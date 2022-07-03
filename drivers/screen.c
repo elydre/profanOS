@@ -19,6 +19,7 @@ int get_offset_col(int offset);
  * Print a message on the specified location
  * If col, row, are negative, we will use the current offset
  */
+ 
 void kprint_at(char *message, int col, int row) {
     /* Set cursor if col/row are negative */
     int offset;
@@ -65,6 +66,7 @@ void kprint_backspace() {
  * Returns the offset of the next character
  * Sets the video cursor to the returned offset
  */
+
 int print_char(char c, int col, int row, char attr) {
     uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;
     if (!attr) attr = WHITE_ON_BLACK;

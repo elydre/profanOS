@@ -11,8 +11,8 @@ CC = gcc
 CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie
 
 # First rule is run by default
-os-image.bin: boot/bootsect.bin kernel.bin
-	cat $^ > os-image.bin
+profan-img.bin: boot/bootsect.bin kernel.bin
+	cat $^ > profan-img.bin
 
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
@@ -23,8 +23,8 @@ kernel.bin: boot/kernel_entry.o ${OBJ}
 kernel.elf: boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ 
 
-run: os-image.bin
-	qemu-system-i386 -fda os-image.bin
+run: profan-img.bin
+	qemu-system-i386 -fda profan-img.bin
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c

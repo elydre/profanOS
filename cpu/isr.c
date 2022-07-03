@@ -122,8 +122,8 @@ void isr_handler(registers_t *r) {
     int_to_ascii(r->int_no, s);
     kprint(s);
     kprint("\n");
-    kprint(exception_messages[r->int_no]);
-    kprint("\n");
+    /*kprint(exception_messages[r->int_no]);
+    kprint("\n");*/
 }
 
 void register_interrupt_handler(uint8_t n, isr_t handler) {

@@ -12,15 +12,17 @@ void kernel_main() {
     asm("int $2");
     asm("int $3");
 
-    kprint("Type something, it will go through the kernel\n"
-        "Type END to halt the CPU or PAGE to request a kmalloc()\n> ");
+    kprint("\n\nWelcome to profanOS!\n\nprofanOS-> ");
 }
 
 void user_input(char *input) {
+
     if (strcmp(input, "END") == 0) {
         kprint("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
-    } else if (strcmp(input, "PAGE") == 0) {
+    }
+    
+    else if (strcmp(input, "PAGE") == 0) {
         /* Lesson 22: Code to test kmalloc, the rest is unchanged */
         uint32_t phys_addr;
         uint32_t page = kmalloc(1000, 1, &phys_addr);
@@ -34,7 +36,13 @@ void user_input(char *input) {
         kprint(phys_str);
         kprint("\n");
     }
-    kprint("You said: ");
-    kprint(input);
-    kprint("\n> ");
+
+    else if (strcmp(input, "TEST") == 0) {
+        kprint(return_int_to_ascii(42));
+    }
+
+    else if (strcmp(input, "") != 0) { kprint("not found"); }
+    if (strcmp(input, "") != 0) { kprint("\n"); }
+
+    kprint("profanOS-> ");
 }
