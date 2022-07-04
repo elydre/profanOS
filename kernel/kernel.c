@@ -35,15 +35,18 @@ void shell_command(char *command) {
         kprint(page_str);
         kprint(", physical address: ");
         kprint(phys_str);
-        kprint("\n");
     }
 
     else if (strcmp(command, "TEST") == 0) {
         kprint(return_int_to_ascii(42));
     }
 
+    else if (strcmp(command, "CLEAR") == 0) {
+        clear_screen();
+    }
+
     else if (strcmp(command, "") != 0) { kprint("not found"); }
-    if (strcmp(command, "") != 0) { kprint("\n"); }
+    if (strcmp(command, "") * strcmp(command, "CLEAR") != 0) { kprint("\n"); }
 
     kprint("profanOS-> ");
 }
