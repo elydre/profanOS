@@ -5,6 +5,8 @@
 #include "../libc/mem.h"
 #include <stdint.h>
 
+static char key_buffer[256];
+
 void kernel_main() {
     isr_install();
     irq_install();
@@ -15,14 +17,13 @@ void kernel_main() {
     kprint("\n\nWelcome to profanOS!\n\nprofanOS-> ");
 }
 
-void user_input(char *input) {
-
-    if (strcmp(input, "END") == 0) {
+void shell_command(char *command) {
+    if (strcmp(command, "END") == 0) {
         kprint("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     }
     
-    else if (strcmp(input, "PAGE") == 0) {
+    else if (strcmp(command, "PAGE") == 0) {
         /* Lesson 22: Code to test kmalloc, the rest is unchanged */
         uint32_t phys_addr;
         uint32_t page = kmalloc(1000, 1, &phys_addr);
@@ -37,12 +38,34 @@ void user_input(char *input) {
         kprint("\n");
     }
 
-    else if (strcmp(input, "TEST") == 0) {
+    else if (strcmp(command, "TEST") == 0) {
         kprint(return_int_to_ascii(42));
     }
 
-    else if (strcmp(input, "") != 0) { kprint("not found"); }
-    if (strcmp(input, "") != 0) { kprint("\n"); }
+    else if (strcmp(command, "") != 0) { kprint("not found"); }
+    if (strcmp(command, "") != 0) { kprint("\n"); }
 
     kprint("profanOS-> ");
+}
+
+void user_input(char letter, int is_enter, int is_backspace) {
+    // shell mode
+    if (is_backspace ) {
+        if (strlen(key_buffer)){
+            backspace(key_buffer);
+            kprint_backspace();
+        }
+    }
+    
+    else if (is_enter) {
+        kprint("\n");
+        shell_command(key_buffer);
+        key_buffer[0] = '\0';
+    }
+    
+    else {
+        char str[2] = {letter, '\0'};
+        append(key_buffer, letter);
+        kprint(str);
+    }
 }
