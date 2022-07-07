@@ -24,7 +24,7 @@ void shell_command(char *command) {
     }
     
     else if (strcmp(command, "PAGE") == 0) {
-        /* Lesson 22: Code to test kmalloc, the rest is unchanged */
+        // Lesson 22: Code to test kmalloc, the rest is unchanged
         uint32_t phys_addr;
         uint32_t page = kmalloc(1000, 1, &phys_addr);
         char page_str[16] = "";
