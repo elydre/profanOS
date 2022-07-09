@@ -15,17 +15,17 @@ int get_offset_col(int offset);
  * Public Kernel API functions                            *
  **********************************************************/
 
-/**
+/*
  * Print a message on the specified location
  * If col, row, are negative, we will use the current offset
- */
- 
-void kprint_at(char *message, int col, int row) {
+*/
+
+void kprint_at(char *message, int col, int row, ScreenColor color) {
     /* Set cursor if col/row are negative */
     int offset;
-    if (col >= 0 && row >= 0)
+    if (col >= 0 && row >= 0) {
         offset = get_offset(col, row);
-    else {
+    } else {
         offset = get_cursor_offset();
         row = get_offset_row(offset);
         col = get_offset_col(offset);
@@ -34,7 +34,7 @@ void kprint_at(char *message, int col, int row) {
     /* Loop through message and print it */
     int i = 0;
     while (message[i] != 0) {
-        offset = print_char(message[i++], col, row, WHITE_ON_BLACK);
+        offset = print_char(message[i++], col, row, color);
         /* Compute row/col for next iteration */
         row = get_offset_row(offset);
         col = get_offset_col(offset);
@@ -42,14 +42,28 @@ void kprint_at(char *message, int col, int row) {
 }
 
 void kprint(char *message) {
-    kprint_at(message, -1, -1);
+    kprint_at(message, -1, -1, c_white);
+}
+
+void ckprint(char *message, ScreenColor color) {
+    kprint_at(message, -1, -1, color);
+}
+
+void rainbow_print(char *message) {
+    ScreenColor rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
+    int i = 0;
+
+    while (message[i] != 0) {
+        print_char(message[i], -1, -1, rainbow_colors[i % 6]);
+        i++;
+    }
 }
 
 void kprint_backspace() {
     int offset = get_cursor_offset()-2;
     int row = get_offset_row(offset);
     int col = get_offset_col(offset);
-    print_char(0x08, col, row, WHITE_ON_BLACK);
+    print_char(0x08, col, row, c_white);
 }
 
 
@@ -62,19 +76,19 @@ void kprint_backspace() {
  * Innermost print function for our kernel, directly accesses the video memory 
  *
  * If 'col' and 'row' are negative, we will print at current cursor location
- * If 'attr' is zero it will use 'white on black' as default
+ * If 'attr' is zero it will use 'c_white on black' as default
  * Returns the offset of the next character
  * Sets the video cursor to the returned offset
  */
 
 int print_char(char c, int col, int row, char attr) {
     uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;
-    if (!attr) attr = WHITE_ON_BLACK;
+    if (!attr) attr = c_white;
 
-    /* Error control: print a red 'E' if the coords aren't right */
+    /* Error control: print a c_red 'E' if the coords aren't right */
     if (col >= MAX_COLS || row >= MAX_ROWS) {
         vidmem[2*(MAX_COLS)*(MAX_ROWS)-2] = 'E';
-        vidmem[2*(MAX_COLS)*(MAX_ROWS)-1] = RED_ON_WHITE;
+        vidmem[2*(MAX_COLS)*(MAX_ROWS)-1] = c_red;
         return get_offset(col, row);
     }
 
@@ -141,7 +155,7 @@ void clear_screen() {
 
     for (i = 0; i < screen_size; i++) {
         screen[i*2] = ' ';
-        screen[i*2+1] = WHITE_ON_BLACK;
+        screen[i*2+1] = c_white;
     }
     set_cursor_offset(get_offset(0, 0));
 }

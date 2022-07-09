@@ -14,7 +14,8 @@ void kernel_main() {
     asm("int $2");
     asm("int $3");
 
-    kprint("\n\nWelcome to profanOS!\n\nprofanOS-> ");
+    rainbow_print("\n\nWelcome to profanOS!\n");
+    kprint("profanOS-> ");
 }
 
 void shell_command(char *command) {
@@ -38,7 +39,7 @@ void shell_command(char *command) {
     }
 
     else if (strcmp(command, "TEST") == 0) {
-        kprint(return_int_to_ascii(42));
+        ckprint(return_int_to_ascii(42), c_magenta);
     }
 
     else if (strcmp(command, "CLEAR") == 0) {
