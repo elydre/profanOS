@@ -21,5 +21,5 @@ make run
 make clean
 
 # qemu command
-TODO
+qemu-system-i386 -fda profan-img.bin
 ```
