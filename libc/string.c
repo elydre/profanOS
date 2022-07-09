@@ -46,12 +46,6 @@ void reverse(char s[]) {
     }
 }
 
-char *return_int_to_ascii(int n) {
-    char * s = "";
-    int_to_ascii(n, s);
-    return s;
-}
-
 int strlen(char s[]) {
     int i = 0;
     while (s[i] != '\0') ++i;
@@ -69,6 +63,14 @@ void backspace(char s[]) {
     s[len-1] = '\0';
 }
 
+void strcpy(char s1[], char s2[]) {
+    int i;
+    for (i = 0; s2[i] != '\0'; ++i) {
+        s1[i] = s2[i];
+    }
+    s1[i] = '\0';
+}
+
 // Returns <0 if s1<s2, 0 if s1==s2, >0 if s1>s2
 int strcmp(char s1[], char s2[]) {
     int i;
@@ -76,4 +78,27 @@ int strcmp(char s1[], char s2[]) {
         if (s1[i] == '\0') return 0;
     }
     return s1[i] - s2[i];
+}
+
+void str_start_split(char s[], char delim) {
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == delim) {
+            s[i] = '\0';
+            return;
+        }
+    }
+}
+
+void str_end_split(char s[], char delim) {
+    int limit = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == delim) {
+            limit = i + 1; break;
+        }
+    }
+
+    for (int i = limit; s[i] != '\0'; i++) {
+        s[i - limit] = s[i];
+    }
+    s[strlen(s) - limit] = '\0';    
 }
