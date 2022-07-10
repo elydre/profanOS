@@ -19,10 +19,6 @@ profan-img.bin: boot/bootsect.bin kernel.bin
 kernel.bin: boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary
 
-# Used for debugging purposes
-kernel.elf: boot/kernel_entry.o ${OBJ}
-	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ 
-
 run: profan-img.bin
 	qemu-system-i386 -fda profan-img.bin
 
