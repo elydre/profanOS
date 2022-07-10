@@ -1,5 +1,6 @@
 #include "../cpu/isr.h"
 #include "../drivers/screen.h"
+#include "../drivers/keyboard.h"
 #include "kernel.h"
 #include "../libc/string.h"
 #include "shell.h"
@@ -58,16 +59,21 @@ void scancode_mod(char letter, int scancode) {
         return;
     }
 
-    char str[3] = {letter, '\0', '\0'};
-    ckprint("\nletter: ", c_dblue);
-    ckprint(str, c_blue);
-    ckprint("\nscancode: ", c_dblue);
+    char str[10];
+    ckprint("\nscancode: ", c_blue);
     int_to_ascii(scancode, str);
-    ckprint(str, c_blue);
+    ckprint(str, c_dcyan);
+    str[0] = letter; str[1] = '\0';
+    ckprint("\nletter: ", c_blue);
+    ckprint(str, c_dcyan);
+    scancode_to_name(scancode, str);
+    ckprint("\nname: ", c_blue);
+    ckprint(str, c_dcyan);
     kprint("\n");
 }
 
-void user_input(char letter, int scancode) {
+void user_input(int scancode) {
+    char letter = scancode_to_char(scancode);
     if (scancode == EXIT && mod != 1) {
         clear_screen();
         rainbow_print("Entering scancode mode.\n");
