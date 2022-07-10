@@ -2,6 +2,8 @@
 
 this repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
 
+![screenshot](https://github.com/elydre/elydre.github.io/blob/main/img/profanOS.png)
+
 ## Install dependencies
 
 ```bash
