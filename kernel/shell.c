@@ -1,5 +1,6 @@
 #include "../drivers/screen.h"
 #include "../libc/string.h"
+#include "kernel.h"
 #include "shell.h"
 #include <stdint.h>
 
@@ -8,28 +9,30 @@ void shell_omp(){
 }
 
 void shell_help(char suffix[]) {
-    char help[] = "HELP  - show this help\nCLEAR - clear the screen\nEND   - shutdown the system\nECHO  - print the arguments";
+    char *help[] = {
+        "CLEAR   - clear the screen",
+        "ECHO    - print the arguments",
+        "END     - shutdown the system",
+        "HELP    - show this help",
+        "VERSION - display the version",
+    };
 
     if (strcmp(suffix, "HELP") == 0) {
-            ckprint(help, c_magenta);
+        for (int i = 0; i < 5; i++) {       // TODO: len of list
+            ckprint(help[i], c_magenta);
             kprint("\n");
+        }
     } else {
         char tmp[100];                      // TODO: autolen
-        char rest[100];
-        char bk[100];
-        strcpy(tmp, help);
-        strcpy(rest, help);
-        for (int i = 0; i < 4; i++) {       // TODO : auto max
-            str_start_split(tmp, '\n');
-            str_end_split(rest, '\n');
-            strcpy(bk, tmp);
+        for (int i = 0; i < 5; i++) {
+            strcpy(tmp, help[i]);
             str_start_split(tmp, ' ');
+
             if (strcmp(tmp, suffix) == 0) {
-                ckprint(bk, c_magenta);
+                ckprint(help[i], c_magenta);
                 kprint("\n");
                 return;
             }
-            strcpy(tmp, rest);
         }
         ckprint("command not found\n", c_red);
     }
@@ -58,6 +61,12 @@ void shell_command(char *command) {
 
     else if (strcmp(prefix, "HELP") == 0) {
         shell_help(suffix);
+    }
+
+    else if (strcmp(prefix, "VERSION") == 0) {
+            ckprint("version ", c_magenta);
+            ckprint(VERSION, c_magenta);
+            kprint("\n");
     }
 
     else if (strcmp(prefix, "") != 0) {

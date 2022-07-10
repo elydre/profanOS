@@ -21,7 +21,10 @@ void kernel_main() {
     asm("int $2");
     asm("int $3");
 
-    rainbow_print("\n\nWelcome to profanOS!\n\n");
+    rainbow_print("\n\nWelcome to profanOS!\n");
+    ckprint("version ", c_dmagenta);
+    ckprint(VERSION, c_magenta);
+    kprint("\n\n");
     shell_omp();
 }
 
