@@ -14,7 +14,7 @@ void shell_help(char suffix[]) {
             ckprint(help, c_magenta);
             kprint("\n");
     } else {
-        char tmp[strlen(suffix) + 1];
+        char tmp[100];
         char rest[100];
         char bk[100];
         strcpy(tmp, help);
