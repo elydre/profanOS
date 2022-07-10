@@ -57,7 +57,7 @@ void scancode_mod(char letter, int scancode) {
     }
 
     char str[3] = {letter, '\0', '\0'};
-    ckprint("letter: ", c_dblue);
+    ckprint("\nletter: ", c_dblue);
     ckprint(str, c_blue);
     ckprint("\nscancode: ", c_dblue);
     int_to_ascii(scancode, str);
