@@ -43,12 +43,13 @@ void shell_command(char *command) {
     str_end_split(suffix, ' ');
     
     if (strcmp(prefix, "END") == 0) {
-        kprint("Stopping the CPU. Bye!\n");
+        rainbow_print("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     }
 
     else if (strcmp(prefix, "ECHO") == 0) {
         ckprint(suffix, c_magenta);
+        kprint("\n");
     }
 
     else if (strcmp(prefix, "CLEAR") == 0) {
