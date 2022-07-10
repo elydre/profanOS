@@ -7,9 +7,6 @@
 #include "../kernel/kernel.h"
 #include <stdint.h>
 
-#define BACKSPACE 0x0E
-#define ENTER 0x1C
-
 #define SC_MAX 57
 
 const char *sc_name[] = { "ERROR", "Esc", "1", "2", "3", "4", "5", "6", 
@@ -30,7 +27,7 @@ static void keyboard_callback(registers_t *regs) {
     uint8_t scancode = port_byte_in(0x60);
     
     if (scancode > SC_MAX) return;
-    user_input(sc_ascii[(int)scancode], scancode == ENTER, scancode == BACKSPACE);
+    user_input(sc_ascii[(int)scancode], (int)scancode);
     UNUSED(regs);
 }
 
