@@ -14,13 +14,13 @@ void shell_help(char suffix[]) {
             ckprint(help, c_magenta);
             kprint("\n");
     } else {
-        char tmp[100];
+        char tmp[100];                      // TODO: autolen
         char rest[100];
         char bk[100];
         strcpy(tmp, help);
         strcpy(rest, help);
-        for (int i = 0; i < 4; i++) {       // 4 is the number of
-            str_start_split(tmp, '\n');     // commands in the help
+        for (int i = 0; i < 4; i++) {       // TODO : auto max
+            str_start_split(tmp, '\n');
             str_end_split(rest, '\n');
             strcpy(bk, tmp);
             str_start_split(tmp, ' ');
