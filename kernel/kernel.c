@@ -40,7 +40,6 @@ void shell_mod(char letter, int scancode) {
         key_buffer[0] = '\0';
     }
 
-    
     else{
         char str[2] = {letter, '\0'};
         append(key_buffer, letter);
