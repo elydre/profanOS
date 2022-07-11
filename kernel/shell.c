@@ -87,6 +87,15 @@ void shell_command(char *command) {
         disk_test();
     }
 
+    else if (strcmp(prefix, "FWRITE") == 0) {
+        ckprint(suffix, c_magenta);
+        uint32_t inbytes[128] = {0};
+        for (int i = 0; i < strlen(suffix); i++){
+            inbytes[i] = suffix[i];
+        }
+        write_sectors_ATA_PIO(0, inbytes);
+    }
+
     else if (strcmp(prefix, "CLEAR") == 0) {
         clear_screen();
     }

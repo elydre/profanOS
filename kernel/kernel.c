@@ -24,6 +24,7 @@ void kernel_main() {
 
     asm("int $2");
     asm("int $3");
+    clear_screen();
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);
