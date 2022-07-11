@@ -1,4 +1,7 @@
 # compiled files
 *.o
-*.bin
-test.c
+
+# bin files
+*/*.bin
+kernel.bin
+profanOS.bin

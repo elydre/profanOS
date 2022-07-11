@@ -19,9 +19,9 @@ profanOS.bin: boot/bootsect.bin kernel.bin hdd.bin
 kernel.bin: boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary
 
-# create a 10MB hdd.bin file
+# create a 1MB hdd.bin file
 hdd.bin:
-	dd if=/dev/zero of=hdd.bin bs=1024 count=10240
+	dd if=/dev/zero of=hdd.bin bs=1024 count=1024
 
 run: profanOS.bin hdd.bin
 	qemu-system-i386 -fda profanOS.bin -drive file=hdd.bin,format=raw
