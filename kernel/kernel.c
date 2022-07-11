@@ -65,7 +65,7 @@ void shell_mod(char letter, int scancode) {
     }
 }
 
-void scancode_mod(char letter, int scancode) {
+void scancode_mod(int scancode) {
     if (scancode == EXIT) {
         clear_screen();
         shell_omp();
@@ -77,7 +77,8 @@ void scancode_mod(char letter, int scancode) {
     ckprint("\nscancode: ", c_blue);
     int_to_ascii(scancode, str);
     ckprint(str, c_dcyan);
-    str[0] = letter; str[1] = '\0';
+    str[0] = scancode_to_char(scancode, 0);
+    str[1] = '\0';
     ckprint("\nletter: ", c_blue);
     ckprint(str, c_dcyan);
     scancode_to_name(scancode, str);
@@ -99,6 +100,6 @@ void user_input(int scancode) {
     }
     
     else if (mod == 1) {
-        scancode_mod(letter, scancode);
+        scancode_mod(scancode);
     }
 }

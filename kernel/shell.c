@@ -1,5 +1,6 @@
 #include "../drivers/screen.h"
 #include "../libc/string.h"
+#include "../drivers/ata/ata.h"
 #include "kernel.h"
 #include "shell.h"
 #include <stdint.h>
@@ -53,6 +54,11 @@ void shell_command(char *command) {
     else if (strcmp(prefix, "ECHO") == 0) {
         ckprint(suffix, c_magenta);
         kprint("\n");
+    }
+
+    else if (strcmp(prefix, "TD") == 0) {
+        write_sectors_ATA_PIO(1, 1, (uint32_t*)0xB8000);
+        ckprint("done\n", c_magenta);
     }
 
     else if (strcmp(prefix, "CLEAR") == 0) {

@@ -1,4 +1,5 @@
 #include "ports.h"
+#include <stdint.h>
 
 /**
  * Read a byte from the specified port
@@ -34,4 +35,14 @@ uint16_t port_word_in (uint16_t port) {
 
 void port_word_out (uint16_t port, uint16_t data) {
     asm volatile("out %%ax, %%dx" : : "a" (data), "d" (port));
+}
+
+uint32_t port_long_in(uint32_t port) {
+    uint32_t result;
+    asm __volatile__("inl %%dx,%%eax":"=a" (result):"d"(port));
+    return result;
+}
+
+void port_long_out(uint32_t port, uint32_t value) {
+    asm volatile("outl %%eax,%%dx"::"d" (port), "a" (value));
 }
