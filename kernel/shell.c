@@ -9,12 +9,39 @@ void shell_omp(){
     kprint("profanOS-> ");
 }
 
+void disk_test() {
+    uint32_t inbytes[256];
+    uint32_t outbytes[256];
+    char tmp[3];
+
+    ckprint("writing to disk\n", c_magenta);
+    
+    for (int i = 0; i < 256; i++) {
+        inbytes[i] = i;
+    }
+
+    write_sectors_ATA_PIO(0, inbytes);
+    ckprint("writing done\nreading from disk\n", c_magenta);
+    
+    read_sectors_ATA_PIO(0, outbytes);
+
+    for (int i = 0; i < 256; i++) {
+        if (outbytes[i] < 8 && outbytes[i] != 0) {
+            int_to_ascii(outbytes[i], tmp);
+            ckprint(tmp, c_magenta);
+            kprint("\n");
+        }
+    }
+    ckprint("...\nreading done, it works!\n", c_magenta);
+}
+
 void shell_help(char suffix[]) {
     char *help[] = {
         "CLEAR   - clear the screen",
         "ECHO    - print the arguments",
         "END     - shutdown the system",
         "HELP    - show this help",
+        "TD      - test the disk",
         "VERSION - display the version",
     };
 
@@ -57,8 +84,7 @@ void shell_command(char *command) {
     }
 
     else if (strcmp(prefix, "TD") == 0) {
-        write_sectors_ATA_PIO(1, 1, (uint32_t*)0xB8000);
-        ckprint("done\n", c_magenta);
+        disk_test();
     }
 
     else if (strcmp(prefix, "CLEAR") == 0) {
@@ -70,9 +96,9 @@ void shell_command(char *command) {
     }
 
     else if (strcmp(prefix, "VERSION") == 0) {
-            ckprint("version ", c_magenta);
-            ckprint(VERSION, c_magenta);
-            kprint("\n");
+        ckprint("version ", c_magenta);
+        ckprint(VERSION, c_magenta);
+        kprint("\n");
     }
 
     else if (strcmp(prefix, "") != 0) {
