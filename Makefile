@@ -38,5 +38,5 @@ run: profanOS.bin hdd.bin
 	nasm $< -f bin -o $@
 
 clean:
-	rm -rf kernel.bin hdd.bin *.dis *.o *.elf
+	rm -rf kernel.bin *.dis *.o *.elf
 	rm -rf kernel/*.o boot/*.bin drivers/*.o drivers/ata/*.o boot/*.o cpu/*.o libc/*.o
