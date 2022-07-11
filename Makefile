@@ -11,7 +11,7 @@ CC = gcc
 CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie
 
 # First rule is run by default
-profanOS.bin: boot/bootsect.bin kernel.bin hdd.bin
+profanOS.bin: boot/bootsect.bin kernel.bin
 	cat $^ > profanOS.bin
 
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
@@ -23,8 +23,8 @@ kernel.bin: boot/kernel_entry.o ${OBJ}
 hdd.bin:
 	dd if=/dev/zero of=hdd.bin bs=1024 count=10240 
 
-run: profanOS.bin
-	qemu-system-i386 -fda profanOS.bin
+run: profanOS.bin hdd.bin
+	qemu-system-i386 -fda profanOS.bin -hda hdd.bin
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c
