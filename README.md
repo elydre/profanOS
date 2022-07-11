@@ -27,3 +27,11 @@ make clean
 # Qemu command
 qemu-system-i386 -fda profan-img.bin
 ```
+
+## keyboard
+
+| Key  | Function               |
+|------|------------------------|
+| esc  | Entering scancode mode |
+| lshft| caps lock like         |
+| rshft| paste the last command |

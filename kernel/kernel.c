@@ -9,9 +9,12 @@
 #define BACKSPACE 14
 #define ENTER 28
 #define EXIT 1
+#define LSHIFT 42
+#define RSHIFT 54
 
 static char key_buffer[256];
 static char last_command[256];
+static int shift = 0;
 static int mod = 0; // 0 = shell, 1 = scancode
 
 
@@ -30,7 +33,18 @@ void kernel_main() {
 }
 
 void shell_mod(char letter, int scancode) {
-    if (scancode == BACKSPACE) {
+    if (scancode == LSHIFT) {
+        shift = !shift;
+    }
+
+    else if (scancode == RSHIFT) {
+        for (int i = 0; last_command[i] != '\0'; i++) {
+            append(key_buffer, last_command[i]);
+        }
+        ckprint(last_command, c_blue);
+    }
+
+    else if (scancode == BACKSPACE) {
         if (strlen(key_buffer)){
             backspace(key_buffer);
             kprint_backspace();
@@ -44,7 +58,7 @@ void shell_mod(char letter, int scancode) {
         key_buffer[0] = '\0';
     }
 
-    else{
+    else {
         char str[2] = {letter, '\0'};
         append(key_buffer, letter);
         ckprint(str, c_blue);
@@ -73,7 +87,7 @@ void scancode_mod(char letter, int scancode) {
 }
 
 void user_input(int scancode) {
-    char letter = scancode_to_char(scancode);
+    char letter = scancode_to_char(scancode, !shift);
     if (scancode == EXIT && mod != 1) {
         clear_screen();
         rainbow_print("Entering scancode mode.\n");

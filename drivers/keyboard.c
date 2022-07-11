@@ -10,8 +10,8 @@
 #define SC_MAX 57
 
 
-char scancode_to_char(int scancode) {
-    char sc_ascii[] = {
+char scancode_to_char(int scancode, int shift) {
+    char sc_ascii_maj[] = {
         '?', '?', '1', '2', '3', '4', '5', '6', '7', '8',
         '9', '0', '-', '=', '?', '?', 'A', 'Z', 'E', 'R',
         'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '?', '?',
@@ -20,7 +20,16 @@ char scancode_to_char(int scancode) {
         '!', ',', '.', '/', '?', '?', '?', ' '
     };
 
-    return sc_ascii[scancode];
+    char sc_ascii_min[] = {
+        '?', '?', '1', '2', '3', '4', '5', '6', '7', '8',
+        '9', '0', '-', '=', '?', '?', 'a', 'z', 'e', 'r',
+        't', 'y', 'u', 'i', 'o', 'p', '[', ']', '?', '?',
+        'q', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm',
+        '\'','`', '?', '>', 'w', 'x', 'c', 'v', 'b', 'n',
+        '!', ',', '.', '/', '?', '?', '?', ' '
+    };
+
+    return (shift) ? sc_ascii_maj[scancode] : sc_ascii_min[scancode];
 }
 
 void scancode_to_name(int scancode, char name[]) {
