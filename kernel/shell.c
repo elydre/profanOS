@@ -10,13 +10,13 @@ void shell_omp(){
 }
 
 void disk_test() {
-    uint32_t inbytes[256];
-    uint32_t outbytes[256];
+    uint32_t inbytes[128];
+    uint32_t outbytes[128];
     char tmp[3];
 
     ckprint("writing to disk\n", c_magenta);
     
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 128; i++) {
         inbytes[i] = i;
     }
 
@@ -25,8 +25,8 @@ void disk_test() {
     
     read_sectors_ATA_PIO(0, outbytes);
 
-    for (int i = 0; i < 256; i++) {
-        if (outbytes[i] < 8 && outbytes[i] != 0) {
+    for (int i = 0; i < 128; i++) {
+        if (outbytes[i] < 8) {
             int_to_ascii(outbytes[i], tmp);
             ckprint(tmp, c_magenta);
             kprint("\n");

@@ -38,8 +38,9 @@ void read_sectors_ATA_PIO(uint32_t LBA, uint32_t out[]) {
 	ATA_wait_BSY();
 	ATA_wait_DRQ();
 
-	for(int i = 0; i < 256; i++) {
+	for(int i = 0; i < 128; i++) {
 		out[i] = port_word_in(0x1F0);
+		port_word_in(0x1F0);
 	}
 }
 
@@ -55,7 +56,7 @@ void write_sectors_ATA_PIO(uint32_t LBA, uint32_t bytes[]) {
 	ATA_wait_BSY();
 	ATA_wait_DRQ();
 
-	for(int i = 0; i < 256; i++) {
+	for(int i = 0; i < 128; i++) {
 		port_long_out(0x1F0, bytes[i]);
 	}
 }
