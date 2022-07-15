@@ -22,10 +22,6 @@ void kernel_main() {
     isr_install();
     irq_install();
 
-    asm("int $2");
-    asm("int $3");
-    clear_screen();
-
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);
     ckprint(VERSION, c_magenta);
