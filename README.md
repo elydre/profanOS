@@ -6,8 +6,6 @@ This repo originally comes from part 23 of the excellent tutorial [How to create
 
 You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
 
-![screenshot](https://github.com/elydre/elydre.github.io/blob/main/img/profanOS.png)
-
 ## Install dependencies
 
 ```bash
@@ -29,6 +27,16 @@ make clean
 # Qemu command
 qemu-system-i386 -fda profan-img.bin
 ```
+
+## Command line
+
+| Command | Description         |
+|---------|---------------------|
+| CLEAR   | clear the screen    |
+| ECHO    | print the argument  |
+| END     | shutdown the system |
+| HELP    | show the help       |
+| TDIR    | test the disk       |
 
 ## keyboard
 
