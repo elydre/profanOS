@@ -45,14 +45,17 @@ void shell_help(char suffix[]) {
         "VERSION - display the version",
     };
 
+    int table_size = sizeof(help) / sizeof(char *);
+
     if (strcmp(suffix, "HELP") == 0) {
-        for (int i = 0; i < 5; i++) {       // TODO: len of list
+        for (int i = 0; i < table_size; i++) {
             ckprint(help[i], c_magenta);
             kprint("\n");
         }
+
     } else {
-        char tmp[100];                      // TODO: autolen
-        for (int i = 0; i < 5; i++) {
+        char tmp[100];
+        for (int i = 0; i < table_size; i++) {
             strcpy(tmp, help[i]);
             str_start_split(tmp, ' ');
 
