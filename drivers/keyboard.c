@@ -7,8 +7,6 @@
 #include "../kernel/kernel.h"
 #include <stdint.h>
 
-#define SC_MAX 57
-
 
 char scancode_to_char(int scancode, int shift) {
     char sc_ascii_maj[] = {
@@ -50,7 +48,6 @@ static void keyboard_callback(registers_t *regs) {
     /* The PIC leaves us the scancode in port 0x60 */
     uint8_t scancode = port_byte_in(0x60);
     
-    if (scancode > SC_MAX) return;
     user_input((int)scancode);
     UNUSED(regs);
 }

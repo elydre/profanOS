@@ -41,6 +41,7 @@ void shell_help(char suffix[]) {
         "ECHO    - print the arguments",
         "END     - shutdown the system",
         "HELP    - show this help",
+        "ISR     - test the interrupt handler",
         "TD      - test the disk",
         "VERSION - display the version",
     };
@@ -76,9 +77,8 @@ void shell_command(char *command) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
     
-    if (strcmp(prefix, "END") == 0) {
-        rainbow_print("Stopping the CPU. Bye!\n");
-        asm volatile("hlt");
+    if (strcmp(prefix, "CLEAR") == 0) {
+        clear_screen();
     }
 
     else if (strcmp(prefix, "ECHO") == 0) {
@@ -86,8 +86,9 @@ void shell_command(char *command) {
         kprint("\n");
     }
 
-    else if (strcmp(prefix, "TD") == 0) {
-        disk_test();
+    else if (strcmp(prefix, "END") == 0) {
+        rainbow_print("Stopping the CPU. Bye!\n");
+        asm volatile("hlt");
     }
 
     else if (strcmp(prefix, "FWRITE") == 0) {
@@ -99,12 +100,16 @@ void shell_command(char *command) {
         write_sectors_ATA_PIO(0, inbytes);
     }
 
-    else if (strcmp(prefix, "CLEAR") == 0) {
-        clear_screen();
-    }
-
     else if (strcmp(prefix, "HELP") == 0) {
         shell_help(suffix);
+    }
+
+    else if (strcmp(prefix, "ISR") == 0) {
+        asm volatile("int $0x1");
+    }
+
+    else if (strcmp(prefix, "TD") == 0) {
+        disk_test();
     }
 
     else if (strcmp(prefix, "VERSION") == 0) {
@@ -117,6 +122,7 @@ void shell_command(char *command) {
         ckprint(prefix, c_red);
         ckprint(" is not a valid command.\n", c_dred);
     }
+
     if (strcmp(prefix, "") * strcmp(prefix, "CLEAR") != 0) { kprint("\n"); }
 
     shell_omp();

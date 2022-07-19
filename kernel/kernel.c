@@ -12,6 +12,8 @@
 #define LSHIFT 42
 #define RSHIFT 54
 
+#define SC_MAX 57
+
 static char key_buffer[256];
 static char last_command[256];
 static int shift = 0;
@@ -30,6 +32,8 @@ void kernel_main() {
 }
 
 void shell_mod(char letter, int scancode) {
+    if (scancode > SC_MAX) return;
+
     if (scancode == LSHIFT) {
         shift = !shift;
     }
@@ -63,6 +67,16 @@ void shell_mod(char letter, int scancode) {
 }
 
 void scancode_mod(int scancode) {
+    char str[10];
+    ckprint("\nscancode: ", c_blue);
+    int_to_ascii(scancode, str);
+    ckprint(str, c_dcyan);
+
+    if (scancode > SC_MAX) {
+        ckprint("\nnot a valid scancode\n", c_red);
+        return;
+    }
+
     if (scancode == EXIT) {
         clear_screen();
         shell_omp();
@@ -70,10 +84,6 @@ void scancode_mod(int scancode) {
         return;
     }
 
-    char str[10];
-    ckprint("\nscancode: ", c_blue);
-    int_to_ascii(scancode, str);
-    ckprint(str, c_dcyan);
     str[0] = scancode_to_char(scancode, 0);
     str[1] = '\0';
     ckprint("\nletter: ", c_blue);
