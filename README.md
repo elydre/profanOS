@@ -23,9 +23,6 @@ make run
 
 # Clean the output
 make clean
-
-# Qemu command
-qemu-system-i386 -fda profan-img.bin
 ```
 
 ## Command line
