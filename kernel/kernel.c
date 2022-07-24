@@ -9,7 +9,8 @@
 #define BACKSPACE 14
 #define ENTER 28
 #define EXIT 1
-#define LSHIFT 42
+#define LSHIFT_IN 42
+#define LSHIFT_OUT 170
 #define RSHIFT 54
 
 #define SC_MAX 57
@@ -32,11 +33,16 @@ void kernel_main() {
 }
 
 void shell_mod(char letter, int scancode) {
-    if (scancode > SC_MAX) return;
 
-    if (scancode == LSHIFT) {
-        shift = !shift;
+    if (scancode == LSHIFT_IN) {
+        shift = 1;
     }
+
+    else if (scancode == LSHIFT_OUT) {
+        shift = 0;
+    }
+
+    else if (scancode > SC_MAX) return;
 
     else if (scancode == RSHIFT) {
         for (int i = 0; last_command[i] != '\0'; i++) {
@@ -95,7 +101,7 @@ void scancode_mod(int scancode) {
 }
 
 void user_input(int scancode) {
-    char letter = scancode_to_char(scancode, !shift);
+    char letter = scancode_to_char(scancode, shift);
     if (scancode == EXIT && mod != 1) {
         clear_screen();
         rainbow_print("Entering scancode mode.\n");

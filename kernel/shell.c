@@ -43,12 +43,12 @@ void shell_help(char suffix[]) {
         "HELP    - show this help",
         "ISR     - test the interrupt handler",
         "TD      - test the disk",
-        "VERSION - display the version",
+        "VER     - display the version",
     };
 
     int table_size = sizeof(help) / sizeof(char *);
 
-    if (strcmp(suffix, "HELP") == 0) {
+    if (strcmp(suffix, "help") == 0) {
         for (int i = 0; i < table_size; i++) {
             ckprint(help[i], c_magenta);
             kprint("\n");
@@ -77,21 +77,21 @@ void shell_command(char *command) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
     
-    if (strcmp(prefix, "CLEAR") == 0) {
+    if (strcmp(prefix, "clear") == 0) {
         clear_screen();
     }
 
-    else if (strcmp(prefix, "ECHO") == 0) {
+    else if (strcmp(prefix, "echo") == 0) {
         ckprint(suffix, c_magenta);
         kprint("\n");
     }
 
-    else if (strcmp(prefix, "END") == 0) {
+    else if (strcmp(prefix, "end") == 0) {
         rainbow_print("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     }
 
-    else if (strcmp(prefix, "FWRITE") == 0) {
+    else if (strcmp(prefix, "fwrite") == 0) {
         ckprint(suffix, c_magenta);
         uint32_t inbytes[128] = {0};
         for (int i = 0; i < strlen(suffix); i++){
@@ -100,19 +100,19 @@ void shell_command(char *command) {
         write_sectors_ATA_PIO(0, inbytes);
     }
 
-    else if (strcmp(prefix, "HELP") == 0) {
+    else if (strcmp(prefix, "help") == 0) {
         shell_help(suffix);
     }
 
-    else if (strcmp(prefix, "ISR") == 0) {
+    else if (strcmp(prefix, "isr") == 0) {
         asm volatile("int $0x1");
     }
 
-    else if (strcmp(prefix, "TD") == 0) {
+    else if (strcmp(prefix, "td") == 0) {
         disk_test();
     }
 
-    else if (strcmp(prefix, "VERSION") == 0) {
+    else if (strcmp(prefix, "ver") == 0) {
         ckprint("version ", c_magenta);
         ckprint(VERSION, c_magenta);
         kprint("\n");
@@ -123,7 +123,7 @@ void shell_command(char *command) {
         ckprint(" is not a valid command.\n", c_dred);
     }
 
-    if (strcmp(prefix, "") * strcmp(prefix, "CLEAR") != 0) { kprint("\n"); }
+    if (strcmp(prefix, "") * strcmp(prefix, "clear") != 0) { kprint("\n"); }
 
     shell_omp();
 }
