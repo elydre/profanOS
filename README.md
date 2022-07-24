@@ -27,13 +27,15 @@ make clean
 
 ## Command line
 
-| Command | Description         |
-|---------|---------------------|
-| CLEAR   | clear the screen    |
-| ECHO    | print the argument  |
-| END     | shutdown the system |
-| HELP    | show the help       |
-| TD      | test the disk       |
+| Command | Description            |
+|---------|------------------------|
+| CLEAR   | clear the screen       |
+| ECHO    | print the argument     |
+| END     | shutdown the system    |
+| HELP    | show the help          |
+| ISR     | test interrupt handler |
+| TD      | test the disk          |
+| VERSION | display the version    |
 
 ## keyboard
 
