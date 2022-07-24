@@ -24,7 +24,7 @@ hdd.bin:
 	dd if=/dev/zero of=hdd.bin bs=1024 count=1024
 
 run: profanOS.bin hdd.bin
-	qemu-system-i386 -fda profanOS.bin -drive file=hdd.bin,format=raw
+	qemu-system-i386 -drive file=profanOS.bin,if=floppy,format=raw -drive file=hdd.bin,format=raw -boot order=a
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c
