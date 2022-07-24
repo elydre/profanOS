@@ -77,52 +77,11 @@ void isr_install() {
     set_idt(); // Load with ASM
 }
 
-
 void isr_handler(registers_t *r) {
-    char *exception_messages[] = {
-        "Division By Zero",
-        "Debug",
-        "Non Maskable Interrupt",
-        "Breakpoint",
-        "Into Detected Overflow",
-        "Out of Bounds",
-        "Invalid Opcode",
-        "No Coprocessor",
-
-        "Double Fault",
-        "Coprocessor Segment Overrun",
-        "Bad TSS",
-        "Segment Not Present",
-        "Stack Fault",
-        "General Protection Fault",
-        "Page Fault",
-        "Unknown Interrupt",
-
-        "Coprocessor Fault",
-        "Alignment Check",
-        "Machine Check",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved",
-        "Reserved"
-    };
-
-    ckprint("interrupt ", c_dred);
+    ckprint("received interrupt: ", c_dred);
     char s[3];
     int_to_ascii(r->int_no, s);
     ckprint(s, c_red);
-    ckprint(" -> ", c_dred);
-    ckprint(exception_messages[r->int_no], c_red);
     kprint("\n");
 }
 
