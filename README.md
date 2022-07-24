@@ -42,5 +42,5 @@ make clean
 | Key  | Function               |
 |------|------------------------|
 | esc  | Entering scancode mode |
-| lshft| caps lock like         |
+| lshft| maj                    |
 | rshft| paste the last command |
