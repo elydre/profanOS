@@ -33,7 +33,7 @@ make clean
 | ECHO    | print the argument  |
 | END     | shutdown the system |
 | HELP    | show the help       |
-| TDIR    | test the disk       |
+| TD      | test the disk       |
 
 ## keyboard
 
