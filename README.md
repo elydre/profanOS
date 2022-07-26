@@ -40,10 +40,17 @@ make fullclean
 | TD      | test the disk          |
 | VERSION | display the version    |
 
-## keyboard
+## Keyboard
 
 | Key  | Function               |
 |------|------------------------|
 | esc  | Entering scancode mode |
 | lshft| maj (hold)             |
 | rshft| paste the last command |
+
+## Author & contact
+
+* [pf4](https://github.com/elydre)
+* [loris](https://github.com/Lorisredstone)
+
+Contact us on [discord](https://pf4.ddns.net/discord)
