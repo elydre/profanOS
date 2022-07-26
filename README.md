@@ -1,5 +1,9 @@
 # profanOS
 
+[![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
+[![dif10](https://img.shields.io/badge/dif10-7-brightgreen)](https://pf4.ddns.net/dif10/)
+
+
 ![wave](https://elydre.github.io/img/profan.svg)
 
 This repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
