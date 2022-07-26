@@ -23,6 +23,9 @@ make run
 
 # Clean the output
 make clean
+
+# Clean all
+make fullclean
 ```
 
 ## Command line
