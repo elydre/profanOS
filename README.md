@@ -51,7 +51,7 @@ make fullclean
 | lshft| maj (hold)             |
 | rshft| paste the last command |
 
-## Author & contact
+## Author & Contact
 
 * [pf4](https://github.com/elydre)
 * [loris](https://github.com/Lorisredstone)
