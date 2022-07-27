@@ -9,12 +9,6 @@
 void shell_omp(){
     kprint("profanOS-> ");
 }
- 
-void doIt() {
-    kprint("Switching to otherTask... \n");
-    yield();
-    kprint("Returned to mainTask!\n");
-}
 
 void disk_test() {
     uint32_t inbytes[128];
@@ -116,7 +110,7 @@ void shell_command(char *command) {
     }
 
     else if (strcmp(prefix, "task") == 0) {
-        doIt();
+        yield();
     }
 
     else if (strcmp(prefix, "td") == 0) {

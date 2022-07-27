@@ -3,9 +3,9 @@ global switchTask
 switchTask:
     pusha
     pushf
-    mov    eax, cr3
+    mov    eax, cr3         ; Push CR3
     push   eax
-    mov    eax, [esp+0x2c]
+    mov    eax, [esp+0x2c]  ; The first argument, where to save
     mov    [eax+0x4], ebx
     mov    [eax+0x8], ecx
     mov    [eax+0xc], edx
@@ -14,36 +14,36 @@ switchTask:
     mov    ebx, [esp+0x24]
     mov    ecx, [esp+0x28]
     mov    edx, [esp+0x14]
-    add    edx, 0x4
-    mov    esi, [esp+0x10]
-    mov    edi, [esp+0x4]
+    add    edx, 0x4         ; Remove the return value 
+    mov    esi, [esp+0x10]  ; EBP
+    mov    edi, [esp+0x4]   ; EFLAG
     mov    [eax], ebx
     mov    [eax+0x18], edx
     mov    [eax+0x1c], esi
     mov    [eax+0x20], ecx
     mov    [eax+0x24], edi
-    pop    ebx
+    pop    ebx              ; CR3
     mov    [eax+0x28], ebx
-    push   ebx
-    mov    eax, [esp+0x30]
-    mov    ebx, [eax+0x4]
-    mov    ecx, [eax+0x8]
-    mov    edx, [eax+0xc]
-    mov    esi, [eax+0x10]
-    mov    edi, [eax+0x14]
-    mov    ebp, [eax+0x1c]
+    push   ebx              ; Goodbye again
+    mov    eax, [esp+0x30]  ; #Now it is the new object
+    mov    ebx, [eax+0x4]   ; EBX
+    mov    ecx, [eax+0x8]   ; ECX
+    mov    edx, [eax+0xc]   ; EDX
+    mov    esi, [eax+0x10]  ; ESI
+    mov    edi, [eax+0x14]  ; EDI
+    mov    ebp, [eax+0x1c]  ; EBP
     push   eax
-    mov    eax, [eax+0x24]
+    mov    eax, [eax+0x24]  ; EFLAGS
     push   eax
     popf
     pop    eax
-    mov    esp, [eax+0x18]
+    mov    esp, [eax+0x18]  ; ESP
     push   eax
-    mov    eax, [eax+0x28]
+    mov    eax, [eax+0x28]  ; CR3
     mov    cr3, eax
     pop    eax
     push   eax
-    mov    eax, [eax+0x20]
+    mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
-    ret
+    ret                     ; This ends all
