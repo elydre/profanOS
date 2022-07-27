@@ -13,8 +13,19 @@ static void otherMain() {
 
 void initTasking() {
     // Get EFLAGS and CR3
-    asm volatile("movl %%cr3, %%eax; movl %%eax, %0;":"=m"(mainTask.regs.cr3)::"%eax");
-    asm volatile("pushfl; movl (%%esp), %%eax; movl %%eax, %0; popfl;":"=m"(mainTask.regs.eflags)::"%eax");
+    
+    asm volatile(
+        "movl %%cr3, %%eax\n\t"
+        "movl %%eax, %0"
+        : "=m" (mainTask.regs.cr3)
+        :: "%eax");
+
+    asm volatile("pushfl\n\t"
+        "movl (%%esp), %%eax\n\t"
+        "movl %%eax, %0\n\t"
+        "popfl"
+        : "=m"(mainTask.regs.eflags)
+        :: "%eax");
  
     createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3);
     mainTask.next = &otherTask;
