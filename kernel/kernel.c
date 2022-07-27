@@ -4,6 +4,7 @@
 #include "kernel.h"
 #include "../libc/string.h"
 #include "shell.h"
+#include "task.h"
 #include <stdint.h>
 
 #define BACKSPACE 14
@@ -24,6 +25,8 @@ static int mod = 0; // 0 = shell, 1 = scancode
 void kernel_main() {
     isr_install();
     irq_install();
+    kprint("isr initialized\n");
+    initTasking();
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);

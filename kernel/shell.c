@@ -3,10 +3,17 @@
 #include "../drivers/ata/ata.h"
 #include "kernel.h"
 #include "shell.h"
+#include "task.h"
 #include <stdint.h>
 
 void shell_omp(){
     kprint("profanOS-> ");
+}
+ 
+void doIt() {
+    kprint("Switching to otherTask... \n");
+    yield();
+    kprint("Returned to mainTask!\n");
 }
 
 void disk_test() {
@@ -106,6 +113,10 @@ void shell_command(char *command) {
 
     else if (strcmp(prefix, "isr") == 0) {
         asm volatile("int $0x1");
+    }
+
+    else if (strcmp(prefix, "task") == 0) {
+        doIt();
     }
 
     else if (strcmp(prefix, "td") == 0) {
