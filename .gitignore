@@ -2,6 +2,6 @@
 *.o
 
 # bin files
-*/*.bin
+*.bin
 kernel.bin
 profanOS.bin
