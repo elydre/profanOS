@@ -58,6 +58,7 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir) {
 void yield() {
     Task *last = runningTask;
     runningTask = runningTask->next;
+
     char str1[10];
     char str2[10];
     int_to_ascii(last->regs.eip, str1);
@@ -67,5 +68,7 @@ void yield() {
     kprint(" to ");
     ckprint(str2, c_green);
     kprint("\n");
+
     switchTask(&last->regs, &runningTask->regs);
+    initTasking();
 }
