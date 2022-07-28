@@ -70,5 +70,8 @@ void yield() {
     kprint("\n");
 
     switchTask(&last->regs, &runningTask->regs);
-    initTasking();
+    
+    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3);
+    mainTask.next = &otherTask;
+    otherTask.next = &mainTask;
 }
