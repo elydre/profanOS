@@ -8,7 +8,7 @@ static Task mainTask;
 static Task otherTask;
  
 static void otherMain() {
-    kprint("Hello multitasking world!");
+    ckprint("Hello multitasking world!\n", c_yellow);
     yield();
 }
 

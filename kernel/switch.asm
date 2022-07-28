@@ -37,11 +37,8 @@ switchTask:
     push   eax
     popf
     pop    eax
-    mov    esp, [eax+0x18]  ; ERROR THAT WAIT HERE
 
-    mov ax, 0     ; Numérateur
-    mov bl, 0     ; Dénominateur
-    div bl        ; Quotient (al) = 2 - Reste (ah) = 1
+    ; mov    esp, [eax+0x18]  ; ERROR THAT WAIT HERE, to patch?
 
     push   eax
     mov    eax, [eax+0x28]  ; CR3
