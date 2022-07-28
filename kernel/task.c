@@ -2,19 +2,20 @@
 #include "../drivers/screen.h"
 #include "../libc/mem.h"
 #include "../libc/string.h"
- 
+
 static Task *runningTask;
 static Task mainTask;
 static Task otherTask;
- 
+
 static void otherMain() {
     ckprint("Hello multitasking world!\n", c_yellow);
-    yield();
+    yield("otherMain");
+    ckprint("Hello again!\n", c_yellow);
 }
 
 void initTasking() {
     // Get EFLAGS and CR3
-    
+
     asm volatile(
         "movl %%cr3, %%eax\n\t"
         "movl %%eax, %0"
@@ -27,15 +28,15 @@ void initTasking() {
         "popfl"
         : "=m"(mainTask.regs.eflags)
         :: "%eax");
- 
+
     createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3);
     mainTask.next = &otherTask;
     otherTask.next = &mainTask;
- 
+
     runningTask = &mainTask;
     kprint("Tasking initialized\n");
 }
- 
+
 void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir) {
     task->regs.eax = 0;
     task->regs.ebx = 0;
@@ -55,7 +56,7 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir) {
     kprint("\n");
 }
 
-void yield() {
+void yield(char func_name[]) {
     Task *last = runningTask;
     runningTask = runningTask->next;
 
@@ -63,15 +64,26 @@ void yield() {
     char str2[10];
     int_to_ascii(last->regs.eip, str1);
     int_to_ascii(runningTask->regs.eip, str2);
-    kprint("Switching from ");
+    ckprint(func_name, c_cyan);
+    kprint(" - Switching from ");
     ckprint(str1, c_green);
     kprint(" to ");
     ckprint(str2, c_green);
     kprint("\n");
 
+    if (strcmp(str1, str2) == 0) {
+        ckprint("Same task\n", c_red);
+        return;
+    }
+
     switchTask(&last->regs, &runningTask->regs);
-    
-    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3);
-    mainTask.next = &otherTask;
-    otherTask.next = &mainTask;
+
+    int_to_ascii(last->regs.eip, str1);
+    int_to_ascii(runningTask->regs.eip, str2);
+    ckprint(func_name, c_cyan);
+    kprint(" - after switch ");
+    ckprint(str1, c_red);
+    kprint(" -> ");
+    ckprint(str2, c_red);
+    kprint("\n");
 }

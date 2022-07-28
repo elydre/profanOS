@@ -110,7 +110,7 @@ void shell_command(char *command) {
     }
 
     else if (strcmp(prefix, "task") == 0) {
-        yield();
+        yield("shell");
     }
 
     else if (strcmp(prefix, "td") == 0) {
