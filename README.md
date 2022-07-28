@@ -15,7 +15,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 sudo apt-get install -y gcc nasm make qemu-system-i386
 ```
 
-## Compile & run
+## Compile & Run
 
 ```bash
 # Simple compilation
