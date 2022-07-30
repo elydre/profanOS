@@ -48,7 +48,7 @@ make fullclean
 
 | Key  | Function               |
 |------|------------------------|
-| esc  | Entering scancode mode |
+| esc  | entering scancode mode |
 | lshft| maj (hold)             |
 | rshft| paste the last command |
 
