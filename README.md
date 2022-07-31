@@ -1,6 +1,8 @@
 # profanOS
 
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
+[![flawfinder](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml)
+![views](https://komarev.com/ghpvc/?username=profanOS&color=aaaaaa&label=views)
 
 
 ![wave](https://elydre.github.io/img/profan.svg)
@@ -15,7 +17,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 sudo apt-get install -y gcc nasm make qemu-system-i386
 ```
 
-## Compile & run
+## Compile & Run
 
 ```bash
 # Simple compilation
@@ -47,11 +49,11 @@ make fullclean
 
 | Key  | Function               |
 |------|------------------------|
-| esc  | Entering scancode mode |
+| esc  | entering scancode mode |
 | lshft| maj (hold)             |
 | rshft| paste the last command |
 
-## Author & contact
+## Author & Contact
 
 * [pf4](https://github.com/elydre)
 * [loris](https://github.com/Lorisredstone)
