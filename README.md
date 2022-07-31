@@ -1,6 +1,7 @@
 # profanOS
 
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
+[![flawfinder](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml)
 ![views](https://komarev.com/ghpvc/?username=profanOS&color=aaaaaa&label=views)
 
 
