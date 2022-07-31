@@ -1,6 +1,7 @@
 #include "../drivers/screen.h"
 #include "../libc/string.h"
 #include "../drivers/ata/ata.h"
+#include "../libc/function.h"
 #include "kernel.h"
 #include "shell.h"
 #include <stdint.h>
@@ -46,17 +47,15 @@ void shell_help(char suffix[]) {
         "VER     - display the version",
     };
 
-    int table_size = sizeof(help) / sizeof(char *);
-
     if (strcmp(suffix, "help") == 0) {
-        for (int i = 0; i < table_size; i++) {
+        for (int i = 0; i < ARYLEN(help); i++) {
             ckprint(help[i], c_magenta);
             kprint("\n");
         }
 
     } else {
         char tmp[100];
-        for (int i = 0; i < table_size; i++) {
+        for (int i = 0; i < ARYLEN(help); i++) {
             strcpy(tmp, help[i]);
             str_start_split(tmp, ' ');
 
