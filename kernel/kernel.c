@@ -60,7 +60,7 @@ void shell_mod(char letter, int scancode) {
     
     else if (scancode == ENTER) {
         kprint("\n");
-        strcpy(last_command, key_buffer);
+        strcpy_s(last_command, key_buffer);
         shell_command(key_buffer);
         key_buffer[0] = '\0';
     }
