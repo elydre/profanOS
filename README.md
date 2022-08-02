@@ -47,11 +47,11 @@ make fullclean
 
 ## Keyboard
 
-| Key  | Function               |
-|------|------------------------|
-| esc  | entering scancode mode |
-| lshft| maj (hold)             |
-| rshft| paste the last command |
+| Key   | Function               |
+|-------|------------------------|
+| esc   | entering scancode mode |
+| lshft | maj (hold)             |
+| rshft | paste the last command |
 
 ## Author & Contact
 

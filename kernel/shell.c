@@ -57,7 +57,7 @@ void shell_help(char suffix[]) {
     } else {
         char tmp[100];
         for (int i = 0; i < ARYLEN(help); i++) {
-            strcpy(tmp, help[i]);
+            strcpy_s(tmp, help[i]);
             str_start_split(tmp, ' ');
 
             if (strcmp(tmp, suffix) == 0) {
@@ -70,7 +70,7 @@ void shell_help(char suffix[]) {
     }
 }
 
-void shell_command(char *command) {
+void shell_command(char command[]) {
     char prefix[strlen(command)], suffix[strlen(command)];
     strcpy(prefix, command);
     strcpy(suffix, command);

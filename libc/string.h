@@ -1,6 +1,11 @@
 #ifndef STRINGS_H
 #define STRINGS_H
 
+#include "function.h"
+#include "../drivers/screen.h"
+
+#define strcpy_s(s1, s2) (void)(ARYLEN(s1) > strlen(s2) ? strcpy(s1, s2) : ckprint("Error: strcpy_s: target string is too small\n", c_red))
+
 void int_to_ascii(int n, char str[]);
 void hex_to_ascii(int n, char str[]);
 void reverse(char s[]);
