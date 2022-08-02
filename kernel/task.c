@@ -3,17 +3,20 @@
 #include "../libc/mem.h"
 #include "../libc/string.h"
 
-static Task *runningTask;
-static Task mainTask;
-static Task otherTask;
+#define TASK_MAX 2
+
+static Task tasks[TASK_MAX];
 
 static void otherMain() {
-    ckprint("Hello multitasking world!\n", c_yellow);
+    rainbow_print("Hello multitasking world!\n");
     yield("otherMain");
-    ckprint("Hello again!\n", c_yellow);
+    rainbow_print("Hello again!\n");
 }
 
 void initTasking() {
+    static Task mainTask;
+    static Task otherTask;
+
     // Get EFLAGS and CR3
 
     asm volatile(
@@ -29,15 +32,16 @@ void initTasking() {
         : "=m"(mainTask.regs.eflags)
         :: "%eax");
 
-    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3);
-    mainTask.next = &otherTask;
-    otherTask.next = &mainTask;
+    strcpy(mainTask.name, "main");
 
-    runningTask = &mainTask;
+    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3, "other");
+
+    tasks[0] = mainTask;
+    tasks[1] = otherTask;
     kprint("Tasking initialized\n");
 }
 
-void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir) {
+void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, char name[]) {
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -48,42 +52,48 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir) {
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
     task->regs.esp = (uint32_t) kmalloc(0x1000, 1, 0);
-    task->next = 0;
+    strcpy(task->name, name);
     char str[10];
     int_to_ascii(task->regs.eip, str);
-    kprint("Task created at ");
-    ckprint(str, c_green);
-    kprint("\n");
+    kprint("Task created ");
+    ckprint(name, c_green);
+    kprint(" (");
+    ckprint(str, c_cyan);
+    kprint(")\n");
+}
+
+void print_switching(char func_name[], Task *task1, Task *task2) {
+    kprint("Yielded from ");
+    ckprint(func_name, c_green);
+    char str[10];
+    kprint(" - switching from ");
+    ckprint(task1->name, c_green);
+    kprint(" (");
+    int_to_ascii(task1->regs.eip, str);
+    ckprint(str, c_cyan);
+    kprint(") to ");
+    ckprint(task2->name, c_green);
+    kprint(" (");
+    int_to_ascii(task2->regs.eip, str);
+    ckprint(str, c_cyan);
+    kprint(")\n");
+}
+
+void copy_task(Task *task1, Task *task2) {
+    task1->regs = task2->regs;
+    strcpy(task2->name, task1->name);
 }
 
 void yield(char func_name[]) {
-    Task *last = runningTask;
-    runningTask = runningTask->next;
+    print_switching(func_name, &tasks[0], &tasks[1]);
 
-    char str1[10];
-    char str2[10];
-    int_to_ascii(last->regs.eip, str1);
-    int_to_ascii(runningTask->regs.eip, str2);
-    ckprint(func_name, c_cyan);
-    kprint(" - Switching from ");
-    ckprint(str1, c_green);
-    kprint(" to ");
-    ckprint(str2, c_green);
-    kprint("\n");
+    copy_task(&tasks[0], &tasks[1]);
+    copy_task(&tasks[2], &tasks[0]);
+    copy_task(&tasks[1], &tasks[2]);
 
-    if (strcmp(str1, str2) == 0) {
-        ckprint("Same task\n", c_red);
-        return;
-    }
+    print_switching(func_name, &tasks[0], &tasks[1]);
 
-    switchTask(&last->regs, &runningTask->regs);
+    switchTask(&tasks[1].regs, &tasks[0].regs);
 
-    int_to_ascii(last->regs.eip, str1);
-    int_to_ascii(runningTask->regs.eip, str2);
-    ckprint(func_name, c_cyan);
-    kprint(" - after switch ");
-    ckprint(str1, c_red);
-    kprint(" -> ");
-    ckprint(str2, c_red);
-    kprint("\n");
+    print_switching(func_name, &tasks[0], &tasks[1]);
 }
