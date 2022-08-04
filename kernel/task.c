@@ -32,16 +32,16 @@ void initTasking() {
         : "=m"(mainTask.regs.eflags)
         :: "%eax");
 
-    strcpy(mainTask.name, "main");
+    mainTask.pid = 0;
 
-    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3, "other");
+    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3, 1);
 
     tasks[0] = mainTask;
     tasks[1] = otherTask;
     kprint("Tasking initialized\n");
 }
 
-void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, char name[]) {
+void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -52,48 +52,49 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, c
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
     task->regs.esp = (uint32_t) kmalloc(0x1000, 1, 0);
-    strcpy(task->name, name);
+    task->pid = pid;
     char str[10];
-    int_to_ascii(task->regs.eip, str);
     kprint("Task created ");
-    ckprint(name, c_green);
+    int_to_ascii(task->pid, str);
+    ckprint(str, c_green);
     kprint(" (");
+    int_to_ascii(task->regs.eip, str);
     ckprint(str, c_cyan);
     kprint(")\n");
 }
 
-void print_switching(char func_name[], Task *task1, Task *task2) {
+void print_switching(char func_name[], int stat, Task *task1, Task *task2) {
     kprint("Yielded from ");
     ckprint(func_name, c_green);
     char str[10];
-    kprint(" - switching from ");
-    ckprint(task1->name, c_green);
+    if (stat == 0) { kprint(" before switching: ");}
+    else if (stat == 1) { kprint(" after switching: ");}
+    else if (stat == 2) { kprint(" after asm: ");}
+    else { kprint(" : ");}
+    int_to_ascii(task1->pid, str);
+    ckprint(str, c_green);
     kprint(" (");
     int_to_ascii(task1->regs.eip, str);
     ckprint(str, c_cyan);
-    kprint(") to ");
-    ckprint(task2->name, c_green);
+    kprint(") - ");
+    int_to_ascii(task2->pid, str);
+    ckprint(str, c_green);
     kprint(" (");
     int_to_ascii(task2->regs.eip, str);
     ckprint(str, c_cyan);
     kprint(")\n");
 }
 
-void copy_task(Task *task1, Task *task2) {
-    task1->regs = task2->regs;
-    strcpy(task2->name, task1->name);
-}
-
 void yield(char func_name[]) {
-    print_switching(func_name, &tasks[0], &tasks[1]);
+    print_switching(func_name, 0, &tasks[0], &tasks[1]);
 
-    copy_task(&tasks[0], &tasks[1]);
-    copy_task(&tasks[2], &tasks[0]);
-    copy_task(&tasks[1], &tasks[2]);
+    tasks[2] = tasks[1];
+    tasks[1] = tasks[0];
+    tasks[0] = tasks[2];
 
-    print_switching(func_name, &tasks[0], &tasks[1]);
+    print_switching(func_name, 1, &tasks[0], &tasks[1]);
 
     switchTask(&tasks[1].regs, &tasks[0].regs);
 
-    print_switching(func_name, &tasks[0], &tasks[1]);
+    print_switching(func_name, 2, &tasks[0], &tasks[1]);
 }

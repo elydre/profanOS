@@ -12,13 +12,13 @@ typedef struct {
 
 typedef struct Task {
     Registers regs;
-    char name[32];
+    int pid;
 } Task;
 
 extern void initTasking();
-void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, char name[]);
+void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid);
 
-extern void yield(); // Switch task frontend
+void yield(char func_name[]) ; // Switch task frontend
 extern void switchTask(Registers *old, Registers *new); // The function which actually switches
 
 #endif
