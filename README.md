@@ -4,7 +4,6 @@
 [![flawfinder](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml)
 ![views](https://komarev.com/ghpvc/?username=profanOS&color=aaaaaa&label=views)
 
-
 ![wave](https://elydre.github.io/img/profan.svg)
 
 This repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
