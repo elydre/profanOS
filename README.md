@@ -13,9 +13,9 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ## Setup
 
 > **Note**
-> compilation is guaranteed only on debian & co,
-> but it is also possible in windows with wsl
-> (recommended for windows 11) or hyperV.
+> compilation is guaranteed only on debian & co, but
+> it is also possible in windows with virtualization
+> solutions like wsl (on windows 11) or hyperV
 
 ### Install dependencies
 
