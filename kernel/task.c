@@ -3,7 +3,7 @@
 #include "../libc/mem.h"
 #include "../libc/string.h"
 
-#define TASK_MAX 2
+#define TASK_MAX 3
 
 static Task tasks[TASK_MAX];
 
@@ -38,6 +38,11 @@ void initTasking() {
 
     tasks[0] = mainTask;
     tasks[1] = otherTask;
+    tasks[2] = otherTask;
+    tasks[3] = otherTask;
+
+    tasks[2].pid = 42;
+
     kprint("Tasking initialized\n");
 }
 
@@ -88,13 +93,21 @@ void print_switching(char func_name[], int stat, Task *task1, Task *task2) {
 void yield(char func_name[]) {
     print_switching(func_name, 0, &tasks[0], &tasks[1]);
 
-    tasks[2] = tasks[1];
-    tasks[1] = tasks[0];
-    tasks[0] = tasks[2];
+    if (!(tasks[2].pid == 42) && tasks[1].pid == 1) {
+        rainbow_print("patching\n");
+        tasks[1] = tasks[3];
+    }
+
+    // tasks[]               t1 t2 .
+    tasks[2] = tasks[1];  // t1 t2 t2
+    tasks[1] = tasks[0];  // t1 t1 t2
+    tasks[0] = tasks[2];  // t2 t1 t2
 
     print_switching(func_name, 1, &tasks[0], &tasks[1]);
 
     switchTask(&tasks[1].regs, &tasks[0].regs);
 
     print_switching(func_name, 2, &tasks[0], &tasks[1]);
+
+    print_switching(func_name, 3, &tasks[0], &tasks[1]);
 }
