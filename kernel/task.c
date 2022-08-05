@@ -3,7 +3,7 @@
 #include "../libc/mem.h"
 #include "../libc/string.h"
 
-#define TASK_MAX 3
+#define TASK_MAX 2
 
 static Task tasks[TASK_MAX];
 
@@ -38,10 +38,6 @@ void initTasking() {
 
     tasks[0] = mainTask;
     tasks[1] = otherTask;
-    tasks[2] = otherTask;
-    tasks[3] = otherTask;
-
-    tasks[2].pid = 42;
 
     kprint("Tasking initialized\n");
 }
@@ -56,7 +52,7 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, i
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = (uint32_t) kmalloc(0x1000, 1, 0);
+    task->regs.esp = (uint32_t) 0x9999;
     task->pid = pid;
     char str[10];
     kprint("Task created ");
@@ -93,11 +89,6 @@ void print_switching(char func_name[], int stat, Task *task1, Task *task2) {
 void yield(char func_name[]) {
     print_switching(func_name, 0, &tasks[0], &tasks[1]);
 
-    if (!(tasks[2].pid == 42) && tasks[1].pid == 1) {
-        rainbow_print("patching\n");
-        tasks[1] = tasks[3];
-    }
-
     // tasks[]               t1 t2 .
     tasks[2] = tasks[1];  // t1 t2 t2
     tasks[1] = tasks[0];  // t1 t1 t2
@@ -108,6 +99,4 @@ void yield(char func_name[]) {
     switchTask(&tasks[1].regs, &tasks[0].regs);
 
     print_switching(func_name, 2, &tasks[0], &tasks[1]);
-
-    print_switching(func_name, 3, &tasks[0], &tasks[1]);
 }

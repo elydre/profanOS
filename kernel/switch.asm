@@ -38,7 +38,7 @@ switchTask:
     popf
     pop    eax
 
-    ; mov    esp, [eax+0x18]  ; ERROR THAT WAIT HERE, to patch?
+    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
 
     push   eax
     mov    eax, [eax+0x28]  ; CR3
