@@ -2,6 +2,7 @@
 #include "../libc/string.h"
 #include "../drivers/ata/ata.h"
 #include "../libc/function.h"
+#include "../libc/mem.h"
 #include "kernel.h"
 #include "shell.h"
 #include "task.h"
@@ -106,6 +107,15 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "isr") == 0) {
         asm volatile("int $0x1");
+    }
+
+    else if (strcmp(prefix, "page") == 0) {
+        uint32_t page = alloc_page(1);
+        ckprint("actual page address: ", c_magenta);
+        char tmp[11];
+        hex_to_ascii(page, tmp);
+        ckprint(tmp, c_magenta);
+        kprint("\n");
     }
 
     else if (strcmp(prefix, "task") == 0) {

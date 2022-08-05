@@ -52,7 +52,7 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, i
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = (uint32_t) 0x9999;
+    task->regs.esp = (uint32_t) alloc_page(0);
     task->pid = pid;
     char str[10];
     kprint("Task created ");

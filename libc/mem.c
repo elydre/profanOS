@@ -31,3 +31,12 @@ uint32_t kmalloc(size_t size, int align, uint32_t *phys_addr) {
     free_mem_addr += size; /* Remember to increment the pointer */
     return ret;
 }
+
+// it's not a finished function, but it works :)
+uint32_t alloc_page(int get_only) {
+    uint32_t page = free_mem_addr;
+    if (!get_only) {
+        free_mem_addr += 0x1000;
+    }
+    return page + 0x10000;
+}
