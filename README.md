@@ -54,7 +54,7 @@ make fullclean
 
 ## Interrupts
 
-|  Id  | Description                   |
+|  ID  | Description                   |
 |------|-------------------------------|
 |  00  | Division By Zero              |
 |  01  | Debug                         |
