@@ -13,12 +13,14 @@ typedef struct {
 typedef struct Task {
     Registers regs;
     int pid;
+    int isdead;
 } Task;
 
 extern void initTasking();
 void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid);
 
-void yield(char func_name[]) ; // Switch task frontend
+void yield();
+
 extern void switchTask(Registers *old, Registers *new); // The function which actually switches
 
 #endif

@@ -87,6 +87,15 @@ make fullclean
 |  17  | Alignment Check               |
 |  18  | Machine Check                 |
 
+### Tasking rotation
+
+```
+> t1 t2 t3 .
+- t1 t2 t3 t3
+- t1 t2 t2 t3
+- t1 t1 t2 t3
+> t3 t1 t2 t3
+```
 
 ## Author & Contact
 

@@ -38,6 +38,15 @@ void disk_test() {
     ckprint("...\nreading done, it works!\n", c_magenta);
 }
 
+void page_info(){
+    uint32_t page = alloc_page(1);
+    ckprint("actual page address: ", c_magenta);
+    char tmp[11];
+    hex_to_ascii(page, tmp);
+    ckprint(tmp, c_magenta);
+    kprint("\n");
+}
+
 void shell_help(char suffix[]) {
     char *help[] = {
         "CLEAR   - clear the screen",
@@ -45,6 +54,8 @@ void shell_help(char suffix[]) {
         "END     - shutdown the system",
         "HELP    - show this help",
         "ISR     - test the interrupt handler",
+        "PAGE    - show the actual page address",
+        "TASK    - yield to the next task",
         "TD      - test the disk",
         "VER     - display the version",
     };
@@ -110,16 +121,11 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "page") == 0) {
-        uint32_t page = alloc_page(1);
-        ckprint("actual page address: ", c_magenta);
-        char tmp[11];
-        hex_to_ascii(page, tmp);
-        ckprint(tmp, c_magenta);
-        kprint("\n");
+        page_info();
     }
 
     else if (strcmp(prefix, "task") == 0) {
-        yield("shell");
+        yield();
     }
 
     else if (strcmp(prefix, "td") == 0) {
