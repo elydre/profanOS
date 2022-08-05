@@ -10,13 +10,20 @@ This repo originally comes from part 23 of the excellent tutorial [How to create
 
 You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
 
-## Install dependencies
+## Setup
+
+> **Note**
+> compilation is guaranteed only on debian & co,
+> but it is also possible in windows with wsl
+> (recommended for windows 11) or hyperV.
+
+### Install dependencies
 
 ```bash
 sudo apt-get install -y gcc nasm make qemu-system-i386
 ```
 
-## Compile & Run
+### Compile & Run
 
 ```bash
 # Simple compilation
@@ -32,7 +39,9 @@ make clean
 make fullclean
 ```
 
-## Command line
+## OS documentation
+
+### Command line
 
 | Command | Description            |
 |---------|------------------------|
@@ -44,7 +53,7 @@ make fullclean
 | TD      | test the disk          |
 | VERSION | display the version    |
 
-## Keyboard
+### Keyboard
 
 | Key   | Function               |
 |-------|------------------------|
@@ -52,7 +61,7 @@ make fullclean
 | lshft | maj (hold)             |
 | rshft | paste the last command |
 
-## Interrupts
+### Interrupts
 
 |  ID  | Description                   |
 |------|-------------------------------|
