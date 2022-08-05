@@ -4,20 +4,26 @@
 [![flawfinder](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/flawfinder.yml)
 ![views](https://komarev.com/ghpvc/?username=profanOS&color=aaaaaa&label=views)
 
-
 ![wave](https://elydre.github.io/img/profan.svg)
 
 This repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
 
 You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
 
-## Install dependencies
+## Setup
+
+> **Note** -
+> compilation is guaranteed only on debian & co, but
+> it is also possible in windows with virtualization
+> solutions like wsl (on windows 11) or hyperV
+
+### Install dependencies
 
 ```bash
 sudo apt-get install -y gcc nasm make qemu-system-i386
 ```
 
-## Compile & Run
+### Compile & Run
 
 ```bash
 # Simple compilation
@@ -33,7 +39,9 @@ make clean
 make fullclean
 ```
 
-## Command line
+## OS documentation
+
+### Command line
 
 | Command | Description            |
 |---------|------------------------|
@@ -45,7 +53,7 @@ make fullclean
 | TD      | test the disk          |
 | VERSION | display the version    |
 
-## Keyboard
+### Keyboard
 
 | Key   | Function               |
 |-------|------------------------|
@@ -55,7 +63,9 @@ make fullclean
 
 ## Interrupts
 
-|  Id  | Description                   |
+### Interrupts
+
+|  ID  | Description                   |
 |------|-------------------------------|
 |  00  | Division By Zero              |
 |  01  | Debug                         |
