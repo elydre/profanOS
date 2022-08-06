@@ -104,3 +104,11 @@ make fullclean
 * [loris](https://github.com/Lorisredstone)
 
 Contact us on [discord](https://pf4.ddns.net/discord)
+
+## source and acknowledgment
+
+* [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
+* [framindmap](https://framindmap.org) for the mindmap of the todo list
+* [yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
+* [szhou42](https://github.com/szhou42/osdev) for the ata driver
+* [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
