@@ -43,15 +43,18 @@ make fullclean
 
 ### Command line
 
-| Command | Description            |
-|---------|------------------------|
-| CLEAR   | clear the screen       |
-| ECHO    | print the argument     |
-| END     | shutdown the system    |
-| HELP    | show the help          |
-| ISR     | test interrupt handler |
-| TD      | test the disk          |
-| VERSION | display the version    |
+| Command | Description                  |
+|---------|------------------------------|
+| CLEAR   | clear the screen             |
+| ECHO    | print the argument           |
+| END     | shutdown the system          |
+| HELP    | show the help                |
+| ISR     | test interrupt handler       |
+| PAGE    | show the actual page address |
+| TASK    | print info about the tasks   |
+| TD      | test the disk                |
+| VER     | display the version          |
+| YIELD   | yield to the next task       |
 
 ### Keyboard
 
