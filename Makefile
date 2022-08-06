@@ -17,7 +17,7 @@ profanOS.bin: boot/bootsect.bin kernel.bin hdd.bin
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
 kernel.bin: boot/kernel_entry.o ${OBJ}
-	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary
+	ld -m elf_i386 -G -o $@ -Ttext 0x1000 $^ --oformat binary
 
 # create a 1MB hdd.bin file
 hdd.bin:
