@@ -26,7 +26,7 @@ void kernel_main() {
     isr_install();
     irq_install();
     kprint("isr initialized\n");
-    initTasking();
+    init_tasking();
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);

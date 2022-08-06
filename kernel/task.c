@@ -7,14 +7,14 @@
 
 static Task tasks[TASK_MAX];
 
-static void otherMain() {
+static void other_main() {
     rainbow_print("Hello multitasking world!\n");
     yield();
     rainbow_print("Hello again!\n");
-    yield();
+    kill_task();
 }
 
-void initTasking() {
+void init_tasking() {
     static Task mainTask;
     static Task otherTask;
 
@@ -34,8 +34,9 @@ void initTasking() {
         :: "%eax");
 
     mainTask.pid = 0;
+    mainTask.isdead = 0;
 
-    createTask(&otherTask, otherMain, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3, 1);
+    create_task(&otherTask, other_main, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3, 1);
 
     tasks[0] = mainTask;
     tasks[1] = otherTask;
@@ -43,7 +44,7 @@ void initTasking() {
     kprint("Tasking initialized\n");
 }
 
-void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
+void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -55,6 +56,7 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, i
     task->regs.cr3 = (uint32_t) pagedir;
     task->regs.esp = (uint32_t) alloc_page(0);
     task->pid = pid;
+    task->isdead = 0;
     char str[10];
     kprint("Task created ");
     int_to_ascii(task->pid, str);
@@ -62,30 +64,58 @@ void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, i
     kprint("\n");
 }
 
-void print_switching(int stat, Task *task1, Task *task2) {
-    char str[10];
-    if (stat == 0) { kprint("before crossing: ");}
-    else if (stat == 1) { kprint("after crossing: ");}
-    else if (stat == 2) { kprint("after switching: ");}
-    int_to_ascii(task1->pid, str);
-    ckprint(str, c_green);
-    kprint(" - ");
-    int_to_ascii(task2->pid, str);
-    ckprint(str, c_green);
-    kprint("\n");
+int refresh_alive() {
+    int decal = 0; int nb_alive = 0;
+
+    for (int i = 0; i < TASK_MAX; i++) {
+        if (tasks[i].isdead == 2) {
+            decal++;
+        }
+        else {
+            nb_alive++;
+            if (decal > 0) {
+                tasks[i - decal] = tasks[i];
+            }
+        }
+    }
+    return nb_alive;
 }
 
 void yield() {
-    print_switching(0, &tasks[0], &tasks[1]);
+    int nb_alive = refresh_alive();
 
-    for (int i = TASK_MAX; i > 0; i--) {
+    if (nb_alive == 1) {
+        ckprint("Only one task alive, no need to yield\n", c_dyellow);
+        return;
+    }
+
+    for (int i = nb_alive; i > 0; i--) {
         tasks[i] = tasks[i - 1];
     }
     tasks[0] = tasks[TASK_MAX];
 
-    print_switching(1, &tasks[0], &tasks[1]);
+    char str[2];
+    kprint("switching from pid ");
+    int_to_ascii(tasks[1].pid, str);
+    ckprint(str, c_green);
+    kprint(" to pid ");
+    int_to_ascii(tasks[0].pid, str);
+    ckprint(str, c_green);
+    kprint("\n");
 
-    switchTask(&tasks[1].regs, &tasks[0].regs);
+    switch_task(&tasks[1].regs, &tasks[0].regs);
 
-    print_switching(2, &tasks[0], &tasks[1]);
+    if (tasks[1].isdead == 1) {
+        tasks[1].isdead = 2;
+        kprint("Task ");
+        int_to_ascii(tasks[1].pid, str);
+        ckprint(str, c_green);
+        kprint(" is killed\n");
+    }
+}
+
+void kill_task() {
+    ckprint("Task kill asked\n", c_dgrey);
+    tasks[0].isdead = 1;
+    yield();
 }

@@ -4,8 +4,6 @@
 #include <stdint.h>
 
 
-extern void initTasking();
-
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
 } Registers;
@@ -16,11 +14,12 @@ typedef struct Task {
     int isdead;
 } Task;
 
-extern void initTasking();
-void createTask(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid);
+extern void init_tasking();
+void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid);
 
 void yield();
+void kill_task();
 
-extern void switchTask(Registers *old, Registers *new); // The function which actually switches
+extern void switch_task(Registers *old, Registers *new); // The function which actually switches
 
 #endif
