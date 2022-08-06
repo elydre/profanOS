@@ -15,11 +15,14 @@ typedef struct Task {
 } Task;
 
 extern void init_tasking();
-void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid);
+void powerfull_task(void (*main)(), int pid);
+
+void task_printer();
 
 void yield();
 void kill_task();
 
-extern void switch_task(Registers *old, Registers *new); // The function which actually switches
+// switch.asm
+extern void switch_task(Registers *old, Registers *new);
 
 #endif

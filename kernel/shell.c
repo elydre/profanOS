@@ -55,9 +55,10 @@ void shell_help(char suffix[]) {
         "HELP    - show this help",
         "ISR     - test the interrupt handler",
         "PAGE    - show the actual page address",
-        "TASK    - yield to the next task",
+        "TASK    - print info about the tasks",
         "TD      - test the disk",
         "VER     - display the version",
+        "YIELD   - yield to the next task",
     };
 
     if (strcmp(suffix, "help") == 0) {
@@ -103,15 +104,6 @@ void shell_command(char command[]) {
         asm volatile("hlt");
     }
 
-    else if (strcmp(prefix, "fwrite") == 0) {
-        ckprint(suffix, c_magenta);
-        uint32_t inbytes[128] = {0};
-        for (int i = 0; i < strlen(suffix); i++){
-            inbytes[i] = suffix[i];
-        }
-        write_sectors_ATA_PIO(0, inbytes);
-    }
-
     else if (strcmp(prefix, "help") == 0) {
         shell_help(suffix);
     }
@@ -125,7 +117,7 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "task") == 0) {
-        yield();
+        task_printer();
     }
 
     else if (strcmp(prefix, "td") == 0) {
@@ -136,6 +128,10 @@ void shell_command(char command[]) {
         ckprint("version ", c_magenta);
         ckprint(VERSION, c_magenta);
         kprint("\n");
+    }
+
+    else if (strcmp(prefix, "yield") == 0) {
+        yield();
     }
 
     else if (strcmp(prefix, "") != 0) {
