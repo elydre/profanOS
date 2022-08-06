@@ -14,6 +14,26 @@ CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie
 profanOS.bin: boot/bootsect.bin kernel.bin hdd.bin
 	cat boot/bootsect.bin kernel.bin > profanOS.bin
 
+# some variables to build the ISO.
+
+FILESIZE = $(shell stat -c%s "profanOS.bin")
+SECTORSIZE = 512
+DIVIDED = $(shell echo $$(($(FILESIZE) / $(SECTORSIZE))))
+FLOPPYSECS = 2876
+FILLERSIZE = $(shell echo $$(($(FLOPPYSECS) - $(DIVIDED))))
+
+
+iso: profanOS.bin
+	mkdir -p iso
+	$(info Filesize: $(FILESIZE), No. of sectors: $(DIVIDED))
+	dd if="/dev/zero" bs=$(SECTORSIZE) count=$(FILLERSIZE) of="iso/_filler.img"
+	$(info Filler created.)
+	cat profanOS.bin iso/_filler.img > iso/_floppy.img
+	$(info Secondary image created.)
+	touch iso/_floppy.catalog
+	mkisofs -input-charset iso8859-1 -r -b "iso/_floppy.img" -c "iso/_floppy.catalog" -o "profanOS.iso" .
+
+
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
 kernel.bin: boot/kernel_entry.o ${OBJ}
@@ -25,6 +45,9 @@ hdd.bin:
 
 run: profanOS.bin hdd.bin
 	qemu-system-i386 -drive file=profanOS.bin,if=floppy,format=raw -drive file=hdd.bin,format=raw -boot order=a
+
+iso_run: iso
+	qemu-system-i386 -cdrom profanOS.iso -boot order=d
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c
@@ -42,4 +65,4 @@ clean:
 	rm -rf kernel/*.o boot/*.bin drivers/*.o drivers/ata/*.o boot/*.o cpu/*.o libc/*.o
 
 fullclean: clean
-	rm -rf profanOS.bin hdd.bin
+	rm -rf *.bin *.iso ./iso

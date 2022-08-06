@@ -1,8 +1,8 @@
-# compiled files
+# build artifacts
 *.o
-
-# bin files
 *.bin
+*.iso
+iso/
 
 # visual studio folder
 .vs
