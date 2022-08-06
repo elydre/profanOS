@@ -64,8 +64,6 @@ make fullclean
 | lshft | maj (hold)             |
 | rshft | paste the last command |
 
-## Interrupts
-
 ### Interrupts
 
 |  ID  | Description                   |
