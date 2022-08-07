@@ -3,6 +3,7 @@
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
 [![download](https://img.shields.io/github/size/esolangs/profanOS-build/profanOS.iso?label=download%20iso)](https://github.com/esolangs/profanOS-build/blob/main/profanOS.iso)
 ![views](https://komarev.com/ghpvc/?username=profanOS&label=views)
+![lines](https://tokei.rs/b1/github/elydre/profanOS)
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
