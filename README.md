@@ -20,7 +20,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ### Install dependencies
 
 ```bash
-sudo apt-get install -y gcc nasm make qemu-system-i386
+sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
 ```
 
 ### Compile & Run
@@ -32,11 +32,8 @@ make
 # Compile and run
 make run
 
-# Clean the output
-make clean
-
-# Clean all
-make fullclean
+# Show all commands
+make help
 ```
 
 ## OS documentation

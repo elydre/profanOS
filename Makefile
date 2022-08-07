@@ -4,14 +4,15 @@ OUT_DIR = out
 bin_image:
 	python3 maketool.py bin_image
 
-# some variables to build the ISO.
+help:
+	@python3 maketool.py help
 
+# some variables to build the ISO.
 FILESIZE = $(shell stat -c%s "profanOS.bin")
 SECTORSIZE = 512
 DIVIDED = $(shell echo $$(($(FILESIZE) / $(SECTORSIZE))))
 FLOPPYSECS = 2876
 FILLERSIZE = $(shell echo $$(($(FLOPPYSECS) - $(DIVIDED))))
-
 
 iso: bin_image
 	mkdir -p $(OUT_DIR)
@@ -25,16 +26,16 @@ iso: bin_image
 
 # create a 1MB hdd.bin file
 hdd:
-	dd if=/dev/zero of=hdd.bin bs=1024 count=1024
+	dd if=/dev/zero of=HDD.bin bs=1024 count=1024
 
 run: bin_image hdd
-	qemu-system-i386 -drive file=profanOS.bin,if=floppy,format=raw -drive file=hdd.bin,format=raw -boot order=a
+	qemu-system-i386 -drive file=profanOS.bin,if=floppy,format=raw -drive file=HDD.bin,format=raw -boot order=a
 
-iso_run: iso
-	qemu-system-i386 -cdrom profanOS.iso -boot order=d
+irun: iso hdd
+	qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d 
 
 clean:
-	rm -rf out/
+	rm -Rf out/
 
 fullclean: clean
-	rm *.bin *.iso
+	rm -Rf *.bin *.iso

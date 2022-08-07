@@ -20,9 +20,9 @@ out_file_name = lambda file_path: f"{OUT_DIR}/{file_path.split('/')[-1].split('.
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
 need_rebuild = lambda file: file1_newer(file, out_file_name(file)) or not file_exists(out_file_name(file))
 
-def cprint(color, text):
+def cprint(color, text, end="\n"):
     r, g, b = color
-    print(f"\033[38;2;{r};{g};{b}m{text}\033[0m")
+    print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
 
 def print_and_exec(command):
     global RBF
@@ -60,6 +60,7 @@ def bin_image():
     RBF = False
     need, out = gen_need_dict()
     if not os.path.exists(OUT_DIR):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}' directory")
         os.makedirs(OUT_DIR)
 
     cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
@@ -81,9 +82,23 @@ def bin_image():
         print_and_exec(f"ld -m elf_i386 -G -o {OUT_DIR}/kernel.bin -Ttext 0x1000 {in_files} --oformat binary")
         print_and_exec(f"cat {OUT_DIR}/bootsect.bin {OUT_DIR}/kernel.bin > profanOS.bin")
 
+def make_help():
+    aide = (
+        ("make", "build profanOS.bin"),
+        ("make iso", "build image and convert it to iso"),
+        ("make clean", "delete all files in out directory"),
+        ("make fullclean", "clean + delete .bin and .iso"),
+        ("make hdd", "create a empty HDD"),
+        ("make run", "run the profanOS.bin in qemu"),
+        ("make irun", "run the profanOS.iso in qemu"),
+    )
+    for command, description in aide:
+        cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
+
 
 assos = {
-    "bin_image": bin_image
+    "bin_image": bin_image,
+    "help": make_help
 }
 
 def main():
