@@ -18,3 +18,7 @@ jobs:
       
     - name: run build
       run: make iso
+    
+    - name: upload build
+      run: |
+        pwd
