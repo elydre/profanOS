@@ -24,8 +24,7 @@ jobs:
         cd ../
         git clone https://github.com/esolangs/profanOS-build.git
         cd profanOS-build
-        mv ../profanOS-build/profanOS.iso .
-        git 
+        mv ../profanOS/profanOS.iso .
         git add profanOS.iso
         git commit -m "New build"
         git push https://${git_token}@github.com/esolangs/profanOS-build.git
