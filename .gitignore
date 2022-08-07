@@ -1,8 +1,7 @@
 # build artifacts
-*.o
 *.bin
 *.iso
-iso/
+out/
 
 # visual studio folder
 .vs
