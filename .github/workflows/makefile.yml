@@ -29,4 +29,5 @@ jobs:
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
         git commit -m "profanOS build"
+        echo ${{ secrets.GITHUB_TOKEN }}
         git push
