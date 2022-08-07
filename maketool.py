@@ -14,9 +14,6 @@ pre = args[0]
 edit_output = lambda path: f"{OUT_DIR}/{path.split('/')[-1]}"
 edit_all_output = lambda paths: " ".join(map(edit_output, paths))
 
-if not os.path.exists(OUT_DIR):
-    os.mkdir(OUT_DIR)
-
 last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
 
@@ -36,22 +33,26 @@ def chek_date():
 if not chek_date():
     print("aucun fichier a compiler")
 
-elif pre == "gcc":
-    cmd = f"{CC} {CFLAGS} -c {args[1]} -o {args[2]}"
-    print(cmd)
-    os.system(cmd)
+else:
+    if not os.path.exists(OUT_DIR):
+        os.mkdir(OUT_DIR)
 
-elif pre == "ld":
-    cmd = f"ld -m elf_i386 -G -o {args[1]} -Ttext 0x1000 {' '.join(args[2:])} --oformat binary"
-    print(cmd)
-    os.system(cmd)
+    if pre == "gcc":
+        cmd = f"{CC} {CFLAGS} -c {args[1]} -o {args[2]}"
+        print(cmd)
+        os.system(cmd)
 
-elif pre == "nasm-bin":
-    cmd = f"nasm -f bin {args[1]} -o {args[2]}"
-    print(cmd)
-    os.system(cmd)
+    elif pre == "ld":
+        cmd = f"ld -m elf_i386 -G -o {args[1]} -Ttext 0x1000 {' '.join(args[2:])} --oformat binary"
+        print(cmd)
+        os.system(cmd)
 
-elif pre == "nasm-elf":
-    cmd = f"nasm -f elf {args[1]} -o {args[2]}"
-    print(cmd)
-    os.system(cmd)
+    elif pre == "nasm-bin":
+        cmd = f"nasm -f bin {args[1]} -o {args[2]}"
+        print(cmd)
+        os.system(cmd)
+
+    elif pre == "nasm-elf":
+        cmd = f"nasm -f elf {args[1]} -o {args[2]}"
+        print(cmd)
+        os.system(cmd)
