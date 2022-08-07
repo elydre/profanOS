@@ -23,14 +23,9 @@ jobs:
       run: |
         cd ../
         git config --local user.name "esolangs"
-        git clone https://${GIT_TOKEN}@github.com/esolangs/profanOS-build.git
+        git clone https://${secrets.GITHUB_TOKEN}@github.com/esolangs/profanOS-build.git
         cd profanOS-build
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
         git commit -m "auto-build"
-
-    - name: push build
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: true
+        git push origin main
