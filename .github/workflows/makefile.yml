@@ -28,5 +28,5 @@ jobs:
         cd profanOS-build
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
-        git commit -m "auto-build" --amend --reset-author
-        git push origin main
+        git commit -m "profanOS build"
+        git push
