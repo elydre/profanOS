@@ -22,6 +22,8 @@ jobs:
     - name: upload build
       run: |
         cd ../
+        git config --global user.email "pourmcpour@gmail.com"
+        git config --global user.name "esolangs"
         git clone https://${git_token}@github.com/esolangs/profanOS-build.git
         cd profanOS-build
         mv ../profanOS/profanOS.iso .
