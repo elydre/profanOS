@@ -29,4 +29,8 @@ jobs:
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
         git commit -m "auto-build" --amend --reset-author
-        git push origin main
+    - name: Push changes # push the output folder to your repo
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        force: true
