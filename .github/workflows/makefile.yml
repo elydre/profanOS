@@ -22,7 +22,7 @@ jobs:
     - name: commit build
       run: |
         cd ../
-        git config --local user.name "esolangs"
+        git config --global user.name "esolangs"
         git clone https://${secrets.GITHUB_TOKEN}@github.com/esolangs/profanOS-build.git
         cd profanOS-build
         mv ../profanOS/profanOS.iso .
