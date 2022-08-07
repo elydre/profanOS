@@ -29,5 +29,4 @@ jobs:
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
         git commit -m "New build"
-        git remote add origin https://${git_token}@github.com/esolangs/profanOS-build.git
         git push origin main
