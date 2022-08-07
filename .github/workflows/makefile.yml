@@ -19,15 +19,13 @@ jobs:
     - name: run build
       run: make iso
     
-    - name: commit build
-      run: |
-        cd ../
-        git config --global user.name "esolangs"
-        git config --global user.email ${{ secrets.EMAIL }}
-        git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/esolangs/profanOS-build.git
-        cd profanOS-build
-        mv ../profanOS/profanOS.iso .
-        git add profanOS.iso
-        git commit -m "profanOS build"
-        echo ${{ secrets.GITHUB_TOKEN }}
-        git push
+    - name: Pushes test file
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
+      with:
+        source_file: 'profanOS.iso'
+        destination_repo: 'esolangs/profanOS-build'
+        user_email: 'pf4_@gmail.com'
+        user_name: 'esolangs'
+        commit_message: 'auto build'
