@@ -4,15 +4,11 @@ HEADERS = $(wildcard kernel/*.h drivers/*.h drivers/ata/*.h cpu/*.h libc/*.h)
 # Nice syntax for file extension replacement
 OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o kernel/switch.o}
 
-# Change this if your cross-compiler is somewhere else
-CC = gcc
-
-# -g: Use debugging symbols in gcc
-CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie
+OUT_DIR = out
 
 # First rule is run by default
 profanOS.bin: boot/bootsect.bin kernel.bin hdd.bin
-	cat boot/bootsect.bin kernel.bin > profanOS.bin
+	cat out/bootsect.bin out/kernel.bin > profanOS.bin
 
 # some variables to build the ISO.
 
@@ -24,20 +20,20 @@ FILLERSIZE = $(shell echo $$(($(FLOPPYSECS) - $(DIVIDED))))
 
 
 iso: profanOS.bin
-	mkdir -p iso
+	mkdir -p $(OUT_DIR)
 	$(info Filesize: $(FILESIZE), No. of sectors: $(DIVIDED))
-	dd if="/dev/zero" bs=$(SECTORSIZE) count=$(FILLERSIZE) of="iso/_filler.img"
+	dd if="/dev/zero" bs=$(SECTORSIZE) count=$(FILLERSIZE) of="$(OUT_DIR)/_filler.img"
 	$(info Filler created.)
-	cat profanOS.bin iso/_filler.img > iso/_floppy.img
+	cat profanOS.bin $(OUT_DIR)/_filler.img > $(OUT_DIR)/_floppy.img
 	$(info Secondary image created.)
-	touch iso/_floppy.catalog
-	mkisofs -input-charset iso8859-1 -r -b "iso/_floppy.img" -c "iso/_floppy.catalog" -o "profanOS.iso" .
+	touch $(OUT_DIR)/_floppy.catalog
+	mkisofs -input-charset iso8859-1 -r -b "$(OUT_DIR)/_floppy.img" -c "$(OUT_DIR)/_floppy.catalog" -o "profanOS.iso" .
 
 
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
 kernel.bin: boot/kernel_entry.o ${OBJ}
-	ld -m elf_i386 -G -o $@ -Ttext 0x1000 $^ --oformat binary
+	@python3 maketool.py ld out/$@ $^
 
 # create a 1MB hdd.bin file
 hdd.bin:
@@ -52,17 +48,16 @@ iso_run: iso
 # Generic rules for wildcards
 # To make an object, always compile from its .c
 %.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -c $< -o $@
+	@python3 maketool.py gcc $< $@
 
 %.o: %.asm
-	nasm $< -f elf -o $@
+	@python3 maketool.py nasm-elf $< $@
 
 %.bin: %.asm
-	nasm $< -f bin -o $@
+	@python3 maketool.py nasm-bin $< $@
 
 clean:
-	rm -rf kernel.bin *.dis *.o *.elf
-	rm -rf kernel/*.o boot/*.bin drivers/*.o drivers/ata/*.o boot/*.o cpu/*.o libc/*.o
+	rm -rf out/
 
 fullclean: clean
-	rm -rf *.bin *.iso ./iso
+	rm -rf *.bin *.iso
