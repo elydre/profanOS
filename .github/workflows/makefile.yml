@@ -23,9 +23,10 @@ jobs:
       run: |
         cd ../
         git config --global user.name "esolangs"
+        git config --global user.email ${{ secrets.EMAIL }}
         git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/esolangs/profanOS-build.git
         cd profanOS-build
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
-        git commit -m "auto-build"
+        git commit -m "auto-build" --amend --reset-author
         git push origin main
