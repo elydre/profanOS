@@ -23,7 +23,7 @@ jobs:
       run: |
         cd ../
         git config --global user.name "esolangs"
-        git clone https://${secrets.GITHUB_TOKEN}@github.com/esolangs/profanOS-build.git
+        git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/esolangs/profanOS-build.git
         cd profanOS-build
         mv ../profanOS/profanOS.iso .
         git add profanOS.iso
