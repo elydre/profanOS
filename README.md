@@ -25,7 +25,7 @@ sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
 
 ### Compile & Run
 
-```bash
+```s
 # Simple compilation
 make
 
