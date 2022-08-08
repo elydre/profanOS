@@ -38,7 +38,7 @@ jobs:
       with:
         source_file: 'profanOS.iso'
         destination_repo: 'elydre/elydre.github.io'
-        destination_folder: 'profan'
+        destination_folder: 'profan/img'
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'iso update'
