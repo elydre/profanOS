@@ -1,7 +1,7 @@
 # profanOS
 
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
-[![download](https://img.shields.io/github/size/esolangs/profanOS-build/profanOS.iso?label=download%20iso)](https://github.com/esolangs/profanOS-build/blob/main/profanOS.iso)
+[![download](https://img.shields.io/github/size/esolangs/profanOS-build/profanOS.iso?label=download%20iso)](https://github.com/elydre/profanOS/releases/tag/latest)
 ![views](https://komarev.com/ghpvc/?username=profanOS&label=views)
 
 ![wave](https://elydre.github.io/img/profan.svg)
@@ -36,7 +36,7 @@ make run
 make help
 ```
 
-You can also [download the iso](https://github.com/esolangs/profanOS-build/raw/main/profanOS.iso) from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
+You can also [download the iso](https://github.com/esolangs/profanOS-build/raw/main/profanOS.iso) from the repo [profanOS-build](https://github.com/esolangs/profanOS-build) or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
 
