@@ -29,3 +29,13 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'auto build'
+
+    - name: Release to GitHub
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        title: Latest Release
+        automatic_release_tag: latest
+        repo_token: "${{ secrets.GIT_TOKEN }}"
+        files: |
+          profanOS.iso
+          profanOS.bin
