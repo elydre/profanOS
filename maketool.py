@@ -84,6 +84,7 @@ def bin_image():
 
 def make_help():
     aide = (
+        ("make install", "install dependencies (debian/ubuntu)"),
         ("make", "build profanOS.bin"),
         ("make iso", "build image and convert it to iso"),
         ("make clean", "delete all files in out directory"),

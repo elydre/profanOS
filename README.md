@@ -25,7 +25,7 @@ sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
 
 ### Compile & Run
 
-```s
+```bash
 # Simple compilation
 make
 
@@ -33,7 +33,7 @@ make
 make run
 
 # Show all commands
-make help
+make info
 ```
 
 You can also download the iso from the repo [profanOS-build](https://github.com/esolangs/profanOS-build) or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)

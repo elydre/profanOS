@@ -4,8 +4,12 @@ OUT_DIR = out
 bin_image:
 	python3 maketool.py bin_image
 
-help:
+info:
 	@python3 maketool.py help
+
+install:
+	sudo apt-get update
+	sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
 
 # some variables to build the ISO.
 FILESIZE = $(shell stat -c%s "profanOS.bin")
