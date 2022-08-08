@@ -43,3 +43,6 @@ clean:
 
 fullclean: clean
 	rm -Rf *.bin *.iso
+
+# ld -m elf_i386 -G -o out/kernel.bin -Ttext 0x1000 out/kernel_entry.o out/shell.o out/interrupt.o out/switch.o out/task.o out/kernel.o out/screen.o out/keyboard.o out/ata.o out/isr.o out/ports.o out/idt.o out/timer.o out/mem.o out/string.o --oformat binary
+# ld -m elf_i386 -G -o out/kernel.bin -Ttext 0x1000 out/kernel_entry.o out/kernel.o out/shell.o out/task.o out/switch.o out/keyboard.o out/screen.o out/ata.o out/idt.o out/isr.o out/ports.o out/timer.o out/interrupt.o out/mem.o out/string.o --oformat binary
