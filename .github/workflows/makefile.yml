@@ -23,7 +23,6 @@ jobs:
         echo "PROFAN_ISO=profanOS-$(python3 profan_version.py).iso" >> $GITHUB_ENV
         cp profanOS.iso profanOS-$(python3 profan_version.py).iso
 
-
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
@@ -36,7 +35,6 @@ jobs:
         user_name: 'esolangs'
         commit_message: 'new release'
 
-
     - name: update iso on website
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
@@ -48,7 +46,6 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'iso update'
-
 
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
