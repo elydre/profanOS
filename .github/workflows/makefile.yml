@@ -21,6 +21,7 @@ jobs:
         make iso
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
         echo "PROFAN_ISO=profanOS-$(python3 profan_version.py).iso" >> $GITHUB_ENV
+        echo "PROFAN_VER=\"profanOS v$(python3 profan_version.py)\"" >> $GITHUB_ENV
         cp profanOS.iso profanOS-$(python3 profan_version.py).iso
 
     - name: push iso to github
@@ -50,7 +51,7 @@ jobs:
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
       with:
-        title: Latest Release
+        title: ${{ env.PROFAN_VER }}
         automatic_release_tag: latest
         repo_token: "${{ secrets.GIT_TOKEN }}"
         files: |
