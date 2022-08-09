@@ -68,7 +68,7 @@ void shell_mod(char letter, int scancode) {
         key_buffer[0] = '\0';
     }
 
-    else {
+    else if (letter != '?') {
         char str[2] = {letter, '\0'};
         append(key_buffer, letter);
         ckprint(str, c_blue);
