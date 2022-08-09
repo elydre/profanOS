@@ -22,7 +22,7 @@ jobs:
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
         echo "PROFAN_ISO=profanOS-$(python3 profan_version.py).iso" >> $GITHUB_ENV
         echo $PROFAN_ISO
-        cp profanOS.iso PROFAN_ISO
+        cp profanOS.iso $PROFAN_ISO
       
     
     - name: push iso to github
