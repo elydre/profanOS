@@ -20,6 +20,14 @@ out_file_name = lambda file_path: f"{OUT_DIR}/{file_path.split('/')[-1].split('.
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
 need_rebuild = lambda file: file1_newer(file, out_file_name(file)) or not file_exists(out_file_name(file))
 
+def ordre(files):
+    if len(files) <= 2:
+        return files
+    elif len(files) == 3:
+        return [files[1], files[2], files[0]]
+    else:
+        return [files[1], files[2], files[0]] + files[3:]
+
 def cprint(color, text, end="\n"):
     r, g, b = color
     print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
@@ -34,7 +42,7 @@ def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
     for dir in DIRECTORY:
         need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
-        out.extend([out_file_name(file) for file in file_in_dir(dir, ".c")])
+        out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
         need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
         need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
         out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])  
