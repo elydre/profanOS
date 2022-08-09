@@ -31,9 +31,10 @@ jobs:
       with:
         source_file: ${{ env.PROFAN_ISO }}
         destination_repo: 'esolangs/profanOS-build'
+        destination_folder: 'release'
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
-        commit_message: 'iso update'
+        commit_message: 'new release'
 
 
     - name: update iso on website
