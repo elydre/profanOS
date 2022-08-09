@@ -17,19 +17,24 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
       
     - name: build iso
-      run: make iso
+      run: |
+        make iso
+        wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
+        profan_ver=$(python3 profan_version.py)
+        export profan_ver
+        cp profanOS.iso profanOS-$profan_ver.iso
+      
     
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
       with:
-        source_file: 'profanOS.iso'
+        source_file: 'profanOS-${{ env.profan_ver }}.iso'
         destination_repo: 'esolangs/profanOS-build'
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'iso update'
-    
 
     - name: update iso on website
       uses: dmnemec/copy_file_to_another_repo_action@main
