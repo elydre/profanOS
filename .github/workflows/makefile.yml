@@ -25,8 +25,7 @@ jobs:
         echo $profan_ver
         cp profanOS.iso profanOS-$profan_ver.iso
       env:
-        - name: profan_ver
-          value: $profan_ver
+        profan_ver: $profan_ver
       
     
     - name: push iso to github
