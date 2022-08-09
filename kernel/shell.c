@@ -15,6 +15,7 @@ void shell_omp(){
 void disk_test() {
     uint32_t inbytes[128];
     uint32_t outbytes[128];
+    int sum = 0;
     char tmp[3];
 
     ckprint("writing to disk\n", c_magenta);
@@ -28,14 +29,17 @@ void disk_test() {
     
     read_sectors_ATA_PIO(0, outbytes);
 
-    for (int i = 0; i < 128; i++) {
-        if (outbytes[i] < 8) {
-            int_to_ascii(outbytes[i], tmp);
-            ckprint(tmp, c_magenta);
-            kprint("\n");
-        }
+    for (int i = 0; i < 8; i++) {
+        sum += outbytes[i];
+        int_to_ascii(outbytes[i], tmp);
+        ckprint(tmp, c_magenta);
+        kprint("\n");
     }
-    ckprint("...\nreading done, it works!\n", c_magenta);
+    if (sum == 28) {
+        ckprint("...\nsum == 28, it works!\n", c_magenta);
+    } else {
+        ckprint("...\nsum != 28, it doesn't work!\n", c_red);
+    }
 }
 
 void page_info(){
