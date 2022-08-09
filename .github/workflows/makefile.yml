@@ -21,10 +21,9 @@ jobs:
         make iso
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
         echo "PROFAN_ISO=profanOS-$(python3 profan_version.py).iso" >> $GITHUB_ENV
-        echo $PROFAN_ISO
-        cp profanOS.iso $PROFAN_ISO
-      
-    
+        cp profanOS.iso profanOS-$(python3 profan_version.py).iso
+
+
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
@@ -35,6 +34,7 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'iso update'
+
 
     - name: update iso on website
       uses: dmnemec/copy_file_to_another_repo_action@main
@@ -47,6 +47,7 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'iso update'
+
 
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
