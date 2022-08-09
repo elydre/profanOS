@@ -37,6 +37,14 @@ void hex_to_ascii(int n, char str[]) {
     else append(str, tmp + '0');
 }
 
+int ascii_to_int(char str[]) {
+    int i, n;
+    n = 0;
+    for (i = 0; str[i] != '\0'; ++i)
+        n = n * 10 + str[i] - '0';
+    return n;
+}
+
 void reverse(char s[]) {
     int c, i, j;
     for (i = 0, j = strlen(s)-1; i < j; i++, j--) {

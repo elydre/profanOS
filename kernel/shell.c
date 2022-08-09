@@ -42,6 +42,23 @@ void disk_test() {
     }
 }
 
+void show_disk_LBA(char suffix[]) {
+    int LBA = 0;
+    if (strcmp(suffix, "ss") != 0) {
+        LBA = ascii_to_int(suffix);
+    }
+    uint32_t outbytes[128];
+    char tmp[10];
+    read_sectors_ATA_PIO((uint32_t) LBA, outbytes);
+    for (int i = 0; i < 128; i++) {
+        int_to_ascii(outbytes[i], tmp);
+        ckprint(tmp, c_magenta);
+        for (int j = strlen(tmp); j < 10; j++) {
+            kprint(" ");
+        }
+    }
+}
+
 void page_info(){
     uint32_t page = alloc_page(1);
     ckprint("actual page address: ", c_magenta);
@@ -59,6 +76,7 @@ void shell_help(char suffix[]) {
         "HELP    - show this help",
         "ISR     - test the interrupt handler",
         "PAGE    - show the actual page address",
+        "SS      - show int32 in the LBA *suffix*",
         "TASK    - print info about the tasks",
         "TD      - test the disk",
         "VER     - display the version",
@@ -118,6 +136,10 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "page") == 0) {
         page_info();
+    }
+
+    else if (strcmp(prefix, "ss") == 0) {
+        show_disk_LBA(suffix);
     }
 
     else if (strcmp(prefix, "task") == 0) {
