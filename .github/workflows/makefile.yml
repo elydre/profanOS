@@ -21,11 +21,10 @@ jobs:
         make iso
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
         profan_ver=$(python3 profan_version.py)
-        export profan_ver
         echo $profan_ver
         cp profanOS.iso profanOS-$profan_ver.iso
       env:
-        profan_ver: $profan_ver
+        ISO_NAME: profanOS-$profan_ver.iso
       
     
     - name: push iso to github
@@ -33,7 +32,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
       with:
-        source_file: 'profanOS-${{ profan_ver }}.iso'
+        source_file: ${{ env.ISO_NAME }}
         destination_repo: 'esolangs/profanOS-build'
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
