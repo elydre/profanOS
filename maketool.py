@@ -104,10 +104,15 @@ def make_help():
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
+def gen_hdd(force):
+    if (not file_exists("HDD.bin")) or force:
+        print_and_exec("dd if=/dev/zero of=HDD.bin bs=1024 count=1024")
 
 assos = {
     "bin_image": bin_image,
-    "help": make_help
+    "help": make_help,
+    "hdd": lambda: gen_hdd(False),
+    "hddf": lambda: gen_hdd(True),
 }
 
 def main():

@@ -30,12 +30,14 @@ iso: bin_image
 
 # create a 1MB hdd.bin file
 hdd:
-	dd if=/dev/zero of=HDD.bin bs=1024 count=1024
+	@python3 maketool.py hddf
 
-run: bin_image hdd
+run: bin_image
+	@python3 maketool.py hdd
 	qemu-system-i386 -drive file=profanOS.bin,if=floppy,format=raw -drive file=HDD.bin,format=raw -boot order=a
 
-irun: iso hdd
+irun: iso
+	@python3 maketool.py hdd
 	qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d 
 
 clean:
