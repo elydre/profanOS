@@ -32,7 +32,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
       with:
-        source_file: ${{ env.ISO_NAME }}
+        source_file: $ISO_NAME
         destination_repo: 'esolangs/profanOS-build'
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
