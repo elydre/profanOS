@@ -1,6 +1,7 @@
 #include "../drivers/screen.h"
-#include "../libc/string.h"
 #include "../drivers/ata/ata.h"
+#include "../drivers/rtc.h"
+#include "../libc/string.h"
 #include "../libc/function.h"
 #include "../libc/mem.h"
 #include "kernel.h"
@@ -78,6 +79,7 @@ void shell_help(char suffix[]) {
         "PAGE    - show the actual page address",
         "SS      - show int32 in the LBA *suffix*",
         "TASK    - print info about the tasks",
+        "TIME    - print the GMT from the RTC",
         "TD      - test the disk",
         "VER     - display the version",
         "YIELD   - yield to the next task",
@@ -103,6 +105,27 @@ void shell_help(char suffix[]) {
         }
         ckprint("command not found\n", c_red);
     }
+}
+
+void print_time() {
+    ckprint("GMT: ", c_magenta);
+    time_t time;
+    get_time(&time);
+    char tmp[3];
+    for (int i = 2; i >= 0; i--) {
+        int_to_ascii(time.full[i], tmp);
+        if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
+        ckprint(tmp, c_magenta);
+        kprint(":");
+    }
+    kprint_backspace(); kprint(" ");
+    for (int i = 3; i < 6; i++) {
+        int_to_ascii(time.full[i], tmp);
+        if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
+        ckprint(tmp, c_magenta);
+        kprint("/");
+    }
+    kprint_backspace(); kprint("\n");
 }
 
 void shell_command(char command[]) {
@@ -144,6 +167,10 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "task") == 0) {
         task_printer();
+    }
+
+    else if (strcmp(prefix, "time") == 0) {
+        print_time();
     }
 
     else if (strcmp(prefix, "td") == 0) {

@@ -11,6 +11,7 @@ OUT_DIR = "out"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
+COLOR_EROR = (255, 0, 0)
 
 
 last_modif = lambda path: os.stat(path).st_mtime
@@ -36,7 +37,10 @@ def print_and_exec(command):
     global RBF
     RBF = True
     cprint(COLOR_EXEC, command)
-    os.system(command)
+    code = os.system(command)
+    if code != 0:
+        cprint(COLOR_EROR, f"error {code}")
+        sys.exit(code)
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []

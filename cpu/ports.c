@@ -46,3 +46,13 @@ uint32_t port_long_in(uint32_t port) {
 void port_long_out(uint32_t port, uint32_t value) {
     asm volatile("outl %%eax,%%dx"::"d" (port), "a" (value));
 }
+
+unsigned char inportb(unsigned short port) {
+    unsigned char res;
+    __asm__ __volatile__("inb %1, %0" : "=a"(res) : "dN"(port));
+    return res;
+}
+ 
+void outportb(unsigned short port, unsigned char data) {
+    __asm__ __volatile__("outb %1, %0" : : "dN" (port), "a" (data));
+}

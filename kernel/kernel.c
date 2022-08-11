@@ -1,6 +1,7 @@
 #include "../cpu/isr.h"
 #include "../drivers/screen.h"
 #include "../drivers/keyboard.h"
+#include "../drivers/rtc.h"
 #include "kernel.h"
 #include "../libc/string.h"
 #include "shell.h"
@@ -27,6 +28,8 @@ void kernel_main() {
     irq_install();
     kprint("isr initialized\n");
     init_tasking();
+    rtc_install();
+    kprint("rtc initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);

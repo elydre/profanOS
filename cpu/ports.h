@@ -12,4 +12,7 @@ void port_word_out (uint16_t port, uint16_t data);
 uint32_t port_long_in(uint32_t port);
 void port_long_out(uint32_t port, uint32_t value);
 
+unsigned char inportb(unsigned short port);
+void outportb(unsigned short port, unsigned char data);
+
 #endif
