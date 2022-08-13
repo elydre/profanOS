@@ -1,5 +1,3 @@
-OUT_DIR = out
-
 # First rule is run by default
 bin_image:
 	python3 maketool.py bin_image
@@ -11,7 +9,6 @@ install:
 	sudo apt-get update
 	sudo apt-get install -y gcc nasm make qemu-system-i386 python3
 
-# create a 1MB hdd.bin file
 hdd:
 	@python3 maketool.py hddf
 
