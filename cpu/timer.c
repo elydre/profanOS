@@ -2,12 +2,33 @@
 #include "isr.h"
 #include "ports.h"
 #include "../libc/function.h"
+#include "../libc/time.h"
 
 uint32_t tick = 0;
+int last_refresh;
+int refresh_time[5];
 
 static void timer_callback(registers_t *regs) {
-    tick++;
     UNUSED(regs);
+    tick++;
+    if (tick % 55 == 0) {
+        int now = gen_unix_time();
+        for (int i = 5; i > 0; i--) {
+            refresh_time[i] = refresh_time[i-1];
+        }
+        refresh_time[0] = now - last_refresh;
+        last_refresh = now;
+    }
+}
+
+uint32_t timer_get_tick() {
+    return tick;
+}
+
+void timer_get_refresh_time(int target[5]) {
+    for (int i = 0; i < 5; i++) {
+        target[i] = refresh_time[i];
+    }
 }
 
 void init_timer(uint32_t freq) {

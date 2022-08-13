@@ -5,6 +5,7 @@
 #include "../libc/function.h"
 #include "../libc/mem.h"
 #include "../libc/time.h"
+#include "../cpu/timer.h"
 #include "kernel.h"
 #include "shell.h"
 #include "task.h"
@@ -133,6 +134,34 @@ void print_time() {
     kprint("\n");
 }
 
+void usage() {
+    char tmp[2];
+    int refresh_time[5];
+    int lvl[3] = {10, 5, 2};
+    ScreenColor colors[3] = {c_dred, c_red, c_yellow};
+    
+    timer_get_refresh_time(refresh_time);
+    for (int ligne = 0; ligne < 3; ligne++) {
+        for (int i = 0; i < 5; i++) {
+            if (refresh_time[i] >= lvl[ligne]) {
+                ckprint("#", colors[ligne]);
+            } else {
+                kprint(" ");
+            }
+        }
+        kprint("\n");
+    }
+    for (int i = 0; i < 5; i++) {
+        if (refresh_time[i] < 10) {
+            int_to_ascii(refresh_time[i], tmp);
+            ckprint(tmp, c_green);
+        } else {
+            ckprint("+", c_green);
+        }
+    }
+    kprint("\n");
+}
+
 void shell_command(char command[]) {
     char prefix[strlen(command)], suffix[strlen(command)];
     strcpy(prefix, command);
@@ -166,6 +195,10 @@ void shell_command(char command[]) {
         page_info();
     }
 
+    else if (strcmp(prefix, "sleep") == 0) {
+        sleep(ascii_to_int(suffix));
+    }
+
     else if (strcmp(prefix, "ss") == 0) {
         show_disk_LBA(suffix);
     }
@@ -180,6 +213,10 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "td") == 0) {
         disk_test();
+    }
+
+    else if (strcmp(prefix, "usg") == 0) {
+        usage();
     }
 
     else if (strcmp(prefix, "ver") == 0) {
