@@ -1,4 +1,4 @@
-name: build iso
+name: build img
 
 on:
   push:
@@ -14,39 +14,27 @@ jobs:
     - uses: actions/checkout@v3
       
     - name: install dependencies
-      run: sudo apt-get update && sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
+      run: sudo apt-get update && sudo apt-get install -y gcc nasm make qemu-system-i386 genimgimage python3
       
-    - name: build iso
+    - name: build img
       run: |
-        make iso
+        make
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
-        echo "PROFAN_ISO=profanOS-$(python3 profan_version.py).iso" >> $GITHUB_ENV
+        echo "PROFAN_IMG=profanOS-$(python3 profan_version.py).img" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$(python3 profan_version.py)" >> $GITHUB_ENV
-        cp profanOS.iso profanOS-$(python3 profan_version.py).iso
+        cp profanOS.img profanOS-$(python3 profan_version.py).img
 
-    - name: push iso to github
+    - name: push img to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
       with:
-        source_file: ${{ env.PROFAN_ISO }}
+        source_file: ${{ env.PROFAN_IMG }}
         destination_repo: 'esolangs/profanOS-build'
-        destination_folder: 'release'
+        destination_folder: 'img'
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'new release'
-
-    - name: update iso on website
-      uses: dmnemec/copy_file_to_another_repo_action@main
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
-      with:
-        source_file: 'profanOS.iso'
-        destination_repo: 'elydre/elydre.github.io'
-        destination_folder: 'profan/img'
-        user_email: 'pf4_@gmail.com'
-        user_name: 'esolangs'
-        commit_message: 'iso update'
 
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
@@ -55,5 +43,4 @@ jobs:
         automatic_release_tag: latest
         repo_token: "${{ secrets.GIT_TOKEN }}"
         files: |
-          profanOS.iso
-          profanOS.bin
+          profanOS.img

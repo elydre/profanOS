@@ -4,6 +4,7 @@
 #include "../libc/string.h"
 #include "../libc/function.h"
 #include "../libc/mem.h"
+#include "../libc/time.h"
 #include "kernel.h"
 #include "shell.h"
 #include "task.h"
@@ -108,10 +109,10 @@ void shell_help(char suffix[]) {
 }
 
 void print_time() {
-    ckprint("GMT: ", c_magenta);
+    ckprint("UTC: ", c_magenta);
     time_t time;
     get_time(&time);
-    char tmp[3];
+    char tmp[12];
     for (int i = 2; i >= 0; i--) {
         int_to_ascii(time.full[i], tmp);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
@@ -126,6 +127,10 @@ void print_time() {
         kprint("/");
     }
     kprint_backspace(); kprint("\n");
+    int_to_ascii(calc_unix_time(&time), tmp);
+    ckprint("unix time: ", c_magenta);
+    ckprint(tmp, c_magenta);
+    kprint("\n");
 }
 
 void shell_command(char command[]) {

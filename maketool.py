@@ -45,14 +45,17 @@ def print_and_exec(command):
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
     for dir in DIRECTORY:
-        need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
-        out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
-        need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
-        need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
-        out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])  
+        try:
+            need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
+            out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
+            need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
+            need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
+            out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])
+        except FileNotFoundError:
+            cprint(COLOR_INFO, f"{dir} directory not found")
 
     for file in need["h"]:
-        if file1_newer(file, "profanOS.bin"):
+        if file1_newer(file, "profanOS.img"):
             cprint(COLOR_INFO, f"header '{file}' was modified, need to rebuild all")
             del need["h"]
             return need, out
@@ -92,18 +95,17 @@ def bin_image():
     if RBF:
         in_files = f"{OUT_DIR}/kernel_entry.o " + " ".join(out)
         print_and_exec(f"ld -m elf_i386 -G -o {OUT_DIR}/kernel.bin -Ttext 0x1000 {in_files} --oformat binary")
-        print_and_exec(f"cat {OUT_DIR}/bootsect.bin {OUT_DIR}/kernel.bin > profanOS.bin")
+        print_and_exec(f"cat {OUT_DIR}/bootsect.bin {OUT_DIR}/kernel.bin > profanOS.img")
 
 def make_help():
     aide = (
         ("make install", "install dependencies (debian/ubuntu)"),
-        ("make", "build profanOS.bin"),
-        ("make iso", "build image and convert it to iso"),
+        ("make", "build profanOS.img"),
         ("make clean", "delete all files in out directory"),
         ("make fullclean", "clean + delete .bin and .iso"),
         ("make hdd", "create a empty HDD"),
-        ("make run", "run the profanOS.bin in qemu"),
-        ("make irun", "run the profanOS.iso in qemu"),
+        ("make run", "run the profanOS.img in qemu"),
+        ("make irun", "run the profanOS.iso in qemu (iso required)"),
     )
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
