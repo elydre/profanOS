@@ -24,4 +24,4 @@ clean:
 	rm -Rf out/
 
 fullclean: clean
-	rm -Rf *.bin *.iso
+	rm -Rf *.bin *.iso *.img
