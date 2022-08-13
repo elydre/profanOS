@@ -85,7 +85,7 @@ void scancode_mod(int scancode) {
     ckprint(str, c_dcyan);
 
     if (scancode > SC_MAX) {
-        ckprint("\nnot a valid scancode\n", c_red);
+        ckprint("\nunknown scancode\n", c_red);
         return;
     }
 
@@ -98,10 +98,10 @@ void scancode_mod(int scancode) {
 
     str[0] = scancode_to_char(scancode, 0);
     str[1] = '\0';
-    ckprint("\nletter: ", c_blue);
+    ckprint("\nletter min: ", c_blue);
     ckprint(str, c_dcyan);
-    scancode_to_name(scancode, str);
-    ckprint("\nname: ", c_blue);
+    str[0] = scancode_to_char(scancode, 1);
+    ckprint("\nletter maj: ", c_blue);
     ckprint(str, c_dcyan);
     kprint("\n");
 }
