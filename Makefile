@@ -9,7 +9,7 @@ info:
 
 install:
 	sudo apt-get update
-	sudo apt-get install -y gcc nasm make qemu-system-i386 genisoimage python3
+	sudo apt-get install -y gcc nasm make qemu-system-i386 python3
 
 # create a 1MB hdd.bin file
 hdd:
