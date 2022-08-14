@@ -101,24 +101,21 @@ void powerfull_task(void (*main)(), int pid) {
 void task_printer() {
     char str[10];
     int nb_alive = refresh_alive();
-    ckprint("Tasks alive : ", c_magenta);
+    ckprint("task alive: ", c_magenta);
     int_to_ascii(nb_alive, str);
     ckprint(str, c_green);
+    ckprint("\nmax task:   ", c_magenta);
+    int_to_ascii(TASK_MAX, str);
+    ckprint(str, c_green);
     kprint("\n");
-    ckprint("Tasks list  : ", c_magenta);
+    ckprint("task list:  ", c_magenta);
     kprint("[");
     for (int i = 0; i < nb_alive; i++) {
         int_to_ascii(tasks[i].pid, str);
         ckprint(str, c_green);
-        if (i != nb_alive - 1) {
-            kprint(", ");
-        }
+        if (i != nb_alive - 1)  kprint(", ");
     }
     kprint("]\n");
-    ckprint("Max tasks   : ", c_magenta);
-    int_to_ascii(TASK_MAX, str);
-    ckprint(str, c_green);
-    kprint("\n");
 }
 
 void destroy_killed_tasks(int nb_alive) {
@@ -127,10 +124,10 @@ void destroy_killed_tasks(int nb_alive) {
         if (tasks[i].isdead == 1) {
             // free_page((uint32_t*)tasks[i].regs.esp);    TODO after implementing good mm
             tasks[i].isdead = 2;
-            kprint("Task ");
+            ckprint("Task ", c_magenta);
             int_to_ascii(tasks[i].pid, str);
             ckprint(str, c_green);
-            kprint(" is killed\n");
+            ckprint(" is killed\n", c_magenta);
         }
     }
 }
@@ -139,7 +136,7 @@ void yield() {
     int nb_alive = refresh_alive();
 
     if (nb_alive == 1) {
-        ckprint("Only one task alive, no need to yield\n", c_dyellow);
+        ckprint("Only one task alive, no need to yield\n", c_yellow);
         return;
     }
 
@@ -147,10 +144,10 @@ void yield() {
     tasks[0] = tasks[nb_alive];
 
     char str[2];
-    kprint("switching from pid ");
+    ckprint("switching from pid ", c_magenta);
     int_to_ascii(tasks[1].pid, str);
     ckprint(str, c_green);
-    kprint(" to pid ");
+    ckprint(" to pid ", c_magenta);
     int_to_ascii(tasks[0].pid, str);
     ckprint(str, c_green);
     kprint("\n");

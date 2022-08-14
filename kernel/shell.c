@@ -52,9 +52,9 @@ void print_scancodes() {
     while (1) {
         while (last_sc == get_last_scancode());
         last_sc = get_last_scancode();
-        ckprint("\nscancode: ", c_blue);
+        ckprint("\nscancode:   ", c_magenta);
         int_to_ascii(last_sc, str);
-        ckprint(str, c_dcyan);
+        ckprint(str, c_green);
 
         if (last_sc == 1) {
             // scancode 1 is the escape key
@@ -69,11 +69,11 @@ void print_scancodes() {
 
         str[0] = scancode_to_char(last_sc, 0);
         str[1] = '\0';
-        ckprint("\nletter min: ", c_blue);
-        ckprint(str, c_dcyan);
+        ckprint("\nletter min: ", c_magenta);
+        ckprint(str, c_green);
         str[0] = scancode_to_char(last_sc, 1);
-        ckprint("\nletter maj: ", c_blue);
-        ckprint(str, c_dcyan);
+        ckprint("\nletter maj: ", c_magenta);
+        ckprint(str, c_green);
         kprint("\n");
     }
 }
@@ -93,10 +93,10 @@ void show_disk_LBA(char suffix[]) {
 
 void page_info(){
     uint32_t page = alloc_page(1);
-    ckprint("actual page address: ", c_magenta);
+    ckprint("\npage adr:   ", c_magenta);
     char tmp[11];
     hex_to_ascii(page, tmp);
-    ckprint(tmp, c_magenta);
+    ckprint(tmp, c_green);
     kprint("\n");
 }
 
@@ -106,12 +106,10 @@ void shell_help(char suffix[]) {
         "ECHO    - print the arguments",
         "END     - shutdown the system",
         "HELP    - show this help",
-        "PAGE    - show the actual page address",
+        "INFO    - show time, task & page info",	
         "SC      - show the scancodes",
         "SLEEP   - sleep for a given time",
         "SS      - show int32 in the LBA *suffix*",
-        "TASK    - print info about the tasks",
-        "TIME    - print the GMT from the RTC",
         "TD      - test the disk",
         "USG     - show the usage of cpu",
         "VER     - display the version",
@@ -141,28 +139,28 @@ void shell_help(char suffix[]) {
 }
 
 void print_time() {
-    ckprint("UTC: ", c_magenta);
+    ckprint("UTC time:   ", c_magenta);
     time_t time;
     get_time(&time);
     char tmp[12];
     for (int i = 2; i >= 0; i--) {
         int_to_ascii(time.full[i], tmp);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
-        ckprint(tmp, c_magenta);
+        ckprint(tmp, c_green);
         kprint(":");
     }
     kprint_backspace(); kprint(" ");
     for (int i = 3; i < 6; i++) {
         int_to_ascii(time.full[i], tmp);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
-        ckprint(tmp, c_magenta);
+        ckprint(tmp, c_green);
         kprint("/");
     }
     kprint_backspace(); kprint("\n");
     int_to_ascii(calc_unix_time(&time), tmp);
-    ckprint("unix time: ", c_magenta);
-    ckprint(tmp, c_magenta);
-    kprint("\n");
+    ckprint("unix time:  ", c_magenta);
+    ckprint(tmp, c_green);
+    kprint("\n\n");
 }
 
 void usage() {
@@ -170,6 +168,7 @@ void usage() {
     int refresh_time[5];
     int lvl[3] = {10, 5, 2};
     ScreenColor colors[3] = {c_dred, c_red, c_yellow};
+    kprint(" ");
     
     timer_get_refresh_time(refresh_time);
     for (int ligne = 0; ligne < 3; ligne++) {
@@ -177,7 +176,7 @@ void usage() {
             if (refresh_time[i] >= lvl[ligne]) ckprint("#", colors[ligne]);
             else kprint(" ");
         }
-        kprint("\n");
+        kprint("\n ");
     }
     for (int i = 0; i < 5; i++) {
         if (refresh_time[i] < 10) {
@@ -196,10 +195,15 @@ void shell_command(char command[]) {
     strcpy(suffix, command);
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
-    
-    if (strcmp(prefix, "clear") == 0) {
-        clear_screen();
-    }
+
+    if      (strcmp(prefix, "clear") == 0)  clear_screen();
+    else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
+    else if (strcmp(prefix, "sc") == 0)     print_scancodes();
+    else if (strcmp(prefix, "sleep") == 0)  sleep(ascii_to_int(suffix));
+    else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
+    else if (strcmp(prefix, "td") == 0)     disk_test();
+    else if (strcmp(prefix, "usg") == 0)    usage();
+    else if (strcmp(prefix, "yield") == 0)  yield();
 
     else if (strcmp(prefix, "echo") == 0) {
         ckprint(suffix, c_magenta);
@@ -211,50 +215,16 @@ void shell_command(char command[]) {
         asm volatile("hlt");
     }
 
-    else if (strcmp(prefix, "help") == 0) {
-        shell_help(suffix);
-    }
-
-    else if (strcmp(prefix, "page") == 0) {
-        page_info();
-    }
-
-    else if (strcmp(prefix, "sc") == 0) {
-        print_scancodes();
-    }
-
-    else if (strcmp(prefix, "sleep") == 0) {
-        sleep(ascii_to_int(suffix));
-    }
-
-    else if (strcmp(prefix, "ss") == 0) {
-        show_disk_LBA(suffix);
-    }
-
-    else if (strcmp(prefix, "task") == 0) {
-        task_printer();
-    }
-
-    else if (strcmp(prefix, "time") == 0) {
+    else if (strcmp(prefix, "info") == 0) {
         print_time();
-    }
-
-    else if (strcmp(prefix, "td") == 0) {
-        disk_test();
-    }
-
-    else if (strcmp(prefix, "usg") == 0) {
-        usage();
+        task_printer();
+        page_info();
     }
 
     else if (strcmp(prefix, "ver") == 0) {
         ckprint("version ", c_magenta);
         ckprint(VERSION, c_magenta);
         kprint("\n");
-    }
-
-    else if (strcmp(prefix, "yield") == 0) {
-        yield();
     }
 
     else if (strcmp(prefix, "") != 0) {

@@ -36,7 +36,8 @@ make run
 make info
 ```
 
-You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build/tree/main/img) or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
+You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build/tree/main/img)
+or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
 
@@ -48,12 +49,10 @@ You can also download the build images from the repo [profanOS-build](https://gi
 | ECHO    | print the arguments             |
 | END     | shutdown the system             |
 | HELP    | show this help                  |
-| PAGE    | show the actual page address    |
+| INFO    | show time, task & page info     |
 | SC      | show the scancodes              |
 | SLEEP   | sleep for a given time          |
 | SS      | show int32 in the LBA *suffix*  |
-| TASK    | print info about the tasks      |
-| TIME    | print the GMT from the RTC      |
 | TD      | test the disk                   |
 | USG     | show the usage of cpu           |
 | VER     | display the version             |
