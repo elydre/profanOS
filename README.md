@@ -1,7 +1,7 @@
 # profanOS
 
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
-[![nbr](https://img.shields.io/github/directory-file-count/esolangs/profanOS-build/img?label=release)](https://github.com/esolangs/profanOS-build/tree/main/img)
+[![nbr](https://img.shields.io/github/directory-file-count/esolangs/profanOS-build/img?label=release)](https://elydre.github.io/profan/all.html)
 ![views](https://komarev.com/ghpvc/?username=profanOS&label=views)
 
 ![wave](https://elydre.github.io/img/profan.svg)
