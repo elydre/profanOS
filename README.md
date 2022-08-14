@@ -36,7 +36,7 @@ make run
 make info
 ```
 
-You can also download the iso from the repo [profanOS-build](https://github.com/esolangs/profanOS-build/tree/main/img) or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
+You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build/tree/main/img) or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
 
