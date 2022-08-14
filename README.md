@@ -63,7 +63,6 @@ You can also download the iso from the repo [profanOS-build](https://github.com/
 
 | Key   | Function               |
 |-------|------------------------|
-| esc   | entering scancode mode |
 | lshft | maj (hold)             |
 | rshft | paste the last command |
 
