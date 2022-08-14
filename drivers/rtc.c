@@ -22,7 +22,7 @@ unsigned char bcd2bin(unsigned char bcd) {
 }
 
 void get_time(time_t *target) {
-    if (bcd){
+    if (bcd) {
         target->seconds = bcd2bin(read_register(0x00));
         target->minutes = bcd2bin(read_register(0x02));
         target->hours = bcd2bin(read_register(0x04));

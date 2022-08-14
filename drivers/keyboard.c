@@ -30,8 +30,12 @@ char scancode_to_char(int scancode, int shift) {
     return (shift) ? sc_ascii_maj[scancode] : sc_ascii_min[scancode];
 }
 
+int get_last_scancode() {
+    return (int) port_byte_in(0x60);
+}
+
 static void keyboard_callback(registers_t *regs) {
-    /* The PIC leaves us the scancode in port 0x60 */
+    // The PIC leaves us the scancode in port 0x60
     uint8_t scancode = port_byte_in(0x60);
     
     user_input((int)scancode);
@@ -39,5 +43,5 @@ static void keyboard_callback(registers_t *regs) {
 }
 
 void init_keyboard() {
-   register_interrupt_handler(IRQ1, keyboard_callback); 
+    register_interrupt_handler(IRQ1, keyboard_callback); 
 }

@@ -10,7 +10,6 @@
 
 #define BACKSPACE 14
 #define ENTER 28
-#define EXIT 1
 #define LSHIFT_IN 42
 #define LSHIFT_OUT 170
 #define RSHIFT 54
@@ -20,8 +19,6 @@
 static char key_buffer[256];
 static char last_command[256];
 static int shift = 0;
-static int mod = 0; // 0 = shell, 1 = scancode
-
 
 void kernel_main() {
     isr_install();
@@ -40,14 +37,8 @@ void kernel_main() {
 
 void shell_mod(char letter, int scancode) {
 
-    if (scancode == LSHIFT_IN) {
-        shift = 1;
-    }
-
-    else if (scancode == LSHIFT_OUT) {
-        shift = 0;
-    }
-
+    if (scancode == LSHIFT_IN) shift = 1;
+    else if (scancode == LSHIFT_OUT) shift = 0;
     else if (scancode > SC_MAX) return;
 
     else if (scancode == RSHIFT) {
@@ -78,47 +69,7 @@ void shell_mod(char letter, int scancode) {
     }
 }
 
-void scancode_mod(int scancode) {
-    char str[10];
-    ckprint("\nscancode: ", c_blue);
-    int_to_ascii(scancode, str);
-    ckprint(str, c_dcyan);
-
-    if (scancode > SC_MAX) {
-        ckprint("\nunknown scancode\n", c_red);
-        return;
-    }
-
-    if (scancode == EXIT) {
-        clear_screen();
-        shell_omp();
-        mod = 0;
-        return;
-    }
-
-    str[0] = scancode_to_char(scancode, 0);
-    str[1] = '\0';
-    ckprint("\nletter min: ", c_blue);
-    ckprint(str, c_dcyan);
-    str[0] = scancode_to_char(scancode, 1);
-    ckprint("\nletter maj: ", c_blue);
-    ckprint(str, c_dcyan);
-    kprint("\n");
-}
-
 void user_input(int scancode) {
     char letter = scancode_to_char(scancode, shift);
-    if (scancode == EXIT && mod != 1) {
-        clear_screen();
-        rainbow_print("Entering scancode mode.\n");
-        mod = 1;
-    }
-
-    else if (mod == 0) {
-        shell_mod(letter, scancode);
-    }
-    
-    else if (mod == 1) {
-        scancode_mod(scancode);
-    }
+    shell_mod(letter, scancode);
 }

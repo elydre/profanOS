@@ -76,9 +76,7 @@ int refresh_alive() {
         }
         else {
             nb_alive++;
-            if (decal > 0) {
-                tasks[i - decal] = tasks[i];
-            }
+            if (decal > 0) tasks[i - decal] = tasks[i];
         }
     }
     *task_count = nb_alive;
@@ -145,9 +143,7 @@ void yield() {
         return;
     }
 
-    for (int i = nb_alive; i > 0; i--) {
-        tasks[i] = tasks[i - 1];
-    }
+    for (int i = nb_alive; i > 0; i--) tasks[i] = tasks[i - 1];
     tasks[0] = tasks[nb_alive];
 
     char str[2];
