@@ -115,3 +115,5 @@ Contact us on [discord](https://pf4.ddns.net/discord)
 * [szhou42](https://github.com/szhou42/osdev) for the ata driver
 * [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
 * [fabian](https://github.com/copy/v86) for the v86 online emulator
+
+*be careful with our friend 55*
