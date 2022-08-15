@@ -23,10 +23,10 @@ static int shift = 0;
 void kernel_main() {
     isr_install();
     irq_install();
-    kprint("isr initialized\n");
+    kprint("ISR initialized\n");
     init_tasking();
     rtc_install();
-    kprint("rtc initialized\n");
+    kprint("RTC initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);
@@ -36,6 +36,7 @@ void kernel_main() {
 }
 
 void shell_mod(char letter, int scancode) {
+    char str[2] = {letter, '\0'};
 
     if (scancode == LSHIFT_IN) shift = 1;
     else if (scancode == LSHIFT_OUT) shift = 0;
@@ -43,9 +44,11 @@ void shell_mod(char letter, int scancode) {
 
     else if (scancode == RSHIFT) {
         for (int i = 0; last_command[i] != '\0'; i++) {
+            if (strlen(key_buffer) > 250) break;
             append(key_buffer, last_command[i]);
+            str[0] = last_command[i];
+            ckprint(str, c_blue);
         }
-        ckprint(last_command, c_blue);
     }
 
     else if (scancode == BACKSPACE) {
@@ -63,7 +66,7 @@ void shell_mod(char letter, int scancode) {
     }
 
     else if (letter != '?') {
-        char str[2] = {letter, '\0'};
+        if (strlen(key_buffer) > 250) return;
         append(key_buffer, letter);
         ckprint(str, c_blue);
     }

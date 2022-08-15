@@ -19,8 +19,7 @@ void shell_omp(){
 }
 
 void disk_test() {
-    uint32_t inbytes[128];
-    uint32_t outbytes[128];
+    uint32_t inbytes[128], outbytes[128];
     int sum = 0;
     char tmp[3];
 
@@ -165,8 +164,7 @@ void print_time() {
 
 void usage() {
     char tmp[2];
-    int refresh_time[5];
-    int lvl[3] = {10, 5, 2};
+    int refresh_time[5], lvl[3] = {10, 5, 2};
     ScreenColor colors[3] = {c_dred, c_red, c_yellow};
     kprint(" ");
     
