@@ -50,6 +50,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 | END     | shutdown the system             |
 | HELP    | show this help                  |
 | INFO    | show time, task & page info     |
+| REBOOT  | reboot the system               |
 | SC      | show the scancodes              |
 | SLEEP   | sleep for a given time          |
 | SS      | show int32 in the LBA *suffix*  |

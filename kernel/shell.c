@@ -2,10 +2,11 @@
 #include "../drivers/keyboard.h"
 #include "../drivers/ata/ata.h"
 #include "../drivers/rtc.h"
-#include "../libc/string.h"
 #include "../libc/function.h"
-#include "../libc/mem.h"
+#include "../libc/string.h"
+#include "../libc/system.h"
 #include "../libc/time.h"
+#include "../libc/mem.h"
 #include "../cpu/timer.h"
 #include "kernel.h"
 #include "shell.h"
@@ -106,6 +107,7 @@ void shell_help(char suffix[]) {
         "END     - shutdown the system",
         "HELP    - show this help",
         "INFO    - show time, task & page info",	
+        "REBOOT  - reboot the system",
         "SC      - show the scancodes",
         "SLEEP   - sleep for a given time",
         "SS      - show int32 in the LBA *suffix*",
@@ -196,6 +198,7 @@ void shell_command(char command[]) {
 
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
+    else if (strcmp(prefix, "reboot") == 0) sys_reboot();
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
     else if (strcmp(prefix, "sleep") == 0)  sleep(ascii_to_int(suffix));
     else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
@@ -210,7 +213,7 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "end") == 0) {
         rainbow_print("Stopping the CPU. Bye!\n");
-        asm volatile("hlt");
+        sys_shutdown();
     }
 
     else if (strcmp(prefix, "info") == 0) {
