@@ -3,6 +3,7 @@
 #include "../drivers/ata/ata.h"
 #include "../drivers/rtc.h"
 #include "../libc/function.h"
+#include "../libc/skprint.h"
 #include "../libc/string.h"
 #include "../libc/system.h"
 #include "../libc/time.h"
@@ -33,15 +34,14 @@ void disk_test() {
     
     read_sectors_ATA_PIO(0, outbytes);
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 10; i++) {
         sum += outbytes[i];
         int_to_ascii(outbytes[i], tmp);
-        ckprint(tmp, c_magenta);
-        kprint("\n");
+        mskprint(3, "$1", tmp, " ");
     }
 
-    if (sum == 28) ckprint("...\nsum == 28, it works!\n", c_magenta);
-    else ckprint("...\nsum != 28, it doesn't work!\n", c_red);
+    if (sum == 45) ckprint("\n\nsum == 45, it works!\n", c_magenta);
+    else ckprint("\nsum != 45, it doesn't work!\n", c_dred);
 }
 
 void print_scancodes() {
@@ -52,9 +52,8 @@ void print_scancodes() {
     while (1) {
         while (last_sc == get_last_scancode());
         last_sc = get_last_scancode();
-        ckprint("\nscancode:   ", c_magenta);
         int_to_ascii(last_sc, str);
-        ckprint(str, c_green);
+        mskprint(2, "$4\nscancode:   $1", str);
 
         if (last_sc == 1) {
             // scancode 1 is the escape key
@@ -69,12 +68,9 @@ void print_scancodes() {
 
         str[0] = scancode_to_char(last_sc, 0);
         str[1] = '\0';
-        ckprint("\nletter min: ", c_magenta);
-        ckprint(str, c_green);
+        mskprint(2, "$4\nletter min: $1", str);
         str[0] = scancode_to_char(last_sc, 1);
-        ckprint("\nletter maj: ", c_magenta);
-        ckprint(str, c_green);
-        kprint("\n");
+        mskprint(3, "$4\nletter maj: $1", str, "\n");
     }
 }
 
@@ -93,36 +89,32 @@ void show_disk_LBA(char suffix[]) {
 
 void page_info(){
     uint32_t page = alloc_page(1);
-    ckprint("\npage adr:   ", c_magenta);
     char tmp[11];
     hex_to_ascii(page, tmp);
-    ckprint(tmp, c_green);
-    kprint("\n");
+    mskprint(3, "$4\npage adr:   $1", tmp, "\n");
 }
 
 void shell_help(char suffix[]) {
     char *help[] = {
-        "CLEAR   - clear the screen",
-        "ECHO    - print the arguments",
-        "END     - shutdown the system",
-        "HELP    - show this help",
-        "INFO    - show time, task & page info",	
-        "REBOOT  - reboot the system",
-        "SC      - show the scancodes",
-        "SLEEP   - sleep for a given time",
-        "SS      - show int32 in the LBA *suffix*",
-        "TD      - test the disk",
-        "USG     - show the usage of cpu",
-        "VER     - display the version",
-        "YIELD   - yield to the next task",
+        "clear   - clear the screen",
+        "echo    - print the arguments",
+        "end     - shutdown the system",
+        "help    - show this help",
+        "info    - show time, task & page info",	
+        "reboot  - reboot the system",
+        "sc      - show the scancodes",
+        "sleep   - sleep for a given time",
+        "ss      - show int32 in the LBA *suffix*",
+        "td      - test the disk",
+        "usg     - show the usage of cpu",
+        "ver     - display the version",
+        "yield   - yield to the next task",
     };
 
     if (strcmp(suffix, "help") == 0) {
         for (int i = 0; i < ARYLEN(help); i++) {
-            ckprint(help[i], c_magenta);
-            kprint("\n");
+            mskprint(3, "$4", help[i], "\n");
         }
-
     } else {
         char tmp[100];
         for (int i = 0; i < ARYLEN(help); i++) {
@@ -130,8 +122,7 @@ void shell_help(char suffix[]) {
             str_start_split(tmp, ' ');
 
             if (strcmp(tmp, suffix) == 0) {
-                ckprint(help[i], c_magenta);
-                kprint("\n");
+                mskprint(3, "$4", help[i], "\n");
                 return;
             }
         }
@@ -147,8 +138,7 @@ void print_time() {
     for (int i = 2; i >= 0; i--) {
         int_to_ascii(time.full[i], tmp);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
-        ckprint(tmp, c_green);
-        kprint(":");
+        mskprint(3, "$1", tmp, "$7:");
     }
     kprint_backspace(); kprint(" ");
     for (int i = 3; i < 6; i++) {
@@ -157,11 +147,9 @@ void print_time() {
         ckprint(tmp, c_green);
         kprint("/");
     }
-    kprint_backspace(); kprint("\n");
+    kprint_backspace();
     int_to_ascii(calc_unix_time(&time), tmp);
-    ckprint("unix time:  ", c_magenta);
-    ckprint(tmp, c_green);
-    kprint("\n\n");
+    mskprint(3, "$4\nunix time:  $1", tmp, "\n\n");
 }
 
 void usage() {
@@ -204,11 +192,11 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (strcmp(prefix, "td") == 0)     disk_test();
     else if (strcmp(prefix, "usg") == 0)    usage();
+    else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
     else if (strcmp(prefix, "yield") == 0)  yield();
 
     else if (strcmp(prefix, "echo") == 0) {
-        ckprint(suffix, c_magenta);
-        kprint("\n");
+        mskprint(3, "$4", suffix, "\n");
     }
 
     else if (strcmp(prefix, "end") == 0) {
@@ -222,15 +210,8 @@ void shell_command(char command[]) {
         page_info();
     }
 
-    else if (strcmp(prefix, "ver") == 0) {
-        ckprint("version ", c_magenta);
-        ckprint(VERSION, c_magenta);
-        kprint("\n");
-    }
-
     else if (strcmp(prefix, "") != 0) {
-        ckprint(prefix, c_red);
-        ckprint(" is not a valid command.\n", c_dred);
+        mskprint(3, "$3", prefix, "$B is not a valid command.\n");
     }
 
     if (strcmp(prefix, "") *

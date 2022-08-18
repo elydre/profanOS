@@ -34,9 +34,9 @@ enum ScreenColor {
 
 /* Public kernel API */
 void clear_screen();
-void kprint_at(char *message, int col, int row, ScreenColor color);
 void kprint(char *message);
 void ckprint(char *message, ScreenColor color);
+void ckprint_at(char *message, int col, int row, ScreenColor color);
 void rainbow_print(char *message);
 void kprint_backspace();
 

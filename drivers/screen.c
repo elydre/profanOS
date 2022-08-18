@@ -20,7 +20,7 @@ int get_offset_col(int offset);
  * If col, row, are negative, we will use the current offset
 */
 
-void kprint_at(char *message, int col, int row, ScreenColor color) {
+void ckprint_at(char *message, int col, int row, ScreenColor color) {
     /* Set cursor if col/row are negative */
     int offset;
     if (col >= 0 && row >= 0) {
@@ -42,11 +42,11 @@ void kprint_at(char *message, int col, int row, ScreenColor color) {
 }
 
 void kprint(char *message) {
-    kprint_at(message, -1, -1, c_white);
+    ckprint_at(message, -1, -1, c_white);
 }
 
 void ckprint(char *message, ScreenColor color) {
-    kprint_at(message, -1, -1, color);
+    ckprint_at(message, -1, -1, color);
 }
 
 void rainbow_print(char *message) {
