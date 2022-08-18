@@ -66,6 +66,30 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 | lshft | maj (hold)             |
 | rshft | paste the last command |
 
+### Smart print color
+
+c_blue, c_green, c_cyan, c_red, c_magenta, c_yellow, c_grey, c_white, 
+c_dblue, c_dgreen, c_dcyan, c_dred, c_dmagenta, c_dyellow, c_dgrey
+
+| Key  | Color name     |
+|------|----------------|
+| `$0` | blue           |
+| `$1` | green          |
+| `$2` | cyan           |
+| `$3` | red            |
+| `$4` | magenta        |
+| `$5` | yellow         |
+| `$6` | grey           |
+| `$7` | white          |
+| `$8` | dblue          |
+| `$9` | dark green     |
+| `$A` | dark cyan      |
+| `$B` | dark red       |
+| `$C` | dark magenta   |
+| `$D` | dark yellow    |
+| `$E` | dark grey      |
+
+
 ### Interrupts
 
 |  ID  | Description                   |
