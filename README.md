@@ -68,9 +68,6 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ### Smart print color
 
-c_blue, c_green, c_cyan, c_red, c_magenta, c_yellow, c_grey, c_white, 
-c_dblue, c_dgreen, c_dcyan, c_dred, c_dmagenta, c_dyellow, c_dgrey
-
 | Key  | Color name     |
 |------|----------------|
 | `$0` | blue           |
@@ -88,7 +85,6 @@ c_dblue, c_dgreen, c_dcyan, c_dred, c_dmagenta, c_dyellow, c_dgrey
 | `$C` | dark magenta   |
 | `$D` | dark yellow    |
 | `$E` | dark grey      |
-
 
 ### Interrupts
 
