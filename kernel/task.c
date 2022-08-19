@@ -2,6 +2,7 @@
 #include "../drivers/screen.h"
 #include "../libc/mem.h"
 #include "../libc/string.h"
+#include "../libc/skprint.h"
 
 #define TASK_MAX 5
 
@@ -29,10 +30,8 @@ void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, 
     task->pid = pid;
     task->isdead = 0;
     char str[10];
-    kprint("Task created ");
     int_to_ascii(task->pid, str);
-    ckprint(str, c_green);
-    kprint("\n");
+    mskprint(3, "Task created $1", str, "\n");
 }
 
 void init_tasking() {
@@ -101,15 +100,10 @@ void powerfull_task(void (*main)(), int pid) {
 void task_printer() {
     char str[10];
     int nb_alive = refresh_alive();
-    ckprint("task alive: ", c_magenta);
     int_to_ascii(nb_alive, str);
-    ckprint(str, c_green);
-    ckprint("\nmax task:   ", c_magenta);
+    mskprint(3, "$4task alive: $1", str, "\n");
     int_to_ascii(TASK_MAX, str);
-    ckprint(str, c_green);
-    kprint("\n");
-    ckprint("task list:  ", c_magenta);
-    kprint("[");
+    mskprint(3, "$4task max:   $1", str, "\n$4task list:  $7[");
     for (int i = 0; i < nb_alive; i++) {
         int_to_ascii(tasks[i].pid, str);
         ckprint(str, c_green);
@@ -124,10 +118,8 @@ void destroy_killed_tasks(int nb_alive) {
         if (tasks[i].isdead == 1) {
             // free_page((uint32_t*)tasks[i].regs.esp);    TODO after implementing good mm
             tasks[i].isdead = 2;
-            ckprint("Task ", c_magenta);
             int_to_ascii(tasks[i].pid, str);
-            ckprint(str, c_green);
-            ckprint(" is killed\n", c_magenta);
+            mskprint(3,"$4Task$1 ", str, " $4killed\n");
         }
     }
 }
@@ -144,10 +136,8 @@ void yield() {
     tasks[0] = tasks[nb_alive];
 
     char str[2];
-    ckprint("switching from pid ", c_magenta);
     int_to_ascii(tasks[1].pid, str);
-    ckprint(str, c_green);
-    ckprint(" to pid ", c_magenta);
+    mskprint(3, "$4switching from pid$1 ", str, "$4 to $1");
     int_to_ascii(tasks[0].pid, str);
     ckprint(str, c_green);
     kprint("\n");

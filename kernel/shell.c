@@ -12,7 +12,6 @@
 #include "kernel.h"
 #include "shell.h"
 #include "task.h"
-#include <stdint.h>
 
 #define SC_MAX 57
 

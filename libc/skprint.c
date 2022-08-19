@@ -1,7 +1,6 @@
 #include "skprint.h"
 #include "string.h"
 #include <stdarg.h>
-#include <stddef.h>
 
 int clean_buffer(char *buffer, int size) {
     for (int i = 0; i < size; i++) {
