@@ -11,9 +11,9 @@ int *task_count = 0;
 
 static void other_main() {
     rainbow_print("Hello multitasking world!\n");
-    yield();
+    yield(0);
     rainbow_print("Hello again!\n");
-    kill_task();
+    kill_task(0);
 }
 
 void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
@@ -124,31 +124,34 @@ void destroy_killed_tasks(int nb_alive) {
     }
 }
 
-void yield() {
+void yield(int target_pid) {
     int nb_alive = refresh_alive();
+    char str_old[10], str_new[10];
+    int_to_ascii(tasks[0].pid, str_old);
+    int_to_ascii(target_pid, str_new);
+    int task_i;
 
-    if (nb_alive == 1) {
-        ckprint("Only one task alive, no need to yield\n", c_yellow);
-        return;
+    for (task_i = 0; task_i < nb_alive; task_i++) {
+        if (tasks[task_i].pid == target_pid) {
+            tasks[TASK_MAX - 1] = tasks[0];
+            tasks[0] = tasks[task_i];
+            tasks[task_i] = tasks[TASK_MAX - 1];
+            break;
+        } else if (task_i == nb_alive - 1) {
+            mskprint(3, "$4Task$1 ", str_new, " $4not found\n");
+            return;
+        }
     }
 
-    for (int i = nb_alive; i > 0; i--) tasks[i] = tasks[i - 1];
-    tasks[0] = tasks[nb_alive];
-
-    char str[2];
-    int_to_ascii(tasks[1].pid, str);
-    mskprint(3, "$4switching from pid$1 ", str, "$4 to $1");
-    int_to_ascii(tasks[0].pid, str);
-    ckprint(str, c_green);
-    kprint("\n");
+    mskprint(5, "$4yield from$1 ", str_old, " $4to$1 ", str_new, "\n");
 
     switch_task(&tasks[1].regs, &tasks[0].regs);
 
     destroy_killed_tasks(nb_alive);
 }
 
-void kill_task() {
+void kill_task(int target_pid) {
     ckprint("Task kill asked\n", c_dgrey);
     tasks[0].isdead = 1;
-    yield();
+    yield(target_pid);
 }

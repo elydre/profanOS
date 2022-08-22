@@ -57,7 +57,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 | TD      | test the disk                   |
 | USG     | show the usage of cpu           |
 | VER     | display the version             |
-| YIELD   | yield to the next task          |
+| YIELD   | yield to pid *suffix*           |
 
 ### Keyboard
 

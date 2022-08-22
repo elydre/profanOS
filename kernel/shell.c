@@ -107,7 +107,7 @@ void shell_help(char suffix[]) {
         "td      - test the disk",
         "usg     - show the usage of cpu",
         "ver     - display the version",
-        "yield   - yield to the next task",
+        "yield   - yield to pid *suffix*"
     };
 
     if (strcmp(suffix, "help") == 0) {
@@ -192,7 +192,7 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "td") == 0)     disk_test();
     else if (strcmp(prefix, "usg") == 0)    usage();
     else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
-    else if (strcmp(prefix, "yield") == 0)  yield();
+    else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
     else if (strcmp(prefix, "echo") == 0) {
         mskprint(3, "$4", suffix, "\n");

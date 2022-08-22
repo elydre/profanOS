@@ -19,8 +19,8 @@ void powerfull_task(void (*main)(), int pid);
 
 void task_printer();
 
-void yield();
-void kill_task();
+void yield(int target_pid);
+void kill_task(int target_pid);
 
 // switch.asm
 extern void switch_task(Registers *old, Registers *new);
