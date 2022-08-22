@@ -110,16 +110,6 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 |  17  | Alignment Check               |
 |  18  | Machine Check                 |
 
-### Tasking rotation
-
-```
-> t1 t2 t3 .
-- t1 t2 t3 t3
-- t1 t2 t2 t3
-- t1 t1 t2 t3
-> t3 t1 t2 t3
-```
-
 ## Author & Contact
 
 * [pf4](https://github.com/elydre)
