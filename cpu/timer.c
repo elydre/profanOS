@@ -11,7 +11,7 @@ int refresh_time[5];
 static void timer_callback(registers_t *regs) {
     UNUSED(regs);
     tick++;
-    if (tick % 55 == 0) {
+    if (tick % 50 == 0) {
         int now = gen_unix_time();
         for (int i = 5; i > 0; i--) {
             refresh_time[i] = refresh_time[i-1];

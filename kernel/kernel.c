@@ -1,9 +1,10 @@
-#include "../cpu/isr.h"
 #include "../drivers/screen.h"
 #include "../drivers/keyboard.h"
 #include "../drivers/rtc.h"
-#include "kernel.h"
 #include "../libc/string.h"
+#include "../libc/time.h"
+#include "../cpu/isr.h"
+#include "kernel.h"
 #include "shell.h"
 #include "task.h"
 #include <stdint.h>
@@ -19,6 +20,7 @@
 static char key_buffer[256];
 static char last_command[256];
 static int shift = 0;
+static int boot_time;
 
 void kernel_main() {
     isr_install();
@@ -27,6 +29,8 @@ void kernel_main() {
     init_tasking();
     rtc_install();
     kprint("RTC initialized\n");
+
+    boot_time = gen_unix_time();
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     ckprint("version ", c_dmagenta);
@@ -75,4 +79,8 @@ void shell_mod(char letter, int scancode) {
 void user_input(int scancode) {
     char letter = scancode_to_char(scancode, shift);
     shell_mod(letter, scancode);
+}
+
+int get_boot_time() {
+    return boot_time;
 }

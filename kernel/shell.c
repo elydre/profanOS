@@ -205,6 +205,15 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "info") == 0) {
         print_time();
+
+        char str[10];
+        int_to_ascii(timer_get_tick(), str);
+        mskprint(3, "$4ticks:      $1", str, "\n");
+        int_to_ascii(gen_unix_time() - get_boot_time(), str);
+        mskprint(3, "$4on time:    $1", str, "s\n");
+        int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick()/50, str);
+        mskprint(3, "$4work time:  $1", str, "s\n\n");
+
         task_printer();
         page_info();
     }
