@@ -20,7 +20,7 @@ int get_offset_col(int offset);
  * If col, row, are negative, we will use the current offset
 */
 
-void ckprint_at(char *message, int col, int row, ScreenColor color) {
+void ckprint_at(char *message, int col, int row, char color) {
     /* Set cursor if col/row are negative */
     int offset;
     if (col >= 0 && row >= 0) {
@@ -45,7 +45,7 @@ void kprint(char *message) {
     ckprint_at(message, -1, -1, c_white);
 }
 
-void ckprint(char *message, ScreenColor color) {
+void ckprint(char *message, char color) {
     ckprint_at(message, -1, -1, color);
 }
 
