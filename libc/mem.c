@@ -44,7 +44,6 @@ int set_state(int imm, int index, int new) {
 }
 
 int alloc(int size) {
-    char debug[10];
     int required_part = get_required_part(size);
     int suite = 0, num, debut, imm_debut, val;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
@@ -92,6 +91,19 @@ void memory_print() {
         }
     }
     kprint("\n");
+}
+
+int free(int addr) { 
+    int index = (addr - BASE_ADDR) / PART_SIZE;
+    int list_index = index / 19, i = index % 19;
+    if (get_state(MLIST[list_index], i) == 1) {
+        MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
+        i++;
+        while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
+            MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
+            i++;
+        } return 1;
+    } return 0;
 }
 
 int get_memory_usage() {

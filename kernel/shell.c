@@ -177,7 +177,8 @@ void shell_command(char command[]) {
     str_end_split(suffix, ' ');
 
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
-    else if (strcmp(prefix, "echo") == 0) mskprint(3, "$4", suffix, "\n");
+    else if (strcmp(prefix, "echo") == 0)   mskprint(3, "$4", suffix, "\n");
+    else if (strcmp(prefix, "free") == 0)   free(ascii_to_int(suffix)) ? mskprint(1, "$4done\n") : mskprint(1, "$3error\n");
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
     else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
