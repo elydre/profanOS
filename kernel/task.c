@@ -26,7 +26,7 @@ void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, 
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = (uint32_t) alloc_page(0);
+    task->regs.esp = (uint32_t) alloc(0x1000);
     task->pid = pid;
     task->isdead = 0;
     char str[10];

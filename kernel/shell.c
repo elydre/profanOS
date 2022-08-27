@@ -86,13 +86,6 @@ void show_disk_LBA(char suffix[]) {
     }
 }
 
-void page_info(){
-    uint32_t page = alloc_page(1);
-    char tmp[11];
-    hex_to_ascii(page, tmp);
-    mskprint(3, "$4\npage adr:   $1", tmp, "\n");
-}
-
 void shell_help(char suffix[]) {
     char *help[] = {
         "clear   - clear the screen",
@@ -185,6 +178,7 @@ void shell_command(char command[]) {
 
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
+    else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
     else if (strcmp(prefix, "sleep") == 0)  sleep(ascii_to_int(suffix));
@@ -213,9 +207,10 @@ void shell_command(char command[]) {
         mskprint(3, "$4on time:    $1", str, "s\n");
         int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick()/50, str);
         mskprint(3, "$4work time:  $1", str, "s\n\n");
+        
+        // TODO: memory usage
 
         task_printer();
-        page_info();
     }
 
     else if (strcmp(prefix, "") != 0) {
