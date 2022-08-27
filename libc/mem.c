@@ -106,6 +106,14 @@ int free(int addr) {
     } return 0;
 }
 
+void * malloc(int size) {
+    int addr = alloc(size);
+    if (addr == -1) return NULL;
+    return (void *)addr;
+}
+
+// memory info function
+
 int get_memory_usage() {
     int used = 0;
     for (int mi = 0; mi < IMM_COUNT; mi++) {

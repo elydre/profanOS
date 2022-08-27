@@ -88,15 +88,18 @@ void show_disk_LBA(char suffix[]) {
 
 void shell_help(char suffix[]) {
     char *help[] = {
+        "alloc   - allocate *suffix* octets",
         "clear   - clear the screen",
         "echo    - print the arguments",
-        "end     - shutdown the system",
+        "free    - free *suffix* address",
         "help    - show this help",
-        "info    - show time, task & page info",	
+        "info    - show time, task & page info",
+        "mem     - show MLIST with colors",
         "reboot  - reboot the system",
         "sc      - show the scancodes",
         "sleep   - sleep for a given time",
         "ss      - show int32 in the LBA *suffix*",
+        "stop    - shutdown the system",
         "td      - test the disk",
         "usg     - show the usage of cpu",
         "ver     - display the version",
@@ -178,7 +181,6 @@ void shell_command(char command[]) {
 
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
     else if (strcmp(prefix, "echo") == 0)   mskprint(3, "$4", suffix, "\n");
-    else if (strcmp(prefix, "free") == 0)   free(ascii_to_int(suffix)) ? mskprint(1, "$4done\n") : mskprint(1, "$3error\n");
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
     else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
@@ -196,9 +198,14 @@ void shell_command(char command[]) {
         mskprint(3, "$4address: $1", str, "\n");
     }
 
-    else if (strcmp(prefix, "end") == 0) {
+    else if (strcmp(prefix, "stop") == 0) {
         rainbow_print("Stopping the CPU. Bye!\n");
         sys_shutdown();
+    }
+
+    else if (strcmp(prefix, "free") == 0) {
+        if (free(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
+        else mskprint(2, "$4free: $3", "FAIL\n");
     }
 
     else if (strcmp(prefix, "info") == 0) {
