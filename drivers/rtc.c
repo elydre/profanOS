@@ -1,11 +1,8 @@
-#include "rtc.h"
-#include "../cpu/ports.h"
-#include "../libc/string.h"
-#include "screen.h"
+#include <ports.h>
+#include <rtc.h>
 
 
 int bcd;
-
 
 unsigned char read_register(unsigned char reg) {
     outportb(0x70, reg);

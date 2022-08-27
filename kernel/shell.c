@@ -1,17 +1,17 @@
-#include "../drivers/screen.h"
-#include "../drivers/keyboard.h"
-#include "../drivers/ata/ata.h"
-#include "../drivers/rtc.h"
-#include "../libc/function.h"
-#include "../libc/skprint.h"
-#include "../libc/string.h"
-#include "../libc/system.h"
-#include "../libc/time.h"
-#include "../libc/mem.h"
-#include "../cpu/timer.h"
+#include <keyboard.h>
+#include <function.h>
+#include <skprint.h>
+#include <screen.h>
 #include "kernel.h"
-#include "shell.h"
-#include "task.h"
+#include <string.h>
+#include <system.h>
+#include <timer.h>
+#include <shell.h>
+#include <time.h>
+#include <task.h>
+#include <mem.h>
+#include <rtc.h>
+#include <ata.h>
 
 #define SC_MAX 57
 

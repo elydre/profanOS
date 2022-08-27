@@ -1,5 +1,5 @@
-#include "system.h"
-#include "../cpu/ports.h"
+#include <system.h>
+#include <ports.h>
 
 
 void sys_reboot() {

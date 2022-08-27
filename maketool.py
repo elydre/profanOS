@@ -2,10 +2,11 @@ import sys, os
 
 # SETUP
 
-DIRECTORY = ["kernel", "drivers", "drivers/ata", "cpu", "libc"]
+DIRECTORY = ["kernel", "drivers", "cpu", "libc"]
+INCLUDE_DIR = "include"
 
 CC = "gcc"
-CFLAGS = "-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie"
+CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I./{INCLUDE_DIR}"
 
 OUT_DIR = "out"
 
@@ -53,6 +54,9 @@ def gen_need_dict():
             out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])
         except FileNotFoundError:
             cprint(COLOR_INFO, f"{dir} directory not found")
+    
+    try: need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
+    except FileNotFoundError: cprint(COLOR_INFO, f"{dir} directory not found")
 
     for file in need["h"]:
         if file1_newer(file, "profanOS.img"):

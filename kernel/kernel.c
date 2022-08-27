@@ -1,12 +1,13 @@
-#include "../drivers/screen.h"
-#include "../drivers/keyboard.h"
-#include "../drivers/rtc.h"
-#include "../libc/string.h"
-#include "../libc/time.h"
-#include "../cpu/isr.h"
+#include <keyboard.h>
+#include <screen.h>
+#include <string.h>
 #include "kernel.h"
-#include "shell.h"
-#include "task.h"
+#include <shell.h>
+#include <time.h>
+#include <task.h>
+#include <rtc.h>
+#include <isr.h>
+
 #include <stdint.h>
 
 #define BACKSPACE 14

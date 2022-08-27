@@ -1,5 +1,7 @@
-#include "skprint.h"
-#include "string.h"
+#include <skprint.h>
+#include <string.h>
+#include <screen.h>
+
 #include <stdarg.h>
 
 int clean_buffer(char *buffer, int size) {

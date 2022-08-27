@@ -1,8 +1,8 @@
-#include "task.h"
-#include "../drivers/screen.h"
-#include "../libc/mem.h"
-#include "../libc/string.h"
-#include "../libc/skprint.h"
+#include <skprint.h>
+#include <screen.h>
+#include <string.h>
+#include <task.h>
+#include <mem.h>
 
 #define TASK_MAX 5
 
