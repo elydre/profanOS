@@ -160,7 +160,7 @@ void usage() {
     }
     for (int i = 0; i < 5; i++) {
         if (refresh_time[i] < 10) {
-            int_to_ascii(refresh_time[i], tmp);
+            hex_to_ascii(refresh_time[i], tmp);
             ckprint(tmp, c_green);
         } else {
             ckprint("+", c_green);
@@ -177,6 +177,7 @@ void shell_command(char command[]) {
     str_end_split(suffix, ' ');
 
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
+    else if (strcmp(prefix, "echo") == 0) mskprint(3, "$4", suffix, "\n");
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
     else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
@@ -188,8 +189,10 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
     else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
-    else if (strcmp(prefix, "echo") == 0) {
-        mskprint(3, "$4", suffix, "\n");
+    else if (strcmp(prefix, "alloc") == 0) {
+        char str[10];
+        int_to_ascii(alloc(ascii_to_int(suffix)), str);
+        mskprint(3, "$4address: $1", str, "\n");
     }
 
     else if (strcmp(prefix, "end") == 0) {

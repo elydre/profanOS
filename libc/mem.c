@@ -20,10 +20,10 @@ void memory_set(uint8_t *dest, uint8_t val, uint32_t len) {
 // https://github.com/elydre/elydre/blob/main/projet/profan-tools/b3.py
 
 #define PART_SIZE 0x1000  // 4Ko
-#define IMM_COUNT 51      // can save 4080Ko
+#define IMM_COUNT 54      // can save 4104Ko
 #define BASE_ADDR 0x20000
 
-static uint8_t MLIST[IMM_COUNT];
+static int MLIST[IMM_COUNT];
 
 int get_state(int imm, int index) {
     int last = -1;
@@ -44,10 +44,11 @@ int set_state(int imm, int index, int new) {
 }
 
 int alloc(int size) {
+    char debug[10];
     int required_part = get_required_part(size);
     int suite = 0, num, debut, imm_debut, val;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 19; i++) {
             num = get_state(MLIST[mi], i);
             if (num == 0) suite += 1;
             else suite = 0;
@@ -56,18 +57,35 @@ int alloc(int size) {
             debut = i - required_part + 1;
 
             if (debut < 0) {
-                imm_debut = (-debut) / 20 + 1;
-                debut = 20 * imm_debut + debut;
+                imm_debut = (-debut) / 19 + 1;
+                debut = 19 * imm_debut + debut;
                 imm_debut = mi - imm_debut;
             } else {
                 imm_debut = mi;
             }
 
             for (int k = debut; k < debut + required_part; k++) {
-                (k == debut) ? val = 1 : 2;
-                MLIST[imm_debut + k / 20] = set_state(MLIST[imm_debut + k / 20], k % 20, val);
-            return (imm_debut * 20 + debut) * PART_SIZE + BASE_ADDR;
+                if (k == debut) val = 1;
+                else val = 2;
+
+                int_to_ascii(val, debug);
+                kprint(debug);
+                kprint(" ");
+                int_to_ascii(imm_debut + k / 19, debug);
+                kprint(debug);
+                kprint(" ");
+                int_to_ascii(k % 19, debug);
+                kprint(debug);
+                kprint(" ");
+
+                MLIST[imm_debut + k / 19] = set_state(MLIST[imm_debut + k / 19], k % 19, val);
+
+                int_to_ascii(get_state(MLIST[imm_debut + k / 19], k % 19), debug);
+                kprint(debug);
+                kprint("\n");
+
             }
+            return (imm_debut * 19 + debut) * PART_SIZE + BASE_ADDR;
         }
     }
     return -1;
@@ -79,7 +97,7 @@ void memory_print() {
     for (int mi = 0; mi < IMM_COUNT; mi++) {
         if (mi % 3 == 0) kprint("\n  ");
         kprint("    ");
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 19; i++) {
             val = get_state(MLIST[mi], i);
             if (val == 0) kprint("0");
             if (val == 1) color = ((i + mi) % 6 + 9) * 16;
