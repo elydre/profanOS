@@ -1,4 +1,5 @@
 #include <function.h>
+#include <skprint.h>
 #include <string.h>
 #include <screen.h>
 #include <mem.h>
@@ -44,12 +45,14 @@ int set_state(int imm, int index, int new) {
 
 int alloc(int size) {
     int required_part = get_required_part(size);
-    int suite, num, debut, imm_debut, val;
+    int suite = 0, num, debut, imm_debut, val;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
         for (int i = 0; i < 20; i++) {
             num = get_state(MLIST[mi], i);
-            (num == 0) ? suite += 1 : 0;
-            if (suite != required_part) continue;
+            if (num == 0) suite += 1;
+            else suite = 0;
+
+            if (!(suite == required_part)) continue;
             debut = i - required_part + 1;
 
             if (debut < 0) {
