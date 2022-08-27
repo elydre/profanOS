@@ -1,4 +1,4 @@
-#include <idt.h>
+#include <cpu/idt.h>
 #include <type.h>
 
 idt_gate_t idt[IDT_ENTRIES];

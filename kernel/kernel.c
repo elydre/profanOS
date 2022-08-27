@@ -1,12 +1,12 @@
-#include <keyboard.h>
+#include <driver/keyboard.h>
+#include <kernel/shell.h>
+#include <driver/rtc.h>
+#include <cpu/isr.h>
 #include <screen.h>
 #include <string.h>
 #include "kernel.h"
-#include <shell.h>
 #include <time.h>
 #include <task.h>
-#include <rtc.h>
-#include <isr.h>
 
 #include <stdint.h>
 

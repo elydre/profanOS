@@ -1,10 +1,10 @@
 #include "../kernel/kernel.h"
+#include <driver/keyboard.h>
 #include <function.h>
-#include <keyboard.h>
+#include <cpu/isr.h>
 #include <screen.h>
 #include <string.h>
 #include <ports.h>
-#include <isr.h>
 
 #include <stdint.h>
 
