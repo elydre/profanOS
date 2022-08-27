@@ -74,6 +74,8 @@ void memory_print() {
     int color, val;
     char nb[2];
     for (int mi = 0; mi < IMM_COUNT; mi++) {
+        if (mi % 3 == 0) kprint("\n  ");
+        kprint("    ");
         for (int i = 0; i < 20; i++) {
             val = get_state(MLIST[mi], i);
             if (val == 0) kprint("0");
@@ -82,8 +84,7 @@ void memory_print() {
                 int_to_ascii(val, nb);
                 ckprint(nb, color);
             }
-        kprint("   ");
-        if (mi % 3 == 2) kprint("\n");
         }
     }
+    kprint("\n");
 }
