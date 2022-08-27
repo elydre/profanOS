@@ -208,10 +208,11 @@ void shell_command(char command[]) {
         mskprint(3, "$4ticks:      $1", str, "\n");
         int_to_ascii(gen_unix_time() - get_boot_time(), str);
         mskprint(3, "$4on time:    $1", str, "s\n");
-        int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick()/50, str);
+        int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick() / 50, str);
         mskprint(3, "$4work time:  $1", str, "s\n\n");
-        
-        // TODO: memory usage
+
+        int_to_ascii(100 * get_memory_usage() / get_usable_memory(), str);
+        mskprint(3, "$4used mem:   $1", str, "%\n\n");
 
         task_printer();
     }

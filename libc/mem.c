@@ -67,23 +67,7 @@ int alloc(int size) {
             for (int k = debut; k < debut + required_part; k++) {
                 if (k == debut) val = 1;
                 else val = 2;
-
-                int_to_ascii(val, debug);
-                kprint(debug);
-                kprint(" ");
-                int_to_ascii(imm_debut + k / 19, debug);
-                kprint(debug);
-                kprint(" ");
-                int_to_ascii(k % 19, debug);
-                kprint(debug);
-                kprint(" ");
-
                 MLIST[imm_debut + k / 19] = set_state(MLIST[imm_debut + k / 19], k % 19, val);
-
-                int_to_ascii(get_state(MLIST[imm_debut + k / 19], k % 19), debug);
-                kprint(debug);
-                kprint("\n");
-
             }
             return (imm_debut * 19 + debut) * PART_SIZE + BASE_ADDR;
         }
@@ -108,4 +92,18 @@ void memory_print() {
         }
     }
     kprint("\n");
+}
+
+int get_memory_usage() {
+    int used = 0;
+    for (int mi = 0; mi < IMM_COUNT; mi++) {
+        for (int i = 0; i < 19; i++) {
+            if (get_state(MLIST[mi], i) > 0) used++;
+        }
+    }
+    return used * (PART_SIZE / 1024);
+}
+
+int get_usable_memory() {
+    return IMM_COUNT * 19 * (PART_SIZE / 1024);
 }
