@@ -46,19 +46,22 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 | Command | Description                     |
 |---------|---------------------------------|
-| CLEAR   | clear the screen                |
-| ECHO    | print the arguments             |
-| END     | shutdown the system             |
-| HELP    | show this help                  |
-| INFO    | show time, task & page info     |
-| REBOOT  | reboot the system               |
-| SC      | show the scancodes              |
-| SLEEP   | sleep for a given time          |
-| SS      | show int32 in the LBA *suffix*  |
-| TD      | test the disk                   |
-| USG     | show the usage of cpu           |
-| VER     | display the version             |
-| YIELD   | yield to pid *suffix*           |
+| alloc   | allocate *suffix* octets        |
+| clear   | clear the screen                |
+| echo    | print the arguments             |
+| free    | free *suffix* address           |
+| help    | show this help                  |
+| info    | show time, task & page info     |
+| mem     | show MLIST with colors          |
+| reboot  | reboot the system               |
+| sc      | show the scancodes              |
+| sleep   | sleep for a given time          |
+| ss      | show int32 in the LBA *suffix*  |
+| stop    | shutdown the system             |
+| td      | test the disk                   |
+| usg     | show the usage of cpu           |
+| ver     | display the version             |
+| yield   | yield to pid *suffix*           |
 
 ### Keyboard
 

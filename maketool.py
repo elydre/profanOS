@@ -2,13 +2,15 @@ import sys, os
 
 # SETUP
 
-DIRECTORY = ["kernel", "drivers", "cpu", "libc"]
+C_DIRECTORY = ["kernel", "drivers", "cpu", "libc"]
+
 INCLUDE_DIR = "include"
+INCLUDE_SUB = [".", "kernel", "drivers", "cpu"]
+
+OUT_DIR = "out"
 
 CC = "gcc"
 CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I./{INCLUDE_DIR}"
-
-OUT_DIR = "out"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
@@ -45,7 +47,7 @@ def print_and_exec(command):
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
-    for dir in DIRECTORY:
+    for dir in C_DIRECTORY:
         try:
             need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
             out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
@@ -54,9 +56,11 @@ def gen_need_dict():
             out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])
         except FileNotFoundError:
             cprint(COLOR_INFO, f"{dir} directory not found")
-    
-    try: need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
-    except FileNotFoundError: cprint(COLOR_INFO, f"{dir} directory not found")
+
+    for dir in INCLUDE_SUB:
+        fulldir = f"./{INCLUDE_DIR}/{dir}"
+        try: need["h"].extend([f"{fulldir}/{file}" for file in file_in_dir(fulldir, ".h")])
+        except FileNotFoundError: cprint(COLOR_INFO, f"{fulldir} directory not found")
 
     for file in need["h"]:
         if file1_newer(file, "profanOS.img"):

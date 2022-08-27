@@ -1,8 +1,8 @@
+#include <cpu/timer.h>
 #include <function.h>
-#include <timer.h>
+#include <cpu/isr.h>
 #include <ports.h>
 #include <time.h>
-#include <isr.h>
 
 uint32_t tick = 0;
 int last_refresh;

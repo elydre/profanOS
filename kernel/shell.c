@@ -1,17 +1,17 @@
-#include <keyboard.h>
+#include <driver/keyboard.h>
+#include <kernel/shell.h>
+#include <driver/rtc.h>
+#include <driver/ata.h>
+#include <cpu/timer.h>
 #include <function.h>
 #include <skprint.h>
 #include <screen.h>
 #include "kernel.h"
 #include <string.h>
 #include <system.h>
-#include <timer.h>
-#include <shell.h>
 #include <time.h>
 #include <task.h>
 #include <mem.h>
-#include <rtc.h>
-#include <ata.h>
 
 #define SC_MAX 57
 
@@ -86,24 +86,20 @@ void show_disk_LBA(char suffix[]) {
     }
 }
 
-void page_info(){
-    uint32_t page = alloc_page(1);
-    char tmp[11];
-    hex_to_ascii(page, tmp);
-    mskprint(3, "$4\npage adr:   $1", tmp, "\n");
-}
-
 void shell_help(char suffix[]) {
     char *help[] = {
+        "alloc   - allocate *suffix* octets",
         "clear   - clear the screen",
         "echo    - print the arguments",
-        "end     - shutdown the system",
+        "free    - free *suffix* address",
         "help    - show this help",
-        "info    - show time, task & page info",	
+        "info    - show time, task & page info",
+        "mem     - show MLIST with colors",
         "reboot  - reboot the system",
         "sc      - show the scancodes",
         "sleep   - sleep for a given time",
         "ss      - show int32 in the LBA *suffix*",
+        "stop    - shutdown the system",
         "td      - test the disk",
         "usg     - show the usage of cpu",
         "ver     - display the version",
@@ -167,7 +163,7 @@ void usage() {
     }
     for (int i = 0; i < 5; i++) {
         if (refresh_time[i] < 10) {
-            int_to_ascii(refresh_time[i], tmp);
+            hex_to_ascii(refresh_time[i], tmp);
             ckprint(tmp, c_green);
         } else {
             ckprint("+", c_green);
@@ -184,7 +180,9 @@ void shell_command(char command[]) {
     str_end_split(suffix, ' ');
 
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
+    else if (strcmp(prefix, "echo") == 0)   mskprint(3, "$4", suffix, "\n");
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
+    else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
     else if (strcmp(prefix, "sleep") == 0)  sleep(ascii_to_int(suffix));
@@ -194,13 +192,20 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
     else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
-    else if (strcmp(prefix, "echo") == 0) {
-        mskprint(3, "$4", suffix, "\n");
+    else if (strcmp(prefix, "alloc") == 0) {
+        char str[10];
+        int_to_ascii(alloc(ascii_to_int(suffix)), str);
+        mskprint(3, "$4address: $1", str, "\n");
     }
 
-    else if (strcmp(prefix, "end") == 0) {
+    else if (strcmp(prefix, "stop") == 0) {
         rainbow_print("Stopping the CPU. Bye!\n");
         sys_shutdown();
+    }
+
+    else if (strcmp(prefix, "free") == 0) {
+        if (free(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
+        else mskprint(2, "$4free: $3", "FAIL\n");
     }
 
     else if (strcmp(prefix, "info") == 0) {
@@ -211,11 +216,13 @@ void shell_command(char command[]) {
         mskprint(3, "$4ticks:      $1", str, "\n");
         int_to_ascii(gen_unix_time() - get_boot_time(), str);
         mskprint(3, "$4on time:    $1", str, "s\n");
-        int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick()/50, str);
+        int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick() / 50, str);
         mskprint(3, "$4work time:  $1", str, "s\n\n");
 
+        int_to_ascii(100 * get_memory_usage() / get_usable_memory(), str);
+        mskprint(3, "$4used mem:   $1", str, "%\n\n");
+
         task_printer();
-        page_info();
     }
 
     else if (strcmp(prefix, "") != 0) {
