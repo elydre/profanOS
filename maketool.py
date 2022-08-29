@@ -5,7 +5,7 @@ import sys, os
 C_DIRECTORY = ["kernel", "drivers", "cpu", "libc"]
 
 INCLUDE_DIR = "include"
-INCLUDE_SUB = [".", "kernel", "drivers", "cpu"]
+INCLUDE_SUB = [".", "kernel", "driver", "cpu"]
 
 OUT_DIR = "out"
 
@@ -55,12 +55,12 @@ def gen_need_dict():
             need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
             out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])
         except FileNotFoundError:
-            cprint(COLOR_INFO, f"{dir} directory not found")
+            cprint(COLOR_EROR, f"{dir} directory not found")
 
     for dir in INCLUDE_SUB:
         fulldir = f"./{INCLUDE_DIR}/{dir}"
         try: need["h"].extend([f"{fulldir}/{file}" for file in file_in_dir(fulldir, ".h")])
-        except FileNotFoundError: cprint(COLOR_INFO, f"{fulldir} directory not found")
+        except FileNotFoundError: cprint(COLOR_EROR, f"{fulldir} directory not found")
 
     for file in need["h"]:
         if file1_newer(file, "profanOS.img"):
