@@ -74,7 +74,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 | Keys | Light Colors | Keys | Dark Colors  |
 |------|--------------|------|--------------|
-| `$0` | blue         | `$8` | dblue        |
+| `$0` | blue         | `$8` | dark blue    |
 | `$1` | green        | `$9` | dark green   |
 | `$2` | cyan         | `$A` | dark cyan    |
 | `$3` | red          | `$B` | dark red     |
