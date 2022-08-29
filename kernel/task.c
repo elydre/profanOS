@@ -13,7 +13,7 @@ static void other_main() {
     rainbow_print("Hello multitasking world!\n");
     yield(0);
     rainbow_print("Hello again!\n");
-    kill_task(0);
+    kill_and_yield(0);
 }
 
 void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
@@ -116,10 +116,11 @@ void destroy_killed_tasks(int nb_alive) {
     char str[2];
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead == 1) {
-            // free_page((uint32_t*)tasks[i].regs.esp);    TODO after implementing good mm
+            mskprint(3,"$4Task$1 ", str, " $4killed, free: ");
+            if (free(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
+            else mskprint(1, "$3fail :(\n");
             tasks[i].isdead = 2;
             int_to_ascii(tasks[i].pid, str);
-            mskprint(3,"$4Task$1 ", str, " $4killed\n");
         }
     }
 }
@@ -150,7 +151,7 @@ void yield(int target_pid) {
     destroy_killed_tasks(nb_alive);
 }
 
-void kill_task(int target_pid) {
+void kill_and_yield(int target_pid) {
     ckprint("Task kill asked\n", c_dgrey);
     tasks[0].isdead = 1;
     yield(target_pid);

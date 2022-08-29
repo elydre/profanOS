@@ -15,7 +15,7 @@
 
 #define SC_MAX 57
 
-void shell_omp(){
+void shell_omp() {
     kprint("profanOS-> ");
 }
 
