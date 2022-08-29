@@ -44,7 +44,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ### Command line
 
-| Command | Description                     |
+| command | description                     |
 |---------|---------------------------------|
 | alloc   | allocate *suffix* octets        |
 | clear   | clear the screen                |
@@ -65,14 +65,14 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ### Keyboard
 
-| Key   | Function               |
+| key   | function               |
 |-------|------------------------|
 | lshft | maj (hold)             |
 | rshft | paste the last command |
 
 ### Smart print color
 
-| Keys | Light Colors | Keys | Dark Colors  |
+| keys | light colors | keys | dark color   |
 |------|--------------|------|--------------|
 | `$0` | blue         | `$8` | dark blue    |
 | `$1` | green        | `$9` | dark green   |
@@ -85,7 +85,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ### Interrupts
 
-|  ID  | Description                   |
+|  ID  | description                   |
 |------|-------------------------------|
 |  00  | Division By Zero              |
 |  01  | Debug                         |
