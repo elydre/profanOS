@@ -2,12 +2,14 @@
 bin_image:
 	python3 maketool.py bin_image
 
+regular: bin_image
+	mkdir -p out
+	mv profanOS.img out/profanOS-irregular.img
+	dd if=/dev/zero of=profanOS.img bs=1k count=1440
+	dd if=out/profanOS-irregular.img of=profanOS.img conv=notrunc
+
 info:
 	@python3 maketool.py help
-
-install:
-	sudo apt-get update
-	sudo apt-get install -y gcc nasm make qemu-system-i386 python3
 
 hdd:
 	@python3 maketool.py hddf
