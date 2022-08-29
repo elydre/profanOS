@@ -72,23 +72,16 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ### Smart print color
 
-| Key  | Color name     |
-|------|----------------|
-| `$0` | blue           |
-| `$1` | green          |
-| `$2` | cyan           |
-| `$3` | red            |
-| `$4` | magenta        |
-| `$5` | yellow         |
-| `$6` | grey           |
-| `$7` | white          |
-| `$8` | dblue          |
-| `$9` | dark green     |
-| `$A` | dark cyan      |
-| `$B` | dark red       |
-| `$C` | dark magenta   |
-| `$D` | dark yellow    |
-| `$E` | dark grey      |
+| Keys | Light Colors | Keys | Dark Colors  |
+|------|--------------|------|--------------|
+| `$0` | blue         | `$8` | dblue        |
+| `$1` | green        | `$9` | dark green   |
+| `$2` | cyan         | `$A` | dark cyan    |
+| `$3` | red          | `$B` | dark red     |
+| `$4` | magenta      | `$C` | dark magenta |
+| `$5` | yellow       | `$D` | dark yellow  |
+| `$6` | grey         | `$E` | dark grey    |
+| `$7` | white        | `$F` | black        |
 
 ### Interrupts
 
@@ -124,10 +117,10 @@ Contact us on [discord](https://pf4.ddns.net/discord)
 ## source and acknowledgment
 
 * [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
+* [fabian](https://github.com/copy/v86) for the v86 online emulator and floppy build
 * [framindmap](https://framindmap.org) for the mindmap of the todo list
 * [yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 * [szhou42](https://github.com/szhou42/osdev) for the ata driver
 * [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
-* [fabian](https://github.com/copy/v86) for the v86 online emulator
 
 *be careful with our friend 55*
