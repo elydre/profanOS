@@ -4,7 +4,7 @@
 #include <ports.h>
 #include <time.h>
 
-uint32_t tick;
+uint32_t tick = 0;
 int last_refresh;
 int refresh_time[5];
 
@@ -32,7 +32,7 @@ void timer_get_refresh_time(int target[5]) {
 }
 
 void init_timer(uint32_t freq) {
-    tick = 0;
+    if (tick > 1000) tick = 0;
     /* Install the function we just wrote */
     register_interrupt_handler(IRQ0, timer_callback);
 
