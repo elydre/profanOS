@@ -63,13 +63,6 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 | ver     | display the version             |
 | yield   | yield to pid *suffix*           |
 
-### Keyboard
-
-| key   | function               |
-|-------|------------------------|
-| lshft | maj (hold)             |
-| rshft | paste the last command |
-
 ### Smart print color
 
 | keys | light colors | keys | dark color   |

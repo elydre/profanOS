@@ -14,7 +14,9 @@
 #define ENTER 28
 #define LSHIFT_IN 42
 #define LSHIFT_OUT 170
-#define RSHIFT 54
+#define RSHIFT_IN 54
+#define RSHIFT_OUT 182
+#define LAST_CMD 72
 
 #define SC_MAX 57
 
@@ -43,11 +45,10 @@ void kernel_main() {
 void shell_mod(char letter, int scancode) {
     char str[2] = {letter, '\0'};
 
-    if (scancode == LSHIFT_IN) shift = 1;
-    else if (scancode == LSHIFT_OUT) shift = 0;
-    else if (scancode > SC_MAX) return;
+    if (scancode == LSHIFT_IN || scancode == RSHIFT_IN) shift = 1;
+    else if (scancode == LSHIFT_OUT || scancode == RSHIFT_OUT) shift = 0;
 
-    else if (scancode == RSHIFT) {
+    else if (scancode == LAST_CMD) {
         for (int i = 0; last_command[i] != '\0'; i++) {
             if (strlen(key_buffer) > 250) break;
             append(key_buffer, last_command[i]);
@@ -70,6 +71,7 @@ void shell_mod(char letter, int scancode) {
         key_buffer[0] = '\0';
     }
 
+    else if (scancode > SC_MAX) return;
     else if (letter != '?') {
         if (strlen(key_buffer) > 250) return;
         append(key_buffer, letter);

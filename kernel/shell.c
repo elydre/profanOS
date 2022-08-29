@@ -162,11 +162,11 @@ void usage() {
         kprint("\n ");
     }
     for (int i = 0; i < 5; i++) {
-        if (refresh_time[i] < 10) {
-            hex_to_ascii(refresh_time[i], tmp);
+        if (refresh_time[i] < 10 && refresh_time[i] >= 0) {
+            int_to_ascii(refresh_time[i], tmp);
             ckprint(tmp, c_green);
         } else {
-            ckprint("+", c_green);
+            ckprint("#", c_green);
         }
     }
     kprint("\n");
