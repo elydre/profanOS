@@ -173,7 +173,8 @@ void usage() {
 }
 
 void shell_command(char command[]) {
-    char prefix[strlen(command)], suffix[strlen(command)];
+    char *prefix = malloc(strlen(command)); // size of char is 1 octet
+    char *suffix = malloc(strlen(command));
     strcpy(prefix, command);
     strcpy(suffix, command);
     str_start_split(prefix, ' ');
@@ -235,5 +236,7 @@ void shell_command(char command[]) {
         strcmp(prefix, "sc")
     != 0) { kprint("\n"); }
 
+    free((int) prefix);
+    free((int) suffix);
     shell_omp();
 }
