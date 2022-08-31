@@ -3,5 +3,6 @@
 
 void skprint(char message[]);
 void mskprint(int nb_args, ...);
+void fskprint(char format[], ...);
 
 #endif

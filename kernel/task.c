@@ -29,9 +29,7 @@ void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, 
     task->regs.esp = (uint32_t) alloc(0x1000);
     task->pid = pid;
     task->isdead = 0;
-    char str[10];
-    int_to_ascii(task->pid, str);
-    mskprint(3, "Task created $1", str, "\n");
+    fskprint("Task created $1%d\n", task->pid);
 }
 
 void init_tasking() {
@@ -98,29 +96,19 @@ void powerfull_task(void (*main)(), int pid) {
 }
 
 void task_printer() {
-    char str[10];
     int nb_alive = refresh_alive();
-    int_to_ascii(nb_alive, str);
-    mskprint(3, "$4task alive: $1", str, "\n");
-    int_to_ascii(TASK_MAX, str);
-    mskprint(3, "$4task max:   $1", str, "\n$4task list:  $7[");
-    for (int i = 0; i < nb_alive; i++) {
-        int_to_ascii(tasks[i].pid, str);
-        ckprint(str, c_green);
-        if (i != nb_alive - 1)  kprint(", ");
-    }
-    kprint("]\n");
+    fskprint("$4task alive: $1%d\n$4task max:   $1%d\n$4task list:  $7[", nb_alive, TASK_MAX);
+    for (int i = 0; i < nb_alive - 1; i++) fskprint("$1%d$7, ", tasks[i].pid);
+    fskprint("$1%d$7]\n", tasks[nb_alive - 1].pid);
 }
 
 void destroy_killed_tasks(int nb_alive) {
-    char str[2];
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead == 1) {
-            mskprint(3,"$4Task$1 ", str, " $4killed, free: ");
+            fskprint("$4Task $1%d$4 killed, free: ", tasks[i].pid);
             if (free(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
             else mskprint(1, "$3fail :(\n");
             tasks[i].isdead = 2;
-            int_to_ascii(tasks[i].pid, str);
         }
     }
 }

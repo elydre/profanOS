@@ -1,6 +1,7 @@
 #include <skprint.h>
 #include <string.h>
 #include <screen.h>
+#include <mem.h>
 
 #include <stdarg.h>
 
@@ -63,5 +64,55 @@ void mskprint(int nb_args, ...) {
         char *arg = va_arg(args, char*);
         last_color = skprint_function(arg, last_color);
     }
+    va_end(args);
+}
+
+void fskprint(char format[], ...) {
+    va_list args;
+    va_start(args, format);
+    char *buffer = malloc(0x1000);
+    clean_buffer(buffer, 0x1000);
+    ScreenColor color = c_white;
+
+    for (int i = 0; i <= strlen(format); i++) {
+        if (i == strlen(format)) {
+            skprint_function(buffer, color);
+            continue;
+        }
+        if (format[i] == '%') {
+            color = skprint_function(buffer, color);
+            clean_buffer(buffer, 0x1000);
+            i++;
+            if (format[i] == 's') {
+                char *arg = va_arg(args, char*);
+                for (int j = 0; j < strlen(arg); j++) {
+                    buffer[j] = arg[j];
+                }
+                buffer[strlen(arg)] = '\0';
+                color = skprint_function(buffer, color);
+            }
+            else if (format[i] == 'd') {
+                int arg = va_arg(args, int);
+                int_to_ascii(arg, buffer);
+                color = skprint_function(buffer, color);
+            }
+            else if (format[i] == 'x') {
+                int arg = va_arg(args, int);
+                hex_to_ascii(arg, buffer);
+                color = skprint_function(buffer, color);
+            }
+            else if (format[i] == 'c') {
+                char arg = va_arg(args, int);
+                buffer[0] = arg;
+                buffer[1] = '\0';
+                color = skprint_function(buffer, color);
+            }
+            else i--;
+            clean_buffer(buffer, 0x1000);
+            continue;
+        }
+        append(buffer, format[i]);
+    }
+    free((int) buffer);
     va_end(args);
 }

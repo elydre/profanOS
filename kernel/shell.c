@@ -22,7 +22,6 @@ void shell_omp() {
 void disk_test() {
     uint32_t inbytes[128], outbytes[128];
     int sum = 0;
-    char tmp[3];
 
     ckprint("writing to disk\n", c_magenta);
     
@@ -35,8 +34,7 @@ void disk_test() {
 
     for (int i = 0; i < 10; i++) {
         sum += outbytes[i];
-        int_to_ascii(outbytes[i], tmp);
-        mskprint(3, "$1", tmp, " ");
+        fskprint("$1%d ", outbytes[i]);
     }
 
     if (sum == 45) ckprint("\n\nsum == 45, it works!\n", c_magenta);
@@ -47,12 +45,10 @@ void print_scancodes() {
     clear_screen();
     rainbow_print("enter scancode press ESC to exit\n");
     int last_sc = 0;
-    char str[10];
     while (1) {
         while (last_sc == get_last_scancode());
         last_sc = get_last_scancode();
-        int_to_ascii(last_sc, str);
-        mskprint(2, "$4\nscancode:   $1", str);
+        fskprint("$4\nscancode:   $1%d", last_sc);
 
         if (last_sc == 1) {
             // scancode 1 is the escape key
@@ -65,11 +61,8 @@ void print_scancodes() {
             continue;
         }
 
-        str[0] = scancode_to_char(last_sc, 0);
-        str[1] = '\0';
-        mskprint(2, "$4\nletter min: $1", str);
-        str[0] = scancode_to_char(last_sc, 1);
-        mskprint(3, "$4\nletter maj: $1", str, "\n");
+        fskprint("$4\nletter min: $1%c", scancode_to_char(last_sc, 0));
+        fskprint("$4\nletter maj: $1%c\n", scancode_to_char(last_sc, 1));
     }
 }
 
@@ -148,7 +141,6 @@ void print_time() {
 }
 
 void usage() {
-    char tmp[2];
     int refresh_time[5], lvl[3] = {10, 5, 2};
     ScreenColor colors[3] = {c_dred, c_red, c_yellow};
     kprint(" ");
@@ -163,8 +155,7 @@ void usage() {
     }
     for (int i = 0; i < 5; i++) {
         if (refresh_time[i] < 10 && refresh_time[i] >= 0) {
-            int_to_ascii(refresh_time[i], tmp);
-            ckprint(tmp, c_green);
+            fskprint("$1%d", refresh_time[i]);
         } else {
             ckprint("#", c_green);
         }
@@ -194,9 +185,11 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
     else if (strcmp(prefix, "alloc") == 0) {
-        char str[10];
-        int_to_ascii(alloc(ascii_to_int(suffix)), str);
-        mskprint(3, "$4address: $1", str, "\n");
+        if (suffix[0] == 'a') fskprint("$3size is required\n");
+        else {
+            int addr = alloc(ascii_to_int(suffix));
+            fskprint("$4address: $1%x $4($1%d$4)\n", addr, addr);
+        }
     }
 
     else if (strcmp(prefix, "stop") == 0) {
@@ -211,18 +204,10 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "info") == 0) {
         print_time();
-
-        char str[10];
-        int_to_ascii(timer_get_tick(), str);
-        mskprint(3, "$4ticks:      $1", str, "\n");
-        int_to_ascii(gen_unix_time() - get_boot_time(), str);
-        mskprint(3, "$4on time:    $1", str, "s\n");
-        int_to_ascii(gen_unix_time() - get_boot_time() - timer_get_tick() / 50, str);
-        mskprint(3, "$4work time:  $1", str, "s\n\n");
-
-        int_to_ascii(100 * get_memory_usage() / get_usable_memory(), str);
-        mskprint(3, "$4used mem:   $1", str, "%\n\n");
-
+        fskprint("$4ticks:      $1%d\n", timer_get_tick());
+        fskprint("$4on time:    $1%ds\n", gen_unix_time() - get_boot_time());
+        fskprint("$4work time:  $1%ds\n\n", gen_unix_time() - get_boot_time() - timer_get_tick() / 50);
+        fskprint("$4used mem:   $1%d%c\n\n", 100 * get_memory_usage() / get_usable_memory(), '%');
         task_printer();
     }
 
