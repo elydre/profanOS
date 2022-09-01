@@ -106,7 +106,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 
-## source and acknowledgment
+## Source & Acknowledgment
 
 * [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
 * [fabian](https://github.com/copy/v86) for the v86 online emulator and floppy build
