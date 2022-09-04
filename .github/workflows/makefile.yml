@@ -25,7 +25,9 @@ jobs:
         make
         mv profanOS.img profanOS-nr.img
         
-        make regular
+        dd if=/dev/zero of=profanOS.img bs=1k count=1440
+	      dd if=profanOS-nr.img of=profanOS.img conv=notrunc
+
         cp profanOS.img profanOS-$(python3 profan_version.py).img
 
     - name: push img to github
