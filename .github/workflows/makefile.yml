@@ -19,13 +19,14 @@ jobs:
     - name: build img
       run: |
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/profan-tools/version.py
-        echo "PROFAN_IMG=profanOS-$(python3 version.py).img" >> $GITHUB_ENV
-        echo "PROFAN_VER=profanOS v$(python3 version.py)" >> $GITHUB_ENV
+        VERSION=$(python3 version.py)
+        echo "PROFAN_IMG=profanOS-$VERSION.img" >> $GITHUB_ENV
+        echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
         make
         mv profanOS.img profanOS-nr.img
         dd if=/dev/zero of=profanOS.img bs=1k count=1440
         dd if=profanOS-nr.img of=profanOS.img conv=notrunc
-        cp profanOS.img ${{ env.PROFAN_IMG }}
+        cp profanOS.img profanOS-$VERSION.img
 
     - name: push img to github
       uses: dmnemec/copy_file_to_another_repo_action@main
