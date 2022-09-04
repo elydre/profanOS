@@ -40,7 +40,6 @@ You can also download the build images from the repo [profanOS-build](https://gi
 or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
-
 ### Command line
 
 | command | description                     |
