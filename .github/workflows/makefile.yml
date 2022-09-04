@@ -18,10 +18,14 @@ jobs:
       
     - name: build img
       run: |
-        make regular
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/lite/profan_version.py
         echo "PROFAN_IMG=profanOS-$(python3 profan_version.py).img" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$(python3 profan_version.py)" >> $GITHUB_ENV
+        
+        make
+        mv profanOS.img profanOS-nr.img
+        
+        make regular
         cp profanOS.img profanOS-$(python3 profan_version.py).img
 
     - name: push img to github
