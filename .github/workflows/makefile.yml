@@ -18,7 +18,7 @@ jobs:
       
     - name: build img
       run: |
-        wget https://raw.githubusercontent.com/elydre/elydre/main/projet/profan-tools/version.py
+        wget https://raw.githubusercontent.com/elydre/elydre/main/projet/profan/version.py
         VERSION=$(python3 version.py)
         echo "PROFAN_IMG=profanOS-$VERSION.img" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
