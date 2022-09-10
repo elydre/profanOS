@@ -59,6 +59,27 @@ void write_sectors_ATA_PIO(uint32_t LBA, uint32_t bytes[]) {
 	}
 }
 
+uint32_t get_ATA_sectors_count() {
+	ATA_wait_BSY();
+	port_byte_out(0x1F6,0xE0 | ((0 >>24) & 0xF));
+	port_byte_out(0x1F2, 0);
+	port_byte_out(0x1F3, 0);
+	port_byte_out(0x1F4, 0);
+	port_byte_out(0x1F5, 0);
+	port_byte_out(0x1F7,0xEC); //Send the identify command
+
+	ATA_wait_BSY();
+	ATA_wait_DRQ();
+
+	uint16_t bytes[256];
+	for (int i = 0; i < 256; i++) {
+		bytes[i] = port_word_in(0x1F0);
+	}
+
+	uint32_t size = bytes[61] << 16 | bytes[60];
+	return size;
+}
+
 static void ATA_wait_BSY() {	//Wait for bsy to be 0
 	while (port_byte_in(0x1F7)&STATUS_BSY);
 }

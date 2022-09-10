@@ -203,11 +203,14 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "info") == 0) {
+        uint32_t sectors_count = get_ATA_sectors_count();
+
         print_time();
         fskprint("$4ticks:      $1%d\n", timer_get_tick());
         fskprint("$4on time:    $1%ds\n", gen_unix_time() - get_boot_time());
         fskprint("$4work time:  $1%ds\n\n", gen_unix_time() - get_boot_time() - timer_get_tick() / 50);
-        fskprint("$4used mem:   $1%d%c\n\n", 100 * get_memory_usage() / get_usable_memory(), '%');
+        fskprint("$4used mem:   $1%d%c\n", 100 * get_memory_usage() / get_usable_memory(), '%');
+        fskprint("$4disk size:  $1%d.%dMo\n\n", sectors_count / 2048, (sectors_count % 2048) / 20);
         task_printer();
     }
 
