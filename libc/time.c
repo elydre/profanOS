@@ -1,4 +1,5 @@
 #include <driver/rtc.h>
+#include <cpu/timer.h>
 #include <time.h>
 
 
@@ -40,4 +41,8 @@ int gen_unix_time() {
 void sleep(int seconds) {
     int start_time = gen_unix_time();
     while (gen_unix_time() - start_time < seconds);
+}
+
+void ms_sleep(uint32_t ms) {
+    timer_sleep(ms);
 }

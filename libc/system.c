@@ -13,3 +13,9 @@ void sys_reboot() {
 void sys_shutdown() {
     asm volatile("hlt");
 }
+
+void do_nothing() {
+    asm volatile("sti");
+    asm volatile("hlt");
+    asm volatile("cli");
+}

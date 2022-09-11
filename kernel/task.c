@@ -1,6 +1,5 @@
-#include <skprint.h>
-#include <screen.h>
 #include <string.h>
+#include <iolib.h>
 #include <task.h>
 #include <mem.h>
 
@@ -60,8 +59,6 @@ void init_tasking() {
     tasks[1] = otherTask;
 
     *task_count = 2;
-
-    kprint("Tasking initialized\n");
 }
 
 int refresh_alive() {
@@ -140,7 +137,7 @@ void yield(int target_pid) {
 }
 
 void kill_and_yield(int target_pid) {
-    ckprint("Task kill asked\n", c_dgrey);
+    fskprint("$ETask $6%d $Ekill asked\n", tasks[0].pid);
     tasks[0].isdead = 1;
     yield(target_pid);
 }

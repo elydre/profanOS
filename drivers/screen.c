@@ -1,16 +1,8 @@
-#include <screen.h>
+#include <driver/screen.h>
 #include <ports.h>
 #include <mem.h>
 
 #include <stdint.h>
-
-/* Declaration of private functions */
-int get_cursor_offset();
-void set_cursor_offset(int offset);
-int print_char(char c, int col, int row, char attr);
-int get_offset(int col, int row);
-int get_offset_row(int offset);
-int get_offset_col(int offset);
 
 /**********************************************************
  * Public Kernel API functions                            *
@@ -50,16 +42,6 @@ void ckprint(char *message, char color) {
     ckprint_at(message, -1, -1, color);
 }
 
-void rainbow_print(char *message) {
-    ScreenColor rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
-    int i = 0;
-
-    while (message[i] != 0) {
-        print_char(message[i], -1, -1, rainbow_colors[i % 6]);
-        i++;
-    }
-}
-
 void kprint_backspace() {
     int offset = get_cursor_offset()-2;
     int row = get_offset_row(offset);
@@ -67,20 +49,6 @@ void kprint_backspace() {
     print_char(0x08, col, row, c_white);
 }
 
-
-/**********************************************************
- * Private kernel functions                               *
- **********************************************************/
-
-
-/**
- * Innermost print function for our kernel, directly accesses the video memory 
- *
- * If 'col' and 'row' are negative, we will print at current cursor location
- * If 'attr' is zero it will use 'c_white on black' as default
- * Returns the offset of the next character
- * Sets the video cursor to the returned offset
- */
 
 int print_char(char c, int col, int row, char attr) {
     uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;

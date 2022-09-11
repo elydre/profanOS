@@ -1,6 +1,7 @@
 #include <cpu/timer.h>
 #include <function.h>
 #include <cpu/isr.h>
+#include <system.h>
 #include <ports.h>
 #include <time.h>
 
@@ -11,7 +12,7 @@ int refresh_time[5];
 static void timer_callback(registers_t *regs) {
     UNUSED(regs);
     tick++;
-    if (tick % 50 == 0) {
+    if (tick % 100 == 0) {
         int now = gen_unix_time();
         for (int i = 5; i > 0; i--) {
             refresh_time[i] = refresh_time[i-1];
@@ -28,6 +29,13 @@ uint32_t timer_get_tick() {
 void timer_get_refresh_time(int target[5]) {
     for (int i = 0; i < 5; i++) {
         target[i] = refresh_time[i];
+    }
+}
+
+void timer_sleep(uint32_t ms) {
+    uint32_t start_tick = timer_get_tick();
+    while (timer_get_tick() < start_tick + ms / 10) {
+        do_nothing();
     }
 }
 

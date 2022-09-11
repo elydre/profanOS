@@ -4,8 +4,8 @@
 #include <driver/ata.h>
 #include <cpu/timer.h>
 #include <function.h>
-#include <skprint.h>
-#include <screen.h>
+#include <iolib.h>
+#include <driver/screen.h>
 #include "kernel.h"
 #include <string.h>
 #include <system.h>
@@ -177,7 +177,7 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
-    else if (strcmp(prefix, "sleep") == 0)  sleep(ascii_to_int(suffix));
+    else if (strcmp(prefix, "sleep") == 0)  ms_sleep(ascii_to_int(suffix) * 1000);
     else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (strcmp(prefix, "td") == 0)     disk_test();
     else if (strcmp(prefix, "usg") == 0)    usage();
@@ -197,6 +197,12 @@ void shell_command(char command[]) {
         sys_shutdown();
     }
 
+    else if (strcmp(prefix, "input") == 0) {
+        char out[100];
+        input(out, 100, c_yellow);
+        fskprint("\n$4input: $1%s\n", out);
+    }
+
     else if (strcmp(prefix, "free") == 0) {
         if (free(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
         else mskprint(2, "$4free: $3", "FAIL\n");
@@ -208,7 +214,7 @@ void shell_command(char command[]) {
         print_time();
         fskprint("$4ticks:      $1%d\n", timer_get_tick());
         fskprint("$4on time:    $1%ds\n", gen_unix_time() - get_boot_time());
-        fskprint("$4work time:  $1%ds\n\n", gen_unix_time() - get_boot_time() - timer_get_tick() / 50);
+        fskprint("$4work time:  $1%ds\n\n", gen_unix_time() - get_boot_time() - timer_get_tick() / 100);
         fskprint("$4used mem:   $1%d%c\n", 100 * get_memory_usage() / get_usable_memory(), '%');
         fskprint("$4disk size:  $1%d.%dMo\n\n", sectors_count / 2048, (sectors_count % 2048) / 20);
         task_printer();

@@ -2,23 +2,26 @@
 #include <kernel/shell.h>
 #include <driver/rtc.h>
 #include <cpu/isr.h>
-#include <screen.h>
+#include <driver/screen.h>
 #include <string.h>
 #include "kernel.h"
+#include <iolib.h>
 #include <time.h>
 #include <task.h>
 
 #include <stdint.h>
 
-#define BACKSPACE 14
-#define ENTER 28
+#define SC_MAX 57
+
 #define LSHIFT_IN 42
 #define LSHIFT_OUT 170
 #define RSHIFT_IN 54
 #define RSHIFT_OUT 182
+
+#define ENTER 28
+#define BACKSPACE 14
 #define LAST_CMD 72
 
-#define SC_MAX 57
 
 static char key_buffer[256];
 static char last_command[256];
@@ -30,15 +33,14 @@ void kernel_main() {
     irq_install();
     kprint("ISR initialized\n");
     init_tasking();
+    kprint("Tasking initialized\n");
     rtc_install();
     kprint("RTC initialized\n");
 
     boot_time = gen_unix_time();
 
     rainbow_print("\n\nWelcome to profanOS!\n");
-    ckprint("version ", c_dmagenta);
-    ckprint(VERSION, c_magenta);
-    kprint("\n\n");
+    fskprint("$Cversion $4%s\n\n", VERSION);
     shell_omp();
 }
 

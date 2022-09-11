@@ -2,8 +2,8 @@
 #include <cpu/timer.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
-#include <screen.h>
-#include <string.h>
+#include <system.h>
+#include <iolib.h>
 #include <ports.h>
 
 isr_t interrupt_handlers[256];
@@ -78,11 +78,8 @@ void isr_install() {
 }
 
 void isr_handler(registers_t *r) {
-    ckprint("received interrupt: ", c_dred);
-    char s[3];
-    int_to_ascii(r->int_no, s);
-    ckprint(s, c_red);
-    asm("hlt");
+    fskprint("$Breceived interrupt: $3%d", r->int_no);
+    sys_shutdown();
 }
 
 void register_interrupt_handler(uint8_t n, isr_t handler) {
@@ -106,7 +103,7 @@ void irq_install() {
     /* Enable interruptions */
     asm volatile("sti");
     /* IRQ0: timer */
-    init_timer(50);
+    init_timer(100);
     /* IRQ1: keyboard */
     init_keyboard();
 }
