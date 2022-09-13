@@ -2,6 +2,7 @@
 #include <kernel/shell.h>
 #include <driver/rtc.h>
 #include <driver/ata.h>
+#include <filesystem.h>
 #include <cpu/timer.h>
 #include <function.h>
 #include <iolib.h>
@@ -195,6 +196,10 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "stop") == 0) {
         rainbow_print("Stopping the CPU. Bye!\n");
         sys_shutdown();
+    }
+
+    else if (strcmp(prefix, "test") == 0) {
+        fskprint("$i_creer_index_de_fichier: $1%d\n", i_creer_index_de_fichier(suffix));
     }
 
     else if (strcmp(prefix, "input") == 0) {
