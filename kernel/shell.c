@@ -199,7 +199,7 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "test") == 0) {
-        fskprint("$i_creer_index_de_fichier: $1%d\n", i_creer_index_de_fichier(suffix));
+        i_set_data_to_file("43434343434343434343", 20, 4);
     }
 
     else if (strcmp(prefix, "input") == 0) {

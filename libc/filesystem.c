@@ -3,6 +3,10 @@
 #include <string.h>
 #include <iolib.h>
 
+void init_filesystem() {
+    return;
+}
+
 uint32_t i_next_free(uint32_t rec) {
     uint32_t x = 0;
     uint32_t sector[128];
@@ -40,9 +44,8 @@ uint32_t i_creer_dossier(char nom[]) {
     return folder_id;
 }
 
-uint32_t i_add_pointeur_to_dossier() {
+void i_add_pointeur_to_dossier() {
     fskprint("$3ERROR ID 0 : SHOULD NOT BE REACHABLE");
-    return 0; 
 }
 
 uint32_t i_creer_index_de_fichier(char nom[]) {
@@ -77,3 +80,51 @@ uint32_t i_creer_index_de_fichier(char nom[]) {
     return location;
 }
 
+uint32_t i_free_file_and_get_next(uint32_t file_id) {
+    uint32_t sector[128];
+    for (int i = 0; i < 128; i++) sector[i] = 0;
+    read_sectors_ATA_PIO(file_id, sector);
+    uint32_t suite = sector[127];
+    for (int i = 0; i < 128; i++) sector[i] = 0;
+    write_sectors_ATA_PIO(file_id, sector);
+    return suite;
+}
+
+// TO FIX : Vide aussi a tord l'index de fichier voir "0x001"
+void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
+    uint32_t sector[128];
+    for (int i = 0; i < 128; i++) sector[i] = 0;
+    read_sectors_ATA_PIO(file_id, sector);
+    uint32_t file_index = sector[127];
+
+    if (!(sector[0] & 0xA000)) {
+        fskprint("$3Le secteur n'est pas un fichier !");
+        return;
+    }
+
+    uint32_t suite = file_id;
+
+    while (suite) {
+        suite = i_free_file_and_get_next(suite); // 0x001
+    }
+
+    for (uint32_t i = 0; i < (data_size / 126 + 1); i++) {
+        uint32_t part[128];
+        for (int i = 0; i < 128; i++) part[i] = 0;
+        int ui = 1;
+        part[0] = 0x9000;
+        for (int j=0;j<126;j++) {
+            if (i*126+j >= data_size) {
+                ui = 1;
+                break;
+            }
+            part[j+1] = data[i*126+j];
+        }
+        if (ui) {
+            part[127] = i_next_free(1);
+        }
+        write_sectors_ATA_PIO(file_index, part);
+        file_index = part[127];
+    }
+
+}
