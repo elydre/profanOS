@@ -2,6 +2,7 @@
 #include <cpu/timer.h>
 #include <time.h>
 
+static int boot_time;
 
 int is_leap_year(int year) {
     return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
@@ -45,4 +46,12 @@ void sleep(int seconds) {
 
 void ms_sleep(uint32_t ms) {
     timer_sleep(ms);
+}
+
+void gen_boot_time() {
+    boot_time = gen_unix_time();
+}
+
+int get_boot_time() {
+    return boot_time;
 }

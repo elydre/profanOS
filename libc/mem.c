@@ -1,7 +1,7 @@
+#include <driver/screen.h>
 #include <function.h>
 #include <iolib.h>
 #include <string.h>
-#include <driver/screen.h>
 #include <mem.h>
 
 void memory_copy(uint8_t *source, uint8_t *dest, int nbytes) {
