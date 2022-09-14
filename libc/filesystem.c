@@ -10,7 +10,7 @@ void init_filesystem() {
 uint32_t i_next_free(uint32_t rec) {
     uint32_t x = 0;
     uint32_t sector[128];
-    for (uint32_t i = 0; i <= rec; i++) {
+    for (uint32_t i = 0; i < rec + 1; i++) {
         read_sectors_ATA_PIO(x, sector);
         while (sector[0] & 0x8000){
             x++;
@@ -87,6 +87,7 @@ uint32_t i_free_file_and_get_next(uint32_t file_id) {
     uint32_t suite = sector[127];
     for (int i = 0; i < 128; i++) sector[i] = 0;
     write_sectors_ATA_PIO(file_id, sector);
+    fskprint("FREE %d\n", suite);
     return suite;
 }
 
@@ -98,11 +99,11 @@ void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
     uint32_t file_index = sector[127];
 
     if (!(sector[0] & 0xA000)) {
-        fskprint("$3Le secteur n'est pas un fichier !");
+        fskprint("Erreur, le secteur %d n'est pas un fichier", file_id);
         return;
     }
 
-    uint32_t suite = file_id;
+    uint32_t suite = file_index;
 
     while (suite) {
         suite = i_free_file_and_get_next(suite); // 0x001
@@ -113,18 +114,15 @@ void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
         for (int i = 0; i < 128; i++) part[i] = 0;
         int ui = 1;
         part[0] = 0x9000;
-        for (int j=0;j<126;j++) {
+        for (int j = 0; j < 126; j++) {
             if (i*126+j >= data_size) {
-                ui = 1;
+                ui = 0;
                 break;
             }
             part[j+1] = data[i*126+j];
         }
-        if (ui) {
-            part[127] = i_next_free(1);
-        }
+        if (ui) part[127] = i_next_free(1); 
         write_sectors_ATA_PIO(file_index, part);
         file_index = part[127];
     }
-
 }
