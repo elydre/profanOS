@@ -1,15 +1,15 @@
 #include <driver/keyboard.h>
+#include <driver/screen.h>
 #include <kernel/shell.h>
 #include <driver/rtc.h>
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
 #include <function.h>
-#include <iolib.h>
-#include <driver/screen.h>
-#include "kernel.h"
 #include <string.h>
 #include <system.h>
+#include "kernel.h"
+#include <iolib.h>
 #include <time.h>
 #include <task.h>
 #include <mem.h>
@@ -115,7 +115,7 @@ void shell_help(char suffix[]) {
                 return;
             }
         }
-        ckprint("command not found\n", c_red);
+        fskprint("$1%s$4 not found in help\n", suffix);
     }
 }
 
@@ -205,12 +205,6 @@ void shell_command(char command[]) {
         i_set_data_to_file("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", 200, 3);
     }
 
-    else if (strcmp(prefix, "input") == 0) {
-        char out[100];
-        input(out, 100, c_yellow);
-        fskprint("\n$4input: $1%s\n", out);
-    }
-
     else if (strcmp(prefix, "free") == 0) {
         if (free(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
         else mskprint(2, "$4free: $3", "FAIL\n");
@@ -241,4 +235,17 @@ void shell_command(char command[]) {
     free((int) prefix);
     free((int) suffix);
     shell_omp();
+}
+
+void run_shell() {
+    shell_omp();
+    char char_buffer[256], last_buffer[256];
+    last_buffer[0] = '\0';
+    while (1) {
+        input_paste(char_buffer, 256, last_buffer, c_blue);
+        strcpy(last_buffer, char_buffer);
+        kprint("\n");
+        shell_command(char_buffer);
+        char_buffer[0] = '\0';
+    }
 }

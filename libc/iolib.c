@@ -1,41 +1,32 @@
 #include <driver/keyboard.h>
 #include <string.h>
 #include <iolib.h>
+#include <time.h>
 #include <mem.h>
 
 #include <stdarg.h>
 
+// input() setings
+#define FIRST_L 40
+#define BONDE_L 4
+
+// keyboard scancodes
 #define SC_MAX 57
 
 #define LSHIFT 42
 #define RSHIFT 54
-
 #define LEFT 75
 #define RIGHT 77
-
+#define PASTE 72
 #define BACKSPACE 14
 #define ENTER 28
+
 
 // private functions
 
 int clean_buffer(char *buffer, int size) {
     for (int i = 0; i < size; i++) buffer[i] = '\0';
     return 0;
-}
-
-int in_table(int n, int list[], int list_len) {
-    for (int i = 0; i < list_len; i++) {
-        if (n == list[i]) return 1;
-    }
-    return 0;
-}
-
-void add_to_table(int n, int list[], int list_len) {
-    for (int i = 0; i < list_len; i++) {
-        if (list[i] != 0) continue;
-        list[i] = n;
-        return;
-    }
 }
 
 ScreenColor skprint_function(char message[], ScreenColor default_color) {
@@ -158,40 +149,61 @@ void input_print_buffer(int old_cursor, char out_buffer[], ScreenColor color, in
 
 // INPUT public functions
 
-void input(char out_buffer[], int size, ScreenColor color) {
+void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor color) {
     int old_cursor = get_cursor_offset();
     int buffer_actual_size = 0;
     int buffer_index = 0;
+    int key_ticks = 0;
+    int sc, last_sc;
     int shift = 0;
-    int sc = 0;
-    char c;
 
-    int not_exited_keys[10];
-    for (int i = 0; i < 10; i++) not_exited_keys[i] = 0;
     clean_buffer(out_buffer, size);
 
-    if (sc <= SC_MAX) add_to_table(sc, not_exited_keys, 10);
-    while ((sc != ENTER || !buffer_index) && buffer_index < size) {
+    do {
         sc = get_last_scancode();
+    } while (sc == ENTER);
 
-        if (sc == LSHIFT || sc == RSHIFT) shift = 1;
-        else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) shift = 0;
-        else if (in_table(sc, not_exited_keys, 10)) continue;
+    while (sc != ENTER) {
+        ms_sleep(10);
 
+        last_sc = sc;
+        sc = get_last_scancode();
+        
+        if (sc != last_sc) key_ticks = 0;
+        else key_ticks++;
+
+        if ((key_ticks > 2 && key_ticks < FIRST_L) || key_ticks % BONDE_L) continue;
+
+        if (sc == LSHIFT || sc == RSHIFT) {
+            shift = 1;
+            continue;
+        }
+
+        else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+            shift = 0;
+            continue;
+        }
+        
         else if (sc == LEFT) {
-            add_to_table(sc, not_exited_keys, 10);
             if (!buffer_index) continue;
             buffer_index--;
         }
 
         else if (sc == RIGHT) {
-            add_to_table(sc, not_exited_keys, 10);
             if (buffer_index == buffer_actual_size) continue;
             buffer_index++;
         }
 
+        else if (sc == PASTE) {
+            for (int i = 0; i < strlen(paste_buffer); i++) {
+                if (size <= buffer_actual_size - 1) break;
+                out_buffer[buffer_index] = paste_buffer[i];
+                buffer_actual_size++;
+                buffer_index++;
+            }
+        }
+
         else if (sc == BACKSPACE) {
-            add_to_table(sc, not_exited_keys, 10);
             if (!buffer_index) continue;
             buffer_index--;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
@@ -202,25 +214,19 @@ void input(char out_buffer[], int size, ScreenColor color) {
         }
 
         else if (sc <= SC_MAX) {
-            add_to_table(sc, not_exited_keys, 10);
-
-            c = scancode_to_char(sc, shift);
-            if (c == '?') continue;
+            if (size <= buffer_actual_size - 1) continue;
+            if (scancode_to_char(sc, shift) == '?') continue;
             for (int i = buffer_actual_size; i > buffer_index; i--) {
                 out_buffer[i] = out_buffer[i - 1];
             }
-            out_buffer[buffer_index] = c;
+            out_buffer[buffer_index] = scancode_to_char(sc, shift);
             buffer_actual_size++;
             buffer_index++;
         }
-        else {
-            for (int i = 0; i < 10; i++) {
-                if (not_exited_keys[i] != sc - 128) continue;
-                not_exited_keys[i] = 0;
-                break;
-            }
-            continue;
-        }
         input_print_buffer(old_cursor, out_buffer, color, buffer_index);
     }
+}
+
+void input(char out_buffer[], int size, ScreenColor color) {
+    input_paste(out_buffer, size, "", color);
 }

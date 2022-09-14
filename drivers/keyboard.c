@@ -35,11 +35,11 @@ int get_last_scancode() {
 }
 
 static void keyboard_callback(registers_t *regs) {
-    // The PIC leaves us the scancode in port 0x60
-    uint8_t scancode = port_byte_in(0x60);
-    
-    user_input((int)scancode);
     UNUSED(regs);
+    /* This function is actually unused,
+     * remplaced by the input() function
+     * but it can be used for ^C exit !
+    */
 }
 
 void init_keyboard() {
