@@ -149,10 +149,8 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
     write_sectors_ATA_PIO(folder_id, dossier);
 }
 
-pair i_get_dir_content(uint32_t id) {
-    char list_name[108][20];
-    int liste_id[108];
-    for (int i = 0; i < 128; i++) for (int j = 0; j < 20; j++) liste_noms[i][j] = 0;
+void i_get_dir_content(uint32_t id, dir_elm_t list_name[], int liste_id[]) {
+    for (int i = 0; i < 128; i++) list_name[i].name[0] = '\0';
     for (int i = 0; i < 128; i++) liste_id[i] = 0;
     int pointeur_noms = 0;
     int pointeur_liste_id = 0;
@@ -180,13 +178,9 @@ pair i_get_dir_content(uint32_t id) {
             read_sectors_ATA_PIO(liste_contenu[i], content);
             for (int j = 0; j < 20; j++) liste_chars[j] = content[j+1];
             for (int j = 0; j < 20; j++) nom[j] = (char) liste_chars[j];
-            liste_noms[pointeur_noms] = nom;
+            for (int c = 0; c < 20; c++) list_name[pointeur_noms].name[c] = nom[c];
             liste_id[pointeur_liste_id] = liste_contenu[i];
             pointeur_noms++; pointeur_liste_id++;
         }
     }
-    pair p;
-    p.list_name = liste_noms;
-    p.list_id = liste_id;
-    return p;
 }

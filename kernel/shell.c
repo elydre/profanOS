@@ -202,9 +202,13 @@ void shell_command(char command[]) {
         i_creer_dossier("/");
         i_creer_dossier("test");
         i_add_item_to_dir(1, 0);
-        uint32_t liste_noms[108];
+        dir_elm_t liste_noms[108];
         int liste_id[108];
         i_get_dir_content(0, liste_noms, liste_id);
+        for (int i = 0; i < 108; i++) {
+            if (liste_noms[i].name[0] == '\0') break;
+            fskprint("$4name: $1%s\n$4id:   $1%d\n", liste_noms[i].name, liste_id[i]);
+        }
     }
 
     else if (strcmp(prefix, "free") == 0) {
