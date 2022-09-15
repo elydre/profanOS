@@ -44,10 +44,6 @@ uint32_t i_creer_dossier(char nom[]) {
     return folder_id;
 }
 
-void i_add_pointeur_to_dossier() {
-    fskprint("$3ERROR ID 0 : SHOULD NOT BE REACHABLE");
-}
-
 uint32_t i_creer_index_de_fichier(char nom[]) {
     if (strlen(nom) > 20) {
         fskprint("$3nom trop long, max 20 caracteres, nom actuel: $0%s\n", nom);
@@ -91,7 +87,6 @@ uint32_t i_free_file_and_get_next(uint32_t file_id) {
     return suite;
 }
 
-// TO FIX : Vide aussi a tord l'index de fichier voir "0x001"
 void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
     uint32_t sector[128];
     for (int i = 0; i < 128; i++) sector[i] = 0;
@@ -106,7 +101,7 @@ void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
     uint32_t suite = file_index;
 
     while (suite) {
-        suite = i_free_file_and_get_next(suite); // 0x001
+        suite = i_free_file_and_get_next(suite);
     }
 
     for (uint32_t i = 0; i < (data_size / 126 + 1); i++) {
@@ -125,4 +120,73 @@ void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
         write_sectors_ATA_PIO(file_index, part);
         file_index = part[127];
     }
+}
+
+void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
+    uint32_t dossier[128];
+    for (int i = 0; i < 128; i++) dossier[i] = 0;
+    read_sectors_ATA_PIO(folder_id, dossier);
+    if (!(dossier[0] & 0x8000)) {
+        fskprint("Erreur, le secteur %d est vide", folder_id);
+        return;
+    }
+    if (!(dossier[0] & 0x4000)) {
+        fskprint("Erreur, le secteur %d n'est pas un dossier", folder_id);
+        return;
+    }
+    int full = 1;
+    for (int i = 21; i<128; i++) {
+        if (!dossier[i]) {
+            dossier[i] = file_id;
+            full = 0;
+            break;
+        }
+    }
+    if (full) {
+        fskprint("Erreur, le dossier est plein");
+        return;
+    }
+    write_sectors_ATA_PIO(folder_id, dossier);
+}
+
+pair i_get_dir_content(uint32_t id) {
+    char list_name[108][20];
+    int liste_id[108];
+    for (int i = 0; i < 128; i++) for (int j = 0; j < 20; j++) liste_noms[i][j] = 0;
+    for (int i = 0; i < 128; i++) liste_id[i] = 0;
+    int pointeur_noms = 0;
+    int pointeur_liste_id = 0;
+    
+    uint32_t folder[128];
+    read_sectors_ATA_PIO(id, folder);
+    if (!(folder[0] & 0x8000)) {
+        fskprint("Erreur, le secteur %d est vide", id);
+        return;
+    }
+    if (!(folder[0] & 0x4000)) {
+        fskprint("Erreur, le secteur %d n'est pas un dossier", id);
+        return;
+    }
+    uint32_t liste_contenu[108];
+    for (int i = 0; i < 108; i++) liste_contenu[i] = 0;
+    for (int i = 21; i < 128; i++) {
+        liste_contenu[i-21] = folder[i];
+    }
+    uint32_t content[128];
+    uint32_t liste_chars[20];
+    char nom[20];
+    for (int i = 0; i < 108; i++) {
+        if (liste_contenu[i]) {
+            read_sectors_ATA_PIO(liste_contenu[i], content);
+            for (int j = 0; j < 20; j++) liste_chars[j] = content[j+1];
+            for (int j = 0; j < 20; j++) nom[j] = (char) liste_chars[j];
+            liste_noms[pointeur_noms] = nom;
+            liste_id[pointeur_liste_id] = liste_contenu[i];
+            pointeur_noms++; pointeur_liste_id++;
+        }
+    }
+    pair p;
+    p.list_name = liste_noms;
+    p.list_id = liste_id;
+    return p;
 }

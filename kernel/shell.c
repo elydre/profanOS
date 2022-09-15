@@ -193,16 +193,18 @@ void shell_command(char command[]) {
         }
     }
 
-    else if (strcmp(prefix, "stop") == 0) {
+    else if (strcmp(prefix, "stop") * strcmp(prefix, "exit") == 0) {
         rainbow_print("Stopping the CPU. Bye!\n");
         sys_shutdown();
     }
 
     else if (strcmp(prefix, "test") == 0) {
-        fskprint("fichier 0 : %d\n", i_creer_index_de_fichier("test"));
-        i_set_data_to_file("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", 200, 0);
-        fskprint("fichier 1 : %d\n", i_creer_index_de_fichier("coucou"));
-        i_set_data_to_file("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", 200, 3);
+        i_creer_dossier("/");
+        i_creer_dossier("test");
+        i_add_item_to_dir(1, 0);
+        uint32_t liste_noms[108];
+        int liste_id[108];
+        i_get_dir_content(0, liste_noms, liste_id);
     }
 
     else if (strcmp(prefix, "free") == 0) {
