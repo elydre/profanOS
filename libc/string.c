@@ -39,6 +39,21 @@ void hex_to_ascii(int n, char str[]) {
     else append(str, tmp + '0');
 }
 
+int in_string(char str[], char thing) {
+    for (int i = 0; i < strlen(str);i++) {
+        if (str[i] == thing) return 1;
+    }
+    return 0;
+}
+
+int count_string(char str[], char thing) {
+    int total = 0;
+    for (int i = 0; i < strlen(str);i++) {
+        if (str[i] == thing) total++;
+    }
+    return total;
+}
+
 int ascii_to_int(char str[]) {
     int i, n;
     n = 0;

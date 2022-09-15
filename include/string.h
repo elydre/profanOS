@@ -17,5 +17,7 @@ void strcpy(char s1[], char s2[]);
 int strcmp(char s1[], char s2[]);
 void str_start_split(char s[], char delim);
 void str_end_split(char s[], char delim);
+int in_string(char str[], char thing);
+int count_string(char str[], char thing);
 
 #endif
