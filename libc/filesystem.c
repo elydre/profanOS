@@ -149,7 +149,7 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
     write_sectors_ATA_PIO(folder_id, dossier);
 }
 
-void i_get_dir_content(uint32_t id, dir_elm_t list_name[], int liste_id[]) {
+void i_get_dir_content(uint32_t id, string_20 list_name[], int liste_id[]) {
     for (int i = 0; i < 128; i++) list_name[i].name[0] = '\0';
     for (int i = 0; i < 128; i++) liste_id[i] = 0;
     int pointeur_noms = 0;
@@ -183,4 +183,12 @@ void i_get_dir_content(uint32_t id, dir_elm_t list_name[], int liste_id[]) {
             pointeur_noms++; pointeur_liste_id++;
         }
     }
+}
+
+uint32_t i_path_to_id(char path[]) {
+    if (strcmp("/", path) == 0) {
+        return 0;
+    }
+    int path_lenght = strlen(path);
+    fskprint("Truc %d", path_lenght);
 }
