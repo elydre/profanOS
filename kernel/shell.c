@@ -206,7 +206,7 @@ void shell_command(char command[]) {
         int liste_id[108];
         i_get_dir_content(0, liste_noms, liste_id);
         for (int i = 0; i < 108; i++) {
-            if (liste_noms[i].name[0] == '\0') break;
+            if (liste_noms[i].name[0] == '\0') continue;
             fskprint("$4name: $1%s\n$4id:   $1%d\n", liste_noms[i].name, liste_id[i]);
         }
     }
