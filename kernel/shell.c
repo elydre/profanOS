@@ -81,7 +81,7 @@ void show_disk_LBA(char suffix[]) {
 
 void shell_help(char suffix[]) {
     char *help[] = {
-        "alloc   - allocate *suffix* octets",
+        "alloc   - allocate *suffix* ko",
         "clear   - clear the screen",
         "echo    - print the arguments",
         "free    - free *suffix* address",
@@ -187,7 +187,7 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "alloc") == 0) {
         if (suffix[0] == 'a') fskprint("$3size is required\n");
         else {
-            int addr = alloc(ascii_to_int(suffix));
+            int addr = alloc(ascii_to_int(suffix) * 1024);
             fskprint("$4address: $1%x $4($1%d$4)\n", addr, addr);
         }
     }

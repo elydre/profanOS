@@ -44,7 +44,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 | command | description                     |
 |---------|---------------------------------|
-| alloc   | allocate *suffix* octets        |
+| alloc   | allocate *suffix* ko            |
 | clear   | clear the screen                |
 | echo    | print the arguments             |
 | free    | free *suffix* address           |
