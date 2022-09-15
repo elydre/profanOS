@@ -74,6 +74,15 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 | `$6` | grey         | `$E` | dark grey    |
 | `$7` | white        | `$F` | black        |
 
+### Formated print
+
+| keys | description |
+|------|-------------|
+| `%d` | int         |
+| `%x` | hex         |
+| `%c` | char        |
+| `%s` | string      |
+
 ### Interrupts
 
 |  ID  | description                   |
