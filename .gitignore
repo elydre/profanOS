@@ -3,6 +3,7 @@
 *.iso
 *.img
 out/
+.vscode/settings.json
 
 # visual studio folder
 .vs
