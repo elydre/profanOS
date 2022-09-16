@@ -4,7 +4,7 @@
 #include <iolib.h>
 #include <mem.h>
 
-void parse_path(char path[1000], string_20_t liste_path[]);
+void i_parse_path(char path[], string_20_t liste_path[]);
 
 void init_filesystem() {
     return;
@@ -188,15 +188,23 @@ void i_get_dir_content(uint32_t id, string_20_t list_name[], int liste_id[]) {
     }
 }
 
-uint32_t i_path_to_id(char input_path[]) {
-    if (strlen(input_path) > 1000) {
-        fskprint("Erreur, le chemin d'acces est trop long !");
-        return;
+uint32_t i_size_folder(uint32_t id_folder) {
+    uint32_t folder[128];
+    read_sectors_ATA_PIO(id_folder, folder);
+    uint32_t size;
+    for (int i=21; i<128; i++) {
+        if (folder[i]) {
+            size++;
+        }
     }
+    return size;
+}
+
+uint32_t i_path_to_id(char input_path[]) {
+
     // sanitize path
-    char path[1000];
-    for (int i=0;i<1000;i++) {path[i]=0;}
-    for (int i=0; i<strlen(input_path)+1; i++) {path[i] = input_path[i];}
+    char path[strlen(input_path)+1];
+    for (int i=0;i<strlen(input_path)+1;i++) {path[i] = input_path[i];}
 
     if (strcmp("/", path) == 0) {
         return 0;
@@ -204,32 +212,38 @@ uint32_t i_path_to_id(char input_path[]) {
     
     int path_len = strlen(path);
     fskprint("Longueur du path : %d\n", path_len);
-    string_20_t * liste_path = malloc(1000*sizeof(string_20_t));
-    parse_path(path, liste_path);
+    fskprint("size folder : %d\n", i_size_folder(0));
+    string_20_t * liste_path = malloc(strlen(path)*sizeof(string_20_t));
+    i_parse_path(path, liste_path);
+    string_20_t list_name[i_size_folder(0)]; for(int i = 0; i<i_size_folder(0);i++) { for (int j = 0; j<20; j++) {list_name[i].name[j] = '\0';}}
+    int liste_id[i_size_folder(0)]; for (int i = 0; i<i_size_folder(0); i++) {liste_id[i] = 0;}
 
+    for (uint32_t i = 0; i<i_size_folder(0); i++) {
+        fskprint("list_name[%d] : %s\n", i, list_name[i].name);
+    }
 
     for (int i = 0; i<count_string(path, '/')+1; i++) {
         fskprint("liste_path[%d] : %s\n", i, liste_path[i].name);
     }
 
-    // NE PAS OUBLIER DE FREE liste_path
+    free((int) liste_path);
+    return 0;
 }
 
-void parse_path(char path[1000], string_20_t liste_path[]) {
+void i_parse_path(char path[], string_20_t liste_path[]) {
     int index = 0;
-    char path_original[1000]; for (int i=0;i<1000;i++) {path_original[i]=0;} ; for (int i=0;i<1000;i++) {path_original[i]=path[i];}
-    char path_original_original[1000]; for (int i=0;i<1000;i++) {path_original_original[i]=0;} ; for (int i=0;i<1000;i++) {path_original_original[i]=path[i];}
-    char path_left[20]; for (int i=0;i<20;i++) {path_left[i]=path[i];} while(in_string(path_left, '/')) {str_end_split(path_left, '/');}
-    
-    while (strcmp(path_left, path) != 0) {
-        for (int i=0; i<1000; i++) {path[i] = path_original[i];}
-        str_start_split(path, '/');
-        char string_name[20]; for (int i=0;i<20;i++) {string_name[i]=0;}
-        for (int i=0; i<(strlen(path)); i++) {string_name[i] = path_original[i];}
-        for (int i=0; i<(1000-strlen(path));i++){path_original[i] = path_original[i+strlen(path)+1];}
-        for (int i = 0; i<20; i++) {liste_path[index].name[i] = string_name[i];}
-        index++;
+    int index_in_str = 0;
+    for (int i = 0; i<strlen(path); i++) {
+        if (path[i] != '/') {
+            liste_path[index].name[index_in_str] = path[i];
+            index_in_str++;
+        } else {
+            liste_path[index].name[index_in_str] = '\0';
+            index++;
+            index_in_str = 0;
+        }
     }
-    for (int i = 0; i<20; i++) {liste_path[0].name[i] = 0;}
-    for (int i=0;i<1000;i++) {path[i]=path_original_original[i];}
+    for (int i = 0; i<20; i++) {
+        liste_path[0].name[i] = 0;
+    }
 }
