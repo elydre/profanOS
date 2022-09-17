@@ -15,6 +15,7 @@
 #include <mem.h>
 
 #define SC_MAX 57
+#define BFR_SIZE 68
 
 void shell_omp() {
     kprint("profanOS-> ");
@@ -82,7 +83,7 @@ void show_disk_LBA(char suffix[]) {
 
 void shell_help(char suffix[]) {
     char *help[] = {
-        "alloc   - allocate *suffix* octets",
+        "alloc   - allocate *suffix* ko",
         "clear   - clear the screen",
         "echo    - print the arguments",
         "free    - free *suffix* address",
@@ -188,7 +189,7 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "alloc") == 0) {
         if (suffix[0] == 'a') fskprint("$3size is required\n");
         else {
-            int addr = alloc(ascii_to_int(suffix));
+            int addr = alloc(ascii_to_int(suffix) * 1024);
             fskprint("$4address: $1%x $4($1%d$4)\n", addr, addr);
         }
     }
@@ -239,10 +240,10 @@ void shell_command(char command[]) {
 
 void run_shell() {
     shell_omp();
-    char char_buffer[256], last_buffer[256];
+    char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
     last_buffer[0] = '\0';
     while (1) {
-        input_paste(char_buffer, 256, last_buffer, c_blue);
+        input_paste(char_buffer, BFR_SIZE, last_buffer, c_blue);
         strcpy(last_buffer, char_buffer);
         kprint("\n");
         shell_command(char_buffer);
