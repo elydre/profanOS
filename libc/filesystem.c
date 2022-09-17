@@ -112,7 +112,7 @@ void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
         int ui = 1;
         part[0] = 0x9000;
         for (int j = 0; j < 126; j++) {
-            if (i*126+j >= data_size) {
+            if (i * 126 + j >= data_size) {
                 ui = 0;
                 break;
             }
@@ -189,10 +189,10 @@ void i_get_dir_content(uint32_t id, string_20_t list_name[], int liste_id[]) {
     }
 }
 
-uint32_t i_size_folder(uint32_t id_folder) {
+int i_size_folder(uint32_t id_folder) {
     uint32_t folder[128];
     read_sectors_ATA_PIO(id_folder, folder);
-    uint32_t size;
+    int size;
     for (int i = 21; i < 128; i++) {
         if (folder[i]) size++;
     }
@@ -206,18 +206,21 @@ uint32_t i_path_to_id(char input_path[]) {
 
     if (strcmp("/", path) == 0) return 0;
     
+    int folder_size = i_size_folder(0);
     int path_len = strlen(path);
     fskprint("Longueur du path : %d\n", path_len);
-    fskprint("size folder : %d\n", i_size_folder(0));
+    fskprint("size folder : %d\n", folder_size);
 
     string_20_t * liste_path = malloc(strlen(path) * sizeof(string_20_t));
     i_parse_path(path, liste_path);
-    string_20_t list_name[i_size_folder(0)];
-    for(int i = 0; i < (int) i_size_folder(0); i++) init_buffer((int *) list_name[i].name, 20);
-    int liste_id[i_size_folder(0)];
-    init_buffer(liste_id, i_size_folder(0));
+    string_20_t * list_name = malloc(folder_size * sizeof(string_20_t));
 
-    for (uint32_t i = 0; i < i_size_folder(0); i++) {
+    for (int i = 0; i < folder_size; i++) list_name[i].name[0] = '\0';
+
+    int * liste_id = malloc(folder_size * sizeof(int));
+    init_buffer(liste_id, folder_size);
+
+    for (int i = 0; i < folder_size; i++) {
         fskprint("list_name[%d] : %s\n", i, list_name[i].name);
     }
 
@@ -226,6 +229,8 @@ uint32_t i_path_to_id(char input_path[]) {
     }
 
     free((int) liste_path);
+    free((int) list_name);
+    free((int) liste_id);
     return 0;
 }
 
