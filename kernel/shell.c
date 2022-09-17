@@ -200,10 +200,14 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "test") == 0) {
-        i_creer_dossier("/");
-        i_creer_dossier("test");
-        i_add_item_to_dir(1, 0);
-        i_path_to_id(suffix);
+        if (!i_size_folder(0)) {
+            i_creer_dossier("/");
+            i_creer_dossier("test");
+            i_creer_dossier("test");
+            i_add_item_to_dir(1, 0);
+            i_add_item_to_dir(2, 1);
+        }
+        fskprint("sortie : %d\n", i_path_to_id(suffix));
     }
 
     else if (strcmp(prefix, "free") == 0) {

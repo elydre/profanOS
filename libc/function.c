@@ -10,6 +10,3 @@ int pow(int base, int exp) {
     return result;
 }
 
-void init_buffer(int buffer[], int size) {
-    for (int i = 0; i < size; i++) buffer[i] = 0;
-}
