@@ -208,20 +208,11 @@ uint32_t i_path_to_id(char input_path[]) {
     char path[strlen(input_path)+1];
     for (int i = 0; i < strlen(input_path) + 1; i++) path[i] = input_path[i];
 
-    // PYTHON COMPARAISON : if path == "/":
-    // PYTHON COMPARAISON :     return 0
     if (strcmp("/", path) == 0) return 0;
 
-    // PYTHON COMPARAISON : path = i_parse_path(path)
     string_20_t * liste_path = malloc(strlen(path) * sizeof(string_20_t));
     i_parse_path(path, liste_path);
 
-    // PYTHON COMPARAISON : if path[0] == "/":
-    // PYTHON COMPARAISON :      path[0] = 0
-    // C'est automatique ^
-
-
-    // PYTHON COMPARAISON : (liste_noms, liste_id) = i_get_dir_content(path[0])
     int folder_size = i_size_folder(0);
     fskprint("size folder : %d\n", folder_size);
     int taille_path = count_string(path, '/') + 1;
@@ -232,7 +223,6 @@ uint32_t i_path_to_id(char input_path[]) {
     for (int i = 0; i<folder_size; i++) liste_id[i] = 0;
     i_get_dir_content(0, liste_noms, liste_id);
 
-    // PYTHON COMPARAISON : path = path[1:]
     for (int i = 0; i < taille_path; i++) liste_path[i] = liste_path[i+1];
     for (int i = 0; i<20; i++) liste_path[taille_path].name[i] = 0;
     taille_path--;
@@ -243,13 +233,6 @@ uint32_t i_path_to_id(char input_path[]) {
     }
     if (!in_folder) return -1;
 
-    // PYTHON COMPARAISON : if len(path) == 1:
-    // PYTHON COMPARAISON :     x = 0
-    // PYTHON COMPARAISON :     for element in liste_noms:
-    // PYTHON COMPARAISON :         if element == path[0]:
-    // PYTHON COMPARAISON :             break
-    // PYTHON COMPARAISON :         x += 1
-    // PYTHON COMPARAISON :     return liste_id[x]
     if (taille_path == 1) {
         x = 0;
         for (int i = 0; i < folder_size; i++) {
@@ -262,21 +245,15 @@ uint32_t i_path_to_id(char input_path[]) {
         return liste_id[x];
     }
 
-    // PYTHON COMPARAISON : while len(path) != 1:
     while (taille_path != 1) {
-        // PYTHON COMPARAISON : x = 0
-        // PYTHON COMPARAISON : for element in liste_noms:
-        // PYTHON COMPARAISON :     if element == path[0]:
-        // PYTHON COMPARAISON :         break
-        // PYTHON COMPARAISON :     x += 1
         x = 0;
         for (int i = 0; i < folder_size; i++) {
             if (!strcmp(liste_noms[i].name, liste_path[0].name)) break;
             x++;
         }
-        // PYTHON COMPARAISON : contenu_path_0 = liste_id[x]
+
         uint32_t contenu_path_0 = liste_id[x];
-        // PYTHON COMPARAISON : (liste_noms, liste_id) = i_get_dir_content(contenu_path_0)
+
         folder_size = i_size_folder(contenu_path_0);
         free((int) liste_noms);
         free((int) liste_id);
@@ -285,14 +262,12 @@ uint32_t i_path_to_id(char input_path[]) {
         uint32_t * liste_id = malloc(folder_size * sizeof(int));
         for (int i = 0; i<folder_size; i++) liste_id[i] = 0;
         i_get_dir_content(contenu_path_0, liste_noms, liste_id);
-        // PYTHON COMPARAISON : path = path[1:]
+
         for (int i = 0; i < taille_path; i++) liste_path[i] = liste_path[i+1];
         for (int i = 0; i<20; i++) liste_path[taille_path].name[i] = 0;
         taille_path--;
     }
 
-    // PYTHON COMPARAISON : if not path[0] in liste_noms:
-    // PYTHON COMPARAISON :     return -1
     in_folder = 0;
     for (int i = 0; i<folder_size; i++) {
         if (!strcmp(liste_path[0].name, liste_noms[i].name)) in_folder = 1;
@@ -300,21 +275,13 @@ uint32_t i_path_to_id(char input_path[]) {
     if (!in_folder) return -1;
     fskprint("in_folder : %d\n", in_folder);
 
-    // PYTHON COMPARAISON : x = 0
-    // PYTHON COMPARAISON : for element in liste_noms:
-    // PYTHON COMPARAISON :     if element == path[0]:
-    // PYTHON COMPARAISON :         break
-    // PYTHON COMPARAISON :     x += 1
-    // PYTHON COMPARAISON : contenu_path_0 = liste_id[x]
     x = 0;
     for (int i = 0; i < folder_size; i++) {
         if (!strcmp(liste_noms[i].name, liste_path[0].name)) break;
         x++;
     }
-    // PYTHON COMPARAISON : contenu_path_0 = liste_id[x]
     uint32_t contenu_path_0 = liste_id[x];
 
-    // PYTHON COMPARAISON : return contenu_path_0
     free((int) liste_path);
     free((int) liste_noms);
     free((int) liste_id);
