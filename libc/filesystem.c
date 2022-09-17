@@ -214,9 +214,7 @@ uint32_t i_path_to_id(char input_path[]) {
     i_parse_path(path, liste_path);
 
     int folder_size = i_size_folder(0);
-    fskprint("size folder : %d\n", folder_size);
     int taille_path = count_string(path, '/') + 1;
-    fskprint("taille_path : %d\n", taille_path);
     string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
     for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
     uint32_t * liste_id = malloc(folder_size * sizeof(int));
@@ -231,7 +229,12 @@ uint32_t i_path_to_id(char input_path[]) {
     for (int i = 0; i<folder_size; i++) {
         if (!strcmp(liste_path[0].name, liste_noms[i].name)) in_folder = 1;
     }
-    if (!in_folder) return -1;
+    if (!in_folder) {
+        free((int) liste_path);
+        free((int) liste_noms);
+        free((int) liste_id);
+        return -1;
+    }
 
     if (taille_path == 1) {
         x = 0;
@@ -272,8 +275,12 @@ uint32_t i_path_to_id(char input_path[]) {
     for (int i = 0; i<folder_size; i++) {
         if (!strcmp(liste_path[0].name, liste_noms[i].name)) in_folder = 1;
     }
-    if (!in_folder) return -1;
-    fskprint("in_folder : %d\n", in_folder);
+    if (!in_folder) {
+        free((int) liste_path);
+        free((int) liste_noms);
+        free((int) liste_id);
+        return -1;
+    }
 
     x = 0;
     for (int i = 0; i < folder_size; i++) {
