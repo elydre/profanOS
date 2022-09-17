@@ -196,7 +196,7 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
 
         else if (sc == PASTE) {
             for (int i = 0; i < strlen(paste_buffer); i++) {
-                if (size <= buffer_actual_size - 1) break;
+                if (size < buffer_actual_size + 2) break;
                 out_buffer[buffer_index] = paste_buffer[i];
                 buffer_actual_size++;
                 buffer_index++;
@@ -214,7 +214,7 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
         }
 
         else if (sc <= SC_MAX) {
-            if (size <= buffer_actual_size - 1) continue;
+            if (size < buffer_actual_size + 2) continue;
             if (scancode_to_char(sc, shift) == '?') continue;
             for (int i = buffer_actual_size; i > buffer_index; i--) {
                 out_buffer[i] = out_buffer[i - 1];
