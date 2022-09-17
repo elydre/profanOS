@@ -1,13 +1,27 @@
 #include <filesystem.h>
 #include <driver/ata.h>
 #include <string.h>
+#include <system.h>
 #include <iolib.h>
 #include <mem.h>
 
 void i_parse_path(char path[], string_20_t liste_path[]);
+uint32_t i_next_free(uint32_t rec);
+uint32_t i_creer_dossier(char nom[]);
 
 void init_filesystem() {
-    return;
+    uint32_t folder_racine[128];
+    for (int i = 0; i<128; i++) folder_racine[i] = 0;
+    if (!(folder_racine[127] && 0x8000)) {
+        fskprint("No root folder, creating one...\n");
+        uint32_t location = i_next_free(0);
+        if (location != 0) {
+            fskprint("Error, there is already some stuff on the disk !\n");
+            sys_shutdown();
+        }
+        i_creer_dossier("/");
+        fskprint("Root folder created at / (sector 0)\n");
+    }
 }
 
 uint32_t i_next_free(uint32_t rec) {
@@ -87,18 +101,17 @@ uint32_t i_free_file_and_get_next(uint32_t file_id) {
     for (int i = 0; i < 128; i++) sector[i] = 0;
     write_sectors_ATA_PIO(file_id, sector);
 
-    fskprint("FREE %d\n", suite);
     return suite;
 }
 
-void i_set_data_to_file(char data[], uint32_t data_size, uint32_t file_id) {
+void i_set_data_to_file(uint32_t data[], uint32_t data_size, uint32_t file_id) {
     uint32_t sector[128];
     read_sectors_ATA_PIO(file_id, sector);
 
     uint32_t file_index = sector[127];
 
     if (!(sector[0] & 0xA000)) {
-        fskprint("Erreur, le secteur %d n'est pas un fichier", file_id);
+        fskprint("Erreur, le secteur %d n'est pas un fichier\n", file_id);
         return;
     }
 
@@ -129,11 +142,11 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
     read_sectors_ATA_PIO(folder_id, dossier);
 
     if (!(dossier[0] & 0x8000)) {
-        fskprint("Erreur, le secteur %d est vide", folder_id);
+        fskprint("Erreur, le secteur %d est vide\n", folder_id);
         return;
     }
     if (!(dossier[0] & 0x4000)) {
-        fskprint("Erreur, le secteur %d n'est pas un dossier", folder_id);
+        fskprint("Erreur, le secteur %d n'est pas un dossier\n", folder_id);
         return;
     }
     int full = 1;
@@ -161,12 +174,12 @@ void i_get_dir_content(uint32_t id, string_20_t list_name[], uint32_t liste_id[]
     read_sectors_ATA_PIO(id, folder);
 
     if (!(folder[0] & 0x8000)) {
-        fskprint("Erreur, le secteur %d est vide", id);
+        fskprint("Erreur, le secteur %d est vide\n", id);
         return;
     }
 
     if (!(folder[0] & 0x4000)) {
-        fskprint("Erreur, le secteur %d n'est pas un dossier", id);
+        fskprint("Erreur, le secteur %d n'est pas un dossier\n", id);
         return;
     }
 
@@ -233,6 +246,7 @@ uint32_t i_path_to_id(char input_path[]) {
         free((int) liste_path);
         free((int) liste_noms);
         free((int) liste_id);
+        fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
         return -1;
     }
 
@@ -279,6 +293,7 @@ uint32_t i_path_to_id(char input_path[]) {
         free((int) liste_path);
         free((int) liste_noms);
         free((int) liste_id);
+        fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
         return -1;
     }
 
@@ -309,4 +324,99 @@ void i_parse_path(char path[], string_20_t liste_path[]) {
         }
     }
     for (int i = 0; i<20; i++) liste_path[0].name[i] = 0;
+}
+
+int get_used_sectors(int disk_size) {
+    int total = 0;
+    for (int i = 0; i < disk_size; i++) {
+        uint32_t sector[128];
+        read_sectors_ATA_PIO(i, sector);
+        if (sector[0] && 0x8000) total ++;
+    }
+    return total;
+}
+
+int is_disk_full(int disk_size) {
+    return disk_size == get_used_sectors(disk_size);
+}
+
+uint32_t make_dir(char path[], char folder_name[]) {
+    uint32_t dossier = i_creer_dossier(folder_name);
+    uint32_t id_to_set = i_path_to_id(path);
+    if ((int) id_to_set != -1) {
+        i_add_item_to_dir(dossier, id_to_set);
+    }
+    else {
+        fskprint("Erreur : le chemin specifie dans make_dir n'existe pas (%s)\n", path);
+    }
+    return dossier;
+}
+
+uint32_t make_file(char path[], char file_name[]) {
+    uint32_t fichier_test = i_creer_index_de_fichier(file_name);
+    uint32_t id_to_set = i_path_to_id(path);
+    i_add_item_to_dir(fichier_test, id_to_set);
+    return fichier_test;
+}
+
+void write_in_file(char path[], uint32_t data[], uint32_t data_size) {
+    uint32_t id_to_set = i_path_to_id(path);
+    i_set_data_to_file(data, data_size, id_to_set);
+}
+
+// Note : ne pas utiliser dans un check d'une boucle sauf si vraiment nessessaire
+uint32_t get_file_size(char path[]) {
+    uint32_t id_file_index = i_path_to_id(path);
+    uint32_t sector[128];
+    read_sectors_ATA_PIO(id_file_index, sector);
+    if (!(sector[0] & 0xA000)){
+        fskprint("Erreur : le secteur n'est pas un fichier\n");
+        return -1;
+    }
+    uint32_t sector_size = 0;
+    while (sector[127]) {
+        sector_size++;
+        id_file_index = sector[127];
+        read_sectors_ATA_PIO(id_file_index, sector);
+    }
+    return sector_size;
+}
+
+uint32_t *declare_read_array(char path[]) {
+    return malloc(get_file_size(path) * sizeof(uint32_t) * 126);
+}
+
+// How to declare data : uint32_t *data = declare_read_array(path);
+// How to free data    : free((int) data);
+void read_file(char path[], uint32_t data[]) {
+    uint32_t file_size = get_file_size("/test1/test2/test3/file");
+    for (uint32_t i=0; i<file_size*126; i++) {
+        data[i] = 0;
+    }
+    uint32_t sector[128];
+    read_sectors_ATA_PIO(i_path_to_id(path), sector);
+    uint32_t id_file_index = sector[127];
+    read_sectors_ATA_PIO(id_file_index, sector);
+    if (!(sector[0] & 0xA000)){
+        fskprint("Erreur : le secteur n'est pas un fichier");
+    }
+    uint32_t index = 0;
+    read_sectors_ATA_PIO(id_file_index, sector);
+    for (int i=1; i<127; i++) {
+        data[index] = sector[i];
+        index++;
+    }
+    id_file_index = sector[127];
+    while (id_file_index) {
+        read_sectors_ATA_PIO(id_file_index, sector);
+        for (int i=1; i<127; i++) {
+            data[index] = sector[i];
+            index++;
+        }
+        id_file_index = sector[127];
+    }
+}
+
+int does_path_exists(char path[]) {
+    return (int) i_path_to_id(path) != -1;
 }

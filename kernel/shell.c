@@ -200,14 +200,22 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "test") == 0) {
-        if (!i_size_folder(0)) {
-            i_creer_dossier("/");
-            i_creer_dossier("test");
-            i_creer_dossier("test");
-            i_add_item_to_dir(1, 0);
-            i_add_item_to_dir(2, 1);
+        make_dir("/", "test1");
+        make_dir("/test1", "test2");
+        make_dir("/test1/test2", "test3");
+        make_file("/test1/test2/test3", "file");
+        uint32_t int_suite[128];
+        for (int i = 0; i < 128; i++) int_suite[i] = i;
+        write_in_file("/test1/test2/test3/file", int_suite, 128);
+        fskprint("Size of file : %d\n", get_file_size("/test1/test2/test3/file"));
+        uint32_t *data = declare_read_array("/test1/test2/test3/file");
+        read_file("/test1/test2/test3/file", data);
+        uint32_t file_size = get_file_size("/test1/test2/test3/file");
+        for (uint32_t i=0; i<file_size*126; i++) {
+            fskprint("%d ", data[i]);
         }
-        fskprint("sortie : %d\n", i_path_to_id(suffix));
+        fskprint("\n");
+        free((int) data);
     }
 
     else if (strcmp(prefix, "free") == 0) {
