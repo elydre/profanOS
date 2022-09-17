@@ -7,5 +7,6 @@
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 int pow(int base, int exp);
+void init_buffer(int buffer[], int size);
 
 #endif
