@@ -24,6 +24,7 @@ jobs:
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
         make iso
         cp profanOS.iso profanOS-$VERSION.iso
+        cp profanOS.elf profanOS-kernel.elf
 
     - name: push img to github
       uses: dmnemec/copy_file_to_another_repo_action@main
@@ -44,5 +45,5 @@ jobs:
         automatic_release_tag: latest
         repo_token: "${{ secrets.GIT_TOKEN }}"
         files: |
-          profanOS.elf
-          profanOS.iso
+          ${{ env.PROFAN_ISO }}
+          profanOS-kernel.elf
