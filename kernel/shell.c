@@ -200,10 +200,12 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "test") == 0) {
-        make_dir("/", "test1");
-        make_dir("/test1", "test2");
-        make_dir("/test1/test2", "test3");
-        make_file("/test1/test2/test3", "file");
+        if (does_path_exists("/test1/test2/test3/file") != -1) {
+            make_dir("/", "test1");
+            make_dir("/test1", "test2");
+            make_dir("/test1/test2", "test3");
+            make_file("/test1/test2/test3", "file");
+        }
         uint32_t int_suite[128];
         for (int i = 0; i < 128; i++) int_suite[i] = i;
         write_in_file("/test1/test2/test3/file", int_suite, 128);

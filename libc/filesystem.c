@@ -216,6 +216,7 @@ uint32_t i_path_to_id(char input_path[]) {
     //init
     int x = 0;
     int in_folder = 0;
+    int start_from_liste_path = 0;
 
     // sanitize path
     char path[strlen(input_path)+1];
@@ -234,13 +235,12 @@ uint32_t i_path_to_id(char input_path[]) {
     for (int i = 0; i<folder_size; i++) liste_id[i] = 0;
     i_get_dir_content(0, liste_noms, liste_id);
 
-    for (int i = 0; i < taille_path; i++) liste_path[i] = liste_path[i+1];
-    for (int i = 0; i<20; i++) liste_path[taille_path].name[i] = 0;
+    start_from_liste_path++;
     taille_path--;
 
     in_folder = 0;
     for (int i = 0; i<folder_size; i++) {
-        if (!strcmp(liste_path[0].name, liste_noms[i].name)) in_folder = 1;
+        if (!strcmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
         free((int) liste_path);
@@ -253,7 +253,7 @@ uint32_t i_path_to_id(char input_path[]) {
     if (taille_path == 1) {
         x = 0;
         for (int i = 0; i < folder_size; i++) {
-            if (!strcmp(liste_noms[i].name, liste_path[0].name)) break;
+            if (!strcmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
             x++;
         }
         free((int) liste_path);
@@ -265,7 +265,7 @@ uint32_t i_path_to_id(char input_path[]) {
     while (taille_path != 1) {
         x = 0;
         for (int i = 0; i < folder_size; i++) {
-            if (!strcmp(liste_noms[i].name, liste_path[0].name)) break;
+            if (!strcmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
             x++;
         }
 
@@ -280,26 +280,28 @@ uint32_t i_path_to_id(char input_path[]) {
         for (int i = 0; i<folder_size; i++) liste_id[i] = 0;
         i_get_dir_content(contenu_path_0, liste_noms, liste_id);
 
-        for (int i = 0; i < taille_path; i++) liste_path[i] = liste_path[i+1];
-        for (int i = 0; i<20; i++) liste_path[taille_path].name[i] = 0;
+        start_from_liste_path++;
         taille_path--;
     }
 
     in_folder = 0;
     for (int i = 0; i<folder_size; i++) {
-        if (!strcmp(liste_path[0].name, liste_noms[i].name)) in_folder = 1;
+        if (!strcmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
+        for (int i = 0; i<folder_size; i++) {
+            fskprint("%s %s\n", liste_path[0+start_from_liste_path].name, liste_noms[i].name);
+        }
         free((int) liste_path);
         free((int) liste_noms);
         free((int) liste_id);
-        fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
+        fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
         return -1;
     }
 
     x = 0;
     for (int i = 0; i < folder_size; i++) {
-        if (!strcmp(liste_noms[i].name, liste_path[0].name)) break;
+        if (!strcmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
         x++;
     }
     uint32_t contenu_path_0 = liste_id[x];
@@ -389,10 +391,6 @@ uint32_t *declare_read_array(char path[]) {
 // How to declare data : uint32_t *data = declare_read_array(path);
 // How to free data    : free((int) data);
 void read_file(char path[], uint32_t data[]) {
-    uint32_t file_size = get_file_size("/test1/test2/test3/file");
-    for (uint32_t i=0; i<file_size*126; i++) {
-        data[i] = 0;
-    }
     uint32_t sector[128];
     read_sectors_ATA_PIO(i_path_to_id(path), sector);
     uint32_t id_file_index = sector[127];
@@ -419,4 +417,15 @@ void read_file(char path[], uint32_t data[]) {
 
 int does_path_exists(char path[]) {
     return (int) i_path_to_id(path) != -1;
+}
+
+int type_sector(char path[]){
+    uint32_t id_sector = i_path_to_id(path);
+    uint32_t sector[128];
+    read_sectors_ATA_PIO(id_sector, sector);
+    if (sector[0] & 0x8000) return -1; // shouldn't happend
+    if (sector[0] & 0x9000) return 1;  // file, shouldn't happend
+    if (sector[0] & 0xa000) return 2;  // file index
+    if (sector[0] & 0xc000) return 3;  // folder
+    return 0; // default (sector empty)
 }
