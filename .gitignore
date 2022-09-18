@@ -6,3 +6,4 @@ out/
 
 # visual studio folder
 .vs
+.vscode/settings.json
