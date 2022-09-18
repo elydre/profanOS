@@ -100,13 +100,13 @@ def elf_image():
 
 def make_help():
     aide = (
-        ("make", "build profanOS.img"),
-        ("make iso", "build bootable iso with grub"),
-        ("make clean", "delete all files in out directory"),
-        ("make fullclean", "clean + delete .iso / .elf"),
-        ("make hdd", "create a empty HDD"),
-        ("make run", "run the profanOS.img in qemu"),
-        ("make irun", "run the profanOS.iso in qemu (iso required)"),
+        ("make",        "build profanOS kernel (elf file)"),
+        ("make iso",    "build bootable iso with grub"),
+        ("make hdd",    "create a empty 1Mo HDD (bin file)"),
+        ("make clean",  "delete all files in out directory"),
+        ("make fullclean", "clean + delete iso / elf / bin"),
+        ("make run",    "run the profanOS.elf in qemu"),
+        ("make irun",   "run the profanOS.iso in qemu"),
     )
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
