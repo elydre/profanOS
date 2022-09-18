@@ -2,7 +2,7 @@ import sys, os
 
 # SETUP
 
-C_DIRECTORY = ["kernel", "drivers", "cpu", "libc"]
+SCR_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
 
 INCLUDE_DIR = "include"
 INCLUDE_SUB = [".", "kernel", "driver", "cpu"]
@@ -47,12 +47,12 @@ def print_and_exec(command):
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
-    for dir in C_DIRECTORY:
+    for dir in SCR_DIRECTORY:
         try:
-            need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
-            out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
             need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
+            need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
             need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
+            out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
             out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])
         except FileNotFoundError:
             cprint(COLOR_EROR, f"{dir} directory not found")
@@ -69,16 +69,16 @@ def gen_need_dict():
             return need, out
     
     del need["h"]
-    
+
     for file in [file for file in need["asm"] if file1_newer(out_file_name(file), file)]:
         need["asm"].remove(file)       
-            
+
     for file in [file for file in need["c"] if file1_newer(out_file_name(file), file)]:
         need["c"].remove(file)
     
     return need, out
 
-def bin_image():
+def elf_image():
     global RBF
     RBF = False
     need, out = gen_need_dict()
@@ -88,29 +88,22 @@ def bin_image():
 
     cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
 
-    if file1_newer("boot/bootsect.asm", f"{OUT_DIR}/bootsect.bin") or not file_exists(f"{OUT_DIR}/bootsect.bin"):
-        print_and_exec(f"nasm boot/bootsect.asm -f bin -o {OUT_DIR}/bootsect.bin")
+    for file in need["asm"]:
+        print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file)}")
 
-    if need_rebuild("boot/kernel_entry.asm"):
-        print_and_exec(f"nasm boot/kernel_entry.asm -f elf -o {OUT_DIR}/kernel_entry.o")
-        
     for file in need["c"]:
         print_and_exec(f"{CC} {CFLAGS} -c {file} -o {out_file_name(file)}")
 
-    for file in need["asm"]:
-        print_and_exec(f"nasm {file} -f elf -o {out_file_name(file)}")
-
     if RBF:
-        in_files = f"{OUT_DIR}/kernel_entry.o " + " ".join(out)
-        print_and_exec(f"ld -m elf_i386 -G -o {OUT_DIR}/kernel.bin -Ttext 0x1000 {in_files} --oformat binary")
-        print_and_exec(f"cat {OUT_DIR}/bootsect.bin {OUT_DIR}/kernel.bin > profanOS.img")
+        in_files = " ".join(out)
+        print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
 
 def make_help():
     aide = (
         ("make", "build profanOS.img"),
-        ("make regular", "build 1440ko profanOS floppy"),
+        ("make iso", "build bootable iso with grub"),
         ("make clean", "delete all files in out directory"),
-        ("make fullclean", "clean + delete .bin and .iso"),
+        ("make fullclean", "clean + delete .iso / .elf"),
         ("make hdd", "create a empty HDD"),
         ("make run", "run the profanOS.img in qemu"),
         ("make irun", "run the profanOS.iso in qemu (iso required)"),
@@ -118,15 +111,23 @@ def make_help():
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
+def make_iso():
+    print_and_exec("mkdir -p isodir/boot/grub")
+    print_and_exec("cp profanOS.elf isodir/boot/profanOS.elf")
+    print_and_exec("cp boot/menu.lst isodir/boot/grub/menu.lst")
+    print_and_exec("cp boot/stage2_eltorito isodir/boot/grub/stage2_eltorito")
+    print_and_exec("mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso isodir")
+
 def gen_hdd(force):
     if (not file_exists("HDD.bin")) or force:
         print_and_exec("dd if=/dev/zero of=HDD.bin bs=1024 count=1024")
 
 assos = {
-    "bin_image": bin_image,
+    "elf_image": elf_image,
     "help": make_help,
     "hdd": lambda: gen_hdd(False),
     "hddf": lambda: gen_hdd(True),
+    "iso": make_iso,
 }
 
 def main():

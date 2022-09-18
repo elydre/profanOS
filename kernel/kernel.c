@@ -9,6 +9,9 @@
 
 
 void kernel_main() {
+    clear_screen();
+    ckprint("booting profanOS...\n", c_grey);
+
     isr_install();
     irq_install();
     kprint("ISR initialized\n");
