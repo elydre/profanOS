@@ -1,9 +1,13 @@
 # build artifacts
-*.bin
 *.iso
-*.img
+*.elf
+*.bin
+
+isodir/
 out/
 .vscode/settings.json
 
 # visual studio folder
+.vscode/settings.json
 .vs
+profanOS.img
