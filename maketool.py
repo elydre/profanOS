@@ -112,6 +112,9 @@ def make_help():
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
 def make_iso():
+    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf"):
+        return cprint(COLOR_INFO, "profanOS.iso is up to date")
+    cprint(COLOR_INFO, "building iso...")
     print_and_exec("mkdir -p isodir/boot/grub")
     print_and_exec("cp profanOS.elf isodir/boot/profanOS.elf")
     print_and_exec("cp boot/menu.lst isodir/boot/grub/menu.lst")
