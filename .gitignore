@@ -7,5 +7,5 @@ isodir/
 out/
 
 # visual studio folder
-.vs
 .vscode/settings.json
+.vs
