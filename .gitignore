@@ -2,6 +2,7 @@
 *.iso
 *.elf
 *.bin
+*.img
 
 isodir/
 out/
@@ -9,4 +10,3 @@ out/
 # visual studio folder
 .vscode/settings.json
 .vs
-profanOS.img
