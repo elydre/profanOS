@@ -1,13 +1,13 @@
-# build artifacts
+# build files
 *.iso
 *.elf
 *.bin
 *.img
 
-isodir/
+# build dir
 out/
 .vscode/settings.json
 
-# visual studio folder
-.vscode/settings.json
-.vs
+# vscode dir
+.vscode/
+.vs/

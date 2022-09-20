@@ -115,11 +115,11 @@ def make_iso():
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf"):
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
     cprint(COLOR_INFO, "building iso...")
-    print_and_exec("mkdir -p isodir/boot/grub")
-    print_and_exec("cp profanOS.elf isodir/boot/profanOS.elf")
-    print_and_exec("cp boot/menu.lst isodir/boot/grub/menu.lst")
-    print_and_exec("cp boot/stage2_eltorito isodir/boot/grub/stage2_eltorito")
-    print_and_exec("mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso isodir")
+    print_and_exec("mkdir -p out/isodir/boot/grub")
+    print_and_exec("cp profanOS.elf out/isodir/boot/profanOS.elf")
+    print_and_exec("cp boot/menu.lst out/isodir/boot/grub/menu.lst")
+    print_and_exec("cp boot/stage2_eltorito out/isodir/boot/grub/stage2_eltorito")
+    print_and_exec("mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso out/isodir")
 
 def gen_hdd(force):
     if (not file_exists("HDD.bin")) or force:
