@@ -23,7 +23,7 @@ irun: iso
 
 
 clean:
-	rm -Rf out/ isodir/
+	rm -Rf out/
 
 fullclean: clean
 	rm -Rf *.iso *.elf *.bin
