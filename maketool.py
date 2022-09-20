@@ -63,7 +63,7 @@ def gen_need_dict():
         except FileNotFoundError: cprint(COLOR_EROR, f"{fulldir} directory not found")
 
     for file in need["h"]:
-        if file1_newer(file, "profanOS.img"):
+        if file1_newer(file, "profanOS.elf"):
             cprint(COLOR_INFO, f"header '{file}' was modified, need to rebuild all")
             del need["h"]
             return need, out
