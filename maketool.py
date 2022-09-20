@@ -86,7 +86,7 @@ def elf_image():
         cprint(COLOR_INFO, f"creating '{OUT_DIR}' directory")
         os.makedirs(OUT_DIR)
 
-    cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
+    if len(need['c']): cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
 
     for file in need["asm"]:
         print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file)}")
@@ -125,12 +125,22 @@ def gen_hdd(force):
     if (not file_exists("HDD.bin")) or force:
         print_and_exec("dd if=/dev/zero of=HDD.bin bs=1024 count=1024")
 
+def qemu_run(iso_run = False):
+    elf_image()
+    if iso_run: make_iso()
+    gen_hdd(False)
+    cprint(COLOR_INFO, "starting qemu...")
+    if iso_run: print_and_exec("qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d")
+    else: print_and_exec("qemu-system-i386 -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a")
+
 assos = {
     "elf_image": elf_image,
     "help": make_help,
     "hdd": lambda: gen_hdd(False),
     "hddf": lambda: gen_hdd(True),
     "iso": make_iso,
+    "run": lambda: qemu_run(False),
+    "irun": lambda: qemu_run(True),
 }
 
 def main():

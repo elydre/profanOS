@@ -2,24 +2,23 @@
 elf_image:
 	python3 maketool.py elf_image
 
-iso: elf_image
-	@python3 maketool.py iso
+iso:
+	python3 maketool.py elf_image
+	python3 maketool.py iso
 
 
 hdd:
-	@python3 maketool.py hddf
+	python3 maketool.py hddf
 
 info:
-	@python3 maketool.py help
+	python3 maketool.py help
 
 
-run: elf_image
-	@python3 maketool.py hdd
-	qemu-system-i386 -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a
+run:
+	python3 maketool.py run
 
-irun: iso
-	@python3 maketool.py hdd
-	qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d
+irun:
+	python3 maketool.py irun
 
 
 clean:
