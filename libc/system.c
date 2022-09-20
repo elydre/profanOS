@@ -11,6 +11,9 @@ void sys_reboot() {
 }
 
 void sys_shutdown() {
+    port_word_out(0x604, 0x2000);  // qemu
+    port_word_out(0xB004, 0x2000); // bochs
+    port_word_out(0x4004, 0x3400); // virtualbox
     asm volatile("hlt");
 }
 
