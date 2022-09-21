@@ -21,28 +21,6 @@ void shell_omp() {
     kprint("profanOS-> ");
 }
 
-void disk_test() {
-    uint32_t inbytes[128], outbytes[128];
-    int sum = 0;
-
-    ckprint("writing to disk\n", c_magenta);
-    
-    for (int i = 0; i < 128; i++) inbytes[i] = i;
-
-    write_sectors_ATA_PIO(0, inbytes);
-    ckprint("writing done\nreading from disk\n", c_magenta);
-    
-    read_sectors_ATA_PIO(0, outbytes);
-
-    for (int i = 0; i < 10; i++) {
-        sum += outbytes[i];
-        fskprint("$1%d ", outbytes[i]);
-    }
-
-    if (sum == 45) ckprint("\n\nsum == 45, it works!\n", c_magenta);
-    else ckprint("\nsum != 45, it doesn't work!\n", c_dred);
-}
-
 void print_scancodes() {
     clear_screen();
     rainbow_print("enter scancode press ESC to exit\n");
@@ -181,7 +159,6 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
     else if (strcmp(prefix, "sleep") == 0)  ms_sleep(ascii_to_int(suffix) * 1000);
     else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
-    else if (strcmp(prefix, "td") == 0)     disk_test();
     else if (strcmp(prefix, "usg") == 0)    usage();
     else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
     else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
