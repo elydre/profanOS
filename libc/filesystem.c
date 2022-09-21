@@ -11,8 +11,8 @@ uint32_t i_creer_dossier(char nom[]);
 
 void init_filesystem() {
     uint32_t folder_racine[128];
-    for (int i = 0; i<128; i++) folder_racine[i] = 0;
-    if (!(folder_racine[127] && 0x8000)) {
+    for (int i = 0; i < 128; i++) folder_racine[i] = 0;
+    if (!(folder_racine[127] & 0x8000)) {
         fskprint("No root folder, creating one...\n");
         uint32_t location = i_next_free(0);
         if (location != 0) {
@@ -41,7 +41,7 @@ uint32_t i_next_free(uint32_t rec) {
 uint32_t i_creer_dossier(char nom[]) {
     uint32_t folder_id = i_next_free(0);
     uint32_t list_to_write[128];
-    for (int i = 0; i<128; i++) list_to_write[i] = 0;
+    for (int i = 0; i < 128; i++) list_to_write[i] = 0;
     list_to_write[0] = 0xC000; // 0x8000 + 0x4000
 
     if (strlen(nom) > 20) {
@@ -74,7 +74,7 @@ uint32_t i_creer_index_de_fichier(char nom[]) {
 
     // write intex
     uint32_t list_to_write[128];
-    for (int i = 0; i<128; i++) list_to_write[i] = 0;
+    for (int i = 0; i < 128; i++) list_to_write[i] = 0;
     list_to_write[0] = 0xA000;
     int list_index = 1;
     for (int i = 0; i < strlen(nom); i++) {
@@ -85,7 +85,7 @@ uint32_t i_creer_index_de_fichier(char nom[]) {
     write_sectors_ATA_PIO(location, list_to_write);
 
     // write file
-    for (int i = 0; i<128; i++) list_to_write[i] = 0;
+    for (int i = 0; i < 128; i++) list_to_write[i] = 0;
     list_to_write[0] = 0x9000;
     list_to_write[127] = 0;
     write_sectors_ATA_PIO(location_file, list_to_write);
@@ -150,7 +150,7 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
         return;
     }
     int full = 1;
-    for (int i = 21; i<128; i++) {
+    for (int i = 21; i < 128; i++) {
         if (!dossier[i]) {
             dossier[i] = file_id;
             full = 0;
@@ -166,7 +166,7 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
 
 void i_get_dir_content(uint32_t id, string_20_t list_name[], uint32_t liste_id[]) {
     for (int i = 0; i < 128; i++) list_name[i].name[0] = '\0';
-    for (int i = 0; i<128; i++) liste_id[i] = 0;
+    for (int i = 0; i < 128; i++) liste_id[i] = 0;
     int pointeur_noms = 0;
     int pointeur_liste_id = 0;
     
@@ -184,7 +184,7 @@ void i_get_dir_content(uint32_t id, string_20_t list_name[], uint32_t liste_id[]
     }
 
     uint32_t liste_contenu[108];
-    for (int i = 0; i<108; i++) liste_contenu[i] = 0;
+    for (int i = 0; i < 108; i++) liste_contenu[i] = 0;
     for (int i = 21; i < 128; i++) liste_contenu[i-21] = folder[i];
 
     uint32_t content[128];
@@ -212,7 +212,7 @@ int i_size_folder(uint32_t id_folder) {
     return size;
 }
 
-uint32_t i_path_to_id(char input_path[]) {
+uint32_t i_path_to_id(char input_path[], int silence) {
     //init
     int x = 0;
     int in_folder = 0;
@@ -227,26 +227,30 @@ uint32_t i_path_to_id(char input_path[]) {
     string_20_t * liste_path = malloc(strlen(path) * sizeof(string_20_t));
     i_parse_path(path, liste_path);
 
+    for (int i = 0; i < count_string(path, '/'); i++) {
+        fskprint("elm: $5%s\n", liste_path[i].name);
+    }
+
     int folder_size = i_size_folder(0);
     int taille_path = count_string(path, '/') + 1;
     string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
     for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
     uint32_t * liste_id = malloc(folder_size * sizeof(int));
-    for (int i = 0; i<folder_size; i++) liste_id[i] = 0;
+    for (int i = 0; i < folder_size; i++) liste_id[i] = 0;
     i_get_dir_content(0, liste_noms, liste_id);
 
     start_from_liste_path++;
     taille_path--;
 
     in_folder = 0;
-    for (int i = 0; i<folder_size; i++) {
+    for (int i = 0; i < folder_size; i++) {
         if (!strcmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
         free((int) liste_path);
         free((int) liste_noms);
         free((int) liste_id);
-        fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
+        if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
         return -1;
     }
 
@@ -277,7 +281,7 @@ uint32_t i_path_to_id(char input_path[]) {
         string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
         for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
         uint32_t * liste_id = malloc(folder_size * sizeof(int));
-        for (int i = 0; i<folder_size; i++) liste_id[i] = 0;
+        for (int i = 0; i < folder_size; i++) liste_id[i] = 0;
         i_get_dir_content(contenu_path_0, liste_noms, liste_id);
 
         start_from_liste_path++;
@@ -285,23 +289,23 @@ uint32_t i_path_to_id(char input_path[]) {
     }
 
     in_folder = 0;
-    for (int i = 0; i<folder_size; i++) {
+    for (int i = 0; i < folder_size; i++) {
         if (!strcmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
-        for (int i = 0; i<folder_size; i++) {
-            fskprint("%s %s\n", liste_path[0+start_from_liste_path].name, liste_noms[i].name);
+        for (int i = 0; i < folder_size; i++) {
+            fskprint("%s %s\n", liste_path[0 + start_from_liste_path].name, liste_noms[i].name);
         }
         free((int) liste_path);
         free((int) liste_noms);
         free((int) liste_id);
-        fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
+        if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
         return -1;
     }
 
     x = 0;
     for (int i = 0; i < folder_size; i++) {
-        if (!strcmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
+        if (!strcmp(liste_noms[i].name, liste_path[0 + start_from_liste_path].name)) break;
         x++;
     }
     uint32_t contenu_path_0 = liste_id[x];
@@ -333,7 +337,7 @@ int get_used_sectors(int disk_size) {
     for (int i = 0; i < disk_size; i++) {
         uint32_t sector[128];
         read_sectors_ATA_PIO(i, sector);
-        if (sector[0] && 0x8000) total ++;
+        if (sector[0] & 0x8000) total++;
     }
     return total;
 }
@@ -344,31 +348,27 @@ int is_disk_full(int disk_size) {
 
 uint32_t make_dir(char path[], char folder_name[]) {
     uint32_t dossier = i_creer_dossier(folder_name);
-    uint32_t id_to_set = i_path_to_id(path);
-    if ((int) id_to_set != -1) {
-        i_add_item_to_dir(dossier, id_to_set);
-    }
-    else {
-        fskprint("Erreur : le chemin specifie dans make_dir n'existe pas (%s)\n", path);
-    }
+    uint32_t id_to_set = i_path_to_id(path, 0);
+    if ((int) id_to_set != -1) i_add_item_to_dir(dossier, id_to_set);
+    else fskprint("Erreur : le chemin specifie dans make_dir n'existe pas (%s)\n", path);
     return dossier;
 }
 
 uint32_t make_file(char path[], char file_name[]) {
     uint32_t fichier_test = i_creer_index_de_fichier(file_name);
-    uint32_t id_to_set = i_path_to_id(path);
+    uint32_t id_to_set = i_path_to_id(path, 0);
     i_add_item_to_dir(fichier_test, id_to_set);
     return fichier_test;
 }
 
 void write_in_file(char path[], uint32_t data[], uint32_t data_size) {
-    uint32_t id_to_set = i_path_to_id(path);
+    uint32_t id_to_set = i_path_to_id(path, 0);
     i_set_data_to_file(data, data_size, id_to_set);
 }
 
 // Note : ne pas utiliser dans un check d'une boucle sauf si vraiment nessessaire
 uint32_t get_file_size(char path[]) {
-    uint32_t id_file_index = i_path_to_id(path);
+    uint32_t id_file_index = i_path_to_id(path, 0);
     uint32_t sector[128];
     read_sectors_ATA_PIO(id_file_index, sector);
     if (!(sector[0] & 0xA000)){
@@ -392,7 +392,7 @@ uint32_t *declare_read_array(char path[]) {
 // How to free data    : free((int) data);
 void read_file(char path[], uint32_t data[]) {
     uint32_t sector[128];
-    read_sectors_ATA_PIO(i_path_to_id(path), sector);
+    read_sectors_ATA_PIO(i_path_to_id(path, 0), sector);
     uint32_t id_file_index = sector[127];
     read_sectors_ATA_PIO(id_file_index, sector);
     if (!(sector[0] & 0xA000)){
@@ -400,14 +400,14 @@ void read_file(char path[], uint32_t data[]) {
     }
     uint32_t index = 0;
     read_sectors_ATA_PIO(id_file_index, sector);
-    for (int i=1; i<127; i++) {
+    for (int i=1; i < 127; i++) {
         data[index] = sector[i];
         index++;
     }
     id_file_index = sector[127];
     while (id_file_index) {
         read_sectors_ATA_PIO(id_file_index, sector);
-        for (int i=1; i<127; i++) {
+        for (int i=1; i < 127; i++) {
             data[index] = sector[i];
             index++;
         }
@@ -416,11 +416,11 @@ void read_file(char path[], uint32_t data[]) {
 }
 
 int does_path_exists(char path[]) {
-    return (int) i_path_to_id(path) != -1;
+    return (int) i_path_to_id(path, 1) != -1;
 }
 
 int type_sector(char path[]){
-    uint32_t id_sector = i_path_to_id(path);
+    uint32_t id_sector = i_path_to_id(path, 0);
     uint32_t sector[128];
     read_sectors_ATA_PIO(id_sector, sector);
     if (sector[0] & 0x8000) return -1; // shouldn't happend

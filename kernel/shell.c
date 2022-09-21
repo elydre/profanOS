@@ -200,24 +200,14 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "test") == 0) {
-        if (does_path_exists("/test1/test2/test3/file") != -1) {
+        if (!does_path_exists("/test1/test2/test3/file")) {
+            fskprint("$1Cree un truc !\n");
             make_dir("/", "test1");
             make_dir("/test1", "test2");
             make_dir("/test1/test2", "test3");
             make_file("/test1/test2/test3", "file");
         }
-        uint32_t int_suite[128];
-        for (int i = 0; i < 128; i++) int_suite[i] = i;
-        write_in_file("/test1/test2/test3/file", int_suite, 128);
-        fskprint("Size of file : %d\n", get_file_size("/test1/test2/test3/file"));
-        uint32_t *data = declare_read_array("/test1/test2/test3/file");
-        read_file("/test1/test2/test3/file", data);
-        uint32_t file_size = get_file_size("/test1/test2/test3/file");
-        for (uint32_t i=0; i<file_size*126; i++) {
-            fskprint("%d ", data[i]);
-        }
-        fskprint("\n");
-        free((int) data);
+        fskprint("print tt le temps\n");
     }
 
     else if (strcmp(prefix, "free") == 0) {
