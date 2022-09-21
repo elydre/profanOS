@@ -75,7 +75,6 @@ void shell_help(char suffix[]) {
         "sleep   - sleep for a given time",
         "ss      - show int32 in the LBA *suffix*",
         "stop    - shutdown the system",
-        "td      - test the disk",
         "usg     - show the usage of cpu",
         "ver     - display the version",
         "yield   - yield to pid *suffix*"
