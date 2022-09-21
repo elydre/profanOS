@@ -12,6 +12,10 @@ OUT_DIR = "out"
 CC = "gcc"
 CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I./{INCLUDE_DIR}"
 
+# SETTINGS
+
+COMPCT_CMDS = True
+
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 0, 0)
@@ -37,9 +41,11 @@ def cprint(color, text, end="\n"):
     print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
 
 def print_and_exec(command):
-    global RBF
-    RBF = True
-    cprint(COLOR_EXEC, command)
+    try: shell_len = os.get_terminal_size().columns
+    except Exception: shell_len = 80
+    if COMPCT_CMDS and len(command) > shell_len:
+        cprint(COLOR_EXEC, f"{command[:shell_len - 3]}...")
+    else: cprint(COLOR_EXEC, command)
     code = os.system(command)
     if code != 0:
         cprint(COLOR_EROR, f"error {code}")
@@ -79,8 +85,6 @@ def gen_need_dict():
     return need, out
 
 def elf_image():
-    global RBF
-    RBF = False
     need, out = gen_need_dict()
     if not os.path.exists(OUT_DIR):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}' directory")
@@ -94,7 +98,7 @@ def elf_image():
     for file in need["c"]:
         print_and_exec(f"{CC} {CFLAGS} -c {file} -o {out_file_name(file)}")
 
-    if RBF:
+    if need["c"] or need["asm"]:
         in_files = " ".join(out)
         print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
 
@@ -115,11 +119,11 @@ def make_iso():
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf"):
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
     cprint(COLOR_INFO, "building iso...")
-    print_and_exec("mkdir -p out/isodir/boot/grub")
-    print_and_exec("cp profanOS.elf out/isodir/boot/profanOS.elf")
-    print_and_exec("cp boot/menu.lst out/isodir/boot/grub/menu.lst")
-    print_and_exec("cp boot/stage2_eltorito out/isodir/boot/grub/stage2_eltorito")
-    print_and_exec("mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso out/isodir")
+    print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
+    print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/profanOS.elf")
+    print_and_exec(f"cp boot/menu.lst {OUT_DIR}/isodir/boot/grub/menu.lst")
+    print_and_exec(f"cp boot/stage2_eltorito {OUT_DIR}/isodir/boot/grub/stage2_eltorito")
+    print_and_exec(f"mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso {OUT_DIR}/isodir")
 
 def gen_hdd(force):
     if (not file_exists("HDD.bin")) or force:
