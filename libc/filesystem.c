@@ -227,10 +227,6 @@ uint32_t i_path_to_id(char input_path[], int silence) {
     string_20_t * liste_path = malloc(strlen(path) * sizeof(string_20_t));
     i_parse_path(path, liste_path);
 
-    for (int i = 0; i < count_string(path, '/'); i++) {
-        fskprint("elm: $5%s\n", liste_path[i].name);
-    }
-
     int folder_size = i_size_folder(0);
     int taille_path = count_string(path, '/') + 1;
     string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
@@ -384,7 +380,7 @@ uint32_t get_file_size(char path[]) {
     return sector_size;
 }
 
-uint32_t *declare_read_array(char path[]) {
+void *declare_read_array(char path[]) {
     return malloc(get_file_size(path) * sizeof(uint32_t) * 126);
 }
 
@@ -428,4 +424,10 @@ int type_sector(char path[]){
     if (sector[0] & 0xa000) return 2;  // file index
     if (sector[0] & 0xc000) return 3;  // folder
     return 0; // default (sector empty)
+}
+
+void list_dir_content(char path[], string_20_t out_list[]) {
+    uint32_t * to_del = malloc(0x1000);
+    i_get_dir_content(i_path_to_id(path, 0), out_list, to_del);
+    free((int) to_del);
 }

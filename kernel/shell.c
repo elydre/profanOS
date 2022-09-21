@@ -199,15 +199,22 @@ void shell_command(char command[]) {
         sys_shutdown();
     }
 
-    else if (strcmp(prefix, "test") == 0) {
-        if (!does_path_exists("/test1/test2/test3/file")) {
-            fskprint("$1Cree un truc !\n");
-            make_dir("/", "test1");
-            make_dir("/test1", "test2");
-            make_dir("/test1/test2", "test3");
-            make_file("/test1/test2/test3", "file");
+    else if (strcmp(prefix, "mkdir") == 0) {
+        make_dir("/", suffix);
+    }
+
+    else if (strcmp(prefix, "ls") == 0) {
+        string_20_t *out_list = malloc(0x1000);
+        list_dir_content("/", out_list);
+        for (int i = 0; i < 10; i++) {
+            if (out_list[i].name[0] == '\0') break;
+            fskprint("$4%s\n", out_list[i].name);
         }
-        fskprint("print tt le temps\n");
+        free((int) out_list);
+    }
+
+    else if (strcmp(prefix, "mkdir") == 0) {
+        make_dir("/", suffix);
     }
 
     else if (strcmp(prefix, "free") == 0) {
