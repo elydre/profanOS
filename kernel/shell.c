@@ -190,6 +190,12 @@ void shell_command(char command[]) {
         free((int) out_list);
     }
 
+    else if (strcmp(prefix, "udisk") == 0) {
+        uint32_t sectors_count = get_ATA_sectors_count();
+        fskprint("total sector count: %d\n", sectors_count);
+        fskprint("used sector count:  %d\n", get_used_sectors(sectors_count));
+    }
+
     else if (strcmp(prefix, "mkdir") == 0) {
         make_dir("/", suffix);
     }

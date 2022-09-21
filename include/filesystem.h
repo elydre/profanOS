@@ -8,8 +8,8 @@ typedef struct string_20_t {
 
 void init_filesystem();
 
-int get_used_sectors(int disk_size);
-int is_disk_full(int disk_size);
+uint32_t get_used_sectors(uint32_t disk_size);
+uint32_t is_disk_full(uint32_t disk_size);
 
 uint32_t make_dir(char path[], char folder_name[]);
 uint32_t make_file(char path[], char file_name[]);

@@ -328,9 +328,9 @@ void i_parse_path(char path[], string_20_t liste_path[]) {
     for (int i = 0; i<20; i++) liste_path[0].name[i] = 0;
 }
 
-int get_used_sectors(int disk_size) {
-    int total = 0;
-    for (int i = 0; i < disk_size; i++) {
+uint32_t get_used_sectors(uint32_t disk_size) {
+    uint32_t total = 0;
+    for (uint32_t i = 0; i < disk_size; i++) {
         uint32_t sector[128];
         read_sectors_ATA_PIO(i, sector);
         if (sector[0] & 0x8000) total++;
@@ -338,7 +338,7 @@ int get_used_sectors(int disk_size) {
     return total;
 }
 
-int is_disk_full(int disk_size) {
+uint32_t is_disk_full(uint32_t disk_size) {
     return disk_size == get_used_sectors(disk_size);
 }
 
