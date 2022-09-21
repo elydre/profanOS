@@ -12,7 +12,6 @@ uint32_t i_creer_dossier(char nom[]);
 void init_filesystem() {
     uint32_t folder_racine[128];
     read_sectors_ATA_PIO(0, folder_racine);
-    fskprint("%d\n", folder_racine[0]);
     if (!(folder_racine[0] & 0x8000)) {
         fskprint("No root folder, creating one...\n");
         uint32_t location = i_next_free(0);

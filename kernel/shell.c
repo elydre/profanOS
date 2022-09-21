@@ -17,8 +17,10 @@
 #define SC_MAX 57
 #define BFR_SIZE 68
 
+static char pwd[256] = "/";
+
 void shell_omp() {
-    kprint("profanOS-> ");
+    fskprint("profanOS [$9%s$7] -> ", pwd);
 }
 
 void print_scancodes() {
@@ -176,29 +178,20 @@ void shell_command(char command[]) {
         sys_shutdown();
     }
 
-    else if (strcmp(prefix, "mkdir") == 0) {
-        make_dir("/", suffix);
-    }
-
     else if (strcmp(prefix, "ls") == 0) {
-        if (strcmp(suffix, "ls") == 0) suffix = "/";
-        if (!does_path_exists(suffix)) {
-            fskprint("$1%s$4 not found\n", suffix);
-        } else {
-            int elm_count = get_folder_size(suffix);
-            fskprint("$4%d elements in $1%s$4:\n", elm_count, suffix);
-            string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
-            uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
-            get_dir_content(path_to_id(suffix, 0), out_list, out_type);
-            for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
-            for (int i = 0; i < 10; i++) {
-                if (out_list[i].name[0] == '\0') break;
-                if (out_type[i] == 2) fskprint("$1%s\n", out_list[i].name);
-                else if (out_type[i] == 3) fskprint("$2%s\n", out_list[i].name);
-                else fskprint("$3%s\n", out_list[i].name);
-            }
-            free((int) out_list);
+        int elm_count = get_folder_size(pwd);
+        fskprint("$4%d elements in $1%s$4:\n", elm_count, pwd);
+        string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
+        uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
+        get_dir_content(path_to_id(pwd, 0), out_list, out_type);
+        for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
+        for (int i = 0; i < 10; i++) {
+            if (out_list[i].name[0] == '\0') break;
+            if (out_type[i] == 2) fskprint("$1%s\n", out_list[i].name);
+            else if (out_type[i] == 3) fskprint("$2%s\n", out_list[i].name);
+            else fskprint("$3%s\n", out_list[i].name);
         }
+        free((int) out_list);
     }
 
     else if (strcmp(prefix, "udisk") == 0) {
@@ -210,11 +203,11 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "mkdir") == 0) {
-        make_dir("/", suffix);
+        make_dir(pwd, suffix);
     }
 
     else if (strcmp(prefix, "mkfile") == 0) {
-        make_file("/", suffix);
+        make_file(pwd, suffix);
     }
 
     else if (strcmp(prefix, "free") == 0) {
@@ -238,22 +231,17 @@ void shell_command(char command[]) {
         mskprint(3, "$3", prefix, "$B is not a valid command.\n");
     }
 
-    if (strcmp(prefix, "") *
-        strcmp(prefix, "clear") *
-        strcmp(prefix, "sleep") *
-        strcmp(prefix, "sc")
-    != 0) { kprint("\n"); }
-
     free((int) prefix);
     free((int) suffix);
-    shell_omp();
 }
 
 void run_shell() {
-    shell_omp();
+    /* use BFR_SIZE in table declaration is not illegal
+     * because BFR_SIZE is a macro and not a variable */
     char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
     last_buffer[0] = '\0';
     while (1) {
+        shell_omp();
         input_paste(char_buffer, BFR_SIZE, last_buffer, c_blue);
         strcpy(last_buffer, char_buffer);
         kprint("\n");
