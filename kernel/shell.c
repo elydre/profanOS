@@ -180,7 +180,6 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "ls") == 0) {
         int elm_count = get_folder_size(pwd);
-        fskprint("$4%d elements in $1%s$4:\n", elm_count, pwd);
         string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
         uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
         get_dir_content(path_to_id(pwd, 0), out_list, out_type);
