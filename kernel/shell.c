@@ -234,8 +234,6 @@ void shell_command(char command[]) {
 }
 
 void run_shell() {
-    /* use BFR_SIZE in table declaration is not illegal
-     * because BFR_SIZE is a macro and not a variable */
     char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
     last_buffer[0] = '\0';
     while (1) {
