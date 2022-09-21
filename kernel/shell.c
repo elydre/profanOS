@@ -17,10 +17,10 @@
 #define SC_MAX 57
 #define BFR_SIZE 68
 
-static char pwd[256] = "/";
+static char current_dir[256] = "/";
 
 void shell_omp() {
-    fskprint("profanOS [$9%s$7] -> ", pwd);
+    fskprint("profanOS [$9%s$7] -> ", current_dir);
 }
 
 void print_scancodes() {
@@ -178,10 +178,10 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "ls") == 0) {
-        int elm_count = get_folder_size(pwd);
+        int elm_count = get_folder_size(current_dir);
         string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
         uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
-        get_dir_content(path_to_id(pwd, 0), out_list, out_type);
+        get_dir_content(path_to_id(current_dir, 0), out_list, out_type);
         for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
         for (int i = 0; i < 10; i++) {
             if (out_list[i].name[0] == '\0') break;
@@ -201,11 +201,16 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "mkdir") == 0) {
-        make_dir(pwd, suffix);
+        make_dir(current_dir, suffix);
+        if (strlen(current_dir) == 1) {
+            make_dir(strcat(current_dir, suffix), "..");
+        } else {
+            make_dir(strcat(strcat(current_dir, "/"), suffix), "..");
+        }
     }
 
     else if (strcmp(prefix, "mkfile") == 0) {
-        make_file(pwd, suffix);
+        make_file(current_dir, suffix);
     }
 
     else if (strcmp(prefix, "free") == 0) {
