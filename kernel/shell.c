@@ -181,23 +181,40 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "ls") == 0) {
-        string_20_t *out_list = malloc(0x1000);
-        list_dir_content("/", out_list);
-        for (int i = 0; i < 10; i++) {
-            if (out_list[i].name[0] == '\0') break;
-            fskprint("$4%s\n", out_list[i].name);
+        if (strcmp(suffix, "ls") == 0) suffix = "/";
+        if (!does_path_exists(suffix)) {
+            fskprint("$1%s$4 not found\n", suffix);
+        } else {
+            int elm_count = get_folder_size(suffix);
+            fskprint("$4%d elements in $1%s$4:\n", elm_count, suffix);
+            string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
+            uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
+            get_dir_content(path_to_id(suffix, 0), out_list, out_type);
+            for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
+            for (int i = 0; i < 10; i++) {
+                if (out_list[i].name[0] == '\0') break;
+                if (out_type[i] == 2) fskprint("$1%s\n", out_list[i].name);
+                else if (out_type[i] == 3) fskprint("$2%s\n", out_list[i].name);
+                else fskprint("$3%s\n", out_list[i].name);
+            }
+            free((int) out_list);
         }
-        free((int) out_list);
     }
 
     else if (strcmp(prefix, "udisk") == 0) {
+        fskprint("disk scan in progress...\n");
         uint32_t sectors_count = get_ATA_sectors_count();
-        fskprint("total sector count: %d\n", sectors_count);
-        fskprint("used sector count:  %d\n", get_used_sectors(sectors_count));
+        uint32_t used_sectors = get_used_sectors(sectors_count);
+        fskprint("$4total sector count: $1%d\n", sectors_count);
+        fskprint("$4used sector count:  $1%d\n", used_sectors);
     }
 
     else if (strcmp(prefix, "mkdir") == 0) {
         make_dir("/", suffix);
+    }
+
+    else if (strcmp(prefix, "mkfile") == 0) {
+        make_file("/", suffix);
     }
 
     else if (strcmp(prefix, "free") == 0) {
