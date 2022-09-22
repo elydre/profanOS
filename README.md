@@ -44,22 +44,28 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 | command | description                     |
 |---------|---------------------------------|
-| alloc   | allocate *suffix* ko            |
+| alloc    | allocate *suffix* ko           |
+| cat     | print file *suffix*             |
+| cd      | change directory to *suffix*    |
 | clear   | clear the screen                |
 | echo    | print the arguments             |
 | free    | free *suffix* address           |
+| gpd     | get to the parent directory     |
 | help    | show this help                  |
 | info    | show time, task & page info     |
+| ls      | list the current directory      |
 | mem     | show MLIST with colors          |
+| mkdir   | create a new folder *suffix*    |
+| mkfile  | create a new file *suffix*      |
 | reboot  | reboot the system               |
 | sc      | show the scancodes              |
 | sleep   | sleep for a given time          |
 | ss      | show int32 in the LBA *suffix*  |
 | stop    | shutdown the system             |
-| td      | test the disk                   |
+| tree    | show the current directory tree |
+| udisk   | show used disk space            |
 | usg     | show the usage of cpu           |
-| ver     | display the version             |
-| yield   | yield to pid *suffix*           |
+| yield   | yield to pid *suffix*"          |
 
 ### Smart print color
 

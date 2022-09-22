@@ -1,5 +1,6 @@
 #include <driver/ata.h>
 #include <ports.h>
+#include <iolib.h>
 
 /*
 BSY: a 1 means that the controller is busy executing a command. No register should be accessed (except the digital output register) while this bit is set.
@@ -24,6 +25,7 @@ static void ATA_wait_BSY();
 static void ATA_wait_DRQ();
 
 void read_sectors_ATA_PIO(uint32_t LBA, uint32_t out[]) {
+	// fskprint("R");
 	ATA_wait_BSY();
 	port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
 	port_byte_out(0x1F2, 1);

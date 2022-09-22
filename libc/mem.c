@@ -74,6 +74,49 @@ int alloc(int size) {
     return -1;
 }
 
+int free_addr(int addr) { 
+    int index = (addr - BASE_ADDR) / PART_SIZE;
+    int list_index = index / 19, i = index % 19;
+    if (get_state(MLIST[list_index], i) == 1) {
+        MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
+        i++;
+        while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
+            MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
+            i++;
+        } return 1;
+    } return 0;
+}
+
+// standard functions
+
+void free(void *addr) {
+    free_addr((int) addr);
+}
+
+void * malloc(int size) {
+    int addr = alloc(size);
+    if (addr == -1) return NULL;
+    return (void *) addr;
+}
+
+void * realloc(void * ptr, int size) {
+    int addr = (int) ptr;
+    int new_addr = alloc(size);
+    if (new_addr == -1) return NULL;
+    memory_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
+    free_addr(addr);
+    return (void *) new_addr;
+}
+
+void * calloc(int size) {
+    int addr = alloc(size);
+    if (addr == -1) return NULL;
+    memory_set((uint8_t *) addr, 0, size);
+    return (void *) addr;
+}
+
+// memory info function
+
 void memory_print() {
     int color, val;
     char nb[2];
@@ -90,29 +133,8 @@ void memory_print() {
             }
         }
     }
-    kprint("\n");
+    kprint("\n\n");
 }
-
-int free(int addr) { 
-    int index = (addr - BASE_ADDR) / PART_SIZE;
-    int list_index = index / 19, i = index % 19;
-    if (get_state(MLIST[list_index], i) == 1) {
-        MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
-        i++;
-        while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
-            MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
-            i++;
-        } return 1;
-    } return 0;
-}
-
-void * malloc(int size) {
-    int addr = alloc(size);
-    if (addr == -1) return NULL;
-    return (void *)addr;
-}
-
-// memory info function
 
 int get_memory_usage() {
     int used = 0;

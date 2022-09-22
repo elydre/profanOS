@@ -6,6 +6,7 @@
 
 # build dir
 out/
+.vscode/settings.json
 
 # vscode dir
 .vscode/

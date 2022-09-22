@@ -39,6 +39,21 @@ void hex_to_ascii(int n, char str[]) {
     else append(str, tmp + '0');
 }
 
+int in_string(char str[], char thing) {
+    for (int i = 0; i < strlen(str);i++) {
+        if (str[i] == thing) return 1;
+    }
+    return 0;
+}
+
+int count_string(char str[], char thing) {
+    int total = 0;
+    for (int i = 0; i < strlen(str);i++) {
+        if (str[i] == thing) total++;
+    }
+    return total;
+}
+
 int ascii_to_int(char str[]) {
     int i, n;
     n = 0;
@@ -83,6 +98,9 @@ void strcpy(char s1[], char s2[]) {
 
 // Returns <0 if s1<s2, 0 if s1==s2, >0 if s1>s2
 int strcmp(char s1[], char s2[]) {
+    if (strlen(s1) != strlen(s2)) {
+        return -1;
+    }
     int i;
     for (i = 0; s1[i] == s2[i]; i++) {
         if (s1[i] == '\0') return 0;
@@ -111,4 +129,12 @@ void str_end_split(char s[], char delim) {
         s[i - limit] = s[i];
     }
     s[strlen(s) - limit] = '\0';    
+}
+
+char* strcat(char s1[], const char s2[]) {
+    char *start = s1;
+    while(*start != '\0') start++;
+    while(*s2 != '\0') *start++ = *s2++;
+    *start = '\0';
+    return s1;
 }

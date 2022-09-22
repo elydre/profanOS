@@ -1,6 +1,7 @@
 #include <driver/screen.h>
 #include <kernel/shell.h>
 #include <driver/rtc.h>
+#include <filesystem.h>
 #include <cpu/isr.h>
 #include "kernel.h"
 #include <iolib.h>
@@ -22,6 +23,9 @@ void kernel_main() {
     rtc_install();
     gen_boot_time();
     kprint("RTC initialized\n");
+
+    init_filesystem();
+    kprint("FileSys initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$Cversion $4%s\n\n", VERSION);

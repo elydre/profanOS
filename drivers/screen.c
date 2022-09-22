@@ -71,7 +71,7 @@ int print_char(char c, int col, int row, char attr) {
     } else if (c == 0x08) { /* Backspace */
         vidmem[offset] = ' ';
         vidmem[offset+1] = attr;
-    } else {
+    } else if (c != '\r') {
         vidmem[offset] = c;
         vidmem[offset+1] = attr;
         offset += 2;
