@@ -23,6 +23,12 @@ void shell_omp() {
     fskprint("profanOS [$9%s$7] -> ", current_dir);
 }
 
+void assemble_path(char old[], char new[], char result[]) {
+    result[0] = '\0'; strcpy(result, old);
+    if (result[strlen(result) - 1] != '/') append(result, '/');
+    for (int i = 0; i < strlen(new); i++) append(result, new[i]);
+}
+
 void print_scancodes() {
     clear_screen();
     rainbow_print("enter scancode press ESC to exit\n");
@@ -46,6 +52,31 @@ void print_scancodes() {
         fskprint("$4\nletter min: $1%c", scancode_to_char(last_sc, 0));
         fskprint("$4\nletter maj: $1%c\n", scancode_to_char(last_sc, 1));
     }
+}
+
+void shell_ls() {
+    int elm_count = get_folder_size(current_dir);
+    string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
+    uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
+    char tmp_path[256];
+    get_dir_content(path_to_id(current_dir, 0), out_list, out_type);
+    for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
+    for (int i = 0; i < elm_count; i++) {
+        if (out_type[i] == 3) {
+            fskprint("$2%s", out_list[i].name);
+            for (int j = 0; j < 22 - strlen(out_list[i].name); j++) kprint(" ");
+            assemble_path(current_dir, out_list[i].name, tmp_path);
+            fskprint("%d elm\n", get_folder_size(tmp_path));
+        }
+    } for (int i = 0; i < elm_count; i++) {
+        if (out_type[i] == 2) {
+            fskprint("$1%s", out_list[i].name);
+            for (int j = 0; j < 22 - strlen(out_list[i].name); j++) kprint(" ");
+            assemble_path(current_dir, out_list[i].name, tmp_path);
+            fskprint("%d sect\n", get_file_size(tmp_path));
+        }
+    }
+    free((int) out_list);
 }
 
 void show_disk_LBA(char suffix[]) {
@@ -155,6 +186,7 @@ void shell_command(char command[]) {
     if      (strcmp(prefix, "clear") == 0)  clear_screen();
     else if (strcmp(prefix, "echo") == 0)   mskprint(3, "$4", suffix, "\n");
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
+    else if (strcmp(prefix, "ls") == 0)     shell_ls();
     else if (strcmp(prefix, "mem") == 0)    memory_print();
     else if (strcmp(prefix, "mkdir") == 0) make_dir(current_dir, suffix);
     else if (strcmp(prefix, "mkfile") == 0) make_file(current_dir, suffix);
@@ -175,24 +207,10 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "stop") * strcmp(prefix, "exit") == 0) {
-        rainbow_print("Stopping the CPU. Bye!\n");
+        rainbow_print("stopping profanOS, bye!\n");
         sys_shutdown();
     }
 
-    else if (strcmp(prefix, "ls") == 0) {
-        int elm_count = get_folder_size(current_dir);
-        string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
-        uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
-        get_dir_content(path_to_id(current_dir, 0), out_list, out_type);
-        for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
-        for (int i = 0; i < 10; i++) {
-            if (out_list[i].name[0] == '\0') break;
-            if (out_type[i] == 2) fskprint("$1%s\n", out_list[i].name);
-            else if (out_type[i] == 3) fskprint("$2%s\n", out_list[i].name);
-            else fskprint("$3%s\n", out_list[i].name);
-        }
-        free((int) out_list);
-    }
 
     else if (strcmp(prefix, "udisk") == 0) {
         fskprint("disk scan in progress...\n");
@@ -200,6 +218,30 @@ void shell_command(char command[]) {
         uint32_t used_sectors = get_used_sectors(sectors_count);
         fskprint("$4total sector count: $1%d\n", sectors_count);
         fskprint("$4used sector count:  $1%d\n", used_sectors);
+    }
+
+    else if (strcmp(prefix, "cat") == 0) {
+        char *file = malloc(strlen(suffix)+strlen(current_dir)+2);
+        assemble_path(current_dir, suffix, file);
+        if (does_path_exists(file) && type_sector(path_to_id(file, 0)) == 2) {
+            char *file_content = malloc(get_file_size(file));
+            read_file(file, (uint32_t *) file_content);
+            fskprint("$4%s\n", file_content);
+            free((int) file_content);
+        } else fskprint("$3%s$B file not found\n", file);
+        free((int) file);
+    }
+
+    else if (strcmp(prefix, "wif") == 0) {
+        // write in file
+        char *file = malloc(strlen(suffix)+strlen(current_dir)+2);
+        assemble_path(current_dir, suffix, file);
+        if (does_path_exists(file) && type_sector(path_to_id(file, 0)) == 2) {
+            char file_content[] = "coucou!";
+            // kprint("-> "); input(file_content, 70, c_blue); kprint("\n");
+            write_in_file(file, (uint32_t *) file_content, 70);
+        } else fskprint("$3%s$B file not found\n", file);
+        free((int) file);
     }
 
     else if (strcmp(prefix, "gpd") == 0) {
@@ -214,10 +256,9 @@ void shell_command(char command[]) {
 
     else if (strcmp(prefix, "cd") == 0) {
         char new_path[256];
-        strcpy(new_path, current_dir);
-        if (current_dir[strlen(current_dir) - 1] != '/') append(new_path, '/');
-        for (int i = 0; i < strlen(suffix); i++) append(new_path, suffix[i]);
-        if (does_path_exists(new_path)) strcpy(current_dir, new_path);
+        assemble_path(current_dir, suffix, new_path);
+        if (does_path_exists(new_path) && type_sector(path_to_id(new_path, 0)) == 3)
+            strcpy(current_dir, new_path);
         else fskprint("$3%s$B path not found\n", new_path);
     }
 
