@@ -156,6 +156,8 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "echo") == 0)   mskprint(3, "$4", suffix, "\n");
     else if (strcmp(prefix, "help") == 0)   shell_help(suffix);
     else if (strcmp(prefix, "mem") == 0)    memory_print();
+    else if (strcmp(prefix, "mkdir") == 0) make_dir(current_dir, suffix);
+    else if (strcmp(prefix, "mkfile") == 0) make_file(current_dir, suffix);
     else if (strcmp(prefix, "reboot") == 0) sys_reboot();
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
     else if (strcmp(prefix, "sleep") == 0)  ms_sleep(ascii_to_int(suffix) * 1000);
@@ -200,17 +202,23 @@ void shell_command(char command[]) {
         fskprint("$4used sector count:  $1%d\n", used_sectors);
     }
 
-    else if (strcmp(prefix, "mkdir") == 0) {
-        make_dir(current_dir, suffix);
-        if (strlen(current_dir) == 1) {
-            make_dir(strcat(current_dir, suffix), "..");
-        } else {
-            make_dir(strcat(strcat(current_dir, "/"), suffix), "..");
+    else if (strcmp(prefix, "gpd") == 0) {
+        // got to parent directory
+        for (int i = strlen(current_dir); i > 0; i--) {
+            if (current_dir[i] == '/' || i == 1) {
+                current_dir[i] = '\0';
+                break;
+            }
         }
     }
 
-    else if (strcmp(prefix, "mkfile") == 0) {
-        make_file(current_dir, suffix);
+    else if (strcmp(prefix, "cd") == 0) {
+        char new_path[256];
+        strcpy(new_path, current_dir);
+        if (current_dir[strlen(current_dir) - 1] != '/') append(new_path, '/');
+        for (int i = 0; i < strlen(suffix); i++) append(new_path, suffix[i]);
+        if (does_path_exists(new_path)) strcpy(current_dir, new_path);
+        else fskprint("$3%s$B path not found\n", new_path);
     }
 
     else if (strcmp(prefix, "free") == 0) {
