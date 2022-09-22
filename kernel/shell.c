@@ -260,7 +260,7 @@ void shell_command(char command[]) {
             char * char_content = declare_read_array(file);
             read_file(file, file_content);
             for (int i = 0; file_content[i] != 0; i++) char_content[i] = (char) file_content[i];
-            fskprint("$4%s\n", char_content);
+            fskprint("$4%s", char_content);
             free((int) file_content);
             free((int) char_content);
         } else fskprint("$3%s$B file not found\n", file);
