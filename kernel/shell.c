@@ -263,7 +263,7 @@ void shell_command(char command[]) {
             for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++)
                 char_content[char_count] = (char) file_content[char_count];
             char_content[char_count] = '\0';
-            fskprint("$4%s", char_content);
+            fskprint("$4%s\n", char_content);
             free((int) file_content);
             free((int) char_content);
         } else fskprint("$3%s$B file not found\n", file);
