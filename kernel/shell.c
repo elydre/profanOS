@@ -29,6 +29,32 @@ void assemble_path(char old[], char new[], char result[]) {
     for (int i = 0; i < strlen(new); i++) append(result, new[i]);
 }
 
+void shell_tree(char path[], int rec) {
+    int elm_count = get_folder_size(path);
+    string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
+    uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
+    char tmp_path[256];
+    get_dir_content(path_to_id(path, 0), out_list, out_type);
+    for (int i = 0; i < elm_count; i++) out_type[i] = type_sector(out_type[i]);
+    for (int i = 0; i < elm_count; i++) {
+        if (out_type[i] == 2) { // file
+            for (int j = 0; j < rec; j++) fskprint("  ");
+            fskprint("| $6%s\n", out_list[i].name);
+        }
+    }
+    for (int i = 0; i < elm_count; i++) {
+        if (out_type[i] == 3) { // folder
+            for (int j = 0; j < rec; j++) fskprint("  ");
+            assemble_path(path, out_list[i].name, tmp_path);
+            fskprint("%s\n", out_list[i].name);
+            shell_tree(tmp_path, rec + 1);
+        }
+    }
+    if (rec == 0) fskprint("\n");
+    free((int) out_list);
+    free((int) out_type);
+}
+
 void print_scancodes() {
     clear_screen();
     rainbow_print("enter scancode press ESC to exit\n");
@@ -77,6 +103,7 @@ void shell_ls() {
         }
     }
     free((int) out_list);
+    free((int) out_type);
 }
 
 void show_disk_LBA(char suffix[]) {
@@ -194,6 +221,7 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "sc") == 0)     print_scancodes();
     else if (strcmp(prefix, "sleep") == 0)  ms_sleep(ascii_to_int(suffix) * 1000);
     else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
+    else if (strcmp(prefix, "tree") == 0)   shell_tree(current_dir, 0);
     else if (strcmp(prefix, "usg") == 0)    usage();
     else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
     else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
