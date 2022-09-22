@@ -130,11 +130,3 @@ void str_end_split(char s[], char delim) {
     }
     s[strlen(s) - limit] = '\0';    
 }
-
-char* strcat(char s1[], const char s2[]) {
-    char *start = s1;
-    while(*start != '\0') start++;
-    while(*s2 != '\0') *start++ = *s2++;
-    *start = '\0';
-    return s1;
-}

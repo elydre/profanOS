@@ -19,6 +19,5 @@ void str_start_split(char s[], char delim);
 void str_end_split(char s[], char delim);
 int in_string(char str[], char thing);
 int count_string(char str[], char thing);
-char* strcat(char s1[], const char s2[]);
 
 #endif
