@@ -90,7 +90,7 @@ void memory_print() {
             }
         }
     }
-    kprint("\n");
+    kprint("\n\n");
 }
 
 int free(int addr) { 
@@ -109,7 +109,7 @@ int free(int addr) {
 void * malloc(int size) {
     int addr = alloc(size);
     if (addr == -1) return NULL;
-    return (void *)addr;
+    return (void *) addr;
 }
 
 // memory info function

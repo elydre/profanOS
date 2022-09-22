@@ -119,7 +119,7 @@ void i_set_data_to_file(uint32_t data[], uint32_t data_size, uint32_t file_id) {
 
     for (uint32_t i = 0; i < (data_size / 126 + 1); i++) {
         uint32_t part[128];
-        for (int i = 0; i<128; i++) part[i] = 0;
+        for (int i = 0; i < 128; i++) part[i] = 0;
         int ui = 1;
         part[0] = 0x9000;
         for (int j = 0; j < 126; j++) {
@@ -365,7 +365,7 @@ void read_file(char path[], uint32_t data[]) {
     id_file_index = sector[127];
     while (id_file_index) {
         read_sectors_ATA_PIO(id_file_index, sector);
-        for (int i=1; i < 127; i++) {
+        for (int i = 1; i < 127; i++) {
             data[index] = sector[i] - 1;
             index++;
         }
