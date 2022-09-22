@@ -42,7 +42,7 @@ def cprint(color, text, end="\n"):
 
 def print_and_exec(command):
     try: shell_len = os.get_terminal_size().columns
-    except Exception: shell_len = 80
+    except Exception: shell_len = 180
     if COMPCT_CMDS and len(command) > shell_len:
         cprint(COLOR_EXEC, f"{command[:shell_len - 3]}...")
     else: cprint(COLOR_EXEC, command)
