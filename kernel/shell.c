@@ -224,10 +224,13 @@ void shell_command(char command[]) {
         char *file = malloc(strlen(suffix)+strlen(current_dir)+2);
         assemble_path(current_dir, suffix, file);
         if (does_path_exists(file) && type_sector(path_to_id(file, 0)) == 2) {
-            char *file_content = malloc(get_file_size(file));
-            read_file(file, (uint32_t *) file_content);
-            fskprint("$4%s\n", file_content);
+            uint32_t * file_content = declare_read_array(file);
+            char * char_content = declare_read_array(file);
+            read_file(file, file_content);
+            for (int i = 0; i < 20; i++) char_content[i] = (char) file_content[i];
+            fskprint("$4%s\n", char_content);
             free((int) file_content);
+            free((int) char_content);
         } else fskprint("$3%s$B file not found\n", file);
         free((int) file);
     }
@@ -237,9 +240,11 @@ void shell_command(char command[]) {
         char *file = malloc(strlen(suffix)+strlen(current_dir)+2);
         assemble_path(current_dir, suffix, file);
         if (does_path_exists(file) && type_sector(path_to_id(file, 0)) == 2) {
-            char file_content[] = "coucou!";
-            // kprint("-> "); input(file_content, 70, c_blue); kprint("\n");
-            write_in_file(file, (uint32_t *) file_content, 70);
+            char char_content[70];
+            kprint("-> "); input(char_content, 70, c_blue); kprint("\n");
+            uint32_t * file_content = malloc(strlen(char_content));
+            for (int i = 0; i < 70; i++) file_content[i] = (uint32_t) char_content[i];
+            write_in_file(file, file_content, strlen(char_content));
         } else fskprint("$3%s$B file not found\n", file);
         free((int) file);
     }
