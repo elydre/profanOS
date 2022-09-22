@@ -13,14 +13,12 @@ void init_filesystem() {
     uint32_t folder_racine[128];
     read_sectors_ATA_PIO(0, folder_racine);
     if (!(folder_racine[0] & 0x8000)) {
-        fskprint("No root folder, creating one...\n");
         uint32_t location = i_next_free(0);
         if (location != 0) {
             fskprint("Error, there is already some stuff on the disk !\n");
             sys_stop();
         }
         i_creer_dossier("/");
-        fskprint("Root folder created at / (sector 0)\n");
     }
 }
 

@@ -122,19 +122,26 @@ void show_disk_LBA(char suffix[]) {
 void shell_help(char suffix[]) {
     char *help[] = {
         "alloc   - allocate *suffix* ko",
+        "cat     - print file *suffix*",
+        "cd      - change directory to *suffix*",
         "clear   - clear the screen",
         "echo    - print the arguments",
         "free    - free *suffix* address",
+        "gpd     - get to the parent directory",
         "help    - show this help",
         "info    - show time, task & page info",
+        "ls      - list the current directory",
         "mem     - show MLIST with colors",
+        "mkdir   - create a new folder *suffix*",
+        "mkfile  - create a new file *suffix*",
         "reboot  - reboot the system",
         "sc      - show the scancodes",
         "sleep   - sleep for a given time",
         "ss      - show int32 in the LBA *suffix*",
         "stop    - shutdown the system",
+        "tree    - show the current directory tree",
+        "udisk   - show used disk space",
         "usg     - show the usage of cpu",
-        "ver     - display the version",
         "yield   - yield to pid *suffix*"
     };
 
@@ -193,11 +200,9 @@ void usage() {
         kprint("\n ");
     }
     for (int i = 0; i < 5; i++) {
-        if (refresh_time[i] < 10 && refresh_time[i] >= 0) {
+        if (refresh_time[i] < 10 && refresh_time[i] >= 0)
             fskprint("$1%d", refresh_time[i]);
-        } else {
-            ckprint("#", c_green);
-        }
+        else ckprint("#", c_green);
     }
     kprint("\n");
 }
@@ -223,7 +228,6 @@ void shell_command(char command[]) {
     else if (strcmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (strcmp(prefix, "tree") == 0)   shell_tree(current_dir, 0);
     else if (strcmp(prefix, "usg") == 0)    usage();
-    else if (strcmp(prefix, "ver") == 0)    mskprint(3, "$4version ", VERSION, "\n");
     else if (strcmp(prefix, "yield") == 0)  (strcmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
     else if (strcmp(prefix, "alloc") == 0) {
@@ -301,8 +305,8 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "info") == 0) {
+        mskprint(3, "$Cversion $4", VERSION, "\n\n");
         uint32_t sectors_count = get_ATA_sectors_count();
-
         print_time();
         fskprint("$4ticks:      $1%d\n", timer_get_tick());
         fskprint("$4on time:    $1%ds\n", gen_unix_time() - get_boot_time());
