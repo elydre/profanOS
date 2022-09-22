@@ -129,7 +129,7 @@ void i_set_data_to_file(uint32_t data[], uint32_t data_size, uint32_t file_id) {
                 ui = 0;
                 break;
             }
-            part[j+1] = data[i*126+j];
+            part[j+1] = data[i*126+j] + 1;
         }
         if (ui) part[127] = i_next_free(1); 
         write_sectors_ATA_PIO(file_index, part);
@@ -361,14 +361,14 @@ void read_file(char path[], uint32_t data[]) {
     uint32_t index = 0;
     read_sectors_ATA_PIO(id_file_index, sector);
     for (int i=1; i < 127; i++) {
-        data[index] = sector[i];
+        data[index] = sector[i] - 1;
         index++;
     }
     id_file_index = sector[127];
     while (id_file_index) {
         read_sectors_ATA_PIO(id_file_index, sector);
         for (int i=1; i < 127; i++) {
-            data[index] = sector[i];
+            data[index] = sector[i] - 1;
             index++;
         }
         id_file_index = sector[127];
