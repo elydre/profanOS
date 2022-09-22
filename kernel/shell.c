@@ -259,7 +259,10 @@ void shell_command(char command[]) {
             uint32_t * file_content = declare_read_array(file);
             char * char_content = declare_read_array(file);
             read_file(file, file_content);
-            for (int i = 0; file_content[i] != 0; i++) char_content[i] = (char) file_content[i];
+            int char_count;
+            for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++)
+                char_content[char_count] = (char) file_content[char_count];
+            char_content[char_count] = '\0';
             fskprint("$4%s", char_content);
             free((int) file_content);
             free((int) char_content);
