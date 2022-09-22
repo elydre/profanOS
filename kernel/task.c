@@ -103,7 +103,7 @@ void destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead == 1) {
             fskprint("$4Task $1%d$4 killed, free: ", tasks[i].pid);
-            if (free(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
+            if (free_addr(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
             else mskprint(1, "$3fail :(\n");
             tasks[i].isdead = 2;
         }

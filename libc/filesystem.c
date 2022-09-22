@@ -221,9 +221,9 @@ uint32_t path_to_id(char input_path[], int silence) {
         if (!strcmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
-        free((int) liste_path);
-        free((int) liste_noms);
-        free((int) liste_id);
+        free(liste_path);
+        free(liste_noms);
+        free(liste_id);
         if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
         return -1;
     }
@@ -234,9 +234,9 @@ uint32_t path_to_id(char input_path[], int silence) {
             if (!strcmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
             x++;
         }
-        free((int) liste_path);
-        free((int) liste_noms);
-        free((int) liste_id);
+        free(liste_path);
+        free(liste_noms);
+        free(liste_id);
         return liste_id[x];
     }
 
@@ -250,8 +250,8 @@ uint32_t path_to_id(char input_path[], int silence) {
         uint32_t contenu_path_0 = liste_id[x];
 
         folder_size = i_size_folder(contenu_path_0);
-        free((int) liste_noms);
-        free((int) liste_id);
+        free(liste_noms);
+        free(liste_id);
         string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
         for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
         uint32_t * liste_id = malloc(folder_size * sizeof(int));
@@ -270,9 +270,9 @@ uint32_t path_to_id(char input_path[], int silence) {
         for (int i = 0; i < folder_size; i++) {
             fskprint("%s %s\n", liste_path[0 + start_from_liste_path].name, liste_noms[i].name);
         }
-        free((int) liste_path);
-        free((int) liste_noms);
-        free((int) liste_id);
+        free(liste_path);
+        free(liste_noms);
+        free(liste_id);
         if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
         return -1;
     }
@@ -284,9 +284,9 @@ uint32_t path_to_id(char input_path[], int silence) {
     }
     uint32_t contenu_path_0 = liste_id[x];
 
-    free((int) liste_path);
-    free((int) liste_noms);
-    free((int) liste_id);
+    free(liste_path);
+    free(liste_noms);
+    free(liste_id);
     return contenu_path_0;
 }
 
@@ -347,7 +347,7 @@ void *declare_read_array(char path[]) {
 }
 
 // How to declare data : uint32_t *data = declare_read_array(path);
-// How to free data    : free((int) data);
+// How to free data    : free(data);
 void read_file(char path[], uint32_t data[]) {
     uint32_t sector[128];
     read_sectors_ATA_PIO(path_to_id(path, 0), sector);

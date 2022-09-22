@@ -93,7 +93,7 @@ void memory_print() {
     kprint("\n\n");
 }
 
-int free(int addr) { 
+int free_addr(int addr) { 
     int index = (addr - BASE_ADDR) / PART_SIZE;
     int list_index = index / 19, i = index % 19;
     if (get_state(MLIST[list_index], i) == 1) {
@@ -106,9 +106,29 @@ int free(int addr) {
     } return 0;
 }
 
+void free(void *addr) {
+    free_addr((int) addr);
+}
+
 void * malloc(int size) {
     int addr = alloc(size);
     if (addr == -1) return NULL;
+    return (void *) addr;
+}
+
+void * realloc(void * ptr, int size) {
+    int addr = (int) ptr;
+    int new_addr = alloc(size);
+    if (new_addr == -1) return NULL;
+    memory_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
+    free_addr(addr);
+    return (void *) new_addr;
+}
+
+void * calloc(int size) {
+    int addr = alloc(size);
+    if (addr == -1) return NULL;
+    memory_set((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
 

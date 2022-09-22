@@ -126,7 +126,7 @@ void fskprint(char format[], ...) {
         clean_buffer(buffer, 0x1000);
         continue;
     }
-    free((int) buffer);
+    free(buffer);
     va_end(args);
 }
 

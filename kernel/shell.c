@@ -51,8 +51,8 @@ void shell_tree(char path[], int rec) {
         }
     }
     if (rec == 0) fskprint("\n");
-    free((int) out_list);
-    free((int) out_type);
+    free(out_list);
+    free(out_type);
 }
 
 void print_scancodes() {
@@ -102,8 +102,8 @@ void shell_ls() {
             fskprint("%d sect\n", get_file_size(tmp_path));
         }
     }
-    free((int) out_list);
-    free((int) out_type);
+    free(out_list);
+    free(out_type);
 }
 
 void show_disk_LBA(char suffix[]) {
@@ -264,10 +264,10 @@ void shell_command(char command[]) {
                 char_content[char_count] = (char) file_content[char_count];
             char_content[char_count] = '\0';
             fskprint("$4%s\n", char_content);
-            free((int) file_content);
-            free((int) char_content);
+            free(file_content);
+            free(char_content);
         } else fskprint("$3%s$B file not found\n", file);
-        free((int) file);
+        free(file);
     }
 
     else if (strcmp(prefix, "wif") == 0) {
@@ -280,9 +280,9 @@ void shell_command(char command[]) {
             uint32_t * file_content = malloc(strlen(char_content));
             for (int i = 0; i < 70; i++) file_content[i] = (uint32_t) char_content[i];
             write_in_file(file, file_content, strlen(char_content));
-            free((int) file_content);
+            free(file_content);
         } else fskprint("$3%s$B file not found\n", file);
-        free((int) file);
+        free(file);
     }
 
     else if (strcmp(prefix, "gpd") == 0) {
@@ -304,7 +304,7 @@ void shell_command(char command[]) {
     }
 
     else if (strcmp(prefix, "free") == 0) {
-        if (free(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
+        if (free_addr(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
         else mskprint(2, "$4free: $3", "FAIL\n");
     }
 
@@ -324,8 +324,8 @@ void shell_command(char command[]) {
         mskprint(3, "$3", prefix, "$B is not a valid command.\n");
     }
 
-    free((int) prefix);
-    free((int) suffix);
+    free(prefix);
+    free(suffix);
 }
 
 void run_shell() {
