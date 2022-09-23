@@ -272,9 +272,6 @@ uint32_t path_to_id(char input_path[], int silence) {
         if (!strcmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
-        for (int i = 0; i < folder_size; i++) {
-            fskprint("%s %s\n", liste_path[0 + start_from_liste_path].name, liste_noms[i].name);
-        }
         if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
         free(liste_path);
         free(liste_noms);
