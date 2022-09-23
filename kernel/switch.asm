@@ -1,6 +1,6 @@
-global switch_task
+global task_switch
 
-switch_task:
+task_switch:
     pusha
     pushf
     mov    eax, cr3         ; Push CR3

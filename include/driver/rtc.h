@@ -12,7 +12,7 @@ typedef struct {
     int full[6];
 } time_t;
  
-void get_time(time_t *time);
-void rtc_install();
+void time_get(time_t *time);
+void rtc_init();
 
 #endif

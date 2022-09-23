@@ -5,20 +5,20 @@
 int bcd;
 
 unsigned char read_register(unsigned char reg) {
-    outportb(0x70, reg);
-    return inportb(0x71);
+    port_byte_out(0x70, reg);
+    return port_byte_in(0x71);
 }
 
 void write_register(unsigned char reg, unsigned char value) {
-    outportb(0x70, reg);
-    outportb(0x71, value);
+    port_byte_out(0x70, reg);
+    port_byte_out(0x71, value);
 }
 
 unsigned char bcd2bin(unsigned char bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
-void get_time(time_t *target) {
+void time_get(time_t *target) {
     if (bcd) {
         target->seconds = bcd2bin(read_register(0x00));
         target->minutes = bcd2bin(read_register(0x02));
@@ -45,7 +45,7 @@ void get_time(time_t *target) {
     target->full[5] = target->year;
 }
 
-void rtc_install(void) {
+void rtc_init(void) {
     unsigned char status;
     status = read_register(0x0B);
     status |=  0x02;             // 24 hour clock

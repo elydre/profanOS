@@ -17,17 +17,17 @@ void kernel_main() {
     irq_install();
     kprint("ISR initialized\n");
     
-    init_tasking();
+    tasking_init();
     kprint("Tasking initialized\n");
 
-    rtc_install();
-    gen_boot_time();
+    rtc_init();
+    time_gen_boot();
     kprint("RTC initialized\n");
 
-    init_filesystem();
+    filesystem_init();
     kprint("FileSys initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$Cversion $4%s\n\n", VERSION);
-    run_shell();
+    shell_run();
 }

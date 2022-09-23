@@ -12,7 +12,7 @@ static void other_main() {
     rainbow_print("Hello multitasking world!\n");
     yield(0);
     rainbow_print("Hello again!\n");
-    kill_and_yield(0);
+    task_kill_yield(0);
 }
 
 void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
@@ -25,13 +25,13 @@ void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, 
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = (uint32_t) alloc(0x1000);
+    task->regs.esp = (uint32_t) mem_alloc(0x1000);
     task->pid = pid;
     task->isdead = 0;
     fskprint("Task created $1%d\n", task->pid);
 }
 
-void init_tasking() {
+void tasking_init() {
     static Task mainTask;
     static Task otherTask;
 
@@ -77,7 +77,7 @@ int refresh_alive() {
     return nb_alive;
 }
 
-void powerfull_task(void (*main)(), int pid) {
+void task_powerfull(void (*main)(), int pid) {
     int nb_alive = refresh_alive();
     Task task;
     Task *mainTask;
@@ -92,7 +92,7 @@ void powerfull_task(void (*main)(), int pid) {
     *task_count = nb_alive + 1;
 }
 
-void task_printer() {
+void task_print() {
     int nb_alive = refresh_alive();
     fskprint("$4task alive: $1%d\n$4task max:   $1%d\n$4task list:  $7[", nb_alive, TASK_MAX);
     for (int i = 0; i < nb_alive - 1; i++) fskprint("$1%d$7, ", tasks[i].pid);
@@ -103,7 +103,7 @@ void destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead == 1) {
             fskprint("$4Task $1%d$4 killed, free: ", tasks[i].pid);
-            if (free_addr(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
+            if (mem_free_addr(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
             else mskprint(1, "$3fail :(\n");
             tasks[i].isdead = 2;
         }
@@ -131,12 +131,12 @@ void yield(int target_pid) {
 
     mskprint(5, "$4yield from$1 ", str_old, " $4to$1 ", str_new, "\n");
 
-    switch_task(&tasks[1].regs, &tasks[0].regs);
+    task_switch(&tasks[1].regs, &tasks[0].regs);
 
     destroy_killed_tasks(nb_alive);
 }
 
-void kill_and_yield(int target_pid) {
+void task_kill_yield(int target_pid) {
     fskprint("$ETask $6%d $Ekill asked\n", tasks[0].pid);
     tasks[0].isdead = 1;
     yield(target_pid);

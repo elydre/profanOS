@@ -15,13 +15,13 @@ void int_to_ascii(int n, char str[]) {
     if (sign < 0) str[i++] = '-';
     str[i] = '\0';
 
-    reverse(str);
+    str_reverse(str);
 }
 
 void hex_to_ascii(int n, char str[]) {
     str[0] = '\0';
-    append(str, '0');
-    append(str, 'x');
+    str_append(str, '0');
+    str_append(str, 'x');
     char zeros = 0;
 
     int32_t tmp;
@@ -30,25 +30,25 @@ void hex_to_ascii(int n, char str[]) {
         tmp = (n >> i) & 0xF;
         if (tmp == 0 && zeros == 0) continue;
         zeros = 1;
-        if (tmp > 0xA) append(str, tmp - 0xA + 'a');
-        else append(str, tmp + '0');
+        if (tmp > 0xA) str_append(str, tmp - 0xA + 'a');
+        else str_append(str, tmp + '0');
     }
 
     tmp = n & 0xF;
-    if (tmp >= 0xA) append(str, tmp - 0xA + 'a');
-    else append(str, tmp + '0');
+    if (tmp >= 0xA) str_append(str, tmp - 0xA + 'a');
+    else str_append(str, tmp + '0');
 }
 
-int in_string(char str[], char thing) {
-    for (int i = 0; i < strlen(str);i++) {
+int str_is_in(char str[], char thing) {
+    for (int i = 0; i < str_len(str);i++) {
         if (str[i] == thing) return 1;
     }
     return 0;
 }
 
-int count_string(char str[], char thing) {
+int str_count(char str[], char thing) {
     int total = 0;
-    for (int i = 0; i < strlen(str);i++) {
+    for (int i = 0; i < str_len(str);i++) {
         if (str[i] == thing) total++;
     }
     return total;
@@ -62,33 +62,33 @@ int ascii_to_int(char str[]) {
     return n;
 }
 
-void reverse(char s[]) {
+void str_reverse(char s[]) {
     int c, i, j;
-    for (i = 0, j = strlen(s)-1; i < j; i++, j--) {
+    for (i = 0, j = str_len(s)-1; i < j; i++, j--) {
         c = s[i];
         s[i] = s[j];
         s[j] = c;
     }
 }
 
-int strlen(char s[]) {
+int str_len(char s[]) {
     int i = 0;
     while (s[i] != '\0') ++i;
     return i;
 }
 
-void append(char s[], char n) {
-    int len = strlen(s);
+void str_append(char s[], char n) {
+    int len = str_len(s);
     s[len] = n;
     s[len+1] = '\0';
 }
 
-void backspace(char s[]) {
-    int len = strlen(s);
+void str_backspace(char s[]) {
+    int len = str_len(s);
     s[len-1] = '\0';
 }
 
-void strcpy(char s1[], char s2[]) {
+void str_cpy(char s1[], char s2[]) {
     int i;
     for (i = 0; s2[i] != '\0'; ++i) {
         s1[i] = s2[i];
@@ -97,8 +97,8 @@ void strcpy(char s1[], char s2[]) {
 }
 
 // Returns <0 if s1<s2, 0 if s1==s2, >0 if s1>s2
-int strcmp(char s1[], char s2[]) {
-    if (strlen(s1) != strlen(s2)) {
+int str_cmp(char s1[], char s2[]) {
+    if (str_len(s1) != str_len(s2)) {
         return -1;
     }
     int i;
@@ -128,10 +128,10 @@ void str_end_split(char s[], char delim) {
     for (int i = limit; s[i] != '\0'; i++) {
         s[i - limit] = s[i];
     }
-    s[strlen(s) - limit] = '\0';    
+    s[str_len(s) - limit] = '\0';    
 }
 
-char* strcat(char s1[], const char s2[]) {
+char* str_cat(char s1[], const char s2[]) {
     char *start = s1;
     while(*start != '\0') start++;
     while(*s2 != '\0') *start++ = *s2++;

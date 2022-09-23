@@ -8,7 +8,7 @@ int is_leap_year(int year) {
     return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
-int calc_unix_time(time_t *time) {
+int time_calc_unix(time_t *time) {
     int seconde_in_year = 31536000;
     int seconde_in_leap_year = 31622400;
     int seconde_in_month[12] = {0, 2678400, 5097600, 7776000, 10368000, 13046400, 15638400, 18316800, 20995200, 23587200, 26265600, 28857600};
@@ -33,25 +33,25 @@ int calc_unix_time(time_t *time) {
     return unix_time;
 }
 
-int gen_unix_time() {
+int time_gen_unix() {
     time_t time;
-    get_time(&time);
-    return calc_unix_time(&time);
+    time_get(&time);
+    return time_calc_unix(&time);
 }
 
 void sleep(int seconds) {
-    int start_time = gen_unix_time();
-    while (gen_unix_time() - start_time < seconds);
+    int start_time = time_gen_unix();
+    while (time_gen_unix() - start_time < seconds);
 }
 
 void ms_sleep(uint32_t ms) {
     timer_sleep(ms);
 }
 
-void gen_boot_time() {
-    boot_time = gen_unix_time();
+void time_gen_boot() {
+    boot_time = time_gen_unix();
 }
 
-int get_boot_time() {
+int time_get_boot() {
     return boot_time;
 }

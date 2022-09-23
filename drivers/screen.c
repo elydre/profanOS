@@ -68,7 +68,7 @@ int print_char(char c, int col, int row, char attr) {
     if (c == '\n') {
         row = get_offset_row(offset);
         offset = get_offset(0, row+1);
-    } else if (c == 0x08) { /* Backspace */
+    } else if (c == 0x08) { /* str_backspace */
         vidmem[offset] = ' ';
         vidmem[offset+1] = attr;
     } else if (c != '\r') {
@@ -81,7 +81,7 @@ int print_char(char c, int col, int row, char attr) {
     if (offset >= MAX_ROWS * MAX_COLS * 2) {
         int i;
         for (i = 1; i < MAX_ROWS; i++) 
-            memory_copy((uint8_t*)(get_offset(0, i) + VIDEO_ADDRESS),
+            mem_copy((uint8_t*)(get_offset(0, i) + VIDEO_ADDRESS),
                         (uint8_t*)(get_offset(0, i-1) + VIDEO_ADDRESS),
                         MAX_COLS * 2);
 

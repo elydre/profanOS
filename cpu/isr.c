@@ -103,7 +103,7 @@ void irq_install() {
     /* Enable interruptions */
     asm volatile("sti");
     /* IRQ0: timer */
-    init_timer(100);
+    timer_init(100);
     /* IRQ1: keyboard */
-    init_keyboard();
+    keyboard_init();
 }

@@ -24,7 +24,7 @@ ERR: a 1 indicates that an error occured. An error code has been placed in the e
 static void ATA_wait_BSY();
 static void ATA_wait_DRQ();
 
-void read_sectors_ATA_PIO(uint32_t LBA, uint32_t out[]) {
+void ata_read_sector(uint32_t LBA, uint32_t out[]) {
 	// fskprint("R");
 	ATA_wait_BSY();
 	port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
@@ -43,7 +43,7 @@ void read_sectors_ATA_PIO(uint32_t LBA, uint32_t out[]) {
 	}
 }
 
-void write_sectors_ATA_PIO(uint32_t LBA, uint32_t bytes[]) {
+void ata_write_sector(uint32_t LBA, uint32_t bytes[]) {
 	ATA_wait_BSY();
 	port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
 	port_byte_out(0x1F2, 1);
@@ -60,7 +60,7 @@ void write_sectors_ATA_PIO(uint32_t LBA, uint32_t bytes[]) {
 	}
 }
 
-uint32_t get_ATA_sectors_count() {
+uint32_t ata_get_sectors_count() {
 	ATA_wait_BSY();
 	port_byte_out(0x1F6,0xE0 | ((0 >> 24) & 0xF));
 	port_byte_out(0x1F2, 0);

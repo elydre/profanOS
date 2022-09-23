@@ -18,7 +18,7 @@
 #define LEFT 75
 #define RIGHT 77
 #define PASTE 72
-#define BACKSPACE 14
+#define str_backspace 14
 #define ENTER 28
 
 // private functions
@@ -29,7 +29,7 @@ int clean_buffer(char *buffer, int size) {
 }
 
 ScreenColor skprint_function(char message[], ScreenColor default_color) {
-    int msg_len = strlen(message);
+    int msg_len = str_len(message);
     char nm[msg_len + 1];
     for (int i = 0; i < msg_len; i++) nm[i] = message[i];
     nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
@@ -51,7 +51,7 @@ ScreenColor skprint_function(char message[], ScreenColor default_color) {
             buffer_index++;
             continue;
         }
-        if (strlen(buffer) > 0) {
+        if (str_len(buffer) > 0) {
             ckprint(buffer, color);
             buffer_index = clean_buffer(buffer, msg_len);
         }
@@ -87,13 +87,13 @@ void fskprint(char format[], ...) {
     clean_buffer(buffer, 0x1000);
     ScreenColor color = c_white;
 
-    for (int i = 0; i <= strlen(format); i++) {
-        if (i == strlen(format)) {
+    for (int i = 0; i <= str_len(format); i++) {
+        if (i == str_len(format)) {
             skprint_function(buffer, color);
             continue;
         }
         if (format[i] != '%') {
-            append(buffer, format[i]);
+            str_append(buffer, format[i]);
             continue;
         }
         color = skprint_function(buffer, color);
@@ -101,8 +101,8 @@ void fskprint(char format[], ...) {
         i++;
         if (format[i] == 's') {
             char *arg = va_arg(args, char*);
-            for (int j = 0; j < strlen(arg); j++) buffer[j] = arg[j];
-            buffer[strlen(arg)] = '\0';
+            for (int j = 0; j < str_len(arg); j++) buffer[j] = arg[j];
+            buffer[str_len(arg)] = '\0';
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'd') {
@@ -159,14 +159,14 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
     clean_buffer(out_buffer, size);
 
     do {
-        sc = get_last_scancode();
+        sc = kb_get_scancode();
     } while (sc == ENTER);
 
     while (sc != ENTER) {
         ms_sleep(10);
 
         last_sc = sc;
-        sc = get_last_scancode();
+        sc = kb_get_scancode();
         
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
@@ -194,7 +194,7 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
         }
 
         else if (sc == PASTE) {
-            for (int i = 0; i < strlen(paste_buffer); i++) {
+            for (int i = 0; i < str_len(paste_buffer); i++) {
                 if (size < buffer_actual_size + 2) break;
                 out_buffer[buffer_index] = paste_buffer[i];
                 buffer_actual_size++;
@@ -202,7 +202,7 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
             }
         }
 
-        else if (sc == BACKSPACE) {
+        else if (sc == str_backspace) {
             if (!buffer_index) continue;
             buffer_index--;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
@@ -214,11 +214,11 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
 
         else if (sc <= SC_MAX) {
             if (size < buffer_actual_size + 2) continue;
-            if (scancode_to_char(sc, shift) == '?') continue;
+            if (kb_scancode_to_char(sc, shift) == '?') continue;
             for (int i = buffer_actual_size; i > buffer_index; i--) {
                 out_buffer[i] = out_buffer[i - 1];
             }
-            out_buffer[buffer_index] = scancode_to_char(sc, shift);
+            out_buffer[buffer_index] = kb_scancode_to_char(sc, shift);
             buffer_actual_size++;
             buffer_index++;
         }

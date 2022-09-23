@@ -38,7 +38,7 @@ void clear_screen();
 void kprint(char *message);
 void ckprint(char *message, char color);
 void ckprint_at(char *message, int col, int row, char color);
-int print_char(char c, int col, int row, char attr);
+int  print_char(char c, int col, int row, char attr);
 void kprint_backspace();
 
 

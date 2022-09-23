@@ -13,7 +13,7 @@ static void timer_callback(registers_t *regs) {
     UNUSED(regs);
     tick++;
     if (tick % 100 == 0) {
-        int now = gen_unix_time();
+        int now = time_gen_unix();
         for (int i = 5; i > 0; i--) {
             refresh_time[i] = refresh_time[i-1];
         }
@@ -39,7 +39,7 @@ void timer_sleep(uint32_t ms) {
     }
 }
 
-void init_timer(uint32_t freq) {
+void timer_init(uint32_t freq) {
     if (tick > 1000) tick = 0;
     /* Install the function we just wrote */
     register_interrupt_handler(IRQ0, timer_callback);

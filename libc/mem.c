@@ -4,14 +4,14 @@
 #include <string.h>
 #include <mem.h>
 
-void memory_copy(uint8_t *source, uint8_t *dest, int nbytes) {
+void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
     int i;
     for (i = 0; i < nbytes; i++) {
         *(dest + i) = *(source + i);
     }
 }
 
-void memory_set(uint8_t *dest, uint8_t val, uint32_t len) {
+void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
     uint8_t *temp = (uint8_t *)dest;
     for ( ; len != 0; len--) *temp++ = val;
 }
@@ -43,7 +43,7 @@ int set_state(int imm, int index, int new) {
     return imm - old + new * pow(3, index);
 }
 
-int alloc(int size) {
+int mem_alloc(int size) {
     int required_part = get_required_part(size);
     int suite = 0, num, debut, imm_debut, val;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
@@ -74,7 +74,7 @@ int alloc(int size) {
     return -1;
 }
 
-int free_addr(int addr) { 
+int mem_free_addr(int addr) { 
     int index = (addr - BASE_ADDR) / PART_SIZE;
     int list_index = index / 19, i = index % 19;
     if (get_state(MLIST[list_index], i) == 1) {
@@ -90,34 +90,34 @@ int free_addr(int addr) {
 // standard functions
 
 void free(void *addr) {
-    free_addr((int) addr);
+    mem_free_addr((int) addr);
 }
 
 void * malloc(int size) {
-    int addr = alloc(size);
+    int addr = mem_alloc(size);
     if (addr == -1) return NULL;
     return (void *) addr;
 }
 
 void * realloc(void * ptr, int size) {
     int addr = (int) ptr;
-    int new_addr = alloc(size);
+    int new_addr = mem_alloc(size);
     if (new_addr == -1) return NULL;
-    memory_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
-    free_addr(addr);
+    mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
+    mem_free_addr(addr);
     return (void *) new_addr;
 }
 
 void * calloc(int size) {
-    int addr = alloc(size);
+    int addr = mem_alloc(size);
     if (addr == -1) return NULL;
-    memory_set((uint8_t *) addr, 0, size);
+    mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
 
 // memory info function
 
-void memory_print() {
+void mem_print() {
     int color, val;
     char nb[2];
     for (int mi = 0; mi < IMM_COUNT; mi++) {
@@ -136,7 +136,7 @@ void memory_print() {
     kprint("\n\n");
 }
 
-int get_memory_usage() {
+int mem_get_usage() {
     int used = 0;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
         for (int i = 0; i < 19; i++) {
@@ -146,6 +146,6 @@ int get_memory_usage() {
     return used * (PART_SIZE / 1024);
 }
 
-int get_usable_memory() {
+int mem_get_usable() {
     return IMM_COUNT * 19 * (PART_SIZE / 1024);
 }

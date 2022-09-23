@@ -14,15 +14,15 @@ typedef struct Task {
     int isdead;
 } Task;
 
-extern void init_tasking();
-void powerfull_task(void (*main)(), int pid);
+extern void tasking_init();
+void task_powerfull(void (*main)(), int pid);
 
-void task_printer();
+void task_print();
 
 void yield(int target_pid);
-void kill_and_yield(int target_pid);
+void task_kill_yield(int target_pid);
 
 // switch.asm
-extern void switch_task(Registers *old, Registers *new);
+extern void task_switch(Registers *old, Registers *new);
 
 #endif

@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 
-char scancode_to_char(int scancode, int shift) {
+char kb_scancode_to_char(int scancode, int shift) {
     char sc_ascii_min[] = {
         '?', '?', '&', '~', '"', '\'','(', '-', '`', '_',
         '+', '@', ')', '=', '?', '?', 'a', 'z', 'e', 'r',
@@ -30,7 +30,7 @@ char scancode_to_char(int scancode, int shift) {
     return (shift) ? sc_ascii_maj[scancode] : sc_ascii_min[scancode];
 }
 
-int get_last_scancode() {
+int kb_get_scancode() {
     return (int) port_byte_in(0x60);
 }
 
@@ -42,6 +42,6 @@ static void keyboard_callback(registers_t *regs) {
     */
 }
 
-void init_keyboard() {
+void keyboard_init() {
     register_interrupt_handler(IRQ1, keyboard_callback); 
 }
