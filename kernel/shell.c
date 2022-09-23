@@ -243,7 +243,6 @@ void shell_command(char command[]) {
         sys_shutdown();
     }
 
-
     else if (strcmp(prefix, "udisk") == 0) {
         fskprint("disk scan in progress...\n");
         uint32_t sectors_count = get_ATA_sectors_count();

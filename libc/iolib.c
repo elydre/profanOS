@@ -21,7 +21,6 @@
 #define BACKSPACE 14
 #define ENTER 28
 
-
 // private functions
 
 int clean_buffer(char *buffer, int size) {

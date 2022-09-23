@@ -197,12 +197,15 @@ uint32_t path_to_id(char input_path[], int silence) {
     int start_from_liste_path = 0;
 
     // sanitize path
-    char path[strlen(input_path)+1];
+    char * path = malloc((strlen(input_path)+1)*sizeof(char));
     for (int i = 0; i < strlen(input_path) + 1; i++) path[i] = input_path[i];
 
-    if (strcmp("/", path) == 0) return 0;
+    if (strcmp("/", path) == 0) {
+        free(path);
+        return 0;
+    }
 
-    string_20_t * liste_path = malloc(strlen(path) * sizeof(string_20_t));
+    string_20_t * liste_path = calloc(strlen(path) * sizeof(string_20_t));
     i_parse_path(path, liste_path);
 
     int folder_size = i_size_folder(0);
@@ -224,6 +227,7 @@ uint32_t path_to_id(char input_path[], int silence) {
         free(liste_path);
         free(liste_noms);
         free(liste_id);
+        free(path);
         if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
         return -1;
     }
@@ -237,6 +241,7 @@ uint32_t path_to_id(char input_path[], int silence) {
         free(liste_path);
         free(liste_noms);
         free(liste_id);
+        free(path);
         return liste_id[x];
     }
 
@@ -270,10 +275,11 @@ uint32_t path_to_id(char input_path[], int silence) {
         for (int i = 0; i < folder_size; i++) {
             fskprint("%s %s\n", liste_path[0 + start_from_liste_path].name, liste_noms[i].name);
         }
+        if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
         free(liste_path);
         free(liste_noms);
         free(liste_id);
-        if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
+        free(path);
         return -1;
     }
 
@@ -287,6 +293,7 @@ uint32_t path_to_id(char input_path[], int silence) {
     free(liste_path);
     free(liste_noms);
     free(liste_id);
+    free(path);
     return contenu_path_0;
 }
 
