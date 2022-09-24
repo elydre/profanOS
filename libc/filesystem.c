@@ -64,7 +64,7 @@ uint32_t i_creer_dossier(char nom[]) {
 }
 
 uint32_t i_creer_index_de_fichier(char nom[]) {
-    if (str_is_in(nom, '/') && str_cmp(nom, "/")) {
+    if (str_is_in(nom, '/')) {
         fskprint("$3Le nom du fichier ne peut pas contenir de /, nom actuel: $0%s\n", nom);
         return 0;
     }
