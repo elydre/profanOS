@@ -2,6 +2,7 @@
 #include <kernel/shell.h>
 #include <driver/rtc.h>
 #include <filesystem.h>
+#include <function.h>
 #include <cpu/isr.h>
 #include "kernel.h"
 #include <iolib.h>
@@ -22,6 +23,7 @@ void kernel_main() {
 
     rtc_init();
     time_gen_boot();
+    init_rand();
     kprint("RTC initialized\n");
 
     filesystem_init();
