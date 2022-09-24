@@ -429,6 +429,6 @@ void fs_get_dir_content(uint32_t id, string_20_t list_name[], uint32_t liste_id[
     }
 }
 
-int get_folder_size(char path[]) {
+int fs_get_folder_size(char path[]) {
     return i_size_folder(fs_path_to_id(path, 0));
 }

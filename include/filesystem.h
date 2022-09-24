@@ -20,7 +20,7 @@ void fs_read_file(char path[], uint32_t data[]);
 void fs_write_in_file(char path[], uint32_t data[], uint32_t data_size);
 
 uint32_t fs_get_file_size(char path[]);
-int get_folder_size(char path[]);
+int fs_get_folder_size(char path[]);
 
 void * fs_declare_read_array(char path[]);
 

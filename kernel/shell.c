@@ -30,7 +30,7 @@ void assemble_path(char old[], char new[], char result[]) {
 }
 
 void shell_tree(char path[], int rec) {
-    int elm_count = get_folder_size(path);
+    int elm_count = fs_get_folder_size(path);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
     uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
     char tmp_path[256];
@@ -81,7 +81,7 @@ void print_scancodes() {
 }
 
 void shell_ls() {
-    int elm_count = get_folder_size(current_dir);
+    int elm_count = fs_get_folder_size(current_dir);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
     uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
     char tmp_path[256];
@@ -92,7 +92,7 @@ void shell_ls() {
             fskprint("$2%s", out_list[i].name);
             for (int j = 0; j < 22 - str_len(out_list[i].name); j++) kprint(" ");
             assemble_path(current_dir, out_list[i].name, tmp_path);
-            fskprint("%d elm\n", get_folder_size(tmp_path));
+            fskprint("%d elm\n", fs_get_folder_size(tmp_path));
         }
     } for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 2) {

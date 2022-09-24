@@ -16,7 +16,7 @@ int wf_get_func_addr(int func_id) {
         case 4:  return (int) fs_read_file;
         case 5:  return (int) fs_write_in_file;
         case 6:  return (int) fs_get_file_size;
-        case 7:  return (int) get_folder_size;
+        case 7:  return (int) fs_get_folder_size;
         case 8:  return (int) fs_declare_read_array;
         case 9:  return (int) fs_does_path_exists;
         case 10: return (int) fs_type_sector;
