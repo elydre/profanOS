@@ -37,6 +37,10 @@ uint32_t i_next_free(uint32_t rec) {
 }
 
 uint32_t i_creer_dossier(char nom[]) {
+    if (str_is_in(nom, '/') && str_cmp(nom, "/")) {
+        fskprint("$3Le nom du dossier ne peut pas contenir de /, nom actuel: $0%s\n", nom);
+        return 0;
+    }
     uint32_t folder_id = i_next_free(0);
     uint32_t list_to_write[128];
     for (int i = 0; i < 128; i++) list_to_write[i] = 0;
@@ -60,6 +64,10 @@ uint32_t i_creer_dossier(char nom[]) {
 }
 
 uint32_t i_creer_index_de_fichier(char nom[]) {
+    if (str_is_in(nom, '/') && str_cmp(nom, "/")) {
+        fskprint("$3Le nom du fichier ne peut pas contenir de /, nom actuel: $0%s\n", nom);
+        return 0;
+    }
     if (str_len(nom) > 20) {
         fskprint("$3nom trop long, max 20 char, nom actuel: $0%s\n", nom);
         return 0;
