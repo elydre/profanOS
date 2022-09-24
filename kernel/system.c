@@ -1,6 +1,8 @@
+#include <filesystem.h>
 #include <system.h>
 #include <ports.h>
 #include <iolib.h>
+#include <mem.h>
 
 
 void sys_reboot() {
@@ -28,4 +30,17 @@ void do_nothing() {
     asm volatile("sti");
     asm volatile("hlt");
     asm volatile("cli");
+}
+
+int sys_run_binary(char *fileName, int arg) {
+	char * binary_mem = calloc(fs_get_file_size(fileName)*126);
+	uint32_t * file = fs_declare_read_array(fileName);
+
+	fs_read_file(fileName, file);
+
+	for (int i = 0; file[i] != (uint32_t) -1 ; i++)
+		binary_mem[i] = (char) file[i];
+
+	int (*start_program)() = (int (*)())(binary_mem);
+	return start_program(arg);
 }

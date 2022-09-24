@@ -8,6 +8,9 @@
 out/
 .vscode/settings.json
 
+# dev dir
+zdev/
+
 # vscode dir
 .vscode/
 .vs/

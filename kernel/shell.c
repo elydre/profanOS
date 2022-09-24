@@ -285,6 +285,17 @@ void shell_command(char command[]) {
         free(file);
     }
 
+    else if (str_cmp(prefix, "start") == 0) {
+        char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
+        assemble_path(current_dir, suffix, file);
+        if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
+            char inp[10];
+            input(inp, 10, c_blue); kprint(" -> ");
+            fskprint("$1%d\n", sys_run_binary(file, ascii_to_int(inp)));
+        } else fskprint("$3%s$B file not found\n", file);
+        free(file);
+    }
+
     else if (str_cmp(prefix, "gpd") == 0) {
         // got to parent directory
         for (int i = str_len(current_dir); i > 0; i--) {
