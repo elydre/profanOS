@@ -15,7 +15,7 @@ path = "/dir/.../" + "name"
 IS_LINUX = os.name == "posix"
 EDIT_FOLDER = "/out/disk"
 
-NUMBER_OF_MO = 1
+NUMBER_OF_MO = 2
 DISK_SIZE = 2048 * NUMBER_OF_MO
 disque = [[0] * 128] * DISK_SIZE
 
