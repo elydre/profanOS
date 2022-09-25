@@ -26,6 +26,8 @@ def p_write_sectors_ATA_PIO(secteur, data):
         p_print_and_exit("Erreur: la taille de la donnée doit être de 128 octets")
     disque[secteur] = data
 def p_read_sectors_ATA_PIO(secteur):
+    if secteur > DISK_SIZE:
+        p_print_and_exit(f"Erreur: secteur non existant {secteur}")
     return disque[secteur]
 
 def p_print_and_exit(msg):
