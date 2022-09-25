@@ -133,7 +133,7 @@ def make_iso():
 def gen_disk(force):
     if file_exists("HDD.bin") and not force: return
     cprint(COLOR_INFO, "building zapps...")
-    print_and_exec("cd zapps && sh build.sh")
+    print_and_exec("cd zapps && python3 build.py")
     
     cprint(COLOR_INFO, "generating HDD.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")
