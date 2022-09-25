@@ -12,7 +12,6 @@ void filesystem_init();
 uint32_t fs_get_used_sectors(uint32_t disk_size);
 uint32_t fs_is_disk_full(uint32_t disk_size);
 
-
 uint32_t fs_make_dir(char path[], char folder_name[]);
 uint32_t fs_make_file(char path[], char file_name[]);
 
