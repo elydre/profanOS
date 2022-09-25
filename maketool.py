@@ -9,8 +9,13 @@ INCLUDE_SUB = [".", "kernel", "driver", "cpu"]
 
 OUT_DIR = "out"
 
+HDD_MAP = {
+    "bin": "zapps/*.bin",
+    "user": "user_dir/*",
+}
+
 CC = "gcc"
-CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I./{INCLUDE_DIR}"
+CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I ./{INCLUDE_DIR}"
 
 # SETTINGS
 
@@ -106,7 +111,7 @@ def make_help():
     aide = (
         ("make",        "build profanOS kernel (elf file)"),
         ("make iso",    "build bootable iso with grub"),
-        ("make hdd",    "create a empty 1Mo HDD (bin file)"),
+        ("make disk",   "create a empty 1Mo HDD (bin file)"),
         ("make clean",  "delete all files in out directory"),
         ("make fullclean", "clean + delete iso / elf / bin"),
         ("make run",    "run the profanOS.elf in qemu"),
@@ -125,14 +130,23 @@ def make_iso():
     print_and_exec(f"cp boot/stage2_eltorito {OUT_DIR}/isodir/boot/grub/stage2_eltorito")
     print_and_exec(f"mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso {OUT_DIR}/isodir")
 
-def gen_hdd(force):
-    if (not file_exists("HDD.bin")) or force:
-        print_and_exec("dd if=/dev/zero of=HDD.bin bs=1024 count=1024")
+def gen_disk(force):
+    if file_exists("HDD.bin") and not force: return
+    cprint(COLOR_INFO, "building zapps...")
+    print_and_exec("cd zapps && sh build.sh")
+    
+    cprint(COLOR_INFO, "generating HDD.bin...")
+    print_and_exec(f"rm -Rf {OUT_DIR}/disk")
+    for dir in HDD_MAP:
+        print_and_exec(f"mkdir -p {OUT_DIR}/disk/{dir}")
+        if HDD_MAP[dir] is None: continue
+        print_and_exec(f"cp {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+    print_and_exec("python3 makefsys.py")
 
 def qemu_run(iso_run = False):
     elf_image()
     if iso_run: make_iso()
-    gen_hdd(False)
+    gen_disk(False)
     cprint(COLOR_INFO, "starting qemu...")
     if iso_run: print_and_exec("qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d")
     else: print_and_exec("qemu-system-i386 -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a")
@@ -140,8 +154,8 @@ def qemu_run(iso_run = False):
 assos = {
     "elf_image": elf_image,
     "help": make_help,
-    "hdd": lambda: gen_hdd(False),
-    "hddf": lambda: gen_hdd(True),
+    "disk": lambda: gen_disk(False),
+    "diskf": lambda: gen_disk(True),
     "iso": make_iso,
     "run": lambda: qemu_run(False),
     "irun": lambda: qemu_run(True),

@@ -20,13 +20,16 @@ jobs:
       run: |
         wget https://raw.githubusercontent.com/elydre/elydre/main/projet/profan/version.py
         VERSION=$(python3 version.py)
+        echo "PROFAN_HDD=disk-$VERSION.bin" >> $GITHUB_ENV
         echo "PROFAN_ISO=profanOS-$VERSION.iso" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
-        make iso
+        make iso && make disk
+        cp HDD.bin disk-$VERSION.bin
+        cp HDD.bin profanOS-disk.bin
         cp profanOS.iso profanOS-$VERSION.iso
         cp profanOS.elf profanOS-kernel.elf
 
-    - name: push img to github
+    - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
         API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
@@ -37,6 +40,18 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'new release'
+  
+    - name: push disk to github
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.GIT_TOKEN }}
+      with:
+        source_file: ${{ env.PROFAN_HDD }}
+        destination_repo: 'esolangs/profanOS-build'
+        destination_folder: 'disk-build'
+        user_email: 'pf4_@gmail.com'
+        user_name: 'esolangs'
+        commit_message: 'new build'
 
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
@@ -47,3 +62,4 @@ jobs:
         files: |
           ${{ env.PROFAN_ISO }}
           profanOS-kernel.elf
+          profanOS-disk.bin

@@ -7,8 +7,8 @@ iso:
 	python3 maketool.py iso
 
 
-hdd:
-	python3 maketool.py hddf
+disk:
+	python3 maketool.py diskf
 
 info:
 	python3 maketool.py help

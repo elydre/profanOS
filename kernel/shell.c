@@ -263,7 +263,7 @@ void shell_command(char command[]) {
             for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++)
                 char_content[char_count] = (char) file_content[char_count];
             char_content[char_count] = '\0';
-            kprint(char_content);
+            ckprint(char_content, c_magenta);
             kprint("\n");
             free(file_content);
             free(char_content);
