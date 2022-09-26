@@ -22,7 +22,7 @@ irun:
 
 
 clean:
-	rm -Rf out/
+	rm -Rf out/ zapps/out/
 
 fullclean: clean
 	rm -Rf *.iso *.elf *.bin

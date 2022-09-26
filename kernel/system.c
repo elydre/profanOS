@@ -42,7 +42,7 @@ int sys_run_binary(char *fileName, int arg) {
 		binary_mem[i] = (char) file[i];
 
 	int (*start_program)() = (int (*)())(binary_mem);
-	int return_value = start_program(arg);
+	int return_value = start_program((int) wf_get_func_addr, arg);
     
     free(binary_mem);
     free(file);

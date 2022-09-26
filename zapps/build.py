@@ -2,6 +2,8 @@ import sys, os
 
 # SETTINGS
 
+OUT_DIR = "out/"
+
 COMPCT_CMDS = True
 
 COLOR_INFO = (120, 250, 161)
@@ -26,11 +28,15 @@ def print_and_exec(command):
 
 def build_prog(name):
     print(f"Building {name}...")
-    print_and_exec(f"gcc -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c {name}.c -o {name}.o")
-    print_and_exec(f"ld -m elf_i386 -e start -o {name}.pe {name}.o -Ttext 0x1000")
-    print_and_exec(f"objcopy -O binary {name}.pe {name}.bin")
-    print_and_exec(f"sed '$ s/\\x00*$//' {name}.bin > {name}.bin.tmp")
-    print_and_exec(f"mv {name}.bin.tmp {name}.bin")
+    print_and_exec(f"gcc -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c {name}.c -o {OUT_DIR}{name}.o")
+    print_and_exec(f"ld -m elf_i386 -e start -o {OUT_DIR}{name}.pe {OUT_DIR}{name}.o")
+    print_and_exec(f"objcopy -O binary {OUT_DIR}{name}.pe {OUT_DIR}{name}.full -j .text -j .data -j .rodata -j .bss")
+    print_and_exec(f"sed '$ s/\\x00*$//' {OUT_DIR}{name}.full > {OUT_DIR}{name}.bin")
 
-build_prog("togame")
-print_and_exec("rm *.o *.pe")
+def build_all():
+    print_and_exec(f"mkdir -p {OUT_DIR}")
+    files = [f[:-2] for f in os.listdir() if f.endswith(".c")]
+    for f in files: build_prog(f)
+
+
+build_all()

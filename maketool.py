@@ -10,7 +10,7 @@ INCLUDE_SUB = [".", "kernel", "driver", "cpu"]
 OUT_DIR = "out"
 
 HDD_MAP = {
-    "bin": "zapps/*.bin",
+    "bin": "zapps/out/*.bin",
     "user": "user_dir/*",
 }
 

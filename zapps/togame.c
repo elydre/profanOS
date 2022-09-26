@@ -8,8 +8,8 @@
 
 #define O_MAX 5
 
-int start(int arg) {
-    int (*get_func)(int id) = (int (*)(int)) arg;
+int start(int addr, int arg) {
+    int (*get_func)(int id) = (int (*)(int)) addr;
     void (*clear_screen)() = (void (*)()) get_func(46);
     void (*ms_sleep)(int) = (void (*)(int)) get_func(44);
     void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49);
@@ -106,5 +106,5 @@ int start(int arg) {
         ms_sleep(to_wait);
         iter++;
     }
-    return 0;
+    return arg;
 }
