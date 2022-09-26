@@ -133,6 +133,8 @@ def make_iso():
 def gen_disk(force):
     if file_exists("HDD.bin") and not force: return
     cprint(COLOR_INFO, "building zapps...")
+    # mettre en commentaire la ligne suivante et supprimer tout les .bin
+    # du dossier zapps/ en cas de problème de compilation de zapps (^_^ )
     print_and_exec("cd zapps && python3 build.py")
     
     cprint(COLOR_INFO, "generating HDD.bin...")
