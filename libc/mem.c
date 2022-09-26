@@ -46,13 +46,12 @@ int set_state(int imm, int index, int new) {
 }
 
 int mem_alloc(int size) {
-    alloc_count++;
     int required_part = get_required_part(size);
     int suite = 0, num, debut, imm_debut, val;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
         for (int i = 0; i < 19; i++) {
             num = get_state(MLIST[mi], i);
-            if (num == 0) suite += 1;
+            if (num == 0) suite++;
             else suite = 0;
 
             if (!(suite == required_part)) continue;
@@ -71,6 +70,7 @@ int mem_alloc(int size) {
                 else val = 2;
                 MLIST[imm_debut + k / 19] = set_state(MLIST[imm_debut + k / 19], k % 19, val);
             }
+            alloc_count++;
             return (imm_debut * 19 + debut) * PART_SIZE + BASE_ADDR;
         }
     }
@@ -78,7 +78,6 @@ int mem_alloc(int size) {
 }
 
 int mem_free_addr(int addr) {
-    free_count++;
     int index = (addr - BASE_ADDR) / PART_SIZE;
     int list_index = index / 19, i = index % 19;
     if (get_state(MLIST[list_index], i) == 1) {
@@ -87,7 +86,9 @@ int mem_free_addr(int addr) {
         while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
             MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
             i++;
-        } return 1;
+        }
+        free_count++;
+        return 1;
     } return 0;
 }
 
