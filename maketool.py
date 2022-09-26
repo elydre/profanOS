@@ -7,10 +7,12 @@ SCR_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
 INCLUDE_DIR = "include"
 INCLUDE_SUB = [".", "kernel", "driver", "cpu"]
 
+ZAPPS_DIR = "zapps"
+
 OUT_DIR = "out"
 
 HDD_MAP = {
-    "bin": "zapps/out/*.bin",
+    "bin": f"{OUT_DIR}/zapps/*.bin",
     "user": "user_dir/*",
 }
 
@@ -29,9 +31,9 @@ COLOR_EROR = (255, 0, 0)
 last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
 file_in_dir = lambda directory, extension: [file for file in os.listdir(directory) if file.endswith(extension)]
-out_file_name = lambda file_path: f"{OUT_DIR}/{file_path.split('/')[-1].split('.')[0]}.o"
+out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.split('/')[-1][:-2]}.o"
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
-need_rebuild = lambda file: file1_newer(file, out_file_name(file)) or not file_exists(out_file_name(file))
+
 
 def ordre(files):
     if len(files) <= 2:
@@ -63,8 +65,8 @@ def gen_need_dict():
             need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
             need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
             need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
-            out.extend(ordre([out_file_name(file) for file in file_in_dir(dir, ".c")]))
-            out.extend([out_file_name(file) for file in file_in_dir(dir, ".asm")])
+            out.extend(ordre([out_file_name(file, "kernel") for file in file_in_dir(dir, ".c")]))
+            out.extend([out_file_name(file, "kernel") for file in file_in_dir(dir, ".asm")])
         except FileNotFoundError:
             cprint(COLOR_EROR, f"{dir} directory not found")
 
@@ -81,31 +83,44 @@ def gen_need_dict():
     
     del need["h"]
 
-    for file in [file for file in need["asm"] if file1_newer(out_file_name(file), file)]:
+    for file in [file for file in need["asm"] if file1_newer(out_file_name(file, "kernel"), file)]:
         need["asm"].remove(file)       
 
-    for file in [file for file in need["c"] if file1_newer(out_file_name(file), file)]:
+    for file in [file for file in need["c"] if file1_newer(out_file_name(file, "kernel"), file)]:
         need["c"].remove(file)
     
     return need, out
 
 def elf_image():
     need, out = gen_need_dict()
-    if not os.path.exists(OUT_DIR):
-        cprint(COLOR_INFO, f"creating '{OUT_DIR}' directory")
-        os.makedirs(OUT_DIR)
+    if not os.path.exists(f"{OUT_DIR}/kernel"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/kernel' directory")
+        os.makedirs(f"{OUT_DIR}/kernel")
 
     if len(need['c']): cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
 
     for file in need["asm"]:
-        print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file)}")
+        print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
 
     for file in need["c"]:
-        print_and_exec(f"{CC} {CFLAGS} -c {file} -o {out_file_name(file)}")
+        print_and_exec(f"{CC} {CFLAGS} -c {file} -o {out_file_name(file, 'kernel')}")
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
         print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
+
+def build_zapps():
+    cprint(COLOR_INFO, "building zapps...")
+    if not os.path.exists(f"{OUT_DIR}/zapps"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
+        os.makedirs(f"{OUT_DIR}/zapps")
+    for name in file_in_dir("zapps", ".c"):
+        fname = f"{OUT_DIR}/zapps/{name[:-2]}"
+        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
+        print_and_exec(f"gcc -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c {ZAPPS_DIR}/{name} -o {fname}.o")
+        print_and_exec(f"ld -m elf_i386 -e start -o {fname}.pe {fname}.o")
+        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
+        print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
 
 def make_help():
     aide = (
@@ -132,10 +147,9 @@ def make_iso():
 
 def gen_disk(force):
     if file_exists("HDD.bin") and not force: return
-    cprint(COLOR_INFO, "building zapps...")
     # mettre en commentaire la ligne suivante et supprimer tout les .bin
     # du dossier zapps/ en cas de problème de compilation de zapps (^_^ )
-    print_and_exec("cd zapps && python3 build.py")
+    build_zapps()
     
     cprint(COLOR_INFO, "generating HDD.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")

@@ -19,6 +19,12 @@ NUMBER_OF_MO = 1
 DISK_SIZE = 2048 * NUMBER_OF_MO
 disque = [[0] * 128] * DISK_SIZE
 
+COLOR_INFO = (170, 170, 170)
+
+def cprint(color, text, end="\n"):
+    r, g, b = color
+    print(f"\033[38;2;{r};{g};{b}m | {text}\033[0m", end=end)
+
 def p_write_sectors_ATA_PIO(secteur, data):
     if secteur < 0:
         p_print_and_exit(f"CONAR TU ECRIT PAS SUR LE SECTEUR {secteur}")
@@ -32,11 +38,11 @@ def p_read_sectors_ATA_PIO(secteur):
         p_print_and_exit(f"CONAR TU LIS PAS SUR LE SECTEUR {secteur}")
 
 def p_print_and_exit(msg):
-    print(msg)
+    cprint(COLOR_INFO, msg)
     sys.exit(1)
 
 def p_disk_to_file():
-    print("Dump de disque dans HDD.bin, merci d'attendre")
+    cprint(COLOR_INFO, "Dump de disque dans HDD.bin, merci d'attendre")
     global disque
     with open("HDD.bin", "wb") as file:
         for i, j in itertools.product(range(DISK_SIZE), range(128)):
@@ -44,7 +50,7 @@ def p_disk_to_file():
             hex_string = hex_string[2] + hex_string[3] + hex_string[0] + hex_string[1]
             file.write(bytes.fromhex(hex_string))
             file.write(bytes.fromhex("0000"))
-    print("Dump fini !")
+    cprint(COLOR_INFO, "Dump fini !")
 
 def p_folder_to_disk(local_place="/"):
     # TODO : fix pouvoir transferer des fichiers de edit_folder directement (ça marche que en récursif)
@@ -54,7 +60,7 @@ def p_folder_to_disk(local_place="/"):
     else: path_folder = f"{os.getcwd()}{EDIT_FOLDER}{local_place}".replace("/", "\\")
     for file_folder in os.listdir(path_folder):
         if os.path.isfile(f"{path_folder}/{file_folder}"):
-            print(f"writing file {file_folder} in {local_place}")
+            cprint(COLOR_INFO, f"writing file {file_folder} in {local_place}")
             make_file(local_place, file_folder)
             with open(path_folder + ("/" if IS_LINUX else "\\") + file_folder, "rb") as f:
                 bit_stream = f.read()
@@ -71,7 +77,7 @@ def p_folder_to_disk(local_place="/"):
             if string_final != b"":
                 write_in_file(f"{local_place}/{file_folder}", string_final, len(string_final))
         else:
-            print(f"writing folder {file_folder} in {local_place}")
+            cprint(COLOR_INFO, f"writing folder {file_folder} in {local_place}")
             make_dir(local_place, file_folder)
             p_folder_to_disk((f"/{local_place}" if local_place != "/" else "") + "/" + file_folder)
 
@@ -115,7 +121,7 @@ def i_creer_index_de_fichier(nom):
     for list_index, i in enumerate(range(len(nom)), start=1):
         index_to_write[list_index] = ord(nom[i])
     index_to_write[127] = location_file
-    # print(index_to_write)
+    # cprint(COLOR_INFO, index_to_write)
     p_write_sectors_ATA_PIO(location, index_to_write)
 
     #write file
@@ -133,12 +139,12 @@ def i_set_data_to_file(data, data_size, file_index):
         p_print_and_exit("Le secteur n'est pas un fichier !")
     suite = file_index
     while suite:
-        # print(f"free {suite}")
+        # cprint(COLOR_INFO, f"free {suite}")
         suite = i_free_file_and_get_next(suite)
     
     # write
     for i in range(data_size // 126 + 1):
-        # print(f"{i}, write in {file_index}")
+        # cprint(COLOR_INFO, f"{i}, write in {file_index}")
         part = [0] * 128
         ui = 1
         part[0] = 0x9000 # (secteur occupé + fichier ici)
@@ -275,14 +281,6 @@ def does_path_exists(path):
 
 # MAIN PROGRAM
 
-if not p_read_sectors_ATA_PIO(0)[127] & 0x8000:
-    print("pas de dossier racine, création en cours...")
-    location = i_next_free()
-    if location != 0:
-        p_print_and_exit("Erreur: le disque n'est pas vide")
-    i_creer_dossier("/")
-    print("Dossier racine créé")
-
-
+i_creer_dossier("/")
 p_folder_to_disk()
 p_disk_to_file()
