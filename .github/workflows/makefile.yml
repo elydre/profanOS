@@ -24,7 +24,7 @@ jobs:
         echo "PROFAN_ISO=profanOS-$VERSION.iso" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
         make iso && make disk
-        zip -r disk-build.zip out/disk
+        cd out/disk && zip -r ../../disk-build.zip * && cd ../..
         cp HDD.bin disk-$VERSION.bin
         cp HDD.bin profanOS-disk.bin
         cp profanOS.iso profanOS-$VERSION.iso

@@ -1,12 +1,18 @@
 # build files
+*.pe
+*.o
+
+# out files
+*.img
 *.iso
 *.elf
 *.bin
-*.img
+
+# archives
+*.zip
 
 # build dir
 out/
-.vscode/settings.json
 
 # vscode dir
 .vscode/
