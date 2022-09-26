@@ -184,7 +184,7 @@ void print_time() {
     }
     kprint_backspace();
     int_to_ascii(time_calc_unix(&time), tmp);
-    mskprint(3, "$4\nunix time:  $1", tmp, "\n\n");
+    mskprint(3, "$4\nunix time:  $1", tmp, "\n");
 }
 
 void usage() {
@@ -320,14 +320,14 @@ void shell_command(char command[]) {
     }
 
     else if (str_cmp(prefix, "info") == 0) {
-        mskprint(3, "$Cversion $4", VERSION, "\n\n");
+        fskprint("$C~~ version $4%s $C~~\n", VERSION);
         uint32_t sectors_count = ata_get_sectors_count();
         print_time();
         fskprint("$4ticks:      $1%d\n", timer_get_tick());
-        fskprint("$4on time:    $1%ds\n", time_gen_unix() - time_get_boot());
-        fskprint("$4work time:  $1%ds\n\n", time_gen_unix() - time_get_boot() - timer_get_tick() / 100);
+        fskprint("$4work time:  $1%ds$7/$1%ds\n", time_gen_unix() - time_get_boot() - timer_get_tick() / 100, time_gen_unix() - time_get_boot());
         fskprint("$4used mem:   $1%d%c\n", 100 * mem_get_usage() / mem_get_usable(), '%');
-        fskprint("$4disk size:  $1%d.%dMo\n\n", sectors_count / 2048, (sectors_count % 2048) / 20);
+        fskprint("$4act alloc:  $1%d$7/$1%d\n", mem_get_alloc_count() - mem_get_free_count(), mem_get_alloc_count());
+        fskprint("$4disk size:  $1%d.%dMo\n", sectors_count / 2048, (sectors_count % 2048) / 20);
         task_print();
     }
 

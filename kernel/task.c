@@ -94,7 +94,7 @@ void task_powerfull(void (*main)(), int pid) {
 
 void task_print() {
     int nb_alive = refresh_alive();
-    fskprint("$4task alive: $1%d\n$4task max:   $1%d\n$4task list:  $7[", nb_alive, TASK_MAX);
+    fskprint("$4task alive: $1%d$7/$1%d\n$4task list:  $7[", nb_alive, TASK_MAX);
     for (int i = 0; i < nb_alive - 1; i++) fskprint("$1%d$7, ", tasks[i].pid);
     fskprint("$1%d$7]\n", tasks[nb_alive - 1].pid);
 }

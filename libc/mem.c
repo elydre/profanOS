@@ -6,14 +6,14 @@
 
 void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
     int i;
-    for (i = 0; i < nbytes; i++) {
+    for (i = 0; i < nbytes; i++)
         *(dest + i) = *(source + i);
-    }
 }
 
 void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
     uint8_t *temp = (uint8_t *)dest;
-    for ( ; len != 0; len--) *temp++ = val;
+    for ( ; len != 0; len--)
+        *temp++ = val;
 }
 
 // elydre b3 memory manager with alloc and free functions
@@ -24,6 +24,8 @@ void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
 #define BASE_ADDR 0x20000
 
 static int MLIST[IMM_COUNT];
+static int alloc_count = 0;
+static int free_count = 0;
 
 int get_state(int imm, int index) {
     int last = -1;
@@ -44,6 +46,7 @@ int set_state(int imm, int index, int new) {
 }
 
 int mem_alloc(int size) {
+    alloc_count++;
     int required_part = get_required_part(size);
     int suite = 0, num, debut, imm_debut, val;
     for (int mi = 0; mi < IMM_COUNT; mi++) {
@@ -74,7 +77,8 @@ int mem_alloc(int size) {
     return -1;
 }
 
-int mem_free_addr(int addr) { 
+int mem_free_addr(int addr) {
+    free_count++;
     int index = (addr - BASE_ADDR) / PART_SIZE;
     int list_index = index / 19, i = index % 19;
     if (get_state(MLIST[list_index], i) == 1) {
@@ -84,6 +88,18 @@ int mem_free_addr(int addr) {
             MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
             i++;
         } return 1;
+    } return 0;
+}
+
+int mem_get_alloc_size(int addr) {
+    int index = (addr - BASE_ADDR) / PART_SIZE;
+    int list_index = index / 19, i = index % 19;
+    if (get_state(MLIST[list_index], i) == 1) {
+        int size = 0;
+        while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
+            size += PART_SIZE;
+            i++;
+        } return size + PART_SIZE;
     } return 0;
 }
 
@@ -148,4 +164,12 @@ int mem_get_usage() {
 
 int mem_get_usable() {
     return IMM_COUNT * 19 * (PART_SIZE / 1024);
+}
+
+int mem_get_alloc_count() {
+    return alloc_count;
+}
+
+int mem_get_free_count() {
+    return free_count;
 }

@@ -42,5 +42,10 @@ int sys_run_binary(char *fileName, int arg) {
 		binary_mem[i] = (char) file[i];
 
 	int (*start_program)() = (int (*)())(binary_mem);
-	return start_program(arg);
+	int return_value = start_program(arg);
+    
+    free(binary_mem);
+    free(file);
+
+    return return_value;
 }

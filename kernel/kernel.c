@@ -30,6 +30,6 @@ void kernel_main() {
     kprint("FileSys initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
-    fskprint("$Cversion $4%s\n\n", VERSION);
+    fskprint("$C~~ version $4%s $C~~\n", VERSION);
     shell_run();
 }
