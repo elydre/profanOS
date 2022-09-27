@@ -8,6 +8,7 @@ int start(int addr, int arg) {
     AF_fs_declare_read_array();
     AF_fs_read_file();
     AF_mskprint();
+    AF_free();
 
     char path[] = "/user/logo.txt";
     uint32_t * data = fs_declare_read_array(path);
@@ -21,5 +22,9 @@ int start(int addr, int arg) {
     str[i] = '\n';
 
     mskprint(1, str);
+
+    free(data);
+    free(str);
+
     return arg;
 }
