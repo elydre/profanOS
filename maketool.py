@@ -117,7 +117,7 @@ def build_zapps():
     for name in file_in_dir("zapps", ".c"):
         fname = f"{OUT_DIR}/zapps/{name[:-2]}"
         if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
-        print_and_exec(f"gcc -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c {ZAPPS_DIR}/{name} -o {fname}.o")
+        print_and_exec(f"{CC} -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c {ZAPPS_DIR}/{name} -o {fname}.o")
         print_and_exec(f"ld -m elf_i386 -e start -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
@@ -156,7 +156,7 @@ def gen_disk(force):
     for dir in HDD_MAP:
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/{dir}")
         if HDD_MAP[dir] is None: continue
-        print_and_exec(f"cp {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+        print_and_exec(f"cp -r {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
     print_and_exec("python3 makefsys.py")
 
 def qemu_run(iso_run = False):
