@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include "addf.h"
+
 #define SC_H 72
 #define SC_B 80
 #define SC_E 01
@@ -9,15 +11,17 @@
 #define O_MAX 5
 
 int start(int addr, int arg) {
-    int (*get_func)(int id) = (int (*)(int)) addr;
-    void (*clear_screen)() = (void (*)()) get_func(46);
-    void (*ms_sleep)(int) = (void (*)(int)) get_func(44);
-    void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49);
-    int (*get_last_scancode)() = (int (*)()) get_func(58);
-    void (*sleep)(int) = (void (*)(int)) get_func(43);
-    void (*int_to_ascii)(int n, char str[]) = (void (*)(int, char *)) get_func(23);
-    void (*append)(char *str, char c) = (void (*)(char *, char)) get_func(29);
-    int (*rand)() = (int (*)()) get_func(60);
+    INIT_AF(addr);
+    
+    AF_get_last_scancode();
+    AF_int_to_ascii();
+    AF_clear_screen();
+    AF_ckprint_at();
+    AF_ms_sleep();
+    AF_append();
+    AF_sleep();
+    AF_rand();
+    
 
     clear_screen();
     int val = 0;
