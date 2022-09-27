@@ -4,7 +4,6 @@
 #include <iolib.h>
 #include <mem.h>
 
-
 void sys_reboot() {
     uint8_t good = 0x02;
     while (good & 0x02)

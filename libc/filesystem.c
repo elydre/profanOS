@@ -5,6 +5,7 @@
 #include <iolib.h>
 #include <mem.h>
 
+uint32_t fs_path_to_id(char input_path[], int silence);
 void i_parse_path(char path[], string_20_t liste_path[]);
 uint32_t i_next_free(uint32_t rec);
 uint32_t i_creer_dossier(char nom[]);
@@ -42,8 +43,7 @@ uint32_t i_creer_dossier(char nom[]) {
         return 0;
     }
     if (!str_cmp(nom, "..")) {
-        fskprint("$3Le nom du dossier ne peut pas etre .., nom actuel: $0%s\n", nom);
-        return 0;
+
     }
     uint32_t folder_id = i_next_free(0);
     uint32_t list_to_write[128];
@@ -198,6 +198,21 @@ void i_parse_path(char path[], string_20_t liste_path[]) {
         }
     }
     for (int i = 0; i<20; i++) liste_path[0].name[i] = 0;
+}
+
+uint32_t i_get_parent_id(char path[]) {
+    if (!str_cmp(path, "/")) {return 0;}
+    if (str_count(path, '/') == 1) {return 0;}
+    char *new_path = malloc(sizeof(char) * str_len(path));
+    for (int i=0; i<str_len(path); i++) new_path[i] = path[i];
+    for (int i = str_len(path); i>0; i--) {
+        if (new_path[i] == '/') {
+            new_path[i] = '\0';
+            break;
+        }
+    }
+    free(new_path);
+    return fs_path_to_id(new_path, 0);
 }
 
 // PUBLIC FUNCTIONS

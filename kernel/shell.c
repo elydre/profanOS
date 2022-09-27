@@ -307,15 +307,11 @@ void shell_command(char command[]) {
     }
 
     else if (str_cmp(prefix, "cd") == 0) {
-        if (!str_cmp(suffix, "..")) {
-            gpd();
-        } else {
-            char new_path[256];
-            assemble_path(current_dir, suffix, new_path);
-            if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
-                str_cpy(current_dir, new_path);
-            else fskprint("$3%s$B path not found\n", new_path);
-        }
+        char new_path[256];
+        assemble_path(current_dir, suffix, new_path);
+        if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
+            str_cpy(current_dir, new_path);
+        else fskprint("$3%s$B path not found\n", new_path);
     }
 
     else if (str_cmp(prefix, "free") == 0) {
