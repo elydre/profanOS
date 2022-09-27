@@ -41,6 +41,10 @@ uint32_t i_creer_dossier(char nom[]) {
         fskprint("$3Le nom du dossier ne peut pas contenir de /, nom actuel: $0%s\n", nom);
         return 0;
     }
+    if (!str_cmp(nom, "..")) {
+        fskprint("$3Le nom du dossier ne peut pas etre .., nom actuel: $0%s\n", nom);
+        return 0;
+    }
     uint32_t folder_id = i_next_free(0);
     uint32_t list_to_write[128];
     for (int i = 0; i < 128; i++) list_to_write[i] = 0;

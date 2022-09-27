@@ -1,6 +1,6 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#define VERSION "0.4.7c"
+#define VERSION "0.4.8"
 
 #endif

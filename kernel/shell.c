@@ -23,6 +23,15 @@ void shell_omp() {
     fskprint("profanOS [$9%s$7] -> ", current_dir);
 }
 
+void gpd() {
+    for (int i = str_len(current_dir); i > 0; i--) {
+        if (current_dir[i] == '/' || i == 1) {
+            current_dir[i] = '\0';
+            break;
+        }
+    }
+}
+
 void assemble_path(char old[], char new[], char result[]) {
     result[0] = '\0'; str_cpy(result, old);
     if (result[str_len(result) - 1] != '/') str_append(result, '/');
@@ -229,6 +238,7 @@ void shell_command(char command[]) {
     else if (str_cmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (str_cmp(prefix, "tree") == 0)   shell_tree(current_dir, 0);
     else if (str_cmp(prefix, "usg") == 0)    usage();
+    else if (str_cmp(prefix, "gpd") == 0)    gpd();
     else if (str_cmp(prefix, "yield") == 0)  (str_cmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
     else if (str_cmp(prefix, "alloc") == 0) {
@@ -296,22 +306,16 @@ void shell_command(char command[]) {
         free(file);
     }
 
-    else if (str_cmp(prefix, "gpd") == 0) {
-        // got to parent directory
-        for (int i = str_len(current_dir); i > 0; i--) {
-            if (current_dir[i] == '/' || i == 1) {
-                current_dir[i] = '\0';
-                break;
-            }
-        }
-    }
-
     else if (str_cmp(prefix, "cd") == 0) {
-        char new_path[256];
-        assemble_path(current_dir, suffix, new_path);
-        if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
-            str_cpy(current_dir, new_path);
-        else fskprint("$3%s$B path not found\n", new_path);
+        if (!str_cmp(suffix, "..")) {
+            gpd();
+        } else {
+            char new_path[256];
+            assemble_path(current_dir, suffix, new_path);
+            if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
+                str_cpy(current_dir, new_path);
+            else fskprint("$3%s$B path not found\n", new_path);
+        }
     }
 
     else if (str_cmp(prefix, "free") == 0) {
