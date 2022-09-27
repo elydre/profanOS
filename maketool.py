@@ -126,9 +126,9 @@ def make_help():
     aide = (
         ("make",        "build profanOS kernel (elf file)"),
         ("make iso",    "build bootable iso with grub"),
-        ("make disk",   "create a empty 1Mo HDD (bin file)"),
+        ("make disk",   "build disk image with zapps"),
         ("make clean",  "delete all files in out directory"),
-        ("make fullclean", "clean + delete iso / elf / bin"),
+        ("make fullclean", "delete all build files"),
         ("make run",    "run the profanOS.elf in qemu"),
         ("make irun",   "run the profanOS.iso in qemu"),
     )
@@ -147,8 +147,8 @@ def make_iso():
 
 def gen_disk(force):
     if file_exists("HDD.bin") and not force: return
-    # mettre en commentaire la ligne suivante et supprimer tout les .bin
-    # du dossier zapps/ en cas de problème de compilation de zapps (^_^ )
+    # en cas de problème de build du disk, taper 'make fullclean'
+    # puis mettre en commentaire la ligne suivante          (^_^ )
     build_zapps()
     
     cprint(COLOR_INFO, "generating HDD.bin...")
@@ -190,3 +190,4 @@ def main():
         exit(1)
 
 if __name__ == "__main__": main()
+else: print("mhhh, akyzo ?")
