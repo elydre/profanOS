@@ -16,6 +16,7 @@
 #define AF_fskprint() void (*fskprint)(char format[], ...) = (void (*)(char[], ...)) get_func(38)
 #define AF_rainbow_print() void (*rainbow_print)(char msg[]) = (void (*)(char *)) get_func(39)
 #define AF_input() void (*input)(char out_buffer[], int size, char color) = (void (*)(char *, int, char)) get_func(41)
+#define AF_time_gen_unix() int (*time_gen_unix)() = (int (*)()) get_func(42)
 #define AF_ms_sleep() void (*ms_sleep)(int) = (void (*)(int)) get_func(44)
 #define AF_sleep() void (*sleep)(int) = (void (*)(int)) get_func(43)
 #define AF_clear_screen() void (*clear_screen)() = (void (*)()) get_func(46)
