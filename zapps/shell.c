@@ -109,6 +109,135 @@ void shell_ls(int addr) {
     free(out_type);
 }
 
+void print_scancodes(int addr) {
+    INIT_AF(addr);
+    AF_fskprint();
+    AF_rainbow_print();
+    AF_clear_screen();
+    AF_kb_scancode_to_char();
+    AF_ckprint();
+    AF_kb_get_scancode();
+
+    clear_screen();
+    rainbow_print("enter scancode press ESC to exit\n");
+    int last_sc = 0;
+    while (1) {
+        while (last_sc == kb_get_scancode());
+        last_sc = kb_get_scancode();
+        fskprint("$4\nscancode:   $1%d", last_sc);
+
+        if (last_sc == 1) {
+            // scancode 1 is the escape key
+            clear_screen();
+            break;
+        }
+
+        if (last_sc > SC_MAX) {
+            ckprint("\nunknown scancode\n", c_yellow);
+            continue;
+        }
+
+        fskprint("$4\nletter min: $1%c", kb_scancode_to_char(last_sc, 0));
+        fskprint("$4\nletter maj: $1%c\n", kb_scancode_to_char(last_sc, 1));
+    }
+}
+
+void show_disk_LBA(int addr, char suffix[]) {
+    INIT_AF(addr);
+    AF_str_cmp();
+    AF_ascii_to_int();
+    AF_int_to_ascii();
+    AF_ckprint();
+    AF_kprint();
+    AF_ata_read_sector();
+    AF_str_len();
+
+    int LBA = 0;
+    if (str_cmp(suffix, "ss") != 0) LBA = ascii_to_int(suffix);
+    uint32_t outbytes[128];
+    char tmp[10];
+    ata_read_sector((uint32_t) LBA, outbytes);
+    for (int i = 0; i < 128; i++) {
+        int_to_ascii(outbytes[i], tmp);
+        ckprint(tmp, c_magenta);
+        for (int j = str_len(tmp); j < 10; j++) kprint(" ");
+    }
+}
+
+void shell_tree(int addr, char path[], int rec) {
+    INIT_AF(addr);
+    AF_fs_get_folder_size();
+    AF_malloc();
+    AF_fs_get_dir_content();
+    AF_fs_type_sector();
+    AF_fskprint();
+    AF_free();
+    AF_fs_path_to_id();
+
+    int elm_count = fs_get_folder_size(path);
+    string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
+    uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
+    char tmp_path[256];
+    fs_get_dir_content(fs_path_to_id(path, 0), out_list, out_type);
+    for (int i = 0; i < elm_count; i++) out_type[i] = fs_type_sector(out_type[i]);
+    for (int i = 0; i < elm_count; i++) {
+        if (out_type[i] == 2) { // file
+            for (int j = 0; j < rec; j++) fskprint("  ");
+            fskprint("| $6%s\n", out_list[i].name);
+        }
+    }
+    for (int i = 0; i < elm_count; i++) {
+        if (out_type[i] == 3) { // folder
+            for (int j = 0; j < rec; j++) fskprint("  ");
+            assemble_path(addr, path, out_list[i].name, tmp_path);
+            fskprint("%s\n", out_list[i].name);
+            shell_tree(addr, tmp_path, rec + 1);
+        }
+    }
+    if (rec == 0) fskprint("\n");
+    free(out_list);
+    free(out_type);
+}
+
+void usage(int addr) {
+    INIT_AF(addr);
+    AF_kprint();
+    AF_ckprint();
+    AF_fskprint();
+    AF_timer_get_refresh_time();
+
+    int refresh_time[5], lvl[3] = {10, 5, 2};
+    ScreenColor colors[3] = {c_dred, c_red, c_yellow};
+    kprint(" ");
+    
+    timer_get_refresh_time(refresh_time);
+    for (int ligne = 0; ligne < 3; ligne++) {
+        for (int i = 0; i < 5; i++) {
+            if (refresh_time[i] >= lvl[ligne]) ckprint("#", colors[ligne]);
+            else kprint(" ");
+        }
+        kprint("\n ");
+    }
+    for (int i = 0; i < 5; i++) {
+        if (refresh_time[i] < 10 && refresh_time[i] >= 0)
+            fskprint("$1%d", refresh_time[i]);
+        else ckprint("#", c_green);
+    }
+    kprint("\n");
+}
+
+void gpd(int addr) {
+    INIT_AF(addr);
+    AF_str_len();
+
+    for (int i = str_len(current_dir); i > 0; i--) {
+        if (current_dir[i] == '/' || i == 1) {
+            current_dir[i] = '\0';
+            break;
+        }
+    }
+}
+
 int shell_command(int addr, char command[]) {
     INIT_AF(addr);
     
@@ -121,6 +250,14 @@ int shell_command(int addr, char command[]) {
     AF_str_cmp();
     AF_malloc();
     AF_free();
+    AF_mem_print();
+    AF_fs_make_dir();
+    AF_fs_make_file();
+    AF_sys_reboot();
+    AF_ms_sleep();
+    AF_ascii_to_int();
+    AF_yield();
+    
 
     char *prefix = malloc(str_len(command) * sizeof(char)); // size of char is 1 octet
     char *suffix = malloc(str_len(command) * sizeof(char));
@@ -141,6 +278,17 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "echo") == 0)   fskprint("$4%s\n", suffix);
     else if (str_cmp(prefix, "help") == 0)   shell_help(addr);
     else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr);
+    else if (str_cmp(prefix, "mem") == 0)    mem_print();
+    else if (str_cmp(prefix, "mkdir") == 0)  fs_make_dir(current_dir, suffix);
+    else if (str_cmp(prefix, "mkfile") == 0) fs_make_file(current_dir, suffix);
+    else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
+    else if (str_cmp(prefix, "sc") == 0)     print_scancodes(addr);
+    else if (str_cmp(prefix, "sleep") == 0)  ms_sleep(ascii_to_int(suffix) * 1000);
+    else if (str_cmp(prefix, "ss") == 0)     show_disk_LBA(addr, suffix);
+    else if (str_cmp(prefix, "tree") == 0)   shell_tree(addr, current_dir, 0);
+    else if (str_cmp(prefix, "usg") == 0)    usage(addr);
+    else if (str_cmp(prefix, "gpd") == 0)    gpd(addr);
+    else if (str_cmp(prefix, "yield") == 0)  (str_cmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
 
     free(prefix);
     free(suffix);

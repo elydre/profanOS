@@ -33,6 +33,8 @@ typedef struct string_20_t {
 
 #define INIT_AF(addr) int (*get_func)(int id) = (int (*)(int)) addr
 
+#define AF_fs_make_dir() uint32_t (*fs_make_dir)(char path[], char folder_name[]) = (uint32_t (*)(char[], char[])) get_func(2)
+#define AF_fs_make_file() uint32_t (*fs_make_file)(char path[], char file_name[]) = (uint32_t (*)(char[], char[])) get_func(3)
 #define AF_fs_read_file() void (*fs_read_file)(char path[], uint32_t data[]) = (void (*)(char[], uint32_t[])) get_func(4)
 #define AF_fs_get_folder_size() int (*fs_get_folder_size)(char path[]) = (int (*)(char[])) get_func(7)
 #define AF_fs_declare_read_array() void * (*fs_declare_read_array)(char path[]) = (void * (*)(char[])) get_func(8)
@@ -43,6 +45,7 @@ typedef struct string_20_t {
 #define AF_free() void (*free)(void * ptr) = (void (*)(void *)) get_func(17)
 #define AF_malloc() void * (*malloc)(int size) = (void * (*)(int)) get_func(19)
 #define AF_int_to_ascii() void (*int_to_ascii)(int n, char str[]) = (void (*)(int, char *)) get_func(23)
+#define AF_ascii_to_int() int (*ascii_to_int)(char str[]) = (int (*)(char[])) get_func(25)
 #define AF_str_len() int (*str_len)(char s[]) = (int (*)(char *)) get_func(27)
 #define AF_str_append() void (*str_append)(char *str, char c) = (void (*)(char *, char)) get_func(29)
 #define AF_str_cpy() void (*str_cpy)(char *dest, char *src) = (void (*)(char *, char *)) get_func(30)
@@ -59,9 +62,15 @@ typedef struct string_20_t {
 #define AF_ms_sleep() void (*ms_sleep)(int) = (void (*)(int)) get_func(44)
 #define AF_clear_screen() void (*clear_screen)() = (void (*)()) get_func(46)
 #define AF_kprint() void (*kprint)(char *message) = (void (*)(char *)) get_func(47)
+#define AF_ckprint() void (*ckprint)(char *message, char color) = (void (*)(char*, char)) get_func(48)
 #define AF_ckprint_at() void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49)
-#define AF_kb_scancode_to_char() char (*kb_scancode_to_char)(int scancode) = (char (*)(int)) get_func(57)
-#define AF_get_last_scancode() int (*get_last_scancode)() = (int (*)()) get_func(58)
+#define AF_kb_scancode_to_char() char (*kb_scancode_to_char)(int scancode, int shift) = (char (*)(int, int)) get_func(57)
+#define AF_kb_get_scancode() int (*kb_get_scancode)() = (int (*)()) get_func(58)
 #define AF_rand() int (*rand)() = (int (*)()) get_func(60)
+#define AF_mem_print() void (*mem_print)() = (void (*)()) get_func(61)
+#define AF_sys_reboot() void (*sys_reboot)() = (void (*)()) get_func(62)
+#define AF_ata_read_sector() void (*ata_read_sector)(uint32_t LBA, uint32_t out[]) = (void (*)(uint32_t, uint32_t[])) get_func(63)
+#define AF_timer_get_refresh_time() void (*timer_get_refresh_time)(int target[]) = (void (*)(int[])) get_func(66)
+#define AF_yield() void (*yield)(int target_pid) = (void (*)(int)) get_func(67)
 
 #endif

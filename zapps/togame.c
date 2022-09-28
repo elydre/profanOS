@@ -13,7 +13,7 @@
 int start(int addr, int arg) {
     INIT_AF(addr);
     
-    AF_get_last_scancode();
+    AF_kb_get_scancode();
     AF_int_to_ascii();
     AF_clear_screen();
     AF_ckprint_at();
@@ -66,7 +66,7 @@ int start(int addr, int arg) {
 
         ckprint_at(" ", 10, val, 0x60);
 
-        last_sc = get_last_scancode();
+        last_sc = kb_get_scancode();
         if (last_sc == SC_B && val < Y_MAX - 1) val++;
         if (last_sc == SC_H && val > 0) val--;
         if (last_sc == SC_E) {
