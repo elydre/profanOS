@@ -78,8 +78,7 @@ void isr_install() {
 }
 
 void isr_handler(registers_t *r) {
-    fskprint("$Breceived interrupt: $3%d\n", r->int_no);
-    sys_stop();
+    sys_interrupt(r->int_no);
 }
 
 void register_interrupt_handler(uint8_t n, isr_t handler) {

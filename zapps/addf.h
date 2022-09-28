@@ -7,6 +7,7 @@
 #define AF_fs_read_file() void (*fs_read_file)(char path[], uint32_t data[]) = (void (*)(char[], uint32_t[])) get_func(4)
 #define AF_fs_declare_read_array() void * (*fs_declare_read_array)(char path[]) = (void * (*)(char[])) get_func(8)
 #define AF_free() void (*free)(void * ptr) = (void (*)(void *)) get_func(17)
+#define AF_malloc() void * (*malloc)(int size) = (void * (*)(int)) get_func(19)
 #define AF_int_to_ascii() void (*int_to_ascii)(int n, char str[]) = (void (*)(int, char *)) get_func(23)
 #define AF_append() void (*append)(char *str, char c) = (void (*)(char *, char)) get_func(29)
 #define AF_str_cpy() void (*str_cpy)(char *dest, char *src) = (void (*)(char *, char *)) get_func(30)
