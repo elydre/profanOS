@@ -1,7 +1,11 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
+#include <task.h>
+#include <driver/ata.h>
 #include <filesystem.h>
+#include <cpu/timer.h>
 #include <string.h>
+#include <system.h>
 #include <iolib.h>
 #include <time.h>
 #include <mem.h>
@@ -34,6 +38,7 @@ int wf_get_func_addr(int func_id) {
         case 20: return (int) realloc;
         case 21: return (int) mem_get_usage;
         case 22: return (int) mem_get_usable;
+        case 61: return (int) mem_print;
 
         // string.h
         case 23: return (int) int_to_ascii;
@@ -63,6 +68,7 @@ int wf_get_func_addr(int func_id) {
         case 43: return (int) sleep;
         case 44: return (int) ms_sleep;
         case 45: return (int) time_get_boot;
+        case 66: return (int) timer_get_refresh_time;
 
         // screen.h
         case 46: return (int) clear_screen;
@@ -84,6 +90,19 @@ int wf_get_func_addr(int func_id) {
         // functions.h
         case 59: return (int) pow;
         case 60: return (int) rand;
+
+        // system.h
+        case 62: return (int) sys_reboot;
+        case 68: return (int) sys_shutdown;
+        case 69: return (int) sys_run_binary;
+
+        // ata driver
+        case 63: return (int) ata_read_sector;
+        case 64: return (int) ata_write_sector;
+        case 65: return (int) ata_get_sectors_count;
+
+        // task.h
+        case 67: return (int) yield;
 
         default: return 0;
     }

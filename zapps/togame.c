@@ -13,12 +13,12 @@
 int start(int addr, int arg) {
     INIT_AF(addr);
     
-    AF_get_last_scancode();
+    AF_kb_get_scancode();
     AF_int_to_ascii();
     AF_clear_screen();
     AF_ckprint_at();
     AF_ms_sleep();
-    AF_append();
+    AF_str_append();
     AF_sleep();
     AF_rand();
     
@@ -66,7 +66,7 @@ int start(int addr, int arg) {
 
         ckprint_at(" ", 10, val, 0x60);
 
-        last_sc = get_last_scancode();
+        last_sc = kb_get_scancode();
         if (last_sc == SC_B && val < Y_MAX - 1) val++;
         if (last_sc == SC_H && val > 0) val--;
         if (last_sc == SC_E) {
@@ -103,9 +103,9 @@ int start(int addr, int arg) {
         if (to_wait > 10) to_wait = 40 - (iter / 50);
 
         int_to_ascii(iter / 10, point);
-        append(point, 'p');
-        append(point, 't');
-        append(point, 's');
+        str_append(point, 'p');
+        str_append(point, 't');
+        str_append(point, 's');
         ckprint_at(point, 0, Y_MAX, 0x0f);
         ms_sleep(to_wait);
         iter++;
