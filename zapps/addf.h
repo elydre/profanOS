@@ -33,16 +33,20 @@ typedef struct string_20_t {
 
 #define INIT_AF(addr) int (*get_func)(int id) = (int (*)(int)) addr
 
+#define AF_fs_get_used_sectors() uint32_t(*fs_get_used_sectors)(uint32_t disk_size) = (uint32_t (*)(uint32_t)) get_func(0)
 #define AF_fs_make_dir() uint32_t (*fs_make_dir)(char path[], char folder_name[]) = (uint32_t (*)(char[], char[])) get_func(2)
 #define AF_fs_make_file() uint32_t (*fs_make_file)(char path[], char file_name[]) = (uint32_t (*)(char[], char[])) get_func(3)
 #define AF_fs_read_file() void (*fs_read_file)(char path[], uint32_t data[]) = (void (*)(char[], uint32_t[])) get_func(4)
+#define AF_fs_write_in_file() void (*fs_write_in_file)(char path[], uint32_t data[], uint32_t data_size) = (void (*)(char[], uint32_t[], uint32_t)) get_func(5)
 #define AF_fs_get_folder_size() int (*fs_get_folder_size)(char path[]) = (int (*)(char[])) get_func(7)
 #define AF_fs_declare_read_array() void * (*fs_declare_read_array)(char path[]) = (void * (*)(char[])) get_func(8)
 #define AF_fs_get_file_size() uint32_t (*fs_get_file_size)(char path[]) = (uint32_t (*)(char *)) get_func(6)
+#define AF_fs_does_path_exists() int (*fs_does_path_exists)(char path[]) = (int (*)(char[])) get_func(9)
 #define AF_fs_type_sector() int (*fs_type_sector)(uint32_t sector) = (int (*)(uint32_t)) get_func(10)
 #define AF_fs_get_dir_content() void (*fs_get_dir_content)(uint32_t id, string_20_t list_name[], uint32_t liste_id[]) = (void (*)(uint32_t, string_20_t[], uint32_t[])) get_func(11)
 #define AF_fs_path_to_id() uint32_t(*fs_path_to_id)(char input_path[], int silence) = (uint32_t(*)(char[], int)) get_func(12)
 #define AF_mem_alloc() int (*mem_alloc)(int size) = (int (*)(int)) get_func(15)
+#define AF_mem_free_addr() int (*mem_free_addr)(int addr) = (int (*)(int)) get_func(16)
 #define AF_free() void (*free)(void * ptr) = (void (*)(void *)) get_func(17)
 #define AF_malloc() void * (*malloc)(int size) = (void * (*)(int)) get_func(19)
 #define AF_int_to_ascii() void (*int_to_ascii)(int n, char str[]) = (void (*)(int, char *)) get_func(23)
@@ -53,6 +57,8 @@ typedef struct string_20_t {
 #define AF_str_cmp() int (*str_cmp)(char str1[], char str2[]) = (int (*)(char[], char[])) get_func(31)
 #define AF_str_start_split() void (*str_start_split)(char *str, char delim) = (void (*)(char *, char)) get_func(32)
 #define AF_str_end_split() void (*str_end_split)(char *str, char delim) = (void (*)(char *, char)) get_func(33)
+#define AF_str_count() int (*str_count)(char str[], char thing) = (int (*)(char[], char)) get_func(35)
+#define AF_str_cat() char* (*str_cat)(char s1[], const char s2[]) = (char* (*)(char[], const char[])) get_func(36)
 #define AF_mskprint() void (*mskprint)(int nb_args, ...) = (void (*)(int, ...)) get_func(37)
 #define AF_fskprint() void (*fskprint)(char format[], ...) = (void (*)(char[], ...)) get_func(38)
 #define AF_rainbow_print() void (*rainbow_print)(char msg[]) = (void (*)(char *)) get_func(39)
@@ -71,9 +77,10 @@ typedef struct string_20_t {
 #define AF_mem_print() void (*mem_print)() = (void (*)()) get_func(61)
 #define AF_sys_reboot() void (*sys_reboot)() = (void (*)()) get_func(62)
 #define AF_ata_read_sector() void (*ata_read_sector)(uint32_t LBA, uint32_t out[]) = (void (*)(uint32_t, uint32_t[])) get_func(63)
+#define AF_ata_get_sectors_count() uint32_t (*ata_get_sectors_count)() = (uint32_t (*)()) get_func(65)
 #define AF_timer_get_refresh_time() void (*timer_get_refresh_time)(int target[]) = (void (*)(int[])) get_func(66)
 #define AF_yield() void (*yield)(int target_pid) = (void (*)(int)) get_func(67)
 #define AF_sys_shutdown() void (*sys_shutdown)() = (void (*)()) get_func(68)
-
+#define AF_sys_run_binary() int (*sys_run_binary)(char *fileName, int arg) = (int (*)(char *, int)) get_func(69)
 
 #endif

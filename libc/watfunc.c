@@ -94,6 +94,7 @@ int wf_get_func_addr(int func_id) {
         // system.h
         case 62: return (int) sys_reboot;
         case 68: return (int) sys_shutdown;
+        case 69: return (int) sys_run_binary;
 
         // ata driver
         case 63: return (int) ata_read_sector;

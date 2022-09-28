@@ -40,5 +40,5 @@ void kernel_main() {
     } else  {
         sys_fatal(42, "Shell not found, exiting...\n");
     }
-    shell_run();
+    fskprint("FALLBACK SHELL\n");
 }

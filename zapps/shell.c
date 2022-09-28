@@ -7,14 +7,11 @@ int shell_command(int addr, char command[]);
 
 static char current_dir[256] = "/";
 
-// tu peut pas lancer une fonction qui s'appelle start? ça serait plus facile
 int start(int addr, int arg) {
     INIT_AF(addr);
     AF_fskprint();
     AF_input_paste();
     AF_str_cpy();
-
-    fskprint("Lancement de l'application shell...\n");
 
     char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
     last_buffer[0] = '\0';
@@ -26,7 +23,6 @@ int start(int addr, int arg) {
         if (shell_command(addr, char_buffer)) break;
         char_buffer[0] = '\0';
     }
-    fskprint("Sortie de l'application shell...\n");
     return arg;
 }
 
@@ -55,7 +51,6 @@ void shell_help(int addr) {
     fskprint("$4go      - start *suffix* file as binary\n");
     fskprint("$4gpd     - get to the parent directory\n");
     fskprint("$4help    - show this help\n");
-    fskprint("$4info    - show time, task & page info\n");
     fskprint("$4ls      - list the current directory\n");
     fskprint("$4mem     - show MLIST with colors\n");
     fskprint("$4mkdir   - create a new folder *suffix*\n");
@@ -260,6 +255,22 @@ int shell_command(int addr, char command[]) {
     AF_mem_alloc();
     AF_rainbow_print();
     AF_sys_shutdown();
+    AF_fs_get_used_sectors();
+    AF_ata_get_sectors_count();
+    AF_fs_type_sector();
+    AF_fs_path_to_id();
+    AF_fs_declare_read_array();
+    AF_ckprint();
+    AF_kprint();
+    AF_fs_read_file();
+    AF_fs_does_path_exists();
+    AF_fs_write_in_file();
+    AF_input();
+    AF_str_count();
+    AF_str_cat();
+    AF_sys_run_binary();
+    AF_mskprint();
+    AF_mem_free_addr();
 
     char *prefix = malloc(str_len(command) * sizeof(char)); // size of char is 1 octet
     char *suffix = malloc(str_len(command) * sizeof(char));
@@ -300,9 +311,79 @@ int shell_command(int addr, char command[]) {
         }
     }
 
-    else if (str_cmp(prefix, "stop") * str_cmp(prefix, "exit") == 0) {
+    else if (str_cmp(prefix, "stop") == 0) {
         rainbow_print("stopping profanOS, bye!\n");
         sys_shutdown();
+    }
+
+    else if (str_cmp(prefix, "udisk") == 0) {
+        fskprint("disk scan in progress...\n");
+        uint32_t sectors_count = ata_get_sectors_count();
+        uint32_t used_sectors = fs_get_used_sectors(sectors_count);
+        fskprint("$4total sector count: $1%d\n", sectors_count);
+        fskprint("$4used sector count:  $1%d\n", used_sectors);
+    }
+
+    else if (str_cmp(prefix, "cat") == 0) {
+        char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
+        assemble_path(addr, current_dir, suffix, file);
+        if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
+            uint32_t * file_content = fs_declare_read_array(file);
+            char * char_content = fs_declare_read_array(file);
+            fs_read_file(file, file_content);
+            int char_count;
+            for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++)
+                char_content[char_count] = (char) file_content[char_count];
+            char_content[char_count] = '\0';
+            ckprint(char_content, c_magenta);
+            kprint("\n");
+            free(file_content);
+            free(char_content);
+        } else fskprint("$3%s$B file not found\n", file);
+        free(file);
+    }
+
+    else if (str_cmp(prefix, "wif") == 0) {
+        // write in file
+        char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
+        assemble_path(addr, current_dir, suffix, file);
+        if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
+            char char_content[70];
+            kprint("-> "); input(char_content, 70, c_blue); kprint("\n");
+            uint32_t * file_content = malloc(str_len(char_content));
+            for (int i = 0; i < 70; i++) file_content[i] = (uint32_t) char_content[i];
+            fs_write_in_file(file, file_content, str_len(char_content));
+            free(file_content);
+        } else fskprint("$3%s$B file not found\n", file);
+        free(file);
+    }
+
+    else if (str_cmp(prefix, "go") == 0) {
+        if(!(str_count(suffix, '.'))) str_cat(suffix, ".bin");
+        char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
+        assemble_path(addr, current_dir, suffix, file);
+        fskprint("file : %s\n", file);
+        if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
+            sys_run_binary(file, 0);
+        } else fskprint("$3%s$B file not found\n", file);
+        free(file);
+    }
+
+    else if (str_cmp(prefix, "cd") == 0) {
+        char new_path[256];
+        assemble_path(addr, current_dir, suffix, new_path);
+        if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
+            str_cpy(current_dir, new_path);
+        else fskprint("$3%s$B path not found\n", new_path);
+    }
+
+    else if (str_cmp(prefix, "free") == 0) {
+        if (mem_free_addr(ascii_to_int(suffix))) mskprint(2, "$4free: $1", "OK\n");
+        else mskprint(2, "$4free: $3", "FAIL\n");
+    }
+
+    else if (str_cmp(prefix, "") != 0) {
+        mskprint(3, "$3", prefix, "$B is not a valid command.\n");
     }
 
     free(prefix);
