@@ -17,7 +17,7 @@ int start(int addr, int arg) {
         input_paste(char_buffer, BFR_SIZE, last_buffer, c_blue);
         str_cpy(last_buffer, char_buffer);
         fskprint("\n");
-        if (shell_command(addr, char_buffer)) break;
+        shell_command(addr, char_buffer);
         char_buffer[0] = '\0';
     }
     return arg;
@@ -204,14 +204,7 @@ int shell_command(int addr, char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    // we test for exit first
-    if (str_cmp(prefix, "exit") == 0) {
-        free(prefix);
-        free(suffix);
-        return 1;
-    } 
-
-    else if (str_cmp(prefix, "clear") == 0)  clear_screen();
+    if      (str_cmp(prefix, "clear") == 0)  clear_screen();
     else if (str_cmp(prefix, "echo") == 0)   fskprint("$4%s\n", suffix);
     else if (str_cmp(prefix, "help") == 0)   shell_help(addr);
     else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr);
@@ -235,7 +228,7 @@ int shell_command(int addr, char command[]) {
         }
     }
 
-    else if (str_cmp(prefix, "stop") == 0) {
+    else if (str_cmp(prefix, "stop")*str_cmp(prefix, "exit") == 0) {
         rainbow_print("stopping profanOS, bye!\n");
         sys_shutdown();
     }
