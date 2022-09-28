@@ -35,14 +35,6 @@ out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.spli
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
 
 
-def ordre(files):
-    if len(files) <= 2:
-        return files
-    elif len(files) == 3:
-        return [files[1], files[2], files[0]]
-    else:
-        return [files[1], files[2], files[0]] + files[3:]
-
 def cprint(color, text, end="\n"):
     r, g, b = color
     print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
@@ -65,7 +57,7 @@ def gen_need_dict():
             need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
             need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
             need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
-            out.extend(ordre([out_file_name(file, "kernel") for file in file_in_dir(dir, ".c")]))
+            out.extend([out_file_name(file, "kernel") for file in file_in_dir(dir, ".c")])
             out.extend([out_file_name(file, "kernel") for file in file_in_dir(dir, ".asm")])
         except FileNotFoundError:
             cprint(COLOR_EROR, f"{dir} directory not found")
@@ -135,8 +127,8 @@ def make_help():
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
-def make_iso():
-    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf"):
+def make_iso(force = False):
+    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
@@ -172,7 +164,7 @@ assos = {
     "help": make_help,
     "disk": lambda: gen_disk(False),
     "diskf": lambda: gen_disk(True),
-    "iso": make_iso,
+    "iso": lambda: make_iso(True),
     "run": lambda: qemu_run(False),
     "irun": lambda: qemu_run(True),
 }
