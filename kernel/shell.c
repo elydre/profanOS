@@ -160,17 +160,7 @@ void shell_help(char suffix[]) {
             mskprint(3, "$4", help[i], "\n");
         }
     } else {
-        char tmp[100];
-        for (int i = 0; i < ARYLEN(help); i++) {
-            str_cpy_s(tmp, help[i]);
-            str_start_split(tmp, ' ');
-
-            if (str_cmp(tmp, suffix) == 0) {
-                mskprint(3, "$4", help[i], "\n");
-                return;
-            }
-        }
-        fskprint("$1%s$4 not found in help\n", suffix);
+        fskprint("$3Il n'y a pas d'aide personalisee !\n");
     }
 }
 
@@ -230,7 +220,7 @@ void shell_command(char command[]) {
     else if (str_cmp(prefix, "help") == 0)   shell_help(suffix);
     else if (str_cmp(prefix, "ls") == 0)     shell_ls();
     else if (str_cmp(prefix, "mem") == 0)    mem_print();
-    else if (str_cmp(prefix, "mkdir") == 0) fs_make_dir(current_dir, suffix);
+    else if (str_cmp(prefix, "mkdir") == 0)  fs_make_dir(current_dir, suffix);
     else if (str_cmp(prefix, "mkfile") == 0) fs_make_file(current_dir, suffix);
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "sc") == 0)     print_scancodes();
@@ -300,6 +290,7 @@ void shell_command(char command[]) {
         if(!(str_count(suffix, '.'))) str_cat(suffix, ".bin");
         char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
         assemble_path(current_dir, suffix, file);
+        fskprint("file : %s\n", file);
         if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
             sys_run_binary(file, 0);
         } else fskprint("$3%s$B file not found\n", file);

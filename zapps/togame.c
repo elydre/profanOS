@@ -18,7 +18,7 @@ int start(int addr, int arg) {
     AF_clear_screen();
     AF_ckprint_at();
     AF_ms_sleep();
-    AF_append();
+    AF_str_append();
     AF_sleep();
     AF_rand();
     
@@ -103,9 +103,9 @@ int start(int addr, int arg) {
         if (to_wait > 10) to_wait = 40 - (iter / 50);
 
         int_to_ascii(iter / 10, point);
-        append(point, 'p');
-        append(point, 't');
-        append(point, 's');
+        str_append(point, 'p');
+        str_append(point, 't');
+        str_append(point, 's');
         ckprint_at(point, 0, Y_MAX, 0x0f);
         ms_sleep(to_wait);
         iter++;
