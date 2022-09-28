@@ -42,6 +42,7 @@ typedef struct string_20_t {
 #define AF_fs_type_sector() int (*fs_type_sector)(uint32_t sector) = (int (*)(uint32_t)) get_func(10)
 #define AF_fs_get_dir_content() void (*fs_get_dir_content)(uint32_t id, string_20_t list_name[], uint32_t liste_id[]) = (void (*)(uint32_t, string_20_t[], uint32_t[])) get_func(11)
 #define AF_fs_path_to_id() uint32_t(*fs_path_to_id)(char input_path[], int silence) = (uint32_t(*)(char[], int)) get_func(12)
+#define AF_mem_alloc() int (*mem_alloc)(int size) = (int (*)(int)) get_func(15)
 #define AF_free() void (*free)(void * ptr) = (void (*)(void *)) get_func(17)
 #define AF_malloc() void * (*malloc)(int size) = (void * (*)(int)) get_func(19)
 #define AF_int_to_ascii() void (*int_to_ascii)(int n, char str[]) = (void (*)(int, char *)) get_func(23)
@@ -72,5 +73,7 @@ typedef struct string_20_t {
 #define AF_ata_read_sector() void (*ata_read_sector)(uint32_t LBA, uint32_t out[]) = (void (*)(uint32_t, uint32_t[])) get_func(63)
 #define AF_timer_get_refresh_time() void (*timer_get_refresh_time)(int target[]) = (void (*)(int[])) get_func(66)
 #define AF_yield() void (*yield)(int target_pid) = (void (*)(int)) get_func(67)
+#define AF_sys_shutdown() void (*sys_shutdown)() = (void (*)()) get_func(68)
+
 
 #endif

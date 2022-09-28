@@ -257,7 +257,9 @@ int shell_command(int addr, char command[]) {
     AF_ms_sleep();
     AF_ascii_to_int();
     AF_yield();
-    
+    AF_mem_alloc();
+    AF_rainbow_print();
+    AF_sys_shutdown();
 
     char *prefix = malloc(str_len(command) * sizeof(char)); // size of char is 1 octet
     char *suffix = malloc(str_len(command) * sizeof(char));
@@ -289,6 +291,19 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "usg") == 0)    usage(addr);
     else if (str_cmp(prefix, "gpd") == 0)    gpd(addr);
     else if (str_cmp(prefix, "yield") == 0)  (str_cmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
+
+    else if (str_cmp(prefix, "alloc") == 0) {
+        if (suffix[0] == 'a') fskprint("$3size is required\n");
+        else {
+            int addr = mem_alloc(ascii_to_int(suffix) * 1024);
+            fskprint("$4address: $1%x $4($1%d$4)\n", addr, addr);
+        }
+    }
+
+    else if (str_cmp(prefix, "stop") * str_cmp(prefix, "exit") == 0) {
+        rainbow_print("stopping profanOS, bye!\n");
+        sys_shutdown();
+    }
 
     free(prefix);
     free(suffix);
