@@ -8,10 +8,7 @@ int shell_command(int addr, char command[]);
 static char current_dir[256] = "/";
 
 int start(int addr, int arg) {
-    INIT_AF(addr);
-    AF_fskprint();
-    AF_input_paste();
-    AF_str_cpy();
+    INIT_AF(addr); AF_fskprint(); AF_input_paste(); AF_str_cpy();
 
     char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
     last_buffer[0] = '\0';
@@ -27,10 +24,7 @@ int start(int addr, int arg) {
 }
 
 void assemble_path(int addr, char old[], char new[], char result[]) {
-    INIT_AF(addr);
-    AF_str_cpy();
-    AF_str_len();
-    AF_str_append();
+    INIT_AF(addr); AF_str_cpy(); AF_str_len(); AF_str_append();
 
     result[0] = '\0'; str_cpy(result, old);
     if (result[str_len(result) - 1] != '/') str_append(result, '/');
@@ -38,8 +32,7 @@ void assemble_path(int addr, char old[], char new[], char result[]) {
 }
 
 void shell_help(int addr) {
-    INIT_AF(addr);
-    AF_fskprint();
+    INIT_AF(addr); AF_fskprint();
     
     fskprint("$4alloc   - allocate *suffix* ko\n");
     fskprint("$4cat     - print file *suffix*\n");
@@ -68,16 +61,7 @@ void shell_help(int addr) {
 }
 
 void shell_ls(int addr) {
-    INIT_AF(addr);
-    AF_fs_get_folder_size();
-    AF_malloc();
-    AF_fs_type_sector();
-    AF_fs_path_to_id();
-    AF_fskprint();
-    AF_fs_get_file_size();
-    AF_fs_get_dir_content();
-    AF_str_len();
-    AF_free();
+    INIT_AF(addr); AF_fs_get_folder_size(); AF_malloc(); AF_fs_type_sector(); AF_fs_path_to_id(); AF_fskprint(); AF_fs_get_file_size(); AF_fs_get_dir_content(); AF_str_len(); AF_free();
 
     int elm_count = fs_get_folder_size(current_dir);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
@@ -105,13 +89,7 @@ void shell_ls(int addr) {
 }
 
 void print_scancodes(int addr) {
-    INIT_AF(addr);
-    AF_fskprint();
-    AF_rainbow_print();
-    AF_clear_screen();
-    AF_kb_scancode_to_char();
-    AF_ckprint();
-    AF_kb_get_scancode();
+    INIT_AF(addr); AF_fskprint(); AF_rainbow_print(); AF_clear_screen(); AF_kb_scancode_to_char(); AF_ckprint(); AF_kb_get_scancode();
 
     clear_screen();
     rainbow_print("enter scancode press ESC to exit\n");
@@ -138,14 +116,7 @@ void print_scancodes(int addr) {
 }
 
 void show_disk_LBA(int addr, char suffix[]) {
-    INIT_AF(addr);
-    AF_str_cmp();
-    AF_ascii_to_int();
-    AF_int_to_ascii();
-    AF_ckprint();
-    AF_kprint();
-    AF_ata_read_sector();
-    AF_str_len();
+    INIT_AF(addr); AF_str_cmp(); AF_ascii_to_int(); AF_int_to_ascii(); AF_ckprint(); AF_kprint(); AF_ata_read_sector(); AF_str_len();
 
     int LBA = 0;
     if (str_cmp(suffix, "ss") != 0) LBA = ascii_to_int(suffix);
@@ -160,14 +131,7 @@ void show_disk_LBA(int addr, char suffix[]) {
 }
 
 void shell_tree(int addr, char path[], int rec) {
-    INIT_AF(addr);
-    AF_fs_get_folder_size();
-    AF_malloc();
-    AF_fs_get_dir_content();
-    AF_fs_type_sector();
-    AF_fskprint();
-    AF_free();
-    AF_fs_path_to_id();
+    INIT_AF(addr); AF_fs_get_folder_size(); AF_malloc(); AF_fs_get_dir_content(); AF_fs_type_sector(); AF_fskprint(); AF_free(); AF_fs_path_to_id();
 
     int elm_count = fs_get_folder_size(path);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
@@ -195,11 +159,7 @@ void shell_tree(int addr, char path[], int rec) {
 }
 
 void usage(int addr) {
-    INIT_AF(addr);
-    AF_kprint();
-    AF_ckprint();
-    AF_fskprint();
-    AF_timer_get_refresh_time();
+    INIT_AF(addr); AF_kprint(); AF_ckprint(); AF_fskprint(); AF_timer_get_refresh_time();
 
     int refresh_time[5], lvl[3] = {10, 5, 2};
     ScreenColor colors[3] = {c_dred, c_red, c_yellow};
@@ -234,43 +194,7 @@ void gpd(int addr) {
 }
 
 int shell_command(int addr, char command[]) {
-    INIT_AF(addr);
-    
-    AF_str_start_split();
-    AF_str_end_split();
-    AF_clear_screen();
-    AF_fskprint();
-    AF_str_cpy();
-    AF_str_len();
-    AF_str_cmp();
-    AF_malloc();
-    AF_free();
-    AF_mem_print();
-    AF_fs_make_dir();
-    AF_fs_make_file();
-    AF_sys_reboot();
-    AF_ms_sleep();
-    AF_ascii_to_int();
-    AF_yield();
-    AF_mem_alloc();
-    AF_rainbow_print();
-    AF_sys_shutdown();
-    AF_fs_get_used_sectors();
-    AF_ata_get_sectors_count();
-    AF_fs_type_sector();
-    AF_fs_path_to_id();
-    AF_fs_declare_read_array();
-    AF_ckprint();
-    AF_kprint();
-    AF_fs_read_file();
-    AF_fs_does_path_exists();
-    AF_fs_write_in_file();
-    AF_input();
-    AF_str_count();
-    AF_str_cat();
-    AF_sys_run_binary();
-    AF_mskprint();
-    AF_mem_free_addr();
+    INIT_AF(addr); AF_str_start_split(); AF_str_end_split(); AF_clear_screen(); AF_fskprint(); AF_str_cpy(); AF_str_len(); AF_str_cmp(); AF_malloc(); AF_free(); AF_mem_print(); AF_fs_make_dir(); AF_fs_make_file(); AF_sys_reboot(); AF_ms_sleep(); AF_ascii_to_int(); AF_yield(); AF_mem_alloc(); AF_rainbow_print(); AF_sys_shutdown(); AF_fs_get_used_sectors(); AF_ata_get_sectors_count(); AF_fs_type_sector(); AF_fs_path_to_id(); AF_fs_declare_read_array(); AF_ckprint(); AF_kprint(); AF_fs_read_file(); AF_fs_does_path_exists(); AF_fs_write_in_file(); AF_input(); AF_str_count(); AF_str_cat(); AF_sys_run_binary(); AF_mskprint(); AF_mem_free_addr();
 
     char *prefix = malloc(str_len(command) * sizeof(char)); // size of char is 1 octet
     char *suffix = malloc(str_len(command) * sizeof(char));
