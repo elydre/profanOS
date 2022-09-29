@@ -375,7 +375,6 @@ int shell_command(int addr, char command[]) {
         if(!(str_count(suffix, '.'))) str_cat(suffix, ".bin");
         char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
         assemble_path(addr, current_dir, suffix, file);
-        fskprint("file : %s\n", file);
         if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
             sys_run_binary(file, 0);
         } else fskprint("$3%s$B file not found\n", file);

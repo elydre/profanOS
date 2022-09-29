@@ -59,6 +59,7 @@ typedef struct {
 #define AF_mem_alloc() int (*mem_alloc)(int size) = (int (*)(int)) get_func(15)
 #define AF_mem_free_addr() int (*mem_free_addr)(int addr) = (int (*)(int)) get_func(16)
 #define AF_free() void (*free)(void * ptr) = (void (*)(void *)) get_func(17)
+#define AF_calloc() void * (*calloc)(int size) = (void * (*)(int)) get_func(18)
 #define AF_malloc() void * (*malloc)(int size) = (void * (*)(int)) get_func(19)
 #define AF_mem_get_usage() int (*mem_get_usage)() = (int (*)()) get_func(21)
 #define AF_mem_get_usable() int (*mem_get_usable)() = (int (*)()) get_func(22)
