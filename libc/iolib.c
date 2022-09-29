@@ -139,12 +139,6 @@ void rainbow_print(char message[]) {
     }
 }
 
-void input_print_buffer(int old_cursor, char out_buffer[], ScreenColor color, int buffer_index) {
-    set_cursor_offset(old_cursor);
-    ckprint(out_buffer, color);
-    ckprint(" ", color);
-    set_cursor_offset(old_cursor + buffer_index * 2);
-}
 
 // INPUT public functions
 
@@ -155,6 +149,7 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
     int key_ticks = 0;
     int sc, last_sc;
     int shift = 0;
+    int new_pos;
 
     clean_buffer(out_buffer, size);
 
@@ -222,7 +217,16 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
             buffer_actual_size++;
             buffer_index++;
         }
-        input_print_buffer(old_cursor, out_buffer, color, buffer_index);
+
+
+        set_cursor_offset(old_cursor);
+        ckprint(out_buffer, color);
+        kprint(" ");
+        new_pos = old_cursor + buffer_index * 2;
+        set_cursor_offset(new_pos);
+        if (new_pos >= 24 * 80 * 2 + 79 * 2) {
+            old_cursor -= 160;
+        }
     }
 }
 

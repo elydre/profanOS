@@ -1,6 +1,6 @@
 #include "addf.h"
 
-#define BFR_SIZE 68
+#define BFR_SIZE 90
 #define SC_MAX 57
 
 static char current_dir[256] = "/";
