@@ -15,10 +15,8 @@ void filesystem_init() {
     ata_read_sector(0, folder_racine);
     if (!(folder_racine[0] & 0x8000)) {
         uint32_t location = i_next_free(0);
-        if (location != 0) {
-            fskprint("Error, there is already some stuff on the disk !\n");
-            sys_stop();
-        }
+        if (location != 0)
+            sys_fatal("There is already some stuff on the disk !\n");
         i_creer_dossier("/");
     }
 }
@@ -39,7 +37,7 @@ uint32_t i_next_free(uint32_t rec) {
 
 uint32_t i_creer_dossier(char nom[]) {
     if (str_is_in(nom, '/') && str_cmp(nom, "/")) {
-        fskprint("$3Le nom du dossier ne peut pas contenir de /, nom actuel: $0%s\n", nom);
+        sys_error("Le nom du dossier ne peut pas contenir de /");
         return 0;
     }
     if (!str_cmp(nom, "..")) {
@@ -51,7 +49,7 @@ uint32_t i_creer_dossier(char nom[]) {
     list_to_write[0] = 0xC000; // 0x8000 + 0x4000
 
     if (str_len(nom) > 20) {
-        fskprint("$3nom trop long, max 20 char, nom actuel: $0%s\n", nom);
+        sys_error("Nom trop long, max 20 char");
         return 0;
     }
 
@@ -69,11 +67,11 @@ uint32_t i_creer_dossier(char nom[]) {
 
 uint32_t i_creer_index_de_fichier(char nom[]) {
     if (str_is_in(nom, '/')) {
-        fskprint("$3Le nom du fichier ne peut pas contenir de /, nom actuel: $0%s\n", nom);
+        sys_error("Le nom du fichier ne peut pas contenir de /");
         return 0;
     }
     if (str_len(nom) > 20) {
-        fskprint("$3nom trop long, max 20 char, nom actuel: $0%s\n", nom);
+        sys_error("Nom trop long, max 20 char");
         return 0;
     }
 
@@ -121,7 +119,7 @@ void i_set_data_to_file(uint32_t data[], uint32_t data_size, uint32_t file_id) {
     uint32_t file_index = sector[127];
 
     if (!(sector[0] & 0xA000)) {
-        fskprint("Erreur, le secteur %d n'est pas un fichier\n", file_id);
+        sys_error("Le secteur n'est pas un fichier");
         return;
     }
 
@@ -152,11 +150,11 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
     ata_read_sector(folder_id, dossier);
 
     if (!(dossier[0] & 0x8000)) {
-        fskprint("Erreur, le secteur %d est vide\n", folder_id);
+        sys_error("Le secteur est vide");
         return;
     }
     if (!(dossier[0] & 0x4000)) {
-        fskprint("Erreur, le secteur %d n'est pas un dossier\n", folder_id);
+        sys_error("Le secteur n'est pas un dossier");
         return;
     }
     int full = 1;
@@ -168,7 +166,7 @@ void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
         }
     }
     if (full) {
-        fskprint("Erreur, le dossier est plein");
+        sys_error("Le dossier est plein");
         return;
     }
     ata_write_sector(folder_id, dossier);
@@ -255,7 +253,7 @@ uint32_t fs_path_to_id(char input_path[], int silence) {
         free(liste_noms);
         free(liste_id);
         free(path);
-        if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un dossier\n", path);
+        if (!silence) sys_error("Le chemin n'emmene pas vers un dossier");
         return -1;
     }
 
@@ -299,7 +297,7 @@ uint32_t fs_path_to_id(char input_path[], int silence) {
         if (!str_cmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
     }
     if (!in_folder) {
-        if (!silence) fskprint("Erreur, le chemin %s n'emmene pas vers un truc qui existe\n", path);
+        if (!silence) sys_error("Le chemin n'emmene pas vers un truc qui existe");
         free(liste_path);
         free(liste_noms);
         free(liste_id);
@@ -339,7 +337,7 @@ uint32_t fs_make_dir(char path[], char folder_name[]) {
     uint32_t dossier = i_creer_dossier(folder_name);
     uint32_t id_to_set = fs_path_to_id(path, 0);
     if ((int) id_to_set != -1) i_add_item_to_dir(dossier, id_to_set);
-    else fskprint("Erreur : le chemin specifie dans fs_make_dir n'existe pas (%s)\n", path);
+    else sys_error("Le chemin specifie dans fs_make_dir n'existe pas");
     return dossier;
 }
 
@@ -361,7 +359,7 @@ uint32_t fs_get_file_size(char path[]) {
     uint32_t sector[128];
     ata_read_sector(id_file_index, sector);
     if (!(sector[0] & 0xA000)){
-        fskprint("Erreur : le secteur n'est pas un fichier\n");
+        sys_error("Le secteur n'est pas un fichier");
         return -1;
     }
     uint32_t sector_size = 0;
@@ -385,7 +383,7 @@ void fs_read_file(char path[], uint32_t data[]) {
     uint32_t id_file_index = sector[127];
     ata_read_sector(id_file_index, sector);
     if (!(sector[0] & 0xA000)){
-        fskprint("Erreur : le secteur n'est pas un fichier");
+        sys_error("Le secteur n'est pas un fichier");
     }
     uint32_t index = 0;
     ata_read_sector(id_file_index, sector);
@@ -428,12 +426,12 @@ void fs_get_dir_content(uint32_t id, string_20_t list_name[], uint32_t liste_id[
     ata_read_sector(id, folder);
 
     if (!(folder[0] & 0x8000)) {
-        fskprint("Erreur, le secteur %d est vide\n", id);
+        sys_error("Le secteur est vide");
         return;
     }
 
     if (!(folder[0] & 0x4000)) {
-        fskprint("Erreur, le secteur %d n'est pas un dossier\n", id);
+        sys_error("Le secteur n'est pas un dossier");
         return;
     }
 
