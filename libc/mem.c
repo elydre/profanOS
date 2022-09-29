@@ -1,6 +1,6 @@
 #include <driver/screen.h>
 #include <function.h>
-#include <iolib.h>
+#include <system.h>
 #include <string.h>
 #include <mem.h>
 
@@ -37,6 +37,7 @@ int get_state(int imm, int index) {
 }
 
 int get_required_part(int size) {
+    if (size < 1) size = 1;
     return (size + PART_SIZE - 1) / PART_SIZE;
 }
 
@@ -74,6 +75,7 @@ int mem_alloc(int size) {
             return (imm_debut * 19 + debut) * PART_SIZE + BASE_ADDR;
         }
     }
+    sys_warning("memory allocation failed");
     return -1;
 }
 

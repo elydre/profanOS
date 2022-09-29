@@ -63,12 +63,15 @@ int wf_get_func_addr(int func_id) {
         case 40: return (int) input_paste;
         case 41: return (int) input;
 
-        // time.h
+        // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;
         case 43: return (int) sleep;
         case 44: return (int) ms_sleep;
         case 45: return (int) time_get_boot;
         case 66: return (int) timer_get_refresh_time;
+        case 71: return (int) time_calc_unix;
+        case 70: return (int) time_get;
+        case 72: return (int) timer_get_tick;
 
         // screen.h
         case 46: return (int) clear_screen;

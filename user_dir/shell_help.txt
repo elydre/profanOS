@@ -1,0 +1,23 @@
+alloc   - allocate *suffix* ko
+cat     - print file *suffix*
+cd      - change directory to *suffix*
+clear   - clear the screen
+echo    - print the arguments
+exit    - exit of the shell app
+free    - free *suffix* address
+go      - start *suffix* file as binary
+gpd     - get to the parent directory
+help    - show this help
+ls      - list the current directory
+mem     - show MLIST with colors
+mkdir   - create a new folder *suffix*
+mkfile  - create a new file *suffix*
+reboot  - reboot the system
+sc      - show the scancodes
+sleep   - sleep for a given time
+ss      - show int32 in the LBA *suffix*
+stop    - shutdown the system
+tree    - show the current directory tree
+udisk   - show used disk space
+usg     - show the usage of cpu
+yield   - yield to pid *suffix*

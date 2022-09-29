@@ -32,16 +32,16 @@ void do_nothing() {
     asm volatile("cli");
 }
 
-void sys_warning(int code, char msg[]) {
-    fskprint("$DWARNING $5%d$D: $5%s\n", code, msg);
+void sys_warning(char msg[]) {
+    fskprint("$DWARNING: $5%s\n", msg);
 }
 
-void sys_error(int code, char msg[]) {
-    fskprint("$BERROR $3%d$B: $3%s\n", code, msg);
+void sys_error(char msg[]) {
+    fskprint("$BERROR: $3%s\n", msg);
 }
 
-void sys_fatal(int code, char msg[]) {
-    fskprint("$CFATAL $4%d$C: $4%s\n", code, msg);
+void sys_fatal(char msg[]) {
+    fskprint("$CFATAL: $4%s\n", msg);
     sys_stop();
 }
 
@@ -78,14 +78,16 @@ void sys_interrupt(int code) {
     sys_stop();
 }
 
-int sys_run_binary(char *fileName, int arg) {
-	char * binary_mem = calloc(fs_get_file_size(fileName)*126);
-	uint32_t * file = fs_declare_read_array(fileName);
+int sys_run_binary(char path[], int arg) {
+	char * binary_mem = calloc(fs_get_file_size(path)*126);
+	uint32_t * file = fs_declare_read_array(path);
 
-	fs_read_file(fileName, file);
+	fs_read_file(path, file);
 
 	for (int i = 0; file[i] != (uint32_t) -1 ; i++)
 		binary_mem[i] = (char) file[i];
+
+    free(file);
 
     int old_active_alloc = mem_get_alloc_count() - mem_get_free_count();
 
@@ -93,10 +95,19 @@ int sys_run_binary(char *fileName, int arg) {
 	int return_value = start_program((int) wf_get_func_addr, arg);
 
     if (old_active_alloc != mem_get_alloc_count() - mem_get_free_count())
-        sys_warning(42, "Memory leak detected");
+        sys_warning("Memory leak detected");
     
     free(binary_mem);
-    free(file);
 
     return return_value;
+}
+
+int sys_run_ifexist(char path[], int arg) {
+    if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
+        return sys_run_binary(path, arg);
+    char ermsg[100];
+    str_cpy(ermsg, path);
+    str_cat(ermsg, " not found");
+    sys_error(ermsg);
+    return -1;
 }

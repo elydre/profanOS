@@ -29,6 +29,17 @@ typedef struct string_20_t {
     char name[20];
 } string_20_t;
 
+typedef struct {
+    int seconds;
+    int minutes;
+    int hours;
+    int day_of_week;
+    int day_of_month;
+    int month;
+    int year;
+    int full[6];
+} time_t;
+
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 #define INIT_AF(addr) int (*get_func)(int id) = (int (*)(int)) addr
@@ -49,6 +60,8 @@ typedef struct string_20_t {
 #define AF_mem_free_addr() int (*mem_free_addr)(int addr) = (int (*)(int)) get_func(16)
 #define AF_free() void (*free)(void * ptr) = (void (*)(void *)) get_func(17)
 #define AF_malloc() void * (*malloc)(int size) = (void * (*)(int)) get_func(19)
+#define AF_mem_get_usage() int (*mem_get_usage)() = (int (*)()) get_func(21)
+#define AF_mem_get_usable() int (*mem_get_usable)() = (int (*)()) get_func(22)
 #define AF_int_to_ascii() void (*int_to_ascii)(int n, char str[]) = (void (*)(int, char *)) get_func(23)
 #define AF_ascii_to_int() int (*ascii_to_int)(char str[]) = (int (*)(char[])) get_func(25)
 #define AF_str_len() int (*str_len)(char s[]) = (int (*)(char *)) get_func(27)
@@ -67,10 +80,12 @@ typedef struct string_20_t {
 #define AF_time_gen_unix() int (*time_gen_unix)() = (int (*)()) get_func(42)
 #define AF_sleep() void (*sleep)(int) = (void (*)(int)) get_func(43)
 #define AF_ms_sleep() void (*ms_sleep)(int) = (void (*)(int)) get_func(44)
+#define AF_time_get_boot() int (*time_get_boot)() = (int (*)()) get_func(45)
 #define AF_clear_screen() void (*clear_screen)() = (void (*)()) get_func(46)
 #define AF_kprint() void (*kprint)(char *message) = (void (*)(char *)) get_func(47)
 #define AF_ckprint() void (*ckprint)(char *message, char color) = (void (*)(char*, char)) get_func(48)
 #define AF_ckprint_at() void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49)
+#define AF_kprint_backspace() void (*kprint_backspace)() = (void (*)()) get_func(51)
 #define AF_kb_scancode_to_char() char (*kb_scancode_to_char)(int scancode, int shift) = (char (*)(int, int)) get_func(57)
 #define AF_kb_get_scancode() int (*kb_get_scancode)() = (int (*)()) get_func(58)
 #define AF_rand() int (*rand)() = (int (*)()) get_func(60)
@@ -82,5 +97,7 @@ typedef struct string_20_t {
 #define AF_yield() void (*yield)(int target_pid) = (void (*)(int)) get_func(67)
 #define AF_sys_shutdown() void (*sys_shutdown)() = (void (*)()) get_func(68)
 #define AF_sys_run_binary() int (*sys_run_binary)(char *fileName, int arg) = (int (*)(char *, int)) get_func(69)
-
+#define AF_time_get() void (*time_get)(time_t *time) = (void (*)(time_t *)) get_func(70)
+#define AF_time_calc_unix() int (*time_calc_unix)(time_t *time) = (int (*)(time_t *)) get_func(71)
+#define AF_timer_get_tick() int (*timer_get_tick)() = (int (*)()) get_func(72)
 #endif
