@@ -5,7 +5,7 @@ import sys, os
 SCR_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
 
 INCLUDE_DIR = "include"
-INCLUDE_SUB = [".", "kernel", "driver", "cpu"]
+INCLUDE_SUB = [".", "driver", "cpu"]
 
 ZAPPS_DIR = "zapps"
 

@@ -1,5 +1,4 @@
 #include <driver/screen.h>
-#include <kernel/shell.h>
 #include <driver/rtc.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
@@ -33,11 +32,7 @@ void kernel_main() {
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
-    // launch of the shell :
-    char shell_path[] = "/bin/shell.bin";
-    if (fs_does_path_exists(shell_path)) {
-        sys_run_binary(shell_path, 0);
-    } else  {
-        sys_fatal(42, "Shell not found, exiting...\n");
-    }
+    // launch of the shell.bin
+    sys_run_ifexist("/bin/shell.bin", 0);
+    start_kshell();
 }

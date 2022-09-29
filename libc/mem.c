@@ -1,6 +1,6 @@
 #include <driver/screen.h>
 #include <function.h>
-#include <iolib.h>
+#include <system.h>
 #include <string.h>
 #include <mem.h>
 
@@ -19,9 +19,9 @@ void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
 // elydre b3 memory manager with alloc and free functions
 // https://github.com/elydre/elydre/blob/main/projet/profan/b3.py
 
-#define PART_SIZE 0x1000  // 4Ko
-#define IMM_COUNT 54      // can save 4104Ko
-#define BASE_ADDR 0x20000
+#define PART_SIZE 0x1000   // 4Ko
+#define IMM_COUNT 54       // can save 4104Ko
+#define BASE_ADDR 0x200000 // TODO: get automatically
 
 static int MLIST[IMM_COUNT];
 static int alloc_count = 0;
@@ -29,14 +29,14 @@ static int free_count = 0;
 
 int get_state(int imm, int index) {
     int last = -1;
-    for(int i = 0; i < index + 1; i++) {
-        if (last != -1) last = (last - last % 3) / 3;
-        else last = imm;
+    for (int i = 0; i < index + 1; i++) {
+        last = (last != -1) ? (last - last % 3) / 3 : imm;
     }
     return last % 3;
 }
 
 int get_required_part(int size) {
+    if (size < 1) size = 1;
     return (size + PART_SIZE - 1) / PART_SIZE;
 }
 
@@ -51,8 +51,7 @@ int mem_alloc(int size) {
     for (int mi = 0; mi < IMM_COUNT; mi++) {
         for (int i = 0; i < 19; i++) {
             num = get_state(MLIST[mi], i);
-            if (num == 0) suite++;
-            else suite = 0;
+            suite = (num == 0) ? suite + 1 : 0;
 
             if (!(suite == required_part)) continue;
             debut = i - required_part + 1;
@@ -66,14 +65,14 @@ int mem_alloc(int size) {
             }
 
             for (int k = debut; k < debut + required_part; k++) {
-                if (k == debut) val = 1;
-                else val = 2;
+                val = (k == debut) ? 1 : 2;
                 MLIST[imm_debut + k / 19] = set_state(MLIST[imm_debut + k / 19], k % 19, val);
             }
             alloc_count++;
             return (imm_debut * 19 + debut) * PART_SIZE + BASE_ADDR;
         }
     }
+    sys_warning("memory allocation failed");
     return -1;
 }
 
@@ -135,7 +134,7 @@ void * calloc(int size) {
 // memory info function
 
 void mem_print() {
-    int color, val;
+    int val, color = 0x80;
     char nb[2];
     for (int mi = 0; mi < IMM_COUNT; mi++) {
         if (mi % 3 == 0) kprint("\n  ");
@@ -143,7 +142,7 @@ void mem_print() {
         for (int i = 0; i < 19; i++) {
             val = get_state(MLIST[mi], i);
             if (val == 0) kprint("0");
-            if (val == 1) color = ((i + mi) % 6 + 9) * 16;
+            if (val == 1) color = (color > 0xE0) ? 0x80 : color + 0x10;
             if (val > 0) {
                 int_to_ascii(val, nb);
                 ckprint(nb, color);

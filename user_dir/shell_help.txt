@@ -1,0 +1,12 @@
+alloc   - allocate * ko                mem     - show MLIST with colors
+cat     - print file *                 mkdir   - create a new folder *
+cd      - change dir to *              mkfile  - create a new file *
+clear   - clear the screen             reboot  - reboot the system
+echo    - print the arguments          sc      - show the scancodes
+exit    - exit of the shell app        sleep   - sleep for a given time
+free    - free * address               ss      - show int in the LBA *
+info    - show time, task & page       stop    - shutdown the system
+go      - start * file as binary       tree    - show current dir tree
+gpd     - get to the parent dir        udisk   - show used disk space
+help    - show this help               usg     - show the usage of cpu
+ls      - list the current dir         yield   - yield to pid *

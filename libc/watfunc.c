@@ -39,6 +39,8 @@ int wf_get_func_addr(int func_id) {
         case 21: return (int) mem_get_usage;
         case 22: return (int) mem_get_usable;
         case 61: return (int) mem_print;
+        case 73: return (int) mem_get_alloc_count;
+        case 74: return (int) mem_get_free_count;
 
         // string.h
         case 23: return (int) int_to_ascii;
@@ -63,12 +65,15 @@ int wf_get_func_addr(int func_id) {
         case 40: return (int) input_paste;
         case 41: return (int) input;
 
-        // time.h
+        // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;
         case 43: return (int) sleep;
         case 44: return (int) ms_sleep;
         case 45: return (int) time_get_boot;
         case 66: return (int) timer_get_refresh_time;
+        case 71: return (int) time_calc_unix;
+        case 70: return (int) time_get;
+        case 72: return (int) timer_get_tick;
 
         // screen.h
         case 46: return (int) clear_screen;
@@ -103,6 +108,7 @@ int wf_get_func_addr(int func_id) {
 
         // task.h
         case 67: return (int) yield;
+        case 75: return (int) task_print;
 
         default: return 0;
     }
