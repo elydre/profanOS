@@ -100,4 +100,8 @@ typedef struct {
 #define AF_time_get() void (*time_get)(time_t *time) = (void (*)(time_t *)) get_func(70)
 #define AF_time_calc_unix() int (*time_calc_unix)(time_t *time) = (int (*)(time_t *)) get_func(71)
 #define AF_timer_get_tick() int (*timer_get_tick)() = (int (*)()) get_func(72)
+#define AF_mem_get_alloc_count() int (*mem_get_alloc_count)() = (int (*)()) get_func(73)
+#define AF_mem_get_free_count() int (*mem_get_free_count)() = (int (*)()) get_func(74)
+#define AF_task_print() void (*task_print)() = (void (*)()) get_func(75)
+
 #endif

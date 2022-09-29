@@ -39,6 +39,8 @@ int wf_get_func_addr(int func_id) {
         case 21: return (int) mem_get_usage;
         case 22: return (int) mem_get_usable;
         case 61: return (int) mem_print;
+        case 73: return (int) mem_get_alloc_count;
+        case 74: return (int) mem_get_free_count;
 
         // string.h
         case 23: return (int) int_to_ascii;
@@ -106,6 +108,7 @@ int wf_get_func_addr(int func_id) {
 
         // task.h
         case 67: return (int) yield;
+        case 75: return (int) task_print;
 
         default: return 0;
     }

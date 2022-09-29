@@ -275,6 +275,8 @@ int shell_command(int addr, char command[]) {
     AF_ata_get_sectors_count();
     AF_fs_does_path_exists();
     AF_fs_get_used_sectors();
+    AF_mem_get_alloc_count();
+    AF_mem_get_free_count();
     AF_fs_write_in_file();
     AF_str_start_split();
     AF_fs_type_sector();
@@ -293,6 +295,7 @@ int shell_command(int addr, char command[]) {
     AF_sys_shutdown();
     AF_fs_make_dir();
     AF_sys_reboot();
+    AF_task_print();
     AF_mem_print();
     AF_str_count();
     AF_mem_alloc();
@@ -340,8 +343,8 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "alloc") == 0) {
         if (suffix[0] == 'a') fskprint("$3size is required\n");
         else {
-            int addr = mem_alloc(ascii_to_int(suffix) * 1024);
-            fskprint("$4address: $1%x $4($1%d$4)\n", addr, addr);
+            int maddr = mem_alloc(ascii_to_int(suffix) * 1024);
+            fskprint("$4address: $1%x $4($1%d$4)\n", maddr, maddr);
         }
     }
 
@@ -380,14 +383,14 @@ int shell_command(int addr, char command[]) {
     }
 
     else if (str_cmp(prefix, "info") == 0) {
-        // uint32_t sectors_count = ata_get_sectors_count();
+        uint32_t sectors_count = ata_get_sectors_count();
         print_time(addr);
         fskprint("$4ticks:      $1%d\n", timer_get_tick());
         fskprint("$4work time:  $1%ds$7/$1%ds\n", time_gen_unix() - time_get_boot() - timer_get_tick() / 100, time_gen_unix() - time_get_boot());
         fskprint("$4used mem:   $1%d%c\n", 100 * mem_get_usage() / mem_get_usable(), '%');
-        /*fskprint("$4act alloc:  $1%d$7/$1%d\n", mem_get_alloc_count() - mem_get_free_count(), mem_get_alloc_count());
+        fskprint("$4act alloc:  $1%d$7/$1%d\n", mem_get_alloc_count() - mem_get_free_count(), mem_get_alloc_count());
         fskprint("$4disk size:  $1%d.%dMo\n", sectors_count / 2048, (sectors_count % 2048) / 20);
-        task_print();*/
+        task_print();
     }
 
     else if (str_cmp(prefix, "cd") == 0) {
