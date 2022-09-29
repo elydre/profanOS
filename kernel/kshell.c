@@ -25,9 +25,9 @@ void start_kshell() {
 void shell_help() {
     char *help[] = {
         "ADDR    - show addr of var",
-        "GO      - go fill as binary",
+        "GO      - go file as binary",
         "HELP    - show this help",
-        "MEM     - show memory info",
+        "MEM     - show memory state",
         "REBOOT  - reboot the system",
         "STOP    - stop the system",
     };
