@@ -197,7 +197,7 @@ void shell_tree(int addr, char path[], int rec) {
     free(out_type);
 }
 
-void shell_cat(int addr, char suffix[]) {
+void shell_cat(int addr, char fpath[], char suffix[]) {
     INIT_AF(addr);
 
     AF_fs_declare_read_array();
@@ -211,8 +211,8 @@ void shell_cat(int addr, char suffix[]) {
     AF_malloc();
     AF_free();
 
-    char *file = malloc(str_len(suffix) + str_len(current_dir) + 2);
-        assemble_path(addr, current_dir, suffix, file);
+    char *file = malloc(str_len(suffix) + str_len(fpath) + 2);
+        assemble_path(addr, fpath, suffix, file);
         if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
             uint32_t * file_content = fs_declare_read_array(file);
             char * char_content = fs_declare_read_array(file);
@@ -321,12 +321,12 @@ int shell_command(int addr, char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "cat") == 0)    shell_cat(addr, suffix);
+    if      (str_cmp(prefix, "cat") == 0)    shell_cat(addr, current_dir, suffix);
     else if (str_cmp(prefix, "clear") == 0)  clear_screen();
     else if (str_cmp(prefix, "echo") == 0)   fskprint("$4%s\n", suffix);
     else if (str_cmp(prefix, "exit") == 0)   ret++;
     else if (str_cmp(prefix, "gpd") == 0)    gpd(addr);
-    else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "user/shell_help.txt");
+    else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "/", "user/shell_help.txt");
     else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr);
     else if (str_cmp(prefix, "mem") == 0)    mem_print();
     else if (str_cmp(prefix, "mkdir") == 0)  fs_make_dir(current_dir, suffix);
