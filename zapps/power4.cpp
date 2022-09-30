@@ -81,12 +81,8 @@ int main (int addr, int arg) {
 
     int (*get_func)(int id) = (int (*)(int)) addr;
     void (*fskprint)(char * format, ...) = (void (*)(char*, ...)) get_func(38);
-    void (*ms_sleep)(int) = (void (*)(int)) get_func(44);
     void (*clear_screen)() = (void (*)()) get_func(46);
     int (*time_gen_unix)() = (int (*)()) get_func(42);
-
-    fskprint((char*) "Welcome to cpp power4!\nfor exit, enter 0");
-    ms_sleep(1500);
 
     r = time_gen_unix();
 
@@ -100,6 +96,7 @@ int main (int addr, int arg) {
         }
     }
 
+    clear_screen();
     while (1) {
         colonne = (tour) ? joueur2.play() : get_user_choix(addr);
 
@@ -114,11 +111,10 @@ int main (int addr, int arg) {
         if (is_gagnant(grille) > 0)
             break;
 
-        clear_screen();
         tour = !tour;
     }
 
-    fskprint((char *) "Winner is %c\n\n", get_piont(tour + 1));
+    fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     return arg;
 }
 
@@ -131,9 +127,10 @@ char get_piont(int num) {
 
 void print_grille(int addr) {
     int (*get_func)(int id) = (int (*)(int)) addr;
+    void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49);
     void (*fskprint)(char * format, ...) = (void (*)(char*, ...)) get_func(38);
 
-    fskprint((char *) "   1   2   3   4   5   6   7   8\n\n");
+    ckprint_at((char *) "   1   2   3   4   5   6   7   8\n\n", 0, 0, 0x0F);
 
     for (int l = 0; l < 8; l++) {
         for (int c = 0; c < 8; c++) {
@@ -147,41 +144,32 @@ void print_grille(int addr) {
 int get_user_choix(int addr) {
     int (*get_func)(int id) = (int (*)(int)) addr;
     void (*input)(char out_buffer[], int size, char color) = (void (*)(char *, int, char)) get_func(41);
-    void (*fskprint)(char * format, ...) = (void (*)(char*, ...)) get_func(38);
+    void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49);
     int (*ascii_to_int)(char str[]) = (int (*)(char[])) get_func(25);
-    void (*clear_screen)() = (void (*)()) get_func(46);
 
     int inp;
 
-    clear_screen();
     print_grille(addr);
 
-    fskprint((char *) "ENTER YOUR CHOICE -> ");
     char buffer[3];
     while (1) {
+        ckprint_at((char *) "ENTER YOUR CHOICE -> ", 0, 11, 0x0F);
         input(buffer, 3, 0x0F);
         inp = ascii_to_int(buffer) - 1;
 
         if (inp == -1 && buffer[0]) return -1;
         if (inp < 8 && inp >= 0 && grille[inp][0] == 0) return inp;
-        
-        clear_screen();
-        print_grille(addr);
-        fskprint((char *) "NOT VALID CHOICE -> ");
     }
 }
 
 void chute(int colonne, int addr) {
     int (*get_func)(int id) = (int (*)(int)) addr;
     void (*ms_sleep)(int) = (void (*)(int)) get_func(44);
-    void (*clear_screen)() = (void (*)()) get_func(46);
-
 
     for (int l = 0; l < 7; l++) {
         if (grille[colonne][l] > 0 && grille[colonne][l + 1] == 0) {
             grille[colonne][l + 1] = grille[colonne][l];
             grille[colonne][l] = 0;
-            clear_screen();
             print_grille(addr);
             ms_sleep(100);
         }
