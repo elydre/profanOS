@@ -116,7 +116,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 ## Author & Contact
 
 * [pf4](https://github.com/elydre)
-* [loris](https://github.com/Lorisredstone)
+* [Loris](https://github.com/Lorisredstone)
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 
