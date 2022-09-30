@@ -89,30 +89,6 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 | `%c` | char        |
 | `%s` | string      |
 
-### Interrupts
-
-|  ID  | description                   |
-|------|-------------------------------|
-|  00  | Division By Zero              |
-|  01  | Debug                         |
-|  02  | Non Maskable Interrupt        |
-|  03  | Breakpoint                    |
-|  04  | Into Detected Overflow        |
-|  05  | Out of Bounds                 |
-|  06  | Invalid Opcode                |
-|  07  | No Coprocssor                 |
-|  08  | Double Fault                  |
-|  09  | Coprocessor Segment Overrun   |
-|  10  | Bad TSS                       |
-|  11  | Segment Not Present           |
-|  12  | Stack Fault                   |
-|  13  | General Protection Fault      |
-|  14  | Page Fault                    |
-|  15  | Unknown Interrupt             |
-|  16  | Coprocessor Fault             |
-|  17  | Alignment Check               |
-|  18  | Machine Check                 |
-
 ## Author & Contact
 
 * [pf4](https://github.com/elydre)
