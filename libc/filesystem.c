@@ -2,7 +2,6 @@
 #include <driver/ata.h>
 #include <string.h>
 #include <system.h>
-#include <iolib.h>
 #include <mem.h>
 
 uint32_t fs_path_to_id(char input_path[], int silence);
@@ -36,22 +35,18 @@ uint32_t i_next_free(uint32_t rec) {
 }
 
 uint32_t i_creer_dossier(char nom[]) {
-    if (str_is_in(nom, '/') && str_cmp(nom, "/")) {
-        sys_error("Dir name cannot contain /");
-        return 0;
-    }
-    if (!str_cmp(nom, "..")) {
+    if (str_is_in(nom, '/') && str_cmp(nom, "/"))
+        return sys_error("Dir name cannot contain /");
 
-    }
+    /* if (!str_cmp(nom, "..")) */
+
     uint32_t folder_id = i_next_free(0);
     uint32_t list_to_write[128];
     for (int i = 0; i < 128; i++) list_to_write[i] = 0;
     list_to_write[0] = 0xC000; // 0x8000 + 0x4000
 
-    if (str_len(nom) > 20) {
-        sys_error("Dir name cannot exceed 20 characters");
-        return 0;
-    }
+    if (str_len(nom) > 20)
+        return sys_error("Dir name cannot exceed 20 characters");
 
     // TODO : check if the name is already taken
 
@@ -66,14 +61,11 @@ uint32_t i_creer_dossier(char nom[]) {
 }
 
 uint32_t i_creer_index_de_fichier(char nom[]) {
-    if (str_is_in(nom, '/')) {
-        sys_error("File name cannot contain /");
-        return 0;
-    }
-    if (str_len(nom) > 20) {
-        sys_error("File name cannot exceed 20 characters");
-        return 0;
-    }
+    if (str_is_in(nom, '/'))
+        return sys_error("File name cannot contain /");
+
+    if (str_len(nom) > 20) 
+        return sys_error("File name cannot exceed 20 characters");
 
     uint32_t location = i_next_free(0);
     uint32_t location_file = i_next_free(1);
@@ -382,9 +374,8 @@ void fs_read_file(char path[], uint32_t data[]) {
     ata_read_sector(fs_path_to_id(path, 0), sector);
     uint32_t id_file_index = sector[127];
     ata_read_sector(id_file_index, sector);
-    if (!(sector[0] & 0xA000)){
+    if (!(sector[0] & 0xA000))
         sys_error("Sector is not a file");
-    }
     uint32_t index = 0;
     ata_read_sector(id_file_index, sector);
     for (int i=1; i < 127; i++) {

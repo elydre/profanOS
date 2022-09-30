@@ -32,12 +32,14 @@ void do_nothing() {
     asm volatile("cli");
 }
 
-void sys_warning(char msg[]) {
+int sys_warning(char msg[]) {
     fskprint("$DWARNING: $5%s\n", msg);
+    return 0;
 }
 
-void sys_error(char msg[]) {
+int sys_error(char msg[]) {
     fskprint("$BERROR: $3%s\n", msg);
+    return 0;
 }
 
 void sys_fatal(char msg[]) {
@@ -79,20 +81,24 @@ void sys_interrupt(int code) {
 }
 
 int sys_run_binary(char path[], int arg) {
-	char * binary_mem = calloc(fs_get_file_size(path)*126);
-	uint32_t * file = fs_declare_read_array(path);
+    uint32_t usbl_mem = (uint32_t) mem_get_usable() - mem_get_usage();
+    if (usbl_mem < 16 || usbl_mem < fs_get_file_size(path) / 2)
+        return sys_error("Not enough memory to run this program");
 
-	fs_read_file(path, file);
+    char * binary_mem = calloc(fs_get_file_size(path)*126);
+    uint32_t * file = fs_declare_read_array(path);
 
-	for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-		binary_mem[i] = (char) file[i];
+    fs_read_file(path, file);
+
+    for (int i = 0; file[i] != (uint32_t) -1 ; i++)
+        binary_mem[i] = (char) file[i];
 
     free(file);
 
     int old_active_alloc = mem_get_alloc_count() - mem_get_free_count();
 
-	int (*start_program)() = (int (*)())(binary_mem);
-	int return_value = start_program((int) wf_get_func_addr, arg);
+    int (*start_program)() = (int (*)())(binary_mem);
+    int return_value = start_program((int) wf_get_func_addr, arg);
 
     if (old_active_alloc < mem_get_alloc_count() - mem_get_free_count())
         sys_warning("Memory leak detected");
@@ -100,7 +106,6 @@ int sys_run_binary(char path[], int arg) {
         sys_warning("Memory void detected");
     
     free(binary_mem);
-
     return return_value;
 }
 

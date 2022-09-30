@@ -23,14 +23,32 @@ void start_kshell() {
     }
 }
 
+void shell_so(char suffix[]) {
+    char path[100] = "/bin/";
+    str_cat(path, suffix);
+    str_cat(path, ".bin");
+    fskprint("path: %s\n", path);
+    sys_run_ifexist(path, 0);    
+}
+
+void shell_satan(char suffix[]) {
+    int to_rm = 0;
+    if (suffix[0] != 's')
+        to_rm = ascii_to_int(suffix) * 4;
+    int val = mem_get_usable() - mem_get_usage() - to_rm;
+    fskprint("memory alloc size: %d ko\n", val);
+    mem_alloc(val * 1024);
+    mem_print();
+}
+
 void shell_help() {
     char *help[] = {
-        "ADDR    - show addr of var",
         "GO      - go file as binary",
         "HELP    - show this help",
         "MEM     - show memory state",
         "REBOOT  - reboot the system",
-        "STOP    - stop the system",
+        "SO      - run file in /bin",
+        "SATAN   - fill dynamic memory",
     };
 
     for (int i = 0; i < ARYLEN(help); i++)
@@ -44,12 +62,12 @@ void shell_command(char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "addr") == 0) fskprint("addr: $1%x\n", &command);
-    else if (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0);
+    if      (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
-    else if (str_cmp(prefix, "stop") == 0) sys_shutdown();
+    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
 
     else if (str_cmp(prefix, "") != 0)
         fskprint("$3%s $Bis not a valid command.\n", prefix);

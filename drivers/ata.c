@@ -25,66 +25,66 @@ static void ATA_wait_BSY();
 static void ATA_wait_DRQ();
 
 void ata_read_sector(uint32_t LBA, uint32_t out[]) {
-	// fskprint("R");
-	ATA_wait_BSY();
-	port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
-	port_byte_out(0x1F2, 1);
-	port_byte_out(0x1F3, (uint8_t) LBA);
-	port_byte_out(0x1F4, (uint8_t)(LBA >> 8));
-	port_byte_out(0x1F5, (uint8_t)(LBA >> 16)); 
-	port_byte_out(0x1F7, 0x20); //Send the read command
+    // fskprint("R");
+    ATA_wait_BSY();
+    port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
+    port_byte_out(0x1F2, 1);
+    port_byte_out(0x1F3, (uint8_t) LBA);
+    port_byte_out(0x1F4, (uint8_t)(LBA >> 8));
+    port_byte_out(0x1F5, (uint8_t)(LBA >> 16)); 
+    port_byte_out(0x1F7, 0x20); //Send the read command
 
-	ATA_wait_BSY();
-	ATA_wait_DRQ();
+    ATA_wait_BSY();
+    ATA_wait_DRQ();
 
-	for (int i = 0; i < 128; i++) {
-		out[i] = port_word_in(0x1F0);
-		port_word_in(0x1F0);
-	}
+    for (int i = 0; i < 128; i++) {
+        out[i] = port_word_in(0x1F0);
+        port_word_in(0x1F0);
+    }
 }
 
 void ata_write_sector(uint32_t LBA, uint32_t bytes[]) {
-	ATA_wait_BSY();
-	port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
-	port_byte_out(0x1F2, 1);
-	port_byte_out(0x1F3, (uint8_t) LBA);
-	port_byte_out(0x1F4, (uint8_t)(LBA >> 8));
-	port_byte_out(0x1F5, (uint8_t)(LBA >> 16));
-	port_byte_out(0x1F7, 0x30); //Send the write command
+    ATA_wait_BSY();
+    port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
+    port_byte_out(0x1F2, 1);
+    port_byte_out(0x1F3, (uint8_t) LBA);
+    port_byte_out(0x1F4, (uint8_t)(LBA >> 8));
+    port_byte_out(0x1F5, (uint8_t)(LBA >> 16));
+    port_byte_out(0x1F7, 0x30); //Send the write command
 
-	ATA_wait_BSY();
-	ATA_wait_DRQ();
+    ATA_wait_BSY();
+    ATA_wait_DRQ();
 
-	for (int i = 0; i < 128; i++) {
-		port_long_out(0x1F0, bytes[i]);
-	}
+    for (int i = 0; i < 128; i++) {
+        port_long_out(0x1F0, bytes[i]);
+    }
 }
 
 uint32_t ata_get_sectors_count() {
-	ATA_wait_BSY();
-	port_byte_out(0x1F6,0xE0 | ((0 >> 24) & 0xF));
-	port_byte_out(0x1F2, 0);
-	port_byte_out(0x1F3, 0);
-	port_byte_out(0x1F4, 0);
-	port_byte_out(0x1F5, 0);
-	port_byte_out(0x1F7, 0xEC); //Send the identify command
+    ATA_wait_BSY();
+    port_byte_out(0x1F6,0xE0 | ((0 >> 24) & 0xF));
+    port_byte_out(0x1F2, 0);
+    port_byte_out(0x1F3, 0);
+    port_byte_out(0x1F4, 0);
+    port_byte_out(0x1F5, 0);
+    port_byte_out(0x1F7, 0xEC); //Send the identify command
 
-	ATA_wait_BSY();
-	ATA_wait_DRQ();
+    ATA_wait_BSY();
+    ATA_wait_DRQ();
 
-	uint16_t bytes[256];
-	for (int i = 0; i < 256; i++) {
-		bytes[i] = port_word_in(0x1F0);
-	}
+    uint16_t bytes[256];
+    for (int i = 0; i < 256; i++) {
+        bytes[i] = port_word_in(0x1F0);
+    }
 
-	uint32_t size = bytes[61] << 16 | bytes[60];
-	return size;
+    uint32_t size = bytes[61] << 16 | bytes[60];
+    return size;
 }
 
-static void ATA_wait_BSY() {	//Wait for bsy to be 0
-	while (port_byte_in(0x1F7) & STATUS_BSY);
+static void ATA_wait_BSY() {    //Wait for bsy to be 0
+    while (port_byte_in(0x1F7) & STATUS_BSY);
 }
 
-static void ATA_wait_DRQ() {	//Wait fot drq to be 1
-	while (!(port_byte_in(0x1F7) & STATUS_RDY));
+static void ATA_wait_DRQ() {    //Wait fot drq to be 1
+    while (!(port_byte_in(0x1F7) & STATUS_RDY));
 }

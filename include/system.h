@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.5.4b"
+#define VERSION "0.5.5"
 
 // system.c
 void sys_reboot();
@@ -14,8 +14,8 @@ int sys_run_ifexist(char path[], int arg);
 
 void do_nothing();
 
-void sys_warning(char msg[]);
-void sys_error(char msg[]);
+int sys_warning(char msg[]);
+int sys_error(char msg[]);
 void sys_fatal(char msg[]);
 void sys_interrupt(int code);
 
