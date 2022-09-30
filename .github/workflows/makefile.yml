@@ -14,7 +14,7 @@ jobs:
     - name: install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc nasm make python3 genisoimage
+        sudo apt-get install -y gcc g++ nasm make python3 genisoimage
       
     - name: build img
       run: |

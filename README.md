@@ -20,7 +20,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ### Install dependencies
 
 ```bash
-apt-get install -y gcc nasm make qemu-system-i386 python3 genisoimage
+apt-get install -y gcc g++ nasm make qemu-system-i386 python3 genisoimage
 ```
 
 ### Compile & Run
