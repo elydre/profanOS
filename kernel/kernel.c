@@ -1,10 +1,7 @@
-#include <driver/screen.h>
 #include <driver/rtc.h>
 #include <filesystem.h>
-#include <cpu/timer.h>
 #include <function.h>
 #include <cpu/isr.h>
-#include "kernel.h"
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
@@ -12,22 +9,22 @@
 
 void kernel_main() {
     clear_screen();
-    ckprint("booting profanOS...\n", c_grey);
+    fskprint("$6booting profanOS...\n");
 
     isr_install();
     irq_install();
-    kprint("ISR initialized\n");
+    fskprint("$7ISR initialized\n");
     
     tasking_init();
-    kprint("Tasking initialized\n");
+    fskprint("$7Tasking initialized\n");
 
     rtc_init();
     time_gen_boot();
     init_rand();
-    kprint("RTC initialized\n");
+    fskprint("$7RTC initialized\n");
 
     filesystem_init();
-    kprint("FileSys initialized\n");
+    fskprint("$7FileSys initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);

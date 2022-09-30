@@ -1,6 +1,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#define VERSION "0.5.4"
+
 // system.c
 void sys_reboot();
 void sys_shutdown();

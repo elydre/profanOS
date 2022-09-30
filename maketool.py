@@ -48,7 +48,7 @@ def print_and_exec(command):
     code = os.system(command)
     if code != 0:
         cprint(COLOR_EROR, f"error {code}")
-        sys.exit(code)
+        sys.exit(code >> 8)
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []

@@ -1,6 +1,5 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
-#include <task.h>
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
@@ -8,6 +7,7 @@
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
+#include <task.h>
 #include <mem.h>
 
 int wf_get_func_addr(int func_id) {

@@ -1,8 +1,6 @@
-#include "../kernel/kernel.h"
 #include <driver/keyboard.h>
 #include <function.h>
 #include <cpu/isr.h>
-#include <string.h>
 #include <ports.h>
 
 #include <stdint.h>

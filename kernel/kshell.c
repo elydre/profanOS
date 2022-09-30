@@ -1,3 +1,4 @@
+#include <function.h>
 #include <system.h>
 #include <string.h>
 #include <mem.h>
@@ -32,7 +33,7 @@ void shell_help() {
         "STOP    - stop the system",
     };
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < ARYLEN(help); i++)
         fskprint("%s\n", help[i]);
 }
 
