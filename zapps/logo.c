@@ -2,7 +2,7 @@
 #include "addf.h"
 
 
-int start(int addr, int arg) {
+int main(int addr, int arg) {
     INIT_AF(addr);
 
     AF_fs_declare_read_array();

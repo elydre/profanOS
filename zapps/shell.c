@@ -7,7 +7,7 @@ static char current_dir[256] = "/";
 
 int shell_command(int addr, char command[]);
 
-int start(int addr, int arg) {
+int main(int addr, int arg) {
     INIT_AF(addr);
     
     AF_input_paste();

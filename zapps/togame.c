@@ -10,7 +10,7 @@
 
 #define O_MAX 5
 
-int start(int addr, int arg) {
+int main(int addr, int arg) {
     INIT_AF(addr);
     
     AF_kb_get_scancode();

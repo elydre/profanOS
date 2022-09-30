@@ -2,7 +2,7 @@
 
 int is_prime(int n);
 
-int start(int addr, int arg) {
+int main(int addr, int arg) {
     INIT_AF(addr);
     AF_fskprint();
     AF_time_gen_unix();
