@@ -17,7 +17,10 @@ HDD_MAP = {
 }
 
 CC = "gcc"
+CPPC = "g++"
+
 CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I ./{INCLUDE_DIR}"
+ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wextra -fno-exceptions -m32"
 
 # SETTINGS
 
@@ -106,11 +109,11 @@ def build_zapps():
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
-    for name in file_in_dir("zapps", ".c"):
-        fname = f"{OUT_DIR}/zapps/{name[:-2]}"
+    for name in file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"):
+        fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
         if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
-        print_and_exec(f"{CC} -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c {ZAPPS_DIR}/{name} -o {fname}.o")
-        print_and_exec(f"ld -m elf_i386 -e start -o {fname}.pe {fname}.o")
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {ZAPPS_DIR}/{name} -o {fname}.o")
+        print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
 
