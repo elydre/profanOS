@@ -32,13 +32,6 @@ void timer_get_refresh_time(int target[5]) {
     }
 }
 
-void timer_sleep(uint32_t ms) {
-    uint32_t start_tick = timer_get_tick();
-    while (timer_get_tick() < start_tick + ms / 10) {
-        do_nothing();
-    }
-}
-
 void timer_init(uint32_t freq) {
     if (tick > 1000) tick = 0;
     /* Install the function we just wrote */

@@ -1,5 +1,6 @@
 #include <driver/rtc.h>
 #include <cpu/timer.h>
+#include <system.h>
 #include <time.h>
 
 static int boot_time;
@@ -45,7 +46,10 @@ void sleep(int seconds) {
 }
 
 void ms_sleep(uint32_t ms) {
-    timer_sleep(ms);
+    uint32_t start_tick = timer_get_tick();
+    while (timer_get_tick() < start_tick + ms / 10) {
+        do_nothing();
+    }
 }
 
 void time_gen_boot() {

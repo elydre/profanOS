@@ -89,16 +89,10 @@ void print_scancodes(int addr) {
     clear_screen();
     rainbow_print("enter scancode press ESC to exit\n");
     int last_sc = 0;
-    while (1) {
+    while (last_sc != 1) {
         while (last_sc == kb_get_scancode());
         last_sc = kb_get_scancode();
         fskprint("$4\nscancode:   $1%d", last_sc);
-
-        if (last_sc == 1) {
-            // scancode 1 is the escape key
-            clear_screen();
-            break;
-        }
 
         if (last_sc > SC_MAX) {
             fskprint("\n$5unknown scancode\n");
@@ -108,6 +102,7 @@ void print_scancodes(int addr) {
         fskprint("$4\nletter min: $1%c", kb_scancode_to_char(last_sc, 0));
         fskprint("$4\nletter maj: $1%c\n", kb_scancode_to_char(last_sc, 1));
     }
+    clear_screen();
 }
 
 void print_time(int addr) {

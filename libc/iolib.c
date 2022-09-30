@@ -224,8 +224,8 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
         kprint(" ");
         new_pos = old_cursor + buffer_index * 2;
         set_cursor_offset(new_pos);
-        if (new_pos >= 24 * 80 * 2 + 79 * 2) {
-            old_cursor -= 160;
+        if (new_pos >= 3998) {  // (row * col + (col - 1)) * 2
+            old_cursor -= 160;  // row * 2
         }
     }
 }
