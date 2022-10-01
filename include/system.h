@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.5.5c"
+#define VERSION "0.5.5d"
 
 // system.c
 void sys_reboot();
