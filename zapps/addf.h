@@ -89,6 +89,7 @@ typedef struct {
 #define AF_kprint_backspace() void (*kprint_backspace)() = (void (*)()) get_func(51)
 #define AF_kb_scancode_to_char() char (*kb_scancode_to_char)(int scancode, int shift) = (char (*)(int, int)) get_func(57)
 #define AF_kb_get_scancode() int (*kb_get_scancode)() = (int (*)()) get_func(58)
+#define AF_pow() int (*pow)(int a, int b) = (int (*)(int, int)) get_func(59)
 #define AF_rand() int (*rand)() = (int (*)()) get_func(60)
 #define AF_mem_print() void (*mem_print)() = (void (*)()) get_func(61)
 #define AF_sys_reboot() void (*sys_reboot)() = (void (*)()) get_func(62)
