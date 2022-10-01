@@ -12,13 +12,9 @@ OUT_DIR = "out"
 
 HDD_MAP = {
     "bin": f"{OUT_DIR}/zapps/*.bin",
-    "user": "user_dir/*",
-    # "systeme/libc" : "libc/*",
-    # "systeme/kernel" : "kernel/*",
-    # "systeme/include" : "include/*",
-    # "systeme/drivers" : "drivers/*",
-    # "systeme/cpu" : "cpu/*",
-    # "systeme/boot" : "boot/*"
+    "sys": None,
+    "user": "sys_dir/user/*",
+    "zada": "sys_dir/zada/*",
 }
 
 CC = "gcc"

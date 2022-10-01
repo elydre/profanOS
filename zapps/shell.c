@@ -321,7 +321,7 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "echo") == 0)   fskprint("$4%s\n", suffix);
     else if (str_cmp(prefix, "exit") == 0)   ret++;
     else if (str_cmp(prefix, "gpd") == 0)    gpd(addr);
-    else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "/", "user/shell_help.txt");
+    else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "/", "zada/shell_help.txt");
     else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr);
     else if (str_cmp(prefix, "mem") == 0)    mem_print();
     else if (str_cmp(prefix, "mkdir") == 0)  fs_make_dir(current_dir, suffix);

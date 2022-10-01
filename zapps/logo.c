@@ -10,7 +10,7 @@ int main(int addr, int arg) {
     AF_mskprint();
     AF_free();
 
-    char path[] = "/user/logo.itxt";
+    char path[] = "/zada/logo.itxt";
     uint32_t * data = fs_declare_read_array(path);
     char * str = fs_declare_read_array(path);
     
