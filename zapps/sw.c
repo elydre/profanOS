@@ -12,6 +12,7 @@ int main(int addr, int arg) {
     AF_fs_read_file();
     AF_ascii_to_int();
     AF_clear_screen();
+    AF_cursor_blink();
     AF_ckprint_at();
     AF_ms_sleep();
     AF_fskprint();
@@ -28,10 +29,11 @@ int main(int addr, int arg) {
     fskprint("loading file: %s into memory...\n", path);
     fs_read_file(path, data);
 
+    cursor_blink(1);
     clear_screen();
 
     int line = 0, str_index = 0, j;
-    
+
     char temps[5];
 
     for (int i = 0; 1; i++) {

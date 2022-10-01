@@ -81,8 +81,10 @@ int main (int addr, int arg) {
 
     int (*get_func)(int id) = (int (*)(int)) addr;
     void (*fskprint)(char * format, ...) = (void (*)(char*, ...)) get_func(38);
+    void (*cursor_blink)(int on) = (void (*)(int)) get_func(76);
     void (*clear_screen)() = (void (*)()) get_func(46);
     int (*time_gen_unix)() = (int (*)()) get_func(42);
+
 
     r = time_gen_unix();
 
@@ -115,6 +117,7 @@ int main (int addr, int arg) {
     }
 
     fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
+    cursor_blink(0);
     return arg;
 }
 
@@ -146,6 +149,7 @@ int get_user_choix(int addr) {
     void (*input)(char out_buffer[], int size, char color) = (void (*)(char *, int, char)) get_func(41);
     void (*ckprint_at)(char *str, int x, int y, char color) = (void (*)(char *, int, int, char)) get_func(49);
     int (*ascii_to_int)(char str[]) = (int (*)(char[])) get_func(25);
+    void (*cursor_blink)(int on) = (void (*)(int)) get_func(76);
 
     int inp;
 
@@ -153,8 +157,11 @@ int get_user_choix(int addr) {
 
     char buffer[3];
     while (1) {
+
         ckprint_at((char *) "ENTER YOUR CHOICE -> ", 0, 11, 0x0F);
+        cursor_blink(0);
         input(buffer, 3, 0x0F);
+        cursor_blink(1);
         inp = ascii_to_int(buffer) - 1;
 
         if (inp == -1 && buffer[0]) return -1;

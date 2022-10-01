@@ -105,5 +105,6 @@ typedef struct {
 #define AF_mem_get_alloc_count() int (*mem_get_alloc_count)() = (int (*)()) get_func(73)
 #define AF_mem_get_free_count() int (*mem_get_free_count)() = (int (*)()) get_func(74)
 #define AF_task_print() void (*task_print)() = (void (*)()) get_func(75)
+#define AF_cursor_blink() void (*cursor_blink)(int on) = (void (*)(int)) get_func(76)
 
 #endif

@@ -106,7 +106,6 @@ int sys_run_binary(char path[], int arg) {
         sys_warning("Memory void detected");
     
     free(binary_mem);
-    fskprint("\n");
     return return_value;
 }
 

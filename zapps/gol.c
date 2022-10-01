@@ -6,9 +6,14 @@ int size = 20;
 
 int main(int addr, int arg) {
     INIT_AF(addr);
+
+    AF_kb_get_scancode();
+    AF_cursor_blink();
+    AF_fskprint();
     AF_calloc();
     AF_free();
-    AF_kb_get_scancode();
+
+    cursor_blink(1);
 
     // init du plateau
     int **plateau = calloc(size * sizeof(int *));
@@ -27,14 +32,18 @@ int main(int addr, int arg) {
     // fin
     for (int i = 0; i < size; i++) free(plateau[i]);
     free(plateau);
+
+    cursor_blink(0);
+    fskprint("\n");
     return arg;
 }
 
 void printl(int addr, int **plateau) {
     INIT_AF(addr);
+
+    AF_ckprint_at();
     AF_calloc();
     AF_free();
-    AF_ckprint_at();
 
     char * ligne = calloc((size+size-1)*sizeof(char));
     int offset;
@@ -89,9 +98,10 @@ int next_value(int valeur, int i, int j, int **plateau) {
 
 void next_step(int addr, int **plateau) {
     INIT_AF(addr);
+    
+    AF_ms_sleep();
     AF_calloc();
     AF_free();
-    AF_ms_sleep();
 
     // plateau temp
     int **plateau_temp = calloc(size * sizeof(int *));

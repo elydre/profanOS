@@ -87,6 +87,7 @@ int wf_get_func_addr(int func_id) {
         case 54: return (int) get_offset;
         case 55: return (int) get_offset_row;
         case 56: return (int) get_offset_col;
+        case 76: return (int) cursor_blink;
 
         // keyboard.h
         case 57: return (int) kb_scancode_to_char;
