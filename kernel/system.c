@@ -82,7 +82,7 @@ void sys_interrupt(int code) {
 
 int sys_run_binary(char path[], int arg) {
     uint32_t usbl_mem = (uint32_t) mem_get_usable() - mem_get_usage();
-    if (usbl_mem < 16 || usbl_mem < fs_get_file_size(path) / 2)
+    if (usbl_mem < 16 || usbl_mem < fs_get_file_size(path) + 16)
         return sys_error("Not enough memory to run this program");
 
     char * binary_mem = calloc(fs_get_file_size(path)*126);
