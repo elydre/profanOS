@@ -3,7 +3,8 @@
 void printl(int addr, int **plateau, int force_print);
 void next_step(int addr, int **plateau);
 void edition_state(int addr, int **plateau);
-int size = 20;
+int size_x = 20;
+int size_y = 40;
 
 int main(int addr, int arg) {
     INIT_AF(addr);
@@ -18,9 +19,9 @@ int main(int addr, int arg) {
     cursor_blink(1);
 
     // init du plateau
-    int **plateau = calloc(size * sizeof(int *));
-    for (int i = 0; i < size; i++)
-        plateau[i] = calloc(size * sizeof(int));
+    int **plateau = calloc(size_x * sizeof(int *));
+    for (int i = 0; i < size_x; i++)
+        plateau[i] = calloc(size_y * sizeof(int));
 
     plateau[2][6] = 1;
     plateau[3][6] = 1;
@@ -28,9 +29,9 @@ int main(int addr, int arg) {
 
     while (kb_get_scancode() != 1) {
         printl(addr, plateau, 2);
-        ckprint_at("Commandes :", 0, size, 0x0F);
-        ckprint_at("ECHAP : quitter", 0, size+1, 0x0F);
-        ckprint_at("E     : mode edition", 0, size+2, 0x0F);
+        ckprint_at("Commandes :", 0, size_x, 0x0F);
+        ckprint_at("ECHAP : quitter", 0, size_x+1, 0x0F);
+        ckprint_at("E     : mode edition", 0, size_x+2, 0x0F);
         next_step(addr, plateau);
         if (kb_get_scancode() == 18) {
             edition_state(addr, plateau);
@@ -38,7 +39,7 @@ int main(int addr, int arg) {
     }
 
     // fin
-    for (int i = 0; i < size; i++) free(plateau[i]);
+    for (int i = 0; i < size_x; i++) free(plateau[i]);
     free(plateau);
     cursor_blink(0);
     fskprint("\n");
@@ -62,9 +63,9 @@ void edition_state(int addr, int **plateau) {
 
     while (kb_get_scancode() != 30) {
         printl(addr, plateau, 1);
-        ckprint_at("COMMANDES MODE EDITION :", 0, size, 0x0F);
-        ckprint_at("Q     : quitter", 0, size+1, 0x0F);
-        ckprint_at("F     : effacer l'ecran", 0, size+2, 0x0F);
+        ckprint_at("COMMANDES MODE EDITION :", 0, size_x, 0x0F);
+        ckprint_at("Q     : quitter", 0, size_x+1, 0x0F);
+        ckprint_at("F     : effacer l'ecran", 0, size_x+2, 0x0F);
         last_scancode = scancode;
         scancode = kb_get_scancode();
         if (last_scancode != scancode) {
@@ -85,7 +86,7 @@ void edition_state(int addr, int **plateau) {
                 }
             }
             else if (scancode == 80) {
-                if (curseur_x < size-1) {
+                if (curseur_x < size_x-1) {
                     plateau[curseur_x][curseur_y] = ancienne_valeur;
                     curseur_x++;
                     ancienne_valeur = plateau[curseur_x][curseur_y];
@@ -93,7 +94,7 @@ void edition_state(int addr, int **plateau) {
                 }
             }
             else if (scancode == 77) {
-                if (curseur_y < size-1) {
+                if (curseur_y < size_y-1) {
                     plateau[curseur_x][curseur_y] = ancienne_valeur;
                     curseur_y++;
                     ancienne_valeur = plateau[curseur_x][curseur_y];
@@ -104,13 +105,13 @@ void edition_state(int addr, int **plateau) {
                 ancienne_valeur = ancienne_valeur ? 0 : 1;
             }
             else if (scancode == 33) {
-                for (int i = 0; i < size; i++) {
-                    for (int j = 0; j < size; j++) {
+                for (int i = 0; i < size_x; i++) {
+                    for (int j = 0; j < size_y; j++) {
                         plateau[i][j] = 0;
                     }
                 }
             }
-            else ckprint_at("      ", 0, size+3, 0x0F);
+            else ckprint_at("      ", 0, size_x+3, 0x0F);
         }
     }
     
@@ -127,11 +128,11 @@ void printl(int addr, int **plateau, int force_print) {
     AF_calloc();
     AF_free();
 
-    char * ligne = calloc((size+size-1)*sizeof(char));
+    char * ligne = calloc((size_y+size_y-1)*sizeof(char));
     int offset;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size_x; i++) {
         offset = 0;
-        for (int j = 0; j < size; j++) {
+        for (int j = 0; j < size_y; j++) {
             if (!force_print) ligne[offset] = plateau[i][j] ? 'X' : '.';
             else {
                 if (plateau[i][j] == 1) ligne[offset] = 'X';
@@ -150,7 +151,7 @@ void printl(int addr, int **plateau, int force_print) {
 int get_value(int i, int j, int **plateau, int i2, int j2) {
     if (i == i2 && j == j2) return 0;
     // renvoie la valeur d'une case, si en dehors du plateau renvoie 0
-    if (i < 0 || i >= size || j < 0 || j >= size) return 0;
+    if (i < 0 || i >= size_x || j < 0 || j >= size_y) return 0;
     return plateau[i][j];
 }
 
@@ -191,23 +192,23 @@ void next_step(int addr, int **plateau) {
     AF_free();
 
     // plateau temp
-    int **plateau_temp = calloc(size * sizeof(int *));
-    for (int i = 0; i < size; i++)
-        plateau_temp[i] = calloc(size * sizeof(int));
+    int **plateau_temp = calloc(size_x * sizeof(int *));
+    for (int i = 0; i < size_x; i++)
+        plateau_temp[i] = calloc(size_y * sizeof(int));
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
+    for (int i = 0; i < size_x; i++) {
+        for (int j = 0; j < size_y; j++) {
             plateau_temp[i][j] = next_value(plateau[i][j], i, j, plateau);
         }
     }
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
+    for (int i = 0; i < size_x; i++) {
+        for (int j = 0; j < size_y; j++) {
             plateau[i][j] = plateau_temp[i][j];
         }
     }
     
-    for (int i = 0; i < size; i++) free(plateau_temp[i]);
+    for (int i = 0; i < size_x; i++) free(plateau_temp[i]);
     free(plateau_temp);
 
     ms_sleep(250);
