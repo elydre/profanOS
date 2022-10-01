@@ -10,6 +10,9 @@ int main(int addr, int arg) {
     char path[] = "/bin/bombe.bin";
 
     fskprint("run: %d\n", arg);
-    sys_run_binary(path, arg + 1);
+
+    if (arg == 140) fskprint("done!\n");
+    else sys_run_binary(path, arg + 1);
+
     return 0;
 }
