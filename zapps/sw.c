@@ -1,4 +1,3 @@
-// work on profan 0.5.3c (master repo edition)
 // requires /user/star_wars.txt, the ascii art of the star wars
 // be careful, the ascii movie is more than 2048 sectors long
 
@@ -32,10 +31,10 @@ int main(int addr, int arg) {
     clear_screen();
 
     int line = 0, str_index = 0, j;
-    int max_steps = 745;
+    
     char temps[5];
 
-    for (int i = 0; i<max_steps; i++) {
+    for (int i = 0; 1; i++) {
         str_index++;
         str[str_index] = (char) data[i];
         if (str[str_index] != '\n') continue;
