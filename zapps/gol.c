@@ -1,7 +1,8 @@
 #include "addf.h"
 
-void printl(int addr, int **plateau);
+void printl(int addr, int **plateau, int force_print);
 void next_step(int addr, int **plateau);
+void edition_state(int addr, int **plateau);
 int size = 20;
 
 int main(int addr, int arg) {
@@ -12,6 +13,7 @@ int main(int addr, int arg) {
     AF_fskprint();
     AF_calloc();
     AF_free();
+    AF_ckprint_at();
 
     cursor_blink(1);
 
@@ -25,20 +27,100 @@ int main(int addr, int arg) {
     plateau[4][6] = 1;
 
     while (kb_get_scancode() != 1) {
-        printl(addr, plateau);
+        printl(addr, plateau, 2);
+        ckprint_at("Commandes :", 0, size, 0x0F);
+        ckprint_at("ECHAP : quitter", 0, size+1, 0x0F);
+        ckprint_at("E     : mode edition", 0, size+2, 0x0F);
         next_step(addr, plateau);
+        if (kb_get_scancode() == 18) {
+            edition_state(addr, plateau);
+        }
     }
 
     // fin
     for (int i = 0; i < size; i++) free(plateau[i]);
     free(plateau);
-
     cursor_blink(0);
     fskprint("\n");
     return arg;
 }
 
-void printl(int addr, int **plateau) {
+void edition_state(int addr, int **plateau) {
+    INIT_AF(addr);
+    AF_ckprint_at();
+    AF_kb_get_scancode();
+    AF_clear_screen();
+
+    int curseur_x = 0;
+    int curseur_y = 0;
+    int ancienne_valeur = plateau[curseur_x][curseur_y];
+    plateau[curseur_x][curseur_y] = 219;
+    int last_scancode;
+    int scancode = 0;
+
+    clear_screen();
+
+    while (kb_get_scancode() != 30) {
+        printl(addr, plateau, 1);
+        ckprint_at("COMMANDES MODE EDITION :", 0, size, 0x0F);
+        ckprint_at("Q     : quitter", 0, size+1, 0x0F);
+        ckprint_at("F     : effacer l'ecran", 0, size+2, 0x0F);
+        last_scancode = scancode;
+        scancode = kb_get_scancode();
+        if (last_scancode != scancode) {
+            if (scancode == 72) {
+                if (curseur_x > 0) {
+                    plateau[curseur_x][curseur_y] = ancienne_valeur;
+                    curseur_x--;
+                    ancienne_valeur = plateau[curseur_x][curseur_y];
+                    plateau[curseur_x][curseur_y] = 219;
+                }
+            }
+            else if (scancode == 75) {
+                if (curseur_y > 0) {
+                    plateau[curseur_x][curseur_y] = ancienne_valeur;
+                    curseur_y--;
+                    ancienne_valeur = plateau[curseur_x][curseur_y];
+                    plateau[curseur_x][curseur_y] = 219;
+                }
+            }
+            else if (scancode == 80) {
+                if (curseur_x < size-1) {
+                    plateau[curseur_x][curseur_y] = ancienne_valeur;
+                    curseur_x++;
+                    ancienne_valeur = plateau[curseur_x][curseur_y];
+                    plateau[curseur_x][curseur_y] = 219;
+                }
+            }
+            else if (scancode == 77) {
+                if (curseur_y < size-1) {
+                    plateau[curseur_x][curseur_y] = ancienne_valeur;
+                    curseur_y++;
+                    ancienne_valeur = plateau[curseur_x][curseur_y];
+                    plateau[curseur_x][curseur_y] = 219;
+                }
+            }
+            else if (scancode == 28) {
+                ancienne_valeur = ancienne_valeur ? 0 : 1;
+            }
+            else if (scancode == 33) {
+                for (int i = 0; i < size; i++) {
+                    for (int j = 0; j < size; j++) {
+                        plateau[i][j] = 0;
+                    }
+                }
+            }
+            else ckprint_at("      ", 0, size+3, 0x0F);
+        }
+    }
+    
+    plateau[curseur_x][curseur_y] = ancienne_valeur;
+    ancienne_valeur = 0;
+
+    clear_screen();
+}
+
+void printl(int addr, int **plateau, int force_print) {
     INIT_AF(addr);
 
     AF_ckprint_at();
@@ -50,7 +132,12 @@ void printl(int addr, int **plateau) {
     for (int i = 0; i < size; i++) {
         offset = 0;
         for (int j = 0; j < size; j++) {
-            ligne[offset] = plateau[i][j] ? 'X' : '.';
+            if (!force_print) ligne[offset] = plateau[i][j] ? 'X' : '.';
+            else {
+                if (plateau[i][j] == 1) ligne[offset] = 'X';
+                else if (plateau[i][j] == 0) ligne[offset] = '.';
+                else ligne[offset] = plateau[i][j];
+            }
             offset++;
             ligne[offset] = ' ';
             offset++;
