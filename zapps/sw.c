@@ -6,7 +6,7 @@
 #include "addf.h"
 
 
-int mainint addr, int arg) {
+int main(int addr, int arg) {
     INIT_AF(addr);
 
     AF_fs_declare_read_array();
@@ -32,10 +32,10 @@ int mainint addr, int arg) {
     clear_screen();
 
     int line = 0, str_index = 0, j;
-
+    int max_steps = 745;
     char temps[5];
 
-    for (int i = 0; 1; i++) {
+    for (int i = 0; i<max_steps; i++) {
         str_index++;
         str[str_index] = (char) data[i];
         if (str[str_index] != '\n') continue;

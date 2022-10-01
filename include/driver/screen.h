@@ -48,4 +48,6 @@ int get_offset(int col, int row);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
 
+void cursor_blink(int on);
+
 #endif

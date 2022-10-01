@@ -1,5 +1,4 @@
 import sys, os
-
 # SETUP
 
 SCR_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
@@ -14,6 +13,12 @@ OUT_DIR = "out"
 HDD_MAP = {
     "bin": f"{OUT_DIR}/zapps/*.bin",
     "user": "user_dir/*",
+    # "systeme/libc" : "libc/*",
+    # "systeme/kernel" : "kernel/*",
+    # "systeme/include" : "include/*",
+    # "systeme/drivers" : "drivers/*",
+    # "systeme/cpu" : "cpu/*",
+    # "systeme/boot" : "boot/*"
 }
 
 CC = "gcc"

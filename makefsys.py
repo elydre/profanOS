@@ -1,5 +1,6 @@
 # full code: https://github.com/elydre/elydre/blob/main/projet/profan/file%20system/file-system.py
 
+from math import ceil
 import itertools
 import os
 import sys
@@ -15,7 +16,18 @@ path = "/dir/.../" + "name"
 IS_LINUX = os.name == "posix"
 EDIT_FOLDER = "/out/disk"
 
-NUMBER_OF_MO = 1
+def getFolderSize(folder):
+    total_size = os.path.getsize(folder)
+    for item in os.listdir(folder):
+        itempath = os.path.join(folder, item)
+        if os.path.isfile(itempath):
+            total_size += os.path.getsize(itempath)
+        elif os.path.isdir(itempath):
+            total_size += getFolderSize(itempath)
+    return total_size
+
+NUMBER_OF_MO = ceil((getFolderSize(f".{EDIT_FOLDER}")/1000000)*5)
+print(f"LE DISQUE VA FAIRE {NUMBER_OF_MO} MEGAOCTETS!")
 DISK_SIZE = 2048 * NUMBER_OF_MO
 disque = [[0] * 128] * DISK_SIZE
 
