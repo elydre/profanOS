@@ -1,7 +1,7 @@
 import sys, os
 # SETUP
 
-SCR_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
+SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
 
 INCLUDE_DIR = "include"
 INCLUDE_SUB = [".", "driver", "cpu"]
@@ -56,7 +56,7 @@ def print_and_exec(command):
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
-    for dir in SCR_DIRECTORY:
+    for dir in SRC_DIRECTORY:
         try:
             need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
             need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
@@ -141,7 +141,7 @@ def make_iso(force = False):
     print_and_exec(f"cp boot/stage2_eltorito {OUT_DIR}/isodir/boot/grub/stage2_eltorito")
     print_and_exec(f"mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso {OUT_DIR}/isodir")
 
-def gen_disk(force):
+def gen_disk(force=False, with_src=False):
     if file_exists("HDD.bin") and not force: return
     # en cas de problème de build du disk, taper 'make fullclean'
     # puis mettre en commentaire la ligne suivante          (^_^ )
@@ -153,6 +153,10 @@ def gen_disk(force):
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/{dir}")
         if HDD_MAP[dir] is None: continue
         print_and_exec(f"cp -r {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+    if with_src:
+        print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
+        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
+            print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
     print_and_exec("python3 makefsys.py")
 
 def qemu_run(iso_run = False):
@@ -168,6 +172,7 @@ assos = {
     "help": make_help,
     "disk": lambda: gen_disk(False),
     "diskf": lambda: gen_disk(True),
+    "disk_src": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
     "run": lambda: qemu_run(False),
     "irun": lambda: qemu_run(True),

@@ -11,6 +11,9 @@ iso:
 disk:
 	python3 maketool.py diskf
 
+disk-src:
+	python3 maketool.py disk_src
+
 # list off available commands
 info:
 	python3 maketool.py help
