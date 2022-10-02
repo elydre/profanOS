@@ -112,13 +112,12 @@ def i_creer_dossier(nom):
     return folder_id # on renvoie l'id du dossier
     
 def i_creer_index_de_fichier(nom):
+    # TODO : réécrire cette fonction en plus rapide (même si pas portable osef)
     if len(nom) > 20:
         p_print_and_exit("Erreur: le nom du dossier est trop long")
 
     location = i_next_free()
     location_file = i_next_free(1)
-
-    # TODO : Vérifier qu'un fichier avec le même nom n'existe pas déja au même endroit
 
     # write index
     index_to_write = [0] * 128
