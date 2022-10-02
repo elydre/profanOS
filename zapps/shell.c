@@ -49,12 +49,14 @@ void shell_ls(int addr, char path[]) {
     AF_fs_path_to_id();
     AF_fskprint();
     AF_str_len();
+    AF_str_cpy();
     AF_malloc();
     AF_free();
 
     char ls_path[256];
-    assemble_path(addr, current_dir, path, ls_path);
-
+    if (path[0] == '\0') str_cpy(ls_path, current_dir);
+    else assemble_path(addr, current_dir, path, ls_path);
+    
     int elm_count = fs_get_folder_size(ls_path);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
     uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
