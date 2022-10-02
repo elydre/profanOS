@@ -421,9 +421,7 @@ int shell_command(int addr, char command[]) {
                     str_cpy(current_dir, old_path);
                     free(liste_path);
                     free(new_path);
-                    free(prefix);
-                    free(suffix);
-                    return ret;
+                    break;
                 }
             }
         }
