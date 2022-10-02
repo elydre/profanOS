@@ -5,6 +5,7 @@ void next_step(int addr, int **plateau);
 void edition_state(int addr, int **plateau);
 int size_x = 20;
 int size_y = 40;
+int wait = 250;
 
 int main(int addr, int arg) {
     INIT_AF(addr);
@@ -18,7 +19,6 @@ int main(int addr, int arg) {
     AF_free();
 
     cursor_blink(1);
-
     clear_screen();
 
     // init du plateau
@@ -30,22 +30,36 @@ int main(int addr, int arg) {
     plateau[3][6] = 1;
     plateau[4][6] = 1;
 
-    while (kb_get_scancode() != 1) {
-        printl(addr, plateau, -1, -1);
-        ckprint_at("Commandes :", 0, size_x, 0x0F);
-        ckprint_at("ECHAP : quitter", 0, size_x+1, 0x0F);
-        ckprint_at("E     : mode edition", 0, size_x+2, 0x0F);
-        next_step(addr, plateau);
-        if (kb_get_scancode() == 18) {
+    int last_scancode, scancode = 0;
+
+    while (scancode != 1) {
+        last_scancode = scancode;
+        scancode = kb_get_scancode();
+        if (kb_get_scancode() == 18)
             edition_state(addr, plateau);
+        if (kb_get_scancode() == 25) {
+            wait += 50;
+            while (kb_get_scancode() == 25);
         }
+        if (kb_get_scancode() == 39 && wait > 0) {
+            wait -= 50;
+            while (kb_get_scancode() == 39);
+        }
+        if (scancode != last_scancode) {
+            ckprint_at("Commandes :", 0, size_x, 0x0F);
+            ckprint_at("ECHAP : quitter", 0, size_x+1, 0x0F);
+            ckprint_at("E     : mode edition\n", 0, size_x+2, 0x0F);
+            fskprint("P/M   : ms_sleep(%d); ", wait);
+        };
+        next_step(addr, plateau);
+        printl(addr, plateau, -1, -1);
     }
 
     // fin
     for (int i = 0; i < size_x; i++) free(plateau[i]);
     free(plateau);
     cursor_blink(0);
-    fskprint("\n");
+    clear_screen();
     return arg;
 }
 
@@ -74,7 +88,7 @@ void edition_state(int addr, int **plateau) {
         else if (scancode == 75) curseur_y -= curseur_y > 0;
         else if (scancode == 80) curseur_x += curseur_x < size_x - 1;
         else if (scancode == 77) curseur_y += curseur_y < size_y - 1;
-        else if (scancode == 28)
+        else if (scancode == 28 || scancode == 57)
             plateau[curseur_x][curseur_y] = !plateau[curseur_x][curseur_y];
         else if (scancode == 33) {
             for (int i = 0; i < size_x; i++)
@@ -176,5 +190,5 @@ void next_step(int addr, int **plateau) {
     for (int i = 0; i < size_x; i++) free(plateau_temp[i]);
     free(plateau_temp);
 
-    ms_sleep(250);
+    ms_sleep(wait);
 }
