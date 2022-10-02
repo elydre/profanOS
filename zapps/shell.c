@@ -423,8 +423,10 @@ int shell_command(int addr, char command[]) {
                     free(new_path);
                     break;
                 }
+                free(new_path);
             }
         }
+        free(liste_path);
     }
 
     else if (str_cmp(prefix, "free") == 0) {
