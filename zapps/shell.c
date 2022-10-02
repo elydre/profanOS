@@ -39,7 +39,7 @@ void assemble_path(int addr, char old[], char new[], char result[]) {
     for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
 }
 
-void shell_ls(int addr) {
+void shell_ls(int addr, char path[]) {
     INIT_AF(addr);
     
     AF_fs_get_folder_size();
@@ -52,24 +52,27 @@ void shell_ls(int addr) {
     AF_malloc();
     AF_free();
 
-    int elm_count = fs_get_folder_size(current_dir);
+    char ls_path[256];
+    assemble_path(addr, current_dir, path, ls_path);
+
+    int elm_count = fs_get_folder_size(ls_path);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
     uint32_t *out_type = malloc(elm_count * sizeof(uint32_t));
     char tmp_path[256];
-    fs_get_dir_content(fs_path_to_id(current_dir, 0), out_list, out_type);
+    fs_get_dir_content(fs_path_to_id(ls_path, 0), out_list, out_type);
     for (int i = 0; i < elm_count; i++) out_type[i] = fs_type_sector(out_type[i]);
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 3) {
             fskprint("$2%s", out_list[i].name);
             for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
-            assemble_path(addr, current_dir, out_list[i].name, tmp_path);
+            assemble_path(addr, ls_path, out_list[i].name, tmp_path);
             fskprint("%d elm\n", fs_get_folder_size(tmp_path));
         }
     } for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 2) {
             fskprint("$1%s", out_list[i].name);
             for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
-            assemble_path(addr, current_dir, out_list[i].name, tmp_path);
+            assemble_path(addr, ls_path, out_list[i].name, tmp_path);
             fskprint("%d sect\n", fs_get_file_size(tmp_path));
         }
     }
@@ -322,7 +325,7 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "exit") == 0)   ret++;
     else if (str_cmp(prefix, "gpd") == 0)    gpd(addr);
     else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "/", "zada/shell_help.txt");
-    else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr);
+    else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr, (str_cmp(suffix, "ls") == 0) ? "" : suffix);
     else if (str_cmp(prefix, "mem") == 0)    mem_print();
     else if (str_cmp(prefix, "mkdir") == 0)  fs_make_dir(current_dir, suffix);
     else if (str_cmp(prefix, "mkfile") == 0) fs_make_file(current_dir, suffix);
@@ -333,7 +336,7 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "stop") == 0)   sys_shutdown();
     else if (str_cmp(prefix, "tree") == 0)   shell_tree(addr, current_dir, 0);
     else if (str_cmp(prefix, "usg") == 0)    usage(addr);
-    else if (str_cmp(prefix, "yield") == 0)  (str_cmp(suffix, "yield") == 0) ? yield(1) : yield(ascii_to_int(suffix));
+    else if (str_cmp(prefix, "yield") == 0)  yield((str_cmp(suffix, "yield") == 0) ? 1 : ascii_to_int(suffix));
 
     else if (str_cmp(prefix, "alloc") == 0) {
         if (suffix[0] == 'a') fskprint("$3size is required\n");
@@ -370,9 +373,9 @@ int shell_command(int addr, char command[]) {
         if(!(str_count(suffix, '.'))) str_cat(suffix, ".bin");
         char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
         assemble_path(addr, current_dir, suffix, file);
-        if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
+        if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2)
             sys_run_binary(file, 0);
-        } else fskprint("$3%s$B file not found\n", file);
+        else fskprint("$3%s$B file not found\n", file);
         free(file);
     }
 
