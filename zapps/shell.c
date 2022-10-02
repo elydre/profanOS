@@ -5,7 +5,9 @@
 
 static char current_dir[256] = "/";
 
+void i_parse_path(int addr, char path[], string_20_t liste_path[]);
 int shell_command(int addr, char command[]);
+void gpd(int addr);
 
 int main(int addr, int arg) {
     INIT_AF(addr);
@@ -305,6 +307,7 @@ int shell_command(int addr, char command[]) {
     AF_str_len();
     AF_str_cmp();
     AF_str_cat();
+    AF_calloc();
     AF_malloc();
     AF_input();
     AF_yield();
@@ -329,7 +332,6 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "/", "zada/shell_help.txt");
     else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr, (str_cmp(suffix, "ls") == 0) ? "" : suffix);
     else if (str_cmp(prefix, "mem") == 0)    mem_print();
-    else if (str_cmp(prefix, "mkdir") == 0)  fs_make_dir(current_dir, suffix);
     else if (str_cmp(prefix, "mkfile") == 0) fs_make_file(current_dir, suffix);
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "sc") == 0)     print_scancodes(addr);
@@ -339,6 +341,15 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "tree") == 0)   shell_tree(addr, current_dir, 0);
     else if (str_cmp(prefix, "usg") == 0)    usage(addr);
     else if (str_cmp(prefix, "yield") == 0)  yield((str_cmp(suffix, "yield") == 0) ? 1 : ascii_to_int(suffix));
+
+
+    else if (str_cmp(prefix, "mkdir") == 0) {
+        if (!str_cmp(suffix, "..")) {
+            fskprint("$3Un dossier ne peut pas avoir comme nom .. !\n");
+        } else {
+            fs_make_dir(current_dir, suffix);
+        }
+    }
 
     else if (str_cmp(prefix, "alloc") == 0) {
         if (suffix[0] == 'a') fskprint("$3size is required\n");
@@ -393,11 +404,29 @@ int shell_command(int addr, char command[]) {
     }
 
     else if (str_cmp(prefix, "cd") == 0) {
-        char new_path[256];
-        assemble_path(addr, current_dir, suffix, new_path);
-        if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
-            str_cpy(current_dir, new_path);
-        else fskprint("$3%s$B path not found\n", new_path);
+        char old_path[256];
+        str_cpy(old_path, current_dir);
+        string_20_t * liste_path = calloc(1024);
+        i_parse_path(addr, suffix, liste_path);
+        for (int i=0; i<str_count(suffix, '/')+1; i++) {
+            if (!str_cmp(liste_path[i].name, "..")) {
+                gpd(addr);
+            } else {
+                char *new_path = calloc(256);
+                assemble_path(addr, current_dir, liste_path[i].name, new_path);
+                if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
+                    str_cpy(current_dir, new_path);
+                else {
+                    fskprint("$3%s$B path not found\n", new_path);
+                    str_cpy(current_dir, old_path);
+                    free(liste_path);
+                    free(new_path);
+                    free(prefix);
+                    free(suffix);
+                    return ret;
+                }
+            }
+        }
     }
 
     else if (str_cmp(prefix, "free") == 0) {
@@ -412,4 +441,23 @@ int shell_command(int addr, char command[]) {
     free(prefix);
     free(suffix);
     return ret;
+}
+
+void i_parse_path(int addr, char path[], string_20_t liste_path[]) {
+    INIT_AF(addr);
+
+    AF_str_len();
+
+    int index = 0;
+    int index_in_str = 0;
+    for (int i = 0; i < str_len(path); i++) {
+        if (path[i] != '/') {
+            liste_path[index].name[index_in_str] = path[i];
+            index_in_str++;
+        } else {
+            liste_path[index].name[index_in_str] = '\0';
+            index++;
+            index_in_str = 0;
+        }
+    }
 }
