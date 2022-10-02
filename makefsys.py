@@ -56,12 +56,13 @@ def p_print_and_exit(msg):
 def p_disk_to_file():
     cprint(COLOR_INFO, "Dump de disque dans HDD.bin, merci d'attendre")
     global disque
+    to_write = bytearray()
     with open("HDD.bin", "wb") as file:
         for i, j in itertools.product(range(DISK_SIZE), range(128)):
             hex_string = "0" * (4 - len(hex(disque[i][j])[2:])) + hex(disque[i][j])[2:]
             hex_string = hex_string[2] + hex_string[3] + hex_string[0] + hex_string[1]
-            file.write(bytes.fromhex(hex_string))
-            file.write(bytes.fromhex("0000"))
+            to_write.extend(bytes.fromhex(hex_string)+bytes.fromhex("0000"))
+        file.write(to_write)
     cprint(COLOR_INFO, "Dump fini !")
 
 def p_folder_to_disk(local_place="/"):
@@ -78,16 +79,8 @@ def p_folder_to_disk(local_place="/"):
                 bit_stream = f.read()
                 # mettre un byte par uint32 pour éviter les soucis, ++ faire un décalage de 1
                 bit_stream = [x+1 for x in list(bit_stream)] + [0] * (3 - len(bit_stream) % 3)
-                chunks = [list(bit_stream[3 * i : 3 * (i + 1)]) for i in range(int(len(bit_stream) / 3 + 1))]
-
-                chunks = chunks[:-1]
-                if chunks[-1] == [0, 0, 0]:
-                    chunks = chunks[:-1]
-            string_final = []
-            for chunk in chunks:
-                string_final.extend([chunk[0], chunk[1], chunk[2]])
-            if string_final != b"":
-                write_in_file(f"{local_place}/{file_folder}", string_final, len(string_final))
+            # if string_final != b"": # SI JAMAIS SOUCI REMETTRE CETTE LIGNE MAIS NORMALEMENT SA FAIT PAS DE SOUCI
+            write_in_file(f"{local_place}/{file_folder}", bit_stream, len(bit_stream))
         else:
             cprint(COLOR_INFO, f"writing folder {file_folder} in {local_place}")
             make_dir(local_place, file_folder)
