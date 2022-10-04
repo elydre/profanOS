@@ -1,6 +1,8 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
+#include <stdint.h>
+
 #define FUNC_ADDR_SAVE 0x199990
 
 #define UNUSED(x) (void)(x)
@@ -9,11 +11,146 @@
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)FUNC_ADDR_SAVE)(id)
 
-#define c_kprint(message) ((void (*)(char *)) hi_func_addr(47))(message)
-#define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
-#define c_free(ptr) ((void (*)(void *)) hi_func_addr(17))(ptr)
-#define c_malloc(size) ((void * (*)(int)) hi_func_addr(19))(size)
-#define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
+#ifdef __cplusplus
+extern "C" {
+    enum ScreenColor {
+        // light colors
+        c_blue = 0x09,
+        c_green = 0x0a,
+        c_cyan = 0x0b,
+        c_red = 0x0c,
+        c_magenta = 0x0d,
+        c_yellow = 0x0e,
+        c_grey = 0x07,
+        c_white = 0x0f,
+        
+        // dark colors
+        c_dblue = 0x01,
+        c_dgreen = 0x02,
+        c_dcyan = 0x03,
+        c_dred = 0x04,
+        c_dmagenta = 0x05,
+        c_dyellow = 0x06,
+        c_dgrey = 0x08,
+    };
 
+    typedef struct string_20_t {
+        char name[20];
+    } string_20_t;
+
+    typedef struct {
+        int seconds;
+        int minutes;
+        int hours;
+        int day_of_week;
+        int day_of_month;
+        int month;
+        int year;
+        int full[6];
+    } time_t;
+}
+#else
+    typedef enum ScreenColor ScreenColor;
+    enum ScreenColor {
+        // light colors
+        c_blue = 0x09,
+        c_green = 0x0a,
+        c_cyan = 0x0b,
+        c_red = 0x0c,
+        c_magenta = 0x0d,
+        c_yellow = 0x0e,
+        c_grey = 0x07,
+        c_white = 0x0f,
+        
+        // dark colors
+        c_dblue = 0x01,
+        c_dgreen = 0x02,
+        c_dcyan = 0x03,
+        c_dred = 0x04,
+        c_dmagenta = 0x05,
+        c_dyellow = 0x06,
+        c_dgrey = 0x08,
+    };
+
+    typedef struct string_20_t {
+        char name[20];
+    } string_20_t;
+
+    typedef struct {
+        int seconds;
+        int minutes;
+        int hours;
+        int day_of_week;
+        int day_of_month;
+        int month;
+        int year;
+        int full[6];
+    } time_t;
+#endif
+
+#define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
+
+#define c_fs_get_used_sectors(disk_size) ((uint32_t (*)(uint32_t)) hi_func_addr(0))(disk_size)
+#define c_fs_make_dir(path,folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
+#define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
+#define c_fs_read_file(path, data) ((void (*)(char *, uint32_t *)) hi_func_addr(4))(path, data)
+#define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)
+#define c_fs_get_folder_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
+#define c_fs_declare_read_array(path) ((void * (*)(char *)) hi_func_addr(8))(path)
+#define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
+#define c_fs_does_path_exists(path) ((int (*)(char *)) hi_func_addr(9))(path)
+#define c_fs_type_sector(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
+#define c_fs_get_dir_content(id, list_name, liste_id) ((void (*)(uint32_t, string_20_t *, uint32_t *)) hi_func_addr(11))(id, list_name, liste_id)
+#define c_fs_path_to_id(input_path, silence) ((uint32_t(*)(char *, int)) hi_func_addr(12))(input_path, silence)
+#define c_mem_alloc(size) ((int (*)(int)) hi_func_addr(15))(size)
+#define c_mem_free_addr(addr) ((int (*)(int)) hi_func_addr(16))(addr)
+#define c_free(ptr) ((void (*)(void *)) hi_func_addr(17))(ptr)
+#define c_calloc(size) ((void * (*)(int)) hi_func_addr(18))(size)
+#define c_malloc(size) ((void * (*)(int)) hi_func_addr(19))(size)
+#define c_mem_get_usage() ((int (*)(void)) hi_func_addr(21))()
+#define c_mem_get_usable() ((int (*)(void)) hi_func_addr(22))()
+#define c_int_to_ascii(n, str) ((void (*)(int, char *)) hi_func_addr(23))(n, str)
+#define c_ascii_to_int(str) ((int (*)(char *)) hi_func_addr(25))(str)
+#define c_str_len(s) ((int (*)(char *)) hi_func_addr(27))(s)
+#define c_str_append(str, c) ((void (*)(char *, char)) hi_func_addr(29))(str, c)
+#define c_str_cpy(dest, src) ((void (*)(char *, char *)) hi_func_addr(30))(dest, src)
+#define c_str_cmp(str1, str2) ((int (*)(char *, char *)) hi_func_addr(31))(str1, str2)
+#define c_str_start_split(str, delim) ((void (*)(char *, char)) hi_func_addr(32))(str, delim)
+#define c_str_end_split(str, delim) ((void (*)(char *, char)) hi_func_addr(33))(str, delim)
+#define c_str_count(str, thing) ((int (*)(char *, char)) hi_func_addr(35))(str, thing)
+#define c_str_cat(s1, s2) ((char* (*)(char *, const char *)) hi_func_addr(36))(s1, s2)
+#define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
+#define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
+#define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
+#define c_input_paste(out_buffer, size, paste_buffer, color) ((void (*)(char *, int, char *, ScreenColor)) hi_func_addr(40))(out_buffer, size, paste_buffer, color)
+#define c_input(out_buffer, size, color) ((void (*)(char *, int, char)) hi_func_addr(41))(out_buffer, size, color)
+#define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
+#define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)
+#define c_ms_sleep(ms) ((void (*)(int)) hi_func_addr(44))(ms)
+#define c_time_get_boot() ((int (*)(void)) hi_func_addr(45))()
+#define c_clear_screen() ((void (*)(void)) hi_func_addr(46))()
+#define c_kprint(message) ((void (*)(char *)) hi_func_addr(47))(message)
+#define c_ckprint(message, color) ((void (*)(char*, char)) hi_func_addr(48))(message, color)
+#define c_ckprint_at(str, x, y, color) ((void (*)(char *, int, int, char)) hi_func_addr(49))(str, x, y, color)
+#define c_kprint_backspace() ((void (*)(void)) hi_func_addr(51))()
+#define c_kb_scancode_to_char(scancode, shift) ((char (*)(int, int)) hi_func_addr(57))(scancode, shift)
+#define c_kb_get_scancode() ((int (*)(void)) hi_func_addr(58))()
+#define c_pow(a, b) ((int (*)(int, int)) hi_func_addr(59))(a, b)
+#define c_rand() ((int (*)(void)) hi_func_addr(60))()
+#define c_mem_print() ((void (*)(void)) hi_func_addr(61))()
+#define c_sys_reboot() ((void (*)(void)) hi_func_addr(62))()
+#define c_ata_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
+#define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
+#define c_timer_get_refresh_time(target) ((void (*)(int *)) hi_func_addr(66))(target)
+#define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
+#define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
+#define c_sys_run_binary(fileName, arg) ((int (*)(char *, int)) hi_func_addr(69))(fileName, arg)
+#define c_time_get(time) ((void (*)(time_t *)) hi_func_addr(70))(time)
+#define c_time_calc_unix(time) ((int (*)(time_t *)) hi_func_addr(71))(time)
+#define c_timer_get_tick() ((int (*)(void)) hi_func_addr(72))()
+#define c_mem_get_alloc_count() ((int (*)(void)) hi_func_addr(73))()
+#define c_mem_get_free_count() ((int (*)(void)) hi_func_addr(74))()
+#define c_task_print() ((void (*)(void)) hi_func_addr(75))()
+#define c_cursor_blink(on) ((void (*)(int)) hi_func_addr(76))(on)
 
 #endif
