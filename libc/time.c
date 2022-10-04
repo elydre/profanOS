@@ -1,6 +1,10 @@
 #include <driver/rtc.h>
 #include <cpu/timer.h>
+#include <filesystem.h>
+#include <string.h>
 #include <system.h>
+#include <mem.h>
+#include <iolib.h>
 #include <time.h>
 
 static int boot_time;
@@ -37,6 +41,23 @@ int time_calc_unix(time_t *time) {
 int time_gen_unix() {
     time_t time;
     time_get(&time);
+    // TODO : faire un parseur de settings + save proprement
+    char *path = "/user/settings";
+    uint32_t *settings = fs_declare_read_array(path);
+    fs_read_file(path, settings);
+    char * char_content = fs_declare_read_array(path);
+    int char_count;
+    for (char_count = 0; settings[char_count] != (uint32_t) -1; char_count++)
+        char_content[char_count] = (char) settings[char_count];
+    char_content[char_count] = '\0';
+    int decalage = 0;
+    char nb[3];
+    nb[0] = char_content[1]; nb[1] = char_content[2]; nb[2] = '\0';
+    decalage = ascii_to_int(nb);
+    if (char_content[0] == '-') decalage = -decalage; 
+    // TODO : ajouter le décalage a l'heure correctement
+    free(char_content);
+    free(settings);
     return time_calc_unix(&time);
 }
 

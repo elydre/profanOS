@@ -364,7 +364,7 @@ uint32_t fs_get_file_size(char path[]) {
 }
 
 void *fs_declare_read_array(char path[]) {
-    return calloc(fs_get_file_size(path) * sizeof(uint32_t) * 126);
+    return calloc((fs_get_file_size(path) * sizeof(uint32_t) + 1) * 126);
 }
 
 // How to declare data : uint32_t *data = fs_declare_read_array(path);
