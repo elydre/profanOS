@@ -45,7 +45,7 @@ int main(int addr, int arg) {
         if (str[str_index] != '\n') continue;
         line++;
         if (line % 14) continue;
-        for (j = 0; str[j] != '\n'; j++) temps[j] = str[j];
+        for (j = 0; str[j] > 40; j++) temps[j] = str[j];
         temps[j] = '\0';
         str[str_index] = '\0';
         if (ascii_to_int(temps) < 0) break;
