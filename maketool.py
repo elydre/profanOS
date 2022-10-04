@@ -1,3 +1,4 @@
+import threading
 import sys, os
 # SETUP
 
@@ -53,6 +54,7 @@ def print_and_exec(command):
     if code != 0:
         cprint(COLOR_EROR, f"error {code}")
         sys.exit(code >> 8)
+    return 1
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
@@ -95,28 +97,50 @@ def elf_image():
 
     if len(need['c']): cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
 
-    for file in need["asm"]:
-        print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
+    def f_temp(file, type):
+        global total
+        if type == "c":
+            print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {CFLAGS}")
+        elif type == "asm":
+            print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
+        total -= 1
 
+    global total
+    total = len(need["asm"])
+    for file in need["asm"]:
+        threading.Thread(target=f_temp, args=(file, "asm")).start()
+    while total: pass # on a besoin d'attendre que tout soit fini
+
+    total = len(need["c"])
     for file in need["c"]:
-        print_and_exec(f"{CC} {CFLAGS} -c {file} -o {out_file_name(file, 'kernel')}")
+        threading.Thread(target=f_temp, args=(file, "c")).start()
+    while total: pass  # on a besoin d'attendre que tout soit fini
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
         print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
 
 def build_zapps():
-    cprint(COLOR_INFO, "building zapps...")
-    if not os.path.exists(f"{OUT_DIR}/zapps"):
-        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
-        os.makedirs(f"{OUT_DIR}/zapps")
-    for name in file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"):
-        fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
-        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
+    def build_zapp(name, fname):
+        global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {ZAPPS_DIR}/{name} -o {fname}.o")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
+        total -= 1
+
+    cprint(COLOR_INFO, "building zapps...")
+    if not os.path.exists(f"{OUT_DIR}/zapps"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
+        os.makedirs(f"{OUT_DIR}/zapps")
+    
+    global total
+    total = len(file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"))
+    for name in file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"):
+        fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
+        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
+        threading.Thread(target=build_zapp, args=(name, fname)).start()
+    while total : pass # on attends que tout soit fini
 
 def make_help():
     aide = (
