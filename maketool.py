@@ -104,6 +104,7 @@ def elf_image():
             print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
         total -= 1
 
+    global total
     total = len(need["c"])
     for file in need["c"]:
         threading.Thread(target=f_temp, args=(file, "c")).start()
