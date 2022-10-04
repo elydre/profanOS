@@ -10,6 +10,11 @@
 #include <task.h>
 #include <mem.h>
 
+void init_watfunc() {
+    int *func_addr = (int *)FUNC_ADDR_SAVE;
+    *func_addr = (int) wf_get_func_addr;
+}
+
 int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h

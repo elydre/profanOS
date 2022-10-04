@@ -1,11 +1,11 @@
 #include "addf.h"
 
-void print_status(int addr, char test_name[], int status);
+void print_status(char test_name[], int status);
 
-int main(int addr, int arg) {
+int main(int arg) {
     if (arg == 86) return 42;
 
-    INIT_AF(addr);
+    INIT_AF();
     AF_mem_get_alloc_count();
     AF_mem_get_free_count();
     AF_fs_get_file_size();
@@ -18,22 +18,22 @@ int main(int addr, int arg) {
     AF_rand();
     AF_pow();
 
-    print_status(addr, "math pow()", pow(3, 7) == 2187 && pow(10, 3) == 1000);
-    print_status(addr, "random", rand() != rand() || rand() != rand());
-    print_status(addr, "rtc unix time", time_gen_unix() > time_get_boot());
+    print_status("math pow()", pow(3, 7) == 2187 && pow(10, 3) == 1000);
+    print_status("random", rand() != rand() || rand() != rand());
+    print_status("rtc unix time", time_gen_unix() > time_get_boot());
     int old_active_alloc = mem_get_alloc_count() - mem_get_free_count();
     int * ptr = (int *) malloc(0x1000);
-    print_status(addr, "memory alloc", ptr != 0);
+    print_status("memory alloc", ptr != 0);
     free(ptr);
-    print_status(addr, "memory free", old_active_alloc == mem_get_alloc_count() - mem_get_free_count());
-    print_status(addr, "file system", fs_get_file_size("/bin/testall.bin") > 0);
-    print_status(addr, "timer tick", timer_get_tick() > 0);
-    print_status(addr, "run binary", sys_run_binary("/bin/testall.bin", 86) == 42);
+    print_status("memory free", old_active_alloc == mem_get_alloc_count() - mem_get_free_count());
+    print_status("file system", fs_get_file_size("/bin/testall.bin") > 0);
+    print_status("timer tick", timer_get_tick() > 0);
+    print_status("run binary", sys_run_binary("/bin/testall.bin", 86) == 42);
     return 0;
 }
 
-void print_status(int addr, char test_name[], int status) {
-    INIT_AF(addr);
+void print_status(char test_name[], int status) {
+    INIT_AF();
     AF_fskprint();
     AF_str_len();
     char spaces[20]; int i;

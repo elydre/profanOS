@@ -77,7 +77,9 @@ public:
     }
 };
 
-int main (int addr, int arg) {
+int main (int arg) {
+
+    int addr = (int) *(int *) 0x199990;
 
     int (*get_func)(int id) = (int (*)(int)) addr;
     void (*fskprint)(char * format, ...) = (void (*)(char*, ...)) get_func(38);

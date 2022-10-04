@@ -5,12 +5,12 @@
 
 static char current_dir[256] = "/";
 
-void i_parse_path(int addr, char path[], string_20_t liste_path[]);
-int shell_command(int addr, char command[]);
-void gpd(int addr);
+void i_parse_path(char path[], string_20_t liste_path[]);
+int shell_command(char command[]);
+void gpd();
 
-int main(int addr, int arg) {
-    INIT_AF(addr);
+int main(int arg) {
+    INIT_AF();
     
     AF_input_paste();
     AF_fskprint();
@@ -23,14 +23,14 @@ int main(int addr, int arg) {
         input_paste(char_buffer, BFR_SIZE, last_buffer, c_blue);
         str_cpy(last_buffer, char_buffer);
         fskprint("\n");
-        if (shell_command(addr, char_buffer)) break;
+        if (shell_command(char_buffer)) break;
         char_buffer[0] = '\0';
     }
     return arg;
 }
 
-void assemble_path(int addr, char old[], char new[], char result[]) {
-    INIT_AF(addr);
+void assemble_path(char old[], char new[], char result[]) {
+    INIT_AF();
     
     AF_str_append();
     AF_str_cpy();
@@ -41,8 +41,8 @@ void assemble_path(int addr, char old[], char new[], char result[]) {
     for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
 }
 
-void shell_ls(int addr, char path[]) {
-    INIT_AF(addr);
+void shell_ls(char path[]) {
+    INIT_AF();
     
     AF_fs_get_folder_size();
     AF_fs_get_dir_content();
@@ -57,7 +57,7 @@ void shell_ls(int addr, char path[]) {
 
     char ls_path[256];
     if (path[0] == '\0') str_cpy(ls_path, current_dir);
-    else assemble_path(addr, current_dir, path, ls_path);
+    else assemble_path(current_dir, path, ls_path);
     
     int elm_count = fs_get_folder_size(ls_path);
     string_20_t *out_list = malloc(elm_count * sizeof(string_20_t));
@@ -69,14 +69,14 @@ void shell_ls(int addr, char path[]) {
         if (out_type[i] == 3) {
             fskprint("$2%s", out_list[i].name);
             for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
-            assemble_path(addr, ls_path, out_list[i].name, tmp_path);
+            assemble_path(ls_path, out_list[i].name, tmp_path);
             fskprint("%d elm\n", fs_get_folder_size(tmp_path));
         }
     } for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 2) {
             fskprint("$1%s", out_list[i].name);
             for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
-            assemble_path(addr, ls_path, out_list[i].name, tmp_path);
+            assemble_path(ls_path, out_list[i].name, tmp_path);
             fskprint("%d sect\n", fs_get_file_size(tmp_path));
         }
     }
@@ -84,8 +84,8 @@ void shell_ls(int addr, char path[]) {
     free(out_type);
 }
 
-void print_scancodes(int addr) {
-    INIT_AF(addr);
+void print_scancodes() {
+    INIT_AF();
     
     AF_kb_scancode_to_char();
     AF_kb_get_scancode();
@@ -112,8 +112,8 @@ void print_scancodes(int addr) {
     clear_screen();
 }
 
-void print_time(int addr) {
-    INIT_AF(addr);
+void print_time() {
+    INIT_AF();
 
     AF_kprint_backspace();
     AF_time_calc_unix();
@@ -140,8 +140,8 @@ void print_time(int addr) {
     fskprint("$4\nunix time:  $1%d\n", time_calc_unix(&time));
 }
 
-void show_disk_LBA(int addr, char suffix[]) {
-    INIT_AF(addr);
+void show_disk_LBA(char suffix[]) {
+    INIT_AF();
     
     AF_ata_read_sector();
     AF_ascii_to_int();
@@ -163,8 +163,8 @@ void show_disk_LBA(int addr, char suffix[]) {
     }
 }
 
-void shell_tree(int addr, char path[], int rec) {
-    INIT_AF(addr);
+void shell_tree(char path[], int rec) {
+    INIT_AF();
 
     AF_fs_get_dir_content();
     AF_fs_get_folder_size();
@@ -189,9 +189,9 @@ void shell_tree(int addr, char path[], int rec) {
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 3) { // folder
             for (int j = 0; j < rec; j++) fskprint("  ");
-            assemble_path(addr, path, out_list[i].name, tmp_path);
+            assemble_path(path, out_list[i].name, tmp_path);
             fskprint("%s\n", out_list[i].name);
-            shell_tree(addr, tmp_path, rec + 1);
+            shell_tree(tmp_path, rec + 1);
         }
     }
     if (rec == 0) fskprint("\n");
@@ -199,8 +199,8 @@ void shell_tree(int addr, char path[], int rec) {
     free(out_type);
 }
 
-void shell_cat(int addr, char fpath[], char suffix[]) {
-    INIT_AF(addr);
+void shell_cat(char fpath[], char suffix[]) {
+    INIT_AF();
 
     AF_fs_declare_read_array();
     AF_fs_does_path_exists();
@@ -214,7 +214,7 @@ void shell_cat(int addr, char fpath[], char suffix[]) {
     AF_free();
 
     char *file = malloc(str_len(suffix) + str_len(fpath) + 2);
-        assemble_path(addr, fpath, suffix, file);
+        assemble_path(fpath, suffix, file);
         if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
             uint32_t * file_content = fs_declare_read_array(file);
             char * char_content = fs_declare_read_array(file);
@@ -231,8 +231,8 @@ void shell_cat(int addr, char fpath[], char suffix[]) {
         free(file);
 }
 
-void usage(int addr) {
-    INIT_AF(addr);
+void usage() {
+    INIT_AF();
 
     AF_timer_get_refresh_time();
     AF_fskprint();
@@ -259,8 +259,8 @@ void usage(int addr) {
     kprint("\n");
 }
 
-void gpd(int addr) {
-    INIT_AF(addr);
+void gpd() {
+    INIT_AF();
     AF_str_len();
 
     for (int i = str_len(current_dir); i > 0; i--) {
@@ -271,8 +271,8 @@ void gpd(int addr) {
     }
 }
 
-int shell_command(int addr, char command[]) {
-    INIT_AF(addr);
+int shell_command(char command[]) {
+    INIT_AF();
     
     AF_ata_get_sectors_count();
     AF_fs_does_path_exists();
@@ -324,22 +324,22 @@ int shell_command(int addr, char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "cat") == 0)    shell_cat(addr, current_dir, suffix);
+    if      (str_cmp(prefix, "cat") == 0)    shell_cat(current_dir, suffix);
     else if (str_cmp(prefix, "clear") == 0)  clear_screen();
     else if (str_cmp(prefix, "echo") == 0)   fskprint("$4%s\n", suffix);
     else if (str_cmp(prefix, "exit") == 0)   ret++;
-    else if (str_cmp(prefix, "gpd") == 0)    gpd(addr);
-    else if (str_cmp(prefix, "help") == 0)   shell_cat(addr, "/", "zada/shell_help.txt");
-    else if (str_cmp(prefix, "ls") == 0)     shell_ls(addr, (str_cmp(suffix, "ls") == 0) ? "" : suffix);
+    else if (str_cmp(prefix, "gpd") == 0)    gpd();
+    else if (str_cmp(prefix, "help") == 0)   shell_cat("/", "zada/shell_help.txt");
+    else if (str_cmp(prefix, "ls") == 0)     shell_ls((str_cmp(suffix, "ls") == 0) ? "" : suffix);
     else if (str_cmp(prefix, "mem") == 0)    mem_print();
     else if (str_cmp(prefix, "mkfile") == 0) fs_make_file(current_dir, suffix);
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
-    else if (str_cmp(prefix, "sc") == 0)     print_scancodes(addr);
+    else if (str_cmp(prefix, "sc") == 0)     print_scancodes();
     else if (str_cmp(prefix, "sleep") == 0)  ms_sleep(ascii_to_int(suffix) * 1000);
-    else if (str_cmp(prefix, "ss") == 0)     show_disk_LBA(addr, suffix);
+    else if (str_cmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (str_cmp(prefix, "stop") == 0)   sys_shutdown();
-    else if (str_cmp(prefix, "tree") == 0)   shell_tree(addr, current_dir, 0);
-    else if (str_cmp(prefix, "usg") == 0)    usage(addr);
+    else if (str_cmp(prefix, "tree") == 0)   shell_tree(current_dir, 0);
+    else if (str_cmp(prefix, "usg") == 0)    usage();
     else if (str_cmp(prefix, "yield") == 0)  yield((str_cmp(suffix, "yield") == 0) ? 1 : ascii_to_int(suffix));
 
 
@@ -370,7 +370,7 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "wif") == 0) {
         // write in file
         char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
-        assemble_path(addr, current_dir, suffix, file);
+        assemble_path(current_dir, suffix, file);
         if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2) {
             char char_content[70];
             fskprint("-> "); input(char_content, 70, c_blue); fskprint("\n");
@@ -385,7 +385,7 @@ int shell_command(int addr, char command[]) {
     else if (str_cmp(prefix, "go") == 0) {
         if(!(str_count(suffix, '.'))) str_cat(suffix, ".bin");
         char *file = malloc(str_len(suffix)+str_len(current_dir)+2);
-        assemble_path(addr, current_dir, suffix, file);
+        assemble_path(current_dir, suffix, file);
         if (fs_does_path_exists(file) && fs_type_sector(fs_path_to_id(file, 0)) == 2)
             sys_run_binary(file, 0);
         else fskprint("$3%s$B file not found\n", file);
@@ -394,7 +394,7 @@ int shell_command(int addr, char command[]) {
 
     else if (str_cmp(prefix, "info") == 0) {
         uint32_t sectors_count = ata_get_sectors_count();
-        print_time(addr);
+        print_time();
         fskprint("$4ticks:      $1%d\n", timer_get_tick());
         fskprint("$4work time:  $1%ds$7/$1%ds\n", time_gen_unix() - time_get_boot() - timer_get_tick() / 100, time_gen_unix() - time_get_boot());
         fskprint("$4used mem:   $1%d%c\n", 100 * mem_get_usage() / mem_get_usable(), '%');
@@ -407,13 +407,13 @@ int shell_command(int addr, char command[]) {
         char old_path[256];
         str_cpy(old_path, current_dir);
         string_20_t * liste_path = calloc(1024);
-        i_parse_path(addr, suffix, liste_path);
+        i_parse_path(suffix, liste_path);
         for (int i=0; i<str_count(suffix, '/')+1; i++) {
             if (!str_cmp(liste_path[i].name, "..")) {
-                gpd(addr);
+                gpd();
             } else {
                 char *new_path = calloc(256);
-                assemble_path(addr, current_dir, liste_path[i].name, new_path);
+                assemble_path(current_dir, liste_path[i].name, new_path);
                 if (fs_does_path_exists(new_path) && fs_type_sector(fs_path_to_id(new_path, 0)) == 3)
                     str_cpy(current_dir, new_path);
                 else {
@@ -443,8 +443,8 @@ int shell_command(int addr, char command[]) {
     return ret;
 }
 
-void i_parse_path(int addr, char path[], string_20_t liste_path[]) {
-    INIT_AF(addr);
+void i_parse_path(char path[], string_20_t liste_path[]) {
+    INIT_AF();
 
     AF_str_len();
 

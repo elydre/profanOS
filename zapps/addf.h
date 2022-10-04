@@ -42,7 +42,8 @@ typedef struct {
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
-#define INIT_AF(addr) int (*get_func)(int id) = (int (*)(int)) addr
+#define FUNC_ADDR_SAVE 0x199990
+#define INIT_AF() int (*get_func)(int id) = (int (*)(int)) *(int *)FUNC_ADDR_SAVE
 
 #define AF_fs_get_used_sectors() uint32_t(*fs_get_used_sectors)(uint32_t disk_size) = (uint32_t (*)(uint32_t)) get_func(0)
 #define AF_fs_make_dir() uint32_t (*fs_make_dir)(char path[], char folder_name[]) = (uint32_t (*)(char[], char[])) get_func(2)

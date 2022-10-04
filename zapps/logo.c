@@ -2,8 +2,8 @@
 #include "addf.h"
 
 
-int main(int addr, int arg) {
-    INIT_AF(addr);
+int main(int arg) {
+    INIT_AF();
 
     AF_fs_declare_read_array();
     AF_fs_read_file();

@@ -1,14 +1,14 @@
 #include "addf.h"
 
-void printl(int addr, int **plateau, int curseur_x, int curseur_y);
-void next_step(int addr, int **plateau);
-void edition_state(int addr, int **plateau);
+void printl(int **plateau, int curseur_x, int curseur_y);
+void next_step(int **plateau);
+void edition_state(int **plateau);
 int size_x = 20;
 int size_y = 40;
 int wait = 250;
 
-int main(int addr, int arg) {
-    INIT_AF(addr);
+int main(int arg) {
+    INIT_AF();
 
     AF_kb_get_scancode();
     AF_cursor_blink();
@@ -36,7 +36,7 @@ int main(int addr, int arg) {
         last_scancode = scancode;
         scancode = kb_get_scancode();
         if (kb_get_scancode() == 18)
-            edition_state(addr, plateau);
+            edition_state(plateau);
         if (kb_get_scancode() == 25) {
             wait += 50;
             while (kb_get_scancode() == 25);
@@ -51,8 +51,8 @@ int main(int addr, int arg) {
             ckprint_at("E     : mode edition\n", 0, size_x+2, 0x0F);
             fskprint("P/M   : ms_sleep(%d); ", wait);
         };
-        next_step(addr, plateau);
-        printl(addr, plateau, -1, -1);
+        next_step(plateau);
+        printl(plateau, -1, -1);
     }
 
     // fin
@@ -63,8 +63,8 @@ int main(int addr, int arg) {
     return arg;
 }
 
-void edition_state(int addr, int **plateau) {
-    INIT_AF(addr);
+void edition_state(int **plateau) {
+    INIT_AF();
     AF_ckprint_at();
     AF_kb_get_scancode();
     AF_clear_screen();
@@ -77,7 +77,7 @@ void edition_state(int addr, int **plateau) {
     clear_screen();
 
     while (kb_get_scancode() != 30) {
-        printl(addr, plateau, curseur_x, curseur_y);
+        printl(plateau, curseur_x, curseur_y);
         ckprint_at("COMMANDES MODE EDITION :", 0, size_x, 0x0F);
         ckprint_at("Q     : quitter", 0, size_x+1, 0x0F);
         ckprint_at("F     : effacer l'ecran", 0, size_x+2, 0x0F);
@@ -99,8 +99,8 @@ void edition_state(int addr, int **plateau) {
     clear_screen();
 }
 
-void printl(int addr, int **plateau, int curseur_x, int curseur_y) {
-    INIT_AF(addr);
+void printl(int **plateau, int curseur_x, int curseur_y) {
+    INIT_AF();
 
     AF_ckprint_at();
     AF_calloc();
@@ -167,8 +167,8 @@ int next_value(int valeur, int i, int j, int **plateau) {
     }
 }
 
-void next_step(int addr, int **plateau) {
-    INIT_AF(addr);
+void next_step(int **plateau) {
+    INIT_AF();
     
     AF_ms_sleep();
     AF_calloc();

@@ -1,8 +1,8 @@
 #include "addf.h"
 
 
-int main(int addr, int arg) {
-    INIT_AF(addr);
+int main(int arg) {
+    INIT_AF();
 
     AF_sys_run_binary();
     AF_fskprint();

@@ -26,6 +26,9 @@ void kernel_main() {
     filesystem_init();
     fskprint("$7FileSys initialized\n");
 
+    init_watfunc();
+    fskprint("$7watfunc initialized\n");
+        
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
