@@ -101,21 +101,20 @@ def elf_image():
         global total
         if type == "c":
             print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {CFLAGS}")
-            total -= 1
         elif type == "asm":
             print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
-            total -= 1
+        total -= 1
 
     global total
     total = len(need["asm"])
     for file in need["asm"]:
         threading.Thread(target=f_temp, args=(file, "asm")).start()
-    while total: pass
+    while total: pass # on a besoin d'attendre que tout soit fini
 
     total = len(need["c"])
     for file in need["c"]:
         threading.Thread(target=f_temp, args=(file, "c")).start()
-    while total: pass
+    while total: pass  # on a besoin d'attendre que tout soit fini
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
