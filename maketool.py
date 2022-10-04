@@ -106,17 +106,27 @@ def elf_image():
         print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
 
 def build_zapps():
-    cprint(COLOR_INFO, "building zapps...")
-    if not os.path.exists(f"{OUT_DIR}/zapps"):
-        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
-        os.makedirs(f"{OUT_DIR}/zapps")
-    for name in file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"):
-        fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
-        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
+    def build_zapp(name, fname):
+        global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {ZAPPS_DIR}/{name} -o {fname}.o")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
+        total -= 1
+    cprint(COLOR_INFO, "building zapps...")
+    if not os.path.exists(f"{OUT_DIR}/zapps"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
+        os.makedirs(f"{OUT_DIR}/zapps")
+    global total
+    zapps_list = file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp")
+    total = len(zapps_list)
+    for name in zapps_list:
+        fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
+        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
+            total -= 1
+            continue
+        threading.Thread(target=build_zapp, args=(name, fname)).start()
+    while total : pass # on attends que tout soit fini
 
 def make_help():
     aide = (
