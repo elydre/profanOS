@@ -1,4 +1,3 @@
-import threading
 import sys, os
 # SETUP
 
@@ -54,7 +53,6 @@ def print_and_exec(command):
     if code != 0:
         cprint(COLOR_EROR, f"error {code}")
         sys.exit(code >> 8)
-    return 1
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
@@ -97,24 +95,11 @@ def elf_image():
 
     if len(need['c']): cprint(COLOR_INFO, f"{len(need['c'])} files to compile")
 
-    def f_temp(file, type):
-        global total
-        if type == "c":
-            print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {CFLAGS}")
-        elif type == "asm":
-            print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
-        total -= 1
-
-    global total
-    total = len(need["asm"])
     for file in need["asm"]:
-        threading.Thread(target=f_temp, args=(file, "asm")).start()
-    while total: pass # on a besoin d'attendre que tout soit fini
+        print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
 
-    total = len(need["c"])
     for file in need["c"]:
-        threading.Thread(target=f_temp, args=(file, "c")).start()
-    while total: pass  # on a besoin d'attendre que tout soit fini
+        print_and_exec(f"{CC} {CFLAGS} -c {file} -o {out_file_name(file, 'kernel')}")
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
@@ -128,12 +113,10 @@ def build_zapps():
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         total -= 1
-
     cprint(COLOR_INFO, "building zapps...")
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
-    
     global total
     zapps_list = file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp")
     total = len(zapps_list)

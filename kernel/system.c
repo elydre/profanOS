@@ -98,7 +98,7 @@ int sys_run_binary(char path[], int arg) {
     int old_active_alloc = mem_get_alloc_count() - mem_get_free_count();
 
     int (*start_program)() = (int (*)())(binary_mem);
-    int return_value = start_program((int) wf_get_func_addr, arg);
+    int return_value = start_program(arg);
 
     if (old_active_alloc < mem_get_alloc_count() - mem_get_free_count())
         sys_warning("Memory leak detected");
