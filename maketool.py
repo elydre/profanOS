@@ -135,10 +135,13 @@ def build_zapps():
         os.makedirs(f"{OUT_DIR}/zapps")
     
     global total
-    total = len(file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"))
-    for name in file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp"):
+    zapps_list = file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp")
+    total = len(zapps_list)
+    for name in zapps_list:
         fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
-        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): continue
+        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
+            total -= 1
+            continue
         threading.Thread(target=build_zapp, args=(name, fname)).start()
     while total : pass # on attends que tout soit fini
 
