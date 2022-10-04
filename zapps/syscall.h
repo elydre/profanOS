@@ -11,7 +11,7 @@
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)FUNC_ADDR_SAVE)(id)
 
-#ifdef __cplusplus
+#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir ScreenColor
 extern "C" {
     enum ScreenColor {
         // light colors
