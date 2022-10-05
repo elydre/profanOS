@@ -1,4 +1,4 @@
-import threading
+from threading import Thread
 import sys, os
 # SETUP
 
@@ -105,14 +105,13 @@ def elf_image():
         total -= 1
 
     global total
-    total = len(need["c"])
+    total = len(need["c"]) + len(need["asm"])
     for file in need["c"]:
-        threading.Thread(target=f_temp, args=(file, "c")).start()
-    while total: pass  # on a besoin d'attendre que tout soit fini
-    
-    total = len(need["asm"])
+        Thread(target=f_temp, args=(file, "c")).start()
+        
     for file in need["asm"]:
-        threading.Thread(target=f_temp, args=(file, "asm")).start()
+        Thread(target=f_temp, args=(file, "asm")).start()
+
     while total: pass # on a besoin d'attendre que tout soit fini
     
     if need["c"] or need["asm"]:
@@ -139,7 +138,7 @@ def build_zapps():
         if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
             total -= 1
             continue
-        threading.Thread(target=build_zapp, args=(name, fname)).start()
+        Thread(target=build_zapp, args=(name, fname)).start()
     while total : pass # on attends que tout soit fini
 
 def make_help():

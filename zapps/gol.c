@@ -37,9 +37,9 @@ int main(int arg) {
             while (c_kb_get_scancode() == 39);
         }
         if (scancode != last_scancode) {
-            c_ckprint_at("Commandes :", 0, size_x, 0x0F);
-            c_ckprint_at("ECHAP : quitter", 0, size_x+1, 0x0F);
-            c_ckprint_at("E     : mode edition\n", 0, size_x+2, 0x0F);
+            c_ckprint_at("Commandes :", 0, size_x+1, 0x0F);
+            c_ckprint_at("ECHAP : quitter", 0, size_x+2, 0x0F);
+            c_ckprint_at("E     : mode edition\n", 0, size_x+3, 0x0F);
             c_fskprint("P/M   : ms_sleep(%d); ", wait);
         };
         next_step(plateau);
@@ -66,9 +66,9 @@ void edition_state(int **plateau) {
 
     while (c_kb_get_scancode() != 30) {
         printl(plateau, curseur_x, curseur_y);
-        c_ckprint_at("COMMANDES MODE EDITION :", 0, size_x, 0x0F);
-        c_ckprint_at("Q     : quitter", 0, size_x+1, 0x0F);
-        c_ckprint_at("F     : effacer l'ecran", 0, size_x+2, 0x0F);
+        c_ckprint_at("COMMANDES MODE EDITION :", 0, size_x+1, 0x0F);
+        c_ckprint_at("Q     : quitter", 0, size_x+2, 0x0F);
+        c_ckprint_at("F     : effacer l'ecran", 0, size_x+3, 0x0F);
         last_scancode = scancode;
         scancode = c_kb_get_scancode();
         if (last_scancode == scancode) continue;
@@ -118,6 +118,7 @@ void printl(int **plateau, int curseur_x, int curseur_y) {
                 ligne[offset + 1] = ' ';
                 offset += 2;
             }
+            ligne[size_y*2-1] = '\0';
             c_ckprint_at(ligne, 0, i, 0x0F);
         }
     }
