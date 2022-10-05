@@ -15,14 +15,11 @@ ___________________________________
 #include "syscall.h"
 
 char get_piont(int num);
-void print_grille(int ** grille);
 int get_user_choix(int ** grille);
 void chute(int colonne, int ** grille);
-int check_eg(int v1, int v2, int v3, int v4);
 void free_grille(int ** grille);
 int IA_play(int ** grille);
 int is_gagnant(int ** tab);
-int randint();
 
 int main(int arg) {
     int colonne;
@@ -95,7 +92,7 @@ int IA_play(int ** grille) {
         return val;
 
     while (1) {
-        val = randint();
+        val = c_rand() % 8;
         if (val < 8 && val >= 0 && grille[val][0] == 0) {
             return val;
         }
@@ -173,10 +170,6 @@ int is_gagnant(int ** tab) {
         }
     }
     return 0;
-}
-
-int randint() {
-    return c_rand() % 8;
 }
 
 void free_grille(int ** grille) {
