@@ -2,8 +2,8 @@
 #define SCREEN_H
 
 #define VIDEO_ADDRESS 0xb8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
+#define GRAPHIC_ADDRESS 0xa0000
+
 
 /* Screen i/o ports */
 #define REG_SCREEN_CTRL 0x3d4
@@ -49,5 +49,10 @@ int get_offset_row(int offset);
 int get_offset_col(int offset);
 
 void cursor_blink(int on);
+
+void vga_init();
+void vga_put_pixel(int x, int y, unsigned char color);
+int vga_get_width();
+int vga_get_height();
 
 #endif

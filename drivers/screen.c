@@ -8,6 +8,9 @@
  * Public Kernel API functions                            *
  **********************************************************/
 
+static int MAX_ROWS = 25;
+static int MAX_COLS = 80;
+
 /*
  * Print a message on the specified location
  * If col, row, are negative, we will use the current offset
