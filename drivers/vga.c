@@ -105,38 +105,6 @@ void write_registers(unsigned char *regs) {
     port_byte_out(vga_AC_INDEX, 0x20);
 }
 
-void vga_put_pixel(int x, int y, unsigned char color) {
-    vga_address[vga_width * y + x] = color;
-}
-
-void vga_pixel_clear() {
-    for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
-        vga_put_pixel(xy % vga_width, xy / vga_width, 0x0f);
-    }
-}
-
-void vga_pixel_mode() {
-    // setup the vga struct
-    vga_width   = 320;
-    vga_height  = 200;
-    vga_bpp     = 256;
-    vga_address = (void *) 0xA0000;
-
-    // enables the mode 13 state
-    write_registers(mode_320_200_256);
-
-    // clears the screen
-    vga_pixel_clear();
-}
-
-int vga_get_width() {
-    return vga_width;
-}
-
-int vga_get_height() {
-    return vga_height;
-}
-
 unsigned get_fb_seg() {
     unsigned seg;
 
@@ -220,6 +188,38 @@ void write_font(unsigned char *buf, unsigned font_height) {
     port_byte_out(vga_GC_DATA, gc5);
     port_byte_out(vga_GC_INDEX, 6);
     port_byte_out(vga_GC_DATA, gc6);
+}
+
+void vga_put_pixel(int x, int y, unsigned char color) {
+    vga_address[vga_width * y + x] = color;
+}
+
+void vga_pixel_clear() {
+    for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
+        vga_put_pixel(xy % vga_width, xy / vga_width, 0x0f);
+    }
+}
+
+int vga_get_width() {
+    return vga_width;
+}
+
+int vga_get_height() {
+    return vga_height;
+}
+
+void vga_pixel_mode() {
+    // setup the vga struct
+    vga_width   = 320;
+    vga_height  = 200;
+    vga_bpp     = 256;
+    vga_address = (void *) 0xA0000;
+
+    // enables the mode 13 state
+    write_registers(mode_320_200_256);
+
+    // clears the screen
+    vga_pixel_clear();
 }
 
 void vga_text_mode() {
