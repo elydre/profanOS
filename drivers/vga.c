@@ -60,6 +60,10 @@ unsigned char g_80x25_text[] = {
     0x0C, 0x00, 0x0F, 0x08, 0x00
 };
 
+/***************************
+ * VGA INTERNAL FUNCTIONS *
+****************************/
+
 void write_registers(unsigned char *regs) {
     unsigned i;
 
@@ -190,23 +194,9 @@ void write_font(unsigned char *buf, unsigned font_height) {
     port_byte_out(vga_GC_DATA, gc6);
 }
 
-void vga_put_pixel(int x, int y, unsigned char color) {
-    vga_address[vga_width * y + x] = color;
-}
-
-void vga_pixel_clear() {
-    for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
-        vga_put_pixel(xy % vga_width, xy / vga_width, 0x0f);
-    }
-}
-
-int vga_get_width() {
-    return vga_width;
-}
-
-int vga_get_height() {
-    return vga_height;
-}
+/*************************
+ * VGA public functions *
+*************************/
 
 void vga_pixel_mode() {
     // setup the vga struct
@@ -229,7 +219,7 @@ void vga_text_mode() {
     vga_height = 25;
     vga_bpp = 16;
 
-    write_font(g_8x16_font, 16);
+    // write_font(g_8x16_font, 16);
 
     // tell the BIOS what we've done, so BIOS text output works OK
     pokew(0x40, 0x4A, vga_width);           // columns on screen
@@ -243,4 +233,36 @@ void vga_text_mode() {
     for (unsigned i = 0; i < vga_width * vga_height; i++)
         pokeb(0xB800, i * 2 + 1, 7);
     clear_screen();
+}
+
+void vga_put_pixel(int x, int y, unsigned char color) {
+    vga_address[vga_width * y + x] = color;
+}
+
+void vga_pixel_clear() {
+    for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
+        vga_put_pixel(xy % vga_width, xy / vga_width, 0x0f);
+    }
+}
+
+int vga_get_width() {
+    return vga_width;
+}
+
+int vga_get_height() {
+    return vga_height;
+}
+
+void vga_print(int x, int y, char msg[], int big, unsigned char color) {
+    unsigned char *glyph, *font;
+    font = big ? g_8x16_font : g_8x8_font;
+    for (int i = 0; msg[i] != '\0'; i++) {
+        glyph = font + (msg[i] * (big ? 16 : 8));
+        for (int j = 0; j < (big ? 16 : 8); j++) {
+            for (int k = 0; k < 8; k++) {
+                if (!(glyph[j] & (1 << k))) continue;
+                vga_put_pixel(i * 8 + x + 8 - k , y + j, color);
+            }
+        }
+    }
 }

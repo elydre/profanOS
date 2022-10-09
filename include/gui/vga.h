@@ -5,6 +5,7 @@ void vga_pixel_mode();
 void vga_text_mode();
 
 void vga_put_pixel(int x, int y, unsigned char color);
+void vga_print(int x, int y, char msg[], int big, unsigned char color);
 void vga_pixel_clear();
 
 int vga_get_width();
