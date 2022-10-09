@@ -7,6 +7,8 @@
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 int pow(int base, int exp);
+int abs(int x);
+
 void init_rand();
 int rand();
 

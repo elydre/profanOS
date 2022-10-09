@@ -11,6 +11,10 @@ int pow(int base, int exp) {
     return result;
 }
 
+int abs(int x) {
+    return x < 0 ? -x : x;
+}
+
 int rand() {
     static int * next = (int *) 0x199980;
     * next = * next * 1103515245 + 12345;

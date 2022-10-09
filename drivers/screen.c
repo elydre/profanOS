@@ -8,6 +8,9 @@
  * Public Kernel API functions                            *
  **********************************************************/
 
+static int MAX_ROWS = 25;
+static int MAX_COLS = 80;
+
 /*
  * Print a message on the specified location
  * If col, row, are negative, we will use the current offset
@@ -134,7 +137,7 @@ void clear_screen() {
 
     for (i = 0; i < screen_size; i++) {
         screen[i*2] = ' ';
-        screen[i*2+1] = c_white;
+        screen[i*2+1] = 0x00;
     }
     set_cursor_offset(get_offset(0, 0));
 }

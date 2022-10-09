@@ -2,8 +2,8 @@
 #define SCREEN_H
 
 #define VIDEO_ADDRESS 0xb8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
+#define GRAPHIC_ADDRESS 0xa0000
+
 
 /* Screen i/o ports */
 #define REG_SCREEN_CTRL 0x3d4

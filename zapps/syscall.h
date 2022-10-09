@@ -152,5 +152,16 @@ extern "C" {
 #define c_mem_get_free_count() ((int (*)(void)) hi_func_addr(74))()
 #define c_task_print() ((void (*)(void)) hi_func_addr(75))()
 #define c_cursor_blink(on) ((void (*)(int)) hi_func_addr(76))(on)
+#define c_vga_320_mode() ((void (*)(void)) hi_func_addr(77))()
+#define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()
+#define c_vga_text_mode() ((void (*)(void)) hi_func_addr(79))()
+#define c_vga_pixel_clear() ((void (*)(void)) hi_func_addr(80))()
+#define c_vga_put_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
+#define c_vga_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(82))(x, y, msg, big, color)
+#define c_vga_draw_line(x1, y1, x2, y2, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(83))(x1, y1, x2, y2, color)
+#define c_vga_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(84))(x, y, w, h, color)
+#define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
+#define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
+
 
 #endif

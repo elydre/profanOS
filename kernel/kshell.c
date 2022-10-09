@@ -1,6 +1,8 @@
 #include <function.h>
+#include <gui/vga.h>
 #include <system.h>
 #include <string.h>
+#include <time.h>
 #include <mem.h>
 
 #define BFR_SIZE 66
