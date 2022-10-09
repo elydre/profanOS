@@ -2,6 +2,8 @@
 
 #define BFR_SIZE 90
 #define SC_MAX 57
+#define LARGEUR c_vga_get_width()
+#define HAUTEUR c_vga_get_height()
 
 static char current_dir[256] = "/";
 
@@ -317,6 +319,67 @@ int shell_command(char command[]) {
     else if (c_str_cmp(prefix, "free") == 0) {
         if (c_mem_free_addr(c_ascii_to_int(suffix))) c_fskprint("$4free: $1OK\n");
         else c_fskprint("$4free: $3FAIL\n");
+    }
+
+    else if (c_str_cmp(prefix, "show") == 0) {
+        char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
+        assemble_path(current_dir, suffix, file);
+        if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+            uint32_t * file_content = c_fs_declare_read_array(file);
+            char * char_content = c_fs_declare_read_array(file);
+            c_fs_read_file(file, file_content);
+            int char_count;
+            for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++)
+                char_content[char_count] = (char) file_content[char_count];
+            char_content[char_count] = '\0';
+
+            int index_char = 0;
+            char size_hauteur[4];
+            int index_hauteur = 0;
+            char size_longueur[4];
+            int index_longueur = 0;
+            while (char_content[index_char] != '|') {
+                size_hauteur[index_hauteur] = char_content[index_char];
+                index_hauteur++; index_char++;
+            } size_hauteur[index_hauteur] = '\0';
+            index_char++;
+            while (char_content[index_char] != '|') {
+                size_longueur[index_longueur] = char_content[index_char];
+                index_longueur++; index_char++;
+            } size_longueur[index_longueur] = '\0';
+            index_char++;
+
+            int hauteur = c_ascii_to_int(size_hauteur);
+            int longueur = c_ascii_to_int(size_longueur);
+            c_fskprint("AFFICHE !");
+            c_vga_640_mode();
+
+            char couleur_str[3];
+            int index_couleur = 0;
+            int couleur = 0;
+            for (int h = 0; h<hauteur; h++) {
+                for (int l = 0; l<longueur; l++) {
+                    for (int i=0; i<3; i++) {couleur_str[i] = '\0';}
+                    index_couleur = 0;
+                    while (char_content[index_char] != '|') {
+                        couleur_str[index_couleur] = char_content[index_char];
+                        index_couleur++; index_char++;
+                    } couleur_str[index_couleur] = '\0'; index_char++;
+                    couleur = c_ascii_to_int(couleur_str);
+                    c_vga_put_pixel(l, h, couleur);
+                }
+            }
+
+            while (c_kb_get_scancode() != 1);
+            c_vga_text_mode();
+
+            c_fskprint("Hauteur : %d\n", hauteur);
+            c_fskprint("Longueur : %d\n", longueur);
+
+            c_free(file_content);
+            c_free(char_content);
+        } else c_fskprint("$3%s$B file not found\n", file);
+        c_free(file);
     }
 
     else if (c_str_cmp(prefix, "") != 0) {

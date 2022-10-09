@@ -1,5 +1,6 @@
 from genericpath import isfile
 from threading import Thread
+import PIL.Image
 import sys, os
 # SETUP
 
@@ -193,7 +194,7 @@ def gen_disk(force=False, with_src=False):
     # en cas de problème de build du disk, taper 'make fullclean'
     # puis mettre en commentaire la ligne suivante          (^_^ )
     build_zapps()
-    
+
     cprint(COLOR_INFO, "generating HDD.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")
     for dir in HDD_MAP:
@@ -204,16 +205,38 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
-    
+
     # transform every image into .img, the format of profanOS
     liste_images = []
     for extention in ["jpg"]:
         liste_images.extend(zapps_file_in_dir("out", extention))
     for file in liste_images:
         file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
-        file_extention = file.split(".")[-1]
-        print(f"need to convert {file} who is a .{file_extention} at {file_location}")
-    
+        file_name = file.split("/")[-1].split(".")[0]
+        print(f"{file_name=} {file_location=}")
+        
+        # on transforme l'image en une liste de couleurs 6 bits
+        image = PIL.Image.open(file)
+        pixels = list(image.getdata())
+        width, height = image.size
+        liste_pixels = [pixels[i * width:(i + 1) * width] for i in range(height)]
+        liste_couleurs = []
+        for ligne in liste_pixels:
+            for pixel in ligne:
+                r, g, b = pixel
+                color = (g//64 << 4) + (r//64 << 2) + b//64
+                liste_couleurs.append(color)
+        liste_couleurs = [[("0" if x < 10 else "") + str(x) for x in liste_couleurs[i * width:(i + 1) * width]] for i in range(height)]
+        # on écrit le fichier
+        with open(f"{file_location}/{file_name}.img", "w") as f:
+            f.write(f"{len(liste_couleurs)}|{len(liste_couleurs[0])}|")
+            for ligne in liste_couleurs:
+                for couleur in ligne:
+                    f.write(f"{couleur}|")
+                    
+        # on vire l'ancienne image
+        os.remove(file)
+
     print_and_exec("python3 makefsys.py")
 
 def qemu_run(iso_run = False):
