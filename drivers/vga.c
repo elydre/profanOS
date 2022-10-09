@@ -178,7 +178,7 @@ void write_font(unsigned char *buf, unsigned font_height) {
     set_plane(2);
     // write font 0
     for (unsigned i = 0; i < 256; i++) {
-        vmemwr(16384u * 0 + i * 32, buf, font_height);
+        vmemwr(16384u + i * 32, buf, font_height);
         buf += font_height;
     }
     // restore registers
@@ -219,7 +219,7 @@ void vga_text_mode() {
     vga_height = 25;
     vga_bpp = 16;
 
-    // write_font(g_8x16_font, 16);
+    write_font(g_8x16_font, 16);
 
     // tell the BIOS what we've done, so BIOS text output works OK
     pokew(0x40, 0x4A, vga_width);           // columns on screen
