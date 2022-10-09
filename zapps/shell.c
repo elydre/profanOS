@@ -351,7 +351,6 @@ int shell_command(char command[]) {
 
             int hauteur = c_ascii_to_int(size_hauteur);
             int longueur = c_ascii_to_int(size_longueur);
-            c_fskprint("AFFICHE !");
             c_vga_640_mode();
 
             char couleur_str[3];
