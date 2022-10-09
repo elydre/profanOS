@@ -351,7 +351,7 @@ int shell_command(char command[]) {
 
             int hauteur = c_ascii_to_int(size_hauteur);
             int longueur = c_ascii_to_int(size_longueur);
-            c_vga_640_mode();
+            c_vga_320_mode();
 
             char couleur_str[3];
             int index_couleur = 0;
