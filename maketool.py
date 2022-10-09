@@ -1,3 +1,4 @@
+from genericpath import isfile
 from threading import Thread
 import sys, os
 # SETUP
@@ -12,7 +13,7 @@ ZAPPS_DIR = "zapps"
 OUT_DIR = "out"
 
 HDD_MAP = {
-    "bin": f"{OUT_DIR}/zapps/*.bin",
+    "bin": f"{OUT_DIR}/zapps/*",
     "sys": None,
     "user": "sys_dir/user/*",
     "zada": "sys_dir/zada/*",
@@ -35,6 +36,15 @@ COLOR_EROR = (255, 0, 0)
 
 last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
+def zapps_file_in_dir(directory, extention):
+    liste = []
+    for file in os.listdir(directory):
+        if os.path.isfile(f"{directory}/{file}"):
+            if file.endswith(extention):
+                liste.append(f"{directory}/{file}")
+        else:
+            liste.extend(zapps_file_in_dir(f"{directory}/{file}", extention))
+    return liste
 file_in_dir = lambda directory, extension: [file for file in os.listdir(directory) if file.endswith(extension)]
 out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.split('/')[-1][:-2]}.o"
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
@@ -121,25 +131,39 @@ def elf_image():
 def build_zapps():
     def build_zapp(name, fname):
         global total
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {ZAPPS_DIR}/{name} -o {fname}.o")
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {name} -o {fname}.o -I ./zapps")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         total -= 1
+
     cprint(COLOR_INFO, "building zapps...")
+    zapps_list = zapps_file_in_dir("zapps", ".c") + zapps_file_in_dir("zapps", ".cpp")
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
+
+    for file in zapps_list:
+        if sum(x == "/" for x in file) > 1:
+            dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
+            if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
+                print(f"making {dir_name}")
+                os.makedirs(f"{OUT_DIR}/{dir_name}")
+                
     global total
-    zapps_list = file_in_dir("zapps", ".c") + file_in_dir("zapps", ".cpp")
     total = len(zapps_list)
     for name in zapps_list:
-        fname = f"{OUT_DIR}/zapps/{''.join(name.split('.')[:-1])}"
+        fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
         if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
             total -= 1
             continue
         Thread(target=build_zapp, args=(name, fname)).start()
     while total : pass # on attends que tout soit fini
+    
+    # on vire les .pe, .full et .o intermediaires
+    for ext in ["pe", "full", "o"]:
+        print_and_exec(f"rm -Rf ./out/zapps/*.{ext}")
+        print_and_exec(f"rm -Rf ./out/zapps/*/*.{ext}")
 
 def make_help():
     aide = (

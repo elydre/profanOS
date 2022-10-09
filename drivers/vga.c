@@ -1,5 +1,5 @@
 #include <driver/screen.h>
-#include <gui/front.h>
+#include <gui/font.h>
 #include <function.h>
 #include <gui/vga.h>
 #include <ports.h>

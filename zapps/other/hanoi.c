@@ -30,10 +30,10 @@ int main(int arg) {
 
 void solve(int n, int from_rod, int to_rod, int aux_rod) {
     if (n == 1) {
-        c_fskprint("\n Move disk 1 from rod %d to rod %d", from_rod, to_rod);
+        c_fskprint("\nMove disk 1 from rod %d to rod %d", from_rod, to_rod);
         return;
     }
     solve(n-1, from_rod, aux_rod, to_rod);
-    c_fskprint("\n Move disk %d from rod %d to rod %d", n, from_rod, to_rod);
+    c_fskprint("\nMove disk %d from rod %d to rod %d", n, from_rod, to_rod);
     solve(n-1, aux_rod, to_rod, from_rod);
 }
