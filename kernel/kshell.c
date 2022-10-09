@@ -71,15 +71,8 @@ void shell_command(char command[]) {
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
     else if (str_cmp(prefix, "test") == 0) {
-        vga_pixel_mode();
-        for (int i = 0; i < 64; i++) {
-            for (int j = 0; j < 25*40; j++) {
-                vga_put_pixel(i%8 * 40 + j%40, i/8 * 25 + j/40, i);
-            }
-        }
-        vga_print(100, 100, "petit", 0, 0);
-        vga_print(100, 120, "grand", 1, 0);
-        ms_sleep(5000);
+        vga_320_mode();        
+        ms_sleep(500);
         vga_text_mode();
     }
 
