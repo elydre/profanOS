@@ -1,4 +1,6 @@
+#include <driver/screen.h>
 #include <gui/front.h>
+#include <gui/vga.h>
 #include <ports.h>
 #include <mem.h>
 
@@ -58,17 +60,6 @@ unsigned char g_80x25_text[] = {
     0x0C, 0x00, 0x0F, 0x08, 0x00
 };
 
-unsigned char g_90x60_text[] = {
-    0xE7, 0x03, 0x01, 0x03, 0x00, 0x02, 0x6B, 0x59,
-    0x5A, 0x82, 0x60, 0x8D, 0x0B, 0x3E, 0x00, 0x47,
-    0x06, 0x07, 0x00, 0x00, 0x00, 0x00, 0xEA, 0x0C,
-    0xDF, 0x2D, 0x08, 0xE8, 0x05, 0xA3, 0xFF, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x10, 0x0E, 0x00, 0xFF,
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x14, 0x07,
-    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-    0x0C, 0x00, 0x0F, 0x08, 0x00,
-};
-
 void write_registers(unsigned char *regs) {
     unsigned i;
 
@@ -118,13 +109,13 @@ void vga_put_pixel(int x, int y, unsigned char color) {
     vga_address[vga_width * y + x] = color;
 }
 
-void vga_clear_screen() {
+void vga_pixel_clear() {
     for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
-        vga_put_pixel(xy % vga_width, xy / vga_width, 0);
+        vga_put_pixel(xy % vga_width, xy / vga_width, 0x0f);
     }
 }
 
-void vga_init() {
+void vga_pixel_mode() {
     // setup the vga struct
     vga_width   = 320;
     vga_height  = 200;
@@ -135,7 +126,7 @@ void vga_init() {
     write_registers(mode_320_200_256);
 
     // clears the screen
-    vga_clear_screen();
+    vga_pixel_clear();
 }
 
 int vga_get_width() {
@@ -231,21 +222,14 @@ void write_font(unsigned char *buf, unsigned font_height) {
     port_byte_out(vga_GC_DATA, gc6);
 }
 
-void vga_switch_text_mode(int hi_res) {
-    if (hi_res) {
-        write_registers(g_90x60_text);
-        vga_width = 90;
-        vga_height = 60;
-        vga_bpp = 8;
-    } else {
-        write_registers(g_80x25_text);
-        vga_width = 80;
-        vga_height = 25;
-        vga_bpp = 16;
-    }
+void vga_text_mode() {
+    vga_pixel_clear();
+    write_registers(g_80x25_text);
+    vga_width = 80;
+    vga_height = 25;
+    vga_bpp = 16;
 
-    if (vga_bpp >= 16) write_font(g_8x16_font, 16);
-    else write_font(g_8x8_font, 8);
+    write_font(g_8x16_font, 16);
 
     // tell the BIOS what we've done, so BIOS text output works OK
     pokew(0x40, 0x4A, vga_width);           // columns on screen
@@ -256,6 +240,7 @@ void vga_switch_text_mode(int hi_res) {
     pokeb(0x40, 0x84, vga_height - 1);      // rows on screen - 1
     pokeb(0x40, 0x85, vga_bpp);             // char height
     // set white-on-black attributes for all text
-    for(unsigned i = 0; i < vga_width * vga_height; i++)
+    for (unsigned i = 0; i < vga_width * vga_height; i++)
         pokeb(0xB800, i * 2 + 1, 7);
+    clear_screen();
 }
