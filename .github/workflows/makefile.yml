@@ -15,7 +15,8 @@ jobs:
     - name: install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc g++ nasm make python3 genisoimage Pillow
+        sudo apt-get install -y gcc g++ nasm make python3 genisoimage
+        sudo pip3 install Pillow
       
     - name: build img
       run: |
