@@ -3,6 +3,7 @@
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
+#include <gui/vga.h>
 #include <string.h>
 #include <system.h>
 #include <iolib.h>
@@ -115,6 +116,18 @@ int wf_get_func_addr(int func_id) {
         // task.h
         case 67: return (int) yield;
         case 75: return (int) task_print;
+
+        // vga.h
+        case 77: return (int) vga_320_mode;
+        case 78: return (int) vga_640_mode;
+        case 79: return (int) vga_text_mode;
+        case 80: return (int) vga_pixel_clear;
+        case 81: return (int) vga_put_pixel;
+        case 82: return (int) vga_print;
+        case 83: return (int) vga_draw_line;
+        case 84: return (int) vga_draw_rect;
+        case 85: return (int) vga_get_width;
+        case 86: return (int) vga_get_height;
 
         default: return 0;
     }

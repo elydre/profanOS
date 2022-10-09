@@ -70,24 +70,6 @@ void shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
-    else if (str_cmp(prefix, "test") == 0) {
-        vga_320_mode();
-        for (int i = 0; i < 64; i++) {
-            for (int j = 0; j < 25*40; j++) {
-                vga_put_pixel(i%8 * 40 + j%40, i/8 * 25 + j/40, i);
-            }
-        }
-        /* while (1) {
-            vga_draw_line(rand() % vga_get_width(),
-                          rand() % vga_get_height(),
-                          rand() % vga_get_width(),
-                          rand() % vga_get_height(),
-                          rand() % 64);
-        } */
-        ms_sleep(500);
-        vga_text_mode();
-    }
-
 
     else if (str_cmp(prefix, "") != 0)
         fskprint("$3%s $Bis not a valid command.\n", prefix);

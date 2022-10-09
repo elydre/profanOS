@@ -32,11 +32,15 @@
 #define VGA_NUM_AC_REGS 21
 #define VGA_NUM_REGS (1 + VGA_NUM_SEQ_REGS + VGA_NUM_CRTC_REGS + VGA_NUM_GC_REGS + VGA_NUM_AC_REGS)
 
+#define MEM_CPY_BASE 0xA0000
+#define MEM_CPY_SIZE 0x4000
+
 // the vga identifiers
 unsigned int vga_width;     // width of the screen
 unsigned int vga_height;    // height of the screen
 unsigned int vga_bpp;       // bits per pixel
-unsigned int vga_ppm;       // put_pixels method
+unsigned int vga_note;      // mode signature
+unsigned int * framebuffer_segment_copy;
 
 // CREATE THE REGISTER ARRAY TAKEN FROM http://wiki.osdev.org/vga_Hardware
 unsigned char g_320x200x256[] = {
@@ -143,16 +147,16 @@ unsigned get_fb_seg() {
     return seg;
 }
 
-void vmemwr(unsigned dst_off, unsigned char *src, unsigned count) {
-    _vmemwr(get_fb_seg(), dst_off, src, count);
-}
-
 static void vpokeb(unsigned off, unsigned val) {
     pokeb(get_fb_seg(), off, val);
 }
 
 static unsigned vpeekb(unsigned off) {
     return peekb(get_fb_seg(), off);
+}
+
+void mcp(unsigned int *source, unsigned int *dest, int nbytes) {
+    for (int i = 0; i < nbytes; i++) * (dest + i) = * (source + i);
 }
 
 void set_plane(unsigned p) {
@@ -168,49 +172,6 @@ void set_plane(unsigned p) {
     port_byte_out(VGA_SEQ_DATA, pmask);
 }
 
-void write_font(unsigned char *buf, unsigned font_height) {
-    unsigned char seq2, seq4, gc4, gc5, gc6;
-
-    // save registers
-    // set_plane() modifies GC 4 and SEQ 2, so save them as well
-    port_byte_out(VGA_SEQ_INDEX, 2);
-    seq2 = port_byte_in(VGA_SEQ_DATA);
-
-    port_byte_out(VGA_SEQ_INDEX, 4);
-    seq4 = port_byte_in(VGA_SEQ_DATA);
-    // turn off even-odd addressing (set flat addressing)
-    // assume: chain-4 addressing already off
-    port_byte_out(VGA_SEQ_DATA, seq4 | 0x04);
-
-    port_byte_out(VGA_GC_INDEX, 4);
-    gc4 = port_byte_in(VGA_GC_DATA);
-
-    port_byte_out(VGA_GC_INDEX, 5);
-    gc5 = port_byte_in(VGA_GC_DATA);
-    // turn off even-odd addressing
-    port_byte_out(VGA_GC_DATA, gc5 & ~0x10);
-
-    port_byte_out(VGA_GC_INDEX, 6);
-    gc6 = port_byte_in(VGA_GC_DATA);
-    // turn off even-odd addressing
-    port_byte_out(VGA_GC_DATA, gc6 & ~0x02);
-    // write font to plane P4
-    set_plane(2);
-    // write font
-    vmemwr(0, buf, 256 * font_height);
-    // restore registers
-    port_byte_out(VGA_SEQ_INDEX, 2);
-    port_byte_out(VGA_SEQ_DATA, seq2);
-    port_byte_out(VGA_SEQ_INDEX, 4);
-    port_byte_out(VGA_SEQ_DATA, seq4);
-    port_byte_out(VGA_GC_INDEX, 4);
-    port_byte_out(VGA_GC_DATA, gc4);
-    port_byte_out(VGA_GC_INDEX, 5);
-    port_byte_out(VGA_GC_DATA, gc5);
-    port_byte_out(VGA_GC_INDEX, 6);
-    port_byte_out(VGA_GC_DATA, gc6);
-}
-
 /*************************
  * VGA public functions *
 *************************/
@@ -219,14 +180,15 @@ void vga_put_pixel(unsigned x, unsigned y, unsigned c) {
     unsigned off, mask, pmask;
     if (x >= vga_width || y >= vga_height)
         return;
-    else if (vga_ppm == 0) {
+    if (vga_note == 1) {
         vpokeb(vga_width * y + x, c);
     }
-    else if (vga_ppm == 1) {
+    else if (vga_note == 2) {
+        // need to be rewritten faster
         off = vga_width / 8 * y + x / 8;
         mask = 0x80 >> (x & 7) * 1;
         pmask = 1;
-        for(unsigned p = 0; p < 4; p++) {
+        for (unsigned p = 0; p < 4; p++) {
             set_plane(p);
             if (pmask & c) vpokeb(off, vpeekb(off) | mask);
             else vpokeb(off, vpeekb(off) & ~mask);
@@ -242,54 +204,73 @@ void vga_pixel_clear() {
 }
 
 void vga_320_mode() {
+    if (vga_note == 1) return;
+
+    int need_save = !vga_note;
     // setup the vga struct
     vga_width  = 320;
     vga_height = 200;
     vga_bpp    = 256;
-    vga_ppm    = 0;
+    vga_note   = 1;
 
+    // setup the vga registers
     write_registers(g_320x200x256);
+
+    // make copy of framebuffer_segment (for font)
+    if (need_save) {
+        framebuffer_segment_copy = calloc(MEM_CPY_SIZE);
+        mcp((void *) MEM_CPY_BASE, framebuffer_segment_copy, MEM_CPY_SIZE);
+    }
 
     // clears the screen
     vga_pixel_clear();
 }
 
 void vga_640_mode() {
+    if (vga_note == 2) return;
+
+    int need_save = !vga_note;
     // setup the vga struct
     vga_width  = 640;
     vga_height = 480;
     vga_bpp    = 16;
-    vga_ppm    = 1;
+    vga_note   = 2;
 
+    // setup the vga registers
     write_registers(g_640x480x16);
+
+    // make copy of framebuffer_segment (for font)
+    if (need_save) {
+        framebuffer_segment_copy = calloc(MEM_CPY_SIZE);
+        mcp((void *) MEM_CPY_BASE, framebuffer_segment_copy, MEM_CPY_SIZE);
+    }
 
     // clears the screen
     vga_pixel_clear();
 }
 
 void vga_text_mode() {
-    vga_pixel_clear();
-    write_registers(g_80x25_text);
-    vga_width = 80;
+    if (vga_note == 0) return;
+    vga_320_mode();
+
+    // restore the framebuffer_segment
+    mcp(framebuffer_segment_copy, (void *) MEM_CPY_BASE, MEM_CPY_SIZE);
+    free(framebuffer_segment_copy);
+
+    vga_width  = 80;
     vga_height = 25;
-    vga_bpp = 16;
+    vga_bpp    = 16;
+    vga_note   = 0;
 
-    write_font(g_8x16_font, 16);
+    // setup the vga registers
+    write_registers(g_80x25_text);
 
-    // tell the BIOS what we've done, so BIOS text output works OK
-    pokew(0x40, 0x4A, vga_width);           // columns on screen
-    pokew(0x40, 0x4C, vga_width * vga_height * 2); // framebuffer size
-    pokew(0x40, 0x50, 0);                   // cursor pos'n
-    pokeb(0x40, 0x60, vga_bpp - 1);         // cursor shape
-    pokeb(0x40, 0x61, vga_bpp - 2);
-    pokeb(0x40, 0x84, vga_height - 1);      // rows on screen - 1
-    pokeb(0x40, 0x85, vga_bpp);             // char height
-    // set white-on-black attributes for all text
-    for (unsigned i = 0; i < vga_width * vga_height; i++)
-        pokeb(0xB800, i * 2 + 1, 7);
     clear_screen();
 }
 
+/**********************
+ * VGA api functions *
+**********************/
 
 int vga_get_width() {
     return vga_width;
@@ -325,5 +306,13 @@ void vga_draw_line(int x1, int y1, int x2, int y2, unsigned color) {
         vga_put_pixel(x, y, color);
         x += xinc;
         y += yinc;
+    }
+}
+
+void vga_draw_rect(int x, int y, int w, int h, unsigned color) {
+    for (int i = 0; i < w; i++) {
+        for (int j = 0; j < h; j++) {
+            vga_put_pixel(x + i, y + j, color);
+        }
     }
 }

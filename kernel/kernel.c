@@ -33,6 +33,6 @@ void kernel_main() {
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
     // launch of the shell.bin
-    // sys_run_ifexist("/bin/shell.bin", 0);
+    sys_run_ifexist("/bin/shell.bin", 0);
     start_kshell();
 }
