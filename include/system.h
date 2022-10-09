@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "gui-4"
+#define VERSION "gui-5"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c

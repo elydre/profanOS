@@ -1,5 +1,6 @@
 #include <driver/screen.h>
 #include <gui/front.h>
+#include <function.h>
 #include <gui/vga.h>
 #include <ports.h>
 #include <mem.h>
@@ -10,7 +11,6 @@
 #define _vmemwr(DS,DO,S,N)  mem_copy((uint8_t *)((DS) * 16 + (DO)), S, N)
 
 // define the ports, taken from http://files.osdev.org/mirrors/geezer/osd/graphics/modes.c
-#define VGA_ADDRESS 0xA0000
 #define VGA_AC_INDEX 0x3C0
 #define VGA_AC_WRITE 0x3C0
 #define VGA_AC_READ 0x3C1
@@ -23,8 +23,8 @@
 #define VGA_MISC_READ 0x3CC
 #define VGA_GC_INDEX 0x3CE
 #define VGA_GC_DATA 0x3CF
-#define VGA_CRTC_INDEX 0x3D4
-#define VGA_CRTC_DATA 0x3D5
+#define VGA_CRTC_INDEX 0x3D4    // 0x3B4
+#define VGA_CRTC_DATA 0x3D5     // 0x3B5
 #define VGA_INSTAT_READ 0x3DA
 #define VGA_NUM_SEQ_REGS 5
 #define VGA_NUM_CRTC_REGS 25
@@ -196,11 +196,8 @@ void write_font(unsigned char *buf, unsigned font_height) {
     port_byte_out(VGA_GC_DATA, gc6 & ~0x02);
     // write font to plane P4
     set_plane(2);
-    // write font 0
-    for (unsigned i = 0; i < 256; i++) {
-        vmemwr(16384u + i * 32, buf, font_height);
-        buf += font_height;
-    }
+    // write font
+    vmemwr(0, buf, 256 * font_height);
     // restore registers
     port_byte_out(VGA_SEQ_INDEX, 2);
     port_byte_out(VGA_SEQ_DATA, seq2);
@@ -302,7 +299,7 @@ int vga_get_height() {
     return vga_height;
 }
 
-void vga_print(int x, int y, char msg[], int big, unsigned char color) {
+void vga_print(int x, int y, char msg[], int big, unsigned color) {
     unsigned char *glyph, *font;
     font = big ? g_8x16_font : g_8x8_font;
     for (int i = 0; msg[i] != '\0'; i++) {
@@ -313,5 +310,20 @@ void vga_print(int x, int y, char msg[], int big, unsigned char color) {
                 vga_put_pixel(i * 8 + x + 8 - k , y + j, color);
             }
         }
+    }
+}
+
+void vga_draw_line(int x1, int y1, int x2, int y2, unsigned color) {
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+    int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
+    float xinc = dx / (float) steps;
+    float yinc = dy / (float) steps;
+    float x = x1;
+    float y = y1;
+    for (int i = 0; i <= steps; i++) {
+        vga_put_pixel(x, y, color);
+        x += xinc;
+        y += yinc;
     }
 }
