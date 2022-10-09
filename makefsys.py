@@ -2,8 +2,8 @@
 
 from math import ceil
 import itertools
-import os
 import sys
+import os
 
 __DOCUMENTATION__ = """
 0x8000 ==> secteur écrit
