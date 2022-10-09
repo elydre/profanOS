@@ -3,7 +3,7 @@
 
 int main(int arg) {
 
-    char path[] = "/bin/other/bombe.bin";
+    char path[] = "/bin/tools/bombe.bin";
 
     c_fskprint("run: %d\n", arg);
 
