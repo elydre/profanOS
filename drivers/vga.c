@@ -38,7 +38,7 @@ unsigned int   vga_bpp;
 unsigned char *vga_address;
 
 // CREATE THE REGISTER ARRAY TAKEN FROM http://wiki.osdev.org/vga_Hardware
-unsigned char mode_320_200_256[] = {
+unsigned char g_320x200x256[] = {
     0x63, 0x03, 0x01, 0x0F, 0x00, 0x0E, 0x5F, 0x4F,
     0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F, 0x00, 0x41,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9C, 0x0E,
@@ -216,7 +216,7 @@ void vga_pixel_mode() {
     vga_address = (void *) 0xA0000;
 
     // enables the mode 13 state
-    write_registers(mode_320_200_256);
+    write_registers(g_320x200x256);
 
     // clears the screen
     vga_pixel_clear();
