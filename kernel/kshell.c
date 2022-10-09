@@ -1,5 +1,5 @@
-#include <driver/screen.h>
 #include <function.h>
+#include <gui/vga.h>
 #include <system.h>
 #include <string.h>
 #include <time.h>
@@ -77,8 +77,8 @@ void shell_command(char command[]) {
                 vga_put_pixel(i%8 * 40 + j%40, i/8 * 25 + j/40, i);
             }
         }
-        ms_sleep(5000);
-        sys_reboot();
+        ms_sleep(2000);
+        vga_switch_text_mode(0);
     }
 
 

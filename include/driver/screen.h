@@ -50,9 +50,4 @@ int get_offset_col(int offset);
 
 void cursor_blink(int on);
 
-void vga_init();
-void vga_put_pixel(int x, int y, unsigned char color);
-int vga_get_width();
-int vga_get_height();
-
 #endif
