@@ -204,6 +204,16 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+    
+    # transform every image into .img, the format of profanOS
+    liste_images = []
+    for extention in ["jpg"]:
+        liste_images.extend(zapps_file_in_dir("out", extention))
+    for file in liste_images:
+        file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
+        file_extention = file.split(".")[-1]
+        print(f"need to convert {file} who is a .{file_extention} at {file_location}")
+    
     print_and_exec("python3 makefsys.py")
 
 def qemu_run(iso_run = False):
