@@ -42,7 +42,7 @@ unsigned int vga_bpp;       // bits per pixel
 unsigned int vga_note;      // mode signature
 unsigned int * framebuffer_segment_copy;
 
-// CREATE THE REGISTER ARRAY TAKEN FROM http://wiki.osdev.org/vga_Hardware
+// CREATE THE REGISTER ARRAY TAKEN FROM https://wiki.osdev.org/VGA_Hardware
 unsigned char g_320x200x256[] = {
     0x63, 0x03, 0x01, 0x0F, 0x00, 0x0E, 0x5F, 0x4F,
     0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F, 0x00, 0x41,
