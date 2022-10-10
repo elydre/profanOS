@@ -1,5 +1,6 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
+#include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
@@ -128,6 +129,9 @@ int wf_get_func_addr(int func_id) {
         case 84: return (int) vga_draw_rect;
         case 85: return (int) vga_get_width;
         case 86: return (int) vga_get_height;
+
+        // graph2d
+        case 87: return (int) lib2d_print_sprite;
 
         default: return 0;
     }
