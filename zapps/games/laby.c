@@ -68,17 +68,26 @@ int main(int arg) {
             }
         }
     }
+    Sprite_t personnage = {"/zada/perso.img", NULL, NULL, 0, 0, 0, 0};
+    c_lib2d_print_sprite(10, 0, personnage);
 
-    char *sprite_path = "/zada/perso.img";
-    c_lib2d_print_sprite(0, 0, sprite_path);
+    // for (int i = 0; i <c_vga_get_height(); i++) {
+    //     for (int j = 0; j < c_vga_get_width(); j++) {
+    //         c_vga_put_pixel(j, i, 0);
+    //     }
+    // }
 
-    while(1) {
-        int scancode = c_kb_get_scancode();
-        if (scancode == KB_S) {
-            
-        }
-    }
-    
+    // while (1) {
+    //     for (int i = 0; i < hauteur; i++) {
+    //         for (int j = 0; j < longueur; j++) {
+    //             if (map[i][j] == '1') {
+    //                 c_vga_draw_rect(j*10, i*10, 10, 10, 0);
+    //             } else {
+    //                 c_vga_draw_rect(j*10, i*10, 10, 10, 63);
+    //             }
+    //         }
+    //     }
+    // }
     c_vga_text_mode();
 
     // free
@@ -87,5 +96,6 @@ int main(int arg) {
     }
     c_free(map);
     c_free(char_content);
+    c_lib2d_free_sprite(personnage);
     return arg;
 }

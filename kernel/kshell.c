@@ -26,7 +26,7 @@ void start_kshell() {
 }
 
 void shell_so(char suffix[]) {
-    char path[100] = "/bin/";
+    char path[] = "/bin/";
     str_cat(path, suffix);
     str_cat(path, ".bin");
     fskprint("path: %s\n", path);

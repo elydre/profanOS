@@ -48,6 +48,16 @@ extern "C" {
         int year;
         int full[6];
     } time_t;
+
+    typedef struct {
+        char *path;;
+        char **data;
+        char **old_data_buffer;
+        int x;
+        int y;
+        int size_x;
+        int size_y;
+    } Sprite_t;
 }
 #else
     typedef enum ScreenColor ScreenColor;
@@ -86,6 +96,24 @@ extern "C" {
         int year;
         int full[6];
     } time_t;
+
+    typedef struct Sprite_t {
+        char *path;
+        char **data;
+        char **old_data_buffer;
+        int x;
+        int y;
+        int size_x;
+        int size_y;
+    } Sprite_t;
+#endif
+
+#ifndef NULL
+    #ifdef __cplusplus
+        #define NULL 0
+    #else
+        #define NULL ((void *)0)
+    #endif
 #endif
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
@@ -162,5 +190,7 @@ extern "C" {
 #define c_vga_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(84))(x, y, w, h, color)
 #define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
 #define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
-#define c_lib2d_print_sprite(x, y, sprite_path) ((void (*)(int, int, char*)) hi_func_addr(87))(x, y, sprite_path)
+#define c_lib2d_print_sprite(x, y, sprite_path) ((void (*)(int, int, Sprite_t)) hi_func_addr(87))(x, y, sprite_path)
+#define c_lib2d_free_sprite(sprite) ((void (*)(Sprite_t)) hi_func_addr(88))(sprite)
+
 #endif

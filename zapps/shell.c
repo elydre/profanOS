@@ -325,7 +325,8 @@ int shell_command(char command[]) {
         char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
         assemble_path(current_dir, suffix, file);
         c_vga_320_mode();
-        c_lib2d_print_sprite(0, 0, file);
+        Sprite_t sprite = {file, NULL, NULL, 0, 0, 0, 0};
+        c_lib2d_print_sprite(0, 0, sprite);
         while (c_kb_get_scancode() != 1);
         c_vga_text_mode();
         c_free(file);

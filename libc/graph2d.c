@@ -1,3 +1,4 @@
+#include <gui/graph2d.h>
 #include <filesystem.h>
 #include <gui/vga.h>
 #include <string.h>
@@ -5,7 +6,11 @@
 #include <iolib.h>
 #include <mem.h>
 
-void lib2d_print_sprite(int x, int y, char* sprite_path) {
+void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
+    if (sprite.data != NULL) { // si on a déja la data en cache
+        return;
+    }
+    char *sprite_path = sprite.path;
     if (!(fs_does_path_exists(sprite_path) && fs_type_sector(fs_path_to_id(sprite_path, 0)) == 2)) {
         sys_error("Le fichier demandé dans lib2d_print_sprite n'existe pas !");
         return;
@@ -52,6 +57,25 @@ void lib2d_print_sprite(int x, int y, char* sprite_path) {
             vga_put_pixel(l+x, h+y, couleur);
         }
     }
+    // set nouvelles coordonées
+    sprite.x = x;
+    sprite.y = y;
+    sprite.size_x = longueur;
+    sprite.size_y = hauteur;
 
+    // set data
+    sprite.data = calloc(hauteur * sizeof(char));
+    for (int i = 0; i < sprite.size_y; i++) {
+        sprite.data[i] = calloc(longueur * sizeof(char));
+    }
+
+    // free
     free(char_content);
+}
+
+void lib2d_free_sprite(Sprite_t sprite) {
+    for (int i = 0; i < sprite.size_y; i++) {
+        free(sprite.data[i]);
+    }
+    free(sprite.data);
 }

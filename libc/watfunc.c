@@ -132,6 +132,7 @@ int wf_get_func_addr(int func_id) {
 
         // graph2d
         case 87: return (int) lib2d_print_sprite;
+        case 88: return (int) lib2d_free_sprite;
 
         default: return 0;
     }
