@@ -9,14 +9,16 @@
 #define floor_color 0
 #define ceiling_color 3
 
+#define block_size 1
+
 int map[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 0, 0, 0, 0, 0, 0, 1, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 1, 1, 1, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 1, 1, 1, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1
@@ -115,29 +117,44 @@ float sin(float x) {
     return y;
 }
 
+int get_map_inex_in_direction(float x, float y, float rot) {
+    // return the index of the block in the direction of the player
+    float checkx = x;
+    float checky = y;
+
+    while (1) {
+        checkx += cos(rot) * 0.1;
+        checky += sin(rot) * 0.1;
+        int index = (int)checkx + (int)checky * mapsize;
+        if (map[index] == 1) {
+            return index;
+        }
+    }
+
+}
+
+
 void calc_slice_height(int * slice_height, int width, int height, float player_x, float player_y, float rot) {
     // edit slice_height array with the height of each slice of the screen
+    // use the map array to know if there is a wall or not
+    // values in map is a 1 meter cube
+
     for (int i = 0; i < width; i++) {
-        float ray_angle = rot - fov / 2 + fov * i / width;
-        float step_size = 0.1;
-        float distance_to_wall = 0;
-
-        int hit_wall = 0;
-        while (!hit_wall && distance_to_wall < 10) {
-            distance_to_wall += step_size;
-            int test_x = (int)(player_x + cos(ray_angle) * distance_to_wall);
-            int test_y = (int)(player_y + sin(ray_angle) * distance_to_wall);
-
-            if (test_x < 0 || test_x >= mapsize ||
-                test_y < 0 || test_y >= mapsize) {
-                hit_wall = 1;
-                distance_to_wall = 10;
-            } else {
-                if (map[test_x + test_y * mapsize] == 1) {
-                    hit_wall = 1;
-                }
+        float angle = rot - half_fov + (float)i / half_width * fov;
+        float x = player_x;
+        float y = player_y;
+        float distance = 0;
+        while (1) {
+            x += cos(angle) * 0.1;
+            y += sin(angle) * 0.1;
+            distance += 0.1;
+            int x_block = x / block_size;
+            int y_block = y / block_size;
+            if (map[y_block * mapsize + x_block] == 1) {
+                break;
             }
         }
-        slice_height[i] = (int)(height / distance_to_wall);
+        float height = 1 / distance * half_height;
+        slice_height[i] = height;
     }
 }
