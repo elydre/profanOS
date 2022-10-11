@@ -9,7 +9,7 @@
 
 #define player_speed 0.1
 #define rot_speed 2
-#define fov (pi * 2)
+#define fov 30
 
 #define floor_color 0
 #define ceiling_color 3
@@ -50,7 +50,7 @@ int main(int arg) {
     char * buffer = c_malloc(width * height);
 
     c_vga_320_mode();
-    for (int tick = 1; c_kb_get_scancode() != 1; tick = (tick > 62) ? 1 : tick + 1) {
+    for (int tick = 4; c_kb_get_scancode() != 1; tick = (tick > 55) ? 4 : tick + 8) {
         for (int i = 0; i < width; i++) {
             angle = deg_to_rad(rot + (fov / 2) - (fov * i / width));
 
