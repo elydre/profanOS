@@ -197,7 +197,7 @@ void vga_put_pixel(unsigned x, unsigned y, unsigned c) {
     }
 }
 
-void vga_pixel_clear() {
+void vga_clear_screen() {
     for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
         vga_put_pixel(xy % vga_width, xy / vga_width, 0x0F);
     }
@@ -223,7 +223,7 @@ void vga_320_mode() {
     }
 
     // clears the screen
-    vga_pixel_clear();
+    vga_clear_screen();
 }
 
 void vga_640_mode() {
@@ -246,7 +246,7 @@ void vga_640_mode() {
     }
 
     // clears the screen
-    vga_pixel_clear();
+    vga_clear_screen();
 }
 
 void vga_text_mode() {

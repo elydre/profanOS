@@ -6,20 +6,18 @@
 #include <iolib.h>
 #include <mem.h>
 
-void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
-    if (sprite.data != NULL) { // si on a déja la data en cache
-        return;
-    }
-    char *sprite_path = sprite.path;
-    if (!(fs_does_path_exists(sprite_path) && fs_type_sector(fs_path_to_id(sprite_path, 0)) == 2)) {
+Sprite_t lib2d_init_sprite(char *path) {
+    if (!(fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)) {
         sys_error("Le fichier demandé dans lib2d_print_sprite n'existe pas !");
-        return;
+        return (Sprite_t) {"", NULL, 0, 0, 0, 0};
     }
-    uint32_t * file_content = fs_declare_read_array(sprite_path);
-    char * char_content = fs_declare_read_array(sprite_path);
-    fs_read_file(sprite_path, file_content);
+    uint32_t *file_content = fs_declare_read_array(path);
+    char *char_content = fs_declare_read_array(path);
+    fs_read_file(path, file_content);
     int char_count;
+    int file_size = 0;
     for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++) {
+        file_size++;
         char_content[char_count] = (char) file_content[char_count];
     }
     free(file_content);
@@ -41,7 +39,24 @@ void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
     index_char++;
     int hauteur = ascii_to_int(size_hauteur);
     int longueur = ascii_to_int(size_longueur);
+    char *data = calloc(file_size);
+    for (int i=0; i<(file_size-index_char); i++) {
+        data[i] = char_content[i+index_char];
+    }
+    free(char_content);
+    Sprite_t sprite = {path, data, 0, 0, longueur, hauteur};
+    return sprite;
+}
 
+void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
+    if (sprite.data == NULL) { // si on a déja la data en cache
+        sys_error("Le sprite demandé n'a pas été initialisé !");
+        return;
+    }
+    int hauteur = sprite.size_y;
+    int longueur = sprite.size_x;
+    
+    int index_char = 0;
     char couleur_str[3];
     int index_couleur = 0;
     int couleur = 0;
@@ -49,33 +64,16 @@ void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
         for (int l = 0; l<longueur; l++) {
             for (int i=0; i<3; i++) {couleur_str[i] = '\0';}
             index_couleur = 0;
-            while (char_content[index_char] != '|') {
-                couleur_str[index_couleur] = char_content[index_char];
+            while (sprite.data[index_char] != '|') {
+                couleur_str[index_couleur] = sprite.data[index_char];
                 index_couleur++; index_char++;
             } couleur_str[index_couleur] = '\0'; index_char++;
             couleur = ascii_to_int(couleur_str);
-            vga_put_pixel(l+x, h+y, couleur);
+            vga_put_pixel(l+y, h+x, couleur);
         }
     }
-    // set nouvelles coordonées
-    sprite.x = x;
-    sprite.y = y;
-    sprite.size_x = longueur;
-    sprite.size_y = hauteur;
-
-    // set data
-    sprite.data = calloc(hauteur * sizeof(char));
-    for (int i = 0; i < sprite.size_y; i++) {
-        sprite.data[i] = calloc(longueur * sizeof(char));
-    }
-
-    // free
-    free(char_content);
 }
 
 void lib2d_free_sprite(Sprite_t sprite) {
-    for (int i = 0; i < sprite.size_y; i++) {
-        free(sprite.data[i]);
-    }
     free(sprite.data);
 }

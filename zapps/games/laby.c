@@ -1,10 +1,11 @@
 #include "../include/driver/keyboard.h"
 #include "syscall.h"
 
+void draw_map(int hauteur, int longueur, char **map);
+
 int main(int arg) {
-    
     // read file
-    char file_path[] = "/user/map";
+    char file_path[] = "/zada/map";
     if (!(c_fs_does_path_exists(file_path) && c_fs_type_sector(c_fs_path_to_id(file_path, 0)) == 2)) {
         c_fskprint("File not found\n");
         return 0;
@@ -57,20 +58,41 @@ int main(int arg) {
     }
 
     c_vga_320_mode();
+    
+    draw_map(longueur, hauteur, map);
 
-    // draw map
-    for (int i = 0; i < hauteur; i++) {
-        for (int j = 0; j < longueur; j++) {
-            if (map[i][j] == '1') {
-                c_vga_draw_rect(j*10, i*10, 10, 10, 0);
-            } else {
-                c_vga_draw_rect(j*10, i*10, 10, 10, 63);
-            }
+    Sprite_t perso = c_lib2d_init_sprite("/zada/perso.img");
+    int perso_x = 0;
+    int perso_y = 10;
+    c_lib2d_print_sprite(perso_x, perso_y, perso);
+
+    int last_sc = 0;
+    while (last_sc != 1) {
+        while (last_sc == c_kb_get_scancode());
+        last_sc = c_kb_get_scancode();
+        if (last_sc == KB_S && !(map[perso_x/10+1][perso_y/10] == '1')) {
+            perso_x += 10;
+            draw_map(longueur, hauteur, map);
+            c_lib2d_print_sprite(perso_x, perso_y, perso);
+        }
+        if (last_sc == KB_Z && !(map[perso_x/10-1][perso_y/10] == '1')) {
+            perso_x -= 10;
+            draw_map(longueur, hauteur, map);
+            c_lib2d_print_sprite(perso_x, perso_y, perso);
+        }
+        if (last_sc == KB_D && !(map[perso_x/10][perso_y/10+1] == '1')) {
+            perso_y += 10;
+            draw_map(longueur, hauteur, map);
+            c_lib2d_print_sprite(perso_x, perso_y, perso);
+        }
+        if (last_sc == KB_Q && !(map[perso_x/10][perso_y/10-1] == '1')) {
+            perso_y -= 10;
+            draw_map(longueur, hauteur, map);
+            c_lib2d_print_sprite(perso_x, perso_y, perso);
         }
     }
-    Sprite_t personnage = {"/zada/perso.img", NULL, NULL, 0, 0, 0, 0};
-    c_lib2d_print_sprite(10, 0, personnage);
 
+    while (1);
     // for (int i = 0; i <c_vga_get_height(); i++) {
     //     for (int j = 0; j < c_vga_get_width(); j++) {
     //         c_vga_put_pixel(j, i, 0);
@@ -88,14 +110,28 @@ int main(int arg) {
     //         }
     //     }
     // }
+
+    while(1);
     c_vga_text_mode();
 
     // free
+    c_lib2d_free_sprite(perso);
     for (int i = 0; i < hauteur; i++) {
         c_free(map[i]);
     }
     c_free(map);
     c_free(char_content);
-    c_lib2d_free_sprite(personnage);
     return arg;
+}
+
+void draw_map(int hauteur, int longueur, char **map) {
+    for (int i = 0; i < hauteur; i++) {
+        for (int j = 0; j < longueur; j++) {
+            if (map[i][j] == '1') {
+                c_vga_draw_rect(j*10, i*10, 10, 10, 0);
+            } else {
+                c_vga_draw_rect(j*10, i*10, 10, 10, 63);
+            }
+        }
+    }
 }
