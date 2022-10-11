@@ -7,7 +7,7 @@
 #define height_at_1m 3
 #define player_speed 0.3
 #define rot_speed 5
-#define fov (pi / 3)
+#define fov pi
 
 #define floor_color 0
 #define ceiling_color 3
