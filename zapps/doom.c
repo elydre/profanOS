@@ -2,62 +2,77 @@
 
 #define mapsize 10
 #define pi 3.14159
-#define player_speed 0.3
-#define fov (pi / 4)
+#define calc_speed 0.1
+
+#define height_at_1m 3
+#define player_speed 0.1
+#define rot_speed 5
+#define fov (pi * 2)
 
 #define wall_color 4
 #define floor_color 0
 #define ceiling_color 3
 
-#define block_size 1
-
-int map[] = {
+int MAP[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 1, 1, 1, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-float sqrt(float x);
-float get_distance(float x1, float y1, float x2, float y2);
-void calc_slice_height(int * slice_height, int width, int height, float player_x, float player_y, float rot);
+double get_distance(double x, double y, double rad_angle);
 
-float cos(float x);
-float sin(float x);
+double cos(double x);
+double sin(double x);
+
+double deg_to_rad(int x);
 
 int main(int arg) {
     // 2.5D game doom like
-    float x = 5, y = 5, rot = 0;
-    int test = 0;
+    double x = 5, y = 5;
+    double rot = 0; // in degrees
+    char info[100];
+    char temp[5];
+
 
     int width = 320, height = 200;
     int half_height = height / 2;
 
-    int slice_height[width];
+    int center, top, bottom;
+    double part_height;
+
     c_vga_320_mode();
     while (c_kb_get_scancode() != 1) {
-        calc_slice_height(slice_height, width, height, x, y, rot);
         for (int i = 0; i < width; i++) {
-            int center = slice_height[i];
-            int top = half_height - center;
-            int bottom = half_height + center;
+            double angle = deg_to_rad(rot + (fov / 2) - (fov * i / width));
 
-            c_vga_draw_rect(i, 0, 1, top, ceiling_color);
-            c_vga_draw_rect(i, top, 1, center * 2, wall_color);
-            c_vga_draw_rect(i, bottom, 1, height - bottom, floor_color);
+            part_height = height_at_1m / get_distance(x, y, angle);
+            center = (int) (half_height * part_height);
+            top = (int) (half_height - center);
+            bottom = (int) (half_height + center);
+
+            for (int j = 0; j < top; j++) {
+                c_vga_put_pixel(i, j, ceiling_color);
+            }
+            for (int j = top; j < bottom; j++) {
+                c_vga_put_pixel(i, j, wall_color);
+            }
+            for (int j = bottom; j < height; j++) {
+                c_vga_put_pixel(i, j, floor_color);
+            }
         }
         
         if (c_kb_get_scancode() == KB_D) {
-            rot += 0.1;
+            rot += rot_speed;
         }
         if (c_kb_get_scancode() == KB_Q) {
-            rot -= 0.1;
+            rot -= rot_speed;
         }
         if (c_kb_get_scancode() == KB_Z) {
             x += cos(rot) * player_speed;
@@ -67,8 +82,26 @@ int main(int arg) {
             x -= cos(rot) * player_speed;
             y -= sin(rot) * player_speed;
         }
-        test = !test;
-        c_vga_draw_rect(0, 0, 10, 10, test + 5);
+
+        if (rot > 360) rot -= 360;
+        if (rot < 0) rot += 360;
+        if (x < 1) x = 1;
+        if (y < 1) y = 1;
+        if (x > mapsize - 1) x = mapsize - 1;
+        if (y > mapsize - 1) y = mapsize - 1;
+
+        c_str_cpy(info, "x: ");
+        c_int_to_ascii((int) x, temp);
+        c_str_cat(info, temp);
+        c_str_cat(info, " y: ");
+        c_int_to_ascii((int) y, temp);
+        c_str_cat(info, temp);
+        c_str_cat(info, " rot: ");
+        c_int_to_ascii((int) rot, temp);
+        c_str_cat(info, temp);
+        c_vga_print(0, 0, info, 0, 0);
+        
+        c_ms_sleep(20);
     }
 
     c_vga_text_mode();
@@ -76,85 +109,59 @@ int main(int arg) {
     return arg;
 }
 
-float sqrt(float x) {
-    // quake 3
-    float xhalf = 0.5f * x;
-    int i = *(int*)&x;
-    i = 0x5f3759df - (i >> 1);
-    x = *(float*)&i;
-    x = x * (1.5f - xhalf * x * x);
-    return 1 / x;
+double modd(double x, double y) {
+    return x - (int) (x / y) * y;
 }
 
-float get_distance(float x1, float y1, float x2, float y2) {
-    float dx = x1 - x2;
-    float dy = y1 - y2;
-    return sqrt(dx * dx + dy * dy);
+double cos(double x) {
+    // cos of x in radians
+    x = modd(x, pi);
+    return 1 - ((x * x) / (2)) + ((x * x * x * x) / (24)) - ((x * x * x * x * x * x) / (720)) + ((x * x * x * x * x * x * x * x) / (40320)) - ((x * x * x * x * x * x * x * x * x * x) / (3628800)) + ((x * x * x * x * x * x * x * x * x * x * x * x) / (479001600));
 }
 
-int factorial(int n) {
-    if (n == 0) return 1;
-    return n * factorial(n - 1);
+double sin(double x) {
+    // sin of x in radians
+    x = modd(x, pi);
+    return x - ((x * x * x) / (6)) + ((x * x * x * x * x) / (120)) - ((x * x * x * x * x * x * x) / (5040)) + ((x * x * x * x * x * x * x * x * x) / (362880)) - ((x * x * x * x * x * x * x * x * x * x * x) / (39916800)) + ((x * x * x * x * x * x * x * x * x * x * x * x) / (6227020800));
 }
 
-float cos(float x) {
-    // calculate the cos of x
-    int i;
-    float y = 0;
-    for (i = 0; i < 10; i++) {
-        y += c_pow(-1, i) * c_pow(x, 2 * i) / factorial(2 * i);
-    }
-    return y;
+double max(double a, double b) {
+    return (a > b) ? a : b;
 }
 
-float sin(float x) {
-    // calculate the sin of x
-    int i;
-    float y = 0;
-    for (i = 0; i < 10; i++) {
-        y += c_pow(-1, i) * c_pow(x, 2 * i + 1) / factorial(2 * i + 1);
-    }
-    return y;
+double abs(double a) {
+    return (a < 0) ? -a : a;
 }
 
-int get_map_inex_in_direction(float x, float y, float rot) {
-    // return the index of the block in the direction of the player
-    float checkx = x;
-    float checky = y;
+double deg_to_rad(int x) {
+    return x * pi / 180;
+}
 
-    while (1) {
-        checkx += cos(rot) * 0.1;
-        checky += sin(rot) * 0.1;
-        int index = (int)checkx + (int)checky * mapsize;
-        if (map[index] == 1) {
-            return index;
+double get_distance(double x, double y, double rad_angle) {
+    double dx = cos(rad_angle);
+    double dy = sin(rad_angle);
+
+    c_fskprint("cos: %d ", (int) (dx * 100), (int) (dy * 100));
+
+    double px = x;
+    double py = y;
+
+    double distance = 0;
+
+    int cell_x, cell_y;
+
+    for (int i = 0; i < 100; i++) {
+        cell_x = (int) px;
+        cell_y = (int) py;
+
+        if (MAP[cell_y * mapsize + cell_x] == 1) {
+            return distance;
         }
+
+        distance += 1 / max(abs(dx), abs(dy));
+
+        px += dx * calc_speed;
+        py += dy * calc_speed;
     }
-
-}
-
-
-void calc_slice_height(int * slice_height, int width, int height, float player_x, float player_y, float rot) {
-    // edit slice_height array with the height of each slice of the screen
-    // use the map array to know if there is a wall or not
-    // values in map is a 1 meter cube
-
-    for (int i = 0; i < width; i++) {
-        float angle = rot - half_fov + (float)i / half_width * fov;
-        float x = player_x;
-        float y = player_y;
-        float distance = 0;
-        while (1) {
-            x += cos(angle) * 0.1;
-            y += sin(angle) * 0.1;
-            distance += 0.1;
-            int x_block = x / block_size;
-            int y_block = y / block_size;
-            if (map[y_block * mapsize + x_block] == 1) {
-                break;
-            }
-        }
-        float height = 1 / distance * half_height;
-        slice_height[i] = height;
-    }
+    return distance;
 }
