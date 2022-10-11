@@ -11,12 +11,12 @@ int main(int arg) {
     }
     c_vga_print(45, 55, "320x200 - 64 colors (fast)", 1, 0);
     c_ms_sleep(SLEEP_TIME);
-    c_vga_pixel_clear();
+    c_vga_clear_screen();
     c_vga_print(40, 40, "little font", 0, 0);
     c_vga_print(40, 60, "big font", 1, 0);
     c_vga_print(40, 80, "colored print", 1, 4);
     c_ms_sleep(SLEEP_TIME);
-    c_vga_pixel_clear();
+    c_vga_clear_screen();
     for (int i = 0; i < 0x500; i++) {
         c_vga_draw_line(c_rand() % c_vga_get_width(),
                           c_rand() % c_vga_get_height(),

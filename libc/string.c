@@ -138,3 +138,16 @@ char* str_cat(char s1[], const char s2[]) {
     *start = '\0';
     return s1;
 }
+
+void str_delchar(char s[], char c) {
+    int i = 0;
+    while (s[i] != '\0') {
+        if (s[i] == c) {
+            for (int j = i; s[j] != '\0'; j++) {
+                s[j] = s[j+1];
+            }
+        } else {
+            i++;
+        }
+    }
+}

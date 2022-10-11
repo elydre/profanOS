@@ -11,6 +11,42 @@
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)FUNC_ADDR_SAVE)(id)
 
+#define KB_A 16
+#define KB_Z 17
+#define KB_E 18
+#define KB_R 19
+#define KB_T 20
+#define KB_Y 21
+#define KB_U 22
+#define KB_I 23
+#define KB_O 24
+#define KB_P 25
+#define KB_Q 30
+#define KB_S 31
+#define KB_D 32
+#define KB_F 33
+#define KB_G 34
+#define KB_H 35
+#define KB_J 36
+#define KB_K 37
+#define KB_L 38
+#define KB_M 39
+#define KB_N 49
+#define KB_W 44
+#define KB_X 45
+#define KB_C 46
+#define KB_V 47
+#define KB_B 48
+
+#define KB_ESC 1
+#define KB_ALT 56
+#define KB_CTRL 29
+#define KB_SHIFT 42
+#define KB_MAJ 58
+
+#define KB_released_value 128
+#define KB_released(key) key+KB_released_value
+
 #ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir ScreenColor
 extern "C" {
     enum ScreenColor {
@@ -48,6 +84,15 @@ extern "C" {
         int year;
         int full[6];
     } time_t;
+
+    typedef struct {
+        char *path;;
+        char *data;
+        int x;
+        int y;
+        int size_x;
+        int size_y;
+    } Sprite_t;
 }
 #else
     typedef enum ScreenColor ScreenColor;
@@ -86,6 +131,23 @@ extern "C" {
         int year;
         int full[6];
     } time_t;
+
+    typedef struct Sprite_t {
+        char *path;
+        char *data;
+        int x;
+        int y;
+        int size_x;
+        int size_y;
+    } Sprite_t;
+#endif
+
+#ifndef NULL
+    #ifdef __cplusplus
+        #define NULL 0
+    #else
+        #define NULL ((void *)0)
+    #endif
 #endif
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
@@ -155,13 +217,16 @@ extern "C" {
 #define c_vga_320_mode() ((void (*)(void)) hi_func_addr(77))()
 #define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()
 #define c_vga_text_mode() ((void (*)(void)) hi_func_addr(79))()
-#define c_vga_pixel_clear() ((void (*)(void)) hi_func_addr(80))()
+#define c_vga_clear_screen() ((void (*)(void)) hi_func_addr(80))()
 #define c_vga_put_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
 #define c_vga_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(82))(x, y, msg, big, color)
 #define c_vga_draw_line(x1, y1, x2, y2, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(83))(x1, y1, x2, y2, color)
 #define c_vga_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(84))(x, y, w, h, color)
 #define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
 #define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
-
+#define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, Sprite_t)) hi_func_addr(87))(x, y, sprite)
+#define c_lib2d_free_sprite(sprite) ((void (*)(Sprite_t)) hi_func_addr(88))(sprite)
+#define c_lib2d_init_sprite(path) ((Sprite_t (*)(char*)) hi_func_addr(89))(path)
+#define c_str_delchar(s, c) ((void (*)(char*, char)) hi_func_addr(90))(s, c)
 
 #endif
