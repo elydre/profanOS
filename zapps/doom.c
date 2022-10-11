@@ -38,7 +38,6 @@ int main(int arg) {
     double rot = 0; // in degrees
     char temp[5];
 
-
     int width = 320, height = 200;
     int half_height = height / 2;
 
