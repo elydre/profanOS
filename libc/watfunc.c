@@ -1,5 +1,6 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
+#include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
@@ -63,6 +64,7 @@ int wf_get_func_addr(int func_id) {
         case 34: return (int) str_is_in;
         case 35: return (int) str_count;
         case 36: return (int) str_cat;
+        case 90: return (int) str_delchar;
 
         // iolib.h
         case 37: return (int) mskprint;
@@ -121,13 +123,18 @@ int wf_get_func_addr(int func_id) {
         case 77: return (int) vga_320_mode;
         case 78: return (int) vga_640_mode;
         case 79: return (int) vga_text_mode;
-        case 80: return (int) vga_pixel_clear;
+        case 80: return (int) vga_clear_screen;
         case 81: return (int) vga_put_pixel;
         case 82: return (int) vga_print;
         case 83: return (int) vga_draw_line;
         case 84: return (int) vga_draw_rect;
         case 85: return (int) vga_get_width;
         case 86: return (int) vga_get_height;
+
+        // graph2d
+        case 87: return (int) lib2d_print_sprite;
+        case 88: return (int) lib2d_free_sprite;
+        case 89: return (int) lib2d_init_sprite;
 
         default: return 0;
     }

@@ -20,5 +20,7 @@ void  str_end_split(char s[], char delim);
 int   str_is_in(char str[], char thing);
 int   str_count(char str[], char thing);
 char* str_cat(char s1[], const char s2[]);
+void str_delchar(char s[], char c);
+
 
 #endif

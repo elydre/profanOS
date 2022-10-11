@@ -208,7 +208,7 @@ def gen_disk(force=False, with_src=False):
 
     # transform every image into .img, the format of profanOS
     liste_images = []
-    for extention in ["jpg"]:
+    for extention in ["jpg", "png"]:
         liste_images.extend(zapps_file_in_dir("out", extention))
     for file in liste_images:
         file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
