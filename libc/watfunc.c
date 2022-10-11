@@ -64,6 +64,7 @@ int wf_get_func_addr(int func_id) {
         case 34: return (int) str_is_in;
         case 35: return (int) str_count;
         case 36: return (int) str_cat;
+        case 90: return (int) str_delchar;
 
         // iolib.h
         case 37: return (int) mskprint;

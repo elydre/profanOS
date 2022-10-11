@@ -50,12 +50,6 @@ int main(int arg) {
             map[i][j] = char_content[i * longueur + j];
         }
     }
-    for (int i = 0; i < hauteur; i++) {
-        for (int j = 0; j < longueur; j++) {
-            c_fskprint("%c", map[i][j]);
-        }
-        c_fskprint("\n");
-    }
 
     c_vga_320_mode();
     
@@ -70,48 +64,40 @@ int main(int arg) {
     while (last_sc != 1) {
         while (last_sc == c_kb_get_scancode());
         last_sc = c_kb_get_scancode();
-        if (last_sc == KB_S && !(map[perso_x/10+1][perso_y/10] == '1')) {
+        if (last_sc == KB_S && (map[perso_x/10+1][perso_y/10] == '0')) {
             perso_x += 10;
             draw_map(longueur, hauteur, map);
             c_lib2d_print_sprite(perso_x, perso_y, perso);
         }
-        if (last_sc == KB_Z && !(map[perso_x/10-1][perso_y/10] == '1')) {
+        if (last_sc == KB_Z && (map[perso_x/10-1][perso_y/10] == '0')) {
             perso_x -= 10;
             draw_map(longueur, hauteur, map);
             c_lib2d_print_sprite(perso_x, perso_y, perso);
         }
-        if (last_sc == KB_D && !(map[perso_x/10][perso_y/10+1] == '1')) {
+        if (last_sc == KB_D && (map[perso_x/10][perso_y/10+1] == '0')) {
             perso_y += 10;
             draw_map(longueur, hauteur, map);
             c_lib2d_print_sprite(perso_x, perso_y, perso);
         }
-        if (last_sc == KB_Q && !(map[perso_x/10][perso_y/10-1] == '1')) {
+        if (last_sc == KB_Q && (map[perso_x/10][perso_y/10-1] == '0')) {
             perso_y -= 10;
             draw_map(longueur, hauteur, map);
             c_lib2d_print_sprite(perso_x, perso_y, perso);
         }
+        if (last_sc == KB_D && (map[perso_x/10][perso_y/10+1] == '2')) {
+            perso_y += 10;
+            draw_map(longueur, hauteur, map);
+            c_lib2d_print_sprite(perso_x, perso_y, perso);
+            for (int i=0; i < 10; i++) {
+                for (int j=0; j<10; j++) {
+                    c_vga_print(25*i, 25*j, "GG !", 1, 36);
+                }
+            }
+            c_ms_sleep(1000);
+            break;
+        }
     }
 
-    while (1);
-    // for (int i = 0; i <c_vga_get_height(); i++) {
-    //     for (int j = 0; j < c_vga_get_width(); j++) {
-    //         c_vga_put_pixel(j, i, 0);
-    //     }
-    // }
-
-    // while (1) {
-    //     for (int i = 0; i < hauteur; i++) {
-    //         for (int j = 0; j < longueur; j++) {
-    //             if (map[i][j] == '1') {
-    //                 c_vga_draw_rect(j*10, i*10, 10, 10, 0);
-    //             } else {
-    //                 c_vga_draw_rect(j*10, i*10, 10, 10, 63);
-    //             }
-    //         }
-    //     }
-    // }
-
-    while(1);
     c_vga_text_mode();
 
     // free
@@ -127,10 +113,14 @@ int main(int arg) {
 void draw_map(int hauteur, int longueur, char **map) {
     for (int i = 0; i < hauteur; i++) {
         for (int j = 0; j < longueur; j++) {
-            if (map[i][j] == '1') {
-                c_vga_draw_rect(j*10, i*10, 10, 10, 0);
-            } else {
+            if (map[i][j] == '0') {
                 c_vga_draw_rect(j*10, i*10, 10, 10, 63);
+            } else if (map[i][j] == '1') {
+                c_vga_draw_rect(j*10, i*10, 10, 10, 0);
+            } else if (map[i][j] == '2') {
+                c_vga_draw_rect(j*10, i*10, 10, 10, 2);
+            } else {
+                // unknown
             }
         }
     }

@@ -328,6 +328,7 @@ int shell_command(char command[]) {
         Sprite_t sprite = c_lib2d_init_sprite(file);
         c_lib2d_print_sprite(0, 0, sprite);
         while (c_kb_get_scancode() != 1);
+        c_lib2d_free_sprite(sprite);
         c_vga_text_mode();
         c_free(file);
     }
