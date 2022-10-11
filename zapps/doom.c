@@ -5,9 +5,11 @@
 #define calc_speed 0.5
 
 #define height_at_1m 3
-#define player_speed 0.3
-#define rot_speed 5
-#define fov pi
+#define minimap_size 4
+
+#define player_speed 0.1
+#define rot_speed 2
+#define fov (pi * 2)
 
 #define floor_color 0
 #define ceiling_color 3
@@ -22,10 +24,11 @@ int MAP[] = {
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-    2, 7, 7, 7, 7, 7, 7, 7, 7, 7
+    2, 7, 7, 7, 1, 7, 7, 7, 7, 7
 };
 
 double get_distance(double x, double y, double rad_angle, int * color);
+void draw_rect_buffer(int x, int y, int width, int height, int color, int buffer_width, char * buffer);
 
 double cos(double x);
 double sin(double x);
@@ -36,35 +39,46 @@ int main(int arg) {
     // 2.5D game doom like
     double x = 5, y = 5;
     double rot = 0; // in degrees
-    char temp[5];
 
     int width = 320, height = 200;
     int half_height = height / 2;
 
     int center, top, bottom;
-    double part_height;
+    double angle;
 
     int color;
+    char * buffer = c_malloc(width * height);
 
     c_vga_320_mode();
-    while (c_kb_get_scancode() != 1) {
+    for (int tick = 1; c_kb_get_scancode() != 1; tick = (tick > 62) ? 1 : tick + 1) {
         for (int i = 0; i < width; i++) {
-            double angle = deg_to_rad(rot + (fov / 2) - (fov * i / width));
+            angle = deg_to_rad(rot + (fov / 2) - (fov * i / width));
 
-            part_height = height_at_1m / get_distance(x, y, angle, &color);
-            center = (int) (half_height * part_height);
+            center = (int) (half_height * height_at_1m / get_distance(x, y, angle, &color));
             top = (int) (half_height - center);
             bottom = (int) (half_height + center);
 
-            for (int j = 0; j < top; j++) {
-                c_vga_put_pixel(i, j, ceiling_color);
+            for (int j = 0; j < height; j++) {
+                if (j < top) buffer[i + j * width] = ceiling_color;
+                else if (j > bottom) buffer[i + j * width] = floor_color;
+                else buffer[i + j * width] = color;
             }
-            for (int j = top; j < bottom; j++) {
-                c_vga_put_pixel(i, j, color);
+        }
+
+        for (int i = 0; i < mapsize; i++) {
+            for (int j = 0; j < mapsize; j++) {
+                draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size, minimap_size, MAP[i + j * mapsize], width, buffer);
+                if (i == (int) x && j == (int) y)
+                    draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size, minimap_size, 36, width, buffer);
+                if (i == (int) (x + cos(deg_to_rad(rot)) * 2) && j == (int) (y + sin(deg_to_rad(rot)) * 2))
+                    draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size / 2, minimap_size / 2, 61, width, buffer);
             }
-            for (int j = bottom; j < height; j++) {
-                c_vga_put_pixel(i, j, floor_color);
-            }
+        }
+
+        draw_rect_buffer(width - 5, 0, 5, 5, tick, width, buffer);
+
+        for (int i = 0; i < width * height; i++) {
+            c_vga_put_pixel(i % width, i / width, buffer[i]);
         }
         
         if (c_kb_get_scancode() == KB_D) {
@@ -88,20 +102,6 @@ int main(int arg) {
         if (y < 1) y = 1;
         if (x > mapsize - 2) x = mapsize - 2;
         if (y > mapsize - 2) y = mapsize - 2;
-
-        // draw minimap
-        for (int i = 0; i < mapsize * mapsize; i++) {
-            c_vga_draw_rect(width - mapsize * 2 + i % mapsize * 2, i / mapsize * 2, 2, 2, MAP[i]);
-        }
-
-        // draw player
-        c_vga_draw_rect(width - mapsize * 2 + (int) x * 2, (int) y * 2, 2, 2, 63);
-
-        // draw player direction
-        c_vga_draw_rect(width - mapsize * 2 + (int) (x + cos(deg_to_rad(rot)) * 2) * 2, (int) (y + sin(deg_to_rad(rot)) * 2) * 2, 2, 2, 61);
-
-        c_int_to_ascii((int) rot, temp);
-        c_vga_print(width - 30, height - 10, temp, 0, 63);
 
         c_ms_sleep(20);
     }
@@ -137,6 +137,14 @@ double abs(double a) {
 
 double deg_to_rad(int x) {
     return x * pi / 180;
+}
+
+void draw_rect_buffer(int x, int y, int width, int height, int color, int buffer_width, char * buffer) {
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            buffer[(x + i) + (y + j) * buffer_width] = color;
+        }
+    }
 }
 
 double get_distance(double x, double y, double rad_angle, int * color) {
