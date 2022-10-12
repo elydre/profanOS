@@ -1,18 +1,19 @@
 #include "syscall.h"
 
-#define mapsize 10
-#define pi 3.14159
-#define calc_speed 0.5
+#define MAP_SIZE 10
+#define PI 3.14159
+#define CALC_SPEED 0.4
+#define MATH_LOOP 10
 
-#define height_at_1m 3
-#define minimap_size 4
+#define BLOCK_HEIGHT 5
+#define MINIMAP_SIZE 4
 
-#define player_speed 0.1
-#define rot_speed (pi / 25)
-#define fov (pi / 4)
+#define PLAYER_SPEED 0.1
+#define ROT_SPEED (PI / 25)
+#define FOV (PI / 4)
 
-#define floor_color 0
-#define ceiling_color 3
+#define FLOOR_COLOR 0
+#define CEILING_COLOR 3
 
 int MAP[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 6,
@@ -55,26 +56,26 @@ int main(int arg) {
     c_vga_320_mode();
     for (int tick = 4; c_kb_get_scancode() != 1; tick = (tick > 55) ? 4 : tick + 8) {
         for (int i = 0; i < width; i++) {
-            angle = rot + (fov / 2) - (fov * i / width);
+            angle = rot + (FOV / 2) - (FOV * i / width);
 
-            center = (int) (half_height * height_at_1m / get_distance(x, y, angle, &color));
+            center = (int) (half_height * BLOCK_HEIGHT / get_distance(x, y, angle, &color));
             top = (int) (half_height - center);
             bottom = (int) (half_height + center);
 
             for (int j = 0; j < height; j++) {
-                if (j < top) buffer[i + j * width] = ceiling_color;
-                else if (j > bottom) buffer[i + j * width] = floor_color;
+                if (j < top) buffer[i + j * width] = CEILING_COLOR;
+                else if (j > bottom) buffer[i + j * width] = FLOOR_COLOR;
                 else buffer[i + j * width] = color;
             }
         }
 
-        for (int i = 0; i < mapsize; i++) {
-            for (int j = 0; j < mapsize; j++) {
-                draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size, minimap_size, MAP[i + j * mapsize], width, buffer);
+        for (int i = 0; i < MAP_SIZE; i++) {
+            for (int j = 0; j < MAP_SIZE; j++) {
+                draw_rect_buffer(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, MAP[i + j * MAP_SIZE], width, buffer);
                 if (i == (int) x && j == (int) y)
-                    draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size, minimap_size, 36, width, buffer);
+                    draw_rect_buffer(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 36, width, buffer);
                 if (i == (int) (x + cos(rot) * 2) && j == (int) (y + sin(rot) * 2))
-                    draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size / 2, minimap_size / 2, 61, width, buffer);
+                    draw_rect_buffer(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 61, width, buffer);
             }
         }
 
@@ -86,6 +87,9 @@ int main(int arg) {
 
         if (last_key != c_kb_get_scancode()) {
             last_key = c_kb_get_scancode();
+            if (last_key == KB_ESC) {
+                for (int i = 0; i < 20; i++) key_buffer[i] = 0;
+            }
             if (last_key < KB_released_value && !(val_in_buffer(last_key, 20, key_buffer))) {
                 add_to_buffer(last_key, key_buffer);
             } else if (last_key >= KB_released_value) {
@@ -94,24 +98,24 @@ int main(int arg) {
         }
         
         if (val_in_buffer(KB_Q, 20, key_buffer)) {
-            rot += rot_speed;
+            rot += ROT_SPEED;
         }
         if (val_in_buffer(KB_D, 20, key_buffer)) {
-            rot -= rot_speed;
+            rot -= ROT_SPEED;
         }
         if (val_in_buffer(KB_Z, 20, key_buffer)) {
-            x += cos(rot) * player_speed;
-            y += sin(rot) * player_speed;
+            x += cos(rot) * PLAYER_SPEED;
+            y += sin(rot) * PLAYER_SPEED;
         }
         if (val_in_buffer(KB_S, 20, key_buffer)) {
-            x -= cos(rot) * player_speed;
-            y -= sin(rot) * player_speed;
+            x -= cos(rot) * PLAYER_SPEED;
+            y -= sin(rot) * PLAYER_SPEED;
         }
 
         if (x < 1) x = 1;
         if (y < 1) y = 1;
-        if (x > mapsize - 2) x = mapsize - 2;
-        if (y > mapsize - 2) y = mapsize - 2;
+        if (x > MAP_SIZE - 2) x = MAP_SIZE - 2;
+        if (y > MAP_SIZE - 2) y = MAP_SIZE - 2;
 
         c_ms_sleep(10);
     }
@@ -133,14 +137,28 @@ double modd(double x, double y) {
 
 double cos(double x) {
     // cos of x in radians
-    x = modd(x, pi);
-    return 1 - ((x * x) / (2)) + ((x * x * x * x) / (24)) - ((x * x * x * x * x * x) / (720));
+    double res = 1;
+    double pow = 1;
+    double fact = 1;
+    for (int i = 0; i < MATH_LOOP; i++) {
+        pow *= -1 * x * x;
+        fact *= (2 * i + 1) * (2 * i + 2);
+        res += pow / fact;
+    }
+    return res;
 }
 
 double sin(double x) {
     // sin of x in radians
-    x = modd(x, pi);
-    return x - ((x * x * x) / (6)) + ((x * x * x * x * x) / (120)) - ((x * x * x * x * x * x * x) / (5040));
+    double res = x;
+    double pow = x;
+    double fact = 1;
+    for (int i = 0; i < MATH_LOOP; i++) {
+        pow *= -1 * x * x;
+        fact *= (2 * i + 2) * (2 * i + 3);
+        res += pow / fact;
+    }
+    return res;    
 }
 
 double max(double a, double b) {
@@ -199,15 +217,15 @@ double get_distance(double x, double y, double rad_angle, int * color) {
         cell_x = (int) px;
         cell_y = (int) py;
 
-        if (MAP[cell_y * mapsize + cell_x]) {
-            * color = MAP[cell_y * mapsize + cell_x];
+        if (MAP[cell_y * MAP_SIZE + cell_x]) {
+            * color = MAP[cell_y * MAP_SIZE + cell_x];
             return distance;
         }
 
         distance += 1 / max(abs(dx), abs(dy));
 
-        px += dx * calc_speed;
-        py += dy * calc_speed;
+        px += dx * CALC_SPEED;
+        py += dy * CALC_SPEED;
     }
     * color = 0;
     return distance;
