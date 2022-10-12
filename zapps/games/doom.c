@@ -116,8 +116,8 @@ int main(int arg) {
         if (x > MAP_SIZE - 2) x = MAP_SIZE - 2;
         if (y > MAP_SIZE - 2) y = MAP_SIZE - 2;
 
-        // if (rot < 0) rot += 2 * PI;
-        // if (rot > 2 * PI) rot -= 2 * PI;
+        if (rot > PI) rot -= 2 * PI;
+        if (rot < -PI) rot += 2 * PI;
 
         c_ms_sleep(10);
     }
