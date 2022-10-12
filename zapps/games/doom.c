@@ -2,10 +2,9 @@
 
 #define MAP_SIZE 10
 #define PI 3.14159
-#define CALC_SPEED 0.4
 #define MATH_LOOP 7
 
-#define BLOCK_HEIGHT 5
+#define BLOCK_HEIGHT 1
 #define MINIMAP_SIZE 4
 
 #define PLAYER_SPEED 0.1
@@ -22,9 +21,9 @@ int MAP[] = {
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-    2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
+    2, 0, 0, 0, 0, 0, 9, 0, 0, 6,
+    2, 0, 0, 0, 0, 0, 9, 0, 0, 6,
+    2, 0, 0, 0, 0, 0, 9, 0, 0, 6,
     2, 7, 7, 7, 9, 7, 7, 7, 7, 7
 };
 
@@ -117,8 +116,8 @@ int main(int arg) {
         if (x > MAP_SIZE - 2) x = MAP_SIZE - 2;
         if (y > MAP_SIZE - 2) y = MAP_SIZE - 2;
 
-        if (rot < 0) rot += 2 * PI;
-        if (rot > 2 * PI) rot -= 2 * PI;
+        // if (rot < 0) rot += 2 * PI;
+        // if (rot > 2 * PI) rot -= 2 * PI;
 
         c_ms_sleep(10);
     }
@@ -129,13 +128,6 @@ int main(int arg) {
     c_free(key_buffer);
 
     return arg;
-}
-
-double modd(double x, double y) {
-    // mod function for double and negative numbers
-    double res = x - (int) (x / y) * y;
-    if (res < 0) res += y;
-    return res;
 }
 
 double cos(double x) {
@@ -209,27 +201,18 @@ double get_distance(double x, double y, double rad_angle, int * color) {
     double dx = cos(rad_angle);
     double dy = sin(rad_angle);
 
-    double px = x;
-    double py = y;
-
     double distance = 0;
-
-    int cell_x, cell_y;
-
-    for (int i = 0; i < 100; i++) {
-        cell_x = (int) px;
-        cell_y = (int) py;
-
-        if (MAP[cell_y * MAP_SIZE + cell_x]) {
-            * color = MAP[cell_y * MAP_SIZE + cell_x];
+    while (1) {
+        distance += 0.1;
+        int map_x = (int) (x + dx * distance);
+        int map_y = (int) (y + dy * distance);
+        if (map_x < 0 || map_x >= MAP_SIZE || map_y < 0 || map_y >= MAP_SIZE) {
+            *color = 0;
             return distance;
         }
-
-        distance += 1 / max(abs(dx), abs(dy));
-
-        px += dx * CALC_SPEED;
-        py += dy * CALC_SPEED;
+        if (MAP[map_x + map_y * MAP_SIZE] > 0) {
+            *color = MAP[map_x + map_y * MAP_SIZE];
+            return distance;
+        }
     }
-    * color = 0;
-    return distance;
 }
