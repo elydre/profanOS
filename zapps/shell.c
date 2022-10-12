@@ -12,7 +12,6 @@ int shell_command(char command[]);
 void gpd();
 
 int main(int arg) {
-
     char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
     last_buffer[0] = '\0';
     while (1) {
@@ -34,7 +33,6 @@ void assemble_path(char old[], char new[], char result[]) {
 }
 
 void shell_ls(char path[]) {
-
     char ls_path[256];
     if (path[0] == '\0') c_str_cpy(ls_path, current_dir);
     else assemble_path(current_dir, path, ls_path);
@@ -65,7 +63,6 @@ void shell_ls(char path[]) {
 }
 
 void print_scancodes() {
-
     c_clear_screen();
     c_rainbow_print("enter scancode press ESC to exit\n");
     int last_sc = 0;
@@ -86,10 +83,10 @@ void print_scancodes() {
 }
 
 void print_time() {
-
-    c_fskprint("$4UTC time:   ");
+    c_fskprint("$4FR time:    ");
     time_t time;
     c_time_get(&time);
+    c_time_jet_lag(&time);
     char tmp[3];
     for (int i = 2; i >= 0; i--) {
         c_int_to_ascii(time.full[i], tmp);
@@ -103,11 +100,10 @@ void print_time() {
         c_fskprint("$1%s$7/", tmp);
     }
     c_kprint_backspace();
-    c_fskprint("$4\nunix time:  $1%d\n", c_time_calc_unix(&time));
+    c_fskprint("$4\nunix time:  $1%d\n", c_time_gen_unix());
 }
 
 void show_disk_LBA(char suffix[]) {
-
     int LBA = 0;
     if (c_str_cmp(suffix, "ss") != 0) LBA = c_ascii_to_int(suffix);
     uint32_t outbytes[128];
@@ -121,7 +117,6 @@ void show_disk_LBA(char suffix[]) {
 }
 
 void shell_tree(char path[], int rec) {
-
     int elm_count = c_fs_get_folder_size(path);
     string_20_t *out_list = c_malloc(elm_count * sizeof(string_20_t));
     uint32_t *out_type = c_malloc(elm_count * sizeof(uint32_t));
@@ -148,7 +143,6 @@ void shell_tree(char path[], int rec) {
 }
 
 void shell_cat(char fpath[], char suffix[]) {
-
     char *file = c_malloc(c_str_len(suffix) + c_str_len(fpath) + 2);
     assemble_path(fpath, suffix, file);
     if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
@@ -167,30 +161,7 @@ void shell_cat(char fpath[], char suffix[]) {
     c_free(file);
 }
 
-void usage() {
-
-    int refresh_time[5], lvl[3] = {10, 5, 2};
-    ScreenColor colors[3] = {c_dred, c_red, c_yellow};
-    c_kprint(" ");
-    
-    c_timer_get_refresh_time(refresh_time);
-    for (int ligne = 0; ligne < 3; ligne++) {
-        for (int i = 0; i < 5; i++) {
-            if (refresh_time[i] >= lvl[ligne]) c_ckprint("#", colors[ligne]);
-            else c_kprint(" ");
-        }
-        c_kprint("\n ");
-    }
-    for (int i = 0; i < 5; i++) {
-        if (refresh_time[i] < 10 && refresh_time[i] >= 0)
-            c_fskprint("$1%d", refresh_time[i]);
-        else c_ckprint("#", c_green);
-    }
-    c_kprint("\n");
-}
-
 void gpd() {
-
     for (int i = c_str_len(current_dir); i > 0; i--) {
         if (current_dir[i] == '/' || i == 1) {
             current_dir[i] = '\0';
@@ -200,7 +171,6 @@ void gpd() {
 }
 
 int shell_command(char command[]) {
-
     char *prefix = c_malloc(c_str_len(command)); // size of char is 1 octet
     char *suffix = c_malloc(c_str_len(command));
 
@@ -226,7 +196,6 @@ int shell_command(char command[]) {
     else if (c_str_cmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (c_str_cmp(prefix, "stop") == 0)   c_sys_shutdown();
     else if (c_str_cmp(prefix, "tree") == 0)   shell_tree(current_dir, 0);
-    else if (c_str_cmp(prefix, "usg") == 0)    usage();
     else if (c_str_cmp(prefix, "yield") == 0)  c_yield((c_str_cmp(suffix, "yield") == 0) ? 1 : c_ascii_to_int(suffix));
 
 
@@ -343,7 +312,6 @@ int shell_command(char command[]) {
 }
 
 void parse_path(char path[], string_20_t liste_path[]) {
-
     int index = 0;
     int index_in_str = 0;
     for (int i = 0; i < c_str_len(path); i++) {

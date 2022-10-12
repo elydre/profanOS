@@ -203,7 +203,7 @@ extern "C" {
 #define c_sys_reboot() ((void (*)(void)) hi_func_addr(62))()
 #define c_ata_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
 #define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
-#define c_timer_get_refresh_time(target) ((void (*)(int *)) hi_func_addr(66))(target)
+#define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
 #define c_sys_run_binary(fileName, arg) ((int (*)(char *, int)) hi_func_addr(69))(fileName, arg)

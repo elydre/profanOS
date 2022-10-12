@@ -40,32 +40,23 @@ You can also download the build images from the repo [profanOS-build](https://gi
 or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
-### Command line
 
-| command | description                     |
-|---------|---------------------------------|
-| alloc    | allocate *suffix* ko           |
-| cat     | print file *suffix*             |
-| cd      | change directory to *suffix*    |
-| clear   | clear the screen                |
-| echo    | print the arguments             |
-| free    | free *suffix* address           |
-| gpd     | get to the parent directory     |
-| help    | show this help                  |
-| info    | show time, task & page info     |
-| ls      | list the current directory      |
-| mem     | show MLIST with colors          |
-| mkdir   | create a new folder *suffix*    |
-| mkfile  | create a new file *suffix*      |
-| reboot  | reboot the system               |
-| sc      | show the scancodes              |
-| sleep   | sleep for a given time          |
-| ss      | show int32 in the LBA *suffix*  |
-| stop    | shutdown the system             |
-| tree    | show the current directory tree |
-| udisk   | show used disk space            |
-| usg     | show the usage of cpu           |
-| yield   | yield to pid *suffix*"          |
+### shell.bin help
+
+```
+alloc   - allocate * ko                mem     - show MLIST with colors
+cat     - print file *                 mkdir   - create a new folder *
+cd      - change dir to *              mkfile  - create a new file *
+clear   - clear the screen             reboot  - reboot the system
+echo    - print the arguments          sc      - show the scancodesshow
+exit    - exit of the shell app        show    - show image in the screen
+free    - free * address               sleep   - sleep for a given time
+info    - show time, task & page       ss      - show int in the LBA *
+go      - start * file as binary       stop    - shutdown the system
+gpd     - get to the parent dir        tree    - show current dir tree
+help    - show this help               udisk   - show used disk space
+ls      - list the current dir         yield   - yield to pid *
+```
 
 ### Smart print color
 

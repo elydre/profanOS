@@ -78,7 +78,7 @@ int wf_get_func_addr(int func_id) {
         case 43: return (int) sleep;
         case 44: return (int) ms_sleep;
         case 45: return (int) time_get_boot;
-        case 66: return (int) timer_get_refresh_time;
+        case 66: return (int) time_jet_lag;
         case 71: return (int) time_calc_unix;
         case 70: return (int) time_get;
         case 72: return (int) timer_get_tick;

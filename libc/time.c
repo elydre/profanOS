@@ -1,28 +1,39 @@
 #include <driver/rtc.h>
 #include <cpu/timer.h>
-#include <filesystem.h>
 #include <string.h>
 #include <system.h>
-#include <mem.h>
-#include <iolib.h>
 #include <time.h>
+#include <mem.h>
+
+#define seconde_in_year 31536000
+#define seconde_in_leap_year 31622400
+#define seconde_in_day 86400
+#define seconde_in_hour 3600
+#define seconde_in_minute 60
+#define start_year 1970
+#define century 2000
 
 static int boot_time;
+static int seconde_in_month[] = {
+    0,
+    2678400,
+    5097600,
+    7776000,
+    10368000,
+    13046400,
+    15638400,
+    18316800,
+    20995200,
+    23587200,
+    26265600,
+    28857600
+};
 
 int is_leap_year(int year) {
     return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
 int time_calc_unix(time_t *time) {
-    int seconde_in_year = 31536000;
-    int seconde_in_leap_year = 31622400;
-    int seconde_in_month[12] = {0, 2678400, 5097600, 7776000, 10368000, 13046400, 15638400, 18316800, 20995200, 23587200, 26265600, 28857600};
-    int seconde_in_day = 86400;
-    int seconde_in_hour = 3600;
-    int seconde_in_minute = 60;
-
-    int start_year = 1970;
-    int century = 2000;
     int unix_time = 0;
 
     for (int i = start_year; i < time->full[5] + century; i++) {
@@ -41,24 +52,47 @@ int time_calc_unix(time_t *time) {
 int time_gen_unix() {
     time_t time;
     time_get(&time);
-    // TODO : faire un parseur de settings + save proprement
-    char *path = "/user/settings";
-    uint32_t *settings = fs_declare_read_array(path);
-    fs_read_file(path, settings);
-    char * char_content = fs_declare_read_array(path);
-    int char_count;
-    for (char_count = 0; settings[char_count] != (uint32_t) -1; char_count++)
-        char_content[char_count] = (char) settings[char_count];
-    char_content[char_count] = '\0';
-    int decalage = 0;
-    char nb[3];
-    nb[0] = char_content[1]; nb[1] = char_content[2]; nb[2] = '\0';
-    decalage = ascii_to_int(nb);
-    if (char_content[0] == '-') decalage = -decalage; 
-    // TODO : ajouter le décalage a l'heure correctement
-    free(char_content);
-    free(settings);
     return time_calc_unix(&time);
+}
+
+void time_add(time_t *time, int seconde) {
+    // add seconde to current time
+    time->full[0] += seconde;
+    while (time->full[0] >= seconde_in_minute) {
+        time->full[0] -= seconde_in_minute;
+        time->full[1]++;
+    }
+    while (time->full[1] >= 60) {
+        time->full[1] -= 60;
+        time->full[2]++;
+    }
+    while (time->full[2] >= 24) {
+        time->full[2] -= 24;
+        time->full[3]++;
+    }
+
+    int year = time->full[5] + century;
+    while (time->full[3] > (is_leap_year(year) ? 366 : 365)) {
+        time->full[3] -= is_leap_year(year) ? 366 : 365;
+        time->full[5]++;
+        year++;
+    }
+
+    int month = time->full[4];
+    while (time->full[3] > (is_leap_year(year) ? seconde_in_leap_year : seconde_in_year) / seconde_in_day) {
+        time->full[3] -= (is_leap_year(year) ? seconde_in_leap_year : seconde_in_year) / seconde_in_day;
+        time->full[5]++;
+        year++;
+    }
+    while (time->full[3] > seconde_in_month[month] / seconde_in_day) {
+        time->full[3] -= seconde_in_month[month] / seconde_in_day;
+        time->full[4]++;
+        month++;
+    }
+}
+
+void time_jet_lag(time_t *time) {
+    time_add(time, sys_get_setting("jetlag") * 3600);
 }
 
 void sleep(int seconds) {

@@ -2,6 +2,7 @@
 #include <gui/font.h>
 #include <function.h>
 #include <gui/vga.h>
+#include <system.h>
 #include <ports.h>
 #include <mem.h>
 
@@ -180,7 +181,10 @@ void vga_put_pixel(unsigned x, unsigned y, unsigned c) {
     unsigned off, mask, pmask;
     if (x >= vga_width || y >= vga_height)
         return;
-    if (vga_note == 1) {
+    else if (vga_note == 0) {
+        sys_error("Cannot put pixel in text mode");
+    }
+    else if (vga_note == 1) {
         vpokeb(vga_width * y + x, c);
     }
     else if (vga_note == 2) {
