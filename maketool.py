@@ -140,6 +140,8 @@ def build_zapps():
 
     cprint(COLOR_INFO, "building zapps...")
     zapps_list = zapps_file_in_dir("zapps", ".c") + zapps_file_in_dir("zapps", ".cpp")
+    zapps_list = [x for x in zapps_list if not x.startswith("zapps/Projets")]
+    print(zapps_list)
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
@@ -205,6 +207,9 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+    cprint(COLOR_INFO, "Delete every copy of projects")
+    for dossier in os.listdir(f"./{OUT_DIR}/disk/bin/Projets"):
+        print_and_exec(f"rm -r {OUT_DIR}/disk/bin/Projets/{dossier}/*")
 
     # transform every image into .img, the format of profanOS
     liste_images = []
@@ -213,7 +218,6 @@ def gen_disk(force=False, with_src=False):
     for file in liste_images:
         file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
         file_name = file.split("/")[-1].split(".")[0]
-        print(f"{file_name=} {file_location=}")
         
         # on transforme l'image en une liste de couleurs 6 bits
         image = PIL.Image.open(file)
