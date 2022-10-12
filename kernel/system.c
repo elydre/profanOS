@@ -92,7 +92,7 @@ int sys_run_binary(char path[], int arg) {
 
     for (int i = 0; file[i] != (uint32_t) -1 ; i++)
         binary_mem[i] = (char) file[i];
-
+    
     free(file);
 
     int old_active_alloc = mem_get_alloc_count() - mem_get_free_count();
