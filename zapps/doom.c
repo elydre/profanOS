@@ -107,6 +107,7 @@ int main(int arg) {
     }
 
     c_vga_text_mode();
+    c_free(buffer);
 
     return arg;
 }
