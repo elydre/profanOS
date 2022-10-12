@@ -3,7 +3,7 @@
 #define MAP_SIZE 10
 #define PI 3.14159
 #define CALC_SPEED 0.4
-#define MATH_LOOP 10
+#define MATH_LOOP 7
 
 #define BLOCK_HEIGHT 5
 #define MINIMAP_SIZE 4
@@ -87,7 +87,7 @@ int main(int arg) {
 
         if (last_key != c_kb_get_scancode()) {
             last_key = c_kb_get_scancode();
-            if (last_key == KB_ESC) {
+            if (last_key == 57) {
                 for (int i = 0; i < 20; i++) key_buffer[i] = 0;
             }
             if (last_key < KB_released_value && !(val_in_buffer(last_key, 20, key_buffer))) {
@@ -116,6 +116,9 @@ int main(int arg) {
         if (y < 1) y = 1;
         if (x > MAP_SIZE - 2) x = MAP_SIZE - 2;
         if (y > MAP_SIZE - 2) y = MAP_SIZE - 2;
+
+        if (rot < 0) rot += 2 * PI;
+        if (rot > 2 * PI) rot -= 2 * PI;
 
         c_ms_sleep(10);
     }
