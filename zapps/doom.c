@@ -9,7 +9,7 @@
 
 #define player_speed 0.1
 #define rot_speed 2
-#define fov 30
+#define fov 40
 
 #define floor_color 0
 #define ceiling_color 3
@@ -24,11 +24,15 @@ int MAP[] = {
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     2, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-    2, 7, 7, 7, 1, 7, 7, 7, 7, 7
+    2, 7, 7, 7, 9, 7, 7, 7, 7, 7
 };
 
 double get_distance(double x, double y, double rad_angle, int * color);
 void draw_rect_buffer(int x, int y, int width, int height, int color, int buffer_width, char * buffer);
+
+int val_in_buffer(int val, int buffer_width, int * buffer);
+void remove_from_buffer(int val, int * buffer);
+void add_to_buffer(int val, int * buffer);
 
 double cos(double x);
 double sin(double x);
@@ -46,8 +50,9 @@ int main(int arg) {
     int center, top, bottom;
     double angle;
 
-    int color;
+    int color, last_key = 0;
     char * buffer = c_malloc(width * height);
+    int * key_buffer = c_calloc(20); // for init to 0
 
     c_vga_320_mode();
     for (int tick = 4; c_kb_get_scancode() != 1; tick = (tick > 55) ? 4 : tick + 8) {
@@ -80,18 +85,27 @@ int main(int arg) {
         for (int i = 0; i < width * height; i++) {
             c_vga_put_pixel(i % width, i / width, buffer[i]);
         }
-        
-        if (c_kb_get_scancode() == KB_D) {
-            rot -= rot_speed;
+
+        if (last_key != c_kb_get_scancode()) {
+            last_key = c_kb_get_scancode();
+            if (last_key < KB_released_value && !(val_in_buffer(last_key, 20, key_buffer))) {
+                add_to_buffer(last_key, key_buffer);
+            } else if (last_key >= KB_released_value) {
+                remove_from_buffer(last_key - KB_released_value, key_buffer);
+            }
         }
-        if (c_kb_get_scancode() == KB_Q) {
+        
+        if (val_in_buffer(KB_Q, 20, key_buffer)) {
             rot += rot_speed;
         }
-        if (c_kb_get_scancode() == KB_Z) {
+        if (val_in_buffer(KB_D, 20, key_buffer)) {
+            rot -= rot_speed;
+        }
+        if (val_in_buffer(KB_Z, 20, key_buffer)) {
             x += cos(deg_to_rad(rot)) * player_speed;
             y += sin(deg_to_rad(rot)) * player_speed;
         }
-        if (c_kb_get_scancode() == KB_S) {
+        if (val_in_buffer(KB_S, 20, key_buffer)) {
             x -= cos(deg_to_rad(rot)) * player_speed;
             y -= sin(deg_to_rad(rot)) * player_speed;
         }
@@ -103,11 +117,13 @@ int main(int arg) {
         if (x > mapsize - 2) x = mapsize - 2;
         if (y > mapsize - 2) y = mapsize - 2;
 
-        c_ms_sleep(20);
+        c_ms_sleep(10);
     }
 
     c_vga_text_mode();
+
     c_free(buffer);
+    c_free(key_buffer);
 
     return arg;
 }
@@ -138,6 +154,31 @@ double abs(double a) {
 
 double deg_to_rad(int x) {
     return x * pi / 180;
+}
+
+int val_in_buffer(int val, int buffer_width, int * buffer) {
+    for (int i = 0; i < buffer_width; i++) {
+        if (buffer[i] == val) return 1;
+    }
+    return 0;
+}
+
+void add_to_buffer(int val, int * buffer) {
+    for (int i = 0; 1; i++) {
+        if (buffer[i] == 0) {
+            buffer[i] = val;
+            return;
+        }
+    }
+}
+
+void remove_from_buffer(int val, int * buffer) {
+    for (int i = 0; i < 20; i++) {
+        if (buffer[i] == val) {
+            buffer[i] = 0;
+            return;
+        }
+    }
 }
 
 void draw_rect_buffer(int x, int y, int width, int height, int color, int buffer_width, char * buffer) {
