@@ -207,9 +207,11 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
-    cprint(COLOR_INFO, "Delete every copy of projects")
+    cprint(COLOR_EXEC, "Correcly copying projects")
     for dossier in os.listdir(f"./{OUT_DIR}/disk/bin/Projets"):
-        print_and_exec(f"rm -r {OUT_DIR}/disk/bin/Projets/{dossier}/*")
+        print_and_exec(f"make -C zapps/Projets/{dossier}/ run")
+        print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/Projets/{dossier}/*")
+        print_and_exec(f"cp -r zapps/Projets/{dossier}/*.bin  {OUT_DIR}/disk/bin/Projets/{dossier}/")
 
     # transform every image into .img, the format of profanOS
     liste_images = []
