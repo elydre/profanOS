@@ -8,8 +8,8 @@
 #define minimap_size 4
 
 #define player_speed 0.1
-#define rot_speed 2
-#define fov 40
+#define rot_speed (pi / 25)
+#define fov (pi / 4)
 
 #define floor_color 0
 #define ceiling_color 3
@@ -37,12 +37,10 @@ void add_to_buffer(int val, int * buffer);
 double cos(double x);
 double sin(double x);
 
-double deg_to_rad(int x);
-
 int main(int arg) {
     // 2.5D game doom like
     double x = 5, y = 5;
-    double rot = 0; // in degrees
+    double rot = 0; // in radians
 
     int width = 320, height = 200;
     int half_height = height / 2;
@@ -57,7 +55,7 @@ int main(int arg) {
     c_vga_320_mode();
     for (int tick = 4; c_kb_get_scancode() != 1; tick = (tick > 55) ? 4 : tick + 8) {
         for (int i = 0; i < width; i++) {
-            angle = deg_to_rad(rot + (fov / 2) - (fov * i / width));
+            angle = rot + (fov / 2) - (fov * i / width);
 
             center = (int) (half_height * height_at_1m / get_distance(x, y, angle, &color));
             top = (int) (half_height - center);
@@ -75,7 +73,7 @@ int main(int arg) {
                 draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size, minimap_size, MAP[i + j * mapsize], width, buffer);
                 if (i == (int) x && j == (int) y)
                     draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size, minimap_size, 36, width, buffer);
-                if (i == (int) (x + cos(deg_to_rad(rot)) * 2) && j == (int) (y + sin(deg_to_rad(rot)) * 2))
+                if (i == (int) (x + cos(rot) * 2) && j == (int) (y + sin(rot) * 2))
                     draw_rect_buffer(i * minimap_size, j * minimap_size, minimap_size / 2, minimap_size / 2, 61, width, buffer);
             }
         }
@@ -102,16 +100,14 @@ int main(int arg) {
             rot -= rot_speed;
         }
         if (val_in_buffer(KB_Z, 20, key_buffer)) {
-            x += cos(deg_to_rad(rot)) * player_speed;
-            y += sin(deg_to_rad(rot)) * player_speed;
+            x += cos(rot) * player_speed;
+            y += sin(rot) * player_speed;
         }
         if (val_in_buffer(KB_S, 20, key_buffer)) {
-            x -= cos(deg_to_rad(rot)) * player_speed;
-            y -= sin(deg_to_rad(rot)) * player_speed;
+            x -= cos(rot) * player_speed;
+            y -= sin(rot) * player_speed;
         }
 
-        if (rot > 360) rot -= 360;
-        if (rot < 0) rot += 360;
         if (x < 1) x = 1;
         if (y < 1) y = 1;
         if (x > mapsize - 2) x = mapsize - 2;
@@ -129,7 +125,10 @@ int main(int arg) {
 }
 
 double modd(double x, double y) {
-    return x - (int) (x / y) * y;
+    // mod function for double and negative numbers
+    double res = x - (int) (x / y) * y;
+    if (res < 0) res += y;
+    return res;
 }
 
 double cos(double x) {
@@ -150,10 +149,6 @@ double max(double a, double b) {
 
 double abs(double a) {
     return (a < 0) ? -a : a;
-}
-
-double deg_to_rad(int x) {
-    return x * pi / 180;
 }
 
 int val_in_buffer(int val, int buffer_width, int * buffer) {
