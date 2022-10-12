@@ -1,5 +1,8 @@
 run:
-	gcc -Wall test.c test2.c -o main.bin -g -ffreestanding -Wextra -fno-exceptions -m32 -fno-pie -I ./ -I ./../../../zapps
+	gcc -g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -c ./test.c -o ./test.o -I ./../../../zapps
+	ld -m elf_i386 -e main -o ./test.pe ./test.o
+	objcopy -O binary ./test.pe ./test.full -j .text -j .data -j .rodata -j .bss
+	sed '$ s\x00*$/\\' ./test.full > ./test.bin
 	make clean
 
 fullclean:

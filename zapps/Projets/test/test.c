@@ -1,4 +1,3 @@
-#include "test2.h"
 #include "syscall.h"
 
 int main(int arg) {

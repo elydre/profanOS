@@ -140,8 +140,7 @@ def build_zapps():
 
     cprint(COLOR_INFO, "building zapps...")
     zapps_list = zapps_file_in_dir("zapps", ".c") + zapps_file_in_dir("zapps", ".cpp")
-    zapps_list = [x for x in zapps_list if not x.startswith("zapps/Projets")]
-    print(zapps_list)
+    zapps_list_clean = [x for x in zapps_list if not x.startswith("zapps/Projets")]
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
@@ -152,6 +151,8 @@ def build_zapps():
             if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
                 print(f"making {dir_name}")
                 os.makedirs(f"{OUT_DIR}/{dir_name}")
+                
+    zapps_list = zapps_list_clean
                 
     global total
     total = len(zapps_list)
@@ -191,7 +192,7 @@ def make_iso(force = False):
     print_and_exec(f"cp boot/stage2_eltorito {OUT_DIR}/isodir/boot/grub/stage2_eltorito")
     print_and_exec(f"mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso {OUT_DIR}/isodir")
 
-def gen_disk(force=False, with_src=False):
+def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     if file_exists("HDD.bin") and not force: return
     # en cas de problème de build du disk, taper 'make fullclean'
     # puis mettre en commentaire la ligne suivante          (^_^ )
@@ -212,6 +213,7 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"make -C zapps/Projets/{dossier}/ run")
         print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/Projets/{dossier}/*")
         print_and_exec(f"cp -r zapps/Projets/{dossier}/*.bin  {OUT_DIR}/disk/bin/Projets/{dossier}/")
+        print_and_exec(f"rm -Rf zapps/Projets/{dossier}/*.bin")
 
     # transform every image into .img, the format of profanOS
     liste_images = []
