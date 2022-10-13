@@ -9,7 +9,7 @@ void sys_reboot();
 void sys_shutdown();
 void sys_stop();
 
-int sys_run_binary(char *path, int arg);
+int sys_run_binary(char *path, int arg, int silence);
 int sys_run_ifexist(char path[], int arg);
 
 void do_nothing();
