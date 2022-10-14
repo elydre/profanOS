@@ -5,6 +5,9 @@
 
 #include <stdint.h>
 
+#define HISTORY_SIZE 4
+
+static int sc_history[HISTORY_SIZE];
 
 char kb_scancode_to_char(int scancode, int shift) {
     char sc_ascii_min[] = {
@@ -32,14 +35,31 @@ int kb_get_scancode() {
     return (int) port_byte_in(0x60);
 }
 
+int kb_get_scfh() {
+    // get scancode from history
+    for (int i = HISTORY_SIZE - 1; i >= 0; i--) {
+        if (sc_history[i] == 0) continue;
+        int sc = sc_history[i];
+        sc_history[i] = 0;
+        return sc;
+    }
+    return 0;
+}
+
+void kb_reset_history() {
+    sc_history[0] = 0;
+}
+
 static void keyboard_callback(registers_t *regs) {
     UNUSED(regs);
-    /* This function is actually unused,
-     * remplaced by the input() function
-     * but it can be used for ^C exit !
-    */
+
+    for (int i = 0; i < HISTORY_SIZE - 1; i++) {
+        sc_history[i + 1] = sc_history[i];
+    }
+    sc_history[0] = kb_get_scancode();
 }
 
 void keyboard_init() {
-    register_interrupt_handler(IRQ1, keyboard_callback); 
+    register_interrupt_handler(IRQ1, keyboard_callback);
+    kb_reset_history();
 }

@@ -5,6 +5,9 @@
 #include <iolib.h>
 #include <mem.h>
 
+#include <driver/keyboard.h>
+#include <time.h>
+
 #define BFR_SIZE 66
 
 /* start_kshell() is the last function executed
@@ -72,7 +75,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
-    else fskprint("command not found: %s\n", prefix);
+    else fskprint("$Bnot found: $3%s\n", prefix);
     
     return 0;
 }

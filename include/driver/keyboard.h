@@ -38,7 +38,10 @@
 #define KB_released(key) key+KB_released_value
 
 char kb_scancode_to_char(int scancode, int shift);
-int kb_get_scancode();
+
+int  kb_get_scancode();
+void kb_reset_history();
+int  kb_get_scfh();
 
 void keyboard_init();
 

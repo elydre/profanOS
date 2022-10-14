@@ -228,5 +228,7 @@ extern "C" {
 #define c_lib2d_free_sprite(sprite) ((void (*)(Sprite_t)) hi_func_addr(88))(sprite)
 #define c_lib2d_init_sprite(path) ((Sprite_t (*)(char*)) hi_func_addr(89))(path)
 #define c_str_delchar(s, c) ((void (*)(char*, char)) hi_func_addr(90))(s, c)
+#define c_kb_reset_history() ((void (*)(void)) hi_func_addr(91))()
+#define c_kb_get_scfh() ((int (*)(void)) hi_func_addr(92))()
 
 #endif

@@ -8,8 +8,9 @@
 #define MINIMAP_SIZE 4
 
 #define PLAYER_SPEED 0.1
-#define ROT_SPEED (PI / 25)
+#define ROT_SPEED 0.1
 #define FOV (PI / 4)
+#define MS_SLEEP 10
 
 #define FLOOR_COLOR 0
 #define CEILING_COLOR 3
@@ -48,12 +49,14 @@ int main(int arg) {
     int center, top, bottom;
     double angle;
 
-    int color, last_key = 0;
+    int color, last_key, key = 0;
     char * buffer = c_malloc(width * height);
     int * key_buffer = c_calloc(20); // for init to 0
 
     c_vga_320_mode();
+    c_kb_reset_history();
     for (int tick = 4; c_kb_get_scancode() != 1; tick = (tick > 55) ? 4 : tick + 8) {
+
         for (int i = 0; i < width; i++) {
             angle = rot + (FOV / 2) - (FOV * i / width);
 
@@ -84,11 +87,11 @@ int main(int arg) {
             c_vga_put_pixel(i % width, i / width, buffer[i]);
         }
 
-        if (last_key != c_kb_get_scancode()) {
-            last_key = c_kb_get_scancode();
-            if (last_key == 57) {
-                for (int i = 0; i < 20; i++) key_buffer[i] = 0;
-            }
+        c_ms_sleep(MS_SLEEP);
+
+        key = c_kb_get_scfh();
+        if (last_key != key && key != 0) {
+            last_key = key;
             if (last_key < KB_released_value && !(val_in_buffer(last_key, 20, key_buffer))) {
                 add_to_buffer(last_key, key_buffer);
             } else if (last_key >= KB_released_value) {
@@ -99,13 +102,16 @@ int main(int arg) {
         if (val_in_buffer(KB_Q, 20, key_buffer)) {
             rot += ROT_SPEED;
         }
+
         if (val_in_buffer(KB_D, 20, key_buffer)) {
             rot -= ROT_SPEED;
         }
+
         if (val_in_buffer(KB_Z, 20, key_buffer)) {
             x += cos(rot) * PLAYER_SPEED;
             y += sin(rot) * PLAYER_SPEED;
         }
+
         if (val_in_buffer(KB_S, 20, key_buffer)) {
             x -= cos(rot) * PLAYER_SPEED;
             y -= sin(rot) * PLAYER_SPEED;
@@ -118,8 +124,6 @@ int main(int arg) {
 
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
-
-        c_ms_sleep(10);
     }
 
     c_vga_text_mode();

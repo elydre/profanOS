@@ -100,6 +100,8 @@ int wf_get_func_addr(int func_id) {
         // keyboard.h
         case 57: return (int) kb_scancode_to_char;
         case 58: return (int) kb_get_scancode;
+        case 91: return (int) kb_reset_history;
+        case 92: return (int) kb_get_scfh;
 
         // functions.h
         case 59: return (int) pow;
