@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.6.3"
+#define VERSION "0.6.4"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c
@@ -9,7 +9,7 @@ void sys_reboot();
 void sys_shutdown();
 void sys_stop();
 
-int sys_run_binary(char *path, int arg);
+int sys_run_binary(char *path, int arg, int silence);
 int sys_run_ifexist(char path[], int arg);
 
 void do_nothing();

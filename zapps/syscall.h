@@ -206,7 +206,7 @@ extern "C" {
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
-#define c_sys_run_binary(fileName, arg) ((int (*)(char *, int)) hi_func_addr(69))(fileName, arg)
+#define c_sys_run_binary(fileName, arg, silence) ((int (*)(char *, int, int)) hi_func_addr(69))(fileName, arg, silence)
 #define c_time_get(time) ((void (*)(time_t *)) hi_func_addr(70))(time)
 #define c_time_calc_unix(time) ((int (*)(time_t *)) hi_func_addr(71))(time)
 #define c_timer_get_tick() ((int (*)(void)) hi_func_addr(72))()
