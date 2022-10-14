@@ -222,6 +222,15 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
             buffer_actual_size--;
         }
 
+        else if (sc == KB_TAB) {
+            if (size < buffer_actual_size + 5) continue;
+            for (int i = 0; i < 4; i++) {
+                out_buffer[buffer_index] = ' ';
+                buffer_actual_size++;
+                buffer_index++;
+            }
+        }
+
         else if (sc <= SC_MAX) {
             if (size < buffer_actual_size + 2) continue;
             if (kb_scancode_to_char(sc, shift) == '?') continue;

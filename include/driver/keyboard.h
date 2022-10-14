@@ -33,6 +33,9 @@
 #define KB_CTRL 29
 #define KB_SHIFT 42
 #define KB_MAJ 58
+#define KB_TAB 15
+
+#define TAB_SIZE 4
 
 #define KB_released_value 128
 #define KB_released(key) key+KB_released_value
