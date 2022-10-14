@@ -18,7 +18,8 @@
 #define LEFT 75
 #define RIGHT 77
 #define PASTE 72
-#define str_backspace 14
+#define BACKSPACE 14
+#define DEL 83
 #define ENTER 28
 
 // private functions
@@ -121,6 +122,11 @@ void fskprint(char format[], ...) {
             buffer[1] = '\0';
             color = skprint_function(buffer, color);
         }
+        else if (format[i] == 'f') {
+            double arg = va_arg(args, double);
+            double_to_ascii(arg, buffer);
+            color = skprint_function(buffer, color);
+        }
         else i--;
         clean_buffer(buffer, 0x1000);
         continue;
@@ -197,9 +203,18 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
             }
         }
 
-        else if (sc == str_backspace) {
+        else if (sc == BACKSPACE) {
             if (!buffer_index) continue;
             buffer_index--;
+            for (int i = buffer_index; i < buffer_actual_size; i++) {
+                out_buffer[i] = out_buffer[i + 1];
+            }
+            out_buffer[buffer_actual_size] = '\0';
+            buffer_actual_size--;
+        }
+
+        else if (sc == DEL) {
+            if (!buffer_index || buffer_index == buffer_actual_size) continue;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
                 out_buffer[i] = out_buffer[i + 1];
             }

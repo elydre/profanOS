@@ -35,4 +35,6 @@ void kernel_main() {
     // launch of the shell.bin
     sys_run_ifexist("/bin/shell.bin", 0);
     start_kshell();
+    
+    sys_fatal("Nothing to run!");
 }

@@ -75,10 +75,11 @@ ls      - list the current dir         yield   - yield to pid *
 
 | keys | description |
 |------|-------------|
-| `%d` | int         |
-| `%x` | hex         |
 | `%c` | char        |
+| `%d` | int         |
+| `%f` | double      |
 | `%s` | string      |
+| `%x` | hex         |
 
 ## Author & Contact
 

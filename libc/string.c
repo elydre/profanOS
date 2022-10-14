@@ -1,3 +1,4 @@
+#include <function.h>
 #include <string.h>
 
 #include <stdint.h>
@@ -39,6 +40,26 @@ void hex_to_ascii(int n, char str[]) {
     else str_append(str, tmp + '0');
 }
 
+void double_to_ascii(double n, char str[]) {
+    int32_t int_part = (int32_t)n;
+    int32_t frac_part = (int32_t)((n - int_part) * pow(10, 6));
+    int_to_ascii(int_part, str);
+    int len = str_len(str);
+    str[len] = '.';
+    str[len + 1] = '\0';
+    int_to_ascii(frac_part, str + len + 1);
+    while (str[str_len(str) - 1] == '0') str[str_len(str) - 1] = '\0';
+    str_append(str, '0');
+}
+
+int ascii_to_int(char str[]) {
+    int i, n;
+    n = 0;
+    for (i = 0; str[i] != '\0'; ++i)
+        n = n * 10 + str[i] - '0';
+    return n;
+}
+
 int str_is_in(char str[], char thing) {
     for (int i = 0; i < str_len(str);i++) {
         if (str[i] == thing) return 1;
@@ -52,14 +73,6 @@ int str_count(char str[], char thing) {
         if (str[i] == thing) total++;
     }
     return total;
-}
-
-int ascii_to_int(char str[]) {
-    int i, n;
-    n = 0;
-    for (i = 0; str[i] != '\0'; ++i)
-        n = n * 10 + str[i] - '0';
-    return n;
 }
 
 void str_reverse(char s[]) {
@@ -131,12 +144,11 @@ void str_end_split(char s[], char delim) {
     s[str_len(s) - limit] = '\0';    
 }
 
-char* str_cat(char s1[], const char s2[]) {
+void str_cat(char s1[], char s2[]) {
     char *start = s1;
     while(*start != '\0') start++;
     while(*s2 != '\0') *start++ = *s2++;
     *start = '\0';
-    return s1;
 }
 
 void str_delchar(char s[], char c) {

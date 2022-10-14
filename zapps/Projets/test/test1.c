@@ -3,6 +3,6 @@
 
 int main(int arg) {
     print2();
-    c_fskprint("BITE !\n");
+    c_fskprint("test\n");
     return arg;
 }

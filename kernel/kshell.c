@@ -2,7 +2,7 @@
 #include <gui/vga.h>
 #include <system.h>
 #include <string.h>
-#include <time.h>
+#include <iolib.h>
 #include <mem.h>
 
 #define BFR_SIZE 66
@@ -11,7 +11,7 @@
  * in profanOS if nothing else has worked, there
  * are debug commands but nothing else */
 
-void shell_command(char command[]);
+int shell_command(char command[]);
 
 void start_kshell() {
     sys_warning("You are now in the kernel-level shell\n");
@@ -20,7 +20,7 @@ void start_kshell() {
         rainbow_print("kernel-shell> ");
         input(char_buffer, BFR_SIZE, 9);
         fskprint("\n");
-        shell_command(char_buffer);
+        if (shell_command(char_buffer)) return;
         char_buffer[0] = '\0';
     }
 }
@@ -45,32 +45,34 @@ void shell_satan(char suffix[]) {
 
 void shell_help() {
     char *help[] = {
-        "GO      - go file as binary",
-        "HELP    - show this help",
-        "MEM     - show memory state",
-        "REBOOT  - reboot the system",
-        "SO      - run file in /bin",
-        "SATAN   - fill dynamic memory",
+        "EXIT   - quit the kshell",
+        "GO     - go file as binary",
+        "HELP   - show this help",
+        "MEM    - show memory state",
+        "REBOOT - reboot the system",
+        "SO     - run file in /bin",
+        "SATAN  - fill dynamic memory",
     };
 
     for (int i = 0; i < ARYLEN(help); i++)
         fskprint("%s\n", help[i]);
 }
 
-void shell_command(char command[]) {
+int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     str_cpy(prefix, command);
     str_cpy(suffix, command);
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0);
+    if      (str_cmp(prefix, "exit") == 0) return 1;
+    else if (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
-
-    else if (str_cmp(prefix, "") != 0)
-        fskprint("$3%s $Bis not a valid command.\n", prefix);
+    else fskprint("command not found: %s\n", prefix);
+    
+    return 0;
 }

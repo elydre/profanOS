@@ -180,7 +180,7 @@ extern "C" {
 #define c_str_start_split(str, delim) ((void (*)(char *, char)) hi_func_addr(32))(str, delim)
 #define c_str_end_split(str, delim) ((void (*)(char *, char)) hi_func_addr(33))(str, delim)
 #define c_str_count(str, thing) ((int (*)(char *, char)) hi_func_addr(35))(str, thing)
-#define c_str_cat(s1, s2) ((char* (*)(char *, const char *)) hi_func_addr(36))(s1, s2)
+#define c_str_cat(s1, s2) ((void (*)(char *, char *)) hi_func_addr(36))(s1, s2)
 #define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
 #define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
 #define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
