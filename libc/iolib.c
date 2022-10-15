@@ -17,7 +17,8 @@
 #define RSHIFT 54
 #define LEFT 75
 #define RIGHT 77
-#define PASTE 72
+#define OLDER 72
+#define NEWER 80
 #define BACKSPACE 14
 #define DEL 83
 #define ENTER 28
@@ -148,9 +149,10 @@ void rainbow_print(char message[]) {
 
 // INPUT public functions
 
-void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor color) {
+void input_wh(char out_buffer[], int size, ScreenColor color, char ** history, int history_size) {
     int old_cursor = get_cursor_offset();
     int buffer_actual_size = 0;
+    int history_index = 0;
     int buffer_index = 0;
     int key_ticks = 0;
     int sc, last_sc;
@@ -194,13 +196,30 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
             buffer_index++;
         }
 
-        else if (sc == PASTE) {
-            for (int i = 0; i < str_len(paste_buffer); i++) {
-                if (size < buffer_actual_size + 2) break;
-                out_buffer[buffer_index] = paste_buffer[i];
-                buffer_actual_size++;
-                buffer_index++;
+        else if (sc == OLDER) {
+            if (history_index == history_size) continue;
+            set_cursor_offset(old_cursor);
+            for (int i = 0; i < buffer_actual_size; i++) kprint(" ");
+            clean_buffer(out_buffer, size);
+            buffer_actual_size = (str_len(history[history_index]) > size) ? size : str_len(history[history_index]);
+            for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index][i];
+            buffer_index = buffer_actual_size;
+            history_index++;
+        }
+
+        else if (sc == NEWER) {
+            clean_buffer(out_buffer, size);
+            set_cursor_offset(old_cursor);
+            for (int i = 0; i < buffer_actual_size; i++) kprint(" ");
+            if (history_index == 1) {
+                buffer_actual_size = 0;
+                buffer_index = 0;
+                continue;
             }
+            history_index--;
+            buffer_actual_size = (str_len(history[history_index - 1]) > size) ? size : str_len(history[history_index - 1]);
+            for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index - 1][i];
+            buffer_index = buffer_actual_size;
         }
 
         else if (sc == BACKSPACE) {
@@ -255,5 +274,5 @@ void input_paste(char out_buffer[], int size, char paste_buffer[], ScreenColor c
 }
 
 void input(char out_buffer[], int size, ScreenColor color) {
-    input_paste(out_buffer, size, "", color);
+    input_wh(out_buffer, size, color, NULL, 0);
 }

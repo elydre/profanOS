@@ -1,9 +1,9 @@
 #include "syscall.h"
 
 #define BFR_SIZE 90
+#define HISTORY_SIZE 8
+
 #define SC_MAX 57
-#define LARGEUR c_vga_get_width()
-#define HAUTEUR c_vga_get_height()
 
 static char current_dir[256] = "/";
 
@@ -12,16 +12,26 @@ int shell_command(char command[]);
 void gpd();
 
 int main(int arg) {
-    char char_buffer[BFR_SIZE], last_buffer[BFR_SIZE];
-    last_buffer[0] = '\0';
+    char char_buffer[BFR_SIZE];
+    char **history = c_malloc(HISTORY_SIZE * sizeof(char*));
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        history[i] = c_malloc(BFR_SIZE * sizeof(char));
+    }
+    int current_history_size = 0;
+
     while (1) {
         c_fskprint("profanOS [$9%s$7] -> ", current_dir);
-        c_input_paste(char_buffer, BFR_SIZE, last_buffer, c_blue);
-        c_str_cpy(last_buffer, char_buffer);
+        c_input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
         c_fskprint("\n");
+        if (c_str_cmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
+            for (int i = HISTORY_SIZE - 1; i > 0; i--) c_str_cpy(history[i], history[i - 1]);
+            if (current_history_size < HISTORY_SIZE) current_history_size++;
+            c_str_cpy(history[0], char_buffer);
+        }
         if (shell_command(char_buffer)) break;
-        char_buffer[0] = '\0';
     }
+    for (int i = 0; i < HISTORY_SIZE; i++) c_free(history[i]);
+    c_free(history);
     return arg;
 }
 

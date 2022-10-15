@@ -184,7 +184,7 @@ extern "C" {
 #define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
 #define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
 #define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
-#define c_input_paste(out_buffer, size, paste_buffer, color) ((void (*)(char *, int, char *, ScreenColor)) hi_func_addr(40))(out_buffer, size, paste_buffer, color)
+#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, ScreenColor, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
 #define c_input(out_buffer, size, color) ((void (*)(char *, int, char)) hi_func_addr(41))(out_buffer, size, color)
 #define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
 #define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)

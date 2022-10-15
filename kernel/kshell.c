@@ -75,7 +75,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
-    else fskprint("$Bnot found: $3%s\n", prefix);
+    else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
     
     return 0;
 }

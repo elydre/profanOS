@@ -70,7 +70,7 @@ int wf_get_func_addr(int func_id) {
         case 37: return (int) mskprint;
         case 38: return (int) fskprint;
         case 39: return (int) rainbow_print;
-        case 40: return (int) input_paste;
+        case 40: return (int) input_wh;
         case 41: return (int) input;
 
         // time.h + rtc.h + timer.h
