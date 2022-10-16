@@ -10,9 +10,9 @@ uint32_t tick = 0;
 static void timer_callback(registers_t *regs) {
     UNUSED(regs);
     tick++;
-    if (tick % 1000 == 0) {
+    /*if (tick % 1000 == 0) {
         yield(1);
-    }
+    }*/
 }
 
 uint32_t timer_get_tick() {
