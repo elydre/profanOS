@@ -45,7 +45,12 @@ void shell_ls(char path[]) {
     char ls_path[256];
     if (path[0] == '\0') c_str_cpy(ls_path, current_dir);
     else assemble_path(current_dir, path, ls_path);
-    
+
+    if (!(c_fs_does_path_exists(ls_path) && c_fs_type_sector(c_fs_path_to_id(ls_path, 0)) == 3)) {
+        c_fskprint("$3%s$B is not a directory\n", ls_path);
+        return;
+    }
+
     int elm_count = c_fs_get_folder_size(ls_path);
     string_20_t *out_list = c_malloc(elm_count * sizeof(string_20_t));
     uint32_t *out_type = c_malloc(elm_count * sizeof(uint32_t));
@@ -301,12 +306,14 @@ int shell_command(char command[]) {
     else if (c_str_cmp(prefix, "show") == 0) {
         char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
         assemble_path(current_dir, suffix, file);
-        c_vga_320_mode();
-        Sprite_t sprite = c_lib2d_init_sprite(file);
-        c_lib2d_print_sprite(0, 0, sprite);
-        while (c_kb_get_scancode() != 1);
-        c_lib2d_free_sprite(sprite);
-        c_vga_text_mode();
+        if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+            c_vga_320_mode();
+            Sprite_t sprite = c_lib2d_init_sprite(file);
+            c_lib2d_print_sprite(0, 0, sprite);
+            while (c_kb_get_scancode() != 1);
+            c_lib2d_free_sprite(sprite);
+            c_vga_text_mode();
+        } else c_fskprint("$3%s$B file not found\n", file);
         c_free(file);
     }
 

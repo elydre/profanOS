@@ -38,8 +38,6 @@ uint32_t i_creer_dossier(char nom[]) {
     if (str_is_in(nom, '/') && str_cmp(nom, "/"))
         return sys_error("Dir name cannot contain /");
 
-    /* if (!str_cmp(nom, "..")) */
-
     uint32_t folder_id = i_next_free(0);
     uint32_t list_to_write[128];
     for (int i = 0; i < 128; i++) list_to_write[i] = 0;
@@ -47,8 +45,6 @@ uint32_t i_creer_dossier(char nom[]) {
 
     if (str_len(nom) > 20)
         return sys_error("Dir name cannot exceed 20 characters");
-
-    // TODO : check if the name is already taken
 
     int list_index = 1;
     for (int i = 0; i < str_len(nom); i++) {
@@ -69,8 +65,6 @@ uint32_t i_creer_index_de_fichier(char nom[]) {
 
     uint32_t location = i_next_free(0);
     uint32_t location_file = i_next_free(1);
-
-    // TODO : check if the name is already taken
 
     // write intex
     uint32_t list_to_write[128];
@@ -205,6 +199,12 @@ uint32_t i_get_parent_id(char path[]) {
     return fs_path_to_id(new_path, 0);
 }
 
+void i_assemble_path(char old[], char new[], char result[]) {
+    result[0] = '\0'; str_cpy(result, old);
+    if (result[str_len(result) - 1] != '/') str_append(result, '/');
+    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
+}
+
 // PUBLIC FUNCTIONS
 
 uint32_t fs_path_to_id(char input_path[], int silence) {
@@ -326,6 +326,13 @@ uint32_t fs_is_disk_full(uint32_t disk_size) {
 }
 
 uint32_t fs_make_dir(char path[], char folder_name[]) {
+    char * path_to_folder = malloc(0x1000);
+    i_assemble_path(path, folder_name, path_to_folder);
+    if (fs_does_path_exists(path_to_folder)) {
+        free(path_to_folder);
+        return sys_error("The path already exists");
+    } free(path_to_folder);
+
     uint32_t dossier = i_creer_dossier(folder_name);
     uint32_t id_to_set = fs_path_to_id(path, 0);
     if ((int) id_to_set != -1) i_add_item_to_dir(dossier, id_to_set);
@@ -334,6 +341,13 @@ uint32_t fs_make_dir(char path[], char folder_name[]) {
 }
 
 uint32_t fs_make_file(char path[], char file_name[]) {
+    char * path_to_file = malloc(0x1000);
+    i_assemble_path(path, file_name, path_to_file);
+    if (fs_does_path_exists(path_to_file)) {
+        free(path_to_file);
+        return sys_error("The path already exists");
+    } free(path_to_file);
+
     uint32_t fichier_test = i_creer_index_de_fichier(file_name);
     uint32_t id_to_set = fs_path_to_id(path, 0);
     i_add_item_to_dir(fichier_test, id_to_set);
