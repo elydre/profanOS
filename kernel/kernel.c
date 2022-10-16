@@ -13,22 +13,22 @@ void kernel_main() {
 
     isr_install();
     irq_install();
-    fskprint("$7ISR initialized\n");
+    fskprint("ISR initialized\n");
     
     tasking_init();
-    fskprint("$7Tasking initialized\n");
+    fskprint("Tasking initialized\n");
 
     rtc_init();
     time_gen_boot();
     init_rand();
-    fskprint("$7RTC initialized\n");
+    fskprint("RTC initialized\n");
 
     filesystem_init();
-    fskprint("$7FileSys initialized\n");
-
-    init_watfunc();
-    fskprint("$7watfunc initialized\n");
+    fskprint("FileSys initialized\n");
         
+    init_watfunc();
+    fskprint("WatFunc initialized\n");
+
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 

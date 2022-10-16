@@ -1,7 +1,6 @@
 #include <driver/rtc.h>
 #include <ports.h>
 
-
 int bcd;
 
 unsigned char read_register(unsigned char reg) {
@@ -14,28 +13,18 @@ void write_register(unsigned char reg, unsigned char value) {
     port_byte_out(0x71, value);
 }
 
-unsigned char bcd2bin(unsigned char bcd) {
-    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+unsigned char bcd2bin(unsigned char in_bcd) {
+    return (bcd) ? ((in_bcd >> 4) * 10) + (in_bcd & 0x0F) : in_bcd;
 }
 
 void time_get(time_t *target) {
-    if (bcd) {
-        target->seconds = bcd2bin(read_register(0x00));
-        target->minutes = bcd2bin(read_register(0x02));
-        target->hours = bcd2bin(read_register(0x04));
-        target->day_of_week = bcd2bin(read_register(0x06));
-        target->day_of_month = bcd2bin(read_register(0x07));
-        target->month = bcd2bin(read_register(0x08));
-        target->year = bcd2bin(read_register(0x09));
-    } else {
-        target->seconds = read_register(0x00);
-        target->minutes = read_register(0x02);
-        target->hours = read_register(0x04);
-        target->day_of_week = read_register(0x06);
-        target->day_of_month = read_register(0x07);
-        target->month = read_register(0x08);
-        target->year = read_register(0x09);
-    }
+    target->seconds = bcd2bin(read_register(0x00));
+    target->minutes = bcd2bin(read_register(0x02));
+    target->hours = bcd2bin(read_register(0x04));
+    target->day_of_week = bcd2bin(read_register(0x06));
+    target->day_of_month = bcd2bin(read_register(0x07));
+    target->month = bcd2bin(read_register(0x08));
+    target->year = bcd2bin(read_register(0x09));
 
     target->full[0] = target->seconds;
     target->full[1] = target->minutes;
