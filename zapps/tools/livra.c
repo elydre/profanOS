@@ -45,7 +45,7 @@ int main(int arg) {
     return arg;
 }
 
-int lexer(char path[], int * code){
+int lexer(char path[], int * code) {
     uint32_t *data_uint32 = c_fs_declare_read_array(path);
     char *data_char = c_fs_declare_read_array(path);
     c_fs_read_file(path, data_uint32);
