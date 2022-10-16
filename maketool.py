@@ -15,7 +15,7 @@ OUT_DIR = "out"
 
 HDD_MAP = {
     "bin": f"{OUT_DIR}/zapps/*",
-    "sys": None,
+    "sys": "sys_dir/sys/*",
     "user": "sys_dir/user/*",
     "zada": "sys_dir/zada/*",
 }

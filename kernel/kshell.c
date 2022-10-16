@@ -5,10 +5,7 @@
 #include <iolib.h>
 #include <mem.h>
 
-#include <driver/keyboard.h>
-#include <time.h>
-
-#define BFR_SIZE 66
+#define BFR_SIZE 65
 
 /* start_kshell() is the last function executed
  * in profanOS if nothing else has worked, there

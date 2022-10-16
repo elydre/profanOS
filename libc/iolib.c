@@ -211,7 +211,7 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
             clean_buffer(out_buffer, size);
             set_cursor_offset(old_cursor);
             for (int i = 0; i < buffer_actual_size; i++) kprint(" ");
-            if (history_index == 1) {
+            if (history_index < 2) {
                 buffer_actual_size = 0;
                 buffer_index = 0;
                 continue;

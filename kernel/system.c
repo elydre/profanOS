@@ -26,12 +26,6 @@ void sys_stop() {
     asm volatile("hlt");
 }
 
-void do_nothing() {
-    asm volatile("sti");
-    asm volatile("hlt");
-    asm volatile("cli");
-}
-
 int sys_warning(char msg[]) {
     fskprint("$DWARNING: $5%s\n", msg);
     return 0;
@@ -122,12 +116,12 @@ int sys_run_ifexist(char path[], int arg) {
 }
 
 int sys_get_setting(char name[]) {
-    // read settings from /user/settings.txt
-    // return -1 if not found
-    char * settings = calloc(fs_get_file_size("/user/settings.txt")*126);
-    uint32_t * file = fs_declare_read_array("/user/settings.txt");
+    // read settings from /sys/settings.txt
+    // return 0 if not found
+    char * settings = calloc(fs_get_file_size("/sys/settings.txt")*126);
+    uint32_t * file = fs_declare_read_array("/sys/settings.txt");
 
-    fs_read_file("/user/settings.txt", file);
+    fs_read_file("/sys/settings.txt", file);
 
     for (int i = 0; file[i] != (uint32_t) -1 ; i++)
         settings[i] = (char) file[i];
@@ -167,5 +161,5 @@ int sys_get_setting(char name[]) {
     }
     free(settings);
     sys_warning("Setting not found");
-    return -1;
+    return 0;
 }
