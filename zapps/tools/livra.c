@@ -1,6 +1,7 @@
 #include "syscall.h"
 
 #define LSIZE 1024
+#define PSIZE 1024
 
 /* https://github.com/elydre/ivra *
     end     0
@@ -24,26 +25,55 @@ int arg_cont[] = {
 };
 
 int * mem;
-int prog[] = {
-    2, 2, 2, 2, 3, 100, 1, 0, 5,
-    2, 0, 2, 2, 4, 1, 2, 5, 1, 1,
-    4, 5, 5, 0, 5, 13, 2, 5, 4,
-    9, 5, 2, 1, 1, 1, 4, 2, 2, 1,
-    0, 0, 0, 9, 2, 3, 0, 12, 0, 0,
-};
 
 void start_inter(int * code, int code_size, int while_id);
+int lexer(char path[], int * code);
 
 int main(int arg) {
     int * meml = c_calloc(LSIZE * sizeof(int));
+    int * prog = c_calloc(PSIZE * sizeof(int));
     mem = meml;
 
     meml[0] = 1;
+
+    int code_size = lexer("/user/prog.li", prog);
     
-    start_inter(prog, sizeof(prog) / sizeof(int), 0);
+    start_inter(prog, code_size, 0);
 
     c_free(meml);
+    c_free(prog);
     return arg;
+}
+
+int lexer(char path[], int * code){
+    uint32_t *data_uint32 = c_fs_declare_read_array(path);
+    char *data_char = c_fs_declare_read_array(path);
+    c_fs_read_file(path, data_uint32);
+
+    int i;
+    for (i = 0; data_uint32[i] != (uint32_t) -1; i++) {
+        data_char[i] =  data_uint32[i];
+    } i++; data_char[i] = '\0';
+
+    c_free(data_uint32);
+
+    int code_size = 0;
+
+    char temp[10];
+    for (i = 0; data_char[i] != '\0'; i++) {
+        if (!(data_char[i] >= '0' && data_char[i] <= '9')) continue;
+        int j = 0;
+        while (data_char[i] >= '0' && data_char[i] <= '9') {
+            temp[j] = data_char[i];
+            i++; j++;
+        }
+        temp[j] = '\0';
+        code[code_size] = c_ascii_to_int(temp);
+        code_size++;
+    }
+
+    c_free(data_char);
+    return code_size;
 }
 
 void start_inter(int * code, int code_size, int while_id) {
