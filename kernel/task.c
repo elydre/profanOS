@@ -101,12 +101,11 @@ void task_print() {
 
 void destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
-        if (tasks[i].isdead == 1) {
-            fskprint("$4Task $1%d$4 killed, free: ", tasks[i].pid);
-            if (mem_free_addr(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
-            else mskprint(1, "$3fail :(\n");
-            tasks[i].isdead = 2;
-        }
+        if (tasks[i].isdead != 1) continue;
+        fskprint("$4Task $1%d$4 killed, free: ", tasks[i].pid);
+        if (mem_free_addr(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
+        else mskprint(1, "$3fail :(\n");
+        tasks[i].isdead = 2;
     }
 }
 
@@ -130,9 +129,7 @@ void yield(int target_pid) {
     }
 
     mskprint(5, "$4yield from$1 ", str_old, " $4to$1 ", str_new, "\n");
-
     task_switch(&tasks[1].regs, &tasks[0].regs);
-
     destroy_killed_tasks(nb_alive);
 }
 

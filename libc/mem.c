@@ -133,6 +133,19 @@ void * calloc(int size) {
 
 // memory info function
 
+int mem_get_phys_size() {
+    int *addr_min = (int *) 0x200000;
+    int *addr_max = (int *) 0x40000000;
+    int *addr_test;
+    while (addr_max - addr_min > 1) {
+        addr_test = addr_min + (addr_max - addr_min) / 2;
+        * addr_test = 0x1234;
+        if (*addr_test == 0x1234) addr_min = addr_test;
+        else addr_max = addr_test;
+    }
+    return (int) addr_max;
+}
+
 void mem_print() {
     int val, color = 0x80;
     char nb[2];
