@@ -52,10 +52,14 @@ int main(int arg) {
     int color, last_key, key = 0;
     char * buffer = c_malloc(width * height);
     int * key_buffer = c_calloc(20); // for init to 0
+    int fps, last_tick = c_timer_get_tick();
 
     c_vga_320_mode();
     c_kb_reset_history();
-    for (int tick = 4; c_kb_get_scancode() != 1; tick = (tick > 55) ? 4 : tick + 8) {
+    while (c_kb_get_scancode() != 1) {
+        fps = 1000 / (c_timer_get_tick() - last_tick);
+        last_tick = c_timer_get_tick();
+        
 
         for (int i = 0; i < width; i++) {
             angle = rot + (FOV / 2) - (FOV * i / width);
@@ -81,7 +85,7 @@ int main(int arg) {
             }
         }
 
-        draw_rect_buffer(width - 5, 0, 5, 5, tick, width, buffer);
+        draw_rect_buffer(width - fps, 0, fps, 10, 15, width, buffer);
 
         for (int i = 0; i < width * height; i++) {
             c_vga_put_pixel(i % width, i / width, buffer[i]);
