@@ -3,6 +3,7 @@
 #define MAP_SIZE 10
 #define PI 3.14159
 #define MATH_LOOP 7
+#define ONK 1000.0
 
 #define BLOCK_HEIGHT 2
 #define MINIMAP_SIZE 4
@@ -103,21 +104,21 @@ int main(int arg) {
         }
         
         if (val_in_buffer(KB_Q, 20, key_buffer)) {
-            rot += ROT_SPEED * tick_count[1] / 1000.0;
+            rot += ROT_SPEED * tick_count[1] / ONK;
         }
 
         if (val_in_buffer(KB_D, 20, key_buffer)) {
-            rot -= ROT_SPEED * tick_count[1] / 1000.0;
+            rot -= ROT_SPEED * tick_count[1] / ONK;
         }
 
         if (val_in_buffer(KB_Z, 20, key_buffer)) {
-            x += cos(rot) * PLAYER_SPEED * tick_count[1] / 1000;
-            y += sin(rot) * PLAYER_SPEED * tick_count[1] / 1000;
+            x += cos(rot) * PLAYER_SPEED * tick_count[1] / ONK;
+            y += sin(rot) * PLAYER_SPEED * tick_count[1] / ONK;
         }
 
         if (val_in_buffer(KB_S, 20, key_buffer)) {
-            x -= cos(rot) * PLAYER_SPEED * tick_count[1] / 1000;
-            y -= sin(rot) * PLAYER_SPEED * tick_count[1] / 1000;
+            x -= cos(rot) * PLAYER_SPEED * tick_count[1] / ONK;
+            y -= sin(rot) * PLAYER_SPEED * tick_count[1] / ONK;
         }
 
         if (x < 1) x = 1;
@@ -159,14 +160,6 @@ double sin(double x) {
         res += pow / fact;
     }
     return res;    
-}
-
-double max(double a, double b) {
-    return (a > b) ? a : b;
-}
-
-double abs(double a) {
-    return (a < 0) ? -a : a;
 }
 
 int val_in_buffer(int val, int buffer_width, int * buffer) {
