@@ -1,4 +1,4 @@
-// #include <gui/font.h>
+#include <gui/font.h>
 #include <gui/vgui.h>
 #include <gui/vga.h>
 #include <mem.h>
@@ -45,4 +45,18 @@ void vgui_set_pixel(int x, int y, int color) {
 
 int vgui_get_pixel(int x, int y) {
     return current_render[y * 320 + x];
+}
+
+void vgui_print(int x, int y, char msg[], int big, unsigned color) {
+    unsigned char *glyph, *font;
+    font = big ? g_8x16_font : g_8x8_font;
+    for (int i = 0; msg[i] != '\0'; i++) {
+        glyph = font + (msg[i] * (big ? 16 : 8));
+        for (int j = 0; j < (big ? 16 : 8); j++) {
+            for (int k = 0; k < 8; k++) {
+                if (!(glyph[j] & (1 << k))) continue;
+                vgui_set_pixel(i * 8 + x + 8 - k , y + j, color);
+            }
+        }
+    }
 }

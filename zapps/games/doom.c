@@ -45,7 +45,7 @@ int main(int arg) {
     int half_height = height / 2;
 
     int center, top, bottom;
-    double angle;
+    char convert[10];
 
     int color, last_key, key = 0;
     int * key_buffer = c_calloc(20); // for init to 0
@@ -60,9 +60,7 @@ int main(int arg) {
         tick_count[0] = c_timer_get_tick();
 
         for (int i = 0; i < width; i++) {
-            angle = rot + (FOV / 2) - (FOV * i / width);
-
-            center = (int) (half_height * BLOCK_HEIGHT / get_distance(x, y, angle, &color));
+            center = (int) (half_height * BLOCK_HEIGHT / get_distance(x, y, rot + (FOV / 2) - (FOV * i / width), &color));
             top = (int) (half_height - center);
             bottom = (int) (half_height + center);
 
@@ -75,16 +73,20 @@ int main(int arg) {
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                c_vgui_draw_rect(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, MAP[i + j * MAP_SIZE]);
+                c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, MAP[i + j * MAP_SIZE]);
                 if (i == (int) x && j == (int) y)
-                    c_vgui_draw_rect(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 36);
+                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 36);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    c_vgui_draw_rect(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 61);
+                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 61);
             }
         }
 
-        c_vgui_draw_rect(width - tick_count[1], 0, tick_count[1], 7, 4);
-        c_vgui_draw_rect(width - tick_count[3], 0, tick_count[3], 7, 32);
+        c_vgui_draw_rect(0, 0, tick_count[1], 7, 4);
+        c_vgui_draw_rect(0, 0, tick_count[3], 7, 32);
+
+        c_int_to_ascii(1000 / tick_count[1], convert);
+        c_vgui_print(0, 8, convert, 1, 8);
+        
 
         tick_count[2] = c_timer_get_tick();
         c_vgui_render();
