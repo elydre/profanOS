@@ -105,7 +105,7 @@ int shell_command(char *buffer) {
             for (int i = 0; i < argc; i++) c_free(argv[i]);
             c_free(argv);
         }
-        else c_fskprint("$Bcommand $3%s$B not found\n", old_prefix);
+        else c_fskprint("$3%s$B is not a valid command.\n", old_prefix);
         c_free(file);
         c_free(old_prefix);
     }

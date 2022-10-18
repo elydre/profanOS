@@ -92,27 +92,6 @@ void print_scancodes() {
     c_clear_screen();
 }
 
-void print_time() {
-    c_fskprint("$4FR time:    ");
-    time_t time;
-    c_time_get(&time);
-    c_time_jet_lag(&time);
-    char tmp[3];
-    for (int i = 2; i >= 0; i--) {
-        c_int_to_ascii(time.full[i], tmp);
-        if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
-        c_fskprint("$1%s$7:", tmp);
-    }
-    c_kprint_backspace(); c_fskprint(" ");
-    for (int i = 3; i < 6; i++) {
-        c_int_to_ascii(time.full[i], tmp);
-        if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
-        c_fskprint("$1%s$7/", tmp);
-    }
-    c_kprint_backspace();
-    c_fskprint("$4\nunix time:  $1%d\n", c_time_gen_unix());
-}
-
 void show_disk_LBA(char suffix[]) {
     int LBA = 0;
     if (c_str_cmp(suffix, "ss") != 0) LBA = c_ascii_to_int(suffix);
@@ -194,11 +173,6 @@ int shell_command(char command[]) {
     if      (c_str_cmp(prefix, "cat") == 0)    shell_cat(current_dir, suffix);
     else if (c_str_cmp(prefix, "clear") == 0)  c_clear_screen();
     else if (c_str_cmp(prefix, "echo") == 0)   c_fskprint("$4%s\n", suffix);
-    else if (c_str_cmp(prefix, "exit") == 0)   ret++;
-    else if (c_str_cmp(prefix, "gpd") == 0)    gpd();
-    else if (c_str_cmp(prefix, "help") == 0)   shell_cat("/", "zada/shell_help.txt");
-    else if (c_str_cmp(prefix, "ls") == 0)     shell_ls((c_str_cmp(suffix, "ls") == 0) ? "" : suffix);
-    else if (c_str_cmp(prefix, "mem") == 0)    c_mem_print();
     else if (c_str_cmp(prefix, "mkfile") == 0) c_fs_make_file(current_dir, suffix);
     else if (c_str_cmp(prefix, "reboot") == 0) c_sys_reboot();
     else if (c_str_cmp(prefix, "sc") == 0)     print_scancodes();
@@ -217,22 +191,6 @@ int shell_command(char command[]) {
         }
     }
 
-    else if (c_str_cmp(prefix, "alloc") == 0) {
-        if (suffix[0] == 'a') c_fskprint("$3size is required\n");
-        else {
-            int maddr = c_mem_alloc(c_ascii_to_int(suffix) * 1024);
-            c_fskprint("$4address: $1%x $4($1%d$4)\n", maddr, maddr);
-        }
-    }
-
-    else if (c_str_cmp(prefix, "udisk") == 0) {
-        c_fskprint("disk scan in progress...\n");
-        uint32_t sectors_count = c_ata_get_sectors_count();
-        uint32_t used_sectors = c_fs_get_used_sectors(sectors_count);
-        c_fskprint("$4total sector count: $1%d\n", sectors_count);
-        c_fskprint("$4used sector count:  $1%d\n", used_sectors);
-    }
-
     else if (c_str_cmp(prefix, "wif") == 0) {
         // write in file
         char *file = c_malloc(c_str_len(suffix)+c_str_len(current_dir)+2);
@@ -246,73 +204,6 @@ int shell_command(char command[]) {
             c_free(file_content);
         } else c_fskprint("$3%s$B file not found\n", file);
         c_free(file);
-    }
-
-    else if (c_str_cmp(prefix, "go") == 0) {
-        if(!(c_str_count(suffix, '.'))) c_str_cat(suffix, ".bin");
-        char *file = c_malloc(c_str_len(suffix)+c_str_len(current_dir)+2);
-        assemble_path(current_dir, suffix, file);
-        if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2)
-            c_sys_run_binary(file, 0, 0);
-        else c_fskprint("$3%s$B file not found\n", file);
-        c_free(file);
-    }
-
-    else if (c_str_cmp(prefix, "info") == 0) {
-        print_time();
-        c_fskprint("$4ticks:      $1%d\n", c_timer_get_tick());
-        c_fskprint("$4work time:  $1%ds$7/$1%ds\n", c_time_gen_unix() - c_time_get_boot() - c_timer_get_tick() / 100, c_time_gen_unix() - c_time_get_boot());
-        c_fskprint("$4used mem:   $1%d%c\n", 100 * c_mem_get_usage() / c_mem_get_usable(), '%');
-        c_fskprint("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_alloc_count() - c_mem_get_free_count(), c_mem_get_alloc_count());
-        c_fskprint("$4disk size:  $1%fMo\n", ((double) c_ata_get_sectors_count()) / 2048);
-        c_task_print();
-    }
-
-    else if (c_str_cmp(prefix, "cd") == 0) {
-        char old_path[256];
-        c_str_cpy(old_path, current_dir);
-        string_20_t * liste_path = c_calloc(1024);
-        parse_path(suffix, liste_path);
-        for (int i=0; i<c_str_count(suffix, '/')+1; i++) {
-            if (!c_str_cmp(liste_path[i].name, "..")) {
-                gpd();
-            } else {
-                char *new_path = c_calloc(256);
-                assemble_path(current_dir, liste_path[i].name, new_path);
-                if (c_fs_does_path_exists(new_path) && c_fs_type_sector(c_fs_path_to_id(new_path, 0)) == 3)
-                    c_str_cpy(current_dir, new_path);
-                else {
-                    c_fskprint("$3%s$B path not found\n", new_path);
-                    c_str_cpy(current_dir, old_path);
-                    c_free(liste_path);
-                    c_free(new_path);
-                    break;
-                }
-                c_free(new_path);
-            }
-        }
-        c_free(liste_path);
-    }
-
-    else if (c_str_cmp(prefix, "free") == 0) {
-        if (c_mem_free_addr(c_ascii_to_int(suffix))) c_fskprint("$4free: $1OK\n");
-        else c_fskprint("$4free: $3FAIL\n");
-    }
-
-    else if (c_str_cmp(prefix, "show") == 0) {
-        char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
-        assemble_path(current_dir, suffix, file);
-        c_vga_320_mode();
-        Sprite_t sprite = c_lib2d_init_sprite(file);
-        c_lib2d_print_sprite(0, 0, sprite);
-        while (c_kb_get_scancode() != 1);
-        c_lib2d_free_sprite(sprite);
-        c_vga_text_mode();
-        c_free(file);
-    }
-
-    else if (c_str_cmp(prefix, "") != 0) {
-        c_fskprint("$3%s$B is not a valid command.\n", prefix);
     }
 
     c_free(prefix);
