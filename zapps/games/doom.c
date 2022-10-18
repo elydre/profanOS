@@ -4,13 +4,12 @@
 #define PI 3.14159
 #define MATH_LOOP 7
 
-#define BLOCK_HEIGHT 1
+#define BLOCK_HEIGHT 2
 #define MINIMAP_SIZE 4
 
-#define PLAYER_SPEED 0.1
-#define ROT_SPEED 0.1
+#define PLAYER_SPEED 5
+#define ROT_SPEED 4
 #define FOV (PI / 4)
-#define MS_SLEEP 10
 
 #define FLOOR_COLOR 0
 #define CEILING_COLOR 3
@@ -52,14 +51,15 @@ int main(int arg) {
     int color, last_key, key = 0;
     char * buffer = c_malloc(width * height);
     int * key_buffer = c_calloc(20); // for init to 0
-    int fps, last_tick = c_timer_get_tick();
+    int tick_count[4];
+    tick_count[0] = c_timer_get_tick();
+    tick_count[3] = 0;
 
     c_vga_320_mode();
     c_kb_reset_history();
     while (c_kb_get_scancode() != 1) {
-        fps = 1000 / (c_timer_get_tick() - last_tick);
-        last_tick = c_timer_get_tick();
-        
+        tick_count[1] = c_timer_get_tick() - tick_count[0];
+        tick_count[0] = c_timer_get_tick();
 
         for (int i = 0; i < width; i++) {
             angle = rot + (FOV / 2) - (FOV * i / width);
@@ -85,13 +85,14 @@ int main(int arg) {
             }
         }
 
-        draw_rect_buffer(width - fps, 0, fps, 10, 15, width, buffer);
+        draw_rect_buffer(width - tick_count[1], 0, tick_count[1], 10, 4, width, buffer);
+        draw_rect_buffer(width - tick_count[3], 0, tick_count[3], 10, 32, width, buffer);
 
+        tick_count[2] = c_timer_get_tick();
         for (int i = 0; i < width * height; i++) {
             c_vga_put_pixel(i % width, i / width, buffer[i]);
         }
-
-        c_ms_sleep(MS_SLEEP);
+        tick_count[3] = c_timer_get_tick() - tick_count[2];
 
         key = c_kb_get_scfh();
         if (last_key != key && key != 0) {
@@ -104,21 +105,21 @@ int main(int arg) {
         }
         
         if (val_in_buffer(KB_Q, 20, key_buffer)) {
-            rot += ROT_SPEED;
+            rot += ROT_SPEED * tick_count[1] / 1000.0;
         }
 
         if (val_in_buffer(KB_D, 20, key_buffer)) {
-            rot -= ROT_SPEED;
+            rot -= ROT_SPEED * tick_count[1] / 1000.0;
         }
 
         if (val_in_buffer(KB_Z, 20, key_buffer)) {
-            x += cos(rot) * PLAYER_SPEED;
-            y += sin(rot) * PLAYER_SPEED;
+            x += cos(rot) * PLAYER_SPEED * tick_count[1] / 1000;
+            y += sin(rot) * PLAYER_SPEED * tick_count[1] / 1000;
         }
 
         if (val_in_buffer(KB_S, 20, key_buffer)) {
-            x -= cos(rot) * PLAYER_SPEED;
-            y -= sin(rot) * PLAYER_SPEED;
+            x -= cos(rot) * PLAYER_SPEED * tick_count[1] / 1000;
+            y -= sin(rot) * PLAYER_SPEED * tick_count[1] / 1000;
         }
 
         if (x < 1) x = 1;
