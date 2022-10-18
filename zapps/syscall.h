@@ -230,5 +230,11 @@ extern "C" {
 #define c_str_delchar(s, c) ((void (*)(char*, char)) hi_func_addr(90))(s, c)
 #define c_kb_reset_history() ((void (*)(void)) hi_func_addr(91))()
 #define c_kb_get_scfh() ((int (*)(void)) hi_func_addr(92))()
+#define c_vgui_setup(refresh_all) ((void (*)(int)) hi_func_addr(93))(refresh_all)
+#define c_vgui_exit() ((void (*)(void)) hi_func_addr(94))()
+#define c_vgui_render() ((void (*)(void)) hi_func_addr(95))()
+#define c_vgui_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(96))(x, y, w, h, color)
+#define c_vgui_set_pixel(x, y, color) ((void (*)(int, int, unsigned)) hi_func_addr(97))(x, y, color)
+#define c_vgui_get_pixel(x, y) ((unsigned (*)(int, int)) hi_func_addr(98))(x, y)
 
 #endif

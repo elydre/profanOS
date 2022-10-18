@@ -8,7 +8,7 @@
 #define MINIMAP_SIZE 4
 
 #define PLAYER_SPEED 5
-#define ROT_SPEED 4
+#define ROT_SPEED 3
 #define FOV (PI / 4)
 
 #define FLOOR_COLOR 0
@@ -28,7 +28,6 @@ int MAP[] = {
 };
 
 double get_distance(double x, double y, double rad_angle, int * color);
-void draw_rect_buffer(int x, int y, int width, int height, int color, int buffer_width, char * buffer);
 
 int val_in_buffer(int val, int buffer_width, int * buffer);
 void remove_from_buffer(int val, int * buffer);
@@ -49,13 +48,12 @@ int main(int arg) {
     double angle;
 
     int color, last_key, key = 0;
-    char * buffer = c_malloc(width * height);
     int * key_buffer = c_calloc(20); // for init to 0
     int tick_count[4];
     tick_count[0] = c_timer_get_tick();
     tick_count[3] = 0;
 
-    c_vga_320_mode();
+    c_vgui_setup(0);
     c_kb_reset_history();
     while (c_kb_get_scancode() != 1) {
         tick_count[1] = c_timer_get_tick() - tick_count[0];
@@ -69,29 +67,27 @@ int main(int arg) {
             bottom = (int) (half_height + center);
 
             for (int j = 0; j < height; j++) {
-                if (j < top) buffer[i + j * width] = CEILING_COLOR;
-                else if (j > bottom) buffer[i + j * width] = FLOOR_COLOR;
-                else buffer[i + j * width] = color;
+                if (j < top) c_vgui_set_pixel(i, j, CEILING_COLOR);
+                else if (j > bottom) c_vgui_set_pixel(i, j, FLOOR_COLOR);
+                else c_vgui_set_pixel(i, j, color);
             }
         }
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                draw_rect_buffer(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, MAP[i + j * MAP_SIZE], width, buffer);
+                c_vgui_draw_rect(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, MAP[i + j * MAP_SIZE]);
                 if (i == (int) x && j == (int) y)
-                    draw_rect_buffer(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 36, width, buffer);
-                if (i == (int) (x + cos(rot) * 2) && j == (int) (y + sin(rot) * 2))
-                    draw_rect_buffer(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 61, width, buffer);
+                    c_vgui_draw_rect(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 36);
+                if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
+                    c_vgui_draw_rect(i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 61);
             }
         }
 
-        draw_rect_buffer(width - tick_count[1], 0, tick_count[1], 10, 4, width, buffer);
-        draw_rect_buffer(width - tick_count[3], 0, tick_count[3], 10, 32, width, buffer);
+        c_vgui_draw_rect(width - tick_count[1], 0, tick_count[1], 7, 4);
+        c_vgui_draw_rect(width - tick_count[3], 0, tick_count[3], 7, 32);
 
         tick_count[2] = c_timer_get_tick();
-        for (int i = 0; i < width * height; i++) {
-            c_vga_put_pixel(i % width, i / width, buffer[i]);
-        }
+        c_vgui_render();
         tick_count[3] = c_timer_get_tick() - tick_count[2];
 
         key = c_kb_get_scfh();
@@ -131,9 +127,7 @@ int main(int arg) {
         if (rot < -PI) rot += 2 * PI;
     }
 
-    c_vga_text_mode();
-
-    c_free(buffer);
+    c_vgui_exit();
     c_free(key_buffer);
 
     return arg;
@@ -194,14 +188,6 @@ void remove_from_buffer(int val, int * buffer) {
         if (buffer[i] == val) {
             buffer[i] = 0;
             return;
-        }
-    }
-}
-
-void draw_rect_buffer(int x, int y, int width, int height, int color, int buffer_width, char * buffer) {
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            buffer[(x + i) + (y + j) * buffer_width] = color;
         }
     }
 }

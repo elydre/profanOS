@@ -4,6 +4,7 @@
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
+#include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
 #include <system.h>
@@ -112,7 +113,7 @@ int wf_get_func_addr(int func_id) {
         case 68: return (int) sys_shutdown;
         case 69: return (int) sys_run_binary;
 
-        // ata driver
+        // ata.h
         case 63: return (int) ata_read_sector;
         case 64: return (int) ata_write_sector;
         case 65: return (int) ata_get_sectors_count;
@@ -133,10 +134,18 @@ int wf_get_func_addr(int func_id) {
         case 85: return (int) vga_get_width;
         case 86: return (int) vga_get_height;
 
-        // graph2d
+        // graph2d.h
         case 87: return (int) lib2d_print_sprite;
         case 88: return (int) lib2d_free_sprite;
         case 89: return (int) lib2d_init_sprite;
+
+        // vgui.h
+        case 93: return (int) vgui_setup;
+        case 94: return (int) vgui_exit;
+        case 95: return (int) vgui_render;
+        case 96: return (int) vgui_draw_rect;
+        case 97: return (int) vgui_set_pixel;
+        case 98: return (int) vgui_get_pixel;
 
         default: return 0;
     }
