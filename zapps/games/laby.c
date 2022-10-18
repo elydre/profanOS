@@ -3,7 +3,7 @@
 
 void draw_map(int hauteur, int longueur, char **map);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     // read file
     char file_path[] = "/zada/map";
     if (!(c_fs_does_path_exists(file_path) && c_fs_type_sector(c_fs_path_to_id(file_path, 0)) == 2)) {
@@ -107,7 +107,7 @@ int main(int arg) {
     }
     c_free(map);
     c_free(char_content);
-    return arg;
+    return 0;
 }
 
 void draw_map(int hauteur, int longueur, char **map) {

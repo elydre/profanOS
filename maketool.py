@@ -24,7 +24,7 @@ CC = "gcc"
 CPPC = "g++"
 
 CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I ./{INCLUDE_DIR}"
-ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wextra -fno-exceptions -m32"
+ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wno-unused -Wextra -fno-exceptions -m32"
 
 # SETTINGS
 
@@ -215,7 +215,7 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
             print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/Projets/{dossier}/*")
             print_and_exec(f"cp -r zapps/Projets/{dossier}/*.bin  {OUT_DIR}/disk/bin/Projets/{dossier}/")
             print_and_exec(f"rm -Rf zapps/Projets/{dossier}/*.bin")
-    except:
+    except Exception:
         cprint(COLOR_EROR, "Error while copying projects, passing...")
 
     # transform every image into .img, the format of profanOS
@@ -225,7 +225,7 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     for file in liste_images:
         file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
         file_name = file.split("/")[-1].split(".")[0]
-        
+
         # on transforme l'image en une liste de couleurs 6 bits
         image = PIL.Image.open(file)
         pixels = list(image.getdata())
@@ -244,7 +244,7 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
             for ligne in liste_couleurs:
                 for couleur in ligne:
                     f.write(f"{couleur}|")
-                    
+
         # on vire l'ancienne image
         os.remove(file)
 

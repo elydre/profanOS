@@ -7,10 +7,12 @@
 
 static char current_dir[256] = "/";
 
-int shell_command(char command[]);
 void assemble_path(char old[], char new[], char result[]);
+void parse_path(char path[], string_20_t liste_path[]);
+int shell_command(char command[]);
+void gpd();
 
-int main(int arg) {
+int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
     char **history = c_malloc(HISTORY_SIZE * sizeof(char*));
     for (int i = 0; i < HISTORY_SIZE; i++) {
@@ -31,7 +33,7 @@ int main(int arg) {
     }
     for (int i = 0; i < HISTORY_SIZE; i++) c_free(history[i]);
     c_free(history);
-    return arg;
+    return 0;
 }
 
 int shell_command(char *buffer) {
@@ -50,17 +52,62 @@ int shell_command(char *buffer) {
     if (!c_str_cmp(prefix, "exit")) {
         return_value = 1;
     }
+
+    else if (!c_str_cmp(prefix, "cd")) {
+        char old_path[256];
+        c_str_cpy(old_path, current_dir);
+        string_20_t * liste_path = c_calloc(1024);
+        parse_path(suffix, liste_path);
+        for (int i=0; i<c_str_count(suffix, '/')+1; i++) {
+            if (!c_str_cmp(liste_path[i].name, "..")) {
+                gpd();
+            } else {
+                char *new_path = c_calloc(256);
+                assemble_path(current_dir, liste_path[i].name, new_path);
+                if (c_fs_does_path_exists(new_path) && c_fs_type_sector(c_fs_path_to_id(new_path, 0)) == 3)
+                    c_str_cpy(current_dir, new_path);
+                else {
+                    c_fskprint("$3%s$B path not found\n", new_path);
+                    c_str_cpy(current_dir, old_path);
+                    c_free(liste_path);
+                    c_free(new_path);
+                    break;
+                }
+                c_free(new_path);
+            }
+        }
+        c_free(liste_path);   
+    }
     
     // shell command
     else {
+        char *old_prefix = c_malloc(c_str_len(prefix));
+        c_str_cpy(old_prefix, prefix);
         if(!(c_str_count(prefix, '.'))) c_str_cat(prefix, ".bin");
         char *file = c_malloc(c_str_len(prefix)+c_str_len(current_dir)+2);
         assemble_path("/bin/commands", prefix, file);
-        c_fskprint("Executing $9%s$7\n", file);
-        if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2)
-            c_sys_run_binary(file, 0, 0);
-        else c_fskprint("$3%s$B file not found\n", file);
+        if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+            int argc = c_str_count(buffer, ' ') + 1 + 1;
+            char **argv = c_malloc(argc * sizeof(char *));
+            // set argv[0] to the command name
+            argv[0] = c_malloc(c_str_len(prefix) + 1);
+            c_str_cpy(argv[0], file);
+            argv[1] = c_malloc(c_str_len(current_dir) + 1);
+            c_str_cpy(argv[1], current_dir);
+            for (int i = 2; i < argc; i++) {
+                argv[i] = c_malloc(c_str_len(suffix) + 1);
+                c_str_cpy(argv[i], suffix);
+                c_str_start_split(argv[i], ' ');
+                c_str_end_split(suffix, ' ');
+            }
+            c_sys_run_binary(file, 0, argc, argv);
+            // free
+            for (int i = 0; i < argc; i++) c_free(argv[i]);
+            c_free(argv);
+        }
+        else c_fskprint("$Bcommand $3%s$B not found\n", old_prefix);
         c_free(file);
+        c_free(old_prefix);
     }
 
     c_free(prefix);
@@ -69,8 +116,31 @@ int shell_command(char *buffer) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-
     result[0] = '\0'; c_str_cpy(result, old);
     if (result[c_str_len(result) - 1] != '/') c_str_append(result, '/');
     for (int i = 0; i < c_str_len(new); i++) c_str_append(result, new[i]);
+}
+
+void parse_path(char path[], string_20_t liste_path[]) {
+    int index = 0;
+    int index_in_str = 0;
+    for (int i = 0; i < c_str_len(path); i++) {
+        if (path[i] != '/') {
+            liste_path[index].name[index_in_str] = path[i];
+            index_in_str++;
+        } else {
+            liste_path[index].name[index_in_str] = '\0';
+            index++;
+            index_in_str = 0;
+        }
+    }
+}
+
+void gpd() {
+    for (int i = c_str_len(current_dir); i > 0; i--) {
+        if (current_dir[i] == '/' || i == 1) {
+            current_dir[i] = '\0';
+            break;
+        }
+    }
 }

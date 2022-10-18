@@ -34,7 +34,7 @@ int prog[] = {
 
 void start_inter(int * code, int code_size, int while_id);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     int * meml = c_calloc(LSIZE * sizeof(int));
     mem = meml;
 
@@ -43,7 +43,7 @@ int main(int arg) {
     start_inter(prog, sizeof(prog) / sizeof(int), 0);
 
     c_free(meml);
-    return arg;
+    return 0;
 }
 
 void start_inter(int * code, int code_size, int while_id) {

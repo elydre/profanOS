@@ -32,7 +32,7 @@ int main(int arg) {
     }
     for (int i = 0; i < HISTORY_SIZE; i++) c_free(history[i]);
     c_free(history);
-    return arg;
+    return 0;
 }
 
 void assemble_path(char old[], char new[], char result[]) {

@@ -2,7 +2,7 @@
 
 int is_prime(int n);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     c_fskprint("$4Starting the performance test...\n");
 
     int start_time = c_time_gen_unix();    
@@ -13,7 +13,7 @@ int main(int arg) {
 
     int time = c_time_gen_unix() - start_time;
     c_fskprint("$4Find $1%d $4prime numbers in $1%d $4seconds\n", count, time);
-    return arg;
+    return 0;
 }
 
 int is_prime(int n) {
