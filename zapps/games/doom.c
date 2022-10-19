@@ -38,7 +38,6 @@ double cos(double x);
 double sin(double x);
 
 int main(int arg) {
-    // 2.5D game doom like
     double x = 5, y = 5;
     double rot = 0; // in radians
 
@@ -82,8 +81,8 @@ int main(int arg) {
             }
         }
 
-        c_vgui_draw_rect(0, 0, tick_count[1], 7, 4);
-        c_vgui_draw_rect(0, 0, tick_count[3], 7, 32);
+        c_vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 32);
+        c_vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 4);
 
         c_int_to_ascii(1000 / tick_count[1], convert);
         c_vgui_print(0, 8, convert, 1, 8);
@@ -119,6 +118,16 @@ int main(int arg) {
         if (val_in_buffer(KB_S, 20, key_buffer)) {
             x -= cos(rot) * PLAYER_SPEED * tick_count[1] / ONK;
             y -= sin(rot) * PLAYER_SPEED * tick_count[1] / ONK;
+        }
+
+        if (val_in_buffer(KB_A, 20, key_buffer)) {
+            x += cos(rot + PI / 2) * PLAYER_SPEED * tick_count[1] / ONK;
+            y += sin(rot + PI / 2) * PLAYER_SPEED * tick_count[1] / ONK;
+        }
+
+        if (val_in_buffer(KB_E, 20, key_buffer)) {
+            x += cos(rot - PI / 2) * PLAYER_SPEED * tick_count[1] / ONK;
+            y += sin(rot - PI / 2) * PLAYER_SPEED * tick_count[1] / ONK;
         }
 
         if (x < 1) x = 1;
