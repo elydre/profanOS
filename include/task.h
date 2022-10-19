@@ -3,26 +3,29 @@
 
 #include <stdint.h>
 
-
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
-} Registers;
+} task_rgs_t;
 
-typedef struct Task {
-    Registers regs;
-    int pid;
-    int isdead;
-} Task;
+typedef struct {
+    task_rgs_t regs;
+    int pid, isdead;
+} task_t;
 
-extern void tasking_init();
-void task_powerfull(void (*main)(), int pid);
 
-void task_print();
+void tasking_init();
+int task_create(void (*func)());
 
 void yield(int target_pid);
 void task_kill_yield(int target_pid);
+void task_kill(int target_pid);
+
+int task_get_current_pid();
+int task_get_alive();
+int task_get_max();
+
 
 // switch.asm
-extern void task_switch(Registers *old, Registers *new);
+extern void task_switch(task_rgs_t *old, task_rgs_t *new);
 
 #endif

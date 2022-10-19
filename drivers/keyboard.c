@@ -2,6 +2,9 @@
 #include <function.h>
 #include <cpu/isr.h>
 #include <ports.h>
+#include <task.h>
+
+#include <iolib.h>
 
 #include <stdint.h>
 
@@ -53,10 +56,14 @@ void kb_reset_history() {
 static void keyboard_callback(registers_t *regs) {
     UNUSED(regs);
 
-    for (int i = 0; i < HISTORY_SIZE - 1; i++) {
+    for (int i = 0; i < HISTORY_SIZE - 1; i++)
         sc_history[i + 1] = sc_history[i];
-    }
     sc_history[0] = kb_get_scancode();
+
+    if (sc_history[0] == 59 && task_get_current_pid()) {
+        yield(0);
+        fskprint("Yielded to kernel ^^\n");
+    }
 }
 
 void keyboard_init() {

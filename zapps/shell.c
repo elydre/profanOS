@@ -269,7 +269,7 @@ int shell_command(char command[]) {
         c_fskprint("$4used mem:   $1%d%c\n", 100 * c_mem_get_usage() / c_mem_get_usable(), '%');
         c_fskprint("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_alloc_count() - c_mem_get_free_count(), c_mem_get_alloc_count());
         c_fskprint("$4disk size:  $1%fMo\n", ((double) c_ata_get_sectors_count()) / 2048);
-        c_task_print();
+        // c_task_print();
     }
 
     else if (c_str_cmp(prefix, "cd") == 0) {

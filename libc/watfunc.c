@@ -120,7 +120,6 @@ int wf_get_func_addr(int func_id) {
 
         // task.h
         case 67: return (int) yield;
-        case 75: return (int) task_print;
 
         // vga.h
         case 77: return (int) vga_320_mode;

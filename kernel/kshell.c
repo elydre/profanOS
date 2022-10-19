@@ -5,6 +5,8 @@
 #include <iolib.h>
 #include <mem.h>
 
+#include <task.h>
+
 #define BFR_SIZE 65
 
 /* start_kshell() is the last function executed
@@ -23,6 +25,11 @@ void start_kshell() {
         if (shell_command(char_buffer)) return;
         char_buffer[0] = '\0';
     }
+}
+
+
+void tasked_func() {
+    while (1) fskprint("infinit loop\n");
 }
 
 void shell_so(char suffix[]) {
@@ -72,6 +79,9 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
+    else if (str_cmp(prefix, "test") == 0) yield(1);
+    else if (str_cmp(prefix, "mk") == 0) task_create(tasked_func);
+
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
     
     return 0;
