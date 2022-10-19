@@ -212,6 +212,7 @@ extern "C" {
 #define c_timer_get_tick() ((int (*)(void)) hi_func_addr(72))()
 #define c_mem_get_alloc_count() ((int (*)(void)) hi_func_addr(73))()
 #define c_mem_get_free_count() ((int (*)(void)) hi_func_addr(74))()
+#define c_sys_run_ifexist(path, argc, argv) ((int (*)(char *, int, char **)) hi_func_addr(75))(path, argc, argv)
 #define c_cursor_blink(on) ((void (*)(int)) hi_func_addr(76))(on)
 #define c_vga_320_mode() ((void (*)(void)) hi_func_addr(77))()
 #define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()

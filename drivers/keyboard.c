@@ -61,8 +61,8 @@ static void keyboard_callback(registers_t *regs) {
     sc_history[0] = kb_get_scancode();
 
     if (sc_history[0] == 59 && task_get_current_pid()) {
+        fskprint("\nyield to kernel...\n");
         yield(0);
-        fskprint("Yielded to kernel ^^\n");
     }
 }
 

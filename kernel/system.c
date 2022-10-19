@@ -74,47 +74,6 @@ void sys_interrupt(int code) {
     sys_stop();
 }
 
-int sys_run_binary(char path[], int arg, int silence) {
-    uint32_t usbl_mem = (uint32_t) mem_get_usable() - mem_get_usage();
-    if (usbl_mem < 16 || usbl_mem < fs_get_file_size(path) + 16)
-        return sys_error("Not enough memory to run this program");
-
-    char * binary_mem = calloc(fs_get_file_size(path)*126);
-    uint32_t * file = fs_declare_read_array(path);
-
-    fs_read_file(path, file);
-
-    for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        binary_mem[i] = (char) file[i];
-    
-    free(file);
-
-    int old_active_alloc = mem_get_alloc_count() - mem_get_free_count();
-
-    int (*start_program)() = (int (*)())(binary_mem);
-    int return_value = start_program(arg);
-
-    if (!silence) {
-        if (old_active_alloc < mem_get_alloc_count() - mem_get_free_count())
-            sys_warning("Memory leak detected");
-        else if (old_active_alloc > mem_get_alloc_count() - mem_get_free_count())
-            sys_warning("Memory void detected");
-    }
-    
-    free(binary_mem);
-    return return_value;
-}
-
-int sys_run_ifexist(char path[], int arg) {
-    if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
-        return sys_run_binary(path, arg, 0);
-    char ermsg[100];
-    str_cpy(ermsg, path);
-    str_cat(ermsg, " not found");
-    sys_error(ermsg);
-    return -1;
-}
-
 int sys_get_setting(char name[]) {
     // read settings from /sys/settings.txt
     // return 0 if not found

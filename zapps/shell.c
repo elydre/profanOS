@@ -257,7 +257,7 @@ int shell_command(char command[]) {
         char *file = c_malloc(c_str_len(suffix)+c_str_len(current_dir)+2);
         assemble_path(current_dir, suffix, file);
         if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2)
-            c_sys_run_binary(file, 0, 0);
+            c_sys_run_ifexist(file, 0, NULL);
         else c_fskprint("$3%s$B file not found\n", file);
         c_free(file);
     }

@@ -15,7 +15,7 @@ int main(int arg) {
     print_status("memory free", old_active_alloc == c_mem_get_alloc_count() - c_mem_get_free_count());
     print_status("file system", c_fs_get_file_size("/bin/tools/testall.bin") > 0);
     print_status("timer tick", c_timer_get_tick() > 0);
-    print_status("run binary", c_sys_run_binary("/bin/tools/testall.bin", 86, 0) == 42);
+    print_status("run binary", c_sys_run_ifexist("/bin/tools/testall.bin", 0, NULL) == 42);
     return 0;
 }
 
