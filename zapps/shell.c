@@ -51,9 +51,7 @@ int shell_command(char *buffer) {
 
     if (!c_str_cmp(prefix, "exit")) {
         return_value = 1;
-    }
-
-    else if (!c_str_cmp(prefix, "cd")) {
+    } else if (!c_str_cmp(prefix, "cd")) {
         char old_path[256];
         c_str_cpy(old_path, current_dir);
         string_20_t * liste_path = c_calloc(1024);
@@ -77,10 +75,7 @@ int shell_command(char *buffer) {
             }
         }
         c_free(liste_path);   
-    }
-    
-    // shell command
-    else {
+    } else {  // shell command
         char *old_prefix = c_malloc(c_str_len(prefix));
         c_str_cpy(old_prefix, prefix);
         if(!(c_str_count(prefix, '.'))) c_str_cat(prefix, ".bin");
@@ -104,8 +99,9 @@ int shell_command(char *buffer) {
             // free
             for (int i = 0; i < argc; i++) c_free(argv[i]);
             c_free(argv);
+        } else if (c_str_cmp(old_prefix, "")) {
+            c_fskprint("$3%s$B is not a valid command.\n", old_prefix);
         }
-        else c_fskprint("$3%s$B is not a valid command.\n", old_prefix);
         c_free(file);
         c_free(old_prefix);
     }
