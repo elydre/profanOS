@@ -153,7 +153,7 @@ extern "C" {
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 #define c_fs_get_used_sectors(disk_size) ((uint32_t (*)(uint32_t)) hi_func_addr(0))(disk_size)
-#define c_fs_make_dir(path,folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
+#define c_fs_make_dir(path, folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
 #define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
 #define c_fs_read_file(path, data) ((void (*)(char *, uint32_t *)) hi_func_addr(4))(path, data)
 #define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)

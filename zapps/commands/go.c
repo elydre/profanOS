@@ -4,9 +4,6 @@ void assemble_path(char old[], char new[], char result[]);
 
 int main(int argc, char **argv) {
     char *path = c_malloc(256);
-    c_fskprint("argv[0] = %s\n", argv[0]);
-    c_fskprint("argv[1] = %s\n", argv[1]);
-    c_fskprint("argv[2] = %s\n", argv[2]);
     char *suffix = c_malloc(256);
     c_str_cpy(suffix, argv[2]);
     char *current_dir = c_malloc(256);
