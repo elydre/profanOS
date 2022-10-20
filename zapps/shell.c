@@ -87,7 +87,7 @@ int shell_command(char *buffer) {
         char *file = c_malloc(c_str_len(prefix)+c_str_len(current_dir)+2);
         assemble_path("/bin/commands", prefix, file);
         if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
-            int argc = c_str_count(buffer, ' ') + 1 + 1;
+            int argc = c_str_count(buffer, ' ') + 3;
             char **argv = c_malloc(argc * sizeof(char *));
             // set argv[0] to the command name
             argv[0] = c_malloc(c_str_len(prefix) + 1);
