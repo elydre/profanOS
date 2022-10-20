@@ -4,7 +4,7 @@ void afficher(int **plateau, int n);
 void solve(int n, int from_rod, int to_rod, int aux_rod);
 void move(int **plateau, int from, int to);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     // ask for input
     char inp[3];
     int n;
@@ -25,7 +25,7 @@ int main(int arg) {
     }
     c_free(plateau);
     c_fskprint("\n");
-    return arg;
+    return 0;
 }
 
 void solve(int n, int from_rod, int to_rod, int aux_rod) {

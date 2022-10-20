@@ -2,8 +2,8 @@
 
 void print_status(char test_name[], int status);
 
-int main(int arg) {
-    if (arg == 86) return 42;
+int main(int argc, char **argv) {
+    if (argc == 86) return 42;
 
     print_status("math pow()", c_pow(3, 7) == 2187 && c_pow(10, 3) == 1000);
     print_status("random", c_rand() != c_rand() || c_rand() != c_rand());
@@ -15,7 +15,7 @@ int main(int arg) {
     print_status("memory free", old_active_alloc == c_mem_get_alloc_count() - c_mem_get_free_count());
     print_status("file system", c_fs_get_file_size("/bin/tools/testall.bin") > 0);
     print_status("timer tick", c_timer_get_tick() > 0);
-    print_status("run binary", c_sys_run_binary("/bin/tools/testall.bin", 86, 0) == 42);
+    print_status("run binary", c_sys_run_binary("/bin/tools/testall.bin", 0, 86, (char **)0) == 42);
     return 0;
 }
 

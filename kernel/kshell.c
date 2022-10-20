@@ -30,7 +30,7 @@ void shell_so(char suffix[]) {
     str_cat(path, suffix);
     str_cat(path, ".bin");
     fskprint("path: %s\n", path);
-    sys_run_ifexist(path, 0);    
+    sys_run_ifexist(path, 0, (char **)0);    
 }
 
 void shell_satan(char suffix[]) {
@@ -66,7 +66,7 @@ int shell_command(char command[]) {
     str_end_split(suffix, ' ');
 
     if      (str_cmp(prefix, "exit") == 0) return 1;
-    else if (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0);
+    else if (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();

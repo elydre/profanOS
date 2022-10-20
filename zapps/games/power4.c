@@ -21,7 +21,7 @@ void free_grille(int ** grille);
 int IA_play(int ** grille);
 int is_gagnant(int ** tab);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     int colonne;
     int tour = 0;
 
@@ -52,7 +52,7 @@ int main(int arg) {
     c_fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     free_grille(grille);
     c_cursor_blink(0);
-    return arg;
+    return 0;
 }
 
 int IA_cp_gagnant(int joueur, int ** grille) {

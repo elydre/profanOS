@@ -3,7 +3,7 @@
 
 #include "syscall.h"
 
-int main(int arg) {
+int main(int argc, char **argv) {
 
     char path[] = "/zada/star_wars.txt";
 
@@ -44,5 +44,5 @@ int main(int arg) {
     c_free(data);
     c_free(str);
     c_cursor_blink(0);
-    return arg;
+    return 0;
 }

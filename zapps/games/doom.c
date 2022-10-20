@@ -38,7 +38,7 @@ void add_to_buffer(int val, int * buffer);
 double cos(double x);
 double sin(double x);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     // 2.5D game doom like
     double x = 5, y = 5;
     double rot = 0; // in radians
@@ -131,7 +131,7 @@ int main(int arg) {
     c_free(buffer);
     c_free(key_buffer);
 
-    return arg;
+    return 0;
 }
 
 double cos(double x) {

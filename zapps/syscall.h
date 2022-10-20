@@ -153,7 +153,7 @@ extern "C" {
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 #define c_fs_get_used_sectors(disk_size) ((uint32_t (*)(uint32_t)) hi_func_addr(0))(disk_size)
-#define c_fs_make_dir(path,folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
+#define c_fs_make_dir(path, folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
 #define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
 #define c_fs_read_file(path, data) ((void (*)(char *, uint32_t *)) hi_func_addr(4))(path, data)
 #define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)
@@ -206,7 +206,7 @@ extern "C" {
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
-#define c_sys_run_binary(fileName, arg, silence) ((int (*)(char *, int, int)) hi_func_addr(69))(fileName, arg, silence)
+#define c_sys_run_binary(path, silence, nb_args, args) ((int (*)(char *, int, int, char **)) hi_func_addr(69))(path, silence, nb_args, args)
 #define c_time_get(time) ((void (*)(time_t *)) hi_func_addr(70))(time)
 #define c_time_calc_unix(time) ((int (*)(time_t *)) hi_func_addr(71))(time)
 #define c_timer_get_tick() ((int (*)(void)) hi_func_addr(72))()

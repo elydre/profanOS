@@ -2,7 +2,7 @@
 
 #define SLEEP_TIME 3500
 
-int main(int arg) {
+int main(int argc, char **argv) {
     c_vga_320_mode();
     for (int i = 0; i < 64; i++) {
         for (int j = 0; j < 25*40; j++) {
@@ -40,5 +40,5 @@ int main(int arg) {
     c_ms_sleep(SLEEP_TIME);
 
     c_vga_text_mode();
-    return arg;
+    return 0;
 }

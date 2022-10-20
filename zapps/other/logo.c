@@ -1,6 +1,6 @@
 #include "syscall.h"
 
-int main(int arg) {
+int main(int argc, char **argv) {
 
     char path[] = "/zada/logo.itxt";
     uint32_t * data = c_fs_declare_read_array(path);
@@ -18,5 +18,5 @@ int main(int arg) {
     c_free(data);
     c_free(str);
 
-    return arg;
+    return 0;
 }
