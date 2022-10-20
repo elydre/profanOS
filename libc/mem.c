@@ -136,7 +136,8 @@ void * calloc(int size) {
 void mem_print() {
     int val, color = 0x80;
     char nb[2];
-    for (int mi = 0; mi < IMM_COUNT; mi++) {
+    int max = IMM_COUNT>54 ? 54 : IMM_COUNT;
+    for (int mi = 0; mi < max; mi++) {
         if (mi % 3 == 0) kprint("\n  ");
         kprint("    ");
         for (int i = 0; i < 19; i++) {

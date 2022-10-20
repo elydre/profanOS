@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.6.9"
+#define VERSION "0.6.10"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c
