@@ -20,7 +20,9 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ### Install dependencies
 
 ```bash
-apt-get install -y gcc g++ nasm make qemu-system-i386 python3 genisoimage
+sudo apt-get update
+sudo apt-get install -y gcc g++ nasm make qemu-system-i386 genisoimage python3 python3-pip
+pip3 install pillow
 ```
 
 ### Compile & Run
@@ -48,7 +50,7 @@ alloc   - allocate * ko                mem     - show MLIST with colors
 cat     - print file *                 mkdir   - create a new folder *
 cd      - change dir to *              mkfile  - create a new file *
 clear   - clear the screen             reboot  - reboot the system
-echo    - print the arguments          sc      - show the scancodesshow
+echo    - print the arguments          sc      - show the scancodes
 exit    - exit of the shell app        show    - show image in the screen
 free    - free * address               sleep   - sleep for a given time
 info    - show time, task & page       ss      - show int in the LBA *

@@ -10,8 +10,8 @@
 #define REG_SCREEN_DATA 0x3d5
 
 
-typedef enum ScreenColor ScreenColor;
-enum ScreenColor {
+typedef enum screen_color_t screen_color_t;
+enum screen_color_t {
     // light colors
     c_blue = 0x09,
     c_green = 0x0a,

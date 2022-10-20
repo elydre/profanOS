@@ -102,9 +102,7 @@ void sleep(int seconds) {
 
 void ms_sleep(uint32_t ms) {
     uint32_t start_tick = timer_get_tick();
-    while (timer_get_tick() < start_tick + ms / 10) {
-        do_nothing();
-    }
+    while (timer_get_tick() < start_tick + ms / 10);
 }
 
 void time_gen_boot() {

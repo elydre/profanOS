@@ -47,9 +47,9 @@
 #define KB_released_value 128
 #define KB_released(key) key+KB_released_value
 
-#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir ScreenColor
+#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir screen_color_t
 extern "C" {
-    enum ScreenColor {
+    enum screen_color_t {
         // light colors
         c_blue = 0x09,
         c_green = 0x0a,
@@ -95,8 +95,8 @@ extern "C" {
     } Sprite_t;
 }
 #else
-    typedef enum ScreenColor ScreenColor;
-    enum ScreenColor {
+    typedef enum screen_color_t screen_color_t;
+    enum screen_color_t {
         // light colors
         c_blue = 0x09,
         c_green = 0x0a,
@@ -184,7 +184,7 @@ extern "C" {
 #define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
 #define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
 #define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
-#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, ScreenColor, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
+#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, screen_color_t, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
 #define c_input(out_buffer, size, color) ((void (*)(char *, int, char)) hi_func_addr(41))(out_buffer, size, color)
 #define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
 #define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)
