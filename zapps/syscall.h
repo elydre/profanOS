@@ -218,7 +218,7 @@ extern "C" {
 #define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()
 #define c_vga_text_mode() ((void (*)(void)) hi_func_addr(79))()
 #define c_vga_clear_screen() ((void (*)(void)) hi_func_addr(80))()
-#define c_vga_put_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
+#define c_vga_set_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
 #define c_vga_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(82))(x, y, msg, big, color)
 #define c_vga_draw_line(x1, y1, x2, y2, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(83))(x1, y1, x2, y2, color)
 #define c_vga_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(84))(x, y, w, h, color)
@@ -237,5 +237,6 @@ extern "C" {
 #define c_vgui_set_pixel(x, y, color) ((void (*)(int, int, unsigned)) hi_func_addr(97))(x, y, color)
 #define c_vgui_get_pixel(x, y) ((unsigned (*)(int, int)) hi_func_addr(98))(x, y)
 #define c_vgui_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(99))(x, y, msg, big, color)
+#define c_task_debug_print() ((void (*)(void)) hi_func_addr(100))()
 
 #endif

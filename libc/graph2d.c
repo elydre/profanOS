@@ -69,7 +69,7 @@ void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
                 index_couleur++; index_char++;
             } couleur_str[index_couleur] = '\0'; index_char++;
             couleur = ascii_to_int(couleur_str);
-            vga_put_pixel(l+y, h+x, couleur);
+            vga_set_pixel(l+y, h+x, couleur);
         }
     }
 }

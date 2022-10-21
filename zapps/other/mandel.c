@@ -29,7 +29,7 @@ int main(int arg) {
                 yn = 2 * tmp_x * tmp_y + cy;
                 n++;
             }
-            c_vga_put_pixel(x, y, n);
+            c_vga_set_pixel(x, y, n);
         }
     }
     c_vga_print(5, 5, "press escape to exit", 0, 63);

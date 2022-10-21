@@ -6,7 +6,7 @@ int main(int arg) {
     c_vga_320_mode();
     for (int i = 0; i < 64; i++) {
         for (int j = 0; j < 25*40; j++) {
-            c_vga_put_pixel(i%8 * 40 + j%40, i/8 * 25 + j/40, i);
+            c_vga_set_pixel(i%8 * 40 + j%40, i/8 * 25 + j/40, i);
         }
     }
     c_vga_print(45, 55, "320x200 - 64 colors (fast)", 1, 0);

@@ -125,13 +125,14 @@ int wf_get_func_addr(int func_id) {
 
         // task.h
         case 67: return (int) yield;
+        case 100: return (int) task_debug_print;
 
         // vga.h
         case 77: return (int) vga_320_mode;
         case 78: return (int) vga_640_mode;
         case 79: return (int) vga_text_mode;
         case 80: return (int) vga_clear_screen;
-        case 81: return (int) vga_put_pixel;
+        case 81: return (int) vga_set_pixel;
         case 82: return (int) vga_print;
         case 83: return (int) vga_draw_line;
         case 84: return (int) vga_draw_rect;

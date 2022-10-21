@@ -4,6 +4,7 @@
 #include <gui/vga.h>
 #include <system.h>
 #include <ports.h>
+#include <task.h>
 #include <mem.h>
 
 #define peekb(S,O)        * (unsigned char *)(16uL * (S) + (O))
@@ -177,7 +178,7 @@ void set_plane(unsigned p) {
  * VGA public functions *
 *************************/
 
-void vga_put_pixel(unsigned x, unsigned y, unsigned c) {
+void vga_set_pixel(unsigned x, unsigned y, unsigned c) {
     unsigned off, mask, pmask;
     if (x >= vga_width || y >= vga_height)
         return;
@@ -203,7 +204,7 @@ void vga_put_pixel(unsigned x, unsigned y, unsigned c) {
 
 void vga_clear_screen() {
     for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
-        vga_put_pixel(xy % vga_width, xy / vga_width, 0x0F);
+        vga_set_pixel(xy % vga_width, xy / vga_width, 0x0F);
     }
 }
 
@@ -225,6 +226,8 @@ void vga_320_mode() {
         framebuffer_segment_copy = calloc(MEM_CPY_SIZE);
         mcp((void *) MEM_CPY_BASE, framebuffer_segment_copy, MEM_CPY_SIZE);
     }
+
+    task_update_gui_mode(vga_note);
 
     // clears the screen
     vga_clear_screen();
@@ -249,6 +252,8 @@ void vga_640_mode() {
         mcp((void *) MEM_CPY_BASE, framebuffer_segment_copy, MEM_CPY_SIZE);
     }
 
+    task_update_gui_mode(vga_note);
+
     // clears the screen
     vga_clear_screen();
 }
@@ -269,6 +274,8 @@ void vga_text_mode() {
     // setup the vga registers
     write_registers(g_80x25_text);
 
+    task_update_gui_mode(vga_note);
+
     clear_screen();
 }
 
@@ -284,6 +291,16 @@ int vga_get_height() {
     return vga_height;
 }
 
+int vga_get_mode() {
+    return vga_note;
+}
+
+void vga_switch_mode(int mode) {
+    if (mode == 0) vga_text_mode();
+    else if (mode == 1) vga_320_mode();
+    else if (mode == 2) vga_640_mode();
+}
+
 void vga_print(int x, int y, char msg[], int big, unsigned color) {
     unsigned char *glyph, *font;
     font = big ? g_8x16_font : g_8x8_font;
@@ -292,7 +309,7 @@ void vga_print(int x, int y, char msg[], int big, unsigned color) {
         for (int j = 0; j < (big ? 16 : 8); j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
-                vga_put_pixel(i * 8 + x + 8 - k , y + j, color);
+                vga_set_pixel(i * 8 + x + 8 - k , y + j, color);
             }
         }
     }
@@ -307,7 +324,7 @@ void vga_draw_line(int x1, int y1, int x2, int y2, unsigned color) {
     float x = x1;
     float y = y1;
     for (int i = 0; i <= steps; i++) {
-        vga_put_pixel(x, y, color);
+        vga_set_pixel(x, y, color);
         x += xinc;
         y += yinc;
     }
@@ -316,7 +333,7 @@ void vga_draw_line(int x1, int y1, int x2, int y2, unsigned color) {
 void vga_draw_rect(int x, int y, int w, int h, unsigned color) {
     for (int i = 0; i < w; i++) {
         for (int j = 0; j < h; j++) {
-            vga_put_pixel(x + i, y + j, color);
+            vga_set_pixel(x + i, y + j, color);
         }
     }
 }

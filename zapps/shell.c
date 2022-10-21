@@ -210,8 +210,8 @@ int shell_command(char command[]) {
     else if (c_str_cmp(prefix, "ss") == 0)     show_disk_LBA(suffix);
     else if (c_str_cmp(prefix, "stop") == 0)   c_sys_shutdown();
     else if (c_str_cmp(prefix, "tree") == 0)   shell_tree(current_dir, 0);
+    else if (c_str_cmp(prefix, "debug") == 0)  c_task_debug_print();
     else if (c_str_cmp(prefix, "yield") == 0)  c_yield((c_str_cmp(suffix, "yield") == 0) ? 1 : c_ascii_to_int(suffix));
-
 
     else if (c_str_cmp(prefix, "mkdir") == 0) {
         if (!c_str_cmp(suffix, "..")) {

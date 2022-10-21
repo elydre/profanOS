@@ -1,3 +1,4 @@
+#include <gui/vga.h>
 #include <string.h>
 #include <iolib.h>
 #include <task.h>
@@ -74,6 +75,8 @@ void tasking_init() {
 
     mainTask.pid = 0;
     mainTask.isdead = 0;
+    mainTask.gui_mode = 0;
+    str_cpy(mainTask.name, "kernel");
 
     tasks[0] = mainTask;
 
@@ -81,7 +84,7 @@ void tasking_init() {
     task_count = 1;
 }
 
-int task_create(void (*func)()) {
+int task_create(void (*func)(), char * name) {
     int nb_alive = i_refresh_alive();
     current_pid++;
     int pid = current_pid;
@@ -92,6 +95,10 @@ int task_create(void (*func)()) {
             break;
         }
     }
+
+    task.gui_mode = vga_get_mode();
+    str_cpy(task.name, name);
+
     i_new_task(&task, func, mainTask->regs.eflags, (uint32_t*) mainTask->regs.cr3, pid);
     tasks[nb_alive] = task;
     task_count++;
@@ -99,9 +106,9 @@ int task_create(void (*func)()) {
 }
 
 void yield(int target_pid) {
-    int nb_alive = i_refresh_alive();
+    int task_i, nb_alive = i_refresh_alive();
 
-    for (int task_i = 0; task_i < nb_alive; task_i++) {
+    for (task_i = 0; task_i < nb_alive; task_i++) {
         if (tasks[task_i].pid == target_pid) {
             tasks[TASK_MAX - 1] = tasks[0];
             tasks[0] = tasks[task_i];
@@ -113,7 +120,11 @@ void yield(int target_pid) {
         }
     }
 
-    task_switch(&tasks[1].regs, &tasks[0].regs);
+    vga_switch_mode(tasks[0].gui_mode);
+
+    fskprint("$2yield: %d -> %d\n", tasks[task_i].pid, tasks[0].pid);
+    
+    task_switch(&tasks[task_i].regs, &tasks[0].regs);
     i_destroy_killed_tasks(nb_alive);
 }
 
@@ -134,6 +145,10 @@ void task_kill(int target_pid) {
     sys_error("Task not found in task_kill");
 }
 
+void task_update_gui_mode(int mode) {
+    tasks[0].gui_mode = mode;
+}
+
 /*******************
  * GET FUNCTIONS *
 *******************/
@@ -148,4 +163,11 @@ int task_get_alive() {
 
 int task_get_max() {
     return TASK_MAX;
+}
+
+void task_debug_print() {
+    int nb_alive = i_refresh_alive();
+    for (int i = 0; i < nb_alive; i++) {
+        fskprint("$4Task %s: %d\n", tasks[i].name, tasks[i].pid);
+    }
 }

@@ -24,7 +24,7 @@ void vgui_exit() {
 void vgui_render() {
     for (int i = 0; i < 320 * 200; i++) {
         if (last_render[i] != current_render[i] || refresh_mode) {
-            vga_put_pixel(i % 320, i / 320, current_render[i]);
+            vga_set_pixel(i % 320, i / 320, current_render[i]);
             last_render[i] = current_render[i];
         }
     }
