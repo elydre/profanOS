@@ -24,7 +24,7 @@ CC = "gcc"
 CPPC = "g++"
 
 CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I ./{INCLUDE_DIR}"
-ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wextra -fno-exceptions -m32"
+ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wno-unused -Wextra -fno-exceptions -m32"
 
 # SETTINGS
 

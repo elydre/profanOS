@@ -1,6 +1,6 @@
 #include "syscall.h"
 
-int main(int arg) {
+int main(int argc, char **argv) {
 
     char path[80];
     c_fskprint("Entrez le chemin du fichier : ");
@@ -17,5 +17,5 @@ int main(int arg) {
     c_fskprint("%s\n", data_char);
 
     c_free(data_char);
-    return arg;
+    return 0;
 }

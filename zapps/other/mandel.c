@@ -9,7 +9,7 @@
 #define YMIN -1.25
 #define YMAX 1.25
 
-int main(int arg) {
+int main(int argc, char **argv) {
     c_vga_320_mode();
 
     long double cx, cy, xn, yn, tmp_x, tmp_y;
@@ -35,5 +35,5 @@ int main(int arg) {
     c_vga_print(5, 5, "press escape to exit", 0, 63);
     while (c_kb_get_scancode() != 1);
     c_vga_text_mode();
-    return arg;
+    return 0;
 }

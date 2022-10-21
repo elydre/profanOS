@@ -9,7 +9,7 @@
 
 #define O_MAX 5
 
-int main(int arg) {
+int main(int argc, char **argv) {
 
     c_clear_screen();
     int val = 0;
@@ -98,5 +98,5 @@ int main(int arg) {
         c_ms_sleep(to_wait);
         iter++;
     }
-    return arg;
+    return 0;
 }

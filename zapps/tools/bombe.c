@@ -1,14 +1,14 @@
 #include "syscall.h"
 
 
-int main(int arg) {
+int main(int argc, char **argv) {
 
     char path[] = "/bin/tools/bombe.bin";
 
-    c_fskprint("run: %d\n", arg);
+    c_fskprint("run: %d\n", argc);
 
-    if (arg == 140) c_fskprint("done!\n");
-    else c_sys_run_ifexist(path, 0, NULL);
+    if (argc == 140) c_fskprint("done!\n");
+    else c_sys_run_binary(path, 0, argc + 1, NULL);
 
-    return arg;
+    return 0;
 }

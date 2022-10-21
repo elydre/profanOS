@@ -2,8 +2,8 @@
 
 void print_status(char test_name[], int status);
 
-int main(int arg) {
-    if (arg == 86) return 42;
+int main(int argc, char **argv) {
+    if (argc == 86) return 42;
 
     print_status("math pow()", c_pow(3, 7) == 2187 && c_pow(10, 3) == 1000);
     print_status("random", c_rand() != c_rand() || c_rand() != c_rand());

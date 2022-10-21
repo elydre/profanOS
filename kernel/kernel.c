@@ -6,6 +6,7 @@
 #include <iolib.h>
 #include <time.h>
 #include <task.h>
+#include <mem.h>
 
 void kernel_main() {
     clear_screen();
@@ -33,7 +34,11 @@ void kernel_main() {
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
     // launch of the shell.bin
-    sys_run_ifexist("/bin/shell.bin", 0, NULL);
+    char **argv = malloc(sizeof(char *));
+    argv[0] = "/bin/shell.bin";
+    sys_run_ifexist(argv[0], 1, argv);
+    free(argv);
+    
     start_kshell();
     
     sys_fatal("Nothing to run!");

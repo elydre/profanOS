@@ -29,7 +29,7 @@ int * mem;
 void start_inter(int * code, int code_size, int while_id);
 int lexer(char path[], int * code);
 
-int main(int arg) {
+int main(int argc, char **argv) {
     int * meml = c_calloc(LSIZE * sizeof(int));
     int * prog = c_calloc(PSIZE * sizeof(int));
     mem = meml;
@@ -42,7 +42,7 @@ int main(int arg) {
 
     c_free(meml);
     c_free(prog);
-    return arg;
+    return 0;
 }
 
 int lexer(char path[], int * code) {

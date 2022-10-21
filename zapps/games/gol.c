@@ -7,7 +7,7 @@ int size_x = 20;
 int size_y = 40;
 int wait = 250;
 
-int main(int arg) {
+int main(int argc, char **argv) {
 
     c_cursor_blink(1);
     c_clear_screen();
@@ -52,7 +52,7 @@ int main(int arg) {
     c_cursor_blink(0);
     c_clear_screen();
     
-    return arg;
+    return 0;
 }
 
 void edition_state(int **plateau) {
