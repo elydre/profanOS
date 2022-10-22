@@ -3,8 +3,6 @@
 #include <cpu/isr.h>
 #include <ports.h>
 
-#include <task.h>
-
 uint32_t tick = 0;
 
 static void timer_callback(registers_t *regs) {

@@ -1,3 +1,4 @@
+#include <driver/serial.h>
 #include <filesystem.h>
 #include <string.h>
 #include <system.h>
@@ -22,22 +23,26 @@ void sys_shutdown() {
 
 void sys_stop() {
     fskprint("$4profanOS has been stopped $2:$4(");
+    serial_debug("SYSTEM", "profanOS has been stopped");
     asm volatile("cli");
     asm volatile("hlt");
 }
 
 int sys_warning(char msg[]) {
     fskprint("$DWARNING: $5%s\n", msg);
+    serial_debug("WARNING", msg);
     return 0;
 }
 
 int sys_error(char msg[]) {
     fskprint("$BERROR: $3%s\n", msg);
+    serial_debug("ERROR", msg);
     return 0;
 }
 
 void sys_fatal(char msg[]) {
     fskprint("$CFATAL: $4%s\n", msg);
+    serial_debug("FATAL", msg);
     sys_stop();
 }
 
@@ -71,6 +76,7 @@ void sys_interrupt(int code) {
     if (code < 19) str_cpy(msg, interrupts[code]);
     else str_cpy(msg, "Reserved");
     fskprint("$CCPU INTERRUPT $4%d$C: $4%s\n", code, msg);
+    serial_debug("CPU INTERRUPT", msg);
     sys_stop();
 }
 

@@ -115,6 +115,11 @@ int task_create(void (*func)(), char * name) {
 void yield(int target_pid) {
     int task_i, nb_alive = i_refresh_alive();
 
+    if (tasks[0].pid == target_pid) {
+        sys_error("Cannot yield to self");
+        return;
+    }
+
     for (task_i = 0; task_i < nb_alive; task_i++) {
         if (tasks[task_i].pid == target_pid) {
             tasks[TASK_MAX] = tasks[task_i];
