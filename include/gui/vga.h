@@ -17,6 +17,4 @@ int vga_get_width();
 int vga_get_height();
 int vga_get_mode();
 
-void task_debug_print();
-
 #endif

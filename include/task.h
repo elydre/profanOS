@@ -23,8 +23,11 @@ void task_kill_yield(int target_pid);
 void task_kill(int target_pid);
 
 void task_update_gui_mode(int mode);
+void task_debug_print();
 
 int task_get_current_pid();
+int task_get_next_pid();
+
 int task_get_alive();
 int task_get_max();
 

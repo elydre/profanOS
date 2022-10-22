@@ -60,9 +60,10 @@ static void keyboard_callback(registers_t *regs) {
         sc_history[i + 1] = sc_history[i];
     sc_history[0] = kb_get_scancode();
 
-    if (sc_history[0] == 59 && task_get_current_pid()) {
-        fskprint("\nyield to kernel...\n");
-        yield(0);
+    if (sc_history[0] == 59) {
+        int task = task_get_next_pid();
+        fskprint("\n$1yield to %d\n", task);
+        yield(task);
     }
 }
 

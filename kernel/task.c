@@ -4,9 +4,9 @@
 #include <task.h>
 #include <mem.h>
 
-#define TASK_MAX 5
+#define TASK_MAX 10
 
-static task_t tasks[TASK_MAX];
+static task_t tasks[TASK_MAX + 1];
 int current_pid, task_count;
 
 /************************
@@ -86,6 +86,10 @@ void tasking_init() {
 
 int task_create(void (*func)(), char * name) {
     int nb_alive = i_refresh_alive();
+    if (task_count >= TASK_MAX) {
+        sys_fatal("Cannot create task, too many tasks");
+        return -1;
+    }
     current_pid++;
     int pid = current_pid;
     task_t task, *mainTask;
@@ -110,9 +114,11 @@ void yield(int target_pid) {
 
     for (task_i = 0; task_i < nb_alive; task_i++) {
         if (tasks[task_i].pid == target_pid) {
-            tasks[TASK_MAX - 1] = tasks[0];
-            tasks[0] = tasks[task_i];
-            tasks[task_i] = tasks[TASK_MAX - 1];
+            tasks[TASK_MAX] = tasks[task_i];
+            for (int i = task_i; i > 0; i--) {
+                tasks[i] = tasks[i - 1];
+            }
+            tasks[0] = tasks[TASK_MAX];
             break;
         } else if (task_i == nb_alive - 1) {
             sys_error("Task not found in yield");
@@ -122,9 +128,9 @@ void yield(int target_pid) {
 
     vga_switch_mode(tasks[0].gui_mode);
 
-    fskprint("$2yield: %d -> %d\n", tasks[task_i].pid, tasks[0].pid);
-    
-    task_switch(&tasks[task_i].regs, &tasks[0].regs);
+    fskprint("$2yield: %d -> %d\n", tasks[1].pid, tasks[0].pid);
+
+    task_switch(&tasks[1].regs, &tasks[0].regs);
     i_destroy_killed_tasks(nb_alive);
 }
 
@@ -157,6 +163,11 @@ int task_get_current_pid() {
     return tasks[0].pid;
 }
 
+int task_get_next_pid() {
+    task_get_alive();
+    return tasks[1].pid;
+}
+
 int task_get_alive() {
     return i_refresh_alive();
 }
@@ -168,6 +179,6 @@ int task_get_max() {
 void task_debug_print() {
     int nb_alive = i_refresh_alive();
     for (int i = 0; i < nb_alive; i++) {
-        fskprint("$4Task %s: %d\n", tasks[i].name, tasks[i].pid);
+        fskprint("$4Task %s: %d (%d, %d)\n", tasks[i].name, tasks[i].pid, tasks[i].isdead, tasks[i].gui_mode);
     }
 }

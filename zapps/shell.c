@@ -9,6 +9,7 @@ static char current_dir[256] = "/";
 
 void assemble_path(char old[], char new[], char result[]);
 void parse_path(char path[], string_20_t liste_path[]);
+void go(char file[], char prefix[], char suffix[]);
 int shell_command(char command[]);
 void gpd();
 
@@ -74,31 +75,20 @@ int shell_command(char *buffer) {
                 c_free(new_path);
             }
         }
-        c_free(liste_path);   
+        c_free(liste_path);  
+    } else if (!c_str_cmp(prefix, "go")) {
+        if(!(c_str_count(suffix, '.'))) c_str_cat(suffix, ".bin");
+        char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
+        assemble_path(current_dir, suffix, file);
+        go(file, prefix, suffix);
     } else {  // shell command
         char *old_prefix = c_malloc(c_str_len(prefix));
         c_str_cpy(old_prefix, prefix);
         if(!(c_str_count(prefix, '.'))) c_str_cat(prefix, ".bin");
-        char *file = c_malloc(c_str_len(prefix)+c_str_len(current_dir)+2);
+        char *file = c_malloc(c_str_len(prefix) + c_str_len(current_dir) + 2);
         assemble_path("/bin/commands", prefix, file);
         if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
-            int argc = c_str_count(buffer, ' ') + 3;
-            char **argv = c_malloc(argc * sizeof(char *));
-            // set argv[0] to the command name
-            argv[0] = c_malloc(c_str_len(prefix) + 1);
-            c_str_cpy(argv[0], file);
-            argv[1] = c_malloc(c_str_len(current_dir) + 1);
-            c_str_cpy(argv[1], current_dir);
-            for (int i = 2; i < argc; i++) {
-                argv[i] = c_malloc(c_str_len(suffix) + 1);
-                c_str_cpy(argv[i], suffix);
-                c_str_start_split(argv[i], ' ');
-                c_str_end_split(suffix, ' ');
-            }
-            c_sys_run_binary(file, 0, argc, argv);
-            // free
-            for (int i = 0; i < argc; i++) c_free(argv[i]);
-            c_free(argv);
+            go(file, old_prefix, suffix);
         } else if (c_str_cmp(old_prefix, "")) {
             c_fskprint("$3%s$B is not a valid command.\n", old_prefix);
         }
@@ -109,6 +99,28 @@ int shell_command(char *buffer) {
     c_free(prefix);
     c_free(suffix);
     return return_value;
+}
+
+void go(char file[], char prefix[], char suffix[]) {
+    if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+        int argc = c_str_count(suffix, ' ') + 4;
+        char **argv = c_malloc(argc * sizeof(char *));
+        // set argv[0] to the command name
+        argv[0] = c_malloc(c_str_len(prefix) + 1);
+        c_str_cpy(argv[0], file);
+        argv[1] = c_malloc(c_str_len(current_dir) + 1);
+        c_str_cpy(argv[1], current_dir);
+        for (int i = 2; i < argc; i++) {
+            argv[i] = c_malloc(c_str_len(suffix) + 1);
+            c_str_cpy(argv[i], suffix);
+            c_str_start_split(argv[i], ' ');
+            c_str_end_split(suffix, ' ');
+        }
+        c_sys_run_binary(file, 0, argc, argv);
+        // free
+        for (int i = 0; i < argc; i++) c_free(argv[i]);
+        c_free(argv);
+    } else c_fskprint("$3%s$B file not found\n", file);
 }
 
 void assemble_path(char old[], char new[], char result[]) {

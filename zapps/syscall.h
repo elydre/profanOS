@@ -7,6 +7,7 @@
 
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
+#define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
 
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)FUNC_ADDR_SAVE)(id)
@@ -45,7 +46,7 @@
 #define KB_MAJ 58
 
 #define KB_released_value 128
-#define KB_released(key) key+KB_released_value
+#define KB_released(key) (key + KB_released_value)
 
 #ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir screen_color_t
 extern "C" {
@@ -146,7 +147,7 @@ extern "C" {
     #ifdef __cplusplus
         #define NULL 0
     #else
-        #define NULL ((void *)0)
+        #define NULL ((void *) 0)
     #endif
 #endif
 

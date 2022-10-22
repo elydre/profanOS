@@ -1,4 +1,3 @@
-#include "../include/driver/keyboard.h"
 #include "syscall.h"
 
 void draw_map(int hauteur, int longueur, char **map);

@@ -8,8 +8,9 @@
 
 // global values for tasking
 int g_argc, g_status;
-char * binary_mem;
 char **g_argv;
+
+char * binary_mem;
 
 void tasked_program() {
     int (*start_program)() = (int (*)())(binary_mem);
@@ -19,9 +20,9 @@ void tasked_program() {
 
     free(binary_mem);
 
-    fskprint("Program exited, yielding to kernel\n");
+    fskprint("program exited...\n");
 
-    task_kill_yield(0);
+    task_kill_yield(task_get_next_pid());
 }
 
 int sys_run_binary(char path[], int silence, int argc, char **argv) {
@@ -46,9 +47,9 @@ int sys_run_binary(char path[], int silence, int argc, char **argv) {
     yield(pid);
 
     if (g_status ) {
-        fskprint("exit by yield\n");
+        fskprint("exit by f1\n");
     } else {
-        fskprint("exit without yield\n");
+        fskprint("exit without f1\n");
     }
     
     // TODO: memory leak detection
