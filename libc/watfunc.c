@@ -1,5 +1,6 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
+#include <driver/serial.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <filesystem.h>
@@ -119,8 +120,8 @@ int wf_get_func_addr(int func_id) {
         // system.h
         case 62: return (int) sys_reboot;
         case 68: return (int) sys_shutdown;
-        case 69: return (int) sys_run_binary;
-        case 75: return (int) sys_run_ifexist;
+        case 69: return (int) run_binary;
+        case 75: return (int) run_ifexist;
 
         // ata.h
         case 63: return (int) ata_read_sector;
@@ -157,6 +158,10 @@ int wf_get_func_addr(int func_id) {
         case 98: return (int) vgui_get_pixel;
         case 99: return (int) vgui_print;
         case 101: return (int) up_string;
+
+        // serial.h
+        case 102: return (int) serial_debug;
+        case 103: return (int) serial_print;
 
         default: return (int) unknown_func;
     }

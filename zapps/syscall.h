@@ -5,6 +5,9 @@
 
 #define FUNC_ADDR_SAVE 0x199990
 
+#define SERIAL_PORT_A 0x3F8
+#define SERIAL_PORT_B 0x2F8
+
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 #define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
@@ -158,9 +161,9 @@ extern "C" {
 #define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
 #define c_fs_read_file(path, data) ((void (*)(char *, uint32_t *)) hi_func_addr(4))(path, data)
 #define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)
+#define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
 #define c_fs_get_folder_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
 #define c_fs_declare_read_array(path) ((void * (*)(char *)) hi_func_addr(8))(path)
-#define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
 #define c_fs_does_path_exists(path) ((int (*)(char *)) hi_func_addr(9))(path)
 #define c_fs_type_sector(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
 #define c_fs_get_dir_content(id, list_name, liste_id) ((void (*)(uint32_t, string_20_t *, uint32_t *)) hi_func_addr(11))(id, list_name, liste_id)
@@ -207,13 +210,13 @@ extern "C" {
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
-#define c_sys_run_binary(path, silence, nb_args, args) ((int (*)(char *, int, int, char **)) hi_func_addr(69))(path, silence, nb_args, args)
+#define c_run_binary(path, silence, nb_args, args) ((int (*)(char *, int, int, char **)) hi_func_addr(69))(path, silence, nb_args, args)
 #define c_time_get(time) ((void (*)(time_t *)) hi_func_addr(70))(time)
 #define c_time_calc_unix(time) ((int (*)(time_t *)) hi_func_addr(71))(time)
 #define c_timer_get_tick() ((int (*)(void)) hi_func_addr(72))()
 #define c_mem_get_alloc_count() ((int (*)(void)) hi_func_addr(73))()
 #define c_mem_get_free_count() ((int (*)(void)) hi_func_addr(74))()
-#define c_sys_run_ifexist(path, argc, argv) ((int (*)(char *, int, char **)) hi_func_addr(75))(path, argc, argv)
+#define c_run_ifexist(path, argc, argv) ((int (*)(char *, int, char **)) hi_func_addr(75))(path, argc, argv)
 #define c_cursor_blink(on) ((void (*)(int)) hi_func_addr(76))(on)
 #define c_vga_320_mode() ((void (*)(void)) hi_func_addr(77))()
 #define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()
@@ -239,5 +242,7 @@ extern "C" {
 #define c_vgui_get_pixel(x, y) ((unsigned (*)(int, int)) hi_func_addr(98))(x, y)
 #define c_vgui_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(99))(x, y, msg, big, color)
 #define c_task_debug_print() ((void (*)(void)) hi_func_addr(100))()
+#define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
+#define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
 
 #endif

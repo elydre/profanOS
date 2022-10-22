@@ -1,5 +1,4 @@
 #include <function.h>
-#include <gui/vga.h>
 #include <system.h>
 #include <string.h>
 #include <iolib.h>
@@ -16,7 +15,6 @@
 int shell_command(char command[]);
 
 void start_kshell() {
-    sys_warning("You are now in the kernel-level shell\n");
     char char_buffer[BFR_SIZE];
     while (1) {
         rainbow_print("kernel-shell> ");
@@ -32,7 +30,7 @@ void shell_so(char suffix[]) {
     str_cat(path, suffix);
     str_cat(path, ".bin");
     fskprint("path: %s\n", path);
-    sys_run_ifexist(path, 0, NULL);
+    run_ifexist(path, 0, NULL);
 }
 
 void shell_satan(char suffix[]) {
@@ -67,14 +65,13 @@ int shell_command(char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "exit") == 0) return 1;
-    else if (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0, NULL);
-    else if (str_cmp(prefix, "help") == 0) shell_help();
-    else if (str_cmp(prefix, "mem") == 0) mem_print();
+    if      (str_cmp(prefix, "exit") == 0)   return 1;
+    else if (str_cmp(prefix, "go") == 0)     run_ifexist(suffix, 0, NULL);
+    else if (str_cmp(prefix, "help") == 0)   shell_help();
+    else if (str_cmp(prefix, "mem") == 0)    mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
-    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
-    else if (str_cmp(prefix, "test") == 0) yield(1);
+    else if (str_cmp(prefix, "so") == 0)     shell_so(suffix);
+    else if (str_cmp(prefix, "satan") == 0)  shell_satan(suffix);
 
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
     

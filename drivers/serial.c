@@ -29,7 +29,7 @@ void serial_send(int device, char out) {
     port_byte_out(device, out);
 }
 
-void serial_string(int device, char out[]) {
+void serial_print(int device, char out[]) {
     for (uint32_t i = 0; i < (uint32_t) str_len(out); ++i) {
         serial_send(device, out[i]);
     }
@@ -37,8 +37,8 @@ void serial_string(int device, char out[]) {
 
 void serial_debug(char source[], char message[]) {
     serial_send(SERIAL_PORT_A, '[');
-    serial_string(SERIAL_PORT_A, source);
-    serial_string(SERIAL_PORT_A, "] - ");
-    serial_string(SERIAL_PORT_A, message);
-    serial_string(SERIAL_PORT_A, "\r\n");
+    serial_print(SERIAL_PORT_A, source);
+    serial_print(SERIAL_PORT_A, "] - ");
+    serial_print(SERIAL_PORT_A, message);
+    serial_print(SERIAL_PORT_A, "\r\n");
 }

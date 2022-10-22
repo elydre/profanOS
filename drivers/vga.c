@@ -7,6 +7,8 @@
 #include <task.h>
 #include <mem.h>
 
+#include <driver/serial.h>
+
 #define peekb(S,O)        * (unsigned char *)(16uL * (S) + (O))
 #define pokeb(S,O,V)      * (unsigned char *)(16uL * (S) + (O)) = (V)
 #define pokew(S,O,V)      * (unsigned short *)(16uL * (S) + (O)) = (V)
@@ -200,6 +202,10 @@ void vga_set_pixel(unsigned x, unsigned y, unsigned c) {
 }
 
 void vga_clear_screen() {
+    if (vga_note == 0) {
+        sys_error("Cannot put pixel in text mode");
+        return;
+    }
     for (unsigned int xy = 0; xy < vga_height * vga_width; xy++) {
         vga_set_pixel(xy % vga_width, xy / vga_width, 0x0F);
     }
@@ -207,6 +213,7 @@ void vga_clear_screen() {
 
 void vga_320_mode() {
     if (vga_note == 1) return;
+    serial_debug("VGA", "Switching to 320x200x256 mode");
 
     int need_save = !vga_note;
     // setup the vga struct
@@ -232,6 +239,7 @@ void vga_320_mode() {
 
 void vga_640_mode() {
     if (vga_note == 2) return;
+    serial_debug("VGA", "Switching to 640x480x16 mode");
 
     int need_save = !vga_note;
     // setup the vga struct
@@ -257,6 +265,8 @@ void vga_640_mode() {
 
 void vga_text_mode() {
     if (vga_note == 0) return;
+    serial_debug("VGA", "Switching to text mode");
+
     vga_320_mode();
 
     // restore the framebuffer_segment

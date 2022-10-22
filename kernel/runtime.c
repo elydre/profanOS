@@ -1,10 +1,9 @@
+#include <driver/serial.h>
 #include <filesystem.h>
-#include <system.h>
 #include <system.h>
 #include <task.h>
 #include <mem.h>
 
-#include <iolib.h>
 
 // global values for tasking
 char **g_argv;
@@ -17,12 +16,11 @@ void tasked_program() {
 
     free(binary_mem);
 
-    fskprint("program exited...\n");
-
     task_kill_yield(task_get_next_pid());
 }
 
-int sys_run_binary(char path[], int silence, int argc, char **argv) {
+int run_binary(char path[], int silence, int argc, char **argv) {
+    serial_debug("RUNTIME", path);
     (void) silence;
 
     char * binary_mem = calloc(fs_get_file_size(path)*126);
@@ -47,9 +45,9 @@ int sys_run_binary(char path[], int silence, int argc, char **argv) {
     return 0;
 }
 
-int sys_run_ifexist(char path[], int argc, char **argv) {
+int run_ifexist(char path[], int argc, char **argv) {
     if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
-        return sys_run_binary(path, 0, argc, argv);
+        return run_binary(path, 0, argc, argv);
     sys_error("Program not found");
     return -1;
 }

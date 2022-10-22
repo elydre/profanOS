@@ -4,7 +4,7 @@
 #include <function.h>
 #include <system.h>
 
-#define str_cpy_s(s1, s2) (void)(ARYLEN(s1) > str_len(s2) ? str_cpy(s1, s2) : sys_error("strcpy destination buffer too small"))
+#define str_cpy_s(s1, s2) (void)(ARYLEN(s1) > str_len(s2) ? str_cpy(s1, s2) : sys_error("Destination buffer too small"))
 
 void int_to_ascii(int n, char str[]);
 void hex_to_ascii(int n, char str[]);

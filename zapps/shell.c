@@ -117,7 +117,7 @@ void go(char file[], char prefix[], char suffix[]) {
             c_str_start_split(argv[i], ' ');
             c_str_end_split(suffix, ' ');
         }
-        c_sys_run_binary(file, 0, argc, argv);
+        c_run_binary(file, 0, argc, argv);
         // free
         for (int i = 0; i < argc; i++) c_free(argv[i]);
         c_free(argv);

@@ -62,8 +62,6 @@ static void keyboard_callback(registers_t *regs) {
 
     if (sc_history[0] == 59) yield(0);
     if (sc_history[0] == 60) yield(1);
-    if (sc_history[0] == 61) yield(2);
-    if (sc_history[0] == 62) yield(3);
 }
 
 void keyboard_init() {

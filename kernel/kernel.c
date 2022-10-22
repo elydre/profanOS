@@ -40,7 +40,7 @@ void kernel_main() {
     // launch of the shell.bin
     char *argv[1];
     argv[0] = "/bin/shell.bin";
-    sys_run_ifexist(argv[0], 1, argv);
+    run_ifexist(argv[0], 1, argv);
 
     start_kshell();
 
