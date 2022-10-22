@@ -51,7 +51,7 @@ void i_destroy_killed_tasks(int nb_alive) {
         if (tasks[i].isdead != 1) continue;
         mem_free_addr(tasks[i].esp_addr);
         tasks[i].isdead = 2;
-        fskprint("task %d killed\n", tasks[i].pid);
+        fskprint("$Etask %d killed\n", tasks[i].pid);
     }
 }
 
@@ -129,9 +129,11 @@ void yield(int target_pid) {
         }
     }
 
-    vga_switch_mode(tasks[0].gui_mode);
+    if (!tasks[0].gui_mode) {
+        vga_switch_mode(tasks[0].gui_mode);
+    }
 
-    fskprint("$2yield: %d -> %d\n", tasks[1].pid, tasks[0].pid);
+    fskprint("$Eyield: %d -> %d\n", tasks[1].pid, tasks[0].pid);
 
     task_switch(&tasks[1].regs, &tasks[0].regs);
     i_destroy_killed_tasks(nb_alive);
@@ -151,7 +153,7 @@ void task_kill(int target_pid) {
             return;
         }
     }
-    sys_error("Task not found in task_kill");
+    sys_error("Task not found in kill");
 }
 
 void task_update_gui_mode(int mode) {
@@ -187,7 +189,7 @@ void task_set_bin_mem(int pid, char * bin_mem) {
             return;
         }
     }
-    sys_error("Task not found in task_set_bin_mem");
+    sys_error("Task not found in set_bin_mem");
 }
 char * task_get_bin_mem(int pid) {
     int nb_alive = i_refresh_alive();
@@ -196,7 +198,7 @@ char * task_get_bin_mem(int pid) {
             return tasks[i].bin_mem;
         }
     }
-    sys_error("Task not found in task_get_bin_mem");
+    sys_error("Task not found in get_bin_mem");
     return 0;
 }
 
