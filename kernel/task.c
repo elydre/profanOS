@@ -129,9 +129,7 @@ void yield(int target_pid) {
         }
     }
 
-    if (!tasks[0].gui_mode) {
-        vga_switch_mode(tasks[0].gui_mode);
-    }
+    vga_switch_mode(tasks[0].gui_mode);
 
     fskprint("$Eyield: %d -> %d\n", tasks[1].pid, tasks[0].pid);
 

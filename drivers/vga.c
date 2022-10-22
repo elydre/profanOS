@@ -179,15 +179,13 @@ void set_plane(unsigned p) {
 
 void vga_set_pixel(unsigned x, unsigned y, unsigned c) {
     unsigned off, mask, pmask;
-    if (x >= vga_width || y >= vga_height)
-        return;
-    else if (vga_note == 0) {
+    if (vga_note == 0) {
         sys_error("Cannot put pixel in text mode");
-    }
-    else if (vga_note == 1) {
+    } else if (x >= vga_width || y >= vga_height) {
+        return;
+    } else if (vga_note == 1) {
         vpokeb(vga_width * y + x, c);
-    }
-    else if (vga_note == 2) {
+    } else if (vga_note == 2) {
         // need to be rewritten faster
         off = vga_width / 8 * y + x / 8;
         mask = 0x80 >> (x & 7) * 1;
