@@ -14,6 +14,7 @@ int current_pid, task_count;
 ************************/
 
 void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
+    uint32_t esp_alloc = (uint32_t) (uint32_t) mem_alloc(0x1000);
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -23,7 +24,8 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = (uint32_t) mem_alloc(0x1000);
+    task->regs.esp = esp_alloc;
+    task->esp_addr = esp_alloc;
     task->pid = pid;
     task->isdead = 0;
 }
@@ -47,8 +49,9 @@ int i_refresh_alive() {
 void i_destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead != 1) continue;
-        mem_free_addr(tasks[i].regs.esp);
+        mem_free_addr(tasks[i].esp_addr);
         tasks[i].isdead = 2;
+        fskprint("task %d killed\n", tasks[i].pid);
     }
 }
 
@@ -176,9 +179,37 @@ int task_get_max() {
     return TASK_MAX;
 }
 
+void task_set_bin_mem(int pid, char * bin_mem) {
+    int nb_alive = i_refresh_alive();
+    for (int i = 0; i < nb_alive; i++) {
+        if (tasks[i].pid == pid) {
+            tasks[i].bin_mem = bin_mem;
+            return;
+        }
+    }
+    sys_error("Task not found in task_set_bin_mem");
+}
+char * task_get_bin_mem(int pid) {
+    int nb_alive = i_refresh_alive();
+    for (int i = 0; i < nb_alive; i++) {
+        if (tasks[i].pid == pid) {
+            return tasks[i].bin_mem;
+        }
+    }
+    sys_error("Task not found in task_get_bin_mem");
+    return 0;
+}
+
 void task_debug_print() {
     int nb_alive = i_refresh_alive();
     for (int i = 0; i < nb_alive; i++) {
-        fskprint("$4Task %s: %d (%d, %d)\n", tasks[i].name, tasks[i].pid, tasks[i].isdead, tasks[i].gui_mode);
+        fskprint("%sTask %s: %d (%d, %d, %x)\n",
+            (i == 0) ? "$1" : "$4",
+            tasks[i].name,
+            tasks[i].pid,
+            tasks[i].isdead,
+            tasks[i].gui_mode,
+            tasks[i].bin_mem
+        );
     }
 }

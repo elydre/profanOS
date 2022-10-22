@@ -12,8 +12,9 @@ typedef struct {
     int pid, isdead;
     int gui_mode;
     char name[32];
+    char * bin_mem;
+    uint32_t esp_addr;
 } task_t;
-
 
 void tasking_init();
 int task_create(void (*func)(), char * name);
@@ -30,6 +31,9 @@ int task_get_next_pid();
 
 int task_get_alive();
 int task_get_max();
+
+void task_set_bin_mem(int pid, char * bin_mem);
+char * task_get_bin_mem(int pid);
 
 
 // switch.asm

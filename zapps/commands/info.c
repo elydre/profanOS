@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     c_kprint_backspace();
     c_fskprint("$4\nunix time:  $1%d\n", c_time_gen_unix());
     c_fskprint("$4ticks:      $1%d\n", c_timer_get_tick());
-    c_fskprint("$4work time:  $1%ds$7/$1%ds\n", c_time_gen_unix() - c_time_get_boot() - c_timer_get_tick() / 100, c_time_gen_unix() - c_time_get_boot());
+    c_fskprint("$4work time:  $1%ds$7/$1%ds\n", c_time_gen_unix() - c_time_get_boot() - c_timer_get_tick() / 1000, c_time_gen_unix() - c_time_get_boot());
     c_fskprint("$4used mem:   $1%d%c\n", 100 * c_mem_get_usage() / c_mem_get_usable(), '%');
     c_fskprint("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_alloc_count() - c_mem_get_free_count(), c_mem_get_alloc_count());
     c_fskprint("$4disk size:  $1%fMo\n", ((double) c_ata_get_sectors_count()) / 2048);

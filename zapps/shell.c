@@ -77,10 +77,11 @@ int shell_command(char *buffer) {
         }
         c_free(liste_path);  
     } else if (!c_str_cmp(prefix, "go")) {
-        if(!(c_str_count(suffix, '.'))) c_str_cat(suffix, ".bin");
+        if (!(c_str_count(suffix, '.'))) c_str_cat(suffix, ".bin");
         char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
         assemble_path(current_dir, suffix, file);
         go(file, prefix, suffix);
+        c_free(file);
     } else {  // shell command
         char *old_prefix = c_malloc(c_str_len(prefix));
         c_str_cpy(old_prefix, prefix);

@@ -163,7 +163,6 @@ void mcp(unsigned int *source, unsigned int *dest, int nbytes) {
 
 void set_plane(unsigned p) {
     unsigned char pmask;
-
     p &= 3;
     pmask = 1 << p;
     // set read plane
