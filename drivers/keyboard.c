@@ -60,8 +60,7 @@ static void keyboard_callback(registers_t *regs) {
         sc_history[i + 1] = sc_history[i];
     sc_history[0] = kb_get_scancode();
 
-    if (sc_history[0] == 59) yield(0);
-    if (sc_history[0] == 60) yield(1);
+    if (sc_history[0] == 59 && task_get_current_pid()) yield(0);
 }
 
 void keyboard_init() {

@@ -136,8 +136,6 @@ void yield(int target_pid) {
 
     vga_switch_mode(tasks[0].gui_mode);
 
-    fskprint("$Eyield: %d -> %d\n", tasks[1].pid, tasks[0].pid);
-
     task_switch(&tasks[1].regs, &tasks[0].regs);
     i_destroy_killed_tasks(nb_alive);
 }
