@@ -1,5 +1,4 @@
 #include <driver/screen.h>
-#include <gui/font.h>
 #include <function.h>
 #include <gui/vga.h>
 #include <system.h>
@@ -306,41 +305,4 @@ void vga_switch_mode(int mode) {
     if (mode == 0) vga_text_mode();
     else if (mode == 1) vga_320_mode();
     else if (mode == 2) vga_640_mode();
-}
-
-void vga_print(int x, int y, char msg[], int big, unsigned color) {
-    unsigned char *glyph, *font;
-    font = big ? g_8x16_font : g_8x8_font;
-    for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = font + (msg[i] * (big ? 16 : 8));
-        for (int j = 0; j < (big ? 16 : 8); j++) {
-            for (int k = 0; k < 8; k++) {
-                if (!(glyph[j] & (1 << k))) continue;
-                vga_set_pixel(i * 8 + x + 8 - k , y + j, color);
-            }
-        }
-    }
-}
-
-void vga_draw_line(int x1, int y1, int x2, int y2, unsigned color) {
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-    int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
-    float xinc = dx / (float) steps;
-    float yinc = dy / (float) steps;
-    float x = x1;
-    float y = y1;
-    for (int i = 0; i <= steps; i++) {
-        vga_set_pixel(x, y, color);
-        x += xinc;
-        y += yinc;
-    }
-}
-
-void vga_draw_rect(int x, int y, int w, int h, unsigned color) {
-    for (int i = 0; i < w; i++) {
-        for (int j = 0; j < h; j++) {
-            vga_set_pixel(x + i, y + j, color);
-        }
-    }
 }

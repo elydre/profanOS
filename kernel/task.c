@@ -1,8 +1,11 @@
+#include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
 #include <iolib.h>
 #include <task.h>
 #include <mem.h>
+
+#include <driver/serial.h>
 
 #define TASK_MAX 10
 
@@ -76,10 +79,11 @@ void tasking_init() {
         : "=m"(mainTask.regs.eflags)
         :: "%eax");
 
-    mainTask.pid = 0;
-    mainTask.isdead = 0;
-    mainTask.gui_mode = 0;
     str_cpy(mainTask.name, "kernel");
+    mainTask.vgui_save = 0;
+    mainTask.gui_mode = 0;
+    mainTask.isdead = 0;
+    mainTask.pid = 0;
 
     tasks[0] = mainTask;
 
@@ -104,6 +108,7 @@ int task_create(void (*func)(), char * name) {
     }
 
     task.gui_mode = vga_get_mode();
+    task.vgui_save = 0;
     str_cpy(task.name, name);
 
     i_new_task(&task, func, mainTask->regs.eflags, (uint32_t*) mainTask->regs.cr3, pid);
@@ -118,6 +123,12 @@ void yield(int target_pid) {
     if (tasks[0].pid == target_pid) {
         sys_error("Cannot yield to self");
         return;
+    }
+
+    if (tasks[0].gui_mode && vgui_get_refresh_mode()) {
+        serial_debug("YIELD", "save vgui");
+        tasks[0].vgui_save = (vgui_get_refresh_mode() == 3) ? 2 : 1;
+        vgui_exit();
     }
 
     for (task_i = 0; task_i < nb_alive; task_i++) {
@@ -135,6 +146,9 @@ void yield(int target_pid) {
     }
 
     vga_switch_mode(tasks[0].gui_mode);
+    if (tasks[0].vgui_save && tasks[0].gui_mode) {
+        vgui_setup(tasks[0].vgui_save - 1);
+    }
 
     task_switch(&tasks[1].regs, &tasks[0].regs);
     i_destroy_killed_tasks(nb_alive);
@@ -159,6 +173,7 @@ void task_kill(int target_pid) {
 
 void task_update_gui_mode(int mode) {
     tasks[0].gui_mode = mode;
+    serial_debug("TASK", "update gui mode");
 }
 
 /*******************
@@ -190,7 +205,7 @@ void task_set_bin_mem(int pid, char * bin_mem) {
             return;
         }
     }
-    sys_error("Task not found in set_bin_mem");
+    sys_error("Task not found");
 }
 char * task_get_bin_mem(int pid) {
     int nb_alive = i_refresh_alive();
@@ -199,7 +214,7 @@ char * task_get_bin_mem(int pid) {
             return tasks[i].bin_mem;
         }
     }
-    sys_error("Task not found in get_bin_mem");
+    sys_error("Task not found");
     return 0;
 }
 

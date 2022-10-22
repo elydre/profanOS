@@ -1,34 +1,46 @@
+#include <function.h>
 #include <gui/font.h>
 #include <gui/vgui.h>
 #include <gui/vga.h>
 #include <mem.h>
 
-char * last_render;
-char * current_render;
+char * last_render = NULL;
+char * current_render = NULL;
 int refresh_mode;
 
+/*    REFRESH MODES
+ * 0: vgui no running
+ * 1: refresh smart
+ * 2: refresh smart - 1
+ * 3: refresh smart - 2
+ * 4: refresh full */
 
 void vgui_setup(int refresh_all) {
-    vga_320_mode();
     last_render = calloc(320 * 200);
     current_render = calloc(320 * 200);
-    refresh_mode = refresh_all + 1;
+    refresh_mode = refresh_all + 3;
 }
 
 void vgui_exit() {
-    vga_text_mode();
     free(last_render);
     free(current_render);
+    last_render = NULL;
+    current_render = NULL;
+    refresh_mode = 0;
 }
 
 void vgui_render() {
     for (int i = 0; i < 320 * 200; i++) {
-        if (last_render[i] != current_render[i] || refresh_mode) {
+        if (last_render[i] != current_render[i] || refresh_mode > 1) {
             vga_set_pixel(i % 320, i / 320, current_render[i]);
             last_render[i] = current_render[i];
         }
     }
-    refresh_mode = (refresh_mode == 2) ? refresh_mode : 0;
+    refresh_mode = (refresh_mode == 4) ? 4 : refresh_mode - (refresh_mode > 1);
+}
+
+int vgui_get_refresh_mode() {
+    return refresh_mode;
 }
 
 void vgui_draw_rect(int x, int y, int width, int height, int color) {

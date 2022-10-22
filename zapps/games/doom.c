@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
     tick_count[0] = c_timer_get_tick();
     tick_count[3] = 0;
 
+    c_vga_320_mode();
     c_vgui_setup(0);
     c_kb_reset_history();
     while (c_kb_get_scancode() != 1) {
@@ -140,6 +141,7 @@ int main(int argc, char **argv) {
     }
 
     c_vgui_exit();
+    c_vga_text_mode();
     c_free(key_buffer);
 
     return 0;

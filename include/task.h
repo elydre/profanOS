@@ -9,11 +9,10 @@ typedef struct {
 
 typedef struct {
     task_rgs_t regs;
-    int pid, isdead;
-    int gui_mode;
-    char name[32];
-    char * bin_mem;
+    int pid, isdead, gui_mode, vgui_save;
     uint32_t esp_addr;
+    char *bin_mem;
+    char name[32];
 } task_t;
 
 void tasking_init();

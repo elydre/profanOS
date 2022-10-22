@@ -138,9 +138,6 @@ int wf_get_func_addr(int func_id) {
         case 79: return (int) vga_text_mode;
         case 80: return (int) vga_clear_screen;
         case 81: return (int) vga_set_pixel;
-        case 82: return (int) vga_print;
-        case 83: return (int) vga_draw_line;
-        case 84: return (int) vga_draw_rect;
         case 85: return (int) vga_get_width;
         case 86: return (int) vga_get_height;
 
