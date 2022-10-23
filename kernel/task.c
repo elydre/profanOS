@@ -18,7 +18,7 @@ int current_pid, task_count;
 ***********************/
 
 void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
-    uint32_t esp_alloc = (uint32_t) (uint32_t) mem_alloc(0x1000);
+    uint32_t esp_alloc = (uint32_t) mem_alloc(0x1000);
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -28,7 +28,7 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = esp_alloc;
+    task->regs.esp = esp_alloc + 0x1000;
     task->esp_addr = esp_alloc;
     task->pid = pid;
     task->isdead = 0;
@@ -222,13 +222,16 @@ char * task_get_bin_mem(int pid) {
 void task_debug_print() {
     int nb_alive = i_refresh_alive();
     for (int i = 0; i < nb_alive; i++) {
-        fskprint("%sTask %s: %d (%d, %d, %x)\n",
+        fskprint("%sTask %s: %d (%d, %d, %x) [%x - %x, %x]\n",
             (i == 0) ? "$1" : "$4",
             tasks[i].name,
             tasks[i].pid,
             tasks[i].isdead,
             tasks[i].gui_mode,
-            tasks[i].bin_mem
+            tasks[i].bin_mem,
+            tasks[i].regs.eflags,
+            tasks[i].regs.esp,
+            tasks[i].esp_addr
         );
     }
 }

@@ -226,7 +226,7 @@ void vga_320_mode() {
 
     // make copy of framebuffer_segment (for font)
     if (need_save) {
-        framebuffer_segment_copy = calloc(MEM_CPY_SIZE);
+        framebuffer_segment_copy = calloc(MEM_CPY_SIZE * sizeof(unsigned int));
         mcp((void *) MEM_CPY_BASE, framebuffer_segment_copy, MEM_CPY_SIZE);
     }
 
@@ -252,7 +252,7 @@ void vga_640_mode() {
 
     // make copy of framebuffer_segment (for font)
     if (need_save) {
-        framebuffer_segment_copy = calloc(MEM_CPY_SIZE);
+        framebuffer_segment_copy = calloc(MEM_CPY_SIZE * sizeof(unsigned int));
         mcp((void *) MEM_CPY_BASE, framebuffer_segment_copy, MEM_CPY_SIZE);
     }
 

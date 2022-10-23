@@ -11,8 +11,7 @@ int g_argc;
 
 void tasked_program() {
     char * binary_mem = task_get_bin_mem(task_get_current_pid());
-    int (*start_program)() = (int (*)())(binary_mem);
-    start_program(g_argc, g_argv);
+    ((void (*)(int, char **)) binary_mem)(g_argc, g_argv);
 
     free(binary_mem);
 
@@ -22,6 +21,8 @@ void tasked_program() {
 int run_binary(char path[], int silence, int argc, char **argv) {
     serial_debug("RUNTIME", path);
     (void) silence;
+
+    int pid = task_create(tasked_program, path);
 
     char * binary_mem = calloc(fs_get_file_size(path)*126);
     uint32_t * file = fs_declare_read_array(path);
@@ -34,9 +35,8 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     g_argc = argc;
     g_argv = argv;
-
-    int pid = task_create(tasked_program, path);
-    task_set_bin_mem(pid, binary_mem);   
+    
+    task_set_bin_mem(pid, binary_mem);
 
     yield(pid);
 
