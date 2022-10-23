@@ -15,7 +15,7 @@
 #include <mem.h>
 
 void init_watfunc() {
-    int *func_addr = (int *)FUNC_ADDR_SAVE;
+    int *func_addr = (int *) FUNC_ADDR_SAVE;
     *func_addr = (int) wf_get_func_addr;
 }
 
@@ -130,7 +130,6 @@ int wf_get_func_addr(int func_id) {
 
         // task.h
         case 67: return (int) yield;
-        case 100: return (int) task_debug_print;
 
         // vga.h
         case 77: return (int) vga_320_mode;

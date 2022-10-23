@@ -241,7 +241,6 @@ extern "C" {
 #define c_vgui_set_pixel(x, y, color) ((void (*)(int, int, unsigned)) hi_func_addr(97))(x, y, color)
 #define c_vgui_get_pixel(x, y) ((unsigned (*)(int, int)) hi_func_addr(98))(x, y)
 #define c_vgui_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(99))(x, y, msg, big, color)
-#define c_task_debug_print() ((void (*)(void)) hi_func_addr(100))()
 #define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
 #define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
 

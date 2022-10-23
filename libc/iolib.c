@@ -7,8 +7,8 @@
 #include <stdarg.h>
 
 // input() setings
-#define FIRST_L 40
-#define BONDE_L 4
+#define FIRST_L 150
+#define BONDE_L 15
 
 // keyboard scancodes
 #define SC_MAX 57
@@ -166,7 +166,7 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
     } while (sc == ENTER);
 
     while (sc != ENTER) {
-        ms_sleep(10);
+        ms_sleep(2);
 
         last_sc = sc;
         sc = kb_get_scancode();

@@ -1,10 +1,7 @@
-#include <driver/keyboard.h>
-#include <driver/screen.h>
 #include <driver/serial.h>
 #include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
-#include <iolib.h>
 #include <task.h>
 #include <mem.h>
 
@@ -34,28 +31,12 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
     task->isdead = 0;
 }
 
-int i_refresh_alive() {
-    int decal = 0, nb_alive = 0;
-    for (int i = 0; i < task_count; i++) {
-        if (tasks[i].isdead == 2) {
-            decal++;
-        }
-        else {
-            nb_alive++;
-            if (decal > 0) tasks[i - decal] = tasks[i];
-        }
-    }
-    task_count = nb_alive;
-    return nb_alive;
-}
-
 
 void i_destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead != 1) continue;
         mem_free_addr(tasks[i].esp_addr);
         tasks[i].isdead = 2;
-        fskprint("$Etask %d killed\n", tasks[i].pid);
     }
 }
 
@@ -93,7 +74,7 @@ void tasking_init() {
 }
 
 int task_create(void (*func)(), char * name) {
-    int nb_alive = i_refresh_alive();
+    int nb_alive = task_get_alive();
     if (task_count >= TASK_MAX) {
         sys_fatal("Cannot create task, too many tasks");
         return -1;
@@ -119,7 +100,7 @@ int task_create(void (*func)(), char * name) {
 }
 
 void yield(int target_pid) {
-    int task_i, nb_alive = i_refresh_alive();
+    int task_i, nb_alive = task_get_alive();
 
     if (tasks[0].pid == target_pid) {
         sys_error("Cannot yield to self");
@@ -161,7 +142,7 @@ void task_kill_yield(int target_pid) {
 }
 
 void task_kill(int target_pid) {
-    int nb_alive = i_refresh_alive();
+    int nb_alive = task_get_alive();
     for (int i = 0; i < nb_alive; i++) {
         if (tasks[i].pid == target_pid) {
             tasks[i].isdead = 1;
@@ -181,6 +162,21 @@ void task_update_gui_mode(int mode) {
  * GET FUNCTIONS *
 ******************/
 
+int task_get_alive() {
+    int decal = 0, nb_alive = 0;
+    for (int i = 0; i < task_count; i++) {
+        if (tasks[i].isdead == 2) {
+            decal++;
+        }
+        else {
+            nb_alive++;
+            if (decal > 0) tasks[i - decal] = tasks[i];
+        }
+    }
+    task_count = nb_alive;
+    return nb_alive;
+}
+
 int task_get_current_pid() {
     return tasks[0].pid;
 }
@@ -190,48 +186,33 @@ int task_get_next_pid() {
     return tasks[1].pid;
 }
 
-int task_get_alive() {
-    return i_refresh_alive();
-}
-
 int task_get_max() {
     return TASK_MAX;
 }
 
-void task_set_bin_mem(int pid, char * bin_mem) {
-    int nb_alive = i_refresh_alive();
+int task_get_internal_pos(int pid) {
+    int nb_alive = task_get_alive();
     for (int i = 0; i < nb_alive; i++) {
         if (tasks[i].pid == pid) {
-            tasks[i].bin_mem = bin_mem;
-            return;
+            return i;
         }
     }
     sys_error("Task not found");
-}
-char * task_get_bin_mem(int pid) {
-    int nb_alive = i_refresh_alive();
-    for (int i = 0; i < nb_alive; i++) {
-        if (tasks[i].pid == pid) {
-            return tasks[i].bin_mem;
-        }
-    }
-    sys_error("Task not found");
-    return 0;
+    return -1;
 }
 
-void task_debug_print() {
-    int nb_alive = i_refresh_alive();
-    for (int i = 0; i < nb_alive; i++) {
-        fskprint("%sTask %s: %d (%d, %d, %x) [%x - %x, %x]\n",
-            (i == 0) ? "$1" : "$4",
-            tasks[i].name,
-            tasks[i].pid,
-            tasks[i].isdead,
-            tasks[i].gui_mode,
-            tasks[i].bin_mem,
-            tasks[i].regs.eflags,
-            tasks[i].regs.esp,
-            tasks[i].esp_addr
-        );
-    }
+void task_set_bin_mem(int pid, char * bin_mem) {
+    tasks[task_get_internal_pos(pid)].bin_mem = bin_mem;
+}
+
+char * task_get_bin_mem(int pid) {
+    return tasks[task_get_internal_pos(pid)].bin_mem;
+}
+
+char * task_get_name(int internal_pos) {
+    return tasks[internal_pos].name;
+}
+
+int task_get_pid(int internal_pos) {
+    return tasks[internal_pos].pid;
 }

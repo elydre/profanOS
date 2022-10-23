@@ -4,8 +4,6 @@
 #include <ports.h>
 #include <task.h>
 
-#include <iolib.h>
-
 #include <stdint.h>
 
 #define HISTORY_SIZE 4

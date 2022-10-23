@@ -5,6 +5,8 @@
 #include <task.h>
 #include <mem.h>
 
+#include <driver/keyboard.h>
+
 
 #define BFR_SIZE 65
 
@@ -14,15 +16,46 @@
 
 int shell_command(char command[]);
 
+#define KB_KEY_UP 0x48
+#define KB_KEY_DOWN 0x50
+#define KB_KEY_ENTER 0x1C
+
 void start_kshell() {
-    char char_buffer[BFR_SIZE];
+    // simple menu to switch between tasks with the keyboard arrows
+    int selected_task = 0, nb_alive, key;
+    while (1) {
+        // refresh tasks
+        nb_alive = task_get_alive();
+        // print tasks
+        for (int i = 0; i < nb_alive; i++) {
+            ckprint_at(task_get_name(i), 0, i, (i == selected_task) ? 0xB0 : 0x0B);
+        }
+        key = kb_get_scancode();
+        if (key == KB_KEY_UP) {
+            selected_task--;
+            if (selected_task < 0) {
+                selected_task = nb_alive - 1;
+            }
+        } else if (key == KB_KEY_DOWN) {
+            selected_task++;
+            if (selected_task >= nb_alive) {
+                selected_task = 0;
+            }
+        } else if (key == KB_KEY_ENTER) {
+            clear_screen();
+            yield(task_get_pid(selected_task));
+        }
+        while (kb_get_scancode() == key);
+    }
+
+    /* char char_buffer[BFR_SIZE];
     while (1) {
         rainbow_print("kernel-shell> ");
         input(char_buffer, BFR_SIZE, 9);
         fskprint("\n");
         if (shell_command(char_buffer)) return;
         char_buffer[0] = '\0';
-    }
+    }*/
 }
 
 void shell_so(char suffix[]) {

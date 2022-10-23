@@ -1,3 +1,4 @@
+#include <driver/serial.h>
 #include <driver/screen.h>
 #include <function.h>
 #include <gui/vga.h>
@@ -6,7 +7,6 @@
 #include <task.h>
 #include <mem.h>
 
-#include <driver/serial.h>
 
 #define peekb(S,O)        * (unsigned char *)(16uL * (S) + (O))
 #define pokeb(S,O,V)      * (unsigned char *)(16uL * (S) + (O)) = (V)
