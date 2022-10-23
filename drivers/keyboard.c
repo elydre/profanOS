@@ -50,7 +50,9 @@ int kb_get_scfh() {
 }
 
 void kb_reset_history() {
-    sc_history[0] = 0;
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        sc_history[i] = 0;
+    }
 }
 
 static void keyboard_callback(registers_t *regs) {
@@ -60,7 +62,7 @@ static void keyboard_callback(registers_t *regs) {
         sc_history[i + 1] = sc_history[i];
     sc_history[0] = kb_get_scancode();
 
-    if (sc_history[0] == 59 && task_get_current_pid()) yield(0);
+    if (sc_history[0] == 59 && task_get_current_pid() != 1) yield(1);
 }
 
 void keyboard_init() {

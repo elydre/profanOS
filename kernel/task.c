@@ -1,3 +1,6 @@
+#include <driver/keyboard.h>
+#include <driver/screen.h>
+#include <driver/serial.h>
 #include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
@@ -5,16 +8,14 @@
 #include <task.h>
 #include <mem.h>
 
-#include <driver/serial.h>
-
 #define TASK_MAX 10
 
 static task_t tasks[TASK_MAX + 1];
 int current_pid, task_count;
 
-/************************
+/***********************
  * INTERNAL FUNCTIONS *
-************************/
+***********************/
 
 void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
     uint32_t esp_alloc = (uint32_t) (uint32_t) mem_alloc(0x1000);
@@ -176,9 +177,9 @@ void task_update_gui_mode(int mode) {
     serial_debug("TASK", "update gui mode");
 }
 
-/*******************
+/******************
  * GET FUNCTIONS *
-*******************/
+******************/
 
 int task_get_current_pid() {
     return tasks[0].pid;
@@ -229,5 +230,43 @@ void task_debug_print() {
             tasks[i].gui_mode,
             tasks[i].bin_mem
         );
+    }
+}
+
+/****************
+ * SWITCH MENU *
+****************/
+
+#define KB_KEY_UP 0x48
+#define KB_KEY_DOWN 0x50
+#define KB_KEY_ENTER 0x1C
+
+void task_switch_menu() {
+    // simple menu to switch between tasks with the keyboard arrows
+    int selected_task = 0, nb_alive, key;
+    while (1) {
+        // refresh tasks
+        nb_alive = i_refresh_alive();
+        // print tasks
+        for (int i = 0; i < nb_alive; i++) {
+            ckprint_at(tasks[i].name, 0, i, (i == selected_task) ? 0xB0 : 0x0B);
+        }
+        // wait for key
+        key = kb_get_scancode();
+        if (key == KB_KEY_UP) {
+            selected_task--;
+            if (selected_task < 0) {
+                selected_task = nb_alive - 1;
+            }
+        } else if (key == KB_KEY_DOWN) {
+            selected_task++;
+            if (selected_task >= nb_alive) {
+                selected_task = 0;
+            }
+        } else if (key == KB_KEY_ENTER) {
+            clear_screen();
+            yield(tasks[selected_task].pid);
+        }
+        while (kb_get_scancode() == key);
     }
 }

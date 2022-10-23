@@ -34,6 +34,8 @@ int task_get_max();
 void task_set_bin_mem(int pid, char * bin_mem);
 char * task_get_bin_mem(int pid);
 
+void task_switch_menu();
+
 
 // switch.asm
 extern void task_switch(task_rgs_t *old, task_rgs_t *new);
