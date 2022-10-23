@@ -34,8 +34,6 @@ void kernel_main() {
     init_watfunc();
     fskprint("WatFunc initialized\n");
 
-    task_create(task_switch_menu, "switch-menu");
-
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
