@@ -35,6 +35,7 @@ char *task_get_bin_mem(int pid);
 
 char *task_get_name(int internal_pos);
 int task_get_pid(int internal_pos);
+int task_is_gui(int internal_pos);
 
 // switch.asm
 extern void task_switch(task_rgs_t *old, task_rgs_t *new);

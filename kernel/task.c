@@ -216,3 +216,11 @@ char * task_get_name(int internal_pos) {
 int task_get_pid(int internal_pos) {
     return tasks[internal_pos].pid;
 }
+
+int task_is_gui(int internal_pos) {
+    /* 0 -> no gui
+     * 1 -> simple gui
+     * 2 -> vgui save */
+    if (tasks[internal_pos].vgui_save) return 2;
+    return (tasks[internal_pos].gui_mode) ? 1 : 0;
+}

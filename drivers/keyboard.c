@@ -1,4 +1,5 @@
 #include <driver/keyboard.h>
+#include <driver/screen.h>
 #include <cpu/ports.h>
 #include <function.h>
 #include <cpu/isr.h>
@@ -60,7 +61,10 @@ static void keyboard_callback(registers_t *regs) {
         sc_history[i + 1] = sc_history[i];
     sc_history[0] = kb_get_scancode();
 
-    if (sc_history[0] == 59 && task_get_current_pid()) yield(0);
+    if (sc_history[0] == 59 && task_get_current_pid()) {
+        clear_screen();
+        yield(0);
+    }
 }
 
 void keyboard_init() {
