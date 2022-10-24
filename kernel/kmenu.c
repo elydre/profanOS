@@ -20,12 +20,8 @@ void task_menu() {
         // print tasks
         cursor_blink(1);
         menu_print_decoline(0, 5);
-        for (int i = 0; i < nb_alive; i++) {
-            menu_print_line(i+6, i, i == selected_task);
-        }
-        for (int i = nb_alive; i < 13; i++) {
-            menu_print_decoline(1, i+6);
-        }
+        for (int i = 0; i < nb_alive; i++) menu_print_line(i+6, i, i == selected_task);
+        for (int i = nb_alive; i < 13; i++) menu_print_decoline(1, i+6);
         menu_print_decoline(2, 19);
         key = kb_get_scancode();
         if (key == KB_KEY_UP) selected_task--;
@@ -36,7 +32,7 @@ void task_menu() {
             clear_screen();
             cursor_blink(0);
             if (selected_task == 0) start_kshell();
-            else yield(task_get_pid(selected_task));
+            else task_switch(task_get_pid(selected_task));
         }
         while (kb_get_scancode() == KB_KEY_UP || kb_get_scancode() == KB_KEY_DOWN || kb_get_scancode() == KB_KEY_ENTER);
     }
@@ -70,9 +66,9 @@ void menu_print_line(int line, int task_i, int is_selected) {
 }
 
 void menu_print_decoline(int type, int line) {
-    // type 0 = first line
-    // type 1 = center line
-    // type 2 = last line
+    /* type 0 = first line
+     * type 1 = center line
+     * type 2 = last line */
     char line_str[80];
     for (int i = 0; i < 80; i++) line_str[i] = ' ';
     line_str[10] = (type == 0) ? 201 : (type == 1) ? 186 : 200;

@@ -10,7 +10,8 @@
 int shell_command(char command[]);
 
 void start_kshell() {
-    sys_warning("You are now in the kernel-level shell\n");
+    sys_warning("You are now in the kernel-level shell");
+    fskprint("\n");
     char char_buffer[BFR_SIZE];
     while (1) {
         rainbow_print("kernel-shell> ");

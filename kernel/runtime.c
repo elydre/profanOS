@@ -7,20 +7,24 @@
 
 
 // global values for tasking
+int g_return, g_argc;
 char **g_argv;
-int g_argc;
+
 
 void tasked_program() {
     char * binary_mem = task_get_bin_mem(task_get_current_pid());
-    ((void (*)(int, char **)) binary_mem)(g_argc, g_argv);
+    g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
 
     free(binary_mem);
 
     if (task_get_next_pid() == 0) clear_screen();
-    task_kill_yield(task_get_next_pid());
+    task_kill_task_switch(task_get_next_pid());
 }
 
 int run_binary(char path[], int silence, int argc, char **argv) {
+    // TODO: check if file is executable
+    // TODO: check if there is enough memory
+
     serial_debug("RUNTIME", path);
     (void) silence;
 
@@ -37,14 +41,15 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     g_argc = argc;
     g_argv = argv;
-    
+    g_return = 0;
+
     task_set_bin_mem(pid, binary_mem);
 
-    yield(pid);
+    task_switch(pid);
 
     // TODO: memory leak detection
 
-    return 0;
+    return g_return;
 }
 
 int run_ifexist(char path[], int argc, char **argv) {

@@ -63,7 +63,7 @@ static void keyboard_callback(registers_t *regs) {
 
     if (sc_history[0] == 59 && task_get_current_pid()) {
         clear_screen();
-        yield(0);
+        task_switch(0);
     }
 }
 

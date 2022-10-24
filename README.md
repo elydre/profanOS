@@ -57,7 +57,7 @@ info    - show time, task & page       ss      - show int in the LBA *
 go      - start * file as binary       stop    - shutdown the system
 gpd     - get to the parent dir        tree    - show current dir tree
 help    - show this help               udisk   - show used disk space
-ls      - list the current dir         yield   - yield to pid *
+ls      - list the current dir         task_switch   - task_switch to pid *
 ```
 
 ### Smart print color

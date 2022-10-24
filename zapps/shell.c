@@ -1,7 +1,6 @@
 #include "syscall.h"
 
 #define BFR_SIZE 90
-#define HISTORY_SIZE 8
 
 #define SC_MAX 57
 
@@ -15,9 +14,12 @@ void gpd();
 
 int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
-    char **history = c_malloc(HISTORY_SIZE * sizeof(char*));
-    for (int i = 0; i < HISTORY_SIZE; i++) {
-        history[i] = c_malloc(BFR_SIZE * sizeof(char));
+    int history_size = 0x1000 / BFR_SIZE - 1;
+    char **history = c_malloc(history_size * sizeof(char*));
+    int addr = c_mem_alloc(0x1000);
+    for (int i = 0; i < history_size; i++) {
+        history[i] = (char*)addr;
+        addr += BFR_SIZE;
     }
     int current_history_size = 0;
 
@@ -26,13 +28,13 @@ int main(int argc, char **argv) {
         c_input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
         c_fskprint("\n");
         if (c_str_cmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
-            for (int i = HISTORY_SIZE - 1; i > 0; i--) c_str_cpy(history[i], history[i - 1]);
-            if (current_history_size < HISTORY_SIZE) current_history_size++;
+            for (int i = history_size - 1; i > 0; i--) c_str_cpy(history[i], history[i - 1]);
+            if (current_history_size < history_size) current_history_size++;
             c_str_cpy(history[0], char_buffer);
         }
         if (shell_command(char_buffer)) break;
     }
-    for (int i = 0; i < HISTORY_SIZE; i++) c_free(history[i]);
+    c_free(history[0]);
     c_free(history);
     return 0;
 }
@@ -52,6 +54,8 @@ int shell_command(char *buffer) {
 
     if (!c_str_cmp(prefix, "exit")) {
         return_value = 1;
+    } else if (!c_str_cmp(prefix, "doom")) {
+        c_run_ifexist("/bin/games/doom.bin", 0, (char **)0);
     } else if (!c_str_cmp(prefix, "cd")) {
         char old_path[256];
         c_str_cpy(old_path, current_dir);
@@ -104,7 +108,7 @@ int shell_command(char *buffer) {
 
 void go(char file[], char prefix[], char suffix[]) {
     if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
-        int argc = c_str_count(suffix, ' ') + 4;
+        int argc = c_str_count(suffix, ' ') + 3;
         char **argv = c_malloc(argc * sizeof(char *));
         // set argv[0] to the command name
         argv[0] = c_malloc(c_str_len(prefix) + 1);

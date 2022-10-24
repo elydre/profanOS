@@ -18,8 +18,8 @@ typedef struct {
 void tasking_init();
 int task_create(void (*func)(), char * name);
 
-void yield(int target_pid);
-void task_kill_yield(int target_pid);
+void task_switch(int target_pid);
+void task_kill_task_switch(int target_pid);
 void task_kill(int target_pid);
 
 void task_update_gui_mode(int mode);
@@ -38,6 +38,6 @@ int task_get_pid(int internal_pos);
 int task_is_gui(int internal_pos);
 
 // switch.asm
-extern void task_switch(task_rgs_t *old, task_rgs_t *new);
+extern void task_asm_switch(task_rgs_t *old, task_rgs_t *new);
 
 #endif

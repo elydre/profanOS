@@ -48,7 +48,8 @@ int main(int argc, char **argv) {
     char convert[10];
 
     int color, last_key, key = 0;
-    int * key_buffer = c_calloc(20); // for init to 0
+    int key_buffer[20];
+    for (int i = 0; i < 20; i++) key_buffer[i] = 0;
     int tick_count[4];
     tick_count[0] = c_timer_get_tick();
     tick_count[3] = 0;

@@ -147,11 +147,7 @@ extern "C" {
 #endif
 
 #ifndef NULL
-    #ifdef __cplusplus
-        #define NULL 0
-    #else
-        #define NULL ((void *) 0)
-    #endif
+    #define NULL ((void *) 0)
 #endif
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
@@ -208,7 +204,7 @@ extern "C" {
 #define c_ata_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
 #define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
-#define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
+#define c_task_switch(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
 #define c_run_binary(path, silence, nb_args, args) ((int (*)(char *, int, int, char **)) hi_func_addr(69))(path, silence, nb_args, args)
 #define c_time_get(time) ((void (*)(time_t *)) hi_func_addr(70))(time)
@@ -225,6 +221,7 @@ extern "C" {
 #define c_vga_set_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
 #define c_vgui_draw_line(x1, y1, x2, y2, c) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))(x1, y1, x2, y2, c)
 #define c_vgui_clear(color) ((void (*)(unsigned)) hi_func_addr(83))(color)
+#define c_task_get_alive() ((int (*)(void)) hi_func_addr(84))()
 #define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
 #define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
 #define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, sprite_t)) hi_func_addr(87))(x, y, sprite)
@@ -240,7 +237,9 @@ extern "C" {
 #define c_vgui_set_pixel(x, y, color) ((void (*)(int, int, unsigned)) hi_func_addr(97))(x, y, color)
 #define c_vgui_get_pixel(x, y) ((unsigned (*)(int, int)) hi_func_addr(98))(x, y)
 #define c_vgui_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(99))(x, y, msg, big, color)
+#define c_task_get_max() ((int (*)(void)) hi_func_addr(100))()
 #define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
 #define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
+#define c_mem_get_phys_size() ((int (*)(void)) hi_func_addr(104))()
 
 #endif

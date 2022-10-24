@@ -99,16 +99,15 @@ int task_create(void (*func)(), char * name) {
     return pid;
 }
 
-void yield(int target_pid) {
+void task_switch(int target_pid) {
     int task_i, nb_alive = task_get_alive();
 
     if (tasks[0].pid == target_pid) {
-        sys_error("Cannot yield to self");
+        sys_error("Cannot switch to self");
         return;
     }
 
     if (tasks[0].gui_mode && vgui_get_refresh_mode()) {
-        serial_debug("YIELD", "save vgui");
         tasks[0].vgui_save = (vgui_get_refresh_mode() == 3) ? 2 : 1;
         vgui_exit();
     }
@@ -122,7 +121,7 @@ void yield(int target_pid) {
             tasks[0] = tasks[TASK_MAX];
             break;
         } else if (task_i == nb_alive - 1) {
-            sys_error("Task not found in yield");
+            sys_error("Task not found");
             return;
         }
     }
@@ -132,13 +131,13 @@ void yield(int target_pid) {
         vgui_setup(tasks[0].vgui_save - 1);
     }
 
-    task_switch(&tasks[1].regs, &tasks[0].regs);
+    task_asm_switch(&tasks[1].regs, &tasks[0].regs);
     i_destroy_killed_tasks(nb_alive);
 }
 
-void task_kill_yield(int target_pid) {
+void task_kill_task_switch(int target_pid) {
     tasks[0].isdead = 1;
-    yield(target_pid);
+    task_switch(target_pid);
 }
 
 void task_kill(int target_pid) {
