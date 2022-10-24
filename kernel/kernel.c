@@ -3,6 +3,7 @@
 #include <filesystem.h>
 #include <function.h>
 #include <cpu/isr.h>
+#include <ramdisk.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
@@ -27,6 +28,9 @@ void kernel_main() {
 
     serial_init();
     fskprint("Serial initialized\n");
+
+    ramdisk_init();
+    fskprint("ramdisk initialized\n");
 
     filesystem_init();
     fskprint("FileSys initialized\n");
