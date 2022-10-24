@@ -18,7 +18,7 @@ void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
 
 #define PART_SIZE 0x1000   // 4Ko
 #define IMM_COUNT 54       // can save 4104Ko
-#define BASE_ADDR 0x222000 // lot of jokes here
+#define BASE_ADDR 0x250000 // lot of jokes here
 
 static int MLIST[IMM_COUNT];
 static int alloc_count = 0;
