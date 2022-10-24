@@ -13,12 +13,12 @@ void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
     for ( ; len != 0; len--) *temp++ = val;
 }
 
-// elydre b3 memory manager with alloc and free functions
+// elydre b3 memory manager with mem_alloc and free_addr functions
 // https://github.com/elydre/elydre/blob/main/projet/profan/b3.py
 
 #define PART_SIZE 0x1000   // 4Ko
 #define IMM_COUNT 54       // can save 4104Ko
-#define BASE_ADDR 0x200000 // TODO: get automatically
+#define BASE_ADDR 0x222000 // lot of jokes here
 
 static int MLIST[IMM_COUNT];
 static int alloc_count = 0;

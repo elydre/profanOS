@@ -34,6 +34,7 @@ void shell_so(char suffix[]) {
 
 void shell_help() {
     char *help[] = {
+        "ALLOC  - allocate *0x1000",
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
         "HELP   - show this help",
@@ -53,7 +54,8 @@ int shell_command(char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "exit") == 0) return 1;
+    if      (str_cmp(prefix, "alloc") == 0) mem_alloc(ascii_to_int(suffix) * 0x1000);
+    else if (str_cmp(prefix, "exit") == 0) return 1;
     else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
     else if (str_cmp(prefix, "mem") == 0) mem_print();
