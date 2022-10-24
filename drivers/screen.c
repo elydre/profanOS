@@ -71,10 +71,12 @@ int print_char(char c, int col, int row, char attr) {
     if (c == '\n') {
         row = get_offset_row(offset);
         offset = get_offset(0, row+1);
+    } else if (c == '\r') { /* str_backspace */
+        offset = get_offset(0, row);
     } else if (c == 0x08) { /* str_backspace */
         vidmem[offset] = ' ';
         vidmem[offset+1] = attr;
-    } else if (c != '\r') {
+    } else {
         vidmem[offset] = c;
         vidmem[offset+1] = attr;
         offset += 2;

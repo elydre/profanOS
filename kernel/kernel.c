@@ -19,7 +19,7 @@ void kernel_main() {
     fskprint("ISR initialized\n");
 
     tasking_init();
-    fskprint("Tasking initialized\n");
+    fskprint("tasking initialized\n");
 
     rtc_init();
     time_gen_boot();
@@ -27,16 +27,14 @@ void kernel_main() {
     fskprint("RTC initialized\n");
 
     serial_init();
-    fskprint("Serial initialized\n");
+    fskprint("serial initialized\n");
 
     ramdisk_init();
-    fskprint("ramdisk initialized\n");
-
     filesystem_init();
-    fskprint("FileSys initialized\n");
+    fskprint("filesys initialized\n");
 
     init_watfunc();
-    fskprint("WatFunc initialized\n");
+    fskprint("watfunc initialized\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
