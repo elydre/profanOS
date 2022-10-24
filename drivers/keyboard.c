@@ -1,7 +1,7 @@
 #include <driver/keyboard.h>
+#include <cpu/ports.h>
 #include <function.h>
 #include <cpu/isr.h>
-#include <ports.h>
 #include <task.h>
 
 #include <stdint.h>

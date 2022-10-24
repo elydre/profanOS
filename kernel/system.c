@@ -1,8 +1,8 @@
 #include <driver/serial.h>
 #include <filesystem.h>
+#include <cpu/ports.h>
 #include <string.h>
 #include <system.h>
-#include <ports.h>
 #include <iolib.h>
 #include <mem.h>
 

@@ -1,9 +1,9 @@
 #include <driver/serial.h>
 #include <driver/screen.h>
+#include <cpu/ports.h>
 #include <function.h>
 #include <gui/vga.h>
 #include <system.h>
-#include <ports.h>
 #include <task.h>
 #include <mem.h>
 

@@ -1,5 +1,5 @@
 #include <driver/screen.h>
-#include <ports.h>
+#include <cpu/ports.h>
 #include <mem.h>
 
 #include <stdint.h>

@@ -1,6 +1,6 @@
 #include <driver/serial.h>
+#include <cpu/ports.h>
 #include <string.h>
-#include <ports.h>
 
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8

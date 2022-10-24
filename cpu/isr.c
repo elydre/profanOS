@@ -1,9 +1,9 @@
 #include <driver/keyboard.h>
+#include <cpu/ports.h>
 #include <cpu/timer.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
 #include <system.h>
-#include <ports.h>
 
 isr_t interrupt_handlers[256];
 

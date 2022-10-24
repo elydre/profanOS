@@ -1,5 +1,5 @@
 #include <driver/rtc.h>
-#include <ports.h>
+#include <cpu/ports.h>
 
 int bcd;
 
