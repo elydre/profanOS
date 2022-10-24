@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "TT-19"
+#define VERSION "TT-20"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c

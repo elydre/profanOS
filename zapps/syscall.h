@@ -96,7 +96,7 @@ extern "C" {
         int y;
         int size_x;
         int size_y;
-    } Sprite_t;
+    } sprite_t;
 }
 #else
     typedef enum screen_color_t screen_color_t;
@@ -136,14 +136,14 @@ extern "C" {
         int full[6];
     } time_t;
 
-    typedef struct Sprite_t {
+    typedef struct sprite_t {
         char *path;
         char *data;
         int x;
         int y;
         int size_x;
         int size_y;
-    } Sprite_t;
+    } sprite_t;
 #endif
 
 #ifndef NULL
@@ -223,14 +223,13 @@ extern "C" {
 #define c_vga_text_mode() ((void (*)(void)) hi_func_addr(79))()
 #define c_vga_clear_screen() ((void (*)(void)) hi_func_addr(80))()
 #define c_vga_set_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
-#define c_vga_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(82))(x, y, msg, big, color)
-#define c_vga_draw_line(x1, y1, x2, y2, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(83))(x1, y1, x2, y2, color)
-#define c_vga_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(84))(x, y, w, h, color)
+#define c_vgui_draw_line(x1, y1, x2, y2, c) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))(x1, y1, x2, y2, c)
+#define c_vgui_clear(color) ((void (*)(unsigned)) hi_func_addr(83))(color)
 #define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
 #define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
-#define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, Sprite_t)) hi_func_addr(87))(x, y, sprite)
-#define c_lib2d_free_sprite(sprite) ((void (*)(Sprite_t)) hi_func_addr(88))(sprite)
-#define c_lib2d_init_sprite(path) ((Sprite_t (*)(char*)) hi_func_addr(89))(path)
+#define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, sprite_t)) hi_func_addr(87))(x, y, sprite)
+#define c_lib2d_free_sprite(sprite) ((void (*)(sprite_t)) hi_func_addr(88))(sprite)
+#define c_lib2d_init_sprite(path) ((sprite_t (*)(char*)) hi_func_addr(89))(path)
 #define c_str_delchar(s, c) ((void (*)(char*, char)) hi_func_addr(90))(s, c)
 #define c_kb_reset_history() ((void (*)(void)) hi_func_addr(91))()
 #define c_kb_get_scfh() ((int (*)(void)) hi_func_addr(92))()

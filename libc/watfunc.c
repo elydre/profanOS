@@ -153,12 +153,15 @@ int wf_get_func_addr(int func_id) {
         case 97: return (int) vgui_set_pixel;
         case 98: return (int) vgui_get_pixel;
         case 99: return (int) vgui_print;
-        case 101: return (int) up_string;
+        case 82: return (int) vgui_draw_line;
+        case 83: return (int) vgui_clear;
+
 
         // serial.h
         case 102: return (int) serial_debug;
         case 103: return (int) serial_print;
 
+        case 101: return (int) up_string;
         default: return (int) unknown_func;
     }
 }

@@ -11,6 +11,7 @@
 
 int main(int argc, char **argv) {
     c_vga_320_mode();
+    c_vgui_setup(0);
 
     long double cx, cy, xn, yn, tmp_x, tmp_y;
     int n;
@@ -29,11 +30,13 @@ int main(int argc, char **argv) {
                 yn = 2 * tmp_x * tmp_y + cy;
                 n++;
             }
-            c_vga_set_pixel(x, y, n);
+            c_vgui_set_pixel(x, y, n);
         }
     }
-    c_vga_print(5, 5, "press escape to exit", 0, 63);
+    c_vgui_print(5, 5, "press escape to exit", 0, 63);
+    c_vgui_render();
     while (c_kb_get_scancode() != 1);
+    c_vgui_exit();
     c_vga_text_mode();
     return 0;
 }

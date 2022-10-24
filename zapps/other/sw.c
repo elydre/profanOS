@@ -1,5 +1,4 @@
 // requires /user/star_wars.txt, the ascii art of the star wars
-// be careful, the ascii movie is more than 2048 sectors long
 
 #include "syscall.h"
 
@@ -9,7 +8,7 @@ int main(int argc, char **argv) {
 
     c_fskprint("allocating memory for the file...\n");
     uint32_t * data = c_fs_declare_read_array(path);
-    char * str = c_malloc(0x4000);
+    char * str = c_malloc(0x1000);
 
     str[0] = '\0';
 

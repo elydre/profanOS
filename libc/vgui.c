@@ -4,8 +4,8 @@
 #include <gui/vga.h>
 #include <mem.h>
 
-char * last_render = NULL;
-char * current_render = NULL;
+char * last_render;
+char * current_render;
 int refresh_mode;
 
 /*    REFRESH MODES
@@ -24,8 +24,6 @@ void vgui_setup(int refresh_all) {
 void vgui_exit() {
     free(last_render);
     free(current_render);
-    last_render = NULL;
-    current_render = NULL;
     refresh_mode = 0;
 }
 
@@ -43,20 +41,20 @@ int vgui_get_refresh_mode() {
     return refresh_mode;
 }
 
-void vgui_draw_rect(int x, int y, int width, int height, int color) {
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            current_render[(y + j) * 320 + x + i] = color;
-        }
-    }
-}
-
 void vgui_set_pixel(int x, int y, int color) {
     current_render[y * 320 + x] = color;
 }
 
 int vgui_get_pixel(int x, int y) {
     return current_render[y * 320 + x];
+}
+
+void vgui_draw_rect(int x, int y, int width, int height, int color) {
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            current_render[(y + j) * 320 + x + i] = color;
+        }
+    }
 }
 
 void vgui_print(int x, int y, char msg[], int big, unsigned color) {
@@ -70,5 +68,26 @@ void vgui_print(int x, int y, char msg[], int big, unsigned color) {
                 vgui_set_pixel(i * 8 + x + 8 - k , y + j, color);
             }
         }
+    }
+}
+
+void vgui_draw_line(int x1, int y1, int x2, int y2, int color) {
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+    int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
+    float xinc = dx / (float) steps;
+    float yinc = dy / (float) steps;
+    float x = x1;
+    float y = y1;
+    for (int i = 0; i <= steps; i++) {
+        vgui_set_pixel(x, y, color);
+        x += xinc;
+        y += yinc;
+    }
+}
+
+void vgui_clear(int color) {
+    for (int i = 0; i < 320 * 200; i++) {
+        current_render[i] = color;
     }
 }
