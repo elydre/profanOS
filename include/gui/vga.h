@@ -16,4 +16,3 @@ int vga_get_mode();
 void vga_switch_mode(int mode);
 
 #endif
-

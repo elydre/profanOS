@@ -306,4 +306,3 @@ void vga_switch_mode(int mode) {
     else if (mode == 1) vga_320_mode();
     else if (mode == 2) vga_640_mode();
 }
-

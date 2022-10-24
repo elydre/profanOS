@@ -88,4 +88,3 @@ static void ATA_wait_BSY() {    //Wait for bsy to be 0
 static void ATA_wait_DRQ() {    //Wait fot drq to be 1
     while (!(port_byte_in(0x1F7) & STATUS_RDY));
 }
-

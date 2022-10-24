@@ -276,4 +276,3 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
 void input(char out_buffer[], int size, screen_color_t color) {
     input_wh(out_buffer, size, color, NULL, 0);
 }
-

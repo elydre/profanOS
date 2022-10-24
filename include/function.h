@@ -15,4 +15,3 @@ void init_rand();
 int rand();
 
 #endif
-

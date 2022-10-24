@@ -54,8 +54,6 @@ int shell_command(char *buffer) {
 
     if (!c_str_cmp(prefix, "exit")) {
         return_value = 1;
-    } else if (!c_str_cmp(prefix, "doom")) {
-        c_run_ifexist("/bin/games/doom.bin", 0, (char **)0);
     } else if (!c_str_cmp(prefix, "cd")) {
         char old_path[256];
         c_str_cpy(old_path, current_dir);

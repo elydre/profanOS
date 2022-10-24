@@ -105,4 +105,3 @@ void irq_install() {
     /* IRQ1: keyboard */
     keyboard_init();
 }
-

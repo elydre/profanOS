@@ -71,4 +71,3 @@ void keyboard_init() {
     register_interrupt_handler(IRQ1, keyboard_callback);
     kb_reset_history();
 }
-

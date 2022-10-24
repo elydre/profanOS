@@ -91,4 +91,3 @@ void vgui_clear(int color) {
         current_render[i] = color;
     }
 }
-
