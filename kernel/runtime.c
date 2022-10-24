@@ -1,4 +1,5 @@
 #include <driver/serial.h>
+#include <driver/screen.h>
 #include <filesystem.h>
 #include <system.h>
 #include <task.h>
@@ -15,6 +16,7 @@ void tasked_program() {
 
     free(binary_mem);
 
+    if (task_get_next_pid() == 0) clear_screen();
     task_kill_yield(task_get_next_pid());
 }
 

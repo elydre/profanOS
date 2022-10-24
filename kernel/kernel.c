@@ -42,7 +42,7 @@ void kernel_main() {
     argv[0] = "/bin/shell.bin";
     run_ifexist(argv[0], 1, argv);
 
-    start_kshell();
+    task_menu();
 
     sys_fatal("Nothing to run!");
 }

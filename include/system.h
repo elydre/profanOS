@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "TT-22"
+#define VERSION "TT-23"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c
@@ -16,9 +16,8 @@ void sys_interrupt(int code);
 
 int sys_get_setting(char name[]);
 
-// watfunc.c
-int wf_get_func_addr(int func_id);
-void init_watfunc();
+// kmenu.c
+void task_menu();
 
 // kshell.c
 void start_kshell();
@@ -26,5 +25,9 @@ void start_kshell();
 // runtime.c
 int run_binary(char path[], int silence, int argc, char **argv);
 int run_ifexist(char path[], int argc, char **argv);
+
+// watfunc.c
+int wf_get_func_addr(int func_id);
+void init_watfunc();
 
 #endif

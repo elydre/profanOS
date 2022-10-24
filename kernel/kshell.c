@@ -1,79 +1,64 @@
-#include <driver/keyboard.h>
-#include <driver/screen.h>
+#include <function.h>
+#include <gui/vga.h>
+#include <system.h>
 #include <string.h>
-#include <task.h>
+#include <iolib.h>
+#include <mem.h>
 
+#define BFR_SIZE 65
 
-#define KB_KEY_UP 0x48
-#define KB_KEY_DOWN 0x50
-#define KB_KEY_ENTER 0x1C
-
-void menu_print_line(int line, int pid, char name[], int gui, int is_selected);
-void menu_print_firstline();
-void menu_print_lastline();
+int shell_command(char command[]);
 
 void start_kshell() {
-    // simple menu to switch between tasks with the keyboard arrows
-    int selected_task = 0, nb_alive, key;
+    sys_warning("You are now in the kernel-level shell\n");
+    char char_buffer[BFR_SIZE];
     while (1) {
-        // refresh tasks
-        nb_alive = task_get_alive();
-        // print tasks
-        menu_print_firstline();
-        for (int i = 0; i < nb_alive; i++) {
-            menu_print_line(i+6, task_get_pid(i), task_get_name(i), task_is_gui(i), i == selected_task);
-        }
-        key = kb_get_scancode();
-        if (key == KB_KEY_UP) {
-            selected_task--;
-            if (selected_task < 0) {
-                selected_task = nb_alive - 1;
-            }
-        } else if (key == KB_KEY_DOWN) {
-            selected_task++;
-            if (selected_task >= nb_alive) {
-                selected_task = 0;
-            }
-        } else if (key == KB_KEY_ENTER) {
-            clear_screen();
-            yield(task_get_pid(selected_task));
-        }
-        while (kb_get_scancode() == key);
+        rainbow_print("kernel-shell> ");
+        input(char_buffer, BFR_SIZE, 9);
+        fskprint("\n");
+        if (shell_command(char_buffer)) break;
+        char_buffer[0] = '\0';
     }
+    clear_screen();
 }
 
-void menu_print_line(int line, int pid, char name[], int gui, int is_selected) {
-    char line_str[80], str_pid[10];
-    int var = 0;
-    for (int i = 0; i < 13; i++) line_str[i] = ' ';
-    line_str[10] = 186;
-    line_str[13] = '\0';
-    ckprint_at(line_str, 0, line, 0x0D);
-    for (int i = 0; i < 80; i++) line_str[i] = '\0';
-    line_str[0] = ' ';
-    int_to_ascii(pid, str_pid);
-    str_cat(line_str, str_pid);
-    var = str_len(line_str);
-    for (int i = 0; i < 5 - var; i++) line_str[var + i] = ' ';
-    if (gui == 1) str_cat(line_str, "[G]");
-    else if (gui == 2) str_cat(line_str, "[S]");
-    else str_cat(line_str, "   ");
-    str_cat(line_str, "   ");
-    str_cat(line_str, name);
-    if (is_selected) ckprint_at(line_str, 13, line, 0x0D);
-    else ckprint_at(line_str, 13, line, 0x0F);
-    for (int i = 0; i < 8; i++) line_str[i] = ' ';
-    line_str[3] = 186;
-    line_str[5] = '\0';
-    ckprint_at(line_str, 66, line, 0x0D);
+
+void shell_so(char suffix[]) {
+    char path[100] = "/bin/";
+    str_cat(path, suffix);
+    str_cat(path, ".bin");
+    fskprint("path: %s\n", path);
+    run_ifexist(path, 0, (char **)0);    
 }
 
-void menu_print_firstline() {
-    char line_str[80];
-    for (int i = 0; i < 80; i++) line_str[i] = ' ';
-    line_str[10] = 201;
-    for (int i = 11; i < 69; i++) line_str[i] = 205;
-    line_str[69] = 187;
-    line_str[70] = '\0';
-    ckprint_at(line_str, 0, 5, 0x0D);
+void shell_help() {
+    char *help[] = {
+        "EXIT   - quit the kshell",
+        "GO     - go file as binary",
+        "HELP   - show this help",
+        "MEM    - show memory state",
+        "REBOOT - reboot the system",
+        "SO     - run file in /bin",
+    };
+
+    for (int i = 0; i < ARYLEN(help); i++)
+        fskprint("%s\n", help[i]);
+}
+
+int shell_command(char command[]) {
+    char prefix[BFR_SIZE], suffix[BFR_SIZE];
+    str_cpy(prefix, command);
+    str_cpy(suffix, command);
+    str_start_split(prefix, ' ');
+    str_end_split(suffix, ' ');
+
+    if      (str_cmp(prefix, "exit") == 0) return 1;
+    else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
+    else if (str_cmp(prefix, "help") == 0) shell_help();
+    else if (str_cmp(prefix, "mem") == 0) mem_print();
+    else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
+    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
+
+    return 0;
 }
