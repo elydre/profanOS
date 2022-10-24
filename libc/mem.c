@@ -5,23 +5,20 @@
 #include <mem.h>
 
 void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
-    int i;
-    for (i = 0; i < nbytes; i++)
-        *(dest + i) = *(source + i);
+    for (int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
 }
 
 void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
     uint8_t *temp = (uint8_t *)dest;
-    for ( ; len != 0; len--)
-        *temp++ = val;
+    for ( ; len != 0; len--) *temp++ = val;
 }
 
-// elydre b3 memory manager with alloc and free functions
+// elydre b3 memory manager with mem_alloc and free_addr functions
 // https://github.com/elydre/elydre/blob/main/projet/profan/b3.py
 
 #define PART_SIZE 0x1000   // 4Ko
 #define IMM_COUNT 54       // can save 4104Ko
-#define BASE_ADDR 0x200000 // TODO: get automatically
+#define BASE_ADDR 0x222000 // lot of jokes here
 
 static int MLIST[IMM_COUNT];
 static int alloc_count = 0;
@@ -132,6 +129,19 @@ void * calloc(int size) {
 }
 
 // memory info function
+
+int mem_get_phys_size() {
+    int *addr_min = (int *) 0x200000;
+    int *addr_max = (int *) 0x40000000;
+    int *addr_test;
+    while (addr_max - addr_min > 1) {
+        addr_test = addr_min + (addr_max - addr_min) / 2;
+        * addr_test = 0x1234;
+        if (*addr_test == 0x1234) addr_min = addr_test;
+        else addr_max = addr_test;
+    }
+    return (int) addr_max;
+}
 
 void mem_print() {
     int val, color = 0x80;

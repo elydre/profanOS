@@ -1,15 +1,14 @@
 #include <gui/graph2d.h>
 #include <filesystem.h>
-#include <gui/vga.h>
+#include <gui/vgui.h>
 #include <string.h>
 #include <system.h>
-#include <iolib.h>
 #include <mem.h>
 
-Sprite_t lib2d_init_sprite(char *path) {
+sprite_t lib2d_init_sprite(char *path) {
     if (!(fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)) {
-        sys_error("Le fichier demandé dans lib2d_print_sprite n'existe pas !");
-        return (Sprite_t) {"", NULL, 0, 0, 0, 0};
+        sys_error("File not found");
+        return (sprite_t) {"", NULL, 0, 0, 0, 0};
     }
     uint32_t *file_content = fs_declare_read_array(path);
     char *char_content = fs_declare_read_array(path);
@@ -44,18 +43,18 @@ Sprite_t lib2d_init_sprite(char *path) {
         data[i] = char_content[i+index_char];
     }
     free(char_content);
-    Sprite_t sprite = {path, data, 0, 0, longueur, hauteur};
+    sprite_t sprite = {path, data, 0, 0, longueur, hauteur};
     return sprite;
 }
 
-void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
-    if (sprite.data == NULL) { // si on a déja la data en cache
-        sys_error("Le sprite demandé n'a pas été initialisé !");
+void lib2d_print_sprite(int x, int y, sprite_t sprite) {
+    if (sprite.data == NULL) {
+        sys_error("Sprite not initialized");
         return;
     }
     int hauteur = sprite.size_y;
     int longueur = sprite.size_x;
-    
+
     int index_char = 0;
     char couleur_str[3];
     int index_couleur = 0;
@@ -69,11 +68,11 @@ void lib2d_print_sprite(int x, int y, Sprite_t sprite) {
                 index_couleur++; index_char++;
             } couleur_str[index_couleur] = '\0'; index_char++;
             couleur = ascii_to_int(couleur_str);
-            vga_put_pixel(l+y, h+x, couleur);
+            vgui_set_pixel(l+y, h+x, couleur);
         }
     }
 }
 
-void lib2d_free_sprite(Sprite_t sprite) {
+void lib2d_free_sprite(sprite_t sprite) {
     free(sprite.data);
 }

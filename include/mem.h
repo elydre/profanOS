@@ -22,6 +22,6 @@ int mem_get_usage();
 int mem_get_usable();
 int mem_get_alloc_count();
 int mem_get_free_count();
-
+int mem_get_phys_size();
 
 #endif

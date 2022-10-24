@@ -18,5 +18,7 @@ int main(int argc, char **argv) {
     c_free(data);
     c_free(str);
 
+    PATH_EXIT();
+
     return 0;
 }

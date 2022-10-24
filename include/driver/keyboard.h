@@ -38,7 +38,7 @@
 #define TAB_SIZE 4
 
 #define KB_released_value 128
-#define KB_released(key) key+KB_released_value
+#define KB_released(key) (key + KB_released_value)
 
 char kb_scancode_to_char(int scancode, int shift);
 

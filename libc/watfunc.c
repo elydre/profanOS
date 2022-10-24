@@ -1,9 +1,11 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
+#include <driver/serial.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <filesystem.h>
 #include <cpu/timer.h>
+#include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
 #include <system.h>
@@ -13,8 +15,16 @@
 #include <mem.h>
 
 void init_watfunc() {
-    int *func_addr = (int *)FUNC_ADDR_SAVE;
+    int *func_addr = (int *) FUNC_ADDR_SAVE;
     *func_addr = (int) wf_get_func_addr;
+}
+
+void unknown_func() {
+    sys_error("Unknown function called");
+}
+
+void up_string(char str[]) {
+    UNUSED(str);
 }
 
 int wf_get_func_addr(int func_id) {
@@ -48,6 +58,7 @@ int wf_get_func_addr(int func_id) {
         case 61: return (int) mem_print;
         case 73: return (int) mem_get_alloc_count;
         case 74: return (int) mem_get_free_count;
+        case 104: return (int) mem_get_phys_size;
 
         // string.h
         case 23: return (int) int_to_ascii;
@@ -110,34 +121,50 @@ int wf_get_func_addr(int func_id) {
         // system.h
         case 62: return (int) sys_reboot;
         case 68: return (int) sys_shutdown;
-        case 69: return (int) sys_run_binary;
+        case 69: return (int) run_binary;
+        case 75: return (int) run_ifexist;
 
-        // ata driver
+        // ata.h
         case 63: return (int) ata_read_sector;
         case 64: return (int) ata_write_sector;
         case 65: return (int) ata_get_sectors_count;
 
         // task.h
-        case 67: return (int) yield;
-        case 75: return (int) task_print;
+        case 67: return (int) task_switch;
+        case 84: return (int) task_get_alive;
+        case 100: return (int) task_get_max;
+
 
         // vga.h
         case 77: return (int) vga_320_mode;
         case 78: return (int) vga_640_mode;
         case 79: return (int) vga_text_mode;
         case 80: return (int) vga_clear_screen;
-        case 81: return (int) vga_put_pixel;
-        case 82: return (int) vga_print;
-        case 83: return (int) vga_draw_line;
-        case 84: return (int) vga_draw_rect;
+        case 81: return (int) vga_set_pixel;
         case 85: return (int) vga_get_width;
         case 86: return (int) vga_get_height;
 
-        // graph2d
+        // graph2d.h
         case 87: return (int) lib2d_print_sprite;
         case 88: return (int) lib2d_free_sprite;
         case 89: return (int) lib2d_init_sprite;
 
-        default: return 0;
+        // vgui.h
+        case 93: return (int) vgui_setup;
+        case 94: return (int) vgui_exit;
+        case 95: return (int) vgui_render;
+        case 96: return (int) vgui_draw_rect;
+        case 97: return (int) vgui_set_pixel;
+        case 98: return (int) vgui_get_pixel;
+        case 99: return (int) vgui_print;
+        case 82: return (int) vgui_draw_line;
+        case 83: return (int) vgui_clear;
+
+        // serial.h
+        case 102: return (int) serial_debug;
+        case 103: return (int) serial_print;
+
+        case 101: return (int) up_string;
+        default: return (int) unknown_func;
     }
 }

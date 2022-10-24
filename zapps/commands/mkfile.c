@@ -8,5 +8,6 @@ int main(int argc, char **argv) {
     c_fs_make_file(current_dir, suffix);
     c_free(current_dir);
     c_free(suffix);
+    PATH_EXIT();
     return 0;
 }

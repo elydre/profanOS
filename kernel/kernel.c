@@ -1,3 +1,4 @@
+#include <driver/serial.h>
 #include <driver/rtc.h>
 #include <filesystem.h>
 #include <function.h>
@@ -15,7 +16,7 @@ void kernel_main() {
     isr_install();
     irq_install();
     fskprint("ISR initialized\n");
-    
+
     tasking_init();
     fskprint("Tasking initialized\n");
 
@@ -24,9 +25,12 @@ void kernel_main() {
     init_rand();
     fskprint("RTC initialized\n");
 
+    serial_init();
+    fskprint("Serial initialized\n");
+
     filesystem_init();
     fskprint("FileSys initialized\n");
-        
+
     init_watfunc();
     fskprint("WatFunc initialized\n");
 
@@ -34,11 +38,11 @@ void kernel_main() {
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
     // launch of the shell.bin
-    char **argv = malloc(sizeof(char *));
+    char *argv[1];
     argv[0] = "/bin/shell.bin";
-    sys_run_ifexist("/bin/shell.bin", 1, argv);
-    free(argv);
-    start_kshell();
-    
+    run_ifexist(argv[0], 1, argv);
+
+    task_menu();
+
     sys_fatal("Nothing to run!");
 }

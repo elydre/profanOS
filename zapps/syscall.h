@@ -5,8 +5,12 @@
 
 #define FUNC_ADDR_SAVE 0x199990
 
+#define SERIAL_PORT_A 0x3F8
+#define SERIAL_PORT_B 0x2F8
+
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
+#define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
 
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)FUNC_ADDR_SAVE)(id)
@@ -45,7 +49,7 @@
 #define KB_MAJ 58
 
 #define KB_released_value 128
-#define KB_released(key) key+KB_released_value
+#define KB_released(key) (key + KB_released_value)
 
 #ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir screen_color_t
 extern "C" {
@@ -92,7 +96,7 @@ extern "C" {
         int y;
         int size_x;
         int size_y;
-    } Sprite_t;
+    } sprite_t;
 }
 #else
     typedef enum screen_color_t screen_color_t;
@@ -132,22 +136,18 @@ extern "C" {
         int full[6];
     } time_t;
 
-    typedef struct Sprite_t {
+    typedef struct sprite_t {
         char *path;
         char *data;
         int x;
         int y;
         int size_x;
         int size_y;
-    } Sprite_t;
+    } sprite_t;
 #endif
 
 #ifndef NULL
-    #ifdef __cplusplus
-        #define NULL 0
-    #else
-        #define NULL ((void *)0)
-    #endif
+    #define NULL ((void *) 0)
 #endif
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
@@ -157,9 +157,9 @@ extern "C" {
 #define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
 #define c_fs_read_file(path, data) ((void (*)(char *, uint32_t *)) hi_func_addr(4))(path, data)
 #define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)
+#define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
 #define c_fs_get_folder_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
 #define c_fs_declare_read_array(path) ((void * (*)(char *)) hi_func_addr(8))(path)
-#define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
 #define c_fs_does_path_exists(path) ((int (*)(char *)) hi_func_addr(9))(path)
 #define c_fs_type_sector(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
 #define c_fs_get_dir_content(id, list_name, liste_id) ((void (*)(uint32_t, string_20_t *, uint32_t *)) hi_func_addr(11))(id, list_name, liste_id)
@@ -204,31 +204,42 @@ extern "C" {
 #define c_ata_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
 #define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
-#define c_yield(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
+#define c_task_switch(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()
-#define c_sys_run_binary(path, silence, nb_args, args) ((int (*)(char *, int, int, char **)) hi_func_addr(69))(path, silence, nb_args, args)
+#define c_run_binary(path, silence, nb_args, args) ((int (*)(char *, int, int, char **)) hi_func_addr(69))(path, silence, nb_args, args)
 #define c_time_get(time) ((void (*)(time_t *)) hi_func_addr(70))(time)
 #define c_time_calc_unix(time) ((int (*)(time_t *)) hi_func_addr(71))(time)
 #define c_timer_get_tick() ((int (*)(void)) hi_func_addr(72))()
 #define c_mem_get_alloc_count() ((int (*)(void)) hi_func_addr(73))()
 #define c_mem_get_free_count() ((int (*)(void)) hi_func_addr(74))()
-#define c_task_print() ((void (*)(void)) hi_func_addr(75))()
+#define c_run_ifexist(path, argc, argv) ((int (*)(char *, int, char **)) hi_func_addr(75))(path, argc, argv)
 #define c_cursor_blink(on) ((void (*)(int)) hi_func_addr(76))(on)
 #define c_vga_320_mode() ((void (*)(void)) hi_func_addr(77))()
 #define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()
 #define c_vga_text_mode() ((void (*)(void)) hi_func_addr(79))()
 #define c_vga_clear_screen() ((void (*)(void)) hi_func_addr(80))()
-#define c_vga_put_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
-#define c_vga_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(82))(x, y, msg, big, color)
-#define c_vga_draw_line(x1, y1, x2, y2, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(83))(x1, y1, x2, y2, color)
-#define c_vga_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(84))(x, y, w, h, color)
+#define c_vga_set_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
+#define c_vgui_draw_line(x1, y1, x2, y2, c) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))(x1, y1, x2, y2, c)
+#define c_vgui_clear(color) ((void (*)(unsigned)) hi_func_addr(83))(color)
+#define c_task_get_alive() ((int (*)(void)) hi_func_addr(84))()
 #define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
 #define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
-#define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, Sprite_t)) hi_func_addr(87))(x, y, sprite)
-#define c_lib2d_free_sprite(sprite) ((void (*)(Sprite_t)) hi_func_addr(88))(sprite)
-#define c_lib2d_init_sprite(path) ((Sprite_t (*)(char*)) hi_func_addr(89))(path)
+#define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, sprite_t)) hi_func_addr(87))(x, y, sprite)
+#define c_lib2d_free_sprite(sprite) ((void (*)(sprite_t)) hi_func_addr(88))(sprite)
+#define c_lib2d_init_sprite(path) ((sprite_t (*)(char*)) hi_func_addr(89))(path)
 #define c_str_delchar(s, c) ((void (*)(char*, char)) hi_func_addr(90))(s, c)
 #define c_kb_reset_history() ((void (*)(void)) hi_func_addr(91))()
 #define c_kb_get_scfh() ((int (*)(void)) hi_func_addr(92))()
+#define c_vgui_setup(refresh_all) ((void (*)(int)) hi_func_addr(93))(refresh_all)
+#define c_vgui_exit() ((void (*)(void)) hi_func_addr(94))()
+#define c_vgui_render() ((void (*)(void)) hi_func_addr(95))()
+#define c_vgui_draw_rect(x, y, w, h, color) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(96))(x, y, w, h, color)
+#define c_vgui_set_pixel(x, y, color) ((void (*)(int, int, unsigned)) hi_func_addr(97))(x, y, color)
+#define c_vgui_get_pixel(x, y) ((unsigned (*)(int, int)) hi_func_addr(98))(x, y)
+#define c_vgui_print(x, y, msg, big, color) ((void (*)(int, int, char *, int, unsigned)) hi_func_addr(99))(x, y, msg, big, color)
+#define c_task_get_max() ((int (*)(void)) hi_func_addr(100))()
+#define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
+#define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
+#define c_mem_get_phys_size() ((int (*)(void)) hi_func_addr(104))()
 
 #endif

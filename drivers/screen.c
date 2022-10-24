@@ -1,12 +1,12 @@
 #include <driver/screen.h>
-#include <ports.h>
+#include <cpu/ports.h>
 #include <mem.h>
 
 #include <stdint.h>
 
 /**********************************************************
  * Public Kernel API functions                            *
- **********************************************************/
+***********************************************************/
 
 static int MAX_ROWS = 25;
 static int MAX_COLS = 80;
@@ -141,7 +141,6 @@ void clear_screen() {
     }
     set_cursor_offset(get_offset(0, 0));
 }
-
 
 int get_offset(int col, int row) { return 2 * (row * MAX_COLS + col); }
 int get_offset_row(int offset) { return offset / (2 * MAX_COLS); }

@@ -7,51 +7,40 @@
 
 #define BFR_SIZE 65
 
-/* start_kshell() is the last function executed
- * in profanOS if nothing else has worked, there
- * are debug commands but nothing else */
-
 int shell_command(char command[]);
 
 void start_kshell() {
-    sys_warning("You are now in the kernel-level shell\n");
+    sys_warning("You are now in the kernel-level shell");
+    fskprint("\n");
     char char_buffer[BFR_SIZE];
     while (1) {
         rainbow_print("kernel-shell> ");
         input(char_buffer, BFR_SIZE, 9);
         fskprint("\n");
-        if (shell_command(char_buffer)) return;
+        if (shell_command(char_buffer)) break;
         char_buffer[0] = '\0';
     }
+    clear_screen();
 }
+
 
 void shell_so(char suffix[]) {
     char path[100] = "/bin/";
     str_cat(path, suffix);
     str_cat(path, ".bin");
     fskprint("path: %s\n", path);
-    sys_run_ifexist(path, 0, (char **)0);    
-}
-
-void shell_satan(char suffix[]) {
-    int to_rm = 0;
-    if (suffix[0] != 's')
-        to_rm = ascii_to_int(suffix) * 4;
-    int val = mem_get_usable() - mem_get_usage() - to_rm;
-    fskprint("memory alloc size: %d ko\n", val);
-    mem_alloc(val * 1024);
-    mem_print();
+    run_ifexist(path, 0, (char **)0);    
 }
 
 void shell_help() {
     char *help[] = {
+        "ALLOC  - allocate *0x1000",
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
         "HELP   - show this help",
         "MEM    - show memory state",
         "REBOOT - reboot the system",
         "SO     - run file in /bin",
-        "SATAN  - fill dynamic memory",
     };
 
     for (int i = 0; i < ARYLEN(help); i++)
@@ -65,14 +54,14 @@ int shell_command(char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "exit") == 0) return 1;
-    else if (str_cmp(prefix, "go") == 0) sys_run_ifexist(suffix, 0, (char **)0);
+    if      (str_cmp(prefix, "alloc") == 0) mem_alloc(ascii_to_int(suffix) * 0x1000);
+    else if (str_cmp(prefix, "exit") == 0) return 1;
+    else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "satan") == 0) shell_satan(suffix);
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
-    
+
     return 0;
 }

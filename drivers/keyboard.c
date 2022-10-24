@@ -1,7 +1,9 @@
 #include <driver/keyboard.h>
+#include <driver/screen.h>
+#include <cpu/ports.h>
 #include <function.h>
 #include <cpu/isr.h>
-#include <ports.h>
+#include <task.h>
 
 #include <stdint.h>
 
@@ -47,16 +49,22 @@ int kb_get_scfh() {
 }
 
 void kb_reset_history() {
-    sc_history[0] = 0;
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        sc_history[i] = 0;
+    }
 }
 
 static void keyboard_callback(registers_t *regs) {
     UNUSED(regs);
 
-    for (int i = 0; i < HISTORY_SIZE - 1; i++) {
+    for (int i = 0; i < HISTORY_SIZE - 1; i++)
         sc_history[i + 1] = sc_history[i];
-    }
     sc_history[0] = kb_get_scancode();
+
+    if (sc_history[0] == 59 && task_get_current_pid()) {
+        clear_screen();
+        task_switch(0);
+    }
 }
 
 void keyboard_init() {

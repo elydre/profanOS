@@ -1,21 +1,21 @@
+#include <driver/serial.h>
+#include <gui/vgui.h>
+#include <gui/vga.h>
 #include <string.h>
-#include <iolib.h>
 #include <task.h>
 #include <mem.h>
 
-#define TASK_MAX 5
+#define TASK_MAX 10
 
-static Task tasks[TASK_MAX];
-int *task_count = 0;
+static task_t tasks[TASK_MAX + 1];
+int current_pid, task_count;
 
-static void other_main() {
-    rainbow_print("Hello multitasking world!\n");
-    yield(0);
-    rainbow_print("Hello again!\n");
-    task_kill_yield(0);
-}
+/***********************
+ * INTERNAL FUNCTIONS *
+***********************/
 
-void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
+void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
+    uint32_t esp_alloc = (uint32_t) mem_alloc(0x1000);
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -25,18 +25,29 @@ void create_task(Task *task, void (*main)(), uint32_t flags, uint32_t *pagedir, 
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = (uint32_t) mem_alloc(0x1000);
+    task->regs.esp = esp_alloc + 0x1000;
+    task->esp_addr = esp_alloc;
     task->pid = pid;
     task->isdead = 0;
-    fskprint("Task created $1%d\n", task->pid);
 }
 
+
+void i_destroy_killed_tasks(int nb_alive) {
+    for (int i = 1; i < nb_alive; i++) {
+        if (tasks[i].isdead != 1) continue;
+        mem_free_addr(tasks[i].esp_addr);
+        tasks[i].isdead = 2;
+    }
+}
+
+/***********************
+ * EXTERNAL FUNCTIONS *
+***********************/
+
 void tasking_init() {
-    static Task mainTask;
-    static Task otherTask;
+    static task_t mainTask;
 
     // Get EFLAGS and CR3
-
     asm volatile(
         "movl %%cr3, %%eax\n\t"
         "movl %%eax, %0"
@@ -50,21 +61,109 @@ void tasking_init() {
         : "=m"(mainTask.regs.eflags)
         :: "%eax");
 
-    mainTask.pid = 0;
+    str_cpy(mainTask.name, "kernel");
+    mainTask.vgui_save = 0;
+    mainTask.gui_mode = 0;
     mainTask.isdead = 0;
-
-    create_task(&otherTask, other_main, mainTask.regs.eflags, (uint32_t*)mainTask.regs.cr3, 1);
+    mainTask.pid = 0;
 
     tasks[0] = mainTask;
-    tasks[1] = otherTask;
 
-    *task_count = 2;
+    current_pid = 0;
+    task_count = 1;
 }
 
-int refresh_alive() {
-    int decal = 0; int nb_alive = 0;
+int task_create(void (*func)(), char * name) {
+    int nb_alive = task_get_alive();
+    if (task_count >= TASK_MAX) {
+        sys_fatal("Cannot create task, too many tasks");
+        return -1;
+    }
+    current_pid++;
+    int pid = current_pid;
+    task_t task, *mainTask;
+    for (int i = 0; i < nb_alive; i++) {
+        if (tasks[i].pid == 0) {
+            mainTask = &tasks[i];
+            break;
+        }
+    }
 
-    for (int i = 0; i < *task_count; i++) {
+    task.gui_mode = vga_get_mode();
+    task.vgui_save = 0;
+    str_cpy(task.name, name);
+
+    i_new_task(&task, func, mainTask->regs.eflags, (uint32_t*) mainTask->regs.cr3, pid);
+    tasks[nb_alive] = task;
+    task_count++;
+    return pid;
+}
+
+void task_switch(int target_pid) {
+    int task_i, nb_alive = task_get_alive();
+
+    if (tasks[0].pid == target_pid) {
+        sys_error("Cannot switch to self");
+        return;
+    }
+
+    if (tasks[0].gui_mode && vgui_get_refresh_mode()) {
+        tasks[0].vgui_save = (vgui_get_refresh_mode() == 3) ? 2 : 1;
+        vgui_exit();
+    }
+
+    for (task_i = 0; task_i < nb_alive; task_i++) {
+        if (tasks[task_i].pid == target_pid) {
+            tasks[TASK_MAX] = tasks[task_i];
+            for (int i = task_i; i > 0; i--) {
+                tasks[i] = tasks[i - 1];
+            }
+            tasks[0] = tasks[TASK_MAX];
+            break;
+        } else if (task_i == nb_alive - 1) {
+            sys_error("Task not found");
+            return;
+        }
+    }
+
+    vga_switch_mode(tasks[0].gui_mode);
+    if (tasks[0].vgui_save && tasks[0].gui_mode) {
+        vgui_setup(tasks[0].vgui_save - 1);
+    }
+
+    task_asm_switch(&tasks[1].regs, &tasks[0].regs);
+    i_destroy_killed_tasks(nb_alive);
+}
+
+void task_kill_task_switch(int target_pid) {
+    tasks[0].isdead = 1;
+    task_switch(target_pid);
+}
+
+void task_kill(int target_pid) {
+    int nb_alive = task_get_alive();
+    for (int i = 0; i < nb_alive; i++) {
+        if (tasks[i].pid == target_pid) {
+            tasks[i].isdead = 1;
+            i_destroy_killed_tasks(nb_alive);
+            return;
+        }
+    }
+    sys_error("Task not found in kill");
+}
+
+void task_update_gui_mode(int mode) {
+    tasks[0].gui_mode = mode;
+    serial_debug("TASK", "update gui mode");
+}
+
+/******************
+ * GET FUNCTIONS *
+******************/
+
+int task_get_alive() {
+    int decal = 0, nb_alive = 0;
+    for (int i = 0; i < task_count; i++) {
         if (tasks[i].isdead == 2) {
             decal++;
         }
@@ -73,71 +172,54 @@ int refresh_alive() {
             if (decal > 0) tasks[i - decal] = tasks[i];
         }
     }
-    *task_count = nb_alive;
+    task_count = nb_alive;
     return nb_alive;
 }
 
-void task_powerfull(void (*main)(), int pid) {
-    int nb_alive = refresh_alive();
-    Task task;
-    Task *mainTask;
+int task_get_current_pid() {
+    return tasks[0].pid;
+}
+
+int task_get_next_pid() {
+    task_get_alive();
+    return tasks[1].pid;
+}
+
+int task_get_max() {
+    return TASK_MAX;
+}
+
+int task_get_internal_pos(int pid) {
+    int nb_alive = task_get_alive();
     for (int i = 0; i < nb_alive; i++) {
-        if (tasks[i].pid == 0) {
-            mainTask = &tasks[i];
-            break;
+        if (tasks[i].pid == pid) {
+            return i;
         }
     }
-    create_task(&task, main, mainTask->regs.eflags, (uint32_t*)mainTask->regs.cr3, pid);
-    tasks[nb_alive] = task;
-    *task_count = nb_alive + 1;
+    sys_error("Task not found");
+    return -1;
 }
 
-void task_print() {
-    int nb_alive = refresh_alive();
-    fskprint("$4task alive: $1%d$7/$1%d\n$4task list:  $7[", nb_alive, TASK_MAX);
-    for (int i = 0; i < nb_alive - 1; i++) fskprint("$1%d$7, ", tasks[i].pid);
-    fskprint("$1%d$7]\n", tasks[nb_alive - 1].pid);
+void task_set_bin_mem(int pid, char * bin_mem) {
+    tasks[task_get_internal_pos(pid)].bin_mem = bin_mem;
 }
 
-void destroy_killed_tasks(int nb_alive) {
-    for (int i = 1; i < nb_alive; i++) {
-        if (tasks[i].isdead == 1) {
-            fskprint("$4Task $1%d$4 killed, free: ", tasks[i].pid);
-            if (mem_free_addr(tasks[i].regs.esp)) mskprint(1, "$1done!\n");
-            else mskprint(1, "$3fail :(\n");
-            tasks[i].isdead = 2;
-        }
-    }
+char * task_get_bin_mem(int pid) {
+    return tasks[task_get_internal_pos(pid)].bin_mem;
 }
 
-void yield(int target_pid) {
-    int nb_alive = refresh_alive();
-    char str_old[10], str_new[10];
-    int_to_ascii(tasks[0].pid, str_old);
-    int_to_ascii(target_pid, str_new);
-    int task_i;
-
-    for (task_i = 0; task_i < nb_alive; task_i++) {
-        if (tasks[task_i].pid == target_pid) {
-            tasks[TASK_MAX - 1] = tasks[0];
-            tasks[0] = tasks[task_i];
-            tasks[task_i] = tasks[TASK_MAX - 1];
-            break;
-        } else if (task_i == nb_alive - 1) {
-            mskprint(3, "$4Task$1 ", str_new, " $4not found\n");
-            return;
-        }
-    }
-
-    mskprint(5, "$4yield from$1 ", str_old, " $4to$1 ", str_new, "\n");
-
-    task_switch(&tasks[1].regs, &tasks[0].regs);
-
-    destroy_killed_tasks(nb_alive);
+char * task_get_name(int internal_pos) {
+    return tasks[internal_pos].name;
 }
 
-void task_kill_yield(int target_pid) {
-    fskprint("$ETask $6%d $Ekill asked\n", tasks[0].pid);
-    tasks[0].isdead = 1;
-    yield(target_pid);
+int task_get_pid(int internal_pos) {
+    return tasks[internal_pos].pid;
+}
+
+int task_is_gui(int internal_pos) {
+    /* 0 -> no gui
+     * 1 -> simple gui
+     * 2 -> vgui save */
+    if (tasks[internal_pos].vgui_save) return 2;
+    return (tasks[internal_pos].gui_mode) ? 1 : 0;
 }
