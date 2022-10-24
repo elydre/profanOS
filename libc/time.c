@@ -112,3 +112,4 @@ void time_gen_boot() {
 int time_get_boot() {
     return boot_time;
 }
+

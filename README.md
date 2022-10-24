@@ -46,18 +46,16 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 ### shell.bin help
 
 ```
-alloc   - allocate * ko                mem     - show MLIST with colors
-cat     - print file *                 mkdir   - create a new folder *
-cd      - change dir to *              mkfile  - create a new file *
-clear   - clear the screen             reboot  - reboot the system
-echo    - print the arguments          sc      - show the scancodes
-exit    - exit of the shell app        show    - show image in the screen
-free    - free * address               sleep   - sleep for a given time
-info    - show time, task & page       ss      - show int in the LBA *
-go      - start * file as binary       stop    - shutdown the system
-gpd     - get to the parent dir        tree    - show current dir tree
-help    - show this help               udisk   - show used disk space
-ls      - list the current dir         task_switch   - task_switch to pid *
+cat     - print file *              mkdir   - create a new folder *
+cd      - change dir to *           mkfile  - create a new file *
+clear   - clear the screen          reboot  - reboot the system
+echo    - print the arguments       sc      - show the scancodes
+exit    - exit of the shell app     show    - show image in the screen
+go      - start * file as binary    sleep   - sleep for a given time
+help    - show this help            stop    - shutdown the system
+info    - show time, task & page    tree    - show current dir tree
+ls      - list the current dir      udisk   - show used disk space
+mem     - show MLIST with colors
 ```
 
 ### Smart print color

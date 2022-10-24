@@ -8,5 +8,4 @@ void serial_init();
 void serial_print(int device, char out[]);
 void serial_debug(char source[], char message[]);
 
-
 #endif

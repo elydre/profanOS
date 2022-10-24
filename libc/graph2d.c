@@ -54,7 +54,7 @@ void lib2d_print_sprite(int x, int y, sprite_t sprite) {
     }
     int hauteur = sprite.size_y;
     int longueur = sprite.size_x;
-    
+
     int index_char = 0;
     char couleur_str[3];
     int index_couleur = 0;

@@ -22,3 +22,4 @@ void vgui_print(int x, int y, char msg[], int big, unsigned color);
 void vgui_clear(int color);
 
 #endif
+

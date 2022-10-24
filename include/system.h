@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "TT-25"
+#define VERSION "0.7.3"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c
@@ -31,3 +31,4 @@ int wf_get_func_addr(int func_id);
 void init_watfunc();
 
 #endif
+

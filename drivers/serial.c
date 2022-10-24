@@ -2,8 +2,6 @@
 #include <cpu/ports.h>
 #include <string.h>
 
-#define SERIAL_PORT_A 0x3F8
-#define SERIAL_PORT_B 0x2F8
 
 void serial_enable(int device) {
     port_byte_out(device + 1, 0x00);

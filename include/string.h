@@ -23,5 +23,4 @@ int  str_count(char str[], char thing);
 void str_cat(char s1[], char s2[]);
 void str_delchar(char s[], char c);
 
-
 #endif

@@ -44,3 +44,4 @@ void rtc_init(void) {
     bcd  =  !(status & 0x04);    // check if data type is BCD
     write_register(0x0B, status);
 }
+

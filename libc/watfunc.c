@@ -160,7 +160,6 @@ int wf_get_func_addr(int func_id) {
         case 82: return (int) vgui_draw_line;
         case 83: return (int) vgui_clear;
 
-
         // serial.h
         case 102: return (int) serial_debug;
         case 103: return (int) serial_print;

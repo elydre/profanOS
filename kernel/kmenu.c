@@ -77,3 +77,4 @@ void menu_print_decoline(int type, int line) {
     line_str[70] = '\0';
     ckprint_at(line_str, 0, line, 0x0D);
 }
+

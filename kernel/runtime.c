@@ -10,7 +10,6 @@
 int g_return, g_argc;
 char **g_argv;
 
-
 void tasked_program() {
     char * binary_mem = task_get_bin_mem(task_get_current_pid());
     g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);

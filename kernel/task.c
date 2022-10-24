@@ -223,3 +223,4 @@ int task_is_gui(int internal_pos) {
     if (tasks[internal_pos].vgui_save) return 2;
     return (tasks[internal_pos].gui_mode) ? 1 : 0;
 }
+

@@ -45,3 +45,4 @@ uint32_t port_long_in(uint32_t port) {
 void port_long_out(uint32_t port, uint32_t value) {
     asm volatile("outl %%eax,%%dx"::"d" (port), "a" (value));
 }
+

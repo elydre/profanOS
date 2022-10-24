@@ -49,3 +49,4 @@ task_asm_switch:
     xchg   [esp], eax
     mov    eax, [eax]
     ret                     ; This ends all
+
