@@ -13,6 +13,7 @@ void menu_print_decoline(int type, int line);
 
 void task_menu() {
     // simple menu to switch between tasks with the keyboard arrows
+    if (task_get_alive() == 1) start_kshell();
     int selected_task = 0, nb_alive, key;
     while (1) {
         // refresh tasks
@@ -28,7 +29,7 @@ void task_menu() {
         else if (key == KB_KEY_DOWN) selected_task++;
         if (selected_task >= nb_alive) selected_task = 0;
         if (selected_task < 0) selected_task = nb_alive - 1;
-        if (key == KB_KEY_ENTER) {
+        if (key == KB_KEY_ENTER || nb_alive == 1) {
             clear_screen();
             cursor_blink(0);
             if (selected_task == 0) start_kshell();

@@ -2,13 +2,16 @@
 #include <driver/screen.h>
 #include <driver/ata.h>
 #include <function.h>
+#include <system.h>
 #include <string.h>
 #include <iolib.h>
 #include <mem.h>
 
 #define UINT32_PER_SECTOR 128
+#define VIRTUAL_DISK_SECTOR 1024
 
 uint32_t *RAMDISK;
+int disk_working;
 
 /* add in this list the paths 
 to load in ramdisk at boot */
@@ -32,7 +35,7 @@ void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
     for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
         out[i] = RAMDISK[LBA * UINT32_PER_SECTOR + i];
-    } if (out[0] == 0) {
+    } if (out[0] == 0 && disk_working) {
         ata_read_sector(LBA, out);
         ramdisk_write_sector(LBA, out);
     }
@@ -54,12 +57,17 @@ void clean_line() {
 }
 
 void ramdisk_init() {
-    RAMDISK = (uint32_t*)(mem_get_phys_size() - (ata_get_sectors_count() * UINT32_PER_SECTOR * 4));
+    disk_working = ata_get_status();
+    if (!disk_working) sys_warning("ATA disk not found");
+    int disk_size = (disk_working ? ata_get_sectors_count() : VIRTUAL_DISK_SECTOR) * UINT32_PER_SECTOR * 4;
+    RAMDISK = (uint32_t*)(mem_get_phys_size() - disk_size);
     if (RAMDISK < (uint32_t*) 0x700000) sys_fatal("No enough memory for ramdisk");
-    char path[256];
-    for (int i = 0; i < 256; i++) path[i] = 0;
-    ramdisk_check_dir(path, 0);
-    clean_line();
+    if (disk_working) {
+        char path[256];
+        for (int i = 0; i < 256; i++) path[i] = 0;
+        ramdisk_check_dir(path, 0);
+        clean_line();
+    }
 }
 
 void load_file(uint32_t first_sector_id) {
