@@ -1,8 +1,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "RD-4"
-#define FUNC_ADDR_SAVE 0x199990
+#define VERSION "0.7.4"
+#define WATFUNC_ADDR 0x199990
 
 // system.c
 void sys_reboot();

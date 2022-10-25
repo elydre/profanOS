@@ -4,10 +4,11 @@
 #include <function.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
-#define RAMDISK_ADDR 0x1000000
 #define UINT32_PER_SECTOR 128
 
+uint32_t *RAMDISK;
 
 /* add in this list the paths 
 to load in ramdisk at boot */
@@ -23,16 +24,14 @@ char * path_to_load[] = {
 ************************/
 
 void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
-    uint32_t* ramdisk = (uint32_t*)RAMDISK_ADDR;
     for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
-        ramdisk[sector * UINT32_PER_SECTOR + i] = buffer[i];
+        RAMDISK[sector * UINT32_PER_SECTOR + i] = buffer[i];
     }
 }
 
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
-    uint32_t* ramdisk = (uint32_t*)RAMDISK_ADDR;
     for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
-        out[i] = ramdisk[LBA * UINT32_PER_SECTOR + i];
+        out[i] = RAMDISK[LBA * UINT32_PER_SECTOR + i];
     } if (out[0] == 0) {
         ata_read_sector(LBA, out);
         ramdisk_write_sector(LBA, out);
@@ -40,8 +39,7 @@ void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
 }
 
 int sector_is_loaded(uint32_t LBA) {
-    uint32_t* ramdisk = (uint32_t*)RAMDISK_ADDR;
-    return ramdisk[LBA * UINT32_PER_SECTOR] != 0;
+    return RAMDISK[LBA * UINT32_PER_SECTOR] != 0;
 }
 
 /***************************
@@ -56,6 +54,8 @@ void clean_line() {
 }
 
 void ramdisk_init() {
+    RAMDISK = (uint32_t*)(mem_get_phys_size() - (ata_get_sectors_count() * UINT32_PER_SECTOR * 4));
+    if (RAMDISK < (uint32_t*) 0x700000) sys_fatal("No enough memory for ramdisk");
     char path[256];
     for (int i = 0; i < 256; i++) path[i] = 0;
     ramdisk_check_dir(path, 0);
@@ -110,4 +110,12 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
             }
         }
     }
+}
+
+/***************
+ * GET & INFO *
+***************/
+
+uint32_t get_ramdisk_address() {
+    return (uint32_t) RAMDISK;
 }

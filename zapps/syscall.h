@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define FUNC_ADDR_SAVE 0x199990
+#define WATFUNC_ADDR 0x199990
 
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8
@@ -13,7 +13,7 @@
 #define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
 
 // nothing better than shit code art
-#define hi_func_addr(id) ((int (*)(int)) *(int *)FUNC_ADDR_SAVE)(id)
+#define hi_func_addr(id) ((int (*)(int)) *(int *)WATFUNC_ADDR)(id)
 
 #define KB_A 16
 #define KB_Z 17
