@@ -22,5 +22,6 @@ int  str_is_in(char str[], char thing);
 int  str_count(char str[], char thing);
 void str_cat(char s1[], char s2[]);
 void str_delchar(char s[], char c);
+int  str_in_str(char s1[], char s2[]);
 
 #endif

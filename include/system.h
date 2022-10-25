@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "RD-3"
+#define VERSION "RD-4"
 #define FUNC_ADDR_SAVE 0x199990
 
 // system.c
