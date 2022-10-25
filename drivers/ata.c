@@ -82,7 +82,9 @@ uint32_t ata_get_sectors_count() {
 
 int ata_get_status() {
     // return 1 if the drive is present
-    ATA_wait_BSY();
+    for (int count = 0; port_byte_in(0x1F7) & STATUS_BSY; count++) {
+        if (count > 0x1000) return 0;
+    }
     port_byte_out(0x1F6,0xA0);
     port_byte_out(0x1F2, 0);
     port_byte_out(0x1F3, 0);
