@@ -23,5 +23,6 @@ int mem_get_usable();
 int mem_get_alloc_count();
 int mem_get_free_count();
 int mem_get_phys_size();
+int mem_get_base_addr();
 
 #endif

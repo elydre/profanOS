@@ -1,8 +1,8 @@
 #include <driver/serial.h>
+#include <libc/task.h>
 #include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
-#include <task.h>
 #include <mem.h>
 
 #define TASK_MAX 10

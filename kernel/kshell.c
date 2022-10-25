@@ -1,3 +1,4 @@
+#include <libc/ramdisk.h>
 #include <function.h>
 #include <gui/vga.h>
 #include <system.h>
@@ -34,6 +35,7 @@ void shell_so(char suffix[]) {
 
 void shell_help() {
     char *help[] = {
+        "ADDR   - show main address",
         "ALLOC  - allocate *0x1000",
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
@@ -47,6 +49,14 @@ void shell_help() {
         fskprint("%s\n", help[i]);
 }
 
+void shell_addr() {
+    fskprint("physic:  %x (%fMo)\n", mem_get_phys_size(), mem_get_phys_size() / 1024.0 / 1024.0);
+    fskprint("ramdisk: %x\n", get_ramdisk_address());
+    fskprint("b3 mm:   %x\n", mem_get_base_addr());
+    fskprint("watfunc: %x\n", WATFUNC_ADDR);
+    fskprint("rand sv: %x\n", RAND_SAVE);
+}
+
 int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     str_cpy(prefix, command);
@@ -54,7 +64,8 @@ int shell_command(char command[]) {
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
 
-    if      (str_cmp(prefix, "alloc") == 0) mem_alloc(ascii_to_int(suffix) * 0x1000);
+    if      (str_cmp(prefix, "addr") == 0) shell_addr();
+    else if (str_cmp(prefix, "alloc") == 0) mem_alloc(ascii_to_int(suffix) * 0x1000);
     else if (str_cmp(prefix, "exit") == 0) return 1;
     else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();

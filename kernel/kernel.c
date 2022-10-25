@@ -1,12 +1,13 @@
+#include <libc/filesystem.h>
 #include <driver/serial.h>
+#include <libc/ramdisk.h>
 #include <driver/rtc.h>
-#include <filesystem.h>
+#include <libc/task.h>
 #include <function.h>
 #include <cpu/isr.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
-#include <task.h>
 #include <mem.h>
 
 void kernel_main() {
@@ -15,24 +16,27 @@ void kernel_main() {
 
     isr_install();
     irq_install();
-    fskprint("ISR initialized\n");
+    fskprint("ISR init\n");
 
     tasking_init();
-    fskprint("Tasking initialized\n");
+    fskprint("tasking init\n");
 
     rtc_init();
     time_gen_boot();
     init_rand();
-    fskprint("RTC initialized\n");
+    fskprint("RTC init\n");
 
     serial_init();
-    fskprint("Serial initialized\n");
+    fskprint("serial init\n");
 
+    ramdisk_init();
+    fskprint("ramdisk init\n");
+    
     filesystem_init();
-    fskprint("FileSys initialized\n");
+    fskprint("filesys init\n");
 
     init_watfunc();
-    fskprint("WatFunc initialized\n");
+    fskprint("watfunc init\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);

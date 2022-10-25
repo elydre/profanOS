@@ -1,6 +1,5 @@
 #include <driver/ata.h>
 #include <cpu/ports.h>
-#include <iolib.h>
 
 /*
 BSY: a 1 means that the controller is busy executing a command. No register should be accessed (except the digital output register) while this bit is set.

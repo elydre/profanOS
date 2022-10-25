@@ -163,3 +163,15 @@ void str_delchar(char s[], char c) {
         }
     }
 }
+
+int str_in_str(char s1[], char s2[]) {
+    // return 1 if s2 is in s1
+    int s1_len = str_len(s1);
+    int s2_len = str_len(s2);
+    for (int i = 0; i < s1_len - s2_len; i++) {
+        int j = 0;
+        while (j < s2_len && s1[i + j] == s2[j]) j++;
+        if (j == s2_len) return 1;
+    }
+    return 0;
+}

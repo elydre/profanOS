@@ -1,21 +1,21 @@
+#include <libc/filesystem.h>
 #include <driver/keyboard.h>
 #include <driver/screen.h>
 #include <driver/serial.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
-#include <filesystem.h>
 #include <cpu/timer.h>
+#include <libc/task.h>
 #include <gui/vgui.h>
 #include <gui/vga.h>
 #include <string.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
-#include <task.h>
 #include <mem.h>
 
 void init_watfunc() {
-    int *func_addr = (int *) FUNC_ADDR_SAVE;
+    int *func_addr = (int *) WATFUNC_ADDR;
     *func_addr = (int) wf_get_func_addr;
 }
 
