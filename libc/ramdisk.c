@@ -30,19 +30,23 @@ void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
     for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
         RAMDISK[sector * UINT32_PER_SECTOR + i] = buffer[i];
     }
+    RAMDISK[sector * UINT32_PER_SECTOR] = buffer[0] + 1;
+}
+
+int ramdisk_does_sector_isloaded(uint32_t sector) {
+    return RAMDISK[sector * UINT32_PER_SECTOR] != 0;
 }
 
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
-    for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
-        out[i] = RAMDISK[LBA * UINT32_PER_SECTOR + i];
-    } if (out[0] == 0 && disk_working) {
+    if (disk_working && !ramdisk_does_sector_isloaded(LBA)) {
         ata_read_sector(LBA, out);
         ramdisk_write_sector(LBA, out);
+        return;
     }
-}
-
-int sector_is_loaded(uint32_t LBA) {
-    return RAMDISK[LBA * UINT32_PER_SECTOR] != 0;
+    for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
+        out[i] = RAMDISK[LBA * UINT32_PER_SECTOR + i];
+    }
+    out[0]--;
 }
 
 /***************************
@@ -81,7 +85,7 @@ void load_file(uint32_t first_sector_id) {
 }
 
 void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
-    if (sector_is_loaded(sector_id)) return;
+    if (ramdisk_does_sector_isloaded(sector_id)) return;
     char fullname[256];
     for (int i = 0; i < 256; i++) fullname[i] = parent_name[i];
     uint32_t sector[UINT32_PER_SECTOR];
