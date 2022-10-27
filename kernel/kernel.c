@@ -43,7 +43,7 @@ void kernel_main() {
 
     // launch of the shell.bin
     char *argv[1];
-    argv[0] = "/bin/shell.bin";
+    argv[0] = "/bin/3drenderer.bin";
     run_ifexist(argv[0], 1, argv);
 
     task_menu();

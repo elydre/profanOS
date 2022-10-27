@@ -241,5 +241,7 @@ extern "C" {
 #define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
 #define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
 #define c_mem_get_phys_size() ((int (*)(void)) hi_func_addr(104))()
+#define c_m_sin(degrees) ((int (*)(int)) hi_func_addr(105))(degrees)
+#define c_m_cos(degrees) ((int (*)(int)) hi_func_addr(106))(degrees)
 
 #endif
