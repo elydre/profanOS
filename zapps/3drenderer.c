@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     c_vgui_setup(0);
 
     Shape_t shape = cube(120);
-    int time = 1;
+    int time;
 
     for (int i = 0; 1; i = (i + 1) % 360) {
         Shape_t new_shape = rotate(&shape, i, i, i);
