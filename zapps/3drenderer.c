@@ -1,5 +1,9 @@
 #include <syscall.h>
 
+#define PI 3.14159265358979323846
+#define MATH_LOOP 100
+#define focal_distance 50
+
 typedef struct Point3_t {
     int x;
     int y;
@@ -24,40 +28,34 @@ typedef struct Shape_t {
     int LinesCount;
 } Shape_t;
 
-Point2_t project(Point3_t point, int focal_distance);
 Shape_t cube(int size);
-float cos(int angle);
-float sin(int angle);
+void delete_shape(Shape_t* shape);
+
+Shape_t rotate(Shape_t* shape, int x, int y, int z);
+void draw(Shape_t* shape);
+
 
 int main(int argc, char** argv) {
     c_vga_320_mode();
     c_vgui_setup(0);
 
     Shape_t shape = cube(100);
-    int focal_distance = 50;
 
-    shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
-    for (int i=0; i<shape.PointsCount; i++) {
-        Point2_t p = project(shape.Points[i], focal_distance);
-        shape.ScreenPoints[i] = p;
-    }
-    for (int i=0; i<shape.LinesCount; i++) {
-        Line_t line = shape.Lines[i];
-        Point2_t p1 = shape.ScreenPoints[line.i1];
-        Point2_t p2 = shape.ScreenPoints[line.i2];
-        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, 63);
+    for (int i = 0; 1; i = (i + 1) % 360) {
+        Shape_t new_shape = rotate(&shape, i, i, i);
+        draw(&new_shape);
+        delete_shape(&new_shape);
+        c_ms_sleep(10);
+        c_vgui_render();
     }
 
-    c_vgui_render();
-
-    while (1);
     c_vga_text_mode();
     return 0;
 }
 
-Point2_t project(Point3_t point, int focal_distance) {
+Point2_t project(Point3_t point) {
     int x = point.x * focal_distance / (point.z + focal_distance + 256);
-    int y = point.y * focal_distance / (point.z + focal_distance + 256   );
+    int y = point.y * focal_distance / (point.z + focal_distance + 256);
     return (Point2_t){x, y};
 }
 
@@ -90,6 +88,86 @@ Shape_t cube(int size) {
     shape.Lines[10] = (Line_t){2, 6};
     shape.Lines[11] = (Line_t){3, 7};
 
+    shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
     return shape;
 }
 
+void delete_shape(Shape_t* shape) {
+    c_free(shape->Points);
+    c_free(shape->Lines);
+    c_free(shape->ScreenPoints);
+}
+
+double cos(int angle) {
+    // convert to radians
+    double x = angle * PI / 180;
+    // cos of x in radians
+    double res = 1;
+    double pow = 1;
+    double fact = 1;
+    for (int i = 0; i < MATH_LOOP; i++) {
+        pow *= -1 * x * x;
+        fact *= (2 * i + 1) * (2 * i + 2);
+        res += pow / fact;
+    }
+    return res;
+}
+
+double sin(int angle) {
+    // convert to radians
+    double x = angle * PI / 180;
+    // sin of x in radians
+    double res = x;
+    double pow = x;
+    double fact = 1;
+    for (int i = 0; i < MATH_LOOP; i++) {
+        pow *= -1 * x * x;
+        fact *= (2 * i + 2) * (2 * i + 3);
+        res += pow / fact;
+    }
+    return res;    
+}
+
+Shape_t rotate(Shape_t* shape, int x, int y, int z) {
+    // return a new shape rotated by x, y, z
+    Shape_t new_shape;
+    new_shape.PointsCount = shape->PointsCount;
+    new_shape.LinesCount = shape->LinesCount;
+    new_shape.Points = c_malloc(sizeof(Point3_t) * new_shape.PointsCount);
+    new_shape.Lines = c_malloc(sizeof(Line_t) * new_shape.LinesCount);
+    new_shape.ScreenPoints = c_malloc(sizeof(Point2_t) * new_shape.PointsCount);
+
+    for (int i = 0; i < new_shape.PointsCount; i++) {
+        int x1 = shape->Points[i].x;
+        int y1 = shape->Points[i].y;
+        int z1 = shape->Points[i].z;
+        new_shape.Points[i].x = x1 * cos(z) - y1 * sin(z);
+        new_shape.Points[i].y = x1 * sin(z) + y1 * cos(z);
+        x1 = new_shape.Points[i].x;
+        y1 = new_shape.Points[i].y;
+        new_shape.Points[i].x = x1 * cos(y) + z1 * sin(y);
+        new_shape.Points[i].z = -x1 * sin(y) + z1 * cos(y);
+        x1 = new_shape.Points[i].x;
+        z1 = new_shape.Points[i].z;
+        new_shape.Points[i].y = y1 * cos(x) - z1 * sin(x);
+        new_shape.Points[i].z = y1 * sin(x) + z1 * cos(x);
+    }
+    for (int i = 0; i < new_shape.LinesCount; i++) {
+        new_shape.Lines[i] = shape->Lines[i];
+    }
+    return new_shape;
+}
+
+void draw(Shape_t* shape) {
+    c_vgui_clear(0);
+    for (int i=0; i<shape->PointsCount; i++) {
+        Point2_t p = project(shape->Points[i]);
+        shape->ScreenPoints[i] = p;
+    }
+    for (int i=0; i<shape->LinesCount; i++) {
+        Line_t line = shape->Lines[i];
+        Point2_t p1 = shape->ScreenPoints[line.i1];
+        Point2_t p2 = shape->ScreenPoints[line.i2];
+        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, 63);
+    }
+}
