@@ -33,6 +33,7 @@ void delete_shape(Shape_t* shape);
 
 Shape_t rotate(Shape_t* shape, int x, int y, int z);
 void draw(Shape_t* shape);
+int show_fps(int time);
 
 
 int main(int argc, char** argv) {
@@ -40,12 +41,14 @@ int main(int argc, char** argv) {
     c_vgui_setup(0);
 
     Shape_t shape = cube(120);
+    int time = 1;
 
     for (int i = 0; 1; i = (i + 1) % 360) {
         Shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape);
         delete_shape(&new_shape);
         c_ms_sleep(10);
+        time = show_fps(time);
         c_vgui_render();
     }
 
@@ -172,4 +175,13 @@ void draw(Shape_t* shape) {
         Point2_t p2 = shape->ScreenPoints[line.i2];
         c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, 63);
     }
+}
+
+int show_fps(int time) {
+    int new_time = c_timer_get_tick();
+    int fps = 1000 / (new_time - time);
+    char fps_str[10];
+    c_int_to_ascii(fps, fps_str);
+    c_vgui_print(0, 0, fps_str, 1, 15);
+    return new_time;
 }
