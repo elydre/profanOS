@@ -255,8 +255,8 @@ def qemu_run(iso_run = False):
     if iso_run: make_iso()
     gen_disk(False)
     cprint(COLOR_INFO, "starting qemu...")
-    if iso_run: print_and_exec("qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d")
-    else: print_and_exec("qemu-system-i386 -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a")
+    if iso_run: print_and_exec("qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
+    else: print_and_exec("qemu-system-i386 -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
 
 assos = {
     "elf_image": elf_image,
