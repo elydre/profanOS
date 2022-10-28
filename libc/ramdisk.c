@@ -9,9 +9,11 @@
 
 #define UINT32_PER_SECTOR 128
 #define VIRTUAL_DISK_SECTOR 1024
+#define MAX_RAMDISK_SECTOR 16 * 1024
 
 uint32_t *RAMDISK;
 int disk_working;
+int ramdisk_size;
 
 /* add in this list the paths 
 to load in ramdisk at boot */
@@ -27,6 +29,10 @@ char * path_to_load[] = {
 ************************/
 
 void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
+    if (sector > MAX_RAMDISK_SECTOR) {
+        ata_write_sector(sector, buffer);
+        return;
+    }
     for (uint32_t i = 0; i < UINT32_PER_SECTOR; i++) {
         RAMDISK[sector * UINT32_PER_SECTOR + i] = buffer[i];
     }
@@ -34,12 +40,13 @@ void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
 }
 
 int ramdisk_does_sector_isloaded(uint32_t sector) {
-    return RAMDISK[sector * UINT32_PER_SECTOR] != 0;
+    return sector < MAX_RAMDISK_SECTOR && RAMDISK[sector * UINT32_PER_SECTOR] != 0;
 }
 
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
     if (disk_working && !ramdisk_does_sector_isloaded(LBA)) {
         ata_read_sector(LBA, out);
+        if (LBA > MAX_RAMDISK_SECTOR) return;
         ramdisk_write_sector(LBA, out);
         return;
     }
@@ -63,8 +70,10 @@ void clean_line() {
 void ramdisk_init() {
     disk_working = ata_get_status();
     if (!disk_working) sys_warning("ATA disk not found");
-    int disk_size = (disk_working ? ata_get_sectors_count() : VIRTUAL_DISK_SECTOR) * UINT32_PER_SECTOR * 4;
-    RAMDISK = (uint32_t*)(mem_get_phys_size() - disk_size);
+    ramdisk_size = (disk_working ? ata_get_sectors_count() : VIRTUAL_DISK_SECTOR);
+    if (ramdisk_size > MAX_RAMDISK_SECTOR) ramdisk_size = MAX_RAMDISK_SECTOR;
+    ramdisk_size *= UINT32_PER_SECTOR * 4;
+    RAMDISK = (uint32_t*)(mem_get_phys_size() - ramdisk_size);
     if (RAMDISK < (uint32_t*) 0x700000) sys_fatal("No enough memory for ramdisk");
     if (disk_working) {
         char path[256];
@@ -91,7 +100,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     uint32_t sector[UINT32_PER_SECTOR];
     ata_read_sector(sector_id, sector);
     if (sector[0] != 0xc000 && sector[0] != 0xa000) {
-        sys_fatal("dametokosita find in dir"); 
+        sys_fatal("dametokosita find in dir");
     }
     char name[20];
     for (int i = 0; i < 20; i++) name[i] = sector[i + 1];
@@ -130,4 +139,8 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
 
 uint32_t get_ramdisk_address() {
     return (uint32_t) RAMDISK;
+}
+
+uint32_t get_ramdisk_size() {
+    return ramdisk_size;
 }

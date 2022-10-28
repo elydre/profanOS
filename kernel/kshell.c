@@ -51,7 +51,7 @@ void shell_help() {
 
 void shell_addr() {
     fskprint("physic:  %x (%fMo)\n", mem_get_phys_size(), mem_get_phys_size() / 1024.0 / 1024.0);
-    fskprint("ramdisk: %x\n", get_ramdisk_address());
+    fskprint("ramdisk: %x (%fMo)\n", get_ramdisk_address(), get_ramdisk_size() / 1024.0 / 1024.0);
     fskprint("b3 mm:   %x\n", mem_get_base_addr());
     fskprint("watfunc: %x\n", WATFUNC_ADDR);
     fskprint("rand sv: %x\n", RAND_SAVE);
