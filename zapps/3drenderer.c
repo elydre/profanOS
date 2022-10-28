@@ -129,7 +129,9 @@ double sin(int angle) {
 }
 
 Shape_t rotate(Shape_t* shape, int x, int y, int z) {
-    // return a new shape rotated by x, y, z
+    /* new object is required because the
+     * floating point math is not exact 
+     * and the shape will be deformed */
     Shape_t new_shape;
     new_shape.PointsCount = shape->PointsCount;
     new_shape.LinesCount = shape->LinesCount;
