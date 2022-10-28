@@ -65,7 +65,7 @@ Point2_t project(Point3_t point) {
 Shape_t cube(int size) {
     Shape_t shape;
     shape.PointsCount = 8;
-    shape.LinesCount = 12;
+    shape.LinesCount = 18;
     shape.Points = c_malloc(sizeof(Point3_t) * shape.PointsCount);
     shape.Lines = c_malloc(sizeof(Line_t) * shape.LinesCount);
 
@@ -90,6 +90,13 @@ Shape_t cube(int size) {
     shape.Lines[9] = (Line_t){1, 5};
     shape.Lines[10] = (Line_t){2, 6};
     shape.Lines[11] = (Line_t){3, 7};
+    // make squares into triangles
+    shape.Lines[12] = (Line_t){0, 2};
+    shape.Lines[13] = (Line_t){4, 6};
+    shape.Lines[14] = (Line_t){0, 5};
+    shape.Lines[15] = (Line_t){1, 6};
+    shape.Lines[16] = (Line_t){2, 7};
+    shape.Lines[17] = (Line_t){3, 4};
 
     shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
     return shape;
