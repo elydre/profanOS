@@ -2,7 +2,7 @@
 
 #define PI 3.14159265358979323846
 #define MATH_LOOP 100
-#define focal_distance 50
+#define focal_distance 100
 
 typedef struct Point3_t {
     int x;
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     c_vga_320_mode();
     c_vgui_setup(0);
 
-    Shape_t shape = cube(100);
+    Shape_t shape = cube(120);
 
     for (int i = 0; 1; i = (i + 1) % 360) {
         Shape_t new_shape = rotate(&shape, i, i, i);
