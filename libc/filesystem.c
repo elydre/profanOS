@@ -15,7 +15,7 @@ void filesystem_init() {
     if (!(folder_racine[0] & 0x8000)) {
         uint32_t location = i_next_free(0);
         if (location != 0)
-            sys_fatal("There is already some stuff on the disk !\n");
+            sys_fatal("There is already some stuff on the disk !");
         i_creer_dossier("/");
     }
 }
