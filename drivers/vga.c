@@ -348,3 +348,4 @@ void vga_switch_mode(int mode) {
     default: return;
     }
 }
+
