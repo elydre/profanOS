@@ -272,7 +272,7 @@ void vga_rosette_mode() {
 }
 
 void vga_320_mode() {
-    if (vga_note == 1) return;
+    if (vga_note == 2) return;
     serial_debug("VGA", "Switching to 320x200x256 mode");
 
     int need_save = (vga_note < 2);
@@ -298,7 +298,7 @@ void vga_320_mode() {
 }
 
 void vga_640_mode() {
-    if (vga_note == 2) return;
+    if (vga_note == 3) return;
     serial_debug("VGA", "Switching to 640x480x16 mode");
 
     int need_save = (vga_note < 2);
