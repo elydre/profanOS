@@ -1,4 +1,5 @@
 #include <driver/keyboard.h>
+#include <gui/vga.h>
 #include <string.h>
 #include <iolib.h>
 #include <time.h>
@@ -159,6 +160,9 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
     int shift = 0;
     int new_pos;
 
+    int row = vga_get_height();
+    int col = vga_get_width();
+
     clean_buffer(out_buffer, size);
 
     do {
@@ -267,8 +271,8 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
         kprint(" ");
         new_pos = old_cursor + buffer_index * 2;
         set_cursor_offset(new_pos);
-        if (new_pos >= 3998) {  // (row * col + (col - 1)) * 2
-            old_cursor -= 160;  // row * 2
+        if (new_pos >= (row * col + (col - 1)) * 2) {
+            old_cursor -= row * 2;
         }
     }
 }

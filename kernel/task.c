@@ -221,5 +221,5 @@ int task_is_gui(int internal_pos) {
      * 1 -> simple gui
      * 2 -> vgui save */
     if (tasks[internal_pos].vgui_save) return 2;
-    return (tasks[internal_pos].gui_mode) ? 1 : 0;
+    return (tasks[internal_pos].gui_mode) > 1;
 }

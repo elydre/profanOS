@@ -13,7 +13,7 @@
 #define pokew(S,O,V)      * (unsigned short *)(16uL * (S) + (O)) = (V)
 #define _vmemwr(DS,DO,S,N)  mem_copy((uint8_t *)((DS) * 16 + (DO)), S, N)
 
-// define the ports, taken from http://files.osdev.org/mirrors/geezer/osd/graphics/modes.c
+// define the ports, taken from https://files.osdev.org/mirrors/geezer/osd/graphics/modes.c
 #define VGA_AC_INDEX 0x3C0
 #define VGA_AC_WRITE 0x3C0
 #define VGA_AC_READ 0x3C1
@@ -39,10 +39,10 @@
 #define MEM_CPY_SIZE 0x4000
 
 // the vga identifiers
-unsigned int vga_width;     // width of the screen
-unsigned int vga_height;    // height of the screen
-unsigned int vga_bpp;       // bits per pixel
-unsigned int vga_note;      // mode signature
+unsigned int vga_width = 80;    // width of the screen
+unsigned int vga_height = 25;   // height of the screen
+unsigned int vga_bpp;           // bits per pixel
+unsigned int vga_note;          // mode signature
 unsigned int * framebuffer_segment_copy;
 
 // CREATE THE REGISTER ARRAY TAKEN FROM https://wiki.osdev.org/VGA_Hardware
@@ -78,6 +78,18 @@ unsigned char g_80x25_text[] = {
     0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
     0x0C, 0x00, 0x0F, 0x08, 0x00
 };
+
+unsigned char g_90x30_text[] = {
+    0xE7, 0x03, 0x01, 0x03, 0x00, 0x02, 0x6B, 0x59,
+    0x5A, 0x82, 0x60, 0x8D, 0x0B, 0x3E, 0x00, 0x4F,
+    0x0D, 0x0E, 0x00, 0x00, 0x00, 0x00, 0xEA, 0x0C,
+    0xDF, 0x2D, 0x10, 0xE8, 0x05, 0xA3, 0xFF, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x10, 0x0E, 0x00, 0xFF,
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x14, 0x07,
+    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
+    0x0C, 0x00, 0x0F, 0x08, 0x00
+};
+
 
 /***************************
  * VGA INTERNAL FUNCTIONS *
@@ -180,14 +192,13 @@ void set_plane(unsigned p) {
 
 void vga_set_pixel(unsigned x, unsigned y, unsigned c) {
     unsigned off, mask, pmask;
-    if (vga_note == 0) {
+    if (vga_note == 0 || vga_note == 1) {
         sys_error("Cannot put pixel in text mode");
     } else if (x >= vga_width || y >= vga_height) {
         return;
-    } else if (vga_note == 1) {
-        vpokeb(vga_width * y + x, c);
     } else if (vga_note == 2) {
-        // need to be rewritten faster
+        vpokeb(vga_width * y + x, c);
+    } else if (vga_note == 3) {
         off = vga_width / 8 * y + x / 8;
         mask = 0x80 >> (x & 7) * 1;
         pmask = 1;
@@ -210,16 +221,66 @@ void vga_clear_screen() {
     }
 }
 
-void vga_320_mode() {
+void vga_text_mode() {
+    if (vga_note == 0) return;
+    serial_debug("VGA", "Switching to text mode");
+
+    if (vga_note == 3) vga_320_mode();
+
+    // restore the framebuffer_segment
+    if (vga_note > 1) {
+        mcp(framebuffer_segment_copy, (void *) MEM_CPY_BASE, MEM_CPY_SIZE);
+        free(framebuffer_segment_copy);
+    }
+
+    vga_width  = 80;
+    vga_height = 25;
+    vga_bpp    = 16;
+    vga_note   = 0;
+
+    // setup the vga registers
+    write_registers(g_80x25_text);
+
+    task_update_gui_mode(vga_note);
+
+    clear_screen();
+}
+
+void vga_rosette_mode() {
     if (vga_note == 1) return;
+    serial_debug("VGA", "Switching to rosette mode");
+
+    if (vga_note == 3) vga_320_mode();
+
+    // restore the framebuffer_segment
+    if (vga_note > 1) {
+        mcp(framebuffer_segment_copy, (void *) MEM_CPY_BASE, MEM_CPY_SIZE);
+        free(framebuffer_segment_copy);
+    }
+
+    vga_width  = 90;
+    vga_height = 30;
+    vga_bpp    = 16;
+    vga_note   = 1;
+
+    // setup the vga registers
+    write_registers(g_90x30_text);
+
+    task_update_gui_mode(vga_note);
+
+    clear_screen();
+}
+
+void vga_320_mode() {
+    if (vga_note == 2) return;
     serial_debug("VGA", "Switching to 320x200x256 mode");
 
-    int need_save = !vga_note;
+    int need_save = (vga_note < 2);
     // setup the vga struct
     vga_width  = 320;
     vga_height = 200;
     vga_bpp    = 256;
-    vga_note   = 1;
+    vga_note   = 2;
 
     // setup the vga registers
     write_registers(g_320x200x256);
@@ -237,15 +298,15 @@ void vga_320_mode() {
 }
 
 void vga_640_mode() {
-    if (vga_note == 2) return;
+    if (vga_note == 3) return;
     serial_debug("VGA", "Switching to 640x480x16 mode");
 
-    int need_save = !vga_note;
+    int need_save = (vga_note < 2);
     // setup the vga struct
     vga_width  = 640;
     vga_height = 480;
     vga_bpp    = 16;
-    vga_note   = 2;
+    vga_note   = 3;
 
     // setup the vga registers
     write_registers(g_640x480x16);
@@ -260,29 +321,6 @@ void vga_640_mode() {
 
     // clears the screen
     vga_clear_screen();
-}
-
-void vga_text_mode() {
-    if (vga_note == 0) return;
-    serial_debug("VGA", "Switching to text mode");
-
-    vga_320_mode();
-
-    // restore the framebuffer_segment
-    mcp(framebuffer_segment_copy, (void *) MEM_CPY_BASE, MEM_CPY_SIZE);
-    free(framebuffer_segment_copy);
-
-    vga_width  = 80;
-    vga_height = 25;
-    vga_bpp    = 16;
-    vga_note   = 0;
-
-    // setup the vga registers
-    write_registers(g_80x25_text);
-
-    task_update_gui_mode(vga_note);
-
-    clear_screen();
 }
 
 /**********************
@@ -302,7 +340,11 @@ int vga_get_mode() {
 }
 
 void vga_switch_mode(int mode) {
-    if (mode == 0) vga_text_mode();
-    else if (mode == 1) vga_320_mode();
-    else if (mode == 2) vga_640_mode();
+    switch (mode) {
+    case 0: return vga_text_mode();
+    case 1: return vga_rosette_mode();
+    case 2: return vga_320_mode();
+    case 3: return vga_640_mode();
+    default: return;
+    }
 }
