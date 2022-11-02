@@ -1,9 +1,10 @@
 #ifndef VGA_H
 #define VGA_H
 
+void vga_text_mode();
+void vga_rosette_mode();
 void vga_320_mode();
 void vga_640_mode();
-void vga_text_mode();
 
 void vga_set_pixel(unsigned x, unsigned y, unsigned c);
 

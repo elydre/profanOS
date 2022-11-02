@@ -1,5 +1,6 @@
 #include <driver/screen.h>
 #include <cpu/ports.h>
+#include <gui/vga.h>
 #include <mem.h>
 
 #include <stdint.h>
@@ -8,8 +9,8 @@
  * Public Kernel API functions                            *
 ***********************************************************/
 
-static int MAX_ROWS = 25;
-static int MAX_COLS = 80;
+#define MAX_ROWS vga_get_height()
+#define MAX_COLS vga_get_width()
 
 /*
  * Print a message on the specified location
