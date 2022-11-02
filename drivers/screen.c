@@ -9,8 +9,8 @@
  * Public Kernel API functions                            *
 ***********************************************************/
 
-#define MAX_ROWS vga_get_height()
-#define MAX_COLS vga_get_width()
+#define MAX_ROWS (vga_get_mode() == 0 ? 25 : 30)
+#define MAX_COLS (vga_get_mode() == 0 ? 80 : 90)
 
 /*
  * Print a message on the specified location
