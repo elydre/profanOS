@@ -85,7 +85,7 @@ mem     - show MLIST with colors
 
 | bug name  | exisiting since | description | fix idea |
 |-----------|-----------------|-------------|----------|
-| laged lag | ? | parts of profanOS slow<br>down at times on qemu | - memory address problem?<br>- qemu problem?<br>- bootload problem? |
+| laged lag | ? | parts of profanOS slow<br>down at times on qemu | - memory address problem?<br>- qemu problem?|
 
 ## Author & Contact
 
