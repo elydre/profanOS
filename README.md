@@ -81,6 +81,12 @@ mem     - show MLIST with colors
 | `%s` | string      |
 | `%x` | hex         |
 
+## Known major bugs
+
+| bug name  | exisiting since | description | fix idea |
+|-----------|-----------------|-------------|----------|
+| laged lag | ? | parts of profanOS slow<br>down at times on qemu | - memory address problem?<br>- qemu problem?<br>- bootload problem? |
+
 ## Author & Contact
 
 * [pf4](https://github.com/elydre)
