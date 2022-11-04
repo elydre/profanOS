@@ -1,4 +1,3 @@
-from genericpath import isfile
 from threading import Thread
 import PIL.Image
 import sys, os

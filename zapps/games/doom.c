@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
         c_vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 32);
         c_vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 4);
 
-        c_int_to_ascii(1000 / tick_count[1], convert);
+        c_int_to_ascii(1000 / (tick_count[1] + 1), convert);
         c_vgui_print(0, 8, convert, 1, 8);
         
 
