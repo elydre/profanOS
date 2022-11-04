@@ -14,6 +14,9 @@ void tasked_program() {
     char * binary_mem = task_get_bin_mem(task_get_current_pid());
     g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
 
+    // fill memory with 0
+    mem_set((uint8_t *) binary_mem, 0, mem_get_alloc_size((int) binary_mem));
+
     free(binary_mem);
 
     if (task_get_next_pid() == 0) clear_screen();
@@ -29,7 +32,7 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    char * binary_mem = calloc(fs_get_file_size(path)*126);
+    char * binary_mem = calloc(fs_get_file_size(path) * 126);
     uint32_t * file = fs_declare_read_array(path);
     fs_read_file(path, file);
 
