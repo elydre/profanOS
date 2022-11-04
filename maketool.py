@@ -46,7 +46,7 @@ def zapps_file_in_dir(directory, extention):
             liste.extend(zapps_file_in_dir(f"{directory}/{file}", extention))
     return liste
 file_in_dir = lambda directory, extension: [file for file in os.listdir(directory) if file.endswith(extension)]
-out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.split('/')[-1][:-2]}.o"
+out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.split('/')[-1].split('.')[0]}.o"
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
 
 

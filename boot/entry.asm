@@ -1,4 +1,4 @@
-; yuuOS bootloader edited for profanOS
+; yuuOS kernel entry edited for profanOS
 
 global loader                       ; the entry symbol for ELF
 
