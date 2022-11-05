@@ -8,7 +8,7 @@
 #include <mem.h>
 
 #define UINT32_PER_SECTOR 128
-#define RAMDISK_SECTOR 1024
+#define RAMDISK_SECTOR 2048     // 1Mo
 #define RAMDISK_SIZE RAMDISK_SECTOR * UINT32_PER_SECTOR * 4
 
 uint32_t ata_table[RAMDISK_SECTOR];
@@ -166,10 +166,14 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
  * GET & INFO *
 ***************/
 
-uint32_t get_ramdisk_address() {
+uint32_t ramdisk_get_address() {
     return (uint32_t) RAMDISK;
 }
 
-uint32_t get_ramdisk_size() {
-    return RAMDISK_SIZE;
+uint32_t ramdisk_get_size() {
+    return RAMDISK_SECTOR;
+}
+
+uint32_t ramdisk_get_used() {
+    return table_pos;
 }

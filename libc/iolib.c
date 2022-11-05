@@ -160,20 +160,22 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
     int shift = 0;
     int new_pos;
 
-    int row = vga_get_height();
-    int col = vga_get_width();
+    int row = vga_get_width();
+    int col = vga_get_height();
 
     clean_buffer(out_buffer, size);
 
     do {
-        sc = kb_get_scancode();
+        sc = kb_get_scfh();
     } while (sc == ENTER);
+
+    kb_reset_history();
 
     while (sc != ENTER) {
         ms_sleep(2);
 
         last_sc = sc;
-        sc = kb_get_scancode();
+        sc = kb_get_scfh();
         
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
@@ -271,7 +273,7 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
         kprint(" ");
         new_pos = old_cursor + buffer_index * 2;
         set_cursor_offset(new_pos);
-        if (new_pos >= (row * col + (col - 1)) * 2) {
+        if (new_pos >= (row * col - 1) * 2) {
             old_cursor -= row * 2;
         }
     }

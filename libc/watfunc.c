@@ -2,6 +2,7 @@
 #include <driver/keyboard.h>
 #include <driver/screen.h>
 #include <driver/serial.h>
+#include <libc/ramdisk.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <cpu/timer.h>
@@ -125,8 +126,6 @@ int wf_get_func_addr(int func_id) {
         case 75: return (int) run_ifexist;
 
         // ata.h
-        case 63: return (int) ata_read_sector;
-        case 64: return (int) ata_write_sector;
         case 65: return (int) ata_get_sectors_count;
 
         // task.h
@@ -163,6 +162,12 @@ int wf_get_func_addr(int func_id) {
         // serial.h
         case 102: return (int) serial_debug;
         case 103: return (int) serial_print;
+
+        // ramdisk.h
+        case 63: return (int) ramdisk_read_sector;
+        case 64: return (int) ramdisk_write_sector;
+        case 105: return (int) ramdisk_get_size;
+        case 106: return (int) ramdisk_get_used;
 
         case 101: return (int) up_string;
         default: return (int) unknown_func;

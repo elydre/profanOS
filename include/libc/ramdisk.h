@@ -7,7 +7,10 @@ void ramdisk_init();
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]);
 void ramdisk_write_sector(uint32_t LBA, uint32_t bytes[]);
 
-uint32_t get_ramdisk_address();
-uint32_t get_ramdisk_size();
+uint32_t ramdisk_get_address();
+
+// size and used are in sectors
+uint32_t ramdisk_get_size();
+uint32_t ramdisk_get_used();
 
 #endif

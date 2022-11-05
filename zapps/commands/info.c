@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     c_fskprint("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_alloc_count() - c_mem_get_free_count(), c_mem_get_alloc_count());
     c_fskprint("$4phys mem:   $1%fMo\n", ((double) c_mem_get_phys_size() / 1024) / 1024);
     c_fskprint("$4disk size:  $1%fMo\n", ((double) c_ata_get_sectors_count()) / 2048);
+    c_fskprint("$4ramdisk:    $1%d%c (%fMo)\n", (int)(100 * ((double) c_ramdisk_get_used()) / c_ramdisk_get_size()), '%', ((double) c_ramdisk_get_size()) / 2048);
     c_fskprint("$4task alive: $1%d$7/$1%d\n", c_task_get_alive(), c_task_get_max());
     return 0;
 }

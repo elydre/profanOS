@@ -201,7 +201,8 @@ extern "C" {
 #define c_rand() ((int (*)(void)) hi_func_addr(60))()
 #define c_mem_print() ((void (*)(void)) hi_func_addr(61))()
 #define c_sys_reboot() ((void (*)(void)) hi_func_addr(62))()
-#define c_ata_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
+#define c_ramdisk_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
+#define c_ramdisk_write_sector(LBA, bytes) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(64))(LBA, bytes)
 #define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_task_switch(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
@@ -241,5 +242,7 @@ extern "C" {
 #define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
 #define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
 #define c_mem_get_phys_size() ((int (*)(void)) hi_func_addr(104))()
+#define c_ramdisk_get_size() ((uint32_t (*)(void)) hi_func_addr(105))()
+#define c_ramdisk_get_used() ((uint32_t (*)(void)) hi_func_addr(106))()
 
 #endif
