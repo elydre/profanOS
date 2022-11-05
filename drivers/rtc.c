@@ -41,6 +41,6 @@ void rtc_init(void) {
     status |=  0x10;             // update ended interrupts
     status &= ~0x20;             // no alarm interrupts
     status &= ~0x40;             // no periodic interrupt
-    bcd  =  !(status & 0x04);    // check if data type is BCD
+    bcd = !(status & 0x04);      // check if data type is BCD
     write_register(0x0B, status);
 }

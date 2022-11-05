@@ -7,8 +7,8 @@ int main(int argc, char **argv) {
     char path[] = "/zada/star_wars.txt";
 
     c_fskprint("allocating memory for the file...\n");
-    uint32_t * data = c_fs_declare_read_array(path);
-    char * str = c_malloc(0x1000);
+    uint32_t *data = c_fs_declare_read_array(path);
+    char *str = c_malloc(0x1000);
 
     str[0] = '\0';
 

@@ -4,8 +4,8 @@
 #include <gui/vga.h>
 #include <mem.h>
 
-char * last_render;
-char * current_render;
+char *last_render;
+char *current_render;
 int refresh_mode;
 
 /*    REFRESH MODES

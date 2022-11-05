@@ -28,11 +28,11 @@ int MAP[] = {
     2, 7, 7, 7, 9, 7, 7, 7, 7, 7
 };
 
-double get_distance(double x, double y, double rad_angle, int * color);
+double get_distance(double x, double y, double rad_angle, int *color);
 
-int val_in_buffer(int val, int buffer_width, int * buffer);
-void remove_from_buffer(int val, int * buffer);
-void add_to_buffer(int val, int * buffer);
+int val_in_buffer(int val, int buffer_width, int *buffer);
+void remove_from_buffer(int val, int *buffer);
+void add_to_buffer(int val, int *buffer);
 
 double cos(double x);
 double sin(double x);
@@ -175,14 +175,14 @@ double sin(double x) {
     return res;    
 }
 
-int val_in_buffer(int val, int buffer_width, int * buffer) {
+int val_in_buffer(int val, int buffer_width, int *buffer) {
     for (int i = 0; i < buffer_width; i++) {
         if (buffer[i] == val) return 1;
     }
     return 0;
 }
 
-void add_to_buffer(int val, int * buffer) {
+void add_to_buffer(int val, int *buffer) {
     for (int i = 0; 1; i++) {
         if (buffer[i] == 0) {
             buffer[i] = val;
@@ -191,7 +191,7 @@ void add_to_buffer(int val, int * buffer) {
     }
 }
 
-void remove_from_buffer(int val, int * buffer) {
+void remove_from_buffer(int val, int *buffer) {
     for (int i = 0; i < 20; i++) {
         if (buffer[i] == val) {
             buffer[i] = 0;
@@ -200,7 +200,7 @@ void remove_from_buffer(int val, int * buffer) {
     }
 }
 
-double get_distance(double x, double y, double rad_angle, int * color) {
+double get_distance(double x, double y, double rad_angle, int *color) {
     double dx = cos(rad_angle);
     double dy = sin(rad_angle);
 

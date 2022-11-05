@@ -5,7 +5,7 @@
 #define GRAPHIC_ADDRESS 0xa0000
 
 
-/* Screen i/o ports */
+// Screen i/o ports
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
 
@@ -32,7 +32,7 @@ enum screen_color_t {
     c_dgrey = 0x08,
 };
 
-/* Public kernel API */
+// Public kernel API
 void clear_screen();
 
 void kprint(char *message);

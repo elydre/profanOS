@@ -89,7 +89,7 @@ void edition_state(int **plateau) {
 
 void printl(int **plateau, int curseur_x, int curseur_y) {
 
-    char * ligne = c_calloc((size_y+size_y-1)*sizeof(char));
+    char *ligne = c_calloc((size_y+size_y-1)*sizeof(char));
     int offset;
     for (int i = 0; i < size_x; i++) {
         offset = 0;

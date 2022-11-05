@@ -21,7 +21,7 @@ void fs_write_in_file(char path[], uint32_t data[], uint32_t data_size);
 uint32_t fs_get_file_size(char path[]);
 int fs_get_folder_size(char path[]);
 
-void * fs_declare_read_array(char path[]);
+void *fs_declare_read_array(char path[]);
 
 int fs_does_path_exists(char path[]);
 int fs_type_sector(uint32_t id_sector);

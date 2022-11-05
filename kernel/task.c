@@ -73,7 +73,7 @@ void tasking_init() {
     task_count = 1;
 }
 
-int task_create(void (*func)(), char * name) {
+int task_create(void (*func)(), char *name) {
     int nb_alive = task_get_alive();
     if (task_count >= TASK_MAX) {
         sys_fatal("Cannot create task, too many tasks");
@@ -200,15 +200,15 @@ int task_get_internal_pos(int pid) {
     return -1;
 }
 
-void task_set_bin_mem(int pid, char * bin_mem) {
+void task_set_bin_mem(int pid, char *bin_mem) {
     tasks[task_get_internal_pos(pid)].bin_mem = bin_mem;
 }
 
-char * task_get_bin_mem(int pid) {
+char *task_get_bin_mem(int pid) {
     return tasks[task_get_internal_pos(pid)].bin_mem;
 }
 
-char * task_get_name(int internal_pos) {
+char *task_get_name(int internal_pos) {
     return tasks[internal_pos].name;
 }
 

@@ -106,13 +106,13 @@ void free(void *addr) {
     mem_free_addr((int) addr);
 }
 
-void * malloc(int size) {
+void *malloc(int size) {
     int addr = mem_alloc(size);
     if (addr == -1) return NULL;
     return (void *) addr;
 }
 
-void * realloc(void * ptr, int size) {
+void *realloc(void *ptr, int size) {
     int addr = (int) ptr;
     int new_addr = mem_alloc(size);
     if (new_addr == -1) return NULL;
@@ -121,7 +121,7 @@ void * realloc(void * ptr, int size) {
     return (void *) new_addr;
 }
 
-void * calloc(int size) {
+void *calloc(int size) {
     int addr = mem_alloc(size);
     if (addr == -1) return NULL;
     mem_set((uint8_t *) addr, 0, size);

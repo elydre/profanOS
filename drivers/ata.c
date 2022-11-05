@@ -18,8 +18,7 @@ ERR: a 1 indicates that an error occured. An error code has been placed in the e
 #define STATUS_DF  0x20
 #define STATUS_ERR 0x01
 
-//This is really specific to out OS now, assuming ATA bus 0 master 
-//Source - OsDev wiki
+// Source - OsDev wiki
 static void ATA_wait_BSY();
 static void ATA_wait_DRQ();
 
@@ -68,7 +67,7 @@ uint32_t ata_get_sectors_count() {
     port_byte_out(0x1F3, 0);
     port_byte_out(0x1F4, 0);
     port_byte_out(0x1F5, 0);
-    port_byte_out(0x1F7, 0xEC); //Send the identify command
+    port_byte_out(0x1F7, 0xEC); // send the identify command
 
     if (port_byte_in(0x1F7) == 0) return 0;
 

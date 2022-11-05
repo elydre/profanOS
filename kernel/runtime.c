@@ -11,7 +11,7 @@ int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
-    char * binary_mem = task_get_bin_mem(task_get_current_pid());
+    char *binary_mem = task_get_bin_mem(task_get_current_pid());
     g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
 
     // fill memory with 0
@@ -32,8 +32,8 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    char * binary_mem = calloc(fs_get_file_size(path) * 126);
-    uint32_t * file = fs_declare_read_array(path);
+    char *binary_mem = calloc(fs_get_file_size(path) * 126);
+    uint32_t *file = fs_declare_read_array(path);
     fs_read_file(path, file);
 
     for (int i = 0; file[i] != (uint32_t) -1 ; i++)

@@ -43,7 +43,7 @@ unsigned int vga_width = 80;    // width of the screen
 unsigned int vga_height = 25;   // height of the screen
 unsigned int vga_bpp;           // bits per pixel
 unsigned int vga_note;          // mode signature
-unsigned int * framebuffer_segment_copy;
+unsigned int *framebuffer_segment_copy;
 
 // CREATE THE REGISTER ARRAY TAKEN FROM https://wiki.osdev.org/VGA_Hardware
 unsigned char g_320x200x256[] = {

@@ -70,7 +70,9 @@ screen_color_t skprint_function(char message[], screen_color_t default_color) {
     return color;
 }
 
-// PRINT public functions
+/***************************
+ * PRINT PUBLIC FUNCTIONS *
+***************************/
 
 void mskprint(int nb_args, ...) {
     va_list args;
@@ -147,8 +149,9 @@ void rainbow_print(char message[]) {
     }
 }
 
-
-// INPUT public functions
+/***********************
+ * INPUT PUBLIC FUNCS *
+***********************/
 
 void input_wh(char out_buffer[], int size, screen_color_t color, char ** history, int history_size) {
     int old_cursor = get_cursor_offset();

@@ -13,9 +13,9 @@ int mem_free_addr(int addr);
 int mem_get_alloc_size(int addr);
 
 void free(void *addr);
-void * malloc(int size);
-void * realloc(void * ptr, int size);
-void * calloc(int size);
+void *malloc(int size);
+void *realloc(void *ptr, int size);
+void *calloc(int size);
 
 void mem_print();
 int mem_get_usage();
