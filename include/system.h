@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.8.1b"
+#define VERSION "0.8.1c"
 #define WATFUNC_ADDR 0x199990
 
 // system.c

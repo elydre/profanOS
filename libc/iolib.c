@@ -8,8 +8,8 @@
 #include <stdarg.h>
 
 // input() setings
-#define FIRST_L 150
-#define BONDE_L 15
+#define FIRST_L 40
+#define BONDE_L 4
 
 // keyboard scancodes
 #define SC_MAX 57
