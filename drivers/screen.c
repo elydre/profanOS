@@ -1,9 +1,9 @@
 #include <driver/screen.h>
 #include <cpu/ports.h>
 #include <gui/vga.h>
+#include <type.h>
 #include <mem.h>
 
-#include <stdint.h>
 
 /**********************************************************
  * Public Kernel API functions                            *

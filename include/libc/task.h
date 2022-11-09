@@ -1,7 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include <stdint.h>
+#include <type.h>
 
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;

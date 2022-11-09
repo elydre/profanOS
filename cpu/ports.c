@@ -1,6 +1,6 @@
 #include <cpu/ports.h>
 
-#include <stdint.h>
+#include <type.h>
 
 // Read a byte from the specified port
 uint8_t port_byte_in(uint16_t port) {

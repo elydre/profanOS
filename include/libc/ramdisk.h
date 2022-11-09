@@ -1,7 +1,7 @@
 #ifndef RAMDISK_H
 #define RAMDISK_H
 
-#include <stdint.h>
+#include <type.h>
 
 void ramdisk_init();
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]);

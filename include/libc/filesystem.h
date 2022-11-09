@@ -1,7 +1,7 @@
 #ifndef FILESYS_H
 #define FILESYS_H
 
-#include <stdint.h>
+#include <type.h>
 
 typedef struct string_20_t {
     char name[20];

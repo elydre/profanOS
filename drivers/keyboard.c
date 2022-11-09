@@ -5,7 +5,6 @@
 #include <function.h>
 #include <cpu/isr.h>
 
-#include <stdint.h>
 
 #define HISTORY_SIZE 4
 
