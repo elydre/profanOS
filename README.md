@@ -90,8 +90,8 @@ mem     - show MLIST with colors
 
 ## Author & Contact
 
-* [pf4](https://github.com/elydre)
-* [Loris](https://github.com/Lorisredstone)
+* kernel - [pf4](https://github.com/elydre)
+* zapps - [Loris](https://github.com/Lorisredstone)
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 
