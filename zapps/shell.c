@@ -1,8 +1,9 @@
 #include "syscall.h"
 
 #define BFR_SIZE 90
-
 #define SC_MAX 57
+
+#define SHELL_PROMPT "profanOS [$9%s$7] -> "
 
 static char current_dir[256] = "/";
 
@@ -24,7 +25,7 @@ int main(int argc, char **argv) {
     int current_history_size = 0;
 
     while (1) {
-        c_fskprint("profanOS [$9%s$7] -> ", current_dir);
+        c_fskprint(SHELL_PROMPT, current_dir);
         c_input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
         c_fskprint("\n");
         if (c_str_cmp(char_buffer, history[0]) && char_buffer[0] != '\0') {

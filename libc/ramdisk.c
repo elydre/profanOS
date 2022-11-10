@@ -22,6 +22,7 @@ to load in ramdisk at boot */
 char *path_to_load[] = {
     "/bin/commands",
     "/bin/shell.bin",
+    "/sys",
 };
 
 
@@ -152,7 +153,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     // check if the path is the beginning of a path to load
     for (int i = 0; i < ARYLEN(path_to_load); i++) {
         if (str_in_str(fullname, path_to_load[i]) || str_in_str(path_to_load[i], fullname) || str_cmp(fullname, path_to_load[i]) == 0) {
-            serial_debug("RD-CD", fullname);
+            // serial_debug("RD-CD", fullname);
             ramdisk_load_sector(sector_id, sector);
             for (int i = 21; i < UINT32_PER_SECTOR - 1; i++) {
                 if (sector[i] == 0) continue;
