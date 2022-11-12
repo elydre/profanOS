@@ -151,6 +151,8 @@ int main(int argc, char **argv) {
 
 double cos(double x) {
     // cos of x in radians
+    while (x > PI) x -= 2 * PI;
+    while (x < -PI) x += 2 * PI;
     double res = 1;
     double pow = 1;
     double fact = 1;
@@ -163,16 +165,7 @@ double cos(double x) {
 }
 
 double sin(double x) {
-    // sin of x in radians
-    double res = x;
-    double pow = x;
-    double fact = 1;
-    for (int i = 0; i < MATH_LOOP; i++) {
-        pow *= -1 * x * x;
-        fact *= (2 * i + 2) * (2 * i + 3);
-        res += pow / fact;
-    }
-    return res;    
+    return cos(x - PI / 2); 
 }
 
 int val_in_buffer(int val, int buffer_width, int *buffer) {
