@@ -1,6 +1,7 @@
 ; yuuOS kernel entry edited for profanOS
 
-global loader                       ; the entry symbol for ELF
+[extern kernel_main]
+[global loader]
 
 MAGIC_NUMBER equ 0x1BADB002         ; define the magic number constant
 FLAGS        equ 0x0                ; multiboot flags
@@ -16,12 +17,11 @@ align 4                             ; align at 4 bytes
 
 section .text                       ; start of the text (code) section
 align 4                             ; the code must be 4 byte aligned
-    mov esp, kernel_stack + KERNEL_STACK_SIZE 
-    [extern kernel_main]
-    loader:
-        call kernel_main            ; load our kernel
+mov esp, kernel_stack + KERNEL_STACK_SIZE 
+loader:
+    call kernel_main            ; load our kernel
     
 section .bss
-    align 4                         ; align at 4 bytes
-    kernel_stack:                   ; label points to beginning of memory
-        resb KERNEL_STACK_SIZE      ; reserve stack for the kernel
+align 4                         ; align at 4 bytes
+kernel_stack:                   ; label points to beginning of memory
+    resb KERNEL_STACK_SIZE      ; reserve stack for the kernel

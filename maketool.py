@@ -1,6 +1,9 @@
+import os
+import sys
 from threading import Thread
+
 import PIL.Image
-import sys, os
+
 # SETUP
 
 SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
@@ -186,10 +189,9 @@ def make_iso(force = False):
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
-    print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/profanOS.elf")
-    print_and_exec(f"cp boot/menu.lst {OUT_DIR}/isodir/boot/grub/menu.lst")
-    print_and_exec(f"cp boot/stage2_eltorito {OUT_DIR}/isodir/boot/grub/stage2_eltorito")
-    print_and_exec(f"mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A profanOS -input-charset iso8859-1 -boot-info-table -o profanOS.iso {OUT_DIR}/isodir")
+    print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
+    print_and_exec(f"cp boot/grub.cfg {OUT_DIR}/isodir/boot/grub/")
+    print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
 def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     if file_exists("HDD.bin") and not force: return

@@ -5,6 +5,7 @@
 #include <libc/task.h>
 #include <function.h>
 #include <cpu/isr.h>
+#include <cpu/gdt.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
@@ -14,9 +15,14 @@ void kernel_main() {
     clear_screen();
     fskprint("$6booting profanOS...\n");
 
+    gdt_init();
+    fskprint("GDT init\n");
+
     isr_install();
-    irq_install();
     fskprint("ISR init\n");
+    
+    irq_install();
+    fskprint("IRQ init\n");
 
     tasking_init();
     fskprint("tasking init\n");
