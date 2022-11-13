@@ -7,7 +7,7 @@
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
-> **WARNING** -
+> **Warning** -
 > the build of this branch requires `grub-common`,
 > `xorriso` and `grub-pc-bin`
 
