@@ -1,7 +1,6 @@
 #include <driver/serial.h>
 #include <libc/task.h>
 #include <gui/vgui.h>
-#include <gui/vga.h>
 #include <string.h>
 #include <mem.h>
 
@@ -89,7 +88,7 @@ int task_create(void (*func)(), char *name) {
         }
     }
 
-    task.gui_mode = vga_get_mode();
+    task.gui_mode = 0;
     task.vgui_save = 0;
     str_cpy(task.name, name);
 
@@ -126,7 +125,6 @@ void task_switch(int target_pid) {
         }
     }
 
-    vga_switch_mode(tasks[0].gui_mode);
     if (tasks[0].vgui_save && tasks[0].gui_mode) {
         vgui_setup(tasks[0].vgui_save - 1);
     }

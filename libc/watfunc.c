@@ -8,7 +8,6 @@
 #include <cpu/timer.h>
 #include <libc/task.h>
 #include <gui/vgui.h>
-#include <gui/vga.h>
 #include <string.h>
 #include <system.h>
 #include <iolib.h>
@@ -132,16 +131,6 @@ int wf_get_func_addr(int func_id) {
         case 67: return (int) task_switch;
         case 84: return (int) task_get_alive;
         case 100: return (int) task_get_max;
-
-
-        // vga.h
-        case 77: return (int) vga_320_mode;
-        case 78: return (int) vga_640_mode;
-        case 79: return (int) vga_text_mode;
-        case 80: return (int) vga_clear_screen;
-        case 81: return (int) vga_set_pixel;
-        case 85: return (int) vga_get_width;
-        case 86: return (int) vga_get_height;
 
         // graph2d.h
         case 87: return (int) lib2d_print_sprite;

@@ -1,5 +1,4 @@
 #include <driver/keyboard.h>
-#include <gui/vga.h>
 #include <string.h>
 #include <iolib.h>
 #include <time.h>
@@ -163,8 +162,8 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
     int shift = 0;
     int new_pos;
 
-    int row = vga_get_width();
-    int col = vga_get_height();
+    int row = 80;
+    int col = 25;
 
     clean_buffer(out_buffer, size);
 

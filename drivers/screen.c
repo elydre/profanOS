@@ -1,6 +1,5 @@
 #include <driver/screen.h>
 #include <cpu/ports.h>
-#include <gui/vga.h>
 #include <type.h>
 #include <mem.h>
 
@@ -9,8 +8,8 @@
  * Public Kernel API functions                            *
 ***********************************************************/
 
-#define MAX_ROWS (vga_get_mode() == 0 ? 25 : 30)
-#define MAX_COLS (vga_get_mode() == 0 ? 80 : 90)
+#define MAX_ROWS 25
+#define MAX_COLS 80
 
 // Print a message on the specified location
 // If col, row, are negative, we will use the current offset
