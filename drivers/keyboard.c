@@ -1,5 +1,5 @@
 #include <driver/keyboard.h>
-#include <driver/screen.h>
+#include <gui/gentxt.h>
 #include <libc/task.h>
 #include <cpu/ports.h>
 #include <function.h>

@@ -3,24 +3,23 @@
 #include <type.h>
 
 uint32_t *framebuffer;
-uint32_t fb_w, fb_h, fb_p, fb_bpp;
+uint32_t fb_w, fb_h, fb_p;
+int is_vesa;
 
 void init_vesa() {
 	framebuffer = (uint32_t *) mboot_get(22);
 	fb_p = mboot_get(24);
 	fb_w = mboot_get(25);
 	fb_h = mboot_get(26);
-	fb_bpp = mboot_get(27) >> 24;
+
+    is_vesa = (framebuffer > 0xb8000 && fb_w > 320 && fb_h > 200);
+	serial_print_hex(0x3F8, (uint32_t)is_vesa);
+}
+
+int vesa_does_enable() {
+    return is_vesa;
 }
 
 void vesa_set_pixel(int x, int y, uint32_t c) {
     framebuffer[y * fb_w + x] = c;
-}
-
-void vesa_clear_screen(uint32_t c) {
-    for (uint32_t y = 0; y < fb_h; ++y) {
-        for (uint32_t x = 0; x < fb_w; ++x) {
-            vesa_set_pixel(x, y, c);
-        }
-    }
 }

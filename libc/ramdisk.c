@@ -1,5 +1,5 @@
 #include <driver/serial.h>
-#include <driver/screen.h>
+#include <gui/gentxt.h>
 #include <driver/ata.h>
 #include <function.h>
 #include <system.h>

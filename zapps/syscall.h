@@ -51,100 +51,48 @@
 #define KB_released_value 128
 #define KB_released(key) (key + KB_released_value)
 
-#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir screen_color_t
-extern "C" {
-    enum screen_color_t {
-        // light colors
-        c_blue = 0x09,
-        c_green = 0x0a,
-        c_cyan = 0x0b,
-        c_red = 0x0c,
-        c_magenta = 0x0d,
-        c_yellow = 0x0e,
-        c_grey = 0x07,
-        c_white = 0x0f,
-        
-        // dark colors
-        c_dblue = 0x01,
-        c_dgreen = 0x02,
-        c_dcyan = 0x03,
-        c_dred = 0x04,
-        c_dmagenta = 0x05,
-        c_dyellow = 0x06,
-        c_dgrey = 0x08,
-    };
+#define c_blue      0x09
+#define c_green     0x0a
+#define c_cyan      0x0b
+#define c_red       0x0c
+#define c_magenta   0x0d
+#define c_yellow    0x0e
+#define c_grey      0x07
+#define c_white     0x0f
 
-    typedef struct string_20_t {
-        char name[20];
-    } string_20_t;
+#define c_dblue     0x01
+#define c_dgreen    0x02
+#define c_dcyan     0x03
+#define c_dred      0x04
+#define c_dmagenta  0x05
+#define c_dyellow   0x06
+#define c_dgrey     0x08
 
-    typedef struct {
-        int seconds;
-        int minutes;
-        int hours;
-        int day_of_week;
-        int day_of_month;
-        int month;
-        int year;
-        int full[6];
-    } time_t;
+#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir char
 
-    typedef struct {
-        char *path;;
-        char *data;
-        int x;
-        int y;
-        int size_x;
-        int size_y;
-    } sprite_t;
-}
-#else
-    typedef enum screen_color_t screen_color_t;
-    enum screen_color_t {
-        // light colors
-        c_blue = 0x09,
-        c_green = 0x0a,
-        c_cyan = 0x0b,
-        c_red = 0x0c,
-        c_magenta = 0x0d,
-        c_yellow = 0x0e,
-        c_grey = 0x07,
-        c_white = 0x0f,
-        
-        // dark colors
-        c_dblue = 0x01,
-        c_dgreen = 0x02,
-        c_dcyan = 0x03,
-        c_dred = 0x04,
-        c_dmagenta = 0x05,
-        c_dyellow = 0x06,
-        c_dgrey = 0x08,
-    };
+typedef struct string_20_t {
+    char name[20];
+} string_20_t;
 
-    typedef struct string_20_t {
-        char name[20];
-    } string_20_t;
+typedef struct {
+    int seconds;
+    int minutes;
+    int hours;
+    int day_of_week;
+    int day_of_month;
+    int month;
+    int year;
+    int full[6];
+} time_t;
 
-    typedef struct {
-        int seconds;
-        int minutes;
-        int hours;
-        int day_of_week;
-        int day_of_month;
-        int month;
-        int year;
-        int full[6];
-    } time_t;
-
-    typedef struct sprite_t {
-        char *path;
-        char *data;
-        int x;
-        int y;
-        int size_x;
-        int size_y;
-    } sprite_t;
-#endif
+typedef struct sprite_t {
+    char *path;
+    char *data;
+    int x;
+    int y;
+    int size_x;
+    int size_y;
+} sprite_t;
 
 #ifndef NULL
     #define NULL ((void *) 0)
@@ -184,7 +132,7 @@ extern "C" {
 #define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
 #define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
 #define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
-#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, screen_color_t, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
+#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, char, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
 #define c_input(out_buffer, size, color) ((void (*)(char *, int, char)) hi_func_addr(41))(out_buffer, size, color)
 #define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
 #define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)

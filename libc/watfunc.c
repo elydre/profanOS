@@ -1,6 +1,6 @@
 #include <libc/filesystem.h>
 #include <driver/keyboard.h>
-#include <driver/screen.h>
+#include <gui/gentxt.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
 #include <gui/graph2d.h>
@@ -99,7 +99,6 @@ int wf_get_func_addr(int func_id) {
         case 47: return (int) kprint;
         case 48: return (int) ckprint;
         case 49: return (int) ckprint_at;
-        case 50: return (int) print_char;
         case 51: return (int) kprint_backspace;
         case 52: return (int) set_cursor_offset;
         case 53: return (int) get_cursor_offset;
