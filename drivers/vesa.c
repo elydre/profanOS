@@ -18,8 +18,8 @@ void vesa_set_pixel(int x, int y, uint32_t c) {
 }
 
 void vesa_clear_screen(uint32_t c) {
-    for (int y = 0; y < fb_h; ++y) {
-        for (int x = 0; x < fb_w; ++x) {
+    for (uint32_t y = 0; y < fb_h; ++y) {
+        for (uint32_t x = 0; x < fb_w; ++x) {
             vesa_set_pixel(x, y, c);
         }
     }
