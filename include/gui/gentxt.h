@@ -1,5 +1,7 @@
-#ifndef SCREEN_H
-#define SCREEN_H
+#ifndef GENTXT_H
+#define GENTXT_H
+
+#include <type.h>
 
 #define c_blue      0x09
 #define c_green     0x0a
@@ -18,6 +20,9 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
+uint32_t gt_convert_color(char c);
+int gt_get_max_cols();
+int gt_get_max_rows();
 
 void clear_screen();
 

@@ -166,8 +166,8 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     int shift = 0;
     int new_pos;
 
-    int row = 80;
-    int col = 25;
+    int row = gt_get_max_rows();
+    int col = gt_get_max_cols();
 
     clean_buffer(out_buffer, size);
 

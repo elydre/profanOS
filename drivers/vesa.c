@@ -12,8 +12,7 @@ void init_vesa() {
 	fb_w = mboot_get(25);
 	fb_h = mboot_get(26);
 
-    is_vesa = (framebuffer > 0xb8000 && fb_w > 320 && fb_h > 200);
-	serial_print_hex(0x3F8, (uint32_t)is_vesa);
+    is_vesa = ((uint32_t) framebuffer > 0xb8000 && fb_w > 320 && fb_h > 200);
 }
 
 int vesa_does_enable() {

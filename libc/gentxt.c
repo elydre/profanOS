@@ -1,8 +1,10 @@
 #include <gui/gentxt.h>
 #include <gui/vesa.h>
 
-#define MAX_COLS (vesa_does_enable() ? 128 : 80)
+#define FONT_WIDTH 8
+#define FONT_HEIGHT 16
 
+void tef_print_char(char c, int *x, int *y, uint32_t color);
 void txt_print_at(char *message, int col, int row, char color);
 void tef_print(char *message, int x, int y, uint32_t color);
 
@@ -38,6 +40,14 @@ uint32_t gt_convert_color(char c) {
         case 0xE: return 0xFFFF55;
         default: return 0xFFFFFF;
     }
+}
+
+int gt_get_max_cols() {
+    return vesa_does_enable() ? 1024 / FONT_WIDTH : 80;
+}
+
+int gt_get_max_rows() {
+    return vesa_does_enable() ? 768 / FONT_HEIGHT : 25;
 }
 
 void kprint(char *message) {
@@ -82,7 +92,10 @@ void set_cursor_offset(int offset) {
 
 void kprint_backspace() {
     if (vesa_does_enable()) {
-        tef_print_char(0x08, -1, -1, 0xFFFFFF);
+        int x[1], y[1];
+        *x = -1;
+        *y = -1;
+        tef_print_char(0x08, x, y, 0xFFFFFF);
     } else {
         txt_backspace();
     }
@@ -97,13 +110,13 @@ void clear_screen() {
 }
 
 int get_offset(int col, int row) {
-    return 2 * (row * MAX_COLS + col);
+    return 2 * (row * gt_get_max_cols() + col);
 }
 
 int get_offset_row(int offset) {
-    return offset / (2 * MAX_COLS);
+    return offset / (2 * gt_get_max_cols());
 }
 
 int get_offset_col(int offset) {
-    return (offset - (get_offset_row(offset)*2*MAX_COLS))/2;
+    return (offset - (get_offset_row(offset) * 2 * gt_get_max_cols())) / 2;
 }
