@@ -5,6 +5,7 @@
 #include <driver/rtc.h>
 #include <libc/task.h>
 #include <function.h>
+#include <gui/vesa.h>
 #include <cpu/isr.h>
 #include <cpu/gdt.h>
 #include <system.h>
@@ -37,6 +38,9 @@ void kernel_main(void *mboot_ptr) {
     serial_init();
     fskprint("serial init\n");
 
+    init_vesa();
+    fskprint("vesa init\n");
+
     tasking_init();
     fskprint("tasking init\n");
 
@@ -54,7 +58,7 @@ void kernel_main(void *mboot_ptr) {
 
     // launch of the shell.bin
     char *argv[1];
-    argv[0] = "/bin/shell.bin";
+    argv[0] = "/bin/games/doom.bin";
     run_ifexist(argv[0], 1, argv);
 
     task_menu();

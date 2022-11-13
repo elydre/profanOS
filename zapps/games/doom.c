@@ -12,8 +12,8 @@
 #define ROT_SPEED 3
 #define FOV (PI / 4)
 
-#define FLOOR_COLOR 0
-#define CEILING_COLOR 3
+#define FLOOR_COLOR 0x000044
+#define CEILING_COLOR 0x66FFFF
 
 int MAP[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 6,
@@ -33,6 +33,7 @@ double get_distance(double x, double y, double rad_angle, int *color);
 int val_in_buffer(int val, int buffer_width, int *buffer);
 void remove_from_buffer(int val, int *buffer);
 void add_to_buffer(int val, int *buffer);
+uint32_t convert_color(int color);
 
 double cos(double x);
 double sin(double x);
@@ -54,7 +55,6 @@ int main(int argc, char **argv) {
     tick_count[0] = c_timer_get_tick();
     tick_count[3] = 0;
 
-    c_vga_320_mode();
     c_vgui_setup(0);
     c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
@@ -70,25 +70,25 @@ int main(int argc, char **argv) {
             for (int j = 0; j < height; j++) {
                 if (j < top) c_vgui_set_pixel(i, j, CEILING_COLOR);
                 else if (j > bottom) c_vgui_set_pixel(i, j, FLOOR_COLOR);
-                else c_vgui_set_pixel(i, j, color);
+                else c_vgui_set_pixel(i, j, convert_color(color));
             }
         }
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, MAP[i + j * MAP_SIZE]);
+                c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
                 if (i == (int) x && j == (int) y)
-                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 36);
+                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 61);
+                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
             }
         }
 
-        c_vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 32);
-        c_vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 4);
+        c_vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 0x880000);
+        c_vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
 
         c_int_to_ascii(1000 / (tick_count[1] + 1), convert);
-        c_vgui_print(0, 8, convert, 1, 8);
+        c_vgui_print(0, 8, convert, 1, 0x0000AA);
         
 
         tick_count[2] = c_timer_get_tick();
@@ -143,7 +143,6 @@ int main(int argc, char **argv) {
     }
 
     c_vgui_exit();
-    c_vga_text_mode();
     c_free(key_buffer);
 
     return 0;
@@ -182,6 +181,28 @@ void add_to_buffer(int val, int *buffer) {
             return;
         }
     }
+}
+
+uint32_t convert_color(int color) {
+    switch (color) {
+        case 0: return 0x000000;
+        case 1: return 0x0000AA;
+        case 2: return 0x00AA00;
+        case 3: return 0x00AAAA;
+        case 4: return 0xAA0000;
+        case 5: return 0xAA00AA;
+        case 6: return 0xAA5500;
+        case 7: return 0xAAAAAA;
+        case 8: return 0x555555;
+        case 9: return 0x5555FF;
+        case 10: return 0x55FF55;
+        case 11: return 0x55FFFF;
+        case 12: return 0xFF5555;
+        case 13: return 0xFF55FF;
+        case 14: return 0xFFFF55;
+        case 15: return 0xFFFFFF;
+    }
+    return 0;
 }
 
 void remove_from_buffer(int val, int *buffer) {

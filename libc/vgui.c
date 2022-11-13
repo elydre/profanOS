@@ -1,10 +1,12 @@
 #include <function.h>
+#include <gui/vesa.h>
 #include <gui/font.h>
 #include <gui/vgui.h>
+#include <type.h>
 #include <mem.h>
 
-char *last_render;
-char *current_render;
+uint32_t *last_render;
+uint32_t *current_render;
 int refresh_mode;
 
 /*    REFRESH MODES
@@ -15,8 +17,8 @@ int refresh_mode;
  * 4: refresh full */
 
 void vgui_setup(int refresh_all) {
-    last_render = calloc(320 * 200);
-    current_render = calloc(320 * 200);
+    last_render = calloc(320 * 200 * sizeof(uint32_t));
+    current_render = calloc(320 * 200 * sizeof(uint32_t));
     refresh_mode = refresh_all + 3;
 }
 
@@ -29,7 +31,7 @@ void vgui_exit() {
 void vgui_render() {
     for (int i = 0; i < 320 * 200; i++) {
         if (last_render[i] != current_render[i] || refresh_mode > 1) {
-            // vga_set_pixel(i % 320, i / 320, current_render[i]);
+            vesa_set_pixel(i % 320, i / 320, current_render[i]);
             last_render[i] = current_render[i];
         }
     }
@@ -40,15 +42,15 @@ int vgui_get_refresh_mode() {
     return refresh_mode;
 }
 
-void vgui_set_pixel(int x, int y, int color) {
+void vgui_set_pixel(int x, int y, uint32_t color) {
     current_render[y * 320 + x] = color;
 }
 
-int vgui_get_pixel(int x, int y) {
+uint32_t vgui_get_pixel(int x, int y) {
     return current_render[y * 320 + x];
 }
 
-void vgui_draw_rect(int x, int y, int width, int height, int color) {
+void vgui_draw_rect(int x, int y, int width, int height, uint32_t color) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
             current_render[(y + j) * 320 + x + i] = color;
@@ -56,7 +58,7 @@ void vgui_draw_rect(int x, int y, int width, int height, int color) {
     }
 }
 
-void vgui_print(int x, int y, char msg[], int big, unsigned color) {
+void vgui_print(int x, int y, char msg[], int big, uint32_t color) {
     unsigned char *glyph, *font;
     font = big ? g_8x16_font : g_8x8_font;
     for (int i = 0; msg[i] != '\0'; i++) {
@@ -70,7 +72,7 @@ void vgui_print(int x, int y, char msg[], int big, unsigned color) {
     }
 }
 
-void vgui_draw_line(int x1, int y1, int x2, int y2, int color) {
+void vgui_draw_line(int x1, int y1, int x2, int y2, uint32_t color) {
     int dx = x2 - x1;
     int dy = y2 - y1;
     int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
@@ -85,7 +87,7 @@ void vgui_draw_line(int x1, int y1, int x2, int y2, int color) {
     }
 }
 
-void vgui_clear(int color) {
+void vgui_clear(uint32_t color) {
     for (int i = 0; i < 320 * 200; i++) {
         current_render[i] = color;
     }
