@@ -7,6 +7,10 @@
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
+> **WARNING** -
+> the build of this branch requires `grub-common`,
+> `xorriso` and `grub-pc-bin`
+
 This repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
 
 You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
