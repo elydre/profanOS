@@ -3,7 +3,7 @@
 [extern kernel_main]
 [global loader]
 
-KERNEL_STACK_SIZE equ 4096          ; size of stack in bytes
+KERNEL_STACK_SIZE equ 4096      ; size of stack in bytes
 
 FLAGS equ 0b111
 MAGIC equ 0x1BADB002
@@ -15,13 +15,9 @@ align 4
     dd FLAGS
     dd CHECKSUM
 
-section .text                       ; start of the text (code) section
-align 4                             ; the code must be 4 byte aligned
-mov esp, kernel_stack + KERNEL_STACK_SIZE 
+section .text                   ; start of the text (code) section
+align 4
 loader:
-    call kernel_main            ; load our kernel
-    
-section .bss
-align 4                         ; align at 4 bytes
-kernel_stack:                   ; label points to beginning of memory
-    resb KERNEL_STACK_SIZE      ; reserve stack for the kernel
+    push ebx                    ; keep the multiboot info pointer
+    cli                         ; disable interrupts
+    call kernel_main            ; load profanOS kernel

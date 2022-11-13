@@ -1,4 +1,5 @@
 #include <libc/filesystem.h>
+#include <libc/multiboot.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
 #include <driver/rtc.h>
@@ -9,11 +10,15 @@
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
+#include <type.h>
 #include <mem.h>
 
-void kernel_main() {
+void kernel_main(void *mboot_ptr) {
     clear_screen();
     fskprint("$6booting profanOS...\n");
+
+    mboot_save(mboot_ptr);
+    fskprint("Mboot saved\n");
 
     gdt_init();
     fskprint("GDT init\n");
@@ -24,9 +29,6 @@ void kernel_main() {
     irq_install();
     fskprint("IRQ init\n");
 
-    tasking_init();
-    fskprint("tasking init\n");
-
     rtc_init();
     time_gen_boot();
     init_rand();
@@ -34,6 +36,9 @@ void kernel_main() {
 
     serial_init();
     fskprint("serial init\n");
+
+    tasking_init();
+    fskprint("tasking init\n");
 
     ramdisk_init();
     fskprint("ramdisk init\n");
