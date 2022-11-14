@@ -68,8 +68,6 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
-#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir char
-
 typedef struct string_20_t {
     char name[20];
 } string_20_t;
