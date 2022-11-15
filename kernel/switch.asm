@@ -38,7 +38,7 @@ task_asm_switch:
     popf
     pop    eax
 
-    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
+    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII #CODE VOLE
 
     push   eax
     mov    eax, [eax+0x28]  ; CR3

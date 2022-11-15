@@ -3,8 +3,6 @@
 [extern kernel_main]
 [global loader]
 
-KERNEL_STACK_SIZE equ 4096      ; size of stack in bytes
-
 FLAGS equ 0b111
 MAGIC equ 0x1BADB002
 CHECKSUM equ -(MAGIC + FLAGS)
