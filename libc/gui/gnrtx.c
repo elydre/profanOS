@@ -1,10 +1,11 @@
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
+#include <system.h>
 
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
-void tef_print_char(char c, int *x, int *y, uint32_t color, uint32_t bg_color);
+void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color);
 void tef_print(char *message, int x, int y, uint32_t color, uint32_t bg_color);
 void tef_set_cursor_offset(int offset);
 int  tef_get_cursor_offset();
@@ -47,19 +48,12 @@ int gt_get_max_rows() {
     return vesa_does_enable() ? 768 / FONT_HEIGHT : 25;
 }
 
-void kprint(char *message) {
+void kprint_rgb_at(char *message, int col, int row, uint32_t color, uint32_t bg_color) {
     if (vesa_does_enable()) {
-        tef_print(message, -1, -1, 0xFFFFFF, 0x000000);
+        tef_print(message, col, row, color, bg_color);
     } else {
-        txt_print_at(message, -1, -1, c_white);
-    }
-}
-
-void ckprint(char *message, char color) {
-    if (vesa_does_enable()) {
-        tef_print(message, -1, -1, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
-    } else {
-        txt_print_at(message, -1, -1, color);
+        sys_warning("text mode does not support RGB");
+        txt_print_at(message, col, row, c_white);
     }
 }
 
@@ -89,10 +83,7 @@ void set_cursor_offset(int offset) {
 
 void kprint_backspace() {
     if (vesa_does_enable()) {
-        int x[1], y[1];
-        *x = -1;
-        *y = -1;
-        tef_print_char(0x08, x, y, 0, 0); // we don't care about the color
+        tef_print_char(0x08, -1, -1, 0, 0); // we don't care about the color
     } else {
         txt_backspace();
     }

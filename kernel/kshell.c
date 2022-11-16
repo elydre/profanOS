@@ -1,4 +1,5 @@
 #include <libc/ramdisk.h>
+#include <gui/gnrtx.h>
 #include <function.h>
 #include <system.h>
 #include <string.h>
@@ -48,6 +49,20 @@ void shell_help() {
         fskprint("%s\n", help[i]);
 }
 
+void rgb_test() {
+    uint32_t color;
+    int ligne = get_offset_row(get_cursor_offset()) + 1;
+    char buffer[10];
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 16; j++) {
+            color = (1<<16) * (i*32 + 110) + (1<<8) * (j*4 + 128) + 1 * (i*16 - j*6 + 128);
+            hex_to_ascii(color, buffer);
+            kprint_rgb_at(buffer, i * 15 + 4, ligne + j, 0, color);
+        }
+    }
+    kprint("\n\n");
+}
+
 void shell_addr() {
     fskprint("physic:  %x (%fMo)\n", mem_get_phys_size(), mem_get_phys_size() / 1024.0 / 1024.0);
     fskprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
@@ -71,6 +86,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    else if (str_cmp(prefix, "rgb") == 0) rgb_test();
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
 
     return 0;

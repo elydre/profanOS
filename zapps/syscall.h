@@ -12,6 +12,10 @@
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 #define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
 
+#define c_ckprint(message, color) c_ckprint_at(message, -1, -1, color)
+#define c_kprint_rgb(message, color, bg_color) c_rgb_print_at(message, -1, -1, color, bg_color)
+#define c_kprint(message) c_ckprint(message, c_white)
+
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)WATFUNC_ADDR)(id)
 
@@ -137,8 +141,6 @@ typedef struct sprite_t {
 #define c_ms_sleep(ms) ((void (*)(int)) hi_func_addr(44))(ms)
 #define c_time_get_boot() ((int (*)(void)) hi_func_addr(45))()
 #define c_clear_screen() ((void (*)(void)) hi_func_addr(46))()
-#define c_kprint(message) ((void (*)(char *)) hi_func_addr(47))(message)
-#define c_ckprint(message, color) ((void (*)(char*, char)) hi_func_addr(48))(message, color)
 #define c_ckprint_at(str, x, y, color) ((void (*)(char *, int, int, char)) hi_func_addr(49))(str, x, y, color)
 #define c_kprint_backspace() ((void (*)(void)) hi_func_addr(51))()
 #define c_kb_scancode_to_char(scancode, shift) ((char (*)(int, int)) hi_func_addr(57))(scancode, shift)

@@ -20,15 +20,20 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
+#define ckprint(message, color) ckprint_at(message, -1, -1, color)
+#define kprint_rgb(message, color, bg_color) rgb_print_at(message, -1, -1, color, bg_color)
+#define kprint(message) ckprint(message, c_white)
+
+
 uint32_t gt_convert_color(char c);
 int gt_get_max_cols();
 int gt_get_max_rows();
 
 void clear_screen();
 
-void kprint(char *message);
-void ckprint(char *message, char color);
+void kprint_rgb_at(char *message, int col, int row, uint32_t color, uint32_t bg_color);
 void ckprint_at(char *message, int col, int row, char color);
+
 void kprint_backspace();
 
 

@@ -43,27 +43,30 @@ void tef_redraw() {
     }
 }
 
-void tef_print_char(char c, int *x, int *y, uint32_t color, uint32_t bg_color) {
+void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
+    if (x != -1) cursor_x = x;
+    if (y != -1) cursor_y = y;
+
     if (c == '\n') {
-        *x = 0;
-        *y += 1;
+        cursor_x = 0;
+        cursor_y += 1;
     } else if (c == '\r') {
-        *x = 0;
+        cursor_x = 0;
     } else if (c == 0x08) {
         // str_backspace
-        tef_set_char((*x) * FONT_WIDTH, (*y) * FONT_HEIGHT, ' ', color, bg_color);
+        tef_set_char(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT, ' ', color, bg_color);
     } else {
-        tef_set_char((*x) * FONT_WIDTH, (*y) * FONT_HEIGHT, c, color, bg_color);
-        *x += 1;
+        tef_set_char(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT, c, color, bg_color);
+        cursor_x++;
     }
 
-    if (*x >= MAX_COLS) {
-        *x = 0;
-        *y += 1;
+    if (cursor_x >= MAX_COLS) {
+        cursor_x = 0;
+        cursor_y++;
     }
 
     // scroll
-    if (*y >= MAX_ROWS) {
+    if (cursor_y >= MAX_ROWS) {
         for (int i = 0; i < MAX_COLS * (MAX_ROWS - 1); i++) {
             char_buffer[i] = char_buffer[i + MAX_COLS];
             color_buffer[i] = color_buffer[i + MAX_COLS];
@@ -72,24 +75,21 @@ void tef_print_char(char c, int *x, int *y, uint32_t color, uint32_t bg_color) {
             char_buffer[i] = ' ';
             color_buffer[i] = color;
         }
-        *y = MAX_ROWS - 1;
+        cursor_y = MAX_ROWS - 1;
         tef_redraw();
     }
 
     // update cursor
-    // tef_set_char((*x) * FONT_WIDTH, (*y) * FONT_HEIGHT, '_', 0x00FFFF, 0);
+    // tef_set_char(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT, '_', 0x00FFFF, 0);
 }
 
 void tef_print(char *message, int x, int y, uint32_t color, uint32_t bg_color) {
     // if cursor_x or cursor_y is -1, use the current cursor position
     for (int i = 0; message[i] != '\0'; i++) {
-        if (x == -1 && y == -1) {
-            tef_print_char(message[i], &cursor_x, &cursor_y, color, bg_color);
-        } else {
-            tef_print_char(message[i], &x, &y, color, bg_color);
-        }
+        tef_print_char(message[i], x, y, color, bg_color);
+        x = -1;
+        y = -1;
     }
-
 }
 
 void tef_clear() {

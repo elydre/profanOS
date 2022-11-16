@@ -96,8 +96,6 @@ int wf_get_func_addr(int func_id) {
 
         // screen.h
         case 46: return (int) clear_screen;
-        case 47: return (int) kprint;
-        case 48: return (int) ckprint;
         case 49: return (int) ckprint_at;
         case 51: return (int) kprint_backspace;
         case 52: return (int) set_cursor_offset;
