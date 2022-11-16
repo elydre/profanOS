@@ -1,5 +1,5 @@
-#ifndef GENTXT_H
-#define GENTXT_H
+#ifndef GNRTX_H
+#define GNRTX_H
 
 #include <type.h>
 
@@ -39,5 +39,8 @@ int get_offset_row(int offset);
 int get_offset_col(int offset);
 
 void cursor_blink(int on);
+
+// font.c
+unsigned char *font_get_8x16();
 
 #endif

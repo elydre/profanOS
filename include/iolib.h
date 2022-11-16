@@ -1,7 +1,7 @@
 #ifndef SKPRINT_H
 #define SKPRINT_H
 
-#include <gui/gentxt.h>
+#include <gui/gnrtx.h>
 
 void mskprint(int nb_args, ...);
 void fskprint(char format[], ...);

@@ -1,6 +1,6 @@
 #include <libc/filesystem.h>
 #include <driver/keyboard.h>
-#include <gui/gentxt.h>
+#include <gui/gnrtx.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
 #include <gui/graph2d.h>

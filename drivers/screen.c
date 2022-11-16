@@ -1,4 +1,4 @@
-#include <gui/gentxt.h>
+#include <gui/gnrtx.h>
 #include <cpu/ports.h>
 #include <type.h>
 #include <mem.h>

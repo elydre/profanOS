@@ -56,39 +56,6 @@ void shell_addr() {
     fskprint("rand sv: %x\n", RAND_SAVE);
 }
 
-void rgb_square() {
-    // set pixel color in a 255x255 square
-    uint32_t color; // 0x00RRGGBB
-    while (1) {
-        for (int k = 255; k > 0; k=k-7) {
-            for (int i = 0; i < 255; i++) {
-                for (int j = 0; j < 255; j++) {
-                    color = (k << 16) + (i << 8) + j;
-                    // we color in a square
-                    for (int x = 0; x < 3 ; x++) {
-                        for (int y = 0; y < 3; y++) {
-                            vesa_set_pixel(i*3+x, j*3+y, color);
-                        }
-                    }
-                }
-            }
-        }
-        for (int k = 0; k < 255; k=k+7) {
-            for (int i = 0; i < 255; i++) {
-                for (int j = 0; j < 255; j++) {
-                    color = (k << 16) + (i << 8) + j;
-                    // we color in a square
-                    for (int x = 0; x < 3 ; x++) {
-                        for (int y = 0; y < 3; y++) {
-                            vesa_set_pixel(i*3+x, j*3+y, color);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     str_cpy(prefix, command);
@@ -103,7 +70,6 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "help") == 0) shell_help();
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
-    else if (str_cmp(prefix, "rgb") == 0) rgb_square();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
 

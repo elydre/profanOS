@@ -6,7 +6,7 @@ import PIL.Image
 
 # SETUP
 
-SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc"]
+SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc", "libc/gui"]
 
 INCLUDE_DIR = "include"
 INCLUDE_SUB = [".", "driver", "cpu", "gui", "libc"]

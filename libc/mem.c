@@ -1,4 +1,4 @@
-#include <gui/gentxt.h>
+#include <gui/gnrtx.h>
 #include <function.h>
 #include <system.h>
 #include <string.h>

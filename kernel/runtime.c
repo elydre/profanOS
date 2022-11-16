@@ -1,6 +1,6 @@
 #include <libc/filesystem.h>
 #include <driver/serial.h>
-#include <gui/gentxt.h>
+#include <gui/gnrtx.h>
 #include <libc/task.h>
 #include <system.h>
 #include <mem.h>

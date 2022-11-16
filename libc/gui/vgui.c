@@ -1,6 +1,6 @@
+#include <gui/gnrtx.h>
 #include <function.h>
 #include <gui/vesa.h>
-#include <gui/font.h>
 #include <gui/vgui.h>
 #include <type.h>
 #include <mem.h>
@@ -58,12 +58,11 @@ void vgui_draw_rect(int x, int y, int width, int height, uint32_t color) {
     }
 }
 
-void vgui_print(int x, int y, char msg[], int big, uint32_t color) {
-    unsigned char *glyph, *font;
-    font = big ? g_8x16_font : g_8x8_font;
+void vgui_print(int x, int y, char msg[], uint32_t color) {
+    unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = font + (msg[i] * (big ? 16 : 8));
-        for (int j = 0; j < (big ? 16 : 8); j++) {
+        glyph = font_get_8x16() + msg[i] * 16;
+        for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
                 vgui_set_pixel(i * 8 + x + 8 - k , y + j, color);
