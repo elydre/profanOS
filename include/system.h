@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "VBE-10"
+#define VERSION "VBE-11"
 #define WATFUNC_ADDR 0x199990
 
 // system.c

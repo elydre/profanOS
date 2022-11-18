@@ -6,6 +6,8 @@
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
+#define SCROLLED_LINES 5
+
 #define MAX_COLS (1024 / FONT_WIDTH)
 #define MAX_ROWS (768 / FONT_HEIGHT)
 
@@ -62,13 +64,14 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
     // scroll
     if (cursor_y >= MAX_ROWS) {
         uint32_t *fb = vesa_get_framebuffer();
-        mem_move(fb + 1024 * 16, fb, 1024 * 752 * 4);
+        mem_move((uint8_t*)(fb + 1024 * 16 * SCROLLED_LINES), (uint8_t*) fb, 1024 * 16 * (768 - 16 * SCROLLED_LINES));
+        // clear the last lines
         for (int i = 0; i < 1024; i++) {
-            for (int j = 0; j < 16; j++) {
-                vesa_set_pixel(i, 768 - j, 0);
+            for (int j = 768 - 16 * SCROLLED_LINES; j < 768; j++) {
+                vesa_set_pixel(i, j, 0);
             }
         }
-        cursor_y--;
+        cursor_y -= SCROLLED_LINES;
         cursor_x = 0;
         return;
     }
