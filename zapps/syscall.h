@@ -119,6 +119,7 @@ typedef struct sprite_t {
 #define c_free(ptr) ((void (*)(void *)) hi_func_addr(17))(ptr)
 #define c_calloc(size) ((void *(*)(int)) hi_func_addr(18))(size)
 #define c_malloc(size) ((void *(*)(int)) hi_func_addr(19))(size)
+#define c_realloc(ptr, size) ((void *(*)(void *, int)) hi_func_addr(20))(ptr, size)
 #define c_mem_get_usage() ((int (*)(void)) hi_func_addr(21))()
 #define c_mem_get_usable() ((int (*)(void)) hi_func_addr(22))()
 #define c_int_to_ascii(n, str) ((void (*)(int, char *)) hi_func_addr(23))(n, str)
