@@ -1,12 +1,13 @@
 #include <libc/filesystem.h>
 #include <driver/keyboard.h>
-#include <gui/gnrtx.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <cpu/timer.h>
 #include <libc/task.h>
+#include <gui/gnrtx.h>
+#include <gui/vesa.h>
 #include <gui/vgui.h>
 #include <string.h>
 #include <system.h>
@@ -104,6 +105,7 @@ int wf_get_func_addr(int func_id) {
         case 55: return (int) get_offset_row;
         case 56: return (int) get_offset_col;
         case 76: return (int) cursor_blink;
+        case 81: return (int) vesa_set_pixel;
 
         // keyboard.h
         case 57: return (int) kb_scancode_to_char;
