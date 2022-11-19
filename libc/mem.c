@@ -158,7 +158,7 @@ int mem_get_phys_size() {
 void mem_print() {
     int val, color = 0x80;
     char nb[2];
-    int nb_lines = (IMM_COUNT > gt_get_max_rows() *3 ? gt_get_max_rows() *3 : IMM_COUNT);
+    int nb_lines = (IMM_COUNT > (gt_get_max_rows() - 2) *3 ? (gt_get_max_rows() - 2) *3 : IMM_COUNT);
     for (int mi = 0; mi < nb_lines; mi++) {
         if (mi % 3 == 0) kprint("\n  ");
         kprint("    ");
@@ -172,7 +172,7 @@ void mem_print() {
             }
         }
     }
-    kprint("\n\n");
+    kprint((IMM_COUNT > nb_lines) ? "\n      ...\n" : "\n\n");
 }
 
 int mem_get_usage() {

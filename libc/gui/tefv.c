@@ -11,6 +11,8 @@
 #define MAX_COLS (1024 / FONT_WIDTH)
 #define MAX_ROWS (768 / FONT_HEIGHT)
 
+#define CURSOR_COLOR 0xFF003c
+
 int cursor_x = 0;
 int cursor_y = 0;
 
@@ -31,9 +33,9 @@ void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
     for (i = 0; i < FONT_WIDTH; i++) {
         for (j = 0; j < FONT_HEIGHT; j++) {
             if (FONT_TABLE[c * FONT_HEIGHT + j] & (1 << i)) {
-                vesa_set_pixel(x + 8 - i, y + j, color);
+                vesa_set_pixel(x + 7 - i, y + j, color);
             } else {
-                vesa_set_pixel(x + 8 - i, y + j, bg_color);
+                vesa_set_pixel(x + 7 - i, y + j, bg_color);
             }
         }
     }
@@ -75,18 +77,32 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
         cursor_x = 0;
         return;
     }
+}
 
-    // update cursor
-    // tef_set_char(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT, '_', 0x00FFFF, 0);
+void tef_draw_cursor(uint32_t color) {
+    // cursor is a empty rectangle
+    for (int i = 0; i < FONT_WIDTH; i++) {
+        vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
+        vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT + FONT_HEIGHT - 1, color);
+    }
+    for (int i = 0; i < FONT_HEIGHT; i++) {
+        vesa_set_pixel(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT + i, color);
+        vesa_set_pixel(cursor_x * FONT_WIDTH + FONT_WIDTH - 1, cursor_y * FONT_HEIGHT + i, color);
+    }
 }
 
 void tef_print(char *message, int x, int y, uint32_t color, uint32_t bg_color) {
-    // if cursor_x or cursor_y is -1, use the current cursor position
+    // clean the actual cursor
+    tef_draw_cursor(0);
+
     for (int i = 0; message[i] != '\0'; i++) {
         tef_print_char(message[i], x, y, color, bg_color);
         x = -1;
         y = -1;
     }
+
+    // draw the cursor
+    tef_draw_cursor(CURSOR_COLOR);
 }
 
 
@@ -96,8 +112,14 @@ int tef_get_cursor_offset() {
 }
 
 void tef_set_cursor_offset(int offset) {
+    // clean the actual cursor
+    tef_draw_cursor(0);
+    
     // we have to divide by 2 for the text mode compatibility
     offset /= 2;
     cursor_y = offset / MAX_COLS;
     cursor_x = offset % MAX_COLS;
+
+    // draw the cursor
+    tef_draw_cursor(CURSOR_COLOR);
 }
