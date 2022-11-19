@@ -126,7 +126,10 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     for (int i = 0; i < 256; i++) fullname[i] = parent_name[i];
     uint32_t sector[UINT32_PER_SECTOR];
     ata_read_sector(sector_id, sector);
-
+    if (sector[0] == 0x9000) {
+        sys_warning("dir pointed to file content");
+        return;
+    }
     if (sector[0] != 0xc000 && sector[0] != 0xa000) {
         fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
