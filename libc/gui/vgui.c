@@ -17,6 +17,7 @@ int refresh_mode;
  * 4: refresh full */
 
 void vgui_setup(int refresh_all) {
+    // TODO: custom resolution
     last_render = calloc(320 * 200 * sizeof(uint32_t));
     current_render = calloc(320 * 200 * sizeof(uint32_t));
     refresh_mode = refresh_all + 3;

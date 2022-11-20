@@ -38,7 +38,7 @@ uint32_t gt_convert_color(char c) {
         case 0xC: return 0xFF5555;
         case 0xD: return 0xFF55FF;
         case 0xE: return 0xFFFF55;
-        default: return 0xFFFFFF;
+        default:  return 0xFFFFFF;
     }
 }
 

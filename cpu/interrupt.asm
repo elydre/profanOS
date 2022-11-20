@@ -26,8 +26,8 @@ isr_common_stub:
     mov fs, ax
     mov gs, ax
     popa
-    add esp, 8 ; Cleans up the pushed error code and pushed ISR number
-    iret ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+    add esp, 8  ; Cleans up the pushed error code and pushed ISR number
+    iret        ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
 ; Common IRQ code. Identical to ISR code except for the 'call' 
 ; and the 'pop ebx'

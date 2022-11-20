@@ -45,7 +45,6 @@ void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
 
 void tef_draw_cursor(uint32_t color) {
     if (hidden_cursor) color = 0;
-    // cursor is a empty rectangle
     for (int i = 0; i < FONT_WIDTH; i++) {
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT + FONT_HEIGHT - 1, color);

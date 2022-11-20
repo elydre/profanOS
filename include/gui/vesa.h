@@ -11,3 +11,4 @@ void vesa_set_pixel(int x, int y, uint32_t c);
 uint32_t vesa_get_pixel(int x, int y);
 
 #endif
+

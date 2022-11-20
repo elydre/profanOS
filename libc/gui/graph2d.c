@@ -76,7 +76,7 @@ void lib2d_print_sprite(int x, int y, sprite_t sprite) {
             couleur_str[index_couleur] = '\0';
             index_char++;
             couleur = ascii_to_int(couleur_str);
-            vgui_set_pixel(l+y, h+x, couleur);  // TODO: vgui / vesa
+            vgui_set_pixel(l+y, h+x, couleur);  // TODO: vgui or vesa
         }
     }
 }

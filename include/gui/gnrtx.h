@@ -20,6 +20,7 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
+
 #define ckprint(message, color) ckprint_at(message, -1, -1, color)
 #define kprint_rgb(message, color, bg_color) rgb_print_at(message, -1, -1, color, bg_color)
 #define kprint(message) ckprint(message, c_white)

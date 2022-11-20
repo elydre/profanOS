@@ -119,7 +119,7 @@ int txt_get_cursor_offset() {
     int offset = port_byte_in(REG_SCREEN_DATA) << 8; // High byte: << 8
     port_byte_out(REG_SCREEN_CTRL, 15);
     offset += port_byte_in(REG_SCREEN_DATA);
-    return offset * 2; // Position * size of character cell
+    return offset * 2; // position * size of character cell
 }
 
 void txt_set_cursor_offset(int offset) {

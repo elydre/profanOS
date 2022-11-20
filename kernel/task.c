@@ -164,8 +164,7 @@ int task_get_alive() {
     for (int i = 0; i < task_count; i++) {
         if (tasks[i].isdead == 2) {
             decal++;
-        }
-        else {
+        } else {
             nb_alive++;
             if (decal > 0) tasks[i - decal] = tasks[i];
         }

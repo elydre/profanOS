@@ -23,7 +23,7 @@ void vesa_set_pixel(int x, int y, uint32_t c) {
     framebuffer[y * fb_w + x] = c;
 }
 
-
+// read from framebuffer can be slow
 uint32_t vesa_get_pixel(int x, int y) {
     return framebuffer[y * fb_w + x];
 }

@@ -25,7 +25,7 @@ task_asm_switch:
     pop    ebx              ; CR3
     mov    [eax+0x28], ebx
     push   ebx              ; Goodbye again
-    mov    eax, [esp+0x30]  ; #Now it is the new object
+    mov    eax, [esp+0x30]  ; Now it is the new object
     mov    ebx, [eax+0x4]   ; EBX
     mov    ecx, [eax+0x8]   ; ECX
     mov    edx, [eax+0xc]   ; EDX
@@ -38,7 +38,7 @@ task_asm_switch:
     popf
     pop    eax
 
-    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII #CODE VOLE
+    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
 
     push   eax
     mov    eax, [eax+0x28]  ; CR3

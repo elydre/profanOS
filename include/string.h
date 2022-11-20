@@ -25,3 +25,4 @@ void str_delchar(char s[], char c);
 int  str_in_str(char s1[], char s2[]);
 
 #endif
+

@@ -29,7 +29,7 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
 // https://github.com/elydre/elydre/blob/main/projet/profan/b3.py
 
 #define PART_SIZE 0x1000   // 4Ko
-#define IMM_COUNT 54*2       // can save 4104Ko
+#define IMM_COUNT 108      // can save ~8Mo
 #define BASE_ADDR 0x250000 // lot of jokes here
 
 static int MLIST[IMM_COUNT];

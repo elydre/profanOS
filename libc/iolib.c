@@ -4,6 +4,7 @@
 #include <time.h>
 #include <mem.h>
 
+// we need the stdarg of the stdlib
 #include <stdarg.h>
 
 // input() setings

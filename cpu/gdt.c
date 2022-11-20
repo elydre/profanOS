@@ -1,5 +1,7 @@
 #include <cpu/gdt.h>
 
+// GDT: global descriptor table
+
 struct gdt_entry gdt[3];
 struct gdt_ptr gdt_p;
 

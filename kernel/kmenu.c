@@ -4,8 +4,8 @@
 #include <string.h>
 #include <time.h>
 
-#define KB_KEY_UP 0x48
-#define KB_KEY_DOWN 0x50
+#define KB_KEY_UP    0x48
+#define KB_KEY_DOWN  0x50
 #define KB_KEY_ENTER 0x1C
 
 void menu_print_line(int line, int task_i, int is_selected);

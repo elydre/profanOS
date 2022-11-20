@@ -26,3 +26,4 @@ int mem_get_phys_size();
 int mem_get_base_addr();
 
 #endif
+
