@@ -26,16 +26,21 @@ sprite_t lib2d_init_sprite(char *path) {
     int index_hauteur = 0;
     char size_longueur[4];
     int index_longueur = 0;
+
     while (char_content[index_char] != '|') {
         size_hauteur[index_hauteur] = char_content[index_char];
         index_hauteur++; index_char++;
-    } size_hauteur[index_hauteur] = '\0';
+    }
+    size_hauteur[index_hauteur] = '\0';
     index_char++;
+
     while (char_content[index_char] != '|') {
         size_longueur[index_longueur] = char_content[index_char];
         index_longueur++; index_char++;
-    } size_longueur[index_longueur] = '\0';
+    }
+    size_longueur[index_longueur] = '\0';
     index_char++;
+
     int hauteur = ascii_to_int(size_hauteur);
     int longueur = ascii_to_int(size_longueur);
     char *data = calloc(file_size);
@@ -43,6 +48,7 @@ sprite_t lib2d_init_sprite(char *path) {
         data[i] = char_content[i+index_char];
     }
     free(char_content);
+
     sprite_t sprite = {path, data, 0, 0, longueur, hauteur};
     return sprite;
 }
@@ -61,14 +67,16 @@ void lib2d_print_sprite(int x, int y, sprite_t sprite) {
     int couleur = 0;
     for (int h = 0; h<hauteur; h++) {
         for (int l = 0; l<longueur; l++) {
-            for (int i=0; i<3; i++) {couleur_str[i] = '\0';}
+            for (int i = 0; i < 3; i++) couleur_str[i] = '\0';
             index_couleur = 0;
             while (sprite.data[index_char] != '|') {
                 couleur_str[index_couleur] = sprite.data[index_char];
                 index_couleur++; index_char++;
-            } couleur_str[index_couleur] = '\0'; index_char++;
+            }
+            couleur_str[index_couleur] = '\0';
+            index_char++;
             couleur = ascii_to_int(couleur_str);
-            vgui_set_pixel(l+y, h+x, couleur);
+            vgui_set_pixel(l+y, h+x, couleur);  // TODO: vgui / vesa
         }
     }
 }

@@ -168,8 +168,6 @@ typedef struct sprite_t {
 #define c_vgui_draw_line(x1, y1, x2, y2, c) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))(x1, y1, x2, y2, c)
 #define c_vgui_clear(color) ((void (*)(unsigned)) hi_func_addr(83))(color)
 #define c_task_get_alive() ((int (*)(void)) hi_func_addr(84))()
-#define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
-#define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
 #define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, sprite_t)) hi_func_addr(87))(x, y, sprite)
 #define c_lib2d_free_sprite(sprite) ((void (*)(sprite_t)) hi_func_addr(88))(sprite)
 #define c_lib2d_init_sprite(path) ((sprite_t (*)(char*)) hi_func_addr(89))(path)

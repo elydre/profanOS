@@ -16,6 +16,8 @@
 int cursor_x = 0;
 int cursor_y = 0;
 
+int hidden_cursor = 0;
+
 
 void tef_clear() {
     cursor_x = 0;
@@ -41,6 +43,19 @@ void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
     }
 }
 
+void tef_draw_cursor(uint32_t color) {
+    if (hidden_cursor) color = 0;
+    // cursor is a empty rectangle
+    for (int i = 0; i < FONT_WIDTH; i++) {
+        vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
+        vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT + FONT_HEIGHT - 1, color);
+    }
+    for (int i = 0; i < FONT_HEIGHT; i++) {
+        vesa_set_pixel(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT + i, color);
+        vesa_set_pixel(cursor_x * FONT_WIDTH + FONT_WIDTH - 1, cursor_y * FONT_HEIGHT + i, color);
+    }
+}
+
 void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
     if (x != -1) cursor_x = x;
     if (y != -1) cursor_y = y;
@@ -52,6 +67,8 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
         cursor_x = 0;
     } else if (c == 0x08) {
         // str_backspace
+        tef_draw_cursor(0);
+        cursor_x--;
         tef_set_char(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT, ' ', color, bg_color);
     } else {
         tef_set_char(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT, c, color, bg_color);
@@ -76,18 +93,6 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
         cursor_y -= SCROLLED_LINES;
         cursor_x = 0;
         return;
-    }
-}
-
-void tef_draw_cursor(uint32_t color) {
-    // cursor is a empty rectangle
-    for (int i = 0; i < FONT_WIDTH; i++) {
-        vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
-        vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT + FONT_HEIGHT - 1, color);
-    }
-    for (int i = 0; i < FONT_HEIGHT; i++) {
-        vesa_set_pixel(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT + i, color);
-        vesa_set_pixel(cursor_x * FONT_WIDTH + FONT_WIDTH - 1, cursor_y * FONT_HEIGHT + i, color);
     }
 }
 
@@ -121,5 +126,10 @@ void tef_set_cursor_offset(int offset) {
     cursor_x = offset % MAX_COLS;
 
     // draw the cursor
+    tef_draw_cursor(CURSOR_COLOR);
+}
+
+void tef_cursor_blink(int off) {
+    hidden_cursor = off;
     tef_draw_cursor(CURSOR_COLOR);
 }

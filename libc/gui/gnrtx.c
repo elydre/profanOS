@@ -8,11 +8,13 @@
 void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color);
 void tef_print(char *message, int x, int y, uint32_t color, uint32_t bg_color);
 void tef_set_cursor_offset(int offset);
+void tef_cursor_blink(int off);
 int  tef_get_cursor_offset();
 void tef_clear();
 
 void txt_print_at(char *message, int col, int row, char color);
 void txt_set_cursor_offset(int offset);
+void txt_cursor_blink(int off);
 int  txt_get_cursor_offset();
 void txt_backspace();
 void txt_clear();
@@ -107,4 +109,12 @@ int get_offset_row(int offset) {
 
 int get_offset_col(int offset) {
     return (offset - (get_offset_row(offset) * 2 * gt_get_max_cols())) / 2;
+}
+
+void cursor_blink(int off) {
+    if (vesa_does_enable()) {
+        tef_cursor_blink(off);
+    } else {
+        txt_cursor_blink(off);
+    }
 }
