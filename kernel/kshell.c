@@ -6,8 +6,6 @@
 #include <iolib.h>
 #include <mem.h>
 
-#include <mm.h>
-
 #define BFR_SIZE 65
 
 int shell_command(char command[]);
@@ -59,25 +57,6 @@ void shell_addr() {
     fskprint("rand sv: %x\n", RAND_SAVE);
 }
 
-void mm_test() {
-    void *ptr = (void *) mm_alloc(0x10);
-    fskprint("ptr: %x\n\n", ptr);
-    void *ptr2 = (void *) mm_alloc(0x100);
-    fskprint("ptr2: %x\n\n", ptr2);
-    mm_free(ptr);
-    void *ptr3 = (void *) mm_alloc(0x50);
-    fskprint("ptr3: %x\n\n", ptr3);
-    void *ptr4 = (void *) mm_alloc(0x5);
-    fskprint("ptr4: %x\n\n", ptr4);
-    mm_print();
-
-    // mm_free(ptr2);
-    // mm_free(ptr3);
-    // mm_free(ptr4);
-
-    // mm_print();
-}
-
 int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     str_cpy(prefix, command);
@@ -93,7 +72,6 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "mm") == 0) mm_test();
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
 
     return 0;

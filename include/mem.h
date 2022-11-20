@@ -7,17 +7,36 @@ void mem_copy(uint8_t *source, uint8_t *dest, int nbytes);
 void mem_set(uint8_t *dest, uint8_t val, uint32_t len);
 void mem_move(uint8_t *source, uint8_t *dest, int nbytes);
 
-int mem_alloc(int size);
-int mem_free_addr(int addr);
+// SNOWFLAKE memory manager
+
+typedef struct allocated_part_t {
+    uint32_t addr;
+    uint32_t size;
+    int task_id;
+    uint8_t state;
+    int next; // list index
+} allocated_part_t;
+
+#define PARTS_COUNT 10000
+#define BASE_ADDR 0x200000
+
+// states:
+// 0 - free
+// 1 - allocated
+
+void mem_init();
+void mem_print();
+
+uint32_t mem_alloc(uint32_t size);
+int mem_free_addr(uint32_t addr);
 
 int mem_get_alloc_size(int addr);
 
 void free(void *addr);
-void *malloc(int size);
-void *realloc(void *ptr, int size);
-void *calloc(int size);
+void *malloc(uint32_t size);
+void *realloc(void *ptr, uint32_t size);
+void *calloc(uint32_t size);
 
-void mem_print();
 int mem_get_usage();
 int mem_get_usable();
 int mem_get_alloc_count();

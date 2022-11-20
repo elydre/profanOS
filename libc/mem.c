@@ -1,4 +1,4 @@
-#include <gui/gnrtx.h>
+#include <libc/task.h>
 #include <function.h>
 #include <system.h>
 #include <string.h>
@@ -25,91 +25,130 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
     }
 }
 
-// elydre b3 memory manager with mem_alloc and free_addr functions
-// https://github.com/elydre/elydre/blob/main/projet/profan/b3.py
+// rip b3 (sep 2022 - nov 2022)
 
-#define PART_SIZE 0x1000   // 4Ko
-#define IMM_COUNT 108      // can save ~8Mo
-#define BASE_ADDR 0x250000 // lot of jokes here
+allocated_part_t *MEM_PARTS;
+int first_part_index = 0;
+int FAA; // first allocable address
 
-static int MLIST[IMM_COUNT];
-static int alloc_count = 0;
-static int free_count = 0;
+// static int alloc_count = 0;
+// static int free_count = 0;
 
-int get_state(int imm, int index) {
-    int last = -1;
-    for (int i = 0; i < index + 1; i++) {
-        last = (last != -1) ? (last - last % 3) / 3 : imm;
+void mem_init() {
+    MEM_PARTS = (allocated_part_t *) BASE_ADDR;
+    for (int i = 0; i < PARTS_COUNT; i++) {
+        MEM_PARTS[i].state = 0;
     }
-    return last % 3;
+
+    FAA = BASE_ADDR + sizeof(allocated_part_t) * PARTS_COUNT;
+
+    MEM_PARTS[0].state = 1;
+    MEM_PARTS[0].size = 0;
+    MEM_PARTS[0].addr = FAA;
+    MEM_PARTS[0].next = 1;
+
+    fskprint("memory manager initialized at %x\n", MEM_PARTS);
+    fskprint("first available address: %x\n", FAA);
+    fskprint("memory manager size: %dKo\n", sizeof(allocated_part_t) * PARTS_COUNT / 1024);
+    mem_alloc(0x1000);
 }
 
-int get_required_part(int size) {
-    if (size < 1) size = 1;
-    return (size + PART_SIZE - 1) / PART_SIZE;
-}
-
-int set_state(int imm, int index, int new) {
-    int old = get_state(imm, index) * pow(3, index);
-    return imm - old + new * pow(3, index);
-}
-
-int mem_alloc(int size) {
-    int required_part = get_required_part(size);
-    int suite = 0, num, debut, imm_debut, val;
-    for (int mi = 0; mi < IMM_COUNT; mi++) {
-        for (int i = 0; i < 19; i++) {
-            num = get_state(MLIST[mi], i);
-            suite = (num == 0) ? suite + 1 : 0;
-
-            if (!(suite == required_part)) continue;
-            debut = i - required_part + 1;
-
-            if (debut < 0) {
-                imm_debut = (-debut) / 19 + 1;
-                debut = 19 * imm_debut + debut;
-                imm_debut = mi - imm_debut;
-            } else {
-                imm_debut = mi;
-            }
-
-            for (int k = debut; k < debut + required_part; k++) {
-                val = (k == debut) ? 1 : 2;
-                MLIST[imm_debut + k / 19] = set_state(MLIST[imm_debut + k / 19], k % 19, val);
-            }
-            alloc_count++;
-            return (imm_debut * 19 + debut) * PART_SIZE + BASE_ADDR;
-        }
+int mm_get_unused_index() {
+    for (int i = 0; i < PARTS_COUNT; i++) {
+        if (MEM_PARTS[i].state == 0) return i;
     }
-    sys_warning("memory allocation failed");
+    fskprint("no more block available\n");
     return -1;
 }
 
-int mem_free_addr(int addr) {
-    int index = (addr - BASE_ADDR) / PART_SIZE;
-    int list_index = index / 19, i = index % 19;
-    if (get_state(MLIST[list_index], i) == 1) {
-        MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
-        i++;
-        while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
-            MLIST[list_index + i / 19] = set_state(MLIST[list_index + i / 19], i % 19, 0);
-            i++;
+void del_occurence(int index) {
+    int i = first_part_index;
+    while (MEM_PARTS[i].state != 0) {
+        if (MEM_PARTS[i].next == index) {
+            MEM_PARTS[i].next = mm_get_unused_index();
+            return;
         }
-        free_count++;
-        return 1;
-    } return 0;
+        i = MEM_PARTS[i].next;
+    }
+}
+
+uint32_t mem_alloc(uint32_t size) {
+    if (size == 0) return 0;
+    // parcours de la liste des parties allouées
+    int index, old_index, exit_mode;
+    uint32_t last_addr;
+    index = first_part_index;
+
+    last_addr = FAA;
+    while (1) {
+        fskprint("$Eindex: %d, addr: %x, size: %d, state: %d, next: %d\n", index, MEM_PARTS[index].addr, MEM_PARTS[index].size, MEM_PARTS[index].state, MEM_PARTS[index].next);
+        // si la partie est libre
+        if (MEM_PARTS[index].state == 0) {
+            // TODO: verifier si 'last_addr + size' est dans la memoire physique
+            exit_mode = 1;
+            break;
+        }
+        if (MEM_PARTS[index].addr - last_addr >= size) {
+            // on peut allouer la partie ici
+            exit_mode = 0;
+            break;
+        }
+
+        last_addr = MEM_PARTS[index].addr + MEM_PARTS[index].size;
+
+        old_index = index;
+        index = MEM_PARTS[index].next;
+    }
+
+    fskprint("exit mode: %d\n", exit_mode);
+
+    int new_index = mm_get_unused_index();
+    if (new_index == -1) return NULL;
+
+    int i = exit_mode ? index: new_index;
+
+    MEM_PARTS[i].addr = last_addr;
+    MEM_PARTS[i].size = size;
+    MEM_PARTS[i].task_id = task_get_current_pid();
+    MEM_PARTS[i].state = 1;
+
+    if (exit_mode == 0) {
+        del_occurence(new_index);
+        fskprint("del occurence(%d)\n", new_index);
+
+        MEM_PARTS[old_index].next = new_index;
+        MEM_PARTS[new_index].next = index;
+    } else {
+        int new_index = mm_get_unused_index();
+        if (new_index == -1) return NULL;
+        MEM_PARTS[index].next = new_index;
+    }
+
+    fskprint("new index: %d, addr: %x, size: %d, state: %d, next: %d\n", i, MEM_PARTS[i].addr, MEM_PARTS[i].size, MEM_PARTS[i].state, MEM_PARTS[i].next);
+
+    return last_addr;
+}
+
+int mem_free_addr(uint32_t addr) {
+    int index = first_part_index;
+    int last_index = -1;
+    while (1) {
+        if (MEM_PARTS[index].addr == addr && last_index != -1) {
+            MEM_PARTS[last_index].next = MEM_PARTS[index].next;
+            fskprint("block %d point to %d\n", last_index, MEM_PARTS[last_index].next);
+            MEM_PARTS[index].state = 0;
+            return 1; // success
+        }
+        last_index = index;
+        index = MEM_PARTS[index].next;
+    }
+    fskprint("no block found at %x\n", addr);
+    return 0; // error
 }
 
 int mem_get_alloc_size(int addr) {
-    int index = (addr - BASE_ADDR) / PART_SIZE;
-    int list_index = index / 19, i = index % 19;
-    if (get_state(MLIST[list_index], i) == 1) {
-        int size = 0;
-        while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
-            size += PART_SIZE;
-            i++;
-        } return size + PART_SIZE;
-    } return 0;
+    // TODO: implement
+    return 0;
 }
 
 // standard functions
@@ -118,24 +157,24 @@ void free(void *addr) {
     mem_free_addr((int) addr);
 }
 
-void *malloc(int size) {
-    int addr = mem_alloc(size);
-    if (addr == -1) return NULL;
+void *malloc(uint32_t size) {
+    uint32_t addr = mem_alloc(size);
+    if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
-void *realloc(void *ptr, int size) {
-    int addr = (int) ptr;
-    int new_addr = mem_alloc(size);
-    if (new_addr == -1) return NULL;
+void *realloc(void *ptr, uint32_t size) {
+    uint32_t addr = (uint32_t) ptr;
+    uint32_t new_addr = mem_alloc(size);
+    if (new_addr == 0) return NULL;
     mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
     mem_free_addr(addr);
     return (void *) new_addr;
 }
 
-void *calloc(int size) {
+void *calloc(uint32_t size) {
     int addr = mem_alloc(size);
-    if (addr == -1) return NULL;
+    if (addr == 0) return NULL;
     mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
@@ -156,47 +195,32 @@ int mem_get_phys_size() {
 }
 
 void mem_print() {
-    int val, color = 0x80;
-    char nb[2];
-    int nb_lines = (IMM_COUNT > (gt_get_max_rows() - 2) *3 ? (gt_get_max_rows() - 2) *3 : IMM_COUNT);
-    for (int mi = 0; mi < nb_lines; mi++) {
-        if (mi % 3 == 0) kprint("\n  ");
-        kprint("    ");
-        for (int i = 0; i < 19; i++) {
-            val = get_state(MLIST[mi], i);
-            if (val == 0) kprint("0");
-            if (val == 1) color = (color > 0xE0) ? 0x80 : color + 0x10;
-            if (val > 0) {
-                int_to_ascii(val, nb);
-                ckprint(nb, color);
-            }
-        }
+    int index = first_part_index;
+    while (1) {
+        fskprint("index: %d, addr: %x, size: %d, state: %d, next: %d\n", index, MEM_PARTS[index].addr, MEM_PARTS[index].size, MEM_PARTS[index].state, MEM_PARTS[index].next);
+        if (MEM_PARTS[index].state == 0) break;
+        index = MEM_PARTS[index].next;
     }
-    kprint((IMM_COUNT > nb_lines) ? "\n      ...\n" : "\n\n");
 }
 
 int mem_get_usage() {
-    int used = 0;
-    for (int mi = 0; mi < IMM_COUNT; mi++) {
-        for (int i = 0; i < 19; i++) {
-            if (get_state(MLIST[mi], i) > 0) used++;
-        }
-    }
-    return used * (PART_SIZE / 1024);
+    // TODO: implement
+    return 0;
 }
 
 int mem_get_usable() {
-    return IMM_COUNT * 19 * (PART_SIZE / 1024);
+    // TODO: implement
+    return 0;
 }
 
 int mem_get_alloc_count() {
-    return alloc_count;
+    // TODO: implement
 }
 
 int mem_get_free_count() {
-    return free_count;
+    // TODO: implement
 }
 
 int mem_get_base_addr() {
-    return BASE_ADDR;
+    return (int) FAA;
 }

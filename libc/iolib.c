@@ -88,7 +88,7 @@ void mskprint(int nb_args, ...) {
 void fskprint(char format[], ...) {
     va_list args;
     va_start(args, format);
-    char *buffer = malloc(0x1000);
+    char *buffer =0x300000; // TODO: use malloc
     clean_buffer(buffer, 0x1000);
     char color = c_white;
 
@@ -135,7 +135,7 @@ void fskprint(char format[], ...) {
         clean_buffer(buffer, 0x1000);
         continue;
     }
-    free(buffer);
+    // free(buffer);
     va_end(args);
 }
 
