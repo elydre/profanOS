@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     char point[13];
     for (int y = 0; y < Y_MAX; y++) {
         for (int x = 0; x < X_MAX; x++) {
-            c_ckprint_at(" ", x, y, 0x60);
+            c_ckprint_at(" ", x, y, 0);
         }
     }
     while (1) {
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
             for (int x = ox_s[i] - 1; x < ox_s[i] + 3; x++) {
                 for (int y = oy_s[i] - 1; y < oy_s[i] + 3; y++) {
                     if (y > Y_MAX - 1 || x >= X_MAX || x < 0) continue;
-                    c_ckprint_at(" ", x, y, 0x60);
+                    c_ckprint_at(" ", x, y, 0);
                 }
             }
         }
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
             ox_s[i]--;
         }
 
-        c_ckprint_at(" ", 10, val, 0x60);
+        c_ckprint_at(" ", 10, val, 0);
 
         last_sc = c_kb_get_scancode();
         if (last_sc == SC_B && val < Y_MAX - 1) val++;
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
         }
 
         if (lost > 3) {
-            c_ckprint_at(":( you lost", 0, 0, 0x60);
+            c_ckprint_at(":( you lost", 0, 0, 0x0f);
             c_sleep(5);
             c_clear_screen();
             break;

@@ -1,6 +1,6 @@
 #include <libc/ramdisk.h>
+#include <gui/gnrtx.h>
 #include <function.h>
-#include <gui/vga.h>
 #include <system.h>
 #include <string.h>
 #include <iolib.h>
@@ -72,8 +72,6 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "text") == 0) vga_text_mode();
-    else if (str_cmp(prefix, "rosette") == 0) vga_rosette_mode();
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
 
     return 0;

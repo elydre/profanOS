@@ -1,25 +1,34 @@
 #include <libc/filesystem.h>
+#include <libc/multiboot.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
 #include <driver/rtc.h>
 #include <libc/task.h>
 #include <function.h>
+#include <gui/vesa.h>
 #include <cpu/isr.h>
+#include <cpu/gdt.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
+#include <type.h>
 #include <mem.h>
 
-void kernel_main() {
+void kernel_main(void *mboot_ptr) {
     clear_screen();
     fskprint("$6booting profanOS...\n");
 
-    isr_install();
-    irq_install();
-    fskprint("ISR init\n");
+    mboot_save(mboot_ptr);
+    fskprint("Mboot saved\n");
 
-    tasking_init();
-    fskprint("tasking init\n");
+    gdt_init();
+    fskprint("GDT init\n");
+
+    isr_install();
+    fskprint("ISR init\n");
+    
+    irq_install();
+    fskprint("IRQ init\n");
 
     rtc_init();
     time_gen_boot();
@@ -28,6 +37,12 @@ void kernel_main() {
 
     serial_init();
     fskprint("serial init\n");
+
+    init_vesa();
+    fskprint("vesa init\n");
+
+    tasking_init();
+    fskprint("tasking init\n");
 
     ramdisk_init();
     fskprint("ramdisk init\n");
