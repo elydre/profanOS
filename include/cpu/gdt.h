@@ -18,4 +18,3 @@ struct gdt_ptr {
 void gdt_init();
 
 #endif
-

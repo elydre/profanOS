@@ -65,4 +65,3 @@ void kernel_main(void *mboot_ptr) {
 
     sys_fatal("Nothing to run!");
 }
-

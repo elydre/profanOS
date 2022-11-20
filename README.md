@@ -7,10 +7,6 @@
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
-> **Warning** -
-> the build of this branch requires `grub-common`,
-> `xorriso` and `grub-pc-bin`
-
 This repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
 
 You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
@@ -26,7 +22,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y gcc g++ nasm make qemu-system-i386 genisoimage python3 python3-pip
+sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 python3-pip grub-common xorriso grub-pc-bin
 pip3 install pillow
 ```
 
@@ -94,8 +90,8 @@ mem     - show MLIST with colors
 
 ## Author & Contact
 
-* kernel - [pf4](https://github.com/elydre)
-* zapps - [Loris](https://github.com/Lorisredstone)
+* pf4 ([@elydre](https://github.com/elydre))
+* Loris ([@Lorisredstone](https://github.com/Lorisredstone))
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 

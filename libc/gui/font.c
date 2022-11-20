@@ -260,4 +260,3 @@ unsigned char font_8x16[4096] = {
 unsigned char *font_get_8x16() {
     return font_8x16;
 }
-
