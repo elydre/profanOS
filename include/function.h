@@ -6,7 +6,6 @@
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
-#define NULL ((void *) 0)
 #define RAND_SAVE 0x199980
 
 int pow(int base, int exp);

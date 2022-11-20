@@ -14,6 +14,9 @@
 #include <type.h>
 #include <mem.h>
 
+
+#include <mm.h>
+
 void kernel_main(void *mboot_ptr) {
     clear_screen();
     fskprint("$6booting profanOS...\n");
@@ -53,13 +56,15 @@ void kernel_main(void *mboot_ptr) {
     init_watfunc();
     fskprint("watfunc init\n");
 
+    mm_init();
+
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
     // launch of the shell.bin
-    char *argv[1];
+    /* char *argv[1];
     argv[0] = "/bin/shell.bin";
-    run_ifexist(argv[0], 1, argv);
+    run_ifexist(argv[0], 1, argv); */
 
     task_menu();
 
