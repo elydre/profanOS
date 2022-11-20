@@ -40,3 +40,9 @@ void serial_debug(char source[], char message[]) {
     serial_print(SERIAL_PORT_A, message);
     serial_print(SERIAL_PORT_A, "\r\n");
 }
+
+void serial_print_hex(int device, uint32_t n) {
+    char tmp[16];
+    hex_to_ascii(n, tmp);
+    serial_print(device, tmp);
+}

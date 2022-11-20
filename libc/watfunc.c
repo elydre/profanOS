@@ -1,14 +1,14 @@
 #include <libc/filesystem.h>
 #include <driver/keyboard.h>
-#include <driver/screen.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <cpu/timer.h>
 #include <libc/task.h>
+#include <gui/gnrtx.h>
+#include <gui/vesa.h>
 #include <gui/vgui.h>
-#include <gui/vga.h>
 #include <string.h>
 #include <system.h>
 #include <iolib.h>
@@ -97,10 +97,7 @@ int wf_get_func_addr(int func_id) {
 
         // screen.h
         case 46: return (int) clear_screen;
-        case 47: return (int) kprint;
-        case 48: return (int) ckprint;
         case 49: return (int) ckprint_at;
-        case 50: return (int) print_char;
         case 51: return (int) kprint_backspace;
         case 52: return (int) set_cursor_offset;
         case 53: return (int) get_cursor_offset;
@@ -108,6 +105,7 @@ int wf_get_func_addr(int func_id) {
         case 55: return (int) get_offset_row;
         case 56: return (int) get_offset_col;
         case 76: return (int) cursor_blink;
+        case 81: return (int) vesa_set_pixel;
 
         // keyboard.h
         case 57: return (int) kb_scancode_to_char;
@@ -132,16 +130,6 @@ int wf_get_func_addr(int func_id) {
         case 67: return (int) task_switch;
         case 84: return (int) task_get_alive;
         case 100: return (int) task_get_max;
-
-
-        // vga.h
-        case 77: return (int) vga_320_mode;
-        case 78: return (int) vga_640_mode;
-        case 79: return (int) vga_text_mode;
-        case 80: return (int) vga_clear_screen;
-        case 81: return (int) vga_set_pixel;
-        case 85: return (int) vga_get_width;
-        case 86: return (int) vga_get_height;
 
         // graph2d.h
         case 87: return (int) lib2d_print_sprite;

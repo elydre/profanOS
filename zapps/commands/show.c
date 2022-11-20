@@ -12,12 +12,10 @@ int main(int argc, char **argv) {
     assemble_path(current_dir, suffix, file);
 
     if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
-        c_vga_320_mode();
         sprite_t sprite = c_lib2d_init_sprite(file);
         c_lib2d_print_sprite(0, 0, sprite);
         while (c_kb_get_scancode() != 1);
         c_lib2d_free_sprite(sprite);
-        c_vga_text_mode();
     } else c_fskprint("$3%s$B file not found\n", file);
     
     c_free(current_dir);

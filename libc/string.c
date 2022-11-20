@@ -37,6 +37,9 @@ void hex_to_ascii(int n, char str[]) {
     tmp = n & 0xF;
     if (tmp >= 0xA) str_append(str, tmp - 0xA + 'a');
     else str_append(str, tmp + '0');
+    for (i = 0; str[i] != '\0'; i++) {
+        if (str[i] == ':') str[i] = 'a';
+    }
 }
 
 void double_to_ascii(double n, char str[]) {
