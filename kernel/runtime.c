@@ -19,7 +19,7 @@ void tasked_program() {
 
     free(binary_mem);
 
-    if (task_get_next_pid() == 0) clear_screen();
+    // if (task_get_next_pid() == 0) clear_screen();
     task_kill_task_switch(task_get_next_pid());
 }
 

@@ -62,9 +62,9 @@ void kernel_main(void *mboot_ptr) {
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
     // launch of the shell.bin
-    char *argv[1];
+    /* char *argv[1];
     argv[0] = "/bin/shell.bin";
-    run_ifexist(argv[0], 1, argv);
+    run_ifexist(argv[0], 1, argv);*/
 
     task_menu();
 

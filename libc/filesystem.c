@@ -208,7 +208,7 @@ void i_assemble_path(char old[], char new[], char result[]) {
 // PUBLIC FUNCTIONS
 
 uint32_t fs_path_to_id(char input_path[], int silence) {
-    //init
+    // init
     int x = 0;
     int in_folder = 0;
     int start_from_liste_path = 0;

@@ -154,7 +154,7 @@ int mem_get_alloc_size(int addr) {
 // standard functions
 
 void free(void *addr) {
-    mem_free_addr((int) addr);
+    // mem_free_addr((int) addr);
 }
 
 void *malloc(uint32_t size) {
@@ -215,10 +215,12 @@ int mem_get_usable() {
 
 int mem_get_alloc_count() {
     // TODO: implement
+    return 0;
 }
 
 int mem_get_free_count() {
     // TODO: implement
+    return 0;
 }
 
 int mem_get_base_addr() {
