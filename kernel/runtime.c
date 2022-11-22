@@ -5,13 +5,14 @@
 #include <system.h>
 #include <mem.h>
 
+#define SPACE 0xAA
 
 // global values for tasking
 int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
-    char *binary_mem = task_get_bin_mem(task_get_current_pid());
+    uint8_t *binary_mem = (uint8_t *) ((uint32_t) task_get_bin_mem(task_get_current_pid()) + SPACE);
     g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
 
     // fill memory with 0
@@ -32,12 +33,12 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    char *binary_mem = calloc(fs_get_file_size(path) * 126);
+    uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126 + SPACE);
     uint32_t *file = fs_declare_read_array(path);
     fs_read_file(path, file);
 
     for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        binary_mem[i] = (char) file[i];
+        binary_mem[i + SPACE] = (uint8_t) file[i];
 
     free(file);
 

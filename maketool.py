@@ -136,8 +136,8 @@ def build_zapps():
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {name} -o {fname}.o -I ./zapps")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
-        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
-        print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
+        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
+        # print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         total -= 1
 
     cprint(COLOR_INFO, "building zapps...")

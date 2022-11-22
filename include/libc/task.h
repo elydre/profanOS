@@ -11,7 +11,7 @@ typedef struct {
     task_rgs_t regs;
     int pid, isdead, gui_mode, vgui_save;
     uint32_t esp_addr;
-    char *bin_mem;
+    uint8_t *bin_mem;
     char name[32];
 } task_t;
 
@@ -30,8 +30,8 @@ int task_get_next_pid();
 int task_get_alive();
 int task_get_max();
 
-void task_set_bin_mem(int pid, char *bin_mem);
-char *task_get_bin_mem(int pid);
+void task_set_bin_mem(int pid, uint8_t *bin_mem);
+uint8_t *task_get_bin_mem(int pid);
 
 char *task_get_name(int internal_pos);
 int task_get_pid(int internal_pos);
