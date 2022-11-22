@@ -2,6 +2,7 @@
 #include <function.h>
 #include <system.h>
 #include <string.h>
+#include <iolib.h>
 #include <mem.h>
 
 void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
@@ -81,7 +82,7 @@ uint32_t mem_alloc(uint32_t size) {
 
     last_addr = FAA;
     while (1) {
-        fskprint("$Eindex: %d, addr: %x, size: %d, state: %d, next: %d\n", index, MEM_PARTS[index].addr, MEM_PARTS[index].size, MEM_PARTS[index].state, MEM_PARTS[index].next);
+        // fskprint("$Eindex: %d, addr: %x, size: %d, state: %d, next: %d\n", index, MEM_PARTS[index].addr, MEM_PARTS[index].size, MEM_PARTS[index].state, MEM_PARTS[index].next);
         // si la partie est libre
         if (MEM_PARTS[index].state == 0) {
             // TODO: verifier si 'last_addr + size' est dans la memoire physique
@@ -100,7 +101,7 @@ uint32_t mem_alloc(uint32_t size) {
         index = MEM_PARTS[index].next;
     }
 
-    fskprint("exit mode: %d\n", exit_mode);
+    // fskprint("exit mode: %d\n", exit_mode);
 
     int new_index = mm_get_unused_index();
     if (new_index == -1) return NULL;
@@ -114,7 +115,7 @@ uint32_t mem_alloc(uint32_t size) {
 
     if (exit_mode == 0) {
         del_occurence(new_index);
-        fskprint("del occurence(%d)\n", new_index);
+        // fskprint("del occurence(%d)\n", new_index);
 
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
@@ -124,7 +125,7 @@ uint32_t mem_alloc(uint32_t size) {
         MEM_PARTS[index].next = new_index;
     }
 
-    fskprint("new index: %d, addr: %x, size: %d, state: %d, next: %d\n", i, MEM_PARTS[i].addr, MEM_PARTS[i].size, MEM_PARTS[i].state, MEM_PARTS[i].next);
+    // fskprint("new index: %d, addr: %x, size: %d, state: %d, next: %d\n", i, MEM_PARTS[i].addr, MEM_PARTS[i].size, MEM_PARTS[i].state, MEM_PARTS[i].next);
 
     return last_addr;
 }
@@ -135,7 +136,7 @@ int mem_free_addr(uint32_t addr) {
     while (1) {
         if (MEM_PARTS[index].addr == addr && last_index != -1) {
             MEM_PARTS[last_index].next = MEM_PARTS[index].next;
-            fskprint("block %d point to %d\n", last_index, MEM_PARTS[last_index].next);
+            // fskprint("clearing index %d, block %d point to %d\n", index, last_index, MEM_PARTS[last_index].next);
             MEM_PARTS[index].state = 0;
             return 1; // success
         }
@@ -146,15 +147,24 @@ int mem_free_addr(uint32_t addr) {
     return 0; // error
 }
 
-int mem_get_alloc_size(int addr) {
-    // TODO: implement
+uint32_t mem_get_alloc_size(uint32_t addr) {
+    uint32_t index = first_part_index;
+    while (MEM_PARTS[index].state) {
+        if (MEM_PARTS[index].addr == addr) {
+            return MEM_PARTS[index].size;
+        }
+        index = MEM_PARTS[index].next;
+    }
+    fskprint("no block found at %x\n", addr);
+    while (1);
     return 0;
 }
 
 // standard functions
 
 void free(void *addr) {
-    // mem_free_addr((int) addr);
+    mem_set((uint8_t *) addr, 0, mem_get_alloc_size((uint32_t) addr));
+    mem_free_addr((int) addr);
 }
 
 void *malloc(uint32_t size) {
@@ -196,9 +206,8 @@ int mem_get_phys_size() {
 
 void mem_print() {
     int index = first_part_index;
-    while (1) {
+    while (MEM_PARTS[index].state) {
         fskprint("index: %d, addr: %x, size: %d, state: %d, next: %d\n", index, MEM_PARTS[index].addr, MEM_PARTS[index].size, MEM_PARTS[index].state, MEM_PARTS[index].next);
-        if (MEM_PARTS[index].state == 0) break;
         index = MEM_PARTS[index].next;
     }
 }

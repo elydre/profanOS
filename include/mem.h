@@ -18,7 +18,7 @@ typedef struct allocated_part_t {
 } allocated_part_t;
 
 #define PARTS_COUNT 10000
-#define BASE_ADDR 0x200000
+#define BASE_ADDR 0x222222
 
 // states:
 // 0 - free
@@ -30,7 +30,7 @@ void mem_print();
 uint32_t mem_alloc(uint32_t size);
 int mem_free_addr(uint32_t addr);
 
-int mem_get_alloc_size(int addr);
+uint32_t mem_get_alloc_size(uint32_t addr);
 
 void free(void *addr);
 void *malloc(uint32_t size);

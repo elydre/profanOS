@@ -281,7 +281,6 @@ uint32_t fs_path_to_id(char input_path[], int silence) {
 
     in_folder = 0;
     for (int i = 0; i < folder_size; i++) {
-        fskprint("%s %s\n", liste_noms[i].name, liste_path[start_from_liste_path].name);
         if (!str_cmp(liste_path[start_from_liste_path].name, liste_noms[i].name)){
             in_folder = 1;
             break;
