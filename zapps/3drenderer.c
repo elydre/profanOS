@@ -20,31 +20,21 @@ typedef struct Line_t {
     int i2;
 } Line_t;
 
-typedef struct Triangle_t {
-    int i1;
-    int i2;
-    int i3;
-} Triangle_t;
-
 typedef struct Shape_t {
     Point3_t* Points;
     Line_t* Lines;
-    Triangle_t* Triangles;
     Point2_t* ScreenPoints;
     int PointsCount;
     int LinesCount;
-    int TrianglesCount;
 } Shape_t;
 
 Shape_t cube(int size);
 void delete_shape(Shape_t* shape);
 
-void fillBottomFlatTriangle(Point2_t v1, Point2_t v2, Point2_t v3);
-void fillTopFlatTriangle(Point2_t v1, Point2_t v2, Point2_t v3);
-void drawTriangle(Point2_t t_v1, Point2_t t_v2, Point2_t t_v3);
 Shape_t rotate(Shape_t* shape, int x, int y, int z);
 void draw(Shape_t* shape);
 int show_fps(int time);
+
 
 int main(int argc, char** argv) {
     c_vga_320_mode();
@@ -57,6 +47,7 @@ int main(int argc, char** argv) {
         Shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape);
         delete_shape(&new_shape);
+        c_ms_sleep(10);
         time = show_fps(time);
         c_vgui_render();
     }
@@ -75,10 +66,8 @@ Shape_t cube(int size) {
     Shape_t shape;
     shape.PointsCount = 8;
     shape.LinesCount = 18;
-    shape.TrianglesCount = 1;
     shape.Points = c_malloc(sizeof(Point3_t) * shape.PointsCount);
     shape.Lines = c_malloc(sizeof(Line_t) * shape.LinesCount);
-    shape.Triangles = c_malloc(sizeof(Triangle_t) * shape.TrianglesCount);
 
     shape.Points[0] = (Point3_t){ size,  size,  size};
     shape.Points[1] = (Point3_t){ size, -size,  size};
@@ -109,8 +98,6 @@ Shape_t cube(int size) {
     shape.Lines[16] = (Line_t){2, 7};
     shape.Lines[17] = (Line_t){3, 4};
 
-    shape.Triangles[0] = (Triangle_t){0, 1, 2};
-
     shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
     return shape;
 }
@@ -119,7 +106,6 @@ void delete_shape(Shape_t* shape) {
     c_free(shape->Points);
     c_free(shape->Lines);
     c_free(shape->ScreenPoints);
-    c_free(shape->Triangles);
 }
 
 double cos(int angle) {
@@ -159,11 +145,9 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
     Shape_t new_shape;
     new_shape.PointsCount = shape->PointsCount;
     new_shape.LinesCount = shape->LinesCount;
-    new_shape.TrianglesCount = shape->TrianglesCount;
     new_shape.Points = c_malloc(sizeof(Point3_t) * new_shape.PointsCount);
     new_shape.Lines = c_malloc(sizeof(Line_t) * new_shape.LinesCount);
     new_shape.ScreenPoints = c_malloc(sizeof(Point2_t) * new_shape.PointsCount);
-    new_shape.Triangles = c_malloc(sizeof(Triangle_t) * new_shape.TrianglesCount);
 
     for (int i = 0; i < new_shape.PointsCount; i++) {
         int x1 = shape->Points[i].x;
@@ -183,9 +167,6 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
     for (int i = 0; i < new_shape.LinesCount; i++) {
         new_shape.Lines[i] = shape->Lines[i];
     }
-    for (int i = 0; i < new_shape.TrianglesCount; i++) {
-        new_shape.Triangles[i] = shape->Triangles[i];
-    }
     return new_shape;
 }
 
@@ -201,18 +182,6 @@ void draw(Shape_t* shape) {
         Point2_t p2 = shape->ScreenPoints[line.i2];
         c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, 63);
     }
-    for (int i=0; i<shape->TrianglesCount; i++) {
-        Point2_t p1;
-        Point2_t p2;
-        Point2_t p3;
-        p1 = shape->ScreenPoints[shape->Triangles[i].i1];
-        p2 = shape->ScreenPoints[shape->Triangles[i].i2];
-        p3 = shape->ScreenPoints[shape->Triangles[i].i3];
-        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, 36);
-        c_vgui_draw_line(p1.x+100, p1.y+100, p3.x+100, p3.y+100, 36);
-        c_vgui_draw_line(p2.x+100, p2.y+100, p3.x+100, p3.y+100, 36);
-        drawTriangle(p1, p2, p3);
-    }
 }
 
 int show_fps(int time) {
@@ -222,81 +191,4 @@ int show_fps(int time) {
     c_int_to_ascii(fps, fps_str);
     c_vgui_print(0, 0, fps_str, 1, 15);
     return new_time;
-}
-
-void fillBottomFlatTriangle(Point2_t v1, Point2_t v2, Point2_t v3) {
-    float invslope1 = (v2.x - v1.x) / (v2.y - v1.y);
-    float invslope2 = (v3.x - v1.x) / (v3.y - v1.y);
-
-    float curx1 = v1.x;
-    float curx2 = v1.x;
-
-    for (int scanlineY = v1.y; scanlineY <= v2.y; scanlineY++) {
-        c_vgui_draw_line((int)curx1+100, scanlineY+100, (int)curx2+100, scanlineY+100, 36);
-        curx1 += invslope1;
-        curx2 += invslope2;
-    }
-}
-
-void fillTopFlatTriangle(Point2_t v1, Point2_t v2, Point2_t v3) {
-    float invslope1 = (v3.x - v1.x) / (v3.y - v1.y);
-    float invslope2 = (v3.x - v2.x) / (v3.y - v2.y);
-
-    float curx1 = v3.x;
-    float curx2 = v3.x;
-
-    for (int scanlineY = v3.y; scanlineY > v1.y; scanlineY--) {
-        c_vgui_draw_line((int)curx1+100, scanlineY+100, (int)curx2+100, scanlineY+100, 36);
-        curx1 -= invslope1;
-        curx2 -= invslope2;
-    }
-}
-
-void drawTriangle(Point2_t t_v1, Point2_t t_v2, Point2_t t_v3) {
-    /* at first sort the three vertices by y-coordinate ascending so v1 is the topmost vertice */
-    Point2_t v1, v2, v3;
-    if (t_v1.y <= t_v2.y && t_v1.y <= t_v3.y) {
-        v1 = t_v1;
-        if (t_v2.y <= t_v3.y) {
-            v2 = t_v2;
-            v3 = t_v3;
-        } else {
-            v2 = t_v3;
-            v3 = t_v2;
-        }
-    } else if (t_v2.y <= t_v3.y && t_v2.y <= t_v1.y) {
-        v1 = t_v2;
-        if (t_v1.y <= t_v3.y) {
-            v2 = t_v1;
-            v3 = t_v3;
-        } else {
-            v2 = t_v3;
-            v3 = t_v1;
-        }
-    } else {
-        v1 = t_v3;
-        if (t_v1.y <= t_v2.y) {
-            v2 = t_v1;
-            v3 = t_v2;
-        } else {
-            v2 = t_v2;
-            v3 = t_v1;
-        }
-    }
-
-    /* here we know that v1.y <= v2.y <= v3.y */
-    /* check for trivial case of bottom-flat triangle */
-    if (v2.y == v3.y){
-        fillBottomFlatTriangle(v1, v2, v3);
-    }
-    /* check for trivial case of top-flat triangle */
-    else if (v1.y == v2.y) {
-        fillTopFlatTriangle(v1, v2, v3);
-    }
-    else {
-        /* general case - split the triangle in a topflat and bottom-flat one */
-        Point2_t v4 = (Point2_t){(int)(v1.x + ((float)(v2.y - v1.y) / (float)(v3.y - v1.y)) * (v3.x - v1.x)), v2.y};
-        fillBottomFlatTriangle(v1, v2, v4);
-        fillTopFlatTriangle(v2, v4, v3);
-    }
 }
