@@ -1,3 +1,4 @@
+#include <libc/filesystem.h>
 #include <libc/multiboot.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
@@ -49,8 +50,13 @@ void kernel_main(void *mboot_ptr) {
     init_watfunc();
     fskprint("watfunc init\n");
 
+    init_filesystem();
+    fskprint("filesystem init\n");
+
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
+
+
 
     // launch of the shell.bin
     /* char *argv[1];
