@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         Shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape);
         delete_shape(&new_shape);
-        c_ms_sleep(10);
+        // c_ms_sleep(10);
         time = show_fps(time);
         c_vgui_render();
     }
@@ -148,11 +148,11 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
     new_shape.Points = c_malloc(sizeof(Point3_t) * new_shape.PointsCount);
     new_shape.Lines = c_malloc(sizeof(Line_t) * new_shape.LinesCount);
     new_shape.ScreenPoints = c_malloc(sizeof(Point2_t) * new_shape.PointsCount);
-
+    int x1, y1, z1;
     for (int i = 0; i < new_shape.PointsCount; i++) {
-        int x1 = shape->Points[i].x;
-        int y1 = shape->Points[i].y;
-        int z1 = shape->Points[i].z;
+        x1 = shape->Points[i].x;
+        y1 = shape->Points[i].y;
+        z1 = shape->Points[i].z;
         new_shape.Points[i].x = x1 * cos(z) - y1 * sin(z);
         new_shape.Points[i].y = x1 * sin(z) + y1 * cos(z);
         x1 = new_shape.Points[i].x;
