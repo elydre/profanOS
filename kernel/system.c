@@ -1,6 +1,6 @@
-#include <libc/filesystem.h>
 #include <driver/serial.h>
 #include <cpu/ports.h>
+#include <function.h>
 #include <string.h>
 #include <system.h>
 #include <iolib.h>
@@ -81,9 +81,10 @@ void sys_interrupt(int code) {
 }
 
 int sys_get_setting(char name[]) {
+    UNUSED(name);
     // read settings from /sys/settings.txt
     // return 0 if not found
-    char *settings = calloc(fs_get_file_size("/sys/settings.txt")*126);
+    /*char *settings = calloc(fs_get_file_size("/sys/settings.txt")*126);
     uint32_t *file = fs_declare_read_array("/sys/settings.txt");
 
     fs_read_file("/sys/settings.txt", file);
@@ -125,6 +126,6 @@ int sys_get_setting(char name[]) {
         }
     }
     free(settings);
-    sys_warning("Setting not found");
+    sys_warning("Setting not found");*/
     return 0;
 }
