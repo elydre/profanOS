@@ -55,6 +55,9 @@ int main(int argc, char** argv) {
         c_vgui_render();
     }
 
+    delete_shape(&shape);
+    c_vgui_exit();
+
     return 0;
 }
 
