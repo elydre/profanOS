@@ -4,7 +4,6 @@
 #include <libc/ramdisk.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
-#include <libc/math.h>
 #include <cpu/timer.h>
 #include <libc/task.h>
 #include <gui/gnrtx.h>
@@ -159,11 +158,6 @@ int wf_get_func_addr(int func_id) {
         case 106: return (int) ramdisk_get_used;
 
         case 101: return (int) up_string;
-
-        // math.h
-        case 105: return (int) m_sin;
-        case 106: return (int) m_cos;
-
         default: return (int) unknown_func;
     }
 }

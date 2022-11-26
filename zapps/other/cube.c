@@ -2,7 +2,9 @@
 
 #define PI 3.14159265358979323846
 #define MATH_LOOP 100
-#define focal_distance 100
+#define FOCAL_DISTANCE 100
+#define CUBE_COLOR 0xFFFFFF
+#define TRIN_COLOR 0xFFFF00
 
 typedef struct Point3_t {
     int x;
@@ -18,6 +20,7 @@ typedef struct Point2_t {
 typedef struct Line_t {
     int i1;
     int i2;
+    uint32_t color;
 } Line_t;
 
 typedef struct Shape_t {
@@ -37,28 +40,27 @@ int show_fps(int time);
 
 
 int main(int argc, char** argv) {
-    c_vga_320_mode();
     c_vgui_setup(0);
 
     Shape_t shape = cube(120);
     int time;
 
-    for (int i = 0; 1; i = (i + 1) % 360) {
+    c_kb_reset_history();
+
+    for (int i = 0; c_kb_get_scfh() != 1; i = (i + 1) % 360) {
         Shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape);
         delete_shape(&new_shape);
-        // c_ms_sleep(10);
         time = show_fps(time);
         c_vgui_render();
     }
 
-    c_vga_text_mode();
     return 0;
 }
 
 Point2_t project(Point3_t point) {
-    int x = point.x * focal_distance / (point.z + focal_distance + 256);
-    int y = point.y * focal_distance / (point.z + focal_distance + 256);
+    int x = point.x * FOCAL_DISTANCE / (point.z + FOCAL_DISTANCE + 256);
+    int y = point.y * FOCAL_DISTANCE / (point.z + FOCAL_DISTANCE + 256);
     return (Point2_t){x, y};
 }
 
@@ -78,25 +80,26 @@ Shape_t cube(int size) {
     shape.Points[6] = (Point3_t){-size, -size, -size};
     shape.Points[7] = (Point3_t){-size,  size, -size};
 
-    shape.Lines[0] = (Line_t){0, 1};
-    shape.Lines[1] = (Line_t){1, 2};
-    shape.Lines[2] = (Line_t){2, 3};
-    shape.Lines[3] = (Line_t){3, 0};
-    shape.Lines[4] = (Line_t){4, 5};
-    shape.Lines[5] = (Line_t){5, 6};
-    shape.Lines[6] = (Line_t){6, 7};
-    shape.Lines[7] = (Line_t){7, 4};
-    shape.Lines[8] = (Line_t){0, 4};
-    shape.Lines[9] = (Line_t){1, 5};
-    shape.Lines[10] = (Line_t){2, 6};
-    shape.Lines[11] = (Line_t){3, 7};
+    shape.Lines[0] = (Line_t){0, 1, CUBE_COLOR};
+    shape.Lines[1] = (Line_t){1, 2, CUBE_COLOR};
+    shape.Lines[2] = (Line_t){2, 3, CUBE_COLOR};
+    shape.Lines[3] = (Line_t){3, 0, CUBE_COLOR};
+    shape.Lines[4] = (Line_t){4, 5, CUBE_COLOR};
+    shape.Lines[5] = (Line_t){5, 6, CUBE_COLOR};
+    shape.Lines[6] = (Line_t){6, 7, CUBE_COLOR};
+    shape.Lines[7] = (Line_t){7, 4, CUBE_COLOR};
+    shape.Lines[8] = (Line_t){0, 4, CUBE_COLOR};
+    shape.Lines[9] = (Line_t){1, 5, CUBE_COLOR};
+    shape.Lines[10] = (Line_t){2, 6, CUBE_COLOR};
+    shape.Lines[11] = (Line_t){3, 7, CUBE_COLOR};
+
     // make squares into triangles
-    shape.Lines[12] = (Line_t){0, 2};
-    shape.Lines[13] = (Line_t){4, 6};
-    shape.Lines[14] = (Line_t){0, 5};
-    shape.Lines[15] = (Line_t){1, 6};
-    shape.Lines[16] = (Line_t){2, 7};
-    shape.Lines[17] = (Line_t){3, 4};
+    shape.Lines[12] = (Line_t){0, 2, TRIN_COLOR};
+    shape.Lines[13] = (Line_t){4, 6, TRIN_COLOR};
+    shape.Lines[14] = (Line_t){0, 5, TRIN_COLOR};
+    shape.Lines[15] = (Line_t){1, 6, TRIN_COLOR};
+    shape.Lines[16] = (Line_t){2, 7, TRIN_COLOR};
+    shape.Lines[17] = (Line_t){3, 4, TRIN_COLOR};
 
     shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
     return shape;
@@ -180,7 +183,7 @@ void draw(Shape_t* shape) {
         Line_t line = shape->Lines[i];
         Point2_t p1 = shape->ScreenPoints[line.i1];
         Point2_t p2 = shape->ScreenPoints[line.i2];
-        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, 63);
+        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
     }
 }
 
@@ -189,6 +192,6 @@ int show_fps(int time) {
     int fps = 1000 / (new_time - time);
     char fps_str[10];
     c_int_to_ascii(fps, fps_str);
-    c_vgui_print(0, 0, fps_str, 1, 15);
+    c_vgui_print(0, 0, fps_str, 0xFFFFFF);
     return new_time;
 }
