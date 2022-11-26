@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     print_status("random", c_rand() != c_rand() || c_rand() != c_rand());
     print_status("rtc unix time", c_time_gen_unix() > c_time_get_boot());
     int old_active_alloc = c_mem_get_alloc_count() - c_mem_get_free_count();
-    int * ptr = (int *) c_malloc(0x1000);
+    int *ptr = (int *) c_malloc(0x1000);
     print_status("memory alloc", ptr != 0);
     c_free(ptr);
     print_status("memory free", old_active_alloc == c_mem_get_alloc_count() - c_mem_get_free_count());

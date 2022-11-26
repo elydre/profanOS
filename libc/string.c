@@ -1,7 +1,6 @@
 #include <function.h>
 #include <string.h>
-
-#include <stdint.h>
+#include <type.h>
 
 // K&R implementation
 
@@ -25,7 +24,7 @@ void hex_to_ascii(int n, char str[]) {
     str_append(str, 'x');
     char zeros = 0;
 
-    int32_t tmp;
+    int tmp;
     int i;
     for (i = 28; i > 0; i -= 4) {
         tmp = (n >> i) & 0xF;
@@ -38,11 +37,14 @@ void hex_to_ascii(int n, char str[]) {
     tmp = n & 0xF;
     if (tmp >= 0xA) str_append(str, tmp - 0xA + 'a');
     else str_append(str, tmp + '0');
+    for (i = 0; str[i] != '\0'; i++) {
+        if (str[i] == ':') str[i] = 'a';
+    }
 }
 
 void double_to_ascii(double n, char str[]) {
-    int32_t int_part = (int32_t)n;
-    int32_t frac_part = (int32_t)((n - int_part) * pow(10, 6));
+    int int_part = (int) n;
+    int frac_part = (int)((n - int_part) * pow(10, 6));
     int_to_ascii(int_part, str);
     int len = str_len(str);
     str[len] = '.';

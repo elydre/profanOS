@@ -16,12 +16,12 @@ int abs(int x) {
 }
 
 int rand() {
-    static int * next = (int *) RAND_SAVE;
-    * next = * next * 1103515245 + 12345;
+    static int *next = (int *) RAND_SAVE;
+    *next = *next * 1103515245 + 12345;
     return (unsigned int) (* next / 65536) % 32768;
 }
 
 void init_rand() {
-    static int * next = (int *) RAND_SAVE;
-    * next = (uint32_t) time_get_boot();
+    static int *next = (int *) RAND_SAVE;
+    *next = (uint32_t) time_get_boot();
 }

@@ -1,7 +1,6 @@
 #include <driver/serial.h>
 #include <libc/task.h>
 #include <gui/vgui.h>
-#include <gui/vga.h>
 #include <string.h>
 #include <mem.h>
 
@@ -73,7 +72,7 @@ void tasking_init() {
     task_count = 1;
 }
 
-int task_create(void (*func)(), char * name) {
+int task_create(void (*func)(), char *name) {
     int nb_alive = task_get_alive();
     if (task_count >= TASK_MAX) {
         sys_fatal("Cannot create task, too many tasks");
@@ -89,7 +88,7 @@ int task_create(void (*func)(), char * name) {
         }
     }
 
-    task.gui_mode = vga_get_mode();
+    task.gui_mode = 0;
     task.vgui_save = 0;
     str_cpy(task.name, name);
 
@@ -126,7 +125,6 @@ void task_switch(int target_pid) {
         }
     }
 
-    vga_switch_mode(tasks[0].gui_mode);
     if (tasks[0].vgui_save && tasks[0].gui_mode) {
         vgui_setup(tasks[0].vgui_save - 1);
     }
@@ -166,8 +164,7 @@ int task_get_alive() {
     for (int i = 0; i < task_count; i++) {
         if (tasks[i].isdead == 2) {
             decal++;
-        }
-        else {
+        } else {
             nb_alive++;
             if (decal > 0) tasks[i - decal] = tasks[i];
         }
@@ -200,15 +197,15 @@ int task_get_internal_pos(int pid) {
     return -1;
 }
 
-void task_set_bin_mem(int pid, char * bin_mem) {
+void task_set_bin_mem(int pid, char *bin_mem) {
     tasks[task_get_internal_pos(pid)].bin_mem = bin_mem;
 }
 
-char * task_get_bin_mem(int pid) {
+char *task_get_bin_mem(int pid) {
     return tasks[task_get_internal_pos(pid)].bin_mem;
 }
 
-char * task_get_name(int internal_pos) {
+char *task_get_name(int internal_pos) {
     return tasks[internal_pos].name;
 }
 
@@ -221,5 +218,5 @@ int task_is_gui(int internal_pos) {
      * 1 -> simple gui
      * 2 -> vgui save */
     if (tasks[internal_pos].vgui_save) return 2;
-    return (tasks[internal_pos].gui_mode) ? 1 : 0;
+    return (tasks[internal_pos].gui_mode) > 1;
 }

@@ -10,8 +10,8 @@ int main(int argc, char **argv) {
     char *file = c_malloc(c_str_len(suffix) + c_str_len(fpath) + 2);
     assemble_path(fpath, suffix, file);
     if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
-        uint32_t * file_content = c_fs_declare_read_array(file);
-        char * char_content = c_fs_declare_read_array(file);
+        uint32_t *file_content = c_fs_declare_read_array(file);
+        char *char_content = c_fs_declare_read_array(file);
         c_fs_read_file(file, file_content);
         int char_count;
         for (char_count = 0; file_content[char_count] != (uint32_t) -1; char_count++)

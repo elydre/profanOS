@@ -1,9 +1,9 @@
 #ifndef ISR_H
 #define ISR_H
 
-#include <stdint.h>
+#include <type.h>
 
-/* ISRs reserved for CPU exceptions */
+// ISRs reserved for CPU exceptions
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -76,13 +76,13 @@ extern void irq15();
  * - Pushed by the processor automatically
  * - `push byte`s on the isr-specific code: error code, then int number
  * - All the registers by pusha
- * - `push eax` whose lower 16-bits contain DS
- */
+ * - `push eax` whose lower 16-bits contain DS */
+
 typedef struct {
-   uint32_t ds; /* Data segment selector */
-   uint32_t edi, esi, ebp, useless, ebx, edx, ecx, eax; /* Pushed by pusha. */
-   uint32_t int_no, err_code; /* Interrupt number and error code (if applicable) */
-   uint32_t eip, cs, eflags, esp, ss; /* Pushed by the processor automatically */
+   uint32_t ds;                                          // Data segment selector
+   uint32_t edi, esi, ebp, useless, ebx, edx, ecx, eax;  // Pushed by pusha.
+   uint32_t int_no, err_code;                            // Interrupt number and error code (if applicable)
+   uint32_t eip, cs, eflags, esp, ss;                    // Pushed by the processor automatically
 } registers_t;
 
 void isr_install();

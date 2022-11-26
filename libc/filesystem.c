@@ -15,7 +15,7 @@ void filesystem_init() {
     if (!(folder_racine[0] & 0x8000)) {
         uint32_t location = i_next_free(0);
         if (location != 0)
-            sys_fatal("There is already some stuff on the disk !\n");
+            sys_fatal("There is already some stuff on the disk !");
         i_creer_dossier("/");
     }
 }
@@ -214,7 +214,7 @@ uint32_t fs_path_to_id(char input_path[], int silence) {
     int start_from_liste_path = 0;
 
     // sanitize path
-    char * path = malloc((str_len(input_path)+1)*sizeof(char));
+    char *path = malloc((str_len(input_path)+1)*sizeof(char));
     for (int i = 0; i < str_len(input_path) + 1; i++) path[i] = input_path[i];
 
     if (str_cmp("/", path) == 0) {
@@ -229,7 +229,7 @@ uint32_t fs_path_to_id(char input_path[], int silence) {
     int taille_path = str_count(path, '/') + 1;
     string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
     for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
-    uint32_t * liste_id = malloc(folder_size * sizeof(int));
+    uint32_t *liste_id = malloc(folder_size * sizeof(int));
     for (int i = 0; i < folder_size; i++) liste_id[i] = 0;
     fs_get_dir_content(0, liste_noms, liste_id);
 
@@ -276,7 +276,7 @@ uint32_t fs_path_to_id(char input_path[], int silence) {
         free(liste_id);
         string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
         for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
-        uint32_t * liste_id = malloc(folder_size * sizeof(int));
+        uint32_t *liste_id = malloc(folder_size * sizeof(int));
         for (int i = 0; i < folder_size; i++) liste_id[i] = 0;
         fs_get_dir_content(contenu_path_0, liste_noms, liste_id);
 
@@ -326,7 +326,7 @@ uint32_t fs_is_disk_full(uint32_t disk_size) {
 }
 
 uint32_t fs_make_dir(char path[], char folder_name[]) {
-    char * path_to_folder = malloc(0x1000);
+    char *path_to_folder = malloc(0x1000);
     i_assemble_path(path, folder_name, path_to_folder);
     if (fs_does_path_exists(path_to_folder)) {
         free(path_to_folder);
@@ -341,7 +341,7 @@ uint32_t fs_make_dir(char path[], char folder_name[]) {
 }
 
 uint32_t fs_make_file(char path[], char file_name[]) {
-    char * path_to_file = malloc(0x1000);
+    char *path_to_file = malloc(0x1000);
     i_assemble_path(path, file_name, path_to_file);
     if (fs_does_path_exists(path_to_file)) {
         free(path_to_file);

@@ -18,55 +18,58 @@ ERR: a 1 indicates that an error occured. An error code has been placed in the e
 #define STATUS_DF  0x20
 #define STATUS_ERR 0x01
 
-//This is really specific to out OS now, assuming ATA bus 0 master 
-//Source - OsDev wiki
+// Source - OsDev wiki
 static void ATA_wait_BSY();
 static void ATA_wait_DRQ();
 
-void ata_read_sector(uint32_t LBA, uint32_t out[]) {
-    // fskprint("R");
-    ATA_wait_BSY();
-    port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
-    port_byte_out(0x1F2, 1);
-    port_byte_out(0x1F3, (uint8_t) LBA);
-    port_byte_out(0x1F4, (uint8_t)(LBA >> 8));
-    port_byte_out(0x1F5, (uint8_t)(LBA >> 16)); 
-    port_byte_out(0x1F7, 0x20); //Send the read command
 
+void ata_write_sector(uint32_t LBA, uint32_t *data) {
+    // LBA = Logical Block Address
+    // data = 128 uint32_t
     ATA_wait_BSY();
     ATA_wait_DRQ();
-
-    for (int i = 0; i < 128; i++) {
-        out[i] = port_word_in(0x1F0);
-        port_word_in(0x1F0);
-    }
+    port_byte_out(0x1F6, 0xE0 | ((LBA >> 24) & 0x0F));
+    port_byte_out(0x1F1, 0x00);
+    port_byte_out(0x1F2, 0x01);
+    port_byte_out(0x1F3, (uint8_t) LBA);
+    port_byte_out(0x1F4, (uint8_t) (LBA >> 8));
+    port_byte_out(0x1F5, (uint8_t) (LBA >> 16));
+    port_byte_out(0x1F7, 0x30);
+    ATA_wait_BSY();
+    ATA_wait_DRQ();
+    for (int i = 0; i < 128; i++)
+        port_long_out(0x1F0, data[i]);
 }
 
-void ata_write_sector(uint32_t LBA, uint32_t bytes[]) {
-    ATA_wait_BSY();
-    port_byte_out(0x1F6,0xE0 | ((LBA >> 24) & 0xF));
-    port_byte_out(0x1F2, 1);
-    port_byte_out(0x1F3, (uint8_t) LBA);
-    port_byte_out(0x1F4, (uint8_t)(LBA >> 8));
-    port_byte_out(0x1F5, (uint8_t)(LBA >> 16));
-    port_byte_out(0x1F7, 0x30); //Send the write command
-
+void ata_read_sector(uint32_t LBA, uint32_t *data) {
     ATA_wait_BSY();
     ATA_wait_DRQ();
-
-    for (int i = 0; i < 128; i++) {
-        port_long_out(0x1F0, bytes[i]);
-    }
+    port_byte_out(0x1F6, 0xE0 | ((LBA >> 24) & 0x0F));
+    port_byte_out(0x1F1, 0x00);
+    port_byte_out(0x1F2, 0x01);
+    port_byte_out(0x1F3, (uint8_t) LBA);
+    port_byte_out(0x1F4, (uint8_t) (LBA >> 8));
+    port_byte_out(0x1F5, (uint8_t) (LBA >> 16));
+    port_byte_out(0x1F7, 0x20);
+    ATA_wait_BSY();
+    ATA_wait_DRQ();
+    for (int i = 0; i < 128; i++)
+        data[i] = port_long_in(0x1F0);    
 }
 
 uint32_t ata_get_sectors_count() {
-    ATA_wait_BSY();
+    // return 0 if ata is not present
+    for (int count = 0; port_byte_in(0x1F7) & STATUS_BSY; count++) {
+        if (count > 0x1000) return 0;
+    }
     port_byte_out(0x1F6,0xE0 | ((0 >> 24) & 0xF));
     port_byte_out(0x1F2, 0);
     port_byte_out(0x1F3, 0);
     port_byte_out(0x1F4, 0);
     port_byte_out(0x1F5, 0);
-    port_byte_out(0x1F7, 0xEC); //Send the identify command
+    port_byte_out(0x1F7, 0xEC); // send the identify command
+
+    if (port_byte_in(0x1F7) == 0) return 0;
 
     ATA_wait_BSY();
     ATA_wait_DRQ();
@@ -80,25 +83,10 @@ uint32_t ata_get_sectors_count() {
     return size;
 }
 
-int ata_get_status() {
-    // return 1 if the drive is present
-    for (int count = 0; port_byte_in(0x1F7) & STATUS_BSY; count++) {
-        if (count > 0x1000) return 0;
-    }
-    port_byte_out(0x1F6,0xA0);
-    port_byte_out(0x1F2, 0);
-    port_byte_out(0x1F3, 0);
-    port_byte_out(0x1F4, 0);
-    port_byte_out(0x1F5, 0);
-    port_byte_out(0x1F7, 0xEC);
-
-    return port_byte_in(0x1F7);
-}
-
-static void ATA_wait_BSY() {    //Wait for bsy to be 0
+static void ATA_wait_BSY() {    // wait for bsy to be 0
     while (port_byte_in(0x1F7) & STATUS_BSY);
 }
 
-static void ATA_wait_DRQ() {    //Wait fot drq to be 1
+static void ATA_wait_DRQ() {    // wait fot drq to be 1
     while (!(port_byte_in(0x1F7) & STATUS_RDY));
 }

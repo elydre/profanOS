@@ -1,5 +1,0 @@
-default = 0
-timeout = 3
-
-title profanOS
-kernel /boot/profanOS.elf

@@ -1,6 +1,6 @@
 #include <libc/ramdisk.h>
+#include <gui/gnrtx.h>
 #include <function.h>
-#include <gui/vga.h>
 #include <system.h>
 #include <string.h>
 #include <iolib.h>
@@ -51,7 +51,7 @@ void shell_help() {
 
 void shell_addr() {
     fskprint("physic:  %x (%fMo)\n", mem_get_phys_size(), mem_get_phys_size() / 1024.0 / 1024.0);
-    fskprint("ramdisk: %x (%fMo)\n", get_ramdisk_address(), get_ramdisk_size() / 1024.0 / 1024.0);
+    fskprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
     fskprint("b3 mm:   %x\n", mem_get_base_addr());
     fskprint("watfunc: %x\n", WATFUNC_ADDR);
     fskprint("rand sv: %x\n", RAND_SAVE);

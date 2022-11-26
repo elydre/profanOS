@@ -1,7 +1,7 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include <stdint.h>
+#include "../include/type.h"
 
 #define WATFUNC_ADDR 0x199990
 
@@ -11,6 +11,10 @@
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 #define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
+
+#define c_ckprint(message, color) c_ckprint_at(message, -1, -1, color)
+#define c_kprint_rgb(message, color, bg_color) c_rgb_print_at(message, -1, -1, color, bg_color)
+#define c_kprint(message) c_ckprint(message, c_white)
 
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)WATFUNC_ADDR)(id)
@@ -51,100 +55,46 @@
 #define KB_released_value 128
 #define KB_released(key) (key + KB_released_value)
 
-#ifdef __cplusplus // si on est en c++ les conditions sont différentes, il n'y a pas besoin de définir screen_color_t
-extern "C" {
-    enum screen_color_t {
-        // light colors
-        c_blue = 0x09,
-        c_green = 0x0a,
-        c_cyan = 0x0b,
-        c_red = 0x0c,
-        c_magenta = 0x0d,
-        c_yellow = 0x0e,
-        c_grey = 0x07,
-        c_white = 0x0f,
-        
-        // dark colors
-        c_dblue = 0x01,
-        c_dgreen = 0x02,
-        c_dcyan = 0x03,
-        c_dred = 0x04,
-        c_dmagenta = 0x05,
-        c_dyellow = 0x06,
-        c_dgrey = 0x08,
-    };
+#define c_blue      0x09
+#define c_green     0x0a
+#define c_cyan      0x0b
+#define c_red       0x0c
+#define c_magenta   0x0d
+#define c_yellow    0x0e
+#define c_grey      0x07
+#define c_white     0x0f
 
-    typedef struct string_20_t {
-        char name[20];
-    } string_20_t;
+#define c_dblue     0x01
+#define c_dgreen    0x02
+#define c_dcyan     0x03
+#define c_dred      0x04
+#define c_dmagenta  0x05
+#define c_dyellow   0x06
+#define c_dgrey     0x08
 
-    typedef struct {
-        int seconds;
-        int minutes;
-        int hours;
-        int day_of_week;
-        int day_of_month;
-        int month;
-        int year;
-        int full[6];
-    } time_t;
+typedef struct string_20_t {
+    char name[20];
+} string_20_t;
 
-    typedef struct {
-        char *path;;
-        char *data;
-        int x;
-        int y;
-        int size_x;
-        int size_y;
-    } sprite_t;
-}
-#else
-    typedef enum screen_color_t screen_color_t;
-    enum screen_color_t {
-        // light colors
-        c_blue = 0x09,
-        c_green = 0x0a,
-        c_cyan = 0x0b,
-        c_red = 0x0c,
-        c_magenta = 0x0d,
-        c_yellow = 0x0e,
-        c_grey = 0x07,
-        c_white = 0x0f,
-        
-        // dark colors
-        c_dblue = 0x01,
-        c_dgreen = 0x02,
-        c_dcyan = 0x03,
-        c_dred = 0x04,
-        c_dmagenta = 0x05,
-        c_dyellow = 0x06,
-        c_dgrey = 0x08,
-    };
+typedef struct {
+    int seconds;
+    int minutes;
+    int hours;
+    int day_of_week;
+    int day_of_month;
+    int month;
+    int year;
+    int full[6];
+} time_t;
 
-    typedef struct string_20_t {
-        char name[20];
-    } string_20_t;
-
-    typedef struct {
-        int seconds;
-        int minutes;
-        int hours;
-        int day_of_week;
-        int day_of_month;
-        int month;
-        int year;
-        int full[6];
-    } time_t;
-
-    typedef struct sprite_t {
-        char *path;
-        char *data;
-        int x;
-        int y;
-        int size_x;
-        int size_y;
-    } sprite_t;
-#endif
+typedef struct sprite_t {
+    char *path;
+    char *data;
+    int x;
+    int y;
+    int size_x;
+    int size_y;
+} sprite_t;
 
 #ifndef NULL
     #define NULL ((void *) 0)
@@ -159,7 +109,7 @@ extern "C" {
 #define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)
 #define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
 #define c_fs_get_folder_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
-#define c_fs_declare_read_array(path) ((void * (*)(char *)) hi_func_addr(8))(path)
+#define c_fs_declare_read_array(path) ((void *(*)(char *)) hi_func_addr(8))(path)
 #define c_fs_does_path_exists(path) ((int (*)(char *)) hi_func_addr(9))(path)
 #define c_fs_type_sector(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
 #define c_fs_get_dir_content(id, list_name, liste_id) ((void (*)(uint32_t, string_20_t *, uint32_t *)) hi_func_addr(11))(id, list_name, liste_id)
@@ -167,8 +117,9 @@ extern "C" {
 #define c_mem_alloc(size) ((int (*)(int)) hi_func_addr(15))(size)
 #define c_mem_free_addr(addr) ((int (*)(int)) hi_func_addr(16))(addr)
 #define c_free(ptr) ((void (*)(void *)) hi_func_addr(17))(ptr)
-#define c_calloc(size) ((void * (*)(int)) hi_func_addr(18))(size)
-#define c_malloc(size) ((void * (*)(int)) hi_func_addr(19))(size)
+#define c_calloc(size) ((void *(*)(int)) hi_func_addr(18))(size)
+#define c_malloc(size) ((void *(*)(int)) hi_func_addr(19))(size)
+#define c_realloc(ptr, size) ((void *(*)(void *, int)) hi_func_addr(20))(ptr, size)
 #define c_mem_get_usage() ((int (*)(void)) hi_func_addr(21))()
 #define c_mem_get_usable() ((int (*)(void)) hi_func_addr(22))()
 #define c_int_to_ascii(n, str) ((void (*)(int, char *)) hi_func_addr(23))(n, str)
@@ -184,15 +135,13 @@ extern "C" {
 #define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
 #define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
 #define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
-#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, screen_color_t, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
+#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, char, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
 #define c_input(out_buffer, size, color) ((void (*)(char *, int, char)) hi_func_addr(41))(out_buffer, size, color)
 #define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
 #define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)
 #define c_ms_sleep(ms) ((void (*)(int)) hi_func_addr(44))(ms)
 #define c_time_get_boot() ((int (*)(void)) hi_func_addr(45))()
 #define c_clear_screen() ((void (*)(void)) hi_func_addr(46))()
-#define c_kprint(message) ((void (*)(char *)) hi_func_addr(47))(message)
-#define c_ckprint(message, color) ((void (*)(char*, char)) hi_func_addr(48))(message, color)
 #define c_ckprint_at(str, x, y, color) ((void (*)(char *, int, int, char)) hi_func_addr(49))(str, x, y, color)
 #define c_kprint_backspace() ((void (*)(void)) hi_func_addr(51))()
 #define c_kb_scancode_to_char(scancode, shift) ((char (*)(int, int)) hi_func_addr(57))(scancode, shift)
@@ -201,7 +150,8 @@ extern "C" {
 #define c_rand() ((int (*)(void)) hi_func_addr(60))()
 #define c_mem_print() ((void (*)(void)) hi_func_addr(61))()
 #define c_sys_reboot() ((void (*)(void)) hi_func_addr(62))()
-#define c_ata_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
+#define c_ramdisk_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
+#define c_ramdisk_write_sector(LBA, bytes) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(64))(LBA, bytes)
 #define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_task_switch(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
@@ -214,16 +164,10 @@ extern "C" {
 #define c_mem_get_free_count() ((int (*)(void)) hi_func_addr(74))()
 #define c_run_ifexist(path, argc, argv) ((int (*)(char *, int, char **)) hi_func_addr(75))(path, argc, argv)
 #define c_cursor_blink(on) ((void (*)(int)) hi_func_addr(76))(on)
-#define c_vga_320_mode() ((void (*)(void)) hi_func_addr(77))()
-#define c_vga_640_mode() ((void (*)(void)) hi_func_addr(78))()
-#define c_vga_text_mode() ((void (*)(void)) hi_func_addr(79))()
-#define c_vga_clear_screen() ((void (*)(void)) hi_func_addr(80))()
-#define c_vga_set_pixel(x, y, c) ((void (*)(unsigned, unsigned, unsigned)) hi_func_addr(81))(x, y, c)
+#define c_vesa_set_pixel(x, y, c) ((void (*)(int, int, uint32_t)) hi_func_addr(81))(x, y, c)
 #define c_vgui_draw_line(x1, y1, x2, y2, c) ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))(x1, y1, x2, y2, c)
 #define c_vgui_clear(color) ((void (*)(unsigned)) hi_func_addr(83))(color)
 #define c_task_get_alive() ((int (*)(void)) hi_func_addr(84))()
-#define c_vga_get_width() ((int (*)(void)) hi_func_addr(85))()
-#define c_vga_get_height() ((int (*)(void)) hi_func_addr(86))()
 #define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, sprite_t)) hi_func_addr(87))(x, y, sprite)
 #define c_lib2d_free_sprite(sprite) ((void (*)(sprite_t)) hi_func_addr(88))(sprite)
 #define c_lib2d_init_sprite(path) ((sprite_t (*)(char*)) hi_func_addr(89))(path)
@@ -241,7 +185,7 @@ extern "C" {
 #define c_serial_debug(source, message) ((void (*)(char *, char *)) hi_func_addr(102))(source, message)
 #define c_serial_print(device, message) ((void (*)(int, char *)) hi_func_addr(103))(device, message)
 #define c_mem_get_phys_size() ((int (*)(void)) hi_func_addr(104))()
-#define c_m_sin(degrees) ((int (*)(int)) hi_func_addr(105))(degrees)
-#define c_m_cos(degrees) ((int (*)(int)) hi_func_addr(106))(degrees)
+#define c_ramdisk_get_size() ((uint32_t (*)(void)) hi_func_addr(105))()
+#define c_ramdisk_get_used() ((uint32_t (*)(void)) hi_func_addr(106))()
 
 #endif

@@ -24,14 +24,14 @@ int arg_cont[] = {
     0, 1, 2, 2, 1, 3, 3, 3, 3, 3, 3, 3, 1, 3
 };
 
-int * mem;
+int *mem;
 
-void start_inter(int * code, int code_size, int while_id);
-int lexer(char path[], int * code);
+void start_inter(int *code, int code_size, int while_id);
+int lexer(char path[], int *code);
 
 int main(int argc, char **argv) {
-    int * meml = c_calloc(LSIZE * sizeof(int));
-    int * prog = c_calloc(PSIZE * sizeof(int));
+    int *meml = c_calloc(LSIZE * sizeof(int));
+    int *prog = c_calloc(PSIZE * sizeof(int));
     mem = meml;
 
     meml[0] = 1;
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-int lexer(char path[], int * code) {
+int lexer(char path[], int *code) {
     uint32_t *data_uint32 = c_fs_declare_read_array(path);
     char *data_char = c_fs_declare_read_array(path);
     c_fs_read_file(path, data_uint32);
@@ -76,7 +76,7 @@ int lexer(char path[], int * code) {
     return code_size;
 }
 
-void start_inter(int * code, int code_size, int while_id) {
+void start_inter(int *code, int code_size, int while_id) {
     int to_pass, mode;
     while (mem[while_id]) {
         to_pass = 0;
@@ -112,7 +112,7 @@ void start_inter(int * code, int code_size, int while_id) {
             instruc += arg_cont[mode];
 
             if (mode == 1 && to_pass == 0) {
-                int * new_code = c_malloc((code_size - instruc - 1) * sizeof(int));
+                int *new_code = c_malloc((code_size - instruc - 1) * sizeof(int));
                 for (int i = 0; i < code_size - instruc - 1; i++) {
                     new_code[i] = code[instruc + i + 1];
                 }

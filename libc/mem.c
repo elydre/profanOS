@@ -1,4 +1,4 @@
-#include <driver/screen.h>
+#include <gui/gnrtx.h>
 #include <function.h>
 #include <system.h>
 #include <string.h>
@@ -13,11 +13,23 @@ void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
     for ( ; len != 0; len--) *temp++ = val;
 }
 
+void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
+    if (source < dest) {
+        for (int i = nbytes - 1; i >= 0; i--) {
+            *(dest + i) = *(source + i);
+        }
+    } else {
+        for (int i = 0; i < nbytes; i++) {
+            *(dest + i) = *(source + i);
+        }
+    }
+}
+
 // elydre b3 memory manager with mem_alloc and free_addr functions
 // https://github.com/elydre/elydre/blob/main/projet/profan/b3.py
 
 #define PART_SIZE 0x1000   // 4Ko
-#define IMM_COUNT 54       // can save 4104Ko
+#define IMM_COUNT 108      // can save ~8Mo
 #define BASE_ADDR 0x250000 // lot of jokes here
 
 static int MLIST[IMM_COUNT];
@@ -106,13 +118,13 @@ void free(void *addr) {
     mem_free_addr((int) addr);
 }
 
-void * malloc(int size) {
+void *malloc(int size) {
     int addr = mem_alloc(size);
     if (addr == -1) return NULL;
     return (void *) addr;
 }
 
-void * realloc(void * ptr, int size) {
+void *realloc(void *ptr, int size) {
     int addr = (int) ptr;
     int new_addr = mem_alloc(size);
     if (new_addr == -1) return NULL;
@@ -121,7 +133,7 @@ void * realloc(void * ptr, int size) {
     return (void *) new_addr;
 }
 
-void * calloc(int size) {
+void *calloc(int size) {
     int addr = mem_alloc(size);
     if (addr == -1) return NULL;
     mem_set((uint8_t *) addr, 0, size);
@@ -146,7 +158,8 @@ int mem_get_phys_size() {
 void mem_print() {
     int val, color = 0x80;
     char nb[2];
-    for (int mi = 0; mi < (IMM_COUNT > 54 ? 54 : IMM_COUNT); mi++) {
+    int nb_lines = (IMM_COUNT > (gt_get_max_rows() - 2) *3 ? (gt_get_max_rows() - 2) *3 : IMM_COUNT);
+    for (int mi = 0; mi < nb_lines; mi++) {
         if (mi % 3 == 0) kprint("\n  ");
         kprint("    ");
         for (int i = 0; i < 19; i++) {
@@ -159,7 +172,7 @@ void mem_print() {
             }
         }
     }
-    kprint("\n\n");
+    kprint((IMM_COUNT > nb_lines) ? "\n      ...\n" : "\n\n");
 }
 
 int mem_get_usage() {

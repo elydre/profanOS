@@ -4,11 +4,12 @@
 #include <time.h>
 #include <mem.h>
 
+// we need the stdarg of the stdlib
 #include <stdarg.h>
 
 // input() setings
-#define FIRST_L 150
-#define BONDE_L 15
+#define FIRST_L 40
+#define BONDE_L 4
 
 // keyboard scancodes
 #define SC_MAX 57
@@ -30,18 +31,18 @@ int clean_buffer(char *buffer, int size) {
     return 0;
 }
 
-screen_color_t skprint_function(char message[], screen_color_t default_color) {
+char skprint_function(char message[], char default_color) {
     int msg_len = str_len(message);
     char nm[msg_len + 1];
     for (int i = 0; i < msg_len; i++) nm[i] = message[i];
     nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
     msg_len++;
-    screen_color_t color = default_color;
+    char color = default_color;
     char buffer[msg_len];
     int buffer_index = 0;
 
     char delimiter[] = "0123456789ABCDE";
-    screen_color_t colors[] = {
+    char colors[] = {
         c_blue, c_green, c_cyan, c_red, c_magenta, c_yellow, c_grey, c_white, 
         c_dblue, c_dgreen, c_dcyan, c_dred, c_dmagenta, c_dyellow, c_dgrey
     };
@@ -69,12 +70,14 @@ screen_color_t skprint_function(char message[], screen_color_t default_color) {
     return color;
 }
 
-// PRINT public functions
+/***************************
+ * PRINT PUBLIC FUNCTIONS *
+***************************/
 
 void mskprint(int nb_args, ...) {
     va_list args;
     va_start(args, nb_args);
-    screen_color_t last_color = c_white;
+    char last_color = c_white;
     for (int i = 0; i < nb_args; i++) {
         char *arg = va_arg(args, char*);
         last_color = skprint_function(arg, last_color);
@@ -87,7 +90,7 @@ void fskprint(char format[], ...) {
     va_start(args, format);
     char *buffer = malloc(0x1000);
     clean_buffer(buffer, 0x1000);
-    screen_color_t color = c_white;
+    char color = c_white;
 
     for (int i = 0; i <= str_len(format); i++) {
         if (i == str_len(format)) {
@@ -137,19 +140,24 @@ void fskprint(char format[], ...) {
 }
 
 void rainbow_print(char message[]) {
-    screen_color_t rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
+    char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
     int i = 0;
+    
+    char buffer[2];
+    buffer[1] = '\0';
 
     while (message[i] != 0) {
-        print_char(message[i], -1, -1, rainbow_colors[i % 6]);
+        buffer[0] = message[i];
+        ckprint(buffer, rainbow_colors[i % 6]);
         i++;
     }
 }
 
+/***********************
+ * INPUT PUBLIC FUNCS *
+***********************/
 
-// INPUT public functions
-
-void input_wh(char out_buffer[], int size, screen_color_t color, char ** history, int history_size) {
+void input_wh(char out_buffer[], int size, char color, char ** history, int history_size) {
     int old_cursor = get_cursor_offset();
     int buffer_actual_size = 0;
     int history_index = 0;
@@ -159,17 +167,22 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
     int shift = 0;
     int new_pos;
 
+    int row = gt_get_max_rows();
+    int col = gt_get_max_cols();
+
     clean_buffer(out_buffer, size);
 
     do {
-        sc = kb_get_scancode();
+        sc = kb_get_scfh();
     } while (sc == ENTER);
+
+    kb_reset_history();
 
     while (sc != ENTER) {
         ms_sleep(2);
 
         last_sc = sc;
-        sc = kb_get_scancode();
+        sc = kb_get_scfh();
         
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
@@ -267,12 +280,12 @@ void input_wh(char out_buffer[], int size, screen_color_t color, char ** history
         kprint(" ");
         new_pos = old_cursor + buffer_index * 2;
         set_cursor_offset(new_pos);
-        if (new_pos >= 3998) {  // (row * col + (col - 1)) * 2
-            old_cursor -= 160;  // row * 2
+        if (new_pos >= (row * col - 1) * 2) {
+            old_cursor -= row * 2;
         }
     }
 }
 
-void input(char out_buffer[], int size, screen_color_t color) {
+void input(char out_buffer[], int size, char color) {
     input_wh(out_buffer, size, color, NULL, 0);
 }

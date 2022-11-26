@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     c_input(inp, 3, 0x09);
     c_fskprint("\n");
     n = c_ascii_to_int(inp);
-    int **plateau = c_calloc(3 * sizeof(int*));
+    int **plateau = c_calloc(3 * sizeof(int *));
     for (int i=0; i<3; i++) {
         plateau[i] = c_calloc(n * sizeof(int));
     }

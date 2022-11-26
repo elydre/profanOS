@@ -3,8 +3,8 @@
 int main(int argc, char **argv) {
 
     char path[] = "/zada/logo.itxt";
-    uint32_t * data = c_fs_declare_read_array(path);
-    char * str = c_fs_declare_read_array(path);
+    uint32_t *data = c_fs_declare_read_array(path);
+    char *str = c_fs_declare_read_array(path);
     
     c_fs_read_file(path, data);
 

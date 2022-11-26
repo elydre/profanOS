@@ -1,11 +1,15 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include <type.h>
+
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8
 
+
 void serial_init();
-void serial_print(int device, char out[]);
 void serial_debug(char source[], char message[]);
+void serial_print(int device, char out[]);
+void serial_print_hex(int device, uint32_t n);
 
 #endif
