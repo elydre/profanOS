@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
                 c_vgui_set_pixel(x, y, n*100);
             }
         }
-        c_vgui_print(5, 5, "press escape to exit", 0, 63);
+        c_vgui_print(5, 5, "press escape to exit", 0xFFFFFF);
         c_vgui_render();
     }
 }

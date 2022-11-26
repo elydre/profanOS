@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
         c_vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
 
         c_int_to_ascii(1000 / (tick_count[1] + 1), convert);
-        c_vgui_print(0, 8, convert, 1, 0x0000AA);
+        c_vgui_print(0, 8, convert, 0x0000AA);
         
 
         tick_count[2] = c_timer_get_tick();
