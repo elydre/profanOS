@@ -14,6 +14,8 @@
 u_int32_t *virtual_disk;
 u_int8_t *free_map;
 
+void i_create_dir(u_int32_t sector, char *name);
+
 // PORT PARTIALLY
 void init_fs() {
     printf("Initialisation of the filesystem...\n");
@@ -26,6 +28,7 @@ void init_fs() {
         free_map[i] = 0;
     }
     printf("Done !\n");
+    i_create_dir(0, "/");
 }
 
 // DO NOT PORT
@@ -42,7 +45,7 @@ void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
     }
 }
 
-void print_sector(u_int32_t sector) {
+void i_print_sector(u_int32_t sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     printf("[");
@@ -60,7 +63,7 @@ void declare_free(u_int32_t sector) {
     free_map[sector] = 0;
 }
 
-u_int32_t next_free() {
+u_int32_t i_next_free() {
     for (int i = 0; i < SECTOR_COUNT; i++) {
         if (free_map[i] == 0) {
             return i;
@@ -69,7 +72,7 @@ u_int32_t next_free() {
     return -1;
 }
 
-void create_dir(u_int32_t sector, char *name) {
+void i_create_dir(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (buffer[0] & I_USED) {
@@ -91,7 +94,7 @@ void create_dir(u_int32_t sector, char *name) {
     write_to_disk(sector, buffer);
 }
 
-void create_dir_continue(u_int32_t sector) {
+void i_create_dir_continue(u_int32_t sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (buffer[0] & I_USED) {
@@ -117,15 +120,15 @@ void dir_continue(u_int32_t sector) {
         printf("Error: the sector isn't a directory");
         exit(1);
     }
-    u_int32_t next_sector = next_free();
+    u_int32_t next_sector = i_next_free();
     buffer[SECTOR_SIZE-1] = next_sector;
     write_to_disk(sector, buffer);
     declare_used(next_sector);
 
-    create_dir_continue(next_sector);
+    i_create_dir_continue(next_sector);
 }
 
-void add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
+void i_add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(dir_sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -144,14 +147,14 @@ void add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
         }
     }
     if (buffer[SECTOR_SIZE-1] == 0) {
-        u_int32_t next_sector = next_free();
+        u_int32_t next_sector = i_next_free();
         buffer[SECTOR_SIZE-1] = next_sector;
         write_to_disk(dir_sector, buffer);
         declare_used(next_sector);
-        create_dir_continue(next_sector);
-        add_item_to_dir(next_sector, item_sector);
+        i_create_dir_continue(next_sector);
+        i_add_item_to_dir(next_sector, item_sector);
     } else {
-        add_item_to_dir(buffer[SECTOR_SIZE-1], item_sector);
+        i_add_item_to_dir(buffer[SECTOR_SIZE-1], item_sector);
     }
 }
 
@@ -178,7 +181,7 @@ void remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     // TODO : remove empty directory continues
 }
 
-void create_file_index(u_int32_t sector, char *name) {
+void i_create_file_index(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (buffer[0] & I_USED) {
@@ -200,7 +203,7 @@ void create_file_index(u_int32_t sector, char *name) {
     write_to_disk(sector, buffer);
 }
 
-void writefile(u_int32_t sector, u_int32_t *data, int data_pointer, int max_size) {
+void i_writefile(u_int32_t sector, u_int32_t *data, int data_pointer, int max_size) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     buffer[0] = I_FILE | I_USED;
@@ -214,15 +217,15 @@ void writefile(u_int32_t sector, u_int32_t *data, int data_pointer, int max_size
     }
     write_to_disk(sector, buffer);
     if (data_pointer < max_size) {
-        u_int32_t next_sector = next_free();
+        u_int32_t next_sector = i_next_free();
         buffer[SECTOR_SIZE-1] = next_sector;
         write_to_disk(sector, buffer);
         declare_used(next_sector);
-        writefile(next_sector, data, data_pointer, max_size);
+        i_writefile(next_sector, data, data_pointer, max_size);
     }
 }
 
-void write_in_file(u_int32_t sector, char *data) {
+void i_write_in_file(u_int32_t sector, char *data) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -233,7 +236,7 @@ void write_in_file(u_int32_t sector, char *data) {
         printf("Error: the sector isn't a file header");
         exit(1);
     }
-    u_int32_t next_sector = next_free();
+    u_int32_t next_sector = i_next_free();
     buffer[SECTOR_SIZE-1] = next_sector;
     buffer[1 + MAX_SIZE_NAME + 1] = (u_int32_t) strlen(data);
     write_to_disk(sector, buffer);
@@ -250,11 +253,11 @@ void write_in_file(u_int32_t sector, char *data) {
         }
     }
     write_to_disk(next_sector, buffer);
-    writefile(next_sector, compressed_data, 0, strlen(data));
+    i_writefile(next_sector, compressed_data, 0, strlen(data));
     free(compressed_data);
 }
 
-char *read_file(u_int32_t sector) {
+char *i_read_file(u_int32_t sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -287,22 +290,77 @@ char *read_file(u_int32_t sector) {
     return data;
 }
 
+u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
+    printf("[new] path_to_id(%s, %s, %d)\n", path, current_path, sector);
+    // read the current sector
+    
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+
+    // TODO: security check
+    
+    // get the name of the current sector
+    char *name = malloc(sizeof(char) * MAX_SIZE_NAME + 1);
+    for (int i = 0; i < MAX_SIZE_NAME; i++) {
+        name[i] = (char) buffer[1 + i];
+    }
+
+    // add the name to the current path
+    strcat(current_path, name);
+
+    printf("current_path = '%s'\n", current_path);
+
+    // if the current path is the path we are looking for, return the sector
+    if (strcmp(current_path, path) == 0) {
+        printf("[found] %s at %d\n", path, sector);
+        return sector;
+    }
+
+    int var;
+    // if current path is a prefix of the path we are looking for, go deeper
+    if (strncmp(current_path, path, strlen(current_path)) == 0) {
+        printf("%s is a prefix of %s\n", current_path, path);
+        for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
+            if (buffer[i] != 0) {
+                printf("var = %d\n", i);
+                u_int32_t result = path_to_id(path, current_path, buffer[i]);
+                if (result != 0) {
+                    printf("[found] %s at %d\n", path, result);
+                    return result;
+                }
+            }
+        }
+    }
+
+    // if we are here, the path is not found
+    printf("[not found] %s\n", path);
+    return 0;
+}
+
+u_int32_t launch_path_to_id(char *path) {
+    char *current_path = malloc(sizeof(char) * (strlen(path) + 1));
+    current_path[0] = '\0';
+    u_int32_t exit = path_to_id(path, current_path, 0);
+    free(current_path);
+    return exit;
+}
+
 int main(int argc, char **argv) {
     init_fs();
-    print_sector(0);
-    printf("Next free sector: %x\n", next_free());
-    create_dir(0, "////////////////////////////////");
-    add_item_to_dir(0, 1);
-    create_file_index(1, "bite");
-    write_in_file(1, "ABCDEF");
-    char *data = read_file(1);
-    printf("data : %s\n", data);
-    free(data);
-    print_sector(0);
-    print_sector(1);
-    print_sector(2);
-    print_sector(3);
-
-    printf("Next free sector: %x\n", next_free());
+    i_create_file_index(1, "bite");
+    i_create_file_index(2, "bite2");
+    // i_create_file_index(3, "bite3");
+    i_add_item_to_dir(0, 1);
+    i_add_item_to_dir(0, 2);
+    // i_add_item_to_dir(1, 3);
+    i_write_in_file(1, "ABCDEF");
+    // char *data = i_read_file(1);
+    // printf("data : %s\n", data);
+    // free(data);
+    printf("Path to id: %x\n", launch_path_to_id("/"));
+    printf("Path to id: %x\n", launch_path_to_id("/bite"));
+    printf("Path to id: %x\n", launch_path_to_id("/bite2"));
+    // printf("Path to id: %x\n", launch_path_to_id("/bite/bite3"));
+    printf("Next free sector: %x\n", i_next_free());
     return 0;
 }
