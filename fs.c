@@ -238,17 +238,20 @@ void write_in_file(u_int32_t sector, char *data) {
     buffer[1 + MAX_SIZE_NAME + 1] = (u_int32_t) strlen(data);
     write_to_disk(sector, buffer);
     declare_used(next_sector);
-    // compressed data
-    u_int32_t *compressed_data = malloc(strlen(data) * sizeof(u_int32_t) / 4 + 1);
-    int compressed_data_pointer = 0;
+    u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * strlen(data));
     for (int i = 0; i < strlen(data); i++) {
-        compressed_data[compressed_data_pointer] = compressed_data[compressed_data_pointer] << 8;
-        compressed_data[compressed_data_pointer] = compressed_data[compressed_data_pointer] | data[i];
-        if (i % 4 == 3) {
-            compressed_data_pointer++;
+        compressed_data[i] = data[i];
+    }
+    for (int i = 1; i < SECTOR_SIZE-1; i++) {
+        if (i < strlen(data)) {
+            buffer[i] = compressed_data[i];
+        } else {
+            buffer[i] = 0;
         }
     }
-    writefile(next_sector, compressed_data, 0, strlen(data)/4+1);
+    write_to_disk(next_sector, buffer);
+    writefile(next_sector, compressed_data, 0, strlen(data));
+    free(compressed_data);
 }
 
 char *read_file(u_int32_t sector) {
@@ -263,10 +266,25 @@ char *read_file(u_int32_t sector) {
         exit(1);
     }
     char *data = malloc(buffer[1 + MAX_SIZE_NAME + 1] * sizeof(char) + sizeof(char));
+    u_int32_t *compressed_data = malloc(buffer[1 + MAX_SIZE_NAME + 1] * (sizeof(u_int32_t) + 1));
+    u_int32_t file_size = buffer[1 + MAX_SIZE_NAME + 1];
     int data_pointer = 0;
-    u_int32_t *compressed_data = malloc(buffer[1 + MAX_SIZE_NAME + 1] * sizeof(u_int32_t) / 4 + 1);
-    int compressed_data_pointer = 0;
-    // TODO : DECOMPRESS
+    sector = buffer[SECTOR_SIZE-1];
+    read_from_disk(sector, buffer);
+    while (sector != 0) {
+        read_from_disk(sector, buffer);
+        for (int i = 0; i < SECTOR_SIZE-1; i++) {
+            if (data_pointer < file_size) {
+                compressed_data[data_pointer] = buffer[1 + i];
+                data_pointer++;
+            }
+        }
+        sector = buffer[SECTOR_SIZE-1];
+    }
+    for (int i = 0; i < file_size; i++) {
+        data[i] = (char) compressed_data[i];
+    }
+    return data;
 }
 
 int main(int argc, char **argv) {
@@ -276,7 +294,7 @@ int main(int argc, char **argv) {
     create_dir(0, "////////////////////////////////");
     add_item_to_dir(0, 1);
     create_file_index(1, "bite");
-    write_in_file(1, "COUCOU");
+    write_in_file(1, "ABCDEF");
     char *data = read_file(1);
     printf("data : %s\n", data);
     free(data);
