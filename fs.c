@@ -293,12 +293,12 @@ char *i_read_file(u_int32_t sector) {
 u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
     printf("[new] path_to_id(%s, %s, %d)\n", path, current_path, sector);
     // read the current sector
-    
+
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
 
     // TODO: security check
-    
+
     // get the name of the current sector
     char *name = malloc(sizeof(char) * MAX_SIZE_NAME + 1);
     for (int i = 0; i < MAX_SIZE_NAME; i++) {
