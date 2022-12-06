@@ -76,11 +76,11 @@ void i_create_dir(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (buffer[0] & I_USED) {
-        printf("Error: sector %d is already used.\n", sector);
+        printf("Error: sector %d is already used\n", sector);
         exit(1);
     }
     if (strlen(name) > MAX_SIZE_NAME) {
-        printf("Error: name is too long.\n");
+        printf("Error: name is too long\n");
         exit(1);
     }
     for (int i = 0; i < SECTOR_SIZE; i++) {
@@ -98,7 +98,7 @@ void i_create_dir_continue(u_int32_t sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (buffer[0] & I_USED) {
-        printf("Error: sector %d is already used.\n", sector);
+        printf("Error: sector %d is already used\n", sector);
         exit(1);
     }
     for (int i = 0; i < SECTOR_SIZE; i++) {
@@ -113,11 +113,11 @@ void dir_continue(u_int32_t sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
-        printf("Error: the sector isn't used");
+        printf("Error: the sector isn't used\n");
         exit(1);
     }
     if (!(buffer[0] & (I_DIRECTORY | I_DIRECTORY_CONTINUE))) {
-        printf("Error: the sector isn't a directory");
+        printf("Error: the sector isn't a directory\n");
         exit(1);
     }
     u_int32_t next_sector = i_next_free();
@@ -132,11 +132,11 @@ void i_add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(dir_sector, buffer);
     if (!(buffer[0] & I_USED)) {
-        printf("Error: the sector isn't used");
+        printf("Error: the sector isn't used\n");
         exit(1);
     }
     if (!(buffer[0] & (I_DIRECTORY | I_DIRECTORY_CONTINUE))) {
-        printf("Error: the sector isn't a directory");
+        printf("Error: the sector isn't a directory (sector %d, flags %x)\n", dir_sector, buffer[0]);
         exit(1);
     }
     for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
@@ -162,11 +162,11 @@ void remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(dir_sector, buffer);
     if (!(buffer[0] & I_USED)) {
-        printf("Error: the sector isn't used");
+        printf("Error: the sector isn't used\n");
         exit(1);
     }
     if (!(buffer[0] & (I_DIRECTORY | I_DIRECTORY_CONTINUE))) {
-        printf("Error: the sector isn't a directory");
+        printf("Error: the sector isn't a directory\n");
         exit(1);
     }
     for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
@@ -185,11 +185,11 @@ void i_create_file_index(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (buffer[0] & I_USED) {
-        printf("Error: sector %d is already used.\n", sector);
+        printf("Error: sector %d is already used\n", sector);
         exit(1);
     }
     if (strlen(name) > MAX_SIZE_NAME) {
-        printf("Error: name is too long.\n");
+        printf("Error: name is too long\n");
         exit(1);
     }
     for (int i = 0; i < SECTOR_SIZE; i++) {
@@ -229,11 +229,11 @@ void i_write_in_file(u_int32_t sector, char *data) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
-        printf("Error: the sector isn't used");
+        printf("Error: the sector isn't used\n");
         exit(1);
     }
     if (!(buffer[0] & I_FILE_HEADER)) {
-        printf("Error: the sector isn't a file header");
+        printf("Error: the sector isn't a file header\n");
         exit(1);
     }
     u_int32_t next_sector = i_next_free();
@@ -261,11 +261,11 @@ char *i_read_file(u_int32_t sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
-        printf("Error: the sector isn't used");
+        printf("Error: the sector isn't used\n");
         exit(1);
     }
     if (!(buffer[0] & I_FILE_HEADER)) {
-        printf("Error: the sector isn't a file header");
+        printf("Error: the sector isn't a file header\n");
         exit(1);
     }
     char *data = malloc(buffer[1 + MAX_SIZE_NAME + 1] * sizeof(char) + sizeof(char));
@@ -291,7 +291,7 @@ char *i_read_file(u_int32_t sector) {
 }
 
 u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
-    printf("[new] path_to_id('%s', '%s', '%d')\n", path, current_path, sector);
+    // printf("[new] path_to_id('%s', '%s', '%d')\n", path, current_path, sector);
 
     // copy the current path
     char *current_path_copy = malloc(sizeof(char) * strlen(current_path) + 1);
@@ -317,25 +317,25 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
         strcat(current_path, "/");
     }
 
-    printf("current_path = '%s'\n", current_path);
+    // printf("current_path = '%s'\n", current_path);
 
     // if the current path is the path we are looking for, return the sector
     if (strcmp(current_path, path) == 0) {
-        printf("[found] %s at %d\n", path, sector);
+        // printf("[found] %s at %d\n", path, sector);
         free(current_path_copy);
         return sector;
     }
 
     // if current path is a prefix of the path we are looking for, go deeper
     if (strncmp(current_path, path, strlen(current_path)) == 0) {
-        printf("%s is a prefix of %s\n", current_path, path);
-        i_print_sector(sector);
+        // printf("%s is a prefix of %s\n", current_path, path);
+        // i_print_sector(sector);
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
             if (buffer[i] != 0) {
-                printf("sector = %d, i = %d, buffer[i] = %d\n", sector, i, buffer[i]);
+                // printf("sector = %d, i = %d, buffer[i] = %d\n", sector, i, buffer[i]);
                 u_int32_t result = path_to_id(path, current_path, buffer[i]);
                 if (result != 0) {
-                    printf("[found] %s at %d\n", path, result);
+                    // printf("[found] %s at %d\n", path, result);
                     free(current_path_copy);
                     return result;
                 }
@@ -344,7 +344,7 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
     }
 
     // if we are here, the path is not found
-    printf("[not found] %s\n", path);
+    // printf("[not found] %s\n", path);
     strcpy(current_path, current_path_copy);
     free(current_path_copy);
     return 0;
@@ -370,18 +370,19 @@ u_int32_t launch_path_to_id(char *path) {
 
 int main(int argc, char **argv) {
     init_fs();
-    i_create_file_index(1, "test");
+    i_create_dir(1, "test");
     i_create_file_index(2, "test2");
-    // i_create_file_index(3, "test3");
+    i_create_file_index(3, "test3");
     i_add_item_to_dir(0, 1);
     i_add_item_to_dir(0, 2);
-    // i_add_item_to_dir(1, 3);
+    i_add_item_to_dir(1, 3);
 
-    // printf("Path to id: %x\n", launch_path_to_id("/"));
-    // printf("Path to id: %x\n", launch_path_to_id("/test"));
-    printf("Path to id: %x\n", launch_path_to_id("/test2"));
+    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/") , "/");
+    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/test") , "/test");
+    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/test2") , "/test2");
+    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/test/test3") , "/test/test3");
 
     // printf("Path to id: %x\n", launch_path_to_id("/test/test3"));
-    printf("Next free sector: %x\n", i_next_free());
+    // printf("Next free sector: %x\n", i_next_free());
     return 0;
 }
