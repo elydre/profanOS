@@ -317,25 +317,18 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
         strcat(current_path, "/");
     }
 
-    // printf("current_path = '%s'\n", current_path);
-
     // if the current path is the path we are looking for, return the sector
     if (strcmp(current_path, path) == 0) {
-        // printf("[found] %s at %d\n", path, sector);
         free(current_path_copy);
         return sector;
     }
 
     // if current path is a prefix of the path we are looking for, go deeper
     if (strncmp(current_path, path, strlen(current_path)) == 0) {
-        // printf("%s is a prefix of %s\n", current_path, path);
-        // i_print_sector(sector);
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
             if (buffer[i] != 0) {
-                // printf("sector = %d, i = %d, buffer[i] = %d\n", sector, i, buffer[i]);
                 u_int32_t result = path_to_id(path, current_path, buffer[i]);
                 if (result != 0) {
-                    // printf("[found] %s at %d\n", path, result);
                     free(current_path_copy);
                     return result;
                 }
@@ -344,7 +337,6 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
     }
 
     // if we are here, the path is not found
-    // printf("[not found] %s\n", path);
     strcpy(current_path, current_path_copy);
     free(current_path_copy);
     return 0;
@@ -365,6 +357,7 @@ u_int32_t launch_path_to_id(char *path) {
     u_int32_t exit = path_to_id(edited_path, current_path, 0);
 
     free(current_path);
+    free(edited_path);
     return exit;
 }
 
