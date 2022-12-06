@@ -291,41 +291,52 @@ char *i_read_file(u_int32_t sector) {
 }
 
 u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
-    printf("[new] path_to_id(%s, %s, %d)\n", path, current_path, sector);
-    // read the current sector
+    printf("[new] path_to_id('%s', '%s', '%d')\n", path, current_path, sector);
 
+    // copy the current path
+    char *current_path_copy = malloc(sizeof(char) * strlen(current_path) + 1);
+    strcpy(current_path_copy, current_path);
+
+    // read the current sector
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
 
     // TODO: security check
 
     // get the name of the current sector
-    char *name = malloc(sizeof(char) * MAX_SIZE_NAME + 1);
+    char *name = malloc(MAX_SIZE_NAME + 1 * sizeof(char));
     for (int i = 0; i < MAX_SIZE_NAME; i++) {
         name[i] = (char) buffer[1 + i];
     }
 
     // add the name to the current path
     strcat(current_path, name);
+    free(name);
+    
+    if (current_path[strlen(current_path)-1] != '/') {
+        strcat(current_path, "/");
+    }
 
     printf("current_path = '%s'\n", current_path);
 
     // if the current path is the path we are looking for, return the sector
     if (strcmp(current_path, path) == 0) {
         printf("[found] %s at %d\n", path, sector);
+        free(current_path_copy);
         return sector;
     }
 
-    int var;
     // if current path is a prefix of the path we are looking for, go deeper
     if (strncmp(current_path, path, strlen(current_path)) == 0) {
         printf("%s is a prefix of %s\n", current_path, path);
+        i_print_sector(sector);
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
             if (buffer[i] != 0) {
-                printf("var = %d\n", i);
+                printf("sector = %d, i = %d, buffer[i] = %d\n", sector, i, buffer[i]);
                 u_int32_t result = path_to_id(path, current_path, buffer[i]);
                 if (result != 0) {
                     printf("[found] %s at %d\n", path, result);
+                    free(current_path_copy);
                     return result;
                 }
             }
@@ -334,13 +345,25 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
 
     // if we are here, the path is not found
     printf("[not found] %s\n", path);
+    strcpy(current_path, current_path_copy);
+    free(current_path_copy);
     return 0;
 }
 
 u_int32_t launch_path_to_id(char *path) {
-    char *current_path = malloc(sizeof(char) * (strlen(path) + 1));
-    current_path[0] = '\0';
-    u_int32_t exit = path_to_id(path, current_path, 0);
+    char *edited_path = malloc(sizeof(char) * (strlen(path) + 2));
+    strcpy(edited_path, path);
+
+    // check if the path ends with a '/'
+    if (edited_path[strlen(edited_path) - 1] != '/') {
+        // if not, add it
+        strcat(edited_path, "/");
+    }
+
+    char *current_path = calloc(strlen(edited_path) + 1, sizeof(char));
+
+    u_int32_t exit = path_to_id(edited_path, current_path, 0);
+
     free(current_path);
     return exit;
 }
