@@ -1,13 +1,13 @@
+#include <libc/filesystem.h>
 #include <driver/serial.h>
 #include <gui/gnrtx.h>
 #include <libc/task.h>
-#include <function.h>
 #include <system.h>
 #include <mem.h>
 
 
 // global values for tasking
-/*int g_return, g_argc;
+int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
@@ -21,15 +21,10 @@ void tasked_program() {
 
     if (task_get_next_pid() == 0) clear_screen();
     task_kill_task_switch(task_get_next_pid());
-}*/
+}
 
 int run_binary(char path[], int silence, int argc, char **argv) {
-    UNUSED(silence);
-    UNUSED(argc);
-    UNUSED(argv);
-    UNUSED(path);
-    return 0;
-    /*// TODO: check if file is executable
+    // TODO: check if file is executable
     // TODO: check if there is enough memory
 
     serial_debug("RUNTIME", path);
@@ -56,11 +51,11 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     // TODO: memory leak detection
 
-    return g_return;*/
+    return g_return;
 }
 
 int run_ifexist(char path[], int argc, char **argv) {
-    // if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
+    if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
         return run_binary(path, 0, argc, argv);
     sys_error("Program not found");
     return -1;

@@ -1,14 +1,12 @@
+#include <libc/filesystem.h>
 #include <gui/graph2d.h>
 #include <gui/vgui.h>
-#include <function.h>
 #include <string.h>
 #include <system.h>
 #include <mem.h>
 
 sprite_t lib2d_init_sprite(char *path) {
-    UNUSED(path);
-    return (sprite_t) {0};
-    /*if (!(fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)) {
+    if (!(fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)) {
         sys_error("File not found");
         return (sprite_t) {"", NULL, 0, 0, 0, 0};
     }
@@ -52,7 +50,7 @@ sprite_t lib2d_init_sprite(char *path) {
     free(char_content);
 
     sprite_t sprite = {path, data, 0, 0, longueur, hauteur};
-    return sprite;*/
+    return sprite;
 }
 
 void lib2d_print_sprite(int x, int y, sprite_t sprite) {

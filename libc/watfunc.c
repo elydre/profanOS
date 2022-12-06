@@ -1,3 +1,4 @@
+#include <libc/filesystem.h>
 #include <driver/keyboard.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
@@ -30,7 +31,7 @@ void up_string(char str[]) {
 int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h
-        /* case 0:  return (int) fs_get_used_sectors;
+        case 0:  return (int) fs_get_used_sectors;
         case 1:  return (int) fs_is_disk_full;
         case 2:  return (int) fs_make_dir;
         case 3:  return (int) fs_make_file;
@@ -42,7 +43,7 @@ int wf_get_func_addr(int func_id) {
         case 9:  return (int) fs_does_path_exists;
         case 10: return (int) fs_type_sector;
         case 11: return (int) fs_get_dir_content;
-        case 12: return (int) fs_path_to_id; */
+        case 12: return (int) fs_path_to_id;
 
         // mem.h
         case 13: return (int) mem_copy;

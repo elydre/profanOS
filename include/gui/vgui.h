@@ -1,8 +1,6 @@
 #ifndef VGUI_H
 #define VGUI_H
 
-#include <type.h>
-
 /*********************************
  * VGUI - virtual graphical lib *
  * vgui can be  used to draw on *
