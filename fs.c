@@ -347,20 +347,18 @@ u_int32_t launch_path_to_id(char *path) {
 
 int main(int argc, char **argv) {
     init_fs();
-    i_create_file_index(1, "bite");
-    i_create_file_index(2, "bite2");
-    // i_create_file_index(3, "bite3");
+    i_create_file_index(1, "test");
+    i_create_file_index(2, "test2");
+    // i_create_file_index(3, "test3");
     i_add_item_to_dir(0, 1);
     i_add_item_to_dir(0, 2);
     // i_add_item_to_dir(1, 3);
-    i_write_in_file(1, "ABCDEF");
-    // char *data = i_read_file(1);
-    // printf("data : %s\n", data);
-    // free(data);
-    printf("Path to id: %x\n", launch_path_to_id("/"));
-    printf("Path to id: %x\n", launch_path_to_id("/bite"));
-    printf("Path to id: %x\n", launch_path_to_id("/bite2"));
-    // printf("Path to id: %x\n", launch_path_to_id("/bite/bite3"));
+
+    // printf("Path to id: %x\n", launch_path_to_id("/"));
+    // printf("Path to id: %x\n", launch_path_to_id("/test"));
+    printf("Path to id: %x\n", launch_path_to_id("/test2"));
+
+    // printf("Path to id: %x\n", launch_path_to_id("/test/test3"));
     printf("Next free sector: %x\n", i_next_free());
     return 0;
 }
