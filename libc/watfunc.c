@@ -21,7 +21,7 @@ void init_watfunc() {
 }
 
 void unknown_func() {
-    sys_error("Unknown function called");
+    sys_error("Unknown syscall");
 }
 
 void up_string(char str[]) {

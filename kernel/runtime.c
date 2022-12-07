@@ -113,9 +113,14 @@ int dily_get_func(int lib_id, int func_id) {
     }
 
     for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] == (uint32_t) lib_id) {
-            return (int) lib_functions[i][func_id];
+        if (lib_functions[i][0] != (uint32_t) lib_id) 
+            continue;
+
+        int val = (int) lib_functions[i][func_id];
+        if (val == 0) {
+            sys_error("Function not found");
         }
+        return val;
     }
 
     sys_error("Library not found");

@@ -3,9 +3,7 @@
 #ifndef IOLIB_ID
 #define IOLIB_ID 1000
 
-#define WATDILY_ADDR 0x199994
-
-#define get_func_addr(func_id) ((int (*)(int, int)) *(int *) WATDILY_ADDR)(IOLIB_ID, func_id)
+#define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
 
 /*
 void mskprint(int nb_args, ...);
@@ -15,10 +13,10 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 void input(char out_buffer[], int size, char color);
 */
 
-#define mskprint ((void (*)(int, ...)) get_func_addr(4))
-#define fskprint ((void (*)(char[], ...)) get_func_addr(5))
-#define rainbow_print ((void (*)(char[])) get_func_addr(6))
-#define input_wh ((void (*)(char[], int, char, char **, int)) get_func_addr(7))
-#define input ((void (*)(char[], int, char)) get_func_addr(8))
+#define mskprint ((void (*)(int, ...)) get_func_addr(IOLIB_ID, 4))
+#define fskprint ((void (*)(char[], ...)) get_func_addr(IOLIB_ID, 5))
+#define rainbow_print ((void (*)(char[])) get_func_addr(IOLIB_ID, 6))
+#define input_wh ((void (*)(char[], int, char, char **, int)) get_func_addr(IOLIB_ID, 7))
+#define input ((void (*)(char[], int, char)) get_func_addr(IOLIB_ID, 8))
 
 #endif
