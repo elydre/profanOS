@@ -342,7 +342,9 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
     return 0;
 }
 
-u_int32_t launch_path_to_id(char *path) {
+// PUBLIC FUNCTIONS
+
+u_int32_t fs_path_to_id(char *path) {
     char *edited_path = malloc(sizeof(char) * (strlen(path) + 2));
     strcpy(edited_path, path);
 
@@ -361,21 +363,134 @@ u_int32_t launch_path_to_id(char *path) {
     return exit;
 }
 
+int fs_does_path_exists(char *path) {
+    if (strcmp(path, "/") == 0) {
+        return 1;
+    } else {
+        return (int) fs_path_to_id(path) != 0;
+    }
+}
+
+u_int32_t fs_make_dir(char *path, char *name) {
+    char *full_name = malloc(strlen(path) + strlen(name) + 1);
+    strcpy(full_name, path);
+    if (strcmp("/", path)) {
+        full_name[strlen(path)] = '/';
+        for (int i = 0; i < strlen(name); i++) {
+            full_name[strlen(path) + i + 1] = name[i];
+        }
+        full_name[strlen(path)+strlen(name) + 1] = '\0';
+    } else {
+        for (int i = 0; i < strlen(name); i++) {
+            full_name[strlen(path) + i] = name[i];
+        }
+        full_name[strlen(path)+strlen(name)] = '\0';
+    }
+    // TODO : check if there is a directory in path
+    if (fs_does_path_exists(full_name)) {
+        printf("Le dossier %s existe déja !\n", full_name);
+        return -1;
+    }
+    printf("Creating dir %s...\n", full_name);
+    u_int32_t next_free = i_next_free();
+    i_create_dir(next_free, name);
+    i_add_item_to_dir(fs_path_to_id(path), next_free);
+    free(full_name);
+    return next_free;
+}
+
+u_int32_t fs_make_file(char path[], char name[]) {
+    char *full_name = malloc(strlen(path) + strlen(name) + 1);
+    strcpy(full_name, path);
+    full_name[strlen(path)] = '/';
+    for (int i = 0; i < strlen(name); i++) {
+        full_name[strlen(path) + i + 1] = name[i];
+    }
+    full_name[strlen(path)+strlen(name) + 1] = '\0';
+    if (fs_does_path_exists(full_name)) {
+        printf("Le fichier %s existe déja !\n", full_name);
+        return -1;
+    }
+    printf("Creating file %s...\n", full_name);
+    u_int32_t next_free = i_next_free();
+    i_create_file_index(next_free, name);
+    i_add_item_to_dir(fs_path_to_id(path), next_free);
+    free(full_name);
+    return next_free;
+}
+
+void fs_write_in_file(char path[], char *data) {
+    u_int32_t id_to_set = fs_path_to_id(path);
+    i_write_in_file(id_to_set, data);
+}
+
+// IM FAST AS FUCK BOIII
+u_int32_t fs_get_file_size(char path[]) {
+    u_int32_t file_id = fs_path_to_id(path);
+    // TODO : IF NOT A FILE
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(file_id, buffer);
+    return buffer[1 + MAX_SIZE_NAME + 1];
+}
+
+void *fs_declare_read_array(char path[]) {
+    return calloc(fs_get_file_size(path) + 1, sizeof(char));
+}
+
+// How to declare data : char *data = fs_declare_read_array(path);
+// How to free data    : free(data);
+void fs_read_file(char path[], char *data) {
+    u_int32_t file_size = fs_get_file_size(path);
+    int data_index = 0;
+    int sector = fs_path_to_id(path);
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    sector = buffer[SECTOR_SIZE-1];
+    while (buffer[SECTOR_SIZE-1] != 0) {
+        read_from_disk(sector, buffer);
+        for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE - 1; i++) {
+            data[data_index] = buffer[i];
+            data_index++;
+        }
+        sector = buffer[SECTOR_SIZE-1];
+    }
+    data_index++;
+    data[data_index] = '\0';
+}
+
 int main(int argc, char **argv) {
     init_fs();
-    i_create_dir(1, "test");
-    i_create_file_index(2, "test2");
-    i_create_file_index(3, "test3");
-    i_add_item_to_dir(0, 1);
-    i_add_item_to_dir(0, 2);
-    i_add_item_to_dir(1, 3);
 
-    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/") , "/");
-    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/test") , "/test");
-    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/test2") , "/test2");
-    printf("Path to id: %x for path '%s'\n", launch_path_to_id("/test/test3") , "/test/test3");
+    fs_make_dir("/", "test");
+    fs_make_dir("/test", "test2");
+    fs_make_file("/test/test2", "FILE");
+    fs_make_file("/test/test2", "FILE");
+    fs_write_in_file("/test/test2/FILE", "BITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITE");
+    printf("Le fichier %s fait %i characteres de long !\n", "/test/test2/FILE", fs_get_file_size("/test/test2/FILE"));
+    char *file = fs_declare_read_array("/test/test2/FILE");
+    fs_read_file("/test/test2/FILE", file);
+    printf("Le fichier %s contient \"%s\"\n", "/test/test2/FILE", file);
+    free(file);
 
-    // printf("Path to id: %x\n", launch_path_to_id("/test/test3"));
+
+
+    for (int i = 0; i < 8; i++) {
+        i_print_sector(i);
+    }
+    
+    // i_create_dir(1, "test");
+    // i_create_file_index(2, "test2");
+    // i_create_file_index(3, "test3");
+    // i_add_item_to_dir(0, 1);
+    // i_add_item_to_dir(0, 2);
+    // i_add_item_to_dir(1, 3);
+
+    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/") , "/");
+    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/test") , "/test");
+    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/test2") , "/test2");
+    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/test/test3") , "/test/test3");
+
+    // printf("Path to id: %x\n", fs_launch_path_to_id("/test/test3"));
     // printf("Next free sector: %x\n", i_next_free());
     return 0;
 }
