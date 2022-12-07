@@ -65,9 +65,8 @@ void declare_free(u_int32_t sector) {
 
 u_int32_t i_next_free() {
     for (int i = 0; i < SECTOR_COUNT; i++) {
-        if (free_map[i] == 0) {
-            return i;
-        }
+        if (free_map[i] != 0) continue;
+        return i;
     }
     return -1;
 }
@@ -326,13 +325,13 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
     // if current path is a prefix of the path we are looking for, go deeper
     if (strncmp(current_path, path, strlen(current_path)) == 0) {
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
-            if (buffer[i] != 0) {
-                u_int32_t result = path_to_id(path, current_path, buffer[i]);
-                if (result != 0) {
-                    free(current_path_copy);
-                    return result;
-                }
-            }
+            if (buffer[i] == 0) continue;
+            
+            u_int32_t result = path_to_id(path, current_path, buffer[i]);
+            if (result == 0) continue;
+
+            free(current_path_copy);
+            return result;
         }
     }
 
