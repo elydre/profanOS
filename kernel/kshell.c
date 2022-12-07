@@ -6,6 +6,8 @@
 #include <iolib.h>
 #include <mem.h>
 
+#include "../zapps/dily/tlib.h"
+
 #define BFR_SIZE 65
 
 int shell_command(char command[]);
@@ -49,6 +51,12 @@ void shell_help() {
         fskprint("%s\n", help[i]);
 }
 
+void test_tlib() {
+    fskprint("sum: %d\n", tlib_sum(1, 2));
+    tlib_draw_rect(300, 100, 100, 100, 0x00FF00);
+    // fskprint("return: %d\n", tlib_main());
+}
+
 void shell_addr() {
     fskprint("physic:  %x (%fMo)\n", mem_get_phys_size(), mem_get_phys_size() / 1024.0 / 1024.0);
     fskprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
@@ -72,6 +80,8 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    else if (str_cmp(prefix, "load") == 0) dily_load("/bin/dily/tlib.bin", 1234);
+    else if (str_cmp(prefix, "test") == 0) test_tlib();
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
 
     return 0;

@@ -3,6 +3,8 @@
 #include <gui/gnrtx.h>
 #include <libc/task.h>
 #include <system.h>
+#include <iolib.h>
+#include <type.h>
 #include <mem.h>
 
 
@@ -10,9 +12,12 @@
 int g_return, g_argc;
 char **g_argv;
 
+uint32_t **lib_functions = 0;
+int lib_count = 0;
+
 void tasked_program() {
-    char *binary_mem = task_get_bin_mem(task_get_current_pid());
-    g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
+    uint8_t *binary_mem = task_get_bin_mem(task_get_current_pid());
+    g_return = ((int (*)(int, char**)) binary_mem)(g_argc, g_argv);
 
     // fill memory with 0
     mem_set((uint8_t *) binary_mem, 0, mem_get_alloc_size((int) binary_mem));
@@ -32,12 +37,12 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    char *binary_mem = calloc(fs_get_file_size(path) * 126);
+    uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126);
     uint32_t *file = fs_declare_read_array(path);
     fs_read_file(path, file);
 
     for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        binary_mem[i] = (char) file[i];
+        binary_mem[i] = (uint8_t) file[i] & 0xFF;
 
     free(file);
 
@@ -59,4 +64,61 @@ int run_ifexist(char path[], int argc, char **argv) {
         return run_binary(path, 0, argc, argv);
     sys_error("Program not found");
     return -1;
+}
+
+void dily_load(char path[], int lib_id) {
+    if (! fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) != 2) {
+        sys_error("Library not found");
+        return;
+    }
+
+    calloc(0x16000);
+    uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126);
+    calloc(0x16000);
+    uint32_t *file = fs_declare_read_array(path);
+    fs_read_file(path, file);
+
+    int lib_size;
+    for (lib_size = 0; file[lib_size] != (uint32_t) -1; lib_size++) {
+        binary_mem[lib_size] = (uint8_t) file[lib_size] & 0xFF;
+    }
+
+    free(file);
+
+    if (lib_functions == 0) {
+        lib_functions = calloc(0x1000);
+        // can be realloc in the future
+    }
+
+    uint32_t *addr_list = calloc(0x1000);
+    addr_list[0] = (uint32_t) lib_id;
+
+    int addr_list_size = 1;
+
+    for (int i = 0; i < lib_size; i++) {
+        if (binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89) {
+            addr_list[addr_list_size] = (uint32_t) &binary_mem[i];
+            fskprint("Found function at %x\n", addr_list[addr_list_size]);
+            addr_list_size++;
+        }
+    }
+
+    fskprint("Found %d functions\n", addr_list_size - 1);
+    lib_functions[lib_count] = addr_list;
+}
+
+int dily_get_func(int lib_id, int func_id) {
+    if (lib_functions == 0) {
+        sys_error("No library loaded");
+        return 0;
+    }
+
+    for (int i = 0; lib_functions[i] != 0; i++) {
+        if (lib_functions[i][0] == (uint32_t) lib_id) {
+            return (int) lib_functions[i][func_id];
+        }
+    }
+
+    sys_error("Library not found");
+    return 0;
 }

@@ -197,11 +197,11 @@ int task_get_internal_pos(int pid) {
     return -1;
 }
 
-void task_set_bin_mem(int pid, char *bin_mem) {
+void task_set_bin_mem(int pid, uint8_t *bin_mem) {
     tasks[task_get_internal_pos(pid)].bin_mem = bin_mem;
 }
 
-char *task_get_bin_mem(int pid) {
+uint8_t *task_get_bin_mem(int pid) {
     return tasks[task_get_internal_pos(pid)].bin_mem;
 }
 

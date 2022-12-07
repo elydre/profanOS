@@ -1,8 +1,12 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.8.4b"
+#define VERSION "dily-01"
+
+
 #define WATFUNC_ADDR 0x199990
+#define WATDILY_ADDR 0x199994
+
 
 // system.c
 void sys_reboot();
@@ -25,6 +29,8 @@ void start_kshell();
 // runtime.c
 int run_binary(char path[], int silence, int argc, char **argv);
 int run_ifexist(char path[], int argc, char **argv);
+void dily_load(char path[], int lib_id);
+int dily_get_func(int lib_id, int func_id);
 
 // watfunc.c
 int wf_get_func_addr(int func_id);

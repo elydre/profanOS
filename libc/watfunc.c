@@ -16,8 +16,8 @@
 #include <mem.h>
 
 void init_watfunc() {
-    int *func_addr = (int *) WATFUNC_ADDR;
-    *func_addr = (int) wf_get_func_addr;
+    *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
+    *(int *)(WATDILY_ADDR) = (int) dily_get_func;
 }
 
 void unknown_func() {
