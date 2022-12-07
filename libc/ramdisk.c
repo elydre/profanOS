@@ -4,7 +4,6 @@
 #include <function.h>
 #include <system.h>
 #include <string.h>
-#include <iolib.h>
 #include <mem.h>
 
 #define UINT32_PER_SECTOR 128
@@ -131,7 +130,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         return;
     }
     if (sector[0] != 0xc000 && sector[0] != 0xa000) {
-        fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
+        // fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
     }
 
@@ -145,7 +144,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_in_str(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
-                fskprint("load %s", fullname);
+                // fskprint("load %s", fullname);
                 clean_line();
                 load_file(sector_id);
             }

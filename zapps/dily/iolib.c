@@ -1,8 +1,4 @@
-#include <driver/keyboard.h>
-#include <string.h>
-#include <iolib.h>
-#include <time.h>
-#include <mem.h>
+#include "syscall.h"
 
 // we need the stdarg of the stdlib
 #include <stdarg.h>
@@ -26,13 +22,17 @@
 
 // private functions
 
+int main() {
+    return 0;
+}
+
 int clean_buffer(char *buffer, int size) {
     for (int i = 0; i < size; i++) buffer[i] = '\0';
     return 0;
 }
 
 char skprint_function(char message[], char default_color) {
-    int msg_len = str_len(message);
+    int msg_len = c_str_len(message);
     char nm[msg_len + 1];
     for (int i = 0; i < msg_len; i++) nm[i] = message[i];
     nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
@@ -54,8 +54,8 @@ char skprint_function(char message[], char default_color) {
             buffer_index++;
             continue;
         }
-        if (str_len(buffer) > 0) {
-            ckprint(buffer, color);
+        if (c_str_len(buffer) > 0) {
+            c_ckprint(buffer, color);
             buffer_index = clean_buffer(buffer, msg_len);
         }
         if (i == msg_len - 1) break;
@@ -88,17 +88,17 @@ void mskprint(int nb_args, ...) {
 void fskprint(char format[], ...) {
     va_list args;
     va_start(args, format);
-    char *buffer = malloc(0x1000);
+    char *buffer = c_malloc(0x1000);
     clean_buffer(buffer, 0x1000);
     char color = c_white;
 
-    for (int i = 0; i <= str_len(format); i++) {
-        if (i == str_len(format)) {
+    for (int i = 0; i <= c_str_len(format); i++) {
+        if (i == c_str_len(format)) {
             skprint_function(buffer, color);
             continue;
         }
         if (format[i] != '%') {
-            str_append(buffer, format[i]);
+            c_str_append(buffer, format[i]);
             continue;
         }
         color = skprint_function(buffer, color);
@@ -106,18 +106,18 @@ void fskprint(char format[], ...) {
         i++;
         if (format[i] == 's') {
             char *arg = va_arg(args, char*);
-            for (int j = 0; j < str_len(arg); j++) buffer[j] = arg[j];
-            buffer[str_len(arg)] = '\0';
+            for (int j = 0; j < c_str_len(arg); j++) buffer[j] = arg[j];
+            buffer[c_str_len(arg)] = '\0';
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'd') {
             int arg = va_arg(args, int);
-            int_to_ascii(arg, buffer);
+            c_int_to_ascii(arg, buffer);
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'x') {
             int arg = va_arg(args, int);
-            hex_to_ascii(arg, buffer);
+            c_hex_to_ascii(arg, buffer);
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'c') {
@@ -128,14 +128,14 @@ void fskprint(char format[], ...) {
         }
         else if (format[i] == 'f') {
             double arg = va_arg(args, double);
-            double_to_ascii(arg, buffer);
+            c_double_to_ascii(arg, buffer);
             color = skprint_function(buffer, color);
         }
         else i--;
         clean_buffer(buffer, 0x1000);
         continue;
     }
-    free(buffer);
+    c_free(buffer);
     va_end(args);
 }
 
@@ -148,7 +148,7 @@ void rainbow_print(char message[]) {
 
     while (message[i] != 0) {
         buffer[0] = message[i];
-        ckprint(buffer, rainbow_colors[i % 6]);
+        c_ckprint(buffer, rainbow_colors[i % 6]);
         i++;
     }
 }
@@ -158,7 +158,7 @@ void rainbow_print(char message[]) {
 ***********************/
 
 void input_wh(char out_buffer[], int size, char color, char ** history, int history_size) {
-    int old_cursor = get_cursor_offset();
+    int old_cursor = c_get_cursor_offset();
     int buffer_actual_size = 0;
     int history_index = 0;
     int buffer_index = 0;
@@ -167,22 +167,22 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     int shift = 0;
     int new_pos;
 
-    int row = gt_get_max_rows();
-    int col = gt_get_max_cols();
+    int row = c_gt_get_max_rows();
+    int col = c_gt_get_max_cols();
 
     clean_buffer(out_buffer, size);
 
     do {
-        sc = kb_get_scfh();
+        sc = c_kb_get_scfh();
     } while (sc == ENTER);
 
-    kb_reset_history();
+    c_kb_reset_history();
 
     while (sc != ENTER) {
-        ms_sleep(2);
+        c_ms_sleep(2);
 
         last_sc = sc;
-        sc = kb_get_scfh();
+        sc = c_kb_get_scfh();
         
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
@@ -211,10 +211,10 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
         else if (sc == OLDER) {
             if (history_index == history_size) continue;
-            set_cursor_offset(old_cursor);
-            for (int i = 0; i < buffer_actual_size; i++) kprint(" ");
+            c_set_cursor_offset(old_cursor);
+            for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
             clean_buffer(out_buffer, size);
-            buffer_actual_size = (str_len(history[history_index]) > size) ? size : str_len(history[history_index]);
+            buffer_actual_size = (c_str_len(history[history_index]) > size) ? size : c_str_len(history[history_index]);
             for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index][i];
             buffer_index = buffer_actual_size;
             history_index++;
@@ -222,15 +222,15 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
         else if (sc == NEWER) {
             clean_buffer(out_buffer, size);
-            set_cursor_offset(old_cursor);
-            for (int i = 0; i < buffer_actual_size; i++) kprint(" ");
+            c_set_cursor_offset(old_cursor);
+            for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
             if (history_index < 2) {
                 buffer_actual_size = 0;
                 buffer_index = 0;
                 continue;
             }
             history_index--;
-            buffer_actual_size = (str_len(history[history_index - 1]) > size) ? size : str_len(history[history_index - 1]);
+            buffer_actual_size = (c_str_len(history[history_index - 1]) > size) ? size : c_str_len(history[history_index - 1]);
             for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index - 1][i];
             buffer_index = buffer_actual_size;
         }
@@ -265,21 +265,21 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
         else if (sc <= SC_MAX) {
             if (size < buffer_actual_size + 2) continue;
-            if (kb_scancode_to_char(sc, shift) == '?') continue;
+            if (c_kb_scancode_to_char(sc, shift) == '?') continue;
             for (int i = buffer_actual_size; i > buffer_index; i--) {
                 out_buffer[i] = out_buffer[i - 1];
             }
-            out_buffer[buffer_index] = kb_scancode_to_char(sc, shift);
+            out_buffer[buffer_index] = c_kb_scancode_to_char(sc, shift);
             buffer_actual_size++;
             buffer_index++;
         }
 
 
-        set_cursor_offset(old_cursor);
-        ckprint(out_buffer, color);
-        kprint(" ");
+        c_set_cursor_offset(old_cursor);
+        c_ckprint(out_buffer, color);
+        c_kprint(" ");
         new_pos = old_cursor + buffer_index * 2;
-        set_cursor_offset(new_pos);
+        c_set_cursor_offset(new_pos);
         if (new_pos >= (row * col - 1) * 2) {
             old_cursor -= row * 2;
         }

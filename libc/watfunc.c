@@ -63,6 +63,7 @@ int wf_get_func_addr(int func_id) {
 
         // string.h
         case 23: return (int) int_to_ascii;
+        case 37: return (int) double_to_ascii;
         case 24: return (int) hex_to_ascii;
         case 25: return (int) ascii_to_int;
         case 26: return (int) str_reverse;
@@ -78,13 +79,6 @@ int wf_get_func_addr(int func_id) {
         case 36: return (int) str_cat;
         case 90: return (int) str_delchar;
 
-        // iolib.h
-        case 37: return (int) mskprint;
-        case 38: return (int) fskprint;
-        case 39: return (int) rainbow_print;
-        case 40: return (int) input_wh;
-        case 41: return (int) input;
-
         // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;
         case 43: return (int) sleep;
@@ -95,15 +89,15 @@ int wf_get_func_addr(int func_id) {
         case 70: return (int) time_get;
         case 72: return (int) timer_get_tick;
 
-        // screen.h
+        // gnrtx.h
         case 46: return (int) clear_screen;
         case 49: return (int) ckprint_at;
         case 51: return (int) kprint_backspace;
         case 52: return (int) set_cursor_offset;
         case 53: return (int) get_cursor_offset;
         case 54: return (int) get_offset;
-        case 55: return (int) get_offset_row;
-        case 56: return (int) get_offset_col;
+        case 55: return (int) gt_get_max_rows;
+        case 56: return (int) gt_get_max_cols;
         case 76: return (int) cursor_blink;
         case 81: return (int) vesa_set_pixel;
 

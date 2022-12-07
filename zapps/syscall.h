@@ -51,6 +51,7 @@
 #define KB_CTRL 29
 #define KB_SHIFT 42
 #define KB_MAJ 58
+#define KB_TAB 15
 
 #define KB_released_value 128
 #define KB_released(key) (key + KB_released_value)
@@ -123,6 +124,7 @@ typedef struct sprite_t {
 #define c_mem_get_usage() ((int (*)(void)) hi_func_addr(21))()
 #define c_mem_get_usable() ((int (*)(void)) hi_func_addr(22))()
 #define c_int_to_ascii(n, str) ((void (*)(int, char *)) hi_func_addr(23))(n, str)
+#define c_hex_to_ascii(n, str) ((void (*)(int, char *)) hi_func_addr(24))(n, str)
 #define c_ascii_to_int(str) ((int (*)(char *)) hi_func_addr(25))(str)
 #define c_str_len(s) ((int (*)(char *)) hi_func_addr(27))(s)
 #define c_str_append(str, c) ((void (*)(char *, char)) hi_func_addr(29))(str, c)
@@ -132,11 +134,7 @@ typedef struct sprite_t {
 #define c_str_end_split(str, delim) ((void (*)(char *, char)) hi_func_addr(33))(str, delim)
 #define c_str_count(str, thing) ((int (*)(char *, char)) hi_func_addr(35))(str, thing)
 #define c_str_cat(s1, s2) ((void (*)(char *, char *)) hi_func_addr(36))(s1, s2)
-#define c_mskprint(...) ((void (*)(int, ...)) hi_func_addr(37))(__VA_ARGS__)
-#define c_fskprint(...) ((void (*)(char *, ...)) hi_func_addr(38))(__VA_ARGS__)
-#define c_rainbow_print(msg) ((void (*)(char *)) hi_func_addr(39))(msg)
-#define c_input_wh(out_buffer, size, color, history, history_size) ((void (*)(char *, int, char, char **, int)) hi_func_addr(40))(out_buffer, size, color, history, history_size)
-#define c_input(out_buffer, size, color) ((void (*)(char *, int, char)) hi_func_addr(41))(out_buffer, size, color)
+#define c_double_to_ascii(n, str) ((void (*)(double, char *)) hi_func_addr(37))(n, str)
 #define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
 #define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)
 #define c_ms_sleep(ms) ((void (*)(int)) hi_func_addr(44))(ms)
@@ -144,6 +142,10 @@ typedef struct sprite_t {
 #define c_clear_screen() ((void (*)(void)) hi_func_addr(46))()
 #define c_ckprint_at(str, x, y, color) ((void (*)(char *, int, int, char)) hi_func_addr(49))(str, x, y, color)
 #define c_kprint_backspace() ((void (*)(void)) hi_func_addr(51))()
+#define c_set_cursor_offset(offset) ((void (*)(int)) hi_func_addr(52))(offset)
+#define c_get_cursor_offset() ((int (*)(void)) hi_func_addr(53))()
+#define c_gt_get_max_rows() ((int (*)(void)) hi_func_addr(55))()
+#define c_gt_get_max_cols() ((int (*)(void)) hi_func_addr(56))()
 #define c_kb_scancode_to_char(scancode, shift) ((char (*)(int, int)) hi_func_addr(57))(scancode, shift)
 #define c_kb_get_scancode() ((int (*)(void)) hi_func_addr(58))()
 #define c_pow(a, b) ((int (*)(int, int)) hi_func_addr(59))(a, b)

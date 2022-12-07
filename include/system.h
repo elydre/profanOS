@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "dily-02"
+#define VERSION "dily-03"
 
 
 #define WATFUNC_ADDR 0x199990

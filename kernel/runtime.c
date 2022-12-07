@@ -98,13 +98,12 @@ void dily_load(char path[], int lib_id) {
     for (int i = 0; i < lib_size; i++) {
         if (binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89) {
             addr_list[addr_list_size] = (uint32_t) &binary_mem[i];
-            fskprint("Found function at %x\n", addr_list[addr_list_size]);
             addr_list_size++;
         }
     }
 
-    fskprint("Found %d functions\n", addr_list_size - 1);
     lib_functions[lib_count] = addr_list;
+    lib_count++;
 }
 
 int dily_get_func(int lib_id, int func_id) {
@@ -113,7 +112,7 @@ int dily_get_func(int lib_id, int func_id) {
         return 0;
     }
 
-    for (int i = 0; lib_functions[i] != 0; i++) {
+    for (int i = 0; i < lib_count; i++) {
         if (lib_functions[i][0] == (uint32_t) lib_id) {
             return (int) lib_functions[i][func_id];
         }
