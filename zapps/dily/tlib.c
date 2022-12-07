@@ -1,9 +1,12 @@
 #include "../syscall.h"
 
-
 int main(void) {
-    c_fskprint("Hello from tlib.c\n");
     return 0;
+}
+
+int sum(int a, int b) {
+    c_fskprint("sum called\n");
+    return a + b;
 }
 
 void draw_rect(int x, int y, int w, int h, int color) {
@@ -15,6 +18,6 @@ void draw_rect(int x, int y, int w, int h, int color) {
     }
 }
 
-int sum(int a, int b) {
-    return a + b;
+int mhh(int a, int b) {
+    return a * b;
 }

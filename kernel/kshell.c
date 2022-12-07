@@ -54,7 +54,7 @@ void shell_help() {
 void test_tlib() {
     fskprint("sum: %d\n", tlib_sum(1, 2));
     tlib_draw_rect(300, 100, 100, 100, 0x00FF00);
-    // fskprint("return: %d\n", tlib_main());
+    fskprint("mhh: %d\n", tlib_mhh(3, 2));
 }
 
 void shell_addr() {
