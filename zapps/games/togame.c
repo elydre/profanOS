@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 
         if (to_wait > 10) to_wait = 40 - (iter / 50);
 
-        c_int_to_ascii(iter / 10, point);
+        int_to_ascii(iter / 10, point);
         str_append(point, 'p');
         str_append(point, 't');
         str_append(point, 's');

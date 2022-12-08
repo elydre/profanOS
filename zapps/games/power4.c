@@ -13,6 +13,7 @@ ___________________________________
 */
 
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 
@@ -130,7 +131,7 @@ int get_user_choix(int ** grille) {
         c_cursor_blink(0);
         input(buffer, 3, 0x0F);
         c_cursor_blink(1);
-        inp = c_ascii_to_int(buffer) - 1;
+        inp = ascii_to_int(buffer) - 1;
 
         if (inp == -1 && buffer[0]) return -1;
         if (inp < 8 && inp >= 0 && grille[inp][0] == 0) return inp;

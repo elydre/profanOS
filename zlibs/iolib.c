@@ -113,12 +113,12 @@ void fskprint(char format[], ...) {
         }
         else if (format[i] == 'd') {
             int arg = va_arg(args, int);
-            c_int_to_ascii(arg, buffer);
+            int_to_ascii(arg, buffer);
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'x') {
             int arg = va_arg(args, int);
-            c_hex_to_ascii(arg, buffer);
+            hex_to_ascii(arg, buffer);
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'c') {
@@ -129,7 +129,7 @@ void fskprint(char format[], ...) {
         }
         else if (format[i] == 'f') {
             double arg = va_arg(args, double);
-            c_double_to_ascii(arg, buffer);
+            double_to_ascii(arg, buffer);
             color = skprint_function(buffer, color);
         }
         else i--;

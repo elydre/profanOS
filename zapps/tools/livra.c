@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 
@@ -70,7 +71,7 @@ int lexer(char path[], int *code) {
             i++; j++;
         }
         temp[j] = '\0';
-        code[code_size] = c_ascii_to_int(temp);
+        code[code_size] = ascii_to_int(temp);
         code_size++;
     }
 

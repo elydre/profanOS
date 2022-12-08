@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 int main(int argc, char **argv) {
@@ -8,13 +9,13 @@ int main(int argc, char **argv) {
     c_time_jet_lag(&time);
     char tmp[3];
     for (int i = 2; i >= 0; i--) {
-        c_int_to_ascii(time.full[i], tmp);
+        int_to_ascii(time.full[i], tmp);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
         fskprint("$1%s$7:", tmp);
     }
     c_kprint_backspace(); fskprint(" ");
     for (int i = 3; i < 6; i++) {
-        c_int_to_ascii(time.full[i], tmp);
+        int_to_ascii(time.full[i], tmp);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
         fskprint("$1%s$7/", tmp);
     }
