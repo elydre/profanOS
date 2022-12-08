@@ -138,7 +138,6 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         return;
     }
     if (sector[0] != 0xc000 && sector[0] != 0xa000) {
-        // fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
     }
 
@@ -152,7 +151,6 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_atb(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
-                // fskprint("load %s", fullname);
                 clean_line();
                 load_file(sector_id);
             }
@@ -163,7 +161,6 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     // check if the path is the beginning of a path to load
     for (int i = 0; i < ARYLEN(path_to_load); i++) {
         if (str_atb(fullname, path_to_load[i]) || str_atb(path_to_load[i], fullname) || str_cmp(fullname, path_to_load[i]) == 0) {
-            // serial_debug("RD-CD", fullname);
             ramdisk_load_sector(sector_id, sector);
             for (int i = 21; i < UINT32_PER_SECTOR - 1; i++) {
                 if (sector[i] == 0) continue;

@@ -14,9 +14,8 @@
 #include <type.h>
 #include <mem.h>
 
-
-#include <iolib.h>
 #include <string.h>
+#include <iolib.h>
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();

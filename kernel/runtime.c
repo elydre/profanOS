@@ -67,7 +67,7 @@ int run_ifexist(char path[], int argc, char **argv) {
 }
 
 void dily_load(char path[], int lib_id) {
-    if (! fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) != 2) {
+    if ((!fs_does_path_exists(path)) || fs_type_sector(fs_path_to_id(path, 0)) != 2) {
         sys_error("Library not found");
         return;
     }
