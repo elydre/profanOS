@@ -1,21 +1,22 @@
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 void assemble_path(char old[], char new[], char result[]);
 
 int main(int argc, char **argv) {
     char *current_dir = c_malloc(256);
-    c_str_cpy(current_dir, argv[1]);
+    str_cpy(current_dir, argv[1]);
     char *suffix = c_malloc(256);
-    c_str_cpy(suffix, argv[2]);
+    str_cpy(suffix, argv[2]);
     char *path = c_malloc(256);
 
-    if (c_str_cmp(suffix, "ls"))
-        c_str_cpy(path, suffix);
-    else c_str_cpy(path, "");
+    if (str_cmp(suffix, "ls"))
+        str_cpy(path, suffix);
+    else str_cpy(path, "");
 
     char ls_path[256];
-    if (path[0] == '\0') c_str_cpy(ls_path, current_dir);
+    if (path[0] == '\0') str_cpy(ls_path, current_dir);
     else assemble_path(current_dir, path, ls_path);
 
     if (!(c_fs_does_path_exists(ls_path) && c_fs_type_sector(c_fs_path_to_id(ls_path, 0)) == 3)) {
@@ -31,14 +32,14 @@ int main(int argc, char **argv) {
         for (int i = 0; i < elm_count; i++) {
             if (out_type[i] == 3) {
                 fskprint("$2%s", out_list[i].name);
-                for (int j = 0; j < 22 - c_str_len(out_list[i].name); j++) fskprint(" ");
+                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
                 assemble_path(ls_path, out_list[i].name, tmp_path);
                 fskprint("%d elm\n", c_fs_get_folder_size(tmp_path));
             }
         } for (int i = 0; i < elm_count; i++) {
             if (out_type[i] == 2) {
                 fskprint("$1%s", out_list[i].name);
-                for (int j = 0; j < 22 - c_str_len(out_list[i].name); j++) fskprint(" ");
+                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
                 assemble_path(ls_path, out_list[i].name, tmp_path);
                 fskprint("%d sect\n", c_fs_get_file_size(tmp_path));
             }
@@ -53,7 +54,7 @@ int main(int argc, char **argv) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; c_str_cpy(result, old);
-    if (result[c_str_len(result) - 1] != '/') c_str_append(result, '/');
-    for (int i = 0; i < c_str_len(new); i++) c_str_append(result, new[i]);
+    result[0] = '\0'; str_cpy(result, old);
+    if (result[str_len(result) - 1] != '/') str_append(result, '/');
+    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
 }

@@ -161,7 +161,6 @@ typedef struct sprite_t {
 #define c_lib2d_print_sprite(x, y, sprite) ((void (*)(int, int, sprite_t)) hi_func_addr(87))(x, y, sprite)
 #define c_lib2d_free_sprite(sprite) ((void (*)(sprite_t)) hi_func_addr(88))(sprite)
 #define c_lib2d_init_sprite(path) ((sprite_t (*)(char*)) hi_func_addr(89))(path)
-#define c_str_delchar(s, c) ((void (*)(char*, char)) hi_func_addr(90))(s, c)
 #define c_kb_reset_history() ((void (*)(void)) hi_func_addr(91))()
 #define c_kb_get_scfh() ((int (*)(void)) hi_func_addr(92))()
 #define c_vgui_setup(refresh_all) ((void (*)(int)) hi_func_addr(93))(refresh_all)

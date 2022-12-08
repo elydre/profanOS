@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 void assemble_path(char old[], char new[], char result[]);;
@@ -6,9 +7,9 @@ void assemble_path(char old[], char new[], char result[]);;
 int main(int argc, char **argv) {
     char *fpath = c_malloc(256);
     char *suffix = c_malloc(256);
-    c_str_cpy(fpath, argv[1]);
-    c_str_cpy(suffix, argv[2]);
-    char *file = c_malloc(c_str_len(suffix) + c_str_len(fpath) + 2);
+    str_cpy(fpath, argv[1]);
+    str_cpy(suffix, argv[2]);
+    char *file = c_malloc(str_len(suffix) + str_len(fpath) + 2);
     assemble_path(fpath, suffix, file);
     if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
         uint32_t *file_content = c_fs_declare_read_array(file);
@@ -30,7 +31,7 @@ int main(int argc, char **argv) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; c_str_cpy(result, old);
-    if (result[c_str_len(result) - 1] != '/') c_str_append(result, '/');
-    for (int i = 0; i < c_str_len(new); i++) c_str_append(result, new[i]);
+    result[0] = '\0'; str_cpy(result, old);
+    if (result[str_len(result) - 1] != '/') str_append(result, '/');
+    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
 }

@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 
 // we need the stdarg of the stdlib
 #include <stdarg.h>
@@ -32,7 +33,7 @@ int clean_buffer(char *buffer, int size) {
 }
 
 char skprint_function(char message[], char default_color) {
-    int msg_len = c_str_len(message);
+    int msg_len = str_len(message);
     char nm[msg_len + 1];
     for (int i = 0; i < msg_len; i++) nm[i] = message[i];
     nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
@@ -54,7 +55,7 @@ char skprint_function(char message[], char default_color) {
             buffer_index++;
             continue;
         }
-        if (c_str_len(buffer) > 0) {
+        if (str_len(buffer) > 0) {
             c_ckprint(buffer, color);
             buffer_index = clean_buffer(buffer, msg_len);
         }
@@ -92,13 +93,13 @@ void fskprint(char format[], ...) {
     clean_buffer(buffer, 0x1000);
     char color = c_white;
 
-    for (int i = 0; i <= c_str_len(format); i++) {
-        if (i == c_str_len(format)) {
+    for (int i = 0; i <= str_len(format); i++) {
+        if (i == str_len(format)) {
             skprint_function(buffer, color);
             continue;
         }
         if (format[i] != '%') {
-            c_str_append(buffer, format[i]);
+            str_append(buffer, format[i]);
             continue;
         }
         color = skprint_function(buffer, color);
@@ -106,8 +107,8 @@ void fskprint(char format[], ...) {
         i++;
         if (format[i] == 's') {
             char *arg = va_arg(args, char*);
-            for (int j = 0; j < c_str_len(arg); j++) buffer[j] = arg[j];
-            buffer[c_str_len(arg)] = '\0';
+            for (int j = 0; j < str_len(arg); j++) buffer[j] = arg[j];
+            buffer[str_len(arg)] = '\0';
             color = skprint_function(buffer, color);
         }
         else if (format[i] == 'd') {
@@ -214,7 +215,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
             c_set_cursor_offset(old_cursor);
             for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
             clean_buffer(out_buffer, size);
-            buffer_actual_size = (c_str_len(history[history_index]) > size) ? size : c_str_len(history[history_index]);
+            buffer_actual_size = (str_len(history[history_index]) > size) ? size : str_len(history[history_index]);
             for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index][i];
             buffer_index = buffer_actual_size;
             history_index++;
@@ -230,7 +231,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
                 continue;
             }
             history_index--;
-            buffer_actual_size = (c_str_len(history[history_index - 1]) > size) ? size : c_str_len(history[history_index - 1]);
+            buffer_actual_size = (str_len(history[history_index - 1]) > size) ? size : str_len(history[history_index - 1]);
             for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index - 1][i];
             buffer_index = buffer_actual_size;
         }

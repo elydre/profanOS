@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 void assemble_path(char old[], char new[], char result[]);
@@ -7,7 +8,7 @@ void shell_tree(char path[], int rec);
 int main(int argc, char **argv) {
     int rec = 0; // param
     char *path = c_malloc(256);
-    c_str_cpy(path, argv[1]);
+    str_cpy(path, argv[1]);
     shell_tree(path, rec);
     c_free(path);
     return 0;
@@ -40,7 +41,7 @@ void shell_tree(char path[], int rec) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; c_str_cpy(result, old);
-    if (result[c_str_len(result) - 1] != '/') c_str_append(result, '/');
-    for (int i = 0; i < c_str_len(new); i++) c_str_append(result, new[i]);
+    result[0] = '\0'; str_cpy(result, old);
+    if (result[str_len(result) - 1] != '/') str_append(result, '/');
+    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
 }

@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 #include <iolib.h>
 
 void print_status(char test_name[], int status);
@@ -22,7 +23,7 @@ int main(int argc, char **argv) {
 
 void print_status(char test_name[], int status) {
     char spaces[20]; int i;
-    for (i = 0; i < 20 - c_str_len(test_name); i++)
+    for (i = 0; i < 20 - str_len(test_name); i++)
         spaces[i] = ' ';
     spaces[i] = '\0';
     fskprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");

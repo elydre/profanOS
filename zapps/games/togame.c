@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <string.h>
 
 #define SC_H 72
 #define SC_B 80
@@ -91,9 +92,9 @@ int main(int argc, char **argv) {
         if (to_wait > 10) to_wait = 40 - (iter / 50);
 
         c_int_to_ascii(iter / 10, point);
-        c_str_append(point, 'p');
-        c_str_append(point, 't');
-        c_str_append(point, 's');
+        str_append(point, 'p');
+        str_append(point, 't');
+        str_append(point, 's');
         c_ckprint_at(point, 0, Y_MAX, 0x0f);
         c_ms_sleep(to_wait);
         iter++;
