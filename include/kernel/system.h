@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "dily-07"
+#define VERSION "dily-08"
 
 
 #define WATFUNC_ADDR 0x199990
@@ -17,9 +17,6 @@ int  sys_warning(char msg[]);
 int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
-
-// settings.c
-int sys_get_setting(char name[]);
 
 // kmenu.c
 void task_menu();

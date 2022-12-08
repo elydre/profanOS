@@ -55,6 +55,7 @@ void kernel_main(void *mboot_ptr) {
 
     dily_load("/lib/iolib.bin", 1000);
     dily_load("/lib/string.bin", 1001);
+    dily_load("/lib/setting.bin", 1002);
     kprint("zlibs init\n");
 
     init_watfunc();

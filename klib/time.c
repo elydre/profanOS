@@ -1,6 +1,6 @@
 #include <driver/rtc.h>
 #include <cpu/timer.h>
-#include <system.h>
+#include <setting.h>
 #include <time.h>
 #include <mem.h>
 
@@ -27,6 +27,10 @@ static int seconde_in_month[] = {
     26265600,
     28857600
 };
+
+int main() {
+    return 0;
+}
 
 int is_leap_year(int year) {
     return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
@@ -92,11 +96,6 @@ void time_add(time_t *time, int seconde) {
 
 void time_jet_lag(time_t *time) {
     time_add(time, sys_get_setting("jetlag") * 3600);
-}
-
-void sleep(int seconds) {
-    int start_time = time_gen_unix();
-    while (time_gen_unix() - start_time < seconds);
 }
 
 void ms_sleep(uint32_t ms) {

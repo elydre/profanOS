@@ -124,7 +124,6 @@ typedef struct sprite_t {
 #define c_mem_get_usage() ((int (*)(void)) hi_func_addr(21))()
 #define c_mem_get_usable() ((int (*)(void)) hi_func_addr(22))()
 #define c_time_gen_unix() ((int (*)(void)) hi_func_addr(42))()
-#define c_sleep(seconds) ((void (*)(int)) hi_func_addr(43))(seconds)
 #define c_ms_sleep(ms) ((void (*)(int)) hi_func_addr(44))(ms)
 #define c_time_get_boot() ((int (*)(void)) hi_func_addr(45))()
 #define c_clear_screen() ((void (*)(void)) hi_func_addr(46))()

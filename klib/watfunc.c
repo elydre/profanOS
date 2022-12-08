@@ -62,7 +62,6 @@ int wf_get_func_addr(int func_id) {
 
         // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;
-        case 43: return (int) sleep;
         case 44: return (int) ms_sleep;
         case 45: return (int) time_get_boot;
         case 66: return (int) time_jet_lag;

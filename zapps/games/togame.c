@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 
         if (lost > 3) {
             c_ckprint_at(":( you lost", 0, 0, 0x0f);
-            c_sleep(5);
+            c_ms_sleep(5000);
             c_clear_screen();
             break;
         }
