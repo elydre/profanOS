@@ -1,8 +1,10 @@
 #include <driver/serial.h>
-#include <klib/task.h>
+#include <kernel/task.h>
 #include <gui/vgui.h>
-#include <string.h>
+#include <minilib.h>
+#include <system.h>
 #include <mem.h>
+
 
 #define TASK_MAX 10
 

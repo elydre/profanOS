@@ -1,7 +1,7 @@
 #include <gui/gnrtx.h>
 #include <function.h>
+#include <minilib.h>
 #include <system.h>
-#include <string.h>
 #include <mem.h>
 
 void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
@@ -167,7 +167,7 @@ void mem_print() {
             if (val == 0) kprint("0");
             if (val == 1) color = (color > 0xE0) ? 0x80 : color + 0x10;
             if (val > 0) {
-                int_to_ascii(val, nb);
+                int2str(val, nb);
                 ckprint(nb, color);
             }
         }

@@ -1,15 +1,14 @@
-#include <klib/filesystem.h>
+#include <kernel/filesystem.h>
 #include <driver/keyboard.h>
+#include <kernel/ramdisk.h>
 #include <driver/serial.h>
-#include <klib/ramdisk.h>
-#include <gui/graph2d.h>
+#include <kernel/task.h>
 #include <driver/ata.h>
 #include <cpu/timer.h>
-#include <klib/task.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <gui/vgui.h>
-#include <string.h>
+#include <function.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
@@ -61,24 +60,6 @@ int wf_get_func_addr(int func_id) {
         case 74: return (int) mem_get_free_count;
         case 104: return (int) mem_get_phys_size;
 
-        // string.h
-        case 23: return (int) int_to_ascii;
-        case 37: return (int) double_to_ascii;
-        case 24: return (int) hex_to_ascii;
-        case 25: return (int) ascii_to_int;
-        case 26: return (int) str_reverse;
-        case 27: return (int) str_len;
-        case 28: return (int) str_backspace;
-        case 29: return (int) str_append;
-        case 30: return (int) str_cpy;
-        case 31: return (int) str_cmp;
-        case 32: return (int) str_start_split;
-        case 33: return (int) str_end_split;
-        case 34: return (int) str_is_in;
-        case 35: return (int) str_count;
-        case 36: return (int) str_cat;
-        case 90: return (int) str_delchar;
-
         // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;
         case 43: return (int) sleep;
@@ -124,11 +105,6 @@ int wf_get_func_addr(int func_id) {
         case 67: return (int) task_switch;
         case 84: return (int) task_get_alive;
         case 100: return (int) task_get_max;
-
-        // graph2d.h
-        case 87: return (int) lib2d_print_sprite;
-        case 88: return (int) lib2d_free_sprite;
-        case 89: return (int) lib2d_init_sprite;
 
         // vgui.h
         case 93: return (int) vgui_setup;

@@ -1,12 +1,11 @@
-#include <klib/ramdisk.h>
+#include <kernel/ramdisk.h>
 #include <gui/gnrtx.h>
 #include <function.h>
 #include <system.h>
-#include <string.h>
 #include <mem.h>
 
+#include <string.h>
 #include <iolib.h>
-#include <tlib.h>
 
 #define BFR_SIZE 65
 
@@ -51,12 +50,6 @@ void shell_help() {
         fskprint("%s\n", help[i]);
 }
 
-void test_tlib() {
-    fskprint("sum: %d\n", tlib_sum(1, 2));
-    tlib_draw_rect(300, 100, 100, 100, 0x00FF00);
-    fskprint("mhh: %d\n", tlib_mhh(3, 2));
-}
-
 void shell_addr() {
     fskprint("physic:  %x (%fMo)\n", mem_get_phys_size(), mem_get_phys_size() / 1024.0 / 1024.0);
     fskprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
@@ -80,8 +73,6 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "load") == 0) dily_load("/bin/dily/tlib.bin", 1234);
-    else if (str_cmp(prefix, "test") == 0) test_tlib();
     else if (prefix[0] != '\0') fskprint("$Bnot found: $3%s\n", prefix);
 
     return 0;

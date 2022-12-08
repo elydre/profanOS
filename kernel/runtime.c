@@ -1,7 +1,7 @@
-#include <klib/filesystem.h>
+#include <kernel/filesystem.h>
 #include <driver/serial.h>
 #include <gui/gnrtx.h>
-#include <klib/task.h>
+#include <kernel/task.h>
 #include <system.h>
 #include <iolib.h>
 #include <type.h>

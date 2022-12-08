@@ -1,7 +1,9 @@
-#include <klib/filesystem.h>
-#include <string.h>
+#include <kernel/filesystem.h>
+#include <system.h>
 #include <type.h>
 #include <mem.h>
+
+#include <string.h>
 
 int sys_get_setting(char name[]) {
     // read settings from /sys/settings.txt

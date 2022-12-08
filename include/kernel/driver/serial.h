@@ -10,6 +10,5 @@
 void serial_init();
 void serial_debug(char source[], char message[]);
 void serial_print(int device, char out[]);
-void serial_print_hex(int device, uint32_t n);
 
 #endif

@@ -1,6 +1,6 @@
 #include <driver/keyboard.h>
 #include <gui/gnrtx.h>
-#include <klib/task.h>
+#include <kernel/task.h>
 #include <cpu/ports.h>
 #include <function.h>
 #include <cpu/isr.h>

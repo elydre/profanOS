@@ -1,8 +1,10 @@
 #include <driver/keyboard.h>
 #include <gui/gnrtx.h>
-#include <klib/task.h>
-#include <string.h>
+#include <kernel/task.h>
+#include <system.h>
 #include <time.h>
+
+#include <minilib.h>
 
 #define KB_KEY_UP    0x48
 #define KB_KEY_DOWN  0x50
@@ -49,7 +51,7 @@ void menu_print_line(int line, int task_i, int is_selected) {
     ckprint_at(line_str, 0, line, 0x0D);
     for (int i = 0; i < 80; i++) line_str[i] = '\0';
     line_str[0] = ' ';
-    int_to_ascii(task_get_pid(task_i), str_pid);
+    int2str(task_get_pid(task_i), str_pid);
     str_cat(line_str, str_pid);
     var = str_len(line_str);
     for (int i = 0; i < 5 - var; i++) line_str[var + i] = ' ';

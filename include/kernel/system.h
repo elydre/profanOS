@@ -16,8 +16,9 @@ void sys_stop();
 int  sys_warning(char msg[]);
 int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
-void sys_interrupt(int code);
+void sys_interrupt(int code); // reserved cpu interrupt
 
+// settings.c
 int sys_get_setting(char name[]);
 
 // kmenu.c

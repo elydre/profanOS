@@ -1,8 +1,14 @@
-#include <function.h>
-#include <string.h>
 #include <type.h>
 
 // K&R implementation
+
+void str_reverse(char s[]);
+void str_append(char s[], char n);
+int str_len(char s[]);
+
+int main() {
+    return 0;
+}
 
 void int_to_ascii(int n, char str[]) {
     int i, sign;
@@ -44,7 +50,7 @@ void hex_to_ascii(int n, char str[]) {
 
 void double_to_ascii(double n, char str[]) {
     int int_part = (int) n;
-    int frac_part = (int)((n - int_part) * pow(10, 6));
+    int frac_part = (int)((n - int_part) * 100000);
     int_to_ascii(int_part, str);
     int len = str_len(str);
     str[len] = '.';
@@ -96,11 +102,6 @@ void str_append(char s[], char n) {
     int len = str_len(s);
     s[len] = n;
     s[len+1] = '\0';
-}
-
-void str_backspace(char s[]) {
-    int len = str_len(s);
-    s[len-1] = '\0';
 }
 
 void str_cpy(char s1[], char s2[]) {

@@ -1,5 +1,3 @@
-// header file to use with tlib.c
-
 #ifndef IOLIB_ID
 #define IOLIB_ID 1000
 

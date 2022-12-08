@@ -1,6 +1,5 @@
 #include <driver/rtc.h>
 #include <cpu/timer.h>
-#include <string.h>
 #include <system.h>
 #include <time.h>
 #include <mem.h>

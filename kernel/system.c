@@ -1,18 +1,7 @@
 #include <driver/serial.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
-
-/******************************************
- * nano string library to be independent *
-******************************************/
-
-void int2str(int n, char s[]) {
-    int i = 0;
-    do {
-        s[i++] = n % 10 + '0';
-    } while ((n /= 10) > 0);
-    s[i] = '\0';
-}
+#include <minilib.h>
 
 /****************************
  * panic and reboot system *

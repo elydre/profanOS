@@ -1,6 +1,6 @@
-#include <klib/filesystem.h>
-#include <klib/ramdisk.h>
-#include <string.h>
+#include <kernel/filesystem.h>
+#include <kernel/ramdisk.h>
+#include <minilib.h>
 #include <system.h>
 #include <mem.h>
 
@@ -35,7 +35,7 @@ uint32_t i_next_free(uint32_t rec) {
 }
 
 uint32_t i_creer_dossier(char nom[]) {
-    if (str_is_in(nom, '/') && str_cmp(nom, "/"))
+    if (str_count(nom, '/') && str_cmp(nom, "/"))
         return sys_error("Dir name cannot contain /");
 
     uint32_t folder_id = i_next_free(0);
@@ -57,7 +57,7 @@ uint32_t i_creer_dossier(char nom[]) {
 }
 
 uint32_t i_creer_index_de_fichier(char nom[]) {
-    if (str_is_in(nom, '/'))
+    if (str_count(nom, '/'))
         return sys_error("File name cannot contain /");
 
     if (str_len(nom) > 20) 
