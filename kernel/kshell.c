@@ -1,12 +1,12 @@
-#include <libc/ramdisk.h>
+#include <klib/ramdisk.h>
 #include <gui/gnrtx.h>
 #include <function.h>
 #include <system.h>
 #include <string.h>
-#include <iolib.h>
 #include <mem.h>
 
-#include "../zapps/dily/tlib.h"
+#include <iolib.h>
+#include <tlib.h>
 
 #define BFR_SIZE 65
 

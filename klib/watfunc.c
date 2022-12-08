@@ -1,11 +1,11 @@
-#include <libc/filesystem.h>
+#include <klib/filesystem.h>
 #include <driver/keyboard.h>
 #include <driver/serial.h>
-#include <libc/ramdisk.h>
+#include <klib/ramdisk.h>
 #include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <cpu/timer.h>
-#include <libc/task.h>
+#include <klib/task.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <gui/vgui.h>

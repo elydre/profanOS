@@ -1,5 +1,5 @@
-#include <libc/filesystem.h>
-#include <libc/ramdisk.h>
+#include <klib/filesystem.h>
+#include <klib/ramdisk.h>
 #include <string.h>
 #include <system.h>
 #include <mem.h>

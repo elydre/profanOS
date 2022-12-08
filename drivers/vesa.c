@@ -1,4 +1,4 @@
-#include <libc/multiboot.h>
+#include <klib/multiboot.h>
 #include <gui/vesa.h>
 #include <type.h>
 

@@ -1,10 +1,10 @@
-#include <libc/filesystem.h>
-#include <libc/multiboot.h>
+#include <klib/filesystem.h>
+#include <klib/multiboot.h>
 #include <driver/serial.h>
-#include <libc/ramdisk.h>
+#include <klib/ramdisk.h>
 #include <driver/rtc.h>
 #include <gui/gnrtx.h>
-#include <libc/task.h>
+#include <klib/task.h>
 #include <function.h>
 #include <gui/vesa.h>
 #include <cpu/isr.h>
@@ -53,8 +53,8 @@ void kernel_main(void *mboot_ptr) {
     filesystem_init();
     kprint("filesys init\n");
 
-    dily_load("/bin/dily/iolib.bin", 1000);
-    kprint("libc init\n");
+    dily_load("/lib/iolib.bin", 1000);
+    kprint("klib init\n");
 
     init_watfunc();
     kprint("watfunc init\n");

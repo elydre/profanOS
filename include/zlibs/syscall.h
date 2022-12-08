@@ -1,7 +1,7 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include "../include/type.h"
+#include <type.h>
 
 #define WATFUNC_ADDR 0x199990
 

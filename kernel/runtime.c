@@ -1,7 +1,7 @@
-#include <libc/filesystem.h>
+#include <klib/filesystem.h>
 #include <driver/serial.h>
 #include <gui/gnrtx.h>
-#include <libc/task.h>
+#include <klib/task.h>
 #include <system.h>
 #include <iolib.h>
 #include <type.h>
@@ -107,11 +107,6 @@ void dily_load(char path[], int lib_id) {
 }
 
 int dily_get_func(int lib_id, int func_id) {
-    if (lib_functions == 0) {
-        sys_error("No library loaded");
-        return 0;
-    }
-
     for (int i = 0; i < lib_count; i++) {
         if (lib_functions[i][0] != (uint32_t) lib_id) 
             continue;
@@ -123,6 +118,6 @@ int dily_get_func(int lib_id, int func_id) {
         return val;
     }
 
-    sys_error("Library not found");
+    sys_fatal("Library not found");
     return 0;
 }

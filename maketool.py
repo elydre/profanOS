@@ -6,10 +6,8 @@ import PIL.Image
 
 # SETUP
 
-SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc", "libc/gui"]
-
-INCLUDE_DIR = "include"
-INCLUDE_SUB = [".", "driver", "cpu", "gui", "libc"]
+SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "klib", "klib/gui"]
+INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"
 
@@ -17,6 +15,7 @@ OUT_DIR = "out"
 
 HDD_MAP = {
     "bin": f"{OUT_DIR}/zapps/*",
+    "lib": f"{OUT_DIR}/zlibs/*",
     "sys": "sys_dir/sys/*",
     "user": "sys_dir/user/*",
     "zada": "sys_dir/zada/*",
@@ -25,8 +24,8 @@ HDD_MAP = {
 CC = "gcc"
 CPPC = "g++"
 
-CFLAGS = f"-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I ./{INCLUDE_DIR}"
-ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wno-unused -Wextra -fno-exceptions -m32"
+CFLAGS = "-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I include/kernel -I include/zlibs"
+ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wno-unused -Wextra -fno-exceptions -m32 -I include/zlibs"
 
 # SETTINGS
 
@@ -39,18 +38,18 @@ COLOR_EROR = (255, 0, 0)
 
 last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
-def zapps_file_in_dir(directory, extention):
-    liste = []
-    for file in os.listdir(directory):
-        if os.path.isfile(f"{directory}/{file}"):
-            if file.endswith(extention):
-                liste.append(f"{directory}/{file}")
-        else:
-            liste.extend(zapps_file_in_dir(f"{directory}/{file}", extention))
-    return liste
 file_in_dir = lambda directory, extension: [file for file in os.listdir(directory) if file.endswith(extension)]
 out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.split('/')[-1].split('.')[0]}.o"
 file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
+
+def find_app_lib(directory, extention):
+    liste = []
+    for file in os.listdir(directory):
+        if not os.path.isfile(f"{directory}/{file}"):
+            liste.extend(find_app_lib(f"{directory}/{file}", extention))
+        elif file.endswith(extention):
+            liste.append(f"{directory}/{file}")
+    return liste
 
 
 def cprint(color, text, end="\n"):
@@ -72,7 +71,6 @@ def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
     for dir in SRC_DIRECTORY:
         try:
-            need["h"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".h")])
             need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
             need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
             out.extend([out_file_name(file, "kernel") for file in file_in_dir(dir, ".c")])
@@ -80,17 +78,17 @@ def gen_need_dict():
         except FileNotFoundError:
             cprint(COLOR_EROR, f"{dir} directory not found")
 
-    for dir in INCLUDE_SUB:
-        fulldir = f"./{INCLUDE_DIR}/{dir}"
-        try: need["h"].extend([f"{fulldir}/{file}" for file in file_in_dir(fulldir, ".h")])
-        except FileNotFoundError: cprint(COLOR_EROR, f"{fulldir} directory not found")
+    for dir in INCLUDE_DIR:
+        for fulldir in [dir] + [f"{dir}/{subdir}" for subdir in os.listdir(dir) if os.path.isdir(f"{dir}/{subdir}")]:
+            try: need["h"].extend([f"{fulldir}/{file}" for file in file_in_dir(fulldir, ".h")])
+            except FileNotFoundError: cprint(COLOR_EROR, f"{fulldir} directory not found")
 
     for file in need["h"]:
         if file1_newer(file, "profanOS.elf"):
             cprint(COLOR_INFO, f"header '{file}' was modified, need to rebuild all")
             del need["h"]
             return need, out
-    
+
     del need["h"]
 
     for file in [file for file in need["asm"] if file1_newer(out_file_name(file, "kernel"), file)]:
@@ -131,23 +129,32 @@ def elf_image():
         in_files = " ".join(out)
         print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
 
-def build_zapps():
-    def build_zapp(name, fname):
+def build_app_lib():
+    def build_file(name, fname):
         global total
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {name} -o {fname}.o -I ./zapps")
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {name} -o {fname}.o")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
+        print_and_exec(f"rm {fname}.o {fname}.pe {fname}.full")
         total -= 1
 
-    cprint(COLOR_INFO, "building zapps...")
-    zapps_list = zapps_file_in_dir("zapps", ".c") + zapps_file_in_dir("zapps", ".cpp")
+    cprint(COLOR_INFO, "building zapps and zlibs")
+    build_list = find_app_lib("zapps", ".c")
+    build_list += find_app_lib("zapps", ".cpp")
+
+    build_list += find_app_lib("zlibs", ".c")
+    build_list += find_app_lib("zlibs", ".cpp")
 
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
 
-    for file in zapps_list:
+    if not os.path.exists(f"{OUT_DIR}/zlibs"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zlibs' directory")
+        os.makedirs(f"{OUT_DIR}/zlibs")
+
+    for file in build_list:
         if sum(x == "/" for x in file) <= 1:
             continue
         dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
@@ -155,29 +162,24 @@ def build_zapps():
             cprint(COLOR_EXEC, f"creating '{OUT_DIR}/{dir_name}' directory")
             os.makedirs(f"{OUT_DIR}/{dir_name}")
 
-    zapps_list = [x for x in zapps_list if not x.startswith("zapps/Projets")]
+    build_list = [x for x in build_list if not x.startswith("zapps/Projets")]
 
     # check if zapps need to be rebuild
-    updated_list = [file for file in zapps_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    cprint(COLOR_INFO, f"{len(updated_list)} zapps to build (total: {len(zapps_list)})")
-    zapps_list = updated_list
+    updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
+    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (total: {len(build_list)})")
+    build_list = updated_list
 
-    if not zapps_list: return
+    if not build_list: return
 
     global total
-    total = len(zapps_list)
-    for name in zapps_list:
+    total = len(build_list)
+    for name in build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
         if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
             total -= 1
             continue
-        Thread(target = build_zapp, args = (name, fname)).start()
+        Thread(target = build_file, args = (name, fname)).start()
     while total : pass # on attends que tout soit fini
-
-    # on supprime les fichiers temporaires
-    for ext in ["pe", "full", "o"]:
-        print_and_exec(f"rm -Rf ./out/zapps/*.{ext}")
-        print_and_exec(f"rm -Rf ./out/zapps/*/*.{ext}")
 
 def make_help():
     aide = (
@@ -203,7 +205,7 @@ def make_iso(force = False):
 
 def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     if file_exists("HDD.bin") and not force: return
-    build_zapps()
+    build_app_lib()
 
     cprint(COLOR_INFO, "generating HDD.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")
@@ -228,7 +230,7 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     # transform every image into .img, the format of profanOS
     liste_images = []
     for extention in ["jpg", "png"]:
-        liste_images.extend(zapps_file_in_dir("out", extention))
+        liste_images.extend(find_app_lib("out", extention))
     for file in liste_images:
         file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
         file_name = file.split("/")[-1].split(".")[0]
