@@ -1,6 +1,6 @@
 #include <syscall.h>
 
-#define PI 3.14159265358979323846
+#define PI 3.14159265358979323846264338325079028873
 #define MATH_LOOP 100
 #define FOCAL_DISTANCE 100
 #define CUBE_COLOR 0xFFFFFF
@@ -192,7 +192,7 @@ void draw(Shape_t* shape) {
 
 int show_fps(int time) {
     int new_time = c_timer_get_tick();
-    int fps = 1000 / (new_time - time);
+    int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
     c_int_to_ascii(fps, fps_str);
     c_vgui_print(0, 0, fps_str, 0xFFFFFF);

@@ -142,20 +142,28 @@ def build_zapps():
 
     cprint(COLOR_INFO, "building zapps...")
     zapps_list = zapps_file_in_dir("zapps", ".c") + zapps_file_in_dir("zapps", ".cpp")
-    zapps_list_clean = [x for x in zapps_list if not x.startswith("zapps/Projets")]
+
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
 
     for file in zapps_list:
-        if sum(x == "/" for x in file) > 1:
-            dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
-            if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
-                print(f"making {dir_name}")
-                os.makedirs(f"{OUT_DIR}/{dir_name}")
-                
-    zapps_list = zapps_list_clean
-                
+        if sum(x == "/" for x in file) <= 1:
+            continue
+        dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
+        if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
+            cprint(COLOR_EXEC, f"creating '{OUT_DIR}/{dir_name}' directory")
+            os.makedirs(f"{OUT_DIR}/{dir_name}")
+
+    zapps_list = [x for x in zapps_list if not x.startswith("zapps/Projets")]
+
+    # check if zapps need to be rebuild
+    updated_list = [file for file in zapps_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
+    cprint(COLOR_INFO, f"{len(updated_list)} zapps to build (total: {len(zapps_list)})")
+    zapps_list = updated_list
+
+    if not zapps_list: return
+
     global total
     total = len(zapps_list)
     for name in zapps_list:
@@ -163,10 +171,10 @@ def build_zapps():
         if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
             total -= 1
             continue
-        Thread(target=build_zapp, args=(name, fname)).start()
+        Thread(target = build_zapp, args = (name, fname)).start()
     while total : pass # on attends que tout soit fini
-    
-    # on vire les .pe, .full et .o intermediaires
+
+    # on supprime les fichiers temporaires
     for ext in ["pe", "full", "o"]:
         print_and_exec(f"rm -Rf ./out/zapps/*.{ext}")
         print_and_exec(f"rm -Rf ./out/zapps/*/*.{ext}")
@@ -195,8 +203,6 @@ def make_iso(force = False):
 
 def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     if file_exists("HDD.bin") and not force: return
-    # en cas de problème de build du disk, taper 'make fullclean'
-    # puis mettre en commentaire la ligne suivante          (^_^ )
     build_zapps()
 
     cprint(COLOR_INFO, "generating HDD.bin...")
@@ -216,8 +222,8 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
             print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/Projets/{dossier}/*")
             print_and_exec(f"cp -r zapps/Projets/{dossier}/*.bin  {OUT_DIR}/disk/bin/Projets/{dossier}/")
             print_and_exec(f"rm -Rf zapps/Projets/{dossier}/*.bin")
-    except Exception:
-        cprint(COLOR_EROR, "Error while copying projects, passing...")
+    except Exception as e:
+        cprint(COLOR_EROR, f"Error while copying projects: {e}")
 
     # transform every image into .img, the format of profanOS
     liste_images = []
