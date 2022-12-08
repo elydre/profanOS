@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <iolib.h>
 
 void assemble_path(char old[], char new[], char result[]);
 
@@ -11,12 +12,12 @@ int main(int argc, char** argv) {
     assemble_path(current_dir, suffix, file);
     if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
         char char_content[70];
-        c_fskprint("-> "); c_input(char_content, 70, c_blue); c_fskprint("\n");
+        fskprint("-> "); input(char_content, 70, c_blue); fskprint("\n");
         uint32_t *file_content = c_malloc(c_str_len(char_content));
         for (int i = 0; i < 70; i++) file_content[i] = (uint32_t) char_content[i];
         c_fs_write_in_file(file, file_content, c_str_len(char_content));
         c_free(file_content);
-    } else c_fskprint("$3%s$B file not found\n", file);
+    } else fskprint("$3%s$B file not found\n", file);
     c_free(file);
     c_free(current_dir);
     c_free(suffix);

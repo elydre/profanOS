@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include <syscall.h>
 
 // we need the stdarg of the stdlib
 #include <stdarg.h>

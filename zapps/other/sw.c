@@ -1,18 +1,20 @@
 // requires /user/star_wars.txt, the ascii art of the star wars
 
-#include "syscall.h"
+#include <syscall.h>
+#include <iolib.h>
+
 
 int main(int argc, char **argv) {
 
     char path[] = "/zada/star_wars.txt";
 
-    c_fskprint("allocating memory for the file...\n");
+    fskprint("allocating memory for the file...\n");
     uint32_t *data = c_fs_declare_read_array(path);
     char *str = c_malloc(0x1000);
 
     str[0] = '\0';
 
-    c_fskprint("loading file: %s into memory...\n", path);
+    fskprint("loading file: %s into memory...\n", path);
     c_fs_read_file(path, data);
 
     c_cursor_blink(1);

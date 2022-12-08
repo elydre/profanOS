@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include <syscall.h>
 
 #define MAX_ITER 64
 #define LARGEUR 320

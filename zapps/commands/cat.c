@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <iolib.h>
 
 void assemble_path(char old[], char new[], char result[]);;
 
@@ -18,10 +19,10 @@ int main(int argc, char **argv) {
             char_content[char_count] = (char) file_content[char_count];
         char_content[char_count] = '\0';
         c_ckprint(char_content, c_magenta);
-        c_fskprint("\n");
+        fskprint("\n");
         c_free(file_content);
         c_free(char_content);
-    } else c_fskprint("$3%s$B file not found\n", file);
+    } else fskprint("$3%s$B file not found\n", file);
     c_free(file);
     c_free(fpath);
     c_free(suffix);

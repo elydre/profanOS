@@ -1,4 +1,5 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <iolib.h>
 
 void afficher(int **plateau, int n);
 void solve(int n, int from_rod, int to_rod, int aux_rod);
@@ -8,9 +9,9 @@ int main(int argc, char **argv) {
     // ask for input
     char inp[3];
     int n;
-    c_fskprint("Enter number of disks: ");
-    c_input(inp, 3, 0x09);
-    c_fskprint("\n");
+    fskprint("Enter number of disks: ");
+    input(inp, 3, 0x09);
+    fskprint("\n");
     n = c_ascii_to_int(inp);
     int **plateau = c_calloc(3 * sizeof(int *));
     for (int i=0; i<3; i++) {
@@ -24,16 +25,16 @@ int main(int argc, char **argv) {
         c_free(plateau[i]);
     }
     c_free(plateau);
-    c_fskprint("\n");
+    fskprint("\n");
     return 0;
 }
 
 void solve(int n, int from_rod, int to_rod, int aux_rod) {
     if (n == 1) {
-        c_fskprint("\nMove disk 1 from rod %d to rod %d", from_rod, to_rod);
+        fskprint("\nMove disk 1 from rod %d to rod %d", from_rod, to_rod);
         return;
     }
     solve(n-1, from_rod, aux_rod, to_rod);
-    c_fskprint("\nMove disk %d from rod %d to rod %d", n, from_rod, to_rod);
+    fskprint("\nMove disk %d from rod %d to rod %d", n, from_rod, to_rod);
     solve(n-1, aux_rod, to_rod, from_rod);
 }

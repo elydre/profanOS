@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include <syscall.h>
 
 #define MAP_SIZE 10
 #define PI 3.14159

@@ -1,4 +1,5 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <iolib.h>
 
 void printl(int **plateau, int curseur_x, int curseur_y);
 void next_step(int **plateau);
@@ -40,7 +41,7 @@ int main(int argc, char **argv) {
             c_ckprint_at("Commandes :", 0, size_x+1, 0x0F);
             c_ckprint_at("ECHAP : quitter", 0, size_x+2, 0x0F);
             c_ckprint_at("E     : mode edition\n", 0, size_x+3, 0x0F);
-            c_fskprint("P/M   : ms_sleep(%d); ", wait);
+            fskprint("P/M   : ms_sleep(%d); ", wait);
         };
         next_step(plateau);
         printl(plateau, -1, -1);

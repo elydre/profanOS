@@ -12,7 +12,9 @@ ___________________________________
  - Licence : GNU GPL v3
 */
 
-#include "syscall.h"
+#include <syscall.h>
+#include <iolib.h>
+
 
 char get_piont(int num);
 int get_user_choix(int ** grille);
@@ -49,7 +51,7 @@ int main(int argc, char **argv) {
         tour = !tour;
     }
 
-    c_fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
+    fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     free_grille(grille);
     c_cursor_blink(0);
     return 0;
@@ -111,11 +113,11 @@ void print_grille(int ** grille) {
 
     for (int l = 0; l < 8; l++) {
         for (int c = 0; c < 8; c++) {
-            c_fskprint((char *) " | %c", get_piont(grille[c][l]));
+            fskprint((char *) " | %c", get_piont(grille[c][l]));
         }
-        c_fskprint((char *) " |\n");
+        fskprint((char *) " |\n");
     }
-    c_fskprint((char *) "\n");
+    fskprint((char *) "\n");
 }
 
 int get_user_choix(int ** grille) {
@@ -126,7 +128,7 @@ int get_user_choix(int ** grille) {
     while (1) {
         c_ckprint_at((char *) "ENTER YOUR CHOICE -> ", 0, 11, 0x0F);
         c_cursor_blink(0);
-        c_input(buffer, 3, 0x0F);
+        input(buffer, 3, 0x0F);
         c_cursor_blink(1);
         inp = c_ascii_to_int(buffer) - 1;
 

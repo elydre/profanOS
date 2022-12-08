@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include <syscall.h>
 #include "iolib.h"
 
 #define BFR_SIZE 90

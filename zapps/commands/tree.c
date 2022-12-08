@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <iolib.h>
 
 void assemble_path(char old[], char new[], char result[]);
 void shell_tree(char path[], int rec);
@@ -21,19 +22,19 @@ void shell_tree(char path[], int rec) {
     for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_type_sector(out_type[i]);
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 2) { // file
-            for (int j = 0; j < rec; j++) c_fskprint("  ");
-            c_fskprint("| $6%s\n", out_list[i].name);
+            for (int j = 0; j < rec; j++) fskprint("  ");
+            fskprint("| $6%s\n", out_list[i].name);
         }
     }
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 3) { // folder
-            for (int j = 0; j < rec; j++) c_fskprint("  ");
+            for (int j = 0; j < rec; j++) fskprint("  ");
             assemble_path(path, out_list[i].name, tmp_path);
-            c_fskprint("%s\n", out_list[i].name);
+            fskprint("%s\n", out_list[i].name);
             shell_tree(tmp_path, rec + 1);
         }
     }
-    if (rec == 0) c_fskprint("\n");
+    if (rec == 0) fskprint("\n");
     c_free(out_list);
     c_free(out_type);
 }

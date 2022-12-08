@@ -1,11 +1,12 @@
-#include "../syscall.h"
+#include <syscall.h>
+#include <iolib.h>
 
 int main(void) {
     return 0;
 }
 
 int sum(int a, int b) {
-    c_fskprint("sum called\n");
+    fskprint("sum called\n");
     return a + b;
 }
 

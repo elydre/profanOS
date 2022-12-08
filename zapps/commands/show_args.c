@@ -1,9 +1,10 @@
 #include <syscall.h>
+#include <iolib.h>
 
 int main(int argc, char **argv) {
-    c_fskprint("$4have %d arguments\n", argc);
+    fskprint("$4have %d arguments\n", argc);
     for (int i = 0; i < argc; i++) {
-        c_fskprint("$4arg %d: $1%s\n", i, argv[i]);
+        fskprint("$4arg %d: $1%s\n", i, argv[i]);
     }
     return 0;
 }

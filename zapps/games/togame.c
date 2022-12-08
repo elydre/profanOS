@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include <syscall.h>
 
 #define SC_H 72
 #define SC_B 80

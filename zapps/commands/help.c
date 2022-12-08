@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <iolib.h>
 
 int main(int argc, char **argv) {
     char *file = "/zada/shell_help.txt";
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
         c_ckprint(char_content, c_magenta);
         c_free(file_content);
         c_free(char_content);
-    } else c_fskprint("$Bshell_help.txt not found\n", file);
+    } else fskprint("$Bshell_help.txt not found\n", file);
     c_free(file);
     return 0;
 }

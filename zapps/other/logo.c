@@ -1,4 +1,5 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <iolib.h>
 
 int main(int argc, char **argv) {
 
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
         str[i] = (char) data[i];
     str[i] = '\n';
 
-    c_mskprint(1, str);
+    mskprint(1, str);
 
     c_free(data);
     c_free(str);
