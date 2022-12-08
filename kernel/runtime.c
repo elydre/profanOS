@@ -72,9 +72,12 @@ void dily_load(char path[], int lib_id) {
         return;
     }
 
-    calloc(0x16000);
+    if (lib_functions == 0) {
+        lib_functions = calloc(0x1000);
+        // can be realloc in the future
+    }
+
     uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126);
-    calloc(0x16000);
     uint32_t *file = fs_declare_read_array(path);
     fs_read_file(path, file);
 
@@ -84,11 +87,6 @@ void dily_load(char path[], int lib_id) {
     }
 
     free(file);
-
-    if (lib_functions == 0) {
-        lib_functions = calloc(0x1000);
-        // can be realloc in the future
-    }
 
     uint32_t *addr_list = calloc(0x1000);
     addr_list[0] = (uint32_t) lib_id;

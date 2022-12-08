@@ -68,13 +68,6 @@ int ascii_to_int(char str[]) {
     return n;
 }
 
-int str_is_in(char str[], char thing) {
-    for (int i = 0; i < str_len(str);i++) {
-        if (str[i] == thing) return 1;
-    }
-    return 0;
-}
-
 int str_count(char str[], char thing) {
     int total = 0;
     for (int i = 0; i < str_len(str);i++) {

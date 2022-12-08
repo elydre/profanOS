@@ -2,8 +2,8 @@
 #include <gui/gnrtx.h>
 #include <driver/ata.h>
 #include <function.h>
+#include <minilib.h>
 #include <system.h>
-#include <string.h>
 #include <mem.h>
 
 #define UINT32_PER_SECTOR 128
@@ -118,6 +118,14 @@ void load_file(uint32_t first_sector_id) {
     } while (sector[UINT32_PER_SECTOR - 1] != 0);
 }
 
+int str_atb(char str[], char begin[]) {
+    // str at begin
+    for (int i = 0; i < str_len(begin); i++) {
+        if (str[i] != begin[i]) return 0;
+    }
+    return 1;
+}
+
 void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     if (ramdisk_sector_internal_pos(sector_id) != -1) return;
 
@@ -142,7 +150,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
 
     if (sector[0] == 0xa000) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
-            if (str_in_str(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
+            if (str_atb(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
                 // fskprint("load %s", fullname);
                 clean_line();
@@ -154,7 +162,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
 
     // check if the path is the beginning of a path to load
     for (int i = 0; i < ARYLEN(path_to_load); i++) {
-        if (str_in_str(fullname, path_to_load[i]) || str_in_str(path_to_load[i], fullname) || str_cmp(fullname, path_to_load[i]) == 0) {
+        if (str_atb(fullname, path_to_load[i]) || str_atb(path_to_load[i], fullname) || str_cmp(fullname, path_to_load[i]) == 0) {
             // serial_debug("RD-CD", fullname);
             ramdisk_load_sector(sector_id, sector);
             for (int i = 21; i < UINT32_PER_SECTOR - 1; i++) {

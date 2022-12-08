@@ -18,7 +18,7 @@ void sys_stop() {
 }
 
 int sys_warning(char msg[]) {
-    ckprint("WARNING: ", 0x05);
+    ckprint("WARNING: ", 0x06);
     ckprint(msg, 0x0E);
     kprint("\n");
 

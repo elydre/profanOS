@@ -16,6 +16,7 @@
 
 
 #include <iolib.h>
+#include <string.h>
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();
@@ -54,6 +55,7 @@ void kernel_main(void *mboot_ptr) {
     kprint("filesys init\n");
 
     dily_load("/lib/iolib.bin", 1000);
+    dily_load("/lib/string.bin", 1001);
     kprint("kernel init\n");
 
     init_watfunc();
