@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     else assemble_path(current_dir, path, ls_path);
 
     if (!(c_fs_does_path_exists(ls_path) && c_fs_type_sector(c_fs_path_to_id(ls_path, 0)) == 3)) {
-        fskprint("$3%s$B is not a directory\n", ls_path);
+        fsprint("$3%s$B is not a directory\n", ls_path);
     } else {
         int elm_count = c_fs_get_folder_size(ls_path);
         string_20_t *out_list = c_malloc(elm_count * sizeof(string_20_t));
@@ -31,17 +31,17 @@ int main(int argc, char **argv) {
         for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_type_sector(out_type[i]);
         for (int i = 0; i < elm_count; i++) {
             if (out_type[i] == 3) {
-                fskprint("$2%s", out_list[i].name);
-                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
+                fsprint("$2%s", out_list[i].name);
+                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fsprint(" ");
                 assemble_path(ls_path, out_list[i].name, tmp_path);
-                fskprint("%d elm\n", c_fs_get_folder_size(tmp_path));
+                fsprint("%d elm\n", c_fs_get_folder_size(tmp_path));
             }
         } for (int i = 0; i < elm_count; i++) {
             if (out_type[i] == 2) {
-                fskprint("$1%s", out_list[i].name);
-                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fskprint(" ");
+                fsprint("$1%s", out_list[i].name);
+                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fsprint(" ");
                 assemble_path(ls_path, out_list[i].name, tmp_path);
-                fskprint("%d sect\n", c_fs_get_file_size(tmp_path));
+                fsprint("%d sect\n", c_fs_get_file_size(tmp_path));
             }
         }
         c_free(out_list);

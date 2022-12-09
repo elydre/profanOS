@@ -32,7 +32,7 @@ int clean_buffer(char *buffer, int size) {
     return 0;
 }
 
-char skprint_function(char message[], char default_color) {
+char sprint_function(char message[], char default_color) {
     int msg_len = str_len(message);
     char nm[msg_len + 1];
     for (int i = 0; i < msg_len; i++) nm[i] = message[i];
@@ -75,18 +75,18 @@ char skprint_function(char message[], char default_color) {
  * PRINT PUBLIC FUNCTIONS *
 ***************************/
 
-void mskprint(int nb_args, ...) {
+void msprint(int nb_args, ...) {
     va_list args;
     va_start(args, nb_args);
     char last_color = c_white;
     for (int i = 0; i < nb_args; i++) {
         char *arg = va_arg(args, char*);
-        last_color = skprint_function(arg, last_color);
+        last_color = sprint_function(arg, last_color);
     }
     va_end(args);
 }
 
-void fskprint(char format[], ...) {
+void fsprint(char format[], ...) {
     va_list args;
     va_start(args, format);
     char *buffer = c_malloc(0x1000);
@@ -95,42 +95,42 @@ void fskprint(char format[], ...) {
 
     for (int i = 0; i <= str_len(format); i++) {
         if (i == str_len(format)) {
-            skprint_function(buffer, color);
+            sprint_function(buffer, color);
             continue;
         }
         if (format[i] != '%') {
             str_append(buffer, format[i]);
             continue;
         }
-        color = skprint_function(buffer, color);
+        color = sprint_function(buffer, color);
         clean_buffer(buffer, 0x1000);
         i++;
         if (format[i] == 's') {
             char *arg = va_arg(args, char*);
             for (int j = 0; j < str_len(arg); j++) buffer[j] = arg[j];
             buffer[str_len(arg)] = '\0';
-            color = skprint_function(buffer, color);
+            color = sprint_function(buffer, color);
         }
         else if (format[i] == 'd') {
             int arg = va_arg(args, int);
             int_to_ascii(arg, buffer);
-            color = skprint_function(buffer, color);
+            color = sprint_function(buffer, color);
         }
         else if (format[i] == 'x') {
             int arg = va_arg(args, int);
             hex_to_ascii(arg, buffer);
-            color = skprint_function(buffer, color);
+            color = sprint_function(buffer, color);
         }
         else if (format[i] == 'c') {
             char arg = va_arg(args, int);
             buffer[0] = arg;
             buffer[1] = '\0';
-            color = skprint_function(buffer, color);
+            color = sprint_function(buffer, color);
         }
         else if (format[i] == 'f') {
             double arg = va_arg(args, double);
             double_to_ascii(arg, buffer);
-            color = skprint_function(buffer, color);
+            color = sprint_function(buffer, color);
         }
         else i--;
         clean_buffer(buffer, 0x1000);

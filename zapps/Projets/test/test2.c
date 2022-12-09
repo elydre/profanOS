@@ -1,5 +1,5 @@
 #include <iolib.h>
 
 void print2() {
-    fskprint("test 2\n");
+    fsprint("test 2\n");
 }

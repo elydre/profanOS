@@ -10,4 +10,6 @@ int str_cmp(char s1[], char s2[]);
 int str_count(char s[], char c);
 void str_append(char s[], char c);
 
+void kprintf(char *fmt, ...);
+
 #endif

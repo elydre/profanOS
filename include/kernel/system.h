@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "dily-08"
+#define VERSION "dily-09"
 
 
 #define WATFUNC_ADDR 0x199990
@@ -29,6 +29,7 @@ int run_binary(char path[], int silence, int argc, char **argv);
 int run_ifexist(char path[], int argc, char **argv);
 void dily_load(char path[], int lib_id);
 int dily_get_func(int lib_id, int func_id);
+void dily_unload(int lib_id);
 
 // watfunc.c
 int wf_get_func_addr(int func_id);

@@ -9,13 +9,13 @@ int main(int argc, char **argv) {
 
     char path[] = "/zada/star_wars.txt";
 
-    fskprint("allocating memory for the file...\n");
+    fsprint("allocating memory for the file...\n");
     uint32_t *data = c_fs_declare_read_array(path);
     char *str = c_malloc(0x1000);
 
     str[0] = '\0';
 
-    fskprint("loading file: %s into memory...\n", path);
+    fsprint("loading file: %s into memory...\n", path);
     c_fs_read_file(path, data);
 
     c_cursor_blink(1);

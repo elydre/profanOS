@@ -51,6 +51,6 @@ int sys_get_setting(char name[]) {
         }
     }
     c_free(settings);
-    fskprint("Setting %s not found", name);
+    fsprint("Setting %s not found", name);
     return 0;
 }

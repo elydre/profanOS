@@ -1,3 +1,5 @@
+#include <gui/gnrtx.h>
+
 void str_cat(char s1[], char s2[]) {
     char *start = s1;
     while(*start != '\0') start++;
@@ -60,4 +62,47 @@ void str_append(char s[], char c) {
     while (s[i] != '\0') i++;
     s[i] = c;
     s[i+1] = '\0';
+}
+
+void kprintf(char *fmt, ...) {
+    // printf kernel level
+    // don't use va
+    char *args = (char *) &fmt;
+    args += 4;
+    int i = 0;
+    char char_buffer[256];
+    int buffer_i = 0;
+    while (fmt[i] != '\0') {
+        if (fmt[i] == '%') {
+            i++;
+            if (fmt[i] == 's') {
+                char *s = *((char **) args);
+                args += 4;
+                for (int j = 0; s[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = s[j];
+                    buffer_i++;
+                }                
+            } else if (fmt[i] == 'c') {
+                char c = *((char *) args);
+                args += 4;
+                char_buffer[buffer_i] = c;
+                buffer_i++;
+            } else if (fmt[i] == 'd') {
+                int n = *((int *) args);
+                args += 4;
+                char s[20];
+                int2str(n, s);
+                for (int j = 0; s[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = s[j];
+                    buffer_i++;
+                }
+            }
+        } else {
+            char_buffer[buffer_i] = fmt[i];
+            buffer_i++;
+        }
+        i++;
+    }
+    char_buffer[buffer_i] = '\0';
+    kprint(char_buffer);
 }

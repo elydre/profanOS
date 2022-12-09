@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
         tour = !tour;
     }
 
-    fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
+    fsprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     free_grille(grille);
     c_cursor_blink(0);
     return 0;
@@ -114,11 +114,11 @@ void print_grille(int ** grille) {
 
     for (int l = 0; l < 8; l++) {
         for (int c = 0; c < 8; c++) {
-            fskprint((char *) " | %c", get_piont(grille[c][l]));
+            fsprint((char *) " | %c", get_piont(grille[c][l]));
         }
-        fskprint((char *) " |\n");
+        fsprint((char *) " |\n");
     }
-    fskprint((char *) "\n");
+    fsprint((char *) "\n");
 }
 
 int get_user_choix(int ** grille) {

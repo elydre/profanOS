@@ -20,10 +20,10 @@ int main(int argc, char **argv) {
             char_content[char_count] = (char) file_content[char_count];
         char_content[char_count] = '\0';
         c_ckprint(char_content, c_magenta);
-        fskprint("\n");
+        fsprint("\n");
         c_free(file_content);
         c_free(char_content);
-    } else fskprint("$3%s$B file not found\n", file);
+    } else fsprint("$3%s$B file not found\n", file);
     c_free(file);
     c_free(fpath);
     c_free(suffix);

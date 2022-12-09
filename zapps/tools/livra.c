@@ -101,7 +101,7 @@ void start_inter(int *code, int code_size, int while_id) {
 
             else if (mode == 2) mem[code[instruc + 1]] = code[instruc + 2];
             else if (mode == 3) mem[code[instruc + 1]] = mem[code[instruc + 2]];
-            else if (mode == 4) fskprint("%d\n", mem[code[instruc + 1]]);
+            else if (mode == 4) fsprint("%d\n", mem[code[instruc + 1]]);
             else if (mode == 5) mem[code[instruc + 3]] = mem[code[instruc + 1]] + mem[code[instruc + 2]];
             else if (mode == 6) mem[code[instruc + 3]] = mem[code[instruc + 1]] - mem[code[instruc + 2]];
             else if (mode == 7) mem[code[instruc + 3]] = mem[code[instruc + 1]] * mem[code[instruc + 2]];

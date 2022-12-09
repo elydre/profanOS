@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
         str[i] = (char) data[i];
     str[i] = '\n';
 
-    mskprint(1, str);
+    msprint(1, str);
 
     c_free(data);
     c_free(str);

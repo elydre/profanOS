@@ -26,5 +26,5 @@ void print_status(char test_name[], int status) {
     for (i = 0; i < 20 - str_len(test_name); i++)
         spaces[i] = ' ';
     spaces[i] = '\0';
-    fskprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");
+    fsprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");
 }

@@ -28,9 +28,9 @@ int main(int argc, char **argv) {
     int current_history_size = 0;
 
     while (1) {
-        fskprint(SHELL_PROMPT, current_dir);
+        fsprint(SHELL_PROMPT, current_dir);
         input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
-        fskprint("\n");
+        fsprint("\n");
         if (str_cmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
             for (int i = history_size - 1; i > 0; i--) str_cpy(history[i], history[i - 1]);
             if (current_history_size < history_size) current_history_size++;
@@ -72,7 +72,7 @@ int shell_command(char *buffer) {
                 if (c_fs_does_path_exists(new_path) && c_fs_type_sector(c_fs_path_to_id(new_path, 0)) == 3)
                     str_cpy(current_dir, new_path);
                 else {
-                    fskprint("$3%s$B path not found\n", new_path);
+                    fsprint("$3%s$B path not found\n", new_path);
                     str_cpy(current_dir, old_path);
                     c_free(liste_path);
                     c_free(new_path);
@@ -97,7 +97,7 @@ int shell_command(char *buffer) {
         if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
             go(file, old_prefix, suffix);
         } else if (str_cmp(old_prefix, "")) {
-            fskprint("$3%s$B is not a valid command.\n", old_prefix);
+            fsprint("$3%s$B is not a valid command.\n", old_prefix);
         }
         c_free(file);
         c_free(old_prefix);
@@ -127,7 +127,7 @@ void go(char file[], char prefix[], char suffix[]) {
         // free
         for (int i = 0; i < argc; i++) c_free(argv[i]);
         c_free(argv);
-    } else fskprint("$3%s$B file not found\n", file);
+    } else fsprint("$3%s$B file not found\n", file);
 }
 
 void assemble_path(char old[], char new[], char result[]) {

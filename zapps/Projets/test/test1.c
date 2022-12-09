@@ -4,6 +4,6 @@
 
 int main(int argc, char **argv) {
     print2();
-    fskprint("test\n");
+    fsprint("test\n");
     return 0;
 }

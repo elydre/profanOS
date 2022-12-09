@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
     char *current_dir = c_malloc(256);
     str_cpy(current_dir, argv[1]);
     if (!str_cmp(suffix, "..")) {
-        fskprint("$3Un dossier ne peut pas avoir comme nom .. !\n");
+        fsprint("$3Un dossier ne peut pas avoir comme nom .. !\n");
     } else {
         c_fs_make_dir(current_dir, suffix);
     }

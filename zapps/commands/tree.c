@@ -23,19 +23,19 @@ void shell_tree(char path[], int rec) {
     for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_type_sector(out_type[i]);
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 2) { // file
-            for (int j = 0; j < rec; j++) fskprint("  ");
-            fskprint("| $6%s\n", out_list[i].name);
+            for (int j = 0; j < rec; j++) fsprint("  ");
+            fsprint("| $6%s\n", out_list[i].name);
         }
     }
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 3) { // folder
-            for (int j = 0; j < rec; j++) fskprint("  ");
+            for (int j = 0; j < rec; j++) fsprint("  ");
             assemble_path(path, out_list[i].name, tmp_path);
-            fskprint("%s\n", out_list[i].name);
+            fsprint("%s\n", out_list[i].name);
             shell_tree(tmp_path, rec + 1);
         }
     }
-    if (rec == 0) fskprint("\n");
+    if (rec == 0) fsprint("\n");
     c_free(out_list);
     c_free(out_type);
 }

@@ -119,3 +119,16 @@ int dily_get_func(int lib_id, int func_id) {
     sys_fatal("Library not found");
     return 0;
 }
+
+void dily_unload(int lib_id) {
+    for (int i = 0; i < lib_count; i++) {
+        if (lib_functions[i][0] != (uint32_t) lib_id) 
+            continue;
+
+        free(lib_functions[i]);
+        lib_functions[i] = 0;
+        return;
+    }
+
+    sys_error("Library not found");
+}

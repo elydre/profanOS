@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
         c_lib2d_print_sprite(0, 0, sprite);
         while (c_kb_get_scancode() != 1);
         c_lib2d_free_sprite(sprite);
-    } else fskprint("$3%s$B file not found\n", file);
+    } else fsprint("$3%s$B file not found\n", file);
     
     c_free(current_dir);
     c_free(suffix);
