@@ -460,6 +460,14 @@ void fs_read_file(char path[], char *data) {
 int main(int argc, char **argv) {
     init_fs();
 
+    FILE *fptr;
+    if ((fptr = fopen("HDD.bin","wb")) == NULL){
+       printf("Error! opening file");
+
+       // Program exits if the file pointer returns NULL.
+       exit(1);
+    }
+
     fs_make_dir("/", "test");
     fs_make_dir("/test", "test2");
     fs_make_file("/test/test2", "FILE");
@@ -471,25 +479,16 @@ int main(int argc, char **argv) {
     printf("Le fichier %s contient \"%s\"\n", "/test/test2/FILE", file);
     free(file);
 
-
-
     for (int i = 0; i < 8; i++) {
         i_print_sector(i);
     }
+
+    int max_to_write = 8;
+    for (int i = 0; i < max_to_write; i++) {
+        u_int32_t buffer[SECTOR_SIZE];
+        read_from_disk(i, buffer);
+        fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
+    }
     
-    // i_create_dir(1, "test");
-    // i_create_file_index(2, "test2");
-    // i_create_file_index(3, "test3");
-    // i_add_item_to_dir(0, 1);
-    // i_add_item_to_dir(0, 2);
-    // i_add_item_to_dir(1, 3);
-
-    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/") , "/");
-    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/test") , "/test");
-    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/test2") , "/test2");
-    // printf("Path to id: %x for path '%s'\n", fs_launch_path_to_id("/test/test3") , "/test/test3");
-
-    // printf("Path to id: %x\n", fs_launch_path_to_id("/test/test3"));
-    // printf("Next free sector: %x\n", i_next_free());
     return 0;
 }
