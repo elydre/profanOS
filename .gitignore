@@ -3,6 +3,7 @@
 *.o
 
 # out files
+*.exe
 *.img
 *.iso
 *.elf
@@ -18,6 +19,3 @@ out/
 # vscode dir
 .vscode/
 .vs/
-
-# fs things
-fs.exe
