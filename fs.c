@@ -13,6 +13,7 @@
 
 u_int32_t *virtual_disk;
 u_int8_t *free_map;
+int max_sector_written = 0;
 
 void i_create_dir(u_int32_t sector, char *name);
 
@@ -42,6 +43,9 @@ void read_from_disk(u_int32_t sector, u_int32_t *buffer) {
 void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         virtual_disk[sector * SECTOR_SIZE + i] = buffer[i];
+    }
+    if (sector > max_sector_written) {
+        max_sector_written = sector;
     }
 }
 
@@ -457,34 +461,102 @@ void fs_read_file(char path[], char *data) {
     data[data_index] = '\0';
 }
 
+// TODO : add a function to delete a file
+// TODO : add a function to delete a directory
+
+#include <dirent.h> 
+
+
+/* let us make a recursive function to print the content of a given folder */
+
+void show_dir_content(char *path) {
+    DIR *d = opendir(path); // open the path
+    if (d==NULL) {
+        return; // if was not able, return*
+    }
+    struct dirent *dir; // for the directory entries
+    while ((dir = readdir(d)) != NULL) {// if we were able to read somehting from the directory
+        if (dir-> d_type != DT_DIR) { // if the type is not directory just print it with blue color
+            path += 5;
+            printf("file : %s/%s\n", path, dir->d_name);
+            fs_make_file(path, dir->d_name);
+            path -= 5;
+            // write the file content here
+
+            char *file_name = malloc(strlen(path) + strlen(dir->d_name) + 100); // 100 is just a random number, to have enough space
+            for (int i = 0; i < strlen(path); i++) {
+                file_name[i] = path[i];
+            }
+            file_name[strlen(path)] = '/';
+            for (int i = 0; i < strlen(dir->d_name); i++) {
+                file_name[strlen(path) + i + 1] = dir->d_name[i];
+            }
+            printf("file_name : %s\n", file_name);
+            // we read the file content
+            FILE *f = fopen(file_name, "r");
+            if (f == NULL) {
+                printf("Error opening file!\n");
+                continue;
+            }
+            // than we get the size of the file
+            fseek(f, 0, SEEK_END); // seek to end of file
+            int size = ftell(f); // get current file pointer
+            fseek(f, 0, SEEK_SET); // seek back to beginning of file
+            // proceed with allocating memory and reading the file
+            printf("size : %d\n", size);     
+            char *data = malloc(size + 1);
+            fread(data, size, 1, f);
+            data[size] = '\0';
+            file_name += 5;
+            fs_write_in_file(file_name, data);
+            file_name -= 5;
+            free(data);
+            free(file_name);
+            fclose(f);
+        }
+        else if(dir -> d_type == DT_DIR && strcmp(dir->d_name,".")!=0 && strcmp(dir->d_name,"..")!=0 ) { // if it is a directory
+            path += 5;
+            printf("folder : %s/%s\n", path, dir->d_name); // print its name in green
+            fs_make_dir(path, dir->d_name);
+            path -= 5;
+
+            char d_path[257]; // here I am using sprintf which is safer than strcat
+            sprintf(d_path, "%s/%s", path, dir->d_name);
+            show_dir_content(d_path); // recall with the new path
+        }
+    }
+    closedir(d); // finally close the directory
+}
+
 int main(int argc, char **argv) {
     init_fs();
 
     FILE *fptr;
-    if ((fptr = fopen("HDD.bin","wb")) == NULL){
+    if ((fptr = fopen("HDD.hex","wb")) == NULL){
        printf("Error! opening file");
 
        // Program exits if the file pointer returns NULL.
        exit(1);
     }
 
-    fs_make_dir("/", "test");
-    fs_make_dir("/test", "test2");
-    fs_make_file("/test/test2", "FILE");
-    fs_make_file("/test/test2", "FILE");
-    fs_write_in_file("/test/test2/FILE", "BITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITE");
-    printf("Le fichier %s fait %i characteres de long !\n", "/test/test2/FILE", fs_get_file_size("/test/test2/FILE"));
-    char *file = fs_declare_read_array("/test/test2/FILE");
-    fs_read_file("/test/test2/FILE", file);
-    printf("Le fichier %s contient \"%s\"\n", "/test/test2/FILE", file);
-    free(file);
+    // fs_make_dir("/", "test");
+    // fs_make_dir("/test", "test2");
+    // fs_make_file("/test/test2", "FILE");
+    // fs_make_file("/test/test2", "FILE");
+    // fs_write_in_file("/test/test2/FILE", "BITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITE");
+    // printf("Le fichier %s fait %i characteres de long !\n", "/test/test2/FILE", fs_get_file_size("/test/test2/FILE"));
+    // char *file = fs_declare_read_array("/test/test2/FILE");
+    // fs_read_file("/test/test2/FILE", file);
+    // printf("Le fichier %s contient \"%s\"\n", "/test/test2/FILE", file);
+    // free(file);
+
+    show_dir_content("zapps");
 
     for (int i = 0; i < 8; i++) {
         i_print_sector(i);
     }
 
-    int max_to_write = 8;
-    for (int i = 0; i < max_to_write; i++) {
+    for (int i = 0; i < max_sector_written; i++) {
         u_int32_t buffer[SECTOR_SIZE];
         read_from_disk(i, buffer);
         fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
