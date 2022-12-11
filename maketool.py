@@ -1,6 +1,7 @@
 import os
 import sys
 from threading import Thread
+from ctypes import *
 
 import PIL.Image
 
@@ -202,6 +203,13 @@ def make_iso(force = False):
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
 def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
+    
+    # we compile the filesystem
+    
+    print_and_exec("rm -Rf fs.so")
+    print_and_exec("cc -fPIC -shared -o fs.so fs.c")
+    fs_functions = CDLL("./fs.so")
+    
     if file_exists("HDD.bin") and not force: return
     build_zapps()
 
@@ -255,7 +263,13 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
         # on vire l'ancienne image
         os.remove(file)
 
-    print_and_exec("python3 makefsys.py")
+    # on met les fichiers dans le 
+    fs_functions.init_fs()
+    a = c_char_p(bytes("/bin\0", "utf-8"))
+    fs_functions.fs_make_dir(a)
+    fs_functions.put_in_disk()
+    
+    print_and_exec("rm -Rf fs.so")
 
 def qemu_run(iso_run = False):
     elf_image()

@@ -466,10 +466,9 @@ void fs_read_file(char path[], char *data) {
 
 #include <dirent.h> 
 
-
 /* let us make a recursive function to print the content of a given folder */
 
-void show_dir_content(char *path) {
+void arboresence_to_disk(char *path) {
     DIR *d = opendir(path); // open the path
     if (d==NULL) {
         return; // if was not able, return*
@@ -478,7 +477,7 @@ void show_dir_content(char *path) {
     while ((dir = readdir(d)) != NULL) {// if we were able to read somehting from the directory
         if (dir-> d_type != DT_DIR) { // if the type is not directory just print it with blue color
             path += 5;
-            printf("file : %s/%s\n", path, dir->d_name);
+            // printf("file : %s/%s\n", path, dir->d_name);
             fs_make_file(path, dir->d_name);
             path -= 5;
             // write the file content here
@@ -491,19 +490,20 @@ void show_dir_content(char *path) {
             for (int i = 0; i < strlen(dir->d_name); i++) {
                 file_name[strlen(path) + i + 1] = dir->d_name[i];
             }
-            printf("file_name : %s\n", file_name);
+            file_name[strlen(path) + strlen(dir->d_name) + 1] = '\0';
+            // printf("file_name : %s\n", file_name);
             // we read the file content
             FILE *f = fopen(file_name, "r");
             if (f == NULL) {
                 printf("Error opening file!\n");
-                continue;
+                exit(1);
             }
             // than we get the size of the file
             fseek(f, 0, SEEK_END); // seek to end of file
             int size = ftell(f); // get current file pointer
             fseek(f, 0, SEEK_SET); // seek back to beginning of file
             // proceed with allocating memory and reading the file
-            printf("size : %d\n", size);     
+            // printf("size : %d\n", size);     
             char *data = malloc(size + 1);
             fread(data, size, 1, f);
             data[size] = '\0';
@@ -516,21 +516,24 @@ void show_dir_content(char *path) {
         }
         else if(dir -> d_type == DT_DIR && strcmp(dir->d_name,".")!=0 && strcmp(dir->d_name,"..")!=0 ) { // if it is a directory
             path += 5;
-            printf("folder : %s/%s\n", path, dir->d_name); // print its name in green
+            // printf("folder : %s/%s\n", path, dir->d_name); // print its name in green
             fs_make_dir(path, dir->d_name);
             path -= 5;
 
             char d_path[257]; // here I am using sprintf which is safer than strcat
             sprintf(d_path, "%s/%s", path, dir->d_name);
-            show_dir_content(d_path); // recall with the new path
+            arboresence_to_disk(d_path); // recall with the new path
         }
     }
     closedir(d); // finally close the directory
 }
 
-int main(int argc, char **argv) {
-    init_fs();
+void disk_to_arboresence(char *path) {
+    // we get every file and folder in the path
+    
+}
 
+void put_in_disk() {
     FILE *fptr;
     if ((fptr = fopen("HDD.hex","wb")) == NULL){
        printf("Error! opening file");
@@ -539,28 +542,15 @@ int main(int argc, char **argv) {
        exit(1);
     }
 
-    // fs_make_dir("/", "test");
-    // fs_make_dir("/test", "test2");
-    // fs_make_file("/test/test2", "FILE");
-    // fs_make_file("/test/test2", "FILE");
-    // fs_write_in_file("/test/test2/FILE", "BITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITEBITE");
-    // printf("Le fichier %s fait %i characteres de long !\n", "/test/test2/FILE", fs_get_file_size("/test/test2/FILE"));
-    // char *file = fs_declare_read_array("/test/test2/FILE");
-    // fs_read_file("/test/test2/FILE", file);
-    // printf("Le fichier %s contient \"%s\"\n", "/test/test2/FILE", file);
-    // free(file);
-
-    show_dir_content("zapps");
-
-    for (int i = 0; i < 8; i++) {
-        i_print_sector(i);
-    }
-
     for (int i = 0; i < max_sector_written; i++) {
         u_int32_t buffer[SECTOR_SIZE];
         read_from_disk(i, buffer);
         fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
     }
-    
+}
+
+int main(int argc, char **argv) {
+    init_fs();
+    arboresence_to_disk("zapps");
     return 0;
 }
