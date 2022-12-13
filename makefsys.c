@@ -1,3 +1,12 @@
+/*****************************************
+ * this file is the program that builds *
+ *  the  disk  image  of  profan  0.9+  *
+ *  You can build and run it yourself   *
+ *   gcc makefsys.c -o makefsys.bin     *
+ *  ./makefsys.bin "$(pwd)/out/disk"    *
+ * Or you use the makefile (make disk)  *
+*****************************************/
+
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
