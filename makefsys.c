@@ -286,28 +286,6 @@ void i_create_file_index(u_int32_t sector, char *name) {
     write_to_disk(sector, buffer);
 }
 
-void i_writefile(u_int32_t sector, u_int32_t *data, int data_pointer, int max_size) {
-    u_int32_t buffer[SECTOR_SIZE];
-    read_from_disk(sector, buffer);
-    buffer[0] = I_FILE | I_USED;
-    for (int i = 0; i < SECTOR_SIZE-1; i++) {
-        if (data_pointer < max_size) {
-            buffer[1 + i] = data[data_pointer];
-            data_pointer++;
-        } else {
-            buffer[1 + i] = 0;
-        }
-    }
-    write_to_disk(sector, buffer);
-    if (data_pointer < max_size) {
-        u_int32_t next_sector = i_next_free();
-        buffer[SECTOR_SIZE-1] = next_sector;
-        write_to_disk(sector, buffer);
-        declare_used(next_sector);
-        i_writefile(next_sector, data, data_pointer, max_size);
-    }
-}
-
 void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
@@ -329,15 +307,29 @@ void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
     for (int i = 0; i < size; i++) {
         compressed_data[i] = data[i];
     }
-    for (int i = 1; i < SECTOR_SIZE-1; i++) {
-        if (i < size) {
-            buffer[i] = compressed_data[i];
-        } else {
-            buffer[i] = 0;
+
+    int sector_i, data_i;
+    u_int32_t current_sector = next_sector;
+
+    while (size > data_i) {
+        for (sector_i = 0; sector_i < SECTOR_SIZE - 1; sector_i++) {
+            if (size < data_i) {
+                break;
+            }
+            buffer[sector_i] = compressed_data[data_i];
+            data_i++;
         }
+        if (size > data_i) {
+            max_sector_written++;
+            next_sector = i_next_free();
+            buffer[SECTOR_SIZE-1] = next_sector;
+        }
+        declare_used(next_sector);
+        write_to_disk(current_sector, buffer);
+        if (size < data_i) break;
+        current_sector = next_sector;
     }
-    write_to_disk(next_sector, buffer);
-    i_writefile(next_sector, compressed_data, 0, size);
+
     free(compressed_data);
 }
 
