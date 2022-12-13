@@ -299,7 +299,7 @@ void i_writefile(u_int32_t sector, u_int32_t *data, int data_pointer, int max_si
     }
 }
 
-void i_write_in_file(u_int32_t sector, char *data) {
+void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -312,22 +312,23 @@ void i_write_in_file(u_int32_t sector, char *data) {
     }
     u_int32_t next_sector = i_next_free();
     buffer[SECTOR_SIZE-1] = next_sector;
-    buffer[MAX_SIZE_NAME + 2] = (u_int32_t) strlen(data);
+    buffer[MAX_SIZE_NAME + 2] = size;
     write_to_disk(sector, buffer);
     declare_used(next_sector);
-    u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * strlen(data));
-    for (int i = 0; data[i] != 0; i++) {
+
+    u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * size);
+    for (int i = 0; i < size; i++) {
         compressed_data[i] = data[i];
     }
     for (int i = 1; i < SECTOR_SIZE-1; i++) {
-        if (i < strlen(data)) {
+        if (i < size) {
             buffer[i] = compressed_data[i];
         } else {
             buffer[i] = 0;
         }
     }
     write_to_disk(next_sector, buffer);
-    i_writefile(next_sector, compressed_data, 0, strlen(data));
+    i_writefile(next_sector, compressed_data, 0, size);
     free(compressed_data);
 }
 
@@ -365,8 +366,6 @@ char *i_read_file(u_int32_t sector) {
 }
 
 u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
-    // printf("[new] path_to_id('%s', '%s', '%d')\n", path, current_path, sector);
-
     // copy the current path
     char *current_path_copy = malloc(sizeof(char) * strlen(current_path) + 1);
     strcpy(current_path_copy, current_path);
@@ -464,9 +463,9 @@ u_int32_t fs_make_file(char path[], char name[]) {
     return next_free;
 }
 
-void fs_write_in_file(char path[], char *data) {
+void fs_write_in_file(char path[], char *data, u_int32_t size) {
     u_int32_t id_to_set = fs_path_to_id(path);
-    i_write_in_file(id_to_set, data);
+    i_write_in_file(id_to_set, data, size);
 }
 
 u_int32_t fs_get_file_size(char path[]) {
@@ -512,7 +511,7 @@ void send_file_to_disk(char *linux_path, char *parent, char *name) {
     fs_make_file(parent, name);
 
     // get the file content
-    FILE *f = fopen(linux_path, "r");
+    FILE *f = fopen(linux_path, "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
@@ -522,7 +521,7 @@ void send_file_to_disk(char *linux_path, char *parent, char *name) {
     fclose(f);
     file_content[fsize] = '\0';
 
-    fs_write_in_file(profan_path, file_content);
+    fs_write_in_file(profan_path, file_content, fsize);
 
     free(file_content);
     free(profan_path);
