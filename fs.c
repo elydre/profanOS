@@ -242,7 +242,7 @@ void i_write_in_file(u_int32_t sector, char *data) {
     }
     u_int32_t next_sector = i_next_free();
     buffer[SECTOR_SIZE-1] = next_sector;
-    buffer[1 + MAX_SIZE_NAME + 1] = (u_int32_t) strlen(data);
+    buffer[MAX_SIZE_NAME + 2] = (u_int32_t) strlen(data);
     write_to_disk(sector, buffer);
     declare_used(next_sector);
     u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * strlen(data));
@@ -272,9 +272,9 @@ char *i_read_file(u_int32_t sector) {
         printf("Error: the sector isn't a file header\n");
         exit(1);
     }
-    char *data = malloc(buffer[1 + MAX_SIZE_NAME + 1] * sizeof(char) + sizeof(char));
-    u_int32_t *compressed_data = malloc(buffer[1 + MAX_SIZE_NAME + 1] * (sizeof(u_int32_t) + 1));
-    u_int32_t file_size = buffer[1 + MAX_SIZE_NAME + 1];
+    char *data = malloc(buffer[MAX_SIZE_NAME + 2] * sizeof(char) + sizeof(char));
+    u_int32_t *compressed_data = malloc(buffer[MAX_SIZE_NAME + 2] * (sizeof(u_int32_t) + 1));
+    u_int32_t file_size = buffer[MAX_SIZE_NAME + 2];
     int data_pointer = 0;
     sector = buffer[SECTOR_SIZE-1];
     read_from_disk(sector, buffer);
@@ -428,13 +428,12 @@ void fs_write_in_file(char path[], char *data) {
     i_write_in_file(id_to_set, data);
 }
 
-// IM FAST AS FUCK BOIII
 u_int32_t fs_get_file_size(char path[]) {
     u_int32_t file_id = fs_path_to_id(path);
-    // TODO : IF NOT A FILE
+    // TODO: security check
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(file_id, buffer);
-    return buffer[1 + MAX_SIZE_NAME + 1];
+    return buffer[MAX_SIZE_NAME + 2];
 }
 
 void *fs_declare_read_array(char path[]) {
@@ -467,87 +466,81 @@ void fs_read_file(char path[], char *data) {
 
 #include <dirent.h> 
 
-/* doesnt work */
-void arboresence_to_disk(char *path) {
-    DIR *d = opendir(path); // open the path
-    if (d==NULL) {
-        return; // if was not able, return*
+void add_file_to_disk(char *path, char *data) {
+    printf("add_file_to_disk('%s')\n", path);
+    return;
+}
+
+void arboresence_to_disk(char *linux_path, char *parent, char *name) {
+    printf("\narboresence_to_disk('%s', '%s', '%s')\n", linux_path, parent, name);
+
+    DIR *d = opendir(linux_path); // open the path
+
+    if (d == NULL) {
+        printf("Cannot open directory %s\n", linux_path);
+        return;
     }
-    struct dirent *dir; // for the directory entries
-    while ((dir = readdir(d)) != NULL) {// if we were able to read somehting from the directory
-        if (dir-> d_type != DT_DIR) { // if the type is not directory just print it with blue color
-            path += 3;
-            printf("file : %s/%s\n", path, dir->d_name);
-            fs_make_file(path, dir->d_name);
-            path -= 3;
-            // write the file content here
 
-            char *file_name = malloc(strlen(path) + strlen(dir->d_name) + 100); // 100 is just a random number, to have enough space
-            for (int i = 0; i < strlen(path); i++) {
-                file_name[i] = path[i];
-            }
-            file_name[strlen(path)] = '/';
-            for (int i = 0; i < strlen(dir->d_name); i++) {
-                file_name[strlen(path) + i + 1] = dir->d_name[i];
-            }
-            file_name[strlen(path) + strlen(dir->d_name) + 1] = '\0';
-            // printf("file_name : %s\n", file_name);
-            // we read the file content
-            FILE *f = fopen(file_name, "r");
-            if (f == NULL) {
-                printf("Error opening file!\n");
-                exit(1);
-            }
-            // than we get the size of the file
-            fseek(f, 0, SEEK_END); // seek to end of file
-            int size = ftell(f); // get current file pointer
-            fseek(f, 0, SEEK_SET); // seek back to beginning of file
-            // proceed with allocating memory and reading the file
-            // printf("size : %d\n", size);     
-            char *data = malloc(size + 1);
-            fread(data, size, 1, f);
-            data[size] = '\0';
-            file_name += 3;
-            fs_write_in_file(file_name, data);
-            file_name -= 3;
-            free(data);
-            free(file_name);
-            fclose(f);
-        }
-        else if(dir -> d_type == DT_DIR && strcmp(dir->d_name,".")!=0 && strcmp(dir->d_name,"..")!=0 ) { // if it is a directory
-            path += 3;
-            printf("folder : %s/%s\n", path, dir->d_name); // print its name
-            // fs_make_dir(path, dir->d_name);
-            path -= 3;
+    if (strcmp(name, "")) {
+        printf("make dir '%s' at '%s'\n", name, parent);
+        // fs_make_dir(parent, name);
+    }
 
-            char d_path[257]; // here I am using sprintf which is safer than strcat
-            sprintf(d_path, "%s/%s", path, dir->d_name);
-            arboresence_to_disk(d_path); // recall with the new path
+    char *profan_path = calloc(strlen(linux_path) + strlen(name) + 1, sizeof(char));
+    strcpy(profan_path, parent);
+    if (profan_path[strlen(parent) - 1] != '/') {
+        profan_path[strlen(parent)] = '/';
+    }
+    strcat(profan_path, name);
+    printf("profan_path = '%s'\n", profan_path);
+    printf("linux_path = '%s'\n", linux_path);
+
+    // list all the files and directories within directory
+    struct dirent *dir;
+    while ((dir = readdir(d)) != NULL) {
+        if (dir->d_type == DT_DIR) {
+            // Found a directory, but ignore . and ..
+            if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
+                char *new_linux_path = calloc(strlen(linux_path) + strlen(dir->d_name) + 2, sizeof(char));
+                strcpy(new_linux_path, linux_path);
+                new_linux_path[strlen(linux_path)] = '/';
+                strcat(new_linux_path, dir->d_name);
+
+                arboresence_to_disk(new_linux_path, profan_path, dir->d_name);
+                free(new_linux_path);
+            }
+        } else {
+            printf("add file '%s' at '%s'\n", dir->d_name, profan_path);
         }
     }
-    closedir(d); // finally close the directory
+    closedir(d);
 }
 
 void put_in_disk() {
     printf("put in disk\n");
     FILE *fptr;
-    if ((fptr = fopen("HDD.hex","wb")) == NULL){
+    if ((fptr = fopen("HDD.hex","wb")) == NULL) {
        printf("Error! opening file");
-
-       // Program exits if the file pointer returns NULL.
        exit(1);
     }
+
     int i;
-    for (i = 0; i < max_sector_written+1; i++) {
+    for (i = 0; i < max_sector_written + 1; i++) {
         u_int32_t buffer[SECTOR_SIZE];
         read_from_disk(i, buffer);
         fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
     }
-    printf("put in disk done, %d\n", i);
+    printf("put in disk done, %d sectors written\n", max_sector_written + 1);
 }
 
 int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Usage : %s <path>\n", argv[0]);
+        return 1;
+    }
+    
     init_fs();
-    put_in_disk();  
+    arboresence_to_disk(argv[1], "/", "");
+    // put_in_disk();  
     return 0;
 }
