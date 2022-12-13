@@ -1,8 +1,9 @@
+#include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#define SECTOR_COUNT 1024
+#define SECTOR_COUNT (1024 * 32)
 #define SECTOR_SIZE 128
 #define MAX_SIZE_NAME 32
 #define I_FILE_HEADER 0x1
@@ -35,6 +36,10 @@ void init_fs() {
 
 // DO NOT PORT
 void read_from_disk(u_int32_t sector, u_int32_t *buffer) {
+    if (sector > SECTOR_COUNT - 2) {
+        printf("Error: sector %d is out of range\n", sector);
+        exit(1);
+    }
     for (int i = 0; i < SECTOR_SIZE; i++) {
         buffer[i] = virtual_disk[sector * SECTOR_SIZE + i];
     }
@@ -42,6 +47,10 @@ void read_from_disk(u_int32_t sector, u_int32_t *buffer) {
 
 // DO NOT PORT
 void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
+    if (sector > SECTOR_COUNT - 2) {
+        printf("Error: sector %d is out of range\n", sector);
+        exit(1);
+    }
     for (int i = 0; i < SECTOR_SIZE; i++) {
         virtual_disk[sector * SECTOR_SIZE + i] = buffer[i];
     }
@@ -508,8 +517,6 @@ void fs_read_file(char path[], char *data) {
 // TODO : add a function to delete a file
 // TODO : add a function to delete a directory
 
-#include <dirent.h>
-
 void send_file_to_disk(char *linux_path, char *parent, char *name) {
     char *profan_path = calloc(strlen(linux_path) + strlen(name) + 2, sizeof(char));
     strcpy(profan_path, parent);
@@ -543,19 +550,19 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
         return;
     }
 
-    if (strcmp(name, "")) {
-        printf("| make dir '%s' at '%s'\n", name, parent);
-        fs_make_dir(parent, name);
-    } else {
-        printf("STARTING DISK TRANSFER\n");
-    }
-
     char *profan_path = calloc(strlen(linux_path) + strlen(name) + 2, sizeof(char));
     strcpy(profan_path, parent);
     if (profan_path[strlen(parent) - 1] != '/') {
         profan_path[strlen(parent)] = '/';
     }
     strcat(profan_path, name);
+
+    if (strcmp(name, "")) {
+        printf("| make dir  %s\n", profan_path);
+        fs_make_dir(parent, name);
+    } else {
+        printf("STARTING DISK TRANSFER\n");
+    }
 
     // list all the files and directories within directory
     struct dirent *dir;
@@ -572,13 +579,13 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
                 free(new_linux_path);
             }
         } else {
-            printf("| add file '%s' at '%s'\n", dir->d_name, profan_path);
             // get the file content
             char *file_path = calloc(strlen(linux_path) + strlen(dir->d_name) + 2, sizeof(char));
             strcpy(file_path, linux_path);
             file_path[strlen(linux_path)] = '/';
             strcat(file_path, dir->d_name);
 
+            printf("| make file %s/%s\n", profan_path, dir->d_name);
             send_file_to_disk(file_path, profan_path, dir->d_name);
         }
     }
@@ -587,9 +594,8 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
 }
 
 void put_in_disk() {
-    printf("put in disk\n");
     FILE *fptr;
-    if ((fptr = fopen("HDD.hex","wb")) == NULL) {
+    if ((fptr = fopen("HDD.bin","wb")) == NULL) {
        printf("Error! opening file");
        exit(1);
     }
@@ -612,12 +618,6 @@ int main(int argc, char **argv) {
     init_fs();
     arboresence_to_disk(argv[1], "/", "");
 
-    char *chek = fs_declare_read_array("/dir/file2.txt");
-    fs_read_file("/dir/file2.txt", chek);
-
-    printf("file2.txt -> '%s'\n", chek);
-    free(chek);
-
-    // put_in_disk();  
+    put_in_disk();  
     return 0;
 }
