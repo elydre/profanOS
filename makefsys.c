@@ -12,18 +12,18 @@
 #include <string.h>
 #include <stdio.h>
 
-#define SECTOR_COUNT (1024 * 16)
-#define MAX_SIZE_NAME 32
-#define SECTOR_SIZE 128
+#define SECTOR_COUNT   (1024 * 16)
+#define MAX_SIZE_NAME  32
+#define SECTOR_SIZE    128
 
 #define PRINT_PROGRESS 1
-#define SPEED_MODE 1 // can be used if you don't need remove
+#define SPEED_MODE     1  // can be dangerous
 
-#define I_FILE_HEADER 0x1
-#define I_FILE 0x10
-#define I_DIRECTORY 0x100
-#define I_DIRECTORY_CONTINUE 0x1000
-#define I_USED 0x10000
+#define I_FILE_H 0x1
+#define I_FILE   0x10
+#define I_DIR    0x100
+#define I_DIRCNT 0x1000
+#define I_USED   0x10000
 
 u_int32_t *virtual_disk;
 u_int8_t *free_map;
@@ -140,7 +140,7 @@ void i_create_dir(u_int32_t sector, char *name) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         buffer[i] = 0;
     }
-    buffer[0] = I_DIRECTORY | I_USED;
+    buffer[0] = I_DIR | I_USED;
     for (int i = 0; i < strlen(name); i++) {
         buffer[1 + i] = name[i];
     }
@@ -158,7 +158,7 @@ void i_create_dir_continue(u_int32_t sector) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         buffer[i] = 0;
     }
-    buffer[0] = I_DIRECTORY_CONTINUE | I_USED;
+    buffer[0] = I_DIRCNT | I_USED;
     declare_used(sector);
     write_to_disk(sector, buffer);
 }
@@ -170,7 +170,7 @@ void dir_continue(u_int32_t sector) {
         printf("Error: the sector isn't used\n");
         exit(1);
     }
-    if (!(buffer[0] & (I_DIRECTORY | I_DIRECTORY_CONTINUE))) {
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
         printf("Error: the sector isn't a directory\n");
         exit(1);
     }
@@ -189,7 +189,7 @@ void i_add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
         printf("Error: the sector isn't used\n");
         exit(1);
     }
-    if (!(buffer[0] & (I_DIRECTORY | I_DIRECTORY_CONTINUE))) {
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
         printf("Error: the sector isn't a directory (sector %d, flags %x)\n", dir_sector, buffer[0]);
         exit(1);
     }
@@ -219,7 +219,7 @@ void remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
         printf("Error: the sector isn't used\n");
         exit(1);
     }
-    if (!(buffer[0] & (I_DIRECTORY | I_DIRECTORY_CONTINUE))) {
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
         printf("Error: the sector isn't a directory\n");
         exit(1);
     }
@@ -249,7 +249,7 @@ void i_create_file_index(u_int32_t sector, char *name) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         buffer[i] = 0;
     }
-    buffer[0] = I_FILE_HEADER | I_USED;
+    buffer[0] = I_FILE_H | I_USED;
     for (int i = 0; i < strlen(name); i++) {
         buffer[1 + i] = name[i];
     }
@@ -264,7 +264,7 @@ void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
         printf("Error: the sector isn't used\n");
         exit(1);
     }
-    if (!(buffer[0] & I_FILE_HEADER)) {
+    if (!(buffer[0] & I_FILE_H)) {
         printf("Error: the sector isn't a file header\n");
         exit(1);
     }
@@ -317,7 +317,7 @@ char *i_read_file(u_int32_t sector) {
         printf("Error: the sector isn't used\n");
         exit(1);
     }
-    if (!(buffer[0] & I_FILE_HEADER)) {
+    if (!(buffer[0] & I_FILE_H)) {
         printf("Error: the sector isn't a file header\n");
         exit(1);
     }
