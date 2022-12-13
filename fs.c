@@ -130,6 +130,22 @@ u_int32_t i_next_free() {
     return -1;
 }
 
+char *build_path(char *path, char *name) {
+    int len = 2;
+    for (int i = 0; path[i] != '\0'; i++) len++;
+    for (int i = 0; name[i] != '\0'; i++) len++;
+
+    char *result = calloc(len, sizeof(char));
+
+    strcpy(result, path);
+    if (path[strlen(path) - 1] != '/') {
+        result[strlen(path)] = '/';
+    }
+    strcat(result, name);
+
+    return result;
+}
+
 void i_create_dir(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
@@ -300,7 +316,7 @@ void i_write_in_file(u_int32_t sector, char *data) {
     write_to_disk(sector, buffer);
     declare_used(next_sector);
     u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * strlen(data));
-    for (int i = 0; i < strlen(data); i++) {
+    for (int i = 0; data[i] != 0; i++) {
         compressed_data[i] = data[i];
     }
     for (int i = 1; i < SECTOR_SIZE-1; i++) {
@@ -403,16 +419,8 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
 // PUBLIC FUNCTIONS
 
 u_int32_t fs_path_to_id(char *path) {
-    char *edited_path = malloc(sizeof(char) * (strlen(path) + 2));
-    strcpy(edited_path, path);
-
-    // check if the path ends with a '/'
-    if (edited_path[strlen(edited_path) - 1] != '/') {
-        // if not, add it
-        strcat(edited_path, "/");
-    }
-
-    char *current_path = calloc(strlen(edited_path) + 1, sizeof(char));
+    char *edited_path = build_path(path, "");
+    char *current_path = calloc(strlen(edited_path) + MAX_SIZE_NAME + 2, sizeof(char));
 
     u_int32_t exit = path_to_id(edited_path, current_path, 0);
 
@@ -422,28 +430,12 @@ u_int32_t fs_path_to_id(char *path) {
 }
 
 int fs_does_path_exists(char *path) {
-    if (strcmp(path, "/") == 0) {
-        return 1;
-    } else {
-        return (int) fs_path_to_id(path) != 0;
-    }
+    if (strcmp(path, "/") == 0) return 1;
+    return (int) fs_path_to_id(path) != 0;
 }
 
 u_int32_t fs_make_dir(char *path, char *name) {
-    char *full_name = malloc(strlen(path) + strlen(name) + 1);
-    strcpy(full_name, path);
-    if (strcmp("/", path)) {
-        full_name[strlen(path)] = '/';
-        for (int i = 0; i < strlen(name); i++) {
-            full_name[strlen(path) + i + 1] = name[i];
-        }
-        full_name[strlen(path)+strlen(name) + 1] = '\0';
-    } else {
-        for (int i = 0; i < strlen(name); i++) {
-            full_name[strlen(path) + i] = name[i];
-        }
-        full_name[strlen(path)+strlen(name)] = '\0';
-    }
+    char *full_name = build_path(full_name, path);
     // TODO : check if there is a directory in path
     if (fs_does_path_exists(full_name)) {
         printf("Le dossier %s existe déja !\n", full_name);
@@ -457,20 +449,17 @@ u_int32_t fs_make_dir(char *path, char *name) {
 }
 
 u_int32_t fs_make_file(char path[], char name[]) {
-    char *full_name = malloc(strlen(path) + strlen(name) + 1);
-    strcpy(full_name, path);
-    full_name[strlen(path)] = '/';
-    for (int i = 0; i < strlen(name); i++) {
-        full_name[strlen(path) + i + 1] = name[i];
-    }
-    full_name[strlen(path)+strlen(name) + 1] = '\0';
+    char *full_name = build_path(path, name);
+
     if (fs_does_path_exists(full_name)) {
         printf("Le fichier %s existe déja !\n", full_name);
         return -1;
     }
+
     u_int32_t next_free = i_next_free();
     i_create_file_index(next_free, name);
     i_add_item_to_dir(fs_path_to_id(path), next_free);
+
     free(full_name);
     return next_free;
 }
@@ -518,12 +507,7 @@ void fs_read_file(char path[], char *data) {
 // TODO : add a function to delete a directory
 
 void send_file_to_disk(char *linux_path, char *parent, char *name) {
-    char *profan_path = calloc(strlen(linux_path) + strlen(name) + 2, sizeof(char));
-    strcpy(profan_path, parent);
-    if (profan_path[strlen(parent) - 1] != '/') {
-        profan_path[strlen(parent)] = '/';
-    }
-    strcat(profan_path, name);
+    char *profan_path = build_path(parent, name);
 
     fs_make_file(parent, name);
 
@@ -532,12 +516,14 @@ void send_file_to_disk(char *linux_path, char *parent, char *name) {
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
+
     char *file_content = malloc(fsize + 1);
     fread(file_content, fsize, 1, f);
     fclose(f);
     file_content[fsize] = '\0';
 
-    fs_write_in_file(profan_path, file_content);
+    // fs_write_in_file(profan_path, file_content);
+
     free(file_content);
     free(profan_path);
 }
@@ -550,12 +536,7 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
         return;
     }
 
-    char *profan_path = calloc(strlen(linux_path) + strlen(name) + 2, sizeof(char));
-    strcpy(profan_path, parent);
-    if (profan_path[strlen(parent) - 1] != '/') {
-        profan_path[strlen(parent)] = '/';
-    }
-    strcat(profan_path, name);
+    char *profan_path = build_path(parent, name);
 
     if (strcmp(name, "")) {
         printf("| make dir  %s\n", profan_path);
@@ -570,20 +551,14 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
         if (dir->d_type == DT_DIR) {
             // Found a directory, but ignore . and ..
             if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
-                char *new_linux_path = calloc(strlen(linux_path) + strlen(dir->d_name) + 2, sizeof(char));
-                strcpy(new_linux_path, linux_path);
-                new_linux_path[strlen(linux_path)] = '/';
-                strcat(new_linux_path, dir->d_name);
+                char *new_linux_path = build_path(linux_path, dir->d_name);
 
                 arboresence_to_disk(new_linux_path, profan_path, dir->d_name);
                 free(new_linux_path);
             }
         } else {
             // get the file content
-            char *file_path = calloc(strlen(linux_path) + strlen(dir->d_name) + 2, sizeof(char));
-            strcpy(file_path, linux_path);
-            file_path[strlen(linux_path)] = '/';
-            strcat(file_path, dir->d_name);
+            char *file_path = build_path(linux_path, dir->d_name);
 
             printf("| make file %s/%s\n", profan_path, dir->d_name);
             send_file_to_disk(file_path, profan_path, dir->d_name);
