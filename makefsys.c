@@ -12,9 +12,13 @@
 #include <string.h>
 #include <stdio.h>
 
-#define SECTOR_COUNT (1024 * 32)
-#define SECTOR_SIZE 128
+#define SECTOR_COUNT (1024 * 512)
 #define MAX_SIZE_NAME 32
+#define SECTOR_SIZE 128
+
+#define PRINT_PROGRESS 1
+#define SPEED_MODE 1 // can be used if you don't need remove
+
 #define I_FILE_HEADER 0x1
 #define I_FILE 0x10
 #define I_DIRECTORY 0x100
@@ -23,14 +27,14 @@
 
 u_int32_t *virtual_disk;
 u_int8_t *free_map;
-int max_sector_written;
+int total_sector_written;
 
 void i_create_dir(u_int32_t sector, char *name);
 
 // PORT PARTIALLY
 void init_fs() {
     printf("Initialisation of the filesystem...\n");
-    max_sector_written = 0;
+    total_sector_written = 0;
     virtual_disk = (u_int32_t *) malloc(SECTOR_COUNT * SECTOR_SIZE * sizeof(u_int32_t));
     for (int i = 0; i < SECTOR_COUNT * SECTOR_SIZE; i++) {
         virtual_disk[i] = 0;
@@ -45,8 +49,8 @@ void init_fs() {
 
 // DO NOT PORT
 void read_from_disk(u_int32_t sector, u_int32_t *buffer) {
-    if (sector > SECTOR_COUNT - 2) {
-        printf("Error: sector %d is out of range\n", sector);
+    if (SECTOR_COUNT < sector) {
+        printf("Error: sector %u is out of range\n", sector);
         exit(1);
     }
     for (int i = 0; i < SECTOR_SIZE; i++) {
@@ -56,15 +60,15 @@ void read_from_disk(u_int32_t sector, u_int32_t *buffer) {
 
 // DO NOT PORT
 void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
-    if (sector > SECTOR_COUNT - 2) {
-        printf("Error: sector %d is out of range\n", sector);
+    if (SECTOR_COUNT < sector) {
+        printf("Error: sector %u is out of range\n", sector);
         exit(1);
     }
     for (int i = 0; i < SECTOR_SIZE; i++) {
         virtual_disk[sector * SECTOR_SIZE + i] = buffer[i];
     }
-    if (sector > max_sector_written) {
-        max_sector_written = sector;
+    if (sector > total_sector_written) {
+        total_sector_written = sector;
     }
 }
 
@@ -78,65 +82,32 @@ void i_print_sector(u_int32_t sector) {
     printf("%x]\n", buffer[SECTOR_SIZE - 1]);
 }
 
-void i_print_sector_smart(u_int32_t sector) {
-    u_int32_t buffer[SECTOR_SIZE];
-    read_from_disk(sector, buffer);
-    if (!(buffer[0] & I_USED)) {
-        printf("[sector %d]: free\n", sector);
-    } else if (buffer[0] & I_FILE_HEADER) {
-        printf("[sector %d]: file header\n", sector);
-        printf("    name: ");
-        for (int i = 1; i < MAX_SIZE_NAME + 1; i++) {
-            printf("%c", buffer[i]);
-        }
-        printf("\n");
-        printf("    size: %d\n", buffer[MAX_SIZE_NAME + 2]);
-        printf("    first sector: %d\n", buffer[SECTOR_SIZE - 1]);
-    } else if (buffer[0] & I_FILE) {
-        printf("[sector %d]: file content\n", sector);
-        printf("    content: '");
-        for (int i = 1; i < SECTOR_SIZE; i++) {
-            printf("%c", buffer[i]);
-        }
-        printf("'\n");
-    } else if (buffer[0] & I_DIRECTORY) {
-        printf("[sector %d]: directory\n", sector);
-        printf("    name: ");
-        for (int i = 1; i < MAX_SIZE_NAME + 1; i++) {
-            printf("%c", buffer[i]);
-        }
-        printf("\n");
-        printf("    content: ");
-        for (int i = MAX_SIZE_NAME + 1; i < 50; i++) {
-            printf("%d ", buffer[i]);
-        }
-        printf("...\n");
-    } else if (buffer[0] & I_DIRECTORY_CONTINUE) {
-        printf("[sector %d]: directory continue\n", sector);
-        printf("    content: ");
-        for (int i = 0; i < 50; i++) {
-            printf("%d ", buffer[i]);
-        }
-        printf("...\n");
-    } else {
-        printf("[sector %d]: unknown (0x%x)\n", sector, buffer[0]);
-    }
-}
-
 void declare_used(u_int32_t sector) {
+    if (SECTOR_COUNT < sector) {
+        printf("Error: sector %u is out of range\n", sector);
+        exit(1);
+    }
     free_map[sector] = 1;
 }
 
 void declare_free(u_int32_t sector) {
+    if (SECTOR_COUNT < sector) {
+        printf("Error: sector %u is out of range\n", sector);
+        exit(1);
+    }
     free_map[sector] = 0;
 }
 
 u_int32_t i_next_free() {
+    if (SPEED_MODE) {
+        return total_sector_written + 1;
+    }
     for (int i = 0; i < SECTOR_COUNT; i++) {
         if (free_map[i] != 0) continue;
         return i;
     }
-    return -1;
+    printf("Error: no free sector (max %d)\n", SECTOR_COUNT);
+    exit(1);
 }
 
 char *build_path(char *path, char *name) {
@@ -313,21 +284,27 @@ void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
 
     while (size > data_i) {
         for (sector_i = 0; sector_i < SECTOR_SIZE - 1; sector_i++) {
-            if (size < data_i) {
-                break;
-            }
+            if (size < data_i) break;
             buffer[sector_i] = compressed_data[data_i];
             data_i++;
         }
         if (size > data_i) {
-            max_sector_written++;
             next_sector = i_next_free();
             buffer[SECTOR_SIZE-1] = next_sector;
+        }
+        if (data_i % 5 == 0 && PRINT_PROGRESS) {
+            printf("progress: %f%%\r", (float) data_i / size * 100);
         }
         declare_used(next_sector);
         write_to_disk(current_sector, buffer);
         if (size < data_i) break;
         current_sector = next_sector;
+    }
+
+    // clean the line
+    if (PRINT_PROGRESS) {
+        for (int i = 0; i < 21; i++) printf(" ");
+        printf("\r");
     }
 
     free(compressed_data);
@@ -576,12 +553,12 @@ void put_in_disk() {
     }
 
     int i;
-    for (i = 0; i < max_sector_written + 1; i++) {
+    for (i = 0; i < total_sector_written + 1; i++) {
         u_int32_t buffer[SECTOR_SIZE];
         read_from_disk(i, buffer);
         fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
     }
-    printf("put in disk done, %d sectors written\n", max_sector_written + 1);
+    printf("put in disk done, %d sectors written\n", total_sector_written + 1);
 }
 
 int main(int argc, char **argv) {
