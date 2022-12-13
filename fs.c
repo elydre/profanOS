@@ -60,6 +60,51 @@ void i_print_sector(u_int32_t sector) {
     printf("%x]\n", buffer[SECTOR_SIZE - 1]);
 }
 
+void i_print_sector_smart(u_int32_t sector) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        printf("[sector %d]: free\n", sector);
+    } else if (buffer[0] & I_FILE_HEADER) {
+        printf("[sector %d]: file header\n", sector);
+        printf("    name: ");
+        for (int i = 1; i < MAX_SIZE_NAME + 1; i++) {
+            printf("%c", buffer[i]);
+        }
+        printf("\n");
+        printf("    size: %d\n", buffer[MAX_SIZE_NAME + 2]);
+        printf("    first sector: %d\n", buffer[SECTOR_SIZE - 1]);
+    } else if (buffer[0] & I_FILE) {
+        printf("[sector %d]: file content\n", sector);
+        printf("    content: '");
+        for (int i = 1; i < SECTOR_SIZE; i++) {
+            printf("%c", buffer[i]);
+        }
+        printf("'\n");
+    } else if (buffer[0] & I_DIRECTORY) {
+        printf("[sector %d]: directory\n", sector);
+        printf("    name: ");
+        for (int i = 1; i < MAX_SIZE_NAME + 1; i++) {
+            printf("%c", buffer[i]);
+        }
+        printf("\n");
+        printf("    content: ");
+        for (int i = MAX_SIZE_NAME + 1; i < 50; i++) {
+            printf("%d ", buffer[i]);
+        }
+        printf("...\n");
+    } else if (buffer[0] & I_DIRECTORY_CONTINUE) {
+        printf("[sector %d]: directory continue\n", sector);
+        printf("    content: ");
+        for (int i = 0; i < 50; i++) {
+            printf("%d ", buffer[i]);
+        }
+        printf("...\n");
+    } else {
+        printf("[sector %d]: unknown (0x%x)\n", sector, buffer[0]);
+    }
+}
+
 void declare_used(u_int32_t sector) {
     free_map[sector] = 1;
 }
@@ -395,7 +440,6 @@ u_int32_t fs_make_dir(char *path, char *name) {
         printf("Le dossier %s existe déja !\n", full_name);
         return -1;
     }
-    printf("Creating dir %s...\n", full_name);
     u_int32_t next_free = i_next_free();
     i_create_dir(next_free, name);
     i_add_item_to_dir(fs_path_to_id(path), next_free);
@@ -415,7 +459,6 @@ u_int32_t fs_make_file(char path[], char name[]) {
         printf("Le fichier %s existe déja !\n", full_name);
         return -1;
     }
-    printf("Creating file %s...\n", full_name);
     u_int32_t next_free = i_next_free();
     i_create_file_index(next_free, name);
     i_add_item_to_dir(fs_path_to_id(path), next_free);
@@ -451,7 +494,8 @@ void fs_read_file(char path[], char *data) {
     sector = buffer[SECTOR_SIZE-1];
     while (buffer[SECTOR_SIZE-1] != 0) {
         read_from_disk(sector, buffer);
-        for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE - 1; i++) {
+        for (int i = 0; i < SECTOR_SIZE - 1; i++) {
+            if (data_index > file_size) break;
             data[data_index] = buffer[i];
             data_index++;
         }
@@ -464,16 +508,34 @@ void fs_read_file(char path[], char *data) {
 // TODO : add a function to delete a file
 // TODO : add a function to delete a directory
 
-#include <dirent.h> 
+#include <dirent.h>
 
-void add_file_to_disk(char *path, char *data) {
-    printf("add_file_to_disk('%s')\n", path);
-    return;
+void send_file_to_disk(char *linux_path, char *parent, char *name) {
+    char *profan_path = calloc(strlen(linux_path) + strlen(name) + 2, sizeof(char));
+    strcpy(profan_path, parent);
+    if (profan_path[strlen(parent) - 1] != '/') {
+        profan_path[strlen(parent)] = '/';
+    }
+    strcat(profan_path, name);
+
+    fs_make_file(parent, name);
+
+    // get the file content
+    FILE *f = fopen(linux_path, "r");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *file_content = malloc(fsize + 1);
+    fread(file_content, fsize, 1, f);
+    fclose(f);
+    file_content[fsize] = '\0';
+
+    fs_write_in_file(profan_path, file_content);
+    free(file_content);
+    free(profan_path);
 }
 
 void arboresence_to_disk(char *linux_path, char *parent, char *name) {
-    printf("\narboresence_to_disk('%s', '%s', '%s')\n", linux_path, parent, name);
-
     DIR *d = opendir(linux_path); // open the path
 
     if (d == NULL) {
@@ -482,18 +544,18 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
     }
 
     if (strcmp(name, "")) {
-        printf("make dir '%s' at '%s'\n", name, parent);
-        // fs_make_dir(parent, name);
+        printf("| make dir '%s' at '%s'\n", name, parent);
+        fs_make_dir(parent, name);
+    } else {
+        printf("STARTING DISK TRANSFER\n");
     }
 
-    char *profan_path = calloc(strlen(linux_path) + strlen(name) + 1, sizeof(char));
+    char *profan_path = calloc(strlen(linux_path) + strlen(name) + 2, sizeof(char));
     strcpy(profan_path, parent);
     if (profan_path[strlen(parent) - 1] != '/') {
         profan_path[strlen(parent)] = '/';
     }
     strcat(profan_path, name);
-    printf("profan_path = '%s'\n", profan_path);
-    printf("linux_path = '%s'\n", linux_path);
 
     // list all the files and directories within directory
     struct dirent *dir;
@@ -510,9 +572,17 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
                 free(new_linux_path);
             }
         } else {
-            printf("add file '%s' at '%s'\n", dir->d_name, profan_path);
+            printf("| add file '%s' at '%s'\n", dir->d_name, profan_path);
+            // get the file content
+            char *file_path = calloc(strlen(linux_path) + strlen(dir->d_name) + 2, sizeof(char));
+            strcpy(file_path, linux_path);
+            file_path[strlen(linux_path)] = '/';
+            strcat(file_path, dir->d_name);
+
+            send_file_to_disk(file_path, profan_path, dir->d_name);
         }
     }
+    free(profan_path);
     closedir(d);
 }
 
@@ -541,6 +611,13 @@ int main(int argc, char **argv) {
     
     init_fs();
     arboresence_to_disk(argv[1], "/", "");
+
+    char *chek = fs_declare_read_array("/dir/file2.txt");
+    fs_read_file("/dir/file2.txt", chek);
+
+    printf("file2.txt -> '%s'\n", chek);
+    free(chek);
+
     // put_in_disk();  
     return 0;
 }

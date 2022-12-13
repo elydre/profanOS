@@ -20,5 +20,6 @@ out/
 .vscode/
 .vs/
 
-# debug files
+# debug dirs/files
+debug/
 *.hex
