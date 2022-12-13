@@ -26,7 +26,7 @@
 #define I_USED   0x10000
 
 u_int32_t *virtual_disk;
-u_int8_t *free_map;
+u_int8_t  *free_map;
 int total_sector_written;
 
 void i_create_dir(u_int32_t sector, char *name);
