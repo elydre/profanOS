@@ -522,7 +522,7 @@ void send_file_to_disk(char *linux_path, char *parent, char *name) {
     fclose(f);
     file_content[fsize] = '\0';
 
-    // fs_write_in_file(profan_path, file_content);
+    fs_write_in_file(profan_path, file_content);
 
     free(file_content);
     free(profan_path);
