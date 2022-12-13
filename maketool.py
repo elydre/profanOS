@@ -216,7 +216,6 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
-    cprint(COLOR_EXEC, "Correcly copying projects")
 
     try:
         for dossier in os.listdir(f"./{OUT_DIR}/disk/bin/Projets"):
@@ -227,7 +226,11 @@ def gen_disk(force=False, with_src=False):
     except Exception as e:
         cprint(COLOR_EROR, f"Error while copying projects: {e}")
 
-    # print_and_exec("python3 makefsys.py")
+    if not file_exists("./makefsys.bin") or file1_newer("fs.c", "./makefsys.bin"):
+        cprint(COLOR_INFO, "building makefsys...")
+        print_and_exec("gcc -o makefsys.bin makefsys.c")
+
+    print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 def qemu_run(iso_run = False):
     elf_image()
