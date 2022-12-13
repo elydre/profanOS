@@ -13,13 +13,14 @@
 
 u_int32_t *virtual_disk;
 u_int8_t *free_map;
-int max_sector_written = 0;
+int max_sector_written;
 
 void i_create_dir(u_int32_t sector, char *name);
 
 // PORT PARTIALLY
 void init_fs() {
     printf("Initialisation of the filesystem...\n");
+    max_sector_written = 0;
     virtual_disk = (u_int32_t *) malloc(SECTOR_COUNT * SECTOR_SIZE * sizeof(u_int32_t));
     for (int i = 0; i < SECTOR_COUNT * SECTOR_SIZE; i++) {
         virtual_disk[i] = 0;
@@ -466,8 +467,7 @@ void fs_read_file(char path[], char *data) {
 
 #include <dirent.h> 
 
-/* let us make a recursive function to print the content of a given folder */
-
+/* doesnt work */
 void arboresence_to_disk(char *path) {
     DIR *d = opendir(path); // open the path
     if (d==NULL) {
@@ -476,10 +476,10 @@ void arboresence_to_disk(char *path) {
     struct dirent *dir; // for the directory entries
     while ((dir = readdir(d)) != NULL) {// if we were able to read somehting from the directory
         if (dir-> d_type != DT_DIR) { // if the type is not directory just print it with blue color
-            path += 5;
-            // printf("file : %s/%s\n", path, dir->d_name);
+            path += 3;
+            printf("file : %s/%s\n", path, dir->d_name);
             fs_make_file(path, dir->d_name);
-            path -= 5;
+            path -= 3;
             // write the file content here
 
             char *file_name = malloc(strlen(path) + strlen(dir->d_name) + 100); // 100 is just a random number, to have enough space
@@ -507,18 +507,18 @@ void arboresence_to_disk(char *path) {
             char *data = malloc(size + 1);
             fread(data, size, 1, f);
             data[size] = '\0';
-            file_name += 5;
+            file_name += 3;
             fs_write_in_file(file_name, data);
-            file_name -= 5;
+            file_name -= 3;
             free(data);
             free(file_name);
             fclose(f);
         }
         else if(dir -> d_type == DT_DIR && strcmp(dir->d_name,".")!=0 && strcmp(dir->d_name,"..")!=0 ) { // if it is a directory
-            path += 5;
-            // printf("folder : %s/%s\n", path, dir->d_name); // print its name in green
-            fs_make_dir(path, dir->d_name);
-            path -= 5;
+            path += 3;
+            printf("folder : %s/%s\n", path, dir->d_name); // print its name
+            // fs_make_dir(path, dir->d_name);
+            path -= 3;
 
             char d_path[257]; // here I am using sprintf which is safer than strcat
             sprintf(d_path, "%s/%s", path, dir->d_name);
@@ -528,12 +528,8 @@ void arboresence_to_disk(char *path) {
     closedir(d); // finally close the directory
 }
 
-void disk_to_arboresence(char *path) {
-    // we get every file and folder in the path
-    
-}
-
 void put_in_disk() {
+    printf("put in disk\n");
     FILE *fptr;
     if ((fptr = fopen("HDD.hex","wb")) == NULL){
        printf("Error! opening file");
@@ -541,16 +537,17 @@ void put_in_disk() {
        // Program exits if the file pointer returns NULL.
        exit(1);
     }
-
-    for (int i = 0; i < max_sector_written; i++) {
+    int i;
+    for (i = 0; i < max_sector_written+1; i++) {
         u_int32_t buffer[SECTOR_SIZE];
         read_from_disk(i, buffer);
         fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
     }
+    printf("put in disk done, %d\n", i);
 }
 
 int main(int argc, char **argv) {
     init_fs();
-    arboresence_to_disk("zapps");
+    put_in_disk();  
     return 0;
 }

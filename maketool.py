@@ -262,11 +262,41 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
 
         # on vire l'ancienne image
         os.remove(file)
+        
+    NULL_BYTE = chr(0)
 
-    # on met les fichiers dans le 
+    # on met les fichiers dans le disque
     fs_functions.init_fs()
-    a = c_char_p(bytes("/bin\0", "utf-8"))
-    fs_functions.fs_make_dir(a)
+    def folder_to_disk(path, folder):
+        pointer_to_path = c_char_p(("/"+path).encode("utf-8"))
+        pointer_to_folder = c_char_p(folder.encode("utf-8"))
+        fs_functions.fs_make_dir(pointer_to_path, pointer_to_folder)
+        
+    def file_to_disk(path, file):
+        pointer_to_path = c_char_p(("/"+path).encode("utf-8"))
+        pointer_to_file = c_char_p(file.encode("utf-8"))
+        print(f" |writing /{path}/{file} to disk...")
+        fs_functions.fs_make_file(pointer_to_path, pointer_to_file)
+        # on écrit le contenu du fichier
+        print(f" |writing content of /{path}/{file} to disk...")
+        with open(f"{path}/{file}", "rb") as f:
+            content = f.read()
+            pointer_to_content = c_char_p(content)
+            pointer_to_path = c_char_p(("/"+path+"/"+file).encode("utf-8"))
+            fs_functions.fs_write_in_file(pointer_to_path, pointer_to_content)
+    
+    def put_to_disk(path):
+        print(f" |putting {path} to disk...")
+        for thing in os.listdir(path):
+            if os.path.isdir(f"{path}/{thing}"):
+                print(f"|putting folder {path}/{thing} to disk...")
+                folder_to_disk(path, thing)
+                put_to_disk(f"{path}/{thing}")
+            else:
+                print(f"|putting file {path}/{thing} to disk...")
+                file_to_disk(path, thing)
+    
+    put_to_disk(f"{OUT_DIR}")
     fs_functions.put_in_disk()
     
     print_and_exec("rm -Rf fs.so")
