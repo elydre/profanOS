@@ -239,6 +239,69 @@ void i_remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     // TODO : remove empty directory continues
 }
 
+int i_get_dir_size(u_int32_t sector) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        printf("Error: the sector isn't used\n");
+        exit(1);
+    }
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        printf("Error: the sector isn't a directory\n");
+        exit(1);
+    }
+    int result = 0;
+    for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
+        if (buffer[i] != 0) {
+            result++;
+        }
+    }
+    if (buffer[SECTOR_SIZE-1] != 0) {
+        result += i_get_dir_size(buffer[SECTOR_SIZE-1]);
+    }
+    return result;
+}
+
+void i_get_element_name(u_int32_t sector, char *name) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        printf("Error: the sector isn't used\n");
+        exit(1);
+    }
+    if (!(buffer[0] & (I_DIR | I_FILE_H))) {
+        printf("Error: the sector isn't a directory or a file\n");
+        exit(1);
+    }
+    for (int i = 0; i < MAX_SIZE_NAME; i++) {
+        name[i] = buffer[i+1];
+    }
+}
+
+void i_get_dir_content(u_int32_t sector, char **names, u_int32_t *sector_ids, int index) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        printf("Error: the sector isn't used\n");
+        exit(1);
+    }
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        printf("Error: the sector isn't a directory\n");
+        exit(1);
+    }
+    for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
+        if (buffer[i] != 0) {
+            names[index] = malloc(MAX_SIZE_NAME);
+            i_get_element_name(buffer[i], names[index]);
+            sector_ids[index] = buffer[i];
+            index++;
+        }
+    }
+    if (buffer[SECTOR_SIZE-1] != 0) {
+        i_get_dir_content(buffer[SECTOR_SIZE-1], names, sector_ids, index);
+    }
+}
+
 void i_create_file_index(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
@@ -431,7 +494,7 @@ u_int32_t fs_make_dir(char *path, char *name) {
     return next_free;
 }
 
-u_int32_t fs_make_file(char path[], char name[]) {
+u_int32_t fs_make_file(char *path, char *name) {
     char *full_name = i_build_path(path, name);
 
     if (fs_does_path_exists(full_name)) {
@@ -447,12 +510,12 @@ u_int32_t fs_make_file(char path[], char name[]) {
     return next_free;
 }
 
-void fs_write_in_file(char path[], u_int8_t *data, u_int32_t size) {
+void fs_write_in_file(char *path, u_int8_t *data, u_int32_t size) {
     u_int32_t id_to_set = fs_path_to_id(path);
     i_write_in_file(id_to_set, data, size);
 }
 
-u_int32_t fs_get_file_size(char path[]) {
+u_int32_t fs_get_file_size(char *path) {
     u_int32_t file_id = fs_path_to_id(path);
     // TODO: security check
     u_int32_t buffer[SECTOR_SIZE];
@@ -460,13 +523,13 @@ u_int32_t fs_get_file_size(char path[]) {
     return buffer[MAX_SIZE_NAME + 2];
 }
 
-void *fs_declare_read_array(char path[]) {
+void *fs_declare_read_array(char *path) {
     return calloc(fs_get_file_size(path) + 1, sizeof(char));
 }
 
 // How to declare data : char *data = fs_declare_read_array(path);
 // How to free data    : free(data);
-void fs_read_file(char path[], char *data) {
+void fs_read_file(char *path, char *data) {
     u_int32_t file_size = fs_get_file_size(path);
     int data_index = 0;
     int sector = fs_path_to_id(path);
@@ -484,6 +547,35 @@ void fs_read_file(char path[], char *data) {
     }
     data_index++;
     data[data_index] = '\0';
+}
+
+int fs_get_dir_size(char *path) {
+    u_int32_t dir_id = fs_path_to_id(path);
+    return i_get_dir_size(dir_id);
+}
+
+void fs_get_dir_content(char *path, char **names, u_int32_t *sector_ids) {
+    u_int32_t dir_id = fs_path_to_id(path);
+    i_get_dir_content(dir_id, names, sector_ids, 0);
+}
+
+void fs_free_names(char **names, int size) {
+    for (int i = 0; i < size; i++) {
+        free(names[i]);
+    }
+    free(names);
+}
+
+int fs_get_sector_type(u_int32_t sector_id) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector_id, buffer);
+
+    if (!(buffer[0] & I_USED))  return 0; // sector empty
+    if (buffer[0] & I_FILE)     return 1; // file content
+    if (buffer[0] & I_FILE_H)   return 2; // file index
+    if (buffer[0] & I_DIR)      return 3; // dir
+    if (buffer[0] & I_DIRCNT)   return 4; // dir continue
+    return 0;                             // sector empty
 }
 
 // TODO : add a function to delete a file
