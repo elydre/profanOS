@@ -313,7 +313,8 @@ void i_write_in_file(uint32_t sector, uint8_t *data, uint32_t size) {
     uint32_t current_sector = next_sector;
 
     while (size > data_i) {
-        for (sector_i = 0; sector_i < SECTOR_SIZE - 1; sector_i++) {
+        buffer[0] = I_FILE | I_USED;
+        for (sector_i = 1; sector_i < SECTOR_SIZE - 1; sector_i++) {
             if (size < data_i) break;
             buffer[sector_i] = compressed_data[data_i];
             data_i++;

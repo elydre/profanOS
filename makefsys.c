@@ -90,10 +90,6 @@ void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         virtual_disk[sector * SECTOR_SIZE + i] = buffer[i];
     }
-    if (sector == 186) {
-        printf("sector 186 written\n");
-        i_print_sector_smart(186);
-    }
 }
 
 void i_print_sector(u_int32_t sector) {
@@ -397,7 +393,8 @@ void i_write_in_file(u_int32_t sector, u_int8_t *data, u_int32_t size) {
     u_int32_t current_sector = next_sector;
 
     while (size > data_i) {
-        for (sector_i = 0; sector_i < SECTOR_SIZE - 1; sector_i++) {
+        buffer[0] = I_FILE | I_USED;
+        for (sector_i = 1; sector_i < SECTOR_SIZE - 1; sector_i++) {
             if (size < data_i) break;
             buffer[sector_i] = compressed_data[data_i];
             data_i++;
@@ -405,13 +402,14 @@ void i_write_in_file(u_int32_t sector, u_int8_t *data, u_int32_t size) {
         if (size > data_i) {
             next_sector = i_next_free();
             buffer[SECTOR_SIZE-1] = next_sector;
+            i_declare_used(next_sector);
+        } else {
+            buffer[SECTOR_SIZE-1] = 0;
         }
         if (data_i % 5 == 0 && PRINT_PROGRESS) {
             printf("progress: %f%%\r", (float) data_i / size * 100);
         }
-        i_declare_used(next_sector);
         write_to_disk(current_sector, buffer);
-        if (size < data_i) break;
         current_sector = next_sector;
     }
 
@@ -730,8 +728,6 @@ int main(int argc, char **argv) {
     
     init_fs();
     arboresence_to_disk(argv[1], "/", "");
-
-    i_print_sector_smart(186);
 
     put_in_disk();
 

@@ -17,7 +17,7 @@
 
 uint32_t ata_table[RAMDISK_SECTOR];
 uint32_t *RAMDISK;
-int ata_sector_count;
+uint32_t ata_sector_count;
 int table_pos = 0;
 
 /* add in this list the paths 
@@ -143,7 +143,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
 
     char name[MAX_NAME];
     for (int i = 0; i < MAX_NAME; i++) name[i] = sector[i + 1];
-    name[MAX_NAME] = 0;
+    name[MAX_NAME - 1] = 0;
     if (fullname[1] != 0 && fullname[0] != 0) str_append(fullname, '/');
     str_cat(fullname, name);
 
@@ -151,8 +151,8 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_in_str(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
-                fskprint("load %s", fullname);
-                clean_line();
+                fskprint("load %s\n", fullname);
+                // clean_line();
                 load_file(sector_id);
             }
         }
@@ -165,7 +165,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
             // serial_debug("RD-CD", fullname);
             ramdisk_load_sector(sector_id, sector);
             // TODO: dir continue gestion
-            for (int i = MAX_NAME + 2; i < UINT32_PER_SECTOR - 1; i++) {
+            for (int i = MAX_NAME + 1; i < UINT32_PER_SECTOR - 1; i++) {
                 if (sector[i] == 0) continue;
                 ramdisk_check_dir(fullname, sector[i]);
             }
