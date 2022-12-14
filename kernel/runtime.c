@@ -32,14 +32,11 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    char *binary_mem = calloc(fs_get_file_size(path) * 126);
-    uint32_t *file = fs_declare_read_array(path);
-    fs_read_file(path, file);
+    int file_size = fs_get_file_size(path);
+    fskprint("file size: %d\n", file_size);
 
-    for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        binary_mem[i] = (char) file[i];
-
-    free(file);
+    char *binary_mem = calloc(file_size + 1);
+    fs_read_file(path, binary_mem);
 
     g_argc = argc;
     g_argv = argv;

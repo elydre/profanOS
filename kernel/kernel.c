@@ -56,12 +56,16 @@ void kernel_main(void *mboot_ptr) {
     rainbow_print("\n\nWelcome to profanOS!\n");
     fskprint("$C~~ version $4%s $C~~\n\n", VERSION);
 
-    // launch of the shell.bin
+    char *output = fs_declare_read_array("/test.txt");
+    fs_read_file("/test.txt", output);
+    serial_debug("FILE", output);
+
+    /* // launch of the shell.bin
     char *argv[1];
-    argv[0] = "/bin/shell.bin";
+    argv[0] = "/bin/commands/reboot.bin";
     run_ifexist(argv[0], 1, argv);
 
-    task_menu();
+    task_menu();*/
 
     sys_fatal("Nothing to run!");
 }

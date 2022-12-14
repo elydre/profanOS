@@ -151,8 +151,8 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_in_str(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
-                fskprint("load %s\n", fullname);
-                // clean_line();
+                fskprint("load %s", fullname);
+                clean_line();
                 load_file(sector_id);
             }
         }
