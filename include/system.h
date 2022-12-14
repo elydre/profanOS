@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "FSv2-03"
+#define VERSION "FSv2-04"
 #define WATFUNC_ADDR 0x199990
 
 // system.c

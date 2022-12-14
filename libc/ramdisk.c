@@ -17,14 +17,16 @@
 
 uint32_t ata_table[RAMDISK_SECTOR];
 uint32_t *RAMDISK;
-int disk_working;
+int ata_sector_count;
 int table_pos = 0;
 
 /* add in this list the paths 
 to load in ramdisk at boot */
 
 char *path_to_load[] = {
-    "/test",
+    "/bin/commands",
+    "/bin/shell.bin",
+    "/sys",
 };
 
 
@@ -33,7 +35,7 @@ char *path_to_load[] = {
 ************************/
 
 int ramdisk_sector_internal_pos(uint32_t sector) {
-    if (!disk_working) {
+    if (!ata_sector_count) {
         if (sector < RAMDISK_SECTOR) return sector;
     } else {
         for (int i = 0; i < table_pos; i++) {
@@ -46,7 +48,7 @@ int ramdisk_sector_internal_pos(uint32_t sector) {
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
     int internal = ramdisk_sector_internal_pos(LBA);
     if (internal == -1) {
-        if (!disk_working) sys_error("Sector not found in ramdisk");
+        if (!ata_sector_count) sys_error("Sector not found in ramdisk");
         else ata_read_sector(LBA, out);
         return;
     }
@@ -68,12 +70,12 @@ void ramdisk_load_sector(uint32_t ATA_LBA, uint32_t in[]) {
 }
 
 void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
-    if (disk_working) {
+    if (ata_sector_count) {
         ata_write_sector(sector, buffer);
     }
     int internal = ramdisk_sector_internal_pos(sector);
     if (internal == -1) {
-        if (!disk_working) {
+        if (!ata_sector_count) {
             sys_error("Sector not found in ramdisk");
         }
         return;
@@ -100,8 +102,8 @@ void ramdisk_init() {
     if (RAMDISK < (uint32_t*) 0x700000)
         sys_fatal("No enough memory for ramdisk");
 
-    disk_working = ata_get_sectors_count() > 0;
-    if (disk_working) {
+    ata_sector_count = ata_get_sectors_count();
+    if (ata_sector_count) {
         char path[256];
         for (int i = 0; i < 256; i++) path[i] = 0;
         ramdisk_check_dir(path, 0);
@@ -123,6 +125,11 @@ void load_file(uint32_t first_sector_id) {
 
 void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     if (ramdisk_sector_internal_pos(sector_id) != -1) return;
+
+    if (ata_sector_count < sector_id) {
+        sys_error("Sector can't exist");
+        return;
+    }
 
     char fullname[256];
     for (int i = 0; i < 256; i++) fullname[i] = parent_name[i];

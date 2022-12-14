@@ -57,19 +57,15 @@ int fs_get_sector_type(u_int32_t sector_id);
 **********************/
 
 void i_create_dir(u_int32_t sector, char *name);
+void i_print_sector_smart(u_int32_t sector);
 
 // PORT PARTIALLY
 void init_fs() {
     printf("Initialisation of the filesystem...\n");
     total_sector_written = 0;
-    virtual_disk = (u_int32_t *) malloc(SECTOR_COUNT * SECTOR_SIZE * sizeof(u_int32_t));
-    for (int i = 0; i < SECTOR_COUNT * SECTOR_SIZE; i++) {
-        virtual_disk[i] = 0;
-    }
-    free_map = (u_int8_t *) malloc(SECTOR_COUNT * sizeof(u_int8_t));
-    for (int i = 0; i < SECTOR_COUNT; i++) {
-        free_map[i] = 0;
-    }
+    virtual_disk = (u_int32_t *) calloc(SECTOR_COUNT * SECTOR_SIZE, sizeof(u_int32_t));
+    free_map = (u_int8_t *) calloc(SECTOR_COUNT, sizeof(u_int8_t));
+
     printf("Done !\n");
     i_create_dir(0, "/");
 }
@@ -94,6 +90,10 @@ void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         virtual_disk[sector * SECTOR_SIZE + i] = buffer[i];
     }
+    if (sector == 186) {
+        printf("sector 186 written\n");
+        i_print_sector_smart(186);
+    }
 }
 
 void i_print_sector(u_int32_t sector) {
@@ -104,6 +104,49 @@ void i_print_sector(u_int32_t sector) {
         printf("%x, ", buffer[i]);
     }
     printf("%x]\n", buffer[SECTOR_SIZE - 1]);
+}
+
+void i_print_sector_smart(u_int32_t sector) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    if (buffer[0] & I_FILE_H) {
+        printf("[sector %d]: file header\n", sector);
+        printf("    name: ");
+        for (int i = 1; i < MAX_SIZE_NAME + 1; i++) {
+            printf("%c", buffer[i]);
+        }
+        printf("\n");
+        printf("    size: %d\n", buffer[MAX_SIZE_NAME + 2]);
+        printf("    first sector: %d\n", buffer[SECTOR_SIZE - 1]);
+    } else if (buffer[0] & I_FILE) {
+        printf("[sector %d]: file content\n", sector);
+        printf("    content: '");
+        for (int i = 1; i < SECTOR_SIZE; i++) {
+            printf("%c", buffer[i]);
+        }
+        printf("'\n");
+    } else if (buffer[0] & I_DIR) {
+        printf("[sector %d]: directory\n", sector);
+        printf("    name: ");
+        for (int i = 1; i < MAX_SIZE_NAME + 1; i++) {
+            printf("%c", buffer[i]);
+        }
+        printf("\n");
+        printf("    content: ");
+        for (int i = MAX_SIZE_NAME + 1; i < 50; i++) {
+            printf("%d ", buffer[i]);
+        }
+        printf("...\n");
+    } else if (buffer[0] & I_DIRCNT) {
+        printf("[sector %d]: directory continue\n", sector);
+        printf("    content: ");
+        for (int i = 0; i < 50; i++) {
+            printf("%d ", buffer[i]);
+        }
+        printf("...\n");
+    } else {
+        printf("[sector %d]: unknown (0x%x)\n", sector, buffer[0]);
+    }
 }
 
 void i_declare_used(u_int32_t sector) {
@@ -166,7 +209,7 @@ void i_create_dir(u_int32_t sector, char *name) {
         buffer[i] = 0;
     }
     buffer[0] = I_DIR | I_USED;
-    for (int i = 0; i < strlen(name); i++) {
+    for (int i = 0; i < (int) strlen(name); i++) {
         buffer[1 + i] = name[i];
     }
     i_declare_used(sector);
@@ -283,6 +326,7 @@ int i_get_dir_size(u_int32_t sector) {
     return result;
 }
 
+
 void i_get_dir_content(u_int32_t sector, u_int32_t *ids, int index) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
@@ -320,7 +364,7 @@ void i_create_file_index(u_int32_t sector, char *name) {
         buffer[i] = 0;
     }
     buffer[0] = I_FILE_H | I_USED;
-    for (int i = 0; i < strlen(name); i++) {
+    for (int i = 0; i < (int) strlen(name); i++) {
         buffer[1 + i] = name[i];
     }
     i_declare_used(sector);
@@ -345,11 +389,11 @@ void i_write_in_file(u_int32_t sector, u_int8_t *data, u_int32_t size) {
     i_declare_used(next_sector);
 
     u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * size);
-    for (int i = 0; i < size; i++) {
+    for (u_int32_t i = 0; i < size; i++) {
         compressed_data[i] = data[i];
     }
 
-    int sector_i, data_i;
+    u_int32_t sector_i, data_i;
     u_int32_t current_sector = next_sector;
 
     while (size > data_i) {
@@ -394,7 +438,7 @@ char *i_read_file(u_int32_t sector) {
     char *data = malloc(buffer[MAX_SIZE_NAME + 2] * sizeof(char) + sizeof(char));
     u_int32_t *compressed_data = malloc(buffer[MAX_SIZE_NAME + 2] * (sizeof(u_int32_t) + 1));
     u_int32_t file_size = buffer[MAX_SIZE_NAME + 2];
-    int data_pointer = 0;
+    u_int32_t data_pointer = 0;
     sector = buffer[SECTOR_SIZE-1];
     read_from_disk(sector, buffer);
     while (sector != 0) {
@@ -407,7 +451,7 @@ char *i_read_file(u_int32_t sector) {
         }
         sector = buffer[SECTOR_SIZE-1];
     }
-    for (int i = 0; i < file_size; i++) {
+    for (u_int32_t i = 0; i < file_size; i++) {
         data[i] = (char) compressed_data[i];
     }
     return data;
@@ -534,7 +578,7 @@ void *fs_declare_read_array(char *path) {
 // How to free data    : free(data);
 void fs_read_file(char *path, char *data) {
     u_int32_t file_size = fs_get_file_size(path);
-    int data_index = 0;
+    u_int32_t data_index = 0;
     int sector = fs_path_to_id(path);
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
@@ -686,6 +730,8 @@ int main(int argc, char **argv) {
     
     init_fs();
     arboresence_to_disk(argv[1], "/", "");
+
+    i_print_sector_smart(186);
 
     put_in_disk();
 

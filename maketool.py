@@ -226,9 +226,9 @@ def gen_disk(force=False, with_src=False):
     except Exception as e:
         cprint(COLOR_EROR, f"Error while copying projects: {e}")
 
-    if not file_exists("./makefsys.bin") or file1_newer("fs.c", "./makefsys.bin"):
+    if not file_exists("makefsys.bin") or file1_newer("makefsys.c", "makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
-        print_and_exec("gcc -o makefsys.bin makefsys.c")
+        print_and_exec("gcc -o makefsys.bin -Wall -Wextra makefsys.c")
 
     print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
