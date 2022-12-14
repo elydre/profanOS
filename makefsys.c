@@ -31,6 +31,10 @@ int total_sector_written;
 
 void i_create_dir(u_int32_t sector, char *name);
 
+/**********************
+ * PRIVATE FUNCTIONS *
+**********************/
+
 // PORT PARTIALLY
 void init_fs() {
     printf("Initialisation of the filesystem...\n");
@@ -82,7 +86,7 @@ void i_print_sector(u_int32_t sector) {
     printf("%x]\n", buffer[SECTOR_SIZE - 1]);
 }
 
-void declare_used(u_int32_t sector) {
+void i_declare_used(u_int32_t sector) {
     if (SECTOR_COUNT < sector) {
         printf("Error: sector %u is out of range\n", sector);
         exit(1);
@@ -90,7 +94,7 @@ void declare_used(u_int32_t sector) {
     free_map[sector] = 1;
 }
 
-void declare_free(u_int32_t sector) {
+void i_declare_free(u_int32_t sector) {
     if (SECTOR_COUNT < sector) {
         printf("Error: sector %u is out of range\n", sector);
         exit(1);
@@ -110,7 +114,7 @@ u_int32_t i_next_free() {
     exit(1);
 }
 
-char *build_path(char *path, char *name) {
+char *i_build_path(char *path, char *name) {
     int len = 2;
     for (int i = 0; path[i] != '\0'; i++) len++;
     for (int i = 0; name[i] != '\0'; i++) len++;
@@ -144,7 +148,7 @@ void i_create_dir(u_int32_t sector, char *name) {
     for (int i = 0; i < strlen(name); i++) {
         buffer[1 + i] = name[i];
     }
-    declare_used(sector);
+    i_declare_used(sector);
     write_to_disk(sector, buffer);
 }
 
@@ -159,7 +163,7 @@ void i_create_dir_continue(u_int32_t sector) {
         buffer[i] = 0;
     }
     buffer[0] = I_DIRCNT | I_USED;
-    declare_used(sector);
+    i_declare_used(sector);
     write_to_disk(sector, buffer);
 }
 
@@ -177,7 +181,7 @@ void dir_continue(u_int32_t sector) {
     u_int32_t next_sector = i_next_free();
     buffer[SECTOR_SIZE-1] = next_sector;
     write_to_disk(sector, buffer);
-    declare_used(next_sector);
+    i_declare_used(next_sector);
 
     i_create_dir_continue(next_sector);
 }
@@ -204,7 +208,7 @@ void i_add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
         u_int32_t next_sector = i_next_free();
         buffer[SECTOR_SIZE-1] = next_sector;
         write_to_disk(dir_sector, buffer);
-        declare_used(next_sector);
+        i_declare_used(next_sector);
         i_create_dir_continue(next_sector);
         i_add_item_to_dir(next_sector, item_sector);
     } else {
@@ -212,7 +216,7 @@ void i_add_item_to_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     }
 }
 
-void remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
+void i_remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(dir_sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -230,7 +234,7 @@ void remove_item_from_dir(u_int32_t dir_sector, u_int32_t item_sector) {
         }
     }
     if (buffer[SECTOR_SIZE-1] != 0) {
-        remove_item_from_dir(buffer[SECTOR_SIZE-1], item_sector);
+        i_remove_item_from_dir(buffer[SECTOR_SIZE-1], item_sector);
     }
     // TODO : remove empty directory continues
 }
@@ -253,7 +257,7 @@ void i_create_file_index(u_int32_t sector, char *name) {
     for (int i = 0; i < strlen(name); i++) {
         buffer[1 + i] = name[i];
     }
-    declare_used(sector);
+    i_declare_used(sector);
     write_to_disk(sector, buffer);
 }
 
@@ -272,7 +276,7 @@ void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
     buffer[SECTOR_SIZE-1] = next_sector;
     buffer[MAX_SIZE_NAME + 2] = size;
     write_to_disk(sector, buffer);
-    declare_used(next_sector);
+    i_declare_used(next_sector);
 
     u_int32_t *compressed_data = malloc(sizeof(u_int32_t) * size);
     for (int i = 0; i < size; i++) {
@@ -295,7 +299,7 @@ void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
         if (data_i % 5 == 0 && PRINT_PROGRESS) {
             printf("progress: %f%%\r", (float) data_i / size * 100);
         }
-        declare_used(next_sector);
+        i_declare_used(next_sector);
         write_to_disk(current_sector, buffer);
         if (size < data_i) break;
         current_sector = next_sector;
@@ -343,7 +347,7 @@ char *i_read_file(u_int32_t sector) {
     return data;
 }
 
-u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
+u_int32_t i_path_to_id(char *path, char *current_path, u_int32_t sector) {
     // copy the current path
     char *current_path_copy = malloc(sizeof(char) * strlen(current_path) + 1);
     strcpy(current_path_copy, current_path);
@@ -379,7 +383,7 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
             if (buffer[i] == 0) continue;
             
-            u_int32_t result = path_to_id(path, current_path, buffer[i]);
+            u_int32_t result = i_path_to_id(path, current_path, buffer[i]);
             if (result == 0) continue;
 
             free(current_path_copy);
@@ -393,13 +397,15 @@ u_int32_t path_to_id(char *path, char *current_path, u_int32_t sector) {
     return 0;
 }
 
-// PUBLIC FUNCTIONS
+/*********************
+ * PUBLIC FUNCTIONS *
+*********************/
 
-u_int32_t fs_path_to_id(char *path) {
-    char *edited_path = build_path(path, "");
+u_int32_t fs_i_path_to_id(char *path) {
+    char *edited_path = i_build_path(path, "");
     char *current_path = calloc(strlen(edited_path) + MAX_SIZE_NAME + 2, sizeof(char));
 
-    u_int32_t exit = path_to_id(edited_path, current_path, 0);
+    u_int32_t exit = i_path_to_id(edited_path, current_path, 0);
 
     free(current_path);
     free(edited_path);
@@ -408,11 +414,11 @@ u_int32_t fs_path_to_id(char *path) {
 
 int fs_does_path_exists(char *path) {
     if (strcmp(path, "/") == 0) return 1;
-    return (int) fs_path_to_id(path) != 0;
+    return (int) fs_i_path_to_id(path) != 0;
 }
 
 u_int32_t fs_make_dir(char *path, char *name) {
-    char *full_name = build_path(full_name, path);
+    char *full_name = i_build_path(full_name, path);
     // TODO : check if there is a directory in path
     if (fs_does_path_exists(full_name)) {
         printf("Le dossier %s existe déja !\n", full_name);
@@ -420,13 +426,13 @@ u_int32_t fs_make_dir(char *path, char *name) {
     }
     u_int32_t next_free = i_next_free();
     i_create_dir(next_free, name);
-    i_add_item_to_dir(fs_path_to_id(path), next_free);
+    i_add_item_to_dir(fs_i_path_to_id(path), next_free);
     free(full_name);
     return next_free;
 }
 
 u_int32_t fs_make_file(char path[], char name[]) {
-    char *full_name = build_path(path, name);
+    char *full_name = i_build_path(path, name);
 
     if (fs_does_path_exists(full_name)) {
         printf("Le fichier %s existe déja !\n", full_name);
@@ -435,19 +441,19 @@ u_int32_t fs_make_file(char path[], char name[]) {
 
     u_int32_t next_free = i_next_free();
     i_create_file_index(next_free, name);
-    i_add_item_to_dir(fs_path_to_id(path), next_free);
+    i_add_item_to_dir(fs_i_path_to_id(path), next_free);
 
     free(full_name);
     return next_free;
 }
 
 void fs_write_in_file(char path[], char *data, u_int32_t size) {
-    u_int32_t id_to_set = fs_path_to_id(path);
+    u_int32_t id_to_set = fs_i_path_to_id(path);
     i_write_in_file(id_to_set, data, size);
 }
 
 u_int32_t fs_get_file_size(char path[]) {
-    u_int32_t file_id = fs_path_to_id(path);
+    u_int32_t file_id = fs_i_path_to_id(path);
     // TODO: security check
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(file_id, buffer);
@@ -463,7 +469,7 @@ void *fs_declare_read_array(char path[]) {
 void fs_read_file(char path[], char *data) {
     u_int32_t file_size = fs_get_file_size(path);
     int data_index = 0;
-    int sector = fs_path_to_id(path);
+    int sector = fs_i_path_to_id(path);
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     sector = buffer[SECTOR_SIZE-1];
@@ -483,8 +489,12 @@ void fs_read_file(char path[], char *data) {
 // TODO : add a function to delete a file
 // TODO : add a function to delete a directory
 
+/******************
+ * DISK TRANSFER *
+******************/
+
 void send_file_to_disk(char *linux_path, char *parent, char *name) {
-    char *profan_path = build_path(parent, name);
+    char *profan_path = i_build_path(parent, name);
 
     fs_make_file(parent, name);
 
@@ -513,7 +523,7 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
         return;
     }
 
-    char *profan_path = build_path(parent, name);
+    char *profan_path = i_build_path(parent, name);
 
     if (strcmp(name, "")) {
         printf("| make dir  %s\n", profan_path);
@@ -528,14 +538,14 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
         if (dir->d_type == DT_DIR) {
             // Found a directory, but ignore . and ..
             if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
-                char *new_linux_path = build_path(linux_path, dir->d_name);
+                char *new_linux_path = i_build_path(linux_path, dir->d_name);
 
                 arboresence_to_disk(new_linux_path, profan_path, dir->d_name);
                 free(new_linux_path);
             }
         } else {
             // get the file content
-            char *file_path = build_path(linux_path, dir->d_name);
+            char *file_path = i_build_path(linux_path, dir->d_name);
 
             printf("| make file %s/%s\n", profan_path, dir->d_name);
             send_file_to_disk(file_path, profan_path, dir->d_name);
