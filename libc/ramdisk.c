@@ -11,6 +11,10 @@
 #define RAMDISK_SECTOR 2048     // 1Mo
 #define RAMDISK_SIZE RAMDISK_SECTOR * UINT32_PER_SECTOR * 4
 
+#define I_FILE_H 0x1
+#define I_DIR    0x100
+#define MAX_NAME 32
+
 uint32_t ata_table[RAMDISK_SECTOR];
 uint32_t *RAMDISK;
 int disk_working;
@@ -20,9 +24,7 @@ int table_pos = 0;
 to load in ramdisk at boot */
 
 char *path_to_load[] = {
-    "/bin/commands",
-    "/bin/shell.bin",
-    "/sys",
+    "/test",
 };
 
 
@@ -126,22 +128,19 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     for (int i = 0; i < 256; i++) fullname[i] = parent_name[i];
     uint32_t sector[UINT32_PER_SECTOR];
     ata_read_sector(sector_id, sector);
-    if (sector[0] == 0x9000) {
-        sys_warning("dir pointed to file content");
-        return;
-    }
-    if (sector[0] != 0xc000 && sector[0] != 0xa000) {
+
+    if (!(sector[0] & (I_FILE_H | I_DIR))) {
         fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
     }
 
-    char name[20];
-    for (int i = 0; i < 20; i++) name[i] = sector[i + 1];
-    name[20] = 0;
+    char name[MAX_NAME];
+    for (int i = 0; i < MAX_NAME; i++) name[i] = sector[i + 1];
+    name[MAX_NAME] = 0;
     if (fullname[1] != 0 && fullname[0] != 0) str_append(fullname, '/');
     str_cat(fullname, name);
 
-    if (sector[0] == 0xa000) {
+    if (sector[0] & I_FILE_H) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_in_str(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
@@ -158,7 +157,8 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         if (str_in_str(fullname, path_to_load[i]) || str_in_str(path_to_load[i], fullname) || str_cmp(fullname, path_to_load[i]) == 0) {
             // serial_debug("RD-CD", fullname);
             ramdisk_load_sector(sector_id, sector);
-            for (int i = 21; i < UINT32_PER_SECTOR - 1; i++) {
+            // TODO: dir continue gestion
+            for (int i = MAX_NAME + 2; i < UINT32_PER_SECTOR - 1; i++) {
                 if (sector[i] == 0) continue;
                 ramdisk_check_dir(fullname, sector[i]);
             }
