@@ -537,12 +537,11 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
     while ((dir = readdir(d)) != NULL) {
         if (dir->d_type == DT_DIR) {
             // Found a directory, but ignore . and ..
-            if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
-                char *new_linux_path = i_build_path(linux_path, dir->d_name);
+            if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..")) continue;
+            char *new_linux_path = i_build_path(linux_path, dir->d_name);
 
-                arboresence_to_disk(new_linux_path, profan_path, dir->d_name);
-                free(new_linux_path);
-            }
+            arboresence_to_disk(new_linux_path, profan_path, dir->d_name);
+            free(new_linux_path);
         } else {
             // get the file content
             char *file_path = i_build_path(linux_path, dir->d_name);
