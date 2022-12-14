@@ -2,7 +2,6 @@
 #include <driver/keyboard.h>
 #include <driver/serial.h>
 #include <libc/ramdisk.h>
-#include <gui/graph2d.h>
 #include <driver/ata.h>
 #include <cpu/timer.h>
 #include <libc/task.h>
@@ -31,7 +30,7 @@ void up_string(char str[]) {
 int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h
-        case 0:  return (int) fs_get_used_sectors;
+        /*case 0:  return (int) fs_get_used_sectors;
         case 1:  return (int) fs_is_disk_full;
         case 2:  return (int) fs_make_dir;
         case 3:  return (int) fs_make_file;
@@ -41,9 +40,9 @@ int wf_get_func_addr(int func_id) {
         case 7:  return (int) fs_get_folder_size;
         case 8:  return (int) fs_declare_read_array;
         case 9:  return (int) fs_does_path_exists;
-        case 10: return (int) fs_type_sector;
+        case 10: return (int) fs_get_sector_type;
         case 11: return (int) fs_get_dir_content;
-        case 12: return (int) fs_path_to_id;
+        case 12: return (int) fs_path_to_id;*/
 
         // mem.h
         case 13: return (int) mem_copy;
@@ -130,11 +129,6 @@ int wf_get_func_addr(int func_id) {
         case 67: return (int) task_switch;
         case 84: return (int) task_get_alive;
         case 100: return (int) task_get_max;
-
-        // graph2d.h
-        case 87: return (int) lib2d_print_sprite;
-        case 88: return (int) lib2d_free_sprite;
-        case 89: return (int) lib2d_init_sprite;
 
         // vgui.h
         case 93: return (int) vgui_setup;

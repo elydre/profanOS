@@ -484,7 +484,7 @@ int fs_does_path_exists(char *path) {
 }
 
 u_int32_t fs_make_dir(char *path, char *name) {
-    char *full_name = i_build_path(full_name, path);
+    char *full_name = i_build_path(path, name);
     // TODO : check if there is a directory in path
     if (fs_does_path_exists(full_name)) {
         printf("Le dossier %s existe déja !\n", full_name);

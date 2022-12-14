@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     c_str_cpy(suffix, argv[2]);
     char *file = c_malloc(c_str_len(suffix) + c_str_len(fpath) + 2);
     assemble_path(fpath, suffix, file);
-    if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file, 0)) == 2) {
         uint32_t *file_content = c_fs_declare_read_array(file);
         char *char_content = c_fs_declare_read_array(file);
         c_fs_read_file(file, file_content);

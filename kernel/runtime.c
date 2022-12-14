@@ -55,7 +55,7 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 }
 
 int run_ifexist(char path[], int argc, char **argv) {
-    if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
+    if (fs_does_path_exists(path) && fs_get_sector_type(fs_path_to_id(path)) == 2)
         return run_binary(path, 0, argc, argv);
     sys_error("Program not found");
     return -1;

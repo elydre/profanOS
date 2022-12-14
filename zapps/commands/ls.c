@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     if (path[0] == '\0') c_str_cpy(ls_path, current_dir);
     else assemble_path(current_dir, path, ls_path);
 
-    if (!(c_fs_does_path_exists(ls_path) && c_fs_type_sector(c_fs_path_to_id(ls_path, 0)) == 3)) {
+    if (!(c_fs_does_path_exists(ls_path) && c_fs_get_sector_type(c_fs_path_to_id(ls_path, 0)) == 3)) {
         c_fskprint("$3%s$B is not a directory\n", ls_path);
     } else {
         int elm_count = c_fs_get_folder_size(ls_path);
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
         char tmp_path[256];
         c_fs_get_dir_content(c_fs_path_to_id(ls_path, 0), out_list, out_type);
 
-        for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_type_sector(out_type[i]);
+        for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_get_sector_type(out_type[i]);
         for (int i = 0; i < elm_count; i++) {
             if (out_type[i] == 3) {
                 c_fskprint("$2%s", out_list[i].name);

@@ -111,7 +111,7 @@ typedef struct sprite_t {
 #define c_fs_get_folder_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
 #define c_fs_declare_read_array(path) ((void *(*)(char *)) hi_func_addr(8))(path)
 #define c_fs_does_path_exists(path) ((int (*)(char *)) hi_func_addr(9))(path)
-#define c_fs_type_sector(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
+#define c_fs_get_sector_type(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
 #define c_fs_get_dir_content(id, list_name, liste_id) ((void (*)(uint32_t, string_20_t *, uint32_t *)) hi_func_addr(11))(id, list_name, liste_id)
 #define c_fs_path_to_id(input_path, silence) ((uint32_t(*)(char *, int)) hi_func_addr(12))(input_path, silence)
 #define c_mem_alloc(size) ((int (*)(int)) hi_func_addr(15))(size)

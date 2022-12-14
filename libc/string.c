@@ -123,6 +123,14 @@ int str_cmp(char s1[], char s2[]) {
     return s1[i] - s2[i];
 }
 
+int str_ncmp(char s1[], char s2[], int n) {
+    int i;
+    for (i = 0; s1[i] == s2[i] && i < n; i++) {
+        if (s1[i] == '\0') return 0;
+    }
+    return s1[i] - s2[i];
+}
+
 void str_start_split(char s[], char delim) {
     for (int i = 0; s[i] != '\0'; i++) {
         if (s[i] == delim) {

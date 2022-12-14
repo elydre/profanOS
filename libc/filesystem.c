@@ -1,464 +1,583 @@
 #include <libc/filesystem.h>
 #include <libc/ramdisk.h>
+#include <driver/ata.h>
 #include <string.h>
 #include <system.h>
+#include <iolib.h>
+#include <type.h>
 #include <mem.h>
 
-uint32_t fs_path_to_id(char input_path[], int silence);
-void i_parse_path(char path[], string_20_t liste_path[]);
-uint32_t i_next_free(uint32_t rec);
-uint32_t i_creer_dossier(char nom[]);
+
+#define MAX_SIZE_NAME  32
+#define SECTOR_SIZE    128
+
+#define I_FILE_H 0x1
+#define I_FILE   0x10
+#define I_DIR    0x100
+#define I_DIRCNT 0x1000
+#define I_USED   0x10000
+
+uint8_t  *free_map;
+uint32_t g_sector_count;
+
+/****************************
+ * PUBLIC FUNCTIONS HEADER *
+****************************/
+
+uint32_t fs_path_to_id(char *path);
+int fs_does_path_exists(char *path);
+
+uint32_t fs_make_dir(char *path, char *name);
+uint32_t fs_make_file(char *path, char *name);
+
+void *fs_declare_read_array(char *path);
+
+void fs_write_in_file(char *path, uint8_t *data, uint32_t size);
+void fs_read_file(char *path, char *data);
+
+uint32_t fs_get_file_size(char *path);
+int fs_get_dir_size(char *path);
+void fs_get_dir_content(char *path, uint32_t *ids);
+
+void fs_get_element_name(uint32_t sector, char *name);
+int fs_get_sector_type(uint32_t sector_id);
+
+
+/**********************
+ * PRIVATE FUNCTIONS *
+**********************/
+
+void i_generate_free_map();
 
 void filesystem_init() {
-    uint32_t folder_racine[128];
-    ramdisk_read_sector(0, folder_racine);
-    if (!(folder_racine[0] & 0x8000)) {
-        uint32_t location = i_next_free(0);
-        if (location != 0)
-            sys_fatal("There is already some stuff on the disk !");
-        i_creer_dossier("/");
+    g_sector_count = ata_get_sectors_count();
+    if (g_sector_count == 0) {
+        sys_warning("Cannot use ATA disk, using ramdisk");
+        g_sector_count = ramdisk_get_size();
+    }
+    
+    free_map = calloc(g_sector_count * sizeof(uint8_t));
+    i_generate_free_map();
+
+    uint32_t root_sect[SECTOR_SIZE];
+    ramdisk_read_sector(0, root_sect);
+
+    if (!(root_sect[0] & 0x100)) {
+        // TODO: init filesystem on empty disk
+        // i_create_dir(0, "/");
+        sys_fatal("Invalid root sector");
     }
 }
 
-uint32_t i_next_free(uint32_t rec) {
-    uint32_t x = 0;
-    uint32_t sector[128];
-    for (uint32_t i = 0; i < rec + 1; i++) {
-        ramdisk_read_sector(x, sector);
-        while (sector[0] & 0x8000){
-            x++;
-            ramdisk_read_sector(x, sector);
-        }
-        if (i != rec) x++;
+void i_print_sector(uint32_t sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    fskprint("[");
+    for (int i = 0; i < SECTOR_SIZE - 1; i++) {
+        fskprint("%x, ", buffer[i]);
     }
-    return x;
+    fskprint("%x]\n", buffer[SECTOR_SIZE - 1]);
 }
 
-uint32_t i_creer_dossier(char nom[]) {
-    if (str_is_in(nom, '/') && str_cmp(nom, "/"))
-        return sys_error("Dir name cannot contain /");
-
-    uint32_t folder_id = i_next_free(0);
-    uint32_t list_to_write[128];
-    for (int i = 0; i < 128; i++) list_to_write[i] = 0;
-    list_to_write[0] = 0xC000; // 0x8000 + 0x4000
-
-    if (str_len(nom) > 20)
-        return sys_error("Dir name cannot exceed 20 characters");
-
-    int list_index = 1;
-    for (int i = 0; i < str_len(nom); i++) {
-        list_to_write[list_index] = (int) nom[i];
-        list_index++;
-    }
-
-    ramdisk_write_sector(folder_id, list_to_write);
-    return folder_id;
-}
-
-uint32_t i_creer_index_de_fichier(char nom[]) {
-    if (str_is_in(nom, '/'))
-        return sys_error("File name cannot contain /");
-
-    if (str_len(nom) > 20) 
-        return sys_error("File name cannot exceed 20 characters");
-
-    uint32_t location = i_next_free(0);
-    uint32_t location_file = i_next_free(1);
-
-    // write intex
-    uint32_t list_to_write[128];
-    for (int i = 0; i < 128; i++) list_to_write[i] = 0;
-    list_to_write[0] = 0xA000;
-    int list_index = 1;
-    for (int i = 0; i < str_len(nom); i++) {
-        list_to_write[list_index] = (int) nom[i];
-        list_index++;
-    }
-    list_to_write[127] = location_file;
-    ramdisk_write_sector(location, list_to_write);
-
-    // write file
-    for (int i = 0; i < 128; i++) list_to_write[i] = 0;
-    list_to_write[0] = 0x9000;
-    list_to_write[127] = 0;
-    ramdisk_write_sector(location_file, list_to_write);
-
-    return location;
-}
-
-uint32_t i_free_file_and_get_next(uint32_t file_id) {
-    uint32_t sector[128];
-    ramdisk_read_sector(file_id, sector);
-    uint32_t suite = sector[127];
-
-    for (int i = 0; i < 128; i++) sector[i] = 0;
-    ramdisk_write_sector(file_id, sector);
-
-    return suite;
-}
-
-void i_set_data_to_file(uint32_t data[], uint32_t data_size, uint32_t file_id) {
-    uint32_t sector[128];
-    ramdisk_read_sector(file_id, sector);
-
-    uint32_t file_index = sector[127];
-
-    if (!(sector[0] & 0xA000)) {
-        sys_error("Sector is not a file");
-        return;
-    }
-
-    uint32_t suite = file_index;
-
-    while (suite) suite = i_free_file_and_get_next(suite);
-
-    for (uint32_t i = 0; i < (data_size / 126 + 1); i++) {
-        uint32_t part[128];
-        for (int i = 0; i < 128; i++) part[i] = 0;
-        int ui = 1;
-        part[0] = 0x9000;
-        for (int j = 0; j < 126; j++) {
-            if (i * 126 + j >= data_size) {
-                ui = 0;
-                break;
-            }
-            part[j+1] = data[i*126+j] + 1;
-        }
-        if (ui) part[127] = i_next_free(1); 
-        ramdisk_write_sector(file_index, part);
-        file_index = part[127];
-    }
-}
-
-void i_add_item_to_dir(uint32_t file_id, uint32_t folder_id) {
-    uint32_t dossier[128];
-    ramdisk_read_sector(folder_id, dossier);
-
-    if (!(dossier[0] & 0x8000)) {
-        sys_error("Sector is empty");
-        return;
-    }
-    if (!(dossier[0] & 0x4000)) {
-        sys_error("Sector is not a dir");
-        return;
-    }
-    int full = 1;
-    for (int i = 21; i < 128; i++) {
-        if (!dossier[i]) {
-            dossier[i] = file_id;
-            full = 0;
-            break;
-        }
-    }
-    if (full) {
-        sys_error("The dir is full");
-        return;
-    }
-    ramdisk_write_sector(folder_id, dossier);
-}
-
-int i_size_folder(uint32_t id_folder) {
-    uint32_t folder[128];
-    ramdisk_read_sector(id_folder, folder);
-    int size = 0;
-    for (int i = 21; i < 128; i++) {
-        if (folder[i]) size++;
-    }
-    return size;
-}
-
-void i_parse_path(char path[], string_20_t liste_path[]) {
-    int index = 0;
-    int index_in_str = 0;
-    for (int i = 0; i < str_len(path); i++) {
-        if (path[i] != '/') {
-            liste_path[index].name[index_in_str] = path[i];
-            index_in_str++;
+void i_generate_free_map() {
+    fskprint("Generating free map... (%d sectors)", g_sector_count);
+    for (uint32_t i = 0; i < g_sector_count; i++) {
+        uint32_t buffer[SECTOR_SIZE];
+        ramdisk_read_sector(i, buffer);
+        if (buffer[0] & I_USED) {
+            free_map[i] = 1;
         } else {
-            liste_path[index].name[index_in_str] = '\0';
-            index++;
-            index_in_str = 0;
+            free_map[i] = 0;
         }
     }
-    for (int i = 0; i<20; i++) liste_path[0].name[i] = 0;
+    fskprint("Done\n");
 }
 
-uint32_t i_get_parent_id(char path[]) {
-    if (!str_cmp(path, "/")) {return 0;}
-    if (str_count(path, '/') == 1) {return 0;}
-    char *new_path = malloc(sizeof(char) * str_len(path));
-    for (int i=0; i<str_len(path); i++) new_path[i] = path[i];
-    for (int i = str_len(path); i>0; i--) {
-        if (new_path[i] == '/') {
-            new_path[i] = '\0';
-            break;
+void i_declare_used(uint32_t sector) {
+    if (g_sector_count < sector) {
+        sys_error("Sector out of range");
+        return;
+    }
+    free_map[sector] = 1;
+}
+
+void i_declare_free(uint32_t sector) {
+    if (g_sector_count < sector) {
+        sys_error("Sector out of range");
+        return;
+    }
+    free_map[sector] = 0;
+}
+
+uint32_t i_next_free() {
+    for (uint32_t i = 0; i < g_sector_count; i++) {
+        if (free_map[i] != 0) continue;
+        return i;
+    }
+    sys_fatal("No free sector");
+    return 0;
+}
+
+char *i_build_path(char *path, char *name) {
+    int len = 2;
+    for (int i = 0; path[i] != '\0'; i++) len++;
+    for (int i = 0; name[i] != '\0'; i++) len++;
+
+    char *result = calloc(len * sizeof(char));
+
+    str_cpy(result, path);
+    if (path[str_len(path) - 1] != '/') {
+        result[str_len(path)] = '/';
+    }
+    str_cat(result, name);
+
+    return result;
+}
+
+void i_create_dir(uint32_t sector, char *name) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (buffer[0] & I_USED) {
+        sys_error("Sector already used");
+        return;
+    }
+    if (str_len(name) > MAX_SIZE_NAME) {
+        sys_error("Name too long");
+        return;
+    }
+    for (int i = 0; i < SECTOR_SIZE; i++) {
+        buffer[i] = 0;
+    }
+    buffer[0] = I_DIR | I_USED;
+    for (int i = 0; i < str_len(name); i++) {
+        buffer[1 + i] = name[i];
+    }
+    i_declare_used(sector);
+    ramdisk_write_sector(sector, buffer);
+}
+
+void i_create_dir_continue(uint32_t sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (buffer[0] & I_USED) {
+        sys_error("Sector already used");
+        return;
+    }
+    for (int i = 0; i < SECTOR_SIZE; i++) {
+        buffer[i] = 0;
+    }
+    buffer[0] = I_DIRCNT | I_USED;
+    i_declare_used(sector);
+    ramdisk_write_sector(sector, buffer);
+}
+
+void dir_continue(uint32_t sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
+        return;
+    }
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        sys_error("The sector isn't a directory");
+        return;
+    }
+    uint32_t next_sector = i_next_free();
+    buffer[SECTOR_SIZE-1] = next_sector;
+    ramdisk_write_sector(sector, buffer);
+    i_declare_used(next_sector);
+
+    i_create_dir_continue(next_sector);
+}
+
+void i_add_item_to_dir(uint32_t dir_sector, uint32_t item_sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(dir_sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("sector not used");
+        return;
+    }
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        sys_error("The sector isn't a directory");
+        return;
+    }
+    for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
+        if (buffer[i] == 0) {
+            buffer[i] = item_sector;
+            ramdisk_write_sector(dir_sector, buffer);
+            return;
         }
     }
-    free(new_path);
-    return fs_path_to_id(new_path, 0);
+    if (buffer[SECTOR_SIZE-1] == 0) {
+        uint32_t next_sector = i_next_free();
+        buffer[SECTOR_SIZE-1] = next_sector;
+        ramdisk_write_sector(dir_sector, buffer);
+        i_declare_used(next_sector);
+        i_create_dir_continue(next_sector);
+        i_add_item_to_dir(next_sector, item_sector);
+    } else {
+        i_add_item_to_dir(buffer[SECTOR_SIZE-1], item_sector);
+    }
 }
 
-void i_assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; str_cpy(result, old);
-    if (result[str_len(result) - 1] != '/') str_append(result, '/');
-    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
+void i_remove_item_from_dir(uint32_t dir_sector, uint32_t item_sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(dir_sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
+        return;
+    }
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        sys_error("The sector isn't a directory");
+        return;
+    }
+    for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
+        if (buffer[i] == item_sector) {
+            buffer[i] = 0;
+            ramdisk_write_sector(dir_sector, buffer);
+        }
+    }
+    if (buffer[SECTOR_SIZE-1] != 0) {
+        i_remove_item_from_dir(buffer[SECTOR_SIZE-1], item_sector);
+    }
+    // TODO : remove empty directory continues
 }
 
-// PUBLIC FUNCTIONS
-
-uint32_t fs_path_to_id(char input_path[], int silence) {
-    //init
-    int x = 0;
-    int in_folder = 0;
-    int start_from_liste_path = 0;
-
-    // sanitize path
-    char *path = malloc((str_len(input_path)+1)*sizeof(char));
-    for (int i = 0; i < str_len(input_path) + 1; i++) path[i] = input_path[i];
-
-    if (str_cmp("/", path) == 0) {
-        free(path);
+int i_get_dir_size(uint32_t sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
         return 0;
     }
-
-    string_20_t * liste_path = calloc(str_len(path) * sizeof(string_20_t));
-    i_parse_path(path, liste_path);
-
-    int folder_size = i_size_folder(0);
-    int taille_path = str_count(path, '/') + 1;
-    string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
-    for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
-    uint32_t *liste_id = malloc(folder_size * sizeof(int));
-    for (int i = 0; i < folder_size; i++) liste_id[i] = 0;
-    fs_get_dir_content(0, liste_noms, liste_id);
-
-    start_from_liste_path++;
-    taille_path--;
-
-    in_folder = 0;
-    for (int i = 0; i < folder_size; i++) {
-        if (!str_cmp(liste_path[0+start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        sys_error("The sector isn't a directory");
+        return 0;
     }
-    if (!in_folder) {
-        free(liste_path);
-        free(liste_noms);
-        free(liste_id);
-        free(path);
-        if (!silence) sys_error("The path does not lead to a dir");
-        return -1;
-    }
-
-    if (taille_path == 1) {
-        x = 0;
-        for (int i = 0; i < folder_size; i++) {
-            if (!str_cmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
-            x++;
+    int result = 0;
+    for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
+        if (buffer[i] != 0) {
+            result++;
         }
-        free(liste_path);
-        free(liste_noms);
-        free(liste_id);
-        free(path);
-        return liste_id[x];
     }
-
-    while (taille_path != 1) {
-        x = 0;
-        for (int i = 0; i < folder_size; i++) {
-            if (!str_cmp(liste_noms[i].name, liste_path[0+start_from_liste_path].name)) break;
-            x++;
-        }
-
-        uint32_t contenu_path_0 = liste_id[x];
-
-        folder_size = i_size_folder(contenu_path_0);
-        free(liste_noms);
-        free(liste_id);
-        string_20_t * liste_noms = malloc(folder_size * sizeof(string_20_t));
-        for (int i = 0; i < folder_size; i++) liste_noms[i].name[0] = '\0';
-        uint32_t *liste_id = malloc(folder_size * sizeof(int));
-        for (int i = 0; i < folder_size; i++) liste_id[i] = 0;
-        fs_get_dir_content(contenu_path_0, liste_noms, liste_id);
-
-        start_from_liste_path++;
-        taille_path--;
+    if (buffer[SECTOR_SIZE-1] != 0) {
+        result += i_get_dir_size(buffer[SECTOR_SIZE-1]);
     }
-
-    in_folder = 0;
-    for (int i = 0; i < folder_size; i++) {
-        if (!str_cmp(liste_path[start_from_liste_path].name, liste_noms[i].name)) in_folder = 1;
-    }
-    if (!in_folder) {
-        if (!silence) sys_error("The path does not lead to something that exists");
-        free(liste_path);
-        free(liste_noms);
-        free(liste_id);
-        free(path);
-        return -1;
-    }
-
-    x = 0;
-    for (int i = 0; i < folder_size; i++) {
-        if (!str_cmp(liste_noms[i].name, liste_path[0 + start_from_liste_path].name)) break;
-        x++;
-    }
-    uint32_t contenu_path_0 = liste_id[x];
-
-    free(liste_path);
-    free(liste_noms);
-    free(liste_id);
-    free(path);
-    return contenu_path_0;
+    return result;
 }
 
-uint32_t fs_get_used_sectors(uint32_t disk_size) {
-    uint32_t total = 0;
-    for (uint32_t i = 0; i < disk_size; i++) {
-        uint32_t sector[128];
-        ramdisk_read_sector(i, sector);
-        if (sector[0] & 0x8000) total++;
+void i_get_dir_content(uint32_t sector, uint32_t *ids, int index) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
+        return;
     }
-    return total;
-}
-
-uint32_t fs_is_disk_full(uint32_t disk_size) {
-    return disk_size == fs_get_used_sectors(disk_size);
-}
-
-uint32_t fs_make_dir(char path[], char folder_name[]) {
-    char *path_to_folder = malloc(0x1000);
-    i_assemble_path(path, folder_name, path_to_folder);
-    if (fs_does_path_exists(path_to_folder)) {
-        free(path_to_folder);
-        return sys_error("The path already exists");
-    } free(path_to_folder);
-
-    uint32_t dossier = i_creer_dossier(folder_name);
-    uint32_t id_to_set = fs_path_to_id(path, 0);
-    if ((int) id_to_set != -1) i_add_item_to_dir(dossier, id_to_set);
-    else sys_error("The path specified in fs_make_dir does not exist");
-    return dossier;
-}
-
-uint32_t fs_make_file(char path[], char file_name[]) {
-    char *path_to_file = malloc(0x1000);
-    i_assemble_path(path, file_name, path_to_file);
-    if (fs_does_path_exists(path_to_file)) {
-        free(path_to_file);
-        return sys_error("The path already exists");
-    } free(path_to_file);
-
-    uint32_t fichier_test = i_creer_index_de_fichier(file_name);
-    uint32_t id_to_set = fs_path_to_id(path, 0);
-    i_add_item_to_dir(fichier_test, id_to_set);
-    return fichier_test;
-}
-
-void fs_write_in_file(char path[], uint32_t data[], uint32_t data_size) {
-    uint32_t id_to_set = fs_path_to_id(path, 0);
-    i_set_data_to_file(data, data_size, id_to_set);
-}
-
-// Note : ne pas utiliser dans un check d'une boucle sauf si vraiment nessessaire
-uint32_t fs_get_file_size(char path[]) {
-    uint32_t id_file_index = fs_path_to_id(path, 0);
-    uint32_t sector[128];
-    ramdisk_read_sector(id_file_index, sector);
-    if (!(sector[0] & 0xA000)){
-        sys_error("Sector is not a file");
-        return -1;
+    if (!(buffer[0] & (I_DIR | I_DIRCNT))) {
+        sys_error("The sector isn't a directory");
+        return;
     }
-    uint32_t sector_size = 0;
-    while (sector[127]) {
-        sector_size++;
-        id_file_index = sector[127];
-        ramdisk_read_sector(id_file_index, sector);
-    }
-    return sector_size;
-}
-
-void *fs_declare_read_array(char path[]) {
-    return calloc((fs_get_file_size(path) * sizeof(uint32_t) + 1) * 126);
-}
-
-// How to declare data : uint32_t *data = fs_declare_read_array(path);
-// How to free data    : free(data);
-void fs_read_file(char path[], uint32_t data[]) {
-    uint32_t sector[128];
-    ramdisk_read_sector(fs_path_to_id(path, 0), sector);
-    uint32_t id_file_index = sector[127];
-    ramdisk_read_sector(id_file_index, sector);
-    if (!(sector[0] & 0xA000))
-        sys_error("Sector is not a file");
-    uint32_t index = 0;
-    ramdisk_read_sector(id_file_index, sector);
-    for (int i=1; i < 127; i++) {
-        data[index] = sector[i] - 1;
-        index++;
-    }
-    id_file_index = sector[127];
-    while (id_file_index) {
-        ramdisk_read_sector(id_file_index, sector);
-        for (int i = 1; i < 127; i++) {
-            data[index] = sector[i] - 1;
+    for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
+        if (buffer[i] != 0) {
+            ids[index] = buffer[i];
             index++;
         }
-        id_file_index = sector[127];
+    }
+    if (buffer[SECTOR_SIZE-1] != 0) {
+        i_get_dir_content(buffer[SECTOR_SIZE-1], ids, index);
     }
 }
 
-int fs_does_path_exists(char path[]) {
-    return (int) fs_path_to_id(path, 1) != -1;
+void i_create_file_index(uint32_t sector, char *name) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (buffer[0] & I_USED) {
+        sys_error("Sector is already used");
+        return;
+    }
+    if (str_len(name) > MAX_SIZE_NAME) {
+        sys_error("Name is too long");
+        return;
+    }
+    for (int i = 0; i < SECTOR_SIZE; i++) {
+        buffer[i] = 0;
+    }
+    buffer[0] = I_FILE_H | I_USED;
+    for (int i = 0; i < str_len(name); i++) {
+        buffer[1 + i] = name[i];
+    }
+    i_declare_used(sector);
+    ramdisk_write_sector(sector, buffer);
 }
 
-int fs_type_sector(uint32_t id_sector) {
-    uint32_t sector[128];
-    ramdisk_read_sector(id_sector, sector);
-    if (sector[0] == 0x8000) return -1; // shouldn't hstr_append
-    if (sector[0] == 0x9000) return 1;  // file content
-    if (sector[0] == 0xa000) return 2;  // file index
-    if (sector[0] == 0xc000) return 3;  // folder
-    return 0;                           // default (sector empty)
+void i_write_in_file(uint32_t sector, uint8_t *data, uint32_t size) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
+        return;
+    }
+    if (!(buffer[0] & I_FILE_H)) {
+        sys_error("The sector isn't a file header");
+        return;
+    }
+    uint32_t next_sector = i_next_free();
+    buffer[SECTOR_SIZE-1] = next_sector;
+    buffer[MAX_SIZE_NAME + 2] = size;
+    ramdisk_write_sector(sector, buffer);
+    i_declare_used(next_sector);
+
+    uint32_t *compressed_data = malloc(sizeof(uint32_t) * size);
+    for (uint32_t i = 0; i < size; i++) {
+        compressed_data[i] = data[i];
+    }
+
+    uint32_t sector_i, data_i;
+    uint32_t current_sector = next_sector;
+
+    while (size > data_i) {
+        for (sector_i = 0; sector_i < SECTOR_SIZE - 1; sector_i++) {
+            if (size < data_i) break;
+            buffer[sector_i] = compressed_data[data_i];
+            data_i++;
+        }
+        if (size > data_i) {
+            next_sector = i_next_free();
+            buffer[SECTOR_SIZE-1] = next_sector;
+        }
+        i_declare_used(next_sector);
+        ramdisk_write_sector(current_sector, buffer);
+        if (size < data_i) break;
+        current_sector = next_sector;
+    }
+
+    free(compressed_data);
 }
 
-void fs_get_dir_content(uint32_t id, string_20_t list_name[], uint32_t liste_id[]) {
-    for (int i = 0; i < 128; i++) list_name[i].name[0] = '\0';
-    for (int i = 0; i < 128; i++) liste_id[i] = 0;
-    int pointeur_noms = 0;
-    int pointeur_liste_id = 0;
+char *i_read_file(uint32_t sector) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
+        return NULL;
+    }
+    if (!(buffer[0] & I_FILE_H)) {
+        sys_error("The sector isn't a file header");
+        return NULL;
+    }
+    char *data = malloc(buffer[MAX_SIZE_NAME + 2] * sizeof(char) + sizeof(char));
+    uint32_t *compressed_data = malloc(buffer[MAX_SIZE_NAME + 2] * (sizeof(uint32_t) + 1));
+    uint32_t file_size = buffer[MAX_SIZE_NAME + 2];
+    uint32_t data_pointer = 0;
+    sector = buffer[SECTOR_SIZE-1];
+    ramdisk_read_sector(sector, buffer);
+    while (sector != 0) {
+        ramdisk_read_sector(sector, buffer);
+        for (uint32_t i = 0; i < SECTOR_SIZE-1; i++) {
+            if (data_pointer < file_size) {
+                compressed_data[data_pointer] = buffer[1 + i];
+                data_pointer++;
+            }
+        }
+        sector = buffer[SECTOR_SIZE-1];
+    }
+    for (uint32_t i = 0; i < file_size; i++) {
+        data[i] = (char) compressed_data[i];
+    }
+    return data;
+}
+
+uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {
+    // copy the current path
+    char *current_path_copy = malloc(sizeof(char) * str_len(current_path) + 1);
+    str_cpy(current_path_copy, current_path);
+
+    // read the current sector
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+
+    // TODO: security check
+
+    // get the name of the current sector
+    char *name = malloc(MAX_SIZE_NAME + 1 * sizeof(char));
+    for (int i = 0; i < MAX_SIZE_NAME; i++) {
+        name[i] = (char) buffer[1 + i];
+    }
+
+    // add the name to the current path
+    str_cat(current_path, name);
+    free(name);
     
-    uint32_t folder[128];
-    ramdisk_read_sector(id, folder);
-
-    if (!(folder[0] & 0x8000)) {
-        sys_error("Sector is empty");
-        return;
+    if (current_path[str_len(current_path)-1] != '/') {
+        str_cat(current_path, "/");
     }
 
-    if (!(folder[0] & 0x4000)) {
-        sys_error("Sector is not a folder");
-        return;
+    // if the current path is the path we are looking for, return the sector
+    if (str_cmp(current_path, path) == 0) {
+        free(current_path_copy);
+        return sector;
     }
 
-    uint32_t liste_contenu[108];
-    for (int i = 0; i < 108; i++) liste_contenu[i] = 0;
-    for (int i = 21; i < 128; i++) liste_contenu[i-21] = folder[i];
+    // if current path is a prefix of the path we are looking for, go deeper
+    if (str_ncmp(current_path, path, str_len(current_path)) == 0) {
+        for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
+            if (buffer[i] == 0) continue;
+            
+            uint32_t result = i_path_to_id(path, current_path, buffer[i]);
+            if (result == 0) continue;
 
-    uint32_t content[128];
-    uint32_t liste_chars[20];
-    char nom[20];
-    for (int i = 0; i < 108; i++) {
-        if (liste_contenu[i]) {
-            ramdisk_read_sector(liste_contenu[i], content);
-            for (int j = 0; j < 20; j++) liste_chars[j] = content[j + 1];
-            for (int j = 0; j < 20; j++) nom[j] = (char) liste_chars[j];
-            for (int c = 0; c < 20; c++) list_name[pointeur_noms].name[c] = nom[c];
-            liste_id[pointeur_liste_id] = liste_contenu[i];
-            pointeur_noms++; pointeur_liste_id++;
+            free(current_path_copy);
+            return result;
         }
     }
+
+    // if we are here, the path is not found
+    str_cpy(current_path, current_path_copy);
+    free(current_path_copy);
+    return 0;
 }
 
-int fs_get_folder_size(char path[]) {
-    return i_size_folder(fs_path_to_id(path, 0));
+/*********************
+ * PUBLIC FUNCTIONS *
+*********************/
+
+uint32_t fs_path_to_id(char *path) {
+    char *edited_path = i_build_path(path, "");
+    char *current_path = calloc(str_len(edited_path) + MAX_SIZE_NAME + 2);
+
+    uint32_t exit_val = i_path_to_id(edited_path, current_path, 0);
+
+    if (exit_val == 0 && str_cmp(edited_path, "/") != 0) {
+        sys_warning("Path not found");
+    }
+
+    free(current_path);
+    free(edited_path);
+    return exit_val;
 }
+
+int fs_does_path_exists(char *path) {
+
+    char *edited_path = i_build_path(path, "");
+    char *current_path = calloc(str_len(edited_path) + MAX_SIZE_NAME + 2);
+
+
+    uint32_t exit_val = i_path_to_id(edited_path, current_path, 0);
+
+    free(current_path);
+    free(edited_path);
+
+    if (str_cmp(edited_path, "/") == 0) return 1;
+
+    return exit_val != 0;
+}
+
+uint32_t fs_make_dir(char *path, char *name) {
+    char *full_name = i_build_path(path, name);
+    // TODO : check if there is a directory in path
+    if (fs_does_path_exists(full_name)) {
+        sys_error("Directory already exists");
+        return -1;
+    }
+    uint32_t next_free = i_next_free();
+    i_create_dir(next_free, name);
+    i_add_item_to_dir(fs_path_to_id(path), next_free);
+    free(full_name);
+    return next_free;
+}
+
+uint32_t fs_make_file(char *path, char *name) {
+    char *full_name = i_build_path(path, name);
+
+    if (fs_does_path_exists(full_name)) {
+        sys_error("File already exists");
+        return -1;
+    }
+
+    uint32_t next_free = i_next_free();
+    i_create_file_index(next_free, name);
+    i_add_item_to_dir(fs_path_to_id(path), next_free);
+
+    free(full_name);
+    return next_free;
+}
+
+void fs_write_in_file(char *path, uint8_t *data, uint32_t size) {
+    uint32_t id_to_set = fs_path_to_id(path);
+    i_write_in_file(id_to_set, data, size);
+}
+
+uint32_t fs_get_file_size(char *path) {
+    uint32_t file_id = fs_path_to_id(path);
+    // TODO: security check
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(file_id, buffer);
+    return buffer[MAX_SIZE_NAME + 2];
+}
+
+void *fs_declare_read_array(char *path) {
+    return calloc(fs_get_file_size(path) + 1);
+}
+
+// How to declare data : char *data = fs_declare_read_array(path);
+// How to free data    : free(data);
+void fs_read_file(char *path, char *data) {
+    uint32_t file_size = fs_get_file_size(path);
+    uint32_t data_index = 0;
+    int sector = fs_path_to_id(path);
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    sector = buffer[SECTOR_SIZE-1];
+    while (buffer[SECTOR_SIZE-1] != 0) {
+        ramdisk_read_sector(sector, buffer);
+        for (int i = 0; i < SECTOR_SIZE - 1; i++) {
+            if (data_index > file_size) break;
+            data[data_index] = buffer[i];
+            data_index++;
+        }
+        sector = buffer[SECTOR_SIZE-1];
+    }
+    data_index++;
+    data[data_index] = '\0';
+}
+
+int fs_get_dir_size(char *path) {
+    uint32_t dir_id = fs_path_to_id(path);
+    return i_get_dir_size(dir_id);
+}
+
+void fs_get_dir_content(char *path, uint32_t *ids) {
+    uint32_t dir_id = fs_path_to_id(path);
+    i_get_dir_content(dir_id, ids, 0);
+}
+
+void fs_get_element_name(uint32_t sector, char *name) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        sys_error("Sector not used");
+        return;
+    }
+    if (!(buffer[0] & (I_DIR | I_FILE_H))) {
+        sys_error("The sector isn't a directory or a file\n");
+        return;
+    }
+    for (int i = 0; i < MAX_SIZE_NAME; i++) {
+        name[i] = buffer[i+1];
+    }
+}
+
+int fs_get_sector_type(uint32_t sector_id) {
+    uint32_t buffer[SECTOR_SIZE];
+    ramdisk_read_sector(sector_id, buffer);
+
+    if (!(buffer[0] & I_USED))  return 0; // sector empty
+    if (buffer[0] & I_FILE)     return 1; // file content
+    if (buffer[0] & I_FILE_H)   return 2; // file index
+    if (buffer[0] & I_DIR)      return 3; // dir
+    if (buffer[0] & I_DIRCNT)   return 4; // dir continue
+    return 0;                             // sector empty
+}
+
+// TODO : add a function to delete a file
+// TODO : add a function to delete a directory

@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     c_str_cpy(suffix, argv[2]);
     char *file = c_malloc(c_str_len(suffix)+c_str_len(current_dir)+2);
     assemble_path(current_dir, suffix, file);
-    if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file, 0)) == 2) {
         char char_content[70];
         c_fskprint("-> "); c_input(char_content, 70, c_blue); c_fskprint("\n");
         uint32_t *file_content = c_malloc(c_str_len(char_content));

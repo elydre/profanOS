@@ -18,7 +18,7 @@ void shell_tree(char path[], int rec) {
     uint32_t *out_type = c_malloc(elm_count * sizeof(uint32_t));
     char tmp_path[256];
     c_fs_get_dir_content(c_fs_path_to_id(path, 0), out_list, out_type);
-    for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_type_sector(out_type[i]);
+    for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_get_sector_type(out_type[i]);
     for (int i = 0; i < elm_count; i++) {
         if (out_type[i] == 2) { // file
             for (int j = 0; j < rec; j++) c_fskprint("  ");
