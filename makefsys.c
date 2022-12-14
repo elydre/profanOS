@@ -401,7 +401,7 @@ u_int32_t i_path_to_id(char *path, char *current_path, u_int32_t sector) {
  * PUBLIC FUNCTIONS *
 *********************/
 
-u_int32_t fs_i_path_to_id(char *path) {
+u_int32_t fs_path_to_id(char *path) {
     char *edited_path = i_build_path(path, "");
     char *current_path = calloc(strlen(edited_path) + MAX_SIZE_NAME + 2, sizeof(char));
 
@@ -414,7 +414,7 @@ u_int32_t fs_i_path_to_id(char *path) {
 
 int fs_does_path_exists(char *path) {
     if (strcmp(path, "/") == 0) return 1;
-    return (int) fs_i_path_to_id(path) != 0;
+    return (int) fs_path_to_id(path) != 0;
 }
 
 u_int32_t fs_make_dir(char *path, char *name) {
@@ -426,7 +426,7 @@ u_int32_t fs_make_dir(char *path, char *name) {
     }
     u_int32_t next_free = i_next_free();
     i_create_dir(next_free, name);
-    i_add_item_to_dir(fs_i_path_to_id(path), next_free);
+    i_add_item_to_dir(fs_path_to_id(path), next_free);
     free(full_name);
     return next_free;
 }
@@ -441,19 +441,19 @@ u_int32_t fs_make_file(char path[], char name[]) {
 
     u_int32_t next_free = i_next_free();
     i_create_file_index(next_free, name);
-    i_add_item_to_dir(fs_i_path_to_id(path), next_free);
+    i_add_item_to_dir(fs_path_to_id(path), next_free);
 
     free(full_name);
     return next_free;
 }
 
 void fs_write_in_file(char path[], u_int8_t *data, u_int32_t size) {
-    u_int32_t id_to_set = fs_i_path_to_id(path);
+    u_int32_t id_to_set = fs_path_to_id(path);
     i_write_in_file(id_to_set, data, size);
 }
 
 u_int32_t fs_get_file_size(char path[]) {
-    u_int32_t file_id = fs_i_path_to_id(path);
+    u_int32_t file_id = fs_path_to_id(path);
     // TODO: security check
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(file_id, buffer);
@@ -469,7 +469,7 @@ void *fs_declare_read_array(char path[]) {
 void fs_read_file(char path[], char *data) {
     u_int32_t file_size = fs_get_file_size(path);
     int data_index = 0;
-    int sector = fs_i_path_to_id(path);
+    int sector = fs_path_to_id(path);
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     sector = buffer[SECTOR_SIZE-1];
