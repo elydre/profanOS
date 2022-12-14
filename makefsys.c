@@ -29,11 +29,34 @@ u_int32_t *virtual_disk;
 u_int8_t  *free_map;
 int total_sector_written;
 
-void i_create_dir(u_int32_t sector, char *name);
+/****************************
+ * PUBLIC FUNCTIONS HEADER *
+****************************/
+
+u_int32_t fs_path_to_id(char *path);
+int fs_does_path_exists(char *path);
+
+u_int32_t fs_make_dir(char *path, char *name);
+u_int32_t fs_make_file(char *path, char *name);
+
+void *fs_declare_read_array(char *path);
+void fs_free_names(char **names, int size);
+
+void fs_write_in_file(char *path, u_int8_t *data, u_int32_t size);
+void fs_read_file(char *path, char *data);
+
+u_int32_t fs_get_file_size(char *path);
+int fs_get_dir_size(char *path);
+void fs_get_dir_content(char *path, char **names, u_int32_t *sector_ids);
+
+int fs_get_sector_type(u_int32_t sector_id);
+
 
 /**********************
  * PRIVATE FUNCTIONS *
 **********************/
+
+void i_create_dir(u_int32_t sector, char *name);
 
 // PORT PARTIALLY
 void init_fs() {
@@ -71,9 +94,6 @@ void write_to_disk(u_int32_t sector, u_int32_t *buffer) {
     for (int i = 0; i < SECTOR_SIZE; i++) {
         virtual_disk[sector * SECTOR_SIZE + i] = buffer[i];
     }
-    if (sector > total_sector_written) {
-        total_sector_written = sector;
-    }
 }
 
 void i_print_sector(u_int32_t sector) {
@@ -103,8 +123,9 @@ void i_declare_free(u_int32_t sector) {
 }
 
 u_int32_t i_next_free() {
+    total_sector_written++;
     if (SPEED_MODE) {
-        return total_sector_written + 1;
+        return total_sector_written;
     }
     for (int i = 0; i < SECTOR_COUNT; i++) {
         if (free_map[i] != 0) continue;
