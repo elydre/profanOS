@@ -261,7 +261,7 @@ void i_create_file_index(u_int32_t sector, char *name) {
     write_to_disk(sector, buffer);
 }
 
-void i_write_in_file(u_int32_t sector, char *data, u_int32_t size) {
+void i_write_in_file(u_int32_t sector, u_int8_t *data, u_int32_t size) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -447,7 +447,7 @@ u_int32_t fs_make_file(char path[], char name[]) {
     return next_free;
 }
 
-void fs_write_in_file(char path[], char *data, u_int32_t size) {
+void fs_write_in_file(char path[], u_int8_t *data, u_int32_t size) {
     u_int32_t id_to_set = fs_i_path_to_id(path);
     i_write_in_file(id_to_set, data, size);
 }
@@ -504,7 +504,7 @@ void send_file_to_disk(char *linux_path, char *parent, char *name) {
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    char *file_content = malloc(fsize + 1);
+    u_int8_t *file_content = malloc(fsize + 1);
     fread(file_content, fsize, 1, f);
     fclose(f);
     file_content[fsize] = '\0';
@@ -546,9 +546,13 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
         } else {
             // get the file content
             char *file_path = i_build_path(linux_path, dir->d_name);
-
-            printf("| make file %s/%s\n", profan_path, dir->d_name);
+            char *printable_path = i_build_path(profan_path, dir->d_name);
+            
+            printf("| make file %s\n", printable_path);
             send_file_to_disk(file_path, profan_path, dir->d_name);
+
+            free(printable_path);
+            free(file_path);
         }
     }
     free(profan_path);
