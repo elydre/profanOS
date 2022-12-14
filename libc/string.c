@@ -124,10 +124,12 @@ int str_cmp(char s1[], char s2[]) {
 }
 
 int str_ncmp(char s1[], char s2[], int n) {
+    // TODO: this is shit code art
     int i;
-    for (i = 0; s1[i] == s2[i] && i < n; i++) {
-        if (s1[i] == '\0') return 0;
+    for (i = 0; s1[i] == s2[i]; i++) {
+        if (i == n || s1[i] == '\0') return 0;
     }
+    if (i == n) return 0;
     return s1[i] - s2[i];
 }
 

@@ -20,28 +20,6 @@
 uint8_t  *free_map;
 uint32_t g_sector_count;
 
-/****************************
- * PUBLIC FUNCTIONS HEADER *
-****************************/
-
-uint32_t fs_path_to_id(char *path);
-int fs_does_path_exists(char *path);
-
-uint32_t fs_make_dir(char *path, char *name);
-uint32_t fs_make_file(char *path, char *name);
-
-void *fs_declare_read_array(char *path);
-
-void fs_write_in_file(char *path, uint8_t *data, uint32_t size);
-void fs_read_file(char *path, char *data);
-
-uint32_t fs_get_file_size(char *path);
-int fs_get_dir_size(char *path);
-void fs_get_dir_content(char *path, uint32_t *ids);
-
-void fs_get_element_name(uint32_t sector, char *name);
-int fs_get_sector_type(uint32_t sector_id);
-
 
 /**********************
  * PRIVATE FUNCTIONS *
@@ -80,7 +58,7 @@ void i_print_sector(uint32_t sector) {
 }
 
 void i_generate_free_map() {
-    fskprint("Generating free map... (%d sectors)", g_sector_count);
+    // fskprint("Generating free map... (%d sectors)\n", g_sector_count);
     for (uint32_t i = 0; i < g_sector_count; i++) {
         uint32_t buffer[SECTOR_SIZE];
         ramdisk_read_sector(i, buffer);
@@ -90,7 +68,6 @@ void i_generate_free_map() {
             free_map[i] = 0;
         }
     }
-    fskprint("Done\n");
 }
 
 void i_declare_used(uint32_t sector) {
