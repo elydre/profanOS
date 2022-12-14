@@ -40,15 +40,15 @@ u_int32_t fs_make_dir(char *path, char *name);
 u_int32_t fs_make_file(char *path, char *name);
 
 void *fs_declare_read_array(char *path);
-void fs_free_names(char **names, int size);
 
 void fs_write_in_file(char *path, u_int8_t *data, u_int32_t size);
 void fs_read_file(char *path, char *data);
 
 u_int32_t fs_get_file_size(char *path);
 int fs_get_dir_size(char *path);
-void fs_get_dir_content(char *path, char **names, u_int32_t *sector_ids);
+void fs_get_dir_content(char *path, u_int32_t *ids);
 
+void fs_get_element_name(u_int32_t sector, char *name);
 int fs_get_sector_type(u_int32_t sector_id);
 
 
@@ -283,23 +283,7 @@ int i_get_dir_size(u_int32_t sector) {
     return result;
 }
 
-void i_get_element_name(u_int32_t sector, char *name) {
-    u_int32_t buffer[SECTOR_SIZE];
-    read_from_disk(sector, buffer);
-    if (!(buffer[0] & I_USED)) {
-        printf("Error: the sector isn't used\n");
-        exit(1);
-    }
-    if (!(buffer[0] & (I_DIR | I_FILE_H))) {
-        printf("Error: the sector isn't a directory or a file\n");
-        exit(1);
-    }
-    for (int i = 0; i < MAX_SIZE_NAME; i++) {
-        name[i] = buffer[i+1];
-    }
-}
-
-void i_get_dir_content(u_int32_t sector, char **names, u_int32_t *sector_ids, int index) {
+void i_get_dir_content(u_int32_t sector, u_int32_t *ids, int index) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
     if (!(buffer[0] & I_USED)) {
@@ -312,14 +296,12 @@ void i_get_dir_content(u_int32_t sector, char **names, u_int32_t *sector_ids, in
     }
     for (int i = 1 + MAX_SIZE_NAME; i < SECTOR_SIZE-1; i++) {
         if (buffer[i] != 0) {
-            names[index] = malloc(MAX_SIZE_NAME);
-            i_get_element_name(buffer[i], names[index]);
-            sector_ids[index] = buffer[i];
+            ids[index] = buffer[i];
             index++;
         }
     }
     if (buffer[SECTOR_SIZE-1] != 0) {
-        i_get_dir_content(buffer[SECTOR_SIZE-1], names, sector_ids, index);
+        i_get_dir_content(buffer[SECTOR_SIZE-1], ids, index);
     }
 }
 
@@ -575,16 +557,25 @@ int fs_get_dir_size(char *path) {
     return i_get_dir_size(dir_id);
 }
 
-void fs_get_dir_content(char *path, char **names, u_int32_t *sector_ids) {
+void fs_get_dir_content(char *path, u_int32_t *ids) {
     u_int32_t dir_id = fs_path_to_id(path);
-    i_get_dir_content(dir_id, names, sector_ids, 0);
+    i_get_dir_content(dir_id, ids, 0);
 }
 
-void fs_free_names(char **names, int size) {
-    for (int i = 0; i < size; i++) {
-        free(names[i]);
+void fs_get_element_name(u_int32_t sector, char *name) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    if (!(buffer[0] & I_USED)) {
+        printf("Error: the sector isn't used\n");
+        exit(1);
     }
-    free(names);
+    if (!(buffer[0] & (I_DIR | I_FILE_H))) {
+        printf("Error: the sector isn't a directory or a file\n");
+        exit(1);
+    }
+    for (int i = 0; i < MAX_SIZE_NAME; i++) {
+        name[i] = buffer[i+1];
+    }
 }
 
 int fs_get_sector_type(u_int32_t sector_id) {
@@ -696,6 +687,7 @@ int main(int argc, char **argv) {
     init_fs();
     arboresence_to_disk(argv[1], "/", "");
 
-    put_in_disk();  
+    put_in_disk();
+
     return 0;
 }
