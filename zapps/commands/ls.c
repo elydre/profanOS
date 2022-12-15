@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
                 c_fskprint("$1%s", tmp_name);
                 for (int j = 0; j < 22 - c_str_len(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
-                c_fskprint("%d sect\n", c_fs_get_file_size(tmp_path));
+                c_fskprint("%d oct\n", c_fs_get_file_size(tmp_path));
             }
         }
         c_free(out_types);
