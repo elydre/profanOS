@@ -1,8 +1,9 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "FSv2-11"
-#define WATFUNC_ADDR 0x199990
+#define VERSION         "FSv2-12"
+#define WATFUNC_ADDR    0x199990
+#define RUNTIME_STACK   0x2000
 
 // system.c
 void sys_reboot();
