@@ -97,7 +97,9 @@ int mem_free_addr(int addr) {
         }
         free_count++;
         return 1;
-    } return 0;
+    }
+    sys_warning("memory free failed");
+    return 0;
 }
 
 int mem_get_alloc_size(int addr) {
@@ -105,6 +107,7 @@ int mem_get_alloc_size(int addr) {
     int list_index = index / 19, i = index % 19;
     if (get_state(MLIST[list_index], i) == 1) {
         int size = 0;
+        i++;
         while (get_state(MLIST[list_index + i / 19], i % 19) == 2) {
             size += PART_SIZE;
             i++;
@@ -112,11 +115,26 @@ int mem_get_alloc_size(int addr) {
     } return 0;
 }
 
+int check_addr(int addr) {
+    int index = (addr - BASE_ADDR) / PART_SIZE;
+    int list_index = index / 19, i = index % 19;
+    if (addr < BASE_ADDR) return 1;
+    if (addr > BASE_ADDR + IMM_COUNT * 19 * PART_SIZE) return 2;
+    if (addr % PART_SIZE != 0) return 3;
+    if (get_state(MLIST[list_index], i) == 2) return 4;
+    return 0;
+}
+
 // standard functions
 
 void free(void *addr) {
-    mem_set((uint8_t *) addr, 0, mem_get_alloc_size((int) addr));
+    if (check_addr((int) addr)) {
+        sys_warning("freeing invalid address");
+        return;
+    }
+    int size = mem_get_alloc_size((int) addr);
     mem_free_addr((int) addr);
+    mem_set((uint8_t *) addr, 0, size);
 }
 
 void *malloc(int size) {
