@@ -7,6 +7,10 @@
 
 static char current_dir[256] = "/";
 
+typedef struct {
+    char name[256];
+} string_20_t;
+
 void assemble_path(char old[], char new[], char result[]);
 void parse_path(char path[], string_20_t liste_path[]);
 void go(char file[], char prefix[], char suffix[]);
@@ -66,7 +70,7 @@ int shell_command(char *buffer) {
             } else {
                 char *new_path = c_calloc(256);
                 assemble_path(current_dir, liste_path[i].name, new_path);
-                if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path, 0)) == 3)
+                if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
                     c_str_cpy(current_dir, new_path);
                 else {
                     c_fskprint("$3%s$B path not found\n", new_path);
@@ -91,7 +95,7 @@ int shell_command(char *buffer) {
         if(!(c_str_count(prefix, '.'))) c_str_cat(prefix, ".bin");
         char *file = c_malloc(c_str_len(prefix) + c_str_len(current_dir) + 2);
         assemble_path("/bin/commands", prefix, file);
-        if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file, 0)) == 2) {
+        if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
             go(file, old_prefix, suffix);
         } else if (c_str_cmp(old_prefix, "")) {
             c_fskprint("$3%s$B is not a valid command.\n", old_prefix);
@@ -106,7 +110,7 @@ int shell_command(char *buffer) {
 }
 
 void go(char file[], char prefix[], char suffix[]) {
-    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file, 0)) == 2) {
+    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         int argc = c_str_count(suffix, ' ') + 3;
         char **argv = c_malloc(argc * sizeof(char *));
         // set argv[0] to the command name

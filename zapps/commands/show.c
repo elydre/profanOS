@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
     assemble_path(current_dir, suffix, file);
 
-    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file, 0)) == 2) {
+    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         sprite_t sprite = c_lib2d_init_sprite(file);
         c_lib2d_print_sprite(0, 0, sprite);
         while (c_kb_get_scancode() != 1);

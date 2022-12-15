@@ -9,13 +9,10 @@ int main(int argc, char** argv) {
     c_str_cpy(suffix, argv[2]);
     char *file = c_malloc(c_str_len(suffix)+c_str_len(current_dir)+2);
     assemble_path(current_dir, suffix, file);
-    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file, 0)) == 2) {
+    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         char char_content[70];
         c_fskprint("-> "); c_input(char_content, 70, c_blue); c_fskprint("\n");
-        uint32_t *file_content = c_malloc(c_str_len(char_content));
-        for (int i = 0; i < 70; i++) file_content[i] = (uint32_t) char_content[i];
-        c_fs_write_in_file(file, file_content, c_str_len(char_content));
-        c_free(file_content);
+        c_fs_write_in_file(file, (uint8_t *) char_content, c_str_len(char_content));
     } else c_fskprint("$3%s$B file not found\n", file);
     c_free(file);
     c_free(current_dir);
