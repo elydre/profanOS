@@ -23,10 +23,6 @@ void unknown_func() {
     sys_error("Unknown function called");
 }
 
-void up_string(char str[]) {
-    UNUSED(str);
-}
-
 int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h
@@ -152,7 +148,6 @@ int wf_get_func_addr(int func_id) {
         case 105: return (int) ramdisk_get_size;
         case 106: return (int) ramdisk_get_used;
 
-        case 101: return (int) up_string;
         default: return (int) unknown_func;
     }
 }

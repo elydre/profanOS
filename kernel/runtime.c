@@ -14,9 +14,6 @@ void tasked_program() {
     char *binary_mem = task_get_bin_mem(task_get_current_pid());
     g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
 
-    // fill memory with 0
-    mem_set((uint8_t *) binary_mem, 0, mem_get_alloc_size((int) binary_mem));
-
     free(binary_mem);
 
     if (task_get_next_pid() == 0) clear_screen();

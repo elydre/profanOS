@@ -442,10 +442,10 @@ int fs_does_path_exists(char *path) {
 
     uint32_t exit_val = i_path_to_id(edited_path, current_path, 0);
 
+    if (str_cmp(edited_path, "/") == 0) exit_val = 1;
+
     free(current_path);
     free(edited_path);
-
-    if (str_cmp(edited_path, "/") == 0) return 1;
 
     return exit_val != 0;
 }

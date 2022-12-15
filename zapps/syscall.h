@@ -10,7 +10,6 @@
 
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
-#define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
 
 #define c_ckprint(message, color) c_ckprint_at(message, -1, -1, color)
 #define c_kprint_rgb(message, color, bg_color) c_rgb_print_at(message, -1, -1, color, bg_color)

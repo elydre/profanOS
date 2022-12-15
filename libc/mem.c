@@ -115,6 +115,7 @@ int mem_get_alloc_size(int addr) {
 // standard functions
 
 void free(void *addr) {
+    mem_set((uint8_t *) addr, 0, mem_get_alloc_size((int) addr));
     mem_free_addr((int) addr);
 }
 
