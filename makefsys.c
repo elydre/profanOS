@@ -404,6 +404,9 @@ void i_write_in_file(u_int32_t sector, u_int8_t *data, u_int32_t size) {
             buffer[SECTOR_SIZE-1] = next_sector;
             i_declare_used(next_sector);
         } else {
+            for (int i = sector_i; i < SECTOR_SIZE-1; i++) {
+                buffer[i] = 0;
+            }
             buffer[SECTOR_SIZE-1] = 0;
         }
         if (data_i % 5 == 0 && PRINT_PROGRESS) {
@@ -580,17 +583,16 @@ void fs_read_file(char *path, char *data) {
     int sector = fs_path_to_id(path);
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
-    sector = buffer[SECTOR_SIZE-1];
+    sector = buffer[SECTOR_SIZE - 1];
     while (buffer[SECTOR_SIZE-1] != 0) {
         read_from_disk(sector, buffer);
-        for (int i = 0; i < SECTOR_SIZE - 1; i++) {
-            if (data_index > file_size) break;
+        for (int i = 1; i < SECTOR_SIZE - 1; i++) {
+            if (file_size <= data_index) break;
             data[data_index] = buffer[i];
             data_index++;
         }
         sector = buffer[SECTOR_SIZE-1];
     }
-    data_index++;
     data[data_index] = '\0';
 }
 
@@ -725,7 +727,7 @@ int main(int argc, char **argv) {
         printf("Usage : %s <path>\n", argv[0]);
         return 1;
     }
-    
+
     init_fs();
     arboresence_to_disk(argv[1], "/", "");
 

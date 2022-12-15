@@ -505,17 +505,16 @@ void fs_read_file(char *path, char *data) {
     int sector = fs_path_to_id(path);
     uint32_t buffer[SECTOR_SIZE];
     ramdisk_read_sector(sector, buffer);
-    sector = buffer[SECTOR_SIZE-1];
+    sector = buffer[SECTOR_SIZE - 1];
     while (buffer[SECTOR_SIZE-1] != 0) {
         ramdisk_read_sector(sector, buffer);
-        for (int i = 0; i < SECTOR_SIZE - 1; i++) {
-            if (data_index > file_size) break;
+        for (int i = 1; i < SECTOR_SIZE - 1; i++) {
+            if (file_size <= data_index) break;
             data[data_index] = buffer[i];
             data_index++;
         }
         sector = buffer[SECTOR_SIZE-1];
     }
-    data_index++;
     data[data_index] = '\0';
 }
 
