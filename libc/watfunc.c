@@ -30,19 +30,20 @@ void up_string(char str[]) {
 int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h
-        /*case 0:  return (int) fs_get_used_sectors;
-        case 1:  return (int) fs_is_disk_full;
+
+        // case 0:  return (int) fs_get_used_sectors;
+        case 1:  return (int) fs_get_element_name;
         case 2:  return (int) fs_make_dir;
         case 3:  return (int) fs_make_file;
         case 4:  return (int) fs_read_file;
         case 5:  return (int) fs_write_in_file;
         case 6:  return (int) fs_get_file_size;
-        case 7:  return (int) fs_get_folder_size;
+        case 7:  return (int) fs_get_dir_size;
         case 8:  return (int) fs_declare_read_array;
         case 9:  return (int) fs_does_path_exists;
         case 10: return (int) fs_get_sector_type;
         case 11: return (int) fs_get_dir_content;
-        case 12: return (int) fs_path_to_id;*/
+        case 12: return (int) fs_path_to_id;
 
         // mem.h
         case 13: return (int) mem_copy;
