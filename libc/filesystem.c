@@ -311,6 +311,7 @@ void i_write_in_file(uint32_t sector, uint8_t *data, uint32_t size) {
 
     uint32_t sector_i, data_i;
     uint32_t current_sector = next_sector;
+    data_i = 0;
 
     while (size > data_i) {
         buffer[0] = I_FILE | I_USED;
@@ -321,48 +322,17 @@ void i_write_in_file(uint32_t sector, uint8_t *data, uint32_t size) {
         }
         if (size > data_i) {
             next_sector = i_next_free();
-            buffer[SECTOR_SIZE-1] = next_sector;
+            buffer[SECTOR_SIZE - 1] = next_sector;
+            i_declare_used(next_sector);
+        } else {
+            buffer[SECTOR_SIZE - 1] = 0;
         }
-        i_declare_used(next_sector);
         ramdisk_write_sector(current_sector, buffer);
         if (size < data_i) break;
         current_sector = next_sector;
     }
 
     free(compressed_data);
-}
-
-char *i_read_file(uint32_t sector) {
-    uint32_t buffer[SECTOR_SIZE];
-    ramdisk_read_sector(sector, buffer);
-    if (!(buffer[0] & I_USED)) {
-        sys_error("Sector not used");
-        return NULL;
-    }
-    if (!(buffer[0] & I_FILE_H)) {
-        sys_error("The sector isn't a file header");
-        return NULL;
-    }
-    char *data = malloc(buffer[MAX_SIZE_NAME + 2] * sizeof(char) + sizeof(char));
-    uint32_t *compressed_data = malloc(buffer[MAX_SIZE_NAME + 2] * (sizeof(uint32_t) + 1));
-    uint32_t file_size = buffer[MAX_SIZE_NAME + 2];
-    uint32_t data_pointer = 0;
-    sector = buffer[SECTOR_SIZE-1];
-    ramdisk_read_sector(sector, buffer);
-    while (sector != 0) {
-        ramdisk_read_sector(sector, buffer);
-        for (uint32_t i = 0; i < SECTOR_SIZE-1; i++) {
-            if (data_pointer < file_size) {
-                compressed_data[data_pointer] = buffer[1 + i];
-                data_pointer++;
-            }
-        }
-        sector = buffer[SECTOR_SIZE-1];
-    }
-    for (uint32_t i = 0; i < file_size; i++) {
-        data[i] = (char) compressed_data[i];
-    }
-    return data;
 }
 
 uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {

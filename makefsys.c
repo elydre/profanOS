@@ -18,6 +18,7 @@
 
 #define PRINT_PROGRESS 1
 #define SPEED_MODE     1  // can be dangerous
+#define FREE_SECTOR    512
 
 #define I_FILE_H 0x1
 #define I_FILE   0x10
@@ -713,13 +714,13 @@ void put_in_disk() {
        exit(1);
     }
 
-    int i;
-    for (i = 0; i < total_sector_written + 1; i++) {
+    int i, to_write = total_sector_written + FREE_SECTOR + 1;
+    for (i = 0; i < to_write; i++) {
         u_int32_t buffer[SECTOR_SIZE];
         read_from_disk(i, buffer);
         fwrite(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
     }
-    printf("put in disk done, %d sectors written\n", total_sector_written + 1);
+    printf("put in disk done, %d sectors written (%d used)\n", to_write, total_sector_written);
 }
 
 int main(int argc, char **argv) {
