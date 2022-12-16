@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION         "SL-08"
+#define VERSION         "SL-09"
 #define WATFUNC_ADDR    0x199990
 #define RUNTIME_STACK   0x2000
 #define TASK_ESP_ALLOC  0x2000
