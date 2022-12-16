@@ -1,7 +1,9 @@
+#include <driver/serial.h>
 #include <libc/task.h>
 #include <system.h>
 #include <iolib.h>
 #include <mem.h>
+
 
 void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
     for (int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
