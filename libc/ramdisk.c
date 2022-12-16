@@ -8,12 +8,16 @@
 #include <mem.h>
 
 #define UINT32_PER_SECTOR 128
-#define RAMDISK_SECTOR 2048     // 1Mo
+#define RAMDISK_SECTOR    2048     // 1Mo
 #define RAMDISK_SIZE RAMDISK_SECTOR * UINT32_PER_SECTOR * 4
+
+#define I_FILE_H 0x1
+#define I_DIR    0x100
+#define MAX_NAME 32
 
 uint32_t ata_table[RAMDISK_SECTOR];
 uint32_t *RAMDISK;
-int disk_working;
+uint32_t ata_sector_count;
 int table_pos = 0;
 
 /* add in this list the paths 
@@ -31,7 +35,7 @@ char *path_to_load[] = {
 ************************/
 
 int ramdisk_sector_internal_pos(uint32_t sector) {
-    if (!disk_working) {
+    if (!ata_sector_count) {
         if (sector < RAMDISK_SECTOR) return sector;
     } else {
         for (int i = 0; i < table_pos; i++) {
@@ -44,7 +48,7 @@ int ramdisk_sector_internal_pos(uint32_t sector) {
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
     int internal = ramdisk_sector_internal_pos(LBA);
     if (internal == -1) {
-        if (!disk_working) sys_error("Sector not found in ramdisk");
+        if (!ata_sector_count) sys_error("Sector not found in ramdisk");
         else ata_read_sector(LBA, out);
         return;
     }
@@ -66,12 +70,12 @@ void ramdisk_load_sector(uint32_t ATA_LBA, uint32_t in[]) {
 }
 
 void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
-    if (disk_working) {
+    if (ata_sector_count) {
         ata_write_sector(sector, buffer);
     }
     int internal = ramdisk_sector_internal_pos(sector);
     if (internal == -1) {
-        if (!disk_working) {
+        if (!ata_sector_count) {
             sys_error("Sector not found in ramdisk");
         }
         return;
@@ -98,8 +102,8 @@ void ramdisk_init() {
     if (RAMDISK < (uint32_t*) 0x700000)
         sys_fatal("No enough memory for ramdisk");
 
-    disk_working = ata_get_sectors_count() > 0;
-    if (disk_working) {
+    ata_sector_count = ata_get_sectors_count();
+    if (ata_sector_count) {
         char path[256];
         for (int i = 0; i < 256; i++) path[i] = 0;
         ramdisk_check_dir(path, 0);
@@ -122,26 +126,28 @@ void load_file(uint32_t first_sector_id) {
 void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     if (ramdisk_sector_internal_pos(sector_id) != -1) return;
 
+    if (ata_sector_count < sector_id) {
+        sys_error("Sector can't exist");
+        return;
+    }
+
     char fullname[256];
     for (int i = 0; i < 256; i++) fullname[i] = parent_name[i];
     uint32_t sector[UINT32_PER_SECTOR];
     ata_read_sector(sector_id, sector);
-    if (sector[0] == 0x9000) {
-        sys_warning("dir pointed to file content");
-        return;
-    }
-    if (sector[0] != 0xc000 && sector[0] != 0xa000) {
+
+    if (!(sector[0] & (I_FILE_H | I_DIR))) {
         fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
     }
 
-    char name[20];
-    for (int i = 0; i < 20; i++) name[i] = sector[i + 1];
-    name[20] = 0;
+    char name[MAX_NAME];
+    for (int i = 0; i < MAX_NAME; i++) name[i] = sector[i + 1];
+    name[MAX_NAME - 1] = 0;
     if (fullname[1] != 0 && fullname[0] != 0) str_append(fullname, '/');
     str_cat(fullname, name);
 
-    if (sector[0] == 0xa000) {
+    if (sector[0] & I_FILE_H) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_in_str(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
@@ -158,7 +164,8 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         if (str_in_str(fullname, path_to_load[i]) || str_in_str(path_to_load[i], fullname) || str_cmp(fullname, path_to_load[i]) == 0) {
             // serial_debug("RD-CD", fullname);
             ramdisk_load_sector(sector_id, sector);
-            for (int i = 21; i < UINT32_PER_SECTOR - 1; i++) {
+            // TODO: dir continue gestion
+            for (int i = MAX_NAME + 1; i < UINT32_PER_SECTOR - 1; i++) {
                 if (sector[i] == 0) continue;
                 ramdisk_check_dir(fullname, sector[i]);
             }

@@ -10,7 +10,6 @@
 
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
-#define PATH_EXIT() ((void (*)(char *)) hi_func_addr(101))("str")
 
 #define c_ckprint(message, color) c_ckprint_at(message, -1, -1, color)
 #define c_kprint_rgb(message, color, bg_color) c_rgb_print_at(message, -1, -1, color, bg_color)
@@ -72,10 +71,6 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
-typedef struct string_20_t {
-    char name[20];
-} string_20_t;
-
 typedef struct {
     int seconds;
     int minutes;
@@ -102,18 +97,19 @@ typedef struct sprite_t {
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
-#define c_fs_get_used_sectors(disk_size) ((uint32_t (*)(uint32_t)) hi_func_addr(0))(disk_size)
+#define c_fs_get_used_sectors() ((uint32_t (*)(void)) hi_func_addr(0))()
+#define c_fs_get_element_name(sector, name) ((void (*)(uint32_t, char *)) hi_func_addr(1))(sector, name)
 #define c_fs_make_dir(path, folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
 #define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
-#define c_fs_read_file(path, data) ((void (*)(char *, uint32_t *)) hi_func_addr(4))(path, data)
-#define c_fs_write_in_file(path, data, data_size) ((void (*)(char *, uint32_t *, uint32_t)) hi_func_addr(5))(path, data, data_size)
+#define c_fs_read_file(path, data) ((void (*)(char *, uint8_t *)) hi_func_addr(4))(path, data)
+#define c_fs_write_in_file(path, data, size) ((void (*)(char *, uint8_t *, uint32_t)) hi_func_addr(5))(path, data, size)
 #define c_fs_get_file_size(path) ((uint32_t (*)(char *)) hi_func_addr(6))(path)
-#define c_fs_get_folder_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
+#define c_fs_get_dir_size(path) ((int (*)(char *)) hi_func_addr(7))(path)
 #define c_fs_declare_read_array(path) ((void *(*)(char *)) hi_func_addr(8))(path)
 #define c_fs_does_path_exists(path) ((int (*)(char *)) hi_func_addr(9))(path)
-#define c_fs_type_sector(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
-#define c_fs_get_dir_content(id, list_name, liste_id) ((void (*)(uint32_t, string_20_t *, uint32_t *)) hi_func_addr(11))(id, list_name, liste_id)
-#define c_fs_path_to_id(input_path, silence) ((uint32_t(*)(char *, int)) hi_func_addr(12))(input_path, silence)
+#define c_fs_get_sector_type(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
+#define c_fs_get_dir_content(path, ids) ((void (*)(char *, uint32_t *)) hi_func_addr(11))(path, ids)
+#define c_fs_path_to_id(path) ((uint32_t (*)(char *)) hi_func_addr(12))(path)
 #define c_mem_alloc(size) ((int (*)(int)) hi_func_addr(15))(size)
 #define c_mem_free_addr(addr) ((int (*)(int)) hi_func_addr(16))(addr)
 #define c_free(ptr) ((void (*)(void *)) hi_func_addr(17))(ptr)
@@ -152,7 +148,7 @@ typedef struct sprite_t {
 #define c_sys_reboot() ((void (*)(void)) hi_func_addr(62))()
 #define c_ramdisk_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
 #define c_ramdisk_write_sector(LBA, bytes) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(64))(LBA, bytes)
-#define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
+#define c_fs_get_sector_count() ((uint32_t (*)(void)) hi_func_addr(65))()
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_task_switch(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()

@@ -23,6 +23,9 @@ void kernel_main(void *mboot_ptr) {
     mboot_save(mboot_ptr);
     kprint("Mboot saved\n");
 
+    init_vesa();
+    fskprint("vesa init\n");
+
     gdt_init();
     kprint("GDT init\n");
 
@@ -42,9 +45,6 @@ void kernel_main(void *mboot_ptr) {
 
     serial_init();
     kprint("serial init\n");
-
-    init_vesa();
-    kprint("vesa init\n");
 
     tasking_init();
     kprint("tasking init\n");
