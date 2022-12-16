@@ -45,8 +45,6 @@ int wf_get_func_addr(int func_id) {
         // mem.h
         case 13: return (int) mem_copy;
         case 14: return (int) mem_set;
-        case 15: return (int) mem_alloc;
-        case 16: return (int) mem_free_addr;
         case 17: return (int) free;
         case 18: return (int) calloc;
         case 19: return (int) malloc;

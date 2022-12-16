@@ -1,7 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION         "SL-10"
+#define VERSION         "SL-11"
 #define WATFUNC_ADDR    0x199990
 #define MEM_BASE_ADDR   0x200000
 #define RUNTIME_STACK   0x2000

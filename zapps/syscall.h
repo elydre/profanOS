@@ -110,8 +110,6 @@ typedef struct sprite_t {
 #define c_fs_get_sector_type(sector) ((int (*)(uint32_t)) hi_func_addr(10))(sector)
 #define c_fs_get_dir_content(path, ids) ((void (*)(char *, uint32_t *)) hi_func_addr(11))(path, ids)
 #define c_fs_path_to_id(path) ((uint32_t (*)(char *)) hi_func_addr(12))(path)
-#define c_mem_alloc(size) ((int (*)(int)) hi_func_addr(15))(size)
-#define c_mem_free_addr(addr) ((int (*)(int)) hi_func_addr(16))(addr)
 #define c_free(ptr) ((void (*)(void *)) hi_func_addr(17))(ptr)
 #define c_calloc(size) ((void *(*)(int)) hi_func_addr(18))(size)
 #define c_malloc(size) ((void *(*)(int)) hi_func_addr(19))(size)

@@ -17,17 +17,16 @@ typedef struct allocated_part_t {
     int next; // list index
 } allocated_part_t;
 
-#define PARTS_COUNT 10000
+#define PARTS_COUNT 100
 
 // states:
 // 0 - free
 // 1 - allocated
+// 2 - initial block
+// 3 - mm struct
 
 void mem_init();
 void mem_print();
-
-uint32_t mem_alloc(uint32_t size);
-int mem_free_addr(uint32_t addr);
 
 uint32_t mem_get_alloc_size(uint32_t addr);
 
@@ -41,6 +40,5 @@ int mem_get_usable();
 int mem_get_alloc_count();
 int mem_get_free_count();
 int mem_get_phys_size();
-int mem_get_base_addr();
 
 #endif

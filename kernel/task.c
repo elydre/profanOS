@@ -15,7 +15,7 @@ int current_pid, task_count;
 ***********************/
 
 void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
-    uint32_t esp_alloc = (uint32_t) mem_alloc(TASK_ESP_ALLOC);
+    uint32_t esp_alloc = (uint32_t) malloc(TASK_ESP_ALLOC);
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -35,7 +35,7 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
 void i_destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead != 1) continue;
-        mem_free_addr(tasks[i].esp_addr);
+        free((void *) tasks[i].esp_addr);
         tasks[i].isdead = 2;
     }
 }
