@@ -2,8 +2,6 @@ import os
 import sys
 from threading import Thread
 
-import PIL.Image
-
 # SETUP
 
 SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "libc", "libc/gui"]
