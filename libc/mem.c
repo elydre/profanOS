@@ -1,7 +1,5 @@
 #include <libc/task.h>
-#include <function.h>
 #include <system.h>
-#include <string.h>
 #include <iolib.h>
 #include <mem.h>
 
@@ -31,35 +29,42 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
 *********************************/
 
 allocated_part_t *MEM_PARTS;
-int first_part_index = 0;
-int FAA; // first allocable address
+uint32_t mm_struct_addr;
+int first_part_index;
+int part_size;
 
 // static int alloc_count = 0;
 // static int free_count = 0;
 
+uint32_t mem_alloc(uint32_t size, int priority);
+int mem_free_addr(uint32_t addr);
+
 void mem_init() {
-    MEM_PARTS = (allocated_part_t *) MEM_BASE_ADDR;
-    for (int i = 0; i < PARTS_COUNT; i++) {
+    first_part_index = 0;
+    part_size = PARTS_COUNT;
+
+    MEM_PARTS = (allocated_part_t *) (MEM_BASE_ADDR + 1);
+    for (int i = 0; i < part_size; i++) {
         MEM_PARTS[i].state = 0;
     }
 
-    FAA = MEM_BASE_ADDR + sizeof(allocated_part_t) * PARTS_COUNT;
-
-    MEM_PARTS[0].state = 1;
-    MEM_PARTS[0].size = 0;
-    MEM_PARTS[0].addr = FAA;
+    MEM_PARTS[0].state = 2;
+    MEM_PARTS[0].size = 1;
+    MEM_PARTS[0].addr = MEM_BASE_ADDR;
     MEM_PARTS[0].next = 1;
 
+    mm_struct_addr = mem_alloc(sizeof(allocated_part_t) * part_size, 1);
+    MEM_PARTS[1].state = 3;
+
     fskprint("memory manager initialized at %x\n", MEM_PARTS);
-    fskprint("first available address: %x\n", FAA);
-    fskprint("memory manager size: %dKo\n", sizeof(allocated_part_t) * PARTS_COUNT / 1024);
+    fskprint("memory manager size: %do\n", sizeof(allocated_part_t) * part_size);
 }
 
 int mm_get_unused_index() {
-    for (int i = 0; i < PARTS_COUNT; i++) {
+    for (int i = 0; i < part_size; i++) {
         if (MEM_PARTS[i].state == 0) return i;
     }
-    fskprint("no more block available\n");
+
     return -1;
 }
 
@@ -74,14 +79,38 @@ void del_occurence(int index) {
     }
 }
 
-uint32_t mem_alloc(uint32_t size) {
+void dynamize_mem() {
+    int sum = 0;
+    for (int i = 0; i < part_size; i++) {
+        sum += !MEM_PARTS[i].state;
+        if (sum > 3) return;
+    }
+
+    serial_debug("SNOWFLAKE", "dynamizing memory...");
+    uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 1);
+    if (new_add == 0) {
+        sys_fatal("memory dynamizing failed");
+        return;
+    }
+    mem_copy((uint8_t *) MEM_PARTS, (uint8_t *) new_add, sizeof(allocated_part_t) * part_size);
+    uint32_t old_add = (uint32_t) MEM_PARTS;
+    MEM_PARTS = (allocated_part_t *) new_add;
+    part_size += GROW_SIZE;
+    mem_free_addr(old_add);
+
+    serial_debug("SNOWFLAKE", "memory successfully dynamized");
+}
+
+uint32_t mem_alloc(uint32_t size, int priority) {
     if (size == 0) return 0;
+    if (!priority) dynamize_mem();
+
     // parcours de la liste des parties allouées
     int index, old_index, exit_mode;
     uint32_t last_addr;
     index = first_part_index;
 
-    last_addr = FAA;
+    last_addr = MEM_BASE_ADDR;
     while (1) {
         // si la partie est libre
         if (MEM_PARTS[index].state == 0) {
@@ -131,15 +160,19 @@ int mem_free_addr(uint32_t addr) {
     int last_index = -1;
     while (1) {
         if (MEM_PARTS[index].addr == addr && last_index != -1) {
-            MEM_PARTS[last_index].next = MEM_PARTS[index].next;
-            MEM_PARTS[index].state = 0;
-            return 1; // success
+            if (MEM_PARTS[index].state == 2) {
+                sys_error("cannot free first block");
+                return 0; // error
+            } else {
+                MEM_PARTS[last_index].next = MEM_PARTS[index].next;
+                MEM_PARTS[index].state = 0;
+                return 1; // success
+            }
         }
         last_index = index;
         index = MEM_PARTS[index].next;
     }
-    // fskprint("no block found at %x\n", addr);
-    kprint("no block found\n");
+    sys_warning("block not found");
     return 0; // error
 }
 
@@ -147,33 +180,32 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
     uint32_t index = first_part_index;
     while (MEM_PARTS[index].state) {
         if (MEM_PARTS[index].addr == addr) {
-            // fskprint("block found at %x, size: %d\n", addr, MEM_PARTS[index].size);
             return MEM_PARTS[index].size;
         }
         index = MEM_PARTS[index].next;
     }
-    // fskprint("no block found at %x\n", addr);
-    kprint("no block found\n");
+    sys_warning("block not found");
     return 0;
 }
 
 // standard functions
 
 void free(void *addr) {
-    // fskprint("free(%x)\n", addr);
-    mem_set((uint8_t *) addr, 0, mem_get_alloc_size((uint32_t) addr));
+    int size = mem_get_alloc_size((uint32_t) addr);
+    if (size == 0) return;
+    mem_set((uint8_t *) addr, 0, size);
     mem_free_addr((int) addr);
 }
 
 void *malloc(uint32_t size) {
-    uint32_t addr = mem_alloc(size);
+    uint32_t addr = mem_alloc(size, 0);
     if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
 void *realloc(void *ptr, uint32_t size) {
     uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = mem_alloc(size);
+    uint32_t new_addr = mem_alloc(size, 0);
     if (new_addr == 0) return NULL;
     mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
     mem_free_addr(addr);
@@ -181,7 +213,7 @@ void *realloc(void *ptr, uint32_t size) {
 }
 
 void *calloc(uint32_t size) {
-    int addr = mem_alloc(size);
+    int addr = mem_alloc(size, 0);
     if (addr == 0) return NULL;
     mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;
@@ -235,8 +267,4 @@ int mem_get_alloc_count() {
 int mem_get_free_count() {
     // TODO: implement
     return 0;
-}
-
-int mem_get_base_addr() {
-    return (int) FAA;
 }

@@ -17,13 +17,16 @@ typedef struct allocated_part_t {
     int next; // list index
 } allocated_part_t;
 
-#define PARTS_COUNT 100
+#define PARTS_COUNT 100 // initial size
+#define GROW_SIZE   10  // increase size
 
-// states:
-// 0 - free
-// 1 - allocated
-// 2 - initial block
-// 3 - mm struct
+/*********************
+ *      states      *
+ * 0: free          *
+ * 1: allocated     *
+ * 2: initial block *
+ * 3: mm struct     *
+*********************/
 
 void mem_init();
 void mem_print();
