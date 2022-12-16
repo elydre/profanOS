@@ -6,16 +6,20 @@
 #include <mem.h>
 
 
+/******************************
+ * binarymem is a pointer to *
+ * the memory of the program *
+ * with the following layout *
+ * |  <---STACK-|--BINARY--| *
+******************************/
+
 // global values for tasking
 int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
     char *binary_mem = task_get_bin_mem(task_get_current_pid());
-    g_return = ((int (*)(int, char **)) binary_mem)(g_argc, g_argv);
-
-    // fill memory with 0
-    mem_set((uint8_t *) binary_mem, 0, mem_get_alloc_size((int) binary_mem));
+    g_return = ((int (*)(int, char **)) binary_mem + RUNTIME_STACK)(g_argc, g_argv);
 
     free(binary_mem);
 
@@ -32,14 +36,11 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    char *binary_mem = calloc(fs_get_file_size(path) * 126);
-    uint32_t *file = fs_declare_read_array(path);
+    int size = fs_get_file_size(path) + RUNTIME_STACK;
+    char *binary_mem = malloc(size);
+    char *file = binary_mem + RUNTIME_STACK;
+
     fs_read_file(path, file);
-
-    for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        binary_mem[i] = (char) file[i];
-
-    free(file);
 
     g_argc = argc;
     g_argv = argv;
@@ -55,7 +56,7 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 }
 
 int run_ifexist(char path[], int argc, char **argv) {
-    if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
+    if (fs_does_path_exists(path) && fs_get_sector_type(fs_path_to_id(path)) == 2)
         return run_binary(path, 0, argc, argv);
     sys_error("Program not found");
     return -1;

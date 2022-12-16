@@ -2,6 +2,7 @@
 #include <libc/task.h>
 #include <gui/vgui.h>
 #include <string.h>
+#include <system.h>
 #include <mem.h>
 
 #define TASK_MAX 10
@@ -14,7 +15,7 @@ int current_pid, task_count;
 ***********************/
 
 void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
-    uint32_t esp_alloc = (uint32_t) mem_alloc(0x1000);
+    uint32_t esp_alloc = (uint32_t) mem_alloc(TASK_ESP_ALLOC);
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -24,7 +25,7 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = esp_alloc + 0x1000;
+    task->regs.esp = esp_alloc + TASK_ESP_ALLOC;
     task->esp_addr = esp_alloc;
     task->pid = pid;
     task->isdead = 0;

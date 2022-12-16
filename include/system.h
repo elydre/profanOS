@@ -1,8 +1,10 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "0.8.4b"
-#define WATFUNC_ADDR 0x199990
+#define VERSION         "0.9.1"
+#define WATFUNC_ADDR    0x199990
+#define RUNTIME_STACK   0x2000
+#define TASK_ESP_ALLOC  0x2000
 
 // system.c
 void sys_reboot();

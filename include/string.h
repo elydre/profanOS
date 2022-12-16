@@ -16,6 +16,7 @@ void str_backspace(char s[]);
 void str_append(char s[], char n);
 void str_cpy(char s1[], char s2[]);
 int  str_cmp(char s1[], char s2[]);
+int  str_ncmp(char s1[], char s2[], int n);
 void str_start_split(char s[], char delim);
 void str_end_split(char s[], char delim);
 int  str_is_in(char str[], char thing);
