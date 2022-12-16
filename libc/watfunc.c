@@ -27,7 +27,8 @@ int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h
 
-        // case 0:  return (int) fs_get_used_sectors;
+        case 0:  return (int) fs_get_used_sectors;
+        case 65: return (int) fs_get_sector_count;
         case 1:  return (int) fs_get_element_name;
         case 2:  return (int) fs_make_dir;
         case 3:  return (int) fs_make_file;
@@ -118,9 +119,6 @@ int wf_get_func_addr(int func_id) {
         case 68: return (int) sys_shutdown;
         case 69: return (int) run_binary;
         case 75: return (int) run_ifexist;
-
-        // ata.h
-        case 65: return (int) ata_get_sectors_count;
 
         // task.h
         case 67: return (int) task_switch;

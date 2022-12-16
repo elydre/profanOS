@@ -124,7 +124,7 @@ int str_cmp(char s1[], char s2[]) {
 }
 
 int str_ncmp(char s1[], char s2[], int n) {
-    // TODO: this is shit code art
+    // TODO: recode this
     int i;
     for (i = 0; s1[i] == s2[i]; i++) {
         if (i == n || s1[i] == '\0') return 0;

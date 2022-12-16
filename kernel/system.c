@@ -122,3 +122,4 @@ int sys_get_setting(char name[]) {
     sys_warning("Setting not found");
     return 0;
 }
+

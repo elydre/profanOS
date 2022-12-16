@@ -97,7 +97,7 @@ typedef struct sprite_t {
 
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
-#define c_fs_get_used_sectors(disk_size) ((uint32_t (*)(uint32_t)) hi_func_addr(0))(disk_size)
+#define c_fs_get_used_sectors() ((uint32_t (*)(void)) hi_func_addr(0))()
 #define c_fs_get_element_name(sector, name) ((void (*)(uint32_t, char *)) hi_func_addr(1))(sector, name)
 #define c_fs_make_dir(path, folder_name) ((uint32_t (*)(char *, char *)) hi_func_addr(2))(path,folder_name)
 #define c_fs_make_file(path, file_name) ((uint32_t (*)(char *, char *)) hi_func_addr(3))(path, file_name)
@@ -148,7 +148,7 @@ typedef struct sprite_t {
 #define c_sys_reboot() ((void (*)(void)) hi_func_addr(62))()
 #define c_ramdisk_read_sector(LBA, out) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(63))(LBA, out)
 #define c_ramdisk_write_sector(LBA, bytes) ((void (*)(uint32_t, uint32_t *)) hi_func_addr(64))(LBA, bytes)
-#define c_ata_get_sectors_count() ((uint32_t (*)(void)) hi_func_addr(65))()
+#define c_fs_get_sector_count() ((uint32_t (*)(void)) hi_func_addr(65))()
 #define c_time_jet_lag(time) ((void (*)(time_t *)) hi_func_addr(66))(time)
 #define c_task_switch(target_pid) ((void (*)(int)) hi_func_addr(67))(target_pid)
 #define c_sys_shutdown() ((void (*)(void)) hi_func_addr(68))()

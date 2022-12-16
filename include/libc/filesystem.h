@@ -23,4 +23,7 @@ void fs_get_dir_content(char *path, uint32_t *ids);
 void fs_get_element_name(uint32_t sector, char *name);
 int fs_get_sector_type(uint32_t sector_id);
 
+uint32_t fs_get_used_sectors();
+uint32_t fs_get_sector_count();
+
 #endif

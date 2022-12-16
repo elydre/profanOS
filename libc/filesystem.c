@@ -526,5 +526,17 @@ int fs_get_sector_type(uint32_t sector_id) {
     return 0;                             // sector empty
 }
 
+uint32_t fs_get_used_sectors() {
+    uint32_t used_sectors = 0;
+    for (uint32_t i = 0; i < g_sector_count; i++) {
+        used_sectors += (free_map[i] == 1);
+    }
+    return used_sectors;
+}
+
+uint32_t fs_get_sector_count() {
+    return g_sector_count;
+}
+
 // TODO : add a function to delete a file
 // TODO : add a function to delete a directory

@@ -75,7 +75,6 @@ int shell_command(char *buffer) {
                 else {
                     c_fskprint("$3%s$B path not found\n", new_path);
                     c_str_cpy(current_dir, old_path);
-                    c_free(liste_path);
                     c_free(new_path);
                     break;
                 }
