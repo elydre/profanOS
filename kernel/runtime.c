@@ -19,7 +19,7 @@ int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
-    char *binary_mem = task_get_bin_mem(task_get_current_pid());
+    uint8_t *binary_mem = task_get_bin_mem(task_get_current_pid());
     g_return = ((int (*)(int, char **)) binary_mem + RUNTIME_STACK)(g_argc, g_argv);
 
     free(binary_mem);
@@ -38,10 +38,10 @@ int run_binary(char path[], int silence, int argc, char **argv) {
     int pid = task_create(tasked_program, path);
 
     int size = fs_get_file_size(path) + RUNTIME_STACK;
-    char *binary_mem = malloc(size);
-    char *file = binary_mem + RUNTIME_STACK;
+    uint8_t *binary_mem = malloc(size);
+    uint8_t *file = binary_mem + RUNTIME_STACK;
 
-    fs_read_file(path, file);
+    fs_read_file(path, (char *) file);
 
     g_argc = argc;
     g_argv = argv;

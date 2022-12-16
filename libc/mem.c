@@ -26,7 +26,9 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
     }
 }
 
-// rip b3 (sep 2022 - nov 2022)
+/*********************************
+ * rip b3 (sep 2022 - dec 2022) *
+*********************************/
 
 allocated_part_t *MEM_PARTS;
 int first_part_index = 0;
@@ -36,12 +38,12 @@ int FAA; // first allocable address
 // static int free_count = 0;
 
 void mem_init() {
-    MEM_PARTS = (allocated_part_t *) BASE_ADDR;
+    MEM_PARTS = (allocated_part_t *) MEM_BASE_ADDR;
     for (int i = 0; i < PARTS_COUNT; i++) {
         MEM_PARTS[i].state = 0;
     }
 
-    FAA = BASE_ADDR + sizeof(allocated_part_t) * PARTS_COUNT;
+    FAA = MEM_BASE_ADDR + sizeof(allocated_part_t) * PARTS_COUNT;
 
     MEM_PARTS[0].state = 1;
     MEM_PARTS[0].size = 0;
@@ -51,7 +53,6 @@ void mem_init() {
     fskprint("memory manager initialized at %x\n", MEM_PARTS);
     fskprint("first available address: %x\n", FAA);
     fskprint("memory manager size: %dKo\n", sizeof(allocated_part_t) * PARTS_COUNT / 1024);
-    mem_alloc(0x1000);
 }
 
 int mm_get_unused_index() {
@@ -101,7 +102,7 @@ uint32_t mem_alloc(uint32_t size) {
     }
 
     int new_index = mm_get_unused_index();
-    if (new_index == -1) return NULL;
+    if (new_index == -1) return 0;
 
     int i = exit_mode ? index: new_index;
 
@@ -118,10 +119,10 @@ uint32_t mem_alloc(uint32_t size) {
         MEM_PARTS[new_index].next = index;
     } else {
         int new_index = mm_get_unused_index();
-        if (new_index == -1) return NULL;
+        if (new_index == -1) return 0;
         MEM_PARTS[index].next = new_index;
     }
-
+    // fskprint("alloc %d bytes at %x\n", size, last_addr);
     return last_addr;
 }
 
@@ -137,7 +138,8 @@ int mem_free_addr(uint32_t addr) {
         last_index = index;
         index = MEM_PARTS[index].next;
     }
-    fskprint("no block found at %x\n", addr);
+    // fskprint("no block found at %x\n", addr);
+    kprint("no block found\n");
     return 0; // error
 }
 
@@ -145,19 +147,21 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
     uint32_t index = first_part_index;
     while (MEM_PARTS[index].state) {
         if (MEM_PARTS[index].addr == addr) {
+            // fskprint("block found at %x, size: %d\n", addr, MEM_PARTS[index].size);
             return MEM_PARTS[index].size;
         }
         index = MEM_PARTS[index].next;
     }
-    fskprint("no block found at %x\n", addr);
-    while (1);
+    // fskprint("no block found at %x\n", addr);
+    kprint("no block found\n");
     return 0;
 }
 
 // standard functions
 
 void free(void *addr) {
-    // mem_set((uint8_t *) addr, 0, mem_get_alloc_size((uint32_t) addr));
+    // fskprint("free(%x)\n", addr);
+    mem_set((uint8_t *) addr, 0, mem_get_alloc_size((uint32_t) addr));
     mem_free_addr((int) addr);
 }
 

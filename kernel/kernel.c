@@ -23,11 +23,11 @@ void kernel_main(void *mboot_ptr) {
     mboot_save(mboot_ptr);
     kprint("Mboot saved\n");
 
-    init_vesa();
-    fskprint("vesa init\n");
-
     gdt_init();
     kprint("GDT init\n");
+
+    init_vesa();
+    kprint("vesa init\n");
 
     isr_install();
     kprint("ISR init\n");
@@ -36,7 +36,7 @@ void kernel_main(void *mboot_ptr) {
     kprint("IRQ init\n");
 
     mem_init();
-    kprint("Memory init\n");
+    kprint("snowflake init\n");
 
     rtc_init();
     time_gen_boot();

@@ -18,7 +18,6 @@ typedef struct allocated_part_t {
 } allocated_part_t;
 
 #define PARTS_COUNT 10000
-#define BASE_ADDR 0x222222
 
 // states:
 // 0 - free
