@@ -17,15 +17,17 @@ typedef struct allocated_part_t {
     int next; // list index
 } allocated_part_t;
 
-#define PARTS_COUNT 100 // initial size
+#define PARTS_COUNT 50  // initial size
 #define GROW_SIZE   10  // increase size
 
 /*********************
  *      states      *
  * 0: free          *
- * 1: allocated     *
+ * 1: simple alloc  *
  * 2: initial block *
  * 3: mm struct     *
+ * 4: bin run       * (not implemented)
+ * 5: loaded lib    * (not implemented)
 *********************/
 
 void mem_init();
@@ -38,10 +40,6 @@ void *malloc(uint32_t size);
 void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
-int mem_get_usage();
-int mem_get_usable();
-int mem_get_alloc_count();
-int mem_get_free_count();
 int mem_get_phys_size();
 
 #endif

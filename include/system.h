@@ -1,11 +1,18 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION         "SL-12"
+// build settings
+
+#define VERSION         "SL-13"
+
 #define WATFUNC_ADDR    0x199990
 #define MEM_BASE_ADDR   0x200000
+
 #define RUNTIME_STACK   0x2000
 #define TASK_ESP_ALLOC  0x2000
+
+#define TASK_MAX_COUNT  20
+
 
 // system.c
 void sys_reboot();

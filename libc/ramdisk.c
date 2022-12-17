@@ -97,10 +97,7 @@ void clean_line() {
 }
 
 void ramdisk_init() {
-    RAMDISK = (uint32_t*)(mem_get_phys_size() - RAMDISK_SIZE);
-
-    if (RAMDISK < (uint32_t*) 0x700000)
-        sys_fatal("No enough memory for ramdisk");
+    RAMDISK = malloc(RAMDISK_SIZE);
 
     ata_sector_count = ata_get_sectors_count();
     if (ata_sector_count) {

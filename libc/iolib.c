@@ -88,7 +88,6 @@ void mskprint(int nb_args, ...) {
 void fskprint(char format[], ...) {
     va_list args;
     va_start(args, format);
-    // char buffer[256];
     char *buffer = malloc(256);
     for (int i = 0; i < 256; i++) buffer[i] = '\0';
     char color = c_white;

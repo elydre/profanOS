@@ -38,7 +38,7 @@ int part_size;
 // static int alloc_count = 0;
 // static int free_count = 0;
 
-uint32_t mem_alloc(uint32_t size, int priority);
+uint32_t mem_alloc(uint32_t size, int state);
 int mem_free_addr(uint32_t addr);
 
 void mem_init() {
@@ -55,8 +55,9 @@ void mem_init() {
     MEM_PARTS[0].addr = MEM_BASE_ADDR;
     MEM_PARTS[0].next = 1;
 
-    mm_struct_addr = mem_alloc(sizeof(allocated_part_t) * part_size, 1);
-    MEM_PARTS[1].state = 3;
+    if (mem_alloc(sizeof(allocated_part_t) * part_size, 3) != (uint32_t) MEM_PARTS) {
+        sys_fatal("snowflake address is illogical");
+    }
 
     fskprint("memory manager initialized at %x\n", MEM_PARTS);
     fskprint("memory manager size: %do\n", sizeof(allocated_part_t) * part_size);
@@ -89,7 +90,7 @@ void dynamize_mem() {
     }
 
     serial_debug("SNOWFLAKE", "dynamizing memory...");
-    uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 1);
+    uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 3);
     if (new_add == 0) {
         sys_fatal("memory dynamizing failed");
         return;
@@ -103,9 +104,10 @@ void dynamize_mem() {
     serial_debug("SNOWFLAKE", "memory successfully dynamized");
 }
 
-uint32_t mem_alloc(uint32_t size, int priority) {
-    if (size == 0) return 0;
-    if (!priority) dynamize_mem();
+uint32_t mem_alloc(uint32_t size, int state) {
+    if (!size) return 0;
+    if (!state) return 0;
+    if (state != 3) dynamize_mem();
 
     // parcours de la liste des parties allouées
     int index, old_index, exit_mode;
@@ -139,8 +141,8 @@ uint32_t mem_alloc(uint32_t size, int priority) {
 
     MEM_PARTS[i].addr = last_addr;
     MEM_PARTS[i].size = size;
-    MEM_PARTS[i].task_id = task_get_current_pid();
-    MEM_PARTS[i].state = 1;
+    MEM_PARTS[i].task_id = (state == 3) ? 0 : task_get_current_pid();
+    MEM_PARTS[i].state = state;
 
     if (exit_mode == 0) {
         del_occurence(new_index);
@@ -200,14 +202,14 @@ void free(void *addr) {
 }
 
 void *malloc(uint32_t size) {
-    uint32_t addr = mem_alloc(size, 0);
+    uint32_t addr = mem_alloc(size, 1);
     if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
 void *realloc(void *ptr, uint32_t size) {
     uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = mem_alloc(size, 0);
+    uint32_t new_addr = mem_alloc(size, 1);
     if (new_addr == 0) return NULL;
     mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
     mem_free_addr(addr);
@@ -215,7 +217,7 @@ void *realloc(void *ptr, uint32_t size) {
 }
 
 void *calloc(uint32_t size) {
-    int addr = mem_alloc(size, 0);
+    int addr = mem_alloc(size, 1);
     if (addr == 0) return NULL;
     mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;
@@ -249,24 +251,4 @@ void mem_print() {
         );
         index = MEM_PARTS[index].next;
     }
-}
-
-int mem_get_usage() {
-    // TODO: implement
-    return 0;
-}
-
-int mem_get_usable() {
-    // TODO: implement
-    return 0;
-}
-
-int mem_get_alloc_count() {
-    // TODO: implement
-    return 0;
-}
-
-int mem_get_free_count() {
-    // TODO: implement
-    return 0;
 }
