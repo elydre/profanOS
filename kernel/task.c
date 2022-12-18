@@ -30,7 +30,6 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
     task->isdead = 0;
 }
 
-
 void i_destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead != 1) continue;

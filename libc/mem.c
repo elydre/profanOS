@@ -83,9 +83,6 @@ void mem_init() {
     if (mem_alloc(sizeof(allocated_part_t) * part_size, 3) != (uint32_t) MEM_PARTS) {
         sys_fatal("snowflake address is illogical");
     }
-
-    fskprint("memory manager initialized at %x\n", MEM_PARTS);
-    fskprint("memory manager size: %do\n", sizeof(allocated_part_t) * part_size);
 }
 
 int mm_get_unused_index() {

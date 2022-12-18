@@ -41,3 +41,4 @@ int task_is_gui(int internal_pos);
 extern void task_asm_switch(task_rgs_t *old, task_rgs_t *new);
 
 #endif
+
