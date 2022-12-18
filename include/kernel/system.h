@@ -3,13 +3,14 @@
 
 // build settings
 
-#define VERSION         "dily-11"
+#define VERSION         "dily-12"
 
 #define WATDILY_ADDR    0x199994
 #define WATFUNC_ADDR    0x199990
 #define MEM_BASE_ADDR   0x200000
 
-#define RUNTIME_STACK   0x2000
+#define RUN_STACK_BIN   0x2000
+#define RUN_STACK_LIB   0x2000
 #define TASK_ESP_ALLOC  0x2000
 
 #define TASK_MAX_COUNT  20

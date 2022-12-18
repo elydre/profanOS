@@ -26,7 +26,7 @@ int lib_count = 0;
 void tasked_program() {
     int pid = task_get_current_pid();
     uint8_t *binary_mem = task_get_bin_mem(pid);
-    g_return = ((int (*)(int, char **)) binary_mem + RUNTIME_STACK)(g_argc, g_argv);
+    g_return = ((int (*)(int, char **)) binary_mem + RUN_STACK_BIN)(g_argc, g_argv);
 
     free(binary_mem);
 
@@ -59,9 +59,9 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    int size = fs_get_file_size(path) + RUNTIME_STACK;
+    int size = fs_get_file_size(path) + RUN_STACK_BIN;
     uint8_t *binary_mem = (uint8_t *) mem_alloc(size, 4); // 4 = runtime
-    uint8_t *file = binary_mem + RUNTIME_STACK;
+    uint8_t *file = binary_mem + RUN_STACK_BIN;
 
     fs_read_file(path, (char *) file);
 
@@ -96,16 +96,11 @@ void dily_load(char path[], int lib_id) {
         // can be realloc in the future
     }
 
-    uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126);
-    uint32_t *file = fs_declare_read_array(path);
+    int lib_size = fs_get_file_size(path) + RUN_STACK_LIB;
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 5); // 5 = library
+    uint8_t *file = binary_mem + RUN_STACK_LIB;
+
     fs_read_file(path, (char *) file);
-
-    int lib_size;
-    for (lib_size = 0; file[lib_size] != (uint32_t) -1; lib_size++) {
-        binary_mem[lib_size] = (uint8_t) file[lib_size] & 0xFF;
-    }
-
-    free(file);
 
     uint32_t *addr_list = calloc(0x1000);
     addr_list[0] = (uint32_t) lib_id;
@@ -113,8 +108,8 @@ void dily_load(char path[], int lib_id) {
     int addr_list_size = 1;
 
     for (int i = 0; i < lib_size; i++) {
-        if (binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89) {
-            addr_list[addr_list_size] = (uint32_t) &binary_mem[i];
+        if (file[i] == 0x55 && file[i + 1] == 0x89) {
+            addr_list[addr_list_size] = (uint32_t) &file[i];
             addr_list_size++;
         }
     }
