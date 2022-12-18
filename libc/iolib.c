@@ -88,8 +88,8 @@ void mskprint(int nb_args, ...) {
 void fskprint(char format[], ...) {
     va_list args;
     va_start(args, format);
-    char *buffer = malloc(0x1000);
-    clean_buffer(buffer, 0x1000);
+    char *buffer = malloc(256);
+    for (int i = 0; i < 256; i++) buffer[i] = '\0';
     char color = c_white;
 
     for (int i = 0; i <= str_len(format); i++) {
@@ -102,7 +102,7 @@ void fskprint(char format[], ...) {
             continue;
         }
         color = skprint_function(buffer, color);
-        clean_buffer(buffer, 0x1000);
+        clean_buffer(buffer, 256);
         i++;
         if (format[i] == 's') {
             char *arg = va_arg(args, char*);
@@ -132,7 +132,7 @@ void fskprint(char format[], ...) {
             color = skprint_function(buffer, color);
         }
         else i--;
-        clean_buffer(buffer, 0x1000);
+        clean_buffer(buffer, 256);
         continue;
     }
     free(buffer);

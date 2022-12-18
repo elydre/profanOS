@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
     int history_size = 0x1000 / BFR_SIZE - 1;
     char **history = c_malloc(history_size * sizeof(char*));
-    int addr = c_mem_alloc(0x1000);
+    int addr = (int) c_malloc(0x1000);
     for (int i = 0; i < history_size; i++) {
         history[i] = (char*)addr;
         addr += BFR_SIZE;
@@ -45,15 +45,15 @@ int main(int argc, char **argv) {
 }
 
 int shell_command(char *buffer) {
-    char *prefix = c_malloc(c_str_len(buffer)); // size of char is 1 octet
-    char *suffix = c_malloc(c_str_len(buffer));
-
-    int return_value = 0;
-
+    char *prefix = c_malloc(c_str_len(buffer) + 5); // size of char is 1 octet
+    char *suffix = c_malloc(c_str_len(buffer) + 5);
     c_str_cpy(prefix, buffer);
     c_str_cpy(suffix, buffer);
     c_str_start_split(prefix, ' ');
     c_str_end_split(suffix, ' ');
+
+    int return_value = 0;
+
 
     // internal commands
 
@@ -81,18 +81,18 @@ int shell_command(char *buffer) {
                 c_free(new_path);
             }
         }
-        c_free(liste_path);  
+        c_free(liste_path);
     } else if (!c_str_cmp(prefix, "go")) {
         if (!(c_str_count(suffix, '.'))) c_str_cat(suffix, ".bin");
-        char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 2);
+        char *file = c_malloc(c_str_len(suffix) + c_str_len(current_dir) + 3);
         assemble_path(current_dir, suffix, file);
         go(file, prefix, suffix);
         c_free(file);
     } else {  // shell command
-        char *old_prefix = c_malloc(c_str_len(prefix));
+        char *old_prefix = c_malloc(c_str_len(prefix) + 1);
         c_str_cpy(old_prefix, prefix);
         if(!(c_str_count(prefix, '.'))) c_str_cat(prefix, ".bin");
-        char *file = c_malloc(c_str_len(prefix) + c_str_len(current_dir) + 2);
+        char *file = c_malloc(c_str_len(prefix) + c_str_len(current_dir) + 17);
         assemble_path("/bin/commands", prefix, file);
         if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
             go(file, old_prefix, suffix);
@@ -131,7 +131,8 @@ void go(char file[], char prefix[], char suffix[]) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; c_str_cpy(result, old);
+    result[0] = '\0';
+    c_str_cpy(result, old);
     if (result[c_str_len(result) - 1] != '/') c_str_append(result, '/');
     for (int i = 0; i < c_str_len(new); i++) c_str_append(result, new[i]);
 }

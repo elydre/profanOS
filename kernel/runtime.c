@@ -1,10 +1,11 @@
 #include <libc/filesystem.h>
 #include <driver/serial.h>
-#include <gui/gnrtx.h>
 #include <libc/task.h>
 #include <system.h>
+#include <iolib.h>
 #include <mem.h>
 
+#define SPACE 0xAA
 
 /******************************
  * binarymem is a pointer to *
@@ -18,12 +19,29 @@ int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
-    char *binary_mem = task_get_bin_mem(task_get_current_pid());
+    int pid = task_get_current_pid();
+    uint8_t *binary_mem = task_get_bin_mem(pid);
     g_return = ((int (*)(int, char **)) binary_mem + RUNTIME_STACK)(g_argc, g_argv);
 
     free(binary_mem);
 
-    if (task_get_next_pid() == 0) clear_screen();
+    int not_free_mem = mem_get_info(7, pid);
+
+    if (!not_free_mem) {
+        task_kill_task_switch(task_get_next_pid());
+        return;
+    }
+
+    sys_warning("Memory leak detected");
+
+    fskprint("$6[auto free] %d alloc will be auto freed (total: %d bytes, pid: %d)\n",
+            not_free_mem,
+            mem_get_info(8, pid),
+            pid
+    );
+
+    mem_free_all(pid);
+
     task_kill_task_switch(task_get_next_pid());
 }
 
@@ -37,10 +55,10 @@ int run_binary(char path[], int silence, int argc, char **argv) {
     int pid = task_create(tasked_program, path);
 
     int size = fs_get_file_size(path) + RUNTIME_STACK;
-    char *binary_mem = malloc(size);
-    char *file = binary_mem + RUNTIME_STACK;
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(size, 4); // 4 = runtime
+    uint8_t *file = binary_mem + RUNTIME_STACK;
 
-    fs_read_file(path, file);
+    fs_read_file(path, (char *) file);
 
     g_argc = argc;
     g_argv = argv;
