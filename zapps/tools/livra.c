@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 
 #define LSIZE 1024
@@ -33,8 +34,8 @@ void start_inter(int *code, int code_size, int while_id);
 int lexer(char path[], int *code);
 
 int main(int argc, char **argv) {
-    int *meml = c_calloc(LSIZE * sizeof(int));
-    int *prog = c_calloc(PSIZE * sizeof(int));
+    int *meml = calloc(LSIZE * sizeof(int));
+    int *prog = calloc(PSIZE * sizeof(int));
     mem = meml;
 
     meml[0] = 1;
@@ -43,8 +44,8 @@ int main(int argc, char **argv) {
     
     start_inter(prog, code_size, 0);
 
-    c_free(meml);
-    c_free(prog);
+    free(meml);
+    free(prog);
     return 0;
 }
 
@@ -67,7 +68,7 @@ int lexer(char path[], int *code) {
         code_size++;
     }
 
-    c_free(data_char);
+    free(data_char);
     return code_size;
 }
 
@@ -107,12 +108,12 @@ void start_inter(int *code, int code_size, int while_id) {
             instruc += arg_cont[mode];
 
             if (mode == 1 && to_pass == 0) {
-                int *new_code = c_malloc((code_size - instruc - 1) * sizeof(int));
+                int *new_code = malloc((code_size - instruc - 1) * sizeof(int));
                 for (int i = 0; i < code_size - instruc - 1; i++) {
                     new_code[i] = code[instruc + i + 1];
                 }
                 start_inter(new_code, code_size - instruc - 1, code[instruc]);
-                c_free(new_code);
+                free(new_code);
                 to_pass++;
             }
         }

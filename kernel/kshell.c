@@ -1,13 +1,12 @@
+#include <kernel/snowflake.h>
 #include <kernel/ramdisk.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <function.h>
 #include <minilib.h>
 #include <system.h>
-#include <mem.h>
 
 #include <iolib.h>
-#include <lib.h>
 
 #define BFR_SIZE 65
 
@@ -43,7 +42,6 @@ void shell_help() {
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
         "HELP   - show this help",
-        "MEM    - show memory state",
         "REBOOT - reboot the system",
         "SO     - run file in /bin",
     };
@@ -59,16 +57,6 @@ void shell_addr() {
     fsprint("mm base: %x\n", MEM_BASE_ADDR);
     fsprint("watfunc: %x\n", WATFUNC_ADDR);
     fsprint("rand sv: %x\n", RAND_SAVE);
-}
-
-void test_smart_switch() {
-    dily_load("/lib/lib_v1.bin", 123);  // we load the lib_v1 whis ID 123
-    lib_print_version();                // we call the lib function
-    dily_unload(123);                   // we unload the lib whis ID 123
-    
-    dily_load("/lib/lib_v2.bin", 123);  // we load the lib_v2 whis ID 123
-    lib_print_version();                // we call the lib function
-    dily_unload(123);                   // we unload the lib whis ID 123
 }
 
 int shell_command(char command[]) {
@@ -91,10 +79,8 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "exit") == 0) return 1;
     else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
-    else if (str_cmp(prefix, "mem") == 0) mem_print();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "tss") == 0) test_smart_switch();
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 
     return 0;

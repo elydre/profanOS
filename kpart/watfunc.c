@@ -1,4 +1,5 @@
 #include <kernel/filesystem.h>
+#include <kernel/snowflake.h>
 #include <driver/keyboard.h>
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
@@ -12,7 +13,6 @@
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
-#include <mem.h>
 
 void init_watfunc() {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
@@ -43,13 +43,10 @@ int wf_get_func_addr(int func_id) {
         case 12: return (int) fs_path_to_id;
 
         // mem.h
-        case 13: return (int) mem_copy;
-        case 14: return (int) mem_set;
-        case 17: return (int) free;
-        case 18: return (int) calloc;
-        case 19: return (int) malloc;
-        case 20: return (int) realloc;
-        case 61: return (int) mem_get_info;
+        case 13: return (int) mem_get_alloc_size;
+        case 14: return (int) mem_alloc;
+        case 15: return (int) mem_free_addr;
+        case 16: return (int) mem_get_info;
 
         // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;

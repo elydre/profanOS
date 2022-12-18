@@ -4,7 +4,6 @@
 #include <function.h>
 #include <minilib.h>
 #include <system.h>
-#include <mem.h>
 
 #define UINT32_PER_SECTOR 128
 #define RAMDISK_SECTOR    2048     // 1Mo

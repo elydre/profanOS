@@ -1,26 +1,27 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 void assemble_path(char old[], char new[], char result[]);;
 
 int main(int argc, char **argv) {
-    char *fpath = c_malloc(256);
-    char *suffix = c_malloc(256);
+    char *fpath = malloc(256);
+    char *suffix = malloc(256);
     str_cpy(fpath, argv[1]);
     str_cpy(suffix, argv[2]);
-    char *file = c_malloc(str_len(suffix) + str_len(fpath) + 2);
+    char *file = malloc(str_len(suffix) + str_len(fpath) + 2);
     assemble_path(fpath, suffix, file);
     if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         char *char_content = c_fs_declare_read_array(file);
         c_fs_read_file(file, (uint8_t *) char_content);
         c_ckprint(char_content, c_magenta);
         fsprint("\n");
-        c_free(char_content);
+        free(char_content);
     } else fsprint("$3%s$B file not found\n", file);
-    c_free(file);
-    c_free(fpath);
-    c_free(suffix);
+    free(file);
+    free(fpath);
+    free(suffix);
     return 0;
 }
 

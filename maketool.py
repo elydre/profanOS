@@ -4,7 +4,7 @@ from threading import Thread
 
 # SETUP
 
-SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "klib", "klib/gui"]
+SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "kpart", "kpart/gui"]
 INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"

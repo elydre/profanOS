@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <iolib.h>
+#include <mem.h>
 
 int main(int argc, char **argv) {
     char file[] = "/zada/shell_help.txt";
@@ -7,7 +8,7 @@ int main(int argc, char **argv) {
         char *char_content = c_fs_declare_read_array(file);
         c_fs_read_file(file, (uint8_t *) char_content);
         c_ckprint(char_content, c_magenta);
-        c_free(char_content);
+        free(char_content);
     } else fsprint("$Bshell_help.txt not found\n", file);
     return 0;
 }

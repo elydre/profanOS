@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 void afficher(int **plateau, int n);
 void solve(int n, int from_rod, int to_rod, int aux_rod);
@@ -14,18 +15,18 @@ int main(int argc, char **argv) {
     input(inp, 3, 0x09);
     fsprint("\n");
     n = ascii_to_int(inp);
-    int **plateau = c_calloc(3 * sizeof(int *));
+    int **plateau = calloc(3 * sizeof(int *));
     for (int i=0; i<3; i++) {
-        plateau[i] = c_calloc(n * sizeof(int));
+        plateau[i] = calloc(n * sizeof(int));
     }
     for (int i=0; i<n; i++) {
         plateau[0][i] = i+1;
     }
     solve(n, 0, 1, 2);
     for (int i=0; i<3; i++) {
-        c_free(plateau[i]);
+        free(plateau[i]);
     }
-    c_free(plateau);
+    free(plateau);
     fsprint("\n");
     return 0;
 }

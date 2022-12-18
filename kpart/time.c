@@ -1,8 +1,8 @@
 #include <driver/rtc.h>
 #include <cpu/timer.h>
+#include <minilib.h>
 #include <setting.h>
 #include <time.h>
-#include <mem.h>
 
 #define seconde_in_year 31536000
 #define seconde_in_leap_year 31622400

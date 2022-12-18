@@ -4,7 +4,6 @@
 #include <minilib.h>
 #include <system.h>
 #include <type.h>
-#include <mem.h>
 
 
 #define MAX_SIZE_NAME  32

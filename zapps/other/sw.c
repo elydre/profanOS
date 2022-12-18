@@ -3,6 +3,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 
 int main(int argc, char **argv) {
@@ -11,7 +12,7 @@ int main(int argc, char **argv) {
 
     fsprint("allocating memory for the file...\n");
     uint8_t *data = c_fs_declare_read_array(path);
-    char *str = c_malloc(0x1000);
+    char *str = malloc(0x1000);
 
     str[0] = '\0';
 
@@ -43,8 +44,8 @@ int main(int argc, char **argv) {
     }
 
     c_clear_screen();
-    c_free(data);
-    c_free(str);
+    free(data);
+    free(str);
     c_cursor_blink(0);
     return 0;
 }

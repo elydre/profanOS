@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <string.h>
+#include <mem.h>
 
 
 #define PI 3.141592
@@ -73,8 +74,8 @@ Shape_t cube(int size) {
     Shape_t shape;
     shape.PointsCount = 8;
     shape.LinesCount = 18;
-    shape.Points = c_malloc(sizeof(Point3_t) * shape.PointsCount);
-    shape.Lines = c_malloc(sizeof(Line_t) * shape.LinesCount);
+    shape.Points = malloc(sizeof(Point3_t) * shape.PointsCount);
+    shape.Lines = malloc(sizeof(Line_t) * shape.LinesCount);
 
     shape.Points[0] = (Point3_t){ size,  size,  size};
     shape.Points[1] = (Point3_t){ size, -size,  size};
@@ -106,14 +107,14 @@ Shape_t cube(int size) {
     shape.Lines[16] = (Line_t){2, 7, TRIN_COLOR};
     shape.Lines[17] = (Line_t){3, 4, TRIN_COLOR};
 
-    shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
+    shape.ScreenPoints = malloc(sizeof(Point2_t) * shape.PointsCount);
     return shape;
 }
 
 void delete_shape(Shape_t* shape) {
-    c_free(shape->Points);
-    c_free(shape->Lines);
-    c_free(shape->ScreenPoints);
+    free(shape->Points);
+    free(shape->Lines);
+    free(shape->ScreenPoints);
 }
 
 double cos(int angle) {
@@ -153,9 +154,9 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
     Shape_t new_shape;
     new_shape.PointsCount = shape->PointsCount;
     new_shape.LinesCount = shape->LinesCount;
-    new_shape.Points = c_malloc(sizeof(Point3_t) * new_shape.PointsCount);
-    new_shape.Lines = c_malloc(sizeof(Line_t) * new_shape.LinesCount);
-    new_shape.ScreenPoints = c_malloc(sizeof(Point2_t) * new_shape.PointsCount);
+    new_shape.Points = malloc(sizeof(Point3_t) * new_shape.PointsCount);
+    new_shape.Lines = malloc(sizeof(Line_t) * new_shape.LinesCount);
+    new_shape.ScreenPoints = malloc(sizeof(Point2_t) * new_shape.PointsCount);
     int x1, y1, z1;
     for (int i = 0; i < new_shape.PointsCount; i++) {
         x1 = shape->Points[i].x;

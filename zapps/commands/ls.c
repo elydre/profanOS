@@ -1,15 +1,16 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 void assemble_path(char old[], char new[], char result[]);
 
 int main(int argc, char **argv) {
-    char *current_dir = c_malloc(256);
+    char *current_dir = malloc(256);
     str_cpy(current_dir, argv[1]);
-    char *suffix = c_malloc(256);
+    char *suffix = malloc(256);
     str_cpy(suffix, argv[2]);
-    char *path = c_malloc(256);
+    char *path = malloc(256);
 
     if (str_cmp(suffix, "ls"))
         str_cpy(path, suffix);
@@ -23,8 +24,8 @@ int main(int argc, char **argv) {
         fsprint("$3%s$B is not a directory\n", ls_path);
     } else {
         int elm_count = c_fs_get_dir_size(ls_path);
-        uint32_t *out_ids = c_malloc(elm_count * sizeof(uint32_t));
-        int *out_types = c_malloc(elm_count * sizeof(int));
+        uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
+        int *out_types = malloc(elm_count * sizeof(int));
         char tmp_path[256], tmp_name[32];
         c_fs_get_dir_content(ls_path, out_ids);
 
@@ -46,12 +47,12 @@ int main(int argc, char **argv) {
                 fsprint("%d oct\n", c_fs_get_file_size(tmp_path));
             }
         }
-        c_free(out_types);
-        c_free(out_ids);
+        free(out_types);
+        free(out_ids);
     }
-    c_free(current_dir);
-    c_free(suffix);
-    c_free(path);
+    free(current_dir);
+    free(suffix);
+    free(path);
     return 0;
 }
 

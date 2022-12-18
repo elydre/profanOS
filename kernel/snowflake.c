@@ -1,31 +1,9 @@
+#include <kernel/snowflake.h>
 #include <driver/serial.h>
 #include <kernel/task.h>
-#include <gui/gnrtx.h>
 #include <minilib.h>
 #include <system.h>
-#include <mem.h>
 
-
-void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
-    for (int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
-}
-
-void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
-    uint8_t *temp = (uint8_t *)dest;
-    for ( ; len != 0; len--) *temp++ = val;
-}
-
-void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
-    if (source < dest) {
-        for (int i = nbytes - 1; i >= 0; i--) {
-            *(dest + i) = *(source + i);
-        }
-    } else {
-        for (int i = 0; i < nbytes; i++) {
-            *(dest + i) = *(source + i);
-        }
-    }
-}
 
 /* * * * * * * * * * * * * * * * * * * *
  *        _             _              *
@@ -169,7 +147,6 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
     if (exit_mode == 0) {
         del_occurence(new_index);
-        // kprintf("del occurence(%d)\n", new_index);
 
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
@@ -226,37 +203,6 @@ void mem_free_all(int task_id) {
     }
 }
 
-// standard functions
-
-void free(void *addr) {
-    int size = mem_get_alloc_size((uint32_t) addr);
-    if (size == 0) return;
-    mem_set((uint8_t *) addr, 0, size);
-    mem_free_addr((int) addr);
-}
-
-void *malloc(uint32_t size) {
-    uint32_t addr = mem_alloc(size, 1);
-    if (addr == 0) return NULL; // error
-    return (void *) addr;
-}
-
-void *realloc(void *ptr, uint32_t size) {
-    uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = mem_alloc(size, 1);
-    if (new_addr == 0) return NULL;
-    mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
-    mem_free_addr(addr);
-    return (void *) new_addr;
-}
-
-void *calloc(uint32_t size) {
-    int addr = mem_alloc(size, 1);
-    if (addr == 0) return NULL;
-    mem_set((uint8_t *) addr, 0, size);
-    return (void *) addr;
-}
-
 int mem_get_info(char get_mode, int get_arg) {
     // check the header for informations about the get_mode
 
@@ -291,22 +237,4 @@ int mem_get_info(char get_mode, int get_arg) {
 
     if (get_mode > 5 && get_mode < 13) return info[get_mode - 6];
     return -1;
-}
-
-void mem_print() {
-    int index = first_part_index;
-    while (MEM_PARTS[index].state) {
-        kprintf("index: %d, addr: %x, size: %d, state: %d, task: %d, next: %d\n",
-                index,
-                MEM_PARTS[index].addr,
-                MEM_PARTS[index].size,
-                MEM_PARTS[index].state,
-                MEM_PARTS[index].task_id,
-                MEM_PARTS[index].next
-        );
-        index = MEM_PARTS[index].next;
-    }
-    for (int i = 0; i < 13; i++) {
-        kprintf("info %d: %d\n", i, mem_get_info(i, 0));
-    }
 }

@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <iolib.h>
+#include <mem.h>
 
 int main(int argc, char **argv) {
 
@@ -10,7 +11,7 @@ int main(int argc, char **argv) {
 
     msprint(1, str);
 
-    c_free(str);
+    free(str);
 
     return 0;
 }

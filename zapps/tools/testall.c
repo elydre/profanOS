@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 void print_status(char test_name[], int status);
 
@@ -11,9 +12,9 @@ int main(int argc, char **argv) {
     print_status("random", c_rand() != c_rand() || c_rand() != c_rand());
     print_status("rtc unix time", c_time_gen_unix() > c_time_get_boot());
     int old_active_alloc = c_mem_get_info(4, 0) - c_mem_get_info(5, 0);
-    int *ptr = (int *) c_malloc(0x1000);
+    int *ptr = (int *) malloc(0x1000);
     print_status("memory alloc", ptr != 0);
-    c_free(ptr);
+    free(ptr);
     print_status("memory free", old_active_alloc == c_mem_get_info(4, 0) - c_mem_get_info(5, 0));
     print_status("file system", c_fs_get_file_size("/bin/tools/testall.bin") > 0);
     print_status("timer tick", c_timer_get_tick() > 0);

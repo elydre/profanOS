@@ -1,6 +1,6 @@
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
-#include <mem.h>
+#include <minilib.h>
 
 #define FONT_TABLE font_get_8x16()
 #define FONT_WIDTH 8

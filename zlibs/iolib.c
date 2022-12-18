@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <string.h>
+#include <mem.h>
 
 // we need the stdarg of the stdlib
 #include <stdarg.h>
@@ -89,7 +90,7 @@ void msprint(int nb_args, ...) {
 void fsprint(char format[], ...) {
     va_list args;
     va_start(args, format);
-    char *buffer = c_malloc(0x1000);
+    char *buffer = malloc(0x1000);
     clean_buffer(buffer, 0x1000);
     char color = c_white;
 
@@ -136,7 +137,7 @@ void fsprint(char format[], ...) {
         clean_buffer(buffer, 256);
         continue;
     }
-    c_free(buffer);
+    free(buffer);
     va_end(args);
 }
 

@@ -15,6 +15,7 @@ ___________________________________
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <mem.h>
 
 
 char get_piont(int num);
@@ -28,9 +29,9 @@ int main(int argc, char **argv) {
     int colonne;
     int tour = 0;
 
-    int **grille = (int **) c_calloc(8 * sizeof(int *));
+    int **grille = (int **) calloc(8 * sizeof(int *));
     for (int i = 0; i < 8; i++) {
-        grille[i] = (int *) c_calloc(8 * sizeof(int));
+        grille[i] = (int *) calloc(8 * sizeof(int));
     }
 
     c_clear_screen();
@@ -59,9 +60,9 @@ int main(int argc, char **argv) {
 }
 
 int IA_cp_gagnant(int joueur, int ** grille) {
-    int ** grille_test = (int **) c_calloc(8 * sizeof(int *));
+    int ** grille_test = (int **) calloc(8 * sizeof(int *));
     for (int i = 0; i < 8; i++) {
-        grille_test[i] = (int *) c_calloc(8 * sizeof(int));
+        grille_test[i] = (int *) calloc(8 * sizeof(int));
     }
     for (int c = 0; c < 8; c++) {
         for (int l = 0; l < 8; l++) {
@@ -177,7 +178,7 @@ int is_gagnant(int ** tab) {
 
 void free_grille(int ** grille) {
     for (int i = 0; i < 8; i++) {
-        c_free(grille[i]);
+        free(grille[i]);
     }
-    c_free(grille);
+    free(grille);
 }

@@ -2,8 +2,8 @@
 #include <function.h>
 #include <gui/vesa.h>
 #include <gui/vgui.h>
+#include <minilib.h>
 #include <type.h>
-#include <mem.h>
 
 uint32_t *last_render;
 uint32_t *current_render;

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <iolib.h>
 #include <type.h>
+#include <mem.h>
 
 int main() {
     return 0;
@@ -36,7 +37,7 @@ int sys_get_setting(char name[]) {
             line_i = 0;
             if (str_cmp(line, name))
                 continue;
-            c_free(settings);
+            free(settings);
             if (arg[str_len(arg)-1] == '\r')
                 arg[str_len(arg)-1] = '\0';
             return ascii_to_int(arg);
@@ -45,7 +46,7 @@ int sys_get_setting(char name[]) {
             line_i++;
         }
     }
-    c_free(settings);
+    free(settings);
     fsprint("Setting %s not found", name);
     return 0;
 }
