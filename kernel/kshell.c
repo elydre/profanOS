@@ -1,5 +1,6 @@
 #include <libc/ramdisk.h>
 #include <gui/gnrtx.h>
+#include <gui/vesa.h>
 #include <function.h>
 #include <system.h>
 #include <string.h>
@@ -50,9 +51,10 @@ void shell_help() {
 }
 
 void shell_addr() {
-    fskprint("physic:  %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
+    fskprint("vesa fb: %x\n", vesa_get_framebuffer());
+    fskprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
     fskprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
-    fskprint("b3 mm:   %x\n", MEM_BASE_ADDR);
+    fskprint("mm base: %x\n", MEM_BASE_ADDR);
     fskprint("watfunc: %x\n", WATFUNC_ADDR);
     fskprint("rand sv: %x\n", RAND_SAVE);
 }

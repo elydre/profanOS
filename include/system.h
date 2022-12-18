@@ -3,7 +3,7 @@
 
 // build settings
 
-#define VERSION         "SL-14"
+#define VERSION         "SL-15"
 
 #define WATFUNC_ADDR    0x199990
 #define MEM_BASE_ADDR   0x200000
