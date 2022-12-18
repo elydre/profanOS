@@ -23,42 +23,33 @@ void unknown_func() {
     sys_error("Unknown syscall");
 }
 
-void up_string(char str[]) {
-    UNUSED(str);
-}
-
 int wf_get_func_addr(int func_id) {
     switch (func_id) {
         // filesystem.h
+
         case 0:  return (int) fs_get_used_sectors;
-        case 1:  return (int) fs_is_disk_full;
+        case 65: return (int) fs_get_sector_count;
+        case 1:  return (int) fs_get_element_name;
         case 2:  return (int) fs_make_dir;
         case 3:  return (int) fs_make_file;
         case 4:  return (int) fs_read_file;
         case 5:  return (int) fs_write_in_file;
         case 6:  return (int) fs_get_file_size;
-        case 7:  return (int) fs_get_folder_size;
+        case 7:  return (int) fs_get_dir_size;
         case 8:  return (int) fs_declare_read_array;
         case 9:  return (int) fs_does_path_exists;
-        case 10: return (int) fs_type_sector;
+        case 10: return (int) fs_get_sector_type;
         case 11: return (int) fs_get_dir_content;
         case 12: return (int) fs_path_to_id;
 
         // mem.h
         case 13: return (int) mem_copy;
         case 14: return (int) mem_set;
-        case 15: return (int) mem_alloc;
-        case 16: return (int) mem_free_addr;
         case 17: return (int) free;
         case 18: return (int) calloc;
         case 19: return (int) malloc;
         case 20: return (int) realloc;
-        case 21: return (int) mem_get_usage;
-        case 22: return (int) mem_get_usable;
-        case 61: return (int) mem_print;
-        case 73: return (int) mem_get_alloc_count;
-        case 74: return (int) mem_get_free_count;
-        case 104: return (int) mem_get_phys_size;
+        case 61: return (int) mem_get_info;
 
         // time.h + rtc.h + timer.h
         case 42: return (int) time_gen_unix;
@@ -97,9 +88,6 @@ int wf_get_func_addr(int func_id) {
         case 69: return (int) run_binary;
         case 75: return (int) run_ifexist;
 
-        // ata.h
-        case 65: return (int) ata_get_sectors_count;
-
         // task.h
         case 67: return (int) task_switch;
         case 84: return (int) task_get_alive;
@@ -126,7 +114,6 @@ int wf_get_func_addr(int func_id) {
         case 105: return (int) ramdisk_get_size;
         case 106: return (int) ramdisk_get_used;
 
-        case 101: return (int) up_string;
         default: return (int) unknown_func;
     }
 }

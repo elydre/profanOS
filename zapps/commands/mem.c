@@ -1,7 +1,6 @@
 #include <syscall.h>
 
 int main(int argc, char **argv) {
-    c_mem_print();
-    PATH_EXIT();
+    c_fskprint("please use the kshell for now\n");
     return 0;
 }

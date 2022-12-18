@@ -1,10 +1,9 @@
-cat     - print file *              mkdir   - create a new folder *
-cd      - change dir to *           mkfile  - create a new file *
-clear   - clear the screen          reboot  - reboot the system
-echo    - print the arguments       sc      - show the scancodes
-exit    - exit of the shell app     show    - show image in the screen
+cat     - print file *              mem     - show MLIST with colors
+cd      - change dir to *           mkdir   - create a new folder *
+clear   - clear the screen          mkfile  - create a new file *
+echo    - print the arguments       reboot  - reboot the system
+exit    - exit of the shell app     sc      - show the scancodes
 go      - start * file as binary    sleep   - sleep for a given time
 help    - show this help            stop    - shutdown the system
-info    - show time, task & page    tree    - show current dir tree
-ls      - list the current dir      udisk   - show used disk space
-mem     - show MLIST with colors
+info    - show time, task & page    udisk   - show used disk space
+ls      - list the current dir

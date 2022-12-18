@@ -19,33 +19,35 @@ int main(int argc, char **argv) {
     if (path[0] == '\0') str_cpy(ls_path, current_dir);
     else assemble_path(current_dir, path, ls_path);
 
-    if (!(c_fs_does_path_exists(ls_path) && c_fs_type_sector(c_fs_path_to_id(ls_path, 0)) == 3)) {
+    if (!(c_fs_does_path_exists(ls_path) && c_fs_get_sector_type(c_fs_path_to_id(ls_path)) == 3)) {
         fsprint("$3%s$B is not a directory\n", ls_path);
     } else {
-        int elm_count = c_fs_get_folder_size(ls_path);
-        string_20_t *out_list = c_malloc(elm_count * sizeof(string_20_t));
-        uint32_t *out_type = c_malloc(elm_count * sizeof(uint32_t));
-        char tmp_path[256];
-        c_fs_get_dir_content(c_fs_path_to_id(ls_path, 0), out_list, out_type);
+        int elm_count = c_fs_get_dir_size(ls_path);
+        uint32_t *out_ids = c_malloc(elm_count * sizeof(uint32_t));
+        int *out_types = c_malloc(elm_count * sizeof(int));
+        char tmp_path[256], tmp_name[32];
+        c_fs_get_dir_content(ls_path, out_ids);
 
-        for (int i = 0; i < elm_count; i++) out_type[i] = c_fs_type_sector(out_type[i]);
+        for (int i = 0; i < elm_count; i++) out_types[i] = c_fs_get_sector_type(out_ids[i]);
         for (int i = 0; i < elm_count; i++) {
-            if (out_type[i] == 3) {
-                fsprint("$2%s", out_list[i].name);
-                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fsprint(" ");
-                assemble_path(ls_path, out_list[i].name, tmp_path);
-                fsprint("%d elm\n", c_fs_get_folder_size(tmp_path));
+            if (out_types[i] == 3) {
+                c_fs_get_element_name(out_ids[i], tmp_name);
+                fsprint("$2%s", tmp_name);
+                for (int j = 0; j < 22 - c_str_len(tmp_name); j++) c_kprint(" ");
+                assemble_path(ls_path, tmp_name, tmp_path);
+                fsprint("%d elm\n", c_fs_get_dir_size(tmp_path));
             }
         } for (int i = 0; i < elm_count; i++) {
-            if (out_type[i] == 2) {
-                fsprint("$1%s", out_list[i].name);
-                for (int j = 0; j < 22 - str_len(out_list[i].name); j++) fsprint(" ");
-                assemble_path(ls_path, out_list[i].name, tmp_path);
-                fsprint("%d sect\n", c_fs_get_file_size(tmp_path));
+            if (out_types[i] == 2) {
+                c_fs_get_element_name(out_ids[i], tmp_name);
+                fsprint("$1%s", tmp_name);
+                for (int j = 0; j < 22 - c_str_len(tmp_name); j++) c_kprint(" ");
+                assemble_path(ls_path, tmp_name, tmp_path);
+                fsprint("%d oct\n", c_fs_get_file_size(tmp_path));
             }
         }
-        c_free(out_list);
-        c_free(out_type);
+        c_free(out_types);
+        c_free(out_ids);
     }
     c_free(current_dir);
     c_free(suffix);

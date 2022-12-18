@@ -142,9 +142,7 @@ int main(int argc, char **argv) {
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
     }
-
     c_vgui_exit();
-    c_free(key_buffer);
 
     return 0;
 }

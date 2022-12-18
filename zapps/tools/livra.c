@@ -49,21 +49,13 @@ int main(int argc, char **argv) {
 }
 
 int lexer(char path[], int *code) {
-    uint32_t *data_uint32 = c_fs_declare_read_array(path);
     char *data_char = c_fs_declare_read_array(path);
-    c_fs_read_file(path, data_uint32);
-
-    int i;
-    for (i = 0; data_uint32[i] != (uint32_t) -1; i++) {
-        data_char[i] =  data_uint32[i];
-    } i++; data_char[i] = '\0';
-
-    c_free(data_uint32);
+    c_fs_read_file(path, (uint8_t *) data_char);
 
     int code_size = 0;
 
     char temp[10];
-    for (i = 0; data_char[i] != '\0'; i++) {
+    for (int i = 0; data_char[i] != '\0'; i++) {
         if (!(data_char[i] >= '0' && data_char[i] <= '9')) continue;
         int j = 0;
         while (data_char[i] >= '0' && data_char[i] <= '9') {

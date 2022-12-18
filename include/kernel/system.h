@@ -1,11 +1,17 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define VERSION "dily-09"
+// build settings
 
+#define VERSION         "dily-10"
 
-#define WATFUNC_ADDR 0x199990
-#define WATDILY_ADDR 0x199994
+#define WATFUNC_ADDR    0x199990
+#define MEM_BASE_ADDR   0x200000
+
+#define RUNTIME_STACK   0x2000
+#define TASK_ESP_ALLOC  0x2000
+
+#define TASK_MAX_COUNT  20
 
 
 // system.c

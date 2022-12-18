@@ -133,7 +133,7 @@ void fsprint(char format[], ...) {
             color = sprint_function(buffer, color);
         }
         else i--;
-        clean_buffer(buffer, 0x1000);
+        clean_buffer(buffer, 256);
         continue;
     }
     c_free(buffer);

@@ -14,12 +14,10 @@
 #include <type.h>
 #include <mem.h>
 
-#include <string.h>
-#include <iolib.h>
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();
-    ckprint("booting profanOS...\n", 0x08);
+    ckprint("booting profanOS...\n", 0x07);
 
     mboot_save(mboot_ptr);
     kprint("Mboot saved\n");
@@ -27,11 +25,17 @@ void kernel_main(void *mboot_ptr) {
     gdt_init();
     kprint("GDT init\n");
 
+    init_vesa();
+    kprint("vesa init\n");
+
     isr_install();
     kprint("ISR init\n");
     
     irq_install();
     kprint("IRQ init\n");
+
+    mem_init();
+    kprint("snowflake init\n");
 
     rtc_init();
     time_gen_boot();
@@ -40,9 +44,6 @@ void kernel_main(void *mboot_ptr) {
 
     serial_init();
     kprint("serial init\n");
-
-    init_vesa();
-    kprint("vesa init\n");
 
     tasking_init();
     kprint("tasking init\n");

@@ -7,6 +7,14 @@
 #include <type.h>
 #include <mem.h>
 
+#define SPACE 0xAA
+
+/******************************
+ * binarymem is a pointer to *
+ * the memory of the program *
+ * with the following layout *
+ * |  <---STACK-|--BINARY--| *
+******************************/
 
 // global values for tasking
 int g_return, g_argc;
@@ -16,15 +24,29 @@ uint32_t **lib_functions = 0;
 int lib_count = 0;
 
 void tasked_program() {
-    uint8_t *binary_mem = task_get_bin_mem(task_get_current_pid());
-    g_return = ((int (*)(int, char**)) binary_mem)(g_argc, g_argv);
-
-    // fill memory with 0
-    mem_set((uint8_t *) binary_mem, 0, mem_get_alloc_size((int) binary_mem));
+    int pid = task_get_current_pid();
+    uint8_t *binary_mem = task_get_bin_mem(pid);
+    g_return = ((int (*)(int, char **)) binary_mem + RUNTIME_STACK)(g_argc, g_argv);
 
     free(binary_mem);
 
-    if (task_get_next_pid() == 0) clear_screen();
+    int not_free_mem = mem_get_info(7, pid);
+
+    if (!not_free_mem) {
+        task_kill_task_switch(task_get_next_pid());
+        return;
+    }
+
+    sys_warning("Memory leak detected");
+
+    fskprint("$6[auto free] %d alloc will be auto freed (total: %d bytes, pid: %d)\n",
+            not_free_mem,
+            mem_get_info(8, pid),
+            pid
+    );
+
+    mem_free_all(pid);
+
     task_kill_task_switch(task_get_next_pid());
 }
 
@@ -37,14 +59,11 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     int pid = task_create(tasked_program, path);
 
-    uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126);
-    uint32_t *file = fs_declare_read_array(path);
-    fs_read_file(path, file);
+    int size = fs_get_file_size(path) + RUNTIME_STACK;
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(size, 4); // 4 = runtime
+    uint8_t *file = binary_mem + RUNTIME_STACK;
 
-    for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        binary_mem[i] = (uint8_t) file[i] & 0xFF;
-
-    free(file);
+    fs_read_file(path, (char *) file);
 
     g_argc = argc;
     g_argv = argv;
@@ -60,7 +79,7 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 }
 
 int run_ifexist(char path[], int argc, char **argv) {
-    if (fs_does_path_exists(path) && fs_type_sector(fs_path_to_id(path, 0)) == 2)
+    if (fs_does_path_exists(path) && fs_get_sector_type(fs_path_to_id(path)) == 2)
         return run_binary(path, 0, argc, argv);
     sys_error("Program not found");
     return -1;

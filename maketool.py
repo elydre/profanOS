@@ -2,8 +2,6 @@ import os
 import sys
 from threading import Thread
 
-import PIL.Image
-
 # SETUP
 
 SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "klib", "klib/gui"]
@@ -50,7 +48,6 @@ def find_app_lib(directory, extention):
         elif file.endswith(extention):
             liste.append(f"{directory}/{file}")
     return liste
-
 
 def cprint(color, text, end="\n"):
     r, g, b = color
@@ -135,7 +132,7 @@ def build_app_lib():
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {name} -o {fname}.o")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.full -j .text -j .data -j .rodata -j .bss")
-        print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
+        # print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         print_and_exec(f"rm {fname}.o {fname}.pe {fname}.full")
         total -= 1
 
@@ -203,7 +200,7 @@ def make_iso(force = False):
     print_and_exec(f"cp boot/grub.cfg {OUT_DIR}/isodir/boot/grub/")
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
-def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
+def gen_disk(force=False, with_src=False):
     if file_exists("HDD.bin") and not force: return
     build_app_lib()
 
@@ -213,11 +210,12 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/{dir}")
         if HDD_MAP[dir] is None: continue
         print_and_exec(f"cp -r {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+
     if with_src:
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
-    cprint(COLOR_EXEC, "Correcly copying projects")
+
     try:
         for dossier in os.listdir(f"./{OUT_DIR}/disk/bin/Projets"):
             print_and_exec(f"make -C zapps/Projets/{dossier}/ run")
@@ -227,37 +225,11 @@ def gen_disk(force=False, with_src=False):  # sourcery skip: low-code-quality
     except Exception as e:
         cprint(COLOR_EROR, f"Error while copying projects: {e}")
 
-    # transform every image into .img, the format of profanOS
-    liste_images = []
-    for extention in ["jpg", "png"]:
-        liste_images.extend(find_app_lib("out", extention))
-    for file in liste_images:
-        file_location = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
-        file_name = file.split("/")[-1].split(".")[0]
+    if not file_exists("makefsys.bin") or file1_newer("makefsys.c", "makefsys.bin"):
+        cprint(COLOR_INFO, "building makefsys...")
+        print_and_exec("gcc -o makefsys.bin -Wall -Wextra makefsys.c")
 
-        # on transforme l'image en une liste de couleurs 6 bits
-        image = PIL.Image.open(file)
-        pixels = list(image.getdata())
-        width, height = image.size
-        liste_pixels = [pixels[i * width:(i + 1) * width] for i in range(height)]
-        liste_couleurs = []
-        for ligne in liste_pixels:
-            for pixel in ligne:
-                r, g, b = pixel
-                color = (g//64 << 4) + (r//64 << 2) + b//64
-                liste_couleurs.append(color)
-        liste_couleurs = [[("0" if x < 10 else "") + str(x) for x in liste_couleurs[i * width:(i + 1) * width]] for i in range(height)]
-        # on écrit le fichier
-        with open(f"{file_location}/{file_name}.img", "w") as f:
-            f.write(f"{len(liste_couleurs)}|{len(liste_couleurs[0])}|")
-            for ligne in liste_couleurs:
-                for couleur in ligne:
-                    f.write(f"{couleur}|")
-
-        # on vire l'ancienne image
-        os.remove(file)
-
-    print_and_exec("python3 makefsys.py")
+    print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 def qemu_run(iso_run = False):
     elf_image()

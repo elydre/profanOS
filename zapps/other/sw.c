@@ -1,4 +1,4 @@
-// requires /user/star_wars.txt, the ascii art of the star wars
+// requires /zada/star_wars.txt, the ascii art of the star wars
 
 #include <syscall.h>
 #include <string.h>
@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
     char path[] = "/zada/star_wars.txt";
 
     fsprint("allocating memory for the file...\n");
-    uint32_t *data = c_fs_declare_read_array(path);
+    uint8_t *data = c_fs_declare_read_array(path);
     char *str = c_malloc(0x1000);
 
     str[0] = '\0';
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
         temps[j] = '\0';
         str[str_index] = '\0';
         if (ascii_to_int(temps) < 0) break;
-        c_clear_screen();
+        c_clear_screen(); // TODO: redraw only the changed characters
         c_ckprint_at(str, 0, 0, 0x0F);
         c_ms_sleep(ascii_to_int(temps) * 100);
         str_index = -1;

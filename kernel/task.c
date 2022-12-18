@@ -6,9 +6,7 @@
 #include <mem.h>
 
 
-#define TASK_MAX 10
-
-static task_t tasks[TASK_MAX + 1];
+static task_t tasks[TASK_MAX_COUNT + 1];
 int current_pid, task_count;
 
 /***********************
@@ -16,7 +14,7 @@ int current_pid, task_count;
 ***********************/
 
 void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir, int pid) {
-    uint32_t esp_alloc = (uint32_t) mem_alloc(0x1000);
+    uint32_t esp_alloc = (uint32_t) malloc(TASK_ESP_ALLOC);
     task->regs.eax = 0;
     task->regs.ebx = 0;
     task->regs.ecx = 0;
@@ -26,17 +24,16 @@ void i_new_task(task_t *task, void (*main)(), uint32_t flags, uint32_t *pagedir,
     task->regs.eflags = flags;
     task->regs.eip = (uint32_t) main;
     task->regs.cr3 = (uint32_t) pagedir;
-    task->regs.esp = esp_alloc + 0x1000;
+    task->regs.esp = esp_alloc + TASK_ESP_ALLOC;
     task->esp_addr = esp_alloc;
     task->pid = pid;
     task->isdead = 0;
 }
 
-
 void i_destroy_killed_tasks(int nb_alive) {
     for (int i = 1; i < nb_alive; i++) {
         if (tasks[i].isdead != 1) continue;
-        mem_free_addr(tasks[i].esp_addr);
+        free((void *) tasks[i].esp_addr);
         tasks[i].isdead = 2;
     }
 }
@@ -76,7 +73,7 @@ void tasking_init() {
 
 int task_create(void (*func)(), char *name) {
     int nb_alive = task_get_alive();
-    if (task_count >= TASK_MAX) {
+    if (task_count >= TASK_MAX_COUNT) {
         sys_fatal("Cannot create task, too many tasks");
         return -1;
     }
@@ -115,11 +112,11 @@ void task_switch(int target_pid) {
 
     for (task_i = 0; task_i < nb_alive; task_i++) {
         if (tasks[task_i].pid == target_pid) {
-            tasks[TASK_MAX] = tasks[task_i];
+            tasks[TASK_MAX_COUNT] = tasks[task_i];
             for (int i = task_i; i > 0; i--) {
                 tasks[i] = tasks[i - 1];
             }
-            tasks[0] = tasks[TASK_MAX];
+            tasks[0] = tasks[TASK_MAX_COUNT];
             break;
         } else if (task_i == nb_alive - 1) {
             sys_error("Task not found");
@@ -185,7 +182,7 @@ int task_get_next_pid() {
 }
 
 int task_get_max() {
-    return TASK_MAX;
+    return TASK_MAX_COUNT;
 }
 
 int task_get_internal_pos(int pid) {

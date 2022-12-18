@@ -10,6 +10,10 @@
 
 static char current_dir[256] = "/";
 
+typedef struct {
+    char name[256];
+} string_20_t;
+
 void assemble_path(char old[], char new[], char result[]);
 void parse_path(char path[], string_20_t liste_path[]);
 void go(char file[], char prefix[], char suffix[]);
@@ -20,7 +24,7 @@ int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
     int history_size = 0x1000 / BFR_SIZE - 1;
     char **history = c_malloc(history_size * sizeof(char*));
-    int addr = c_mem_alloc(0x1000);
+    int addr = (int) c_malloc(0x1000);
     for (int i = 0; i < history_size; i++) {
         history[i] = (char*)addr;
         addr += BFR_SIZE;
@@ -44,15 +48,15 @@ int main(int argc, char **argv) {
 }
 
 int shell_command(char *buffer) {
-    char *prefix = c_malloc(str_len(buffer)); // size of char is 1 octet
-    char *suffix = c_malloc(str_len(buffer));
-
-    int return_value = 0;
-
+    char *prefix = c_malloc(str_len(buffer) + 5); // size of char is 1 octet
+    char *suffix = c_malloc(str_len(buffer) + 5);
     str_cpy(prefix, buffer);
     str_cpy(suffix, buffer);
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
+
+    int return_value = 0;
+
 
     // internal commands
 
@@ -69,32 +73,31 @@ int shell_command(char *buffer) {
             } else {
                 char *new_path = c_calloc(256);
                 assemble_path(current_dir, liste_path[i].name, new_path);
-                if (c_fs_does_path_exists(new_path) && c_fs_type_sector(c_fs_path_to_id(new_path, 0)) == 3)
+                if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
                     str_cpy(current_dir, new_path);
                 else {
-                    fsprint("$3%s$B path not found\n", new_path);
+                    c_fskprint("$3%s$B path not found\n", new_path);
                     str_cpy(current_dir, old_path);
-                    c_free(liste_path);
                     c_free(new_path);
                     break;
                 }
                 c_free(new_path);
             }
         }
-        c_free(liste_path);  
+        c_free(liste_path);
     } else if (!str_cmp(prefix, "go")) {
         if (!(str_count(suffix, '.'))) str_cat(suffix, ".bin");
-        char *file = c_malloc(str_len(suffix) + str_len(current_dir) + 2);
+        char *file = c_malloc(str_len(suffix) + str_len(current_dir) + 3);
         assemble_path(current_dir, suffix, file);
         go(file, prefix, suffix);
         c_free(file);
     } else {  // shell command
-        char *old_prefix = c_malloc(str_len(prefix));
+        char *old_prefix = c_malloc(str_len(prefix) + 1);
         str_cpy(old_prefix, prefix);
         if(!(str_count(prefix, '.'))) str_cat(prefix, ".bin");
-        char *file = c_malloc(str_len(prefix) + str_len(current_dir) + 2);
+        char *file = c_malloc(str_len(prefix) + str_len(current_dir) + 17);
         assemble_path("/bin/commands", prefix, file);
-        if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+        if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
             go(file, old_prefix, suffix);
         } else if (str_cmp(old_prefix, "")) {
             fsprint("$3%s$B is not a valid command.\n", old_prefix);
@@ -109,7 +112,7 @@ int shell_command(char *buffer) {
 }
 
 void go(char file[], char prefix[], char suffix[]) {
-    if (c_fs_does_path_exists(file) && c_fs_type_sector(c_fs_path_to_id(file, 0)) == 2) {
+    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         int argc = str_count(suffix, ' ') + 3;
         char **argv = c_malloc(argc * sizeof(char *));
         // set argv[0] to the command name
@@ -131,7 +134,8 @@ void go(char file[], char prefix[], char suffix[]) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; str_cpy(result, old);
+    result[0] = '\0';
+    str_cpy(result, old);
     if (result[str_len(result) - 1] != '/') str_append(result, '/');
     for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
 }
