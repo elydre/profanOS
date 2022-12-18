@@ -141,7 +141,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     ata_read_sector(sector_id, sector);
 
     if (!(sector[0] & (I_FILE_H | I_DIR))) {
-        // fskprint("FATAL: %x in sec %d\n", sector[0], sector_id);
+        // kprintf("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
     }
 

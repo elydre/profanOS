@@ -1,5 +1,6 @@
+#include <driver/serial.h>
+#include <kernel/task.h>
 #include <gui/gnrtx.h>
-#include <function.h>
 #include <minilib.h>
 #include <system.h>
 #include <mem.h>
@@ -168,7 +169,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
     if (exit_mode == 0) {
         del_occurence(new_index);
-        // fskprint("del occurence(%d)\n", new_index);
+        // kprintf("del occurence(%d)\n", new_index);
 
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
@@ -295,7 +296,7 @@ int mem_get_info(char get_mode, int get_arg) {
 void mem_print() {
     int index = first_part_index;
     while (MEM_PARTS[index].state) {
-        fskprint("index: %d, addr: %x, size: %d, state: %d, task: %d, next: %d\n",
+        kprintf("index: %d, addr: %x, size: %d, state: %d, task: %d, next: %d\n",
                 index,
                 MEM_PARTS[index].addr,
                 MEM_PARTS[index].size,
@@ -306,6 +307,6 @@ void mem_print() {
         index = MEM_PARTS[index].next;
     }
     for (int i = 0; i < 13; i++) {
-        fskprint("info %d: %d\n", i, mem_get_info(i, 0));
+        kprintf("info %d: %d\n", i, mem_get_info(i, 0));
     }
 }

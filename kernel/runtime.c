@@ -1,9 +1,9 @@
 #include <kernel/filesystem.h>
 #include <driver/serial.h>
-#include <gui/gnrtx.h>
 #include <kernel/task.h>
+#include <gui/gnrtx.h>
+#include <minilib.h>
 #include <system.h>
-#include <iolib.h>
 #include <type.h>
 #include <mem.h>
 
@@ -39,7 +39,7 @@ void tasked_program() {
 
     sys_warning("Memory leak detected");
 
-    fskprint("$6[auto free] %d alloc will be auto freed (total: %d bytes, pid: %d)\n",
+    kprintf("$6[auto free] %d alloc will be auto freed (total: %d bytes, pid: %d)\n",
             not_free_mem,
             mem_get_info(8, pid),
             pid
@@ -86,7 +86,7 @@ int run_ifexist(char path[], int argc, char **argv) {
 }
 
 void dily_load(char path[], int lib_id) {
-    if ((!fs_does_path_exists(path)) || fs_type_sector(fs_path_to_id(path, 0)) != 2) {
+    if ((!fs_does_path_exists(path)) || fs_get_sector_type(fs_path_to_id(path)) != 2) {
         sys_error("Library not found");
         return;
     }
@@ -98,7 +98,7 @@ void dily_load(char path[], int lib_id) {
 
     uint8_t *binary_mem = calloc(fs_get_file_size(path) * 126);
     uint32_t *file = fs_declare_read_array(path);
-    fs_read_file(path, file);
+    fs_read_file(path, (char *) file);
 
     int lib_size;
     for (lib_size = 0; file[lib_size] != (uint32_t) -1; lib_size++) {

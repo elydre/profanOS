@@ -3,8 +3,9 @@
 
 // build settings
 
-#define VERSION         "dily-10"
+#define VERSION         "dily-11"
 
+#define WATDILY_ADDR    0x199994
 #define WATFUNC_ADDR    0x199990
 #define MEM_BASE_ADDR   0x200000
 

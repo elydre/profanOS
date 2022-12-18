@@ -11,9 +11,10 @@
 #include <cpu/gdt.h>
 #include <system.h>
 #include <time.h>
-#include <type.h>
 #include <mem.h>
 
+#include <iolib.h>
+#include <type.h>
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();

@@ -1,8 +1,8 @@
 #include <kernel/filesystem.h>
 #include <kernel/ramdisk.h>
+#include <driver/ata.h>
 #include <minilib.h>
 #include <system.h>
-#include <iolib.h>
 #include <type.h>
 #include <mem.h>
 
@@ -46,18 +46,8 @@ void filesystem_init() {
     }
 }
 
-void i_print_sector(uint32_t sector) {
-    uint32_t buffer[SECTOR_SIZE];
-    ramdisk_read_sector(sector, buffer);
-    fskprint("[");
-    for (int i = 0; i < SECTOR_SIZE - 1; i++) {
-        fskprint("%x, ", buffer[i]);
-    }
-    fskprint("%x]\n", buffer[SECTOR_SIZE - 1]);
-}
-
 void i_generate_free_map() {
-    // fskprint("Generating free map... (%d sectors)\n", g_sector_count);
+    // kprintf("Generating free map... (%d sectors)\n", g_sector_count);
     for (uint32_t i = 0; i < g_sector_count; i++) {
         uint32_t buffer[SECTOR_SIZE];
         ramdisk_read_sector(i, buffer);

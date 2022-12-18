@@ -53,12 +53,12 @@ void shell_help() {
 }
 
 void shell_addr() {
-    fskprint("vesa fb: %x\n", vesa_get_framebuffer());
-    fskprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
-    fskprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
-    fskprint("mm base: %x\n", MEM_BASE_ADDR);
-    fskprint("watfunc: %x\n", WATFUNC_ADDR);
-    fskprint("rand sv: %x\n", RAND_SAVE);
+    fsprint("vesa fb: %x\n", vesa_get_framebuffer());
+    fsprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
+    fsprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
+    fsprint("mm base: %x\n", MEM_BASE_ADDR);
+    fsprint("watfunc: %x\n", WATFUNC_ADDR);
+    fsprint("rand sv: %x\n", RAND_SAVE);
 }
 
 void test_smart_switch() {
