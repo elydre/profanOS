@@ -138,7 +138,7 @@ void assemble_path(char old[], char new[], char result[]) {
     result[0] = '\0';
     str_cpy(result, old);
     if (result[str_len(result) - 1] != '/') str_append(result, '/');
-    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
+    str_cat(result, new);
 }
 
 void parse_path(char path[], string_20_t liste_path[]) {

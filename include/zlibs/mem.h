@@ -1,5 +1,5 @@
 #ifndef MEM_ID
-#define MEM_ID 1001
+#define MEM_ID 1003
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
 

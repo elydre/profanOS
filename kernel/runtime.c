@@ -2,12 +2,9 @@
 #include <kernel/snowflake.h>
 #include <driver/serial.h>
 #include <kernel/task.h>
-#include <gui/gnrtx.h>
 #include <minilib.h>
 #include <system.h>
 #include <type.h>
-
-#define SPACE 0xAA
 
 /******************************
  * binarymem is a pointer to *
