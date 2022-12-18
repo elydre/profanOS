@@ -26,7 +26,7 @@ typedef struct allocated_part_t {
  * 1: simple alloc  *
  * 2: initial block *
  * 3: mm struct     *
- * 4: bin run       * (not implemented)
+ * 4: bin run       *
  * 5: loaded lib    * (not implemented)
 *********************/
 
@@ -34,12 +34,31 @@ void mem_init();
 void mem_print();
 
 uint32_t mem_get_alloc_size(uint32_t addr);
+uint32_t mem_alloc(uint32_t size, int state);
+void mem_free_all(int task_id);
 
 void free(void *addr);
 void *malloc(uint32_t size);
 void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
-int mem_get_phys_size();
+/************************************
+ *     MEM_GET_INFO  GET_MODES     *
+ * 00: physical memory size        *
+ * 01: base address                *
+ * 02: MEM_PARTS size              *
+ * 03: MEM_PARTS addr              *
+ * 04: total alloc count           *
+ * 05: total free count            *
+ * 06: used memory size            *
+ * 07: ca count by task *get_arg*  *
+ * 08: ca size by task *get_arg*   *
+ * 09: ca count for bin_run        *
+ * 10: ca size for bin_run         *
+ * 11: ca count for loaded libs    *
+ * 12: ca size for loaded libs     *
+************************************/
+
+int mem_get_info(char get_mode, int get_arg);
 
 #endif

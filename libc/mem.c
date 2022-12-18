@@ -26,23 +26,48 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
     }
 }
 
-/*********************************
- * rip b3 (sep 2022 - dec 2022) *
-*********************************/
+/* * * * * * * * * * * * * * * * * * * *
+ *        _             _              *
+ *   ___ | | _   _   __| | _ __   ___  *
+ *  / _ \| || | | | / _` || '__| / _ | *
+ * |  __/| || |_| || (_| || |   |  __/ *
+ *  \___||_| \__, | \__,_||_|    \___| *
+ *           |___/                     *
+ *                                     *
+ *    rip b3  (sep 2022 - dec 2022)    *
+ * * * * * * * * * * * * * * * * * * * */
+
 
 allocated_part_t *MEM_PARTS;
-uint32_t mm_struct_addr;
 int first_part_index;
+uint32_t alloc_count;
+uint32_t free_count;
+uint32_t phys_size;
 int part_size;
-
-// static int alloc_count = 0;
-// static int free_count = 0;
 
 uint32_t mem_alloc(uint32_t size, int state);
 int mem_free_addr(uint32_t addr);
 
+int mem_get_phys_size() {
+    int *addr_min = (int *) 0x200000;
+    int *addr_max = (int *) 0x40000000;
+    int *addr_test;
+    while (addr_max - addr_min > 1) {
+        addr_test = addr_min + (addr_max - addr_min) / 2;
+        *addr_test = 0x1234;
+        if (*addr_test == 0x1234) addr_min = addr_test;
+        else addr_max = addr_test;
+    }
+    return (int) addr_max;
+}
+
 void mem_init() {
     first_part_index = 0;
+    alloc_count = 0;
+    free_count = 0;
+
+    phys_size = mem_get_phys_size();
+
     part_size = PARTS_COUNT;
 
     MEM_PARTS = (allocated_part_t *) (MEM_BASE_ADDR + 1);
@@ -141,7 +166,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
     MEM_PARTS[i].addr = last_addr;
     MEM_PARTS[i].size = size;
-    MEM_PARTS[i].task_id = (state == 3) ? 0 : task_get_current_pid();
+    MEM_PARTS[i].task_id = (state == 1) ? task_get_current_pid(): 0;
     MEM_PARTS[i].state = state;
 
     if (exit_mode == 0) {
@@ -151,11 +176,11 @@ uint32_t mem_alloc(uint32_t size, int state) {
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
     } else {
-        int new_index = mm_get_unused_index();
+        new_index = mm_get_unused_index();
         if (new_index == -1) return 0;
         MEM_PARTS[index].next = new_index;
     }
-    // fskprint("alloc %d bytes at %x\n", size, last_addr);
+    alloc_count++;
     return last_addr;
 }
 
@@ -168,6 +193,7 @@ int mem_free_addr(uint32_t addr) {
                 sys_error("cannot free first block");
                 return 0; // error
             } else {
+                free_count++;
                 MEM_PARTS[last_index].next = MEM_PARTS[index].next;
                 MEM_PARTS[index].state = 0;
                 return 1; // success
@@ -190,6 +216,16 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
     }
     sys_warning("block not found");
     return 0;
+}
+
+void mem_free_all(int task_id) {
+    uint32_t index = first_part_index;
+    while (MEM_PARTS[index].state) {
+        if (MEM_PARTS[index].task_id == task_id) {
+            mem_free_addr(MEM_PARTS[index].addr);
+        }
+        index = MEM_PARTS[index].next;
+    }
 }
 
 // standard functions
@@ -223,19 +259,40 @@ void *calloc(uint32_t size) {
     return (void *) addr;
 }
 
-// memory info function
+int mem_get_info(char get_mode, int get_arg) {
+    // check the header for informations about the get_mode
 
-int mem_get_phys_size() {
-    int *addr_min = (int *) 0x200000;
-    int *addr_max = (int *) 0x40000000;
-    int *addr_test;
-    while (addr_max - addr_min > 1) {
-        addr_test = addr_min + (addr_max - addr_min) / 2;
-        * addr_test = 0x1234;
-        if (*addr_test == 0x1234) addr_min = addr_test;
-        else addr_max = addr_test;
+    if (get_mode == 0) return phys_size;
+    if (get_mode == 1) return MEM_BASE_ADDR;
+    if (get_mode == 2) return sizeof(allocated_part_t) * part_size;
+    if (get_mode == 3) return (int) MEM_PARTS;
+    if (get_mode == 4) return alloc_count;
+    if (get_mode == 5) return free_count;
+
+    int index = first_part_index;
+
+    int info[7];
+    for (int i = 0; i < 7; i++) info[i] = 0;
+
+    while (MEM_PARTS[index].state) {
+        info[0] += MEM_PARTS[index].size;
+        if (MEM_PARTS[index].task_id == get_arg && MEM_PARTS[index].state > 0) {
+            info[1]++;
+            info[2] += MEM_PARTS[index].size;
+        }
+        if (MEM_PARTS[index].state == 4) { // bin_run
+            info[3]++;
+            info[4] += MEM_PARTS[index].size;
+        }
+        if (MEM_PARTS[index].state == 5) { // libs
+            info[5]++;
+            info[6] += MEM_PARTS[index].size;
+        }
+        index = MEM_PARTS[index].next;
     }
-    return (int) addr_max;
+
+    if (get_mode > 5 && get_mode < 13) return info[get_mode - 6];
+    return -1;
 }
 
 void mem_print() {
@@ -250,5 +307,8 @@ void mem_print() {
                 MEM_PARTS[index].next
         );
         index = MEM_PARTS[index].next;
+    }
+    for (int i = 0; i < 13; i++) {
+        fskprint("info %d: %d\n", i, mem_get_info(i, 0));
     }
 }
