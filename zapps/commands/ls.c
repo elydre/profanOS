@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
             if (out_types[i] == 3) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
                 fsprint("$2%s", tmp_name);
-                for (int j = 0; j < 22 - c_str_len(tmp_name); j++) c_kprint(" ");
+                for (int j = 0; j < 22 - str_len(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
                 fsprint("%d elm\n", c_fs_get_dir_size(tmp_path));
             }
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
             if (out_types[i] == 2) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
                 fsprint("$1%s", tmp_name);
-                for (int j = 0; j < 22 - c_str_len(tmp_name); j++) c_kprint(" ");
+                for (int j = 0; j < 22 - str_len(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
                 fsprint("%d oct\n", c_fs_get_file_size(tmp_path));
             }

@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <type.h>
 
 int main() {
     return 0;
@@ -9,15 +10,9 @@ int main() {
 int sys_get_setting(char name[]) {
     // read settings from /sys/settings.txt
     // return 0 if not found
-    char *settings = c_calloc(c_fs_get_file_size("/sys/settings.txt")*126);
-    uint32_t *file = c_fs_declare_read_array("/sys/settings.txt");
+    char *settings = c_fs_declare_read_array("/sys/settings.txt");
 
-    c_fs_read_file("/sys/settings.txt", file);
-
-    for (int i = 0; file[i] != (uint32_t) -1 ; i++)
-        settings[i] = (char) file[i];
-
-    c_free(file);
+    c_fs_read_file("/sys/settings.txt", (uint8_t *) settings);
 
     char line[100];
     char arg[100];

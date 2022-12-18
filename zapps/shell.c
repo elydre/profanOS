@@ -76,7 +76,7 @@ int shell_command(char *buffer) {
                 if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
                     str_cpy(current_dir, new_path);
                 else {
-                    c_fskprint("$3%s$B path not found\n", new_path);
+                    fsprint("$3%s$B path not found\n", new_path);
                     str_cpy(current_dir, old_path);
                     c_free(new_path);
                     break;
