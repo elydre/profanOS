@@ -1,20 +1,15 @@
-#include <gui/gnrtx.h>
-#include <function.h>
-#include <gui/vesa.h>
-#include <gui/vgui.h>
-#include <minilib.h>
-#include <type.h>
+/*
 
 uint32_t *last_render;
 uint32_t *current_render;
 int refresh_mode;
 
-/*    REFRESH MODES
- * 0: vgui no running
- * 1: refresh smart
- * 2: refresh smart - 1
- * 3: refresh smart - 2
- * 4: refresh full */
+//    REFRESH MODES
+// 0: vgui no running
+// 1: refresh smart
+// 2: refresh smart - 1
+// 3: refresh smart - 2
+// 4: refresh full
 
 void vgui_setup(int refresh_all) {
     // TODO: custom resolution
@@ -92,3 +87,4 @@ void vgui_clear(uint32_t color) {
         current_render[i] = color;
     }
 }
+*/

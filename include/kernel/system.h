@@ -3,7 +3,7 @@
 
 // build settings
 
-#define VERSION         "dily-14"
+#define VERSION         "dily-15"
 
 #define WATDILY_ADDR    0x199994
 #define WATFUNC_ADDR    0x199990

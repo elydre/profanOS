@@ -42,7 +42,6 @@ void task_menu() {
 }
 
 void menu_print_line(int line, int task_i, int is_selected) {
-    int gui = task_is_gui(task_i);
     char line_str[80], str_pid[10];
     int var = 0;
     for (int i = 0; i < 13; i++) line_str[i] = ' ';
@@ -54,11 +53,7 @@ void menu_print_line(int line, int task_i, int is_selected) {
     int2str(task_get_pid(task_i), str_pid);
     str_cat(line_str, str_pid);
     var = str_len(line_str);
-    for (int i = 0; i < 5 - var; i++) line_str[var + i] = ' ';
-    if (gui == 1) str_cat(line_str, "[G]");
-    else if (gui == 2) str_cat(line_str, "[S]");
-    else str_cat(line_str, "   ");
-    str_cat(line_str, "   ");
+    for (int i = 0; i < 7 - var; i++) line_str[var + i] = ' ';
     str_cat(line_str, task_get_name(task_i));
     if (is_selected) ckprint_at(line_str, 13, line, 0x0D);
     else ckprint_at(line_str, 13, line, 0x0F);

@@ -1,6 +1,5 @@
 #include <driver/serial.h>
 #include <kernel/task.h>
-#include <gui/vgui.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -59,8 +58,6 @@ void tasking_init() {
         :: "%eax");
 
     str_cpy(mainTask.name, "kernel");
-    mainTask.vgui_save = 0;
-    mainTask.gui_mode = 0;
     mainTask.isdead = 0;
     mainTask.pid = 0;
 
@@ -86,8 +83,6 @@ int task_create(void (*func)(), char *name) {
         }
     }
 
-    task.gui_mode = 0;
-    task.vgui_save = 0;
     str_cpy(task.name, name);
 
     i_new_task(&task, func, mainTask->regs.eflags, (uint32_t*) mainTask->regs.cr3, pid);
@@ -104,11 +99,6 @@ void task_switch(int target_pid) {
         return;
     }
 
-    if (tasks[0].gui_mode && vgui_get_refresh_mode()) {
-        tasks[0].vgui_save = (vgui_get_refresh_mode() == 3) ? 2 : 1;
-        vgui_exit();
-    }
-
     for (task_i = 0; task_i < nb_alive; task_i++) {
         if (tasks[task_i].pid == target_pid) {
             tasks[TASK_MAX_COUNT] = tasks[task_i];
@@ -121,10 +111,6 @@ void task_switch(int target_pid) {
             sys_error("Task not found");
             return;
         }
-    }
-
-    if (tasks[0].vgui_save && tasks[0].gui_mode) {
-        vgui_setup(tasks[0].vgui_save - 1);
     }
 
     task_asm_switch(&tasks[1].regs, &tasks[0].regs);
@@ -146,11 +132,6 @@ void task_kill(int target_pid) {
         }
     }
     sys_error("Task not found in kill");
-}
-
-void task_update_gui_mode(int mode) {
-    tasks[0].gui_mode = mode;
-    serial_debug("TASK", "update gui mode");
 }
 
 /******************
@@ -209,12 +190,4 @@ char *task_get_name(int internal_pos) {
 
 int task_get_pid(int internal_pos) {
     return tasks[internal_pos].pid;
-}
-
-int task_is_gui(int internal_pos) {
-    /* 0 -> no gui
-     * 1 -> simple gui
-     * 2 -> vgui save */
-    if (tasks[internal_pos].vgui_save) return 2;
-    return (tasks[internal_pos].gui_mode) > 1;
 }

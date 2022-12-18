@@ -76,7 +76,6 @@ int wf_get_func_addr(int func_id) {
         case 92: return (int) kb_get_scfh;
 
         // functions.h
-        case 59: return (int) pow;
         case 60: return (int) rand;
 
         // system.h
@@ -90,24 +89,10 @@ int wf_get_func_addr(int func_id) {
         case 84: return (int) task_get_alive;
         case 100: return (int) task_get_max;
 
-        // vgui.h
-        case 93: return (int) vgui_setup;
-        case 94: return (int) vgui_exit;
-        case 95: return (int) vgui_render;
-        case 96: return (int) vgui_draw_rect;
-        case 97: return (int) vgui_set_pixel;
-        case 98: return (int) vgui_get_pixel;
-        case 99: return (int) vgui_print;
-        case 82: return (int) vgui_draw_line;
-        case 83: return (int) vgui_clear;
-
         // serial.h
-        case 102: return (int) serial_debug;
         case 103: return (int) serial_print;
 
         // ramdisk.h
-        case 63: return (int) ramdisk_read_sector;
-        case 64: return (int) ramdisk_write_sector;
         case 105: return (int) ramdisk_get_size;
         case 106: return (int) ramdisk_get_used;
 
