@@ -62,4 +62,3 @@ void *calloc(uint32_t size);
 int mem_get_info(char get_mode, int get_arg);
 
 #endif
-

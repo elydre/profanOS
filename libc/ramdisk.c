@@ -185,4 +185,3 @@ uint32_t ramdisk_get_size() {
 uint32_t ramdisk_get_used() {
     return table_pos;
 }
-

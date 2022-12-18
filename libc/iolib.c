@@ -289,4 +289,3 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 void input(char out_buffer[], int size, char color) {
     input_wh(out_buffer, size, color, NULL, 0);
 }
-
