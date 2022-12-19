@@ -3,15 +3,16 @@
 
 // build settings
 
-#define VERSION         "0.9.2b"
+#define KERNEL_VERSION  "0.9.2c"
 
-#define WATFUNC_ADDR    0x199990
-#define MEM_BASE_ADDR   0x200000
+#define TASK_MAX_COUNT  20
+#define RUN_DEFAULT     "/bin/shell.bin"
 
 #define RUNTIME_STACK   0x2000
 #define TASK_ESP_ALLOC  0x2000
 
-#define TASK_MAX_COUNT  20
+#define WATFUNC_ADDR    0x199990
+#define MEM_BASE_ADDR   0x200000
 
 
 // system.c
