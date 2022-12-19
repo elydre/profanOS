@@ -1,12 +1,13 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <time.h>
 
 int main(int argc, char **argv) {
     fsprint("$4FR time:    ");
     time_t time;
     c_time_get(&time);
-    c_time_jet_lag(&time);
+    time_jet_lag(&time);
     char tmp[3];
     for (int i = 2; i >= 0; i--) {
         int_to_ascii(time.full[i], tmp);
@@ -20,9 +21,8 @@ int main(int argc, char **argv) {
         fsprint("$1%s$7/", tmp);
     }
     c_kprint_backspace();
-    fsprint("$4\nunix time:  $1%d\n", c_time_gen_unix());
-    fsprint("$4ticks:      $1%d\n", c_timer_get_tick());
-    fsprint("$4work time:  $1%ds$7/$1%ds\n", c_time_gen_unix() - c_time_get_boot() - c_timer_get_tick() / 1000, c_time_gen_unix() - c_time_get_boot());
+    fsprint("$4\nunix time:  $1%d\n", time_gen_unix());
+    fsprint("$4work time:  $1%dms\n", c_timer_get_tick());
     fsprint("$4used mem:   $1%dKo\n", c_mem_get_info(6, 0) / 1024);
     fsprint("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_info(4, 0) - c_mem_get_info(5, 0), c_mem_get_info(4, 0));
     fsprint("$4phys mem:   $1%fMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);

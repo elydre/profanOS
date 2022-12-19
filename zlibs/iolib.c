@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <string.h>
+#include <time.h>
 #include <mem.h>
 
 // we need the stdarg of the stdlib
@@ -181,7 +182,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     c_kb_reset_history();
 
     while (sc != ENTER) {
-        c_ms_sleep(2);
+        ms_sleep(2);
 
         last_sc = sc;
         sc = c_kb_get_scfh();

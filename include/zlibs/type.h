@@ -1,6 +1,17 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+typedef struct {
+    int seconds;
+    int minutes;
+    int hours;
+    int day_of_week;
+    int day_of_month;
+    int month;
+    int year;
+    int full[6];
+} time_t;
+
 #define uint32_t unsigned int
 #define uint16_t unsigned short
 #define uint8_t unsigned char

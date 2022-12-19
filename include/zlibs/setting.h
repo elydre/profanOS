@@ -3,8 +3,8 @@
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
 
-// int sys_get_setting(char name[])
+// int setting_get(char name[])
 
-#define sys_get_setting ((int (*)(char[])) get_func_addr(SETTING_ID, 2))
+#define setting_get ((int (*)(char[])) get_func_addr(SETTING_ID, 2))
 
 #endif

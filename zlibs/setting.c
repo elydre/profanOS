@@ -8,7 +8,7 @@ int main() {
     return 0;
 }
 
-int sys_get_setting(char name[]) {
+int setting_get(char name[]) {
     // read settings from /sys/settings.txt
     // return 0 if not found
     char *settings = c_fs_declare_read_array("/sys/settings.txt");

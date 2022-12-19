@@ -5,13 +5,13 @@
 #include <driver/serial.h>
 #include <kernel/task.h>
 #include <driver/ata.h>
+#include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <gui/vgui.h>
 #include <system.h>
 #include <iolib.h>
-#include <time.h>
 
 void init_watfunc() {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
@@ -48,11 +48,6 @@ int wf_get_func_addr(int func_id) {
         case 16: return (int) mem_get_info;
 
         // time.h + rtc.h + timer.h
-        case 42: return (int) time_gen_unix;
-        case 44: return (int) ms_sleep;
-        case 45: return (int) time_get_boot;
-        case 66: return (int) time_jet_lag;
-        case 71: return (int) time_calc_unix;
         case 70: return (int) time_get;
         case 72: return (int) timer_get_tick;
 
@@ -77,7 +72,6 @@ int wf_get_func_addr(int func_id) {
         // system.h
         case 62: return (int) sys_reboot;
         case 68: return (int) sys_shutdown;
-        case 69: return (int) run_binary;
         case 75: return (int) run_ifexist;
 
         // task.h

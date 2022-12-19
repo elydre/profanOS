@@ -3,6 +3,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <time.h>
 #include <mem.h>
 
 
@@ -38,7 +39,7 @@ int main(int argc, char **argv) {
         if (ascii_to_int(temps) < 0) break;
         c_clear_screen(); // TODO: redraw only the changed characters
         c_ckprint_at(str, 0, 0, 0x0F);
-        c_ms_sleep(ascii_to_int(temps) * 100);
+        ms_sleep(ascii_to_int(temps) * 100);
         str_index = -1;
         str[0] = '\0';
     }

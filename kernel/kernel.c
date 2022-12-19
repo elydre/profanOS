@@ -10,7 +10,6 @@
 #include <cpu/isr.h>
 #include <cpu/gdt.h>
 #include <system.h>
-#include <time.h>
 
 #include <iolib.h>
 #include <type.h>
@@ -38,7 +37,6 @@ void kernel_main(void *mboot_ptr) {
     kprint("snowflake init\n");
 
     rtc_init();
-    time_gen_boot();
     kprint("RTC init\n");
 
     serial_init();
@@ -57,6 +55,7 @@ void kernel_main(void *mboot_ptr) {
     dily_load("/lib/string.bin", 1001);
     dily_load("/lib/setting.bin", 1002);
     dily_load("/lib/mem.bin", 1003);
+    dily_load("/lib/time.bin", 1004);
     kprint("zlibs init\n");
 
     init_watfunc();

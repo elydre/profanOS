@@ -1,18 +1,19 @@
 #include <syscall.h>
 #include <iolib.h>
+#include <time.h>
 
 int is_prime(int n);
 
 int main(int argc, char **argv) {
     fsprint("$4Starting the performance test...\n");
 
-    int start_time = c_time_gen_unix();    
+    int start_time = time_gen_unix();    
     int n = 15 * 1000 * 1000;
     int count = 0;
     for (int i = 0; i < n; i++)
         count += is_prime(i);
 
-    int time = c_time_gen_unix() - start_time;
+    int time = time_gen_unix() - start_time;
     fsprint("$4Find $1%d $4prime numbers in $1%d $4seconds\n", count, time);
     return 0;
 }

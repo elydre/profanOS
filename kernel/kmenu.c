@@ -2,7 +2,6 @@
 #include <gui/gnrtx.h>
 #include <kernel/task.h>
 #include <system.h>
-#include <time.h>
 
 #include <minilib.h>
 

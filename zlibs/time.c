@@ -1,8 +1,5 @@
-#include <driver/rtc.h>
-#include <cpu/timer.h>
-#include <minilib.h>
+#include <syscall.h>
 #include <setting.h>
-#include <time.h>
 
 #define seconde_in_year 31536000
 #define seconde_in_leap_year 31622400
@@ -54,7 +51,7 @@ int time_calc_unix(time_t *time) {
 
 int time_gen_unix() {
     time_t time;
-    time_get(&time);
+    c_time_get(&time);
     return time_calc_unix(&time);
 }
 
@@ -95,18 +92,10 @@ void time_add(time_t *time, int seconde) {
 }
 
 void time_jet_lag(time_t *time) {
-    time_add(time, sys_get_setting("jetlag") * 3600);
+    time_add(time, setting_get("jetlag") * 3600);
 }
 
 void ms_sleep(uint32_t ms) {
-    uint32_t start_tick = timer_get_tick();
-    while (timer_get_tick() < start_tick + ms);
-}
-
-void time_gen_boot() {
-    boot_time = time_gen_unix();
-}
-
-int time_get_boot() {
-    return boot_time;
+    uint32_t start_tick = c_timer_get_tick();
+    while (c_timer_get_tick() < start_tick + ms);
 }

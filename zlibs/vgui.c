@@ -88,3 +88,7 @@ void vgui_clear(uint32_t color) {
     }
 }
 */
+
+int main() {
+    return 0;
+}

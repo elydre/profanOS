@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <iolib.h>
+#include <time.h>
 #include <mem.h>
 
 void printl(int **plateau, int curseur_x, int curseur_y);
@@ -171,5 +172,5 @@ void next_step(int **plateau) {
     for (int i = 0; i < size_x; i++) free(plateau_temp[i]);
     free(plateau_temp);
 
-    c_ms_sleep(wait);
+    ms_sleep(wait);
 }

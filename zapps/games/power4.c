@@ -15,6 +15,7 @@ ___________________________________
 #include <syscall.h>
 #include <string.h>
 #include <iolib.h>
+#include <time.h>
 #include <mem.h>
 
 
@@ -145,7 +146,7 @@ void chute(int colonne, int ** grille) {
             grille[colonne][l + 1] = grille[colonne][l];
             grille[colonne][l] = 0;
             print_grille(grille);
-            c_ms_sleep(100);
+            ms_sleep(100);
         }
     }
 }

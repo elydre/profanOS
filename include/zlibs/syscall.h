@@ -72,31 +72,6 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
-typedef struct {
-    int seconds;
-    int minutes;
-    int hours;
-    int day_of_week;
-    int day_of_month;
-    int month;
-    int year;
-    int full[6];
-} time_t;
-
-typedef struct sprite_t {
-    char *path;
-    char *data;
-    int x;
-    int y;
-    int size_x;
-    int size_y;
-} sprite_t;
-
-#ifndef NULL
-    #define NULL ((void *) 0)
-#endif
-
-#define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 #define c_fs_get_used_sectors ((uint32_t (*)(void)) hi_func_addr(0))
 #define c_fs_get_element_name ((void (*)(uint32_t, char *)) hi_func_addr(1))
@@ -115,9 +90,6 @@ typedef struct sprite_t {
 #define c_mem_alloc ((uint32_t (*)(uint32_t, int)) hi_func_addr(14))
 #define c_mem_free_addr ((int (*)(uint32_t)) hi_func_addr(15))
 #define c_mem_get_info ((int (*)(int, int)) hi_func_addr(16))
-#define c_time_gen_unix ((int (*)(void)) hi_func_addr(42))
-#define c_ms_sleep ((void (*)(int)) hi_func_addr(44))
-#define c_time_get_boot ((int (*)(void)) hi_func_addr(45))
 #define c_clear_screen ((void (*)(void)) hi_func_addr(46))
 #define c_ckprint_at ((void (*)(char *, int, int, char)) hi_func_addr(49))
 #define c_kprint_backspace ((void (*)(void)) hi_func_addr(51))
@@ -130,21 +102,21 @@ typedef struct sprite_t {
 #define c_rand ((int (*)(void)) hi_func_addr(60))
 #define c_sys_reboot ((void (*)(void)) hi_func_addr(62))
 #define c_fs_get_sector_count ((uint32_t (*)(void)) hi_func_addr(65))
-#define c_time_jet_lag ((void (*)(time_t *)) hi_func_addr(66))
 #define c_task_switch ((void (*)(int)) hi_func_addr(67))
 #define c_sys_shutdown ((void (*)(void)) hi_func_addr(68))
+
 #define c_time_get ((void (*)(time_t *)) hi_func_addr(70))
-#define c_time_calc_unix ((int (*)(time_t *)) hi_func_addr(71))
-#define c_timer_get_tick ((int (*)(void)) hi_func_addr(72))
+#define c_timer_get_tick ((uint32_t (*)(void)) hi_func_addr(72))
+
 #define c_run_ifexist ((int (*)(char *, int, char **)) hi_func_addr(75))
 #define c_cursor_blink ((void (*)(int)) hi_func_addr(76))
 #define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(81))
-#define c_vgui_draw_line ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))
-#define c_vgui_clear ((void (*)(unsigned)) hi_func_addr(83))
 #define c_task_get_alive ((int (*)(void)) hi_func_addr(84))
 #define c_kb_reset_history ((void (*)(void)) hi_func_addr(91))
 #define c_kb_get_scfh ((int (*)(void)) hi_func_addr(92))
 
+#define c_vgui_draw_line ((void (*)(int, int, int, int, unsigned)) hi_func_addr(82))
+#define c_vgui_clear ((void (*)(unsigned)) hi_func_addr(83))
 #define c_vgui_setup ((void (*)(int)) hi_func_addr(93))
 #define c_vgui_exit ((void (*)(void)) hi_func_addr(94))
 #define c_vgui_render ((void (*)(void)) hi_func_addr(95))

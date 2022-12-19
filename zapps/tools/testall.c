@@ -9,7 +9,6 @@ int main(int argc, char **argv) {
     if (argc == 86) return 42;
 
     print_status("random", c_rand() != c_rand() || c_rand() != c_rand());
-    print_status("rtc unix time", c_time_gen_unix() > c_time_get_boot());
     int old_active_alloc = c_mem_get_info(4, 0) - c_mem_get_info(5, 0);
     int *ptr = (int *) malloc(0x1000);
     print_status("memory alloc", ptr != 0);
