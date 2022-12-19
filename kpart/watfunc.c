@@ -9,7 +9,6 @@
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <gui/vgui.h>
-#include <function.h>
 #include <system.h>
 #include <iolib.h>
 #include <time.h>
@@ -74,9 +73,6 @@ int wf_get_func_addr(int func_id) {
         case 58: return (int) kb_get_scancode;
         case 91: return (int) kb_reset_history;
         case 92: return (int) kb_get_scfh;
-
-        // functions.h
-        case 60: return (int) rand;
 
         // system.h
         case 62: return (int) sys_reboot;

@@ -2,7 +2,6 @@
 #include <gui/gnrtx.h>
 #include <kernel/task.h>
 #include <cpu/ports.h>
-#include <function.h>
 #include <cpu/isr.h>
 
 
@@ -54,7 +53,7 @@ void kb_reset_history() {
 }
 
 static void keyboard_callback(registers_t *regs) {
-    UNUSED(regs);
+    (void) regs;
 
     for (int i = 0; i < HISTORY_SIZE - 1; i++)
         sc_history[i + 1] = sc_history[i];

@@ -6,7 +6,6 @@
 #include <kernel/task.h>
 #include <driver/rtc.h>
 #include <gui/gnrtx.h>
-#include <function.h>
 #include <gui/vesa.h>
 #include <cpu/isr.h>
 #include <cpu/gdt.h>
@@ -40,7 +39,6 @@ void kernel_main(void *mboot_ptr) {
 
     rtc_init();
     time_gen_boot();
-    init_rand();
     kprint("RTC init\n");
 
     serial_init();

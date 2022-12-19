@@ -2,7 +2,6 @@
 #include <kernel/ramdisk.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
-#include <function.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -56,7 +55,6 @@ void shell_addr() {
     fsprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
     fsprint("mm base: %x\n", MEM_BASE_ADDR);
     fsprint("watfunc: %x\n", WATFUNC_ADDR);
-    fsprint("rand sv: %x\n", RAND_SAVE);
 }
 
 int shell_command(char command[]) {

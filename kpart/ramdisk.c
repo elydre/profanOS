@@ -1,12 +1,10 @@
 #include <driver/serial.h>
 #include <driver/ata.h>
 #include <gui/gnrtx.h>
-#include <function.h>
 #include <minilib.h>
 #include <system.h>
 
 #define UINT32_PER_SECTOR 128
-#define RAMDISK_SECTOR    2048     // 1Mo
 #define RAMDISK_SIZE RAMDISK_SECTOR * UINT32_PER_SECTOR * 4
 
 #define I_FILE_H 0x1

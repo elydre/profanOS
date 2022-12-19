@@ -1,6 +1,9 @@
 #ifndef MINILIB_H
 #define MINILIB_H
 
+#define UNUSED(x) (void)(x)
+#define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
+
 void str_cat(char s1[], char s2[]);
 int str_len(char s[]);
 void str_cpy(char s1[], char s2[]);

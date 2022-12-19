@@ -3,9 +3,10 @@
 
 // build settings
 
-#define KERNEL_VERSION  "dily-16"
+#define KERNEL_VERSION  "dily-17"
 
 #define TASK_MAX_COUNT  20
+#define RAMDISK_SECTOR  2048
 #define RUN_DEFAULT     "/bin/shell.bin"
 
 #define RUN_STACK_BIN   0x2000
