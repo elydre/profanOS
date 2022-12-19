@@ -1,5 +1,4 @@
 #include <kernel/multiboot.h>
-#include <driver/serial.h>
 
 /* a part of the multiboot data can be 0 if the
  * kernel is not loaded by a multiboot loader */
