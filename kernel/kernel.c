@@ -65,12 +65,10 @@ void kernel_main(void *mboot_ptr) {
     kprint("watfunc init\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
-    fsprint("$C~~ version $4%s $C~~\n\n", VERSION);
+    fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
 
-    // launch of the shell.bin
-    char *argv[1];
-    argv[0] = "/bin/shell.bin";
-    run_ifexist(argv[0], 1, argv);
+    // launch of the default program
+    run_ifexist(RUN_DEFAULT, 0, NULL);
 
     task_menu();
 

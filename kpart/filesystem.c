@@ -8,6 +8,7 @@
 
 #define MAX_SIZE_NAME  32
 #define SECTOR_SIZE    128
+#define FAST_SCAN      1 // use dichotomy to generate free map
 
 #define I_FILE_H 0x1
 #define I_FILE   0x10
@@ -46,15 +47,33 @@ void filesystem_init() {
 }
 
 void i_generate_free_map() {
-    // kprintf("Generating free map... (%d sectors)\n", g_sector_count);
-    for (uint32_t i = 0; i < g_sector_count; i++) {
-        uint32_t buffer[SECTOR_SIZE];
-        ramdisk_read_sector(i, buffer);
-        if (buffer[0] & I_USED) {
-            free_map[i] = 1;
-        } else {
-            free_map[i] = 0;
+    uint32_t buffer[SECTOR_SIZE];
+    if (!FAST_SCAN) {    
+        for (uint32_t i = 0; i < g_sector_count; i++) {
+            ramdisk_read_sector(i, buffer);
+            if (buffer[0] & I_USED) {
+                free_map[i] = 1;
+            } else {
+                free_map[i] = 0;
+            }
         }
+        return;
+    }
+    // use dichotomy to find the last used sector
+    uint32_t min = 0;
+    uint32_t max = g_sector_count;
+    uint32_t mid = 0;
+    while (min < max) {
+        mid = (min + max) / 2;
+        ramdisk_read_sector(mid, buffer);
+        if (buffer[0] & I_USED) {
+            min = mid + 1;
+        } else {
+            max = mid;
+        }
+    }
+    for (uint32_t i = 0; i < min; i++) {
+        free_map[i] = 1;
     }
 }
 

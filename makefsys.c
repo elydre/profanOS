@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define SECTOR_COUNT   (1024 * 16)
+#define SECTOR_COUNT   (1024 * 128)
 #define MAX_SIZE_NAME  32
 #define SECTOR_SIZE    128
 

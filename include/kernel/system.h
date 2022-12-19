@@ -3,17 +3,18 @@
 
 // build settings
 
-#define VERSION         "dily-15"
+#define KERNEL_VERSION  "dily-16"
 
-#define WATDILY_ADDR    0x199994
-#define WATFUNC_ADDR    0x199990
-#define MEM_BASE_ADDR   0x200000
+#define TASK_MAX_COUNT  20
+#define RUN_DEFAULT     "/bin/shell.bin"
 
 #define RUN_STACK_BIN   0x2000
 #define RUN_STACK_LIB   0x2000
 #define TASK_ESP_ALLOC  0x2000
 
-#define TASK_MAX_COUNT  20
+#define WATFUNC_ADDR    0x199990
+#define WATDILY_ADDR    0x199994
+#define MEM_BASE_ADDR   0x200000
 
 
 // system.c
