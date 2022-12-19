@@ -51,15 +51,11 @@ void kernel_main(void *mboot_ptr) {
     filesystem_init();
     kprint("filesys init\n");
 
-    dily_load("/lib/iolib.bin", 1000);
-    dily_load("/lib/string.bin", 1001);
-    dily_load("/lib/setting.bin", 1002);
-    dily_load("/lib/mem.bin", 1003);
-    dily_load("/lib/time.bin", 1004);
-    kprint("zlibs init\n");
-
     init_watfunc();
     kprint("watfunc init\n");
+
+    dily_init();
+    kprint("zlibs init\n");
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
