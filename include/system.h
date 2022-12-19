@@ -3,7 +3,7 @@
 
 // build settings
 
-#define VERSION         "0.9.2"
+#define VERSION         "0.9.2b"
 
 #define WATFUNC_ADDR    0x199990
 #define MEM_BASE_ADDR   0x200000
