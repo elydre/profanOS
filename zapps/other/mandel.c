@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <vgui.h>
 
 #define MAX_ITER 64
 #define LARGEUR 320
@@ -10,7 +11,7 @@
 #define YMAX 1.2
 
 int main(int argc, char **argv) {
-    c_vgui_setup(0);
+    vgui_setup(0);
 
     while (1) {
         long double cx, cy, xn, yn, tmp_x, tmp_y;
@@ -25,7 +26,7 @@ int main(int argc, char **argv) {
                 n = 0;
                 while ((xn * xn + yn * yn) < 4 && n < MAX_ITER) {
                     if (c_kb_get_scancode() == 1) {
-                        c_vgui_exit();
+                        vgui_exit();
                         return 0;
                     }
                     tmp_x = xn;
@@ -34,10 +35,10 @@ int main(int argc, char **argv) {
                     yn = 2 * tmp_x * tmp_y + cy;
                     n++;
                 }
-                c_vgui_set_pixel(x, y, n*100);
+                vgui_set_pixel(x, y, n*100);
             }
         }
-        c_vgui_print(5, 5, "press escape to exit", 0xFFFFFF);
-        c_vgui_render();
+        vgui_print(5, 5, "press escape to exit", 0xFFFFFF);
+        vgui_render();
     }
 }

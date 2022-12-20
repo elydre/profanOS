@@ -26,6 +26,10 @@ run:
 irun:
 	python3 maketool.py irun
 
+# run iso in qemu kvm
+kirun:
+	python3 maketool.py kirun
+
 # clean out/ directory
 clean:
 	rm -Rf out/

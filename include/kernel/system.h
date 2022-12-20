@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "dily-20"
+#define KERNEL_VERSION  "dily-21"
 
 #define TASK_MAX_COUNT  20
 #define RAMDISK_SECTOR  2048

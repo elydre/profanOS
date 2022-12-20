@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <string.h>
+#include <vgui.h>
 #include <mem.h>
 
 
@@ -43,7 +44,7 @@ int show_fps(int time);
 
 
 int main(int argc, char** argv) {
-    c_vgui_setup(0);
+    vgui_setup(0);
 
     Shape_t shape = cube(120);
     int time;
@@ -55,11 +56,12 @@ int main(int argc, char** argv) {
         draw(&new_shape);
         delete_shape(&new_shape);
         time = show_fps(time);
-        c_vgui_render();
+        
+    vgui_render();
     }
 
     delete_shape(&shape);
-    c_vgui_exit();
+    vgui_exit();
 
     return 0;
 }
@@ -180,7 +182,7 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
 }
 
 void draw(Shape_t* shape) {
-    c_vgui_clear(0);
+    vgui_clear(0);
     for (int i=0; i<shape->PointsCount; i++) {
         Point2_t p = project(shape->Points[i]);
         shape->ScreenPoints[i] = p;
@@ -189,7 +191,8 @@ void draw(Shape_t* shape) {
         Line_t line = shape->Lines[i];
         Point2_t p1 = shape->ScreenPoints[line.i1];
         Point2_t p2 = shape->ScreenPoints[line.i2];
-        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
+        
+        vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
     }
 }
 
@@ -198,6 +201,6 @@ int show_fps(int time) {
     int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
     int_to_ascii(fps, fps_str);
-    c_vgui_print(0, 0, fps_str, 0xFFFFFF);
+    vgui_print(0, 0, fps_str, 0xFFFFFF);
     return new_time;
 }

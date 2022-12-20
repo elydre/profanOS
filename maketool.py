@@ -22,8 +22,12 @@ HDD_MAP = {
 CC = "gcc"
 CPPC = "g++"
 
-CFLAGS = "-g -ffreestanding -Wall -Wextra -fno-exceptions -m32 -fno-pie -I include/kernel -I include/zlibs"
-ZAPPS_FLAGS = "-g -ffreestanding -Wall -Wno-unused -Wextra -fno-exceptions -m32 -I include/zlibs"
+CFLAGS = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions"
+KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
+ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -I include/zlibs"
+
+QEMU_SPL = "qemu-system-i386"
+QEMU_KVM = "kvm"
 
 # SETTINGS
 
@@ -107,7 +111,7 @@ def elf_image():
     def f_temp(file, type):
         global total
         if type == "c":
-            print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {CFLAGS}")
+            print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {KERN_FLAGS}")
         elif type == "asm":
             print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
         total -= 1
@@ -129,7 +133,7 @@ def elf_image():
 def build_app_lib():
     def build_file(name, fname):
         global total
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} {ZAPPS_FLAGS} -c {name} -o {fname}.o")
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
         print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
         # print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
@@ -187,6 +191,7 @@ def make_help():
         ("make fullclean", "delete all build files"),
         ("make run",    "run the profanOS.elf in qemu"),
         ("make irun",   "run the profanOS.iso in qemu"),
+        ("make kirun",  "run the profanOS.iso with kvm"),
     )
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
@@ -231,13 +236,14 @@ def gen_disk(force=False, with_src=False):
 
     print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
-def qemu_run(iso_run = False):
+def qemu_run(iso_run = False, kvm = False):
     elf_image()
     if iso_run: make_iso()
     gen_disk(False)
+    qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
     cprint(COLOR_INFO, "starting qemu...")
-    if iso_run: print_and_exec("qemu-system-i386 -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
-    else: print_and_exec("qemu-system-i386 -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
+    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
+    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
 
 assos = {
     "elf_image": elf_image,
@@ -248,6 +254,7 @@ assos = {
     "iso": lambda: make_iso(True),
     "run": lambda: qemu_run(False),
     "irun": lambda: qemu_run(True),
+    "kirun": lambda: qemu_run(True, True),
 }
 
 def main():
