@@ -13,6 +13,8 @@
 #include <system.h>
 #include <iolib.h>
 
+int wf_get_func_addr(int func_id);
+
 void init_watfunc() {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
     *(int *)(WATDILY_ADDR) = (int) dily_get_func;
@@ -56,12 +58,13 @@ int wf_get_func_addr(int func_id) {
         case 49: return (int) ckprint_at;
         case 51: return (int) kprint_backspace;
         case 52: return (int) set_cursor_offset;
-        case 53: return (int) get_cursor_offset;
+        case 53: return (int) get_cursor_offset; // check this
         case 54: return (int) get_offset;
         case 55: return (int) gt_get_max_rows;
         case 56: return (int) gt_get_max_cols;
         case 76: return (int) cursor_blink;
         case 81: return (int) vesa_set_pixel;
+        case 17: return (int) font_get;
 
         // keyboard.h
         case 57: return (int) kb_scancode_to_char;

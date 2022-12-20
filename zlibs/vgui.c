@@ -1,4 +1,5 @@
-/*
+#include <syscall.h>
+#include <mem.h>
 
 uint32_t *last_render;
 uint32_t *current_render;
@@ -10,6 +11,11 @@ int refresh_mode;
 // 2: refresh smart - 1
 // 3: refresh smart - 2
 // 4: refresh full
+
+
+int main() {
+    return 0;
+}
 
 void vgui_setup(int refresh_all) {
     // TODO: custom resolution
@@ -27,7 +33,7 @@ void vgui_exit() {
 void vgui_render() {
     for (int i = 0; i < 320 * 200; i++) {
         if (last_render[i] != current_render[i] || refresh_mode > 1) {
-            vesa_set_pixel(i % 320, i / 320, current_render[i]);
+            c_vesa_set_pixel(i % 320, i / 320, current_render[i]);
             last_render[i] = current_render[i];
         }
     }
@@ -57,7 +63,7 @@ void vgui_draw_rect(int x, int y, int width, int height, uint32_t color) {
 void vgui_print(int x, int y, char msg[], uint32_t color) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = font_get_8x16() + msg[i] * 16;
+        glyph = c_font_get(0) + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
@@ -65,6 +71,10 @@ void vgui_print(int x, int y, char msg[], uint32_t color) {
             }
         }
     }
+}
+
+int abs(int x) {
+    return (x < 0) ? -x : x;
 }
 
 void vgui_draw_line(int x1, int y1, int x2, int y2, uint32_t color) {
@@ -86,9 +96,4 @@ void vgui_clear(uint32_t color) {
     for (int i = 0; i < 320 * 200; i++) {
         current_render[i] = color;
     }
-}
-*/
-
-int main() {
-    return 0;
 }

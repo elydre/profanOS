@@ -25,6 +25,8 @@
 #define kprint_rgb(message, color, bg_color) rgb_print_at(message, -1, -1, color, bg_color)
 #define kprint(message) ckprint(message, c_white)
 
+#define FONT_8X16 0
+
 uint32_t gt_convert_color(char c);
 int gt_get_max_cols();
 int gt_get_max_rows();
@@ -46,6 +48,6 @@ int get_offset_col(int offset);
 void cursor_blink(int off);
 
 // font.c
-unsigned char *font_get_8x16();
+uint8_t *font_get(int font_id);
 
 #endif

@@ -20,11 +20,28 @@ lib_t libs_at_boot[] = {
     {1003, "/lib/mem.bin"},
     {1004, "/lib/time.bin"},
     {1005, "/lib/demo.bin"},
+    {1006, "/lib/vgui.bin"},
 };
+
+
+int dily_does_loaded(int lib_id) {
+    for (int i = 0; i < lib_count; i++) {
+        if (lib_functions[i][0] != (uint32_t) lib_id) 
+            continue;
+
+        return 1;
+    }
+    return 0;
+}
 
 void dily_load(char path[], int lib_id) {
     if ((!fs_does_path_exists(path)) || fs_get_sector_type(fs_path_to_id(path)) != 2) {
         sys_error("Lib file not found");
+        return;
+    }
+
+    if (dily_does_loaded(lib_id)) {
+        sys_error("Lib already loaded");
         return;
     }
 
@@ -85,7 +102,7 @@ void dily_unload(int lib_id) {
 }
 
 void dily_init() {
-    for (int i = 0; i < sizeof(libs_at_boot) / sizeof(lib_t); i++) {
+    for (int i = 0; i < (int) (sizeof(libs_at_boot) / sizeof(lib_t)); i++) {
         dily_load(libs_at_boot[i].path, libs_at_boot[i].id);
     }
 }

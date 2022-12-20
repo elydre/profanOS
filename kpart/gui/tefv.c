@@ -2,7 +2,7 @@
 #include <gui/vesa.h>
 #include <minilib.h>
 
-#define FONT_TABLE font_get_8x16()
+#define FONT_TABLE font_get(FONT_8X16)
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
