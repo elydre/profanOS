@@ -1,4 +1,6 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <string.h>
+#include <time.h>
 
 #define SC_H 72
 #define SC_B 80
@@ -83,19 +85,19 @@ int main(int argc, char **argv) {
 
         if (lost > 3) {
             c_ckprint_at(":( you lost", 0, 0, 0x0f);
-            c_sleep(5);
+            ms_sleep(5000);
             c_clear_screen();
             break;
         }
 
         if (to_wait > 10) to_wait = 40 - (iter / 50);
 
-        c_int_to_ascii(iter / 10, point);
-        c_str_append(point, 'p');
-        c_str_append(point, 't');
-        c_str_append(point, 's');
+        int_to_ascii(iter / 10, point);
+        str_append(point, 'p');
+        str_append(point, 't');
+        str_append(point, 's');
         c_ckprint_at(point, 0, Y_MAX, 0x0f);
-        c_ms_sleep(to_wait);
+        ms_sleep(to_wait);
         iter++;
     }
     return 0;

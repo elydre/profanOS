@@ -1,20 +1,18 @@
-#include <libc/filesystem.h>
-#include <libc/multiboot.h>
+#include <kernel/filesystem.h>
+#include <kernel/multiboot.h>
+#include <kernel/snowflake.h>
+#include <kernel/ramdisk.h>
 #include <driver/serial.h>
-#include <libc/ramdisk.h>
+#include <kernel/task.h>
 #include <driver/rtc.h>
 #include <gui/gnrtx.h>
-#include <libc/task.h>
-#include <function.h>
 #include <gui/vesa.h>
 #include <cpu/isr.h>
 #include <cpu/gdt.h>
 #include <system.h>
-#include <iolib.h>
-#include <time.h>
-#include <type.h>
-#include <mem.h>
 
+#include <iolib.h>
+#include <type.h>
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();
@@ -39,8 +37,6 @@ void kernel_main(void *mboot_ptr) {
     kprint("snowflake init\n");
 
     rtc_init();
-    time_gen_boot();
-    init_rand();
     kprint("RTC init\n");
 
     serial_init();
@@ -58,8 +54,11 @@ void kernel_main(void *mboot_ptr) {
     init_watfunc();
     kprint("watfunc init\n");
 
+    dily_init();
+    kprint("zlibs init\n");
+
     rainbow_print("\n\nWelcome to profanOS!\n");
-    fskprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
+    fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
 
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);

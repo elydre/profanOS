@@ -1,4 +1,6 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <string.h>
+#include <vgui.h>
 
 #define MAP_SIZE 10
 #define PI 3.14159
@@ -55,7 +57,7 @@ int main(int argc, char **argv) {
     tick_count[0] = c_timer_get_tick();
     tick_count[3] = 0;
 
-    c_vgui_setup(0);
+    vgui_setup(0);
     c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
     while (c_kb_get_scancode() != 1) {
@@ -68,31 +70,31 @@ int main(int argc, char **argv) {
             bottom = (int) (half_height + center);
 
             for (int j = 0; j < height; j++) {
-                if (j < top) c_vgui_set_pixel(i, j, CEILING_COLOR);
-                else if (j > bottom) c_vgui_set_pixel(i, j, FLOOR_COLOR);
-                else c_vgui_set_pixel(i, j, convert_color(color));
+                if (j < top) vgui_set_pixel(i, j, CEILING_COLOR);
+                else if (j > bottom) vgui_set_pixel(i, j, FLOOR_COLOR);
+                else vgui_set_pixel(i, j, convert_color(color));
             }
         }
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
+                vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
                 if (i == (int) x && j == (int) y)
-                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
+                    vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    c_vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
+                    vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
             }
         }
 
-        c_vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 0x880000);
-        c_vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
+        vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 0x880000);
+        vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
 
-        c_int_to_ascii(1000 / (tick_count[1] + 1), convert);
-        c_vgui_print(0, 8, convert, 0x0000AA);
+        int_to_ascii(1000 / (tick_count[1] + 1), convert);
+        vgui_print(0, 8, convert, 0x0000AA);
         
 
         tick_count[2] = c_timer_get_tick();
-        c_vgui_render();
+        vgui_render();
         tick_count[3] = c_timer_get_tick() - tick_count[2];
 
         key = c_kb_get_scfh();
@@ -141,7 +143,7 @@ int main(int argc, char **argv) {
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
     }
-    c_vgui_exit();
+    vgui_exit();
 
     return 0;
 }

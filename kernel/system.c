@@ -1,47 +1,45 @@
-#include <libc/filesystem.h>
 #include <driver/serial.h>
 #include <cpu/ports.h>
-#include <string.h>
-#include <system.h>
-#include <iolib.h>
-#include <mem.h>
+#include <gui/gnrtx.h>
+#include <minilib.h>
 
-void sys_reboot() {
-    uint8_t good = 0x02;
-    while (good & 0x02)
-        good = port_byte_in(0x64);
-    port_byte_out(0x64, 0xFE);
-    asm volatile("hlt");
-}
-
-void sys_shutdown() {
-    port_word_out(0x604, 0x2000);   // qemu
-    port_word_out(0xB004, 0x2000);  // bochs
-    port_word_out(0x4004, 0x3400);  // virtualbox
-    sys_stop();                     // halt if above didn't work
-}
+/****************************
+ * panic and reboot system *
+****************************/
 
 void sys_stop() {
-    fskprint("$4profanOS has been stopped $2:$4(");
+    ckprint("profanOS has been stopped ", 0x0D);
+    ckprint(":", 0x0B);
+    ckprint("(\n", 0x0D);
+
     serial_debug("SYSTEM", "profanOS has been stopped");
     asm volatile("cli");
     asm volatile("hlt");
 }
 
 int sys_warning(char msg[]) {
-    fskprint("$DWARNING: $5%s\n", msg);
+    ckprint("WARNING: ", 0x06);
+    ckprint(msg, 0x0E);
+    kprint("\n");
+
     serial_debug("WARNING", msg);
     return 0;
 }
 
 int sys_error(char msg[]) {
-    fskprint("$BERROR: $3%s\n", msg);
+    ckprint("ERROR: ", 0x04);
+    ckprint(msg, 0x0C);
+    kprint("\n");
+
     serial_debug("ERROR", msg);
     return 0;
 }
 
 void sys_fatal(char msg[]) {
-    fskprint("$CFATAL: $4%s\n", msg);
+    ckprint("FATAL: ", 0x05);
+    ckprint(msg, 0x0D);
+    kprint("\n");
+
     serial_debug("FATAL", msg);
     sys_stop();
 }
@@ -50,7 +48,13 @@ void sys_interrupt(int code) {
     /* do not use this function, is
     * reserved for cpu interrupts*/
 
+    ckprint("CPU INTERRUPT ", 0x05);
+
     char msg[30];
+    int2str(code, msg);
+    ckprint(msg, 0x0D);
+    ckprint(": ", 0x05);
+
     char *interrupts[] = {
         "Division by zero",
         "Debug",
@@ -73,52 +77,24 @@ void sys_interrupt(int code) {
         "Machine check",
     };
 
-    if (code < 19) str_cpy(msg, interrupts[code]);
-    else str_cpy(msg, "Reserved");
-    fskprint("$CCPU INTERRUPT $4%d$C: $4%s\n", code, msg);
+    if (code < 19) ckprint(interrupts[code], 0x0D);
+    else ckprint("Reserved", 0x0D);
+    kprint("\n");
     serial_debug("CPU INTERRUPT", msg);
     sys_stop();
 }
 
-int sys_get_setting(char name[]) {
-    // read settings from /sys/settings.txt
-    // return 0 if not found
-    char *settings = fs_declare_read_array("/sys/settings.txt");
+void sys_reboot() {
+    uint8_t good = 0x02;
+    while (good & 0x02)
+        good = port_byte_in(0x64);
+    port_byte_out(0x64, 0xFE);
+    asm volatile("hlt");
+}
 
-    fs_read_file("/sys/settings.txt", settings);
-
-    char line[100];
-    char arg[100];
-    int line_i = 0;
-    int part = 0;
-    for (int i = 0; i < str_len(settings); i++) {
-        if (part == 0) {
-            if (settings[i] == '=') {
-                part = 1;
-                line[line_i] = '\0';
-                line_i = 0;
-            } else {
-                line[line_i] = settings[i];
-                line_i++;
-            }
-            continue;
-        }
-        if (settings[i] == '\n') {
-            part = 0;
-            arg[line_i] = '\0';
-            line_i = 0;
-            if (str_cmp(line, name))
-                continue;
-            free(settings);
-            if (arg[str_len(arg)-1] == '\r')
-                arg[str_len(arg)-1] = '\0';
-            return ascii_to_int(arg);
-        } else {
-            arg[line_i] = settings[i];
-            line_i++;
-        }
-    }
-    free(settings);
-    sys_warning("Setting not found");
-    return 0;
+void sys_shutdown() {
+    port_word_out(0x604, 0x2000);   // qemu
+    port_word_out(0xB004, 0x2000);  // bochs
+    port_word_out(0x4004, 0x3400);  // virtualbox
+    sys_stop();                     // halt if above didn't work
 }

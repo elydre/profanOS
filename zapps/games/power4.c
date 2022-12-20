@@ -12,7 +12,12 @@ ___________________________________
  - Licence : GNU GPL v3
 */
 
-#include "syscall.h"
+#include <syscall.h>
+#include <string.h>
+#include <iolib.h>
+#include <time.h>
+#include <mem.h>
+
 
 char get_piont(int num);
 int get_user_choix(int ** grille);
@@ -25,9 +30,9 @@ int main(int argc, char **argv) {
     int colonne;
     int tour = 0;
 
-    int **grille = (int **) c_calloc(8 * sizeof(int *));
+    int **grille = (int **) calloc(8 * sizeof(int *));
     for (int i = 0; i < 8; i++) {
-        grille[i] = (int *) c_calloc(8 * sizeof(int));
+        grille[i] = (int *) calloc(8 * sizeof(int));
     }
 
     c_clear_screen();
@@ -49,16 +54,16 @@ int main(int argc, char **argv) {
         tour = !tour;
     }
 
-    c_fskprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
+    fsprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     free_grille(grille);
     c_cursor_blink(0);
     return 0;
 }
 
 int IA_cp_gagnant(int joueur, int ** grille) {
-    int ** grille_test = (int **) c_calloc(8 * sizeof(int *));
+    int ** grille_test = (int **) calloc(8 * sizeof(int *));
     for (int i = 0; i < 8; i++) {
-        grille_test[i] = (int *) c_calloc(8 * sizeof(int));
+        grille_test[i] = (int *) calloc(8 * sizeof(int));
     }
     for (int c = 0; c < 8; c++) {
         for (int l = 0; l < 8; l++) {
@@ -111,11 +116,11 @@ void print_grille(int ** grille) {
 
     for (int l = 0; l < 8; l++) {
         for (int c = 0; c < 8; c++) {
-            c_fskprint((char *) " | %c", get_piont(grille[c][l]));
+            fsprint((char *) " | %c", get_piont(grille[c][l]));
         }
-        c_fskprint((char *) " |\n");
+        fsprint((char *) " |\n");
     }
-    c_fskprint((char *) "\n");
+    fsprint((char *) "\n");
 }
 
 int get_user_choix(int ** grille) {
@@ -126,9 +131,9 @@ int get_user_choix(int ** grille) {
     while (1) {
         c_ckprint_at((char *) "ENTER YOUR CHOICE -> ", 0, 11, 0x0F);
         c_cursor_blink(0);
-        c_input(buffer, 3, 0x0F);
+        input(buffer, 3, 0x0F);
         c_cursor_blink(1);
-        inp = c_ascii_to_int(buffer) - 1;
+        inp = ascii_to_int(buffer) - 1;
 
         if (inp == -1 && buffer[0]) return -1;
         if (inp < 8 && inp >= 0 && grille[inp][0] == 0) return inp;
@@ -141,7 +146,7 @@ void chute(int colonne, int ** grille) {
             grille[colonne][l + 1] = grille[colonne][l];
             grille[colonne][l] = 0;
             print_grille(grille);
-            c_ms_sleep(100);
+            ms_sleep(100);
         }
     }
 }
@@ -174,7 +179,7 @@ int is_gagnant(int ** tab) {
 
 void free_grille(int ** grille) {
     for (int i = 0; i < 8; i++) {
-        c_free(grille[i]);
+        free(grille[i]);
     }
-    c_free(grille);
+    free(grille);
 }

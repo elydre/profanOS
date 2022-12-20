@@ -1,6 +1,10 @@
 #include <syscall.h>
+#include <string.h>
+#include <vgui.h>
+#include <mem.h>
 
-#define PI 3.14159265358979323846264338325079028873
+
+#define PI 3.141592
 #define MATH_LOOP 100
 #define FOCAL_DISTANCE 100
 #define CUBE_COLOR 0xFFFFFF
@@ -40,7 +44,7 @@ int show_fps(int time);
 
 
 int main(int argc, char** argv) {
-    c_vgui_setup(0);
+    vgui_setup(0);
 
     Shape_t shape = cube(120);
     int time;
@@ -52,11 +56,12 @@ int main(int argc, char** argv) {
         draw(&new_shape);
         delete_shape(&new_shape);
         time = show_fps(time);
-        c_vgui_render();
+        
+    vgui_render();
     }
 
     delete_shape(&shape);
-    c_vgui_exit();
+    vgui_exit();
 
     return 0;
 }
@@ -71,8 +76,8 @@ Shape_t cube(int size) {
     Shape_t shape;
     shape.PointsCount = 8;
     shape.LinesCount = 18;
-    shape.Points = c_malloc(sizeof(Point3_t) * shape.PointsCount);
-    shape.Lines = c_malloc(sizeof(Line_t) * shape.LinesCount);
+    shape.Points = malloc(sizeof(Point3_t) * shape.PointsCount);
+    shape.Lines = malloc(sizeof(Line_t) * shape.LinesCount);
 
     shape.Points[0] = (Point3_t){ size,  size,  size};
     shape.Points[1] = (Point3_t){ size, -size,  size};
@@ -104,14 +109,14 @@ Shape_t cube(int size) {
     shape.Lines[16] = (Line_t){2, 7, TRIN_COLOR};
     shape.Lines[17] = (Line_t){3, 4, TRIN_COLOR};
 
-    shape.ScreenPoints = c_malloc(sizeof(Point2_t) * shape.PointsCount);
+    shape.ScreenPoints = malloc(sizeof(Point2_t) * shape.PointsCount);
     return shape;
 }
 
 void delete_shape(Shape_t* shape) {
-    c_free(shape->Points);
-    c_free(shape->Lines);
-    c_free(shape->ScreenPoints);
+    free(shape->Points);
+    free(shape->Lines);
+    free(shape->ScreenPoints);
 }
 
 double cos(int angle) {
@@ -151,9 +156,9 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
     Shape_t new_shape;
     new_shape.PointsCount = shape->PointsCount;
     new_shape.LinesCount = shape->LinesCount;
-    new_shape.Points = c_malloc(sizeof(Point3_t) * new_shape.PointsCount);
-    new_shape.Lines = c_malloc(sizeof(Line_t) * new_shape.LinesCount);
-    new_shape.ScreenPoints = c_malloc(sizeof(Point2_t) * new_shape.PointsCount);
+    new_shape.Points = malloc(sizeof(Point3_t) * new_shape.PointsCount);
+    new_shape.Lines = malloc(sizeof(Line_t) * new_shape.LinesCount);
+    new_shape.ScreenPoints = malloc(sizeof(Point2_t) * new_shape.PointsCount);
     int x1, y1, z1;
     for (int i = 0; i < new_shape.PointsCount; i++) {
         x1 = shape->Points[i].x;
@@ -177,7 +182,7 @@ Shape_t rotate(Shape_t* shape, int x, int y, int z) {
 }
 
 void draw(Shape_t* shape) {
-    c_vgui_clear(0);
+    vgui_clear(0);
     for (int i=0; i<shape->PointsCount; i++) {
         Point2_t p = project(shape->Points[i]);
         shape->ScreenPoints[i] = p;
@@ -186,7 +191,8 @@ void draw(Shape_t* shape) {
         Line_t line = shape->Lines[i];
         Point2_t p1 = shape->ScreenPoints[line.i1];
         Point2_t p2 = shape->ScreenPoints[line.i2];
-        c_vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
+        
+        vgui_draw_line(p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
     }
 }
 
@@ -194,7 +200,7 @@ int show_fps(int time) {
     int new_time = c_timer_get_tick();
     int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
-    c_int_to_ascii(fps, fps_str);
-    c_vgui_print(0, 0, fps_str, 0xFFFFFF);
+    int_to_ascii(fps, fps_str);
+    vgui_print(0, 0, fps_str, 0xFFFFFF);
     return new_time;
 }

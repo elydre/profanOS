@@ -1,17 +1,18 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <string.h>
+#include <iolib.h>
+#include <mem.h>
 
 void print_status(char test_name[], int status);
 
 int main(int argc, char **argv) {
     if (argc == 86) return 42;
 
-    print_status("math pow()", c_pow(3, 7) == 2187 && c_pow(10, 3) == 1000);
     print_status("random", c_rand() != c_rand() || c_rand() != c_rand());
-    print_status("rtc unix time", c_time_gen_unix() > c_time_get_boot());
     int old_active_alloc = c_mem_get_info(4, 0) - c_mem_get_info(5, 0);
-    int *ptr = (int *) c_malloc(0x1000);
+    int *ptr = (int *) malloc(0x1000);
     print_status("memory alloc", ptr != 0);
-    c_free(ptr);
+    free(ptr);
     print_status("memory free", old_active_alloc == c_mem_get_info(4, 0) - c_mem_get_info(5, 0));
     print_status("file system", c_fs_get_file_size("/bin/tools/testall.bin") > 0);
     print_status("timer tick", c_timer_get_tick() > 0);
@@ -21,8 +22,8 @@ int main(int argc, char **argv) {
 
 void print_status(char test_name[], int status) {
     char spaces[20]; int i;
-    for (i = 0; i < 20 - c_str_len(test_name); i++)
+    for (i = 0; i < 20 - str_len(test_name); i++)
         spaces[i] = ' ';
     spaces[i] = '\0';
-    c_fskprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");
+    fsprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");
 }

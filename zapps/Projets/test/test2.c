@@ -1,5 +1,5 @@
-#include "syscall.h"
+#include <iolib.h>
 
 void print2() {
-    c_fskprint("test 2\n");
+    fsprint("test 2\n");
 }

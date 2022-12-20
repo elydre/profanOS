@@ -1,18 +1,23 @@
 // requires /zada/star_wars.txt, the ascii art of the star wars
 
-#include "syscall.h"
+#include <syscall.h>
+#include <string.h>
+#include <iolib.h>
+#include <time.h>
+#include <mem.h>
+
 
 int main(int argc, char **argv) {
 
     char path[] = "/zada/star_wars.txt";
 
-    c_fskprint("allocating memory for the file...\n");
+    fsprint("allocating memory for the file...\n");
     uint8_t *data = c_fs_declare_read_array(path);
-    char *str = c_malloc(0x1000);
+    char *str = malloc(0x1000);
 
     str[0] = '\0';
 
-    c_fskprint("loading file: %s into memory...\n", path);
+    fsprint("loading file: %s into memory...\n", path);
     c_fs_read_file(path, data);
 
     c_cursor_blink(1);
@@ -31,17 +36,17 @@ int main(int argc, char **argv) {
         for (j = 0; str[j] > 40; j++) temps[j] = str[j];
         temps[j] = '\0';
         str[str_index] = '\0';
-        if (c_ascii_to_int(temps) < 0) break;
+        if (ascii_to_int(temps) < 0) break;
         c_clear_screen(); // TODO: redraw only the changed characters
         c_ckprint_at(str, 0, 0, 0x0F);
-        c_ms_sleep(c_ascii_to_int(temps) * 100);
+        ms_sleep(ascii_to_int(temps) * 100);
         str_index = -1;
         str[0] = '\0';
     }
 
     c_clear_screen();
-    c_free(data);
-    c_free(str);
+    free(data);
+    free(str);
     c_cursor_blink(0);
     return 0;
 }

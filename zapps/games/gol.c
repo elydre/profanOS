@@ -1,4 +1,7 @@
-#include "syscall.h"
+#include <syscall.h>
+#include <iolib.h>
+#include <time.h>
+#include <mem.h>
 
 void printl(int **plateau, int curseur_x, int curseur_y);
 void next_step(int **plateau);
@@ -13,9 +16,9 @@ int main(int argc, char **argv) {
     c_clear_screen();
 
     // init du plateau
-    int **plateau = c_calloc(size_x * sizeof(int *));
+    int **plateau = calloc(size_x * sizeof(int *));
     for (int i = 0; i < size_x; i++)
-        plateau[i] = c_calloc(size_y * sizeof(int));
+        plateau[i] = calloc(size_y * sizeof(int));
 
     plateau[2][6] = 1;
     plateau[3][6] = 1;
@@ -40,15 +43,15 @@ int main(int argc, char **argv) {
             c_ckprint_at("Commandes :", 0, size_x+1, 0x0F);
             c_ckprint_at("ECHAP : quitter", 0, size_x+2, 0x0F);
             c_ckprint_at("E     : mode edition\n", 0, size_x+3, 0x0F);
-            c_fskprint("P/M   : ms_sleep(%d); ", wait);
+            fsprint("P/M   : ms_sleep(%d); ", wait);
         };
         next_step(plateau);
         printl(plateau, -1, -1);
     }
 
     // fin
-    for (int i = 0; i < size_x; i++) c_free(plateau[i]);
-    c_free(plateau);
+    for (int i = 0; i < size_x; i++) free(plateau[i]);
+    free(plateau);
     c_cursor_blink(0);
     c_clear_screen();
     
@@ -89,7 +92,7 @@ void edition_state(int **plateau) {
 
 void printl(int **plateau, int curseur_x, int curseur_y) {
 
-    char *ligne = c_calloc((size_y+size_y-1)*sizeof(char));
+    char *ligne = calloc((size_y+size_y-1)*sizeof(char));
     int offset;
     for (int i = 0; i < size_x; i++) {
         offset = 0;
@@ -122,7 +125,7 @@ void printl(int **plateau, int curseur_x, int curseur_y) {
             c_ckprint_at(ligne, 0, i, 0x0F);
         }
     }
-    c_free(ligne);
+    free(ligne);
 }
 
 int get_value(int i, int j, int **plateau, int i2, int j2) {
@@ -154,9 +157,9 @@ int next_value(int valeur, int i, int j, int **plateau) {
 void next_step(int **plateau) {
 
     // plateau temp
-    int **plateau_temp = c_calloc(size_x * sizeof(int *));
+    int **plateau_temp = calloc(size_x * sizeof(int *));
     for (int i = 0; i < size_x; i++)
-        plateau_temp[i] = c_calloc(size_y * sizeof(int));
+        plateau_temp[i] = calloc(size_y * sizeof(int));
 
     for (int i = 0; i < size_x; i++)
         for (int j = 0; j < size_y; j++)
@@ -166,8 +169,8 @@ void next_step(int **plateau) {
         for (int j = 0; j < size_y; j++)
             plateau[i][j] = plateau_temp[i][j];
     
-    for (int i = 0; i < size_x; i++) c_free(plateau_temp[i]);
-    c_free(plateau_temp);
+    for (int i = 0; i < size_x; i++) free(plateau_temp[i]);
+    free(plateau_temp);
 
-    c_ms_sleep(wait);
+    ms_sleep(wait);
 }
