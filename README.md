@@ -22,8 +22,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 python3-pip grub-common xorriso grub-pc-bin mtools
-pip3 install pillow
+sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 grub-common xorriso grub-pc-bin mtools
 ```
 
 ### Compile & Run
