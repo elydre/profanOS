@@ -218,7 +218,7 @@ def gen_disk(force=False, with_src=False):
 
     if with_src:
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
-        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [INCLUDE_DIR]:
+        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + INCLUDE_DIR:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
 
     try:
