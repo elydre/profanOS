@@ -31,12 +31,6 @@ jobs:
         cp profanOS.iso profanOS-$VERSION.iso
         cp profanOS.elf profanOS-kernel.elf
 
-  push:
-    needs: build
-    runs-on: ubuntu-20.04
-
-    steps:
-
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
@@ -60,12 +54,6 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'new build'
-
-  release:
-    needs: build
-    runs-on: ubuntu-20.04
-
-    steps:
 
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
