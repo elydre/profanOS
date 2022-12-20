@@ -84,6 +84,19 @@ long int a64l(const char *string) {
     return (long int) result;
 }
 
+void abort() {
+    int pid = 0; // kernel pid for now
+    c_mem_free_all(c_task_get_current_pid()); // free all memory
+    c_task_kill_task_switch(pid); // kill the current task and go to kernel
+}
+
+int abs(int j) {
+	return (j >= 0) ? j : -j;
+}
+
+void atexit(void (*func)()) {
+    c_task_add_exit_func(func); // TODO : create c_task_add_exit_func
+}
 
 // INTERNAL FUNCS, DO NOT MOVE AROUND
 

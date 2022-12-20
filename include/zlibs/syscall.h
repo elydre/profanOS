@@ -127,4 +127,9 @@
 
 #define c_rand ((int (*)(void)) hi_func_addr(60)) // TODO: in zlib
 
+#define c_mem_free_all ((void (*)(int)) hi_func_addr(43))
+#define c_task_get_current_pid ((int (*)(void)) hi_func_addr(44))
+#define c_task_kill_task_switch ((void (*)(int)) hi_func_addr(45))
+#define c_task_get_next_pid ((int (*)(void)) hi_func_addr(46))
+
 #endif

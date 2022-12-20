@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <i_iolib.h>
 
+#define TEST_ABORT 0
+
 void print_state(int is_fine, char* name);
 
 int main(int argc, char **argv) {
@@ -45,6 +47,19 @@ int main(int argc, char **argv) {
     if (a64l("z1") != 0xff) {is_fine = 0; fsprint("9 is not okay !\n");}
     if (a64l("1") != 0x3) {is_fine = 0; fsprint("10 is not okay !\n");}
     print_state(is_fine, "a64l");
+
+    // test of abort
+    #if TEST_ABORT
+    abort();
+    fsprint("This line should not be printed or else abort isnt working !\n");
+    #endif
+    fsprint("$3abort$7: $3NOT OK (cant be tested)\n");
+
+    // test of abs
+    is_fine = 1;
+    if (abs(10) != 10) is_fine = 0;
+    if (abs(-10) != 10) is_fine = 0;
+    print_state(is_fine, "abs");
 
     return 0;
 }

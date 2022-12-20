@@ -47,6 +47,7 @@ int wf_get_func_addr(int func_id) {
         case 15: return (int) mem_alloc;
         case 16: return (int) mem_free_addr;
         case 17: return (int) mem_get_info;
+        case 43: return (int) mem_free_all; // not mem.h, but related to snowflake
 
         // time.h + rtc.h + timer.h
         case 18: return (int) time_get;
@@ -79,6 +80,9 @@ int wf_get_func_addr(int func_id) {
         case 37: return (int) task_switch;
         case 38: return (int) task_get_alive;
         case 39: return (int) task_get_max;
+        case 44: return (int) task_get_current_pid;
+        case 45: return (int) task_kill_task_switch;
+        case 46: return (int) task_get_next_pid;
 
         // serial.h
         case 40: return (int) serial_print;

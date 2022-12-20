@@ -12,6 +12,8 @@ void free(void *mem);
 void *malloc(uint32_t size);
 void *realloc(void *ptr, uint32_t size);
 long int a64l(const char *str);
+void abort(void);
+int abs(int j);
 */
 
 #define calloc(nmemb, lsize) ((void *(*)(uint32_t, uint32_t)) get_func_addr(STDLIB_ID, 3))(nmemb, lsize)
@@ -19,5 +21,7 @@ long int a64l(const char *str);
 #define malloc(size) ((void *(*)(uint32_t)) get_func_addr(STDLIB_ID, 5))(size)
 #define realloc(ptr, size) ((void *(*)(void *, uint32_t)) get_func_addr(STDLIB_ID, 6))(ptr, size)
 #define a64l(str) ((long int (*)(const char *)) get_func_addr(STDLIB_ID, 7))(str)
+#define abort() ((void (*)(void)) get_func_addr(STDLIB_ID, 8))()
+#define abs(j) ((int (*)(int)) get_func_addr(STDLIB_ID, 9))(j)
 
 #endif
