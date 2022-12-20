@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <iolib.h>
 
 void init_lib();
 
@@ -9,4 +10,8 @@ int main() {
 
 void init_lib() {
     c_kprint("hello for lib init!\n");
+}
+
+void demo_func(int a) {
+    fsprint("hello for lib demo!, a = %d\n", a);
 }
