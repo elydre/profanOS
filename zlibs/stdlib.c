@@ -60,7 +60,7 @@ static const char a64l_table[TABLE_SIZE] = {
 };
 
 
-long int a64l (const char *string) {
+long int a64l(const char *string) {
     const char *ptr = string;
     unsigned long int result = 0ul;
     const char *end = ptr + 6;
