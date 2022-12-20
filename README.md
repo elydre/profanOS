@@ -57,29 +57,6 @@ info    - show time, task & page    udisk   - show used disk space
 ls      - list the current dir
 ```
 
-### Smart print color
-
-| keys | light colors | keys | dark color   |
-|------|--------------|------|--------------|
-| `$0` | blue         | `$8` | dark blue    |
-| `$1` | green        | `$9` | dark green   |
-| `$2` | cyan         | `$A` | dark cyan    |
-| `$3` | red          | `$B` | dark red     |
-| `$4` | magenta      | `$C` | dark magenta |
-| `$5` | yellow       | `$D` | dark yellow  |
-| `$6` | grey         | `$E` | dark grey    |
-| `$7` | white        | `$F` | black        |
-
-### Formated print
-
-| keys | description |
-|------|-------------|
-| `%c` | char        |
-| `%d` | int         |
-| `%f` | double      |
-| `%s` | string      |
-| `%x` | hex         |
-
 ## Known major bugs
 
 | bug name  | exisiting since | description | fix idea |
