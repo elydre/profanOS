@@ -1,10 +1,10 @@
 // requires /zada/star_wars.txt, the ascii art of the star wars
 
 #include <syscall.h>
-#include <string.h>
-#include <iolib.h>
-#include <time.h>
-#include <mem.h>
+#include <i_string.h>
+#include <i_iolib.h>
+#include <i_time.h>
+#include <i_mem.h>
 
 
 int main(int argc, char **argv) {

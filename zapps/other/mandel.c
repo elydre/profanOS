@@ -1,5 +1,5 @@
 #include <syscall.h>
-#include <vgui.h>
+#include <i_vgui.h>
 
 #define MAX_ITER 64
 #define LARGEUR 320

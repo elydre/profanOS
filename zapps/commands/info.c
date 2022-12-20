@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <string.h>
-#include <iolib.h>
-#include <time.h>
+#include <i_string.h>
+#include <i_iolib.h>
+#include <i_time.h>
 
 int main(int argc, char **argv) {
     fsprint("$4FR time:    ");

@@ -1,5 +1,5 @@
 #include <syscall.h>
-#include <iolib.h>
+#include <i_iolib.h>
 
 int main(int argc, char **argv) {
     fsprint("$4have %d arguments\n", argc);

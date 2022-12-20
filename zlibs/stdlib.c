@@ -12,7 +12,7 @@ int main() {
 }
 
 void init_func() {
-    c_kprint("Init of the stdlib !");
+    c_kprint("Init of the stdlib !\n");
 }
 
 void *calloc(uint32_t nmemb, uint32_t lsize) {

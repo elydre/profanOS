@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <iolib.h>
-#include <time.h>
-#include <mem.h>
+#include <i_iolib.h>
+#include <i_time.h>
+#include <i_mem.h>
 
 void printl(int **plateau, int curseur_x, int curseur_y);
 void next_step(int **plateau);

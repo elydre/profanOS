@@ -1,6 +1,6 @@
 #include <syscall.h>
-#include <string.h>
-#include <time.h>
+#include <i_string.h>
+#include <i_time.h>
 
 #define SC_H 72
 #define SC_B 80

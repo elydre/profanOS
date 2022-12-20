@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <string.h>
-#include <iolib.h>
-#include <mem.h>
+#include <i_string.h>
+#include <i_iolib.h>
+#include <i_mem.h>
 
 void print_status(char test_name[], int status);
 

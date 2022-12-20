@@ -1,6 +1,6 @@
 #include <syscall.h>
-#include <iolib.h>
-#include <mem.h>
+#include <i_iolib.h>
+#include <i_mem.h>
 
 int main(int argc, char **argv) {
 

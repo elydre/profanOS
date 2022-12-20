@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <string.h>
-#include <vgui.h>
-#include <mem.h>
+#include <i_string.h>
+#include <i_vgui.h>
+#include <i_mem.h>
 
 
 #define PI 3.141592

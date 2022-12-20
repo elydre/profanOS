@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <string.h>
-#include <iolib.h>
-#include <mem.h>
+#include <i_string.h>
+#include <i_iolib.h>
+#include <i_mem.h>
 
 void afficher(int **plateau, int n);
 void solve(int n, int from_rod, int to_rod, int aux_rod);

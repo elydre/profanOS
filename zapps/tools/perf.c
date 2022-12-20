@@ -1,6 +1,6 @@
 #include <syscall.h>
-#include <iolib.h>
-#include <time.h>
+#include <i_iolib.h>
+#include <i_time.h>
 
 int is_prime(int n);
 
