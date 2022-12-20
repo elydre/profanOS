@@ -4,14 +4,11 @@
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
 #include <kernel/task.h>
-#include <driver/ata.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
-#include <gui/vgui.h>
 #include <system.h>
-#include <iolib.h>
 
 int wf_get_func_addr(int func_id);
 
