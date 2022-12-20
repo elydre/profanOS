@@ -17,7 +17,6 @@
 #define WATDILY_ADDR    0x199994
 #define MEM_BASE_ADDR   0x200000
 
-
 // system.c
 void sys_reboot();
 void sys_shutdown();

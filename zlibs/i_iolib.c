@@ -1,7 +1,8 @@
 #include <syscall.h>
-#include <string.h>
-#include <time.h>
-#include <mem.h>
+#include <i_string.h>
+#include <i_time.h>
+#include <i_mem.h>
+
 
 // we need the stdarg of the stdlib
 #include <stdarg.h>
@@ -74,7 +75,7 @@ char sprint_function(char message[], char default_color) {
 }
 
 /***************************
- * PRINT PUBLIC FUNCTIONS *
+ * PRINT PUBLIC FUNCTIONS  *
 ***************************/
 
 void msprint(int nb_args, ...) {

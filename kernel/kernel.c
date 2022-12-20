@@ -11,7 +11,7 @@
 #include <cpu/gdt.h>
 #include <system.h>
 
-#include <iolib.h>
+#include <i_iolib.h>
 #include <type.h>
 
 void kernel_main(void *mboot_ptr) {

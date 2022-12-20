@@ -14,13 +14,14 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1000, "/lib/iolib.bin"},
-    {1001, "/lib/string.bin"},
-    {1002, "/lib/setting.bin"},
-    {1003, "/lib/mem.bin"},
-    {1004, "/lib/time.bin"},
-    {1005, "/lib/demo.bin"},
-    {1006, "/lib/vgui.bin"},
+    {1000, "/lib/i_iolib.bin"},
+    {1001, "/lib/i_string.bin"},
+    {1002, "/lib/i_setting.bin"},
+    {1003, "/lib/i_mem.bin"},
+    {1004, "/lib/i_time.bin"},
+    {1005, "/lib/i_demo.bin"},
+    {1006, "/lib/i_vgui.bin"},
+    {1007, "/lib/stdlib.bin"},
 };
 
 

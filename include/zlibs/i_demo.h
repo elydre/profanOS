@@ -9,6 +9,6 @@ void init_lib();
 void demo_func();
 */
 
-#define demo_func ((void (*)(int)) get_func_addr(DEMO_ID, 3))
+#define demo_func(a) ((void (*)(int)) get_func_addr(DEMO_ID, 3))(a)
 
 #endif

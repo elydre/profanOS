@@ -11,7 +11,6 @@
 #include <gui/vesa.h>
 #include <gui/vgui.h>
 #include <system.h>
-#include <iolib.h>
 
 int wf_get_func_addr(int func_id);
 
