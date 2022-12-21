@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.9.3"
+#define KERNEL_VERSION  "0.9.5"
 
 #define TASK_MAX_COUNT  20
 #define RAMDISK_SECTOR  2048

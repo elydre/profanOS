@@ -36,6 +36,9 @@ void kernel_main(void *mboot_ptr) {
     mem_init();
     kprint("snowflake init\n");
 
+    tef_init();
+    kprint("tef init\n");
+
     rtc_init();
     kprint("RTC init\n");
 
