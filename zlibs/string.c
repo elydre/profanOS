@@ -2,6 +2,7 @@
 #include <i_iolib.h>
 #include <i_string.h>
 #include <type.h>
+#include <stdlib.h>
 
 void init_func();
 
@@ -127,7 +128,7 @@ int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
     return r;
 }
 
-void *memcpy(uint8_t *source, uint8_t *dest, size_t nbytes) {
+void *memcpy(void *source, void *dest, size_t nbytes) {
     for (unsigned int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
     return dest;
 }
@@ -411,6 +412,7 @@ Wchar *strncpy(Wchar * __restrict s1, register const Wchar * __restrict s2,
     return s1;
 }
 
+size_t strnlen(const Wchar *s, size_t max);
 char *strndup(register const char *s1, size_t n) {
     register char *s;
 
@@ -491,6 +493,7 @@ Wchar *strtok(Wchar * __restrict s1, const Wchar * __restrict s2) {
 Wchar *strtok_r(Wchar * __restrict s1, const Wchar * __restrict s2,
                  Wchar ** __restrict next_start) {
     fsprint("Wstrtok_r not implemented yet, WHY DO YOU USE IT ?\n");
+    return NULL;
 }
 
 int strverscmp(const char *s1, const char *s2) {
