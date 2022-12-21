@@ -61,6 +61,14 @@ int main(int argc, char **argv) {
     if (abs(-10) != 10) is_fine = 0;
     print_state(is_fine, "abs");
 
+    // test of atof
+    is_fine = 1;
+    if (atof("10.0") != 10.0) is_fine = 0;
+    if (atof("-10.0") != -10.0) is_fine = 0;
+    fsprint("atof: %f\n", atof("10.0"));
+    fsprint("atof: %f\n", atof("-10.0"));
+    print_state(is_fine, "atof");
+
     return 0;
 }
 

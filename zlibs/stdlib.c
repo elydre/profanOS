@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <i_iolib.h>
 
 void init_func();
 
@@ -95,7 +96,55 @@ int abs(int j) {
 }
 
 void atexit(void (*func)()) {
-    c_task_add_exit_func(func); // TODO : create c_task_add_exit_func
+    fsprint("atexit not implemented yet, WHY DO YOU USE IT ?\n");
+    // TODO : create c_task_add_exit_func
+    // c_task_add_exit_func(func); 
+}
+
+double atof(const char *s) {
+    fsprint("atof not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0.0;
+    // TODO : implement atof
+    // This function stolen from either Rolf Neugebauer or Andrew Tolmach. 
+    // Probably Rolf.
+
+    // double a = 0.0;
+    // int e = 0;
+    // int c;
+    // while ((c = *s++) != '\0' && (c >= '0' && c <= '9')) {
+    //     a = a*10.0 + (c - '0');
+    // }
+    // if (c == '.') {
+    //     while ((c = *s++) != '\0' && (c >= '0' && c <= '9')) {
+    //         a = a*10.0 + (c - '0');
+    //         e = e-1;
+    //     }
+    // }
+    // if (c == 'e' || c == 'E') {
+    //     int sign = 1;
+    //     int i = 0;
+    //     c = *s++;
+    //     if (c == '+')
+    //         c = *s++;
+    //     else if (c == '-') {
+    //         c = *s++;
+    //         sign = -1;
+    //     }
+    //     while ((c >= '0' && c <= '9')) {
+    //         i = i*10 + (c - '0');
+    //         c = *s++;
+    //     }
+    //     e += i*sign;
+    // }
+    // while (e > 0) {
+    //     a *= 10.0;
+    //     e--;
+    // }
+    // while (e < 0) {
+    //     a *= 0.1;
+    //     e++;
+    // }
+    // return a;
 }
 
 // INTERNAL FUNCS, DO NOT MOVE AROUND
