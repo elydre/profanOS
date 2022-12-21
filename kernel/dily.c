@@ -22,6 +22,7 @@ lib_t libs_at_boot[] = {
     {1005, "/lib/i_demo.bin"},
     {1006, "/lib/i_vgui.bin"},
     {1007, "/lib/stdlib.bin"},
+    {1008, "/lib/string.bin"},
 };
 
 

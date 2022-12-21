@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
     // test of calloc
     is_fine = 1;
     int *x = calloc(1, sizeof(int));
+    if (*x != 0) is_fine = 0;
     *x = 10;
     if (*x != 10) is_fine = 0;
     free(x);

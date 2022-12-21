@@ -1,10 +1,9 @@
 #include <syscall.h>
 #include <i_iolib.h>
+#include <string.h>
 
 void init_func();
 
-void mem_copy(uint8_t *source, uint8_t *dest, int nbytes);
-void mem_set(uint8_t *dest, uint8_t val, uint32_t len);
 void mem_move(uint8_t *source, uint8_t *dest, int nbytes);
 
 int main() {
@@ -20,14 +19,14 @@ void *calloc(uint32_t nmemb, uint32_t lsize) {
     uint32_t size = lsize * nmemb;
     int addr = c_mem_alloc(size, 1);
     if (addr == 0) return NULL;
-    mem_set((uint8_t *) addr, 0, size);
+    memset((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
 
 void free(void *mem) {
     int size = c_mem_get_alloc_size((uint32_t) mem);
     if (size == 0) return;
-    mem_set((uint8_t *) mem, 0, size);
+    memset((uint8_t *) mem, 0, size);
     c_mem_free_addr((int) mem);
 }
 
@@ -41,7 +40,7 @@ void *realloc(void *mem, uint32_t new_size) {
     uint32_t addr = (uint32_t) mem;
     uint32_t new_addr = c_mem_alloc(new_size, 1);
     if (new_addr == 0) return NULL;
-    mem_copy((uint8_t *) addr, (uint8_t *) new_addr, new_size);
+    memcpy((uint8_t *) addr, (uint8_t *) new_addr, new_size);
     c_mem_free_addr(addr);
     return (void *) new_addr;
 }
@@ -224,11 +223,6 @@ char *getenv(const char *var) {
 
 int getpt(void) {
     fsprint("getpt not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-}
-
-int grantpt(int fd) {
-    fsprint("grantpt not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -547,15 +541,6 @@ long long int strtol_l(const char* str, char** end, int base, locale_t loc) {
     return 0;
 }
 
-double strtod(const char* str, char** end) {
-    fsprint("strtod not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-}
-
-long double strtod_l(const char* str, char** end, locale_t loc) {
-    fsprint("strtod_l not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-}
 
 long long strtoll(const char* str, char** end, int base) {
     fsprint("strtoll not implemented yet, WHY DO YOU USE IT ?\n");
@@ -680,14 +665,10 @@ int wctomb(char *s, wchar_t wchar) {
 
 // INTERNAL FUNCS, DO NOT MOVE AROUND
 
-void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
-    for (int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
-}
-
-void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
-    uint8_t *temp = (uint8_t *)dest;
-    for ( ; len != 0; len--) *temp++ = val;
-}
+// void memset(uint8_t *dest, uint8_t val, uint32_t len) {
+//     uint8_t *temp = (uint8_t *)dest;
+//     for ( ; len != 0; len--) *temp++ = val;
+// }
 
 void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
     if (source < dest) {
