@@ -2,6 +2,8 @@
 #include <i_iolib.h>
 
 #define TEST_ABORT 0
+#define TEST_ATOF 0
+#define TEST_ATEXIT 0
 
 void print_state(int is_fine, char* name);
 
@@ -53,7 +55,7 @@ int main(int argc, char **argv) {
     abort();
     fsprint("This line should not be printed or else abort isnt working !\n");
     #endif
-    fsprint("$3abort$7: $3NOT OK (cant be tested)\n");
+    fsprint("$1abort$7: $1NOT OK (cant be tested)\n");
 
     // test of abs
     is_fine = 1;
@@ -61,13 +63,26 @@ int main(int argc, char **argv) {
     if (abs(-10) != 10) is_fine = 0;
     print_state(is_fine, "abs");
 
+    // test of atexit
+    #if TEST_ATEXIT
+    is_fine = 1;
+    if (atexit(0) != 0) is_fine = 0;
+    print_state(is_fine, "atexit");
+    #else
+    fsprint("$1atexit$7: $1NOT OK (not implemented)\n");
+    #endif
+
     // test of atof
+    #if TEST_ATOF
     is_fine = 1;
     if (atof("10.0") != 10.0) is_fine = 0;
     if (atof("-10.0") != -10.0) is_fine = 0;
     fsprint("atof: %f\n", atof("10.0"));
     fsprint("atof: %f\n", atof("-10.0"));
     print_state(is_fine, "atof");
+    #else
+    fsprint("$1atof$7: $1NOT OK (not implemented)\n");
+    #endif
 
     return 0;
 }
