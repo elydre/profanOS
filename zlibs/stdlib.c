@@ -96,7 +96,7 @@ int abs(int j) {
 }
 
 void atexit(void (*func)()) {
-    fsprint("atexit not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("atexit2 not implemented yet, WHY DO YOU USE IT ?\n");
     // TODO : create c_task_add_exit_func
     // c_task_add_exit_func(func); 
 }
