@@ -129,7 +129,7 @@ int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
 }
 
 void *memcpy(void *source, void *dest, size_t nbytes) {
-    for (unsigned int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
+    for (unsigned int i = 0; i < nbytes; i++) *((char *) dest + i) = *((char *)source + i);
     return dest;
 }
 
