@@ -100,7 +100,6 @@ struct random_data {
 
 typedef void *locale_t; // PLACEHOLDER, //TODO : implement locale_t
 
-
 #define Wvoid void
 #define Wchar char
 typedef unsigned char __string_uchar_t;

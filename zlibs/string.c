@@ -129,7 +129,11 @@ int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
 }
 
 void *memcpy(void *source, void *dest, size_t nbytes) {
-    for (unsigned int i = 0; i < nbytes; i++) *((char *) dest + i) = *((char *)source + i);
+    char *src = (char *) source;
+    char *dst = (char *) dest;
+    for (unsigned int i = 0; i < nbytes; i++) {
+        dst[i] = src[i];
+    }
     return dest;
 }
 
@@ -414,20 +418,11 @@ Wchar *strncpy(Wchar * __restrict s1, register const Wchar * __restrict s2,
 
 size_t strnlen(const Wchar *s, size_t max);
 char *strndup(register const char *s1, size_t n) {
-    register char *s;
-
-    n = strnlen(s1,n);            /* Avoid problems if s1 not nul-terminated. */
-
-    if ((s = malloc(n + 1)) != NULL) {
-        memcpy(s, s1, n);
-        s[n] = 0;
-    }
-
-    return s;
+    fsprint("strndup not implemented yet, WHY DO YOU USE IT ?\n");
+    return NULL;
 }
 
-size_t strnlen(const Wchar *s, size_t max)
-{
+size_t strnlen(const Wchar *s, size_t max) {
     register const Wchar *p = s;
 
     while (max && *p) {

@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include <i_iolib.h>
+#include <stdlib.h>
+#include <../include/zlibs>
 
 #define TEST_ABORT 0
 #define TEST_ATOF 0
@@ -84,6 +85,17 @@ int main(int argc, char **argv) {
     #else
     fsprint("$1atof$7: $1NOT OK (not implemented)\n");
     #endif
+
+    fsprint("Testing stdlib.h: $1OK$7\n");
+    fsprint("Testing string.h\n");
+
+    // test of basename
+    is_fine = 1;
+    if (strcmp(basename("/"), "/") != 0) is_fine = 0;
+    if (strcmp(basename("/a"), "a") != 0) is_fine = 0;
+    if (strcmp(basename("/a/"), "a") != 0) is_fine = 0;
+    if (strcmp(basename("/a/b"), "b") != 0) is_fine = 0;
+    print_state(is_fine, "basename");
 
     return 0;
 }
