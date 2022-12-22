@@ -284,24 +284,30 @@ Wchar *strchrnul(register const Wchar *s, Wint c) {
     fsprint("Wstrchrnul not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
-
+size_t strlen(const Wchar *s);
 int strcmp(register const Wchar *s1, register const Wchar *s2) {
-    fsprint("Wstrcmp not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    if (strlen(s1) != strlen(s2)) {
+        return -1;
+    }
+    int i;
+    for (i = 0; s1[i] == s2[i]; i++) {
+        if (s1[i] == '\0') return 0;
+    }
+    return s1[i] - s2[i];
 }
 
 Wchar *strcpy(Wchar * __restrict s1, const Wchar * __restrict s2) {
-    fsprint("Wstrcpy not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("strcpy not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 size_t strcspn(const Wchar *s1, const Wchar *s2) {
-    fsprint("Wstrcspn not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
 Wchar *strdup(register const Wchar *s1) {
-    fsprint("Wstrdup not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("strdup not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 

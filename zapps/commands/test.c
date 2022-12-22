@@ -1,6 +1,6 @@
 #include <i_iolib.h>
 #include <stdlib.h>
-#include <../include/zlibs>
+#include <string.h>
 
 #define TEST_ABORT 0
 #define TEST_ATOF 0
@@ -91,11 +91,13 @@ int main(int argc, char **argv) {
 
     // test of basename
     is_fine = 1;
-    if (strcmp(basename("/"), "/") != 0) is_fine = 0;
+    if (strcmp(basename("test1/test2/test3"), "test3") != 0) is_fine = 0;
+    if (strcmp(basename("test1/test2/test3/"), "") != 0) is_fine = 0;
+    if (strcmp(basename("test1/test2/test3//"), "") != 0) is_fine = 0;
     if (strcmp(basename("/a"), "a") != 0) is_fine = 0;
-    if (strcmp(basename("/a/"), "a") != 0) is_fine = 0;
-    if (strcmp(basename("/a/b"), "b") != 0) is_fine = 0;
     print_state(is_fine, "basename");
+
+    fsprint("Testing string.h: $1OK$7\n");
 
     return 0;
 }
