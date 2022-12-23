@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <i_iolib.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 void assemble_path(char old[], char new[], char result[]);;
 
@@ -16,9 +16,9 @@ int main(int argc, char **argv) {
         char *char_content = c_fs_declare_read_array(file);
         c_fs_read_file(file, (uint8_t *) char_content);
         c_ckprint(char_content, c_magenta);
-        fsprint("\n");
+        printf("\n");
         free(char_content);
-    } else fsprint("$3%s$B file not found\n", file);
+    } else printf("$3%s$B file not found\n", file);
     free(file);
     free(fpath);
     free(suffix);

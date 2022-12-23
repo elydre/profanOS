@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <i_iolib.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
@@ -9,6 +10,6 @@ int main(int argc, char **argv) {
         c_fs_read_file(file, (uint8_t *) char_content);
         c_ckprint(char_content, c_magenta);
         free(char_content);
-    } else fsprint("$Bshell_help.txt not found\n", file);
+    } else printf("$Bshell_help.txt not found\n", file);
     return 0;
 }

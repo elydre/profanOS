@@ -1,5 +1,5 @@
-#include <i_iolib.h>
+#include <stdio.h>
 
 void print2() {
-    fsprint("test 2\n");
+    printf("test 2\n");
 }

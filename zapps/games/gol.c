@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <i_iolib.h>
+#include <stdio.h>
 #include <i_time.h>
 #include <stdlib.h>
 
@@ -43,7 +44,7 @@ int main(int argc, char **argv) {
             c_ckprint_at("Commandes :", 0, size_x+1, 0x0F);
             c_ckprint_at("ECHAP : quitter", 0, size_x+2, 0x0F);
             c_ckprint_at("E     : mode edition\n", 0, size_x+3, 0x0F);
-            fsprint("P/M   : ms_sleep(%d); ", wait);
+            printf("P/M   : ms_sleep(%d); ", wait);
         };
         next_step(plateau);
         printl(plateau, -1, -1);

@@ -1,7 +1,8 @@
 #include <syscall.h>
 #include <string.h>
-#include <i_iolib.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <i_iolib.h>
 
 void afficher(int **plateau, int n);
 void solve(int n, int from_rod, int to_rod, int aux_rod);
@@ -11,9 +12,9 @@ int main(int argc, char **argv) {
     // ask for input
     char inp[3];
     int n;
-    fsprint("Enter number of disks: ");
+    printf("Enter number of disks: ");
     input(inp, 3, 0x09);
-    fsprint("\n");
+    printf("\n");
     n = atoi(inp);
     int **plateau = calloc(3, sizeof(int *));
     for (int i=0; i<3; i++) {
@@ -27,16 +28,16 @@ int main(int argc, char **argv) {
         free(plateau[i]);
     }
     free(plateau);
-    fsprint("\n");
+    printf("\n");
     return 0;
 }
 
 void solve(int n, int from_rod, int to_rod, int aux_rod) {
     if (n == 1) {
-        fsprint("\nMove disk 1 from rod %d to rod %d", from_rod, to_rod);
+        printf("\nMove disk 1 from rod %d to rod %d", from_rod, to_rod);
         return;
     }
     solve(n-1, from_rod, aux_rod, to_rod);
-    fsprint("\nMove disk %d from rod %d to rod %d", n, from_rod, to_rod);
+    printf("\nMove disk %d from rod %d to rod %d", n, from_rod, to_rod);
     solve(n-1, aux_rod, to_rod, from_rod);
 }

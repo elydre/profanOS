@@ -14,10 +14,10 @@ ___________________________________
 
 #include <syscall.h>
 #include <string.h>
-#include <i_iolib.h>
+#include <stdio.h>
 #include <i_time.h>
 #include <stdlib.h>
-
+#include <i_iolib.h>
 
 char get_piont(int num);
 int get_user_choix(int ** grille);
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         tour = !tour;
     }
 
-    fsprint((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
+    printf((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     free_grille(grille);
     c_cursor_blink(0);
     return 0;
@@ -116,11 +116,11 @@ void print_grille(int ** grille) {
 
     for (int l = 0; l < 8; l++) {
         for (int c = 0; c < 8; c++) {
-            fsprint((char *) " | %c", get_piont(grille[c][l]));
+            printf((char *) " | %c", get_piont(grille[c][l]));
         }
-        fsprint((char *) " |\n");
+        printf((char *) " |\n");
     }
-    fsprint((char *) "\n");
+    printf((char *) "\n");
 }
 
 int get_user_choix(int ** grille) {

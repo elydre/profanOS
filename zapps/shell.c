@@ -2,6 +2,7 @@
 #include <string.h>
 #include <i_string.h>
 #include <i_iolib.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -34,9 +35,9 @@ int main(int argc, char **argv) {
     int current_history_size = 0;
 
     while (1) {
-        fsprint(SHELL_PROMPT, current_dir);
+        printf(SHELL_PROMPT, current_dir);
         input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
-        fsprint("\n");
+        printf("\n");
         if (strcmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
             for (int i = history_size - 1; i > 0; i--) strcpy(history[i], history[i - 1]);
             if (current_history_size < history_size) current_history_size++;
@@ -78,7 +79,7 @@ int shell_command(char *buffer) {
                 if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
                     strcpy(current_dir, new_path);
                 else {
-                    fsprint("$3%s$B path not found\n", new_path);
+                    printf("$3%s$B path not found\n", new_path);
                     strcpy(current_dir, old_path);
                     free(new_path);
                     break;
@@ -102,7 +103,7 @@ int shell_command(char *buffer) {
         if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
             go(file, old_prefix, suffix);
         } else if (strcmp(old_prefix, "")) {
-            fsprint("$3%s$B is not a valid command.\n", old_prefix);
+            printf("$3%s$B is not a valid command.\n", old_prefix);
         }
         free(file);
         free(old_prefix);
@@ -132,7 +133,7 @@ void go(char file[], char prefix[], char suffix[]) {
         // free
         for (int i = 0; i < argc; i++) free(argv[i]);
         free(argv);
-    } else fsprint("$3%s$B file not found\n", file);
+    } else printf("$3%s$B file not found\n", file);
 }
 
 void assemble_path(char old[], char new[], char result[]) {

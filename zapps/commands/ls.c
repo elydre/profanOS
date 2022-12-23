@@ -2,6 +2,7 @@
 #include <i_iolib.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 void assemble_path(char old[], char new[], char result[]);
 
@@ -21,7 +22,7 @@ int main(int argc, char **argv) {
     else assemble_path(current_dir, path, ls_path);
 
     if (!(c_fs_does_path_exists(ls_path) && c_fs_get_sector_type(c_fs_path_to_id(ls_path)) == 3)) {
-        fsprint("$3%s$B is not a directory\n", ls_path);
+        printf("$3%s$B is not a directory\n", ls_path);
     } else {
         int elm_count = c_fs_get_dir_size(ls_path);
         uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
@@ -33,18 +34,18 @@ int main(int argc, char **argv) {
         for (int i = 0; i < elm_count; i++) {
             if (out_types[i] == 3) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
-                fsprint("$2%s", tmp_name);
+                printf("$2%s", tmp_name);
                 for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
-                fsprint("%d elm\n", c_fs_get_dir_size(tmp_path));
+                printf("%d elm\n", c_fs_get_dir_size(tmp_path));
             }
         } for (int i = 0; i < elm_count; i++) {
             if (out_types[i] == 2) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
-                fsprint("$1%s", tmp_name);
+                printf("$1%s", tmp_name);
                 for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
-                fsprint("%d oct\n", c_fs_get_file_size(tmp_path));
+                printf("%d oct\n", c_fs_get_file_size(tmp_path));
             }
         }
         free(out_types);

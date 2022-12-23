@@ -1,6 +1,6 @@
 #include <syscall.h>
 #include <string.h>
-#include <i_iolib.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void print_status(char test_name[], int status);
@@ -26,5 +26,5 @@ void print_status(char test_name[], int status) {
     for (i = 0; i < 20 - strlen(test_name); i++)
         spaces[i] = ' ';
     spaces[i] = '\0';
-    fsprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");
+    printf("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");
 }

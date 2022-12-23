@@ -1,11 +1,11 @@
 #include <syscall.h>
-#include <i_string.h>
+#include <string.h>
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
     char *suffix = malloc(256);
-    str_cpy(suffix, argv[2]);
-    c_task_switch((str_cmp(suffix, "yield") == 0) ? 1 : ascii_to_int(suffix));
+    strcpy(suffix, argv[2]);
+    c_task_switch((strcmp(suffix, "yield") == 0) ? 1 : atoi(suffix));
     free(suffix);
     return 0;
 }

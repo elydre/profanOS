@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <i_iolib.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void assemble_path(char old[], char new[], char result[]);
@@ -14,9 +15,9 @@ int main(int argc, char** argv) {
     assemble_path(current_dir, suffix, file);
     if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         char char_content[70];
-        fsprint("-> "); input(char_content, 70, c_blue); fsprint("\n");
+        printf("-> "); input(char_content, 70, c_blue); printf("\n");
         c_fs_write_in_file(file, (uint8_t *) char_content, strlen(char_content));
-    } else fsprint("$3%s$B file not found\n", file);
+    } else printf("$3%s$B file not found\n", file);
     free(file);
     free(current_dir);
     free(suffix);
