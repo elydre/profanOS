@@ -192,8 +192,15 @@ int vsscanf_s( const char *restrict buffer, const char *restrict format, va_list
     return 0;
 }
 
-int printf( const char *restrict format, ... ) {
-    fsprint("printf not implemented yet, WHY DO YOU USE IT ?\n");
+int printf(const char *restrict format, ... ) {
+    va_list args;
+    // we copy format to a buffer because we need to modify it
+    char *format_copy = malloc(strlen(format) + 1);
+    strcpy(format_copy, format);
+    va_start(args, format);
+    vfsprint(format_copy, args);
+    va_end(args);
+    free(format_copy);
     return 0;
 }
 

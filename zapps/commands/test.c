@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
     fsprint("Testing string.h: $1OK$7\n");
 
-    printf("TEST %s %d\n", "test", 1);
+    printf("Il n'y a pas de test pour printf, mais si il ne marchais pas, l'os ne montrerais rien !\n");
 
     return 0;
 }

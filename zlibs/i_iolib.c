@@ -89,9 +89,7 @@ void msprint(int nb_args, ...) {
     va_end(args);
 }
 
-void fsprint(char format[], ...) {
-    va_list args;
-    va_start(args, format);
+void vfsprint(char format[], va_list args) {
     char *buffer = malloc(0x1000);
     clean_buffer(buffer, 0x1000);
     char color = c_white;
@@ -140,6 +138,21 @@ void fsprint(char format[], ...) {
         continue;
     }
     free(buffer);
+}
+
+void fsprint(char format[], ...) {
+    // how many % is there
+    int nb_args = 0;
+    for (int i = 0; i < str_len(format); i++) {
+        if (format[i] == '%') nb_args++;
+    }
+    if (nb_args == 0) {
+        sprint_function(format, c_white);
+        return;
+    }
+    va_list args;
+    va_start(args, format);
+    vfsprint(format, args);
     va_end(args);
 }
 
