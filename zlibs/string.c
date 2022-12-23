@@ -271,8 +271,13 @@ char *strcasestr(const char *s1, const char *s2) {
 }
 
 Wchar *strcat(Wchar * __restrict s1, register const Wchar * __restrict s2) {
-    fsprint("strcat not implemented yet, WHY DO YOU USE IT ?\n");
-    return NULL;
+    size_t i,j;
+    for (i = 0; s1[i] != '\0'; i++)
+        ;
+    for (j = 0; s2[j] != '\0'; j++)
+        s1[i+j] = s2[j];
+    s1[i+j] = '\0';
+    return s1;
 }
 
 Wchar *strchr(register const Wchar *s, Wint c) {
@@ -297,8 +302,12 @@ int strcmp(register const Wchar *s1, register const Wchar *s2) {
 }
 
 Wchar *strcpy(Wchar * __restrict s1, const Wchar * __restrict s2) {
-    fsprint("strcpy not implemented yet, WHY DO YOU USE IT ?\n");
-    return NULL;
+    int i;
+    for (i = 0; s2[i] != '\0'; ++i) {
+        s1[i] = s2[i];
+    }
+    s1[i] = '\0';
+    return s1;
 }
 
 size_t strcspn(const Wchar *s1, const Wchar *s2) {

@@ -1,11 +1,13 @@
 #include <syscall.h>
-#include <i_string.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <i_string.h>
+#include <stdlib.h>
+#include <string.h>
 
 void assemble_path(char old[], char new[], char result[]);;
 
 int main(int argc, char **argv) {
+    strsignal(0);
     char *fpath = malloc(256);
     char *suffix = malloc(256);
     str_cpy(fpath, argv[1]);
