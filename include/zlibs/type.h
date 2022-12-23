@@ -105,5 +105,18 @@ typedef void *locale_t; // PLACEHOLDER, //TODO : implement locale_t
 typedef unsigned char __string_uchar_t;
 #define Wuchar __string_uchar_t
 #define Wint int
+typedef int            errno_t;
+typedef unsigned short wint_t;
+typedef unsigned short wctype_t;
+typedef long           __time32_t;
+typedef size_t rsize_t;
+
+typedef struct FILE {
+
+} FILE;
+
+typedef struct fpos_t {
+    
+} fpos_t;
 
 #endif
