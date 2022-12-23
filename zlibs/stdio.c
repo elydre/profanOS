@@ -193,7 +193,7 @@ int vsscanf_s( const char *restrict buffer, const char *restrict format, va_list
 }
 
 int printf( const char *restrict format, ... ) {
-    fsprint(format, ...);
+    fsprint("printf not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
