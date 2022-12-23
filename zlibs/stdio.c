@@ -16,6 +16,7 @@ int main() {
 void init_func() {
     c_kprint("Init of the stdio lib !\n");
 }
+void fonction_inutile() {} // car j'ai tout décalé dans le header, et flemme de fix ça
 
 void clearerr(FILE *stream) {
     fsprint("clearerr not implemented yet, WHY DO YOU USE IT ?\n");
@@ -192,7 +193,7 @@ int vsscanf_s( const char *restrict buffer, const char *restrict format, va_list
 }
 
 int printf( const char *restrict format, ... ) {
-    fsprint("printf not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint(format, ...);
     return 0;
 }
 

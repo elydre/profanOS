@@ -1,6 +1,7 @@
 #include <i_iolib.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define TEST_ABORT 0
 #define TEST_ATOF 0
@@ -114,6 +115,8 @@ int main(int argc, char **argv) {
     print_state(is_fine, "basename");
 
     fsprint("Testing string.h: $1OK$7\n");
+
+    printf("TEST %s %d\n", "test", 1);
 
     return 0;
 }
