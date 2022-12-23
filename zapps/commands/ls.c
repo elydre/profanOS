@@ -1,6 +1,6 @@
 #include <syscall.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
 #include <string.h>
 
 void assemble_path(char old[], char new[], char result[]);

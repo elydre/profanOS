@@ -147,9 +147,19 @@ double atof(const char *s) {
     // return a;
 }
 
+#define isspace(c) ((c) == ' ' || (c) == '\t')
+#define isdigit(c) ((c) >= '0' && (c) <= '9')
 int atoi(const char *nptr) {
-    fsprint("atoi not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    int n=0, neg=0;
+	while (isspace(*nptr)) nptr++;
+	switch (*nptr) {
+        case '-': {neg=1; nptr++; break;}
+        case '+': {nptr++; break;}
+	}
+	/* Compute n as a negative number to avoid overflow on INT_MIN */
+	while (isdigit(*nptr))
+		n = 10*n - (*nptr++ - '0');
+	return neg ? n : -n;
 }
 
 long atol(const char *nptr) {
@@ -662,6 +672,63 @@ int wctomb(char *s, wchar_t wchar) {
     fsprint("wctomb not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
+
+void I_swap(char *x, char *y) {
+    char t = *x; *x = *y; *y = t;
+}
+ 
+// Function to reverse `buffer[i…j]`
+char* I_reverse(char *buffer, int i, int j)
+{
+    while (i < j) {
+        I_swap(&buffer[i++], &buffer[j--]);
+    }
+ 
+    return buffer;
+}
+
+char* itoa(int value, char* buffer, int base) {
+    // invalid input
+    if (base < 2 || base > 32) {
+        return buffer;
+    }
+ 
+    // consider the absolute value of the number
+    int n = abs(value);
+ 
+    int i = 0;
+    while (n) {
+        int r = n % base;
+ 
+        if (r >= 10) {
+            buffer[i++] = 65 + (r - 10);
+        }
+        else {
+            buffer[i++] = 48 + r;
+        }
+ 
+        n = n / base;
+    }
+ 
+    // if the number is 0
+    if (i == 0) {
+        buffer[i++] = '0';
+    }
+ 
+    // If the base is 10 and the value is negative, the resulting string
+    // is preceded with a minus sign (-)
+    // With any other base, value is always considered unsigned
+    if (value < 0 && base == 10) {
+        buffer[i++] = '-';
+    }
+ 
+    buffer[i] = '\0'; // null terminate string
+ 
+    // reverse the string and return it
+    return I_reverse(buffer, 0, i - 1);
+}
+ 
+
 
 // INTERNAL FUNCS, DO NOT MOVE AROUND
 

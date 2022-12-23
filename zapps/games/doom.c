@@ -1,5 +1,5 @@
 #include <syscall.h>
-#include <i_string.h>
+#include <stdlib.h>
 #include <i_vgui.h>
 
 #define MAP_SIZE 10
@@ -88,8 +88,8 @@ int main(int argc, char **argv) {
 
         vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 0x880000);
         vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
-
-        int_to_ascii(1000 / (tick_count[1] + 1), convert);
+        
+        itoa(1000 / (tick_count[1] + 1), convert, 10);
         vgui_print(0, 8, convert, 0x0000AA);
         
 

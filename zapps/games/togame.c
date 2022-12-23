@@ -1,5 +1,5 @@
 #include <syscall.h>
-#include <i_string.h>
+#include <stdlib.h>
 #include <string.h>
 #include <i_time.h>
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 
         if (to_wait > 10) to_wait = 40 - (iter / 50);
 
-        int_to_ascii(iter / 10, point);
+        itoa(iter / 10, point, 10);
         strcat(point, "pts");
         c_ckprint_at(point, 0, Y_MAX, 0x0f);
         ms_sleep(to_wait);

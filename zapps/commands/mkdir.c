@@ -1,7 +1,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
 
 int main(int argc, char **argv) {
     char *suffix = malloc(256);

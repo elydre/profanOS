@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <i_string.h>
 #include <i_iolib.h>
 #include <i_time.h>
+#include <stdlib.h>
 
 int main(int argc, char **argv) {
     fsprint("$4FR time:    ");
@@ -10,13 +10,13 @@ int main(int argc, char **argv) {
     time_jet_lag(&time);
     char tmp[3];
     for (int i = 2; i >= 0; i--) {
-        int_to_ascii(time.full[i], tmp);
+        itoa(time.full[i], tmp, 10);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
         fsprint("$1%s$7:", tmp);
     }
     c_kprint_backspace(); fsprint(" ");
     for (int i = 3; i < 6; i++) {
-        int_to_ascii(time.full[i], tmp);
+        itoa(time.full[i], tmp, 10);
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
         fsprint("$1%s$7/", tmp);
     }

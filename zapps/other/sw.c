@@ -1,7 +1,7 @@
 // requires /zada/star_wars.txt, the ascii art of the star wars
 
 #include <syscall.h>
-#include <i_string.h>
+#include <string.h>
 #include <i_iolib.h>
 #include <i_time.h>
 #include <stdlib.h>
@@ -36,10 +36,10 @@ int main(int argc, char **argv) {
         for (j = 0; str[j] > 40; j++) temps[j] = str[j];
         temps[j] = '\0';
         str[str_index] = '\0';
-        if (ascii_to_int(temps) < 0) break;
+        if (atoi(temps) < 0) break;
         c_clear_screen(); // TODO: redraw only the changed characters
         c_ckprint_at(str, 0, 0, 0x0F);
-        ms_sleep(ascii_to_int(temps) * 100);
+        ms_sleep(atoi(temps) * 100);
         str_index = -1;
         str[0] = '\0';
     }

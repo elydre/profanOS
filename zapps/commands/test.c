@@ -86,6 +86,22 @@ int main(int argc, char **argv) {
     fsprint("$1atof$7: $1NOT OK (not implemented)\n");
     #endif
 
+    // test of atoi
+    is_fine = 1;
+    if (atoi("10") != 10) {is_fine = 0; fsprint("%d\n", atoi("10"));}
+    if (atoi("-10") != -10) {is_fine = 0; fsprint("%d\n", atoi("-10"));}
+    print_state(is_fine, "atoi");
+
+    // test of itoa
+    is_fine = 1;
+    char *itoa_test = malloc(10);
+    itoa(10, itoa_test, 10);
+    if (strcmp(itoa_test, "10") != 0) is_fine = 0;
+    itoa(-10, itoa_test, 10);
+    if (strcmp(itoa_test, "-10") != 0) is_fine = 0;
+    free(itoa_test);
+    print_state(is_fine, "itoa");
+
     fsprint("Testing stdlib.h: $1OK$7\n");
     fsprint("Testing string.h\n");
 

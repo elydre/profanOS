@@ -1,7 +1,6 @@
 #include <syscall.h>
-#include <i_string.h>
 #include <i_vgui.h>
-#include <i_mem.h>
+#include <stdlib.h>
 
 
 #define PI 3.141592
@@ -200,7 +199,7 @@ int show_fps(int time) {
     int new_time = c_timer_get_tick();
     int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
-    int_to_ascii(fps, fps_str);
+    itoa(fps, fps_str, 10);
     vgui_print(0, 0, fps_str, 0xFFFFFF);
     return new_time;
 }

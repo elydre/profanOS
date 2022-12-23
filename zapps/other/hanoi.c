@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <i_string.h>
+#include <string.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
 
 void afficher(int **plateau, int n);
 void solve(int n, int from_rod, int to_rod, int aux_rod);
@@ -14,10 +14,10 @@ int main(int argc, char **argv) {
     fsprint("Enter number of disks: ");
     input(inp, 3, 0x09);
     fsprint("\n");
-    n = ascii_to_int(inp);
-    int **plateau = calloc(3 * sizeof(int *));
+    n = atoi(inp);
+    int **plateau = calloc(3, sizeof(int *));
     for (int i=0; i<3; i++) {
-        plateau[i] = calloc(n * sizeof(int));
+        plateau[i] = calloc(n, sizeof(int));
     }
     for (int i=0; i<n; i++) {
         plateau[0][i] = i+1;

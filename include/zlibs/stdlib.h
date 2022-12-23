@@ -119,5 +119,6 @@ double atof(const char *s);
 #define wcstoull(nptr, endptr, base) ((unsigned long long int (*)(const wchar_t *, wchar_t **, int)) get_func_addr(STDLIB_ID, 101))(nptr, endptr, base)
 #define wcstoull_l(nptr, endptr, base, loc) ((unsigned long long int (*)(const wchar_t *, wchar_t **, int, locale_t)) get_func_addr(STDLIB_ID, 102))(nptr, endptr, base, loc)
 #define wctomb(s, wchar) ((int (*)(char *, wchar_t)) get_func_addr(STDLIB_ID, 103))(s, wchar)
+#define itoa(value, str, base) ((char *(*)(int, char *, int)) get_func_addr(STDLIB_ID, 106))(value, str, base)
 
 #endif
