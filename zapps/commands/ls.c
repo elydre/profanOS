@@ -1,23 +1,23 @@
 #include <syscall.h>
-#include <i_string.h>
 #include <i_iolib.h>
 #include <i_mem.h>
+#include <string.h>
 
 void assemble_path(char old[], char new[], char result[]);
 
 int main(int argc, char **argv) {
     char *current_dir = malloc(256);
-    str_cpy(current_dir, argv[1]);
+    strcpy(current_dir, argv[1]);
     char *suffix = malloc(256);
-    str_cpy(suffix, argv[2]);
+    strcpy(suffix, argv[2]);
     char *path = malloc(256);
 
-    if (str_cmp(suffix, "ls"))
-        str_cpy(path, suffix);
-    else str_cpy(path, "");
+    if (strcmp(suffix, "ls"))
+        strcpy(path, suffix);
+    else strcpy(path, "");
 
     char ls_path[256];
-    if (path[0] == '\0') str_cpy(ls_path, current_dir);
+    if (path[0] == '\0') strcpy(ls_path, current_dir);
     else assemble_path(current_dir, path, ls_path);
 
     if (!(c_fs_does_path_exists(ls_path) && c_fs_get_sector_type(c_fs_path_to_id(ls_path)) == 3)) {
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
             if (out_types[i] == 3) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
                 fsprint("$2%s", tmp_name);
-                for (int j = 0; j < 22 - str_len(tmp_name); j++) c_kprint(" ");
+                for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
                 fsprint("%d elm\n", c_fs_get_dir_size(tmp_path));
             }
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
             if (out_types[i] == 2) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
                 fsprint("$1%s", tmp_name);
-                for (int j = 0; j < 22 - str_len(tmp_name); j++) c_kprint(" ");
+                for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
                 fsprint("%d oct\n", c_fs_get_file_size(tmp_path));
             }
@@ -57,7 +57,11 @@ int main(int argc, char **argv) {
 }
 
 void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; str_cpy(result, old);
-    if (result[str_len(result) - 1] != '/') str_append(result, '/');
-    for (int i = 0; i < str_len(new); i++) str_append(result, new[i]);
+    result[0] = '\0'; strcpy(result, old);
+    if (result[strlen(result) - 1] != '/') {
+        strncat(result, "/", 1);
+    }
+    for (unsigned int i = 0; i < strlen(new); i++) {
+        strncat(result, &new[i], 1);
+    }
 }

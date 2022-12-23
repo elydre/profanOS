@@ -1,14 +1,14 @@
 #include <syscall.h>
-#include <i_string.h>
+#include <string.h>
 #include <i_iolib.h>
 #include <i_mem.h>
 
 int main(int argc, char **argv) {
     char *suffix = malloc(256);
-    str_cpy(suffix, argv[2]);
+    strcpy(suffix, argv[2]);
     char *current_dir = malloc(256);
-    str_cpy(current_dir, argv[1]);
-    if (!str_cmp(suffix, "..")) {
+    strcpy(current_dir, argv[1]);
+    if (!strcmp(suffix, "..")) {
         fsprint("$3Un dossier ne peut pas avoir comme nom .. !\n");
     } else {
         c_fs_make_dir(current_dir, suffix);

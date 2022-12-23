@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <i_string.h>
+#include <string.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
 
 void print_status(char test_name[], int status);
 
@@ -21,8 +21,9 @@ int main(int argc, char **argv) {
 }
 
 void print_status(char test_name[], int status) {
-    char spaces[20]; int i;
-    for (i = 0; i < 20 - str_len(test_name); i++)
+    char spaces[20]; 
+    unsigned int i;
+    for (i = 0; i < 20 - strlen(test_name); i++)
         spaces[i] = ' ';
     spaces[i] = '\0';
     fsprint("$4%s%s%s\n", test_name, spaces, status ? "$7[$1done$7]" : "$7[$3fail$7]");

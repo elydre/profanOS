@@ -1,7 +1,7 @@
 #include <syscall.h>
 #include <i_string.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
 
 
 #define LSIZE 1024
@@ -34,8 +34,8 @@ void start_inter(int *code, int code_size, int while_id);
 int lexer(char path[], int *code);
 
 int main(int argc, char **argv) {
-    int *meml = calloc(LSIZE * sizeof(int));
-    int *prog = calloc(PSIZE * sizeof(int));
+    int *meml = calloc(LSIZE, sizeof(int));
+    int *prog = calloc(PSIZE, sizeof(int));
     mem = meml;
 
     meml[0] = 1;
