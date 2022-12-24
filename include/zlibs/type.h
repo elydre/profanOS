@@ -112,7 +112,15 @@ typedef long           __time32_t;
 typedef size_t rsize_t;
 
 typedef struct FILE {
-
+    char *filename;
+    char *path;
+    char *name;
+    char *mode;
+    char *buffer;
+    unsigned int buffer_size;
+    unsigned int buffer_pos;
+    int eof;
+    int error;
 } FILE;
 
 typedef struct fpos_t {

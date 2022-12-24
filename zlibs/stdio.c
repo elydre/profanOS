@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 void init_func();
+int printf(const char *restrict format, ... );
 
 int main() {
     init_func();
@@ -23,8 +24,72 @@ void clearerr(FILE *stream) {
 }
 
 FILE *fopen( const char *restrict filename, const char *restrict mode ) {
-    fsprint("fopen not implemented yet, WHY DO YOU USE IT ?\n");
-    return NULL;
+    // first we check if the file exists with a syscall
+    // copy the filename to a new string
+    char *file_name = calloc(strlen(filename) + 1, sizeof(char));
+    strcpy(file_name, filename);
+    int exists = c_fs_does_path_exists(file_name);
+    free(file_name);
+    // the file doesn't exist but it should
+    if (exists == 0 && (strcmp(mode, "r") == 0 || strcmp(mode, "r+") == 0)) {
+        return NULL;
+    }
+    // we separate the filename from the path
+    char *name = calloc(strlen(filename) + 1, sizeof(char));
+    char *path = calloc(strlen(filename) + 1, sizeof(char));
+    // path is everything before the last /
+    // filename is everything after the last /
+    int last_slash = 0;
+    for (unsigned int i = 0; i < strlen(filename); i++) {
+        if (filename[i] == '/') {
+            last_slash = i;
+        }
+    }
+    for (int i = 0; i < last_slash; i++) {
+        path[i] = filename[i];
+    }
+    for (unsigned int i = last_slash + 1; i < strlen(filename); i++) {
+        name[i - last_slash - 1] = filename[i];
+    }
+    // now we create the file if it doesn't exist
+    if (exists == 0) {
+        c_fs_make_file(path, name);
+        
+    }
+    // now the file exists, we can open it
+    // we create a new file struct
+    FILE *file = calloc(1, sizeof(FILE));
+    // we copy the filename, name, path, mode into the file struct
+    file->filename = calloc(strlen(filename) + 1, sizeof(char));
+    strcpy(file->filename, filename);
+    file->name = calloc(strlen(name) + 1, sizeof(char));
+    strcpy(file->name, name);
+    file->path = calloc(strlen(path) + 1, sizeof(char));
+    strcpy(file->path, path);
+    file->mode = calloc(strlen(mode) + 1, sizeof(char));
+    strcpy(file->mode, mode);
+    // we free the name and path, now if we need them we can get them from the file struct
+    free(name);
+    free(path);
+
+    // we open the file, read it, and put it in the file struct
+    // we get the file size
+    int file_size = c_fs_get_file_size(file->filename);
+    // we allocate the memory for the file
+    file->buffer = calloc(file_size + 1, sizeof(char));
+    // we read the file
+    c_fs_read_file(file->filename, (uint8_t *) file->buffer);
+    // we set the file size
+    file->buffer_size = file_size;
+    // we set the file position to 0
+    file->buffer_pos = 0;
+    // we set the file eof to 0
+    file->eof = 0;
+    // we set the file error to 0
+    file->error = 0;
+    
+    // we return the file
+    return file;
 }
 
 errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filename, const char *restrict mode ) {
@@ -43,7 +108,19 @@ errno_t freopen_s( FILE *restrict *restrict newstreamptr, const char *restrict f
 }
 
 int fclose(FILE *stream) {
-    fsprint("fclose not implemented yet, WHY DO YOU USE IT ?\n");
+    // because we dont actually use streams, we just have to free things
+
+    // but we still have to check if the file isnt null
+    if (stream == NULL) {
+        return 0;
+    }
+
+    free(stream->filename);
+    free(stream->path);
+    free(stream->name);
+    free(stream->mode);
+    free(stream->buffer);
+    free(stream);
     return 0;
 }
 
@@ -67,13 +144,85 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    fsprint("fread not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+    // we check if the file is open for reading
+    if (!(strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || strcmp(stream->mode, "w+") == 0 || strcmp(stream->mode, "a+") == 0)) {
+        return 0;
+    }
+    // we check if the file is at the end
+    if (stream->eof == 1) {
+        return 0;
+    }
+    // we copy char by char from the file buffer to the buffer
+    while (count && !stream->eof) {
+        // we check if the file is at the end
+        if (stream->buffer_pos >= stream->buffer_size) {
+            stream->eof = 1;
+            return 0;
+        }
+        // we copy the char
+        ((char *) buffer)[stream->buffer_pos] = stream->buffer[stream->buffer_pos];
+        // we increment the buffer position
+        stream->buffer_pos++;
+        // we decrement the count
+        count--;
+    }
+    return 1;
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    fsprint("fwrite not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+    // we check if the file is open for reading
+    if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
+        return 0;
+    }
+    // now we branch, it's not the same in append and write mode
+    if (strcmp(stream->mode, "w") == 0 || strcmp(stream->mode, "w+") == 0) {
+        // we reset the file buffer
+        free(stream->buffer);
+        stream->buffer = calloc(size * count + 1, sizeof(char));
+        // we copy the buffer into the file buffer
+        strcpy(stream->buffer, buffer);
+        // we set the buffer size
+        stream->buffer_size = size * count;
+        // we set the buffer position
+        stream->buffer_pos = 0;
+        // we set the eof
+        stream->eof = 0;
+        // we set the error
+        stream->error = 0;
+        // than, again, beacause we are not using streams, we write the file
+        c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
+    }
+    if (strcmp(stream->mode, "a") == 0 || strcmp(stream->mode, "a+") == 0) {
+        // in this mode we just create a string that is the concatenation of the file buffer and the buffer
+        char *new_buffer = calloc(stream->buffer_size + size * count + 1, sizeof(char));
+        strcpy(new_buffer, stream->buffer);
+        strcat(new_buffer, buffer);
+        // we free the old buffer
+        free(stream->buffer);
+        // we set the new buffer
+        stream->buffer = new_buffer;
+        // we set the buffer size
+        stream->buffer_size = stream->buffer_size + size * count;
+        // we set the buffer position
+        stream->buffer_pos = 0;
+        // we set the eof
+        stream->eof = 0;
+        // we set the error
+        stream->error = 0;
+        // than, again, beacause we are not using streams, we write the file
+        c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
+    }
+
+    // in any case, we return the count
+    return count;
 }
 
 int fgetc(FILE *stream) {
