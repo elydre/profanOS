@@ -4,7 +4,8 @@
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
-
+#include <stdio.h>
+#include <string.h>
 #include <i_iolib.h>
 
 #define BFR_SIZE 65
@@ -50,35 +51,36 @@ void shell_help() {
 }
 
 void shell_addr() {
-    fsprint("vesa fb: %x\n", vesa_get_framebuffer());
-    fsprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
-    fsprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
-    fsprint("mm base: %x\n", MEM_BASE_ADDR);
-    fsprint("watfunc: %x\n", WATFUNC_ADDR);
+    printf("vesa fb: %x\n", vesa_get_framebuffer());
+    printf("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
+    printf("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
+    printf("mm base: %x\n", MEM_BASE_ADDR);
+    printf("watfunc: %x\n", WATFUNC_ADDR);
 }
 
 int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
-    int part = 0, i = 0;
+    int part = 0;
+    unsigned int i = 0;
 
-    for (i = 0; i < str_len(command); i++) {
+    for (i = 0; i < strlen(command); i++) {
         if (command[i] == ' ') {
             prefix[i] = '\0';
             part = 1;
         }
         else if (part == 0) prefix[i] = command[i];
-        else if (part == 1) suffix[i - str_len(prefix) - 1] = command[i];
+        else if (part == 1) suffix[i - strlen(prefix) - 1] = command[i];
     }
     if (part == 0) prefix[i] = '\0';
-    else suffix[i - str_len(prefix) - 1] = '\0';
+    else suffix[i - strlen(prefix) - 1] = '\0';
 
-    if      (str_cmp(prefix, "addr") == 0) shell_addr();
-    else if (str_cmp(prefix, "alloc") == 0) malloc(str2int(suffix) * 0x1000);
-    else if (str_cmp(prefix, "exit") == 0) return 1;
-    else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
-    else if (str_cmp(prefix, "help") == 0) shell_help();
-    else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
-    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    if      (strcmp(prefix, "addr") == 0) shell_addr();
+    else if (strcmp(prefix, "alloc") == 0) malloc(str2int(suffix) * 0x1000);
+    else if (strcmp(prefix, "exit") == 0) return 1;
+    else if (strcmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
+    else if (strcmp(prefix, "help") == 0) shell_help();
+    else if (strcmp(prefix, "reboot") == 0) sys_reboot();
+    else if (strcmp(prefix, "so") == 0) shell_so(suffix);
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 
     return 0;
