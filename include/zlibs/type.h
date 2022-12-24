@@ -121,6 +121,7 @@ typedef struct FILE {
     unsigned int buffer_pos;
     int eof;
     int error;
+    int is_temp;
 } FILE;
 
 typedef struct fpos_t {

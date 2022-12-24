@@ -8,6 +8,8 @@
 
 void init_func();
 int printf(const char *restrict format, ... );
+int fflush(FILE *stream);
+int fclose(FILE *stream);
 
 int main() {
     init_func();
@@ -87,6 +89,8 @@ FILE *fopen( const char *restrict filename, const char *restrict mode ) {
     file->eof = 0;
     // we set the file error to 0
     file->error = 0;
+    // we set the file temporary to 0
+    file->is_temp = 0;
     
     // we return the file
     return file;
@@ -98,12 +102,17 @@ errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filenam
 }
 
 FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
-    fsprint("freopen not implemented yet, WHY DO YOU USE IT ?\n");
-    return NULL;
+    // we close the file
+    fclose(stream);
+    // we open the file
+    return fopen(filename, mode);
 }
 
 errno_t freopen_s( FILE *restrict *restrict newstreamptr, const char *restrict filename, const char *restrict mode, FILE *restrict stream ) {
-    fsprint("freopen_s not implemented yet, WHY DO YOU USE IT ?\n");
+    // we close the file
+    fclose(stream);
+    // we open the file
+    *newstreamptr = fopen(filename, mode);
     return 0;
 }
 
@@ -113,6 +122,12 @@ int fclose(FILE *stream) {
     // but we still have to check if the file isnt null
     if (stream == NULL) {
         return 0;
+    }
+
+    // we check if the file is open for writing
+    if (strcmp(stream->mode, "w") == 0 || strcmp(stream->mode, "w+") == 0 || strcmp(stream->mode, "a") == 0 || strcmp(stream->mode, "a+") == 0) {
+        // we write the file
+        fflush(stream);
     }
 
     free(stream->filename);
@@ -125,7 +140,16 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    fsprint("fflush not implemented yet, WHY DO YOU USE IT ?\n");
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+    // we check if the file is open for writing
+    if (strcmp(stream->mode, "w") != 0 && strcmp(stream->mode, "w+") != 0 && strcmp(stream->mode, "a") != 0 && strcmp(stream->mode, "a+") != 0) {
+        return 0;
+    }
+    // we write the file
+    c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
     return 0;
 }
 
@@ -197,8 +221,8 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
         stream->eof = 0;
         // we set the error
         stream->error = 0;
-        // than, again, beacause we are not using streams, we write the file
-        c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
+        // we flush the file
+        fflush(stream);
     }
     if (strcmp(stream->mode, "a") == 0 || strcmp(stream->mode, "a+") == 0) {
         // in this mode we just create a string that is the concatenation of the file buffer and the buffer
@@ -217,8 +241,8 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
         stream->eof = 0;
         // we set the error
         stream->error = 0;
-        // than, again, beacause we are not using streams, we write the file
-        c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
+        // we flush the file
+        fflush(stream);
     }
 
     // in any case, we return the count
@@ -457,11 +481,13 @@ int rename( const char *old_filename, const char *new_filename ) {
     return 0;
 }
 
+// TODO : IMPLEMENT RANDOM BEFORE THIS
 FILE *tmpfile(void) {
     fsprint("tmpfile not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
+// TODO : IMPLEMENT RANDOM BEFORE THIS
 errno_t tmpfile_s(FILE * restrict * restrict streamptr) {
     fsprint("tmpfile_s not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;

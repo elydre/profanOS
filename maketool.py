@@ -17,6 +17,7 @@ HDD_MAP = {
     "sys": "sys_dir/sys/*",
     "user": "sys_dir/user/*",
     "zada": "sys_dir/zada/*",
+    "tmp" : ""
 }
 
 CC = "gcc"
