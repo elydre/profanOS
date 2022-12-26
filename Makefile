@@ -1,3 +1,5 @@
+.PHONY: elf iso disk disk-src run irun kirun info clean fullclean
+
 # build kernel
 elf:
 	python3 maketool.py elf_image
