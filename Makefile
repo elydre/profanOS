@@ -1,16 +1,21 @@
 .PHONY: elf iso disk disk-src run irun kirun info clean fullclean
 
+elf: profanOS.elf
+
+iso: profanOS.iso
+
+disk: HDD.bin
+
 # build kernel
-elf:
+profanOS.elf:
 	python3 maketool.py elf_image
 
 # create iso with grub
-iso:
-	python3 maketool.py elf_image
+profanOS.iso: profanOS.elf
 	python3 maketool.py iso
 
 # build disk image with zapps
-disk:
+HDD.bin:
 	python3 maketool.py diskf
 
 disk-src:
