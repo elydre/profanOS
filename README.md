@@ -67,6 +67,7 @@ ls      - list the current dir
 
 * pf4 ([@elydre](https://github.com/elydre))
 * Loris ([@Lorisredstone](https://github.com/Lorisredstone))
+* ProtoByter ([@ProtoByter](https://github.com/ProtoByter))
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 
