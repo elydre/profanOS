@@ -52,6 +52,19 @@
 #define KB_MAJ 58
 #define KB_TAB 15
 
+// keyboard scancodes
+#define SC_MAX 57
+
+#define LSHIFT 42
+#define RSHIFT 54
+#define LEFT 75
+#define RIGHT 77
+#define OLDER 72
+#define NEWER 80
+#define BACKSPACE 14
+#define DEL 83
+#define ENTER 28
+
 #define KB_released_value 128
 #define KB_released(key) (key + KB_released_value)
 
