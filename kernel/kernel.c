@@ -26,7 +26,6 @@ void kernel_main(void *mboot_ptr) {
     init_vesa();
     ckprint("Multiboot info saved, GDT and VESA initialized\n", 0x07);
 
-
     status_print(isr_install,  "Installing", "cpu interrupts");
     status_print(irq_install,  "Enabling", "interruptions");
     status_print(timer_init,   "Initing", "cpu timer (PIT)");
