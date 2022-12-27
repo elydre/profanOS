@@ -14,9 +14,10 @@ void serial_enable(int device) {
     port_byte_out(device + 4, 0x0B);
 }
 
-void serial_init() {
+int serial_init() {
     serial_enable(SERIAL_PORT_A);
     serial_enable(SERIAL_PORT_B);
+    return 0;
 }
 
 int serial_transmit_empty(int device) {

@@ -25,4 +25,6 @@ void *malloc(uint32_t size);
 void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
+void status_print(int (*func)(), char *verb, char *noun);
+
 #endif

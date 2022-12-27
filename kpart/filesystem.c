@@ -26,8 +26,9 @@ uint32_t g_sector_count;
 
 void i_generate_free_map();
 
-void filesystem_init() {
+int filesys_init() {
     g_sector_count = ata_get_sectors_count();
+
     if (g_sector_count == 0) {
         sys_warning("Cannot use ATA disk, using ramdisk");
         g_sector_count = ramdisk_get_size();
@@ -44,6 +45,7 @@ void filesystem_init() {
         // i_create_dir(0, "/");
         sys_fatal("Invalid root sector");
     }
+    return 0;
 }
 
 void i_generate_free_map() {
@@ -394,12 +396,12 @@ uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {
 
 void i_delete_dir(uint32_t id) {
     sys_warning("Not implemented yet : delete_file");
-    (void *)id;
+    (void) id;
 }
 
 void i_delete_file(uint32_t id) {
     sys_warning("Not implemented yet : delete_file");
-    (void *)id;
+    (void) id;
 }
 
 /*********************

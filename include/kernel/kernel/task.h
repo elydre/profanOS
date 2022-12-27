@@ -15,7 +15,7 @@ typedef struct {
     char name[32];
 } task_t;
 
-void tasking_init();
+int tasking_init();
 int task_create(void (*func)(), char *name);
 
 void task_switch(int target_pid);

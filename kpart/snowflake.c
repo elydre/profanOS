@@ -40,7 +40,7 @@ int mem_get_phys_size() {
     return (int) addr_max;
 }
 
-void mem_init() {
+int mem_init() {
     first_part_index = 0;
     alloc_count = 0;
     free_count = 0;
@@ -62,6 +62,8 @@ void mem_init() {
     if (mem_alloc(sizeof(allocated_part_t) * part_size, 3) != (uint32_t) MEM_PARTS) {
         sys_fatal("snowflake address is illogical");
     }
+
+    return 0;
 }
 
 int mm_get_unused_index() {

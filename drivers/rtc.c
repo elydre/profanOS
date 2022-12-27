@@ -34,7 +34,7 @@ void time_get(time_t *target) {
     target->full[5] = target->year;
 }
 
-void rtc_init(void) {
+int rtc_init() {
     unsigned char status;
     status = read_register(0x0B);
     status |=  0x02;             // 24 hour clock
@@ -43,4 +43,5 @@ void rtc_init(void) {
     status &= ~0x40;             // no periodic interrupt
     bcd = !(status & 0x04);      // check if data type is BCD
     write_register(0x0B, status);
+    return 0;
 }

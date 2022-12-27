@@ -46,6 +46,6 @@ int  kb_get_scancode();
 void kb_reset_history();
 int  kb_get_scfh();
 
-void keyboard_init();
+int keyboard_init();
 
 #endif

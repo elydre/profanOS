@@ -87,12 +87,7 @@ void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
 
 void ramdisk_check_dir(char parent_name[], uint32_t sector_id);
 
-void clean_line() {
-    for (int i = 0; i < 40; i++) kprint(" ");
-    kprint("\r");
-}
-
-void ramdisk_init() {
+int ramdisk_init() {
     RAMDISK = malloc(RAMDISK_SIZE);
 
     ata_sector_count = ata_get_sectors_count();
@@ -100,10 +95,10 @@ void ramdisk_init() {
         char path[256];
         for (int i = 0; i < 256; i++) path[i] = 0;
         ramdisk_check_dir(path, 0);
-        clean_line();
     } else {
         sys_warning("ATA disk not working");
     }
+    return 0;
 }
 
 void load_file(uint32_t first_sector_id) {
@@ -138,7 +133,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
     ata_read_sector(sector_id, sector);
 
     if (!(sector[0] & (I_FILE_H | I_DIR))) {
-        // kprintf("FATAL: %x in sec %d\n", sector[0], sector_id);
+        kprintf("FATAL: %x in sec %d\n", sector[0], sector_id);
         sys_fatal("dametokosita find in dir");
     }
 
@@ -152,7 +147,6 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id) {
         for (int i = 0; i < ARYLEN(path_to_load); i++) {
             if (str_atb(fullname, path_to_load[i]) || str_cmp(fullname, path_to_load[i]) == 0) {
                 serial_debug("RD-LF", fullname);
-                clean_line();
                 load_file(sector_id);
             }
         }

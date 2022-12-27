@@ -9,7 +9,7 @@ isr_t interrupt_handlers[256];
 
 /* Can't do this with a loop because we need the address
  * of the function names */
-void isr_install() {
+int isr_install() {
     set_idt_gate(0, (uint32_t)isr0);
     set_idt_gate(1, (uint32_t)isr1);
     set_idt_gate(2, (uint32_t)isr2);
@@ -74,6 +74,8 @@ void isr_install() {
     set_idt_gate(47, (uint32_t)irq15);
 
     set_idt(); // Load with ASM
+
+    return 0;
 }
 
 void isr_handler(registers_t *r) {
@@ -97,11 +99,8 @@ void irq_handler(registers_t *r) {
     }
 }
 
-void irq_install() {
+int irq_install() {
     // Enable interruptions
     asm volatile("sti");
-    // IRQ0: timer
-    timer_init(1000);
-    // IRQ1: keyboard
-    keyboard_init();
+    return 0;
 }
