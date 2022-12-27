@@ -392,6 +392,14 @@ uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {
     return 0;
 }
 
+void i_delete_dir(uint32_t id) {
+    (void *)id;
+}
+
+void i_delete_file(uint32_t id) {
+    (void *)id;
+}
+
 /*********************
  * PUBLIC FUNCTIONS *
 *********************/
@@ -545,5 +553,21 @@ uint32_t fs_get_sector_count() {
     return g_sector_count;
 }
 
-// TODO : add a function to delete a file
-// TODO : add a function to delete a directory
+int fs_delete_file(char *path) {
+    uint32_t file_id = fs_path_to_id(path);
+    if (file_id == 0) {
+        return -1;
+    }
+    i_delete_file(file_id);
+    return 0;
+}
+
+int fs_delete_dir(char *path) {
+    uint32_t folder_id = fs_path_to_id(path);
+    if (folder_id == 0) {
+        return -1;
+    }
+    i_delete_dir(folder_id);
+    return 0;
+}
+

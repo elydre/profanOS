@@ -88,7 +88,11 @@ void *SYSCALL_ARRAY[] = {
     mem_free_all,
     task_get_current_pid,
     task_kill_task_switch,
-    task_get_next_pid
+    task_get_next_pid,
+
+    // filesystem stuff that was implemented later
+    fs_delete_file,
+    fs_delete_dir,
 };
 
 int wf_get_func_addr(int func_id) {

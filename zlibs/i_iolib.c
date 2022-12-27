@@ -2,6 +2,7 @@
 #include <i_string.h>
 #include <i_time.h>
 #include <i_mem.h>
+#include <string.h>
 
 
 // we need the stdarg of the stdlib
@@ -36,9 +37,9 @@ int clean_buffer(char *buffer, int size) {
 }
 
 char sprint_function(char message[], char default_color) {
-    int msg_len = str_len(message);
+    unsigned int msg_len = strlen(message);
     char nm[msg_len + 1];
-    for (int i = 0; i < msg_len; i++) nm[i] = message[i];
+    for (unsigned int i = 0; i < msg_len; i++) nm[i] = message[i];
     nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
     msg_len++;
     char color = default_color;
@@ -52,13 +53,13 @@ char sprint_function(char message[], char default_color) {
     };
 
     clean_buffer(buffer, msg_len);
-    for (int i = 0; i < msg_len; i++) {
+    for (unsigned int i = 0; i < msg_len; i++) {
         if (nm[i] != '$') {
             buffer[buffer_index] = nm[i];
             buffer_index++;
             continue;
         }
-        if (str_len(buffer) > 0) {
+        if (strlen(buffer) > 0) {
             c_ckprint(buffer, color);
             buffer_index = clean_buffer(buffer, msg_len);
         }
@@ -94,8 +95,8 @@ void vfsprint(char format[], va_list args) {
     clean_buffer(buffer, 0x1000);
     char color = c_white;
 
-    for (int i = 0; i <= str_len(format); i++) {
-        if (i == str_len(format)) {
+    for (unsigned int i = 0; i <= strlen(format); i++) {
+        if (i == strlen(format)) {
             sprint_function(buffer, color);
             continue;
         }
@@ -108,8 +109,8 @@ void vfsprint(char format[], va_list args) {
         i++;
         if (format[i] == 's') {
             char *arg = va_arg(args, char*);
-            for (int j = 0; j < str_len(arg); j++) buffer[j] = arg[j];
-            buffer[str_len(arg)] = '\0';
+            for (unsigned int j = 0; j < strlen(arg); j++) buffer[j] = arg[j];
+            buffer[strlen(arg)] = '\0';
             color = sprint_function(buffer, color);
         }
         else if (format[i] == 'd') {
@@ -143,7 +144,7 @@ void vfsprint(char format[], va_list args) {
 void fsprint(char format[], ...) {
     // how many % is there
     int nb_args = 0;
-    for (int i = 0; i < str_len(format); i++) {
+    for (unsigned int i = 0; i < strlen(format); i++) {
         if (format[i] == '%') nb_args++;
     }
     if (nb_args == 0) {
@@ -231,7 +232,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
             c_set_cursor_offset(old_cursor);
             for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
             clean_buffer(out_buffer, size);
-            buffer_actual_size = (str_len(history[history_index]) > size) ? size : str_len(history[history_index]);
+            buffer_actual_size = ((int) strlen(history[history_index]) > size) ? size : (int) strlen(history[history_index]);
             for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index][i];
             buffer_index = buffer_actual_size;
             history_index++;
@@ -247,7 +248,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
                 continue;
             }
             history_index--;
-            buffer_actual_size = (str_len(history[history_index - 1]) > size) ? size : str_len(history[history_index - 1]);
+            buffer_actual_size = ((int) strlen(history[history_index - 1]) > size) ? size : (int) strlen(history[history_index - 1]);
             for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index - 1][i];
             buffer_index = buffer_actual_size;
         }

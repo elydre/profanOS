@@ -132,4 +132,7 @@
 #define c_task_kill_task_switch ((void (*)(int)) hi_func_addr(45))
 #define c_task_get_next_pid ((int (*)(void)) hi_func_addr(46))
 
+#define c_fs_delete_file ((void (*)(char *)) hi_func_addr(47))
+#define c_fs_delete_dir ((void (*)(char *)) hi_func_addr(48))
+
 #endif

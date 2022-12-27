@@ -26,4 +26,7 @@ int fs_get_sector_type(uint32_t sector_id);
 uint32_t fs_get_used_sectors();
 uint32_t fs_get_sector_count();
 
+int fs_delete_file(char *path);
+int fs_delete_dir(char *path);
+
 #endif
