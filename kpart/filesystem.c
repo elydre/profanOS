@@ -394,12 +394,10 @@ uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {
 
 void i_delete_dir(uint32_t id) {
     (void *)id;
-    fskprint("delete dir, NOT IMPLEMENTED");
 }
 
 void i_delete_file(uint32_t id) {
     (void *)id;
-    fskprint("delete file, NOT IMPLEMENTED");
 }
 
 /*********************

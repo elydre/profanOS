@@ -57,10 +57,6 @@ int shell_command(char *buffer) {
     strcpy(suffix, buffer);
     str_start_split(prefix, ' ');
     str_end_split(suffix, ' ');
-    // we set suffit at "" if there is no suffix
-    if (strlen(suffix) == strlen(buffer)) {
-        for (int i = 0; i < strlen(buffer); i++) suffix[i] = '\0';
-    }
 
     int return_value = 0;
 
@@ -83,6 +79,7 @@ int shell_command(char *buffer) {
                 if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
                     strcpy(current_dir, new_path);
                 else {
+                    printf("$3%s$B path not found\n", new_path);
                     strcpy(current_dir, old_path);
                     free(new_path);
                     break;
@@ -120,7 +117,6 @@ int shell_command(char *buffer) {
 void go(char file[], char prefix[], char suffix[]) {
     if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         int argc = str_count(suffix, ' ') + 3;
-        if (!strcmp(suffix, "")) argc--;
         char **argv = malloc(argc * sizeof(char *));
         // set argv[0] to the command name
         argv[0] = malloc(strlen(prefix) + 1);
