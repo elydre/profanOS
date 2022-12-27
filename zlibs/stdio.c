@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#define STDIO_C
+#include <stdio.h>
 
 void init_func();
 int printf(const char *restrict format, ... );
@@ -378,7 +380,25 @@ int printf(const char *restrict format, ... ) {
 }
 
 int fprintf( FILE *restrict stream, const char *restrict format, ... ) {
-    fsprint("fprintf not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("fprintf is not correctly implemented, ignore this warning if you are not Loris !\n");
+    // if the stream is read only, we can't write to it
+    if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || stream == stdin) {
+        return 0;
+    }
+    // if the stream is stdout or stderr, we use vfsprint
+    if (stream == stdout || stream == stderr) {
+        va_list args;
+        // we copy format to a buffer because we need to modify it
+        char *format_copy = malloc(strlen(format) + 1);
+        strcpy(format_copy, format);
+        va_start(args, format);
+        vfsprint(format_copy, args);
+        va_end(args);
+        free(format_copy);
+        return 0;
+    }
+    // if the stream is a file, we show an error, it's not implemented yet
+    fsprint("fprintf not implemented for files yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 

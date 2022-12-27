@@ -3,9 +3,10 @@
 
 #include <type.h>
 
-#define stdin 0
-#define stdout 1
-#define stderr 2
+#define stdin (FILE *) 0
+#define stdout (FILE *) 1
+#define stderr (FILE *) 2
+
 #define _IOFBF 0
 #define _IOLBF 1
 #define _IONBF 2
@@ -31,6 +32,8 @@
 int main();
 */
 
+// we dont define functions if we are in the .c file
+#ifndef STDIO_C
 #define clearerr ((void (*)(FILE *)) get_func_addr(STDIO_ID, 4))
 #define fopen ((FILE * (*)(const char *, const char *)) get_func_addr(STDIO_ID, 5))
 #define fopen_s ((errno_t (*)(FILE * *, const char *, const char *)) get_func_addr(STDIO_ID, 6))
@@ -92,5 +95,6 @@ int main();
 #define tmpfile_s ((errno_t (*)(FILE **)) get_func_addr(STDIO_ID, 62))
 #define tmpnam ((char *(*)(char *)) get_func_addr(STDIO_ID, 63))
 #define tmpnam_s ((errno_t (*)(char *, rsize_t)) get_func_addr(STDIO_ID, 64))
+#endif
 
 #endif

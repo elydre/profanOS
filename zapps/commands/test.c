@@ -117,6 +117,9 @@ int main(int argc, char **argv) {
     printf("Testing string.h: $1OK$7\n");
 
     printf("Il n'y a pas de test pour printf, mais si il ne marchais pas, l'os ne montrerais rien !\n");
+    fprintf(stderr, "print on stderr\n");
+    fprintf(stdout, "print on stdout\n");
+    fprintf(stdin, "print on stdin, THIS MESSAGE SHOULD NOT BE SEEN\n");
 
     return 0;
 }
