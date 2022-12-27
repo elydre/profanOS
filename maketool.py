@@ -23,7 +23,7 @@ HDD_MAP = {
 CC = "gcc"
 CPPC = "g++"
 
-CFLAGS = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions"
+CFLAGS = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -I include/zlibs"
 
