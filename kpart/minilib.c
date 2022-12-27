@@ -192,3 +192,30 @@ void *calloc(uint32_t size) {
     mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
+
+// status print
+
+void status_print(int (*func)(), char *verb, char *noun) {
+    int old_cursor, new_cursor, status;
+
+    ckprint("[", 0x0F);
+    old_cursor = get_cursor_offset();
+    ckprint("WORK", 0x0E);
+    ckprint("]  ", 0x0F);
+    ckprint(verb, 0x07);
+    ckprint(" ", 0x0F);
+    ckprint(noun, 0x0F);
+    ckprint("\n", 0x0F);
+
+    status = func();
+    new_cursor = get_cursor_offset();
+    set_cursor_offset(old_cursor);
+
+    if (status == 0) {
+        ckprint(" OK ", 0x0A);
+    } else {
+        ckprint("FAIL", 0x0C);
+    }
+
+    set_cursor_offset(new_cursor);
+}

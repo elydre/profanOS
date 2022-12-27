@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-void ramdisk_init();
+int ramdisk_init();
 void ramdisk_read_sector(uint32_t LBA, uint32_t out[]);
 void ramdisk_write_sector(uint32_t LBA, uint32_t bytes[]);
 

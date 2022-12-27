@@ -51,6 +51,6 @@ void cursor_blink(int off);
 uint8_t *font_get(int font_id);
 
 // tefv.c
-void tef_init();
+int tef_init();
 
 #endif

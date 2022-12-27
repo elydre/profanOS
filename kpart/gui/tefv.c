@@ -16,7 +16,7 @@
 int cursor_x = 0;
 int cursor_y = 0;
 
-int hidden_cursor = 0;
+int hidden_cursor = 1;
 
 typedef struct {
     char content;
@@ -26,8 +26,9 @@ typedef struct {
 
 screen_char_t *screen_buffer = NULL;
 
-void tef_init() {
+int tef_init() {
     screen_buffer = malloc(MAX_COLS * MAX_ROWS * sizeof(screen_char_t));
+    return screen_buffer == NULL;
 }
 
 // a character at a given position

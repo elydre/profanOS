@@ -3,11 +3,12 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.9.6"
+#define KERNEL_VERSION  "0.9.7"
 
 #define TASK_MAX_COUNT  20
 #define RAMDISK_SECTOR  2048
 #define RUN_DEFAULT     "/bin/shell.bin"
+#define TIMER_TICK_RATE 1000
 
 #define RUN_STACK_BIN   0x2000
 #define RUN_STACK_LIB   0x2000
@@ -42,9 +43,9 @@ int dily_does_loaded(int lib_id);
 int dily_get_func(int lib_id, int func_id);
 void dily_load(char path[], int lib_id);
 void dily_unload(int lib_id);
-void dily_init();
+int dily_init();
 
 // watfunc.c
-void init_watfunc();
+int init_watfunc();
 
 #endif

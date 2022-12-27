@@ -27,7 +27,7 @@ typedef struct allocated_part_t {
  * 5: loaded lib    *
 *********************/
 
-void mem_init();
+int mem_init();
 
 uint32_t mem_get_alloc_size(uint32_t addr);
 uint32_t mem_alloc(uint32_t size, int state);

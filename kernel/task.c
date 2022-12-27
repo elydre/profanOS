@@ -40,7 +40,7 @@ void i_destroy_killed_tasks(int nb_alive) {
  * EXTERNAL FUNCTIONS *
 ***********************/
 
-void tasking_init() {
+int tasking_init() {
     static task_t mainTask;
 
     // Get EFLAGS and CR3
@@ -65,6 +65,8 @@ void tasking_init() {
 
     current_pid = 0;
     task_count = 1;
+
+    return 0;
 }
 
 int task_create(void (*func)(), char *name) {

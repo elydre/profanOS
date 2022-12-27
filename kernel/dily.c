@@ -104,8 +104,9 @@ void dily_unload(int lib_id) {
     sys_error("Library not found");
 }
 
-void dily_init() {
+int dily_init() {
     for (int i = 0; i < (int) (sizeof(libs_at_boot) / sizeof(lib_t)); i++) {
         dily_load(libs_at_boot[i].path, libs_at_boot[i].id);
     }
+    return 0;
 }

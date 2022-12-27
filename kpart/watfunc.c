@@ -13,9 +13,10 @@
 
 int wf_get_func_addr(int func_id);
 
-void init_watfunc() {
+int init_watfunc() {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
     *(int *)(WATDILY_ADDR) = (int) dily_get_func;
+    return 0;
 }
 
 void unknown_func() {

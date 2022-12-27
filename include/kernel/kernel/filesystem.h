@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-void filesystem_init();
+int filesys_init();
 
 uint32_t fs_path_to_id(char *path);
 int fs_does_path_exists(char *path);
