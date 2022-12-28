@@ -6,6 +6,7 @@ elf:
 
 # create iso with grub
 iso: 
+	python3 maketool.py elf_image
 	python3 maketool.py iso
 
 # build disk image with zapps
