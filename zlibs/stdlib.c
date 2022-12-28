@@ -732,11 +732,6 @@ char* itoa(int value, char* buffer, int base) {
 
 // INTERNAL FUNCS, DO NOT MOVE AROUND
 
-// void memset(uint8_t *dest, uint8_t val, uint32_t len) {
-//     uint8_t *temp = (uint8_t *)dest;
-//     for ( ; len != 0; len--) *temp++ = val;
-// }
-
 void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
     if (source < dest) {
         for (int i = nbytes - 1; i >= 0; i--) {

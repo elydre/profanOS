@@ -12,13 +12,18 @@ int *line_sizes;
 
 int main(int argc, char **argv) {
 
-    text_buffer = malloc(1 * sizeof(char*)); // we will realloc later
-    text_buffer[0] = calloc(1, sizeof(char)); // we will realloc later
+    text_buffer = calloc(100, sizeof(char *)); // hardcoded for now
+    for (int i = 0; i < 100; i++) {
+        text_buffer[i] = calloc(100, sizeof(char)); // hardcoded for now
+    }
     current_line = 0;
     current_col = 0;
-    line_sizes = malloc(1 * sizeof(int)); // we will realloc later
-    line_sizes[0] = 0;
-    lines_number = 1;
+    line_sizes = calloc(100, sizeof(int)); // hardcoded for now
+    
+    for (int i = 0; i < 100; i++) {
+        line_sizes[i] = 0;
+    }
+    lines_number = 100;
 
     if (argc == 2) {
         // we open a new file that will be saved later
@@ -54,6 +59,7 @@ int main(int argc, char **argv) {
     int sc, last_sc;
     int shift = 0;
     int new_pos;
+
 
     #define FIRST_L 40
     #define BONDE_L 4
@@ -105,7 +111,15 @@ int main(int argc, char **argv) {
         }
 
         else if (sc == BACKSPACE) {
-            // do nothing
+            // we remove the last character
+            if (current_col > 0) {
+                current_col--;
+                text_buffer[current_line][current_col] = '\0';
+            } else if (current_line > 0) {
+                current_line--;
+                current_col = line_sizes[current_line];
+                text_buffer[current_line][current_col] = '\0';
+            }
         }
 
         else if (sc == DEL) {
@@ -113,14 +127,24 @@ int main(int argc, char **argv) {
         }
 
         else if (sc == KB_TAB) {
-            // print 4 spaces
+            for (int i = 0; i < 4; i++) {
+                // we add a tab
+                text_buffer[current_line][current_col] = ' ';
+                current_col++;
+            }
+        }
+
+        else if (sc == ENTER) {
+            // we add a new line
+            current_line++;
+            current_col = 0;
         }
 
         else if (sc <= SC_MAX) {
             if (c_kb_scancode_to_char(sc, shift) == '?') continue;
-            // printf("%c", c_kb_scancode_to_char(sc, shift));
-            // buffer_actual_size++;
-            // buffer_index++;
+            // we add the character to the buffer
+            text_buffer[current_line][current_col] = c_kb_scancode_to_char(sc, shift);
+            current_col++;
         }
 
     }
