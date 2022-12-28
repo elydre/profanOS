@@ -95,6 +95,7 @@ int shell_command(char *buffer) {
         if (!(str_count(suffix, '.'))) strncat(suffix, ".bin", 4);
         char *file = malloc(strlen(suffix) + strlen(current_dir) + 3);
         assemble_path(current_dir, suffix, file);
+        suffix[0] = '\0';
         go(file, prefix, suffix);
         free(file);
     } else {  // shell command
@@ -122,8 +123,7 @@ void go(char file[], char prefix[], char suffix[]) {
         int argc = str_count(suffix, ' ') + 3;
         if (!strcmp(suffix, "")) argc--;
         char **argv = malloc(argc * sizeof(char *));
-        // set argv[0] to the command name
-        argv[0] = malloc(strlen(prefix) + 1);
+        argv[0] = malloc(strlen(file) + 1);
         strcpy(argv[0], file);
         argv[1] = malloc(strlen(current_dir) + 1);
         strcpy(argv[1], current_dir);
