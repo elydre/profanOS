@@ -5,8 +5,7 @@ elf:
 	python3 maketool.py elf_image
 
 # create iso with grub
-iso: 
-	python3 maketool.py elf_image
+iso: elf
 	python3 maketool.py iso
 
 # build disk image with zapps
@@ -21,15 +20,15 @@ info:
 	python3 maketool.py help
 
 # run kernel in qemu
-run:
+run: elf
 	python3 maketool.py run
 
 # run iso in qemu
-irun:
+irun: elf
 	python3 maketool.py irun
 
 # run iso in qemu kvm
-kirun:
+kirun: elf
 	python3 maketool.py kirun
 
 # clean out/ directory

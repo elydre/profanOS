@@ -238,7 +238,6 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 def qemu_run(iso_run = False, kvm = False):
-    elf_image()
     if iso_run: make_iso()
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
