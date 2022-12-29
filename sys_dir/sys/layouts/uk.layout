@@ -1,0 +1,13 @@
+!include QWERTY.layout.base
+
+1   Esc
+2   1   shift   =!  altgr   =¹
+3   2   shift   ="  altgr   =²
+4   3   shift   =£  altgr   =³
+5   4   shift   =$  altgr   =€
+6   5   shift   =%  altgr   =½
+7   6   shift   =^  altgr   =¾
+8   7   shift   =&  altgr   ={
+9   8   shift   =*  altgr   =[
+10  9   shift   =(  altgr   =]
+11  0   shift   =)  altgr   =}
