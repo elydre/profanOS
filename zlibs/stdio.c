@@ -394,7 +394,7 @@ int fprintf( FILE *restrict stream, const char *restrict format, ... ) {
         vfsprint(format_copy, args);
         va_end(args);
         free(format_copy);
-        return 0;
+        return strlen(format); // TODO : return the true number of characters written
     }
     // if the stream is a file, we show an error, it's not implemented yet
     fsprint("fprintf not implemented for files yet, WHY DO YOU USE IT ?\n");
