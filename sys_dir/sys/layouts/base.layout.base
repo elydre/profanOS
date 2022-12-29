@@ -1,0 +1,37 @@
+59	F1	shift	=F13	ctrl	=F25
+60	F2	shift	=F14	ctrl	=F26
+61	F3	shift	=F15	ctrl	=F27
+62	F4	shift	=F16	ctrl	=F28
+63	F5	shift	=F17	ctrl	=F29
+64	F6	shift	=F18	ctrl	=F30
+65	F7	shift	=F19	ctrl	=F31
+66	F8	shift	=F20	ctrl	=F32
+67	F9	shift	=F21	ctrl	=F33
+68	F10	shift	=F22	ctrl	=F34
+
+71	KP_7
+72	KP_8
+73	KP_9
+75	KP_4
+76	KP_5
+77	KP_6
+79	KP_1
+80	KP_2
+81	KP_3
+82	KP_0
+
+69	Num_Lock
+98	KP_Divide
+55	KP_Multiply
+74	KP_Subtract
+78	KP_Add
+96	KP_Enter
+
+83  KP_Period
+
+110 Ins
+102 Home
+104 PgUp
+111 Remove
+107 End
+109 PgDown

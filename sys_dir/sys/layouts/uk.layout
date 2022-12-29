@@ -1,13 +1,37 @@
 !include QWERTY.layout.base
 
-1   Esc
-2   1   shift   =!  altgr   =¹
-3   2   shift   ="  altgr   =²
-4   3   shift   =£  altgr   =³
-5   4   shift   =$  altgr   =€
-6   5   shift   =%  altgr   =½
-7   6   shift   =^  altgr   =¾
-8   7   shift   =&  altgr   ={
-9   8   shift   =*  altgr   =[
-10  9   shift   =(  altgr   =]
-11  0   shift   =)  altgr   =}
+1	Esc
+2	1	shift	=!	altgr	=¹
+3	2	shift	="	altgr	=²
+4	3	shift	=£	altgr	=³
+5	4	shift	=$	altgr	=€
+6	5	shift	=%	altgr	=½
+7	6	shift	=^	altgr	=¾
+8	7	shift	=&	altgr	={
+9	8	shift	=*	altgr	=[
+10	9	shift	=(	altgr	=]
+11	0	shift	=)	altgr	=}
+12	-	shift	=_	altgr	=\
+13	=	shift	=+
+14	Del
+15	Tab
+
+26	[	shift	={
+27	]	shift	=}
+28	Ret
+
+39	;	shift	=:
+40	'	shift	=@
+41	`	shift	=¬
+42	shift
+43	#	shift	=~
+
+51	,	shift	=<
+52	.	shift	=>
+53	/	shift	=?
+54	shift
+56	alt
+57	space
+58	cplck
+86	\	shift	=|
+97	ctrl
