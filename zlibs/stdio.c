@@ -58,7 +58,6 @@ FILE *fopen( const char *restrict filename, const char *restrict mode ) {
     // now we create the file if it doesn't exist
     if (exists == 0) {
         c_fs_make_file(path, name);
-        
     }
     // now the file exists, we can open it
     // we create a new file struct
