@@ -4,8 +4,6 @@
 
 void init_func();
 
-void mem_move(uint8_t *source, uint8_t *dest, int nbytes);
-
 int main() {
     init_func();
     return 0;
@@ -726,20 +724,4 @@ char* itoa(int value, char* buffer, int base) {
  
     // reverse the string and return it
     return I_reverse(buffer, 0, i - 1);
-}
- 
-
-
-// INTERNAL FUNCS, DO NOT MOVE AROUND
-
-void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
-    if (source < dest) {
-        for (int i = nbytes - 1; i >= 0; i--) {
-            *(dest + i) = *(source + i);
-        }
-    } else {
-        for (int i = 0; i < nbytes; i++) {
-            *(dest + i) = *(source + i);
-        }
-    }
 }
