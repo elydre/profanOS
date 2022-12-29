@@ -27,11 +27,11 @@
 78	KP_Add
 96	KP_Enter
 
-83  KP_Period
+83	KP_Period
 
-110 Ins
-102 Home
-104 PgUp
-111 Remove
-107 End
-109 PgDown
+110	Ins
+102	Home
+104	PgUp
+111	Remove
+107	End
+109	PgDown
