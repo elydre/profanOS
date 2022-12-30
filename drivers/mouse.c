@@ -72,7 +72,6 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             } else {
                 mouse_y += -(mouse_byte[2]);
             }
-
             // we check if the mouse is out of the screen
             if (mouse_x < 0) {
                 mouse_x = 0;
