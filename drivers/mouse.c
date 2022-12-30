@@ -56,6 +56,7 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
                 }
                 is_bad = 1;
                 was_installed=0;
+                // TODO : save the old mouse position so we can restore it
                 mouse_install();
                 mouse_reset();
                 break;
@@ -91,6 +92,8 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             buttons[0] = (mouse_byte[0] & 0x1) == 0x1;
             buttons[1] = (mouse_byte[0] & 0x2) == 0x2;
             buttons[2] = (mouse_byte[0] & 0x4) == 0x4;
+
+            is_bad = 0;
             break;
     }
 }
@@ -135,7 +138,6 @@ void mouse_install() {
     register_interrupt_handler(IRQ12, mouse_handler);
 
     mouse_reset();
-    is_bad = 0;
 }
 
 // get data
