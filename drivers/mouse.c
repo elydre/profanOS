@@ -1,8 +1,9 @@
+#include <driver/mouse.h>
 #include <cpu/ports.h>  
 #include <cpu/isr.h>
-#include <driver/mouse.h>
-#include <type.h>
 #include <minilib.h>
+#include <system.h>
+#include <type.h>
 
 /*
 Mouse.inc by SANiK
@@ -14,6 +15,7 @@ sbyte mouse_byte[3];    //signed char
 int mouse_x=0;         //signed char
 int mouse_y=0;         //signed char
 int was_installed=0;
+int is_bad = 0;
 
 /*
 buttons[0] = left button
@@ -22,6 +24,7 @@ buttons[2] = middle button
 */
 bool buttons[3];
 
+void mouse_reset();
 
 //Mouse functions
 void mouse_handler(registers_t *a_r) { // (not used but just there)
@@ -41,6 +44,20 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             // if those are set, it's a bad packet
             if ((mouse_byte[0] & 0x80) || (mouse_byte[0] & 0x40)) {
                 mouse_cycle=0;
+                if (!is_bad) {
+                    sys_warning("Bad mouse packet (but dont worry)");
+                }
+                break;
+            }
+            if (!(mouse_byte[0] & 0x8)) {
+                mouse_cycle=0;
+                if (!is_bad) {
+                    sys_warning("Bad mouse packet (WTF IT SHOULDNT HAPPEND WHY DO YOU USE THE SCROLL WHEEL)");
+                }
+                is_bad = 1;
+                was_installed=0;
+                mouse_install();
+                mouse_reset();
                 break;
             }
             // now we add the coordinates (and take care of the sign)
@@ -54,12 +71,22 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             } else {
                 mouse_y += -(mouse_byte[2]);
             }
+
+            // we check if the mouse is out of the screen
             if (mouse_x < 0) {
                 mouse_x = 0;
             }
             if (mouse_y < 0) {
                 mouse_y = 0;
             }
+            // TODO : the screen resolution
+            if (mouse_x > 1024) {
+                mouse_x = 1024;
+            }
+            if (mouse_y > 768) {
+                mouse_y = 768;
+            }
+
             mouse_cycle=0;
             buttons[0] = (mouse_byte[0] & 0x1) == 0x1;
             buttons[1] = (mouse_byte[0] & 0x2) == 0x2;
@@ -106,19 +133,22 @@ void mouse_install() {
 
     //Setup the mouse handler
     register_interrupt_handler(IRQ12, mouse_handler);
+
+    mouse_reset();
+    is_bad = 0;
 }
 
 // get data
 int mouse_get_x() {
-    return mouse_x;
+    return is_bad ? 0 : mouse_x;
 }
 
 int mouse_get_y() {
-    return mouse_y;
+    return is_bad ? 0 : mouse_y;
 }
 
 bool mouse_get_button(int button) {
-    return buttons[button];
+    return is_bad ? 0 : buttons[button];
 }
 
 // set data
