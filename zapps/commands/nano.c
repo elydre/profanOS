@@ -94,12 +94,10 @@ int main(int argc, char **argv) {
         
         else if (sc == LEFT) {
             // do nothing
-
         }
 
         else if (sc == RIGHT) {
             // do nothing
-
         }
 
         else if (sc == OLDER) {
