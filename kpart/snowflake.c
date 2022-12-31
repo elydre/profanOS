@@ -71,6 +71,7 @@ int mm_get_unused_index() {
         if (MEM_PARTS[i].state == 0) return i;
     }
 
+    sys_error("no more memory, dynamizing do not work");
     return -1;
 }
 
@@ -89,10 +90,9 @@ void dynamize_mem() {
     int sum = 0;
     for (int i = 0; i < part_size; i++) {
         sum += !MEM_PARTS[i].state;
-        if (sum > 3) return;
+        if (sum > 4) return;
     }
 
-    serial_debug("SNOWFLAKE", "dynamizing memory...");
     uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 3);
     if (new_add == 0) {
         sys_fatal("memory dynamizing failed");
@@ -147,15 +147,15 @@ uint32_t mem_alloc(uint32_t size, int state) {
     MEM_PARTS[i].task_id = (state == 1) ? task_get_current_pid(): 0;
     MEM_PARTS[i].state = state;
 
-    if (exit_mode == 0) {
+    if (exit_mode) {
+        new_index = mm_get_unused_index();
+        if (new_index == -1) return 0;
+        MEM_PARTS[index].next = new_index;
+    } else {
         del_occurence(new_index);
 
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
-    } else {
-        new_index = mm_get_unused_index();
-        if (new_index == -1) return 0;
-        MEM_PARTS[index].next = new_index;
     }
     alloc_count++;
     return last_addr;
