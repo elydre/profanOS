@@ -4,6 +4,7 @@
 #include <driver/keyboard.h>
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
+#include <driver/mouse.h>
 #include <kernel/task.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
@@ -30,6 +31,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(irq_install,  "Enabling", "interruptions");
     status_print(timer_init,   "Initing", "cpu timer (PIT)");
     status_print(keyboard_init,"Setuping", "PS/2 keyboard");
+    status_print(mouse_init,   "Setuping", "PS/2 mouse");
     status_print(mem_init,     "Initing", "snowflake memory manager");
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");

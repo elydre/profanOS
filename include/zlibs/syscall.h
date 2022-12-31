@@ -148,15 +148,6 @@
 #define c_fs_delete_file ((void (*)(char *)) hi_func_addr(47))
 #define c_fs_delete_dir ((void (*)(char *)) hi_func_addr(48))
 
-#define c_mouse_get_x ((int (*)(void)) hi_func_addr(49))
-#define c_mouse_get_y ((int (*)(void)) hi_func_addr(50))
-#define c_mouse_read ((unsigned char (*)(void)) hi_func_addr(51))
-#define c_mouse_install ((void (*)(void)) hi_func_addr(52))
-#define c_mouse_get_button ((bool (*)(int)) hi_func_addr(53))
-#define c_mouse_set_x ((void (*)(int)) hi_func_addr(54))
-#define c_mouse_set_y ((void (*)(int)) hi_func_addr(55))
-#define c_mouse_set_button ((void (*)(int bool)) hi_func_addr(56))
-#define c_mouse_reset ((void (*)(void)) hi_func_addr(57))
-
+#define c_mouse_call ((int (*)(int, int)) hi_func_addr(49))
 
 #endif

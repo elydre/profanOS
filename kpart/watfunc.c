@@ -97,15 +97,7 @@ void *SYSCALL_ARRAY[] = {
     fs_delete_dir,
 
     // mouse.h
-    mouse_get_x,
-    mouse_get_y,
-    mouse_read,
-    mouse_install,
-    mouse_get_button,
-    mouse_set_x,
-    mouse_set_y,
-    mouse_set_button,
-    mouse_reset,
+    mouse_call,
 };
 
 int wf_get_func_addr(int func_id) {

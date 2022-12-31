@@ -6,27 +6,30 @@
 #include <type.h>
 
 /*
-Mouse.inc by SANiK
-License: Use as you wish, except to cause damage
+mouse.inc by SANiK
+license: Use as you wish, except to cause damage
 */
 
-byte mouse_cycle=0;     //unsigned char
-sbyte mouse_byte[3];    //signed char
-int mouse_x=0;         //signed char
-int mouse_y=0;         //signed char
-int was_installed=0;
+int8_t mouse_byte[3];
+
+uint8_t mouse_cycle = 0;
+int was_installed = 0;
 int is_bad = 0;
 
-/*
-buttons[0] = left button
-buttons[1] = right button
-buttons[2] = middle button
-*/
+int mouse_x;
+int mouse_y;
+
+/*******************************
+ * buttons[0] = left button   *
+ * buttons[1] = right button  *
+ * buttons[2] = middle button *
+*******************************/
+
 bool buttons[3];
 
 void mouse_reset();
 
-//Mouse functions
+// mouse functions
 void mouse_handler(registers_t *a_r) { // (not used but just there)
     UNUSED(a_r);
     switch(mouse_cycle) {
@@ -43,7 +46,7 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
 
             // if those are set, it's a bad packet
             if ((mouse_byte[0] & 0x80) || (mouse_byte[0] & 0x40)) {
-                mouse_cycle=0;
+                mouse_cycle = 0;
                 if (!is_bad) {
                     sys_warning("Bad mouse packet (but dont worry)");
                 }
@@ -55,9 +58,9 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
                     sys_warning("Bad mouse packet (WTF IT SHOULDNT HAPPEND WHY DO YOU USE THE SCROLL WHEEL)");
                 }
                 is_bad = 1;
-                was_installed=0;
+                was_installed = 0;
                 // TODO : save the old mouse position so we can restore it
-                mouse_install();
+                mouse_init();
                 mouse_reset();
                 break;
             }
@@ -97,72 +100,48 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
     }
 }
 
-void mouse_write(byte a_write) {
-    //Tell the mouse we are sending a command
+void mouse_write(uint8_t a_write) {
+    // tell the mouse we are sending a command
     port_byte_out(0x64, 0xD4);
-    //Finally write
+    // finally write
     port_byte_out(0x60, a_write);
 }
 
-byte mouse_read() {
-    //Get's response from mouse
+uint8_t mouse_read() {
+    // get's response from mouse
     return port_byte_in(0x60);
 }
 
-void mouse_install() {
+int mouse_init() {
     if(was_installed) {
-        return;
+        return 1;
     }
-    was_installed=1;
-    byte _status;
+    was_installed = 1;
 
-    //Enable the auxiliary mouse device
+    uint8_t status;
+
+    // enable the auxiliary mouse device
     port_byte_out(0x64, 0xA8);
 
-    //Enable the interrupts
+    // enable the interrupts
     port_byte_out(0x64, 0x20);
-    _status=(port_byte_in(0x60) | 2);
+    status = (port_byte_in(0x60) | 2);
     port_byte_out(0x64, 0x60);
-    port_byte_out(0x60, _status);
+    port_byte_out(0x60, status);
 
-    //Tell the mouse to use default settings
+    // tell the mouse to use default settings
     mouse_write(0xF6);
-    mouse_read();  //Acknowledge
+    mouse_read();  // acknowledge
 
-    //Enable the mouse
+    // enable the mouse
     mouse_write(0xF4);
-    mouse_read();  //Acknowledge
+    mouse_read();  // acknowledge
 
-    //Setup the mouse handler
+    // setup the mouse handler
     register_interrupt_handler(IRQ12, mouse_handler);
 
     mouse_reset();
-}
-
-// get data
-int mouse_get_x() {
-    return is_bad ? 0 : mouse_x;
-}
-
-int mouse_get_y() {
-    return is_bad ? 0 : mouse_y;
-}
-
-bool mouse_get_button(int button) {
-    return is_bad ? 0 : buttons[button];
-}
-
-// set data
-void mouse_set_x(int x) {
-    mouse_x = x;
-}
-
-void mouse_set_y(int y) {
-    mouse_y = y;
-}
-
-void mouse_set_button(int button, bool value) {
-    buttons[button] = value;
+    return 0; 
 }
 
 // reset data
@@ -172,4 +151,27 @@ void mouse_reset() {
     buttons[0] = 0;
     buttons[1] = 0;
     buttons[2] = 0;
+}
+
+// get/set mouse data
+int mouse_call(int thing, int val) {
+    switch(thing) {
+        case 0:
+            return is_bad ? 0 : mouse_x;
+        case 1:
+            return is_bad ? 0 : mouse_y;
+        case 2:
+            return is_bad ? 0 : buttons[val];
+        case 3:
+            mouse_x = val;
+            return 0;
+        case 4:
+            mouse_y = val;
+            return 0;
+        case 5:
+            mouse_reset();
+            return 0;
+        default:
+            return 0;
+    }
 }

@@ -1,23 +1,22 @@
 #include <syscall.h>
-#include <stdio.h>
+#include <i_mouse.h>
 #include <stdlib.h>
 #include <i_time.h>
 #include <i_vgui.h>
+#include <stdio.h>
 
 void draw_mouse(int x, int y);
 
 int main(int argc, char **argv) {
-
-    c_mouse_install();
     c_clear_screen();
 
     int x, y;
 
     while (1) {
-        x = c_mouse_get_x();
-        y = c_mouse_get_y();
+        x = mouse_get_x();
+        y = mouse_get_y();
         // // we draw a rectangle
-        printf("x: %d, y: %d, %d %d %d\n", x, y, c_mouse_get_button(0), c_mouse_get_button(1), c_mouse_get_button(2));
+        printf("x: %d, y: %d, %d %d %d\n", x, y, mouse_get_button(0), mouse_get_button(1), mouse_get_button(2));
         draw_mouse(x, y);
         ms_sleep(25);
     }
