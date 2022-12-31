@@ -3,6 +3,7 @@
 #include <driver/keyboard.h>
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
+#include <driver/mouse.h>
 #include <kernel/task.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
@@ -94,6 +95,17 @@ void *SYSCALL_ARRAY[] = {
     // filesystem stuff that was implemented later
     fs_delete_file,
     fs_delete_dir,
+
+    // mouse.h
+    mouse_get_x,
+    mouse_get_y,
+    mouse_read,
+    mouse_install,
+    mouse_get_button,
+    mouse_set_x,
+    mouse_set_y,
+    mouse_set_button,
+    mouse_reset,
 };
 
 int wf_get_func_addr(int func_id) {

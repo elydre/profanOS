@@ -128,4 +128,12 @@ typedef struct fpos_t {
     
 } fpos_t;
 
+// typedef of byte and sbyte
+typedef unsigned char byte;
+typedef signed char sbyte;
+
+typedef unsigned long DWORD, *PDWORD, *LPDWORD;
+
+typedef int bool;
+
 #endif
