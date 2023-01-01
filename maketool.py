@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 from threading import Thread
@@ -33,6 +34,7 @@ QEMU_KVM = "kvm"
 # SETTINGS
 
 COMPCT_CMDS = True
+HBL_FILE    = True
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
@@ -206,6 +208,32 @@ def make_iso(force = False):
     print_and_exec(f"cp boot/grub.cfg {OUT_DIR}/isodir/boot/grub/")
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
+def get_kernel_version(print_info = True):
+    path = os.path.dirname(os.path.abspath(__file__))
+
+    with open(f"{path}/include/kernel/system.h", "r") as f:
+        for line in f:
+            if "KERNEL_VERSION" not in line: continue
+            info = line.split(" ")[-1][1:-2]
+            if print_info: print(info)
+            return info
+
+def write_build_logs():
+    cprint(COLOR_EXEC, "writing build logs...")
+    text = "- HDD.bin BUILD LOGS -\n"
+    text += "UTC build time: " + datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%d %H:%M:%S"
+    ) + "\n"
+    text += f"machine name:   {os.uname().nodename} ({os.uname().sysname})\n"
+    text += f"profan branch:  {os.popen('git rev-parse --abbrev-ref HEAD').read().splitlines()[0]}\n"
+    text += f"build for:      profanOS {get_kernel_version(False)}\n"
+    text += f"gcc version:    {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
+    text += f"ld version:     {os.popen('ld --version').read().splitlines()[0]}\n"
+    text += f"python version: {os.popen('python3 --version').read().splitlines()[0]}\n"
+
+    with open(f"{OUT_DIR}/disk/user/hbl.txt", "w") as f:
+        f.write(text)
+
 def gen_disk(force=False, with_src=False):
     if file_exists("HDD.bin") and not force: return
     build_app_lib()
@@ -231,10 +259,13 @@ def gen_disk(force=False, with_src=False):
     except Exception as e:
         cprint(COLOR_EROR, f"Error while copying projects: {e}")
 
+    if HBL_FILE: write_build_logs()
+
     if not file_exists("makefsys.bin") or file1_newer("makefsys.c", "makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec("gcc -o makefsys.bin -Wall -Wextra makefsys.c")
-
+    
+    cprint(COLOR_INFO, "building HDD.bin...")
     print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 def qemu_run(iso_run = False, kvm = False):
@@ -255,6 +286,7 @@ assos = {
     "run": lambda: qemu_run(False),
     "irun": lambda: qemu_run(True),
     "kirun": lambda: qemu_run(True, True),
+    "kver": get_kernel_version,
 }
 
 def main():

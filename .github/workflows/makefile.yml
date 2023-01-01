@@ -19,8 +19,7 @@ jobs:
 
     - name: build img
       run: |
-        wget https://raw.githubusercontent.com/elydre/elydre/main/projet/profan/version.py
-        VERSION=$(python3 version.py)
+        VERSION=$(python3 maketool.py kver)
         echo "PROFAN_HDD=disk-$VERSION.bin" >> $GITHUB_ENV
         echo "PROFAN_ISO=profanOS-$VERSION.iso" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV

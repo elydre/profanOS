@@ -62,12 +62,10 @@ void i_print_sector_smart(u_int32_t sector);
 
 // PORT PARTIALLY
 void init_fs() {
-    printf("Initialisation of the filesystem...\n");
     total_sector_written = 0;
     virtual_disk = (u_int32_t *) calloc(SECTOR_COUNT * SECTOR_SIZE, sizeof(u_int32_t));
     free_map = (u_int8_t *) calloc(SECTOR_COUNT, sizeof(u_int8_t));
 
-    printf("Done !\n");
     i_create_dir(0, "/");
 }
 
