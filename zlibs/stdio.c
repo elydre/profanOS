@@ -521,5 +521,3 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
     fsprint("tmpnam_s not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
-
-

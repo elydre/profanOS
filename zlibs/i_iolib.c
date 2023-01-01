@@ -195,6 +195,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     } while (sc == ENTER);
 
     c_kb_reset_history();
+    c_cursor_blink(1);
 
     while (sc != ENTER) {
         ms_sleep(2);
@@ -302,6 +303,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
             old_cursor -= row * 2;
         }
     }
+    c_cursor_blink(0);
 }
 
 void input(char out_buffer[], int size, char color) {

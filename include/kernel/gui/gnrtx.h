@@ -45,7 +45,7 @@ int get_offset(int col, int row);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
 
-void cursor_blink(int off);
+void cursor_blink(int on);
 
 // font.c
 uint8_t *font_get(int font_id);

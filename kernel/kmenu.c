@@ -20,7 +20,6 @@ void task_menu() {
         // refresh tasks
         nb_alive = task_get_alive();
         // print tasks
-        cursor_blink(1);
         menu_print_decoline(0, 5);
         for (int i = 0; i < nb_alive; i++) menu_print_line(i+6, i, i == selected_task);
         for (int i = nb_alive; i < 13; i++) menu_print_decoline(1, i+6);
@@ -32,7 +31,6 @@ void task_menu() {
         if (selected_task < 0) selected_task = nb_alive - 1;
         if (key == KB_KEY_ENTER || nb_alive == 1) {
             clear_screen();
-            cursor_blink(0);
             if (selected_task == 0) start_kshell();
             else task_switch(task_get_pid(selected_task));
         }

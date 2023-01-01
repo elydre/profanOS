@@ -1,5 +1,5 @@
 #include <syscall.h>
-#include <i_setting.h>
+#include <profan.h>
 
 #define seconde_in_year 31536000
 #define seconde_in_leap_year 31622400

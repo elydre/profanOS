@@ -20,9 +20,7 @@ char **g_argv;
 void tasked_program() {
     int pid = task_get_current_pid();
     uint8_t *binary_mem = task_get_bin_mem(pid);
-    uint8_t *entry = binary_mem + RUN_STACK_BIN;
-    while (entry[0] != 0x55 && entry[1] != 0x89) entry += 2;
-    g_return = ((int (*)(int, char **)) entry)(g_argc, g_argv);
+    g_return = ((int (*)(int, char **)) binary_mem + RUN_STACK_BIN)(g_argc, g_argv);
 
     free(binary_mem);
 

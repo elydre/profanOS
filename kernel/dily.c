@@ -16,10 +16,9 @@ typedef struct {
 lib_t libs_at_boot[] = {
     {1000, "/lib/i_iolib.bin"},
     {1001, "/lib/i_string.bin"},
-    {1002, "/lib/i_setting.bin"},
+    {1002, "/lib/profan.bin"},
     {1003, "/lib/i_mem.bin"},
     {1004, "/lib/i_time.bin"},
-    {1005, "/lib/i_demo.bin"},
     {1006, "/lib/i_vgui.bin"},
     {1007, "/lib/stdlib.bin"},
     {1008, "/lib/string.bin"},
@@ -38,15 +37,15 @@ int dily_does_loaded(int lib_id) {
     return 0;
 }
 
-void dily_load(char path[], int lib_id) {
+int dily_load(char path[], int lib_id) {
     if ((!fs_does_path_exists(path)) || fs_get_sector_type(fs_path_to_id(path)) != 2) {
         sys_error("Lib file not found");
-        return;
+        return 1;
     }
 
     if (dily_does_loaded(lib_id)) {
         sys_error("Lib already loaded");
-        return;
+        return 1;
     }
 
     if (lib_functions == 0) {
@@ -76,6 +75,8 @@ void dily_load(char path[], int lib_id) {
 
     lib_functions[lib_count] = addr_list;
     lib_count++;
+
+    return 0;
 }
 
 int dily_get_func(int lib_id, int func_id) {
@@ -106,8 +107,9 @@ void dily_unload(int lib_id) {
 }
 
 int dily_init() {
+    int error_count = 0;
     for (int i = 0; i < (int) (sizeof(libs_at_boot) / sizeof(lib_t)); i++) {
-        dily_load(libs_at_boot[i].path, libs_at_boot[i].id);
+        error_count += dily_load(libs_at_boot[i].path, libs_at_boot[i].id);
     }
-    return 0;
+    return error_count != 0;
 }

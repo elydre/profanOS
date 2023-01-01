@@ -21,7 +21,6 @@ int main(int argc, char **argv) {
     printf("loading file: %s into memory...\n", path);
     c_fs_read_file(path, data);
 
-    c_cursor_blink(1);
     c_clear_screen();
 
     int line = 0, str_index = 0, j;
@@ -48,6 +47,5 @@ int main(int argc, char **argv) {
     c_clear_screen();
     free(data);
     free(str);
-    c_cursor_blink(0);
     return 0;
 }

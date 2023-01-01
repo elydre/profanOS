@@ -13,7 +13,6 @@ int wait = 250;
 
 int main(int argc, char **argv) {
 
-    c_cursor_blink(1);
     c_clear_screen();
 
     // init du plateau
@@ -53,7 +52,6 @@ int main(int argc, char **argv) {
     // fin
     for (int i = 0; i < size_x; i++) free(plateau[i]);
     free(plateau);
-    c_cursor_blink(0);
     c_clear_screen();
     
     return 0;

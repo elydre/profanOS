@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.9.8c"
+#define KERNEL_VERSION  "0.9.9"
 
 #define TASK_MAX_COUNT  20
 #define RAMDISK_SECTOR  2048
@@ -41,7 +41,7 @@ int run_ifexist(char path[], int argc, char **argv);
 // dily.c
 int dily_does_loaded(int lib_id);
 int dily_get_func(int lib_id, int func_id);
-void dily_load(char path[], int lib_id);
+int dily_load(char path[], int lib_id);
 void dily_unload(int lib_id);
 int dily_init();
 

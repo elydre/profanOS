@@ -510,5 +510,3 @@ int strverscmp(const char *s1, const char *s2) {
     fsprint("strverscmp not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
-
-

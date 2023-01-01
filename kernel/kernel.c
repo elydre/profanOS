@@ -26,6 +26,7 @@ void kernel_main(void *mboot_ptr) {
     gdt_init();
     init_vesa();
     ckprint("Multiboot info saved, GDT and VESA initialized\n", 0x07);
+    cursor_blink(0);
 
     status_print(isr_install,  "Installing", "cpu interrupts");
     status_print(irq_install,  "Enabling", "interruptions");
@@ -44,7 +45,6 @@ void kernel_main(void *mboot_ptr) {
 
     kprintf("successfully booted in %d ms", timer_get_tick() * 1000 / TIMER_TICK_RATE);
 
-    cursor_blink(0);
     rainbow_print("\n\nWelcome to profanOS!\n");
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
 

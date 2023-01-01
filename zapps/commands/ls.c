@@ -1,10 +1,8 @@
 #include <syscall.h>
-#include <i_iolib.h>
 #include <stdlib.h>
+#include <profan.h>
 #include <string.h>
 #include <stdio.h>
-
-void assemble_path(char old[], char new[], char result[]);
 
 int main(int argc, char **argv) {
     char *current_dir = malloc(256);
@@ -55,14 +53,4 @@ int main(int argc, char **argv) {
     free(suffix);
     free(path);
     return 0;
-}
-
-void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; strcpy(result, old);
-    if (result[strlen(result) - 1] != '/') {
-        strncat(result, "/", 1);
-    }
-    for (unsigned int i = 0; i < strlen(new); i++) {
-        strncat(result, &new[i], 1);
-    }
 }

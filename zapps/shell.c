@@ -1,9 +1,10 @@
-#include <syscall.h>
-#include <string.h>
 #include <i_string.h>
 #include <i_iolib.h>
-#include <stdio.h>
+#include <syscall.h>
+#include <string.h>
 #include <stdlib.h>
+#include <profan.h>
+#include <stdio.h>
 
 
 #define BFR_SIZE 90
@@ -13,15 +14,8 @@
 
 static char current_dir[256] = "/";
 
-typedef struct {
-    char name[256];
-} string_20_t;
-
-void assemble_path(char old[], char new[], char result[]);
-void parse_path(char path[], string_20_t liste_path[]);
 void go(char file[], char prefix[], char suffix[]);
 int shell_command(char command[]);
-void gpd();
 
 int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
@@ -63,34 +57,19 @@ int shell_command(char *buffer) {
 
     int return_value = 0;
 
-
     // internal commands
 
     if (!strcmp(prefix, "exit")) {
         return_value = 1;
     } else if (!strcmp(prefix, "cd")) {
-        char old_path[256];
-        strcpy(old_path, current_dir);
-        string_20_t * liste_path = calloc(1024/sizeof(string_20_t), sizeof(string_20_t));
-        parse_path(suffix, liste_path);
-        for (int i=0; i<str_count(suffix, '/')+1; i++) {
-            if (!strcmp(liste_path[i].name, "..")) {
-                gpd();
-            } else {
-                char *new_path = calloc(256, sizeof(char));
-                assemble_path(current_dir, liste_path[i].name, new_path);
-                if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
-                    strcpy(current_dir, new_path);
-                else {
-                    printf("$3%s$B path not found\n", new_path);
-                    strcpy(current_dir, old_path);
-                    free(new_path);
-                    break;
-                }
-                free(new_path);
-            }
+        char *new_path = calloc(256, sizeof(char));
+        assemble_path(current_dir, suffix, new_path);
+        if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
+            strcpy(current_dir, new_path);
+        else {
+            printf("$3%s$B path not found\n", new_path);
         }
-        free(liste_path);
+        free(new_path);
     } else if (!strcmp(prefix, "go")) {
         if (!(str_count(suffix, '.'))) strncat(suffix, ".bin", 4);
         char *file = malloc(strlen(suffix) + strlen(current_dir) + 3);
@@ -138,38 +117,4 @@ void go(char file[], char prefix[], char suffix[]) {
         for (int i = 0; i < argc; i++) free(argv[i]);
         free(argv);
     } else printf("$3%s$B file not found\n", file);
-}
-
-void assemble_path(char old[], char new[], char result[]) {
-    result[0] = '\0'; strcpy(result, old);
-    if (result[strlen(result) - 1] != '/') {
-        strncat(result, "/", 1);
-    }
-    for (unsigned int i = 0; i < strlen(new); i++) {
-        strncat(result, &new[i], 1);
-    }
-}
-
-void parse_path(char path[], string_20_t liste_path[]) {
-    int index = 0;
-    int index_in_str = 0;
-    for (unsigned int i = 0; i < strlen(path); i++) {
-        if (path[i] != '/') {
-            liste_path[index].name[index_in_str] = path[i];
-            index_in_str++;
-        } else {
-            liste_path[index].name[index_in_str] = '\0';
-            index++;
-            index_in_str = 0;
-        }
-    }
-}
-
-void gpd() {
-    for (int i = strlen(current_dir); i > 0; i--) {
-        if (current_dir[i] == '/' || i == 1) {
-            current_dir[i] = '\0';
-            break;
-        }
-    }
 }

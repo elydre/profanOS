@@ -141,8 +141,8 @@ void tef_set_cursor_offset(int offset) {
     tef_draw_cursor(CURSOR_COLOR);
 }
 
-void tef_cursor_blink(int off) {
-    hidden_cursor = off;
+void tef_cursor_blink(int on) {
+    hidden_cursor = !on;
     tef_draw_cursor(CURSOR_COLOR);
 }
 

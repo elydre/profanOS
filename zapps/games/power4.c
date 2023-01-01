@@ -56,7 +56,6 @@ int main(int argc, char **argv) {
 
     printf((char *) "\nWinner is %c\n\n", get_piont(tour + 1));
     free_grille(grille);
-    c_cursor_blink(0);
     return 0;
 }
 
@@ -130,9 +129,7 @@ int get_user_choix(int ** grille) {
 
     while (1) {
         c_ckprint_at((char *) "ENTER YOUR CHOICE -> ", 0, 11, 0x0F);
-        c_cursor_blink(0);
         input(buffer, 3, 0x0F);
-        c_cursor_blink(1);
         inp = atoi(buffer) - 1;
 
         if (inp == -1 && buffer[0]) return -1;
