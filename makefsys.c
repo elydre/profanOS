@@ -16,7 +16,7 @@
 #define MAX_SIZE_NAME  32
 #define SECTOR_SIZE    128
 
-#define PRINT_PROGRESS 1
+#define PRINT_PROGRESS 0
 #define SPEED_MODE     1  // can be dangerous
 #define MIN_FREE       512
 
