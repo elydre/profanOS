@@ -398,7 +398,7 @@ int fprintf( FILE *restrict stream, const char *restrict format, ... ) {
     }
     // if the stream is a file, we show an error, it's not implemented yet
     fsprint("fprintf not implemented for files yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    return 0; // TODO : return the true number of characters written
 }
 
 int sprintf( char *restrict buffer, const char *restrict format, ... ) {
