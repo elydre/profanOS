@@ -11,7 +11,7 @@
 #define YMAX 1.2
 
 int main(int argc, char **argv) {
-    vgui_setup(0);
+    vgui_t vgui = vgui_setup(LARGEUR, HAUTEUR);
 
     while (1) {
         long double cx, cy, xn, yn, tmp_x, tmp_y;
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
                 n = 0;
                 while ((xn * xn + yn * yn) < 4 && n < MAX_ITER) {
                     if (c_kb_get_scancode() == 1) {
-                        vgui_exit();
+                        vgui_exit(&vgui);
                         return 0;
                     }
                     tmp_x = xn;
@@ -35,10 +35,10 @@ int main(int argc, char **argv) {
                     yn = 2 * tmp_x * tmp_y + cy;
                     n++;
                 }
-                vgui_set_pixel(x, y, n*100);
+                vgui_set_pixel(&vgui, x, y, n*100);
             }
         }
-        vgui_print(5, 5, "press escape to exit", 0xFFFFFF);
-        vgui_render();
+        vgui_print(&vgui, 5, 5, "press escape to exit", 0xFFFFFF);
+        vgui_render(&vgui, 1);
     }
 }
