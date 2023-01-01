@@ -1,73 +1,73 @@
 #include <syscall.h>
+#include <i_iolib.h>
 #include <i_mem.h>
 
-uint32_t *last_render;
-uint32_t *current_render;
-int refresh_mode;
-
-//    REFRESH MODES
-// 0: vgui no running
-// 1: refresh smart
-// 2: refresh smart - 1
-// 3: refresh smart - 2
-// 4: refresh full
-
+typedef struct {
+    int width;
+    int height;
+    uint32_t *old_framebuffer;
+    uint32_t *framebuffer;
+} vgui_t;
 
 int main() {
     return 0;
 }
 
-void vgui_setup(int refresh_all) {
-    // TODO: custom resolution
-    last_render = calloc(320 * 200 * sizeof(uint32_t));
-    current_render = calloc(320 * 200 * sizeof(uint32_t));
-    refresh_mode = refresh_all + 3;
+void vgui_render(vgui_t *vgui, int render_mode);
+
+vgui_t vgui_setup(int width, int height) {
+    vgui_t vgui;
+    int buffer_size = width * height * sizeof(uint32_t);
+    vgui.width = width;
+    vgui.height = height;
+
+    vgui.old_framebuffer = calloc(buffer_size);
+    vgui.framebuffer = calloc(buffer_size);
+
+    vgui_render(&vgui, 1);
+    return vgui;
 }
 
-void vgui_exit() {
-    free(last_render);
-    free(current_render);
-    refresh_mode = 0;
+void vgui_exit(vgui_t *vgui) {
+    free(vgui->old_framebuffer);
+    free(vgui->framebuffer);
 }
 
-void vgui_render() {
-    for (int i = 0; i < 320 * 200; i++) {
-        if (last_render[i] != current_render[i] || refresh_mode > 1) {
-            c_vesa_set_pixel(i % 320, i / 320, current_render[i]);
-            last_render[i] = current_render[i];
+void vgui_set_pixel(vgui_t *vgui, int x, int y, uint32_t color) {
+    if (x < 0 || x >= vgui->width || y < 0 || y >= vgui->height) return;
+    vgui->framebuffer[y * vgui->width + x] = color;
+}
+
+uint32_t vgui_get_pixel(vgui_t *vgui, int x, int y) {
+    if (x < 0 || x >= vgui->width || y < 0 || y >= vgui->height) return 0;
+    return vgui->framebuffer[y * vgui->width + x];
+}
+
+void vgui_render(vgui_t *vgui, int render_mode) {
+    for (int i = 0; i < vgui->width * vgui->height; i++) {
+        if (vgui->framebuffer[i] != vgui->old_framebuffer[i] || render_mode) {
+            c_vesa_set_pixel(i % vgui->width, i / vgui->width, vgui->framebuffer[i]);
+            vgui->old_framebuffer[i] = vgui->framebuffer[i];
         }
     }
-    refresh_mode = (refresh_mode == 4) ? 4 : refresh_mode - (refresh_mode > 1);
 }
 
-int vgui_get_refresh_mode() {
-    return refresh_mode;
-}
-
-void vgui_set_pixel(int x, int y, uint32_t color) {
-    current_render[y * 320 + x] = color;
-}
-
-uint32_t vgui_get_pixel(int x, int y) {
-    return current_render[y * 320 + x];
-}
-
-void vgui_draw_rect(int x, int y, int width, int height, uint32_t color) {
+void vgui_draw_rect(vgui_t *vgui, int x, int y, int width, int height, uint32_t color) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
-            current_render[(y + j) * 320 + x + i] = color;
+            vgui_set_pixel(vgui, x + i, y + j, color);
         }
     }
 }
 
-void vgui_print(int x, int y, char msg[], uint32_t color) {
+void vgui_print(vgui_t *vgui, int x, int y, char msg[], uint32_t color) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
         glyph = c_font_get(0) + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
-                vgui_set_pixel(i * 8 + x + 8 - k , y + j, color);
+                vgui_set_pixel(vgui, i * 8 + x + 8 - k , y + j, color);
             }
         }
     }
@@ -77,23 +77,32 @@ int abs(int x) {
     return (x < 0) ? -x : x;
 }
 
-void vgui_draw_line(int x1, int y1, int x2, int y2, uint32_t color) {
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-    int steps = abs(dx) > abs(dy) ? abs(dx) : abs(dy);
-    float xinc = dx / (float) steps;
-    float yinc = dy / (float) steps;
-    float x = x1;
-    float y = y1;
-    for (int i = 0; i <= steps; i++) {
-        vgui_set_pixel(x, y, color);
-        x += xinc;
-        y += yinc;
+void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color) {
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
+    int err = dx - dy;
+
+    while (1) {
+        vgui_set_pixel(vgui, x1, y1, color);
+        if (x1 == x2 && y1 == y2) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x1 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y1 += sy;
+        }
     }
 }
 
-void vgui_clear(uint32_t color) {
-    for (int i = 0; i < 320 * 200; i++) {
-        current_render[i] = color;
+void vgui_clear(vgui_t *vgui, uint32_t color) {
+    for (int i = 0; i < vgui->width; i++) {
+        for (int j = 0; j < vgui->height; j++) {
+            vgui_set_pixel(vgui, i, j, color);
+        }
     }
 }

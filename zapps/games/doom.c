@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     tick_count[0] = c_timer_get_tick();
     tick_count[3] = 0;
 
-    vgui_setup(0);
+    vgui_t vgui = vgui_setup(320, 200);
     c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
     while (c_kb_get_scancode() != 1) {
@@ -70,31 +70,31 @@ int main(int argc, char **argv) {
             bottom = (int) (half_height + center);
 
             for (int j = 0; j < height; j++) {
-                if (j < top) vgui_set_pixel(i, j, CEILING_COLOR);
-                else if (j > bottom) vgui_set_pixel(i, j, FLOOR_COLOR);
-                else vgui_set_pixel(i, j, convert_color(color));
+                if (j < top) vgui_set_pixel(&vgui, i, j, CEILING_COLOR);
+                else if (j > bottom) vgui_set_pixel(&vgui, i, j, FLOOR_COLOR);
+                else vgui_set_pixel(&vgui, i, j, convert_color(color));
             }
         }
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
+                vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
                 if (i == (int) x && j == (int) y)
-                    vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
+                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    vgui_draw_rect(width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
+                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
             }
         }
 
-        vgui_draw_rect(0, 0, tick_count[1] * 2, 7, 0x880000);
-        vgui_draw_rect(0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
+        vgui_draw_rect(&vgui, 0, 0, tick_count[1] * 2, 7, 0x880000);
+        vgui_draw_rect(&vgui, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
         
         itoa(1000 / (tick_count[1] + 1), convert, 10);
-        vgui_print(0, 8, convert, 0x0000AA);
+        vgui_print(&vgui, 0, 8, convert, 0x0000AA);
         
 
         tick_count[2] = c_timer_get_tick();
-        vgui_render();
+        vgui_render(&vgui, 0);
         tick_count[3] = c_timer_get_tick() - tick_count[2];
 
         key = c_kb_get_scfh();
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
                 remove_from_buffer(last_key - KB_released_value, key_buffer);
             }
         }
-        
+
         if (val_in_buffer(KB_Q, 20, key_buffer)) {
             rot += ROT_SPEED * tick_count[1] / ONK;
         }
@@ -135,6 +135,11 @@ int main(int argc, char **argv) {
             y += sin(rot - PI / 2) * PLAYER_SPEED * tick_count[1] / ONK;
         }
 
+        if (val_in_buffer(KB_R, 20, key_buffer)) {
+            vgui_print(&vgui, 100, 100, "R", 0x00FF00);
+            vgui_render(&vgui, 1);
+        }
+
         if (x < 1) x = 1;
         if (y < 1) y = 1;
         if (x > MAP_SIZE - 2) x = MAP_SIZE - 2;
@@ -143,7 +148,7 @@ int main(int argc, char **argv) {
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
     }
-    vgui_exit();
+    vgui_exit(&vgui);
 
     return 0;
 }
