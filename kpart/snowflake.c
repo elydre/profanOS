@@ -77,7 +77,7 @@ int mm_get_unused_index() {
 
 void del_occurence(int index) {
     int i = first_part_index;
-    while (MEM_PARTS[i].state != 0) {
+    while (MEM_PARTS[i].state) {
         if (MEM_PARTS[i].next == index) {
             MEM_PARTS[i].next = mm_get_unused_index();
             return;
@@ -108,8 +108,7 @@ void dynamize_mem() {
 }
 
 uint32_t mem_alloc(uint32_t size, int state) {
-    if (!size) return 0;
-    if (!state) return 0;
+    if (!(size && state)) return 0;
     if (state != 3) dynamize_mem();
 
     // parcours de la liste des parties allouées
@@ -130,7 +129,6 @@ uint32_t mem_alloc(uint32_t size, int state) {
             exit_mode = 0;
             break;
         }
-
         last_addr = MEM_PARTS[index].addr + MEM_PARTS[index].size;
 
         old_index = index;
