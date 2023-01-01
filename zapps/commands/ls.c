@@ -5,19 +5,14 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    char *current_dir = malloc(256);
-    strcpy(current_dir, argv[1]);
-    char *suffix = malloc(256);
-    strcpy(suffix, argv[2]);
     char *path = malloc(256);
-
-    if (strcmp(suffix, "ls"))
-        strcpy(path, suffix);
+    char *ls_path = malloc(256);
+    
+    if (argc > 2 && strcmp(argv[2], "ls")) strcpy(path, argv[2]);
     else strcpy(path, "");
 
-    char ls_path[256];
-    if (path[0] == '\0') strcpy(ls_path, current_dir);
-    else assemble_path(current_dir, path, ls_path);
+    if (path[0] == '\0') strcpy(ls_path, argv[1]);
+    else assemble_path(argv[1], path, ls_path);
 
     if (!(c_fs_does_path_exists(ls_path) && c_fs_get_sector_type(c_fs_path_to_id(ls_path)) == 3)) {
         printf("$3%s$B is not a directory\n", ls_path);
@@ -49,8 +44,7 @@ int main(int argc, char **argv) {
         free(out_types);
         free(out_ids);
     }
-    free(current_dir);
-    free(suffix);
+    free(ls_path);
     free(path);
     return 0;
 }
