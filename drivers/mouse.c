@@ -47,16 +47,10 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             // if those are set, it's a bad packet
             if ((mouse_byte[0] & 0x80) || (mouse_byte[0] & 0x40)) {
                 mouse_cycle = 0;
-                if (!is_bad) {
-                    sys_warning("Bad mouse packet (but dont worry)");
-                }
                 break;
             }
             if (!(mouse_byte[0] & 0x8)) {
                 mouse_cycle=0;
-                if (!is_bad) {
-                    sys_warning("Bad mouse packet (WTF IT SHOULDNT HAPPEND WHY DO YOU USE THE SCROLL WHEEL)");
-                }
                 is_bad = 1;
                 was_installed = 0;
                 // TODO : save the old mouse position so we can restore it
