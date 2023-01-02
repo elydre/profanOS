@@ -60,6 +60,7 @@ void i_process_switch(int pid1, int pid2) {
     }
     proc2->state = PROCESS_RUNNING;
 
+    asm volatile("sti");
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
@@ -187,7 +188,6 @@ int process_create(void (*func)(), char *name) {
 
 void process_kill(int pid) {
     sprintf("Killing process %d\n", pid);
-    process_debug();
 
     if (pid == 0) {
         sys_error("Cannot kill kernel (^_^ )");
@@ -273,15 +273,15 @@ void process_exit() {
 }
 
 void process_debug() {
-    sprintf("Current index: %d [", pid_order_i);
+    kprintf("Current index: %d [", pid_order_i);
     for (int i = 0; i < PROCESS_MAX; i++) {
-        sprintf("%d ", pid_order[i]);
+        kprintf("%d ", pid_order[i]);
     }
-    sprintf("]\n");
+    kprintf("]\n");
 
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state != PROCESS_DEAD) {
-            sprintf("Process %d: %s, state: %d\n", plist[i].pid, plist[i].name, plist[i].state);
+            kprintf("Process %d: %s, state: %d\n", plist[i].pid, plist[i].name, plist[i].state);
         }
     }
 }
