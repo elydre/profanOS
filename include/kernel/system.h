@@ -3,16 +3,16 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.9.9"
+#define KERNEL_VERSION  "PROC-01"
 
-#define TASK_MAX_COUNT  20
+#define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
 #define RUN_DEFAULT     "/bin/shell.bin"
 #define TIMER_TICK_RATE 1000
 
 #define RUN_STACK_BIN   0x2000
 #define RUN_STACK_LIB   0x2000
-#define TASK_ESP_ALLOC  0x2000
+#define PROCESS_ESP     0x2000
 
 #define WATFUNC_ADDR    0x199990
 #define WATDILY_ADDR    0x199994

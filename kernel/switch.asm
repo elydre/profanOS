@@ -1,6 +1,6 @@
-global task_asm_switch
+global process_asm_switch
 
-task_asm_switch:
+process_asm_switch:
     pusha
     pushf
     mov    eax, cr3         ; Push CR3

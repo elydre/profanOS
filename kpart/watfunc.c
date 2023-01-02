@@ -4,7 +4,7 @@
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
 #include <driver/mouse.h>
-#include <kernel/task.h>
+#include <kernel/process.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -75,9 +75,9 @@ void *SYSCALL_ARRAY[] = {
     run_ifexist,
 
     // task.h
-    task_switch,
-    task_get_alive,
-    task_get_max,
+    // task_switch,
+    // task_get_alive,
+    // task_get_max,
 
     // serial.h
     serial_print,
@@ -88,9 +88,9 @@ void *SYSCALL_ARRAY[] = {
 
     // some more functions
     mem_free_all,
-    task_get_current_pid,
-    task_kill_task_switch,
-    task_get_next_pid,
+    // task_get_current_pid,
+    // task_kill_task_switch,
+    // task_get_next_pid,
 
     // filesystem stuff that was implemented later
     fs_delete_file,

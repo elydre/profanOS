@@ -5,7 +5,7 @@
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
 #include <driver/mouse.h>
-#include <kernel/task.h>
+#include <kernel/process.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -37,7 +37,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
     status_print(serial_init,  "Enabling", "serial port (A and B)");
-    status_print(tasking_init, "Initing", "cooperative multitasking");
+    status_print(process_init, "Initing", "process manager");
     status_print(ramdisk_init, "Setuping", "ramdisk");
     status_print(filesys_init, "Loading", "filesystem v2");
     status_print(init_watfunc, "Initing", "watfunc");
@@ -49,9 +49,11 @@ void kernel_main(void *mboot_ptr) {
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
 
     // launch of the default program
-    run_ifexist(RUN_DEFAULT, 0, NULL);
+    // run_ifexist(RUN_DEFAULT, 0, NULL);
 
-    task_menu();
+    // task_menu();
+
+    start_kshell();
 
     sys_fatal("Nothing to run!");
 }

@@ -1,3 +1,4 @@
+#include <kernel/process.h>
 #include <cpu/ports.h>
 #include <cpu/timer.h>
 #include <cpu/isr.h>
@@ -8,6 +9,9 @@ uint32_t tick = 0;
 static void timer_callback(registers_t *regs) {
     (void) regs;
     tick++;
+    if (tick % 10 == 0) {
+        schedule();
+    }
 }
 
 uint32_t timer_get_tick() {

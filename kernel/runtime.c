@@ -1,7 +1,7 @@
 #include <kernel/filesystem.h>
 #include <kernel/snowflake.h>
 #include <driver/serial.h>
-#include <kernel/task.h>
+#include <kernel/process.h>
 #include <minilib.h>
 #include <system.h>
 #include <type.h>
@@ -18,6 +18,7 @@ int g_return, g_argc;
 char **g_argv;
 
 void tasked_program() {
+    /*
     int pid = task_get_current_pid();
     uint8_t *binary_mem = task_get_bin_mem(pid);
     g_return = ((int (*)(int, char **)) binary_mem + RUN_STACK_BIN)(g_argc, g_argv);
@@ -42,6 +43,7 @@ void tasked_program() {
     mem_free_all(pid);
 
     task_kill_task_switch(task_get_next_pid());
+    */
 }
 
 int run_binary(char path[], int silence, int argc, char **argv) {
@@ -50,6 +52,8 @@ int run_binary(char path[], int silence, int argc, char **argv) {
 
     serial_debug("RUNTIME", path);
     (void) silence;
+
+    /*
 
     int pid = task_create(tasked_program, path);
 
@@ -70,6 +74,8 @@ int run_binary(char path[], int silence, int argc, char **argv) {
     // TODO: memory leak detection
 
     return g_return;
+    */
+    return 0;
 }
 
 int run_ifexist(char path[], int argc, char **argv) {

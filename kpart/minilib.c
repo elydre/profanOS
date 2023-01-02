@@ -1,4 +1,5 @@
 #include <kernel/snowflake.h>
+#include <cpu/timer.h>
 #include <gui/gnrtx.h>
 
 // string functions
@@ -218,4 +219,11 @@ void status_print(int (*func)(), char *verb, char *noun) {
     }
 
     set_cursor_offset(new_cursor);
+}
+
+void ms_sleep(int ms) {
+    int start = timer_get_tick();
+    while (timer_get_tick() < start + ms) {
+        asm volatile("hlt");
+    }
 }

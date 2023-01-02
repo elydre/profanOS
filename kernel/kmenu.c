@@ -1,6 +1,6 @@
 #include <driver/keyboard.h>
 #include <gui/gnrtx.h>
-#include <kernel/task.h>
+#include <kernel/process.h>
 #include <system.h>
 
 #include <minilib.h>
@@ -8,7 +8,7 @@
 #define KB_KEY_UP    0x48
 #define KB_KEY_DOWN  0x50
 #define KB_KEY_ENTER 0x1C
-
+/*
 void menu_print_line(int line, int task_i, int is_selected);
 void menu_print_decoline(int type, int line);
 
@@ -59,6 +59,7 @@ void menu_print_line(int line, int task_i, int is_selected) {
     line_str[5] = '\0';
     ckprint_at(line_str, 66, line, 0x0D);
 }
+*/
 
 void menu_print_decoline(int type, int line) {
     /* type 0 = first line
