@@ -7,7 +7,7 @@
 static process_t plist[PROCESS_MAX];
 int pid_order[PROCESS_MAX];
 int pid_order_i = -1;
-int current_pid;
+int current_pid, need_clean;
 
 #define PROCESS_RUNNING  0
 #define PROCESS_WAITING  1
@@ -55,7 +55,9 @@ void i_process_switch(int pid1, int pid2) {
     process_t *proc1 = &plist[i_pid_to_place(pid1)];
     process_t *proc2 = &plist[i_pid_to_place(pid2)];
 
-    proc1->state = PROCESS_WAITING;
+    if (proc1->state == PROCESS_RUNNING) {
+        proc1->state = PROCESS_WAITING;
+    }
     proc2->state = PROCESS_RUNNING;
 
     process_asm_switch(&proc1->regs, &proc2->regs);
@@ -84,6 +86,7 @@ void i_pid_order_remove(int pid) {
 }
 
 void i_clean_killed_process() {
+    sprintf("Cleaning killed processes...\n");
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
             free((void *) plist[i].esp_addr);
@@ -91,6 +94,7 @@ void i_clean_killed_process() {
             sprintf("Process %d cleaned\n", plist[i].pid);
         }
     }
+    need_clean = 0;
 }
 
 void i_process_yield(int current_pid) {
@@ -123,7 +127,7 @@ int process_init() {
         plist[i].state = PROCESS_DEAD;
         pid_order[i] = -1;
     }
-
+    need_clean = 0;
 
     static process_t main_proc;
 
@@ -204,6 +208,7 @@ void process_kill(int pid) {
     if (pid == process_get_current_pid()) {
         sprintf("Killing current process %d\n", pid);
         i_pid_order_remove(pid);
+        need_clean = 1;
         i_process_yield(pid);
     }
 }
@@ -235,7 +240,7 @@ void process_sleep(int pid) {
 }
 
 void schedule() {
-    i_clean_killed_process();
+    if (need_clean) i_clean_killed_process();
     i_process_yield(process_get_current_pid());
 }
 
