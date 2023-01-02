@@ -1,4 +1,5 @@
 #include <kernel/snowflake.h>
+#include <driver/serial.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 
@@ -99,7 +100,7 @@ void str_append(char s[], char c) {
 
 // formated print
 
-void kprintf(char *fmt, ...) {
+void func_printf(int output, char *fmt, ...) {
     // printf kernel level
     // don't use va
     char *args = (char *) &fmt;
@@ -139,7 +140,11 @@ void kprintf(char *fmt, ...) {
         i++;
     }
     char_buffer[buffer_i] = '\0';
-    kprint(char_buffer);
+    if (output == 0) {
+        kprint(char_buffer);
+    } else if (output == 1) {
+        serial_print(SERIAL_PORT_A, char_buffer);
+    }
 }
 
 // memory management
@@ -221,8 +226,8 @@ void status_print(int (*func)(), char *verb, char *noun) {
     set_cursor_offset(new_cursor);
 }
 
-void ms_sleep(int ms) {
-    int start = timer_get_tick();
+void ms_sleep(uint32_t ms) {
+    uint32_t start = timer_get_tick();
     while (timer_get_tick() < start + ms) {
         asm volatile("hlt");
     }

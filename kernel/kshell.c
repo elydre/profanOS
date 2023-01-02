@@ -5,7 +5,6 @@
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
-#include <stdio.h>
 
 #include <kernel/process.h>
 #include <driver/serial.h>
@@ -56,20 +55,15 @@ void shell_help() {
 }
 
 void shell_addr() {
-    printf("vesa fb: %x\n", vesa_get_framebuffer());
-    printf("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
-    printf("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
-    printf("mm base: %x\n", MEM_BASE_ADDR);
-    printf("watfunc: %x\n", WATFUNC_ADDR);
+    fsprint("vesa fb: %x\n", vesa_get_framebuffer());
+    fsprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
+    fsprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
+    fsprint("mm base: %x\n", MEM_BASE_ADDR);
+    fsprint("watfunc: %x\n", WATFUNC_ADDR);
 }
 
 void process_test() {
-    char buffer[10];
-    while (1) {
-        int2str(timer_get_tick(), buffer);
-        serial_debug("process_test", buffer);
-        ms_sleep(10);
-    }
+    process_exit();
 }
 
 int shell_command(char command[]) {

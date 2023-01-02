@@ -18,8 +18,11 @@ typedef struct {
 int process_init();
 int process_create(void (*func)(), char *name);
 
-int process_kill(int pid);
+void process_kill(int pid);
 void schedule();
+
+void process_exit();
+void process_debug();
 
 int process_get_current_pid();
 

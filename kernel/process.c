@@ -1,5 +1,5 @@
-#include <driver/serial.h>
 #include <kernel/process.h>
+#include <driver/serial.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -9,10 +9,11 @@ int pid_order[PROCESS_MAX];
 int pid_order_i = -1;
 int current_pid;
 
-#define PROCESS_RUNNING 0
-#define PROCESS_WAITING 1
-#define PROCESS_STOPPED 2
-#define PROCESS_DEAD    3
+#define PROCESS_RUNNING  0
+#define PROCESS_WAITING  1
+#define PROCESS_SLEEPING 2
+#define PROCESS_KILLED   3
+#define PROCESS_DEAD     4
 
 /***********************
  * INTERNAL FUNCTIONS *
@@ -82,9 +83,40 @@ void i_pid_order_remove(int pid) {
     pid_order[PROCESS_MAX - 1] = -1;
 }
 
+void i_clean_killed_process() {
+    for (int i = 0; i < PROCESS_MAX; i++) {
+        if (plist[i].state == PROCESS_KILLED) {
+            free((void *) plist[i].esp_addr);
+            plist[i].state = PROCESS_DEAD;
+            sprintf("Process %d cleaned\n", plist[i].pid);
+        }
+    }
+}
+
+void i_process_yield(int current_pid) {
+    if (pid_order_i == -1) return;
+
+    int next_pid;
+
+    pid_order_i++;
+    if (pid_order[pid_order_i] == -1) pid_order_i = 0;
+
+    next_pid = pid_order[pid_order_i];
+
+    if (current_pid == next_pid) return;
+
+    sprintf("Switching from %d to %d\n", current_pid, next_pid);
+
+    i_process_switch(current_pid, next_pid);
+}
+
 /***********************
  * EXTERNAL FUNCTIONS *
 ***********************/
+
+int process_get_current_pid() {
+    return pid_order[pid_order_i];
+}
 
 int process_init() {
     for (int i = 0; i < PROCESS_MAX; i++) {
@@ -146,57 +178,81 @@ int process_create(void (*func)(), char *name) {
 
     i_pid_order_add(current_pid);
 
-    return 0;
+    return current_pid;
 }
 
-int process_kill(int pid) {
+void process_kill(int pid) {
+    sprintf("Killing process %d\n", pid);
+    process_debug();
+
+    if (pid == 0) {
+        sys_error("Cannot kill kernel");
+    }
+
+    int place = i_pid_to_place(pid);
+
+    if (plist[place].state > PROCESS_SLEEPING) {
+        sys_error("Process already dead");
+    }
+
+    if (place < 0) {
+        sys_error("Process not found");
+    }
+
+    plist[place].state = PROCESS_KILLED;
+
+    if (pid == process_get_current_pid()) {
+        sprintf("Killing current process %d\n", pid);
+        i_pid_order_remove(pid);
+        i_process_yield(pid);
+    }
+}
+
+void process_sleep(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
         sys_error("Process not found");
-        return -1;
-    }
-
-    if (pid == 0) {
-        sys_error("Cannot kill kernel");
-        return -1;
+        return;
     }
 
     if (plist[place].state == PROCESS_DEAD) {
         sys_error("Process already dead");
-        return -1;
+        return;
     }
 
-    if (plist[place].state == PROCESS_RUNNING) {
-        sys_error("Cannot kill running process");
-        return -1;
+    if (plist[place].state == PROCESS_SLEEPING) {
+        sys_error("Process already sleeping");
+        return;
     }
 
-    plist[place].state = PROCESS_DEAD;
-    free((void *) plist[place].esp_addr);
-
+    plist[place].state = PROCESS_WAITING;
     i_pid_order_remove(pid);
 
-    return 0;
+    if (pid == process_get_current_pid()) {
+        schedule();
+    }
 }
 
 void schedule() {
-    if (pid_order_i == -1) return;
-
-    int current_pid, next_pid;
-
-    current_pid = pid_order[pid_order_i];
-
-    pid_order_i++;
-    if (pid_order[pid_order_i] == -1) pid_order_i = 0;
-
-    next_pid = pid_order[pid_order_i];
-
-    if (current_pid == next_pid) return;
-
-    i_process_switch(current_pid, next_pid);
+    i_clean_killed_process();
+    i_process_yield(process_get_current_pid());
 }
 
-int process_get_current_pid() {
-    return current_pid;
+void process_exit() {
+    process_kill(process_get_current_pid());
+}
+
+void process_debug() {
+    sprintf("Current index: %d [", pid_order_i);
+    for (int i = 0; i < PROCESS_MAX; i++) {
+        sprintf("%d ", pid_order[i]);
+    }
+    sprintf("]\n");
+
+    for (int i = 0; i < PROCESS_MAX; i++) {
+        if (plist[i].state != PROCESS_DEAD) {
+            sprintf("Process %d: %s, state: %d\n", plist[i].pid, plist[i].name, plist[i].state);
+        }
+    }
 }
