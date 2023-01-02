@@ -63,9 +63,8 @@ void shell_addr() {
 }
 
 void process_test() {
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; ; i++) {
         sprintf("process_test: %d\n", i);
-        ms_sleep(100);
     }
     process_exit();
 }
@@ -91,11 +90,15 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "exit") == 0) return 1;
     else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
+    else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
+    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+
     else if (str_cmp(prefix, "p") == 0) process_create(process_test, "process_test");
     else if (str_cmp(prefix, "d") == 0) process_debug();
-    else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "t") == 0) kprintf("ticks: %d\n", timer_get_tick());
-    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    else if (str_cmp(prefix, "s") == 0) process_sleep(str2int(suffix));
+    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
+
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 
     return 0;

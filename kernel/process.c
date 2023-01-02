@@ -190,7 +190,7 @@ void process_kill(int pid) {
     process_debug();
 
     if (pid == 0) {
-        sys_error("Cannot kill kernel");
+        sys_error("Cannot kill kernel (^_^ )");
     }
 
     int place = i_pid_to_place(pid);
@@ -204,11 +204,12 @@ void process_kill(int pid) {
     }
 
     plist[place].state = PROCESS_KILLED;
+    int current_pid = process_get_current_pid();
+    i_pid_order_remove(pid);
+    need_clean = 1;
 
-    if (pid == process_get_current_pid()) {
-        sprintf("Killing current process %d\n", pid);
-        i_pid_order_remove(pid);
-        need_clean = 1;
+    if (pid == current_pid) {
+        sprintf("Killing current process\n");
         i_process_yield(pid);
     }
 }
@@ -231,12 +232,35 @@ void process_sleep(int pid) {
         return;
     }
 
-    plist[place].state = PROCESS_WAITING;
+    plist[place].state = PROCESS_SLEEPING;
+    int current_pid = process_get_current_pid();
     i_pid_order_remove(pid);
 
-    if (pid == process_get_current_pid()) {
-        schedule();
+    if (pid == current_pid) {
+        i_process_yield(pid);
     }
+}
+
+void process_wakeup(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return;
+    }
+
+    if (plist[place].state == PROCESS_DEAD) {
+        sys_error("Process already dead");
+        return;
+    }
+
+    if (plist[place].state != PROCESS_SLEEPING) {
+        sys_error("Process not sleeping");
+        return;
+    }
+
+    plist[place].state = PROCESS_WAITING;
+    i_pid_order_add(pid);
 }
 
 void schedule() {
