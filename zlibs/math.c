@@ -58,6 +58,10 @@
 
 #define NB_Snum 12
 
+#define FENV_SUPPORT 1
+
+#define ASUINT64(x) ((union {double f; uint64_t i;}){x}).i
+
 static const double_t toint = 1/EPS;
 
 /* Small multiples of pi/2 rounded to double precision. */
@@ -308,30 +312,30 @@ static const double pi = 3.141592653589793238462643383279502884;
 //static const double g = 6.024680040776729583740234375;
 static const double gmhalf = 5.524680040776729583740234375;
 static const double Snum[NB_Snum+1] = {
-	23531376880.410759688572007674451636754734846804940,
-	42919803642.649098768957899047001988850926355848959,
-	35711959237.355668049440185451547166705960488635843,
-	17921034426.037209699919755754458931112671403265390,
-	6039542586.3520280050642916443072979210699388420708,
-	1439720407.3117216736632230727949123939715485786772,
-	248874557.86205415651146038641322942321632125127801,
-	31426415.585400194380614231628318205362874684987640,
-	2876370.6289353724412254090516208496135991145378768,
-	186056.26539522349504029498971604569928220784236328,
-	8071.6720023658162106380029022722506138218516325024,
-	210.82427775157934587250973392071336271166969580291,
-	2.5066282746310002701649081771338373386264310793408,
+    23531376880.410759688572007674451636754734846804940,
+    42919803642.649098768957899047001988850926355848959,
+    35711959237.355668049440185451547166705960488635843,
+    17921034426.037209699919755754458931112671403265390,
+    6039542586.3520280050642916443072979210699388420708,
+    1439720407.3117216736632230727949123939715485786772,
+    248874557.86205415651146038641322942321632125127801,
+    31426415.585400194380614231628318205362874684987640,
+    2876370.6289353724412254090516208496135991145378768,
+    186056.26539522349504029498971604569928220784236328,
+    8071.6720023658162106380029022722506138218516325024,
+    210.82427775157934587250973392071336271166969580291,
+    2.5066282746310002701649081771338373386264310793408,
 };
 static const double Sden[NB_Snum+1] = {
-	0, 39916800, 120543840, 150917976, 105258076, 45995730, 13339535,
-	2637558, 357423, 32670, 1925, 66, 1,
+    0, 39916800, 120543840, 150917976, 105258076, 45995730, 13339535,
+    2637558, 357423, 32670, 1925, 66, 1,
 };
 /* n! for small integer n */
 static const double fact[] = {
-	1, 1, 2, 6, 24, 120, 720, 5040.0, 40320.0, 362880.0, 3628800.0, 39916800.0,
-	479001600.0, 6227020800.0, 87178291200.0, 1307674368000.0, 20922789888000.0,
-	355687428096000.0, 6402373705728000.0, 121645100408832000.0,
-	2432902008176640000.0, 51090942171709440000.0, 1124000727777607680000.0,
+    1, 1, 2, 6, 24, 120, 720, 5040.0, 40320.0, 362880.0, 3628800.0, 39916800.0,
+    479001600.0, 6227020800.0, 87178291200.0, 1307674368000.0, 20922789888000.0,
+    355687428096000.0, 6402373705728000.0, 121645100408832000.0,
+    2432902008176640000.0, 51090942171709440000.0, 1124000727777607680000.0,
 };
 
 static const double __C1  =  4.16666666666666019037e-02; /* 0x3FA55555, 0x5555554C */
@@ -347,6 +351,18 @@ static const double __S3  = -1.98412698298579493134e-04; /* 0xBF2A01A0, 0x19C161
 static const double __S4  =  2.75573137070700676789e-06; /* 0x3EC71DE3, 0x57B1FE7D */
 static const double __S5  = -2.50507602534068634195e-08; /* 0xBE5AE5E6, 0x8A2B9CEB */
 static const double __S6  =  1.58969099521155010221e-10; /* 0x3DE5D93A, 0x5ACFD57C */
+
+
+static const float ln2_hi = 6.9313812256e-01; /* 0x3f317180 */
+static const float ln2_lo = 9.0580006145e-06; /* 0x3717f7d1 */
+static const float invln2 = 1.4426950216e+00; /* 0x3fb8aa3b */
+/*
+ * Domain [-0.34568, 0.34568], range ~[-6.694e-10, 6.696e-10]:
+ * |6 / x * (1 + 2 * (1 / (exp(x) - 1) - 1 / x)) - q(x)| < 2**-30.04
+ * Scaled coefficients: Qn_here = 2**n * Qn_for_q (see s_expm1.c):
+ */
+static const float Q1 = -3.3333212137e-2; /* -0x888868.0p-28 */
+static const float Q2 =  1.5807170421e-3; /*  0xcf3010.0p-33 */
 
 void init_func();
 int __rem_pio2f(float x, double *y);
@@ -368,6 +384,13 @@ static double sinpi(double x);
 static double S(double x);
 double __sin(double x, double y, int iy);
 double __cos(double x, double y);
+float __expo2f(float x, float sign);
+static inline uint32_t top12(float x);
+float __math_oflowf(uint32_t sign);
+float __math_uflowf(uint32_t sign);
+float __math_xflowf(uint32_t sign, float y);
+static inline float fp_barrierf(float x);
+
 
 int main() {
     init_func();
@@ -848,7 +871,7 @@ long double exp2l(long double a) {
     return 0;
 }
 
-float expf(float a) {
+float expf(float x) {
     printf("expf not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
@@ -863,9 +886,99 @@ double expm1(double a) {
     return 0;
 }
 
-float expm1f(float a) {
-    printf("expm1f not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+/* origin: FreeBSD /usr/src/lib/msun/src/s_expm1f.c */
+/*
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+float expm1f(float x) {
+    float_t y,hi,lo,c,t,e,hxs,hfx,r1,twopk;
+    union {float f; uint32_t i;} u = {x};
+    uint32_t hx = u.i & 0x7fffffff;
+    int k, sign = u.i >> 31;
+
+    /* filter out huge and non-finite argument */
+    if (hx >= 0x4195b844) {  /* if |x|>=27*ln2 */
+        if (hx > 0x7f800000)  /* NaN */
+            return x;
+        if (sign)
+            return -1;
+        if (hx > 0x42b17217) { /* x > log(FLT_MAX) */
+            x *= 0x1p127f;
+            return x;
+        }
+    }
+
+    /* argument reduction */
+    if (hx > 0x3eb17218) {           /* if  |x| > 0.5 ln2 */
+        if (hx < 0x3F851592) {       /* and |x| < 1.5 ln2 */
+            if (!sign) {
+                hi = x - ln2_hi;
+                lo = ln2_lo;
+                k =  1;
+            } else {
+                hi = x + ln2_hi;
+                lo = -ln2_lo;
+                k = -1;
+            }
+        } else {
+            k  = invln2*x + (sign ? -0.5f : 0.5f);
+            t  = k;
+            hi = x - t*ln2_hi;      /* t*ln2_hi is exact here */
+            lo = t*ln2_lo;
+        }
+        x = hi-lo;
+        c = (hi-x)-lo;
+    } else if (hx < 0x33000000) {  /* when |x|<2**-25, return x */
+        if (hx < 0x00800000)
+            FORCE_EVAL(x*x);
+        return x;
+    } else
+        k = 0;
+
+    /* x is now in primary range */
+    hfx = 0.5f*x;
+    hxs = x*hfx;
+    r1 = 1.0f+hxs*(Q1+hxs*Q2);
+    t  = 3.0f - r1*hfx;
+    e  = hxs*((r1-t)/(6.0f - x*t));
+    if (k == 0)  /* c is 0 */
+        return x - (x*e-hxs);
+    e  = x*(e-c) - c;
+    e -= hxs;
+    /* exp(x) ~ 2^k (x_reduced - e + 1) */
+    if (k == -1)
+        return 0.5f*(x) - 0.5f;
+    if (k == 1) {
+        if (x < -0.25f)
+            return -2.0f*(e-(x+0.5f));
+        return 1.0f + 2.0f*(x);
+    }
+    u.i = (0x7f+k)<<23;  /* 2^k */
+    twopk = u.f;
+    if (k < 0 || k > 56) {   /* suffice to return exp(x)-1 */
+        y = x - e + 1.0f;
+        if (k == 128)
+            y = y*2.0f*0x1p127f;
+        else
+            y = y*twopk;
+        return y - 1.0f;
+    }
+    u.i = (0x7f-k)<<23;  /* 2^-k */
+    if (k < 23)
+        y = (x+(1-u.f))*twopk;
+    else
+        y = (x-(e+u.f)+1)*twopk;
+    return y;
 }
 
 long double expm1l(long double a) {
@@ -1491,24 +1604,43 @@ double sinh(double a) {
     return 0;
 }
 
-float sinhf(float a) {
-    printf("sinhf not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+float sinhf(float x) {
+    union {float f; uint32_t i;} u = {.f = x};
+    uint32_t w;
+    float t, h, absx;
+
+    h = 0.5;
+    if (u.i >> 31)
+        h = -h;
+    /* |x| */
+    u.i &= 0x7fffffff;
+    absx = u.f;
+    w = u.i;
+
+    /* |x| < log(FLT_MAX) */
+    if (w < 0x42b17217) {
+        t = expm1f(absx);
+        if (w < 0x3f800000) {
+            if (w < 0x3f800000 - (12<<23))
+                return x;
+            return h*(2*t - t*t/(t+1));
+        }
+        return h*(t + t/(t+1));
+    }
+
+    /* |x| > logf(FLT_MAX) or nan */
+    t = __expo2f(absx, 2*h);
+    return t;
 }
 
-long double sinhl(long double a) {
-    printf("sinhl not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+long double sinhl(long double x) {
+    return sinh(x);
 }
 
-long double sinl(long double a) {
-    printf("sinl not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+long double sinl(long double x) {
+    return sin(x);
 }
 
-#define FENV_SUPPORT 1
-
-#define ASUINT64(x) ((union {double f; uint64_t i;}){x}).i
 double sqrt(double x) {
     uint64_t ix, top, m;
 
@@ -1784,19 +1916,49 @@ double tanh(double a) {
     return 0;
 }
 
-float tanhf(float a) {
-    printf("tanhf is not implemented yet, WHY DO YOU USE IT?\n");
-    return 0;
+float tanhf(float x) {
+    union {float f; uint32_t i;} u = {.f = x};
+    uint32_t w;
+    int sign;
+    float t;
+
+    /* x = |x| */
+    sign = u.i >> 31;
+    u.i &= 0x7fffffff;
+    x = u.f;
+    w = u.i;
+
+    if (w > 0x3f0c9f54) {
+        /* |x| > log(3)/2 ~= 0.5493 or nan */
+        if (w > 0x41200000) {
+            /* |x| > 10 */
+            t = 1 + 0/x;
+        } else {
+            t = expm1f(2*x);
+            t = 1 - 2/(t+2);
+        }
+    } else if (w > 0x3e82c578) {
+        /* |x| > log(5/3)/2 ~= 0.2554 */
+        t = expm1f(2*x);
+        t = t/(t+2);
+    } else if (w >= 0x00800000) {
+        /* |x| >= 0x1p-126 */
+        t = expm1f(-2*x);
+        t = -t/(t+2);
+    } else {
+        /* |x| is subnormal */
+        FORCE_EVAL(x*x);
+        t = x;
+    }
+    return sign ? -t : t;
 }
 
-long double tanhl(long double a) {
-    printf("tanhl is not implemented yet, WHY DO YOU USE IT?\n");
-    return 0;
+long double tanhl(long double x) {
+    return tanh(x);
 }
 
-long double tanl(long double a) {
-    printf("tanl is not implemented yet, WHY DO YOU USE IT?\n");
-    return 0;
+long double tanl(long double x) {
+    return tan(x);
 }
 
 /*
@@ -1825,71 +1987,71 @@ most ideas and constants are from boost and python
 */
 
 double tgamma(double x) {
-	union {double f; uint64_t i;} u = {x};
-	double absx, y;
-	double_t dy, z, r;
-	uint32_t ix = u.i>>32 & 0x7fffffff;
-	int sign = u.i>>63;
+    union {double f; uint64_t i;} u = {x};
+    double absx, y;
+    double_t dy, z, r;
+    uint32_t ix = u.i>>32 & 0x7fffffff;
+    int sign = u.i>>63;
 
-	/* special cases */
-	if (ix >= 0x7ff00000)
-		/* tgamma(nan)=nan, tgamma(inf)=inf, tgamma(-inf)=nan with invalid */
-		return x + INFINITY;
-	if (ix < (0x3ff-54)<<20)
-		/* |x| < 2^-54: tgamma(x) ~ 1/x, +-0 raises div-by-zero */
-		return 1/x;
+    /* special cases */
+    if (ix >= 0x7ff00000)
+        /* tgamma(nan)=nan, tgamma(inf)=inf, tgamma(-inf)=nan with invalid */
+        return x + INFINITY;
+    if (ix < (0x3ff-54)<<20)
+        /* |x| < 2^-54: tgamma(x) ~ 1/x, +-0 raises div-by-zero */
+        return 1/x;
 
-	/* integer arguments */
-	/* raise inexact when non-integer */
-	if (x == floor(x)) {
-		if (sign)
-			return 0/0.0;
-		if (x <= sizeof fact/sizeof *fact)
-			return fact[(int)x - 1];
-	}
+    /* integer arguments */
+    /* raise inexact when non-integer */
+    if (x == floor(x)) {
+        if (sign)
+            return 0/0.0;
+        if (x <= sizeof fact/sizeof *fact)
+            return fact[(int)x - 1];
+    }
 
-	/* x >= 172: tgamma(x)=inf with overflow */
-	/* x =< -184: tgamma(x)=+-0 with underflow */
-	if (ix >= 0x40670000) { /* |x| >= 184 */
-		if (sign) {
-			FORCE_EVAL((float)(0x1p-126/x));
-			if (floor(x) * 0.5 == floor(x * 0.5))
-				return 0;
-			return -0.0;
-		}
-		x *= 0x1p1023;
-		return x;
-	}
+    /* x >= 172: tgamma(x)=inf with overflow */
+    /* x =< -184: tgamma(x)=+-0 with underflow */
+    if (ix >= 0x40670000) { /* |x| >= 184 */
+        if (sign) {
+            FORCE_EVAL((float)(0x1p-126/x));
+            if (floor(x) * 0.5 == floor(x * 0.5))
+                return 0;
+            return -0.0;
+        }
+        x *= 0x1p1023;
+        return x;
+    }
 
-	absx = sign ? -x : x;
+    absx = sign ? -x : x;
 
-	/* handle the error of x + g - 0.5 */
-	y = absx + gmhalf;
-	if (absx > gmhalf) {
-		dy = y - absx;
-		dy -= gmhalf;
-	} else {
-		dy = y - gmhalf;
-		dy -= absx;
-	}
+    /* handle the error of x + g - 0.5 */
+    y = absx + gmhalf;
+    if (absx > gmhalf) {
+        dy = y - absx;
+        dy -= gmhalf;
+    } else {
+        dy = y - gmhalf;
+        dy -= absx;
+    }
 
-	z = absx - 0.5;
-	r = S(absx) * exp(-y);
-	if (x < 0) {
-		/* reflection formula for negative x */
-		/* sinpi(absx) is not 0, integers are already handled */
-		r = -pi / (sinpi(absx) * absx * r);
-		dy = -dy;
-		z = -z;
-	}
-	r += dy * (gmhalf+0.5) * r / y;
-	z = pow(y, 0.5*z);
-	y = r * z * z;
-	return y;
+    z = absx - 0.5;
+    r = S(absx) * exp(-y);
+    if (x < 0) {
+        /* reflection formula for negative x */
+        /* sinpi(absx) is not 0, integers are already handled */
+        r = -pi / (sinpi(absx) * absx * r);
+        dy = -dy;
+        z = -z;
+    }
+    r += dy * (gmhalf+0.5) * r / y;
+    z = pow(y, 0.5*z);
+    y = r * z * z;
+    return y;
 }
 
 float tgammaf(float x) {
-	return tgamma(x);
+    return tgamma(x);
 }
 
 /* origin: OpenBSD /usr/src/lib/libm/src/ld80/e_tgammal.c */
@@ -1942,45 +2104,45 @@ float tgammaf(float x) {
  *
  */
 long double tgammal(long double x) {
-	return tgamma(x);
+    return tgamma(x);
 }
 
 double trunc(double x) {
-	union {double f; uint64_t i;} u = {x};
-	int e = (int)(u.i >> 52 & 0x7ff) - 0x3ff + 12;
-	uint64_t m;
+    union {double f; uint64_t i;} u = {x};
+    int e = (int)(u.i >> 52 & 0x7ff) - 0x3ff + 12;
+    uint64_t m;
 
-	if (e >= 52 + 12)
-		return x;
-	if (e < 12)
-		e = 1;
-	m = -1ULL >> e;
-	if ((u.i & m) == 0)
-		return x;
-	FORCE_EVAL(x + 0x1p120f);
-	u.i &= ~m;
-	return u.f;
+    if (e >= 52 + 12)
+        return x;
+    if (e < 12)
+        e = 1;
+    m = -1ULL >> e;
+    if ((u.i & m) == 0)
+        return x;
+    FORCE_EVAL(x + 0x1p120f);
+    u.i &= ~m;
+    return u.f;
 }
 
 float truncf(float x) {
-	union {float f; uint32_t i;} u = {x};
-	int e = (int)(u.i >> 23 & 0xff) - 0x7f + 9;
-	uint32_t m;
+    union {float f; uint32_t i;} u = {x};
+    int e = (int)(u.i >> 23 & 0xff) - 0x7f + 9;
+    uint32_t m;
 
-	if (e >= 23 + 9)
-		return x;
-	if (e < 9)
-		e = 1;
-	m = -1U >> e;
-	if ((u.i & m) == 0)
-		return x;
-	FORCE_EVAL(x + 0x1p120f);
-	u.i &= ~m;
-	return u.f;
+    if (e >= 23 + 9)
+        return x;
+    if (e < 9)
+        e = 1;
+    m = -1U >> e;
+    if ((u.i & m) == 0)
+        return x;
+    FORCE_EVAL(x + 0x1p120f);
+    u.i &= ~m;
+    return u.f;
 }
 
 long double truncl(long double x) {
-	return trunc(x);
+    return trunc(x);
 }
 
 double y0(double a) {
@@ -1997,6 +2159,12 @@ double yn(int a, double b) {
     printf("yn is not implemented yet, WHY DO YOU USE IT?\n");
     return 0;
 }
+
+
+// ///////////////////////////////////
+// Under this is internal functions //
+//////////////////////////////////////
+
 
 /* origin: FreeBSD /usr/src/lib/msun/src/e_rem_pio2f.c */
 /*
@@ -2446,8 +2614,8 @@ static inline double eval_as_double(double x) {
 
 static inline float eval_as_float(float x)
 {
-	float y = x;
-	return y;
+    float y = x;
+    return y;
 }
 
 static float R_acosf(float z) {
@@ -2458,56 +2626,56 @@ static float R_acosf(float z) {
 }
 
 float __math_invalidf(float x) {
-	return (x - x) / (x - x);
+    return (x - x) / (x - x);
 }
 
 /* sin(pi x) with x > 0x1p-100, if sin(pi*x)==0 the sign is arbitrary */
 static double sinpi(double x)
 {
-	int n;
+    int n;
 
-	/* argument reduction: x = |x| mod 2 */
-	/* spurious inexact when x is odd int */
-	x = x * 0.5;
-	x = 2 * (x - floor(x));
+    /* argument reduction: x = |x| mod 2 */
+    /* spurious inexact when x is odd int */
+    x = x * 0.5;
+    x = 2 * (x - floor(x));
 
-	/* reduce x into [-.25,.25] */
-	n = 4 * x;
-	n = (n+1)/2;
-	x -= n * 0.5;
+    /* reduce x into [-.25,.25] */
+    n = 4 * x;
+    n = (n+1)/2;
+    x -= n * 0.5;
 
-	x *= pi;
-	switch (n) {
-	default: /* case 4 */
-	case 0:
-		return __sin(x, 0, 0);
-	case 1:
-		return __cos(x, 0);
-	case 2:
-		return __sin(-x, 0, 0);
-	case 3:
-		return -__cos(x, 0);
-	}
+    x *= pi;
+    switch (n) {
+    default: /* case 4 */
+    case 0:
+        return __sin(x, 0, 0);
+    case 1:
+        return __cos(x, 0);
+    case 2:
+        return __sin(-x, 0, 0);
+    case 3:
+        return -__cos(x, 0);
+    }
 }
 
 /* S(x) rational function for positive x */
 static double S(double x)
 {
-	double_t num = 0, den = 0;
-	int i;
+    double_t num = 0, den = 0;
+    int i;
 
-	/* to avoid overflow handle large x differently */
-	if (x < 8)
-		for (i = NB_Snum; i >= 0; i--) {
-			num = num * x + Snum[i];
-			den = den * x + Sden[i];
-		}
-	else
-		for (i = 0; i <= NB_Snum; i++) {
-			num = num / x + Snum[i];
-			den = den / x + Sden[i];
-		}
-	return num/den;
+    /* to avoid overflow handle large x differently */
+    if (x < 8)
+        for (i = NB_Snum; i >= 0; i--) {
+            num = num * x + Snum[i];
+            den = den * x + Sden[i];
+        }
+    else
+        for (i = 0; i <= NB_Snum; i++) {
+            num = num / x + Snum[i];
+            den = den / x + Sden[i];
+        }
+    return num/den;
 }
 
 /* origin: FreeBSD /usr/src/lib/msun/src/k_sin.c */
@@ -2552,16 +2720,16 @@ static double S(double x)
  */
 double __sin(double x, double y, int iy)
 {
-	double_t z,r,v,w;
+    double_t z,r,v,w;
 
-	z = x*x;
-	w = z*z;
-	r = __S2 + z*(__S3 + z*__S4) + z*w*(__S5 + z*__S6);
-	v = z*x;
-	if (iy == 0)
-		return x + v*(S1 + z*r);
-	else
-		return x - ((z*(0.5*y - v*r) - y) - v*__S1);
+    z = x*x;
+    w = z*z;
+    r = __S2 + z*(__S3 + z*__S4) + z*w*(__S5 + z*__S6);
+    v = z*x;
+    if (iy == 0)
+        return x + v*(S1 + z*r);
+    else
+        return x - ((z*(0.5*y - v*r) - y) - v*__S1);
 }
 
 /* origin: FreeBSD /usr/src/lib/msun/src/k_cos.c */
@@ -2615,12 +2783,54 @@ double __sin(double x, double y, int iy)
  */
 double __cos(double x, double y)
 {
-	double_t hz,z,r,w;
+    double_t hz,z,r,w;
 
-	z  = x*x;
-	w  = z*z;
-	r  = z*(__C1+z*(__C2+z*__C3)) + w*w*(__C4+z*(__C5+z*__C6));
-	hz = 0.5*z;
-	w  = 1.0-hz;
-	return w + (((1.0-w)-hz) + (z*r-x*y));
+    z  = x*x;
+    w  = z*z;
+    r  = z*(__C1+z*(__C2+z*__C3)) + w*w*(__C4+z*(__C5+z*__C6));
+    hz = 0.5*z;
+    w  = 1.0-hz;
+    return w + (((1.0-w)-hz) + (z*r-x*y));
+}
+
+/* k is such that k*ln2 has minimal relative error and x - kln2 > log(FLT_MIN) */
+static const int __expo2f_k = 235;
+static const float kln2 = 0x1.45c778p+7f;
+
+/* expf(x)/2 for x >= log(FLT_MAX), slightly better than 0.5f*expf(x/2)*expf(x/2) */
+float __expo2f(float x, float sign)
+{
+    float scale;
+
+    /* note that k is odd and scale*scale overflows */
+    SET_FLOAT_WORD(scale, (uint32_t)(0x7f + __expo2f_k/2) << 23);
+    /* exp(x - k ln2) * 2**(k-1) */
+    /* in directed rounding correct sign before rounding or overflow is important */
+    return expf(x - kln2) * (sign * scale) * scale;
+}
+
+static inline uint32_t top12(float x)
+{
+    return asuint(x) >> 20;
+}
+
+float __math_oflowf(uint32_t sign)
+{
+    return __math_xflowf(sign, 0x1p97f);
+}
+
+float __math_uflowf(uint32_t sign)
+{
+    return __math_xflowf(sign, 0x1p-95f);
+}
+
+float __math_xflowf(uint32_t sign, float y)
+{
+    return eval_as_float(fp_barrierf(sign ? -y : y) * y);
+}
+
+static inline float fp_barrierf(float x)
+{
+    volatile float y = x;
+    return y;
 }
