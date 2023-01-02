@@ -59,9 +59,10 @@ ls      - list the current dir
 
 ## Known major bugs
 
-| bug name  | exisiting since | description | fix idea |
+| bug name  | since | description | fixed ? |
 |-----------|-----------------|-------------|----------|
-| laged lag | ? | parts of profanOS slow<br>down at times on qemu | - memory address problem?<br>- qemu problem?|
+| lagged lag | ? | all profanOS is getting very slow | partially |
+| BOBCAT | 0.4.2 | some version of gcc build broken zapps | no |
 
 ## Author & Contact
 
