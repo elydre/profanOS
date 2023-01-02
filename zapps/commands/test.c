@@ -1,7 +1,7 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #define TEST_ABORT 0
 #define TEST_ATOF 0
@@ -120,6 +120,13 @@ int main(int argc, char **argv) {
     fprintf(stderr, "print on stderr\n");
     fprintf(stdout, "print on stdout\n");
     fprintf(stdin, "print on stdin, THIS MESSAGE SHOULD NOT BE SEEN\n");    
+
+    printf("Testing math.h\n");
+
+    printf("Should be yn : ");
+    yn(1, 1);
+
+    printf("End of the test for now !\n");
 
     return 0;
 }
