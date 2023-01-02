@@ -126,22 +126,34 @@ int main(int argc, char **argv) {
     printf("Should be yn : ");
     yn(1, 1);
 
+    // test of acos
+    is_fine = 1;
+    if (acos(0) != 1.5707963267948966192313216916398) is_fine = 0;
+    if (acos(1) != 0) is_fine = 0;
+    print_state(is_fine, "acos");
+
+    // test of acosf
+    is_fine = 1;
+    if (abs(acosf(0)-1.570790) > 0.0001) is_fine = 0;
+    if (acosf(1) != 0) is_fine = 0;
+    print_state(is_fine, "acosf");
+
     // test of tanf
     is_fine = 1;
     if (tanf(0) != 0) is_fine = 0;
-    if (tanf(1)-1.55740 > 0.0001) is_fine = 0; // we dont test the exact value, osef
+    if (abs(tanf(1)-1.55740) > 0.0001) is_fine = 0; // we dont test the exact value, osef
     print_state(is_fine, "tanf");
 
     // test of cosf
     is_fine = 1;
     if (cosf(0) != 1) is_fine = 0;
-    if (cosf(1)-0.54030 > 0.0001) is_fine = 0; // we dont test the exact value, osef
+    if (abs(cosf(1)-0.54030) > 0.0001) is_fine = 0; // we dont test the exact value, osef
     print_state(is_fine, "cosf");
 
     // test of sinf
     is_fine = 1;
     if (sinf(0) != 0) is_fine = 0;
-    if (sinf(1)-0.84147 > 0.0001) is_fine = 0; // we dont test the exact value, osef
+    if (abs(sinf(1)-0.84147) > 0.0001) is_fine = 0; // we dont test the exact value, osef
     print_state(is_fine, "sinf");
 
     printf("End of the test for now !\n");

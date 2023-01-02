@@ -260,12 +260,62 @@ static const double s2pio2 = 2*M_PI_2; /* 0x400921FB, 0x54442D18 */
 static const double s3pio2 = 3*M_PI_2; /* 0x4012D97C, 0x7F3321D2 */
 static const double s4pio2 = 4*M_PI_2; /* 0x401921FB, 0x54442D18 */
 
+
+static const double pio2_hi = 1.57079632679489655800e+00; /* 0x3FF921FB, 0x54442D18 */
+static const double pio2_lo = 6.12323399573676603587e-17; /* 0x3C91A626, 0x33145C07 */
+static const double pS0 =  1.66666666666666657415e-01; /* 0x3FC55555, 0x55555555 */
+static const double pS1 = -3.25565818622400915405e-01; /* 0xBFD4D612, 0x03EB6F7D */
+static const double pS2 =  2.01212532134862925881e-01; /* 0x3FC9C155, 0x0E884455 */
+static const double pS3 = -4.00555345006794114027e-02; /* 0xBFA48228, 0xB5688F3B */
+static const double pS4 =  7.91534994289814532176e-04; /* 0x3F49EFE0, 0x7501B288 */
+static const double pS5 =  3.47933107596021167570e-05; /* 0x3F023DE1, 0x0DFDF709 */
+static const double qS1 = -2.40339491173441421878e+00; /* 0xC0033A27, 0x1C8A2D4B */
+static const double qS2 =  2.02094576023350569471e+00; /* 0x40002AE5, 0x9C598AC8 */
+static const double qS3 = -6.88283971605453293030e-01; /* 0xBFE6066C, 0x1B8D0159 */
+static const double qS4 =  7.70381505559019352791e-02; /* 0x3FB3B8C5, 0xB12E9282 */
+
+const uint16_t __rsqrt_tab[128] = {
+0xb451,0xb2f0,0xb196,0xb044,0xaef9,0xadb6,0xac79,0xab43,
+0xaa14,0xa8eb,0xa7c8,0xa6aa,0xa592,0xa480,0xa373,0xa26b,
+0xa168,0xa06a,0x9f70,0x9e7b,0x9d8a,0x9c9d,0x9bb5,0x9ad1,
+0x99f0,0x9913,0x983a,0x9765,0x9693,0x95c4,0x94f8,0x9430,
+0x936b,0x92a9,0x91ea,0x912e,0x9075,0x8fbe,0x8f0a,0x8e59,
+0x8daa,0x8cfe,0x8c54,0x8bac,0x8b07,0x8a64,0x89c4,0x8925,
+0x8889,0x87ee,0x8756,0x86c0,0x862b,0x8599,0x8508,0x8479,
+0x83ec,0x8361,0x82d8,0x8250,0x81c9,0x8145,0x80c2,0x8040,
+0xff02,0xfd0e,0xfb25,0xf947,0xf773,0xf5aa,0xf3ea,0xf234,
+0xf087,0xeee3,0xed47,0xebb3,0xea27,0xe8a3,0xe727,0xe5b2,
+0xe443,0xe2dc,0xe17a,0xe020,0xdecb,0xdd7d,0xdc34,0xdaf1,
+0xd9b3,0xd87b,0xd748,0xd61a,0xd4f1,0xd3cd,0xd2ad,0xd192,
+0xd07b,0xcf69,0xce5b,0xcd51,0xcc4a,0xcb48,0xca4a,0xc94f,
+0xc858,0xc764,0xc674,0xc587,0xc49d,0xc3b7,0xc2d4,0xc1f4,
+0xc116,0xc03c,0xbf65,0xbe90,0xbdbe,0xbcef,0xbc23,0xbb59,
+0xba91,0xb9cc,0xb90a,0xb84a,0xb78c,0xb6d0,0xb617,0xb560,
+};
+
+static const float R_pio2_hi = 1.5707962513e+00; /* 0x3fc90fda */
+static const float R_pio2_lo = 7.5497894159e-08; /* 0x33a22168 */
+static const float R_pS0 =  1.6666586697e-01;
+static const float R_pS1 = -4.2743422091e-02;
+static const float R_pS2 = -8.6563630030e-03;
+static const float R_qS1 = -7.0662963390e-01;
+
 void init_func();
 int __rem_pio2f(float x, double *y);
 int __rem_pio2_large(double *x, double *y, int e0, int nx, int prec);
 float __tandf(double x, int odd);
 float __cosdf(double x);
 float __sindf(double x);
+static double R_acos(double z);
+double sqrt(double a);
+double __math_invalid(double x);
+static inline uint32_t mul32(uint32_t a, uint32_t b);
+static inline uint64_t mul64(uint64_t a, uint64_t b);
+static inline double eval_as_double(double x);
+static float R_acosf(float z);
+float __math_invalidf(float x);
+float sqrtf(float x);
+static inline float eval_as_float(float x);
 
 int main() {
     init_func();
@@ -335,14 +385,132 @@ int isunordered(float x, float y) {
     return 0;
 }
 
-double acos(double a) {
-    printf("acos not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+/* origin: FreeBSD /usr/src/lib/msun/src/e_acos.c */
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunSoft, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+/* acos(x)
+ * Method :
+ *      acos(x)  = pi/2 - asin(x)
+ *      acos(-x) = pi/2 + asin(x)
+ * For |x|<=0.5
+ *      acos(x) = pi/2 - (x + x*x^2*R(x^2))     (see asin.c)
+ * For x>0.5
+ *      acos(x) = pi/2 - (pi/2 - 2asin(sqrt((1-x)/2)))
+ *              = 2asin(sqrt((1-x)/2))
+ *              = 2s + 2s*z*R(z)        ...z=(1-x)/2, s=sqrt(z)
+ *              = 2f + (2c + 2s*z*R(z))
+ *     where f=hi part of s, and c = (z-f*f)/(s+f) is the correction term
+ *     for f so that f+c ~ sqrt(z).
+ * For x<-0.5
+ *      acos(x) = pi - 2asin(sqrt((1-|x|)/2))
+ *              = pi - 0.5*(s+s*z*R(z)), where z=(1-|x|)/2,s=sqrt(z)
+ *
+ * Special cases:
+ *      if x is NaN, return x itself;
+ *      if |x|>1, return NaN with invalid signal.
+ *
+ * Function needed: sqrt
+ */
+double acos(double x) {
+    double z,w,s,c,df;
+    uint32_t hx,ix;
+
+    GET_HIGH_WORD(hx, x);
+    ix = hx & 0x7fffffff;
+    /* |x| >= 1 or nan */
+    if (ix >= 0x3ff00000) {
+        uint32_t lx;
+
+        GET_LOW_WORD(lx,x);
+        if (((ix-0x3ff00000) | lx) == 0) {
+            /* acos(1)=0, acos(-1)=pi */
+            if (hx >> 31)
+                return 2*pio2_hi + 0x1p-120f;
+            return 0;
+        }
+        return 0/(x-x);
+    }
+    /* |x| < 0.5 */
+    if (ix < 0x3fe00000) {
+        if (ix <= 0x3c600000)  /* |x| < 2**-57 */
+            return pio2_hi + 0x1p-120f;
+        return pio2_hi - (x - (pio2_lo-x*R_acos(x*x)));
+    }
+    /* x < -0.5 */
+    if (hx >> 31) {
+        z = (1.0+x)*0.5;
+        s = sqrt(z);
+        w = R_acos(z)*s-pio2_lo;
+        return 2*(pio2_hi - (s+w));
+    }
+    /* x > 0.5 */
+    z = (1.0-x)*0.5;
+    s = sqrt(z);
+    df = s;
+    SET_LOW_WORD(df,0);
+    c = (z-df*df)/(s+df);
+    w = R_acos(z)*s+c;
+    return 2*(df+w);
 }
 
-float acosf(float a) {
-    printf("acosf not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+/* origin: FreeBSD /usr/src/lib/msun/src/e_acosf.c */
+/*
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+float acosf(float x) {
+    float z,w,s,c,df;
+    uint32_t hx,ix;
+
+    GET_FLOAT_WORD(hx, x);
+    ix = hx & 0x7fffffff;
+    /* |x| >= 1 or nan */
+    if (ix >= 0x3f800000) {
+        if (ix == 0x3f800000) {
+            if (hx >> 31)
+                return 2*pio2_hi + 0x1p-120f;
+            return 0;
+        }
+        return 0/(x-x);
+    }
+    /* |x| < 0.5 */
+    if (ix < 0x3f000000) {
+        if (ix <= 0x32800000) /* |x| < 2**-26 */
+            return pio2_hi + 0x1p-120f;
+        return pio2_hi - (x - (pio2_lo-x*R_acosf(x*x)));
+    }
+    /* x < -0.5 */
+    if (hx >> 31) {
+        z = (1+x)*0.5f;
+        s = sqrtf(z);
+        w = R_acosf(z)*s-pio2_lo;
+        return 2*(pio2_hi - (s+w));
+    }
+    /* x > 0.5 */
+    z = (1-x)*0.5f;
+    s = sqrtf(z);
+    GET_FLOAT_WORD(hx,s);
+    SET_FLOAT_WORD(df,hx&0xfffff000);
+    c = (z-df*df)/(s+df);
+    w = R_acosf(z)*s+c;
+    return 2*(df+w);
 }
 
 double acosh(double a) {
@@ -1216,54 +1384,54 @@ double sin(double a) {
 }
 
 float sinf(float x) {
-	double y;
-	uint32_t ix;
-	int n, sign;
+    double y;
+    uint32_t ix;
+    int n, sign;
 
-	GET_FLOAT_WORD(ix, x);
-	sign = ix >> 31;
-	ix &= 0x7fffffff;
+    GET_FLOAT_WORD(ix, x);
+    sign = ix >> 31;
+    ix &= 0x7fffffff;
 
-	if (ix <= 0x3f490fda) {  /* |x| ~<= pi/4 */
-		if (ix < 0x39800000) {  /* |x| < 2**-12 */
-			/* raise inexact if x!=0 and underflow if subnormal */
-			FORCE_EVAL(ix < 0x00800000 ? x/0x1p120f : x+0x1p120f);
-			return x;
-		}
-		return __sindf(x);
-	}
-	if (ix <= 0x407b53d1) {  /* |x| ~<= 5*pi/4 */
-		if (ix <= 0x4016cbe3) {  /* |x| ~<= 3pi/4 */
-			if (sign)
-				return -__cosdf(x + s1pio2);
-			else
-				return __cosdf(x - s1pio2);
-		}
-		return __sindf(sign ? -(x + s2pio2) : -(x - s2pio2));
-	}
-	if (ix <= 0x40e231d5) {  /* |x| ~<= 9*pi/4 */
-		if (ix <= 0x40afeddf) {  /* |x| ~<= 7*pi/4 */
-			if (sign)
-				return __cosdf(x + s3pio2);
-			else
-				return -__cosdf(x - s3pio2);
-		}
-		return __sindf(sign ? x + s4pio2 : x - s4pio2);
-	}
+    if (ix <= 0x3f490fda) {  /* |x| ~<= pi/4 */
+        if (ix < 0x39800000) {  /* |x| < 2**-12 */
+            /* raise inexact if x!=0 and underflow if subnormal */
+            FORCE_EVAL(ix < 0x00800000 ? x/0x1p120f : x+0x1p120f);
+            return x;
+        }
+        return __sindf(x);
+    }
+    if (ix <= 0x407b53d1) {  /* |x| ~<= 5*pi/4 */
+        if (ix <= 0x4016cbe3) {  /* |x| ~<= 3pi/4 */
+            if (sign)
+                return -__cosdf(x + s1pio2);
+            else
+                return __cosdf(x - s1pio2);
+        }
+        return __sindf(sign ? -(x + s2pio2) : -(x - s2pio2));
+    }
+    if (ix <= 0x40e231d5) {  /* |x| ~<= 9*pi/4 */
+        if (ix <= 0x40afeddf) {  /* |x| ~<= 7*pi/4 */
+            if (sign)
+                return __cosdf(x + s3pio2);
+            else
+                return -__cosdf(x - s3pio2);
+        }
+        return __sindf(sign ? x + s4pio2 : x - s4pio2);
+    }
 
-	/* sin(Inf or NaN) is NaN */
-	if (ix >= 0x7f800000)
-		return x - x;
+    /* sin(Inf or NaN) is NaN */
+    if (ix >= 0x7f800000)
+        return x - x;
 
-	/* general argument reduction needed */
-	n = __rem_pio2f(x, &y);
-	switch (n&3) {
-	case 0: return  __sindf(y);
-	case 1: return  __cosdf(y);
-	case 2: return  __sindf(-y);
-	default:
-		return -__cosdf(y);
-	}
+    /* general argument reduction needed */
+    n = __rem_pio2f(x, &y);
+    switch (n&3) {
+    case 0: return  __sindf(y);
+    case 1: return  __cosdf(y);
+    case 2: return  __sindf(-y);
+    default:
+        return -__cosdf(y);
+    }
 }
 
 double sinh(double a) {
@@ -1286,14 +1454,211 @@ long double sinl(long double a) {
     return 0;
 }
 
-double sqrt(double a) {
-    printf("sqrt not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+#define FENV_SUPPORT 1
+
+#define ASUINT64(x) ((union {double f; uint64_t i;}){x}).i
+double sqrt(double x) {
+    uint64_t ix, top, m;
+
+    /* special case handling.  */
+    ix = ASUINT64(x);
+    top = ix >> 52;
+    if (top - 0x001 >= 0x7ff - 0x001) {
+        /* x < 0x1p-1022 or inf or nan.  */
+        if (ix * 2 == 0)
+            return x;
+        if (ix == 0x7ff0000000000000)
+            return x;
+        if (ix > 0x7ff0000000000000)
+            return __math_invalid(x);
+        /* x is subnormal, normalize it.  */
+        ix = ASUINT64(x * 0x1p52);
+        top = ix >> 52;
+        top -= 52;
+    }
+
+    /* argument reduction:
+       x = 4^e m; with integer e, and m in [1, 4)
+       m: fixed point representation [2.62]
+       2^e is the exponent part of the result.  */
+    int even = top & 1;
+    m = (ix << 11) | 0x8000000000000000;
+    if (even) m >>= 1;
+    top = (top + 0x3ff) >> 1;
+
+    /* approximate r ~ 1/sqrt(m) and s ~ sqrt(m) when m in [1,4)
+
+       initial estimate:
+       7bit table lookup (1bit exponent and 6bit significand).
+
+       iterative approximation:
+       using 2 goldschmidt iterations with 32bit int arithmetics
+       and a final iteration with 64bit int arithmetics.
+
+       details:
+
+       the relative error (e = r0 sqrt(m)-1) of a linear estimate
+       (r0 = a m + b) is |e| < 0.085955 ~ 0x1.6p-4 at best,
+       a table lookup is faster and needs one less iteration
+       6 bit lookup table (128b) gives |e| < 0x1.f9p-8
+       7 bit lookup table (256b) gives |e| < 0x1.fdp-9
+       for single and double prec 6bit is enough but for quad
+       prec 7bit is needed (or modified iterations). to avoid
+       one more iteration >=13bit table would be needed (16k).
+
+       a newton-raphson iteration for r is
+         w = r*r
+         u = 3 - m*w
+         r = r*u/2
+       can use a goldschmidt iteration for s at the end or
+         s = m*r
+
+       first goldschmidt iteration is
+         s = m*r
+         u = 3 - s*r
+         r = r*u/2
+         s = s*u/2
+       next goldschmidt iteration is
+         u = 3 - s*r
+         r = r*u/2
+         s = s*u/2
+       and at the end r is not computed only s.
+
+       they use the same amount of operations and converge at the
+       same quadratic rate, i. if
+         r1 sqrt(m) - 1 = e, then
+         r2 sqrt(m) - 1 = -3/2 e^2 - 1/2 e^3
+       the advantage of goldschmidt is that the mul for s and r
+       are independent (computed in parallel), however it is not
+       "self synchronizing": it only uses the input m in the
+       first iteration so rounding errors accumulate. at the end
+       or when switching to larger precision arithmetics rounding
+       errors dominate so the first iteration should be used.
+
+       the fixed point representations are
+         m: 2.30 r: 0.32, s: 2.30, d: 2.30, u: 2.30, three: 2.30
+       and after switching to 64 bit
+         m: 2.62 r: 0.64, s: 2.62, d: 2.62, u: 2.62, three: 2.62  */
+
+    static const uint64_t three = 0xc0000000;
+    uint64_t r, s, d, u, i;
+
+    i = (ix >> 46) % 128;
+    r = (uint32_t)__rsqrt_tab[i] << 16;
+    /* |r sqrt(m) - 1| < 0x1.fdp-9 */
+    s = mul32(m>>32, r);
+    /* |s/sqrt(m) - 1| < 0x1.fdp-9 */
+    d = mul32(s, r);
+    u = three - d;
+    r = mul32(r, u) << 1;
+    /* |r sqrt(m) - 1| < 0x1.7bp-16 */
+    s = mul32(s, u) << 1;
+    /* |s/sqrt(m) - 1| < 0x1.7bp-16 */
+    d = mul32(s, r);
+    u = three - d;
+    r = mul32(r, u) << 1;
+    /* |r sqrt(m) - 1| < 0x1.3704p-29 (measured worst-case) */
+    r = r << 32;
+    s = mul64(m, r);
+    d = mul64(s, r);
+    u = (three<<32) - d;
+    s = mul64(s, u);  /* repr: 3.61 */
+    /* -0x1p-57 < s - sqrt(m) < 0x1.8001p-61 */
+    s = (s - 2) >> 9; /* repr: 12.52 */
+    /* -0x1.09p-52 < s - sqrt(m) < -0x1.fffcp-63 */
+
+    /* s < sqrt(m) < s + 0x1.09p-52,
+       compute nearest rounded result:
+       the nearest result to 52 bits is either s or s+0x1p-52,
+       we can decide by comparing (2^52 s + 0.5)^2 to 2^104 m.  */
+    uint64_t d0, d1, d2;
+    double y, t;
+    d0 = (m << 42) - s*s;
+    d1 = s - d0;
+    d2 = d1 + s + 1;
+    s += d1 >> 63;
+    s &= 0x000fffffffffffff;
+    s |= top << 52;
+    y = asdouble(s);
+    if (FENV_SUPPORT) {
+        /* handle rounding modes and inexact exception:
+           only (s+1)^2 == 2^42 m case is exact otherwise
+           add a tiny value to cause the fenv effects.  */
+        uint64_t tiny = d2==0 ? 0 : 0x0010000000000000;
+        tiny |= (d1^d2) & 0x8000000000000000;
+        t = asdouble(tiny);
+        y = eval_as_double(y + t);
+    }
+    return y;
 }
 
-float sqrtf(float a) {
-    printf("sqrtf not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+float sqrtf(float x) {
+    uint32_t ix, m, m1, m0, even, ey;
+
+    ix = asuint(x);
+    if (ix - 0x00800000 >= 0x7f800000 - 0x00800000) {
+        /* x < 0x1p-126 or inf or nan.  */
+        if (ix * 2 == 0)
+            return x;
+        if (ix == 0x7f800000)
+            return x;
+        if (ix > 0x7f800000)
+            return __math_invalidf(x);
+        /* x is subnormal, normalize it.  */
+        ix = asuint(x * 0x1p23f);
+        ix -= 23 << 23;
+    }
+
+    /* x = 4^e m; with int e and m in [1, 4).  */
+    even = ix & 0x00800000;
+    m1 = (ix << 8) | 0x80000000;
+    m0 = (ix << 7) & 0x7fffffff;
+    m = even ? m0 : m1;
+
+    /* 2^e is the exponent part of the return value.  */
+    ey = ix >> 1;
+    ey += 0x3f800000 >> 1;
+    ey &= 0x7f800000;
+
+    /* compute r ~ 1/sqrt(m), s ~ sqrt(m) with 2 goldschmidt iterations.  */
+    static const uint32_t three = 0xc0000000;
+    uint32_t r, s, d, u, i;
+    i = (ix >> 17) % 128;
+    r = (uint32_t)__rsqrt_tab[i] << 16;
+    /* |r*sqrt(m) - 1| < 0x1p-8 */
+    s = mul32(m, r);
+    /* |s/sqrt(m) - 1| < 0x1p-8 */
+    d = mul32(s, r);
+    u = three - d;
+    r = mul32(r, u) << 1;
+    /* |r*sqrt(m) - 1| < 0x1.7bp-16 */
+    s = mul32(s, u) << 1;
+    /* |s/sqrt(m) - 1| < 0x1.7bp-16 */
+    d = mul32(s, r);
+    u = three - d;
+    s = mul32(s, u);
+    /* -0x1.03p-28 < s/sqrt(m) - 1 < 0x1.fp-31 */
+    s = (s - 1)>>6;
+    /* s < sqrt(m) < s + 0x1.08p-23 */
+
+    /* compute nearest rounded result.  */
+    uint32_t d0, d1, d2;
+    float y, t;
+    d0 = (m << 16) - s*s;
+    d1 = s - d0;
+    d2 = d1 + s + 1;
+    s += d1 >> 31;
+    s &= 0x007fffff;
+    s |= ey;
+    y = asfloat(s);
+    if (FENV_SUPPORT) {
+        /* handle rounding and inexact exception. */
+        uint32_t tiny = d2==0 ? 0 : 0x01000000;
+        tiny |= (d1^d2) & 0x80000000;
+        t = asfloat(tiny);
+        y = eval_as_float(y + t);
+    }
+    return y;
 }
 
 long double sqrtl(long double a) {
@@ -1823,22 +2188,69 @@ float __tandf(double x, int odd) {
 }
 
 float __cosdf(double x) {
-	double_t r, w, z;
+    double_t r, w, z;
 
-	/* Try to optimize for parallel evaluation as in __tandf.c. */
-	z = x*x;
-	w = z*z;
-	r = C2+z*C3;
-	return ((1.0+z*C0) + w*C1) + (w*z)*r;
+    /* Try to optimize for parallel evaluation as in __tandf.c. */
+    z = x*x;
+    w = z*z;
+    r = C2+z*C3;
+    return ((1.0+z*C0) + w*C1) + (w*z)*r;
 }
 
 float __sindf(double x) {
-	double_t r, s, w, z;
+    double_t r, s, w, z;
 
-	/* Try to optimize for parallel evaluation as in __tandf.c. */
-	z = x*x;
-	w = z*z;
-	r = S3 + z*S4;
-	s = z*x;
-	return (x + s*(S1 + z*S2)) + s*w*r;
+    /* Try to optimize for parallel evaluation as in __tandf.c. */
+    z = x*x;
+    w = z*z;
+    r = S3 + z*S4;
+    s = z*x;
+    return (x + s*(S1 + z*S2)) + s*w*r;
+}
+
+static double R_acos(double z) {
+    double_t p, q;
+    p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
+    q = 1.0+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
+    return p/q;
+}
+
+double __math_invalid(double x) {
+    return (x - x) / (x - x);
+}
+
+/* returns a*b*2^-32 - e, with error 0 <= e < 1.  */
+static inline uint32_t mul32(uint32_t a, uint32_t b) {
+    return (uint64_t)a*b >> 32;
+}
+
+/* returns a*b*2^-64 - e, with error 0 <= e < 3.  */
+static inline uint64_t mul64(uint64_t a, uint64_t b) {
+    uint64_t ahi = a>>32;
+    uint64_t alo = a&0xffffffff;
+    uint64_t bhi = b>>32;
+    uint64_t blo = b&0xffffffff;
+    return ahi*bhi + (ahi*blo >> 32) + (alo*bhi >> 32);
+}
+
+static inline double eval_as_double(double x) {
+    double y = x;
+    return y;
+}
+
+static inline float eval_as_float(float x)
+{
+	float y = x;
+	return y;
+}
+
+static float R_acosf(float z) {
+    float_t p, q;
+    p = z*(R_pS0+z*(R_pS1+z*R_pS2));
+    q = 1.0f+z*R_qS1;
+    return p/q;
+}
+
+float __math_invalidf(float x) {
+	return (x - x) / (x - x);
 }
