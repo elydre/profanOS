@@ -24,6 +24,7 @@ lib_t libs_at_boot[] = {
     {1008, "/lib/string.bin"},
     {1009, "/lib/stdio.bin"},
     {1010, "/lib/i_mouse.bin"},
+    {1011, "/lib/math.bin"},
 };
 
 

@@ -21,6 +21,7 @@ int main() {
 void init_func() {
     c_kprint("Init of the stdio lib !\n");
 }
+
 void fonction_inutile() {} // car j'ai tout décalé dans le header, et flemme de fix ça
 
 void clearerr(FILE *stream) {
