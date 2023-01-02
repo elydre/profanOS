@@ -225,7 +225,6 @@ def write_build_logs():
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
     text += f"machine name:   {os.uname().nodename} ({os.uname().sysname})\n"
-    text += f"profan branch:  {os.popen('git rev-parse --abbrev-ref HEAD').read().splitlines()[0]}\n"
     text += f"build for:      profanOS {get_kernel_version(False)}\n"
     text += f"gcc version:    {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
     text += f"ld version:     {os.popen('ld --version').read().splitlines()[0]}\n"
