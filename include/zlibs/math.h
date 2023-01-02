@@ -5,6 +5,7 @@ thx https://pubs.opengroup.org/onlinepubs/009695399/basedefs/math.h.html
 #ifndef MATH_ID
 #define MATH_ID 1011
 
+#include <math_private.h>
 #include <type.h>
 
 extern int signgam;
