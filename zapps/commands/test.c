@@ -126,6 +126,12 @@ int main(int argc, char **argv) {
     printf("Should be yn : ");
     yn(1, 1);
 
+    // test of tan
+    is_fine = 1;
+    if (tanf(0) != 0) is_fine = 0;
+    if (tanf(1)-1.55740 > 0.0001) is_fine = 0; // we dont test the exact value, osef
+    print_state(is_fine, "tan");
+
     printf("End of the test for now !\n");
 
     return 0;
