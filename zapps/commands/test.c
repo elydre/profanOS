@@ -156,6 +156,12 @@ int main(int argc, char **argv) {
     if (abs(sinf(1)-0.84147) > 0.0001) is_fine = 0; // we dont test the exact value, osef
     print_state(is_fine, "sinf");
 
+    // test of log10
+    is_fine = 1;
+    if (log10(1) != 0) is_fine = 0;
+    if (abs(log10(10)-1) > 0.0001) is_fine = 0; // we dont test the exact value, osef
+    print_state(is_fine, "log10");
+
     printf("End of the test for now !\n");
 
     return 0;
