@@ -49,8 +49,8 @@ int i_pid_to_place(int pid) {
 }
 
 void i_process_switch(int pid1, int pid2) {
-    // this function is called when a process 
-    // is switched so we need security checks
+    // this function is called when a process is
+    // switched so we don't need security checks
 
     process_t *proc1 = &plist[i_pid_to_place(pid1)];
     process_t *proc2 = &plist[i_pid_to_place(pid2)];
@@ -60,7 +60,7 @@ void i_process_switch(int pid1, int pid2) {
     }
     proc2->state = PROCESS_RUNNING;
 
-    asm volatile("sti");
+    asm volatile("sti"); // (re)enable interrupts
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
@@ -107,6 +107,10 @@ void i_process_yield(int current_pid) {
     if (pid_order[pid_order_i] == -1) pid_order_i = 0;
 
     next_pid = pid_order[pid_order_i];
+
+    if (next_pid == -1) {
+        sys_fatal("No process to switch to");
+    }
 
     if (current_pid == next_pid) return;
 
@@ -175,13 +179,11 @@ int process_create(void (*func)(), char *name) {
 
     str_cpy(new_proc.name, name);
     new_proc.pid = current_pid;
-    new_proc.state = PROCESS_WAITING;
+    new_proc.state = PROCESS_SLEEPING;
 
     i_new_process(&new_proc, func, main_proc->regs.eflags, (uint32_t *) main_proc->regs.cr3);
 
     plist[place] = new_proc;
-
-    i_pid_order_add(current_pid);
 
     return current_pid;
 }
@@ -284,4 +286,26 @@ void process_debug() {
             kprintf("Process %d: %s, state: %d\n", plist[i].pid, plist[i].name, plist[i].state);
         }
     }
+}
+
+void process_set_bin_mem(int pid, uint8_t *mem) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return;
+    }
+
+    plist[place].run_mem = mem;
+}
+
+uint8_t *process_get_bin_mem(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].run_mem;
 }

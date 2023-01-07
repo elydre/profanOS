@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "PROC-05"
+#define KERNEL_VERSION  "PROC-06"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
@@ -35,7 +35,6 @@ void task_menu();
 void start_kshell();
 
 // runtime.c
-int run_binary(char path[], int silence, int argc, char **argv);
 int run_ifexist(char path[], int argc, char **argv);
 
 // dily.c

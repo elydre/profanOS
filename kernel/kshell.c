@@ -93,7 +93,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
 
-    else if (str_cmp(prefix, "p") == 0) process_create(process_test, "process_test");
+    else if (str_cmp(prefix, "p") == 0) kprintf("pid: %d\n", process_create(process_test, "process_test"));
     else if (str_cmp(prefix, "d") == 0) process_debug();
     else if (str_cmp(prefix, "t") == 0) kprintf("ticks: %d\n", timer_get_tick());
     else if (str_cmp(prefix, "s") == 0) process_sleep(str2int(suffix));
