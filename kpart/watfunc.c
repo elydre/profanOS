@@ -108,4 +108,3 @@ int wf_get_func_addr(int func_id) {
     }
     return (int) SYSCALL_ARRAY[func_id];
 }
-
