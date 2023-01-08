@@ -14,7 +14,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ## Setup
 
 > **Note** -
-> compilation is guaranteed only on debian & co, but
+> compilation is guaranteed only on ubuntu with gcc 11
 > it is also possible in windows with virtualization
 > solutions like wsl (on windows 11) or hyperV
 
@@ -59,9 +59,10 @@ ls      - list the current dir
 
 ## Known major bugs
 
-| bug name  | exisiting since | description | fix idea |
-|-----------|-----------------|-------------|----------|
-| laged lag | ? | parts of profanOS slow<br>down at times on qemu | - memory address problem?<br>- qemu problem?|
+| bug name  | since | description | cause | fixed ? |
+|-----------|-------|-------------|-------|---------|
+| lagged lag | ? | all profanOS is getting very slow in qemu | memory | partially |
+| BOBCAT | 0.4.2 | some version of gcc build broken zapps | gcc | no |
 
 ## Author & Contact
 

@@ -21,6 +21,7 @@ int main() {
 void init_func() {
     c_kprint("Init of the stdio lib !\n");
 }
+
 void fonction_inutile() {} // car j'ai tout décalé dans le header, et flemme de fix ça
 
 void clearerr(FILE *stream) {
@@ -366,7 +367,7 @@ int vsscanf_s( const char *restrict buffer, const char *restrict format, va_list
     return 0;
 }
 
-int printf(const char *restrict format, ... ) {
+int printf(const char *restrict format, ...) {
     va_list args;
     // we copy format to a buffer because we need to modify it
     char *format_copy = malloc(strlen(format) + 1);
