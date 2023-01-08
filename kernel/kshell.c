@@ -1,20 +1,35 @@
 #include <kernel/snowflake.h>
 #include <kernel/ramdisk.h>
+#include <kernel/process.h>
+#include <driver/serial.h>
+#include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <cpu/timer.h>
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
 
-#include <kernel/process.h>
-#include <driver/serial.h>
-#include <cpu/timer.h>
-
 #include <i_iolib.h>
 
 #define BFR_SIZE 65
 
 int shell_command(char command[]);
+
+void kernel_switch_back() {
+    int pid_list[PROCESS_MAX]; // it's a define
+    int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid;
+
+    kprint("\n");
+
+    for (int i = 0; i < pid_list_len; i++) {
+        pid = pid_list[i];
+        if (process_get_state(pid) < 2 && pid) {
+            process_sleep(pid);
+            sprintf("Process %d stopped\n", pid);
+        }
+    }
+}
 
 void start_kshell() {
     sys_warning("You are now in the kernel-level shell");
@@ -46,6 +61,9 @@ void shell_help() {
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
         "HELP   - show this help",
+        "PK     - kill a process",
+        "PS     - show process list",
+        "PW     - wake up a process",
         "REBOOT - reboot the system",
         "SO     - run file in /bin",
     };
@@ -62,11 +80,22 @@ void shell_addr() {
     fsprint("watfunc: %x\n", WATFUNC_ADDR);
 }
 
-void process_test() {
-    for (int i = 0; ; i++) {
-        sprintf("process_test: %d\n", i);
+void shell_process_show() {
+    char *state[] = {
+        "RUNNING",
+        "WAITING",
+        "SLEEPING",
+        "ZOMBIE",
+    };
+    int pid_list[PROCESS_MAX]; // it's a define
+    int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid;
+    char name[64];
+    for (int i = 0; i < pid_list_len; i++) {
+        pid = pid_list[i];
+        process_get_name(pid, name);
+        kprintf("pid: %d, ppid: %d, state: %s, name: %s\n", pid, process_get_ppid(pid), state[process_get_state(pid)], name);
     }
-    process_exit();
 }
 
 int shell_command(char command[]) {
@@ -90,13 +119,11 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "exit") == 0) return 1;
     else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
+    else if (str_cmp(prefix, "pk") == 0) process_kill(str2int(suffix));
+    else if (str_cmp(prefix, "ps") == 0) shell_process_show();
+    else if (str_cmp(prefix, "pw") == 0) process_wakeup(str2int(suffix));
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-
-    else if (str_cmp(prefix, "p") == 0) kprintf("pid: %d\n", process_create(process_test, "process_test"));
-    else if (str_cmp(prefix, "t") == 0) kprintf("ticks: %d\n", timer_get_tick());
-    else if (str_cmp(prefix, "s") == 0) process_sleep(str2int(suffix));
-    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 

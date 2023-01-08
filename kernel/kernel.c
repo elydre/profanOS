@@ -3,9 +3,9 @@
 #include <kernel/snowflake.h>
 #include <driver/keyboard.h>
 #include <kernel/ramdisk.h>
+#include <kernel/process.h>
 #include <driver/serial.h>
 #include <driver/mouse.h>
-#include <kernel/process.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -50,8 +50,6 @@ void kernel_main(void *mboot_ptr) {
 
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);
-
-    // task_menu();
 
     start_kshell();
 

@@ -84,12 +84,10 @@ void i_pid_order_remove(int pid) {
 }
 
 void i_clean_killed_process() {
-    sprintf("Cleaning killed processes...\n");
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
             free((void *) plist[i].esp_addr);
             plist[i].state = PROCESS_DEAD;
-            sprintf("Process %d cleaned\n", plist[i].pid);
         }
     }
     need_clean = 0;
@@ -111,12 +109,12 @@ void i_process_yield(int current_pid) {
     next_pid = pid_order[pid_order_i];
 
     if (next_pid == -1) {
-        sys_fatal("No process to switch to");
+        sprintf("No process to switch to, adding kernel\n");
+        i_pid_order_add(0);
+        next_pid = 0;
     }
 
     if (current_pid == next_pid) return;
-
-    sprintf("Switching from %d to %d\n", current_pid, next_pid);
 
     i_process_switch(current_pid, next_pid);
 }
@@ -132,27 +130,29 @@ int process_init() {
     }
     need_clean = 0;
 
-    static process_t main_proc;
+    static process_t kern_proc;
 
     // Get EFLAGS and CR3
     asm volatile(
         "movl %%cr3, %%eax\n\t"
         "movl %%eax, %0"
-        : "=m" (main_proc.regs.cr3)
+        : "=m" (kern_proc.regs.cr3)
         :: "%eax");
 
     asm volatile("pushfl\n\t"
         "movl (%%esp), %%eax\n\t"
         "movl %%eax, %0\n\t"
         "popfl"
-        : "=m"(main_proc.regs.eflags)
+        : "=m"(kern_proc.regs.eflags)
         :: "%eax");
 
-    str_cpy(main_proc.name, "kernel");
-    main_proc.state = PROCESS_RUNNING;
-    main_proc.pid = 0;
+    str_cpy(kern_proc.name, "kernel");
+    kern_proc.state = PROCESS_RUNNING;
 
-    plist[0] = main_proc;
+    kern_proc.pid = 0;
+    kern_proc.ppid = 0; // it's worse than inbreeding!
+
+    plist[0] = kern_proc;
 
     i_pid_order_add(0);
 
@@ -174,14 +174,14 @@ int process_create(void (*func)(), char *name) {
     pid_incrament++;
 
     static process_t new_proc;
-    process_t *main_proc = &plist[0];
+    process_t *kern_proc = &plist[0];
 
     str_cpy(new_proc.name, name);
     new_proc.pid = pid_incrament;
     new_proc.ppid = process_get_running_pid();
     new_proc.state = PROCESS_SLEEPING;
 
-    i_new_process(&new_proc, func, main_proc->regs.eflags, (uint32_t *) main_proc->regs.cr3);
+    i_new_process(&new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
 
     plist[place] = new_proc;
 
@@ -189,8 +189,6 @@ int process_create(void (*func)(), char *name) {
 }
 
 void process_kill(int pid) {
-    sprintf("Killing process %d\n", pid);
-
     if (pid == 0) {
         sys_error("Cannot kill kernel (^_^ )");
     }
@@ -211,7 +209,6 @@ void process_kill(int pid) {
     need_clean = 1;
 
     if (pid == current_pid) {
-        sprintf("Killing current process\n");
         i_process_yield(pid);
     }
 }
@@ -348,4 +345,26 @@ int process_get_state(int pid) {
     }
 
     return plist[place].state;
+}
+
+void *process_get_custom(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].custom;
+}
+
+void process_set_custom(int pid, void *custom) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return;
+    }
+
+    plist[place].custom = custom;
 }

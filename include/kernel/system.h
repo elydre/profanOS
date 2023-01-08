@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "PROC-08"
+#define KERNEL_VERSION  "PROC-09"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
@@ -28,11 +28,9 @@ int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
-// kmenu.c
-void task_menu();
-
 // kshell.c
 void start_kshell();
+void kernel_switch_back();
 
 // runtime.c
 int run_ifexist(char path[], int argc, char **argv);
