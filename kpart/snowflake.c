@@ -111,21 +111,20 @@ uint32_t mem_alloc(uint32_t size, int state) {
     if (!(size && state)) return 0;
     if (state != 3) dynamize_mem();
 
-    // parcours de la liste des parties allouées
+    // traversing the list of allocated parts
     int index, old_index, exit_mode;
     uint32_t last_addr;
     index = first_part_index;
 
     last_addr = MEM_BASE_ADDR;
     while (1) {
-        // si la partie est libre
+        // if the part is free
         if (MEM_PARTS[index].state == 0) {
-            // TODO: verifier si 'last_addr + size' est dans la memoire physique
-            exit_mode = 1;
+            exit_mode = 1 + (last_addr + size > phys_size);
             break;
         }
         if (MEM_PARTS[index].addr - last_addr >= size) {
-            // on peut allouer la partie ici
+            // we can allocate the part here
             exit_mode = 0;
             break;
         }
@@ -133,6 +132,11 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
         old_index = index;
         index = MEM_PARTS[index].next;
+    }
+
+    if (exit_mode == 2) {
+        sys_error("Cannot alloc: out of physical memory");
+        return 0;
     }
 
     int new_index = mm_get_unused_index();

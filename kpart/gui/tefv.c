@@ -11,7 +11,7 @@
 #define MAX_COLS (1024 / FONT_WIDTH)
 #define MAX_ROWS (768 / FONT_HEIGHT)
 
-#define CURSOR_COLOR 0xFF003c
+#define CURSOR_COLOR 0xFF003C
 
 int cursor_x = 0;
 int cursor_y = 0;
@@ -27,7 +27,7 @@ typedef struct {
 screen_char_t *screen_buffer = NULL;
 
 int tef_init() {
-    screen_buffer = malloc(MAX_COLS * MAX_ROWS * sizeof(screen_char_t));
+    screen_buffer = calloc(MAX_COLS * MAX_ROWS * sizeof(screen_char_t));
     return screen_buffer == NULL;
 }
 
