@@ -10,12 +10,6 @@ int pid_order[PROCESS_MAX];
 int pid_incrament, need_clean, pid_running;
 int pid_order_i = -1;
 
-#define PROCESS_RUNNING  0
-#define PROCESS_WAITING  1
-#define PROCESS_SLEEPING 2
-#define PROCESS_KILLED   3
-#define PROCESS_DEAD     4
-
 /***********************
  * INTERNAL FUNCTIONS *
 ***********************/
@@ -130,10 +124,6 @@ void i_process_yield(int current_pid) {
 /***********************
  * EXTERNAL FUNCTIONS *
 ***********************/
-
-int process_get_running_pid() {
-    return pid_running;
-}
 
 int process_init() {
     for (int i = 0; i < PROCESS_MAX; i++) {
@@ -284,18 +274,12 @@ void process_exit() {
     process_kill(process_get_running_pid());
 }
 
-void process_debug() {
-    kprintf("Current index: %d [", pid_order_i);
-    for (int i = 0; i < PROCESS_MAX; i++) {
-        kprintf("%d ", pid_order[i]);
-    }
-    kprintf("]\n");
+/**********************
+ * GET/SET FUNCTIONS *
+**********************/
 
-    for (int i = 0; i < PROCESS_MAX; i++) {
-        if (plist[i].state != PROCESS_DEAD) {
-            kprintf("Process %d: %s, state: %d\n", plist[i].pid, plist[i].name, plist[i].state);
-        }
-    }
+int process_get_running_pid() {
+    return pid_running;
 }
 
 void process_set_bin_mem(int pid, uint8_t *mem) {
@@ -329,4 +313,39 @@ int process_get_ppid(int pid) {
     }
 
     return plist[place].ppid;
+}
+
+int process_generate_pid_list(int *list, int max) {
+    int i = 0;
+    for (int j = 0; j < PROCESS_MAX; j++) {
+        if (plist[j].state != PROCESS_DEAD) {
+            list[i] = plist[j].pid;
+            i++;
+        }
+        if (max == i) break;
+    }
+    return i;
+}
+
+int process_get_name(int pid, char *name) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    str_cpy(name, plist[place].name);
+    return 1;
+}
+
+int process_get_state(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].state;
 }

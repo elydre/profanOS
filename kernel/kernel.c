@@ -49,7 +49,7 @@ void kernel_main(void *mboot_ptr) {
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
 
     // launch of the default program
-    // run_ifexist(RUN_DEFAULT, 0, NULL);
+    run_ifexist(RUN_DEFAULT, 0, NULL);
 
     // task_menu();
 
