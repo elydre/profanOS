@@ -18,7 +18,9 @@ char **g_argv;
 int g_argc;
 
 void tasked_program() {
-    int pid = process_get_current_pid();
+    int pid = process_get_running_pid();
+    int ppid = process_get_ppid(pid);
+
     uint8_t *binary_mem = process_get_bin_mem(pid);
     ((int (*)(int, char **)) binary_mem + RUN_STACK_BIN)(g_argc, g_argv);
 
@@ -37,12 +39,13 @@ void tasked_program() {
 
         mem_free_all(pid);
     }
+
+    process_wakeup(ppid);
     process_exit();
 }
 
 int run_binary(char path[], int argc, char **argv) {
     // TODO: check if file is executable
-    // TODO: check if there is enough memory
 
     serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, path);
@@ -51,6 +54,11 @@ int run_binary(char path[], int argc, char **argv) {
     uint8_t *binary_mem = (uint8_t *) mem_alloc(size, 4); // 4 = runtime
     uint8_t *file = binary_mem + RUN_STACK_BIN;
 
+    if (!binary_mem) {
+        sys_error("Not enough memory");
+        return -1;
+    }
+
     fs_read_file(path, (char *) file);
 
     g_argc = argc;
@@ -58,6 +66,8 @@ int run_binary(char path[], int argc, char **argv) {
 
     process_set_bin_mem(pid, binary_mem);
     process_wakeup(pid);
+
+    process_sleep(process_get_running_pid());
 
     return 0;
 }

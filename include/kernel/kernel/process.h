@@ -9,7 +9,8 @@ typedef struct {
 
 typedef struct {
     proc_rgs_t regs;
-    int pid, state;
+    int pid, ppid;
+    int state;
     uint32_t esp_addr;
     uint8_t *run_mem;
     char name[64];
@@ -30,7 +31,8 @@ void process_debug();
 void process_set_bin_mem(int pid, uint8_t *mem);
 uint8_t *process_get_bin_mem(int pid);
 
-int process_get_current_pid();
+int process_get_ppid(int pid);
+int process_get_running_pid();
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);

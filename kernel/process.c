@@ -6,8 +6,9 @@
 
 static process_t plist[PROCESS_MAX];
 int pid_order[PROCESS_MAX];
+
+int pid_incrament, need_clean, pid_running;
 int pid_order_i = -1;
-int current_pid, need_clean;
 
 #define PROCESS_RUNNING  0
 #define PROCESS_WAITING  1
@@ -60,6 +61,8 @@ void i_process_switch(int pid1, int pid2) {
     }
     proc2->state = PROCESS_RUNNING;
 
+    pid_running = pid2;
+
     asm volatile("sti"); // (re)enable interrupts
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
@@ -99,6 +102,11 @@ void i_clean_killed_process() {
 }
 
 void i_process_yield(int current_pid) {
+    if (current_pid == -1) {
+        sys_fatal("The current process is set to -1");
+        return;
+    }
+
     if (pid_order_i == -1) return;
 
     int next_pid;
@@ -123,8 +131,8 @@ void i_process_yield(int current_pid) {
  * EXTERNAL FUNCTIONS *
 ***********************/
 
-int process_get_current_pid() {
-    return pid_order[pid_order_i];
+int process_get_running_pid() {
+    return pid_running;
 }
 
 int process_init() {
@@ -158,7 +166,8 @@ int process_init() {
 
     i_pid_order_add(0);
 
-    current_pid = 0;
+    pid_incrament = 0;
+    pid_running = 0;
     pid_order_i = 0;
 
     return 0;
@@ -172,20 +181,21 @@ int process_create(void (*func)(), char *name) {
         return -1;
     }
 
-    current_pid++;
+    pid_incrament++;
 
     static process_t new_proc;
     process_t *main_proc = &plist[0];
 
     str_cpy(new_proc.name, name);
-    new_proc.pid = current_pid;
+    new_proc.pid = pid_incrament;
+    new_proc.ppid = process_get_running_pid();
     new_proc.state = PROCESS_SLEEPING;
 
     i_new_process(&new_proc, func, main_proc->regs.eflags, (uint32_t *) main_proc->regs.cr3);
 
     plist[place] = new_proc;
 
-    return current_pid;
+    return pid_incrament;
 }
 
 void process_kill(int pid) {
@@ -206,7 +216,7 @@ void process_kill(int pid) {
     }
 
     plist[place].state = PROCESS_KILLED;
-    int current_pid = process_get_current_pid();
+    int current_pid = process_get_running_pid();
     i_pid_order_remove(pid);
     need_clean = 1;
 
@@ -235,7 +245,7 @@ void process_sleep(int pid) {
     }
 
     plist[place].state = PROCESS_SLEEPING;
-    int current_pid = process_get_current_pid();
+    int current_pid = process_get_running_pid();
     i_pid_order_remove(pid);
 
     if (pid == current_pid) {
@@ -267,11 +277,11 @@ void process_wakeup(int pid) {
 
 void schedule() {
     if (need_clean) i_clean_killed_process();
-    i_process_yield(process_get_current_pid());
+    i_process_yield(process_get_running_pid());
 }
 
 void process_exit() {
-    process_kill(process_get_current_pid());
+    process_kill(process_get_running_pid());
 }
 
 void process_debug() {
@@ -308,4 +318,15 @@ uint8_t *process_get_bin_mem(int pid) {
     }
 
     return plist[place].run_mem;
+}
+
+int process_get_ppid(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].ppid;
 }
