@@ -5,10 +5,8 @@
 #include <system.h>
 #include <type.h>
 
-/*
-mouse.inc by SANiK
-license: Use as you wish, except to cause damage
-*/
+// mouse.inc by SANiK
+// license: Use as you wish, except to cause damage
 
 int8_t mouse_byte[3];
 

@@ -3,16 +3,16 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.9.9"
+#define KERNEL_VERSION  "0.10.1"
 
-#define TASK_MAX_COUNT  20
+#define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
 #define RUN_DEFAULT     "/bin/shell.bin"
 #define TIMER_TICK_RATE 1000
 
 #define RUN_STACK_BIN   0x2000
 #define RUN_STACK_LIB   0x2000
-#define TASK_ESP_ALLOC  0x2000
+#define PROCESS_ESP     0x4000
 
 #define WATFUNC_ADDR    0x199990
 #define WATDILY_ADDR    0x199994
@@ -28,14 +28,11 @@ int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
-// kmenu.c
-void task_menu();
-
 // kshell.c
 void start_kshell();
+void kernel_switch_back();
 
 // runtime.c
-int run_binary(char path[], int silence, int argc, char **argv);
 int run_ifexist(char path[], int argc, char **argv);
 
 // dily.c
