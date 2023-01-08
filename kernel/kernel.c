@@ -18,6 +18,7 @@
 #include <i_iolib.h>
 #include <type.h>
 
+
 void kernel_main(void *mboot_ptr) {
     clear_screen();
     ckprint("booting profanOS...\n", 0x07);

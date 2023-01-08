@@ -3,7 +3,6 @@
 #include <cpu/isr.h>
 #include <system.h>
 
-
 #define HISTORY_SIZE 4
 
 static int sc_history[HISTORY_SIZE];

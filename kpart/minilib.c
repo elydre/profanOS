@@ -98,7 +98,7 @@ void str_append(char s[], char c) {
     s[i+1] = '\0';
 }
 
-// formated print
+// formated print (multiple output)
 
 void func_printf(int output, char *fmt, ...) {
     // printf kernel level

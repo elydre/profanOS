@@ -271,9 +271,9 @@ void process_exit() {
     process_kill(process_get_running_pid());
 }
 
-/**********************
- * GET/SET FUNCTIONS *
-**********************/
+/************************
+ * GET / SET FUNCTIONS *
+************************/
 
 int process_get_running_pid() {
     return pid_running;

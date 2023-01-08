@@ -13,8 +13,6 @@
 
 #define BFR_SIZE 65
 
-int shell_command(char command[]);
-
 void kernel_switch_back() {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
@@ -30,6 +28,8 @@ void kernel_switch_back() {
         }
     }
 }
+
+int shell_command(char command[]);
 
 void start_kshell() {
     sys_warning("You are now in the kernel-level shell");
