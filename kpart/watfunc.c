@@ -1,10 +1,10 @@
 #include <kernel/filesystem.h>
 #include <kernel/snowflake.h>
 #include <driver/keyboard.h>
+#include <kernel/process.h>
 #include <kernel/ramdisk.h>
 #include <driver/serial.h>
 #include <driver/mouse.h>
-#include <kernel/process.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -40,12 +40,15 @@ void *SYSCALL_ARRAY[] = {
     fs_get_sector_type,
     fs_get_dir_content,
     fs_path_to_id,
+    fs_delete_file,
+    fs_delete_dir,
 
     // snowflake.h
     mem_get_alloc_size,
     mem_alloc,
     mem_free_addr,
     mem_get_info,
+    mem_free_all,
 
     // rtc.h + timer.h
     time_get,
@@ -74,30 +77,29 @@ void *SYSCALL_ARRAY[] = {
     sys_shutdown,
     run_ifexist,
 
-    // task.h
-    // task_switch,
-    // task_get_alive,
-    // task_get_max,
-
     // serial.h
     serial_print,
+
+    // mouse.h
+    mouse_call,
 
     // ramdisk.h
     ramdisk_get_size,
     ramdisk_get_used,
 
-    // some more functions
-    mem_free_all,
-    // task_get_current_pid,
-    // task_kill_task_switch,
-    // task_get_next_pid,
-
-    // filesystem stuff that was implemented later
-    fs_delete_file,
-    fs_delete_dir,
-
-    // mouse.h
-    mouse_call,
+    // process.h
+    process_create,
+    process_sleep,
+    process_wakeup,
+    process_kill,
+    process_exit,
+    process_get_running_pid,
+    process_get_ppid,
+    process_generate_pid_list,
+    process_get_name,
+    process_get_state,
+    process_get_custom,
+    process_set_custom,
 };
 
 int wf_get_func_addr(int func_id) {

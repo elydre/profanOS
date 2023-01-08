@@ -83,9 +83,8 @@ long int a64l(const char *string) {
 }
 
 void abort() {
-    int pid = 0; // kernel pid for now
-    c_mem_free_all(c_task_get_current_pid()); // free all memory
-    c_task_kill_task_switch(pid); // kill the current task and go to kernel
+    fsprint("abort not implemented yet, WHY DO YOU USE IT ?\n");
+    // TODO : implement abort, it's totally possible
 }
 
 int abs(int j) {

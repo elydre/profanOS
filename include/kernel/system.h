@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "PROC-09"
+#define KERNEL_VERSION  "PROC-10"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
