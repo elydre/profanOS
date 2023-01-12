@@ -42,7 +42,7 @@ void start_kshell() {
         if (shell_command(char_buffer)) break;
         char_buffer[0] = '\0';
     }
-    clear_screen();
+    kprint("exiting kshell can cause a kernel panic\n");
 }
 
 
@@ -61,15 +61,14 @@ void shell_help() {
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
         "HELP   - show this help",
-        "PK     - kill a process",
-        "PS     - show process list",
-        "PW     - wake up a process",
+        "MEM    - show memory allocs",
         "REBOOT - reboot the system",
         "SO     - run file in /bin",
     };
 
-    for (int i = 0; i < ARYLEN(help); i++)
+    for (int i = 0; i < ARYLEN(help); i++) {
         kprintf("%s\n", help[i]);
+    }
 }
 
 void shell_addr() {
@@ -80,21 +79,18 @@ void shell_addr() {
     fsprint("watfunc: %x\n", WATFUNC_ADDR);
 }
 
-void shell_process_show() {
-    char *state[] = {
-        "RUNNING",
-        "WAITING",
-        "SLEEPING",
-        "ZOMBIE",
-    };
-    int pid_list[PROCESS_MAX]; // it's a define
-    int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
-    int pid;
-    char name[64];
-    for (int i = 0; i < pid_list_len; i++) {
-        pid = pid_list[i];
-        process_get_name(pid, name);
-        kprintf("pid: %d, ppid: %d, state: %s, name: %s\n", pid, process_get_ppid(pid), state[process_get_state(pid)], name);
+void shell_mem() {
+    allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
+    int index = 0;
+    while (mem_parts[index].state) {
+        fsprint("part %d (s: %d, t: %d) -> %x, size: %d\n",
+            index,
+            mem_parts[index].state,
+            mem_parts[index].task_id,
+            mem_parts[index].addr,
+            mem_parts[index].size
+        );
+        index = mem_parts[index].next;
     }
 }
 
@@ -119,9 +115,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "exit") == 0) return 1;
     else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
     else if (str_cmp(prefix, "help") == 0) shell_help();
-    else if (str_cmp(prefix, "pk") == 0) process_kill(str2int(suffix));
-    else if (str_cmp(prefix, "ps") == 0) shell_process_show();
-    else if (str_cmp(prefix, "pw") == 0) process_wakeup(str2int(suffix));
+    else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
 

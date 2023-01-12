@@ -1,7 +1,7 @@
 #ifndef MOUSE_ID
 #define MOUSE_ID 1010
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
+#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 /*
 int main();

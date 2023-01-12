@@ -1,7 +1,7 @@
 #ifndef TIME_ID
 #define TIME_ID 1004
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
+#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 /*
 int is_leap_year(int year);

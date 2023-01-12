@@ -1,7 +1,7 @@
 #ifndef I_STRING_ID
 #define I_STRING_ID 1001
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
+#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 /*
 void int_to_ascii(int n, char str[]);

@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-#define WATFUNC_ADDR 0x199990
+#define WATFUNC_ADDR 0x1ffff7
 
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8

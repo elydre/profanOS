@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.3"
+#define KERNEL_VERSION  "0.10.4"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
@@ -17,9 +17,9 @@
 #define RUN_STACK_LIB   0x2000
 #define PROCESS_ESP     0x4000
 
-#define WATFUNC_ADDR    0x199990
-#define WATDILY_ADDR    0x199994
-#define MEM_BASE_ADDR   0x200000
+#define WATFUNC_ADDR    0x1ffff7
+#define WATDILY_ADDR    0x1ffffb
+#define MEM_BASE_ADDR   0x1fffff
 
 
 // system.c
