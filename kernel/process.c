@@ -109,7 +109,7 @@ void i_process_yield(int current_pid) {
     next_pid = pid_order[pid_order_i];
 
     if (next_pid == -1) {
-        sprintf("No process to switch to, adding kernel\n");
+        serial_debug("PROCESS", "Nothing to switch to, adding kernel");
         i_pid_order_add(0);
         next_pid = 0;
     }

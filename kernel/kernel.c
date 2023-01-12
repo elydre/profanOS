@@ -40,11 +40,12 @@ void kernel_main(void *mboot_ptr) {
     status_print(serial_init,  "Enabling", "serial port (A and B)");
     status_print(process_init, "Initing", "process manager");
     status_print(ramdisk_init, "Setuping", "ramdisk");
+    status_print(init_rand,    "Initing", "minilib random generator");
     status_print(filesys_init, "Loading", "filesystem v2");
     status_print(init_watfunc, "Initing", "watfunc");
     status_print(dily_init,    "Loading", "dynamic library");
 
-    kprintf("successfully booted in %d ms", timer_get_tick() * 1000 / TIMER_TICK_RATE);
+    kprintf("successfully booted in %d ms", timer_get_ms() * 1000 / RATE_TIMER_TICK);
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);

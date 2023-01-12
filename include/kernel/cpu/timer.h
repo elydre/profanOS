@@ -3,7 +3,9 @@
 
 #include <type.h>
 
-uint32_t timer_get_tick();
 int timer_init();
+
+uint32_t timer_get_ms();
+uint32_t timer_get_tick();
 
 #endif

@@ -3,12 +3,15 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.2"
+#define KERNEL_VERSION  "0.10.3"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
 #define RUN_DEFAULT     "/bin/shell.bin"
-#define TIMER_TICK_RATE 1000
+
+#define RATE_TIMER_TICK 1000     // cpu ticks per second
+#define RATE_SCHEDULER  100      // schedule per second
+#define RATE_COSMIC_RAY 0        // cosmic ray per second
 
 #define RUN_STACK_BIN   0x2000
 #define RUN_STACK_LIB   0x2000
@@ -17,6 +20,7 @@
 #define WATFUNC_ADDR    0x199990
 #define WATDILY_ADDR    0x199994
 #define MEM_BASE_ADDR   0x200000
+
 
 // system.c
 void sys_reboot();
@@ -27,6 +31,8 @@ int  sys_warning(char msg[]);
 int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
+
+void sys_cosmic_ray();
 
 // kshell.c
 void start_kshell();

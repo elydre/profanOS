@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     }
     c_kprint_backspace();
     printf("$4\nunix time:  $1%d\n", time_gen_unix());
-    printf("$4work time:  $1%dms\n", c_timer_get_tick());
+    printf("$4work time:  $1%dms\n", c_timer_get_ms());
     printf("$4used mem:   $1%dKo\n", c_mem_get_info(6, 0) / 1024);
     printf("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_info(4, 0) - c_mem_get_info(5, 0), c_mem_get_info(4, 0));
     printf("$4phys mem:   $1%fMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);

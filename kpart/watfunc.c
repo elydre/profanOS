@@ -52,7 +52,7 @@ void *SYSCALL_ARRAY[] = {
 
     // rtc.h + timer.h
     time_get,
-    timer_get_tick,
+    timer_get_ms,
 
     // gnrtx.h
     font_get,
