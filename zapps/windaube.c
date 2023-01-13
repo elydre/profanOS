@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
     int pid1 = c_process_create(main_process, "windaube_main");
     // we awake them
     c_process_wakeup(pid1);
-
     while (1);
     return 0;
 }
@@ -28,18 +27,16 @@ void main_process() {
     vgui_clear(&vgui, 0x000000);
     vgui_render(&vgui, 0);
     desktop = malloc(sizeof(desktop_t));
-    desktop->nb_windows = 2;
+    desktop->nb_windows = 3;
     desktop->windows = malloc(sizeof(window_t *) * desktop->nb_windows);
     int i = 0;
     int j = 0;
     while (1) {
         vgui_clear(&vgui, 0x000000);
         desktop->windows[0] = window_create("test", 100, 100, 0, 0, 0);
-        desktop->windows[1] = window_create("test2", 100, 100, i, j, 1);
-
+        desktop->windows[1] = window_create("test2", 100, 100, i, j, 2);
+        desktop->windows[2] = window_create("test2", 100, 100, i*2, j*2, 1);
         desktop_draw(&vgui, desktop);
-
         i++;j++;
     }
-
 }
