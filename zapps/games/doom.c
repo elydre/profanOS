@@ -54,15 +54,15 @@ int main(int argc, char **argv) {
     int key_buffer[20];
     for (int i = 0; i < 20; i++) key_buffer[i] = 0;
     int tick_count[4];
-    tick_count[0] = c_timer_get_tick();
+    tick_count[0] = c_timer_get_ms();
     tick_count[3] = 0;
 
     vgui_t vgui = vgui_setup(320, 200);
     c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
     while (c_kb_get_scancode() != 1) {
-        tick_count[1] = c_timer_get_tick() - tick_count[0];
-        tick_count[0] = c_timer_get_tick();
+        tick_count[1] = c_timer_get_ms() - tick_count[0];
+        tick_count[0] = c_timer_get_ms();
 
         for (int i = 0; i < width; i++) {
             center = (int) (half_height * BLOCK_HEIGHT / get_distance(x, y, rot + (FOV / 2) - (FOV * i / width), &color));
@@ -93,9 +93,9 @@ int main(int argc, char **argv) {
         vgui_print(&vgui, 0, 8, convert, 0x0000AA);
         
 
-        tick_count[2] = c_timer_get_tick();
+        tick_count[2] = c_timer_get_ms();
         vgui_render(&vgui, 0);
-        tick_count[3] = c_timer_get_tick() - tick_count[2];
+        tick_count[3] = c_timer_get_ms() - tick_count[2];
 
         key = c_kb_get_scfh();
         if (last_key != key && key != 0) {

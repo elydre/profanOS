@@ -1,7 +1,9 @@
 #include <kernel/snowflake.h>
 #include <driver/serial.h>
+#include <driver/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
+#include <minilib.h>
 
 // string functions
 
@@ -226,9 +228,27 @@ void status_print(int (*func)(), char *verb, char *noun) {
     set_cursor_offset(new_cursor);
 }
 
+// time
+
 void ms_sleep(uint32_t ms) {
-    uint32_t start = timer_get_tick();
-    while (timer_get_tick() < start + ms) {
+    uint32_t start = timer_get_ms();
+    while (timer_get_ms() < start + ms) {
         asm volatile("hlt");
     }
+}
+
+// random
+
+uint32_t rand_val = 0;
+
+int init_rand() {
+    time_t time;
+    time_get(&time);
+    rand_val = time.seconds + time.minutes * 60 + time.hours * 60 * 60;
+    return 0;
+}
+
+uint32_t rand() {
+    rand_val = rand_val * 1103515245 + 12345;
+    return (uint32_t) rand_val;
 }

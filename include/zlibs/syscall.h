@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-#define WATFUNC_ADDR 0x199990
+#define WATFUNC_ADDR 0x1ffff7
 
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8
@@ -110,7 +110,7 @@
 #define c_mem_free_all ((void (*)(int)) hi_func_addr(20))
 
 #define c_time_get ((void (*)(time_t *)) hi_func_addr(21))
-#define c_timer_get_tick ((uint32_t (*)(void)) hi_func_addr(22))
+#define c_timer_get_ms ((uint32_t (*)(void)) hi_func_addr(22))
 
 #define c_font_get ((uint8_t *(*)(int)) hi_func_addr(23))
 #define c_clear_screen ((void (*)(void)) hi_func_addr(24))

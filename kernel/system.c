@@ -1,7 +1,10 @@
 #include <driver/serial.h>
+#include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
 #include <minilib.h>
+
+#include <system.h>
 
 /****************************
  * panic and reboot system *
@@ -97,4 +100,18 @@ void sys_shutdown() {
     port_word_out(0xB004, 0x2000);  // bochs
     port_word_out(0x4004, 0x3400);  // virtualbox
     sys_stop();                     // halt if above didn't work
+}
+
+void sys_cosmic_ray() {
+    uint32_t timer_tick = timer_get_tick();
+    if (timer_tick == 1) {
+        sys_warning("cosmic ray simulation enabled");
+    }
+
+    if (timer_tick % (RATE_TIMER_TICK / (RATE_COSMIC_RAY - 1)) == 0) {
+        uint32_t addr = rand() % 0xFFFFFFF;
+        uint32_t value = rand() & 0x7FFFFFFF;
+
+        *((uint32_t *) addr) = value;
+    }
 }

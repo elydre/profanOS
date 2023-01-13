@@ -26,7 +26,7 @@
 #define SEEK_END 2
 
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x199994)
+#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 /*
 int main();

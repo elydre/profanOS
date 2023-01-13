@@ -1,6 +1,6 @@
 #include <kernel/snowflake.h>
-#include <driver/serial.h>
 #include <kernel/process.h>
+#include <driver/serial.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -18,7 +18,6 @@
 
 
 allocated_part_t *MEM_PARTS;
-int first_part_index;
 uint32_t alloc_count;
 uint32_t free_count;
 uint32_t phys_size;
@@ -41,7 +40,6 @@ int mem_get_phys_size() {
 }
 
 int mem_init() {
-    first_part_index = 0;
     alloc_count = 0;
     free_count = 0;
 
@@ -76,7 +74,7 @@ int mm_get_unused_index() {
 }
 
 void del_occurence(int index) {
-    int i = first_part_index;
+    int i = 0;
     while (MEM_PARTS[i].state) {
         if (MEM_PARTS[i].next == index) {
             MEM_PARTS[i].next = mm_get_unused_index();
@@ -114,7 +112,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
     // traversing the list of allocated parts
     int index, old_index, exit_mode;
     uint32_t last_addr;
-    index = first_part_index;
+    index = 0;
 
     last_addr = MEM_BASE_ADDR;
     while (1) {
@@ -164,7 +162,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
 }
 
 int mem_free_addr(uint32_t addr) {
-    int index = first_part_index;
+    int index = 0;
     int last_index = -1;
     while (1) {
         if (MEM_PARTS[index].addr == addr && last_index != -1) {
@@ -186,7 +184,7 @@ int mem_free_addr(uint32_t addr) {
 }
 
 uint32_t mem_get_alloc_size(uint32_t addr) {
-    uint32_t index = first_part_index;
+    uint32_t index = 0;
     while (MEM_PARTS[index].state) {
         if (MEM_PARTS[index].addr == addr) {
             return MEM_PARTS[index].size;
@@ -198,7 +196,7 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
 }
 
 void mem_free_all(int task_id) {
-    uint32_t index = first_part_index;
+    uint32_t index = 0;
     while (MEM_PARTS[index].state) {
         if (MEM_PARTS[index].task_id == task_id) {
             mem_free_addr(MEM_PARTS[index].addr);
@@ -217,7 +215,7 @@ int mem_get_info(char get_mode, int get_arg) {
     if (get_mode == 4) return alloc_count;
     if (get_mode == 5) return free_count;
 
-    int index = first_part_index;
+    int index = 0;
 
     int info[7];
     for (int i = 0; i < 7; i++) info[i] = 0;

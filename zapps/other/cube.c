@@ -196,7 +196,7 @@ void draw(shape_t *shape, vgui_t *vgui) {
 }
 
 int show_fps(vgui_t *vgui, int time) {
-    int new_time = c_timer_get_tick();
+    int new_time = c_timer_get_ms();
     int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
     itoa(fps, fps_str, 10);
