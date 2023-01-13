@@ -3,17 +3,17 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.4"
+#define KERNEL_VERSION  "WINDAUBE1"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
-#define RUN_DEFAULT     "/bin/shell.bin"
+#define RUN_DEFAULT     "/bin/windaube.bin"
 
 #define RATE_TIMER_TICK 1000     // cpu ticks per second
 #define RATE_SCHEDULER  100      // schedule per second
 #define RATE_COSMIC_RAY 0        // cosmic ray per second
 
-#define RUN_STACK_BIN   0x2000
+#define RUN_STACK_BIN   0x20000
 #define RUN_STACK_LIB   0x2000
 #define PROCESS_ESP     0x4000
 
