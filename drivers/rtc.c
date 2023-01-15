@@ -17,7 +17,7 @@ unsigned char bcd2bin(unsigned char in_bcd) {
     return (bcd) ? ((in_bcd >> 4) * 10) + (in_bcd & 0x0F) : in_bcd;
 }
 
-void time_get(time_t *target) {
+void time_get(i_time_t *target) {
     target->seconds = bcd2bin(read_register(0x00));
     target->minutes = bcd2bin(read_register(0x02));
     target->hours = bcd2bin(read_register(0x04));

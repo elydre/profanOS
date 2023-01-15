@@ -109,7 +109,7 @@
 #define c_mem_get_info ((int (*)(int, int)) hi_func_addr(19))
 #define c_mem_free_all ((void (*)(int)) hi_func_addr(20))
 
-#define c_time_get ((void (*)(time_t *)) hi_func_addr(21))
+#define c_time_get ((void (*)(i_time_t *)) hi_func_addr(21))
 #define c_timer_get_ms ((uint32_t (*)(void)) hi_func_addr(22))
 
 #define c_font_get ((uint8_t *(*)(int)) hi_func_addr(23))

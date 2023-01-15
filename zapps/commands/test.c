@@ -162,6 +162,14 @@ int main(int argc, char **argv) {
     if (abs(log10(10)-1) > 0.0001) is_fine = 0; // we dont test the exact value, osef
     print_state(is_fine, "log10");
 
+    printf("Testing math.h: $1OK$7\n");
+
+    printf("Testing time.h\n");
+
+    printf("Should be xxx\n");
+
+    printf("Testing time.h: $1OK$7\n");
+
     printf("End of the test for now !\n");
 
     return 0;

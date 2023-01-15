@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv) {
     printf("$4FR time:    ");
-    time_t time;
+    i_time_t time;
     c_time_get(&time);
     time_jet_lag(&time);
     char tmp[3];

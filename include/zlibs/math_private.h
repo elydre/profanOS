@@ -11,8 +11,8 @@
 /*
  * from: @(#)fdlibm.h 5.1 93/09/24
  */
-#ifndef _MATH_PRIVATE_H_
-#define _MATH_PRIVATE_H_
+#ifndef _MATH_PRIVATE_H
+#define _MATH_PRIVATE_H
 /* The original fdlibm code used statements like:
     n0 = ((*(int*)&one)>>29)^1;        * index of high word *
     ix0 = *(n0+(int*)&x);            * high word of x *
@@ -23,9 +23,9 @@
    Unlike the original code, we determine the endianness at compile
    time, not at run time; I don't see much benefit to selecting
    endianness at run time.  */
+
 /* A union which permits us to convert between a double and two 32 bit
    ints.  */
-
 typedef union
 {
   double value;
