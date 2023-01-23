@@ -3,6 +3,7 @@
 
 #include <type.h>
 #include <stdarg.h>
+#include <i_vgui.h> 
 
 typedef struct window_t {
     char *name;
@@ -12,11 +13,13 @@ typedef struct window_t {
     int y;
     uint32_t *buffer;
     int priorite;
+    int has_moved;
 } window_t;
 
 typedef struct desktop_t {
     window_t **windows;
     int nb_windows;
+    vgui_t *vgui;
 } desktop_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
@@ -31,7 +34,8 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #ifndef LIBDAUBE_C
 #define window_create ((window_t *(*)(char *, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
 #define window_draw ((void (*)(vgui_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 4))
-#define desktop_draw ((void (*)(vgui_t *, desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
+#define desktop_draw ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
+#define window_move ((void (*)(desktop_t *, int, int, int)) get_func_addr(LIBDAUBE_ID, 6))
 #endif
 
 

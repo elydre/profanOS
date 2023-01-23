@@ -28,6 +28,7 @@ window_t *window_create(char *name, int height, int width, int y, int x, int pri
     window->y = y;
     window->x = x;
     window->buffer = malloc(sizeof(char) * height * width);
+    window->has_moved = 0;
     return window;
 }
 
@@ -41,18 +42,25 @@ void window_draw(vgui_t *vgui, window_t *window) {
     vgui_draw_rect(vgui, window->x + 1, window->y + 1, window->width - 1, window->height - 1, 0x000000);
 }
 
-void desktop_draw(vgui_t *vgui, desktop_t *desktop) {
+void desktop_draw(desktop_t *desktop) {
     // we draw the windows, by order of priority
+    int *buffer = calloc(sizeof(int), desktop->vgui->height * desktop->vgui->width);
     int total = desktop->nb_windows;
     int i = desktop->nb_windows - 1;
     while (total) {
         for (int j = 0; j < desktop->nb_windows; j++) {
             if (desktop->windows[j]->priorite == i) {
-                window_draw(vgui, desktop->windows[j]);
+                window_draw(desktop->vgui, desktop->windows[j]);
                 total--;
             }
         }
         i--;
     } 
-    vgui_render(vgui, 0);
+    vgui_render(desktop->vgui, 0);
+    free(buffer);
+}
+
+void window_move(desktop_t *desktop, int id_window, int y, int x) {
+    desktop->windows[id_window]->y = y;
+    desktop->windows[id_window]->x = x;
 }

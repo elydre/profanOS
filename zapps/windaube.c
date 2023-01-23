@@ -28,15 +28,16 @@ void main_process() {
     vgui_render(&vgui, 0);
     desktop = malloc(sizeof(desktop_t));
     desktop->nb_windows = 3;
+    desktop->vgui = &vgui;
     desktop->windows = malloc(sizeof(window_t *) * desktop->nb_windows);
+    desktop->windows[0] = window_create("test", 100, 100, 0, 0, 0);
+    desktop->windows[1] = window_create("test2", 100, 100, 0, 0, 2);
+    desktop->windows[2] = window_create("test2", 100, 100, 0, 0, 1);
     int i = 0;
     int j = 0;
     while (1) {
-        vgui_clear(&vgui, 0x000000);
-        desktop->windows[0] = window_create("test", 100, 100, 0, 0, 0);
-        desktop->windows[1] = window_create("test2", 100, 100, i, j, 2);
-        desktop->windows[2] = window_create("test2", 100, 100, i*2, j*2, 1);
-        desktop_draw(&vgui, desktop);
+        desktop_draw(desktop);
+        window_move(desktop, 0, i, j);
         i++;j++;
     }
 }
