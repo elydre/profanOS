@@ -242,7 +242,7 @@ void ms_sleep(uint32_t ms) {
 uint32_t rand_val = 0;
 
 int init_rand() {
-    time_t time;
+    i_time_t time;
     time_get(&time);
     rand_val = time.seconds + time.minutes * 60 + time.hours * 60 * 60;
     return 0;

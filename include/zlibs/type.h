@@ -10,7 +10,7 @@ typedef struct {
     int month;
     int year;
     int full[6];
-} time_t;
+} i_time_t;
 
 #define low_16(address) (uint16_t)((address) & 0xFFFF)
 #define high_16(address) (uint16_t)(((address) >> 16) & 0xFFFF)
@@ -131,5 +131,27 @@ typedef struct fpos_t {
 typedef unsigned long DWORD, *PDWORD, *LPDWORD;
 
 typedef int bool;
+
+typedef uint64_t time_t;
+typedef int timer_t;
+typedef int clockid_t;
+typedef unsigned long clock_t;
+
+union sigval { /* Data passed with notification */
+    int sival_int;   /* Integer value */
+    void *sival_ptr; /* Pointer value */
+};
+
+typedef struct sigevent_t {
+    int    sigev_notify;  /* Notification method */
+    int    sigev_signo;   /* Notification signal */
+    union sigval sigev_value; /* Data passed with notification */
+    /* Function used for thread
+    notification (SIGEV_THREAD) */
+    void (*sigev_notify_function)(union sigval);
+    /* Attributes for notification thread
+    (SIGEV_THREAD) */
+    void  *sigev_notify_attributes;
+} sigevent_t;
 
 #endif

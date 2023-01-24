@@ -33,7 +33,7 @@ int is_leap_year(int year) {
     return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
-int time_calc_unix(time_t *time) {
+int time_calc_unix(i_time_t *time) {
     int unix_time = 0;
 
     for (int i = start_year; i < time->full[5] + century; i++) {
@@ -50,12 +50,12 @@ int time_calc_unix(time_t *time) {
 }
 
 int time_gen_unix() {
-    time_t time;
+    i_time_t time;
     c_time_get(&time);
     return time_calc_unix(&time);
 }
 
-void time_add(time_t *time, int seconde) {
+void time_add(i_time_t *time, int seconde) {
     // add seconde to current time
     time->full[0] += seconde;
     while (time->full[0] >= seconde_in_minute) {
@@ -91,7 +91,7 @@ void time_add(time_t *time, int seconde) {
     }
 }
 
-void time_jet_lag(time_t *time) {
+void time_jet_lag(i_time_t *time) {
     time_add(time, setting_get("jetlag") * 3600);
 }
 
