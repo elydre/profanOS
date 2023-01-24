@@ -13,12 +13,11 @@ desktop_t *desktop;
 void main_process();
 
 int main(int argc, char **argv) {
-    
-    // we run the process
+    /*
     int pid1 = c_process_create(main_process, "windaube_main");
-    // we awake them
     c_process_wakeup(pid1);
-    while (1);
+    while (1);*/
+    main_process();
     return 0;
 }
 

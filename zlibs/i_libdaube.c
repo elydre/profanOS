@@ -55,7 +55,7 @@ void desktop_draw(desktop_t *desktop) {
             }
         }
         i--;
-    } 
+    }
     vgui_render(desktop->vgui, 0);
     free(buffer);
 }
