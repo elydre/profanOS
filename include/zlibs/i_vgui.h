@@ -8,6 +8,8 @@ typedef struct {
     int height;
     uint32_t *old_framebuffer;
     uint32_t *framebuffer;
+    uint32_t *changed_pixels; // coordinates of changed pixels (y * width + x)
+    uint32_t changed_pixels_count;
 } vgui_t;
 
 #define vgui_setup(width, height) ((vgui_t (*)(int, int)) get_func_addr(VGUI_ID, 2))(width, height)
