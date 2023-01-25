@@ -60,7 +60,6 @@ int fs_get_sector_type(u_int32_t sector_id);
 void i_create_dir(u_int32_t sector, char *name);
 void i_print_sector_smart(u_int32_t sector);
 
-// PORT PARTIALLY
 void init_fs() {
     total_sector_written = 0;
     virtual_disk = (u_int32_t *) calloc(SECTOR_COUNT * SECTOR_SIZE, sizeof(u_int32_t));
