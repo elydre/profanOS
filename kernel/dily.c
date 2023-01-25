@@ -86,7 +86,7 @@ int dily_get_func(int lib_id, int func_id) {
         if (lib_functions[i][0] != (uint32_t) lib_id) 
             continue;
 
-        int val = (int) lib_functions[i][func_id];
+        int val = (int) lib_functions[i][func_id + 1];
         if (!val) sys_error("Function not found");
         return val;
     }
