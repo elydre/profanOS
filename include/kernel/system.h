@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.4"
+#define KERNEL_VERSION  "0.10.4b"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
@@ -13,7 +13,7 @@
 #define RATE_SCHEDULER  100      // schedule per second
 #define RATE_COSMIC_RAY 0        // cosmic ray per second
 
-#define RUN_STACK_BIN   0x2000
+#define RUN_STACK_BIN   0x4000
 #define RUN_STACK_LIB   0x2000
 #define PROCESS_ESP     0x4000
 
