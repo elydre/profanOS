@@ -134,10 +134,17 @@ def elf_image():
         print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
 
 def build_app_lib():
+    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("build/zentry.c", f"{OUT_DIR}/make/zentry.o"):
+        cprint(COLOR_INFO, "building zentry...")
+        print_and_exec(f"mkdir -p {OUT_DIR}/make")
+        print_and_exec(f"gcc -c build/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
+    
+    cprint(COLOR_INFO, "building HDD.bin...")
+    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
     def build_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
+        print_and_exec(f"ld -m elf_i386 -e entry -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
         # print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         print_and_exec(f"rm {fname}.o {fname}.pe")
@@ -211,7 +218,7 @@ def make_iso(force = False):
 def get_kernel_version(print_info = True):
     path = os.path.dirname(os.path.abspath(__file__))
 
-    with open(f"{path}/include/kernel/system.h", "r") as f:
+    with open(f"{path}/../include/kernel/system.h", "r") as f:
         for line in f:
             if "KERNEL_VERSION" not in line: continue
             info = line.split(" ")[-1][1:-2]
@@ -260,12 +267,13 @@ def gen_disk(force=False, with_src=False):
 
     if HBL_FILE: write_build_logs()
 
-    if not file_exists("makefsys.bin") or file1_newer("makefsys.c", "makefsys.bin"):
+    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer("build/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
-        print_and_exec("gcc -o makefsys.bin -Wall -Wextra makefsys.c")
+        print_and_exec(f"mkdir -p {OUT_DIR}/make")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra build/makefsys.c")
     
     cprint(COLOR_INFO, "building HDD.bin...")
-    print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
+    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 def qemu_run(iso_run = False, kvm = False):
     if iso_run: make_iso()
