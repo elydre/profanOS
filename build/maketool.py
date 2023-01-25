@@ -21,10 +21,10 @@ HDD_MAP = {
     "tmp" : None
 }
 
-CC = "gcc"
+CC   = "gcc"
 CPPC = "g++"
 
-CFLAGS = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
+CFLAGS     = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -I include/zlibs"
 
