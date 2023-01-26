@@ -135,7 +135,7 @@ void vfsprint(char format[], va_list args) {
             color = sprint_function(buffer, color);
         }
         else i--;
-        clean_buffer(buffer, 256);
+        clean_buffer(buffer, 0x1000);
         continue;
     }
     free(buffer);

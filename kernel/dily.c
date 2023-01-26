@@ -55,9 +55,10 @@ int dily_load(char path[], int lib_id) {
         // can be realloc in the future
     }
 
-    int lib_size = fs_get_file_size(path) + RUN_STACK_LIB;
+    int file_size = fs_get_file_size(path);
+    int lib_size = file_size + RUN_LIB_STACK_L + RUN_LIB_STACK_R;
     uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 5); // 5 = library
-    uint8_t *file = binary_mem + RUN_STACK_LIB;
+    uint8_t *file = binary_mem + RUN_LIB_STACK_L;
 
     fs_read_file(path, (char *) file);
 
@@ -66,7 +67,7 @@ int dily_load(char path[], int lib_id) {
 
     int addr_list_size = 1;
 
-    for (int i = 0; i < lib_size; i++) {
+    for (int i = 0; i < file_size; i++) {
         if (file[i] == 0x55 && file[i + 1] == 0x89) {
             addr_list[addr_list_size] = (uint32_t) &file[i];
             addr_list_size++;

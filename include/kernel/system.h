@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.5"
+#define KERNEL_VERSION  "0.10.6"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  2048
@@ -13,9 +13,13 @@
 #define RATE_SCHEDULER  100      // schedule per second
 #define RATE_COSMIC_RAY 0        // cosmic ray per second
 
-#define RUN_STACK_BIN   0x4000
-#define RUN_STACK_LIB   0x2000
-#define PROCESS_ESP     0x4000
+#define RUN_BIN_STACK_L 0x4000  // left stack size for binary
+#define RUN_BIN_STACK_R 0x4000  // right stack size for binary
+
+#define RUN_LIB_STACK_L 0x2000  // left stack size for library
+#define RUN_LIB_STACK_R 0x2000  // right stack size for library
+
+#define PROCESS_ESP     0x4000  // process stack size
 
 #define WATFUNC_ADDR    0x1ffff7
 #define WATDILY_ADDR    0x1ffffb

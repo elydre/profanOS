@@ -297,6 +297,10 @@ void i_create_file_index(uint32_t sector, char *name) {
 }
 
 void i_write_in_file(uint32_t sector, uint8_t *data, uint32_t size) {
+    if (size == 0) {
+        sys_error("entry size is 0");
+        return;
+    }
     uint32_t buffer[SECTOR_SIZE];
     ramdisk_read_sector(sector, buffer);
     if (!(buffer[0] & I_USED)) {

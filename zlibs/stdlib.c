@@ -35,6 +35,7 @@ void *malloc(uint32_t size) {
 }
 
 void *realloc(void *mem, uint32_t new_size) {
+    if (mem == NULL) return malloc(new_size);
     uint32_t addr = (uint32_t) mem;
     uint32_t new_addr = c_mem_alloc(new_size, 1);
     if (new_addr == 0) return NULL;
