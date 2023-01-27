@@ -131,7 +131,7 @@ def elf_image():
     
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
-        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/link.ld {in_files} -o profanOS.elf")
+        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/klink.ld {in_files} -o profanOS.elf")
 
 def build_app_lib():
     if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{BUILD_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
@@ -142,9 +142,8 @@ def build_app_lib():
     def build_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -e entry -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/zlink.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
-        # print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
 
