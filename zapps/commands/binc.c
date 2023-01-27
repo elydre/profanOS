@@ -9,12 +9,6 @@
 // TODO: file not hardcoded
 #define TO_JOIN_DATA ".text/.data/.bss/.rodata"
 
-#define INPUT_FILE   "/user/main.pe"
-#define OUTPUT_FILE  "/user/main.bin"
-
-#define OUTPUT_DIR  "/user"
-#define OUTPUT_NAME "main.bin"
-
 char **to_join;
 int to_join_count;
 
@@ -30,11 +24,22 @@ int section_count;
 uint8_t *data;
 uint32_t data_size;
 
-uint32_t gen_data() {
+int gen_data(char *input_file) {
     // read the INPUT_FILE and generate the data
-    data_size = c_fs_get_file_size(INPUT_FILE);
+    if (!c_fs_does_path_exists(input_file)) {
+        printf("[BINC ERROR] - input file does not exist\n");
+        return 1;
+    }
+
+    data_size = c_fs_get_file_size(input_file);
     data = malloc(data_size + 1);
-    c_fs_read_file(INPUT_FILE, data);
+    c_fs_read_file(input_file, data);
+
+    if (data[0] != 0x7f || data[1] != 'E' || data[2] != 'L' || data[3] != 'F') {
+        printf("[BINC ERROR] - input file is not an ELF file\n");
+        free(data);
+        return 1;
+    }
 
     return 0;
 }
@@ -142,7 +147,31 @@ void gen_to_join() {
     free(str_data_addr);
 }
 
-void generate_output() {
+void binc_make_file(char *output_file) {
+    // split the path into parent and file
+    // then call c_fs_make_file(parent, file)
+
+    char *parent = calloc(strlen(output_file) + 1, 1);
+    char *file = calloc(strlen(output_file) + 1, 1);
+    
+    for (int i = strlen(output_file) - 1; i >= 0; i--) {
+        if (output_file[i] == '/') {
+            strcpy(parent, output_file);
+            parent[i] = 0;
+            strcpy(file, output_file + i + 1);
+            break;
+        }
+    }
+
+    printf("parent: %s, file: %s\n", parent, file);
+
+    c_fs_make_file(parent, file);
+
+    free(parent);
+    free(file);
+}
+
+void generate_output(char *output_file) {
     uint8_t *output = malloc(TO_JOIN_SIZE * to_join_count + data_size);
     uint32_t output_size = 0;
     uint32_t to_add;
@@ -166,17 +195,87 @@ void generate_output() {
             }
         }
     }
-    if (!c_fs_does_path_exists(OUTPUT_FILE)) {
-        c_fs_make_file(OUTPUT_DIR, OUTPUT_NAME);
+    if (!c_fs_does_path_exists(output_file)) {
+        printf("creating output file...\n");
+        binc_make_file(output_file);
     }
     printf("output size: %x\n", output_size);
 
-    c_fs_write_in_file(OUTPUT_FILE, output, output_size);
+    c_fs_write_in_file(output_file, output, output_size);
 
     free(output);
 }
 
+void generate_full_path(char *path, char *dir) {
+    char *temp = malloc(strlen(dir) + 1);
+    strcpy(temp, dir);
+    strcpy(dir, path);
+    if (dir[strlen(dir) - 1] != '/') strcat(dir, "/");
+    strcat(dir, temp);
+    free(temp);
+}
+
+int parse_args(int argc, char **argv, char *input_file, char *output_file) {
+    if (argc < 3) {
+        printf("usage: binc <file> [-o <output>]\n");
+        return 1;
+    }
+    for (int i = 2; i < argc; i++) {
+        if (!strcmp(argv[i], "-o")) {
+            if (i + 1 >= argc) {
+                printf("[BINC ERROR] - missing output file after -o\n");
+                return 1;
+            }
+            strcpy(output_file, argv[i + 1]);
+            i++;
+        } else {
+            strcpy(input_file, argv[i]);
+        }
+    }
+    if (!input_file[0]) {
+        printf("[BINC ERROR] - missing input file\n");
+        return 1;
+    }
+
+    if (!output_file[0]) {
+        for (uint32_t i = 0; i < strlen(input_file); i++) {
+            if (input_file[i] == '.') {
+                output_file[i] = 0;
+                break;
+            }
+            output_file[i] = input_file[i];
+        }
+        strcat(output_file, ".bin");
+    }
+
+    generate_full_path(argv[1], input_file);
+    generate_full_path(argv[1], output_file);
+
+    return 0;
+}
+
+void free_to_join() {
+    for (int i = 0; i < to_join_count; i++) {
+        free(to_join[i]);
+    }
+
+    free(to_join);
+}
+
 int main(int argc, char **argv) {
+
+    char *input_file = calloc(128, sizeof(char));
+    char *output_file = calloc(128, sizeof(char));
+
+    if (parse_args(argc, argv, input_file, output_file)) {
+        free(input_file);
+        free(output_file);
+        return 1;
+    }
+
+    printf("input file: %s\n", input_file);
+    printf("output file: %s\n", output_file);
+
     gen_to_join();
 
     printf("to join (%d) [ ", to_join_count);
@@ -185,7 +284,12 @@ int main(int argc, char **argv) {
     }
     printf("]\n\n");
 
-    if (gen_data()) return 1;
+    if (gen_data(input_file)) {
+        free(input_file);
+        free(output_file);
+        free_to_join();
+        return 1;
+    }
     printf("data size: %x\n", data_size);
 
     read_file_header(data);
@@ -198,16 +302,15 @@ int main(int argc, char **argv) {
 
     print_section();
 
-    generate_output();
+    generate_output(output_file);
 
     free(data);
     free(sections);
 
-    for (int i = 0; i < to_join_count; i++) {
-        free(to_join[i]);
-    }
+    free(input_file);
+    free(output_file);
 
-    free(to_join);
+    free_to_join();
 
     return 0;
 }
