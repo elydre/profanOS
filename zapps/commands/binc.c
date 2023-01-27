@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <type.h>
 
-#define TO_JOIN_SIZE 0x1000
+// TODO: not hardcoded
 
-// TODO: file not hardcoded
+#define TO_JOIN_SIZE 0x1000
 #define TO_JOIN_DATA ".text/.data/.bss/.rodata"
 
 char **to_join;
