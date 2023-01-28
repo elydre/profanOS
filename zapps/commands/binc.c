@@ -6,7 +6,6 @@
 
 // TODO: not hardcoded
 
-#define TO_JOIN_SIZE 0x1000
 #define TO_JOIN_DATA ".text/.data/.bss/.rodata"
 
 char **to_join;
@@ -172,7 +171,7 @@ void binc_make_file(char *output_file) {
 }
 
 void generate_output(char *output_file) {
-    uint8_t *output = malloc(TO_JOIN_SIZE * to_join_count + data_size);
+    uint8_t *output = malloc(data_size);
     uint32_t output_size = 0;
     uint32_t to_add;
 
@@ -182,16 +181,14 @@ void generate_output(char *output_file) {
         section_t *section = sections + j;
         for (int i = 0; i < to_join_count; i++) {
             if (!strcmp(section->name, to_join[i])) {
-                to_add = TO_JOIN_SIZE - output_size % TO_JOIN_SIZE;
-                if (to_add != TO_JOIN_SIZE && to_add != 0) {
-                    memset(output + output_size, 0, to_add);
-                    output_size += to_add;
-                }
-                for (int k = 0; k < TO_JOIN_SIZE; k++) {
+                to_add = (section->offset - sections[0].offset) - output_size;
+                memset(output + output_size, 0, to_add);
+                output_size += to_add;
+                for (int k = 0; k < section->size; k++) {
                     output[output_size + k] = data[section->offset + k];
                 }
                 output_size += section->size;
-                printf("added %s (%d)\n", section->name, section->size);
+                printf("added %s (%d, %x)\n", section->name, section->size, to_add);
             }
         }
     }
