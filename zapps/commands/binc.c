@@ -184,7 +184,7 @@ void generate_output(char *output_file) {
                 to_add = (section->offset - sections[0].offset) - output_size;
                 memset(output + output_size, 0, to_add);
                 output_size += to_add;
-                for (int k = 0; k < section->size; k++) {
+                for (uint32_t k = 0; k < section->size; k++) {
                     output[output_size + k] = data[section->offset + k];
                 }
                 output_size += section->size;
