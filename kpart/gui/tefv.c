@@ -1,3 +1,4 @@
+#include <driver/serial.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>
@@ -72,10 +73,16 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
     if (y != -1) cursor_y = y;
 
     if (c == '\n') {
+        // fill the rest of the line with spaces
+        for (int i = cursor_x; i < MAX_COLS; i++) {
+            tef_set_char(i, cursor_y, ' ', color, bg_color);
+        }
         cursor_x = 0;
-        cursor_y += 1;
+        cursor_y++;
     } else if (c == '\r') {
         cursor_x = 0;
+    } else if (c == '\a') {
+        serial_debug("TEFV", "BEEEEEEEEPPP (^_^ )");
     } else if (c == 0x08) {
         // str_backspace
         tef_draw_cursor(0);
@@ -151,9 +158,11 @@ void tef_clear() {
     cursor_x = 0;
     cursor_y = 0;
     for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
-        screen_buffer[i].content = ' ';
-        screen_buffer[i].color = 0;
-        screen_buffer[i].bg_color = 0;
+        if (!(screen_buffer[i].content == ' ' && screen_buffer[i].bg_color == 0)) {
+            screen_buffer[i].content = ' ';
+            screen_buffer[i].color = 0;
+            screen_buffer[i].bg_color = 0;
+        }
     }
     // set pixel to black
     for (int i = 0; i < 1024; i++) {
