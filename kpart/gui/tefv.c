@@ -13,16 +13,16 @@
 
 #define CURSOR_COLOR 0xFF003C
 
-int cursor_x = 0;
-int cursor_y = 0;
-
-int hidden_cursor = 1;
-
 typedef struct {
     char content;
     uint32_t color;
     uint32_t bg_color;
 } screen_char_t;
+
+int cursor_x = 0;
+int cursor_y = 0;
+
+int hidden_cursor = 1;
 
 screen_char_t *screen_buffer = NULL;
 

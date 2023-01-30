@@ -6,7 +6,7 @@
 #define KERNEL_VERSION  "0.10.6b"
 
 #define PROCESS_MAX     20
-#define RAMDISK_SECTOR  20480
+#define RAMDISK_SECTOR  4096
 #define RUN_DEFAULT     "/bin/shell.bin"
 
 #define RATE_TIMER_TICK 1000     // cpu ticks per second
