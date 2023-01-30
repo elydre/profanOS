@@ -225,7 +225,7 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    fsprint("getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("(OK) getenv not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -476,7 +476,7 @@ int rpmatch (const char *__response) {
 }
 
 char *secure_getenv(const char *name) {
-    fsprint("secure_getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("(OK) secure_getenv not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 

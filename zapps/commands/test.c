@@ -170,6 +170,14 @@ int main(int argc, char **argv) {
 
     printf("Testing time.h: $1OK$7\n");
 
+    printf("Testing stdio.h\n");
+
+    char buffer [100];
+    int cx;
+    cx = snprintf ( buffer, 100, "The half of %d is %d", 60, 60/2 );
+    printf("snprintf: %s\n", buffer);
+    printf("Testing stdio.h: $1OK$7\n");
+
     printf("End of the test for now !\n");
 
     return 0;

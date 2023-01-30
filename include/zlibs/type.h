@@ -154,4 +154,7 @@ typedef struct sigevent_t {
     void  *sigev_notify_attributes;
 } sigevent_t;
 
+#define LDOUBLE long double
+#define LLONG long long
+
 #endif

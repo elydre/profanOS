@@ -68,6 +68,11 @@ void tef_draw_cursor(uint32_t color) {
 }
 
 void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
+    for (int i = 0; i < 500000;) {
+        i++;    // wait
+        asm __volatile__("nop");
+
+    }
     if (x != -1) cursor_x = x;
     if (y != -1) cursor_y = y;
 
