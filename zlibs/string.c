@@ -280,9 +280,15 @@ Wchar *strcat(Wchar * __restrict s1, register const Wchar * __restrict s2) {
     return s1;
 }
 
-Wchar *strchr(register const Wchar *s, Wint c) {
-    fsprint("strchr not implemented yet, WHY DO YOU USE IT ?\n");
-    return NULL;
+Wchar *strchr(const char *p, int ch) {
+    char c;
+	c = ch;
+	for (;; ++p) {
+		if (*p == c)
+			return ((char *)p);
+		if (*p == '\0')
+			return (NULL);
+	}
 }
 
 Wchar *strchrnul(register const Wchar *s, Wint c) {
