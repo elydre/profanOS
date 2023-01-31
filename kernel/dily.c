@@ -26,6 +26,7 @@ lib_t libs_at_boot[] = {
     {1010, "/lib/i_mouse.bin"},
     {1011, "/lib/math.bin"},
     {1012, "/lib/time.bin"},
+    {1013, "/lib/setjmp.bin"},
 };
 
 

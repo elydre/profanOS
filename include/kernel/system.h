@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.7"
+#define KERNEL_VERSION  "0.10.7b"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  4096
