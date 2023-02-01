@@ -32,12 +32,7 @@
 #define SEEK_SET 0
 #endif
 
-
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
-
-/*
-int main();
-*/
 
 // we dont define functions if we are in the .c file
 #ifndef STDIO_C
