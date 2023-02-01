@@ -133,9 +133,16 @@
 #define _CS_XBS5_LPBIG_OFFBIG_LINTFLAGS WARN()
 
 
+#ifndef SEEK_CUR
 #define SEEK_CUR WARN()
+#endif
+#ifndef SEEK_END
 #define SEEK_END WARN()
+#endif
+#ifndef SEEK_SET
 #define SEEK_SET WARN()
+#endif
+
 #define F_LOCK WARN()
 #define F_TEST WARN()
 #define F_TLOCK WARN()

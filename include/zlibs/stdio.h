@@ -21,9 +21,16 @@
 #define FOPEN_MAX 1024
 #define FILENAME_MAX 20
 #define BUFSIZ 1024 // TODO : CHOSE A CORRECT VALUE
-#define SEEK_SET 0
+
+#ifndef SEEK_CUR
 #define SEEK_CUR 1
+#endif
+#ifndef SEEK_END
 #define SEEK_END 2
+#endif
+#ifndef SEEK_SET
+#define SEEK_SET 0
+#endif
 
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
