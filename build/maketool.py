@@ -209,6 +209,7 @@ def make_iso(force = False):
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
+    print_and_exec(f"cp HDD.bin {OUT_DIR}/isodir/boot/")
     print_and_exec(f"cp boot/grub.cfg {OUT_DIR}/isodir/boot/grub/")
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
