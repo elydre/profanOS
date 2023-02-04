@@ -189,27 +189,21 @@ def build_app_lib():
         Thread(target = build_file, args = (name, fname)).start()
     while total : pass # on attends que tout soit fini
 
-def make_help():
-    aide = (
-        ("make",        "build profanOS kernel (elf file)"),
-        ("make iso",    "build bootable iso with grub"),
-        ("make disk",   "build disk image with zapps"),
-        ("make clean",  "delete all files in out directory"),
-        ("make fullclean", "delete all build files"),
-        ("make run",    "run the profanOS.elf in qemu"),
-        ("make irun",   "run the profanOS.iso in qemu"),
-        ("make kirun",  "run the profanOS.iso with kvm"),
-    )
-    for command, description in aide:
-        cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
+def make_iso(force = False, diskiso = False):
+    elf_image()
+    if diskiso: gen_disk()
 
-def make_iso(force = False):
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
+
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
-    print_and_exec(f"cp boot/grub.cfg {OUT_DIR}/isodir/boot/grub/")
+    if diskiso:
+        print_and_exec(f"echo TITE | cat HDD.bin - > {OUT_DIR}/isodir/boot/HDD.bin")
+        print_and_exec(f"cp boot/diskiso.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
+    else:
+        print_and_exec(f"cp boot/classic.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
 def get_kernel_version(print_info = True):
@@ -274,7 +268,7 @@ def gen_disk(force=False, with_src=False):
     cprint(COLOR_INFO, "building HDD.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
-def qemu_run(iso_run = False, kvm = False):
+def qemu_run(iso_run = True, kvm = False):
     if iso_run: make_iso()
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
@@ -282,16 +276,43 @@ def qemu_run(iso_run = False, kvm = False):
     if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
     else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
 
+def make_help():
+    aide = (
+        ("make [info]", "show this help message"),
+
+        ("make elf",        "build the kernel in elf format"),
+        ("make iso",        "build the iso image of profanOS"),
+        ("make miso",       "build the iso image with No ATA option"),
+
+        ("make disk",       "build classic disk image"),
+        ("make srcdisk",    "build disk image with source code"),
+
+        ("make clean",      "delete the out/ directory"),
+        ("make fullclean",  "delete all build files"),
+
+        ("make run",        "run the profanOS.iso in qemu"),
+        ("make erun",       "run the profanOS.elf in qemu"),
+        ("make krun",       "run the profanOS.iso with kvm"),
+    )
+
+    for command, description in aide:
+        cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
+    
+    cprint(COLOR_INFO, "\nYou can cross the command like:")
+    cprint(COLOR_INFO, "MAKE DISK RUN to force the disk generation and run it")
+    cprint(COLOR_INFO, "MAKE SRCDISK MISO RUN to run in qemu with all options")
+
+
 assos = {
-    "elf_image": elf_image,
+    "elf": elf_image,
     "help": make_help,
-    "disk": lambda: gen_disk(False),
-    "diskf": lambda: gen_disk(True),
-    "disk_src": lambda: gen_disk(True, True),
+    "disk": lambda: gen_disk(True),
+    "srcdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
-    "run": lambda: qemu_run(False),
-    "irun": lambda: qemu_run(True),
-    "kirun": lambda: qemu_run(True, True),
+    "miso": lambda: make_iso(True, True),
+    "run": lambda: qemu_run(True),
+    "erun": lambda: qemu_run(False),
+    "krun": lambda: qemu_run(True, True),
     "kver": get_kernel_version,
 }
 

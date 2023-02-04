@@ -1,5 +1,6 @@
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
+#include <driver/diskiso.h>
 #include <driver/serial.h>
 #include <minilib.h>
 #include <system.h>
@@ -15,7 +16,6 @@
  *                                     *
  *    rip b3  (sep 2022 - dec 2022)    *
  * * * * * * * * * * * * * * * * * * * */
-
 
 allocated_part_t *MEM_PARTS;
 uint32_t alloc_count;
@@ -59,6 +59,16 @@ int mem_init() {
 
     if (mem_alloc(sizeof(allocated_part_t) * part_size, 3) != (uint32_t) MEM_PARTS) {
         sys_fatal("snowflake address is illogical");
+    }
+
+    // allocate the diskiso module if needed
+    if (!diskiso_get_size()) return 0;
+
+    uint32_t start = mem_alloc(diskiso_get_size() * 512, 1);
+
+    if (start != diskiso_get_start()) {
+        sys_error("diskiso address is illogical");
+        mem_free_addr(start);
     }
 
     return 0;

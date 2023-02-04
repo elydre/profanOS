@@ -4,6 +4,7 @@
 #include <driver/keyboard.h>
 #include <kernel/ramdisk.h>
 #include <kernel/process.h>
+#include <driver/diskiso.h>
 #include <driver/serial.h>
 #include <driver/mouse.h>
 #include <driver/rtc.h>
@@ -34,6 +35,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(timer_init,   "Initing", "cpu timer (PIT)");
     status_print(keyboard_init,"Setuping", "PS/2 keyboard");
     status_print(mouse_init,   "Setuping", "PS/2 mouse");
+    status_print(init_diskiso, "Checking", "disk in iso mode");
     status_print(mem_init,     "Initing", "snowflake memory manager");
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
@@ -49,6 +51,7 @@ void kernel_main(void *mboot_ptr) {
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
+
 
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);
