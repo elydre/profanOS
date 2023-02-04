@@ -1,37 +1,42 @@
-.PHONY: elf iso disk disk-src run irun kirun info clean fullclean
+.PHONY: info elf iso miso disk srcdisk run erun krun clean fullclean
 
 PY_BUILD = build/maketool.py
-
-# build kernel
-elf:
-	python3 $(PY_BUILD) elf_image
-
-# create iso with grub
-iso: elf
-	python3 $(PY_BUILD) iso
-
-# build disk image with zapps
-disk:
-	python3 $(PY_BUILD) diskf
-
-disk-src:
-	python3 $(PY_BUILD) disk_src
 
 # list off available commands
 info:
 	python3 $(PY_BUILD) help
 
+# build kernel
+elf:
+	python3 $(PY_BUILD) elf
+
+# create iso with grub
+iso:
+	python3 $(PY_BUILD) iso
+
+# create full iso with grub
+miso:
+	python3 $(PY_BUILD) miso
+
+# build disk image
+disk:
+	python3 $(PY_BUILD) disk
+
+# build disk image with source
+srcdisk:
+	python3 $(PY_BUILD) srcdisk
+
 # run kernel in qemu
-run: elf
+run:
 	python3 $(PY_BUILD) run
 
 # run iso in qemu
-irun: elf
-	python3 $(PY_BUILD) irun
+erun:
+	python3 $(PY_BUILD) erun
 
-# run iso in qemu kvm
-kirun: elf
-	python3 $(PY_BUILD) kirun
+# run iso in qemu with kvm acceleration
+krun:
+	python3 $(PY_BUILD) krun
 
 # clean out/ directory
 clean:

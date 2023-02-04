@@ -29,13 +29,13 @@ sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 grub-common x
 
 ```bash
 # Simple compilation
-make
+make elf
 
 # Compile and run
 make run
 
 # Show all commands
-make info
+make
 ```
 
 You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
