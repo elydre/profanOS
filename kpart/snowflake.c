@@ -17,7 +17,6 @@
  *    rip b3  (sep 2022 - dec 2022)    *
  * * * * * * * * * * * * * * * * * * * */
 
-
 allocated_part_t *MEM_PARTS;
 uint32_t alloc_count;
 uint32_t free_count;

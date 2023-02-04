@@ -9,6 +9,7 @@
 #define PROCESS_KILLED   3
 #define PROCESS_DEAD     4
 
+
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
 } proc_rgs_t;

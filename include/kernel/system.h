@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "NDR 03"
+#define KERNEL_VERSION  "0.10.8"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  4096

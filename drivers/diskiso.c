@@ -24,12 +24,8 @@ int init_diskiso() {
 
     uint32_t sector_count = analyze_sectors((uint32_t *) GRUBMOD_START);
 
-    kprintf("        | %d sectors found!\n", sector_count);
-
     uint32_t pos = MEM_BASE_ADDR + PARTS_COUNT * sizeof(allocated_part_t) + 1;
     diskiso_start = pos; 
-
-    kprintf("        | Copying module to 0x%x\n", pos);
 
     uint32_t mod_end = GRUBMOD_START + sector_count * 512;
     uint32_t end_pos = pos + sector_count * 512;

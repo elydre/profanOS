@@ -586,4 +586,3 @@ int fs_delete_dir(char *path) {
     i_delete_dir(folder_id);
     return 0;
 }
-
