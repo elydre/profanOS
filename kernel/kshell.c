@@ -1,6 +1,7 @@
 #include <kernel/snowflake.h>
 #include <kernel/ramdisk.h>
 #include <kernel/process.h>
+#include <driver/diskiso.h>
 #include <driver/serial.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -72,18 +73,20 @@ void shell_help() {
 }
 
 void shell_addr() {
-    fsprint("vesa fb: %x\n", vesa_get_framebuffer());
-    fsprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
-    fsprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
-    fsprint("mm base: %x\n", MEM_BASE_ADDR);
-    fsprint("watfunc: %x\n", WATFUNC_ADDR);
+    kprintf("vesa fb: 0x%x\n", vesa_get_framebuffer());
+    kprintf("max add: 0x%x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
+    kprintf("ramdisk: 0x%x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
+    kprintf("diskiso: 0x%x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
+    kprintf("mm base: 0x%x\n", MEM_BASE_ADDR);
+    kprintf("watdily: 0x%x\n", WATDILY_ADDR);
+    kprintf("watfunc: 0x%x\n", WATFUNC_ADDR);
 }
 
 void shell_mem() {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
-        fsprint("part %d (s: %d, t: %d) -> %x, size: %d\n",
+        kprintf("part %d (s: %d, t: %d) -> 0x%x, size: %d\n",
             index,
             mem_parts[index].state,
             mem_parts[index].task_id,

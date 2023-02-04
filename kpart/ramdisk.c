@@ -102,7 +102,7 @@ void ramdisk_check_dir(char parent_name[], uint32_t sector_id);
 int ramdisk_init() {
     diskiso_sector_count = diskiso_get_size();
     if (diskiso_sector_count) {
-        sys_warning("using diskiso");
+        sys_warning("Using diskiso as ramdisk");
         ata_sector_count = 0;
         return 0;
     }

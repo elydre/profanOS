@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "NDR 02"
+#define KERNEL_VERSION  "NDR 03"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  4096
@@ -13,17 +13,19 @@
 #define RATE_SCHEDULER  100      // schedule per second
 #define RATE_COSMIC_RAY 0        // cosmic ray per second
 
-#define RUN_BIN_STACK_L 0x1000  // left stack size for binary
-#define RUN_BIN_STACK_R 0x4000  // right stack size for binary
+#define RUN_BIN_STACK_L 0x1000   // left stack size for binary
+#define RUN_BIN_STACK_R 0x4000   // right stack size for binary
 
-#define RUN_LIB_STACK_L 0x1000  // left stack size for library
-#define RUN_LIB_STACK_R 0x4000  // right stack size for library
+#define RUN_LIB_STACK_L 0x1000   // left stack size for library
+#define RUN_LIB_STACK_R 0x4000   // right stack size for library
 
-#define PROCESS_ESP     0x4000  // process stack size
+#define PROCESS_ESP     0x4000   // process stack size
 
 #define WATFUNC_ADDR    0x1ffff7
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
+
+#define GRUBMOD_START   0x125000 // grub module start
 
 
 // system.c

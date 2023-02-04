@@ -55,7 +55,7 @@ void int2str(int n, char s[]) {
     str_reverse(s);
 }
 
-void hex2str(int n, char s[]) {
+void hex2str(uint32_t n, char s[]) {
     int i = 0;
     int tmp;
     char hex[] = "0123456789abcdef";
@@ -147,7 +147,7 @@ void func_printf(int output, char *fmt, ...) {
                     buffer_i++;
                 }
             } else if (fmt[i] == 'x') {
-                int n = *((int *) args);
+                uint32_t n = *((int *) args);
                 args += 4;
                 char s[20];
                 hex2str(n, s);

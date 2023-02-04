@@ -1,5 +1,7 @@
 #include <kernel/filesystem.h>
 #include <kernel/ramdisk.h>
+#include <driver/diskiso.h>
+#include <driver/serial.h>
 #include <driver/ata.h>
 #include <minilib.h>
 #include <system.h>
@@ -27,10 +29,16 @@ uint32_t g_sector_count;
 void i_generate_free_map();
 
 int filesys_init() {
-    g_sector_count = ata_get_sectors_count();
+    g_sector_count = diskiso_get_size();
+
+    if (g_sector_count) {
+        serial_debug("FILESYS", "Using diskiso instead of ATA");
+    } else {
+        g_sector_count = ata_get_sectors_count();
+    }
 
     if (g_sector_count == 0) {
-        sys_warning("Cannot use ATA disk, using ramdisk");
+        sys_warning("Cannot use diskiso, using ramdisk");
         g_sector_count = ramdisk_get_size();
     }
     

@@ -63,8 +63,13 @@ int mem_init() {
     }
 
     // allocate the diskiso module if needed
-    if (diskiso_get_size()) {
-        mem_alloc(diskiso_get_size() * 512, 1);
+    if (!diskiso_get_size()) return 0;
+
+    uint32_t start = mem_alloc(diskiso_get_size() * 512, 1);
+
+    if (start != diskiso_get_start()) {
+        sys_error("diskiso address is illogical");
+        mem_free_addr(start);
     }
 
     return 0;

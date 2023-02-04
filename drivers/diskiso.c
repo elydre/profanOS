@@ -22,9 +22,7 @@ int init_diskiso() {
         return 0;
     }
 
-    uint32_t mod_start = 0x125000;
-    uint32_t sector_count = analyze_sectors((uint32_t *) mod_start);
-    uint32_t mod_end = mod_start + sector_count * 512;
+    uint32_t sector_count = analyze_sectors((uint32_t *) GRUBMOD_START);
 
     kprintf("        | %d sectors found!\n", sector_count);
 
@@ -33,10 +31,10 @@ int init_diskiso() {
 
     kprintf("        | Copying module to 0x%x\n", pos);
 
-    // copy the module to the new position starting from the end
-
+    uint32_t mod_end = GRUBMOD_START + sector_count * 512;
     uint32_t end_pos = pos + sector_count * 512;
 
+    // copy the module to the new position starting from the end
     for (uint32_t i = 0; i <= sector_count * 512; i++) {
         *((uint8_t *) (end_pos - i)) = *((uint8_t *) (mod_end - i));
     }
@@ -48,6 +46,10 @@ int init_diskiso() {
 
 uint32_t diskiso_get_size() {
     return diskiso_size;
+}
+
+uint32_t diskiso_get_start() {
+    return diskiso_start;
 }
 
 void diskiso_read(uint32_t sector, uint32_t *data) {
