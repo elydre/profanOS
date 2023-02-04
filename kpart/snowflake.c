@@ -1,5 +1,6 @@
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
+#include <driver/diskiso.h>
 #include <driver/serial.h>
 #include <minilib.h>
 #include <system.h>
@@ -59,6 +60,11 @@ int mem_init() {
 
     if (mem_alloc(sizeof(allocated_part_t) * part_size, 3) != (uint32_t) MEM_PARTS) {
         sys_fatal("snowflake address is illogical");
+    }
+
+    // allocate the diskiso module if needed
+    if (diskiso_get_size()) {
+        mem_alloc(diskiso_get_size() * 512, 1);
     }
 
     return 0;

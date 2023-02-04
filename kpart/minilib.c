@@ -55,6 +55,18 @@ void int2str(int n, char s[]) {
     str_reverse(s);
 }
 
+void hex2str(int n, char s[]) {
+    int i = 0;
+    int tmp;
+    char hex[] = "0123456789abcdef";
+    do {
+        tmp = n % 16;
+        s[i++] = hex[tmp];
+    } while ((n /= 16) > 0);
+    s[i] = '\0';
+    str_reverse(s);
+}
+
 int str2int(char s[]) {
     int i = 0;
     int n = 0;
@@ -134,6 +146,18 @@ void func_printf(int output, char *fmt, ...) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
+            } else if (fmt[i] == 'x') {
+                int n = *((int *) args);
+                args += 4;
+                char s[20];
+                hex2str(n, s);
+                for (int j = 0; s[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = s[j];
+                    buffer_i++;
+                }
+            } else if (fmt[i] == '%') {
+                char_buffer[buffer_i] = '%';
+                buffer_i++;
             }
         } else {
             char_buffer[buffer_i] = fmt[i];
@@ -221,6 +245,8 @@ void status_print(int (*func)(), char *verb, char *noun) {
 
     if (status == 0) {
         ckprint(" OK ", 0x0A);
+    } else if (status == 2) {
+        ckprint("ENBL", 0x0B);
     } else {
         ckprint("FAIL", 0x0C);
     }

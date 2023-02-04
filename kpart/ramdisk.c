@@ -1,3 +1,4 @@
+#include <driver/diskiso.h>
 #include <driver/serial.h>
 #include <driver/ata.h>
 #include <gui/gnrtx.h>
@@ -14,6 +15,7 @@
 uint32_t ata_table[RAMDISK_SECTOR];
 uint32_t *RAMDISK;
 uint32_t ata_sector_count;
+uint32_t diskiso_sector_count;
 int table_pos = 0;
 
 /* add in this list the paths 
@@ -41,18 +43,6 @@ int ramdisk_sector_internal_pos(uint32_t sector) {
     return -1;
 }
 
-void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
-    int internal = ramdisk_sector_internal_pos(LBA);
-    if (internal == -1) {
-        if (!ata_sector_count) sys_error("Sector not found in ramdisk");
-        else ata_read_sector(LBA, out);
-        return;
-    }
-    for (int i = 0; i < UINT32_PER_SECTOR; i++) {
-        out[i] = RAMDISK[internal * UINT32_PER_SECTOR + i];
-    }
-}
-
 void ramdisk_load_sector(uint32_t ATA_LBA, uint32_t in[]) {
     if (table_pos >= RAMDISK_SECTOR) {
         sys_fatal("No more space in ramdisk");
@@ -65,7 +55,29 @@ void ramdisk_load_sector(uint32_t ATA_LBA, uint32_t in[]) {
     table_pos++;
 }
 
+void ramdisk_read_sector(uint32_t LBA, uint32_t out[]) {
+    if (diskiso_sector_count) {
+        diskiso_read(LBA, out);
+        return;
+    }
+
+    int internal = ramdisk_sector_internal_pos(LBA);
+    if (internal == -1) {
+        if (!ata_sector_count) sys_error("Sector not found in ramdisk");
+        else ata_read_sector(LBA, out);
+        return;
+    }
+    for (int i = 0; i < UINT32_PER_SECTOR; i++) {
+        out[i] = RAMDISK[internal * UINT32_PER_SECTOR + i];
+    }
+}
+
 void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
+    if (diskiso_sector_count) {
+        diskiso_write(sector, buffer);
+        return;
+    }
+
     if (ata_sector_count) {
         ata_write_sector(sector, buffer);
     }
@@ -88,6 +100,13 @@ void ramdisk_write_sector(uint32_t sector, uint32_t* buffer) {
 void ramdisk_check_dir(char parent_name[], uint32_t sector_id);
 
 int ramdisk_init() {
+    diskiso_sector_count = diskiso_get_size();
+    if (diskiso_sector_count) {
+        sys_warning("using diskiso");
+        ata_sector_count = 0;
+        return 0;
+    }
+    
     RAMDISK = malloc(RAMDISK_SIZE);
 
     ata_sector_count = ata_get_sectors_count();
