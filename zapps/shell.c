@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
     int history_size = 0x1000 / BFR_SIZE - 1;
     char **history = malloc(history_size * sizeof(char*));
-    int addr = (int) malloc(0x1000);
+    int addr = (int) calloc(0x1000, sizeof(char));
     for (int i = 0; i < history_size; i++) {
         history[i] = (char*)addr;
         addr += BFR_SIZE;
