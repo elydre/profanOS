@@ -40,7 +40,8 @@ void kernel_main(void *mboot_ptr) {
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
     status_print(serial_init,  "Enabling", "serial port (A and B)");
-    status_print(process_init, "Initing", "process manager");
+    status_print(sys_init_fpu, "Initing", "floating point unit");
+    status_print(process_init, "Starting", "process manager");
     status_print(ramdisk_init, "Setuping", "ramdisk");
     status_print(init_rand,    "Initing", "minilib random generator");
     status_print(filesys_init, "Loading", "filesystem v2");

@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.8"
+#define KERNEL_VERSION  "0.10.8b"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  4096
@@ -39,6 +39,7 @@ void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
 void sys_cosmic_ray();
+int sys_init_fpu();
 
 // kshell.c
 void start_kshell();
