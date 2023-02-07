@@ -41,8 +41,10 @@ int main(int argc, char **argv) {
                 printf("%d oct\n", c_fs_get_file_size(tmp_path));
             }
         }
-        free(out_types);
-        free(out_ids);
+        if (elm_count) {
+            free(out_types);
+            free(out_ids);
+        }
     }
     free(ls_path);
     free(path);
