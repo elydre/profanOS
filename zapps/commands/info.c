@@ -20,10 +20,11 @@ int main(int argc, char **argv) {
         if (tmp[1] == '\0') { tmp[1] = tmp[0]; tmp[0] = '0'; }
         printf("$1%s$7/", tmp);
     }
+    int used_mem = c_mem_get_info(6, 0) / 1024;
     c_kprint_backspace();
     printf("$4\nunix time:  $1%d\n", time_gen_unix());
-    printf("$4work time:  $1%dms\n", c_timer_get_ms());
-    printf("$4used mem:   $1%dKo\n", c_mem_get_info(6, 0) / 1024);
+    printf("$4work time:  $1%d.%ds\n", (int) (c_timer_get_ms() / 1000), (int) (c_timer_get_ms() % 1000));
+    printf("$4used mem:   $1%d.%dMo\n", used_mem / 1024, used_mem % 1024);
     printf("$4act alloc:  $1%d$7/$1%d\n", c_mem_get_info(4, 0) - c_mem_get_info(5, 0), c_mem_get_info(4, 0));
     printf("$4phys mem:   $1%fMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
     printf("$4disk size:  $1%fMo\n", ((double) c_fs_get_sector_count()) / 2048);
