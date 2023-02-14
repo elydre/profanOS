@@ -1,15 +1,19 @@
 #include <syscall.h>
 #include <stdlib.h>
 #include <i_time.h>
+#include <i_vgui.h>
 #include <stdio.h>
 #include <type.h>
 
 #define FILENAME "/user/test.piv"
 
+vgui_t *vgui;
+
 void display_image(uint8_t *data, uint16_t width, uint16_t height) {
     for (uint32_t i = 0; i < width * height; i++) {
-        c_vesa_set_pixel(i % width, i / width, (data[i * 3] << 16) | (data[i * 3 + 1] << 8) | data[i * 3 + 2]);
+        vgui_set_pixel(vgui, i % width, i / width, (data[i * 3] << 16) | (data[i * 3 + 1] << 8) | data[i * 3 + 2]);
     }
+    vgui_render(vgui, 0);
 }
 
 void play_video(uint8_t *data, uint16_t width, uint16_t height, uint16_t nbframes) {
@@ -32,6 +36,10 @@ int main(int argc, char *argv[]) {
 
     uint8_t *data = ptr + 7;
 
+    vgui_t vgui_obj = vgui_setup(width, height);
+    vgui = &vgui_obj;
+
+
     if (type == 0xFF) {
         display_image(data, width, height);
     } else if (type == 0xFE) {
@@ -41,6 +49,8 @@ int main(int argc, char *argv[]) {
     } else {
         printf("Unknown image type: %d\n", type);
     }
+
+    vgui_exit(vgui);
 
     free(ptr);
     return 0;
