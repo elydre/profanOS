@@ -282,7 +282,7 @@ def make_help():
 
         ("make elf",        "build the kernel in elf format"),
         ("make iso",        "build the iso image of profanOS"),
-        ("make miso",       "build the iso image with No ATA option"),
+        ("make miso",       "build the iso with 'No ATA' option"),
 
         ("make disk",       "build classic disk image"),
         ("make srcdisk",    "build disk image with source code"),
