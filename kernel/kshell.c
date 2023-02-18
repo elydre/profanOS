@@ -100,14 +100,14 @@ void shell_mem() {
 void process_func() {
     for (int i = 0; i < 10; i++) {
         sprintf("%d ms passed\n", timer_get_ms());
-        // process_sleep(1, 100);
+        process_sleep(1, 100);
     }
-    process_handover(0);
+    process_exit();
 }
 
 void test_process() {
     int pid = process_create(process_func, 1, "test_process");
-    process_handover(pid);
+    process_wakeup(pid);
 }
 
 

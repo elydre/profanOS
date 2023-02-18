@@ -14,7 +14,9 @@
 process_t *plist;
 process_t **tsleep_list;
 
+uint32_t tsleep_interact;
 int tsleep_list_length;
+
 int pid_incrament;
 int pid_current;
 
@@ -118,6 +120,15 @@ void i_clean_killed() {
     need_clean = 0;
 }
 
+void i_refresh_tsleep_interact() {
+    tsleep_interact = 0;
+    for (int i = 0; i < tsleep_list_length; i++) {
+        if (tsleep_list[i]->sleep_to < tsleep_interact || !tsleep_interact) {
+            tsleep_interact = tsleep_list[i]->sleep_to;
+        }
+    }
+}
+
 
 /*********************
  * PUBLIC FUNCTIONS *
@@ -158,6 +169,7 @@ int process_init() {
     kern_proc->ppid = 0; // it's worse than inbreeding!
     kern_proc->priority = KERNEL_PRIORITY;
 
+    tsleep_interact = 0;
     pid_incrament = 0;
     pid_current = 0;
     need_clean = 0;
@@ -231,6 +243,7 @@ int process_sleep(int pid, int ms) {
         plist[place].sleep_to = timer_get_ticks() + (ms * 1000 / RATE_TIMER_TICK);
         tsleep_list[tsleep_list_length] = &plist[place];
         tsleep_list_length++;
+        i_refresh_tsleep_interact();
     }
 
     i_remove_from_shdlr_queue(pid);
@@ -266,6 +279,17 @@ int process_wakeup(int pid) {   // TODO: sleep to exit gestion
 
     plist[place].state = PROCESS_WAITING;
     i_add_to_shdlr_queue(pid, plist[place].priority);
+
+    // remove from tsleep_list
+    for (int i = 0; i < tsleep_list_length; i++) {
+        if (tsleep_list[i]->pid == pid) {
+            tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+            tsleep_list_length--;
+            break;
+        }
+    }
+
+    i_refresh_tsleep_interact();
 
     process_enable_sheduler();
     
@@ -348,16 +372,17 @@ void schedule(uint32_t ticks) {
         return;
     }
 
-    if (tsleep_list_length && ticks) {
+    if (tsleep_interact && tsleep_interact <= ticks) {
         for (int i = 0; i < tsleep_list_length; i++) {
             if (tsleep_list[i]->sleep_to <= ticks) {
                 tsleep_list[i]->state = PROCESS_WAITING;
                 i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
                 tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
                 tsleep_list_length--;
-                // i--; i don't if it's needed
+                i--;
             }
         }
+        i_refresh_tsleep_interact();
     }
 
     if (ticks % SCHEDULER_EVRY) {
