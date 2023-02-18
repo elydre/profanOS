@@ -100,6 +100,7 @@ void *SYSCALL_ARRAY[] = {
     process_get_state,
     process_get_custom,
     process_set_custom,
+    process_get_run_time,
 };
 
 int wf_get_func_addr(int func_id) {

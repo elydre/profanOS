@@ -25,10 +25,10 @@ int shdlr_queue_length;
 int pid_incrament;
 int pid_current;
 
+uint32_t last_switch;
 uint8_t need_clean;
 
 uint8_t sheduler_state = SHDLR_DISL;
-
 
 
 /***********************
@@ -64,12 +64,19 @@ int i_pid_to_place(int pid) {
     return ERROR_CODE;
 }
 
-void i_process_switch(int from_pid, int to_pid) {
+void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
     // this function is called when a process is
     // switched so we don't need security checks
 
     process_t *proc1 = &plist[i_pid_to_place(from_pid)];
     process_t *proc2 = &plist[i_pid_to_place(to_pid)];
+
+    if (!ticks) {
+        ticks = timer_get_ticks();
+    }
+
+    proc1->run_time += ticks - last_switch;
+    last_switch = ticks;
 
     if (proc1->state == PROCESS_RUNNING) {
         proc1->state = PROCESS_WAITING;
@@ -469,7 +476,7 @@ void schedule(uint32_t ticks) {
     i_exit_sheduler();
 
     if (pid != pid_current) {
-        i_process_switch(pid_current, pid);
+        i_process_switch(pid_current, pid, ticks);
     }
 }
 
@@ -578,6 +585,28 @@ int process_get_state(int pid) {
     }
 
     return plist[place].state;
+}
+
+int process_get_priority(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].priority;
+}
+
+uint32_t process_get_run_time(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].run_time;
 }
 
 void *process_get_custom(int pid) {
