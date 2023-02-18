@@ -3,9 +3,10 @@
 
 // build settings
 
-#define KERNEL_VERSION  "PROCv2 06"
+#define KERNEL_VERSION  "PROCv2 07"
 
 #define PROCESS_MAX     20
+#define KERNEL_PRIORITY 5       // default kernel process priority
 #define RAMDISK_SECTOR  4096
 #define RUN_DEFAULT     "/bin/shell.bin"
 

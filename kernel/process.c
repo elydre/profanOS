@@ -82,6 +82,7 @@ void i_process_switch(int from_pid, int to_pid) {
 
 int i_add_to_shdlr_queue(int pid, int priority) {
     if (shdlr_queue_length + priority > PROCESS_MAX * 10) {
+        sys_error("process queue is full");
         return ERROR_CODE;
     }
 
@@ -155,6 +156,7 @@ int process_init() {
 
     kern_proc->pid = 0;
     kern_proc->ppid = 0; // it's worse than inbreeding!
+    kern_proc->priority = KERNEL_PRIORITY;
 
     pid_incrament = 0;
     pid_current = 0;
@@ -163,7 +165,7 @@ int process_init() {
     shdlr_queue_index = 0;
     shdlr_queue_length = 0;
 
-    i_add_to_shdlr_queue(0, 5);
+    i_add_to_shdlr_queue(0, KERNEL_PRIORITY);
 
     // enable sheduler
     sheduler_state = SHDLR_ENBL;
@@ -171,9 +173,6 @@ int process_init() {
     return 0;
 }
 
-int process_get_pid() {
-    return pid_current;
-}
 
 int process_create(void (*func)(), int priority, char *name) {
     if (priority > 10) {
@@ -204,32 +203,6 @@ int process_create(void (*func)(), int priority, char *name) {
     return pid_incrament;
 }
 
-int process_wakeup(int pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_error("Process not found");
-        return ERROR_CODE;
-    }
-
-    if (plist[place].state == PROCESS_DEAD) {
-        sys_error("Process already dead");
-        return ERROR_CODE;
-    }
-
-    if (!(plist[place].state == PROCESS_FSLPING || plist[place].state == PROCESS_TSLPING)) {
-        sys_error("Process not sleeping");
-        return ERROR_CODE;
-    }
-
-    plist[place].state = PROCESS_WAITING;
-    if (i_add_to_shdlr_queue(pid, plist[place].priority) == ERROR_CODE) {
-        sys_error("Can't add process to sheduler queue");
-        return ERROR_CODE;
-    }
-    
-    return 0;
-}
 
 int process_sleep(int pid, int ms) {
     int place = i_pid_to_place(pid);
@@ -270,6 +243,71 @@ int process_sleep(int pid, int ms) {
     return 0;
 }
 
+
+int process_wakeup(int pid) {   // TODO: sleep to exit gestion
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return ERROR_CODE;
+    }
+
+    if (plist[place].state == PROCESS_DEAD) {
+        sys_error("Process already dead");
+        return ERROR_CODE;
+    }
+
+    if (!(plist[place].state == PROCESS_FSLPING || plist[place].state == PROCESS_TSLPING)) {
+        sys_error("Process not sleeping");
+        return ERROR_CODE;
+    }
+
+    process_disable_sheduler();
+
+    plist[place].state = PROCESS_WAITING;
+    i_add_to_shdlr_queue(pid, plist[place].priority);
+
+    process_enable_sheduler();
+    
+    return 0;
+}
+
+
+int process_handover(int pid) {
+    int place = i_pid_to_place(pid);
+    int current_place = i_pid_to_place(pid_current);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return ERROR_CODE;
+    }
+
+    if (plist[place].state == PROCESS_DEAD) {
+        sys_error("Process already dead");
+        return ERROR_CODE;
+    }
+
+    if (!(plist[place].state == PROCESS_FSLPING || plist[place].state == PROCESS_TSLPING)) {
+        sys_error("Process not sleeping");
+        return ERROR_CODE;
+    }
+
+    process_disable_sheduler();
+
+    plist[place].state = PROCESS_WAITING;
+    i_add_to_shdlr_queue(pid, plist[place].priority);
+
+    plist[current_place].state = PROCESS_FSLPING;
+    i_remove_from_shdlr_queue(pid_current);
+
+    process_enable_sheduler();
+
+    schedule(0);
+    
+    return 0;
+}
+
+
 int process_kill(int pid) {
     if (pid == 0) {
         sys_error("Cannot kill kernel (^_^ )");
@@ -302,6 +340,7 @@ int process_kill(int pid) {
 
     return 0;
 }
+
 
 void schedule(uint32_t ticks) {
     if (sheduler_state == SHDLR_DISL && ticks) {
@@ -348,6 +387,7 @@ void schedule(uint32_t ticks) {
     }
 }
 
+
 void process_enable_sheduler() {
     sheduler_state = SHDLR_ENBL;
 }
@@ -358,4 +398,8 @@ void process_disable_sheduler() {
 
 int process_exit() {
     return process_kill(pid_current);
+}
+
+int process_get_pid() {
+    return pid_current;
 }
