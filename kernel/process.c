@@ -7,24 +7,26 @@
 #define ERROR_CODE (-1)
 
 #define SHDLR_ENBL 0    // sheduler enabled
-#define SHDLR_DISL 1    // sheduler absolutely disabled
+#define SHDLR_RUNN 1    // sheduler running
+#define SHDLR_DISL 2    // sheduler disabled
 
 #define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
 
 process_t *plist;
-process_t **tsleep_list;
 
+process_t **tsleep_list;
 uint32_t tsleep_interact;
 int tsleep_list_length;
-
-int pid_incrament;
-int pid_current;
 
 int *shdlr_queue;
 int shdlr_queue_index;
 int shdlr_queue_length;
 
+int pid_incrament;
+int pid_current;
+
 uint8_t need_clean;
+
 uint8_t sheduler_state = SHDLR_DISL;
 
 
@@ -126,6 +128,14 @@ void i_refresh_tsleep_interact() {
         if (tsleep_list[i]->sleep_to < tsleep_interact || !tsleep_interact) {
             tsleep_interact = tsleep_list[i]->sleep_to;
         }
+    }
+}
+
+void i_exit_sheduler() {
+    if (sheduler_state == SHDLR_RUNN) {
+        sheduler_state = SHDLR_ENBL;
+    } else {
+        sys_error("sheduler is not running but sheduler is exiting");
     }
 }
 
@@ -367,10 +377,17 @@ int process_kill(int pid) {
 
 
 void schedule(uint32_t ticks) {
-    if (sheduler_state == SHDLR_DISL && ticks) {
+    if (sheduler_state == SHDLR_DISL) {
         serial_debug("SHEDULER", "sheduler is currently disabled");
         return;
     }
+
+    if (sheduler_state == SHDLR_RUNN) {
+        serial_debug("SHEDULER", "a other sheduler is currently running\n");
+        return;
+    }
+
+    sheduler_state = SHDLR_RUNN;
 
     if (tsleep_interact && tsleep_interact <= ticks) {
         for (int i = 0; i < tsleep_list_length; i++) {
@@ -386,6 +403,7 @@ void schedule(uint32_t ticks) {
     }
 
     if (ticks % SCHEDULER_EVRY) {
+        i_exit_sheduler();
         return;
     }
 
@@ -398,6 +416,7 @@ void schedule(uint32_t ticks) {
     if (shdlr_queue_index >= shdlr_queue_length) {
         if (shdlr_queue_length == 0) {
             sys_error("sheduler queue is empty");
+            i_exit_sheduler();
             return;
         }
         shdlr_queue_index = 0;
@@ -410,6 +429,8 @@ void schedule(uint32_t ticks) {
     } else {
         // serial_debug("SHEDULER", "process is already running");
     }
+
+    i_exit_sheduler();
 }
 
 
