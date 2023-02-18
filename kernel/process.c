@@ -68,6 +68,8 @@ void i_process_switch(int from_pid, int to_pid) {
     // this function is called when a process is
     // switched so we don't need security checks
 
+    sprintf("Switching from %d to %d\n", from_pid, to_pid);
+
     process_t *proc1 = &plist[i_pid_to_place(from_pid)];
     process_t *proc2 = &plist[i_pid_to_place(to_pid)];
 
@@ -77,8 +79,6 @@ void i_process_switch(int from_pid, int to_pid) {
     proc2->state = PROCESS_RUNNING;
 
     pid_current = to_pid;
-
-    sprintf("Switching from %d to %d\n", from_pid, to_pid);
 
     asm volatile("sti"); // (re)enable interrupts
     process_asm_switch(&proc1->regs, &proc2->regs);
@@ -136,7 +136,21 @@ void i_exit_sheduler() {
         sheduler_state = SHDLR_ENBL;
     } else {
         sys_error("sheduler is not running but sheduler is exiting");
+        sprintf("sheduler state: %d\n", sheduler_state);
     }
+}
+
+void i_tsleep_awake(uint32_t ticks) {
+    for (int i = 0; i < tsleep_list_length; i++) {
+        if (tsleep_list[i]->sleep_to <= ticks) {
+            tsleep_list[i]->state = PROCESS_WAITING;
+            i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
+            tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+            tsleep_list_length--;
+            i--;
+        }
+    }
+    i_refresh_tsleep_interact();
 }
 
 
@@ -202,6 +216,11 @@ int process_create(void (*func)(), int priority, char *name) {
         return ERROR_CODE;
     }
 
+    if (priority < 1) {
+        sys_error("Priority can't be lower than 1");
+        return ERROR_CODE;
+    }
+
     int place = i_get_free_place();
 
     if (place == ERROR_CODE) {
@@ -216,7 +235,7 @@ int process_create(void (*func)(), int priority, char *name) {
 
     str_cpy(new_proc->name, name);
     new_proc->pid = pid_incrament;
-    new_proc->ppid = process_get_pid();
+    new_proc->ppid = pid_current;
     new_proc->state = PROCESS_FSLPING;
     new_proc->priority = priority;
 
@@ -376,6 +395,27 @@ int process_kill(int pid) {
 }
 
 
+int process_exit() {
+    return process_kill(pid_current);
+}
+
+
+/************************
+ * SCHEUDLER FUNCTIONS *
+************************/
+
+void process_enable_sheduler() {
+    if (sheduler_state == SHDLR_DISL) {
+        sheduler_state = SHDLR_ENBL;
+    }
+}
+
+void process_disable_sheduler() {
+    if (sheduler_state == SHDLR_ENBL) {
+        sheduler_state = SHDLR_DISL;
+    }
+}
+
 void schedule(uint32_t ticks) {
     if (sheduler_state == SHDLR_DISL) {
         serial_debug("SHEDULER", "sheduler is currently disabled");
@@ -383,23 +423,14 @@ void schedule(uint32_t ticks) {
     }
 
     if (sheduler_state == SHDLR_RUNN) {
-        serial_debug("SHEDULER", "a other sheduler is currently running\n");
+        serial_debug("SHEDULER", "a other sheduler is currently running");
         return;
     }
 
     sheduler_state = SHDLR_RUNN;
 
     if (tsleep_interact && tsleep_interact <= ticks) {
-        for (int i = 0; i < tsleep_list_length; i++) {
-            if (tsleep_list[i]->sleep_to <= ticks) {
-                tsleep_list[i]->state = PROCESS_WAITING;
-                i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
-                tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-                tsleep_list_length--;
-                i--;
-            }
-        }
-        i_refresh_tsleep_interact();
+        i_tsleep_awake(ticks);
     }
 
     if (ticks % SCHEDULER_EVRY) {
@@ -415,37 +446,146 @@ void schedule(uint32_t ticks) {
 
     if (shdlr_queue_index >= shdlr_queue_length) {
         if (shdlr_queue_length == 0) {
-            sys_error("sheduler queue is empty");
-            i_exit_sheduler();
-            return;
+            serial_debug("SHEDULER", "queue is empty, adding kernel");
+            process_wakeup(0);
         }
         shdlr_queue_index = 0;
     }
 
     int pid = shdlr_queue[shdlr_queue_index];
 
+    i_exit_sheduler();
+    
     if (pid != pid_current) {
         i_process_switch(pid_current, pid);
-    } else {
-        // serial_debug("SHEDULER", "process is already running");
+    }
+}
+
+
+/************************
+ * GET / SET FUNCTIONS *
+************************/
+
+void process_set_priority(int pid, int priority) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return;
     }
 
-    i_exit_sheduler();
+    if (priority > 10) {
+        sys_error("Priority can't be higher than 10");
+        return;
+    }
+
+    if (priority < 1) {
+        sys_error("Priority can't be lower than 1");
+        return;
+    }
+
+    plist[place].priority = priority;
+
+    if (plist[place].state < PROCESS_TSLPING) {
+        process_disable_sheduler();
+        
+        i_remove_from_shdlr_queue(pid);
+        i_add_to_shdlr_queue(pid, priority);
+        
+        process_enable_sheduler();
+    }
 }
 
-
-void process_enable_sheduler() {
-    sheduler_state = SHDLR_ENBL;
-}
-
-void process_disable_sheduler() {
-    sheduler_state = SHDLR_DISL;
-}
-
-int process_exit() {
-    return process_kill(pid_current);
-}
-
-int process_get_pid() {
+int process_get_running_pid() {
     return pid_current;
+}
+
+void process_set_bin_mem(int pid, uint8_t *mem) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return;
+    }
+
+    plist[place].run_mem = mem;
+}
+
+uint8_t *process_get_bin_mem(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].run_mem;
+}
+
+int process_get_ppid(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].ppid;
+}
+
+int process_generate_pid_list(int *list, int max) {
+    int i = 0;
+    for (int j = 0; j < PROCESS_MAX; j++) {
+        if (plist[j].state != PROCESS_DEAD) {
+            list[i] = plist[j].pid;
+            i++;
+        }
+        if (max == i) break;
+    }
+    return i;
+}
+
+int process_get_name(int pid, char *name) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    str_cpy(name, plist[place].name);
+    return 1;
+}
+
+int process_get_state(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].state;
+}
+
+void *process_get_custom(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].custom;
+}
+
+void process_set_custom(int pid, void *custom) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return;
+    }
+
+    plist[place].custom = custom;
 }

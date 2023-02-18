@@ -24,9 +24,11 @@ typedef struct {
     char name[64];
 } process_t;
 
+// setup and call
 int process_init();
 void schedule(uint32_t ticks);
 
+// process gestion
 int process_create(void (*func)(), int priority, char *name);
 int process_handover(int pid);
 int process_wakeup(int pid);
@@ -34,10 +36,27 @@ int process_sleep(int pid, int ms);
 int process_kill(int pid);
 int process_exit();
 
-int process_get_pid();
 
+// sheduler control
 void process_enable_sheduler();
 void process_disable_sheduler();
+
+
+// process info
+int process_get_running_pid();
+
+int process_get_ppid(int pid);
+int process_generate_pid_list(int *list, int max);
+int process_get_name(int pid, char *name);
+int process_get_state(int pid);
+
+void process_set_bin_mem(int pid, uint8_t *mem);
+uint8_t *process_get_bin_mem(int pid);
+
+void *process_get_custom(int pid);
+void process_set_custom(int pid, void *custom);
+
+void process_set_priority(int pid, int priority);
 
 
 // switch.asm
