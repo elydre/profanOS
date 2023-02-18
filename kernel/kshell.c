@@ -97,6 +97,17 @@ void shell_mem() {
     }
 }
 
+void process_func() {
+    kprintf("process %d started\n", process_get_pid());
+    while (1);
+}
+
+void test_process() {
+    int pid = process_create(process_func, 1, "test_process");
+    process_wakeup(pid);
+}
+
+
 int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     int part = 0;
@@ -121,7 +132,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    // else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
+    else if (str_cmp(prefix, "proc") == 0) test_process();
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 

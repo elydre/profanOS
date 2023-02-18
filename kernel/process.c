@@ -11,10 +11,12 @@
 
 process_t *plist;
 
-int *sheduler_queue;
-
 int pid_incrament;
 int pid_current;
+
+int *shdlr_queue;
+int shdlr_queue_index;
+int shdlr_queue_length;
 
 uint8_t sheduler_state = SHDLR_ADIS;
 
@@ -53,26 +55,38 @@ int i_pid_to_place(int pid) {
     return ERROR_CODE;
 }
 
-void i_process_switch(int pid1, int pid2) {
+void i_process_switch(int from_pid, int to_pid) {
     // this function is called when a process is
     // switched so we don't need security checks
 
-    process_t *proc1 = &plist[i_pid_to_place(pid1)];
-    process_t *proc2 = &plist[i_pid_to_place(pid2)];
+    process_t *proc1 = &plist[i_pid_to_place(from_pid)];
+    process_t *proc2 = &plist[i_pid_to_place(to_pid)];
 
     if (proc1->state == PROCESS_RUNNING) {
         proc1->state = PROCESS_WAITING;
     }
     proc2->state = PROCESS_RUNNING;
 
-    pid_current = pid2;
+    pid_current = to_pid;
+
+    sprintf("Switching from %d to %d\n", from_pid, to_pid);
 
     asm volatile("sti"); // (re)enable interrupts
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
-void i_add_to_sheduler_queue(int pid, int priority) {
-    
+int i_add_to_shdlr_queue(int pid, int priority) {
+    if (shdlr_queue_length + priority > PROCESS_MAX * 10) {
+        return ERROR_CODE;
+    }
+
+    for (int i = 0; i < priority; i++) {
+        shdlr_queue[shdlr_queue_length + i] = pid;
+    }
+
+    shdlr_queue_length += priority;
+
+    return 0;
 }
 
 /*********************
@@ -81,7 +95,7 @@ void i_add_to_sheduler_queue(int pid, int priority) {
 
 int process_init() {
     plist = calloc(sizeof(process_t) * PROCESS_MAX);
-    sheduler_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
+    shdlr_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
 
     for (int i = 0; i < PROCESS_MAX; i++) {
         plist[i].state = PROCESS_DEAD;
@@ -115,6 +129,11 @@ int process_init() {
     pid_incrament = 0;
     pid_current = 0;
 
+    shdlr_queue_index = 0;
+    shdlr_queue_length = 0;
+
+    i_add_to_shdlr_queue(0, 5);
+
     sheduler_state = SHDLR_ENBL;
 
     return 0;
@@ -125,6 +144,11 @@ int process_get_pid() {
 }
 
 int process_create(void (*func)(), int priority, char *name) {
+    if (priority > 10) {
+        sys_error("Priority can't be higher than 10");
+        return ERROR_CODE;
+    }
+
     int place = i_get_free_place();
 
     if (place == ERROR_CODE) {
@@ -148,6 +172,33 @@ int process_create(void (*func)(), int priority, char *name) {
     return pid_incrament;
 }
 
+int process_wakeup(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return ERROR_CODE;
+    }
+
+    if (plist[place].state == PROCESS_DEAD) {
+        sys_error("Process already dead");
+        return ERROR_CODE;
+    }
+
+    if (plist[place].state != PROCESS_SLEEPING) {
+        sys_error("Process not sleeping");
+        return ERROR_CODE;
+    }
+
+    plist[place].state = PROCESS_WAITING;
+    if (i_add_to_shdlr_queue(pid, plist[place].priority) == ERROR_CODE) {
+        sys_error("Can't add process to sheduler queue");
+        return ERROR_CODE;
+    }
+    
+    return 0;
+}
+
 void schedule() {
     if (sheduler_state) {
         serial_debug("SHEDULER", "currently disabled, can't schedule");
@@ -155,6 +206,19 @@ void schedule() {
     }
 
 
+    shdlr_queue_index++;
+    if (shdlr_queue_index >= shdlr_queue_length) {
+        shdlr_queue_index = 0;
+    }
+    int pid = shdlr_queue[shdlr_queue_index];
+
+    if (pid == pid_current) {
+        serial_debug("SHEDULER", "process is already running");
+        return;
+    }
+
+    i_process_switch(pid_current, pid);
+    
     
     if (sheduler_state == SHDLR_TDIS) {
         sheduler_state = SHDLR_ENBL;

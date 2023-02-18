@@ -28,8 +28,13 @@ int process_init();
 void schedule();
 
 int process_create(void (*func)(), int priority, char *name);
+int process_wakeup(int pid);
 
 int process_get_pid();
+
+void process_enable_sheduler();
+void process_disable_sheduler();
+
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);
