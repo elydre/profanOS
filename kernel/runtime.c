@@ -44,6 +44,9 @@ void tasked_program() {
 }
 
 int run_binary(char path[], int argc, char **argv) {
+    UNUSED(path);
+    UNUSED(argc);
+    UNUSED(argv);
     // TODO: check if file is executable
 
     /*serial_debug("RUNTIME", path);

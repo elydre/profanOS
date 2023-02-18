@@ -14,9 +14,9 @@ static void timer_callback(registers_t *regs) {
 
     tick++;
 
-    /*if (tick % SCHEDULER_EVRY == 0) {
+    if (tick % SCHEDULER_EVRY == 0) {
         schedule();
-    }*/
+    }
 
 #if RATE_COSMIC_RAY != 0
     sys_cosmic_ray();

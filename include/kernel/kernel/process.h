@@ -25,6 +25,11 @@ typedef struct {
 } process_t;
 
 int process_init();
+void schedule();
+
+int process_create(void (*func)(), int priority, char *name);
+
+int process_get_pid();
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);
