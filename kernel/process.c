@@ -68,8 +68,6 @@ void i_process_switch(int from_pid, int to_pid) {
     // this function is called when a process is
     // switched so we don't need security checks
 
-    sprintf("Switching from %d to %d\n", from_pid, to_pid);
-
     process_t *proc1 = &plist[i_pid_to_place(from_pid)];
     process_t *proc2 = &plist[i_pid_to_place(to_pid)];
 
@@ -153,6 +151,15 @@ void i_tsleep_awake(uint32_t ticks) {
     i_refresh_tsleep_interact();
 }
 
+/*****************
+ * IDLE PROCESS *
+*****************/
+
+void idle_process() {
+    while (1) {
+        asm volatile("hlt");
+    }
+}
 
 /*********************
  * PUBLIC FUNCTIONS *
@@ -206,6 +213,9 @@ int process_init() {
     // enable sheduler
     sheduler_state = SHDLR_ENBL;
 
+    // create idle process
+    process_create(idle_process, 1, "idle");
+
     return 0;
 }
 
@@ -245,7 +255,7 @@ int process_create(void (*func)(), int priority, char *name) {
 }
 
 
-int process_sleep(int pid, int ms) {
+int process_sleep(int pid, uint32_t ms) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -445,17 +455,19 @@ void schedule(uint32_t ticks) {
     shdlr_queue_index++;
 
     if (shdlr_queue_index >= shdlr_queue_length) {
-        if (shdlr_queue_length == 0) {
-            serial_debug("SHEDULER", "queue is empty, adding kernel");
-            process_wakeup(0);
-        }
         shdlr_queue_index = 0;
     }
 
-    int pid = shdlr_queue[shdlr_queue_index];
+    int pid;
+
+    if (shdlr_queue_length == 0) {
+        pid = 1;    // idle process
+    } else {
+        pid = shdlr_queue[shdlr_queue_index];
+    }
 
     i_exit_sheduler();
-    
+
     if (pid != pid_current) {
         i_process_switch(pid_current, pid);
     }
@@ -496,7 +508,7 @@ void process_set_priority(int pid, int priority) {
     }
 }
 
-int process_get_running_pid() {
+int process_get_pid() {
     return pid_current;
 }
 

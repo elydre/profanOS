@@ -254,15 +254,6 @@ void status_print(int (*func)(), char *verb, char *noun) {
     set_cursor_offset(new_cursor);
 }
 
-// time
-
-void ms_sleep(uint32_t ms) {
-    uint32_t start = timer_get_ms();
-    while (timer_get_ms() < start + ms) {
-        asm volatile("hlt");
-    }
-}
-
 // random
 
 uint32_t rand_val = 0;

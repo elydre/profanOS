@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "PROCv2 10"
+#define KERNEL_VERSION  "PROCv2 11"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5       // default kernel process priority

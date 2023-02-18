@@ -23,11 +23,11 @@ void kernel_switch_back() {
 
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        if (process_get_state(pid) < 2 && pid) {
+        if (process_get_state(pid) < 2 && pid && pid != process_get_pid()) {
             process_sleep(pid, 0);
-            sprintf("Process %d stopped\n", pid);
         }
     }
+    process_handover(0);
 }
 
 int shell_command(char command[]);

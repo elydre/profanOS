@@ -17,7 +17,7 @@ char **g_argv;
 int g_argc;
 
 void tasked_program() {
-    int pid = process_get_running_pid();
+    int pid = process_get_pid();
     int ppid = process_get_ppid(pid);
 
     uint8_t *binary_mem = process_get_bin_mem(pid);

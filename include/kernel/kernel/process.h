@@ -32,7 +32,7 @@ void schedule(uint32_t ticks);
 int process_create(void (*func)(), int priority, char *name);
 int process_handover(int pid);
 int process_wakeup(int pid);
-int process_sleep(int pid, int ms);
+int process_sleep(int pid, uint32_t ms);
 int process_kill(int pid);
 int process_exit();
 
@@ -43,7 +43,7 @@ void process_disable_sheduler();
 
 
 // process info
-int process_get_running_pid();
+int process_get_pid();
 
 int process_get_ppid(int pid);
 int process_generate_pid_list(int *list, int max);

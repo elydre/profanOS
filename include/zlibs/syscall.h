@@ -139,11 +139,11 @@
 #define c_ramdisk_get_used ((uint32_t (*)(void)) hi_func_addr(43))
 
 #define c_process_create ((int (*)(void (*func)(), char *)) hi_func_addr(44))
-#define c_process_sleep ((void (*)(int)) hi_func_addr(45))
+#define c_process_sleep ((void (*)(int, uint32_t)) hi_func_addr(45))
 #define c_process_wakeup ((void (*)(int)) hi_func_addr(46))
 #define c_process_kill ((void (*)(int)) hi_func_addr(47))
 #define c_process_exit ((void (*)(void)) hi_func_addr(48))
-#define c_process_get_running_pid ((int (*)(void)) hi_func_addr(49))
+#define c_process_get_pid ((int (*)(void)) hi_func_addr(49))
 #define c_process_get_ppid ((int (*)(int)) hi_func_addr(50))
 #define c_process_generate_pid_list ((int (*)(int *, int)) hi_func_addr(51))
 #define c_process_get_name ((int (*)(int, char *)) hi_func_addr(52))

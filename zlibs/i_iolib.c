@@ -9,8 +9,7 @@
 #include <stdarg.h>
 
 // input() setings
-#define FIRST_L 40
-#define BONDE_L 4
+#define FIRST_L 8
 
 // keyboard scancodes
 #define SC_MAX 57
@@ -198,7 +197,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     c_cursor_blink(1);
 
     while (sc != ENTER) {
-        ms_sleep(2);
+        ms_sleep(10);
 
         last_sc = sc;
         sc = c_kb_get_scfh();
@@ -206,7 +205,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
 
-        if ((key_ticks > 2 && key_ticks < FIRST_L) || key_ticks % BONDE_L) continue;
+        if (key_ticks < FIRST_L && key_ticks) continue;
 
         if (sc == LSHIFT || sc == RSHIFT) {
             shift = 1;

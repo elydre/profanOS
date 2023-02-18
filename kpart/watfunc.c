@@ -88,18 +88,18 @@ void *SYSCALL_ARRAY[] = {
     ramdisk_get_used,
 
     // process.h
-    /*process_create,
+    process_create,
     process_sleep,
     process_wakeup,
     process_kill,
     process_exit,
-    process_get_running_pid,
+    process_get_pid,
     process_get_ppid,
     process_generate_pid_list,
     process_get_name,
     process_get_state,
     process_get_custom,
-    process_set_custom,*/
+    process_set_custom,
 };
 
 int wf_get_func_addr(int func_id) {
