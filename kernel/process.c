@@ -1,5 +1,6 @@
 #include <kernel/process.h>
 #include <driver/serial.h>
+#include <cpu/timer.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -11,7 +12,9 @@
 #define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
 
 process_t *plist;
+process_t **tsleep_list;
 
+int tsleep_list_length;
 int pid_incrament;
 int pid_current;
 
@@ -110,6 +113,7 @@ int i_remove_from_shdlr_queue(int pid) {
 int process_init() {
     plist = calloc(sizeof(process_t) * PROCESS_MAX);
     shdlr_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
+    tsleep_list = calloc(sizeof(process_t *) * PROCESS_MAX);
 
     for (int i = 0; i < PROCESS_MAX; i++) {
         plist[i].state = PROCESS_DEAD;
@@ -178,7 +182,7 @@ int process_create(void (*func)(), int priority, char *name) {
     str_cpy(new_proc->name, name);
     new_proc->pid = pid_incrament;
     new_proc->ppid = process_get_pid();
-    new_proc->state = PROCESS_SLEEPING;
+    new_proc->state = PROCESS_FSLPING;
     new_proc->priority = priority;
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
@@ -199,7 +203,7 @@ int process_wakeup(int pid) {
         return ERROR_CODE;
     }
 
-    if (plist[place].state != PROCESS_SLEEPING) {
+    if (!(plist[place].state == PROCESS_FSLPING || plist[place].state == PROCESS_TSLPING)) {
         sys_error("Process not sleeping");
         return ERROR_CODE;
     }
@@ -213,7 +217,7 @@ int process_wakeup(int pid) {
     return 0;
 }
 
-int process_sleep(int pid) {
+int process_sleep(int pid, int ms) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -221,20 +225,30 @@ int process_sleep(int pid) {
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROCESS_DEAD) {
+    if (plist[place].state >= PROCESS_KILLED) {
         sys_error("Process already dead");
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROCESS_SLEEPING) {
+    if (plist[place].state >= PROCESS_TSLPING) {
         sys_error("Process already sleeping");
         return ERROR_CODE;
     }
 
-    plist[place].state = PROCESS_SLEEPING;
+    process_disable_sheduler();
+    if (ms == 0) {
+        plist[place].state = PROCESS_FSLPING;
+    } else {
+        plist[place].state = PROCESS_TSLPING;
+        // convert ms to ticks
+        plist[place].sleep_to = timer_get_ticks() + (ms * 1000 / RATE_TIMER_TICK);
+        tsleep_list[tsleep_list_length] = &plist[place];
+        tsleep_list_length++;
+    }
 
     i_remove_from_shdlr_queue(pid);
 
+    process_enable_sheduler();
     if (pid == pid_current) {
         schedule(0);
     }
@@ -248,8 +262,19 @@ void schedule(uint32_t ticks) {
         return;
     }
 
-    if (ticks % SCHEDULER_EVRY && ticks != 0) {
-        // TODO: process_sleep gestion
+    if (tsleep_list_length && ticks) {
+        for (int i = 0; i < tsleep_list_length; i++) {
+            if (tsleep_list[i]->sleep_to <= ticks) {
+                tsleep_list[i]->state = PROCESS_WAITING;
+                i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
+                tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+                tsleep_list_length--;
+                // i--;
+            }
+        }
+    }
+
+    if (ticks % SCHEDULER_EVRY) {
         return;
     }
 
@@ -268,7 +293,7 @@ void schedule(uint32_t ticks) {
     if (pid != pid_current) {
         i_process_switch(pid_current, pid);
     } else {
-        serial_debug("SHEDULER", "process is already running");
+        // serial_debug("SHEDULER", "process is already running");
     }
 }
 

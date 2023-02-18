@@ -98,8 +98,10 @@ void shell_mem() {
 }
 
 void process_func() {
-    kprintf("process %d started\n", process_get_pid());
-    while (1);
+    while (1) {
+        sprintf("%d ms passed\n", timer_get_ms());
+        process_sleep(1, 100);
+    }
 }
 
 void test_process() {
@@ -133,7 +135,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "proc") == 0) test_process();
-    else if (str_cmp(prefix, "sleep") == 0) process_sleep(1);
+    else if (str_cmp(prefix, "sleep") == 0) process_sleep(1, 1000);
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 

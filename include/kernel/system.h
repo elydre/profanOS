@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "PROCv2 04"
+#define KERNEL_VERSION  "PROCv2 05"
 
 #define PROCESS_MAX     20
 #define RAMDISK_SECTOR  4096

@@ -4,10 +4,11 @@
 #include <type.h>
 
 #define PROCESS_RUNNING  0
-#define PROCESS_WAITING  1
-#define PROCESS_SLEEPING 2
-#define PROCESS_KILLED   3
-#define PROCESS_DEAD     4
+#define PROCESS_WAITING  1  // in the queue
+#define PROCESS_TSLPING  2  // time sleep
+#define PROCESS_FSLPING  3  // forever sleep
+#define PROCESS_KILLED   4
+#define PROCESS_DEAD     5
 
 
 typedef struct {
@@ -16,9 +17,8 @@ typedef struct {
 
 typedef struct {
     proc_rgs_t regs;
-    int pid, ppid, priority;
-    int state, sleep_to;
-    uint32_t esp_addr;
+    int pid, ppid, priority, state;
+    uint32_t esp_addr, sleep_to;
     uint8_t *run_mem;
     void *custom;
     char name[64];
@@ -29,7 +29,7 @@ void schedule(uint32_t ticks);
 
 int process_create(void (*func)(), int priority, char *name);
 int process_wakeup(int pid);
-int process_sleep(int pid);
+int process_sleep(int pid, int ms);
 
 int process_get_pid();
 
