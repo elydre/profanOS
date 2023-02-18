@@ -25,10 +25,11 @@ typedef struct {
 } process_t;
 
 int process_init();
-void schedule();
+void schedule(uint32_t ticks);
 
 int process_create(void (*func)(), int priority, char *name);
 int process_wakeup(int pid);
+int process_sleep(int pid);
 
 int process_get_pid();
 

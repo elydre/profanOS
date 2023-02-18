@@ -6,8 +6,9 @@
 #define ERROR_CODE (-1)
 
 #define SHDLR_ENBL 0    // sheduler enabled
-#define SHDLR_TDIS 1    // sheduler temporary disabled
-#define SHDLR_ADIS 2    // sheduler absolutely disabled
+#define SHDLR_DISL 1    // sheduler absolutely disabled
+
+#define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
 
 process_t *plist;
 
@@ -18,7 +19,7 @@ int *shdlr_queue;
 int shdlr_queue_index;
 int shdlr_queue_length;
 
-uint8_t sheduler_state = SHDLR_ADIS;
+uint8_t sheduler_state = SHDLR_DISL;
 
 
 
@@ -85,6 +86,19 @@ int i_add_to_shdlr_queue(int pid, int priority) {
     }
 
     shdlr_queue_length += priority;
+
+    return 0;
+}
+
+int i_remove_from_shdlr_queue(int pid) {
+    // remove all occurences of pid from shdlr_queue
+    for (int i = 0; i < shdlr_queue_length; i++) {
+        if (shdlr_queue[i] == pid) {
+            shdlr_queue[i] = shdlr_queue[shdlr_queue_length - 1];
+            shdlr_queue_length--;
+            i--;
+        }
+    }
 
     return 0;
 }
@@ -199,31 +213,62 @@ int process_wakeup(int pid) {
     return 0;
 }
 
-void schedule() {
-    if (sheduler_state) {
-        serial_debug("SHEDULER", "currently disabled, can't schedule");
-        return;
+int process_sleep(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return ERROR_CODE;
     }
 
-
-    shdlr_queue_index++;
-    if (shdlr_queue_index >= shdlr_queue_length) {
-        shdlr_queue_index = 0;
+    if (plist[place].state == PROCESS_DEAD) {
+        sys_error("Process already dead");
+        return ERROR_CODE;
     }
-    int pid = shdlr_queue[shdlr_queue_index];
+
+    if (plist[place].state == PROCESS_SLEEPING) {
+        sys_error("Process already sleeping");
+        return ERROR_CODE;
+    }
+
+    plist[place].state = PROCESS_SLEEPING;
+
+    i_remove_from_shdlr_queue(pid);
 
     if (pid == pid_current) {
-        serial_debug("SHEDULER", "process is already running");
+        schedule(0);
+    }
+
+    return 0;
+}
+
+void schedule(uint32_t ticks) {
+    if (sheduler_state == SHDLR_DISL && ticks) {
+        serial_debug("SHEDULER", "sheduler is currently disabled");
         return;
     }
 
-    i_process_switch(pid_current, pid);
-    
-    
-    if (sheduler_state == SHDLR_TDIS) {
-        sheduler_state = SHDLR_ENBL;
-    } else if (sheduler_state == SHDLR_ADIS) {   // DEBUG
-        sys_error("this should never happen (schedule)");
+    if (ticks % SCHEDULER_EVRY && ticks != 0) {
+        // TODO: process_sleep gestion
+        return;
+    }
+
+    shdlr_queue_index++;
+
+    if (shdlr_queue_index >= shdlr_queue_length) {
+        if (shdlr_queue_length == 0) {
+            sys_error("sheduler queue is empty");
+            return;
+        }
+        shdlr_queue_index = 0;
+    }
+
+    int pid = shdlr_queue[shdlr_queue_index];
+
+    if (pid != pid_current) {
+        i_process_switch(pid_current, pid);
+    } else {
+        serial_debug("SHEDULER", "process is already running");
     }
 }
 
@@ -232,5 +277,5 @@ void process_enable_sheduler() {
 }
 
 void process_disable_sheduler() {
-    sheduler_state = SHDLR_ADIS;
+    sheduler_state = SHDLR_DISL;
 }

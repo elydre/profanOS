@@ -133,6 +133,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "proc") == 0) test_process();
+    else if (str_cmp(prefix, "sleep") == 0) process_sleep(1);
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 
