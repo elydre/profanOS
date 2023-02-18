@@ -98,10 +98,11 @@ void shell_mem() {
 }
 
 void process_func() {
-    while (1) {
+    for (int i = 0; i < 10; i++) {
         sprintf("%d ms passed\n", timer_get_ms());
         process_sleep(1, 100);
     }
+    process_exit();
 }
 
 void test_process() {

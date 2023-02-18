@@ -22,6 +22,7 @@ int *shdlr_queue;
 int shdlr_queue_index;
 int shdlr_queue_length;
 
+uint8_t need_clean;
 uint8_t sheduler_state = SHDLR_DISL;
 
 
@@ -106,6 +107,17 @@ int i_remove_from_shdlr_queue(int pid) {
     return 0;
 }
 
+void i_clean_killed() {
+    for (int i = 0; i < PROCESS_MAX; i++) {
+        if (plist[i].state == PROCESS_KILLED) {
+            free((void *) plist[i].esp_addr);
+            plist[i].state = PROCESS_DEAD;
+        }
+    }
+    need_clean = 0;
+}
+
+
 /*********************
  * PUBLIC FUNCTIONS *
 *********************/
@@ -146,12 +158,14 @@ int process_init() {
 
     pid_incrament = 0;
     pid_current = 0;
+    need_clean = 0;
 
     shdlr_queue_index = 0;
     shdlr_queue_length = 0;
 
     i_add_to_shdlr_queue(0, 5);
 
+    // enable sheduler
     sheduler_state = SHDLR_ENBL;
 
     return 0;
@@ -256,6 +270,39 @@ int process_sleep(int pid, int ms) {
     return 0;
 }
 
+int process_kill(int pid) {
+    if (pid == 0) {
+        sys_error("Cannot kill kernel (^_^ )");
+        return ERROR_CODE;
+    }
+
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return ERROR_CODE;
+    }
+
+    if (plist[place].state >= PROCESS_KILLED) {
+        sys_error("Process already dead");
+        return ERROR_CODE;
+    }
+
+    process_disable_sheduler();
+
+    plist[place].state = PROCESS_KILLED;
+    i_remove_from_shdlr_queue(pid);
+    need_clean = 1;
+
+    process_enable_sheduler();
+
+    if (pid == pid_current) {
+        schedule(0);
+    }
+
+    return 0;
+}
+
 void schedule(uint32_t ticks) {
     if (sheduler_state == SHDLR_DISL && ticks) {
         serial_debug("SHEDULER", "sheduler is currently disabled");
@@ -269,13 +316,17 @@ void schedule(uint32_t ticks) {
                 i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
                 tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
                 tsleep_list_length--;
-                // i--;
+                // i--; i don't if it's needed
             }
         }
     }
 
     if (ticks % SCHEDULER_EVRY) {
         return;
+    }
+
+    if (need_clean) {
+        i_clean_killed();
     }
 
     shdlr_queue_index++;
@@ -303,4 +354,8 @@ void process_enable_sheduler() {
 
 void process_disable_sheduler() {
     sheduler_state = SHDLR_DISL;
+}
+
+int process_exit() {
+    return process_kill(pid_current);
 }
