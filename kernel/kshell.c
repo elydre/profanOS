@@ -15,7 +15,7 @@
 #define BFR_SIZE 65
 
 void kernel_switch_back() {
-    int pid_list[PROCESS_MAX]; // it's a define
+    /*int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
 
@@ -27,7 +27,7 @@ void kernel_switch_back() {
             process_sleep(pid);
             sprintf("Process %d stopped\n", pid);
         }
-    }
+    }*/
 }
 
 int shell_command(char command[]);
@@ -121,7 +121,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
+    // else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 

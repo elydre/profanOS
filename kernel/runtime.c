@@ -17,7 +17,7 @@ char **g_argv;
 int g_argc;
 
 void tasked_program() {
-    int pid = process_get_running_pid();
+    /*int pid = process_get_running_pid();
     int ppid = process_get_ppid(pid);
 
     uint8_t *binary_mem = process_get_bin_mem(pid);
@@ -40,13 +40,13 @@ void tasked_program() {
     }
 
     process_wakeup(ppid);
-    process_exit();
+    process_exit();*/
 }
 
 int run_binary(char path[], int argc, char **argv) {
     // TODO: check if file is executable
 
-    serial_debug("RUNTIME", path);
+    /*serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, path);
 
     int size = fs_get_file_size(path) + RUN_BIN_STACK_L + RUN_BIN_STACK_R;
@@ -66,7 +66,7 @@ int run_binary(char path[], int argc, char **argv) {
     process_set_bin_mem(pid, binary_mem);
     process_wakeup(pid);
 
-    process_sleep(process_get_running_pid());
+    process_sleep(process_get_running_pid());*/
 
     return 0;
 }

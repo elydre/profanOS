@@ -154,7 +154,8 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
     MEM_PARTS[i].addr = last_addr;
     MEM_PARTS[i].size = size;
-    MEM_PARTS[i].task_id = (state == 1) ? process_get_running_pid(): 0;
+    // MEM_PARTS[i].task_id = (state == 1) ? process_get_running_pid(): 0;
+    MEM_PARTS[i].task_id = 0;
     MEM_PARTS[i].state = state;
 
     if (exit_mode) {
