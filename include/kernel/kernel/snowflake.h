@@ -25,6 +25,7 @@ typedef struct allocated_part_t {
  * 3: mm struct     *
  * 4: bin run       *
  * 5: loaded lib    *
+ * 6: as kernel     *
 *********************/
 
 int mem_init();

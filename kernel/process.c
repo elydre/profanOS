@@ -1,3 +1,4 @@
+#include <kernel/snowflake.h>
 #include <kernel/process.h>
 #include <driver/serial.h>
 #include <cpu/timer.h>
@@ -31,7 +32,7 @@ int pid_current;
 ***********************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
-    uint32_t esp_alloc = (uint32_t) malloc(PROCESS_ESP);
+    uint32_t esp_alloc = (uint32_t) mem_alloc(PROCESS_ESP, 6);
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -442,6 +443,11 @@ int process_kill(int pid) {
         return ERROR_CODE;
     }
 
+    if (plist[place].state == PROCESS_IDLETIME) {
+        sys_error("Can't interact with idle process");
+        return ERROR_CODE;
+    }
+
     if (plist[place].state >= PROCESS_KILLED) {
         sys_error("Process already dead");
         return ERROR_CODE;
@@ -449,8 +455,13 @@ int process_kill(int pid) {
 
     process_disable_sheduler();
 
+    if (plist[place].state == PROCESS_TSLPING) {
+        i_remove_from_tsleep_list(pid);
+    }
+
     plist[place].state = PROCESS_KILLED;
     i_remove_from_shdlr_queue(pid);
+
     need_clean = 1;
 
     process_enable_sheduler();
