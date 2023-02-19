@@ -1,20 +1,22 @@
 #include <syscall.h>
 #include <stdlib.h>
-#include <i_vgui.h>
 #include <stdio.h>
 
 
 int main(int argc, char **argv) {
+
+    // wake up the parent process
+    c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+
     int history_size = 100;
 
     int *history = calloc(history_size, sizeof(int));
 
-    vgui_t vgui_obj = vgui_setup(1024, 101);
-    vgui_t *vgui = &vgui_obj;
-
     int cpu, last_idle, last_total;
     int idle = 0;
     int total = 0;
+
+    uint32_t *pixel_buffer = calloc(100 * 100, sizeof(uint32_t));
 
     while (1) {
         last_idle = idle;
@@ -30,12 +32,22 @@ int main(int argc, char **argv) {
         }
         history[history_size - 1] = cpu;
 
-        vgui_draw_rect(vgui, 1024 - 101, 0, 101, 101, 0x000000);
-        for (int i = 0; i < history_size; i++) {
-            vgui_draw_line(vgui, 1024 - i, 100 - history[i], 1024 - i, 100, 0x00FFFF);
+        // reset pixel buffer
+        for (int i = 0; i < 100 * 100; i++) {
+            pixel_buffer[i] = 0x000000;
         }
 
-        vgui_render(vgui, 0);
+        for (int i = 0; i < history_size; i++) {
+            for (int j = 0; j < history[i]; j++) {
+                pixel_buffer[i + 100 * j] = 0x00FFFF;
+            }
+        }
+
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
+                c_vesa_set_pixel(1023 - i, 100 - j, pixel_buffer[i + 100 * j]);
+            }
+        }
         c_process_sleep(c_process_get_pid(), 200);
     }
 }

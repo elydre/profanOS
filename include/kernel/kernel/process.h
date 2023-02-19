@@ -9,6 +9,7 @@
 #define PROCESS_FSLPING  3  // forever sleep
 #define PROCESS_KILLED   4
 #define PROCESS_DEAD     5
+#define PROCESS_IDLETIME 6
 
 
 typedef struct {

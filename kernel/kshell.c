@@ -23,10 +23,11 @@ void kernel_switch_back() {
 
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        if (process_get_state(pid) < 2 && pid && pid != process_get_pid()) {
+        if (process_get_state(pid) < 3 && pid && pid != process_get_pid()) {
             process_sleep(pid, 0);
         }
     }
+    sprintf("hand over to process 0\n");
     process_handover(0);
 }
 
@@ -136,6 +137,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
     else if (str_cmp(prefix, "proc") == 0) test_process();
     else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
+    else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 

@@ -81,7 +81,9 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
     if (proc1->state == PROCESS_RUNNING) {
         proc1->state = PROCESS_WAITING;
     }
-    proc2->state = PROCESS_RUNNING;
+    if (proc2->state != PROCESS_IDLETIME) {
+        proc2->state = PROCESS_RUNNING;
+    }
 
     pid_current = to_pid;
 
@@ -148,8 +150,24 @@ void i_exit_sheduler() {
 void i_tsleep_awake(uint32_t ticks) {
     for (int i = 0; i < tsleep_list_length; i++) {
         if (tsleep_list[i]->sleep_to <= ticks) {
-            tsleep_list[i]->state = PROCESS_WAITING;
-            i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
+            if (tsleep_list[i]->state == PROCESS_TSLPING) {
+                tsleep_list[i]->state = PROCESS_WAITING;
+                i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
+                tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+                tsleep_list_length--;
+                i--;
+            } else {
+                sys_error("process in tsleep list is not in tsleep state");
+                sprintf("process pid: %d\n", tsleep_list[i]->pid);
+            }
+        }
+    }
+    i_refresh_tsleep_interact();
+}
+
+void i_remove_from_tsleep_list(int pid) {
+    for (int i = 0; i < tsleep_list_length; i++) {
+        if (tsleep_list[i]->pid == pid) {
             tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
             tsleep_list_length--;
             i--;
@@ -222,6 +240,7 @@ int process_init() {
 
     // create idle process
     process_create(idle_process, 1, "idle");
+    plist[1].state = PROCESS_IDLETIME;
 
     return 0;
 }
@@ -270,17 +289,27 @@ int process_sleep(int pid, uint32_t ms) {
         return ERROR_CODE;
     }
 
+    if (plist[place].state == PROCESS_IDLETIME) {
+        sys_error("Can't interact with idle process");
+        return ERROR_CODE;
+    }
+
+    if (plist[place].state == PROCESS_FSLPING) {
+        sys_error("Process already sleeping");
+        return ERROR_CODE;
+    }
+
     if (plist[place].state >= PROCESS_KILLED) {
         sys_error("Process already dead");
         return ERROR_CODE;
     }
 
-    if (plist[place].state >= PROCESS_TSLPING) {
-        sys_error("Process already sleeping");
-        return ERROR_CODE;
+    process_disable_sheduler();
+
+    if (plist[place].state == PROCESS_TSLPING) {
+        i_remove_from_tsleep_list(pid);
     }
 
-    process_disable_sheduler();
     if (ms == 0) {
         plist[place].state = PROCESS_FSLPING;
     } else {
@@ -311,6 +340,11 @@ int process_wakeup(int pid) {   // TODO: sleep to exit gestion
         return ERROR_CODE;
     }
 
+    if (plist[place].state == PROCESS_IDLETIME) {
+        sys_error("Can't interact with idle process");
+        return ERROR_CODE;
+    }
+
     if (plist[place].state == PROCESS_DEAD) {
         sys_error("Process already dead");
         return ERROR_CODE;
@@ -323,17 +357,12 @@ int process_wakeup(int pid) {   // TODO: sleep to exit gestion
 
     process_disable_sheduler();
 
+    if (plist[place].state == PROCESS_TSLPING) {
+        i_remove_from_tsleep_list(pid);
+    }
+    
     plist[place].state = PROCESS_WAITING;
     i_add_to_shdlr_queue(pid, plist[place].priority);
-
-    // remove from tsleep_list
-    for (int i = 0; i < tsleep_list_length; i++) {
-        if (tsleep_list[i]->pid == pid) {
-            tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-            tsleep_list_length--;
-            break;
-        }
-    }
 
     i_refresh_tsleep_interact();
 
@@ -352,6 +381,16 @@ int process_handover(int pid) {
         return ERROR_CODE;
     }
 
+    if (plist[place].state == PROCESS_IDLETIME) {
+        sys_error("Can't interact with idle process");
+        return ERROR_CODE;
+    }
+
+    if (plist[current_place].state == PROCESS_IDLETIME) {
+        process_wakeup(pid);
+        return 0;
+    }
+
     if (plist[place].state == PROCESS_DEAD) {
         sys_error("Process already dead");
         return ERROR_CODE;
@@ -364,8 +403,17 @@ int process_handover(int pid) {
 
     process_disable_sheduler();
 
+    if (plist[place].state == PROCESS_TSLPING) {
+        sprintf("remove from tsleep list pid %d\n", pid);
+        i_remove_from_tsleep_list(pid);
+    }
+
     plist[place].state = PROCESS_WAITING;
     i_add_to_shdlr_queue(pid, plist[place].priority);
+
+    if (plist[current_place].state == PROCESS_TSLPING) {
+        i_remove_from_tsleep_list(pid_current);
+    }
 
     plist[current_place].state = PROCESS_FSLPING;
     i_remove_from_shdlr_queue(pid_current);
