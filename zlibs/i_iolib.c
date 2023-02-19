@@ -191,6 +191,10 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
     clean_buffer(out_buffer, size);
 
+    do {
+        sc = c_kb_get_scfh();
+    } while (sc == ENTER);
+
     c_kb_reset_history();
 
     c_cursor_blink(1);
