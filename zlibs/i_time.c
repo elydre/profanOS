@@ -96,5 +96,6 @@ void time_jet_lag(i_time_t *time) {
 }
 
 void ms_sleep(uint32_t ms) {
+    if (ms <= 0) return;
     c_process_sleep(c_process_get_pid(), ms);
 }
