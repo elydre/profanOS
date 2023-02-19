@@ -1,6 +1,5 @@
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <driver/serial.h>
 #include <cpu/timer.h>
 #include <minilib.h>
 #include <system.h>
@@ -408,7 +407,6 @@ int process_handover(int pid) {
     process_disable_sheduler();
 
     if (plist[place].state == PROCESS_TSLPING) {
-        serial_kprintf("remove from tsleep list pid %d\n", pid);
         i_remove_from_tsleep_list(pid);
     }
 

@@ -28,7 +28,8 @@ uint32_t timer_get_ms() {
 
 int timer_init() {
     if (ticks > 1000) ticks = 0;
-    // Install the function we just wrote
+
+    // set the timer interrupt handler
     register_interrupt_handler(IRQ0, timer_callback);
 
     // Get the PIT value: hardware clock at 1193180 Hz

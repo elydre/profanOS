@@ -34,3 +34,4 @@ int init_rand();
 uint32_t rand();
 
 #endif
+

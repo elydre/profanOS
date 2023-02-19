@@ -268,3 +268,4 @@ uint32_t rand() {
     rand_val = rand_val * 1103515245 + 12345;
     return (uint32_t) rand_val;
 }
+

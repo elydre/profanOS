@@ -87,7 +87,7 @@ void *SYSCALL_ARRAY[] = {
     ramdisk_get_size,
     ramdisk_get_used,
 
-    // process.h
+    // process.h    TODO: edit for PROCv2
     process_create,
     process_sleep,
     process_wakeup,

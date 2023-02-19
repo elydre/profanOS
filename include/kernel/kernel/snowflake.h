@@ -14,8 +14,8 @@ typedef struct allocated_part_t {
     int next; // list index
 } allocated_part_t;
 
-#define PARTS_COUNT 50  // initial size
-#define GROW_SIZE   10  // increase size
+#define PARTS_COUNT 100  // initial size
+#define GROW_SIZE   20  // increase size
 
 /*********************
  *      states      *

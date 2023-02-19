@@ -121,9 +121,10 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
+
     else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
     else if (str_cmp(prefix, "k") == 0) process_kill(str2int(suffix));
+    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 
