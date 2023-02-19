@@ -9,7 +9,7 @@
 #include <stdarg.h>
 
 // input() setings
-#define SLEEP_T 30
+#define SLEEP_T 15
 #define FIRST_L 12
 
 // keyboard scancodes
@@ -190,10 +190,6 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     int col = c_gt_get_max_cols();
 
     clean_buffer(out_buffer, size);
-    
-    do {
-        sc = c_kb_get_scfh();
-    } while (sc == ENTER);
 
     c_kb_reset_history();
 
@@ -215,7 +211,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
         else key_ticks++;
         last_sc = sc;
 
-        if (key_ticks < FIRST_L && key_ticks) continue;
+        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) continue;
 
         if (sc == LSHIFT || sc == RSHIFT) {
             shift = 1;
