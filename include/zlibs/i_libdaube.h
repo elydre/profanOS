@@ -1,5 +1,5 @@
 #ifndef LIBDAUBE_ID
-#define LIBDAUBE_ID 1013
+#define LIBDAUBE_ID 1015
 
 #include <type.h>
 #include <stdarg.h>
