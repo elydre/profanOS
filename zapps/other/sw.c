@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
 
-    char path[] = "/zada/star_wars.txt";
+    char path[] = "/zada/starwars.txt";
 
     printf("allocating memory for the file...\n");
     uint8_t *data = c_fs_declare_read_array(path);
@@ -23,8 +23,7 @@ int main(int argc, char **argv) {
 
     c_clear_screen();
 
-    int line = 0, str_index = 0, j;
-
+    int line = 0, str_index = 0, j, nb_temps;
     char temps[5];
 
     for (int i = 0; c_kb_get_scancode() != 1; i++) {
@@ -36,10 +35,10 @@ int main(int argc, char **argv) {
         for (j = 0; str[j] > 40; j++) temps[j] = str[j];
         temps[j] = '\0';
         str[str_index] = '\0';
-        if (atoi(temps) < 0) break;
-        c_clear_screen(); // TODO: redraw only the changed characters
+        nb_temps = atoi(temps);
+        if (nb_temps < 0) break;
         c_ckprint_at(str, 0, 0, 0x0F);
-        ms_sleep(atoi(temps) * 100);
+        ms_sleep(nb_temps * 100);
         str_index = -1;
         str[0] = '\0';
     }

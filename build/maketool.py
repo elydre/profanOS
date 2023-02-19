@@ -9,8 +9,8 @@ SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "kpart", "kpart/gui"]
 INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"
-
-OUT_DIR = "out"
+BUILD_DIR = "build"
+OUT_DIR   = "out"
 
 HDD_MAP = {
     "bin": f"{OUT_DIR}/zapps/*",
@@ -21,10 +21,10 @@ HDD_MAP = {
     "tmp" : None
 }
 
-CC = "gcc"
+CC   = "gcc"
 CPPC = "g++"
 
-CFLAGS = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
+CFLAGS     = "-m32 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -I include/zlibs"
 
@@ -131,15 +131,19 @@ def elf_image():
     
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
-        print_and_exec(f"ld -m elf_i386 -T link.ld {in_files} -o profanOS.elf")
+        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/klink.ld {in_files} -o profanOS.elf")
 
 def build_app_lib():
+    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{BUILD_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
+        cprint(COLOR_INFO, "building zentry...")
+        print_and_exec(f"mkdir -p {OUT_DIR}/make")
+        print_and_exec(f"gcc -c {BUILD_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
+
     def build_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -e main -o {fname}.pe {fname}.o")
+        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/zlink.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
-        # print_and_exec(f"sed '$ s/\\x00*$//' {fname}.full > {fname}.bin")
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
 
@@ -185,33 +189,27 @@ def build_app_lib():
         Thread(target = build_file, args = (name, fname)).start()
     while total : pass # on attends que tout soit fini
 
-def make_help():
-    aide = (
-        ("make",        "build profanOS kernel (elf file)"),
-        ("make iso",    "build bootable iso with grub"),
-        ("make disk",   "build disk image with zapps"),
-        ("make clean",  "delete all files in out directory"),
-        ("make fullclean", "delete all build files"),
-        ("make run",    "run the profanOS.elf in qemu"),
-        ("make irun",   "run the profanOS.iso in qemu"),
-        ("make kirun",  "run the profanOS.iso with kvm"),
-    )
-    for command, description in aide:
-        cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
+def make_iso(force = False, diskiso = False):
+    elf_image()
+    if diskiso: gen_disk()
 
-def make_iso(force = False):
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
+
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
-    print_and_exec(f"cp boot/grub.cfg {OUT_DIR}/isodir/boot/grub/")
+    if diskiso:
+        print_and_exec(f"echo TITE | cat HDD.bin - > {OUT_DIR}/isodir/boot/HDD.bin")
+        print_and_exec(f"cp boot/diskiso.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
+    else:
+        print_and_exec(f"cp boot/classic.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
 def get_kernel_version(print_info = True):
     path = os.path.dirname(os.path.abspath(__file__))
 
-    with open(f"{path}/include/kernel/system.h", "r") as f:
+    with open(f"{path}/../include/kernel/system.h", "r") as f:
         for line in f:
             if "KERNEL_VERSION" not in line: continue
             info = line.split(" ")[-1][1:-2]
@@ -260,14 +258,17 @@ def gen_disk(force=False, with_src=False):
 
     if HBL_FILE: write_build_logs()
 
-    if not file_exists("makefsys.bin") or file1_newer("makefsys.c", "makefsys.bin"):
+    print_and_exec(f"cp {OUT_DIR}/make/zentry.o {OUT_DIR}/disk/sys/")
+
+    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{BUILD_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
-        print_and_exec("gcc -o makefsys.bin -Wall -Wextra makefsys.c")
+        print_and_exec(f"mkdir -p {OUT_DIR}/make")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {BUILD_DIR}/makefsys.c")
     
     cprint(COLOR_INFO, "building HDD.bin...")
-    print_and_exec(f"./makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
+    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
-def qemu_run(iso_run = False, kvm = False):
+def qemu_run(iso_run = True, kvm = False):
     if iso_run: make_iso()
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
@@ -275,16 +276,43 @@ def qemu_run(iso_run = False, kvm = False):
     if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
     else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
 
+def make_help():
+    aide = (
+        ("make [info]", "show this help message"),
+
+        ("make elf",        "build the kernel in elf format"),
+        ("make iso",        "build the iso image of profanOS"),
+        ("make miso",       "build the iso with 'No ATA' option"),
+
+        ("make disk",       "build classic disk image"),
+        ("make srcdisk",    "build disk image with source code"),
+
+        ("make clean",      "delete the out/ directory"),
+        ("make fullclean",  "delete all build files"),
+
+        ("make run",        "run the profanOS.iso in qemu"),
+        ("make erun",       "run the profanOS.elf in qemu"),
+        ("make krun",       "run the profanOS.iso with kvm"),
+    )
+
+    for command, description in aide:
+        cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
+    
+    cprint(COLOR_INFO, "\nYou can cross the command like:")
+    cprint(COLOR_INFO, "MAKE DISK RUN to force the disk generation and run it")
+    cprint(COLOR_INFO, "MAKE SRCDISK MISO RUN to run in qemu with all options")
+
+
 assos = {
-    "elf_image": elf_image,
+    "elf": elf_image,
     "help": make_help,
-    "disk": lambda: gen_disk(False),
-    "diskf": lambda: gen_disk(True),
-    "disk_src": lambda: gen_disk(True, True),
+    "disk": lambda: gen_disk(True),
+    "srcdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
-    "run": lambda: qemu_run(False),
-    "irun": lambda: qemu_run(True),
-    "kirun": lambda: qemu_run(True, True),
+    "miso": lambda: make_iso(True, True),
+    "run": lambda: qemu_run(True),
+    "erun": lambda: qemu_run(False),
+    "krun": lambda: qemu_run(True, True),
     "kver": get_kernel_version,
 }
 

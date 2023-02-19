@@ -1,6 +1,7 @@
 #include <kernel/snowflake.h>
 #include <kernel/ramdisk.h>
 #include <kernel/process.h>
+#include <driver/diskiso.h>
 #include <driver/serial.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -22,11 +23,11 @@ void kernel_switch_back() {
 
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        if (process_get_state(pid) < 2 && pid) {
-            process_sleep(pid);
-            sprintf("Process %d stopped\n", pid);
+        if (process_get_state(pid) < 3 && pid && pid != process_get_pid()) {
+            process_sleep(pid, 0);
         }
     }
+    process_handover(0);
 }
 
 int shell_command(char command[]);
@@ -72,18 +73,20 @@ void shell_help() {
 }
 
 void shell_addr() {
-    fsprint("vesa fb: %x\n", vesa_get_framebuffer());
-    fsprint("max add: %x (%fMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024.0 / 1024.0);
-    fsprint("ramdisk: %x (%fMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048.0);
-    fsprint("mm base: %x\n", MEM_BASE_ADDR);
-    fsprint("watfunc: %x\n", WATFUNC_ADDR);
+    kprintf("vesa fb: 0x%x\n", vesa_get_framebuffer());
+    kprintf("max add: 0x%x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
+    kprintf("ramdisk: 0x%x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
+    kprintf("diskiso: 0x%x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
+    kprintf("mm base: 0x%x\n", MEM_BASE_ADDR);
+    kprintf("watdily: 0x%x\n", WATDILY_ADDR);
+    kprintf("watfunc: 0x%x\n", WATFUNC_ADDR);
 }
 
 void shell_mem() {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
-        fsprint("part %d (s: %d, t: %d) -> %x, size: %d\n",
+        kprintf("part %d (s: %d, t: %d) -> 0x%x, size: %d\n",
             index,
             mem_parts[index].state,
             mem_parts[index].task_id,
@@ -118,6 +121,10 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+
+    else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
+    else if (str_cmp(prefix, "k") == 0) process_kill(str2int(suffix));
+    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 

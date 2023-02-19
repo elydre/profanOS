@@ -154,4 +154,14 @@ typedef struct sigevent_t {
     void  *sigev_notify_attributes;
 } sigevent_t;
 
+#define LDOUBLE long double
+#define LLONG long long
+
+typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+typedef int pid_t;
+typedef int off_t;
+typedef int ssize_t;
+typedef unsigned int useconds_t;
+
 #endif

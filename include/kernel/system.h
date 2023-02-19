@@ -6,20 +6,27 @@
 #define KERNEL_VERSION  "WINDAUBE1"
 
 #define PROCESS_MAX     20
-#define RAMDISK_SECTOR  2048
+#define KERNEL_PRIORITY 5       // default kernel process priority
+#define RAMDISK_SECTOR  4096
 #define RUN_DEFAULT     "/bin/windaube.bin"
 
 #define RATE_TIMER_TICK 1000     // cpu ticks per second
 #define RATE_SCHEDULER  100      // schedule per second
 #define RATE_COSMIC_RAY 0        // cosmic ray per second
 
-#define RUN_STACK_BIN   0x20000
-#define RUN_STACK_LIB   0x2000
-#define PROCESS_ESP     0x4000
+#define RUN_BIN_STACK_L 0x1000   // left stack size for binary
+#define RUN_BIN_STACK_R 0x4000   // right stack size for binary
+
+#define RUN_LIB_STACK_L 0x1000   // left stack size for library
+#define RUN_LIB_STACK_R 0x4000   // right stack size for library
+
+#define PROCESS_ESP     0x4000   // process stack size
 
 #define WATFUNC_ADDR    0x1ffff7
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
+
+#define GRUBMOD_START   0x125000 // grub module start
 
 
 // system.c
@@ -33,6 +40,7 @@ void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
 void sys_cosmic_ray();
+int sys_init_fpu();
 
 // kshell.c
 void start_kshell();

@@ -35,6 +35,7 @@ void *malloc(uint32_t size) {
 }
 
 void *realloc(void *mem, uint32_t new_size) {
+    if (mem == NULL) return malloc(new_size);
     uint32_t addr = (uint32_t) mem;
     uint32_t new_addr = c_mem_alloc(new_size, 1);
     if (new_addr == 0) return NULL;
@@ -224,7 +225,7 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    fsprint("getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("(OK) getenv not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -475,7 +476,7 @@ int rpmatch (const char *__response) {
 }
 
 char *secure_getenv(const char *name) {
-    fsprint("secure_getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    fsprint("(OK) secure_getenv not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 

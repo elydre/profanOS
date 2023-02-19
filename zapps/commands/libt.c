@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -169,6 +170,21 @@ int main(int argc, char **argv) {
     printf("Should be xxx\n");
 
     printf("Testing time.h: $1OK$7\n");
+
+    printf("Testing stdio.h\n");
+
+    char buffer [100];
+    int cx;
+    cx = snprintf ( buffer, 100, "The half of %d is %d", 60, 60/2 );
+    printf("snprintf: %s\n", buffer);
+    printf("Testing stdio.h: $1OK$7\n");
+
+    printf("Testing unistd.h\n");
+
+    printf("Should be write : ");
+    write(1, "write on stdout\n", 16);
+
+    printf("Testing unistd.h: $1OK$7\n");
 
     printf("End of the test for now !\n");
 

@@ -14,8 +14,8 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ## Setup
 
 > **Note** -
-> compilation is guaranteed only on ubuntu with gcc 11
-> it is also possible in windows with virtualization
+> compilation is guaranteed only on ubuntu 22.04 with 
+> gcc 11, it is also possible in windows with virtualization
 > solutions like wsl (on windows 11) or hyperV
 
 ### Install dependencies
@@ -29,13 +29,13 @@ sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 grub-common x
 
 ```bash
 # Simple compilation
-make
+make elf
 
 # Compile and run
 make run
 
 # Show all commands
-make info
+make
 ```
 
 You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
@@ -46,15 +46,15 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 ### shell.bin help
 
 ```
-cat     - print file *              mem     - show MLIST with colors
-cd      - change dir to *           mkdir   - create a new folder *
-clear   - clear the screen          mkfile  - create a new file *
+binc    - elf to binary converter   info    - show time, mem, disk
+cat     - show file content         ls      - list the current dir
+cd      - change dir                mkdir   - create a new dir
+clear   - clear the screen          mkfile  - create a new file
+cpu     - start cpu usage monitor   proc    - show process info
 echo    - print the arguments       reboot  - reboot the system
-exit    - exit of the shell app     sc      - show the scancodes
-go      - start * file as binary    sleep   - sleep for a given time
-help    - show this help            stop    - shutdown the system
-info    - show time, task & page    udisk   - show used disk space
-ls      - list the current dir
+exit    - exit of the shell app     rim     - start text editor
+go      - start * file as binary    stop    - shutdown the system
+help    - show this help            udisk   - show used disk space
 ```
 
 ## Known major bugs

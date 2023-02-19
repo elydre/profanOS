@@ -48,9 +48,7 @@ int main(int argc, char** argv) {
     shape_t shape = cube(120);
     int time;
 
-    c_kb_reset_history();
-
-    for (int i = 0; c_kb_get_scfh() != 1; i = (i + 1) % 360) {
+    for (int i = 0; c_kb_get_scancode() != 1; i = (i + 1) % 360) {
         shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape, &vgui);
         delete_shape(&new_shape);

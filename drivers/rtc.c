@@ -1,7 +1,7 @@
 #include <driver/rtc.h>
 #include <cpu/ports.h>
 
-int bcd;
+char bcd;
 
 unsigned char read_register(unsigned char reg) {
     port_byte_out(0x70, reg);
