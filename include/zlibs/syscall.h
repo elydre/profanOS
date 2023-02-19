@@ -152,7 +152,4 @@
 #define c_process_set_custom ((void (*)(int, void *)) hi_func_addr(55))
 #define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(56))
 
-#define c_rand ((int (*)(void)) hi_func_addr(0xDEADBEEF)) // TODO: in lib
-
-
 #endif

@@ -27,7 +27,6 @@ void kernel_switch_back() {
             process_sleep(pid, 0);
         }
     }
-    sprintf("hand over to process 0\n");
     process_handover(0);
 }
 
@@ -98,19 +97,6 @@ void shell_mem() {
     }
 }
 
-void process_func() {
-    for (int i = 0; i < 10; i++) {
-        sprintf("%d ms passed\n", timer_get_ms());
-        process_sleep(1, 100);
-    }
-    process_exit();
-}
-
-void test_process() {
-    int pid = process_create(process_func, 1, "test_process");
-    process_wakeup(pid);
-}
-
 int shell_command(char command[]) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     int part = 0;
@@ -135,7 +121,6 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "proc") == 0) test_process();
     else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
     else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
 

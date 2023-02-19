@@ -18,17 +18,12 @@ process_t **tsleep_list;
 uint32_t tsleep_interact;
 int tsleep_list_length;
 
-int *shdlr_queue;
-int shdlr_queue_index;
 int shdlr_queue_length;
-
-int pid_incrament;
-int pid_current;
-
-uint32_t last_switch;
-uint8_t need_clean;
+int *shdlr_queue;
 
 uint8_t sheduler_state = SHDLR_DISL;
+uint8_t need_clean;
+int pid_current;
 
 
 /***********************
@@ -75,6 +70,8 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
         ticks = timer_get_ticks();
     }
 
+    static uint32_t last_switch = 0;
+
     proc1->run_time += ticks - last_switch;
     last_switch = ticks;
 
@@ -91,6 +88,11 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
+void i_optimize_shdlr_queue() {
+    // TODO: separate all occurrences of each number as much as possible
+    return;
+}
+
 int i_add_to_shdlr_queue(int pid, int priority) {
     if (shdlr_queue_length + priority > PROCESS_MAX * 10) {
         sys_error("process queue is full");
@@ -102,6 +104,8 @@ int i_add_to_shdlr_queue(int pid, int priority) {
     }
 
     shdlr_queue_length += priority;
+
+    i_optimize_shdlr_queue();
 
     return 0;
 }
@@ -115,6 +119,8 @@ int i_remove_from_shdlr_queue(int pid) {
             i--;
         }
     }
+
+    i_optimize_shdlr_queue();
 
     return 0;
 }
@@ -143,7 +149,6 @@ void i_exit_sheduler() {
         sheduler_state = SHDLR_ENBL;
     } else {
         sys_error("sheduler is not running but sheduler is exiting");
-        sprintf("sheduler state: %d\n", sheduler_state);
     }
 }
 
@@ -158,7 +163,6 @@ void i_tsleep_awake(uint32_t ticks) {
                 i--;
             } else {
                 sys_error("process in tsleep list is not in tsleep state");
-                sprintf("process pid: %d\n", tsleep_list[i]->pid);
             }
         }
     }
@@ -226,11 +230,9 @@ int process_init() {
     kern_proc->priority = KERNEL_PRIORITY;
 
     tsleep_interact = 0;
-    pid_incrament = 0;
     pid_current = 0;
     need_clean = 0;
 
-    shdlr_queue_index = 0;
     shdlr_queue_length = 0;
 
     i_add_to_shdlr_queue(0, KERNEL_PRIORITY);
@@ -264,6 +266,7 @@ int process_create(void (*func)(), int priority, char *name) {
         return ERROR_CODE;
     }
 
+    static int pid_incrament = 0;
     pid_incrament++;
 
     process_t *kern_proc = &plist[0];
@@ -404,7 +407,7 @@ int process_handover(int pid) {
     process_disable_sheduler();
 
     if (plist[place].state == PROCESS_TSLPING) {
-        sprintf("remove from tsleep list pid %d\n", pid);
+        serial_kprintf("remove from tsleep list pid %d\n", pid);
         i_remove_from_tsleep_list(pid);
     }
 
@@ -482,13 +485,7 @@ void process_disable_sheduler() {
 }
 
 void schedule(uint32_t ticks) {
-    if (sheduler_state == SHDLR_DISL) {
-        serial_debug("SHEDULER", "sheduler is currently disabled");
-        return;
-    }
-
-    if (sheduler_state == SHDLR_RUNN) {
-        serial_debug("SHEDULER", "a other sheduler is currently running");
+    if (sheduler_state != SHDLR_ENBL) {
         return;
     }
 
@@ -507,6 +504,7 @@ void schedule(uint32_t ticks) {
         i_clean_killed();
     }
 
+    static int shdlr_queue_index = 0;
     shdlr_queue_index++;
 
     if (shdlr_queue_index >= shdlr_queue_length) {
