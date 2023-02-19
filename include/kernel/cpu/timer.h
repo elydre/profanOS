@@ -9,4 +9,3 @@ uint32_t timer_get_ms();
 uint32_t timer_get_ticks();
 
 #endif
-

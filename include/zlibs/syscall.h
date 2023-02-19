@@ -153,4 +153,3 @@
 #define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(56))
 
 #endif
-
