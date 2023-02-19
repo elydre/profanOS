@@ -86,6 +86,7 @@ int str_cmp(char s1[], char s2[]) {
 }
 
 int str_ncmp(char s1[], char s2[], int n) {
+    // TODO: recode this
     int i;
     for (i = 0; s1[i] == s2[i]; i++) {
         if (i == n || s1[i] == '\0') return 0;
@@ -251,6 +252,15 @@ void status_print(int (*func)(), char *verb, char *noun) {
     }
 
     set_cursor_offset(new_cursor);
+}
+
+// time
+
+void ms_sleep(uint32_t ms) {
+    uint32_t start = timer_get_ms();
+    while (timer_get_ms() < start + ms) {
+        asm volatile("hlt");
+    }
 }
 
 // random

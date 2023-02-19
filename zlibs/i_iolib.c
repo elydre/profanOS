@@ -9,8 +9,8 @@
 #include <stdarg.h>
 
 // input() setings
-#define SLEEP_T 15
-#define FIRST_L 12
+#define FIRST_L 40
+#define BONDE_L 4
 
 // keyboard scancodes
 #define SC_MAX 57
@@ -24,7 +24,6 @@
 #define BACKSPACE 14
 #define DEL 83
 #define ENTER 28
-#define RESEND 224
 
 // private functions
 
@@ -178,11 +177,11 @@ void rainbow_print(char message[]) {
 
 void input_wh(char out_buffer[], int size, char color, char ** history, int history_size) {
     int old_cursor = c_get_cursor_offset();
-    int sc, last_sc, last_sc_sgt = 0;
     int buffer_actual_size = 0;
     int history_index = 0;
     int buffer_index = 0;
     int key_ticks = 0;
+    int sc, last_sc;
     int shift = 0;
     int new_pos;
 
@@ -191,27 +190,23 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
     clean_buffer(out_buffer, size);
 
-    c_kb_reset_history();
+    do {
+        sc = c_kb_get_scfh();
+    } while (sc == ENTER);
 
+    c_kb_reset_history();
     c_cursor_blink(1);
 
     while (sc != ENTER) {
-        ms_sleep(SLEEP_T);
+        ms_sleep(2);
 
+        last_sc = sc;
         sc = c_kb_get_scfh();
-
-        if (sc == RESEND || sc == 0) {
-            sc = last_sc_sgt;
-        } else {
-            last_sc_sgt = sc;
-        }
-
-        if (!sc) continue;
+        
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
-        last_sc = sc;
 
-        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) continue;
+        if ((key_ticks > 2 && key_ticks < FIRST_L) || key_ticks % BONDE_L) continue;
 
         if (sc == LSHIFT || sc == RSHIFT) {
             shift = 1;
@@ -297,6 +292,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
             buffer_actual_size++;
             buffer_index++;
         }
+
 
         c_set_cursor_offset(old_cursor);
         c_ckprint(out_buffer, color);

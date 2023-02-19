@@ -13,11 +13,11 @@ ___________________________________
 */
 
 #include <syscall.h>
-#include <i_iolib.h>
-#include <i_time.h>
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <i_time.h>
+#include <stdlib.h>
+#include <i_iolib.h>
 
 char get_piont(int num);
 int get_user_choix(int ** grille);
@@ -96,7 +96,7 @@ int IA_play(int ** grille) {
         return val;
 
     while (1) {
-        val = rand() % 8;
+        val = c_rand() % 8;
         if (val < 8 && val >= 0 && grille[val][0] == 0) {
             return val;
         }

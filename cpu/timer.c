@@ -4,32 +4,36 @@
 #include <cpu/isr.h>
 #include <system.h>
 
-uint32_t ticks = 0;
+
+#define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
+
+uint32_t tick = 0;
 
 static void timer_callback(registers_t *regs) {
     (void) regs;
 
-    ticks++;
+    tick++;
 
-    schedule(ticks);
+    if (tick % SCHEDULER_EVRY == 0) {
+        schedule();
+    }
 
 #if RATE_COSMIC_RAY != 0
     sys_cosmic_ray();
 #endif
 }
 
-uint32_t timer_get_ticks() {
-    return ticks;
+uint32_t timer_get_tick() {
+    return tick;
 }
 
 uint32_t timer_get_ms() {
-    return ticks * 1000 / RATE_TIMER_TICK;
+    return tick * 1000 / RATE_TIMER_TICK;
 }
 
 int timer_init() {
-    if (ticks > 1000) ticks = 0;
-
-    // set the timer interrupt handler
+    if (tick > 1000) tick = 0;
+    // Install the function we just wrote
     register_interrupt_handler(IRQ0, timer_callback);
 
     // Get the PIT value: hardware clock at 1193180 Hz

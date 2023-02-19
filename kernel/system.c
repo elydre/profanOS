@@ -103,7 +103,7 @@ void sys_shutdown() {
 }
 
 void sys_cosmic_ray() {
-    uint32_t timer_tick = timer_get_ticks();
+    uint32_t timer_tick = timer_get_tick();
     if (timer_tick == 1) {
         sys_warning("cosmic ray simulation enabled");
     }

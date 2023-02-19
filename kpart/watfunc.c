@@ -87,20 +87,19 @@ void *SYSCALL_ARRAY[] = {
     ramdisk_get_size,
     ramdisk_get_used,
 
-    // process.h    TODO: edit for PROCv2
+    // process.h
     process_create,
     process_sleep,
     process_wakeup,
     process_kill,
     process_exit,
-    process_get_pid,
+    process_get_running_pid,
     process_get_ppid,
     process_generate_pid_list,
     process_get_name,
     process_get_state,
     process_get_custom,
     process_set_custom,
-    process_get_run_time,
 };
 
 int wf_get_func_addr(int func_id) {

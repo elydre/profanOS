@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     while (1) {
         if (!(iter % 20)) {
             ox_s[nex_o] = 80;
-            oy_s[nex_o] = (rand() + oy_s[nex_o]) % Y_MAX;
+            oy_s[nex_o] = (c_rand() + oy_s[nex_o]) % Y_MAX;
             nex_o++;
             if (nex_o == O_MAX) nex_o = 0;
         }

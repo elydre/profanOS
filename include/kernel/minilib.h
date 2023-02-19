@@ -5,7 +5,7 @@
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 #define kprintf(...) func_printf(0, __VA_ARGS__)
-#define serial_kprintf(...) func_printf(1, __VA_ARGS__)
+#define sprintf(...) func_printf(1, __VA_ARGS__)
 
 void str_cat(char s1[], char s2[]);
 int str_len(char s[]);
@@ -29,6 +29,7 @@ void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
 void status_print(int (*func)(), char *verb, char *noun);
+void ms_sleep(uint32_t ms);
 
 int init_rand();
 uint32_t rand();

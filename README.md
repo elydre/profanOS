@@ -46,15 +46,15 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 ### shell.bin help
 
 ```
-binc    - elf to binary converter   info    - show time, mem, disk
-cat     - show file content         ls      - list the current dir
-cd      - change dir                mkdir   - create a new dir
-clear   - clear the screen          mkfile  - create a new file
-cpu     - start cpu usage monitor   proc    - show process info
+binc    - elf -> binary converter   ls      - list the current dir
+cat     - print file *              mem     - show MLIST with colors
+cd      - change dir to *           mkdir   - create a new folder *
+clear   - clear the screen          mkfile  - create a new file *
 echo    - print the arguments       reboot  - reboot the system
-exit    - exit of the shell app     rim     - start text editor
-go      - start * file as binary    stop    - shutdown the system
-help    - show this help            udisk   - show used disk space
+exit    - exit of the shell app     sc      - show the scancodes
+go      - start * file as binary    sleep   - sleep for a given time
+help    - show this help            stop    - shutdown the system
+info    - show time, task & page    udisk   - show used disk space
 ```
 
 ## Known major bugs
