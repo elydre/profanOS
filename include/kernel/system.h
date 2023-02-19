@@ -3,9 +3,10 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.10.8b"
+#define KERNEL_VERSION  "0.11.1"
 
 #define PROCESS_MAX     20
+#define KERNEL_PRIORITY 5       // default kernel process priority
 #define RAMDISK_SECTOR  4096
 #define RUN_DEFAULT     "/bin/shell.bin"
 

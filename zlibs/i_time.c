@@ -96,6 +96,5 @@ void time_jet_lag(i_time_t *time) {
 }
 
 void ms_sleep(uint32_t ms) {
-    uint32_t start_tick = c_timer_get_ms();
-    while (c_timer_get_ms() < start_tick + ms);
+    c_process_sleep(c_process_get_pid(), ms);
 }

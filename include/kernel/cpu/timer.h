@@ -6,6 +6,6 @@
 int timer_init();
 
 uint32_t timer_get_ms();
-uint32_t timer_get_tick();
+uint32_t timer_get_ticks();
 
 #endif

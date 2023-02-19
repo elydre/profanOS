@@ -101,6 +101,11 @@ void dynamize_mem() {
         if (sum > 4) return;
     }
 
+    // the memory dynamization is a unsafe
+    // operation we need to disable the sheduler
+
+    process_disable_sheduler();
+
     uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 3);
     if (new_add == 0) {
         sys_fatal("memory dynamizing failed");
@@ -111,6 +116,8 @@ void dynamize_mem() {
     MEM_PARTS = (allocated_part_t *) new_add;
     part_size += GROW_SIZE;
     mem_free_addr(old_add);
+
+    process_enable_sheduler();
 
     serial_debug("SNOWFLAKE", "memory successfully dynamized");
 }
@@ -154,7 +161,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
     MEM_PARTS[i].addr = last_addr;
     MEM_PARTS[i].size = size;
-    MEM_PARTS[i].task_id = (state == 1) ? process_get_running_pid(): 0;
+    MEM_PARTS[i].task_id = (state == 1) ? process_get_pid(): 0;
     MEM_PARTS[i].state = state;
 
     if (exit_mode) {

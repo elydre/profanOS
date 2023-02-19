@@ -23,11 +23,11 @@ void kernel_switch_back() {
 
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        if (process_get_state(pid) < 2 && pid) {
-            process_sleep(pid);
-            sprintf("Process %d stopped\n", pid);
+        if (process_get_state(pid) < 3 && pid && pid != process_get_pid()) {
+            process_sleep(pid, 0);
         }
     }
+    process_handover(0);
 }
 
 int shell_command(char command[]);
@@ -121,6 +121,9 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+
+    else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
+    else if (str_cmp(prefix, "k") == 0) process_kill(str2int(suffix));
     else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
 
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
