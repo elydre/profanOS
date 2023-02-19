@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
     if (!(c_fs_does_path_exists(ls_path) && c_fs_get_sector_type(c_fs_path_to_id(ls_path)) == 3)) {
         printf("$3%s$B is not a directory\n", ls_path);
     } else {
+        int size;
         int elm_count = c_fs_get_dir_size(ls_path);
         uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
         int *out_types = malloc(elm_count * sizeof(int));
@@ -38,7 +39,10 @@ int main(int argc, char **argv) {
                 printf("$1%s", tmp_name);
                 for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
                 assemble_path(ls_path, tmp_name, tmp_path);
-                printf("%d oct\n", c_fs_get_file_size(tmp_path));
+                size = c_fs_get_file_size(tmp_path);
+                if (size < 1024) printf("%d oct\n", size);
+                else if (size < 1024 * 1024) printf("%d.%d Ko\n", size / 1024, (size % 1024) / 10);
+                else printf("%d.%d Mo\n", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
             }
         }
         if (elm_count) {
