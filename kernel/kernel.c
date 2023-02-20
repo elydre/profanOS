@@ -48,7 +48,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(init_watfunc, "Initing", "watfunc");
     status_print(dily_init,    "Loading", "dynamic library");
 
-    kprintf("successfully booted in %d ms", timer_get_ms() * 1000 / RATE_TIMER_TICK);
+    kprintf("successfully booted in %d ms", timer_get_ms());
 
     rainbow_print("\n\nWelcome to profanOS!\n");
     fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);

@@ -75,7 +75,9 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
     if (c == '\n') {
         // fill the rest of the line with spaces
         for (int i = cursor_x; i < MAX_COLS; i++) {
-            tef_set_char(i, cursor_y, ' ', color, bg_color);
+            if (screen_buffer[cursor_y * MAX_COLS + i].content == '\0') {
+                tef_set_char(i, cursor_y, ' ', color, bg_color);
+            }
         }
         cursor_x = 0;
         cursor_y++;
