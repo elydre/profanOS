@@ -62,9 +62,6 @@ help    - show this help            udisk   - show used disk space
 profanOS works on pc with legacy bios but not with uefi. However profanOS
 can work on recent pc and activating the bios compatibility.
 
-> **Note** -
-> on real hardware it is better to use profan in No ATA mode
-
 To install profanOS on a USB key or an internal disk, it is possible to use
 the installation script `tools/install.sh` or any other image flasher.
 
