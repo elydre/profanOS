@@ -9,7 +9,7 @@ SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "kpart", "kpart/gui"]
 INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"
-BUILD_DIR = "build"
+TOOLS_DIR = "tools"
 OUT_DIR   = "out"
 
 HDD_MAP = {
@@ -150,19 +150,19 @@ def elf_image():
     
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
-        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/klink.ld {in_files} -o profanOS.elf")
+        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/klink.ld {in_files} -o profanOS.elf")
 
 
 def build_app_lib():
-    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{BUILD_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
+    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{TOOLS_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
         cprint(COLOR_INFO, "building zentry...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -c {BUILD_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
+        print_and_exec(f"gcc -c {TOOLS_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
 
     def build_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -T {BUILD_DIR}/zlink.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/zlink.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
@@ -300,10 +300,10 @@ def gen_disk(force=False, with_src=False):
 
     print_and_exec(f"cp {OUT_DIR}/make/zentry.o {OUT_DIR}/disk/sys/")
 
-    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{BUILD_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
+    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {BUILD_DIR}/makefsys.c")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
     
     cprint(COLOR_INFO, "building HDD.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")

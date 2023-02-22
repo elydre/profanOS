@@ -1,6 +1,6 @@
 .PHONY: info elf iso miso disk srcdisk run erun krun clean fullclean
 
-PY_BUILD = build/maketool.py
+PY_BUILD = tools/maketool.py
 
 # list off available commands
 info:
