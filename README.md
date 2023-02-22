@@ -60,7 +60,7 @@ help    - show this help            udisk   - show used disk space
 ### Real-Hardware
 
 profanOS works on pc with legacy bios but not with uefi. However profanOS
-can work on recent pc and activating the bios compatibility.
+can work on recent pc by activating bios compatibility.
 
 To install profanOS on a USB key or an internal disk, it is possible to use
 the installation script `tools/install.sh` or any other image flasher.
