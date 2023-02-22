@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     uint32_t addr, value;
 
     while (1) {
-        addr = local_rand() << 12 | local_rand() & 0xFFF;
+        addr = (local_rand() << 12) | (local_rand() & 0xFFF);
         value = local_rand();
         *(uint32_t *) addr = value;
         ms_sleep(1);
