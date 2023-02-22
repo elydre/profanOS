@@ -36,9 +36,13 @@ void main_process() {
     desktop->windows[1] = window_create(desktop, "test2", 50, 150, 200, 200, 2);
     desktop->windows[2] = window_create(desktop, "test3", 20, 20, 300, 300, 0);
     desktop_refresh(desktop);
-    int i = 0;
-    int j = 0;
+
+    int i = 100;
+    int j = 100;
     while (1) {
-        i++;j++;
+        window_move(desktop->windows[0], i, j);
+        i += 2;
+        j += 1;
+        desktop_refresh(desktop);
     }
 }

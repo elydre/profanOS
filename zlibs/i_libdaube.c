@@ -20,6 +20,8 @@ void init_func() {
 
 void window_draw(vgui_t *vgui, window_t *window);
 void desktop_draw(desktop_t *desktop);
+int *sort_index_by_priority(window_t **windows, int nb_windows);
+void serial_print_number(char *str, int number);
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite) {
     window_t *window = malloc(sizeof(window_t));
@@ -49,9 +51,6 @@ void window_draw(vgui_t *vgui, window_t *window) {
     vgui_print(vgui, window->x + 5, window->y + 5, window->name, 0xffffff);
 }
 
-int *sort_index_by_priority(window_t **windows, int nb_windows);
-void serial_print_number(char *str, int number);
-
 void desktop_refresh(desktop_t *desktop) {
     // we draw the windows, by order of priority
     int total = desktop->nb_windows;
@@ -70,6 +69,12 @@ void desktop_refresh(desktop_t *desktop) {
     vgui_render(desktop->vgui, 0);
 
     free(sorted);
+}
+
+void window_move(window_t *window, int x, int y) {
+    window->x = x;
+    window->y = y;
+    window->has_moved = 1;
 }
 
 int *sort_index_by_priority(window_t **windows, int nb_windows) {
@@ -100,4 +105,5 @@ void serial_print_number(char *str, int number) {
     c_serial_print(SERIAL_PORT_A, str);
     c_serial_print(SERIAL_PORT_A, number_str);
     c_serial_print(SERIAL_PORT_A, "\n");
+    free(number_str);
 }

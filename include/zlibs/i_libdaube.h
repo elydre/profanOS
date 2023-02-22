@@ -35,6 +35,7 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
 #define window_draw ((void (*)(vgui_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 4))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
+#define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 6))
 
 #endif
 
