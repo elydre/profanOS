@@ -102,20 +102,6 @@ void sys_shutdown() {
     sys_stop();                     // halt if above didn't work
 }
 
-void sys_cosmic_ray() {
-    uint32_t timer_tick = timer_get_ticks();
-    if (timer_tick == 1) {
-        sys_warning("cosmic ray simulation enabled");
-    }
-
-    if (timer_tick % (RATE_TIMER_TICK / (RATE_COSMIC_RAY - 1)) == 0) {
-        uint32_t addr = rand() % 0xFFFFFFF;
-        uint32_t value = rand() & 0x7FFFFFFF;
-
-        *((uint32_t *) addr) = value;
-    }
-}
-
 void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(eax));
 }

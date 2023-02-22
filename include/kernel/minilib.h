@@ -30,7 +30,4 @@ void *calloc(uint32_t size);
 
 void status_print(int (*func)(), char *verb, char *noun);
 
-int init_rand();
-uint32_t rand();
-
 #endif

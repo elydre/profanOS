@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.11.1b"
+#define KERNEL_VERSION  "0.11.2"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5       // default kernel process priority
@@ -12,7 +12,6 @@
 
 #define RATE_TIMER_TICK 1000     // cpu ticks per second
 #define RATE_SCHEDULER  100      // schedule per second
-#define RATE_COSMIC_RAY 0        // cosmic ray per second
 
 #define RUN_BIN_STACK_L 0x1000   // left stack size for binary
 #define RUN_BIN_STACK_R 0x4000   // right stack size for binary
@@ -39,7 +38,6 @@ int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
-void sys_cosmic_ray();
 int sys_init_fpu();
 
 // kshell.c

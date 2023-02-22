@@ -43,7 +43,6 @@ void kernel_main(void *mboot_ptr) {
     status_print(sys_init_fpu, "Initing", "floating point unit");
     status_print(process_init, "Starting", "process manager");
     status_print(ramdisk_init, "Setuping", "ramdisk");
-    status_print(init_rand,    "Initing", "minilib random generator");
     status_print(filesys_init, "Loading", "filesystem v2");
     status_print(init_watfunc, "Initing", "watfunc");
     status_print(dily_init,    "Loading", "dynamic library");

@@ -7,22 +7,24 @@
 #define LSIZE 1024
 #define PSIZE 1024
 
-/* https://github.com/elydre/ivra *
-    end     0
-    while   1 r
-    set     2 r v
-    cp      3 r r
-    show    4 r
-    add     5 r r o
-    sub     6 r r o
-    mul     7 r r o
-    div     8 r r o
-    egal    9 r r o
-    sup     10 r r o
-    or      11 r r o
-    not     12 r
-    mod     13 r r o
-*/
+/*************************************
+ *  https://github.com/elydre/ivra  *
+ * portable lite edition of ivra v0 *
+ *    end     0                     *
+ *    while   1 r                   *
+ *    set     2 r v                 *
+ *    cp      3 r r                 *
+ *    show    4 r                   *
+ *    add     5 r r o               *
+ *    sub     6 r r o               *
+ *    mul     7 r r o               *
+ *    div     8 r r o               *
+ *    egal    9 r r o               *
+ *    sup     10 r r o              *
+ *    or      11 r r o              *
+ *    not     12 r                  *
+ *    mod     13 r r o              *
+*************************************/
 
 int arg_cont[] = {
     0, 1, 2, 2, 1, 3, 3, 3, 3, 3, 3, 3, 1, 3
