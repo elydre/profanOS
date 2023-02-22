@@ -8,11 +8,14 @@
 #include <stdio.h>
 #include <i_vgui.h>
 
+#define MAX_WINDOWS 10
+
 desktop_t *desktop;
 
 void main_process();
 
 int main(int argc, char **argv) {
+    c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
     /*
     int pid1 = c_process_create(main_process, "windaube_main");
     c_process_wakeup(pid1);
@@ -26,17 +29,16 @@ void main_process() {
     vgui_clear(&vgui, 0x000000);
     vgui_render(&vgui, 0);
     desktop = malloc(sizeof(desktop_t));
-    desktop->nb_windows = 3;
+    desktop->nb_windows = 0;
     desktop->vgui = &vgui;
-    desktop->windows = malloc(sizeof(window_t *) * desktop->nb_windows);
-    desktop->windows[0] = window_create("test", 100, 100, 0, 0, 0);
-    desktop->windows[1] = window_create("test2", 100, 100, 0, 0, 2);
-    desktop->windows[2] = window_create("test2", 100, 100, 0, 0, 1);
+    desktop->windows = malloc(sizeof(window_t *) * MAX_WINDOWS);
+    desktop->windows[0] = window_create(desktop, "test1", 100, 100, 100, 100, 1);
+    desktop->windows[1] = window_create(desktop, "test2", 50, 150, 200, 200, 2);
+    desktop->windows[2] = window_create(desktop, "test3", 20, 20, 300, 300, 0);
+    desktop_refresh(desktop);
     int i = 0;
     int j = 0;
     while (1) {
-        desktop_draw(desktop);
-        window_move(desktop, 0, i, j);
         i++;j++;
     }
 }
