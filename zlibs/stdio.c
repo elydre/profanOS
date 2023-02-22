@@ -740,7 +740,6 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format, va_list args
             case DP_S_CONV:
                     switch (ch) {
                     case 'd':
-                        [[fallthrough]];
                     case 'i':
                             if (cflags == DP_C_SHORT) 
                                     value = va_arg (args, int);
@@ -778,7 +777,7 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format, va_list args
                             break;
                     case 'X':
                             flags |= DP_F_UP;
-                            [[fallthrough]];
+
                     case 'x':
                             flags |= DP_F_UNSIGNED;
                             if (cflags == DP_C_SHORT)
@@ -801,7 +800,7 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format, va_list args
                             break;
                     case 'E':
                             flags |= DP_F_UP;
-                            [[fallthrough]];
+
                     case 'e':
                             if (cflags == DP_C_LDOUBLE)
                                     fvalue = va_arg (args, LDOUBLE);
@@ -810,7 +809,7 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format, va_list args
                             break;
                     case 'G':
                             flags |= DP_F_UP;
-                            [[fallthrough]];
+
                     case 'g':
                             if (cflags == DP_C_LDOUBLE)
                                     fvalue = va_arg (args, LDOUBLE);
