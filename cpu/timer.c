@@ -12,10 +12,6 @@ static void timer_callback(registers_t *regs) {
     ticks++;
 
     schedule(ticks);
-
-#if RATE_COSMIC_RAY != 0
-    sys_cosmic_ray();
-#endif
 }
 
 uint32_t timer_get_ticks() {

@@ -6,19 +6,27 @@
 
 
 int main(int argc, char** argv) {
-    char *current_dir = malloc(256);
-    char *suffix = malloc(256);
-    strcpy(current_dir, argv[1]);
-    strcpy(suffix, argv[2]);
-    char *file = malloc(strlen(suffix)+strlen(current_dir)+2);
-    assemble_path(current_dir, suffix, file);
+    if (argc < 3) {
+        fsprint("$BUsage: wif <file>\n");
+        return 0;
+    }
+
+    char *file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
+    assemble_path(argv[1], argv[2], file);
+
     if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
-        char char_content[70];
-        fsprint("-> "); input(char_content, 70, c_blue); fsprint("\n");
+        char *char_content = malloc(256);
+
+        c_kprint("-> ");
+        input(char_content, 256, c_blue);
+        c_kprint("\n");
+    
         c_fs_write_in_file(file, (uint8_t *) char_content, strlen(char_content));
-    } else fsprint("$3%s$B file not found\n", file);
+        free(char_content);
+    } else {
+        fsprint("$3%s$B file not found\n", file);
+    }
+
     free(file);
-    free(current_dir);
-    free(suffix);
     return 0;
 }

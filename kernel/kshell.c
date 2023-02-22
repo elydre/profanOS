@@ -19,15 +19,21 @@ void kernel_switch_back() {
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
 
-    kprint("\n");
-
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (process_get_state(pid) < 3 && pid && pid != process_get_pid()) {
             process_sleep(pid, 0);
         }
     }
-    process_handover(0);
+
+    if (process_get_state(0) > 2) {
+        // if the kernel is sleeping
+        kprint("\n");
+        process_handover(0);
+    } else if (process_get_pid() > 2) {
+        kprint("\n");
+        process_sleep(process_get_pid(), 0);
+    }
 }
 
 int shell_command(char command[]);

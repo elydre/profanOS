@@ -252,19 +252,3 @@ void status_print(int (*func)(), char *verb, char *noun) {
 
     set_cursor_offset(new_cursor);
 }
-
-// random
-
-uint32_t rand_val = 0;
-
-int init_rand() {
-    i_time_t time;
-    time_get(&time);
-    rand_val = time.seconds + time.minutes * 60 + time.hours * 60 * 60;
-    return 0;
-}
-
-uint32_t rand() {
-    rand_val = rand_val * 1103515245 + 12345;
-    return (uint32_t) rand_val;
-}

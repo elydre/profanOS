@@ -19,7 +19,7 @@ jobs:
 
     - name: build img
       run: |
-        VERSION=$(python3 build/maketool.py kver)
+        VERSION=$(python3 tools/maketool.py kver)
         echo "PROFAN_HDD=disk-$VERSION.bin" >> $GITHUB_ENV
         echo "PROFAN_ISO=profanOS-$VERSION.iso" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
