@@ -57,7 +57,23 @@ go      - start * file as binary    stop    - shutdown the system
 help    - show this help            udisk   - show used disk space
 ```
 
-## Known major bugs
+### Real-Hardware
+
+profanOS works on pc with legacy bios but not with uefi. However profanOS
+can work on recent pc and activating the bios compatibility.
+
+> **Note** -
+> on real hardware it is better to use profan in No ATA mode
+
+To install profanOS on a USB key or an internal disk, it is possible to use
+the installation script `tools/install.sh` or any other image flasher.
+
+> **Warning** -
+> installing an OS on a real machine can be risky and
+> must be done with knowledge of the possible risks
+
+
+### Known major bugs
 
 | bug name  | since | description | cause | fixed ? |
 |-----------|-------|-------------|-------|---------|
