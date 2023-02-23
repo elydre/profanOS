@@ -1,12 +1,12 @@
 #include <i_libdaube.h>
 #include <i_string.h>
-#include <i_iolib.h>
-#include <syscall.h>
-#include <string.h>
-#include <stdlib.h>
-#include <profan.h>
-#include <stdio.h>
+#include <i_mouse.h>
+#include <i_time.h>
 #include <i_vgui.h>
+
+#include <syscall.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #define MAX_WINDOWS 10
 
@@ -32,17 +32,18 @@ void main_process() {
     desktop->nb_windows = 0;
     desktop->vgui = &vgui;
     desktop->windows = malloc(sizeof(window_t *) * MAX_WINDOWS);
-    desktop->windows[0] = window_create(desktop, "test1", 100, 100, 100, 100, 1);
-    desktop->windows[1] = window_create(desktop, "test2", 50, 150, 200, 200, 2);
-    desktop->windows[2] = window_create(desktop, "test3", 20, 20, 300, 300, 0);
+    desktop->windows[0] = window_create(desktop, "classic 1", 100, 100, 100, 100, 1);
+    desktop->windows[1] = window_create(desktop, "classic 2", 50, 150, 200, 200, 2);
+    desktop->windows[2] = window_create(desktop, "classic 3", 20, 20, 300, 300, 0);
+    desktop->windows[3] = window_create(desktop, "lite 1", 200, 200, 100, 100, 3);
+    desktop->windows[3]->is_lite = 1;
     desktop_refresh(desktop);
 
     int i = 100;
     int j = 100;
     while (1) {
-        window_move(desktop->windows[0], i, j);
-        i += 2;
-        j += 1;
-        desktop_refresh(desktop);
+        // window_move(desktop->windows[0], mouse_get_x(), mouse_get_y());
+        // desktop_refresh(desktop);
+        ms_sleep(100);
     }
 }

@@ -14,6 +14,7 @@ typedef struct window_t {
     uint32_t *buffer;
     int priorite;
     int has_moved;
+    int is_lite;    // no border
 } window_t;
 
 typedef struct desktop_t {
