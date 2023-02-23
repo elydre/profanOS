@@ -24,10 +24,19 @@ typedef struct window_t {
     int is_lite;    // no border
 } window_t;
 
+typedef struct mouse_t {
+    int x;
+    int y;
+    int size_x;
+    int size_y;
+    uint32_t *buffer;
+} mouse_t;
+
 typedef struct desktop_t {
     window_t **windows;
     int nb_windows;
     vgui_t *vgui;
+    mouse_t *mouse;
 } desktop_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
@@ -48,6 +57,8 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #define window_fill ((void (*)(window_t *, uint32_t)) get_func_addr(LIBDAUBE_ID, 8))
 #define window_refresh ((void (*)(desktop_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 9))
 #define window_set_pixel ((void (*)(window_t *, int, int, uint32_t)) get_func_addr(LIBDAUBE_ID, 10))
+#define mouse_create ((mouse_t *(*)()) get_func_addr(LIBDAUBE_ID, 11))
+#define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 12))
 
 #endif
 

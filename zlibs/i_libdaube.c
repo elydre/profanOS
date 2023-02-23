@@ -12,6 +12,30 @@
 #define COLOR_GRADN1 0x240865
 #define COLOR_GRADN2 0x0c0f1d
 
+uint8_t mouse_img[21*12] = {
+    1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0,
+    1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0,
+    1, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0,
+    1, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0,
+    1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0,
+    1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0,
+    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0,
+    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+    1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1,
+    1, 2, 2, 2, 1, 2, 2, 1, 0, 0, 0, 0,
+    1, 2, 2, 1, 1, 2, 2, 1, 0, 0, 0, 0,
+    1, 2, 1, 0, 0, 1, 2, 2, 1, 0, 0, 0,
+    1, 1, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+};
+
 void init_func();
 
 int main() {
@@ -23,11 +47,13 @@ void init_func() {
     printf("Init of the libdaube library\n");
 }
 
-void window_draw_box(vgui_t *vgui, window_t *window);
+void window_draw_box(desktop_t *desktop, window_t *window);
 void desktop_draw(desktop_t *desktop);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
+void window_refresh(desktop_t *desktop, window_t *window);
 void serial_print_ss(char *str, char *name);
 void draw_rect_gradian(vgui_t *vgui, int x, int y, int width, int height, int color1, int color2);
+void window_set_pixels_visible(desktop_t *desktop, window_t *window);
 void window_update_visible(desktop_t *desktop, window_t *window);
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite, int is_lite) {
@@ -63,7 +89,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     return window;
 }
 
-void window_draw_box(vgui_t *vgui, window_t *window) {
+void window_draw_box(desktop_t *desktop, window_t *window) {
+    vgui_t *vgui = desktop->vgui;
     // we draw the border of the window
     vgui_draw_line(vgui, window->out_x, window->out_y, window->out_x + window->out_width - 1, window->out_y, COLOR_MASTER);
     vgui_draw_line(vgui, window->out_x, window->out_y, window->out_x, window->out_y + window->out_height - 1, COLOR_MASTER);
@@ -71,7 +98,7 @@ void window_draw_box(vgui_t *vgui, window_t *window) {
     vgui_draw_line(vgui, window->out_x, window->out_y + window->out_height - 1, window->out_x + window->out_width - 1, window->out_y + window->out_height - 1, COLOR_MASTER);
 
     // we add the inside
-    vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, window->out_width - 2, window->out_height - 2, 0);
+    // vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, window->out_width - 2, window->out_height - 2, 0);
 
     if (!window->is_lite) {
         // we add the inside lines
@@ -99,9 +126,11 @@ void desktop_refresh(desktop_t *desktop) {
 
     for (int i = 0; i < total; i++) {
         serial_print_ss("drawing window box for", desktop->windows[sorted[i]]->name);
-        window_draw_box(desktop->vgui, desktop->windows[sorted[i]]);
+        window_draw_box(desktop, desktop->windows[sorted[i]]);
         serial_print_ss("updating visible of window", desktop->windows[sorted[i]]->name);
         window_update_visible(desktop, desktop->windows[sorted[i]]);
+        serial_print_ss("drawing window content for", desktop->windows[sorted[i]]->name);
+        window_set_pixels_visible(desktop, desktop->windows[sorted[i]]);
     }
 
     c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
@@ -111,9 +140,16 @@ void desktop_refresh(desktop_t *desktop) {
 }
 
 void window_move(window_t *window, int x, int y) {
-    // TODO in_x and in_y
-    window->out_x = x;
-    window->out_y = y;
+    // no verife
+    if (window->is_lite) {
+        window->out_y = y - 1;
+        window->out_x = x - 1;
+    } else {
+        window->out_y = y - 21;
+        window->out_x = x - 6;
+    }
+    window->in_x = x;
+    window->in_y = y;
 }
 
 void window_resize(window_t *window, int width, int height) {
@@ -128,7 +164,52 @@ void window_fill(window_t *window, uint32_t color) {
     }
 }
 
+
 void window_refresh(desktop_t *desktop, window_t *window) {
+    serial_print_ss("refreshing window", window->name);
+    window_set_pixels_visible(desktop, window);
+    vgui_render(desktop->vgui, 0);
+}
+
+void window_set_pixel(window_t *window, int x, int y, uint32_t color) {
+    window->buffer[x + y * window->in_width] = color;
+}
+
+mouse_t* mouse_create() {
+    mouse_t *mouse = malloc(sizeof(mouse_t));
+    mouse->x = 0;
+    mouse->y = 0;
+    mouse->size_x = 12;
+    mouse->size_y = 21;
+    return mouse;
+}
+
+void refresh_mouse(desktop_t *desktop) {
+    // serial_print_ss("refresh", "mouse");
+
+    // restore the image under the mouse
+    for (int i = 0; i < desktop->mouse->size_x; i++) {
+        for (int j = 0; j < desktop->mouse->size_y; j++) {
+            c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, vgui_get_pixel(desktop->vgui, desktop->mouse->x + i, desktop->mouse->y + j));
+        }
+    }
+
+    desktop->mouse->x = c_mouse_call(0, 0);
+    desktop->mouse->y = c_mouse_call(1, 0);
+
+    for (int i = 0; i < desktop->mouse->size_x; i++) {
+        for (int j = 0; j < desktop->mouse->size_y; j++) {
+            if (mouse_img[i + j * desktop->mouse->size_x] == 1) {
+                c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_MASTER);
+            } else if (mouse_img[i + j * desktop->mouse->size_x] == 2) {
+                c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_GRADN2);
+            }
+        }
+    }
+}
+
+
+void window_set_pixels_visible(desktop_t *desktop, window_t *window) {
     for (int i = 0; i < window->in_width; i++) {
         for (int j = 0; j < window->in_height; j++) {
             if (window->visible[i + j * window->in_width]) {
@@ -136,11 +217,6 @@ void window_refresh(desktop_t *desktop, window_t *window) {
             }
         }
     }
-    vgui_render(desktop->vgui, 0);
-}
-
-void window_set_pixel(window_t *window, int x, int y, uint32_t color) {
-    window->buffer[x + y * window->in_width] = color;
 }
 
 int *sort_index_by_priority(window_t **windows, int nb_windows) {

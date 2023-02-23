@@ -138,7 +138,7 @@
 #define c_ramdisk_get_size ((uint32_t (*)(void)) hi_func_addr(42))
 #define c_ramdisk_get_used ((uint32_t (*)(void)) hi_func_addr(43))
 
-#define c_process_create ((int (*)(void (*func)(), char *)) hi_func_addr(44))
+#define c_process_create ((int (*)(void (*func)(), int, char *)) hi_func_addr(44))
 #define c_process_sleep ((void (*)(int, uint32_t)) hi_func_addr(45))
 #define c_process_wakeup ((void (*)(int)) hi_func_addr(46))
 #define c_process_kill ((void (*)(int)) hi_func_addr(47))

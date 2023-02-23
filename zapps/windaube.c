@@ -12,8 +12,8 @@
 
 desktop_t *desktop;
 
+void perf_demo();
 void main_process();
-void perf_demo(desktop_t *desktop, window_t *window);
 
 int main(int argc, char **argv) {
     c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
@@ -30,21 +30,27 @@ void main_process() {
     desktop->nb_windows = 0;
     desktop->vgui = &vgui;
     desktop->windows = malloc(sizeof(window_t *) * MAX_WINDOWS);
-    desktop->windows[0] = window_create(desktop, "classic 1", 180, 150, 150, 120, 2, 0);
-    desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 1, 0);
-    desktop->windows[2] = window_create(desktop, "classic 3", 70, 70, 300, 300, 0, 0);
+    desktop->windows[0] = window_create(desktop, "desktop", 1, 1, 1022, 766, 0, 0);
+    desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 2, 0);
+    desktop->windows[2] = window_create(desktop, "classic 3", 70, 70, 300, 300, 1, 0);
     desktop->windows[3] = window_create(desktop, "lite 1", 240, 240, 100, 100, 3, 1);
+    desktop->mouse = mouse_create();
     desktop_refresh(desktop);
 
     window_fill(desktop->windows[3], 0x222222);
     window_refresh(desktop, desktop->windows[3]);
 
-    while (1) {        
-        perf_demo(desktop, desktop->windows[1]);
+    int demo_pid = c_process_create(perf_demo, 5, "demo");
+    c_process_wakeup(demo_pid);
+
+    while (1) {
+        refresh_mouse(desktop);
+        ms_sleep(10);
     }
 }
 
-void perf_demo(desktop_t *desktop, window_t *window) {
+void perf_demo() {
+    window_t *window = desktop->windows[1];
     // square that bounces on the edge of the window like pong
 
     int square_x = 10;
@@ -58,6 +64,7 @@ void perf_demo(desktop_t *desktop, window_t *window) {
 
     window_fill(window, 0xff0000);
     while (1) {
+        // c_serial_print(SERIAL_PORT_A, "tick\n");
         // draw the old square
 
         for (int i = 0; i < 10; i++) {
@@ -98,7 +105,6 @@ void perf_demo(desktop_t *desktop, window_t *window) {
         if (square_y < 0) {
             square_speed_y = 7;
         }
-
         ms_sleep(2);
     }
 }
