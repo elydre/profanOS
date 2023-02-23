@@ -48,8 +48,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
         window->out_y = y - 1;
         window->out_x = x - 1;
     } else {
-        window->out_height = height + 26;
-        window->out_width = width + 11;
+        window->out_height = height + 27;
+        window->out_width = width + 12;
         window->out_y = y - 21;
         window->out_x = x - 6;
     }
@@ -65,32 +65,30 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
 
 void window_draw_box(vgui_t *vgui, window_t *window) {
     // we draw the border of the window
-    vgui_draw_line(vgui, window->out_x, window->out_y, window->out_x + window->out_width, window->out_y, COLOR_MASTER);
-    vgui_draw_line(vgui, window->out_x, window->out_y, window->out_x, window->out_y + window->out_height, COLOR_MASTER);
-    vgui_draw_line(vgui, window->out_x + window->out_width, window->out_y, window->out_x + window->out_width, window->out_y + window->out_height, COLOR_MASTER);
-    vgui_draw_line(vgui, window->out_x, window->out_y + window->out_height, window->out_x + window->out_width, window->out_y + window->out_height, COLOR_MASTER);
+    vgui_draw_line(vgui, window->out_x, window->out_y, window->out_x + window->out_width - 1, window->out_y, COLOR_MASTER);
+    vgui_draw_line(vgui, window->out_x, window->out_y, window->out_x, window->out_y + window->out_height - 1, COLOR_MASTER);
+    vgui_draw_line(vgui, window->out_x + window->out_width - 1, window->out_y, window->out_x + window->out_width - 1, window->out_y + window->out_height - 1, COLOR_MASTER);
+    vgui_draw_line(vgui, window->out_x, window->out_y + window->out_height - 1, window->out_x + window->out_width - 1, window->out_y + window->out_height - 1, COLOR_MASTER);
 
     // we add the inside
-    vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, window->out_width - 1, window->out_height - 1, 0x000000);
+    vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, window->out_width - 2, window->out_height - 2, 0);
 
     if (!window->is_lite) {
         // we add the inside lines
-        vgui_draw_line(vgui, window->out_x + 5, window->out_y + 20, window->out_x + window->out_width - 5, window->out_y + 20, COLOR_MASTER);
-        vgui_draw_line(vgui, window->out_x + 5, window->out_y + 20, window->out_x + 5, window->out_y + window->out_height - 5, COLOR_MASTER);
-        vgui_draw_line(vgui, window->out_x + window->out_width - 5, window->out_y + 20, window->out_x + window->out_width - 5, window->out_y + window->out_height - 5, COLOR_MASTER);
-        vgui_draw_line(vgui, window->out_x + 5, window->out_y + window->out_height - 5, window->out_x + window->out_width - 5, window->out_y + window->out_height - 5, COLOR_MASTER);
+        vgui_draw_line(vgui, window->out_x + 5, window->out_y + 20, window->out_x + window->out_width - 6, window->out_y + 20, COLOR_MASTER);
+        vgui_draw_line(vgui, window->out_x + 5, window->out_y + 20, window->out_x + 5, window->out_y + window->out_height - 6, COLOR_MASTER);
+        vgui_draw_line(vgui, window->out_x + window->out_width - 6, window->out_y + 20, window->out_x + window->out_width - 6, window->out_y + window->out_height - 6, COLOR_MASTER);
+        vgui_draw_line(vgui, window->out_x + 5, window->out_y + window->out_height - 6, window->out_x + window->out_width - 6, window->out_y + window->out_height - 6, COLOR_MASTER);
 
         // we add the gradian
         draw_rect_gradian(vgui, window->out_x + 5, window->out_y + 1, window->out_width - 9, 18, COLOR_GRADN1, COLOR_GRADN2);
-        vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, 4, window->out_height - 1, COLOR_GRADN1);
-        vgui_draw_rect(vgui, window->out_x + window->out_width - 4, window->out_y + 1, 4, window->out_height - 1, COLOR_GRADN2);
-        draw_rect_gradian(vgui, window->out_x + 5, window->out_y + window->out_height - 4, window->out_width - 9, 3, COLOR_GRADN1, COLOR_GRADN2);
+        vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, 4, window->out_height - 2, COLOR_GRADN1);
+        vgui_draw_rect(vgui, window->out_x + window->out_width - 5, window->out_y + 1, 4, window->out_height - 2, COLOR_GRADN2);
+        draw_rect_gradian(vgui, window->out_x + 5, window->out_y + window->out_height - 5, window->out_width - 9, 3, COLOR_GRADN1, COLOR_GRADN2);
     }
 
     // we add the name of the window
     vgui_print(vgui, window->out_x + 6, window->out_y + 4, window->name, COLOR_TITLES);
-
-    vgui_render(vgui, 0);
 }
 
 void desktop_refresh(desktop_t *desktop) {
@@ -131,7 +129,6 @@ void window_fill(window_t *window, uint32_t color) {
 }
 
 void window_refresh(desktop_t *desktop, window_t *window) {
-    serial_print_ss("refreshing window", window->name);
     for (int i = 0; i < window->in_width; i++) {
         for (int j = 0; j < window->in_height; j++) {
             if (window->visible[i + j * window->in_width]) {
@@ -140,6 +137,10 @@ void window_refresh(desktop_t *desktop, window_t *window) {
         }
     }
     vgui_render(desktop->vgui, 0);
+}
+
+void window_set_pixel(window_t *window, int x, int y, uint32_t color) {
+    window->buffer[x + y * window->in_width] = color;
 }
 
 int *sort_index_by_priority(window_t **windows, int nb_windows) {

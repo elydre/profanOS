@@ -13,13 +13,11 @@
 desktop_t *desktop;
 
 void main_process();
+void perf_demo(desktop_t *desktop, window_t *window);
 
 int main(int argc, char **argv) {
     c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
-    /*
-    int pid1 = c_process_create(main_process, "windaube_main");
-    c_process_wakeup(pid1);
-    while (1);*/
+
     main_process();
     return 0;
 }
@@ -32,16 +30,75 @@ void main_process() {
     desktop->nb_windows = 0;
     desktop->vgui = &vgui;
     desktop->windows = malloc(sizeof(window_t *) * MAX_WINDOWS);
-    desktop->windows[0] = window_create(desktop, "classic 1", 150, 150, 100, 100, 1, 0);
-    desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 2, 0);
+    desktop->windows[0] = window_create(desktop, "classic 1", 180, 150, 150, 120, 2, 0);
+    desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 1, 0);
     desktop->windows[2] = window_create(desktop, "classic 3", 70, 70, 300, 300, 0, 0);
-    desktop->windows[3] = window_create(desktop, "lite 1", 250, 250, 100, 100, 3, 1);
+    desktop->windows[3] = window_create(desktop, "lite 1", 240, 240, 100, 100, 3, 1);
     desktop_refresh(desktop);
 
-    window_fill(desktop->windows[1], 0x0000ff);
-    window_refresh(desktop, desktop->windows[1]);
+    window_fill(desktop->windows[3], 0x222222);
+    window_refresh(desktop, desktop->windows[3]);
 
     while (1) {        
-        ms_sleep(100);
+        perf_demo(desktop, desktop->windows[1]);
+    }
+}
+
+void perf_demo(desktop_t *desktop, window_t *window) {
+    // square that bounces on the edge of the window like pong
+
+    int square_x = 10;
+    int square_y = 0;
+
+    int old_square_x = 0;
+    int old_square_y = 0;
+
+    float square_speed_x = 6;
+    float square_speed_y = 4;
+
+    window_fill(window, 0xff0000);
+    while (1) {
+        // draw the old square
+
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if (old_square_x + i < window->in_width && old_square_y + j < window->in_height && old_square_x + i >= 0 && old_square_y + j >= 0) {
+                    window_set_pixel(window, old_square_x + i, old_square_y + j, 0xaa0000);
+                }
+            }
+        }
+
+        // draw the new square
+
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if (square_x + i < window->in_width && square_y + j < window->in_height && square_x + i >= 0 && square_y + j >= 0) {
+                    window_set_pixel(window, square_x + i, square_y + j, 0xffffff);
+                }
+            }
+        }
+
+        window_refresh(desktop, window);
+
+        old_square_x = square_x;
+        old_square_y = square_y;
+
+        square_x += square_speed_x;
+        square_y += square_speed_y;
+
+        if (square_x > window->in_width - 10) {
+            square_speed_x = -5;
+        }
+        if (square_x < 0) {
+            square_speed_x = 7;
+        }
+        if (square_y > window->in_height - 10) {
+            square_speed_y = -3;
+        }
+        if (square_y < 0) {
+            square_speed_y = 7;
+        }
+
+        ms_sleep(2);
     }
 }
