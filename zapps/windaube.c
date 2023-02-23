@@ -32,18 +32,16 @@ void main_process() {
     desktop->nb_windows = 0;
     desktop->vgui = &vgui;
     desktop->windows = malloc(sizeof(window_t *) * MAX_WINDOWS);
-    desktop->windows[0] = window_create(desktop, "classic 1", 100, 100, 100, 100, 1);
-    desktop->windows[1] = window_create(desktop, "classic 2", 50, 150, 200, 200, 2);
-    desktop->windows[2] = window_create(desktop, "classic 3", 20, 20, 300, 300, 0);
-    desktop->windows[3] = window_create(desktop, "lite 1", 200, 200, 100, 100, 3);
-    desktop->windows[3]->is_lite = 1;
+    desktop->windows[0] = window_create(desktop, "classic 1", 150, 150, 100, 100, 1, 0);
+    desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 2, 0);
+    desktop->windows[2] = window_create(desktop, "classic 3", 70, 70, 300, 300, 0, 0);
+    desktop->windows[3] = window_create(desktop, "lite 1", 250, 250, 100, 100, 3, 1);
     desktop_refresh(desktop);
 
-    int i = 100;
-    int j = 100;
-    while (1) {
-        // window_move(desktop->windows[0], mouse_get_x(), mouse_get_y());
-        // desktop_refresh(desktop);
+    window_fill(desktop->windows[1], 0x0000ff);
+    window_refresh(desktop, desktop->windows[1]);
+
+    while (1) {        
         ms_sleep(100);
     }
 }
