@@ -203,10 +203,34 @@ void refresh_mouse(desktop_t *desktop) {
             }
         }
     }
+
+    int is_clicked = c_mouse_call(2, 0);
+    if (is_clicked && !desktop->mouse->already_clicked) {
+        serial_print_ss("mouse", "clicked");
+        // we check if the mouse is on a window
+        int total = desktop->nb_windows;
+        int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
+        // the first element is the one with the lowest priority
+        for (int i = total - 1; i >= 0; i--) {
+            window_t *window = desktop->windows[sorted[i]];
+            if (desktop->mouse->x >= window->out_x && desktop->mouse->x <= window->out_x + window->out_width && desktop->mouse->y >= window->out_y && desktop->mouse->y <= window->out_y + window->out_height) {
+                set_window_priority(desktop, window);
+                desktop_refresh(desktop);
+                break;
+            }
+        }
+    }
+
+    if (is_clicked) {
+        desktop->mouse->already_clicked = 1;
+    } else {
+        desktop->mouse->already_clicked = 0;
+    }
 }
 
 
 void window_set_pixels_visible(desktop_t *desktop, window_t *window) {
+    // TODO: optimize this
     for (int i = 0; i < window->in_width; i++) {
         for (int j = 0; j < window->in_height; j++) {
             if (window->visible[i + j * window->in_width]) {
@@ -238,6 +262,21 @@ int *sort_index_by_priority(window_t **windows, int nb_windows) {
     }
 
     return sorted;
+}
+
+void set_window_priority(desktop_t *desktop, window_t *window) {
+    int total = desktop->nb_windows;
+    int *sorted = sort_index_by_priority(desktop->windows, total);
+    int current_priority = window->priorite;
+    // the first element is the one with the lowest priority
+
+    for (int i = total - 1; i >= current_priority; i--) {
+        if (desktop->windows[sorted[i]] == window) {
+            window->priorite = total - 1;
+        } else {
+            desktop->windows[sorted[i]]->priorite--;
+        }
+    }
 }
 
 void window_update_visible(desktop_t *desktop, window_t *window) {

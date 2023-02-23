@@ -29,7 +29,7 @@ typedef struct mouse_t {
     int y;
     int size_x;
     int size_y;
-    uint32_t *buffer;
+    int already_clicked;
 } mouse_t;
 
 typedef struct desktop_t {

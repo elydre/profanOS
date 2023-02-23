@@ -105,6 +105,6 @@ void perf_demo() {
         if (square_y < 0) {
             square_speed_y = 7;
         }
-        ms_sleep(2);
+        ms_sleep(50);
     }
 }
