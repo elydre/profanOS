@@ -166,7 +166,6 @@ void window_fill(window_t *window, uint32_t color) {
 
 
 void window_refresh(desktop_t *desktop, window_t *window) {
-    serial_print_ss("refreshing window", window->name);
     window_set_pixels_visible(desktop, window);
     vgui_render(desktop->vgui, 0);
 }
@@ -185,8 +184,6 @@ mouse_t* mouse_create() {
 }
 
 void refresh_mouse(desktop_t *desktop) {
-    // serial_print_ss("refresh", "mouse");
-
     // restore the image under the mouse
     for (int i = 0; i < desktop->mouse->size_x; i++) {
         for (int j = 0; j < desktop->mouse->size_y; j++) {
