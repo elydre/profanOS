@@ -10,20 +10,27 @@ typedef struct window_t {
 
     char *name;
 
-    int out_x;
-    int out_y;
-    int out_width;
-    int out_height;
+    int x;
+    int y;
+    int width;
+    int height;
 
     int in_x;
     int in_y;
     int in_width;
     int in_height;
 
+    uint8_t moved;
+    uint8_t changed;
+
+    int old_x;
+    int old_y;
+    int old_width;
+    int old_height;
+
     uint32_t *buffer;
     uint8_t *visible;
 
-    uint8_t changed;
     uint8_t is_lite;    // no border
 
     int priorite;
@@ -32,8 +39,11 @@ typedef struct window_t {
 typedef struct mouse_t {
     int x;
     int y;
-    int size_x;
-    int size_y;
+
+    int clicked_window_id;
+    int window_x_dec;
+    int window_y_dec;
+
     int already_clicked;
 } mouse_t;
 

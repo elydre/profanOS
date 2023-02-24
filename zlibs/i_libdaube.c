@@ -10,6 +10,8 @@
 #define LIBDAUBE_C
 #include <i_libdaube.h>
 
+#define NO_OPTI 0   // disable optimizations
+
 #define COLOR_MASTER 0x6b6e8c
 #define COLOR_TITLES 0xa7a0b9
 #define COLOR_GRADN1 0x240865
@@ -46,6 +48,9 @@ uint8_t mouse_img[21*12] = {
     0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
 };
+
+#define MOUSE_WIDTH 12
+#define MOUSE_HEIGHT 21
 
 void init_func();
 
@@ -99,20 +104,20 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->in_x = x;
 
     if (is_lite) {
-        window->out_height = height + 2;
-        window->out_width = width + 2;
-        window->out_y = y - 1;
-        window->out_x = x - 1;
+        window->height = height + 2;
+        window->width = width + 2;
+        window->y = y - 1;
+        window->x = x - 1;
     } else {
-        window->out_height = height + 27;
-        window->out_width = width + 12;
-        window->out_y = y - 21;
-        window->out_x = x - 6;
+        window->height = height + 27;
+        window->width = width + 12;
+        window->y = y - 21;
+        window->x = x - 6;
     }
 
     window->parent_desktop = (void *) desktop;
-    window->buffer = calloc(window->out_height * window->out_width, sizeof(uint32_t));
-    window->visible = malloc(sizeof(uint8_t) * window->out_height * window->out_width);
+    window->buffer = calloc(window->height * window->width, sizeof(uint32_t));
+    window->visible = malloc(sizeof(uint8_t) * window->height * window->width);
     window->is_lite = is_lite;
     window->changed = 1;
 
@@ -125,25 +130,25 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
 
 void window_draw_box(desktop_t *desktop, window_t *window) {
     // we draw the border of the window
-    draw_straight_line(window, 0, 0, window->out_width - 1, 0, COLOR_MASTER);
-    draw_straight_line(window, 0, 0, 0, window->out_height - 1, COLOR_MASTER);
-    draw_straight_line(window, window->out_width - 1, 0, window->out_width - 1, window->out_height, COLOR_MASTER);
-    draw_straight_line(window, 0, window->out_height - 1, window->out_width - 1, window->out_height - 1, COLOR_MASTER);
+    draw_straight_line(window, 0, 0, window->width - 1, 0, COLOR_MASTER);
+    draw_straight_line(window, 0, 0, 0, window->height - 1, COLOR_MASTER);
+    draw_straight_line(window, window->width - 1, 0, window->width - 1, window->height, COLOR_MASTER);
+    draw_straight_line(window, 0, window->height - 1, window->width - 1, window->height - 1, COLOR_MASTER);
 
     if (!window->is_lite) {
         // we add the inside lines
-        draw_straight_line(window, 5, 20, window->out_width - 6, 20, COLOR_MASTER);
-        draw_straight_line(window, 5, 20, 5, window->out_height - 6, COLOR_MASTER);
-        draw_straight_line(window, window->out_width - 6, 20, window->out_width - 6, window->out_height - 5, COLOR_MASTER);
-        draw_straight_line(window, 5, window->out_height - 6, window->out_width - 6, window->out_height - 6, COLOR_MASTER);
+        draw_straight_line(window, 5, 20, window->width - 6, 20, COLOR_MASTER);
+        draw_straight_line(window, 5, 20, 5, window->height - 6, COLOR_MASTER);
+        draw_straight_line(window, window->width - 6, 20, window->width - 6, window->height - 5, COLOR_MASTER);
+        draw_straight_line(window, 5, window->height - 6, window->width - 6, window->height - 6, COLOR_MASTER);
 
         // we add the gradians
-        draw_rect_gradian(window, 5, 1, window->out_width - 9, 19, COLOR_GRADN1, COLOR_GRADN2);
-        draw_rect_gradian(window, 5, window->out_height - 5, window->out_width - 9, 4, COLOR_GRADN1, COLOR_GRADN2);
+        draw_rect_gradian(window, 5, 1, window->width - 9, 19, COLOR_GRADN1, COLOR_GRADN2);
+        draw_rect_gradian(window, 5, window->height - 5, window->width - 9, 4, COLOR_GRADN1, COLOR_GRADN2);
 
         // and the rectangles
-        draw_rect(window, 1, 1, 4, window->out_height - 2, COLOR_GRADN1);
-        draw_rect(window, window->out_width - 5, 1, 4, window->out_height - 2, COLOR_GRADN2);
+        draw_rect(window, 1, 1, 4, window->height - 2, COLOR_GRADN1);
+        draw_rect(window, window->width - 5, 1, 4, window->height - 2, COLOR_GRADN2);
 
         // we add the name of the window
         draw_print_wut(window, 6, 4, window->name, COLOR_TITLES);
@@ -165,6 +170,7 @@ void desktop_refresh(desktop_t *desktop) {
 
     for (int i = 0; i < total; i++) {
         desktop->windows[i]->changed = 0;
+        desktop->windows[i]->moved = 0;
     }
 
     c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
@@ -176,16 +182,20 @@ void desktop_refresh(desktop_t *desktop) {
 }
 
 void window_move(window_t *window, int x, int y) {
+    window->old_x = window->x;
+    window->old_y = window->y;
+
     if (window->is_lite) {
-        window->out_y = y - 1;
-        window->out_x = x - 1;
+        window->y = y - 1;
+        window->x = x - 1;
     } else {
-        window->out_y = y - 21;
-        window->out_x = x - 6;
+        window->y = y - 21;
+        window->x = x - 6;
     }
     window->in_x = x;
     window->in_y = y;
 
+    window->moved = 1;
     window->changed = 1;
 }
 
@@ -198,10 +208,10 @@ void window_set_pixel(window_t *window, int x, int y, uint32_t color) {
         return;
     }
 
-    x += window->in_x - window->out_x;
-    y += window->in_y - window->out_y;
+    x += window->in_x - window->x;
+    y += window->in_y - window->y;
 
-    window->buffer[y * window->out_width + x] = color;
+    window->buffer[y * window->width + x] = color;
 }
 
 void window_fill(window_t *window, uint32_t color) {
@@ -228,27 +238,47 @@ mouse_t* mouse_create() {
     mouse_t *mouse = malloc(sizeof(mouse_t));
     mouse->x = 0;
     mouse->y = 0;
-    mouse->size_x = 12;
-    mouse->size_y = 21;
+    mouse->clicked_window_id = -1;
     return mouse;
 }
 
 void refresh_mouse(desktop_t *desktop) {
     // restore the image under the mouse
-    for (int i = 0; i < desktop->mouse->size_x; i++) {
-        for (int j = 0; j < desktop->mouse->size_y; j++) {
+    for (int i = 0; i < MOUSE_WIDTH; i++) {
+        for (int j = 0; j < MOUSE_HEIGHT; j++) {
             c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, vgui_get_pixel(desktop->vgui, desktop->mouse->x + i, desktop->mouse->y + j));
+        }
+    }
+
+    if (desktop->mouse->clicked_window_id != -1) {
+        window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
+
+        int window_width = window->width;
+        int window_height = window->height;
+
+        // draw window outline
+
+        int x = desktop->mouse->x + desktop->mouse->window_x_dec;
+        int y = desktop->mouse->y + desktop->mouse->window_y_dec;
+
+        for (int i = 0; i < window_width; i++) {
+            c_vesa_set_pixel(x + i, y, vgui_get_pixel(desktop->vgui, x + i, y));
+            c_vesa_set_pixel(x + i, y + window_height, vgui_get_pixel(desktop->vgui, x + i, y + window_height));
+        }
+        for (int i = 0; i < window_height; i++) {
+            c_vesa_set_pixel(x, y + i, vgui_get_pixel(desktop->vgui, x, y + i));
+            c_vesa_set_pixel(x + window_width, y + i, vgui_get_pixel(desktop->vgui, x + window_width, y + i));
         }
     }
 
     desktop->mouse->x = c_mouse_call(0, 0);
     desktop->mouse->y = c_mouse_call(1, 0);
 
-    for (int i = 0; i < desktop->mouse->size_x; i++) {
-        for (int j = 0; j < desktop->mouse->size_y; j++) {
-            if (mouse_img[i + j * desktop->mouse->size_x] == 1) {
+    for (int i = 0; i < MOUSE_WIDTH; i++) {
+        for (int j = 0; j < MOUSE_HEIGHT; j++) {
+            if (mouse_img[i + j * MOUSE_WIDTH] == 1) {
                 c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_MASTER);
-            } else if (mouse_img[i + j * desktop->mouse->size_x] == 2) {
+            } else if (mouse_img[i + j * MOUSE_WIDTH] == 2) {
                 c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_GRADN2);
             }
         }
@@ -263,13 +293,41 @@ void refresh_mouse(desktop_t *desktop) {
         // the first element is the one with the lowest priority
         for (int i = total - 1; i >= 0; i--) {
             window_t *window = desktop->windows[sorted[i]];
-            if (desktop->mouse->x >= window->out_x && desktop->mouse->x <= window->out_x + window->out_width && desktop->mouse->y >= window->out_y && desktop->mouse->y <= window->out_y + window->out_height) {
-                set_window_priority(desktop, window);
-                window->changed = 1;
-                desktop_refresh(desktop);
+            if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height) {
+                desktop->mouse->clicked_window_id = sorted[i];
+                desktop->mouse->window_x_dec = window->x - desktop->mouse->x;
+                desktop->mouse->window_y_dec = window->y - desktop->mouse->y;
                 break;
             }
         }
+        free(sorted);
+    } else if (is_clicked && desktop->mouse->already_clicked) {
+        serial_print_ss("mouse", "dragging");
+        window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
+
+        int window_width = window->width;
+        int window_height = window->height;
+
+        // draw window outline
+
+        int x = desktop->mouse->x + desktop->mouse->window_x_dec;
+        int y = desktop->mouse->y + desktop->mouse->window_y_dec;
+
+        for (int i = 0; i < window_width; i++) {
+            c_vesa_set_pixel(x + i, y, COLOR_MASTER);
+            c_vesa_set_pixel(x + i, y + window_height, COLOR_MASTER);
+        }
+        for (int i = 0; i < window_height; i++) {
+            c_vesa_set_pixel(x, y + i, COLOR_MASTER);
+            c_vesa_set_pixel(x + window_width, y + i, COLOR_MASTER);
+        }
+    } else if (!is_clicked && desktop->mouse->already_clicked) {
+        serial_print_ss("mouse", "released");
+        window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
+        set_window_priority(desktop, window);
+        window_move(window, desktop->mouse->x + desktop->mouse->window_x_dec, desktop->mouse->y + desktop->mouse->window_y_dec);
+        desktop->mouse->clicked_window_id = -1;
+        desktop_refresh(desktop);
     }
 
     if (is_clicked) {
@@ -283,13 +341,43 @@ void refresh_mouse(desktop_t *desktop) {
     }
 }
 
+void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
+    int x1, x2, y1, y2;
+
+    if (w->moved && is_first) {
+        serial_print_ss("window move:", w->name);
+        x1 = max(window->x, w->old_x);
+        x2 = min(window->x + window->width, w->old_x + w->width);
+        y1 = max(window->y, w->old_y);
+        y2 = min(window->y + window->height, w->old_y + w->height);
+    } else {
+        // calculate the intersection of the two rectangles
+        x1 = max(window->x, w->x);
+        x2 = min(window->x + window->width, w->x + w->width);
+        y1 = max(window->y, w->y);
+        y2 = min(window->y + window->height, w->y + w->height);
+    }
+
+    for (int x = x1; x < x2; x++) {
+        for (int y = y1; y < y2; y++) {
+            if (window->visible[(x - window->x) + (y - window->y) * window->width]) {
+                vgui_set_pixel(desktop->vgui, x, y, window->buffer[(x - window->x) + (y - window->y) * window->width]);
+            }
+        }
+    }
+
+    if (w->moved && is_first) {
+        window_set_pixels_intersection(desktop, window, w, 0);
+    }
+}
 
 void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
+    if (NO_OPTI) all = 1;
     if (window->changed || all) {
-        for (int i = 0; i < window->out_width; i++) {
-            for (int j = 0; j < window->out_height; j++) {
-                if (window->visible[i + j * window->out_width]) {
-                    vgui_set_pixel(desktop->vgui, window->out_x + i, window->out_y + j, window->buffer[i + j * window->out_width]);
+        for (int i = 0; i < window->width; i++) {
+            for (int j = 0; j < window->height; j++) {
+                if (window->visible[i + j * window->width]) {
+                    vgui_set_pixel(desktop->vgui, window->x + i, window->y + j, window->buffer[i + j * window->width]);
                 }
             }
         }
@@ -299,26 +387,12 @@ void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
     int total = desktop->nb_windows;
     int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
     // the first element is the one with the lowest priority
-    
-    int x1, x2, y1, y2;
 
     for (int i = 0; i < total; i++) {
         window_t *w = desktop->windows[sorted[i]];
-        if (w->priorite >= window->priorite) break;
-        if (! w->changed) continue;
-        // calculate the intersection of the two rectangles
-        x1 = max(window->out_x, w->out_x);
-        x2 = min(window->out_x + window->out_width, w->out_x + w->out_width);
-        y1 = max(window->out_y, w->out_y);
-        y2 = min(window->out_y + window->out_height, w->out_y + w->out_height);
+        if (w == window || !w->changed) continue;
 
-        for (int x = x1; x < x2; x++) {
-            for (int y = y1; y < y2; y++) {
-                if (window->visible[(x - window->out_x) + (y - window->out_y) * window->out_width]) {
-                    vgui_set_pixel(desktop->vgui, x, y, window->buffer[(x - window->out_x) + (y - window->out_y) * window->out_width]);
-                }
-            }
-        }
+        window_set_pixels_intersection(desktop, window, w, 1);
     }
     free(sorted);
 }
@@ -370,7 +444,7 @@ void window_update_visible(desktop_t *desktop, window_t *window) {
     // the visible buffer is a buffer of 1 and 0, 1 if the pixel is visible, 0 if not
 
     // we first set all the pixels to 1
-    for (int i = 0; i < window->out_width * window->out_height; i++) {
+    for (int i = 0; i < window->width * window->height; i++) {
         window->visible[i] = 1;
     }
 
@@ -387,14 +461,14 @@ void window_update_visible(desktop_t *desktop, window_t *window) {
         }
 
         // calculate the intersection of the two rectangles
-        x1 = max(window->out_x, desktop->windows[sorted[i]]->out_x);
-        x2 = min(window->out_x + window->out_width, desktop->windows[sorted[i]]->out_x + desktop->windows[sorted[i]]->out_width);
-        y1 = max(window->out_y, desktop->windows[sorted[i]]->out_y);
-        y2 = min(window->out_y + window->out_height, desktop->windows[sorted[i]]->out_y + desktop->windows[sorted[i]]->out_height);
+        x1 = max(window->x, desktop->windows[sorted[i]]->x);
+        x2 = min(window->x + window->width, desktop->windows[sorted[i]]->x + desktop->windows[sorted[i]]->width);
+        y1 = max(window->y, desktop->windows[sorted[i]]->y);
+        y2 = min(window->y + window->height, desktop->windows[sorted[i]]->y + desktop->windows[sorted[i]]->height);
 
         for (int x = x1; x < x2; x++) {
             for (int y = y1; y < y2; y++) {
-                window->visible[x - window->out_x + (y - window->out_y) * window->out_width] = 0;
+                window->visible[x - window->x + (y - window->y) * window->width] = 0;
             }
         }
     }
@@ -413,11 +487,11 @@ void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int co
     // just orizontal or vertical lines
     if (x1 == x2) {
         for (int i = y1; i < y2; i++) {
-            window->buffer[x1 + i * window->out_width] = color;
+            window->buffer[x1 + i * window->width] = color;
         }
     } else if (y1 == y2) {
         for (int i = x1; i < x2; i++) {
-            window->buffer[i + y1 * window->out_width] = color;
+            window->buffer[i + y1 * window->width] = color;
         }
     }
 }
@@ -449,7 +523,7 @@ void draw_rect_gradian(window_t *window, int x, int y, int width, int height, in
 void draw_rect(window_t *window, int x, int y, int width, int height, int color) {
     for (int i = x; i < x + width; i++) {
         for (int j = y; j < y + height; j++) {
-            window->buffer[i + j * window->out_width] = color;
+            window->buffer[i + j * window->width] = color;
         }
     }
 }
@@ -461,7 +535,7 @@ void draw_print_wut(window_t *window, int x, int y, char *msg, int color) {
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
-                window->buffer[(i * 8 + x + 8 - k) + (y + j) * window->out_width] = color;
+                window->buffer[(i * 8 + x + 8 - k) + (y + j) * window->width] = color;
             }
         }
     }
