@@ -123,9 +123,6 @@ void window_draw_box(desktop_t *desktop, window_t *window) {
     vgui_draw_line(vgui, window->out_x + window->out_width - 1, window->out_y, window->out_x + window->out_width - 1, window->out_y + window->out_height - 1, COLOR_MASTER);
     vgui_draw_line(vgui, window->out_x, window->out_y + window->out_height - 1, window->out_x + window->out_width - 1, window->out_y + window->out_height - 1, COLOR_MASTER);
 
-    // we add the inside
-    // vgui_draw_rect(vgui, window->out_x + 1, window->out_y + 1, window->out_width - 2, window->out_height - 2, 0);
-
     if (!window->is_lite) {
         // we add the inside lines
         vgui_draw_line(vgui, window->out_x + 5, window->out_y + 20, window->out_x + window->out_width - 6, window->out_y + 20, COLOR_MASTER);
@@ -149,7 +146,6 @@ void desktop_refresh(desktop_t *desktop) {
 
     // we draw the windows, by order of priority
     int total = desktop->nb_windows;
-
     int *sorted = sort_index_by_priority(desktop->windows, total);
 
     for (int i = 0; i < total; i++) {
@@ -198,10 +194,9 @@ void window_fill(window_t *window, uint32_t color) {
     }
 }
 
-
 void window_refresh(desktop_t *desktop, window_t *window) {
     while (desktop->is_locked) {
-        serial_print_ss("desktop is locked, can't refresh", window->name);
+        // serial_print_ss("desktop is locked, can't refresh", window->name);
         ms_sleep(1);
     }
     window_set_pixels_visible(desktop, window, 1);
@@ -342,6 +337,8 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
             window->priorite = total - 1;
         } else {
             desktop->windows[sorted[i]]->priorite--;
+            desktop->windows[sorted[i]]->changed = 1;
+
         }
     }
 }
