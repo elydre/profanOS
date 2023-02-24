@@ -279,21 +279,29 @@ void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
         }
         return;
     }
+
     int total = desktop->nb_windows;
     int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
     // the first element is the one with the lowest priority
+    
+    int x1, x2, y1, y2;
+
     for (int i = 0; i < total; i++) {
         window_t *w = desktop->windows[sorted[i]];
-        if (w->changed) {
-            for (int i = 0; i < w->in_width; i++) {
-                for (int j = 0; j < w->in_height; j++) {
-                    if (w->visible[i + j * w->in_width]) {
-                        vgui_set_pixel(desktop->vgui, w->in_x + i, w->in_y + j, w->buffer[i + j * w->in_width]);
-                    }
+        if (w->priorite >= window->priorite) break;
+        if (! w->changed) continue;
+        // calculate the intersection of the two rectangles
+        x1 = max(window->in_x, desktop->windows[sorted[i]]->out_x);
+        x2 = min(window->in_x + window->in_width, desktop->windows[sorted[i]]->out_x + desktop->windows[sorted[i]]->out_width);
+        y1 = max(window->in_y, desktop->windows[sorted[i]]->out_y);
+        y2 = min(window->in_y + window->in_height, desktop->windows[sorted[i]]->out_y + desktop->windows[sorted[i]]->out_height);
+        
+        for (int x = x1; x < x2; x++) {
+            for (int y = y1; y < y2; y++) {
+                if (window->visible[x - window->in_x + (y - window->in_y) * window->in_width]) {
+                    vgui_set_pixel(desktop->vgui, x, y, window->buffer[x - window->in_x + (y - window->in_y) * window->in_width]);
                 }
             }
-            free(sorted);
-            return;
         }
     }
     free(sorted);
