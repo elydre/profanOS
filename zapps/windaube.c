@@ -39,7 +39,7 @@ void main_process() {
     window_fill(desktop->windows[3], 0x222222);
     window_refresh(desktop, desktop->windows[3]);
 
-    int demo_pid = c_process_create(perf_demo, 5, "demo");
+    int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);
 
     while (1) {

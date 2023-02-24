@@ -3,7 +3,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <type.h>
+
+#include <i_time.h>
 #include <i_vgui.h>
+
 #define LIBDAUBE_C
 #include <i_libdaube.h>
 
@@ -142,6 +145,8 @@ void window_draw_box(desktop_t *desktop, window_t *window) {
 }
 
 void desktop_refresh(desktop_t *desktop) {
+    desktop->is_locked = 1;
+
     // we draw the windows, by order of priority
     int total = desktop->nb_windows;
 
@@ -160,6 +165,8 @@ void desktop_refresh(desktop_t *desktop) {
 
     c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
     vgui_render(desktop->vgui, 0);
+
+    desktop->is_locked = 0;
 
     free(sorted);
 }
@@ -193,6 +200,10 @@ void window_fill(window_t *window, uint32_t color) {
 
 
 void window_refresh(desktop_t *desktop, window_t *window) {
+    while (desktop->is_locked) {
+        serial_print_ss("desktop is locked, can't refresh", window->name);
+        ms_sleep(1);
+    }
     window_set_pixels_visible(desktop, window, 1);
     vgui_render(desktop->vgui, 0);
 }

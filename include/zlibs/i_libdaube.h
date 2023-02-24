@@ -21,10 +21,10 @@ typedef struct window_t {
     uint32_t *buffer;
     uint8_t *visible;
 
-    int changed;
+    uint8_t changed;
+    uint8_t is_lite;    // no border
 
     int priorite;
-    int is_lite;    // no border
 } window_t;
 
 typedef struct mouse_t {
@@ -37,11 +37,15 @@ typedef struct mouse_t {
 
 typedef struct desktop_t {
     window_t **windows;
+
+    vgui_t *vgui;
+    mouse_t *mouse;
+
     int nb_windows;
     int screen_width;
     int screen_height;
-    vgui_t *vgui;
-    mouse_t *mouse;
+
+    uint8_t is_locked;
 } desktop_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
