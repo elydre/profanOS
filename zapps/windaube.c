@@ -37,7 +37,7 @@ void main_process() {
     desktop_refresh(desktop);
 
     window_fill(desktop->windows[3], 0x222222);
-    window_refresh(desktop, desktop->windows[3]);
+    window_refresh(desktop->windows[3]);
 
     int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);
@@ -84,7 +84,7 @@ void perf_demo() {
             }
         }
 
-        window_refresh(desktop, window);
+        window_refresh(window);
 
         old_square_x = square_x;
         old_square_y = square_y;

@@ -110,6 +110,7 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
         window->out_x = x - 6;
     }
 
+    window->parent_desktop = (void *) desktop;
     window->buffer = calloc(window->out_height * window->out_width, sizeof(uint32_t));
     window->visible = malloc(sizeof(uint8_t) * window->out_height * window->out_width);
     window->is_lite = is_lite;
@@ -143,10 +144,10 @@ void window_draw_box(desktop_t *desktop, window_t *window) {
         // and the rectangles
         draw_rect(window, 1, 1, 4, window->out_height - 2, COLOR_GRADN1);
         draw_rect(window, window->out_width - 5, 1, 4, window->out_height - 2, COLOR_GRADN2);
-    }
 
-    // we add the name of the window
-    draw_print_wut(window, 6, 4, window->name, COLOR_TITLES);
+        // we add the name of the window
+        draw_print_wut(window, 6, 4, window->name, COLOR_TITLES);
+    }
 }
 
 void desktop_refresh(desktop_t *desktop) {
@@ -211,11 +212,14 @@ void window_fill(window_t *window, uint32_t color) {
     }
 }
 
-void window_refresh(desktop_t *desktop, window_t *window) {
+void window_refresh(window_t *window) {
+    desktop_t *desktop = window->parent_desktop;
+
     while (desktop->is_locked) {
         // serial_print_ss("desktop is locked, can't refresh", window->name);
         ms_sleep(1);
     }
+
     window_set_pixels_visible(desktop, window, 1);
     vgui_render(desktop->vgui, 0);
 }
@@ -273,7 +277,7 @@ void refresh_mouse(desktop_t *desktop) {
     } else {
         desktop->mouse->already_clicked = 0;
     }
-    
+
     if (c_mouse_call(2, 1)) {
         desktop_refresh(desktop);
     }
@@ -307,7 +311,7 @@ void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
         x2 = min(window->out_x + window->out_width, w->out_x + w->out_width);
         y1 = max(window->out_y, w->out_y);
         y2 = min(window->out_y + window->out_height, w->out_y + w->out_height);
-        
+
         for (int x = x1; x < x2; x++) {
             for (int y = y1; y < y2; y++) {
                 if (window->visible[(x - window->out_x) + (y - window->out_y) * window->out_width]) {
@@ -323,7 +327,7 @@ int *sort_index_by_priority(window_t **windows, int nb_windows) {
     // the first element is the one with the lowest priority
 
     int *sorted = malloc(sizeof(int) * nb_windows);
-    
+
     for (int i = 0; i < nb_windows; i++) {
         sorted[i] = i;
     }
@@ -355,7 +359,6 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
         } else {
             desktop->windows[sorted[i]]->priorite--;
             desktop->windows[sorted[i]]->changed = 1;
-
         }
     }
 }
@@ -388,7 +391,7 @@ void window_update_visible(desktop_t *desktop, window_t *window) {
         x2 = min(window->out_x + window->out_width, desktop->windows[sorted[i]]->out_x + desktop->windows[sorted[i]]->out_width);
         y1 = max(window->out_y, desktop->windows[sorted[i]]->out_y);
         y2 = min(window->out_y + window->out_height, desktop->windows[sorted[i]]->out_y + desktop->windows[sorted[i]]->out_height);
-        
+
         for (int x = x1; x < x2; x++) {
             for (int y = y1; y < y2; y++) {
                 window->visible[x - window->out_x + (y - window->out_y) * window->out_width] = 0;
@@ -436,7 +439,6 @@ void draw_rect_gradian(window_t *window, int x, int y, int width, int height, in
 
     for (int i = 0; i < width; i++) {
         color = ((int) r << 16) | ((int) g << 8) | (int) b;
-        // vgui_draw_line(vgui, x + i, y, x + i, y + height, color);
         draw_straight_line(window, x + i, y, x + i, y + height, color);
         r += dr;
         g += dg;
