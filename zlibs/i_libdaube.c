@@ -105,7 +105,7 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
         window->out_x = x - 6;
     }
 
-    window->buffer = malloc(sizeof(uint32_t) * window->out_height * window->out_width);
+    window->buffer = calloc(window->out_height * window->out_width, sizeof(uint32_t));
     window->visible = malloc(sizeof(uint8_t) * window->out_height * window->out_width);
     window->is_lite = is_lite;
     window->changed = 1;
