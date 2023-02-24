@@ -65,6 +65,8 @@ void *SYSCALL_ARRAY[] = {
     gt_get_max_cols,
     cursor_blink,
     vesa_set_pixel,
+    vesa_get_width,
+    vesa_get_height,
 
     // keyboard.h
     kb_scancode_to_char,

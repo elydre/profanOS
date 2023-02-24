@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.11.2"
+#define KERNEL_VERSION  "0.11.3"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5       // default kernel process priority
