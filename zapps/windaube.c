@@ -10,6 +10,9 @@
 
 #define MAX_WINDOWS 10
 
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 768
+
 desktop_t *desktop;
 
 void perf_demo();
@@ -23,18 +26,14 @@ int main(int argc, char **argv) {
 }
 
 void main_process() {
-    vgui_t vgui = vgui_setup(1024, 768);
+    vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
     vgui_clear(&vgui, 0x000000);
     vgui_render(&vgui, 0);
-    desktop = malloc(sizeof(desktop_t));
-    desktop->nb_windows = 0;
-    desktop->vgui = &vgui;
-    desktop->windows = malloc(sizeof(window_t *) * MAX_WINDOWS);
+    desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
     desktop->windows[0] = window_create(desktop, "desktop", 1, 1, 1022, 766, 0, 0);
     desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 2, 0);
     desktop->windows[2] = window_create(desktop, "classic 3", 70, 70, 300, 300, 1, 0);
     desktop->windows[3] = window_create(desktop, "lite 1", 240, 240, 100, 100, 3, 1);
-    desktop->mouse = mouse_create();
     desktop_refresh(desktop);
 
     window_fill(desktop->windows[3], 0x222222);

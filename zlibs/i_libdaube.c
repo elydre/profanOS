@@ -12,6 +12,14 @@
 #define COLOR_GRADN1 0x240865
 #define COLOR_GRADN2 0x0c0f1d
 
+#ifndef max
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 uint8_t mouse_img[21*12] = {
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -50,11 +58,25 @@ void init_func() {
 void window_draw_box(desktop_t *desktop, window_t *window);
 void desktop_draw(desktop_t *desktop);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
-void window_refresh(desktop_t *desktop, window_t *window);
 void serial_print_ss(char *str, char *name);
 void draw_rect_gradian(vgui_t *vgui, int x, int y, int width, int height, int color1, int color2);
-void window_set_pixels_visible(desktop_t *desktop, window_t *window);
+void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all);
 void window_update_visible(desktop_t *desktop, window_t *window);
+void set_window_priority(desktop_t *desktop, window_t *window);
+mouse_t* mouse_create();
+
+desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int screen_height) {
+    desktop_t *desktop = malloc(sizeof(desktop_t));
+    desktop->nb_windows = 0;
+    desktop->vgui = vgui;
+    desktop->windows = malloc(sizeof(window_t *) * max_windows);
+    desktop->mouse = mouse_create();
+
+    desktop->screen_width = screen_width;
+    desktop->screen_height = screen_height;
+
+    return desktop;
+}
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite, int is_lite) {
     serial_print_ss("Creating window", name);
@@ -83,6 +105,7 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->buffer = malloc(sizeof(uint32_t) * window->out_height * window->out_width);
     window->visible = malloc(sizeof(uint8_t) * window->out_height * window->out_width);
     window->is_lite = is_lite;
+    window->changed = 1;
 
     desktop->nb_windows++;
 
@@ -125,12 +148,14 @@ void desktop_refresh(desktop_t *desktop) {
     int *sorted = sort_index_by_priority(desktop->windows, total);
 
     for (int i = 0; i < total; i++) {
-        serial_print_ss("drawing window box for", desktop->windows[sorted[i]]->name);
+        serial_print_ss("work for", desktop->windows[sorted[i]]->name);
         window_draw_box(desktop, desktop->windows[sorted[i]]);
-        serial_print_ss("updating visible of window", desktop->windows[sorted[i]]->name);
         window_update_visible(desktop, desktop->windows[sorted[i]]);
-        serial_print_ss("drawing window content for", desktop->windows[sorted[i]]->name);
-        window_set_pixels_visible(desktop, desktop->windows[sorted[i]]);
+        window_set_pixels_visible(desktop, desktop->windows[sorted[i]], 0);
+    }
+
+    for (int i = 0; i < total; i++) {
+        desktop->windows[i]->changed = 0;
     }
 
     c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
@@ -150,6 +175,8 @@ void window_move(window_t *window, int x, int y) {
     }
     window->in_x = x;
     window->in_y = y;
+
+    window->changed = 1;
 }
 
 void window_resize(window_t *window, int width, int height) {
@@ -166,7 +193,7 @@ void window_fill(window_t *window, uint32_t color) {
 
 
 void window_refresh(desktop_t *desktop, window_t *window) {
-    window_set_pixels_visible(desktop, window);
+    window_set_pixels_visible(desktop, window, 1);
     vgui_render(desktop->vgui, 0);
 }
 
@@ -215,6 +242,7 @@ void refresh_mouse(desktop_t *desktop) {
             window_t *window = desktop->windows[sorted[i]];
             if (desktop->mouse->x >= window->out_x && desktop->mouse->x <= window->out_x + window->out_width && desktop->mouse->y >= window->out_y && desktop->mouse->y <= window->out_y + window->out_height) {
                 set_window_priority(desktop, window);
+                window->changed = 1;
                 desktop_refresh(desktop);
                 break;
             }
@@ -229,15 +257,35 @@ void refresh_mouse(desktop_t *desktop) {
 }
 
 
-void window_set_pixels_visible(desktop_t *desktop, window_t *window) {
-    // TODO: optimize this
-    for (int i = 0; i < window->in_width; i++) {
-        for (int j = 0; j < window->in_height; j++) {
-            if (window->visible[i + j * window->in_width]) {
-                vgui_set_pixel(desktop->vgui, window->in_x + i, window->in_y + j, window->buffer[i + j * window->in_width]);
+void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
+    if (window->changed || all) {
+        for (int i = 0; i < window->in_width; i++) {
+            for (int j = 0; j < window->in_height; j++) {
+                if (window->visible[i + j * window->in_width]) {
+                    vgui_set_pixel(desktop->vgui, window->in_x + i, window->in_y + j, window->buffer[i + j * window->in_width]);
+                }
             }
         }
+        return;
     }
+    int total = desktop->nb_windows;
+    int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
+    // the first element is the one with the lowest priority
+    for (int i = 0; i < total; i++) {
+        window_t *w = desktop->windows[sorted[i]];
+        if (w->changed) {
+            for (int i = 0; i < w->in_width; i++) {
+                for (int j = 0; j < w->in_height; j++) {
+                    if (w->visible[i + j * w->in_width]) {
+                        vgui_set_pixel(desktop->vgui, w->in_x + i, w->in_y + j, w->buffer[i + j * w->in_width]);
+                    }
+                }
+            }
+            free(sorted);
+            return;
+        }
+    }
+    free(sorted);
 }
 
 int *sort_index_by_priority(window_t **windows, int nb_windows) {
@@ -280,6 +328,8 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
 }
 
 void window_update_visible(desktop_t *desktop, window_t *window) {
+    // can be optimized...
+
     // update the visible buffer of the window
     // the visible buffer is a buffer of 1 and 0, 1 if the pixel is visible, 0 if not
 
@@ -293,17 +343,22 @@ void window_update_visible(desktop_t *desktop, window_t *window) {
     int *sorted = sort_index_by_priority(desktop->windows, total);
     // the first element is the one with the lowest priority
 
+    int x1, x2, y1, y2;
+
     for (int i = total - 1; i >= 0; i--) {
         if (desktop->windows[sorted[i]] == window) {
             break;
         }
-        if (desktop->windows[sorted[i]]->visible) {
-            for (int j = 0; j < window->in_width; j++) {
-                for (int k = 0; k < window->in_height; k++) {
-                    if (window->in_x + j >= desktop->windows[sorted[i]]->out_x && window->in_x + j < desktop->windows[sorted[i]]->out_x + desktop->windows[sorted[i]]->out_width && window->in_y + k >= desktop->windows[sorted[i]]->out_y && window->in_y + k < desktop->windows[sorted[i]]->out_y + desktop->windows[sorted[i]]->out_height) {
-                        window->visible[j + k * window->in_width] = 0;
-                    }
-                }
+
+        // calculate the intersection of the two rectangles
+        x1 = max(window->in_x, desktop->windows[sorted[i]]->out_x);
+        x2 = min(window->in_x + window->in_width, desktop->windows[sorted[i]]->out_x + desktop->windows[sorted[i]]->out_width);
+        y1 = max(window->in_y, desktop->windows[sorted[i]]->out_y);
+        y2 = min(window->in_y + window->in_height, desktop->windows[sorted[i]]->out_y + desktop->windows[sorted[i]]->out_height);
+
+        for (int j = x1; j < x2; j++) {
+            for (int k = y1; k < y2; k++) {
+                window->visible[j - window->in_x + (k - window->in_y) * window->in_width] = 0;
             }
         }
     }
