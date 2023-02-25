@@ -459,6 +459,8 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
             desktop->windows[sorted[i]]->changed = 1;
         }
     }
+
+    free(sorted);
 }
 
 void window_update_visible(desktop_t *desktop, window_t *window) {
