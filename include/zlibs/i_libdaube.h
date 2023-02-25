@@ -33,6 +33,11 @@ typedef struct window_t {
 
     uint8_t is_lite;    // no border
 
+    // if the window is part of a process (most are but it's not mandatory)
+    int is_process;
+    char *program_path;
+    int pid;
+
     int priorite;
 } window_t;
 
@@ -82,6 +87,7 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 11))
 #define mouse_create ((mouse_t *(*)()) get_func_addr(LIBDAUBE_ID, 12))
 #define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 13))
+#define window_set_process ((void (*)(window_t *, char *, int)) get_func_addr(LIBDAUBE_ID, 14))
 
 #endif
 

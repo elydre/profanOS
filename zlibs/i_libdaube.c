@@ -121,6 +121,10 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->is_lite = is_lite;
     window->changed = 1;
 
+    window->is_process = 0;
+    window->program_path = malloc(1);
+    window->pid = 0;
+
     desktop->nb_windows++;
 
     window_draw_box(desktop, window);
@@ -539,4 +543,12 @@ void draw_print_wut(window_t *window, int x, int y, char *msg, int color) {
             }
         }
     }
+}
+
+void window_set_process(window_t *window, char *path, int pid) {
+    window->pid = pid;
+    free(window->program_path);
+    window->program_path = malloc(strlen(path));
+    strcpy(window->program_path, path);
+    window->is_process = 1;
 }

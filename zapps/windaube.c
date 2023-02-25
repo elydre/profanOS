@@ -42,6 +42,9 @@ void main_process() {
     int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);
 
+    // window_set_process(desktop->windows[2], "/bin/games/doom.bin", 0);
+    // WAKEUP
+
     while (1) {
         refresh_mouse(desktop);
         ms_sleep(10);

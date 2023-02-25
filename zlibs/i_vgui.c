@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 typedef struct {
     int width;
@@ -23,9 +24,9 @@ vgui_t vgui_setup(int width, int height) {
     vgui.width = width;
     vgui.height = height;
 
-    vgui.old_framebuffer = calloc(buffer_size);
-    vgui.framebuffer = calloc(buffer_size);
-    vgui.changed_pixels = calloc(buffer_size);
+    vgui.old_framebuffer = calloc(buffer_size, sizeof(uint32_t));
+    vgui.framebuffer = calloc(buffer_size, sizeof(uint32_t));
+    vgui.changed_pixels = calloc(buffer_size, sizeof(uint32_t));
 
     vgui_render(&vgui, 1);
     return vgui;
@@ -38,6 +39,12 @@ void vgui_exit(vgui_t *vgui) {
 }
 
 void vgui_set_pixel(vgui_t *vgui, int x, int y, uint32_t color) {
+    // for debug purposes, we print in seerial the current process
+    c_serial_print(SERIAL_PORT_A, "Current process: ");
+    char *buf = calloc(10, sizeof(char));
+    itoa(c_process_get_pid(), buf, 10);
+    c_serial_print(SERIAL_PORT_A, buf);
+    c_serial_print(SERIAL_PORT_A, "\n");
     if (x < 0 || x >= vgui->width || y < 0 || y >= vgui->height) return;
     uint32_t poss = y * vgui->width + x;
     int already_changed = 0;
@@ -95,10 +102,6 @@ void vgui_print(vgui_t *vgui, int x, int y, char msg[], uint32_t color) {
             }
         }
     }
-}
-
-int abs(int x) {
-    return (x < 0) ? -x : x;
 }
 
 void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color) {
