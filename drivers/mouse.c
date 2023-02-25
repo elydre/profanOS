@@ -1,5 +1,6 @@
 #include <driver/mouse.h>
 #include <cpu/ports.h>  
+#include <gui/vesa.h>
 #include <cpu/isr.h>
 #include <minilib.h>
 #include <system.h>
@@ -74,12 +75,11 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             if (mouse_y < 0) {
                 mouse_y = 0;
             }
-            // TODO : the screen resolution
-            if (mouse_x > 1024) {
-                mouse_x = 1024;
+            if (mouse_x > vesa_get_width()) {
+                mouse_x = vesa_get_width();
             }
-            if (mouse_y > 768) {
-                mouse_y = 768;
+            if (mouse_y > vesa_get_height()) {
+                mouse_y = vesa_get_height();
             }
 
             mouse_cycle=0;

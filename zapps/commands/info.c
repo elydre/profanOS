@@ -4,6 +4,9 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+    char kver[32];
+    c_sys_kinfo(kver);
+    printf("$4kernel:     $1%s\n", kver);
     printf("$4FR time:    ");
     i_time_t time;
     c_time_get(&time);
@@ -29,5 +32,6 @@ int main(int argc, char **argv) {
     printf("$4phys mem:   $1%fMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
     printf("$4disk size:  $1%fMo\n", ((double) c_fs_get_sector_count()) / 2048);
     printf("$4ramdisk:    $1%d%c $7($1%fMo$7)\n", (int)(100 * ((double) c_ramdisk_get_used()) / c_ramdisk_get_size()), '%', ((double) c_ramdisk_get_size()) / 2048);
+    printf("$4screen:     $1%dx$1%d\n", c_vesa_get_width(), c_vesa_get_height());
     return 0;
 }

@@ -43,11 +43,11 @@ uint32_t gt_convert_color(char c) {
 }
 
 int gt_get_max_cols() {
-    return vesa_does_enable() ? 1024 / FONT_WIDTH : 80;
+    return vesa_does_enable() ? vesa_get_width() / FONT_WIDTH : 80;
 }
 
 int gt_get_max_rows() {
-    return vesa_does_enable() ? 768 / FONT_HEIGHT : 25;
+    return vesa_does_enable() ? vesa_get_height() / FONT_HEIGHT : 25;
 }
 
 void kprint_rgb_at(char *message, int col, int row, uint32_t color, uint32_t bg_color) {

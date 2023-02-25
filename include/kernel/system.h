@@ -3,7 +3,8 @@
 
 // build settings
 
-#define KERNEL_VERSION  "WINDAUBE1"
+#define KERNEL_VERSION  "0.11.4"
+#define KERNEL_EDITING  "windaube"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5       // default kernel process priority
@@ -25,7 +26,7 @@
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
 
-#define GRUBMOD_START   0x125000 // grub module start
+#define GRUBMOD_START   0x126000 // grub module start
 
 
 // system.c
@@ -39,6 +40,7 @@ void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
 int sys_init_fpu();
+void sys_kinfo(char *dest);
 
 // kshell.c
 void start_kshell();

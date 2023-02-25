@@ -31,3 +31,11 @@ uint32_t vesa_get_pixel(int x, int y) {
 void *vesa_get_framebuffer() {
     return framebuffer;
 }
+
+int vesa_get_width() {
+    return (int) fb_w;
+}
+
+int vesa_get_height() {
+    return (int) fb_h;
+}

@@ -9,8 +9,8 @@
 
 #define SCROLLED_LINES 5
 
-#define MAX_COLS (1024 / FONT_WIDTH)
-#define MAX_ROWS (768 / FONT_HEIGHT)
+#define MAX_COLS (vesa_get_width() / FONT_WIDTH)
+#define MAX_ROWS (vesa_get_height() / FONT_HEIGHT)
 
 #define CURSOR_COLOR 0xFF003C
 
@@ -167,8 +167,11 @@ void tef_clear() {
         }
     }
     // set pixel to black
-    for (int i = 0; i < 1024; i++) {
-        for (int j = 0; j < 768; j++) {
+    int width = vesa_get_width();
+    int height = vesa_get_height();
+
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
             vesa_set_pixel(i, j, 0);
         }
     }
