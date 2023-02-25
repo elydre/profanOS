@@ -19,13 +19,6 @@ void perf_demo();
 void main_process();
 
 int main(int argc, char **argv) {
-    c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
-
-    main_process();
-    return 0;
-}
-
-void main_process() {
     vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -38,6 +31,8 @@ void main_process() {
     window_fill(lite, 0x222222);
     window_refresh(lite);
 
+    c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
+
     int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);
 
@@ -45,10 +40,11 @@ void main_process() {
         refresh_mouse(desktop);
         ms_sleep(10);
     }
+    return 0;
 }
 
 void perf_demo() {
-    window_t *window = window_create(desktop, "pong like", 100, 200, 200, 200, 2, 0);
+    window_t *window = window_create(desktop, "pong like", 100, 200, 200, 200, 1, 0);
     desktop_refresh(desktop);
     // square that bounces on the edge of the window like pong
 

@@ -1,9 +1,11 @@
+#include <i_libdaube.h>
+#include <i_time.h>
+
 #include <syscall.h>
 #include <stdlib.h>
-#include <stdio.h>
-
 
 int main(int argc, char **argv) {
+    c_serial_print(SERIAL_PORT_A, "cpu usage\n");
 
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
@@ -16,7 +18,8 @@ int main(int argc, char **argv) {
     int idle = 0;
     int total = 0;
 
-    uint32_t *pixel_buffer = calloc(100 * 100, sizeof(uint32_t));
+    window_t *window = window_create(desktop_get_main(), "cpu usage", 500, 100, 100, 100, 2, 0);
+    desktop_refresh(desktop_get_main());
 
     while (1) {
         last_idle = idle;
@@ -33,21 +36,15 @@ int main(int argc, char **argv) {
         history[history_size - 1] = cpu;
 
         // reset pixel buffer
-        for (int i = 0; i < 100 * 100; i++) {
-            pixel_buffer[i] = 0x000000;
-        }
+        window_fill(window, 0x000000);
 
         for (int i = 0; i < history_size; i++) {
             for (int j = 0; j < history[i]; j++) {
-                pixel_buffer[i + 100 * j] = 0x00FFFF;
+                window_set_pixel(window, i, 100 - j, 0x00FFFF);
             }
         }
 
-        for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++) {
-                c_vesa_set_pixel(1023 - i, 100 - j, pixel_buffer[i + 100 * j]);
-            }
-        }
-        c_process_sleep(c_process_get_pid(), 200);
+        window_refresh(window);
+        ms_sleep(200);
     }
 }

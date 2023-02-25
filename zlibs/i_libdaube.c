@@ -49,6 +49,8 @@ uint8_t mouse_img[21*12] = {
     0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
 };
 
+desktop_t *main_desktop;
+
 #define MOUSE_WIDTH 12
 #define MOUSE_HEIGHT 21
 
@@ -60,6 +62,7 @@ int main() {
 }
 
 void init_func() {
+    main_desktop = NULL;
     printf("Init of the libdaube library\n");
 }
 
@@ -87,6 +90,10 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     desktop->screen_width = screen_width;
     desktop->screen_height = screen_height;
     desktop->max_windows = max_windows;
+
+    if (main_desktop == NULL) {
+        main_desktop = desktop;
+    }
 
     return desktop;
 }
@@ -352,6 +359,10 @@ void refresh_mouse(desktop_t *desktop) {
     if (c_mouse_call(2, 1)) {
         desktop_refresh(desktop);
     }
+}
+
+desktop_t *desktop_get_main() {
+    return main_desktop;
 }
 
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {

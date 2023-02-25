@@ -88,7 +88,7 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 11))
 #define mouse_create ((mouse_t *(*)()) get_func_addr(LIBDAUBE_ID, 12))
 #define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 13))
-#define window_set_process ((void (*)(window_t *, char *, int)) get_func_addr(LIBDAUBE_ID, 14))
+#define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 14))
 
 #endif
 
