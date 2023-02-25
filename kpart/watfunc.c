@@ -78,6 +78,7 @@ void *SYSCALL_ARRAY[] = {
     sys_reboot,
     sys_shutdown,
     run_ifexist,
+    sys_kinfo,
 
     // serial.h
     serial_print,

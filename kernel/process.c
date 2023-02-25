@@ -163,6 +163,10 @@ void i_tsleep_awake(uint32_t ticks) {
                 i--;
             } else {
                 sys_error("process in tsleep list is not in tsleep state");
+
+                tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+                tsleep_list_length--;
+                i--;
             }
         }
     }

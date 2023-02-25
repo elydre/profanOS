@@ -3,7 +3,8 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.11.3"
+#define KERNEL_VERSION  "0.11.4"
+#define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5       // default kernel process priority
@@ -39,6 +40,7 @@ void sys_fatal(char msg[]);
 void sys_interrupt(int code); // reserved cpu interrupt
 
 int sys_init_fpu();
+void sys_kinfo(char *dest);
 
 // kshell.c
 void start_kshell();

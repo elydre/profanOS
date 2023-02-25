@@ -4,6 +4,9 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+    char kver[32];
+    c_sys_kinfo(kver);
+    printf("$4kernel:     $1%s\n", kver);
     printf("$4FR time:    ");
     i_time_t time;
     c_time_get(&time);
