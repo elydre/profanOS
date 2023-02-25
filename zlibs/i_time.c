@@ -99,3 +99,12 @@ void ms_sleep(uint32_t ms) {
     if (ms <= 0) return;
     c_process_sleep(c_process_get_pid(), ms);
 }
+
+void ms_sleep_perfect(uint32_t ms) {
+    if (ms <= 0) return;
+    int debut = c_timer_get_ms();
+    if (ms > 10) {
+        c_process_sleep(c_process_get_pid(), ms - 10);
+    }
+    while (c_timer_get_ms() - debut < ms);
+}
