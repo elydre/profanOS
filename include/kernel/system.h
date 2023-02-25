@@ -26,7 +26,7 @@
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
 
-#define GRUBMOD_START   0x125000 // grub module start
+#define GRUBMOD_START   0x126000 // grub module start
 
 
 // system.c
