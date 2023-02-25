@@ -63,7 +63,6 @@ void init_func() {
     printf("Init of the libdaube library\n");
 }
 
-
 void window_draw_box(desktop_t *desktop, window_t *window);
 void desktop_draw(desktop_t *desktop);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
@@ -82,11 +81,12 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     desktop_t *desktop = malloc(sizeof(desktop_t));
     desktop->nb_windows = 0;
     desktop->vgui = vgui;
-    desktop->windows = malloc(sizeof(window_t *) * max_windows);
+    desktop->windows = calloc(max_windows, sizeof(window_t *));
     desktop->mouse = mouse_create();
 
     desktop->screen_width = screen_width;
     desktop->screen_height = screen_height;
+    desktop->max_windows = max_windows;
 
     return desktop;
 }
@@ -125,9 +125,18 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->program_path = malloc(1);
     window->pid = 0;
 
+    // draw the border of the window in the buffer
+    window_draw_box(desktop, window);
+
     desktop->nb_windows++;
 
-    window_draw_box(desktop, window);
+    // add the window to the desktop
+    for (int i = 0; i < desktop->max_windows; i++) {
+        if (desktop->windows[i] == NULL) {
+            desktop->windows[i] = window;
+            break;
+        }
+    }
 
     return window;
 }

@@ -61,6 +61,7 @@ typedef struct desktop_t {
     int nb_windows;
     int screen_width;
     int screen_height;
+    int max_windows;
 
     uint8_t is_locked;
 } desktop_t;

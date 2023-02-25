@@ -27,23 +27,19 @@ int main(int argc, char **argv) {
 
 void main_process() {
     vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
-    vgui_clear(&vgui, 0x000000);
-    vgui_render(&vgui, 0);
+
     desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
-    desktop->windows[0] = window_create(desktop, "desktop", 1, 1, 1022, 766, 0, 0);
-    desktop->windows[1] = window_create(desktop, "classic 2", 100, 200, 200, 200, 2, 0);
-    desktop->windows[2] = window_create(desktop, "classic 3", 70, 70, 300, 300, 1, 0);
-    desktop->windows[3] = window_create(desktop, "lite 1", 240, 240, 100, 100, 3, 1);
+
+    window_t *back = window_create(desktop, "desktop", 1, 1, 1022, 766, 0, 1);
+    window_t *lite = window_create(desktop, "lite 1", 240, 240, 100, 100, 3, 1);
+
     desktop_refresh(desktop);
 
-    window_fill(desktop->windows[3], 0x222222);
-    window_refresh(desktop->windows[3]);
+    window_fill(lite, 0x222222);
+    window_refresh(lite);
 
     int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);
-
-    // window_set_process(desktop->windows[2], "/bin/games/doom.bin", 0);
-    // WAKEUP
 
     while (1) {
         refresh_mouse(desktop);
@@ -52,7 +48,8 @@ void main_process() {
 }
 
 void perf_demo() {
-    window_t *window = desktop->windows[1];
+    window_t *window = window_create(desktop, "pong like", 100, 200, 200, 200, 2, 0);
+    desktop_refresh(desktop);
     // square that bounces on the edge of the window like pong
 
     int square_x = 10;
