@@ -18,5 +18,6 @@ void ms_sleep(uint32_t ms);
 #define time_add ((void (*)(i_time_t *, int)) get_func_addr(TIME_ID, 5))
 #define time_jet_lag ((void (*)(i_time_t *)) get_func_addr(TIME_ID, 6))
 #define ms_sleep ((void (*)(uint32_t)) get_func_addr(TIME_ID, 7))
+#define ms_sleep_perfect ((void (*)(uint32_t)) get_func_addr(TIME_ID, 8))
 
 #endif
