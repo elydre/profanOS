@@ -127,5 +127,5 @@ int sys_init_fpu() {
 }
 
 void sys_kinfo(char *dest) {
-    str_cpy(dest, KERNEL_EDITING" "KERNEL_VERSION);
+    str_cpy(dest, KERNEL_EDITING " " KERNEL_VERSION);
 }
