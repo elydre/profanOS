@@ -81,7 +81,7 @@ void draw_rect(window_t *window, int x, int y, int width, int height, int color)
 void draw_print_wut(window_t *window, int x, int y, char *msg, int color);
 
 desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int screen_height) {
-    desktop_t *desktop = malloc(sizeof(desktop_t));
+    desktop_t *desktop = calloc(1, sizeof(desktop_t));
     desktop->nb_windows = 0;
     desktop->vgui = vgui;
     desktop->windows = calloc(max_windows, sizeof(window_t *));
@@ -100,8 +100,8 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite, int is_lite, int cant_move) {
     serial_print_ss("Creating window", name);
-    window_t *window = malloc(sizeof(window_t));
-    window->name = malloc(sizeof(char) * strlen(name) + 1);
+    window_t *window = calloc(1, sizeof(window_t));
+    window->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(window->name, name);
     window->priorite = priorite;
 
@@ -124,7 +124,7 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
 
     window->parent_desktop = (void *) desktop;
     window->buffer = calloc(window->height * window->width, sizeof(uint32_t));
-    window->visible = malloc(sizeof(uint8_t) * window->height * window->width);
+    window->visible = calloc(window->height * window->width, sizeof(uint8_t));
     window->is_lite = is_lite;
     window->changed = 1;
 
@@ -253,7 +253,7 @@ void window_refresh(window_t *window) {
 }
 
 mouse_t* mouse_create() {
-    mouse_t *mouse = malloc(sizeof(mouse_t));
+    mouse_t *mouse = calloc(1, sizeof(mouse_t));
     mouse->x = 0;
     mouse->y = 0;
     mouse->clicked_window_id = -1;
@@ -430,7 +430,7 @@ void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
 int *sort_index_by_priority(window_t **windows, int nb_windows) {
     // the first element is the one with the lowest priority
 
-    int *sorted = malloc(sizeof(int) * nb_windows);
+    int *sorted = calloc(nb_windows, sizeof(int));
 
     for (int i = 0; i < nb_windows; i++) {
         sorted[i] = i;
