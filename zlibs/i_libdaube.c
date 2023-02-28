@@ -572,11 +572,3 @@ void draw_print_wut(window_t *window, int x, int y, char *msg, int color) {
         }
     }
 }
-
-void window_set_process(window_t *window, char *path, int pid) {
-    window->pid = pid;
-    free(window->program_path);
-    window->program_path = malloc(strlen(path));
-    strcpy(window->program_path, path);
-    window->is_process = 1;
-}
