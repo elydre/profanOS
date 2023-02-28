@@ -189,9 +189,7 @@ void i_remove_from_tsleep_list(int pid) {
 *****************/
 
 void idle_process() {
-    while (1) {
-        asm volatile("hlt");
-    }
+    while (1);
 }
 
 /*********************

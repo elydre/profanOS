@@ -1,4 +1,5 @@
 #include <driver/serial.h>
+#include <kernel/process.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
@@ -11,6 +12,8 @@
 ****************************/
 
 void sys_stop() {
+    serial_kprintf("FATAL during process %d\n", process_get_pid());
+
     ckprint("profanOS has been stopped ", 0x0D);
     ckprint(":", 0x0B);
     ckprint("(\n", 0x0D);
