@@ -81,7 +81,6 @@ the installation script `tools/install.sh` or any other image flasher.
 
 * pf4 ([@elydre](https://github.com/elydre))
 * Loris ([@Lorisredstone](https://github.com/Lorisredstone))
-* ProtoByter ([@ProtoByter](https://github.com/ProtoByter))
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 
@@ -93,5 +92,6 @@ Contact us on [discord](https://pf4.ddns.net/discord)
 * [yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 * [szhou42](https://github.com/szhou42/osdev) for the ata driver
 * [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
+* ProtoByter ([@ProtoByter](https://github.com/ProtoByter)) for the first pull request
 
 *be careful with our friend 55*
