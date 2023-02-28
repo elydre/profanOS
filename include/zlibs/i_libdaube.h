@@ -33,11 +33,6 @@ typedef struct window_t {
 
     uint8_t is_lite;    // no border
 
-    // if the window is part of a process (most are but it's not mandatory)
-    int is_process;
-    char *program_path;
-    int pid;
-
     int priorite;
 
     uint8_t cant_move;
@@ -67,6 +62,22 @@ typedef struct desktop_t {
 
     uint8_t is_locked;
 } desktop_t;
+
+typedef struct button_t {
+    window_t *window;
+    int x;
+    int y;
+    int width;
+    int height;
+    void (*callback)(void *); // clickevent_t
+    uint32_t color;
+    char *text;
+} button_t;
+
+typedef struct clickevent_t {
+    button_t *button;
+    mouse_t *mouse;
+} clickevent_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 

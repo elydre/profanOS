@@ -128,10 +128,6 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->is_lite = is_lite;
     window->changed = 1;
 
-    window->is_process = 0;
-    window->program_path = malloc(1);
-    window->pid = 0;
-
     window->cant_move = cant_move;
 
     // draw the border of the window in the buffer
@@ -288,7 +284,6 @@ void refresh_mouse(desktop_t *desktop) {
         int window_height = window->height;
 
         // draw window outline
-
         int x = desktop->mouse->x + desktop->mouse->window_x_dec;
         int y = desktop->mouse->y + desktop->mouse->window_y_dec;
 

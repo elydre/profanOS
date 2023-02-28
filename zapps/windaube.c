@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     window_refresh(lite);
 
     c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
+    c_run_ifexist("/bin/other/windowdemo.bin", 0, NULL);
 
     int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);
