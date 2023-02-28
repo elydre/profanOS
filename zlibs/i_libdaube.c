@@ -98,7 +98,7 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     return desktop;
 }
 
-window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite, int is_lite) {
+window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite, int is_lite, int cant_move) {
     serial_print_ss("Creating window", name);
     window_t *window = malloc(sizeof(window_t));
     window->name = malloc(sizeof(char) * strlen(name) + 1);
@@ -131,6 +131,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->is_process = 0;
     window->program_path = malloc(1);
     window->pid = 0;
+
+    window->cant_move = cant_move;
 
     // draw the border of the window in the buffer
     window_draw_box(desktop, window);
@@ -263,11 +265,13 @@ mouse_t* mouse_create() {
 }
 
 void refresh_mouse(desktop_t *desktop) {
-    // if we try to move the background
-    if (desktop->mouse->clicked_window_id == 0) {
-        desktop->mouse->clicked_window_id = -1;
-        desktop->mouse->already_clicked = !desktop->mouse->already_clicked;
-        return;
+    if (desktop->mouse->clicked_window_id != -1) {
+        if (desktop->windows[desktop->mouse->clicked_window_id]->cant_move) {
+            serial_print_ss("window", "cant move");
+            desktop->mouse->clicked_window_id = -1;
+            desktop->mouse->already_clicked = !desktop->mouse->already_clicked;
+            return;
+        }
     }
 
     // restore the image under the mouse
