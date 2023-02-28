@@ -263,6 +263,13 @@ mouse_t* mouse_create() {
 }
 
 void refresh_mouse(desktop_t *desktop) {
+    // if we try to move the background
+    if (desktop->mouse->clicked_window_id == 0) {
+        desktop->mouse->clicked_window_id = -1;
+        desktop->mouse->already_clicked = !desktop->mouse->already_clicked;
+        return;
+    }
+
     // restore the image under the mouse
     for (int i = 0; i < MOUSE_WIDTH; i++) {
         for (int j = 0; j < MOUSE_HEIGHT; j++) {
