@@ -91,7 +91,7 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #ifndef LIBDAUBE_C
 
 #define desktop_init ((desktop_t *(*)(vgui_t *, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
-#define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
+#define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
 #define window_draw_box ((void (*)(vgui_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 5))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 6))
 #define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))

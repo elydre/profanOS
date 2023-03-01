@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
 
     desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    window_t *back = window_create(desktop, "desktop", 1, 1, 1022, 766, 0, 1, 1);
-    window_t *lite = window_create(desktop, "lite 1", 240, 240, 100, 100, 3, 1, 0);
+    window_t *back = window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
+    window_t *lite = window_create(desktop, "lite 1", 240, 240, 100, 100, 1, 0);
 
     desktop_refresh(desktop);
 
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 }
 
 void perf_demo() {
-    window_t *window = window_create(desktop, "pong like", 100, 200, 200, 200, 1, 0, 0);
+    window_t *window = window_create(desktop, "pong like", 100, 200, 200, 200, 0, 0);
     desktop_refresh(desktop);
     // square that bounces on the edge of the window like pong
 

@@ -98,12 +98,12 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     return desktop;
 }
 
-window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int priorite, int is_lite, int cant_move) {
+window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move) {
     serial_print_ss("Creating window", name);
     window_t *window = calloc(1, sizeof(window_t));
     window->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(window->name, name);
-    window->priorite = priorite;
+    window->priorite = desktop->nb_windows;
 
     window->in_height = height;
     window->in_width = width;
@@ -297,28 +297,28 @@ void refresh_mouse(desktop_t *desktop) {
             if (x + i < 0 || x + i >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x + i, y, vgui_get_pixel(desktop->vgui, x + i, y));
+            c_vesa_set_pixel(x + i - 6, y - 21, vgui_get_pixel(desktop->vgui, x + i - 6, y - 21));
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
             if (x + i < 0 || x + i >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x + i, y + window_height, vgui_get_pixel(desktop->vgui, x + i, y + window_height));
+            c_vesa_set_pixel(x + i - 6, y + window_height - 22, vgui_get_pixel(desktop->vgui, x + i - 6, y + window_height - 22));
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
             if (x < 0 || x >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x, y + i, vgui_get_pixel(desktop->vgui, x, y + i));
+            c_vesa_set_pixel(x - 6, y + i - 21, vgui_get_pixel(desktop->vgui, x - 6, y + i - 21));
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
             if (x + window_width < 0 || x + window_width >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x + window_width, y + i, vgui_get_pixel(desktop->vgui, x + window_width, y + i));
+            c_vesa_set_pixel(x + window_width - 7, y + i - 21, vgui_get_pixel(desktop->vgui, x + window_width - 7, y + i - 21));
         }
     }
 
@@ -341,15 +341,31 @@ void refresh_mouse(desktop_t *desktop) {
         // we check if the mouse is on a window
         int total = desktop->nb_windows;
         int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
+        int has_fire = 0;
         // the first element is the one with the lowest priority
         for (int i = total - 1; i >= 0; i--) {
             window_t *window = desktop->windows[sorted[i]];
-            if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height) {
+            if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + 20) {
+                if (window->is_lite) {
+                    serial_print_ss("window cant move", "lite");
+                    goto is_lite_fallback;
+                }
+                serial_print_ss("mouse", "clicked on window top");
+                has_fire = 1;
                 desktop->mouse->clicked_window_id = sorted[i];
-                desktop->mouse->window_x_dec = window->x - desktop->mouse->x;
-                desktop->mouse->window_y_dec = window->y - desktop->mouse->y;
+                desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
+                desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
+                break;
+            } else if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height)  {
+                is_lite_fallback:
+                // click de bouton a check
+                serial_print_ss("mouse", "clicked on window inside");
+                has_fire = 0;
                 break;
             }
+        }
+        if (!has_fire) {
+            is_clicked = 0;
         }
         free(sorted);
     } else if (is_clicked && desktop->mouse->already_clicked) {
@@ -369,28 +385,28 @@ void refresh_mouse(desktop_t *desktop) {
             if (x + i < 0 || x + i >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x + i, y, COLOR_MASTER);
+            c_vesa_set_pixel(x + i - 6, y - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
             if (x + i < 0 || x + i >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x + i, y + window_height, COLOR_MASTER);
+            c_vesa_set_pixel(x + i - 6, y + window_height - 22, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
             if (x < 0 || x >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x, y + i, COLOR_MASTER);
+            c_vesa_set_pixel(x - 6, y + i - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
             if (x + window_width < 0 || x + window_width >= desktop->vgui->width) {
                 continue;
             }
-            c_vesa_set_pixel(x + window_width, y + i, COLOR_MASTER);
+            c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
         }
     } else if (!is_clicked && desktop->mouse->already_clicked) {
         serial_print_ss("mouse", "released");
@@ -415,6 +431,12 @@ void refresh_mouse(desktop_t *desktop) {
 desktop_t *desktop_get_main() {
     return main_desktop;
 }
+
+window_t *window_delete() {
+    // TODO (we need to free the memory and switch the priority of every window)
+    return NULL;
+}
+
 
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
     int x1, x2, y1, y2;
@@ -617,3 +639,5 @@ void draw_print_wut(window_t *window, int x, int y, char *msg, int color) {
         }
     }
 }
+
+

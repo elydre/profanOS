@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     int idle = 0;
     int total = 0;
 
-    window_t *window = window_create(desktop_get_main(), "cpu usage", 500, 100, 100, 100, 2, 0, 0);
+    window_t *window = window_create(desktop_get_main(), "cpu usage", 500, 100, 100, 100, 0, 0);
     desktop_refresh(desktop_get_main());
 
     while (1) {
