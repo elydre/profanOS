@@ -100,6 +100,14 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move) {
     serial_print_ss("Creating window", name);
+    if (desktop->nb_windows >= desktop->max_windows) {
+        serial_print_ss("Error:", "Too many windows\n");
+        return NULL;
+    }
+    if (width < 0 || height < 0) {
+        serial_print_ss("Error:", "Window position is negative\n");
+        return NULL;
+    }
     window_t *window = calloc(1, sizeof(window_t));
     window->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(window->name, name);
@@ -123,6 +131,7 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     }
 
     window->parent_desktop = (void *) desktop;
+    window->button_array = NULL;
     window->buffer = calloc(window->height * window->width, sizeof(uint32_t));
     window->visible = calloc(window->height * window->width, sizeof(uint8_t));
     window->is_lite = is_lite;
@@ -342,13 +351,21 @@ void refresh_mouse(desktop_t *desktop) {
         int total = desktop->nb_windows;
         int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
         int has_fire = 0;
+        int has_clicked = 0;
         // the first element is the one with the lowest priority
         for (int i = total - 1; i >= 0; i--) {
             window_t *window = desktop->windows[sorted[i]];
+            if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height) {
+                // this is not a bug, it is a feature
+
+                // click de bouton a check
+                serial_print_ss("mouse", "clicked on window inside");
+                has_clicked = 1;
+            }
             if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + 20) {
                 if (window->is_lite) {
                     serial_print_ss("window cant move", "lite");
-                    goto is_lite_fallback;
+                    break;
                 }
                 serial_print_ss("mouse", "clicked on window top");
                 has_fire = 1;
@@ -356,17 +373,10 @@ void refresh_mouse(desktop_t *desktop) {
                 desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
                 desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
                 break;
-            } else if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height)  {
-                is_lite_fallback:
-                // click de bouton a check
-                serial_print_ss("mouse", "clicked on window inside");
-                has_fire = 0;
-                break;
             }
+            if (has_clicked) break;
         }
-        if (!has_fire) {
-            is_clicked = 0;
-        }
+        if (!has_fire) is_clicked = 0;
         free(sorted);
     } else if (is_clicked && desktop->mouse->already_clicked) {
         serial_print_ss("mouse", "dragging");
@@ -376,7 +386,6 @@ void refresh_mouse(desktop_t *desktop) {
         int window_height = window->height;
 
         // draw window outline
-
         int x = desktop->mouse->x + desktop->mouse->window_x_dec;
         int y = desktop->mouse->y + desktop->mouse->window_y_dec;
 

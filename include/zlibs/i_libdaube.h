@@ -7,6 +7,7 @@
 
 typedef struct window_t {
     void *parent_desktop;
+    void **button_array; // button_t **
 
     char *name;
 
@@ -69,7 +70,9 @@ typedef struct button_t {
     int y;
     int width;
     int height;
-    void (*callback)(void *); // clickevent_t
+    void (*callback_click)(void *); // clickevent_t *
+    void (*callback_creation)(void);
+    void (*callback_destruction)(void);
     uint32_t color;
     char *text;
 } button_t;
