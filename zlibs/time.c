@@ -12,6 +12,7 @@ char     **tzname;
 
 int main() {
     c_kprint("Init of the time lib !\n");
+    return 0;
 }
 
 char *asctime(const tm_t *a) {

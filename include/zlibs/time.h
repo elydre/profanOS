@@ -43,7 +43,7 @@ typedef struct itimerspec_t {
 // Flag indicating time is absolute with respect to the clock associated with a timer.
 #define TIMER_ABSTIME 1
 
-#ifndef TIME_c
+#ifndef TIME_C
 #define asctime ((char * (*)(const tm_t *)) (get_func_addr(TIME_ID, 2)))
 #define asctime_r ((char * (*)(const tm_t *, char *)) (get_func_addr(TIME_ID, 3)))
 #define clock ((clock_t (*)(void)) (get_func_addr(TIME_ID, 4)))
