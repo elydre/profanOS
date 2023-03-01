@@ -44,9 +44,31 @@ typedef struct itimerspec_t {
 #define TIMER_ABSTIME 1
 
 #ifndef TIME_c
-
-
-
+#define asctime ((char * (*)(const tm_t *)) (get_func_addr(TIME_ID, 1)))
+#define asctime_r ((char * (*)(const tm_t *, char *)) (get_func_addr(TIME_ID, 2)))
+#define clock ((clock_t (*)(void)) (get_func_addr(TIME_ID, 3)))
+#define clock_getres ((int (*)(clockid_t, timespec_t *)) (get_func_addr(TIME_ID, 4)))
+#define clock_gettime ((int (*)(clockid_t, timespec_t *)) (get_func_addr(TIME_ID, 5)))
+#define clock_settime ((int (*)(clockid_t, const timespec_t *)) (get_func_addr(TIME_ID, 6)))
+#define ctime ((char * (*)(const time_t *)) (get_func_addr(TIME_ID, 7)))
+#define ctime_r ((char * (*)(const time_t *, char *)) (get_func_addr(TIME_ID, 8)))
+#define difftime ((double (*)(time_t, time_t)) (get_func_addr(TIME_ID, 9)))
+#define getdate ((tm_t * (*)(const char *)) (get_func_addr(TIME_ID, 10)))
+#define gmtime ((tm_t * (*)(const time_t *)) (get_func_addr(TIME_ID, 11)))
+#define gmtime_r ((tm_t * (*)(const time_t *, tm_t *)) (get_func_addr(TIME_ID, 12)))
+#define localtime ((tm_t * (*)(const time_t *)) (get_func_addr(TIME_ID, 13)))
+#define localtime_r ((tm_t * (*)(const time_t *, tm_t *)) (get_func_addr(TIME_ID, 14)))
+#define mktime ((time_t (*)(tm_t *)) (get_func_addr(TIME_ID, 15)))
+#define nanosleep ((int (*)(const timespec_t *, timespec_t *)) (get_func_addr(TIME_ID, 16)))
+#define strftime ((size_t (*)(char *, size_t, const char *, const tm_t *)) (get_func_addr(TIME_ID, 17)))
+#define strptime ((char * (*)(const char *, const char *, tm_t *)) (get_func_addr(TIME_ID, 18)))
+#define time ((time_t (*)(time_t *)) (get_func_addr(TIME_ID, 19)))
+#define timer_create ((int (*)(clockid_t, sigevent_t *, timer_t *)) (get_func_addr(TIME_ID, 20)))
+#define timer_delete ((int (*)(timer_t)) (get_func_addr(TIME_ID, 21)))
+#define timer_gettime ((int (*)(timer_t, itimerspec_t *)) (get_func_addr(TIME_ID, 22)))
+#define timer_getoverrun ((int (*)(timer_t)) (get_func_addr(TIME_ID, 23)))
+#define timer_settime ((int (*)(timer_t, int, const itimerspec_t *, itimerspec_t *)) (get_func_addr(TIME_ID, 24)))
+#define tzset ((void (*)(void)) (get_func_addr(TIME_ID, 25)))
 #endif
 
 #endif

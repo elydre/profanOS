@@ -10,14 +10,7 @@ int       daylight;
 long int  timezone;
 char     **tzname;
 
-void init_func();
-
 int main() {
-    init_func();
-    return 0;
-}
-
-void init_func() {
     c_kprint("Init of the time lib !\n");
 }
 
