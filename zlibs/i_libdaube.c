@@ -287,6 +287,10 @@ void refresh_mouse(desktop_t *desktop) {
     // restore the image under the mouse
     for (int i = 0; i < MOUSE_WIDTH; i++) {
         for (int j = 0; j < MOUSE_HEIGHT; j++) {
+            // chek if we are outside the screen
+            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->vgui->width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->vgui->height) {
+                continue;
+            }
             c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, vgui_get_pixel(desktop->vgui, desktop->mouse->x + i, desktop->mouse->y + j));
         }
     }
@@ -336,6 +340,9 @@ void refresh_mouse(desktop_t *desktop) {
 
     for (int i = 0; i < MOUSE_WIDTH; i++) {
         for (int j = 0; j < MOUSE_HEIGHT; j++) {
+            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->vgui->width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->vgui->height) {
+                continue;
+            }
             if (mouse_img[i + j * MOUSE_WIDTH] == 1) {
                 c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_MASTER);
             } else if (mouse_img[i + j * MOUSE_WIDTH] == 2) {
