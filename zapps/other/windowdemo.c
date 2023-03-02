@@ -4,11 +4,16 @@
 #include <syscall.h>
 #include <stdlib.h>
 
+void callback(clickevent_t *event) {
+    c_serial_print(SERIAL_PORT_A, "click\n");
+}
+
 int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
     window_t *window = window_create(desktop_get_main(), "WINDOW DEMO", 400, 200, 100, 100, 0, 0);
+    button_t *button = create_button(window, 0, 0, 20, 20, callback);
     desktop_refresh(desktop_get_main());
 
     while (1) {

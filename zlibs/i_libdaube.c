@@ -12,6 +12,8 @@
 
 #define NO_OPTI 0   // disable optimizations
 
+#define DEBUG_LEVEL 0
+
 #define COLOR_MASTER 0x6b6e8c
 #define COLOR_TITLES 0xa7a0b9
 #define COLOR_GRADN1 0x240865
@@ -99,7 +101,7 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
 }
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move) {
-    serial_print_ss("Creating window", name);
+    if (DEBUG_LEVEL > 0) serial_print_ss("Creating window", name);
     if (desktop->nb_windows >= desktop->max_windows) {
         serial_print_ss("Error:", "Too many windows\n");
         return NULL;
@@ -190,7 +192,7 @@ void desktop_refresh(desktop_t *desktop) {
     int *sorted = sort_index_by_priority(desktop->windows, total);
 
     for (int i = 0; i < total; i++) {
-        serial_print_ss("work for", desktop->windows[sorted[i]]->name);
+        if (DEBUG_LEVEL > 2) serial_print_ss("work for", desktop->windows[sorted[i]]->name);
         window_update_visible(desktop, desktop->windows[sorted[i]]);
         window_set_pixels_visible(desktop, desktop->windows[sorted[i]], 0);
     }
@@ -200,7 +202,7 @@ void desktop_refresh(desktop_t *desktop) {
         desktop->windows[i]->moved = 0;
     }
 
-    c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
+    if (DEBUG_LEVEL > 2) c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
     vgui_render(desktop->vgui, 0);
 
     desktop->is_locked = 0;
@@ -277,7 +279,7 @@ mouse_t* mouse_create() {
 void refresh_mouse(desktop_t *desktop) {
     if (desktop->mouse->clicked_window_id != -1) {
         if (desktop->windows[desktop->mouse->clicked_window_id]->cant_move) {
-            serial_print_ss("window", "cant move");
+            if (DEBUG_LEVEL > 2) serial_print_ss("window", "cant move");
             desktop->mouse->clicked_window_id = -1;
             desktop->mouse->already_clicked = !desktop->mouse->already_clicked;
             return;
@@ -353,7 +355,7 @@ void refresh_mouse(desktop_t *desktop) {
 
     int is_clicked = c_mouse_call(2, 0);
     if (is_clicked && !desktop->mouse->already_clicked) {
-        serial_print_ss("mouse", "clicked");
+        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked");
         // we check if the mouse is on a window
         int total = desktop->nb_windows;
         int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
@@ -366,15 +368,24 @@ void refresh_mouse(desktop_t *desktop) {
                 // this is not a bug, it is a feature
 
                 // click de bouton a check
-                serial_print_ss("mouse", "clicked on window inside");
+                if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on window inside");
+                for (int j = 0; j < window->buttons_count; j++) {
+                    button_t *button = window->button_array[j];
+                    if (desktop->mouse->x - window->x >= button->x && desktop->mouse->x - window->x <= button->x + button->width && desktop->mouse->y - window->y >= button->y && desktop->mouse->y - window->y <= button->y + button->height) {
+                        button->is_clicked = 1;
+                        if (DEBUG_LEVEL > 0) serial_print_ss("button", "clicked");
+                        has_clicked = 1;
+                        break;
+                    }
+                }
                 has_clicked = 1;
             }
             if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + 20) {
                 if (window->is_lite) {
-                    serial_print_ss("window cant move", "lite");
+                    if (DEBUG_LEVEL > 2) serial_print_ss("window cant move", "lite");
                     break;
                 }
-                serial_print_ss("mouse", "clicked on window top");
+                if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on window top");
                 has_fire = 1;
                 desktop->mouse->clicked_window_id = sorted[i];
                 desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
@@ -386,7 +397,7 @@ void refresh_mouse(desktop_t *desktop) {
         if (!has_fire) is_clicked = 0;
         free(sorted);
     } else if (is_clicked && desktop->mouse->already_clicked) {
-        serial_print_ss("mouse", "dragging");
+        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging");
         window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
 
         int window_width = window->width;
@@ -425,7 +436,7 @@ void refresh_mouse(desktop_t *desktop) {
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
         }
     } else if (!is_clicked && desktop->mouse->already_clicked) {
-        serial_print_ss("mouse", "released");
+        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "released");
         window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
         set_window_priority(desktop, window);
         window_move(window, desktop->mouse->x + desktop->mouse->window_x_dec, desktop->mouse->y + desktop->mouse->window_y_dec);
@@ -442,23 +453,56 @@ void refresh_mouse(desktop_t *desktop) {
     if (c_mouse_call(2, 1)) {
         desktop_refresh(desktop);
     }
+
+    for (int i = 0; i < desktop->nb_windows; i++) {
+        window_t *window = desktop->windows[i];
+        for (int j = 0; j < window->buttons_count; j++) {
+            button_t *button = ((button_t **) window->button_array)[j];
+            if (button->is_clicked) {
+                clickevent_t *event = malloc(sizeof(clickevent_t));
+                event->x = desktop->mouse->x - window->x;
+                event->y = desktop->mouse->y - window->y;
+                event->button = button;
+                event->mouse = desktop->mouse;
+                button->callback(event);
+                free(event);
+                button->is_clicked = 0;
+            }
+        }
+    }
 }
 
 desktop_t *desktop_get_main() {
     return main_desktop;
 }
 
-window_t *window_delete() {
+void window_delete(window_t *) {
     // TODO (we need to free the memory and switch the priority of every window)
-    return NULL;
+    serial_print_ss("window", "delete");
 }
 
+button_t *create_button(window_t *window, int x, int y, int width, int height, void (*callback)(clickevent_t *)) {
+    // set button
+    button_t *button = malloc(sizeof(button_t));
+    button->x = x;
+    button->y = y;
+    button->width = width;
+    button->height = height;
+    button->callback = callback;
+    button->window = window;
+    button->is_clicked = 0;
+    // set in the window
+    window->button_array = realloc(window->button_array, sizeof(button_t *) * (window->buttons_count + 1));
+    window->button_array[window->buttons_count] = button;
+    window->buttons_count++;
+    return button;
+}
 
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
     int x1, x2, y1, y2;
 
     if (w->moved && is_first) {
-        serial_print_ss("window move:", w->name);
+        if (DEBUG_LEVEL > 2) serial_print_ss("window move:", w->name);
         x1 = max(window->x, w->old_x);
         x2 = min(window->x + window->width, w->old_x + w->width);
         y1 = max(window->y, w->old_y);

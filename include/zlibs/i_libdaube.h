@@ -8,6 +8,7 @@
 typedef struct window_t {
     void *parent_desktop;
     void **button_array; // button_t **
+    int buttons_count;
 
     char *name;
 
@@ -64,23 +65,23 @@ typedef struct desktop_t {
     uint8_t is_locked;
 } desktop_t;
 
+typedef struct clickevent_t {
+    void *button; // button_t *
+    mouse_t *mouse;
+    int x;
+    int y;
+} clickevent_t;
+
 typedef struct button_t {
     window_t *window;
     int x;
     int y;
     int width;
     int height;
-    void (*callback_click)(void *); // clickevent_t *
-    void (*callback_creation)(void);
-    void (*callback_destruction)(void);
-    uint32_t color;
-    char *text;
+    int is_clicked;
+    void (*callback)(clickevent_t *); // clickevent_t *
 } button_t;
 
-typedef struct clickevent_t {
-    button_t *button;
-    mouse_t *mouse;
-} clickevent_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
@@ -105,7 +106,8 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #define mouse_create ((mouse_t *(*)()) get_func_addr(LIBDAUBE_ID, 12))
 #define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 13))
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 14))
-
+#define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 15))
+#define create_button ((button_t *(*)(window_t *, int, int, int, int, void (*)(clickevent_t *))) get_func_addr(LIBDAUBE_ID, 16))
 #endif
 
 #endif
