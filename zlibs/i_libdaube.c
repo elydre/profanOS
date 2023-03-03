@@ -476,9 +476,20 @@ desktop_t *desktop_get_main() {
     return main_desktop;
 }
 
-void window_delete(window_t *) {
+void window_delete(window_t *window) {
     // TODO (we need to free the memory and switch the priority of every window)
     serial_print_ss("window", "delete");
+    // we need to free the memory and switch the priority of every window
+    // first we do the buttons
+    for (int i = 0; i < window->buttons_count; i++) {
+        free(window->button_array[i]);
+    }
+    // than we do the window
+    free(window->button_array);
+    free(window->name);
+    free(window->buffer);
+    free(window->visible);
+    free(window);
 }
 
 button_t *create_button(window_t *window, int x, int y, int width, int height, void (*callback)(clickevent_t *)) {

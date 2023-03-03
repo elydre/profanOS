@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 void callback(clickevent_t *event) {
-    c_serial_print(SERIAL_PORT_A, "click\n");
+    window_delete(((button_t *) event->button)->window);
 }
 
 int main(int argc, char **argv) {
