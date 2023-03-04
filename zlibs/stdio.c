@@ -420,7 +420,7 @@ int printf(const char *restrict format, ...) {
 }
 
 int fprintf( FILE *restrict stream, const char *restrict format, ... ) {
-    fsprint("fprintf is not correctly implemented, ignore this warning if you are not Loris !\n");
+    c_serial_print(SERIAL_PORT_A, "WARNING: fprintf is not correctly implemented\n");
     // if the stream is read only, we can't write to it
     if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || stream == stdin) {
         return 0;
