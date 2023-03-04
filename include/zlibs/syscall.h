@@ -107,7 +107,7 @@
 #define c_mem_alloc ((uint32_t (*)(uint32_t, int)) hi_func_addr(17))
 #define c_mem_free_addr ((int (*)(uint32_t)) hi_func_addr(18))
 #define c_mem_get_info ((int (*)(int, int)) hi_func_addr(19))
-#define c_mem_free_all ((void (*)(int)) hi_func_addr(20))
+#define c_mem_free_all ((int (*)(int)) hi_func_addr(20))
 
 #define c_time_get ((void (*)(i_time_t *)) hi_func_addr(21))
 #define c_timer_get_ms ((uint32_t (*)(void)) hi_func_addr(22))
