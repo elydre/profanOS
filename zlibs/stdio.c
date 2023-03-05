@@ -442,8 +442,15 @@ int fprintf( FILE *restrict stream, const char *restrict format, ... ) {
     return 0; // TODO : return the true number of characters written
 }
 
-int sprintf( char *restrict buffer, const char *restrict format, ... ) {
-    fsprint("sprintf not implemented yet, WHY DO YOU USE IT ?\n");
+int sprintf(char *restrict buffer, const char *restrict format, ... ) {
+    va_list args;
+    // we copy format to a buffer because we need to modify it
+    char *format_copy = malloc(strlen(format) + 1);
+    strcpy(format_copy, format);
+    va_start(args, format);
+    vsnprintf(buffer, 1024, format_copy, args);
+    va_end(args);
+    free(format_copy);
     return 0;
 }
 
