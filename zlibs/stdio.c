@@ -286,6 +286,25 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
         // we flush the file
         fflush(stream);
     }
+    if (strcmp(stream->mode, "wb") == 0 || strcmp(stream->mode, "wb+") == 0) {
+        // we reset the file buffer
+        free(stream->buffer);
+        stream->buffer = calloc(size * count + 1, sizeof(char));
+        // we copy the buffer into the file buffer, with a loop to avoid the null char
+        for (int i = 0; i < size * count; i++) {
+            stream->buffer[i] = ((char *) buffer)[i];
+        }
+        // we set the buffer size
+        stream->buffer_size = size * count;
+        // we set the buffer position to the end of the buffer
+        stream->buffer_pos = stream->buffer_size;
+        // we set the eof
+        stream->eof = 0;
+        // we set the error
+        stream->error = 0;
+        // we flush the file
+        fflush(stream);
+    }
 
     // in any case, we return the count
     return count;
