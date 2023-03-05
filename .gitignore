@@ -21,5 +21,6 @@ out/
 .vs/
 
 # debug dirs/files
+extracted/
 debug/
 *.hex

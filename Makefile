@@ -26,6 +26,9 @@ disk:
 srcdisk:
 	python3 $(PY_BUILD) srcdisk
 
+xtrdisk:
+	python3 $(PY_BUILD) xtrdisk
+
 # run kernel in qemu
 run:
 	python3 $(PY_BUILD) run
@@ -45,3 +48,4 @@ clean:
 # clean all build files
 fullclean: clean
 	rm -Rf *.iso *.elf *.bin
+	rm -Rf extracted/
