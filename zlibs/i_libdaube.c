@@ -654,7 +654,7 @@ void serial_print_ss(char *str, char *name) {
 }
 
 void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int color) {
-    // just orizontal or vertical lines
+    // just horizontal or vertical lines
     if (x1 == x2) {
         for (int i = y1; i < y2; i++) {
             window->buffer[x1 + i * window->width] = color;
