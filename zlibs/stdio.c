@@ -133,6 +133,13 @@ FILE *fopen( const char *restrict filename, const char *restrict mode ) {
     file->error = 0;
     // we set the file temporary to 0
     file->is_temp = 0;
+
+    // if we are in writing mode we void the content
+    if (strcmp(mode, "w") == 0 || strcmp(mode, "w+") == 0 || strcmp(mode, "wb") == 0 || strcmp(mode, "wb+") == 0) {
+        file->buffer[0] = '\0';
+        file->buffer_size = 0;
+        file->buffer_pos = 0;
+    }
     
     // we return the file
     return file;
@@ -187,7 +194,7 @@ int fflush(FILE *stream) {
         return 0;
     }
     // we check if the file is open for writing
-    if (strcmp(stream->mode, "w") != 0 && strcmp(stream->mode, "w+") != 0 && strcmp(stream->mode, "a") != 0 && strcmp(stream->mode, "a+") != 0) {
+    if (strcmp(stream->mode, "w") && strcmp(stream->mode, "w+") && strcmp(stream->mode, "a") && strcmp(stream->mode, "a+") && strcmp(stream->mode, "wb") && strcmp(stream->mode, "wb+") && strcmp(stream->mode, "ab") && strcmp(stream->mode, "ab+")) {
         return 0;
     }
     // we write the file
@@ -248,64 +255,23 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
         return 0;
     }
-    // now we branch, it's not the same in append and write mode
-    if (strcmp(stream->mode, "w") == 0 || strcmp(stream->mode, "w+") == 0) {
-        // we reset the file buffer
-        free(stream->buffer);
-        stream->buffer = calloc(size * count + 1, sizeof(char));
-        // we copy the buffer into the file buffer
-        strcpy(stream->buffer, buffer);
-        // we set the buffer size
-        stream->buffer_size = size * count;
-        // we set the buffer position
-        stream->buffer_pos = 0;
-        // we set the eof
-        stream->eof = 0;
-        // we set the error
-        stream->error = 0;
-        // we flush the file
-        fflush(stream);
-    }
-    if (strcmp(stream->mode, "a") == 0 || strcmp(stream->mode, "a+") == 0) {
-        // in this mode we just create a string that is the concatenation of the file buffer and the buffer
-        char *new_buffer = calloc(stream->buffer_size + size * count + 1, sizeof(char));
-        strcpy(new_buffer, stream->buffer);
-        strcat(new_buffer, buffer);
-        // we free the old buffer
-        free(stream->buffer);
-        // we set the new buffer
-        stream->buffer = new_buffer;
-        // we set the buffer size
-        stream->buffer_size = stream->buffer_size + size * count;
-        // we set the buffer position
-        stream->buffer_pos = 0;
-        // we set the eof
-        stream->eof = 0;
-        // we set the error
-        stream->error = 0;
-        // we flush the file
-        fflush(stream);
-    }
-    if (strcmp(stream->mode, "wb") == 0 || strcmp(stream->mode, "wb+") == 0) {
-        // we reset the file buffer
-        free(stream->buffer);
-        stream->buffer = calloc(size * count + 1, sizeof(char));
-        // we copy the buffer into the file buffer, with a loop to avoid the null char
-        for (int i = 0; i < size * count; i++) {
-            stream->buffer[i] = ((char *) buffer)[i];
+    // we put the buffer_index to the end of the buffer
+    stream->buffer_pos = stream->buffer_size;
+    // we copy char by char from the buffer to the file buffer
+    for (int i = 0; i < (int) count; i++) {
+        // we check if the file buffer is full
+        if (stream->buffer_pos >= stream->buffer_size) {
+            // we realloc the buffer
+            stream->buffer_size += 1024;
+            stream->buffer = realloc(stream->buffer, stream->buffer_size);
         }
-        // we set the buffer size
-        stream->buffer_size = size * count;
-        // we set the buffer position to the end of the buffer
-        stream->buffer_pos = stream->buffer_size;
-        // we set the eof
-        stream->eof = 0;
-        // we set the error
-        stream->error = 0;
-        // we flush the file
-        fflush(stream);
+        // we copy the char
+        stream->buffer[stream->buffer_pos] = ((char *) buffer)[stream->buffer_pos];
+        // we increment the buffer position
+        stream->buffer_pos++;
     }
-
+    // we flush
+    fflush(stream);
     // in any case, we return the count
     return count;
 }
