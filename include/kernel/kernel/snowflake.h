@@ -34,7 +34,7 @@ uint32_t mem_get_alloc_size(uint32_t addr);
 uint32_t mem_alloc(uint32_t size, int state);
 int mem_free_addr(uint32_t addr);
 
-void mem_free_all(int task_id);
+int mem_free_all(int task_id);
 
 
 /************************************

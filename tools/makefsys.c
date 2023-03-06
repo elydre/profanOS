@@ -7,6 +7,7 @@
  * Or you use the makefile (make disk)  *
 *****************************************/
 
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +44,7 @@ u_int32_t fs_make_file(char *path, char *name);
 void *fs_declare_read_array(char *path);
 
 void fs_write_in_file(char *path, u_int8_t *data, u_int32_t size);
-void fs_read_file(char *path, char *data);
+void fs_read_file(char *path, u_int8_t *data);
 
 u_int32_t fs_get_file_size(char *path);
 int fs_get_dir_size(char *path);
@@ -506,6 +507,20 @@ u_int32_t i_path_to_id(char *path, char *current_path, u_int32_t sector) {
     return 0;
 }
 
+void i_get_name(u_int32_t sector, char *name) {
+    u_int32_t buffer[SECTOR_SIZE];
+    read_from_disk(sector, buffer);
+    
+    if (!(buffer[0] & I_USED)) {
+        printf("Error: the sector isn't used\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < MAX_SIZE_NAME; i++) {
+        name[i] = (char) buffer[1 + i];
+    }
+}
+
 /*********************
  * PUBLIC FUNCTIONS *
 *********************/
@@ -575,7 +590,7 @@ void *fs_declare_read_array(char *path) {
 
 // How to declare data : char *data = fs_declare_read_array(path);
 // How to free data    : free(data);
-void fs_read_file(char *path, char *data) {
+void fs_read_file(char *path, u_int8_t *data) {
     u_int32_t file_size = fs_get_file_size(path);
     u_int32_t data_index = 0;
     int sector = fs_path_to_id(path);
@@ -721,6 +736,61 @@ void put_in_disk() {
     printf("put in disk done, %d sectors written (%d used)\n", to_write, total_sector_written);
 }
 
+void load_from_disk() {
+    FILE *fptr;
+    if ((fptr = fopen("HDD.bin","rb")) == NULL) {
+       printf("Error! opening file");
+       exit(1);
+    }
+
+    // get the file size
+    fseek(fptr, 0, SEEK_END);
+    long fsize = ftell(fptr);
+    fseek(fptr, 0, SEEK_SET);
+
+    int i, to_read = fsize / (sizeof(u_int32_t) * SECTOR_SIZE);
+    to_read += 2048 - (to_read % (2048));
+    for (i = 0; i < to_read; i++) {
+        u_int32_t buffer[SECTOR_SIZE];
+        fread(buffer, sizeof(u_int32_t), SECTOR_SIZE, fptr);
+        write_to_disk(i, buffer);
+        total_sector_written++;
+    }
+    printf("load from disk done, %d sectors read (%d used)\n", to_read, total_sector_written);
+}
+
+void extract_from_disk(char *profan_path, char *parent, char *name) {
+    char *linux_path = i_build_path(profan_path, name);
+    char *profan_path2 = i_build_path(parent, name);
+
+    int type = fs_get_sector_type(fs_path_to_id(profan_path2));
+    if (type == 2) {
+        // file
+        u_int8_t *file_content = fs_declare_read_array(profan_path2);
+        fs_read_file(profan_path2, file_content);
+        FILE *f = fopen(linux_path, "wb");
+        fwrite(file_content, fs_get_file_size(profan_path2), 1, f);
+        fclose(f);
+        free(file_content);
+    } else if (type == 3) {
+        // dir
+        mkdir(linux_path, 0777);
+        int max = fs_get_dir_size(profan_path2);
+        char *child_name = malloc(256);
+        u_int32_t *dir_content = malloc(sizeof(u_int32_t) * max);
+        fs_get_dir_content(profan_path2, dir_content);
+
+        for (int i = 0; i < max; i++) {
+            fs_get_element_name(dir_content[i], child_name);
+            printf("| extract child %s in %s\n", child_name, profan_path2);
+            extract_from_disk(linux_path, profan_path2, child_name);
+        }
+    }
+
+    free(profan_path2);
+    free(linux_path);
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         printf("Usage : %s <path>\n", argv[0]);
@@ -728,9 +798,14 @@ int main(int argc, char **argv) {
     }
 
     init_fs();
-    arboresence_to_disk(argv[1], "/", "");
-
-    put_in_disk();
+    if (strcmp(argv[1], "42")) {
+        arboresence_to_disk(argv[1], "/", "");
+        put_in_disk();
+    } else {
+        printf("special mode, extracting disk\n");
+        load_from_disk();
+        extract_from_disk("./extracted", "/", "");
+    }
 
     return 0;
 }

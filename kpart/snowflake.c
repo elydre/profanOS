@@ -217,14 +217,16 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
     return 0;
 }
 
-void mem_free_all(int task_id) {
+int mem_free_all(int task_id) {
     uint32_t index = 0;
+    int count = 0;
     while (MEM_PARTS[index].state) {
         if (MEM_PARTS[index].task_id == task_id) {
-            mem_free_addr(MEM_PARTS[index].addr);
+            count += mem_free_addr(MEM_PARTS[index].addr);
         }
         index = MEM_PARTS[index].next;
     }
+    return count;
 }
 
 int mem_get_info(char get_mode, int get_arg) {

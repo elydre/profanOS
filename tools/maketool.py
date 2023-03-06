@@ -320,6 +320,19 @@ def qemu_run(iso_run = True, kvm = False):
     if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
     else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
 
+def extract_disk():
+    if not file_exists("HDD.bin"):
+        cprint(COLOR_EROR, "HDD.bin not found")
+        return
+
+    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
+        cprint(COLOR_INFO, "building makefsys...")
+        print_and_exec(f"mkdir -p {OUT_DIR}/make")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
+    
+    cprint(COLOR_INFO, "extracting HDD.bin...")
+    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin 42")
+
 
 def make_help():
     aide = (
@@ -331,6 +344,7 @@ def make_help():
 
         ("make disk",       "build classic disk image"),
         ("make srcdisk",    "build disk image with source code"),
+        ("make xtrdisk",    "extract the disk image"),
 
         ("make clean",      "delete the out/ directory"),
         ("make fullclean",  "delete all build files"),
@@ -353,6 +367,7 @@ assos = {
     "help": make_help,
     "disk": lambda: gen_disk(True),
     "srcdisk": lambda: gen_disk(True, True),
+    "xtrdisk": lambda: extract_disk(),
     "iso": lambda: make_iso(True),
     "miso": lambda: make_iso(True, True),
     "run": lambda: qemu_run(True),
