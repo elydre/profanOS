@@ -198,7 +198,7 @@ int fflush(FILE *stream) {
         return 0;
     }
     // we write the file
-    c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
+    c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_pos);
     return 0;
 }
 
