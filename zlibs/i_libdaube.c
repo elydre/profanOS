@@ -234,21 +234,25 @@ void window_resize(window_t *window, int width, int height) {
     // TODO
 }
 
-void window_set_pixel(window_t *window, int x, int y, uint32_t color) {
-    if (x < 0 || y < 0 || x >= window->in_width || y >= window->in_height) {
-        return;
+void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8_t in_box) {
+    // the coordinates are those of the interior of the window
+    int out_x = x;
+    int out_y = y;
+
+    if (in_box) {
+        out_x += window->in_x - window->x;
+        out_y += window->in_y - window->y;
     }
 
-    x += window->in_x - window->x;
-    y += window->in_y - window->y;
+    if (out_x < 0 || out_x >= window->width || out_y < 0 || out_y >= window->height) return;
 
-    window->buffer[y * window->width + x] = color;
+    window->buffer[out_y * window->width + out_x] = color;
 }
 
 void window_fill(window_t *window, uint32_t color) {
     for (int i = 0; i < window->in_width; i++) {
         for (int j = 0; j < window->in_height; j++) {
-            window_set_pixel(window, i, j, color);
+            window_set_pixel_func(window, i, j, color, 1);
         }
     }
 }
@@ -430,6 +434,9 @@ void refresh_mouse(desktop_t *desktop) {
         }
     } else if (!is_clicked && desktop->mouse->already_clicked) {
         if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "released");
+        if (desktop->mouse->clicked_window_id == -1) {
+            serial_print_ss("BUG", "clicked_window_id == -1");
+        }
         window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
         set_window_priority(desktop, window);
         window_move(window, desktop->mouse->x + desktop->mouse->window_x_dec, desktop->mouse->y + desktop->mouse->window_y_dec);
@@ -588,6 +595,9 @@ int *sort_index_by_priority(window_t **windows, int nb_windows) {
 
     for (int i = 0; i < nb_windows; i++) {
         for (int j = 0; j < nb_windows; j++) {
+            if (windows[j] == NULL) {
+                serial_print_ss("BUG", "window is null");
+            }
             if (windows[sorted[i]]->priority < windows[sorted[j]]->priority) {
                 tmp = sorted[i];
                 sorted[i] = sorted[j];

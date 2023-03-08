@@ -39,7 +39,11 @@ void tasked_program() {
         mem_free_all(pid);
     }
 
-    process_wakeup(ppid);
+    int pstate = process_get_state(ppid);
+
+    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
+        process_wakeup(ppid);
+
     process_exit();
 }
 

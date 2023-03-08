@@ -93,13 +93,16 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 
 #ifndef LIBDAUBE_C
 
+#define window_set_pixel(window, x, y, color) window_set_pixel_func(window, x, y, color, 1)
+#define window_set_pixel_out(window, x, y, color) window_set_pixel_func(window, x, y, color, 0)
+
 #define desktop_init ((desktop_t *(*)(vgui_t *, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
 #define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
 #define window_draw_box ((void (*)(vgui_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 5))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 6))
 #define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))
 #define window_resize ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 8))
-#define window_set_pixel ((void (*)(window_t *, int, int, uint32_t)) get_func_addr(LIBDAUBE_ID, 9))
+#define window_set_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 9))
 #define window_fill ((void (*)(window_t *, uint32_t)) get_func_addr(LIBDAUBE_ID, 10))
 #define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 11))
 #define mouse_create ((mouse_t *(*)()) get_func_addr(LIBDAUBE_ID, 12))
