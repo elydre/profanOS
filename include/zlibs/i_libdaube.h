@@ -22,7 +22,6 @@ typedef struct window_t {
     int in_width;
     int in_height;
 
-    uint8_t moved;
     uint8_t changed;
 
     int old_x;
@@ -35,7 +34,7 @@ typedef struct window_t {
 
     uint8_t is_lite;    // no border
 
-    int priorite;
+    int priority;
 
     uint8_t cant_move;
 } window_t;

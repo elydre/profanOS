@@ -99,7 +99,7 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
         main_desktop = desktop;
     }
 
-    window_t *truc = window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
+    window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
 
     return desktop;
 }
@@ -117,7 +117,7 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window_t *window = calloc(1, sizeof(window_t));
     window->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(window->name, name);
-    window->priorite = desktop->nb_windows;
+    window->priority = desktop->nb_windows;
 
     window->in_height = height;
     window->in_width = width;
@@ -203,7 +203,6 @@ void desktop_refresh(desktop_t *desktop) {
 
     for (int i = 0; i < total; i++) {
         desktop->windows[i]->changed = 0;
-        desktop->windows[i]->moved = 0;
     }
 
     if (DEBUG_LEVEL > 2) c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
@@ -228,7 +227,6 @@ void window_move(window_t *window, int x, int y) {
     window->in_x = x;
     window->in_y = y;
 
-    window->moved = 1;
     window->changed = 1;
 }
 
@@ -243,11 +241,6 @@ void window_set_pixel(window_t *window, int x, int y, uint32_t color) {
 
     x += window->in_x - window->x;
     y += window->in_y - window->y;
-
-    if (y * window->width + x >= window->width * window->height) {
-        serial_print_ss("[WUT] out of bounds", window->name);
-        return;
-    }
 
     window->buffer[y * window->width + x] = color;
 }
@@ -363,14 +356,11 @@ void refresh_mouse(desktop_t *desktop) {
         // we check if the mouse is on a window
         int total = desktop->nb_windows;
         int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
-        int has_fire = 0;
         int has_clicked = 0;
         // the first element is the one with the lowest priority
         for (int i = total - 1; i >= 0; i--) {
             window_t *window = desktop->windows[sorted[i]];
             if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height) {
-                // this is not a bug, it is a feature
-
                 // click de bouton a check
                 if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on window inside");
                 for (int j = 0; j < window->buttons_count; j++) {
@@ -382,7 +372,7 @@ void refresh_mouse(desktop_t *desktop) {
                         break;
                     }
                 }
-                has_clicked = 1;
+                if (has_clicked) break;
             }
             if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + 20) {
                 if (window->is_lite) {
@@ -390,15 +380,14 @@ void refresh_mouse(desktop_t *desktop) {
                     break;
                 }
                 if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on window top");
-                has_fire = 1;
+                is_clicked = 2;
                 desktop->mouse->clicked_window_id = sorted[i];
                 desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
                 desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
                 break;
             }
-            if (has_clicked) break;
         }
-        if (!has_fire) is_clicked = 0;
+        is_clicked--;
         free(sorted);
     } else if (is_clicked && desktop->mouse->already_clicked) {
         if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging");
@@ -494,21 +483,23 @@ void window_delete(window_t *window) {
     free(window->buffer);
     free(window->visible);
 
+    desktop_t *desktop = window->parent_desktop;
+    window->priority = -1;
+    window->changed = 1;
+    
+    desktop_refresh(window->parent_desktop);
+
     // remove the window
-    for (int i = 0; i < ((desktop_t *)window->parent_desktop)->nb_windows; i++) {
-        if (((desktop_t *)window->parent_desktop)->windows[i] == window) {
-            ((desktop_t *)window->parent_desktop)->windows[i] = NULL;
+    for (int i = 0; i < desktop->nb_windows; i++) {
+        if (desktop->windows[i] == window) {
+            desktop->windows[i] = desktop->windows[desktop->nb_windows - 1];
             break;
         }
     }
 
     ((desktop_t *) window->parent_desktop)->nb_windows--;
-    ((desktop_t *) window->parent_desktop)->windows[0]->moved = 1;
-    ((desktop_t *) window->parent_desktop)->windows[0]->changed = 1;
-    desktop_refresh(window->parent_desktop);
 
     free(window);
-
 }
 
 button_t *create_button(window_t *window, int x, int y, int width, int height, void (*callback)(clickevent_t *)) {
@@ -531,7 +522,7 @@ button_t *create_button(window_t *window, int x, int y, int width, int height, v
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
     int x1, x2, y1, y2;
 
-    if (w->moved && is_first) {
+    if (w->changed && is_first) {
         if (DEBUG_LEVEL > 2) serial_print_ss("window move:", w->name);
         x1 = max(window->x, w->old_x);
         x2 = min(window->x + window->width, w->old_x + w->width);
@@ -553,7 +544,7 @@ void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window
         }
     }
 
-    if (w->moved && is_first) {
+    if (w->changed && is_first) {
         window_set_pixels_intersection(desktop, window, w, 0);
     }
 }
@@ -597,7 +588,7 @@ int *sort_index_by_priority(window_t **windows, int nb_windows) {
 
     for (int i = 0; i < nb_windows; i++) {
         for (int j = 0; j < nb_windows; j++) {
-            if (windows[sorted[i]]->priorite < windows[sorted[j]]->priorite) {
+            if (windows[sorted[i]]->priority < windows[sorted[j]]->priority) {
                 tmp = sorted[i];
                 sorted[i] = sorted[j];
                 sorted[j] = tmp;
@@ -611,14 +602,14 @@ int *sort_index_by_priority(window_t **windows, int nb_windows) {
 void set_window_priority(desktop_t *desktop, window_t *window) {
     int total = desktop->nb_windows;
     int *sorted = sort_index_by_priority(desktop->windows, total);
-    int current_priority = window->priorite;
+    int current_priority = window->priority;
     // the first element is the one with the lowest priority
 
     for (int i = total - 1; i >= current_priority; i--) {
         if (desktop->windows[sorted[i]] == window) {
-            window->priorite = total - 1;
+            window->priority = total - 1;
         } else {
-            desktop->windows[sorted[i]]->priorite--;
+            desktop->windows[sorted[i]]->priority--;
             desktop->windows[sorted[i]]->changed = 1;
         }
     }
