@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
 
     desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    window_t *back = window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
     window_t *lite = window_create(desktop, "lite 1", 240, 240, 100, 100, 1, 0);
 
     desktop_refresh(desktop);

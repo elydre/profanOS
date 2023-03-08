@@ -68,13 +68,15 @@ void init_func() {
     printf("Init of the libdaube library\n");
 }
 
-void window_draw_box(desktop_t *desktop, window_t *window);
-void desktop_draw(desktop_t *desktop);
-int *sort_index_by_priority(window_t **windows, int nb_windows);
-void serial_print_ss(char *str, char *name);
+window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move);
+
 void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all);
 void window_update_visible(desktop_t *desktop, window_t *window);
+int *sort_index_by_priority(window_t **windows, int nb_windows);
 void set_window_priority(desktop_t *desktop, window_t *window);
+void window_draw_box(desktop_t *desktop, window_t *window);
+void serial_print_ss(char *str, char *name);
+void desktop_draw(desktop_t *desktop);
 mouse_t* mouse_create();
 
 void draw_rect_gradian(window_t *window, int x, int y, int width, int height, int color1, int color2);
@@ -96,6 +98,8 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     if (main_desktop == NULL) {
         main_desktop = desktop;
     }
+
+    window_t *truc = window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
 
     return desktop;
 }
@@ -489,7 +493,22 @@ void window_delete(window_t *window) {
     free(window->name);
     free(window->buffer);
     free(window->visible);
+
+    // remove the window
+    for (int i = 0; i < ((desktop_t *)window->parent_desktop)->nb_windows; i++) {
+        if (((desktop_t *)window->parent_desktop)->windows[i] == window) {
+            ((desktop_t *)window->parent_desktop)->windows[i] = NULL;
+            break;
+        }
+    }
+
+    ((desktop_t *) window->parent_desktop)->nb_windows--;
+    ((desktop_t *) window->parent_desktop)->windows[0]->moved = 1;
+    ((desktop_t *) window->parent_desktop)->windows[0]->changed = 1;
+    desktop_refresh(window->parent_desktop);
+
     free(window);
+
 }
 
 button_t *create_button(window_t *window, int x, int y, int width, int height, void (*callback)(clickevent_t *)) {
