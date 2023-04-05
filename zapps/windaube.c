@@ -28,8 +28,9 @@ int main(int argc, char **argv) {
     c_run_ifexist("/bin/winapps/windowdemo.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/windowterm.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/counter.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/usage.bin", 0, NULL);
 
-    int demo_pid = c_process_create(perf_demo, 1, "demo");
+    int demo_pid = c_process_create(perf_demo, 1, "pong like demo");
     c_process_wakeup(demo_pid);
 
     while (1) {
