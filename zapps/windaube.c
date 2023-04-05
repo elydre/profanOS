@@ -22,16 +22,12 @@ int main(int argc, char **argv) {
     vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    window_t *lite = window_create(desktop, "lite 1", 240, 240, 100, 100, 1, 0);
-
     desktop_refresh(desktop);
 
-    window_fill(lite, 0x222222);
-    window_refresh(lite);
-
-    c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
-    c_run_ifexist("/bin/other/windowdemo.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/cpu.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/windowdemo.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/windowterm.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/counter.bin", 0, NULL);
 
     int demo_pid = c_process_create(perf_demo, 1, "demo");
     c_process_wakeup(demo_pid);

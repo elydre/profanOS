@@ -78,7 +78,7 @@ typedef struct button_t {
     int width;
     int height;
     int is_clicked;
-    void (*callback)(clickevent_t *); // clickevent_t *
+    void (*callback)(clickevent_t *);
 } button_t;
 
 

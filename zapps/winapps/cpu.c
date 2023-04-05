@@ -5,8 +5,6 @@
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-    c_serial_print(SERIAL_PORT_A, "cpu usage\n");
-
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
