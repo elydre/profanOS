@@ -92,21 +92,48 @@ int main(int argc, char **argv) {
         // print the list
         for (int i = 0; i < 20; i++) {
             if (pid_runtime[i].pid != -1) {
+                // get the name of the process
                 c_process_get_name(pid_runtime[i].pid, buffer);
+                // keep name from the last slash to the end
+                char *ptr = strrchr(buffer, '/');
+                if (ptr != NULL) {
+                    strcpy(buffer, ptr + 1);
+                }
+
+                // add the pid and the usage
                 tmp = strlen(buffer);
                 buffer[tmp] = ' ';
                 buffer[tmp + 1] = '(';
                 itoa(pid_runtime[i].pid, buffer + tmp + 2, 10);
                 tmp = strlen(buffer);
                 buffer[tmp] = ')';
-                buffer[tmp + 1] = ' ';
-                itoa(pid_runtime[i].usage, buffer + tmp + 2, 10);
+                buffer[tmp + 1] = 0;
+
+                // align with the column 20
+                tmp = strlen(buffer);
+                for (int j = tmp; j < 20; j++) {
+                    buffer[j] = ' ';
+                }
+
+                // add the cpu usage
+                itoa(pid_runtime[i].usage, buffer + 20, 10);
                 tmp = strlen(buffer);
                 buffer[tmp] = '%';
                 buffer[tmp + 1] = 0;
+
+                // align with the column 25
+                tmp = strlen(buffer);
+                for (int j = tmp; j < 25; j++) {
+                    buffer[j] = ' ';
+                }
+
+                // add the memory usage
+                itoa(c_mem_get_info(8, pid_runtime[i].pid) / 1024, buffer + 25, 10);
+                strcpy(buffer + strlen(buffer), "Ko");
+
                 tmp = strlen(buffer);
                 for (int j = 0; j < tmp; j++) {
-                    local_print_char(window, buffer[j], j * 8, i * 16, 0x00bb00);
+                    local_print_char(window, buffer[j], j * 8 + 6, i * 16 + 5, 0x00bb00);
                 }
             }
         }

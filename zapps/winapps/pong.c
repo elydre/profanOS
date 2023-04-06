@@ -76,4 +76,6 @@ int main(int argc, char **argv) {
         }
         ms_sleep(50);
     }
+    
+    return 0;
 }

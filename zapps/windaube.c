@@ -13,9 +13,6 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
 
-void perf_demo();
-void main_process();
-
 int main(int argc, char **argv) {
     vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
 
