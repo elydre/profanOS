@@ -83,13 +83,6 @@ typedef struct button_t {
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
-/*
-void input(char out_buffer[], int size, char color);
-window_t *window_create(char *name, int height, int width, int y, int x);
-void window_draw_box(window_t *window);
-void desktop_draw(vgui_t *vgui, desktop_t *desktop);
-*/
-
 #ifndef LIBDAUBE_C
 
 #define window_set_pixel(window, x, y, color) window_set_pixel_func(window, x, y, color, 1)
