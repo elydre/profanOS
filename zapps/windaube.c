@@ -13,90 +13,26 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
 
-desktop_t *desktop;
-
 void perf_demo();
 void main_process();
 
 int main(int argc, char **argv) {
     vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
+    desktop_t *desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
     desktop_refresh(desktop);
 
     c_run_ifexist("/bin/winapps/cpu.bin", 0, NULL);
-    c_run_ifexist("/bin/winapps/windowdemo.bin", 0, NULL);
-    c_run_ifexist("/bin/winapps/windowterm.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/demo.bin", 0, NULL);
+    c_run_ifexist("/bin/winapps/pong.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/counter.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/usage.bin", 0, NULL);
-
-    int demo_pid = c_process_create(perf_demo, 1, "pong like demo");
-    c_process_wakeup(demo_pid);
+    c_run_ifexist("/bin/winapps/term.bin", 0, NULL);
 
     while (1) {
         refresh_mouse(desktop);
         ms_sleep(10);
     }
+
     return 0;
-}
-
-void perf_demo() {
-    window_t *window = window_create(desktop, "pong like", 100, 200, 200, 200, 0, 0);
-    desktop_refresh(desktop);
-    // square that bounces on the edge of the window like pong
-
-    int square_x = 10;
-    int square_y = 0;
-
-    int old_square_x = 0;
-    int old_square_y = 0;
-
-    float square_speed_x = 6;
-    float square_speed_y = 4;
-
-    window_fill(window, 0xff0000);
-    while (1) {
-        // c_serial_print(SERIAL_PORT_A, "tick\n");
-        // draw the old square
-
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                if (old_square_x + i < window->in_width && old_square_y + j < window->in_height && old_square_x + i >= 0 && old_square_y + j >= 0) {
-                    window_set_pixel(window, old_square_x + i, old_square_y + j, 0xaa0000);
-                }
-            }
-        }
-
-        // draw the new square
-
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                if (square_x + i < window->in_width && square_y + j < window->in_height && square_x + i >= 0 && square_y + j >= 0) {
-                    window_set_pixel(window, square_x + i, square_y + j, 0xffffff);
-                }
-            }
-        }
-
-        window_refresh(window);
-
-        old_square_x = square_x;
-        old_square_y = square_y;
-
-        square_x += square_speed_x;
-        square_y += square_speed_y;
-
-        if (square_x > window->in_width - 10) {
-            square_speed_x = -5;
-        }
-        if (square_x < 0) {
-            square_speed_x = 7;
-        }
-        if (square_y > window->in_height - 10) {
-            square_speed_y = -3;
-        }
-        if (square_y < 0) {
-            square_speed_y = 7;
-        }
-        ms_sleep(50);
-    }
 }
