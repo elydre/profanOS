@@ -1,9 +1,7 @@
 #ifndef WADDS_ID
 #define WADDS_ID 1016
 
-#define LIBDAUBE_STRUCTS_ONLY
 #include <i_libdaube.h>
-#undef LIBDAUBE_STRUCTS_ONLY
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 

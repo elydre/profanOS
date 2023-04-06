@@ -81,7 +81,6 @@ typedef struct button_t {
     void (*callback)(clickevent_t *);
 } button_t;
 
-#ifndef LIBDAUBE_STRUCTS_ONLY
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 /*
@@ -110,7 +109,6 @@ void desktop_draw(vgui_t *vgui, desktop_t *desktop);
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 14))
 #define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 15))
 #define create_button ((button_t *(*)(window_t *, int, int, int, int, void (*)(clickevent_t *))) get_func_addr(LIBDAUBE_ID, 16))
-#endif
 #endif
 
 #endif

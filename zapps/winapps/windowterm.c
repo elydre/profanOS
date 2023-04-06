@@ -1,5 +1,5 @@
 #include <i_libdaube.h>
-#include <i_winterm.h>
+#include <i_winadds.h>
 #include <i_time.h>
 
 #include <syscall.h>

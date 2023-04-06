@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
     window_t *window = window_create(desktop_get_main(), "process usage", 400, 200, 350, 200, 0, 0);
-    create_exit_button(window, 350, callback);
+    create_exit_button(window, callback);
     desktop_refresh(desktop_get_main());
 
     // reset pixel buffer

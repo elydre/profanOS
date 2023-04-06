@@ -1,4 +1,4 @@
-#include <i_winterm.h>
+#include <i_winadds.h>
 #include <stdlib.h>
 #include <syscall.h>
 #include <i_time.h>
