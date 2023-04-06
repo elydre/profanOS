@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int is_running = 1;
+int is_running;
 
 typedef struct pid_runtime {
     int pid;
@@ -15,7 +15,7 @@ typedef struct pid_runtime {
     int usage;
 } pid_runtime_t;
 
-void callback(clickevent_t *event) {
+void exit_callback(clickevent_t *event) {
     is_running = 0;
     window_delete(((button_t *) event->button)->window);
 }
@@ -33,8 +33,8 @@ int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
-    window_t *window = window_create(desktop_get_main(), "process usage", 400, 200, 350, 200, 0, 0);
-    create_exit_button(window, callback);
+    window_t *window = window_create(desktop_get_main(), "process usage", 100, 450, 350, 208, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
     desktop_refresh(desktop_get_main());
 
     // reset pixel buffer
@@ -51,6 +51,8 @@ int main(int argc, char **argv) {
     int count, pid, runtime, loop_time, start, tmp;
 
     loop_time = 1000;
+
+    is_running = 1;
     while (is_running) {
         start = c_timer_get_ms();
         window_fill(window, 0x000000);

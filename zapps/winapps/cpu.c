@@ -1,8 +1,16 @@
 #include <i_libdaube.h>
+#include <i_winadds.h>
 #include <i_time.h>
 
 #include <syscall.h>
 #include <stdlib.h>
+
+int is_running;
+
+void exit_callback(clickevent_t *event) {
+    is_running = 0;
+    window_delete(((button_t *) event->button)->window);
+}
 
 int main(int argc, char **argv) {
     // wake up the parent process
@@ -16,10 +24,13 @@ int main(int argc, char **argv) {
     int idle = 0;
     int total = 0;
 
-    window_t *window = window_create(desktop_get_main(), "cpu usage", 500, 100, 100, 100, 0, 0);
+    window_t *window = window_create(desktop_get_main(), "cpu usage", 550, 220, 100, 100, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
+
     desktop_refresh(desktop_get_main());
 
-    while (1) {
+    is_running = 1;
+    while (is_running) {
         last_idle = idle;
         last_total = total;
 
@@ -45,4 +56,7 @@ int main(int argc, char **argv) {
         window_refresh(window);
         ms_sleep(200);
     }
+    free(history);
+
+    return 0;
 }

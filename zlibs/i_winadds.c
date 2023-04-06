@@ -55,7 +55,7 @@ int wterm_get_len() {
     return curent_len;
 }
 
-button_t *create_exit_button(window_t *window, void (*callback)(clickevent_t *)) {
+button_t *wadds_create_exitbt(window_t *window, void (*exit_callback)(clickevent_t *)) {
     int x = window->width - 3;
 
     // draw bg rectangle
@@ -81,5 +81,5 @@ button_t *create_exit_button(window_t *window, void (*callback)(clickevent_t *))
         window_set_pixel_out(window, x - 16, i, 0x880000);
     }
 
-    return create_button(window, x - 18, 3, 16, 16, callback);
+    return create_button(window, x - 18, 3, 16, 16, exit_callback);
 }

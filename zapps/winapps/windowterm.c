@@ -7,13 +7,13 @@
 #include <stdio.h>
 
 char msg[] = "Hello, world!";
-int is_running = 1;
+int is_running;
 
 #define WINW_HEIGHT 208
 #define FONT_HEIGHT 16
 #define PRT_LINES (WINW_HEIGHT / FONT_HEIGHT)
 
-void callback(clickevent_t *event) {
+void exit_callback(clickevent_t *event) {
     is_running = 0;
     window_delete(((button_t *) event->button)->window);
 }
@@ -59,11 +59,12 @@ int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
-    window_t *window = window_create(desktop_get_main(), "gui term", 500, 500, 208, 208, 0, 0);
-    create_exit_button(window, callback);
+    window_t *window = window_create(desktop_get_main(), "gui term", 500, 450, 208, 208, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
 
     desktop_refresh(desktop_get_main());
 
+    is_running = 1;
     while (is_running) {
         // reset pixel buffer
         window_fill(window, 0x000000);

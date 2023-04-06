@@ -9,6 +9,6 @@
 #define wterm_append_char ((void (*)(char)) get_func_addr(WADDS_ID, 3))
 #define wterm_get_buffer ((char *(*)(void)) get_func_addr(WADDS_ID, 4))
 #define wterm_get_len ((int (*)(void)) get_func_addr(WADDS_ID, 5))
-#define create_exit_button ((button_t *(*)(window_t *, void (*)(clickevent_t *))) get_func_addr(WADDS_ID, 6))
+#define wadds_create_exitbt ((button_t *(*)(window_t *, void (*)(clickevent_t *))) get_func_addr(WADDS_ID, 6))
 
 #endif
