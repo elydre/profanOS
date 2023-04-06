@@ -29,7 +29,7 @@ lib_t libs_at_boot[] = {
     {1013, "/lib/setjmp.bin"},
     {1014, "/lib/unistd.bin"},
     {1015, "/lib/i_libdaube.bin"},
-    {1016, "/lib/i_winterm.bin"},
+    {1016, "/lib/i_winadds.bin"},
 };
 
 

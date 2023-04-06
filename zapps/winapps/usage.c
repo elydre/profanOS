@@ -1,4 +1,5 @@
 #include <i_libdaube.h>
+#include <i_winadds.h>
 #include <i_time.h>
 
 #include <syscall.h>
@@ -19,14 +20,6 @@ void callback(clickevent_t *event) {
     window_delete(((button_t *) event->button)->window);
 }
 
-void draw_exit_button(window_t *window) {
-    for (int i = 1; i < 19; i++) {
-        for (int j = 1; j < 19; j++) {
-            window_set_pixel_out(window, 350 + 11 - i, j, 0xff0000);
-        }
-    }
-}
-
 void local_print_char(window_t *window, char c, int x, int y, uint32_t color) {
     uint8_t *glyph = c_font_get(0) + c * 16;
     for (int j = 0; j < 16; j++) {
@@ -41,8 +34,7 @@ int main(int argc, char **argv) {
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
     window_t *window = window_create(desktop_get_main(), "process usage", 400, 200, 350, 200, 0, 0);
-    button_t *button = create_button(window, 1, 1, 19, 19, callback);
-    draw_exit_button(window);
+    create_exit_button(window, 350, callback);
     desktop_refresh(desktop_get_main());
 
     // reset pixel buffer
