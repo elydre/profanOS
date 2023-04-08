@@ -310,28 +310,28 @@ void refresh_mouse(desktop_t *desktop) {
 
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i < 0 || x + i >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x + i - 6, y - 21, vgui_get_pixel(desktop->vgui, x + i - 6, y - 21));
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i < 0 || x + i >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x + i - 6, y + window_height - 22, vgui_get_pixel(desktop->vgui, x + i - 6, y + window_height - 22));
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x < 0 || x >= desktop->vgui->width) {
+            if (x - 6 < 0 || x - 6 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x - 6, y + i - 21, vgui_get_pixel(desktop->vgui, x - 6, y + i - 21));
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x + window_width < 0 || x + window_width >= desktop->vgui->width) {
+            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, vgui_get_pixel(desktop->vgui, x + window_width - 7, y + i - 21));
@@ -406,28 +406,28 @@ void refresh_mouse(desktop_t *desktop) {
 
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i < 0 || x + i >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x + i - 6, y - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i < 0 || x + i >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x + i - 6, y + window_height - 22, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x < 0 || x >= desktop->vgui->width) {
+            if (x - 6 < 0 || x - 6 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x - 6, y + i - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x + window_width < 0 || x + window_width >= desktop->vgui->width) {
+            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->vgui->width) {
                 continue;
             }
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
