@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     c_run_ifexist("/bin/winapps/term.bin", 0, NULL);
 
     while (1) {
+        desktop_run_stack(desktop);
         refresh_mouse(desktop);
         ms_sleep(10);
     }

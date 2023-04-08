@@ -56,6 +56,8 @@ desktop_t *main_desktop;
 #define MOUSE_WIDTH 12
 #define MOUSE_HEIGHT 21
 
+#define ID_DESKTOP_REFRESH 1
+
 void init_func();
 
 int main() {
@@ -94,6 +96,9 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     desktop->screen_width = screen_width;
     desktop->screen_height = screen_height;
     desktop->max_windows = max_windows;
+
+    desktop->func_run_stack = calloc(100, sizeof(libdaude_func_t));
+    desktop->func_run_stack_size = 0;
 
     if (main_desktop == NULL) {
         main_desktop = desktop;
@@ -161,56 +166,19 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     return window;
 }
 
-void window_draw_box(desktop_t *desktop, window_t *window) {
-    // we draw the border of the window
-    draw_straight_line(window, 0, 0, window->width - 1, 0, COLOR_MASTER);
-    draw_straight_line(window, 0, 0, 0, window->height - 1, COLOR_MASTER);
-    draw_straight_line(window, window->width - 1, 0, window->width - 1, window->height, COLOR_MASTER);
-    draw_straight_line(window, 0, window->height - 1, window->width - 1, window->height - 1, COLOR_MASTER);
-
-    if (!window->is_lite) {
-        // we add the inside lines
-        draw_straight_line(window, 5, 20, window->width - 6, 20, COLOR_MASTER);
-        draw_straight_line(window, 5, 20, 5, window->height - 6, COLOR_MASTER);
-        draw_straight_line(window, window->width - 6, 20, window->width - 6, window->height - 5, COLOR_MASTER);
-        draw_straight_line(window, 5, window->height - 6, window->width - 6, window->height - 6, COLOR_MASTER);
-
-        // we add the gradians
-        draw_rect_gradian(window, 5, 1, window->width - 9, 19, COLOR_GRADN1, COLOR_GRADN2);
-        draw_rect_gradian(window, 5, window->height - 5, window->width - 9, 4, COLOR_GRADN1, COLOR_GRADN2);
-
-        // and the rectangles
-        draw_rect(window, 1, 1, 4, window->height - 2, COLOR_GRADN1);
-        draw_rect(window, window->width - 5, 1, 4, window->height - 2, COLOR_GRADN2);
-
-        // we add the name of the window
-        draw_print_wut(window, 6, 4, window->name, COLOR_TITLES);
-    }
-}
-
 void desktop_refresh(desktop_t *desktop) {
-    desktop->is_locked = 1;
-
-    // we draw the windows, by order of priority
-    int total = desktop->nb_windows;
-    int *sorted = sort_index_by_priority(desktop->windows, total);
-
-    for (int i = 0; i < total; i++) {
-        if (DEBUG_LEVEL > 2) serial_print_ss("work for", desktop->windows[sorted[i]]->name);
-        window_update_visible(desktop, desktop->windows[sorted[i]]);
-        window_set_pixels_visible(desktop, desktop->windows[sorted[i]], 0);
+    // check if the function is already in the stack
+    for (int i = 0; i < desktop->func_run_stack_size; i++) {
+        if (desktop->func_run_stack[i].func_id == ID_DESKTOP_REFRESH && desktop->func_run_stack[i].arg1 == (uint32_t) desktop) {
+            return;
+        }
     }
 
-    for (int i = 0; i < total; i++) {
-        desktop->windows[i]->changed = 0;
-    }
+    int index = desktop->func_run_stack_size;
 
-    if (DEBUG_LEVEL > 2) c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
-    vgui_render(desktop->vgui, 0);
-
-    desktop->is_locked = 0;
-
-    free(sorted);
+    desktop->func_run_stack[index].func_id = ID_DESKTOP_REFRESH;
+    desktop->func_run_stack[index].arg1 = (uint32_t) desktop;
+    desktop->func_run_stack_size++;
 }
 
 void window_move(window_t *window, int x, int y) {
@@ -261,7 +229,7 @@ void window_refresh(window_t *window) {
     desktop_t *desktop = window->parent_desktop;
 
     while (desktop->is_locked) {
-        // serial_print_ss("desktop is locked, can't refresh", window->name);
+        if (DEBUG_LEVEL > 2) serial_print_ss("desktop is locked, can't refresh", window->name);
         ms_sleep(1);
     }
 
@@ -528,6 +496,64 @@ button_t *create_button(window_t *window, int x, int y, int width, int height, v
     return button;
 }
 
+/********************************
+ *                             *
+ *      FUNC CALL SYSTEM       *
+ *                             *
+********************************/
+
+void func_desktop_refresh(desktop_t *desktop);
+
+void desktop_run_stack(desktop_t *desktop) {
+    char tmp[4];
+    libdaude_func_t func_run;
+    while (desktop->func_run_stack_size > 0) {
+        func_run = desktop->func_run_stack[desktop->func_run_stack_size - 1];
+        desktop->func_run_stack_size--;
+        itoa(func_run.func_id, tmp, 10);
+        serial_print_ss("runing func:", tmp);                
+        switch (func_run.func_id) {
+            case ID_DESKTOP_REFRESH:
+                func_desktop_refresh((desktop_t *) func_run.arg1);
+                break;
+            default:
+                serial_print_ss("BUG", "func not found");
+                break;
+        }
+    }
+}
+
+/******************************
+ *                           *
+ *    INTERNAL FUNCTIONS     *
+ *                           *
+******************************/
+
+void func_desktop_refresh(desktop_t *desktop) {
+    desktop->is_locked = 1;
+
+    // we draw the windows, by order of priority
+    int total = desktop->nb_windows;
+    int *sorted = sort_index_by_priority(desktop->windows, total);
+
+    for (int i = 0; i < total; i++) {
+        if (DEBUG_LEVEL > 2) serial_print_ss("work for", desktop->windows[sorted[i]]->name);
+        window_update_visible(desktop, desktop->windows[sorted[i]]);
+        window_set_pixels_visible(desktop, desktop->windows[sorted[i]], 0);
+    }
+
+    for (int i = 0; i < total; i++) {
+        desktop->windows[i]->changed = 0;
+    }
+
+    if (DEBUG_LEVEL > 2) c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
+    vgui_render(desktop->vgui, 0);
+
+    desktop->is_locked = 0;
+
+    free(sorted);
+}
+
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
     int x1, x2, y1, y2;
 
@@ -673,6 +699,39 @@ void serial_print_ss(char *str, char *name) {
     c_serial_print(SERIAL_PORT_A, " ");
     c_serial_print(SERIAL_PORT_A, name);
     c_serial_print(SERIAL_PORT_A, "...\n");
+}
+
+/******************************
+ *                           *
+ *     DRAWING FUNCTIONS     *
+ *                           *
+******************************/
+
+void window_draw_box(desktop_t *desktop, window_t *window) {
+    // we draw the border of the window
+    draw_straight_line(window, 0, 0, window->width - 1, 0, COLOR_MASTER);
+    draw_straight_line(window, 0, 0, 0, window->height - 1, COLOR_MASTER);
+    draw_straight_line(window, window->width - 1, 0, window->width - 1, window->height, COLOR_MASTER);
+    draw_straight_line(window, 0, window->height - 1, window->width - 1, window->height - 1, COLOR_MASTER);
+
+    if (!window->is_lite) {
+        // we add the inside lines
+        draw_straight_line(window, 5, 20, window->width - 6, 20, COLOR_MASTER);
+        draw_straight_line(window, 5, 20, 5, window->height - 6, COLOR_MASTER);
+        draw_straight_line(window, window->width - 6, 20, window->width - 6, window->height - 5, COLOR_MASTER);
+        draw_straight_line(window, 5, window->height - 6, window->width - 6, window->height - 6, COLOR_MASTER);
+
+        // we add the gradians
+        draw_rect_gradian(window, 5, 1, window->width - 9, 19, COLOR_GRADN1, COLOR_GRADN2);
+        draw_rect_gradian(window, 5, window->height - 5, window->width - 9, 4, COLOR_GRADN1, COLOR_GRADN2);
+
+        // and the rectangles
+        draw_rect(window, 1, 1, 4, window->height - 2, COLOR_GRADN1);
+        draw_rect(window, window->width - 5, 1, 4, window->height - 2, COLOR_GRADN2);
+
+        // we add the name of the window
+        draw_print_wut(window, 6, 4, window->name, COLOR_TITLES);
+    }
 }
 
 void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int color) {

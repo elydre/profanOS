@@ -5,6 +5,14 @@
 #include <stdarg.h>
 #include <i_vgui.h> 
 
+typedef struct libdaude_func_t {
+    int func_id;
+
+    uint32_t arg1;
+    uint32_t arg2;
+    uint32_t arg3;
+} libdaude_func_t;
+
 typedef struct window_t {
     void *parent_desktop;
     void **button_array; // button_t **
@@ -61,6 +69,9 @@ typedef struct desktop_t {
     int screen_height;
     int max_windows;
 
+    libdaude_func_t *func_run_stack;
+    int func_run_stack_size;
+
     uint8_t is_locked;
 } desktop_t;
 
@@ -90,28 +101,30 @@ typedef struct button_t {
 
 #define desktop_init ((desktop_t *(*)(vgui_t *, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
 #define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
-#define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 6))
-#define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))
-#define window_resize ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 8))
-#define window_set_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 9))
-#define window_fill ((void (*)(window_t *, uint32_t)) get_func_addr(LIBDAUBE_ID, 10))
-#define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 11))
-#define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 13))
-#define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 14))
-#define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 15))
-#define create_button ((button_t *(*)(window_t *, int, int, int, int, void (*)(clickevent_t *))) get_func_addr(LIBDAUBE_ID, 16))
-#endif
+#define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
+#define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 6))
+#define window_resize ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))
+#define window_set_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 8))
+#define window_fill ((void (*)(window_t *, uint32_t)) get_func_addr(LIBDAUBE_ID, 9))
+#define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 10))
+#define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 12))
+#define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 13))
+#define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 14))
+#define create_button ((button_t *(*)(window_t *, int, int, int, int, void (*)(clickevent_t *))) get_func_addr(LIBDAUBE_ID, 15))
+#define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 16))
 
 #endif
 
+#endif
 
-// desktop_refresh
-// window_create
-// window_move
-// window_resize
-// window_refresh
+
+// desktop_refresh OK!
 // window_delete
 
+// window_refresh
+// window_resize
+// window_create
+// window_move
 // window_set_pixel_func
 // window_fill
 // desktop_get_main
