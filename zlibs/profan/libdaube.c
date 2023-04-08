@@ -524,7 +524,7 @@ void desktop_run_stack(desktop_t *desktop) {
         func_run = desktop->func_run_stack[desktop->func_run_stack_size - 1];
         desktop->func_run_stack_size--;
         itoa(func_run.func_id, tmp, 10);
-        serial_print_ss("runing func:", tmp);                
+        if (DEBUG_LEVEL > 2) serial_print_ss("runing func:", tmp);
         switch (func_run.func_id) {
             case ID_DESKTOP_REFRESH:
                 func_desktop_refresh((desktop_t *) func_run.arg1);
@@ -571,14 +571,11 @@ void func_desktop_refresh(desktop_t *desktop) {
 }
 
 void func_window_delete(window_t *window) {
-    serial_print_ss("window", "delete");
-    // we need to free the memory and switch the priority of every window
-
     // we need to refresh the desktop
     desktop_t *desktop = window->parent_desktop;
     window->priority = -1;
     window->changed = 1;
-    
+
     func_desktop_refresh(window->parent_desktop);
 
     // free the buttons
@@ -752,7 +749,7 @@ void serial_print_ss(char *str, char *name) {
     c_serial_print(SERIAL_PORT_A, str);
     c_serial_print(SERIAL_PORT_A, " ");
     c_serial_print(SERIAL_PORT_A, name);
-    c_serial_print(SERIAL_PORT_A, "...\n");
+    c_serial_print(SERIAL_PORT_A, "\n");
 }
 
 /******************************
