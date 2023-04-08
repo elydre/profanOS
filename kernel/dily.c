@@ -14,22 +14,21 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1000, "/lib/i_iolib.bin"},
-    {1001, "/lib/i_string.bin"},
-    {1002, "/lib/profan.bin"},
-    {1003, "/lib/i_mem.bin"},
-    {1004, "/lib/i_time.bin"},
-    {1006, "/lib/i_vgui.bin"},
-    {1007, "/lib/stdlib.bin"},
-    {1008, "/lib/string.bin"},
-    {1009, "/lib/stdio.bin"},
-    {1010, "/lib/i_mouse.bin"},
-    {1011, "/lib/math.bin"},
-    {1012, "/lib/time.bin"},
-    {1013, "/lib/setjmp.bin"},
-    {1014, "/lib/unistd.bin"},
-    {1015, "/lib/i_libdaube.bin"},
-    {1016, "/lib/i_winadds.bin"},
+    {1000, "/lib/profan/iolib.bin"},
+    {1001, "/lib/profan/string.bin"},
+    {1002, "/lib/profan/profan.bin"},
+    {1003, "/lib/profan/mem.bin"},
+    {1004, "/lib/profan/time.bin"},
+    {1006, "/lib/profan/vgui.bin"},
+    {1007, "/lib/ports/stdlib.bin"},
+    {1008, "/lib/ports/string.bin"},
+    {1009, "/lib/ports/stdio.bin"},
+    {1011, "/lib/ports/math.bin"},
+    {1012, "/lib/ports/time.bin"},
+    {1013, "/lib/ports/setjmp.bin"},
+    {1014, "/lib/ports/unistd.bin"},
+    {1015, "/lib/profan/libdaube.bin"},
+    {1016, "/lib/profan/winadds.bin"},
 };
 
 
@@ -98,6 +97,7 @@ int dily_get_func(int lib_id, int func_id) {
         return val;
     }
 
+    serial_kprintf("Library not found: func_id: %d, lib_id: %d\n", func_id, lib_id);
     sys_fatal("Library not found");
     return 0;
 }
