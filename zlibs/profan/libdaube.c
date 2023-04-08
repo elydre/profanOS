@@ -732,5 +732,3 @@ void draw_print_wut(window_t *window, int x, int y, char *msg, int color) {
         }
     }
 }
-
-

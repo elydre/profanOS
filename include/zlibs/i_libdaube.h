@@ -90,14 +90,12 @@ typedef struct button_t {
 
 #define desktop_init ((desktop_t *(*)(vgui_t *, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
 #define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
-#define window_draw_box ((void (*)(vgui_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 5))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 6))
 #define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))
 #define window_resize ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 8))
 #define window_set_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 9))
 #define window_fill ((void (*)(window_t *, uint32_t)) get_func_addr(LIBDAUBE_ID, 10))
 #define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 11))
-#define mouse_create ((mouse_t *(*)()) get_func_addr(LIBDAUBE_ID, 12))
 #define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 13))
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 14))
 #define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 15))
@@ -105,3 +103,17 @@ typedef struct button_t {
 #endif
 
 #endif
+
+
+// desktop_refresh
+// window_create
+// window_move
+// window_resize
+// window_refresh
+// window_delete
+
+// window_set_pixel_func
+// window_fill
+// desktop_get_main
+
+// refresh_mouse
