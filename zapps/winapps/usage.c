@@ -16,7 +16,7 @@ typedef struct pid_runtime {
 } pid_runtime_t;
 
 void exit_callback(clickevent_t *event) {
-    is_running = 1;
+    is_running = 0;
     window_delete(((button_t *) event->button)->window);
 }
 
