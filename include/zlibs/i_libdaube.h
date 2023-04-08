@@ -17,6 +17,7 @@ typedef struct window_t {
     void *parent_desktop;
     void **button_array; // button_t **
     int buttons_count;
+    uint32_t magic;
 
     char *name;
 

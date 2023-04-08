@@ -19,6 +19,9 @@
 #define COLOR_GRADN1 0x240865
 #define COLOR_GRADN2 0x0c0f1d
 
+#define WINDOW_MAGIC 0xdeadbeef
+#define check_window_fail(w) (w->magic != WINDOW_MAGIC)
+
 #ifndef max
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #endif
@@ -56,7 +59,8 @@ desktop_t *main_desktop;
 #define MOUSE_WIDTH 12
 #define MOUSE_HEIGHT 21
 
-#define ID_DESKTOP_REFRESH 1
+#define ID_DESKTOP_REFRESH  1
+#define ID_WINDOW_DELETE    2
 
 void init_func();
 
@@ -148,6 +152,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->is_lite = is_lite;
     window->changed = 1;
 
+    window->magic = WINDOW_MAGIC;
+
     window->cant_move = cant_move;
 
     // draw the border of the window in the buffer
@@ -203,6 +209,11 @@ void window_resize(window_t *window, int width, int height) {
 }
 
 void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8_t in_box) {
+    if (check_window_fail(window)) {
+        serial_print_ss("error:", "window_set_pixel: invalid window");
+        return;
+    }
+
     // the coordinates are those of the interior of the window
     int out_x = x;
     int out_y = y;
@@ -218,6 +229,11 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
 }
 
 void window_fill(window_t *window, uint32_t color) {
+    if (check_window_fail(window)) {
+        serial_print_ss("error:", "window_fill: invalid window");
+        return;
+    }
+
     for (int i = 0; i < window->in_width; i++) {
         for (int j = 0; j < window->in_height; j++) {
             window_set_pixel_func(window, i, j, color, 1);
@@ -226,6 +242,11 @@ void window_fill(window_t *window, uint32_t color) {
 }
 
 void window_refresh(window_t *window) {
+    if (check_window_fail(window)) {
+        serial_print_ss("error:", "window_refresh: invalid window");
+        return;
+    }
+
     desktop_t *desktop = window->parent_desktop;
 
     while (desktop->is_locked) {
@@ -445,38 +466,12 @@ desktop_t *desktop_get_main() {
 }
 
 void window_delete(window_t *window) {
-    serial_print_ss("window", "delete");
-    // we need to free the memory and switch the priority of every window
-
-    // we need to refresh the desktop
     desktop_t *desktop = window->parent_desktop;
-    window->priority = -1;
-    window->changed = 1;
-    
-    desktop_refresh(window->parent_desktop);
+    int index = desktop->func_run_stack_size;
 
-    // free the buttons
-    for (int i = 0; i < window->buttons_count; i++) {
-        free(window->button_array[i]);
-    }
-
-    // free the arrays
-    free(window->button_array);
-    free(window->name);
-    free(window->buffer);
-    free(window->visible);
-
-    // remove the window
-    for (int i = 0; i < desktop->nb_windows; i++) {
-        if (desktop->windows[i] == window) {
-            desktop->windows[i] = desktop->windows[desktop->nb_windows - 1];
-            break;
-        }
-    }
-
-    desktop->nb_windows--;
-
-    free(window);
+    desktop->func_run_stack[index].func_id = ID_WINDOW_DELETE;
+    desktop->func_run_stack[index].arg1 = (uint32_t) window;
+    desktop->func_run_stack_size++;
 }
 
 button_t *create_button(window_t *window, int x, int y, int width, int height, void (*callback)(clickevent_t *)) {
@@ -503,6 +498,7 @@ button_t *create_button(window_t *window, int x, int y, int width, int height, v
 ********************************/
 
 void func_desktop_refresh(desktop_t *desktop);
+void func_window_delete(window_t *window);
 
 void desktop_run_stack(desktop_t *desktop) {
     char tmp[4];
@@ -515,6 +511,9 @@ void desktop_run_stack(desktop_t *desktop) {
         switch (func_run.func_id) {
             case ID_DESKTOP_REFRESH:
                 func_desktop_refresh((desktop_t *) func_run.arg1);
+                break;
+            case ID_WINDOW_DELETE:
+                func_window_delete((window_t *) func_run.arg1);
                 break;
             default:
                 serial_print_ss("BUG", "func not found");
@@ -552,6 +551,41 @@ void func_desktop_refresh(desktop_t *desktop) {
     desktop->is_locked = 0;
 
     free(sorted);
+}
+
+void func_window_delete(window_t *window) {
+    serial_print_ss("window", "delete");
+    // we need to free the memory and switch the priority of every window
+
+    // we need to refresh the desktop
+    desktop_t *desktop = window->parent_desktop;
+    window->priority = -1;
+    window->changed = 1;
+    
+    func_desktop_refresh(window->parent_desktop);
+
+    // free the buttons
+    for (int i = 0; i < window->buttons_count; i++) {
+        free(window->button_array[i]);
+    }
+
+    // free the arrays
+    free(window->button_array);
+    free(window->name);
+    free(window->buffer);
+    free(window->visible);
+
+    // remove the window
+    for (int i = 0; i < desktop->nb_windows; i++) {
+        if (desktop->windows[i] == window) {
+            desktop->windows[i] = desktop->windows[desktop->nb_windows - 1];
+            break;
+        }
+    }
+
+    desktop->nb_windows--;
+
+    free(window);
 }
 
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
