@@ -16,8 +16,21 @@ typedef struct pid_runtime {
 } pid_runtime_t;
 
 void exit_callback(clickevent_t *event) {
-    is_running = 0;
+    is_running = 1;
     window_delete(((button_t *) event->button)->window);
+}
+
+char *get_state(int state) {
+    switch (state) {
+        case 0: return "RUNG";
+        case 1: return "WATG";
+        case 2: return "TSLP";
+        case 3: return "FSLP";
+        case 4: return "ZMBI";
+        case 5: return "DEAD";
+        case 6: return "IDLE";
+        default: return "UNKN";
+    }
 }
 
 void local_print_char(window_t *window, char c, int x, int y, uint32_t color) {
@@ -48,7 +61,7 @@ int main(int argc, char **argv) {
         pid_runtime[i].pid = -1;
     }
 
-    int count, pid, runtime, loop_time, start, tmp;
+    int count, pid, runtime, loop_time, start, tmp, state, line;
 
     loop_time = 1000;
 
@@ -90,8 +103,16 @@ int main(int argc, char **argv) {
         }
 
         // print the list
+        line = 0;
         for (int i = 0; i < 20; i++) {
             if (pid_runtime[i].pid != -1) {
+                // get the state of the process
+                state = c_process_get_state(pid_runtime[i].pid);
+                if (state == 5) {
+                    pid_runtime[i].pid = -1;
+                    continue;
+                }
+
                 // get the name of the process
                 c_process_get_name(pid_runtime[i].pid, buffer);
                 // keep name from the last slash to the end
@@ -115,26 +136,36 @@ int main(int argc, char **argv) {
                     buffer[j] = ' ';
                 }
 
+                // add the state
+                strcpy(buffer + 20, get_state(state));
+
+                // align with the column 26
+                tmp = strlen(buffer);
+                for (int j = tmp; j < 26; j++) {
+                    buffer[j] = ' ';
+                }
+
                 // add the cpu usage
-                itoa(pid_runtime[i].usage, buffer + 20, 10);
+                itoa(pid_runtime[i].usage, buffer + 26, 10);
                 tmp = strlen(buffer);
                 buffer[tmp] = '%';
                 buffer[tmp + 1] = 0;
 
-                // align with the column 25
+                // align with the column 31
                 tmp = strlen(buffer);
-                for (int j = tmp; j < 25; j++) {
+                for (int j = tmp; j < 31; j++) {
                     buffer[j] = ' ';
                 }
 
                 // add the memory usage
-                itoa(c_mem_get_info(8, pid_runtime[i].pid) / 1024, buffer + 25, 10);
+                itoa(c_mem_get_info(8, pid_runtime[i].pid) / 1024, buffer + 31, 10);
                 strcpy(buffer + strlen(buffer), "Ko");
 
                 tmp = strlen(buffer);
                 for (int j = 0; j < tmp; j++) {
-                    local_print_char(window, buffer[j], j * 8 + 6, i * 16 + 5, 0x00bb00);
+                    local_print_char(window, buffer[j], j * 8 + 6, line * 16 + 5, 0x00bb00);
                 }
+                line++;
             }
         }
 

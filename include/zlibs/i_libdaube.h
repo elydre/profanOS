@@ -115,19 +115,4 @@ typedef struct button_t {
 #define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 16))
 
 #endif
-
 #endif
-
-
-// desktop_refresh OK!
-// window_delete
-
-// window_refresh
-// window_resize
-// window_create
-// window_move
-// window_set_pixel_func
-// window_fill
-// desktop_get_main
-
-// refresh_mouse
