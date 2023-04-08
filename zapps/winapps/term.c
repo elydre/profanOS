@@ -15,7 +15,6 @@ int is_running;
 
 void exit_callback(clickevent_t *event) {
     is_running = 0;
-    window_delete(((button_t *) event->button)->window);
 }
 
 void local_print_char(window_t *window, char c, int x, int y, uint32_t color, uint32_t bg_color) {
@@ -59,10 +58,13 @@ int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
-    window_t *window = window_create(desktop_get_main(), "gui term", 500, 450, 208, 208, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    // get the main desktop
+    desktop_t *main_desktop = desktop_get_main();
 
-    desktop_refresh(desktop_get_main());
+    // create a window and add an exit button
+    window_t *window = window_create(main_desktop, "gui term", 500, 450, 208, 208, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
+    desktop_refresh(main_desktop);
 
     is_running = 1;
     while (is_running) {
@@ -74,6 +76,10 @@ int main(int argc, char **argv) {
         window_refresh(window);
         ms_sleep(50);
     }
+
+    // destroy window and wait for it to be deleted
+    window_delete(window);
+    window_wait_delete(main_desktop, window);
 
     return 0;
 }

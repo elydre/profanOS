@@ -115,14 +115,17 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
 
 window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move) {
     if (DEBUG_LEVEL > 0) serial_print_ss("Creating window", name);
+
     if (desktop->nb_windows >= desktop->max_windows) {
         serial_print_ss("Error:", "Too many windows\n");
         return NULL;
     }
+
     if (width < 0 || height < 0) {
         serial_print_ss("Error:", "Window position is negative\n");
         return NULL;
     }
+
     window_t *window = calloc(1, sizeof(window_t));
     window->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(window->name, name);
@@ -491,6 +494,20 @@ button_t *create_button(window_t *window, int x, int y, int width, int height, v
     return button;
 }
 
+void window_wait_delete(desktop_t *desktop, window_t *window) {
+    int found = 1;
+    while (found) {
+        found = 0;
+        for (int i = 0; i < desktop->nb_windows; i++) {
+            if (desktop->windows[i] == window) {
+                found = 1;
+                break;
+            }
+        }
+        ms_sleep(10);
+    }
+}
+
 /********************************
  *                             *
  *      FUNC CALL SYSTEM       *
@@ -570,7 +587,10 @@ void func_window_delete(window_t *window) {
     }
 
     // free the arrays
-    free(window->button_array);
+    if (window->button_array != NULL) {
+        free(window->button_array);
+    }
+
     free(window->name);
     free(window->buffer);
     free(window->visible);

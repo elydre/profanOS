@@ -9,7 +9,6 @@ int is_running;
 
 void exit_callback(clickevent_t *event) {
     is_running = 0;
-    window_delete(((button_t *) event->button)->window);
 }
 
 int main(int argc, char **argv) {
@@ -24,10 +23,13 @@ int main(int argc, char **argv) {
     int idle = 0;
     int total = 0;
 
-    window_t *window = window_create(desktop_get_main(), "cpu usage", 550, 220, 100, 100, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    // get the main desktop
+    desktop_t *main_desktop = desktop_get_main();
 
-    desktop_refresh(desktop_get_main());
+    // create a window and add an exit button
+    window_t *window = window_create(main_desktop, "cpu usage", 550, 220, 100, 100, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
+    desktop_refresh(main_desktop);
 
     is_running = 1;
     while (is_running) {
@@ -56,7 +58,12 @@ int main(int argc, char **argv) {
         window_refresh(window);
         ms_sleep(200);
     }
+
     free(history);
+
+    // destroy window and wait for it to be deleted
+    window_delete(window);
+    window_wait_delete(main_desktop, window);
 
     return 0;
 }

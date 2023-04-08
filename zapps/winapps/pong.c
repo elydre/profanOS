@@ -8,18 +8,20 @@ int is_running;
 
 void exit_callback(clickevent_t *event) {
     is_running = 0;
-    window_delete(((button_t *) event->button)->window);
 }
 
 int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
-    window_t *window = window_create(desktop_get_main(), "pong like", 100, 200, 200, 200, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    // get the main desktop
+    desktop_t *main_desktop = desktop_get_main();
 
-    desktop_refresh(desktop_get_main());
-    // square that bounces on the edge of the window like pong
+    // create a window and add an exit button
+    window_t *window = window_create(main_desktop, "pong like", 100, 200, 200, 200, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
+    desktop_refresh(main_desktop);
+
 
     int square_x = 10;
     int square_y = 0;
@@ -76,6 +78,10 @@ int main(int argc, char **argv) {
         }
         ms_sleep(50);
     }
-    
+
+    // destroy window and wait for it to be deleted
+    window_delete(window);
+    window_wait_delete(main_desktop, window);
+
     return 0;
 }

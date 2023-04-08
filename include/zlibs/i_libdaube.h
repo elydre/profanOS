@@ -112,7 +112,8 @@ typedef struct button_t {
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 13))
 #define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 14))
 #define create_button ((button_t *(*)(window_t *, int, int, int, int, void (*)(clickevent_t *))) get_func_addr(LIBDAUBE_ID, 15))
-#define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 16))
+#define window_wait_delete ((void (*)(desktop_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 16))
+#define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 17))
 
 #endif
 #endif
