@@ -477,24 +477,26 @@ desktop_t *desktop_get_main() {
 }
 
 void window_delete(window_t *window) {
-    // TODO (we need to free the memory and switch the priority of every window)
     serial_print_ss("window", "delete");
     // we need to free the memory and switch the priority of every window
-    // first we do the buttons
-    for (int i = 0; i < window->buttons_count; i++) {
-        free(window->button_array[i]);
-    }
-    // than we do the window
-    free(window->button_array);
-    free(window->name);
-    free(window->buffer);
-    free(window->visible);
 
+    // we need to refresh the desktop
     desktop_t *desktop = window->parent_desktop;
     window->priority = -1;
     window->changed = 1;
     
     desktop_refresh(window->parent_desktop);
+
+    // free the buttons
+    for (int i = 0; i < window->buttons_count; i++) {
+        free(window->button_array[i]);
+    }
+
+    // free the arrays
+    free(window->button_array);
+    free(window->name);
+    free(window->buffer);
+    free(window->visible);
 
     // remove the window
     for (int i = 0; i < desktop->nb_windows; i++) {
@@ -504,7 +506,7 @@ void window_delete(window_t *window) {
         }
     }
 
-    ((desktop_t *) window->parent_desktop)->nb_windows--;
+    desktop->nb_windows--;
 
     free(window);
 }
