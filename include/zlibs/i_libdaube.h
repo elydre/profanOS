@@ -69,6 +69,7 @@ typedef struct desktop_t {
     int screen_width;
     int screen_height;
     int max_windows;
+    int current_priority;
 
     libdaude_func_t *func_run_stack;
     int func_run_stack_size;

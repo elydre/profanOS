@@ -100,6 +100,7 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     desktop->screen_width = screen_width;
     desktop->screen_height = screen_height;
     desktop->max_windows = max_windows;
+    desktop->current_priority = 0;
 
     desktop->func_run_stack = calloc(100, sizeof(libdaude_func_t));
     desktop->func_run_stack_size = 0;
@@ -129,7 +130,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window_t *window = calloc(1, sizeof(window_t));
     window->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(window->name, name);
-    window->priority = desktop->nb_windows;
+
+    window->priority = desktop->current_priority++;
 
     window->in_height = height;
     window->in_width = width;
@@ -162,8 +164,6 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     // draw the border of the window in the buffer
     window_draw_box(desktop, window);
 
-    desktop->nb_windows++;
-
     // add the window to the desktop
     for (int i = 0; i < desktop->max_windows; i++) {
         if (desktop->windows[i] == NULL) {
@@ -171,6 +171,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
             break;
         }
     }
+
+    desktop->nb_windows++;
 
     return window;
 }
