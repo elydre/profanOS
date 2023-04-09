@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
                     strcpy(buffer, ptr + 1);
                 }
 
-                // add the pid and the usage
+                // add the pid
                 tmp = strlen(buffer);
                 buffer[tmp] = ' ';
                 buffer[tmp + 1] = '(';
