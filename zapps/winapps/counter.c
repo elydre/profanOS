@@ -1,7 +1,8 @@
 #include <i_winadds.h>
-#include <stdlib.h>
-#include <syscall.h>
 #include <i_time.h>
+
+#include <syscall.h>
+#include <stdlib.h>
 
 int main(int argc, char **argv) {
     char tmp[4];

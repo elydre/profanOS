@@ -4,7 +4,6 @@
 
 #include <syscall.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 char msg[] = "Hello, world!";
 int is_running;

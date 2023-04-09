@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <type.h>
 
 #include <i_time.h>
 #include <i_vgui.h>
