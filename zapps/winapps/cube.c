@@ -3,6 +3,7 @@
 
 #include <i_libdaube.h>
 #include <i_winadds.h>
+#include <i_time.h>
 
 #define PI 3.141592
 #define MATH_LOOP 100
@@ -208,8 +209,9 @@ int show_fps(window_t *window, int time) {
     int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
     itoa(fps, fps_str, 10);
+
     for (int i = 0; fps_str[i] != '\0'; i++) {
-        wadds_putc(window, 0, i, fps_str[i], 0x00FF00, 0x000000);
+        wadds_putc(window, i * 8 + 5, 5, fps_str[i], 0x00FF00, 0x000000);
     }
 
     return new_time;
