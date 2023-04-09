@@ -1,13 +1,15 @@
 #include <syscall.h>
-#include <i_vgui.h>
 #include <stdlib.h>
 
+#include <i_libdaube.h>
+#include <i_winadds.h>
 
 #define PI 3.141592
 #define MATH_LOOP 100
 #define FOCAL_DISTANCE 100
 #define CUBE_COLOR 0xFFFFFF
-#define TRIN_COLOR 0xFFFF00
+
+int is_running;
 
 typedef struct point3_t {
     int x;
@@ -38,27 +40,43 @@ shape_t cube(int size);
 void delete_shape(shape_t *shape);
 
 shape_t rotate(shape_t *shape, int x, int y, int z);
-void draw(shape_t *shape, vgui_t *vgui);
-int show_fps(vgui_t *vgui, int time);
+void draw(shape_t *shape, window_t *window);
+int show_fps(window_t *window, int time);
 
+void exit_callback(clickevent_t *event) {
+    is_running = 0;
+}
 
 int main(int argc, char** argv) {
-    vgui_t vgui = vgui_setup(320, 200);
+    // wake up the parent process
+    c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+
+    // get the main desktop
+    desktop_t *main_desktop = desktop_get_main();
+
+    // create a window and add an exit button
+    window_t *window = window_create(main_desktop, "3D cube", 200, 200, 200, 200, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
+    desktop_refresh(main_desktop);
 
     shape_t shape = cube(120);
     int time;
 
-    for (int i = 0; c_kb_get_scancode() != 1; i = (i + 1) % 360) {
+    is_running = 1;
+    for (int i = 0; is_running; i = (i + 2) % 360) {
         shape_t new_shape = rotate(&shape, i, i, i);
-        draw(&new_shape, &vgui);
+        draw(&new_shape, window);
         delete_shape(&new_shape);
-        time = show_fps(&vgui, time);
+        time = show_fps(window, time);
 
-        vgui_render(&vgui, 0);
+        window_refresh(window);
     }
 
     delete_shape(&shape);
-    vgui_exit(&vgui);
+
+    // destroy window and wait for it to be deleted
+    window_delete(window);
+    window_wait_delete(main_desktop, window);
 
     return 0;
 }
@@ -72,7 +90,7 @@ point2_t project(point3_t point) {
 shape_t cube(int size) {
     shape_t shape;
     shape.PointsCount = 8;
-    shape.LinesCount = 18;
+    shape.LinesCount = 12;
     shape.Points = malloc(sizeof(point3_t) * shape.PointsCount);
     shape.Lines = malloc(sizeof(line_t) * shape.LinesCount);
 
@@ -97,14 +115,6 @@ shape_t cube(int size) {
     shape.Lines[9] = (line_t){1, 5, CUBE_COLOR};
     shape.Lines[10] = (line_t){2, 6, CUBE_COLOR};
     shape.Lines[11] = (line_t){3, 7, CUBE_COLOR};
-
-    // make squares into triangles
-    shape.Lines[12] = (line_t){0, 2, TRIN_COLOR};
-    shape.Lines[13] = (line_t){4, 6, TRIN_COLOR};
-    shape.Lines[14] = (line_t){0, 5, TRIN_COLOR};
-    shape.Lines[15] = (line_t){1, 6, TRIN_COLOR};
-    shape.Lines[16] = (line_t){2, 7, TRIN_COLOR};
-    shape.Lines[17] = (line_t){3, 4, TRIN_COLOR};
 
     shape.ScreenPoints = malloc(sizeof(point2_t) * shape.PointsCount);
     return shape;
@@ -178,26 +188,29 @@ shape_t rotate(shape_t *shape, int x, int y, int z) {
     return new_shape;
 }
 
-void draw(shape_t *shape, vgui_t *vgui) {
-    vgui_clear(vgui, 0);
-    for (int i=0; i<shape->PointsCount; i++) {
+void draw(shape_t *shape, window_t *window) {
+    window_fill(window, 0);
+    for (int i = 0; i<shape->PointsCount; i++) {
         point2_t p = project(shape->Points[i]);
         shape->ScreenPoints[i] = p;
     }
-    for (int i=0; i<shape->LinesCount; i++) {
+    for (int i = 0; i < shape->LinesCount; i++) {
         line_t line = shape->Lines[i];
         point2_t p1 = shape->ScreenPoints[line.i1];
         point2_t p2 = shape->ScreenPoints[line.i2];
         
-        vgui_draw_line(vgui, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
+        wadds_line(window, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
     }
 }
 
-int show_fps(vgui_t *vgui, int time) {
+int show_fps(window_t *window, int time) {
     int new_time = c_timer_get_ms();
     int fps = 1000 / (new_time - time + 1);
     char fps_str[10];
     itoa(fps, fps_str, 10);
-    vgui_print(vgui, 0, 0, fps_str, 0xFFFFFF);
+    for (int i = 0; fps_str[i] != '\0'; i++) {
+        wadds_putc(window, 0, i, fps_str[i], 0x00FF00, 0x000000);
+    }
+
     return new_time;
 }

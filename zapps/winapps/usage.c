@@ -32,19 +32,9 @@ char *get_state(int state) {
     }
 }
 
-void local_print_char(window_t *window, char c, int x, int y, uint32_t color) {
-    uint8_t *glyph = c_font_get(0) + c * 16;
-    for (int j = 0; j < 16; j++) {
-        for (int k = 0; k < 8; k++) {
-            window_set_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : 0);
-        }
-    }
-}
-
 int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
-
 
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();
@@ -164,7 +154,7 @@ int main(int argc, char **argv) {
 
                 tmp = strlen(buffer);
                 for (int j = 0; j < tmp; j++) {
-                    local_print_char(window, buffer[j], j * 8 + 6, line * 16 + 5, 0x00bb00);
+                    wadds_putc(window, j * 8 + 6, line * 16 + 5, buffer[j], 0x00bb00, 0x000000);
                 }
                 line++;
             }

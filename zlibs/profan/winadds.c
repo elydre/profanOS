@@ -83,3 +83,34 @@ button_t *wadds_create_exitbt(window_t *window, void (*exit_callback)(clickevent
 
     return create_button(window, x - 18, 3, 16, 16, exit_callback);
 }
+
+void wadds_line(window_t *window, int x1, int y1, int x2, int y2, int color) {
+    int dx = abs(x2 - x1);
+    int sx = x1 < x2 ? 1 : -1;
+    int dy = -abs(y2 - y1);
+    int sy = y1 < y2 ? 1 : -1;
+    int err = dx + dy, e2;
+
+    for (;;) {
+        window_set_pixel(window, x1, y1, color);
+        if (x1 == x2 && y1 == y2) break;
+        e2 = 2 * err;
+        if (e2 >= dy) {
+            err += dy;
+            x1 += sx;
+        }
+        if (e2 <= dx) {
+            err += dx;
+            y1 += sy;
+        }
+    }
+}
+
+void wadds_putc(window_t *window, int x, int y, char c, uint32_t color, uint32_t bg_color) {
+    uint8_t *glyph = c_font_get(0) + c * 16;
+    for (int j = 0; j < 16; j++) {
+        for (int k = 0; k < 8; k++) {
+            window_set_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : bg_color);
+        }
+    }
+}
