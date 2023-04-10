@@ -25,13 +25,13 @@ int main(int argc, char **argv) {
 
     is_running = 1;
     while (is_running) {
-        window_fill(window, 0xFF0000);
+        window_fill(window, 0xFFFFFF);
         window_refresh(window);
 
-        window_fill(window, 0x00FF00);
+        window_fill(window, 0xEEEEEE);
         window_refresh(window);
 
-        window_fill(window, 0x0000FF);
+        window_fill(window, 0xDDDDDD);
         window_refresh(window);
     }
 

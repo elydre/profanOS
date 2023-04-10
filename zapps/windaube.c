@@ -4,7 +4,7 @@
 
 #include <syscall.h>
 
-#define MAX_WINDOWS 10
+#define MAX_WINDOWS 20
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     while (1) {
         desktop_run_stack(desktop);
-        refresh_mouse(desktop);
+        // refresh_mouse(desktop);
         ms_sleep(10);
     }
 

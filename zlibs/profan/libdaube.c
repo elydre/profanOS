@@ -554,6 +554,7 @@ void desktop_run_stack(desktop_t *desktop) {
 ******************************/
 
 void func_desktop_refresh(desktop_t *desktop) {
+    if (desktop->is_locked) return;
     desktop->is_locked = 1;
 
     // we draw the windows, by order of priority
@@ -573,9 +574,9 @@ void func_desktop_refresh(desktop_t *desktop) {
     if (DEBUG_LEVEL > 2) c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
     vgui_render(desktop->vgui, 0);
 
-    desktop->is_locked = 0;
-
     free(sorted);
+
+    desktop->is_locked = 0;
 }
 
 void func_window_delete(window_t *window) {
