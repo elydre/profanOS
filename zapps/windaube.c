@@ -40,17 +40,17 @@ int main(int argc, char **argv) {
 void start_addons(desktop_t *desktop) {
     // fill screen if F7 is pressed
     if (c_kb_get_scancode() == 65) {
-        for (int i = 0; i < desktop->screen_width; i++) {
-            for (int j = 0; j < desktop->screen_height; j++) {
-                c_vesa_set_pixel(i, j, (0x010101 * (i + j)) % 0xFFFFFF);
+        for (int x = 0; x < desktop->screen_width; x++) {
+            for (int y = 0; y < desktop->screen_height; y++) {
+                c_vesa_set_pixel(x, y, (0x010101 * (x + y)) % 0xFFFFFF);
             }
         }
     }
     // restore screen if F8 is pressed
     if (c_kb_get_scancode() == 66) {
-        for (int i = 0; i < desktop->screen_width; i++) {
-            for (int j = 0; j < desktop->screen_height; j++) {
-                c_vesa_set_pixel(i, j, desktop->screen_buffer[i + j * desktop->screen_width]);
+        for (int x = 0; x < desktop->screen_width; x++) {
+            for (int y = 0; y < desktop->screen_height; y++) {
+                c_vesa_set_pixel(x, y, desktop->screen_buffer[x + y * desktop->screen_width]);
             }
         }
     }
