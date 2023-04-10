@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     while (1) {
         desktop_run_stack(desktop);
-        // refresh_mouse(desktop);
+        refresh_mouse(desktop);
         ms_sleep(10);
     }
 
