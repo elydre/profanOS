@@ -13,7 +13,6 @@ int main(int argc, char **argv) {
     vgui_t vgui = vgui_setup(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     desktop_t *desktop = desktop_init(&vgui, MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
-    desktop_refresh(desktop);
 
     c_run_ifexist("/bin/winapps/cpu.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/demo.bin", 0, NULL);
