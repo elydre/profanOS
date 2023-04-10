@@ -457,10 +457,6 @@ void refresh_mouse(desktop_t *desktop) {
         desktop->mouse->already_clicked = 0;
     }
 
-    if (c_mouse_call(2, 1)) {
-        desktop_refresh(desktop);
-    }
-
     for (int i = 0; i < desktop->nb_windows; i++) {
         window_t *window = desktop->windows[i];
         for (int j = 0; j < window->buttons_count; j++) {
@@ -641,6 +637,10 @@ void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window
         for (int y = y1; y < y2; y++) {
             win_buffer_index = (x - window->x) + (y - window->y) * window->width;
 
+            if (x < 0 || x >= desktop->screen_width || y < 0 || y >= desktop->screen_height) {
+                continue;
+            }
+
             if (! window->visible[win_buffer_index]) {
                 continue;
             }
@@ -666,6 +666,9 @@ void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
         int screen_buffer_index;
         for (int i = 0; i < window->width; i++) {
             for (int j = 0; j < window->height; j++) {
+                if (window->x + i < 0 || window->x + i >= desktop->screen_width || window->y + j < 0 || window->y + j >= desktop->screen_height) {
+                    continue;
+                }
                 if (! window->visible[i + j * window->width]) {
                     continue;
                 }
