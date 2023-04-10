@@ -2,8 +2,6 @@
 #define LIBDAUBE_ID 1015
 
 #include <type.h>
-#include <stdarg.h>
-#include <i_vgui.h> 
 
 typedef struct libdaude_func_t {
     int func_id;
@@ -62,7 +60,6 @@ typedef struct mouse_t {
 typedef struct desktop_t {
     window_t **windows;
 
-    vgui_t *vgui;
     mouse_t *mouse;
 
     int nb_windows;
@@ -73,6 +70,8 @@ typedef struct desktop_t {
 
     libdaude_func_t *func_run_stack;
     int func_run_stack_size;
+
+    uint32_t *screen_buffer;
 
     uint8_t is_locked;
 } desktop_t;
@@ -101,7 +100,7 @@ typedef struct button_t {
 #define window_set_pixel(window, x, y, color) window_set_pixel_func(window, x, y, color, 1)
 #define window_set_pixel_out(window, x, y, color) window_set_pixel_func(window, x, y, color, 0)
 
-#define desktop_init ((desktop_t *(*)(vgui_t *, int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
+#define desktop_init ((desktop_t *(*)(int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
 #define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
 #define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 6))

@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #include <i_time.h>
-#include <i_vgui.h>
 
 #define LIBDAUBE_C
 #include <i_libdaube.h>
@@ -89,16 +88,19 @@ void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int co
 void draw_rect(window_t *window, int x, int y, int width, int height, int color);
 void draw_print_wut(window_t *window, int x, int y, char *msg, int color);
 
-desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int screen_height) {
+desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     desktop_t *desktop = calloc(1, sizeof(desktop_t));
-    desktop->nb_windows = 0;
-    desktop->vgui = vgui;
+
     desktop->windows = calloc(max_windows, sizeof(window_t *));
+    desktop->max_windows = max_windows;
+    desktop->nb_windows = 0;
+
     desktop->mouse = mouse_create();
 
+    desktop->screen_buffer = calloc(screen_width * screen_height, sizeof(int));
     desktop->screen_width = screen_width;
     desktop->screen_height = screen_height;
-    desktop->max_windows = max_windows;
+
     desktop->current_priority = 0;
 
     desktop->func_run_stack = calloc(100, sizeof(libdaude_func_t));
@@ -106,6 +108,12 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
 
     if (main_desktop == NULL) {
         main_desktop = desktop;
+    }
+
+    for (int x = 0; x < screen_width; x++) {
+        for (int y = 0; y < screen_height; y++) {
+            c_vesa_set_pixel(x, y, 0x000000);
+        }
     }
 
     window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
@@ -266,7 +274,6 @@ void window_refresh(window_t *window) {
     }
 
     window_set_pixels_visible(desktop, window, 1);
-    vgui_render(desktop->vgui, 0);
 }
 
 mouse_t* mouse_create() {
@@ -291,10 +298,10 @@ void refresh_mouse(desktop_t *desktop) {
     for (int i = 0; i < MOUSE_WIDTH; i++) {
         for (int j = 0; j < MOUSE_HEIGHT; j++) {
             // chek if we are outside the screen
-            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->vgui->width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->vgui->height) {
+            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->screen_width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->screen_height) {
                 continue;
             }
-            c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, vgui_get_pixel(desktop->vgui, desktop->mouse->x + i, desktop->mouse->y + j));
+            c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, desktop->screen_buffer[(desktop->mouse->y + j) * desktop->screen_width + (desktop->mouse->x + i)]);
         }
     }
 
@@ -310,31 +317,31 @@ void refresh_mouse(desktop_t *desktop) {
 
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
                 continue;
             }
-            c_vesa_set_pixel(x + i - 6, y - 21, vgui_get_pixel(desktop->vgui, x + i - 6, y - 21));
+            c_vesa_set_pixel(x + i - 6, y - 21, desktop->screen_buffer[(y - 21) * desktop->screen_width + (x + i - 6)]);
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
                 continue;
             }
-            c_vesa_set_pixel(x + i - 6, y + window_height - 22, vgui_get_pixel(desktop->vgui, x + i - 6, y + window_height - 22));
+            c_vesa_set_pixel(x + i - 6, y + window_height - 22, desktop->screen_buffer[(y + window_height - 22) * desktop->screen_width + (x + i - 6)]);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x - 6 < 0 || x - 6 >= desktop->vgui->width) {
+            if (x - 6 < 0 || x - 6 >= desktop->screen_width) {
                 continue;
             }
-            c_vesa_set_pixel(x - 6, y + i - 21, vgui_get_pixel(desktop->vgui, x - 6, y + i - 21));
+            c_vesa_set_pixel(x - 6, y + i - 21, desktop->screen_buffer[(y + i - 21) * desktop->screen_width + (x - 6)]);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->vgui->width) {
+            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) {
                 continue;
             }
-            c_vesa_set_pixel(x + window_width - 7, y + i - 21, vgui_get_pixel(desktop->vgui, x + window_width - 7, y + i - 21));
+            c_vesa_set_pixel(x + window_width - 7, y + i - 21, desktop->screen_buffer[(y + i - 21) * desktop->screen_width + (x + window_width - 7)]);
         }
     }
 
@@ -343,7 +350,7 @@ void refresh_mouse(desktop_t *desktop) {
 
     for (int i = 0; i < MOUSE_WIDTH; i++) {
         for (int j = 0; j < MOUSE_HEIGHT; j++) {
-            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->vgui->width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->vgui->height) {
+            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->screen_width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->screen_height) {
                 continue;
             }
             if (mouse_img[i + j * MOUSE_WIDTH] == 1) {
@@ -406,28 +413,28 @@ void refresh_mouse(desktop_t *desktop) {
 
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
                 continue;
             }
             c_vesa_set_pixel(x + i - 6, y - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->vgui->width) {
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
                 continue;
             }
             c_vesa_set_pixel(x + i - 6, y + window_height - 22, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x - 6 < 0 || x - 6 >= desktop->vgui->width) {
+            if (x - 6 < 0 || x - 6 >= desktop->screen_width) {
                 continue;
             }
             c_vesa_set_pixel(x - 6, y + i - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->vgui->width) {
+            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) {
                 continue;
             }
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
@@ -572,7 +579,6 @@ void func_desktop_refresh(desktop_t *desktop) {
     }
 
     if (DEBUG_LEVEL > 2) c_serial_print(SERIAL_PORT_A, "FINISHED DRAWING\n");
-    vgui_render(desktop->vgui, 0);
 
     free(sorted);
 
@@ -615,7 +621,7 @@ void func_window_delete(window_t *window) {
 }
 
 void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window_t *w, uint8_t is_first) {
-    int x1, x2, y1, y2;
+    int x1, x2, y1, y2, win_buffer_index;
 
     if (w->changed && is_first) {
         if (DEBUG_LEVEL > 2) serial_print_ss("window move:", w->name);
@@ -633,9 +639,18 @@ void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window
 
     for (int x = x1; x < x2; x++) {
         for (int y = y1; y < y2; y++) {
-            if (window->visible[(x - window->x) + (y - window->y) * window->width]) {
-                vgui_set_pixel(desktop->vgui, x, y, window->buffer[(x - window->x) + (y - window->y) * window->width]);
+            win_buffer_index = (x - window->x) + (y - window->y) * window->width;
+
+            if (! window->visible[win_buffer_index]) {
+                continue;
             }
+
+            if (desktop->screen_buffer[x + y * desktop->screen_width] == window->buffer[win_buffer_index]) {
+                continue;
+            }
+
+            c_vesa_set_pixel(x, y, window->buffer[win_buffer_index]);
+            desktop->screen_buffer[x + y * desktop->screen_width] = window->buffer[win_buffer_index];
         }
     }
 
@@ -646,12 +661,22 @@ void window_set_pixels_intersection(desktop_t *desktop, window_t *window, window
 
 void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
     if (NO_OPTI) all = 1;
+
     if (window->changed || all) {
+        int screen_buffer_index;
         for (int i = 0; i < window->width; i++) {
             for (int j = 0; j < window->height; j++) {
-                if (window->visible[i + j * window->width]) {
-                    vgui_set_pixel(desktop->vgui, window->x + i, window->y + j, window->buffer[i + j * window->width]);
+                if (! window->visible[i + j * window->width]) {
+                    continue;
                 }
+                screen_buffer_index = (window->x + i) + (window->y + j) * desktop->screen_width;
+
+                if (desktop->screen_buffer[screen_buffer_index] == window->buffer[i + j * window->width]) {
+                    continue;
+                }
+
+                c_vesa_set_pixel(window->x + i, window->y + j, window->buffer[i + j * window->width]);
+                desktop->screen_buffer[screen_buffer_index] = window->buffer[i + j * window->width];
             }
         }
         return;
