@@ -94,7 +94,6 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
     }
 
     pid_current = to_pid;
-    i_exit_sheduler();
 
     asm volatile("sti"); // (re)enable interrupts
     process_asm_switch(&proc1->regs, &proc2->regs);
