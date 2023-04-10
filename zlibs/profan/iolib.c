@@ -4,6 +4,8 @@
 #include <i_mem.h>
 #include <string.h>
 
+#include <i_winadds.h>
+
 
 // we need the stdarg of the stdlib
 #include <stdarg.h>
@@ -38,42 +40,8 @@ int clean_buffer(char *buffer, int size) {
 }
 
 char sprint_function(char message[], char default_color) {
-    unsigned int msg_len = strlen(message);
-    char nm[msg_len + 1];
-    for (unsigned int i = 0; i < msg_len; i++) nm[i] = message[i];
-    nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
-    msg_len++;
-    char color = default_color;
-    char buffer[msg_len];
-    int buffer_index = 0;
-
-    char delimiter[] = "0123456789ABCDE";
-    char colors[] = {
-        c_blue, c_green, c_cyan, c_red, c_magenta, c_yellow, c_grey, c_white, 
-        c_dblue, c_dgreen, c_dcyan, c_dred, c_dmagenta, c_dyellow, c_dgrey
-    };
-
-    clean_buffer(buffer, msg_len);
-    for (unsigned int i = 0; i < msg_len; i++) {
-        if (nm[i] != '$') {
-            buffer[buffer_index] = nm[i];
-            buffer_index++;
-            continue;
-        }
-        if (strlen(buffer) > 0) {
-            c_ckprint(buffer, color);
-            buffer_index = clean_buffer(buffer, msg_len);
-        }
-        if (i == msg_len - 1) break;
-        for (int j = 0; j < ARYLEN(delimiter); j++) {
-            if (nm[i + 1] == delimiter[j]) {
-                color = colors[j];
-                i++;
-                break;
-            }
-        }
-    }
-    return color;
+    wterm_append_string(message);
+    return default_color;
 }
 
 /***************************

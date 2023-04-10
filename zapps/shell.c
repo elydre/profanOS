@@ -18,6 +18,8 @@ void go(char file[], char prefix[], char suffix[]);
 int shell_command(char command[]);
 
 int main(int argc, char **argv) {
+    c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+
     char char_buffer[BFR_SIZE];
     int history_size = 0x1000 / BFR_SIZE - 1;
     char **history = malloc(history_size * sizeof(char*));
