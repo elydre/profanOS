@@ -198,7 +198,7 @@ int fflush(FILE *stream) {
         return 0;
     }
     // we write the file
-    c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_size);
+    c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_pos);
     return 0;
 }
 
@@ -255,18 +255,16 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
         return 0;
     }
-    // we put the buffer_index to the end of the buffer
-    stream->buffer_pos = stream->buffer_size;
     // we copy char by char from the buffer to the file buffer
     for (int i = 0; i < (int) count; i++) {
         // we check if the file buffer is full
         if (stream->buffer_pos >= stream->buffer_size) {
             // we realloc the buffer
-            stream->buffer_size += 1024;
+            stream->buffer_size += 512;
             stream->buffer = realloc(stream->buffer, stream->buffer_size);
         }
         // we copy the char
-        stream->buffer[stream->buffer_pos] = ((char *) buffer)[stream->buffer_pos];
+        stream->buffer[stream->buffer_pos] = ((char *) buffer)[i];
         // we increment the buffer position
         stream->buffer_pos++;
     }
