@@ -23,8 +23,6 @@ int main(int argc, char **argv) {
     wadds_create_exitbt(window, exit_callback);
     desktop_refresh(main_desktop);
 
-    // set the window background to black
-
     is_running = 1;
     while (is_running) {
         window_fill(window, 0xFF0000);
