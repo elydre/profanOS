@@ -1,9 +1,11 @@
 #include <syscall.h>
 #include <stdlib.h>
-#include <i_vgui.h>
+
+#include <i_libdaube.h>
+#include <i_winadds.h>
 
 #define MAP_SIZE 10
-#define PI 3.14159
+#define PI 3.141592
 #define MATH_LOOP 7
 #define ONK 1000.0
 
@@ -30,6 +32,8 @@ int MAP[] = {
     2, 7, 7, 7, 9, 7, 7, 7, 7, 7
 };
 
+int is_running;
+
 double get_distance(double x, double y, double rad_angle, int *color);
 
 int val_in_buffer(int val, int buffer_width, int *buffer);
@@ -40,12 +44,27 @@ uint32_t convert_color(int color);
 double cos(double x);
 double sin(double x);
 
+void exit_callback(clickevent_t *event) {
+    is_running = 0;
+}
+
 int main(int argc, char **argv) {
+    // wake up the parent process
+    c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+
     double x = 5, y = 5;
     double rot = 0; // in radians
 
     int width = 320, height = 200;
     int half_height = height / 2;
+
+    // get the main desktop
+    desktop_t *main_desktop = desktop_get_main();
+
+    // create a window and add an exit button
+    window_t *window = window_create(main_desktop, "doom like", 100, 100, width, height, 0, 0);
+    wadds_create_exitbt(window, exit_callback);
+    desktop_refresh(main_desktop);
 
     int center, top, bottom;
     char convert[10];
@@ -57,10 +76,11 @@ int main(int argc, char **argv) {
     tick_count[0] = c_timer_get_ms();
     tick_count[3] = 0;
 
-    vgui_t vgui = vgui_setup(320, 200);
     c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
-    while (c_kb_get_scancode() != 1) {
+
+    is_running = 1;
+    while (is_running) {
         tick_count[1] = c_timer_get_ms() - tick_count[0];
         tick_count[0] = c_timer_get_ms();
 
@@ -70,30 +90,30 @@ int main(int argc, char **argv) {
             bottom = (int) (half_height + center);
 
             for (int j = 0; j < height; j++) {
-                if (j < top) vgui_set_pixel(&vgui, i, j, CEILING_COLOR);
-                else if (j > bottom) vgui_set_pixel(&vgui, i, j, FLOOR_COLOR);
-                else vgui_set_pixel(&vgui, i, j, convert_color(color));
+                if (j < top) window_set_pixel(window, i, j, CEILING_COLOR);
+                else if (j > bottom) window_set_pixel(window, i, j, FLOOR_COLOR);
+                else window_set_pixel(window, i, j, convert_color(color));
             }
         }
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
+                wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
                 if (i == (int) x && j == (int) y)
-                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
+                    wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
+                    wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
             }
         }
 
-        vgui_draw_rect(&vgui, 0, 0, tick_count[1] * 2, 7, 0x880000);
-        vgui_draw_rect(&vgui, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
-        
+        wadds_rect(window, 0, 0, tick_count[1] * 2, 7, 0x880000);
+        wadds_rect(window, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
+
         itoa(1000 / (tick_count[1] + 1), convert, 10);
-        vgui_print(&vgui, 0, 8, convert, 0x0000AA);
+        wadds_puts(window, 0, 8, convert, 0x000000, 0xFF000000);
         
         tick_count[2] = c_timer_get_ms();
-        vgui_render(&vgui, 0);
+        window_refresh(window);
         tick_count[3] = c_timer_get_ms() - tick_count[2];
 
         key = c_kb_get_scfh();
@@ -134,11 +154,6 @@ int main(int argc, char **argv) {
             y += sin(rot - PI / 2) * PLAYER_SPEED * tick_count[1] / ONK;
         }
 
-        if (val_in_buffer(KB_R, 20, key_buffer)) {
-            vgui_print(&vgui, 100, 100, "R", 0x00FF00);
-            vgui_render(&vgui, 1);
-        }
-
         if (x < 1) x = 1;
         if (y < 1) y = 1;
         if (x > MAP_SIZE - 2) x = MAP_SIZE - 2;
@@ -147,7 +162,10 @@ int main(int argc, char **argv) {
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
     }
-    vgui_exit(&vgui);
+    
+    // destroy window and wait for it to be deleted
+    window_delete(window);
+    window_wait_delete(main_desktop, window);
 
     return 0;
 }

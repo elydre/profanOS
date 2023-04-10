@@ -233,6 +233,7 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
     int out_y = y;
 
     if (in_box) {
+        if (x >= window->in_width || y >= window->in_height) return;
         out_x += window->in_x - window->x;
         out_y += window->in_y - window->y;
     }
