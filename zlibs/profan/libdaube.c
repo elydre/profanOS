@@ -80,8 +80,8 @@ void window_update_visible(desktop_t *desktop, window_t *window);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
 void set_window_priority(desktop_t *desktop, window_t *window);
 void window_draw_box(desktop_t *desktop, window_t *window);
+void func_desktop_refresh(desktop_t *desktop);
 void serial_print_ss(char *str, char *name);
-void desktop_draw(desktop_t *desktop);
 mouse_t* mouse_create();
 
 void draw_rect_gradian(window_t *window, int x, int y, int width, int height, int color1, int color2);
@@ -109,6 +109,8 @@ desktop_t *desktop_init(vgui_t *vgui, int max_windows, int screen_width, int scr
     }
 
     window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
+
+    func_desktop_refresh(desktop);
 
     return desktop;
 }
@@ -255,7 +257,12 @@ void window_refresh(window_t *window) {
 
     while (desktop->is_locked) {
         if (DEBUG_LEVEL > 2) serial_print_ss("desktop is locked, can't refresh", window->name);
-        ms_sleep(1);
+        ms_sleep(10);
+    }
+
+    while (window->changed) {
+        if (DEBUG_LEVEL > 2) serial_print_ss("window changed", window->name);
+        ms_sleep(10);
     }
 
     window_set_pixels_visible(desktop, window, 1);
