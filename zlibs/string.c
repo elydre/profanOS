@@ -282,13 +282,13 @@ Wchar *strcat(Wchar * __restrict s1, register const Wchar * __restrict s2) {
 
 Wchar *strchr(const char *p, int ch) {
     char c;
-	c = ch;
-	for (;; ++p) {
-		if (*p == c)
-			return ((char *)p);
-		if (*p == '\0')
-			return (NULL);
-	}
+    c = ch;
+    for (;; ++p) {
+        if (*p == c)
+            return (char *)p;
+        if (*p == '\0')
+            return NULL;
+    }
 }
 
 Wchar *strchrnul(register const Wchar *s, Wint c) {
@@ -419,7 +419,13 @@ Wchar *strncat(Wchar * __restrict s1, register const Wchar * __restrict s2,
 }
 
 int strncmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
-    fsprint("strncmp not implemented yet, WHY DO YOU USE IT ?\n");
+    if (n == 0) return 0;
+    do {
+        if (*s1 != *s2++)
+            return *(unsigned char *) s1 - *(unsigned char *) --s2;
+        if (*s1++ == 0)
+            break;
+    } while (--n != 0);
     return 0;
 }
 
