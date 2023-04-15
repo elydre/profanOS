@@ -1,4 +1,5 @@
 global process_asm_switch
+extern i_exit_sheduler
 
 process_asm_switch:
     pusha
@@ -37,9 +38,7 @@ process_asm_switch:
     push   eax
     popf
     pop    eax
-
     mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
-
     push   eax
     mov    eax, [eax+0x28]  ; CR3
     mov    cr3, eax
@@ -48,4 +47,5 @@ process_asm_switch:
     mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
+    call i_exit_sheduler
     ret                     ; This ends all

@@ -225,7 +225,7 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    fsprint("(OK) getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    c_serial_print(SERIAL_PORT_A, "getenv not correctly implemented...\n");
     return NULL;
 }
 

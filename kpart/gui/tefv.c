@@ -85,6 +85,9 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
         cursor_x = 0;
     } else if (c == '\a') {
         serial_debug("TEFV", "BEEEEEEEEPPP (^_^ )");
+    } else if (c == '\t') {
+        tef_set_char(cursor_x, cursor_y, ' ', color, bg_color);
+        cursor_x++;
     } else if (c == 0x08) {
         // str_backspace
         tef_draw_cursor(0);

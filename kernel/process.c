@@ -22,7 +22,9 @@ int shdlr_queue_length;
 int *shdlr_queue;
 
 uint8_t sheduler_state = SHDLR_DISL;
+uint8_t sheduler_count;
 uint8_t need_clean;
+
 int pid_current;
 
 
@@ -57,6 +59,15 @@ int i_pid_to_place(int pid) {
         if (plist[i].pid == pid) return i;
     }
     return ERROR_CODE;
+}
+
+void i_exit_sheduler() {
+    if (sheduler_state == SHDLR_RUNN) {
+        sheduler_state = SHDLR_ENBL;
+    } else {
+        sys_error("sheduler is not running but sheduler is exiting");
+    }
+    sheduler_count--;
 }
 
 void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
@@ -144,30 +155,19 @@ void i_refresh_tsleep_interact() {
     }
 }
 
-void i_exit_sheduler() {
-    if (sheduler_state == SHDLR_RUNN) {
-        sheduler_state = SHDLR_ENBL;
-    } else {
-        sys_error("sheduler is not running but sheduler is exiting");
-    }
-}
-
 void i_tsleep_awake(uint32_t ticks) {
     for (int i = 0; i < tsleep_list_length; i++) {
         if (tsleep_list[i]->sleep_to <= ticks) {
             if (tsleep_list[i]->state == PROCESS_TSLPING) {
                 tsleep_list[i]->state = PROCESS_WAITING;
                 i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
-                tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-                tsleep_list_length--;
-                i--;
             } else {
                 sys_error("process in tsleep list is not in tsleep state");
-
-                tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-                tsleep_list_length--;
-                i--;
             }
+
+            tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+            tsleep_list_length--;
+            i--;
         }
     }
     i_refresh_tsleep_interact();
@@ -189,9 +189,7 @@ void i_remove_from_tsleep_list(int pid) {
 *****************/
 
 void idle_process() {
-    while (1) {
-        asm volatile("hlt");
-    }
+    while (1) asm volatile("hlt");
 }
 
 /*********************
@@ -236,6 +234,8 @@ int process_init() {
     tsleep_interact = 0;
     pid_current = 0;
     need_clean = 0;
+
+    sheduler_count = 0;
 
     shdlr_queue_length = 0;
 
@@ -498,13 +498,22 @@ void process_disable_sheduler() {
 }
 
 void schedule(uint32_t ticks) {
+    sheduler_count++;
+
     if (sheduler_state != SHDLR_ENBL) {
+        sheduler_count--;
         return;
     }
 
     sheduler_state = SHDLR_RUNN;
 
-    if (tsleep_interact && tsleep_interact <= ticks) {
+    // tick perfect backup verification system
+    if (sheduler_count > 1) {
+        sheduler_count--;
+        return;
+    }
+
+    if (tsleep_interact && tsleep_interact <= ticks && ticks) {
         i_tsleep_awake(ticks);
     }
 
@@ -532,10 +541,10 @@ void schedule(uint32_t ticks) {
         pid = shdlr_queue[shdlr_queue_index];
     }
 
-    i_exit_sheduler();
-
     if (pid != pid_current) {
         i_process_switch(pid_current, pid, ticks);
+    } else {
+        i_exit_sheduler();
     }
 }
 
