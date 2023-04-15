@@ -40,7 +40,7 @@ void *realloc(void *mem, uint32_t new_size) {
     uint32_t new_addr = c_mem_alloc(new_size, 1);
     if (new_addr == 0) return NULL;
     memcpy((uint8_t *) addr, (uint8_t *) new_addr, new_size);
-    c_mem_free_addr(addr);
+    free(mem);
     return (void *) new_addr;
 }
 
