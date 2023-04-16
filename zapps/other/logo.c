@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
 
-    char path[] = "/zada/logo.itxt";
+    char path[] = "/zada/common/logo.itxt";
     char *str = c_fs_declare_read_array(path);
 
     c_fs_read_file(path, (uint8_t *) str);

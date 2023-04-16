@@ -39,8 +39,8 @@ void *realloc(void *mem, uint32_t new_size) {
     uint32_t addr = (uint32_t) mem;
     uint32_t new_addr = c_mem_alloc(new_size, 1);
     if (new_addr == 0) return NULL;
-    memcpy((uint8_t *) addr, (uint8_t *) new_addr, new_size);
-    c_mem_free_addr(addr);
+    memcpy((uint8_t *) new_addr, (uint8_t *) addr, new_size);
+    free(mem);
     return (void *) new_addr;
 }
 
@@ -225,7 +225,7 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    fsprint("(OK) getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    c_serial_print(SERIAL_PORT_A, "getenv not correctly implemented...\n");
     return NULL;
 }
 

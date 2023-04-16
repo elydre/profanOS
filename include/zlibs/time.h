@@ -5,18 +5,17 @@
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
-/*
-int main();
-*/
-
 // Null pointer constant.
+#ifndef NULL
 #define NULL 0
+#endif
+
 // Number of clock ticks per second returned by the times() function (LEGACY).
 #define CLK_TCK 100
 // A number used to convert the value returned by the clock() function into seconds.
 #define CLOCKS_PER_SEC 1000
 
-typedef struct tm_t {
+struct tm {
     int    tm_sec ;  //seconds [0,61]
     int    tm_min ;  //minutes [0,59]
     int    tm_hour;  //hour [0,23]
@@ -26,7 +25,9 @@ typedef struct tm_t {
     int    tm_wday;  //day of week [0,6] (Sunday = 0)
     int    tm_yday;  //day of year [0,365]
     int    tm_isdst; //daylight savings flag
-} tm_t;
+};
+
+typedef struct tm tm_t;
 
 typedef struct timespec_t {
     time_t  tv_sec ; // seconds

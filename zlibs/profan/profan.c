@@ -5,6 +5,11 @@
 #include <i_mem.h>
 #include <type.h>
 
+struct stackframe {
+    struct stackframe* ebp;
+    uint32_t eip;
+};
+
 int main() {
     return 0;
 }
@@ -83,4 +88,17 @@ void assemble_path(char old[], char new[], char result[]) {
     if (result[strlen(result) - 1] == '/' && strlen(result) != 1) {
         result[strlen(result) - 1] = '\0';
     }
+}
+
+void profan_stacktrace() {
+    struct stackframe *stk;
+    asm ("movl %%ebp,%0" : "=r"(stk) ::);
+    fsprint("Stack trace:\n");
+    int size = 0;
+    while (stk->eip) {
+        fsprint("   %x\n", stk->eip);
+        stk = stk->ebp;
+        size++;
+    }
+    fsprint("total size: %d\n", size);
 }

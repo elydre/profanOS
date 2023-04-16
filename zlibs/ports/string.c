@@ -128,13 +128,15 @@ int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
     return r;
 }
 
-void *memcpy(void *source, void *dest, size_t nbytes) {
-    char *src = (char *) source;
-    char *dst = (char *) dest;
-    for (unsigned int i = 0; i < nbytes; i++) {
-        dst[i] = src[i];
+void *memcpy(void * __restrict s1, const void * __restrict s2, size_t n) {
+    register char *r1 = s1;
+    register const char *r2 = s2;
+
+    while (n--) {
+        *r1++ = *r2++;
     }
-    return dest;
+
+    return s1;
 }
 
 void *memmem(const void *haystack, size_t haystacklen,
@@ -282,13 +284,13 @@ Wchar *strcat(Wchar * __restrict s1, register const Wchar * __restrict s2) {
 
 Wchar *strchr(const char *p, int ch) {
     char c;
-	c = ch;
-	for (;; ++p) {
-		if (*p == c)
-			return ((char *)p);
-		if (*p == '\0')
-			return (NULL);
-	}
+    c = ch;
+    for (;; ++p) {
+        if (*p == c)
+            return (char *)p;
+        if (*p == '\0')
+            return NULL;
+    }
 }
 
 Wchar *strchrnul(register const Wchar *s, Wint c) {
@@ -419,7 +421,13 @@ Wchar *strncat(Wchar * __restrict s1, register const Wchar * __restrict s2,
 }
 
 int strncmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
-    fsprint("strncmp not implemented yet, WHY DO YOU USE IT ?\n");
+    if (n == 0) return 0;
+    do {
+        if (*s1 != *s2++)
+            return *(unsigned char *) s1 - *(unsigned char *) --s2;
+        if (*s1++ == 0)
+            break;
+    } while (--n != 0);
     return 0;
 }
 
@@ -496,8 +504,33 @@ size_t strspn(const Wchar *s1, const Wchar *s2) {
     return 0;
 }
 
-Wchar *strstr(const Wchar *s1, const Wchar *s2) {
-    fsprint("Wstrstr not implemented yet, WHY DO YOU USE IT ?\n");
+char *strstr(register char *string, char *substring) {
+    register char *a, *b;
+
+    /* First scan quickly through the two strings looking for a
+     * single-character match.  When it's found, then compare the
+     * rest of the substring.
+     */
+
+    b = substring;
+    if (*b == 0) {
+        return string;
+    }
+    for ( ; *string != 0; string += 1) {
+        if (*string != *b) {
+            continue;
+        }
+        a = string;
+        while (1) {
+            if (*b == 0) {
+                return string;
+            }
+            if (*a++ != *b++) {
+                break;
+            }
+        }
+        b = substring;
+    }
     return NULL;
 }
 

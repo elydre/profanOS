@@ -230,20 +230,22 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
         return 0;
     }
     // we copy char by char from the file buffer to the buffer
+    int read_count = 0;
     while (count && !stream->eof) {
         // we check if the file is at the end
         if (stream->buffer_pos >= stream->buffer_size) {
             stream->eof = 1;
-            return 0;
+            return read_count;
         }
         // we copy the char
-        ((char *) buffer)[stream->buffer_pos] = stream->buffer[stream->buffer_pos];
+        ((char *) buffer)[read_count] = stream->buffer[stream->buffer_pos];
         // we increment the buffer position
         stream->buffer_pos++;
         // we decrement the count
         count--;
+        read_count++;
     }
-    return 1;
+    return read_count;
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
@@ -251,10 +253,17 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     if (stream == NULL) {
         return 0;
     }
+
     // we check if the file is open for reading
     if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
         return 0;
     }
+
+    if (stream == stdout) {
+        fsprint("%s", buffer);
+        return count;
+    }
+
     // we copy char by char from the buffer to the file buffer
     for (int i = 0; i < (int) count; i++) {
         // we check if the file buffer is full
@@ -280,12 +289,37 @@ int fgetc(FILE *stream) {
 }
 
 int getc(FILE *stream) {
-    fsprint("getc not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+    // we check if the file is open for reading
+    if (!(strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || strcmp(stream->mode, "w+") == 0 || strcmp(stream->mode, "a+") == 0)) {
+        return 0;
+    }
+    // we check if the file is at the end
+    if (stream->eof == 1) {
+        return 0;
+    }
+    // we check if the file is at the end
+    if (stream->buffer_pos >= stream->buffer_size) {
+        stream->eof = 1;
+        return 0;
+    }
+    // we copy the char
+    char c = stream->buffer[stream->buffer_pos];
+    // we increment the buffer position
+    stream->buffer_pos++;
+    return c;
 }
 
 char *fgets(char *restrict str, int count, FILE *restrict stream) {
-    fsprint("fgets not implemented yet, WHY DO YOU USE IT ?\n");
+    if (stream == stdin) {
+        input(str, count, 0x09);
+        c_kprint("\n");
+        return str;
+    }
+
     return NULL;
 }
 
@@ -569,12 +603,16 @@ long ftell( FILE *stream ) {
 }
 
 int feof( FILE *stream ) {
-    fsprint("feof not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+    return stream->eof;
 }
 
 int ferror( FILE *stream ) {
-    fsprint("ferror not implemented yet, WHY DO YOU USE IT ?\n");
+    c_serial_print(SERIAL_PORT_A, "WARNING: ferror not correctly implemented...\n");
+    // return 0 if no error found
     return 0;
 }
 

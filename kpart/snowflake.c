@@ -213,8 +213,7 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
         }
         index = MEM_PARTS[index].next;
     }
-    sys_warning("block not found");
-    return 0;
+    return 0; // block not found
 }
 
 int mem_free_all(int task_id) {
