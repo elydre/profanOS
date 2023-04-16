@@ -9,6 +9,7 @@ SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "kpart", "kpart/gui"]
 INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"
+ZLIBS_DIR = "zlibs"
 TOOLS_DIR = "tools"
 OUT_DIR   = "out"
 
@@ -169,11 +170,11 @@ def build_app_lib():
 
     cprint(COLOR_INFO, "building zapps and zlibs")
 
-    build_list = find_app_lib("zapps", ".c")
-    build_list += find_app_lib("zapps", ".cpp")
+    build_list = find_app_lib(ZAPPS_DIR, ".c")
+    build_list += find_app_lib(ZAPPS_DIR, ".cpp")
 
-    build_list += find_app_lib("zlibs", ".c")
-    build_list += find_app_lib("zlibs", ".cpp")
+    build_list += find_app_lib(ZLIBS_DIR, ".c")
+    build_list += find_app_lib(ZLIBS_DIR, ".cpp")
 
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
@@ -284,7 +285,7 @@ def gen_disk(force=False, with_src=False):
 
     if with_src:
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
-        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + INCLUDE_DIR:
+        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [ZLIBS_DIR] + INCLUDE_DIR:
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
 
     try:
@@ -346,6 +347,8 @@ def make_help():
         ("make srcdisk",    "build disk image with source code"),
         ("make xtrdisk",    "extract the disk image"),
 
+        ("make addons",     "download all addons in disk source"),
+
         ("make clean",      "delete the out/ directory"),
         ("make fullclean",  "delete all build files"),
 
@@ -358,8 +361,9 @@ def make_help():
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
     
     cprint(COLOR_INFO, "\nYou can cross the command like:")
-    cprint(COLOR_INFO, "MAKE DISK RUN to force the disk generation and run it")
-    cprint(COLOR_INFO, "MAKE SRCDISK MISO RUN to run in qemu with all options")
+    cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
+    cprint(COLOR_INFO, " MAKE ADDONS SRCDISK MISO to build the disk with all options")
+    cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
 
 assos = {

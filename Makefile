@@ -1,6 +1,7 @@
-.PHONY: info elf iso miso disk srcdisk run erun krun clean fullclean
+.PHONY: info elf iso miso disk srcdisk run erun krun clean fullclean addons
 
 PY_BUILD = tools/maketool.py
+PY_ADDON = tools/addons.py
 
 # list off available commands
 info:
@@ -40,6 +41,10 @@ erun:
 # run iso in qemu with kvm acceleration
 krun:
 	python3 $(PY_BUILD) krun
+
+# install all addons
+addons:
+	python3 $(PY_ADDON) -a
 
 # clean out/ directory
 clean:
