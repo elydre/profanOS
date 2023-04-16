@@ -1,17 +1,17 @@
-function get_syscall_addr(function_id)
+function get_syscall(function_id)
     return profan.call_c(profan.memval(0x1ffff7, 4), 4, function_id)
 end
 
 function clear()
-    profan.call_c(get_syscall_addr(24))
+    profan.call_c(get_syscall(24))
 end
 
 function malloc(size)
-    return profan.call_c(get_syscall_addr(17), 4, size, 4, 1)
+    return profan.call_c(get_syscall(17), 4, size, 4, 1)
 end
 
 function free(ptr)
-    profan.call_c(get_syscall_addr(18), 4, ptr)
+    profan.call_c(get_syscall(18), 4, ptr)
 end
 
 function serial_print(str, serial_port)
@@ -26,14 +26,15 @@ function serial_print(str, serial_port)
     profan.memset(ptr + #str, 1, 0)
 
     -- call serial_print
-    profan.call_c(get_syscall_addr(43), 4, serial_port, 4, ptr)
+    profan.call_c(get_syscall(43), 4, serial_port, 4, ptr)
     
     free(ptr)
 end
 
 return {
+    get_syscall = get_syscall,
     serial_print = serial_print,
     clear = clear,
     malloc = malloc,
-    free = free
+    free = free,
 }
