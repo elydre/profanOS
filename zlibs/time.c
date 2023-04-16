@@ -1,8 +1,7 @@
 #include <syscall.h>
 #include <i_iolib.h>
-#include <i_string.h>
 #include <type.h>
-#include <stdlib.h>
+
 #define TIME_C
 #include <time.h>
 
@@ -107,7 +106,7 @@ size_t strftime(char *a, size_t b, const char *c, const tm_t *d) {
 }
 
 char *strptime(const char *a, const char *b, tm_t *c) {
-    fsprint("Strptime is not implemented yet, WHY DO YOU USE IT ?\n");
+    c_serial_print(SERIAL_PORT_A, "Strptime is not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
