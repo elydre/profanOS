@@ -1052,8 +1052,7 @@ double floor(double x) {
 }
 
 float floorf(float a) {
-    printf("floorf not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    return (float) floor((double)a);
 }
 
 long double floorl(long double a) {

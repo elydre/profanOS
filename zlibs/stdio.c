@@ -230,20 +230,22 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
         return 0;
     }
     // we copy char by char from the file buffer to the buffer
+    int read_count = 0;
     while (count && !stream->eof) {
         // we check if the file is at the end
         if (stream->buffer_pos >= stream->buffer_size) {
             stream->eof = 1;
-            return 0;
+            return read_count;
         }
         // we copy the char
-        ((char *) buffer)[stream->buffer_pos] = stream->buffer[stream->buffer_pos];
+        ((char *) buffer)[read_count] = stream->buffer[stream->buffer_pos];
         // we increment the buffer position
         stream->buffer_pos++;
         // we decrement the count
         count--;
+        read_count++;
     }
-    return 1;
+    return read_count;
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
@@ -609,7 +611,8 @@ int feof( FILE *stream ) {
 }
 
 int ferror( FILE *stream ) {
-    fsprint("ferror not implemented yet, WHY DO YOU USE IT ?\n");
+    c_serial_print(SERIAL_PORT_A, "WARNING: ferror not correctly implemented...\n");
+    // return 0 if no error found
     return 0;
 }
 
