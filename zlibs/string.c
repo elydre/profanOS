@@ -128,13 +128,15 @@ int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
     return r;
 }
 
-void *memcpy(void *source, void *dest, size_t nbytes) {
-    char *src = (char *) source;
-    char *dst = (char *) dest;
-    for (unsigned int i = 0; i < nbytes; i++) {
-        dst[i] = src[i];
+void *memcpy(void * __restrict s1, const void * __restrict s2, size_t n) {
+    register char *r1 = s1;
+    register const char *r2 = s2;
+
+    while (n--) {
+        *r1++ = *r2++;
     }
-    return dest;
+
+    return s1;
 }
 
 void *memmem(const void *haystack, size_t haystacklen,
