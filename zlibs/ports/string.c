@@ -4,6 +4,10 @@
 #include <type.h>
 #include <stdlib.h>
 
+#ifndef TOLOWER
+#define TOLOWER(c) ((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
+#endif
+
 void init_func();
 
 int main() {
@@ -257,9 +261,11 @@ Wchar *stpncpy(register Wchar * __restrict s1,
     return s1 + (s2 - p);
 }
 
-int strcasecmp(register const Wchar *s1, register const Wchar *s2) {
-    fsprint("strcasecmp not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+int strncasecmp(register const Wchar *s1, register const Wchar *s2, size_t n);
+
+int strcasecmp (const char *s1, const char *s2) {
+    int result = strncasecmp(s1, s2, -1);
+    return result;
 }
 
 int strcasecmp_l(register const Wchar *s1, register const Wchar *s2, locale_t loc) {
@@ -323,9 +329,11 @@ size_t strcspn(const Wchar *s1, const Wchar *s2) {
     return 0;
 }
 
-Wchar *strdup(register const Wchar *s1) {
-    fsprint("strdup not implemented yet, WHY DO YOU USE IT ?\n");
-    return NULL;
+Wchar *strdup(register const Wchar *s) {
+	size_t l = strlen(s);
+	char *d = malloc(l+1);
+	if (!d) return NULL;
+	return memcpy(d, s, l+1);
 }
 
 char *strerror(int errnum) {
@@ -395,10 +403,19 @@ size_t strlen(const Wchar *s) {
 }
 
 int strncasecmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
-    fsprint("strncasecmp not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    int is = strcmp(s1, "PNAMES");
+    unsigned char *ucs1 = (unsigned char *) s1;
+    unsigned char *ucs2 = (unsigned char *) s2;
+    int d = 0;
+    for ( ; n != 0; n--) {
+        int c1 = TOLOWER(*ucs1);
+        int c2 = TOLOWER(*ucs2);
+        if (((d = c1 - c2) != 0) || (c2 == '\0')) break;
+        ucs1++;
+        ucs2++;
+    }
+    return d;
 }
-
 
 int strncasecmp_l(register const Wchar *s1, register const Wchar *s2, size_t n, locale_t loc) {
     fsprint("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
