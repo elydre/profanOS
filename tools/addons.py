@@ -23,6 +23,26 @@ ADDONS = {
                 "path": [profan_path, "out", "zapps", "commands", "lua.bin"]
             },
         ]
+    },
+    "doom": {
+        "description": "port of the Doom game for profanOS",
+        "files": [
+            {
+                "name": "doom-core",
+                "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom-core.bin",
+                "path": [profan_path, "out", "zapps", "tools", "doom-core.bin"]
+            },
+            {
+                "name": "doom-launcher",
+                "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.bin",
+                "path": [profan_path, "out", "zapps", "commands", "doom.bin"]
+            },
+            {
+                "name": "doom1.wad",
+                "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
+                "path": [profan_path, "out", "zapps", "doom", "DOOM1.WAD"]
+            }
+        ]
     }
 }
 
