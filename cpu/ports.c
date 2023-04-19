@@ -1,5 +1,4 @@
 #include <cpu/ports.h>
-
 #include <type.h>
 
 // Read a byte from the specified port
