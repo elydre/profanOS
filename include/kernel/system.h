@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.11.5b"
+#define KERNEL_VERSION  "0.11.5c"
 #define KERNEL_EDITING  "windaube"
 
 #define PROCESS_MAX     20
@@ -26,7 +26,7 @@
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
 
-#define GRUBMOD_START   0x126000 // grub module start
+#define GRUBMOD_START   0x117000 // grub module start
 
 
 // system.c
