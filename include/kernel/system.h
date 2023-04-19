@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SCS-01"
+#define KERNEL_VERSION  "SCS-02"
 #define KERNEL_EDITING  "scubasuit"
 
 #define PROCESS_MAX     20

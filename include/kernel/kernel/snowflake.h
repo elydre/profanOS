@@ -1,10 +1,10 @@
-#ifndef MEM_H
-#define MEM_H
+#ifndef SNOWFLAKE_H
+#define SNOWFLAKE_H
 
 #include <type.h>
 
 
-// SNOWFLAKE memory manager
+// SNOWFLAKE physical memory manager
 
 typedef struct allocated_part_t {
     uint32_t addr;
