@@ -3,8 +3,8 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.11.5c"
-#define KERNEL_EDITING  "generic"
+#define KERNEL_VERSION  "SCS-01"
+#define KERNEL_EDITING  "scubasuit"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5       // default kernel process priority
