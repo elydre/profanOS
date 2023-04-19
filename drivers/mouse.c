@@ -13,91 +13,88 @@ enum {
     COMMAND_SETRESOLUTION, COMMAND_SETRESOLUTION1
 };
 
-uint8_t g_commandRunning, g_resetStages, g_mouseDeviceID = 0, g_mouseCycle;
-uint8_t g_mouseAvailable = 0, g_mouseInitted = 0, g_ps2MouseAvail = 0, g_ps2DisableMovement = 0;
+uint8_t g_command_running, g_reset_stages, g_mouse_device_ID = 0, g_mouse_cycle;
+uint8_t g_mouse_available = 0, g_mouse_initted = 0;
 
 int g_mouseX, g_mouseY;
-uint8_t g_mouseButtons[3];
+uint8_t g_mouse_buttons[3];
 
 mouse_packet_t g_currentPacket;
 uint8_t g_discardPacket;
 
-uint8_t IsMouseAvailable() {
-    return g_mouseAvailable && g_mouseInitted;
+uint8_t mouse_is_available() {
+    return g_mouse_available && g_mouse_initted;
 }
 
-// mouse comms //
-
-void MouseWait (uint8_t type) {
-    if (!g_mouseAvailable) return;
-    uint32_t _timeout = 1000000;
+void mouse_wait (uint8_t type) {
+    if (!g_mouse_available) return;
+    uint32_t timeout = 1000000;
 
     if (type == 0) {
-        while (_timeout--) {
+        while (timeout--) {
             if (port_byte_in (0x64) & 1) return;
             asm ("pause");
         }
     } else {
-        while (_timeout--) {
+        while (timeout--) {
             if (!(port_byte_in (0x64) & 2)) return;
             asm ("pause");
         }
     }
-    g_mouseAvailable = 0;
+    g_mouse_available = 0;
+
 }
 
-void MouseWrite (uint8_t write) {
-    if (!g_mouseAvailable) return;
-    MouseWait (1);
+void mouse_write(uint8_t write) {
+    if (!g_mouse_available) return;
+    mouse_wait(1);
     port_byte_out(0x64, 0xD4);
-    MouseWait (1);
+    mouse_wait(1);
     port_byte_out(0x60, write);
 }
 
-uint8_t MouseRead() {
-    if (!g_mouseAvailable)
+uint8_t mouse_read() {
+    if (!g_mouse_available)
         return 0xFF;
-    MouseWait (0);
-    return port_byte_in (0x60);
+    mouse_wait(0);
+    return port_byte_in(0x60);
 }
 
 
-static const int g_sampleRateValues[] = {10,20,40,60,80,100,200};
-int g_mouseSpeedMultiplier = 2, g_mouseSampRate = 6;
+static const int g_sample_rate_values[] = {10, 20, 40, 60, 80, 100, 200};
+int g_mouse_speed_multiplier = 2, g_mouse_samp_rate = 6;
 
-int GetMouseSpeedMultiplier() {
-    return g_mouseSpeedMultiplier;
+int mouse_get_speed_multiplier() {
+    return g_mouse_speed_multiplier;
 }
 
-int GetMouseSampRateMax() {
-    return ARYLEN(g_sampleRateValues);
+int mouse_get_samp_rate_max() {
+    return ARYLEN(g_sample_rate_values);
 }
 
-void SetMouseSpeedMultiplier(int spd) {
+void mouse_set_speed_multiplier(int spd) {
     spd &= 0b11;
-    g_mouseSpeedMultiplier = spd;
+    g_mouse_speed_multiplier = spd;
 
-    if (g_ps2MouseAvail)
-    {
-        g_commandRunning = COMMAND_SETRESOLUTION;
-        MouseWrite(0xE8);
+    if (g_mouse_available) {
+        g_command_running = COMMAND_SETRESOLUTION;
+        mouse_write(0xE8);
     }
 }
 
-void SetMouseSampleRate(int spd) {
+void mouse_set_sample_rate(int spd) {
     if (spd < 0) spd = 0;
-    if (spd >= GetMouseSampRateMax()) spd = ARYLEN(g_sampleRateValues);
-    g_mouseSampRate = spd;
+    if (spd >= mouse_get_samp_rate_max()) spd = ARYLEN(g_sample_rate_values);
+    g_mouse_samp_rate = spd;
 
-    // send Set Sample Rate command
-    if (g_ps2MouseAvail)
-    {
-        g_commandRunning = COMMAND_SETSAMPRATE;
-        MouseWrite(0xF3);
+    // send set sample rate command
+    if (g_mouse_available) {
+        g_command_running = COMMAND_SETSAMPRATE;
+        mouse_write(0xF3);
     }
 }
 
-void OnUpdateMouse (uint8_t flags, int8_t x, int8_t y, int8_t z) {
+void update_mouse (uint8_t flags, int8_t x, int8_t y, int8_t z) {
     (void) z;
     g_mouseX += x;
     g_mouseY -= y;
@@ -106,207 +103,190 @@ void OnUpdateMouse (uint8_t flags, int8_t x, int8_t y, int8_t z) {
     if (g_mouseX >= 1024) g_mouseX = 1023;
     if (g_mouseY >= 768) g_mouseY = 767;
 
-    g_mouseButtons[0] = (flags & 0b1) ? 1 : 0;
-    g_mouseButtons[1] = (flags & 0b10) ? 1 : 0;
-    g_mouseButtons[2] = (flags & 0b100) ? 1 : 0;
+    g_mouse_buttons[0] = (flags & 0b1) ? 1 : 0;
+    g_mouse_buttons[1] = (flags & 0b10) ? 1 : 0;
+    g_mouse_buttons[2] = (flags & 0b100) ? 1 : 0;
 }
 
-void IrqMouse() {
-    //acknowledge interrupt
+void irq_mouse() {
+    // acknowledge interrupt
     port_byte_out(0x20, 0x20);
-    port_byte_out(0xA0, 0x20); // irq 12!!!
+    port_byte_out(0xA0, 0x20); // irq 12
 
-    uint8_t b = MouseRead();
-    if (g_commandRunning) {
-        switch (g_commandRunning) {
+    uint8_t b = mouse_read();
+    if (g_command_running) {
+        switch (g_command_running) {
             case COMMAND_RESET: {
                 if (b == 0xFA) {
-                    //we are on good terms, return.
-                    if (g_resetStages <= 3) {
-                        g_resetStages++;
+                    // we are on good terms, return.
+                    if (g_reset_stages <= 3) {
+                        g_reset_stages++;
                         return;
                     }
                 }
-                else if (b == 0xAA && g_resetStages <= 1) {
-                    g_resetStages = 2;
+                else if (b == 0xAA && g_reset_stages <= 1) {
+                    g_reset_stages = 2;
                     return;
                 }
-                else if (g_resetStages == 2) {
-                    g_resetStages = 3; // this is the mouse ID
-                    g_mouseDeviceID = b;
+                else if (g_reset_stages == 2) {
+                    g_reset_stages = 3; // this is the mouse ID
+                    g_mouse_device_ID = b;
                     return;
                 }
-                else if (g_resetStages == 3) {
+                else if (g_reset_stages == 3) {
                     // extra data that we do not care about
-                    g_resetStages = 4;
-                    g_commandRunning = COMMAND_NONE;
+                    g_reset_stages = 4;
+                    g_command_running = COMMAND_NONE;
                 }
                 break;
             }
             case COMMAND_SETDEFAULT: {
-                // NanoShell V2 ignores this. Why?
-                g_commandRunning = COMMAND_NONE;
+                g_command_running = COMMAND_NONE;
                 break;
             }
             case COMMAND_SETREPORT: {
-                // NanoShell V2 ignores this. Why?
-                g_commandRunning = COMMAND_NONE;
+                g_command_running = COMMAND_NONE;
                 break;
             }
             case COMMAND_SETSAMPRATE: {
                 if (b == 0xFA) {
                     // acknowledged.
-                    g_commandRunning = COMMAND_SETSAMPRATE1;
-                    MouseWrite (g_sampleRateValues[g_mouseSampRate]);
+                    g_command_running = COMMAND_SETSAMPRATE1;
+                    mouse_write(g_sample_rate_values[g_mouse_samp_rate]);
                 }
-                else g_commandRunning = COMMAND_NONE;
+                else g_command_running = COMMAND_NONE;
                 break;
             }
             case COMMAND_SETRESOLUTION: {
                 if (b == 0xFA) {
                     // acknowledged.
-                    g_commandRunning = COMMAND_SETRESOLUTION1;
-                    MouseWrite (g_mouseSpeedMultiplier);
+                    g_command_running = COMMAND_SETRESOLUTION1;
+                    mouse_write(g_mouse_speed_multiplier);
                 }
                 else
-                    g_commandRunning = COMMAND_NONE;
+                    g_command_running = COMMAND_NONE;
                 break;
             }
             case COMMAND_SETSAMPRATE1:
             case COMMAND_SETRESOLUTION1: {
-                g_commandRunning = COMMAND_NONE;
+                g_command_running = COMMAND_NONE;
                 break;
             }
             case COMMAND_GETDEVID: {
-                // What if the mouse ID was indeed 0xfa? Probably never the case
-                if (b != 0xFA) g_mouseDeviceID = b; 
-                g_commandRunning = COMMAND_NONE;
+                // what if the mouse ID was indeed 0xfa? probably never the case
+                if (b != 0xFA) g_mouse_device_ID = b; 
+                g_command_running = COMMAND_NONE;
                 break;
             }
         }
     } else {
-        switch (g_mouseCycle) {
+        switch (g_mouse_cycle) {
             case 0:
                 g_currentPacket.flags = b;
-                g_mouseCycle++;
+                g_mouse_cycle++;
                 g_discardPacket = 0;
             
                 if (g_currentPacket.flags & (1 << 6) || g_currentPacket.flags & (1 << 7))
                 g_discardPacket = 1;
             
                 if (!(g_currentPacket.flags & (1 << 3))) {
-                    // WAIT UNTIL WE GET A 0x8, THEN PROCEED!!!!!!
-                    // This is a hack, and should not be kept.
-                    g_mouseCycle = 0;
+                    g_mouse_cycle = 0;
                 }
                 break;
             case 1:
-                g_currentPacket.xMov = b;
-                g_mouseCycle++;
+                g_currentPacket.x_mov = b;
+                g_mouse_cycle++;
                 break;
             case 2:
-                g_currentPacket.yMov = b;
-                if (g_mouseDeviceID == 0)
-                {
+                g_currentPacket.y_mov = b;
+                if (g_mouse_device_ID == 0) {
                     // some mice do not send scroll data too
-                    g_mouseCycle = 0;
-                    g_commandRunning = COMMAND_NONE;
+                    g_mouse_cycle = 0;
+                    g_command_running = COMMAND_NONE;
                     if (g_discardPacket) {
                         g_discardPacket = 0;
                         return;
                     }
-                    if (g_ps2DisableMovement) {
-                        g_currentPacket.xMov = 0;
-                        g_currentPacket.yMov = 0;
-                    }
-                    OnUpdateMouse (g_currentPacket.flags, g_currentPacket.xMov, g_currentPacket.yMov, 0);
+                    update_mouse(g_currentPacket.flags, g_currentPacket.x_mov, g_currentPacket.y_mov, 0);
                 }
-                else g_mouseCycle++;
+                else g_mouse_cycle++;
                 break;
             case 3:
-                g_currentPacket.zMov = b;
-                g_mouseCycle = 0;
-                g_commandRunning = COMMAND_NONE;
-                if (g_discardPacket)
-                {
+                g_currentPacket.z_mov = b;
+                g_mouse_cycle = 0;
+                g_command_running = COMMAND_NONE;
+                if (g_discardPacket) {
                     g_discardPacket = 0;
                     return;
                 }
-                if (g_ps2DisableMovement)
-                {
-                    g_currentPacket.xMov = 0;
-                    g_currentPacket.yMov = 0;
-                }
-                OnUpdateMouse (g_currentPacket.flags, g_currentPacket.xMov, g_currentPacket.yMov, g_currentPacket.zMov);
+                update_mouse(g_currentPacket.flags, g_currentPacket.x_mov, g_currentPacket.y_mov, g_currentPacket.z_mov);
                 break;
         }
     }
 }
 
 int mouse_init() {
-    register_interrupt_handler(IRQ12, IrqMouse);
-    g_mouseAvailable = 1;
+    register_interrupt_handler(IRQ12, irq_mouse);
+    g_mouse_available = 1;
 
-    // return; // don't have it for now
-    uint8_t _status;
+    uint8_t status;
 
     // Enable the auxiliary mouse device
-    MouseWait (1);
-    if (!g_mouseAvailable) return 1;
+    mouse_wait(1);
+    if (!g_mouse_available) return 1;
     port_byte_out(0x64, 0xA8);
 
     // Enable the interrupts
-    MouseWait (1);
-    if (!g_mouseAvailable) return 1;
+    mouse_wait(1);
+    if (!g_mouse_available) return 1;
     port_byte_out(0x64, 0x20);
 
-    uint8_t b = port_byte_in (0x60);
+    uint8_t b = port_byte_in(0x60);
 
-    // HACK!!! Some PCs (my HP laptop for instance) will actually return a
-    // bitflipped config, so bits 7 and 3 are set.  Just flip the whole byte
-    // so everything is in order.
+    // HACK!!! Some PCs will actually return a bitflipped config, so bits
+    // 7 and 3 are set. Just flip the whole byte so everything is in order.
+
     if ((b & 0x80) && (b & 0x08)) b = ~b;
-    // if (b & 0x88) b = ~b;
-    _status = (b | 2);
+    status = (b | 2);
 
-    MouseWait (1);
-    if (!g_mouseAvailable) return 1;
+    mouse_wait(1);
+    if (!g_mouse_available) return 1;
     port_byte_out(0x64, 0x60);
-    MouseWait (1);
-    if (!g_mouseAvailable) return 1;
-    port_byte_out(0x60, _status);
+    mouse_wait(1);
+    if (!g_mouse_available) return 1;
+    port_byte_out(0x60, status);
 
-    //reset mouse
-    g_commandRunning = COMMAND_RESET;
-    MouseWrite (255);
+    // reset mouse
+    g_command_running = COMMAND_RESET;
+    mouse_write(255);
 
     for (int i = 0; i < 20; i++) {
         port_byte_out(0x80, 0x00); // Wait a few seconds to make sure all the interrupts went through.
     }
 
-    g_commandRunning = COMMAND_NONE;
+    g_command_running = COMMAND_NONE;
 
     // halt for 3 bytes, because we're supposed to get them
-    g_resetStages = 4;
+    g_reset_stages = 4;
 
     // tell the mouse to use default settings
-    g_commandRunning = COMMAND_SETDEFAULT;
-    MouseWrite (0xF6);
+    g_command_running = COMMAND_SETDEFAULT;
+    mouse_write(0xF6);
 
-    g_commandRunning = COMMAND_SETREPORT;
-    MouseWrite (0xF4);
+    g_command_running = COMMAND_SETREPORT;
+    mouse_write(0xF4);
 
-    g_commandRunning = COMMAND_GETDEVID;
-    MouseWrite (0xF2);
+    g_command_running = COMMAND_GETDEVID;
+    mouse_write(0xF2);
 
-    SetMouseSampleRate(3);
+    mouse_set_sample_rate(3);
 
     while (port_byte_in(0x64) & 2)
-        port_byte_in (0x60);
+        port_byte_in(0x60);
 
-    if (g_mouseAvailable) {
-        g_mouseInitted = 1;
-        g_ps2MouseAvail = 1;
+    if (g_mouse_available) {
+        g_mouse_initted = 1;
+        g_mouse_available = 1;
         return 0;
     } else {
         return 1;
@@ -320,7 +300,7 @@ int mouse_call(int thing, int val) {
         case 1:
             return g_mouseY;
         case 2:
-            return g_mouseButtons[val];
+            return g_mouse_buttons[val];
         case 3:
             g_mouseX = val;
             return 0;

@@ -9,13 +9,13 @@
 #include <type.h>
 
 typedef struct {
-	uint8_t flags, xMov, yMov, zMov;
+	uint8_t flags, x_mov, y_mov, z_mov;
 } mouse_packet_t;
 
 int mouse_init();
 
 int mouse_call(int thing, int val);
 
-uint8_t IsMouseAvailable();
+uint8_t mouse_is_available();
 
 #endif
