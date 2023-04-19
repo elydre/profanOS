@@ -29,7 +29,7 @@ sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 grub-common x
 
 ```bash
 # Simple compilation
-make elf
+make iso
 
 # Compile and run
 make run
@@ -43,19 +43,23 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
 
-### shell.bin help
+### Main features
 
-```
-binc    - elf to binary converter   info    - show time, mem, disk
-cat     - show file content         ls      - list the current dir
-cd      - change dir                mkdir   - create a new dir
-clear   - clear the screen          mkfile  - create a new file
-cpu     - start cpu usage monitor   proc    - show process info
-echo    - print the arguments       reboot  - reboot the system
-exit    - exit of the shell app     rim     - start text editor
-go      - start * file as binary    stop    - shutdown the system
-help    - show this help            udisk   - show used disk space
-```
+* multiboot support
+* 32 bits protected mode
+* PS/2 mouse and keyboard
+* ATA hard disk
+* filesystem (custom)
+* processing, idle and sleep
+* physical memory management
+* custom dynamic library
+
+### Major ports
+
+* [lua](https://github.com/elydre/lua-profan) programming language, with custom library
+* [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
+
+All the ports are available with the command `make addons` or by building them manually.
 
 ### Real-Hardware
 
@@ -69,13 +73,18 @@ the installation script `tools/install.sh` or any other image flasher.
 > installing an OS on a real machine can be risky and
 > must be done with knowledge of the possible risks
 
-
 ### Known major bugs
 
 | bug name  | since | description | cause | fixed ? |
 |-----------|-------|-------------|-------|---------|
-| lagged lag | ? | all profanOS is getting very slow in qemu | memory | partially |
+| lagged lag | ? | all profanOS is getting very slow| ? | partially |
 | BOBCAT | 0.4.2 | some version of gcc build broken zapps | gcc | no |
+
+## Screenshots
+
+| ![shell](https://elydre.github.io/img/profan/screen/shell.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
+|------------------------------------------------------------------|-------------------------------------------------------------------|
+| ![windaube](https://elydre.github.io/img/profan/screen/windaube.png) | ![lua](https://elydre.github.io/img/profan/screen/lua.png) |
 
 ## Author & Contact
 
