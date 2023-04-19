@@ -40,7 +40,7 @@ ADDONS = {
             {
                 "name": "doom1.wad",
                 "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
-                "path": [profan_path, "out", "zapps", "doom", "DOOM1.WAD"]
+                "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
             }
         ]
     }

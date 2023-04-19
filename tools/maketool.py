@@ -18,7 +18,10 @@ HDD_MAP = {
     "lib": f"{OUT_DIR}/zlibs/*",
     "sys": "sys_dir/sys/*",
     "user": "sys_dir/user/*",
-    "zada": "sys_dir/zada/*",
+    "zada": [
+        "sys_dir/zada/*",
+        f"{OUT_DIR}/zada/*",
+    ],
     "tmp" : None
 }
 
@@ -281,7 +284,12 @@ def gen_disk(force=False, with_src=False):
 
         if HDD_MAP[dir] is None: continue
 
-        print_and_exec(f"cp -r {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+        if isinstance(HDD_MAP[dir], str):
+            print_and_exec(f"cp -r {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+            continue
+
+        for file in HDD_MAP[dir]:
+            print_and_exec(f"cp -r {file} {OUT_DIR}/disk/{dir}")
 
     if with_src:
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
