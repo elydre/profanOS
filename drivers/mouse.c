@@ -68,10 +68,6 @@ int mouse_get_speed_multiplier() {
     return g_mouse_speed_multiplier;
 }
 
-int mouse_get_samp_rate_max() {
-    return ARYLEN(g_sample_rate_values);
-}
-
 void mouse_set_speed_multiplier(int spd) {
     spd &= 0b11;
     g_mouse_speed_multiplier = spd;
@@ -80,6 +76,10 @@ void mouse_set_speed_multiplier(int spd) {
         g_command_running = COMMAND_SETRESOLUTION;
         mouse_write(0xE8);
     }
+}
+
+int mouse_get_samp_rate_max() {
+    return ARYLEN(g_sample_rate_values);
 }
 
 void mouse_set_sample_rate(int spd) {
