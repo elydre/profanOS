@@ -12,6 +12,29 @@ int is_running;
 #define FONT_HEIGHT 16
 #define PRT_LINES (WINW_HEIGHT / FONT_HEIGHT)
 
+// we dont have virtual memory yet
+uint32_t color_code_convert(char code) {
+    switch (code) {
+        case '0': return 0x9999ff;
+        case '1': return 0x99ff99;
+        case '2': return 0x99ffff;
+        case '3': return 0xff9999;
+        case '4': return 0xff99ff;
+        case '5': return 0xffff99;
+        case '6': return 0xaaaaaa;
+        case '7': return 0xffffff;
+        case '8': return 0x000099;
+        case '9': return 0x009900;
+        case 'A': return 0x009999;
+        case 'B': return 0x990000;
+        case 'C': return 0x990099;
+        case 'D': return 0x999900;
+        case 'E': return 0x999999;
+        case 'F': return 0x000000;
+    }
+    return 0;
+}
+
 void exit_callback(clickevent_t *event) {
     is_running = 0;
 }
@@ -42,12 +65,16 @@ void print_from_buffer(window_t *window, char *buffer, int len) {
     // print the lines
     int x = 0;
     int y = 0;
+    int color = 0xffffff;
     for (int i = start; i < len; i++) {
         if (buffer[i] == '\n') {
             x = 0;
             y += FONT_HEIGHT;
+        } else if (buffer[i] == '$') {
+            color = color_code_convert(buffer[i + 1]);
+            i++;
         } else {
-            local_print_char(window, buffer[i], x, y, 0xffffff, 0x660066);
+            local_print_char(window, buffer[i], x, y, color, 0);
             x += 8;
         }
     }
