@@ -40,10 +40,10 @@ typedef struct window_t {
     uint8_t *visible;
 
     uint8_t is_lite;    // no border
+    uint8_t cant_move;
+    uint8_t always_on_top;
 
     int priority;
-
-    uint8_t cant_move;
 } window_t;
 
 typedef struct mouse_t {
@@ -101,7 +101,7 @@ typedef struct button_t {
 #define window_set_pixel_out(window, x, y, color) window_set_pixel_func(window, x, y, color, 0)
 
 #define desktop_init ((desktop_t *(*)(int, int, int)) get_func_addr(LIBDAUBE_ID, 3))
-#define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 4))
+#define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, uint8_t, uint8_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 4))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
 #define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 6))
 #define window_resize ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))

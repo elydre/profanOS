@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     desktop_t *main_desktop = desktop_get_main();
 
     // create a window and add an exit button
-    window_t *window = window_create(main_desktop, "doom like", 100, 100, width, height, 0, 0);
+    window_t *window = window_create(main_desktop, "doom like", 100, 100, width, height, 0, 0, 0);
     wadds_create_exitbt(window, exit_callback);
     desktop_refresh(main_desktop);
 

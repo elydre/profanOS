@@ -72,13 +72,14 @@ void init_func() {
     printf("Init of the libdaube library\n");
 }
 
-window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move);
+window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, uint8_t is_lite, uint8_t cant_move, uint8_t always_on_top);
 
 void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all);
 void window_update_visible(desktop_t *desktop, window_t *window);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
 void set_window_priority(desktop_t *desktop, window_t *window);
 void window_draw_box(desktop_t *desktop, window_t *window);
+void desktop_patch_always_on_top(desktop_t *desktop);
 void func_desktop_refresh(desktop_t *desktop);
 void serial_print_ss(char *str, char *name);
 mouse_t* mouse_create();
@@ -116,14 +117,14 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
         }
     }
 
-    window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1);
+    window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1, 0);
 
     func_desktop_refresh(desktop);
 
     return desktop;
 }
 
-window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, int is_lite, int cant_move) {
+window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width, int height, uint8_t is_lite, uint8_t cant_move, uint8_t always_on_top) {
     if (DEBUG_LEVEL > 0) serial_print_ss("Creating window", name);
 
     if (desktop->nb_windows >= desktop->max_windows) {
@@ -163,12 +164,13 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->button_array = NULL;
     window->buffer = calloc(window->height * window->width, sizeof(uint32_t));
     window->visible = calloc(window->height * window->width, sizeof(uint8_t));
-    window->is_lite = is_lite;
     window->changed = 1;
 
     window->magic = WINDOW_MAGIC;
 
+    window->always_on_top = always_on_top;
     window->cant_move = cant_move;
+    window->is_lite = is_lite;
 
     // draw the border of the window in the buffer
     window_draw_box(desktop, window);
@@ -182,6 +184,8 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     }
 
     desktop->nb_windows++;
+
+    desktop_patch_always_on_top(desktop);
 
     return window;
 }
@@ -730,14 +734,37 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
     int total = desktop->nb_windows;
     int *sorted = sort_index_by_priority(desktop->windows, total);
     int current_priority = window->priority;
+    int is_always_on_top = window->always_on_top;
     // the first element is the one with the lowest priority
 
+    int new_priority = total - 1;
     for (int i = total - 1; i >= current_priority; i--) {
+        if (!is_always_on_top && desktop->windows[sorted[i]]->always_on_top) {
+            new_priority = i - 1;
+            continue;
+        }
         if (desktop->windows[sorted[i]] == window) {
-            window->priority = total - 1;
+            window->priority = new_priority;
         } else {
             desktop->windows[sorted[i]]->priority--;
             desktop->windows[sorted[i]]->changed = 1;
+        }
+    }
+
+    free(sorted);
+}
+
+void desktop_patch_always_on_top(desktop_t *desktop) {
+    // patch the windows priority on creation
+
+    int total = desktop->nb_windows;
+    int *sorted = sort_index_by_priority(desktop->windows, total);
+    // the first element is the one with the lowest priority
+
+    for (int i = 0; i < total; i++) {
+        if (! desktop->windows[sorted[i]]->always_on_top) continue;
+        if (desktop->windows[sorted[i]]->priority != total - 1) {
+            set_window_priority(desktop, desktop->windows[sorted[i]]);
         }
     }
 
