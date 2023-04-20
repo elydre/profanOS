@@ -13,8 +13,11 @@ void start_addons();
 int main(int argc, char **argv) {
     desktop_t *desktop = desktop_init(MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
 
+    c_run_ifexist("/bin/winapps/taskbar.bin", 0, NULL);
+
     c_run_ifexist("/bin/winapps/cpu.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/demo.bin", 0, NULL);
+    // c_run_ifexist("/bin/winapps/magnifier.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/pong.bin", 0, NULL);
     // c_run_ifexist("/bin/winapps/counter.bin", 0, NULL);
     c_run_ifexist("/bin/winapps/usage.bin", 0, NULL);
