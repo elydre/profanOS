@@ -34,7 +34,8 @@ for y = 0, height - 1 do
     for x = 0, width - 1 do
         local real, imag = screenToComplex(x, y)
         local isInside, iterations = isInsideMandelbrot(real, imag, maxIterations)
-        local color = isInside and 0x000000 or 0xFFFFFF
+        -- Couleur du pixel en nuance de violet / bleu
+        local color = isInside and 0x000000 or 0x08000F * iterations
         profan.setpixel(x, y, color)
     end
 end
