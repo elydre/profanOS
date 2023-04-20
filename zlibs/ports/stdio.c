@@ -556,8 +556,12 @@ int fprintf_s( FILE *restrict stream, const char *restrict format, ... ) {
     return 0;
 }
 
+static size_t dopr(char *buffer, size_t maxlen, const char *format, va_list args);
 int sprintf_s( char *restrict buffer, rsize_t bufsz, const char *restrict format, ... ) {
-    fsprint("sprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+    va_list args;
+    va_start(args, format);
+    dopr(buffer, bufsz, format, args);
+    va_end(args);
     return 0;
 }
 

@@ -5,12 +5,15 @@
 #include <i_libdaube.h>
 
 #define BUFFER_SIZE 0x1000
+#define WADDS_NOBG 0xFF000000
 
 char *char_buffer;
+int last_update;
 int curent_len;
 
 int main() {
     char_buffer = calloc(BUFFER_SIZE, sizeof(char));
+    last_update = 0;
     curent_len = 0;
 
     return 0;
@@ -31,6 +34,7 @@ void wterm_append_string(char *str) {
 
     curent_len += len;
     char_buffer[curent_len] = 0;
+    last_update = c_timer_get_ms();
 }
 
 void wterm_append_char(char c) {
@@ -45,6 +49,7 @@ void wterm_append_char(char c) {
         curent_len = BUFFER_SIZE - 1;
     }
     char_buffer[curent_len] = 0;
+    last_update = c_timer_get_ms();
 }
 
 char *wterm_get_buffer() {
@@ -53,6 +58,10 @@ char *wterm_get_buffer() {
 
 int wterm_get_len() {
     return curent_len;
+}
+
+int wterm_get_last_update() {
+    return last_update;
 }
 
 button_t *wadds_create_exitbt(window_t *window, void (*exit_callback)(clickevent_t *)) {
@@ -118,7 +127,7 @@ void wadds_putc(window_t *window, int x, int y, char c, uint32_t color, uint32_t
     uint8_t *glyph = c_font_get(0) + c * 16;
     for (int j = 0; j < 16; j++) {
         for (int k = 0; k < 8; k++) {
-            if (!(glyph[j] & (1 << k)) && bg_color == 0xFF000000) continue;
+            if (!(glyph[j] & (1 << k)) && bg_color == WADDS_NOBG) continue;
             window_set_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : bg_color);
         }
     }

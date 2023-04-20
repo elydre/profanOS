@@ -66,14 +66,22 @@ int main(int argc, char **argv) {
     desktop_refresh(main_desktop);
 
     is_running = 1;
+    int last_refresh, last_update = 0;
     while (is_running) {
-        // reset pixel buffer
+        // check if the terminal has been updated
+        last_update = wterm_get_last_update();
+        if (last_update == last_refresh) {
+            ms_sleep(50);
+            continue;
+        }
+
+        // refresh the window
+        last_refresh = last_update;
         window_fill(window, 0x000000);
 
         print_from_buffer(window, wterm_get_buffer(), wterm_get_len());
 
         window_refresh(window);
-        ms_sleep(50);
     }
 
     // destroy window and wait for it to be deleted
