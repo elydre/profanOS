@@ -1,6 +1,7 @@
+#include <i_winadds.h>
+#include <i_string.h>
 #include <syscall.h>
 #include <i_iolib.h>
-#include <i_string.h>
 #include <type.h>
 #include <stdlib.h>
 #include <string.h>
@@ -356,15 +357,12 @@ char *gets_s( char *str, rsize_t n ) {
 }
 
 int putchar(int ch) {
-    char buffer[2];
-    buffer[0] = (char) ch;
-    buffer[1] = '\0';
-    c_kprint(buffer);
+    wterm_append_char((char) ch);
     return ch;
 }
 
 int puts(const char *str) {
-    c_kprint((char *) str);
+    wterm_append_string((char *) str);
     return 0;
 }
 
