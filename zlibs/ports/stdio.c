@@ -221,9 +221,15 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     if (stream == NULL) {
         return 0;
     }
+    int mode_len = strlen(stream->mode);
     // we check if the file is open for reading
-    if (!(strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || strcmp(stream->mode, "w+") == 0 || strcmp(stream->mode, "a+") == 0)) {
-        return 0;
+    for (int i = 0; i < mode_len; i++) {
+        if (stream->mode[i] == 'r') {
+            break;
+        }
+        if (i == mode_len - 1) {
+            return 0;
+        }
     }
     // we check if the file is at the end
     if (stream->eof == 1) {
@@ -235,7 +241,7 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
         // we check if the file is at the end
         if (stream->buffer_pos >= stream->buffer_size) {
             stream->eof = 1;
-            return read_count;
+            break;
         }
         // we copy the char
         ((char *) buffer)[read_count] = stream->buffer[stream->buffer_pos];
@@ -350,12 +356,15 @@ char *gets_s( char *str, rsize_t n ) {
 }
 
 int putchar(int ch) {
-    fsprint("putchar not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    char buffer[2];
+    buffer[0] = (char) ch;
+    buffer[1] = '\0';
+    c_kprint(buffer);
+    return ch;
 }
 
 int puts(const char *str) {
-    fsprint("puts not implemented yet, WHY DO YOU USE IT ?\n");
+    c_kprint((char *) str);
     return 0;
 }
 
@@ -563,6 +572,10 @@ int vprintf( const char *restrict format, va_list vlist ) {
 }
 
 int vfprintf( FILE *restrict stream, const char *restrict format, va_list vlist ) {
+    if (stream == stdout || stream == stderr) {
+        vfsprint((char *)format, vlist);
+        return strlen(format); // TODO : return the true number of characters written
+    }
     fsprint("vfprintf not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
@@ -598,8 +611,10 @@ int vsnprintf_s( char *restrict buffer, rsize_t bufsz, const char *restrict form
 }
 
 long ftell( FILE *stream ) {
-    fsprint("ftell not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    if (stream == NULL) {
+        return 0;
+    }
+    return stream->buffer_pos;
 }
 
 int feof( FILE *stream ) {

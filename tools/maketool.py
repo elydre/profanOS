@@ -14,11 +14,14 @@ TOOLS_DIR = "tools"
 OUT_DIR   = "out"
 
 HDD_MAP = {
-    "bin": f"{OUT_DIR}/zapps/*",
-    "lib": f"{OUT_DIR}/zlibs/*",
-    "sys": "sys_dir/sys/*",
-    "user": "sys_dir/user/*",
-    "zada": "sys_dir/zada/*",
+    "bin": f"{OUT_DIR}/zapps",
+    "lib": f"{OUT_DIR}/zlibs",
+    "sys": "sys_dir/sys",
+    "user": "sys_dir/user",
+    "zada": [
+        "sys_dir/zada",
+        f"{OUT_DIR}/zada",
+    ],
     "tmp" : None
 }
 
@@ -281,11 +284,18 @@ def gen_disk(force=False, with_src=False):
 
         if HDD_MAP[dir] is None: continue
 
-        print_and_exec(f"cp -r {HDD_MAP[dir]} {OUT_DIR}/disk/{dir} || true")
+        if isinstance(HDD_MAP[dir], str):
+            print_and_exec(f"cp -r {HDD_MAP[dir]}/* {OUT_DIR}/disk/{dir} || true")
+            continue
+
+        for dir_name in HDD_MAP[dir]:
+            if not os.path.exists(dir_name): continue
+            print_and_exec(f"cp -r {dir_name}/* {OUT_DIR}/disk/{dir}")
 
     if with_src:
         print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
         for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [ZLIBS_DIR] + INCLUDE_DIR:
+            if not os.path.exists(dir_name): continue
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
 
     try:
