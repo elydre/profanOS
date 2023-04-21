@@ -1,6 +1,5 @@
 #include <syscall.h>
-#include <i_iolib.h>
-#include <i_mem.h>
+#include <stdlib.h>
 
 typedef struct {
     int width;
@@ -19,13 +18,13 @@ void vgui_render(vgui_t *vgui, int render_mode);
 
 vgui_t vgui_setup(int width, int height) {
     vgui_t vgui;
-    int buffer_size = width * height * sizeof(uint32_t);
+    int buffer_size = width * height;
     vgui.width = width;
     vgui.height = height;
 
-    vgui.old_framebuffer = calloc(buffer_size);
-    vgui.framebuffer = calloc(buffer_size);
-    vgui.changed_pixels = calloc(buffer_size);
+    vgui.old_framebuffer = calloc(buffer_size, sizeof(uint32_t));
+    vgui.framebuffer = calloc(buffer_size, sizeof(uint32_t));
+    vgui.changed_pixels = calloc(buffer_size, sizeof(uint32_t));
 
     vgui_render(&vgui, 1);
     return vgui;
@@ -95,10 +94,6 @@ void vgui_print(vgui_t *vgui, int x, int y, char msg[], uint32_t color) {
             }
         }
     }
-}
-
-int abs(int x) {
-    return (x < 0) ? -x : x;
 }
 
 void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color) {

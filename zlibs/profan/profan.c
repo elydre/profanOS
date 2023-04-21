@@ -1,8 +1,7 @@
-#include <i_string.h>
 #include <syscall.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <i_mem.h>
 #include <type.h>
 
 struct stackframe {
@@ -25,7 +24,7 @@ int setting_get(char name[]) {
     char arg[100];
     int line_i = 0;
     int part = 0;
-    for (int i = 0; i < str_len(settings); i++) {
+    for (uint32_t i = 0; i < strlen(settings); i++) {
         if (part == 0) {
             if (settings[i] == '=') {
                 part = 1;
@@ -41,12 +40,12 @@ int setting_get(char name[]) {
             part = 0;
             arg[line_i] = '\0';
             line_i = 0;
-            if (str_cmp(line, name))
+            if (strcmp(line, name))
                 continue;
             free(settings);
-            if (arg[str_len(arg)-1] == '\r')
-                arg[str_len(arg)-1] = '\0';
-            return ascii_to_int(arg);
+            if (arg[strlen(arg)-1] == '\r')
+                arg[strlen(arg)-1] = '\0';
+            return atoi(arg);
         } else {
             arg[line_i] = settings[i];
             line_i++;
@@ -65,10 +64,10 @@ void assemble_path(char old[], char new[], char result[]) {
     if (result[strlen(result) - 1] != '/') {
         strncat(result, "/", 1);
     }
-    int index;
-    for (unsigned int i = 0; i < strlen(new); i++) {
+    uint32_t index;
+    for (uint32_t i = 0; i < strlen(new); i++) {
         if (new[i] == '.' && new[i + 1] == '.' && (new[i + 2] == '/' || new[i + 2] == '\0')) {
-            for (int j = strlen(result) - 2; j >= 0; j--) {
+            for (int j = (int) strlen(result) - 2; j >= 0; j--) {
                 if (result[j] == '/') {
                     result[j + 1] = '\0';
                     break;

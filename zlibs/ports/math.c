@@ -1,10 +1,9 @@
-#include <i_string.h>
-#include <syscall.h>
-#include <string.h>
-#include <type.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <math_private.h>
+#include <syscall.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <type.h>
 #include <libm.h>
 
 #define float_t float

@@ -1,7 +1,5 @@
-#include <i_string.h>
 #include <i_ocmlib.h>
 #include <i_time.h>
-#include <i_mem.h>
 
 #include <syscall.h>
 #include <string.h>

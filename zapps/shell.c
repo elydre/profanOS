@@ -1,4 +1,3 @@
-#include <i_string.h>
 #include <i_iolib.h>
 #include <syscall.h>
 #include <string.h>
@@ -17,6 +16,39 @@ static char current_dir[256] = "/";
 void go(char file[], char prefix[], char suffix[]);
 int shell_command(char command[]);
 
+// some string functions
+void str_start_split(char s[], char delim) {
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == delim) {
+            s[i] = '\0';
+            return;
+        }
+    }
+}
+
+void str_end_split(char s[], char delim) {
+    int limit = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == delim) {
+            limit = i + 1; break;
+        }
+    }
+
+    for (int i = limit; s[i] != '\0'; i++) {
+        s[i - limit] = s[i];
+    }
+    s[strlen(s) - limit] = '\0';    
+}
+
+int str_count(char str[], char thing) {
+    int total = 0;
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == thing) total++;
+    }
+    return total;
+}
+
+// shell functions
 int main(int argc, char **argv) {
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 

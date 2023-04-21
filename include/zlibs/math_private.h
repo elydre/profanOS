@@ -26,6 +26,9 @@
 
 /* A union which permits us to convert between a double and two 32 bit
    ints.  */
+
+#include <type.h>
+
 typedef union
 {
   double value;
