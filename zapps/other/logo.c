@@ -1,6 +1,6 @@
 #include <syscall.h>
-#include <i_iolib.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 int main(int argc, char **argv) {
 
@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 
     c_fs_read_file(path, (uint8_t *) str);
 
-    msprint(1, str);
+    printf("%s", str);
 
     free(str);
 

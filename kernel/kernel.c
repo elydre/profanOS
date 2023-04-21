@@ -17,6 +17,7 @@
 #include <system.h>
 
 #include <i_iolib.h>
+#include <stdio.h>
 #include <type.h>
 
 
@@ -50,7 +51,7 @@ void kernel_main(void *mboot_ptr) {
     kprintf("successfully booted in %d ms", timer_get_ms());
 
     rainbow_print("\n\nWelcome to profanOS!\n");
-    fsprint("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
+    printf("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
 
 
     // launch of the default program

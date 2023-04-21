@@ -1,7 +1,7 @@
 #include <i_string.h>
 #include <syscall.h>
-#include <i_iolib.h>
 #include <string.h>
+#include <stdio.h>
 #include <i_mem.h>
 #include <type.h>
 
@@ -53,7 +53,7 @@ int setting_get(char name[]) {
         }
     }
     free(settings);
-    fsprint("Setting %s not found", name);
+    printf("Setting %s not found", name);
     return 0;
 }
 
@@ -93,12 +93,12 @@ void assemble_path(char old[], char new[], char result[]) {
 void profan_stacktrace() {
     struct stackframe *stk;
     asm ("movl %%ebp,%0" : "=r"(stk) ::);
-    fsprint("Stack trace:\n");
+    printf("Stack trace:\n");
     int size = 0;
     while (stk->eip) {
-        fsprint("   %x\n", stk->eip);
+        printf("   %x\n", stk->eip);
         stk = stk->ebp;
         size++;
     }
-    fsprint("total size: %d\n", size);
+    printf("total size: %d\n", size);
 }

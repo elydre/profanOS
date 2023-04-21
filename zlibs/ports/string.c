@@ -1,8 +1,7 @@
 #include <syscall.h>
-#include <i_iolib.h>
-#include <i_string.h>
-#include <type.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <type.h>
 
 #ifndef TOLOWER
 #define TOLOWER(c) ((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
@@ -99,12 +98,12 @@ char *dirname(char *path)
 }
 
 int ffs(int i) {
-    fsprint("ffs not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ffs not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
 int ffsll(long long int i) {
-    fsprint("ffsll not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ffsll not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -118,7 +117,7 @@ void *memccpy(void * __restrict s1, const void * __restrict s2, int c, size_t n)
 }
 
 Wvoid *memchr(const Wvoid *s, Wint c, size_t n) {
-    fsprint("Wmemchr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("Wmemchr not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -230,7 +229,7 @@ Wvoid *memset(Wvoid *s, Wint c, size_t n) {
 }
 
 void psignal(int signum, register const char *message) {
-    fsprint("psignal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("psignal not implemented yet, WHY DO YOU USE IT ?\n");
 }
 
 void *rawmemchr(const void *s, int c) {
@@ -269,12 +268,12 @@ int strcasecmp (const char *s1, const char *s2) {
 }
 
 int strcasecmp_l(register const Wchar *s1, register const Wchar *s2, locale_t loc) {
-    fsprint("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
 char *strcasestr(const char *s1, const char *s2) {
-    fsprint("strcasestr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcasestr not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -300,7 +299,7 @@ Wchar *strchr(const char *p, int ch) {
 }
 
 Wchar *strchrnul(register const Wchar *s, Wint c) {
-    fsprint("Wstrchrnul not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("Wstrchrnul not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 size_t strlen(const Wchar *s);
@@ -325,7 +324,7 @@ Wchar *strcpy(Wchar * __restrict s1, const Wchar * __restrict s2) {
 }
 
 size_t strcspn(const Wchar *s1, const Wchar *s2) {
-    fsprint("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -337,7 +336,7 @@ Wchar *strdup(register const Wchar *s) {
 }
 
 char *strerror(int errnum) {
-    fsprint("strerror not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strerror not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -418,7 +417,7 @@ int strncasecmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
 }
 
 int strncasecmp_l(register const Wchar *s1, register const Wchar *s2, size_t n, locale_t loc) {
-    fsprint("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -464,7 +463,7 @@ Wchar *strncpy(Wchar * __restrict s1, register const Wchar * __restrict s2,
 
 size_t strnlen(const Wchar *s, size_t max);
 char *strndup(register const char *s1, size_t n) {
-    fsprint("strndup not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strndup not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -507,17 +506,17 @@ Wchar *strrchr(register const  Wchar *s, Wint c)
 }
 
 char *strsep(char ** __restrict s1, const char * __restrict s2) {
-    fsprint("strsep not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strsep not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 char *strsignal(int signum) {
-    fsprint("strsignal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strsignal not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 size_t strspn(const Wchar *s1, const Wchar *s2) {
-    fsprint("Wstrspn not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("Wstrspn not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -552,17 +551,17 @@ char *strstr(register char *string, char *substring) {
 }
 
 Wchar *strtok(Wchar * __restrict s1, const Wchar * __restrict s2) {
-    fsprint("Wstrtok not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("Wstrtok not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 Wchar *strtok_r(Wchar * __restrict s1, const Wchar * __restrict s2,
                  Wchar ** __restrict next_start) {
-    fsprint("Wstrtok_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("Wstrtok_r not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 int strverscmp(const char *s1, const char *s2) {
-    fsprint("strverscmp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strverscmp not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }

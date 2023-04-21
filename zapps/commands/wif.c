@@ -3,11 +3,12 @@
 #include <string.h>
 #include <profan.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        fsprint("$BUsage: wif <file>\n");
+        printf("$BUsage: wif <file>\n");
         return 0;
     }
 
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
         c_fs_write_in_file(file, (uint8_t *) char_content, strlen(char_content));
         free(char_content);
     } else {
-        fsprint("$3%s$B file not found\n", file);
+        printf("$3%s$B file not found\n", file);
     }
 
     free(file);
