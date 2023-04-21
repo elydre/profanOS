@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     float square_speed_x = 6;
     float square_speed_y = 4;
 
-    window_fill(window, 0xff0000);
+    wadds_fill(window, 0xff0000);
 
     is_running = 1;
     while (is_running) {

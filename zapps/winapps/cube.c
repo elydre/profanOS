@@ -190,7 +190,7 @@ shape_t rotate(shape_t *shape, int x, int y, int z) {
 }
 
 void draw(shape_t *shape, window_t *window) {
-    window_fill(window, 0);
+    wadds_fill(window, 0);
     for (int i = 0; i<shape->PointsCount; i++) {
         point2_t p = project(shape->Points[i]);
         shape->ScreenPoints[i] = p;

@@ -4,64 +4,10 @@
 
 #include <i_libdaube.h>
 
-#define BUFFER_SIZE 0x1000
 #define WADDS_NOBG 0xFF000000
 
-char *char_buffer;
-int last_update;
-int curent_len;
-
 int main() {
-    char_buffer = calloc(BUFFER_SIZE, sizeof(char));
-    last_update = 0;
-    curent_len = 0;
-
     return 0;
-}
-
-void wterm_append_string(char *str) {
-    int len = strlen(str);
-    if (curent_len + len > BUFFER_SIZE - 2) {
-        for (int i = 0; i < BUFFER_SIZE - len; i++) {
-            char_buffer[i] = char_buffer[i + len];
-        }
-        curent_len -= len;
-    }
-
-    for (int i = 0; i < len; i++) {
-        char_buffer[curent_len + i] = str[i];
-    }
-
-    curent_len += len;
-    char_buffer[curent_len] = 0;
-    last_update = c_timer_get_ms();
-}
-
-void wterm_append_char(char c) {
-    if (curent_len + 1 > BUFFER_SIZE - 2) {
-        for (int i = 0; i < BUFFER_SIZE - 1; i++) {
-            char_buffer[i] = char_buffer[i + 1];
-        }
-    }
-    char_buffer[curent_len] = c;
-    curent_len++;
-    if (curent_len >= BUFFER_SIZE) {
-        curent_len = BUFFER_SIZE - 1;
-    }
-    char_buffer[curent_len] = 0;
-    last_update = c_timer_get_ms();
-}
-
-char *wterm_get_buffer() {
-    return char_buffer;
-}
-
-int wterm_get_len() {
-    return curent_len;
-}
-
-int wterm_get_last_update() {
-    return last_update;
 }
 
 button_t *wadds_create_exitbt(window_t *window, void (*exit_callback)(clickevent_t *)) {
@@ -136,5 +82,13 @@ void wadds_putc(window_t *window, int x, int y, char c, uint32_t color, uint32_t
 void wadds_puts(window_t *window, int x, int y, char *str, uint32_t color, uint32_t bg_color) {
     for (uint32_t i = 0; i < strlen(str); i++) {
         wadds_putc(window, x + i * 8, y, str[i], color, bg_color);
+    }
+}
+
+void wadds_fill(window_t *window, uint32_t color) {
+    for (int i = 0; i < window->width; i++) {
+        for (int j = 0; j < window->height; j++) {
+            window_set_pixel(window, i, j, color);
+        }
     }
 }

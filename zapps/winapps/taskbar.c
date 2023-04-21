@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     desktop_refresh(main_desktop);
 
     // set the window background
-    window_fill(window, TASKBAR_COLOR);
+    wadds_fill(window, TASKBAR_COLOR);
     window_refresh(window);
 
     i_time_t time;

@@ -1,10 +1,10 @@
-#include <syscall.h>
 #include <i_string.h>
+#include <i_ocmlib.h>
 #include <i_time.h>
 #include <i_mem.h>
-#include <string.h>
 
-#include <i_winadds.h>
+#include <syscall.h>
+#include <string.h>
 
 
 // we need the stdarg of the stdlib
@@ -40,7 +40,9 @@ int clean_buffer(char *buffer, int size) {
 }
 
 char sprint_function(char message[], char default_color) {
-    wterm_append_string(message);
+    for (int i = 0; message[i] != '\0'; i++) {
+        ocm_write(0, message[i]);
+    }
     return default_color;
 }
 

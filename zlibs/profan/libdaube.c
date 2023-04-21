@@ -82,7 +82,6 @@ void window_draw_box(desktop_t *desktop, window_t *window);
 void desktop_patch_always_on_top(desktop_t *desktop);
 void func_desktop_refresh(desktop_t *desktop);
 void serial_print_ss(char *str, char *name);
-mouse_t* mouse_create();
 
 void draw_rect_gradian(window_t *window, int x, int y, int width, int height, int color1, int color2);
 void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int color);
@@ -96,7 +95,10 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     desktop->max_windows = max_windows;
     desktop->nb_windows = 0;
 
-    desktop->mouse = mouse_create();
+    desktop->mouse = calloc(1, sizeof(mouse_t)); 
+    desktop->mouse->x = 0;
+    desktop->mouse->y = 0;
+    desktop->mouse->clicked_window_id = -1;
 
     desktop->screen_buffer = calloc(screen_width * screen_height, sizeof(int));
     desktop->screen_width = screen_width;
@@ -247,19 +249,6 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
     window->buffer[out_y * window->width + out_x] = color;
 }
 
-void window_fill(window_t *window, uint32_t color) {
-    if (check_window_fail(window)) {
-        serial_print_ss("error:", "window_fill: invalid window");
-        return;
-    }
-
-    for (int i = 0; i < window->in_width; i++) {
-        for (int j = 0; j < window->in_height; j++) {
-            window_set_pixel_func(window, i, j, color, 1);
-        }
-    }
-}
-
 void window_refresh(window_t *window) {
     if (check_window_fail(window)) {
         serial_print_ss("error:", "window_refresh: invalid window");
@@ -279,14 +268,6 @@ void window_refresh(window_t *window) {
     }
 
     window_set_pixels_visible(desktop, window, 1);
-}
-
-mouse_t* mouse_create() {
-    mouse_t *mouse = calloc(1, sizeof(mouse_t));
-    mouse->x = 0;
-    mouse->y = 0;
-    mouse->clicked_window_id = -1;
-    return mouse;
 }
 
 void refresh_mouse(desktop_t *desktop) {

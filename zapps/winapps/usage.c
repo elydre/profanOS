@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     is_running = 1;
     while (is_running) {
         start = c_timer_get_ms();
-        window_fill(window, 0x000000);
+        wadds_fill(window, 0x000000);
 
         // get the list of running processes
         count = c_process_generate_pid_list(running_pid, 20);

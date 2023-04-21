@@ -22,6 +22,7 @@ lib_t libs_at_boot[] = {
     {1002, "/lib/profan/profan.bin"},
     {1003, "/lib/profan/mem.bin"},
     {1004, "/lib/profan/itime.bin"},
+    {1005, "/lib/profan/ocmlib.bin"},
     {1006, "/lib/profan/vgui.bin"},
     {1009, "/lib/ports/stdio.bin"},
     {1011, "/lib/ports/math.bin"},

@@ -1,5 +1,6 @@
 #include <i_libdaube.h>
 #include <i_winadds.h>
+#include <i_ocmlib.h>
 #include <i_time.h>
 
 #include <syscall.h>
@@ -11,6 +12,8 @@ int is_running;
 #define WINW_HEIGHT 208
 #define FONT_HEIGHT 16
 #define PRT_LINES (WINW_HEIGHT / FONT_HEIGHT)
+
+#define MONITORED_OCM 0
 
 // we dont have virtual memory yet
 uint32_t color_code_convert(char code) {
@@ -48,12 +51,14 @@ void local_print_char(window_t *window, char c, int x, int y, uint32_t color, ui
     }
 }
 
-void print_from_buffer(window_t *window, char *buffer, int len) {
+void print_from_ocm(window_t *window) {
     // get from the buffer the last PRT_LINES lines
+    int len = ocm_get_len(MONITORED_OCM);
     int start = 0;
     int count = 0;
     for (int i = len - 1; i >= 0; i--) {
-        if (buffer[i] == '\n') {
+#include <i_winadds.h>
+        if (ocm_read(MONITORED_OCM, i) == '\n') {
             start = i + 1;
             count++;
         }
@@ -67,14 +72,14 @@ void print_from_buffer(window_t *window, char *buffer, int len) {
     int y = 0;
     int color = 0xffffff;
     for (int i = start; i < len; i++) {
-        if (buffer[i] == '\n') {
+        if (ocm_read(MONITORED_OCM, i) == '\n') {
             x = 0;
             y += FONT_HEIGHT;
-        } else if (buffer[i] == '$') {
-            color = color_code_convert(buffer[i + 1]);
+        } else if (ocm_read(MONITORED_OCM, i) == '$') {
+            color = color_code_convert(ocm_read(MONITORED_OCM, i + 1));
             i++;
         } else {
-            local_print_char(window, buffer[i], x, y, color, 0);
+            local_print_char(window, ocm_read(MONITORED_OCM, i), x, y, color, 0);
             x += 8;
         }
     }
@@ -96,7 +101,7 @@ int main(int argc, char **argv) {
     int last_refresh, last_update = 0;
     while (is_running) {
         // check if the terminal has been updated
-        last_update = wterm_get_last_update();
+        last_update = ocm_get_last_update(MONITORED_OCM);
         if (last_update == last_refresh) {
             ms_sleep(50);
             continue;
@@ -104,9 +109,9 @@ int main(int argc, char **argv) {
 
         // refresh the window
         last_refresh = last_update;
-        window_fill(window, 0x000000);
+        wadds_fill(window, 0x000000);
 
-        print_from_buffer(window, wterm_get_buffer(), wterm_get_len());
+        print_from_ocm(window);
 
         window_refresh(window);
     }

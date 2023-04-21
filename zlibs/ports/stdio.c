@@ -1,11 +1,12 @@
-#include <i_winadds.h>
-#include <i_string.h>
-#include <syscall.h>
+#include <i_ocmlib.h>
 #include <i_iolib.h>
-#include <type.h>
+
+#include <syscall.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <type.h>
+
 #define STDIO_C
 #include <stdio.h>
 #include <ctype.h>
@@ -357,12 +358,14 @@ char *gets_s( char *str, rsize_t n ) {
 }
 
 int putchar(int ch) {
-    wterm_append_char((char) ch);
+    ocm_write(0, (char) ch);
     return ch;
 }
 
 int puts(const char *str) {
-    wterm_append_string((char *) str);
+    for (int i = 0; str[i] != '\0'; i++) {
+        ocm_write(0, (char) str[i]);
+    }
     return 0;
 }
 

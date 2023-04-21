@@ -1,11 +1,11 @@
-#include <i_winadds.h>
+#include <i_ocmlib.h>
 #include <i_time.h>
 
 #include <syscall.h>
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-    char tmp[4];
+    char tmp[3];
 
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
@@ -13,12 +13,10 @@ int main(int argc, char **argv) {
         if (i > 98) i = 10;
 
         itoa(i, tmp, 10);
-
-        // add \n
-        tmp[2] = '\n';
-        tmp[3] = 0;
-
-        wterm_append_string(tmp);
+        ocm_write(0, tmp[0]);
+        ocm_write(0, tmp[1]);
+        ocm_write(0, '\n');
+        
         ms_sleep(50);
     }
 }

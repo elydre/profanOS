@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         history[history_size - 1] = cpu;
 
         // reset pixel buffer
-        window_fill(window, 0x000000);
+        wadds_fill(window, 0x000000);
 
         for (int i = 0; i < history_size; i++) {
             for (int j = 0; j < history[i]; j++) {

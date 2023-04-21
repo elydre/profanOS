@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     desktop_refresh(main_desktop);
 
     // set the window background to black
-    window_fill(window, 0x000000);
+    wadds_fill(window, 0x000000);
     window_refresh(window);
 
     is_running = 1;
