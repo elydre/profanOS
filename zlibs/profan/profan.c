@@ -13,49 +13,6 @@ int main() {
     return 0;
 }
 
-int setting_get(char name[]) {
-    // read settings from /sys/settings.txt
-    // return 0 if not found
-    char *settings = c_fs_declare_read_array("/sys/settings.txt");
-
-    c_fs_read_file("/sys/settings.txt", (uint8_t *) settings);
-
-    char line[100];
-    char arg[100];
-    int line_i = 0;
-    int part = 0;
-    for (uint32_t i = 0; i < strlen(settings); i++) {
-        if (part == 0) {
-            if (settings[i] == '=') {
-                part = 1;
-                line[line_i] = '\0';
-                line_i = 0;
-            } else {
-                line[line_i] = settings[i];
-                line_i++;
-            }
-            continue;
-        }
-        if (settings[i] == '\n') {
-            part = 0;
-            arg[line_i] = '\0';
-            line_i = 0;
-            if (strcmp(line, name))
-                continue;
-            free(settings);
-            if (arg[strlen(arg)-1] == '\r')
-                arg[strlen(arg)-1] = '\0';
-            return atoi(arg);
-        } else {
-            arg[line_i] = settings[i];
-            line_i++;
-        }
-    }
-    free(settings);
-    printf("Setting %s not found", name);
-    return 0;
-}
-
 void assemble_path(char old[], char new[], char result[]) {
     result[0] = '\0';
     if (new[0] != '/') {

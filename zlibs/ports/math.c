@@ -410,7 +410,7 @@ int main() {
 }
 
 void init_func() {
-    c_kprint("Init of the math lib !\n");
+    puts("Init of the math lib !\n");
 }
 
 int fpclassify(float x) {

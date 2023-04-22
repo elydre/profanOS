@@ -39,16 +39,10 @@ int clean_buffer(char *buffer, int size) {
 }
 
 void rainbow_print(char message[]) {
-    char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
-    int i = 0;
-    
-    char buffer[2];
-    buffer[1] = '\0';
+    char rainbow_colors[] = "120435";
 
-    while (message[i] != 0) {
-        buffer[0] = message[i];
-        c_ckprint(buffer, rainbow_colors[i % 6]);
-        i++;
+    for (int i = 0; message[i] != 0; i++) {
+        printf("$%c%c", rainbow_colors[i % 6], message[i]);
     }
 }
 

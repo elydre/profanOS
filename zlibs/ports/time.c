@@ -10,7 +10,7 @@ long int  timezone;
 char     **tzname;
 
 int main() {
-    c_kprint("Init of the time lib !\n");
+    puts("Init of the time lib !\n");
     return 0;
 }
 
