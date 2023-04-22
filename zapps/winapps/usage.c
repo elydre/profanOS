@@ -152,10 +152,7 @@ int main(int argc, char **argv) {
                 itoa(c_mem_get_info(8, pid_runtime[i].pid) / 1024, buffer + 31, 10);
                 strcpy(buffer + strlen(buffer), "Ko");
 
-                tmp = strlen(buffer);
-                for (int j = 0; j < tmp; j++) {
-                    wadds_putc(window, j * 8 + 6, line * 16 + 5, buffer[j], 0x00bb00, 0x000000);
-                }
+                wadds_puts(window, buffer, 6, line * 16 + 5, 0x00bb00, 0x000000);
                 line++;
             }
         }

@@ -42,15 +42,6 @@ void exit_callback(clickevent_t *event) {
     is_running = 0;
 }
 
-void local_print_char(window_t *window, char c, int x, int y, uint32_t color, uint32_t bg_color) {
-    uint8_t *glyph = c_font_get(0) + c * 16;
-    for (int j = 0; j < 16; j++) {
-        for (int k = 0; k < 8; k++) {
-            window_set_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : bg_color);
-        }
-    }
-}
-
 void print_from_ocm(window_t *window) {
     // get from the buffer the last PRT_LINES lines
     int len = ocm_get_len(MONITORED_OCM);
@@ -89,10 +80,12 @@ void print_from_ocm(window_t *window) {
             color = color_code_convert(ocm_read(MONITORED_OCM, i + 1));
             i++;
         } else {
-            local_print_char(window, ch, x, y, color, 0);
+            wadds_putc(window, ch, x, y, color, 0);
             x += 8;
         }
     }
+    // print the cursor
+    wadds_putc(window, '_', x, y, 0xffff00, 0);
 }
 
 int main(int argc, char **argv) {

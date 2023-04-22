@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
         wadds_rect(window, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
 
         itoa(1000 / (tick_count[1] + 1), convert, 10);
-        wadds_puts(window, 0, 8, convert, 0x000000, 0xFF000000);
+        wadds_puts(window, convert, 0, 8, 0x000000, 0xFF000000);
         
         tick_count[2] = c_timer_get_ms();
         window_refresh(window);

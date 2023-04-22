@@ -35,14 +35,14 @@ int main(int argc, char **argv) {
         c_time_get(&time);
         // display the time
         sprintf_s(char_buffer, 256, "%02d:%02d:%02d", time.hours, time.minutes, time.seconds);
-        wadds_puts(window, SCREEN_WIDTH - (8*8 + 5), 1, char_buffer, 0xffffff, TASKBAR_COLOR);
+        wadds_puts(window, char_buffer, SCREEN_WIDTH - (8*8 + 5), 1, 0xffffff, TASKBAR_COLOR);
         // display the date
         sprintf_s(char_buffer, 256, "%02d/%02d/%02d", time.day_of_month, time.month, time.year);
-        wadds_puts(window, SCREEN_WIDTH - (8*8 + 5), 17, char_buffer, 0xffffff, TASKBAR_COLOR);
+        wadds_puts(window, char_buffer, SCREEN_WIDTH - (8*8 + 5), 17, 0xffffff, TASKBAR_COLOR);
 
         window_refresh(window);
         
-        ms_sleep(250);
+        ms_sleep(500);
     }
 
     return 0;

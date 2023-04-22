@@ -69,7 +69,7 @@ void wadds_rect(window_t *window, int x, int y, int width, int height, uint32_t 
     }
 }
 
-void wadds_putc(window_t *window, int x, int y, char c, uint32_t color, uint32_t bg_color) {
+void wadds_putc(window_t *window, char c, int x, int y, uint32_t color, uint32_t bg_color) {
     uint8_t *glyph = c_font_get(0) + c * 16;
     for (int j = 0; j < 16; j++) {
         for (int k = 0; k < 8; k++) {
@@ -79,9 +79,9 @@ void wadds_putc(window_t *window, int x, int y, char c, uint32_t color, uint32_t
     }
 }
 
-void wadds_puts(window_t *window, int x, int y, char *str, uint32_t color, uint32_t bg_color) {
+void wadds_puts(window_t *window, char *str, int x, int y, uint32_t color, uint32_t bg_color) {
     for (uint32_t i = 0; i < strlen(str); i++) {
-        wadds_putc(window, x + i * 8, y, str[i], color, bg_color);
+        wadds_putc(window, str[i], x + i * 8, y, color, bg_color);
     }
 }
 

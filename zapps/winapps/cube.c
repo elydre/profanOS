@@ -211,7 +211,7 @@ int show_fps(window_t *window, int time) {
     itoa(fps, fps_str, 10);
 
     for (int i = 0; fps_str[i] != '\0'; i++) {
-        wadds_putc(window, i * 8 + 5, 5, fps_str[i], 0x00FF00, 0x000000);
+        wadds_putc(window, fps_str[i], i * 8 + 5, 5, 0x00FF00, 0x000000);
     }
 
     return new_time;
