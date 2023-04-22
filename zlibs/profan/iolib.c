@@ -71,6 +71,7 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
     int buffer_index = 0;
     int buffer_actual_size = 0;
+    int shift_pressed = 0;
 
     puts("$0");
 
@@ -93,13 +94,25 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
             continue;
         }
 
+        // check if shift is pressed
+        if (sc == LSHIFT || sc == RSHIFT) {
+            shift_pressed = 1;
+            continue;
+        }
+
+        // check if shift is released
+        if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+            shift_pressed = 0;
+            continue;
+        }
+
         // check if the scancode is a valid one
         if (sc > SC_MAX) {
             continue;
         }
 
         // convert the scancode to a char
-        char c = c_kb_scancode_to_char(sc, 0);
+        char c = c_kb_scancode_to_char(sc, shift_pressed);
 
         // check if the char is printable
         if (c < 32 || c > 126 || c == '?') {
