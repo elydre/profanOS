@@ -28,16 +28,16 @@ int main(int argc, char **argv) {
         for (int i = 0; i < elm_count; i++) {
             if (out_types[i] == 3) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
-                printf("$2%s", tmp_name);
-                for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
+                printf("$2%s$7", tmp_name);
+                for (uint32_t j = 0; j < 22 - strlen(tmp_name); j++) putchar((int)' ');
                 assemble_path(ls_path, tmp_name, tmp_path);
                 printf("%d elm\n", c_fs_get_dir_size(tmp_path));
             }
         } for (int i = 0; i < elm_count; i++) {
             if (out_types[i] == 2) {
                 c_fs_get_element_name(out_ids[i], tmp_name);
-                printf("$1%s", tmp_name);
-                for (unsigned int j = 0; j < 22 - strlen(tmp_name); j++) c_kprint(" ");
+                printf("$1%s$7", tmp_name);
+                for (uint32_t j = 0; j < 22 - strlen(tmp_name); j++) putchar((int)' ');
                 assemble_path(ls_path, tmp_name, tmp_path);
                 size = c_fs_get_file_size(tmp_path);
                 if (size < 1024) printf("%d oct\n", size);

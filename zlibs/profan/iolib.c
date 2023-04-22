@@ -3,6 +3,7 @@
 
 #include <syscall.h>
 #include <string.h>
+#include <stdio.h>
 
 
 // we need the stdarg of the stdlib
@@ -56,17 +57,9 @@ void rainbow_print(char message[]) {
 ***********************/
 
 void input_wh(char out_buffer[], int size, char color, char ** history, int history_size) {
-    int old_cursor = c_get_cursor_offset();
-    int sc, last_sc, last_sc_sgt = 0;
-    int buffer_actual_size = 0;
-    int history_index = 0;
-    int buffer_index = 0;
-    int key_ticks = 0;
-    int shift = 0;
-    int new_pos;
-
-    int row = c_gt_get_max_rows();
-    int col = c_gt_get_max_cols();
+    (void) color;
+    (void) history;
+    int sc;
 
     clean_buffer(out_buffer, size);
 
@@ -76,121 +69,52 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
 
     c_kb_reset_history();
 
-    c_cursor_blink(1);
+    int buffer_index = 0;
+    int buffer_actual_size = 0;
 
-    while (sc != ENTER) {
+    puts("$0");
+
+    while (sc != ENTER && size > buffer_actual_size + 1) {
         ms_sleep(SLEEP_T);
 
         sc = c_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
-            sc = last_sc_sgt;
-        } else {
-            last_sc_sgt = sc;
-        }
-
-        if (!sc) continue;
-        if (sc != last_sc) key_ticks = 0;
-        else key_ticks++;
-        last_sc = sc;
-
-        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) continue;
-
-        if (sc == LSHIFT || sc == RSHIFT) {
-            shift = 1;
             continue;
         }
 
-        else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
-            shift = 0;
+        if (sc == BACKSPACE) {
+            if (buffer_index > 0) {
+                buffer_index--;
+                buffer_actual_size--;
+                out_buffer[buffer_index] = '\0';
+                puts("\b \b");
+            }
             continue;
         }
-        
-        else if (sc == LEFT) {
-            if (!buffer_index) continue;
-            buffer_index--;
+
+        // check if the scancode is a valid one
+        if (sc > SC_MAX) {
+            continue;
         }
 
-        else if (sc == RIGHT) {
-            if (buffer_index == buffer_actual_size) continue;
-            buffer_index++;
+        // convert the scancode to a char
+        char c = c_kb_scancode_to_char(sc, 0);
+
+        // check if the char is printable
+        if (c < 32 || c > 126 || c == '?') {
+            continue;
         }
 
-        else if (sc == OLDER) {
-            if (history_index == history_size) continue;
-            c_set_cursor_offset(old_cursor);
-            for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
-            clean_buffer(out_buffer, size);
-            buffer_actual_size = ((int) strlen(history[history_index]) > size) ? size : (int) strlen(history[history_index]);
-            for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index][i];
-            buffer_index = buffer_actual_size;
-            history_index++;
-        }
+        // print the char
+        putchar(c);
+        out_buffer[buffer_index] = c;
 
-        else if (sc == NEWER) {
-            clean_buffer(out_buffer, size);
-            c_set_cursor_offset(old_cursor);
-            for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
-            if (history_index < 2) {
-                buffer_actual_size = 0;
-                buffer_index = 0;
-                continue;
-            }
-            history_index--;
-            buffer_actual_size = ((int) strlen(history[history_index - 1]) > size) ? size : (int) strlen(history[history_index - 1]);
-            for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index - 1][i];
-            buffer_index = buffer_actual_size;
-        }
-
-        else if (sc == BACKSPACE) {
-            if (!buffer_index) continue;
-            buffer_index--;
-            for (int i = buffer_index; i < buffer_actual_size; i++) {
-                out_buffer[i] = out_buffer[i + 1];
-            }
-            out_buffer[buffer_actual_size] = '\0';
-            buffer_actual_size--;
-        }
-
-        else if (sc == DEL) {
-            if (!buffer_index || buffer_index == buffer_actual_size) continue;
-            for (int i = buffer_index; i < buffer_actual_size; i++) {
-                out_buffer[i] = out_buffer[i + 1];
-            }
-            out_buffer[buffer_actual_size] = '\0';
-            buffer_actual_size--;
-        }
-
-        else if (sc == KB_TAB) {
-            if (size < buffer_actual_size + 5) continue;
-            for (int i = 0; i < 4; i++) {
-                out_buffer[buffer_index] = ' ';
-                buffer_actual_size++;
-                buffer_index++;
-            }
-        }
-
-        else if (sc <= SC_MAX) {
-            if (size < buffer_actual_size + 2) continue;
-            if (c_kb_scancode_to_char(sc, shift) == '?') continue;
-            for (int i = buffer_actual_size; i > buffer_index; i--) {
-                out_buffer[i] = out_buffer[i - 1];
-            }
-            out_buffer[buffer_index] = c_kb_scancode_to_char(sc, shift);
-            buffer_actual_size++;
-            buffer_index++;
-        }
-
-        c_set_cursor_offset(old_cursor);
-        c_ckprint(out_buffer, color);
-        c_kprint(" ");
-        new_pos = old_cursor + buffer_index * 2;
-        c_set_cursor_offset(new_pos);
-        if (new_pos >= (row * col - 1) * 2) {
-            old_cursor -= row * 2;
-        }
+        buffer_actual_size++;
+        buffer_index++;
     }
-    c_cursor_blink(0);
+
+    out_buffer[buffer_index] = '\0';   
 }
 
 void input(char out_buffer[], int size, char color) {

@@ -30,31 +30,23 @@ int main() {
     return 0;
 }
 
-void ocm_write(int id, uint8_t data) {
+uint32_t ocm_write(int id, uint8_t data) {
     ocm_buffer_t *buffer = out_buffers[id];
 
-    if (buffer->write_pos >= buffer->size) {
-        buffer->write_pos = 0;
-    }
-    
     if (buffer->current_len < buffer->size) {
         buffer->current_len++;
     }
 
-    buffer->content[buffer->write_pos] = data;
+    buffer->content[buffer->write_pos % buffer->size] = data;
     buffer->last_update = c_timer_get_ms();
 
-    buffer->write_pos++;
+    return buffer->write_pos++;
 }
 
 uint8_t ocm_read(int id, uint32_t pos) {
     ocm_buffer_t *buffer = out_buffers[id];
 
-    return buffer->content[
-        (buffer->size > buffer->current_len) ?
-        pos % buffer->size:
-        (buffer->write_pos + pos) % buffer->size
-    ];
+    return buffer->content[pos % buffer->size];
 }
 
 uint32_t ocm_get_len(int id) {
@@ -67,4 +59,16 @@ uint32_t ocm_get_last_update(int id) {
     ocm_buffer_t *buffer = out_buffers[id];
 
     return buffer->last_update;
+}
+
+uint32_t ocm_get_wpos(int id) {
+    ocm_buffer_t *buffer = out_buffers[id];
+
+    return buffer->write_pos;
+}
+
+void ocm_set_wpos(int id, uint32_t pos) {
+    ocm_buffer_t *buffer = out_buffers[id];
+
+    buffer->write_pos = pos;
 }

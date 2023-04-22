@@ -324,12 +324,12 @@ char *fgets(char *restrict str, int count, FILE *restrict stream) {
     return NULL;
 }
 
-int fputc( int ch, FILE *stream) {
+int fputc(int ch, FILE *stream) {
     puts("fputc not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-int putc( int ch, FILE *stream) {
+int putc(int ch, FILE *stream) {
     puts("putc not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }

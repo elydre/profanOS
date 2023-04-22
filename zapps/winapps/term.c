@@ -18,21 +18,21 @@ int is_running;
 // we dont have virtual memory yet
 uint32_t color_code_convert(char code) {
     switch (code) {
-        case '0': return 0x9999ff;
-        case '1': return 0x99ff99;
-        case '2': return 0x99ffff;
-        case '3': return 0xff9999;
-        case '4': return 0xff99ff;
-        case '5': return 0xffff99;
-        case '6': return 0xaaaaaa;
+        case '0': return 0x8888ff;
+        case '1': return 0x88ff88;
+        case '2': return 0x88ffff;
+        case '3': return 0xff8888;
+        case '4': return 0xff88ff;
+        case '5': return 0xffff88;
+        case '6': return 0x888888;
         case '7': return 0xffffff;
-        case '8': return 0x000099;
-        case '9': return 0x009900;
-        case 'A': return 0x009999;
-        case 'B': return 0x990000;
-        case 'C': return 0x990099;
-        case 'D': return 0x999900;
-        case 'E': return 0x999999;
+        case '8': return 0x0000aa;
+        case '9': return 0x00aa00;
+        case 'A': return 0x00aaaa;
+        case 'B': return 0xaa0000;
+        case 'C': return 0xaa00aa;
+        case 'D': return 0xaaaa00;
+        case 'E': return 0xaaaaaa;
         case 'F': return 0x000000;
     }
     return 0;
@@ -54,10 +54,10 @@ void local_print_char(window_t *window, char c, int x, int y, uint32_t color, ui
 void print_from_ocm(window_t *window) {
     // get from the buffer the last PRT_LINES lines
     int len = ocm_get_len(MONITORED_OCM);
-    int start = 0;
+    int wpos = ocm_get_wpos(MONITORED_OCM);
+    int start = wpos - len;
     int count = 0;
-    for (int i = len - 1; i >= 0; i--) {
-#include <i_winadds.h>
+    for (int i = wpos; i > wpos - len; i--) {
         if (ocm_read(MONITORED_OCM, i) == '\n') {
             start = i + 1;
             count++;
@@ -70,16 +70,26 @@ void print_from_ocm(window_t *window) {
     // print the lines
     int x = 0;
     int y = 0;
+
+    char ch;
     int color = 0xffffff;
-    for (int i = start; i < len; i++) {
-        if (ocm_read(MONITORED_OCM, i) == '\n') {
+
+    for (int i = start; i < wpos; i++) {
+        ch = ocm_read(MONITORED_OCM, i);
+        if (ch == '\n') {
             x = 0;
             y += FONT_HEIGHT;
-        } else if (ocm_read(MONITORED_OCM, i) == '$') {
+            color = 0xffffff;
+        } else if (ch == '\b') {
+            x -= 8;
+            if (x < 0) {
+                x = 0;
+            }
+        } else if (ch == '$') {
             color = color_code_convert(ocm_read(MONITORED_OCM, i + 1));
             i++;
         } else {
-            local_print_char(window, ocm_read(MONITORED_OCM, i), x, y, color, 0);
+            local_print_char(window, ch, x, y, color, 0);
             x += 8;
         }
     }
@@ -103,7 +113,7 @@ int main(int argc, char **argv) {
         // check if the terminal has been updated
         last_update = ocm_get_last_update(MONITORED_OCM);
         if (last_update == last_refresh) {
-            ms_sleep(50);
+            ms_sleep(10);
             continue;
         }
 
