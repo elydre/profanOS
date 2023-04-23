@@ -4,12 +4,13 @@
 #include <system.h>
 
 
-page_directory_t *kernel_directory;
+scuba_directory_t *kernel_directory;
 
-page_directory_t *scuba_get_kernel_directory() {
+scuba_directory_t *scuba_get_kernel_directory() {
     return kernel_directory;
 }
 
+// TODO: use memory manager to allign this
 void *i_allign_calloc(size_t size) {
     void *ptr = calloc(size + 0x1000);
     ptr = (void *) (((uint32_t) ptr + 0x1000) & 0xFFFFF000);
@@ -18,7 +19,7 @@ void *i_allign_calloc(size_t size) {
 
 int scuba_init() {
     // allocate a page directory
-    kernel_directory = i_allign_calloc(sizeof(page_directory_t));
+    kernel_directory = i_allign_calloc(sizeof(scuba_directory_t));
 
     // setup directory entries
     for (int i = 0; i < 1024; i++) {
@@ -61,10 +62,24 @@ void scuba_enable() {
     asm volatile("mov %0, %%cr0":: "r"(cr0));
 }
 
-void scuba_switch(page_directory_t *dir) {
+void scuba_switch(scuba_directory_t *dir) {
     // switch to the new page directory
     asm volatile("mov %0, %%cr3":: "r"(dir));
 }
+
+void scuba_flush_tlb() {
+    // flush the TLB
+    asm volatile("mov %%cr3, %%eax"::);
+    asm volatile("mov %%eax, %%cr3"::);
+}
+
+/**************************
+ *                       *
+ *   PROCESS SWITCHING   *
+ *                       *
+**************************/
+
+
 
 /**************************
  *                       *
@@ -72,18 +87,18 @@ void scuba_switch(page_directory_t *dir) {
  *                       *
 **************************/
 
-void scuba_map(page_directory_t *dir, uint32_t virt, uint32_t phys) {
+void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys) {
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
 
     // get the page table
-    page_table_t *table = dir->tables[table_index];
+    scuba_page_table_t *table = dir->tables[table_index];
 
     // if the page table doesn't exist, create it
     if (!table) {
         serial_kprintf("creating table %d\n", table_index);
 
-        table = i_allign_calloc(sizeof(page_table_t));
+        table = i_allign_calloc(sizeof(scuba_page_table_t));
         dir->tables[table_index] = table;
 
         dir->entries[table_index].present = 1;
@@ -104,12 +119,12 @@ void scuba_map(page_directory_t *dir, uint32_t virt, uint32_t phys) {
     table->pages[page_index].user = 1;
 }
 
-void scuba_unmap(page_directory_t *dir, uint32_t virt) {
+void scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
 
     // get the page table
-    page_table_t *table = dir->tables[table_index];
+    scuba_page_table_t *table = dir->tables[table_index];
 
     // if the page table doesn't exist, return
     if (!table) return;
@@ -127,14 +142,14 @@ void scuba_unmap(page_directory_t *dir, uint32_t virt) {
  *                       *
 **************************/
 
-uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt) {
+uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
     kprintf("getting phys for %x\n", virt);
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
     kprintf("table index: %x\n", table_index);
 
     // get the page table
-    page_table_t *table = dir->tables[table_index];
+    scuba_page_table_t *table = dir->tables[table_index];
     kprintf("table: %x\n", table);
 
     // if the page table doesn't exist, return
@@ -146,7 +161,7 @@ uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt) {
     kprintf("page index: %x\n", page_index);
 
     // get the page
-    page_t *page = &table->pages[page_index];
+    scuba_page_t *page = &table->pages[page_index];
     kprintf("page: %x\n", page);
 
     // if the page doesn't exist, return

@@ -13,12 +13,12 @@ typedef struct {
     uint32_t dirty :    1;
     uint32_t unused :   7;
     uint32_t frame :   20;
-} page_t;
+} scuba_page_t;
 
 // Max 4MB per table
 typedef struct {
-    page_t pages[1024]; 
-} page_table_t;
+    scuba_page_t pages[1024]; 
+} scuba_page_table_t;
 
 typedef struct {
     uint32_t present :  1;
@@ -28,13 +28,15 @@ typedef struct {
     uint32_t dirty :    1;
     uint32_t unused :   7;
     uint32_t frame :   20;
-} page_dir_entry_t;
+} scuba_dir_entry_t;
 
 // Max 4GB per directory
 typedef struct {
-    page_dir_entry_t entries[1024];
-    page_table_t *tables[1024];
-} page_directory_t;
+    scuba_dir_entry_t entries[1024];
+    scuba_page_table_t *tables[1024];
+    uint32_t pid;
+} scuba_directory_t;
+
 
 // SCUBASUIT virtual memory manager
 
@@ -43,15 +45,15 @@ typedef struct {
 
 int scuba_init();
 
-void scuba_map(page_directory_t *dir, uint32_t virt, uint32_t phys);
-void scuba_unmap(page_directory_t *dir, uint32_t virt);
+void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys);
+void scuba_unmap(scuba_directory_t *dir, uint32_t virt);
 
 void scuba_enable();
-void scuba_switch(page_directory_t *dir);
+void scuba_switch(scuba_directory_t *dir);
 
-uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt);
+uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
 
-page_directory_t *scuba_get_kernel_directory();
+scuba_directory_t *scuba_get_kernel_directory();
 
 
 void scuba_fault_handler(registers_t *reg);
