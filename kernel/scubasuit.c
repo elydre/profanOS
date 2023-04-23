@@ -19,17 +19,7 @@ void *i_allign_calloc(size_t size) {
 
 int scuba_init() {
     // allocate a page directory
-    kernel_directory = i_allign_calloc(sizeof(scuba_directory_t));
-
-    // setup directory entries
-    for (int i = 0; i < 1024; i++) {
-        kernel_directory->entries[i].present = 0;
-        kernel_directory->entries[i].rw = 1;
-        kernel_directory->entries[i].user = 1;
-        kernel_directory->entries[i].accessed = 0;
-        kernel_directory->entries[i].unused = 0;
-        kernel_directory->entries[i].frame = 0;
-    }
+    kernel_directory = scuba_directory_create();
 
     // map the first 16MB of memory
     for (int i = 0; i < 0x4000000; i += 0x1000) {
@@ -75,10 +65,38 @@ void scuba_flush_tlb() {
 
 /**************************
  *                       *
- *   PROCESS SWITCHING   *
+ *    SCUBA DIRECTORY    *
  *                       *
 **************************/
 
+scuba_directory_t *scuba_directory_create() {
+    // allocate a page directory
+    scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t));
+
+    // setup directory entries
+    for (int i = 0; i < 1024; i++) {
+        dir->entries[i].present = 0;
+        dir->entries[i].rw = 1;
+        dir->entries[i].user = 1;
+        dir->entries[i].accessed = 0;
+        dir->entries[i].unused = 0;
+        dir->entries[i].frame = 0;
+    }
+
+    return dir;
+}
+
+void scuba_directory_destroy(scuba_directory_t *dir) {
+    // free all page tables
+    for (int i = 0; i < 1024; i++) {
+        if (dir->tables[i]) {
+            free(dir->tables[i]);
+        }
+    }
+
+    // free the page directory
+    free(dir);
+}
 
 
 /**************************

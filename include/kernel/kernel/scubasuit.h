@@ -42,18 +42,22 @@ typedef struct {
 
 #define PAGE_SIZE 4096
 
+scuba_directory_t *scuba_get_kernel_directory();
 
 int scuba_init();
+
+void scuba_enable();
+void scuba_switch(scuba_directory_t *dir);
+void scuba_flush_tlb();
+
+scuba_directory_t *scuba_directory_create();
+void scuba_directory_destroy(scuba_directory_t *dir);
 
 void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys);
 void scuba_unmap(scuba_directory_t *dir, uint32_t virt);
 
-void scuba_enable();
-void scuba_switch(scuba_directory_t *dir);
-
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
 
-scuba_directory_t *scuba_get_kernel_directory();
 
 
 void scuba_fault_handler(registers_t *reg);
