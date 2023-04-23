@@ -48,8 +48,16 @@ void sys_fatal(char msg[]) {
 }
 
 void sys_interrupt(int code) {
+    serial_kprintf("CPU INTERRUPT %d\n", code);
     /* do not use this function, is
     * reserved for cpu interrupts*/
+
+    if (code == 14) {   // page fault
+        uint32_t faulting_address;
+        asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
+        serial_kprintf("faulting address %x\n", faulting_address);
+        kprintf("faulting address %x\n", faulting_address);
+    }
 
     ckprint("CPU INTERRUPT ", 0x05);
 

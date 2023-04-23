@@ -1,4 +1,5 @@
 #include <kernel/scubasuit.h>
+#include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -34,18 +35,20 @@ int scuba_init() {
         scuba_map(kernel_directory, i, i);
     }
 
-    // setup the page fault handler
-    register_interrupt_handler(IRQ14, scuba_fault_handler);
+    // video memory
+    if (vesa_does_enable()) {
+        uint32_t from = (uint32_t) vesa_get_framebuffer();
+        uint32_t to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
+        for (uint32_t i = from; i < to; i += 0x1000) {
+            scuba_map(kernel_directory, i, i);
+        }
+    }
 
     // switch to the new page directory
     scuba_switch(kernel_directory);
 
     // enable paging
     scuba_enable();
-
-    while (1) {
-        asm volatile("hlt");
-    }
 
     return 0;
 }
@@ -152,45 +155,4 @@ uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt) {
 
     // return the physical address
     return page->frame * 0x1000;
-}
-
-
-/**************************
- *                       *
- *   SCUBA PAGE FAULT    *
- *                       *
-**************************/
-
-// Err code interpretation
-#define ERR_PRESENT     0x1
-#define ERR_RW          0x2
-#define ERR_USER        0x4
-#define ERR_RESERVED    0x8
-#define ERR_INST        0x10
-
-void scuba_fault_handler(registers_t *reg) {
-    // asm volatile("sti");
-    serial_kprintf("Page fault\n");
-
-    /*// Gather fault info and print to screen
-    uint32_t faulting_addr;
-    asm volatile("mov %%cr2, %0" : "=r" (faulting_addr));
-
-    uint8_t present = reg->err_code & ERR_PRESENT;
-    uint8_t rw = reg->err_code & ERR_RW;
-    uint8_t user = reg->err_code & ERR_USER;
-    uint8_t reserved = reg->err_code & ERR_RESERVED;
-    uint8_t inst_fetch = reg->err_code & ERR_INST;
-
-    serial_kprintf("Faulting address: %x\n", faulting_addr);
-
-    serial_kprintf("Possible causes: [ ");
-    if (!present) serial_kprintf("Page not present ");
-    if (rw) serial_kprintf("Page is read only ");
-    if (user) serial_kprintf("Page is read only ");
-    if (reserved) serial_kprintf("Overwrote reserved bits ");
-    if (inst_fetch) serial_kprintf("Instruction fetch ");
-    serial_kprintf("]\n");
-
-    sys_fatal("Page fault");*/
 }
