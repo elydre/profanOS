@@ -1,4 +1,5 @@
 #include <kernel/snowflake.h>
+#include <kernel/scubasuit.h>
 #include <kernel/ramdisk.h>
 #include <kernel/process.h>
 #include <driver/diskiso.h>
@@ -79,20 +80,20 @@ void shell_help() {
 }
 
 void shell_addr() {
-    kprintf("vesa fb: 0x%x\n", vesa_get_framebuffer());
-    kprintf("max add: 0x%x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
-    kprintf("ramdisk: 0x%x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
-    kprintf("diskiso: 0x%x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
-    kprintf("mm base: 0x%x\n", MEM_BASE_ADDR);
-    kprintf("watdily: 0x%x\n", WATDILY_ADDR);
-    kprintf("watfunc: 0x%x\n", WATFUNC_ADDR);
+    kprintf("vesa fb: %x\n", vesa_get_framebuffer());
+    kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
+    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
+    kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
+    kprintf("mm base: %x\n", MEM_BASE_ADDR);
+    kprintf("watdily: %x\n", WATDILY_ADDR);
+    kprintf("watfunc: %x\n", WATFUNC_ADDR);
 }
 
 void shell_mem() {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
-        kprintf("part %d (s: %d, t: %d) -> 0x%x, size: %d\n",
+        kprintf("part %d (s: %d, t: %d) -> %x, size: %d\n",
             index,
             mem_parts[index].state,
             mem_parts[index].task_id,
@@ -101,6 +102,11 @@ void shell_mem() {
         );
         index = mem_parts[index].next;
     }
+}
+
+void scuba_demo() {
+    kprintf("scuba demo: %x\n", scuba_get_phys(scuba_get_kernel_directory(), 0x123456));
+    
 }
 
 int shell_command(char command[]) {
@@ -127,6 +133,7 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    else if (str_cmp(prefix, "s") == 0) scuba_demo();
 
     else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
     else if (str_cmp(prefix, "k") == 0) process_kill(str2int(suffix));

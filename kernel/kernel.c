@@ -56,7 +56,7 @@ void kernel_main(void *mboot_ptr) {
 
 
     // launch of the default program
-    run_ifexist(RUN_DEFAULT, 0, NULL);
+    // run_ifexist(RUN_DEFAULT, 0, NULL);
 
     start_kshell();
 

@@ -140,7 +140,7 @@ void i_print_sector_smart(u_int32_t sector) {
         }
         printf("...\n");
     } else {
-        printf("[sector %d]: unknown (0x%x)\n", sector, buffer[0]);
+        printf("[sector %d]: unknown (%x)\n", sector, buffer[0]);
     }
 }
 
