@@ -37,20 +37,24 @@ int scuba_init() {
 
     // switch to the new page directory
     scuba_switch(kernel_directory);
-    while (1);
+
+    // enable paging
+    scuba_enable();
 
     return 0;
 }
 
-void scuba_switch(page_directory_t *dir) {
-    // set the page directory
-    asm volatile("mov %0, %%cr3":: "r"(dir));
-
+void scuba_enable() {
     // enable paging
     uint32_t cr0;
     asm volatile("mov %%cr0, %0": "=r"(cr0));
     cr0 |= 0x80000000;
-    asm volatile("mov %0, %%cr0":: "r"(cr0));    
+    asm volatile("mov %0, %%cr0":: "r"(cr0));
+}
+
+void scuba_switch(page_directory_t *dir) {
+    // switch to the new page directory
+    asm volatile("mov %0, %%cr3":: "r"(dir));
 }
 
 /**************************
@@ -174,11 +178,11 @@ void scuba_fault_handler(registers_t *reg) {
     serial_kprintf("Faulting address: %x\n", faulting_addr);
 
     serial_kprintf("Possible causes: [ ");
-    if(!present) serial_kprintf("Page not present ");
-    if(rw) serial_kprintf("Page is read only ");
-    if(user) serial_kprintf("Page is read only ");
-    if(reserved) serial_kprintf("Overwrote reserved bits ");
-    if(inst_fetch) serial_kprintf("Instruction fetch ");
+    if (!present) serial_kprintf("Page not present ");
+    if (rw) serial_kprintf("Page is read only ");
+    if (user) serial_kprintf("Page is read only ");
+    if (reserved) serial_kprintf("Overwrote reserved bits ");
+    if (inst_fetch) serial_kprintf("Instruction fetch ");
     serial_kprintf("]\n");
 
     sys_fatal("Page fault");

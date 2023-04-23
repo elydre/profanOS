@@ -45,7 +45,9 @@ int scuba_init();
 void scuba_map(page_directory_t *dir, uint32_t virt, uint32_t phys);
 void scuba_unmap(page_directory_t *dir, uint32_t virt);
 
+void scuba_enable();
 void scuba_switch(page_directory_t *dir);
+
 uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt);
 
 page_directory_t *scuba_get_kernel_directory();
