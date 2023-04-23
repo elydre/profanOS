@@ -105,7 +105,7 @@ void shell_mem() {
 }
 
 void scuba_demo() {
-    kprintf("scuba demo: %x\n", scuba_get_phys(scuba_get_kernel_directory(), 0x123456));
+    // kprintf("scuba demo: %x\n", scuba_get_phys(scuba_get_kernel_directory(), scuba_fault_handler));
     
 }
 

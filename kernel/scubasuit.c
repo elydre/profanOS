@@ -9,13 +9,15 @@ page_directory_t *scuba_get_kernel_directory() {
     return kernel_directory;
 }
 
+void *i_allign_calloc(size_t size) {
+    void *ptr = calloc(size + 0x1000);
+    ptr = (void *) (((uint32_t) ptr + 0x1000) & 0xFFFFF000);
+    return ptr;
+}
 
 int scuba_init() {
     // allocate a page directory
-    kernel_directory = calloc(sizeof(page_directory_t) + 0x1000);
-
-    // align the page directory
-    kernel_directory = (page_directory_t *) (((uint32_t) kernel_directory + 0x1000) & 0xFFFFF000);
+    kernel_directory = i_allign_calloc(sizeof(page_directory_t));
 
     // setup directory entries
     for (int i = 0; i < 1024; i++) {
@@ -29,7 +31,7 @@ int scuba_init() {
 
     // map the first 16MB of memory
     for (int i = 0; i < 0x4000000; i += 0x1000) {
-        scuba_map(kernel_directory, i + 0xC0000000, i);
+        scuba_map(kernel_directory, i, i);
     }
 
     // setup the page fault handler
@@ -40,6 +42,10 @@ int scuba_init() {
 
     // enable paging
     scuba_enable();
+
+    while (1) {
+        asm volatile("hlt");
+    }
 
     return 0;
 }
@@ -74,7 +80,7 @@ void scuba_map(page_directory_t *dir, uint32_t virt, uint32_t phys) {
     if (!table) {
         serial_kprintf("creating table %d\n", table_index);
 
-        table = calloc(sizeof(page_table_t));
+        table = i_allign_calloc(sizeof(page_table_t));
         dir->tables[table_index] = table;
 
         dir->entries[table_index].present = 1;
@@ -119,6 +125,7 @@ void scuba_unmap(page_directory_t *dir, uint32_t virt) {
 **************************/
 
 uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt) {
+    kprintf("getting phys for %x\n", virt);
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
     kprintf("table index: %x\n", table_index);
@@ -162,10 +169,10 @@ uint32_t scuba_get_phys(page_directory_t *dir, uint32_t virt) {
 #define ERR_INST        0x10
 
 void scuba_fault_handler(registers_t *reg) {
-    asm volatile("sti");
-    serial_kprintf("Page fault:\n");
+    // asm volatile("sti");
+    serial_kprintf("Page fault\n");
 
-    // Gather fault info and print to screen
+    /*// Gather fault info and print to screen
     uint32_t faulting_addr;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_addr));
 
@@ -185,5 +192,5 @@ void scuba_fault_handler(registers_t *reg) {
     if (inst_fetch) serial_kprintf("Instruction fetch ");
     serial_kprintf("]\n");
 
-    sys_fatal("Page fault");
+    sys_fatal("Page fault");*/
 }
