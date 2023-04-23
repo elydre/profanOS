@@ -1,6 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
+#include <kernel/scubasuit.h>
 #include <type.h>
 
 #define PROCESS_RUNNING  0
@@ -20,6 +21,7 @@ typedef struct {
     proc_rgs_t regs;
     int pid, ppid, priority, state;
     uint32_t esp_addr, sleep_to, run_time;
+    scuba_directory_t *scuba_dir;
     uint8_t *run_mem;
     void *custom;
     char name[64];

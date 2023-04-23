@@ -139,6 +139,7 @@ int i_remove_from_shdlr_queue(int pid) {
 void i_clean_killed() {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
+            scuba_directory_destroy(plist[i].scuba_dir);
             free((void *) plist[i].esp_addr);
             plist[i].state = PROCESS_DEAD;
         }
@@ -241,6 +242,8 @@ int process_init() {
 
     i_add_to_shdlr_queue(0, KERNEL_PRIORITY);
 
+    kern_proc->scuba_dir = scuba_get_kernel_directory();
+
     // enable sheduler
     sheduler_state = SHDLR_ENBL;
 
@@ -283,6 +286,9 @@ int process_create(void (*func)(), int priority, char *name) {
     new_proc->priority = priority;
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
+    
+    new_proc->scuba_dir = scuba_directory_create(pid_incrament);
+    scuba_directory_init(new_proc->scuba_dir);
 
     return pid_incrament;
 }

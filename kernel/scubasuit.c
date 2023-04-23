@@ -5,6 +5,7 @@
 
 
 scuba_directory_t *kernel_directory;
+scuba_directory_t *current_directory;
 
 scuba_directory_t *scuba_get_kernel_directory() {
     return kernel_directory;
@@ -19,7 +20,7 @@ void *i_allign_calloc(size_t size) {
 
 int scuba_init() {
     // allocate a page directory
-    kernel_directory = scuba_directory_create();
+    kernel_directory = scuba_directory_create(0);
 
     // map the first 16MB of memory
     for (int i = 0; i < 0x4000000; i += 0x1000) {
@@ -53,14 +54,47 @@ void scuba_enable() {
 }
 
 void scuba_switch(scuba_directory_t *dir) {
+    current_directory = dir;
     // switch to the new page directory
     asm volatile("mov %0, %%cr3":: "r"(dir));
 }
 
 void scuba_flush_tlb() {
     // flush the TLB
-    asm volatile("mov %%cr3, %%eax"::);
-    asm volatile("mov %%eax, %%cr3"::);
+
+    uint32_t cr3;
+    asm volatile("mov %%cr3, %0": "=r"(cr3));
+    asm volatile("mov %0, %%cr3":: "r"(cr3));
+    kprintf("flushed TLB cr3: %x\n", cr3);
+}
+
+void scuba_get_current_directory() {
+    // dont use current_directory because it might be NULL
+    uint32_t cr3;
+    asm volatile("mov %%cr3, %0": "=r"(cr3));
+    kprintf("current directory: %x\n", cr3);
+}
+
+/**************************
+ *                       *
+ *     SCUBA PROCESS     *
+ *                       *
+**************************/
+
+#include <kernel/process.h>
+
+extern process_t *plist;
+void scuba_process_switch() {
+    scuba_directory_t *dir = plist[i_pid_to_place(process_get_pid())].scuba_dir;
+    if (current_directory == dir) return;
+    if (dir->pid == 1) return;
+    serial_kprintf("switching to process %d\n", dir->pid);
+    // switch to the new page directory
+    scuba_switch(dir);
+
+    // flush the TLB
+    scuba_flush_tlb();
+    scuba_get_current_directory();
 }
 
 /**************************
@@ -69,9 +103,10 @@ void scuba_flush_tlb() {
  *                       *
 **************************/
 
-scuba_directory_t *scuba_directory_create() {
+scuba_directory_t *scuba_directory_create(int target_pid) {
     // allocate a page directory
     scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t));
+    dir->pid = target_pid;
 
     // setup directory entries
     for (int i = 0; i < 1024; i++) {
@@ -86,7 +121,35 @@ scuba_directory_t *scuba_directory_create() {
     return dir;
 }
 
+void scuba_directory_init(scuba_directory_t *dir) {
+    kprintf("directory: %x\n", dir);
+    // map the first 16MB of memory
+    for (int i = 0; i < 0x4000000; i += 0x1000) {
+        scuba_map(dir, i, i);
+    }
+
+    uint32_t *yep = i_allign_calloc(0x1000);
+    kprintf("address of yep: %x (~%dMo)\n", yep, (uint32_t) yep / 1024 / 1024);
+    *yep = dir->pid;
+    kprintf("0x12345000: %x\n", *yep);
+    scuba_map(dir, 0x12345000, (uint32_t) yep);
+
+    // video memory
+    if (vesa_does_enable()) {
+        uint32_t from = (uint32_t) vesa_get_framebuffer();
+        uint32_t to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
+        for (uint32_t i = from; i < to; i += 0x1000) {
+            scuba_map(dir, i, i);
+        }
+    }
+}
+
 void scuba_directory_destroy(scuba_directory_t *dir) {
+    serial_kprintf("destroying directory %d\n", dir->pid);
+    uint32_t *yep = scuba_get_phys(dir, 0x12345000);
+    serial_kprintf("convert: %x\n", yep);
+    serial_kprintf("val: %x\n", *yep);
+    return;
     // free all page tables
     for (int i = 0; i < 1024; i++) {
         if (dir->tables[i]) {
@@ -97,7 +160,6 @@ void scuba_directory_destroy(scuba_directory_t *dir) {
     // free the page directory
     free(dir);
 }
-
 
 /**************************
  *                       *
@@ -161,14 +223,11 @@ void scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
 **************************/
 
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
-    kprintf("getting phys for %x\n", virt);
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
-    kprintf("table index: %x\n", table_index);
 
     // get the page table
     scuba_page_table_t *table = dir->tables[table_index];
-    kprintf("table: %x\n", table);
 
     // if the page table doesn't exist, return
     if (!table) return 0;
@@ -176,15 +235,11 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
     // get the page index
     uint32_t page_index = (virt / 0x1000) % 1024;
 
-    kprintf("page index: %x\n", page_index);
-
     // get the page
     scuba_page_t *page = &table->pages[page_index];
-    kprintf("page: %x\n", page);
 
     // if the page doesn't exist, return
     if (!page->present) return 0;
-    kprintf("page frame: %x\n", page->frame);
 
     // return the physical address
     return page->frame * 0x1000;
