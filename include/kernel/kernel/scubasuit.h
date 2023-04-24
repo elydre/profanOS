@@ -50,7 +50,7 @@ void scuba_enable();
 void scuba_switch(scuba_directory_t *dir);
 void scuba_flush_tlb();
 
-void scuba_process_switch();
+void scuba_process_switch(scuba_directory_t *dir);
 
 scuba_directory_t *scuba_directory_create(int target_pid);
 void scuba_directory_init(scuba_directory_t *dir);

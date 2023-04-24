@@ -65,14 +65,12 @@ void scuba_flush_tlb() {
     uint32_t cr3;
     asm volatile("mov %%cr3, %0": "=r"(cr3));
     asm volatile("mov %0, %%cr3":: "r"(cr3));
-    kprintf("flushed TLB cr3: %x\n", cr3);
 }
 
 void scuba_get_current_directory() {
     // dont use current_directory because it might be NULL
     uint32_t cr3;
     asm volatile("mov %%cr3, %0": "=r"(cr3));
-    kprintf("current directory: %x\n", cr3);
 }
 
 /**************************
@@ -83,12 +81,12 @@ void scuba_get_current_directory() {
 
 #include <kernel/process.h>
 
-extern process_t *plist;
-void scuba_process_switch() {
-    scuba_directory_t *dir = plist[i_pid_to_place(process_get_pid())].scuba_dir;
+void scuba_process_switch(scuba_directory_t *dir) {
     if (current_directory == dir) return;
     if (dir->pid == 1) return;
+
     serial_kprintf("switching to process %d\n", dir->pid);
+
     // switch to the new page directory
     scuba_switch(dir);
 
@@ -122,16 +120,13 @@ scuba_directory_t *scuba_directory_create(int target_pid) {
 }
 
 void scuba_directory_init(scuba_directory_t *dir) {
-    kprintf("directory: %x\n", dir);
     // map the first 16MB of memory
     for (int i = 0; i < 0x4000000; i += 0x1000) {
         scuba_map(dir, i, i);
     }
 
     uint32_t *yep = i_allign_calloc(0x1000);
-    kprintf("address of yep: %x (~%dMo)\n", yep, (uint32_t) yep / 1024 / 1024);
     *yep = dir->pid;
-    kprintf("0x12345000: %x\n", *yep);
     scuba_map(dir, 0x12345000, (uint32_t) yep);
 
     // video memory
@@ -146,10 +141,8 @@ void scuba_directory_init(scuba_directory_t *dir) {
 
 void scuba_directory_destroy(scuba_directory_t *dir) {
     serial_kprintf("destroying directory %d\n", dir->pid);
-    uint32_t *yep = scuba_get_phys(dir, 0x12345000);
-    serial_kprintf("convert: %x\n", yep);
-    serial_kprintf("val: %x\n", *yep);
     return;
+
     // free all page tables
     for (int i = 0; i < 1024; i++) {
         if (dir->tables[i]) {

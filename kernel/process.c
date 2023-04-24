@@ -61,7 +61,8 @@ int i_pid_to_place(int pid) {
     return ERROR_CODE;
 }
 
-void i_exit_sheduler() {
+void i_end_sheduler() {
+    scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
     if (sheduler_state == SHDLR_RUNN) {
         sheduler_state = SHDLR_ENBL;
     } else {
@@ -524,7 +525,7 @@ void schedule(uint32_t ticks) {
     }
 
     if (ticks % SCHEDULER_EVRY) {
-        i_exit_sheduler();
+        i_end_sheduler();
         return;
     }
 
@@ -550,7 +551,7 @@ void schedule(uint32_t ticks) {
     if (pid != pid_current) {
         i_process_switch(pid_current, pid, ticks);
     } else {
-        i_exit_sheduler();
+        i_end_sheduler();
     }
 }
 

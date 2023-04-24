@@ -1,7 +1,5 @@
 global process_asm_switch
-
-extern i_exit_sheduler
-extern scuba_process_switch
+extern i_end_sheduler
 
 process_asm_switch:
     pusha
@@ -49,6 +47,5 @@ process_asm_switch:
     mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
-    call i_exit_sheduler
-    call scuba_process_switch
+    call i_end_sheduler     ; Call the end of the sheduler (process.c)
     ret                     ; This ends all
