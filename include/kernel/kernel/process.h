@@ -55,8 +55,8 @@ int process_generate_pid_list(int *list, int max);
 int process_get_name(int pid, char *name);
 uint32_t process_get_run_time(int pid);
 
-void process_set_bin_mem(int pid, uint8_t *mem);
-uint8_t *process_get_bin_mem(int pid);
+void process_set_bin_mem(int pid, void *mem);
+void *process_get_bin_mem(int pid);
 
 void *process_get_custom(int pid);
 void process_set_custom(int pid, void *custom);

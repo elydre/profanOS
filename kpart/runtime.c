@@ -12,18 +12,28 @@
  * |  <--Lstack--|--BINARY--|-Rstack->  | *
 *******************************************/
 
-// global values for tasking
-char **g_argv;
-int g_argc;
+typedef struct {
+    int argc;
+    char **argv;
+    char *path;
+} comm_struct_t;
 
 void tasked_program() {
     int pid = process_get_pid();
     int ppid = process_get_ppid(pid);
 
-    uint8_t *binary_mem = process_get_bin_mem(pid);
-    ((int (*)(int, char **)) binary_mem + RUN_BIN_STACK_L)(g_argc, g_argv);
+    comm_struct_t *comm = process_get_bin_mem(pid);
+    int argc = comm->argc;
+    char **argv = comm->argv;
+    char *path = comm->path;
+    free(comm);
 
-    free(binary_mem);
+    // load binary
+    fs_read_file(path, (char *) 0xC0000000);
+
+    // call main
+    int ret;
+    asm volatile("call *%1" : "=a"(ret) : "r"(0xC0000000), "b"(argc), "c"(argv));
 
     int not_free_mem = mem_get_info(7, pid);
 
@@ -52,21 +62,12 @@ int run_binary(char path[], int argc, char **argv) {
     serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, 2, path);
 
-    int size = fs_get_file_size(path) + RUN_BIN_STACK_L + RUN_BIN_STACK_R;
-    uint8_t *binary_mem = (uint8_t *) mem_alloc(size, 4); // 4 = runtime
-    uint8_t *file = binary_mem + RUN_BIN_STACK_L;
+    comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 6);
+    comm->argc = argc;
+    comm->argv = argv;
+    comm->path = path;
 
-    if (!binary_mem) {
-        sys_error("Not enough memory");
-        return -1;
-    }
-
-    fs_read_file(path, (char *) file);
-
-    g_argc = argc;
-    g_argv = argv;
-
-    process_set_bin_mem(pid, binary_mem);
+    process_set_bin_mem(pid, comm);
     process_handover(pid);
 
     return 0;

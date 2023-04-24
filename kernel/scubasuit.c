@@ -120,32 +120,43 @@ scuba_directory_t *scuba_directory_create(int target_pid) {
 }
 
 void scuba_directory_init(scuba_directory_t *dir) {
-    // map the first 16MB of memory
-    for (int i = 0; i < 0x4000000; i += 0x1000) {
+    // kernel, lib, alloc, from 1Mo to 16Mo
+    for (int i = 0x100000; i < 0x4000000; i += 0x1000) {
         scuba_map(dir, i, i);
     }
 
-    uint32_t *yep = i_allign_calloc(0x1000);
-    *yep = dir->pid;
-    scuba_map(dir, 0x12345000, (uint32_t) yep);
-
     // video memory
+    uint32_t from, to;
+
     if (vesa_does_enable()) {
-        uint32_t from = (uint32_t) vesa_get_framebuffer();
-        uint32_t to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
-        for (uint32_t i = from; i < to; i += 0x1000) {
-            scuba_map(dir, i, i);
-        }
+        // pixel buffer
+        from = (uint32_t) vesa_get_framebuffer();
+        to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
+    } else {
+        // text mode
+        from = 0xB8000;
+        to = from + 80 * 25 * 2 + 0x1000;
+    }
+
+    for (uint32_t i = from; i < to; i += 0x1000) {
+        scuba_map(dir, i, i);
+    }
+
+    // private memory
+    // TODO: calloc as binrun (4)
+    uint32_t *physical = i_allign_calloc(0x100000);
+    for (uint32_t i = 0; i < 0x100000; i += 0x1000) {
+        scuba_map(dir, 0xC0000000 + i, (uint32_t) physical + i);
     }
 }
 
 void scuba_directory_destroy(scuba_directory_t *dir) {
     serial_kprintf("destroying directory %d\n", dir->pid);
-    return;
 
     // free all page tables
     for (int i = 0; i < 1024; i++) {
         if (dir->tables[i]) {
+            serial_kprintf("destroying table %d\n", i);
             free(dir->tables[i]);
         }
     }

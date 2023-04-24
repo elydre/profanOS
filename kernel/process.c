@@ -138,14 +138,18 @@ int i_remove_from_shdlr_queue(int pid) {
 }
 
 void i_clean_killed() {
+    need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
+            if (plist[i].pid == pid_current) {
+                need_clean = 1;
+                continue;
+            }
             scuba_directory_destroy(plist[i].scuba_dir);
             free((void *) plist[i].esp_addr);
             plist[i].state = PROCESS_DEAD;
         }
     }
-    need_clean = 0;
 }
 
 void i_refresh_tsleep_interact() {
@@ -594,7 +598,7 @@ int process_get_pid() {
     return pid_current;
 }
 
-void process_set_bin_mem(int pid, uint8_t *mem) {
+void process_set_bin_mem(int pid, void *mem) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -605,7 +609,7 @@ void process_set_bin_mem(int pid, uint8_t *mem) {
     plist[place].run_mem = mem;
 }
 
-uint8_t *process_get_bin_mem(int pid) {
+void *process_get_bin_mem(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
