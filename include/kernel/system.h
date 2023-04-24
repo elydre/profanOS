@@ -36,7 +36,7 @@ void sys_stop();
 int  sys_warning(char msg[]);
 int  sys_error(char msg[]);
 void sys_fatal(char msg[]);
-void sys_interrupt(int code); // reserved cpu interrupt
+void sys_interrupt(int code, int err_code); // reserved cpu interrupt
 
 int sys_init_fpu();
 void sys_kinfo(char *dest);

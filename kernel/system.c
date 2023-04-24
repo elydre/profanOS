@@ -47,7 +47,8 @@ void sys_fatal(char msg[]) {
     sys_stop();
 }
 
-void sys_interrupt(int code) {
+void sys_interrupt(int code, int err_code) {
+    (void) (err_code);
     serial_kprintf("CPU INTERRUPT %d\n", code);
     /* do not use this function, is
     * reserved for cpu interrupts*/
@@ -57,6 +58,15 @@ void sys_interrupt(int code) {
         asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
         serial_kprintf("faulting address %x\n", faulting_address);
         kprintf("faulting address %x\n", faulting_address);
+
+        /* PAGE FAULT PATCH - DEBUG
+        serial_kprintf("during %s\n", err_code & 0x2 ? "write" : "read");
+
+        uint32_t *new_page = (uint32_t *) mem_alloc(0x1000, 0x1000, 1);
+        mem_set((uint8_t *) new_page, 0, 0x1000);
+        scuba_map(process_get_directory(process_get_pid()), faulting_address, (uint32_t) new_page);
+        return;
+        */
     }
 
     ckprint("CPU INTERRUPT ", 0x05);
