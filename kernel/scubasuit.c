@@ -121,7 +121,7 @@ scuba_directory_t *scuba_directory_create(int target_pid) {
 
 void scuba_directory_init(scuba_directory_t *dir) {
     // kernel, lib, alloc, from 1Mo to 16Mo
-    for (int i = 0x100000; i < 0x4000000; i += 0x1000) {
+    for (int i = 0; i < 0x4000000; i += 0x1000) {
         scuba_map(dir, i, i);
     }
 
