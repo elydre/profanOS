@@ -6,11 +6,21 @@
 #include <system.h>
 #include <type.h>
 
-/*******************************************
- * binary_mem is pointer to the memory of *
- * the program with the following layout. *
- * |  <--Lstack--|--BINARY--|-Rstack->  | *
-*******************************************/
+/*************************************************************
+ *       - kernel runtime memory layout and sharing -    e  *
+ *                                                       l  *
+ *  |             |                   | E                y  *
+ *  | kernel      | allocable memory  | N                d  *
+ *  | -0x100000   | - 0x200000        | D                r  *
+ *  |             |                   |                  e  *
+ *        ^     ^     ^     ^     ^                         *
+ *        |     |     |     |     '---SCUBA----.            *
+ *        |     |     |     |                  |            *
+ *  |                                 | : |             |   *
+ *  | physical (shared)   [STACK]     | : | virtual     |   *
+ *  |                                 | : | -0xC0000000 |   *
+ *  |                                 | : |             |   *
+*************************************************************/
 
 typedef struct {
     int argc;
@@ -31,20 +41,32 @@ void tasked_program() {
     // setup private memory
 
     // we need to allign to 4KB
-    uint32_t physical = mem_alloc(RUN_BIN_VIRT, 0x100000, 4);
-    mem_set((uint8_t *) physical, 0, RUN_BIN_VIRT);
+    uint32_t physical = mem_alloc(RUN_BIN_VCUNT, 0x1000, 4);
+    mem_set((uint8_t *) physical, 0, RUN_BIN_VCUNT);
 
-    for (uint32_t i = 0; i < 0x100000; i += 0x1000) {
-        scuba_map(process_get_directory(pid), 0xC0000000 + i, (uint32_t) physical + i);
+    for (uint32_t i = 0; i < RUN_BIN_VCUNT; i += 0x1000) {
+        scuba_map(process_get_directory(pid), RUN_BIN_VBASE + i, (uint32_t) physical + i);
     }
 
     // load binary
-    fs_read_file(path, (char *) 0xC0000000);
+    fs_read_file(path, (char *) RUN_BIN_VBASE);
+
+    // malloc a new stack
+    uint32_t stack = mem_alloc(RUN_BIN_STACK, 0, 4);
+    mem_set((uint8_t *) stack, 0, RUN_BIN_STACK);
+    kprintf("Stack: from %x to %x\n", stack, stack + RUN_BIN_STACK);
+
+    // setup stack
+    asm volatile("mov %0, %%esp" : : "r" (stack + RUN_BIN_STACK));
 
     // call main
-    int (*main)(int, char **) = (int (*)(int, char **)) 0xC0000000;
+    int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
     main(argc, argv);
 
+    // free the stack
+    free((void *) stack);
+
+    // free forgeted allocations
     int not_free_mem = mem_get_info(7, pid);
 
     if (not_free_mem) {
@@ -59,6 +81,7 @@ void tasked_program() {
         mem_free_all(pid);
     }
 
+    // free the virtual memory
     free((void *) physical);
 
     process_wakeup(ppid);
