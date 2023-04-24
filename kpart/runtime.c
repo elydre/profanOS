@@ -42,8 +42,8 @@ void tasked_program() {
     fs_read_file(path, (char *) 0xC0000000);
 
     // call main
-    int ret;
-    asm volatile("call *%1" : "=a"(ret) : "r"(0xC0000000), "b"(argc), "c"(argv));
+    int (*main)(int, char **) = (int (*)(int, char **)) 0xC0000000;
+    main(argc, argv);
 
     int not_free_mem = mem_get_info(7, pid);
 
