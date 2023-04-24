@@ -14,10 +14,6 @@ scuba_directory_t *scuba_get_kernel_directory() {
 
 void *i_allign_calloc(size_t size, int state) {
     void *ptr = (void *) mem_alloc(size, 0x1000, state); // we need to allign to 4KB
-    if (ptr == NULL) {
-        serial_kprintf("i_allign_calloc: WUT\n");
-        return NULL;
-    }
     mem_set(ptr, 0, size);
     return ptr;
 }

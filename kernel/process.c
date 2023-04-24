@@ -62,7 +62,10 @@ int i_pid_to_place(int pid) {
 }
 
 void i_end_sheduler() {
-    scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
+    if (pid_current != 1) {
+        scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
+    }
+
     if (sheduler_state == SHDLR_RUNN) {
         sheduler_state = SHDLR_ENBL;
     } else {
@@ -292,8 +295,12 @@ int process_create(void (*func)(), int priority, char *name) {
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
     
-    new_proc->scuba_dir = scuba_directory_create(pid_incrament);
-    scuba_directory_init(new_proc->scuba_dir);
+    if (pid_incrament == 1) {
+        new_proc->scuba_dir = NULL;
+    } else {
+        new_proc->scuba_dir = scuba_directory_create(pid_incrament);
+        scuba_directory_init(new_proc->scuba_dir);
+    }
 
     return pid_incrament;
 }

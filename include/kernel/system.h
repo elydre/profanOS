@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SCS-11"
+#define KERNEL_VERSION  "SCS-12"
 #define KERNEL_EDITING  "scubasuit"
 
 #define PROCESS_MAX     20
@@ -14,8 +14,7 @@
 #define RATE_TIMER_TICK 1000     // cpu ticks per second
 #define RATE_SCHEDULER  100      // schedule per second
 
-#define RUN_BIN_STACK_L 0x1000   // left stack size for binary
-#define RUN_BIN_STACK_R 0x4000   // right stack size for binary
+#define RUN_BIN_VIRT    0x80000  // virtual address for binary
 
 #define RUN_LIB_STACK_L 0x1000   // left stack size for library
 #define RUN_LIB_STACK_R 0x4000   // right stack size for library

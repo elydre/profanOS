@@ -30,7 +30,10 @@ void tasked_program() {
 
     // setup private memory
 
-    uint32_t *physical = i_allign_calloc(0x100000, 4);
+    // we need to allign to 4KB
+    uint32_t physical = mem_alloc(RUN_BIN_VIRT, 0x100000, 4);
+    mem_set((uint8_t *) physical, 0, RUN_BIN_VIRT);
+
     for (uint32_t i = 0; i < 0x100000; i += 0x1000) {
         scuba_map(process_get_directory(pid), 0xC0000000 + i, (uint32_t) physical + i);
     }
@@ -56,7 +59,7 @@ void tasked_program() {
         mem_free_all(pid);
     }
 
-    free(physical);
+    free((void *) physical);
 
     process_wakeup(ppid);
     process_exit();
