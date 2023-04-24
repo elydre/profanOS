@@ -1,4 +1,5 @@
 #include <kernel/scubasuit.h>
+#include <kernel/snowflake.h>
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
@@ -11,10 +12,13 @@ scuba_directory_t *scuba_get_kernel_directory() {
     return kernel_directory;
 }
 
-// TODO: use memory manager to allign this
-void *i_allign_calloc(size_t size) {
-    void *ptr = calloc(size + 0x1000);
-    ptr = (void *) (((uint32_t) ptr + 0x1000) & 0xFFFFF000);
+void *i_allign_calloc(size_t size, int state) {
+    void *ptr = (void *) mem_alloc(size, 0x1000, state); // we need to allign to 4KB
+    if (ptr == NULL) {
+        serial_kprintf("i_allign_calloc: WUT\n");
+        return NULL;
+    }
+    mem_set(ptr, 0, size);
     return ptr;
 }
 
@@ -103,7 +107,7 @@ void scuba_process_switch(scuba_directory_t *dir) {
 
 scuba_directory_t *scuba_directory_create(int target_pid) {
     // allocate a page directory
-    scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t));
+    scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t), 6);
     dir->pid = target_pid;
 
     // setup directory entries
@@ -141,13 +145,6 @@ void scuba_directory_init(scuba_directory_t *dir) {
     for (uint32_t i = from; i < to; i += 0x1000) {
         scuba_map(dir, i, i);
     }
-
-    // private memory
-    // TODO: calloc as binrun (4)
-    uint32_t *physical = i_allign_calloc(0x100000);
-    for (uint32_t i = 0; i < 0x100000; i += 0x1000) {
-        scuba_map(dir, 0xC0000000 + i, (uint32_t) physical + i);
-    }
 }
 
 void scuba_directory_destroy(scuba_directory_t *dir) {
@@ -182,7 +179,7 @@ void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys) {
     if (!table) {
         serial_kprintf("creating table %d\n", table_index);
 
-        table = i_allign_calloc(sizeof(scuba_page_table_t));
+        table = i_allign_calloc(sizeof(scuba_page_table_t), 6);
         dir->tables[table_index] = table;
 
         dir->entries[table_index].present = 1;

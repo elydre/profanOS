@@ -93,7 +93,7 @@ void shell_mem() {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
-        kprintf("part %d (s: %d, t: %d) -> %x, size: %d\n",
+        kprintf("part %d (s: %d, t: %d) -> %x, size: %x\n",
             index,
             mem_parts[index].state,
             mem_parts[index].task_id,
@@ -102,11 +102,6 @@ void shell_mem() {
         );
         index = mem_parts[index].next;
     }
-}
-
-void scuba_demo() {
-    // kprintf("scuba demo: %x\n", scuba_get_phys(scuba_get_kernel_directory(), scuba_fault_handler));
-    
 }
 
 int shell_command(char command[]) {
@@ -133,7 +128,6 @@ int shell_command(char command[]) {
     else if (str_cmp(prefix, "mem") == 0) shell_mem();
     else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
     else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
-    else if (str_cmp(prefix, "s") == 0) scuba_demo();
 
     else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
     else if (str_cmp(prefix, "k") == 0) process_kill(str2int(suffix));

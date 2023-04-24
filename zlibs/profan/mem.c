@@ -33,14 +33,14 @@ void free(void *addr) {
 }
 
 void *malloc(uint32_t size) {
-    uint32_t addr = c_mem_alloc(size, 1);
+    uint32_t addr = c_mem_alloc(size, 0, 1);
     if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
 void *realloc(void *ptr, uint32_t size) {
     uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = c_mem_alloc(size, 1);
+    uint32_t new_addr = c_mem_alloc(size, 0, 1);
     if (new_addr == 0) return NULL;
     mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
     c_mem_free_addr(addr);
@@ -48,7 +48,7 @@ void *realloc(void *ptr, uint32_t size) {
 }
 
 void *calloc(uint32_t size) {
-    int addr = c_mem_alloc(size, 1);
+    int addr = c_mem_alloc(size, 0, 1);
     if (addr == 0) return NULL;
     mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;

@@ -64,6 +64,8 @@ void process_set_custom(int pid, void *custom);
 void process_set_priority(int pid, int priority);
 int process_get_priority(int pid);
 
+scuba_directory_t *process_get_directory(int pid);
+
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);

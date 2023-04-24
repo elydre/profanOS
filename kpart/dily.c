@@ -59,7 +59,7 @@ int dily_load(char path[], int lib_id) {
 
     int file_size = fs_get_file_size(path);
     int lib_size = file_size + RUN_LIB_STACK_L + RUN_LIB_STACK_R;
-    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 5); // 5 = library
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5 = library
     uint8_t *file = binary_mem + RUN_LIB_STACK_L;
 
     fs_read_file(path, (char *) file);

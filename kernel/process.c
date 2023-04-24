@@ -33,7 +33,7 @@ int pid_current;
 ***********************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
-    uint32_t esp_alloc = (uint32_t) mem_alloc(PROCESS_ESP, 6);
+    uint32_t esp_alloc = (uint32_t) mem_alloc(PROCESS_ESP, 0, 6);
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -708,4 +708,15 @@ void process_set_custom(int pid, void *custom) {
     }
 
     plist[place].custom = custom;
+}
+
+scuba_directory_t *process_get_directory(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].scuba_dir;
 }

@@ -28,6 +28,13 @@ void tasked_program() {
     char *path = comm->path;
     free(comm);
 
+    // setup private memory
+
+    uint32_t *physical = i_allign_calloc(0x100000, 4);
+    for (uint32_t i = 0; i < 0x100000; i += 0x1000) {
+        scuba_map(process_get_directory(pid), 0xC0000000 + i, (uint32_t) physical + i);
+    }
+
     // load binary
     fs_read_file(path, (char *) 0xC0000000);
 
@@ -49,6 +56,8 @@ void tasked_program() {
         mem_free_all(pid);
     }
 
+    free(physical);
+
     process_wakeup(ppid);
     process_exit();
 }
@@ -62,7 +71,7 @@ int run_binary(char path[], int argc, char **argv) {
     serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, 2, path);
 
-    comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 6);
+    comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 0, 6);
     comm->argc = argc;
     comm->argv = argv;
     comm->path = path;
