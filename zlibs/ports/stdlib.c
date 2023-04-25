@@ -15,7 +15,7 @@ void init_func() {
 
 void *calloc(uint32_t nmemb, uint32_t lsize) {
     uint32_t size = lsize * nmemb;
-    int addr = c_mem_alloc(size, 1);
+    int addr = c_mem_alloc(size, 0, 1);
     if (addr == 0) return NULL;
     memset((uint8_t *) addr, 0, size);
     return (void *) addr;
@@ -29,7 +29,7 @@ void free(void *mem) {
 }
 
 void *malloc(uint32_t size) {
-    uint32_t addr = c_mem_alloc(size, 1);
+    uint32_t addr = c_mem_alloc(size, 0, 1);
     if (addr == 0) return NULL; // error
     return (void *) addr;
 }
@@ -37,7 +37,7 @@ void *malloc(uint32_t size) {
 void *realloc(void *mem, uint32_t new_size) {
     if (mem == NULL) return malloc(new_size);
     uint32_t addr = (uint32_t) mem;
-    uint32_t new_addr = c_mem_alloc(new_size, 1);
+    uint32_t new_addr = c_mem_alloc(new_size, 0, 1);
     if (new_addr == 0) return NULL;
     memcpy((uint8_t *) new_addr, (uint8_t *) addr, new_size);
     free(mem);

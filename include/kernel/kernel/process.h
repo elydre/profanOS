@@ -1,6 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
+#include <kernel/scubasuit.h>
 #include <type.h>
 
 #define PROCESS_RUNNING  0
@@ -20,6 +21,7 @@ typedef struct {
     proc_rgs_t regs;
     int pid, ppid, priority, state;
     uint32_t esp_addr, sleep_to, run_time;
+    scuba_directory_t *scuba_dir;
     uint8_t *run_mem;
     void *custom;
     char name[64];
@@ -29,6 +31,7 @@ typedef struct {
 // setup and call
 int process_init();
 void schedule(uint32_t ticks);
+
 
 // process gestion
 int process_create(void (*func)(), int priority, char *name);
@@ -53,14 +56,16 @@ int process_generate_pid_list(int *list, int max);
 int process_get_name(int pid, char *name);
 uint32_t process_get_run_time(int pid);
 
-void process_set_bin_mem(int pid, uint8_t *mem);
-uint8_t *process_get_bin_mem(int pid);
+void process_set_bin_mem(int pid, void *mem);
+void *process_get_bin_mem(int pid);
 
 void *process_get_custom(int pid);
 void process_set_custom(int pid, void *custom);
 
 void process_set_priority(int pid, int priority);
 int process_get_priority(int pid);
+
+scuba_directory_t *process_get_directory(int pid);
 
 
 // switch.asm

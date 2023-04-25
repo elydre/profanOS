@@ -1,4 +1,5 @@
 #include <kernel/snowflake.h>
+#include <kernel/scubasuit.h>
 #include <kernel/ramdisk.h>
 #include <kernel/process.h>
 #include <driver/diskiso.h>
@@ -52,7 +53,6 @@ void start_kshell() {
     kprint("exiting kshell can cause a kernel panic\n");
 }
 
-
 void shell_so(char suffix[]) {
     char path[100] = "/bin/";
     str_cat(path, suffix);
@@ -79,20 +79,20 @@ void shell_help() {
 }
 
 void shell_addr() {
-    kprintf("vesa fb: 0x%x\n", vesa_get_framebuffer());
-    kprintf("max add: 0x%x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
-    kprintf("ramdisk: 0x%x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
-    kprintf("diskiso: 0x%x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
-    kprintf("mm base: 0x%x\n", MEM_BASE_ADDR);
-    kprintf("watdily: 0x%x\n", WATDILY_ADDR);
-    kprintf("watfunc: 0x%x\n", WATFUNC_ADDR);
+    kprintf("vesa fb: %x\n", vesa_get_framebuffer());
+    kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
+    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
+    kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
+    kprintf("mm base: %x\n", MEM_BASE_ADDR);
+    kprintf("watdily: %x\n", WATDILY_ADDR);
+    kprintf("watfunc: %x\n", WATFUNC_ADDR);
 }
 
 void shell_mem() {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
-        kprintf("part %d (s: %d, t: %d) -> 0x%x, size: %d\n",
+        kprintf("part %d (s: %d, t: %d) -> %x, size: %x\n",
             index,
             mem_parts[index].state,
             mem_parts[index].task_id,

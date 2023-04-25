@@ -164,7 +164,7 @@ int fclose(FILE *stream) {
     // because we dont actually use streams, we just have to free things
 
     // but we still have to check if the file isnt null
-    if (stream == NULL) {
+    if (stream == NULL || stream == stdout) {
         return 0;
     }
 
@@ -185,7 +185,7 @@ int fclose(FILE *stream) {
 
 int fflush(FILE *stream) {
     // we check if the file is null
-    if (stream == NULL) {
+    if (stream == NULL || stream == stdout) {
         return 0;
     }
     // we check if the file is open for writing
@@ -213,7 +213,7 @@ int fwide(FILE *stream, int mode) {
 
 size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
     // we check if the file is null
-    if (stream == NULL) {
+    if (stream == NULL || stream == stdout) {
         return 0;
     }
     int mode_len = strlen(stream->mode);
@@ -255,14 +255,14 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
         return 0;
     }
 
-    // we check if the file is open for reading
-    if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
-        return 0;
-    }
-
     if (stream == stdout) {
         puts(buffer);
         return count;
+    }
+
+    // we check if the file is open for reading
+    if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
+        return 0;
     }
 
     // we copy char by char from the buffer to the file buffer
@@ -291,7 +291,7 @@ int fgetc(FILE *stream) {
 
 int getc(FILE *stream) {
     // we check if the file is null
-    if (stream == NULL) {
+    if (stream == NULL || stream == stdout) {
         return 0;
     }
     // we check if the file is open for reading
@@ -438,17 +438,17 @@ int printf(const char *restrict format, ...) {
 
 int fprintf(FILE *restrict stream, const char *restrict format, ...) {
     c_serial_print(SERIAL_PORT_A, "WARNING: fprintf is not correctly implemented\n");
-    // if the stream is read only, we can't write to it
-    if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || stream == stdin) {
-        return 0;
-    }
-    // if the stream is stdout or stderr, we use vprintf
+    // if the stream is stdout or stderr, we use vfsprint
     if (stream == stdout || stream == stderr) {
         va_list args;
         va_start(args, format);
         vprintf(format, args);
         va_end(args);
         return strlen(format); // TODO : return the true number of characters written
+    }
+    // if the stream is read only, we can't write to it
+    if (stream == stdin || strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
+        return 0;
     }
     // if the stream is a file, we show an error, it's not implemented yet
     puts("fprintf not implemented for files yet, WHY DO YOU USE IT ?\n");

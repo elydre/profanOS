@@ -1,3 +1,4 @@
+#include <kernel/scubasuit.h>
 #include <driver/serial.h>
 #include <kernel/process.h>
 #include <cpu/timer.h>
@@ -50,9 +51,17 @@ void sys_fatal(char msg[]) {
     sys_stop();
 }
 
-void sys_interrupt(int code) {
+void sys_interrupt(int code, int err_code) {
     /* do not use this function, is
     * reserved for cpu interrupts*/
+
+    serial_kprintf("received interrupt %d from cpu\n", code);
+
+    // page fault issue handler
+    if (code == 14) {
+        scuba_fault_handler(err_code);
+        return;
+    }
 
     ckprint("CPU INTERRUPT ", 0x05);
 
@@ -86,7 +95,7 @@ void sys_interrupt(int code) {
     if (code < 19) ckprint(interrupts[code], 0x0D);
     else ckprint("Reserved", 0x0D);
     kprint("\n");
-    serial_debug("CPU INTERRUPT", msg);
+
     sys_stop();
 }
 

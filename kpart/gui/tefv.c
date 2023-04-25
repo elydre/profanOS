@@ -60,10 +60,12 @@ void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
 void tef_draw_cursor(uint32_t color) {
     if (hidden_cursor) color = 0;
     for (int i = -2; i < 3; i++) {
+        if (cursor_x * FONT_WIDTH + i < 0 || cursor_x * FONT_WIDTH + i >= vesa_get_width()) continue;
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT + FONT_HEIGHT - 1, color);
     }
     for (int i = 0; i < FONT_HEIGHT; i++) {
+        if (cursor_y * FONT_HEIGHT + i < 0 || cursor_y * FONT_HEIGHT + i >= vesa_get_height()) continue;
         vesa_set_pixel(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT + i, color);
     }
 }

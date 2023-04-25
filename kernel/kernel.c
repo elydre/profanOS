@@ -1,6 +1,7 @@
 #include <kernel/filesystem.h>
 #include <kernel/multiboot.h>
 #include <kernel/snowflake.h>
+#include <kernel/scubasuit.h>
 #include <driver/keyboard.h>
 #include <kernel/ramdisk.h>
 #include <kernel/process.h>
@@ -37,7 +38,8 @@ void kernel_main(void *mboot_ptr) {
     status_print(keyboard_init,"Setuping", "PS/2 keyboard");
     status_print(mouse_init,   "Setuping", "PS/2 mouse");
     status_print(init_diskiso, "Checking", "disk in iso mode");
-    status_print(mem_init,     "Initing", "snowflake memory manager");
+    status_print(mem_init,     "Initing", "snowflake physical MM");
+    status_print(scuba_init,   "Loading", "scubasuit virtual MM");
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
     status_print(serial_init,  "Enabling", "serial port (A and B)");

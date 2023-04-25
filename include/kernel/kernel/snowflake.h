@@ -1,10 +1,9 @@
-#ifndef MEM_H
-#define MEM_H
+#ifndef SNOWFLAKE_H
+#define SNOWFLAKE_H
 
 #include <type.h>
 
-
-// SNOWFLAKE memory manager
+// SNOWFLAKE physical memory manager
 
 typedef struct allocated_part_t {
     uint32_t addr;
@@ -23,15 +22,16 @@ typedef struct allocated_part_t {
  * 1: simple alloc  *
  * 2: initial block *
  * 3: mm struct     *
- * 4: bin run       *
+ * 4: run stack     *
  * 5: loaded lib    *
  * 6: as kernel     *
+ * 7: scuba vpage   *
 *********************/
 
 int mem_init();
 
 uint32_t mem_get_alloc_size(uint32_t addr);
-uint32_t mem_alloc(uint32_t size, int state);
+uint32_t mem_alloc(uint32_t size, uint32_t align, int task_id);
 int mem_free_addr(uint32_t addr);
 
 int mem_free_all(int task_id);
