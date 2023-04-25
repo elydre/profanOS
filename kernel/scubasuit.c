@@ -104,6 +104,8 @@ void scuba_process_switch(scuba_directory_t *dir) {
 scuba_directory_t *scuba_directory_create(int target_pid) {
     // allocate a page directory
     scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t), 6);
+
+    dir->to_free_index = 0;
     dir->pid = target_pid;
 
     // setup directory entries
@@ -122,7 +124,7 @@ scuba_directory_t *scuba_directory_create(int target_pid) {
 void scuba_directory_init(scuba_directory_t *dir) {
     // kernel, lib, alloc, from 1Mo to 16Mo
     for (int i = 0; i < 0x4000000; i += 0x1000) {
-        scuba_map(dir, i, i);
+        scuba_map_from_kernel(dir, i, i);
     }
 
     // video memory
@@ -139,7 +141,7 @@ void scuba_directory_init(scuba_directory_t *dir) {
     }
 
     for (uint32_t i = from; i < to; i += 0x1000) {
-        scuba_map(dir, i, i);
+        scuba_map_from_kernel(dir, i, i);
     }
 }
 
@@ -147,11 +149,8 @@ void scuba_directory_destroy(scuba_directory_t *dir) {
     serial_kprintf("destroying directory %d\n", dir->pid);
 
     // free all page tables
-    for (int i = 0; i < 1024; i++) {
-        if (dir->tables[i]) {
-            serial_kprintf("destroying table %d\n", i);
-            free(dir->tables[i]);
-        }
+    for (uint32_t i = 0; i < dir->to_free_index; i++) {
+        free(dir->to_free[i]);
     }
 
     // free the page directory
@@ -164,7 +163,7 @@ void scuba_directory_destroy(scuba_directory_t *dir) {
  *                       *
 **************************/
 
-void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys) {
+void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel) {
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
 
@@ -173,9 +172,23 @@ void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys) {
 
     // if the page table doesn't exist, create it
     if (!table) {
-        serial_kprintf("creating table %d\n", table_index);
+        if (from_kernel) {
+            serial_kprintf("using kernel table %d\n", table_index);
 
-        table = i_allign_calloc(sizeof(scuba_page_table_t), 6);
+            table = kernel_directory->tables[table_index];
+            if (!table) {
+                sys_error("Cannot use non-existant kernel page table");
+                return;
+            }
+            if (!table->pages[(virt / 0x1000) % 1024].present) {
+                sys_error("Address not mapped in kernel page table");
+                return;
+            }
+        } else {
+            serial_kprintf("creating table %d\n", table_index);
+            table = i_allign_calloc(sizeof(scuba_page_table_t), 6);
+            dir->to_free[dir->to_free_index++] = table;
+        }
         dir->tables[table_index] = table;
 
         dir->entries[table_index].present = 1;
@@ -185,6 +198,8 @@ void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys) {
         dir->entries[table_index].unused = 0;
         dir->entries[table_index].frame = (uint32_t) table / 0x1000;
     }
+
+    if (from_kernel) return;
 
     // get the page index
     uint32_t page_index = (virt / 0x1000) % 1024;

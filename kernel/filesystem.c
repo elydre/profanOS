@@ -48,11 +48,12 @@ int filesys_init() {
     uint32_t root_sect[SECTOR_SIZE];
     ramdisk_read_sector(0, root_sect);
 
-    if (!(root_sect[0] & 0x100)) {
+    if (!(root_sect[0] & 0x100 && root_sect[1] == '/' && root_sect[2] == 0)) {
         // TODO: init filesystem on empty disk
         // i_create_dir(0, "/");
         sys_fatal("Invalid root sector");
     }
+
     return 0;
 }
 

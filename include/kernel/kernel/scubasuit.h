@@ -4,6 +4,11 @@
 #include <cpu/isr.h>
 #include <type.h>
 
+// SCUBASUIT virtual memory manager
+
+// stadard page size
+#define PAGE_SIZE 4096
+
 // Max 4KB per page
 typedef struct {
     uint32_t present :  1;
@@ -34,13 +39,15 @@ typedef struct {
 typedef struct {
     scuba_dir_entry_t entries[1024];
     scuba_page_table_t *tables[1024];
+
+    uint32_t to_free_index;
+    void *to_free[1024];
+
     uint32_t pid;
 } scuba_directory_t;
 
-
-// SCUBASUIT virtual memory manager
-
-#define PAGE_SIZE 4096
+#define scuba_map(dir, virt, phys) scuba_map_func(dir, virt, phys, 0)
+#define scuba_map_from_kernel(dir, virt, phys) scuba_map_func(dir, virt, phys, 1)
 
 scuba_directory_t *scuba_get_kernel_directory();
 
@@ -56,7 +63,7 @@ scuba_directory_t *scuba_directory_create(int target_pid);
 void scuba_directory_init(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
-void scuba_map(scuba_directory_t *dir, uint32_t virt, uint32_t phys);
+void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);
 void scuba_unmap(scuba_directory_t *dir, uint32_t virt);
 
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
