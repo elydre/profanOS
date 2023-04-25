@@ -319,7 +319,7 @@ void scuba_fault_handler(int err_code) {
         if (scuba_create_virtual(current_directory, faulting_address, RUN_BIN_VEXPD)) {
             sys_error("Failed to create virtual pages");
         } else {
-            serial_kprintf("Created virtual pages for 0x%x\n", faulting_address);
+            serial_kprintf("Created virtual pages for 0x%x (pid: %d)\n", faulting_address, pid);
             return;
         }
     } else {
