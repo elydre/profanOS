@@ -35,7 +35,6 @@ int dily_does_loaded(int lib_id) {
     for (int i = 0; i < lib_count; i++) {
         if (lib_functions[i][0] != (uint32_t) lib_id) 
             continue;
-
         return 1;
     }
     return 0;

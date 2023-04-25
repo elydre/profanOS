@@ -71,6 +71,7 @@ void i_end_sheduler() {
     } else {
         sys_error("sheduler is not running but sheduler is exiting");
     }
+
     sheduler_count--;
 }
 

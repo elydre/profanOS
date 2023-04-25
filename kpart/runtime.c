@@ -1,7 +1,7 @@
 #include <kernel/filesystem.h>
 #include <kernel/snowflake.h>
-#include <driver/serial.h>
 #include <kernel/process.h>
+#include <driver/serial.h>
 #include <minilib.h>
 #include <system.h>
 #include <type.h>
@@ -39,14 +39,7 @@ void tasked_program() {
     free(comm);
 
     // setup private memory
-
-    // we need to allign to 4KB
-    uint32_t physical = mem_alloc(RUN_BIN_VCUNT, 0x1000, 4);
-    mem_set((uint8_t *) physical, 0, RUN_BIN_VCUNT);
-
-    for (uint32_t i = 0; i < RUN_BIN_VCUNT; i += 0x1000) {
-        scuba_map(process_get_directory(pid), RUN_BIN_VBASE + i, (uint32_t) physical + i);
-    }
+    scuba_create_virtual(process_get_directory(pid), RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
 
     // load binary
     fs_read_file(path, (char *) RUN_BIN_VBASE);
@@ -79,9 +72,6 @@ void tasked_program() {
 
         mem_free_all(pid);
     }
-
-    // free the virtual memory
-    free((void *) physical);
 
     // wake up the parent process
     int pstate = process_get_state(ppid);

@@ -154,8 +154,6 @@ void scuba_directory_init(scuba_directory_t *dir) {
 }
 
 void scuba_directory_destroy(scuba_directory_t *dir) {
-    serial_kprintf("destroying directory %d\n", dir->pid);
-
     // free all page tables
     for (uint32_t i = 0; i < dir->to_free_index; i++) {
         free(dir->to_free[i]);
@@ -245,7 +243,7 @@ int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
 
     // map the page
     for (int i = 0; i < count; i++) {
-        if (!scuba_map_func(dir, virt + i * 0x1000, phys + i * 0x1000, 0)) continue;
+        if (!scuba_map(dir, virt + i * 0x1000, phys + i * 0x1000)) continue;
         sys_error("Failed to map page");
         return 1;
     }
@@ -314,9 +312,6 @@ void scuba_fault_handler(int err_code) {
     uint32_t faulting_address;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
-    // print the error message
-    serial_kprintf("Page fault at 0x%x\n", faulting_address);
-
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
@@ -346,5 +341,7 @@ void scuba_fault_handler(int err_code) {
     if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
         process_wakeup(process_get_ppid(pid));
 
-    process_exit();
+    if (process_exit()) {
+        sys_fatal("Failed to exit process");
+    }
 }

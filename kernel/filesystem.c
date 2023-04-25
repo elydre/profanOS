@@ -50,7 +50,6 @@ int filesys_init() {
 
     if (!(root_sect[0] & 0x100 && root_sect[1] == '/' && root_sect[2] == 0)) {
         // TODO: init filesystem on empty disk
-        // i_create_dir(0, "/");
         sys_fatal("Invalid root sector");
     }
 

@@ -3,12 +3,12 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SCS-15"
-#define KERNEL_EDITING  "scubasuit"
+#define KERNEL_VERSION  "0.12.1"
+#define KERNEL_EDITING  "generic"
 
-#define PROCESS_MAX     20
+#define PROCESS_MAX     20          // max process count
 #define KERNEL_PRIORITY 5           // default kernel process priority
-#define RAMDISK_SECTOR  4096
+#define RAMDISK_SECTOR  4096        // ramdisk sector count
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define RUN_DEFAULT     "/bin/shell.bin"
 

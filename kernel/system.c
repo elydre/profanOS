@@ -54,7 +54,8 @@ void sys_interrupt(int code, int err_code) {
 
     serial_kprintf("received interrupt %d from cpu\n", code);
 
-    if (code == 14) {   // page fault
+    // page fault issue handler
+    if (code == 14) {
         scuba_fault_handler(err_code);
         return;
     }

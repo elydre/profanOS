@@ -3,7 +3,6 @@
 
 #include <type.h>
 
-
 // SNOWFLAKE physical memory manager
 
 typedef struct allocated_part_t {

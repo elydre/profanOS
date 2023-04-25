@@ -255,3 +255,4 @@ void status_print(int (*func)(), char *verb, char *noun) {
 
     set_cursor_offset(new_cursor);
 }
+

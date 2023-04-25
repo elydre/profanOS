@@ -1,6 +1,4 @@
-#include <driver/keyboard.h>
 #include <cpu/ports.h>
-#include <cpu/timer.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
 #include <system.h>

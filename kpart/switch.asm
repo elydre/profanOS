@@ -4,9 +4,9 @@ extern i_end_sheduler
 process_asm_switch:
     pusha
     pushf
-    mov    eax, cr3         ; Push CR3
+    mov    eax, cr3         ; push CR3
     push   eax
-    mov    eax, [esp+0x2c]  ; The first argument, where to save
+    mov    eax, [esp+0x2c]  ; the first argument, where to save
     mov    [eax+0x4], ebx
     mov    [eax+0x8], ecx
     mov    [eax+0xc], edx
@@ -15,7 +15,7 @@ process_asm_switch:
     mov    ebx, [esp+0x24]
     mov    ecx, [esp+0x28]
     mov    edx, [esp+0x14]
-    add    edx, 0x4         ; Remove the return value 
+    add    edx, 0x4         ; remove the return value 
     mov    esi, [esp+0x10]  ; EBP
     mov    edi, [esp+0x4]   ; EFLAG
     mov    [eax], ebx
@@ -25,8 +25,8 @@ process_asm_switch:
     mov    [eax+0x24], edi
     pop    ebx              ; CR3
     mov    [eax+0x28], ebx
-    push   ebx              ; Goodbye again
-    mov    eax, [esp+0x30]  ; Now it is the new object
+    push   ebx
+    mov    eax, [esp+0x30]  ; now it is the new object
     mov    ebx, [eax+0x4]   ; EBX
     mov    ecx, [eax+0x8]   ; ECX
     mov    edx, [eax+0xc]   ; EDX
@@ -47,5 +47,5 @@ process_asm_switch:
     mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
-    call i_end_sheduler     ; Call the end of the sheduler (process.c)
-    ret                     ; This ends all
+    call i_end_sheduler     ; all the end of the sheduler (process.c)
+    ret                     ; this ends all

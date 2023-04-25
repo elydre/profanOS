@@ -53,7 +53,6 @@ void start_kshell() {
     kprint("exiting kshell can cause a kernel panic\n");
 }
 
-
 void shell_so(char suffix[]) {
     char path[100] = "/bin/";
     str_cat(path, suffix);

@@ -268,3 +268,4 @@ int mem_get_info(char get_mode, int get_arg) {
     if (get_mode > 5 && get_mode < 13) return info[get_mode - 6];
     return -1;
 }
+

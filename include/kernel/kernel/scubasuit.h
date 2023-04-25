@@ -61,8 +61,9 @@ void scuba_directory_init(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
 int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);
-int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
 int scuba_unmap(scuba_directory_t *dir, uint32_t virt);
+
+int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
 
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
 
