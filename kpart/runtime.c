@@ -55,9 +55,6 @@ void tasked_program() {
     int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
     main(argc, argv);
 
-    // free the stack
-    free((void *) stack);
-
     // free forgeted allocations
     int not_free_mem = mem_get_info(7, pid);
 
@@ -72,6 +69,17 @@ void tasked_program() {
 
         mem_free_all(pid);
     }
+
+    // free the path
+    free((void *) path);
+
+    // free the argv
+    for (int i = 0; i < argc; i++)
+        free((void *) argv[i]);
+    free((void *) argv);
+
+    // free the stack
+    free((void *) stack);
 
     // wake up the parent process
     int pstate = process_get_state(ppid);
@@ -88,10 +96,22 @@ int run_binary(char path[], int argc, char **argv) {
     serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, 2, path);
 
+    // duplicate path
+    char *npath = malloc(str_len(path) + 1);
+    str_cpy(npath, path);
+
+    // duplicate argv
+    char **nargv = malloc(sizeof(char *) * argc);
+
+    for (int i = 0; i < argc; i++) {
+        nargv[i] = malloc(str_len(argv[i]) + 1);
+        str_cpy(nargv[i], argv[i]);
+    }
+
     comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 0, 6);
     comm->argc = argc;
-    comm->argv = argv;
-    comm->path = path;
+    comm->argv = nargv;
+    comm->path = npath;
 
     process_set_bin_mem(pid, comm);
     process_handover(pid);
