@@ -372,7 +372,7 @@ void refresh_mouse(desktop_t *desktop) {
                 window_set_buttons_to_unclicked(window);
                 continue;
             }
-            
+
             // check if the pixel ender the mouse is displayed
             if (window->visible[mouse_x - window->x + (mouse_y - window->y) * window->width] == 0) {
                 window_set_buttons_to_unclicked(window);
