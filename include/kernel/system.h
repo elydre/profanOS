@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.12.1"
+#define KERNEL_VERSION  "0.12.1b"
 #define KERNEL_EDITING  "windaube"
 
 #define PROCESS_MAX     20          // max process count
