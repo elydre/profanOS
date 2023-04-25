@@ -5,11 +5,6 @@
 #include <syscall.h>
 #include <stdlib.h>
 
-int is_running;
-
-void exit_callback(clickevent_t *event) {
-    is_running = 0;
-}
 
 int main(int argc, char **argv) {
     // wake up the parent process
@@ -20,15 +15,14 @@ int main(int argc, char **argv) {
 
     // create a window and add an exit button
     window_t *window = window_create(main_desktop, "on top", 380, 220, 100, 100, 0, 0, 1);
-    wadds_create_exitbt(window, exit_callback);
+    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     // set the window background to black
     wadds_fill(window, 0x000000);
     window_refresh(window);
 
-    is_running = 1;
-    while (is_running) {
+    while (!wadds_is_clicked(exit_button)) {
         ms_sleep(200);
     }
 

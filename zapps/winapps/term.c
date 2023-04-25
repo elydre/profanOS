@@ -7,7 +7,6 @@
 #include <stdlib.h>
 
 char msg[] = "Hello, world!";
-int is_running;
 
 #define WINW_HEIGHT 208
 #define FONT_HEIGHT 16
@@ -36,10 +35,6 @@ uint32_t color_code_convert(char code) {
         case 'F': return 0x000000;
     }
     return 0;
-}
-
-void exit_callback(clickevent_t *event) {
-    is_running = 0;
 }
 
 void print_from_ocm(window_t *window) {
@@ -97,12 +92,11 @@ int main(int argc, char **argv) {
 
     // create a window and add an exit button
     window_t *window = window_create(main_desktop, "gui term", 500, 450, 208 * 2, 208, 0, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
-    is_running = 1;
     int last_refresh, last_update = 0;
-    while (is_running) {
+    while (!wadds_is_clicked(exit_button)) {
         // check if the terminal has been updated
         last_update = ocm_get_last_update(MONITORED_OCM);
         if (last_update == last_refresh) {

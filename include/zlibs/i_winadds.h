@@ -7,7 +7,9 @@
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
-#define wadds_create_exitbt ((button_t *(*)(window_t *, void (*)(clickevent_t *))) get_func_addr(WADDS_ID, 2))
+#define wadds_is_clicked(button) ((button)->is_clicked)
+
+#define wadds_create_exitbt ((button_t *(*)(window_t *)) get_func_addr(WADDS_ID, 2))
 #define wadds_line ((void (*)(window_t *, int, int, int, int, uint32_t)) get_func_addr(WADDS_ID, 3))
 #define wadds_rect ((void (*)(window_t *, int, int, int, int, int)) get_func_addr(WADDS_ID, 4))
 #define wadds_putc ((void (*)(window_t *, char, int, int, uint32_t, uint32_t)) get_func_addr(WADDS_ID, 5))

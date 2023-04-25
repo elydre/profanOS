@@ -10,8 +10,6 @@
 #define FOCAL_DISTANCE 100
 #define CUBE_COLOR 0xFFFFFF
 
-int is_running;
-
 typedef struct point3_t {
     int x;
     int y;
@@ -44,10 +42,6 @@ shape_t rotate(shape_t *shape, int x, int y, int z);
 void draw(shape_t *shape, window_t *window);
 int show_fps(window_t *window, int time);
 
-void exit_callback(clickevent_t *event) {
-    is_running = 0;
-}
-
 int main(int argc, char** argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
@@ -57,14 +51,13 @@ int main(int argc, char** argv) {
 
     // create a window and add an exit button
     window_t *window = window_create(main_desktop, "3D cube", 200, 200, 200, 200, 0, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     shape_t shape = cube(120);
     int time;
 
-    is_running = 1;
-    for (int i = 0; is_running; i = (i + 2) % 360) {
+    for (int i = 0; !wadds_is_clicked(exit_button); i = (i + 2) % 360) {
         shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape, window);
         delete_shape(&new_shape);

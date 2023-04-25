@@ -76,21 +76,13 @@ typedef struct desktop_t {
     uint8_t is_locked;
 } desktop_t;
 
-typedef struct clickevent_t {
-    void *button; // button_t *
-    mouse_t *mouse;
-    int x;
-    int y;
-} clickevent_t;
-
 typedef struct button_t {
     window_t *window;
     int x;
     int y;
     int width;
     int height;
-    int is_clicked;
-    void (*callback)(clickevent_t *);
+    uint8_t is_clicked;
 } button_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
@@ -110,7 +102,7 @@ typedef struct button_t {
 #define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 10))
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 11))
 #define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 12))
-#define create_button ((button_t *(*)(window_t *, int, int, int, int, void (*)(clickevent_t *))) get_func_addr(LIBDAUBE_ID, 13))
+#define create_button ((button_t *(*)(window_t *, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 13))
 #define window_wait_delete ((void (*)(desktop_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 14))
 #define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 15))
 

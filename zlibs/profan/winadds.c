@@ -10,7 +10,7 @@ int main() {
     return 0;
 }
 
-button_t *wadds_create_exitbt(window_t *window, void (*exit_callback)(clickevent_t *)) {
+button_t *wadds_create_exitbt(window_t *window) {
     int x = window->width - 3;
 
     // draw bg rectangle
@@ -36,7 +36,7 @@ button_t *wadds_create_exitbt(window_t *window, void (*exit_callback)(clickevent
         window_set_pixel_out(window, x - 16, i, 0x880000);
     }
 
-    return create_button(window, x - 18, 3, 16, 16, exit_callback);
+    return create_button(window, x - 18, 3, 16, 16);
 }
 
 void wadds_line(window_t *window, int x1, int y1, int x2, int y2, uint32_t color) {

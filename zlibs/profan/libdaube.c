@@ -79,6 +79,7 @@ void window_update_visible(desktop_t *desktop, window_t *window);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
 void set_window_priority(desktop_t *desktop, window_t *window);
 void window_draw_box(desktop_t *desktop, window_t *window);
+void window_set_buttons_to_unclicked(window_t *window);
 void desktop_patch_always_on_top(desktop_t *desktop);
 void func_desktop_refresh(desktop_t *desktop);
 void serial_print_ss(char *str, char *name);
@@ -350,43 +351,62 @@ void refresh_mouse(desktop_t *desktop) {
     int is_clicked = c_mouse_call(2, 0);
     if (is_clicked && !desktop->mouse->already_clicked) {
         if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked");
+
         // we check if the mouse is on a window
         int total = desktop->nb_windows;
-        int *sorted = sort_index_by_priority(desktop->windows, desktop->nb_windows);
-        int has_clicked = 0;
-        // the first element is the one with the lowest priority
-        for (int i = total - 1; i >= 0; i--) {
-            window_t *window = desktop->windows[sorted[i]];
-            if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + window->height) {
-                // click de bouton a check
-                if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on window inside");
-                for (int j = 0; j < window->buttons_count; j++) {
-                    button_t *button = window->button_array[j];
-                    if (desktop->mouse->x - window->x >= button->x && desktop->mouse->x - window->x <= button->x + button->width && desktop->mouse->y - window->y >= button->y && desktop->mouse->y - window->y <= button->y + button->height) {
-                        button->is_clicked = 1;
-                        if (DEBUG_LEVEL > 0) serial_print_ss("button", "clicked");
-                        has_clicked = 1;
-                        break;
-                    }
-                }
-                if (has_clicked) break;
+        int mouse_x = desktop->mouse->x;
+        int mouse_y = desktop->mouse->y;
+        uint8_t alway_clicked = 0;
+        button_t *button;
+
+        for (int i = 0; i < total; i++) {
+            window_t *window = desktop->windows[i];
+
+            if (alway_clicked) {
+                window_set_buttons_to_unclicked(window);
+                continue;
             }
-            if (desktop->mouse->x >= window->x && desktop->mouse->x <= window->x + window->width && desktop->mouse->y >= window->y && desktop->mouse->y <= window->y + 20) {
-                if (window->is_lite) {
-                    if (DEBUG_LEVEL > 2) serial_print_ss("window cant move", "lite");
-                    break;
+
+            // check if the mouse is on the window
+            if (!(mouse_x >= window->x && mouse_x <= window->x + window->width && mouse_y >= window->y && mouse_y <= window->y + window->height)) {
+                window_set_buttons_to_unclicked(window);
+                continue;
+            }
+            
+            // check if the pixel ender the mouse is displayed
+            if (window->visible[mouse_x - window->x + (mouse_y - window->y) * window->width] == 0) {
+                window_set_buttons_to_unclicked(window);
+                continue;
+            }
+
+            serial_print_ss("mouse clicked on window", window->name);
+
+            // check if the mouse is on a button
+            for (int j = 0; j < window->buttons_count; j++) {
+                button = window->button_array[j];
+                if (mouse_x - window->x >= button->x && mouse_x - window->x <= button->x + button->width && mouse_y - window->y >= button->y && mouse_y - window->y <= button->y + button->height) {
+                    serial_print_ss("button", "clicked");
+                    button->is_clicked = 1;
+                    alway_clicked = 1;
+                } else {
+                    button->is_clicked = 0;
                 }
-                if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on window top");
-                is_clicked = 2;
-                desktop->mouse->clicked_window_id = sorted[i];
-                desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
-                desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
-                break;
+            }
+
+            // check if the mouse is on the top of the window
+            if ((!alway_clicked) && (mouse_x >= window->x && mouse_x <= window->x + window->width && mouse_y >= window->y && mouse_y <= window->y + 20)) {
+                if (window->is_lite) {
+                    serial_print_ss("window cant move", "lite");
+                } else {
+                    serial_print_ss("mouse", "clicked on the top bar");
+                    desktop->mouse->clicked_window_id = i;
+                    desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
+                    desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
+                    alway_clicked = 1;
+                }
             }
         }
-        is_clicked--;
-        free(sorted);
-    } else if (is_clicked && desktop->mouse->already_clicked) {
+    } else if (is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_window_id != -1) {
         if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging");
         window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
 
@@ -425,11 +445,9 @@ void refresh_mouse(desktop_t *desktop) {
             }
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
         }
-    } else if (!is_clicked && desktop->mouse->already_clicked) {
+    } else if (!is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_window_id != -1) {
         if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "released");
-        if (desktop->mouse->clicked_window_id == -1) {
-            serial_print_ss("BUG", "clicked_window_id == -1");
-        }
+
         window_t *window = desktop->windows[desktop->mouse->clicked_window_id];
         set_window_priority(desktop, window);
         window_move(window, desktop->mouse->x + desktop->mouse->window_x_dec, desktop->mouse->y + desktop->mouse->window_y_dec);
@@ -437,28 +455,7 @@ void refresh_mouse(desktop_t *desktop) {
         desktop_refresh(desktop);
     }
 
-    if (is_clicked) {
-        desktop->mouse->already_clicked = 1;
-    } else {
-        desktop->mouse->already_clicked = 0;
-    }
-
-    for (int i = 0; i < desktop->nb_windows; i++) {
-        window_t *window = desktop->windows[i];
-        for (int j = 0; j < window->buttons_count; j++) {
-            button_t *button = ((button_t **) window->button_array)[j];
-            if (button->is_clicked) {
-                clickevent_t *event = malloc(sizeof(clickevent_t));
-                event->x = desktop->mouse->x - window->x;
-                event->y = desktop->mouse->y - window->y;
-                event->button = button;
-                event->mouse = desktop->mouse;
-                button->callback(event);
-                free(event);
-                button->is_clicked = 0;
-            }
-        }
-    }
+    desktop->mouse->already_clicked = is_clicked;
 }
 
 desktop_t *desktop_get_main() {
@@ -474,14 +471,13 @@ void window_delete(window_t *window) {
     desktop->func_run_stack_size++;
 }
 
-button_t *create_button(window_t *window, int x, int y, int width, int height, void (*callback)(clickevent_t *)) {
+button_t *create_button(window_t *window, int x, int y, int width, int height) {
     // set button
     button_t *button = malloc(sizeof(button_t));
     button->x = x;
     button->y = y;
     button->width = width;
     button->height = height;
-    button->callback = callback;
     button->window = window;
     button->is_clicked = 0;
     // set in the window
@@ -789,6 +785,12 @@ void window_update_visible(desktop_t *desktop, window_t *window) {
     }
 
     free(sorted);
+}
+
+void window_set_buttons_to_unclicked(window_t *window) {
+    for (int j = 0; j < window->buttons_count; j++) {
+        ((button_t *) window->button_array[j])->is_clicked = 0;
+    }
 }
 
 void serial_print_ss(char *str, char *name) {

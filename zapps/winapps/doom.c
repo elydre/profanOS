@@ -32,7 +32,6 @@ int MAP[] = {
     2, 7, 7, 7, 9, 7, 7, 7, 7, 7
 };
 
-int is_running;
 
 double get_distance(double x, double y, double rad_angle, int *color);
 
@@ -44,9 +43,6 @@ uint32_t convert_color(int color);
 double cos(double x);
 double sin(double x);
 
-void exit_callback(clickevent_t *event) {
-    is_running = 0;
-}
 
 int main(int argc, char **argv) {
     // wake up the parent process
@@ -63,7 +59,7 @@ int main(int argc, char **argv) {
 
     // create a window and add an exit button
     window_t *window = window_create(main_desktop, "doom like", 100, 100, width, height, 0, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     int center, top, bottom;
@@ -79,8 +75,7 @@ int main(int argc, char **argv) {
     c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
 
-    is_running = 1;
-    while (is_running) {
+    while (!wadds_is_clicked(exit_button)) {
         tick_count[1] = c_timer_get_ms() - tick_count[0];
         tick_count[0] = c_timer_get_ms();
 

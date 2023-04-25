@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-int is_running;
 
 typedef struct pid_runtime {
     int pid;
@@ -14,10 +13,6 @@ typedef struct pid_runtime {
     int new_runtime;
     int usage;
 } pid_runtime_t;
-
-void exit_callback(clickevent_t *event) {
-    is_running = 0;
-}
 
 char *get_state(int state) {
     switch (state) {
@@ -41,7 +36,7 @@ int main(int argc, char **argv) {
 
     // create a window and add an exit button
     window_t *window = window_create(main_desktop, "process usage", 100, 450, 350, 208, 0, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     int *running_pid = calloc(20, sizeof(int));
@@ -56,8 +51,7 @@ int main(int argc, char **argv) {
 
     loop_time = 1000;
 
-    is_running = 1;
-    while (is_running) {
+    while (!wadds_is_clicked(exit_button)) {
         start = c_timer_get_ms();
         wadds_fill(window, 0x000000);
 

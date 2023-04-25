@@ -4,11 +4,6 @@
 
 #include <syscall.h>
 
-int is_running;
-
-void exit_callback(clickevent_t *event) {
-    is_running = 0;
-}
 
 int main(int argc, char **argv) {
     // wake up the parent process
@@ -19,7 +14,7 @@ int main(int argc, char **argv) {
 
     // create a window and add an exit button
     window_t *window = window_create(main_desktop, "pong like", 100, 200, 200, 200, 0, 0, 0);
-    wadds_create_exitbt(window, exit_callback);
+    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
 
@@ -34,8 +29,7 @@ int main(int argc, char **argv) {
 
     wadds_fill(window, 0xff0000);
 
-    is_running = 1;
-    while (is_running) {
+    while (!wadds_is_clicked(exit_button)) {
         // draw the old square
 
         for (int i = 0; i < 10; i++) {
