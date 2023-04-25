@@ -12,13 +12,8 @@ ADDONS = {
     "lua": {
         "description": "port of the Lua interpreter for profanOS",
         "files": [
-            {   
-                "name": "lua-core",
-                "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua-core.bin",
-                "path": [profan_path, "out", "zapps", "tools", "lua-core.bin"]
-            },
             {
-                "name": "lua-launcher",
+                "name": "lua",
                 "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.bin",
                 "path": [profan_path, "out", "zapps", "commands", "lua.bin"]
             },
@@ -28,12 +23,7 @@ ADDONS = {
         "description": "port of the Doom game for profanOS",
         "files": [
             {
-                "name": "doom-core",
-                "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom-core.bin",
-                "path": [profan_path, "out", "zapps", "tools", "doom-core.bin"]
-            },
-            {
-                "name": "doom-launcher",
+                "name": "doom",
                 "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.bin",
                 "path": [profan_path, "out", "zapps", "commands", "doom.bin"]
             },

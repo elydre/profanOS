@@ -33,7 +33,7 @@ int pid_current;
 ***********************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
-    uint32_t esp_alloc = (uint32_t) mem_alloc(PROCESS_ESP, 6);
+    uint32_t esp_alloc = (uint32_t) mem_alloc(PROCESS_ESP, 0, 6);
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -61,12 +61,17 @@ int i_pid_to_place(int pid) {
     return ERROR_CODE;
 }
 
-void i_exit_sheduler() {
+void i_end_sheduler() {
+    if (pid_current != 1) {
+        scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
+    }
+
     if (sheduler_state == SHDLR_RUNN) {
         sheduler_state = SHDLR_ENBL;
     } else {
         sys_error("sheduler is not running but sheduler is exiting");
     }
+
     sheduler_count--;
 }
 
@@ -137,13 +142,18 @@ int i_remove_from_shdlr_queue(int pid) {
 }
 
 void i_clean_killed() {
+    need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
+            if (plist[i].pid == pid_current) {
+                need_clean = 1;
+                continue;
+            }
+            scuba_directory_destroy(plist[i].scuba_dir);
             free((void *) plist[i].esp_addr);
             plist[i].state = PROCESS_DEAD;
         }
     }
-    need_clean = 0;
 }
 
 void i_refresh_tsleep_interact() {
@@ -241,6 +251,8 @@ int process_init() {
 
     i_add_to_shdlr_queue(0, KERNEL_PRIORITY);
 
+    kern_proc->scuba_dir = scuba_get_kernel_directory();
+
     // enable sheduler
     sheduler_state = SHDLR_ENBL;
 
@@ -283,6 +295,13 @@ int process_create(void (*func)(), int priority, char *name) {
     new_proc->priority = priority;
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
+    
+    if (pid_incrament == 1) {
+        new_proc->scuba_dir = NULL;
+    } else {
+        new_proc->scuba_dir = scuba_directory_create(pid_incrament);
+        scuba_directory_init(new_proc->scuba_dir);
+    }
 
     return pid_incrament;
 }
@@ -518,7 +537,7 @@ void schedule(uint32_t ticks) {
     }
 
     if (ticks % SCHEDULER_EVRY) {
-        i_exit_sheduler();
+        i_end_sheduler();
         return;
     }
 
@@ -544,7 +563,7 @@ void schedule(uint32_t ticks) {
     if (pid != pid_current) {
         i_process_switch(pid_current, pid, ticks);
     } else {
-        i_exit_sheduler();
+        i_end_sheduler();
     }
 }
 
@@ -587,7 +606,7 @@ int process_get_pid() {
     return pid_current;
 }
 
-void process_set_bin_mem(int pid, uint8_t *mem) {
+void process_set_bin_mem(int pid, void *mem) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -598,7 +617,7 @@ void process_set_bin_mem(int pid, uint8_t *mem) {
     plist[place].run_mem = mem;
 }
 
-uint8_t *process_get_bin_mem(int pid) {
+void *process_get_bin_mem(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -697,4 +716,15 @@ void process_set_custom(int pid, void *custom) {
     }
 
     plist[place].custom = custom;
+}
+
+scuba_directory_t *process_get_directory(int pid) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_error("Process not found");
+        return 0;
+    }
+
+    return plist[place].scuba_dir;
 }

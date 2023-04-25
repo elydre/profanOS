@@ -63,7 +63,9 @@ void hex2str(uint32_t n, char s[]) {
         tmp = n % 16;
         s[i++] = hex[tmp];
     } while ((n /= 16) > 0);
-    s[i] = '\0';
+    s[i] = 'x';
+    s[i+1] = '0';
+    s[i+2] = '\0';
     str_reverse(s);
 }
 
@@ -203,22 +205,23 @@ void free(void *addr) {
 }
 
 void *malloc(uint32_t size) {
-    uint32_t addr = mem_alloc(size, 1);
+    uint32_t addr = mem_alloc(size, 0, 1);
     if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
 void *realloc(void *ptr, uint32_t size) {
     uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = mem_alloc(size, 1);
+    uint32_t new_addr = mem_alloc(size, 0, 1);
     if (new_addr == 0) return NULL;
+    if (addr == 0) return (void *) new_addr;
     mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
     mem_free_addr(addr);
     return (void *) new_addr;
 }
 
 void *calloc(uint32_t size) {
-    int addr = mem_alloc(size, 1);
+    int addr = mem_alloc(size, 0, 1);
     if (addr == 0) return NULL;
     mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;

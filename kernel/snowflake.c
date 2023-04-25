@@ -23,7 +23,7 @@ uint32_t free_count;
 uint32_t phys_size;
 int part_size;
 
-uint32_t mem_alloc(uint32_t size, int state);
+uint32_t mem_alloc(uint32_t size, uint32_t allign, int state);
 int mem_free_addr(uint32_t addr);
 
 int mem_get_phys_size() {
@@ -57,14 +57,14 @@ int mem_init() {
     MEM_PARTS[0].addr = MEM_BASE_ADDR;
     MEM_PARTS[0].next = 1;
 
-    if (mem_alloc(sizeof(allocated_part_t) * part_size, 3) != (uint32_t) MEM_PARTS) {
+    if (mem_alloc(sizeof(allocated_part_t) * part_size, 0, 3) != (uint32_t) MEM_PARTS) {
         sys_fatal("snowflake address is illogical");
     }
 
     // allocate the diskiso module if needed
     if (!diskiso_get_size()) return 0;
 
-    uint32_t start = mem_alloc(diskiso_get_size() * 512, 1);
+    uint32_t start = mem_alloc(diskiso_get_size() * 512, 0, 1);
 
     if (start != diskiso_get_start()) {
         sys_error("diskiso address is illogical");
@@ -106,7 +106,7 @@ void dynamize_mem() {
 
     process_disable_sheduler();
 
-    uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 3);
+    uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 0, 3);
 
     if (new_add == 0) {
         sys_fatal("memory dynamizing failed");
@@ -127,27 +127,32 @@ void dynamize_mem() {
     serial_debug("SNOWFLAKE", "memory successfully dynamized");
 }
 
-uint32_t mem_alloc(uint32_t size, int state) {
+uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     if (!(size && state)) return 0;
     if (state != 3) dynamize_mem();
 
     // traversing the list of allocated parts
     int index, old_index, exit_mode;
-    uint32_t last_addr;
+    uint32_t last_addr, gap;
     index = 0;
 
     last_addr = MEM_BASE_ADDR;
     while (1) {
+        // calculate the gap
+        gap = allign ? (allign - (last_addr % allign)) % allign : 0;
+
         // if the part is free
         if (MEM_PARTS[index].state == 0) {
-            exit_mode = 1 + (last_addr + size > phys_size);
+            exit_mode = 1 + (last_addr + size + gap > phys_size);
             break;
         }
-        if (MEM_PARTS[index].addr - last_addr >= size) {
+
+        if (MEM_PARTS[index].addr - last_addr >= size + gap) {
             // we can allocate the part here
             exit_mode = 0;
             break;
         }
+
         last_addr = MEM_PARTS[index].addr + MEM_PARTS[index].size;
 
         old_index = index;
@@ -164,7 +169,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
 
     int i = exit_mode ? index: new_index;
 
-    MEM_PARTS[i].addr = last_addr;
+    MEM_PARTS[i].addr = last_addr + gap;
     MEM_PARTS[i].size = size;
     MEM_PARTS[i].task_id = (state == 1) ? process_get_pid(): 0;
     MEM_PARTS[i].state = state;
@@ -180,7 +185,7 @@ uint32_t mem_alloc(uint32_t size, int state) {
         MEM_PARTS[new_index].next = index;
     }
     alloc_count++;
-    return last_addr;
+    return last_addr + gap;
 }
 
 int mem_free_addr(uint32_t addr) {
