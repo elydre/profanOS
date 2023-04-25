@@ -54,7 +54,6 @@ void tasked_program() {
     // malloc a new stack
     uint32_t stack = mem_alloc(RUN_BIN_STACK, 0, 4);
     mem_set((uint8_t *) stack, 0, RUN_BIN_STACK);
-    kprintf("Stack: from %x to %x\n", stack, stack + RUN_BIN_STACK);
 
     // setup stack
     asm volatile("mov %0, %%esp" : : "r" (stack + RUN_BIN_STACK));
@@ -84,7 +83,12 @@ void tasked_program() {
     // free the virtual memory
     free((void *) physical);
 
-    process_wakeup(ppid);
+    // wake up the parent process
+    int pstate = process_get_state(ppid);
+
+    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
+        process_wakeup(ppid);
+
     process_exit();
 }
 

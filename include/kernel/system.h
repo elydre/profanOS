@@ -3,24 +3,25 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SCS-14"
+#define KERNEL_VERSION  "SCS-15"
 #define KERNEL_EDITING  "scubasuit"
 
 #define PROCESS_MAX     20
 #define KERNEL_PRIORITY 5           // default kernel process priority
 #define RAMDISK_SECTOR  4096
-#define SCUBA_MAP_TO    0x8000000   // scuba map to 128MB
+#define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define RUN_DEFAULT     "/bin/shell.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
 
+#define RUN_BIN_STACK   0x10000     // stack size (not auto expand)
 #define RUN_BIN_VBASE   0xC0000000  // virtual base address for binary
-#define RUN_BIN_VCUNT   0x80000     // virtual memory count for binary
-#define RUN_BIN_STACK   0x10000     // stack size for binary file
+#define RUN_BIN_VCUNT   0x10000     // virtual memory count (auto expand)
+#define RUN_BIN_VEXPD   16          // sucessive page create during page fault
 
 #define RUN_LIB_STACK_L 0x1000      // left stack size for library
-#define RUN_LIB_STACK_R 0x4000      // right stack size for library
+#define RUN_LIB_STACK_R 0x1000      // right stack size for library
 
 #define PROCESS_ESP     0x4000      // process stack size
 

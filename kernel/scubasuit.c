@@ -1,5 +1,6 @@
 #include <kernel/scubasuit.h>
 #include <kernel/snowflake.h>
+#include <kernel/process.h>
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
@@ -7,6 +8,7 @@
 
 scuba_directory_t *kernel_directory;
 scuba_directory_t *current_directory;
+uint32_t g_map_to_addr;
 
 scuba_directory_t *scuba_get_kernel_directory() {
     return kernel_directory;
@@ -18,32 +20,12 @@ void *i_allign_calloc(size_t size, int state) {
     return ptr;
 }
 
-int scuba_init() {
-    // allocate a page directory
-    kernel_directory = scuba_directory_create(0);
 
-    // map the first 16MB of memory
-    for (int i = 0; i < 0x4000000; i += 0x1000) {
-        scuba_map(kernel_directory, i, i);
-    }
-
-    // video memory
-    if (vesa_does_enable()) {
-        uint32_t from = (uint32_t) vesa_get_framebuffer();
-        uint32_t to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
-        for (uint32_t i = from; i < to; i += 0x1000) {
-            scuba_map(kernel_directory, i, i);
-        }
-    }
-
-    // switch to the new page directory
-    scuba_switch(kernel_directory);
-
-    // enable paging
-    scuba_enable();
-
-    return 0;
-}
+/**************************
+ *                       *
+ *      MMU CONTROL      *
+ *                       *
+**************************/
 
 void scuba_enable() {
     // enable paging
@@ -67,10 +49,45 @@ void scuba_flush_tlb() {
     asm volatile("mov %0, %%cr3":: "r"(cr3));
 }
 
-void scuba_get_current_directory() {
-    // dont use current_directory because it might be NULL
-    uint32_t cr3;
-    asm volatile("mov %%cr3, %0": "=r"(cr3));
+/**************************
+ *                       *
+ *      SCUBA INIT       *
+ *                       *
+**************************/
+
+int scuba_init() {
+    // allocate a page directory
+    kernel_directory = scuba_directory_create(0);
+
+    g_map_to_addr = SCUBA_MAP_TO;
+    uint32_t physical_end = mem_get_info(0, 0);
+
+    if (g_map_to_addr > physical_end) {
+        g_map_to_addr = physical_end;
+        sys_warning("Cannot map memory to desired limit");
+    }
+
+    // map the memory to itself
+    for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {
+        scuba_map(kernel_directory, i, i);
+    }
+
+    // video memory
+    if (vesa_does_enable()) {
+        uint32_t from = (uint32_t) vesa_get_framebuffer();
+        uint32_t to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
+        for (uint32_t i = from; i < to; i += 0x1000) {
+            scuba_map(kernel_directory, i, i);
+        }
+    }
+
+    // switch to the new page directory
+    scuba_switch(kernel_directory);
+
+    // enable paging
+    scuba_enable();
+
+    return 0;
 }
 
 /**************************
@@ -79,20 +96,15 @@ void scuba_get_current_directory() {
  *                       *
 **************************/
 
-#include <kernel/process.h>
-
 void scuba_process_switch(scuba_directory_t *dir) {
     if (current_directory == dir) return;
     if (dir->pid == 1) return;
-
-    serial_kprintf("switching to process %d\n", dir->pid);
 
     // switch to the new page directory
     scuba_switch(dir);
 
     // flush the TLB
     scuba_flush_tlb();
-    scuba_get_current_directory();
 }
 
 /**************************
@@ -122,8 +134,8 @@ scuba_directory_t *scuba_directory_create(int target_pid) {
 }
 
 void scuba_directory_init(scuba_directory_t *dir) {
-    // kernel, lib, alloc, from 1Mo to 16Mo
-    for (int i = 0; i < 0x4000000; i += 0x1000) {
+    // map the memory to itself
+    for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {
         scuba_map_from_kernel(dir, i, i);
     }
 
@@ -134,10 +146,6 @@ void scuba_directory_init(scuba_directory_t *dir) {
         // pixel buffer
         from = (uint32_t) vesa_get_framebuffer();
         to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
-    } else {
-        // text mode
-        from = 0xB8000;
-        to = from + 80 * 25 * 2 + 0x1000;
     }
 
     for (uint32_t i = from; i < to; i += 0x1000) {
@@ -163,7 +171,7 @@ void scuba_directory_destroy(scuba_directory_t *dir) {
  *                       *
 **************************/
 
-void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel) {
+int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel) {
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
 
@@ -173,19 +181,24 @@ void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int fr
     // if the page table doesn't exist, create it
     if (!table) {
         if (from_kernel) {
-            serial_kprintf("using kernel table %d\n", table_index);
-
+            // use the kernel page table
             table = kernel_directory->tables[table_index];
             if (!table) {
                 sys_error("Cannot use non-existant kernel page table");
-                return;
+                return 1;
             }
             if (!table->pages[(virt / 0x1000) % 1024].present) {
                 sys_error("Address not mapped in kernel page table");
-                return;
+                return 1;
             }
         } else {
-            serial_kprintf("creating table %d\n", table_index);
+            // check if we have space to free
+            if (dir->to_free_index >= SCUBA_MAX_TO_FREE) {
+                sys_error("Too many page tables to free");
+                return 1;
+            }
+
+            // create a new page table
             table = i_allign_calloc(sizeof(scuba_page_table_t), 6);
             dir->to_free[dir->to_free_index++] = table;
         }
@@ -199,7 +212,7 @@ void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int fr
         dir->entries[table_index].frame = (uint32_t) table / 0x1000;
     }
 
-    if (from_kernel) return;
+    if (from_kernel) return 0;
 
     // get the page index
     uint32_t page_index = (virt / 0x1000) % 1024;
@@ -209,9 +222,38 @@ void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int fr
     table->pages[page_index].present = 1;
     table->pages[page_index].rw = 1;
     table->pages[page_index].user = 1;
+
+    return 0;
 }
 
-void scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
+int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
+    if (dir->to_free_index + count >= SCUBA_MAX_TO_FREE) {
+        sys_error("Too many pages to free");
+        return 1;
+    }
+
+    // alloc a page
+    uint32_t phys = (uint32_t) i_allign_calloc(0x1000 * count, 7);
+
+    if (!phys) {
+        sys_error("Failed to alloc page");
+        return 1;
+    }
+
+    // add the page to the list of pages to free
+    dir->to_free[dir->to_free_index++] = (void *) phys;
+
+    // map the page
+    for (int i = 0; i < count; i++) {
+        if (!scuba_map_func(dir, virt + i * 0x1000, phys + i * 0x1000, 0)) continue;
+        sys_error("Failed to map page");
+        return 1;
+    }
+
+    return 0;
+}
+
+int scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
 
@@ -219,19 +261,23 @@ void scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
     scuba_page_table_t *table = dir->tables[table_index];
 
     // if the page table doesn't exist, return
-    if (!table) return;
+    if (!table) {
+        sys_error("Page table doesn't exist");        
+        return 1;
+    }
 
     // get the page index
     uint32_t page_index = (virt / 0x1000) % 1024;
 
     // unmap the page
     table->pages[page_index].present = 0;
+    return 0;
 }
 
 /**************************
  *                       *
  *    SCUBA GET PHYS     *
- *                       *
+ *     ( not used )      *
 **************************/
 
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
@@ -255,4 +301,50 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
 
     // return the physical address
     return page->frame * 0x1000;
+}
+
+/***************************
+ *                        *
+ *    SCUBA PAGE FAULT    *
+ *                        *
+***************************/
+
+void scuba_fault_handler(int err_code) {
+    // get the faulting address
+    uint32_t faulting_address;
+    asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
+
+    // print the error message
+    serial_kprintf("Page fault at 0x%x\n", faulting_address);
+
+    int pid = process_get_pid();
+
+    // check if the faulting address is after RUN_BIN_VBASE
+    if (faulting_address >= RUN_BIN_VBASE) {
+        if (scuba_create_virtual(current_directory, faulting_address, RUN_BIN_VEXPD)) {
+            sys_error("Failed to create virtual pages");
+        } else {
+            serial_kprintf("Created virtual pages for 0x%x\n", faulting_address);
+            return;
+        }
+    } else {
+        kprintf("Page fault during %s at %x, pid %d, code %x\n",
+                (err_code & 0x2) ? "write" : "read",
+                faulting_address,
+                pid,
+                err_code
+        );
+        sys_error("Page fault, killing process");
+    }
+
+    // clean memory
+    mem_free_all(pid);
+
+    // wake up the parent process
+    int pstate = process_get_state(process_get_ppid(pid));
+
+    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
+        process_wakeup(process_get_ppid(pid));
+
+    process_exit();
 }

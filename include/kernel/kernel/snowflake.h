@@ -23,9 +23,10 @@ typedef struct allocated_part_t {
  * 1: simple alloc  *
  * 2: initial block *
  * 3: mm struct     *
- * 4: bin run       *
+ * 4: run stack     *
  * 5: loaded lib    *
  * 6: as kernel     *
+ * 7: scuba vpage   *
 *********************/
 
 int mem_init();

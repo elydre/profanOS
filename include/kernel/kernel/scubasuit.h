@@ -8,6 +8,7 @@
 
 // stadard page size
 #define PAGE_SIZE 4096
+#define SCUBA_MAX_TO_FREE 512
 
 // Max 4KB per page
 typedef struct {
@@ -41,7 +42,7 @@ typedef struct {
     scuba_page_table_t *tables[1024];
 
     uint32_t to_free_index;
-    void *to_free[1024];
+    void *to_free[SCUBA_MAX_TO_FREE];
 
     uint32_t pid;
 } scuba_directory_t;
@@ -53,23 +54,18 @@ scuba_directory_t *scuba_get_kernel_directory();
 
 int scuba_init();
 
-void scuba_enable();
-void scuba_switch(scuba_directory_t *dir);
-void scuba_flush_tlb();
-
 void scuba_process_switch(scuba_directory_t *dir);
 
 scuba_directory_t *scuba_directory_create(int target_pid);
 void scuba_directory_init(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
-void scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);
-void scuba_unmap(scuba_directory_t *dir, uint32_t virt);
+int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);
+int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
+int scuba_unmap(scuba_directory_t *dir, uint32_t virt);
 
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
 
-
-
-void scuba_fault_handler(registers_t *reg);
+void scuba_fault_handler(int err_code);
 
 #endif

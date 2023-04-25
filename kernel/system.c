@@ -1,3 +1,4 @@
+#include <kernel/scubasuit.h>
 #include <driver/serial.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
@@ -48,25 +49,14 @@ void sys_fatal(char msg[]) {
 }
 
 void sys_interrupt(int code, int err_code) {
-    (void) (err_code);
-    serial_kprintf("CPU INTERRUPT %d\n", code);
     /* do not use this function, is
     * reserved for cpu interrupts*/
 
+    serial_kprintf("received interrupt %d from cpu\n", code);
+
     if (code == 14) {   // page fault
-        uint32_t faulting_address;
-        asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
-        serial_kprintf("faulting address %x\n", faulting_address);
-        kprintf("faulting address %x\n", faulting_address);
-
-        /* PAGE FAULT PATCH - DEBUG
-        serial_kprintf("during %s\n", err_code & 0x2 ? "write" : "read");
-
-        uint32_t *new_page = (uint32_t *) mem_alloc(0x1000, 0x1000, 1);
-        mem_set((uint8_t *) new_page, 0, 0x1000);
-        scuba_map(process_get_directory(process_get_pid()), faulting_address, (uint32_t) new_page);
+        scuba_fault_handler(err_code);
         return;
-        */
     }
 
     ckprint("CPU INTERRUPT ", 0x05);
@@ -101,7 +91,7 @@ void sys_interrupt(int code, int err_code) {
     if (code < 19) ckprint(interrupts[code], 0x0D);
     else ckprint("Reserved", 0x0D);
     kprint("\n");
-    serial_debug("CPU INTERRUPT", msg);
+
     sys_stop();
 }
 
