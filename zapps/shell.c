@@ -85,8 +85,13 @@ int shell_command(char *buffer) {
         assemble_path("/bin/commands", prefix, file);
         if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
             go(file, old_prefix, suffix);
-        } else if (strcmp(old_prefix, "")) {
-            printf("$3%s$B is not a valid command.\n", old_prefix);
+        } else {
+            assemble_path("/bin/fatpath", prefix, file);
+            if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
+                go(file, old_prefix, suffix);
+            } else if (strcmp(old_prefix, "")) {
+                printf("$3%s$B is not a valid command.\n", old_prefix);
+            }
         }
         free(file);
         free(old_prefix);

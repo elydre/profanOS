@@ -15,7 +15,7 @@ ADDONS = {
             {
                 "name": "lua",
                 "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.bin",
-                "path": [profan_path, "out", "zapps", "commands", "lua.bin"]
+                "path": [profan_path, "out", "zapps", "fatpath", "lua.bin"]
             },
         ]
     },
@@ -25,7 +25,7 @@ ADDONS = {
             {
                 "name": "doom",
                 "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.bin",
-                "path": [profan_path, "out", "zapps", "commands", "doom.bin"]
+                "path": [profan_path, "out", "zapps", "fatpath", "doom.bin"]
             },
             {
                 "name": "doom1.wad",
