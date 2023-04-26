@@ -114,12 +114,12 @@ void vfsprint(char format[], va_list args) {
             buffer[strlen(arg)] = '\0';
             color = sprint_function(buffer, color);
         }
-        else if (format[i] == 'd') {
+        else if (format[i] == 'd' || format[i] == 'i') {
             int arg = va_arg(args, int);
             int_to_ascii(arg, buffer);
             color = sprint_function(buffer, color);
         }
-        else if (format[i] == 'x') {
+        else if (format[i] == 'x' || format[i] == 'p') {
             int arg = va_arg(args, int);
             hex_to_ascii(arg, buffer);
             color = sprint_function(buffer, color);
