@@ -77,7 +77,7 @@ void *SYSCALL_ARRAY[] = {
     // system.h
     sys_reboot,
     sys_shutdown,
-    run_ifexist,
+    run_ifexist_full,
     sys_kinfo,
 
     // serial.h

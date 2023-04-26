@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.12.1b"
+#define KERNEL_VERSION  "0.12.2"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
@@ -50,7 +50,12 @@ void start_kshell();
 void kernel_switch_back();
 
 // runtime.c
-int run_ifexist(char path[], int argc, char **argv);
+#define run_ifexist(path, argc, argv) \
+        run_ifexist_full(path, argc, argv, 0, 0, 0)
+
+int run_ifexist_full(char path[], int argc, char **argv,
+                     uint32_t vbase, uint32_t vcunt,
+                     uint32_t stack);
 
 // dily.c
 int dily_does_loaded(int lib_id);
