@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 
     wadds_fill(window, 0xff0000);
 
-    while (!wadds_is_clicked(exit_button)) {
+    while (!exit_button->clicked_tick) {
         // draw the old square
 
         for (int i = 0; i < 10; i++) {

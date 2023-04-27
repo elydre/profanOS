@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
     loop_time = 1000;
 
-    while (!wadds_is_clicked(exit_button)) {
+    while (!exit_button->clicked_tick) {
         start = c_timer_get_ms();
         wadds_fill(window, 0x000000);
 

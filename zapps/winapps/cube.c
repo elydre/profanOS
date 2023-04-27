@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     shape_t shape = cube(120);
     int time;
 
-    for (int i = 0; !wadds_is_clicked(exit_button); i = (i + 2) % 360) {
+    for (int i = 0; !exit_button->clicked_tick; i = (i + 2) % 360) {
         shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape, window);
         delete_shape(&new_shape);

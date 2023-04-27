@@ -62,7 +62,6 @@ int main(int argc, char **argv) {
             c_serial_print(SERIAL_PORT_A, "menu button clicked\n");
         }
 
-
         if (need_refresh) {
             window_refresh(window);
             need_refresh = 0;

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     // set the window background to black
     wadds_fill(window, 0x000000);
 
-    while (!wadds_is_clicked(exit_button)) {
+    while (!exit_button->clicked_tick) {
         for (int y = -window->height / 2; y < window->height / 2; y++) {
             for (int x = -window->width / 2; x < window->width / 2; x++) {
                 if (main_desktop->mouse->x + x / 2 < 0 || main_desktop->mouse->x + x / 2 >= main_desktop->screen_width || main_desktop->mouse->y + y / 2 < 0 || main_desktop->mouse->y + y / 2 >= main_desktop->screen_height) {

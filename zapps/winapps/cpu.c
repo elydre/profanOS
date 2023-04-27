@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
-    while (!wadds_is_clicked(exit_button)) {
+    while (!exit_button->clicked_tick) {
         last_idle = idle;
         last_total = total;
 

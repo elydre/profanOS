@@ -370,17 +370,18 @@ void refresh_mouse(desktop_t *desktop) {
                 continue;
             }
 
-            serial_print_ss("mouse clicked on window", window->name);
+            if (DEBUG_LEVEL > 2) serial_print_ss("mouse clicked on window", window->name);
 
             // check if the mouse is on a button
             for (int j = 0; j < window->buttons_count; j++) {
                 button = window->button_array[j];
                 if (mouse_x - window->x >= button->x && mouse_x - window->x <= button->x + button->width && mouse_y - window->y >= button->y && mouse_y - window->y <= button->y + button->height) {
-                    serial_print_ss("button", "clicked");
+                    if (DEBUG_LEVEL > 2) serial_print_ss("button", "clicked");
                     desktop->mouse->clicked_button_id = j;
                     desktop->mouse->clicked_window_id = window->usid;
                     desktop->mouse->clicked_on = BUTTON_ID;
                     button->is_clicked = 1;
+                    button->clicked_tick++;
                     i = total;
                     break;
                 }
@@ -400,12 +401,25 @@ void refresh_mouse(desktop_t *desktop) {
             }
             break;
         }
+    } else if (is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_on == BUTTON_ID) {
+        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging on button");
+        id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
+
+        if (id == -1) {
+            if (DEBUG_LEVEL > 2) serial_print_ss("window", "not found");
+            return;
+        }
+
+        window_t *window = desktop->windows[id];
+        button_t *button = window->button_array[desktop->mouse->clicked_button_id];
+        button->clicked_tick++;
+
     } else if (is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_on == WINDOW_ID) {
         if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging");
         id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
 
         if (id == -1) {
-            serial_print_ss("window", "not found");
+            if (DEBUG_LEVEL > 2) serial_print_ss("window", "not found");
             return;
         }
 
@@ -447,10 +461,10 @@ void refresh_mouse(desktop_t *desktop) {
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
         }
     } else if (!is_clicked && desktop->mouse->already_clicked) {
-        serial_print_ss("mouse", "released");
+        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "released");
         id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
         if (id == -1) {
-            serial_print_ss("window", "not found");
+            if (DEBUG_LEVEL > 2) serial_print_ss("window", "not found");
             desktop->mouse->already_clicked = 0;
             desktop->mouse->clicked_on = NOTHING_ID;
             return;
@@ -494,6 +508,7 @@ button_t *create_button(window_t *window, int x, int y, int width, int height) {
     button->height = height;
     button->window = window;
     button->is_clicked = 0;
+    button->clicked_tick = 0;
     // set in the window
     window->button_array = realloc(window->button_array, sizeof(button_t *) * (window->buttons_count + 1));
     window->button_array[window->buttons_count] = button;

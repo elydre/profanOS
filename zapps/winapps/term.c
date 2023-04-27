@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     desktop_refresh(main_desktop);
 
     int last_refresh, last_update = 0;
-    while (!wadds_is_clicked(exit_button)) {
+    while (!exit_button->clicked_tick) {
         // check if the terminal has been updated
         last_update = ocm_get_last_update(MONITORED_OCM);
         if (last_update == last_refresh) {

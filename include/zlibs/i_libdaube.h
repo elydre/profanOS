@@ -92,6 +92,7 @@ typedef struct button_t {
     int width;
     int height;
     uint8_t is_clicked;
+    uint32_t clicked_tick;
 } button_t;
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)

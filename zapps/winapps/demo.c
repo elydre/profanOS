@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     wadds_fill(window, 0x000000);
     window_refresh(window);
 
-    while (!wadds_is_clicked(exit_button)) {
+    while (!exit_button->clicked_tick) {
         ms_sleep(200);
     }
 
