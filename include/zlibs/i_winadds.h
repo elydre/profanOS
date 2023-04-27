@@ -15,5 +15,6 @@
 #define wadds_putc ((void (*)(window_t *, char, int, int, uint32_t, uint32_t)) get_func_addr(WADDS_ID, 5))
 #define wadds_puts ((void (*)(window_t *, char*, int, int, uint32_t, uint32_t)) get_func_addr(WADDS_ID, 6))
 #define wadds_fill ((void (*)(window_t *, uint32_t)) get_func_addr(WADDS_ID, 7))
+#define wadds_draw_bmp ((int (*)(window_t *, char*, int, int)) get_func_addr(WADDS_ID, 8))
 
 #endif

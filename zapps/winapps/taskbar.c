@@ -25,6 +25,10 @@ int main(int argc, char **argv) {
 
     // set the window background
     wadds_fill(window, TASKBAR_COLOR);
+
+    // set profanOS logo
+    printf("set logo with code: %d\n", wadds_draw_bmp(window, "/zada/bmp/profan_logo.bmp", 0, 0));
+
     window_refresh(window);
 
     i_time_t time;

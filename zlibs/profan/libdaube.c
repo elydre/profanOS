@@ -382,7 +382,7 @@ void refresh_mouse(desktop_t *desktop) {
                 continue;
             }
 
-            serial_print_ss("mouse clicked on window", window->name);
+            if (DEBUG_LEVEL > 2) serial_print_ss("mouse clicked on window", window->name);
 
             // check if the mouse is on a button
             for (int j = 0; j < window->buttons_count; j++) {
@@ -399,9 +399,9 @@ void refresh_mouse(desktop_t *desktop) {
             // check if the mouse is on the top of the window
             if ((!alway_clicked) && (mouse_x >= window->x && mouse_x <= window->x + window->width && mouse_y >= window->y && mouse_y <= window->y + 20)) {
                 if (window->is_lite) {
-                    serial_print_ss("window cant move", "lite");
+                    if (DEBUG_LEVEL > 2) serial_print_ss("window cant move", "lite");
                 } else {
-                    serial_print_ss("mouse", "clicked on the top bar");
+                    if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on the top bar");
                     desktop->mouse->clicked_window_id = i;
                     desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
                     desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;

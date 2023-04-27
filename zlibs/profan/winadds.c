@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <i_libdaube.h>
 
@@ -91,4 +92,68 @@ void wadds_fill(window_t *window, uint32_t color) {
             window_set_pixel(window, i, j, color);
         }
     }
+}
+
+/*****************************
+ *   draw bmp error codes   *
+ * 1: file doesn't exist    *
+ * 2: file isn't a bmp      *
+ * 3: window is too small   *
+ * 4: width or height is 0  *
+ * 5: file is not 24/32 bit *
+*****************************/
+
+int wadds_draw_bmp(window_t *window, char *path, int x, int y) {
+    // check if file exists
+    if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 2))
+        return 1;
+    
+    // open file
+    uint8_t *file_content = c_fs_declare_read_array(path);
+    c_fs_read_file(path, file_content);
+
+    // check if file is a bmp
+    if (file_content[0] != 'B' || file_content[1] != 'M') {
+        free(file_content);
+        return 2;
+    }
+
+    // get image data
+    int width = *(int *)(file_content + 18);
+    int height = *(int *)(file_content + 22);
+    int offset = *(int *)(file_content + 10);
+    int size = *(int *)(file_content + 34);
+    uint8_t *data = file_content + offset;
+
+    if (window->width < x + width || window->height < y + height) {
+        free(file_content);
+        return 3;
+    }
+
+    if (width <= 0 || height <= 0) {
+        free(file_content);
+        return 4;
+    }
+
+    int factor = size / (width * height);
+
+    // draw image
+    if (factor != 3 && factor != 4) {
+        free(file_content);
+        return 5;        
+    }
+
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) { 
+            uint32_t color = data[(j * width + i) * factor] |
+                            (data[(j * width + i) * factor + 1] << 8) |
+                            (data[(j * width + i) * factor + 2] << 16);
+
+            if (factor == 4 && data[(j * width + i) * factor + 3] == 0) continue;
+            window_set_pixel(window, x + i, (y + height - 1) - j, color);
+        }
+    }
+
+    free(file_content);
+    return 0;
 }
