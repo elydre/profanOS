@@ -288,6 +288,9 @@ void refresh_mouse(desktop_t *desktop) {
             if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->screen_width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->screen_height) {
                 continue;
             }
+            if (!mouse_img[i + j * MOUSE_WIDTH]) {
+               continue;
+            }
             c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, desktop->screen_buffer[(desktop->mouse->y + j) * desktop->screen_width + (desktop->mouse->x + i)]);
         }
     }
