@@ -3,6 +3,11 @@
 
 #include <type.h>
 
+#define NOTHING_ID  0
+#define DESKTOP_ID  1
+#define WINDOW_ID   2
+#define BUTTON_ID   3
+
 typedef struct libdaude_func_t {
     int func_id;
 
@@ -16,6 +21,7 @@ typedef struct window_t {
     void **button_array; // button_t **
     int buttons_count;
     uint32_t magic;
+    int usid;
 
     char *name;
 
@@ -51,6 +57,9 @@ typedef struct mouse_t {
     int y;
 
     int clicked_window_id;
+    int clicked_button_id;
+    uint8_t clicked_on;
+
     int window_x_dec;
     int window_y_dec;
 
@@ -66,7 +75,7 @@ typedef struct desktop_t {
     int screen_width;
     int screen_height;
     int max_windows;
-    int current_priority;
+    int current_usid;
 
     libdaude_func_t *func_run_stack;
     int func_run_stack_size;

@@ -12,6 +12,15 @@
 #define SCREEN_WIDTH c_vesa_get_width()
 #define SCREEN_HEIGHT c_vesa_get_height()
 
+void refresh_time(window_t *window, i_time_t time, char *char_buffer) {
+    // display the time
+    sprintf_s(char_buffer, 256, "%02d:%02d:%02d", time.hours, time.minutes, time.seconds);
+    wadds_puts(window, char_buffer, SCREEN_WIDTH - (8*8 + 5), 1, 0xffffff, TASKBAR_COLOR);
+    // display the date
+    sprintf_s(char_buffer, 256, "%02d/%02d/%02d", time.day_of_month, time.month, time.year);
+    wadds_puts(window, char_buffer, SCREEN_WIDTH - (8*8 + 5), 17, 0xffffff, TASKBAR_COLOR);    
+}
+
 int main(int argc, char **argv) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
@@ -26,27 +35,40 @@ int main(int argc, char **argv) {
     // set the window background
     wadds_fill(window, TASKBAR_COLOR);
 
-    // set profanOS logo
-    printf("set logo with code: %d\n", wadds_draw_bmp(window, "/zada/bmp/profan_logo.bmp", 0, 0));
+    // set profanOS button
+    button_t *menu_button = create_button(window, 1, 1, TASKBAR_HEIGHT, TASKBAR_HEIGHT);
+    wadds_draw_bmp(window, "/zada/bmp/profan_logo.bmp", 1, 1);
 
     window_refresh(window);
 
-    i_time_t time;
     char *char_buffer = malloc(256);
+    int need_refresh = 0;
+    int old_seconds = 61;
+    i_time_t time;
 
     while (1) {
         // get the current time from rtc
         c_time_get(&time);
-        // display the time
-        sprintf_s(char_buffer, 256, "%02d:%02d:%02d", time.hours, time.minutes, time.seconds);
-        wadds_puts(window, char_buffer, SCREEN_WIDTH - (8*8 + 5), 1, 0xffffff, TASKBAR_COLOR);
-        // display the date
-        sprintf_s(char_buffer, 256, "%02d/%02d/%02d", time.day_of_month, time.month, time.year);
-        wadds_puts(window, char_buffer, SCREEN_WIDTH - (8*8 + 5), 17, 0xffffff, TASKBAR_COLOR);
+        if (time.seconds != old_seconds) {
+            // refresh the time
+            refresh_time(window, time, char_buffer);
+            old_seconds = time.seconds;
+            need_refresh = 1;
+        }
 
-        window_refresh(window);
-        
-        ms_sleep(500);
+
+        // check if the menu button is clicked
+        if (wadds_is_clicked(menu_button)) {
+            c_serial_print(SERIAL_PORT_A, "menu button clicked\n");
+        }
+
+
+        if (need_refresh) {
+            window_refresh(window);
+            need_refresh = 0;
+        }
+
+        ms_sleep(100);
     }
 
     return 0;
