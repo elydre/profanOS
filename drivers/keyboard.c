@@ -3,7 +3,7 @@
 #include <cpu/isr.h>
 #include <system.h>
 
-#define HISTORY_SIZE 4
+#define HISTORY_SIZE 5
 
 static int sc_history[HISTORY_SIZE];
 
@@ -53,9 +53,15 @@ void kb_reset_history() {
 static void keyboard_callback(registers_t *regs) {
     (void) regs;
 
-    for (int i = 0; i < HISTORY_SIZE - 1; i++)
+    int sc = kb_get_scancode();
+
+    if (sc == 0) return;
+    if (sc == sc_history[0]) return;
+
+    for (int i = HISTORY_SIZE - 2; i >= 0; i--) {
         sc_history[i + 1] = sc_history[i];
-    sc_history[0] = kb_get_scancode();
+    }
+    sc_history[0] = sc;
 
     if (sc_history[0] == 59) {
         kernel_switch_back();
