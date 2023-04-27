@@ -307,30 +307,30 @@ void refresh_mouse(desktop_t *desktop) {
 
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
-                continue;
-            }
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;           
+            if (y - 21 < 0 || y - 21 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x + i - 6, y - 21, desktop->screen_buffer[(y - 21) * desktop->screen_width + (x + i - 6)]);
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
-                continue;
-            }
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;
+            if (y + window_height - 22 < 0 || y + window_height - 22 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x + i - 6, y + window_height - 22, desktop->screen_buffer[(y + window_height - 22) * desktop->screen_width + (x + i - 6)]);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x - 6 < 0 || x - 6 >= desktop->screen_width) {
-                continue;
-            }
+            if (x - 6 < 0 || x - 6 >= desktop->screen_width) continue;
+            if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x - 6, y + i - 21, desktop->screen_buffer[(y + i - 21) * desktop->screen_width + (x - 6)]);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) {
-                continue;
-            }
+            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) continue;
+            if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, desktop->screen_buffer[(y + i - 21) * desktop->screen_width + (x + window_width - 7)]);
         }
     }
@@ -422,30 +422,30 @@ void refresh_mouse(desktop_t *desktop) {
 
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
-                continue;
-            }
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;
+            if (y - 21 < 0 || y - 21 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x + i - 6, y - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_width; i++) {
             // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) {
-                continue;
-            }
+            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;
+            if (y + window_height - 22 < 0 || y + window_height - 22 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x + i - 6, y + window_height - 22, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x - 6 < 0 || x - 6 >= desktop->screen_width) {
-                continue;
-            }
+            if (x - 6 < 0 || x - 6 >= desktop->screen_width) continue;
+            if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x - 6, y + i - 21, COLOR_MASTER);
         }
         for (int i = 0; i < window_height; i++) {
             // chek if we are outside the screen
-            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) {
-                continue;
-            }
+            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) continue;
+            if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
+
             c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
         }
     } else if (!is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_window_id != -1) {
