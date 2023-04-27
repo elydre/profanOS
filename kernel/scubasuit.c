@@ -14,7 +14,7 @@ scuba_directory_t *scuba_get_kernel_directory() {
     return kernel_directory;
 }
 
-void *i_allign_calloc(size_t size, int state) {
+void *i_allign_calloc(uint32_t size, int state) {
     void *ptr = (void *) mem_alloc(size, 0x1000, state); // we need to allign to 4KB
     mem_set(ptr, 0, size);
     return ptr;
@@ -309,17 +309,18 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
 
 void scuba_fault_handler(int err_code) {
     // get the faulting address
-    uint32_t faulting_address;
+    uint32_t faulting_address, new_address;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
     if (faulting_address >= RUN_BIN_VBASE) {
-        if (scuba_create_virtual(current_directory, faulting_address, RUN_BIN_VEXPD)) {
+        new_address = faulting_address - (faulting_address % 0x1000);
+        if (scuba_create_virtual(current_directory, new_address, RUN_BIN_VEXPD)) {
             sys_error("Failed to create virtual pages");
         } else {
-            serial_kprintf("Created virtual pages for 0x%x (pid: %d)\n", faulting_address, pid);
+            serial_kprintf("Created virtual pages for %x\n", faulting_address);
             return;
         }
     } else {

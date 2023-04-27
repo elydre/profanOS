@@ -26,6 +26,9 @@ typedef struct {
     int argc;
     char **argv;
     char *path;
+    uint32_t vbase;
+    uint32_t vcunt;
+    uint32_t stack_size;
 } comm_struct_t;
 
 void tasked_program() {
@@ -33,27 +36,25 @@ void tasked_program() {
     int ppid = process_get_ppid(pid);
 
     comm_struct_t *comm = process_get_bin_mem(pid);
-    int argc = comm->argc;
-    char **argv = comm->argv;
-    char *path = comm->path;
-    free(comm);
+    uint32_t stack_size = comm->stack_size;
 
     // setup private memory
-    scuba_create_virtual(process_get_directory(pid), RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
+    scuba_create_virtual(process_get_directory(pid), comm->vbase, comm->vcunt / 0x1000);
 
     // load binary
-    fs_read_file(path, (char *) RUN_BIN_VBASE);
+    fs_read_file(comm->path, (char *) comm->vbase);
 
     // malloc a new stack
-    uint32_t stack = mem_alloc(RUN_BIN_STACK, 0, 4);
-    mem_set((uint8_t *) stack, 0, RUN_BIN_STACK);
+    uint32_t stack = mem_alloc(stack_size, 0, 4);
+    mem_set((uint8_t *) stack, 0, stack_size);
 
     // setup stack
-    asm volatile("mov %0, %%esp" : : "r" (stack + RUN_BIN_STACK));
+    asm volatile("mov %0, %%esp" : : "r" (stack + stack_size));
 
     // call main
-    int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
-    main(argc, argv);
+    int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
+    main(comm->argc, comm->argv);
+
 
     // free forgeted allocations
     int not_free_mem = mem_get_info(7, pid);
@@ -71,12 +72,15 @@ void tasked_program() {
     }
 
     // free the path
-    free((void *) path);
+    free((void *) comm->path);
 
     // free the argv
-    for (int i = 0; i < argc; i++)
-        free((void *) argv[i]);
-    free((void *) argv);
+    for (int i = 0; i < comm->argc; i++)
+        free((void *) comm->argv[i]);
+    free((void *) comm->argv);
+
+    // free comm struct
+    free(comm);
 
     // free the stack
     free((void *) stack);
@@ -90,7 +94,7 @@ void tasked_program() {
     process_exit();
 }
 
-int run_binary(char path[], int argc, char **argv) {
+int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
     // TODO: check if file is executable
 
     serial_debug("RUNTIME", path);
@@ -113,15 +117,24 @@ int run_binary(char path[], int argc, char **argv) {
     comm->argv = nargv;
     comm->path = npath;
 
+    comm->vbase = vbase;
+    comm->vcunt = vcunt;
+    comm->stack_size = stack_size;
+
     process_set_bin_mem(pid, comm);
     process_handover(pid);
 
     return 0;
 }
 
-int run_ifexist(char path[], int argc, char **argv) {
+int run_ifexist_full(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack) {
+    vbase = vbase ? vbase : RUN_BIN_VBASE;
+    vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
+    stack = stack ? stack : RUN_BIN_STACK;
+
     if (fs_does_path_exists(path) && fs_get_sector_type(fs_path_to_id(path)) == 2)
-        return run_binary(path, argc, argv);
+        return run_binary(path, argc, argv, vbase, vcunt, stack);
+
     sys_error("Program not found");
     return -1;
 }
