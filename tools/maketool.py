@@ -35,6 +35,9 @@ ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -I include/zlibs"
 QEMU_SPL = "qemu-system-i386"
 QEMU_KVM = "kvm"
 
+QEMU_SERIAL = "-serial stdio"
+QEMU_AUDIO  = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
+
 # SETTINGS
 
 COMPCT_CMDS = True
@@ -320,16 +323,19 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 
-def qemu_run(iso_run = True, kvm = False):
+def qemu_run(iso_run = True, kvm = False, audio = False):
     if iso_run: make_iso()
 
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
 
+    qemu_args = QEMU_SERIAL
+    if audio: qemu_args += f" {QEMU_AUDIO}"
+
     cprint(COLOR_INFO, "starting qemu...")
 
-    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -serial stdio -boot order=d")
-    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -serial stdio -boot order=a")
+    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d {qemu_args}")
+    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a {qemu_args}")
 
 def extract_disk():
     if not file_exists("HDD.bin"):
@@ -365,6 +371,7 @@ def make_help():
         ("make run",        "run the profanOS.iso in qemu"),
         ("make erun",       "run the profanOS.elf in qemu"),
         ("make krun",       "run the profanOS.iso with kvm"),
+        ("make srun",       "run the profanOS.iso with sound"),
     )
 
     for command, description in aide:
@@ -387,6 +394,7 @@ assos = {
     "run": lambda: qemu_run(True),
     "erun": lambda: qemu_run(False),
     "krun": lambda: qemu_run(True, True),
+    "srun": lambda: qemu_run(True, False, True),
     "kver": get_kernel_version,
 }
 
