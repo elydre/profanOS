@@ -14,8 +14,12 @@
 
 #define COLOR_MASTER 0x6b6e8c
 #define COLOR_TITLES 0xa7a0b9
+
 #define COLOR_GRADN1 0x240865
 #define COLOR_GRADN2 0x0c0f1d
+
+#define COLOR_FOCUS1 0x101b9e
+#define COLOR_FOCUS2 0x031359
 
 #define WINDOW_MAGIC 0xdeadbeef
 #define check_window_fail(w) (w->magic != WINDOW_MAGIC)
@@ -106,6 +110,7 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     desktop->screen_height = screen_height;
 
     desktop->current_usid = 0;
+    desktop->focus_window_usid = 0;
 
     desktop->func_run_stack = calloc(100, sizeof(libdaude_func_t));
     desktop->func_run_stack_size = 0;
@@ -168,6 +173,13 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     window->button_array = NULL;
     window->buffer = calloc(window->height * window->width, sizeof(uint32_t));
     window->visible = calloc(window->height * window->width, sizeof(uint8_t));
+
+    if (!is_lite) {
+        window->topbar_buffer = calloc(window->width * 19, sizeof(uint32_t));
+    } else {
+        window->topbar_buffer = NULL;
+    }
+
     window->changed = 1;
 
     window->magic = WINDOW_MAGIC;
@@ -240,6 +252,7 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
     int out_x = x;
     int out_y = y;
 
+
     if (in_box) {
         if (x >= window->in_width || y >= window->in_height) return;
         out_x += window->in_x - window->x;
@@ -247,6 +260,11 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
     }
 
     if (out_x < 0 || out_x >= window->width || out_y < 0 || out_y >= window->height) return;
+
+    if (!in_box && window->topbar_buffer != NULL && out_y != 0 && out_y < 20) {
+        serial_print_ss("editing topbar for", window->name);
+        window->topbar_buffer[out_y * window->width + out_x] = 0xFF000000 ^ color;
+    }
 
     window->buffer[out_y * window->width + out_x] = color;
 }
@@ -614,6 +632,10 @@ void func_window_delete(window_t *window) {
     free(window->buffer);
     free(window->visible);
 
+    if (window->topbar_buffer != NULL) {
+        free(window->topbar_buffer);
+    }
+
     // remove the window
     for (int i = 0; i < desktop->nb_windows; i++) {
         if (desktop->windows[i] == window) {
@@ -741,6 +763,7 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
     int *sorted = sort_index_by_priority(desktop->windows, total);
     int current_priority = window->priority;
     int is_always_on_top = window->always_on_top;
+
     // the first element is the one with the lowest priority
 
     int new_priority = total - 1;
@@ -756,6 +779,16 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
             desktop->windows[sorted[i]]->changed = 1;
         }
     }
+
+    int old_focus_id = usid_to_id(desktop, desktop->focus_window_usid);
+    desktop->focus_window_usid = window->usid;
+
+    if (old_focus_id != -1) {
+        window_draw_box(desktop, desktop->windows[old_focus_id]);
+        desktop->windows[old_focus_id]->changed = 1;
+    }
+
+    window_draw_box(desktop, window);
 
     free(sorted);
 }
@@ -839,6 +872,11 @@ void serial_print_ss(char *str, char *name) {
 ******************************/
 
 void window_draw_box(desktop_t *desktop, window_t *window) {
+    uint8_t is_focus = (window->usid == desktop->focus_window_usid);
+
+    uint32_t grn1 = (is_focus) ? COLOR_FOCUS1 : COLOR_GRADN1;
+    uint32_t grn2 = (is_focus) ? COLOR_FOCUS2 : COLOR_GRADN2;
+
     // we draw the border of the window
     draw_straight_line(window, 0, 0, window->width - 1, 0, COLOR_MASTER);
     draw_straight_line(window, 0, 0, 0, window->height - 1, COLOR_MASTER);
@@ -853,15 +891,23 @@ void window_draw_box(desktop_t *desktop, window_t *window) {
         draw_straight_line(window, 5, window->height - 6, window->width - 6, window->height - 6, COLOR_MASTER);
 
         // we add the gradians
-        draw_rect_gradian(window, 5, 1, window->width - 9, 19, COLOR_GRADN1, COLOR_GRADN2);
-        draw_rect_gradian(window, 5, window->height - 5, window->width - 9, 4, COLOR_GRADN1, COLOR_GRADN2);
+        draw_rect_gradian(window, 5, 1, window->width - 9, 19, grn1, grn2);
+        draw_rect_gradian(window, 5, window->height - 5, window->width - 9, 4, grn1, grn2);
 
         // and the rectangles
-        draw_rect(window, 1, 1, 4, window->height - 2, COLOR_GRADN1);
-        draw_rect(window, window->width - 5, 1, 4, window->height - 2, COLOR_GRADN2);
+        draw_rect(window, 1, 1, 4, window->height - 2, grn1);
+        draw_rect(window, window->width - 5, 1, 4, window->height - 2, grn2);
 
         // we add the name of the window
         draw_print_wut(window, 6, 4, window->name, COLOR_TITLES);
+    }
+
+    // restore the topbar
+    if (window->topbar_buffer == NULL) return;
+
+    for (int i = 0; i < window->width * 19; i++) {
+        if (!window->topbar_buffer[i] && 0xFF000000) continue;
+        window->buffer[i + window->width] = window->topbar_buffer[i];
     }
 }
 

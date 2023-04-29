@@ -43,6 +43,7 @@ typedef struct window_t {
     int old_height;
 
     uint32_t *buffer;
+    uint32_t *topbar_buffer;
     uint8_t *visible;
 
     uint8_t is_lite;    // no border
@@ -76,6 +77,8 @@ typedef struct desktop_t {
     int screen_height;
     int max_windows;
     int current_usid;
+
+    int focus_window_usid;
 
     libdaude_func_t *func_run_stack;
     int func_run_stack_size;
