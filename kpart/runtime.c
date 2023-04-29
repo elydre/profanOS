@@ -38,8 +38,15 @@ void tasked_program() {
     comm_struct_t *comm = process_get_bin_mem(pid);
     uint32_t stack_size = comm->stack_size;
 
+    int vsize = comm->vcunt;
+    int fsize = fs_get_file_size(comm->path);
+    fsize = fsize + (0x1000 - (fsize % 0x1000));
+
+    if (vsize < fsize * 2)
+        vsize = fsize * 2;
+
     // setup private memory
-    scuba_create_virtual(process_get_directory(pid), comm->vbase, comm->vcunt / 0x1000);
+    scuba_create_virtual(process_get_directory(pid), comm->vbase, vsize / 0x1000);
 
     // load binary
     fs_read_file(comm->path, (char *) comm->vbase);

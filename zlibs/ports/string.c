@@ -7,6 +7,9 @@
 #define TOLOWER(c) ((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
 #endif
 
+#define BITOP(a,b,op) \
+ ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
+
 void init_func();
 
 int main() {
@@ -62,8 +65,7 @@ void bzero(void *s, size_t n) {
 }
 
 
-char *dirname(char *path)
-{
+char *dirname(char *path) {
     static const char null_or_empty_or_noslash[] = ".";
     register char *s;
     register char *last;
@@ -107,7 +109,7 @@ int ffsll(long long int i) {
     return 0;
 }
 
-void *memccpy(void * __restrict s1, const void * __restrict s2, int c, size_t n) {
+void *memccpy(void *restrict s1, const void *restrict s2, int c, size_t n) {
     register char *r1 = s1;
     register const char *r2 = s2;
 
@@ -116,14 +118,14 @@ void *memccpy(void * __restrict s1, const void * __restrict s2, int c, size_t n)
     return (n == (size_t) -1) ? NULL : r1;
 }
 
-Wvoid *memchr(const Wvoid *s, Wint c, size_t n) {
-    puts("Wmemchr not implemented yet, WHY DO YOU USE IT ?\n");
+void *memchr(const void *s, int c, size_t n) {
+    puts("memchr not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
-    register const Wuchar *r1 = (const Wuchar *) s1;
-    register const Wuchar *r2 = (const Wuchar *) s2;
+int memcmp(const void *s1, const void *s2, size_t n) {
+    register const uint8_t *r1 = (const uint8_t *) s1;
+    register const uint8_t *r2 = (const uint8_t *) s2;
 
     int r = 0;
 
@@ -131,7 +133,7 @@ int memcmp(const Wvoid *s1, const Wvoid *s2, size_t n) {
     return r;
 }
 
-void *memcpy(void * __restrict s1, const void * __restrict s2, size_t n) {
+void *memcpy(void *restrict s1, const void *restrict s2, size_t n) {
     register char *r1 = s1;
     register const char *r2 = s2;
 
@@ -171,9 +173,9 @@ void *memmem(const void *haystack, size_t haystacklen,
     return NULL;
 }
 
-Wvoid *memmove(Wvoid *s1, const Wvoid *s2, size_t n) {
-    register Wchar *s = (Wchar *) s1;
-    register const Wchar *p = (const Wchar *) s2;
+void *memmove(void *s1, const void *s2, size_t n) {
+    register char *s = (char *) s1;
+    register const char *p = (const char *) s2;
 
     if (p >= s) {
         while (n) {
@@ -190,9 +192,9 @@ Wvoid *memmove(Wvoid *s1, const Wvoid *s2, size_t n) {
     return s1;
 }
 
-Wvoid *mempcpy(Wvoid * __restrict s1, const Wvoid * __restrict s2, size_t n) {
-   register Wchar *r1 = s1;
-   register const Wchar *r2 = s2;
+void *mempcpy(void *restrict s1, const void *restrict s2, size_t n) {
+   register char *r1 = s1;
+   register const char *r2 = s2;
 
    while (n) {
       *r1++ = *r2++;
@@ -217,11 +219,11 @@ void *memrchr(const void *s, int c, size_t n) {
     return NULL;
 }
 
-Wvoid *memset(Wvoid *s, Wint c, size_t n) {
-    register Wuchar *p = (Wuchar *) s;
+void *memset(void *s, int c, size_t n) {
+    register uint8_t *p = (uint8_t *) s;
 
     while (n) {
-        *p++ = (Wuchar) c;
+        *p++ = (uint8_t) c;
         --n;
     }
 
@@ -240,17 +242,17 @@ void *rawmemchr(const void *s, int c) {
     return (void *) r;    /* silence the warning */
 }
 
-Wchar *stpcpy(register Wchar * __restrict s1, const Wchar * __restrict s2) {
+char *stpcpy(register char *restrict s1, const char *restrict s2) {
     while ( (*s1++ = *s2++) != 0 );
 
     return s1 - 1;
 }
 
-Wchar *stpncpy(register Wchar * __restrict s1,
-                register const Wchar * __restrict s2,
+char *stpncpy(register char *restrict s1,
+                register const char *restrict s2,
                 size_t n) {
-    Wchar *s = s1;
-    const Wchar *p = s2;
+    char *s = s1;
+    const char *p = s2;
 
     while (n) {
         if ((*s = *s2) != 0) s2++; /* Need to fill tail with 0s. */
@@ -260,14 +262,14 @@ Wchar *stpncpy(register Wchar * __restrict s1,
     return s1 + (s2 - p);
 }
 
-int strncasecmp(register const Wchar *s1, register const Wchar *s2, size_t n);
+int strncasecmp(register const char *s1, register const char *s2, size_t n);
 
 int strcasecmp (const char *s1, const char *s2) {
     int result = strncasecmp(s1, s2, -1);
     return result;
 }
 
-int strcasecmp_l(register const Wchar *s1, register const Wchar *s2, locale_t loc) {
+int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc) {
     puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
@@ -277,7 +279,7 @@ char *strcasestr(const char *s1, const char *s2) {
     return 0;
 }
 
-Wchar *strcat(Wchar * __restrict s1, register const Wchar * __restrict s2) {
+char *strcat(char *restrict s1, register const char *restrict s2) {
     size_t i,j;
     for (i = 0; s1[i] != '\0'; i++)
         ;
@@ -287,7 +289,7 @@ Wchar *strcat(Wchar * __restrict s1, register const Wchar * __restrict s2) {
     return s1;
 }
 
-Wchar *strchr(const char *p, int ch) {
+char *strchr(const char *p, int ch) {
     char c;
     c = ch;
     for (;; ++p) {
@@ -298,12 +300,12 @@ Wchar *strchr(const char *p, int ch) {
     }
 }
 
-Wchar *strchrnul(register const Wchar *s, Wint c) {
-    puts("Wstrchrnul not implemented yet, WHY DO YOU USE IT ?\n");
+char *strchrnul(register const char *s, int c) {
+    puts("strchrnul not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
-size_t strlen(const Wchar *s);
-int strcmp(register const Wchar *s1, register const Wchar *s2) {
+size_t strlen(const char *s);
+int strcmp(register const char *s1, register const char *s2) {
     if (strlen(s1) != strlen(s2)) {
         return -1;
     }
@@ -314,7 +316,7 @@ int strcmp(register const Wchar *s1, register const Wchar *s2) {
     return s1[i] - s2[i];
 }
 
-Wchar *strcpy(Wchar * __restrict s1, const Wchar * __restrict s2) {
+char *strcpy(char *restrict s1, const char *restrict s2) {
     int i;
     for (i = 0; s2[i] != '\0'; ++i) {
         s1[i] = s2[i];
@@ -323,16 +325,16 @@ Wchar *strcpy(Wchar * __restrict s1, const Wchar * __restrict s2) {
     return s1;
 }
 
-size_t strcspn(const Wchar *s1, const Wchar *s2) {
+size_t strcspn(const char *s1, const char *s2) {
     puts("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-Wchar *strdup(register const Wchar *s) {
-	size_t l = strlen(s);
-	char *d = malloc(l+1);
-	if (!d) return NULL;
-	return memcpy(d, s, l+1);
+char *strdup(register const char *s) {
+    size_t l = strlen(s);
+    char *d = malloc(l+1);
+    if (!d) return NULL;
+    return memcpy(d, s, l+1);
 }
 
 char *strerror(int errnum) {
@@ -340,8 +342,8 @@ char *strerror(int errnum) {
     return NULL;
 }
 
-size_t strlcat(register char *__restrict dst,
-               register const char *__restrict src,
+size_t strlcat(register char *restrict dst,
+               register const char *restrict src,
                size_t n) {
     size_t len;
     char dummy[1];
@@ -370,11 +372,11 @@ size_t strlcat(register char *__restrict dst,
     return len;
 }
 
-size_t strlcpy(register Wchar *__restrict dst,
-                  register const Wchar *__restrict src,
+size_t strlcpy(register char *restrict dst,
+                  register const char *restrict src,
                   size_t n) {
-    const Wchar *src0 = src;
-    Wchar dummy[1];
+    const char *src0 = src;
+    char dummy[1];
 
     if (!n) {
         dst = dummy;
@@ -393,15 +395,15 @@ size_t strlcpy(register Wchar *__restrict dst,
     return src - src0;
 }
 
-size_t strlen(const Wchar *s) {
-    register const Wchar *p;
+size_t strlen(const char *s) {
+    register const char *p;
 
     for (p=s ; *p ; p++);
 
     return p - s;
 }
 
-int strncasecmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
+int strncasecmp(register const char *s1, register const char *s2, size_t n) {
     int is = strcmp(s1, "PNAMES");
     unsigned char *ucs1 = (unsigned char *) s1;
     unsigned char *ucs2 = (unsigned char *) s2;
@@ -416,14 +418,14 @@ int strncasecmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
     return d;
 }
 
-int strncasecmp_l(register const Wchar *s1, register const Wchar *s2, size_t n, locale_t loc) {
+int strncasecmp_l(register const char *s1, register const char *s2, size_t n, locale_t loc) {
     puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-Wchar *strncat(Wchar * __restrict s1, register const Wchar * __restrict s2,
+char *strncat(char *restrict s1, register const char *restrict s2,
                 size_t n) {
-    register Wchar *s = s1;
+    register char *s = s1;
 
     while (*s++);
     --s;
@@ -436,7 +438,7 @@ Wchar *strncat(Wchar * __restrict s1, register const Wchar * __restrict s2,
     return s1;
 }
 
-int strncmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
+int strncmp(register const char *s1, register const char *s2, size_t n) {
     if (n == 0) return 0;
     do {
         if (*s1 != *s2++)
@@ -448,9 +450,9 @@ int strncmp(register const Wchar *s1, register const Wchar *s2, size_t n) {
 }
 
 
-Wchar *strncpy(Wchar * __restrict s1, register const Wchar * __restrict s2,
+char *strncpy(char *restrict s1, register const char *restrict s2,
                size_t n) {
-    register Wchar *s = s1;
+    register char *s = s1;
 
     while (n) {
         if ((*s = *s2) != 0) s2++; /* Need to fill tail with 0s. */
@@ -461,14 +463,14 @@ Wchar *strncpy(Wchar * __restrict s1, register const Wchar * __restrict s2,
     return s1;
 }
 
-size_t strnlen(const Wchar *s, size_t max);
+size_t strnlen(const char *s, size_t max);
 char *strndup(register const char *s1, size_t n) {
     puts("strndup not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
-size_t strnlen(const Wchar *s, size_t max) {
-    register const Wchar *p = s;
+size_t strnlen(const char *s, size_t max) {
+    register const char *p = s;
 
     while (max && *p) {
         ++p;
@@ -478,34 +480,32 @@ size_t strnlen(const Wchar *s, size_t max) {
     return p - s;
 }
 
-Wchar *strpbrk(const Wchar *s1, const Wchar *s2)
-{
-    register const Wchar *s;
-    register const Wchar *p;
+char *strpbrk(const char *s1, const char *s2) {
+    register const char *s;
+    register const char *p;
 
     for ( s=s1 ; *s ; s++ ) {
         for ( p=s2 ; *p ; p++ ) {
-            if (*p == *s) return (Wchar *) s; /* silence the warning */
+            if (*p == *s) return (char *) s; /* silence the warning */
         }
     }
     return NULL;
 }
 
-Wchar *strrchr(register const  Wchar *s, Wint c)
-{
-    register const Wchar *p;
+char *strrchr(register const  char *s, int c) {
+    register const char *p;
 
     p = NULL;
     do {
-        if (*s == (Wchar) c) {
+        if (*s == (char) c) {
             p = s;
         }
     } while (*s++);
 
-    return (Wchar *) p;            /* silence the warning */
+    return (char *) p;            /* silence the warning */
 }
 
-char *strsep(char ** __restrict s1, const char * __restrict s2) {
+char *strsep(char **restrict s1, const char *restrict s2) {
     puts("strsep not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
@@ -515,9 +515,19 @@ char *strsignal(int signum) {
     return NULL;
 }
 
-size_t strspn(const Wchar *s1, const Wchar *s2) {
-    puts("Wstrspn not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+size_t strspn(const char *s, const char *c) {
+    const char *a = s;
+    size_t byteset[32 / sizeof(size_t)] = { 0 };
+
+    if (!c[0]) return 0;
+    if (!c[1]) {
+        for (; *s == *c; s++);
+        return s-a;
+    }
+
+    for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++);
+    for (; *s && BITOP(byteset, *(unsigned char *)s, &); s++);
+    return s-a;
 }
 
 char *strstr(register char *string, char *substring) {
@@ -550,14 +560,14 @@ char *strstr(register char *string, char *substring) {
     return NULL;
 }
 
-Wchar *strtok(Wchar * __restrict s1, const Wchar * __restrict s2) {
-    puts("Wstrtok not implemented yet, WHY DO YOU USE IT ?\n");
+char *strtok(char *restrict s1, const char *restrict s2) {
+    puts("strtok not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
-Wchar *strtok_r(Wchar * __restrict s1, const Wchar * __restrict s2,
-                 Wchar ** __restrict next_start) {
-    puts("Wstrtok_r not implemented yet, WHY DO YOU USE IT ?\n");
+char *strtok_r(char *restrict s1, const char *restrict s2,
+                 char **restrict next_start) {
+    puts("strtok_r not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 

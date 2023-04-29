@@ -31,10 +31,15 @@ function serial_print(str, serial_port)
     free(ptr)
 end
 
+function ms_sleep(ms)
+    profan.call_c(get_syscall(48), 4, profan.call_c(get_syscall(52)), 4, ms)
+end
+
 return {
     get_syscall = get_syscall,
     serial_print = serial_print,
     clear = clear,
     malloc = malloc,
     free = free,
+    ms_sleep = ms_sleep,
 }

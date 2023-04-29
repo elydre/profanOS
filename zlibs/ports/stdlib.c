@@ -149,15 +149,15 @@ double atof(const char *s) {
 #define isdigit(c) ((c) >= '0' && (c) <= '9')
 int atoi(const char *nptr) {
     int n=0, neg=0;
-	while (isspace(*nptr)) nptr++;
-	switch (*nptr) {
+    while (isspace(*nptr)) nptr++;
+    switch (*nptr) {
         case '-': {neg=1; nptr++; break;}
         case '+': {nptr++; break;}
-	}
-	/* Compute n as a negative number to avoid overflow on INT_MIN */
-	while (isdigit(*nptr))
-		n = 10*n - (*nptr++ - '0');
-	return neg ? n : -n;
+    }
+    /* Compute n as a negative number to avoid overflow on INT_MIN */
+    while (isdigit(*nptr))
+        n = 10*n - (*nptr++ - '0');
+    return neg ? n : -n;
 }
 
 long atol(const char *nptr) {
