@@ -1,4 +1,4 @@
-.PHONY: info elf iso miso disk srcdisk run erun krun arun clean fullclean addons
+.PHONY: info elf iso miso disk srcdisk run erun krun srun clean fullclean addons
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
