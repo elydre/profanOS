@@ -92,8 +92,8 @@ void save_file(char *path) {
         if (data_copy[i] == '\0') data_copy[i] = '\n';
     }
 
-    c_fs_write_in_file(path, (uint8_t *) data_copy, g_data_size);
-    free(data_copy);    
+    c_fs_write_in_file(path, (uint8_t *) data_copy, g_data_size - 1);
+    free(data_copy);
 }
 
 void display_data(int from_line, int to_line, int x_offset) {
@@ -232,6 +232,22 @@ void main_loop(char *path) {
         else if (key == 170 || key == 182) {
             c_serial_print(SERIAL_PORT_A, "shift released\n");
             shift_pressed = 0;
+        }
+
+        // check if key is tab
+        else if (key == 15) {
+            c_serial_print(SERIAL_PORT_A, "tab pressed\n");
+            int spaces = 4 - (g_cursor_pos % 4);
+            for (int i = 0; i < spaces; i++) {
+                // add character to data buffer
+                for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+                    g_data[i] = g_data[i - 1];
+
+                g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = ' ';
+                g_data_size++;
+
+                g_cursor_pos++;
+            }
         }
 
         // check if key is arrow left
