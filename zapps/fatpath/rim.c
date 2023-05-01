@@ -8,6 +8,9 @@
 #include <i_vgui.h>
 #include <i_time.h>
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 #define set_pixel(x, y, color) vgui_set_pixel(g_vgui, x, y, color)
 #define render_screen() vgui_render(g_vgui, 1)
@@ -26,8 +29,12 @@
 #define FONT_W 8
 #define FONT_H 16
 
+#define PRINTABLE_LINES (SCREEN_H / FONT_H)
+
 #define COLOR_BG 0x111111
-#define COLOR_FG 0xffffff
+#define COLOR_T1 0xffffff
+#define COLOR_T2 0xaaaaaa
+
 #define COLOR_F1 0xffff88
 #define COLOR_F2 0xaaaa44
 
@@ -45,6 +52,7 @@ int g_cursor_pos;
 
 void draw_interface() {
     draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
+    draw_line(FONT_W * 3 + 2, FONT_H, FONT_W * 3 + 2, SCREEN_H, COLOR_F2);
 }
 
 void set_title(char *path) {
@@ -52,7 +60,7 @@ void set_title(char *path) {
     strcat(g_title, path);
 
     draw_rect(0, 0, SCREEN_H, FONT_H, COLOR_BG);
-    print(0, 0, g_title, COLOR_FG);
+    print(0, 0, g_title, COLOR_T1);
 }
 
 void load_file(char *path) {
@@ -89,17 +97,26 @@ void save_file(char *path) {
 
 void display_data(int from_line, int to_line) {
     // clear screen
-    draw_rect(0, FONT_H + 1, SCREEN_W, SCREEN_H - FONT_H - 1, COLOR_BG);
+    draw_rect(FONT_W * 3 + 5, FONT_H + 1, SCREEN_W - FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
+    draw_rect(0, FONT_H + 1, FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
 
     // display data
-    int y = FONT_H + 1;
+    int y = FONT_H + 2;
     int pos;
+    char line_str[10];
+    line_str[0] = ' ';
+    line_str[1] = ' ';
     for (int i = from_line; i < to_line; i++) {
-        print(0, y, g_data + g_data_lines[i], COLOR_FG);
+        // line content
+        print(FONT_W * 3 + 5, y, g_data + g_data_lines[i], COLOR_T1);
         if (i == g_cursor_line) {
-            pos = g_cursor_pos * FONT_W;
+            pos = g_cursor_pos * FONT_W + FONT_W * 3 + 5;
             draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
         }
+        // line number
+        itoa(i + 1, line_str + 2, 10);
+        print(0, y, line_str + strlen(line_str) - 3, COLOR_T2);
+
         y += FONT_H;
     }
 }
@@ -120,6 +137,9 @@ void main_loop(char *path) {
     int key, future_cursor_pos;
     uint8_t shift_pressed = 0;
     char c;
+
+    int print_from = 0;
+
     while (1) {
         // wait for key
         key = c_kb_get_scfh();
@@ -271,9 +291,15 @@ void main_loop(char *path) {
             ms_sleep(20);
             continue;
         }
+
+        if (g_cursor_line - 1 < print_from && g_cursor_line > 0) {
+            print_from = g_cursor_line - 1;
+        } else if (g_cursor_line + 3 > print_from + PRINTABLE_LINES) {
+            print_from = g_cursor_line + 3 - PRINTABLE_LINES;
+        }
       
         // display data
-        display_data(0, g_lines_count);
+        display_data(print_from, min(g_lines_count, print_from + PRINTABLE_LINES));
 
         // render screen
         render_screen();
