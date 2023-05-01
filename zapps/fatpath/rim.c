@@ -1,7 +1,9 @@
-#include <syscall.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <syscall.h>
+#include <profan.h>
 
 #include <i_vgui.h>
 #include <i_time.h>
@@ -45,11 +47,44 @@ void draw_interface() {
     draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
 }
 
-void set_title(char *title) {
-    int old_len = strlen(g_title);
-    draw_rect(0, 0, old_len * FONT_W, FONT_H, COLOR_BG);
-    print(0, 0, title, COLOR_FG);
-    strcpy(g_title, title);
+void set_title(char *path) {
+    strcpy(g_title, "rim - ");
+    strcat(g_title, path);
+
+    draw_rect(0, 0, SCREEN_H, FONT_H, COLOR_BG);
+    print(0, 0, g_title, COLOR_FG);
+}
+
+void load_file(char *path) {
+    int file_size = c_fs_get_file_size(path);
+    g_data_size = file_size + 1;
+    file_size += 1024 - (file_size % 1024);
+    printf("file size: %d\n", file_size);
+
+    g_data = realloc(g_data, file_size);
+
+    c_fs_read_file(path, (uint8_t *) g_data);
+
+    for (int i = 0; i < file_size; i++) {
+        if (g_data[i] != '\n') continue;
+        g_data[i] = '\0';
+        g_data_lines[g_lines_count] = i + 1;
+        g_lines_count++;
+        if (g_lines_count % 1024) continue;
+        g_data_lines = realloc(g_data_lines, g_lines_count + 1024);
+    }
+}
+
+void save_file(char *path) {
+    char *data_copy = malloc(g_data_size);
+    memcpy(data_copy, g_data, g_data_size);
+
+    for (int i = 0; i < g_data_size - 1; i++) {
+        if (data_copy[i] == '\0') data_copy[i] = '\n';
+    }
+
+    c_fs_write_in_file(path, (uint8_t *) data_copy, g_data_size);
+    free(data_copy);    
 }
 
 void display_data(int from_line, int to_line) {
@@ -81,7 +116,7 @@ void realloc_buffer() {
     }
 }
 
-void main_loop() {
+void main_loop(char *path) {
     int key, future_cursor_pos;
     uint8_t shift_pressed = 0;
     char c;
@@ -114,6 +149,21 @@ void main_loop() {
             g_lines_count++;
             g_cursor_line++;
             g_cursor_pos = 0;
+        }
+
+        // check if key is escape
+        else if (key == 1) {
+            c_serial_print(SERIAL_PORT_A, "escape pressed\n");
+            // exit
+            return;
+        }
+
+        // check if key is ctrl
+        else if (key == 29) {
+            c_serial_print(SERIAL_PORT_A, "ctrl pressed\n");
+            if (path != NULL) {
+                save_file(path);
+            }
         }
 
         // check if key is backspace
@@ -230,7 +280,26 @@ void main_loop() {
     }
 }
 
+void quit() {
+    vgui_exit(g_vgui);
+    free(g_title);
+    free(g_data);
+    free(g_data_lines);
+}
+
 int main(int argc, char *argv[]) {
+    char *file = NULL;
+    if (argc == 3) {
+        file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
+        assemble_path(argv[1], argv[2], file);
+
+        if (!(c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2)) {
+            printf("$3%s$B file not found\n", file);
+            free(file);
+            return 0;
+        }
+    }
+
     vgui_t vgui = vgui_setup(SCREEN_W, SCREEN_H);
     g_vgui = &vgui;
 
@@ -242,16 +311,26 @@ int main(int argc, char *argv[]) {
     g_data_lines = calloc(1024, sizeof(int));
     g_lines_count = 1;
 
+    g_cursor_line = 0;
+    g_cursor_pos = 0;
+
     clear_screen(COLOR_BG);
     draw_interface();
 
-    set_title("rim - (nothing open)");
+    if (file) {
+        set_title(file);
+        load_file(file);
+    } else {
+        set_title("DEMO MODE");
+    }
 
+    display_data(0, g_lines_count);
     render_screen();
-    main_loop();
 
-    vgui_exit(&vgui);
-    free(g_title);
+    main_loop(file);
+
+    if (file) free(file);
+    quit();
 
     return 0;
 }
