@@ -1,6 +1,8 @@
 #ifndef VGUI_ID
 #define VGUI_ID 1006
 
+#include <type.h>
+
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 typedef struct {
