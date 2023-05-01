@@ -30,6 +30,7 @@
 #define FONT_H 16
 
 #define PRINTABLE_LINES (SCREEN_H / FONT_H)
+#define PRINTABLE_COLS ((SCREEN_W - (FONT_W * 3 + 5)) / FONT_W)
 
 #define COLOR_BG 0x111111
 #define COLOR_T1 0xffffff
@@ -95,7 +96,7 @@ void save_file(char *path) {
     free(data_copy);    
 }
 
-void display_data(int from_line, int to_line) {
+void display_data(int from_line, int to_line, int x_offset) {
     // clear screen
     draw_rect(FONT_W * 3 + 5, FONT_H + 1, SCREEN_W - FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
     draw_rect(0, FONT_H + 1, FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
@@ -108,10 +109,12 @@ void display_data(int from_line, int to_line) {
     line_str[1] = ' ';
     for (int i = from_line; i < to_line; i++) {
         // line content
-        print(FONT_W * 3 + 5, y, g_data + g_data_lines[i], COLOR_T1);
-        if (i == g_cursor_line) {
-            pos = g_cursor_pos * FONT_W + FONT_W * 3 + 5;
-            draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
+        if (x_offset <= cursor_max_at_line(i)) {
+            print(FONT_W * 3 + 5, y, g_data + g_data_lines[i] + x_offset, COLOR_T1);
+            if (i == g_cursor_line) {
+                pos = (g_cursor_pos - x_offset) * FONT_W + FONT_W * 3 + 5;
+                draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
+            }
         }
         // line number
         itoa(i + 1, line_str + 2, 10);
@@ -138,7 +141,8 @@ void main_loop(char *path) {
     uint8_t shift_pressed = 0;
     char c;
 
-    int print_from = 0;
+    int y_offset = 0;
+    int x_offset = 0;
 
     while (1) {
         // wait for key
@@ -292,14 +296,24 @@ void main_loop(char *path) {
             continue;
         }
 
-        if (g_cursor_line - 1 < print_from && g_cursor_line > 0) {
-            print_from = g_cursor_line - 1;
-        } else if (g_cursor_line + 3 > print_from + PRINTABLE_LINES) {
-            print_from = g_cursor_line + 3 - PRINTABLE_LINES;
+        // smart scrolling (y axis)
+        if (g_cursor_line - 1 < y_offset && g_cursor_line > 0) {
+            y_offset = g_cursor_line - 1;
+        } else if (g_cursor_line + 3 > y_offset + PRINTABLE_LINES) {
+            y_offset = g_cursor_line + 3 - PRINTABLE_LINES;
+        }
+
+        // smart scrolling (x axis)
+        if (g_cursor_pos - 1 < x_offset && g_cursor_pos > 0) {
+            x_offset = g_cursor_pos - 1;
+        } else if (g_cursor_pos + 3 > x_offset + PRINTABLE_COLS) {
+            x_offset = g_cursor_pos + 3 - PRINTABLE_COLS;
+        } else if (g_cursor_pos == 0) {
+            x_offset = 0;
         }
       
         // display data
-        display_data(print_from, min(g_lines_count, print_from + PRINTABLE_LINES));
+        display_data(y_offset, min(g_lines_count, y_offset + PRINTABLE_LINES), x_offset);
 
         // render screen
         render_screen();
@@ -350,7 +364,7 @@ int main(int argc, char *argv[]) {
         set_title("DEMO MODE");
     }
 
-    display_data(0, g_lines_count);
+    display_data(0, g_lines_count, 0);
     render_screen();
 
     main_loop(file);
