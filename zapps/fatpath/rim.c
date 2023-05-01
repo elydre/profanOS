@@ -8,6 +8,23 @@
 #include <i_vgui.h>
 #include <i_time.h>
 
+// SETTINGS
+
+#define SCREEN_W 320
+#define SCREEN_H 200
+
+#define FONT_W 8
+#define FONT_H 16
+
+#define COLOR_BG 0x111111
+#define COLOR_T1 0xffffff
+#define COLOR_T2 0xaaaaaa
+
+#define COLOR_F1 0xffff88
+#define COLOR_F2 0xaaaa44
+
+// MACROS
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -23,21 +40,10 @@
                                   g_data_lines[line + 1] - g_data_lines[line] - 1 : \
                                   g_data_size - g_data_lines[line] - 1)
 
-#define SCREEN_W 320
-#define SCREEN_H 200
-
-#define FONT_W 8
-#define FONT_H 16
-
 #define PRINTABLE_LINES (SCREEN_H / FONT_H)
 #define PRINTABLE_COLS ((SCREEN_W - (FONT_W * 3 + 5)) / FONT_W)
 
-#define COLOR_BG 0x111111
-#define COLOR_T1 0xffffff
-#define COLOR_T2 0xaaaaaa
-
-#define COLOR_F1 0xffff88
-#define COLOR_F2 0xaaaa44
+// GLOBALS
 
 vgui_t *g_vgui;
 char *g_title;
@@ -50,6 +56,8 @@ int g_lines_count;
 
 int g_cursor_line;
 int g_cursor_pos;
+
+// FUNCTIONS
 
 void draw_interface() {
     draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
