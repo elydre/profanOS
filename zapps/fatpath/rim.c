@@ -10,13 +10,13 @@
 
 // SETTINGS
 
-#define SCREEN_W 320
-#define SCREEN_H 200
+#define SCREEN_W 640
+#define SCREEN_H 480
 
 #define FONT_W 8
 #define FONT_H 16
 
-#define COLOR_BG 0x111111
+#define COLOR_BG 0x111111 // ((c_timer_get_ms() * 0xf) & 0xAAAAAA)
 #define COLOR_T1 0xffffff
 #define COLOR_T2 0xaaaaaa
 
@@ -30,8 +30,9 @@
 #endif
 
 #define set_pixel(x, y, color) vgui_set_pixel(g_vgui, x, y, color)
-#define render_screen() vgui_render(g_vgui, 1)
+#define render_screen() vgui_render(g_vgui, 0)
 #define print(x, y, text, color) vgui_print(g_vgui, x, y, text, color)
+#define gputc(x, y, c, color, bg) vgui_putc(g_vgui, x, y, c, color, bg)
 #define draw_line(x1, y1, x2, y2, color) vgui_draw_line(g_vgui, x1, y1, x2, y2, color)
 #define draw_rect(x, y, width, height, color) vgui_draw_rect(g_vgui, x, y, width, height, color)
 #define clear_screen(color) vgui_clear(g_vgui, color)
@@ -56,6 +57,8 @@ int g_lines_count;
 
 int g_cursor_line;
 int g_cursor_pos;
+
+char *g_current_screen;
 
 // FUNCTIONS
 
@@ -104,10 +107,37 @@ void save_file(char *path) {
     free(data_copy);
 }
 
+char *calc_new_screen(int from_line, int to_line, int x_offset) {
+    char *new_screen = calloc((PRINTABLE_LINES + 1) * (PRINTABLE_COLS + 1), sizeof(char));
+
+    int line = 0;
+    int max;
+    for (int i = from_line; i < to_line; i++) {
+        max = cursor_max_at_line(i);
+        for (int j = x_offset; j < min(max, x_offset + PRINTABLE_COLS); j++) {
+            new_screen[line * PRINTABLE_COLS + j - x_offset] = g_data[g_data_lines[i] + j];
+        }
+        line++;
+    }
+    return new_screen;
+}
+
 void display_data(int from_line, int to_line, int x_offset) {
-    // clear screen
-    draw_rect(FONT_W * 3 + 5, FONT_H + 1, SCREEN_W - FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
+    if (to_line - from_line > PRINTABLE_LINES) {
+        printf("error: too many lines to display\n");
+        return;
+    }
+
+    // clear line numbers
     draw_rect(0, FONT_H + 1, FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
+
+    char *new_screen = calc_new_screen(from_line, to_line, x_offset);
+
+    static int old_cursor_x = 0;
+    static int old_cursor_y = 0;
+
+    // remove cursor
+    draw_line(old_cursor_x, old_cursor_y, old_cursor_x, old_cursor_y + FONT_H, COLOR_BG);
 
     // display data
     int y = FONT_H + 2;
@@ -115,21 +145,31 @@ void display_data(int from_line, int to_line, int x_offset) {
     char line_str[10];
     line_str[0] = ' ';
     line_str[1] = ' ';
-    for (int i = from_line; i < to_line; i++) {
+    for (int i = 0; i <= to_line - from_line; i++) {
         // line content
-        if (x_offset <= cursor_max_at_line(i)) {
-            print(FONT_W * 3 + 5, y, g_data + g_data_lines[i] + x_offset, COLOR_T1);
-            if (i == g_cursor_line) {
-                pos = (g_cursor_pos - x_offset) * FONT_W + FONT_W * 3 + 5;
-                draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
+        for (int j = 0; j < PRINTABLE_COLS; j++) {
+            if (g_current_screen == NULL || new_screen[i * PRINTABLE_COLS + j] != g_current_screen[i * PRINTABLE_COLS + j]) {
+                gputc(FONT_W * 3 + 5 + j * FONT_W, y, new_screen[i * PRINTABLE_COLS + j], COLOR_T1, COLOR_BG);
             }
         }
-        // line number
-        itoa(i + 1, line_str + 2, 10);
-        print(0, y, line_str + strlen(line_str) - 3, COLOR_T2);
+
+        if (i + from_line == g_cursor_line) {
+            pos = (g_cursor_pos - x_offset) * FONT_W + FONT_W * 3 + 5;
+            draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
+            old_cursor_x = pos;
+            old_cursor_y = y;
+        }
+
+        if (i < to_line - from_line) {
+            // line number
+            itoa(from_line + i + 1, line_str + 2, 10);
+            print(0, y, line_str + strlen(line_str) - 3, COLOR_T2);
+        }
 
         y += FONT_H;
     }
+    if (g_current_screen != NULL) free(g_current_screen);
+    g_current_screen = new_screen;
 }
 
 void realloc_buffer() {
@@ -349,6 +389,7 @@ void quit() {
     free(g_title);
     free(g_data);
     free(g_data_lines);
+    free(g_current_screen);
 }
 
 int main(int argc, char *argv[]) {
@@ -378,6 +419,8 @@ int main(int argc, char *argv[]) {
     g_cursor_line = 0;
     g_cursor_pos = 0;
 
+    g_current_screen = NULL;
+
     clear_screen(COLOR_BG);
     draw_interface();
 
@@ -388,7 +431,7 @@ int main(int argc, char *argv[]) {
         set_title("DEMO MODE");
     }
 
-    display_data(0, g_lines_count, 0);
+    display_data(0, min(g_lines_count, PRINTABLE_LINES), 0);
     render_screen();
 
     main_loop(file);
