@@ -145,3 +145,18 @@ void vgui_clear(vgui_t *vgui, uint32_t color) {
         }
     }
 }
+
+void vgui_putc(vgui_t *vgui, int x, int y, char c, uint32_t color, int bg_color) {
+    unsigned char *glyph;
+    glyph = c_font_get(0) + c * 16;
+    for (int j = 0; j < 16; j++) {
+        for (int k = 0; k < 8; k++) {
+            if (!(glyph[j] & (1 << k))) {
+                if (bg_color == -1) continue;
+                vgui_set_pixel(vgui, x + 8 - k, y + j, bg_color);
+                continue;
+            }
+            vgui_set_pixel(vgui, x + 8 - k, y + j, color);
+        }
+    }
+}
