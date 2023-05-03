@@ -10,7 +10,6 @@ int main(int argc, char **argv) {
     printf("$4FR time:    ");
     i_time_t time;
     c_time_get(&time);
-    time_jet_lag(&time);
     char tmp[3];
     for (int i = 2; i >= 0; i--) {
         itoa(time.full[i], tmp, 10);

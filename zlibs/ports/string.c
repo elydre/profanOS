@@ -1,8 +1,7 @@
 #include <syscall.h>
-#include <i_iolib.h>
-#include <i_string.h>
-#include <type.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <type.h>
 
 #ifndef TOLOWER
 #define TOLOWER(c) ((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
@@ -101,12 +100,12 @@ char *dirname(char *path) {
 }
 
 int ffs(int i) {
-    fsprint("ffs not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ffs not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
 int ffsll(long long int i) {
-    fsprint("ffsll not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ffsll not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -120,7 +119,7 @@ void *memccpy(void *restrict s1, const void *restrict s2, int c, size_t n) {
 }
 
 void *memchr(const void *s, int c, size_t n) {
-    fsprint("Wmemchr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("memchr not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -232,7 +231,7 @@ void *memset(void *s, int c, size_t n) {
 }
 
 void psignal(int signum, register const char *message) {
-    fsprint("psignal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("psignal not implemented yet, WHY DO YOU USE IT ?\n");
 }
 
 void *rawmemchr(const void *s, int c) {
@@ -271,12 +270,12 @@ int strcasecmp (const char *s1, const char *s2) {
 }
 
 int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc) {
-    fsprint("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
 char *strcasestr(const char *s1, const char *s2) {
-    fsprint("strcasestr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcasestr not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -302,9 +301,10 @@ char *strchr(const char *p, int ch) {
 }
 
 char *strchrnul(register const char *s, int c) {
-    fsprint("Wstrchrnul not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strchrnul not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
+
 size_t strlen(const char *s);
 int strcmp(register const char *s1, register const char *s2) {
     if (strlen(s1) != strlen(s2)) {
@@ -327,7 +327,7 @@ char *strcpy(char *restrict s1, const char *restrict s2) {
 }
 
 size_t strcspn(const char *s1, const char *s2) {
-    fsprint("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -339,7 +339,7 @@ char *strdup(register const char *s) {
 }
 
 char *strerror(int errnum) {
-    fsprint("strerror not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strerror not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -420,7 +420,7 @@ int strncasecmp(register const char *s1, register const char *s2, size_t n) {
 }
 
 int strncasecmp_l(register const char *s1, register const char *s2, size_t n, locale_t loc) {
-    fsprint("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -464,9 +464,8 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
     return s1;
 }
 
-size_t strnlen(const char *s, size_t max);
 char *strndup(register const char *s1, size_t n) {
-    fsprint("strndup not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strndup not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -507,12 +506,12 @@ char *strrchr(register const  char *s, int c) {
 }
 
 char *strsep(char **restrict s1, const char *restrict s2) {
-    fsprint("strsep not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strsep not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 char *strsignal(int signum) {
-    fsprint("strsignal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strsignal not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
@@ -562,17 +561,17 @@ char *strstr(register char *string, char *substring) {
 }
 
 char *strtok(char *restrict s1, const char *restrict s2) {
-    fsprint("Wstrtok not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtok not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 char *strtok_r(char *restrict s1, const char *restrict s2,
                  char **restrict next_start) {
-    fsprint("Wstrtok_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtok_r not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
 
 int strverscmp(const char *s1, const char *s2) {
-    fsprint("strverscmp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strverscmp not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
