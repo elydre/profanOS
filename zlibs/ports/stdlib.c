@@ -98,7 +98,6 @@ void atexit(void (*func)()) {
     // c_task_add_exit_func(func); 
 }
 
-// ITS NOT LORIS'S CODE, ITS FROM ROLF NEUGEBAUER OR ANDREW TOLMACH OR SOMETHING
 double atof(const char *s) {
     puts("atof not implemented yet, WHY DO YOU USE IT ?\n");
     return 0.0;
@@ -170,7 +169,6 @@ long long atoll(const char *nptr) {
     return 0;
 }
 
-// ITS NOT LORIS'S CODE, ITS FROM THE STDLIB, DONT KILL ME BEACAUSE OVERFLOWS !
 void *bsearch(const void *key, const void *base, size_t /* nmemb */ high,
               size_t size, int (*compar)(const void *, const void *)) {
     puts("bsearch not implemented yet, WHY DO YOU USE IT ?\n");
@@ -182,7 +180,6 @@ char *canonicalize_file_name (const char *name) {
     return NULL;
 }
 
-// ITS NOT LORIS'S CODE, ITS FROM THE STDLIB
 div_t div(int numer, int denom) {
     div_t result;
     result.quot = numer / denom;
@@ -258,7 +255,6 @@ static const char conv_table[64] =
   's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
 };
 
-// NOT LORIS'S CODE, FROM THE STDLIB
 char *l64a(long int n) {
     unsigned long int m = (unsigned long int) n;
     static char result[7];
