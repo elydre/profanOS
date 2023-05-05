@@ -1,6 +1,6 @@
 local calls = require("calls")
 
-function play_sound(freq)
+local function play_sound(freq)
     -- set the PIT to the desired frequency
 
     local div = 1193180 // freq
@@ -17,13 +17,13 @@ function play_sound(freq)
 end
 
 
-function nosound()
+local function nosound()
     profan.pout(0x61, 1, profan.pin(0x61, 1) & 0xFC)
 end
 
 
 -- demo function
-function beep()
+local function beep()
     -- play 1KHz sound
     play_sound(1000)
 

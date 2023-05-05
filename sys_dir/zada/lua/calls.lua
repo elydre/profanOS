@@ -1,20 +1,20 @@
-function get_syscall(function_id)
+local function get_syscall(function_id)
     return profan.call_c(profan.memval(0x1ffff7, 4), 4, function_id)
 end
 
-function clear()
+local function clear()
     profan.call_c(get_syscall(24))
 end
 
-function malloc(size)
+local function malloc(size)
     return profan.call_c(get_syscall(17), 4, size, 4, 1)
 end
 
-function free(ptr)
+local function free(ptr)
     profan.call_c(get_syscall(18), 4, ptr)
 end
 
-function serial_print(str, serial_port)
+local function serial_print(str, serial_port)
     serial_port = serial_port or 0x3F8
 
     local ptr = malloc(#str + 1)
@@ -31,7 +31,7 @@ function serial_print(str, serial_port)
     free(ptr)
 end
 
-function ms_sleep(ms)
+local function ms_sleep(ms)
     profan.call_c(get_syscall(48), 4, profan.call_c(get_syscall(52)), 4, ms)
 end
 
