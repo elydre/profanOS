@@ -1,4 +1,3 @@
-#include <i_string.h>
 #include <syscall.h>
 #include <string.h>
 #include <type.h>
