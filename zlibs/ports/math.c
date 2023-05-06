@@ -1179,29 +1179,40 @@ long double fdiml(long double a, long double b) {
 }
 
 double floor(double x) {
-    union {double f; uint64_t i;} u = {x};
+    /* union {double f; uint64_t i;} u = {x};
     int e = u.i >> 52 & 0x7ff;
     double_t y;
 
     if (e >= 0x3ff+52 || x == 0)
         return x;
-    /* y = int(x) - x, where int(x) is an integer neighbor of x */
+    // y = int(x) - x, where int(x) is an integer neighbor of x
     if (u.i >> 63)
         y = x - toint + toint - x;
     else
         y = x + toint - toint - x;
-    /* special case because of non-nearest rounding modes */
+    // special case because of non-nearest rounding modes
     if (e <= 0x3ff-1) {
         FORCE_EVAL(y);
         return u.i >> 63 ? -1 : 0;
     }
     if (y > 0)
         return x + y - 1;
-    return x + y;
+    return x + y; */
+
+    // 32-bit version
+    int interger = (int) x;
+    if (x < 0 && x != interger) {
+        interger--;
+    }
+    return (double) interger;
 }
 
 float floorf(float a) {
-    return (float) floor((double)a);
+    int interger = (int) a;
+    if (a < 0 && a != interger) {
+        interger--;
+    }
+    return (float) interger;
 }
 
 long double floorl(long double a) {
