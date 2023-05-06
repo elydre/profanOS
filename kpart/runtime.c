@@ -56,7 +56,7 @@ void tasked_program() {
     mem_set((uint8_t *) stack, 0, stack_size);
 
     // setup stack
-    asm volatile("mov %0, %%esp" : : "r" (stack + stack_size));
+    asm volatile("mov %0, %%esp" :: "r" (stack + stack_size));
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
@@ -112,7 +112,7 @@ int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcun
     str_cpy(npath, path);
 
     // duplicate argv
-    char **nargv = malloc(sizeof(char *) * argc);
+    char **nargv = calloc(sizeof(char *) * (argc + 1));
 
     for (int i = 0; i < argc; i++) {
         nargv[i] = malloc(str_len(argv[i]) + 1);

@@ -199,7 +199,11 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
 
 void free(void *addr) {
     int size = mem_get_alloc_size((uint32_t) addr);
-    if (size == 0) return;
+    if (size == 0) {
+        kprintf("kernel free: %x not allocated\n", addr);
+        return;
+    }
+
     mem_set((uint8_t *) addr, 0, size);
     mem_free_addr((int) addr);
 }
