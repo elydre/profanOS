@@ -54,7 +54,6 @@ void kernel_main(void *mboot_ptr) {
     rainbow_print("\n\nWelcome to profanOS!\n");
     color_print("$C~~ version $4" KERNEL_VERSION "$C~~\n\n");
 
-
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);
 
