@@ -1,4 +1,3 @@
-#include <i_string.h>
 #include <i_iolib.h>
 #include <syscall.h>
 #include <string.h>
@@ -16,6 +15,37 @@ static char current_dir[256] = "/";
 
 void go(char file[], char prefix[], char suffix[]);
 int shell_command(char command[]);
+
+void start_split(char s[], char delim) {
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == delim) {
+            s[i] = '\0';
+            return;
+        }
+    }
+}
+
+void end_split(char s[], char delim) {
+    int limit = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == delim) {
+            limit = i + 1; break;
+        }
+    }
+
+    for (int i = limit; s[i] != '\0'; i++) {
+        s[i - limit] = s[i];
+    }
+    s[strlen(s) - limit] = '\0';    
+}
+
+int str_count(char str[], char thing) {
+    int total = 0;
+    for (uint32_t i = 0; i < strlen(str);i++) {
+        if (str[i] == thing) total++;
+    }
+    return total;
+}
 
 int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
@@ -49,8 +79,8 @@ int shell_command(char *buffer) {
     char *suffix = malloc(strlen(buffer) + 5);
     strcpy(prefix, buffer);
     strcpy(suffix, buffer);
-    str_start_split(prefix, ' ');
-    str_end_split(suffix, ' ');
+    start_split(prefix, ' ');
+    end_split(suffix, ' ');
     if (strlen(buffer) == strlen(suffix)) {
         suffix[0] = '\0';
     }
@@ -114,8 +144,8 @@ void go(char file[], char prefix[], char suffix[]) {
         for (int i = 2; i < argc; i++) {
             argv[i] = malloc(strlen(suffix) + 1);
             strcpy(argv[i], suffix);
-            str_start_split(argv[i], ' ');
-            str_end_split(suffix, ' ');
+            start_split(argv[i], ' ');
+            end_split(suffix, ' ');
         }
         c_run_ifexist(file, argc, argv);
         // free

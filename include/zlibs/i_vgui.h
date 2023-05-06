@@ -21,8 +21,8 @@ typedef struct {
 #define vgui_render(vgui, render_mode) ((void (*)(vgui_t *, int)) get_func_addr(VGUI_ID, 6))(vgui, render_mode)
 #define vgui_draw_rect(vgui, x, y, width, height, color) ((void (*)(vgui_t *, int, int, int, int, uint32_t)) get_func_addr(VGUI_ID, 7))(vgui, x, y, width, height, color)
 #define vgui_print(vgui, x, y, msg, color) ((void (*)(vgui_t *, int, int, char *, uint32_t)) get_func_addr(VGUI_ID, 8))(vgui, x, y, msg, color)
-#define vgui_draw_line(vgui, x1, y1, x2, y2, color) ((void (*)(vgui_t *, int, int, int, int, uint32_t)) get_func_addr(VGUI_ID, 10))(vgui, x1, y1, x2, y2, color)
-#define vgui_clear(vgui, color) ((void (*)(vgui_t *, uint32_t)) get_func_addr(VGUI_ID, 11))(vgui, color)
-#define vgui_putc(vgui, x, y, c, color, bg_color) ((void (*)(vgui_t *, int, int, char, uint32_t, int)) get_func_addr(VGUI_ID, 12))(vgui, x, y, c, color, bg_color)
+#define vgui_draw_line(vgui, x1, y1, x2, y2, color) ((void (*)(vgui_t *, int, int, int, int, uint32_t)) get_func_addr(VGUI_ID, 9))(vgui, x1, y1, x2, y2, color)
+#define vgui_clear(vgui, color) ((void (*)(vgui_t *, uint32_t)) get_func_addr(VGUI_ID, 10))(vgui, color)
+#define vgui_putc(vgui, x, y, c, color, bg_color) ((void (*)(vgui_t *, int, int, char, uint32_t, int)) get_func_addr(VGUI_ID, 11))(vgui, x, y, c, color, bg_color)
 
 #endif

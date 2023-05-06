@@ -8,7 +8,6 @@ int is_leap_year(int year);
 int time_calc_unix(i_time_t *time);
 int time_gen_unix();
 void time_add(i_time_t *time, int seconde);
-void time_jet_lag(i_time_t *time);
 void ms_sleep(uint32_t ms);
 */
 
@@ -16,8 +15,7 @@ void ms_sleep(uint32_t ms);
 #define time_calc_unix ((int (*)(i_time_t *)) get_func_addr(TIME_ID, 3))
 #define time_gen_unix ((int (*)()) get_func_addr(TIME_ID, 4))
 #define time_add ((void (*)(i_time_t *, int)) get_func_addr(TIME_ID, 5))
-#define time_jet_lag ((void (*)(i_time_t *)) get_func_addr(TIME_ID, 6))
-#define ms_sleep ((void (*)(uint32_t)) get_func_addr(TIME_ID, 7))
-#define ms_sleep_perfect ((void (*)(uint32_t)) get_func_addr(TIME_ID, 8))
+#define ms_sleep ((void (*)(uint32_t)) get_func_addr(TIME_ID, 6))
+#define ms_sleep_perfect ((void (*)(uint32_t)) get_func_addr(TIME_ID, 7))
 
 #endif

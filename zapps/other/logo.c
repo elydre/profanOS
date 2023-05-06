@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 
     c_fs_read_file(path, (uint8_t *) str);
 
-    msprint(1, str);
+    color_print(str);
 
     free(str);
 

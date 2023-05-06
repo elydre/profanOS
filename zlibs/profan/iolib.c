@@ -1,8 +1,7 @@
 #include <syscall.h>
-#include <i_string.h>
-#include <i_time.h>
-#include <i_mem.h>
 #include <string.h>
+
+#include <i_time.h>
 
 
 // we need the stdarg of the stdlib
@@ -37,126 +36,83 @@ int clean_buffer(char *buffer, int size) {
     return 0;
 }
 
-char sprint_function(char message[], char default_color) {
-    unsigned int msg_len = strlen(message);
-    char nm[msg_len + 1];
-    for (unsigned int i = 0; i < msg_len; i++) nm[i] = message[i];
-    nm[msg_len] = '$'; nm[msg_len + 1] = '\0';
-    msg_len++;
-    char color = default_color;
-    char buffer[msg_len];
-    int buffer_index = 0;
-
-    char delimiter[] = "0123456789ABCDE";
-    char colors[] = {
-        c_blue, c_green, c_cyan, c_red, c_magenta, c_yellow, c_grey, c_white, 
-        c_dblue, c_dgreen, c_dcyan, c_dred, c_dmagenta, c_dyellow, c_dgrey
-    };
-
-    clean_buffer(buffer, msg_len);
-    for (unsigned int i = 0; i < msg_len; i++) {
-        if (nm[i] != '$') {
-            buffer[buffer_index] = nm[i];
-            buffer_index++;
-            continue;
-        }
-        if (strlen(buffer) > 0) {
-            c_ckprint(buffer, color);
-            buffer_index = clean_buffer(buffer, msg_len);
-        }
-        if (i == msg_len - 1) break;
-        for (int j = 0; j < ARYLEN(delimiter); j++) {
-            if (nm[i + 1] == delimiter[j]) {
-                color = colors[j];
-                i++;
-                break;
-            }
-        }
-    }
-    return color;
-}
-
 /***************************
  * PRINT PUBLIC FUNCTIONS  *
 ***************************/
 
-void msprint(int nb_args, ...) {
-    va_list args;
-    va_start(args, nb_args);
-    char last_color = c_white;
-    for (int i = 0; i < nb_args; i++) {
-        char *arg = va_arg(args, char*);
-        last_color = sprint_function(arg, last_color);
-    }
-    va_end(args);
-}
+uint32_t color_print(char *s) {
+    uint32_t msg_len = strlen(s);
 
-void vfsprint(char format[], va_list args) {
-    char *buffer = malloc(0x1000);
-    clean_buffer(buffer, 0x1000);
-    char color = c_white;
+    uint32_t from = 0;
+    uint32_t i = 0;
+    char c = c_white;
 
-    for (unsigned int i = 0; i <= strlen(format); i++) {
-        if (i == strlen(format)) {
-            sprint_function(buffer, color);
-            continue;
+    while (s[i] != '\0') {
+        for (i = from; i < msg_len - 1; i++) {
+            if (s[i] != '$') continue;
+            s[i] = '\0';
+            c_ckprint(s + from, c);
+            s[i] = '$';
+            switch (s[i + 1]) {
+                case '0':
+                    c = c_blue;
+                    break;
+                case '1':
+                    c = c_green;
+                    break;
+                case '2':
+                    c = c_cyan;
+                    break;
+                case '3':
+                    c = c_red;
+                    break;
+                case '4':
+                    c = c_magenta;
+                    break;
+                case '5':
+                    c = c_yellow;
+                    break;
+                case '6':
+                    c = c_grey;
+                    break;
+                case '7':
+                    c = c_white;
+                    break;
+                case '8':
+                    c = c_dblue;
+                    break;
+                case '9':
+                    c = c_dgreen;
+                    break;
+                case 'A':
+                    c = c_dcyan;
+                    break;
+                case 'B':
+                    c = c_dred;
+                    break;
+                case 'C':
+                    c = c_dmagenta;
+                    break;
+                case 'D':
+                    c = c_dyellow;
+                    break;
+                case 'E':
+                    c = c_dgrey;
+                    break;
+                default:
+                    c = c_white;
+                    break;
+            }
+            i += 2;
+            from = i;
+            break;
         }
-        if (format[i] != '%') {
-            str_append(buffer, format[i]);
-            continue;
-        }
-        color = sprint_function(buffer, color);
-        clean_buffer(buffer, 0x1000);
         i++;
-        if (format[i] == 's') {
-            char *arg = va_arg(args, char*);
-            for (unsigned int j = 0; j < strlen(arg); j++) buffer[j] = arg[j];
-            buffer[strlen(arg)] = '\0';
-            color = sprint_function(buffer, color);
-        }
-        else if (format[i] == 'd' || format[i] == 'i') {
-            int arg = va_arg(args, int);
-            int_to_ascii(arg, buffer);
-            color = sprint_function(buffer, color);
-        }
-        else if (format[i] == 'x' || format[i] == 'p') {
-            int arg = va_arg(args, int);
-            hex_to_ascii(arg, buffer);
-            color = sprint_function(buffer, color);
-        }
-        else if (format[i] == 'c') {
-            char arg = va_arg(args, int);
-            buffer[0] = arg;
-            buffer[1] = '\0';
-            color = sprint_function(buffer, color);
-        }
-        else if (format[i] == 'f') {
-            double arg = va_arg(args, double);
-            double_to_ascii(arg, buffer);
-            color = sprint_function(buffer, color);
-        }
-        else i--;
-        clean_buffer(buffer, 0x1000);
-        continue;
     }
-    free(buffer);
+    c_ckprint(s + from, c);
+    return msg_len;
 }
 
-void fsprint(char format[], ...) {
-    // how many % is there
-    int nb_args = 0;
-    for (unsigned int i = 0; i < strlen(format); i++) {
-        if (format[i] == '%') nb_args++;
-    }
-    if (nb_args == 0) {
-        sprint_function(format, c_white);
-        return;
-    }
-    va_list args;
-    va_start(args, format);
-    vfsprint(format, args);
-    va_end(args);
-}
 
 void rainbow_print(char message[]) {
     char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
@@ -312,8 +268,4 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
         }
     }
     c_cursor_blink(0);
-}
-
-void input(char out_buffer[], int size, char color) {
-    input_wh(out_buffer, size, color, NULL, 0);
 }
