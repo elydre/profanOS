@@ -21,7 +21,7 @@ void assemble_path(char old[], char new[], char result[]) {
         strncat(result, "/", 1);
     }
     int index;
-    for (unsigned int i = 0; i < strlen(new); i++) {
+    for (uint32_t i = 0; i < strlen(new); i++) {
         if (new[i] == '.' && new[i + 1] == '.' && (new[i + 2] == '/' || new[i + 2] == '\0')) {
             for (int j = strlen(result) - 2; j >= 0; j--) {
                 if (result[j] == '/') {
