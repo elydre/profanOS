@@ -3,10 +3,6 @@
 
 #include <i_time.h>
 
-
-// we need the stdarg of the stdlib
-#include <stdarg.h>
-
 // input() setings
 #define SLEEP_T 15
 #define FIRST_L 12
