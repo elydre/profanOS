@@ -56,7 +56,7 @@ void tasked_program() {
     mem_set((uint8_t *) stack, 0, stack_size);
 
     // setup stack
-    asm volatile("mov %0, %%esp" :: "r" (stack + stack_size));
+    asm volatile("mov %0, %%esp" :: "r" (stack + stack_size - 0x80));
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
