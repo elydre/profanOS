@@ -262,7 +262,6 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
     if (out_x < 0 || out_x >= window->width || out_y < 0 || out_y >= window->height) return;
 
     if (!in_box && window->topbar_buffer != NULL && out_y != 0 && out_y < 20) {
-        serial_print_ss("editing topbar for", window->name);
         window->topbar_buffer[out_y * window->width + out_x] = 0xFF000000 ^ color;
     }
 
