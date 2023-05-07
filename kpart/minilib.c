@@ -1,4 +1,5 @@
 #include <kernel/snowflake.h>
+#include <kernel/process.h>
 #include <driver/serial.h>
 #include <driver/rtc.h>
 #include <cpu/timer.h>
@@ -199,7 +200,11 @@ void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
 
 void free(void *addr) {
     int size = mem_get_alloc_size((uint32_t) addr);
-    if (size == 0) return;
+    if (size == 0) {
+        kprintf("kernel free: %x not allocated\n", addr);
+        return;
+    }
+
     mem_set((uint8_t *) addr, 0, size);
     mem_free_addr((int) addr);
 }
@@ -254,4 +259,36 @@ void status_print(int (*func)(), char *verb, char *noun) {
     }
 
     set_cursor_offset(new_cursor);
+}
+
+int exit_pid(int pid) {
+    // clean memory
+    mem_free_all(pid);
+
+    // wake up the parent process
+    int pstate = process_get_state(process_get_ppid(pid));
+
+    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
+        process_wakeup(process_get_ppid(pid));
+
+    
+    comm_struct_t *comm = process_get_comm(pid);
+
+    if (comm != NULL) {
+        // free the path
+        free((void *) comm->path);
+
+        // free the argv
+        for (int i = 0; i < comm->argc; i++)
+            free((void *) comm->argv[i]);
+        free((void *) comm->argv);
+
+        // free the stack
+        free((void *) comm->stack);
+
+        // free comm struct
+        free(comm);
+    }
+
+    return process_kill(pid);
 }

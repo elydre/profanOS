@@ -5,10 +5,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
-// we need the stdarg of the stdlib
-#include <stdarg.h>
-
 // input() setings
 #define SLEEP_T 15
 #define FIRST_L 12
@@ -37,6 +33,84 @@ int clean_buffer(char *buffer, int size) {
     for (int i = 0; i < size; i++) buffer[i] = '\0';
     return 0;
 }
+
+/***************************
+ * PRINT PUBLIC FUNCTIONS  *
+***************************/
+
+uint32_t color_print(char *s) {
+    uint32_t msg_len = strlen(s);
+
+    uint32_t from = 0;
+    uint32_t i = 0;
+    char c = c_white;
+
+    while (s[i] != '\0') {
+        for (i = from; i < msg_len - 1; i++) {
+            if (s[i] != '$') continue;
+            s[i] = '\0';
+            c_ckprint(s + from, c);
+            s[i] = '$';
+            switch (s[i + 1]) {
+                case '0':
+                    c = c_blue;
+                    break;
+                case '1':
+                    c = c_green;
+                    break;
+                case '2':
+                    c = c_cyan;
+                    break;
+                case '3':
+                    c = c_red;
+                    break;
+                case '4':
+                    c = c_magenta;
+                    break;
+                case '5':
+                    c = c_yellow;
+                    break;
+                case '6':
+                    c = c_grey;
+                    break;
+                case '7':
+                    c = c_white;
+                    break;
+                case '8':
+                    c = c_dblue;
+                    break;
+                case '9':
+                    c = c_dgreen;
+                    break;
+                case 'A':
+                    c = c_dcyan;
+                    break;
+                case 'B':
+                    c = c_dred;
+                    break;
+                case 'C':
+                    c = c_dmagenta;
+                    break;
+                case 'D':
+                    c = c_dyellow;
+                    break;
+                case 'E':
+                    c = c_dgrey;
+                    break;
+                default:
+                    c = c_white;
+                    break;
+            }
+            i += 2;
+            from = i;
+            break;
+        }
+        i++;
+    }
+    c_ckprint(s + from, c);
+    return msg_len;
+}
+
 
 void rainbow_print(char message[]) {
     char rainbow_colors[] = "120435";
@@ -122,8 +196,4 @@ void input_wh(char out_buffer[], int size, char color, char ** history, int hist
     }
 
     out_buffer[buffer_index] = '\0';   
-}
-
-void input(char out_buffer[], int size, char color) {
-    input_wh(out_buffer, size, color, NULL, 0);
 }

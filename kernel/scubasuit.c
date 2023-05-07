@@ -333,16 +333,7 @@ void scuba_fault_handler(int err_code) {
         sys_error("Page fault, killing process");
     }
 
-    // clean memory
-    mem_free_all(pid);
-
-    // wake up the parent process
-    int pstate = process_get_state(process_get_ppid(pid));
-
-    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
-        process_wakeup(process_get_ppid(pid));
-
-    if (process_exit()) {
+    if (exit_pid(pid)) {
         sys_fatal("Failed to exit process");
     }
 }

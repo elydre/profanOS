@@ -37,6 +37,27 @@ void kernel_switch_back() {
     }
 }
 
+void kernel_exit_current() {
+    int pid_list[PROCESS_MAX]; // it's a define
+    int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid;
+
+    for (int i = pid_list_len - 1; i >= 0; i--) {
+        pid = pid_list[i];
+        if (process_get_state(pid) == PROCESS_RUNNING && pid) {
+            exit_pid(pid);
+            return;
+        }
+    }
+    for (int i = pid_list_len - 1; i >= 0; i--) {
+        pid = pid_list[i];
+        if (process_get_state(pid) == PROCESS_TSLPING && pid) {
+            exit_pid(pid);
+            return;
+        }
+    }
+}
+
 int shell_command(char command[]);
 
 void start_kshell() {

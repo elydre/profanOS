@@ -16,39 +16,41 @@ static char current_dir[256] = "/";
 void go(char file[], char prefix[], char suffix[]);
 int shell_command(char command[]);
 
-// some string functions
-void str_start_split(char s[], char delim) {
+void start_split(char s[], char delim) {
     for (int i = 0; s[i] != '\0'; i++) {
-        if (s[i] == delim) {
-            s[i] = '\0';
-            return;
-        }
+        if (s[i] != delim) continue;
+        s[i] = '\0';
+        return;
     }
 }
 
-void str_end_split(char s[], char delim) {
+void end_split(char s[], char delim) {
+    uint32_t len = strlen(s);
     int limit = 0;
-    for (int i = 0; s[i] != '\0'; i++) {
-        if (s[i] == delim) {
-            limit = i + 1; break;
-        }
+
+    for (uint32_t i = 0; i < len; i++) {
+        if (s[i] != delim) continue;
+        limit = i + 1;
+        break;
     }
 
-    for (int i = limit; s[i] != '\0'; i++) {
+    for (uint32_t i = limit; i < len; i++) {
         s[i - limit] = s[i];
     }
-    s[strlen(s) - limit] = '\0';    
+
+    s[len - limit] = '\0';
 }
 
 int str_count(char str[], char thing) {
     int total = 0;
-    for (int i = 0; str[i] != '\0'; i++) {
+
+    for (uint32_t i = 0; str[i] != '\0'; i++) {
         if (str[i] == thing) total++;
     }
+
     return total;
 }
 
-// shell functions
 int main(int argc, char **argv) {
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
@@ -56,6 +58,7 @@ int main(int argc, char **argv) {
     int history_size = 0x1000 / BFR_SIZE - 1;
     char **history = malloc(history_size * sizeof(char*));
     int addr = (int) calloc(0x1000, sizeof(char));
+
     for (int i = 0; i < history_size; i++) {
         history[i] = (char*)addr;
         addr += BFR_SIZE;
@@ -65,7 +68,7 @@ int main(int argc, char **argv) {
     while (1) {
         printf(SHELL_PROMPT, current_dir);
         input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
-        printf("\n");
+        puts("\n");
         if (strcmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
             for (int i = history_size - 1; i > 0; i--) strcpy(history[i], history[i - 1]);
             if (current_history_size < history_size) current_history_size++;
@@ -79,12 +82,13 @@ int main(int argc, char **argv) {
 }
 
 int shell_command(char *buffer) {
-    char *prefix = malloc(strlen(buffer) + 5); // size of char is 1 octet
+    char *prefix = malloc(strlen(buffer) + 5);
     char *suffix = malloc(strlen(buffer) + 5);
     strcpy(prefix, buffer);
     strcpy(suffix, buffer);
-    str_start_split(prefix, ' ');
-    str_end_split(suffix, ' ');
+    start_split(prefix, ' ');
+    end_split(suffix, ' ');
+
     if (strlen(buffer) == strlen(suffix)) {
         suffix[0] = '\0';
     }
@@ -105,7 +109,7 @@ int shell_command(char *buffer) {
         }
         free(new_path);
     } else if (!strcmp(prefix, "go")) {
-        if (!(str_count(suffix, '.'))) strncat(suffix, ".bin", 4);
+        if (!str_count(suffix, '.')) strncat(suffix, ".bin", 4);
         char *file = malloc(strlen(suffix) + strlen(current_dir) + 3);
         assemble_path(current_dir, suffix, file);
         suffix[0] = '\0';
@@ -114,8 +118,8 @@ int shell_command(char *buffer) {
     } else {  // shell command
         char *old_prefix = malloc(strlen(prefix) + 1);
         strcpy(old_prefix, prefix);
-        if(!(str_count(prefix, '.'))) strncat(prefix, ".bin", 4);
-        char *file = malloc(strlen(prefix) + strlen(current_dir) + 17);
+        if (!str_count(prefix, '.')) strncat(prefix, ".bin", 4);
+        char *file = malloc(strlen(prefix) + 17);
         assemble_path("/bin/commands", prefix, file);
         if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
             go(file, old_prefix, suffix);
@@ -138,19 +142,22 @@ int shell_command(char *buffer) {
 
 void go(char file[], char prefix[], char suffix[]) {
     if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
-        int argc = str_count(suffix, ' ') + 3;
-        if (!strcmp(suffix, "")) argc--;
+        int argc = str_count(suffix, ' ') + 2;
+        if (suffix[0] != '\0') argc++;
+
         char **argv = malloc(argc * sizeof(char *));
         argv[0] = malloc(strlen(file) + 1);
         strcpy(argv[0], file);
         argv[1] = malloc(strlen(current_dir) + 1);
         strcpy(argv[1], current_dir);
+
         for (int i = 2; i < argc; i++) {
             argv[i] = malloc(strlen(suffix) + 1);
             strcpy(argv[i], suffix);
-            str_start_split(argv[i], ' ');
-            str_end_split(suffix, ' ');
+            start_split(argv[i], ' ');
+            end_split(suffix, ' ');
         }
+
         c_run_ifexist(file, argc, argv);
         // free
         for (int i = 0; i < argc; i++) free(argv[i]);

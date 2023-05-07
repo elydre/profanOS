@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.12.2c"
+#define KERNEL_VERSION  "0.12.3"
 #define KERNEL_EDITING  "windaube"
 
 #define PROCESS_MAX     20          // max process count
@@ -48,6 +48,7 @@ void sys_kinfo(char *dest);
 // kshell.c
 void start_kshell();
 void kernel_switch_back();
+void kernel_exit_current();
 
 // runtime.c
 #define run_ifexist(path, argc, argv) \

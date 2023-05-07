@@ -200,7 +200,7 @@ def build_app_lib():
             cprint(COLOR_EXEC, f"creating '{OUT_DIR}/{dir_name}' directory")
             os.makedirs(f"{OUT_DIR}/{dir_name}")
 
-    build_list = [x for x in build_list if not x.startswith("zapps/Projets")]
+    build_list = [x for x in build_list if not x.startswith("zapps/projets")]
 
     # check if zapps need to be rebuild
     updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
@@ -302,11 +302,10 @@ def gen_disk(force=False, with_src=False):
             print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
 
     try:
-        for dossier in os.listdir(f"./{OUT_DIR}/disk/bin/Projets"):
-            print_and_exec(f"make -C zapps/Projets/{dossier}/ run")
-            print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/Projets/{dossier}/*")
-            print_and_exec(f"cp -r zapps/Projets/{dossier}/*.bin  {OUT_DIR}/disk/bin/Projets/{dossier}/")
-            print_and_exec(f"rm -Rf zapps/Projets/{dossier}/*.bin")
+        for dossier in os.listdir(f"{OUT_DIR}/disk/bin/projets"):
+            print_and_exec(f"make -C zapps/projets/{dossier}/ build")
+            print_and_exec(f"cp zapps/projets/{dossier}/*.bin {OUT_DIR}/disk/bin/projets/")
+            print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/projets/{dossier}/ zapps/projets/{dossier}/*.bin")
     except Exception as e:
         cprint(COLOR_EROR, f"Error while copying projects: {e}")
 

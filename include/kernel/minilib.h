@@ -7,6 +7,17 @@
 #define kprintf(...) func_printf(0, __VA_ARGS__)
 #define serial_kprintf(...) func_printf(1, __VA_ARGS__)
 
+// runtime comm struct
+typedef struct {
+    int argc;
+    char **argv;
+    char *path;
+    uint32_t vbase;
+    uint32_t vcunt;
+    uint32_t stack_size;
+    uint32_t stack;
+} comm_struct_t;
+
 void str_cat(char s1[], char s2[]);
 int str_len(char s[]);
 void str_cpy(char s1[], char s2[]);
@@ -29,5 +40,6 @@ void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
 void status_print(int (*func)(), char *verb, char *noun);
+int exit_pid(int pid);
 
 #endif

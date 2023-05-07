@@ -1,197 +1,443 @@
-#include <syscall.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <i_vgui.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 
-int str_ncmp(char s1[], char s2[], int n) {
-    // TODO: recode this
-    int i;
-    for (i = 0; s1[i] == s2[i]; i++) {
-        if (i == n || s1[i] == '\0') return 0;
-    }
-    if (i == n) return 0;
-    return s1[i] - s2[i];
+#include <syscall.h>
+#include <profan.h>
+
+#include <i_vgui.h>
+#include <i_time.h>
+
+// SETTINGS
+
+#define SCREEN_W 640
+#define SCREEN_H 480
+
+#define FONT_W 8
+#define FONT_H 16
+
+#define COLOR_BG 0x111111 // ((c_timer_get_ms() * 0xf) & 0xAAAAAA)
+#define COLOR_T1 0xffffff
+#define COLOR_T2 0xaaaaaa
+
+#define COLOR_F1 0xffff88
+#define COLOR_F2 0xaaaa44
+
+// MACROS
+
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#define set_pixel(x, y, color) vgui_set_pixel(g_vgui, x, y, color)
+#define render_screen() vgui_render(g_vgui, 0)
+#define print(x, y, text, color) vgui_print(g_vgui, x, y, text, color)
+#define gputc(x, y, c, color, bg) vgui_putc(g_vgui, x, y, c, color, bg)
+#define draw_line(x1, y1, x2, y2, color) vgui_draw_line(g_vgui, x1, y1, x2, y2, color)
+#define draw_rect(x, y, width, height, color) vgui_draw_rect(g_vgui, x, y, width, height, color)
+#define clear_screen(color) vgui_clear(g_vgui, color)
+
+#define cursor_max_at_line(line) ((line < g_lines_count - 1) ? \
+                                  g_data_lines[line + 1] - g_data_lines[line] - 1 : \
+                                  g_data_size - g_data_lines[line] - 1)
+
+#define PRINTABLE_LINES (SCREEN_H / FONT_H)
+#define PRINTABLE_COLS ((SCREEN_W - (FONT_W * 3 + 5)) / FONT_W)
+
+// GLOBALS
+
+vgui_t *g_vgui;
+char *g_title;
+
+char *g_data;
+int g_data_size;
+
+int *g_data_lines;
+int g_lines_count;
+
+int g_cursor_line;
+int g_cursor_pos;
+
+char *g_current_screen;
+
+// FUNCTIONS
+
+void draw_interface() {
+    draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
+    draw_line(FONT_W * 3 + 2, FONT_H, FONT_W * 3 + 2, SCREEN_H, COLOR_F2);
 }
 
-#define ENTER 28
-#define BACKSPACE 14
+void set_title(char *path) {
+    strcpy(g_title, "rim - ");
+    strcat(g_title, path);
 
-#define TEXT_COL (1024/8-1)
-#define TEXT_LINE (768/16 - 1)
+    draw_rect(0, 0, SCREEN_H, FONT_H, COLOR_BG);
+    print(0, 0, g_title, COLOR_T1);
+}
 
-int global_argc;
-char **global_argv;
-char **text_buffer;
+void load_file(char *path) {
+    int file_size = c_fs_get_file_size(path);
+    g_data_size = file_size + 1;
+    file_size += 1024 - (file_size % 1024);
+    printf("file size: %d\n", file_size);
 
-void draw_mode(vgui_t *vgui, char *value) {
-    if (strlen(value) > 12) {
+    g_data = realloc(g_data, file_size);
+
+    c_fs_read_file(path, (uint8_t *) g_data);
+
+    for (int i = 0; i < file_size; i++) {
+        if (g_data[i] != '\n') continue;
+        g_data[i] = '\0';
+        g_data_lines[g_lines_count] = i + 1;
+        g_lines_count++;
+        if (g_lines_count % 1024) continue;
+        g_data_lines = realloc(g_data_lines, g_lines_count + 1024);
+    }
+}
+
+void save_file(char *path) {
+    char *data_copy = malloc(g_data_size);
+    memcpy(data_copy, g_data, g_data_size);
+
+    for (int i = 0; i < g_data_size - 1; i++) {
+        if (data_copy[i] == '\0') data_copy[i] = '\n';
+    }
+
+    c_fs_write_in_file(path, (uint8_t *) data_copy, g_data_size - 1);
+    free(data_copy);
+}
+
+char *calc_new_screen(int from_line, int to_line, int x_offset) {
+    char *new_screen = calloc((PRINTABLE_LINES + 1) * (PRINTABLE_COLS + 1), sizeof(char));
+
+    int line = 0;
+    int max;
+    for (int i = from_line; i < to_line; i++) {
+        max = cursor_max_at_line(i);
+        for (int j = x_offset; j < min(max, x_offset + PRINTABLE_COLS); j++) {
+            new_screen[line * PRINTABLE_COLS + j - x_offset] = g_data[g_data_lines[i] + j];
+        }
+        line++;
+    }
+    return new_screen;
+}
+
+void display_data(int from_line, int to_line, int x_offset) {
+    if (to_line - from_line > PRINTABLE_LINES) {
+        printf("error: too many lines to display\n");
         return;
     }
-    vgui_draw_rect(vgui, 0, 768-16, 8*12, 16, 0x000000);
-    vgui_print(vgui, 0, 768-16, value, 0xFFFFFF);
-}
 
-int handle_command(vgui_t *vgui, char *command) {
-    // for now we only handle the exit command
-    if (strcmp(command, ":exit") == 0) {
-        return 1; // exit
-    }
-    if (!str_ncmp(command, ":save", 5)) {
-        while (!(*command == ' ')) command++;
-        command++;
-        char *new_path = calloc(100, sizeof(char));
-        strcpy(new_path, global_argv[1]);
-        strcat(new_path, command);
-        c_serial_print(SERIAL_PORT_A, new_path);
-        FILE *file = fopen(new_path, "w");
-        char *into_file = calloc(TEXT_COL*TEXT_LINE*2, sizeof(char));
-        int into_file_index = 0;
-        for (int i = 0; i < TEXT_LINE; i++) {
-            for (int j = 0; j < TEXT_COL; j++) {
-                if (text_buffer[i][j] == '\0') {
-                    break;
-                }
-                into_file[into_file_index] = text_buffer[i][j];
-                into_file_index++;
+    // clear line numbers
+    draw_rect(0, FONT_H + 1, FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
+
+    char *new_screen = calc_new_screen(from_line, to_line, x_offset);
+
+    static int old_cursor_x = 0;
+    static int old_cursor_y = 0;
+
+    // remove cursor
+    draw_line(old_cursor_x, old_cursor_y, old_cursor_x, old_cursor_y + FONT_H, COLOR_BG);
+
+    // display data
+    int y = FONT_H + 2;
+    int pos;
+    char line_str[10];
+    line_str[0] = ' ';
+    line_str[1] = ' ';
+    for (int i = 0; i <= to_line - from_line; i++) {
+        // line content
+        for (int j = 0; j < PRINTABLE_COLS; j++) {
+            if (g_current_screen == NULL || new_screen[i * PRINTABLE_COLS + j] != g_current_screen[i * PRINTABLE_COLS + j]) {
+                gputc(FONT_W * 3 + 5 + j * FONT_W, y, new_screen[i * PRINTABLE_COLS + j], COLOR_T1, COLOR_BG);
             }
-            if (text_buffer[i+1][0] == '\0') {
-                break;
-            }
-            into_file[into_file_index] = '\n';
-            into_file_index++;
         }
-        into_file[into_file_index] = '\0';
-        fwrite(into_file, sizeof(char), strlen(into_file), file);
-        fclose(file);
-        free(new_path);
-        return 1; // on close après
+
+        if (i + from_line == g_cursor_line) {
+            pos = (g_cursor_pos - x_offset) * FONT_W + FONT_W * 3 + 5;
+            draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
+            old_cursor_x = pos;
+            old_cursor_y = y;
+        }
+
+        if (i < to_line - from_line) {
+            // line number
+            itoa(from_line + i + 1, line_str + 2, 10);
+            print(0, y, line_str + strlen(line_str) - 3, COLOR_T2);
+        }
+
+        y += FONT_H;
     }
-    return 0;
+    if (g_current_screen != NULL) free(g_current_screen);
+    g_current_screen = new_screen;
 }
 
-void main(int argc, char **argv) {
-    global_argc = argc;
-    global_argv = argv;
-    // preparation
-    argv += 2;
-    argc -= 2;
-
-    // initial draw
-    c_clear_screen();
-    vgui_t vgui = vgui_setup(1024, 768);
-    vgui_draw_line(&vgui, 0, 768-17, 1024, 768-17, 0x00FF00);
-    vgui_draw_line(&vgui, 8*12, 768-17, 8*12, 768, 0x00FF00);
-    vgui_render(&vgui, 0);
-
-    // mainloop
-    int scancode;
-    bool command_mode = 2;
-    bool command_type = 0;
-
-    // text buffer
-    char *command_buffer = calloc(100, sizeof(char));
-    text_buffer = calloc(TEXT_LINE, sizeof(char *));
-    for (int i = 0; i < TEXT_LINE; i++) {
-        text_buffer[i] = calloc(TEXT_COL, sizeof(char));
+void realloc_buffer() {
+    if (g_lines_count % 1024 == 0) {
+        printf("reallocating data lines with size %d\n", g_lines_count + 1024);
+        g_data_lines = realloc(g_data_lines, (g_lines_count + 1024) * sizeof(int));
     }
-    int cursor_line = 0;
-    int cursor_column = 0;
 
-    while ((scancode = c_kb_get_scfh()) != 1) {
-        if (scancode == 0) {
+    if (g_data_size % 1024 == 0 && g_data_size != 0) {
+        printf("reallocating data with size %d\n", g_data_size + 1024);
+        g_data = realloc(g_data, (g_data_size + 1024) * sizeof(char));
+    }
+}
+
+void main_loop(char *path) {
+    int key, future_cursor_pos;
+    uint8_t shift_pressed = 0;
+    char c;
+
+    int y_offset = 0;
+    int x_offset = 0;
+
+    while (1) {
+        // wait for key
+        key = c_kb_get_scfh();
+
+        // realloc buffer if needed
+        realloc_buffer();
+    
+        // check if key is enter
+        if (key == 28) {
+            c_serial_print(SERIAL_PORT_A, "enter pressed\n");
+            // add line to data lines
+
+            // add '\0' character to data buffer
+            for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+                g_data[i] = g_data[i - 1];
+
+            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = '\0';
+            g_data_size++;
+
+            // add line to data lines
+            for (int i = g_lines_count; i > g_cursor_line + 1; i--) {
+                g_data_lines[i] = g_data_lines[i - 1];
+                g_data_lines[i]++;
+            }
+
+            g_data_lines[g_cursor_line + 1] = g_data_lines[g_cursor_line] + g_cursor_pos + 1;
+            g_lines_count++;
+            g_cursor_line++;
+            g_cursor_pos = 0;
+        }
+
+        // check if key is escape
+        else if (key == 1) {
+            c_serial_print(SERIAL_PORT_A, "escape pressed\n");
+            // exit
+            return;
+        }
+
+        // check if key is ctrl
+        else if (key == 29) {
+            c_serial_print(SERIAL_PORT_A, "ctrl pressed\n");
+            if (path != NULL) {
+                save_file(path);
+            }
+        }
+
+        // check if key is backspace
+        else if (key == 14) {
+            c_serial_print(SERIAL_PORT_A, "backspace pressed\n");
+            // remove character from data buffer
+            if (g_cursor_pos > 0) {
+                for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_size; i++)
+                    g_data[i - 1] = g_data[i];
+                
+                for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+                    g_data_lines[i]--;
+
+                g_data_size--;
+                g_cursor_pos--;
+            } else if (g_cursor_line > 0) {
+                future_cursor_pos = cursor_max_at_line(g_cursor_line - 1);
+
+                for (int i = g_data_lines[g_cursor_line]; i < g_data_size; i++)
+                    g_data[i - 1] = g_data[i];
+                
+                // remove line from data lines
+                for (int i = g_cursor_line; i < g_lines_count - 1; i++) {
+                    g_data_lines[i] = g_data_lines[i + 1];
+                    g_data_lines[i]--;
+                }
+
+                g_data_size--;
+                g_lines_count--;
+                g_cursor_line--;
+                g_cursor_pos = future_cursor_pos;
+            }
+        }
+
+        // check if shift is pressed
+        else if (key == 42 || key == 54) {
+            c_serial_print(SERIAL_PORT_A, "shift pressed\n");
+            shift_pressed = 1;
+        }
+
+        // check if shift is released
+        else if (key == 170 || key == 182) {
+            c_serial_print(SERIAL_PORT_A, "shift released\n");
+            shift_pressed = 0;
+        }
+
+        // check if key is tab
+        else if (key == 15) {
+            c_serial_print(SERIAL_PORT_A, "tab pressed\n");
+            int spaces = 4 - (g_cursor_pos % 4);
+            for (int i = 0; i < spaces; i++) {
+                // add character to data buffer
+                for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+                    g_data[i] = g_data[i - 1];
+
+                g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = ' ';
+                g_data_size++;
+
+                g_cursor_pos++;
+            }
+        }
+
+        // check if key is arrow left
+        else if (key == 75) {
+            c_serial_print(SERIAL_PORT_A, "arrow left pressed\n");
+            // move cursor
+            if (g_cursor_pos > 0) {
+                g_cursor_pos--;
+            }
+        }
+
+        // check if key is arrow right
+        else if (key == 77) {
+            c_serial_print(SERIAL_PORT_A, "arrow right pressed\n");
+            // move cursor
+            if (g_cursor_pos < cursor_max_at_line(g_cursor_line)) {
+                g_cursor_pos++;
+            }
+        }
+
+        // check if key is arrow up
+        else if (key == 72) {
+            c_serial_print(SERIAL_PORT_A, "arrow up pressed\n");
+            // move cursor
+            if (g_cursor_line > 0) {
+                g_cursor_line--;
+            }
+            if (g_cursor_pos > cursor_max_at_line(g_cursor_line)) {
+                g_cursor_pos = cursor_max_at_line(g_cursor_line);
+            }
+        }
+
+        // check if key is arrow down
+        else if (key == 80) {
+            c_serial_print(SERIAL_PORT_A, "arrow down pressed\n");
+            // move cursor
+            if (g_cursor_line < g_lines_count - 1) {
+                g_cursor_line++;
+            }
+            if (g_cursor_pos > cursor_max_at_line(g_cursor_line)) {
+                g_cursor_pos = cursor_max_at_line(g_cursor_line);
+            }
+        }
+
+        // check if key is printable
+        else if (key < 58 && key > 0) {
+            c = c_kb_scancode_to_char(key, shift_pressed);
+
+            // add character to data buffer
+            for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+                g_data[i] = g_data[i - 1];
+
+            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = c;
+            g_data_size++;
+
+            for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+                g_data_lines[i]++;
+
+            g_cursor_pos++;
+        } else {
+            ms_sleep(20);
             continue;
         }
-        // control flow things
-        else if (scancode == KB_CTRL || command_mode == 2) {
-            command_mode = !command_mode;
-            if (command_mode) {
-                draw_mode(&vgui, "MODE COMMAND");
-            } else {
-                draw_mode(&vgui, "MODE TYPING");
-            }
-            vgui_render(&vgui, 0);
-        }
-        else if (command_mode && scancode == 52) { // :
-            // we add the char to command_buffer
-            command_type = 1;
-            command_buffer[0] = ':';
-            command_buffer[1] = '\0';
-            vgui_print(&vgui, 8*12, 768-16, command_buffer, 0xFFFFFF);
-            vgui_render(&vgui, 0);
+
+        // smart scrolling (y axis)
+        if (g_cursor_line - 1 < y_offset && g_cursor_line > 0) {
+            y_offset = g_cursor_line - 1;
+        } else if (g_cursor_line + 3 > y_offset + PRINTABLE_LINES) {
+            y_offset = g_cursor_line + 3 - PRINTABLE_LINES;
         }
 
-        else if (command_type && scancode == ENTER) {
-            // we void command buffer
-            command_type = 0;
-            
-            int result = handle_command(&vgui, command_buffer);
-            if (result == 1) {
-                break;
-            }
-
-            command_buffer[0] = '\0';
-            vgui_draw_rect(&vgui, 8*12+1, 768-16, 1024, 16, 0x000000);
-            vgui_render(&vgui, 0);
+        // smart scrolling (x axis)
+        if (g_cursor_pos - 1 < x_offset && g_cursor_pos > 0) {
+            x_offset = g_cursor_pos - 1;
+        } else if (g_cursor_pos + 3 > x_offset + PRINTABLE_COLS) {
+            x_offset = g_cursor_pos + 3 - PRINTABLE_COLS;
+        } else if (g_cursor_pos == 0) {
+            x_offset = 0;
         }
+      
+        // display data
+        display_data(y_offset, min(g_lines_count, y_offset + PRINTABLE_LINES), x_offset);
 
-        else if (command_type && scancode == BACKSPACE ) {
-            if (strlen(command_buffer) > 0) {
-                command_buffer[strlen(command_buffer) - 1] = '\0';
-                vgui_draw_rect(&vgui, 8*12+1, 768-16, 1024, 16, 0x000000);
-                vgui_print(&vgui, 8*12, 768-16, command_buffer, 0xFFFFFF);
-                vgui_render(&vgui, 0);
-            }
-        }
+        // render screen
+        render_screen();
+    }
+}
 
-        // on traite les caractères comme il faut
-        else if (command_type && scancode <= SC_MAX) {
-            if (strlen(command_buffer) > 100) {
-                continue;
-            }
-            command_buffer[strlen(command_buffer) + 1] = '\0';
-            command_buffer[strlen(command_buffer)] = c_kb_scancode_to_char(scancode, 0);
-            vgui_print(&vgui, 8*12, 768-16, command_buffer, 0xFFFFFF);
-            vgui_render(&vgui, 0);
-        }
+void quit() {
+    vgui_exit(g_vgui);
+    free(g_title);
+    free(g_data);
+    free(g_data_lines);
+    free(g_current_screen);
+}
 
-        else if (!command_mode && scancode == ENTER) {
-            // we move the cursor a colomn down if we can
-            if (cursor_line < TEXT_LINE) {
-                cursor_line++;
-                cursor_column = 0;
-            }
-        }
+int main(int argc, char *argv[]) {
+    char *file = NULL;
+    if (argc == 3) {
+        file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
+        assemble_path(argv[1], argv[2], file);
 
-        else if (!command_mode && scancode <= SC_MAX) {
-            if (text_buffer[cursor_line][cursor_column] != '\0') {
-                continue;
-            }
-            if (c_kb_scancode_to_char(scancode, 0) == '?') {
-                continue;
-            }
-            text_buffer[cursor_line][cursor_column] = c_kb_scancode_to_char(scancode, 0);
-            // we clean the char
-            vgui_draw_rect(&vgui, 8*cursor_column, 16*cursor_line, 8, 16, 0x000000);
-            // we print the char
-            vgui_print(&vgui, 8*cursor_column, 16*cursor_line, &text_buffer[cursor_line][cursor_column], 0xFFFFFF);
-            vgui_render(&vgui, 0);
-            // we move the cursor iif it's not at the end
-            if (cursor_column < TEXT_COL) {
-                cursor_column++;
-            }
+        if (!(c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2)) {
+            printf("$3%s$B file not found\n", file);
+            free(file);
+            return 0;
         }
-        
     }
 
-    // end
-    vgui_exit(&vgui);
-    free(command_buffer);
-    for (int i = 0; i < TEXT_LINE; i++) {
-        free(text_buffer[i]);
+    vgui_t vgui = vgui_setup(SCREEN_W, SCREEN_H);
+    g_vgui = &vgui;
+
+    g_title = calloc(256, sizeof(char));
+
+    g_data = calloc(1024, sizeof(char));
+    g_data_size = 1;
+
+    g_data_lines = calloc(1024, sizeof(int));
+    g_lines_count = 1;
+
+    g_cursor_line = 0;
+    g_cursor_pos = 0;
+
+    g_current_screen = NULL;
+
+    clear_screen(COLOR_BG);
+    draw_interface();
+
+    if (file) {
+        set_title(file);
+        load_file(file);
+    } else {
+        set_title("DEMO MODE");
     }
-    free(text_buffer);
-    c_clear_screen();
+
+    display_data(0, min(g_lines_count, PRINTABLE_LINES), 0);
+    render_screen();
+
+    main_loop(file);
+
+    if (file) free(file);
+    quit();
+
+    return 0;
 }

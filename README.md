@@ -45,19 +45,20 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ### Main features
 
-* multiboot support
-* 32 bits protected mode
-* PS/2 mouse and keyboard
-* ATA hard disk
-* filesystem (custom)
-* processing, idle and sleep
-* physical memory management
-* custom dynamic library
+- multiboot support
+- 32 bits protected mode
+- PS/2 mouse and keyboard
+- ATA hard disk
+- filesystem (custom)
+- processing, idle and sleep
+- physical memory management
+- virtual memory management
+- custom dynamic library
 
 ### Major ports
 
-* [lua](https://github.com/elydre/lua-profan) programming language, with custom library
-* [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
+- [lua](https://github.com/elydre/lua-profan) programming language, with custom library
+- [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
 
 All the ports are available with the command `make addons` or by building them manually.
 
@@ -88,19 +89,19 @@ the installation script `tools/install.sh` or any other image flasher.
 
 ## Author & Contact
 
-* pf4 ([@elydre](https://github.com/elydre))
-* Loris ([@Lorisredstone](https://github.com/Lorisredstone))
+- pf4 ([@elydre](https://github.com/elydre))
+- Loris ([@Lorisredstone](https://github.com/Lorisredstone))
 
 Contact us on [discord](https://pf4.ddns.net/discord)
 
 ## Source & Acknowledgment
 
-* [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
-* [fabian](https://github.com/copy/v86) for the v86 online emulator and floppy build
-* [framindmap](https://framindmap.org) for the mindmap of the todo list
-* [yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
-* [szhou42](https://github.com/szhou42/osdev) for the ata driver
-* [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
-* [@ProtoByter](https://github.com/ProtoByter) for the first pull request
+- [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
+- [fabian](https://github.com/copy/v86) for the v86 online emulator and floppy build
+- [framindmap](https://framindmap.org) for the mindmap of the todo list
+- [yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
+- [szhou42](https://github.com/szhou42/osdev) for the ata driver
+- [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
+- [@ProtoByter](https://github.com/ProtoByter) for the first pull request
 
 *be careful with our friend 55*

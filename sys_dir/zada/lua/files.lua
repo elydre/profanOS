@@ -3,6 +3,7 @@
 ---------------------------------------
 
 local calls = require("calls")
+local syscalls = calls.syscalls
 
 ------------------------
 -- Internal functions --
@@ -37,7 +38,7 @@ end
 
 local function path_to_id(path)
     local ptr = copy_string_to_memory(path)
-    local file_id = profan.call_c(calls.get_syscall(13), 4, ptr)
+    local file_id = profan.call_c(calls.get_syscall(syscalls.fs_path_to_id), 4, ptr)
 
     calls.free(ptr)
     return file_id
@@ -50,7 +51,7 @@ end
 
 local function does_path_exist(path)
     local ptr = copy_string_to_memory(path)
-    local exists = profan.call_c(calls.get_syscall(10), 4, ptr)
+    local exists = profan.call_c(calls.get_syscall(syscalls.fs_does_path_exists), 4, ptr)
 
     free(ptr)
     return exists ~= 0 -- cast to boolean
@@ -63,7 +64,7 @@ local function get_path_type(path)
     end
 
     local ptr = copy_string_to_memory(path)
-    local path_type = profan.call_c(calls.get_syscall(11), 4, path_to_id(path))
+    local path_type = profan.call_c(calls.get_syscall(syscalls.get_sector_type), 4, path_to_id(path))
 
     calls.free(ptr)
     return path_type
@@ -80,7 +81,7 @@ local function get_file_size(file_name)
     end
 
     local ptr = copy_string_to_memory(file_name)
-    local size = profan.call_c(calls.get_syscall(7), 4, ptr)
+    local size = profan.call_c(calls.get_syscall(syscalls.fs_get_file_size), 4, ptr)
 
     free(ptr)
     return size
@@ -97,7 +98,7 @@ local function get_dir_size(dir_name)
     end
 
     local ptr = copy_string_to_memory(dir_name)
-    local size = profan.call_c(calls.get_syscall(8), 4, ptr)
+    local size = profan.call_c(calls.get_syscall(syscalls.fs_get_dir_size), 4, ptr)
 
     free(ptr)
     return size
@@ -106,7 +107,7 @@ end
 
 local function get_element_name(file_id)
     local ptr = calls.malloc(256)
-    profan.call_c(calls.get_syscall(2), 4, file_id, 4, ptr)
+    profan.call_c(calls.get_syscall(syscalls.fs_get_element_name), 4, file_id, 4, ptr)
 
     local file_name = copy_memory_to_string(ptr, 256)
     calls.free(ptr)
@@ -125,7 +126,7 @@ local function get_dir_content(dir_name)
     local dir_size = get_dir_size(dir_name)
     local output = calls.malloc((dir_size + 1) * 4)
 
-    profan.call_c(calls.get_syscall(12), 4, ptr, 4, output)
+    profan.call_c(calls.get_syscall(syscalls.fs_get_dir_content), 4, ptr, 4, output)
 
     local content = {}
     
@@ -156,7 +157,7 @@ local function get_file_content(file_name)
     -- malloc output, a char buffer
     local output = calls.malloc(file_size + 1)
 
-    profan.call_c(calls.get_syscall(5), 4, ptr, 4, output)
+    profan.call_c(calls.get_syscall(syscalls.fs_read_file), 4, ptr, 4, output)
 
     local content = copy_memory_to_string(output, file_size)
 
@@ -182,7 +183,7 @@ local function set_file_content(file_name, content)
     local name_ptr = copy_string_to_memory(file_name)
     local content_ptr = copy_string_to_memory(content)
 
-    profan.call_c(calls.get_syscall(6), 4, name_ptr, 4, content_ptr, 4, #content)
+    profan.call_c(calls.get_syscall(syscalls.fs_write_in_file), 4, name_ptr, 4, content_ptr, 4, #content)
 
     calls.free(name_ptr)
     calls.free(content_ptr)
@@ -215,9 +216,9 @@ local function create_element(element, elm_type)
     local elm_name_ptr = copy_string_to_memory(elm_name)
     
     if elm_type == 2 then
-        profan.call_c(calls.get_syscall(4), 4, parent_dir_ptr, 4, elm_name_ptr)
+        profan.call_c(calls.get_syscall(syscalls.fs_make_file), 4, parent_dir_ptr, 4, elm_name_ptr)
     else    
-        profan.call_c(calls.get_syscall(3), 4, parent_dir_ptr, 4, elm_name_ptr)
+        profan.call_c(calls.get_syscall(syscalls.fs_make_dir), 4, parent_dir_ptr, 4, elm_name_ptr)
     end
 
     calls.free(parent_dir_ptr)

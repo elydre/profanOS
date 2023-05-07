@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 
     c_fs_read_file(path, (uint8_t *) str);
 
-    printf("%s", str);
+    puts(str);
 
     free(str);
 

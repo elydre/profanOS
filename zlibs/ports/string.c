@@ -304,6 +304,7 @@ char *strchrnul(register const char *s, int c) {
     puts("strchrnul not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
+
 size_t strlen(const char *s);
 int strcmp(register const char *s1, register const char *s2) {
     if (strlen(s1) != strlen(s2)) {
@@ -463,7 +464,6 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
     return s1;
 }
 
-size_t strnlen(const char *s, size_t max);
 char *strndup(register const char *s1, size_t n) {
     puts("strndup not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;

@@ -240,6 +240,7 @@ int process_init() {
     kern_proc->pid = 0;
     kern_proc->ppid = 0; // it's worse than inbreeding!
     kern_proc->priority = KERNEL_PRIORITY;
+    kern_proc->comm = NULL;
 
     tsleep_interact = 0;
     pid_current = 0;
@@ -293,6 +294,7 @@ int process_create(void (*func)(), int priority, char *name) {
     new_proc->ppid = pid_current;
     new_proc->state = PROCESS_FSLPING;
     new_proc->priority = priority;
+    new_proc->comm = NULL;
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
     
@@ -494,12 +496,6 @@ int process_kill(int pid) {
     return 0;
 }
 
-
-int process_exit() {
-    return process_kill(pid_current);
-}
-
-
 /************************
  * SCHEUDLER FUNCTIONS *
 ************************/
@@ -606,7 +602,7 @@ int process_get_pid() {
     return pid_current;
 }
 
-void process_set_bin_mem(int pid, void *mem) {
+void process_set_comm(int pid, void *comm) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -614,10 +610,10 @@ void process_set_bin_mem(int pid, void *mem) {
         return;
     }
 
-    plist[place].run_mem = mem;
+    plist[place].comm = comm;
 }
 
-void *process_get_bin_mem(int pid) {
+void *process_get_comm(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -625,7 +621,7 @@ void *process_get_bin_mem(int pid) {
         return 0;
     }
 
-    return plist[place].run_mem;
+    return plist[place].comm;
 }
 
 int process_get_ppid(int pid) {
@@ -694,28 +690,6 @@ uint32_t process_get_run_time(int pid) {
     }
 
     return plist[place].run_time;
-}
-
-void *process_get_custom(int pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_error("Process not found");
-        return 0;
-    }
-
-    return plist[place].custom;
-}
-
-void process_set_custom(int pid, void *custom) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_error("Process not found");
-        return;
-    }
-
-    plist[place].custom = custom;
 }
 
 scuba_directory_t *process_get_directory(int pid) {

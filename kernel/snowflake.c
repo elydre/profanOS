@@ -26,17 +26,22 @@ int part_size;
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state);
 int mem_free_addr(uint32_t addr);
 
-int mem_get_phys_size() {
-    int *addr_min = (int *) 0x200000;
-    int *addr_max = (int *) 0x40000000;
-    int *addr_test;
+uint32_t mem_get_phys_size() {
+    uint32_t *addr_min = (uint32_t *) 0x200000;
+    uint32_t *addr_max = (uint32_t *) 0x40000000;
+    uint32_t *addr_test;
+    uint32_t old_value;
     while (addr_max - addr_min > 1) {
         addr_test = addr_min + (addr_max - addr_min) / 2;
+        old_value = *addr_test;
         *addr_test = 0x1234;
-        if (*addr_test == 0x1234) addr_min = addr_test;
+        if (*addr_test == 0x1234) {
+            addr_min = addr_test;
+            *addr_test = old_value;
+        } 
         else addr_max = addr_test;
     }
-    return (int) addr_max;
+    return (uint32_t) addr_max;
 }
 
 int mem_init() {

@@ -1,5 +1,6 @@
-#include <syscall.h>
 #include <i_iolib.h>
+
+#include <syscall.h>
 #include <string.h>
 #include <profan.h>
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        printf("$BUsage: wif <file>\n");
+        puts("$BUsage: wif <file>\n");
         return 0;
     }
 
