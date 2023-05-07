@@ -22,8 +22,7 @@ typedef struct {
     int pid, ppid, priority, state;
     uint32_t esp_addr, sleep_to, run_time;
     scuba_directory_t *scuba_dir;
-    uint8_t *run_mem;
-    void *custom;
+    void *comm;
     char name[64];
 } process_t;
 
@@ -39,7 +38,6 @@ int process_handover(int pid);
 int process_wakeup(int pid);
 int process_sleep(int pid, uint32_t ms);
 int process_kill(int pid);
-int process_exit();
 
 
 // sheduler control
@@ -56,11 +54,8 @@ int process_generate_pid_list(int *list, int max);
 int process_get_name(int pid, char *name);
 uint32_t process_get_run_time(int pid);
 
-void process_set_bin_mem(int pid, void *mem);
-void *process_get_bin_mem(int pid);
-
-void *process_get_custom(int pid);
-void process_set_custom(int pid, void *custom);
+void process_set_comm(int pid, void *comm);
+void *process_get_comm(int pid);
 
 void process_set_priority(int pid, int priority);
 int process_get_priority(int pid);

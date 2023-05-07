@@ -6,36 +6,27 @@
 #include <system.h>
 #include <type.h>
 
-/*************************************************************
- *       - kernel runtime memory layout and sharing -    e  *
- *                                                       l  *
- *  |             |                   | E                y  *
- *  | kernel      | allocable memory  | N                d  *
- *  | -0x100000   | - 0x200000        | D                r  *
- *  |             |                   |                  e  *
- *        ^     ^     ^     ^     ^                         *
- *        |     |     |     |     '---SCUBA----.            *
- *        |     |     |     |                  |            *
- *  |                                 | : |             |   *
- *  | physical (shared)   [STACK]     | : | virtual     |   *
- *  |                                 | : | -0xC0000000 |   *
- *  |                                 | : |             |   *
-*************************************************************/
-
-typedef struct {
-    int argc;
-    char **argv;
-    char *path;
-    uint32_t vbase;
-    uint32_t vcunt;
-    uint32_t stack_size;
-} comm_struct_t;
+/************************************************************
+ *     - kernel runtime memory layout and sharing -     e  *
+ *                                                      l  *
+ *  |             |                   | E               y  *
+ *  | kernel      | allocable memory  | N               d  *
+ *  | -0x100000   | - 0x200000        | D               r  *
+ *  |             |                   |                 e  *
+ *        ^     ^     ^     ^     ^                        *
+ *        |     |     |     |     '---SCUBA----.           *
+ *        |     |     |     |                  |           *
+ *  |                                 | : |             |  *
+ *  | physical (shared)   [STACK]     | : | virtual     |  *
+ *  |                                 | : | -0xC0000000 |  *
+ *  |                                 | : |             |  *
+************************************************************/
 
 void tasked_program() {
     int pid = process_get_pid();
     int ppid = process_get_ppid(pid);
 
-    comm_struct_t *comm = process_get_bin_mem(pid);
+    comm_struct_t *comm = process_get_comm(pid);
     uint32_t stack_size = comm->stack_size;
 
     int vsize = comm->vcunt;
@@ -52,11 +43,11 @@ void tasked_program() {
     fs_read_file(comm->path, (char *) comm->vbase);
 
     // malloc a new stack
-    uint32_t stack = mem_alloc(stack_size, 0, 4);
-    mem_set((uint8_t *) stack, 0, stack_size);
+    comm->stack = mem_alloc(stack_size, 0, 4);
+    mem_set((uint8_t *) comm->stack, 0, stack_size);
 
     // setup stack
-    asm volatile("mov %0, %%esp" :: "r" (stack + stack_size - 0x80));
+    asm volatile("mov %0, %%esp" :: "r" (comm->stack + stack_size - 0x80));
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
@@ -86,19 +77,19 @@ void tasked_program() {
         free((void *) comm->argv[i]);
     free((void *) comm->argv);
 
-    // free comm struct
-    free(comm);
-
-    // free the stack
-    free((void *) stack);
-
     // wake up the parent process
     int pstate = process_get_state(ppid);
 
     if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
         process_wakeup(ppid);
 
-    process_exit();
+    // free the stack
+    free((void *) comm->stack);
+
+    // free comm struct
+    free(comm);
+
+    process_kill(pid);
 }
 
 int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
@@ -128,7 +119,7 @@ int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcun
     comm->vcunt = vcunt;
     comm->stack_size = stack_size;
 
-    process_set_bin_mem(pid, comm);
+    process_set_comm(pid, comm);
     process_handover(pid);
 
     return 0;

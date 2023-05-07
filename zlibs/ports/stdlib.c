@@ -93,9 +93,7 @@ int abs(int j) {
 }
 
 void atexit(void (*func)()) {
-    puts("atexit2 not implemented yet, WHY DO YOU USE IT ?\n");
-    // TODO : create c_task_add_exit_func
-    // c_task_add_exit_func(func); 
+    puts("atexit not implemented yet, WHY DO YOU USE IT ?\n");
 }
 
 double atof(const char *s) {
@@ -213,7 +211,8 @@ int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *
 }
 
 void exit(int rv) {
-    puts("exit not implemented yet, WHY DO YOU USE IT ?\n");
+    (void) rv;
+    c_exit_pid(c_process_get_pid());
 }
 
 char *gcvt(double number, int ndigit, char *buf) {
