@@ -32,10 +32,14 @@ void *vesa_get_framebuffer() {
     return framebuffer;
 }
 
-int vesa_get_width() {
-    return (int) fb_w;
+uint32_t vesa_get_pitch() {
+    return fb_p;
 }
 
-int vesa_get_height() {
-    return (int) fb_h;
+uint32_t vesa_get_width() {
+    return fb_w;
+}
+
+uint32_t vesa_get_height() {
+    return fb_h;
 }

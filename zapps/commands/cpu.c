@@ -16,6 +16,8 @@ int main(int argc, char **argv) {
     int idle = 0;
     int total = 0;
 
+    int x_offset = c_vesa_get_width() - 1;
+
     uint32_t *pixel_buffer = calloc(100 * 100, sizeof(uint32_t));
 
     while (1) {
@@ -45,7 +47,7 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < 100; j++) {
-                c_vesa_set_pixel(1023 - i, 100 - j, pixel_buffer[i + 100 * j]);
+                c_vesa_set_pixel(x_offset - i, 100 - j, pixel_buffer[i + 100 * j]);
             }
         }
         c_process_sleep(c_process_get_pid(), 200);

@@ -75,7 +75,7 @@ int scuba_init() {
     // video memory
     if (vesa_does_enable()) {
         uint32_t from = (uint32_t) vesa_get_framebuffer();
-        uint32_t to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
+        uint32_t to = from + vesa_get_pitch() * vesa_get_height() * 4 + 0x1000;
         for (uint32_t i = from; i < to; i += 0x1000) {
             scuba_map(kernel_directory, i, i);
         }
@@ -145,7 +145,7 @@ void scuba_directory_init(scuba_directory_t *dir) {
     if (vesa_does_enable()) {
         // pixel buffer
         from = (uint32_t) vesa_get_framebuffer();
-        to = from + vesa_get_width() * vesa_get_height() * 4 + 0x1000;
+        to = from + vesa_get_pitch() * vesa_get_height() * 4 + 0x1000;
     }
 
     for (uint32_t i = from; i < to; i += 0x1000) {
