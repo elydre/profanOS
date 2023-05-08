@@ -10,7 +10,9 @@ void vesa_set_pixel(int x, int y, uint32_t c);
 uint32_t vesa_get_pixel(int x, int y);
 
 void *vesa_get_framebuffer();
-int vesa_get_width();
-int vesa_get_height();
+
+uint32_t vesa_get_pitch();
+uint32_t vesa_get_width();
+uint32_t vesa_get_height();
 
 #endif

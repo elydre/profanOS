@@ -8,7 +8,7 @@ int is_vesa;
 
 void init_vesa() {
     framebuffer = (uint32_t *) mboot_get(22);
-    fb_p = mboot_get(24);
+    fb_p = mboot_get(24) / sizeof(uint32_t);
     fb_w = mboot_get(25);
     fb_h = mboot_get(26);
 
@@ -20,22 +20,26 @@ int vesa_does_enable() {
 }
 
 void vesa_set_pixel(int x, int y, uint32_t c) {
-    framebuffer[y * fb_w + x] = c;
+    framebuffer[y * fb_p + x] = c;
 }
 
 // read from framebuffer can be slow
 uint32_t vesa_get_pixel(int x, int y) {
-    return framebuffer[y * fb_w + x];
+    return framebuffer[y * fb_p + x];
 }
 
 void *vesa_get_framebuffer() {
     return framebuffer;
 }
 
-int vesa_get_width() {
-    return (int) fb_w;
+uint32_t vesa_get_pitch() {
+    return fb_p;
 }
 
-int vesa_get_height() {
-    return (int) fb_h;
+uint32_t vesa_get_width() {
+    return fb_w;
+}
+
+uint32_t vesa_get_height() {
+    return fb_h;
 }

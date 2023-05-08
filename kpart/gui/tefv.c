@@ -9,8 +9,8 @@
 
 #define SCROLLED_LINES 5
 
-#define MAX_COLS (vesa_get_width() / FONT_WIDTH)
-#define MAX_ROWS (vesa_get_height() / FONT_HEIGHT)
+#define MAX_COLS ((int) vesa_get_width() / FONT_WIDTH)
+#define MAX_ROWS ((int) vesa_get_height() / FONT_HEIGHT)
 
 #define CURSOR_COLOR 0xFF003C
 
@@ -60,12 +60,12 @@ void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
 void tef_draw_cursor(uint32_t color) {
     if (hidden_cursor) color = 0;
     for (int i = -2; i < 3; i++) {
-        if (cursor_x * FONT_WIDTH + i < 0 || cursor_x * FONT_WIDTH + i >= vesa_get_width()) continue;
+        if (cursor_x * FONT_WIDTH + i < 0 || cursor_x * FONT_WIDTH + i >= (int) vesa_get_width()) continue;
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT + FONT_HEIGHT - 1, color);
     }
     for (int i = 0; i < FONT_HEIGHT; i++) {
-        if (cursor_y * FONT_HEIGHT + i < 0 || cursor_y * FONT_HEIGHT + i >= vesa_get_height()) continue;
+        if (cursor_y * FONT_HEIGHT + i < 0 || cursor_y * FONT_HEIGHT + i >= (int) vesa_get_height()) continue;
         vesa_set_pixel(cursor_x * FONT_WIDTH, cursor_y * FONT_HEIGHT + i, color);
     }
 }
