@@ -201,7 +201,6 @@ void main_loop(char *path) {
     
         // check if key is enter
         if (key == 28) {
-            c_serial_print(SERIAL_PORT_A, "enter pressed\n");
             // add line to data lines
 
             // add '\0' character to data buffer
@@ -225,14 +224,12 @@ void main_loop(char *path) {
 
         // check if key is escape
         else if (key == 1) {
-            c_serial_print(SERIAL_PORT_A, "escape pressed\n");
             // exit
             return;
         }
 
         // check if key is ctrl
         else if (key == 29) {
-            c_serial_print(SERIAL_PORT_A, "ctrl pressed\n");
             if (path != NULL) {
                 save_file(path);
             }
@@ -240,7 +237,6 @@ void main_loop(char *path) {
 
         // check if key is backspace
         else if (key == 14) {
-            c_serial_print(SERIAL_PORT_A, "backspace pressed\n");
             // remove character from data buffer
             if (g_cursor_pos > 0) {
                 for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_size; i++)
@@ -272,35 +268,34 @@ void main_loop(char *path) {
 
         // check if shift is pressed
         else if (key == 42 || key == 54) {
-            c_serial_print(SERIAL_PORT_A, "shift pressed\n");
             shift_pressed = 1;
         }
 
         // check if shift is released
         else if (key == 170 || key == 182) {
-            c_serial_print(SERIAL_PORT_A, "shift released\n");
             shift_pressed = 0;
         }
 
         // check if key is tab
         else if (key == 15) {
-            c_serial_print(SERIAL_PORT_A, "tab pressed\n");
             int spaces = 4 - (g_cursor_pos % 4);
-            for (int i = 0; i < spaces; i++) {
-                // add character to data buffer
-                for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-                    g_data[i] = g_data[i - 1];
+            // add character to data buffer
+            for (int i = g_data_size + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+                g_data[i] = g_data[i - spaces];
 
-                g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = ' ';
-                g_data_size++;
+            for (int i = 0; i < spaces; i++)
+                g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] = ' ';
 
-                g_cursor_pos++;
-            }
+            g_data_size += spaces;
+
+            for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+                g_data_lines[i] += spaces;
+
+            g_cursor_pos += spaces;
         }
 
         // check if key is arrow left
         else if (key == 75) {
-            c_serial_print(SERIAL_PORT_A, "arrow left pressed\n");
             // move cursor
             if (g_cursor_pos > 0) {
                 g_cursor_pos--;
@@ -309,7 +304,6 @@ void main_loop(char *path) {
 
         // check if key is arrow right
         else if (key == 77) {
-            c_serial_print(SERIAL_PORT_A, "arrow right pressed\n");
             // move cursor
             if (g_cursor_pos < cursor_max_at_line(g_cursor_line)) {
                 g_cursor_pos++;
@@ -318,7 +312,6 @@ void main_loop(char *path) {
 
         // check if key is arrow up
         else if (key == 72) {
-            c_serial_print(SERIAL_PORT_A, "arrow up pressed\n");
             // move cursor
             if (g_cursor_line > 0) {
                 g_cursor_line--;
@@ -330,7 +323,6 @@ void main_loop(char *path) {
 
         // check if key is arrow down
         else if (key == 80) {
-            c_serial_print(SERIAL_PORT_A, "arrow down pressed\n");
             // move cursor
             if (g_cursor_line < g_lines_count - 1) {
                 g_cursor_line++;
