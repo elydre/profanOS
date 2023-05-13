@@ -23,6 +23,10 @@
 #define COLOR_F1 0xffff88
 #define COLOR_F2 0xaaaa44
 
+// input settings
+#define SLEEP_T 15
+#define FIRST_L 12
+
 // MACROS
 
 #ifndef min
@@ -79,7 +83,7 @@ void load_file(char *path) {
     int file_size = c_fs_get_file_size(path);
     g_data_size = file_size + 1;
     file_size += 1024 - (file_size % 1024);
-    printf("file size: %d\n", file_size);
+    // printf("file size: %d\n", file_size);
 
     g_data = realloc(g_data, file_size);
 
@@ -185,9 +189,11 @@ void realloc_buffer() {
 }
 
 void main_loop(char *path) {
-    int key, future_cursor_pos;
     uint8_t shift_pressed = 0;
-    char c;
+    int future_cursor_pos;
+
+    int last_key, key_sgt = 0;
+    int key, key_ticks = 0;
 
     int y_offset = 0;
     int x_offset = 0;
@@ -195,6 +201,21 @@ void main_loop(char *path) {
     while (1) {
         // wait for key
         key = c_kb_get_scfh();
+
+        if (key == 224 || key == 0) {   // RESEND or 0
+            key = key_sgt;
+        } else {
+            key_sgt = key;
+        }
+
+        if (key != last_key) key_ticks = 0;
+        else key_ticks++;
+        last_key = key;
+
+        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
+            ms_sleep(SLEEP_T);
+            continue;
+        }
 
         // realloc buffer if needed
         realloc_buffer();
@@ -334,13 +355,11 @@ void main_loop(char *path) {
 
         // check if key is printable
         else if (key < 58 && key > 0) {
-            c = c_kb_scancode_to_char(key, shift_pressed);
-
             // add character to data buffer
             for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
                 g_data[i] = g_data[i - 1];
 
-            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = c;
+            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = c_kb_scancode_to_char(key, shift_pressed);
             g_data_size++;
 
             for (int i = g_cursor_line + 1; i < g_lines_count; i++)
@@ -348,7 +367,6 @@ void main_loop(char *path) {
 
             g_cursor_pos++;
         } else {
-            ms_sleep(20);
             continue;
         }
 
