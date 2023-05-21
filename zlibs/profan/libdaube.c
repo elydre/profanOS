@@ -105,7 +105,11 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     desktop->mouse->x = 0;
     desktop->mouse->y = 0;
 
-    desktop->screen_buffer = calloc(screen_width * screen_height, sizeof(int));
+    desktop->screen_buffer = malloc(screen_width * screen_height * sizeof(uint32_t));
+    for (int i = 0; i < screen_width * screen_height; i++) {
+        desktop->screen_buffer[i] = 0xFF0000;
+    }
+
     desktop->screen_width = screen_width;
     desktop->screen_height = screen_height;
 
@@ -118,16 +122,6 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     if (main_desktop == NULL) {
         main_desktop = desktop;
     }
-
-    for (int x = 0; x < screen_width; x++) {
-        for (int y = 0; y < screen_height; y++) {
-            c_vesa_set_pixel(x, y, 0x000000);
-        }
-    }
-
-    window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1, 0);
-
-    func_desktop_refresh(desktop);
 
     return desktop;
 }
@@ -266,6 +260,46 @@ void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8
     }
 
     window->buffer[out_y * window->width + out_x] = color;
+}
+
+void window_display_pixel_func(window_t *window, int x, int y, uint32_t color, uint8_t in_box) {
+    if (check_window_fail(window)) {
+        serial_print_ss("error:", "window_set_pixel: invalid window");
+        return;
+    }
+
+    // the coordinates are those of the interior of the window
+    int out_x = x;
+    int out_y = y;
+
+    if (in_box) {
+        if (x >= window->in_width || y >= window->in_height) return;
+        out_x += window->in_x - window->x;
+        out_y += window->in_y - window->y;
+    }
+
+    if (out_x < 0 || out_x >= window->width || out_y < 0 || out_y >= window->height) return;
+
+    if (!in_box && window->topbar_buffer != NULL && out_y != 0 && out_y < 20) {
+        window->topbar_buffer[out_y * window->width + out_x] = 0xFF000000 ^ color;
+    }
+
+    window->buffer[out_y * window->width + out_x] = color;
+
+    desktop_t *desktop = window->parent_desktop;
+
+    if (!window->visible[out_y * window->width + out_x]) {
+        return;
+    }
+
+    uint32_t screen_buffer_index = (window->x + out_x) + (window->y + out_y) * desktop->screen_width;
+
+    if (desktop->screen_buffer[screen_buffer_index] == window->buffer[out_y * window->width + out_x]) {
+        return;
+    }
+
+    c_vesa_set_pixel(window->x + out_x, window->y + out_y, window->buffer[out_y * window->width + out_x]);
+    desktop->screen_buffer[screen_buffer_index] = window->buffer[out_y * window->width + out_x];
 }
 
 void window_refresh(window_t *window) {
