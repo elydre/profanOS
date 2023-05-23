@@ -8,9 +8,9 @@ while (profan.pin(0x60, 1) ~= 1) do
     print(string.format("0x%07x: %02x", i, mem))
 
     if (mem ~= 0) then
-        sound.play_sound(mem * 5 + 20)
+        sound.freq(mem * 5 + 20)
     else 
-        sound.nosound()
+        sound.stop()
     end
     
     calls.ms_sleep(20)
@@ -18,4 +18,4 @@ while (profan.pin(0x60, 1) ~= 1) do
 end
 
 
-sound.nosound()
+sound.stop()
