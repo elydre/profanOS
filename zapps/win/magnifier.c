@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     desktop_refresh(main_desktop);
 
     // set the window background to black
-    wadds_fill(window, 0x000000);
+    wadds_fill(window, 0x000000, 0);
 
     while (!exit_button->clicked_tick) {
         for (int y = -window->height / 2; y < window->height / 2; y++) {

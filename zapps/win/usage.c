@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     while (!exit_button->clicked_tick) {
         start = c_timer_get_ms();
-        wadds_fill(window, 0x000000);
+        wadds_fill(window, 0x000000, 0);
 
         // get the list of running processes
         count = c_process_generate_pid_list(running_pid, 20);
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
                 itoa(c_mem_get_info(8, pid_runtime[i].pid) / 1024, buffer + 31, 10);
                 strcpy(buffer + strlen(buffer), "Ko");
 
-                wadds_puts(window, buffer, 6, line * 16 + 5, 0x00bb00, 0x000000);
+                wadds_puts(window, buffer, 6, line * 16 + 5, 0x00bb00, 0x000000, 0);
                 line++;
             }
         }

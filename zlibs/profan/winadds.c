@@ -40,7 +40,7 @@ button_t *wadds_create_exitbt(window_t *window) {
     return create_button(window, x - 18, 3, 16, 16);
 }
 
-void wadds_line(window_t *window, int x1, int y1, int x2, int y2, uint32_t color) {
+void wadds_line(window_t *window, int x1, int y1, int x2, int y2, uint32_t color, uint8_t inst) {
     int dx = abs(x2 - x1);
     int sx = x1 < x2 ? 1 : -1;
     int dy = -abs(y2 - y1);
@@ -48,7 +48,8 @@ void wadds_line(window_t *window, int x1, int y1, int x2, int y2, uint32_t color
     int err = dx + dy, e2;
 
     for (;;) {
-        window_set_pixel(window, x1, y1, color);
+        if (!inst) window_set_pixel(window, x1, y1, color);
+        else window_display_pixel(window, x1, y1, color);
         if (x1 == x2 && y1 == y2) break;
         e2 = 2 * err;
         if (e2 >= dy) {
@@ -62,34 +63,37 @@ void wadds_line(window_t *window, int x1, int y1, int x2, int y2, uint32_t color
     }
 }
 
-void wadds_rect(window_t *window, int x, int y, int width, int height, uint32_t color) {
+void wadds_rect(window_t *window, int x, int y, int width, int height, uint32_t color, uint8_t inst) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
-            window_set_pixel(window, x + i, y + j, color);
+            if (!inst) window_set_pixel(window, x + i, y + j, color);
+            else window_display_pixel(window, x + i, y + j, color);
         }
     }
 }
 
-void wadds_putc(window_t *window, char c, int x, int y, uint32_t color, uint32_t bg_color) {
+void wadds_putc(window_t *window, char c, int x, int y, uint32_t color, uint32_t bg_color, uint8_t inst) {
     uint8_t *glyph = c_font_get(0) + c * 16;
     for (int j = 0; j < 16; j++) {
         for (int k = 0; k < 8; k++) {
             if (!(glyph[j] & (1 << k)) && bg_color == WADDS_NOBG) continue;
-            window_set_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : bg_color);
+            if (!inst) window_set_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : bg_color);
+            else window_display_pixel(window, x + 8 - k, y + j, (glyph[j] & (1 << k)) ? color : bg_color);
         }
     }
 }
 
-void wadds_puts(window_t *window, char *str, int x, int y, uint32_t color, uint32_t bg_color) {
+void wadds_puts(window_t *window, char *str, int x, int y, uint32_t color, uint32_t bg_color, uint8_t inst) {
     for (uint32_t i = 0; i < strlen(str); i++) {
-        wadds_putc(window, str[i], x + i * 8, y, color, bg_color);
+        wadds_putc(window, str[i], x + i * 8, y, color, bg_color, inst);
     }
 }
 
-void wadds_fill(window_t *window, uint32_t color) {
+void wadds_fill(window_t *window, uint32_t color, uint8_t inst) {
     for (int i = 0; i < window->width; i++) {
         for (int j = 0; j < window->height; j++) {
-            window_set_pixel(window, i, j, color);
+            if (!inst) window_set_pixel(window, i, j, color);
+            else window_display_pixel(window, i, j, color);
         }
     }
 }

@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     float square_speed_x = 6;
     float square_speed_y = 4;
 
-    wadds_fill(window, 0xff0000);
+    wadds_fill(window, 0xff0000, 0);
 
     while (!exit_button->clicked_tick) {
         // draw the old square

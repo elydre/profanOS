@@ -93,19 +93,19 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
+                wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]), 0);
                 if (i == (int) x && j == (int) y)
-                    wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
+                    wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF, 0);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
+                    wadds_rect(window, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00, 0);
             }
         }
 
-        wadds_rect(window, 0, 0, tick_count[1] * 2, 7, 0x880000);
-        wadds_rect(window, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
+        wadds_rect(window, 0, 0, tick_count[1] * 2, 7, 0x880000, 0);
+        wadds_rect(window, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000, 0);
 
         itoa(1000 / (tick_count[1] + 1), convert, 10);
-        wadds_puts(window, convert, 0, 8, 0x000000, 0xFF000000);
+        wadds_puts(window, convert, 0, 8, 0x000000, 0xFF000000, 0);
         
         tick_count[2] = c_timer_get_ms();
         window_refresh(window);

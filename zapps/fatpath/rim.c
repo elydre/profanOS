@@ -36,11 +36,11 @@
 
 #define set_pixel(x, y, color) window_set_pixel(g_window, x, y, color)
 #define render_screen() window_refresh(g_window)
-#define print(x, y, text, color) wadds_puts(g_window, text, x, y, color, 0xFF000000)
-#define gputc(x, y, c, color, bg) wadds_putc(g_window, c, x, y, color, bg)
-#define draw_line(x1, y1, x2, y2, color) wadds_line(g_window, x1, y1, x2, y2, color)
-#define draw_rect(x, y, width, height, color) wadds_rect(g_window, x, y, width, height, color)
-#define clear_screen(color) wadds_fill(g_window, color)
+#define print(x, y, text, color) wadds_puts(g_window, text, x, y, color, COLOR_BG, 1)
+#define gputc(x, y, c, color, bg) wadds_putc(g_window, c, x, y, color, bg, 1)
+#define draw_line(x1, y1, x2, y2, color) wadds_line(g_window, x1, y1, x2, y2, color, 1)
+#define draw_rect(x, y, width, height, color) wadds_rect(g_window, x, y, width, height, color, 1)
+#define clear_screen(color) wadds_fill(g_window, color, 1)
 
 #define cursor_max_at_line(line) ((line < g_lines_count - 1) ? \
                                   g_data_lines[line + 1] - g_data_lines[line] - 1 : \
@@ -123,9 +123,6 @@ void display_data(int from_line, int to_line, int x_offset) {
         return;
     }
 
-    // clear line numbers
-    draw_rect(0, 1, FONT_W * 3, SCREEN_H - 1, COLOR_BG);
-
     char *new_screen = calc_new_screen(from_line, to_line, x_offset);
 
     static int old_cursor_x = 0;
@@ -140,7 +137,8 @@ void display_data(int from_line, int to_line, int x_offset) {
     char line_str[10];
     line_str[0] = ' ';
     line_str[1] = ' ';
-    for (int i = 0; i <= to_line - from_line; i++) {
+
+    for (int i = 0; i < to_line - from_line; i++) {
         // line content
         for (int j = 0; j < PRINTABLE_COLS; j++) {
             if (g_current_screen == NULL || new_screen[i * PRINTABLE_COLS + j] != g_current_screen[i * PRINTABLE_COLS + j]) {
@@ -163,6 +161,8 @@ void display_data(int from_line, int to_line, int x_offset) {
 
         y += FONT_H;
     }
+    print(0, y, "   ", COLOR_T2);
+
     if (g_current_screen != NULL) free(g_current_screen);
     g_current_screen = new_screen;
 }
@@ -380,8 +380,6 @@ void main_loop(char *path) {
         // display data
         display_data(y_offset, min(g_lines_count, y_offset + PRINTABLE_LINES), x_offset);
 
-        // render screen
-        render_screen();
     }
 }
 
@@ -436,6 +434,9 @@ int main(int argc, char *argv[]) {
 
     clear_screen(COLOR_BG);
     draw_interface();
+
+    // render screen
+    render_screen();
 
     if (file) {
         load_file(file);

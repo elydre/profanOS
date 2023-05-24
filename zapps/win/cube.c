@@ -183,7 +183,7 @@ shape_t rotate(shape_t *shape, int x, int y, int z) {
 }
 
 void draw(shape_t *shape, window_t *window) {
-    wadds_fill(window, 0);
+    wadds_fill(window, 0, 0);
     for (int i = 0; i<shape->PointsCount; i++) {
         point2_t p = project(shape->Points[i]);
         shape->ScreenPoints[i] = p;
@@ -193,7 +193,7 @@ void draw(shape_t *shape, window_t *window) {
         point2_t p1 = shape->ScreenPoints[line.i1];
         point2_t p2 = shape->ScreenPoints[line.i2];
         
-        wadds_line(window, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
+        wadds_line(window, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color, 0);
     }
 }
 
@@ -204,7 +204,7 @@ int show_fps(window_t *window, int time) {
     itoa(fps, fps_str, 10);
 
     for (int i = 0; fps_str[i] != '\0'; i++) {
-        wadds_putc(window, fps_str[i], i * 8 + 5, 5, 0x00FF00, 0x000000);
+        wadds_putc(window, fps_str[i], i * 8 + 5, 5, 0x00FF00, 0x000000, 0);
     }
 
     return new_time;
