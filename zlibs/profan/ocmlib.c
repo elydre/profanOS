@@ -38,6 +38,11 @@ int main(int argc, char **argv) {
 
 void ocm_init(window_t *window) {
     screen_buffer = calloc(MAX_COLS * MAX_ROWS, sizeof(screen_char_t));
+    for (int i = 0; i < MAX_COLS * MAX_ROWS; i++) {
+        screen_buffer[i].content = ' ';
+        screen_buffer[i].color = 0xFFFFFF;
+        screen_buffer[i].bg_color = 0;
+    }
     term_window = window;
 }
 

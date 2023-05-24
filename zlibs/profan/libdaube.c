@@ -741,7 +741,7 @@ void window_set_pixels_visible(desktop_t *desktop, window_t *window, int all) {
                 if (window->x + i < 0 || window->x + i >= desktop->screen_width || window->y + j < 0 || window->y + j >= desktop->screen_height) {
                     continue;
                 }
-                if (! window->visible[i + j * window->width]) {
+                if (!window->visible[i + j * window->width]) {
                     continue;
                 }
                 screen_buffer_index = (window->x + i) + (window->y + j) * desktop->screen_width;
@@ -822,7 +822,6 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
 }
 
 int focus_window(desktop_t *desktop, window_t *window) {
-    printf("focus window %d\n", window->usid);
     int old_focus_id = usid_to_id(desktop, desktop->focus_window_usid);
 
     if (desktop->focus_window_usid == window->usid) {

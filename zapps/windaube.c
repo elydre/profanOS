@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     c_run_ifexist("/bin/win/desktop.bin", 0, NULL);
     c_run_ifexist("/bin/win/cpu.bin", 0, NULL);
 
-    // c_run_ifexist("/bin/shell.bin", 0, NULL);
+    c_run_ifexist("/bin/shell.bin", 0, NULL);
 
     c_run_ifexist("/bin/win/demo.bin", 0, NULL);
     // c_run_ifexist("/bin/win/magnifier.bin", 0, NULL);
