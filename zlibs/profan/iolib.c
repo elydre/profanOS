@@ -3,6 +3,7 @@
 
 #define IOLIB_C
 
+#include <i_winadds.h>
 #include <i_ocmlib.h>
 #include <i_iolib.h>
 #include <i_time.h>
@@ -149,7 +150,7 @@ void input_wh(char out_buffer[], int size, uint32_t color, char ** history, int 
     clean_buffer(out_buffer, size);
 
     do {
-        sc = c_kb_get_scfh();
+        sc = wadds_get_kb(NULL);
     } while (sc == ENTER);
 
     c_kb_reset_history();
@@ -159,7 +160,7 @@ void input_wh(char out_buffer[], int size, uint32_t color, char ** history, int 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
 
-        sc = c_kb_get_scfh();
+        sc = wadds_get_kb(NULL);
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;

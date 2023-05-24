@@ -192,7 +192,7 @@ void main_loop(char *path) {
 
     while (!g_exit_button->clicked_tick) {
         // wait for key
-        key = c_kb_get_scfh();
+        key = wadds_get_kb(g_window);
 
         if (key == 224 || key == 0) {   // RESEND or 0
             key = key_sgt;
@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
     }
 
     // wake up the parent process
-    // c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+    c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();

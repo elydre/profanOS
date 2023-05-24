@@ -98,6 +98,17 @@ void wadds_fill(window_t *window, uint32_t color, uint8_t inst) {
     }
 }
 
+int wadds_get_kb(window_t *window) {
+    int focus_usid = desktop_get_main()->focus_window_usid;
+
+    // if the default window is focused
+    if (window == NULL && focus_usid == 0)
+        return c_kb_get_scfh();
+
+    if (focus_usid != window->usid) return 0;
+    return c_kb_get_scfh();
+}
+
 /*****************************
  *   draw bmp error codes   *
  * 1: file doesn't exist    *
