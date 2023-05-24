@@ -1,5 +1,7 @@
 #include <i_libdaube.h>
+#include <i_ocmlib.h>
 #include <i_time.h>
+
 
 #include <syscall.h>
 
@@ -8,18 +10,19 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
 
-void start_addons();
+void setup_desktop(desktop_t *desktop);
+void start_addons(desktop_t *desktop);
 
 int main(int argc, char **argv) {
 
     desktop_t *desktop = desktop_init(MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
+    setup_desktop(desktop);
 
-    c_run_ifexist("/bin/win/desktop.bin", 0, NULL);
     c_run_ifexist("/bin/win/cpu.bin", 0, NULL);
+    c_run_ifexist("/bin/win/demo.bin", 0, NULL);
 
     c_run_ifexist("/bin/shell.bin", 0, NULL);
 
-    c_run_ifexist("/bin/win/demo.bin", 0, NULL);
     // c_run_ifexist("/bin/win/magnifier.bin", 0, NULL);
     // c_run_ifexist("/bin/win/pong.bin", 0, NULL);
     // c_run_ifexist("/bin/win/usage.bin", 0, NULL);
@@ -37,6 +40,13 @@ int main(int argc, char **argv) {
     }
 
     return 0;
+}
+
+void setup_desktop(desktop_t *desktop) {
+    window_t *window = window_create(desktop, "desktop", 1, 1, 1022, 766, 1, 1, 0);
+    desktop_refresh(desktop);
+
+    ocm_init(window);
 }
 
 void start_addons(desktop_t *desktop) {

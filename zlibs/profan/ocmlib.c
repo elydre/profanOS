@@ -40,7 +40,7 @@ void ocm_init(window_t *window) {
     screen_buffer = calloc(MAX_COLS * MAX_ROWS, sizeof(screen_char_t));
     for (int i = 0; i < MAX_COLS * MAX_ROWS; i++) {
         screen_buffer[i].content = ' ';
-        screen_buffer[i].color = 0xFFFFFF;
+        screen_buffer[i].color = 0;
         screen_buffer[i].bg_color = 0;
     }
     term_window = window;
@@ -135,7 +135,7 @@ void print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
         }
         for (int i = MAX_ROWS - SCROLLED_LINES; i < MAX_ROWS; i++) {
             for (int j = 0; j < MAX_COLS; j++) {
-                set_char(j, i, ' ', color, bg_color);
+                set_char(j, i, ' ', 0, 0);
             }
         }
         cursor_y = MAX_ROWS - SCROLLED_LINES;
@@ -186,20 +186,10 @@ void ocm_clear() {
     draw_cursor(0);
     cursor_x = 0;
     cursor_y = 0;
-    for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
-        if (!(screen_buffer[i].content == ' ' && screen_buffer[i].bg_color == 0)) {
-            screen_buffer[i].content = ' ';
-            screen_buffer[i].color = 0;
-            screen_buffer[i].bg_color = 0;
-        }
-    }
-    // set pixel to black
-    int width = term_window->in_width;
-    int height = term_window->in_height;
 
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            window_display_pixel(term_window, i, j, 0);
+    for (int i = 0; i < MAX_ROWS; i++) {
+        for (int j = 0; j < MAX_COLS; j++) {
+            set_char(j, i, ' ', 0, 0);
         }
     }
 }

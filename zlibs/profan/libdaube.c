@@ -522,18 +522,21 @@ void refresh_mouse(desktop_t *desktop) {
         }
 
         window_t *window = desktop->windows[id];
-        int need_refresh = focus_window(desktop, window);
+        int focus_changed = focus_window(desktop, window);
+
+        if (focus_changed && !window->is_lite) {
+            set_window_priority(desktop, window);
+        }
 
         if (desktop->mouse->clicked_on == WINDOW_ID) {
-            set_window_priority(desktop, window);
             window_move(window, desktop->mouse->x + desktop->mouse->window_x_dec, desktop->mouse->y + desktop->mouse->window_y_dec);
-            desktop_refresh(desktop);
+            focus_changed = 1;
         } else if (desktop->mouse->clicked_on == BUTTON_ID) {
             button_t *button = window->button_array[desktop->mouse->clicked_button_id];
             button->is_clicked = 0;
         }
 
-        if (need_refresh) {
+        if (focus_changed) {
             desktop_refresh(desktop);
         }
 
