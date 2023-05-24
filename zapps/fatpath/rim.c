@@ -51,6 +51,7 @@
 
 // GLOBALS
 
+button_t *g_exit_button;
 window_t *g_window;
 
 char *g_data;
@@ -189,7 +190,7 @@ void main_loop(char *path) {
     int y_offset = 0;
     int x_offset = 0;
 
-    while (1) {
+    while (!g_exit_button->clicked_tick) {
         // wait for key
         key = c_kb_get_scfh();
 
@@ -306,6 +307,11 @@ void main_loop(char *path) {
             g_cursor_pos += spaces;
         }
 
+        // check if the key is alt
+        else if (key == 56) {
+            // do nothing
+        }
+
         // check if key is arrow left
         else if (key == 75) {
             // move cursor
@@ -418,7 +424,7 @@ int main(int argc, char *argv[]) {
 
     // create a window and add an exit button
     g_window = window_create(main_desktop, title, 200, 200, SCREEN_W, SCREEN_H, 0, 0, 1);
-    button_t *exit_button = wadds_create_exitbt(g_window);
+    g_exit_button = wadds_create_exitbt(g_window);
     desktop_refresh(main_desktop);
 
     g_data = calloc(1024, sizeof(char));
