@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
         char *char_content = malloc(256);
 
         puts("-> ");
-        input(char_content, 256, c_blue);
+        input(char_content, 256, HEX_BLUE);
         puts("\n");
     
         c_fs_write_in_file(file, (uint8_t *) char_content, strlen(char_content));

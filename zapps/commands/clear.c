@@ -1,6 +1,6 @@
-#include <syscall.h>
+#include <i_ocmlib.h>
 
 int main(int argc, char **argv) {
-    c_clear_screen();
+    ocm_clear();
     return 0;
 }

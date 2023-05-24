@@ -1,4 +1,3 @@
-#include <i_ocmlib.h>
 #include <i_iolib.h>
 
 #include <syscall.h>
@@ -288,7 +287,7 @@ int getc(FILE *stream) {
 
 char *fgets(char *restrict str, int count, FILE *restrict stream) {
     if (stream == stdin) {
-        input(str, count, 0x09);
+        input(str, count, HEX_BLUE);
         puts("\n");
         return str;
     }
@@ -323,16 +322,14 @@ char *gets_s(char *str, rsize_t n ) {
 }
 
 int putchar(int ch) {
-    ocm_write(0, (char) ch);
+    char tmp[2] = {ch, 0};
+    puts(tmp);
     return ch;
 }
 
 int puts(const char *str) {
-    int i;
-    for (i = 0; str[i] != '\0'; i++) {
-        ocm_write(0, (char) str[i]);
-    }
-    return i;
+    color_print((char *) str);
+    return strlen(str);
 }
 
 int ungetc(int ch, FILE *stream) {

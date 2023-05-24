@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 
     while (1) {
         printf(SHELL_PROMPT, current_dir);
-        input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
+        input_wh(char_buffer, BFR_SIZE, HEX_BLUE, history, current_history_size);
         puts("\n");
         if (strcmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
             for (int i = history_size - 1; i > 0; i--) strcpy(history[i], history[i - 1]);

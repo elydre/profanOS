@@ -61,7 +61,8 @@ void kernel_exit_current() {
 int shell_command(char command[]);
 
 void start_kshell() {
-    sys_warning("You are now in the kernel-level shell");
+    sys_fatal("kernel shell disabled for now");
+    // sys_warning("You are now in the kernel-level shell");
     kprint("\n");
     char char_buffer[BFR_SIZE];
     while (1) {

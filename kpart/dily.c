@@ -14,12 +14,12 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
+    {1000, "/lib/profan/iolib.bin"},
     {1007, "/lib/ports/stdlib.bin"},
     {1008, "/lib/ports/string.bin"},
     {1005, "/lib/profan/ocmlib.bin"},
     {1009, "/lib/ports/stdio.bin"},
     {1016, "/lib/profan/winadds.bin"},
-    {1000, "/lib/profan/iolib.bin"},
     {1002, "/lib/profan/profan.bin"},
     {1004, "/lib/profan/itime.bin"},
     {1006, "/lib/profan/vgui.bin"},

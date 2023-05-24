@@ -129,7 +129,7 @@ int get_user_choix(int ** grille) {
 
     while (1) {
         c_ckprint_at((char *) "ENTER YOUR CHOICE -> ", 0, 11, 0x0F);
-        input(buffer, 3, 0x0F);
+        input(buffer, 3, HEX_BLUE);
         inp = atoi(buffer) - 1;
 
         if (inp == -1 && buffer[0]) return -1;

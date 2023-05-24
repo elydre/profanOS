@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     char inp[3];
     int n;
     printf("Enter number of disks: ");
-    input(inp, 3, 0x09);
+    input(inp, 3, HEX_BLUE);
     printf("\n");
     n = atoi(inp);
     int **plateau = calloc(3, sizeof(int *));
