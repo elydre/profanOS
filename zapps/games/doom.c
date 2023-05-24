@@ -72,8 +72,7 @@ int main(int argc, char **argv) {
     tick_count[0] = c_timer_get_ms();
     tick_count[3] = 0;
 
-    c_kb_reset_history();
-    for (int i = 0; i < 100; i++) c_kb_get_scfh();
+    for (int i = 0; i < 100; i++) wadds_get_kb(window);
 
     while (!exit_button->clicked_tick) {
         tick_count[1] = c_timer_get_ms() - tick_count[0];
@@ -111,7 +110,7 @@ int main(int argc, char **argv) {
         window_refresh(window);
         tick_count[3] = c_timer_get_ms() - tick_count[2];
 
-        key = c_kb_get_scfh();
+        key = wadds_get_kb(window);
         if (last_key != key && key != 0) {
             last_key = key;
             if (last_key < KB_released_value && !(val_in_buffer(last_key, 20, key_buffer))) {
