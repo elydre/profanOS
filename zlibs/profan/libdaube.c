@@ -83,6 +83,7 @@ void window_update_visible(desktop_t *desktop, window_t *window);
 int *sort_index_by_priority(window_t **windows, int nb_windows);
 void set_window_priority(desktop_t *desktop, window_t *window);
 void window_draw_box(desktop_t *desktop, window_t *window);
+int focus_window(desktop_t *desktop, window_t *window);
 void desktop_patch_always_on_top(desktop_t *desktop);
 void func_desktop_refresh(desktop_t *desktop);
 void serial_print_ss(char *str, char *name);
@@ -422,6 +423,7 @@ void refresh_mouse(desktop_t *desktop) {
             }
 
             if (DEBUG_LEVEL > 2) serial_print_ss("mouse clicked on window", window->name);
+            desktop->mouse->clicked_window_id = window->usid;
 
             // check if the mouse is on a button
             for (int j = 0; j < window->buttons_count; j++) {
@@ -429,7 +431,6 @@ void refresh_mouse(desktop_t *desktop) {
                 if (mouse_x - window->x >= button->x && mouse_x - window->x <= button->x + button->width && mouse_y - window->y >= button->y && mouse_y - window->y <= button->y + button->height) {
                     if (DEBUG_LEVEL > 2) serial_print_ss("button", "clicked");
                     desktop->mouse->clicked_button_id = j;
-                    desktop->mouse->clicked_window_id = window->usid;
                     desktop->mouse->clicked_on = BUTTON_ID;
                     button->is_clicked = 1;
                     button->clicked_tick++;
@@ -444,7 +445,6 @@ void refresh_mouse(desktop_t *desktop) {
                     if (DEBUG_LEVEL > 2) serial_print_ss("window cant move", "lite");
                 } else {
                     if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on the top bar");
-                    desktop->mouse->clicked_window_id = window->usid;
                     desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
                     desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
                     desktop->mouse->clicked_on = WINDOW_ID;
@@ -522,6 +522,7 @@ void refresh_mouse(desktop_t *desktop) {
         }
 
         window_t *window = desktop->windows[id];
+        int need_refresh = focus_window(desktop, window);
 
         if (desktop->mouse->clicked_on == WINDOW_ID) {
             set_window_priority(desktop, window);
@@ -531,6 +532,11 @@ void refresh_mouse(desktop_t *desktop) {
             button_t *button = window->button_array[desktop->mouse->clicked_button_id];
             button->is_clicked = 0;
         }
+
+        if (need_refresh) {
+            desktop_refresh(desktop);
+        }
+
         desktop->mouse->clicked_on = NOTHING_ID;
     }
 
@@ -812,8 +818,17 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
             desktop->windows[sorted[i]]->changed = 1;
         }
     }
+    free(sorted);
+}
 
+int focus_window(desktop_t *desktop, window_t *window) {
+    printf("focus window %d\n", window->usid);
     int old_focus_id = usid_to_id(desktop, desktop->focus_window_usid);
+
+    if (desktop->focus_window_usid == window->usid) {
+        return 0;
+    }
+
     desktop->focus_window_usid = window->usid;
 
     if (old_focus_id != -1) {
@@ -822,8 +837,9 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
     }
 
     window_draw_box(desktop, window);
+    window->changed = 1;
 
-    free(sorted);
+    return 1;
 }
 
 void desktop_patch_always_on_top(desktop_t *desktop) {

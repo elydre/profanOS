@@ -14,19 +14,17 @@ int main(int argc, char **argv) {
 
     desktop_t *desktop = desktop_init(MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    c_run_ifexist("/bin/winapps/desktop.bin", 0, NULL);
-    c_run_ifexist("/bin/winapps/cpu.bin", 0, NULL);
+    c_run_ifexist("/bin/win/desktop.bin", 0, NULL);
+    c_run_ifexist("/bin/win/cpu.bin", 0, NULL);
 
-    c_run_ifexist("/bin/shell.bin", 0, NULL);
+    // c_run_ifexist("/bin/shell.bin", 0, NULL);
 
-    // c_run_ifexist("/bin/winapps/demo.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/magnifier.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/pong.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/counter.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/usage.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/term.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/doom.bin", 0, NULL);
-    // c_run_ifexist("/bin/winapps/cube.bin", 0, NULL);
+    c_run_ifexist("/bin/win/demo.bin", 0, NULL);
+    // c_run_ifexist("/bin/win/magnifier.bin", 0, NULL);
+    // c_run_ifexist("/bin/win/pong.bin", 0, NULL);
+    // c_run_ifexist("/bin/win/usage.bin", 0, NULL);
+    // c_run_ifexist("/bin/win/doom.bin", 0, NULL);
+    // c_run_ifexist("/bin/win/cube.bin", 0, NULL);
 
     while (1) {
         // run the functions stack

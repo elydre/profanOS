@@ -3,20 +3,20 @@
 
 #include <type.h>
 
-#define HEX_BLUE     0x0000FF
-#define HEX_GREEN    0x00FF00
-#define HEX_CYAN     0x00FFFF
-#define HEX_RED      0xFF0000
-#define HEX_MAGENTA  0xFF00FF
-#define HEX_YELLOW   0xFFFF00
-#define HEX_GREY     0x808080
+#define HEX_BLUE     0x5555FF
+#define HEX_GREEN    0x55FF55
+#define HEX_CYAN     0x55FFFF
+#define HEX_RED      0xFF5555
+#define HEX_MAGENTA  0xFF55FF
+#define HEX_YELLOW   0xFFFF55
+#define HEX_GREY     0xAAAAAA
 #define HEX_WHITE    0xFFFFFF
-#define HEX_DBLUE    0x000080
-#define HEX_DGREEN   0x008000
-#define HEX_DCYAN    0x008080
-#define HEX_DRED     0x800000
-#define HEX_DMAGENTA 0x800080
-#define HEX_DYELLOW  0x808000
+#define HEX_DBLUE    0x0000AA
+#define HEX_DGREEN   0x00AA00
+#define HEX_DCYAN    0x00AAAA
+#define HEX_DRED     0xAA0000
+#define HEX_DMAGENTA 0xAA00AA
+#define HEX_DYELLOW  0xAAAA00
 #define HEX_DGREY    0x404040
 #define HEX_DWHITE   0xC0C0C0
 
