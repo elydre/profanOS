@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
     desktop_t *main_desktop = desktop_get_main();
 
     // create a window and add an exit button
-    g_window = window_create(main_desktop, title, 200, 200, SCREEN_W, SCREEN_H, 0, 0, 1);
+    g_window = window_create(main_desktop, title, 200, 200, SCREEN_W, SCREEN_H, 0, 0, 0);
     g_exit_button = wadds_create_exitbt(g_window);
     desktop_refresh(main_desktop);
 
