@@ -101,8 +101,12 @@ void update_mouse (uint8_t flags, int8_t x, int8_t y, int8_t z) {
     g_mouseY -= y;
     if (g_mouseX < 0) g_mouseX = 0;
     if (g_mouseY < 0) g_mouseY = 0;
-    if (g_mouseX >= 1024) g_mouseX = 1023;
-    if (g_mouseY >= 768) g_mouseY = 767;
+
+    if (g_mouseX >= (int) vesa_get_width())
+        g_mouseX = vesa_get_width() - 1;
+
+    if (g_mouseY >= (int) vesa_get_height())
+        g_mouseY = vesa_get_height() - 1;
 
     g_mouse_buttons[0] = (flags & 0b1) ? 1 : 0;
     g_mouse_buttons[1] = (flags & 0b10) ? 1 : 0;

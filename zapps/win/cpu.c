@@ -22,7 +22,9 @@ int main(int argc, char **argv) {
     desktop_t *main_desktop = desktop_get_main();
 
     // create a window and add an exit button
-    window_t *window = window_create(main_desktop, "cpu usage", 550, 220, 100, 100, 0, 0, 0);
+    window_t *window = window_create(main_desktop, "cpu usage",
+        main_desktop->screen_width - 125, 35, 100, 100, 0, 0, 0);
+
     button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
