@@ -11,18 +11,18 @@
 
 // SETTINGS
 
-#define SCREEN_W 400
-#define SCREEN_H 400
+#define SCREEN_W 640
+#define SCREEN_H 480
 
 #define FONT_W 8
 #define FONT_H 16
 
-#define COLOR_BG 0x111111 // ((c_timer_get_ms() * 0xf) & 0xAAAAAA)
+#define COLOR_BG 0x00000F // ((c_timer_get_ms() * 0xf) & 0xAAAAAA)
 #define COLOR_T1 0xffffff
-#define COLOR_T2 0xaaaaaa
+#define COLOR_T2 0xa7a0b9
 
-#define COLOR_F1 0xffff88
-#define COLOR_F2 0xaaaa44
+#define COLOR_F1 0xccccff
+#define COLOR_F2 0xa7a0b9
 
 // input settings
 #define SLEEP_T 15
@@ -52,7 +52,6 @@
 // GLOBALS
 
 window_t *g_window;
-char *g_title;
 
 char *g_data;
 int g_data_size;
@@ -68,16 +67,7 @@ char *g_current_screen;
 // FUNCTIONS
 
 void draw_interface() {
-    draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
-    draw_line(FONT_W * 3 + 2, FONT_H, FONT_W * 3 + 2, SCREEN_H, COLOR_F2);
-}
-
-void set_title(char *path) {
-    strcpy(g_title, "rim - ");
-    strcat(g_title, path);
-
-    draw_rect(0, 0, SCREEN_H, FONT_H, COLOR_BG);
-    print(0, 0, g_title, COLOR_T1);
+    draw_line(FONT_W * 3 + 2, 0, FONT_W * 3 + 2, SCREEN_H, COLOR_F2);
 }
 
 void load_file(char *path) {
@@ -134,7 +124,7 @@ void display_data(int from_line, int to_line, int x_offset) {
     }
 
     // clear line numbers
-    draw_rect(0, FONT_H + 1, FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
+    draw_rect(0, 1, FONT_W * 3, SCREEN_H - 1, COLOR_BG);
 
     char *new_screen = calc_new_screen(from_line, to_line, x_offset);
 
@@ -145,7 +135,7 @@ void display_data(int from_line, int to_line, int x_offset) {
     draw_line(old_cursor_x, old_cursor_y, old_cursor_x, old_cursor_y + FONT_H, COLOR_BG);
 
     // display data
-    int y = FONT_H + 2;
+    int y = 1;
     int pos;
     char line_str[10];
     line_str[0] = ' ';
@@ -396,7 +386,6 @@ void main_loop(char *path) {
 }
 
 void quit() {
-    free(g_title);
     free(g_data);
     free(g_data_lines);
     free(g_current_screen);
@@ -415,6 +404,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    char *title = calloc(256, sizeof(char));
+    strcpy(title, "rim - ");
+    if (file != NULL) {
+        strcat(title, file);
+    } else {
+        strcat(title, "DEMO MODE");
+    }
+
     // wake up the parent process
     // c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 
@@ -422,14 +419,9 @@ int main(int argc, char *argv[]) {
     desktop_t *main_desktop = desktop_get_main();
 
     // create a window and add an exit button
-    g_window = window_create(main_desktop, "rim", 200, 200, SCREEN_W, SCREEN_H, 0, 0, 1);
+    g_window = window_create(main_desktop, title, 200, 200, SCREEN_W, SCREEN_H, 0, 0, 1);
     button_t *exit_button = wadds_create_exitbt(g_window);
     desktop_refresh(main_desktop);
-
-    // set the window background to black
-    
-
-    g_title = calloc(256, sizeof(char));
 
     g_data = calloc(1024, sizeof(char));
     g_data_size = 1;
@@ -446,10 +438,7 @@ int main(int argc, char *argv[]) {
     draw_interface();
 
     if (file) {
-        set_title(file);
         load_file(file);
-    } else {
-        set_title("DEMO MODE");
     }
 
     display_data(0, min(g_lines_count, PRINTABLE_LINES), 0);
@@ -459,6 +448,7 @@ int main(int argc, char *argv[]) {
 
     window_delete(g_window);
     if (file) free(file);
+    free(title);
     quit();
 
     window_wait_delete(main_desktop, g_window);

@@ -15,11 +15,11 @@
 #define COLOR_MASTER 0x6b6e8c
 #define COLOR_TITLES 0xa7a0b9
 
-#define COLOR_GRADN1 0x240865
-#define COLOR_GRADN2 0x0c0f1d
+#define COLOR_GRADN1 0x120434
+#define COLOR_GRADN2 0x00000c
 
-#define COLOR_FOCUS1 0x101b9e
-#define COLOR_FOCUS2 0x031359
+#define COLOR_FOCUS1 0x240865
+#define COLOR_FOCUS2 0x0c0f1d
 
 #define WINDOW_MAGIC 0xdeadbeef
 #define check_window_fail(w) (w->magic != WINDOW_MAGIC)
