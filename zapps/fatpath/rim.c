@@ -5,13 +5,14 @@
 #include <syscall.h>
 #include <profan.h>
 
-#include <i_vgui.h>
+#include <i_libdaube.h>
+#include <i_winadds.h>
 #include <i_time.h>
 
 // SETTINGS
 
-#define SCREEN_W 640
-#define SCREEN_H 480
+#define SCREEN_W 400
+#define SCREEN_H 400
 
 #define FONT_W 8
 #define FONT_H 16
@@ -33,13 +34,13 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define set_pixel(x, y, color) vgui_set_pixel(g_vgui, x, y, color)
-#define render_screen() vgui_render(g_vgui, 0)
-#define print(x, y, text, color) vgui_print(g_vgui, x, y, text, color)
-#define gputc(x, y, c, color, bg) vgui_putc(g_vgui, x, y, c, color, bg)
-#define draw_line(x1, y1, x2, y2, color) vgui_draw_line(g_vgui, x1, y1, x2, y2, color)
-#define draw_rect(x, y, width, height, color) vgui_draw_rect(g_vgui, x, y, width, height, color)
-#define clear_screen(color) vgui_clear(g_vgui, color)
+#define set_pixel(x, y, color) window_set_pixel(g_window, x, y, color)
+#define render_screen() window_refresh(g_window)
+#define print(x, y, text, color) wadds_puts(g_window, text, x, y, color, 0xFF000000)
+#define gputc(x, y, c, color, bg) wadds_putc(g_window, c, x, y, color, bg)
+#define draw_line(x1, y1, x2, y2, color) wadds_line(g_window, x1, y1, x2, y2, color)
+#define draw_rect(x, y, width, height, color) wadds_rect(g_window, x, y, width, height, color)
+#define clear_screen(color) wadds_fill(g_window, color)
 
 #define cursor_max_at_line(line) ((line < g_lines_count - 1) ? \
                                   g_data_lines[line + 1] - g_data_lines[line] - 1 : \
@@ -50,7 +51,7 @@
 
 // GLOBALS
 
-vgui_t *g_vgui;
+window_t *g_window;
 char *g_title;
 
 char *g_data;
@@ -395,7 +396,6 @@ void main_loop(char *path) {
 }
 
 void quit() {
-    vgui_exit(g_vgui);
     free(g_title);
     free(g_data);
     free(g_data_lines);
@@ -415,8 +415,19 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    vgui_t vgui = vgui_setup(SCREEN_W, SCREEN_H);
-    g_vgui = &vgui;
+    // wake up the parent process
+    // c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+
+    // get the main desktop
+    desktop_t *main_desktop = desktop_get_main();
+
+    // create a window and add an exit button
+    g_window = window_create(main_desktop, "rim", 200, 200, SCREEN_W, SCREEN_H, 0, 0, 1);
+    button_t *exit_button = wadds_create_exitbt(g_window);
+    desktop_refresh(main_desktop);
+
+    // set the window background to black
+    
 
     g_title = calloc(256, sizeof(char));
 
@@ -446,8 +457,11 @@ int main(int argc, char *argv[]) {
 
     main_loop(file);
 
+    window_delete(g_window);
     if (file) free(file);
     quit();
+
+    window_wait_delete(main_desktop, g_window);
 
     return 0;
 }
