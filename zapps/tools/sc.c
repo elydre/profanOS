@@ -12,7 +12,12 @@ int main(int argc, char **argv) {
     while (last_sc != 1) {
         while (last_sc == c_kb_get_scancode()) ms_sleep(10);
         last_sc = c_kb_get_scancode();
-        printf("$4sc: $1%d (0x%x) letter: %c, %c", last_sc, last_sc, c_kb_scancode_to_char(last_sc, 0), c_kb_scancode_to_char(last_sc, 1));
+        printf("\r$4sc: $1%d $4($10x%x$4) letter: $1%c$4, $1%c    ",
+                last_sc, last_sc,
+                c_kb_scancode_to_char(last_sc, 0),
+                c_kb_scancode_to_char(last_sc, 1)
+        );
     }
+    printf("\n");
     return 0;
 }

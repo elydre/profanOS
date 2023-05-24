@@ -10,6 +10,7 @@
 static int sc_history[HISTORY_SIZE];
 
 char kb_scancode_to_char(int scancode, int shift) {
+    if (scancode > 0x58) return '?';
     char sc_ascii_min[] = {
         '?', '?', '&', '~', '"', '\'','(', '-', '`', '_',
         '+', '@', ')', '=', '?', '?', 'a', 'z', 'e', 'r',
