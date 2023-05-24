@@ -193,3 +193,11 @@ void ocm_clear() {
         }
     }
 }
+
+int ocm_get_max_rows() {
+    return MAX_ROWS;
+}
+
+int ocm_get_max_cols() {
+    return MAX_COLS;
+}

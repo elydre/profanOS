@@ -115,14 +115,8 @@
 #define c_timer_get_ms ((uint32_t (*)(void)) hi_func_addr(22))
 
 #define c_font_get ((uint8_t *(*)(int)) hi_func_addr(23))
-#define c_clear_screen ((void (*)(void)) hi_func_addr(24))
 #define c_ckprint_at ((void (*)(char *, int, int, char)) hi_func_addr(25))
-#define c_kprint_backspace ((void (*)(void)) hi_func_addr(26))
-#define c_set_cursor_offset ((void (*)(int)) hi_func_addr(27))
-#define c_get_cursor_offset ((int (*)(void)) hi_func_addr(28))
-#define c_gt_get_max_rows ((int (*)(void)) hi_func_addr(29))
-#define c_gt_get_max_cols ((int (*)(void)) hi_func_addr(30))
-#define c_cursor_blink ((void (*)(int)) hi_func_addr(31))
+
 #define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(32))
 #define c_vesa_get_width ((uint32_t (*)(void)) hi_func_addr(33))
 #define c_vesa_get_height ((uint32_t (*)(void)) hi_func_addr(34))

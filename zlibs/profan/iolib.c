@@ -143,8 +143,8 @@ void input_wh(char out_buffer[], int size, uint32_t color, char ** history, int 
     int shift = 0;
     int new_pos;
 
-    int row = c_gt_get_max_rows();
-    int col = c_gt_get_max_cols();
+    int row = ocm_get_max_rows();
+    int col = ocm_get_max_cols();
 
     clean_buffer(out_buffer, size);
 

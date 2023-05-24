@@ -1,8 +1,10 @@
 #include <syscall.h>
-#include <i_iolib.h>
-#include <stdio.h>
-#include <i_time.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+#include <i_ocmlib.h> 
+#include <i_iolib.h>
+#include <i_time.h>
 
 void printl(int **plateau, int curseur_x, int curseur_y);
 void next_step(int **plateau);
@@ -13,7 +15,7 @@ int wait = 250;
 
 int main(int argc, char **argv) {
 
-    c_clear_screen();
+    ocm_clear();
 
     // init du plateau
     int **plateau = calloc(size_x, sizeof(int *));
@@ -40,9 +42,9 @@ int main(int argc, char **argv) {
             while (c_kb_get_scancode() == 39);
         }
         if (scancode != last_scancode) {
-            c_ckprint_at("Commandes :", 0, size_x+1, 0x0F);
-            c_ckprint_at("ECHAP : quitter", 0, size_x+2, 0x0F);
-            c_ckprint_at("E     : mode edition\n", 0, size_x+3, 0x0F);
+            ocm_print("Commandes :", 0, size_x+1, 0xFFFFFF, 0x000000);
+            ocm_print("ECHAP : quitter", 0, size_x+2, 0xFFFFFF, 0x000000);
+            ocm_print("E     : mode edition\n", 0, size_x+3, 0xFFFFFF, 0x000000);
             printf("P/M   : ms_sleep(%d); ", wait);
         };
         next_step(plateau);
@@ -52,7 +54,7 @@ int main(int argc, char **argv) {
     // fin
     for (int i = 0; i < size_x; i++) free(plateau[i]);
     free(plateau);
-    c_clear_screen();
+    ocm_clear();
     
     return 0;
 }
@@ -64,13 +66,13 @@ void edition_state(int **plateau) {
     int last_scancode;
     int scancode = 0;
 
-    c_clear_screen();
+    ocm_clear();
 
     while (c_kb_get_scancode() != 30) {
         printl(plateau, curseur_x, curseur_y);
-        c_ckprint_at("COMMANDES MODE EDITION :", 0, size_x+1, 0x0F);
-        c_ckprint_at("Q     : quitter", 0, size_x+2, 0x0F);
-        c_ckprint_at("F     : effacer l'ecran", 0, size_x+3, 0x0F);
+        ocm_print("COMMANDES MODE EDITION :", 0, size_x+1, 0xFFFFFF, 0x000000);
+        ocm_print("Q     : quitter", 0, size_x+2, 0xFFFFFF, 0x000000);
+        ocm_print("F     : effacer l'ecran", 0, size_x+3, 0xFFFFFF, 0x000000);
         last_scancode = scancode;
         scancode = c_kb_get_scancode();
         if (last_scancode == scancode) continue;
@@ -86,7 +88,7 @@ void edition_state(int **plateau) {
                     plateau[i][j] = 0;
         }
     }
-    c_clear_screen();
+    ocm_clear();
 }
 
 void printl(int **plateau, int curseur_x, int curseur_y) {
@@ -102,10 +104,10 @@ void printl(int **plateau, int curseur_x, int curseur_y) {
                 offset += 2;
             }
             ligne[offset] = '\0';
-            c_ckprint_at(ligne, 0, i, 0x0F);
+            ocm_print(ligne, 0, i, 0xFFFFFF, 0x000000);
             ligne[0] = plateau[i][curseur_y] ? 'X' : '.';
             ligne[1] = '\0';
-            c_ckprint_at(ligne, curseur_y*2, i, 0xF0);
+            ocm_print(ligne, curseur_y * 2, i, 0x000000, 0xFFFFFF);
             offset = 0;
             for (int j = curseur_y + 1; j < size_y; j++) {
                 ligne[offset] = plateau[i][j] ? 'X' : '.';
@@ -113,7 +115,7 @@ void printl(int **plateau, int curseur_x, int curseur_y) {
                 offset += 2;
             }
             ligne[offset] = '\0';
-            c_ckprint_at(ligne, (curseur_y+1)*2, i, 0x0F);
+            ocm_print(ligne, (curseur_y+1)*2, i, 0xFFFFFF, 0x000000);
         } else {
             for (int j = 0; j < size_y; j++) {
                 ligne[offset] = plateau[i][j] ? 'X' : '.';
@@ -121,7 +123,7 @@ void printl(int **plateau, int curseur_x, int curseur_y) {
                 offset += 2;
             }
             ligne[size_y*2-1] = '\0';
-            c_ckprint_at(ligne, 0, i, 0x0F);
+            ocm_print(ligne, 0, i, 0xFFFFFF, 0x000000);
         }
     }
     free(ligne);

@@ -1,5 +1,6 @@
 #include <driver/mouse.h>
 #include <cpu/ports.h>
+#include <gui/vesa.h>
 #include <minilib.h>
 
 enum {
@@ -226,6 +227,9 @@ void irq_mouse() {
 }
 
 int mouse_init() {
+    g_mouseX = vesa_get_width() / 3;
+    g_mouseY = vesa_get_height() / 3;
+
     register_interrupt_handler(IRQ12, irq_mouse);
     g_mouse_available = 1;
 
