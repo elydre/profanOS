@@ -13,7 +13,7 @@
 
 #define c_ckprint(message, color) c_ckprint_at(message, -1, -1, color)
 #define c_kprint_rgb(message, color, bg_color) c_rgb_print_at(message, -1, -1, color, bg_color)
-#define c_kprint(message) c_ckprint(message, c_white)
+#define c_kprint(message) c_ckprint(message, 0x0F)
 
 #define c_run_ifexist(path, argc, argv) c_run_ifexist_full(path, argc, argv, 0, 0, 0)
 
@@ -69,24 +69,6 @@
 
 #define KB_released_value 128
 #define KB_released(key) (key + KB_released_value)
-
-#define c_blue      0x09
-#define c_green     0x0a
-#define c_cyan      0x0b
-#define c_red       0x0c
-#define c_magenta   0x0d
-#define c_yellow    0x0e
-#define c_grey      0x07
-#define c_white     0x0f
-
-#define c_dblue     0x01
-#define c_dgreen    0x02
-#define c_dcyan     0x03
-#define c_dred      0x04
-#define c_dmagenta  0x05
-#define c_dyellow   0x06
-#define c_dgrey     0x08
-
 
 #define c_fs_get_used_sectors ((uint32_t (*)(void)) hi_func_addr(0))
 #define c_fs_get_sector_count ((uint32_t (*)(void)) hi_func_addr(1))
