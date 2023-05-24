@@ -317,7 +317,7 @@ void window_refresh(window_t *window) {
     }
 
     while (window->changed) {
-        if (DEBUG_LEVEL > 2) serial_print_ss("window changed", window->name);
+        if (DEBUG_LEVEL > 2) serial_print_ss("window is changed, can't refresh", window->name);
         ms_sleep(10);
     }
 
@@ -681,8 +681,11 @@ void func_window_delete(window_t *window) {
     // remove the window
     for (int i = 0; i < desktop->nb_windows; i++) {
         if (desktop->windows[i] == window) {
-            desktop->windows[i] = desktop->windows[desktop->nb_windows - 1];
-            break;
+            if (i != desktop->nb_windows - 1) {
+                desktop->windows[i] = desktop->windows[desktop->nb_windows - 1];
+                break;
+            }
+            desktop->windows[i] = NULL;
         }
     }
 
