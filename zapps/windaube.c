@@ -14,12 +14,11 @@ void setup_desktop(desktop_t *desktop);
 void start_addons(desktop_t *desktop);
 
 int main(int argc, char **argv) {
-
     desktop_t *desktop = desktop_init(MAX_WINDOWS, SCREEN_WIDTH, SCREEN_HEIGHT);
     setup_desktop(desktop);
 
     c_run_ifexist("/bin/win/cpu.bin", 0, NULL);
-    c_run_ifexist("/bin/win/demo.bin", 0, NULL);
+    // c_run_ifexist("/bin/win/demo.bin", 0, NULL);
 
     c_run_ifexist("/bin/shell.bin", 0, NULL);
 
