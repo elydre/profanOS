@@ -53,24 +53,8 @@ typedef struct window_t {
     int priority;
 } window_t;
 
-typedef struct mouse_t {
-    int x;
-    int y;
-
-    int clicked_window_id;
-    int clicked_button_id;
-    uint8_t clicked_on;
-
-    int window_x_dec;
-    int window_y_dec;
-
-    int already_clicked;
-} mouse_t;
-
 typedef struct desktop_t {
     window_t **windows;
-
-    mouse_t *mouse;
 
     int nb_windows;
     int screen_width;
@@ -86,6 +70,8 @@ typedef struct desktop_t {
     uint32_t *screen_buffer;
 
     uint8_t is_locked;
+
+    uint8_t f5_is_pressed;
 } desktop_t;
 
 typedef struct button_t {
@@ -116,7 +102,7 @@ typedef struct button_t {
 #define window_set_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 8))
 #define window_display_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 9))
 #define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 10))
-#define refresh_mouse ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 11))
+#define refresh_ui ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 11))
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 12))
 #define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 13))
 #define create_button ((button_t *(*)(window_t *, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 14))

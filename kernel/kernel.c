@@ -36,7 +36,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(irq_install,  "Enabling", "interruptions");
     status_print(timer_init,   "Initing", "cpu timer (PIT)");
     status_print(keyboard_init,"Setuping", "PS/2 keyboard");
-    status_print(mouse_init,   "Setuping", "PS/2 mouse");
+    // status_print(mouse_init,   "Setuping", "PS/2 mouse");
     status_print(init_diskiso, "Checking", "disk in iso mode");
     status_print(mem_init,     "Initing", "snowflake physical MM");
     status_print(scuba_init,   "Loading", "scubasuit virtual MM");

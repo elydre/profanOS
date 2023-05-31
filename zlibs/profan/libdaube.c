@@ -32,34 +32,7 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-uint8_t mouse_img[21*12] = {
-    1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0,
-    1, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0,
-    1, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0,
-    1, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0,
-    1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
-    1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1,
-    1, 2, 2, 2, 1, 2, 2, 1, 0, 0, 0, 0,
-    1, 2, 2, 1, 1, 2, 2, 1, 0, 0, 0, 0,
-    1, 2, 1, 0, 0, 1, 2, 2, 1, 0, 0, 0,
-    1, 1, 0, 0, 0, 1, 2, 2, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
-};
-
 desktop_t *main_desktop;
-
-#define MOUSE_WIDTH 12
-#define MOUSE_HEIGHT 21
 
 #define ID_DESKTOP_REFRESH  1
 #define ID_WINDOW_DELETE    2
@@ -101,10 +74,6 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     desktop->windows = calloc(max_windows, sizeof(window_t *));
     desktop->max_windows = max_windows;
     desktop->nb_windows = 0;
-
-    desktop->mouse = calloc(1, sizeof(mouse_t)); 
-    desktop->mouse->x = 0;
-    desktop->mouse->y = 0;
 
     desktop->screen_buffer = malloc(screen_width * screen_height * sizeof(uint32_t));
     for (int i = 0; i < screen_width * screen_height; i++) {
@@ -324,226 +293,27 @@ void window_refresh(window_t *window) {
     window_set_pixels_visible(desktop, window, 1);
 }
 
-void refresh_mouse(desktop_t *desktop) {
-    int id;
+#define KEY_F5      0x3F
+#define KEY_TAB     0x0F
+#define KEY_LEFT    0x4B
+#define KEY_RIGHT   0x4D
+#define KEY_UP      0x48
+#define KEY_DOWN    0x50
 
-    // restore the image under the mouse
-    for (int i = 0; i < MOUSE_WIDTH; i++) {
-        for (int j = 0; j < MOUSE_HEIGHT; j++) {
-            // chek if we are outside the screen
-            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->screen_width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->screen_height) {
-                continue;
-            }
-            if (!mouse_img[i + j * MOUSE_WIDTH]) {
-               continue;
-            }
-            c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, desktop->screen_buffer[(desktop->mouse->y + j) * desktop->screen_width + (desktop->mouse->x + i)]);
-        }
+#define KEY_RELEASE 0x80
+
+void refresh_ui(desktop_t *desktop) {
+    // get the keyboard input:
+    // F5 + tab -> switch between windows (stop when you release F5)
+    // F5 + arrow -> move window          (stop when you release F5)
+
+    if (c_kb_get_scancode() == KEY_F5) {
+        desktop->f5_is_pressed = 1;
+    } else if (c_kb_get_scancode() == (KEY_F5 | KEY_RELEASE)) {
+        desktop->f5_is_pressed = 0;
     }
 
-    if (desktop->mouse->clicked_on == WINDOW_ID) {
-        id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
-        if (id != -1) {
-            window_t *window = desktop->windows[id];
-
-            int window_width = window->width;
-            int window_height = window->height;
-
-            // draw window outline
-            int x = desktop->mouse->x + desktop->mouse->window_x_dec;
-            int y = desktop->mouse->y + desktop->mouse->window_y_dec;
-
-            for (int i = 0; i < window_width; i++) {
-                // chek if we are outside the screen
-                if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;           
-                if (y - 21 < 0 || y - 21 >= desktop->screen_height) continue;
-
-                c_vesa_set_pixel(x + i - 6, y - 21, desktop->screen_buffer[(y - 21) * desktop->screen_width + (x + i - 6)]);
-            }
-            for (int i = 0; i < window_width; i++) {
-                // chek if we are outside the screen
-                if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;
-                if (y + window_height - 22 < 0 || y + window_height - 22 >= desktop->screen_height) continue;
-
-                c_vesa_set_pixel(x + i - 6, y + window_height - 22, desktop->screen_buffer[(y + window_height - 22) * desktop->screen_width + (x + i - 6)]);
-            }
-            for (int i = 0; i < window_height; i++) {
-                // chek if we are outside the screen
-                if (x - 6 < 0 || x - 6 >= desktop->screen_width) continue;
-                if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
-
-                c_vesa_set_pixel(x - 6, y + i - 21, desktop->screen_buffer[(y + i - 21) * desktop->screen_width + (x - 6)]);
-            }
-            for (int i = 0; i < window_height; i++) {
-                // chek if we are outside the screen
-                if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) continue;
-                if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
-
-                c_vesa_set_pixel(x + window_width - 7, y + i - 21, desktop->screen_buffer[(y + i - 21) * desktop->screen_width + (x + window_width - 7)]);
-            }
-        }
-    }
-
-    desktop->mouse->x = c_mouse_call(0, 0);
-    desktop->mouse->y = c_mouse_call(1, 0);
-
-    for (int i = 0; i < MOUSE_WIDTH; i++) {
-        for (int j = 0; j < MOUSE_HEIGHT; j++) {
-            if (desktop->mouse->x + i < 0 || desktop->mouse->x + i >= desktop->screen_width || desktop->mouse->y + j < 0 || desktop->mouse->y + j >= desktop->screen_height) {
-                continue;
-            }
-            if (mouse_img[i + j * MOUSE_WIDTH] == 1) {
-                c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_MASTER);
-            } else if (mouse_img[i + j * MOUSE_WIDTH] == 2) {
-                c_vesa_set_pixel(desktop->mouse->x + i, desktop->mouse->y + j, COLOR_GRADN2);
-            }
-        }
-    }
-
-    int is_clicked = c_mouse_call(2, 0);
-    if (is_clicked && !desktop->mouse->already_clicked) {
-        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked");
-
-        // we check if the mouse is on a window
-        int total = desktop->nb_windows;
-        int mouse_x = desktop->mouse->x;
-        int mouse_y = desktop->mouse->y;
-        button_t *button;
-
-        for (int i = 0; i < total; i++) {
-            window_t *window = desktop->windows[i];
-            // check if the mouse is on the window
-            if (!(mouse_x >= window->x && mouse_x <= window->x + window->width && mouse_y >= window->y && mouse_y <= window->y + window->height)) {
-                continue;
-            }
-
-            // check if the pixel ender the mouse is displayed
-            if (window->visible[mouse_x - window->x + (mouse_y - window->y) * window->width] == 0) {
-                continue;
-            }
-
-            if (DEBUG_LEVEL > 2) serial_print_ss("mouse clicked on window", window->name);
-            desktop->mouse->clicked_window_id = window->usid;
-
-            // check if the mouse is on a button
-            for (int j = 0; j < window->buttons_count; j++) {
-                button = window->button_array[j];
-                if (mouse_x - window->x >= button->x && mouse_x - window->x <= button->x + button->width && mouse_y - window->y >= button->y && mouse_y - window->y <= button->y + button->height) {
-                    if (DEBUG_LEVEL > 2) serial_print_ss("button", "clicked");
-                    desktop->mouse->clicked_button_id = j;
-                    desktop->mouse->clicked_on = BUTTON_ID;
-                    button->is_clicked = 1;
-                    button->clicked_tick++;
-                    i = total;
-                    break;
-                }
-            }
-
-            // check if the mouse is on the top of the window
-            if ((i != total) && mouse_x >= window->x && mouse_x <= window->x + window->width && mouse_y >= window->y && mouse_y <= window->y + 20) {
-                if (window->is_lite) {
-                    if (DEBUG_LEVEL > 2) serial_print_ss("window cant move", "lite");
-                } else {
-                    if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "clicked on the top bar");
-                    desktop->mouse->window_x_dec = window->in_x - desktop->mouse->x;
-                    desktop->mouse->window_y_dec = window->in_y - desktop->mouse->y;
-                    desktop->mouse->clicked_on = WINDOW_ID;
-                }
-            }
-            break;
-        }
-    } else if (is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_on == BUTTON_ID) {
-        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging on button");
-        id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
-
-        if (id == -1) {
-            if (DEBUG_LEVEL > 2) serial_print_ss("window", "not found");
-            return;
-        }
-
-        window_t *window = desktop->windows[id];
-        button_t *button = window->button_array[desktop->mouse->clicked_button_id];
-        button->clicked_tick++;
-
-    } else if (is_clicked && desktop->mouse->already_clicked && desktop->mouse->clicked_on == WINDOW_ID) {
-        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "dragging");
-        id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
-
-        if (id == -1) {
-            if (DEBUG_LEVEL > 2) serial_print_ss("window", "not found");
-            return;
-        }
-
-        window_t *window = desktop->windows[id];
-
-        int window_width = window->width;
-        int window_height = window->height;
-
-        // draw window outline
-        int x = desktop->mouse->x + desktop->mouse->window_x_dec;
-        int y = desktop->mouse->y + desktop->mouse->window_y_dec;
-
-        for (int i = 0; i < window_width; i++) {
-            // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;
-            if (y - 21 < 0 || y - 21 >= desktop->screen_height) continue;
-
-            c_vesa_set_pixel(x + i - 6, y - 21, COLOR_MASTER);
-        }
-        for (int i = 0; i < window_width; i++) {
-            // chek if we are outside the screen
-            if (x + i - 6 < 0 || x + i - 6 >= desktop->screen_width) continue;
-            if (y + window_height - 22 < 0 || y + window_height - 22 >= desktop->screen_height) continue;
-
-            c_vesa_set_pixel(x + i - 6, y + window_height - 22, COLOR_MASTER);
-        }
-        for (int i = 0; i < window_height; i++) {
-            // chek if we are outside the screen
-            if (x - 6 < 0 || x - 6 >= desktop->screen_width) continue;
-            if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
-
-            c_vesa_set_pixel(x - 6, y + i - 21, COLOR_MASTER);
-        }
-        for (int i = 0; i < window_height; i++) {
-            // chek if we are outside the screen
-            if (x + window_width - 7 < 0 || x + window_width - 7 >= desktop->screen_width) continue;
-            if (y + i - 21 < 0 || y + i - 21 >= desktop->screen_height) continue;
-
-            c_vesa_set_pixel(x + window_width - 7, y + i - 21, COLOR_MASTER);
-        }
-    } else if (!is_clicked && desktop->mouse->already_clicked) {
-        if (DEBUG_LEVEL > 2) serial_print_ss("mouse", "released");
-        id = usid_to_id(desktop, desktop->mouse->clicked_window_id);
-        if (id == -1) {
-            if (DEBUG_LEVEL > 2) serial_print_ss("window", "not found");
-            desktop->mouse->already_clicked = 0;
-            desktop->mouse->clicked_on = NOTHING_ID;
-            return;
-        }
-
-        window_t *window = desktop->windows[id];
-        int focus_changed = focus_window(desktop, window);
-
-        if (focus_changed && !window->is_lite) {
-            set_window_priority(desktop, window);
-        }
-
-        if (desktop->mouse->clicked_on == WINDOW_ID) {
-            window_move(window, desktop->mouse->x + desktop->mouse->window_x_dec, desktop->mouse->y + desktop->mouse->window_y_dec);
-            focus_changed = 1;
-        } else if (desktop->mouse->clicked_on == BUTTON_ID) {
-            button_t *button = window->button_array[desktop->mouse->clicked_button_id];
-            button->is_clicked = 0;
-        }
-
-        if (focus_changed) {
-            desktop_refresh(desktop);
-        }
-
-        desktop->mouse->clicked_on = NOTHING_ID;
-    }
-
-    desktop->mouse->already_clicked = is_clicked;
+    
 }
 
 desktop_t *desktop_get_main() {

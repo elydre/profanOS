@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
         // run the functions stack
         desktop_run_stack(desktop);
 
-        refresh_mouse(desktop);
+        refresh_ui(desktop);
 
         start_addons(desktop);
         ms_sleep(10);
