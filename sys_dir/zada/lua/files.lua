@@ -170,11 +170,11 @@ local function set_file_content(file_name, content)
     if not does_path_exist(file_name) then
         return false
     end
-    
+
     if get_path_type(file_name) ~= 2 then
         return false
     end
-    
+
     -- chek if content is a string
     if type(content) ~= "string" then
         return false
