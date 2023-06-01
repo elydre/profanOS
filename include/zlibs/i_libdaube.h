@@ -71,7 +71,7 @@ typedef struct desktop_t {
 
     uint8_t is_locked;
 
-    uint8_t f5_is_pressed;
+    uint8_t key_state[6];
 } desktop_t;
 
 typedef struct button_t {

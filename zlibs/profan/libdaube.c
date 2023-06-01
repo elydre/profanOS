@@ -307,13 +307,59 @@ void refresh_ui(desktop_t *desktop) {
     // F5 + tab -> switch between windows (stop when you release F5)
     // F5 + arrow -> move window          (stop when you release F5)
 
-    if (c_kb_get_scancode() == KEY_F5) {
-        desktop->f5_is_pressed = 1;
-    } else if (c_kb_get_scancode() == (KEY_F5 | KEY_RELEASE)) {
-        desktop->f5_is_pressed = 0;
+    // key_state[0] = F5
+    // key_state[1] = tab
+    // key_state[2] = left
+    // key_state[3] = right
+    // key_state[4] = up
+    // key_state[5] = down
+
+    if (c_kb_get_scancode() == KEY_F5 && !desktop->key_state[0]) {
+        desktop->key_state[0] = 1;
+        return;
     }
 
-    
+    // printf("lib: %x\n", desktop);
+
+    if (!desktop->key_state[0]) {
+        return;
+    }
+
+    switch (c_kb_get_scfh()) {  // get from history
+        case KEY_TAB:
+            desktop->key_state[1] = 1;
+            break;
+        case KEY_LEFT:
+            desktop->key_state[2] = 1;
+            break;
+        case KEY_RIGHT:
+            desktop->key_state[3] = 1;
+            break;
+        case KEY_UP:
+            desktop->key_state[4] = 1;
+            break;
+        case KEY_DOWN:
+            desktop->key_state[5] = 1;
+            break;
+        case KEY_F5 + KEY_RELEASE:
+            desktop->key_state[0] = 0;
+            break;
+        case KEY_TAB + KEY_RELEASE:
+            desktop->key_state[1] = 0;
+            break;
+        case KEY_LEFT + KEY_RELEASE:
+            desktop->key_state[2] = 0;
+            break;
+        case KEY_RIGHT + KEY_RELEASE:
+            desktop->key_state[3] = 0;
+            break;
+        case KEY_UP + KEY_RELEASE:
+            desktop->key_state[4] = 0;
+            break;
+        case KEY_DOWN + KEY_RELEASE:
+            desktop->key_state[5] = 0;
+            break;
+    }
 }
 
 desktop_t *desktop_get_main() {
