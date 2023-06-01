@@ -8,9 +8,10 @@
 #define LIBDAUBE_C
 #include <i_libdaube.h>
 
-#define NO_OPTI 0   // disable optimizations
+#define NO_OPTI      0 // disable optimizations
 
-#define DEBUG_LEVEL 0
+#define DEBUG_LEVEL  0
+#define MOVE_SPEED   5
 
 #define COLOR_MASTER 0x6b6e8c
 #define COLOR_TITLES 0xa7a0b9
@@ -22,6 +23,7 @@
 #define COLOR_FOCUS2 0x0c0f1d
 
 #define WINDOW_MAGIC 0xdeadbeef
+
 #define check_window_fail(w) (w->magic != WINDOW_MAGIC)
 
 #ifndef max
@@ -36,6 +38,15 @@ desktop_t *main_desktop;
 
 #define ID_DESKTOP_REFRESH  1
 #define ID_WINDOW_DELETE    2
+
+#define KEY_F5      0x3F
+#define KEY_TAB     0x0F
+#define KEY_LEFT    0x4B
+#define KEY_RIGHT   0x4D
+#define KEY_UP      0x48
+#define KEY_DOWN    0x50
+
+#define KEY_RELEASE 0x80
 
 void init_func();
 
@@ -65,6 +76,7 @@ void draw_rect_gradian(window_t *window, int x, int y, int width, int height, in
 void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int color);
 void draw_rect(window_t *window, int x, int y, int width, int height, int color);
 void draw_print_wut(window_t *window, int x, int y, char *msg, int color);
+void window_draw_temp_box(window_t *window, int x, int y, uint8_t mode);
 int usid_to_id(desktop_t *desktop, int usid);
 
 
@@ -189,15 +201,16 @@ void window_move(window_t *window, int x, int y) {
     window->old_x = window->x;
     window->old_y = window->y;
 
+    window->x = x;
+    window->y = y;
+
     if (window->is_lite) {
-        window->y = y - 1;
-        window->x = x - 1;
+        window->in_y = y + 1;
+        window->in_x = x + 1;
     } else {
-        window->y = y - 21;
-        window->x = x - 6;
+        window->in_y = y + 21;
+        window->in_x = x + 6;
     }
-    window->in_x = x;
-    window->in_y = y;
 
     window->changed = 1;
 }
@@ -293,15 +306,6 @@ void window_refresh(window_t *window) {
     window_set_pixels_visible(desktop, window, 1);
 }
 
-#define KEY_F5      0x3F
-#define KEY_TAB     0x0F
-#define KEY_LEFT    0x4B
-#define KEY_RIGHT   0x4D
-#define KEY_UP      0x48
-#define KEY_DOWN    0x50
-
-#define KEY_RELEASE 0x80
-
 void refresh_ui(desktop_t *desktop) {
     // get the keyboard input:
     // F5 + tab -> switch between windows (stop when you release F5)
@@ -363,10 +367,18 @@ void refresh_ui(desktop_t *desktop) {
 
     static int last_window_index = 0;
 
+    static int last_x = 0;
+    static int last_y = 0;
+    static uint8_t window_moving = 0;
+
     // F5 released
     if (!desktop->key_state[0]) {
         if (desktop->windows[last_window_index]->usid != desktop->focus_window_usid) {
             focus_window(desktop, desktop->windows[last_window_index]);
+            desktop_refresh(desktop);
+        } if (window_moving) {
+            window_move(desktop->windows[last_window_index], last_x, last_y);
+            window_moving = 0;
             desktop_refresh(desktop);
         }
         return;
@@ -384,6 +396,30 @@ void refresh_ui(desktop_t *desktop) {
         serial_print_ss("switching to window", window->name);
     }
 
+    // direction
+    if (desktop->key_state[2] || desktop->key_state[3] ||
+        desktop->key_state[4] || desktop->key_state[5]
+    ) {
+        window_t *window = desktop->windows[last_window_index];
+
+        if (window_moving) {
+            // erase temp outline
+            window_draw_temp_box(window, last_x, last_y, 1);
+        } else {
+            last_x = window->x;
+            last_y = window->y;
+        }
+
+        if (desktop->key_state[2]) last_x -= MOVE_SPEED;
+        if (desktop->key_state[3]) last_x += MOVE_SPEED;
+        if (desktop->key_state[4]) last_y -= MOVE_SPEED;
+        if (desktop->key_state[5]) last_y += MOVE_SPEED;
+
+        window_moving = 1;
+
+        // draw temp outline
+        window_draw_temp_box(window, last_x, last_y, 0);
+    }
 }
 
 desktop_t *desktop_get_main() {
@@ -802,6 +838,35 @@ void window_draw_box(desktop_t *desktop, window_t *window) {
     for (int i = 0; i < window->width * 19; i++) {
         if (!window->topbar_buffer[i] && 0xFF000000) continue;
         window->buffer[i + window->width] = window->topbar_buffer[i];
+    }
+}
+
+void window_draw_temp_box(window_t *window, int x, int y, uint8_t mode) {
+    // mode 0: COLOR_MASTER
+    // mode 1: ERAZE
+
+    if (mode == 0) {
+        for (int i = x; i < window->width + x - 1; i++) {
+            c_vesa_set_pixel(i, y, COLOR_MASTER);
+            c_vesa_set_pixel(i, y + window->height - 1, COLOR_MASTER);
+        }
+        for (int i = y; i < window->height + y; i++) {
+            c_vesa_set_pixel(x, i, COLOR_MASTER);
+            c_vesa_set_pixel(x + window->width - 1, i, COLOR_MASTER);
+        }
+        return;
+    } else if (mode == 1) {
+        uint32_t *screen_buffer = ((desktop_t *) window->parent_desktop)->screen_buffer;
+        int screen_width = ((desktop_t *) window->parent_desktop)->screen_width;
+
+        for (int i = x; i < window->width + x - 1; i++) {
+            c_vesa_set_pixel(i, y, screen_buffer[i + y * screen_width]);
+            c_vesa_set_pixel(i, y + window->height - 1, screen_buffer[i + (y + window->height - 1) * screen_width]);
+        }
+        for (int i = y; i < window->height + y; i++) {
+            c_vesa_set_pixel(x, i, screen_buffer[x + i * screen_width]);
+            c_vesa_set_pixel(x + window->width - 1, i, screen_buffer[(x + window->width - 1) + i * screen_width]);
+        }
     }
 }
 
