@@ -360,6 +360,30 @@ void refresh_ui(desktop_t *desktop) {
             desktop->key_state[5] = 0;
             break;
     }
+
+    static int last_window_index = 0;
+
+    // F5 released
+    if (!desktop->key_state[0]) {
+        if (desktop->windows[last_window_index]->usid != desktop->focus_window_usid) {
+            focus_window(desktop, desktop->windows[last_window_index]);
+            desktop_refresh(desktop);
+        }
+        return;
+    }
+
+    // tab
+    if (desktop->key_state[1]) {
+        desktop->key_state[1] = 0;
+        int window_index = last_window_index + 1;
+        if (window_index >= desktop->nb_windows) {
+            window_index = 0;
+        }
+        last_window_index = window_index;
+        window_t *window = desktop->windows[window_index];
+        serial_print_ss("switching to window", window->name);
+    }
+
 }
 
 desktop_t *desktop_get_main() {
