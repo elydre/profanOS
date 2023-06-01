@@ -104,18 +104,13 @@ int wadds_get_kb(window_t *window) {
         desktop_get_main() :
         (desktop_t *) window->parent_desktop;
 
-    // if F5 is pressed
-    if (desktop->key_state[0])
-        return 0;
-
     // if the default window is focused
-    if (window == NULL && desktop->focus_window_usid == 0)
+    if (!desktop->key_state[0] &&
+        ((desktop->focus_window_usid == window->usid) ||
+        (window == NULL && desktop->focus_window_usid == 0)))
         return c_kb_get_scfh();
-
-    if (desktop->focus_window_usid != window->usid)
-        return 0;
     
-    return c_kb_get_scfh();
+    return 0;
 }
 
 /*****************************
