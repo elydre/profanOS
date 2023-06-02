@@ -47,6 +47,7 @@ desktop_t *main_desktop;
 #define KEY_RIGHT   0x4D
 #define KEY_UP      0x48
 #define KEY_DOWN    0x50
+#define KEY_ALT     0x38
 
 #define KEY_RELEASE 0x80
 
@@ -325,7 +326,7 @@ void refresh_ui(desktop_t *desktop) {
     // key_state[4] = up
     // key_state[5] = down
 
-    if (c_kb_get_scancode() == KEY_F5 && !desktop->key_state[0]) {
+    if ((c_kb_get_scancode() == KEY_F5 || c_kb_get_scancode() == KEY_ALT) && !desktop->key_state[0]) {
         if (rdata->last_window_index >= desktop->nb_windows) {
             rdata->last_window_index = 0;
         }
@@ -363,6 +364,9 @@ void refresh_ui(desktop_t *desktop) {
             desktop->key_state[5] = 1;
             break;
         case KEY_F5 + KEY_RELEASE:
+            desktop->key_state[0] = 0;
+            break;
+        case KEY_ALT + KEY_RELEASE:
             desktop->key_state[0] = 0;
             break;
         case KEY_TAB + KEY_RELEASE:
