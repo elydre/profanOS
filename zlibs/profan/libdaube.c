@@ -21,8 +21,8 @@
 #define COLOR_GRADN1 0x120434
 #define COLOR_GRADN2 0x00000c
 
-#define COLOR_FOCUS1 0x240865
-#define COLOR_FOCUS2 0x0c0f1d
+#define COLOR_FOCUS1 0x280a70
+#define COLOR_FOCUS2 0x0c0f21
 
 #define WINDOW_MAGIC 0xdeadbeef
 
@@ -395,14 +395,17 @@ void refresh_ui(desktop_t *desktop) {
         window = desktop->windows[rdata->last_window_index];
         window_draw_temp_box(window, rdata->last_x, rdata->last_y, 1);
 
-        if (window->usid != desktop->focus_window_usid) {
-            focus_window(desktop, window);
-            desktop_refresh(desktop);
-        } if (rdata->window_moving) {
+        if (!window->cant_move) {
+            set_window_priority(desktop, window);
+        }
+        focus_window(desktop, window);
+
+        if (rdata->window_moving) {
             window_move(window, rdata->last_x, rdata->last_y);
             rdata->window_moving = 0;
-            desktop_refresh(desktop);
         }
+
+        desktop_refresh(desktop);
         return;
     }
 
