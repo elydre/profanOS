@@ -317,7 +317,6 @@ void refresh_ui(desktop_t *desktop) {
 
     window_t *window;
 
-
     // get the keyboard input:
     // F5 + tab -> switch between windows (stop when you release F5)
     // F5 + arrow -> move window          (stop when you release F5)
@@ -330,6 +329,10 @@ void refresh_ui(desktop_t *desktop) {
     // key_state[5] = down
 
     if (c_kb_get_scancode() == KEY_F5 && !desktop->key_state[0]) {
+        if (last_window_index >= desktop->nb_windows) {
+            last_window_index = 0;
+        }
+
         desktop->key_state[0] = 1;
 
         window = desktop->windows[last_window_index];
@@ -341,8 +344,6 @@ void refresh_ui(desktop_t *desktop) {
 
         return;
     }
-
-    // printf("lib: %x\n", desktop);
 
     if (!desktop->key_state[0]) {
         return;
@@ -382,6 +383,10 @@ void refresh_ui(desktop_t *desktop) {
         case KEY_DOWN + KEY_RELEASE:
             desktop->key_state[5] = 0;
             break;
+    }
+
+    if (last_window_index >= desktop->nb_windows) {
+        last_window_index = 0;
     }
 
     // F5 released
