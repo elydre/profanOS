@@ -384,6 +384,27 @@ void refresh_ui(desktop_t *desktop) {
             desktop_refresh(desktop);
         }
         return;
+    }
+
+    // tab
+    if (desktop->key_state[1]) {
+        desktop->key_state[1] = 0;
+        int window_index = last_window_index + 1;
+        if (window_index >= desktop->nb_windows) {
+            window_index = 0;
+        }
+        last_window_index = window_index;
+        window_t *window = desktop->windows[window_index];
+        serial_print_ss("switching to window", window->name);
+    }
+
+    // direction
+    if (desktop->key_state[2] || desktop->key_state[3] ||
+        desktop->key_state[4] || desktop->key_state[5]
+    ) {
+        window_t *window = desktop->windows[last_window_index];
+
+        if (window_moving) {
             // erase temp outline
             window_draw_temp_box(window, last_x, last_y, 1);
         } else {
