@@ -16,6 +16,8 @@
 #define COLOR_MASTER 0x6b6e8c
 #define COLOR_TITLES 0xa7a0b9
 
+#define COLOR_ACCENT 0xFF0033
+
 #define COLOR_GRADN1 0x120434
 #define COLOR_GRADN2 0x00000c
 
@@ -382,27 +384,6 @@ void refresh_ui(desktop_t *desktop) {
             desktop_refresh(desktop);
         }
         return;
-    }
-
-    // tab
-    if (desktop->key_state[1]) {
-        desktop->key_state[1] = 0;
-        int window_index = last_window_index + 1;
-        if (window_index >= desktop->nb_windows) {
-            window_index = 0;
-        }
-        last_window_index = window_index;
-        window_t *window = desktop->windows[window_index];
-        serial_print_ss("switching to window", window->name);
-    }
-
-    // direction
-    if (desktop->key_state[2] || desktop->key_state[3] ||
-        desktop->key_state[4] || desktop->key_state[5]
-    ) {
-        window_t *window = desktop->windows[last_window_index];
-
-        if (window_moving) {
             // erase temp outline
             window_draw_temp_box(window, last_x, last_y, 1);
         } else {
@@ -850,19 +831,19 @@ void window_draw_temp_box(window_t *window, int x, int y, uint8_t mode) {
 
     uint32_t *screen_buffer = ((desktop_t *) window->parent_desktop)->screen_buffer;
     int screen_width = ((desktop_t *) window->parent_desktop)->screen_width;
-    
+
     if (mode == 0) {
         for (int i = x; i < window->width + x - 1; i++) {
             if (i < 0 || i >= x_max) continue;
-            if (y > 0 && y < y_max) c_vesa_set_pixel(i, y, COLOR_MASTER);
+            if (y > 0 && y < y_max) c_vesa_set_pixel(i, y, COLOR_ACCENT);
             if (y + window->height - 1 < 0 || y + window->height - 1 >= y_max) continue;
-            c_vesa_set_pixel(i, y + window->height - 1, COLOR_MASTER);
+            c_vesa_set_pixel(i, y + window->height - 1, COLOR_ACCENT);
         }
         for (int i = y; i < window->height + y; i++) {
             if (i < 0 || i >= y_max) continue;
-            if (x > 0 && x < x_max) c_vesa_set_pixel(x, i, COLOR_MASTER);
+            if (x > 0 && x < x_max) c_vesa_set_pixel(x, i, COLOR_ACCENT);
             if (x + window->width - 1 < 0 || x + window->width - 1 >= x_max) continue;
-            c_vesa_set_pixel(x + window->width - 1, i, COLOR_MASTER);
+            c_vesa_set_pixel(x + window->width - 1, i, COLOR_ACCENT);
         }
         return;
     } else if (mode == 1) {
