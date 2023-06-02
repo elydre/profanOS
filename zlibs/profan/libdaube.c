@@ -309,6 +309,15 @@ void window_refresh(window_t *window) {
 }
 
 void refresh_ui(desktop_t *desktop) {
+    static int last_window_index = 0;
+
+    static int last_x = 0;
+    static int last_y = 0;
+    static uint8_t window_moving = 0;
+
+    window_t *window;
+
+
     // get the keyboard input:
     // F5 + tab -> switch between windows (stop when you release F5)
     // F5 + arrow -> move window          (stop when you release F5)
@@ -322,6 +331,14 @@ void refresh_ui(desktop_t *desktop) {
 
     if (c_kb_get_scancode() == KEY_F5 && !desktop->key_state[0]) {
         desktop->key_state[0] = 1;
+
+        window = desktop->windows[last_window_index];
+
+        last_x = window->x;
+        last_y = window->y;
+
+        window_draw_temp_box(window, last_x, last_y, 0);
+
         return;
     }
 
@@ -367,14 +384,11 @@ void refresh_ui(desktop_t *desktop) {
             break;
     }
 
-    static int last_window_index = 0;
-
-    static int last_x = 0;
-    static int last_y = 0;
-    static uint8_t window_moving = 0;
-
     // F5 released
     if (!desktop->key_state[0]) {
+        window = desktop->windows[last_window_index];
+        window_draw_temp_box(window, last_x, last_y, 1);
+
         if (desktop->windows[last_window_index]->usid != desktop->focus_window_usid) {
             focus_window(desktop, desktop->windows[last_window_index]);
             desktop_refresh(desktop);
@@ -393,8 +407,18 @@ void refresh_ui(desktop_t *desktop) {
         if (window_index >= desktop->nb_windows) {
             window_index = 0;
         }
+
+        window = desktop->windows[last_window_index];
+        window_draw_temp_box(window, last_x, last_y, 1);    // erase old temp box
+
         last_window_index = window_index;
-        window_t *window = desktop->windows[window_index];
+        window = desktop->windows[last_window_index];
+
+        last_x = window->x;
+        last_y = window->y;
+
+        window_draw_temp_box(window, last_x, last_y, 0);    // draw new temp box
+        
         serial_print_ss("switching to window", window->name);
     }
 
@@ -402,15 +426,9 @@ void refresh_ui(desktop_t *desktop) {
     if (desktop->key_state[2] || desktop->key_state[3] ||
         desktop->key_state[4] || desktop->key_state[5]
     ) {
-        window_t *window = desktop->windows[last_window_index];
+        window = desktop->windows[last_window_index];
 
-        if (window_moving) {
-            // erase temp outline
-            window_draw_temp_box(window, last_x, last_y, 1);
-        } else {
-            last_x = window->x;
-            last_y = window->y;
-        }
+        window_draw_temp_box(window, last_x, last_y, 1);
 
         if (desktop->key_state[2]) last_x -= MOVE_SPEED;
         if (desktop->key_state[3]) last_x += MOVE_SPEED;
