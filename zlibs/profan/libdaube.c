@@ -845,26 +845,37 @@ void window_draw_temp_box(window_t *window, int x, int y, uint8_t mode) {
     // mode 0: COLOR_MASTER
     // mode 1: ERAZE
 
+    int x_max = c_vesa_get_width();
+    int y_max = c_vesa_get_height();
+
+    uint32_t *screen_buffer = ((desktop_t *) window->parent_desktop)->screen_buffer;
+    int screen_width = ((desktop_t *) window->parent_desktop)->screen_width;
+    
     if (mode == 0) {
         for (int i = x; i < window->width + x - 1; i++) {
-            c_vesa_set_pixel(i, y, COLOR_MASTER);
+            if (i < 0 || i >= x_max) continue;
+            if (y > 0 && y < y_max) c_vesa_set_pixel(i, y, COLOR_MASTER);
+            if (y + window->height - 1 < 0 || y + window->height - 1 >= y_max) continue;
             c_vesa_set_pixel(i, y + window->height - 1, COLOR_MASTER);
         }
         for (int i = y; i < window->height + y; i++) {
-            c_vesa_set_pixel(x, i, COLOR_MASTER);
+            if (i < 0 || i >= y_max) continue;
+            if (x > 0 && x < x_max) c_vesa_set_pixel(x, i, COLOR_MASTER);
+            if (x + window->width - 1 < 0 || x + window->width - 1 >= x_max) continue;
             c_vesa_set_pixel(x + window->width - 1, i, COLOR_MASTER);
         }
         return;
     } else if (mode == 1) {
-        uint32_t *screen_buffer = ((desktop_t *) window->parent_desktop)->screen_buffer;
-        int screen_width = ((desktop_t *) window->parent_desktop)->screen_width;
-
         for (int i = x; i < window->width + x - 1; i++) {
-            c_vesa_set_pixel(i, y, screen_buffer[i + y * screen_width]);
+            if (i < 0 || i >= x_max) continue;
+            if (y > 0 && y < y_max) c_vesa_set_pixel(i, y, screen_buffer[i + y * screen_width]);
+            if (y + window->height - 1 < 0 || y + window->height - 1 >= y_max) continue;
             c_vesa_set_pixel(i, y + window->height - 1, screen_buffer[i + (y + window->height - 1) * screen_width]);
         }
         for (int i = y; i < window->height + y; i++) {
-            c_vesa_set_pixel(x, i, screen_buffer[x + i * screen_width]);
+            if (i < 0 || i >= y_max) continue;
+            if (x > 0 && x < x_max) c_vesa_set_pixel(x, i, screen_buffer[x + i * screen_width]);
+            if (x + window->width - 1 < 0 || x + window->width - 1 >= x_max) continue;
             c_vesa_set_pixel(x + window->width - 1, i, screen_buffer[(x + window->width - 1) + i * screen_width]);
         }
     }
