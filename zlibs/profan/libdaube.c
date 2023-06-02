@@ -389,11 +389,11 @@ void refresh_ui(desktop_t *desktop) {
         window = desktop->windows[last_window_index];
         window_draw_temp_box(window, last_x, last_y, 1);
 
-        if (desktop->windows[last_window_index]->usid != desktop->focus_window_usid) {
-            focus_window(desktop, desktop->windows[last_window_index]);
+        if (window->usid != desktop->focus_window_usid) {
+            focus_window(desktop, window);
             desktop_refresh(desktop);
         } if (window_moving) {
-            window_move(desktop->windows[last_window_index], last_x, last_y);
+            window_move(window, last_x, last_y);
             window_moving = 0;
             desktop_refresh(desktop);
         }
@@ -425,6 +425,8 @@ void refresh_ui(desktop_t *desktop) {
     if (desktop->key_state[2] || desktop->key_state[3] ||
         desktop->key_state[4] || desktop->key_state[5]
     ) {
+        window_moving = 1;
+
         window = desktop->windows[last_window_index];
 
         window_draw_temp_box(window, last_x, last_y, 1);
@@ -434,7 +436,10 @@ void refresh_ui(desktop_t *desktop) {
         if (desktop->key_state[4]) last_y -= MOVE_SPEED;
         if (desktop->key_state[5]) last_y += MOVE_SPEED;
 
-        window_moving = 1;
+        if (last_x <= 0) last_x = desktop->screen_width - 1;
+        if (last_x >= desktop->screen_width) last_x = 0;
+        if (last_y <= 0) last_y = desktop->screen_height - 1;
+        if (last_y >= desktop->screen_height) last_y = 0;
 
         // draw temp outline
         window_draw_temp_box(window, last_x, last_y, 0);
