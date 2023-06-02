@@ -429,9 +429,13 @@ void refresh_ui(desktop_t *desktop) {
     if (desktop->key_state[2] || desktop->key_state[3] ||
         desktop->key_state[4] || desktop->key_state[5]
     ) {
-        window_moving = 1;
-
         window = desktop->windows[last_window_index];
+
+        if (window->cant_move) {
+            return;
+        }
+
+        window_moving = 1;
 
         window_draw_temp_box(window, last_x, last_y, 1);
 
