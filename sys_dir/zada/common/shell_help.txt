@@ -1,9 +1,18 @@
-binc    - elf to binary converter   info    - show time, mem, disk
-cat     - show file content         ls      - list the current dir
-cd      - change dir                mkdir   - create a new dir
-clear   - clear the screen          mkfile  - create a new file
-cpu     - start cpu usage monitor   proc    - show process info
-echo    - print the arguments       reboot  - reboot the system
-exit    - exit of the shell app     rim     - start text editor
-go      - start * file as binary    stop    - shutdown the system
-help    - show this help            udisk   - show used disk space
+                $4* SHELL BASIC COMMANDS *$7
+binc    - elf to binary converter   ls      - list the current dir
+cat     - show file content         mkdir   - create a new dir
+cd      - change dir                mkfile  - create a new file
+clear   - clear the screen          proc    - show process info
+cpu     - start cpu usage monitor   reboot  - reboot the system
+echo    - print the arguments       rim     - start text editor
+exit    - exit of the shell app     stop    - shutdown the system
+go      - start * file as binary    udisk   - show used disk space
+info    - show time, mem, disk      win     - window manager tool
+
+              $4* USEFUL KEYBOARD SHORTCUTS *$7
+ALT + TAB       - switch between windows
+ALT + ARROWS    - move the window
+
+F1              - kernel shell
+F2              - kill the current process
+F7, F8          - fill the screen with color

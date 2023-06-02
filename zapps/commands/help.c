@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
         char *char_content = c_fs_declare_read_array(file);
         c_fs_read_file(file, (uint8_t *) char_content);
 
-        puts(char_content);
+        printf("%s\n", char_content);
 
         free(char_content);
     } else {
