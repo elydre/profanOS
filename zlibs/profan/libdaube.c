@@ -80,7 +80,6 @@ void draw_straight_line(window_t *window, int x1, int y1, int x2, int y2, int co
 void draw_rect(window_t *window, int x, int y, int width, int height, int color);
 void draw_print_wut(window_t *window, int x, int y, char *msg, int color);
 void window_draw_temp_box(window_t *window, int x, int y, uint8_t mode);
-int usid_to_id(desktop_t *desktop, int usid);
 
 
 desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
@@ -219,8 +218,31 @@ void window_move(window_t *window, int x, int y) {
     window->changed = 1;
 }
 
-void window_resize(window_t *window, int width, int height) {
-    // TODO
+void window_auto_switch(desktop_t *desktop, window_t *window) {
+    // get the index of the window
+    int index = -1;
+    for (int i = 0; i < desktop->max_windows; i++) {
+        if (desktop->windows[i] == window) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        serial_print_ss("error:", "window_auto_switch: window not found");
+        return;
+    }
+
+    if (!window->cant_move) {
+        set_window_priority(desktop, window);
+    }
+    focus_window(desktop, window);
+
+    refresh_ui_t *rdata = desktop->refresh_data;
+
+    rdata->last_window_index = index;
+    rdata->last_x = window->x;
+    rdata->last_y = window->y;
 }
 
 void window_set_pixel_func(window_t *window, int x, int y, uint32_t color, uint8_t in_box) {
@@ -722,7 +744,13 @@ void set_window_priority(desktop_t *desktop, window_t *window) {
 }
 
 int focus_window(desktop_t *desktop, window_t *window) {
-    int old_focus_id = usid_to_id(desktop, desktop->focus_window_usid);
+    int old_focus_id = -1;
+    for (int i = 0; i < desktop->nb_windows; i++) {
+        if (desktop->windows[i]->usid == desktop->focus_window_usid) {
+            old_focus_id = i;
+            break;
+        }
+    }
 
     if (desktop->focus_window_usid == window->usid) {
         return 0;
@@ -795,15 +823,6 @@ void window_update_visible(desktop_t *desktop, window_t *window) {
     }
 
     free(sorted);
-}
-
-int usid_to_id(desktop_t *desktop, int usid) {
-    for (int i = 0; i < desktop->nb_windows; i++) {
-        if (desktop->windows[i]->usid == usid) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 void serial_print_ss(char *str, char *name) {

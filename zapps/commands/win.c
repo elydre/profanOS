@@ -37,6 +37,7 @@ int help() {
          "  -c <ID>     Close a window\n"
          "  -t <ID t/f> on top/floating\n"
          "  -a <ID u/m> unmovable/movable\n"
+         "  -s <ID>     Switch to a window\n"
     );
 
     return 0;
@@ -114,6 +115,26 @@ int movable_window(int usid, int movable) {
     return 0;
 }
 
+int switch_window(int usid) {
+    desktop_t *desktop = desktop_get_main();
+    window_t *window;
+
+    int index = usid_to_index(desktop, usid);
+
+    if (index == -1) {
+        printf("win: window with usid %d not found\n", usid);
+        return 1;
+    }
+
+    printf("win: switching to window %d\n", usid);
+
+    window = desktop->windows[index];
+    window_auto_switch(desktop, window);
+    desktop_refresh(desktop);
+
+    return 0;
+}
+
 #define ARG_DEC 1
 
 int main(int argc, char **argv) {
@@ -149,10 +170,15 @@ int main(int argc, char **argv) {
             int movable = !strcmp(argv[3 + ARG_DEC], "m");
             return movable_window(atoi(argv[2 + ARG_DEC]), movable);
         } else puts("win: invalid arguments (win -a <ID> <u/m>)\n");
-    }    
+    }
+
+    if (!strcmp(argv[1 + ARG_DEC], "-s")) {
+        if (argc == 3) {
+            return switch_window(atoi(argv[2 + ARG_DEC]));
+        } else puts("win: invalid arguments (win -s <ID>)\n");
+    }
 
     puts("win: invalid arguments\n");
+    help();
     return 1;
-
-    return 0;
 }

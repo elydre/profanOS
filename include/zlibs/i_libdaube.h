@@ -95,7 +95,7 @@ typedef struct desktop_t {
 #define window_create ((window_t *(*)(desktop_t *, char *, int, int, int, int, uint8_t, uint8_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 4))
 #define desktop_refresh ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 5))
 #define window_move ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 6))
-#define window_resize ((void (*)(window_t *, int, int)) get_func_addr(LIBDAUBE_ID, 7))
+#define window_auto_switch ((void (*)(desktop_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 7))
 #define window_set_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 8))
 #define window_display_pixel_func ((void (*)(window_t *, int, int, uint32_t, uint8_t)) get_func_addr(LIBDAUBE_ID, 9))
 #define window_refresh ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 10))
