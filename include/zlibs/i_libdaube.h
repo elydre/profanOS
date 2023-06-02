@@ -6,7 +6,6 @@
 #define NOTHING_ID  0
 #define DESKTOP_ID  1
 #define WINDOW_ID   2
-#define BUTTON_ID   3
 
 typedef struct libdaude_func_t {
     int func_id;
@@ -18,8 +17,6 @@ typedef struct libdaude_func_t {
 
 typedef struct window_t {
     void *parent_desktop;
-    void **button_array; // button_t **
-    int buttons_count;
     uint32_t magic;
     int usid;
 
@@ -74,16 +71,6 @@ typedef struct desktop_t {
     uint8_t key_state[6];
 } desktop_t;
 
-typedef struct button_t {
-    window_t *window;
-    int x;
-    int y;
-    int width;
-    int height;
-    uint8_t is_clicked;
-    uint32_t clicked_tick;
-} button_t;
-
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
 #ifndef LIBDAUBE_C
@@ -105,9 +92,8 @@ typedef struct button_t {
 #define refresh_ui ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 11))
 #define desktop_get_main ((desktop_t *(*)(void)) get_func_addr(LIBDAUBE_ID, 12))
 #define window_delete ((void (*)(window_t *)) get_func_addr(LIBDAUBE_ID, 13))
-#define create_button ((button_t *(*)(window_t *, int, int, int, int)) get_func_addr(LIBDAUBE_ID, 14))
-#define window_wait_delete ((void (*)(desktop_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 15))
-#define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 16))
+#define window_wait_delete ((void (*)(desktop_t *, window_t *)) get_func_addr(LIBDAUBE_ID, 14))
+#define desktop_run_stack ((void (*)(desktop_t *)) get_func_addr(LIBDAUBE_ID, 15))
 
 #endif
 #endif

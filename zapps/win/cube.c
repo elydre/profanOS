@@ -49,15 +49,14 @@ int main(int argc, char** argv) {
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();
 
-    // create a window and add an exit button
+    // create a window
     window_t *window = window_create(main_desktop, "3D cube", 200, 200, 200, 200, 0, 0, 0);
-    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     shape_t shape = cube(120);
     int time;
 
-    for (int i = 0; !exit_button->clicked_tick; i = (i + 2) % 360) {
+    for (int i = 0; 1; i = (i + 2) % 360) {
         shape_t new_shape = rotate(&shape, i, i, i);
         draw(&new_shape, window);
         delete_shape(&new_shape);

@@ -11,35 +11,6 @@ int main() {
     return 0;
 }
 
-button_t *wadds_create_exitbt(window_t *window) {
-    int x = window->width - 3;
-
-    // draw bg rectangle
-    for (int i = 3; i < 16; i++) {
-        for (int j = 3; j < 16; j++) {
-            window_set_pixel_out(window, x - i, j, 0x880000);
-        }
-    }
-
-    // draw cross
-    for (int i = 3; i < 16; i++) {
-        for (int j = -1; j < 2; j++) {
-            window_set_pixel_out(window, x - i, (i + j != 2) ? i + j : 3, 0xa7a0b9);
-            window_set_pixel_out(window, x - (19 - i), (i + j != 2) ? i + j : 3, 0xa7a0b9);
-        }
-    }
-
-    // draw outlines
-    for (int i = 3; i < 16; i++) {
-        window_set_pixel_out(window, x - i, 3, 0x880000);
-        window_set_pixel_out(window, x - i - 1, 16, 0x880000);
-        window_set_pixel_out(window, x - 3, i + 1, 0x880000);
-        window_set_pixel_out(window, x - 16, i, 0x880000);
-    }
-
-    return create_button(window, x - 18, 3, 16, 16);
-}
-
 void wadds_line(window_t *window, int x1, int y1, int x2, int y2, uint32_t color, uint8_t inst) {
     int dx = abs(x2 - x1);
     int sx = x1 < x2 ? 1 : -1;

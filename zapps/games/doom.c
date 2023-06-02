@@ -57,9 +57,8 @@ int main(int argc, char **argv) {
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();
 
-    // create a window and add an exit button
+    // create a window
     window_t *window = window_create(main_desktop, "doom like", 100, 100, width, height, 0, 0, 0);
-    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     int center, top, bottom;
@@ -74,7 +73,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < 100; i++) wadds_get_kb(window);
 
-    while (!exit_button->clicked_tick) {
+    while (1) {
         tick_count[1] = c_timer_get_ms() - tick_count[0];
         tick_count[0] = c_timer_get_ms();
 

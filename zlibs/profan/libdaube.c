@@ -148,7 +148,6 @@ window_t *window_create(desktop_t* desktop, char *name, int x, int y, int width,
     }
 
     window->parent_desktop = (void *) desktop;
-    window->button_array = NULL;
     window->buffer = calloc(window->height * window->width, sizeof(uint32_t));
     window->visible = calloc(window->height * window->width, sizeof(uint8_t));
 
@@ -464,23 +463,6 @@ void window_delete(window_t *window) {
     desktop->func_run_stack_size++;
 }
 
-button_t *create_button(window_t *window, int x, int y, int width, int height) {
-    // set button
-    button_t *button = malloc(sizeof(button_t));
-    button->x = x;
-    button->y = y;
-    button->width = width;
-    button->height = height;
-    button->window = window;
-    button->is_clicked = 0;
-    button->clicked_tick = 0;
-    // set in the window
-    window->button_array = realloc(window->button_array, sizeof(button_t *) * (window->buttons_count + 1));
-    window->button_array[window->buttons_count] = button;
-    window->buttons_count++;
-    return button;
-}
-
 void window_wait_delete(desktop_t *desktop, window_t *window) {
     int found = 1;
     while (found) {
@@ -564,16 +546,6 @@ void func_window_delete(window_t *window) {
     window->changed = 1;
 
     func_desktop_refresh(window->parent_desktop);
-
-    // free the buttons
-    for (int i = 0; i < window->buttons_count; i++) {
-        free(window->button_array[i]);
-    }
-
-    // free the arrays
-    if (window->button_array != NULL) {
-        free(window->button_array);
-    }
 
     free(window->name);
     free(window->buffer);

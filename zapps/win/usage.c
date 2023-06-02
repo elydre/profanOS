@@ -34,9 +34,8 @@ int main(int argc, char **argv) {
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();
 
-    // create a window and add an exit button
+    // create a window
     window_t *window = window_create(main_desktop, "process usage", 100, 450, 350, 208, 0, 0, 0);
-    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
     int *running_pid = calloc(20, sizeof(int));
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
 
     loop_time = 1000;
 
-    while (!exit_button->clicked_tick) {
+    while (1) {
         start = c_timer_get_ms();
         wadds_fill(window, 0x000000, 0);
 

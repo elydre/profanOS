@@ -12,9 +12,8 @@ int main(int argc, char **argv) {
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();
 
-    // create a window and add an exit button
+    // create a window
     window_t *window = window_create(main_desktop, "pong like", 100, 200, 200, 200, 0, 0, 0);
-    button_t *exit_button = wadds_create_exitbt(window);
     desktop_refresh(main_desktop);
 
 
@@ -29,7 +28,7 @@ int main(int argc, char **argv) {
 
     wadds_fill(window, 0xff0000, 0);
 
-    while (!exit_button->clicked_tick) {
+    while (1) {
         // draw the old square
 
         for (int i = 0; i < 10; i++) {

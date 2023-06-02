@@ -51,7 +51,6 @@
 
 // GLOBALS
 
-button_t *g_exit_button;
 window_t *g_window;
 
 char *g_data;
@@ -190,7 +189,7 @@ void main_loop(char *path) {
     int y_offset = 0;
     int x_offset = 0;
 
-    while (!g_exit_button->clicked_tick) {
+    while (1) {
         // wait for key
         key = wadds_get_kb(g_window);
 
@@ -422,9 +421,8 @@ int main(int argc, char *argv[]) {
     // get the main desktop
     desktop_t *main_desktop = desktop_get_main();
 
-    // create a window and add an exit button
+    // create a window
     g_window = window_create(main_desktop, title, 200, 200, SCREEN_W, SCREEN_H, 0, 0, 0);
-    g_exit_button = wadds_create_exitbt(g_window);
     desktop_refresh(main_desktop);
 
     g_data = calloc(1024, sizeof(char));
