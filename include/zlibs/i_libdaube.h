@@ -7,6 +7,14 @@
 #define DESKTOP_ID  1
 #define WINDOW_ID   2
 
+typedef struct {
+    int last_window_index;
+
+    int last_x;
+    int last_y;
+    uint8_t window_moving;
+} refresh_ui_t;
+
 typedef struct libdaude_func_t {
     int func_id;
 
@@ -62,6 +70,8 @@ typedef struct desktop_t {
     int focus_window_usid;
 
     libdaude_func_t *func_run_stack;
+    refresh_ui_t *refresh_data;
+
     int func_run_stack_size;
 
     uint32_t *screen_buffer;

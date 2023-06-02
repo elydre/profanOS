@@ -12,7 +12,6 @@ typedef struct {
 screen_char_t *screen_buffer;
 window_t *term_window;
 
-
 #define FONT_TABLE c_font_get(FONT_8X16)
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
@@ -36,6 +35,11 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+int cursor_x;
+int cursor_y;
+
+int hidden_cursor;
+
 void ocm_init(window_t *window) {
     screen_buffer = calloc(MAX_COLS * MAX_ROWS, sizeof(screen_char_t));
     for (int i = 0; i < MAX_COLS * MAX_ROWS; i++) {
@@ -43,13 +47,14 @@ void ocm_init(window_t *window) {
         screen_buffer[i].color = 0;
         screen_buffer[i].bg_color = 0;
     }
+
+    cursor_x = 0;
+    cursor_y = 0;
+    hidden_cursor = 1;
+
     term_window = window;
 }
 
-int cursor_x = 0;
-int cursor_y = 0;
-
-int hidden_cursor = 1;
 
 // set a character at a given position
 void set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {

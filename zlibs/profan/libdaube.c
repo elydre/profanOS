@@ -103,6 +103,8 @@ desktop_t *desktop_init(int max_windows, int screen_width, int screen_height) {
     desktop->func_run_stack = calloc(100, sizeof(libdaude_func_t));
     desktop->func_run_stack_size = 0;
 
+    desktop->refresh_data = calloc(1, sizeof(refresh_ui_t));
+
     if (main_desktop == NULL) {
         main_desktop = desktop;
     }
@@ -308,11 +310,7 @@ void window_refresh(window_t *window) {
 }
 
 void refresh_ui(desktop_t *desktop) {
-    static int last_window_index = 0;
-
-    static int last_x = 0;
-    static int last_y = 0;
-    static uint8_t window_moving = 0;
+    refresh_ui_t *rdata = desktop->refresh_data;
 
     window_t *window;
 
@@ -328,18 +326,18 @@ void refresh_ui(desktop_t *desktop) {
     // key_state[5] = down
 
     if (c_kb_get_scancode() == KEY_F5 && !desktop->key_state[0]) {
-        if (last_window_index >= desktop->nb_windows) {
-            last_window_index = 0;
+        if (rdata->last_window_index >= desktop->nb_windows) {
+            rdata->last_window_index = 0;
         }
 
         desktop->key_state[0] = 1;
 
-        window = desktop->windows[last_window_index];
+        window = desktop->windows[rdata->last_window_index];
 
-        last_x = window->x;
-        last_y = window->y;
+        rdata->last_x = window->x;
+        rdata->last_y = window->y;
 
-        window_draw_temp_box(window, last_x, last_y, 0);
+        window_draw_temp_box(window, rdata->last_x, rdata->last_y, 0);
 
         return;
     }
@@ -384,21 +382,21 @@ void refresh_ui(desktop_t *desktop) {
             break;
     }
 
-    if (last_window_index >= desktop->nb_windows) {
-        last_window_index = 0;
+    if (rdata->last_window_index >= desktop->nb_windows) {
+        rdata->last_window_index = 0;
     }
 
     // F5 released
     if (!desktop->key_state[0]) {
-        window = desktop->windows[last_window_index];
-        window_draw_temp_box(window, last_x, last_y, 1);
+        window = desktop->windows[rdata->last_window_index];
+        window_draw_temp_box(window, rdata->last_x, rdata->last_y, 1);
 
         if (window->usid != desktop->focus_window_usid) {
             focus_window(desktop, window);
             desktop_refresh(desktop);
-        } if (window_moving) {
-            window_move(window, last_x, last_y);
-            window_moving = 0;
+        } if (rdata->window_moving) {
+            window_move(window, rdata->last_x, rdata->last_y);
+            rdata->window_moving = 0;
             desktop_refresh(desktop);
         }
         return;
@@ -407,50 +405,50 @@ void refresh_ui(desktop_t *desktop) {
     // tab
     if (desktop->key_state[1]) {
         desktop->key_state[1] = 0;
-        int window_index = last_window_index + 1;
+        int window_index = rdata->last_window_index + 1;
 
         if (window_index >= desktop->nb_windows) {
             window_index = 0;
         }
 
-        window = desktop->windows[last_window_index];
-        window_draw_temp_box(window, last_x, last_y, 1);    // erase old temp box
+        window = desktop->windows[rdata->last_window_index];
+        window_draw_temp_box(window, rdata->last_x, rdata->last_y, 1);    // erase old temp box
 
-        last_window_index = window_index;
-        window = desktop->windows[last_window_index];
+        rdata->last_window_index = window_index;
+        window = desktop->windows[rdata->last_window_index];
 
-        last_x = window->x;
-        last_y = window->y;
+        rdata->last_x = window->x;
+        rdata->last_y = window->y;
 
-        window_draw_temp_box(window, last_x, last_y, 0);    // draw new temp box
+        window_draw_temp_box(window, rdata->last_x, rdata->last_y, 0);    // draw new temp box
     }
 
     // direction
     if (desktop->key_state[2] || desktop->key_state[3] ||
         desktop->key_state[4] || desktop->key_state[5]
     ) {
-        window = desktop->windows[last_window_index];
+        window = desktop->windows[rdata->last_window_index];
 
         if (window->cant_move) {
             return;
         }
 
-        window_moving = 1;
+        rdata->window_moving = 1;
 
-        window_draw_temp_box(window, last_x, last_y, 1);
+        window_draw_temp_box(window, rdata->last_x, rdata->last_y, 1);
 
-        if (desktop->key_state[2]) last_x -= MOVE_SPEED;
-        if (desktop->key_state[3]) last_x += MOVE_SPEED;
-        if (desktop->key_state[4]) last_y -= MOVE_SPEED;
-        if (desktop->key_state[5]) last_y += MOVE_SPEED;
+        if (desktop->key_state[2]) rdata->last_x -= MOVE_SPEED;
+        if (desktop->key_state[3]) rdata->last_x += MOVE_SPEED;
+        if (desktop->key_state[4]) rdata->last_y -= MOVE_SPEED;
+        if (desktop->key_state[5]) rdata->last_y += MOVE_SPEED;
 
-        if (last_x <= 0) last_x = desktop->screen_width - 1;
-        if (last_x >= desktop->screen_width) last_x = 0;
-        if (last_y <= 0) last_y = desktop->screen_height - 1;
-        if (last_y >= desktop->screen_height) last_y = 0;
+        if (rdata->last_x <= 0) rdata->last_x = desktop->screen_width - 1;
+        if (rdata->last_x >= desktop->screen_width) rdata->last_x = 0;
+        if (rdata->last_y <= 0) rdata->last_y = desktop->screen_height - 1;
+        if (rdata->last_y >= desktop->screen_height) rdata->last_y = 0;
 
         // draw temp outline
-        window_draw_temp_box(window, last_x, last_y, 0);
+        window_draw_temp_box(window, rdata->last_x, rdata->last_y, 0);
     }
 }
 
