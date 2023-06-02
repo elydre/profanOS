@@ -549,12 +549,20 @@ void func_desktop_refresh(desktop_t *desktop) {
 }
 
 void func_window_delete(window_t *window) {
-    // we need to refresh the desktop
+    if (check_window_fail(window)) {
+        serial_print_ss("error:", "func_window_delete: invalid window");
+    }
+
     desktop_t *desktop = window->parent_desktop;
+
+    if (window->usid == desktop->focus_window_usid) {
+        desktop->focus_window_usid = 0;
+    }
+
     window->priority = -1;
     window->changed = 1;
 
-    func_desktop_refresh(window->parent_desktop);
+    func_desktop_refresh(desktop);
 
     free(window->name);
     free(window->buffer);
