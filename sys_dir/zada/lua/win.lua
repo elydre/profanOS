@@ -84,7 +84,7 @@ local function desktop_refresh()
 end
 
 local function window_set_pixel(window, x, y, color)
-    profan.call_c(calls.get_lib_func(LIBDAUBE_ID, winfuncs.window_set_pixel), 4, window, 4, x, 4, y, 4, color, 4, 1)
+    profan.call_c(calls.get_lib_func(LIBDAUBE_ID, winfuncs.window_set_pixel), 4, window, 4, x, 4, y, 4, color, 1, 1)
 end
 
 
@@ -94,7 +94,7 @@ end
 
 local function window_display_pixel(window, x, y, color)
     -- set pixel without refreshing
-    profan.call_c(calls.get_lib_func(LIBDAUBE_ID, winfuncs.window_display_pixel), 4, window, 4, x, 4, y, 4, color, 4, 1)
+    profan.call_c(calls.get_lib_func(LIBDAUBE_ID, winfuncs.window_display_pixel), 4, window, 4, x, 4, y, 4, color, 1, 1)
 end
 
 return {
