@@ -10,7 +10,7 @@ local syscalls = calls.syscalls
 ------------------------
 
 local function copy_string_to_memory(str)
-    local ptr = malloc(#str + 1)
+    local ptr = calls.malloc(#str + 1)
 
     -- Copy string to memory
     for i = 0, #str - 1 do
