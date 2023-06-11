@@ -22,6 +22,10 @@ local function get_syscall(function_id)
     return profan.call_c(profan.memval(0x1ffff7, 4), 4, function_id)
 end
 
+local function get_lib_func(lib_id, func_id)
+    return profan.call_c(profan.memval(0x1ffffb, 4), 4, lib_id, 4, func_id)
+end
+
 local function clear()
     profan.call_c(get_syscall(syscalls.clear))
 end
@@ -57,6 +61,7 @@ end
 
 return {
     get_syscall = get_syscall,
+    get_lib_func = get_lib_func,
     serial_print = serial_print,
     clear = clear,
     malloc = malloc,
