@@ -59,6 +59,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
 - [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
+- [sulfur](https://github.com/asqel/sulfur_lang) programming language, a project of a friend
 
 All the ports are available with the command `make addons` or by building them manually.
 
