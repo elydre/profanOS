@@ -82,7 +82,7 @@ the installation script `tools/install.sh` or any other image flasher.
 | lagged lag | ? | all profanOS is getting very slow| ? | partially |
 | BOBCAT | 0.4.2 | some version of gcc build broken zapps | gcc | no |
 
-## stable releases
+## Stable releases
 
 | nickname  | version | downloads |
 |-----------|---------|-----------|
