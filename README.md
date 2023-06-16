@@ -86,6 +86,7 @@ the installation script `tools/install.sh` or any other image flasher.
 
 | nickname  | version | downloads |
 |-----------|---------|-----------|
+| sequoia   | 0.12.4  | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/sequoia/total?color=999999&label=iso+file&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/sequoia) |
 | waterlily | 0.6.9   | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/waterlily/total?color=999999&label=iso+file&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/waterlily) |
 | mimosa    | 0.1.9   | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/mimosa/total?color=999999&label=floppy&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/mimosa) |
 
