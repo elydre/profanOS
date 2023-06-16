@@ -33,6 +33,16 @@ ADDONS = {
                 "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
             }
         ]
+    },
+    "sulfur": {
+        "description": "official sulfur language interpreter",
+        "files": [
+            {
+                "name": "sulfur",
+                "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.bin",
+                "path": [profan_path, "out", "zapps", "fatpath", "sulfur.bin"]
+            },
+        ]
     }
 }
 
