@@ -24,12 +24,12 @@ int main(int argc, char **argv) {
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         c_process_get_name(pid, name);
-        printf("pid: %d, ppid: %d, state: %s, name: %s, run: %ds, memory: %d Ko (%d alloc)\n",
+        printf("pid: %d, ppid: %d, state: %s, name: %s, run: %gs, memory: %d Ko (%d alloc)\n",
                 pid,
                 c_process_get_ppid(pid),
                 get_state(c_process_get_state(pid)),
                 name,
-                c_process_get_run_time(pid) / 1000,
+                c_process_get_run_time(pid) / 1000.0,
                 c_mem_get_info(8, pid) / 1024,
                 c_mem_get_info(7, pid)
         );

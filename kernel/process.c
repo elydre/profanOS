@@ -290,10 +290,16 @@ int process_create(void (*func)(), int priority, char *name) {
     process_t *new_proc = &plist[place];
 
     str_cpy(new_proc->name, name);
+
     new_proc->pid = pid_incrament;
     new_proc->ppid = pid_current;
+
     new_proc->state = PROCESS_FSLPING;
     new_proc->priority = priority;
+
+    new_proc->sleep_to = 0;
+    new_proc->run_time = 0;
+
     new_proc->comm = NULL;
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
