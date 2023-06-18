@@ -69,13 +69,15 @@ int main(int argc, char **argv) {
         printf("$BInvalid file name\n");
     }
 
-    // check if the file already exists
-    else if (c_fs_does_path_exists(new_name)) {
-        printf("$3%s$B already exists\n", new_name);
+    // check if path exists and is directory
+    else if (c_fs_does_path_exists(new_name) && c_fs_get_sector_type(c_fs_path_to_id(new_name)) == 3) {
+        printf("$B%s is a directory\n", new_name);
     }
 
     else {
-        c_fs_make_file(parent_path, file_name);
+        if (!c_fs_does_path_exists(new_name)) {
+            c_fs_make_file(parent_path, file_name);
+        }
         c_fs_write_in_file(new_name, data + 0x1000, size - 0x1000);
     }
 
