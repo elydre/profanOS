@@ -53,7 +53,7 @@ void kernel_main(void *mboot_ptr) {
     kprintf("successfully booted in %d ms", timer_get_ms());
 
     rainbow_print("\n\nWelcome to profanOS!\n");
-    printf("$C~~ version $4%s $C~~\n\n", KERNEL_VERSION);
+    printf("$C~~ version $4%s$C ~~\n\n", KERNEL_VERSION);
 
 
     // launch of the default program

@@ -59,6 +59,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
 - [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
+- [sulfur](https://github.com/asqel/sulfur_lang) programming language, a project of a friend
 
 All the ports are available with the command `make addons` or by building them manually.
 
@@ -81,6 +82,14 @@ the installation script `tools/install.sh` or any other image flasher.
 | lagged lag | ? | all profanOS is getting very slow| ? | partially |
 | BOBCAT | 0.4.2 | some version of gcc build broken zapps | gcc | no |
 
+## Stable releases
+
+| nickname  | version | downloads |
+|-----------|---------|-----------|
+| sequoia   | 0.12.4  | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/sequoia/total?color=999999&label=iso+file&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/sequoia) |
+| waterlily | 0.6.9   | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/waterlily/total?color=999999&label=iso+file&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/waterlily) |
+| mimosa    | 0.1.9   | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/mimosa/total?color=999999&label=floppy&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/mimosa) |
+
 ## Screenshots
 
 | ![shell](https://elydre.github.io/img/profan/screen/shell.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
@@ -97,12 +106,14 @@ Contact us on [discord](https://pf4.ddns.net/discord)
 ## Source & Acknowledgment
 
 - [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
-- [fabian](https://github.com/copy/v86) for the v86 online emulator and floppy build
+- [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
 - [framindmap](https://framindmap.org) for the mindmap of the todo list
-- [yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
-- [szhou42](https://github.com/szhou42/osdev) for the ata driver
-- [osdev](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
-- [@ProtoByter](https://github.com/ProtoByter) for the first pull request
+- [osdev wiki](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
+- [Terry Davis](https://templeos.org) for the inspiration and his courage
+- [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 - [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
+- [szhou42](https://github.com/szhou42/osdev) for the ata driver
+- [@ProtoByter](https://github.com/ProtoByter) for the first pull request
+- [@asqel](https://github.com/asqel) for the real hardware test and sulfur lang
 
 *be careful with our friend 55*

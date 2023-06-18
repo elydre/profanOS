@@ -99,14 +99,16 @@ int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcun
     int pid = process_create(tasked_program, 2, path);
 
     // duplicate path
-    char *npath = malloc(str_len(path) + 1);
+    char *npath = (char *) mem_alloc(str_len(path) + 1, 0, 6);
     str_cpy(npath, path);
 
     // duplicate argv
-    char **nargv = calloc(sizeof(char *) * (argc + 1));
+    int size = sizeof(char *) * (argc + 1);
+    char **nargv = (char **) mem_alloc(size, 0, 6);
+    mem_set((void *) nargv, 0, size);
 
     for (int i = 0; i < argc; i++) {
-        nargv[i] = malloc(str_len(argv[i]) + 1);
+        nargv[i] = (char *) mem_alloc(str_len(argv[i]) + 1, 0, 6);
         str_cpy(nargv[i], argv[i]);
     }
 

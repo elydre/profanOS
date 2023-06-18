@@ -19,7 +19,7 @@
 
 #define PRINT_PROGRESS 0
 #define SPEED_MODE     1  // can be dangerous
-#define MIN_FREE       2048
+#define MIN_FREE       (1024 * 8)
 
 #define I_FILE_H 0x1
 #define I_FILE   0x10
