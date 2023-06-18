@@ -48,8 +48,6 @@ int main(int argc, char **argv) {
     new_name[i] = '\0';
     strcat(new_name, ".bin");
 
-    printf("new file: %s\n", new_name);
-
     // get the file name
     char *file_name = NULL;
     char *parent_path = malloc(256);
