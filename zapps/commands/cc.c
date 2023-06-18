@@ -6,6 +6,26 @@
 #include <profan.h>
 
 
+#define TCC_PATH "/bin/fatpath/tcc.bin"
+#define VLK_PATH "/bin/fatpath/vlink.bin"
+#define XEC_PATH "/bin/commands/xec.bin"
+
+#define OPTION_HELP 1 << 0
+#define OPTION_RUN  1 << 1
+
+
+int does_file_exist(char *file) {
+    // check if path exists
+    if (!c_fs_does_path_exists(file))
+        return 0;
+
+    // check if path is a file
+    if (c_fs_get_sector_type(c_fs_path_to_id(file)) != 2)
+        return 0;
+
+    return 1;
+}
+
 void execute_command(char *path, char *args) {
     printf("$6%s %s\n", path, args);
     // generate argv
@@ -33,30 +53,60 @@ void execute_command(char *path, char *args) {
     free(argv);
 }
 
-int does_file_exist(char *file) {
-    // check if path exists
-    if (!c_fs_does_path_exists(file))
-        return 0;
+uint32_t parse_options(int argc, char **argv, char **path) {
+    // uint32_t options = parse_options(argc, argv);
+    // options & OPTION_HELP; // -h
+    // options & OPTION_RUN;  // -r
 
-    // check if path is a file
-    if (c_fs_get_sector_type(c_fs_path_to_id(file)) != 2)
-        return 0;
+    uint32_t options = 0;
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            for (int j = 1; argv[i][j] != '\0'; j++) {
+                switch (argv[i][j]) {
+                    case 'h':
+                        options |= OPTION_HELP;
+                        break;
+                    case 'r':
+                        options |= OPTION_RUN;
+                        break;
+                    default:
+                        printf("cc: invalid option -- '%c'\n", argv[i][j]);
+                        break;
+                }
+            }
+        } else {
+            *path = argv[i];
+        }
+    }
 
-    return 1;
+    return options;
 }
 
-#define TCC_PATH   "/bin/fatpath/tcc.bin"
-#define VLK_PATH   "/bin/fatpath/vlink.bin"
-#define XEC_PATH   "/bin/commands/xec.bin"
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        printf("Usage: cc <file>\n");
+    if (argc < 3) {
+        printf("Usage: cc [option] <file>\n");
         return 1;
     }
 
-    char *full_path = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
-    assemble_path(argv[1], argv[2], full_path);
+    char *path = NULL;
+    uint32_t options = parse_options(argc, argv, &path);
+
+    if (options & OPTION_HELP) {
+        printf("Usage: cc [option] <file>\n");
+        printf("Options:\n");
+        printf("  -h  Display this information\n");
+        printf("  -r  Compile and run\n");
+        return 0;
+    }
+
+    if (path == NULL) {
+        printf("cc: no input files\n");
+        return 1;
+    }
+
+    char *full_path = malloc(strlen(argv[1]) + strlen(path) + 2);
+    assemble_path(argv[1], path, full_path);
 
     if (!does_file_exist(full_path)) {
         printf("%s file not found\n", full_path);
@@ -77,8 +127,12 @@ int main(int argc, char *argv[]) {
         char *elf_file = malloc(strlen(obj_file) + 5);
         strcpy(elf_file, obj_file);
 
+        char *bin_file = malloc(strlen(obj_file) + 5);
+        strcpy(bin_file, obj_file);
+
         strcat(obj_file, ".o");
         strcat(elf_file, ".elf");
+        strcat(bin_file, ".bin");
 
         char *args = malloc(strlen(full_path) * 2 + 70);
         sprintf(args, "-c %s -o %s", full_path, obj_file);
@@ -89,9 +143,16 @@ int main(int argc, char *argv[]) {
 
         execute_command(XEC_PATH, elf_file);
 
-        free(args);
+        // run binary if -r option is set
+        if (options & OPTION_RUN) {
+            execute_command(bin_file, "");
+        }
+
         free(elf_file);
         free(obj_file);
+        free(bin_file);
+
+        free(args);
     }
     
     free(full_path);
