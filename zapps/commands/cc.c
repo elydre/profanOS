@@ -6,12 +6,15 @@
 #include <profan.h>
 
 
-#define TCC_PATH "/bin/fatpath/tcc.bin"
-#define VLK_PATH "/bin/fatpath/vlink.bin"
-#define XEC_PATH "/bin/commands/xec.bin"
+#define TCC_PATH "/bin/fatpath/tcc.bin"     // c compiler
+#define VLK_PATH "/bin/fatpath/vlink.bin"   // linker
+#define XEC_PATH "/bin/commands/xec.bin"    // elf to binary
+#define ZEC_PATH "/sys/zentry.c"            // zentry source
+#define ZEO_PATH "/sys/zentry.o"            // zentry object
 
-#define OPTION_HELP 1 << 0
-#define OPTION_RUN  1 << 1
+#define OPTION_HELP     1 << 0
+#define OPTION_RUN      1 << 1
+#define OPTION_NOENTRY  1 << 2
 
 
 int does_file_exist(char *file) {
@@ -55,8 +58,10 @@ void execute_command(char *path, char *args) {
 
 uint32_t parse_options(int argc, char **argv, char **path) {
     // uint32_t options = parse_options(argc, argv);
-    // options & OPTION_HELP; // -h
-    // options & OPTION_RUN;  // -r
+    // options & OPTION_HELP;    // -h
+    // options & OPTION_RUN;     // -r
+    // options & OPTION_NOENTRY; // -n
+
 
     uint32_t options = 0;
     for (int i = 1; i < argc; i++) {
@@ -68,6 +73,9 @@ uint32_t parse_options(int argc, char **argv, char **path) {
                         break;
                     case 'r':
                         options |= OPTION_RUN;
+                        break;
+                    case 'n':
+                        options |= OPTION_NOENTRY;
                         break;
                     default:
                         printf("cc: invalid option -- '%c'\n", argv[i][j]);
@@ -96,6 +104,7 @@ int main(int argc, char *argv[]) {
         printf("Usage: cc [option] <file>\n");
         printf("Options:\n");
         printf("  -h  Display this information\n");
+        printf("  -n  Do not include zentry.o\n");
         printf("  -r  Compile and run\n");
         return 0;
     }
@@ -117,7 +126,16 @@ int main(int argc, char *argv[]) {
     } else if (!does_file_exist(XEC_PATH)) {
         printf("xec.bin not found\n");
     } else {
-        printf("all files found, compiling %s\n", full_path);
+        if (!(options & OPTION_NOENTRY) && !does_file_exist(ZEO_PATH)) {
+            if (does_file_exist(ZEC_PATH)) {
+                execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH);
+            } else {
+                printf("zentry.c and zentry.o not found, cannot compile\n");
+                free(full_path);
+                return 1;
+            }
+        }
+
         // remove extension from file name
         char *obj_file = malloc(strlen(full_path) + 1);
         strcpy(obj_file, full_path);
@@ -138,7 +156,13 @@ int main(int argc, char *argv[]) {
         sprintf(args, "-c %s -o %s", full_path, obj_file);
         execute_command(TCC_PATH, args);
 
-        sprintf(args, "-nostdlib -T /user/zlink.ld %s -o %s", obj_file, elf_file);
+        // add zentry.o to link if -n option is not set
+        if (options & OPTION_NOENTRY) {
+            sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s", elf_file, obj_file);
+        } else {
+            sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s", elf_file, ZEO_PATH, obj_file);
+        }
+
         execute_command(VLK_PATH, args);
 
         execute_command(XEC_PATH, elf_file);
