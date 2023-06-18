@@ -5,83 +5,62 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        printf("Usage: xec <name>\n");
+    if (argc != 4) {
+        printf("Usage: xec <input> <output>\n");
         return 0;
     }
 
-    char *full_path = malloc(256);
-    assemble_path(argv[1], argv[2], full_path);
+    char *input_file = malloc(256);
+    assemble_path(argv[1], argv[2], input_file);
 
     // check if the file exists
-    if (!c_fs_does_path_exists(full_path)) {
-        printf("%s does not exist\n", full_path);
-        free(full_path);
+    if (!c_fs_does_path_exists(input_file)) {
+        printf("%s does not exist\n", input_file);
+        free(input_file);
         return 0;
     }
 
     // read the file
-    uint32_t size = c_fs_get_file_size(full_path);
+    uint32_t size = c_fs_get_file_size(input_file);
+    uint8_t *data = malloc(size + 1);
+    c_fs_read_file(input_file, data);
 
     if (size < 0x1000) {
-        printf("%s is too small\n", full_path);
-        free(full_path);
+        printf("%s is too small\n", input_file);
+        free(input_file);
+        free(data);
         return 0;
     }
 
-    uint8_t *data = malloc(size + 1);
-    c_fs_read_file(full_path, data);
+    char *output_file = malloc(256);
+    assemble_path(argv[1], argv[3], output_file);
 
-    // generate the new file name
-    char *new_name = malloc(256);
+    char *parent_dir = malloc(strlen(output_file) + 1);
+    char *file_name = malloc(strlen(output_file) + 1);
 
-    // remove the extension
-    int len = strlen(full_path);
-    int i;
-    for (i = len - 1; i >= 0; i--) {
-        if (full_path[i] == '.') {
-            break;
-        }
-    }
-
-    strncpy(new_name, full_path, i);
-    new_name[i] = '\0';
-    strcat(new_name, ".bin");
-
-    // get the file name
-    char *file_name = NULL;
-    char *parent_path = malloc(256);
-
-    // isolate the file name and the parent path
-    for (int i = len - 1; i >= 0; i--) {
-        if (new_name[i] == '/') {
-            file_name = new_name + i + 1;
-            strncpy(parent_path, new_name, i);
-            parent_path[i] = '\0';
-            break;
-        }
-    }
-
-    // theorically impossible
-    if (file_name == NULL) {
-        printf("$BInvalid file name\n");
-    }
+    // isolate parent directory and file name
+    int i = strlen(output_file) - 1;
+    for (; output_file[i] != '/'; i--);
+    strncpy(parent_dir, output_file, i);
+    parent_dir[i] = '\0';
+    strcpy(file_name, output_file + i + 1);
 
     // check if path exists and is directory
-    else if (c_fs_does_path_exists(new_name) && c_fs_get_sector_type(c_fs_path_to_id(new_name)) == 3) {
-        printf("$B%s is a directory\n", new_name);
-    }
-
-    else {
-        if (!c_fs_does_path_exists(new_name)) {
-            c_fs_make_file(parent_path, file_name);
+    if (c_fs_does_path_exists(output_file) && c_fs_get_sector_type(c_fs_path_to_id(output_file)) == 3) {
+        printf("$B%s is a directory\n", output_file);
+    } else {
+        if (!c_fs_does_path_exists(output_file)) {
+            c_fs_make_file(parent_dir, file_name);
         }
-        c_fs_write_in_file(new_name, data + 0x1000, size - 0x1000);
+        c_fs_write_in_file(output_file, data + 0x1000, size - 0x1000);
     }
 
-    free(parent_path);
-    free(full_path);
-    free(new_name);
+    free(output_file);
+    free(input_file);
+
+    free(parent_dir);
+    free(file_name);
+
     free(data);
 
     return 0;
