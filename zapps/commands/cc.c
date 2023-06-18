@@ -15,7 +15,9 @@
 #define OPTION_HELP     1 << 0
 #define OPTION_RUN      1 << 1
 #define OPTION_NOENTRY  1 << 2
+#define OPTION_NORAND   1 << 3
 
+uint32_t g_rand_val;
 
 int does_file_exist(char *file) {
     // check if path exists
@@ -27,6 +29,16 @@ int does_file_exist(char *file) {
         return 0;
 
     return 1;
+}
+
+void new_rand_name(char *name) {
+    do {
+        for (int i = 0; i < 8; i++) {
+            g_rand_val = (g_rand_val * 1103515245 + 12345) & 0x7fffffff;
+            name[i] = 'a' + (g_rand_val % 26);
+        }
+        name[8] = '\0';
+    } while (does_file_exist(name));
 }
 
 void execute_command(char *path, char *args) {
@@ -61,6 +73,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
     // options & OPTION_HELP;    // -h
     // options & OPTION_RUN;     // -r
     // options & OPTION_NOENTRY; // -n
+    // options & OPTION_NORAND;  // -x
 
 
     uint32_t options = 0;
@@ -76,6 +89,9 @@ uint32_t parse_options(int argc, char **argv, char **path) {
                         break;
                     case 'n':
                         options |= OPTION_NOENTRY;
+                        break;
+                    case 'x':
+                        options |= OPTION_NORAND;
                         break;
                     default:
                         printf("cc: invalid option -- '%c'\n", argv[i][j]);
@@ -97,6 +113,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    g_rand_val = c_timer_get_ms();
+
     char *path = NULL;
     uint32_t options = parse_options(argc, argv, &path);
 
@@ -106,6 +124,7 @@ int main(int argc, char *argv[]) {
         printf("  -h  Display this information\n");
         printf("  -n  Do not include zentry.o\n");
         printf("  -r  Compile and run\n");
+        printf("  -x  Do not use tmp files\n");
         return 0;
     }
 
@@ -136,23 +155,54 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        char *obj_file, *elf_file, *bin_file;
+
+        if (options & OPTION_NORAND) {
+            obj_file = malloc(strlen(full_path) + 1);
+            strcpy(obj_file, full_path);
+
+            // remove extension from file name
+            char *dot = strrchr(obj_file, '.');
+            if (dot != NULL) *dot = '\0';
+
+            elf_file = malloc(strlen(obj_file) + 5);
+            strcpy(elf_file, obj_file);
+
+            strcat(obj_file, ".o");
+            strcat(elf_file, ".elf");
+        } else {
+            obj_file = malloc(18);
+            elf_file = malloc(18);
+
+            strcpy(obj_file, "/tmp/");
+            strcpy(elf_file, "/tmp/");
+
+            new_rand_name(obj_file + 5);
+            new_rand_name(elf_file + 5);
+
+            strcat(obj_file, ".o");
+            strcat(elf_file, ".elf");
+        }
+
+        bin_file = malloc(256);
+
+        // get the name of the input file
+        int len = strlen(full_path);
+        for (int i = len - 1; i >= 0; i--) {
+            if (full_path[i] == '/') {
+                assemble_path(argv[1], full_path + i + 1, bin_file);
+                break;
+            }
+        }
+
         // remove extension from file name
-        char *obj_file = malloc(strlen(full_path) + 1);
-        strcpy(obj_file, full_path);
-        char *dot = strrchr(obj_file, '.');
+        char *dot = strrchr(bin_file, '.');
         if (dot != NULL) *dot = '\0';
 
-        char *elf_file = malloc(strlen(obj_file) + 5);
-        strcpy(elf_file, obj_file);
-
-        char *bin_file = malloc(strlen(obj_file) + 5);
-        strcpy(bin_file, obj_file);
-
-        strcat(obj_file, ".o");
-        strcat(elf_file, ".elf");
         strcat(bin_file, ".bin");
 
         char *args = malloc(strlen(full_path) * 2 + 70);
+
         sprintf(args, "-c %s -o %s", full_path, obj_file);
         execute_command(TCC_PATH, args);
 
@@ -165,7 +215,8 @@ int main(int argc, char *argv[]) {
 
         execute_command(VLK_PATH, args);
 
-        execute_command(XEC_PATH, elf_file);
+        sprintf(args, "%s %s", elf_file, bin_file);
+        execute_command(XEC_PATH, args);
 
         // run binary if -r option is set
         if (options & OPTION_RUN) {
