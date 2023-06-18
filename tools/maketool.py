@@ -16,7 +16,7 @@ OUT_DIR   = "out"
 HDD_MAP = {
     "bin": f"{OUT_DIR}/zapps",
     "lib": f"{OUT_DIR}/zlibs",
-    "sys": "sys_dir/sys",
+    "sys": None, # "sys_dir/sys",
     "user": "sys_dir/user",
     "zada": [
         "sys_dir/zada",
@@ -311,7 +311,9 @@ def gen_disk(force=False, with_src=False):
 
     if HBL_FILE: write_build_logs()
 
-    print_and_exec(f"cp {OUT_DIR}/make/zentry.o {OUT_DIR}/disk/sys/")
+    print_and_exec(f"cp {TOOLS_DIR}/zentry.c {OUT_DIR}/disk/sys/")
+    print_and_exec(f"cp {TOOLS_DIR}/zlink.ld {OUT_DIR}/disk/sys/")
+    print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
 
     if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")

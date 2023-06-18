@@ -43,6 +43,26 @@ ADDONS = {
                 "path": [profan_path, "out", "zapps", "fatpath", "sulfur.bin"]
             },
         ]
+    },
+    "tcc": {
+        "description": "Tiny C Compiler port for profanOS",
+        "files": [
+            {
+                "name": "tcc",
+                "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.bin",
+                "path": [profan_path, "out", "zapps", "fatpath", "tcc.bin"]
+            },
+        ]
+    },
+    "vlink": {
+        "description": "vlink linker port for profanOS",
+        "files": [
+            {
+                "name": "vlink",
+                "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.bin",
+                "path": [profan_path, "out", "zapps", "fatpath", "vlink.bin"]
+            },
+        ]
     }
 }
 
