@@ -100,6 +100,8 @@ void load_file(char *path) {
 }
 
 void save_file(char *path) {
+    if (g_data_size - 1 == 0) return;
+
     char *data_copy = malloc(g_data_size);
     memcpy(data_copy, g_data, g_data_size);
 
