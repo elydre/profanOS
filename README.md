@@ -7,7 +7,7 @@
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
-This repo originally comes from part 23 of the excellent tutorial [How to create an OS from scratch](https://github.com/cfenollosa/os-tutorial) thanks!
+The profan Operating System is an independent OS supporting multitasking and virtual memory, developed from scratch.
 
 You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
 
@@ -43,7 +43,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 ## OS documentation
 
-### Main features
+### Main kernel features
 
 - multiboot support
 - 32 bits protected mode
@@ -60,6 +60,8 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
 - [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
 - [sulfur](https://github.com/asqel/sulfur_lang) programming language, a project of a friend
+- [tcc](https://github.com/elydre/tinycc-profan) compiler, a small and fast c compiler
+- [vlink](https://github.com/elydre/vlink-profan) linker with multi-format support
 
 All the ports are available with the command `make addons` or by building them manually.
 
