@@ -24,7 +24,6 @@ to load in ramdisk at boot */
 char *path_to_load[] = {
     "/bin/commands",
     "/bin/shell.bin",
-    "/sys",
 };
 
 /************************
