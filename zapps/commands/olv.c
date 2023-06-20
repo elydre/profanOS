@@ -9,6 +9,7 @@ typedef struct {
     char* (*function)(char**);
 } internal_function_t;
 
+char program[] = "echo !(split 'coucou test hi' from)";
 
 /**************************************
  *                                   *
