@@ -4,12 +4,14 @@
 
 #include <syscall.h>
 
+#define STRING_CHAR '\''
+
 typedef struct {
     char* name;
     char* (*function)(char**);
 } internal_function_t;
 
-char program[] = "echo !(upper kernel version: !(kver))";
+char program[] = "echo 'coucou toi' test";
 
 /**************************************
  *                                   *
@@ -71,11 +73,6 @@ internal_function_t internal_functions[] = {
     {NULL, NULL}
 };
 
-/************************************
- *                                 *
- *  String Manipulation Functions  *
- *                                 *
-************************************/
 
 void* get_function(char* name) {
     for (int i = 0; internal_functions[i].name != NULL; i++) {
@@ -86,6 +83,24 @@ void* get_function(char* name) {
     return NULL;
 }
 
+/************************************
+ *                                 *
+ *  String Manipulation Functions  *
+ *                                 *
+************************************/
+
+void remove_quotes(char *string) {
+    int i, dec = 0;
+    for (i = 0; string[i] != '\0'; i++) {
+        if (string[i] == STRING_CHAR) {
+            dec++;
+            continue;
+        }
+        string[i - dec] = string[i];
+    }
+    string[i - dec] = '\0';
+}
+
 char **gen_args(char *string) {
     if (string == NULL || strlen(string) == 0) {
         char **argv = malloc(1 * sizeof(char*));
@@ -94,12 +109,18 @@ char **gen_args(char *string) {
     }
 
     // count the number of arguments
+    int in_string = 0;
     int argc = 1;
+
     for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == ' ') {
+        if (string[i] == STRING_CHAR) {
+            in_string = !in_string;
+        } if (string[i] == ' ' && !in_string) {
             argc++;
         }
     }
+
+    printf("argc: %d\n", argc);
 
     // allocate the arguments array
     char **argv = malloc((argc + 1) * sizeof(char*));
@@ -108,22 +129,46 @@ char **gen_args(char *string) {
     int old_i = 0;
     int arg_i = 0;
     for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == ' ') {
+        if (string[i] == STRING_CHAR) {
+            in_string = !in_string;
+        } if (string[i] == ' ' && !in_string) {
             argv[arg_i] = malloc((i - old_i + 1) * sizeof(char));
             strncpy(argv[arg_i], string + old_i, i - old_i);
-            old_i = i + 1;
+            remove_quotes(argv[arg_i]);
+            argv[arg_i][i - old_i] = '\0';
             arg_i++;
+            old_i = i + 1;
         }
     }
 
     // add the last argument
-    argv[arg_i] = malloc((strlen(string) - old_i + 1) * sizeof(char));
-    strcpy(argv[arg_i], string + old_i);
+    argv[argc - 1] = malloc((strlen(string) - old_i + 1) * sizeof(char));
+    strcpy(argv[argc - 1], string + old_i);
 
-    // add the NULL terminator
     argv[argc] = NULL;
 
     return argv;
+}
+
+char *get_function_name(char *string) {
+    int in_string = 0;
+    for (int i = 0; string[i] != '\0'; i++) {
+        if (string[i] == STRING_CHAR) {
+            in_string = !in_string;
+        }
+
+        if (string[i] == ' ' && !in_string) {
+            char *function_name = malloc((i + 1) * sizeof(char));
+            strncpy(function_name, string, i);
+            remove_quotes(function_name);
+            return function_name;
+        }
+    }
+
+    char *function_name = malloc((strlen(string) + 1) * sizeof(char));
+    strcpy(function_name, string);
+
+    return function_name;
 }
 
 void free_args(char **argv) {
@@ -138,21 +183,6 @@ void free_args(char **argv) {
  *  Execution Functions  *
  *                       *
 **************************/
-
-char *get_function_name(char *string) {
-    for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == ' ') {
-            char *function_name = malloc((i + 1) * sizeof(char));
-            strncpy(function_name, string, i);
-            return function_name;
-        }
-    }
-
-    char *function_name = malloc((strlen(string) + 1) * sizeof(char));
-    strcpy(function_name, string);
-
-    return function_name;
-}
 
 void debug_print(char *function_name, char **function_args) {
     printf("$6%s(", function_name);
@@ -182,32 +212,35 @@ char *execute_line(char* full_line) {
 
     // get the function address
     void *function = get_function(function_name);
+    
+    char *result;
 
     if (function == NULL) {
         printf("Function '%s' not found\n", function_name);
-        free(function_name);
-        return NULL;
+        result = NULL;
+    } else {
+        // generate the arguments array
+        char **function_args = gen_args(line + strlen(function_name) + 1);
+
+        debug_print(function_name, function_args);
+
+        // execute the function
+        result = ((char* (*)(char**))function)(function_args);
+
+        if (result == NULL) {
+            result = malloc(1 * sizeof(char));
+            result[0] = '\0';
+        }
+
+        free_args(function_args);
     }
 
-    // generate the arguments array
-    char **function_args = gen_args(line + strlen(function_name) + 1);
-
-    debug_print(function_name, function_args);
-
-    // execute the function
-    char *result = ((char* (*)(char**))function)(function_args);
-
-    if (result == NULL) {
-        result = malloc(1 * sizeof(char));
-        result[0] = '\0';
-    }
-
-    free_args(function_args);
     free(function_name);
 
     if (line != full_line) {
         free(line);
     }
+
     free(full_line);
 
     return result;
