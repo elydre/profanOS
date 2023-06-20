@@ -25,6 +25,7 @@ typedef struct {
 
 
 variable_t *variables;
+internal_function_t internal_functions[];
 
 /*******************************
  *                            *
@@ -206,12 +207,39 @@ char *if_set_var(char **input) {
     return NULL;
 }
 
+char *if_show(char **input) {
+    for (int i = 0; input[i] != NULL; i++) {
+        printf("arg[%d]: '%s'\n", i, input[i]);
+    }
+    return NULL;
+}
+
+char *if_debug(char **input) {
+    // print variables
+    printf("VARIABLES\n");
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name != NULL) {
+            printf("  %s: %s\n", variables[i].name, variables[i].value);
+        }
+    }
+
+    // print functions
+    printf("FUNCTIONS\n");
+    for (int i = 0; internal_functions[i].name != NULL; i++) {
+        printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
+    }
+
+    return NULL;
+}
+
 internal_function_t internal_functions[] = {
     {"echo", if_echo},
     {"upper", if_upper},
     {"join", if_join},
     {"split", if_split},
     {"VAR", if_set_var},
+    {"show", if_show},
+    {"debug", if_debug},
     {NULL, NULL}
 };
 
