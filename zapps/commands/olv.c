@@ -120,8 +120,6 @@ char **gen_args(char *string) {
         }
     }
 
-    printf("argc: %d\n", argc);
-
     // allocate the arguments array
     char **argv = malloc((argc + 1) * sizeof(char*));
 
