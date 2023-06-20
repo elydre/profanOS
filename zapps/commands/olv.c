@@ -412,7 +412,7 @@ char *execute_line(char* full_line) {
 
     // get the function address
     void *function = get_function(function_name);
-    
+
     char *result;
 
     if (function == NULL) {
