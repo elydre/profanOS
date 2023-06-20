@@ -3,17 +3,71 @@
 #include <stdio.h>
 
 #define STRING_CHAR '\''
+#define MORE_DEBUG 0
+
+#define MAX_VARIABLES 100
+
+#define OLV_VERSION "0.2"
 
 typedef struct {
     char* name;
     char* (*function)(char**);
 } internal_function_t;
 
-#define MORE_DEBUG 0
+typedef struct {
+    char* name;
+    char* value;
+} variable_t;
+
 
 char program[] =
-"echo !(upper 'hello world')\n"
-"echo !(join 'hello' 'world')\n";
+"VAR oui 43\n"
+"VAR test oui\n"
+"echo !!test\n";
+
+variable_t *variables;
+
+/*******************************
+ *                            *
+ * Variable Get/Set Functions *
+ *                            *
+********************************/
+
+char *get_variable(char *name) {
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL) {
+            return NULL;
+        }
+        if (strcmp(variables[i].name, name) == 0) {
+            return variables[i].value;
+        }
+    }
+    return NULL;
+}
+
+int set_variable(char *name, char *value) {
+    char *value_copy = malloc(strlen(value) + 1);
+    strcpy(value_copy, value);
+
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL) {
+            char *name_copy = malloc(strlen(name) + 1);
+            strcpy(name_copy, name);
+            variables[i].name = name_copy;
+            variables[i].value = value_copy;
+            return 0;
+        }
+        if (strcmp(variables[i].name, name) == 0) {
+            if (variables[i].value) {
+                free(variables[i].value);
+            }
+            variables[i].value = value_copy;
+            return 0;
+        }
+    }
+    return 1;
+}
+
 
 /**************************************
  *                                   *
@@ -127,14 +181,40 @@ char *if_split(char **input) {
     return result;
 }
 
+char *if_set_var(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+    
+    if (argc != 2) {
+        printf("VAR: expected 2 arguments, got %d\n", argc);
+        return NULL;
+    }
+
+    // get name
+    char *name = input[0];
+    
+    // get value
+    char *value = input[1];
+
+    // set variable
+    if (set_variable(name, value)) {
+        printf("VAR: no more space for variables\n");
+    }
+
+    return NULL;
+}
+
 internal_function_t internal_functions[] = {
     {"echo", if_echo},
     {"upper", if_upper},
     {"join", if_join},
     {"split", if_split},
+    {"VAR", if_set_var},
     {NULL, NULL}
 };
-
 
 void* get_function(char* name) {
     for (int i = 0; internal_functions[i].name != NULL; i++) {
@@ -242,6 +322,16 @@ void free_args(char **argv) {
     free(argv);
 }
 
+void free_vars() {
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name != NULL) {
+            free(variables[i].name);
+            free(variables[i].value);
+        }
+    }
+    free(variables);
+}
+
 /**************************
  *                       *
  *  Execution Functions  *
@@ -263,9 +353,10 @@ void debug_print(char *function_name, char **function_args) {
 }
 
 char *check_subfunc(char *line);
+char *check_variables(char *line);
 
 char *execute_line(char* full_line) {
-    // check if !( ... ) is present
+    // check for function and variable
     char *line = check_subfunc(full_line);
 
     if (line == NULL) {
@@ -317,6 +408,7 @@ char *execute_line(char* full_line) {
 }
 
 char *check_subfunc(char *line) {
+    // check if !( ... ) is present
     int start = -1;
     int end = -1;
     for (int i = 0; line[i] != '\0'; i++) {
@@ -327,7 +419,12 @@ char *check_subfunc(char *line) {
     }
 
     if (start == -1) {
-        return line;
+        char *var_line = check_variables(line);
+        if (var_line != line) {
+            free(line);
+        }
+
+        return var_line;
     }
 
     int open_parentheses = 1;
@@ -375,6 +472,72 @@ char *check_subfunc(char *line) {
     if (rec != new_line) {
         free(new_line);
     }
+
+    char *var_line = check_variables(rec);
+    if (var_line != rec) {
+        free(rec);
+    }
+
+    return var_line;
+}
+
+char *check_variables(char *line) {
+    // check if !... is present
+    int start = -1;
+    int end = -1;
+    for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == '!' && line[i + 1] != '!') {
+            start = i;
+            break;
+        }
+    }
+
+    if (start == -1) {
+        return line;
+    }
+
+    int i;
+    for (i = start + 1; line[i] != '\0'; i++) {
+        if (line[i] == ' ' || line[i] == '\n' || line[i] == '\t' || line[i] == '\0') {
+            end = i;
+            break;
+        }
+    }
+
+    if (end == -1) end = i;
+
+    char *var_name = malloc((end - start) * sizeof(char));
+    strncpy(var_name, line + start + 1, end - start - 1);
+    var_name[end - start - 1] = '\0';
+
+    // get the variable value
+    char *var_value = get_variable(var_name);
+
+    if (var_value == NULL) {
+        printf("Error: variable '%s' not found\n", var_name);
+        free(var_name);
+        return NULL;
+    }
+
+    free(var_name);
+
+    // replace the variable with its value
+    char *new_line = malloc((strlen(line) - (end - start) + strlen(var_value) + 1) * sizeof(char));
+    strncpy(new_line, line, start);
+    strcat(new_line, var_value);
+    strcat(new_line, line + end);
+
+    char *rec = check_variables(new_line);
+
+    if (rec == NULL) {
+        free(new_line);
+        return NULL;
+    }
+
+    if (rec != new_line) {
+        free(new_line);
+    }
+
     return rec;
 }
 
@@ -455,6 +618,9 @@ char **lexe_program(char *program) {
 int main(int argc, char** argv) {
     char **lines = lexe_program(program);
 
+    variables = calloc(MAX_VARIABLES, sizeof(variable_t));
+    set_variable("version", OLV_VERSION);
+
     for (int line_index = 0; lines[line_index] != NULL; line_index++) {
         char *result = execute_line(lines[line_index]);
 
@@ -467,6 +633,7 @@ int main(int argc, char** argv) {
     }
 
     free_args(lines);
+    free_vars();
 
     return 0;
 }
