@@ -11,7 +11,7 @@ typedef struct {
     char* (*function)(char**);
 } internal_function_t;
 
-char program[] = "echo 'coucou toi' test";
+char program[] = "echo 'Hello, world!'";
 
 /**************************************
  *                                   *
@@ -142,13 +142,14 @@ char **gen_args(char *string) {
     // add the last argument
     argv[argc - 1] = malloc((strlen(string) - old_i + 1) * sizeof(char));
     strcpy(argv[argc - 1], string + old_i);
+    remove_quotes(argv[argc - 1]);
 
     argv[argc] = NULL;
 
     return argv;
 }
 
-char *get_function_name(char *string) {
+char *get_function_name(char *string, int *size) {
     int in_string = 0;
     for (int i = 0; string[i] != '\0'; i++) {
         if (string[i] == STRING_CHAR) {
@@ -158,14 +159,17 @@ char *get_function_name(char *string) {
         if (string[i] == ' ' && !in_string) {
             char *function_name = malloc((i + 1) * sizeof(char));
             strncpy(function_name, string, i);
+            *size = i + 1; // also include the space
             remove_quotes(function_name);
             return function_name;
         }
     }
-
+    
     char *function_name = malloc((strlen(string) + 1) * sizeof(char));
     strcpy(function_name, string);
+    *size = strlen(string);
 
+    remove_quotes(function_name);
     return function_name;
 }
 
@@ -183,7 +187,7 @@ void free_args(char **argv) {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf("$6%s(", function_name);
+    printf("$6'%s'(", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
@@ -191,7 +195,9 @@ void debug_print(char *function_name, char **function_args) {
             continue;
         }
         printf("$6'%s') [%d]\n", function_args[i], i + 1);
+        return;
     }
+    printf("$6) [0]\n");
 }
 
 char *check_subfunc(char *line);
@@ -206,7 +212,8 @@ char *execute_line(char* full_line) {
     }
 
     // get the function name
-    char *function_name = get_function_name(line);
+    int name_size;
+    char *function_name = get_function_name(line, &name_size);
 
     // get the function address
     void *function = get_function(function_name);
@@ -218,7 +225,7 @@ char *execute_line(char* full_line) {
         result = NULL;
     } else {
         // generate the arguments array
-        char **function_args = gen_args(line + strlen(function_name) + 1);
+        char **function_args = gen_args(line + name_size);
 
         debug_print(function_name, function_args);
 
