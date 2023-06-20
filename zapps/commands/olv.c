@@ -3,11 +3,15 @@
 #include <stdio.h>
 
 #define STRING_CHAR '\''
-#define MORE_DEBUG 0
+
+#define ENABLE_DEBUG 0  // debug level 1
+#define MORE_DEBUG 0    // debug level 2
 
 #define MAX_VARIABLES 100
 
 #define OLV_VERSION "0.2"
+
+#define PROFAN_COLOR "$6"
 
 typedef struct {
     char* name;
@@ -19,11 +23,6 @@ typedef struct {
     char* value;
 } variable_t;
 
-
-char program[] =
-"VAR oui 43\n"
-"VAR test oui\n"
-"echo !!test\n";
 
 variable_t *variables;
 
@@ -274,10 +273,11 @@ char **gen_args(char *string) {
         } if (string[i] == ' ' && !in_string) {
             argv[arg_i] = malloc((i - old_i + 1) * sizeof(char));
             strncpy(argv[arg_i], string + old_i, i - old_i);
-            remove_quotes(argv[arg_i]);
             argv[arg_i][i - old_i] = '\0';
-            arg_i++;
+
+            remove_quotes(argv[arg_i]);
             old_i = i + 1;
+            arg_i++;
         }
     }
 
@@ -301,6 +301,8 @@ char *get_function_name(char *string, int *size) {
         if (string[i] == ' ' && !in_string) {
             char *function_name = malloc((i + 1) * sizeof(char));
             strncpy(function_name, string, i);
+            function_name[i] = '\0';
+
             *size = i + 1; // also include the space
             remove_quotes(function_name);
             return function_name;
@@ -339,17 +341,17 @@ void free_vars() {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf("$6'%s'(", function_name);
+    printf(PROFAN_COLOR "'%s'(", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
-            printf("$6'%s', ", function_args[i]);
+            printf(PROFAN_COLOR "'%s', ", function_args[i]);
             continue;
         }
-        printf("$6'%s') [%d]\n", function_args[i], i + 1);
+        printf(PROFAN_COLOR "'%s') [%d]\n", function_args[i], i + 1);
         return;
     }
-    printf("$6) [0]\n");
+    printf(PROFAN_COLOR ") [0]\n");
 }
 
 char *check_subfunc(char *line);
@@ -383,7 +385,8 @@ char *execute_line(char* full_line) {
         // generate the arguments array
         char **function_args = gen_args(line + name_size);
 
-        debug_print(function_name, function_args);
+        if (ENABLE_DEBUG)
+            debug_print(function_name, function_args);
 
         // execute the function
         result = ((char* (*)(char**))function)(function_args);
@@ -448,6 +451,7 @@ char *check_subfunc(char *line) {
 
     char *subfunc = malloc((end - start - 1) * sizeof(char));
     strncpy(subfunc, line + start + 2, end - start - 2);
+    subfunc[end - start - 2] = '\0';
 
     // execute the subfunc
     char *subfunc_result = execute_line(subfunc);
@@ -463,6 +467,8 @@ char *check_subfunc(char *line) {
     // replace the subfunc with its result
     char *new_line = malloc((strlen(line) - (end - start) + strlen(subfunc_result) + 1) * sizeof(char));
     strncpy(new_line, line, start);
+    new_line[start] = '\0';
+
     strcat(new_line, subfunc_result);
     strcat(new_line, line + end + 1);
 
@@ -524,6 +530,8 @@ char *check_variables(char *line) {
     // replace the variable with its value
     char *new_line = malloc((strlen(line) - (end - start) + strlen(var_value) + 1) * sizeof(char));
     strncpy(new_line, line, start);
+    new_line[start] = '\0';
+
     strcat(new_line, var_value);
     strcat(new_line, line + end);
 
@@ -609,17 +617,8 @@ char **lexe_program(char *program) {
     return lines;
 }
 
-/********************
- *                 *
- *  Main Function  *
- *                 *
-********************/
-
-int main(int argc, char** argv) {
+void execute_program(char *program) {
     char **lines = lexe_program(program);
-
-    variables = calloc(MAX_VARIABLES, sizeof(variable_t));
-    set_variable("version", OLV_VERSION);
 
     for (int line_index = 0; lines[line_index] != NULL; line_index++) {
         char *result = execute_line(lines[line_index]);
@@ -631,8 +630,43 @@ int main(int argc, char** argv) {
             free(result);
         }
     }
+    free(lines);
+}
 
-    free_args(lines);
+void start_shell() {
+    // use execute_program() and fgets() to create a shell
+    printf("Welcome to the olive v%s shell!\n", OLV_VERSION);
+    printf("Type 'exit' to exit\n");
+
+    char *line = malloc(256 * sizeof(char));
+
+    while (1) {
+        printf(">>> ");
+        fgets(line, 256, stdin);
+
+        if (strncmp(line, "exit", 4) == 0) {
+            break;
+        }
+
+        execute_program(line);
+    }
+
+    free(line);
+}
+
+/********************
+ *                 *
+ *  Main Function  *
+ *                 *
+********************/
+
+int main(int argc, char** argv) {
+    variables = calloc(MAX_VARIABLES, sizeof(variable_t));
+    set_variable("version", OLV_VERSION);
+
+    // execute_program("echo Hello World");
+    start_shell();
+
     free_vars();
 
     return 0;
