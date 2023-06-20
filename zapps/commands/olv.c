@@ -2,8 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <syscall.h>
-
 #define STRING_CHAR '\''
 
 typedef struct {
@@ -11,18 +9,12 @@ typedef struct {
     char* (*function)(char**);
 } internal_function_t;
 
-char program[] = "'echo' !(upper 'Hello, world!' coucou)";
 
 /**************************************
  *                                   *
  *  Olivine Lang Internal Functions  *
  *                                   *
 **************************************/
-
-char *if_clear(char **input) {
-    printf("clear function executed!\n");
-    return NULL;
-}
 
 char *if_echo(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
@@ -60,17 +52,81 @@ char *if_upper(char **input) {
     return result;
 }
 
-char *if_kver(char **input) {
-    char *result = malloc((64) * sizeof(char));
-    c_sys_kinfo(result);
+char *if_join(char **input) {
+    /*
+     * input: ["hello", "world"]
+     * output: "'hello world'"
+    */
+
+    int required_size = 2;
+    for (int i = 0; input[i] != NULL; i++) {
+        required_size += strlen(input[i]) + 1;
+    }
+
+    char *result = malloc(required_size * sizeof(char));
+
+    int result_i = 0;
+    result[result_i++] = STRING_CHAR;
+
+    for (int i = 0; input[i] != NULL; i++) {
+        for (int j = 0; input[i][j] != '\0'; j++) {
+            result[result_i++] = input[i][j];
+        }
+        result[result_i++] = ' ';
+    }
+
+    result[required_size - 2] = STRING_CHAR;
+    result[required_size - 1] = '\0';
+
+    return result;
+}
+
+char *if_split(char **input) {
+    /*
+     * input: ["hello world", "test"]
+     * output: "'hello' 'world' 'test'"
+    */
+
+    int required_size = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        for (int j = 0; input[i][j] != '\0'; j++) {
+            if (input[i][j] == ' ') {
+                required_size += 2;
+            }
+            required_size++;
+        }
+        required_size += 3;
+    }
+
+    char *result = malloc(required_size * sizeof(char));
+
+    int result_i = 0;
+
+    for (int i = 0; input[i] != NULL; i++) {
+        result[result_i++] = STRING_CHAR;
+        for (int j = 0; input[i][j] != '\0'; j++) {
+            if (input[i][j] == ' ') {
+                result[result_i++] = STRING_CHAR;
+                result[result_i++] = ' ';
+                result[result_i++] = STRING_CHAR;
+            } else {
+                result[result_i++] = input[i][j];
+            }
+        }
+        result[result_i++] = STRING_CHAR;
+        result[result_i++] = ' ';
+    }
+
+    result[required_size - 1] = '\0';
+
     return result;
 }
 
 internal_function_t internal_functions[] = {
-    {"clear", if_clear},
     {"echo", if_echo},
     {"upper", if_upper},
-    {"kver", if_kver},
+    {"join", if_join},
+    {"split", if_split},
     {NULL, NULL}
 };
 
