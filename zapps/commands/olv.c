@@ -9,7 +9,11 @@ typedef struct {
     char* (*function)(char**);
 } internal_function_t;
 
-char program[] = "echo !(split 'coucou test hi' from)";
+#define MORE_DEBUG 0
+
+char program[] =
+"echo !(upper 'hello world')\n"
+"echo !(join 'hello' 'world')\n";
 
 /**************************************
  *                                   *
@@ -265,7 +269,10 @@ char *execute_line(char* full_line) {
     char *line = check_subfunc(full_line);
 
     if (line == NULL) {
-        printf("Error: subfunction failed\n");
+        if (MORE_DEBUG)
+            printf("Error: subfunction failed\n");
+
+        free(full_line);
         return NULL;
     }
 
@@ -338,7 +345,7 @@ char *check_subfunc(char *line) {
     }
 
     if (end == -1) {
-        printf("Error: missing closing parenthesis\n");
+        printf("Error: missing closing parenthesis '%s'\n", line);
         return NULL;
     }
 
@@ -350,7 +357,9 @@ char *check_subfunc(char *line) {
     free(subfunc);
 
     if (subfunc_result == NULL) {
-        printf("Error: subfunc returned NULL\n");
+        if (MORE_DEBUG)
+            printf("Error: subfunc returned NULL\n");
+
         return NULL;
     }
 
@@ -369,13 +378,95 @@ char *check_subfunc(char *line) {
     return rec;
 }
 
+/***********************
+ *                    *
+ *  Lexing Functions  *
+ *                    *
+***********************/
+
+char **lexe_program(char *program) {
+    int line_count = 1;
+    for (int i = 0; program[i] != '\0'; i++) {
+        if (program[i] == '\n' || program[i] == ';') {
+            line_count++;
+        }
+    }
+
+    char **lines = malloc((line_count + 1) * sizeof(char*));
+    char *tmp = malloc((strlen(program) + 1) * sizeof(char));
+
+    int tmp_index = 0;
+    int line_index = 0;
+    for (int i = 0; program[i] != '\0'; i++) {
+        if (program[i] == '\n' || program[i] == ';') {
+            if (tmp_index == 0) {
+                line_count--;
+                continue;
+            }
+
+            tmp[tmp_index++] = '\0';
+            lines[line_index] = malloc(tmp_index * sizeof(char));
+            strcpy(lines[line_index], tmp);
+            line_index++;
+            tmp_index = 0;
+            continue;
+        }
+
+        // remove multiple spaces
+        if (program[i] == ' ' && program[i + 1] == ' ') {
+            continue;
+        }
+
+        // remove tabs and carriage returns
+        if (program[i] == '\t' || program[i] == '\r') {
+            continue;
+        }
+
+        // remove comments
+        if (program[i] == '/' && program[i + 1] == '/') {
+            while (program[i] != '\n' && program[i] != '\0') i++;
+            continue;
+        }
+
+        tmp[tmp_index++] = program[i];
+    }
+
+    if (tmp_index == 0) {
+        line_count--;
+    } else {
+        tmp[tmp_index++] = '\0';
+        lines[line_index] = malloc(tmp_index * sizeof(char));
+        strcpy(lines[line_index], tmp);
+    }
+
+    free(tmp);
+
+    lines[line_count] = NULL;
+
+    return lines;
+}
+
+/********************
+ *                 *
+ *  Main Function  *
+ *                 *
+********************/
+
 int main(int argc, char** argv) {
-    char *copy = malloc((strlen(program) + 1) * sizeof(char));
-    strcpy(copy, program);
+    char **lines = lexe_program(program);
 
-    char *res = execute_line(copy);
+    for (int line_index = 0; lines[line_index] != NULL; line_index++) {
+        char *result = execute_line(lines[line_index]);
 
-    free(res);
+        if (result != NULL) {
+            if (result[0] != '\0') {
+                printf("%s\n", result);
+            }
+            free(result);
+        }
+    }
+
+    free_args(lines);
 
     return 0;
 }
