@@ -673,7 +673,7 @@ void execute_program(char *program) {
 
 void start_shell() {
     // use execute_program() and fgets() to create a shell
-    printf("Welcome to the olive v%s shell!\n", OLV_VERSION);
+    printf("Welcome to the olivine v%s shell!\n", OLV_VERSION);
     printf("Type 'exit' to exit\n");
 
     char *line = malloc(256 * sizeof(char));
