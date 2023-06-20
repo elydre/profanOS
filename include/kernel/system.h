@@ -10,7 +10,7 @@
 #define KERNEL_PRIORITY 5           // default kernel process priority
 #define RAMDISK_SECTOR  4096        // ramdisk sector count
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
-#define RUN_DEFAULT     "/bin/shell.bin"
+#define RUN_DEFAULT     "/bin/commands/olv.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second

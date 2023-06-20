@@ -5,13 +5,22 @@
 #define STRING_CHAR '\''
 
 #define ENABLE_DEBUG 0  // debug level 1
-#define MORE_DEBUG 0    // debug level 2
+#define MORE_DEBUG   0  // debug level 2
+
+#define PROFANBUILD     // enable binary execution
+
+#ifdef PROFANBUILD
+  #include <syscall.h>
+  #include <profan.h>
+#endif
 
 #define MAX_VARIABLES 100
+#define MAX_PSEUDOS   100
 
 #define OLV_VERSION "0.2"
 
 #define PROFAN_COLOR "$6"
+#define OLV_PROMPT   "olivine [$4%s$7] -> "
 
 typedef struct {
     char* name;
@@ -23,9 +32,16 @@ typedef struct {
     char* value;
 } variable_t;
 
+typedef struct {
+    char* name;
+    char* value;
+} pseudo_t;
 
 variable_t *variables;
+pseudo_t *pseudos;
 internal_function_t internal_functions[];
+
+char *current_directory;
 
 /*******************************
  *                            *
@@ -62,6 +78,47 @@ int set_variable(char *name, char *value) {
                 free(variables[i].value);
             }
             variables[i].value = value_copy;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/*****************************
+ *                          *
+ * pseudo Get/Set Functions  *
+ *                          *
+*****************************/
+
+char *get_pseudo(char *name) {
+    for (int i = 0; i < MAX_PSEUDOS; i++) {
+        if (pseudos[i].name == NULL) {
+            return NULL;
+        }
+        if (strcmp(pseudos[i].name, name) == 0) {
+            return pseudos[i].value;
+        }
+    }
+    return NULL;
+}
+
+int set_pseudo(char *name, char *value) {
+    char *value_copy = malloc(strlen(value) + 1);
+    strcpy(value_copy, value);
+
+    for (int i = 0; i < MAX_PSEUDOS; i++) {
+        if (pseudos[i].name == NULL) {
+            char *name_copy = malloc(strlen(name) + 1);
+            strcpy(name_copy, name);
+            pseudos[i].name = name_copy;
+            pseudos[i].value = value_copy;
+            return 0;
+        }
+        if (strcmp(pseudos[i].name, name) == 0) {
+            if (pseudos[i].value) {
+                free(pseudos[i].value);
+            }
+            pseudos[i].value = value_copy;
             return 0;
         }
     }
@@ -219,7 +276,7 @@ char *if_debug(char **input) {
     printf("VARIABLES\n");
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name != NULL) {
-            printf("  %s: %s\n", variables[i].name, variables[i].value);
+            printf("  %s: '%s'\n", variables[i].name, variables[i].value);
         }
     }
 
@@ -229,14 +286,132 @@ char *if_debug(char **input) {
         printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
     }
 
+    // print pseudos
+    printf("PSEUDOS\n");
+    for (int i = 0; pseudos[i].name != NULL; i++) {
+        printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
+    }
+
     return NULL;
 }
 
 char *if_eval(char **input) {
     printf("we need to evaluate:\n");
     for (int i = 0; input[i] != NULL; i++) {
-        printf(" %s\n", input[i]);
+        printf(" %s", input[i]);
     }
+    printf("\n");
+    return NULL;
+}
+
+char *if_go_binfile(char **input) {
+    #ifdef PROFANBUILD
+
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+    
+    if (argc < 1) {
+        printf("GO: expected at least 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    // get file name
+    char *file_name = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, input[0], file_name);
+    // check if file exists
+
+    if (!(c_fs_does_path_exists(file_name) && c_fs_get_sector_type(c_fs_path_to_id(file_name)) == 2)) {
+        printf("GO: file '%s' does not exist\n", file_name);
+        free(file_name);
+        return NULL;
+    }
+
+    // rebuild the arguments whis profan format:
+    // 1. full path to the binary
+    // 2. current working directory
+    // 3. all the arguments
+
+    argc++;
+
+    char **argv = malloc((argc + 1) * sizeof(char*));
+    argv[0] = file_name;
+    argv[1] = current_directory;
+    for (int i = 1; input[i] != NULL; i++) {
+        argv[i + 1] = input[i];
+    }
+    argv[argc] = NULL;
+
+    c_run_ifexist(file_name, argc, argv);
+
+    free(file_name);
+    free(argv);
+
+    #else
+    printf("GO: not available in this build\n");
+    #endif
+
+    return NULL;
+}
+
+char *if_change_dir(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+    
+    if (argc != 1) {
+        printf("CD: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    // get dir
+    char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+
+    // check if dir exists
+    #ifdef PROFANBUILD
+    assemble_path(current_directory, input[0], dir);
+
+    if (!(c_fs_does_path_exists(dir) && c_fs_get_sector_type(c_fs_path_to_id(dir)) == 3)) {
+        printf("CD: directory '%s' does not exist\n", dir);
+        return NULL;
+    }
+    #else
+    strcpy(dir, input[0]);
+    #endif
+
+    // change directory
+    strcpy(current_directory, dir);
+
+    return NULL;
+}
+
+char *if_make_pseudo(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+    
+    if (argc != 2) {
+        printf("PSEUDO: expected 2 arguments, got %d\n", argc);
+        return NULL;
+    }
+
+    // get name
+    char *name = input[0];
+    
+    // get value
+    char *value = input[1];
+
+    // set pseudo
+    if (set_pseudo(name, value)) {
+        printf("PSEUDO: no more space for pseudo\n");
+    }
+
     return NULL;
 }
 
@@ -249,6 +424,9 @@ internal_function_t internal_functions[] = {
     {"show", if_show},
     {"debug", if_debug},
     {"eval", if_eval},
+    {"go", if_go_binfile},
+    {"cd", if_change_dir},
+    {"pseudo", if_make_pseudo},
     {NULL, NULL}
 };
 
@@ -371,6 +549,16 @@ void free_vars() {
     free(variables);
 }
 
+void free_pseudos() {
+    for (int i = 0; i < MAX_PSEUDOS; i++) {
+        if (pseudos[i].name != NULL) {
+            free(pseudos[i].name);
+            free(pseudos[i].value);
+        }
+    }
+    free(pseudos);
+}
+
 /**************************
  *                       *
  *  Execution Functions  *
@@ -393,6 +581,7 @@ void debug_print(char *function_name, char **function_args) {
 
 char *check_subfunc(char *line);
 char *check_variables(char *line);
+char *check_pseudos(char *line);
 
 char *execute_line(char* full_line) {
     // check for function and variable
@@ -464,7 +653,12 @@ char *check_subfunc(char *line) {
             free(line);
         }
 
-        return var_line;
+        char *pseudo_line = check_pseudos(var_line);
+        if (pseudo_line != var_line) {
+            free(var_line);
+        }
+
+        return pseudo_line;
     }
 
     int open_parentheses = 1;
@@ -521,6 +715,11 @@ char *check_subfunc(char *line) {
         free(rec);
     }
 
+    char *pseudo_line = check_pseudos(var_line);
+    if (pseudo_line != var_line) {
+        free(var_line);
+    }
+
     return var_line;
 }
 
@@ -541,8 +740,7 @@ char *check_variables(char *line) {
 
     int i;
     for (i = start + 1; line[i] != '\0'; i++) {
-        if (line[i] == ' ' || line[i] == '\n' || line[i] == '\t' || 
-            line[i] == '!' || line[i] == STRING_CHAR) {
+        if (line[i] == ' ' || line[i] == '!' || line[i] == STRING_CHAR) {
             end = i;
             break;
         }
@@ -585,6 +783,32 @@ char *check_variables(char *line) {
     }
 
     return rec;
+}
+
+char *check_pseudos(char *line) {
+    char *pseudo_name = malloc((strlen(line) + 1) * sizeof(char));
+    int len = strlen(line);
+    int i;
+    for (i = 0; i < len; i++) {
+        if (line[i] == ' ') {
+            break;
+        }
+        pseudo_name[i] = line[i];
+    }
+    pseudo_name[i] = '\0';
+
+    char *pseudo_value = get_pseudo(pseudo_name);
+
+    free(pseudo_name);
+    if (pseudo_value == NULL) {
+        return line;
+    }
+
+    char *new_line = malloc((strlen(line) - i + strlen(pseudo_value) + 2) * sizeof(char));
+    strcpy(new_line, pseudo_value);
+    strcat(new_line, line + i);
+
+    return new_line;
 }
 
 /***********************
@@ -673,13 +897,10 @@ void execute_program(char *program) {
 
 void start_shell() {
     // use execute_program() and fgets() to create a shell
-    printf("Welcome to the olivine v%s shell!\n", OLV_VERSION);
-    printf("Type 'exit' to exit\n");
-
     char *line = malloc(256 * sizeof(char));
 
     while (1) {
-        printf(">>> ");
+        printf(OLV_PROMPT, current_directory);
         fgets(line, 256, stdin);
 
         if (strncmp(line, "exit", 4) == 0) {
@@ -699,12 +920,20 @@ void start_shell() {
 ********************/
 
 int main(int argc, char** argv) {
+    current_directory = malloc(256 * sizeof(char));
+    strcpy(current_directory, "/");
+
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     set_variable("version", OLV_VERSION);
+
+    pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
+    set_pseudo("info", "go /bin/commands/info.bin");
+    set_pseudo("ls", "go /bin/commands/ls.bin");
 
     // execute_program("echo Hello World");
     start_shell();
 
+    free_pseudos();
     free_vars();
 
     return 0;
