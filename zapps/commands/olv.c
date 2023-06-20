@@ -232,14 +232,23 @@ char *if_debug(char **input) {
     return NULL;
 }
 
+char *if_eval(char **input) {
+    printf("we need to evaluate:\n");
+    for (int i = 0; input[i] != NULL; i++) {
+        printf(" %s\n", input[i]);
+    }
+    return NULL;
+}
+
 internal_function_t internal_functions[] = {
     {"echo", if_echo},
     {"upper", if_upper},
     {"join", if_join},
     {"split", if_split},
-    {"VAR", if_set_var},
+    {"SET", if_set_var},
     {"show", if_show},
     {"debug", if_debug},
+    {"eval", if_eval},
     {NULL, NULL}
 };
 
@@ -532,7 +541,8 @@ char *check_variables(char *line) {
 
     int i;
     for (i = start + 1; line[i] != '\0'; i++) {
-        if (line[i] == ' ' || line[i] == '\n' || line[i] == '\t' || line[i] == '\0') {
+        if (line[i] == ' ' || line[i] == '\n' || line[i] == '\t' || 
+            line[i] == '!' || line[i] == STRING_CHAR) {
             end = i;
             break;
         }
