@@ -7,7 +7,7 @@
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
 
-#define PROFANBUILD     // enable binary execution
+// #define PROFANBUILD     // enable binary execution
 
 #ifdef PROFANBUILD
   #include <syscall.h>
@@ -686,7 +686,6 @@ char *check_subfunc(char *line) {
 
     // execute the subfunc
     char *subfunc_result = execute_line(subfunc);
-    free(subfunc);
 
     if (subfunc_result == NULL) {
         if (MORE_DEBUG)
@@ -706,6 +705,7 @@ char *check_subfunc(char *line) {
     free(subfunc_result);
 
     char *rec = check_subfunc(new_line);
+
     if (rec != new_line) {
         free(new_line);
     }
@@ -930,8 +930,8 @@ int main(int argc, char** argv) {
     set_pseudo("info", "go /bin/commands/info.bin");
     set_pseudo("ls", "go /bin/commands/ls.bin");
 
-    // execute_program("echo Hello World");
-    start_shell();
+    execute_program("echo !(upper coucou)");
+    // start_shell();
 
     free_pseudos();
     free_vars();
