@@ -457,6 +457,20 @@ void remove_quotes(char *string) {
     string[i - dec] = '\0';
 }
 
+int does_startwith(char *str, char *start) {
+    int len = strlen(start);
+    if (strlen(str) < len) {
+        return 0;
+    }
+
+    for (int i = 0; i < len; i++) {
+        if (str[i] != start[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 char **gen_args(char *string) {
     if (string == NULL || strlen(string) == 0) {
         char **argv = malloc(1 * sizeof(char*));
@@ -591,7 +605,6 @@ char *execute_line(char* full_line) {
         if (MORE_DEBUG)
             printf("Error: subfunction failed\n");
 
-        free(full_line);
         return NULL;
     }
 
@@ -631,8 +644,6 @@ char *execute_line(char* full_line) {
         free(line);
     }
 
-    free(full_line);
-
     return result;
 }
 
@@ -649,9 +660,6 @@ char *check_subfunc(char *line) {
 
     if (start == -1) {
         char *var_line = check_variables(line);
-        if (var_line != line) {
-            free(line);
-        }
 
         char *pseudo_line = check_pseudos(var_line);
         if (pseudo_line != var_line) {
@@ -686,6 +694,7 @@ char *check_subfunc(char *line) {
 
     // execute the subfunc
     char *subfunc_result = execute_line(subfunc);
+    free(subfunc);
 
     if (subfunc_result == NULL) {
         if (MORE_DEBUG)
@@ -883,6 +892,13 @@ void execute_program(char *program) {
     char **lines = lexe_program(program);
 
     for (int line_index = 0; lines[line_index] != NULL; line_index++) {
+        if (does_startwith(lines[line_index], "GOTO")) {
+            int val = atoi(lines[line_index] + 5);
+            printf("GOTO %d\n", val);
+            line_index = val - 1;
+            continue;
+        }
+
         char *result = execute_line(lines[line_index]);
 
         if (result != NULL) {
@@ -892,7 +908,7 @@ void execute_program(char *program) {
             free(result);
         }
     }
-    free(lines);
+    free_args(lines);
 }
 
 void start_shell() {
@@ -930,7 +946,8 @@ int main(int argc, char** argv) {
     set_pseudo("info", "go /bin/commands/info.bin");
     set_pseudo("ls", "go /bin/commands/ls.bin");
 
-    execute_program("echo !(upper coucou)");
+    // execute_program("echo 1;echo 2;GOTO 1");
+    execute_program("show 'hi ypu' !(echo !(upper version: !version))");
     // start_shell();
 
     free(current_directory);
