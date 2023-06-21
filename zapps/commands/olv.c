@@ -7,20 +7,27 @@
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
 
-#define PROFANBUILD     // enable binary execution
+// #define PROFANBUILD     // enable binary execution
 
 #ifdef PROFANBUILD
   #include <syscall.h>
   #include <profan.h>
+
+  // profanOS config
+  #define OLV_PROMPT "olivine [$4%s$7] -> "
+  #define PROFAN_COLOR "$6"
+#else
+  #define uint32_t unsigned int
+
+  // unix config
+  #define OLV_PROMPT "olivine [%s] -> "
+  #define PROFAN_COLOR ""
 #endif
 
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
 
 #define OLV_VERSION "0.2"
-
-#define PROFAN_COLOR "$6"
-#define OLV_PROMPT   "olivine [$4%s$7] -> "
 
 typedef struct {
     char* name;
