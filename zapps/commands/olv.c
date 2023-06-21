@@ -933,6 +933,7 @@ int main(int argc, char** argv) {
     execute_program("echo !(upper coucou)");
     // start_shell();
 
+    free(current_directory);
     free_pseudos();
     free_vars();
 
