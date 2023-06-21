@@ -7,7 +7,7 @@
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
 
-// #define PROFANBUILD     // enable binary execution
+#define PROFANBUILD     // enable binary execution
 
 #ifdef PROFANBUILD
   #include <syscall.h>
@@ -458,12 +458,12 @@ void remove_quotes(char *string) {
 }
 
 int does_startwith(char *str, char *start) {
-    int len = strlen(start);
+    uint32_t len = strlen(start);
     if (strlen(str) < len) {
         return 0;
     }
 
-    for (int i = 0; i < len; i++) {
+    for (uint32_t i = 0; i < len; i++) {
         if (str[i] != start[i]) {
             return 0;
         }
@@ -839,8 +839,11 @@ char **lexe_program(char *program) {
 
     int tmp_index = 0;
     int line_index = 0;
+    int is_string_begin = 1;
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
+            is_string_begin = 1;
+
             if (tmp_index == 0) {
                 line_count--;
                 continue;
@@ -862,6 +865,14 @@ char **lexe_program(char *program) {
         // remove tabs and carriage returns
         if (program[i] == '\t' || program[i] == '\r') {
             continue;
+        }
+
+        // remove spaces at the beginning of the line
+        if (is_string_begin) {
+            if (program[i] == ' ') {
+                continue;
+            }
+            is_string_begin = 0;
         }
 
         // remove comments
@@ -888,8 +899,110 @@ char **lexe_program(char *program) {
     return lines;
 }
 
+int execute_for(int line_count, char **lines) {
+    char *for_line = check_subfunc(lines[0]);
+
+    if (for_line == NULL) {
+        return -1;
+    }
+
+    char *var_name = malloc((strlen(for_line) + 1) * sizeof(char));
+    char *string = malloc((strlen(for_line) + 1) * sizeof(char));
+
+    int i;
+    for (i = 4; for_line[i] != ' ' && for_line[i] != '\0'; i++) {
+        var_name[i - 4] = for_line[i];
+    }
+    var_name[i - 4] = '\0';
+
+    if (for_line[i] == '\0') {
+        printf("Error: missing string for FOR loop\n");
+        free(var_name);
+        free(string);
+
+        if (for_line != lines[0]) {
+            free(for_line);
+        }
+
+        return -1;
+    }
+
+    int j;
+    for (j = i + 1; for_line[j] != '\0'; j++) {
+        string[j - i - 1] = for_line[j];
+    }
+
+    string[j - i - 1] = '\0';
+
+    // chek string length
+    if (strlen(string) == 0) {
+        printf("Error: missing string for FOR loop\n");
+        free(var_name);
+        free(string);
+
+        if (for_line != lines[0]) {
+            free(for_line);
+        }
+
+        return -1;
+    }
+
+    // convert string to string array
+    char **string_array = gen_args(string);
+
+    int line_end = 0;
+    // TODO imbricated FOR loops
+    for (int i = 1; i < line_count; i++) {
+        if (does_startwith(lines[i], "END")) {
+            line_end = i;
+            break;
+        }
+    }
+
+    // execute for loop
+    for (int i = 0; string_array[i] != NULL; i++) {
+        for (int j = 1; j < line_end; j++) {
+            set_variable(var_name, string_array[i]);
+            // if (does_startwith(lines[j], "FOR")) -- TODO
+
+            char *result = execute_line(lines[j]);
+
+            if (result != NULL) {
+                if (result[0] != '\0') {
+                    printf("%s\n", result);
+                }
+                free(result);
+            }
+        }
+    }
+
+    free_args(string_array);
+
+    if (for_line != lines[0]) {
+        free(for_line);
+    }
+
+    free(var_name);
+    free(string);
+
+    return line_end;
+}
+
 void execute_lines(int line_count, char **lines) {
     for (int line_index = 0; line_index < line_count; line_index++) {
+        if (does_startwith(lines[line_index], "FOR")) {
+            int ret = execute_for(line_count - line_index, lines + line_index);
+            if (ret == -1) {
+                if (MORE_DEBUG)
+                    printf("Error: invalid FOR loop\n");
+
+                return;
+            }
+
+            line_index += ret;
+            continue;
+        }
+
         char *result = execute_line(lines[line_index]);
 
         if (result != NULL) {
@@ -948,9 +1061,9 @@ int main(int argc, char** argv) {
     set_pseudo("info", "go /bin/commands/info.bin");
     set_pseudo("ls", "go /bin/commands/ls.bin");
 
-    // execute_program("echo 1;echo 2;GOTO 1");
-    execute_program("echo !(upper version: !version);echo noice");
-    // start_shell();
+    // execute_program("FOR coucou 1 2 3 4;echo !coucou;END;echo fin");
+    // execute_program("echo !(upper version: !version);echo noice");
+    start_shell();
 
     free(current_directory);
     free_pseudos();
