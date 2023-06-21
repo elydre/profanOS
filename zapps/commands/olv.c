@@ -888,17 +888,8 @@ char **lexe_program(char *program) {
     return lines;
 }
 
-void execute_program(char *program) {
-    char **lines = lexe_program(program);
-
-    for (int line_index = 0; lines[line_index] != NULL; line_index++) {
-        if (does_startwith(lines[line_index], "GOTO")) {
-            int val = atoi(lines[line_index] + 5);
-            printf("GOTO %d\n", val);
-            line_index = val - 1;
-            continue;
-        }
-
+void execute_lines(int line_count, char **lines) {
+    for (int line_index = 0; line_index < line_count; line_index++) {
         char *result = execute_line(lines[line_index]);
 
         if (result != NULL) {
@@ -908,6 +899,17 @@ void execute_program(char *program) {
             free(result);
         }
     }
+}
+
+void execute_program(char *program) {
+    char **lines = lexe_program(program);
+    int line_count = 0;
+    for (int i = 0; lines[i] != NULL; i++) {
+        line_count++;
+    }
+
+    execute_lines(line_count, lines);
+
     free_args(lines);
 }
 
@@ -947,7 +949,7 @@ int main(int argc, char** argv) {
     set_pseudo("ls", "go /bin/commands/ls.bin");
 
     // execute_program("echo 1;echo 2;GOTO 1");
-    execute_program("show 'hi ypu' !(echo !(upper version: !version))");
+    execute_program("echo !(upper version: !version);echo noice");
     // start_shell();
 
     free(current_directory);
