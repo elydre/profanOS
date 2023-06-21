@@ -415,6 +415,46 @@ char *if_make_pseudo(char **input) {
     return NULL;
 }
 
+char *if_range(char **input) {
+    /*
+     * input: ["1", "5"]
+     * output: "'1' '2' '3' '4' '5'"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+    
+    if (argc != 2) {
+        printf("RANGE: expected 2 arguments, got %d\n", argc);
+        return NULL;
+    }
+
+    int start = atoi(input[0]);
+    int end = atoi(input[1]);
+
+    if (start > end) {
+        printf("RANGE: start is bigger than end\n");
+        return NULL;
+    }
+
+    char *output = malloc(1 * sizeof(char));
+    output[0] = '\0';
+    for (int i = start; i < end; i++) {
+        char *tmp = malloc((strlen(output) + strlen(input[1]) + 4) * sizeof(char));
+        strcpy(tmp, output);
+        sprintf(tmp, "%s '%d'", tmp, i);
+        free(output);
+        output = tmp;
+    }
+    char *copy = malloc((strlen(output)) * sizeof(char));
+    strcpy(copy, output + 1);
+    free(output);
+
+    return copy;
+}
+
 internal_function_t internal_functions[] = {
     {"echo", if_echo},
     {"upper", if_upper},
@@ -427,6 +467,7 @@ internal_function_t internal_functions[] = {
     {"go", if_go_binfile},
     {"cd", if_change_dir},
     {"pseudo", if_make_pseudo},
+    {"range", if_range},
     {NULL, NULL}
 };
 
