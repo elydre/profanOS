@@ -1237,10 +1237,11 @@ void start_shell() {
  *                 *
 ********************/
 
-char prog[] = ""
-"FOR e !(find -f /bin/commands);"
-" echo pseudo !(name !e) go !e;"
-" pseudo !(name !e) 'go !e';"
+char init_prog[] = ""
+"FOR dir '/bin/commands' '/bin/fatpath';"
+" FOR e !(find -f !dir);"
+"  pseudo !(name !e) 'go !e';"
+" END;"
 "END";
 
 int main(int argc, char** argv) {
@@ -1252,8 +1253,9 @@ int main(int argc, char** argv) {
 
     pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
 
-    execute_program(prog);
-    // execute_program("echo !(upper version: !version);echo noice");
+    // init pseudo commands
+    execute_program(init_prog);
+
     start_shell();
 
     free(current_directory);
