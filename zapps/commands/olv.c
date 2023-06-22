@@ -7,7 +7,10 @@
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
 
-// #define PROFANBUILD     // enable binary execution
+#define MAX_INPUT_SIZE 256
+#define MAX_PATH_SIZE  256
+
+#define PROFANBUILD     // enable binary execution
 
 #ifdef PROFANBUILD
   #include <syscall.h>
@@ -462,6 +465,122 @@ char *if_range(char **input) {
     return copy;
 }
 
+char *if_find(char **input) {
+    /*
+     * input: ["-f", "/dir/subdir"]
+     * output: "'/dir/subdir/file1' '/dir/subdir/file2'"
+    */
+
+    #ifdef PROFANBUILD
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 2) {
+        printf("FIND: expected 2 arguments, got %d\n", argc);
+        return NULL;
+    }
+
+    int required_type = 0;
+    if (strcmp(input[0], "-f") == 0) {
+        required_type = 2;
+    } else if (strcmp(input[0], "-d") == 0) {
+        required_type = 3;
+    } else {
+        printf("FIND: expected -f or -d as first argument, got '%s'\n", input[0]);
+        return NULL;
+    }
+
+    char *path = malloc((strlen(input[1]) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, input[1], path);
+
+    int elm_count = c_fs_get_dir_size(path);
+
+    uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
+    int *out_types = malloc(elm_count * sizeof(int));
+    c_fs_get_dir_content(path, out_ids);
+
+    for (int i = 0; i < elm_count; i++)
+        out_types[i] = c_fs_get_sector_type(out_ids[i]);
+    
+    char *output = malloc(1 * sizeof(char));
+    output[0] = '\0';
+
+    char *tmp_name = malloc(MAX_PATH_SIZE * sizeof(char));
+    char *tmp_path = malloc(MAX_PATH_SIZE * sizeof(char));
+
+    for (int i = 0; i < elm_count; i++) {
+        if (out_types[i] == required_type) {
+            c_fs_get_element_name(out_ids[i], tmp_name);
+            assemble_path(path, tmp_name, tmp_path);
+
+            char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4) * sizeof(char));
+            strcpy(tmp, output);
+            sprintf(tmp, "%s '%s'", tmp, tmp_path);
+            free(output);
+            output = tmp;
+        }
+    }
+
+    char *copy = malloc((strlen(output)) * sizeof(char));
+    strcpy(copy, output + 1);
+    free(output);
+
+    free(tmp_name);
+    free(tmp_path);
+    free(out_ids);
+    free(out_types);
+    free(path);
+
+    return copy;
+    #else
+    printf("FIND: not supported in this build\n");
+    return NULL;
+    #endif
+}
+
+char *if_name(char **input) {
+    /*
+     * input: ["/dir/subdir/file1.txt"]
+     * output: "'file1'"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        printf("NAME: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    int len = strlen(input[0]);
+    char *name = malloc((len + 1) * sizeof(char));
+
+    for (int i = len - 1; i >= 0; i--) {
+        if (input[0][i] == '/') {
+            strcpy(name, input[0] + i + 1);
+            break;
+        }
+    }
+
+    // remove extension
+    for (int i = strlen(name) - 1; i >= 0; i--) {
+        if (name[i] == '.') {
+            name[i] = '\0';
+            break;
+        }
+    }
+
+    char *output = malloc((strlen(name) + 3) * sizeof(char));
+    sprintf(output, "'%s'", name);
+    free(name);
+
+    return output;    
+}
+
 internal_function_t internal_functions[] = {
     {"echo", if_echo},
     {"upper", if_upper},
@@ -475,6 +594,8 @@ internal_function_t internal_functions[] = {
     {"cd", if_change_dir},
     {"pseudo", if_make_pseudo},
     {"range", if_range},
+    {"find", if_find},
+    {"name", if_name},
     {NULL, NULL}
 };
 
@@ -1094,11 +1215,11 @@ void execute_program(char *program) {
 
 void start_shell() {
     // use execute_program() and fgets() to create a shell
-    char *line = malloc(256 * sizeof(char));
+    char *line = malloc(MAX_INPUT_SIZE * sizeof(char));
 
     while (1) {
         printf(OLV_PROMPT, current_directory);
-        fgets(line, 256, stdin);
+        fgets(line, MAX_INPUT_SIZE, stdin);
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
@@ -1117,26 +1238,23 @@ void start_shell() {
 ********************/
 
 char prog[] = ""
-"FOR i 1 2 3 4;"
-" FOR j 1 2 3 4;"
-"  echo !i !j;"
-" END;"
+"FOR e !(find -f /bin/commands);"
+" echo pseudo !(name !e) go !e;"
+" pseudo !(name !e) 'go !e';"
 "END";
 
 int main(int argc, char** argv) {
-    current_directory = malloc(256 * sizeof(char));
+    current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
     strcpy(current_directory, "/");
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     set_variable("version", OLV_VERSION);
 
     pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
-    set_pseudo("info", "go /bin/commands/info.bin");
-    set_pseudo("ls", "go /bin/commands/ls.bin");
 
     execute_program(prog);
     // execute_program("echo !(upper version: !version);echo noice");
-    // start_shell();
+    start_shell();
 
     free(current_directory);
     free_pseudos();
