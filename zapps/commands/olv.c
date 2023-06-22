@@ -999,9 +999,16 @@ int execute_for(int line_count, char **lines) {
     char **string_array = gen_args(string);
 
     int line_end = 0;
-    // TODO imbricated FOR loops
+    
+    int end_offset = 1;
     for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "END")) {
+        if (does_startwith(lines[i], "FOR")) {
+            end_offset++;
+        } else if (does_startwith(lines[i], "END")) {
+            end_offset--;
+        }
+
+        if (end_offset == 0) {
             line_end = i;
             break;
         }
@@ -1011,7 +1018,18 @@ int execute_for(int line_count, char **lines) {
     for (int i = 0; string_array[i] != NULL; i++) {
         for (int j = 1; j < line_end; j++) {
             set_variable(var_name, string_array[i]);
-            // if (does_startwith(lines[j], "FOR")) -- TODO
+            if (does_startwith(lines[j], "FOR")) {
+                int ret = execute_for(line_end - j, lines + j);
+                if (ret == -1) {
+                    if (MORE_DEBUG)
+                        printf("Error: invalid FOR loop\n");
+
+                    return -1;
+                }
+
+                j += ret;
+                continue;
+            }
 
             char *result = execute_line(lines[j]);
 
@@ -1098,6 +1116,13 @@ void start_shell() {
  *                 *
 ********************/
 
+char prog[] = ""
+"FOR i 1 2 3 4;"
+" FOR j 1 2 3 4;"
+"  echo !i !j;"
+" END;"
+"END";
+
 int main(int argc, char** argv) {
     current_directory = malloc(256 * sizeof(char));
     strcpy(current_directory, "/");
@@ -1109,9 +1134,9 @@ int main(int argc, char** argv) {
     set_pseudo("info", "go /bin/commands/info.bin");
     set_pseudo("ls", "go /bin/commands/ls.bin");
 
-    // execute_program("FOR coucou 1 2 3 4;echo !coucou;END;echo fin");
+    execute_program(prog);
     // execute_program("echo !(upper version: !version);echo noice");
-    start_shell();
+    // start_shell();
 
     free(current_directory);
     free_pseudos();
