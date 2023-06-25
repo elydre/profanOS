@@ -1087,6 +1087,51 @@ int check_condition(char *condition) {
 int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
 
+int execute_lines(char **lines, int line_end) {
+   for (int i = 0; i < line_end; i++) {
+        if (i >= line_end) {
+            printf("Error: trying to execute line after END\n");
+            return -1;
+        }
+
+        if (does_startwith(lines[i], "FOR")) {
+            int ret = execute_for(line_end - i, lines + i);
+            if (ret == -1) {
+                if (MORE_DEBUG)
+                    printf("Error: invalid FOR loop\n");
+
+                return -1;
+            }
+
+            i += ret;
+            continue;
+        }
+
+        if (does_startwith(lines[i], "IF")) {
+            int ret = execute_if(line_end - i, lines + i);
+            if (ret == -1) {
+                if (MORE_DEBUG)
+                    printf("Error: invalid IF statement\n");
+
+                return -1;
+            }
+
+            i += ret;
+            continue;
+        }
+
+        char *result = execute_line(lines[i]);
+
+        if (result != NULL) {
+            if (result[0] != '\0') {
+                printf("%s\n", result);
+            }
+            free(result);
+        }
+    }
+    return 0;
+}
+
 int execute_for(int line_count, char **lines) {
     char *for_line = check_subfunc(lines[0]);
 
@@ -1168,41 +1213,11 @@ int execute_for(int line_count, char **lines) {
 
     // execute for loop
     for (int i = 0; string_array[i] != NULL; i++) {
-        for (int j = 1; j < line_end; j++) {
-            set_variable(var_name, string_array[i]);
-            if (does_startwith(lines[j], "FOR")) {
-                int ret = execute_for(line_end - j, lines + j);
-                if (ret == -1) {
-                    if (MORE_DEBUG)
-                        printf("Error: invalid FOR loop\n");
-
-                    return -1;
-                }
-
-                j += ret;
-                continue;
-            }
-            if (does_startwith(lines[j], "IF")) {
-                int ret = execute_if(line_end - j, lines + j);
-                if (ret == -1) {
-                    if (MORE_DEBUG)
-                        printf("Error: invalid IF statement\n");
-
-                    return -1;
-                }
-
-                j += ret;
-                continue;
-            }
-
-            char *result = execute_line(lines[j]);
-
-            if (result != NULL) {
-                if (result[0] != '\0') {
-                    printf("%s\n", result);
-                }
-                free(result);
-            }
+        set_variable(var_name, string_array[i]);
+        if (execute_lines(lines + 1, line_end - 1)) {
+            if (MORE_DEBUG)
+                printf("Error: invalid FOR loop\n");
+            line_end = -1;
         }
     }
 
@@ -1286,42 +1301,12 @@ int execute_if(int line_count, char **lines) {
 
     // execute if statement
     if (check_condition(condition)) {
-        for (int i = 1; i < line_end; i++) {
-            if (does_startwith(lines[i], "FOR")) {
-                int ret = execute_for(line_end - i, lines + i);
-                if (ret == -1) {
-                    if (MORE_DEBUG)
-                        printf("Error: invalid FOR loop\n");
+        if (execute_lines(lines + 1, line_end - 1)) {
+            if (MORE_DEBUG)
+                printf("Error: invalid IF statement\n");
 
-                    return -1;
-                }
-
-                i += ret;
-                continue;
-            }
-
-            if (does_startwith(lines[i], "IF")) {
-                int ret = execute_if(line_end - i, lines + i);
-                if (ret == -1) {
-                    if (MORE_DEBUG)
-                        printf("Error: invalid IF statement\n");
-
-                    return -1;
-                }
-
-                i += ret;
-                continue;
-            }
-
-            char *result = execute_line(lines[i]);
-
-            if (result != NULL) {
-                if (result[0] != '\0') {
-                    printf("%s\n", result);
-                }
-                free(result);
-            }
-        }
+            line_end = -1;
+        }     
     }
 
     if (if_line != lines[0]) {
@@ -1333,44 +1318,6 @@ int execute_if(int line_count, char **lines) {
     return line_end;
 }
 
-void execute_lines(int line_count, char **lines) {
-    for (int line_index = 0; line_index < line_count; line_index++) {
-        if (does_startwith(lines[line_index], "FOR")) {
-            int ret = execute_for(line_count - line_index, lines + line_index);
-            if (ret == -1) {
-                if (MORE_DEBUG)
-                    printf("Error: invalid FOR loop\n");
-
-                return;
-            }
-
-            line_index += ret;
-            continue;
-        }
-        if (does_startwith(lines[line_index], "IF")) {
-            int ret = execute_if(line_count - line_index, lines + line_index);
-            if (ret == -1) {
-                if (MORE_DEBUG)
-                    printf("Error: invalid IF statement\n");
-
-                return;
-            }
-
-            line_index += ret;
-            continue;
-        }
-
-        char *result = execute_line(lines[line_index]);
-
-        if (result != NULL) {
-            if (result[0] != '\0') {
-                printf("%s\n", result);
-            }
-            free(result);
-        }
-    }
-}
-
 void execute_program(char *program) {
     char **lines = lexe_program(program);
     int line_count = 0;
@@ -1378,7 +1325,7 @@ void execute_program(char *program) {
         line_count++;
     }
 
-    execute_lines(line_count, lines);
+    execute_lines(lines, line_count);
 
     free_args(lines);
 }
@@ -1438,7 +1385,7 @@ int main(int argc, char** argv) {
     // execute test program
     execute_program(test_prog);
 
-    start_shell();
+    // start_shell();
 
     free(current_directory);
     free_pseudos();
