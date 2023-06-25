@@ -1142,6 +1142,18 @@ int execute_for(int line_count, char **lines) {
     char *var_name = malloc((strlen(for_line) + 1) * sizeof(char));
     char *string = malloc((strlen(for_line) + 1) * sizeof(char));
 
+    if (for_line[3] != ' ') {
+        printf("Error: missing space after FOR\n");
+        free(var_name);
+        free(string);
+
+        if (for_line != lines[0]) {
+            free(for_line);
+        }
+
+        return -1;
+    }
+
     int i;
     for (i = 4; for_line[i] != ' ' && for_line[i] != '\0'; i++) {
         var_name[i - 4] = for_line[i];
