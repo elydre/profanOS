@@ -1367,9 +1367,11 @@ void start_shell() {
 ********************/
 
 char init_prog[] = ""
-"FOR dir '/bin/commands' '/bin/fatpath';"
-" FOR e !(find -f !dir);"
-"  pseudo !(name !e) 'go !e';"
+"IF !profan;"
+" FOR dir '/bin/commands' '/bin/fatpath';"
+"  FOR e !(find -f !dir);"
+"   pseudo !(name !e) 'go !e';"
+"  END;"
 " END;"
 "END";
 
@@ -1388,6 +1390,7 @@ int main(int argc, char** argv) {
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     set_variable("version", OLV_VERSION);
+    set_variable("profan", PROFANBUILD ? "1" : "0");
 
     pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
 
