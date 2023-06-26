@@ -6,13 +6,13 @@
 
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
+#define PROFANBUILD  0  // enable binary execution
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
 
-#define PROFANBUILD     // enable binary execution
 
-#ifdef PROFANBUILD
+#if PROFANBUILD
   #include <syscall.h>
   #include <profan.h>
 
@@ -23,7 +23,7 @@
   #define uint32_t unsigned int
 
   // unix config
-  #define OLV_PROMPT "olivine [%s] -> "
+  #define OLV_PROMPT "olivine [\033[1;34m%s\033[0m] -> "
   #define PROFAN_COLOR ""
 #endif
 
@@ -315,7 +315,7 @@ char *if_eval(char **input) {
 }
 
 char *if_go_binfile(char **input) {
-    #ifdef PROFANBUILD
+    #if PROFANBUILD
 
     // get argc
     int argc = 0;
@@ -382,7 +382,7 @@ char *if_change_dir(char **input) {
     char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
 
     // check if dir exists
-    #ifdef PROFANBUILD
+    #if PROFANBUILD
     assemble_path(current_directory, input[0], dir);
 
     if (!(c_fs_does_path_exists(dir) && c_fs_get_sector_type(c_fs_path_to_id(dir)) == 3)) {
@@ -471,7 +471,7 @@ char *if_find(char **input) {
      * output: "'/dir/subdir/file1' '/dir/subdir/file2'"
     */
 
-    #ifdef PROFANBUILD
+    #if PROFANBUILD
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
@@ -1397,7 +1397,7 @@ int main(int argc, char** argv) {
     // execute test program
     execute_program(test_prog);
 
-    // start_shell();
+    start_shell();
 
     free(current_directory);
     free_pseudos();
