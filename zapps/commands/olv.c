@@ -1397,9 +1397,6 @@ int main(int argc, char** argv) {
     // init pseudo commands
     execute_program(init_prog);
 
-    // execute test program
-    execute_program(test_prog);
-
     start_shell();
 
     free(current_directory);
