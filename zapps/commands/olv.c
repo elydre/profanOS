@@ -1450,11 +1450,11 @@ int main(int argc, char** argv) {
     strcpy(current_directory, "/");
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
+    pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
+
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
     set_sync_variable("path", current_directory);
-
-    pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
 
     // init pseudo commands
     execute_program(init_prog);
