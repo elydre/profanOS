@@ -6,11 +6,10 @@
 
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
-#define PROFANBUILD  0  // enable binary execution
+#define PROFANBUILD  1  // enable binary execution
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
-
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -40,6 +39,7 @@ typedef struct {
 typedef struct {
     char* name;
     char* value;
+    int sync;
 } variable_t;
 
 typedef struct {
@@ -81,17 +81,69 @@ int set_variable(char *name, char *value) {
             strcpy(name_copy, name);
             variables[i].name = name_copy;
             variables[i].value = value_copy;
+            variables[i].sync = 0;
             return 0;
         }
         if (strcmp(variables[i].name, name) == 0) {
-            if (variables[i].value) {
+            if (variables[i].value && (!variables[i].sync)) {
                 free(variables[i].value);
             }
             variables[i].value = value_copy;
+            variables[i].sync = 0;
             return 0;
         }
     }
     return 1;
+}
+
+int set_sync_variable(char *name, char *value) {
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL) {
+            variables[i].name = name;
+            variables[i].value = value;
+            variables[i].sync = 1;
+            return 0;
+        }
+        if (strcmp(variables[i].name, name) == 0) {
+            if (variables[i].value && (!variables[i].sync)) {
+                free(variables[i].value);
+            }
+            variables[i].value = value;
+            variables[i].sync = 1;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int does_variable_exist(char *name) {
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL) {
+            return 0;
+        }
+        if (strcmp(variables[i].name, name) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void del_variable(char *name) {
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL) {
+            return;
+        }
+        if (strcmp(variables[i].name, name) == 0) {
+            if (variables[i].value && (!variables[i].sync)) {
+                free(variables[i].value);
+                free(variables[i].name);
+            }
+            variables[i].name = NULL;
+            variables[i].value = NULL;
+            variables[i].sync = 0;
+            return;
+        }
+    }
 }
 
 /*****************************
@@ -395,6 +447,8 @@ char *if_change_dir(char **input) {
 
     // change directory
     strcpy(current_directory, dir);
+
+    free(dir);
 
     return NULL;
 }
@@ -724,9 +778,9 @@ void free_args(char **argv) {
 
 void free_vars() {
     for (int i = 0; i < MAX_VARIABLES; i++) {
-        if (variables[i].name != NULL) {
-            free(variables[i].name);
+        if (variables[i].name != NULL && (!variables[i].sync)) {
             free(variables[i].value);
+            free(variables[i].name);
         }
     }
     free(variables);
@@ -1223,6 +1277,8 @@ int execute_for(int line_count, char **lines) {
         return -1;
     }
 
+    int var_exist_before = does_variable_exist(var_name);
+
     // execute for loop
     for (int i = 0; string_array[i] != NULL; i++) {
         set_variable(var_name, string_array[i]);
@@ -1231,6 +1287,11 @@ int execute_for(int line_count, char **lines) {
                 printf("Error: invalid FOR loop\n");
             line_end = -1;
         }
+    }
+
+    // delete variable
+    if (!var_exist_before) {
+        del_variable(var_name);
     }
 
     free_args(string_array);
@@ -1391,6 +1452,7 @@ int main(int argc, char** argv) {
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
+    set_sync_variable("path", current_directory);
 
     pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
 
