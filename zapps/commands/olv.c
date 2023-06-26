@@ -1436,16 +1436,7 @@ char init_prog[] = ""
 " END;"
 "END";
 
-char test_prog[] = ""
-"FOR i !(range 0 10);"
-" echo !i;"
-" IF !i;"
-"  echo 'i is not 0';"
-" END;"
-"echo coucou;"
-"END";
-
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
     strcpy(current_directory, "/");
 
