@@ -6,7 +6,7 @@
 
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
-#define PROFANBUILD  1  // enable binary execution
+#define PROFANBUILD  0  // filesys usage
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
@@ -883,6 +883,10 @@ char *check_subfunc(char *line) {
 
     if (start == -1) {
         char *var_line = check_variables(line);
+
+        if (var_line == NULL) {
+            return NULL;
+        }
 
         char *pseudo_line = check_pseudos(var_line);
         if (pseudo_line != var_line) {
