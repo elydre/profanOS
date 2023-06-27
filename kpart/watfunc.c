@@ -87,10 +87,10 @@ void *SYSCALL_ARRAY[] = {
     mouse_call,
 
     // ramdisk.h
-    ramdisk_get_size,
-    ramdisk_get_used,
+    ramdisk_get_info,
 
     // process.h
+    process_set_sheduler,
     process_create,
     process_sleep,
     process_wakeup,
@@ -104,6 +104,10 @@ void *SYSCALL_ARRAY[] = {
 
     // minilib.h
     exit_pid,
+
+    // system.h (dily)
+    dily_unload,
+    dily_load,
 };
 
 int wf_get_func_addr(int func_id) {

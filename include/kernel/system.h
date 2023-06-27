@@ -3,12 +3,12 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.12.4"
+#define KERNEL_VERSION  "0.12.5"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
 #define KERNEL_PRIORITY 5           // default kernel process priority
-#define RAMDISK_SECTOR  4096        // ramdisk sector count
+#define RAMDISK_SECTOR  2048        // ramdisk sector count
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define RUN_DEFAULT     "/bin/shell.bin"
 
@@ -29,7 +29,7 @@
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
 
-#define GRUBMOD_START   0x118000    // grub module start (increase 0x1000)
+#define GRUBMOD_START   0x117000    // grub module start (increase 0x1000)
 
 
 // system.c
@@ -62,7 +62,7 @@ int run_ifexist_full(char path[], int argc, char **argv,
 int dily_does_loaded(int lib_id);
 int dily_get_func(int lib_id, int func_id);
 int dily_load(char path[], int lib_id);
-void dily_unload(int lib_id);
+int dily_unload(int lib_id);
 int dily_init();
 
 // watfunc.c

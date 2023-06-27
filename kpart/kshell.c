@@ -102,7 +102,7 @@ void shell_help() {
 void shell_addr() {
     kprintf("vesa fb: %x\n", vesa_get_framebuffer());
     kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
-    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
+    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_info(0) / 2048);
     kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
     kprintf("mm base: %x\n", MEM_BASE_ADDR);
     kprintf("watdily: %x\n", WATDILY_ADDR);

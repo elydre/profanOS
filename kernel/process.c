@@ -506,15 +506,15 @@ int process_kill(int pid) {
  * SCHEUDLER FUNCTIONS *
 ************************/
 
-void process_enable_sheduler() {
-    if (sheduler_state == SHDLR_DISL) {
-        sheduler_state = SHDLR_ENBL;
-    }
-}
-
-void process_disable_sheduler() {
-    if (sheduler_state == SHDLR_ENBL) {
+void process_set_sheduler(int state) {
+    // disable sheduler
+    if (!state && sheduler_state == SHDLR_ENBL) {
         sheduler_state = SHDLR_DISL;
+    }
+
+    // enable sheduler    
+    else if (state && sheduler_state == SHDLR_DISL) {
+        sheduler_state = SHDLR_ENBL;
     }
 }
 

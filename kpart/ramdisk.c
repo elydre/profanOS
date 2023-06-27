@@ -191,10 +191,8 @@ uint32_t ramdisk_get_address() {
     return (uint32_t) RAMDISK;
 }
 
-uint32_t ramdisk_get_size() {
-    return RAMDISK_SECTOR;
-}
-
-uint32_t ramdisk_get_used() {
-    return table_pos;
+uint32_t ramdisk_get_info(int info) {
+    if (info == 0) return RAMDISK_SECTOR;
+    if (info == 1) return table_pos;
+    return 0;
 }

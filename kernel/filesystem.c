@@ -39,7 +39,7 @@ int filesys_init() {
 
     if (g_sector_count == 0) {
         sys_warning("Cannot use diskiso, using ramdisk");
-        g_sector_count = ramdisk_get_size();
+        g_sector_count = ramdisk_get_info(0);
     }
     
     free_map = calloc(g_sector_count * sizeof(uint8_t));
