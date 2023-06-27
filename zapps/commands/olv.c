@@ -653,7 +653,7 @@ internal_function_t internal_functions[] = {
     {NULL, NULL}
 };
 
-void* get_function(char* name) {
+void *get_function(char *name) {
     for (int i = 0; internal_functions[i].name != NULL; i++) {
         if (strcmp(internal_functions[i].name, name) == 0) {
             return internal_functions[i].function;
@@ -820,7 +820,7 @@ char *check_subfunc(char *line);
 char *check_variables(char *line);
 char *check_pseudos(char *line);
 
-char *execute_line(char* full_line) {
+char *execute_line(char *full_line) {
     // check for function and variable
     char *line = check_subfunc(full_line);
 
