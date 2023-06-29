@@ -306,7 +306,7 @@ char *if_set_var(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
-    
+
     if (argc != 2) {
         printf("VAR: expected 2 arguments, got %d\n", argc);
         return NULL;
@@ -314,7 +314,7 @@ char *if_set_var(char **input) {
 
     // get name
     char *name = input[0];
-    
+
     // get value
     char *value = input[1];
 
@@ -374,7 +374,7 @@ char *if_go_binfile(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
-    
+
     if (argc < 1) {
         printf("GO: expected at least 1 argument, got %d\n", argc);
         return NULL;
@@ -424,7 +424,7 @@ char *if_change_dir(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
-    
+
     if (argc != 1) {
         printf("CD: expected 1 argument, got %d\n", argc);
         return NULL;
@@ -459,7 +459,7 @@ char *if_make_pseudo(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
-    
+
     if (argc != 2) {
         printf("PSEUDO: expected 2 arguments, got %d\n", argc);
         return NULL;
@@ -467,7 +467,7 @@ char *if_make_pseudo(char **input) {
 
     // get name
     char *name = input[0];
-    
+
     // get value
     char *value = input[1];
 
@@ -489,7 +489,7 @@ char *if_range(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
-    
+
     if (argc != 2) {
         printf("RANGE: expected 2 arguments, got %d\n", argc);
         return NULL;
@@ -557,7 +557,7 @@ char *if_find(char **input) {
 
     for (int i = 0; i < elm_count; i++)
         out_types[i] = c_fs_get_sector_type(out_ids[i]);
-    
+
     char *output = malloc(1 * sizeof(char));
     output[0] = '\0';
 
@@ -632,7 +632,7 @@ char *if_name(char **input) {
     sprintf(output, "'%s'", name);
     free(name);
 
-    return output;    
+    return output;
 }
 
 internal_function_t internal_functions[] = {
@@ -760,7 +760,7 @@ char *get_function_name(char *string, int *size) {
             return function_name;
         }
     }
-    
+
     char *function_name = malloc((strlen(string) + 1) * sizeof(char));
     strcpy(function_name, string);
     *size = strlen(string);
@@ -1350,7 +1350,7 @@ int execute_if(int line_count, char **lines) {
     }
 
     int line_end = 0;
-    
+
     int end_offset = 1;
     for (int i = 1; i < line_count; i++) {
         if (does_startwith(lines[i], "IF") || does_startwith(lines[i], "FOR")) {
@@ -1383,7 +1383,7 @@ int execute_if(int line_count, char **lines) {
                 printf("Error: invalid IF statement\n");
 
             line_end = -1;
-        }     
+        }
     }
 
     if (if_line != lines[0]) {
