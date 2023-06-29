@@ -171,7 +171,7 @@ void ocm_set_cursor_offset(int offset) {
     if (screen_buffer == NULL || term_window == NULL) return;
     // clean the actual cursor
     draw_cursor(0);
-    
+
     // we have to divide by 2 for the text mode compatibility
     offset /= 2;
     cursor_y = offset / MAX_COLS;

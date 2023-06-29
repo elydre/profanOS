@@ -179,7 +179,7 @@ void irq_mouse() {
             }
             case COMMAND_GETDEVID: {
                 // what if the mouse ID was indeed 0xfa? probably never the case
-                if (b != 0xFA) g_mouse_device_ID = b; 
+                if (b != 0xFA) g_mouse_device_ID = b;
                 g_command_running = COMMAND_NONE;
                 break;
             }
@@ -190,10 +190,10 @@ void irq_mouse() {
                 g_currentPacket.flags = b;
                 g_mouse_cycle++;
                 g_discardPacket = 0;
-            
+
                 if (g_currentPacket.flags & (1 << 6) || g_currentPacket.flags & (1 << 7))
                 g_discardPacket = 1;
-            
+
                 if (!(g_currentPacket.flags & (1 << 3))) {
                     g_mouse_cycle = 0;
                 }

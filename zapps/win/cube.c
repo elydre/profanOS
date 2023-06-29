@@ -191,7 +191,7 @@ void draw(shape_t *shape, window_t *window) {
         line_t line = shape->Lines[i];
         point2_t p1 = shape->ScreenPoints[line.i1];
         point2_t p2 = shape->ScreenPoints[line.i2];
-        
+
         wadds_line(window, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color, 0);
     }
 }

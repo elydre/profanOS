@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 
         itoa(1000 / (tick_count[1] + 1), convert, 10);
         wadds_puts(window, convert, 0, 8, 0x000000, 0xFF000000, 0);
-        
+
         tick_count[2] = c_timer_get_ms();
         window_refresh(window);
         tick_count[3] = c_timer_get_ms() - tick_count[2];
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
     }
-    
+
     // destroy window and wait for it to be deleted
     window_delete(window);
     window_wait_delete(main_desktop, window);

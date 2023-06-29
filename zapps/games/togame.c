@@ -78,9 +78,9 @@ int main(int argc, char **argv) {
                 }
             }
         }
-             
+
         if (lost == 0) ocm_print("O", 10, val, 0x00FF00, 0x000000);
-        
+
         else {
             lost++;
             ocm_print("X", 10, val, 0x0000FF, 0x000000);

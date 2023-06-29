@@ -80,7 +80,7 @@ int wadds_get_kb(window_t *window) {
         ((desktop->focus_window_usid == window->usid) ||
         (window == NULL && desktop->focus_window_usid == 0)))
         return c_kb_get_scfh();
-    
+
     return 0;
 }
 
@@ -97,7 +97,7 @@ int wadds_draw_bmp(window_t *window, char *path, int x, int y) {
     // check if file exists
     if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 2))
         return 1;
-    
+
     // open file
     uint8_t *file_content = c_fs_declare_read_array(path);
     c_fs_read_file(path, file_content);
@@ -130,11 +130,11 @@ int wadds_draw_bmp(window_t *window, char *path, int x, int y) {
     // draw image
     if (factor != 3 && factor != 4) {
         free(file_content);
-        return 5;        
+        return 5;
     }
 
     for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) { 
+        for (int j = 0; j < height; j++) {
             uint32_t color = data[(j * width + i) * factor] |
                             (data[(j * width + i) * factor + 1] << 8) |
                             (data[(j * width + i) * factor + 2] << 16);

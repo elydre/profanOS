@@ -3,7 +3,7 @@
 [extern kernel_main]
 [global loader]
 
-FLAGS equ 0b111 
+FLAGS equ 0b111
 MAGIC equ 0x1BADB002        ; it's wrong
 CHECKSUM equ -(MAGIC + FLAGS)
 

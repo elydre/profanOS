@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <i_ocmlib.h> 
+#include <i_ocmlib.h>
 #include <i_iolib.h>
 #include <i_time.h>
 
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < size_x; i++) free(plateau[i]);
     free(plateau);
     ocm_clear();
-    
+
     return 0;
 }
 
