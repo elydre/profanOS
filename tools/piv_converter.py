@@ -49,7 +49,7 @@ def convert_gif_to_piv(gif):
                 else:
                     r, g, b, a = rgb
                 output.extend((r, g, b))
-    
+
     with open(f'{path}/test.piv', 'wb') as f:
         f.write(bytearray(output))
 

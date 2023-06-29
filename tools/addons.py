@@ -81,7 +81,7 @@ def get_addon(name: str) -> bool:
     if name not in ADDONS:
         print("ERROR: Unknown addon:", name)
         return False
-    
+
     print(f"Install {name.upper()}: {ADDONS[name]['description']}")
     for sub in ADDONS[name]["files"]:
         print(f" Getting {name} part: {sub['name']}")
@@ -110,7 +110,7 @@ def show_help():
 
     for addon in ADDONS:
         msg += [f"  {addon}: {ADDONS[addon]['description']}"]
-    
+
     msg += ["EXAMPLES:",
            "  python3 get_addons.py -l",
            "  python3 get_addons.py -a",

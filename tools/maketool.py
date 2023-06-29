@@ -78,13 +78,13 @@ def print_and_exec(command):
         shell_len = os.get_terminal_size().columns
     except Exception: 
         shell_len = 180
-    
+
     if COMPCT_CMDS and len(command) > shell_len:
         cprint(COLOR_EXEC, f"{command[:shell_len - 3]}...")
     else: cprint(COLOR_EXEC, command)
-    
+
     code = os.system(command) >> 8
-    
+
     if code != 0:
         cprint(COLOR_EROR, f"command '{command}' failed with code {code}")
         os._exit(code)
@@ -120,7 +120,7 @@ def gen_need_dict():
 
     for file in [file for file in need["c"] if file1_newer(out_file_name(file, "kernel"), file)]:
         need["c"].remove(file)
-    
+
     return need, out
 
 
@@ -154,7 +154,7 @@ def elf_image():
         threading.Thread(target=f_temp, args=(file, "asm")).start()
 
     while total: pass # on a besoin d'attendre que tout soit fini
-    
+
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
         print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/klink.ld {in_files} -o profanOS.elf")
@@ -320,7 +320,7 @@ def gen_disk(force=False, with_src=False):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
         print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
-    
+
     cprint(COLOR_INFO, "building HDD.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
@@ -348,7 +348,7 @@ def extract_disk():
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
         print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
-    
+
     cprint(COLOR_INFO, "extracting HDD.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin 42")
 
@@ -378,7 +378,7 @@ def make_help():
 
     for command, description in aide:
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
-    
+
     cprint(COLOR_INFO, "\nYou can cross the command like:")
     cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
     cprint(COLOR_INFO, " MAKE ADDONS SRCDISK MISO to build the disk with all options")
