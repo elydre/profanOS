@@ -12,7 +12,7 @@ void print_state(int is_fine, char* name);
 
 int main(int argc, char **argv) {
     int is_fine;
-    
+
     printf("Testing stdlib.h\n");
 
     // test of calloc

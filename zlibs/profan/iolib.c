@@ -113,7 +113,7 @@ uint32_t color_print(char *s) {
 void rainbow_print(char *message) {
     char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
     int i = 0;
-    
+
     char buffer[2];
     buffer[1] = '\0';
 
@@ -178,7 +178,7 @@ void input_wh(char *out_buffer, int size, char color, char ** history, int histo
             shift = 0;
             continue;
         }
-        
+
         else if (sc == LEFT) {
             if (!buffer_index) continue;
             buffer_index--;

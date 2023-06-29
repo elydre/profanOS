@@ -1698,7 +1698,7 @@ float powf(float x, float y) {
         // any**0 = 1.0f for all values, including NaN
         if (0 == absuy)
             return 1.0f;
-    
+
         // handle NaNs
         if (x != x || y != y)
             return x + y;
@@ -1710,13 +1710,13 @@ float powf(float x, float y) {
         uint32_t onesMask = 0x40000000U >> gMaskShift[absuy >> 23];         // we get away with this because leading exponent bit is never set for |y| < 2.0
         uint32_t fractionalBits = absuy & fractMask;
         uint32_t onesBit = absuy & onesMask;
-            
+
         if (0 == absux) {
             //if y is an odd integer
             if( 0 == fractionalBits && 0 != onesBit ) {
                 if (y < 0.0f)
                     return 1.0f / x;
-            
+
                 return x;
             }
 
@@ -1757,7 +1757,7 @@ float powf(float x, float y) {
         if (x > -__builtin_inff()) {
             if (fractionalBits)
                 goto nan_sqrt;
-        
+
             goto ipowf;
         }
 

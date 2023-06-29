@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < size_x; i++) free(plateau[i]);
     free(plateau);
     c_clear_screen();
-    
+
     return 0;
 }
 
@@ -167,7 +167,7 @@ void next_step(int **plateau) {
     for (int i = 0; i < size_x; i++)
         for (int j = 0; j < size_y; j++)
             plateau[i][j] = plateau_temp[i][j];
-    
+
     for (int i = 0; i < size_x; i++) free(plateau_temp[i]);
     free(plateau_temp);
 

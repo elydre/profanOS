@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     current_line = 0;
     current_col = 0;
     line_sizes = calloc(100, sizeof(int)); // hardcoded for now
-    
+
     for (int i = 0; i < 100; i++) {
         line_sizes[i] = 0;
     }
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
             printf("%c", file_content[index]);
         }
     }
-    
+
     int old_cursor = c_get_cursor_offset();
     int buffer_actual_size = 0;
     int history_index = 0;
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
         last_sc = sc;
         sc = c_kb_get_scfh();
-        
+
         if (sc != last_sc) key_ticks = 0;
         else key_ticks++;
 
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
             shift = 0;
             continue;
         }
-        
+
         else if (sc == LEFT) {
             // do nothing
         }

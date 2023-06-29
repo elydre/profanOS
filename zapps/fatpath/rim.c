@@ -221,7 +221,7 @@ void main_loop(char *path) {
 
         // realloc buffer if needed
         realloc_buffer();
-    
+
         // check if key is enter
         if (key == 28) {
             // add line to data lines
@@ -264,7 +264,7 @@ void main_loop(char *path) {
             if (g_cursor_pos > 0) {
                 for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_size; i++)
                     g_data[i - 1] = g_data[i];
-                
+
                 for (int i = g_cursor_line + 1; i < g_lines_count; i++)
                     g_data_lines[i]--;
 
@@ -275,7 +275,7 @@ void main_loop(char *path) {
 
                 for (int i = g_data_lines[g_cursor_line]; i < g_data_size; i++)
                     g_data[i - 1] = g_data[i];
-                
+
                 // remove line from data lines
                 for (int i = g_cursor_line; i < g_lines_count - 1; i++) {
                     g_data_lines[i] = g_data_lines[i + 1];
@@ -387,7 +387,7 @@ void main_loop(char *path) {
         } else if (g_cursor_pos == 0) {
             x_offset = 0;
         }
-      
+
         // display data
         display_data(y_offset, min(g_lines_count, y_offset + PRINTABLE_LINES), x_offset);
 

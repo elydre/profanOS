@@ -88,10 +88,10 @@ int main(int argc, char **argv) {
 
         vgui_draw_rect(&vgui, 0, 0, tick_count[1] * 2, 7, 0x880000);
         vgui_draw_rect(&vgui, 0, 0, (tick_count[1] - tick_count[3]) * 2, 7, 0xCC0000);
-        
+
         itoa(1000 / (tick_count[1] + 1), convert, 10);
         vgui_print(&vgui, 0, 8, convert, 0x0000AA);
-        
+
         tick_count[2] = c_timer_get_ms();
         vgui_render(&vgui, 0);
         tick_count[3] = c_timer_get_ms() - tick_count[2];

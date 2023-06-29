@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
         printf("$BUsage: cat <file>\n");
         return 0;
     }
-    
+
     char *file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
     assemble_path(argv[1], argv[2], file);
 

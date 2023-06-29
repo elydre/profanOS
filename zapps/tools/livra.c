@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     meml[0] = 1;
 
     int code_size = lexer("/user/prog.li", prog);
-    
+
     start_inter(prog, code_size, 0);
 
     free(meml);

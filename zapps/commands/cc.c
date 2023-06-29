@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
 
         free(args);
     }
-    
+
     free(full_path);
     return 0;
 }

@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         printf("  -r <id> <path>  replace a library\n");
         return 0;
     }
-    
+
     if (mode == 'u') {
         if (argc < 4) {
             printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[2]);
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
         free(new_path);
         return 0;
     }
-    
+
     printf("lib: invalid mode '%s'\n" HELP_HELP, argv[2]);
     return 0;
 }

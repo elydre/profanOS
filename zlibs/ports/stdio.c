@@ -106,7 +106,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         file->buffer_size = 0;
         file->buffer_pos = 0;
     }
-    
+
     // we return the file
     return file;
 }
@@ -620,7 +620,7 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
  *   This includes width, precision, flags 0- +, and *(arg for wid,prec).
  * %f, %g, %m, %p have reduced support, support for wid,prec,flags,*, but
  *   less floating point range, no %e formatting for %g.
- 
+
  * -- profanOS edit note --
  * snprintf renamed to dopr
  * long long changed to long
@@ -1194,7 +1194,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
             } else fmt++;
             ret++;
         }
-        
+
         /* see if we are at end */
         if(!*fmt) break;
 
