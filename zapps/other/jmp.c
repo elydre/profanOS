@@ -6,7 +6,7 @@ void jmpfunction(jmp_buf env_buf) {
     longjmp(env_buf, 42);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     int val;
     jmp_buf env_buffer;
 

@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.12.5"
+#define KERNEL_VERSION  "0.12.5b"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
@@ -37,9 +37,9 @@ void sys_reboot();
 void sys_shutdown();
 void sys_stop();
 
-int  sys_warning(char msg[]);
-int  sys_error(char msg[]);
-void sys_fatal(char msg[]);
+int  sys_warning(char *msg);
+int  sys_error(char *msg);
+void sys_fatal(char *msg);
 void sys_interrupt(int code, int err_code); // reserved cpu interrupt
 
 int sys_init_fpu();
@@ -54,14 +54,14 @@ void kernel_exit_current();
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full(path, argc, argv, 0, 0, 0)
 
-int run_ifexist_full(char path[], int argc, char **argv,
+int run_ifexist_full(char *path, int argc, char **argv,
                      uint32_t vbase, uint32_t vcunt,
                      uint32_t stack);
 
 // dily.c
 int dily_does_loaded(int lib_id);
 int dily_get_func(int lib_id, int func_id);
-int dily_load(char path[], int lib_id);
+int dily_load(char *path, int lib_id);
 int dily_unload(int lib_id);
 int dily_init();
 

@@ -33,7 +33,7 @@ int arg_cont[] = {
 int *mem;
 
 void start_inter(int *code, int code_size, int while_id);
-int lexer(char path[], int *code);
+int lexer(char *path, int *code);
 
 int main(int argc, char **argv) {
     int *meml = calloc(LSIZE, sizeof(int));
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-int lexer(char path[], int *code) {
+int lexer(char *path, int *code) {
     char *data_char = c_fs_declare_read_array(path);
     c_fs_read_file(path, (uint8_t *) data_char);
 

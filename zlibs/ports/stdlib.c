@@ -460,7 +460,7 @@ int random_r(struct random_data *buf, int32_t *result) {
     return 0;
 }
 
-char *realpath(const char *path, char got_path[]) {
+char *realpath(const char *path, char *got_path) {
     puts("realpath not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }

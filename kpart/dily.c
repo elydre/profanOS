@@ -37,7 +37,7 @@ int dily_does_loaded(int lib_id) {
     return 0;
 }
 
-int dily_load(char path[], int lib_id) {
+int dily_load(char *path, int lib_id) {
     if ((!fs_does_path_exists(path)) || fs_get_sector_type(fs_path_to_id(path)) != 2) {
         sys_error("Lib file not found");
         return 1;

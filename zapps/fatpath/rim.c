@@ -404,7 +404,7 @@ void quit() {
     free(g_current_screen);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     char *file = NULL;
     if (argc == 3) {
         file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);

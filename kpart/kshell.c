@@ -58,7 +58,7 @@ void kernel_exit_current() {
     }
 }
 
-int shell_command(char command[]);
+int shell_command(char *command);
 
 void start_kshell() {
     sys_warning("You are now in the kernel-level shell");
@@ -74,7 +74,7 @@ void start_kshell() {
     kprint("exiting kshell can cause a kernel panic\n");
 }
 
-void shell_so(char suffix[]) {
+void shell_so(char *suffix) {
     char path[100] = "/bin/";
     str_cat(path, suffix);
     str_cat(path, ".bin");
@@ -124,7 +124,7 @@ void shell_mem() {
     }
 }
 
-int shell_command(char command[]) {
+int shell_command(char *command) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     int part = 0;
     int i;

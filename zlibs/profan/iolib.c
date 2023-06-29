@@ -110,7 +110,7 @@ uint32_t color_print(char *s) {
 }
 
 
-void rainbow_print(char message[]) {
+void rainbow_print(char *message) {
     char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
     int i = 0;
     
@@ -128,7 +128,7 @@ void rainbow_print(char message[]) {
  * INPUT PUBLIC FUNCS *
 ***********************/
 
-void input_wh(char out_buffer[], int size, char color, char ** history, int history_size) {
+void input_wh(char *out_buffer, int size, char color, char ** history, int history_size) {
     int old_cursor = c_get_cursor_offset();
     int sc, last_sc, last_sc_sgt = 0;
     int buffer_actual_size = 0;

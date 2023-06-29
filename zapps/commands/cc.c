@@ -107,7 +107,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
 }
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     if (argc < 3) {
         printf("Usage: cc [option] <file>\n");
         return 1;
