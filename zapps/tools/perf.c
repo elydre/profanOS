@@ -7,7 +7,7 @@ int is_prime(int n);
 int main(int argc, char **argv) {
     printf("$4Starting the performance test...\n");
 
-    int start_time = time_gen_unix();    
+    int start_time = time_gen_unix();
     int n = 15 * 1000 * 1000;
     int count = 0;
     for (int i = 0; i < n; i++)

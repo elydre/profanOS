@@ -74,9 +74,9 @@ def cprint(color, text, end="\n"):
 
 
 def print_and_exec(command):
-    try: 
+    try:
         shell_len = os.get_terminal_size().columns
-    except Exception: 
+    except Exception:
         shell_len = 180
 
     if COMPCT_CMDS and len(command) > shell_len:
@@ -116,7 +116,7 @@ def gen_need_dict():
     del need["h"]
 
     for file in [file for file in need["asm"] if file1_newer(out_file_name(file, "kernel"), file)]:
-        need["asm"].remove(file)       
+        need["asm"].remove(file)
 
     for file in [file for file in need["c"] if file1_newer(out_file_name(file, "kernel"), file)]:
         need["c"].remove(file)
@@ -215,7 +215,7 @@ def build_app_lib():
     for name in build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
 
-        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"): 
+        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"):
             total -= 1
             continue
 

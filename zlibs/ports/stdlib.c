@@ -100,7 +100,7 @@ double atof(const char *s) {
     puts("atof not implemented yet, WHY DO YOU USE IT ?\n");
     return 0.0;
     // TODO : implement atof
-    // This function stolen from either Rolf Neugebauer or Andrew Tolmach. 
+    // This function stolen from either Rolf Neugebauer or Andrew Tolmach.
     // Probably Rolf.
 
     // double a = 0.0;

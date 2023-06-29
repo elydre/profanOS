@@ -1,4 +1,4 @@
-# The profan Operating System 
+# The profan Operating System
 
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
 [![nbr](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
@@ -14,7 +14,7 @@ You can find the list of things to do [here](https://framindmap.org/c/maps/12638
 ## Setup
 
 > **Note** -
-> compilation is guaranteed only on ubuntu 22.04 with 
+> compilation is guaranteed only on ubuntu 22.04 with
 > gcc 11, it is also possible in windows with virtualization
 > solutions like wsl (on windows 11) or hyperV
 

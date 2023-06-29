@@ -168,7 +168,7 @@ double cos(double x) {
 }
 
 double sin(double x) {
-    return cos(x - PI / 2); 
+    return cos(x - PI / 2);
 }
 
 int val_in_buffer(int val, int buffer_width, int *buffer) {

@@ -296,7 +296,7 @@
 extern char  *optarg;
 extern int    optind, opterr, optopt;
 
-#define access ((int (*)(const char *, int)) get_func_addr(UNISTD_ID, 2))   
+#define access ((int (*)(const char *, int)) get_func_addr(UNISTD_ID, 2))
 #define alarm ((unsigned int (*)(unsigned int)) get_func_addr(UNISTD_ID, 3))
 #define chdir ((int (*)(const char *)) get_func_addr(UNISTD_ID, 4))
 #define chown ((int (*)(const char *, uid_t, gid_t)) get_func_addr(UNISTD_ID, 5))

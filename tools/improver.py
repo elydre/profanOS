@@ -14,10 +14,13 @@ def scan_file(path):
     contant = ""
     with open(path) as f:
         for l, c in enumerate(f, 1):
-            # check if line only contains whitespace
-            if c.isspace() and len(c) > 1:
-                print(f"{path}:{l} contains {len(c) - 1} whitespace characters")
-                contant += "\n"
+            line = c[:-1] # remove newline
+
+            # check if line ends with whitespace
+            if line.endswith(" ") or line.endswith("\t"):
+                print(f"{path}:{l} ends with whitespace")
+                contant += c.rstrip() + "\n"
+
             else:
                 contant += c
 

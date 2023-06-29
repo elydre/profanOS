@@ -28,7 +28,7 @@ int logo_line;
 void print_logo_line() {
     // chek if we need to print a new line
     if (LOGO_START_LINE + logo_line > curent_line || LOGO_START_LINE + LOGO_LINES <= curent_line) {
-        printf("                       "); 
+        printf("                       ");
     } else {
         printf("%s      ", LOGO[logo_line++]);
     }
