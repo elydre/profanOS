@@ -1,7 +1,7 @@
 import datetime
 import os
 import sys
-from threading import Thread
+import threading
 
 # SETUP
 
@@ -45,7 +45,7 @@ HBL_FILE    = True
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
-COLOR_EROR = (255, 0, 0)
+COLOR_EROR = (255, 100, 80)
 
 
 last_modif = lambda path: os.stat(path).st_mtime
@@ -83,11 +83,11 @@ def print_and_exec(command):
         cprint(COLOR_EXEC, f"{command[:shell_len - 3]}...")
     else: cprint(COLOR_EXEC, command)
     
-    code = os.system(command)
+    code = os.system(command) >> 8
     
     if code != 0:
-        cprint(COLOR_EROR, f"error {code}")
-        sys.exit(code >> 8)
+        cprint(COLOR_EROR, f"command '{command}' failed with code {code}")
+        os._exit(code)
 
 
 def gen_need_dict():
@@ -148,10 +148,10 @@ def elf_image():
     total = len(need["c"]) + len(need["asm"])
 
     for file in need["c"]:
-        Thread(target=f_temp, args=(file, "c")).start()
-        
+        threading.Thread(target=f_temp, args=(file, "c")).start()
+
     for file in need["asm"]:
-        Thread(target=f_temp, args=(file, "asm")).start()
+        threading.Thread(target=f_temp, args=(file, "asm")).start()
 
     while total: pass # on a besoin d'attendre que tout soit fini
     
@@ -219,7 +219,7 @@ def build_app_lib():
             total -= 1
             continue
 
-        Thread(target = build_file, args = (name, fname)).start()
+        threading.Thread(target = build_file, args = (name, fname)).start()
 
     while total : pass # on attends que tout soit fini
 
