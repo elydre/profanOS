@@ -7,8 +7,8 @@
 
 /*
 void color_print(char *s);
-void rainbow_print(char message[]);
-void input_wh(char out_buffer[], int size, char color, char ** history, int history_size);
+void rainbow_print(char *message);
+void input_wh(char *out_buffer, int size, char color, char ** history, int history_size);
 */
 
 #define input(out_buffer, size, color) input_wh(out_buffer, size, color, NULL, 0)

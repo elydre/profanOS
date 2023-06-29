@@ -30,14 +30,14 @@ lib_t libs_at_boot[] = {
 
 int dily_does_loaded(int lib_id) {
     for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id) 
+        if (lib_functions[i][0] != (uint32_t) lib_id)
             continue;
         return 1;
     }
     return 0;
 }
 
-int dily_load(char path[], int lib_id) {
+int dily_load(char *path, int lib_id) {
     if ((!fs_does_path_exists(path)) || fs_get_sector_type(fs_path_to_id(path)) != 2) {
         sys_error("Lib file not found");
         return 1;
@@ -55,12 +55,12 @@ int dily_load(char path[], int lib_id) {
 
     int file_size = fs_get_file_size(path);
     int lib_size = file_size + RUN_LIB_STACK_L + RUN_LIB_STACK_R;
-    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5 = library
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5: library
     uint8_t *file = binary_mem + RUN_LIB_STACK_L;
 
     fs_read_file(path, (char *) file);
 
-    uint32_t *addr_list = calloc(0x800);
+    uint32_t *addr_list = (uint32_t *) mem_alloc(0x800, 0, 5); // 6: as kernel
     addr_list[0] = (uint32_t) lib_id;
 
     int addr_list_size = 1;
@@ -80,9 +80,23 @@ int dily_load(char path[], int lib_id) {
     return 0;
 }
 
+int dily_unload(int lib_id) {
+    for (int i = 0; i < lib_count; i++) {
+        if (lib_functions[i][0] != (uint32_t) lib_id)
+            continue;
+
+        free(lib_functions[i]);
+        lib_functions[i] = 0;
+        return 0;
+    }
+
+    sys_error("Library not found");
+    return 1;
+}
+
 int dily_get_func(int lib_id, int func_id) {
     for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id) 
+        if (lib_functions[i][0] != (uint32_t) lib_id)
             continue;
 
         // the first value is the standard lib entry
@@ -94,19 +108,6 @@ int dily_get_func(int lib_id, int func_id) {
 
     sys_fatal("Library not found");
     return 0;
-}
-
-void dily_unload(int lib_id) {
-    for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id) 
-            continue;
-
-        free(lib_functions[i]);
-        lib_functions[i] = 0;
-        return;
-    }
-
-    sys_error("Library not found");
 }
 
 int dily_init() {

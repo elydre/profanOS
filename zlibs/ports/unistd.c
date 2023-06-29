@@ -77,17 +77,17 @@ int execlp(const char *a, const char *b, ...) {
     return 0;
 }
 
-int execv(const char *a, char *const b[]) {
+int execv(const char *a, char *const *b) {
     puts("execv is not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-int execve(const char *a, char *const b[], char *const c[]) {
+int execve(const char *a, char *const *b, char *const *c) {
     puts("execve is not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-int execvp(const char *a, char *const b[]) {
+int execvp(const char *a, char *const *b) {
     puts("execvp is not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
@@ -151,7 +151,7 @@ gid_t getgid() {
     return 0;
 }
 
-int getgroups(int a, gid_t b[]) {
+int getgroups(int a, gid_t *b) {
     puts("getgroups is not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
@@ -176,7 +176,7 @@ int getlogin_r(char *a, size_t n) {
     return 0;
 }
 
-int getopt(int a, char * const b[], const char *c) {
+int getopt(int a, char * const *b, const char *c) {
     puts("getopt is not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }

@@ -4,13 +4,19 @@
 #include <type.h>
 
 int ramdisk_init();
-void ramdisk_read_sector(uint32_t LBA, uint32_t out[]);
-void ramdisk_write_sector(uint32_t LBA, uint32_t bytes[]);
+
+void ramdisk_read_sector(uint32_t LBA, uint32_t *out);
+void ramdisk_write_sector(uint32_t LBA, uint32_t *bytes);
 
 uint32_t ramdisk_get_address();
 
-// size and used are in sectors
-uint32_t ramdisk_get_size();
-uint32_t ramdisk_get_used();
+
+/***********************
+ * RAMDISK INFO CODES *
+ *    info 0: size    *
+ *    info 1: used    *
+***********************/
+
+uint32_t ramdisk_get_info(int info);
 
 #endif

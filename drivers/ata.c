@@ -54,7 +54,7 @@ void ata_read_sector(uint32_t LBA, uint32_t *data) {
     ATA_wait_BSY();
     ATA_wait_DRQ();
     for (int i = 0; i < 128; i++)
-        data[i] = port_long_in(0x1F0);    
+        data[i] = port_long_in(0x1F0);
 }
 
 uint32_t ata_get_sectors_count() {

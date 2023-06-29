@@ -1687,18 +1687,18 @@ float powf(float x, float y) {
 
     //Move the arguments to the integer registers for bitwise inspection
     union { float f; uint32_t u; } ux, uy;
-    ux.f = x;        
+    ux.f = x;
     uy.f = y;
     uint32_t absux = ux.u & 0x7fffffff;
     uint32_t absuy = uy.u & 0x7fffffff;
 
     // Handle most edge cases
-    //If |x| or |y| is in { +-0, +-Inf, +-NaN } 
+    //If |x| or |y| is in { +-0, +-Inf, +-NaN }
     if ((ux.u - 1U) >= 0x7f7fffff || (absuy - 1) >= 0x4affffff) {
         // any**0 = 1.0f for all values, including NaN
         if (0 == absuy)
             return 1.0f;
-    
+
         // handle NaNs
         if (x != x || y != y)
             return x + y;
@@ -1710,13 +1710,13 @@ float powf(float x, float y) {
         uint32_t onesMask = 0x40000000U >> gMaskShift[absuy >> 23];         // we get away with this because leading exponent bit is never set for |y| < 2.0
         uint32_t fractionalBits = absuy & fractMask;
         uint32_t onesBit = absuy & onesMask;
-            
+
         if (0 == absux) {
             //if y is an odd integer
             if( 0 == fractionalBits && 0 != onesBit ) {
                 if (y < 0.0f)
                     return 1.0f / x;
-            
+
                 return x;
             }
 
@@ -1743,7 +1743,7 @@ float powf(float x, float y) {
                     return 0.0f;
                 else
                     return __builtin_fabsf(y);
-            }        
+            }
         }
 
         // we can also deal with x == +inf at this point.
@@ -1757,16 +1757,16 @@ float powf(float x, float y) {
         if (x > -__builtin_inff()) {
             if (fractionalBits)
                 goto nan_sqrt;
-        
+
             goto ipowf;
         }
 
         // At this point, we know that x is in { +-0, -Inf } and y is finite non-zero.
         // Deal with y is odd integer cases
         if (0 == fractionalBits && 0 != onesBit)    // if( |y| >= 1.0f || |y| < 0x1.0p24f )
-            return 0.0f < y ? x : -0.0f; 
+            return 0.0f < y ? x : -0.0f;
 
-        // x == -inf        
+        // x == -inf
         return 0.0f < y ? -x : 0.0f;
     }
 
@@ -1790,9 +1790,9 @@ float powf(float x, float y) {
 
     //    We further break down m as :
     //
-    //          m = (1+a/256.0)(1+r)              a = high 8 explicit bits of mantissa(m), b = next 7 bits 
+    //          m = (1+a/256.0)(1+r)              a = high 8 explicit bits of mantissa(m), b = next 7 bits
     //          log2f(m) = log2(1+a/256.0) + log2(1+r)
-    //          
+    //
     //      We use the high 7 bits of the mantissa to look up log2(1+a/256.0) in log2f_table above
     //      We calculate 1+r as:
     //
@@ -1857,7 +1857,7 @@ float powf(float x, float y) {
     double z = 1.0;
 
     // don't set inexact if we don't need to
-    if( 0.0 != f ) { 
+    if( 0.0 != f ) {
         double ff = f * f;
         double s7 = c7overc8 * f;            double s3 = c3 * f;
         double s5 = c5overc8 * f;            double s1 = c1 * f;

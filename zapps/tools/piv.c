@@ -23,7 +23,7 @@ void play_video(uint8_t *data, uint16_t width, uint16_t height, uint16_t nbframe
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     int size = c_fs_get_file_size(FILENAME);
     uint8_t *ptr = (uint8_t *) malloc(size);
 

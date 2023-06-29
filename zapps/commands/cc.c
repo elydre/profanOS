@@ -11,10 +11,12 @@
 #define XEC_PATH "/bin/commands/xec.bin"    // elf to binary
 #define ZEC_PATH "/sys/zentry.c"            // zentry source
 #define ZEO_PATH "/sys/zentry.o"            // zentry object
+#define TLC_PATH "/sys/tcclib.c"            // tcclib source
+#define TLO_PATH "/sys/tcclib.o"            // tcclib object
 
 #define OPTION_HELP     1 << 0
 #define OPTION_RUN      1 << 1
-#define OPTION_NOENTRY  1 << 2
+#define OPTION_NOADDS  1 << 2
 #define OPTION_NORAND   1 << 3
 
 uint32_t g_rand_val;
@@ -72,7 +74,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
     // uint32_t options = parse_options(argc, argv);
     // options & OPTION_HELP;    // -h
     // options & OPTION_RUN;     // -r
-    // options & OPTION_NOENTRY; // -n
+    // options & OPTION_NOADDS; // -n
     // options & OPTION_NORAND;  // -x
 
 
@@ -88,7 +90,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
                         options |= OPTION_RUN;
                         break;
                     case 'n':
-                        options |= OPTION_NOENTRY;
+                        options |= OPTION_NOADDS;
                         break;
                     case 'x':
                         options |= OPTION_NORAND;
@@ -107,7 +109,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
 }
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     if (argc < 3) {
         printf("Usage: cc [option] <file>\n");
         return 1;
@@ -122,7 +124,7 @@ int main(int argc, char *argv[]) {
         printf("Usage: cc [option] <file>\n");
         printf("Options:\n");
         printf("  -h  Display this information\n");
-        printf("  -n  Do not include zentry.o\n");
+        printf("  -n  Not include zentry.o, tcclib.o\n");
         printf("  -r  Compile and run\n");
         printf("  -x  Do not use tmp files\n");
         return 0;
@@ -145,13 +147,24 @@ int main(int argc, char *argv[]) {
     } else if (!does_file_exist(XEC_PATH)) {
         printf("xec.bin not found\n");
     } else {
-        if (!(options & OPTION_NOENTRY) && !does_file_exist(ZEO_PATH)) {
-            if (does_file_exist(ZEC_PATH)) {
-                execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH);
-            } else {
-                printf("zentry.c and zentry.o not found, cannot compile\n");
-                free(full_path);
-                return 1;
+        if (!(options & OPTION_NOADDS)) {
+            if (!does_file_exist(ZEO_PATH)) {
+                if (does_file_exist(ZEC_PATH)) {
+                    execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH);
+                } else {
+                    printf("zentry.c and zentry.o not found, cannot compile\n");
+                    free(full_path);
+                    return 1;
+                }
+            }
+            if (!does_file_exist(TLO_PATH)) {
+                if (does_file_exist(TLC_PATH)) {
+                    execute_command(TCC_PATH, "-c " TLC_PATH " -o " TLO_PATH);
+                } else {
+                    printf("tcclib.c and tcclib.o not found, cannot compile\n");
+                    free(full_path);
+                    return 1;
+                }
             }
         }
 
@@ -206,11 +219,11 @@ int main(int argc, char *argv[]) {
         sprintf(args, "-c %s -o %s", full_path, obj_file);
         execute_command(TCC_PATH, args);
 
-        // add zentry.o to link if -n option is not set
-        if (options & OPTION_NOENTRY) {
+        // add zentry.o and tcclib.o to link if -n option is not set
+        if (options & OPTION_NOADDS) {
             sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s", elf_file, obj_file);
         } else {
-            sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s", elf_file, ZEO_PATH, obj_file);
+            sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s %s", elf_file, ZEO_PATH, obj_file, TLO_PATH);
         }
 
         execute_command(VLK_PATH, args);
@@ -229,7 +242,7 @@ int main(int argc, char *argv[]) {
 
         free(args);
     }
-    
+
     free(full_path);
     return 0;
 }

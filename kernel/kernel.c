@@ -49,9 +49,9 @@ void kernel_main(void *mboot_ptr) {
     status_print(init_watfunc, "Initing", "watfunc");
     status_print(dily_init,    "Loading", "dynamic library");
 
-    kprintf("successfully booted in %d ms", timer_get_ms());
+    kprintf("successfully booted in %d ms\n", timer_get_ms());
 
-    rainbow_print("\n\nWelcome to profanOS!\n");
+    rainbow_print("\nWelcome to profanOS!\n");
     color_print("$C~~ version $4" KERNEL_VERSION "$C ~~\n\n");
 
     // launch of the default program

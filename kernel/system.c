@@ -21,7 +21,7 @@ void sys_stop() {
     asm volatile("hlt");
 }
 
-int sys_warning(char msg[]) {
+int sys_warning(char *msg) {
     ckprint("WARNING: ", 0x06);
     ckprint(msg, 0x0E);
     kprint("\n");
@@ -30,7 +30,7 @@ int sys_warning(char msg[]) {
     return 0;
 }
 
-int sys_error(char msg[]) {
+int sys_error(char *msg) {
     ckprint("ERROR: ", 0x04);
     ckprint(msg, 0x0C);
     kprint("\n");
@@ -39,7 +39,7 @@ int sys_error(char msg[]) {
     return 0;
 }
 
-void sys_fatal(char msg[]) {
+void sys_fatal(char *msg) {
     ckprint("FATAL: ", 0x05);
     ckprint(msg, 0x0D);
     kprint("\n");

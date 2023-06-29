@@ -8,20 +8,20 @@
 
 // string functions
 
-void str_cat(char s1[], char s2[]) {
+void str_cat(char *s1, char *s2) {
     char *start = s1;
     while(*start != '\0') start++;
     while(*s2 != '\0') *start++ = *s2++;
     *start = '\0';
 }
 
-int str_len(char s[]) {
+int str_len(char *s) {
     int i = 0;
     while (s[i] != '\0') i++;
     return i;
 }
 
-void str_cpy(char s1[], char s2[]) {
+void str_cpy(char *s1, char *s2) {
     int i;
     for (i = 0; s2[i] != '\0'; i++) {
         s1[i] = s2[i];
@@ -29,7 +29,7 @@ void str_cpy(char s1[], char s2[]) {
     s1[i] = '\0';
 }
 
-void str_reverse(char s[]) {
+void str_reverse(char *s) {
     int i = 0;
     int j = str_len(s) - 1;
     char tmp;
@@ -42,7 +42,7 @@ void str_reverse(char s[]) {
     }
 }
 
-void int2str(int n, char s[]) {
+void int2str(int n, char *s) {
     int i, sign;
     if ((sign = n) < 0) n = -n;
     i = 0;
@@ -56,7 +56,7 @@ void int2str(int n, char s[]) {
     str_reverse(s);
 }
 
-void hex2str(uint32_t n, char s[]) {
+void hex2str(uint32_t n, char *s) {
     int i = 0;
     int tmp;
     char hex[] = "0123456789abcdef";
@@ -70,7 +70,7 @@ void hex2str(uint32_t n, char s[]) {
     str_reverse(s);
 }
 
-int str2int(char s[]) {
+int str2int(char *s) {
     int i = 0;
     int n = 0;
     while (s[i] >= '0' && s[i] <= '9') {
@@ -79,7 +79,7 @@ int str2int(char s[]) {
     return n;
 }
 
-int str_cmp(char s1[], char s2[]) {
+int str_cmp(char *s1, char *s2) {
     int i = 0;
     while (s1[i] == s2[i]) {
         if (s1[i] == '\0') return 0;
@@ -88,7 +88,7 @@ int str_cmp(char s1[], char s2[]) {
     return s1[i] - s2[i];
 }
 
-int str_ncmp(char s1[], char s2[], int n) {
+int str_ncmp(char *s1, char *s2, int n) {
     int i;
     for (i = 0; s1[i] == s2[i]; i++) {
         if (i == n || s1[i] == '\0') return 0;
@@ -97,7 +97,7 @@ int str_ncmp(char s1[], char s2[], int n) {
     return s1[i] - s2[i];
 }
 
-int str_count(char s[], char c) {
+int str_count(char *s, char c) {
     int i = 0;
     int count = 0;
     while (s[i] != '\0') {
@@ -107,7 +107,7 @@ int str_count(char s[], char c) {
     return count;
 }
 
-void str_append(char s[], char c) {
+void str_append(char *s, char c) {
     int i = 0;
     while (s[i] != '\0') i++;
     s[i] = c;
@@ -133,7 +133,7 @@ void func_printf(int output, char *fmt, ...) {
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
-                }                
+                }
             } else if (fmt[i] == 'c') {
                 char c = *((char *) args);
                 args += 4;
@@ -271,7 +271,7 @@ int exit_pid(int pid) {
     if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
         process_wakeup(process_get_ppid(pid));
 
-    
+
     comm_struct_t *comm = process_get_comm(pid);
 
     if (comm != NULL) {

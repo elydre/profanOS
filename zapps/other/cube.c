@@ -143,12 +143,12 @@ double sin(int angle) {
         fact *= (2 * i + 2) * (2 * i + 3);
         res += pow / fact;
     }
-    return res;    
+    return res;
 }
 
 shape_t rotate(shape_t *shape, int x, int y, int z) {
     /* new object is required because the
-     * floating point math is not exact 
+     * floating point math is not exact
      * and the shape will be deformed */
     shape_t new_shape;
     new_shape.PointsCount = shape->PointsCount;
@@ -188,7 +188,7 @@ void draw(shape_t *shape, vgui_t *vgui) {
         line_t line = shape->Lines[i];
         point2_t p1 = shape->ScreenPoints[line.i1];
         point2_t p2 = shape->ScreenPoints[line.i2];
-        
+
         vgui_draw_line(vgui, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
     }
 }

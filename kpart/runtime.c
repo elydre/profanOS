@@ -92,7 +92,7 @@ void tasked_program() {
     process_kill(pid);
 }
 
-int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
+int run_binary(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
     // TODO: check if file is executable
 
     serial_debug("RUNTIME", path);
@@ -127,7 +127,7 @@ int run_binary(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcun
     return 0;
 }
 
-int run_ifexist_full(char path[], int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack) {
+int run_ifexist_full(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack) {
     vbase = vbase ? vbase : RUN_BIN_VBASE;
     vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
     stack = stack ? stack : RUN_BIN_STACK;

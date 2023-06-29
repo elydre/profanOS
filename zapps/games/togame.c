@@ -76,9 +76,9 @@ int main(int argc, char **argv) {
                 }
             }
         }
-             
+
         if (lost == 0) c_ckprint_at("O", 10, val, 0x51);
-        
+
         else {
             lost++;
             c_ckprint_at("X", 10, val, 0x41);

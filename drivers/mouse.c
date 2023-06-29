@@ -1,5 +1,5 @@
 #include <driver/mouse.h>
-#include <cpu/ports.h>  
+#include <cpu/ports.h>
 #include <gui/vesa.h>
 #include <cpu/isr.h>
 #include <minilib.h>
@@ -32,7 +32,7 @@ void mouse_reset();
 void mouse_handler(registers_t *a_r) { // (not used but just there)
     UNUSED(a_r);
     switch(mouse_cycle) {
-        case 0: 
+        case 0:
             mouse_byte[0] = port_byte_in(0x60);
             mouse_cycle++;
             break;
@@ -133,7 +133,7 @@ int mouse_init() {
     register_interrupt_handler(IRQ12, mouse_handler);
 
     mouse_reset();
-    return 0; 
+    return 0;
 }
 
 // reset data
