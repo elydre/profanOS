@@ -469,8 +469,8 @@ int vprintf(const char *restrict format, va_list vlist) {
     int count;
 
     // use dopr to print the string
-    char *buffer = malloc(1024);
-    dopr(buffer, 1024, format, vlist);
+    char *buffer = malloc(0x4000);
+    dopr(buffer, 0x4000, format, vlist);
 
     // print the string
     count = puts(buffer);
