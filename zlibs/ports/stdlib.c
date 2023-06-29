@@ -411,7 +411,18 @@ char *ptsname (int fd) {
 }
 
 void qsort(void  *base, size_t nel, size_t width, __compar_fn_t comp) {
-    puts("qsort not implemented yet, WHY DO YOU USE IT ?\n");
+    // bubble sort
+    char *arr = (char*) base;
+    char temp[width];
+    for (size_t i = 0; i < nel; i++) {
+        for (size_t j = 0; j < nel - i - 1; j++) {
+            if (comp(arr + j * width, arr + (j + 1) * width) > 0) {
+                memcpy(temp, arr + j * width, width);
+                memcpy(arr + j * width, arr + (j + 1) * width, width);
+                memcpy(arr + (j + 1) * width, temp, width);
+            }
+        }
+    }
 }
 
 void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
