@@ -303,7 +303,7 @@ int process_create(void (*func)(), int priority, char *name) {
     new_proc->comm = NULL;
 
     i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
-    
+
     if (pid_incrament == 1) {
         new_proc->scuba_dir = NULL;
     } else {
@@ -394,14 +394,14 @@ int process_wakeup(int pid) {   // TODO: sleep to exit gestion
     if (plist[place].state == PROCESS_TSLPING) {
         i_remove_from_tsleep_list(pid);
     }
-    
+
     plist[place].state = PROCESS_WAITING;
     i_add_to_shdlr_queue(pid, plist[place].priority);
 
     i_refresh_tsleep_interact();
 
     process_enable_sheduler();
-    
+
     return 0;
 }
 
@@ -454,7 +454,7 @@ int process_handover(int pid) {
     process_enable_sheduler();
 
     schedule(0);
-    
+
     return 0;
 }
 
@@ -596,10 +596,10 @@ void process_set_priority(int pid, int priority) {
 
     if (plist[place].state < PROCESS_TSLPING) {
         process_disable_sheduler();
-        
+
         i_remove_from_shdlr_queue(pid);
         i_add_to_shdlr_queue(pid, priority);
-        
+
         process_enable_sheduler();
     }
 }

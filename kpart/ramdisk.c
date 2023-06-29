@@ -104,7 +104,7 @@ int ramdisk_init() {
         ata_sector_count = 0;
         return 0;
     }
-    
+
     RAMDISK = malloc(RAMDISK_SIZE);
 
     ata_sector_count = ata_get_sectors_count();

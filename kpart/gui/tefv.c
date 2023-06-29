@@ -145,7 +145,7 @@ int tef_get_cursor_offset() {
 void tef_set_cursor_offset(int offset) {
     // clean the actual cursor
     tef_draw_cursor(0);
-    
+
     // we have to divide by 2 for the text mode compatibility
     offset /= 2;
     cursor_y = offset / MAX_COLS;

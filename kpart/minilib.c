@@ -271,7 +271,7 @@ int exit_pid(int pid) {
     if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
         process_wakeup(process_get_ppid(pid));
 
-    
+
     comm_struct_t *comm = process_get_comm(pid);
 
     if (comm != NULL) {
