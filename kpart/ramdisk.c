@@ -18,7 +18,7 @@ uint32_t ata_sector_count;
 uint32_t diskiso_sector_count;
 int table_pos = 0;
 
-/* add in this list the paths 
+/* add in this list the paths
 to load in ramdisk at boot */
 
 char *path_to_load[] = {

@@ -30,7 +30,7 @@ lib_t libs_at_boot[] = {
 
 int dily_does_loaded(int lib_id) {
     for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id) 
+        if (lib_functions[i][0] != (uint32_t) lib_id)
             continue;
         return 1;
     }
@@ -82,7 +82,7 @@ int dily_load(char *path, int lib_id) {
 
 int dily_unload(int lib_id) {
     for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id) 
+        if (lib_functions[i][0] != (uint32_t) lib_id)
             continue;
 
         free(lib_functions[i]);
@@ -96,7 +96,7 @@ int dily_unload(int lib_id) {
 
 int dily_get_func(int lib_id, int func_id) {
     for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id) 
+        if (lib_functions[i][0] != (uint32_t) lib_id)
             continue;
 
         // the first value is the standard lib entry

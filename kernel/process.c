@@ -512,7 +512,7 @@ void process_set_sheduler(int state) {
         sheduler_state = SHDLR_DISL;
     }
 
-    // enable sheduler    
+    // enable sheduler
     else if (state && sheduler_state == SHDLR_DISL) {
         sheduler_state = SHDLR_ENBL;
     }

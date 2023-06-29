@@ -133,7 +133,7 @@ void func_printf(int output, char *fmt, ...) {
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
-                }                
+                }
             } else if (fmt[i] == 'c') {
                 char c = *((char *) args);
                 args += 4;

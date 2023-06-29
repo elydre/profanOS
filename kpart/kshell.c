@@ -79,7 +79,7 @@ void shell_so(char *suffix) {
     str_cat(path, suffix);
     str_cat(path, ".bin");
     kprintf("path: %s\n", path);
-    run_ifexist(path, 0, (char **)0);    
+    run_ifexist(path, 0, (char **)0);
 }
 
 void shell_help() {

@@ -58,7 +58,7 @@ int filesys_init() {
 
 void i_generate_free_map() {
     uint32_t buffer[SECTOR_SIZE];
-    if (!FAST_SCAN) {    
+    if (!FAST_SCAN) {
         for (uint32_t i = 0; i < g_sector_count; i++) {
             ramdisk_read_sector(i, buffer);
             if (buffer[0] & I_USED) {

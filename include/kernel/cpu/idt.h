@@ -18,7 +18,7 @@ typedef struct {
     uint16_t low_offset;    // Lower 16 bits of handler function address
     uint16_t sel;           // Kernel segment selector
     uint8_t always0;
-    uint8_t flags; 
+    uint8_t flags;
     uint16_t high_offset;   // Higher 16 bits of handler function address
 } __attribute__((packed)) idt_gate_t;
 

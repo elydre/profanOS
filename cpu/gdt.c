@@ -32,8 +32,8 @@ void gdt_init() {
     gdt_p.base = (unsigned int) gdt;
 
     gdt_init_entry(0, 0, 0, 0, 0);                  // null
-    gdt_init_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);   // code 
+    gdt_init_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);   // code
     gdt_init_entry(2, 0, 0xFFFFFFFF, 0x92, 0xCF);   // data
 
-    gdt_flush();    
+    gdt_flush();
 }
