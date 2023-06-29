@@ -122,7 +122,7 @@ typedef struct FILE {
 } FILE;
 
 typedef struct fpos_t {
-    
+
 } fpos_t;
 
 typedef unsigned long DWORD, *PDWORD, *LPDWORD;
