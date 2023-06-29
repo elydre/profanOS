@@ -28,7 +28,7 @@ int logo_line;
 void print_logo_line() {
     // chek if we need to print a new line
     if (LOGO_START_LINE + logo_line > curent_line || LOGO_START_LINE + LOGO_LINES <= curent_line) {
-        printf("                       "); 
+        printf("                       ");
     } else {
         printf("%s      ", LOGO[logo_line++]);
     }
@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
     pl_and_pf("$4disk size:  $2%gMo\n", ((double) c_fs_get_sector_count()) / 2048);
 
     pl_and_pf("$4ramdisk:    $2%d%% $7($2%gMo$7)\n",
-        (int) (100 * ((double) c_ramdisk_get_used()) / c_ramdisk_get_size()),
-        c_ramdisk_get_size() / 2048.0
+        (int) (100 * ((double) c_ramdisk_get_info(1)) / c_ramdisk_get_info(0)),
+        c_ramdisk_get_info(0) / 2048.0
     );
 
     pl_and_pf("$4screen:     $2%dx$2%d\n", c_vesa_get_width(), c_vesa_get_height());

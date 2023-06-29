@@ -91,6 +91,8 @@ void load_file(char *path) {
 }
 
 void save_file(char *path) {
+    if (g_data_size - 1 == 0) return;
+
     char *data_copy = malloc(g_data_size);
     memcpy(data_copy, g_data, g_data_size);
 
@@ -210,7 +212,7 @@ void main_loop(char *path) {
 
         // realloc buffer if needed
         realloc_buffer();
-    
+
         // check if key is enter
         if (key == 28) {
             // add line to data lines
@@ -253,7 +255,7 @@ void main_loop(char *path) {
             if (g_cursor_pos > 0) {
                 for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_size; i++)
                     g_data[i - 1] = g_data[i];
-                
+
                 for (int i = g_cursor_line + 1; i < g_lines_count; i++)
                     g_data_lines[i]--;
 
@@ -264,7 +266,7 @@ void main_loop(char *path) {
 
                 for (int i = g_data_lines[g_cursor_line]; i < g_data_size; i++)
                     g_data[i - 1] = g_data[i];
-                
+
                 // remove line from data lines
                 for (int i = g_cursor_line; i < g_lines_count - 1; i++) {
                     g_data_lines[i] = g_data_lines[i + 1];
@@ -381,7 +383,7 @@ void main_loop(char *path) {
         } else if (g_cursor_pos == 0) {
             x_offset = 0;
         }
-      
+
         // display data
         display_data(y_offset, min(g_lines_count, y_offset + PRINTABLE_LINES), x_offset);
 
@@ -394,7 +396,7 @@ void quit() {
     free(g_current_screen);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     char *file = NULL;
     if (argc == 3) {
         file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);

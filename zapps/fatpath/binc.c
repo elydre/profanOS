@@ -152,7 +152,7 @@ void binc_make_file(char *output_file) {
 
     char *parent = calloc(strlen(output_file) + 1, 1);
     char *file = calloc(strlen(output_file) + 1, 1);
-    
+
     for (int i = strlen(output_file) - 1; i >= 0; i--) {
         if (output_file[i] == '/') {
             strcpy(parent, output_file);

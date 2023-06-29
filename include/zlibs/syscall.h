@@ -116,9 +116,9 @@
 #define c_serial_print ((void (*)(int, char *)) hi_func_addr(43))
 #define c_mouse_call ((int (*)(int, int)) hi_func_addr(44))
 
-#define c_ramdisk_get_size ((uint32_t (*)(void)) hi_func_addr(45))
-#define c_ramdisk_get_used ((uint32_t (*)(void)) hi_func_addr(46))
+#define c_ramdisk_get_info ((uint32_t (*)(int)) hi_func_addr(45))
 
+#define c_process_set_sheduler ((void (*)(int)) hi_func_addr(46))
 #define c_process_create ((int (*)(void (*func)(), int, char *)) hi_func_addr(47))
 #define c_process_sleep ((void (*)(int, uint32_t)) hi_func_addr(48))
 #define c_process_wakeup ((void (*)(int)) hi_func_addr(49))
@@ -131,5 +131,8 @@
 #define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(56))
 
 #define c_exit_pid ((int (*)(int)) hi_func_addr(57))
+
+#define c_dily_unload ((int (*)(int)) hi_func_addr(58))
+#define c_dily_load ((int (*)(char *, int)) hi_func_addr(59))
 
 #endif

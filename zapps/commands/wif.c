@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         puts("-> ");
         input(char_content, 256, HEX_BLUE);
         puts("\n");
-    
+
         c_fs_write_in_file(file, (uint8_t *) char_content, strlen(char_content));
         free(char_content);
     } else {

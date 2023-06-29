@@ -100,7 +100,7 @@ double atof(const char *s) {
     puts("atof not implemented yet, WHY DO YOU USE IT ?\n");
     return 0.0;
     // TODO : implement atof
-    // This function stolen from either Rolf Neugebauer or Andrew Tolmach. 
+    // This function stolen from either Rolf Neugebauer or Andrew Tolmach.
     // Probably Rolf.
 
     // double a = 0.0;
@@ -411,7 +411,18 @@ char *ptsname (int fd) {
 }
 
 void qsort(void  *base, size_t nel, size_t width, __compar_fn_t comp) {
-    puts("qsort not implemented yet, WHY DO YOU USE IT ?\n");
+    // bubble sort
+    char *arr = (char*) base;
+    char temp[width];
+    for (size_t i = 0; i < nel; i++) {
+        for (size_t j = 0; j < nel - i - 1; j++) {
+            if (comp(arr + j * width, arr + (j + 1) * width) > 0) {
+                memcpy(temp, arr + j * width, width);
+                memcpy(arr + j * width, arr + (j + 1) * width, width);
+                memcpy(arr + (j + 1) * width, temp, width);
+            }
+        }
+    }
 }
 
 void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
@@ -460,7 +471,7 @@ int random_r(struct random_data *buf, int32_t *result) {
     return 0;
 }
 
-char *realpath(const char *path, char got_path[]) {
+char *realpath(const char *path, char *got_path) {
     puts("realpath not implemented yet, WHY DO YOU USE IT ?\n");
     return NULL;
 }
@@ -669,14 +680,14 @@ int wctomb(char *s, wchar_t wchar) {
 void I_swap(char *x, char *y) {
     char t = *x; *x = *y; *y = t;
 }
- 
+
 // Function to reverse `buffer[i…j]`
 char* I_reverse(char *buffer, int i, int j)
 {
     while (i < j) {
         I_swap(&buffer[i++], &buffer[j--]);
     }
- 
+
     return buffer;
 }
 
@@ -685,38 +696,38 @@ char* itoa(int value, char* buffer, int base) {
     if (base < 2 || base > 32) {
         return buffer;
     }
- 
+
     // consider the absolute value of the number
     int n = abs(value);
- 
+
     int i = 0;
     while (n) {
         int r = n % base;
- 
+
         if (r >= 10) {
             buffer[i++] = 65 + (r - 10);
         }
         else {
             buffer[i++] = 48 + r;
         }
- 
+
         n = n / base;
     }
- 
+
     // if the number is 0
     if (i == 0) {
         buffer[i++] = '0';
     }
- 
+
     // If the base is 10 and the value is negative, the resulting string
     // is preceded with a minus sign (-)
     // With any other base, value is always considered unsigned
     if (value < 0 && base == 10) {
         buffer[i++] = '-';
     }
- 
+
     buffer[i] = '\0'; // null terminate string
- 
+
     // reverse the string and return it
     return I_reverse(buffer, 0, i - 1);
 }

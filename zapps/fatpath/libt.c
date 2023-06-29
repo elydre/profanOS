@@ -12,7 +12,7 @@ void print_state(int is_fine, char* name);
 
 int main(int argc, char **argv) {
     int is_fine;
-    
+
     printf("Testing stdlib.h\n");
 
     // test of calloc
@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
     printf("Il n'y a pas de test pour printf, mais si il ne marchais pas, l'os ne montrerais rien !\n");
     fprintf(stderr, "print on stderr\n");
     fprintf(stdout, "print on stdout\n");
-    fprintf(stdin, "print on stdin, THIS MESSAGE SHOULD NOT BE SEEN\n");    
+    fprintf(stdin, "print on stdin, THIS MESSAGE SHOULD NOT BE SEEN\n");
 
     printf("Testing math.h\n");
 

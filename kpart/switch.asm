@@ -15,7 +15,7 @@ process_asm_switch:
     mov    ebx, [esp+0x24]
     mov    ecx, [esp+0x28]
     mov    edx, [esp+0x14]
-    add    edx, 0x4         ; remove the return value 
+    add    edx, 0x4         ; remove the return value
     mov    esi, [esp+0x10]  ; EBP
     mov    edi, [esp+0x4]   ; EFLAG
     mov    [eax], ebx

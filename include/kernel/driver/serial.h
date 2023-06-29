@@ -8,7 +8,7 @@
 
 
 int serial_init();
-void serial_debug(char source[], char message[]);
-void serial_print(int device, char out[]);
+void serial_debug(char *source, char *message);
+void serial_print(int device, char *out);
 
 #endif

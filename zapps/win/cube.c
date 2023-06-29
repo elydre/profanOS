@@ -146,12 +146,12 @@ double sin(int angle) {
         fact *= (2 * i + 2) * (2 * i + 3);
         res += pow / fact;
     }
-    return res;    
+    return res;
 }
 
 shape_t rotate(shape_t *shape, int x, int y, int z) {
     /* new object is required because the
-     * floating point math is not exact 
+     * floating point math is not exact
      * and the shape will be deformed */
     shape_t new_shape;
     new_shape.PointsCount = shape->PointsCount;

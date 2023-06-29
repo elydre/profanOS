@@ -58,7 +58,7 @@ void kernel_exit_current() {
     }
 }
 
-int shell_command(char command[]);
+int shell_command(char *command);
 
 void start_kshell() {
     sys_fatal("kernel shell disabled for now");
@@ -75,12 +75,12 @@ void start_kshell() {
     kprint("exiting kshell can cause a kernel panic\n");
 }
 
-void shell_so(char suffix[]) {
+void shell_so(char *suffix) {
     char path[100] = "/bin/";
     str_cat(path, suffix);
     str_cat(path, ".bin");
     kprintf("path: %s\n", path);
-    run_ifexist(path, 0, (char **)0);    
+    run_ifexist(path, 0, (char **)0);
 }
 
 void shell_help() {
@@ -103,7 +103,7 @@ void shell_help() {
 void shell_addr() {
     kprintf("vesa fb: %x\n", vesa_get_framebuffer());
     kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
-    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_size() / 2048);
+    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_info(0) / 2048);
     kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
     kprintf("mm base: %x\n", MEM_BASE_ADDR);
     kprintf("watdily: %x\n", WATDILY_ADDR);
@@ -125,7 +125,7 @@ void shell_mem() {
     }
 }
 
-int shell_command(char command[]) {
+int shell_command(char *command) {
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     int part = 0;
     int i;

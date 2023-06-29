@@ -38,7 +38,7 @@ uint32_t mem_get_phys_size() {
         if (*addr_test == 0x1234) {
             addr_min = addr_test;
             *addr_test = old_value;
-        } 
+        }
         else addr_max = addr_test;
     }
     return (uint32_t) addr_max;

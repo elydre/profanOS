@@ -23,7 +23,7 @@ typedef struct {
 
 // Max 4MB per table
 typedef struct {
-    scuba_page_t pages[1024]; 
+    scuba_page_t pages[1024];
 } scuba_page_table_t;
 
 typedef struct {

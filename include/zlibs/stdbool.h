@@ -1,5 +1,5 @@
 #ifndef STDBOOL_ID
-#define STDBOOL_ID 
+#define STDBOOL_ID
 // just the header, it has no functions
 
 #define bool _Bool

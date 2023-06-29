@@ -106,7 +106,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         file->buffer_size = 0;
         file->buffer_pos = 0;
     }
-    
+
     // we return the file
     return file;
 }
@@ -469,8 +469,8 @@ int vprintf(const char *restrict format, va_list vlist) {
     int count;
 
     // use dopr to print the string
-    char *buffer = malloc(1024);
-    dopr(buffer, 1024, format, vlist);
+    char *buffer = malloc(0x4000);
+    dopr(buffer, 0x4000, format, vlist);
 
     // print the string
     count = puts(buffer);
@@ -582,22 +582,22 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
  * Copyright (c) 2013, NLnet Labs. All rights reserved.
  *
  * This software is open source.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * Redistributions of source code must retain the above copyright notice,
  * this list of conditions and the following disclaimer.
- * 
+ *
  * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * 
+ *
  * Neither the name of the NLNET LABS nor the names of its contributors may
  * be used to endorse or promote products derived from this software without
  * specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -620,7 +620,7 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
  *   This includes width, precision, flags 0- +, and *(arg for wid,prec).
  * %f, %g, %m, %p have reduced support, support for wid,prec,flags,*, but
  *   less floating point range, no %e formatting for %g.
- 
+
  * -- profanOS edit note --
  * snprintf renamed to dopr
  * long long changed to long
@@ -1160,7 +1160,7 @@ print_char(char** at, size_t* left, int* ret, int c,
         print_pad(at, left, ret, ' ', minw - 1);
 }
 
-/** 
+/**
  * Print to string.
  * str: string buffer for result. result will be null terminated.
  * size: size of the buffer. null is put inside buffer.
@@ -1169,7 +1169,7 @@ print_char(char** at, size_t* left, int* ret, int c,
  * returns number of characters. a null is printed after this.
  * return number of bytes that would have been written
  *       if the buffer had been large enough.
- * 
+ *
  * supported format specifiers:
  *     %s, %u, %d, %x, %i, %f, %g, %c, %p, %n.
  *     length: l, ll (for d, u, x).
@@ -1194,7 +1194,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
             } else fmt++;
             ret++;
         }
-        
+
         /* see if we are at end */
         if(!*fmt) break;
 

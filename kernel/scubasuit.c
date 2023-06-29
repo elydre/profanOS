@@ -260,7 +260,7 @@ int scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
 
     // if the page table doesn't exist, return
     if (!table) {
-        sys_error("Page table doesn't exist");        
+        sys_error("Page table doesn't exist");
         return 1;
     }
 

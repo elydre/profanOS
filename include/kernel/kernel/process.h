@@ -12,6 +12,9 @@
 #define PROCESS_DEAD     5
 #define PROCESS_IDLETIME 6
 
+#define process_disable_sheduler() process_set_sheduler(0)
+#define process_enable_sheduler() process_set_sheduler(1)
+
 
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
@@ -41,8 +44,7 @@ int process_kill(int pid);
 
 
 // sheduler control
-void process_enable_sheduler();
-void process_disable_sheduler();
+void process_set_sheduler(int state);
 
 
 // process info

@@ -13,7 +13,7 @@ int main() {
     return 0;
 }
 
-void assemble_path(char old[], char new[], char result[]) {
+void assemble_path(char *old, char *new, char *result) {
     result[0] = '\0';
     if (new[0] != '/') {
         strcpy(result, old);

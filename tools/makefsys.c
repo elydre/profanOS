@@ -477,7 +477,7 @@ u_int32_t i_path_to_id(char *path, char *current_path, u_int32_t sector) {
     // add the name to the current path
     strcat(current_path, name);
     free(name);
-    
+
     if (current_path[strlen(current_path)-1] != '/') {
         strcat(current_path, "/");
     }
@@ -492,7 +492,7 @@ u_int32_t i_path_to_id(char *path, char *current_path, u_int32_t sector) {
     if (strncmp(current_path, path, strlen(current_path)) == 0) {
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
             if (buffer[i] == 0) continue;
-            
+
             u_int32_t result = i_path_to_id(path, current_path, buffer[i]);
             if (result == 0) continue;
 
@@ -510,7 +510,7 @@ u_int32_t i_path_to_id(char *path, char *current_path, u_int32_t sector) {
 void i_get_name(u_int32_t sector, char *name) {
     u_int32_t buffer[SECTOR_SIZE];
     read_from_disk(sector, buffer);
-    
+
     if (!(buffer[0] & I_USED)) {
         printf("Error: the sector isn't used\n");
         exit(1);
@@ -707,7 +707,7 @@ void arboresence_to_disk(char *linux_path, char *parent, char *name) {
             // get the file content
             char *file_path = i_build_path(linux_path, dir->d_name);
             char *printable_path = i_build_path(profan_path, dir->d_name);
-            
+
             printf("| make file %s\n", printable_path);
             send_file_to_disk(file_path, profan_path, dir->d_name);
 

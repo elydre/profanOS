@@ -83,7 +83,7 @@ void vgui_draw_rect(vgui_t *vgui, int x, int y, int width, int height, uint32_t 
     }
 }
 
-void vgui_print(vgui_t *vgui, int x, int y, char msg[], uint32_t color) {
+void vgui_print(vgui_t *vgui, int x, int y, char *msg, uint32_t color) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
         glyph = c_font_get(0) + msg[i] * 16;

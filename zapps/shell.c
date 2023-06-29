@@ -13,10 +13,10 @@
 
 static char current_dir[256] = "/";
 
-void go(char file[], char prefix[], char suffix[]);
-int shell_command(char command[]);
+void go(char *file, char *prefix, char *suffix);
+int shell_command(char *command);
 
-void start_split(char s[], char delim) {
+void start_split(char *s, char delim) {
     for (int i = 0; s[i] != '\0'; i++) {
         if (s[i] != delim) continue;
         s[i] = '\0';
@@ -24,7 +24,7 @@ void start_split(char s[], char delim) {
     }
 }
 
-void end_split(char s[], char delim) {
+void end_split(char *s, char delim) {
     uint32_t len = strlen(s);
     int limit = 0;
 
@@ -41,7 +41,7 @@ void end_split(char s[], char delim) {
     s[len - limit] = '\0';
 }
 
-int str_count(char str[], char thing) {
+int str_count(char *str, char thing) {
     int total = 0;
 
     for (uint32_t i = 0; str[i] != '\0'; i++) {
@@ -140,7 +140,7 @@ int shell_command(char *buffer) {
     return return_value;
 }
 
-void go(char file[], char prefix[], char suffix[]) {
+void go(char *file, char *prefix, char *suffix) {
     if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
         int argc = str_count(suffix, ' ') + 2;
         if (suffix[0] != '\0') argc++;

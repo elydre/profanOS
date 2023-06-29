@@ -39,9 +39,9 @@ int filesys_init() {
 
     if (g_sector_count == 0) {
         sys_warning("Cannot use diskiso, using ramdisk");
-        g_sector_count = ramdisk_get_size();
+        g_sector_count = ramdisk_get_info(0);
     }
-    
+
     free_map = calloc(g_sector_count * sizeof(uint8_t));
     i_generate_free_map();
 
@@ -58,7 +58,7 @@ int filesys_init() {
 
 void i_generate_free_map() {
     uint32_t buffer[SECTOR_SIZE];
-    if (!FAST_SCAN) {    
+    if (!FAST_SCAN) {
         for (uint32_t i = 0; i < g_sector_count; i++) {
             ramdisk_read_sector(i, buffer);
             if (buffer[0] & I_USED) {
@@ -376,7 +376,7 @@ uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {
     // add the name to the current path
     str_cat(current_path, name);
     free(name);
-    
+
     if (current_path[str_len(current_path)-1] != '/') {
         str_cat(current_path, "/");
     }
@@ -391,7 +391,7 @@ uint32_t i_path_to_id(char *path, char *current_path, uint32_t sector) {
     if (str_ncmp(current_path, path, str_len(current_path)) == 0) {
         for (int i = MAX_SIZE_NAME + 1; i < SECTOR_SIZE-1; i++) {
             if (buffer[i] == 0) continue;
-            
+
             uint32_t result = i_path_to_id(path, current_path, buffer[i]);
             if (result == 0) continue;
 
