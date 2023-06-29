@@ -55,12 +55,12 @@ int dily_load(char *path, int lib_id) {
 
     int file_size = fs_get_file_size(path);
     int lib_size = file_size + RUN_LIB_STACK_L + RUN_LIB_STACK_R;
-    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5 = library
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5: library
     uint8_t *file = binary_mem + RUN_LIB_STACK_L;
 
     fs_read_file(path, (char *) file);
 
-    uint32_t *addr_list = calloc(0x800);
+    uint32_t *addr_list = (uint32_t *) mem_alloc(0x800, 0, 5); // 6: as kernel
     addr_list[0] = (uint32_t) lib_id;
 
     int addr_list_size = 1;
