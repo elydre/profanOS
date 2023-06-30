@@ -422,13 +422,14 @@ char *if_eval(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         required_size += strlen(input[i]);
     }
+
     char *joined_input = malloc(required_size * sizeof(char));
     joined_input[0] = '\0';
     for (int i = 0; input[i] != NULL; i++) {
         strcat(joined_input, input[i]);
     }
 
-    char **elms = malloc(sizeof(char *) * strlen(joined_input) + 1);
+    char **elms = malloc(sizeof(char *) * (strlen(joined_input) + 1));
     int len = 0;
     int str_len = strlen(joined_input);
     int old_cut = 0;
@@ -436,8 +437,6 @@ char *if_eval(char **input) {
         // check if operator
         for (uint32_t j = 0; j < sizeof(ops); j++) {
             if (joined_input[i] != ops[j]) continue;
-
-            printf("i: %d, old_cut: %d, len: %d\n", i, old_cut, len);
 
             if (old_cut != i) {
                 elms[len] = malloc(sizeof(char) * (i - old_cut + 1));
@@ -448,7 +447,6 @@ char *if_eval(char **input) {
 
             elms[len] = malloc(sizeof(char) * 2);
             elms[len][0] = joined_input[i];
-            printf("elms[%d][0]: %c\n", len, elms[len][0]);
             elms[len][1] = '\0';
             len++;
 
@@ -468,7 +466,6 @@ char *if_eval(char **input) {
     printsplit(elms);
 
     free(joined_input);
-
 
     ast_t *ast = gen_ast(elms, len);
     char *res = eval(ast);
