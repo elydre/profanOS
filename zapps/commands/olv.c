@@ -358,11 +358,19 @@ char *if_debug(char **input) {
 }
 
 char *if_eval(char **input) {
-    printf("we need to evaluate:\n");
+    // join input
+    int required_size = 1;
     for (int i = 0; input[i] != NULL; i++) {
-        printf(" %s", input[i]);
+        required_size += strlen(input[i]);
     }
-    printf("\n");
+    char *joined_input = malloc(required_size * sizeof(char));
+    joined_input[0] = '\0';
+    for (int i = 0; input[i] != NULL; i++) {
+        strcat(joined_input, input[i]);
+    }
+    printf("EVAL: '%s'\n", joined_input);
+
+    free(joined_input);
     return NULL;
 }
 
