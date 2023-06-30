@@ -6,7 +6,7 @@
 
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
-#define PROFANBUILD  0  // filesys usage
+#define PROFANBUILD  1  // filesys usage
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
@@ -210,7 +210,7 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
-char ops[] = "+-*/^&|~<>=()";
+char ops[] = "=<>+-*/^&|~()";
 
 void printsplit(char **split) {
     for (int i = 0; split[i] != NULL; i++) {
@@ -231,9 +231,22 @@ ast_t *gen_ast(char **str, int len) {
     ast->center.type = AST_TYPE_NIL;
 
     // if start with parenthesis and end with parenthesis remove them
-    if (len > 2 && str[0][0] == '(' && str[len - 1][0] == ')') {
-        str++;
-        len -= 2;
+    if (len > 2 && str[0][0] == '(') {
+        int count = 1;
+        int good = 1;
+        for (int i = 1; i < len; i++) {
+            if (str[i][0] == '(') {
+                count++;
+            } else if (str[i][0] == ')') {
+                count--;
+            }
+            if (count == 0 && i != len - 1) {
+                good = 0;
+            }
+        } if (good) {
+            str++;
+            len -= 2;
+        }
     }
 
     // check if only one element
@@ -293,29 +306,13 @@ ast_t *gen_ast(char **str, int len) {
         exit(1);
     }
 
-    // split array in three parts
-    char **left = malloc(sizeof(char *) * (op_index + 1));
-    char **center = malloc(sizeof(char *) * 2);
-    char **right = malloc(sizeof(char *) * (len - op_index));
-
-    for (int i = 0; i < op_index; i++)
-        left[i] = str[i];
-    left[op_index] = NULL;
-
-    center[0] = str[op_index];
-    center[1] = NULL;
-
-    for (int i = op_index + 1; i < len; i++)
-        right[i - op_index - 1] = str[i];
-    right[len - op_index - 1] = NULL;
-
     // generate ast
     if (op_index == 0) {
         ast->left.type = AST_TYPE_STR;
         ast->left.ptr = str[0];
     } else {
         ast->left.type = AST_TYPE_AST;
-        ast->left.ptr = gen_ast(left, op_index);
+        ast->left.ptr = gen_ast(str, op_index);
     }
 
     ast->center.type = AST_TYPE_STR;
@@ -326,7 +323,7 @@ ast_t *gen_ast(char **str, int len) {
         ast->right.ptr = str[op_index + 1];
     } else {
         ast->right.type = AST_TYPE_AST;
-        ast->right.ptr = gen_ast(right, len - op_index - 1);
+        ast->right.ptr = gen_ast(str + op_index + 1, len - op_index - 1);
     }
 
     return ast;
@@ -335,7 +332,9 @@ ast_t *gen_ast(char **str, int len) {
 char *eval(ast_t *ast) {
     // if only one element return it
     if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
-        return (char *) ast->center.ptr;
+        char *res = malloc(strlen((char *) ast->center.ptr) + 1);
+        strcpy(res, (char *) ast->center.ptr);
+        return res;
     }
 
     if (ast->center.type == AST_TYPE_NIL) {
@@ -346,12 +345,13 @@ char *eval(ast_t *ast) {
     // convert to int
     char *op = (char *) ast->center.ptr;
     int left, right;
-    char *res;
+    char *res = NULL;
 
     if (ast->left.type == AST_TYPE_AST) {
         res = eval((ast_t *) ast->left.ptr);
         if (res == NULL) return NULL;
         left = atoi(res);
+        free(res);
     } else {
         left = atoi((char *) ast->left.ptr);
     }
@@ -360,6 +360,7 @@ char *eval(ast_t *ast) {
         res = eval((ast_t *) ast->right.ptr);
         if (res == NULL) return NULL;
         right = atoi(res);
+        free(res);
     } else {
         right = atoi((char *) ast->right.ptr);
     }
@@ -433,6 +434,7 @@ char *if_eval(char **input) {
     int len = 0;
     int str_len = strlen(joined_input);
     int old_cut = 0;
+
     for (int i = 0; i < str_len; i++) {
         // check if operator
         for (uint32_t j = 0; j < sizeof(ops); j++) {
@@ -463,7 +465,6 @@ char *if_eval(char **input) {
     }
 
     elms[len] = NULL;
-    printsplit(elms);
 
     free(joined_input);
 
@@ -1740,9 +1741,7 @@ int main(int argc, char **argv) {
 
     // init pseudo commands
     execute_program(init_prog);
-    execute_program("eval 4+5*(6-2)");
-
-    // start_shell();
+    start_shell();
 
     free(current_directory);
     free_pseudos();
