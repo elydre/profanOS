@@ -4,8 +4,8 @@
 
 #define STRING_CHAR '\''
 
-#define ENABLE_DEBUG 0  // debug level 1
-#define MORE_DEBUG   0  // debug level 2
+#define ENABLE_DEBUG 0  // print function calls
+#define SHOW_ALLFAIL 0  // show all failed checks
 #define PROFANBUILD  0  // filesys usage
 
 #define MAX_INPUT_SIZE 256
@@ -1113,7 +1113,7 @@ char *execute_line(char *full_line) {
     char *line = check_subfunc(full_line);
 
     if (line == NULL) {
-        if (MORE_DEBUG)
+        if (SHOW_ALLFAIL)
             printf("Error: subfunction failed\n");
 
         return NULL;
@@ -1212,7 +1212,7 @@ char *check_subfunc(char *line) {
     free(subfunc);
 
     if (subfunc_result == NULL) {
-        if (MORE_DEBUG)
+        if (SHOW_ALLFAIL)
             printf("Error: subfunc returned NULL\n");
 
         return NULL;
@@ -1421,17 +1421,33 @@ char **lexe_program(char *program) {
 *************************/
 
 int check_condition(char *condition) {
+    char *verif = check_subfunc(condition);
+    if (verif == NULL) {
+        if (SHOW_ALLFAIL)
+            printf("Error: error in condition '%s'\n", condition);
+
+        return -1;
+    }
+
+    int res = 1;
+
     if (
-        strcmp(condition, "false") == 0 ||
-        strcmp(condition, "0")     == 0 ||
-        strcmp(condition, "False") == 0 ||
-        strcmp(condition, "FALSE") == 0
-    ) return 0;
-    return 1;
+        strcmp(verif, "false") == 0 ||
+        strcmp(verif, "0")     == 0 ||
+        strcmp(verif, "False") == 0 ||
+        strcmp(verif, "FALSE") == 0
+    ) res = 0;
+
+    if (verif != condition) {
+        free(verif);
+    }
+
+    return res;
 }
 
 int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
+int execute_while(int line_count, char **lines);
 
 int execute_lines(char **lines, int line_end) {
     // return -3 : break
@@ -1449,7 +1465,7 @@ int execute_lines(char **lines, int line_end) {
         if (does_startwith(lines[i], "FOR")) {
             int ret = execute_for(line_end - i, lines + i);
             if (ret == -1) {
-                if (MORE_DEBUG)
+                if (SHOW_ALLFAIL)
                     printf("Error: invalid FOR loop\n");
 
                 return -1;
@@ -1463,7 +1479,7 @@ int execute_lines(char **lines, int line_end) {
             int ret = execute_if(line_end - i, lines + i);
 
             if (ret == -1) {
-                if (MORE_DEBUG)
+                if (SHOW_ALLFAIL)
                     printf("Error: invalid IF statement\n");
 
                 return -1;
@@ -1473,6 +1489,27 @@ int execute_lines(char **lines, int line_end) {
 
             i += ret;
             continue;
+        }
+
+        if (does_startwith(lines[i], "WHILE")) {
+            int ret = execute_while(line_end - i, lines + i);
+
+            if (ret == -1) {
+                if (SHOW_ALLFAIL)
+                    printf("Error: invalid WHILE loop\n");
+
+                return -1;
+            } else if (ret < -1) {
+                return ret;
+            }
+
+            i += ret;
+            continue;
+        }
+
+        if (does_startwith(lines[i], "END")) {
+            printf("Error: END without FOR, IF or WHILE\n");
+            return -1;
         }
 
         if (does_startwith(lines[i], "BREAK")) {
@@ -1562,7 +1599,7 @@ int execute_for(int line_count, char **lines) {
 
     int end_offset = 1;
     for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "FOR") || does_startwith(lines[i], "IF")) {
+        if (does_startwith(lines[i], "FOR") || does_startwith(lines[i], "IF") || does_startwith(lines[i], "WHILE")) {
             end_offset++;
         } else if (does_startwith(lines[i], "END")) {
             end_offset--;
@@ -1594,7 +1631,7 @@ int execute_for(int line_count, char **lines) {
         set_variable(var_name, string_array[i]);
         res = execute_lines(lines + 1, line_end - 1);
         if (res == -1) {
-            if (MORE_DEBUG)
+            if (SHOW_ALLFAIL)
                 printf("Error: invalid FOR loop\n");
             line_end = -1;
         } else if (res == -3) {
@@ -1622,11 +1659,7 @@ int execute_for(int line_count, char **lines) {
 }
 
 int execute_if(int line_count, char **lines) {
-    char *if_line = check_subfunc(lines[0]);
-
-    if (if_line == NULL) {
-        return -1;
-    }
+    char *if_line = lines[0];
 
     char *condition = malloc((strlen(if_line) + 1) * sizeof(char));
 
@@ -1664,7 +1697,7 @@ int execute_if(int line_count, char **lines) {
 
     int end_offset = 1;
     for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "IF") || does_startwith(lines[i], "FOR")) {
+        if (does_startwith(lines[i], "IF") || does_startwith(lines[i], "FOR") || does_startwith(lines[i], "WHILE")) {
             end_offset++;
         } else if (does_startwith(lines[i], "END")) {
             end_offset--;
@@ -1688,17 +1721,120 @@ int execute_if(int line_count, char **lines) {
     }
 
     // execute if statement
-    if (check_condition(condition)) {
+    int verif = check_condition(condition);
+
+    if (verif == -1) {
+        if (SHOW_ALLFAIL)
+            printf("Error: invalid condition for WHILE loop\n");
+        free(condition);
+        return -1;
+    }
+
+    if (verif) {
         int ret = execute_lines(lines + 1, line_end - 1);
-        if (ret == -1 && MORE_DEBUG) {
+        if (ret == -1 && SHOW_ALLFAIL) {
             printf("Error: invalid IF statement\n");
         } if (ret < 0) {
             line_end = ret;
         }
     }
 
-    if (if_line != lines[0]) {
-        free(if_line);
+    free(condition);
+
+    return line_end;
+}
+
+int execute_while(int line_count, char **lines) {
+    char *while_line = lines[0];
+
+    char *condition = malloc((strlen(while_line) + 1) * sizeof(char));
+
+    if (while_line[5] != ' ') {
+        printf("Error: missing space after WHILE\n");
+        free(condition);
+
+        if (while_line != lines[0]) {
+            free(while_line);
+        }
+
+        return -1;
+    }
+
+    int i;
+    for (i = 6; while_line[i] != '\0'; i++) {
+        condition[i - 6] = while_line[i];
+    }
+
+    condition[i - 6] = '\0';
+
+    // check condition length
+    if (strlen(condition) == 0) {
+        printf("Error: missing condition for WHILE loop\n");
+        free(condition);
+
+        if (while_line != lines[0]) {
+            free(while_line);
+        }
+
+        return -1;
+    }
+
+    int line_end = 0;
+
+    int end_offset = 1;
+    for (int i = 1; i < line_count; i++) {
+        if (does_startwith(lines[i], "WHILE") || does_startwith(lines[i], "FOR") || does_startwith(lines[i], "IF")) {
+            end_offset++;
+        } else if (does_startwith(lines[i], "END")) {
+            end_offset--;
+        }
+
+        if (end_offset == 0) {
+            line_end = i;
+            break;
+        }
+    }
+
+    if (line_end == 0) {
+        printf("Error: missing END for WHILE loop\n");
+        free(condition);
+
+        if (while_line != lines[0]) {
+            free(while_line);
+        }
+
+        return -1;
+    }
+
+    // execute while loop
+    int verif = check_condition(condition);
+
+    if (verif == -1) {
+        if (SHOW_ALLFAIL)
+            printf("Error: invalid condition for WHILE loop\n");
+        free(condition);
+        return -1;
+    }
+ 
+    while (verif) {
+        int ret = execute_lines(lines + 1, line_end - 1);
+        if (ret == -1 && SHOW_ALLFAIL) {
+            printf("Error: invalid WHILE loop\n");
+        } if (ret == -3) {
+            break;
+        } if (ret == -1) {
+            line_end = ret;
+            break;
+        }
+
+        verif = check_condition(condition);
+        if (verif == -1) {
+            if (SHOW_ALLFAIL)
+                printf("Error: invalid condition for WHILE loop\n");
+
+            free(condition);
+            return -1;
+        }
     }
 
     free(condition);
@@ -1749,6 +1885,12 @@ char init_prog[] = ""
 "   pseudo !(name !e) 'go !e';"
 "  END;"
 " END;"
+"END;"
+
+"SET i 0;"
+"WHILE !(eval !i < 100);"
+" SET i !(eval !i + 1);"
+" echo i = !i;"
 "END";
 
 int main(int argc, char **argv) {
