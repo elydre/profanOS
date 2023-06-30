@@ -138,10 +138,10 @@ int does_variable_exist(char *name) {
     return 0;
 }
 
-void del_variable(char *name) {
+int del_variable(char *name) {
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
-            return;
+            return 1;
         }
         if (strcmp(variables[i].name, name) == 0) {
             if (variables[i].value && (!variables[i].sync)) {
@@ -151,9 +151,15 @@ void del_variable(char *name) {
             variables[i].name = NULL;
             variables[i].value = NULL;
             variables[i].sync = 0;
-            return;
+
+            // shift all variables down
+            for (int j = i; j < MAX_VARIABLES - 1; j++) {
+                variables[j] = variables[j + 1];
+            }
+            return 0;
         }
     }
+    return 1;
 }
 
 /*****************************
@@ -1188,10 +1194,30 @@ void debug_print(char *function_name, char **function_args) {
 int execute_lines(char **lines, int line_end, char *result);
 
 char *execute_function(function_t *function, char **args) {
-    (void *) args;
+    // set variables:
+    // !0: first argument
+    // !1: second argument
+    // !2: third argument
+    // !#: argument count
+
+    int argc = 0;
+    char tmp[4];
+    for (argc = 0; args[argc] != NULL; argc++) {
+        sprintf(tmp, "%d", argc);
+        set_variable(tmp, args[argc]);
+    }
+    sprintf(tmp, "%d", argc);
+    set_variable("#", tmp);
 
     char *result = malloc(sizeof(char));
     int ret = execute_lines(function->lines, function->line_count, result);
+
+    // free variables
+    for (int i = 0; i < argc; i++) {
+        sprintf(tmp, "%d", i);
+        del_variable(tmp);
+    }
+    del_variable("#");
 
     if (ret < 0) {
         if (SHOW_ALLFAIL)
@@ -1554,6 +1580,26 @@ int check_condition(char *condition) {
     return res;
 }
 
+int get_line_end(int line_count, char **lines) {
+    int line_end = 0;
+
+    int end_offset = 1;
+    for (int i = 1; i < line_count; i++) {
+        if (does_startwith(lines[i], "IF") || does_startwith(lines[i], "FOR") || does_startwith(lines[i], "WHILE") || does_startwith(lines[i], "FUNC")) {
+            end_offset++;
+        } else if (does_startwith(lines[i], "END")) {
+            end_offset--;
+        }
+
+        if (end_offset == 0) {
+            line_end = i;
+            break;
+        }
+    }
+
+    return line_end;
+}
+
 int execute_return(char *line, char *result);
 int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
@@ -1638,7 +1684,7 @@ int execute_lines(char **lines, int line_end, char *result) {
         }
 
         if (does_startwith(lines[i], "END")) {
-            printf("Error: END without FOR, IF or WHILE\n");
+            printf("Error: suspicious END line %d\n", i + 1);
             return -1;
         }
 
@@ -1754,21 +1800,7 @@ int execute_for(int line_count, char **lines) {
     // convert string to string array
     char **string_array = gen_args(string);
 
-    int line_end = 0;
-
-    int end_offset = 1;
-    for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "FOR") || does_startwith(lines[i], "IF") || does_startwith(lines[i], "WHILE")) {
-            end_offset++;
-        } else if (does_startwith(lines[i], "END")) {
-            end_offset--;
-        }
-
-        if (end_offset == 0) {
-            line_end = i;
-            break;
-        }
-    }
+    int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
         printf("Error: missing END for FOR loop\n");
@@ -1852,21 +1884,7 @@ int execute_if(int line_count, char **lines) {
         return -1;
     }
 
-    int line_end = 0;
-
-    int end_offset = 1;
-    for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "IF") || does_startwith(lines[i], "FOR") || does_startwith(lines[i], "WHILE")) {
-            end_offset++;
-        } else if (does_startwith(lines[i], "END")) {
-            end_offset--;
-        }
-
-        if (end_offset == 0) {
-            line_end = i;
-            break;
-        }
-    }
+    int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
         printf("Error: missing END for IF statement\n");
@@ -1938,21 +1956,7 @@ int execute_while(int line_count, char **lines) {
         return -1;
     }
 
-    int line_end = 0;
-
-    int end_offset = 1;
-    for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "WHILE") || does_startwith(lines[i], "FOR") || does_startwith(lines[i], "IF")) {
-            end_offset++;
-        } else if (does_startwith(lines[i], "END")) {
-            end_offset--;
-        }
-
-        if (end_offset == 0) {
-            line_end = i;
-            break;
-        }
-    }
+    int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
         printf("Error: missing END for WHILE loop\n");
@@ -2027,21 +2031,7 @@ int save_function(int line_count, char **lines) {
         return -1;
     }
 
-    int line_end = 0;
-
-    int end_offset = 1;
-    for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "FUNC")) {
-            end_offset++;
-        } else if (does_startwith(lines[i], "END")) {
-            end_offset--;
-        }
-
-        if (end_offset == 0) {
-            line_end = i;
-            break;
-        }
-    }
+    int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
         printf("Error: missing END for FUNC\n");
@@ -2102,12 +2092,14 @@ char init_prog[] = ""
 "END;"
 
 "FUNC test;"
-" echo test;"
-" echo !profan;"
-"END;"
+" echo argc: !#;"
+" IF !#;"
+"  FOR i !(range 0 !#);"
+"   echo !i':' !!i;"
+"  END;"
+" END;"
+"END";
 
-"test;"
-"test;";
 
 int main(int argc, char **argv) {
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
@@ -2124,7 +2116,7 @@ int main(int argc, char **argv) {
     // init pseudo commands
     execute_program(init_prog);
 
-    // start_shell();
+    start_shell();
 
     free(current_directory);
     free_functions();
