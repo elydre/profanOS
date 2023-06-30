@@ -401,7 +401,7 @@ char *eval(ast_t *ast) {
     // convert back to string
     char *ret = malloc(sizeof(char) * 12);
     sprintf(ret, "%d", result);
-    return ret;    
+    return ret;
 }
 
 char *if_eval(char **input) {
