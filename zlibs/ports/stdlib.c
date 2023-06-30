@@ -23,7 +23,10 @@ void *calloc(uint32_t nmemb, uint32_t lsize) {
 
 void free(void *mem) {
     int size = c_mem_get_alloc_size((uint32_t) mem);
-    if (size == 0) return;
+    if (size == 0) {
+        // puts("free() : invalid pointer\n");
+        return;
+    }
     memset((uint8_t *) mem, 0, size);
     c_mem_free_addr((int) mem);
 }
