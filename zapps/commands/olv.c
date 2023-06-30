@@ -1885,12 +1885,6 @@ char init_prog[] = ""
 "   pseudo !(name !e) 'go !e';"
 "  END;"
 " END;"
-"END;"
-
-"SET i 0;"
-"WHILE !(eval !i < 100);"
-" SET i !(eval !i + 1);"
-" echo i = !i;"
 "END";
 
 int main(int argc, char **argv) {
