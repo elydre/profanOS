@@ -12,7 +12,7 @@ good_externtions = [
 analyzed = {
     "files": 0,
     "lines": 0,
-    "paths": 0,
+    "patch": 0,
 }
 
 # scan file and remove trailing whitespace
@@ -25,7 +25,7 @@ def scan_file(path):
 
             # check if line ends with whitespace
             if line.endswith(" ") or line.endswith("\t"):
-                analyzed["paths"] += 1
+                analyzed["patch"] += 1
                 print(f"{path}:{l} ends with whitespace")
                 contant += c.rstrip() + "\n"
 
@@ -54,4 +54,4 @@ def scan_dir(path):
 if __name__ == "__main__":
     scan_dir(".")
     print(f"End of scan, {analyzed['lines']} lines analyzed in {analyzed['files']} files!")
-    print(f"{analyzed['paths']} paths with trailing whitespace")
+    print(f"{analyzed['patch']} lines with trailing whitespace")
