@@ -6,7 +6,7 @@
 
 #define ENABLE_DEBUG 0  // debug level 1
 #define MORE_DEBUG   0  // debug level 2
-#define PROFANBUILD  1  // filesys usage
+#define PROFANBUILD  0  // filesys usage
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
@@ -1434,7 +1434,13 @@ int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
 
 int execute_lines(char **lines, int line_end) {
-   for (int i = 0; i < line_end; i++) {
+    // return -3 : break
+    // return -2 : continue
+    // return -1 : error
+    // return 0  : no error
+    // return >0 : number of lines executed
+
+    for (int i = 0; i < line_end; i++) {
         if (i >= line_end) {
             printf("Error: trying to execute line after END\n");
             return -1;
@@ -1455,15 +1461,26 @@ int execute_lines(char **lines, int line_end) {
 
         if (does_startwith(lines[i], "IF")) {
             int ret = execute_if(line_end - i, lines + i);
+
             if (ret == -1) {
                 if (MORE_DEBUG)
                     printf("Error: invalid IF statement\n");
 
                 return -1;
+            } else if (ret < -1) {
+                return ret;
             }
 
             i += ret;
             continue;
+        }
+
+        if (does_startwith(lines[i], "BREAK")) {
+            return -3;
+        }
+
+        if (does_startwith(lines[i], "CONTINUE")) {
+            return -2;
         }
 
         char *result = execute_line(lines[i]);
@@ -1570,14 +1587,20 @@ int execute_for(int line_count, char **lines) {
     }
 
     int var_exist_before = does_variable_exist(var_name);
+    int res;
 
     // execute for loop
     for (int i = 0; string_array[i] != NULL; i++) {
         set_variable(var_name, string_array[i]);
-        if (execute_lines(lines + 1, line_end - 1)) {
+        res = execute_lines(lines + 1, line_end - 1);
+        if (res == -1) {
             if (MORE_DEBUG)
                 printf("Error: invalid FOR loop\n");
             line_end = -1;
+        } else if (res == -3) {
+            break;
+        } else if (res == -2) {
+            continue;
         }
     }
 
@@ -1666,11 +1689,11 @@ int execute_if(int line_count, char **lines) {
 
     // execute if statement
     if (check_condition(condition)) {
-        if (execute_lines(lines + 1, line_end - 1)) {
-            if (MORE_DEBUG)
-                printf("Error: invalid IF statement\n");
-
-            line_end = -1;
+        int ret = execute_lines(lines + 1, line_end - 1);
+        if (ret == -1 && MORE_DEBUG) {
+            printf("Error: invalid IF statement\n");
+        } if (ret < 0) {
+            line_end = ret;
         }
     }
 
@@ -1741,7 +1764,7 @@ int main(int argc, char **argv) {
 
     // init pseudo commands
     execute_program(init_prog);
-    start_shell();
+    // start_shell();
 
     free(current_directory);
     free_pseudos();
