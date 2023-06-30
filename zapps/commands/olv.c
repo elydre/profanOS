@@ -210,7 +210,7 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
-char ops[] = "=<>+-*/^&|~()";
+char ops[] = "=<>+-*/~^&|~()";
 
 void printsplit(char **split) {
     for (int i = 0; split[i] != NULL; i++) {
@@ -380,7 +380,7 @@ char *eval(ast_t *ast) {
         case '/':
             result = left / right;
             break;
-        case '%':
+        case '~':
             result = left % right;
             break;
         case '<':
@@ -786,8 +786,8 @@ char *if_range(char **input) {
     int start = atoi(input[0]);
     int end = atoi(input[1]);
 
-    if (start > end) {
-        printf("RANGE: start is bigger than end\n");
+    if (start >= end) {
+        printf("RANGE: start must be less than end\n");
         return NULL;
     }
 
@@ -1764,7 +1764,7 @@ int main(int argc, char **argv) {
 
     // init pseudo commands
     execute_program(init_prog);
-    // start_shell();
+    start_shell();
 
     free(current_directory);
     free_pseudos();
