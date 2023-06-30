@@ -245,6 +245,18 @@ void print_function(char *name) {
     }
 }
 
+function_t *get_function(char *name) {
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            return NULL;
+        }
+        if (strcmp(functions[i].name, name) == 0) {
+            return &functions[i];
+        }
+    }
+    return NULL;
+}
+
 /***********************************
  *                                *
  *  Olivine Integrated Evaluator  *
@@ -997,7 +1009,7 @@ internal_function_t internal_functions[] = {
     {NULL, NULL}
 };
 
-void *get_function(char *name) {
+void *get_if_function(char *name) {
     for (int i = 0; internal_functions[i].name != NULL; i++) {
         if (strcmp(internal_functions[i].name, name) == 0) {
             return internal_functions[i].function;
@@ -1087,7 +1099,7 @@ char **gen_args(char *string) {
     return argv;
 }
 
-char *get_function_name(char *string, int *size) {
+char *get_if_function_name(char *string, int *size) {
     int in_string = 0;
     for (int i = 0; string[i] != '\0'; i++) {
         if (string[i] == STRING_CHAR) {
@@ -1173,9 +1185,29 @@ void debug_print(char *function_name, char **function_args) {
     printf(PROFAN_COLOR ") [0]\n");
 }
 
+int execute_lines(char **lines, int line_end, char *result);
+
+char *execute_function(function_t *function, char **args) {
+    (void *) args;
+
+    char *result = malloc(sizeof(char));
+    int ret = execute_lines(function->lines, function->line_count, result);
+
+    if (ret < 0) {
+        if (SHOW_ALLFAIL)
+            printf("Error: function failed\n");
+
+        free(result);
+        return NULL;
+    }
+
+    return result;
+}
+
 char *check_subfunc(char *line);
 char *check_variables(char *line);
 char *check_pseudos(char *line);
+
 
 char *execute_line(char *full_line) {
     // check for function and variable
@@ -1189,11 +1221,15 @@ char *execute_line(char *full_line) {
     }
 
     // get the function name
-    int name_size;
-    char *function_name = get_function_name(line, &name_size);
+    int name_size, isif;
+    char *function_name = get_if_function_name(line, &name_size);
 
     // get the function address
-    void *function = get_function(function_name);
+    void *function = get_if_function(function_name);
+    if (function == NULL) {
+        function = get_function(function_name);
+        isif = 0;
+    } else isif = 1;
 
     char *result;
 
@@ -1208,7 +1244,11 @@ char *execute_line(char *full_line) {
             debug_print(function_name, function_args);
 
         // execute the function
-        result = ((char* (*)(char**))function)(function_args);
+        if (isif) {
+            result = ((char* (*)(char**))function)(function_args);
+        } else {
+            result = execute_function(function, function_args);
+        }
 
         if (result == NULL) {
             result = malloc(1 * sizeof(char));
@@ -1514,17 +1554,23 @@ int check_condition(char *condition) {
     return res;
 }
 
+int execute_return(char *line, char *result);
 int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
 int execute_while(int line_count, char **lines);
 int save_function(int line_count, char **lines);
 
-int execute_lines(char **lines, int line_end) {
+int execute_lines(char **lines, int line_end, char *result) {
+    // return -4 : return
     // return -3 : break
     // return -2 : continue
     // return -1 : error
     // return 0  : no error
     // return >0 : number of lines executed
+
+    if (result != NULL) {
+        result[0] = '\0';
+    }
 
     for (int i = 0; i < line_end; i++) {
         if (i >= line_end) {
@@ -1604,16 +1650,45 @@ int execute_lines(char **lines, int line_end) {
             return -2;
         }
 
-        char *result = execute_line(lines[i]);
+        if (does_startwith(lines[i], "RETURN")) {
+            return execute_return(lines[i], result);
+        }
 
-        if (result != NULL) {
-            if (result[0] != '\0') {
-                printf("%s\n", result);
+        char *res = execute_line(lines[i]);
+
+        if (res != NULL) {
+            if (res[0] != '\0') {
+                printf("%s\n", res);
             }
-            free(result);
+            free(res);
         }
     }
     return 0;
+}
+
+int execute_return(char *line, char *result) {
+    if (result != NULL) {
+        if (strlen(line) < 6) {
+            if (SHOW_ALLFAIL)
+                printf("Error: invalid RETURN statement\n");
+
+            return -1;
+        }
+
+        char *res = check_subfunc(line + 6);
+
+        if (res == NULL) {
+            if (SHOW_ALLFAIL)
+                printf("Error: invalid RETURN statement\n");
+
+            return -1;
+        }
+
+        free(result);
+        result = res;
+    }
+
+    return -4;
 }
 
 int execute_for(int line_count, char **lines) {
@@ -1713,7 +1788,7 @@ int execute_for(int line_count, char **lines) {
     // execute for loop
     for (int i = 0; string_array[i] != NULL; i++) {
         set_variable(var_name, string_array[i]);
-        res = execute_lines(lines + 1, line_end - 1);
+        res = execute_lines(lines + 1, line_end - 1, NULL);
         if (res == -1) {
             if (SHOW_ALLFAIL)
                 printf("Error: invalid FOR loop\n");
@@ -1815,7 +1890,7 @@ int execute_if(int line_count, char **lines) {
     }
 
     if (verif) {
-        int ret = execute_lines(lines + 1, line_end - 1);
+        int ret = execute_lines(lines + 1, line_end - 1, NULL);
         if (ret == -1 && SHOW_ALLFAIL) {
             printf("Error: invalid IF statement\n");
         } if (ret < 0) {
@@ -1899,9 +1974,9 @@ int execute_while(int line_count, char **lines) {
         free(condition);
         return -1;
     }
- 
+
     while (verif) {
-        int ret = execute_lines(lines + 1, line_end - 1);
+        int ret = execute_lines(lines + 1, line_end - 1, NULL);
         if (ret == -1 && SHOW_ALLFAIL) {
             printf("Error: invalid WHILE loop\n");
         } if (ret == -3) {
@@ -1988,7 +2063,7 @@ void execute_program(char *program) {
         line_count++;
     }
 
-    execute_lines(lines, line_count);
+    execute_lines(lines, line_count, NULL);
 
     free_args(lines);
 }
@@ -2029,7 +2104,10 @@ char init_prog[] = ""
 "FUNC test;"
 " echo test;"
 " echo !profan;"
-"END";
+"END;"
+
+"test;"
+"test;";
 
 int main(int argc, char **argv) {
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
@@ -2045,8 +2123,6 @@ int main(int argc, char **argv) {
 
     // init pseudo commands
     execute_program(init_prog);
-
-    print_function("test");
 
     // start_shell();
 
