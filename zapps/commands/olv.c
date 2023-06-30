@@ -1002,7 +1002,7 @@ internal_function_t internal_functions[] = {
     {"upper", if_upper},
     {"join", if_join},
     {"split", if_split},
-    {"SET", if_set_var},
+    {"set", if_set_var},
     {"show", if_show},
     {"debug", if_debug},
     {"eval", if_eval},
