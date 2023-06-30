@@ -29,6 +29,7 @@
 
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
+#define MAX_FUNCTIONS 100
 
 #define OLV_VERSION "0.3"
 
@@ -48,8 +49,15 @@ typedef struct {
     char* value;
 } pseudo_t;
 
+typedef struct {
+    char* name;
+    char** lines;
+    int line_count;
+} function_t;
+
 variable_t *variables;
 pseudo_t *pseudos;
+function_t *functions;
 internal_function_t internal_functions[];
 
 char *current_directory;
@@ -94,6 +102,7 @@ int set_variable(char *name, char *value) {
             return 0;
         }
     }
+    printf("Error: Too many variables\n");
     return 1;
 }
 
@@ -185,9 +194,56 @@ int set_pseudo(char *name, char *value) {
             return 0;
         }
     }
+    printf("Error: Too many pseudos\n");
     return 1;
 }
 
+/*******************************
+ *                            *
+ * Function Get/Set Functions *
+ *                            *
+********************************/
+
+int set_function(char *name, char **lines, int line_count) {
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            char *name_copy = malloc(strlen(name) + 1);
+            strcpy(name_copy, name);
+            functions[i].name = name_copy;
+            functions[i].line_count = line_count;
+
+            // we need to copy the lines
+            functions[i].lines = malloc(sizeof(char *) * line_count);
+            for (int j = 0; j < line_count; j++) {
+                functions[i].lines[j] = malloc(strlen(lines[j]) + 1);
+                strcpy(functions[i].lines[j], lines[j]);
+            }
+
+            return 0;
+        } if (strcmp(functions[i].name, name) == 0) {
+            printf("Function %s already exists\n", name);
+            return 1;
+        }
+    }
+    printf("Too many functions\n");
+    return 1;
+}
+
+void print_function(char *name) {
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            printf("Function %s does not exist\n", name);
+            return;
+        }
+        if (strcmp(functions[i].name, name) == 0) {
+            printf("Function %s:\n", name);
+            for (int j = 0; j < functions[i].line_count; j++) {
+                printf("| %s\n", functions[i].lines[j]);
+            }
+            return;
+        }
+    }
+}
 
 /***********************************
  *                                *
@@ -1084,6 +1140,19 @@ void free_pseudos() {
     free(pseudos);
 }
 
+void free_functions() {
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name != NULL) {
+            free(functions[i].name);
+            for (int l = 0; l < functions[i].line_count; l++) {
+                free(functions[i].lines[l]);
+            }
+            free(functions[i].lines);
+        }
+    }
+    free(functions);
+}
+
 /**************************
  *                       *
  *  Execution Functions  *
@@ -1448,6 +1517,7 @@ int check_condition(char *condition) {
 int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
 int execute_while(int line_count, char **lines);
+int save_function(int line_count, char **lines);
 
 int execute_lines(char **lines, int line_end) {
     // return -3 : break
@@ -1501,6 +1571,20 @@ int execute_lines(char **lines, int line_end) {
                 return -1;
             } else if (ret < -1) {
                 return ret;
+            }
+
+            i += ret;
+            continue;
+        }
+
+        if (does_startwith(lines[i], "FUNC")) {
+            int ret = save_function(line_end - i, lines + i);
+
+            if (ret == -1) {
+                if (SHOW_ALLFAIL)
+                    printf("Error: invalid FUNCTION declaration\n");
+
+                return -1;
             }
 
             i += ret;
@@ -1842,6 +1926,61 @@ int execute_while(int line_count, char **lines) {
     return line_end;
 }
 
+int save_function(int line_count, char **lines) {
+    // FUNC name;
+    //  ...
+    // END
+
+    char *func_line = lines[0];
+
+    if (func_line[4] != ' ') {
+        printf("Error: missing space after FUNC\n");
+        return -1;
+    }
+
+    char *func_name = malloc((strlen(func_line) + 1) * sizeof(char));
+    int i;
+    for (i = 5; func_line[i] != '\0'; i++) {
+        func_name[i - 5] = func_line[i];
+    }
+
+    func_name[i - 5] = '\0';
+
+    if (strlen(func_name) == 0) {
+        printf("Error: missing function name\n");
+        free(func_name);
+        return -1;
+    }
+
+    int line_end = 0;
+
+    int end_offset = 1;
+    for (int i = 1; i < line_count; i++) {
+        if (does_startwith(lines[i], "FUNC")) {
+            end_offset++;
+        } else if (does_startwith(lines[i], "END")) {
+            end_offset--;
+        }
+
+        if (end_offset == 0) {
+            line_end = i;
+            break;
+        }
+    }
+
+    if (line_end == 0) {
+        printf("Error: missing END for FUNC\n");
+        free(func_name);
+        return -1;
+    }
+
+    int ret = set_function(func_name, lines + 1, line_end - 1);
+
+    free(func_name);
+
+    return ret ? -1 : line_end;
+}
+
 void execute_program(char *program) {
     char **lines = lexe_program(program);
     int line_count = 0;
@@ -1885,6 +2024,11 @@ char init_prog[] = ""
 "   pseudo !(name !e) 'go !e';"
 "  END;"
 " END;"
+"END;"
+
+"FUNC test;"
+" echo test;"
+" echo !profan;"
 "END";
 
 int main(int argc, char **argv) {
@@ -1893,6 +2037,7 @@ int main(int argc, char **argv) {
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
+    functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
@@ -1900,9 +2045,13 @@ int main(int argc, char **argv) {
 
     // init pseudo commands
     execute_program(init_prog);
-    start_shell();
+
+    print_function("test");
+
+    // start_shell();
 
     free(current_directory);
+    free_functions();
     free_pseudos();
     free_vars();
 
