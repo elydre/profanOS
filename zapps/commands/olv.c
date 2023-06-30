@@ -275,7 +275,7 @@ ast_t *gen_ast(char **str, int len) {
         } else if (str[i][0] == ')') {
             op_parenthesis--;
         } else if (op_parenthesis == 0) {
-            for (int j = 0; j < sizeof(ops); j++) {
+            for (int j = 0; j < (int) sizeof(ops); j++) {
                 if (str[i][0] == ops[j] && j < op_priority) {
                     op_index = i;
                     op_priority = j;
@@ -404,6 +404,18 @@ char *eval(ast_t *ast) {
     return ret;
 }
 
+void free_ast(ast_t *ast) {
+    if (ast->left.type == AST_TYPE_AST) {
+        free_ast((ast_t *) ast->left.ptr);
+    }
+
+    if (ast->right.type == AST_TYPE_AST) {
+        free_ast((ast_t *) ast->right.ptr);
+    }
+
+    free(ast);
+}
+
 char *if_eval(char **input) {
     // join input
     int required_size = 1;
@@ -422,8 +434,10 @@ char *if_eval(char **input) {
     int old_cut = 0;
     for (int i = 0; i < str_len; i++) {
         // check if operator
-        for (int j = 0; j < sizeof(ops); j++) {
+        for (uint32_t j = 0; j < sizeof(ops); j++) {
             if (joined_input[i] != ops[j]) continue;
+
+            printf("i: %d, old_cut: %d, len: %d\n", i, old_cut, len);
 
             if (old_cut != i) {
                 elms[len] = malloc(sizeof(char) * (i - old_cut + 1));
@@ -434,6 +448,7 @@ char *if_eval(char **input) {
 
             elms[len] = malloc(sizeof(char) * 2);
             elms[len][0] = joined_input[i];
+            printf("elms[%d][0]: %c\n", len, elms[len][0]);
             elms[len][1] = '\0';
             len++;
 
@@ -450,12 +465,21 @@ char *if_eval(char **input) {
     }
 
     elms[len] = NULL;
-
-    ast_t *ast = gen_ast(elms, len);
-
-    char *res = eval(ast);
+    printsplit(elms);
 
     free(joined_input);
+
+
+    ast_t *ast = gen_ast(elms, len);
+    char *res = eval(ast);
+
+    free_ast(ast);
+
+    for (int i = 0; i < len; i++) {
+        free(elms[i]);
+    }
+
+    free(elms);
 
     return res;
 }
@@ -1719,8 +1743,9 @@ int main(int argc, char **argv) {
 
     // init pseudo commands
     execute_program(init_prog);
+    execute_program("eval 4+5*(6-2)");
 
-    start_shell();
+    // start_shell();
 
     free(current_directory);
     free_pseudos();
