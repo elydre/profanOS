@@ -30,7 +30,7 @@
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
 
-#define OLV_VERSION "0.2"
+#define OLV_VERSION "0.3"
 
 typedef struct {
     char* name;
