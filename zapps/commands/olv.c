@@ -6,7 +6,7 @@
 
 #define ENABLE_DEBUG 0  // print function calls
 #define SHOW_ALLFAIL 0  // show all failed checks
-#define PROFANBUILD  1  // filesys usage
+#define PROFANBUILD  0  // filesys usage
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
@@ -2121,7 +2121,6 @@ int get_func_color(char *str) {
     // unknown functions: dark red
     return c_dred;
 }
-#endif
 
 void olv_print(char *str, int len) {
     /* colored print
@@ -2210,6 +2209,8 @@ void olv_print(char *str, int len) {
 
     free(tmp);
 }
+#endif
+
 
 void local_input(char *buffer, int size) {
     #if PROFANBUILD
