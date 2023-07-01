@@ -1734,10 +1734,7 @@ int execute_lines(char **lines, int line_end, char **result) {
 
 int execute_return(char *line, char **result) {
     if (strlen(line) < 7) {
-        if (SHOW_ALLFAIL)
-            printf("Error: invalid RETURN statement\n");
-
-        return -1;
+        return -4;
     }
 
     char *res = check_subfunc(line + 7);
@@ -1785,28 +1782,21 @@ int execute_for(int line_count, char **lines) {
     }
     var_name[i - 4] = '\0';
 
-    if (for_line[i] == '\0') {
-        printf("Error: missing string for FOR loop\n");
-        free(var_name);
-        free(string);
+    int line_end = get_line_end(line_count, lines);
 
-        if (for_line != lines[0]) {
-            free(for_line);
+    if (for_line[i] == '\0') {
+        string[0] = '\0';
+    } else {
+        int j;
+        for (j = i + 1; for_line[j] != '\0'; j++) {
+            string[j - i - 1] = for_line[j];
         }
 
-        return -1;
+        string[j - i - 1] = '\0';
     }
-
-    int j;
-    for (j = i + 1; for_line[j] != '\0'; j++) {
-        string[j - i - 1] = for_line[j];
-    }
-
-    string[j - i - 1] = '\0';
 
     // chek string length
     if (strlen(string) == 0) {
-        printf("Error: missing string for FOR loop\n");
         free(var_name);
         free(string);
 
@@ -1814,13 +1804,11 @@ int execute_for(int line_count, char **lines) {
             free(for_line);
         }
 
-        return -1;
+        return line_end;
     }
 
     // convert string to string array
     char **string_array = gen_args(string);
-
-    int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
         printf("Error: missing END for FOR loop\n");
@@ -2483,6 +2471,19 @@ char init_prog[] = ""
 "   echo arg[!i']:' !!i;"
 "  END;"
 " END;"
+"END;"
+
+"FUNC tree;"
+" IF !#;"
+"  FOR f !(find -f !0);"
+"   echo !f;"
+"  END;"
+"  FOR d !(find -d !0);"
+"   tree !d;"
+"  END;"
+"  RETURN;"
+" END;"
+" echo missing argument;"
 "END";
 
 
