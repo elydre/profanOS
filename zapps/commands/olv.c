@@ -2103,9 +2103,9 @@ int get_func_color(char *str) {
         }
     }
 
-    // functions: dark yellow
+    // functions: dark cyan
     if (get_function(str) != NULL) {
-        return c_dyellow;
+        return c_dcyan;
     }
 
     // pseudos: blue
@@ -2113,23 +2113,23 @@ int get_func_color(char *str) {
         return c_blue;
     }
 
-    // internal functions: yellow
+    // internal functions: cyan
     if (get_if_function(str) != NULL) {
-        return c_yellow;
+        return c_cyan;
     }
 
-    // unknown functions: red
-    return c_red;
+    // unknown functions: dark red
+    return c_dred;
 }
 #endif
     
 
 void olv_print(char *str, int len) {
     /* colored print
-     * function: yellow/dark yellow
+     * function: cyan
      * keywords: purple
      * unknown function: red
-     * variable: cyan
+     * variable: yellow
      * brackets: green
     **/
 
@@ -2159,7 +2159,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_cyan : c_white);
+                c_ckprint(tmp, is_var ? c_yellow : c_white);
             }
 
             // find the closing bracket
@@ -2185,7 +2185,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_cyan : c_white);
+                c_ckprint(tmp, is_var ? c_yellow : c_white);
                 from = i;
             }
             is_var = 1;
@@ -2196,7 +2196,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_cyan : c_white);
+                c_ckprint(tmp, is_var ? c_yellow : c_white);
                 from = i;
             }
             is_var = 0;
@@ -2206,7 +2206,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        c_ckprint(tmp, is_var ? c_cyan : c_white);
+        c_ckprint(tmp, is_var ? c_yellow : c_white);
     }
 
     free(tmp);
