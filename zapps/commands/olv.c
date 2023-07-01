@@ -2219,11 +2219,11 @@ void olv_print(char *str, int len) {
     free(tmp);
 }
 
-void olv_autocomplete(char *str, int len) {
+char *olv_autocomplete(char *str, int len) {
     c_serial_print(SERIAL_PORT_A, "autocomplete for input:\n");
 
     if (len == 0) {
-        return;
+        return NULL;
     }
 
     char *tmp = malloc((len + 1) * sizeof(char));
@@ -2238,17 +2238,22 @@ void olv_autocomplete(char *str, int len) {
     if (i < len) {
         c_serial_print(SERIAL_PORT_A, "autocomplete: i < len\n");
         free(tmp);
-        return;
+        return NULL;
     }
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
+
+    int suggest = 0;
+    char *ret = NULL;
 
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
         if (strncmp(tmp, keywords[j], i) == 0) {
             c_serial_print(SERIAL_PORT_A, keywords[j]);
             c_serial_print(SERIAL_PORT_A, "\n");
+            ret = keywords[j];
+            suggest++;
         }
     }
 
@@ -2257,6 +2262,8 @@ void olv_autocomplete(char *str, int len) {
         if (strncmp(tmp, functions[j].name, i) == 0) {
             c_serial_print(SERIAL_PORT_A, functions[j].name);
             c_serial_print(SERIAL_PORT_A, "\n");
+            ret = functions[j].name;
+            suggest++;
         }
     }
 
@@ -2265,6 +2272,8 @@ void olv_autocomplete(char *str, int len) {
         if (strncmp(tmp, pseudos[j].name, i) == 0) {
             c_serial_print(SERIAL_PORT_A, pseudos[j].name);
             c_serial_print(SERIAL_PORT_A, "\n");
+            ret = pseudos[j].name;
+            suggest++;
         }
     }
 
@@ -2273,10 +2282,16 @@ void olv_autocomplete(char *str, int len) {
         if (strncmp(tmp, internal_functions[j].name, i) == 0) {
             c_serial_print(SERIAL_PORT_A, internal_functions[j].name);
             c_serial_print(SERIAL_PORT_A, "\n");
+            ret = internal_functions[j].name;
+            suggest++;
         }
     }
-
     free(tmp);
+
+    if (suggest == 1) {
+        return ret + i;
+    }
+    return NULL;
 }
 
 #endif
@@ -2357,8 +2372,18 @@ void local_input(char *buffer, int size) {
         }
 
         else if (sc == TAB) {
-            olv_autocomplete(buffer, buffer_actual_size);
-            continue;
+            char *suggestion = olv_autocomplete(buffer, buffer_index);
+            if (suggestion == NULL) continue;
+            int suggestion_len = strlen(suggestion);
+            if (buffer_actual_size + suggestion_len >= size) continue;
+            for (int i = buffer_actual_size; i >= buffer_index; i--) {
+                buffer[i + suggestion_len] = buffer[i];
+            }
+            for (int i = 0; i < suggestion_len; i++) {
+                buffer[buffer_index + i] = suggestion[i];
+            }
+            buffer_actual_size += suggestion_len;
+            buffer_index += suggestion_len;
         }
 
         else if (sc <= SC_MAX) {
