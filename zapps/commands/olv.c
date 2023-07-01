@@ -8,12 +8,15 @@
 #define SHOW_ALLFAIL  0  // show all failed checks
 #define PROFANBUILD   1  // enable profan features
 
-#define INPUT_SIZE    256
+#define HISTORY_SIZE  100
+#define INPUT_SIZE    1024
 #define MAX_PATH_SIZE 256
 
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
+
+#define OLV_VERSION "0.3"
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -21,18 +24,18 @@
   #include <profan.h>
 
   // profanOS config
-  #define OLV_PROMPT "olivine [$4%s$7] -> "
+  #define FIRST_PROMPT "olivine [$4%s$7] > "
   #define PROFAN_COLOR "$6"
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
 
   // unix config
-  #define OLV_PROMPT "olivine [\033[1;34m%s\033[0m] -> "
+  #define FIRST_PROMPT "olivine [%s] > "
   #define PROFAN_COLOR ""
 #endif
 
-#define OLV_VERSION "0.3"
+#define OTHER_PROMPT "> "
 
 char *keywords[] = {
     "IF",
@@ -2066,6 +2069,35 @@ void execute_program(char *program) {
     free_args(lines);
 }
 
+int does_syntax_fail(char *program) {
+    char **lines = lexe_program(program);
+
+    // check if all 'IF', 'WHILE', 'FOR' and 'FUNC' have a matching 'END'
+    int open = 0;
+    for (int i = 0; lines[i] != NULL; i++) {
+        char *line = lines[i];
+        if (strncmp(line, "IF", 2) == 0) {
+            open++;
+        } else if (strncmp(line, "WHILE", 5) == 0) {
+            open++;
+        } else if (strncmp(line, "FOR", 3) == 0) {
+            open++;
+        } else if (strncmp(line, "FUNC", 4) == 0) {
+            open++;
+        } else if (strncmp(line, "END", 3) == 0) {
+            open--;
+        }
+    }
+
+    free_args(lines);
+
+    if (open != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
 /**********************
  *                   *
  *  Input Functions  *
@@ -2313,10 +2345,11 @@ char *olv_autocomplete(char *str, int len) {
 #endif
 
 
-void local_input(char *buffer, int size) {
+void local_input(char *buffer, int size, char **history, int history_end) {
     #if PROFANBUILD
 
     buffer[0] = '\0';
+    history_end++;
 
     int old_cursor = c_get_cursor_offset();
     int sc, last_sc, last_sc_sgt = 0;
@@ -2328,6 +2361,8 @@ void local_input(char *buffer, int size) {
     int shift = 0;
 
     int need_print = 0;
+
+    int history_index = history_end;
 
     c_cursor_blink(1);
 
@@ -2387,6 +2422,39 @@ void local_input(char *buffer, int size) {
             buffer_actual_size--;
         }
 
+        else if (sc == OLDER) {
+            // read from history
+            int old_index = history_index;
+            history_index = (history_index - 1);
+            if (history_index < 0) history_index += HISTORY_SIZE;
+            c_set_cursor_offset(old_cursor);
+            printf("%*s", buffer_actual_size, " ");
+            if (history[history_index] == NULL || history_index == history_end) {
+                history_index = old_index;
+            }
+            strcpy(buffer, history[history_index]);
+            buffer_actual_size = strlen(buffer);
+            buffer_index = buffer_actual_size;
+        }
+
+        else if (sc == NEWER) {
+            // read from history
+            int old_index = history_index;
+            if (history[history_index] == NULL || history_index == history_end) continue;
+            history_index = (history_index + 1) % HISTORY_SIZE;
+            c_set_cursor_offset(old_cursor);
+            printf("%*s", buffer_actual_size, " ");
+            if (history[history_index] == NULL || history_index == history_end) {
+                buffer[0] = '\0';
+                buffer_actual_size = 0;
+                buffer_index = 0;
+            } else {
+                strcpy(buffer, history[history_index]);
+                buffer_actual_size = strlen(buffer);
+                buffer_index = buffer_actual_size;
+            }
+        }
+
         else if (sc == TAB) {
             char *suggestion = olv_autocomplete(buffer, buffer_index);
             if (suggestion == NULL) continue;
@@ -2435,16 +2503,45 @@ void start_shell() {
     // use execute_program() to create a shell
     char *line = malloc(INPUT_SIZE * sizeof(char));
 
+    char **history = calloc(HISTORY_SIZE, sizeof(char *));
+    int history_index = 0;
+
     while (1) {
-        printf(OLV_PROMPT, current_directory);
-        local_input(line, INPUT_SIZE);
+        printf(FIRST_PROMPT, current_directory);
+        local_input(line, INPUT_SIZE, history, history_index);
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
         }
 
+        while (does_syntax_fail(line)) {
+            // multiline program
+            strcat(line, ";");
+            printf(OTHER_PROMPT);
+            local_input(line + strlen(line), INPUT_SIZE - strlen(line), history, history_index);
+        }
+
+        // add to history if not empty and not the same as the last command
+        if (strlen(line) > 0 && (history[history_index] == NULL || strcmp(line, history[history_index]) != 0)) {
+            history_index = (history_index + 1) % HISTORY_SIZE;
+
+            if (history[history_index] != NULL) {
+                free(history[history_index]);
+            }
+
+            history[history_index] = malloc(strlen(line) + 1);
+            strcpy(history[history_index], line);
+        }
+
         execute_program(line);
     }
+
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        if (history[i] != NULL) {
+            free(history[i]);
+        }
+    }
+    free(history);
 
     free(line);
 }
