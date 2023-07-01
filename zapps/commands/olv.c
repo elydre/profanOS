@@ -2082,9 +2082,50 @@ void execute_program(char *program) {
 #define ENTER 28
 #define RESEND 224
 
+char *keywords[] = {
+    "IF",
+    "WHILE",
+    "FOR",
+    "FUNC",
+    "END",
+    "RETURN",
+    "BREAK",
+    "CONTINUE",
+    NULL
+};
+
+int get_func_color(char *str) {
+    // keywords: purple
+    for (int i = 0; keywords[i] != NULL; i++) {
+        if (strcmp(str, keywords[i]) == 0) {
+            return c_magenta;
+        }
+    }
+
+    // functions: dark yellow
+    if (get_function(str) != NULL) {
+        return c_dyellow;
+    }
+
+    // pseudos: blue
+    if (get_pseudo(str) != NULL) {
+        return c_blue;
+    }
+
+    // internal functions: yellow
+    if (get_if_function(str) != NULL) {
+        return c_yellow;
+    }
+
+    // unknown functions: red
+    return c_red;
+}
+    
+
 void olv_print(char *str, int len) {
     /* colored print
-     * function: yellow
+     * function: yellow/dark yellow
+     * keywords: purple
      * unknown function: red
      * variable: cyan
      * brackets: green
@@ -2094,7 +2135,6 @@ void olv_print(char *str, int len) {
         return;
     }
 
-    // c_ckprint("demo", c_green);
     char *tmp = malloc((len + 1) * sizeof(char));
 
     int is_func = 1;
@@ -2107,7 +2147,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    c_ckprint(tmp, c_yellow);
+    c_ckprint(tmp, get_func_color(tmp));
 
     is_func = 0;
     int from = i;
