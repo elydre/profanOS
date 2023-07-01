@@ -25,7 +25,7 @@
   #define PROFAN_COLOR "$6"
 #else
   #define uint32_t unsigned int
-  #define uint8_t unsigned char
+  #define uint8_t  unsigned char
 
   // unix config
   #define OLV_PROMPT "olivine [\033[1;34m%s\033[0m] -> "
@@ -2093,13 +2093,13 @@ void execute_program(char *program) {
 
 #define LSHIFT 42
 #define RSHIFT 54
-#define LEFT 75
-#define RIGHT 77
-#define OLDER 72
-#define NEWER 80
-#define BACKSPACE 14
-#define DEL 83
-#define ENTER 28
+#define LEFT   75
+#define RIGHT  77
+#define OLDER  72
+#define NEWER  80
+#define BACK   14
+#define DEL    83
+#define ENTER  28
 #define RESEND 224
 
 #if PROFANBUILD
@@ -2131,8 +2131,6 @@ int get_func_color(char *str) {
 }
 
 void olv_print(char *str, int len) {
-    c_serial_print(SERIAL_PORT_A, "print for input\n");
-
     /* colored print
      * function: cyan
      * keywords: purple
@@ -2140,6 +2138,8 @@ void olv_print(char *str, int len) {
      * variable: yellow
      * brackets: green
     **/
+    
+    // c_serial_print(SERIAL_PORT_A, "print for input\n");
 
     if (len == 0) {
         return;
@@ -2277,9 +2277,18 @@ void local_input(char *buffer, int size) {
             buffer_index++;
         }
 
-        else if (sc == BACKSPACE) {
+        else if (sc == BACK) {
             if (!buffer_index) continue;
             buffer_index--;
+            for (int i = buffer_index; i < buffer_actual_size; i++) {
+                buffer[i] = buffer[i + 1];
+            }
+            buffer[buffer_actual_size] = '\0';
+            buffer_actual_size--;
+        }
+        
+        else if (sc == DEL) {
+            if (buffer_index == buffer_actual_size) continue;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
                 buffer[i] = buffer[i + 1];
             }
@@ -2298,9 +2307,7 @@ void local_input(char *buffer, int size) {
             buffer_index++;
         }
 
-        else {
-            continue;
-        }
+        else continue;
 
         c_set_cursor_offset(old_cursor);
         olv_print(buffer, buffer_actual_size);
