@@ -4,12 +4,16 @@
 
 #define STRING_CHAR '\''
 
-#define ENABLE_DEBUG 0  // print function calls
-#define SHOW_ALLFAIL 0  // show all failed checks
-#define PROFANBUILD  0  // filesys usage
+#define ENABLE_DEBUG  0  // print function calls
+#define SHOW_ALLFAIL  0  // show all failed checks
+#define PROFANBUILD   1  // enable profan features
 
-#define MAX_INPUT_SIZE 256
-#define MAX_PATH_SIZE  256
+#define INPUT_SIZE    256
+#define MAX_PATH_SIZE 256
+
+#define MAX_VARIABLES 100
+#define MAX_PSEUDOS   100
+#define MAX_FUNCTIONS 100
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -28,11 +32,19 @@
   #define PROFAN_COLOR ""
 #endif
 
-#define MAX_VARIABLES 100
-#define MAX_PSEUDOS   100
-#define MAX_FUNCTIONS 100
-
 #define OLV_VERSION "0.3"
+
+char *keywords[] = {
+    "IF",
+    "WHILE",
+    "FOR",
+    "FUNC",
+    "END",
+    "RETURN",
+    "BREAK",
+    "CONTINUE",
+    NULL
+};
 
 typedef struct {
     char* name;
@@ -607,6 +619,8 @@ char *if_join(char **input) {
      * output: "'hello world'"
     */
 
+    if (input[0] == NULL) return NULL;
+
     int required_size = 2;
     for (int i = 0; input[i] != NULL; i++) {
         required_size += strlen(input[i]) + 1;
@@ -635,6 +649,8 @@ char *if_split(char **input) {
      * input: ["hello world", "test"]
      * output: "'hello' 'world' 'test'"
     */
+
+    if (input[0] == NULL) return NULL;
 
     int required_size = 0;
     for (int i = 0; input[i] != NULL; i++) {
@@ -679,7 +695,7 @@ char *if_set_var(char **input) {
     }
 
     if (argc != 2) {
-        printf("VAR: expected 2 arguments, got %d\n", argc);
+        printf("set: expected 2 arguments, got %d\n", argc);
         return NULL;
     }
 
@@ -691,16 +707,9 @@ char *if_set_var(char **input) {
 
     // set variable
     if (set_variable(name, value)) {
-        printf("VAR: no more space for variables\n");
+        printf("set: no more space for variables\n");
     }
 
-    return NULL;
-}
-
-char *if_show(char **input) {
-    for (int i = 0; input[i] != NULL; i++) {
-        printf("arg[%d]: '%s'\n", i, input[i]);
-    }
     return NULL;
 }
 
@@ -713,10 +722,16 @@ char *if_debug(char **input) {
         }
     }
 
-    // print functions
-    printf("FUNCTIONS\n");
+    // print internal functions
+    printf("INTERNAL FUNCTIONS\n");
     for (int i = 0; internal_functions[i].name != NULL; i++) {
         printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
+    }
+
+    // print functions
+    printf("FUNCTIONS\n");
+    for (int i = 0; functions[i].name != NULL; i++) {
+        printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
     }
 
     // print pseudos
@@ -1004,7 +1019,6 @@ internal_function_t internal_functions[] = {
     {"join", if_join},
     {"split", if_split},
     {"set", if_set_var},
-    {"show", if_show},
     {"debug", if_debug},
     {"eval", if_eval},
     {"go", if_go_binfile},
@@ -2064,8 +2078,14 @@ void execute_program(char *program) {
     free_args(lines);
 }
 
+/**********************
+ *                   *
+ *  Input Functions  *
+ *                   *
+**********************/
+
 // input() setings
-#define SLEEP_T 15
+#define SLEEP_T 11
 #define FIRST_L 12
 
 // keyboard scancodes
@@ -2081,18 +2101,6 @@ void execute_program(char *program) {
 #define DEL 83
 #define ENTER 28
 #define RESEND 224
-
-char *keywords[] = {
-    "IF",
-    "WHILE",
-    "FOR",
-    "FUNC",
-    "END",
-    "RETURN",
-    "BREAK",
-    "CONTINUE",
-    NULL
-};
 
 #if PROFANBUILD
 int get_func_color(char *str) {
@@ -2123,6 +2131,8 @@ int get_func_color(char *str) {
 }
 
 void olv_print(char *str, int len) {
+    c_serial_print(SERIAL_PORT_A, "print for input\n");
+
     /* colored print
      * function: cyan
      * keywords: purple
@@ -2226,15 +2236,12 @@ void local_input(char *buffer, int size) {
     int key_ticks = 0;
     int shift = 0;
 
-    do {
-        sc = c_kb_get_scfh();
-    } while (sc == ENTER);
+    int need_print = 0;
 
     c_cursor_blink(1);
 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
-
         sc = c_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
@@ -2243,24 +2250,24 @@ void local_input(char *buffer, int size) {
             last_sc_sgt = sc;
         }
 
-        if (!sc) continue;
-        if (sc != last_sc) key_ticks = 0;
-        else key_ticks++;
+        key_ticks = (sc != last_sc) ? 0 : key_ticks + 1;
         last_sc = sc;
 
-        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) continue;
+        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
+            continue;
+        }
 
         if (sc == LSHIFT || sc == RSHIFT) {
             shift = 1;
             continue;
         }
 
-        else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+        if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
             shift = 0;
             continue;
         }
 
-        else if (sc == LEFT) {
+        if (sc == LEFT) {
             if (!buffer_index) continue;
             buffer_index--;
         }
@@ -2291,6 +2298,10 @@ void local_input(char *buffer, int size) {
             buffer_index++;
         }
 
+        else {
+            continue;
+        }
+
         c_set_cursor_offset(old_cursor);
         olv_print(buffer, buffer_actual_size);
         c_kprint(" ");
@@ -2309,11 +2320,11 @@ void local_input(char *buffer, int size) {
 
 void start_shell() {
     // use execute_program() to create a shell
-    char *line = malloc(MAX_INPUT_SIZE * sizeof(char));
+    char *line = malloc(INPUT_SIZE * sizeof(char));
 
     while (1) {
         printf(OLV_PROMPT, current_directory);
-        local_input(line, MAX_INPUT_SIZE);
+        local_input(line, INPUT_SIZE);
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
@@ -2340,11 +2351,11 @@ char init_prog[] = ""
 " END;"
 "END;"
 
-"FUNC test;"
+"FUNC show;"
 " echo argc: !#;"
 " IF !#;"
 "  FOR i !(range 0 !#);"
-"   echo !i':' !!i;"
+"   echo arg[!i']:' !!i;"
 "  END;"
 " END;"
 "END";
