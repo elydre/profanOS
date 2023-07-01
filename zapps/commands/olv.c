@@ -2220,7 +2220,7 @@ void olv_print(char *str, int len) {
 }
 
 void olv_autocomplete(char *str, int len) {
-    c_serial_print(SERIAL_PORT_A, "autocomplete for input: \n");
+    c_serial_print(SERIAL_PORT_A, "autocomplete for input:\n");
 
     if (len == 0) {
         return;
