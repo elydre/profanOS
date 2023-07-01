@@ -6,13 +6,14 @@
 
 #define ENABLE_DEBUG 0  // print function calls
 #define SHOW_ALLFAIL 0  // show all failed checks
-#define PROFANBUILD  0  // filesys usage
+#define PROFANBUILD  1  // filesys usage
 
 #define MAX_INPUT_SIZE 256
 #define MAX_PATH_SIZE  256
 
 #if PROFANBUILD
   #include <syscall.h>
+  #include <i_time.h>
   #include <profan.h>
 
   // profanOS config
@@ -1585,7 +1586,12 @@ int get_line_end(int line_count, char **lines) {
 
     int end_offset = 1;
     for (int i = 1; i < line_count; i++) {
-        if (does_startwith(lines[i], "IF") || does_startwith(lines[i], "FOR") || does_startwith(lines[i], "WHILE") || does_startwith(lines[i], "FUNC")) {
+        if (
+            does_startwith(lines[i], "IF")    ||
+            does_startwith(lines[i], "FOR")   ||
+            does_startwith(lines[i], "WHILE") ||
+            does_startwith(lines[i], "FUNC")
+        ) {
             end_offset++;
         } else if (does_startwith(lines[i], "END")) {
             end_offset--;
@@ -2058,13 +2064,214 @@ void execute_program(char *program) {
     free_args(lines);
 }
 
+// input() setings
+#define SLEEP_T 15
+#define FIRST_L 12
+
+// keyboard scancodes
+#define SC_MAX 57
+
+#define LSHIFT 42
+#define RSHIFT 54
+#define LEFT 75
+#define RIGHT 77
+#define OLDER 72
+#define NEWER 80
+#define BACKSPACE 14
+#define DEL 83
+#define ENTER 28
+#define RESEND 224
+
+void olv_print(char *str, int len) {
+    /* colored print
+     * function: yellow
+     * unknown function: red
+     * variable: cyan
+     * brackets: green
+    **/
+
+    if (len == 0) {
+        return;
+    }
+
+    // c_ckprint("demo", c_green);
+    char *tmp = malloc((len + 1) * sizeof(char));
+
+    int is_func = 1;
+    int is_var = 0;
+    int i = 0;
+
+    while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR) && i != len) {
+        i++;
+    }
+
+    memcpy(tmp, str, i);
+    tmp[i] = '\0';
+    c_ckprint(tmp, c_yellow);
+
+    is_func = 0;
+    int from = i;
+    for (; i < len; i++) {
+        if (str[i] == '!' && str[i + 1] == '(') {
+            // print from from to i
+            if (from != i) {
+                memcpy(tmp, str + from, i - from);
+                tmp[i - from] = '\0';
+                c_ckprint(tmp, is_var ? c_cyan : c_white);
+            }
+
+            // find the closing bracket
+            int j;
+            for (j = i + 1; j < len; j++) {
+                if (str[j] == ')') {
+                    break;
+                }
+            }
+
+            c_ckprint("!(", c_green);
+            olv_print(str + i + 2, j - i - 2);
+            if (j != len) {
+                c_ckprint(")", c_green);
+            }
+            i = j;
+            from = i + 1;
+        }
+
+        // variable
+        else if (str[i] == '!') {
+            // print from from to i
+            if (from != i) {
+                memcpy(tmp, str + from, i - from);
+                tmp[i - from] = '\0';
+                c_ckprint(tmp, is_var ? c_cyan : c_white);
+                from = i;
+            }
+            is_var = 1;
+        }
+
+        else if (str[i] == ' ' || str[i] == STRING_CHAR) {
+            // print from from to i
+            if (from != i) {
+                memcpy(tmp, str + from, i - from);
+                tmp[i - from] = '\0';
+                c_ckprint(tmp, is_var ? c_cyan : c_white);
+                from = i;
+            }
+            is_var = 0;
+        }
+    }
+
+    if (from != i) {
+        memcpy(tmp, str + from, i - from);
+        tmp[i - from] = '\0';
+        c_ckprint(tmp, is_var ? c_cyan : c_white);
+    }
+
+    free(tmp);
+}
+
+void local_input(char *buffer, int size) {
+    #if PROFANBUILD
+
+    buffer[0] = '\0';
+
+    int old_cursor = c_get_cursor_offset();
+    int sc, last_sc, last_sc_sgt = 0;
+
+    int buffer_actual_size = 0;
+    int buffer_index = 0;
+
+    int key_ticks = 0;
+    int shift = 0;
+
+    do {
+        sc = c_kb_get_scfh();
+    } while (sc == ENTER);
+
+    c_cursor_blink(1);
+
+    while (sc != ENTER) {
+        ms_sleep(SLEEP_T);
+
+        sc = c_kb_get_scfh();
+
+        if (sc == RESEND || sc == 0) {
+            sc = last_sc_sgt;
+        } else {
+            last_sc_sgt = sc;
+        }
+
+        if (!sc) continue;
+        if (sc != last_sc) key_ticks = 0;
+        else key_ticks++;
+        last_sc = sc;
+
+        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) continue;
+
+        if (sc == LSHIFT || sc == RSHIFT) {
+            shift = 1;
+            continue;
+        }
+
+        else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+            shift = 0;
+            continue;
+        }
+
+        else if (sc == LEFT) {
+            if (!buffer_index) continue;
+            buffer_index--;
+        }
+
+        else if (sc == RIGHT) {
+            if (buffer_index == buffer_actual_size) continue;
+            buffer_index++;
+        }
+
+        else if (sc == BACKSPACE) {
+            if (!buffer_index) continue;
+            buffer_index--;
+            for (int i = buffer_index; i < buffer_actual_size; i++) {
+                buffer[i] = buffer[i + 1];
+            }
+            buffer[buffer_actual_size] = '\0';
+            buffer_actual_size--;
+        }
+
+        else if (sc <= SC_MAX) {
+            if (size < buffer_actual_size + 2) continue;
+            if (c_kb_scancode_to_char(sc, shift) == '?') continue;
+            for (int i = buffer_actual_size; i > buffer_index; i--) {
+                buffer[i] = buffer[i - 1];
+            }
+            buffer[buffer_index] = c_kb_scancode_to_char(sc, shift);
+            buffer_actual_size++;
+            buffer_index++;
+        }
+
+        c_set_cursor_offset(old_cursor);
+        olv_print(buffer, buffer_actual_size);
+        c_kprint(" ");
+        c_set_cursor_offset(old_cursor + buffer_index * 2);
+    }
+
+    buffer[buffer_actual_size] = '\0';
+
+    c_cursor_blink(0);
+    c_kprint("\n");
+
+    #else
+    fgets(buffer, size, stdin);
+    #endif
+}
+
 void start_shell() {
-    // use execute_program() and fgets() to create a shell
+    // use execute_program() to create a shell
     char *line = malloc(MAX_INPUT_SIZE * sizeof(char));
 
     while (1) {
         printf(OLV_PROMPT, current_directory);
-        fgets(line, MAX_INPUT_SIZE, stdin);
+        local_input(line, MAX_INPUT_SIZE);
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
