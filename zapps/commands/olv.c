@@ -2122,7 +2122,6 @@ int get_func_color(char *str) {
     return c_dred;
 }
 #endif
-    
 
 void olv_print(char *str, int len) {
     /* colored print
