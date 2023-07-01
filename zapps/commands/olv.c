@@ -2094,6 +2094,7 @@ char *keywords[] = {
     NULL
 };
 
+#if PROFANBUILD
 int get_func_color(char *str) {
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
@@ -2120,6 +2121,7 @@ int get_func_color(char *str) {
     // unknown functions: red
     return c_red;
 }
+#endif
     
 
 void olv_print(char *str, int len) {
