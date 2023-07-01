@@ -1206,7 +1206,7 @@ void debug_print(char *function_name, char **function_args) {
     printf(PROFAN_COLOR ") [0]\n");
 }
 
-int execute_lines(char **lines, int line_end, char *result);
+int execute_lines(char **lines, int line_end, char **result);
 
 char *execute_function(function_t *function, char **args) {
     // set variables:
@@ -1225,7 +1225,7 @@ char *execute_function(function_t *function, char **args) {
     set_variable("#", tmp);
 
     char *result = malloc(sizeof(char));
-    int ret = execute_lines(function->lines, function->line_count, result);
+    int ret = execute_lines(function->lines, function->line_count, &result);
 
     // free variables
     for (int i = 0; i < argc; i++) {
@@ -1234,7 +1234,7 @@ char *execute_function(function_t *function, char **args) {
     }
     del_variable("#");
 
-    if (ret < 0) {
+    if (ret == -1) {
         if (SHOW_ALLFAIL)
             printf("Error: function failed\n");
 
@@ -1620,13 +1620,13 @@ int get_line_end(int line_count, char **lines) {
     return line_end;
 }
 
-int execute_return(char *line, char *result);
+int execute_return(char *line, char **result);
 int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
 int execute_while(int line_count, char **lines);
 int save_function(int line_count, char **lines);
 
-int execute_lines(char **lines, int line_end, char *result) {
+int execute_lines(char **lines, int line_end, char **result) {
     // return -4 : return
     // return -3 : break
     // return -2 : continue
@@ -1635,7 +1635,7 @@ int execute_lines(char **lines, int line_end, char *result) {
     // return >0 : number of lines executed
 
     if (result != NULL) {
-        result[0] = '\0';
+        *result[0] = '\0';
     }
 
     for (int i = 0; i < line_end; i++) {
@@ -1732,26 +1732,26 @@ int execute_lines(char **lines, int line_end, char *result) {
     return 0;
 }
 
-int execute_return(char *line, char *result) {
+int execute_return(char *line, char **result) {
+    if (strlen(line) < 7) {
+        if (SHOW_ALLFAIL)
+            printf("Error: invalid RETURN statement\n");
+
+        return -1;
+    }
+
+    char *res = check_subfunc(line + 7);
+
+    if (res == NULL) {
+        if (SHOW_ALLFAIL)
+            printf("Error: invalid RETURN statement\n");
+
+        return -1;
+    }
+
     if (result != NULL) {
-        if (strlen(line) < 6) {
-            if (SHOW_ALLFAIL)
-                printf("Error: invalid RETURN statement\n");
-
-            return -1;
-        }
-
-        char *res = check_subfunc(line + 6);
-
-        if (res == NULL) {
-            if (SHOW_ALLFAIL)
-                printf("Error: invalid RETURN statement\n");
-
-            return -1;
-        }
-
-        free(result);
-        result = res;
+        free(*result);
+        *result = res;
     }
 
     return -4;
@@ -2151,13 +2151,19 @@ void olv_print(char *str, int len) {
     int is_var = 0;
     int i = 0;
 
-    while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR) && i != len) {
+    int dec = 0;
+    while (str[i] == ' ' && i != len) {
+        dec++;
+        i++;
+    }
+
+    while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR || str[i] == ';') && i != len) {
         i++;
     }
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    c_ckprint(tmp, get_func_color(tmp));
+    c_ckprint(tmp, get_func_color(tmp + dec));
 
     int from = i;
     for (; i < len; i++) {
@@ -2170,20 +2176,42 @@ void olv_print(char *str, int len) {
             }
 
             // find the closing bracket
-            int j;
+            int j, open = 0;
             for (j = i + 1; j < len; j++) {
-                if (str[j] == ')') {
+                if (str[j] == '(') {
+                    open++;
+                } else if (str[j] == ')') {
+                    open--;
+                }
+
+                if (open == 0) {
                     break;
                 }
             }
 
-            c_ckprint("!(", c_green);
+            c_ckprint("!(", (j == len) ? c_dyellow : c_green);
             olv_print(str + i + 2, j - i - 2);
+
             if (j != len) {
                 c_ckprint(")", c_green);
             }
+
             i = j;
             from = i + 1;
+        }
+
+        else if (str[i] == ';') {
+            // print from from to i
+            if (from != i) {
+                memcpy(tmp, str + from, i - from);
+                tmp[i - from] = '\0';
+                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                from = i;
+            }
+            c_ckprint(";", c_grey);
+            olv_print(str + i + 1, len - i - 1);
+            free(tmp);
+            return;
         }
 
         // variable
