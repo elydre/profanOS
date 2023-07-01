@@ -2101,6 +2101,7 @@ void execute_program(char *program) {
 #define DEL    83
 #define ENTER  28
 #define RESEND 224
+#define TAB    15
 
 #if PROFANBUILD
 int get_func_color(char *str) {
@@ -2138,7 +2139,7 @@ void olv_print(char *str, int len) {
      * variable: yellow
      * brackets: green
     **/
-    
+
     // c_serial_print(SERIAL_PORT_A, "print for input\n");
 
     if (len == 0) {
@@ -2147,7 +2148,6 @@ void olv_print(char *str, int len) {
 
     char *tmp = malloc((len + 1) * sizeof(char));
 
-    int is_func = 1;
     int is_var = 0;
     int i = 0;
 
@@ -2159,7 +2159,6 @@ void olv_print(char *str, int len) {
     tmp[i] = '\0';
     c_ckprint(tmp, get_func_color(tmp));
 
-    is_func = 0;
     int from = i;
     for (; i < len; i++) {
         if (str[i] == '!' && str[i + 1] == '(') {
@@ -2219,6 +2218,67 @@ void olv_print(char *str, int len) {
 
     free(tmp);
 }
+
+void olv_autocomplete(char *str, int len) {
+    c_serial_print(SERIAL_PORT_A, "autocomplete for input: \n");
+
+    if (len == 0) {
+        return;
+    }
+
+    char *tmp = malloc((len + 1) * sizeof(char));
+
+    int is_var = 0;
+    int i = 0;
+
+    while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR) && i != len) {
+        i++;
+    }
+
+    if (i < len) {
+        c_serial_print(SERIAL_PORT_A, "autocomplete: i < len\n");
+        free(tmp);
+        return;
+    }
+
+    memcpy(tmp, str, i);
+    tmp[i] = '\0';
+
+    // keywords
+    for (int j = 0; keywords[j] != NULL; j++) {
+        if (strncmp(tmp, keywords[j], i) == 0) {
+            c_serial_print(SERIAL_PORT_A, keywords[j]);
+            c_serial_print(SERIAL_PORT_A, "\n");
+        }
+    }
+
+    // functions
+    for (int j = 0; functions[j].name != NULL; j++) {
+        if (strncmp(tmp, functions[j].name, i) == 0) {
+            c_serial_print(SERIAL_PORT_A, functions[j].name);
+            c_serial_print(SERIAL_PORT_A, "\n");
+        }
+    }
+
+    // pseudos
+    for (int j = 0; pseudos[j].name != NULL; j++) {
+        if (strncmp(tmp, pseudos[j].name, i) == 0) {
+            c_serial_print(SERIAL_PORT_A, pseudos[j].name);
+            c_serial_print(SERIAL_PORT_A, "\n");
+        }
+    }
+
+    // internal functions
+    for (int j = 0; internal_functions[j].name != NULL; j++) {
+        if (strncmp(tmp, internal_functions[j].name, i) == 0) {
+            c_serial_print(SERIAL_PORT_A, internal_functions[j].name);
+            c_serial_print(SERIAL_PORT_A, "\n");
+        }
+    }
+
+    free(tmp);
+}
+
 #endif
 
 
@@ -2286,7 +2346,7 @@ void local_input(char *buffer, int size) {
             buffer[buffer_actual_size] = '\0';
             buffer_actual_size--;
         }
-        
+
         else if (sc == DEL) {
             if (buffer_index == buffer_actual_size) continue;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
@@ -2294,6 +2354,11 @@ void local_input(char *buffer, int size) {
             }
             buffer[buffer_actual_size] = '\0';
             buffer_actual_size--;
+        }
+
+        else if (sc == TAB) {
+            olv_autocomplete(buffer, buffer_actual_size);
+            continue;
         }
 
         else if (sc <= SC_MAX) {
