@@ -11,6 +11,7 @@
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
 #define MAX_PATH_SIZE 256
+#define MAX_SUGGESTS  10
 
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
@@ -2365,8 +2366,10 @@ void olv_print(char *str, int len) {
     free(tmp);
 }
 
-char *olv_autocomplete(char *str, int len) {
+char *olv_autocomplete(char *str, int len, char **other) {
     char *tmp = malloc((len + 1) * sizeof(char));
+
+    other[0] = NULL;
 
     int is_var = 0;
     int dec = 0;
@@ -2446,7 +2449,10 @@ char *olv_autocomplete(char *str, int len) {
     for (int j = 0; keywords[j] != NULL; j++) {
         if (strncmp(tmp, keywords[j], i - dec) == 0) {
             ret = keywords[j];
-            suggest++;
+            if (suggest < MAX_SUGGESTS) {
+                other[suggest] = keywords[j];
+                suggest++;
+            }
         }
     }
 
@@ -2454,7 +2460,10 @@ char *olv_autocomplete(char *str, int len) {
     for (int j = 0; functions[j].name != NULL; j++) {
         if (strncmp(tmp, functions[j].name, i - dec) == 0) {
             ret = functions[j].name;
-            suggest++;
+            if (suggest < MAX_SUGGESTS) {
+                other[suggest] = functions[j].name;
+                suggest++;
+            }
         }
     }
 
@@ -2462,7 +2471,10 @@ char *olv_autocomplete(char *str, int len) {
     for (int j = 0; pseudos[j].name != NULL; j++) {
         if (strncmp(tmp, pseudos[j].name, i - dec) == 0) {
             ret = pseudos[j].name;
-            suggest++;
+            if (suggest < MAX_SUGGESTS) {
+                other[suggest] = pseudos[j].name;
+                suggest++;
+            }
         }
     }
 
@@ -2470,10 +2482,15 @@ char *olv_autocomplete(char *str, int len) {
     for (int j = 0; internal_functions[j].name != NULL; j++) {
         if (strncmp(tmp, internal_functions[j].name, i - dec) == 0) {
             ret = internal_functions[j].name;
-            suggest++;
+            if (suggest < MAX_SUGGESTS) {
+                other[suggest] = internal_functions[j].name;
+                suggest++;
+            }
         }
     }
     free(tmp);
+
+    other[suggest] = NULL;
 
     if (suggest == 1) {
         return ret + i - dec;
@@ -2484,17 +2501,21 @@ char *olv_autocomplete(char *str, int len) {
 #endif
 
 
-void local_input(char *buffer, int size, char **history, int history_end) {
+int local_input(char *buffer, int size, char **history, int history_end) {
     #if PROFANBUILD
 
-    buffer[0] = '\0';
     history_end++;
 
     int old_cursor = c_get_cursor_offset();
     int sc, last_sc, last_sc_sgt = 0;
 
-    int buffer_actual_size = 0;
-    int buffer_index = 0;
+    int buffer_actual_size = strlen(buffer);
+    int buffer_index = buffer_actual_size;
+
+    if (buffer_actual_size) {
+        olv_print(buffer, buffer_actual_size);
+        c_set_cursor_offset(old_cursor + buffer_index * 2);
+    }
 
     int key_ticks = 0;
     int shift = 0;
@@ -2502,6 +2523,9 @@ void local_input(char *buffer, int size, char **history, int history_end) {
     int need_print = 0;
 
     int history_index = history_end;
+
+    char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
+    int ret_val = 0;
 
     c_cursor_blink(1);
 
@@ -2596,8 +2620,21 @@ void local_input(char *buffer, int size, char **history, int history_end) {
         }
 
         else if (sc == TAB) {
-            char *suggestion = olv_autocomplete(buffer, buffer_index);
-            if (suggestion == NULL) continue;
+            char *suggestion = olv_autocomplete(buffer, buffer_index, other_suggests);
+            if (suggestion == NULL && other_suggests[0] != NULL) {
+                // print other suggestions
+                printf("\n");
+                for (int i = 0; other_suggests[i] != NULL; i++) {
+                    printf("%s   ", other_suggests[i]);
+                }
+                ret_val = 1;
+                break;
+            }
+            
+            if (suggestion == NULL) {
+                continue;
+            }
+
             int suggestion_len = strlen(suggestion);
             if (buffer_actual_size + suggestion_len >= size) continue;
             for (int i = buffer_actual_size; i >= buffer_index; i--) {
@@ -2629,10 +2666,14 @@ void local_input(char *buffer, int size, char **history, int history_end) {
         c_set_cursor_offset(old_cursor + buffer_index * 2);
     }
 
+    free(other_suggests);
+
     buffer[buffer_actual_size] = '\0';
 
     c_cursor_blink(0);
     c_kprint("\n");
+
+    return ret_val;
 
     #else
     fgets(buffer, size, stdin);
@@ -2645,31 +2686,40 @@ void start_shell() {
 
     char **history = calloc(HISTORY_SIZE, sizeof(char *));
     int history_index = 0;
+    int len;
 
     while (1) {
-        printf(FIRST_PROMPT, current_directory);
-        local_input(line, INPUT_SIZE, history, history_index);
+        line[0] = '\0';
+        do {
+            printf(FIRST_PROMPT, current_directory);
+        } while(local_input(line, INPUT_SIZE, history, history_index));
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
         }
 
+
         while (does_syntax_fail(line)) {
             // multiline program
             strcat(line, ";");
-            printf(OTHER_PROMPT);
-            local_input(line + strlen(line), INPUT_SIZE - strlen(line), history, history_index);
+            len = strlen(line);
+            line[len] = '\0';
+            do {
+                printf(OTHER_PROMPT);
+            } while(local_input(line + len, INPUT_SIZE - len, history, history_index));
         }
 
+        len = strlen(line);
+
         // add to history if not empty and not the same as the last command
-        if (strlen(line) > 0 && (history[history_index] == NULL || strcmp(line, history[history_index]) != 0)) {
+        if (len > 0 && (history[history_index] == NULL || strcmp(line, history[history_index]) != 0)) {
             history_index = (history_index + 1) % HISTORY_SIZE;
 
             if (history[history_index] != NULL) {
                 free(history[history_index]);
             }
 
-            history[history_index] = malloc(strlen(line) + 1);
+            history[history_index] = malloc(len + 1);
             strcpy(history[history_index], line);
         }
 
