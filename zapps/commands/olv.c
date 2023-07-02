@@ -2553,14 +2553,15 @@ void local_input(char *buffer, int size, char **history, int history_end) {
             int old_index = history_index;
             history_index = (history_index - 1);
             if (history_index < 0) history_index += HISTORY_SIZE;
-            c_set_cursor_offset(old_cursor);
-            printf("%*s", buffer_actual_size, " ");
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
+            } else {
+                c_set_cursor_offset(old_cursor);
+                printf("%*s", buffer_actual_size, " ");
+                strcpy(buffer, history[history_index]);
+                buffer_actual_size = strlen(buffer);
+                buffer_index = buffer_actual_size;
             }
-            strcpy(buffer, history[history_index]);
-            buffer_actual_size = strlen(buffer);
-            buffer_index = buffer_actual_size;
         }
 
         else if (sc == NEWER) {
