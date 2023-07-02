@@ -17,7 +17,7 @@
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
 
-#define OLV_VERSION "0.3"
+#define OLV_VERSION "0.4"
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -25,15 +25,15 @@
   #include <profan.h>
 
   // profanOS config
-  #define FIRST_PROMPT "olivine [$4%s$7] > "
-  #define PROFAN_COLOR "$6"
+  #define FIRST_PROMPT "profanOS [$4%s$7] > "
+  #define DEBUG_COLOR "$6"
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
 
   // unix config
   #define FIRST_PROMPT "olivine [%s] > "
-  #define PROFAN_COLOR ""
+  #define DEBUG_COLOR ""
 #endif
 
 #define OTHER_PROMPT "> "
@@ -1244,17 +1244,17 @@ void free_functions() {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf(PROFAN_COLOR "'%s'(", function_name);
+    printf(DEBUG_COLOR "'%s'(", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
-            printf(PROFAN_COLOR "'%s', ", function_args[i]);
+            printf(DEBUG_COLOR "'%s', ", function_args[i]);
             continue;
         }
-        printf(PROFAN_COLOR "'%s') [%d]\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR "'%s') [%d]\n", function_args[i], i + 1);
         return;
     }
-    printf(PROFAN_COLOR ") [0]\n");
+    printf(DEBUG_COLOR ") [0]\n");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
