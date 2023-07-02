@@ -55,6 +55,13 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 - virtual memory management
 - custom dynamic library
 
+### Programing languages
+
+The kernel and userspace are developed mainly in C. In profanOS you will be greeted by
+the Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)).
+
+You can also use the lua, sulfur and C languages to create your own programs.
+
 ### Major ports
 
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
