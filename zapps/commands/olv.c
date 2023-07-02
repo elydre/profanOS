@@ -39,6 +39,7 @@
 
 char *keywords[] = {
     "IF",
+    "ELSE",
     "WHILE",
     "FOR",
     "FUNC",
@@ -1607,7 +1608,8 @@ int get_line_end(int line_count, char **lines) {
             does_startwith(lines[i], "IF")    ||
             does_startwith(lines[i], "FOR")   ||
             does_startwith(lines[i], "WHILE") ||
-            does_startwith(lines[i], "FUNC")
+            does_startwith(lines[i], "FUNC")  ||
+            does_startwith(lines[i], "ELSE")
         ) {
             end_offset++;
         } else if (does_startwith(lines[i], "END")) {
@@ -1623,8 +1625,9 @@ int get_line_end(int line_count, char **lines) {
     return line_end;
 }
 
+int execute_if(int line_count, char **lines, int *cnd_state);
+int execute_else(int line_count, char **lines, int last_if_state);
 int execute_return(char *line, char **result);
-int execute_if(int line_count, char **lines);
 int execute_for(int line_count, char **lines);
 int execute_while(int line_count, char **lines);
 int save_function(int line_count, char **lines);
@@ -1640,6 +1643,8 @@ int execute_lines(char **lines, int line_end, char **result) {
     if (result != NULL) {
         *result[0] = '\0';
     }
+
+    int lastif_state = 2; // 0: false, 1: true, 2: not set
 
     for (int i = 0; i < line_end; i++) {
         if (i >= line_end) {
@@ -1661,7 +1666,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (does_startwith(lines[i], "IF")) {
-            int ret = execute_if(line_end - i, lines + i);
+            int ret = execute_if(line_end - i, lines + i, &lastif_state);
 
             if (ret == -1) {
                 if (SHOW_ALLFAIL)
@@ -1673,6 +1678,21 @@ int execute_lines(char **lines, int line_end, char **result) {
             }
 
             i += ret;
+            continue;
+        }
+
+        if (does_startwith(lines[i], "ELSE")) {
+            int ret = execute_else(line_end - i, lines + i, lastif_state);
+
+            if (ret == -1) {
+                if (SHOW_ALLFAIL)
+                    printf("Error: invalid ELSE statement\n");
+
+                return -1;
+            }
+
+            i += ret;
+
             continue;
         }
 
@@ -1860,7 +1880,7 @@ int execute_for(int line_count, char **lines) {
     return line_end;
 }
 
-int execute_if(int line_count, char **lines) {
+int execute_if(int line_count, char **lines, int *cnd_state) {
     char *if_line = lines[0];
 
     char *condition = malloc((strlen(if_line) + 1) * sizeof(char));
@@ -1918,6 +1938,8 @@ int execute_if(int line_count, char **lines) {
         return -1;
     }
 
+    *cnd_state = verif;
+
     if (verif) {
         int ret = execute_lines(lines + 1, line_end - 1, NULL);
         if (ret == -1 && SHOW_ALLFAIL) {
@@ -1928,6 +1950,38 @@ int execute_if(int line_count, char **lines) {
     }
 
     free(condition);
+
+    return line_end;
+}
+
+int execute_else(int line_count, char **lines, int last_if_state) {
+    char *else_line = lines[0];
+
+    if (last_if_state == 2) {   // not set
+        printf("Error: ELSE statement without IF\n");
+        return -1;
+    }
+
+    if (else_line[4] != '\0') {
+        printf("Error: invalid ELSE statement\n");
+        return -1;
+    }
+
+    int line_end = get_line_end(line_count, lines);
+
+    if (line_end == 0) {
+        printf("Error: missing END for ELSE statement\n");
+        return -1;
+    }
+
+    if (!last_if_state) {
+        int ret = execute_lines(lines + 1, line_end - 1, NULL);
+        if (ret == -1 && SHOW_ALLFAIL) {
+            printf("Error: invalid ELSE statement\n");
+        } if (ret < 0) {
+            line_end = ret;
+        }
+    }
 
     return line_end;
 }
@@ -2082,6 +2136,8 @@ int does_syntax_fail(char *program) {
             open++;
         } else if (strncmp(line, "FOR", 3) == 0) {
             open++;
+        } else if (strncmp(line, "ELSE", 4) == 0) {
+            open++;
         } else if (strncmp(line, "FUNC", 4) == 0) {
             open++;
         } else if (strncmp(line, "END", 3) == 0) {
@@ -2209,7 +2265,7 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            c_ckprint("!(", (j == len) ? c_dyellow : c_green);
+            c_ckprint("!(", (j == len) ? c_red : c_green);
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
