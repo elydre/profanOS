@@ -2259,7 +2259,6 @@ void olv_print(char *str, int len) {
      * brackets: green
     **/
 
-    // c_serial_print(SERIAL_PORT_A, "print for input\n");
 
     if (len == 0) {
         return;
@@ -2428,8 +2427,6 @@ char *olv_autocomplete(char *str, int len) {
         // variables
         for (int j = 0; variables[j].name != NULL; j++) {
             if (strncmp(tmp, variables[j].name, size) == 0) {
-                c_serial_print(SERIAL_PORT_A, variables[j].name);
-                c_serial_print(SERIAL_PORT_A, "\n");
                 ret = variables[j].name;
                 suggest++;
             }
@@ -2448,8 +2445,6 @@ char *olv_autocomplete(char *str, int len) {
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
         if (strncmp(tmp, keywords[j], i - dec) == 0) {
-            c_serial_print(SERIAL_PORT_A, keywords[j]);
-            c_serial_print(SERIAL_PORT_A, "\n");
             ret = keywords[j];
             suggest++;
         }
@@ -2458,8 +2453,6 @@ char *olv_autocomplete(char *str, int len) {
     // functions
     for (int j = 0; functions[j].name != NULL; j++) {
         if (strncmp(tmp, functions[j].name, i - dec) == 0) {
-            c_serial_print(SERIAL_PORT_A, functions[j].name);
-            c_serial_print(SERIAL_PORT_A, "\n");
             ret = functions[j].name;
             suggest++;
         }
@@ -2468,8 +2461,6 @@ char *olv_autocomplete(char *str, int len) {
     // pseudos
     for (int j = 0; pseudos[j].name != NULL; j++) {
         if (strncmp(tmp, pseudos[j].name, i - dec) == 0) {
-            c_serial_print(SERIAL_PORT_A, pseudos[j].name);
-            c_serial_print(SERIAL_PORT_A, "\n");
             ret = pseudos[j].name;
             suggest++;
         }
@@ -2478,8 +2469,6 @@ char *olv_autocomplete(char *str, int len) {
     // internal functions
     for (int j = 0; internal_functions[j].name != NULL; j++) {
         if (strncmp(tmp, internal_functions[j].name, i - dec) == 0) {
-            c_serial_print(SERIAL_PORT_A, internal_functions[j].name);
-            c_serial_print(SERIAL_PORT_A, "\n");
             ret = internal_functions[j].name;
             suggest++;
         }
@@ -2720,29 +2709,7 @@ void execute_file(char *file) {
     free(path);
 
     #else
-
-    FILE *f = fopen(file, "r");
-
-    if (f == NULL) {
-        printf("file '%s' does not exist\n", file);
-        return;
-    }
-
-    fseek(f, 0, SEEK_END);
-    int file_size = ftell(f);
-    rewind(f);
-
-    char *file = malloc((file_size + 1) * sizeof(char));
-
-    fread(file, sizeof(char), file_size, f);
-    file[file_size] = '\0';
-
-    fclose(f);
-
-    execute_program(file);
-
-    free(file);
-
+    printf("execute_file not available\n");
     #endif
 }
 
