@@ -472,7 +472,7 @@ char *eval(ast_t *ast) {
         case '/':
             result = left / right;
             break;
-        case '~':
+        case '^':
             result = left % right;
             break;
         case '<':
@@ -483,6 +483,9 @@ char *eval(ast_t *ast) {
             break;
         case '=':
             result = left == right;
+            break;
+        case '~':
+            result = left != right;
             break;
         default:
             printf("unknown operator: %s\n", op);
@@ -1669,12 +1672,12 @@ int get_line_end(int line_count, char **lines) {
     return line_end;
 }
 
-int execute_if(int line_count, char **lines, int *cnd_state);
-int execute_else(int line_count, char **lines, int last_if_state);
-int execute_return(char *line, char **result);
-int execute_for(int line_count, char **lines);
-int execute_while(int line_count, char **lines);
+int execute_if(int line_count, char **lines, char **result, int *cnd_state);
+int execute_else(int line_count, char **lines, char **result, int last_if_state);
+int execute_while(int line_count, char **lines, char **result);
+int execute_for(int line_count, char **lines, char **result);
 int save_function(int line_count, char **lines);
+int execute_return(char *line, char **result);
 
 int execute_lines(char **lines, int line_end, char **result) {
     // return -4 : return
@@ -1697,7 +1700,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (does_startwith(lines[i], "FOR")) {
-            int ret = execute_for(line_end - i, lines + i);
+            int ret = execute_for(line_end - i, lines + i, result);
             if (ret == -1) {
                 if (SHOW_ALLFAIL)
                     printf("Error: invalid FOR loop\n");
@@ -1710,7 +1713,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (does_startwith(lines[i], "IF")) {
-            int ret = execute_if(line_end - i, lines + i, &lastif_state);
+            int ret = execute_if(line_end - i, lines + i, result, &lastif_state);
 
             if (ret == -1) {
                 if (SHOW_ALLFAIL)
@@ -1726,7 +1729,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (does_startwith(lines[i], "ELSE")) {
-            int ret = execute_else(line_end - i, lines + i, lastif_state);
+            int ret = execute_else(line_end - i, lines + i, result, lastif_state);
 
             if (ret == -1) {
                 if (SHOW_ALLFAIL)
@@ -1741,7 +1744,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (does_startwith(lines[i], "WHILE")) {
-            int ret = execute_while(line_end - i, lines + i);
+            int ret = execute_while(line_end - i, lines + i, result);
 
             if (ret == -1) {
                 if (SHOW_ALLFAIL)
@@ -1821,7 +1824,7 @@ int execute_return(char *line, char **result) {
     return -4;
 }
 
-int execute_for(int line_count, char **lines) {
+int execute_for(int line_count, char **lines, char **result) {
     char *for_line = check_subfunc(lines[0]);
 
     if (for_line == NULL) {
@@ -1895,7 +1898,7 @@ int execute_for(int line_count, char **lines) {
     // execute for loop
     for (int i = 0; string_array[i] != NULL; i++) {
         set_variable(var_name, string_array[i]);
-        res = execute_lines(lines + 1, line_end - 1, NULL);
+        res = execute_lines(lines + 1, line_end - 1, result);
         if (res == -1) {
             if (SHOW_ALLFAIL)
                 printf("Error: invalid FOR loop\n");
@@ -1924,7 +1927,7 @@ int execute_for(int line_count, char **lines) {
     return line_end;
 }
 
-int execute_if(int line_count, char **lines, int *cnd_state) {
+int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     char *if_line = lines[0];
 
     char *condition = malloc((strlen(if_line) + 1) * sizeof(char));
@@ -1985,7 +1988,7 @@ int execute_if(int line_count, char **lines, int *cnd_state) {
     *cnd_state = verif;
 
     if (verif) {
-        int ret = execute_lines(lines + 1, line_end - 1, NULL);
+        int ret = execute_lines(lines + 1, line_end - 1, result);
         if (ret == -1 && SHOW_ALLFAIL) {
             printf("Error: invalid IF statement\n");
         } if (ret < 0) {
@@ -1998,7 +2001,7 @@ int execute_if(int line_count, char **lines, int *cnd_state) {
     return line_end;
 }
 
-int execute_else(int line_count, char **lines, int last_if_state) {
+int execute_else(int line_count, char **lines, char **result, int last_if_state) {
     char *else_line = lines[0];
 
     if (last_if_state == 2) {   // not set
@@ -2019,7 +2022,7 @@ int execute_else(int line_count, char **lines, int last_if_state) {
     }
 
     if (!last_if_state) {
-        int ret = execute_lines(lines + 1, line_end - 1, NULL);
+        int ret = execute_lines(lines + 1, line_end - 1, result);
         if (ret == -1 && SHOW_ALLFAIL) {
             printf("Error: invalid ELSE statement\n");
         } if (ret < 0) {
@@ -2030,7 +2033,7 @@ int execute_else(int line_count, char **lines, int last_if_state) {
     return line_end;
 }
 
-int execute_while(int line_count, char **lines) {
+int execute_while(int line_count, char **lines, char **result) {
     char *while_line = lines[0];
 
     char *condition = malloc((strlen(while_line) + 1) * sizeof(char));
@@ -2089,7 +2092,7 @@ int execute_while(int line_count, char **lines) {
     }
 
     while (verif) {
-        int ret = execute_lines(lines + 1, line_end - 1, NULL);
+        int ret = execute_lines(lines + 1, line_end - 1, result);
         if (ret == -1 && SHOW_ALLFAIL) {
             printf("Error: invalid WHILE loop\n");
         } if (ret == -3) {
@@ -2630,7 +2633,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
                 ret_val = 1;
                 break;
             }
-            
+
             if (suggestion == NULL) {
                 continue;
             }
@@ -2677,6 +2680,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     #else
     fgets(buffer, size, stdin);
+    return 0;
     #endif
 }
 
@@ -2759,7 +2763,31 @@ void execute_file(char *file) {
     free(path);
 
     #else
-    printf("execute_file not available\n");
+
+    FILE *f = fopen(file, "r");
+    if (f == NULL) {
+        printf("file '%s' does not exist\n", file);
+        return;
+    }
+
+    char *line = malloc(INPUT_SIZE * sizeof(char));
+    char *program = malloc(sizeof(char));
+    program[0] = '\0';
+
+    while (fgets(line, INPUT_SIZE, f) != NULL) {
+        // realloc program
+        int len = strlen(line);
+        program = realloc(program, (strlen(program) + len + 1) * sizeof(char));
+        strcat(program, line);
+    }
+
+    fclose(f);
+    free(line);
+
+    execute_program(program);
+
+    free(program);
+
     #endif
 }
 

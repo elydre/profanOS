@@ -4,6 +4,8 @@ FOR dir '/bin/commands' '/bin/fatpath'
     END
 END
 
+pseudo testall 'exec /zada/olivine/testall.olv'
+
 FUNC show
     echo argc: !#
     IF !#
@@ -25,3 +27,4 @@ FUNC tree
     END
     echo missing argument
 END
+

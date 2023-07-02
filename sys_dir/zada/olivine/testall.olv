@@ -1,0 +1,128 @@
+IF !(eval 4 + 6 * (3 - 1) = 16);
+    echo if and eval passed
+END; ELSE
+    echo if and eval failed
+END
+
+
+set var 43
+IF !(eval !var = 43);
+    echo variable passed
+END; ELSE
+    echo variable failed
+END
+del var
+
+
+set sum 0
+FOR i !(range 1 11)
+    set sum !(eval !sum + !i)
+END
+
+IF !(eval !sum = 55);
+    echo for passed
+END; ELSE
+    echo for failed
+END
+
+del sum
+
+
+set i 0
+WHILE !(eval !i < 101)
+    set i !(eval !i + 1)
+END
+
+IF !(eval !i = 101);
+    echo while passed
+END; ELSE
+    echo while failed
+END
+
+set i 0
+WHILE 1
+    set i !(eval !i + 1)
+    IF !(eval !i = 101);
+        BREAK
+    END;
+END
+
+IF !(eval !i = 101);
+    echo while break passed
+END; ELSE
+    echo while break failed
+END
+
+set i 0
+set sum 0
+
+WHILE !(eval !i ~ 101)
+    set i !(eval !i + 1)
+    IF !(eval !i ^ 2);
+        CONTINUE
+    END;
+    set sum !(eval !sum + !i)
+END
+
+IF !(eval !sum = 2550);
+    echo while continue passed
+END; ELSE
+    echo while continue failed
+END
+
+del sum
+del i
+
+FOR e 1 2 3 4 5 6 7 8 9 10
+    set last !e
+    IF !(eval !e = 7);
+        BREAK
+    END;
+END
+
+IF !(eval !last = 7);
+    echo for break passed
+END; ELSE
+    echo for break failed
+END
+
+set sum 0
+FOR e 1 2 3 4 5 6 7 8 9 10
+    set last !e
+    IF !(eval !e ^ 2);
+        CONTINUE
+    END;
+    set sum !(eval !sum + !e)
+END
+
+IF !(eval !sum = 30);
+    echo for continue passed
+END; ELSE
+    echo for continue failed
+END
+
+del sum
+
+FUNC testargc
+    RETURN !#
+END
+
+IF !(eval !(testargc 1 2 3 4 5) = 5);
+    echo function argc passed
+END; ELSE
+    echo function argc failed
+END
+
+FUNC testargv
+    IF !#
+        RETURN !(eval !0 * 2)
+    END; ELSE
+        RETURN 0
+    END;
+END
+
+IF !(eval !(testargv 5) = 10);
+    echo function argv passed
+END; ELSE
+    echo function argv failed
+END
