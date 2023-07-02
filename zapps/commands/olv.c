@@ -717,6 +717,29 @@ char *if_set_var(char **input) {
     return NULL;
 }
 
+char *if_del_var(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        printf("del: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // delete variable
+    if (del_variable(name)) {
+        printf("del: variable '%s' not found\n", name);
+    }
+
+    return NULL;
+}
+
 char *if_debug(char **input) {
     // print variables
     printf("VARIABLES\n");
@@ -1041,6 +1064,7 @@ internal_function_t internal_functions[] = {
     {"join", if_join},
     {"split", if_split},
     {"set", if_set_var},
+    {"del", if_del_var},
     {"debug", if_debug},
     {"eval", if_eval},
     {"go", if_go_binfile},
