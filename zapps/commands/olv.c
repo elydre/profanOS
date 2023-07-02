@@ -2324,35 +2324,22 @@ void olv_print(char *str, int len) {
 }
 
 char *olv_autocomplete(char *str, int len) {
-    c_serial_print(SERIAL_PORT_A, "autocomplete for input:\n");
-
-    if (len == 0) {
-        return NULL;
-    }
-
     char *tmp = malloc((len + 1) * sizeof(char));
 
     int is_var = 0;
     int dec = 0;
     int i = 0;
 
-    // check for ;
-    int have_semicolon = 0;
-
-    while (i < len) {
-        if (str[i] == '!' && str[i + 1] == '(') {
-            have_semicolon = 1;
-            dec = i + 2;
-            i++;
-        } else if (str[i] == ';') {
-            have_semicolon = 1;
-            dec = i + 1;
+    // check for ';' or '!('
+    for (int j = 0; j < len; j++) {
+        if (str[j] == '!' && str[j + 1] == '(') {
+            dec = j + 2;
+            i = dec;
+            j++;
+        } else if (str[j] == ';') {
+            dec = j + 1;
+            i = dec;
         }
-        i++;
-    }
-
-    if (have_semicolon) {
-        i = dec;
     }
 
     while (str[i] == ' ' && i != len) {
@@ -2360,25 +2347,60 @@ char *olv_autocomplete(char *str, int len) {
         i++;
     }
 
+    // check if we are in the middle of a variable
+    int in_var = 0;
+    for (int j = i; j < len; j++) {
+        if (str[j] == '!') {
+            in_var = j + 1;
+        } else if (str[j] == ' ' || str[j] == STRING_CHAR) {
+            in_var = 0;
+        }
+    }
+
+    if (in_var) i++;
+
     while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR) && i != len) {
         i++;
     }
 
-    if (i < len) {
-        c_serial_print(SERIAL_PORT_A, "autocomplete: i < len\n");
+    if (i - dec == 0 || (i < len && !in_var)) {
         free(tmp);
+        return NULL;
+    }
+
+    int suggest = 0;
+    char *ret = NULL;
+
+    if (in_var) {
+        int size = len - in_var;
+
+        if (size == 0) {
+            free(tmp);
+            return NULL;
+        }
+
+        memcpy(tmp, str + in_var, size);
+        tmp[i] = '\0';
+
+        // variables
+        for (int j = 0; variables[j].name != NULL; j++) {
+            if (strncmp(tmp, variables[j].name, size) == 0) {
+                c_serial_print(SERIAL_PORT_A, variables[j].name);
+                c_serial_print(SERIAL_PORT_A, "\n");
+                ret = variables[j].name;
+                suggest++;
+            }
+        }
+        free(tmp);
+
+        if (suggest == 1) {
+            return ret + size;
+        }
         return NULL;
     }
 
     memcpy(tmp, str + dec, i - dec);
     tmp[i] = '\0';
-
-    c_serial_print(SERIAL_PORT_A, "autocomplete: tmp = '");
-    c_serial_print(SERIAL_PORT_A, tmp);
-    c_serial_print(SERIAL_PORT_A, "'\n");
-
-    int suggest = 0;
-    char *ret = NULL;
 
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
