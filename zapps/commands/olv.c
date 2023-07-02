@@ -2333,7 +2333,32 @@ char *olv_autocomplete(char *str, int len) {
     char *tmp = malloc((len + 1) * sizeof(char));
 
     int is_var = 0;
+    int dec = 0;
     int i = 0;
+
+    // check for ;
+    int have_semicolon = 0;
+
+    while (i < len) {
+        if (str[i] == '!' && str[i + 1] == '(') {
+            have_semicolon = 1;
+            dec = i + 2;
+            i++;
+        } else if (str[i] == ';') {
+            have_semicolon = 1;
+            dec = i + 1;
+        }
+        i++;
+    }
+
+    if (have_semicolon) {
+        i = dec;
+    }
+
+    while (str[i] == ' ' && i != len) {
+        dec++;
+        i++;
+    }
 
     while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR) && i != len) {
         i++;
@@ -2345,15 +2370,19 @@ char *olv_autocomplete(char *str, int len) {
         return NULL;
     }
 
-    memcpy(tmp, str, i);
+    memcpy(tmp, str + dec, i - dec);
     tmp[i] = '\0';
+
+    c_serial_print(SERIAL_PORT_A, "autocomplete: tmp = '");
+    c_serial_print(SERIAL_PORT_A, tmp);
+    c_serial_print(SERIAL_PORT_A, "'\n");
 
     int suggest = 0;
     char *ret = NULL;
 
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
-        if (strncmp(tmp, keywords[j], i) == 0) {
+        if (strncmp(tmp, keywords[j], i - dec) == 0) {
             c_serial_print(SERIAL_PORT_A, keywords[j]);
             c_serial_print(SERIAL_PORT_A, "\n");
             ret = keywords[j];
@@ -2363,7 +2392,7 @@ char *olv_autocomplete(char *str, int len) {
 
     // functions
     for (int j = 0; functions[j].name != NULL; j++) {
-        if (strncmp(tmp, functions[j].name, i) == 0) {
+        if (strncmp(tmp, functions[j].name, i - dec) == 0) {
             c_serial_print(SERIAL_PORT_A, functions[j].name);
             c_serial_print(SERIAL_PORT_A, "\n");
             ret = functions[j].name;
@@ -2373,7 +2402,7 @@ char *olv_autocomplete(char *str, int len) {
 
     // pseudos
     for (int j = 0; pseudos[j].name != NULL; j++) {
-        if (strncmp(tmp, pseudos[j].name, i) == 0) {
+        if (strncmp(tmp, pseudos[j].name, i - dec) == 0) {
             c_serial_print(SERIAL_PORT_A, pseudos[j].name);
             c_serial_print(SERIAL_PORT_A, "\n");
             ret = pseudos[j].name;
@@ -2383,7 +2412,7 @@ char *olv_autocomplete(char *str, int len) {
 
     // internal functions
     for (int j = 0; internal_functions[j].name != NULL; j++) {
-        if (strncmp(tmp, internal_functions[j].name, i) == 0) {
+        if (strncmp(tmp, internal_functions[j].name, i - dec) == 0) {
             c_serial_print(SERIAL_PORT_A, internal_functions[j].name);
             c_serial_print(SERIAL_PORT_A, "\n");
             ret = internal_functions[j].name;
@@ -2393,7 +2422,7 @@ char *olv_autocomplete(char *str, int len) {
     free(tmp);
 
     if (suggest == 1) {
-        return ret + i;
+        return ret + i - dec;
     }
     return NULL;
 }
@@ -2616,6 +2645,8 @@ char init_prog[] = ""
 "  END;"
 " END;"
 "END;"
+
+"pseudo exit 'echo exit';"
 
 "FUNC show;"
 " echo argc: !#;"
