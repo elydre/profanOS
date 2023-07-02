@@ -2374,13 +2374,13 @@ char *olv_autocomplete(char *str, int len) {
     if (in_var) {
         int size = len - in_var;
 
-        if (size == 0) {
+        if (size < 1) {
             free(tmp);
             return NULL;
         }
 
         memcpy(tmp, str + in_var, size);
-        tmp[i] = '\0';
+        tmp[size] = '\0';
 
         // variables
         for (int j = 0; variables[j].name != NULL; j++) {
