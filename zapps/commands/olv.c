@@ -800,6 +800,24 @@ char *if_go_binfile(char **input) {
     return NULL;
 }
 
+void execute_file(char *file);
+char *if_exec(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        printf("EXEC: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    execute_file(input[0]);
+
+    return NULL;
+}
+
 char *if_change_dir(char **input) {
     // get argc
     int argc = 0;
@@ -1026,6 +1044,7 @@ internal_function_t internal_functions[] = {
     {"debug", if_debug},
     {"eval", if_eval},
     {"go", if_go_binfile},
+    {"exec", if_exec},
     {"cd", if_change_dir},
     {"pseudo", if_make_pseudo},
     {"range", if_range},
@@ -2653,6 +2672,55 @@ void start_shell() {
     free(line);
 }
 
+void execute_file(char *file) {
+    #if PROFANBUILD
+
+    char *path = malloc((strlen(file) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, file, path);
+
+    if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 2)) {
+        printf("file '%s' does not exist\n", path);
+        free(path);
+        return;
+    }
+
+    int file_size = c_fs_get_file_size(path);
+    char *contents = malloc((file_size + 1) * sizeof(char));
+
+    c_fs_read_file(path, (uint8_t *) contents);
+
+    execute_program(contents);
+
+    free(contents);
+    free(path);
+
+    #else
+
+    FILE *f = fopen(file, "r");
+
+    if (f == NULL) {
+        printf("file '%s' does not exist\n", file);
+        return;
+    }
+
+    fseek(f, 0, SEEK_END);
+    int file_size = ftell(f);
+    rewind(f);
+
+    char *file = malloc((file_size + 1) * sizeof(char));
+
+    fread(file, sizeof(char), file_size, f);
+    file[file_size] = '\0';
+
+    fclose(f);
+
+    execute_program(file);
+
+    free(file);
+
+    #endif
+}
+
 /********************
  *                 *
  *  Main Function  *
@@ -2660,45 +2728,18 @@ void start_shell() {
 ********************/
 
 char init_prog[] = ""
+"pseudo exit 'echo exit not available';"
 "IF !profan;"
-" FOR dir '/bin/commands' '/bin/fatpath';"
-"  FOR e !(find -f !dir);"
-"   pseudo !(name !e) 'go !e';"
-"  END;"
-" END;"
-"END;"
-
-"pseudo exit 'echo exit';"
-
-"FUNC show;"
-" echo argc: !#;"
-" IF !#;"
-"  FOR i !(range 0 !#);"
-"   echo arg[!i']:' !!i;"
-"  END;"
-" END;"
-"END;"
-
-"FUNC tree;"
-" IF !#;"
-"  FOR f !(find -f !0);"
-"   echo !f;"
-"  END;"
-"  FOR d !(find -d !0);"
-"   tree !d;"
-"  END;"
-"  RETURN;"
-" END;"
-" echo missing argument;"
+" exec '/zada/olivine/init.olv';"
 "END";
 
 
 int main(int argc, char **argv) {
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
-    strcpy(current_directory, "/");
+    strcpy(current_directory, (PROFANBUILD && argc > 1) ? argv[1] : "/");
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
-    pseudos = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
+    pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
 
     set_variable("version", OLV_VERSION);
