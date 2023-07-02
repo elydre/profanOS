@@ -1,0 +1,30 @@
+FOR dir '/bin/commands' '/bin/fatpath'
+    FOR e !(find -f !dir)
+        pseudo !(name !e) 'go !e'
+    END
+END
+
+pseudo testall 'exec /zada/olivine/testall.olv'
+
+FUNC show
+    echo argc: !#
+    IF !#
+        FOR i !(range 0 !#)
+            echo arg[!i']:' !!i
+        END
+    END
+END
+
+FUNC tree
+    IF !#
+        FOR f !(find -f !0)
+            echo !f
+            END
+        FOR d !(find -d !0)
+            tree !d
+        END
+        RETURN
+    END
+    echo missing argument
+END
+

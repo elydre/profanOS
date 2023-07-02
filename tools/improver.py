@@ -9,8 +9,15 @@ good_externtions = [
     ".ld",
 ]
 
+analyzed = {
+    "files": 0,
+    "lines": 0,
+    "patch": 0,
+}
+
 # scan file and remove trailing whitespace
 def scan_file(path):
+    analyzed["files"] += 1
     contant = ""
     with open(path) as f:
         for l, c in enumerate(f, 1):
@@ -18,10 +25,12 @@ def scan_file(path):
 
             # check if line ends with whitespace
             if line.endswith(" ") or line.endswith("\t"):
+                analyzed["patch"] += 1
                 print(f"{path}:{l} ends with whitespace")
                 contant += c.rstrip() + "\n"
 
             else:
+                analyzed["lines"] += 1
                 contant += c
 
     with open(path, "w") as f:
@@ -44,3 +53,5 @@ def scan_dir(path):
 # run script
 if __name__ == "__main__":
     scan_dir(".")
+    print(f"End of scan, {analyzed['lines']} lines analyzed in {analyzed['files']} files!")
+    print(f"{analyzed['patch']} lines with trailing whitespace")

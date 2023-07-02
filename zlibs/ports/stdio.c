@@ -428,7 +428,7 @@ int sprintf(char *restrict buffer, const char *restrict format, ...) {
     va_list args;
     // we copy format to a buffer because we need to modify it
     va_start(args, format);
-    dopr(buffer, 1024, format, args);
+    dopr(buffer, -1, format, args);
     va_end(args);
     return 0;
 }
