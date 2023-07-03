@@ -19,6 +19,11 @@ int main(int argc, char **argv) {
 
     int elm_count = c_fs_get_dir_size(ls_path);
 
+    if (!elm_count) {
+        free(ls_path);
+        return 0;
+    }
+
     uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
     int *out_types = malloc(elm_count * sizeof(int));
 
@@ -51,10 +56,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (elm_count) {
-        free(out_types);
-        free(out_ids);
-    }
+    free(out_types);
+    free(out_ids);
 
     free(ls_path);
     return 0;

@@ -1372,7 +1372,7 @@ char *execute_line(char *full_line) {
 
         // execute the function
         if (isif) {
-            result = ((char* (*)(char**))function)(function_args);
+            result = ((char* (*)(char**)) function)(function_args);
         } else {
             result = execute_function(function, function_args);
         }
@@ -1384,7 +1384,6 @@ char *execute_line(char *full_line) {
 
         free_args(function_args);
     }
-
     free(function_name);
 
     if (line != full_line) {
@@ -1413,7 +1412,7 @@ char *check_subfunc(char *line) {
         }
 
         char *pseudo_line = check_pseudos(var_line);
-        if (pseudo_line != var_line) {
+        if (pseudo_line != var_line && var_line != line) {
             free(var_line);
         }
 
@@ -1480,7 +1479,7 @@ char *check_subfunc(char *line) {
         free(var_line);
     }
 
-    return var_line;
+    return pseudo_line;
 }
 
 char *check_variables(char *line) {
