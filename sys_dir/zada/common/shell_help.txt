@@ -1,5 +1,5 @@
-binc    - elf to binary converter   info    - show time, mem, disk
-cat     - show file content         ls      - list the current dir
+cat     - show file content         info    - show time, mem, disk
+cc      - compile C source file     ls      - list the current dir
 cd      - change dir                mkdir   - create a new dir
 clear   - clear the screen          mkfile  - create a new file
 cpu     - start cpu usage monitor   proc    - show process info
