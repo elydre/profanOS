@@ -745,30 +745,65 @@ char *if_del_var(char **input) {
 }
 
 char *if_debug(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    int mode = 0;
+
+    if (argc == 0) {
+        mode = 0;
+    } else if (argc == 1) {
+        if (strcmp(input[0], "-v") == 0) {
+            mode = 1;
+        } else if (strcmp(input[0], "-if") == 0) {
+            mode = 2;
+        } else if (strcmp(input[0], "-f") == 0) {
+            mode = 3;
+        } else if (strcmp(input[0], "-p") == 0) {
+            mode = 4;
+        } else {
+            printf("debug: unknown argument '%s'\n", input[0]);
+            printf("expected '-v', '-if', '-f' or '-p'\n");
+            return NULL;
+        }
+    } else {
+        printf("debug: expected 0 or 1 arguments, got %d\n", argc);
+        return NULL;
+    }
+
     // print variables
-    printf("VARIABLES\n");
-    for (int i = 0; i < MAX_VARIABLES; i++) {
-        if (variables[i].name != NULL) {
+    if (mode == 0 || mode == 1) {
+        printf("VARIABLES\n");
+        for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
             printf("  %s: '%s'\n", variables[i].name, variables[i].value);
         }
     }
 
     // print internal functions
-    printf("INTERNAL FUNCTIONS\n");
-    for (int i = 0; internal_functions[i].name != NULL; i++) {
-        printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
+    if (mode == 0 || mode == 2) {
+        printf("INTERNAL FUNCTIONS\n");
+        for (int i = 0; internal_functions[i].name != NULL; i++) {
+            printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
+        }
     }
 
     // print functions
-    printf("FUNCTIONS\n");
-    for (int i = 0; functions[i].name != NULL; i++) {
-        printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
+    if (mode == 0 || mode == 3) {
+        printf("FUNCTIONS\n");
+        for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
+            printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
+        }
     }
 
     // print pseudos
-    printf("PSEUDOS\n");
-    for (int i = 0; pseudos[i].name != NULL; i++) {
-        printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
+    if (mode == 0 || mode == 4) {
+        printf("PSEUDOS\n");
+        for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
+            printf("  %s: %p\n", pseudos[i].name, pseudos[i].value);
+        }
     }
 
     return NULL;
@@ -1684,7 +1719,7 @@ int execute_lines(char **lines, int line_end, char **result) {
     // return -3 : break
     // return -2 : continue
     // return -1 : error
-    // return 0  : no error
+    // return  0 : no error
     // return >0 : number of lines executed
 
     if (result != NULL) {
@@ -2434,14 +2469,20 @@ char *olv_autocomplete(char *str, int len, char **other) {
         for (int j = 0; variables[j].name != NULL; j++) {
             if (strncmp(tmp, variables[j].name, size) == 0) {
                 ret = variables[j].name;
-                suggest++;
+                if (suggest < MAX_SUGGESTS) {
+                    other[suggest] = variables[j].name;
+                    suggest++;
+                }
             }
         }
         free(tmp);
 
+        other[suggest] = NULL;
+
         if (suggest == 1) {
             return ret + size;
         }
+
         return NULL;
     }
 
