@@ -3,7 +3,7 @@
 [![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
 [![nbr](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
 [![lines](https://img.shields.io/badge/dynamic/json?color=blue&label=code%20lines&query=profan_lines&url=https://elydre.github.io/build/count.json)](https://elydre.github.io/profan)
-[![test](https://img.shields.io/badge/click%20to%20test-all-blue)](https://elydre.github.io/profan)
+[![test](https://img.shields.io/badge/click%20to%20test-all-blue)](https://elydre.github.io/profan/all.html)
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
