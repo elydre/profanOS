@@ -1,7 +1,5 @@
-import os
-import shutil
-import sys
-import urllib.request
+import urllib.request as urlreq
+import os, sys
 
 # setup
 
@@ -69,13 +67,18 @@ ADDONS = {
 # functions
 
 def download(url: str, path: str) -> bool:
+    def show_progress(block_num, block_size, total_size):
+        percent = int(block_num * block_size * 100 / total_size)
+        print(f" | Downloaded {percent}%", end="\r")
+
+    # get file
     try:
-        with urllib.request.urlopen(url) as response, open(path, "wb") as out_file:
-            shutil.copyfileobj(response, out_file)
-        return True
-    except Exception as e:
-        print(" | ERROR while downloading", url, ":", e)
-    return False
+        urlreq.urlretrieve(url, path, show_progress)
+    except Exception:
+        print(" | ERROR: Could not download file")
+        return False
+
+    return True
 
 def get_addon(name: str) -> bool:
     if name not in ADDONS:
