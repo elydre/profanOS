@@ -75,9 +75,8 @@ uint32_t parse_options(int argc, char **argv, char **path) {
     // uint32_t options = parse_options(argc, argv);
     // options & OPTION_HELP;    // -h
     // options & OPTION_RUN;     // -r
-    // options & OPTION_NOADDS; // -n
+    // options & OPTION_NOADDS;  // -n
     // options & OPTION_NORAND;  // -x
-
 
     uint32_t options = 0;
     for (int i = 1; i < argc; i++) {
