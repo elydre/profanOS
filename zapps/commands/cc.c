@@ -14,10 +14,11 @@
 #define TLC_PATH "/sys/tcclib.c"            // tcclib source
 #define TLO_PATH "/sys/tcclib.o"            // tcclib object
 
-#define OPTION_HELP     1 << 0
-#define OPTION_RUN      1 << 1
-#define OPTION_NOADDS  1 << 2
-#define OPTION_NORAND   1 << 3
+#define OPTION_ERROR    1 << 0
+#define OPTION_HELP     1 << 1
+#define OPTION_RUN      1 << 2
+#define OPTION_NOADDS   1 << 3
+#define OPTION_NORAND   1 << 4
 
 uint32_t g_rand_val;
 
@@ -96,6 +97,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
                         options |= OPTION_NORAND;
                         break;
                     default:
+                        options |= OPTION_ERROR;
                         printf("cc: invalid option -- '%c'\n", argv[i][j]);
                         break;
                 }
@@ -119,6 +121,11 @@ int main(int argc, char **argv) {
 
     char *path = NULL;
     uint32_t options = parse_options(argc, argv, &path);
+    
+    if (options & OPTION_ERROR) {
+        printf("Usage: cc [option] <file>\n");
+        return 1;
+    }
 
     if (options & OPTION_HELP) {
         printf("Usage: cc [option] <file>\n");
