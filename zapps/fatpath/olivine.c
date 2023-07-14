@@ -513,6 +513,11 @@ void free_ast(ast_t *ast) {
 }
 
 char *if_eval(char **input) {
+    if (input[0] == NULL) {
+        printf("eval: no input\n");
+        return NULL;
+    }
+
     // join input
     int required_size = 1;
     for (int i = 0; input[i] != NULL; i++) {
