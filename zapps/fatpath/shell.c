@@ -9,7 +9,7 @@
 #define BFR_SIZE 90
 #define SC_MAX 57
 
-#define SHELL_PROMPT "profanOS [$9%s$7] -> "
+#define SHELL_PROMPT "profanOS [$9%s$7] > "
 
 static char current_dir[256] = "/";
 
