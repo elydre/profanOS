@@ -17,7 +17,7 @@
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
 
-#define OLV_VERSION "0.4"
+#define OLV_VERSION "0.5"
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -906,6 +906,7 @@ char *if_change_dir(char **input) {
 
     if (!(c_fs_does_path_exists(dir) && c_fs_get_sector_type(c_fs_path_to_id(dir)) == 3)) {
         printf("CD: directory '%s' does not exist\n", dir);
+        free(dir);
         return NULL;
     }
     #else
@@ -998,8 +999,8 @@ char *if_find(char **input) {
         argc++;
     }
 
-    if (argc != 2) {
-        printf("FIND: expected 2 arguments, got %d\n", argc);
+    if (argc < 1 || argc > 2) {
+        printf("FIND: expected 1 or 2 arguments, got %d\n", argc);
         return NULL;
     }
 
@@ -1013,8 +1014,17 @@ char *if_find(char **input) {
         return NULL;
     }
 
-    char *path = malloc((strlen(input[1]) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, input[1], path);
+    char *path = malloc((argc == 2 ? strlen(input[1]) : 0) + strlen(current_directory) + 2);
+    if (argc == 1)
+        strcpy(path, current_directory);
+    else
+        assemble_path(current_directory, input[1], path);
+
+    if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 3)) {
+        printf("FIND: directory '%s' does not exist\n", path);
+        free(path);
+        return NULL;
+    }
 
     int elm_count = c_fs_get_dir_size(path);
 
@@ -1102,6 +1112,33 @@ char *if_name(char **input) {
     return output;
 }
 
+char *if_ticks(char **input) {
+    /*
+     * input: []
+     * output: "'123456789'"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 0) {
+        printf("TICKS: expected 0 arguments, got %d\n", argc);
+        return NULL;
+    }
+
+    char *output = malloc(11 * sizeof(char));
+
+    #if PROFANBUILD
+    sprintf(output, "%d", c_timer_get_ms());
+    #else
+    strcpy(output, "0");
+    #endif
+
+    return output;
+}
+
 internal_function_t internal_functions[] = {
     {"echo", if_echo},
     {"upper", if_upper},
@@ -1118,6 +1155,7 @@ internal_function_t internal_functions[] = {
     {"range", if_range},
     {"find", if_find},
     {"name", if_name},
+    {"ticks", if_ticks},
     {NULL, NULL}
 };
 
@@ -1572,7 +1610,13 @@ char *check_pseudos(char *line) {
     strcpy(new_line, pseudo_value);
     strcat(new_line, line + i);
 
-    return new_line;
+    char *rec = check_pseudos(new_line);
+
+    if (rec != new_line) {
+        free(new_line);
+    }
+
+    return rec;
 }
 
 /***********************
@@ -2408,11 +2452,26 @@ void olv_print(char *str, int len) {
     free(tmp);
 }
 
-char *olv_autocomplete(char *str, int len, char **other) {
-    char *tmp = malloc((len + 1) * sizeof(char));
+int add_to_suggest(char **suggests, int count, char *str) {
+    if (count < MAX_SUGGESTS) {
+        suggests[count] = malloc((strlen(str) + 1) * sizeof(char));
+        strcpy(suggests[count], str);
+        count++;
+        suggests[count] = NULL;
+        return count;
+    }
+    return count;
+}
 
+char *olv_autocomplete(char *str, int len, char **other) {
     other[0] = NULL;
 
+    if (len == 0) {
+        return NULL;
+    }
+
+    char *ret = NULL;
+    int suggest = 0;
     int is_var = 0;
     int dec = 0;
     int i = 0;
@@ -2450,44 +2509,101 @@ char *olv_autocomplete(char *str, int len, char **other) {
         i++;
     }
 
+    // path
     if (i - dec == 0 || (i < len && !in_var)) {
-        free(tmp);
-        return NULL;
-    }
+        #if PROFANBUILD
+        // ls the current directory
+        char *path = malloc(MAX_PATH_SIZE * sizeof(char));
+        char *inp_end = malloc(MAX_PATH_SIZE * sizeof(char));
 
-    int suggest = 0;
-    char *ret = NULL;
+        memcpy(inp_end, str + i + 1, len - (i + 1));
+        inp_end[len - (i + 1)] = '\0';
+        assemble_path(current_directory, inp_end, path);
+        if (path[strlen(path) - 1] != '/' && inp_end[strlen(inp_end) - 1] == '/') {
+            strcat(path, "/");
+        }
 
-    if (in_var) {
-        int size = len - in_var;
+        // cut the path at the last '/'
+        int last_slash = 0;
+        for (int j = strlen(path) - 1; j >= 0; j--) {
+            if (path[j] == '/') {
+                last_slash = j;
+                break;
+            }
+        }
+        strcpy(inp_end, path + last_slash + 1);
+        path[last_slash + (last_slash == 0)] = '\0';
 
-        if (size < 1) {
-            free(tmp);
+        dec = strlen(inp_end);
+
+        // check if the path is valid
+        if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 3)) {
+            free(inp_end);
+            free(path);
+
             return NULL;
         }
 
-        memcpy(tmp, str + in_var, size);
-        tmp[size] = '\0';
+        // get the directory content
+        int elm_count = c_fs_get_dir_size(path);
 
-        // variables
-        for (int j = 0; variables[j].name != NULL; j++) {
-            if (strncmp(tmp, variables[j].name, size) == 0) {
-                ret = variables[j].name;
-                if (suggest < MAX_SUGGESTS) {
-                    other[suggest] = variables[j].name;
-                    suggest++;
-                }
+        uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
+        char *name = malloc(MAX_PATH_SIZE * sizeof(char));
+
+        c_fs_get_dir_content(path, out_ids);
+        free(path);
+
+        for (int j = 0; j < elm_count; j++) {
+            c_fs_get_element_name(out_ids[j], name);
+            if (strncmp(name, inp_end, dec) == 0) {
+                if (c_fs_get_sector_type(out_ids[j]) == 3)
+                    strcat(name, "/");
+                suggest = add_to_suggest(other, suggest, name);
             }
         }
-        free(tmp);
 
-        other[suggest] = NULL;
+        free(inp_end);
+        free(out_ids);
+        free(name);
 
         if (suggest == 1) {
-            return ret + size;
+            ret = malloc(strlen(other[0]) + 1);
+            strcpy(ret, other[0] + dec);
+            free(other[0]);
+            return ret;
         }
 
+        #endif
+
         return NULL;
+    }
+
+    char *tmp = malloc((len + 1) * sizeof(char));
+
+    // variables
+    if (in_var) {
+        int size = len - in_var;
+
+        if (size != 0) {
+            memcpy(tmp, str + in_var, size);
+            tmp[size] = '\0';
+        }
+
+        for (int j = 0; variables[j].name != NULL; j++) {
+            if (!size || strncmp(tmp, variables[j].name, size) == 0) {
+                suggest = add_to_suggest(other, suggest, variables[j].name);
+            }
+        }
+
+        free(tmp);
+
+        if (suggest == 1) {
+            ret = malloc(strlen(other[0]) + 1);
+            strcpy(ret, other[0] + size);
+            free(other[0]);
+        }
+
+        return ret;
     }
 
     memcpy(tmp, str + dec, i - dec);
@@ -2496,54 +2612,40 @@ char *olv_autocomplete(char *str, int len, char **other) {
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
         if (strncmp(tmp, keywords[j], i - dec) == 0) {
-            ret = keywords[j];
-            if (suggest < MAX_SUGGESTS) {
-                other[suggest] = keywords[j];
-                suggest++;
-            }
+            suggest = add_to_suggest(other, suggest, keywords[j]);
         }
     }
 
     // functions
     for (int j = 0; functions[j].name != NULL; j++) {
         if (strncmp(tmp, functions[j].name, i - dec) == 0) {
-            ret = functions[j].name;
-            if (suggest < MAX_SUGGESTS) {
-                other[suggest] = functions[j].name;
-                suggest++;
-            }
+            suggest = add_to_suggest(other, suggest, functions[j].name);
         }
     }
 
     // pseudos
     for (int j = 0; pseudos[j].name != NULL; j++) {
         if (strncmp(tmp, pseudos[j].name, i - dec) == 0) {
-            ret = pseudos[j].name;
-            if (suggest < MAX_SUGGESTS) {
-                other[suggest] = pseudos[j].name;
-                suggest++;
-            }
+            suggest = add_to_suggest(other, suggest, pseudos[j].name);
         }
     }
 
     // internal functions
     for (int j = 0; internal_functions[j].name != NULL; j++) {
         if (strncmp(tmp, internal_functions[j].name, i - dec) == 0) {
-            ret = internal_functions[j].name;
-            if (suggest < MAX_SUGGESTS) {
-                other[suggest] = internal_functions[j].name;
-                suggest++;
-            }
+            suggest = add_to_suggest(other, suggest, internal_functions[j].name);
         }
     }
+
     free(tmp);
 
-    other[suggest] = NULL;
-
     if (suggest == 1) {
-        return ret + i - dec;
+        ret = malloc(strlen(other[0]) + 1);
+        strcpy(ret, other[0] + i - dec);
+        free(other[0]);
     }
-    return NULL;
+
+    return ret;
 }
 
 #endif
@@ -2675,6 +2777,9 @@ int local_input(char *buffer, int size, char **history, int history_end) {
                 for (int i = 0; other_suggests[i] != NULL; i++) {
                     printf("%s   ", other_suggests[i]);
                 }
+                for (int i = 0; other_suggests[i] != NULL; i++) {
+                    free(other_suggests[i]);
+                }
                 ret_val = 1;
                 break;
             }
@@ -2693,6 +2798,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             }
             buffer_actual_size += suggestion_len;
             buffer_index += suggestion_len;
+            free(suggestion);
         }
 
         else if (sc <= SC_MAX) {
