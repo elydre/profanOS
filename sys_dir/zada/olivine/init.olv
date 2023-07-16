@@ -28,3 +28,15 @@ FUNC tree
     echo missing argument
 END
 
+FUNC time
+    IF !(eval !# ~ 1)
+        echo TIME: require one argument
+        RETURN
+    END
+
+    set debut !(ticks)
+
+    !0
+
+    echo !0 took !(eval !(ticks) - !debut) ms
+END
