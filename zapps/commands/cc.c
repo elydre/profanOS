@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
     char *path = NULL;
     uint32_t options = parse_options(argc, argv, &path);
-    
+
     if (options & OPTION_ERROR) {
         printf("Usage: cc [option] <file>\n");
         return 1;
