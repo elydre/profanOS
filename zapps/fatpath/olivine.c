@@ -2509,8 +2509,12 @@ char *olv_autocomplete(char *str, int len, char **other) {
         i++;
     }
 
+    if (i - dec == 0) {
+        return NULL;
+    }
+
     // path
-    if (i - dec == 0 || (i < len && !in_var)) {
+    if (i < len && !in_var) {
         #if PROFANBUILD
         // ls the current directory
         char *path = malloc(MAX_PATH_SIZE * sizeof(char));
@@ -2519,9 +2523,10 @@ char *olv_autocomplete(char *str, int len, char **other) {
         memcpy(inp_end, str + i + 1, len - (i + 1));
         inp_end[len - (i + 1)] = '\0';
         assemble_path(current_directory, inp_end, path);
-        if (path[strlen(path) - 1] != '/' && inp_end[strlen(inp_end) - 1] == '/') {
-            strcat(path, "/");
-        }
+        if (path[strlen(path) - 1] != '/'
+            && (inp_end[strlen(inp_end) - 1] == '/'
+            || !inp_end[0])
+        ) strcat(path, "/");
 
         // cut the path at the last '/'
         int last_slash = 0;
