@@ -489,8 +489,7 @@ int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) 
 }
 
 int vsprintf(char *restrict buffer, const char *restrict format, va_list vlist) {
-    puts("vsprintf not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    return dopr(buffer, -1, format, vlist);
 }
 
 int vsnprintf(char *restrict str, size_t count, const char *restrict fmt, va_list args) {
