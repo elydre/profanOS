@@ -95,7 +95,7 @@ void load_file(char *path) {
         g_data_lines[g_lines_count] = i + 1;
         g_lines_count++;
         if (g_lines_count % 1024) continue;
-        g_data_lines = realloc(g_data_lines, g_lines_count + 1024);
+        g_data_lines = realloc(g_data_lines, (g_lines_count + 1024) * sizeof(int));
     }
 }
 
