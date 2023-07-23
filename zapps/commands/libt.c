@@ -10,7 +10,7 @@
 
 void print_state(int is_fine, char* name);
 
-int main(int argc, char **argv) {
+int main(void) {
     int is_fine;
 
     printf("Testing stdlib.h\n");

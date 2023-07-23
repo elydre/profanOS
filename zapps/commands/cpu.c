@@ -3,8 +3,7 @@
 #include <stdio.h>
 
 
-int main(int argc, char **argv) {
-
+int main(void) {
     // wake up the parent process
     c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
 

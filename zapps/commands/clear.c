@@ -1,6 +1,6 @@
 #include <syscall.h>
 
-int main(int argc, char **argv) {
+int main(void) {
     c_clear_screen();
     return 0;
 }

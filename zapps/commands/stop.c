@@ -1,6 +1,6 @@
 #include <syscall.h>
 
-int main(int argc, char **argv) {
+int main(void) {
     c_sys_shutdown();
     return 0;
 }

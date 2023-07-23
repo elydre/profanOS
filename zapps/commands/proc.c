@@ -16,7 +16,7 @@ char *get_state(int state) {
     }
 }
 
-int main(int argc, char **argv) {
+int main(void) {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;

@@ -36,7 +36,7 @@ void print_logo_line() {
     curent_line++;
 }
 
-int main(int argc, char **argv) {
+int main(void) {
     printf("\n $2-$A Welcome to the profan Operating System $2-\n\n");
 
     curent_line = 0;

@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     }
 
     if (mode == 'h') {
-        printf("Usage: lib <mode> [args]\n");
+        printf(HELP_USAGE);
         printf("Available modes:\n");
         printf("  -h              print this help message\n");
         printf("  -u <id>         unload a library\n");
