@@ -367,8 +367,8 @@ def make_help():
 
         ("make addons",     "download all addons in disk source"),
 
-        ("make clean",      "delete the out/ directory"),
-        ("make fullclean",  "delete all build files"),
+        ("make clean",      "delete all build files"),
+        ("make fullclean",  "delete git ignored files"),
 
         ("make run",        "run the profanOS.iso in qemu"),
         ("make erun",       "run the profanOS.elf in qemu"),

@@ -50,11 +50,11 @@ srun:
 addons:
 	python3 $(PY_ADDON) -a
 
-# clean out/ directory
-clean:
-	rm -Rf out/
-
 # clean all build files
-fullclean: clean
+clean:
+	rm -Rf out/ extracted/
 	rm -Rf *.iso *.elf *.bin
-	rm -Rf extracted/
+
+# remove git ignored files
+fullclean: clean
+	git clean -fdx
