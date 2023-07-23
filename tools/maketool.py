@@ -30,7 +30,7 @@ CPPC = "g++"
 
 CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
-ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -I include/zlibs"
+ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 
 QEMU_SPL = "qemu-system-i386"
 QEMU_KVM = "kvm"
