@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
     if (argc < 3) {
-        printf("$BUsage: cat <file>\n");
+        printf("$BUsage: $3cat <file>\n");
         return 0;
     }
 
