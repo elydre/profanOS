@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
 
         strcat(bin_file, ".bin");
 
-        char *args = malloc(strlen(full_path) * 2 + 70);
+        char *args = malloc(strlen(full_path) * 2 + 256);
 
         sprintf(args, "-c %s -o %s", full_path, obj_file);
         execute_command(TCC_PATH, args);
