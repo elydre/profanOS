@@ -85,10 +85,11 @@ the installation script `tools/install.sh` or any other image flasher.
 
 ### Known major bugs
 
-| bug name  | since | description | cause | fixed ? |
-|-----------|-------|-------------|-------|---------|
-| lagged lag | ? | all profanOS is getting very slow| ? | partially |
-| BOBCAT | 0.4.2 | some version of gcc build broken zapps | gcc | no |
+| bug name   | since | description                            | cause | fixed ?   |
+|------------|-------|----------------------------------------|-------|-----------|
+| lagged lag | ?     | all profanOS is getting very slow      | ?     | partially |
+| BOBCAT     | 0.4.2 | some version of gcc build broken zapps | gcc   | no        |
+| no KB      | ?     | keyboard not working sometimes         | ?     | no        |
 
 ## Stable releases
 
