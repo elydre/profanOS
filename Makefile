@@ -1,4 +1,4 @@
-.PHONY: info elf iso miso disk srcdisk run erun krun srun clean fullclean addons
+.PHONY: info elf iso miso disk srcdisk run erun krun srun clean fclean addons
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
@@ -55,6 +55,7 @@ clean:
 	rm -Rf out/ extracted/
 	rm -Rf *.iso *.elf *.bin
 
-# remove git ignored files
-fullclean: clean
+# remove git ignored and discard all changes
+fclean: clean
 	git clean -fdx
+	git reset --hard
