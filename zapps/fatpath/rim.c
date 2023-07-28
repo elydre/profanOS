@@ -413,7 +413,7 @@ int main(int argc, char **argv) {
         if (!(c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2)) {
             printf("$3%s$B file not found\n", file);
             free(file);
-            return 0;
+            return 1;
         }
     }
 

@@ -127,5 +127,5 @@ int main(int argc, char **argv) {
     }
 
     printf("lib: invalid mode '%s'\n" HELP_HELP, argv[2]);
-    return 0;
+    return 1;
 }

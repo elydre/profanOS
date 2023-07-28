@@ -12,9 +12,8 @@ int main(void) {
         c_ckprint(char_content, c_magenta);
 
         free(char_content);
-    } else {
-        printf("$3%s$B file not found\n", file);
+        return 0;
     }
-
-    return 0;
+    printf("$3%s$B file not found\n", file);    
+    return 1;
 }

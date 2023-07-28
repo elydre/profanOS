@@ -8,7 +8,7 @@
 int main(int argc, char **argv) {
     if (argc < 3) {
         printf("$BUsage: $3cat <file>\n");
-        return 0;
+        return 1;
     }
 
     char *file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
@@ -22,11 +22,10 @@ int main(int argc, char **argv) {
         c_kprint("\n");
 
         free(char_content);
-    } else {
-        printf("$3%s$B file not found\n", file);
+        free(file);
+        return 0;
     }
-
+    printf("$3%s$B file not found\n", file);
     free(file);
-
-    return 0;
+    return 1;
 }

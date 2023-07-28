@@ -44,7 +44,7 @@ void new_rand_name(char *name) {
     } while (does_file_exist(name));
 }
 
-void execute_command(char *path, char *args) {
+int execute_command(char *path, char *args) {
     printf("$6%s %s\n", path, args);
     // generate argv
 
@@ -66,9 +66,11 @@ void execute_command(char *path, char *args) {
 
     argv[argc] = NULL;
 
-    c_run_ifexist(path, argc, argv);
+    int ret = c_run_ifexist(path, argc, argv);
 
     free(argv);
+
+    return ret;
 }
 
 uint32_t parse_options(int argc, char **argv, char **path) {
@@ -156,7 +158,10 @@ int main(int argc, char **argv) {
         if (!(options & OPTION_NOADDS)) {
             if (!does_file_exist(ZEO_PATH)) {
                 if (does_file_exist(ZEC_PATH)) {
-                    execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH);
+                    if (execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH)) {
+                        free(full_path);
+                        return 1;
+                    }
                 } else {
                     printf("zentry.c and zentry.o not found, cannot compile\n");
                     free(full_path);
@@ -165,7 +170,10 @@ int main(int argc, char **argv) {
             }
             if (!does_file_exist(TLO_PATH)) {
                 if (does_file_exist(TLC_PATH)) {
-                    execute_command(TCC_PATH, "-c " TLC_PATH " -o " TLO_PATH);
+                    if (execute_command(TCC_PATH, "-c " TLC_PATH " -o " TLO_PATH)) {
+                        free(full_path);
+                        return 1;
+                    }
                 } else {
                     printf("tcclib.c and tcclib.o not found, cannot compile\n");
                     free(full_path);
@@ -175,6 +183,7 @@ int main(int argc, char **argv) {
         }
 
         char *obj_file, *elf_file, *bin_file;
+        int ret = 1;
 
         if (options & OPTION_NORAND) {
             obj_file = malloc(strlen(full_path) + 1);
@@ -223,32 +232,32 @@ int main(int argc, char **argv) {
         char *args = malloc(strlen(full_path) * 2 + 256);
 
         sprintf(args, "-c %s -o %s", full_path, obj_file);
-        execute_command(TCC_PATH, args);
-
-        // add zentry.o and tcclib.o to link if -n option is not set
-        if (options & OPTION_NOADDS) {
-            sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s", elf_file, obj_file);
-        } else {
-            sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s %s", elf_file, ZEO_PATH, obj_file, TLO_PATH);
+        if (!execute_command(TCC_PATH, args)) {
+            // add zentry.o and tcclib.o to link if -n option is not set
+            if (options & OPTION_NOADDS) {
+                sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s", elf_file, obj_file);
+            } else {
+                sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s %s", elf_file, ZEO_PATH, obj_file, TLO_PATH);
+            }
+            if (!execute_command(VLK_PATH, args)) {
+                sprintf(args, "%s %s", elf_file, bin_file);
+                if (!execute_command(XEC_PATH, args)) {
+                    if (options & OPTION_RUN) {
+                        if (!execute_command(bin_file, "")) ret = 0;
+                    } else ret = 0;
+                }
+            }
         }
 
-        execute_command(VLK_PATH, args);
-
-        sprintf(args, "%s %s", elf_file, bin_file);
-        execute_command(XEC_PATH, args);
-
-        // run binary if -r option is set
-        if (options & OPTION_RUN) {
-            execute_command(bin_file, "");
-        }
-
+        free(full_path);
         free(elf_file);
         free(obj_file);
         free(bin_file);
-
         free(args);
+
+        return ret;
     }
 
     free(full_path);
-    return 0;
+    return 1;
 }

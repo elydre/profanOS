@@ -7,7 +7,7 @@
 int main(int argc, char **argv) {
     if (argc != 3) {
         printf("$BUsage: $3mkfile <name>\n");
-        return 0;
+        return 1;
     }
 
     char *full_path = malloc(256);
@@ -47,10 +47,13 @@ int main(int argc, char **argv) {
     // create the file
     else {
         c_fs_make_file(parent_path, file_name);
+        free(parent_path);
+        free(full_path);
+        return 0;
     }
 
     free(parent_path);
     free(full_path);
 
-    return 0;
+    return 1;
 }
