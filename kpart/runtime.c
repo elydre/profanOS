@@ -22,6 +22,13 @@
  *  |                                 | : |             |  *
 ************************************************************/
 
+typedef struct {
+    int pid;
+    int ret;
+} direct_return_t;
+
+direct_return_t last_return;
+
 void tasked_program() {
     int pid = process_get_pid();
     int ppid = process_get_ppid(pid);
@@ -51,8 +58,7 @@ void tasked_program() {
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
-    main(comm->argc, comm->argv);
-
+    int ret = main(comm->argc, comm->argv) & 0xFF;
 
     // free forgeted allocations
     int not_free_mem = mem_get_info(7, pid);
@@ -69,25 +75,24 @@ void tasked_program() {
         mem_free_all(pid);
     }
 
-    // free the path
-    free((void *) comm->path);
-
-    // free the argv
+    // free the comm struct
     for (int i = 0; i < comm->argc; i++)
         free((void *) comm->argv[i]);
+
+    free((void *) comm->stack);
+    free((void *) comm->path);
     free((void *) comm->argv);
+    free(comm);
+
+    // set return value
+    last_return.pid = pid;
+    last_return.ret = ret;
 
     // wake up the parent process
     int pstate = process_get_state(ppid);
 
     if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
         process_wakeup(ppid);
-
-    // free the stack
-    free((void *) comm->stack);
-
-    // free comm struct
-    free(comm);
 
     process_kill(pid);
 }
@@ -97,6 +102,7 @@ int run_binary(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt
 
     serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, 2, path);
+    if (pid == 1) last_return.pid = -1;
 
     // duplicate path
     char *npath = (char *) mem_alloc(str_len(path) + 1, 0, 6);
@@ -124,7 +130,7 @@ int run_binary(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt
     process_set_comm(pid, comm);
     process_handover(pid);
 
-    return 0;
+    return (last_return.pid == pid) ? last_return.ret : 0;
 }
 
 int run_ifexist_full(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack) {
