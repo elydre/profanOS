@@ -855,7 +855,10 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
-    c_run_ifexist(file_name, argc, argv);
+    char *ret_str = malloc(10 * sizeof(char));
+    sprintf(ret_str, "%d", c_run_ifexist(file_name, argc, argv));
+
+    set_variable("exit", ret_str);
 
     free(file_name);
     free(argv);
@@ -2346,7 +2349,6 @@ void olv_print(char *str, int len) {
      * brackets: green
     **/
 
-
     if (len == 0) {
         return;
     }
@@ -2362,7 +2364,7 @@ void olv_print(char *str, int len) {
         i++;
     }
 
-    while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR || str[i] == ';') && i != len) {
+    while (!(str[i] == '!' || str[i] == ' '  || str[i] == ';') && i != len) {
         i++;
     }
 
@@ -2858,7 +2860,6 @@ void start_shell() {
             break;
         }
 
-
         while (does_syntax_fail(line)) {
             // multiline program
             strcat(line, ";");
@@ -2970,6 +2971,7 @@ int main(int argc, char **argv) {
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
+    set_variable("exit", "0");
     set_sync_variable("path", current_directory);
 
     // init pseudo commands
