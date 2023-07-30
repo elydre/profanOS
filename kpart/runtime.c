@@ -29,6 +29,41 @@ typedef struct {
 
 direct_return_t last_return;
 
+int force_exit_pid(int pid, int ret_code) {
+    // clean memory
+    mem_free_all(pid);
+
+    comm_struct_t *comm = process_get_comm(pid);
+
+    if (comm != NULL) {
+        // free the path
+        free((void *) comm->path);
+
+        // free the argv
+        for (int i = 0; i < comm->argc; i++)
+            free((void *) comm->argv[i]);
+        free((void *) comm->argv);
+
+        // free the stack
+        free((void *) comm->stack);
+
+        // free comm struct
+        free(comm);
+    }
+
+    // set return value
+    last_return.pid = pid;
+    last_return.ret = ret_code;
+
+    // wake up the parent process
+    int pstate = process_get_state(process_get_ppid(pid));
+
+    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
+        process_wakeup(process_get_ppid(pid));
+
+    return process_kill(pid);
+}
+
 void tasked_program() {
     int pid = process_get_pid();
     int ppid = process_get_ppid(pid);

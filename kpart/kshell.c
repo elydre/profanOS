@@ -45,14 +45,14 @@ void kernel_exit_current() {
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];
         if (process_get_state(pid) == PROCESS_RUNNING && pid) {
-            exit_pid(pid);
+            force_exit_pid(pid, 130);
             return;
         }
     }
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];
         if (process_get_state(pid) == PROCESS_TSLPING && pid) {
-            exit_pid(pid);
+            force_exit_pid(pid, 130);
             return;
         }
     }

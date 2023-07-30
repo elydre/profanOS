@@ -154,7 +154,7 @@
 #define c_process_get_state ((int (*)(int)) hi_func_addr(55))
 #define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(56))
 
-#define c_exit_pid ((int (*)(int)) hi_func_addr(57))
+#define c_exit_pid ((int (*)(int, int)) hi_func_addr(57))
 
 #define c_dily_unload ((int (*)(int)) hi_func_addr(58))
 #define c_dily_load ((int (*)(char *, int)) hi_func_addr(59))

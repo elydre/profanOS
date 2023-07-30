@@ -103,7 +103,7 @@ void *SYSCALL_ARRAY[] = {
     process_get_run_time,
 
     // minilib.h
-    exit_pid,
+    force_exit_pid,
 
     // system.h (dily)
     dily_unload,

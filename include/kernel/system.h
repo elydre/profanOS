@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "0.12.6"
+#define KERNEL_VERSION  "0.12.6b"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
@@ -57,6 +57,8 @@ void kernel_exit_current();
 int run_ifexist_full(char *path, int argc, char **argv,
                      uint32_t vbase, uint32_t vcunt,
                      uint32_t stack);
+
+int force_exit_pid(int pid, int ret_code);
 
 // dily.c
 int dily_does_loaded(int lib_id);
