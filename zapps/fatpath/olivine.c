@@ -861,6 +861,7 @@ char *if_go_binfile(char **input) {
     set_variable("exit", ret_str);
 
     free(file_name);
+    free(ret_str);
     free(argv);
 
     #else
