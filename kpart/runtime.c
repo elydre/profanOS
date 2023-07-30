@@ -137,7 +137,12 @@ int run_binary(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt
 
     serial_debug("RUNTIME", path);
     int pid = process_create(tasked_program, 2, path);
-    if (pid == 1) last_return.pid = -1;
+
+    if (pid == -1)
+        return -1;
+
+    if (pid == 1)
+        last_return.pid = -1;
 
     // duplicate path
     char *npath = (char *) mem_alloc(str_len(path) + 1, 0, 6);
