@@ -32,6 +32,8 @@ CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-prote
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 
+KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/kernel/kernel.map"
+
 QEMU_SPL = "qemu-system-i386"
 QEMU_KVM = "kvm"
 
@@ -157,7 +159,7 @@ def elf_image():
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
-        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/klink.ld {in_files} -o profanOS.elf")
+        print_and_exec(f"ld {KERN_LINK} {in_files} -o profanOS.elf")
 
 
 def build_app_lib():
@@ -315,6 +317,7 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"cp {TOOLS_DIR}/tcclib.c {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp {TOOLS_DIR}/zlink.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
+    print_and_exec(f"cp {OUT_DIR}/kernel/kernel.map {OUT_DIR}/disk/sys/ || true")
 
     if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
