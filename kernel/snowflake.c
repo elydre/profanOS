@@ -61,6 +61,7 @@ int mem_init() {
     MEM_PARTS[0].size = 1;
     MEM_PARTS[0].addr = MEM_BASE_ADDR;
     MEM_PARTS[0].next = 1;
+    MEM_PARTS[0].task_id = 0;
 
     if (mem_alloc(sizeof(allocated_part_t) * part_size, 0, 3) != (uint32_t) MEM_PARTS) {
         sys_fatal("snowflake address is illogical");
