@@ -1135,6 +1135,7 @@ static void
 print_str(char** at, size_t* left, int* ret, char* s,
     int minw, int precision, int prgiven, int minus)
 {
+    if (s == NULL) s = "(null)"; /* unofficial modification */
     int w;
     /* with prec: no more than x characters from this string, stop at 0 */
     if(prgiven)
