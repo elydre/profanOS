@@ -38,6 +38,8 @@
 
 #define OTHER_PROMPT "> "
 
+#define CD_DEFAULT "/"
+
 char *keywords[] = {
     "IF",
     "ELSE",
@@ -807,7 +809,7 @@ char *if_debug(char **input) {
     if (mode == 0 || mode == 4) {
         printf("PSEUDOS\n");
         for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
-            printf("  %s: %p\n", pseudos[i].name, pseudos[i].value);
+            printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
         }
     }
 
@@ -896,8 +898,14 @@ char *if_change_dir(char **input) {
         argc++;
     }
 
-    if (argc != 1) {
+    if (argc > 1) {
         printf("CD: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    // change to default if no arguments
+    if (argc == 0) {
+        strcpy(current_directory, CD_DEFAULT);
         return NULL;
     }
 
@@ -1647,6 +1655,10 @@ char **lexe_program(char *program) {
         if (program[i] == '\n' || program[i] == ';') {
             is_string_begin = 1;
 
+            while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+                tmp_index--;
+            }
+
             if (tmp_index == 0) {
                 line_count--;
                 continue;
@@ -1690,6 +1702,9 @@ char **lexe_program(char *program) {
     if (tmp_index == 0) {
         line_count--;
     } else {
+        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+            tmp_index--;
+        }
         tmp[tmp_index++] = '\0';
         lines[line_index] = malloc(tmp_index * sizeof(char));
         strcpy(lines[line_index], tmp);
