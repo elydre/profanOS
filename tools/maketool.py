@@ -5,7 +5,7 @@ import threading
 
 # SETUP
 
-SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "kpart", "kpart/gui"]
+SRC_DIRECTORY = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
 INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"
@@ -275,6 +275,23 @@ def write_build_logs():
         f.write(text)
 
 
+def add_src_to_disk():
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
+    for dir_name in [ZAPPS_DIR] + [ZLIBS_DIR]:
+        if not os.path.exists(dir_name): continue
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+    
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/include")
+    for dir_name in INCLUDE_DIR:
+        if not os.path.exists(dir_name): continue
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/include")
+    
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/kernel")
+    for dir_name in SRC_DIRECTORY:
+        if not os.path.exists(dir_name): continue
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/kernel")
+
+
 def gen_disk(force=False, with_src=False):
 
     if file_exists("HDD.bin") and not force: return
@@ -298,10 +315,7 @@ def gen_disk(force=False, with_src=False):
             print_and_exec(f"cp -r {dir_name}/* {OUT_DIR}/disk/{dir}")
 
     if with_src:
-        print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
-        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [ZLIBS_DIR] + INCLUDE_DIR:
-            if not os.path.exists(dir_name): continue
-            print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+        add_src_to_disk()
 
     try:
         for dossier in os.listdir(f"{OUT_DIR}/disk/bin/projets"):
