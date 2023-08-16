@@ -1,7 +1,7 @@
 #ifndef BUTTERFLY_H
 #define BUTTERFLY_H
 
-#include <stdint.h>
+#include <type.h>
 
 #define SECTOR_SIZE 256
 #define META_MAXLEN 64
@@ -90,12 +90,6 @@ void     sep_path(char *fullpath, char **parent, char **cnt);
 void     fs_print_sector(filesys_t *fs, sid_t sid, int verbose);
 vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id);
 void     draw_tree(filesys_t *filesys, sid_t sid, int depth);
-
-// hostio.c
-int      save_vdisk(vdisk_t *vdisk, char *filename);
-vdisk_t *load_vdisk(char *filename, uint32_t min_size);
-int      host_to_internal(filesys_t *filesys, char *extern_path, char *intern_path);
-int      internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path);
 
 // cnt_init.c
 int      fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type);

@@ -65,11 +65,12 @@ int filesys_init() {
 
     fu_dir_create(MAIN_FS, 0, "/");
 
-    /* fu_dir_create(filesys, 2, "/user/abc");
-    fu_dir_create(filesys, 0, "/user/abc/lalala");
-    fu_dir_create(filesys, 0, "/user/abc/coucou3");
-    fu_file_create(filesys, 0, "/user/abc/coucou3/abc");
-    fu_file_create(filesys, 0, "/user/abc/coucou3/def"); */
+    fu_dir_create(MAIN_FS, 0, "/user");
+    fu_dir_create(MAIN_FS, 0, "/user/abc");
+    fu_dir_create(MAIN_FS, 0, "/user/abc/lalala");
+    fu_dir_create(MAIN_FS, 0, "/user/abc/coucou3");
+    fu_file_create(MAIN_FS, 0, "/user/abc/coucou3/abc");
+    fu_file_create(MAIN_FS, 0, "/user/abc/coucou3/def");
 
     /* fu_add_element_to_dir(
         filesys,
