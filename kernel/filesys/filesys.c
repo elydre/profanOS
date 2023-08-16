@@ -46,18 +46,24 @@ void fs_print_status(filesys_t *filesys) {
     kprintf("====================\n\n");
 }
 
-int main(void) {
-    filesys_t *filesys = fs_create();
+filesys_t *MAIN_FS;
 
-    vdisk_t *d0 = vdisk_create(10000000);
+filesys_t *get_main_fs() {
+    return MAIN_FS;
+}
+
+int filesys_init() {
+    MAIN_FS = fs_create();
+
+    vdisk_t *d0 = vdisk_create(1000);
     // vdisk_t *d1 = vdisk_create(50);
     // vdisk_t *d1 = load_vdisk("test.bin", 50);
-    fs_mount_vdisk(filesys, d0);
+    fs_mount_vdisk(MAIN_FS, d0);
     // fs_mount_vdisk(filesys, d1);
 
-    fs_print_status(filesys);
+    fs_print_status(MAIN_FS);
 
-    fu_dir_create(filesys, 0, "/");
+    fu_dir_create(MAIN_FS, 0, "/");
 
     /* fu_dir_create(filesys, 2, "/user/abc");
     fu_dir_create(filesys, 0, "/user/abc/lalala");
@@ -72,15 +78,8 @@ int main(void) {
         "mount"
     );*/
 
-    host_to_internal(filesys, "input", "/");
-    internal_to_host(filesys, "output", "/");
+    draw_tree(MAIN_FS, ROOT_SID, 0);
 
-    draw_tree(filesys, ROOT_SID, 0);
-
-    fs_print_status(filesys);
-
-    // save_vdisk(d1, "test.bin");
-
-    fs_destroy(filesys);
+    fs_print_status(MAIN_FS);
     return 0;
 }
