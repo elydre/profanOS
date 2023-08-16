@@ -1,5 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
+#include <type.h>
 
 
 int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
@@ -7,13 +8,13 @@ int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
 
     // check if sector unused
     if (vdisk_is_sector_used(vdisk, sid)) {
-        printf("d%ds%d already used\n", sid.device, sid.sector);
+        kprintf("d%ds%d already used\n", sid.device, sid.sector);
         return 1;
     }
 
     vdisk_note_sector_used(vdisk, sid);
 
-    data = calloc(SECTOR_SIZE, sizeof(uint8_t));
+    data = calloc(SECTOR_SIZE);
 
     // add sector identifier
     data[0] = ST_CONT;
@@ -45,14 +46,14 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
 
     vdisk = fs_get_vdisk(filesys, main_sid.device);
     if (vdisk == NULL) {
-        printf("d%d not found\n", main_sid.device);
+        kprintf("d%d not found\n", main_sid.device);
         return NULL_SID;
     }
 
     // get unused sector for header
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
-        printf("no more sectors in d%d\n", main_sid.device);
+        kprintf("no more sectors in d%d\n", main_sid.device);
         return NULL_SID;
     }
     main_sid.sector = (uint32_t) ret_sect;
@@ -62,7 +63,7 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     loca_sid.device = main_sid.device;
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
-        printf("no more sectors in d%d\n", main_sid.device);
+        kprintf("no more sectors in d%d\n", main_sid.device);
         vdisk_note_sector_unused(vdisk, main_sid);
         return NULL_SID;
     }
@@ -70,13 +71,13 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
 
     // init locator
     if (fs_cnt_init_loca_in_sector(vdisk, loca_sid)) {
-        printf("failed to init core\n");
+        kprintf("failed to init core\n");
         vdisk_note_sector_unused(vdisk, main_sid);
         vdisk_note_sector_unused(vdisk, loca_sid);
         return NULL_SID;
     }
 
-    data = calloc(SECTOR_SIZE, sizeof(uint8_t));
+    data = calloc(SECTOR_SIZE);
 
     // add sector identifier
     data[0] = ST_CONT;
@@ -87,7 +88,7 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     }
 
     // add meta and core sid
-    memcpy(data + 2, meta, min(strlen(meta), META_MAXLEN - 1));
+    memcpy(data + 2, meta, min(str_len(meta), META_MAXLEN - 1));
 
     memcpy(data + LAST_SID_OFFSET, &loca_sid, sizeof(sid_t));
 
@@ -105,17 +106,17 @@ char *fs_cnt_get_meta(filesys_t *filesys, sid_t sid) {
 
     vdisk = fs_get_vdisk(filesys, sid.device);
     if (vdisk == NULL) {
-        printf("d%d not found\n", sid.device);
+        kprintf("d%d not found\n", sid.device);
         return NULL;
     }
 
     data = vdisk_load_sector(vdisk, sid);
     if (data == NULL) {
-        printf("failed to read d%ds%d\n", sid.device, sid.sector);
+        kprintf("failed to read d%ds%d\n", sid.device, sid.sector);
         return NULL;
     }
 
-    meta = calloc(META_MAXLEN, sizeof(char));
+    meta = calloc(META_MAXLEN);
     memcpy(meta, data + 2, META_MAXLEN - 1);
 
     vdisk_unload_sector(vdisk, sid, data, NO_SAVE);
@@ -129,13 +130,13 @@ void fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta) {
 
     vdisk = fs_get_vdisk(filesys, sid.device);
     if (vdisk == NULL) {
-        printf("d%d not found\n", sid.device);
+        kprintf("d%d not found\n", sid.device);
         return;
     }
 
     data = vdisk_load_sector(vdisk, sid);
     if (data == NULL) {
-        printf("failed to read d%ds%d\n", sid.device, sid.sector);
+        kprintf("failed to read d%ds%d\n", sid.device, sid.sector);
         return;
     }
 

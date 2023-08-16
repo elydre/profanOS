@@ -1,5 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
+#include <type.h>
 
 
 int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
@@ -21,7 +22,7 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
 
     sep_path(path, &parent, &name);
     if (!parent[0]) {
-        printf("parent unreachable\n");
+        kprintf("parent unreachable\n");
         free(parent);
         free(name);
         return NULL_SID;
@@ -29,13 +30,13 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
 
     parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
     if (IS_NULL_SID(parent_sid)) {
-        printf("failed to find parent directory\n");
+        kprintf("failed to find parent directory\n");
         free(parent);
         free(name);
         return NULL_SID;
     }
     if (!fu_is_dir(filesys, parent_sid)) {
-        printf("parent is not a directory\n");
+        kprintf("parent is not a directory\n");
         free(parent);
         free(name);
         return NULL_SID;
@@ -43,13 +44,13 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "F-%s", name);
+    snkprintf(meta, META_MAXLEN, "F-%s", name);
 
     head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        printf("failed to create file\n");
+        kprintf("failed to create file\n");
         free(parent);
         free(name);
         return NULL_SID;
@@ -58,7 +59,7 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
     // create a link in parent directory
 
     if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
-        printf("failed to add directory to parent\n");
+        kprintf("failed to add directory to parent\n");
         free(parent);
         free(name);
         return NULL_SID;
