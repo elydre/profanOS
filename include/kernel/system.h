@@ -4,7 +4,7 @@
 // build settings
 
 #define KERNEL_VERSION  "BFS-01"
-#define KERNEL_EDITING  "generic"
+#define KERNEL_EDITING  "butterfly"
 
 #define PROCESS_MAX     20          // max process count
 #define KERNEL_PRIORITY 5           // default kernel process priority
