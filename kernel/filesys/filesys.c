@@ -1,5 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
+#include <type.h>
 
 
 filesys_t *fs_create() {
@@ -25,7 +26,7 @@ int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk) {
         }
     }
     if (did == FS_DISKS) {
-        printf("cannot mount more than %d disks\n", FS_DISKS);
+        kprintf("cannot mount more than %d disks\n", FS_DISKS);
         return -1;
     }
     filesys->vdisk[did] = vdisk;
@@ -34,15 +35,15 @@ int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk) {
 }
 
 void fs_print_status(filesys_t *filesys) {
-    printf("\n====================\n");
-    printf("vdisk_count: %d\n", filesys->vdisk_count);
+    kprintf("\n====================\n");
+    kprintf("vdisk_count: %d\n", filesys->vdisk_count);
     for (uint32_t i = 0; i < filesys->vdisk_count; i++) {
-        printf("vdisk[%d] size: %d, used: %d\n", i,
+        kprintf("vdisk[%d] size: %d, used: %d\n", i,
             filesys->vdisk[i]->size,
             filesys->vdisk[i]->used_count
         );
     }
-    printf("====================\n\n");
+    kprintf("====================\n\n");
 }
 
 int main(void) {

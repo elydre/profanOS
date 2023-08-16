@@ -29,6 +29,14 @@ void str_cpy(char *s1, char *s2) {
     s1[i] = '\0';
 }
 
+void  str_ncpy(char *s1, char *s2, int n) {
+    int i;
+    for (i = 0; i < n && s2[i] != '\0'; i++) {
+        s1[i] = s2[i];
+    }
+    s1[i] = '\0';
+}
+
 void str_reverse(char *s) {
     int i = 0;
     int j = str_len(s) - 1;
