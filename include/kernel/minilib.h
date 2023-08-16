@@ -31,9 +31,9 @@ void  str_append(char *s, char c);
 
 void  func_printf(int output, char *fmt, ...);
 
-void  mem_copy(uint8_t *source, uint8_t *dest, int nbytes);
-void  mem_set(uint8_t *dest, uint8_t val, uint32_t len);
-void  mem_move(uint8_t *source, uint8_t *dest, int nbytes);
+void  mem_copy(void *dest, void *source, int nbytes);
+void  mem_set(void *dest, uint8_t val, uint32_t len);
+void  mem_move(void *source, void *dest, int nbytes);
 
 void  free(void *addr);
 void *malloc(uint32_t size);

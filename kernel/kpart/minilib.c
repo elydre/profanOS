@@ -185,23 +185,25 @@ void func_printf(int output, char *fmt, ...) {
 
 // memory management
 
-void mem_copy(uint8_t *source, uint8_t *dest, int nbytes) {
-    for (int i = 0; i < nbytes; i++) *(dest + i) = *(source + i);
+void mem_copy(void *dest, void *source, int nbytes) {
+    for (int i = 0; i < nbytes; i++)
+        *((uint8_t *) dest + i) = *((uint8_t *) source + i);
 }
 
-void mem_set(uint8_t *dest, uint8_t val, uint32_t len) {
-    uint8_t *temp = (uint8_t *)dest;
-    for ( ; len != 0; len--) *temp++ = val;
+void mem_set(void *dest, uint8_t val, uint32_t len) {
+    uint8_t *temp = dest;
+    for ( ; len != 0; len--)
+        *temp++ = val;
 }
 
-void mem_move(uint8_t *source, uint8_t *dest, int nbytes) {
+void mem_move(void *source, void *dest, int nbytes) {
     if (source < dest) {
         for (int i = nbytes - 1; i >= 0; i--) {
-            *(dest + i) = *(source + i);
+            *((uint8_t *) dest + i) = *((uint8_t *) source + i);
         }
     } else {
         for (int i = 0; i < nbytes; i++) {
-            *(dest + i) = *(source + i);
+            *((uint8_t *) dest + i) = *((uint8_t *) source + i);
         }
     }
 }

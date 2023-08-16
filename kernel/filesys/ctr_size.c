@@ -30,7 +30,7 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
 
     // check if sector linked to another locator
     sid_t next_sid;
-    memcpy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
+    mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
 
     if (!IS_NULL_SID(next_sid)) {
         int ret = fs_cnt_shrink_size(filesys, next_sid, to_shrink);
@@ -47,7 +47,7 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
     // remove core sectors
     for (uint32_t byte = LAST_SID_OFFSET - sizeof(sid_t); byte > 0; byte -= sizeof(sid_t)) {
         sid_t core_sid;
-        memcpy(&core_sid, data + byte, sizeof(sid_t));
+        mem_copy(&core_sid, data + byte, sizeof(sid_t));
         if (core_sid.device == 0 && core_sid.sector == 0)
             continue;
         vdisk_note_sector_unused(vdisk, core_sid);
@@ -90,7 +90,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             return -1;
         }
 
-        memcpy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
+        mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
         vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
 
         if (IS_NULL_SID(next_sid)) {
@@ -106,7 +106,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
 
     // check if loca is full
     for (uint32_t byte = sizeof(sid_t); byte < LAST_SID_OFFSET; byte += sizeof(sid_t)) {
-        memcpy(&core_sid, data + byte, sizeof(sid_t));
+        mem_copy(&core_sid, data + byte, sizeof(sid_t));
         if (IS_NULL_SID(core_sid)) break;
         core_count += 1;
     }
@@ -126,7 +126,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             return -1;
         }
         core_count += 1;
-        memcpy(data + core_count * sizeof(sid_t), &core_sid, sizeof(sid_t));
+        mem_copy(data + core_count * sizeof(sid_t), &core_sid, sizeof(sid_t));
         to_grow -= 1;
     }
 
@@ -153,7 +153,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             return -1;
         }
 
-        memcpy(data + LAST_SID_OFFSET, &new_loca_sid, sizeof(sid_t));
+        mem_copy(data + LAST_SID_OFFSET, &new_loca_sid, sizeof(sid_t));
         vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
 
         loca_sid = new_loca_sid;
@@ -176,7 +176,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
                 return -1;
             }
             core_count += 1;
-            memcpy(data + core_count * sizeof(sid_t), &core_sid, sizeof(sid_t));
+            mem_copy(data + core_count * sizeof(sid_t), &core_sid, sizeof(sid_t));
             to_grow -= 1;
         }
     }

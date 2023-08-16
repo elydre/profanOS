@@ -121,7 +121,7 @@ void dynamize_mem() {
 
     // fill the new part with 0 and copy the old part
     mem_set((uint8_t *) new_add, 0, sizeof(allocated_part_t) * (part_size + GROW_SIZE));
-    mem_copy((uint8_t *) MEM_PARTS, (uint8_t *) new_add, sizeof(allocated_part_t) * part_size);
+    mem_copy((uint8_t *) new_add, (uint8_t *) MEM_PARTS, sizeof(allocated_part_t) * part_size);
 
     uint32_t old_add = (uint32_t) MEM_PARTS;
     MEM_PARTS = (allocated_part_t *) new_add;

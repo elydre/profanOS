@@ -40,9 +40,9 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     offset += 2;
 
     if (!is_read) {
-        memcpy(data + offset, buf, size);
+        mem_copy(data + offset, buf, size);
     } else {
-        memcpy(buf, data + offset, size);
+        mem_copy(buf, data + offset, size);
     }
 
     vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);

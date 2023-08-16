@@ -50,7 +50,7 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
 
     // get the number of elements
     uint32_t count;
-    memcpy(&count, buf, sizeof(uint32_t));
+    mem_copy(&count, buf, sizeof(uint32_t));
 
     // get the elements
     *ids = malloc(sizeof(sid_t) * count);
@@ -58,11 +58,11 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
 
     uint32_t name_offset;
     for (uint32_t i = 0; i < count; i++) {
-        memcpy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
-        memcpy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
+        mem_copy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
+        mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(str_len(tmp) + 1);
-        strcpy((*names)[i], tmp);
+        str_cpy((*names)[i], tmp);
     }
     free(buf);
     return count;
@@ -96,7 +96,7 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
 
     uint32_t count = 0;
     // get the number of elements
-    memcpy(&count, buf, sizeof(uint32_t));
+    mem_copy(&count, buf, sizeof(uint32_t));
 
     if (count > 0) {
         // move names
@@ -106,15 +106,15 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
     }
 
     // insert the new element
-    memcpy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)), &element_sid, sizeof(sid_t));
+    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)), &element_sid, sizeof(sid_t));
     uint32_t name_offset = size - sizeof(uint32_t) - count * (sizeof(sid_t) + sizeof(uint32_t));
-    memcpy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), &name_offset, sizeof(uint32_t));
+    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), &name_offset, sizeof(uint32_t));
 
     // update the number of elements
     count++;
-    memcpy(buf, &count, sizeof(uint32_t));
+    mem_copy(buf, &count, sizeof(uint32_t));
 
-    strcpy((char *) buf + sizeof(uint32_t) + count * sizeof(sid_t) + count * sizeof(uint32_t) + name_offset, name);
+    str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(sid_t) + count * sizeof(uint32_t) + name_offset, name);
 
     // write the directory
     if (fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1)) {

@@ -88,9 +88,9 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     }
 
     // add meta and core sid
-    memcpy(data + 2, meta, min(str_len(meta), META_MAXLEN - 1));
+    mem_copy(data + 2, meta, min(str_len(meta), META_MAXLEN - 1));
 
-    memcpy(data + LAST_SID_OFFSET, &loca_sid, sizeof(sid_t));
+    mem_copy(data + LAST_SID_OFFSET, &loca_sid, sizeof(sid_t));
 
     vdisk_write_sector(vdisk, main_sid, data);
 
@@ -117,7 +117,7 @@ char *fs_cnt_get_meta(filesys_t *filesys, sid_t sid) {
     }
 
     meta = calloc(META_MAXLEN);
-    memcpy(meta, data + 2, META_MAXLEN - 1);
+    mem_copy(meta, data + 2, META_MAXLEN - 1);
 
     vdisk_unload_sector(vdisk, sid, data, NO_SAVE);
 
@@ -140,7 +140,7 @@ void fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta) {
         return;
     }
 
-    memcpy(data + 2, meta, META_MAXLEN - 1);
+    mem_copy(data + 2, meta, META_MAXLEN - 1);
 
     vdisk_unload_sector(vdisk, sid, data, SAVE);
 }
