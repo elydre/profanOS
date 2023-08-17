@@ -94,8 +94,6 @@ int filesys_init() {
     fs_mount_vdisk(MAIN_FS, d0, 1);
     fs_mount_vdisk(MAIN_FS, d1, 2);
 
-    fs_print_status(MAIN_FS);
-
     fu_dir_create(MAIN_FS, 0, "/");
 
     fu_dir_create(MAIN_FS, 0, "/tmp");
@@ -104,10 +102,22 @@ int filesys_init() {
         MAIN_FS,
         ROOT_SID,
         fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/user"),
-        "mount"
+        "user"
     );
 
-    draw_tree(MAIN_FS, ROOT_SID, 0);
+    fu_add_element_to_dir(
+        MAIN_FS,
+        ROOT_SID,
+        fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/bin"),
+        "bin"
+    );
+
+    fu_add_element_to_dir(
+        MAIN_FS,
+        ROOT_SID,
+        fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/lib"),
+        "lib"
+    );
 
     fs_print_status(MAIN_FS);
     return 0;

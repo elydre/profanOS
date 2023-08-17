@@ -37,8 +37,6 @@ int init_diskiso() {
 
     diskiso_size = sector_count;
 
-    kprintf("diskiso: %d sectors\n", diskiso_size);
-
     return 2;   // enabled
 }
 
