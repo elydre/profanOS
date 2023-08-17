@@ -1,4 +1,4 @@
-#include <driver/keyboard.h>
+#include <drivers/keyboard.h>
 #include <kernel/process.h>
 #include <cpu/ports.h>
 #include <cpu/isr.h>

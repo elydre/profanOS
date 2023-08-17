@@ -1,4 +1,4 @@
-#include <driver/rtc.h>
+#include <drivers/rtc.h>
 #include <cpu/ports.h>
 
 char bcd;

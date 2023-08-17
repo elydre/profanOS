@@ -1,5 +1,5 @@
 #include <kernel/scubasuit.h>
-#include <driver/serial.h>
+#include <drivers/serial.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>

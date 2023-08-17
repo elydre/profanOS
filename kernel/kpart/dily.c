@@ -1,6 +1,6 @@
 #include <kernel/filesystem.h>
 #include <kernel/snowflake.h>
-#include <driver/serial.h>
+#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
 #include <type.h>

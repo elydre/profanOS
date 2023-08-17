@@ -1,11 +1,10 @@
 #include <kernel/filesystem.h>
 #include <kernel/snowflake.h>
-#include <driver/keyboard.h>
+#include <drivers/keyboard.h>
 #include <kernel/process.h>
-#include <kernel/ramdisk.h>
-#include <driver/serial.h>
-#include <driver/mouse.h>
-#include <driver/rtc.h>
+#include <drivers/serial.h>
+#include <drivers/mouse.h>
+#include <drivers/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
@@ -87,7 +86,7 @@ void *SYSCALL_ARRAY[] = {
     mouse_call,
 
     // ramdisk.h
-    ramdisk_get_info,
+    unknown_func,
 
     // process.h
     process_set_sheduler,

@@ -52,32 +52,45 @@ filesys_t *get_main_fs() {
     return MAIN_FS;
 }
 
+int initrd_to_vdisk(vdisk_t *vdisk) {
+    uint8_t *initrd = (uint8_t *) diskiso_get_start();
+    uint32_t initrd_size = diskiso_get_size();
+
+    if (initrd_size > vdisk->size) {
+        kprintf("initrd is too big for the vdisk\n");
+        return 1;
+    }
+
+    for (uint32_t i = 0; i < initrd_size / SECTOR_SIZE; i++) {
+        vdisk_write_sector(vdisk, (sid_t) {0, i}, initrd + i * SECTOR_SIZE);
+    }
+
+    diskiso_free();
+
+    return 0;
+}
+
 int filesys_init() {
     MAIN_FS = fs_create();
 
-    vdisk_t *d0 = vdisk_create(1000);
-    // vdisk_t *d1 = vdisk_create(50);
-    // vdisk_t *d1 = load_vdisk("test.bin", 50);
+    vdisk_t *d0 = vdisk_create(10000);
+    vdisk_t *d1 = vdisk_create(10000);
+    initrd_to_vdisk(d1);
     fs_mount_vdisk(MAIN_FS, d0);
-    // fs_mount_vdisk(filesys, d1);
+    fs_mount_vdisk(MAIN_FS, d1);
 
     fs_print_status(MAIN_FS);
 
     fu_dir_create(MAIN_FS, 0, "/");
 
-    fu_dir_create(MAIN_FS, 0, "/user");
-    fu_dir_create(MAIN_FS, 0, "/user/abc");
-    fu_dir_create(MAIN_FS, 0, "/user/abc/lalala");
-    fu_dir_create(MAIN_FS, 0, "/user/abc/coucou3");
-    fu_file_create(MAIN_FS, 0, "/user/abc/coucou3/abc");
-    fu_file_create(MAIN_FS, 0, "/user/abc/coucou3/def");
+    fu_dir_create(MAIN_FS, 0, "/tmp");
 
-    /* fu_add_element_to_dir(
-        filesys,
-        fu_path_to_sid(filesys, ROOT_SID, "/user"),
-        (sid_t) {2, 0},
+    fu_add_element_to_dir(
+        MAIN_FS,
+        ROOT_SID,
+        fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/user"),
         "mount"
-    );*/
+    );
 
     draw_tree(MAIN_FS, ROOT_SID, 0);
 

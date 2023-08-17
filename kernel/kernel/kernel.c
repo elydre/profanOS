@@ -2,13 +2,12 @@
 #include <kernel/multiboot.h>
 #include <kernel/snowflake.h>
 #include <kernel/scubasuit.h>
-#include <driver/keyboard.h>
-#include <kernel/ramdisk.h>
+#include <drivers/keyboard.h>
+#include <drivers/diskiso.h>
 #include <kernel/process.h>
-#include <driver/diskiso.h>
-#include <driver/serial.h>
-#include <driver/mouse.h>
-#include <driver/rtc.h>
+#include <drivers/serial.h>
+#include <drivers/mouse.h>
+#include <drivers/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
@@ -44,7 +43,6 @@ void kernel_main(void *mboot_ptr) {
     status_print(serial_init,  "Enabling", "serial port (A and B)");
     status_print(sys_init_fpu, "Initing", "floating point unit");
     status_print(process_init, "Starting", "process manager");
-    status_print(ramdisk_init, "Setuping", "ramdisk");
     status_print(filesys_init, "Loading", "filesystem v2");
     status_print(init_watfunc, "Initing", "watfunc");
     status_print(dily_init,    "Loading", "dynamic library");

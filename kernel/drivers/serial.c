@@ -1,4 +1,4 @@
-#include <driver/serial.h>
+#include <drivers/serial.h>
 #include <cpu/ports.h>
 #include <minilib.h>
 #include <type.h>

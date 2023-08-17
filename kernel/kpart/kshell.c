@@ -1,9 +1,8 @@
 #include <kernel/snowflake.h>
 #include <kernel/scubasuit.h>
-#include <kernel/ramdisk.h>
+#include <drivers/diskiso.h>
+#include <drivers/serial.h>
 #include <kernel/process.h>
-#include <driver/diskiso.h>
-#include <driver/serial.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <cpu/timer.h>
@@ -102,8 +101,7 @@ void shell_help() {
 void shell_addr() {
     kprintf("vesa fb: %x\n", vesa_get_framebuffer());
     kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
-    kprintf("ramdisk: %x (%dMo)\n", ramdisk_get_address(), ramdisk_get_info(0) / 2048);
-    kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 2048);
+    kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 1024 / 1024);
     kprintf("mm base: %x\n", MEM_BASE_ADDR);
     kprintf("watdily: %x\n", WATDILY_ADDR);
     kprintf("watfunc: %x\n", WATFUNC_ADDR);

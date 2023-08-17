@@ -41,35 +41,14 @@ int init_diskiso() {
 }
 
 uint32_t diskiso_get_size() {
-    return diskiso_size;
+    return diskiso_size * 512;
 }
 
 uint32_t diskiso_get_start() {
     return diskiso_start;
 }
 
-void diskiso_read(uint32_t sector, uint32_t *data) {
-    if (sector >= diskiso_size) {
-        return;
-    }
-
-    uint32_t pos = diskiso_start + sector * 512;
-
-    for (int i = 0; i < 128; i++) {
-        data[i] = *((uint32_t *) pos);
-        pos += 4;
-    }
-}
-
-void diskiso_write(uint32_t sector, uint32_t *data) {
-    if (sector >= diskiso_size) {
-        return;
-    }
-
-    uint32_t pos = diskiso_start + sector * 512;
-
-    for (int i = 0; i < 128; i++) {
-        *((uint32_t *) pos) = data[i];
-        pos += 4;
-    }
+void diskiso_free() {
+    diskiso_size = 0;
+    free((void *) diskiso_start);
 }

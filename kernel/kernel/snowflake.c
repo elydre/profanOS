@@ -1,7 +1,7 @@
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <driver/diskiso.h>
-#include <driver/serial.h>
+#include <drivers/diskiso.h>
+#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -70,7 +70,7 @@ int mem_init() {
     // allocate the diskiso module if needed
     if (!diskiso_get_size()) return 0;
 
-    uint32_t start = mem_alloc(diskiso_get_size() * 512, 0, 1);
+    uint32_t start = mem_alloc(diskiso_get_size(), 0, 1);
 
     if (start != diskiso_get_start()) {
         sys_error("diskiso address is illogical");
