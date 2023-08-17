@@ -11,7 +11,7 @@
 #define BYTE_IN_CORE (SECTOR_SIZE - 2)
 
 #define NULL_SID ((sid_t){0, 0})
-#define ROOT_SID ((sid_t){1, 0})
+#define ROOT_SID ((sid_t){2, 0})
 
 #define FS_DISKS 256
 

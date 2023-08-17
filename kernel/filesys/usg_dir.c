@@ -76,6 +76,16 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
         return 1;
     }
 
+    if (IS_NULL_SID(element_sid)) {
+        kprintf("element sid is null\n");
+        return 1;
+    }
+
+    if (IS_NULL_SID(dir_sid)) {
+        kprintf("dir sid is null\n");
+        return 1;
+    }
+
     if (!fu_is_dir(filesys, dir_sid)) {
         kprintf("not a directory\n");
         return 1;

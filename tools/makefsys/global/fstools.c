@@ -125,7 +125,7 @@ void fs_print_sector(filesys_t *fs, sid_t sid, int verbose) {
 
 vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id) {
     device_id -= 1;
-    if (device_id >= fs->vdisk_count || fs->vdisk[device_id] == NULL) {
+    if (device_id >= FS_DISKS || fs->vdisk[device_id] == NULL) {
         return NULL;
     }
     return fs->vdisk[device_id];

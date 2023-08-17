@@ -12,33 +12,33 @@ filesys_t *fs_create() {
 }
 
 void fs_destroy(filesys_t *filesys) {
-    for (uint32_t i = 0; i < filesys->vdisk_count; i++) {
+    for (uint32_t i = 0; i < FS_DISKS; i++) {
+        if (filesys->vdisk[i] == NULL) continue;
         vdisk_destroy(filesys->vdisk[i]);
     }
     free(filesys->vdisk);
     free(filesys);
 }
 
-int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk) {
-    uint32_t did;
-    for (did = 0; did < filesys->vdisk_count; did++) {
-        if (filesys->vdisk[did] == NULL) {
-            break;
-        }
-    }
-    if (did == FS_DISKS) {
+int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
+    if (did > FS_DISKS) {
         printf("cannot mount more than %d disks\n", FS_DISKS);
         return -1;
     }
-    filesys->vdisk[did] = vdisk;
+    if (filesys->vdisk[did - 1] != NULL) {
+        printf("disk %d is already mounted\n", did);
+        return -1;
+    }
+    filesys->vdisk[did - 1] = vdisk;
     filesys->vdisk_count++;
-    return did + 1;
+    return did;
 }
 
 void fs_print_status(filesys_t *filesys) {
     printf("\n====================\n");
     printf("vdisk_count: %d\n", filesys->vdisk_count);
-    for (uint32_t i = 0; i < filesys->vdisk_count; i++) {
+    for (uint32_t i = 0; i < FS_DISKS; i++) {
+        if (filesys->vdisk[i] == NULL) continue;
         printf("vdisk[%d] size: %d, used: %d\n", i,
             filesys->vdisk[i]->size,
             filesys->vdisk[i]->used_count
@@ -56,10 +56,12 @@ int main(int argc, char **argv) {
     filesys_t *filesys = fs_create();
 
     vdisk_t *d0 = vdisk_create(10000);
-    fs_mount_vdisk(filesys, d0);
+    fs_mount_vdisk(filesys, d0, 2);
     fs_print_status(filesys);
 
-    fu_dir_create(filesys, 0, "/");
+    printf("d2: %p\n", fs_get_vdisk(filesys, 2));
+
+    fu_dir_create(filesys, 2, "/");
 
     host_to_internal(filesys, argv[1], "/");
     // internal_to_host(filesys, "output", "/");
