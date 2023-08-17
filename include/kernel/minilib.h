@@ -9,9 +9,9 @@
 
 // runtime comm struct
 typedef struct {
-    int argc;
-    char **argv;
-    char *path;
+    int      argc;
+    char   **argv;
+    sid_t    file;
     uint32_t vbase;
     uint32_t vcunt;
     uint32_t stack_size;

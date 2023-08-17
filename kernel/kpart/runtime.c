@@ -1,5 +1,6 @@
 #include <kernel/filesystem.h>
 #include <kernel/snowflake.h>
+#include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <minilib.h>
@@ -36,9 +37,6 @@ int force_exit_pid(int pid, int ret_code) {
     comm_struct_t *comm = process_get_comm(pid);
 
     if (comm != NULL) {
-        // free the path
-        free((void *) comm->path);
-
         // free the argv
         for (int i = 0; i < comm->argc; i++)
             free((void *) comm->argv[i]);
@@ -72,17 +70,19 @@ void tasked_program() {
     uint32_t stack_size = comm->stack_size;
 
     int vsize = comm->vcunt;
-    int fsize = fs_get_file_size(comm->path);
+    int fsize = fs_cnt_get_size(get_main_fs(), comm->file);
+    int real_fsize = fsize;
+
+    // setup private memory
     fsize = fsize + (0x1000 - (fsize % 0x1000));
 
     if (vsize < fsize * 2)
         vsize = fsize * 2;
 
-    // setup private memory
     scuba_create_virtual(process_get_directory(pid), comm->vbase, vsize / 0x1000);
-
+    
     // load binary
-    fs_read_file(comm->path, (char *) comm->vbase);
+    fs_cnt_read(get_main_fs(), comm->file, (uint8_t *) comm->vbase, 0, real_fsize);
 
     // malloc a new stack
     comm->stack = mem_alloc(stack_size, 0, 4);
@@ -115,7 +115,6 @@ void tasked_program() {
         free((void *) comm->argv[i]);
 
     free((void *) comm->stack);
-    free((void *) comm->path);
     free((void *) comm->argv);
     free(comm);
 
@@ -132,21 +131,16 @@ void tasked_program() {
     process_kill(pid);
 }
 
-int run_binary(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
-    // TODO: check if file is executable
-
+int run_binary(sid_t file, char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
     serial_debug("RUNTIME", path);
+
     int pid = process_create(tasked_program, 2, path);
 
     if (pid == -1)
         return -1;
 
-    if (pid == 1)
+    if (pid == 2)
         last_return.pid = -1;
-
-    // duplicate path
-    char *npath = (char *) mem_alloc(str_len(path) + 1, 0, 6);
-    str_cpy(npath, path);
 
     // duplicate argv
     int size = sizeof(char *) * (argc + 1);
@@ -161,7 +155,7 @@ int run_binary(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt
     comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 0, 6);
     comm->argc = argc;
     comm->argv = nargv;
-    comm->path = npath;
+    comm->file = file;
 
     comm->vbase = vbase;
     comm->vcunt = vcunt;
@@ -178,8 +172,11 @@ int run_ifexist_full(char *path, int argc, char **argv, uint32_t vbase, uint32_t
     vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
     stack = stack ? stack : RUN_BIN_STACK;
 
-    if (fs_does_path_exists(path) && fs_get_sector_type(fs_path_to_id(path)) == 2)
-        return run_binary(path, argc, argv, vbase, vcunt, stack);
+    sid_t file = fu_path_to_sid(get_main_fs(), ROOT_SID, path);
+
+    if (!IS_NULL_SID(file) && fu_is_file(get_main_fs(), file)) {
+        return run_binary(file, path, argc, argv, vbase, vcunt, stack);
+    }
 
     sys_error("Program not found");
     return -1;

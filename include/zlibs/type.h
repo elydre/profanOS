@@ -121,6 +121,11 @@ typedef struct FILE {
     int is_temp;
 } FILE;
 
+typedef struct {
+    uint32_t device;            // device id
+    uint32_t sector;            // sector id
+} sid_t;
+
 typedef struct fpos_t {
 
 } fpos_t;

@@ -41,16 +41,11 @@
 #define NO_SAVE 0
 
 typedef struct {
-    uint32_t device;            // device id
-    uint32_t sector;            // sector id
-} sid_t;
-
-typedef struct {
     uint8_t data[SECTOR_SIZE];  // sector data
 } sector_t;
 
 typedef struct {
-    sector_t **sectors;         // array of sectors
+    sector_t *sectors;          // first sector pointer
     uint32_t size;              // sector count
 
     uint8_t *used;              // array sectors (bool)
