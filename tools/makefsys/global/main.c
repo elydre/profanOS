@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "butterfly.h"
+#include "../butterfly.h"
 
 filesys_t *fs_create() {
     filesys_t *filesys = malloc(sizeof(filesys_t));
@@ -47,40 +47,28 @@ void fs_print_status(filesys_t *filesys) {
     printf("====================\n\n");
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        printf("usage: %s <input path>\n", argv[0]);
+        return 1;
+    }
+
     filesys_t *filesys = fs_create();
 
-    vdisk_t *d0 = vdisk_create(10000000);
-    // vdisk_t *d1 = vdisk_create(50);
-    // vdisk_t *d1 = load_vdisk("test.bin", 50);
+    vdisk_t *d0 = vdisk_create(10000);
     fs_mount_vdisk(filesys, d0);
-    // fs_mount_vdisk(filesys, d1);
-
     fs_print_status(filesys);
 
     fu_dir_create(filesys, 0, "/");
 
-    /* fu_dir_create(filesys, 2, "/user/abc");
-    fu_dir_create(filesys, 0, "/user/abc/lalala");
-    fu_dir_create(filesys, 0, "/user/abc/coucou3");
-    fu_file_create(filesys, 0, "/user/abc/coucou3/abc");
-    fu_file_create(filesys, 0, "/user/abc/coucou3/def"); */
-
-    /* fu_add_element_to_dir(
-        filesys,
-        fu_path_to_sid(filesys, ROOT_SID, "/user"),
-        (sid_t) {2, 0},
-        "mount"
-    );*/
-
-    host_to_internal(filesys, "input", "/");
-    internal_to_host(filesys, "output", "/");
+    host_to_internal(filesys, argv[1], "/");
+    // internal_to_host(filesys, "output", "/");
 
     draw_tree(filesys, ROOT_SID, 0);
 
     fs_print_status(filesys);
 
-    // save_vdisk(d1, "test.bin");
+    save_vdisk(d0, "../HDD.bin");
 
     fs_destroy(filesys);
     return 0;

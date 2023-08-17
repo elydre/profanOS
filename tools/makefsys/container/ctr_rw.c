@@ -51,8 +51,6 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
 }
 
 int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t offset, int size, int is_read) {
-    printf("%s %d bytes in d%ds%d\n", is_read ? "read" : "write", size, loca_sid.device, loca_sid.sector);
-
     sid_t next_loca_sid;
     vdisk_t *vdisk;
 
@@ -88,12 +86,10 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
         } else {
             for (int i = 0; i < LINKS_IN_LOCA; i++) {
                 if (index >= size) {
-                    printf("END index %d\n", index);
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                     return 0;
                 }
                 if (index + BYTE_IN_CORE < 0) {
-                    printf("index - BYTE_IN_CORE %d\n", index - BYTE_IN_CORE);
                     index += BYTE_IN_CORE;
                     continue;
                 }

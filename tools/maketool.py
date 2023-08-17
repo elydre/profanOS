@@ -336,7 +336,7 @@ def gen_disk(force=False, with_src=False):
     if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/butterfly/*/*.c")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
 
     cprint(COLOR_INFO, "building HDD.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
@@ -361,10 +361,10 @@ def extract_disk():
         cprint(COLOR_EROR, "HDD.bin not found")
         return
 
-    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
+    if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
 
     cprint(COLOR_INFO, "extracting HDD.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin 42")

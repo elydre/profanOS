@@ -1,4 +1,4 @@
-#include "butterfly.h"
+#include "../butterfly.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

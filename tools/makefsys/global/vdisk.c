@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "butterfly.h"
+#include "../butterfly.h"
 
 
 vdisk_t *vdisk_create(uint32_t initsize) {
