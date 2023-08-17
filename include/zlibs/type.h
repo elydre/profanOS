@@ -1,29 +1,14 @@
 #ifndef TYPE_H
 #define TYPE_H
 
-typedef struct {
-    int seconds;
-    int minutes;
-    int hours;
-    int day_of_week;
-    int day_of_month;
-    int month;
-    int year;
-    int full[6];
-} i_time_t;
-
-#define low_16(address) (uint16_t)((address) & 0xFFFF)
-#define high_16(address) (uint16_t)(((address) >> 16) & 0xFFFF)
-
-#ifndef NULL
-#define NULL 0
-#endif
+#include "../kernel/ktype.h"
 
 //-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 // Math (from stdlib)
 //
 //-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 typedef struct _div_t {
     int quot;
     int rem;
@@ -58,15 +43,6 @@ typedef struct _Mbstatet
 } _Mbstatet;
 
 typedef _Mbstatet mbstate_t;
-
-typedef signed char        int8_t;
-typedef short              int16_t;
-typedef int                int32_t;
-typedef long long          int64_t;
-typedef unsigned char      uint8_t;
-typedef unsigned short     uint16_t;
-typedef unsigned int       uint32_t;
-typedef unsigned long long uint64_t;
 
 typedef signed char        int_least8_t;
 typedef short              int_least16_t;
@@ -120,11 +96,6 @@ typedef struct FILE {
     int error;
     int is_temp;
 } FILE;
-
-typedef struct {
-    uint32_t device;            // device id
-    uint32_t sector;            // sector id
-} sid_t;
 
 typedef struct fpos_t {
 

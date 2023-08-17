@@ -77,9 +77,6 @@ void *SYSCALL_ARRAY[] = {
     // mouse.h
     mouse_call,
 
-    // ramdisk.h
-    unknown_func,
-
     // process.h
     process_set_sheduler,
     process_create,

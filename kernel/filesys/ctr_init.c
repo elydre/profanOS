@@ -14,13 +14,13 @@ int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
 
     vdisk_note_sector_used(vdisk, sid);
 
-    data = calloc(SECTOR_SIZE);
+    data = calloc(FS_SECTOR_SIZE);
 
     // add sector identifier
     data[0] = ST_CONT;
     data[1] = type;
 
-    for (int i = 2; i < SECTOR_SIZE; i++) {
+    for (int i = 2; i < FS_SECTOR_SIZE; i++) {
         data[i] = 0;
     }
 
@@ -77,13 +77,13 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
         return NULL_SID;
     }
 
-    data = calloc(SECTOR_SIZE);
+    data = calloc(FS_SECTOR_SIZE);
 
     // add sector identifier
     data[0] = ST_CONT;
     data[1] = SF_HEAD;
 
-    for (int i = 2; i < SECTOR_SIZE; i++) {
+    for (int i = 2; i < FS_SECTOR_SIZE; i++) {
         data[i] = 0;
     }
 

@@ -87,89 +87,65 @@
 #define c_dyellow   0x06
 #define c_dgrey     0x08
 
+#define c_fs_get_main ((filesys_t *(*)(void)) hi_func_addr(0))
+#define c_fs_cnt_set_size ((int (*)(filesys_t *, sid_t, uint32_t)) hi_func_addr(1))
+#define c_fs_cnt_get_size ((uint32_t (*)(filesys_t *, sid_t)) hi_func_addr(2))
+#define c_fs_cnt_delete ((int (*)(filesys_t *, sid_t)) hi_func_addr(3))
+#define c_fs_cnt_rw ((int (*)(filesys_t *, sid_t, void *, uint32_t, uint32_t, int)) hi_func_addr(4))
+#define c_fs_cnt_init ((sid_t (*)(filesys_t *, uint32_t, char *)) hi_func_addr(5))
+#define c_fs_cnt_get_meta ((char *(*)(filesys_t *, sid_t)) hi_func_addr(6))
+#define c_fs_cnt_change_meta ((void (*)(filesys_t *, sid_t, char *)) hi_func_addr(7))
 
-#define c_fs_get_used_sectors ((uint32_t (*)(void)) hi_func_addr(0))
-#define c_fs_get_sector_count ((uint32_t (*)(void)) hi_func_addr(1))
-#define c_fs_get_element_name ((void (*)(uint32_t, char *)) hi_func_addr(2))
-#define c_fs_make_dir ((uint32_t (*)(char *, char *)) hi_func_addr(3))
-#define c_fs_make_file ((uint32_t (*)(char *, char *)) hi_func_addr(4))
-#define c_fs_read_file ((void (*)(char *, uint8_t *)) hi_func_addr(5))
-#define c_fs_write_in_file ((void (*)(char *, uint8_t *, uint32_t)) hi_func_addr(6))
-#define c_fs_get_file_size ((uint32_t (*)(char *)) hi_func_addr(7))
-#define c_fs_get_dir_size ((int (*)(char *)) hi_func_addr(8))
-#define c_fs_declare_read_array ((void *(*)(char *)) hi_func_addr(9))
-#define c_fs_does_path_exists ((int (*)(char *)) hi_func_addr(10))
-#define c_fs_get_sector_type ((int (*)(uint32_t)) hi_func_addr(11))
-#define c_fs_get_dir_content ((void (*)(char *, uint32_t *)) hi_func_addr(12))
-#define c_fs_path_to_id ((uint32_t (*)(char *)) hi_func_addr(13))
-#define c_fs_delete_file ((void (*)(char *)) hi_func_addr(14))
-#define c_fs_delete_dir ((void (*)(char *)) hi_func_addr(15))
+#define c_mem_get_alloc_size ((uint32_t (*)(uint32_t)) hi_func_addr(8))
+#define c_mem_alloc ((uint32_t (*)(uint32_t, uint32_t, int)) hi_func_addr(9))
+#define c_mem_free_addr ((int (*)(uint32_t)) hi_func_addr(10))
+#define c_mem_get_info ((int (*)(int, int)) hi_func_addr(11))
+#define c_mem_free_all ((int (*)(int)) hi_func_addr(12))
 
-/*
-    fs_get_main,
-    fs_cnt_set_size,
-    fs_cnt_get_size,
-    fs_cnt_delete,
-    fs_cnt_rw,
-    fs_cnt_init,
-    fs_cnt_get_meta,
-    fs_cnt_change_meta,
-*/
+#define c_time_get ((void (*)(i_time_t *)) hi_func_addr(13))
+#define c_timer_get_ms ((uint32_t (*)(void)) hi_func_addr(14))
 
+#define c_font_get ((uint8_t *(*)(int)) hi_func_addr(15))
+#define c_clear_screen ((void (*)(void)) hi_func_addr(16))
+#define c_ckprint_at ((void (*)(char *, int, int, char)) hi_func_addr(17))
+#define c_kprint_backspace ((void (*)(void)) hi_func_addr(18))
+#define c_set_cursor_offset ((void (*)(int)) hi_func_addr(19))
+#define c_get_cursor_offset ((int (*)(void)) hi_func_addr(20))
+#define c_gt_get_max_rows ((int (*)(void)) hi_func_addr(21))
+#define c_gt_get_max_cols ((int (*)(void)) hi_func_addr(22))
+#define c_cursor_blink ((void (*)(int)) hi_func_addr(23))
+#define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(24))
+#define c_vesa_get_width ((uint32_t (*)(void)) hi_func_addr(25))
+#define c_vesa_get_height ((uint32_t (*)(void)) hi_func_addr(26))
 
+#define c_kb_scancode_to_char ((char (*)(int, int)) hi_func_addr(27))
+#define c_kb_get_scancode ((int (*)(void)) hi_func_addr(28))
+#define c_kb_reset_history ((void (*)(void)) hi_func_addr(29))
+#define c_kb_get_scfh ((int (*)(void)) hi_func_addr(30))
 
-#define c_mem_get_alloc_size ((uint32_t (*)(uint32_t)) hi_func_addr(16))
-#define c_mem_alloc ((uint32_t (*)(uint32_t, uint32_t, int)) hi_func_addr(17))
-#define c_mem_free_addr ((int (*)(uint32_t)) hi_func_addr(18))
-#define c_mem_get_info ((int (*)(int, int)) hi_func_addr(19))
-#define c_mem_free_all ((int (*)(int)) hi_func_addr(20))
+#define c_sys_reboot ((void (*)(void)) hi_func_addr(31))
+#define c_sys_shutdown ((void (*)(void)) hi_func_addr(32))
+#define c_run_ifexist_full ((int (*)(char *, int, char **, uint32_t, uint32_t, uint32_t)) hi_func_addr(33))
+#define c_sys_kinfo ((void (*)(char *)) hi_func_addr(34))
 
-#define c_time_get ((void (*)(i_time_t *)) hi_func_addr(21))
-#define c_timer_get_ms ((uint32_t (*)(void)) hi_func_addr(22))
+#define c_serial_print ((void (*)(int, char *)) hi_func_addr(35))
+#define c_mouse_call ((int (*)(int, int)) hi_func_addr(36))
 
-#define c_font_get ((uint8_t *(*)(int)) hi_func_addr(23))
-#define c_clear_screen ((void (*)(void)) hi_func_addr(24))
-#define c_ckprint_at ((void (*)(char *, int, int, char)) hi_func_addr(25))
-#define c_kprint_backspace ((void (*)(void)) hi_func_addr(26))
-#define c_set_cursor_offset ((void (*)(int)) hi_func_addr(27))
-#define c_get_cursor_offset ((int (*)(void)) hi_func_addr(28))
-#define c_gt_get_max_rows ((int (*)(void)) hi_func_addr(29))
-#define c_gt_get_max_cols ((int (*)(void)) hi_func_addr(30))
-#define c_cursor_blink ((void (*)(int)) hi_func_addr(31))
-#define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(32))
-#define c_vesa_get_width ((uint32_t (*)(void)) hi_func_addr(33))
-#define c_vesa_get_height ((uint32_t (*)(void)) hi_func_addr(34))
+#define c_process_set_sheduler ((void (*)(int)) hi_func_addr(37))
+#define c_process_create ((int (*)(void (*func)(), int, char *)) hi_func_addr(38))
+#define c_process_sleep ((void (*)(int, uint32_t)) hi_func_addr(39))
+#define c_process_wakeup ((void (*)(int)) hi_func_addr(40))
+#define c_process_kill ((void (*)(int)) hi_func_addr(41))
+#define c_process_get_pid ((int (*)(void)) hi_func_addr(42))
+#define c_process_get_ppid ((int (*)(int)) hi_func_addr(43))
+#define c_process_generate_pid_list ((int (*)(int *, int)) hi_func_addr(44))
+#define c_process_get_name ((int (*)(int, char *)) hi_func_addr(45))
+#define c_process_get_state ((int (*)(int)) hi_func_addr(46))
+#define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(47))
 
-#define c_kb_scancode_to_char ((char (*)(int, int)) hi_func_addr(35))
-#define c_kb_get_scancode ((int (*)(void)) hi_func_addr(36))
-#define c_kb_reset_history ((void (*)(void)) hi_func_addr(37))
-#define c_kb_get_scfh ((int (*)(void)) hi_func_addr(38))
+#define c_exit_pid ((int (*)(int, int)) hi_func_addr(48))
 
-#define c_sys_reboot ((void (*)(void)) hi_func_addr(39))
-#define c_sys_shutdown ((void (*)(void)) hi_func_addr(40))
-#define c_run_ifexist_full ((int (*)(char *, int, char **, uint32_t, uint32_t, uint32_t)) hi_func_addr(41))
-#define c_sys_kinfo ((void (*)(char *)) hi_func_addr(42))
-
-#define c_serial_print ((void (*)(int, char *)) hi_func_addr(43))
-#define c_mouse_call ((int (*)(int, int)) hi_func_addr(44))
-
-#define c_ramdisk_get_info ((uint32_t (*)(int)) hi_func_addr(45))
-
-#define c_process_set_sheduler ((void (*)(int)) hi_func_addr(46))
-#define c_process_create ((int (*)(void (*func)(), int, char *)) hi_func_addr(47))
-#define c_process_sleep ((void (*)(int, uint32_t)) hi_func_addr(48))
-#define c_process_wakeup ((void (*)(int)) hi_func_addr(49))
-#define c_process_kill ((void (*)(int)) hi_func_addr(50))
-#define c_process_get_pid ((int (*)(void)) hi_func_addr(51))
-#define c_process_get_ppid ((int (*)(int)) hi_func_addr(52))
-#define c_process_generate_pid_list ((int (*)(int *, int)) hi_func_addr(53))
-#define c_process_get_name ((int (*)(int, char *)) hi_func_addr(54))
-#define c_process_get_state ((int (*)(int)) hi_func_addr(55))
-#define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(56))
-
-#define c_exit_pid ((int (*)(int, int)) hi_func_addr(57))
-
-#define c_dily_unload ((int (*)(int)) hi_func_addr(58))
-#define c_dily_load ((int (*)(char *, int)) hi_func_addr(59))
+#define c_dily_unload ((int (*)(int)) hi_func_addr(49))
+#define c_dily_load ((int (*)(char *, int)) hi_func_addr(50))
 
 #endif

@@ -89,11 +89,11 @@ void fs_print_sector(filesys_t *fs, sid_t sid, int verbose) {
         kprintf(" unknown (%d)", data[1]);
     }
 
-    link_sid.device = data[SECTOR_SIZE - 8] | (data[SECTOR_SIZE - 7] << 8)
-        | (data[SECTOR_SIZE - 6] << 16) | (data[SECTOR_SIZE - 5] << 24);
+    link_sid.device = data[FS_SECTOR_SIZE - 8] | (data[FS_SECTOR_SIZE - 7] << 8)
+        | (data[FS_SECTOR_SIZE - 6] << 16) | (data[FS_SECTOR_SIZE - 5] << 24);
 
-    link_sid.sector = data[SECTOR_SIZE - 4] | (data[SECTOR_SIZE - 3] << 8)
-        | (data[SECTOR_SIZE - 2] << 16) | (data[SECTOR_SIZE - 1] << 24);
+    link_sid.sector = data[FS_SECTOR_SIZE - 4] | (data[FS_SECTOR_SIZE - 3] << 8)
+        | (data[FS_SECTOR_SIZE - 2] << 16) | (data[FS_SECTOR_SIZE - 1] << 24);
 
     if (data[1] != SF_CORE && (link_sid.device || link_sid.sector)) {
         kprintf(", link: d%ds%d", link_sid.device, link_sid.sector);
@@ -107,7 +107,7 @@ void fs_print_sector(filesys_t *fs, sid_t sid, int verbose) {
         return;
     }
 
-    for (uint32_t i = 0; i < SECTOR_SIZE / 16; i++) {
+    for (uint32_t i = 0; i < FS_SECTOR_SIZE / 16; i++) {
         kprintf("\n%04x: ", i * 16);
         for (int j = 0; j < 16; j++) {
             kprintf("%02x ", data[i * 16 + j]);

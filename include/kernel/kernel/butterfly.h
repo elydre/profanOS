@@ -3,12 +3,15 @@
 
 #include <type.h>
 
-#define SECTOR_SIZE 256
+#ifndef FS_SECTOR_SIZE
+#define FS_SECTOR_SIZE 256
+#endif
+
 #define META_MAXLEN 64
 
-#define LAST_SID_OFFSET (SECTOR_SIZE - sizeof(sid_t))
-#define LINKS_IN_LOCA ((int) (SECTOR_SIZE / sizeof(sid_t) - 2))
-#define BYTE_IN_CORE (SECTOR_SIZE - 2)
+#define LAST_SID_OFFSET (FS_SECTOR_SIZE - sizeof(sid_t))
+#define LINKS_IN_LOCA ((int) (FS_SECTOR_SIZE / sizeof(sid_t) - 2))
+#define BYTE_IN_CORE (FS_SECTOR_SIZE - 2)
 
 #define NULL_SID ((sid_t){0, 0})
 #define ROOT_SID ((sid_t){1, 0})
@@ -39,25 +42,6 @@
 
 #define SAVE 1
 #define NO_SAVE 0
-
-typedef struct {
-    uint8_t data[SECTOR_SIZE];  // sector data
-} sector_t;
-
-typedef struct {
-    sector_t *sectors;          // first sector pointer
-    uint32_t size;              // sector count
-
-    uint8_t *used;              // array sectors (bool)
-    uint32_t *free;             // array of free sector ids
-    uint32_t used_count;        // used sector count
-} vdisk_t;
-
-typedef struct {
-    vdisk_t **vdisk;            // list mounted virtual disks
-    uint32_t vdisk_count;       // virtual disk count
-} filesys_t;
-
 
 #define fs_cnt_read(fs, head_sid, buf, offset, size) fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
 #define fs_cnt_write(fs, head_sid, buf, offset, size) fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
@@ -117,5 +101,7 @@ sid_t    fu_path_to_sid(filesys_t *filesys, sid_t from, char *path);
 
 // filesys.c
 filesys_t *fs_get_main();
+int      filesys_init();
+
 
 #endif

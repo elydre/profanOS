@@ -57,9 +57,9 @@ int initrd_to_vdisk(vdisk_t *vdisk) {
     uint8_t *initrd = (uint8_t *) diskiso_get_start();
     uint32_t initrd_size = diskiso_get_size();
 
-    if (initrd_size > vdisk->size * SECTOR_SIZE) {
+    if (initrd_size > vdisk->size * FS_SECTOR_SIZE) {
         kprintf("initrd is too big for the vdisk (initrd: %d, vdisk: %d)\n",
-            initrd_size, vdisk->size * SECTOR_SIZE
+            initrd_size, vdisk->size * FS_SECTOR_SIZE
         );
         return 1;
     }
@@ -69,10 +69,10 @@ int initrd_to_vdisk(vdisk_t *vdisk) {
         return 1;
     }
 
-    for (uint32_t i = 0; i < initrd_size / SECTOR_SIZE; i++) {
-        vdisk_write_sector(vdisk, (sid_t) {0, i}, initrd + i * SECTOR_SIZE);
-        if (((sector_t*) vdisk->sectors + i * SECTOR_SIZE)->data[0] &&
-            ((sector_t*) vdisk->sectors + i * SECTOR_SIZE)->data[1]
+    for (uint32_t i = 0; i < initrd_size / FS_SECTOR_SIZE; i++) {
+        vdisk_write_sector(vdisk, (sid_t) {0, i}, initrd + i * FS_SECTOR_SIZE);
+        if (((sector_t*) vdisk->sectors + i * FS_SECTOR_SIZE)->data[0] &&
+            ((sector_t*) vdisk->sectors + i * FS_SECTOR_SIZE)->data[1]
         ) {
             vdisk_note_sector_used(vdisk, (sid_t) {0, i});
         }
