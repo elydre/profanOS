@@ -70,7 +70,7 @@ void tasked_program() {
     uint32_t stack_size = comm->stack_size;
 
     int vsize = comm->vcunt;
-    int fsize = fs_cnt_get_size(get_main_fs(), comm->file);
+    int fsize = fs_cnt_get_size(fs_get_main(), comm->file);
     int real_fsize = fsize;
 
     // setup private memory
@@ -82,7 +82,7 @@ void tasked_program() {
     scuba_create_virtual(process_get_directory(pid), comm->vbase, vsize / 0x1000);
     
     // load binary
-    fs_cnt_read(get_main_fs(), comm->file, (uint8_t *) comm->vbase, 0, real_fsize);
+    fs_cnt_read(fs_get_main(), comm->file, (uint8_t *) comm->vbase, 0, real_fsize);
 
     // malloc a new stack
     comm->stack = mem_alloc(stack_size, 0, 4);
@@ -172,9 +172,9 @@ int run_ifexist_full(char *path, int argc, char **argv, uint32_t vbase, uint32_t
     vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
     stack = stack ? stack : RUN_BIN_STACK;
 
-    sid_t file = fu_path_to_sid(get_main_fs(), ROOT_SID, path);
+    sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
 
-    if (!IS_NULL_SID(file) && fu_is_file(get_main_fs(), file)) {
+    if (!IS_NULL_SID(file) && fu_is_file(fs_get_main(), file)) {
         return run_binary(file, path, argc, argv, vbase, vcunt, stack);
     }
 

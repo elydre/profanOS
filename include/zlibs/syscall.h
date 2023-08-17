@@ -105,6 +105,19 @@
 #define c_fs_delete_file ((void (*)(char *)) hi_func_addr(14))
 #define c_fs_delete_dir ((void (*)(char *)) hi_func_addr(15))
 
+/*
+    fs_get_main,
+    fs_cnt_set_size,
+    fs_cnt_get_size,
+    fs_cnt_delete,
+    fs_cnt_rw,
+    fs_cnt_init,
+    fs_cnt_get_meta,
+    fs_cnt_change_meta,
+*/
+
+
+
 #define c_mem_get_alloc_size ((uint32_t (*)(uint32_t)) hi_func_addr(16))
 #define c_mem_alloc ((uint32_t (*)(uint32_t, uint32_t, int)) hi_func_addr(17))
 #define c_mem_free_addr ((int (*)(uint32_t)) hi_func_addr(18))

@@ -116,6 +116,6 @@ sid_t    fu_file_create(filesys_t *filesys, int device_id, char *path);
 sid_t    fu_path_to_sid(filesys_t *filesys, sid_t from, char *path);
 
 // filesys.c
-filesys_t *get_main_fs();
+filesys_t *fs_get_main();
 
 #endif

@@ -49,7 +49,7 @@ void fs_print_status(filesys_t *filesys) {
 
 filesys_t *MAIN_FS;
 
-filesys_t *get_main_fs() {
+filesys_t *fs_get_main() {
     return MAIN_FS;
 }
 

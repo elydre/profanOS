@@ -1,6 +1,6 @@
-#include <kernel/filesystem.h>
-#include <kernel/snowflake.h>
 #include <drivers/keyboard.h>
+#include <kernel/butterfly.h>
+#include <kernel/snowflake.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <drivers/mouse.h>
@@ -24,23 +24,15 @@ void unknown_func() {
 }
 
 void *SYSCALL_ARRAY[] = {
-    // filesystem.h
-    fs_get_used_sectors,
-    fs_get_sector_count,
-    fs_get_element_name,
-    fs_make_dir,
-    fs_make_file,
-    fs_read_file,
-    fs_write_in_file,
-    fs_get_file_size,
-    fs_get_dir_size,
-    fs_declare_read_array,
-    fs_does_path_exists,
-    fs_get_sector_type,
-    fs_get_dir_content,
-    fs_path_to_id,
-    fs_delete_file,
-    fs_delete_dir,
+    // butterfly.h
+    fs_get_main,
+    fs_cnt_set_size,
+    fs_cnt_get_size,
+    fs_cnt_delete,
+    fs_cnt_rw,
+    fs_cnt_init,
+    fs_cnt_get_meta,
+    fs_cnt_change_meta,
 
     // snowflake.h
     mem_get_alloc_size,

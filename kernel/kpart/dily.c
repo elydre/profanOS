@@ -39,8 +39,8 @@ int dily_does_loaded(int lib_id) {
 }
 
 int dily_load(char *path, int lib_id) {
-    sid_t file = fu_path_to_sid(get_main_fs(), ROOT_SID, path);
-    if (IS_NULL_SID(file) || !fu_is_file(get_main_fs(), file)) {
+    sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
+    if (IS_NULL_SID(file) || !fu_is_file(fs_get_main(), file)) {
         sys_error("Lib file not found");
         return 1;
     }
@@ -55,13 +55,13 @@ int dily_load(char *path, int lib_id) {
         // can be realloc in the future
     }
 
-    uint32_t file_size = fs_cnt_get_size(get_main_fs(), file);
+    uint32_t file_size = fs_cnt_get_size(fs_get_main(), file);
     uint32_t lib_size = file_size + RUN_LIB_STACK_L + RUN_LIB_STACK_R;
     uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5: library
     uint8_t *cnt = binary_mem + RUN_LIB_STACK_L;
 
     // fs_read_file(path, (char *) file);
-    fs_cnt_read(get_main_fs(), file, cnt, 0, file_size);
+    fs_cnt_read(fs_get_main(), file, cnt, 0, file_size);
 
     uint32_t *addr_list = (uint32_t *) mem_alloc(0x800, 0, 5); // 6: as kernel
     addr_list[0] = (uint32_t) lib_id;
