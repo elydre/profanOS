@@ -108,7 +108,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
             }
         }
         next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
-        if (IS_NULL_SID(next_loca_sid)) {
+        if (IS_NULL_SID(next_loca_sid) && index < size) {
             kprintf("no more locator after d%ds%d\n", loca_sid.device, loca_sid.sector);
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
