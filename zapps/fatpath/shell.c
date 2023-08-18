@@ -104,35 +104,37 @@ int shell_command(char *buffer) {
         char *new_path = calloc(256, sizeof(char));
         assemble_path(current_dir, suffix, new_path);
         elm = fu_path_to_sid(ROOT_SID, new_path);
+
         if (!IS_NULL_SID(elm) && fu_is_dir(elm))
             strcpy(current_dir, new_path);
-        else {
+        else
             printf("$3%s$B path not found\n", new_path);
-        }
+
         free(new_path);
-    } /*else if (!strcmp(prefix, "go")) {
+    } else if (!strcmp(prefix, "go")) {
         if (!str_count(suffix, '.')) strncat(suffix, ".bin", 4);
         char *file = malloc(strlen(suffix) + strlen(current_dir) + 3);
         assemble_path(current_dir, suffix, file);
         suffix[0] = '\0';
-        if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
+        elm = fu_path_to_sid(ROOT_SID, file);
+
+        if (!IS_NULL_SID(elm) && fu_is_file(elm))
             go(file, prefix, suffix);
-        } else {
+        else
             printf("$3%s$B file not found\n", file);
-        }
+
         free(file);
-    }*/ else {  // shell command
+    } else {  // shell command
         char *old_prefix = malloc(strlen(prefix) + 1);
         strcpy(old_prefix, prefix);
         if (!str_count(prefix, '.')) strncat(prefix, ".bin", 4);
         char *file = malloc(strlen(prefix) + 17);
         assemble_path("/bin/commands", prefix, file);
-
         elm = fu_path_to_sid(ROOT_SID, file);
 
-        if (!IS_NULL_SID(elm) && fu_is_file(elm)) {
+        if (!IS_NULL_SID(elm) && fu_is_file(elm))
             go(file, old_prefix, suffix);
-        } else {
+        else {
             assemble_path("/bin/fatpath", prefix, file);
             elm = fu_path_to_sid(ROOT_SID, file);
             if (!IS_NULL_SID(elm) && fu_is_file(elm)) {

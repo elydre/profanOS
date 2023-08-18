@@ -1,7 +1,9 @@
-#include <syscall.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+#include <syscall.h>
+#include <filesys.h>
 
 
 #define LSIZE 1024
@@ -32,28 +34,17 @@ int arg_cont[] = {
 
 int *mem;
 
-void start_inter(int *code, int code_size, int while_id);
-int lexer(char *path, int *code);
-
-int main(int argc, char **argv) {
-    int *meml = calloc(LSIZE, sizeof(int));
-    int *prog = calloc(PSIZE, sizeof(int));
-    mem = meml;
-
-    meml[0] = 1;
-
-    int code_size = lexer("/user/prog.li", prog);
-
-    start_inter(prog, code_size, 0);
-
-    free(meml);
-    free(prog);
-    return 0;
-}
-
 int lexer(char *path, int *code) {
-    char *data_char = c_fs_declare_read_array(path);
-    c_fs_read_file(path, (uint8_t *) data_char);
+    sid_t file = fu_path_to_sid(ROOT_SID, path);
+
+    if (IS_NULL_SID(file) || !fu_is_file(file)) {
+        printf("%s: file not found\n", path);
+        return 0;
+    }
+    
+    int file_size = fu_get_file_size(file);
+    char *data_char = calloc(file_size + 1, sizeof(char));
+    fu_read_file(file, data_char, file_size);
 
     int code_size = 0;
 
@@ -120,4 +111,21 @@ void start_inter(int *code, int code_size, int while_id) {
             }
         }
     }
+}
+
+int main(int argc, char **argv) {
+    int *meml = calloc(LSIZE, sizeof(int));
+    int *prog = calloc(PSIZE, sizeof(int));
+    mem = meml;
+
+    meml[0] = 1;
+
+    int code_size = lexer("/user/prog.li", prog);
+
+    if (code_size)
+        start_inter(prog, code_size, 0);
+
+    free(meml);
+    free(prog);
+    return 0;
 }

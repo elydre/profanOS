@@ -1,9 +1,12 @@
-#include <syscall.h>
 #include <stdlib.h>
-#include <i_time.h>
-#include <i_vgui.h>
 #include <stdio.h>
 #include <type.h>
+
+#include <syscall.h>
+#include <filesys.h>
+#include <i_time.h>
+#include <i_vgui.h>
+
 
 #define FILENAME "/user/test.piv"
 
@@ -24,10 +27,16 @@ void play_video(uint8_t *data, uint16_t width, uint16_t height, uint16_t nbframe
 }
 
 int main(int argc, char **argv) {
-    int size = c_fs_get_file_size(FILENAME);
-    uint8_t *ptr = (uint8_t *) malloc(size);
+    sid_t file = fu_path_to_sid(ROOT_SID, FILENAME);
 
-    c_fs_read_file(FILENAME, ptr);
+    if (IS_NULL_SID(file) || !fu_is_file(file)) {
+        printf("%s: file not found\n", FILENAME);
+        return 1;
+    }
+
+    int size = fu_get_file_size(file);
+    uint8_t *ptr = malloc(size);
+    fu_read_file(file, ptr, size);
 
     uint8_t type = ptr[0];
     uint16_t width = ptr[1] | (ptr[2] << 8);
