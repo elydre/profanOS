@@ -23,6 +23,8 @@
 #define IS_NULL_SID(sid) (sid.device == 0 && sid.sector == 0)
 #endif
 
+#define fu_get_file_size(sid) (c_fs_cnt_get_size(c_fs_get_main(), sid))
+
 //    int main(void);
 //    void sep_path(char *fullpath, char **parent, char **cnt);
 int   fu_is_dir(sid_t dir_sid);
