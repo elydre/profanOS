@@ -191,7 +191,7 @@ def build_app_lib():
     if not os.path.exists(f"{OUT_DIR}/zlibs"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zlibs' directory")
         os.makedirs(f"{OUT_DIR}/zlibs")
-    
+
     skip_count = 0
 
     for file in build_list:
@@ -208,15 +208,12 @@ def build_app_lib():
         if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
             cprint(COLOR_EXEC, f"creating '{OUT_DIR}/{dir_name}' directory")
             os.makedirs(f"{OUT_DIR}/{dir_name}")
-    
-    if skip_count:
-        cprint(COLOR_INFO, f"skipped {skip_count} zapps and zlibs")
 
     build_list = [x for x in build_list if not x.startswith("zapps/projets")]
 
     # check if zapps need to be rebuild
     updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (total: {len(build_list) + skip_count})")
+    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (active: {len(build_list)}, skipped: {skip_count}, total: {len(build_list) + skip_count})")
     build_list = updated_list
 
     if not build_list: return
@@ -290,12 +287,12 @@ def add_src_to_disk():
     for dir_name in [ZAPPS_DIR] + [ZLIBS_DIR]:
         if not os.path.exists(dir_name): continue
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
-    
+
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/include")
     for dir_name in INCLUDE_DIR:
         if not os.path.exists(dir_name): continue
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/include")
-    
+
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/kernel")
     for dir_name in SRC_DIRECTORY:
         if not os.path.exists(dir_name): continue

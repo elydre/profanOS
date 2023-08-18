@@ -35,6 +35,9 @@ int fflush(FILE *stream);
 int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
+    puts("fopen not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+    /*
     // first we check if the file exists with a syscall
     // copy the filename to a new string
     char *file_name = calloc(strlen(filename) + 1, sizeof(char));
@@ -109,6 +112,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
 
     // we return the file
     return file;
+    */
 }
 
 errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filename, const char *restrict mode) {
@@ -132,6 +136,9 @@ errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict fi
 }
 
 int fclose(FILE *stream) {
+    puts("fclose not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+    /*
     // because we dont actually use streams, we just have to free things
 
     // but we still have to check if the file isnt null
@@ -152,9 +159,13 @@ int fclose(FILE *stream) {
     free(stream->buffer);
     free(stream);
     return 0;
+    */
 }
 
 int fflush(FILE *stream) {
+    puts("fflush not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+    /*
     // we check if the file is null
     if (stream == NULL || stream == stdout) {
         return 0;
@@ -166,6 +177,7 @@ int fflush(FILE *stream) {
     // we write the file
     c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_pos);
     return 0;
+    */
 }
 
 void setbuf(FILE *restrict stream, char *restrict buffer) {
@@ -183,6 +195,9 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
+    puts("fread not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+    /*
     // we check if the file is null
     if (stream == NULL || stream == stdout) {
         return 0;
@@ -218,9 +233,13 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
         read_count++;
     }
     return read_count;
+    */
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
+    puts("fwrite not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+    /*
     // we check if the file is null
     if (stream == NULL) {
         return 0;
@@ -253,6 +272,7 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     fflush(stream);
     // in any case, we return the count
     return count;
+    */
 }
 
 int fgetc(FILE *stream) {

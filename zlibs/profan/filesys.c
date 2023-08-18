@@ -33,12 +33,16 @@
 
 sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path);
 
-
 /********************************************
  *                                         *
  *          Auxiliary functions            *
  *                                         *
 ********************************************/
+
+// init function
+int main(void) {
+    return 0;
+}
 
 void sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;

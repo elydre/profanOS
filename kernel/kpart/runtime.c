@@ -79,7 +79,7 @@ void tasked_program() {
         vsize = fsize * 2;
 
     scuba_create_virtual(process_get_directory(pid), comm->vbase, vsize / 0x1000);
-    
+
     // load binary
     fs_cnt_read(fs_get_main(), comm->file, (uint8_t *) comm->vbase, 0, real_fsize);
 
