@@ -21,6 +21,7 @@ lib_t libs_at_boot[] = {
     {1007, "/lib/ports/stdlib.bin"},
     {1008, "/lib/ports/string.bin"},
     {1009, "/lib/ports/stdio.bin"},
+    {1010, "/lib/profan/filesys.bin"},
     {1011, "/lib/ports/math.bin"},
     {1012, "/lib/ports/time.bin"},
     {1013, "/lib/ports/setjmp.bin"},

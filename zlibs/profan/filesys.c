@@ -5,33 +5,17 @@
 #include <syscall.h>
 #include <type.h>
 
+#define FILESYS_LIB_C
+#include <filesys.h>
+
+
 /********************************************
  *                                         *
  *          Definitions and macros         *
  *                                         *
 ********************************************/
 
-#ifndef NULL_SID
-#define NULL_SID ((sid_t) {0, 0})
-#endif
-
-#ifndef UINT32_MAX
-#define UINT32_MAX 0xFFFFFFFF
-#endif
-
-#ifndef META_MAXLEN
-#define META_MAXLEN 64
-#endif
-
-#ifndef ROOT_SID
-#define ROOT_SID ((sid_t) {1, 0})
-#endif
-
-#ifndef IS_NULL_SID
-#define IS_NULL_SID(sid) (sid.device == 0 && sid.sector == 0)
-#endif
-
-sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path);
+sid_t fu_path_to_sid(sid_t from, char *path);
 
 /********************************************
  *                                         *
@@ -79,7 +63,8 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
  *                                         *
 ********************************************/
 
-int fu_is_dir(filesys_t *filesys, sid_t dir_sid) {
+int fu_is_dir(sid_t dir_sid) {
+    filesys_t *filesys = c_fs_get_main();
     char *name = c_fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
     if (name[0] == 'D') {
@@ -104,7 +89,9 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***names) {
+int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
+    filesys_t *filesys = c_fs_get_main();
+
     // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
@@ -112,7 +99,7 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
         return -1;
     }
 
-    if (!fu_is_dir(filesys, dir_sid)) {
+    if (!fu_is_dir(dir_sid)) {
         printf("not a directory\n");
         return -1;
     }
@@ -144,7 +131,9 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     return count;
 }
 
-int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, char *name) {
+int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
+    filesys_t *filesys = c_fs_get_main();
+
     // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
@@ -152,7 +141,7 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
         return 1;
     }
 
-    if (!fu_is_dir(filesys, dir_sid)) {
+    if (!fu_is_dir(dir_sid)) {
         printf("not a directory\n");
         return 1;
     }
@@ -203,7 +192,9 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
     return 0;
 }
 
-sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
+sid_t fu_dir_create(int device_id, char *path) {
+    filesys_t *filesys = c_fs_get_main();
+
     char *parent, *name;
 
     sid_t parent_sid;
@@ -211,14 +202,14 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
 
     sep_path(path, &parent, &name);
     if (parent[0]) {
-        parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
+        parent_sid = fu_path_to_sid(ROOT_SID, parent);
         if (IS_NULL_SID(parent_sid)) {
             printf("failed to find parent directory\n");
             free(parent);
             free(name);
             return NULL_SID;
         }
-        if (!fu_is_dir(filesys, parent_sid)) {
+        if (!fu_is_dir(parent_sid)) {
             printf("parent is not a directory\n");
             free(parent);
             free(name);
@@ -244,7 +235,7 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
 
     // create a link in parent directory
     if (parent[0]) {
-        if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
+        if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
             printf("failed to add directory to parent\n");
             free(parent);
             free(name);
@@ -267,7 +258,9 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
  *                                         *
 ********************************************/
 
-int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
+int fu_is_file(sid_t dir_sid) {
+    filesys_t *filesys = c_fs_get_main();
+
     char *name = c_fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
@@ -278,7 +271,9 @@ int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
     return 0;
 }
 
-sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
+sid_t fu_file_create(int device_id, char *path) {
+    filesys_t *filesys = c_fs_get_main();
+
     char *parent, *name;
 
     sid_t parent_sid;
@@ -292,14 +287,14 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
         return NULL_SID;
     }
 
-    parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
+    parent_sid = fu_path_to_sid(ROOT_SID, parent);
     if (IS_NULL_SID(parent_sid)) {
         printf("failed to find parent directory\n");
         free(parent);
         free(name);
         return NULL_SID;
     }
-    if (!fu_is_dir(filesys, parent_sid)) {
+    if (!fu_is_dir(parent_sid)) {
         printf("parent is not a directory\n");
         free(parent);
         free(name);
@@ -322,7 +317,7 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
 
     // create a link in parent directory
 
-    if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
+    if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
         printf("failed to add directory to parent\n");
         free(parent);
         free(name);
@@ -373,7 +368,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     sid_t *sids;
     int count;
 
-    count = fu_get_dir_content(filesys, parent, &sids, &names);
+    count = fu_get_dir_content(parent, &sids, &names);
 
     if (count == -1) {
         printf("failed to get directory content during path search\n");
@@ -386,7 +381,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
             ret = sids[j];
             break;
         }
-        if (strcmp(name, names[j]) == 0 && fu_is_dir(filesys, sids[j])) {
+        if (strcmp(name, names[j]) == 0 && fu_is_dir(sids[j])) {
             ret = fu_rec_path_to_sid(filesys, sids[j], path + i);
             break;
         }
@@ -403,7 +398,9 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     return ret;
 }
 
-sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path) {
+sid_t fu_path_to_sid(sid_t from, char *path) {
+    filesys_t *filesys = c_fs_get_main();
+
     sid_t ret;
 
     if (strcmp("/", path) == 0) {
