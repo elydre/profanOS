@@ -121,6 +121,13 @@ int filesys_init() {
         "lib"
     );
 
+    fu_add_element_to_dir(
+        MAIN_FS,
+        ROOT_SID,
+        fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/zada"),
+        "zada"
+    );
+
     fs_print_status(MAIN_FS);
     return 0;
 }

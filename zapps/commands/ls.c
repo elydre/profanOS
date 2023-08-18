@@ -5,6 +5,71 @@
 #include <string.h>
 #include <stdio.h>
 
+int cmp_string_alpha(char *s1, char *s2) {
+    int i = 0;
+    while (s1[i] && s2[i]) {
+        if (s1[i] < s2[i]) return -1;
+        else if (s1[i] > s2[i]) return 1;
+        i++;
+    }
+    if (s1[i]) return 1;
+    else if (s2[i]) return -1;
+    else return 0;
+}
+
+void sort_alpha_and_type(int count, char **names, sid_t *ids) {
+    char *tmp_name;
+    sid_t tmp_id;
+    int i, j;
+
+    int dir_count = 0;
+
+    // put directories first
+    for (i = 0; i < count; i++) {
+        if (fu_is_dir(ids[i])) {
+            tmp_name = names[dir_count];
+            names[dir_count] = names[i];
+            names[i] = tmp_name;
+
+            tmp_id = ids[dir_count];
+            ids[dir_count] = ids[i];
+            ids[i] = tmp_id;
+
+            dir_count++;
+        }
+    }
+
+    // sort directories
+    for (i = 0; i < dir_count; i++) {
+        for (j = i + 1; j < dir_count; j++) {
+            if (cmp_string_alpha(names[i], names[j]) > 0) {
+                tmp_name = names[i];
+                names[i] = names[j];
+                names[j] = tmp_name;
+
+                tmp_id = ids[i];
+                ids[i] = ids[j];
+                ids[j] = tmp_id;
+            }
+        }
+    }
+
+    // sort files
+    for (i = dir_count; i < count; i++) {
+        for (j = i + 1; j < count; j++) {
+            if (cmp_string_alpha(names[i], names[j]) > 0) {
+                tmp_name = names[i];
+                names[i] = names[j];
+                names[j] = tmp_name;
+
+                tmp_id = ids[i];
+                ids[i] = ids[j];
+                ids[j] = tmp_id;
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     char *ls_path = malloc(256);
 
@@ -29,6 +94,8 @@ int main(int argc, char **argv) {
         free(ls_path);
         return 0;
     }
+
+    sort_alpha_and_type(elm_count, cnt_names, cnt_ids);
 
     for (int i = 0; i < elm_count; i++) {
         if (fu_is_dir(cnt_ids[i])) {

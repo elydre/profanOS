@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define pl_and_pf(f, ...) print_logo_line(); printf(f, __VA_ARGS__)
+#define pl_and_pf(...) print_logo_line(); printf(__VA_ARGS__)
 
 #define LOGO_LINES 9
 #define INFO_LINES 9
@@ -66,14 +66,10 @@ int main(void) {
     );
 
     pl_and_pf("$4phys mem:   $2%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
-    pl_and_pf("$4disk size:  $2%gMo\n", ((double) c_fs_get_sector_count()) / 2048);
-
-    pl_and_pf("$4ramdisk:    $2%d%% $7($2%gMo$7)\n",
-        (int) (100 * ((double) c_ramdisk_get_info(1)) / c_ramdisk_get_info(0)),
-        c_ramdisk_get_info(0) / 2048.0
-    );
 
     pl_and_pf("$4screen:     $2%dx$2%d\n", c_vesa_get_width(), c_vesa_get_height());
+    pl_and_pf("\n");
+    pl_and_pf("\n");
 
     printf("\n");
 
