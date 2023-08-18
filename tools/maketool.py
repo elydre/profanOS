@@ -191,9 +191,16 @@ def build_app_lib():
     if not os.path.exists(f"{OUT_DIR}/zlibs"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zlibs' directory")
         os.makedirs(f"{OUT_DIR}/zlibs")
+    
+    skip_count = 0
 
     for file in build_list:
         if sum(x == "/" for x in file) <= 1:
+            continue
+
+        if file.split("/")[-2].startswith("_"):
+            skip_count += 1
+            build_list = [x for x in build_list if x != file]
             continue
 
         dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
@@ -201,12 +208,15 @@ def build_app_lib():
         if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
             cprint(COLOR_EXEC, f"creating '{OUT_DIR}/{dir_name}' directory")
             os.makedirs(f"{OUT_DIR}/{dir_name}")
+    
+    if skip_count:
+        cprint(COLOR_INFO, f"skipped {skip_count} zapps and zlibs")
 
     build_list = [x for x in build_list if not x.startswith("zapps/projets")]
 
     # check if zapps need to be rebuild
     updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (total: {len(build_list)})")
+    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (total: {len(build_list) + skip_count})")
     build_list = updated_list
 
     if not build_list: return
@@ -323,7 +333,7 @@ def gen_disk(force=False, with_src=False):
             print_and_exec(f"cp zapps/projets/{dossier}/*.bin {OUT_DIR}/disk/bin/projets/")
             print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/projets/{dossier}/ zapps/projets/{dossier}/*.bin")
     except Exception as e:
-        cprint(COLOR_EROR, f"Error while copying projects: {e}")
+        cprint(COLOR_EROR, f"Error while building projets {e}")
 
     if HBL_FILE: write_build_logs()
 

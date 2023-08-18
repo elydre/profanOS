@@ -17,6 +17,9 @@
 
 #define c_run_ifexist(path, argc, argv) c_run_ifexist_full(path, argc, argv, 0, 0, 0)
 
+#define c_fs_cnt_read(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
+#define c_fs_cnt_write(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
+
 // nothing better than shit code art
 #define hi_func_addr(id) ((int (*)(int)) *(int *)WATFUNC_ADDR)(id)
 
