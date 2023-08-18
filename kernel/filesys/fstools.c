@@ -60,14 +60,15 @@ void fs_print_sector(filesys_t *fs, sid_t sid, int verbose) {
         kprintf("out of range\n");
         return;
     }
+
+    uint8_t *data = vdisk_load_sector(vdisk, sid);
+
     if (vdisk_is_sector_used(vdisk, sid)) {
-        kprintf("used, ");
+        kprintf("%x, used, ", data);
     } else {
         kprintf("unused\n");
         return;
     }
-
-    uint8_t *data = vdisk_load_sector(vdisk, sid);
 
     if (data[0] == ST_CONT) {
         kprintf("type: container");

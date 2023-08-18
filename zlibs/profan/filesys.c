@@ -31,8 +31,8 @@ int main(void) {
 void sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
-    *parent = (char *)malloc(META_MAXLEN);
-    *cnt = (char *)malloc(META_MAXLEN);
+    *parent = (char *) malloc(META_MAXLEN);
+    *cnt = (char *) malloc(META_MAXLEN);
 
     len = strlen(fullpath);
     if (len == 0 || (len == 1 && fullpath[0] == '/')) {

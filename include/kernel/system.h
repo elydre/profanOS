@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "BFS-05"
+#define KERNEL_VERSION  "BFS-06"
 #define KERNEL_EDITING  "butterfly"
 
 #define PROCESS_MAX     20          // max process count

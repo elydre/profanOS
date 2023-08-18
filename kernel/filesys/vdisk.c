@@ -105,7 +105,7 @@ int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
         kprintf("d%ds%d out of range\n", sid.device, sid.sector);
         return 1;
     }
-    mem_copy(vdisk->sectors + sid.sector * FS_SECTOR_SIZE, data, FS_SECTOR_SIZE);
+    mem_copy(vdisk->sectors + sid.sector, data, FS_SECTOR_SIZE);
     return 0;
 }
 
@@ -114,7 +114,7 @@ uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
         kprintf("d%ds%d out of range\n", sid.device, sid.sector);
         return NULL;
     }
-    return (uint8_t *) (vdisk->sectors + (sid.sector * FS_SECTOR_SIZE));
+    return (uint8_t *) (vdisk->sectors + sid.sector);
 }
 
 int vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save) {
