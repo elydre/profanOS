@@ -1,9 +1,11 @@
-#include <syscall.h>
-#include <filesys.h>
 #include <stdlib.h>
-#include <profan.h>
 #include <string.h>
 #include <stdio.h>
+
+#include <syscall.h>
+#include <filesys.h>
+#include <profan.h>
+
 
 int cmp_string_alpha(char *s1, char *s2) {
     int i = 0;

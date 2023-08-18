@@ -143,6 +143,10 @@ void draw_tree(filesys_t *filesys, sid_t sid, int depth) {
         return;
     }
 
+    if (count == 0) {
+        return;
+    }
+
     for (int i = 0; i < count; i++) {
         for (int j = 0; j < depth; j++) {
             printf("  ");

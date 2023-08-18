@@ -52,6 +52,11 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     uint32_t count;
     mem_copy(&count, buf, sizeof(uint32_t));
 
+    if (count == 0 || ids == NULL || names == NULL) {
+        free(buf);
+        return count;
+    }
+
     // get the elements
     *ids = malloc(sizeof(sid_t) * count);
     *names = malloc(sizeof(char *) * count);

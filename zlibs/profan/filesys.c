@@ -386,7 +386,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
             ret = sids[j];
             break;
         }
-        if (strcmp(name, names[j]) == 0 && fu_is_dir(sids[j])) {
+        if (strcmp(name, names[j]) == 0 && fu_is_dir(sids[j]) && fu_get_dir_content(sids[j], NULL, NULL) > 0) {
             ret = fu_rec_path_to_sid(filesys, sids[j], path + i);
             break;
         }

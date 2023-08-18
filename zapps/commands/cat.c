@@ -1,9 +1,10 @@
-#include <syscall.h>
-#include <filesys.h>
-#include <profan.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include <syscall.h>
+#include <filesys.h>
+#include <profan.h>
 
 void make_printable(char *str, int size) {
     int i;

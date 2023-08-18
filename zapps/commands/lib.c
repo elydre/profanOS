@@ -3,14 +3,18 @@
 #include <stdio.h>
 
 #include <syscall.h>
+#include <filesys.h>
 #include <profan.h>
 
 
 #define HELP_USAGE "Usage: lib <mode> [args]\n"
 #define HELP_HELP "Try 'lib -h' for more information.\n"
 
-#define is_file(path) (c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 2)
-
+int is_file(char *path) {
+    sid_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_NULL_SID(sid)) return 0;
+    return fu_is_file(sid);
+}
 
 int main(int argc, char **argv) {
     // parse arguments

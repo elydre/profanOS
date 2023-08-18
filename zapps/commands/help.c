@@ -1,7 +1,8 @@
-#include <syscall.h>
-#include <filesys.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <filesys.h>
+#include <syscall.h>
 
 #define help_path "/zada/common/shell_help.txt"
 

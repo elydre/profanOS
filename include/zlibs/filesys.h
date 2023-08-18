@@ -24,6 +24,10 @@
 #endif
 
 #define fu_get_file_size(sid) (c_fs_cnt_get_size(c_fs_get_main(), sid))
+#define fu_set_file_size(sid, size) (c_fs_cnt_set_size(c_fs_get_main(), sid, size))
+
+#define fu_write_file(sid, buf, size) (c_fs_cnt_write(c_fs_get_main(), sid, buf, 0, size))
+#define fu_read_file(sid, buf, size) (c_fs_cnt_read(c_fs_get_main(), sid, buf, 0, size))
 
 //    int main(void);
 //    void sep_path(char *fullpath, char **parent, char **cnt);
