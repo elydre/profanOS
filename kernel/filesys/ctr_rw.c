@@ -148,7 +148,11 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
 
     // check if offset+size is valid
     if (offset + size > *((uint32_t *) (data + 2 + META_MAXLEN))) {
-        kprintf("cannot %s beyond cnt size\n", is_read ? "read" : "write");
+        kprintf("cannot %s beyond cnt size, %d max, %d requested\n",
+                is_read ? "read" : "write",
+                *((uint32_t *) (data + 2 + META_MAXLEN)),
+                offset + size
+        );
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
