@@ -10,6 +10,7 @@
 #define STDIO_C
 #include <stdio.h>
 
+#define FILE_BUFFER_SIZE 1024
 
 void init_func();
 
@@ -35,84 +36,55 @@ int fflush(FILE *stream);
 int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
-    puts("fopen not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-    /*
-    // first we check if the file exists with a syscall
-    // copy the filename to a new string
-    char *file_name = calloc(strlen(filename) + 1, sizeof(char));
-    strcpy(file_name, filename);
-    int exists = c_fs_does_path_exists(file_name);
-    free(file_name);
+    // first we check if the file exists
+    sid_t file_id = fu_path_to_sid(filename);
+
+    int exists = !IS_NULL_SID(file_id);
+
     // the file doesn't exist but it should
-    if (exists == 0 && (strcmp(mode, "r") == 0 || strcmp(mode, "r+") == 0)) {
+    if (!exists && (
+        strcmp(mode, "r") == 0 ||
+        strcmp(mode, "r+") == 0 ||
+        strcmp(mode, "rb") == 0 ||
+        strcmp(mode, "rb+") == 0
+    )) {
         return NULL;
     }
-    // we separate the filename from the path
-    char *name = calloc(strlen(filename) + 1, sizeof(char));
-    char *path = calloc(strlen(filename) + 1, sizeof(char));
-    // path is everything before the last /
-    // filename is everything after the last /
-    int last_slash = 0;
-    for (unsigned int i = 0; i < strlen(filename); i++) {
-        if (filename[i] == '/') {
-            last_slash = i;
-        }
-    }
-    for (int i = 0; i < last_slash; i++) {
-        path[i] = filename[i];
-    }
-    for (unsigned int i = last_slash + 1; i < strlen(filename); i++) {
-        name[i - last_slash - 1] = filename[i];
-    }
-    // now we create the file if it doesn't exist
-    if (exists == 0) {
-        c_fs_make_file(path, name);
-    }
-    // now the file exists, we can open it
-    // we create a new file struct
-    FILE *file = calloc(1, sizeof(FILE));
-    // we copy the filename, name, path, mode into the file struct
-    file->filename = calloc(strlen(filename) + 1, sizeof(char));
-    strcpy(file->filename, filename);
-    file->name = calloc(strlen(name) + 1, sizeof(char));
-    strcpy(file->name, name);
-    file->path = calloc(strlen(path) + 1, sizeof(char));
-    strcpy(file->path, path);
-    file->mode = calloc(strlen(mode) + 1, sizeof(char));
-    strcpy(file->mode, mode);
-    // we free the name and path, now if we need them we can get them from the file struct
-    free(name);
-    free(path);
 
-    // we open the file, read it, and put it in the file struct
-    // we get the file size
-    int file_size = c_fs_get_file_size(file->filename);
-    // we allocate the memory for the file
-    file->buffer = calloc(file_size + 1, sizeof(char));
-    // we read the file
-    c_fs_read_file(file->filename, (uint8_t *) file->buffer);
-    // we set the file size
-    file->buffer_size = file_size;
-    // we set the file position to 0
-    file->buffer_pos = 0;
-    // we set the file eof to 0
+    // the path is a directory
+    if (exists && fu_is_dir(file_id)) {
+        return NULL;
+    }
+
+    // the file exists but we want to create it
+    if (!exists) {
+        file_id = fu_create_file(0, filename);
+    }
+
+    // check for failure
+    if (IS_NULL_SID(file_id)) {
+        return NULL;
+    }
+
+    // now we create the file structure
+    FILE *file = malloc(sizeof(FILE));
+
+    // we copy the filename
+    file->filename = strdup(filename);
+
+    // we set file pos and eof to 0
+    file->file_pos = 0;
     file->eof = 0;
-    // we set the file error to 0
-    file->error = 0;
-    // we set the file temporary to 0
-    file->is_temp = 0;
 
-    // if we are in writing mode we void the content
-    if (strcmp(mode, "w") == 0 || strcmp(mode, "w+") == 0 || strcmp(mode, "wb") == 0 || strcmp(mode, "wb+") == 0) {
-        file->buffer[0] = '\0';
-        file->buffer_size = 0;
-        file->buffer_pos = 0;
-    }
+    // we copy the mode
+    file->mode = strdup(mode);
 
-    // we return the file
+    // we set the buffer
+    file->buffer_size = 0;
+    file->buffer_pos = 0;
+    file->buffer = malloc(FILE_BUFFER_SIZE);
+
     return file;
-    */
 }
 
 errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filename, const char *restrict mode) {
@@ -136,48 +108,43 @@ errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict fi
 }
 
 int fclose(FILE *stream) {
-    puts("fclose not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-    /*
-    // because we dont actually use streams, we just have to free things
-
-    // but we still have to check if the file isnt null
-    if (stream == NULL || stream == stdout) {
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+    // we check for stdout/stderr/stdin
+    if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
 
     // we check if the file is open for writing
-    if (strcmp(stream->mode, "w") == 0 || strcmp(stream->mode, "w+") == 0 || strcmp(stream->mode, "a") == 0 || strcmp(stream->mode, "a+") == 0) {
-        // we write the file
+    if (!(strcmp(stream->mode, "w") &&
+        strcmp(stream->mode, "w+")  &&
+        strcmp(stream->mode, "a")   &&
+        strcmp(stream->mode, "a+")  &&
+        strcmp(stream->mode, "wb")  &&
+        strcmp(stream->mode, "wb+") &&
+        strcmp(stream->mode, "ab")  &&
+        strcmp(stream->mode, "ab+"))
+    ) {
+        // we save the file
         fflush(stream);
     }
 
+    // we free the structure
     free(stream->filename);
-    free(stream->path);
-    free(stream->name);
-    free(stream->mode);
     free(stream->buffer);
+    free(stream->mode);
+
+    // we free the file
     free(stream);
+
     return 0;
-    */
 }
 
 int fflush(FILE *stream) {
     puts("fflush not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
-    /*
-    // we check if the file is null
-    if (stream == NULL || stream == stdout) {
-        return 0;
-    }
-    // we check if the file is open for writing
-    if (strcmp(stream->mode, "w") && strcmp(stream->mode, "w+") && strcmp(stream->mode, "a") && strcmp(stream->mode, "a+") && strcmp(stream->mode, "wb") && strcmp(stream->mode, "wb+") && strcmp(stream->mode, "ab") && strcmp(stream->mode, "ab+")) {
-        return 0;
-    }
-    // we write the file
-    c_fs_write_in_file(stream->filename, (uint8_t *) stream->buffer, stream->buffer_pos);
-    return 0;
-    */
 }
 
 void setbuf(FILE *restrict stream, char *restrict buffer) {
