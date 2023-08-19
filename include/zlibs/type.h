@@ -86,15 +86,12 @@ typedef size_t rsize_t;
 
 typedef struct FILE {
     char *filename;
-    char *path;
-    char *name;
+    int   file_pos;
+    int   eof;
     char *mode;
+    int   buffer_size;
+    int   buffer_pos;
     char *buffer;
-    unsigned int buffer_size;
-    unsigned int buffer_pos;
-    int eof;
-    int error;
-    int is_temp;
 } FILE;
 
 typedef struct fpos_t {
