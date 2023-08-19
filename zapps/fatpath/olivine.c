@@ -1049,6 +1049,11 @@ char *if_find(char **input) {
 
     int elm_count = fu_get_dir_content(dir_id, &out_ids, &names);
 
+    if (elm_count == 0) {
+        free(path);
+        return NULL;
+    }
+
     char *output = malloc(1 * sizeof(char));
     output[0] = '\0';
 
