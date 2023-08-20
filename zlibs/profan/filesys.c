@@ -17,6 +17,15 @@
 
 sid_t fu_path_to_sid(sid_t from, char *path);
 
+#define CACHE_FCTF_SIZE 16
+
+typedef struct {
+    sid_t sid;
+    void *addr;
+} cache_fctf_t;
+
+cache_fctf_t *cache_fctf;
+
 /********************************************
  *                                         *
  *          Auxiliary functions            *
@@ -25,6 +34,12 @@ sid_t fu_path_to_sid(sid_t from, char *path);
 
 // init function
 int main(void) {
+    cache_fctf = malloc(sizeof(cache_fctf_t) * CACHE_FCTF_SIZE);
+    for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
+        cache_fctf[i].sid = NULL_SID;
+        cache_fctf[i].addr = NULL;
+    }
+
     return 0;
 }
 
@@ -341,6 +356,132 @@ int fu_file_read(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
 
 int fu_file_write(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
     return (!fu_is_file(file_sid) || c_fs_cnt_write(c_fs_get_main(), file_sid, buf, offset, size));
+}
+
+/**************************************************
+ *                                               *
+ *      Function Calls Through File System       *
+ *                                               *
+**************************************************/
+
+// call a function when reading a file
+
+int fu_is_fctf(sid_t file_sid) {
+    filesys_t *filesys = c_fs_get_main();
+
+    char *name = c_fs_cnt_get_meta(filesys, file_sid);
+    if (name == NULL) return 0;
+    if (name[0] == 'C') {
+        free(name);
+        return 1;
+    }
+    free(name);
+    return 0;
+}
+
+sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uint32_t, uint8_t)) {
+    filesys_t *filesys = c_fs_get_main();
+
+    char *parent, *name;
+
+    sid_t parent_sid;
+    sid_t head_sid;
+
+    sep_path(path, &parent, &name);
+    if (!parent[0]) {
+        printf("parent unreachable\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    if (IS_NULL_SID(parent_sid)) {
+        printf("failed to find parent directory\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+    if (!fu_is_dir(parent_sid)) {
+        printf("parent is not a directory\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    // generate the meta
+    char *meta = malloc(META_MAXLEN);
+    snprintf(meta, META_MAXLEN, "C-%s", name);
+
+    head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    free(meta);
+
+    if (IS_NULL_SID(head_sid)) {
+        printf("failed to create file\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    // create a link in parent directory
+
+    if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
+        printf("failed to add directory to parent\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    // write the function pointer
+    c_fs_cnt_set_size(filesys, head_sid, sizeof(void *));
+    if (c_fs_cnt_write(filesys, head_sid, (void *) &fct, 0, sizeof(void *))) {
+        printf("failed to write function pointer\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    free(parent);
+    free(name);
+
+    return head_sid;
+}
+
+int fu_fctf_rw(sid_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_t is_read) {
+    // search in cache
+
+    void *addr = NULL;
+
+    for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
+        if (IS_SAME_SID(cache_fctf[i].sid, file_sid)) {
+            addr = cache_fctf[i].addr;
+            break;
+        }
+    }
+
+    if (addr == NULL) {
+        // read container
+        if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
+            printf("failed to read function pointer\n");
+            return 1;
+        }
+
+        // add to cache
+        for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
+            if (IS_SAME_SID(cache_fctf[i].sid, file_sid)) {
+                cache_fctf[i].sid = file_sid;
+                cache_fctf[i].addr = addr;
+                break;
+            }
+            if (i == CACHE_FCTF_SIZE - 1) {
+                cache_fctf[0].sid = file_sid;
+                cache_fctf[0].addr = addr;
+            }
+        }
+    }
+
+    // call the function
+    return ((int (*)(void *, uint32_t, uint32_t, uint8_t)) addr)(buf, offset, size, is_read);
 }
 
 /**************************************************

@@ -94,6 +94,7 @@ int filesys_init() {
     fu_dir_create(MAIN_FS, 0, "/");
 
     fu_dir_create(MAIN_FS, 0, "/tmp");
+    fu_dir_create(MAIN_FS, 0, "/dev");
 
     fu_add_element_to_dir(
         MAIN_FS,
