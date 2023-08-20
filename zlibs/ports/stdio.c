@@ -1,6 +1,7 @@
 #include <i_iolib.h>
-
+#include <filesys.h>
 #include <syscall.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <type.h>
@@ -37,7 +38,7 @@ int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
     // first we check if the file exists
-    sid_t file_id = fu_path_to_sid(filename);
+    sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) filename);
 
     int exists = !IS_NULL_SID(file_id);
 
@@ -47,9 +48,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         strcmp(mode, "r+") == 0 ||
         strcmp(mode, "rb") == 0 ||
         strcmp(mode, "rb+") == 0
-    )) {
-        return NULL;
-    }
+    )) return NULL;
 
     // the path is a directory
     if (exists && fu_is_dir(file_id)) {
@@ -58,7 +57,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
 
     // the file exists but we want to create it
     if (!exists) {
-        file_id = fu_create_file(0, filename);
+        file_id = fu_file_create(0, (char *) filename);
     }
 
     // check for failure
@@ -71,18 +70,23 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
 
     // we copy the filename
     file->filename = strdup(filename);
-
-    // we set file pos and eof to 0
-    file->file_pos = 0;
-    file->eof = 0;
+    file->sid = file_id;
 
     // we copy the mode
     file->mode = strdup(mode);
 
-    // we set the buffer
-    file->buffer_size = 0;
-    file->buffer_pos = 0;
-    file->buffer = malloc(FILE_BUFFER_SIZE);
+    // if the file is open for appending, we set the file pos to the end of the file
+    if (strcmp(mode, "a")  == 0 ||
+        strcmp(mode, "a+") == 0 ||
+        strcmp(mode, "ab") == 0 ||
+        strcmp(mode, "ab+") == 0
+    )    file->file_pos = fu_get_file_size(file_id);
+
+    // else we set the file pos to 0
+    else {
+        file->file_pos = 0;
+        fu_set_file_size(file_id, 0);
+    }
 
     return file;
 }
@@ -112,6 +116,7 @@ int fclose(FILE *stream) {
     if (stream == NULL) {
         return 0;
     }
+
     // we check for stdout/stderr/stdin
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
@@ -126,14 +131,10 @@ int fclose(FILE *stream) {
         strcmp(stream->mode, "wb+") &&
         strcmp(stream->mode, "ab")  &&
         strcmp(stream->mode, "ab+"))
-    ) {
-        // we save the file
-        fflush(stream);
-    }
+    ) fflush(stream);
 
     // we free the structure
     free(stream->filename);
-    free(stream->buffer);
     free(stream->mode);
 
     // we free the file
@@ -162,84 +163,82 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    puts("fread not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-    /*
-    // we check if the file is null
-    if (stream == NULL || stream == stdout) {
-        return 0;
-    }
-    int mode_len = strlen(stream->mode);
-    // we check if the file is open for reading
-    for (int i = 0; i < mode_len; i++) {
-        if (stream->mode[i] == 'r') {
-            break;
-        }
-        if (i == mode_len - 1) {
-            return 0;
-        }
-    }
-    // we check if the file is at the end
-    if (stream->eof == 1) {
-        return 0;
-    }
-    // we copy char by char from the file buffer to the buffer
-    int read_count = 0;
-    while (count && !stream->eof) {
-        // we check if the file is at the end
-        if (stream->buffer_pos >= stream->buffer_size) {
-            stream->eof = 1;
-            break;
-        }
-        // we copy the char
-        ((char *) buffer)[read_count] = stream->buffer[stream->buffer_pos];
-        // we increment the buffer position
-        stream->buffer_pos++;
-        // we decrement the count
-        count--;
-        read_count++;
-    }
-    return read_count;
-    */
-}
-
-size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    puts("fwrite not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
-    /*
     // we check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    if (stream == stdout) {
-        puts(buffer);
-        return count;
-    }
-
-    // we check if the file is open for reading
-    if (strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
+    // we check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
 
-    // we copy char by char from the buffer to the file buffer
-    for (int i = 0; i < (int) count; i++) {
-        // we check if the file buffer is full
-        if (stream->buffer_pos >= stream->buffer_size) {
-            // we realloc the buffer
-            stream->buffer_size += 512;
-            stream->buffer = realloc(stream->buffer, stream->buffer_size);
-        }
-        // we copy the char
-        stream->buffer[stream->buffer_pos] = ((char *) buffer)[i];
-        // we increment the buffer position
-        stream->buffer_pos++;
+    int mode_len = strlen(stream->mode);
+
+    // we check if the file is open for reading, else we return 0
+    if (!(strcmp(stream->mode, "r")  == 0 ||
+          strcmp(stream->mode, "r+") == 0 ||
+          strcmp(stream->mode, "w+") == 0 ||
+          strcmp(stream->mode, "a+") == 0)
+    ) return 0;
+
+    // get the file size
+    int file_size = fu_get_file_size(stream->sid);
+
+    // we check if the file is at the end
+    if (stream->file_pos >= file_size) {
+        return 0;
     }
-    // we flush
-    fflush(stream);
-    // in any case, we return the count
-    return count;
-    */
+
+    // we check if the file is at the end
+    if (stream->file_pos + (int) count >= file_size) {
+        count = file_size - stream->file_pos;
+    }
+
+    // we read the file
+    int read = c_fs_cnt_read(c_fs_get_main(), stream->sid, buffer, stream->file_pos, count);
+
+    // we increment the file position
+    stream->file_pos += read;
+
+    // we return the number of elements read
+    return read;    
+}
+
+size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+
+    // we check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr || stream == stdin) {
+        return 0;
+    }
+
+    // we check if the file is open for writing, else we return 0
+    if (!(strcmp(stream->mode, "w")  == 0 ||
+          strcmp(stream->mode, "w+") == 0 ||
+          strcmp(stream->mode, "a")  == 0 ||
+          strcmp(stream->mode, "a+") == 0)
+    ) return 0;
+
+    // we get the current file size
+    int file_size = fu_get_file_size(stream->sid);
+
+    // if file is too small, we resize it
+    if (file_size < stream->file_pos + (int) count) {
+        fu_set_file_size(stream->sid, stream->file_pos + (int) count);
+    }
+
+    // we write the file
+    int written = c_fs_cnt_write(c_fs_get_main(), stream->sid, (void *) buffer, stream->file_pos, count);
+
+    // we increment the file position
+    stream->file_pos += written;
+
+    // we return the number of elements written
+    return written;
 }
 
 int fgetc(FILE *stream) {
@@ -249,26 +248,35 @@ int fgetc(FILE *stream) {
 
 int getc(FILE *stream) {
     // we check if the file is null
-    if (stream == NULL || stream == stdout) {
+    if (stream == NULL) {
         return 0;
     }
-    // we check if the file is open for reading
-    if (!(strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0 || strcmp(stream->mode, "w+") == 0 || strcmp(stream->mode, "a+") == 0)) {
+
+    // we check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
+
+    // we check if the file is open for reading, else we return 0
+    if (!(strcmp(stream->mode, "r")  == 0 ||
+          strcmp(stream->mode, "r+") == 0 ||
+          strcmp(stream->mode, "w+") == 0 ||
+          strcmp(stream->mode, "a+") == 0)
+    ) return 0;
+
     // we check if the file is at the end
-    if (stream->eof == 1) {
-        return 0;
+    if (stream->file_pos >= (int) fu_get_file_size(stream->sid)) {
+        return EOF;
     }
-    // we check if the file is at the end
-    if (stream->buffer_pos >= stream->buffer_size) {
-        stream->eof = 1;
-        return 0;
-    }
-    // we copy the char
-    char c = stream->buffer[stream->buffer_pos];
-    // we increment the buffer position
-    stream->buffer_pos++;
+
+    // we read the file
+    char c;
+    c_fs_cnt_read(c_fs_get_main(), stream->sid, &c, stream->file_pos, 1);
+
+    // we increment the file position
+    stream->file_pos++;
+
+    // we return the character
     return c;
 }
 
@@ -504,10 +512,17 @@ int vsnprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict forma
 }
 
 long ftell(FILE *stream) {
+    // we check if the file is null
     if (stream == NULL) {
         return 0;
     }
-    return stream->buffer_pos;
+
+    // we check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr || stream == stdin) {
+        return 0;
+    }
+
+    return stream->file_pos;
 }
 
 int feof(FILE *stream) {
@@ -515,7 +530,17 @@ int feof(FILE *stream) {
     if (stream == NULL) {
         return 0;
     }
-    return stream->eof;
+
+    // we check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr || stream == stdin) {
+        return 0;
+    }
+
+    // we get the file size
+    int file_size = fu_get_file_size(stream->sid);
+
+    // we check if the file is at the end
+    return (stream->file_pos >= file_size);
 }
 
 int ferror(FILE *stream) {
