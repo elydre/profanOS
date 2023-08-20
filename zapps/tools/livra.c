@@ -41,7 +41,7 @@ int lexer(char *path, int *code) {
         printf("%s: file not found\n", path);
         return 0;
     }
-    
+
     int file_size = fu_get_file_size(file);
     char *data_char = calloc(file_size + 1, sizeof(char));
     fu_read_file(file, data_char, file_size);

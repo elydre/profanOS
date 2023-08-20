@@ -33,7 +33,6 @@ void clearerr(FILE *stream) {
     puts("clearerr not implemented yet, WHY DO YOU USE IT ?\n");
 }
 
-int fflush(FILE *stream);
 int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
@@ -156,7 +155,6 @@ int fflush(FILE *stream) {
         return 0;
     }
 
-    puts("fflush not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
@@ -214,7 +212,7 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     stream->file_pos += read;
 
     // we return the number of elements read
-    return read;    
+    return read;
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
@@ -245,6 +243,7 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
 
     // we write the file
     int written = c_fs_cnt_write(c_fs_get_main(), stream->sid, (void *) buffer, stream->file_pos, count);
+    written = written == 0 ? count : 0;
 
     // we increment the file position
     stream->file_pos += written;

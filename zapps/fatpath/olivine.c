@@ -1035,7 +1035,7 @@ char *if_find(char **input) {
         strcpy(path, current_directory);
     else
         assemble_path(current_directory, input[1], path);
-    
+
     sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {

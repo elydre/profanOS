@@ -80,8 +80,8 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
             return 1;
         }
 
-        if (index + LINKS_IN_LOCA < 0) {
-            index += LINKS_IN_LOCA;
+        if (index + LINKS_IN_LOCA * BYTE_IN_CORE < 0) {
+            index += LINKS_IN_LOCA * BYTE_IN_CORE;
         } else {
             for (int i = 0; i < LINKS_IN_LOCA; i++) {
                 if (index >= size) {
@@ -109,7 +109,12 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
         }
         next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
         if (IS_NULL_SID(next_loca_sid) && index < size) {
-            kprintf("no more locator after d%ds%d\n", loca_sid.device, loca_sid.sector);
+            kprintf("no more locator after d%ds%d, but still %d bytes to %s\n",
+                    loca_sid.device,
+                    loca_sid.sector,
+                    size - index,
+                    is_read ? "read" : "write"
+            );
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
         }

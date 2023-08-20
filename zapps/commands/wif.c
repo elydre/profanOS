@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
         fu_set_file_size(file, len);
         fu_write_file(file, (uint8_t *) argv[3], len);
-            
+
         free(path);
         return 0;
     }

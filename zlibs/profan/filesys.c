@@ -417,7 +417,6 @@ sid_t fu_path_to_sid(sid_t from, char *path) {
     }
 
     if (IS_NULL_SID(ret)) {
-        printf("failed to find path %s\n", path);
         return NULL_SID;
     }
 
