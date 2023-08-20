@@ -99,26 +99,30 @@ int main(int argc, char **argv) {
 
     sort_alpha_and_type(elm_count, cnt_names, cnt_ids);
 
+    int size;
+
     for (int i = 0; i < elm_count; i++) {
         if (fu_is_dir(cnt_ids[i])) {
             printf("$2%s", cnt_names[i]);
             for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
             printf("%d elm\n", fu_get_dir_content(cnt_ids[i], NULL, NULL));
-            free(cnt_names[i]);
-        }
-    }
-
-    int size;
-    for (int i = 0; i < elm_count; i++) {
-        if (fu_is_file(cnt_ids[i])) {
+        } else if (fu_is_file(cnt_ids[i])) {
             printf("$1%s", cnt_names[i]);
             for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
             size = fu_get_file_size(cnt_ids[i]);
             if (size < 1024) printf("%d oct\n", size);
             else if (size < 1024 * 1024) printf("%d.%d Ko\n", size / 1024, (size % 1024) / 10);
             else printf("%d.%d Mo\n", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
-            free(cnt_names[i]);
+        } else if (fu_is_fctf(cnt_ids[i])) {
+            printf("$5%s", cnt_names[i]);
+            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
+            printf("fctf: %p\n", fu_fctf_get_addr(cnt_ids[i]));
+        } else {
+            printf("$3%s", cnt_names[i]);
+            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
+            printf("unk\n");
         }
+        free(cnt_names[i]);
     }
 
     free(cnt_names);

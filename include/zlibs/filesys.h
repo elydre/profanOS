@@ -48,7 +48,8 @@
 #define fu_is_fctf ((int (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 11))
 #define fu_fctf_create ((sid_t (*)(int, char *, int (*)(void *, uint32_t, uint32_t, uint8_t))) get_func_addr(FILESYS_LIB_ID, 12))
 #define fu_fctf_rw ((int (*)(sid_t, void *, uint32_t, uint32_t, uint8_t)) get_func_addr(FILESYS_LIB_ID, 13))
-#define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 15))
+#define fu_fctf_get_addr ((uint32_t (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 14))
+#define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 16))
 
 #endif
 #endif

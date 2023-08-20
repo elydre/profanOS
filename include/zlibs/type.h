@@ -89,6 +89,7 @@ typedef struct FILE {
     char *mode;
 
     int   file_pos;
+    int   type;
     sid_t sid;
 } FILE;
 

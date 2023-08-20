@@ -11,7 +11,8 @@
 #define STDIO_C
 #include <stdio.h>
 
-#define FILE_BUFFER_SIZE 1024
+#define FILE_TYPE_FILE 0
+#define FILE_TYPE_FCTF 1
 
 void init_func();
 
@@ -66,6 +67,16 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
 
     // now we create the file structure
     FILE *file = malloc(sizeof(FILE));
+
+    // get the file type
+    if (fu_is_file(file_id)) {
+        file->type = FILE_TYPE_FILE;
+    } else if (fu_is_fctf(file_id)) {
+        file->type = FILE_TYPE_FCTF;
+    } else {
+        free(file);
+        return NULL;
+    }
 
     // we copy the filename
     file->filename = strdup(filename);
@@ -195,18 +206,26 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     // get the file size
     int file_size = fu_get_file_size(stream->sid);
 
-    // we check if the file is at the end
-    if (stream->file_pos >= file_size) {
-        return 0;
-    }
+    if (stream->type == FILE_TYPE_FILE) {
+        // we check if the file is at the end
+        if (stream->file_pos >= file_size) {
+            return 0;
+        }
 
-    // we check if the file is at the end
-    if (stream->file_pos + (int) count >= file_size) {
-        count = file_size - stream->file_pos;
+        // we check if the file is at the end
+        if (stream->file_pos + (int) count >= file_size) {
+            count = file_size - stream->file_pos;
+        }
     }
 
     // we read the file
-    int read = fu_file_read(stream->sid, buffer, stream->file_pos, count);
+    int read;
+    if (stream->type == FILE_TYPE_FILE) {
+        read = fu_file_read(stream->sid, (void *) buffer, stream->file_pos, count);
+    } else if (stream->type == FILE_TYPE_FCTF) {
+        read = fu_fctf_read(stream->sid, (void *) buffer, stream->file_pos, count);
+    }
+    read = read == 0 ? count : 0;
 
     // we increment the file position
     stream->file_pos += read;
@@ -237,12 +256,17 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     int file_size = fu_get_file_size(stream->sid);
 
     // if file is too small, we resize it
-    if (file_size < stream->file_pos + (int) count) {
+    if (stream->type == FILE_TYPE_FILE && file_size < stream->file_pos + (int) count) {
         fu_set_file_size(stream->sid, stream->file_pos + (int) count);
     }
 
     // we write the file
-    int written = fu_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
+    int written;
+    if (stream->type == FILE_TYPE_FILE) {
+        written = fu_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
+    } else if (stream->type == FILE_TYPE_FCTF) {
+        written = fu_fctf_write(stream->sid, (void *) buffer, stream->file_pos, count);
+    }
     written = written == 0 ? count : 0;
 
     // we increment the file position
@@ -258,36 +282,10 @@ int fgetc(FILE *stream) {
 }
 
 int getc(FILE *stream) {
-    // we check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
-    // we check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr || stream == stdin) {
-        return 0;
-    }
-
-    // we check if the file is open for reading, else we return 0
-    if (!(strcmp(stream->mode, "r")  == 0 ||
-          strcmp(stream->mode, "r+") == 0 ||
-          strcmp(stream->mode, "w+") == 0 ||
-          strcmp(stream->mode, "a+") == 0)
-    ) return 0;
-
-    // we check if the file is at the end
-    if (stream->file_pos >= (int) fu_get_file_size(stream->sid)) {
+    int c;
+    if (fread(&c, 1, 1, stream) == 0) {
         return EOF;
     }
-
-    // we read the file
-    char c;
-    fu_file_read(stream->sid, &c, stream->file_pos, 1);
-
-    // we increment the file position
-    stream->file_pos++;
-
-    // we return the character
     return c;
 }
 

@@ -468,7 +468,7 @@ int fu_fctf_rw(sid_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_
 
         // add to cache
         for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
-            if (IS_SAME_SID(cache_fctf[i].sid, file_sid)) {
+            if (IS_NULL_SID(cache_fctf[i].sid)) {
                 cache_fctf[i].sid = file_sid;
                 cache_fctf[i].addr = addr;
                 break;
@@ -482,6 +482,42 @@ int fu_fctf_rw(sid_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_
 
     // call the function
     return ((int (*)(void *, uint32_t, uint32_t, uint8_t)) addr)(buf, offset, size, is_read);
+}
+
+uint32_t fu_fctf_get_addr(sid_t file_sid) {
+    // search in cache
+
+    void *addr = NULL;
+
+    for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
+        if (IS_SAME_SID(cache_fctf[i].sid, file_sid)) {
+            addr = cache_fctf[i].addr;
+            break;
+        }
+    }
+
+    if (addr == NULL) {
+        // read container
+        if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
+            printf("failed to read function pointer\n");
+            return 1;
+        }
+
+        // add to cache
+        for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
+            if (IS_NULL_SID(cache_fctf[i].sid)) {
+                cache_fctf[i].sid = file_sid;
+                cache_fctf[i].addr = addr;
+                break;
+            }
+            if (i == CACHE_FCTF_SIZE - 1) {
+                cache_fctf[0].sid = file_sid;
+                cache_fctf[0].addr = addr;
+            }
+        }
+    }
+
+    return (uint32_t) addr;
 }
 
 /**************************************************
