@@ -74,19 +74,21 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
 
     // we copy the mode
     file->mode = strdup(mode);
+    file->file_pos = 0;
 
     // if the file is open for appending, we set the file pos to the end of the file
     if (strcmp(mode, "a")  == 0 ||
         strcmp(mode, "a+") == 0 ||
         strcmp(mode, "ab") == 0 ||
         strcmp(mode, "ab+") == 0
-    )    file->file_pos = fu_get_file_size(file_id);
+    ) file->file_pos = fu_get_file_size(file_id);
 
-    // else we set the file pos to 0
-    else {
-        file->file_pos = 0;
-        fu_set_file_size(file_id, 0);
-    }
+    // else if the file is open for writing, we set the file pos to the beginning of the file
+    else if (strcmp(mode, "w")  == 0 ||
+             strcmp(mode, "w+") == 0 ||
+             strcmp(mode, "wb") == 0 ||
+             strcmp(mode, "wb+") == 0
+    ) fu_set_file_size(file_id, 0);
 
     return file;
 }
@@ -144,6 +146,16 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+
+    // we check for stdout/stderr/stdin
+    if (stream == stdout || stream == stderr || stream == stdin) {
+        return 0;
+    }
+
     puts("fflush not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
@@ -212,8 +224,8 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     }
 
     // we check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr || stream == stdin) {
-        return 0;
+    if (stream == stdout || stream == stderr) {
+        return puts((char *) buffer);
     }
 
     // we check if the file is open for writing, else we return 0
