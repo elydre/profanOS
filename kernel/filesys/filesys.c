@@ -53,21 +53,16 @@ filesys_t *fs_get_main() {
     return MAIN_FS;
 }
 
-int initrd_to_vdisk(vdisk_t *vdisk) {
+vdisk_t *initrd_to_vdisk() {
     uint8_t *initrd = (uint8_t *) diskiso_get_start();
     uint32_t initrd_size = diskiso_get_size();
 
-    if (initrd_size > vdisk->size * FS_SECTOR_SIZE) {
-        kprintf("initrd is too big for the vdisk (initrd: %d, vdisk: %d)\n",
-            initrd_size, vdisk->size * FS_SECTOR_SIZE
-        );
-        return 1;
-    }
-
     if (initrd_size == 0) {
         kprintf("initrd is empty/missing\n");
-        return 1;
+        return NULL;
     }
+
+    vdisk_t *vdisk = vdisk_create(initrd_size / FS_SECTOR_SIZE + 1);
 
     for (uint32_t i = 0; i < initrd_size / FS_SECTOR_SIZE; i++) {
         vdisk_write_sector(vdisk, (sid_t) {0, i}, initrd + i * FS_SECTOR_SIZE);
@@ -80,16 +75,16 @@ int initrd_to_vdisk(vdisk_t *vdisk) {
 
     diskiso_free();
 
-    return 0;
+    return vdisk;
 }
 
 int filesys_init() {
     MAIN_FS = fs_create();
 
     vdisk_t *d0 = vdisk_create(500);
-    vdisk_t *d1 = vdisk_create(2000);
+    vdisk_t *d1 = initrd_to_vdisk();
 
-    if (initrd_to_vdisk(d1)) {
+    if (d1 == NULL) {
         return 1;
     }
 
