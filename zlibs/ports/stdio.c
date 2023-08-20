@@ -124,7 +124,7 @@ int fclose(FILE *stream) {
     }
 
     // we check if the file is open for writing
-    if (!(strcmp(stream->mode, "w") &&
+    /*if (!(strcmp(stream->mode, "w") &&
         strcmp(stream->mode, "w+")  &&
         strcmp(stream->mode, "a")   &&
         strcmp(stream->mode, "a+")  &&
@@ -132,7 +132,7 @@ int fclose(FILE *stream) {
         strcmp(stream->mode, "wb+") &&
         strcmp(stream->mode, "ab")  &&
         strcmp(stream->mode, "ab+"))
-    ) fflush(stream);
+    ) fflush(stream);*/
 
     // we free the structure
     free(stream->filename);
@@ -206,7 +206,7 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     }
 
     // we read the file
-    int read = c_fs_cnt_read(c_fs_get_main(), stream->sid, buffer, stream->file_pos, count);
+    int read = fu_file_read(stream->sid, buffer, stream->file_pos, count);
 
     // we increment the file position
     stream->file_pos += read;
@@ -242,7 +242,7 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     }
 
     // we write the file
-    int written = c_fs_cnt_write(c_fs_get_main(), stream->sid, (void *) buffer, stream->file_pos, count);
+    int written = fu_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
     written = written == 0 ? count : 0;
 
     // we increment the file position
@@ -282,7 +282,7 @@ int getc(FILE *stream) {
 
     // we read the file
     char c;
-    c_fs_cnt_read(c_fs_get_main(), stream->sid, &c, stream->file_pos, 1);
+    fu_file_read(stream->sid, &c, stream->file_pos, 1);
 
     // we increment the file position
     stream->file_pos++;

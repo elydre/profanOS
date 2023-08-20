@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
         int size = fu_get_file_size(file);
         char *char_content = malloc(size + 2);
 
-        c_fs_cnt_read(c_fs_get_main(), file, char_content, 0, size);
+        fu_file_read(file, char_content, 0, size);
         make_printable(char_content, size);
 
         c_ckprint(char_content, c_magenta);

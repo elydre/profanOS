@@ -44,7 +44,7 @@ int lexer(char *path, int *code) {
 
     int file_size = fu_get_file_size(file);
     char *data_char = calloc(file_size + 1, sizeof(char));
-    fu_read_file(file, data_char, file_size);
+    fu_file_read(file, data_char, 0, file_size);
 
     int code_size = 0;
 

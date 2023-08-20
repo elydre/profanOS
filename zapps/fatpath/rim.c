@@ -91,7 +91,7 @@ void load_file(char *path) {
 
     g_data = realloc(g_data, file_size);
 
-    fu_read_file(file, g_data, read_size);
+    fu_file_read(file, g_data, 0, read_size);
 
     for (int i = 0; i < file_size; i++) {
         if (g_data[i] != '\n') continue;
@@ -115,7 +115,7 @@ void save_file(char *path) {
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
     fu_set_file_size(file, g_data_size - 1);
-    fu_write_file(file, data_copy, g_data_size - 1);
+    fu_file_write(file, data_copy, 0, g_data_size - 1);
 
     free(data_copy);
 }

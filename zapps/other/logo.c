@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     int size = fu_get_file_size(file);
     char *cnt = calloc(size + 1, sizeof(char));
 
-    fu_read_file(file, cnt, size);
+    fu_file_read(file, cnt, 0, size);
 
     color_print(cnt);
     free(cnt);

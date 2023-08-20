@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
     int size = fu_get_file_size(file);
     uint8_t *ptr = malloc(size);
-    fu_read_file(file, ptr, size);
+    fu_file_read(file, ptr, 0, size);
 
     uint8_t type = ptr[0];
     uint16_t width = ptr[1] | (ptr[2] << 8);

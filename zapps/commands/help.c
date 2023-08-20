@@ -13,7 +13,7 @@ int main(void) {
         int size = fu_get_file_size(file);
         char *char_content = malloc(size + 2);
 
-        c_fs_cnt_read(c_fs_get_main(), file, char_content, 0, size);
+        fu_file_read(file, char_content, 0, size);
 
         c_ckprint(char_content, c_magenta);
 

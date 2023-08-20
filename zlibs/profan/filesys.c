@@ -335,6 +335,14 @@ sid_t fu_file_create(int device_id, char *path) {
     return head_sid;
 }
 
+int fu_file_read(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
+    return (!fu_is_file(file_sid) || c_fs_cnt_read(c_fs_get_main(), file_sid, buf, offset, size));
+}
+
+int fu_file_write(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
+    return (!fu_is_file(file_sid) || c_fs_cnt_write(c_fs_get_main(), file_sid, buf, offset, size));
+}
+
 /**************************************************
  *                                               *
  *            Path to SID conversion             *

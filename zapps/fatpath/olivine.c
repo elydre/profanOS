@@ -2943,7 +2943,7 @@ void execute_file(char *file) {
     char *contents = malloc((file_size + 1) * sizeof(char));
     contents[file_size] = '\0';
 
-    fu_read_file(id, (uint8_t *) contents, file_size);
+    fu_file_read(id, (uint8_t *) contents, 0, file_size);
 
     execute_program(contents);
 

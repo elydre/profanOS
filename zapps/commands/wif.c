@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         int len = strlen(argv[3]);
 
         fu_set_file_size(file, len);
-        fu_write_file(file, (uint8_t *) argv[3], len);
+        fu_file_write(file, (uint8_t *) argv[3], 0, len);
 
         free(path);
         return 0;
