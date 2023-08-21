@@ -88,6 +88,9 @@ int main(void) {
     }
 
     fontdemo("/zada/fonts/zap-light20.psf");
+    fontdemo("/zada/fonts/lat15-bold24.psf");
+    fontdemo("/zada/fonts/lat15-thin20.psf");
+    fontdemo("/zada/fonts/lat38-bold18.psf");
 
     return 0;
 }
