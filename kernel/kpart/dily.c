@@ -26,7 +26,7 @@ lib_t libs_at_boot[] = {
     {1012, "/lib/ports/time.bin"},
     {1013, "/lib/ports/setjmp.bin"},
     {1014, "/lib/ports/unistd.bin"},
-    {2000, "/lib/profan/devio.bin"},
+    {1015, "/lib/profan/devio.bin"},
 };
 
 
