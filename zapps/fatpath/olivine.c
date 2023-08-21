@@ -1352,7 +1352,7 @@ void debug_print(char *function_name, char **function_args) {
         printf(DEBUG_COLOR "'%s') [%d]\n", function_args[i], i + 1);
         return;
     }
-    printf(DEBUG_COLOR ") [0]\n");
+    printf(DEBUG_COLOR ") [0]$$\n");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2861,7 +2861,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
     buffer[buffer_actual_size] = '\0';
 
     c_cursor_blink(0);
-    c_kprint("\n");
+    printf("\n");
 
     return ret_val;
 
@@ -2883,6 +2883,7 @@ void start_shell() {
         line[0] = '\0';
         do {
             printf(FIRST_PROMPT, current_directory);
+            fflush(stdout);
         } while(local_input(line, INPUT_SIZE, history, history_index));
 
         if (strncmp(line, "exit", 4) == 0) {
@@ -2896,6 +2897,7 @@ void start_shell() {
             line[len] = '\0';
             do {
                 printf(OTHER_PROMPT);
+                fflush(stdout);
             } while(local_input(line + len, INPUT_SIZE - len, history, history_index));
         }
 

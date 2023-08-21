@@ -22,7 +22,7 @@ void make_printable(char *str, int size) {
 
 int main(int argc, char **argv) {
     if (argc < 3) {
-        printf("$BUsage: $3cat <path>\n");
+        printf("$BUsage: $3cat <path>$$\n");
         return 1;
     }
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
         free(path);
         return 0;
     }
-    printf("$3%s$B file not found\n", path);
+    printf("$3%s$B file not found$$\n", path);
     free(path);
     return 1;
 }

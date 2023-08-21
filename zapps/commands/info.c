@@ -72,7 +72,7 @@ int main(void) {
     pl_and_pf("\n");
     pl_and_pf("\n");
 
-    printf("\n");
+    printf("$$\n");
 
     return 0;
 }

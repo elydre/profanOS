@@ -20,6 +20,6 @@ int main(void) {
         free(char_content);
         return 0;
     }
-    printf("$3%s$B file not found\n", help_path);
+    printf("$3%s$B file not found$$\n", help_path);
     return 1;
 }

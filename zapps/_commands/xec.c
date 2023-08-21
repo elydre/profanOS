@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 4) {
-        printf("$BUsage: $3xec <input> <output>\n");
+        printf("$BUsage: $3xec <input> <output>$$\n");
         return 0;
     }
 
@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
     // check if the file exists
     if (!c_fs_does_path_exists(input_file)) {
-        printf("$Bfile $3%s$B not found\n", input_file);
+        printf("$Bfile $3%s$B not found$$\n", input_file);
         free(input_file);
         return 0;
     }
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     c_fs_read_file(input_file, data);
 
     if (size < 0x1000) {
-        printf("$Bfile $3%s$B is too small\n", input_file);
+        printf("$Bfile $3%s$B is too small$$\n", input_file);
         free(input_file);
         free(data);
         return 0;
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 
     // check if path exists and is directory
     if (c_fs_does_path_exists(output_file) && c_fs_get_sector_type(c_fs_path_to_id(output_file)) == 3) {
-        printf("$3%s$B is a directory\n", output_file);
+        printf("$3%s$B is a directory$$\n", output_file);
     } else {
         if (!c_fs_does_path_exists(output_file)) {
             c_fs_make_file(parent_dir, file_name);

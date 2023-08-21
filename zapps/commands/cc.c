@@ -39,7 +39,7 @@ void new_rand_name(char *name) {
 }
 
 int execute_command(char *path, char *args) {
-    printf("$6%s %s\n", path, args);
+    printf("$6%s %s$$\n", path, args);
     // generate argv
 
     int argc = 3;

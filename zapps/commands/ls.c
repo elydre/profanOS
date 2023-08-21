@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);
 
     if (!IS_NULL_SID(dir) && fu_is_file(dir)) {
-        printf("$3%s$B is not a directory\n", ls_path);
+        printf("$3%s$B is not a directory$$\n", ls_path);
         free(ls_path);
         return 1;
     }
@@ -103,23 +103,23 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < elm_count; i++) {
         if (fu_is_dir(cnt_ids[i])) {
-            printf("$2%s", cnt_names[i]);
-            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
+            printf("$2%s$$", cnt_names[i]);
+            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) putchar(' ');
             printf("%d elm\n", fu_get_dir_content(cnt_ids[i], NULL, NULL));
         } else if (fu_is_file(cnt_ids[i])) {
-            printf("$1%s", cnt_names[i]);
-            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
+            printf("$1%s$$", cnt_names[i]);
+            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) putchar(' ');
             size = fu_get_file_size(cnt_ids[i]);
             if (size < 1024) printf("%d oct\n", size);
             else if (size < 1024 * 1024) printf("%d.%d Ko\n", size / 1024, (size % 1024) / 10);
             else printf("%d.%d Mo\n", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
         } else if (fu_is_fctf(cnt_ids[i])) {
-            printf("$5%s", cnt_names[i]);
-            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
+            printf("$5%s$$", cnt_names[i]);
+            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) putchar(' ');
             printf("fctf: %p\n", fu_fctf_get_addr(cnt_ids[i]));
         } else {
-            printf("$3%s", cnt_names[i]);
-            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) c_kprint(" ");
+            printf("$3%s$$", cnt_names[i]);
+            for (unsigned int j = 0; j < 22 - strlen(cnt_names[i]); j++) putchar(' ');
             printf("unk\n");
         }
         free(cnt_names[i]);
