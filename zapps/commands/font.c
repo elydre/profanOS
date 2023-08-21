@@ -4,54 +4,64 @@
 #include <string.h>
 #include <stdio.h>
 
-/*
-pff file format:
-[0-3] width
-[4-7] height
-[8-11] charcount
-[12...] char data
-*/
-
 #define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 
 typedef struct {
     uint32_t width;
     uint32_t height;
     uint32_t charcount;
+    uint32_t charsize;
+
     uint8_t *data;
-} pff_font_t;
+} font_data_t;
 
-void print_string(pff_font_t *font, uint32_t y, char *s);
+void print_string(font_data_t *font, uint32_t y, char *s);
 
-pff_font_t *pff_load_font(char *file) {
+font_data_t *load_psf_font(char *file) {
     sid_t sid = fu_path_to_sid(ROOT_SID, file);
 
     if (IS_NULL_SID(sid)) {
+        printf("Failed to open font %s\n", file);
         return NULL;
     }
 
-    uint32_t width;
-    uint32_t height;
+    uint32_t magic;
+    uint32_t version;
+    uint32_t headersize;
+    uint32_t flags;
     uint32_t charcount;
+    uint32_t charsize;
+    uint32_t height;
+    uint32_t width;
 
-    fu_file_read(sid, &width, 0, 4);
-    fu_file_read(sid, &height, 4, 4);
-    fu_file_read(sid, &charcount, 8, 4);
+    fu_file_read(sid, &magic, 0, 4);
+    fu_file_read(sid, &version, 4, 4);
+    fu_file_read(sid, &headersize, 8, 4);
+    fu_file_read(sid, &flags, 12, 4);
+    fu_file_read(sid, &charcount, 16, 4);
+    fu_file_read(sid, &charsize, 20, 4);
+    fu_file_read(sid, &height, 24, 4);
+    fu_file_read(sid, &width, 28, 4);
 
-    uint32_t char_size = (ALIGN_UP(width, 8) * height) / 8;
-    uint8_t *font = malloc(char_size * charcount);
-    fu_file_read(sid, font, 12, char_size * charcount);
+    if (magic != 0x864ab572) {
+        printf("Invalid magic number\n");
+        return NULL;
+    }
 
-    pff_font_t *pff = malloc(sizeof(pff_font_t));
-    pff->width = width;
-    pff->height = height;
-    pff->charcount = charcount;
-    pff->data = font;
+    uint8_t *font = malloc(charcount * charsize);
+    fu_file_read(sid, font, headersize, charcount * charsize);
 
-    return pff;
+    font_data_t *psf = malloc(sizeof(font_data_t));
+    psf->width = width;
+    psf->height = height;
+    psf->charcount = charcount;
+    psf->charsize = charsize;
+    psf->data = font;
+
+    return psf;
 }
 
-void pff_free_font(pff_font_t *pff) {
+void free_font(font_data_t *pff) {
     free(pff->data);
     free(pff);
 }
@@ -59,10 +69,14 @@ void pff_free_font(pff_font_t *pff) {
 void fontdemo(char *file) {
     static uint32_t y = 0;
 
-    pff_font_t *font = pff_load_font(file);
+    font_data_t *font = load_psf_font(file);
+    if (font == NULL) {
+        return;
+    }
+
     print_string(font, y, file);
     y += font->height;
-    pff_free_font(font);
+    free_font(font);
 }
 
 int main(void) {
@@ -71,18 +85,14 @@ int main(void) {
             c_vesa_set_pixel(i, j, 0);
         }
     }
-    fontdemo("/zada/fonts/ter16x32.pff");
-    fontdemo("/zada/fonts/sun12x22.pff");
-    fontdemo("/zada/fonts/font10x18.pff");
-    fontdemo("/zada/fonts/font8x16.pff");
-    fontdemo("/zada/fonts/sun8x16.pff");
+
+    fontdemo("/zada/fonts/font.psf");
+    fontdemo("/zada/fonts/zap.psf");
 
     return 0;
 }
 
-// c_vesa_set_pixel(x, y, color);
-
-void print_char(pff_font_t *font, uint32_t xo, uint32_t yo, char c) {
+void print_char(font_data_t *font, uint32_t xo, uint32_t yo, char c) {
     uint32_t w = ALIGN_UP(font->width, 8);
     uint32_t h = font->height;
 
@@ -97,7 +107,7 @@ void print_char(pff_font_t *font, uint32_t xo, uint32_t yo, char c) {
     }
 }
 
-void print_string(pff_font_t *font, uint32_t y, char *s) {
+void print_string(font_data_t *font, uint32_t y, char *s) {
     uint32_t x = 0;
     while (*s) {
         if (*s == '\n') {
