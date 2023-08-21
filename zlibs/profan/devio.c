@@ -28,11 +28,9 @@ void init_devio();
 void init_lcbuffer();
 
 int main(void) {
-    c_kprint("devio loading\n");
     init_devio();
-    c_kprint("devio loaded\n");
     init_lcbuffer();
-    c_kprint("devio loaded\n");
+    c_kprint("Init of devio !\n");
 
     return 0;
 }
