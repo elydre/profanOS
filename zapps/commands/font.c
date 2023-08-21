@@ -4,8 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
-
 typedef struct {
     uint32_t width;
     uint32_t height;
@@ -28,7 +26,6 @@ font_data_t *load_psf_font(char *file) {
     uint32_t magic;
     uint32_t version;
     uint32_t headersize;
-    uint32_t flags;
     uint32_t charcount;
     uint32_t charsize;
     uint32_t height;
@@ -37,7 +34,6 @@ font_data_t *load_psf_font(char *file) {
     fu_file_read(sid, &magic, 0, 4);
     fu_file_read(sid, &version, 4, 4);
     fu_file_read(sid, &headersize, 8, 4);
-    fu_file_read(sid, &flags, 12, 4);
     fu_file_read(sid, &charcount, 16, 4);
     fu_file_read(sid, &charsize, 20, 4);
     fu_file_read(sid, &height, 24, 4);
@@ -45,6 +41,11 @@ font_data_t *load_psf_font(char *file) {
 
     if (magic != 0x864ab572) {
         printf("Invalid magic number\n");
+        return NULL;
+    }
+
+    if (version != 0) {
+        printf("psf version not supported\n");
         return NULL;
     }
 
@@ -86,23 +87,24 @@ int main(void) {
         }
     }
 
-    fontdemo("/zada/fonts/font.psf");
-    fontdemo("/zada/fonts/zap.psf");
+    fontdemo("/zada/fonts/zap-light20.psf");
 
     return 0;
 }
 
 void print_char(font_data_t *font, uint32_t xo, uint32_t yo, char c) {
-    uint32_t w = ALIGN_UP(font->width, 8);
-    uint32_t h = font->height;
+    uint8_t *char_data = font->data + (c * font->charsize);
 
-    uint8_t *char_data = font->data + (c * (w * h) / 8);
-    for (uint32_t y = 0; y < h; y++) {
-        for (uint32_t x = w / 8 - 1; x < w / 8; x--) {
-            uint8_t byte = char_data[y * w / 8 + x];
-            for (uint32_t i = 0; i < 8; i++) {
-                c_vesa_set_pixel(xo + ((x + 1) * 8) - i, yo + y, byte & (1 << i) ? 0xFFFFFF : 0);
-            }
+    uint32_t x = 0;
+    uint32_t y = 0;
+    for (uint32_t i = 0; i < font->charsize; i++) {
+        if (x >= font->width) {
+            x = 0;
+            y++;
+        }
+        for (int j = 7; j >= 0; j--) {
+            c_vesa_set_pixel(xo + x, yo + y, char_data[i] & (1 << j) ? 0xFFFFFF : 0);
+            x++;
         }
     }
 }
