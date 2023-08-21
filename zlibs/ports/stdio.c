@@ -21,13 +21,20 @@ int puts(const char *str);
 int vprintf(const char *restrict format, va_list vlist);
 int dopr(char* str, size_t size, const char* format, va_list arg);
 
+sid_t stdout_sid = NULL_SID;
+
 int main() {
     init_func();
     return 0;
 }
 
 void init_func() {
-    puts("Init of the stdio lib !\n");
+    stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+    if (IS_NULL_SID(stdout_sid) || !fu_is_fctf(stdout_sid)) {
+        c_kprint("Can't find /dev/stdout");
+    } else {
+        c_kprint("Init of the stdio lib !\n");
+    }
 }
 
 void clearerr(FILE *stream) {
@@ -156,14 +163,8 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    // we check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
-    // we check for stdout/stderr/stdin
-    if (stream == stdout || stream == stderr || stream == stdin) {
-        return 0;
+    if (stream == stdout) {   
+        fu_fctf_flush(stdout_sid);
     }
 
     return 0;
@@ -241,8 +242,12 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     }
 
     // we check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr) {
-        return puts((char *) buffer);
+    if (stream == stdout) {
+        return fu_fctf_write(stdout_sid, (void *) buffer, 0, count) ? 0 : count;
+    }
+    
+    if (stream == stderr) {
+        return fu_fctf_write(stdout_sid, (void *) buffer, 0, count) ? 0 : count;
     }
 
     // we check if the file is open for writing, else we return 0
@@ -332,8 +337,16 @@ int putchar(int ch) {
 }
 
 int puts(const char *str) {
-    color_print((char *) str);
-    return strlen(str);
+    // we check if the string is null
+    if (str == NULL) {
+        return EOF;
+    }
+
+    // we get the string length
+    int len = strlen(str);
+
+    // we write the string
+    return fu_fctf_write(stdout_sid, (void *) str, 0, len) ? EOF : len;
 }
 
 int ungetc(int ch, FILE *stream) {

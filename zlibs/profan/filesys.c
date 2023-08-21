@@ -39,6 +39,7 @@ int main(void) {
         cache_fctf[i].sid = NULL_SID;
         cache_fctf[i].addr = NULL;
     }
+    c_kprint("Init of filesys lib!\n");
 
     return 0;
 }
@@ -411,7 +412,8 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "C-%s", name);
+    strcpy(meta, "C-");
+    strncpy(meta + 2, name, META_MAXLEN - 2);
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);

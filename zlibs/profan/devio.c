@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <i_iolib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -27,8 +28,11 @@ void init_devio();
 void init_lcbuffer();
 
 int main(void) {
+    c_kprint("devio loading\n");
     init_devio();
+    c_kprint("devio loaded\n");
     init_lcbuffer();
+    c_kprint("devio loaded\n");
 
     return 0;
 }
@@ -92,6 +96,15 @@ int devzebra_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
+int devparrot_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+    if (mode == MODE_WRITE) {
+        color_print((char *) buffer);
+        return size;
+    }
+
+    return 0;
+}
+
 int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (offset) {
         printf("offset is not supported by buffer system\n");
@@ -131,11 +144,12 @@ int devbuffer_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 }
 
 void init_devio() {
-    fu_fctf_create(0, "/dev/zero", devzero_rw);
-    fu_fctf_create(0, "/dev/null", devnull_rw);
+    fu_fctf_create(0, "/dev/zero",   devzero_rw);
+    fu_fctf_create(0, "/dev/null",   devnull_rw);
     fu_fctf_create(0, "/dev/random", devrand_rw);
 
-    fu_fctf_create(0, "/dev/zebra", devzebra_rw);
+    fu_fctf_create(0, "/dev/zebra",  devzebra_rw);
+    fu_fctf_create(0, "/dev/parrot", devparrot_rw);
 
     fu_fctf_create(0, "/dev/stdout", devstdout_rw);
     fu_fctf_create(0, "/dev/stderr", devstderr_rw);
@@ -149,7 +163,7 @@ void init_lcbuffer() {
         lc[i]->offset = 0;
     }
 
-    lc[DEVIO_STDOUT]->redirection = fu_path_to_sid(ROOT_SID, "/dev/zebra");
-    lc[DEVIO_STDERR]->redirection = fu_path_to_sid(ROOT_SID, "/dev/zebra");
+    lc[DEVIO_STDOUT]->redirection = fu_path_to_sid(ROOT_SID, "/dev/parrot");
+    lc[DEVIO_STDERR]->redirection = fu_path_to_sid(ROOT_SID, "/dev/parrot");
     lc[DEVIO_BUFFER]->redirection = fu_path_to_sid(ROOT_SID, "/dev/null");
 }

@@ -20,13 +20,13 @@ lib_t libs_at_boot[] = {
     {1006, "/lib/profan/vgui.bin"},
     {1007, "/lib/ports/stdlib.bin"},
     {1008, "/lib/ports/string.bin"},
-    {1009, "/lib/ports/stdio.bin"},
     {1010, "/lib/profan/filesys.bin"},
+    {1015, "/lib/profan/devio.bin"},
+    {1009, "/lib/ports/stdio.bin"},
     {1011, "/lib/ports/math.bin"},
     {1012, "/lib/ports/time.bin"},
     {1013, "/lib/ports/setjmp.bin"},
     {1014, "/lib/ports/unistd.bin"},
-    {1015, "/lib/profan/devio.bin"},
 };
 
 
@@ -110,6 +110,7 @@ int dily_get_func(int lib_id, int func_id) {
         return val;
     }
 
+    serial_kprintf("lib %d not found\n", lib_id);
     sys_fatal("Library not found");
     return 0;
 }

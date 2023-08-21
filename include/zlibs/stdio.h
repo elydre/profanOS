@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-#define stdin (FILE *) 0
+#define stdin (FILE *)  0
 #define stdout (FILE *) 1
 #define stderr (FILE *) 2
 
