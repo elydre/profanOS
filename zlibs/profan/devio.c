@@ -1,8 +1,10 @@
-#include <syscall.h>
-#include <i_iolib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include <syscall.h>
+#include <i_iolib.h>
+#include <panda.h>
 
 #define DEVIO_LIB_C
 #include <filesys.h>
@@ -103,6 +105,16 @@ int devparrot_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
+int devpanda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+    static char color = c_white;
+    if (mode == MODE_WRITE) {
+        color = panda_color_print((char *) buffer, size, color);
+        return size;
+    }
+
+    return 0;
+}
+
 int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (offset) {
         printf("offset is not supported by buffer system\n");
@@ -148,6 +160,7 @@ void init_devio() {
 
     fu_fctf_create(0, "/dev/zebra",  devzebra_rw);
     fu_fctf_create(0, "/dev/parrot", devparrot_rw);
+    fu_fctf_create(0, "/dev/panda",  devpanda_rw);
 
     fu_fctf_create(0, "/dev/stdout", devstdout_rw);
     fu_fctf_create(0, "/dev/stderr", devstderr_rw);

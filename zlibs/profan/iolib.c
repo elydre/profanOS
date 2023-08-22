@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <i_time.h>
+#include <panda.h>
 
 // input() setings
 #define SLEEP_T 15
@@ -109,6 +110,73 @@ uint32_t color_print(char *s) {
     return msg_len;
 }
 
+char panda_color_print(char *s, char c, int len) {
+    uint32_t from = 0;
+    int i = 0;
+
+    while (s[i] != '\0') {
+        for (i = from; i < len - 1; i++) {
+            if (s[i] != '$') continue;
+            panda_print_string(s + from, i - from, c);
+            switch (s[i + 1]) {
+                case '0':
+                    c = c_blue;
+                    break;
+                case '1':
+                    c = c_green;
+                    break;
+                case '2':
+                    c = c_cyan;
+                    break;
+                case '3':
+                    c = c_red;
+                    break;
+                case '4':
+                    c = c_magenta;
+                    break;
+                case '5':
+                    c = c_yellow;
+                    break;
+                case '6':
+                    c = c_grey;
+                    break;
+                case '7':
+                    c = c_white;
+                    break;
+                case '8':
+                    c = c_dblue;
+                    break;
+                case '9':
+                    c = c_dgreen;
+                    break;
+                case 'A':
+                    c = c_dcyan;
+                    break;
+                case 'B':
+                    c = c_dred;
+                    break;
+                case 'C':
+                    c = c_dmagenta;
+                    break;
+                case 'D':
+                    c = c_dyellow;
+                    break;
+                case 'E':
+                    c = c_dgrey;
+                    break;
+                default:
+                    c = c_white;
+                    break;
+            }
+            i += 2;
+            from = i;
+            break;
+        }
+        i++;
+    }
+    panda_print_string(s + from, i - from, c);
+    return c;
+}
 
 void rainbow_print(char *message) {
     char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
