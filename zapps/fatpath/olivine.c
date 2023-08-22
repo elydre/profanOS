@@ -2692,8 +2692,8 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     history_end++;
 
-    // save the current cursor position
-    printf("\033[s");
+    // save the current cursor position and show it
+    printf("\033[s\033[?25l");
 
     int sc, last_sc, last_sc_sgt = 0;
 
@@ -2702,9 +2702,9 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        printf("\033[u");
-        fflush(stdout);
     }
+
+    fflush(stdout);
 
     int key_ticks = 0;
     int shift = 0;
@@ -2715,8 +2715,6 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
     int ret_val = 0;
-
-    // c_cursor_blink(1);
 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
@@ -2851,9 +2849,9 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
         else continue;
 
-        printf("\033[u");
+        printf("\033[?25h\033[u");
         olv_print(buffer, buffer_actual_size);
-        printf(" $$\033[u\033[%dC", buffer_index);
+        printf(" $$\033[u\033[%dC\033[?25l", buffer_index);
         fflush(stdout);
     }
 
@@ -2861,8 +2859,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     buffer[buffer_actual_size] = '\0';
 
-    c_cursor_blink(0);
-    printf("\n");
+    printf("\033[?25h\n");
 
     return ret_val;
 

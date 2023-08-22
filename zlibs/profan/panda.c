@@ -29,6 +29,8 @@ typedef struct {
     uint32_t saved_cursor_x;
     uint32_t saved_cursor_y;
 
+    uint8_t cursor_is_hidden;
+
     screen_char_t *screen_buffer;
     
     font_data_t *font;
@@ -153,6 +155,16 @@ int compute_ansi_escape(char *str) {
         g_panda->cursor_y = g_panda->saved_cursor_y;
     }
 
+    // cursor hide and show
+    if (strncmp(str, "?25", 3) == 0) {
+        if (str[3] == 'l') {
+            g_panda->cursor_is_hidden = 0;
+        } else if (str[3] == 'h') {
+            g_panda->cursor_is_hidden = 1;
+        }
+        return 5;
+    }
+
     // number
     char *tmp = str;
     while (*tmp >= '0' && *tmp <= '9') tmp++;
@@ -227,14 +239,31 @@ void panda_scroll() {
     }
 }
 
+void draw_cursor(int errase) {
+    uint32_t offset;
+    if (!errase) {
+        for (uint32_t i = 0; i < g_panda->font->height; i++) {
+            c_vesa_set_pixel(g_panda->cursor_x * g_panda->font->width + 1, (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height + i, 0xFFFFFF);
+        }
+    } else {
+        offset = (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->max_cols + g_panda->cursor_x;
+        print_char(g_panda->cursor_x * g_panda->font->width,
+                  (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height,
+                   g_panda->screen_buffer[offset].content,
+                   g_panda->screen_buffer[offset].color
+        );
+    }
+}
+
 void panda_print_string(char *string, int len, char color) {
     uint32_t y;
     for (int i = 0; (len < 0) ? (string[i]) : (i < len); i++) {
-        if (string[i] == '\n') {
+        if (!g_panda->cursor_is_hidden)
+            draw_cursor(1);
+        if (string[i] == '\n')
             panda_scroll();
-        } else if (string[i] == '\033') {
+        else if (string[i] == '\033')
             i += compute_ansi_escape(string + i);
-        }
         else {
             y = g_panda->cursor_y - g_panda->scroll_offset;
             g_panda->screen_buffer[y * g_panda->max_cols + g_panda->cursor_x].content = string[i];
@@ -246,6 +275,12 @@ void panda_print_string(char *string, int len, char color) {
             );
             g_panda->cursor_x++;
         }
+        if (g_panda->cursor_x >= g_panda->max_cols)
+            panda_scroll();
+        if (g_panda->cursor_y - g_panda->scroll_offset >= g_panda->max_lines)
+            panda_scroll();
+        if (!g_panda->cursor_is_hidden)
+            draw_cursor(0);
     }
 }
 
@@ -269,6 +304,8 @@ void init_panda() {
     g_panda->saved_cursor_y = 0;
 
     g_panda->scroll_offset = 0;
+
+    g_panda->cursor_is_hidden = 0;
 
     g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
     g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;

@@ -135,6 +135,15 @@ int devpanda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
+int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+    if (mode == MODE_WRITE) {
+        c_serial_print(SERIAL_PORT_A, (char *) buffer);
+        return size;
+    }
+
+    return 0;
+}
+
 int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (offset) {
         printf("offset is not supported by buffer system\n");
@@ -183,6 +192,7 @@ void init_devio() {
     fu_fctf_create(0, "/dev/zebra",  devzebra_rw);
     fu_fctf_create(0, "/dev/parrot", devparrot_rw);
     fu_fctf_create(0, "/dev/panda",  devpanda_rw);
+    fu_fctf_create(0, "/dev/serial", devserial_rw);
 
     fu_fctf_create(0, "/dev/stdout", devstdout_rw);
     fu_fctf_create(0, "/dev/stderr", devstderr_rw);
