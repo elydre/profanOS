@@ -164,6 +164,9 @@ int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t
     } else if (mode == MODE_FLUSH && lc->offset) {
         lc->buffer[lc->offset] = '\0';
         write_in_file(lc->redirection, lc->buffer, 0, lc->offset);
+        if (fu_is_fctf(lc->redirection)) {
+            fu_fctf_flush(lc->redirection);
+        }
         lc->offset = 0;
     } else if (mode == MODE_READD) {
         read_in_file(lc->redirection, buffer, 0, size);
@@ -184,10 +187,32 @@ int devbuffer_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return genbuffer_rw(lc[DEVIO_BUFFER], buffer, offset, size, mode);
 }
 
+int devnocolor_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+    if (mode == MODE_WRITE) {
+        char *copy = strdup((char *) buffer);
+        for (uint32_t i = 0; copy[i]; i++) {
+            if (copy[i] == '$' && copy[i + 1]) {
+                for (uint32_t j = i; copy[j]; j++) {
+                    copy[j] = copy[j + 2];
+                }
+            }
+        }
+        // push it to buffer
+        devbuffer_rw(copy, 0, strlen(copy), MODE_WRITE);
+        free(copy);
+        return size;
+    } else if (mode == MODE_FLUSH) {
+        devbuffer_rw(NULL, 0, 0, MODE_FLUSH);
+    }
+
+    return 0;
+}
+
 void init_devio() {
     fu_fctf_create(0, "/dev/zero",   devzero_rw);
     fu_fctf_create(0, "/dev/null",   devnull_rw);
     fu_fctf_create(0, "/dev/random", devrand_rw);
+    fu_fctf_create(0, "/dev/nocolor", devnocolor_rw);
 
     fu_fctf_create(0, "/dev/zebra",  devzebra_rw);
     fu_fctf_create(0, "/dev/parrot", devparrot_rw);
