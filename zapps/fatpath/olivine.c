@@ -2357,7 +2357,7 @@ char get_func_color(char *str) {
 
     // internal functions: cyan
     if (get_if_function(str) != NULL) {
-        return '3';
+        return '2';
     }
 
     // unknown functions: dark red
