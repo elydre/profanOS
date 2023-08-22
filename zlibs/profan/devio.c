@@ -63,6 +63,20 @@ void write_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
     }
 }
 
+void read_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
+    if (IS_NULL_SID(sid)) {
+        return;
+    }
+
+    if (fu_is_fctf(sid)) {
+        fu_fctf_read(sid, buffer, offset, size);
+    } else if (fu_is_file(sid)) {
+        fu_file_read(sid, buffer, offset, size);
+    } else {
+        printf("no method to read in sid d%ds%d\n", sid.device, sid.sector);
+    }
+}
+
 int devzero_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_READD) {
         memset(buffer, 0, size);
@@ -110,6 +124,12 @@ int devpanda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
         color = panda_color_print((char *) buffer, color, size);
         return size;
+    } else if (mode == MODE_READD) {
+        if (size < 2 * sizeof(uint32_t)) {
+            return 0;
+        }
+        panda_get_cursor((uint32_t *) buffer, (uint32_t *) buffer + 1);
+        return 2 * sizeof(uint32_t);
     }
 
     return 0;
@@ -136,6 +156,8 @@ int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t
         lc->buffer[lc->offset] = '\0';
         write_in_file(lc->redirection, lc->buffer, 0, lc->offset);
         lc->offset = 0;
+    } else if (mode == MODE_READD) {
+        read_in_file(lc->redirection, buffer, 0, size);
     }
 
     return 0;

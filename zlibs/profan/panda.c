@@ -26,6 +26,9 @@ typedef struct {
     uint32_t max_lines;
     uint32_t max_cols;
 
+    uint32_t saved_cursor_x;
+    uint32_t saved_cursor_y;
+
     screen_char_t *screen_buffer;
     
     font_data_t *font;
@@ -135,23 +138,50 @@ void print_char(uint32_t xo, uint32_t yo, char c, char color_code) {
 }
 
 
-void compute_ansi_escape(char *str) {
-    c_kprint("compute_ansi_escape\n");
-    char *ptr = str;
-    while (*ptr != '\0') {
-        if (*ptr >= '0' && *ptr <= '9') {
-            ptr++;
-        } else if (*ptr == ';') {
-            g_panda->cursor_x = atoi(str);
-            str = ptr + 1;
-            ptr = str;
-        } else if (*ptr == 'H') {
-            g_panda->cursor_y = atoi(str);
-            return;
-        } else {
-            return;
-        }
+int compute_ansi_escape(char *str) {
+    char *start = str;
+
+    if (str[1] == '[') str += 2;
+    else return 1;
+
+    // cursor save and restore
+    if (str[0] == 's') {
+        g_panda->saved_cursor_x = g_panda->cursor_x;
+        g_panda->saved_cursor_y = g_panda->cursor_y;
+    } else if (str[0] == 'u') {
+        g_panda->cursor_x = g_panda->saved_cursor_x;
+        g_panda->cursor_y = g_panda->saved_cursor_y;
     }
+
+    // number
+    char *tmp = str;
+    while (*tmp >= '0' && *tmp <= '9') tmp++;
+
+    // cursor up
+    if (tmp[0] == 'A') {
+        int n = atoi(str);
+        g_panda->cursor_y -= n;
+    }
+
+    // cursor down
+    if (tmp[0] == 'B') {
+        int n = atoi(str);
+        g_panda->cursor_y += n;
+    }
+
+    // cursor forward
+    if (tmp[0] == 'C') {
+        int n = atoi(str);
+        g_panda->cursor_x += n;
+    }
+
+    // cursor backward
+    if (tmp[0] == 'D') {
+        int n = atoi(str);
+        g_panda->cursor_x -= n;
+    }
+
+    return tmp - start;
 }
 
 void panda_scroll() {
@@ -203,11 +233,7 @@ void panda_print_string(char *string, int len, char color) {
         if (string[i] == '\n') {
             panda_scroll();
         } else if (string[i] == '\033') {
-            i++;
-            if (string[i] == '[') {
-                i++;
-                compute_ansi_escape(string + i);
-            }
+            i += compute_ansi_escape(string + i);
         }
         else {
             y = g_panda->cursor_y - g_panda->scroll_offset;
@@ -223,6 +249,11 @@ void panda_print_string(char *string, int len, char color) {
     }
 }
 
+void panda_get_cursor(uint32_t *x, uint32_t *y) {
+    *x = g_panda->cursor_x;
+    *y = g_panda->cursor_y;
+}
+
 void init_panda() {
     g_panda = malloc(sizeof(panda_global_t));
     g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
@@ -233,6 +264,10 @@ void init_panda() {
 
     g_panda->cursor_x = 0;
     g_panda->cursor_y = 0;
+
+    g_panda->saved_cursor_x = 0;
+    g_panda->saved_cursor_y = 0;
+
     g_panda->scroll_offset = 0;
 
     g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;

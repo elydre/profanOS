@@ -2337,31 +2337,31 @@ int does_syntax_fail(char *program) {
 #define TAB    15
 
 #if PROFANBUILD
-int get_func_color(char *str) {
+char get_func_color(char *str) {
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (strcmp(str, keywords[i]) == 0) {
-            return c_magenta;
+            return '4';
         }
     }
 
     // functions: dark cyan
     if (get_function(str) != NULL) {
-        return c_dcyan;
+        return 'A';
     }
 
     // pseudos: blue
     if (get_pseudo(str) != NULL) {
-        return c_blue;
+        return '0';
     }
 
     // internal functions: cyan
     if (get_if_function(str) != NULL) {
-        return c_cyan;
+        return '3';
     }
 
     // unknown functions: dark red
-    return c_dred;
+    return 'B';
 }
 
 void olv_print(char *str, int len) {
@@ -2394,7 +2394,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    c_ckprint(tmp, get_func_color(tmp + dec));
+    printf("$%c%s", get_func_color(tmp + dec), tmp);
 
     int from = i;
     for (; i < len; i++) {
@@ -2403,7 +2403,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
             }
 
             // find the closing bracket
@@ -2420,11 +2420,11 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            c_ckprint("!(", (j == len) ? c_red : c_green);
+            printf("$%c!(", (j == len) ? '3' : '1');
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                c_ckprint(")", c_green);
+                printf("$1)");
             }
 
             i = j;
@@ -2436,10 +2436,10 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
-            c_ckprint(";", c_grey);
+            printf("$6;$$");
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
@@ -2451,7 +2451,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
             is_var = 1;
@@ -2462,7 +2462,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
             is_var = 0;
@@ -2472,7 +2472,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        c_ckprint(tmp, is_var ? c_yellow : c_white);
+        printf("$%c%s", is_var ? '5' : '$', tmp);
     }
 
     free(tmp);
@@ -2692,7 +2692,9 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     history_end++;
 
-    int old_cursor = c_get_cursor_offset();
+    // save the current cursor position
+    printf("\033[s");
+
     int sc, last_sc, last_sc_sgt = 0;
 
     int buffer_actual_size = strlen(buffer);
@@ -2700,7 +2702,8 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        c_set_cursor_offset(old_cursor + buffer_index * 2);
+        printf("\033[u");
+        fflush(stdout);
     }
 
     int key_ticks = 0;
@@ -2713,7 +2716,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
     int ret_val = 0;
 
-    c_cursor_blink(1);
+    // c_cursor_blink(1);
 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
@@ -2779,7 +2782,6 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
             } else {
-                c_set_cursor_offset(old_cursor);
                 printf("%*s", buffer_actual_size, " ");
                 strcpy(buffer, history[history_index]);
                 buffer_actual_size = strlen(buffer);
@@ -2792,8 +2794,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
-            c_set_cursor_offset(old_cursor);
-            printf("%*s", buffer_actual_size, " ");
+            printf("\033[u%*s", buffer_actual_size, " ");
             if (history[history_index] == NULL || history_index == history_end) {
                 buffer[0] = '\0';
                 buffer_actual_size = 0;
@@ -2850,10 +2851,10 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
         else continue;
 
-        c_set_cursor_offset(old_cursor);
+        printf("\033[u");
         olv_print(buffer, buffer_actual_size);
-        c_kprint(" ");
-        c_set_cursor_offset(old_cursor + buffer_index * 2);
+        printf(" $$\033[u\033[%dC", buffer_index);
+        fflush(stdout);
     }
 
     free(other_suggests);
