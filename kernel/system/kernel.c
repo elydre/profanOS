@@ -45,17 +45,13 @@ void kernel_main(void *mboot_ptr) {
     status_print(process_init, "Starting", "process manager");
     status_print(filesys_init, "Loading", "butterfly filesystem");
     status_print(init_watfunc, "Initing", "watfunc");
-    status_print(dily_init,    "Loading", "dynamic library");
 
     kprintf("successfully booted in %d ms\n", timer_get_ms());
-
-    rainbow_print("\nWelcome to profanOS!\n");
-    color_print("$C~~ version $4" KERNEL_VERSION "$C ~~\n\n");
 
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);
 
-    start_kshell();
+    // start_kshell();
 
     sys_fatal("Nothing to run!");
 }

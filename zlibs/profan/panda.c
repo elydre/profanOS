@@ -221,8 +221,9 @@ void panda_scroll() {
         for (uint32_t j = 0; j < g_panda->max_cols; j++) {
             new_offset = i * g_panda->max_cols + j;
             offset = new_offset + g_panda->max_cols;
-            if (g_panda->screen_buffer[new_offset].content == g_panda->screen_buffer[offset].content)
-                continue;
+            if (g_panda->screen_buffer[new_offset].content == g_panda->screen_buffer[offset].content &&
+                g_panda->screen_buffer[new_offset].color == g_panda->screen_buffer[offset].color
+            ) continue;
             g_panda->screen_buffer[new_offset].content = g_panda->screen_buffer[offset].content;
             g_panda->screen_buffer[new_offset].color = g_panda->screen_buffer[offset].color;
             print_char(j * g_panda->font->width, i * g_panda->font->height, g_panda->screen_buffer[new_offset].content, g_panda->screen_buffer[new_offset].color);
@@ -284,6 +285,16 @@ void panda_print_string(char *string, int len, char color) {
     }
 }
 
+#define offset_to_cursor_y(offset, max_cols) ((offset) / (2 * (max_cols)))
+
+void panda_set_start(int kernel_cursor) {
+    uint32_t kmax_cols = c_vesa_get_width() / 8;
+
+    g_panda->cursor_x = 0;
+    g_panda->cursor_y = ((offset_to_cursor_y(kernel_cursor, kmax_cols) + 1) * 16) / g_panda->font->height;
+    g_panda->scroll_offset = 0;
+}
+
 void panda_get_cursor(uint32_t *x, uint32_t *y) {
     *x = g_panda->cursor_x;
     *y = g_panda->cursor_y;
@@ -294,7 +305,7 @@ void init_panda() {
     g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
 
     if (g_panda->font == NULL) {
-        printf("Failed to load font\n");
+        printf("\n Failed to load font\n");
     }
 
     g_panda->cursor_x = 0;
@@ -311,6 +322,4 @@ void init_panda() {
     g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
 
     g_panda->screen_buffer = calloc(g_panda->max_lines * g_panda->max_cols, sizeof(screen_char_t));
-
-    printf("Init of panda terminal emulator !\n");
 }

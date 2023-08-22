@@ -1,5 +1,7 @@
 #include <syscall.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <i_time.h>
 #include <panda.h>
@@ -115,17 +117,27 @@ char panda_color_print(char *s, char c, int len) {
 }
 
 void rainbow_print(char *message) {
-    char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
-    int i = 0;
+    // char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
+    char rainbow_colors[] = {'1', '2', '0', '4', '3', '5'};
+    int color_index = 0;
 
-    char buffer[2];
-    buffer[1] = '\0';
-
-    while (message[i] != 0) {
-        buffer[0] = message[i];
-        c_ckprint(buffer, rainbow_colors[i % 6]);
-        i++;
+    char *new = malloc((strlen(message) + 1) * 3);
+    // set color codes evry chars
+    
+    int i;
+    for (i = 0; message[i]; i++) {
+        new[i * 3] = '$';
+        new[i * 3 + 1] = rainbow_colors[color_index];
+        new[i * 3 + 2] = message[i];
+        color_index = (color_index + 1) % 6;
     }
+
+    new[i * 3] = '$';
+    new[i * 3 + 1] = '7';
+    new[i * 3 + 2] = '\0';
+
+    puts(new);
+    free(new);
 }
 
 /***********************

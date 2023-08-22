@@ -31,9 +31,7 @@ int main() {
 void init_func() {
     stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
     if (IS_NULL_SID(stdout_sid) || !fu_is_fctf(stdout_sid)) {
-        c_kprint("Can't find /dev/stdout");
-    } else {
-        c_kprint("Init of the stdio lib !\n");
+        c_kprint("\n Can't find /dev/stdout");
     }
 }
 

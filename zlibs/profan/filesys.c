@@ -39,7 +39,6 @@ int main(void) {
         cache_fctf[i].sid = NULL_SID;
         cache_fctf[i].addr = NULL;
     }
-    c_kprint("Init of filesys lib!\n");
 
     return 0;
 }

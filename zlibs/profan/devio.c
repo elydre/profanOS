@@ -32,7 +32,6 @@ void init_lcbuffer();
 int main(void) {
     init_devio();
     init_lcbuffer();
-    c_kprint("Init of devio !\n");
 
     return 0;
 }

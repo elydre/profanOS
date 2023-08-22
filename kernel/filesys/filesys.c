@@ -96,34 +96,29 @@ int filesys_init() {
     fu_dir_create(MAIN_FS, 0, "/tmp");
     fu_dir_create(MAIN_FS, 0, "/dev");
 
-    fu_add_element_to_dir(
+    if (fu_add_element_to_dir(
         MAIN_FS,
         ROOT_SID,
         fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/user"),
         "user"
-    );
-
-    fu_add_element_to_dir(
+    ) || fu_add_element_to_dir(
         MAIN_FS,
         ROOT_SID,
         fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/bin"),
         "bin"
-    );
-
-    fu_add_element_to_dir(
+    ) || fu_add_element_to_dir(
         MAIN_FS,
         ROOT_SID,
         fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/lib"),
         "lib"
-    );
-
-    fu_add_element_to_dir(
+    ) || fu_add_element_to_dir(
         MAIN_FS,
         ROOT_SID,
         fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/zada"),
         "zada"
-    );
+    )) {
+        return 1;
+    }
 
-    fs_print_status(MAIN_FS);
     return 0;
 }

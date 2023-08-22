@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void main() {
-    puts("Init of the unistd lib !\n");
+int main(void) {
+    return 0;
 }
 
 int access(const char *a, int b) {

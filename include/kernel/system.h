@@ -3,14 +3,14 @@
 
 // build settings
 
-#define KERNEL_VERSION  "BFS-09"
+#define KERNEL_VERSION  "BFS-10"
 #define KERNEL_EDITING  "butterfly"
 
 #define PROCESS_MAX     20          // max process count
 #define KERNEL_PRIORITY 5           // default kernel process priority
 #define RAMDISK_SECTOR  2048        // ramdisk sector count
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
-#define RUN_DEFAULT     "/bin/fatpath/olivine.bin"
+#define RUN_DEFAULT     "/bin/tools/init.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
@@ -29,7 +29,7 @@
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
 
-#define GRUBMOD_START   0x117000    // grub module start (increase 0x1000)
+#define GRUBMOD_START   0x116000    // grub module start (increase 0x1000)
 
 
 // system.c

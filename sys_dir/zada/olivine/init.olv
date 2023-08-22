@@ -43,4 +43,3 @@ END
 
 cpu
 ubr stdout /dev/panda
-clear

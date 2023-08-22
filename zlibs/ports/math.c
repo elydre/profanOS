@@ -559,9 +559,7 @@ int main() {
     return 0;
 }
 
-void init_func() {
-    c_kprint("Init of the math lib !\n");
-}
+void init_func() {; }
 
 int fpclassify(float x) {
     puts("fpclassify not implemented yet, WHY DO YOU USE IT ?\n");

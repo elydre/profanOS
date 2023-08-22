@@ -13,7 +13,6 @@ int main() {
 }
 
 void init_func() {
-    c_kprint("Init of the stdlib !\n");
     rand_seed = time_gen_unix();
 }
 
