@@ -1,5 +1,5 @@
 #ifndef PANDA_ID
-#define PANDA_ID 1000
+#define PANDA_ID 1005
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 

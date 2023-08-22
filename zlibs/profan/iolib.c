@@ -114,7 +114,7 @@ char panda_color_print(char *s, char c, int len) {
     uint32_t from = 0;
     int i = 0;
 
-    while (s[i] != '\0') {
+    while (i < len) {
         for (i = from; i < len - 1; i++) {
             if (s[i] != '$') continue;
             panda_print_string(s + from, i - from, c);

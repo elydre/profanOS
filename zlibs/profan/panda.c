@@ -92,21 +92,24 @@ void print_char(uint32_t xo, uint32_t yo, char c, uint32_t color) {
 }
 
 uint32_t compute_color(char color) {
-    uint32_t r = 0;
-    uint32_t g = 0;
-    uint32_t b = 0;
-
-    if (color & 0x1) {
-        r = 0xFF;
+    switch (color) {
+        case 0x0: return 0x000000;
+        case 0x1: return 0x0000AA;
+        case 0x2: return 0x00AA00;
+        case 0x3: return 0x00AAAA;
+        case 0x4: return 0xAA0000;
+        case 0x5: return 0xAA00AA;
+        case 0x6: return 0xAA5500;
+        case 0x7: return 0xAAAAAA;
+        case 0x8: return 0x555555;
+        case 0x9: return 0x5555FF;
+        case 0xA: return 0x55FF55;
+        case 0xB: return 0x55FFFF;
+        case 0xC: return 0xFF5555;
+        case 0xD: return 0xFF55FF;
+        case 0xE: return 0xFFFF55;
+        default:  return 0xFFFFFF;
     }
-    if (color & 0x2) {
-        g = 0xFF;
-    }
-    if (color & 0x4) {
-        b = 0xFF;
-    }
-
-    return (r << 16) | (g << 8) | b;
 }
 
 void panda_print_string(char *string, int len, char color) {
@@ -117,6 +120,9 @@ void panda_print_string(char *string, int len, char color) {
         if (string[i] == '\n') {
             x = 0;
             y += g_font->height;
+            if (y >= c_vesa_get_height() - g_font->height) {
+                y = 0;
+            }
         } else {
             print_char(x, y, string[i], compute_color(color));
             x += g_font->width;

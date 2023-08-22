@@ -108,7 +108,7 @@ int devparrot_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 int devpanda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     static char color = c_white;
     if (mode == MODE_WRITE) {
-        color = panda_color_print((char *) buffer, size, color);
+        color = panda_color_print((char *) buffer, color, size);
         return size;
     }
 
