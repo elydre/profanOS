@@ -2601,7 +2601,19 @@ char *olv_autocomplete(char *str, int len, char **other) {
         char *inp_end = malloc(MAX_PATH_SIZE * sizeof(char));
 
         memcpy(inp_end, str + i + 1, len - (i + 1));
-        inp_end[len - (i + 1)] = '\0';
+        len = len - (i + 1);
+        inp_end[len] = '\0';
+
+        // find the last space
+        for (int j = len - 1; j >= 0; j--) {
+            if (inp_end[j] != ' ') continue;
+            // copy to the beginning
+            memcpy(inp_end, inp_end + j + 1, len - (j + 1));
+            len = len - (j + 1);
+            inp_end[len] = '\0';
+            break;
+        }
+
         assemble_path(current_directory, inp_end, path);
         if (path[strlen(path) - 1] != '/'
             && (inp_end[strlen(inp_end) - 1] == '/'
