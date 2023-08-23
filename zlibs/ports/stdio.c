@@ -161,7 +161,7 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    if (stream == stdout) {   
+    if (stream == stdout) {
         fu_fctf_flush(stdout_sid);
     }
 
@@ -243,7 +243,7 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     if (stream == stdout) {
         return fu_fctf_write(stdout_sid, (void *) buffer, 0, count) ? 0 : count;
     }
-    
+
     if (stream == stderr) {
         return fu_fctf_write(stdout_sid, (void *) buffer, 0, count) ? 0 : count;
     }

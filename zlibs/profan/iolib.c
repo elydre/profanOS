@@ -123,7 +123,7 @@ void rainbow_print(char *message) {
 
     char *new = malloc((strlen(message) + 1) * 3);
     // set color codes evry chars
-    
+
     int i;
     for (i = 0; message[i]; i++) {
         new[i * 3] = '$';

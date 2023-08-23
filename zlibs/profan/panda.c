@@ -32,7 +32,7 @@ typedef struct {
     uint8_t cursor_is_hidden;
 
     screen_char_t *screen_buffer;
-    
+
     font_data_t *font;
 } panda_global_t;
 

@@ -628,7 +628,7 @@ sid_t fu_path_to_sid(sid_t from, char *path) {
 void fu_simplify_path(char *path) {
     // some path look like this: /a/b/../c/./d/./e/../f
     // this function simplifies them to: /a/c/d/f
-    
+
     char *tmp = malloc(strlen(path) + 1);
     strcpy(tmp, path);
 

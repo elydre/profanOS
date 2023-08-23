@@ -81,7 +81,7 @@ int main() {
         loaded += !print_load_status(i);
     }
     printf("Loaded %d/%d libraries\n\n", loaded, total);
-    
+
     panda_set_start(c_get_cursor_offset());
 
     if (redirect_stdout("/dev/panda")) {
