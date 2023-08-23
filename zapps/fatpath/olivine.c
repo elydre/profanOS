@@ -259,8 +259,7 @@ int set_function(char *name, char **lines, int line_count) {
 void print_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name == NULL) {
-            printf("Function %s does not exist\n", name);
-            return;
+            break;
         }
         if (strcmp(functions[i].name, name) == 0) {
             printf("Function %s:\n", name);
@@ -270,6 +269,29 @@ void print_function(char *name) {
             return;
         }
     }
+    printf("Function %s does not exist\n", name);
+}
+
+int del_function(char *name) {
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            return 1;
+        }
+        if (strcmp(functions[i].name, name) == 0) {
+            free(functions[i].name);
+            for (int j = 0; j < functions[i].line_count; j++) {
+                free(functions[i].lines[j]);
+            }
+            free(functions[i].lines);
+
+            // shift all functions down
+            for (int j = i; j < MAX_FUNCTIONS - 1; j++) {
+                functions[j] = functions[j + 1];
+            }
+            return 0;
+        }
+    }
+    return 1;
 }
 
 function_t *get_function(char *name) {
@@ -752,6 +774,29 @@ char *if_del_var(char **input) {
     return NULL;
 }
 
+char *if_del_func(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        printf("delfunc: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // delete function
+    if (del_function(name)) {
+        printf("delfunc: function '%s' not found\n", name);
+    }
+
+    return NULL;
+}
+
 char *if_debug(char **input) {
     // get argc
     int argc = 0;
@@ -915,8 +960,10 @@ char *if_change_dir(char **input) {
     // get dir
     char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
 
-    // check if dir exists
     #if PROFANBUILD
+    // simplify path
+    fu_simplify_path(input[0]);
+    // check if dir exists
     assemble_path(current_directory, input[0], dir);
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
@@ -1063,7 +1110,11 @@ char *if_find(char **input) {
         if ((fu_is_dir(out_ids[i]) && required_type == 2) ||
             (fu_is_file(out_ids[i]) && required_type == 1)
         ) {
+            if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
+                continue;
+            }
             assemble_path(path, names[i], tmp_path);
+            fu_simplify_path(tmp_path);
             char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
             strcpy(tmp, output);
             sprintf(tmp, "%s '%s'", tmp, tmp_path);
@@ -1166,6 +1217,7 @@ internal_function_t internal_functions[] = {
     {"split", if_split},
     {"set", if_set_var},
     {"del", if_del_var},
+    {"delfunc", if_del_func},
     {"debug", if_debug},
     {"eval", if_eval},
     {"go", if_go_binfile},

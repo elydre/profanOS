@@ -237,6 +237,7 @@ sid_t fu_dir_create(int device_id, char *path) {
         }
     } else {
         parent_sid.device = 1;
+        parent_sid.sector = 0;
     }
 
     // generate the meta
@@ -266,13 +267,12 @@ sid_t fu_dir_create(int device_id, char *path) {
     c_fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
     c_fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
 
-    if (parent[0]) {
-        if (fu_add_element_to_dir(head_sid, parent_sid, "..")) {
-            printf("failed to add '..' to directory\n");
-            free(parent);
-            free(name);
-            return NULL_SID;
-        }
+    // create '.' and '..'
+    if (fu_add_element_to_dir(head_sid, parent_sid, "..")) {
+        printf("failed to add '..' to directory\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
     }
 
     if (fu_add_element_to_dir(head_sid, head_sid, ".")) {
@@ -352,7 +352,6 @@ sid_t fu_file_create(int device_id, char *path) {
     }
 
     // create a link in parent directory
-
     if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
         printf("failed to add directory to parent\n");
         free(parent);
@@ -441,7 +440,6 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     }
 
     // create a link in parent directory
-
     if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
         printf("failed to add directory to parent\n");
         free(parent);
@@ -633,34 +631,26 @@ void fu_simplify_path(char *path) {
     strcpy(tmp, path);
 
     int i = 0;
-    int j = 0;
     int k = 0;
 
     while (tmp[i]) {
         if (tmp[i] == '/') {
-            if (j == 0) {
-                path[k] = '/';
-                k++;
+            if (tmp[i + 1] == '.') {
+                if (tmp[i + 2] == '/' || tmp[i + 2] == '\0') {
+                    i += 2;
+                    continue;
+                } else if (tmp[i + 2] == '.' && (tmp[i + 3] == '/' || tmp[i + 3] == '\0')) {
+                    i += 3;
+                    while (k > 0 && path[k - 1] != '/') {
+                        k--;
+                    }
+                    continue;
+                }
             }
-            j = 0;
-            i++;
-            continue;
-        }
-        if (tmp[i] == '.' && tmp[i + 1] == '.') {
-            while (k > 0 && path[k - 1] != '/') {
-                k--;
-            }
-            i += 2;
-            continue;
-        }
-        if (tmp[i] == '.' && tmp[i + 1] == '/') {
-            i += 2;
-            continue;
         }
         path[k] = tmp[i];
-        k++;
         i++;
-        j++;
+        k++;
     }
 
     if (k > 1 && path[k - 1] == '/') {
@@ -673,8 +663,8 @@ void fu_simplify_path(char *path) {
     i = 1;
     while (path[i]) {
         if (path[i] == '/' && path[i - 1] == '/') {
-            for (j = i; path[j]; j++) {
-                path[j] = path[j + 1];
+            for (k = i; path[k]; k++) {
+                path[k] = path[k + 1];
             }
             continue;
         }

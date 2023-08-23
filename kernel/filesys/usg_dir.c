@@ -165,6 +165,7 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
         }
     } else {
         parent_sid.device = 1;
+        parent_sid.sector = 0;
     }
 
     // generate the meta
@@ -194,6 +195,21 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
 
     fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
     fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
+
+    // create '.' and '..'
+    if (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..")) {
+        kprintf("failed to add '..' to directory\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    if (fu_add_element_to_dir(filesys, head_sid, head_sid, ".")) {
+        kprintf("failed to add '.' to directory\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
 
     free(parent);
     free(name);

@@ -16,16 +16,22 @@ FUNC show
 END
 
 FUNC tree
-    IF !#
+    FUNC tree_rec
         FOR f !(find -f !0)
             echo !f
             END
         FOR d !(find -d !0)
-            tree !d
+            tree_rec !d
         END
-        RETURN
     END
-    echo missing argument
+
+    IF !#
+        tree_rec !0
+    END; ELSE
+        tree_rec .
+    END
+
+    delfunc tree_rec
 END
 
 FUNC time
