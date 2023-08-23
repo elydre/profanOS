@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
         fu_file_read(file, char_content, 0, size);
         make_printable(char_content, size);
 
-        c_ckprint(char_content, c_magenta);
+        puts(char_content);
 
         free(char_content);
         free(path);

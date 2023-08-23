@@ -1,9 +1,20 @@
-cat     - show file content         info    - show time, mem, disk
-cc      - compile C source file     ls      - list the current dir
-cd      - change dir                mkdir   - create a new dir
+$5 USEFUL COMMANDS $6
+cat     - show file content         ls      - list the current dir
+cc      - compile C source file     mkdir   - create a new dir
 clear   - clear the screen          mkfile  - create a new file
 cpu     - start cpu usage monitor   proc    - show process info
-echo    - print the arguments       reboot  - reboot the system
-exit    - exit of the shell app     rim     - start text editor
-go      - start * file as binary    stop    - shutdown the system
-help    - show this help            udisk   - show used disk space
+info    - show time, mem, disk      rim     - start text editor
+
+all commands are in /bin/commands and /bin/fatpath$7
+
+$5 OLIVINE LANGUAGE $6
+cd      - change dir                go     - start file as binary
+eval    - calculate expression      set    - set variable
+
+Some examples:
+
+$4FOR $7i $1!($2find$7 -d /user$1)              $4FUNC$7 double
+    $2echo $5!i                             $4RETURN $1!($2eval$7 !0 * 2$1)
+$4END                                 END
+
+$6See $7man olivine$6 for more info.$7
