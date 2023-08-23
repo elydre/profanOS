@@ -266,6 +266,22 @@ sid_t fu_dir_create(int device_id, char *path) {
     c_fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
     c_fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
 
+    if (parent[0]) {
+        if (fu_add_element_to_dir(head_sid, parent_sid, "..")) {
+            printf("failed to add '..' to directory\n");
+            free(parent);
+            free(name);
+            return NULL_SID;
+        }
+    }
+
+    if (fu_add_element_to_dir(head_sid, head_sid, ".")) {
+        printf("failed to add '.' to directory\n");
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
     free(parent);
     free(name);
 
@@ -607,4 +623,63 @@ sid_t fu_path_to_sid(sid_t from, char *path) {
     }
 
     return ret;
+}
+
+void fu_simplify_path(char *path) {
+    // some path look like this: /a/b/../c/./d/./e/../f
+    // this function simplifies them to: /a/c/d/f
+    
+    char *tmp = malloc(strlen(path) + 1);
+    strcpy(tmp, path);
+
+    int i = 0;
+    int j = 0;
+    int k = 0;
+
+    while (tmp[i]) {
+        if (tmp[i] == '/') {
+            if (j == 0) {
+                path[k] = '/';
+                k++;
+            }
+            j = 0;
+            i++;
+            continue;
+        }
+        if (tmp[i] == '.' && tmp[i + 1] == '.') {
+            while (k > 0 && path[k - 1] != '/') {
+                k--;
+            }
+            i += 2;
+            continue;
+        }
+        if (tmp[i] == '.' && tmp[i + 1] == '/') {
+            i += 2;
+            continue;
+        }
+        path[k] = tmp[i];
+        k++;
+        i++;
+        j++;
+    }
+
+    if (k > 1 && path[k - 1] == '/') {
+        path[k - 1] = '\0';
+    } else {
+        path[k] = '\0';
+    }
+
+    // remove successive slashes
+    i = 1;
+    while (path[i]) {
+        if (path[i] == '/' && path[i - 1] == '/') {
+            for (j = i; path[j]; j++) {
+                path[j] = path[j + 1];
+            }
+            continue;
+        }
+        i++;
+    }
+
+    free(tmp);
 }
