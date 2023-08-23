@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);
 
-    if (!IS_NULL_SID(dir) && fu_is_file(dir)) {
+    if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
         printf("$3%s$B is not a directory$$\n", ls_path);
         free(ls_path);
         return 1;
