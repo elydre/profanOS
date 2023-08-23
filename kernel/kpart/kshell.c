@@ -61,7 +61,7 @@ int shell_command(char *command);
 
 void start_kshell() {
     sys_warning("You are now in the kernel-level shell");
-    kprint("\n");
+    /*kprint("\n");
     char char_buffer[BFR_SIZE];
     while (1) {
         rainbow_print("kernel-shell> ");
@@ -69,7 +69,7 @@ void start_kshell() {
         kprint("\n");
         if (shell_command(char_buffer)) break;
         char_buffer[0] = '\0';
-    }
+    }*/
     kprint("exiting kshell can cause a kernel panic\n");
 }
 

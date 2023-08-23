@@ -2761,8 +2761,6 @@ int local_input(char *buffer, int size, char **history, int history_end) {
     int key_ticks = 0;
     int shift = 0;
 
-    int need_print = 0;
-
     int history_index = history_end;
 
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));

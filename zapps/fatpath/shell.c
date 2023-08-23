@@ -54,29 +54,14 @@ int str_count(char *str, char thing) {
 
 int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
-    int history_size = 0x1000 / BFR_SIZE - 1;
-    char **history = malloc(history_size * sizeof(char*));
-    int addr = (int) calloc(0x1000, sizeof(char));
-
-    for (int i = 0; i < history_size; i++) {
-        history[i] = (char*)addr;
-        addr += BFR_SIZE;
-    }
-    int current_history_size = 0;
 
     while (1) {
         printf(SHELL_PROMPT, current_dir);
-        input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
+        fflush(stdout);
+        open_input(char_buffer, BFR_SIZE);
         puts("\n");
-        if (strcmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
-            for (int i = history_size - 1; i > 0; i--) strcpy(history[i], history[i - 1]);
-            if (current_history_size < history_size) current_history_size++;
-            strcpy(history[0], char_buffer);
-        }
         if (shell_command(char_buffer)) break;
     }
-    free(history[0]);
-    free(history);
     return 0;
 }
 

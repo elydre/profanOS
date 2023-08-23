@@ -294,7 +294,7 @@ int getc(FILE *stream) {
 
 char *fgets(char *restrict str, int count, FILE *restrict stream) {
     if (stream == stdin) {
-        input(str, count, 0x09);
+        open_input(str, count);
         puts("\n");
         return str;
     }

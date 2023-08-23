@@ -16,6 +16,7 @@
 #define LSHIFT 42
 #define RSHIFT 54
 #define LEFT 75
+#define BACK   14
 #define RIGHT 77
 #define OLDER 72
 #define NEWER 80
@@ -144,32 +145,24 @@ void rainbow_print(char *message) {
  * INPUT PUBLIC FUNCS *
 ***********************/
 
-void input_wh(char *out_buffer, int size, char color, char ** history, int history_size) {
-    int old_cursor = c_get_cursor_offset();
+void open_input(char *buffer, int size) {
+    // save the current cursor position and show it
+    printf("\033[s\033[?25l");
+    fflush(stdout);
+
     int sc, last_sc, last_sc_sgt = 0;
+
     int buffer_actual_size = 0;
-    int history_index = 0;
     int buffer_index = 0;
+
+    for (int i = 0; i < size; i++)
+        buffer[i] = '\0';
+
     int key_ticks = 0;
     int shift = 0;
-    int new_pos;
-
-    int row = c_gt_get_max_rows();
-    int col = c_gt_get_max_cols();
-
-    clean_buffer(out_buffer, size);
-
-    do {
-        sc = c_kb_get_scfh();
-    } while (sc == ENTER);
-
-    c_kb_reset_history();
-
-    c_cursor_blink(1);
 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
-
         sc = c_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
@@ -178,24 +171,24 @@ void input_wh(char *out_buffer, int size, char color, char ** history, int histo
             last_sc_sgt = sc;
         }
 
-        if (!sc) continue;
-        if (sc != last_sc) key_ticks = 0;
-        else key_ticks++;
+        key_ticks = (sc != last_sc) ? 0 : key_ticks + 1;
         last_sc = sc;
 
-        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) continue;
+        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
+            continue;
+        }
 
         if (sc == LSHIFT || sc == RSHIFT) {
             shift = 1;
             continue;
         }
 
-        else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+        if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
             shift = 0;
             continue;
         }
 
-        else if (sc == LEFT) {
+        if (sc == LEFT) {
             if (!buffer_index) continue;
             buffer_index--;
         }
@@ -205,79 +198,42 @@ void input_wh(char *out_buffer, int size, char color, char ** history, int histo
             buffer_index++;
         }
 
-        else if (sc == OLDER) {
-            if (history_index == history_size) continue;
-            c_set_cursor_offset(old_cursor);
-            for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
-            clean_buffer(out_buffer, size);
-            buffer_actual_size = ((int) strlen(history[history_index]) > size) ? size : (int) strlen(history[history_index]);
-            for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index][i];
-            buffer_index = buffer_actual_size;
-            history_index++;
-        }
-
-        else if (sc == NEWER) {
-            clean_buffer(out_buffer, size);
-            c_set_cursor_offset(old_cursor);
-            for (int i = 0; i < buffer_actual_size; i++) c_kprint(" ");
-            if (history_index < 2) {
-                buffer_actual_size = 0;
-                buffer_index = 0;
-                continue;
-            }
-            history_index--;
-            buffer_actual_size = ((int) strlen(history[history_index - 1]) > size) ? size : (int) strlen(history[history_index - 1]);
-            for (int i = 0; i < buffer_actual_size; i++) out_buffer[i] = history[history_index - 1][i];
-            buffer_index = buffer_actual_size;
-        }
-
-        else if (sc == BACKSPACE) {
+        else if (sc == BACK) {
             if (!buffer_index) continue;
             buffer_index--;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
-                out_buffer[i] = out_buffer[i + 1];
+                buffer[i] = buffer[i + 1];
             }
-            out_buffer[buffer_actual_size] = '\0';
+            buffer[buffer_actual_size] = '\0';
             buffer_actual_size--;
         }
 
         else if (sc == DEL) {
-            if (!buffer_index || buffer_index == buffer_actual_size) continue;
+            if (buffer_index == buffer_actual_size) continue;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
-                out_buffer[i] = out_buffer[i + 1];
+                buffer[i] = buffer[i + 1];
             }
-            out_buffer[buffer_actual_size] = '\0';
+            buffer[buffer_actual_size] = '\0';
             buffer_actual_size--;
-        }
-
-        else if (sc == KB_TAB) {
-            if (size < buffer_actual_size + 5) continue;
-            for (int i = 0; i < 4; i++) {
-                out_buffer[buffer_index] = ' ';
-                buffer_actual_size++;
-                buffer_index++;
-            }
         }
 
         else if (sc <= SC_MAX) {
             if (size < buffer_actual_size + 2) continue;
             if (c_kb_scancode_to_char(sc, shift) == '?') continue;
             for (int i = buffer_actual_size; i > buffer_index; i--) {
-                out_buffer[i] = out_buffer[i - 1];
+                buffer[i] = buffer[i - 1];
             }
-            out_buffer[buffer_index] = c_kb_scancode_to_char(sc, shift);
+            buffer[buffer_index] = c_kb_scancode_to_char(sc, shift);
             buffer_actual_size++;
             buffer_index++;
         }
 
-        c_set_cursor_offset(old_cursor);
-        c_ckprint(out_buffer, color);
-        c_kprint(" ");
-        new_pos = old_cursor + buffer_index * 2;
-        c_set_cursor_offset(new_pos);
-        if (new_pos >= (row * col - 1) * 2) {
-            old_cursor -= row * 2;
-        }
+        else continue;
+
+        printf("\033[?25h\033[u$0%s $7\033[u\033[%dC\033[?25l", buffer, buffer_index);
+        fflush(stdout);
     }
-    c_cursor_blink(0);
+
+    buffer[buffer_actual_size] = '\0';
+    printf("\033[?25h");
 }
