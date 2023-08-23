@@ -152,16 +152,16 @@ void print_help(int full) {
     puts("Usage: ls [options] [path]\n");
 
     if (!full) {
-        puts("try 'ls -h' for more information");
+        puts("try 'ls -h' for more information\n");
         return;
     }
 
     puts(
         "Options:\n"
-        "  -l  print files in separate lines\n"
-        "  -c  print files in columns\n"
         "  -a  show all elements\n"
         "  -h  display this help\n"
+        "  -l  print files in separate lines\n"
+        "  -m  print files in comma separated list\n"
         "  -p  show file size in physical size\n"
         "  -z  sort by size\n"
     );
@@ -183,8 +183,8 @@ ls_args_t *parse_args(int argc, char **argv) {
                     case 'l':
                         args->format = LS_FORMAT_LINES;
                         break;
-                    case 'c':
-                        args->format = LS_FORMAT_COLS;
+                    case 'm':
+                        args->format = LS_FORMAT_COMMA;
                         break;
                     case 'a':
                         args->showall = 1;
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);
 
     if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
-        printf("$3%s$B is not a directory$$\n", ls_path);
+        printf("%s is not a directory\n", ls_path);
         free(ls_path);
         free(args);
         return 1;
