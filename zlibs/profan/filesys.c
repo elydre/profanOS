@@ -627,6 +627,11 @@ void fu_simplify_path(char *path) {
     // some path look like this: /a/b/../c/./d/./e/../f
     // this function simplifies them to: /a/c/d/f
 
+    if (path[0] != '/') {
+        printf("Cannot simplify relative path\n");
+        return;
+    }
+
     char *tmp = malloc(strlen(path) + 2);
     strcpy(tmp, path);
     strcat(tmp, "/");

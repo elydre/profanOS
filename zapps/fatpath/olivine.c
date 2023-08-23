@@ -961,10 +961,10 @@ char *if_change_dir(char **input) {
     char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
 
     #if PROFANBUILD
-    // simplify path
-    fu_simplify_path(input[0]);
     // check if dir exists
     assemble_path(current_directory, input[0], dir);
+    // simplify path
+    fu_simplify_path(dir);
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {

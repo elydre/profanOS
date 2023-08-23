@@ -48,4 +48,3 @@ FUNC time
 END
 
 cpu
-ubr stdout /dev/panda
