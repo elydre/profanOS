@@ -139,7 +139,7 @@ void print_char(uint32_t xo, uint32_t yo, char c, char color_code) {
     }
 }
 
-
+void panda_clear_screen();
 int compute_ansi_escape(char *str) {
     char *start = str;
 
@@ -163,6 +163,12 @@ int compute_ansi_escape(char *str) {
             g_panda->cursor_is_hidden = 1;
         }
         return 5;
+    }
+
+    // clear screen
+    if (str[0] == '2' && str[1] == 'J') {
+        panda_clear_screen();
+        return 3;
     }
 
     // number
@@ -298,6 +304,20 @@ void panda_set_start(int kernel_cursor) {
 void panda_get_cursor(uint32_t *x, uint32_t *y) {
     *x = g_panda->cursor_x;
     *y = g_panda->cursor_y;
+}
+
+void panda_clear_screen() {
+    for (uint32_t i = 0; i < g_panda->max_lines; i++) {
+        for (uint32_t j = 0; j < g_panda->max_cols; j++) {
+            if (g_panda->screen_buffer[i * g_panda->max_cols + j].content == ' ') continue;
+            g_panda->screen_buffer[i * g_panda->max_cols + j].content = ' ';
+            g_panda->screen_buffer[i * g_panda->max_cols + j].color = 0xF;
+            print_char(j * g_panda->font->width, i * g_panda->font->height, ' ', 0xF);
+        }
+    }
+    g_panda->cursor_x = 0;
+    g_panda->cursor_y = 0;
+    g_panda->scroll_offset = 0;
 }
 
 void init_panda() {

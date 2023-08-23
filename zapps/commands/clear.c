@@ -1,6 +1,6 @@
-#include <syscall.h>
+#include <stdio.h>
 
 int main(void) {
-    c_clear_screen();
+    printf("\033[2J");
     return 0;
 }
