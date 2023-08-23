@@ -228,14 +228,16 @@ int main(int argc, char **argv) {
     char *ls_path = malloc(512);
 
     if (args->path) {
-        assemble_path(argv[1], argv[2], ls_path);
+        assemble_path(argv[1], args->path, ls_path);
     } else strcpy(ls_path, argv[1]);
+    fu_simplify_path(ls_path);
 
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);
 
     if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
         printf("$3%s$B is not a directory$$\n", ls_path);
         free(ls_path);
+        free(args);
         return 1;
     }
 
