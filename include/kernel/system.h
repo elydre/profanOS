@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "BFS-10"
+#define KERNEL_VERSION  "BFS-11"
 #define KERNEL_EDITING  "butterfly"
 
 #define PROCESS_MAX     20          // max process count
@@ -20,8 +20,7 @@
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count (auto expand)
 #define RUN_BIN_VEXPD   16          // sucessive page create during page fault
 
-#define RUN_LIB_STACK_L 0x1000      // left stack size for library
-#define RUN_LIB_STACK_R 0x1000      // right stack size for library
+#define RUN_LIB_STACK   0x1000      // left stack size for library
 
 #define PROCESS_ESP     0x4000      // process stack size
 

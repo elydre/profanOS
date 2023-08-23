@@ -88,11 +88,16 @@ void tasked_program() {
     mem_set((uint8_t *) comm->stack, 0, stack_size);
 
     // setup stack
+    uint32_t old_esp = 0;
+    asm volatile("mov %%esp, %0" : "=r" (old_esp));
     asm volatile("mov %0, %%esp" :: "r" (comm->stack + stack_size - 0x80));
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
     int ret = main(comm->argc, comm->argv) & 0xFF;
+
+    // restore stack
+    asm volatile("mov %0, %%esp" :: "r" (old_esp));
 
     // free forgeted allocations
     int not_free_mem = mem_get_info(7, pid);

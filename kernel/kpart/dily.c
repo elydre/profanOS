@@ -31,16 +31,12 @@ int dily_load(char *path, int lib_id) {
 
     if (lib_functions == 0) {
         lib_functions = calloc(0x400);
-        // can be realloc in the future
     }
 
     uint32_t file_size = fs_cnt_get_size(fs_get_main(), file);
-    uint32_t lib_size = file_size + RUN_LIB_STACK_L + RUN_LIB_STACK_R;
-    uint8_t *binary_mem = (uint8_t *) mem_alloc(lib_size, 0, 5); // 5: library
-    uint8_t *cnt = binary_mem + RUN_LIB_STACK_L;
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(file_size + RUN_LIB_STACK, 0, 5); // 5: library
 
-    // fs_read_file(path, (char *) file);
-    fs_cnt_read(fs_get_main(), file, cnt, 0, file_size);
+    fs_cnt_read(fs_get_main(), file, binary_mem, 0, file_size);
 
     uint32_t *addr_list = (uint32_t *) mem_alloc(0x800, 0, 5); // 6: as kernel
     addr_list[0] = (uint32_t) lib_id;
@@ -48,13 +44,26 @@ int dily_load(char *path, int lib_id) {
     int addr_list_size = 1;
 
     for (uint32_t i = 0; i < file_size; i++) {
-        if (cnt[i] == 0x55 && cnt[i + 1] == 0x89) {
-            addr_list[addr_list_size] = (uint32_t) &cnt[i];
-            addr_list_size++;
+        if (!(binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89))
+            continue;
+        addr_list[addr_list_size] = (uint32_t) &binary_mem[i];
+        addr_list_size++;
+
+        if (addr_list_size >= 512) {
+            sys_fatal("Too many functions in library");
+            return 1;
         }
     }
 
+    uint8_t *stack = binary_mem + file_size;
+    mem_set((uint8_t *) stack, 0, RUN_LIB_STACK);
+    uint32_t old_esp = 0;
+    asm volatile("mov %%esp, %0" : "=r" (old_esp));
+    asm volatile("mov %0, %%esp" :: "r" (stack + RUN_LIB_STACK - 0x80));
+
     ((void (*)(void)) addr_list[1])();
+
+    asm volatile("mov %0, %%esp" :: "r" (old_esp));
 
     lib_functions[lib_count] = addr_list;
     lib_count++;
