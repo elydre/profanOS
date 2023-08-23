@@ -627,26 +627,22 @@ void fu_simplify_path(char *path) {
     // some path look like this: /a/b/../c/./d/./e/../f
     // this function simplifies them to: /a/c/d/f
 
-    char *tmp = malloc(strlen(path) + 1);
+    char *tmp = malloc(strlen(path) + 2);
     strcpy(tmp, path);
+    strcat(tmp, "/");
 
     int i = 0;
     int k = 0;
 
     while (tmp[i]) {
-        if (tmp[i] == '/') {
-            if (tmp[i + 1] == '.') {
-                if (tmp[i + 2] == '/' || tmp[i + 2] == '\0') {
-                    i += 2;
-                    continue;
-                } else if (tmp[i + 2] == '.' && (tmp[i + 3] == '/' || tmp[i + 3] == '\0')) {
-                    i += 3;
-                    while (k > 0 && path[k - 1] != '/') {
-                        k--;
-                    }
-                    continue;
-                }
-            }
+        if (tmp[i] == '.' && tmp[i + 1] == '.') {
+            i += 2;
+            for (k -= 2; k >= 0 && path[k] != '/'; k--);
+            continue;
+        }
+        if (tmp[i] == '.' && tmp[i + 1] == '/') {
+            i += 2;
+            continue;
         }
         path[k] = tmp[i];
         i++;
@@ -669,6 +665,10 @@ void fu_simplify_path(char *path) {
             continue;
         }
         i++;
+    }
+
+    if (i > 1 && path[i - 1] == '/' && path[i - 2] != '/') {
+        path[i - 1] = '\0';
     }
 
     free(tmp);
