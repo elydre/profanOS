@@ -57,5 +57,13 @@ clean:
 
 # remove git ignored and discard all changes
 fclean: clean
-	git clean -fdx
-	git reset --hard
+	@echo "This will remove all untracked files and discard all changes"
+	@echo "Are you sure you want to continue? [y/N]"
+	@read -r input; \
+	if [ "$$input" = "y" ] || [ "$$input" = "Y" ]; then \
+		# remove all untracked files and discard all changes
+		git clean -fdx; \
+		git reset --hard; \
+	else \
+		echo "Aborting"; \
+	fi
