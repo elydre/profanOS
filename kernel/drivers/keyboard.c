@@ -46,12 +46,6 @@ int kb_get_scfh() {
     return 0;
 }
 
-void kb_reset_history() {
-    for (int i = 0; i < HISTORY_SIZE; i++) {
-        sc_history[i] = 0;
-    }
-}
-
 static void keyboard_callback(registers_t *regs) {
     (void) regs;
 
@@ -74,7 +68,9 @@ static void keyboard_callback(registers_t *regs) {
 
 int keyboard_init() {
     register_interrupt_handler(IRQ1, keyboard_callback);
-    kb_reset_history();
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        sc_history[i] = 0;
+    }
 
     return 0;
 }

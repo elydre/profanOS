@@ -102,7 +102,7 @@ int devrand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 
 int devzebra_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
-        c_ckprint((char *) buffer, c_dgreen);
+        c_kcprint((char *) buffer, c_dgreen);
         return size;
     }
 

@@ -58,7 +58,7 @@ void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
 }
 
 void tef_draw_cursor(uint32_t color) {
-    if (hidden_cursor) color = 0;
+    if (hidden_cursor) return;
     for (int i = -2; i < 3; i++) {
         if (cursor_x * FONT_WIDTH + i < 0 || cursor_x * FONT_WIDTH + i >= (int) vesa_get_width()) continue;
         vesa_set_pixel(cursor_x * FONT_WIDTH + i, cursor_y * FONT_HEIGHT, color);
@@ -70,9 +70,8 @@ void tef_draw_cursor(uint32_t color) {
     }
 }
 
-void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
-    if (x != -1) cursor_x = x;
-    if (y != -1) cursor_y = y;
+void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
+    tef_draw_cursor(0);
 
     if (c == '\n') {
         // fill the rest of the line with spaces
@@ -121,19 +120,6 @@ void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color) {
         }
         cursor_y = MAX_ROWS - SCROLLED_LINES;
     }
-}
-
-void tef_print(char *message, int x, int y, uint32_t color, uint32_t bg_color) {
-    // clean the actual cursor
-    tef_draw_cursor(0);
-
-    for (int i = 0; message[i] != '\0'; i++) {
-        tef_print_char(message[i], x, y, color, bg_color);
-        x = -1;
-        y = -1;
-    }
-
-    // draw the cursor
     tef_draw_cursor(CURSOR_COLOR);
 }
 
@@ -156,8 +142,9 @@ void tef_set_cursor_offset(int offset) {
 }
 
 void tef_cursor_blink(int on) {
+    tef_draw_cursor(on ? CURSOR_COLOR : 0);
     hidden_cursor = !on;
-    tef_draw_cursor(CURSOR_COLOR);
+    tef_draw_cursor(on ? CURSOR_COLOR : 0);
 }
 
 void tef_clear() {

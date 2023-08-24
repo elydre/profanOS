@@ -12,9 +12,9 @@
 ****************************/
 
 void sys_stop() {
-    ckprint("profanOS has been stopped ", 0x0D);
-    ckprint(":", 0x0B);
-    ckprint("(\n", 0x0D);
+    kcprint("profanOS has been stopped ", 0x0D);
+    kcprint(":", 0x0B);
+    kcprint("(\n", 0x0D);
 
     serial_debug("SYSTEM", "profanOS has been stopped");
     asm volatile("cli");
@@ -22,8 +22,8 @@ void sys_stop() {
 }
 
 int sys_warning(char *msg) {
-    ckprint("WARNING: ", 0x06);
-    ckprint(msg, 0x0E);
+    kcprint("WARNING: ", 0x06);
+    kcprint(msg, 0x0E);
     kprint("\n");
 
     serial_debug("WARNING", msg);
@@ -31,8 +31,8 @@ int sys_warning(char *msg) {
 }
 
 int sys_error(char *msg) {
-    ckprint("ERROR: ", 0x04);
-    ckprint(msg, 0x0C);
+    kcprint("ERROR: ", 0x04);
+    kcprint(msg, 0x0C);
     kprint("\n");
 
     serial_debug("ERROR", msg);
@@ -40,8 +40,8 @@ int sys_error(char *msg) {
 }
 
 void sys_fatal(char *msg) {
-    ckprint("FATAL: ", 0x05);
-    ckprint(msg, 0x0D);
+    kcprint("FATAL: ", 0x05);
+    kcprint(msg, 0x0D);
     kprint("\n");
 
     serial_debug("FATAL", msg);
@@ -60,12 +60,12 @@ void sys_interrupt(int code, int err_code) {
         return;
     }
 
-    ckprint("CPU INTERRUPT ", 0x05);
+    kcprint("CPU INTERRUPT ", 0x05);
 
     char msg[30];
     int2str(code, msg);
-    ckprint(msg, 0x0D);
-    ckprint(": ", 0x05);
+    kcprint(msg, 0x0D);
+    kcprint(": ", 0x05);
 
     char *interrupts[] = {
         "Division by zero",
@@ -89,8 +89,8 @@ void sys_interrupt(int code, int err_code) {
         "Machine check",
     };
 
-    if (code < 19) ckprint(interrupts[code], 0x0D);
-    else ckprint("Reserved", 0x0D);
+    if (code < 19) kcprint(interrupts[code], 0x0D);
+    else kcprint("Reserved", 0x0D);
     kprint("\n");
 
     sys_stop();

@@ -51,7 +51,7 @@ uint32_t color_print(char *s) {
         for (i = from; i < msg_len - 1; i++) {
             if (s[i] != '$') continue;
             s[i] = '\0';
-            c_ckprint(s + from, c);
+            c_kcprint(s + from, c);
             s[i] = '$';
             switch (s[i + 1]) {
                 case '0': c = c_blue;     break;
@@ -77,7 +77,7 @@ uint32_t color_print(char *s) {
         }
         i++;
     }
-    c_ckprint(s + from, c);
+    c_kcprint(s + from, c);
     return msg_len;
 }
 

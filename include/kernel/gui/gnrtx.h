@@ -21,9 +21,8 @@
 #define c_dgrey     0x08
 
 
-#define ckprint(message, color) ckprint_at(message, -1, -1, color)
-#define kprint_rgb(message, color, bg_color) rgb_print_at(message, -1, -1, color, bg_color)
-#define kprint(message) ckprint(message, c_white)
+#define kcprint(message, color) kcnprint(message, -1, color)
+#define kprint(message) kcprint(message, c_white)
 
 #define FONT_8X16 0
 
@@ -33,11 +32,9 @@ int gt_get_max_rows();
 
 void clear_screen();
 
-void kprint_rgb_at(char *message, int col, int row, uint32_t color, uint32_t bg_color);
-void ckprint_at(char *message, int col, int row, char color);
+void kcnprint(char *message, int len, char color);
 
 void kprint_backspace();
-
 
 void set_cursor_offset(int offset);
 int get_cursor_offset();

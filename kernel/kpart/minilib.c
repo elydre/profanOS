@@ -248,25 +248,25 @@ void *calloc(uint32_t size) {
 void status_print(int (*func)(), char *verb, char *noun) {
     int old_cursor, new_cursor, status;
 
-    ckprint("[", 0x0F);
+    kcprint("[", 0x0F);
     old_cursor = get_cursor_offset();
-    ckprint("WORK", 0x0E);
-    ckprint("]  ", 0x0F);
-    ckprint(verb, 0x07);
-    ckprint(" ", 0x0F);
-    ckprint(noun, 0x0F);
-    ckprint("\n", 0x0F);
+    kcprint("WORK", 0x0E);
+    kcprint("]  ", 0x0F);
+    kcprint(verb, 0x07);
+    kcprint(" ", 0x0F);
+    kcprint(noun, 0x0F);
+    kcprint("\n", 0x0F);
 
     status = func();
     new_cursor = get_cursor_offset();
     set_cursor_offset(old_cursor);
 
     if (status == 0) {
-        ckprint(" OK ", 0x0A);
+        kcprint(" OK ", 0x0A);
     } else if (status == 2) {
-        ckprint("ENBL", 0x0B);
+        kcprint("ENBL", 0x0B);
     } else {
-        ckprint("FAIL", 0x0C);
+        kcprint("FAIL", 0x0C);
     }
 
     set_cursor_offset(new_cursor);

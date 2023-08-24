@@ -58,7 +58,6 @@ int main(int argc, char **argv) {
     tick_count[3] = 0;
 
     vgui_t vgui = vgui_setup(320, 200);
-    c_kb_reset_history();
     for (int i = 0; i < 100; i++) c_kb_get_scfh();
     while (c_kb_get_scancode() != 1) {
         tick_count[1] = c_timer_get_ms() - tick_count[0];

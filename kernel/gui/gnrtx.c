@@ -1,12 +1,12 @@
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
+#include <minilib.h>
 #include <system.h>
 
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
-void tef_print_char(char c, int x, int y, uint32_t color, uint32_t bg_color);
-void tef_print(char *message, int x, int y, uint32_t color, uint32_t bg_color);
+void tef_print_char(char c, uint32_t color, uint32_t bg_color);
 void tef_set_cursor_offset(int offset);
 void tef_cursor_blink(int on);
 int  tef_get_cursor_offset();
@@ -50,20 +50,11 @@ int gt_get_max_rows() {
     return vesa_does_enable() ? vesa_get_height() / FONT_HEIGHT : 25;
 }
 
-void kprint_rgb_at(char *message, int col, int row, uint32_t color, uint32_t bg_color) {
+void kprint_char(char c, char color, char bg_color) {
     if (vesa_does_enable()) {
-        tef_print(message, col, row, color, bg_color);
+        tef_print_char(c, gt_convert_color(color), gt_convert_color(bg_color));
     } else {
-        sys_warning("text mode does not support RGB");
-        txt_print_at(message, col, row, c_white);
-    }
-}
-
-void ckprint_at(char *message, int col, int row, char color) {
-    if (vesa_does_enable()) {
-        tef_print(message, col, row, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
-    } else {
-        txt_print_at(message, col, row, color);
+        txt_print_at(&c, -1, -1, color);
     }
 }
 
@@ -85,7 +76,7 @@ void set_cursor_offset(int offset) {
 
 void kprint_backspace() {
     if (vesa_does_enable()) {
-        tef_print_char(0x08, -1, -1, 0, 0); // we don't care about the color
+        tef_print_char(0x08, 0, 0); // we don't care about the color
     } else {
         txt_backspace();
     }
@@ -116,5 +107,78 @@ void cursor_blink(int on) {
         tef_cursor_blink(on);
     } else {
         txt_cursor_blink(on);
+    }
+}
+
+uint32_t saved_cursor_x = 0;
+uint32_t saved_cursor_y = 0;
+
+int compute_ansi_escape(char *str) {
+    char *start = str;
+
+    if (str[1] == '[') str += 2;
+    else return 1;
+
+    // cursor save and restore
+    if (str[0] == 's') {
+        saved_cursor_x = get_offset_col(get_cursor_offset());
+        saved_cursor_y = get_offset_row(get_cursor_offset());
+    } else if (str[0] == 'u') {
+        set_cursor_offset(get_offset(saved_cursor_x, saved_cursor_y));
+    }
+
+    // cursor hide and show
+    if (str_ncmp(str, "?25", 3) == 0) {
+        if (str[3] == 'l') {
+            cursor_blink(1);
+        } else if (str[3] == 'h') {
+            cursor_blink(0);
+        }
+        return 5;
+    }
+
+    // clear screen
+    if (str[0] == '2' && str[1] == 'J') {
+        clear_screen();
+        return 3;
+    }
+
+    // number
+    char *tmp = str;
+    while (*tmp >= '0' && *tmp <= '9') tmp++;
+
+    // cursor up
+    if (tmp[0] == 'A') {
+        set_cursor_offset(get_cursor_offset() - str2int(str) * 2 * gt_get_max_cols());
+    }
+
+    // cursor down
+    else if (tmp[0] == 'B') {
+        set_cursor_offset(get_cursor_offset() + str2int(str) * 2 * gt_get_max_cols());
+    }
+
+    // cursor forward
+    else if (tmp[0] == 'C') {
+        set_cursor_offset(get_cursor_offset() + str2int(str) * 2);
+    }
+
+    // cursor backward
+    else if (tmp[0] == 'D') {
+        set_cursor_offset(get_cursor_offset() - str2int(str) * 2);
+    }
+
+    return tmp - start;
+}
+
+void kcnprint(char *message, int len, char color) {
+    int i = 0;
+    if (len == -1) len = str_len(message);
+    while (i < len) {
+        if (message[i] == '\033') {
+            i += compute_ansi_escape(message + i);
+        } else {
+            kprint_char(message[i], color, 0);
+        }
+        i++;
     }
 }

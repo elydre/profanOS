@@ -8,7 +8,7 @@
 void draw_mouse(int x, int y);
 
 int main(int argc, char **argv) {
-    c_clear_screen();
+    printf("\033[2J");
 
     int x, y;
 

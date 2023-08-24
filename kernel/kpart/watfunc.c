@@ -47,14 +47,8 @@ void *SYSCALL_ARRAY[] = {
 
     // gnrtx.h
     font_get,
-    clear_screen,
-    ckprint_at,
-    kprint_backspace,
-    set_cursor_offset,
+    kcnprint,
     get_cursor_offset,
-    gt_get_max_rows,
-    gt_get_max_cols,
-    cursor_blink,
     vesa_set_pixel,
     vesa_get_width,
     vesa_get_height,
@@ -62,7 +56,6 @@ void *SYSCALL_ARRAY[] = {
     // keyboard.h
     kb_scancode_to_char,
     kb_get_scancode,
-    kb_reset_history,
     kb_get_scfh,
 
     // system.h

@@ -22,12 +22,12 @@
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();
-    ckprint("booting profanOS...\n", 0x07);
+    kcprint("booting profanOS...\n", 0x07);
 
     mboot_save(mboot_ptr);
     gdt_init();
     init_vesa();
-    ckprint("Multiboot info saved, GDT and VESA initialized\n", 0x07);
+    kcprint("Multiboot info saved, GDT and VESA initialized\n", 0x07);
     cursor_blink(0);
 
     status_print(isr_install,  "Installing", "cpu interrupts");

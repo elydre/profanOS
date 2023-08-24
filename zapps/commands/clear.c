@@ -7,7 +7,7 @@ int ansiclear() {
 }
 
 int hardclear() {
-    c_clear_screen();
+    c_kprint("\033[2J");
     ansiclear();
     return 0;
 }

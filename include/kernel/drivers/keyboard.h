@@ -43,7 +43,6 @@
 char kb_scancode_to_char(int scancode, int shift);
 
 int  kb_get_scancode();
-void kb_reset_history();
 int  kb_get_scfh();
 
 int keyboard_init();
