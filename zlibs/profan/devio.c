@@ -16,7 +16,9 @@
 typedef struct {
     uint8_t  buffer[LCS_SIZE];
     uint32_t offset;
+
     sid_t    redirection;
+    uint32_t redirection_offset;
 } lc_t;
 
 lc_t **lc;
@@ -41,25 +43,33 @@ int devio_change_redirection(uint32_t lc_index, sid_t redirection) {
         return 1;
     }
 
+    if (IS_NULL_SID(redirection)) {
+        return 1;
+    }
+
     lc[lc_index]->redirection = redirection;
+    lc[lc_index]->redirection_offset = 0;
     return 0;
 }
 
-void write_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
+int write_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
     if (IS_NULL_SID(sid)) {
-        return;
+        return 0;
     }
 
     if (fu_is_fctf(sid)) {
         fu_fctf_write(sid, buffer, offset, size);
-    } else if (fu_is_file(sid)) {
-        if (size + offset > fu_get_file_size(sid)) {
-            fu_set_file_size(sid, size + offset);
-        }
-        fu_file_write(sid, buffer, offset, size);
-    } else {
-        printf("no method to write in sid d%ds%d\n", sid.device, sid.sector);
+        return size;
     }
+    if (fu_is_file(sid)) {
+        if (size + offset > fu_get_file_size(sid)) {
+            if (fu_set_file_size(sid, size + offset)) return 0;
+        }
+        if (fu_file_write(sid, buffer, offset, size)) return 0;
+        return size;
+    }
+    printf("no method to write in sid d%ds%d\n", sid.device, sid.sector);
+    return 0;
 }
 
 void read_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
@@ -143,7 +153,7 @@ int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int genbuffer_rw(lc_t *lcptr, void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (offset) {
         printf("offset is not supported by buffer system\n");
         return 0;
@@ -151,24 +161,29 @@ int genbuffer_rw(lc_t *lc, void *buffer, uint32_t offset, uint32_t size, uint8_t
 
     if (mode == MODE_WRITE) {
         for (uint32_t i = 0; i < size; i++) {
-            lc->buffer[lc->offset++] = ((uint8_t *) buffer)[i];
-            if (!(lc->offset >= LCS_SIZE || ((uint8_t *) buffer)[i] == '\n'))
+            lcptr->buffer[lcptr->offset++] = ((uint8_t *) buffer)[i];
+            if (!(lcptr->offset >= LCS_SIZE || ((uint8_t *) buffer)[i] == '\n'))
                 continue;
 
-            lc->buffer[lc->offset] = '\0';
-            write_in_file(lc->redirection, lc->buffer, 0, lc->offset);
+            lcptr->buffer[lcptr->offset] = '\0';
+            lcptr->redirection_offset += write_in_file(lcptr->redirection, lcptr->buffer, lcptr->redirection_offset, lcptr->offset);
 
-            lc->offset = 0;
+            lcptr->offset = 0;
         }
-    } else if (mode == MODE_FLUSH && lc->offset) {
-        lc->buffer[lc->offset] = '\0';
-        write_in_file(lc->redirection, lc->buffer, 0, lc->offset);
-        if (fu_is_fctf(lc->redirection)) {
-            fu_fctf_flush(lc->redirection);
+    } else if (mode == MODE_FLUSH && lcptr->offset) {
+        lcptr->buffer[lcptr->offset] = '\0';
+        lcptr->redirection_offset += write_in_file(
+                lcptr->redirection,
+                lcptr->buffer, 
+                lcptr->redirection_offset,
+                lcptr->offset
+        );
+        if (fu_is_fctf(lcptr->redirection)) {
+            fu_fctf_flush(lcptr->redirection);
         }
-        lc->offset = 0;
+        lcptr->offset = 0;
     } else if (mode == MODE_READD) {
-        read_in_file(lc->redirection, buffer, 0, size);
+        read_in_file(lcptr->redirection, buffer, 0, size);
     }
 
     return 0;
@@ -225,12 +240,19 @@ void init_devio() {
 
 void init_lcbuffer() {
     lc = malloc((sizeof(lc_t *) * LCS_COUNT) + (sizeof(lc_t) * LCS_COUNT));
+    if (lc == NULL) {
+        printf("error while allocating memory for lc\n");
+        return;
+    }
+
     for (uint32_t i = 0; i < LCS_COUNT; i++) {
         lc[i] = (lc_t *) ((uint32_t) lc + (sizeof(lc_t *) * LCS_COUNT) + (sizeof(lc_t) * i));
         lc[i]->offset = 0;
     }
 
-    lc[DEVIO_STDOUT]->redirection = fu_path_to_sid(ROOT_SID, "/dev/parrot");
-    lc[DEVIO_STDERR]->redirection = fu_path_to_sid(ROOT_SID, "/dev/parrot");
-    lc[DEVIO_BUFFER]->redirection = fu_path_to_sid(ROOT_SID, "/dev/null");
+    if (
+        devio_change_redirection(DEVIO_STDOUT, fu_path_to_sid(ROOT_SID, "/dev/parrot")) ||
+        devio_change_redirection(DEVIO_STDERR, fu_path_to_sid(ROOT_SID, "/dev/parrot")) ||
+        devio_change_redirection(DEVIO_BUFFER, fu_path_to_sid(ROOT_SID, "/dev/null"))
+    ) printf("error while initializing redirections\n");
 }
