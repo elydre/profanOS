@@ -61,6 +61,7 @@ int write_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
         fu_fctf_write(sid, buffer, offset, size);
         return size;
     }
+
     if (fu_is_file(sid)) {
         if (size + offset > fu_get_file_size(sid)) {
             if (fu_set_file_size(sid, size + offset)) return 0;
@@ -174,7 +175,7 @@ int genbuffer_rw(lc_t *lcptr, void *buffer, uint32_t offset, uint32_t size, uint
         lcptr->buffer[lcptr->offset] = '\0';
         lcptr->redirection_offset += write_in_file(
                 lcptr->redirection,
-                lcptr->buffer, 
+                lcptr->buffer,
                 lcptr->redirection_offset,
                 lcptr->offset
         );
