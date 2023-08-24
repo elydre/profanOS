@@ -1,7 +1,7 @@
 #ifndef RTC_H
 #define RTC_H
 
-#include <type.h>
+#include <ktype.h>
 
 void time_get(i_time_t *time);
 int rtc_init();

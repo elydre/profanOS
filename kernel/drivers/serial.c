@@ -1,7 +1,7 @@
 #include <drivers/serial.h>
 #include <cpu/ports.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 void serial_enable(int device) {

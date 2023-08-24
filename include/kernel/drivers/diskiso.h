@@ -1,7 +1,7 @@
 #ifndef DISKISO_H
 #define DISKISO_H
 
-#include <type.h>
+#include <ktype.h>
 
 int      init_diskiso();
 

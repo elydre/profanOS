@@ -616,10 +616,6 @@ sid_t fu_path_to_sid(sid_t from, char *path) {
         ret = fu_rec_path_to_sid(filesys, from, path);
     }
 
-    if (IS_NULL_SID(ret)) {
-        return NULL_SID;
-    }
-
     return ret;
 }
 

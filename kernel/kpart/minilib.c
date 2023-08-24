@@ -1,4 +1,5 @@
 #include <kernel/snowflake.h>
+#include <drivers/keyboard.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <drivers/rtc.h>
@@ -122,67 +123,6 @@ void str_append(char *s, char c) {
     s[i+1] = '\0';
 }
 
-// formated print (multiple output)
-
-void func_printf(int output, char *fmt, ...) {
-    // printf kernel level
-    // don't use va
-    char *args = (char *) &fmt;
-    args += 4;
-    int i = 0;
-    char char_buffer[256];
-    int buffer_i = 0;
-    while (fmt[i] != '\0') {
-        if (fmt[i] == '%') {
-            i++;
-            if (fmt[i] == 's') {
-                char *s = *((char **) args);
-                args += 4;
-                for (int j = 0; s[j] != '\0'; j++) {
-                    char_buffer[buffer_i] = s[j];
-                    buffer_i++;
-                }
-            } else if (fmt[i] == 'c') {
-                char c = *((char *) args);
-                args += 4;
-                char_buffer[buffer_i] = c;
-                buffer_i++;
-            } else if (fmt[i] == 'd') {
-                int n = *((int *) args);
-                args += 4;
-                char s[20];
-                int2str(n, s);
-                for (int j = 0; s[j] != '\0'; j++) {
-                    char_buffer[buffer_i] = s[j];
-                    buffer_i++;
-                }
-            } else if (fmt[i] == 'x') {
-                uint32_t n = *((int *) args);
-                args += 4;
-                char s[20];
-                hex2str(n, s);
-                for (int j = 0; s[j] != '\0'; j++) {
-                    char_buffer[buffer_i] = s[j];
-                    buffer_i++;
-                }
-            } else if (fmt[i] == '%') {
-                char_buffer[buffer_i] = '%';
-                buffer_i++;
-            }
-        } else {
-            char_buffer[buffer_i] = fmt[i];
-            buffer_i++;
-        }
-        i++;
-    }
-    char_buffer[buffer_i] = '\0';
-    if (output == 0) {
-        kprint(char_buffer);
-    } else if (output == 1) {
-        serial_print(SERIAL_PORT_A, char_buffer);
-    }
-}
-
 // memory management
 
 void mem_copy(void *dest, void *source, int nbytes) {
@@ -243,7 +183,7 @@ void *calloc(uint32_t size) {
     return (void *) addr;
 }
 
-// status print
+// input/output functions
 
 void status_print(int (*func)(), char *verb, char *noun) {
     int old_cursor, new_cursor, status;
@@ -270,4 +210,131 @@ void status_print(int (*func)(), char *verb, char *noun) {
     }
 
     set_cursor_offset(new_cursor);
+}
+
+#define LSHIFT  42
+#define RSHIFT  54
+#define BACK    14
+#define ENTER   28
+#define RESEND  224
+#define SLEEP_T 15
+#define FIRST_L 12
+#define SC_MAX  57
+
+void kinput(char *buffer, int size) {
+    kprint("\033[?25l");
+
+    int sc, last_sc, last_sc_sgt = 0;
+    int index = 0;
+
+    for (int i = 0; i < size; i++)
+        buffer[i] = '\0';
+
+    int key_ticks = 0;
+    int shift = 0;
+    char c;
+
+    while (sc != ENTER) {
+        process_sleep(process_get_pid(), SLEEP_T);
+        sc = kb_get_scfh();
+
+        if (sc == RESEND || sc == 0) {
+            sc = last_sc_sgt;
+        } else {
+            last_sc_sgt = sc;
+        }
+
+        key_ticks = (sc != last_sc) ? 0 : key_ticks + 1;
+        last_sc = sc;
+
+        if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
+            continue;
+        } else if (sc == LSHIFT || sc == RSHIFT) {
+            shift = 1;
+        } else if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+            shift = 0;
+        } else if (sc == BACK) {
+            if (index == 0) continue;
+            buffer[index] = '\0';
+            index--;
+            kprint("\033[1D \033[1D");
+        } else if (sc <= SC_MAX) {
+            if (size < index + 2) continue;
+            c = kb_scancode_to_char(sc, shift);
+            if (c == '?') continue;
+            kcnprint(&c, 1, c_blue);
+            buffer[index] = c;
+            index++;
+        }
+    }
+
+    buffer[index] = '\0';
+    kprint("\033[?25h");
+}
+
+void func_printf(int output, char *fmt, ...) {
+    // printf kernel level
+    // don't use va
+    char *args = (char *) &fmt;
+    args += 4;
+    int i = 0;
+    char char_buffer[256];
+    int buffer_i = 0;
+    while (fmt[i] != '\0') {
+        if (fmt[i] == '%') {
+            i++;
+            if (fmt[i] == 's') {
+                char *s = *((char **) args);
+                args += 4;
+                for (int j = 0; s[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = s[j];
+                    buffer_i++;
+                }
+            } else if (fmt[i] == 'c') {
+                char c = *((char *) args);
+                args += 4;
+                char_buffer[buffer_i] = c;
+                buffer_i++;
+            } else if (fmt[i] == 'd') {
+                int n = *((int *) args);
+                args += 4;
+                char s[20];
+                int2str(n, s);
+                for (int j = 0; s[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = s[j];
+                    buffer_i++;
+                }
+            } else if (fmt[i] == 'x') {
+                uint32_t n = *((int *) args);
+                args += 4;
+                char s[20];
+                hex2str(n, s);
+                for (int j = 0; s[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = s[j];
+                    buffer_i++;
+                }
+            } else if (fmt[i] == '%') {
+                char_buffer[buffer_i] = '%';
+                buffer_i++;
+            }
+        } else {
+            char_buffer[buffer_i] = fmt[i];
+            buffer_i++;
+        }
+        i++;
+    }
+    char_buffer[buffer_i] = '\0';
+    if (output == 0) {
+        kprint(char_buffer);
+    } else if (output == 1) {
+        serial_print(SERIAL_PORT_A, char_buffer);
+    }
+}
+
+void krainbow(char *message) {
+    char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
+
+    for (int i = 0; message[i]; i++) {
+        kcnprint(&message[i], 1, rainbow_colors[i % 6]);
+    }
 }

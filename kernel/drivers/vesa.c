@@ -1,6 +1,6 @@
 #include <kernel/multiboot.h>
 #include <gui/vesa.h>
-#include <type.h>
+#include <ktype.h>
 
 uint32_t *framebuffer;
 uint32_t fb_w, fb_h, fb_p;

@@ -3,7 +3,7 @@
 #include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
-#include <type.h>
+#include <ktype.h>
 
 uint32_t **lib_functions = 0;
 int lib_count = 0;

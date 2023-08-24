@@ -1,7 +1,7 @@
 #ifndef GNRTX_H
 #define GNRTX_H
 
-#include <type.h>
+#include <ktype.h>
 
 #define c_blue      0x09
 #define c_green     0x0a

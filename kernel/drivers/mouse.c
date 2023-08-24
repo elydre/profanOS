@@ -4,7 +4,7 @@
 #include <cpu/isr.h>
 #include <minilib.h>
 #include <system.h>
-#include <type.h>
+#include <ktype.h>
 
 // mouse.inc by SANiK
 // license: Use as you wish, except to cause damage
@@ -24,7 +24,7 @@ int mouse_y;
  * buttons[2] = middle button *
 *******************************/
 
-bool buttons[3];
+uint8_t buttons[3];
 
 void mouse_reset();
 

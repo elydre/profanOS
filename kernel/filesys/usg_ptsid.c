@@ -1,6 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
@@ -76,11 +76,6 @@ sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path) {
         ret = fu_rec_path_to_sid(filesys, from, path + 1);
     } else {
         ret = fu_rec_path_to_sid(filesys, from, path);
-    }
-
-    if (IS_NULL_SID(ret)) {
-        kprintf("failed to find path %s\n", path);
-        return NULL_SID;
     }
 
     return ret;

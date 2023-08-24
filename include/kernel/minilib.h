@@ -29,8 +29,6 @@ int   str_ncmp(char *s1, char *s2, int n);
 int   str_count(char *s, char c);
 void  str_append(char *s, char c);
 
-void  func_printf(int output, char *fmt, ...);
-
 void  mem_copy(void *dest, void *source, int nbytes);
 void  mem_set(void *dest, uint8_t val, uint32_t len);
 void  mem_move(void *source, void *dest, int nbytes);
@@ -41,5 +39,8 @@ void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
 void  status_print(int (*func)(), char *verb, char *noun);
+void  func_printf(int output, char *fmt, ...);
+void  kinput(char *buffer, int size);
+void  krainbow(char *message);
 
 #endif

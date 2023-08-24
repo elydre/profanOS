@@ -2,7 +2,7 @@
 #define TASK_H
 
 #include <kernel/scubasuit.h>
-#include <type.h>
+#include <ktype.h>
 
 #define PROCESS_RUNNING  0
 #define PROCESS_WAITING  1  // in the queue

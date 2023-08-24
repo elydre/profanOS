@@ -1,6 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
     vdisk_t *vdisk;

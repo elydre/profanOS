@@ -1,6 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t offset, uint32_t size, int is_read) {

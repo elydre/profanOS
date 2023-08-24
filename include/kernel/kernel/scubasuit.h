@@ -2,7 +2,7 @@
 #define SCUBASUIT_H
 
 #include <cpu/isr.h>
-#include <type.h>
+#include <ktype.h>
 
 // SCUBASUIT virtual memory manager
 

@@ -1,7 +1,7 @@
 #ifndef VESA_H
 #define VESA_H
 
-#include <type.h>
+#include <ktype.h>
 
 void     init_vesa();
 int      vesa_does_enable();

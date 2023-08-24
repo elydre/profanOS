@@ -15,9 +15,7 @@
 #include <cpu/gdt.h>
 #include <minilib.h>
 #include <system.h>
-
-#include <i_iolib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 void kernel_main(void *mboot_ptr) {
@@ -51,7 +49,7 @@ void kernel_main(void *mboot_ptr) {
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);
 
-    // start_kshell();
+    start_kshell();
 
     sys_fatal("Nothing to run!");
 }

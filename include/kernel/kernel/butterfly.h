@@ -1,7 +1,7 @@
 #ifndef BUTTERFLY_H
 #define BUTTERFLY_H
 
-#include <type.h>
+#include <ktype.h>
 
 #ifndef FS_SECTOR_SIZE
 #define FS_SECTOR_SIZE 256

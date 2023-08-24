@@ -1,6 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 int fu_is_file(filesys_t *filesys, sid_t dir_sid) {

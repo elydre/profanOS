@@ -2,7 +2,7 @@
 #define MOUSE_H
 
 #include <cpu/isr.h>
-#include <type.h>
+#include <ktype.h>
 
 int mouse_init();
 void mouse_handler(registers_t *a_r);

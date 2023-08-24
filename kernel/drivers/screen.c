@@ -1,7 +1,7 @@
 #include <gui/gnrtx.h>
 #include <cpu/ports.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 /**********************************************************

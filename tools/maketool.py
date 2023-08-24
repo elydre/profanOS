@@ -29,7 +29,7 @@ CC   = "gcc"
 CPPC = "g++"
 
 CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
-KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
+KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 
 KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/kernel/kernel.map"

@@ -1,7 +1,7 @@
 #ifndef SNOWFLAKE_H
 #define SNOWFLAKE_H
 
-#include <type.h>
+#include <ktype.h>
 
 // SNOWFLAKE physical memory manager
 

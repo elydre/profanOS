@@ -10,8 +10,6 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <i_iolib.h>
-
 #define BFR_SIZE 65
 
 void kernel_switch_back() {
@@ -55,22 +53,6 @@ void kernel_exit_current() {
             return;
         }
     }
-}
-
-int shell_command(char *command);
-
-void start_kshell() {
-    sys_warning("You are now in the kernel-level shell");
-    /*kprint("\n");
-    char char_buffer[BFR_SIZE];
-    while (1) {
-        rainbow_print("kernel-shell> ");
-        input(char_buffer, BFR_SIZE, 9);
-        kprint("\n");
-        if (shell_command(char_buffer)) break;
-        char_buffer[0] = '\0';
-    }*/
-    kprint("exiting kshell can cause a kernel panic\n");
 }
 
 void shell_so(char *suffix) {
@@ -154,4 +136,18 @@ int shell_command(char *command) {
     else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
 
     return 0;
+}
+
+void start_kshell() {
+    sys_warning("You are now in the kernel-level shell");
+    kprint("\n");
+    char char_buffer[BFR_SIZE];
+    while (1) {
+        krainbow("kernel-shell> ");
+        kinput(char_buffer, BFR_SIZE);
+        kprint("\n");
+        if (shell_command(char_buffer)) break;
+        char_buffer[0] = '\0';
+    }
+    kprint("exiting kshell can cause a kernel panic\n");
 }

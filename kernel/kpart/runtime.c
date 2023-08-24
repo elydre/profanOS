@@ -4,7 +4,7 @@
 #include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
-#include <type.h>
+#include <ktype.h>
 
 /************************************************************
  *     - kernel runtime memory layout and sharing -     e  *

@@ -1,7 +1,7 @@
 #include <kernel/butterfly.h>
 #include <drivers/diskiso.h>
 #include <minilib.h>
-#include <type.h>
+#include <ktype.h>
 
 
 filesys_t *fs_create() {
@@ -82,19 +82,19 @@ int filesys_init() {
     MAIN_FS = fs_create();
 
     vdisk_t *d0 = vdisk_create(500);
-    vdisk_t *d1 = initrd_to_vdisk();
-
-    if (d1 == NULL) {
+    if (d0 == NULL)
         return 1;
-    }
 
     fs_mount_vdisk(MAIN_FS, d0, 1);
-    fs_mount_vdisk(MAIN_FS, d1, 2);
-
     fu_dir_create(MAIN_FS, 0, "/");
-
     fu_dir_create(MAIN_FS, 0, "/tmp");
     fu_dir_create(MAIN_FS, 0, "/dev");
+
+    vdisk_t *d1 = initrd_to_vdisk();
+    if (d1 == NULL)
+        return 1;
+
+    fs_mount_vdisk(MAIN_FS, d1, 2);
 
     if (fu_add_element_to_dir(
         MAIN_FS,
