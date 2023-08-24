@@ -19,50 +19,12 @@
 
 int txt_get_cursor_offset();
 void txt_set_cursor_offset(int offset);
-int txt_print_char(char c, int col, int row, char attr);
 
-void txt_print_at(char *message, int col, int row, char color) {
-    // Set cursor if col/row are negative
-    int offset;
-    if (col >= 0 && row >= 0) {
-        offset = get_offset(col, row);
-    } else {
-        offset = get_cursor_offset();
-        row = get_offset_row(offset);
-        col = get_offset_col(offset);
-    }
-
-    // Loop through message and print it
-    int i = 0;
-    while (message[i] != 0) {
-        offset = txt_print_char(message[i++], col, row, color);
-        // Compute row/col for next iteration
-        row = get_offset_row(offset);
-        col = get_offset_col(offset);
-    }
-}
-
-void txt_backspace() {
-    int offset = get_cursor_offset()-2;
+void txt_print_char(char c, char attr) {
+    int offset = txt_get_cursor_offset();
     int row = get_offset_row(offset);
-    int col = get_offset_col(offset);
-    txt_print_char(0x08, col, row, c_white);
-}
 
-int txt_print_char(char c, int col, int row, char attr) {
     uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;
-    if (!attr) attr = c_white;
-
-    // Error control: print a c_red 'E' if the coords aren't right
-    if (col >= MAX_COLS || row >= MAX_ROWS) {
-        vidmem[2*(MAX_COLS)*(MAX_ROWS)-2] = 'E';
-        vidmem[2*(MAX_COLS)*(MAX_ROWS)-1] = c_red;
-        return get_offset(col, row);
-    }
-
-    int offset;
-    if (col >= 0 && row >= 0) offset = get_offset(col, row);
-    else offset = txt_get_cursor_offset();
 
     if (c == '\n') {
         row = get_offset_row(offset);
@@ -95,7 +57,11 @@ int txt_print_char(char c, int col, int row, char attr) {
     }
 
     txt_set_cursor_offset(offset);
-    return offset;
+}
+
+void txt_backspace() {
+    txt_set_cursor_offset(get_cursor_offset() - 2);
+    txt_print_char(0x08, c_white);
 }
 
 void txt_clear() {

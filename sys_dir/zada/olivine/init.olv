@@ -46,5 +46,3 @@ FUNC time
 
     echo !0 took !(eval !(ticks) - !debut) ms
 END
-
-cpu

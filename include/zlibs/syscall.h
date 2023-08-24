@@ -111,8 +111,8 @@
 #define c_kcnprint ((void (*)(char *, int, char)) hi_func_addr(16))
 #define c_get_cursor_offset ((int (*)(void)) hi_func_addr(17))
 #define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(18))
-#define c_vesa_get_width ((uint32_t (*)(void)) hi_func_addr(19))
-#define c_vesa_get_height ((uint32_t (*)(void)) hi_func_addr(20))
+#define c_vesa_get_width ((int (*)(void)) hi_func_addr(19))
+#define c_vesa_get_height ((int (*)(void)) hi_func_addr(20))
 
 #define c_kb_scancode_to_char ((char (*)(int, int)) hi_func_addr(21))
 #define c_kb_get_scancode ((int (*)(void)) hi_func_addr(22))

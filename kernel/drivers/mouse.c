@@ -75,11 +75,11 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             if (mouse_y < 0) {
                 mouse_y = 0;
             }
-            if (mouse_x > (int) vesa_get_width()) {
-                mouse_x = (int) vesa_get_width();
+            if (mouse_x > vesa_get_width()) {
+                mouse_x = vesa_get_width();
             }
-            if (mouse_y > (int) vesa_get_height()) {
-                mouse_y = (int) vesa_get_height();
+            if (mouse_y > vesa_get_height()) {
+                mouse_y = vesa_get_height();
             }
 
             mouse_cycle=0;

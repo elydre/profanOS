@@ -36,10 +36,10 @@ uint32_t vesa_get_pitch() {
     return fb_p;
 }
 
-uint32_t vesa_get_width() {
-    return fb_w;
+int vesa_get_width() {
+    return (vesa_does_enable()) ? fb_w : -fb_w;
 }
 
-uint32_t vesa_get_height() {
-    return fb_h;
+int vesa_get_height() {
+    return (vesa_does_enable()) ? fb_h : -fb_h;
 }

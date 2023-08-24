@@ -12,7 +12,7 @@ void tef_cursor_blink(int on);
 int  tef_get_cursor_offset();
 void tef_clear();
 
-void txt_print_at(char *message, int col, int row, char color);
+void txt_print_char(char c, char color);
 void txt_set_cursor_offset(int offset);
 void txt_cursor_blink(int on);
 int  txt_get_cursor_offset();
@@ -50,11 +50,11 @@ int gt_get_max_rows() {
     return vesa_does_enable() ? vesa_get_height() / FONT_HEIGHT : 25;
 }
 
-void kprint_char(char c, char color, char bg_color) {
+void kprint_char(char c, char color) {
     if (vesa_does_enable()) {
-        tef_print_char(c, gt_convert_color(color), gt_convert_color(bg_color));
+        tef_print_char(c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
     } else {
-        txt_print_at(&c, -1, -1, color);
+        txt_print_char(c, color);
     }
 }
 
@@ -177,7 +177,7 @@ void kcnprint(char *message, int len, char color) {
         if (message[i] == '\033') {
             i += compute_ansi_escape(message + i);
         } else {
-            kprint_char(message[i], color, 0);
+            kprint_char(message[i], color);
         }
         i++;
     }

@@ -267,6 +267,7 @@ void draw_cursor(int errase) {
 }
 
 void panda_print_string(char *string, int len, char color) {
+    if (g_panda->screen_buffer == NULL) return;
     uint32_t y;
     for (int i = 0; (len < 0) ? (string[i]) : (i < len); i++) {
         if (!g_panda->cursor_is_hidden)
@@ -298,6 +299,7 @@ void panda_print_string(char *string, int len, char color) {
 #define offset_to_cursor_y(offset, max_cols) ((offset) / (2 * (max_cols)))
 
 void panda_set_start(int kernel_cursor) {
+    if (g_panda->screen_buffer == NULL) return;
     uint32_t kmax_cols = c_vesa_get_width() / 8;
 
     g_panda->cursor_x = 0;
@@ -325,6 +327,12 @@ void panda_clear_screen() {
 }
 
 void init_panda() {
+    if (c_vesa_get_height() < 0) {
+        printf("[panda] VESA is not enabled\n");
+        g_panda->screen_buffer = NULL;
+        return;
+    }
+
     g_panda = malloc(sizeof(panda_global_t));
     g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
 
