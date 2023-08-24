@@ -61,7 +61,6 @@ fclean: clean
 	@echo "Are you sure you want to continue? [y/N]"
 	@read -r input; \
 	if [ "$$input" = "y" ] || [ "$$input" = "Y" ]; then \
-		# remove all untracked files and discard all changes
 		git clean -fdx; \
 		git reset --hard; \
 	else \
