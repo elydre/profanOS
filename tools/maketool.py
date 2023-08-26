@@ -32,7 +32,7 @@ CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-prote
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 
-KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/kernel/kernel.map"
+KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/make/kernel.map"
 
 QEMU_SPL = "qemu-system-i386"
 QEMU_KVM = "kvm"
@@ -338,7 +338,7 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"cp {TOOLS_DIR}/tcclib.c {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp {TOOLS_DIR}/zlink.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
-    print_and_exec(f"cp {OUT_DIR}/kernel/kernel.map {OUT_DIR}/disk/sys/ || true")
+    print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ || true")
 
     if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")

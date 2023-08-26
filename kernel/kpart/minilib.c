@@ -136,18 +136,6 @@ void mem_set(void *dest, uint8_t val, uint32_t len) {
         *temp++ = val;
 }
 
-void mem_move(void *source, void *dest, int nbytes) {
-    if (source < dest) {
-        for (int i = nbytes - 1; i >= 0; i--) {
-            *((uint8_t *) dest + i) = *((uint8_t *) source + i);
-        }
-    } else {
-        for (int i = 0; i < nbytes; i++) {
-            *((uint8_t *) dest + i) = *((uint8_t *) source + i);
-        }
-    }
-}
-
 void free(void *addr) {
     if (addr == NULL) return;
     int size = mem_get_alloc_size((uint32_t) addr);
@@ -171,7 +159,7 @@ void *realloc(void *ptr, uint32_t size) {
     uint32_t new_addr = mem_alloc(size, 0, 1);
     if (new_addr == 0) return NULL;
     if (addr == 0) return (void *) new_addr;
-    mem_copy((uint8_t *) addr, (uint8_t *) new_addr, size);
+    mem_copy((uint8_t *) new_addr, (uint8_t *) addr, size);
     mem_free_addr(addr);
     return (void *) new_addr;
 }

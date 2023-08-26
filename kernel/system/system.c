@@ -39,7 +39,24 @@ int sys_error(char *msg) {
     return 0;
 }
 
+struct stackframe {
+    struct stackframe* ebp;
+    uint32_t eip;
+};
+
+void profan_stacktrace() {
+    struct stackframe *stk;
+    asm ("movl %%ebp,%0" : "=r"(stk) ::);
+    serial_kprintf("Stack trace:");
+    while (stk->eip) {
+        serial_kprintf(" %x", stk->eip);
+        stk = stk->ebp;
+    }
+    serial_kprintf("\n");
+}
+
 void sys_fatal(char *msg) {
+    profan_stacktrace();
     kcprint("FATAL: ", 0x05);
     kcprint(msg, 0x0D);
     kprint("\n");

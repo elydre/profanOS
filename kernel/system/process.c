@@ -9,6 +9,7 @@
 #define SHDLR_ENBL 0    // sheduler enabled
 #define SHDLR_RUNN 1    // sheduler running
 #define SHDLR_DISL 2    // sheduler disabled
+#define SHDLR_DEAD 3    // sheduler dead
 
 #define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
 
@@ -21,7 +22,7 @@ int tsleep_list_length;
 int shdlr_queue_length;
 int *shdlr_queue;
 
-uint8_t sheduler_state = SHDLR_DISL;
+uint8_t sheduler_state = SHDLR_DEAD;
 uint8_t sheduler_count;
 uint8_t need_clean;
 

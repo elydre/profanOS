@@ -42,6 +42,11 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
         return NULL_SID;
     }
 
+    if (count == 0) {
+        free(name);
+        return NULL_SID;
+    }
+
     // search for the path part
     for (int j = 0; j < count; j++) {
         if (str_cmp(path, names[j]) == 0) {

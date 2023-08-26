@@ -5,6 +5,8 @@
 #include <minilib.h>
 #include <system.h>
 
+#include <gui/gnrtx.h>
+
 
 /* * * * * * * * * * * * * * * * * * * *
  *        _             _              *
@@ -44,9 +46,13 @@ uint32_t mem_get_phys_size() {
     return (uint32_t) addr_max;
 }
 
+int instance_count;
+
 int mem_init() {
     alloc_count = 0;
     free_count = 0;
+
+    instance_count = 0;
 
     phys_size = mem_get_phys_size();
 
@@ -85,7 +91,7 @@ int mm_get_unused_index(int not_index) {
         if (MEM_PARTS[i].state == 0 && i != not_index) return i;
     }
 
-    sys_error("no more memory, dynamizing do not work");
+    sys_fatal("no more memory, dynamizing do not work");
     return -1;
 }
 
@@ -97,7 +103,7 @@ void del_occurence(int index) {
             return;
         }
         if (count > part_size) {
-            sys_fatal("recursive linked list detected");
+            sys_fatal("recursive linked list detected in del_occurence");
         }
         i = MEM_PARTS[i].next;
     }
@@ -109,9 +115,6 @@ void dynamize_mem() {
         sum += !MEM_PARTS[i].state;
         if (sum > 4) return;
     }
-
-    // the memory dynamization is a unsafe
-    // operation we need to disable the sheduler
 
     process_disable_sheduler();
 
@@ -131,14 +134,21 @@ void dynamize_mem() {
     part_size += GROW_SIZE;
     mem_free_addr(old_add);
 
-    process_enable_sheduler();
-
     serial_debug("SNOWFLAKE", "memory successfully dynamized");
 }
 
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     if (!(size && state)) return 0;
-    if (state != 3) dynamize_mem();
+
+    if (state != 3) {
+        dynamize_mem();
+        process_disable_sheduler();
+        instance_count++;
+    }
+
+    if (instance_count > 1) {
+        sys_fatal("instance count is too high in mem_alloc");
+    }
 
     // traversing the list of allocated parts
     int index, old_index, exit_mode;
@@ -148,7 +158,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     last_addr = MEM_BASE_ADDR;
     for (int i = 0; i <= part_size; i++) {
         if (i == part_size) {
-            sys_fatal("recursive linked list detected");
+            sys_fatal("recursive linked list detected in mem_alloc");
         }
 
         // calculate the gap
@@ -174,52 +184,75 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
 
     if (exit_mode == 2) {
         sys_error("Cannot alloc: out of physical memory");
+        if (state != 3) instance_count--;
+        process_enable_sheduler();
         return 0;
     }
 
-    int new_index = mm_get_unused_index(-1);
-    if (new_index == -1) return 0;
-
-    int i = exit_mode ? index: new_index;
-
-    MEM_PARTS[i].addr = last_addr + gap;
-    MEM_PARTS[i].size = size;
-    MEM_PARTS[i].task_id = (state == 1) ? process_get_pid(): 0;
-    MEM_PARTS[i].state = state;
-
     if (exit_mode) {
-        new_index = mm_get_unused_index(-1);
-        if (new_index == -1) return 0;
-        MEM_PARTS[index].next = new_index;
-    } else {
+        MEM_PARTS[index].addr = last_addr + gap;
+        MEM_PARTS[index].size = size;
+        MEM_PARTS[index].task_id = (state == 1) ? process_get_pid(): 0;
+        MEM_PARTS[index].state = state;
+        MEM_PARTS[index].next = mm_get_unused_index(-1);
+    }
+
+    else {
+        int new_index = mm_get_unused_index(-1);
         del_occurence(new_index);
+
+        MEM_PARTS[new_index].addr = last_addr + gap;
+        MEM_PARTS[new_index].size = size;
+        MEM_PARTS[new_index].task_id = (state == 1) ? process_get_pid(): 0;
+        MEM_PARTS[new_index].state = state;
 
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
     }
+
     alloc_count++;
+    if (state != 3) instance_count--;
+    process_enable_sheduler();
+
     return last_addr + gap;
 }
 
 int mem_free_addr(uint32_t addr) {
+    process_disable_sheduler();
+    instance_count++;
+
+    if (instance_count > 1) {
+        sys_fatal("instance count is too high in mem_free_addr");
+    }
+
     int index = 0;
     int last_index = -1;
-    while (1) {
-        if (MEM_PARTS[index].addr == addr && last_index != -1) {
-            if (MEM_PARTS[index].state == 2) {
-                sys_error("cannot free first block");
-                return 0; // error
-            } else {
-                free_count++;
-                MEM_PARTS[last_index].next = MEM_PARTS[index].next;
-                MEM_PARTS[index].state = 0;
-                return 1; // success
-            }
+    while (MEM_PARTS[index].state) {
+        if (!(MEM_PARTS[index].addr == addr && last_index != -1)) {
+            last_index = index;
+            index = MEM_PARTS[index].next;
+            continue;
         }
-        last_index = index;
-        index = MEM_PARTS[index].next;
+
+        if (MEM_PARTS[index].state == 2) {
+            sys_error("cannot free first block");
+            instance_count--;
+            process_enable_sheduler();
+            return 0; // error
+        }
+
+        free_count++;
+        MEM_PARTS[last_index].next = MEM_PARTS[index].next;
+        MEM_PARTS[index].state = 0;
+        instance_count--;
+        process_enable_sheduler();
+
+        return 1; // success
     }
+
     sys_warning("block not found");
+    instance_count--;
+    process_enable_sheduler();
     return 0; // error
 }
 

@@ -61,15 +61,21 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     *ids = malloc(sizeof(sid_t) * count);
     *names = malloc(sizeof(char *) * count);
 
+    if (*ids == NULL || *names == NULL) {
+        kprintf("failed to allocate memory\n");
+        return -1;
+    }
+
     uint32_t name_offset;
     for (uint32_t i = 0; i < count; i++) {
-        mem_copy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
+        mem_copy(*ids + i, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
         mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(str_len(tmp) + 1);
         str_cpy((*names)[i], tmp);
     }
     free(buf);
+
     return count;
 }
 
