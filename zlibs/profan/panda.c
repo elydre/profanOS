@@ -348,7 +348,7 @@ void init_panda() {
 
     g_panda->scroll_offset = 0;
 
-    g_panda->cursor_is_hidden = 0;
+    g_panda->cursor_is_hidden = 1;
 
     g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
     g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
