@@ -85,17 +85,20 @@ int main() {
     panda_set_start(c_get_cursor_offset());
 
     if (c_vesa_get_width() > 0) {
-        if (redirect_stdout("/dev/panda")) {
-            c_kprint("Failed to redirect stdout\n");
-            return 1;
-        }
+        // if (redirect_stdout("/dev/panda")) {
+        //     c_kprint("Failed to redirect stdout\n");
+        //     return 1;
+        // }
         c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
     }
 
     welcome_print();
-    c_run_ifexist("/bin/fatpath/olivine.bin", 0, NULL);
+    while (1) {
+        c_kprint("starting sub.bin\n");
+        c_run_ifexist("/bin/commands/sub.bin", 0, NULL);
+    }
 
     return 0;
 }
