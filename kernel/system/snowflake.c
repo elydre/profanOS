@@ -80,9 +80,9 @@ int mem_init() {
     return 0;
 }
 
-int mm_get_unused_index() {
+int mm_get_unused_index(int not_index) {
     for (int i = 0; i < part_size; i++) {
-        if (MEM_PARTS[i].state == 0) return i;
+        if (MEM_PARTS[i].state == 0 && i != not_index) return i;
     }
 
     sys_error("no more memory, dynamizing do not work");
@@ -91,10 +91,13 @@ int mm_get_unused_index() {
 
 void del_occurence(int index) {
     int i = 0;
-    while (MEM_PARTS[i].state) {
+    for (int count = 0; MEM_PARTS[i].state; count++) {
         if (MEM_PARTS[i].next == index) {
-            MEM_PARTS[i].next = mm_get_unused_index();
+            MEM_PARTS[i].next = mm_get_unused_index(index);
             return;
+        }
+        if (count > part_size) {
+            sys_fatal("recursive linked list detected");
         }
         i = MEM_PARTS[i].next;
     }
@@ -143,7 +146,11 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     index = 0;
 
     last_addr = MEM_BASE_ADDR;
-    while (1) {
+    for (int i = 0; i <= part_size; i++) {
+        if (i == part_size) {
+            sys_fatal("recursive linked list detected");
+        }
+
         // calculate the gap
         gap = allign ? (allign - (last_addr % allign)) % allign : 0;
 
@@ -170,7 +177,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
         return 0;
     }
 
-    int new_index = mm_get_unused_index();
+    int new_index = mm_get_unused_index(-1);
     if (new_index == -1) return 0;
 
     int i = exit_mode ? index: new_index;
@@ -181,7 +188,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     MEM_PARTS[i].state = state;
 
     if (exit_mode) {
-        new_index = mm_get_unused_index();
+        new_index = mm_get_unused_index(-1);
         if (new_index == -1) return 0;
         MEM_PARTS[index].next = new_index;
     } else {
