@@ -179,7 +179,6 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
 
     int new_index = mm_get_unused_index(-1);
     if (new_index == -1) return 0;
-    if (!exit_mode) del_occurence(new_index);
 
     int i = exit_mode ? index: new_index;
 
@@ -193,6 +192,8 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
         if (new_index == -1) return 0;
         MEM_PARTS[index].next = new_index;
     } else {
+        del_occurence(new_index);
+
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
     }
