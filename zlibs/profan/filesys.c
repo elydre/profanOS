@@ -79,6 +79,7 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
 ********************************************/
 
 int fu_is_dir(sid_t dir_sid) {
+    if (IS_NULL_SID(dir_sid)) return 0;
     filesys_t *filesys = c_fs_get_main();
     char *name = c_fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
@@ -107,15 +108,15 @@ DIR STRUCTURE
 int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
     filesys_t *filesys = c_fs_get_main();
 
+    if (!fu_is_dir(dir_sid)) {
+        printf("not a directory\n");
+        return -1;
+    }
+
     // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
         printf("failed to get directory size\n");
-        return -1;
-    }
-
-    if (!fu_is_dir(dir_sid)) {
-        printf("not a directory\n");
         return -1;
     }
 
@@ -295,8 +296,9 @@ sid_t fu_dir_create(int device_id, char *path) {
 ********************************************/
 
 int fu_is_file(sid_t dir_sid) {
-    filesys_t *filesys = c_fs_get_main();
+    if (IS_NULL_SID(dir_sid)) return 0;
 
+    filesys_t *filesys = c_fs_get_main();
     char *name = c_fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
@@ -382,8 +384,9 @@ int fu_file_write(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
 // call a function when reading a file
 
 int fu_is_fctf(sid_t file_sid) {
-    filesys_t *filesys = c_fs_get_main();
+    if (IS_NULL_SID(file_sid)) return 0;
 
+    filesys_t *filesys = c_fs_get_main();
     char *name = c_fs_cnt_get_meta(filesys, file_sid);
     if (name == NULL) return 0;
     if (name[0] == 'C') {

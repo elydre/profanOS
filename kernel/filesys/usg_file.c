@@ -5,6 +5,7 @@
 
 
 int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
+    if (IS_NULL_SID(dir_sid)) return 0;
     char *name = fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
