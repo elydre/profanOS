@@ -66,9 +66,7 @@ int      vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save)
 
 // fstools.c
 void     sep_path(char *fullpath, char **parent, char **cnt);
-void     fs_print_sector(filesys_t *fs, sid_t sid, int verbose);
 vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id);
-void     draw_tree(filesys_t *filesys, sid_t sid, int depth);
 
 // cnt_init.c
 int      fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type);

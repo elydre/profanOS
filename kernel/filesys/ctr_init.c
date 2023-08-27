@@ -1,5 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
+#include <system.h>
 #include <ktype.h>
 
 
@@ -8,7 +9,6 @@ int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
 
     // check if sector unused
     if (vdisk_is_sector_used(vdisk, sid)) {
-        kprintf("d%ds%d already used\n", sid.device, sid.sector);
         return 1;
     }
 
@@ -46,14 +46,14 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
 
     vdisk = fs_get_vdisk(filesys, main_sid.device);
     if (vdisk == NULL) {
-        kprintf("d%d not found\n", main_sid.device);
+        sys_error("failed to init container, device not found");
         return NULL_SID;
     }
 
     // get unused sector for header
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
-        kprintf("no more sectors in d%d\n", main_sid.device);
+        sys_error("failed to init container, no more sectors");
         return NULL_SID;
     }
     main_sid.sector = (uint32_t) ret_sect;
@@ -63,7 +63,7 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     loca_sid.device = main_sid.device;
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
-        kprintf("no more sectors in d%d\n", main_sid.device);
+        sys_error("failed to init container, no more sectors");
         vdisk_note_sector_unused(vdisk, main_sid);
         return NULL_SID;
     }
@@ -71,7 +71,7 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
 
     // init locator
     if (fs_cnt_init_loca_in_sector(vdisk, loca_sid)) {
-        kprintf("failed to init core\n");
+        sys_error("failed to init container, failed to init locator");
         vdisk_note_sector_unused(vdisk, main_sid);
         vdisk_note_sector_unused(vdisk, loca_sid);
         return NULL_SID;
@@ -106,13 +106,13 @@ char *fs_cnt_get_meta(filesys_t *filesys, sid_t sid) {
 
     vdisk = fs_get_vdisk(filesys, sid.device);
     if (vdisk == NULL) {
-        kprintf("d%d not found\n", sid.device);
+        sys_error("failed to get meta, vdisk not found");
         return NULL;
     }
 
     data = vdisk_load_sector(vdisk, sid);
     if (data == NULL) {
-        kprintf("failed to read d%ds%d\n", sid.device, sid.sector);
+        sys_error("failed to get meta, failed to read sector");
         return NULL;
     }
 
@@ -130,13 +130,13 @@ void fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta) {
 
     vdisk = fs_get_vdisk(filesys, sid.device);
     if (vdisk == NULL) {
-        kprintf("d%d not found\n", sid.device);
+        sys_error("failed to change meta, vdisk not found");
         return;
     }
 
     data = vdisk_load_sector(vdisk, sid);
     if (data == NULL) {
-        kprintf("failed to read d%ds%d\n", sid.device, sid.sector);
+        sys_error("failed to change meta, failed to read sector");
         return;
     }
 

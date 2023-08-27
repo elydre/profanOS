@@ -11,7 +11,6 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     // read the directory
     uint32_t size = fs_cnt_get_size(filesys, parent);
     if (size == UINT32_MAX) {
-        kprintf("failed to get directory size\n");
         return NULL_SID;
     }
 
@@ -38,7 +37,6 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     count = fu_get_dir_content(filesys, parent, &sids, &names);
 
     if (count == -1) {
-        kprintf("failed to get directory content during path search\n");
         return NULL_SID;
     }
 

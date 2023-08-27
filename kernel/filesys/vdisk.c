@@ -34,7 +34,7 @@ void vdisk_destroy(vdisk_t *vdisk) {
 
 int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
     if (vdisk->used[sid.sector] == 1) {
-        kprintf("d%ds%d already used\n", sid.device, sid.sector);
+        sys_error("sector already used");
         return 1;
     }
 
@@ -55,7 +55,7 @@ int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
 
 int vdisk_note_sector_unused(vdisk_t *vdisk, sid_t sid) {
     if (vdisk->used[sid.sector] == 0) {
-        kprintf("d%ds%d already unused\n", sid.device, sid.sector);
+        sys_error("sector already unused");
         return 1;
     }
 
@@ -71,7 +71,7 @@ int vdisk_is_sector_used(vdisk_t *vdisk, sid_t sid) {
 
 int vdisk_get_unused_sector(vdisk_t *vdisk) {
     if (vdisk->used_count >= vdisk->size) {
-        kprintf("vdisk %p is full\n", vdisk);
+        sys_error("vdisk is full");
         return -1;
     }
     return vdisk->free[vdisk->used_count];
@@ -79,7 +79,6 @@ int vdisk_get_unused_sector(vdisk_t *vdisk) {
 
 int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
     if (newsize <= vdisk->size) {
-        kprintf("vdisk %p already has %d sectors\n", vdisk, vdisk->size);
         return 1;
     }
     vdisk->free = realloc(vdisk->free, sizeof(uint32_t) * newsize);
@@ -102,7 +101,7 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
 
 int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
     if (sid.sector >= vdisk->size) {
-        kprintf("d%ds%d out of range\n", sid.device, sid.sector);
+        sys_error("cannot write sector, out of range");
         return 1;
     }
     mem_copy(vdisk->sectors + sid.sector, data, FS_SECTOR_SIZE);
@@ -111,7 +110,7 @@ int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
 
 uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
     if (sid.sector >= vdisk->size) {
-        kprintf("d%ds%d out of range\n", sid.device, sid.sector);
+        sys_error("cannot load sector, out of range");
         return NULL;
     }
     return (uint8_t *) (vdisk->sectors + sid.sector);
@@ -119,7 +118,7 @@ uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
 
 int vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save) {
     if (sid.sector >= vdisk->size) {
-        kprintf("d%ds%d out of range\n", sid.device, sid.sector);
+        sys_error("cannot unload sector, out of range");
         return 1;
     }
     (void) save;

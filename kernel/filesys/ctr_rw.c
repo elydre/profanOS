@@ -1,5 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
+#include <system.h>
 #include <ktype.h>
 
 
@@ -10,13 +11,11 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     vdisk = fs_get_vdisk(filesys, core_sid.device);
 
     if (vdisk == NULL) {
-        kprintf("d%ds%d not found\n", core_sid.device, core_sid.sector);
         return -1;
     }
 
     // check if sector is used
     if (!vdisk_is_sector_used(vdisk, core_sid)) {
-        kprintf("d%ds%d not used\n", core_sid.device, core_sid.sector);
         return -1;
     }
 
@@ -24,14 +23,12 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     data = vdisk_load_sector(vdisk, core_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_CORE) {
-        kprintf("d%ds%d not core\n", core_sid.device, core_sid.sector);
         vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
         return -1;
     }
 
     // check if offset is valid
     if (offset >= BYTE_IN_CORE) {
-        kprintf("offset %d out of range\n", offset);
         vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
         return -1;
     }
@@ -59,7 +56,6 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
     vdisk = fs_get_vdisk(filesys, loca_sid.device);
 
     if (vdisk == NULL) {
-        kprintf("d%ds%d not found\n", loca_sid.device, loca_sid.sector);
         return 1;
     }
 
@@ -67,7 +63,6 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
     while (index < size) {
         // check if sector is used
         if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-            kprintf("d%ds%d not used\n", loca_sid.device, loca_sid.sector);
             return 1;
         }
 
@@ -75,7 +70,6 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
         data = vdisk_load_sector(vdisk, loca_sid);
 
         if (data[0] != ST_CONT || data[1] != SF_LOCA) {
-            kprintf("d%ds%d not locator\n", loca_sid.device, loca_sid.sector);
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
         }
@@ -132,13 +126,13 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     vdisk = fs_get_vdisk(filesys, head_sid.device);
 
     if (vdisk == NULL) {
-        kprintf("d%ds%d not found\n", head_sid.device, head_sid.sector);
+        sys_error("failed to r/w, vdisk not found");
         return 1;
     }
 
     // check if sector is used
     if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        kprintf("d%ds%d not used\n", head_sid.device, head_sid.sector);
+        sys_error("failed to r/w, sector not used");
         return 1;
     }
 
@@ -146,7 +140,7 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     data = vdisk_load_sector(vdisk, head_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_HEAD) {
-        kprintf("d%ds%d not cnt header\n", head_sid.device, head_sid.sector);
+        sys_error("failed to r/w, sector not cnt header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
@@ -158,6 +152,7 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
                 *((uint32_t *) (data + 2 + META_MAXLEN)),
                 offset + size
         );
+        sys_error("failed to r/w, offset+size is invalid");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
@@ -166,7 +161,7 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
     if (loca_sid.device != 0 || loca_sid.sector != 0) {
         if (fs_cnt_rw_loca(filesys, loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
-            kprintf("? failed to %s locator d%ds%d\n", is_read ? "read" : "write", loca_sid.device, loca_sid.sector);
+            sys_error("failed to r/w, failed to r/w locator");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }

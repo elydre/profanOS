@@ -1,6 +1,7 @@
 #include <kernel/butterfly.h>
 #include <drivers/diskiso.h>
 #include <minilib.h>
+#include <system.h>
 #include <ktype.h>
 
 
@@ -22,11 +23,11 @@ void fs_destroy(filesys_t *filesys) {
 
 int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
     if (did > FS_DISKS) {
-        kprintf("cannot mount more than %d disks\n", FS_DISKS);
+        sys_error("disk id is too big");
         return -1;
     }
     if (filesys->vdisk[did - 1] != NULL) {
-        kprintf("disk %d is already mounted\n", did);
+        sys_error("disk id is already used");
         return -1;
     }
     filesys->vdisk[did - 1] = vdisk;
@@ -58,7 +59,7 @@ vdisk_t *initrd_to_vdisk() {
     uint32_t initrd_size = diskiso_get_size();
 
     if (initrd_size == 0) {
-        kprintf("initrd is empty/missing\n");
+        sys_error("initrd is empty/missing\n");
         return NULL;
     }
 

@@ -1,9 +1,11 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
+#include <system.h>
 #include <ktype.h>
 
 
 int fu_is_dir(filesys_t *filesys, sid_t dir_sid) {
+    if (IS_NULL_SID(dir_sid)) return 0;
     char *name = fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
     if (name[0] == 'D') {
@@ -29,22 +31,21 @@ DIR STRUCTURE
 */
 
 int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***names) {
-    // read the directory and get size
-    uint32_t size = fs_cnt_get_size(filesys, dir_sid);
-    if (size == UINT32_MAX) {
-        kprintf("failed to get directory size\n");
+    if (!fu_is_dir(filesys, dir_sid)) {
+        sys_error("failed to get dir content, not a directory");
         return -1;
     }
 
-    if (!fu_is_dir(filesys, dir_sid)) {
-        kprintf("not a directory\n");
+    // read the directory and get size
+    uint32_t size = fs_cnt_get_size(filesys, dir_sid);
+    if (size == UINT32_MAX) {
         return -1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size);
     if (fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
-        kprintf("failed to read directory\n");
+        sys_error("failed to get dir content, read failed");
         return -1;
     }
 
@@ -62,7 +63,6 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     *names = malloc(sizeof(char *) * count);
 
     if (*ids == NULL || *names == NULL) {
-        kprintf("failed to allocate memory\n");
         return -1;
     }
 
@@ -80,38 +80,30 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
 }
 
 int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, char *name) {
-    // read the directory and get size
-    uint32_t size = fs_cnt_get_size(filesys, dir_sid);
-    if (size == UINT32_MAX) {
-        kprintf("failed to get directory size\n");
-        return 1;
-    }
-
-    if (IS_NULL_SID(element_sid)) {
-        kprintf("element sid is null\n");
-        return 1;
-    }
-
-    if (IS_NULL_SID(dir_sid)) {
-        kprintf("dir sid is null\n");
+    if (IS_NULL_SID(element_sid) || IS_NULL_SID(dir_sid)) {
+        sys_error("failed to add element to dir, null sid given");
         return 1;
     }
 
     if (!fu_is_dir(filesys, dir_sid)) {
-        kprintf("not a directory\n");
+        sys_error("failed to add element to dir, not a directory");
+        return 1;
+    }
+
+    // read the directory and get size
+    uint32_t size = fs_cnt_get_size(filesys, dir_sid);
+    if (size == UINT32_MAX) {
         return 1;
     }
 
     // extend the directory
     if (fs_cnt_set_size(filesys, dir_sid, size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1)) {
-        kprintf("failed to extend directory\n");
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1);
     if (fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
-        kprintf("failed to read directory\n");
         return 1;
     }
 
@@ -139,7 +131,6 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
 
     // write the directory
     if (fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1)) {
-        kprintf("failed to write directory\n");
         return 1;
     }
 
@@ -158,13 +149,13 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     if (parent[0]) {
         parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
         if (IS_NULL_SID(parent_sid)) {
-            kprintf("failed to find parent directory\n");
+            sys_error("failed to create directory, parent not found");
             free(parent);
             free(name);
             return NULL_SID;
         }
         if (!fu_is_dir(filesys, parent_sid)) {
-            kprintf("parent is not a directory\n");
+            sys_error("failed to create directory, parent not a directory");
             free(parent);
             free(name);
             return NULL_SID;
@@ -183,7 +174,7 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        kprintf("failed to create directory\n");
+        sys_error("failed to create directory, init failed");
         free(parent);
         free(name);
         return NULL_SID;
@@ -192,7 +183,7 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     // create a link in parent directory
     if (parent[0]) {
         if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
-            kprintf("failed to add directory to parent\n");
+            sys_error("failed to create directory, add to parent failed");
             free(parent);
             free(name);
             return NULL_SID;
@@ -204,14 +195,12 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
 
     // create '.' and '..'
     if (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..")) {
-        kprintf("failed to add '..' to directory\n");
         free(parent);
         free(name);
         return NULL_SID;
     }
 
     if (fu_add_element_to_dir(filesys, head_sid, head_sid, ".")) {
-        kprintf("failed to add '.' to directory\n");
         free(parent);
         free(name);
         return NULL_SID;
