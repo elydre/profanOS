@@ -279,6 +279,34 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     return written;
 }
 
+int fseek(FILE *stream, long offset, int whence) {
+    // we check if the file is null
+    if (stream == NULL) {
+        return 0;
+    }
+
+    // we check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr || stream == stdin) {
+        return 0;
+    }
+
+    switch (whence) {
+        case SEEK_SET:
+            stream->file_pos = offset;
+            break;
+        case SEEK_CUR:
+            stream->file_pos += offset;
+            break;
+        case SEEK_END:
+            stream->file_pos = fu_get_file_size(stream->sid) + offset;
+            break;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
 int fgetc(FILE *stream) {
     puts("fgetc not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
