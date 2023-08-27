@@ -101,14 +101,10 @@ int      internal_to_host(filesys_t *filesys, char *extern_path, char *intern_pa
 int      fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type);
 sid_t    fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta);
 char    *fs_cnt_get_meta(filesys_t *filesys, sid_t sid);
-void     fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta);
 
 // cnt_size.c
 int      fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size);
 uint32_t fs_cnt_get_size(filesys_t *filesys, sid_t head_sid);
-
-// cnt_del.c
-int      fs_cnt_delete(filesys_t *filesys, sid_t head_sid);
 
 // cnt_rw.c
 int      fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read);

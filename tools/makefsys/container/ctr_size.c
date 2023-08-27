@@ -4,65 +4,6 @@
 
 #include "../butterfly.h"
 
-int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-
-    vdisk = fs_get_vdisk(filesys, loca_sid.device);
-
-    if (vdisk == NULL) {
-        printf("d%ds%d not found\n", loca_sid.device, loca_sid.sector);
-        return -1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-        printf("d%ds%d not used\n", loca_sid.device, loca_sid.sector);
-        return -1;
-    }
-
-    // check if sector is cnt locator
-    data = vdisk_load_sector(vdisk, loca_sid);
-
-    if (data[0] != ST_CONT || data[1] != SF_LOCA) {
-        printf("d%ds%d not cnt locator\n", loca_sid.device, loca_sid.sector);
-        free(data);
-        return -1;
-    }
-
-    // check if sector linked to another locator
-    sid_t next_sid;
-    memcpy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
-
-    if (!IS_NULL_SID(next_sid)) {
-        int ret = fs_cnt_shrink_size(filesys, next_sid, to_shrink);
-        if (ret == -1) {
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return -1;
-        }
-        // next locator is empty, remove it
-        vdisk_note_sector_unused(vdisk, next_sid);
-        memset(data + LAST_SID_OFFSET, 0, sizeof(sid_t));
-        to_shrink = ret;
-    }
-
-    // remove core sectors
-    for (uint32_t byte = LAST_SID_OFFSET - sizeof(sid_t); byte > 0; byte -= sizeof(sid_t)) {
-        sid_t core_sid;
-        memcpy(&core_sid, data + byte, sizeof(sid_t));
-        if (core_sid.device == 0 && core_sid.sector == 0)
-            continue;
-        vdisk_note_sector_unused(vdisk, core_sid);
-        memset(data + byte, 0, sizeof(sid_t));
-        to_shrink--;
-        if (to_shrink == 0) {
-            break;
-        }
-    }
-    vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
-    return to_shrink;
-}
-
 int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     vdisk_t *vdisk;
     uint8_t *data;
@@ -227,12 +168,7 @@ int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
             return 1;
         }
     } else if (old_count > new_count) {
-        // shrink cnt
-        if (fs_cnt_shrink_size(filesys, loca_sid, old_count - new_count)) {
-            printf("failed to shrink cnt\n");
-            vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
-            return 1;
-        }
+        printf("shrink cnt not implemented\n");
     }
 
     *((uint32_t *) (data + 2 + META_MAXLEN)) = size;

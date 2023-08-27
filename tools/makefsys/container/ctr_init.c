@@ -124,24 +124,3 @@ char *fs_cnt_get_meta(filesys_t *filesys, sid_t sid) {
 
     return meta;
 }
-
-void fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-
-    vdisk = fs_get_vdisk(filesys, sid.device);
-    if (vdisk == NULL) {
-        printf("d%d not found\n", sid.device);
-        return;
-    }
-
-    data = vdisk_load_sector(vdisk, sid);
-    if (data == NULL) {
-        printf("failed to read d%ds%d\n", sid.device, sid.sector);
-        return;
-    }
-
-    memcpy(data + 2, meta, META_MAXLEN - 1);
-
-    vdisk_unload_sector(vdisk, sid, data, SAVE);
-}

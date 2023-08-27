@@ -59,8 +59,6 @@ int main(int argc, char **argv) {
     fs_mount_vdisk(filesys, d0, 2);
     fs_print_status(filesys);
 
-    printf("d2: %p\n", fs_get_vdisk(filesys, 2));
-
     fu_dir_create(filesys, 2, "/");
 
     host_to_internal(filesys, argv[1], "/");
