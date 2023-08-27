@@ -14,7 +14,9 @@
 #define c_kcprint(message, color) c_kcnprint(message, -1, color)
 #define c_kprint(message) c_kcprint(message, c_white)
 
-#define c_run_ifexist(path, argc, argv) c_run_ifexist_full(path, argc, argv, 0, 0, 0)
+#define c_run_ifexist(path, argc, argv) \
+        c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
+        argc, argv, 0, 0, 0, 1}, NULL)
 
 #define c_fs_cnt_read(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
 #define c_fs_cnt_write(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
@@ -120,7 +122,7 @@
 
 #define c_sys_reboot ((void (*)(void)) hi_func_addr(24))
 #define c_sys_shutdown ((void (*)(void)) hi_func_addr(25))
-#define c_run_ifexist_full ((int (*)(char *, int, char **, uint32_t, uint32_t, uint32_t)) hi_func_addr(26))
+#define c_run_ifexist_full ((int (*)(runtime_args_t, int *)) hi_func_addr(26))
 #define c_sys_kinfo ((void (*)(char *)) hi_func_addr(27))
 
 #define c_serial_print ((void (*)(int, char *)) hi_func_addr(28))

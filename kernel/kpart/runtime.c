@@ -135,10 +135,10 @@ void tasked_program() {
     process_kill(pid);
 }
 
-int run_binary(sid_t file, char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack_size) {
-    serial_debug("RUNTIME", path);
+int run_binary(runtime_args_t args, int *pid_ptr) {
+    serial_debug("RUNTIME", args.path);
 
-    int pid = process_create(tasked_program, 2, path);
+    int pid = process_create(tasked_program, 2, args.path);
 
     if (pid == -1)
         return -1;
@@ -146,40 +146,60 @@ int run_binary(sid_t file, char *path, int argc, char **argv, uint32_t vbase, ui
     if (pid == 2)
         last_return.pid = -1;
 
+    if (pid_ptr != NULL)
+        *pid_ptr = pid;
+
     // duplicate argv
-    int size = sizeof(char *) * (argc + 1);
+    int size = sizeof(char *) * (args.argc + 1);
     char **nargv = (char **) mem_alloc(size, 0, 6);
     mem_set((void *) nargv, 0, size);
 
-    for (int i = 0; i < argc; i++) {
-        nargv[i] = (char *) mem_alloc(str_len(argv[i]) + 1, 0, 6);
-        str_cpy(nargv[i], argv[i]);
+    for (int i = 0; i < args.argc; i++) {
+        nargv[i] = (char *) mem_alloc(str_len(args.argv[i]) + 1, 0, 6);
+        str_cpy(nargv[i], args.argv[i]);
     }
 
     comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 0, 6);
-    comm->argc = argc;
+    comm->argc = args.argc;
     comm->argv = nargv;
-    comm->file = file;
+    comm->file = args.sid;
 
-    comm->vbase = vbase;
-    comm->vcunt = vcunt;
-    comm->stack_size = stack_size;
+    comm->vbase = args.vbase;
+    comm->vcunt = args.vcunt;
+    comm->stack_size = args.stack;
 
     process_set_comm(pid, comm);
-    process_handover(pid);
+
+    if (args.sleep)
+        process_handover(pid);
+    else
+        process_wakeup(pid);
 
     return (last_return.pid == pid) ? last_return.ret : 0;
 }
 
-int run_ifexist_full(char *path, int argc, char **argv, uint32_t vbase, uint32_t vcunt, uint32_t stack) {
-    vbase = vbase ? vbase : RUN_BIN_VBASE;
+int run_ifexist_full(runtime_args_t args, int *pid) {
+    /*vbase = vbase ? vbase : RUN_BIN_VBASE;
     vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
     stack = stack ? stack : RUN_BIN_STACK;
 
     sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
+    */
 
-    if (!IS_NULL_SID(file) && fu_is_file(fs_get_main(), file)) {
-        return run_binary(file, path, argc, argv, vbase, vcunt, stack);
+    if (args.path == NULL && IS_NULL_SID(args.sid)) {
+        sys_error("No path or sid provided");
+        return -1;
+    }
+
+    args.path = args.path == NULL ? "serenity" : args.path;
+    args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(fs_get_main(), ROOT_SID, args.path) : args.sid;
+
+    args.vbase = args.vbase ? args.vbase : RUN_BIN_VBASE;
+    args.vcunt = args.vcunt ? args.vcunt : RUN_BIN_VCUNT;
+    args.stack = args.stack ? args.stack : RUN_BIN_STACK;
+
+    if (!IS_NULL_SID(args.sid) && fu_is_file(fs_get_main(), args.sid)) {
+        return run_binary(args, pid);
     }
 
     sys_error("Program not found");

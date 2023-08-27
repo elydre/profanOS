@@ -51,11 +51,10 @@ void kernel_exit_current();
 
 // runtime.c
 #define run_ifexist(path, argc, argv) \
-        run_ifexist_full(path, argc, argv, 0, 0, 0)
+        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
+        argc, argv, 0, 0, 0, 1}, NULL)
 
-int run_ifexist_full(char *path, int argc, char **argv,
-                     uint32_t vbase, uint32_t vcunt,
-                     uint32_t stack);
+int run_ifexist_full(runtime_args_t args, int *pid);
 
 int force_exit_pid(int pid, int ret_code);
 

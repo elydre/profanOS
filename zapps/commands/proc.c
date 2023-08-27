@@ -1,4 +1,6 @@
 #include <syscall.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #define PROCESS_MAX 20
@@ -16,7 +18,7 @@ char *get_state(int state) {
     }
 }
 
-int main(void) {
+void list_process(void) {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
@@ -34,5 +36,93 @@ int main(void) {
                 c_mem_get_info(7, pid)
         );
     }
+}
+
+typedef struct {
+    int mode;
+    int pid;
+} proc_args_t;
+
+#define MODE_LIST 0
+#define MODE_LHLP 1
+#define MODE_FHLP 2
+#define MODE_KILL 3
+#define MODE_SLPP 4
+#define MODE_WKUP 5
+
+void show_help(int full) {
+    puts("Usage: proc [mode] [pid]\n");
+    if (!full) {
+        puts("Use -h for more help\n");
+        return;
+    }
+    puts("Modes:\n"
+        "  -h: show this help\n"
+        "  -l: list all processes\n"
+        "  -k: kill a process\n"
+        "  -s: asleep a process\n"
+        "  -w: wake up a process\n"
+    );
+}
+
+proc_args_t parse_args(int argc, char **argv) {
+    proc_args_t args;
+    args.mode = MODE_LIST;
+    args.pid = -1;
+    if (argc == 1) {
+        return args;
+    }
+    if (argc == 2) {
+        if (strcmp(argv[1], "-h") == 0) {
+            args.mode = MODE_FHLP;
+            return args;
+        }
+        if (strcmp(argv[1], "-l") == 0) {
+            args.mode = MODE_LIST;
+            return args;
+        }
+        args.mode = MODE_LHLP;
+        return args;
+    }
+    else if (argc == 3) {
+        if (strcmp(argv[1], "-k") == 0) {
+            args.mode = MODE_KILL;
+        }
+        else if (strcmp(argv[1], "-s") == 0) {
+            args.mode = MODE_SLPP;
+        }
+        else if (strcmp(argv[1], "-w") == 0) {
+            args.mode = MODE_WKUP;
+        }
+        else {
+            args.mode = MODE_LHLP;
+            return args;
+        }
+        args.pid = atoi(argv[2]);
+        return args;
+    }
+    args.mode = MODE_LHLP;
+    return args;
+}
+
+int main(int argc, char **argv) {
+    argc--;
+    argv++;
+
+    proc_args_t args = parse_args(argc, argv);
+
+    if (args.mode == MODE_LIST)
+        list_process();
+    else if (args.mode == MODE_LHLP)
+        show_help(0);
+    else if (args.mode == MODE_FHLP)
+        show_help(1);
+    else if (args.mode == MODE_KILL)
+        c_process_kill(args.pid);
+    else if (args.mode == MODE_SLPP)
+        c_process_sleep(args.pid, 0);
+    else if (args.mode == MODE_WKUP)
+        c_process_wakeup(args.pid);
+    else return 1;
     return 0;
 }

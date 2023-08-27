@@ -895,7 +895,10 @@ char *if_go_binfile(char **input) {
     // 2. current working directory
     // 3. all the arguments
 
-    argc++;
+    int sleep = 1;
+    if (strcmp(input[argc - 1], "&") == 0) {
+        sleep = 0;
+    } else argc++;
 
     char **argv = malloc((argc + 1) * sizeof(char*));
     argv[0] = file_name;
@@ -906,9 +909,17 @@ char *if_go_binfile(char **input) {
     argv[argc] = NULL;
 
     char *ret_str = malloc(10 * sizeof(char));
-    sprintf(ret_str, "%d", c_run_ifexist(file_name, argc, argv));
+
+    int pid;
+
+    sprintf(ret_str, "%d", c_run_ifexist_full (
+        (runtime_args_t){file_name, file_id, argc, argv, 0, 0, 0, sleep}, &pid
+    ));
 
     set_variable("exit", ret_str);
+
+    sprintf(ret_str, "%d", pid);
+    set_variable("spi", ret_str);
 
     free(file_name);
     free(ret_str);
@@ -3065,6 +3076,7 @@ int main(int argc, char **argv) {
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
     set_variable("exit", "0");
+    set_variable("spi",  "0");
     set_sync_variable("path", current_directory);
 
     // init pseudo commands
