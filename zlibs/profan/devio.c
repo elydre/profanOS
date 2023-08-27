@@ -59,7 +59,7 @@ int write_in_file(sid_t sid, void *buffer, uint32_t offset, uint32_t size) {
 
     if (fu_is_fctf(sid)) {
         fu_fctf_write(sid, buffer, offset, size);
-        return size;
+        return 0;
     }
 
     if (fu_is_file(sid)) {
@@ -155,11 +155,6 @@ int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 }
 
 int genbuffer_rw(lc_t *lcptr, void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
-    if (offset) {
-        printf("offset is not supported by buffer system\n");
-        return 0;
-    }
-
     if (mode == MODE_WRITE) {
         for (uint32_t i = 0; i < size; i++) {
             lcptr->buffer[lcptr->offset++] = ((uint8_t *) buffer)[i];
