@@ -71,13 +71,6 @@ int vdisk_is_sector_used(vdisk_t *vdisk, sid_t sid) {
     return vdisk->used[sid.sector];
 }
 
-int vdisk_get_unused_sector(vdisk_t *vdisk) {
-    if (vdisk->used_count >= vdisk->size) {
-        printf("vdisk %p is full\n", vdisk);
-        return -1;
-    }
-    return vdisk->free[vdisk->used_count];
-}
 
 int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
     if (newsize <= vdisk->size) {
@@ -94,6 +87,14 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
     }
     vdisk->size = newsize;
     return 0;
+}
+
+int vdisk_get_unused_sector(vdisk_t *vdisk) {
+    if (vdisk->used_count >= vdisk->size) {
+        printf("vdisk %p is full, extend...\n", vdisk);
+        vdisk_extend(vdisk, vdisk->size + 10000);
+    }
+    return vdisk->free[vdisk->used_count];
 }
 
 int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {

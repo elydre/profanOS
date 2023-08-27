@@ -196,10 +196,14 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     int mode_len = strlen(stream->mode);
 
     // we check if the file is open for reading, else we return 0
-    if (!(strcmp(stream->mode, "r")  == 0 ||
-          strcmp(stream->mode, "r+") == 0 ||
-          strcmp(stream->mode, "w+") == 0 ||
-          strcmp(stream->mode, "a+") == 0)
+    if (!(strcmp(stream->mode, "r")   == 0 ||
+          strcmp(stream->mode, "r+")  == 0 ||
+          strcmp(stream->mode, "w+")  == 0 ||
+          strcmp(stream->mode, "a+")  == 0 ||
+          strcmp(stream->mode, "rb")  == 0 ||
+          strcmp(stream->mode, "rb+") == 0 ||
+          strcmp(stream->mode, "wb+") == 0 ||
+          strcmp(stream->mode, "ab+") == 0)
     ) return 0;
 
     // get the file size
@@ -249,10 +253,14 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     }
 
     // we check if the file is open for writing, else we return 0
-    if (!(strcmp(stream->mode, "w")  == 0 ||
-          strcmp(stream->mode, "w+") == 0 ||
-          strcmp(stream->mode, "a")  == 0 ||
-          strcmp(stream->mode, "a+") == 0)
+    if (!(strcmp(stream->mode, "w")   == 0 ||
+          strcmp(stream->mode, "w+")  == 0 ||
+          strcmp(stream->mode, "a")   == 0 ||
+          strcmp(stream->mode, "a+")  == 0 ||
+          strcmp(stream->mode, "wb")  == 0 ||
+          strcmp(stream->mode, "wb+") == 0 ||
+          strcmp(stream->mode, "ab")  == 0 ||
+          strcmp(stream->mode, "ab+") == 0)
     ) return 0;
 
     // we get the current file size

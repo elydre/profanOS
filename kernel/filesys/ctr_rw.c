@@ -8,6 +8,11 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     vdisk_t *vdisk;
     uint8_t *data;
 
+    // check if offset is valid
+    if (offset >= BYTE_IN_CORE) {
+        return -1;
+    }
+
     vdisk = fs_get_vdisk(filesys, core_sid.device);
 
     if (vdisk == NULL) {
@@ -23,12 +28,6 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     data = vdisk_load_sector(vdisk, core_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_CORE) {
-        vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
-        return -1;
-    }
-
-    // check if offset is valid
-    if (offset >= BYTE_IN_CORE) {
         vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
         return -1;
     }
@@ -82,7 +81,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                     return 0;
                 }
-                if (index + BYTE_IN_CORE < 0) {
+                if (index + BYTE_IN_CORE <= 0) {
                     index += BYTE_IN_CORE;
                     continue;
                 }

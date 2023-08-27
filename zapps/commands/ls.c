@@ -333,12 +333,12 @@ int main(int argc, char **argv) {
         } else if (fu_is_fctf(cnt_ids[i])) {
             printf("$5%s\033[u\033[22C$7", cnt_names[i]);
 
-            if (args->size_type == LS_SIZE_VIRT) printf("fctf: %p", fu_fctf_get_addr(cnt_ids[i]));
+            if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
             else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
         } else {
             printf("$3%s\033[u\033[22C$7unk", cnt_names[i]);
         }
-        printf("\033[u\033[30Cd%ds%d\n", cnt_ids[i].device, cnt_ids[i].sector);
+        printf("\033[u\033[34Cd%ds%d\n", cnt_ids[i].device, cnt_ids[i].sector);
         free(cnt_names[i]);
     }
 
