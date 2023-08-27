@@ -916,6 +916,10 @@ char *if_go_binfile(char **input) {
         (runtime_args_t){file_name, file_id, argc, argv, 0, 0, 0, sleep}, &pid
     ));
 
+    if (!sleep) {
+        printf("GO: started with pid %d\n", pid);
+    }
+
     set_variable("exit", ret_str);
 
     sprintf(ret_str, "%d", pid);
