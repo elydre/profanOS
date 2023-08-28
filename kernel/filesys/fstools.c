@@ -11,10 +11,10 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
     (*parent)[0] = '\0';
     (*cnt)[0] = '\0';
 
-    len = strlen(fullpath);
+    len = str_len(fullpath);
 
     if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        strcpy((*cnt), "/");
+        str_cpy((*cnt), "/");
         return;
     }
 
@@ -30,12 +30,12 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
     }
 
     if (i <= 0) {
-        strcpy(*parent, "/");
-        strncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
+        str_cpy(*parent, "/");
+        str_ncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
     } else {
-        strncpy(*parent, fullpath, i);
+        str_ncpy(*parent, fullpath, i);
         (*parent)[i] = '\0';
-        strncpy(*cnt, fullpath + i + 1, META_MAXLEN);
+        str_ncpy(*cnt, fullpath + i + 1, META_MAXLEN);
     }
 }
 
