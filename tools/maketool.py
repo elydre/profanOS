@@ -233,10 +233,10 @@ def build_app_lib():
     while total : pass # on attends que tout soit fini
 
 
-def make_iso(force = False, diskiso = False):
+def make_iso(force = False, more_option = False):
     elf_image()
 
-    if diskiso: gen_disk()
+    gen_disk()
 
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
@@ -245,9 +245,10 @@ def make_iso(force = False, diskiso = False):
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
 
-    if diskiso:
-        print_and_exec(f"echo TITE | cat HDD.bin - > {OUT_DIR}/isodir/boot/HDD.bin")
-        print_and_exec(f"cp boot/diskiso.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
+    print_and_exec(f"echo TITE | cat HDD.bin - > {OUT_DIR}/isodir/boot/HDD.bin")
+
+    if more_option:
+        print_and_exec(f"cp boot/full.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
     else:
         print_and_exec(f"cp boot/classic.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
 
@@ -383,7 +384,7 @@ def make_help():
 
         ("make elf",        "build the kernel in elf format"),
         ("make iso",        "build the iso image of profanOS"),
-        ("make miso",       "build the iso with 'No ATA' option"),
+        ("make miso",       "build the iso with more grub options"),
 
         ("make disk",       "build classic disk image"),
         ("make srcdisk",    "build disk image with source code"),
