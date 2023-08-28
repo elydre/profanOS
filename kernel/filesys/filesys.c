@@ -127,5 +127,15 @@ int filesys_init() {
         return 1;
     }
 
+    sid_t src_sid = fu_path_to_sid(MAIN_FS, (sid_t) {2, 0}, "/src");
+    if (!IS_NULL_SID(src_sid) && fu_add_element_to_dir(
+        MAIN_FS,
+        ROOT_SID,
+        src_sid,
+        "src"
+    )) {
+        return 1;
+    }
+
     return 0;
 }

@@ -377,7 +377,7 @@ def make_help():
         ("make miso",       "build the iso with more grub options"),
 
         ("make disk",       "build classic disk image"),
-        ("make rdisk",    "build disk image with source code"),
+        ("make bdisk",    "build disk image with source code"),
 
         ("make addons",     "download all addons in disk source"),
 
@@ -395,7 +395,7 @@ def make_help():
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")
     cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
-    cprint(COLOR_INFO, " MAKE ADDONS RDISK MISO to build the disk with all options")
+    cprint(COLOR_INFO, " MAKE ADDONS BDISK MISO to build the disk with all options")
     cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
 
@@ -403,7 +403,7 @@ assos = {
     "elf": elf_image,
     "help": make_help,
     "disk": lambda: gen_disk(True),
-    "rdisk": lambda: gen_disk(True, True),
+    "bdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
     "miso": lambda: make_iso(True, True),
     "run": lambda: qemu_run(True),

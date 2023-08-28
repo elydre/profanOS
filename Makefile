@@ -1,4 +1,4 @@
-.PHONY: help elf iso miso disk rdisk run erun krun srun clean fclean addons
+.PHONY: help elf iso miso disk bdisk run erun krun srun clean fclean addons
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
@@ -24,8 +24,8 @@ disk:
 	python3 $(PY_BUILD) disk
 
 # build disk image with source
-rdisk:
-	python3 $(PY_BUILD) rdisk
+bdisk:
+	python3 $(PY_BUILD) bdisk
 
 # run kernel in qemu
 run:
