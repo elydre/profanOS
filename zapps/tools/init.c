@@ -75,12 +75,12 @@ void welcome_print() {
 }
 
 int main() {
-    int loaded = 0;
+    int sum = 0;
     int total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
     for (int i = 0; i < total; i++) {
-        loaded += !print_load_status(i);
+        sum += !print_load_status(i);
     }
-    printf("Loaded %d/%d libraries\n\n", loaded, total);
+    printf("Loaded %d/%d libraries\n\n", sum, total);
 
     panda_set_start(c_get_cursor_offset());
 
@@ -96,6 +96,19 @@ int main() {
 
     welcome_print();
     c_run_ifexist("/bin/fatpath/olivine.bin", 0, NULL);
+
+    printf("olivine exited, sleeping\n");
+    c_process_sleep(c_process_get_pid(), 0);
+
+    // unload libraries
+    for (int i = 0; i < total; i++) {
+        lib_t *lib = &libs_at_boot[i];
+        c_dily_unload(lib->id);
+    }
+
+    c_kprint("all libraries unloaded, bye!\n");
+
+    c_mem_free_all(c_process_get_pid());
 
     return 0;
 }
