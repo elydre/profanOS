@@ -48,12 +48,19 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
 
     *parent = (char *) malloc(META_MAXLEN);
     *cnt = (char *) malloc(META_MAXLEN);
+    (*parent)[0] = '\0';
+    (*cnt)[0] = '\0';
 
     len = strlen(fullpath);
+
     if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        (*parent)[0] = '\0';
         strcpy((*cnt), "/");
         return;
+    }
+
+    if (fullpath[len - 1] == '/') {
+        fullpath[len - 1] = '\0';
+        len--;
     }
 
     for (i = len - 1; i >= 0; i--) {

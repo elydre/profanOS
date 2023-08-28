@@ -8,12 +8,19 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
 
     *parent = (char *) malloc(META_MAXLEN);
     *cnt = (char *) malloc(META_MAXLEN);
+    (*parent)[0] = '\0';
+    (*cnt)[0] = '\0';
 
-    len = str_len(fullpath);
+    len = strlen(fullpath);
+
     if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        (*parent)[0] = '\0';
-        str_cpy((*cnt), "/");
+        strcpy((*cnt), "/");
         return;
+    }
+
+    if (fullpath[len - 1] == '/') {
+        fullpath[len - 1] = '\0';
+        len--;
     }
 
     for (i = len - 1; i >= 0; i--) {
@@ -23,14 +30,15 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
     }
 
     if (i <= 0) {
-        str_cpy(*parent, "/");
-        str_ncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
+        strcpy(*parent, "/");
+        strncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
     } else {
-        str_ncpy(*parent, fullpath, i);
+        strncpy(*parent, fullpath, i);
         (*parent)[i] = '\0';
-        str_ncpy(*cnt, fullpath + i + 1, META_MAXLEN);
+        strncpy(*cnt, fullpath + i + 1, META_MAXLEN);
     }
 }
+
 
 vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id) {
     device_id -= 1;
