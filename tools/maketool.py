@@ -368,31 +368,16 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
     if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=initrd.bin,format=raw -boot order=d {qemu_args}")
     else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=initrd.bin,format=raw -boot order=a {qemu_args}")
 
-def extract_disk():
-    if not file_exists("initrd.bin"):
-        cprint(COLOR_EROR, "initrd.bin not found")
-        return
-
-    if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
-        cprint(COLOR_INFO, "building makefsys...")
-        print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
-
-    cprint(COLOR_INFO, "extracting initrd.bin...")
-    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin 42")
-
-
 def make_help():
     aide = (
-        ("make [info]", "show this help message"),
+        ("make [help]", "show this help message"),
 
         ("make elf",        "build the kernel in elf format"),
         ("make iso",        "build the iso image of profanOS"),
         ("make miso",       "build the iso with more grub options"),
 
         ("make disk",       "build classic disk image"),
-        ("make srcdisk",    "build disk image with source code"),
-        ("make xtrdisk",    "extract the disk image"),
+        ("make rdisk",    "build disk image with source code"),
 
         ("make addons",     "download all addons in disk source"),
 
@@ -410,7 +395,7 @@ def make_help():
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")
     cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
-    cprint(COLOR_INFO, " MAKE ADDONS SRCDISK MISO to build the disk with all options")
+    cprint(COLOR_INFO, " MAKE ADDONS RDISK MISO to build the disk with all options")
     cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
 
@@ -418,8 +403,7 @@ assos = {
     "elf": elf_image,
     "help": make_help,
     "disk": lambda: gen_disk(True),
-    "srcdisk": lambda: gen_disk(True, True),
-    "xtrdisk": lambda: extract_disk(),
+    "rdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
     "miso": lambda: make_iso(True, True),
     "run": lambda: qemu_run(True),
