@@ -1,4 +1,5 @@
 #include <kernel/butterfly.h>
+#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
 #include <ktype.h>
@@ -69,22 +70,14 @@ int vdisk_is_sector_used(vdisk_t *vdisk, sid_t sid) {
     return vdisk->used[sid.sector];
 }
 
-int vdisk_get_unused_sector(vdisk_t *vdisk) {
-    if (vdisk->used_count >= vdisk->size) {
-        sys_error("vdisk is full");
-        return -1;
-    }
-    return vdisk->free[vdisk->used_count];
-}
-
 int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
     if (newsize <= vdisk->size) {
         return 1;
     }
-    vdisk->free = realloc(vdisk->free, sizeof(uint32_t) * newsize);
-    vdisk->used = realloc(vdisk->used, sizeof(uint8_t) * newsize);
+    vdisk->free = realloc_as_kernel(vdisk->free, sizeof(uint32_t) * newsize);
+    vdisk->used = realloc_as_kernel(vdisk->used, sizeof(uint8_t) * newsize);
 
-    vdisk->sectors = realloc(vdisk->sectors, sizeof(sector_t) * newsize);
+    vdisk->sectors = realloc_as_kernel(vdisk->sectors, sizeof(sector_t) * newsize);
 
     if (vdisk->sectors == NULL) {
         sys_fatal("could not allocate memory for vdisk");
@@ -97,6 +90,14 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
 
     vdisk->size = newsize;
     return 0;
+}
+
+int vdisk_get_unused_sector(vdisk_t *vdisk) {
+    if (vdisk->used_count >= vdisk->size) {
+        serial_debug("VDISK", "vdisk full, extending...");
+        vdisk_extend(vdisk, vdisk->size + 1000);
+    }
+    return vdisk->free[vdisk->used_count];
 }
 
 int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {

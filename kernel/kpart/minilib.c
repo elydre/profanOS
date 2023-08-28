@@ -154,9 +154,9 @@ void *malloc(uint32_t size) {
     return (void *) addr;
 }
 
-void *realloc(void *ptr, uint32_t size) {
+void *realloc_as_kernel(void *ptr, uint32_t size) {
     uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = mem_alloc(size, 0, 1);
+    uint32_t new_addr = mem_alloc(size, 0, 6);
     if (new_addr == 0) return NULL;
     if (addr == 0) return (void *) new_addr;
     mem_copy((uint8_t *) new_addr, (uint8_t *) addr, size);
