@@ -1,10 +1,10 @@
-.PHONY: info elf iso miso disk srcdisk run erun krun srun clean fclean addons
+.PHONY: help elf iso miso disk rdisk run erun krun srun clean fclean addons
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
 
 # list off available commands
-info:
+help:
 	python3 $(PY_BUILD) help
 
 # build kernel
@@ -24,11 +24,8 @@ disk:
 	python3 $(PY_BUILD) disk
 
 # build disk image with source
-srcdisk:
-	python3 $(PY_BUILD) srcdisk
-
-xtrdisk:
-	python3 $(PY_BUILD) xtrdisk
+rdisk:
+	python3 $(PY_BUILD) rdisk
 
 # run kernel in qemu
 run:
@@ -57,5 +54,12 @@ clean:
 
 # remove git ignored and discard all changes
 fclean: clean
-	git clean -fdx
-	git reset --hard
+	@echo "This will remove all untracked files and discard all changes"
+	@echo "Are you sure you want to continue? [y/N]"
+	@read -r input; \
+	if [ "$$input" = "y" ] || [ "$$input" = "Y" ]; then \
+		git clean -fdx; \
+		git reset --hard; \
+	else \
+		echo "Aborting"; \
+	fi

@@ -1,5 +1,6 @@
 #include <i_iolib.h>
 #include <syscall.h>
+#include <filesys.h>
 #include <string.h>
 #include <stdlib.h>
 #include <profan.h>
@@ -53,29 +54,14 @@ int str_count(char *str, char thing) {
 
 int main(int argc, char **argv) {
     char char_buffer[BFR_SIZE];
-    int history_size = 0x1000 / BFR_SIZE - 1;
-    char **history = malloc(history_size * sizeof(char*));
-    int addr = (int) calloc(0x1000, sizeof(char));
-
-    for (int i = 0; i < history_size; i++) {
-        history[i] = (char*)addr;
-        addr += BFR_SIZE;
-    }
-    int current_history_size = 0;
 
     while (1) {
         printf(SHELL_PROMPT, current_dir);
-        input_wh(char_buffer, BFR_SIZE, c_blue, history, current_history_size);
+        fflush(stdout);
+        open_input(char_buffer, BFR_SIZE);
         puts("\n");
-        if (strcmp(char_buffer, history[0]) && char_buffer[0] != '\0') {
-            for (int i = history_size - 1; i > 0; i--) strcpy(history[i], history[i - 1]);
-            if (current_history_size < history_size) current_history_size++;
-            strcpy(history[0], char_buffer);
-        }
         if (shell_command(char_buffer)) break;
     }
-    free(history[0]);
-    free(history);
     return 0;
 }
 
@@ -93,6 +79,8 @@ int shell_command(char *buffer) {
 
     int return_value = 0;
 
+    sid_t elm;
+
     // internal commands
 
     if (!strcmp(prefix, "exit")) {
@@ -100,18 +88,26 @@ int shell_command(char *buffer) {
     } else if (!strcmp(prefix, "cd")) {
         char *new_path = calloc(256, sizeof(char));
         assemble_path(current_dir, suffix, new_path);
-        if (c_fs_does_path_exists(new_path) && c_fs_get_sector_type(c_fs_path_to_id(new_path)) == 3)
+        elm = fu_path_to_sid(ROOT_SID, new_path);
+
+        if (!IS_NULL_SID(elm) && fu_is_dir(elm))
             strcpy(current_dir, new_path);
-        else {
+        else
             printf("$3%s$B path not found\n", new_path);
-        }
+
         free(new_path);
     } else if (!strcmp(prefix, "go")) {
         if (!str_count(suffix, '.')) strncat(suffix, ".bin", 4);
         char *file = malloc(strlen(suffix) + strlen(current_dir) + 3);
         assemble_path(current_dir, suffix, file);
         suffix[0] = '\0';
-        go(file, prefix, suffix);
+        elm = fu_path_to_sid(ROOT_SID, file);
+
+        if (!IS_NULL_SID(elm) && fu_is_file(elm))
+            go(file, prefix, suffix);
+        else
+            printf("$3%s$B file not found\n", file);
+
         free(file);
     } else {  // shell command
         char *old_prefix = malloc(strlen(prefix) + 1);
@@ -119,11 +115,14 @@ int shell_command(char *buffer) {
         if (!str_count(prefix, '.')) strncat(prefix, ".bin", 4);
         char *file = malloc(strlen(prefix) + 17);
         assemble_path("/bin/commands", prefix, file);
-        if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
+        elm = fu_path_to_sid(ROOT_SID, file);
+
+        if (!IS_NULL_SID(elm) && fu_is_file(elm))
             go(file, old_prefix, suffix);
-        } else {
+        else {
             assemble_path("/bin/fatpath", prefix, file);
-            if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
+            elm = fu_path_to_sid(ROOT_SID, file);
+            if (!IS_NULL_SID(elm) && fu_is_file(elm)) {
                 go(file, old_prefix, suffix);
             } else if (strcmp(old_prefix, "")) {
                 printf("$3%s$B is not a valid command.\n", old_prefix);
@@ -139,26 +138,24 @@ int shell_command(char *buffer) {
 }
 
 void go(char *file, char *prefix, char *suffix) {
-    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
-        int argc = str_count(suffix, ' ') + 2;
-        if (suffix[0] != '\0') argc++;
+    int argc = str_count(suffix, ' ') + 2;
+    if (suffix[0] != '\0') argc++;
 
-        char **argv = malloc(argc * sizeof(char *));
-        argv[0] = malloc(strlen(file) + 1);
-        strcpy(argv[0], file);
-        argv[1] = malloc(strlen(current_dir) + 1);
-        strcpy(argv[1], current_dir);
+    char **argv = malloc(argc * sizeof(char *));
+    argv[0] = malloc(strlen(file) + 1);
+    strcpy(argv[0], file);
+    argv[1] = malloc(strlen(current_dir) + 1);
+    strcpy(argv[1], current_dir);
 
-        for (int i = 2; i < argc; i++) {
-            argv[i] = malloc(strlen(suffix) + 1);
-            strcpy(argv[i], suffix);
-            start_split(argv[i], ' ');
-            end_split(suffix, ' ');
-        }
+    for (int i = 2; i < argc; i++) {
+        argv[i] = malloc(strlen(suffix) + 1);
+        strcpy(argv[i], suffix);
+        start_split(argv[i], ' ');
+        end_split(suffix, ' ');
+    }
 
-        c_run_ifexist(file, argc, argv);
-        // free
-        for (int i = 0; i < argc; i++) free(argv[i]);
-        free(argv);
-    } else printf("$3%s$B file not found\n", file);
+    c_run_ifexist(file, argc, argv);
+    // free
+    for (int i = 0; i < argc; i++) free(argv[i]);
+    free(argv);
 }

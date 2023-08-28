@@ -1,8 +1,11 @@
 #include <syscall.h>
+#include <i_time.h>
 #include <string.h>
 #include <stdio.h>
 
 void init_func();
+
+uint32_t rand_seed = 0;
 
 int main() {
     init_func();
@@ -10,7 +13,7 @@ int main() {
 }
 
 void init_func() {
-    c_kprint("Init of the stdlib !\n");
+    rand_seed = time_gen_unix();
 }
 
 void *calloc(uint32_t nmemb, uint32_t lsize) {
@@ -433,15 +436,14 @@ void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *
 }
 
 int rand(void) {
-    puts("rand not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+    rand_seed = rand_seed * 1103515245 + 12345;
+    return (int) (rand_seed / 65536) % 32768;
 }
 
 /* This algorithm is mentioned in the ISO C standard, here extended
    for 32 bits.  */
 // FROM THE STDLIB
-int rand_r (unsigned int *seed)
-{
+int rand_r (unsigned int *seed) {
     unsigned int next = *seed;
     int result;
 

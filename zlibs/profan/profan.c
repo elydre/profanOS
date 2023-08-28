@@ -13,6 +13,7 @@ int main() {
 }
 
 void assemble_path(char *old, char *new, char *result) {
+    /*
     result[0] = '\0';
     if (new[0] != '/') {
         strcpy(result, old);
@@ -40,6 +41,21 @@ void assemble_path(char *old, char *new, char *result) {
             result[index + 1] = '\0';
         }
     }
+    if (result[strlen(result) - 1] == '/' && strlen(result) != 1) {
+        result[strlen(result) - 1] = '\0';
+    }
+    */
+
+    result[0] = '\0';
+    if (new[0] == '/') {
+        strcpy(result, new);
+        return;
+    }
+    strcpy(result, old);
+    if (result[strlen(result) - 1] != '/') {
+        strcat(result, "/");
+    }
+    strcat(result, new);
     if (result[strlen(result) - 1] == '/' && strlen(result) != 1) {
         result[strlen(result) - 1] = '\0';
     }

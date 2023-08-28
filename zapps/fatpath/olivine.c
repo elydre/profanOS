@@ -21,6 +21,7 @@
 
 #if PROFANBUILD
   #include <syscall.h>
+  #include <filesys.h>
   #include <i_time.h>
   #include <profan.h>
 
@@ -258,8 +259,7 @@ int set_function(char *name, char **lines, int line_count) {
 void print_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name == NULL) {
-            printf("Function %s does not exist\n", name);
-            return;
+            break;
         }
         if (strcmp(functions[i].name, name) == 0) {
             printf("Function %s:\n", name);
@@ -269,6 +269,29 @@ void print_function(char *name) {
             return;
         }
     }
+    printf("Function %s does not exist\n", name);
+}
+
+int del_function(char *name) {
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            return 1;
+        }
+        if (strcmp(functions[i].name, name) == 0) {
+            free(functions[i].name);
+            for (int j = 0; j < functions[i].line_count; j++) {
+                free(functions[i].lines[j]);
+            }
+            free(functions[i].lines);
+
+            // shift all functions down
+            for (int j = i; j < MAX_FUNCTIONS - 1; j++) {
+                functions[j] = functions[j + 1];
+            }
+            return 0;
+        }
+    }
+    return 1;
 }
 
 function_t *get_function(char *name) {
@@ -751,6 +774,29 @@ char *if_del_var(char **input) {
     return NULL;
 }
 
+char *if_del_func(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        printf("delfunc: expected 1 argument, got %d\n", argc);
+        return NULL;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // delete function
+    if (del_function(name)) {
+        printf("delfunc: function '%s' not found\n", name);
+    }
+
+    return NULL;
+}
+
 char *if_debug(char **input) {
     // get argc
     int argc = 0;
@@ -836,7 +882,9 @@ char *if_go_binfile(char **input) {
     assemble_path(current_directory, input[0], file_name);
     // check if file exists
 
-    if (!(c_fs_does_path_exists(file_name) && c_fs_get_sector_type(c_fs_path_to_id(file_name)) == 2)) {
+    sid_t file_id = fu_path_to_sid(ROOT_SID, file_name);
+
+    if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
         printf("GO: file '%s' does not exist\n", file_name);
         free(file_name);
         return NULL;
@@ -847,7 +895,10 @@ char *if_go_binfile(char **input) {
     // 2. current working directory
     // 3. all the arguments
 
-    argc++;
+    int sleep = 1;
+    if (strcmp(input[argc - 1], "&") == 0) {
+        sleep = 0;
+    } else argc++;
 
     char **argv = malloc((argc + 1) * sizeof(char*));
     argv[0] = file_name;
@@ -858,9 +909,21 @@ char *if_go_binfile(char **input) {
     argv[argc] = NULL;
 
     char *ret_str = malloc(10 * sizeof(char));
-    sprintf(ret_str, "%d", c_run_ifexist(file_name, argc, argv));
+
+    int pid;
+
+    sprintf(ret_str, "%d", c_run_ifexist_full (
+        (runtime_args_t){file_name, file_id, argc, argv, 0, 0, 0, sleep}, &pid
+    ));
+
+    if (!sleep) {
+        printf("GO: started with pid %d\n", pid);
+    }
 
     set_variable("exit", ret_str);
+
+    sprintf(ret_str, "%d", pid);
+    set_variable("spi", ret_str);
 
     free(file_name);
     free(ret_str);
@@ -912,11 +975,14 @@ char *if_change_dir(char **input) {
     // get dir
     char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
 
-    // check if dir exists
     #if PROFANBUILD
+    // check if dir exists
     assemble_path(current_directory, input[0], dir);
+    // simplify path
+    fu_simplify_path(dir);
 
-    if (!(c_fs_does_path_exists(dir) && c_fs_get_sector_type(c_fs_path_to_id(dir)) == 3)) {
+    sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
+    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
         printf("CD: directory '%s' does not exist\n", dir);
         free(dir);
         return NULL;
@@ -1018,9 +1084,9 @@ char *if_find(char **input) {
 
     int required_type = 0;
     if (strcmp(input[0], "-f") == 0) {
-        required_type = 2;
+        required_type = 1;
     } else if (strcmp(input[0], "-d") == 0) {
-        required_type = 3;
+        required_type = 2;
     } else {
         printf("FIND: expected -f or -d as first argument, got '%s'\n", input[0]);
         return NULL;
@@ -1032,33 +1098,39 @@ char *if_find(char **input) {
     else
         assemble_path(current_directory, input[1], path);
 
-    if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 3)) {
+    sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
+
+    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
         printf("FIND: directory '%s' does not exist\n", path);
         free(path);
         return NULL;
     }
 
-    int elm_count = c_fs_get_dir_size(path);
+    sid_t *out_ids;
+    char **names;
 
-    uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
-    int *out_types = malloc(elm_count * sizeof(int));
-    c_fs_get_dir_content(path, out_ids);
+    int elm_count = fu_get_dir_content(dir_id, &out_ids, &names);
 
-    for (int i = 0; i < elm_count; i++)
-        out_types[i] = c_fs_get_sector_type(out_ids[i]);
+    if (elm_count == 0) {
+        free(path);
+        return NULL;
+    }
 
     char *output = malloc(1 * sizeof(char));
     output[0] = '\0';
 
-    char *tmp_name = malloc(MAX_PATH_SIZE * sizeof(char));
     char *tmp_path = malloc(MAX_PATH_SIZE * sizeof(char));
 
     for (int i = 0; i < elm_count; i++) {
-        if (out_types[i] == required_type) {
-            c_fs_get_element_name(out_ids[i], tmp_name);
-            assemble_path(path, tmp_name, tmp_path);
-
-            char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4) * sizeof(char));
+        if ((fu_is_dir(out_ids[i]) && required_type == 2) ||
+            (fu_is_file(out_ids[i]) && required_type == 1)
+        ) {
+            if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
+                continue;
+            }
+            assemble_path(path, names[i], tmp_path);
+            fu_simplify_path(tmp_path);
+            char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
             strcpy(tmp, output);
             sprintf(tmp, "%s '%s'", tmp, tmp_path);
             free(output);
@@ -1070,10 +1142,12 @@ char *if_find(char **input) {
     strcpy(copy, output + 1);
     free(output);
 
-    free(tmp_name);
+    for (int i = 0; i < elm_count; i++) {
+        free(names[i]);
+    }
     free(tmp_path);
     free(out_ids);
-    free(out_types);
+    free(names);
     free(path);
 
     return copy;
@@ -1158,6 +1232,7 @@ internal_function_t internal_functions[] = {
     {"split", if_split},
     {"set", if_set_var},
     {"del", if_del_var},
+    {"delfunc", if_del_func},
     {"debug", if_debug},
     {"eval", if_eval},
     {"go", if_go_binfile},
@@ -1344,7 +1419,7 @@ void debug_print(char *function_name, char **function_args) {
         printf(DEBUG_COLOR "'%s') [%d]\n", function_args[i], i + 1);
         return;
     }
-    printf(DEBUG_COLOR ") [0]\n");
+    printf(DEBUG_COLOR ") [0]$$\n");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2329,31 +2404,31 @@ int does_syntax_fail(char *program) {
 #define TAB    15
 
 #if PROFANBUILD
-int get_func_color(char *str) {
+char get_func_color(char *str) {
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (strcmp(str, keywords[i]) == 0) {
-            return c_magenta;
+            return '4';
         }
     }
 
     // functions: dark cyan
     if (get_function(str) != NULL) {
-        return c_dcyan;
+        return 'A';
     }
 
     // pseudos: blue
     if (get_pseudo(str) != NULL) {
-        return c_blue;
+        return '0';
     }
 
     // internal functions: cyan
     if (get_if_function(str) != NULL) {
-        return c_cyan;
+        return '2';
     }
 
     // unknown functions: dark red
-    return c_dred;
+    return 'B';
 }
 
 void olv_print(char *str, int len) {
@@ -2386,7 +2461,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    c_ckprint(tmp, get_func_color(tmp + dec));
+    printf("$%c%s", get_func_color(tmp + dec), tmp);
 
     int from = i;
     for (; i < len; i++) {
@@ -2395,7 +2470,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
             }
 
             // find the closing bracket
@@ -2412,11 +2487,11 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            c_ckprint("!(", (j == len) ? c_red : c_green);
+            printf("$%c!(", (j == len) ? '3' : '1');
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                c_ckprint(")", c_green);
+                printf("$1)");
             }
 
             i = j;
@@ -2428,10 +2503,10 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
-            c_ckprint(";", c_grey);
+            printf("$6;$$");
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
@@ -2443,7 +2518,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
             is_var = 1;
@@ -2454,7 +2529,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                c_ckprint(tmp, is_var ? c_yellow : c_white);
+                printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
             is_var = 0;
@@ -2464,7 +2539,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        c_ckprint(tmp, is_var ? c_yellow : c_white);
+        printf("$%c%s", is_var ? '5' : '$', tmp);
     }
 
     free(tmp);
@@ -2489,6 +2564,8 @@ char *olv_autocomplete(char *str, int len, char **other) {
     }
 
     char *ret = NULL;
+    char *tmp;
+
     int suggest = 0;
     int is_var = 0;
     int dec = 0;
@@ -2539,7 +2616,19 @@ char *olv_autocomplete(char *str, int len, char **other) {
         char *inp_end = malloc(MAX_PATH_SIZE * sizeof(char));
 
         memcpy(inp_end, str + i + 1, len - (i + 1));
-        inp_end[len - (i + 1)] = '\0';
+        len = len - (i + 1);
+        inp_end[len] = '\0';
+
+        // find the last space
+        for (int j = len - 1; j >= 0; j--) {
+            if (inp_end[j] != ' ') continue;
+            // copy to the beginning
+            memcpy(inp_end, inp_end + j + 1, len - (j + 1));
+            len = len - (j + 1);
+            inp_end[len] = '\0';
+            break;
+        }
+
         assemble_path(current_directory, inp_end, path);
         if (path[strlen(path) - 1] != '/'
             && (inp_end[strlen(inp_end) - 1] == '/'
@@ -2560,34 +2649,37 @@ char *olv_autocomplete(char *str, int len, char **other) {
         dec = strlen(inp_end);
 
         // check if the path is valid
-        if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 3)) {
-            free(inp_end);
-            free(path);
+        sid_t dir = fu_path_to_sid(ROOT_SID, path);
+        free(path);
 
+        if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
+            free(inp_end);
             return NULL;
         }
 
         // get the directory content
-        int elm_count = c_fs_get_dir_size(path);
+        char **names;
+        sid_t *out_ids;
 
-        uint32_t *out_ids = malloc(elm_count * sizeof(uint32_t));
-        char *name = malloc(MAX_PATH_SIZE * sizeof(char));
-
-        c_fs_get_dir_content(path, out_ids);
-        free(path);
+        int elm_count = fu_get_dir_content(dir, &out_ids, &names);
 
         for (int j = 0; j < elm_count; j++) {
-            c_fs_get_element_name(out_ids[j], name);
-            if (strncmp(name, inp_end, dec) == 0) {
-                if (c_fs_get_sector_type(out_ids[j]) == 3)
-                    strcat(name, "/");
-                suggest = add_to_suggest(other, suggest, name);
+            if (strncmp(names[j], inp_end, dec) == 0) {
+                tmp = malloc((strlen(names[j]) + 2) * sizeof(char));
+                strcpy(tmp, names[j]);
+                if (fu_is_dir(out_ids[j]))
+                    strcat(tmp, "/");
+                suggest = add_to_suggest(other, suggest, tmp);
+                free(tmp);
             }
         }
 
+        for (int j = 0; j < elm_count; j++) {
+            free(names[j]);
+        }
         free(inp_end);
         free(out_ids);
-        free(name);
+        free(names);
 
         if (suggest == 1) {
             ret = malloc(strlen(other[0]) + 1);
@@ -2601,7 +2693,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
         return NULL;
     }
 
-    char *tmp = malloc((len + 1) * sizeof(char));
+    tmp = malloc((len + 1) * sizeof(char));
 
     // variables
     if (in_var) {
@@ -2679,7 +2771,9 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     history_end++;
 
-    int old_cursor = c_get_cursor_offset();
+    // save the current cursor position and show it
+    printf("\033[s\033[?25l");
+
     int sc, last_sc, last_sc_sgt = 0;
 
     int buffer_actual_size = strlen(buffer);
@@ -2687,20 +2781,17 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        c_set_cursor_offset(old_cursor + buffer_index * 2);
     }
+
+    fflush(stdout);
 
     int key_ticks = 0;
     int shift = 0;
-
-    int need_print = 0;
 
     int history_index = history_end;
 
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
     int ret_val = 0;
-
-    c_cursor_blink(1);
 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
@@ -2766,7 +2857,6 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
             } else {
-                c_set_cursor_offset(old_cursor);
                 printf("%*s", buffer_actual_size, " ");
                 strcpy(buffer, history[history_index]);
                 buffer_actual_size = strlen(buffer);
@@ -2779,8 +2869,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
-            c_set_cursor_offset(old_cursor);
-            printf("%*s", buffer_actual_size, " ");
+            printf("\033[u%*s", buffer_actual_size, " ");
             if (history[history_index] == NULL || history_index == history_end) {
                 buffer[0] = '\0';
                 buffer_actual_size = 0;
@@ -2837,18 +2926,17 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
         else continue;
 
-        c_set_cursor_offset(old_cursor);
+        printf("\033[?25h\033[u");
         olv_print(buffer, buffer_actual_size);
-        c_kprint(" ");
-        c_set_cursor_offset(old_cursor + buffer_index * 2);
+        printf(" $$\033[u\033[%dC\033[?25l", buffer_index);
+        fflush(stdout);
     }
 
     free(other_suggests);
 
     buffer[buffer_actual_size] = '\0';
 
-    c_cursor_blink(0);
-    c_kprint("\n");
+    printf("\033[?25h\n");
 
     return ret_val;
 
@@ -2870,6 +2958,7 @@ void start_shell() {
         line[0] = '\0';
         do {
             printf(FIRST_PROMPT, current_directory);
+            fflush(stdout);
         } while(local_input(line, INPUT_SIZE, history, history_index));
 
         if (strncmp(line, "exit", 4) == 0) {
@@ -2883,6 +2972,7 @@ void start_shell() {
             line[len] = '\0';
             do {
                 printf(OTHER_PROMPT);
+                fflush(stdout);
             } while(local_input(line + len, INPUT_SIZE - len, history, history_index));
         }
 
@@ -2919,16 +3009,18 @@ void execute_file(char *file) {
     char *path = malloc((strlen(file) + strlen(current_directory) + 2) * sizeof(char));
     assemble_path(current_directory, file, path);
 
-    if (!(c_fs_does_path_exists(path) && c_fs_get_sector_type(c_fs_path_to_id(path)) == 2)) {
+    sid_t id = fu_path_to_sid(ROOT_SID, path);
+    if (IS_NULL_SID(id) || !fu_is_file(id)) {
         printf("file '%s' does not exist\n", path);
         free(path);
         return;
     }
 
-    int file_size = c_fs_get_file_size(path);
+    int file_size = fu_get_file_size(id);
     char *contents = malloc((file_size + 1) * sizeof(char));
+    contents[file_size] = '\0';
 
-    c_fs_read_file(path, (uint8_t *) contents);
+    fu_file_read(id, (uint8_t *) contents, 0, file_size);
 
     execute_program(contents);
 
@@ -2988,6 +3080,7 @@ int main(int argc, char **argv) {
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
     set_variable("exit", "0");
+    set_variable("spi",  "0");
     set_sync_variable("path", current_directory);
 
     // init pseudo commands

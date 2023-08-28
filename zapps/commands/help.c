@@ -1,19 +1,24 @@
-#include <syscall.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-char file[] = "/zada/common/shell_help.txt";
+#include <filesys.h>
+#include <syscall.h>
+
+#define help_path "/zada/common/shell_help.txt"
 
 int main(void) {
-    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
-        char *char_content = c_fs_declare_read_array(file);
-        c_fs_read_file(file, (uint8_t *) char_content);
+    sid_t file = fu_path_to_sid(ROOT_SID, help_path);
 
-        c_ckprint(char_content, c_magenta);
+    if (!IS_NULL_SID(file) && fu_is_file(file)) {
+        int size = fu_get_file_size(file);
+        char *char_content = malloc(size + 2);
+
+        fu_file_read(file, char_content, 0, size);
+        puts(char_content);
 
         free(char_content);
         return 0;
     }
-    printf("$3%s$B file not found\n", file);
+    printf("$3%s$B file not found$$\n", help_path);
     return 1;
 }

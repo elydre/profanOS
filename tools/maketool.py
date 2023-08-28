@@ -5,7 +5,7 @@ import threading
 
 # SETUP
 
-SRC_DIRECTORY = ["boot", "kernel", "drivers", "cpu", "kpart", "kpart/gui"]
+SRC_DIRECTORY = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
 INCLUDE_DIR = ["include/kernel", "include/zlibs"]
 
 ZAPPS_DIR = "zapps"
@@ -29,10 +29,10 @@ CC   = "gcc"
 CPPC = "g++"
 
 CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
-KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel -I include/zlibs"
+KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 
-KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/kernel/kernel.map"
+KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/make/kernel.map"
 
 QEMU_SPL = "qemu-system-i386"
 QEMU_KVM = "kvm"
@@ -157,6 +157,10 @@ def elf_image():
 
     while total: pass # on a besoin d'attendre que tout soit fini
 
+    if not os.path.exists(f"{OUT_DIR}/make"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/make' directory")
+        os.makedirs(f"{OUT_DIR}/make")
+
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
         print_and_exec(f"ld {KERN_LINK} {in_files} -o profanOS.elf")
@@ -192,8 +196,15 @@ def build_app_lib():
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zlibs' directory")
         os.makedirs(f"{OUT_DIR}/zlibs")
 
+    skip_count = 0
+
     for file in build_list:
         if sum(x == "/" for x in file) <= 1:
+            continue
+
+        if file.split("/")[-2].startswith("_"):
+            skip_count += 1
+            build_list = [x for x in build_list if x != file]
             continue
 
         dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
@@ -206,7 +217,7 @@ def build_app_lib():
 
     # check if zapps need to be rebuild
     updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (total: {len(build_list)})")
+    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (active: {len(build_list)}, skipped: {skip_count}, total: {len(build_list) + skip_count})")
     build_list = updated_list
 
     if not build_list: return
@@ -226,10 +237,10 @@ def build_app_lib():
     while total : pass # on attends que tout soit fini
 
 
-def make_iso(force = False, diskiso = False):
+def make_iso(force = False, more_option = False):
     elf_image()
 
-    if diskiso: gen_disk()
+    gen_disk()
 
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
@@ -238,9 +249,10 @@ def make_iso(force = False, diskiso = False):
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
 
-    if diskiso:
-        print_and_exec(f"echo TITE | cat HDD.bin - > {OUT_DIR}/isodir/boot/HDD.bin")
-        print_and_exec(f"cp boot/diskiso.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
+    print_and_exec(f"echo TITE | cat initrd.bin - > {OUT_DIR}/isodir/boot/initrd.bin")
+
+    if more_option:
+        print_and_exec(f"cp boot/full.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
     else:
         print_and_exec(f"cp boot/classic.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
 
@@ -261,7 +273,7 @@ def get_kernel_version(print_info = True):
 def write_build_logs():
     cprint(COLOR_EXEC, "writing build logs...")
 
-    text = "- HDD.bin BUILD LOGS -\n"
+    text = "- initrd.bin BUILD LOGS -\n"
     text += "UTC build time: " + datetime.datetime.now(datetime.timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
@@ -275,13 +287,30 @@ def write_build_logs():
         f.write(text)
 
 
+def add_src_to_disk():
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
+    for dir_name in [ZAPPS_DIR] + [ZLIBS_DIR]:
+        if not os.path.exists(dir_name): continue
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/include")
+    for dir_name in INCLUDE_DIR:
+        if not os.path.exists(dir_name): continue
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/include")
+
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/kernel")
+    for dir_name in SRC_DIRECTORY:
+        if not os.path.exists(dir_name): continue
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/kernel")
+
+
 def gen_disk(force=False, with_src=False):
 
-    if file_exists("HDD.bin") and not force: return
+    if file_exists("initrd.bin") and not force: return
 
     build_app_lib()
 
-    cprint(COLOR_INFO, "generating HDD.bin...")
+    cprint(COLOR_INFO, "generating initrd.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")
 
     for dir in HDD_MAP:
@@ -298,10 +327,7 @@ def gen_disk(force=False, with_src=False):
             print_and_exec(f"cp -r {dir_name}/* {OUT_DIR}/disk/{dir}")
 
     if with_src:
-        print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
-        for dir_name in SRC_DIRECTORY + [ZAPPS_DIR] + [ZLIBS_DIR] + INCLUDE_DIR:
-            if not os.path.exists(dir_name): continue
-            print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+        add_src_to_disk()
 
     try:
         for dossier in os.listdir(f"{OUT_DIR}/disk/bin/projets"):
@@ -309,7 +335,7 @@ def gen_disk(force=False, with_src=False):
             print_and_exec(f"cp zapps/projets/{dossier}/*.bin {OUT_DIR}/disk/bin/projets/")
             print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/projets/{dossier}/ zapps/projets/{dossier}/*.bin")
     except Exception as e:
-        cprint(COLOR_EROR, f"Error while copying projects: {e}")
+        cprint(COLOR_EROR, f"Error while building projets {e}")
 
     if HBL_FILE: write_build_logs()
 
@@ -317,14 +343,14 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"cp {TOOLS_DIR}/tcclib.c {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp {TOOLS_DIR}/zlink.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
-    print_and_exec(f"cp {OUT_DIR}/kernel/kernel.map {OUT_DIR}/disk/sys/ || true")
+    print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ || true")
 
-    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
+    if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
+        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
 
-    cprint(COLOR_INFO, "building HDD.bin...")
+    cprint(COLOR_INFO, "building initrd.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 
@@ -339,34 +365,19 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
 
     cprint(COLOR_INFO, "starting qemu...")
 
-    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d {qemu_args}")
-    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a {qemu_args}")
-
-def extract_disk():
-    if not file_exists("HDD.bin"):
-        cprint(COLOR_EROR, "HDD.bin not found")
-        return
-
-    if not file_exists(f"{OUT_DIR}/make/makefsys.bin") or file1_newer(f"{TOOLS_DIR}/makefsys.c", f"{OUT_DIR}/make/makefsys.bin"):
-        cprint(COLOR_INFO, "building makefsys...")
-        print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys.c")
-
-    cprint(COLOR_INFO, "extracting HDD.bin...")
-    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin 42")
-
+    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=initrd.bin,format=raw -boot order=d {qemu_args}")
+    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=initrd.bin,format=raw -boot order=a {qemu_args}")
 
 def make_help():
     aide = (
-        ("make [info]", "show this help message"),
+        ("make [help]", "show this help message"),
 
         ("make elf",        "build the kernel in elf format"),
         ("make iso",        "build the iso image of profanOS"),
-        ("make miso",       "build the iso with 'No ATA' option"),
+        ("make miso",       "build the iso with more grub options"),
 
         ("make disk",       "build classic disk image"),
-        ("make srcdisk",    "build disk image with source code"),
-        ("make xtrdisk",    "extract the disk image"),
+        ("make rdisk",    "build disk image with source code"),
 
         ("make addons",     "download all addons in disk source"),
 
@@ -384,7 +395,7 @@ def make_help():
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")
     cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
-    cprint(COLOR_INFO, " MAKE ADDONS SRCDISK MISO to build the disk with all options")
+    cprint(COLOR_INFO, " MAKE ADDONS RDISK MISO to build the disk with all options")
     cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
 
@@ -392,8 +403,7 @@ assos = {
     "elf": elf_image,
     "help": make_help,
     "disk": lambda: gen_disk(True),
-    "srcdisk": lambda: gen_disk(True, True),
-    "xtrdisk": lambda: extract_disk(),
+    "rdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
     "miso": lambda: make_iso(True, True),
     "run": lambda: qemu_run(True),

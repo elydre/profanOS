@@ -23,12 +23,14 @@ jobs:
         echo "PROFAN_HDD=disk-$VERSION.bin" >> $GITHUB_ENV
         echo "PROFAN_ISO=profanOS-$VERSION.iso" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
-        make addons srcdisk miso
-        cd out/disk && zip -r ../../disk-build.zip * && cd ../..
-        cp HDD.bin disk-$VERSION.bin
-        cp HDD.bin profanOS-disk.bin
+        make addons rdisk iso
+        cd out/disk && zip -r ../../initrd-build.zip * && cd ../..
+        cp initrd.bin disk-$VERSION.bin
+        cp initrd.bin profanOS-initrd.bin
         cp profanOS.iso profanOS-$VERSION.iso
         cp profanOS.elf profanOS-kernel.elf
+        make miso
+        cp profanOS.iso profanOS-fullgrub.iso
 
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
@@ -62,6 +64,7 @@ jobs:
         repo_token: "${{ secrets.GIT_TOKEN }}"
         files: |
           ${{ env.PROFAN_ISO }}
+          profanOS-fullgrub.iso
           profanOS-kernel.elf
-          profanOS-disk.bin
-          disk-build.zip
+          profanOS-initrd.bin
+          initrd-build.zip

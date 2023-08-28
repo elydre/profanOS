@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <filesys.h>
 #include <profan.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,62 +7,65 @@
 
 int main(int argc, char **argv) {
     if (argc != 4) {
-        printf("$BUsage: $3xec <input> <output>\n");
-        return 0;
+        printf("$BUsage: $3xec <input> <output>$$\n");
+        return 1;
     }
 
     char *input_file = malloc(256);
     assemble_path(argv[1], argv[2], input_file);
 
+    sid_t input_sid = fu_path_to_sid(ROOT_SID, input_file);
+
     // check if the file exists
-    if (!c_fs_does_path_exists(input_file)) {
-        printf("$Bfile $3%s$B not found\n", input_file);
+    if (IS_NULL_SID(input_sid)) {
+        printf("$Bfile $3%s$B not found$$\n", input_file);
         free(input_file);
-        return 0;
+        return 1;
     }
 
     // read the file
-    uint32_t size = c_fs_get_file_size(input_file);
-    uint8_t *data = malloc(size + 1);
-    c_fs_read_file(input_file, data);
+    uint32_t size = fu_get_file_size(input_sid);
 
     if (size < 0x1000) {
-        printf("$Bfile $3%s$B is too small\n", input_file);
+        printf("$Bfile $3%s$B is too small$$\n", input_file);
+        free(input_file);
+        return 1;
+    }
+
+    uint8_t *data = malloc(size + 1);
+    fu_file_read(input_sid, data, 0, size);
+    data[size] = '\0';
+
+    char *output_file = malloc(256);
+    assemble_path(argv[1], argv[3], output_file);
+
+    sid_t output_sid = fu_path_to_sid(ROOT_SID, output_file);
+
+    if (!IS_NULL_SID(output_sid)) {
+        fu_set_file_size(output_sid, size - 0x1000);
+        fu_file_write(output_sid, data + 0x1000, 0, size - 0x1000);
+        free(output_file);
         free(input_file);
         free(data);
         return 0;
     }
 
-    char *output_file = malloc(256);
-    assemble_path(argv[1], argv[3], output_file);
-
-    char *parent_dir = malloc(strlen(output_file) + 1);
-    char *file_name = malloc(strlen(output_file) + 1);
-
-    // isolate parent directory and file name
-    int i = strlen(output_file) - 1;
-    for (; output_file[i] != '/'; i--);
-    strncpy(parent_dir, output_file, i);
-    parent_dir[i] = '\0';
-    strcpy(file_name, output_file + i + 1);
-
-    // check if path exists and is directory
-    if (c_fs_does_path_exists(output_file) && c_fs_get_sector_type(c_fs_path_to_id(output_file)) == 3) {
-        printf("$3%s$B is a directory\n", output_file);
-    } else {
-        if (!c_fs_does_path_exists(output_file)) {
-            c_fs_make_file(parent_dir, file_name);
-        }
-        c_fs_write_in_file(output_file, data + 0x1000, size - 0x1000);
+    // create the file
+    output_sid = fu_file_create(0, output_file);
+    if (IS_NULL_SID(output_sid)) {
+        printf("$Bfailed to create file $3%s$$\n", output_file);
+        free(output_file);
+        free(input_file);
+        free(data);
+        return 1;
     }
+
+    // write the file
+    fu_set_file_size(output_sid, size - 0x1000);
+    fu_file_write(output_sid, data + 0x1000, 0, size - 0x1000);
 
     free(output_file);
     free(input_file);
-
-    free(parent_dir);
-    free(file_name);
-
     free(data);
-
     return 0;
 }

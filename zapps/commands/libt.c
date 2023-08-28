@@ -186,7 +186,7 @@ int main(void) {
 
     printf("Testing unistd.h: $1OK$7\n");
 
-    printf("End of the test for now !\n");
+    printf("$$End of the test for now !\n");
 
     return 0;
 }

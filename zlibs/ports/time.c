@@ -12,13 +12,10 @@ char     **tzname;
 void init_func();
 
 int main() {
-    init_func();
     return 0;
 }
 
-void init_func() {
-    c_kprint("Init of the time lib !\n");
-}
+void init_func() {; }
 
 char *asctime(const tm_t *a) {
     puts("Asctime is not implemented yet, WHY DO YOU USE IT ?\n");

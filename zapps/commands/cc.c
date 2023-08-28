@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <syscall.h>
+#include <filesys.h>
 #include <profan.h>
 
 
@@ -23,15 +24,8 @@
 uint32_t g_rand_val;
 
 int does_file_exist(char *file) {
-    // check if path exists
-    if (!c_fs_does_path_exists(file))
-        return 0;
-
-    // check if path is a file
-    if (c_fs_get_sector_type(c_fs_path_to_id(file)) != 2)
-        return 0;
-
-    return 1;
+    sid_t sid = fu_path_to_sid(ROOT_SID, file);
+    return !IS_NULL_SID(sid) && fu_is_file(sid);
 }
 
 void new_rand_name(char *name) {
@@ -45,7 +39,7 @@ void new_rand_name(char *name) {
 }
 
 int execute_command(char *path, char *args) {
-    printf("$6%s %s\n", path, args);
+    printf("$6%s %s$$\n", path, args);
     // generate argv
 
     int argc = 3;

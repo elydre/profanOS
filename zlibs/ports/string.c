@@ -17,9 +17,7 @@ int main() {
     return 0;
 }
 
-void init_func() {
-    c_kprint("Init of the string lib !\n");
-}
+void init_func() {; }
 
 char *basename(const char *path) {
     register const char *s;

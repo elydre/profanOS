@@ -1,6 +1,19 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+/*****************************
+ *                          *
+ *       kernel types       *
+ *                          *
+*****************************/
+
+#ifndef KTYPE_H
+#define KTYPE_H
+
+#ifndef FS_SECTOR_SIZE
+#define FS_SECTOR_SIZE 256
+#endif
+
 typedef struct {
     int seconds;
     int minutes;
@@ -19,11 +32,62 @@ typedef struct {
 #define NULL 0
 #endif
 
-//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-// Math (from stdlib)
-//
-//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+typedef signed char        int8_t;
+typedef short              int16_t;
+typedef int                int32_t;
+typedef long long          int64_t;
+typedef unsigned char      uint8_t;
+typedef unsigned short     uint16_t;
+typedef unsigned int       uint32_t;
+typedef unsigned long long uint64_t;
+
+typedef struct {
+    uint8_t data[FS_SECTOR_SIZE];  // sector data
+} sector_t;
+
+typedef struct {
+    sector_t *sectors;          // first sector pointer
+    uint32_t size;              // sector count
+
+    uint8_t *used;              // array sectors (bool)
+    uint32_t *free;             // array of free sector ids
+    uint32_t used_count;        // used sector count
+} vdisk_t;
+
+typedef struct {
+    uint32_t device;            // device id
+    uint32_t sector;            // sector id
+} sid_t;
+
+typedef struct {
+    vdisk_t **vdisk;            // list mounted virtual disks
+    uint32_t vdisk_count;       // virtual disk count
+    uint32_t max_disks;         // maximum virtual disk count
+} filesys_t;
+
+typedef struct {
+    char *path;     // path to file
+    sid_t sid;      // sector id (can be null)
+    
+    int argc;       // argument count
+    char **argv;    // argument list
+
+    uint32_t vbase; // virtual base address
+    uint32_t vcunt; // virtual count
+
+    uint32_t stack; // stack size
+
+    uint8_t sleep; // sleep after start
+} runtime_args_t;
+
+#endif
+
+/*****************************
+ *                          *
+ *        libs types        *
+ *                          *
+*****************************/
+
 typedef struct _div_t {
     int quot;
     int rem;
@@ -58,15 +122,6 @@ typedef struct _Mbstatet
 } _Mbstatet;
 
 typedef _Mbstatet mbstate_t;
-
-typedef signed char        int8_t;
-typedef short              int16_t;
-typedef int                int32_t;
-typedef long long          int64_t;
-typedef unsigned char      uint8_t;
-typedef unsigned short     uint16_t;
-typedef unsigned int       uint32_t;
-typedef unsigned long long uint64_t;
 
 typedef signed char        int_least8_t;
 typedef short              int_least16_t;
@@ -110,15 +165,11 @@ typedef size_t rsize_t;
 
 typedef struct FILE {
     char *filename;
-    char *path;
-    char *name;
     char *mode;
-    char *buffer;
-    unsigned int buffer_size;
-    unsigned int buffer_pos;
-    int eof;
-    int error;
-    int is_temp;
+
+    int   file_pos;
+    int   type;
+    sid_t sid;
 } FILE;
 
 typedef struct fpos_t {

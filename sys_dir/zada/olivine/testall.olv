@@ -126,3 +126,6 @@ IF !(eval !(testargv 5) = 10);
 END; ELSE
     echo function argv failed
 END
+
+delfunc testargc
+delfunc testargv

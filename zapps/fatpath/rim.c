@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <syscall.h>
+#include <filesys.h>
 #include <profan.h>
 
 #include <i_vgui.h>
@@ -80,14 +81,17 @@ void set_title(char *path) {
 }
 
 void load_file(char *path) {
-    int file_size = c_fs_get_file_size(path);
+    sid_t file = fu_path_to_sid(ROOT_SID, path);
+    int file_size = fu_get_file_size(file);
+    int read_size = file_size;
+
     g_data_size = file_size + 1;
     file_size += 1024 - (file_size % 1024);
     // printf("file size: %d\n", file_size);
 
     g_data = realloc(g_data, file_size);
 
-    c_fs_read_file(path, (uint8_t *) g_data);
+    fu_file_read(file, g_data, 0, read_size);
 
     for (int i = 0; i < file_size; i++) {
         if (g_data[i] != '\n') continue;
@@ -109,7 +113,10 @@ void save_file(char *path) {
         if (data_copy[i] == '\0') data_copy[i] = '\n';
     }
 
-    c_fs_write_in_file(path, (uint8_t *) data_copy, g_data_size - 1);
+    sid_t file = fu_path_to_sid(ROOT_SID, path);
+    fu_set_file_size(file, g_data_size - 1);
+    fu_file_write(file, data_copy, 0, g_data_size - 1);
+
     free(data_copy);
 }
 
@@ -410,8 +417,10 @@ int main(int argc, char **argv) {
         file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
         assemble_path(argv[1], argv[2], file);
 
-        if (!(c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2)) {
-            printf("$3%s$B file not found\n", file);
+        sid_t elm = fu_path_to_sid(ROOT_SID, file);
+
+        if (IS_NULL_SID(elm) || !fu_is_file(elm)) {
+            printf("$3%s$B file not found$$\n", file);
             free(file);
             return 1;
         }

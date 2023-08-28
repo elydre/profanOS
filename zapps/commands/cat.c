@@ -1,31 +1,50 @@
-#include <syscall.h>
-#include <profan.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
+#include <syscall.h>
+#include <filesys.h>
+#include <profan.h>
+
+void make_printable(char *str, int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        if (str[i] == '\0')
+            str[i] = 176;
+    }
+    if (str[size - 1] == '\n') {
+        str[size] = '\0';
+        return;
+    }
+    str[size] = '\n';
+    str[size + 1] = '\0';
+}
 
 int main(int argc, char **argv) {
     if (argc < 3) {
-        printf("$BUsage: $3cat <file>\n");
+        printf("$BUsage: $3cat <path>$$\n");
         return 1;
     }
 
-    char *file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
-    assemble_path(argv[1], argv[2], file);
+    char *path = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
+    assemble_path(argv[1], argv[2], path);
 
-    if (c_fs_does_path_exists(file) && c_fs_get_sector_type(c_fs_path_to_id(file)) == 2) {
-        char *char_content = c_fs_declare_read_array(file);
-        c_fs_read_file(file, (uint8_t *) char_content);
+    sid_t file = fu_path_to_sid(ROOT_SID, path);
 
-        c_ckprint(char_content, c_magenta);
-        c_kprint("\n");
+    if (!IS_NULL_SID(file) && fu_is_file(file)) {
+        int size = fu_get_file_size(file);
+        char *char_content = malloc(size + 2);
+
+        fu_file_read(file, char_content, 0, size);
+        make_printable(char_content, size);
+
+        puts(char_content);
 
         free(char_content);
-        free(file);
+        free(path);
         return 0;
     }
-    printf("$3%s$B file not found\n", file);
-    free(file);
+    printf("$3%s$B file not found$$\n", path);
+    free(path);
     return 1;
 }

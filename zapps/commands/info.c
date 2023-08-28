@@ -1,9 +1,11 @@
-#include <syscall.h>
-#include <i_time.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#define pl_and_pf(f, ...) print_logo_line(); printf(f, __VA_ARGS__)
+#include <syscall.h>
+#include <filesys.h>
+#include <i_time.h>
+
+#define pl_and_pf(...) print_logo_line(); printf(__VA_ARGS__)
 
 #define LOGO_LINES 9
 #define INFO_LINES 9
@@ -36,6 +38,22 @@ void print_logo_line() {
     curent_line++;
 }
 
+void print_fs_info() {
+    print_logo_line();
+    printf("$4fs vdisk:   $2");
+
+    uint32_t *info = fu_get_vdisk_info();
+
+    uint32_t dcount = info[0];
+    for (uint32_t i = 0; i < dcount; i++) {
+        printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] * FS_SECTOR_SIZE / 1024);
+        if (i != dcount - 1) printf("$7, $2");
+    }
+    printf("$7\n");
+
+    free(info);
+}
+
 int main(void) {
     printf("\n $2-$A Welcome to the profan Operating System $2-\n\n");
 
@@ -56,6 +74,7 @@ int main(void) {
         time.hours, time.minutes, time.seconds,
         time.day_of_month, time.month, time.year
     );
+    print_fs_info();
 
     pl_and_pf("$4work time:  $2%gs\n", c_timer_get_ms() / 1000.0);
     pl_and_pf("$4used mem:   $2%d.%dMo\n", used_mem / 1024, used_mem % 1024);
@@ -66,16 +85,11 @@ int main(void) {
     );
 
     pl_and_pf("$4phys mem:   $2%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
-    pl_and_pf("$4disk size:  $2%gMo\n", ((double) c_fs_get_sector_count()) / 2048);
-
-    pl_and_pf("$4ramdisk:    $2%d%% $7($2%gMo$7)\n",
-        (int) (100 * ((double) c_ramdisk_get_info(1)) / c_ramdisk_get_info(0)),
-        c_ramdisk_get_info(0) / 2048.0
-    );
 
     pl_and_pf("$4screen:     $2%dx$2%d\n", c_vesa_get_width(), c_vesa_get_height());
+    pl_and_pf("\n");
 
-    printf("\n");
+    printf("$$\n");
 
     return 0;
 }
