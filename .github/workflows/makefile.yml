@@ -25,8 +25,8 @@ jobs:
         echo "PROFAN_VER=profanOS v$VERSION" >> $GITHUB_ENV
         make addons srcdisk iso
         cd out/disk && zip -r ../../initrd-build.zip * && cd ../..
-        cp HDD.bin disk-$VERSION.bin
-        cp HDD.bin profanOS-initrd.bin
+        cp initrd.bin disk-$VERSION.bin
+        cp initrd.bin profanOS-initrd.bin
         cp profanOS.iso profanOS-$VERSION.iso
         cp profanOS.elf profanOS-kernel.elf
         make miso

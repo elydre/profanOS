@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
     fs_print_status(filesys);
 
-    save_vdisk(d0, "HDD.bin");
+    save_vdisk(d0, "initrd.bin");
 
     fs_destroy(filesys);
     return 0;

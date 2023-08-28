@@ -157,6 +157,10 @@ def elf_image():
 
     while total: pass # on a besoin d'attendre que tout soit fini
 
+    if not os.path.exists(f"{OUT_DIR}/make"):
+        cprint(COLOR_INFO, f"creating '{OUT_DIR}/make' directory")
+        os.makedirs(f"{OUT_DIR}/make")
+
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
         print_and_exec(f"ld {KERN_LINK} {in_files} -o profanOS.elf")
@@ -245,7 +249,7 @@ def make_iso(force = False, more_option = False):
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
 
-    print_and_exec(f"echo TITE | cat HDD.bin - > {OUT_DIR}/isodir/boot/HDD.bin")
+    print_and_exec(f"echo TITE | cat initrd.bin - > {OUT_DIR}/isodir/boot/initrd.bin")
 
     if more_option:
         print_and_exec(f"cp boot/full.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
@@ -269,7 +273,7 @@ def get_kernel_version(print_info = True):
 def write_build_logs():
     cprint(COLOR_EXEC, "writing build logs...")
 
-    text = "- HDD.bin BUILD LOGS -\n"
+    text = "- initrd.bin BUILD LOGS -\n"
     text += "UTC build time: " + datetime.datetime.now(datetime.timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
@@ -302,11 +306,11 @@ def add_src_to_disk():
 
 def gen_disk(force=False, with_src=False):
 
-    if file_exists("HDD.bin") and not force: return
+    if file_exists("initrd.bin") and not force: return
 
     build_app_lib()
 
-    cprint(COLOR_INFO, "generating HDD.bin...")
+    cprint(COLOR_INFO, "generating initrd.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")
 
     for dir in HDD_MAP:
@@ -346,7 +350,7 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
         print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
 
-    cprint(COLOR_INFO, "building HDD.bin...")
+    cprint(COLOR_INFO, "building initrd.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
 
 
@@ -361,12 +365,12 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
 
     cprint(COLOR_INFO, "starting qemu...")
 
-    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=HDD.bin,format=raw -boot order=d {qemu_args}")
-    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=HDD.bin,format=raw -boot order=a {qemu_args}")
+    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=initrd.bin,format=raw -boot order=d {qemu_args}")
+    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=initrd.bin,format=raw -boot order=a {qemu_args}")
 
 def extract_disk():
-    if not file_exists("HDD.bin"):
-        cprint(COLOR_EROR, "HDD.bin not found")
+    if not file_exists("initrd.bin"):
+        cprint(COLOR_EROR, "initrd.bin not found")
         return
 
     if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
@@ -374,7 +378,7 @@ def extract_disk():
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
         print_and_exec(f"gcc -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
 
-    cprint(COLOR_INFO, "extracting HDD.bin...")
+    cprint(COLOR_INFO, "extracting initrd.bin...")
     print_and_exec(f"./{OUT_DIR}/make/makefsys.bin 42")
 
 

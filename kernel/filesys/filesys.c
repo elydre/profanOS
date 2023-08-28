@@ -60,7 +60,7 @@ vdisk_t *initrd_to_vdisk() {
     uint32_t initrd_size = diskiso_get_size();
 
     if (initrd_size == 0) {
-        sys_error("initrd is empty/missing\n");
+        sys_error("initrd is empty/missing");
         return NULL;
     }
 
