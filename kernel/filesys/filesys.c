@@ -7,13 +7,14 @@
 
 filesys_t *fs_create() {
     filesys_t *filesys = malloc(sizeof(filesys_t));
-    filesys->vdisk = calloc(sizeof(vdisk_t *) * FS_DISKS);
+    filesys->max_disks = FS_MAX_DISKS;
+    filesys->vdisk = calloc(sizeof(vdisk_t *) * filesys->max_disks);
     filesys->vdisk_count = 0;
     return filesys;
 }
 
 void fs_destroy(filesys_t *filesys) {
-    for (uint32_t i = 0; i < FS_DISKS; i++) {
+    for (uint32_t i = 0; i < filesys->max_disks; i++) {
         if (filesys->vdisk[i] == NULL) continue;
         vdisk_destroy(filesys->vdisk[i]);
     }
@@ -22,7 +23,7 @@ void fs_destroy(filesys_t *filesys) {
 }
 
 int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
-    if (did > FS_DISKS) {
+    if (did > filesys->max_disks) {
         sys_error("disk id is too big");
         return -1;
     }
@@ -38,7 +39,7 @@ int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
 void fs_print_status(filesys_t *filesys) {
     kprintf("\n====================\n");
     kprintf("vdisk_count: %d\n", filesys->vdisk_count);
-    for (uint32_t i = 0; i < FS_DISKS; i++) {
+    for (uint32_t i = 0; i < filesys->max_disks; i++) {
         if (filesys->vdisk[i] == NULL) continue;
         kprintf("vdisk[%d] size: %d, used: %d\n", i,
             filesys->vdisk[i]->size,

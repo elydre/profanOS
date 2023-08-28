@@ -10,6 +10,7 @@
 #define KERNEL_PRIORITY 5           // default kernel process priority
 #define RAMDISK_SECTOR  2048        // ramdisk sector count
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
+#define FS_MAX_DISKS    256         // max disk count
 #define RUN_DEFAULT     "/bin/tools/init.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second

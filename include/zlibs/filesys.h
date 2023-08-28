@@ -57,6 +57,7 @@
 #define fu_fctf_get_addr ((uint32_t (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 14))
 #define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 16))
 #define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 17))
+#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 18))
 #endif
 
 #ifndef DEVIO_LIB_C

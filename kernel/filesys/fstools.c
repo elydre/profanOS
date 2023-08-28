@@ -42,7 +42,7 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
 
 vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id) {
     device_id -= 1;
-    if (device_id >= FS_DISKS || fs->vdisk[device_id] == NULL) {
+    if (device_id >= fs->max_disks || fs->vdisk[device_id] == NULL) {
         return NULL;
     }
     return fs->vdisk[device_id];

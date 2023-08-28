@@ -16,8 +16,6 @@
 #define NULL_SID ((sid_t){0, 0})
 #define ROOT_SID ((sid_t){1, 0})
 
-#define FS_DISKS 256
-
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif

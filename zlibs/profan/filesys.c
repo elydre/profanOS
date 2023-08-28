@@ -702,3 +702,33 @@ void fu_simplify_path(char *path) {
 
     free(tmp);
 }
+
+/**************************************************
+ *                                               *
+ *             File System Get Info              *
+ *                                               *
+**************************************************/
+
+uint32_t *fu_get_vdisk_info() {
+    // array:
+    // [0] = vdisk_count
+    // [3n + 1] = vdisk[n] mount point
+    // [3n + 2] = vdisk[n] used_count
+    // [3n + 3] = vdisk[n] size
+    // ...
+
+    filesys_t *filesys = c_fs_get_main();
+
+    uint32_t *ret = malloc(sizeof(uint32_t) * (filesys->vdisk_count * 3 + 1));
+    ret[0] = filesys->vdisk_count;
+    int ret_i = 1;
+    for (uint32_t i = 0; i < filesys->max_disks; i++) {
+        if (filesys->vdisk[i] == NULL) continue;
+        ret[ret_i] = i + 1;
+        ret[ret_i + 1] = filesys->vdisk[i]->used_count;
+        ret[ret_i + 2] = filesys->vdisk[i]->size;
+        ret_i += 3;
+    }
+
+    return ret;
+}
