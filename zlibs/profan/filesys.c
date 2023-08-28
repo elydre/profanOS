@@ -221,6 +221,12 @@ sid_t fu_dir_create(int device_id, char *path) {
     sid_t parent_sid;
     sid_t head_sid;
 
+    // check if the the directory already exists
+    head_sid = fu_path_to_sid(ROOT_SID, path);
+    if (!IS_NULL_SID(head_sid)) {
+        return head_sid;
+    }
+
     sep_path(path, &parent, &name);
     if (parent[0]) {
         parent_sid = fu_path_to_sid(ROOT_SID, parent);
@@ -317,6 +323,12 @@ sid_t fu_file_create(int device_id, char *path) {
     sid_t parent_sid;
     sid_t head_sid;
 
+    // check if the the directory already exists
+    head_sid = fu_path_to_sid(ROOT_SID, path);
+    if (!IS_NULL_SID(head_sid)) {
+        return head_sid;
+    }
+
     sep_path(path, &parent, &name);
     if (!parent[0]) {
         printf("parent unreachable\n");
@@ -404,6 +416,12 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
 
     sid_t parent_sid;
     sid_t head_sid;
+
+    // check if the the directory already exists
+    head_sid = fu_path_to_sid(ROOT_SID, path);
+    if (!IS_NULL_SID(head_sid)) {
+        return head_sid;
+    }
 
     sep_path(path, &parent, &name);
     if (!parent[0]) {
