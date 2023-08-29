@@ -1,21 +1,9 @@
 local syscalls = {
-    fs_get_element_name = 2,
-    fs_make_dir = 3,
-    fs_make_file = 4,
-    fs_read_file = 5,
-    fs_write_in_file = 6,
-    fs_get_file_size = 7,
-    fs_get_dir_size = 8,
-    fs_does_path_exists = 10,
-    fs_get_sector_type = 11,
-    fs_get_dir_content = 12,
-    fs_path_to_id = 13,
-    malloc = 17,
-    free = 18,
-    clear = 24,
-    serial_print = 43,
-    process_sleep = 48,
-    process_get = 51,
+    malloc = 9,
+    free = 10,
+    serial_print = 28,
+    process_sleep = 32,
+    process_get = 35,
 }
 
 local function get_syscall(function_id)
@@ -24,10 +12,6 @@ end
 
 local function get_lib_func(lib_id, func_id)
     return profan.call_c(profan.memval(0x1ffffb, 4), 4, lib_id, 4, func_id)
-end
-
-local function clear()
-    profan.call_c(get_syscall(syscalls.clear))
 end
 
 local function malloc(size)
@@ -63,7 +47,6 @@ return {
     get_syscall = get_syscall,
     get_lib_func = get_lib_func,
     serial_print = serial_print,
-    clear = clear,
     malloc = malloc,
     free = free,
     ms_sleep = ms_sleep,
