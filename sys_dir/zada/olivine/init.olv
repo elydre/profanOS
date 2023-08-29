@@ -5,6 +5,7 @@ FOR dir '/bin/commands' '/bin/fatpath'
 END
 
 pseudo testall 'exec /zada/olivine/testall.olv'
+pseudo xclear 'clear -x'
 
 FUNC show
     echo argc: !#
