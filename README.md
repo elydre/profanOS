@@ -59,7 +59,7 @@ or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
 The kernel and userspace are developed mainly in C. In profanOS you will be greeted by
 the Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)).
-You can also use the lua, sulfur C and C++ languages to create your own programs.
+You can also use the lua, sulfur, C and C++ languages to create your own programs.
 
 ### Major ports
 
