@@ -242,7 +242,7 @@ def make_iso(force = False, more_option = False):
 
     gen_disk()
 
-    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and not force:
+    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and file1_newer("profanOS.iso", "initrd.bin") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
 
     cprint(COLOR_INFO, "building iso...")
