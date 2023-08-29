@@ -268,13 +268,23 @@ void draw_cursor(int errase) {
 
 void panda_print_string(char *string, int len, char color) {
     if (g_panda->screen_buffer == NULL) return;
-    uint32_t y;
+    uint32_t tmp, y;
     for (int i = 0; (len < 0) ? (string[i]) : (i < len); i++) {
         if (!g_panda->cursor_is_hidden)
             draw_cursor(1);
         if (string[i] == '\n')
             panda_scroll(SCROLL_LINES);
-        else if (string[i] == '\033')
+        else if (string[i] == '\r')
+            g_panda->cursor_x = 0;
+        else if (string[i] == '\t') {
+            tmp = g_panda->cursor_x + 4 - (g_panda->cursor_x % 4);
+            for (; g_panda->cursor_x < tmp; g_panda->cursor_x++)
+                print_char(g_panda->cursor_x * g_panda->font->width,
+                    (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height,
+                    ' ',
+                    color
+                );
+        } else if (string[i] == '\033')
             i += compute_ansi_escape(string + i);
         else {
             y = g_panda->cursor_y - g_panda->scroll_offset;
