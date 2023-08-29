@@ -6,6 +6,7 @@ END
 
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
+pseudo pwd 'echo !path'
 
 FUNC show
     echo argc: !#
