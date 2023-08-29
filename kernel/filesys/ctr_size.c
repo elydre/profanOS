@@ -105,6 +105,8 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     sid_t new_loca_sid;
     sid_t core_sid;
 
+    data = vdisk_load_sector(vdisk, loca_sid);
+
     // check if loca is full
     for (uint32_t byte = sizeof(sid_t); byte < LAST_SID_OFFSET; byte += sizeof(sid_t)) {
         mem_copy(&core_sid, data + byte, sizeof(sid_t));

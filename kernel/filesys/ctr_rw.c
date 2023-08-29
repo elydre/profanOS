@@ -41,7 +41,7 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
         mem_copy(buf, data + offset, size);
     }
 
-    vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
+    vdisk_unload_sector(vdisk, core_sid, data, is_read ? NO_SAVE : SAVE);
     return size + offset - 2;
 }
 

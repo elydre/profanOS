@@ -114,15 +114,16 @@ uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
         sys_error("cannot load sector, out of range");
         return NULL;
     }
-    return (uint8_t *) (vdisk->sectors + sid.sector);
+    // return (uint8_t *) (vdisk->sectors + sid.sector);
+    uint8_t *data = malloc(FS_SECTOR_SIZE);
+    mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
+    return data;
 }
 
 int vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save) {
-    if (sid.sector >= vdisk->size) {
-        sys_error("cannot unload sector, out of range");
-        return 1;
+    if (save) {
+        vdisk_write_sector(vdisk, sid, data);
     }
-    (void) save;
-    (void) data;
+    free(data);
     return 0;
 }

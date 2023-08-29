@@ -670,8 +670,7 @@ int process_get_state(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
-        return 0;
+        return PROCESS_DEAD;
     }
 
     return plist[place].state;
