@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #define SCROLL_LINES 8
+#define malloc_as_kernel(size) ((void *) c_mem_alloc(size, 0, 6))
 
 typedef struct {
     uint32_t width;
@@ -50,11 +51,7 @@ int main(void) {
 
 font_data_t *load_psf_font(char *file) {
     sid_t sid = fu_path_to_sid(ROOT_SID, file);
-
-    if (IS_NULL_SID(sid)) {
-        printf("Failed to open font %s\n", file);
-        return NULL;
-    }
+    if (IS_NULL_SID(sid)) return NULL;
 
     uint32_t magic;
     uint32_t version;
@@ -72,20 +69,13 @@ font_data_t *load_psf_font(char *file) {
     fu_file_read(sid, &height, 24, 4);
     fu_file_read(sid, &width, 28, 4);
 
-    if (magic != 0x864ab572) {
-        printf("Invalid magic number\n");
+    if (magic != 0x864ab572 || version != 0)
         return NULL;
-    }
 
-    if (version != 0) {
-        printf("psf version not supported\n");
-        return NULL;
-    }
-
-    uint8_t *font = malloc(charcount * charsize);
+    uint8_t *font = malloc_as_kernel(charcount * charsize);
     fu_file_read(sid, font, headersize, charcount * charsize);
 
-    font_data_t *psf = malloc(sizeof(font_data_t));
+    font_data_t *psf = malloc_as_kernel(sizeof(font_data_t));
     psf->width = width;
     psf->height = height;
     psf->charcount = charcount;
@@ -322,6 +312,18 @@ void panda_get_cursor(uint32_t *x, uint32_t *y) {
     *y = g_panda->cursor_y;
 }
 
+int panda_change_font(char *file) {
+    font_data_t *font = load_psf_font(file);
+    if (font == NULL) return 1;
+
+    panda_clear_screen();
+    free_font(g_panda->font);
+    g_panda->font = font;
+    g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
+    g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
+    return 0;
+}
+
 void panda_clear_screen() {
     for (uint32_t i = 0; i < g_panda->max_lines; i++) {
         for (uint32_t j = 0; j < g_panda->max_cols; j++) {
@@ -343,7 +345,7 @@ void init_panda() {
         return;
     }
 
-    g_panda = malloc(sizeof(panda_global_t));
+    g_panda = malloc_as_kernel(sizeof(panda_global_t));
     g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
 
     if (g_panda->font == NULL) {
@@ -363,5 +365,7 @@ void init_panda() {
     g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
     g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
 
-    g_panda->screen_buffer = calloc(g_panda->max_lines * g_panda->max_cols, sizeof(screen_char_t));
+    int buffer_size = g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t);
+    g_panda->screen_buffer = malloc_as_kernel(buffer_size);
+    memset(g_panda->screen_buffer, 0, buffer_size);
 }
