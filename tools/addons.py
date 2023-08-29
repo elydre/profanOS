@@ -32,16 +32,16 @@ ADDONS = {
             }
         ]
     },
-    # "sulfur": { * needs to be updated for 1.0
-    #     "description": "official sulfur language interpreter",
-    #     "files": [
-    #         {
-    #             "name": "sulfur",
-    #             "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.bin",
-    #             "path": [profan_path, "out", "zapps", "fatpath", "sulfur.bin"]
-    #         },
-    #     ]
-    # },
+    "sulfur": {
+        "description": "official sulfur language interpreter",
+        "files": [
+            {
+                "name": "sulfur",
+                "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.bin",
+                "path": [profan_path, "out", "zapps", "fatpath", "sulfur.bin"]
+            },
+        ]
+    },
     "tcc": {
         "description": "Tiny C Compiler port for profanOS",
         "files": [
