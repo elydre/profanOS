@@ -263,6 +263,14 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (!elm_count) {
+        free(cnt_names);
+        free(cnt_ids);
+        free(ls_path);
+        free(args);
+        return 0;
+    }
+
     if (args->sort_mode == LS_SORT_ALPHA) {
         sort_alpha_and_type(elm_count, cnt_names, cnt_ids);
     } else {
@@ -279,12 +287,9 @@ int main(int argc, char **argv) {
             free(cnt_names[i]);
         }
         puts("$$\n");
-        free(cnt_names);
-        free(cnt_ids);
-        free(ls_path);
-        free(args);
-        return 0;
-    } else if (args->format == LS_FORMAT_COLS) {
+    }
+
+    else if (args->format == LS_FORMAT_COLS) {
         uint32_t max_len = 0;
         for (int i = 0; i < elm_count; i++) {
             if (strlen(cnt_names[i]) > max_len) max_len = strlen(cnt_names[i]);
@@ -305,41 +310,38 @@ int main(int argc, char **argv) {
             }
             putchar('\n');
         }
-
-        free(cnt_names);
-        free(cnt_ids);
-        free(ls_path);
-        free(args);
-        return 0;
     }
-    int size;
-    for (int i = 0; i < elm_count; i++) {
-        // save the current cursor position
-        printf("\033[s");
-        if (fu_is_dir(cnt_ids[i])) {
-            printf("$2%s\033[u\033[22C$7", cnt_names[i]);
-            if (args->size_type == LS_SIZE_VIRT) {
-                printf("%d elm", fu_get_dir_content(cnt_ids[i], NULL, NULL));
+
+    else {
+        int size;
+        for (int i = 0; i < elm_count; i++) {
+            // save the current cursor position
+            printf("\033[s");
+            if (fu_is_dir(cnt_ids[i])) {
+                printf("$2%s\033[u\033[22C$7", cnt_names[i]);
+                if (args->size_type == LS_SIZE_VIRT) {
+                    printf("%d elm", fu_get_dir_content(cnt_ids[i], NULL, NULL));
+                } else {
+                    printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+                }
+            } else if (fu_is_file(cnt_ids[i])) {
+                printf("$1%s\033[u\033[22C$7", cnt_names[i]);
+
+                size = fu_get_file_size(cnt_ids[i]);
+                if (args->size_type == LS_SIZE_PHYS || size < 1024) printf("%d B", size);
+                else if (size < 1024 * 1024) printf("%d.%d KB", size / 1024, (size % 1024) / 10);
+                else printf("%d.%d MB", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
+            } else if (fu_is_fctf(cnt_ids[i])) {
+                printf("$5%s\033[u\033[22C$7", cnt_names[i]);
+
+                if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
+                else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
             } else {
-                printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+                printf("$3%s\033[u\033[22C$7unk", cnt_names[i]);
             }
-        } else if (fu_is_file(cnt_ids[i])) {
-            printf("$1%s\033[u\033[22C$7", cnt_names[i]);
-
-            size = fu_get_file_size(cnt_ids[i]);
-            if (args->size_type == LS_SIZE_PHYS || size < 1024) printf("%d B", size);
-            else if (size < 1024 * 1024) printf("%d.%d KB", size / 1024, (size % 1024) / 10);
-            else printf("%d.%d MB", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
-        } else if (fu_is_fctf(cnt_ids[i])) {
-            printf("$5%s\033[u\033[22C$7", cnt_names[i]);
-
-            if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
-            else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
-        } else {
-            printf("$3%s\033[u\033[22C$7unk", cnt_names[i]);
+            printf("\033[u\033[34Cd%ds%d\n", cnt_ids[i].device, cnt_ids[i].sector);
+            free(cnt_names[i]);
         }
-        printf("\033[u\033[34Cd%ds%d\n", cnt_ids[i].device, cnt_ids[i].sector);
-        free(cnt_names[i]);
     }
 
     free(cnt_names);
