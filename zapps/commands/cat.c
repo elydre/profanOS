@@ -21,13 +21,16 @@ void make_printable(char *str, int size) {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 3) {
+    if (argc != 2) {
         printf("$BUsage: $3cat <path>$$\n");
         return 1;
     }
 
-    char *path = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
-    assemble_path(argv[1], argv[2], path);
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
+    char *path = malloc(strlen(pwd) + strlen(argv[1]) + 2);
+    assemble_path(pwd, argv[1], path);
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
 

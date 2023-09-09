@@ -413,9 +413,17 @@ void quit() {
 
 int main(int argc, char **argv) {
     char *file = NULL;
-    if (argc == 3) {
-        file = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
-        assemble_path(argv[1], argv[2], file);
+    if (argc > 2) {
+        printf("Usage: rim [file]\n");
+        return 1;
+    }
+
+    if (argc == 2) {
+        char *pwd = getenv("PWD");
+        if (!pwd) pwd = "/";
+
+        file = malloc(strlen(pwd) + strlen(argv[1]) + 2);
+        assemble_path(pwd, argv[1], file);
 
         sid_t elm = fu_path_to_sid(ROOT_SID, file);
 

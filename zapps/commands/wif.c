@@ -13,16 +13,19 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    char *path = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
-    assemble_path(argv[1], argv[2], path);
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
+    char *path = malloc(strlen(pwd) + strlen(argv[1]) + 2);
+    assemble_path(pwd, argv[1], path);
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
 
     if (!IS_NULL_SID(file) && fu_is_file(file)) {
-        int len = strlen(argv[3]);
+        int len = strlen(argv[2]);
 
         fu_set_file_size(file, len);
-        fu_file_write(file, (uint8_t *) argv[3], 0, len);
+        fu_file_write(file, (uint8_t *) argv[2], 0, len);
 
         free(path);
         return 0;

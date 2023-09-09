@@ -93,7 +93,7 @@ int shell_command(char *buffer) {
         if (!IS_NULL_SID(elm) && fu_is_dir(elm))
             strcpy(current_dir, new_path);
         else
-            printf("$3%s$B path not found\n", new_path);
+            printf("$3%s$B path not found$7\n", new_path);
 
         free(new_path);
     } else if (!strcmp(prefix, "go")) {
@@ -106,7 +106,7 @@ int shell_command(char *buffer) {
         if (!IS_NULL_SID(elm) && fu_is_file(elm))
             go(file, prefix, suffix);
         else
-            printf("$3%s$B file not found\n", file);
+            printf("$3%s$B file not found$7\n", file);
 
         free(file);
     } else {  // shell command
@@ -125,7 +125,7 @@ int shell_command(char *buffer) {
             if (!IS_NULL_SID(elm) && fu_is_file(elm)) {
                 go(file, old_prefix, suffix);
             } else if (strcmp(old_prefix, "")) {
-                printf("$3%s$B is not a valid command.\n", old_prefix);
+                printf("$3%s$B is not a valid command.$7\n", old_prefix);
             }
         }
         free(file);
@@ -138,16 +138,14 @@ int shell_command(char *buffer) {
 }
 
 void go(char *file, char *prefix, char *suffix) {
-    int argc = str_count(suffix, ' ') + 2;
+    int argc = str_count(suffix, ' ') + 1;
     if (suffix[0] != '\0') argc++;
 
     char **argv = malloc(argc * sizeof(char *));
-    argv[0] = malloc(strlen(file) + 1);
-    strcpy(argv[0], file);
-    argv[1] = malloc(strlen(current_dir) + 1);
-    strcpy(argv[1], current_dir);
+    argv[0] = malloc(strlen(prefix) + 1);
+    strcpy(argv[0], prefix);
 
-    for (int i = 2; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         argv[i] = malloc(strlen(suffix) + 1);
         strcpy(argv[i], suffix);
         start_split(argv[i], ' ');

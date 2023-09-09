@@ -17,22 +17,21 @@ int is_file(char *path) {
 }
 
 int main(int argc, char **argv) {
-    // parse arguments
-
-    if (argc < 3) {
+    if (argc < 2) {
         printf(HELP_USAGE HELP_HELP);
-
         return 1;
     }
 
-    char mode = *(argv[2] + 1);
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
 
+    char mode = *(argv[1] + 1);
     if (mode == '-') {
-        mode = *(argv[2] + 2);
+        mode = *(argv[1] + 2);
     }
 
     if (mode == '\0') {
-        printf("lib: invalid mode '%s'\n" HELP_HELP, argv[2]);
+        printf("lib: invalid mode '%s'\n" HELP_HELP, argv[1]);
         return 1;
     }
 
@@ -47,15 +46,15 @@ int main(int argc, char **argv) {
     }
 
     if (mode == 'u') {
-        if (argc < 4) {
-            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[2]);
+        if (argc < 3) {
+            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[1]);
             return 1;
         }
 
-        int id = atoi(argv[3]);
+        int id = atoi(argv[2]);
 
         if (id == 0) {
-            printf("lib: invalid id '%s'\n" HELP_HELP, argv[3]);
+            printf("lib: invalid id '%s'\n" HELP_HELP, argv[2]);
             return 1;
         }
 
@@ -68,21 +67,21 @@ int main(int argc, char **argv) {
     }
 
     if (mode == 'l') {
-        if (argc < 5) {
-            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[2]);
+        if (argc < 4) {
+            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[1]);
             return 1;
         }
 
-        int id = atoi(argv[3]);
+        int id = atoi(argv[2]);
 
         if (id == 0) {
-            printf("lib: invalid id '%s'\n" HELP_HELP, argv[3]);
+            printf("lib: invalid id '%s'\n" HELP_HELP, argv[2]);
             return 1;
         }
 
         // assemble new path
-        char *new_path = malloc(strlen(argv[1]) + strlen(argv[4]) + 3);
-        assemble_path(argv[1], argv[4], new_path);
+        char *new_path = malloc(strlen(pwd) + strlen(argv[3]) + 3);
+        assemble_path(pwd, argv[3], new_path);
 
         if (!is_file(new_path)) {
             printf("lib: file '%s' does not exist\n" HELP_HELP, new_path);
@@ -98,21 +97,21 @@ int main(int argc, char **argv) {
     }
 
     if (mode == 'r') {
-        if (argc < 5) {
-            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[2]);
+        if (argc < 4) {
+            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[1]);
             return 1;
         }
 
-        int id = atoi(argv[3]);
+        int id = atoi(argv[2]);
 
         if (id == 0) {
-            printf("lib: invalid id '%s'\n" HELP_HELP, argv[3]);
+            printf("lib: invalid id '%s'\n" HELP_HELP, argv[2]);
             return 1;
         }
 
         // assemble new path
-        char *new_path = malloc(strlen(argv[1]) + strlen(argv[4]) + 3);
-        assemble_path(argv[1], argv[4], new_path);
+        char *new_path = malloc(strlen(pwd) + strlen(argv[3]) + 3);
+        assemble_path(pwd, argv[3], new_path);
 
         if (!is_file(new_path)) {
             printf("lib: file '%s' does not exist\n" HELP_HELP, new_path);
@@ -130,6 +129,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    printf("lib: invalid mode '%s'\n" HELP_HELP, argv[2]);
+    printf("lib: invalid mode '%s'\n" HELP_HELP, argv[1]);
     return 1;
 }

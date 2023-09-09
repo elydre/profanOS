@@ -53,21 +53,21 @@ int main(int argc, char *argv[]) {
     uint32_t addr;
     int size;
 
-    if (argc < 3 || argc > 4) {
+    if (argc < 2 || argc > 3) {
         printf("$BUsage: $3mem <address> <size>$$\n");
         return 1;
     }
-    addr = (uint32_t) str_to_int(argv[2]);
+    addr = (uint32_t) str_to_int(argv[1]);
     if (addr == (uint32_t) -1) {
-        printf("$3%s$B is not a valid address$$\n", argv[2]);
+        printf("$3%s$B is not a valid address$$\n", argv[1]);
         return 1;
     }
-    if (argc == 3)
+    if (argc == 2)
         size = 512;
     else
-        size = str_to_int(argv[3]);
+        size = str_to_int(argv[2]);
     if (size < 1) {
-        printf("$3%s$B is not a valid size$$\n", argv[3]);
+        printf("$3%s$B is not a valid size$$\n", argv[2]);
         return 1;
     }
     print_memory_contents((void *)addr, size);

@@ -8,13 +8,16 @@
 
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
+    if (argc != 2) {
         printf("$BUsage: $3mkfile <name>$$\n");
         return 1;
     }
 
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
     char *full_path = malloc(256);
-    assemble_path(argv[1], argv[2], full_path);
+    assemble_path(pwd, argv[1], full_path);
 
     int len = strlen(full_path);
 

@@ -42,16 +42,15 @@ int execute_command(char *path, char *args) {
     printf("$6%s %s$$\n", path, args);
     // generate argv
 
-    int argc = 3;
+    int argc = 2;
     for (int i = 0; args[i] != '\0'; i++) {
         if (args[i] == ' ') argc++;
     }
 
     char **argv = malloc((argc + 1) * sizeof(char *));
     argv[0] = path;
-    argv[1] = "/";
 
-    for (int i = 2; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         argv[i] = args;
         args = strchr(args, ' ');
         *args = '\0';
@@ -107,7 +106,7 @@ uint32_t parse_options(int argc, char **argv, char **path) {
 
 
 int main(int argc, char **argv) {
-    if (argc < 3) {
+    if (argc < 2) {
         printf("Usage: cc [option] <file>\n");
         return 1;
     }
@@ -116,6 +115,9 @@ int main(int argc, char **argv) {
 
     char *path = NULL;
     uint32_t options = parse_options(argc, argv, &path);
+
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
 
     if (options & OPTION_ERROR) {
         printf("Usage: cc [option] <file>\n");
@@ -137,8 +139,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *full_path = malloc(strlen(argv[1]) + strlen(path) + 2);
-    assemble_path(argv[1], path, full_path);
+    char *full_path = malloc(strlen(pwd) + strlen(path) + 2);
+    assemble_path(pwd, path, full_path);
 
     if (!does_file_exist(full_path)) {
         printf("%s file not found\n", full_path);
@@ -212,7 +214,7 @@ int main(int argc, char **argv) {
         int len = strlen(full_path);
         for (int i = len - 1; i >= 0; i--) {
             if (full_path[i] == '/') {
-                assemble_path(argv[1], full_path + i + 1, bin_file);
+                assemble_path(pwd, full_path + i + 1, bin_file);
                 break;
             }
         }
