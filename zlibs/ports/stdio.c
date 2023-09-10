@@ -509,9 +509,9 @@ int fprintf(FILE *restrict stream, const char *restrict format, ...) {
 
     // we write the string
     int count = fwrite(buffer, 1, strlen(buffer), stream);
-    
+
     free(buffer);
-    return count;    
+    return count;
 }
 
 int sprintf(char *restrict buffer, const char *restrict format, ...) {
