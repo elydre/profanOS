@@ -43,7 +43,7 @@ int main(void) {
     return 0;
 }
 
-void sep_path(char *fullpath, char **parent, char **cnt) {
+void fu_sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     *parent = (char *) malloc(META_MAXLEN);
@@ -220,6 +220,100 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
     return 0;
 }
 
+int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
+    filesys_t *filesys = c_fs_get_main();
+
+    // read the directory and get size
+    uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
+    if (size == UINT32_MAX) {
+        printf("failed to get directory size\n");
+        return 1;
+    }
+
+    if (!fu_is_dir(dir_sid)) {
+        printf("not a directory\n");
+        return 1;
+    }
+
+    // read the directory
+    uint8_t *buf = malloc(size);
+    if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
+        printf("failed to read directory\n");
+        return 1;
+    }
+
+    uint32_t count = 0;
+    // get the number of elements
+    memcpy(&count, buf, sizeof(uint32_t));
+
+    if (count == 0) {
+        free(buf);
+        return 0;
+    }
+
+    // get the elements
+    sid_t *ids = malloc(sizeof(sid_t) * count);
+    uint32_t *name_offsets = malloc(sizeof(uint32_t) * count);
+
+    for (uint32_t i = 0; i < count; i++) {
+        memcpy(&ids[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
+        memcpy(&name_offsets[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
+    }
+
+    // search for the element
+    uint32_t index = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        if (IS_SAME_SID(ids[i], element_sid)) {
+            index = i + 1;
+            break;
+        }
+    }
+
+    if (index == 0) {
+        printf("element not found\n");
+        free(name_offsets);
+        free(buf);
+        free(ids);
+        return 1;
+    }
+
+    index--;
+
+    for (uint32_t i = index; i < count - 1; i++) {
+        ids[i] = ids[i + 1];
+        name_offsets[i] = name_offsets[i + 1];
+        memcpy(buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), &ids[i], sizeof(sid_t));
+        memcpy(buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), &name_offsets[i], sizeof(uint32_t));
+    }
+
+    // move names
+    int name_offset = sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t));
+    memmove(buf + name_offset - (sizeof(uint32_t) + sizeof(sid_t)), buf + name_offset, size - name_offset);
+
+    // TODO: remove the name of the removed element
+
+    // update the number of elements
+    count--;
+    memcpy(buf, &count, sizeof(uint32_t));
+
+    // write the directory
+    if (c_fs_cnt_write(filesys, dir_sid, buf, 0,
+        size - (sizeof(uint32_t) + sizeof(sid_t)))
+    ) {
+        printf("failed to write directory\n");
+        free(name_offsets);
+        free(buf);
+        free(ids);
+        return 1;
+    }
+
+    free(name_offsets);
+    free(buf);
+    free(ids);
+
+    return 0;
+}
+
 sid_t fu_dir_create(int device_id, char *path) {
     filesys_t *filesys = c_fs_get_main();
 
@@ -234,7 +328,7 @@ sid_t fu_dir_create(int device_id, char *path) {
         return head_sid;
     }
 
-    sep_path(path, &parent, &name);
+    fu_sep_path(path, &parent, &name);
     if (parent[0]) {
         parent_sid = fu_path_to_sid(ROOT_SID, parent);
         if (IS_NULL_SID(parent_sid)) {
@@ -336,7 +430,7 @@ sid_t fu_file_create(int device_id, char *path) {
         return head_sid;
     }
 
-    sep_path(path, &parent, &name);
+    fu_sep_path(path, &parent, &name);
     if (!parent[0]) {
         printf("parent unreachable\n");
         free(parent);
@@ -430,7 +524,7 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
         return head_sid;
     }
 
-    sep_path(path, &parent, &name);
+    fu_sep_path(path, &parent, &name);
     if (!parent[0]) {
         printf("parent unreachable\n");
         free(parent);
