@@ -20,6 +20,7 @@
 #define OPTION_RUN      1 << 2
 #define OPTION_NOADDS   1 << 3
 #define OPTION_NORAND   1 << 4
+#define OPTION_CHDEP    1 << 5
 
 uint32_t g_rand_val;
 
@@ -90,6 +91,9 @@ uint32_t parse_options(int argc, char **argv, char **path) {
                     case 'x':
                         options |= OPTION_NORAND;
                         break;
+                    case 'c':
+                        options |= OPTION_CHDEP;
+                        break;
                     default:
                         options |= OPTION_ERROR;
                         printf("cc: invalid option -- '%c'\n", argv[i][j]);
@@ -124,6 +128,21 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (options & OPTION_CHDEP) {
+        printf("Dependencies:\n"
+            " tcc.bin     %s$7\n"
+            " vlink.bin   %s$7\n"
+            " xec.bin     %s$7\n"
+            " zentry      %s$7\n"
+            " tcclib      %s$7\n",
+            does_file_exist(TCC_PATH) ? "$1found" : "$3not found",
+            does_file_exist(VLK_PATH) ? "$1found" : "$3not found",
+            does_file_exist(XEC_PATH) ? "$1found" : "$3not found",
+            does_file_exist(ZEO_PATH) ? "$1found" : does_file_exist(ZEC_PATH) ? "$2source" : "$3not found",
+            does_file_exist(TLO_PATH) ? "$1found" : does_file_exist(TLC_PATH) ? "$2source" : "$3not found");
+        return 0;
+    }
+
     if (options & OPTION_HELP) {
         printf("Usage: cc [option] <file>\n");
         printf("Options:\n");
@@ -143,13 +162,13 @@ int main(int argc, char **argv) {
     assemble_path(pwd, path, full_path);
 
     if (!does_file_exist(full_path)) {
-        printf("%s file not found\n", full_path);
+        printf("cc: %s file not found\n", full_path);
     } else if (!does_file_exist(TCC_PATH)) {
-        printf("tcc.bin not found\n");
+        printf("cc: tcc.bin not found\n");
     } else if (!does_file_exist(VLK_PATH)) {
-        printf("vlink.bin not found\n");
+        printf("cc: vlink.bin not found\n");
     } else if (!does_file_exist(XEC_PATH)) {
-        printf("xec.bin not found\n");
+        printf("cc: xec.bin not found\n");
     } else {
         if (!(options & OPTION_NOADDS)) {
             if (!does_file_exist(ZEO_PATH)) {
@@ -159,7 +178,7 @@ int main(int argc, char **argv) {
                         return 1;
                     }
                 } else {
-                    printf("zentry.c and zentry.o not found, cannot compile\n");
+                    printf("cc: zentry.c and zentry.o not found, cannot compile\n");
                     free(full_path);
                     return 1;
                 }
@@ -171,7 +190,7 @@ int main(int argc, char **argv) {
                         return 1;
                     }
                 } else {
-                    printf("tcclib.c and tcclib.o not found, cannot compile\n");
+                    printf("cc: tcclib.c and tcclib.o not found, cannot compile\n");
                     free(full_path);
                     return 1;
                 }
