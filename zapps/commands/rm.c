@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 
     rm_options_t *options = parse_options(argc, argv);
 
-    if (options->help) {
+    if (options->help == 1) {
         print_help(options->help);
         free(options);
         return 1;
