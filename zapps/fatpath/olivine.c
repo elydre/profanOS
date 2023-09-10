@@ -917,28 +917,32 @@ char *if_go_binfile(char **input) {
     }
 
     // get file name
-    char *file_name = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, input[0], file_name);
+    char *file_path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, input[0], file_path);
     // check if file exists
 
-    sid_t file_id = fu_path_to_sid(ROOT_SID, file_name);
+    sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
 
     if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
-        printf("GO: file '%s' does not exist\n", file_name);
-        free(file_name);
+        printf("GO: file '%s' does not exist\n", file_path);
+        free(file_path);
         return NULL;
     }
-
-    // rebuild the arguments whis profan format:
-    // 1. full path to the binary
-    // 2. current working directory
-    // 3. all the arguments
 
     int sleep = 1;
     if (strcmp(input[argc - 1], "&") == 0) {
         sleep = 0;
         argc--;
     };
+
+    char *file_name = malloc((strlen(input[0]) + 1) * sizeof(char));
+    strcpy(file_name, input[0]);
+    // remove the extension
+    char *dot = strrchr(file_name, '.');
+    if (dot) *dot = '\0';
+    // remove the path
+    char *slash = strrchr(file_name, '/');
+    if (slash) memmove(file_name, slash + 1, strlen(slash));
 
     char **argv = malloc((argc + 1) * sizeof(char*));
     argv[0] = file_name;
@@ -952,7 +956,7 @@ char *if_go_binfile(char **input) {
     int pid;
 
     sprintf(ret_str, "%d", c_run_ifexist_full (
-        (runtime_args_t){file_name, file_id, argc, argv, 0, 0, 0, sleep}, &pid
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
     ));
 
     if (!sleep) {
@@ -964,6 +968,7 @@ char *if_go_binfile(char **input) {
     sprintf(ret_str, "%d", pid);
     set_variable("spi", ret_str);
 
+    free(file_path);
     free(file_name);
     free(ret_str);
     free(argv);
@@ -2900,7 +2905,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
             } else {
-                printf("%*s", buffer_actual_size, " ");
+                printf("\033[u\033[K");
                 strcpy(buffer, history[history_index]);
                 buffer_actual_size = strlen(buffer);
                 buffer_index = buffer_actual_size;
@@ -2912,7 +2917,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
-            printf("\033[u%*s", buffer_actual_size, " ");
+            printf("\033[u\033[K");
             if (history[history_index] == NULL || history_index == history_end) {
                 buffer[0] = '\0';
                 buffer_actual_size = 0;

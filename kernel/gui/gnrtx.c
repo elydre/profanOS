@@ -125,6 +125,14 @@ int compute_ansi_escape(char *str) {
         saved_cursor_y = get_offset_row(get_cursor_offset());
     } else if (str[0] == 'u') {
         set_cursor_offset(get_offset(saved_cursor_x, saved_cursor_y));
+    } else if (str[0] == 'K') {
+        int offset = get_cursor_offset();
+        int row = get_offset_row(offset);
+        int col = get_offset_col(offset);
+        for (int i = col; i < gt_get_max_cols(); i++) {
+            kprint_char(' ', 0x0);
+        }
+        set_cursor_offset(get_offset(col, row));
     }
 
     // cursor hide and show
