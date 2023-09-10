@@ -1,6 +1,7 @@
 #include <i_iolib.h>
 #include <filesys.h>
 #include <syscall.h>
+#include <profan.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -42,8 +43,26 @@ void clearerr(FILE *stream) {
 int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
+    // we check for null pointers
+    if (filename == NULL || mode == NULL) {
+        return NULL;
+    }
+
+    // if path is relative, we add the current directory
+    char *path;
+    if (filename[0] != '/') {
+        char *pwd = getenv("PWD");
+        if (pwd == NULL) pwd = "/";
+
+        path = malloc(strlen(pwd) + strlen(filename) + 2);
+        assemble_path(pwd, (char *) filename, path);
+        filename = path;
+    } else {
+        path = strdup(filename);
+    }
+
     // first we check if the file exists
-    sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) filename);
+    sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
 
     int exists = !IS_NULL_SID(file_id);
 
@@ -53,20 +72,25 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         strcmp(mode, "r+") == 0 ||
         strcmp(mode, "rb") == 0 ||
         strcmp(mode, "rb+") == 0
-    )) return NULL;
+    )) {
+        free(path);
+        return NULL;
+    }
 
     // the path is a directory
     if (exists && fu_is_dir(file_id)) {
+        free(path);
         return NULL;
     }
 
     // the file exists but we want to create it
     if (!exists) {
-        file_id = fu_file_create(0, (char *) filename);
+        file_id = fu_file_create(0, (char *) path);
     }
 
     // check for failure
     if (IS_NULL_SID(file_id)) {
+        free(path);
         return NULL;
     }
 
@@ -80,11 +104,12 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         file->type = FILE_TYPE_FCTF;
     } else {
         free(file);
+        free(path);
         return NULL;
     }
 
     // we copy the filename
-    file->filename = strdup(filename);
+    file->filename = path;
     file->sid = file_id;
 
     // we copy the mode
@@ -457,8 +482,7 @@ int printf(const char *restrict format, ...) {
 }
 
 int fprintf(FILE *restrict stream, const char *restrict format, ...) {
-    c_serial_print(SERIAL_PORT_A, "WARNING: fprintf is not correctly implemented\n");
-    // if the stream is stdout or stderr, we use vfsprint
+    // if the stream is stdout or stderr, we use vprintf
     if (stream == stdout || stream == stderr) {
         va_list args;
         va_start(args, format);
@@ -467,12 +491,27 @@ int fprintf(FILE *restrict stream, const char *restrict format, ...) {
         return strlen(format); // TODO : return the true number of characters written
     }
     // if the stream is read only, we can't write to it
-    if (stream == stdin || strcmp(stream->mode, "r") == 0 || strcmp(stream->mode, "r+") == 0) {
-        return 0;
-    }
-    // if the stream is a file, we show an error, it's not implemented yet
-    puts("fprintf not implemented for files yet, WHY DO YOU USE IT ?\n");
-    return 0; // TODO : return the true number of characters written
+    if (stream == stdin ||
+        strcmp(stream->mode, "r")   == 0 ||
+        strcmp(stream->mode, "r+")  == 0 ||
+        strcmp(stream->mode, "rb")  == 0 ||
+        strcmp(stream->mode, "rb+") == 0
+    ) return 0;
+
+    // we allocate a buffer to store the formatted string
+    char *buffer = malloc(0x4000);
+
+    // we copy format to a buffer because we need to modify it
+    va_list args;
+    va_start(args, format);
+    dopr(buffer, 0x4000, format, args);
+    va_end(args);
+
+    // we write the string
+    int count = fwrite(buffer, 1, strlen(buffer), stream);
+    
+    free(buffer);
+    return count;    
 }
 
 int sprintf(char *restrict buffer, const char *restrict format, ...) {

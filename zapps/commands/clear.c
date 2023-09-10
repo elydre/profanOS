@@ -23,9 +23,6 @@ int showhelp() {
 }
 
 int main(int argc, char **argv) {
-    argc--;
-    argv++;
-
     if (argc == 1) return ansiclear();
     if (argc > 2) return showhelp();
     if (argv[1][0] != '-') return showhelp();

@@ -27,19 +27,20 @@
 
   // profanOS config
   #define FIRST_PROMPT "profanOS [$4%s$7] > "
-  #define DEBUG_COLOR "$6"
+  #define DEBUG_COLOR  "$6"
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
 
   // unix config
   #define FIRST_PROMPT "olivine [%s] > "
-  #define DEBUG_COLOR ""
+  #define DEBUG_COLOR  ""
 #endif
 
 #define OTHER_PROMPT "> "
+#define CD_DEFAULT   "/"
 
-#define CD_DEFAULT "/"
+#define USE_ENVVARS  1
 
 char *keywords[] = {
     "IF",
@@ -92,12 +93,17 @@ char *current_directory;
 char *get_variable(char *name) {
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
-            return NULL;
+            break;
         }
         if (strcmp(variables[i].name, name) == 0) {
             return variables[i].value;
         }
     }
+
+    if (USE_ENVVARS) {
+        return getenv(name);
+    }
+
     return NULL;
 }
 
@@ -150,19 +156,24 @@ int set_sync_variable(char *name, char *value) {
 int does_variable_exist(char *name) {
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
-            return 0;
+            break;
         }
         if (strcmp(variables[i].name, name) == 0) {
             return 1;
         }
     }
+
+    if (USE_ENVVARS && getenv(name)) {
+        return 1;
+    }
+
     return 0;
 }
 
 int del_variable(char *name) {
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
-            return 1;
+            break;
         }
         if (strcmp(variables[i].name, name) == 0) {
             if (variables[i].value && (!variables[i].sync)) {
@@ -180,6 +191,12 @@ int del_variable(char *name) {
             return 0;
         }
     }
+
+    if (USE_ENVVARS && getenv(name)) {
+        unsetenv(name);
+        return 0;
+    }
+
     return 1;
 }
 
@@ -774,6 +791,28 @@ char *if_del_var(char **input) {
     return NULL;
 }
 
+char *if_export(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 2) {
+        printf("export: expected 2 arguments, got %d\n", argc);
+        return NULL;
+    }
+
+    if (!USE_ENVVARS) {
+        printf("export: environment variables are disabled\n");
+        return NULL;
+    }
+
+    setenv(input[0], input[1], 1);
+
+    return NULL;
+}
+
 char *if_del_func(char **input) {
     // get argc
     int argc = 0;
@@ -898,13 +937,13 @@ char *if_go_binfile(char **input) {
     int sleep = 1;
     if (strcmp(input[argc - 1], "&") == 0) {
         sleep = 0;
-    } else argc++;
+        argc--;
+    };
 
     char **argv = malloc((argc + 1) * sizeof(char*));
     argv[0] = file_name;
-    argv[1] = current_directory;
-    for (int i = 1; input[i] != NULL; i++) {
-        argv[i + 1] = input[i];
+    for (int i = 1; i < argc; i++) {
+        argv[i] = input[i];
     }
     argv[argc] = NULL;
 
@@ -993,6 +1032,9 @@ char *if_change_dir(char **input) {
 
     // change directory
     strcpy(current_directory, dir);
+    if (USE_ENVVARS) {
+        setenv("PWD", current_directory, 1);
+    }
 
     free(dir);
 
@@ -1231,6 +1273,7 @@ internal_function_t internal_functions[] = {
     {"join", if_join},
     {"split", if_split},
     {"set", if_set_var},
+    {"export", if_export},
     {"del", if_del_var},
     {"delfunc", if_del_func},
     {"debug", if_debug},
@@ -3072,6 +3115,7 @@ char init_prog[] = ""
 int main(int argc, char **argv) {
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
     strcpy(current_directory, (PROFANBUILD && argc > 1) ? argv[1] : "/");
+    if (USE_ENVVARS) setenv("PWD", current_directory, 1);
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));

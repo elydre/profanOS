@@ -106,9 +106,6 @@ proc_args_t parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    argc--;
-    argv++;
-
     proc_args_t args = parse_args(argc, argv);
 
     if (args.mode == MODE_LIST)

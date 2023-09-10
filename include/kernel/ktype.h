@@ -59,7 +59,7 @@ typedef struct {
 typedef struct {
     char *path;     // path to file
     sid_t sid;      // sector id (can be null)
-    
+
     int argc;       // argument count
     char **argv;    // argument list
 

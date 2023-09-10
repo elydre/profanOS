@@ -6,13 +6,16 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
+    if (argc != 3) {
         printf("$BUsage: $3xec <input> <output>$$\n");
         return 1;
     }
 
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
     char *input_file = malloc(256);
-    assemble_path(argv[1], argv[2], input_file);
+    assemble_path(pwd, argv[1], input_file);
 
     sid_t input_sid = fu_path_to_sid(ROOT_SID, input_file);
 
@@ -37,7 +40,7 @@ int main(int argc, char **argv) {
     data[size] = '\0';
 
     char *output_file = malloc(256);
-    assemble_path(argv[1], argv[3], output_file);
+    assemble_path(pwd, argv[2], output_file);
 
     sid_t output_sid = fu_path_to_sid(ROOT_SID, output_file);
 

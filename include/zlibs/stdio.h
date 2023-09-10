@@ -60,7 +60,7 @@
 #define putchar ((int (*)(int)) get_func_addr(STDIO_ID, 24))
 #define puts ((int (*)(const char *)) get_func_addr(STDIO_ID, 25))
 #define ungetc ((int (*)(int, FILE *)) get_func_addr(STDIO_ID, 26))
-#define scanf ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 27)) 
+#define scanf ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 27))
 #define fscanf ((int (*)(FILE *, const char *, ...)) get_func_addr(STDIO_ID, 28))
 #define sscanf ((int (*)(const char *, const char *, ...)) get_func_addr(STDIO_ID, 29))
 #define scanf_s ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 30))

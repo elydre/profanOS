@@ -6,9 +6,8 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    char *pwd = argv[1];
-    argc--;
-    argv++;
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
 
     if (argc != 2) {
         printf("Usage: font [font path]\n");

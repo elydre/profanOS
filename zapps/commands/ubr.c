@@ -3,13 +3,13 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
+    if (argc != 3) {
         printf("Usage: ubr <buffer name> <redirection file>\n");
         return 1;
     }
 
-    char *buffer_name = argv[2];
-    char *redirection_file = argv[3];
+    char *buffer_name = argv[1];
+    char *redirection_file = argv[2];
 
     uint32_t buffer_id = 0;
     if (strcmp(buffer_name, "stdout") == 0) {

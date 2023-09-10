@@ -5,7 +5,26 @@
 
 void init_func();
 
+typedef struct {
+    char *name;
+    char *value;
+} env_var_t;
+
+typedef struct {
+    env_var_t *vars;
+    int size;
+} env_t;
+
 uint32_t rand_seed = 0;
+env_t ENV = {NULL, 0};
+
+#define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
+#define malloc(size) malloc_func(size, 0)
+#define realloc(mem, new_size) realloc_func(mem, new_size, 0)
+
+#define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
+#define malloc_ask(size) malloc_func(size, 1)
+#define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
 int main() {
     init_func();
@@ -14,11 +33,13 @@ int main() {
 
 void init_func() {
     rand_seed = time_gen_unix();
+    ENV.vars = NULL;
+    ENV.size = 0;
 }
 
-void *calloc(uint32_t nmemb, uint32_t lsize) {
+void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
-    int addr = c_mem_alloc(size, 0, 1);
+    int addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
     if (addr == 0) return NULL;
     memset((uint8_t *) addr, 0, size);
     return (void *) addr;
@@ -35,16 +56,16 @@ void free(void *mem) {
     c_mem_free_addr((int) mem);
 }
 
-void *malloc(uint32_t size) {
-    uint32_t addr = c_mem_alloc(size, 0, 1);
+void *malloc_func(uint32_t size, int as_kernel) {
+    uint32_t addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
     if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
-void *realloc(void *mem, uint32_t new_size) {
+void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL) return malloc(new_size);
     uint32_t addr = (uint32_t) mem;
-    uint32_t new_addr = c_mem_alloc(new_size, 0, 1);
+    uint32_t new_addr = c_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
     if (new_addr == 0) return NULL;
     memcpy((uint8_t *) new_addr, (uint8_t *) addr, new_size);
     free(mem);
@@ -227,7 +248,12 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    c_serial_print(SERIAL_PORT_A, "getenv not correctly implemented...\n");
+    // check if the variable already exists
+    for (int i = 0; i < ENV.size; i++) {
+        if (strcmp(ENV.vars[i].name, var) == 0) {
+            return ENV.vars[i].value;
+        }
+    }
     return NULL;
 }
 
@@ -502,17 +528,64 @@ int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
 }
 
 int setenv(const char *name, const char *value, int replace) {
-    puts("setenv not implemented yet, WHY DO YOU USE IT ?\n");
+    // check if the variable already exists
+    for (int i = 0; i < ENV.size; i++) {
+        if (strcmp(ENV.vars[i].name, name) == 0) {
+            if (replace) {
+                // replace the value
+                free(ENV.vars[i].value);
+                char *new_value = malloc_ask(strlen(value) + 1);
+                strcpy(new_value, value);
+                ENV.vars[i].value = new_value;
+                return 0;
+            } else {
+                // do nothing
+                return 0;
+            }
+        }
+    }
+
+    // add the variable
+    ENV.size++;
+    ENV.vars = realloc_ask(ENV.vars, sizeof(env_var_t) * ENV.size);
+
+    char *new_name = malloc_ask(strlen(name) + 1);
+    strcpy(new_name, name);
+    ENV.vars[ENV.size - 1].name = new_name;
+
+    char *new_value = malloc_ask(strlen(value) + 1);
+    strcpy(new_value, value);
+    ENV.vars[ENV.size - 1].value = new_value;
+
     return 0;
 }
 
 int unsetenv(const char *name) {
-    puts("unsetenv not implemented yet, WHY DO YOU USE IT ?\n");
+    // check if the variable already exists
+    for (int i = 0; i < ENV.size; i++) {
+        if (strcmp(ENV.vars[i].name, name) == 0) {
+            // remove the variable
+            free(ENV.vars[i].name);
+            free(ENV.vars[i].value);
+            for (int j = i; j < ENV.size - 1; j++) {
+                ENV.vars[j] = ENV.vars[j + 1];
+            }
+            ENV.size--;
+            ENV.vars = realloc_ask(ENV.vars, sizeof(env_var_t) * ENV.size);
+            return 0;
+        }
+    }
     return 0;
 }
 
 int clearenv(void) {
-    puts("clearenv not implemented yet, WHY DO YOU USE IT ?\n");
+    // remove all variables
+    for (int i = 0; i < ENV.size; i++) {
+        free(ENV.vars[i].name);
+        free(ENV.vars[i].value);
+    }
+    ENV.size = 0;
+    ENV.vars = NULL;
     return 0;
 }
 

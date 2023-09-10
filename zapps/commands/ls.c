@@ -218,7 +218,7 @@ ls_args_t *parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    ls_args_t *args = parse_args(argc - 1, argv + 1);
+    ls_args_t *args = parse_args(argc, argv);
     if (args->showhelp) {
         print_help(args->showhelp == LS_FULL_HELP);
         free(args);
@@ -226,10 +226,12 @@ int main(int argc, char **argv) {
     }
 
     char *ls_path = malloc(512);
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
 
     if (args->path) {
-        assemble_path(argv[1], args->path, ls_path);
-    } else strcpy(ls_path, argv[1]);
+        assemble_path(pwd, args->path, ls_path);
+    } else strcpy(ls_path, pwd);
     fu_simplify_path(ls_path);
 
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);

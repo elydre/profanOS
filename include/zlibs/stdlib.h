@@ -5,23 +5,18 @@
 
 #define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
 
-/*
-int main();
-void *calloc(uint32_t nmemb, uint32_t lsize);
-void free(void *mem);
-void *malloc(uint32_t size);
-void *realloc(void *ptr, uint32_t size);
-long int a64l(const char *str);
-void abort(void);
-int abs(int j);
-int atexit(void (*func)(void));
-double atof(const char *s);
-*/
+#define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
+#define malloc(size) malloc_func(size, 0)
+#define realloc(mem, new_size) realloc_func(mem, new_size, 0)
 
-#define calloc(nmemb, lsize) ((void *(*)(uint32_t, uint32_t)) get_func_addr(STDLIB_ID, 3))(nmemb, lsize)
+#define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
+#define malloc_ask(size) malloc_func(size, 1)
+#define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
+
+#define calloc_func(nmemb, lsize, as_kernel) ((void *(*)(uint32_t, uint32_t, int)) get_func_addr(STDLIB_ID, 3))(nmemb, lsize, as_kernel)
 #define free(mem) ((void (*)(void *)) get_func_addr(STDLIB_ID, 4))(mem)
-#define malloc(size) ((void *(*)(uint32_t)) get_func_addr(STDLIB_ID, 5))(size)
-#define realloc(ptr, size) ((void *(*)(void *, uint32_t)) get_func_addr(STDLIB_ID, 6))(ptr, size)
+#define malloc_func(size, as_kernel) ((void *(*)(uint32_t, int)) get_func_addr(STDLIB_ID, 5))(size, as_kernel)
+#define realloc_func(ptr, size, as_kernel) ((void *(*)(void *, uint32_t, int)) get_func_addr(STDLIB_ID, 6))(ptr, size, as_kernel)
 #define a64l(str) ((long int (*)(const char *)) get_func_addr(STDLIB_ID, 7))(str)
 #define abort() ((void (*)(void)) get_func_addr(STDLIB_ID, 8))()
 #define abs(j) ((int (*)(int)) get_func_addr(STDLIB_ID, 9))(j)
