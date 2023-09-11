@@ -26,6 +26,14 @@ env_t ENV = {NULL, 0};
 #define malloc_ask(size) malloc_func(size, 1)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
+#ifndef isdigit
+#define isdigit(c) ((c) >= '0' && (c) <= '9')
+#endif
+
+#ifndef isspace
+#define isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
+#endif
+
 int main() {
     init_func();
     return 0;
@@ -125,53 +133,47 @@ void atexit(void (*func)()) {
 }
 
 double atof(const char *s) {
-    puts("atof not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0.0;
-    // TODO : implement atof
     // This function stolen from either Rolf Neugebauer or Andrew Tolmach.
-    // Probably Rolf.
 
-    // double a = 0.0;
-    // int e = 0;
-    // int c;
-    // while ((c = *s++) != '\0' && (c >= '0' && c <= '9')) {
-    //     a = a*10.0 + (c - '0');
-    // }
-    // if (c == '.') {
-    //     while ((c = *s++) != '\0' && (c >= '0' && c <= '9')) {
-    //         a = a*10.0 + (c - '0');
-    //         e = e-1;
-    //     }
-    // }
-    // if (c == 'e' || c == 'E') {
-    //     int sign = 1;
-    //     int i = 0;
-    //     c = *s++;
-    //     if (c == '+')
-    //         c = *s++;
-    //     else if (c == '-') {
-    //         c = *s++;
-    //         sign = -1;
-    //     }
-    //     while ((c >= '0' && c <= '9')) {
-    //         i = i*10 + (c - '0');
-    //         c = *s++;
-    //     }
-    //     e += i*sign;
-    // }
-    // while (e > 0) {
-    //     a *= 10.0;
-    //     e--;
-    // }
-    // while (e < 0) {
-    //     a *= 0.1;
-    //     e++;
-    // }
-    // return a;
+    double a = 0.0;
+    int e = 0;
+    int c;
+    while ((c = *s++) != '\0' && isdigit(c)) {
+        a = a*10.0 + (c - '0');
+    }
+    if (c == '.') {
+        while ((c = *s++) != '\0' && isdigit(c)) {
+        a = a*10.0 + (c - '0');
+        e = e-1;
+        }
+    }
+    if (c == 'e' || c == 'E') {
+        int sign = 1;
+        int i = 0;
+        c = *s++;
+        if (c == '+')
+            c = *s++;
+        else if (c == '-') {
+            c = *s++;
+            sign = -1;
+        }
+        while (isdigit(c)) {
+            i = i*10 + (c - '0');
+            c = *s++;
+        }
+        e += i*sign;
+    }
+    while (e > 0) {
+        a *= 10.0;
+        e--;
+    }
+    while (e < 0) {
+        a *= 0.1;
+        e++;
+    }
+    return a;
 }
 
-#define isspace(c) ((c) == ' ' || (c) == '\t')
-#define isdigit(c) ((c) >= '0' && (c) <= '9')
 int atoi(const char *nptr) {
     int n=0, neg=0;
     while (isspace(*nptr)) nptr++;
@@ -603,9 +605,85 @@ int srand48_r (long int seedval, struct drand48_data *buffer) {
     return 0;
 }
 
-double strtod(const char* str, char** end) {
-    puts("strtod not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+double strtod (char *str, char **ptr) {
+    printf("strtod '%s'\n", str);
+    char *p;
+
+    if (ptr == (char **) 0)
+        return atof (str);
+
+    p = str;
+
+    while (isspace (*p))
+        ++p;
+
+    if (*p == '+' || *p == '-')
+        ++p;
+
+    /* INF or INFINITY.  */
+    if ((p[0] == 'i' || p[0] == 'I') &&
+        (p[1] == 'n' || p[1] == 'N') &&
+        (p[2] == 'f' || p[2] == 'F')
+    ) {
+        if ((p[3] == 'i' || p[3] == 'I') &&
+            (p[4] == 'n' || p[4] == 'N') &&
+            (p[5] == 'i' || p[5] == 'I') &&
+            (p[6] == 't' || p[6] == 'T') &&
+            (p[7] == 'y' || p[7] == 'Y')
+        ) {
+            *ptr = p + 8;
+            return atof (str);
+        } else {
+            *ptr = p + 3;
+            return atof (str);
+        }
+    }
+
+    /* NAN or NAN(foo).  */
+    if ((p[0] == 'n' || p[0] == 'N') &&
+        (p[1] == 'a' || p[1] == 'A') &&
+        (p[2] == 'n' || p[2] == 'N')
+    ) {
+        p += 3;
+        if (*p == '(') {
+            ++p;
+            while (*p != '\0' && *p != ')')
+                ++p;
+            if (*p == ')')
+                ++p;
+        }
+        *ptr = p;
+        return atof (str);
+    }
+
+    /* digits, with 0 or 1 periods in it.  */
+    if (isdigit (*p) || *p == '.') {
+        int got_dot = 0;
+        while (isdigit (*p) || (!got_dot && *p == '.')) {
+        if (*p == '.')
+            got_dot = 1;
+        ++p;
+        }
+
+        /* Exponent.  */
+        if (*p == 'e' || *p == 'E') {
+            int i;
+            i = 1;
+            if (p[i] == '+' || p[i] == '-')
+                ++i;
+            if (isdigit (p[i])) {
+                while (isdigit (p[i]))
+                    ++i;
+                *ptr = p + i;
+                return atof (str);
+            }
+        }
+        *ptr = p;
+        return atof (str);
+    }
+    /* Didn't find any digits.  Doesn't look like a number.  */
+    *ptr = str;
+    return 0.0;
 }
 
 long double strtod_l(const char* str, char** end, locale_t loc) {
@@ -613,9 +691,8 @@ long double strtod_l(const char* str, char** end, locale_t loc) {
     return 0;
 }
 
-float strtof(const char* str, char** end) {
-    puts("strtof not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+float strtof(const char *str, char **end) {
+    return (float) strtod((char *) str, end);
 }
 
 long double strtof_l(const char* str, char** end, locale_t loc) {
@@ -759,7 +836,7 @@ void I_swap(char *x, char *y) {
     char t = *x; *x = *y; *y = t;
 }
 
-// Function to reverse `buffer[i…j]`
+// Function to reverse `buffer[i..j]`
 char* I_reverse(char *buffer, int i, int j)
 {
     while (i < j) {
