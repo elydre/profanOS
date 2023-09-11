@@ -234,6 +234,7 @@ void open_input(char *buffer, int size) {
         fflush(stdout);
     }
 
-    buffer[buffer_actual_size] = '\0';
+    buffer[buffer_actual_size] = '\n';
+    buffer[buffer_actual_size + 1] = '\0';
     printf("\033[?25h");
 }

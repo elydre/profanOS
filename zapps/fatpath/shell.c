@@ -66,14 +66,19 @@ int main(int argc, char **argv) {
 }
 
 int shell_command(char *buffer) {
-    char *prefix = malloc(strlen(buffer) + 5);
-    char *suffix = malloc(strlen(buffer) + 5);
+    uint32_t buffer_len = strlen(buffer);
+    if (buffer[buffer_len - 1] == '\n') {
+        buffer[--buffer_len] = '\0';
+    }
+
+    char *prefix = malloc(buffer_len + 5);
+    char *suffix = malloc(buffer_len + 5);
     strcpy(prefix, buffer);
     strcpy(suffix, buffer);
     start_split(prefix, ' ');
     end_split(suffix, ' ');
 
-    if (strlen(buffer) == strlen(suffix)) {
+    if (buffer_len == strlen(suffix)) {
         suffix[0] = '\0';
     }
 
