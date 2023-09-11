@@ -1013,6 +1013,8 @@ char *if_change_dir(char **input) {
     // change to default if no arguments
     if (argc == 0) {
         strcpy(current_directory, CD_DEFAULT);
+        if (!USE_ENVVARS) return NULL;
+        setenv("PWD", current_directory, 1);
         return NULL;
     }
 
