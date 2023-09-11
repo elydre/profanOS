@@ -3119,10 +3119,10 @@ char init_prog[] = ""
 "END";
 
 
-int main(int argc, char **argv) {
+int main(void) {
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
-    strcpy(current_directory, (PROFANBUILD && argc > 1) ? argv[1] : "/");
-    if (USE_ENVVARS) setenv("PWD", current_directory, 1);
+    strcpy(current_directory, "/");
+    if (USE_ENVVARS) setenv("PWD", "/", 1);
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));

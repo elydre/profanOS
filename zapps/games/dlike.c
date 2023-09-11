@@ -11,10 +11,10 @@
 #define MINIMAP_SIZE 4
 
 #define PLAYER_SPEED 5
-#define ROT_SPEED 3
+#define ROT_SPEED    3
 #define FOV (PI / 4)
 
-#define FLOOR_COLOR 0x000044
+#define FLOOR_COLOR   0x000044
 #define CEILING_COLOR 0x66FFFF
 
 int MAP[] = {
