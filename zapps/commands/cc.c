@@ -40,30 +40,36 @@ void new_rand_name(char *name) {
 }
 
 int execute_command(char *path, char *args) {
-    printf("$6%s %s$$\n", path, args);
+    printf("$6%s %s$$\n", path, args ? args : "");
     // generate argv
 
-    int argc = 2;
-    for (int i = 0; args[i] != '\0'; i++) {
-        if (args[i] == ' ') argc++;
+    int argc = 1;
+    char **argv;
+    if (args == NULL) {
+        argv = malloc(2 * sizeof(char *));
+    } else {
+        argc++;
+
+        for (int i = 0; args[i] != '\0'; i++) {
+            if (args[i] == ' ') argc++;
+        }
+
+        argv = malloc((argc + 1) * sizeof(char *));
+
+        for (int i = 1; i < argc; i++) {
+            argv[i] = args;
+            args = strchr(args, ' ');
+            *args = '\0';
+            args++;
+        }
     }
 
-    char **argv = malloc((argc + 1) * sizeof(char *));
     argv[0] = path;
-
-    for (int i = 1; i < argc; i++) {
-        argv[i] = args;
-        args = strchr(args, ' ');
-        *args = '\0';
-        args++;
-    }
-
     argv[argc] = NULL;
 
     int ret = c_run_ifexist(path, argc, argv);
 
     free(argv);
-
     return ret;
 }
 
@@ -258,7 +264,7 @@ int main(int argc, char **argv) {
                 sprintf(args, "%s %s", elf_file, bin_file);
                 if (!execute_command(XEC_PATH, args)) {
                     if (options & OPTION_RUN) {
-                        if (!execute_command(bin_file, "")) ret = 0;
+                        if (!execute_command(bin_file, NULL)) ret = 0;
                     } else ret = 0;
                 }
             }
