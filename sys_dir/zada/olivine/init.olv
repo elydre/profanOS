@@ -38,7 +38,7 @@ END
 
 FUNC time
     IF !(eval !# ~ 1)
-        echo TIME: require one argument
+        echo TIME: require one argument, !# given
         RETURN
     END
 
@@ -47,4 +47,16 @@ FUNC time
     !0
 
     echo !0 took !(eval !(ticks) - !debut) ms
+END
+
+FUNC mv
+    IF !(eval !# ~ 2)
+        echo mv: require two arguments, !# given
+        RETURN
+    END
+
+    cp !0 !1
+    IF !(eval !exit = 0)
+        rm !0
+    END
 END
