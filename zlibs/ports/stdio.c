@@ -22,7 +22,10 @@ int puts(const char *str);
 int vprintf(const char *restrict format, va_list vlist);
 int dopr(char* str, size_t size, const char* format, va_list arg);
 
-sid_t stdout_sid = NULL_SID;
+sid_t *SIDS = NULL;
+
+#define stdout_sid SIDS[1]
+#define stderr_sid SIDS[2]
 
 int main() {
     init_func();
@@ -30,10 +33,19 @@ int main() {
 }
 
 void init_func() {
-    stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
-    if (IS_NULL_SID(stdout_sid) || !fu_is_fctf(stdout_sid)) {
+    sid_t *dup = malloc(sizeof(sid_t) * 3);
+
+    dup[1] = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+    if (IS_NULL_SID(dup[1]) || !fu_is_fctf(dup[1])) {
         c_kprint("\n Can't find /dev/stdout");
     }
+
+    dup[2] = fu_path_to_sid(ROOT_SID, "/dev/stderr");
+    if (IS_NULL_SID(dup[2]) || !fu_is_fctf(dup[2])) {
+        c_kprint("\n Can't find /dev/stderr");
+    }
+
+    SIDS = dup;
 }
 
 void clearerr(FILE *stream) {
@@ -274,7 +286,7 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
     }
 
     if (stream == stderr) {
-        return fu_fctf_write(stdout_sid, (void *) buffer, 0, count) ? 0 : count;
+        return fu_fctf_write(stderr_sid, (void *) buffer, 0, count) ? 0 : count;
     }
 
     // we check if the file is open for writing, else we return 0
@@ -482,21 +494,14 @@ int printf(const char *restrict format, ...) {
 }
 
 int fprintf(FILE *restrict stream, const char *restrict format, ...) {
-    // if the stream is stdout or stderr, we use vprintf
-    if (stream == stdout || stream == stderr) {
-        va_list args;
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
-        return strlen(format); // TODO : return the true number of characters written
-    }
     // if the stream is read only, we can't write to it
-    if (stream == stdin ||
+    if ((stream != stdout && stream != stderr) && (
+        stream == stdin ||
         strcmp(stream->mode, "r")   == 0 ||
         strcmp(stream->mode, "r+")  == 0 ||
         strcmp(stream->mode, "rb")  == 0 ||
         strcmp(stream->mode, "rb+") == 0
-    ) return 0;
+    )) return 0;
 
     // we allocate a buffer to store the formatted string
     char *buffer = malloc(0x4000);
@@ -570,7 +575,7 @@ int vprintf(const char *restrict format, va_list vlist) {
 }
 
 int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    if (stream == stdout || stream == stderr) {
+    if (stream == stdout) {
         vprintf(format, vlist);
         return strlen(format); // TODO : return the true number of characters written
     }
