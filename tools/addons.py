@@ -66,6 +66,10 @@ ADDONS = {
 
 # functions
 
+def get_size(url: str) -> int:
+    try: return int(urlreq.urlopen(url).info()["Content-Length"]) // 1024
+    except Exception: return 0
+
 def download(url: str, path: str) -> bool:
     def show_progress(block_num, block_size, total_size):
         percent = int(block_num * block_size * 100 / total_size)
@@ -87,7 +91,7 @@ def get_addon(name: str) -> bool:
 
     print(f"Install {name.upper()}: {ADDONS[name]['description']}")
     for sub in ADDONS[name]["files"]:
-        print(f" Getting {name} part: {sub['name']}")
+        print(f" Getting {name} part: {sub['name']} ({get_size(sub['url'])}Ko)")
         # check if parent directory exists
         parent = os.sep.join(sub["path"][:-1])
         if not os.path.exists(parent):
