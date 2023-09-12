@@ -145,7 +145,8 @@ int main(int argc, char **argv) {
             does_file_exist(VLK_PATH) ? "$1found" : "$3not found",
             does_file_exist(XEC_PATH) ? "$1found" : "$3not found",
             does_file_exist(ZEO_PATH) ? "$1found" : does_file_exist(ZEC_PATH) ? "$2source" : "$3not found",
-            does_file_exist(TLO_PATH) ? "$1found" : does_file_exist(TLC_PATH) ? "$2source" : "$3not found");
+            does_file_exist(TLO_PATH) ? "$1found" : does_file_exist(TLC_PATH) ? "$2source" : "$3not found"
+        );
         return 0;
     }
 
