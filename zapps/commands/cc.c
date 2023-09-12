@@ -152,6 +152,7 @@ int main(int argc, char **argv) {
     if (options & OPTION_HELP) {
         printf("Usage: cc [option] <file>\n");
         printf("Options:\n");
+        printf("  -c  Check dependencies\n");
         printf("  -h  Display this information\n");
         printf("  -n  Not include zentry.o, tcclib.o\n");
         printf("  -r  Compile and run\n");
