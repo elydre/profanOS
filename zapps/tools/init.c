@@ -56,12 +56,12 @@ int print_load_status(int i) {
     return 0;
 }
 
-int redirect_stdout(char *file) {
+int redirect_devio(char *file, int id) {
     sid_t sid = fu_path_to_sid(ROOT_SID, file);
 
     return (IS_NULL_SID(sid)
         || !(fu_is_file(sid) || fu_is_fctf(sid))
-        || devio_change_redirection(DEVIO_STDOUT, sid)
+        || devio_change_redirection(id, sid)
     );
 }
 
@@ -85,8 +85,12 @@ int main() {
     panda_set_start(c_get_cursor_offset());
 
     if (c_vesa_get_width() > 0) {
-        if (redirect_stdout("/dev/panda")) {
+        if (redirect_devio("/dev/panda", DEVIO_STDOUT)) {
             c_kprint("Failed to redirect stdout\n");
+            return 1;
+        }
+        if (redirect_devio("/dev/panda", DEVIO_STDERR)) {
+            c_kprint("Failed to redirect stderr\n");
             return 1;
         }
         c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
