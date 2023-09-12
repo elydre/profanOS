@@ -2177,10 +2177,14 @@ int execute_for(int line_count, char **lines, char **result) {
             if (SHOW_ALLFAIL)
                 printf("Error: invalid FOR loop\n");
             line_end = -1;
+            break;
         } else if (res == -3) {
             break;
         } else if (res == -2) {
             continue;
+        } else if (res < 0) {
+            line_end = res;
+            break;
         }
     }
 
@@ -2371,6 +2375,8 @@ int execute_while(int line_count, char **lines, char **result) {
             printf("Error: invalid WHILE loop\n");
         } if (ret == -3) {
             break;
+        } if (ret == -2) {
+            continue;
         } if (ret < 0) {
             line_end = ret;
             break;
@@ -2468,7 +2474,7 @@ int does_syntax_fail(char *program) {
 
     free_args(lines);
 
-    if (open != 0) {
+    if (open > 0) {
         return 1;
     }
 
@@ -3163,6 +3169,7 @@ typedef struct {
     int help;
     int version;
     int no_init;
+    int inter;
 
     char *file;
 } olivine_args_t;
@@ -3177,6 +3184,7 @@ void show_help(int full, char *name) {
         "  -h, --help     show this help message and exit\n"
         "  -v, --version  show program's version number\n"
         "  -n, --no-init  don't execute the init program\n\n"
+        "  -i, --inter    start a shell after executing the file\n\n"
 
         "Without file, the program will start a shell.\n"
         "Use 'exec' to execute a file from the shell instead\n"
@@ -3208,6 +3216,10 @@ olivine_args_t *parse_args(int argc, char **argv) {
             || strcmp(argv[i], "--no-init") == 0
         ) {
             args->no_init = 1;
+        } else if (strcmp(argv[i], "-i") == 0
+            || strcmp(argv[i], "--inter") == 0
+        ) {
+            args->inter = 1;
         } else if (argv[i][0] != '-') {
             args->file = argv[i];
         } else {
@@ -3275,7 +3287,9 @@ int main(int argc, char **argv) {
 
     if (args->file != NULL) {
         execute_file(args->file);
-    } else {
+    }
+
+    if (args->inter || args->file == NULL) {
         start_shell();
     }
 
