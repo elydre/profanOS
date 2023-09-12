@@ -71,7 +71,7 @@ void *malloc_func(uint32_t size, int as_kernel) {
 }
 
 void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
-    if (mem == NULL) return malloc(new_size);
+    if (mem == NULL) return malloc_func(new_size, as_kernel);
     uint32_t addr = (uint32_t) mem;
     uint32_t new_addr = c_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
     if (new_addr == 0) return NULL;
