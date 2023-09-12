@@ -2093,6 +2093,8 @@ int execute_return(char *line, char **result) {
     if (result != NULL) {
         free(*result);
         *result = res;
+    } else {
+        free(res);
     }
 
     return -4;
