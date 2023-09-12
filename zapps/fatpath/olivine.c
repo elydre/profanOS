@@ -3153,6 +3153,75 @@ void execute_file(char *file) {
     #endif
 }
 
+/************************
+ *                     *
+ *   Argument Parser   *
+ *                     *
+************************/
+
+typedef struct {
+    int help;
+    int version;
+    int no_init;
+
+    char *file;
+} olivine_args_t;
+
+void show_help(int full, char *name) {
+    printf("Usage: %s [options] [file]\n", name);
+    if (!full) {
+        printf("Try '%s --help' for more information.\n", name);
+        return;
+    }
+    printf("Options:\n"
+        "  -h, --help     show this help message and exit\n"
+        "  -v, --version  show program's version number\n"
+        "  -n, --no-init  don't execute the init program\n\n"
+
+        "Without file, the program will start a shell.\n"
+        "Use 'exec' to execute a file from the shell instead\n"
+        "of relaunching a new instance of olivine.\n"
+    );
+}
+
+void show_version(void) {
+    printf("Olivine %s, profanOS feature %s\n", OLV_VERSION, PROFANBUILD ? "enabled" : "disabled");
+}
+
+olivine_args_t *parse_args(int argc, char **argv) {
+    olivine_args_t *args = malloc(sizeof(olivine_args_t));
+    args->help = 0;
+    args->version = 0;
+    args->no_init = 0;
+    args->file = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0
+            || strcmp(argv[i], "--help") == 0
+        ) {
+            args->help = 2;
+        } else if (strcmp(argv[i], "-v") == 0
+            || strcmp(argv[i], "--version") == 0
+        ) {
+            args->version = 1;
+        } else if (strcmp(argv[i], "-n") == 0
+            || strcmp(argv[i], "--no-init") == 0
+        ) {
+            args->no_init = 1;
+        } else if (argv[i][0] != '-') {
+            args->file = argv[i];
+        } else {
+            printf("Error: unknown option '%s'\n", argv[i]);
+            args->help = 1;
+            free(args);
+            return NULL;
+        }
+    }
+
+    return args;
+}
+
+
 /********************
  *                 *
  *  Main Function  *
@@ -3166,7 +3235,25 @@ char init_prog[] = ""
 "END";
 
 
-int main(void) {
+int main(int argc, char **argv) {
+    olivine_args_t *args = parse_args(argc, argv);
+
+    if (args == NULL) {
+        return 1;
+    }
+
+    if (args->help) {
+        show_help(args->help == 2, argv[0]);
+        free(args);
+        return args->help == 2 ? 0 : 1;
+    }
+
+    if (args->version) {
+        show_version();
+        free(args);
+        return 0;
+    }
+
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
     strcpy(current_directory, "/");
     if (USE_ENVVARS) setenv("PWD", "/", 1);
@@ -3182,14 +3269,21 @@ int main(void) {
     set_sync_variable("path", current_directory);
 
     // init pseudo commands
-    execute_program(init_prog);
+    if (!args->no_init) {
+        execute_program(init_prog);
+    }
 
-    start_shell();
+    if (args->file != NULL) {
+        execute_file(args->file);
+    } else {
+        start_shell();
+    }
 
     free(current_directory);
     free_functions();
     free_pseudos();
     free_vars();
+    free(args);
 
     return 0;
 }
