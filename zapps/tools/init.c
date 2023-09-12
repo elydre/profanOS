@@ -93,7 +93,7 @@ int main() {
             c_kprint("Failed to redirect stderr\n");
             return 1;
         }
-        c_run_ifexist("/bin/commands/cpu.bin", 0, NULL);
+        c_run_ifexist("/bin/commands/usage.bin", 0, NULL);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
     }
