@@ -856,9 +856,11 @@ char *if_debug(char **input) {
             mode = 3;
         } else if (strcmp(input[0], "-p") == 0) {
             mode = 4;
+        } else if (strcmp(input[0], "-a") == 0) {
+            mode = 5;
         } else {
             printf("debug: unknown argument '%s'\n", input[0]);
-            printf("expected '-v', '-if', '-f' or '-p'\n");
+            printf("expected '-v', '-if', '-f', '-p' or '-a'\n");
             return NULL;
         }
     } else {
@@ -897,6 +899,41 @@ char *if_debug(char **input) {
             printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
         }
     }
+
+    if (mode != 5) {
+        return NULL;
+    }
+
+    // save all info in a file
+    FILE *f = fopen("debug.txt", "w");
+
+    // print variables
+    fprintf(f, "VARIABLES (max %d):", MAX_VARIABLES);
+    for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
+        fprintf(f, " %s='%s'", variables[i].name, variables[i].value);
+    }
+
+    // print internal functions
+    fprintf(f, "\nINTERNAL FUNCTIONS:");
+    for (int i = 0; internal_functions[i].name != NULL; i++) {
+        fprintf(f, " %s:%p", internal_functions[i].name, internal_functions[i].function);
+    }
+
+    // print pseudos
+    fprintf(f, "\nPSEUDOS (max %d):", MAX_PSEUDOS);
+    for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
+        fprintf(f, " %s='%s'", pseudos[i].name, pseudos[i].value);
+    }
+
+    // print functions
+    fprintf(f, "\nFUNCTIONS (max %d):", MAX_FUNCTIONS);
+    for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
+        fprintf(f, "\n  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
+        for (int j = 0; j < functions[i].line_count; j++) {
+            fprintf(f, "  | %s\n", functions[i].lines[j]);
+        }
+    }
+    fclose(f);
 
     return NULL;
 }
@@ -1933,6 +1970,8 @@ int execute_lines(char **lines, int line_end, char **result) {
                     printf("Error: invalid FOR loop\n");
 
                 return -1;
+            } else if (ret < -1) {
+                return ret;
             }
 
             i += ret;
@@ -1963,6 +2002,8 @@ int execute_lines(char **lines, int line_end, char **result) {
                     printf("Error: invalid ELSE statement\n");
 
                 return -1;
+            } else if (ret < -1) {
+                return ret;
             }
 
             i += ret;
@@ -1994,6 +2035,8 @@ int execute_lines(char **lines, int line_end, char **result) {
                     printf("Error: invalid FUNCTION declaration\n");
 
                 return -1;
+            } else if (ret < -1) {
+                return ret;
             }
 
             i += ret;
@@ -2034,7 +2077,11 @@ int execute_return(char *line, char **result) {
         return -4;
     }
 
-    char *res = check_subfunc(line + 7);
+    char *copy = strdup(line + 7);
+    char *res = check_subfunc(copy);
+    if (res != copy) {
+        free(copy);
+    }
 
     if (res == NULL) {
         if (SHOW_ALLFAIL)
@@ -2324,7 +2371,7 @@ int execute_while(int line_count, char **lines, char **result) {
             printf("Error: invalid WHILE loop\n");
         } if (ret == -3) {
             break;
-        } if (ret == -1) {
+        } if (ret < 0) {
             line_end = ret;
             break;
         }
