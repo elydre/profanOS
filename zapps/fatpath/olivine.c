@@ -267,31 +267,6 @@ int set_pseudo(char *name, char *value) {
  *                            *
 ********************************/
 
-int set_function(char *name, char **lines, int line_count) {
-    for (int i = 0; i < MAX_FUNCTIONS; i++) {
-        if (functions[i].name == NULL) {
-            char *name_copy = malloc(strlen(name) + 1);
-            strcpy(name_copy, name);
-            functions[i].name = name_copy;
-            functions[i].line_count = line_count;
-
-            // we need to copy the lines
-            functions[i].lines = malloc(sizeof(char *) * line_count);
-            for (int j = 0; j < line_count; j++) {
-                functions[i].lines[j] = malloc(strlen(lines[j]) + 1);
-                strcpy(functions[i].lines[j], lines[j]);
-            }
-
-            return 0;
-        } if (strcmp(functions[i].name, name) == 0) {
-            printf("Function %s already exists\n", name);
-            return 1;
-        }
-    }
-    printf("Too many functions\n");
-    return 1;
-}
-
 void print_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name == NULL) {
@@ -314,11 +289,8 @@ int del_function(char *name) {
             return 1;
         }
         if (strcmp(functions[i].name, name) == 0) {
-            free(functions[i].name);
-            for (int j = 0; j < functions[i].line_count; j++) {
-                free(functions[i].lines[j]);
-            }
             free(functions[i].lines);
+            free(functions[i].name);
 
             // shift all functions down
             for (int j = i; j < MAX_FUNCTIONS - 1; j++) {
@@ -327,6 +299,40 @@ int del_function(char *name) {
             return 0;
         }
     }
+    return 1;
+}
+
+int set_function(char *name, char **lines, int line_count) {
+    int char_count = 0;
+    for (int i = 0; i < line_count; i++) {
+        char_count += strlen(lines[i]) + 1;
+    }
+
+    char **lines_copy = malloc(sizeof(char *) * line_count + char_count);
+    char *lines_ptr = (char *) lines_copy + sizeof(char *) * line_count;
+
+    for (int i = 0; i < line_count; i++) {
+        lines_copy[i] = lines_ptr;
+        strcpy(lines_ptr, lines[i]);
+        lines_ptr += strlen(lines[i]) + 1;
+    }
+
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            char *name_copy = malloc(strlen(name) + 1);
+            strcpy(name_copy, name);
+            functions[i].name = name_copy;
+            functions[i].line_count = line_count;
+            functions[i].lines = lines_copy;
+            return 0;
+        } if (strcmp(functions[i].name, name) == 0) {
+            free(functions[i].lines);
+            functions[i].line_count = line_count;
+            functions[i].lines = lines_copy;
+            return 0;
+        }
+    }
+    printf("Too many functions\n");
     return 1;
 }
 
@@ -1535,9 +1541,6 @@ void free_functions() {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name != NULL) {
             free(functions[i].name);
-            for (int l = 0; l < functions[i].line_count; l++) {
-                free(functions[i].lines[l]);
-            }
             free(functions[i].lines);
         }
     }
@@ -1862,11 +1865,15 @@ char **lexe_program(char *program) {
         }
     }
 
-    char **lines = malloc((line_count + 1) * sizeof(char*));
-    char *tmp = malloc((strlen(program) + 1) * sizeof(char));
+    int program_len = strlen(program) + 1;
+    char *tmp = malloc((program_len) * sizeof(char));
 
-    int tmp_index = 0;
+    int index_size = (line_count + 1) * sizeof(char*);
+    char **lines = malloc(index_size + (program_len) * sizeof(char));
+    char *line_ptr = (char*) lines + index_size;
+
     int line_index = 0;
+    int tmp_index = 0;
     int is_string_begin = 1;
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
@@ -1882,8 +1889,11 @@ char **lexe_program(char *program) {
             }
 
             tmp[tmp_index++] = '\0';
-            lines[line_index] = malloc(tmp_index * sizeof(char));
+
+            lines[line_index] = line_ptr;
             strcpy(lines[line_index], tmp);
+
+            line_ptr += tmp_index;
             line_index++;
             tmp_index = 0;
             continue;
@@ -1923,7 +1933,7 @@ char **lexe_program(char *program) {
             tmp_index--;
         }
         tmp[tmp_index++] = '\0';
-        lines[line_index] = malloc(tmp_index * sizeof(char));
+        lines[line_index] = line_ptr;
         strcpy(lines[line_index], tmp);
     }
 
@@ -2522,7 +2532,7 @@ void execute_program(char *program) {
 
     execute_lines(lines, line_count, NULL);
 
-    free_args(lines);
+    free(lines);
 }
 
 int does_syntax_fail(char *program) {
@@ -2546,8 +2556,7 @@ int does_syntax_fail(char *program) {
             open--;
         }
     }
-
-    free_args(lines);
+    free(lines);
 
     if (open > 0) {
         return 1;

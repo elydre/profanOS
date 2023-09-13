@@ -1,9 +1,0 @@
-set sum 0
-set i 0
-
-WHILE !(eval !i < 100000)
-    set sum !(eval !sum + !i ^ 42)
-    set i !(eval !i + 1)
-END
-
-echo while: !sum
