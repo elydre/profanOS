@@ -6,7 +6,9 @@
 
 #define ENABLE_DEBUG  0  // print function calls
 #define SHOW_ALLFAIL  0  // show all failed checks
-#define PROFANBUILD   0  // enable profan features
+#define PROFANBUILD   1  // enable profan features
+
+#define OLV_VERSION "0.6"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -17,7 +19,19 @@
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
 
-#define OLV_VERSION "0.5"
+
+/******************************
+ *                           *
+ *  Structs and Definitions  *
+ *                           *
+******************************/
+
+#ifdef NoProfan
+  #ifdef PROFANBUILD
+    #undef PROFANBUILD
+  #endif
+  #define PROFANBUILD 0
+#endif
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -107,9 +121,14 @@ char *get_variable(char *name) {
     return NULL;
 }
 
-int set_variable(char *name, char *value) {
-    char *value_copy = malloc(strlen(value) + 1);
-    strcpy(value_copy, value);
+#define set_variable(name, value) set_variable_withlen(name, value, -1)
+
+int set_variable_withlen(char *name, char *value, int str_len) {
+    if (str_len == -1) str_len = strlen(value);
+
+    char *value_copy = malloc(str_len + 1);
+    strncpy(value_copy, value, str_len);
+    value_copy[str_len] = '\0';
 
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
@@ -1146,7 +1165,7 @@ char *if_make_pseudo(char **input) {
 char *if_range(char **input) {
     /*
      * input: ["1", "5"]
-     * output: "'1' '2' '3' '4' '5'"
+     * output: "1 2 3 4 5"
     */
 
     int argc = 0;
@@ -1167,18 +1186,15 @@ char *if_range(char **input) {
         return NULL;
     }
 
-    char *output = malloc((strlen(input[1]) + 3) * (end - start + 1));
-    output[0] = '\0';
-
+    char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
     char *tmp = malloc(12 * sizeof(char));
-    tmp[0] = '\'';
-    tmp[1] = '\0';
+    tmp[0] = '\0';
 
     int output_len = 0;
 
     for (int i = start; i < end; i++) {
-        local_itoa(i, tmp + 1);
-        strcat(tmp, "' ");
+        local_itoa(i, tmp);
+        strcat(tmp, " ");
         for (int j = 0; tmp[j] != '\0'; j++) {
             output[output_len++] = tmp[j];
         }
@@ -2206,14 +2222,33 @@ int execute_for(int line_count, char **lines, char **result) {
 
     int var_exist_before = does_variable_exist(var_name);
 
-    // convert string to string array
-    char **string_array = gen_args(string);
+
+    int var_len = 0;
+    int string_index = 0;
+    int in_string = 0;
 
     int res;
+    // execute the loop
+    while (string[string_index]) {
+        // set the the variable
 
-    // execute for loop
-    for (int i = 0; string_array[i] != NULL; i++) {
-        set_variable(var_name, string_array[i]);
+        for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
+            if (string[string_index + var_len] == STRING_CHAR) {
+                in_string = !in_string;
+            } else if (!in_string && string[string_index + var_len] == ' ') {
+                break;
+            }
+        }
+
+        set_variable_withlen(var_name, string + string_index, var_len);
+
+        string_index += var_len;
+
+        while (string[string_index] == ' ') {
+            string_index++;
+        }
+
+        // execute the iteration
         res = execute_lines(lines + 1, line_end - 1, result);
         if (res == -1) {
             if (SHOW_ALLFAIL)
@@ -2234,8 +2269,6 @@ int execute_for(int line_count, char **lines, char **result) {
     if (!var_exist_before) {
         del_variable(var_name);
     }
-
-    free_args(string_array);
 
     if (for_line != lines[0]) {
         free(for_line);
