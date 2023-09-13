@@ -6,7 +6,7 @@
 
 #define ENABLE_DEBUG  0  // print function calls
 #define SHOW_ALLFAIL  0  // show all failed checks
-#define PROFANBUILD   1  // enable profan features
+#define PROFANBUILD   0  // enable profan features
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -323,6 +323,38 @@ function_t *get_function(char *name) {
     return NULL;
 }
 
+/****************************
+ *                         *
+ *  Local Tools Functions  *
+ *                         *
+****************************/
+
+void local_itoa(int n, char *buffer) {
+    int i = 0;
+    int sign = 0;
+
+    if (n < 0) {
+        sign = 1;
+        n = -n;
+    }
+
+    do {
+        buffer[i++] = n % 10 + '0';
+    } while ((n /= 10) > 0);
+
+    if (sign) {
+        buffer[i++] = '-';
+    }
+
+    buffer[i] = '\0';
+
+    for (int j = 0; j < i / 2; j++) {
+        char tmp = buffer[j];
+        buffer[j] = buffer[i - j - 1];
+        buffer[i - j - 1] = tmp;
+    }
+}
+
 /***********************************
  *                                *
  *  Olivine Integrated Evaluator  *
@@ -538,7 +570,7 @@ char *eval(ast_t *ast) {
 
     // convert back to string
     char *ret = malloc(sizeof(char) * 12);
-    sprintf(ret, "%d", result);
+    local_itoa(result, ret);
     return ret;
 }
 
@@ -992,9 +1024,9 @@ char *if_go_binfile(char **input) {
 
     int pid;
 
-    sprintf(ret_str, "%d", c_run_ifexist_full (
+    local_itoa(c_run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
-    ));
+    ), ret_str);
 
     if (!sleep) {
         printf("GO: started with pid %d\n", pid);
@@ -1002,7 +1034,7 @@ char *if_go_binfile(char **input) {
 
     set_variable("exit", ret_str);
 
-    sprintf(ret_str, "%d", pid);
+    local_itoa(pid, ret_str);
     set_variable("spi", ret_str);
 
     free(file_path);
@@ -1135,20 +1167,27 @@ char *if_range(char **input) {
         return NULL;
     }
 
-    char *output = malloc(1 * sizeof(char));
+    char *output = malloc((strlen(input[1]) + 3) * (end - start + 1));
     output[0] = '\0';
-    for (int i = start; i < end; i++) {
-        char *tmp = malloc((strlen(output) + strlen(input[1]) + 4) * sizeof(char));
-        strcpy(tmp, output);
-        sprintf(tmp, "%s '%d'", tmp, i);
-        free(output);
-        output = tmp;
-    }
-    char *copy = malloc((strlen(output)) * sizeof(char));
-    strcpy(copy, output + 1);
-    free(output);
 
-    return copy;
+    char *tmp = malloc(12 * sizeof(char));
+    tmp[0] = '\'';
+    tmp[1] = '\0';
+
+    int output_len = 0;
+
+    for (int i = start; i < end; i++) {
+        local_itoa(i, tmp + 1);
+        strcat(tmp, "' ");
+        for (int j = 0; tmp[j] != '\0'; j++) {
+            output[output_len++] = tmp[j];
+        }
+    }
+    output[--output_len] = '\0';
+
+    free(tmp);
+
+    return output;
 }
 
 char *if_find(char **input) {
@@ -1303,7 +1342,7 @@ char *if_ticks(char **input) {
     char *output = malloc(11 * sizeof(char));
 
     #if PROFANBUILD
-    sprintf(output, "%d", c_timer_get_ms());
+    local_itoa(c_timer_get_ms(), output);
     #else
     strcpy(output, "0");
     #endif
@@ -1521,10 +1560,10 @@ char *execute_function(function_t *function, char **args) {
     int argc = 0;
     char tmp[4];
     for (argc = 0; args[argc] != NULL; argc++) {
-        sprintf(tmp, "%d", argc);
+        local_itoa(argc, tmp);
         set_variable(tmp, args[argc]);
     }
-    sprintf(tmp, "%d", argc);
+    local_itoa(argc, tmp);
     set_variable("#", tmp);
 
     char *result = malloc(sizeof(char));
@@ -1532,7 +1571,7 @@ char *execute_function(function_t *function, char **args) {
 
     // free variables
     for (int i = 0; i < argc; i++) {
-        sprintf(tmp, "%d", i);
+        local_itoa(i, tmp);
         del_variable(tmp);
     }
     del_variable("#");
@@ -2153,9 +2192,6 @@ int execute_for(int line_count, char **lines, char **result) {
         return line_end;
     }
 
-    // convert string to string array
-    char **string_array = gen_args(string);
-
     if (line_end == 0) {
         printf("Error: missing END for FOR loop\n");
         free(var_name);
@@ -2169,6 +2205,10 @@ int execute_for(int line_count, char **lines, char **result) {
     }
 
     int var_exist_before = does_variable_exist(var_name);
+
+    // convert string to string array
+    char **string_array = gen_args(string);
+
     int res;
 
     // execute for loop
