@@ -21,7 +21,7 @@ FUNC tree
     FUNC tree_rec
         FOR f !(find -f !0)
             echo !f
-            END
+        END
         FOR d !(find -d !0)
             tree_rec !d
         END
