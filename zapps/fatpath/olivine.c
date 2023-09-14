@@ -395,6 +395,34 @@ void local_itoa(int n, char *buffer) {
     }
 }
 
+int local_atoi(char *str, int *result) {
+    int i = 0;
+    int sign = 0;
+    int res = 0;
+
+    if (str[0] == '-') {
+        sign = 1;
+        i++;
+    }
+
+    while (str[i] != '\0') {
+        if (str[i] < '0' || str[i] > '9') {
+            return 1;
+        }
+        res *= 10;
+        res += str[i] - '0';
+        i++;
+    }
+
+    if (sign) {
+        res = -res;
+    }
+
+    *result = res;
+
+    return 0;
+}
+
 void raise_error(char *part, char *format, ...) {
     if (part == NULL) printf("OLIVINE raise: ");
     else printf("'%s' raise: ", part);
@@ -556,43 +584,7 @@ ast_t *gen_ast(char **str, int len) {
     return ast;
 }
 
-char *eval(ast_t *ast) {
-    // if only one element return it
-    if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
-        char *res = malloc(strlen((char *) ast->center.ptr) + 1);
-        strcpy(res, (char *) ast->center.ptr);
-        return res;
-    }
-
-    if (ast->center.type == AST_TYPE_NIL) {
-        raise_error("eval", "No operator found in expression");
-        return ERROR_CODE;
-    }
-
-    // convert to int
-    char *op = (char *) ast->center.ptr;
-    int left, right;
-    char *res = NULL;
-
-    if (ast->left.type == AST_TYPE_AST) {
-        res = eval((ast_t *) ast->left.ptr);
-        if (res == NULL) return NULL;
-        left = atoi(res);
-        free(res);
-    } else {
-        left = atoi((char *) ast->left.ptr);
-    }
-
-    if (ast->right.type == AST_TYPE_AST) {
-        res = eval((ast_t *) ast->right.ptr);
-        if (res == NULL) return NULL;
-        right = atoi(res);
-        free(res);
-    } else {
-        right = atoi((char *) ast->right.ptr);
-    }
-
-    // calculate
+char *calculate_integers(int left, int right, char *op) {
     int result;
     switch (op[0]) {
         case '+':
@@ -623,16 +615,84 @@ char *eval(ast_t *ast) {
             result = left != right;
             break;
         default:
-            raise_error("eval", "Unknown operator '%s' in expression", op);
+            raise_error("eval", "Unknown operator '%s' between integers", op);
             return NULL;
     }
-
-    // printf("%d %s %d -> %d\n", left, op, right, result);
 
     // convert back to string
     char *ret = malloc(sizeof(char) * 12);
     local_itoa(result, ret);
     return ret;
+}
+
+char *calculate_strings(char *left, char *right, char *op) {
+    char *res;
+    if (op[0] == '+') {
+        res = malloc(strlen(left) + strlen(right) + 1);
+        strcpy(res, left);
+        strcat(res, right);
+    } else if (op[0] == '=') {
+        res = malloc(sizeof(char) * 2);
+        res[0] = (strcmp(left, right) == 0) + '0';
+        res[1] = '\0';
+    } else if (op[0] == '~') {
+        res = malloc(sizeof(char) * 2);
+        res[0] = (strcmp(left, right) != 0) + '0';
+        res[1] = '\0';
+    } else {
+        raise_error("eval", "Unknown operator '%s' between strings", op);
+        return NULL;
+    }
+    return res;
+}
+    
+
+char *eval(ast_t *ast) {
+    char *res;
+
+    // if only one element return it
+    if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
+        res = malloc(strlen((char *) ast->center.ptr) + 1);
+        strcpy(res, (char *) ast->center.ptr);
+        return res;
+    }
+
+    if (ast->center.type == AST_TYPE_NIL) {
+        raise_error("eval", "No operator found in expression");
+        return ERROR_CODE;
+    }
+
+    // convert to int
+    char *op = (char *) ast->center.ptr;
+    int left, right, no_number = 0;
+    char *left_str, *right_str;
+
+    if (ast->left.type == AST_TYPE_AST) {
+        left_str = eval((ast_t *) ast->left.ptr);
+    } else {
+        left_str = (char *) ast->left.ptr;
+    }
+
+    if (ast->right.type == AST_TYPE_AST) {
+        right_str = eval((ast_t *) ast->right.ptr);
+    } else {
+        right_str = (char *) ast->right.ptr;
+    }
+
+    if (right_str != NULL && left_str != NULL) {
+        no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
+        res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
+    }
+
+    if (ast->left.type == AST_TYPE_AST && left_str != NULL) {
+        free(left_str);
+    }
+
+    if (ast->right.type == AST_TYPE_AST && right_str != NULL) {
+        free(right_str);
+    }
+
+    return res;
 }
 
 char *if_eval(char **input) {
@@ -2851,6 +2911,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
         int elm_count = fu_get_dir_content(dir, &out_ids, &names);
 
         for (int j = 0; j < elm_count; j++) {
+            if (names[j][0] == '.' && inp_end[0] != '.') continue;
             if (strncmp(names[j], inp_end, dec) == 0) {
                 tmp = malloc((strlen(names[j]) + 2) * sizeof(char));
                 strcpy(tmp, names[j]);
@@ -2864,6 +2925,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
         for (int j = 0; j < elm_count; j++) {
             free(names[j]);
         }
+
         free(inp_end);
         free(out_ids);
         free(names);
@@ -3363,7 +3425,7 @@ int main(int argc, char **argv) {
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
-    set_variable("spi",  "0");
+    set_variable("spi", "0");
     set_sync_variable("exit", exit_code);
     set_sync_variable("path", current_directory);
 
