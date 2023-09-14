@@ -40,14 +40,18 @@
   #include <profan.h>
 
   // profanOS config
-  #define FIRST_PROMPT "profanOS [$4%s$7] > "
+  #define PROMPT_SUCC "profanOS [$4%s$7] > "
+  #define PROMPT_FAIL "profanOS [$4%s$7] $3>$7 "
+
   #define DEBUG_COLOR  "$6"
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
 
   // unix config
-  #define FIRST_PROMPT "olivine [%s] > "
+  #define PROMPT_SUCC "olivine [%s] > "
+  #define PROMPT_FAIL "-ERROR- [%s] > "
+
   #define DEBUG_COLOR  ""
 #endif
 
@@ -97,6 +101,7 @@ function_t *functions;
 internal_function_t internal_functions[];
 
 char *current_directory;
+char *exit_code;
 
 void raise_error(char *part, char *format, ...);
 
@@ -397,7 +402,7 @@ void raise_error(char *part, char *format, ...) {
 
     printf("\n");
 
-    set_variable("exit", "1");
+    strcpy(exit_code, "1");
 }
 
 /***********************************
@@ -1061,27 +1066,24 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
-    char *ret_str = malloc(10 * sizeof(char));
-
     int pid;
-
     local_itoa(c_run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
-    ), ret_str);
+    ), exit_code);
 
     if (!sleep) {
         printf("GO: started with pid %d\n", pid);
     }
 
-    set_variable("exit", ret_str);
+    char *tmp = malloc(10 * sizeof(char));
 
-    local_itoa(pid, ret_str);
-    set_variable("spi", ret_str);
+    local_itoa(pid, tmp);
+    set_variable("spi", tmp);
 
     free(file_path);
     free(file_name);
-    free(ret_str);
     free(argv);
+    free(tmp);
 
     #else
     raise_error("go", "Not available in this build");
@@ -1624,6 +1626,9 @@ char *check_pseudos(char *line);
 
 
 char *execute_line(char *full_line) {
+    // set the exit code variable to 0
+    strcpy(exit_code, "0");
+
     // check for function and variable
     char *line = check_subfunc(full_line);
 
@@ -2024,6 +2029,11 @@ int execute_lines(char **lines, int line_end, char **result) {
 
     if (result != NULL) {
         *result[0] = '\0';
+    }
+
+    if (line_end == 0) {
+        strcpy(exit_code, "0");
+        return 0;
     }
 
     int lastif_state = 2; // 0: false, 1: true, 2: not set
@@ -3123,7 +3133,7 @@ void start_shell() {
     while (1) {
         line[0] = '\0';
         do {
-            printf(FIRST_PROMPT, current_directory);
+            printf(exit_code[0] == '0' ? PROMPT_SUCC : PROMPT_FAIL, current_directory);
             fflush(stdout);
         } while(local_input(line, INPUT_SIZE, history, history_index));
 
@@ -3333,14 +3343,17 @@ int main(int argc, char **argv) {
     strcpy(current_directory, "/");
     if (USE_ENVVARS) setenv("PWD", "/", 1);
 
+    exit_code = malloc(5 * sizeof(char));
+    strcpy(exit_code, "0");
+
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
-    set_variable("exit", "0");
     set_variable("spi",  "0");
+    set_sync_variable("exit", exit_code);
     set_sync_variable("path", current_directory);
 
     // init pseudo commands
@@ -3356,10 +3369,12 @@ int main(int argc, char **argv) {
         start_shell();
     }
 
-    free(current_directory);
     free_functions();
     free_pseudos();
     free_vars();
+
+    free(current_directory);
+    free(exit_code);
     free(args);
 
     return 0;
