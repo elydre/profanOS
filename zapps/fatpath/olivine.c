@@ -1,12 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #define STRING_CHAR '\''
 
 #define ENABLE_DEBUG  0  // print function calls
-#define SHOW_ALLFAIL  0  // show all failed checks
 #define PROFANBUILD   1  // enable profan features
+#define USE_ENVVARS   1  // enable environment variables
+
+#define OLV_VERSION "0.6"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -17,7 +20,19 @@
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
 
-#define OLV_VERSION "0.5"
+
+/******************************
+ *                           *
+ *  Structs and Definitions  *
+ *                           *
+******************************/
+
+#ifdef NoProfan
+  #ifdef PROFANBUILD
+    #undef PROFANBUILD
+  #endif
+  #define PROFANBUILD 0
+#endif
 
 #if PROFANBUILD
   #include <syscall.h>
@@ -26,21 +41,26 @@
   #include <profan.h>
 
   // profanOS config
-  #define FIRST_PROMPT "profanOS [$4%s$7] > "
+  #define PROMPT_SUCC "profanOS [$4%s$7] > "
+  #define PROMPT_FAIL "profanOS [$4%s$7] $3>$7 "
+
   #define DEBUG_COLOR  "$6"
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
 
   // unix config
-  #define FIRST_PROMPT "olivine [%s] > "
+  #define PROMPT_SUCC "olivine [%s] > "
+  #define PROMPT_FAIL "-ERROR- [%s] > "
+
   #define DEBUG_COLOR  ""
 #endif
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
 
-#define USE_ENVVARS  1
+#define ERROR_CODE ((void *) 1)
+
 
 char *keywords[] = {
     "IF",
@@ -83,6 +103,9 @@ function_t *functions;
 internal_function_t internal_functions[];
 
 char *current_directory;
+char *exit_code;
+
+void raise_error(char *part, char *format, ...);
 
 /*******************************
  *                            *
@@ -107,9 +130,14 @@ char *get_variable(char *name) {
     return NULL;
 }
 
-int set_variable(char *name, char *value) {
-    char *value_copy = malloc(strlen(value) + 1);
-    strcpy(value_copy, value);
+#define set_variable(name, value) set_variable_withlen(name, value, -1)
+
+int set_variable_withlen(char *name, char *value, int str_len) {
+    if (str_len == -1) str_len = strlen(value);
+
+    char *value_copy = malloc(str_len + 1);
+    strncpy(value_copy, value, str_len);
+    value_copy[str_len] = '\0';
 
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
@@ -129,7 +157,8 @@ int set_variable(char *name, char *value) {
             return 0;
         }
     }
-    printf("Error: Too many variables\n");
+
+    raise_error(NULL, "Cannot set value of '%s', more than %d variables", name, MAX_VARIABLES);
     return 1;
 }
 
@@ -197,6 +226,8 @@ int del_variable(char *name) {
         return 0;
     }
 
+    raise_error(NULL, "Variable '%s' does not exist", name);
+
     return 1;
 }
 
@@ -238,7 +269,7 @@ int set_pseudo(char *name, char *value) {
             return 0;
         }
     }
-    printf("Error: Too many pseudos\n");
+    raise_error(NULL, "Cannot set value of '%s', more than %d pseudos", name, MAX_PSEUDOS);
     return 1;
 }
 
@@ -248,32 +279,7 @@ int set_pseudo(char *name, char *value) {
  *                            *
 ********************************/
 
-int set_function(char *name, char **lines, int line_count) {
-    for (int i = 0; i < MAX_FUNCTIONS; i++) {
-        if (functions[i].name == NULL) {
-            char *name_copy = malloc(strlen(name) + 1);
-            strcpy(name_copy, name);
-            functions[i].name = name_copy;
-            functions[i].line_count = line_count;
-
-            // we need to copy the lines
-            functions[i].lines = malloc(sizeof(char *) * line_count);
-            for (int j = 0; j < line_count; j++) {
-                functions[i].lines[j] = malloc(strlen(lines[j]) + 1);
-                strcpy(functions[i].lines[j], lines[j]);
-            }
-
-            return 0;
-        } if (strcmp(functions[i].name, name) == 0) {
-            printf("Function %s already exists\n", name);
-            return 1;
-        }
-    }
-    printf("Too many functions\n");
-    return 1;
-}
-
-void print_function(char *name) {
+int print_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name == NULL) {
             break;
@@ -283,23 +289,21 @@ void print_function(char *name) {
             for (int j = 0; j < functions[i].line_count; j++) {
                 printf("| %s\n", functions[i].lines[j]);
             }
-            return;
+            return 0;
         }
     }
-    printf("Function %s does not exist\n", name);
+    raise_error(NULL, "Function %s does not exist", name);
+    return 1;
 }
 
 int del_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name == NULL) {
-            return 1;
+            break;
         }
         if (strcmp(functions[i].name, name) == 0) {
-            free(functions[i].name);
-            for (int j = 0; j < functions[i].line_count; j++) {
-                free(functions[i].lines[j]);
-            }
             free(functions[i].lines);
+            free(functions[i].name);
 
             // shift all functions down
             for (int j = i; j < MAX_FUNCTIONS - 1; j++) {
@@ -308,6 +312,42 @@ int del_function(char *name) {
             return 0;
         }
     }
+    raise_error(NULL, "Function %s does not exist", name);
+    return 1;
+}
+
+int set_function(char *name, char **lines, int line_count) {
+    int char_count = 0;
+    for (int i = 0; i < line_count; i++) {
+        char_count += strlen(lines[i]) + 1;
+    }
+
+    char **lines_copy = malloc(sizeof(char *) * line_count + char_count);
+    char *lines_ptr = (char *) lines_copy + sizeof(char *) * line_count;
+
+    for (int i = 0; i < line_count; i++) {
+        lines_copy[i] = lines_ptr;
+        strcpy(lines_ptr, lines[i]);
+        lines_ptr += strlen(lines[i]) + 1;
+    }
+
+    for (int i = 0; i < MAX_FUNCTIONS; i++) {
+        if (functions[i].name == NULL) {
+            char *name_copy = malloc(strlen(name) + 1);
+            strcpy(name_copy, name);
+            functions[i].name = name_copy;
+            functions[i].line_count = line_count;
+            functions[i].lines = lines_copy;
+            return 0;
+        } if (strcmp(functions[i].name, name) == 0) {
+            free(functions[i].lines);
+            functions[i].line_count = line_count;
+            functions[i].lines = lines_copy;
+            return 0;
+        }
+    }
+
+    raise_error(NULL, "Cannot set function '%s', more than %d functions", name, MAX_FUNCTIONS);
     return 1;
 }
 
@@ -321,6 +361,80 @@ function_t *get_function(char *name) {
         }
     }
     return NULL;
+}
+
+/****************************
+ *                         *
+ *  Local Tools Functions  *
+ *                         *
+****************************/
+
+void local_itoa(int n, char *buffer) {
+    int i = 0;
+    int sign = 0;
+
+    if (n < 0) {
+        sign = 1;
+        n = -n;
+    }
+
+    do {
+        buffer[i++] = n % 10 + '0';
+    } while ((n /= 10) > 0);
+
+    if (sign) {
+        buffer[i++] = '-';
+    }
+
+    buffer[i] = '\0';
+
+    for (int j = 0; j < i / 2; j++) {
+        char tmp = buffer[j];
+        buffer[j] = buffer[i - j - 1];
+        buffer[i - j - 1] = tmp;
+    }
+}
+
+int local_atoi(char *str, int *result) {
+    int i = 0;
+    int sign = 0;
+    int res = 0;
+
+    if (str[0] == '-') {
+        sign = 1;
+        i++;
+    }
+
+    while (str[i] != '\0') {
+        if (str[i] < '0' || str[i] > '9') {
+            return 1;
+        }
+        res *= 10;
+        res += str[i] - '0';
+        i++;
+    }
+
+    if (sign) {
+        res = -res;
+    }
+
+    *result = res;
+
+    return 0;
+}
+
+void raise_error(char *part, char *format, ...) {
+    if (part == NULL) printf("OLIVINE raise: ");
+    else printf("'%s' raise: ", part);
+
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+
+    printf("\n");
+
+    strcpy(exit_code, "1");
 }
 
 /***********************************
@@ -344,18 +458,18 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
-char ops[] = "=<>+-*/~^&|~()";
+char ops[] = "=<>+-*/~^&|~()%![],{}\\";
 
-void printsplit(char **split) {
-    for (int i = 0; split[i] != NULL; i++) {
-        printf(i == 0 ?
-                "[\"%s\", " :
-                split[i + 1] ?
-                    "\"%s\", " :
-                    "\"%s\"]\n"
-            , split[i]
-        );
+void free_ast(ast_t *ast) {
+    if (ast->left.type == AST_TYPE_AST) {
+        free_ast((ast_t *) ast->left.ptr);
     }
+
+    if (ast->right.type == AST_TYPE_AST) {
+        free_ast((ast_t *) ast->right.ptr);
+    }
+
+    free(ast);
 }
 
 ast_t *gen_ast(char **str, int len) {
@@ -434,10 +548,9 @@ ast_t *gen_ast(char **str, int len) {
 
     // check if no operator
     if (op_index == -1) {
-        printf("input: ");
-        printsplit(str);
-        printf("no operator found\n");
-        exit(1);
+        raise_error("eval", "No operator found in expression");
+        free_ast(ast);
+        return NULL;
     }
 
     // generate ast
@@ -447,6 +560,10 @@ ast_t *gen_ast(char **str, int len) {
     } else {
         ast->left.type = AST_TYPE_AST;
         ast->left.ptr = gen_ast(str, op_index);
+        if (ast->left.ptr == NULL) {
+            free_ast(ast);
+            return NULL;
+        }
     }
 
     ast->center.type = AST_TYPE_STR;
@@ -458,48 +575,16 @@ ast_t *gen_ast(char **str, int len) {
     } else {
         ast->right.type = AST_TYPE_AST;
         ast->right.ptr = gen_ast(str + op_index + 1, len - op_index - 1);
+        if (ast->right.ptr == NULL) {
+            free_ast(ast);
+            return NULL;
+        }
     }
 
     return ast;
 }
 
-char *eval(ast_t *ast) {
-    // if only one element return it
-    if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
-        char *res = malloc(strlen((char *) ast->center.ptr) + 1);
-        strcpy(res, (char *) ast->center.ptr);
-        return res;
-    }
-
-    if (ast->center.type == AST_TYPE_NIL) {
-        printf("operator not supported\n");
-        return NULL;
-    }
-
-    // convert to int
-    char *op = (char *) ast->center.ptr;
-    int left, right;
-    char *res = NULL;
-
-    if (ast->left.type == AST_TYPE_AST) {
-        res = eval((ast_t *) ast->left.ptr);
-        if (res == NULL) return NULL;
-        left = atoi(res);
-        free(res);
-    } else {
-        left = atoi((char *) ast->left.ptr);
-    }
-
-    if (ast->right.type == AST_TYPE_AST) {
-        res = eval((ast_t *) ast->right.ptr);
-        if (res == NULL) return NULL;
-        right = atoi(res);
-        free(res);
-    } else {
-        right = atoi((char *) ast->right.ptr);
-    }
-
-    // calculate
+char *calculate_integers(int left, int right, char *op) {
     int result;
     switch (op[0]) {
         case '+':
@@ -530,34 +615,90 @@ char *eval(ast_t *ast) {
             result = left != right;
             break;
         default:
-            printf("unknown operator: %s\n", op);
+            raise_error("eval", "Unknown operator '%s' between integers", op);
             return NULL;
     }
 
-    // printf("%d %s %d -> %d\n", left, op, right, result);
-
     // convert back to string
     char *ret = malloc(sizeof(char) * 12);
-    sprintf(ret, "%d", result);
+    local_itoa(result, ret);
     return ret;
 }
 
-void free_ast(ast_t *ast) {
+char *calculate_strings(char *left, char *right, char *op) {
+    char *res;
+    if (op[0] == '+') {
+        res = malloc(strlen(left) + strlen(right) + 1);
+        strcpy(res, left);
+        strcat(res, right);
+    } else if (op[0] == '=') {
+        res = malloc(sizeof(char) * 2);
+        res[0] = (strcmp(left, right) == 0) + '0';
+        res[1] = '\0';
+    } else if (op[0] == '~') {
+        res = malloc(sizeof(char) * 2);
+        res[0] = (strcmp(left, right) != 0) + '0';
+        res[1] = '\0';
+    } else {
+        raise_error("eval", "Unknown operator '%s' between strings", op);
+        return NULL;
+    }
+    return res;
+}
+    
+
+char *eval(ast_t *ast) {
+    char *res;
+
+    // if only one element return it
+    if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
+        res = malloc(strlen((char *) ast->center.ptr) + 1);
+        strcpy(res, (char *) ast->center.ptr);
+        return res;
+    }
+
+    if (ast->center.type == AST_TYPE_NIL) {
+        raise_error("eval", "No operator found in expression");
+        return ERROR_CODE;
+    }
+
+    // convert to int
+    char *op = (char *) ast->center.ptr;
+    int left, right, no_number = 0;
+    char *left_str, *right_str;
+
     if (ast->left.type == AST_TYPE_AST) {
-        free_ast((ast_t *) ast->left.ptr);
+        left_str = eval((ast_t *) ast->left.ptr);
+    } else {
+        left_str = (char *) ast->left.ptr;
     }
 
     if (ast->right.type == AST_TYPE_AST) {
-        free_ast((ast_t *) ast->right.ptr);
+        right_str = eval((ast_t *) ast->right.ptr);
+    } else {
+        right_str = (char *) ast->right.ptr;
     }
 
-    free(ast);
+    if (right_str != NULL && left_str != NULL) {
+        no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
+        res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
+    }
+
+    if (ast->left.type == AST_TYPE_AST && left_str != NULL) {
+        free(left_str);
+    }
+
+    if (ast->right.type == AST_TYPE_AST && right_str != NULL) {
+        free(right_str);
+    }
+
+    return res;
 }
 
 char *if_eval(char **input) {
     if (input[0] == NULL) {
-        printf("eval: no input\n");
-        return NULL;
+        raise_error("eval", "Requires at least one argument");
+        return ERROR_CODE;
     }
 
     // join input
@@ -611,9 +752,14 @@ char *if_eval(char **input) {
     free(joined_input);
 
     ast_t *ast = gen_ast(elms, len);
-    char *res = eval(ast);
+    char *res;
 
-    free_ast(ast);
+    if (ast) {
+        res = eval(ast);
+        free_ast(ast);
+    } else {
+        res = NULL;
+    }
 
     for (int i = 0; i < len; i++) {
         free(elms[i]);
@@ -750,8 +896,8 @@ char *if_set_var(char **input) {
     }
 
     if (argc != 2) {
-        printf("set: expected 2 arguments, got %d\n", argc);
-        return NULL;
+        raise_error("set", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     // get name
@@ -762,7 +908,7 @@ char *if_set_var(char **input) {
 
     // set variable
     if (set_variable(name, value)) {
-        printf("set: no more space for variables\n");
+        return ERROR_CODE;
     }
 
     return NULL;
@@ -776,8 +922,8 @@ char *if_del_var(char **input) {
     }
 
     if (argc != 1) {
-        printf("del: expected 1 argument, got %d\n", argc);
-        return NULL;
+        raise_error("del", "Expected 1 argument, got %d\n", argc);
+        return ERROR_CODE;
     }
 
     // get name
@@ -785,7 +931,7 @@ char *if_del_var(char **input) {
 
     // delete variable
     if (del_variable(name)) {
-        printf("del: variable '%s' not found\n", name);
+        return ERROR_CODE;
     }
 
     return NULL;
@@ -799,13 +945,13 @@ char *if_export(char **input) {
     }
 
     if (argc != 2) {
-        printf("export: expected 2 arguments, got %d\n", argc);
-        return NULL;
+        raise_error("export", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     if (!USE_ENVVARS) {
-        printf("export: environment variables are disabled\n");
-        return NULL;
+        raise_error("export", "Environment variables are disabled");
+        return ERROR_CODE;
     }
 
     setenv(input[0], input[1], 1);
@@ -821,8 +967,8 @@ char *if_del_func(char **input) {
     }
 
     if (argc != 1) {
-        printf("delfunc: expected 1 argument, got %d\n", argc);
-        return NULL;
+        raise_error("delfunc", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
     }
 
     // get name
@@ -830,7 +976,7 @@ char *if_del_func(char **input) {
 
     // delete function
     if (del_function(name)) {
-        printf("delfunc: function '%s' not found\n", name);
+        return ERROR_CODE;
     }
 
     return NULL;
@@ -859,13 +1005,13 @@ char *if_debug(char **input) {
         } else if (strcmp(input[0], "-a") == 0) {
             mode = 5;
         } else {
-            printf("debug: unknown argument '%s'\n", input[0]);
+            raise_error("debug", "Unknown argument '%s'", input[0]);
             printf("expected '-v', '-if', '-f', '-p' or '-a'\n");
-            return NULL;
+            return ERROR_CODE;
         }
     } else {
-        printf("debug: expected 0 or 1 arguments, got %d\n", argc);
-        return NULL;
+        raise_error("debug", "Expected 0 or 1 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     // print variables
@@ -949,8 +1095,8 @@ char *if_go_binfile(char **input) {
     }
 
     if (argc < 1) {
-        printf("GO: expected at least 1 argument, got %d\n", argc);
-        return NULL;
+        raise_error("go", "Expected at least 1 argument, got %d", argc);
+        return ERROR_CODE;
     }
 
     // get file name
@@ -961,9 +1107,9 @@ char *if_go_binfile(char **input) {
     sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
 
     if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
-        printf("GO: file '%s' does not exist\n", file_path);
+        raise_error("go", "File '%s' does not exist", file_path);
         free(file_path);
-        return NULL;
+        return ERROR_CODE;
     }
 
     int sleep = 1;
@@ -988,33 +1134,31 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
-    char *ret_str = malloc(10 * sizeof(char));
-
     int pid;
-
-    sprintf(ret_str, "%d", c_run_ifexist_full (
+    local_itoa(c_run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
-    ));
+    ), exit_code);
 
     if (!sleep) {
         printf("GO: started with pid %d\n", pid);
     }
 
-    set_variable("exit", ret_str);
+    char *tmp = malloc(10 * sizeof(char));
 
-    sprintf(ret_str, "%d", pid);
-    set_variable("spi", ret_str);
+    local_itoa(pid, tmp);
+    set_variable("spi", tmp);
 
     free(file_path);
     free(file_name);
-    free(ret_str);
     free(argv);
+    free(tmp);
+    return exit_code[0] == '0' ? NULL : ERROR_CODE;
 
     #else
-    printf("GO: not available in this build\n");
-    #endif
+    raise_error("go", "Not available in this build");
+    return ERROR_CODE;
 
-    return NULL;
+    #endif
 }
 
 void execute_file(char *file);
@@ -1026,8 +1170,8 @@ char *if_exec(char **input) {
     }
 
     if (argc != 1) {
-        printf("EXEC: expected 1 argument, got %d\n", argc);
-        return NULL;
+        raise_error("exec", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
     }
 
     execute_file(input[0]);
@@ -1043,8 +1187,8 @@ char *if_change_dir(char **input) {
     }
 
     if (argc > 1) {
-        printf("CD: expected 1 argument, got %d\n", argc);
-        return NULL;
+        raise_error("cd", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
     }
 
     // change to default if no arguments
@@ -1066,9 +1210,9 @@ char *if_change_dir(char **input) {
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
-        printf("CD: directory '%s' does not exist\n", dir);
+        raise_error("cd", "Directory '%s' does not exist", dir);
         free(dir);
-        return NULL;
+        return ERROR_CODE;
     }
     #else
     strcpy(dir, input[0]);
@@ -1093,8 +1237,8 @@ char *if_make_pseudo(char **input) {
     }
 
     if (argc != 2) {
-        printf("PSEUDO: expected 2 arguments, got %d\n", argc);
-        return NULL;
+        raise_error("pseudo", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     // get name
@@ -1104,9 +1248,7 @@ char *if_make_pseudo(char **input) {
     char *value = input[1];
 
     // set pseudo
-    if (set_pseudo(name, value)) {
-        printf("PSEUDO: no more space for pseudo\n");
-    }
+    set_pseudo(name, value);
 
     return NULL;
 }
@@ -1114,7 +1256,7 @@ char *if_make_pseudo(char **input) {
 char *if_range(char **input) {
     /*
      * input: ["1", "5"]
-     * output: "'1' '2' '3' '4' '5'"
+     * output: "1 2 3 4 5"
     */
 
     int argc = 0;
@@ -1123,32 +1265,36 @@ char *if_range(char **input) {
     }
 
     if (argc != 2) {
-        printf("RANGE: expected 2 arguments, got %d\n", argc);
-        return NULL;
+        raise_error("range", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     int start = atoi(input[0]);
     int end = atoi(input[1]);
 
     if (start >= end) {
-        printf("RANGE: start must be less than end\n");
-        return NULL;
+        raise_error("range", "Start must be less than end, got %d and %d", start, end);
+        return ERROR_CODE;
     }
 
-    char *output = malloc(1 * sizeof(char));
-    output[0] = '\0';
+    char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
+    char *tmp = malloc(12 * sizeof(char));
+    tmp[0] = '\0';
+
+    int output_len = 0;
+
     for (int i = start; i < end; i++) {
-        char *tmp = malloc((strlen(output) + strlen(input[1]) + 4) * sizeof(char));
-        strcpy(tmp, output);
-        sprintf(tmp, "%s '%d'", tmp, i);
-        free(output);
-        output = tmp;
+        local_itoa(i, tmp);
+        strcat(tmp, " ");
+        for (int j = 0; tmp[j] != '\0'; j++) {
+            output[output_len++] = tmp[j];
+        }
     }
-    char *copy = malloc((strlen(output)) * sizeof(char));
-    strcpy(copy, output + 1);
-    free(output);
+    output[--output_len] = '\0';
 
-    return copy;
+    free(tmp);
+
+    return output;
 }
 
 char *if_find(char **input) {
@@ -1163,9 +1309,9 @@ char *if_find(char **input) {
         argc++;
     }
 
-    if (argc < 1 || argc > 2) {
-        printf("FIND: expected 1 or 2 arguments, got %d\n", argc);
-        return NULL;
+    if (argc > 2) {
+        raise_error("find", "Expected at most 2 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     int required_type = 0;
@@ -1173,23 +1319,22 @@ char *if_find(char **input) {
         required_type = 1;
     } else if (strcmp(input[0], "-d") == 0) {
         required_type = 2;
-    } else {
-        printf("FIND: expected -f or -d as first argument, got '%s'\n", input[0]);
-        return NULL;
     }
 
-    char *path = malloc((argc == 2 ? strlen(input[1]) : 0) + strlen(current_directory) + 2);
-    if (argc == 1)
-        strcpy(path, current_directory);
-    else
-        assemble_path(current_directory, input[1], path);
+    char *user_path;
+    if (argc == 0 || (argc == 1 && required_type)) user_path = "";
+    if (argc == 1 && !required_type) user_path = input[0];
+    if (argc == 2) user_path = input[1];
+
+    char *path = malloc(strlen(user_path) + strlen(current_directory) + 2);
+    assemble_path(current_directory, user_path, path);
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
-        printf("FIND: directory '%s' does not exist\n", path);
+        raise_error("find", "Directory '%s' does not exist", path);
         free(path);
-        return NULL;
+        return ERROR_CODE;
     }
 
     sid_t *out_ids;
@@ -1208,7 +1353,8 @@ char *if_find(char **input) {
     char *tmp_path = malloc(MAX_PATH_SIZE * sizeof(char));
 
     for (int i = 0; i < elm_count; i++) {
-        if ((fu_is_dir(out_ids[i]) && required_type == 2) ||
+        if (!required_type ||
+            (fu_is_dir(out_ids[i]) && required_type == 2) ||
             (fu_is_file(out_ids[i]) && required_type == 1)
         ) {
             if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
@@ -1238,8 +1384,8 @@ char *if_find(char **input) {
 
     return copy;
     #else
-    printf("FIND: not supported in this build\n");
-    return NULL;
+    raise_error("find", "Not supported in this build");
+    return ERROR_CODE;
     #endif
 }
 
@@ -1255,8 +1401,8 @@ char *if_name(char **input) {
     }
 
     if (argc != 1) {
-        printf("NAME: expected 1 argument, got %d\n", argc);
-        return NULL;
+        raise_error("name", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
     }
 
     int len = strlen(input[0]);
@@ -1296,14 +1442,14 @@ char *if_ticks(char **input) {
     }
 
     if (argc != 0) {
-        printf("TICKS: expected 0 arguments, got %d\n", argc);
-        return NULL;
+        raise_error("ticks", "Expected 0 arguments, got %d", argc);
+        return ERROR_CODE;
     }
 
     char *output = malloc(11 * sizeof(char));
 
     #if PROFANBUILD
-    sprintf(output, "%d", c_timer_get_ms());
+    local_itoa(c_timer_get_ms(), output);
     #else
     strcpy(output, "0");
     #endif
@@ -1480,9 +1626,6 @@ void free_functions() {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name != NULL) {
             free(functions[i].name);
-            for (int l = 0; l < functions[i].line_count; l++) {
-                free(functions[i].lines[l]);
-            }
             free(functions[i].lines);
         }
     }
@@ -1521,10 +1664,11 @@ char *execute_function(function_t *function, char **args) {
     int argc = 0;
     char tmp[4];
     for (argc = 0; args[argc] != NULL; argc++) {
-        sprintf(tmp, "%d", argc);
+        local_itoa(argc, tmp);
         set_variable(tmp, args[argc]);
     }
-    sprintf(tmp, "%d", argc);
+
+    local_itoa(argc, tmp);
     set_variable("#", tmp);
 
     char *result = malloc(sizeof(char));
@@ -1532,17 +1676,16 @@ char *execute_function(function_t *function, char **args) {
 
     // free variables
     for (int i = 0; i < argc; i++) {
-        sprintf(tmp, "%d", i);
+        local_itoa(i, tmp);
         del_variable(tmp);
     }
+
     del_variable("#");
 
     if (ret == -1) {
-        if (SHOW_ALLFAIL)
-            printf("Error: function failed\n");
-
+        // function failed
         free(result);
-        return NULL;
+        return ERROR_CODE;
     }
 
     return result;
@@ -1558,9 +1701,7 @@ char *execute_line(char *full_line) {
     char *line = check_subfunc(full_line);
 
     if (line == NULL) {
-        if (SHOW_ALLFAIL)
-            printf("Error: subfunction failed\n");
-
+        // subfunction failed
         return NULL;
     }
 
@@ -1578,8 +1719,8 @@ char *execute_line(char *full_line) {
     char *result;
 
     if (function == NULL) {
-        printf("Function '%s' not found\n", function_name);
-        result = NULL;
+        raise_error(NULL, "Function '%s' not found", function_name);
+        result = ERROR_CODE;
     } else {
         // generate the arguments array
         char **function_args = gen_args(line + name_size);
@@ -1606,6 +1747,11 @@ char *execute_line(char *full_line) {
     if (line != full_line) {
         free(line);
     }
+
+    // set the exit code variable to 0
+    if (result != ERROR_CODE) {
+        strcpy(exit_code, "0");
+    } else return NULL;
 
     return result;
 }
@@ -1651,7 +1797,7 @@ char *check_subfunc(char *line) {
     }
 
     if (end == -1) {
-        printf("Error: missing closing parenthesis '%s'\n", line);
+        raise_error(NULL, "Missing closing parenthesis in '%s'", line);
         return NULL;
     }
 
@@ -1664,9 +1810,7 @@ char *check_subfunc(char *line) {
     free(subfunc);
 
     if (subfunc_result == NULL) {
-        if (SHOW_ALLFAIL)
-            printf("Error: subfunc returned NULL\n");
-
+        // subfunc execution failed
         return NULL;
     }
 
@@ -1732,7 +1876,7 @@ char *check_variables(char *line) {
     char *var_value = get_variable(var_name);
 
     if (var_value == NULL) {
-        printf("Error: variable '%s' not found\n", var_name);
+        raise_error(NULL, "Variable '%s' not found", var_name);
         free(var_name);
         return NULL;
     }
@@ -1807,11 +1951,15 @@ char **lexe_program(char *program) {
         }
     }
 
-    char **lines = malloc((line_count + 1) * sizeof(char*));
-    char *tmp = malloc((strlen(program) + 1) * sizeof(char));
+    int program_len = strlen(program) + 1;
+    char *tmp = malloc((program_len) * sizeof(char));
 
-    int tmp_index = 0;
+    int index_size = (line_count + 1) * sizeof(char*);
+    char **lines = malloc(index_size + (program_len) * sizeof(char));
+    char *line_ptr = (char*) lines + index_size;
+
     int line_index = 0;
+    int tmp_index = 0;
     int is_string_begin = 1;
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
@@ -1827,8 +1975,11 @@ char **lexe_program(char *program) {
             }
 
             tmp[tmp_index++] = '\0';
-            lines[line_index] = malloc(tmp_index * sizeof(char));
+
+            lines[line_index] = line_ptr;
             strcpy(lines[line_index], tmp);
+
+            line_ptr += tmp_index;
             line_index++;
             tmp_index = 0;
             continue;
@@ -1868,7 +2019,7 @@ char **lexe_program(char *program) {
             tmp_index--;
         }
         tmp[tmp_index++] = '\0';
-        lines[line_index] = malloc(tmp_index * sizeof(char));
+        lines[line_index] = line_ptr;
         strcpy(lines[line_index], tmp);
     }
 
@@ -1888,9 +2039,7 @@ char **lexe_program(char *program) {
 int check_condition(char *condition) {
     char *verif = check_subfunc(condition);
     if (verif == NULL) {
-        if (SHOW_ALLFAIL)
-            printf("Error: error in condition '%s'\n", condition);
-
+        // error in condition
         return -1;
     }
 
@@ -1955,20 +2104,23 @@ int execute_lines(char **lines, int line_end, char **result) {
         *result[0] = '\0';
     }
 
+    if (line_end == 0) {
+        strcpy(exit_code, "0");
+        return 0;
+    }
+
     int lastif_state = 2; // 0: false, 1: true, 2: not set
 
     for (int i = 0; i < line_end; i++) {
         if (i >= line_end) {
-            printf("Error: trying to execute line after END\n");
+            raise_error(NULL, "Trying to execute line after END");
             return -1;
         }
 
         if (does_startwith(lines[i], "FOR")) {
             int ret = execute_for(line_end - i, lines + i, result);
             if (ret == -1) {
-                if (SHOW_ALLFAIL)
-                    printf("Error: invalid FOR loop\n");
-
+                // invalid FOR loop
                 return -1;
             } else if (ret < -1) {
                 return ret;
@@ -1982,9 +2134,7 @@ int execute_lines(char **lines, int line_end, char **result) {
             int ret = execute_if(line_end - i, lines + i, result, &lastif_state);
 
             if (ret == -1) {
-                if (SHOW_ALLFAIL)
-                    printf("Error: invalid IF statement\n");
-
+                // invalid IF statement
                 return -1;
             } else if (ret < -1) {
                 return ret;
@@ -1998,9 +2148,7 @@ int execute_lines(char **lines, int line_end, char **result) {
             int ret = execute_else(line_end - i, lines + i, result, lastif_state);
 
             if (ret == -1) {
-                if (SHOW_ALLFAIL)
-                    printf("Error: invalid ELSE statement\n");
-
+                // invalid ELSE statement
                 return -1;
             } else if (ret < -1) {
                 return ret;
@@ -2015,9 +2163,7 @@ int execute_lines(char **lines, int line_end, char **result) {
             int ret = execute_while(line_end - i, lines + i, result);
 
             if (ret == -1) {
-                if (SHOW_ALLFAIL)
-                    printf("Error: invalid WHILE loop\n");
-
+                // invalid WHILE loop
                 return -1;
             } else if (ret < -1) {
                 return ret;
@@ -2031,9 +2177,7 @@ int execute_lines(char **lines, int line_end, char **result) {
             int ret = save_function(line_end - i, lines + i);
 
             if (ret == -1) {
-                if (SHOW_ALLFAIL)
-                    printf("Error: invalid FUNCTION declaration\n");
-
+                // invalid FUNCTION declaration
                 return -1;
             } else if (ret < -1) {
                 return ret;
@@ -2044,7 +2188,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (does_startwith(lines[i], "END")) {
-            printf("Error: suspicious END line %d\n", i + 1);
+            raise_error(NULL, "Suspicious END line %d", i + 1);
             return -1;
         }
 
@@ -2084,9 +2228,7 @@ int execute_return(char *line, char **result) {
     }
 
     if (res == NULL) {
-        if (SHOW_ALLFAIL)
-            printf("Error: invalid RETURN statement\n");
-
+        // invalid RETURN statement
         return -1;
     }
 
@@ -2111,7 +2253,7 @@ int execute_for(int line_count, char **lines, char **result) {
     char *string = malloc((strlen(for_line) + 1) * sizeof(char));
 
     if (for_line[3] != ' ') {
-        printf("Error: missing space after FOR\n");
+        raise_error(NULL, "Missing space after FOR");
         free(var_name);
         free(string);
 
@@ -2153,11 +2295,8 @@ int execute_for(int line_count, char **lines, char **result) {
         return line_end;
     }
 
-    // convert string to string array
-    char **string_array = gen_args(string);
-
     if (line_end == 0) {
-        printf("Error: missing END for FOR loop\n");
+        raise_error(NULL, "Missing END for FOR loop");
         free(var_name);
         free(string);
 
@@ -2169,15 +2308,37 @@ int execute_for(int line_count, char **lines, char **result) {
     }
 
     int var_exist_before = does_variable_exist(var_name);
-    int res;
 
-    // execute for loop
-    for (int i = 0; string_array[i] != NULL; i++) {
-        set_variable(var_name, string_array[i]);
+
+    int var_len = 0;
+    int string_index = 0;
+    int in_string = 0;
+
+    int res;
+    // execute the loop
+    while (string[string_index]) {
+        // set the the variable
+
+        for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
+            if (string[string_index + var_len] == STRING_CHAR) {
+                in_string = !in_string;
+            } else if (!in_string && string[string_index + var_len] == ' ') {
+                break;
+            }
+        }
+
+        set_variable_withlen(var_name, string + string_index, var_len);
+
+        string_index += var_len;
+
+        while (string[string_index] == ' ') {
+            string_index++;
+        }
+
+        // execute the iteration
         res = execute_lines(lines + 1, line_end - 1, result);
         if (res == -1) {
-            if (SHOW_ALLFAIL)
-                printf("Error: invalid FOR loop\n");
+            // invalid FOR loop
             line_end = -1;
             break;
         } else if (res == -3) {
@@ -2195,8 +2356,6 @@ int execute_for(int line_count, char **lines, char **result) {
         del_variable(var_name);
     }
 
-    free_args(string_array);
-
     if (for_line != lines[0]) {
         free(for_line);
     }
@@ -2213,7 +2372,7 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     char *condition = malloc((strlen(if_line) + 1) * sizeof(char));
 
     if (if_line[2] != ' ') {
-        printf("Error: missing space after IF\n");
+        raise_error(NULL, "Missing space after IF");
         free(condition);
 
         if (if_line != lines[0]) {
@@ -2232,7 +2391,7 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
 
     // check condition length
     if (strlen(condition) == 0) {
-        printf("Error: missing condition for IF statement\n");
+        raise_error(NULL, "Missing condition for IF statement");
         free(condition);
 
         if (if_line != lines[0]) {
@@ -2245,7 +2404,7 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
-        printf("Error: missing END for IF statement\n");
+        raise_error(NULL, "Missing END for IF statement");
         free(condition);
 
         if (if_line != lines[0]) {
@@ -2259,8 +2418,7 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     int verif = check_condition(condition);
 
     if (verif == -1) {
-        if (SHOW_ALLFAIL)
-            printf("Error: invalid condition for WHILE loop\n");
+        // invalid condition for WHILE loop
         free(condition);
         return -1;
     }
@@ -2269,11 +2427,7 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
 
     if (verif) {
         int ret = execute_lines(lines + 1, line_end - 1, result);
-        if (ret == -1 && SHOW_ALLFAIL) {
-            printf("Error: invalid IF statement\n");
-        } if (ret < 0) {
-            line_end = ret;
-        }
+        if (ret < 0) line_end = ret;
     }
 
     free(condition);
@@ -2285,29 +2439,25 @@ int execute_else(int line_count, char **lines, char **result, int last_if_state)
     char *else_line = lines[0];
 
     if (last_if_state == 2) {   // not set
-        printf("Error: ELSE statement without IF\n");
+        raise_error(NULL, "ELSE statement without IF");
         return -1;
     }
 
     if (else_line[4] != '\0') {
-        printf("Error: invalid ELSE statement\n");
+        raise_error(NULL, "Invalid ELSE statement");
         return -1;
     }
 
     int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
-        printf("Error: missing END for ELSE statement\n");
+        raise_error(NULL, "Missing END for ELSE statement");
         return -1;
     }
 
     if (!last_if_state) {
         int ret = execute_lines(lines + 1, line_end - 1, result);
-        if (ret == -1 && SHOW_ALLFAIL) {
-            printf("Error: invalid ELSE statement\n");
-        } if (ret < 0) {
-            line_end = ret;
-        }
+        if (ret < 0) line_end = ret;
     }
 
     return line_end;
@@ -2319,7 +2469,7 @@ int execute_while(int line_count, char **lines, char **result) {
     char *condition = malloc((strlen(while_line) + 1) * sizeof(char));
 
     if (while_line[5] != ' ') {
-        printf("Error: missing space after WHILE\n");
+        raise_error(NULL, "Missing space after WHILE");
         free(condition);
 
         if (while_line != lines[0]) {
@@ -2338,7 +2488,7 @@ int execute_while(int line_count, char **lines, char **result) {
 
     // check condition length
     if (strlen(condition) == 0) {
-        printf("Error: missing condition for WHILE loop\n");
+        raise_error(NULL, "Missing condition for WHILE loop");
         free(condition);
 
         if (while_line != lines[0]) {
@@ -2351,7 +2501,7 @@ int execute_while(int line_count, char **lines, char **result) {
     int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
-        printf("Error: missing END for WHILE loop\n");
+        raise_error(NULL, "Missing END for WHILE loop");
         free(condition);
 
         if (while_line != lines[0]) {
@@ -2365,32 +2515,25 @@ int execute_while(int line_count, char **lines, char **result) {
     int verif = check_condition(condition);
 
     if (verif == -1) {
-        if (SHOW_ALLFAIL)
-            printf("Error: invalid condition for WHILE loop\n");
+        // invalid condition for WHILE loop
         free(condition);
         return -1;
     }
 
     while (verif) {
         int ret = execute_lines(lines + 1, line_end - 1, result);
-        if (ret == -1 && SHOW_ALLFAIL) {
-            printf("Error: invalid WHILE loop\n");
-        } if (ret == -3) {
+        if (ret == -3) {
             break;
-        } if (ret == -2) {
-            continue;
-        } if (ret < 0) {
+        } if (ret < 0 && ret != -2) {
             line_end = ret;
             break;
         }
 
         verif = check_condition(condition);
         if (verif == -1) {
-            if (SHOW_ALLFAIL)
-                printf("Error: invalid condition for WHILE loop\n");
-
-            free(condition);
-            return -1;
+            // invalid condition for WHILE loop
+            line_end = -1;
+            break;
         }
     }
 
@@ -2407,7 +2550,7 @@ int save_function(int line_count, char **lines) {
     char *func_line = lines[0];
 
     if (func_line[4] != ' ') {
-        printf("Error: missing space after FUNC\n");
+        raise_error(NULL, "Missing space after FUNC");
         return -1;
     }
 
@@ -2420,7 +2563,7 @@ int save_function(int line_count, char **lines) {
     func_name[i - 5] = '\0';
 
     if (strlen(func_name) == 0) {
-        printf("Error: missing function name\n");
+        raise_error(NULL, "Missing function name");
         free(func_name);
         return -1;
     }
@@ -2428,7 +2571,7 @@ int save_function(int line_count, char **lines) {
     int line_end = get_line_end(line_count, lines);
 
     if (line_end == 0) {
-        printf("Error: missing END for FUNC\n");
+        raise_error(NULL, "Missing END for FUNC");
         free(func_name);
         return -1;
     }
@@ -2449,7 +2592,7 @@ void execute_program(char *program) {
 
     execute_lines(lines, line_count, NULL);
 
-    free_args(lines);
+    free(lines);
 }
 
 int does_syntax_fail(char *program) {
@@ -2473,8 +2616,7 @@ int does_syntax_fail(char *program) {
             open--;
         }
     }
-
-    free_args(lines);
+    free(lines);
 
     if (open > 0) {
         return 1;
@@ -2769,6 +2911,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
         int elm_count = fu_get_dir_content(dir, &out_ids, &names);
 
         for (int j = 0; j < elm_count; j++) {
+            if (names[j][0] == '.' && inp_end[0] != '.') continue;
             if (strncmp(names[j], inp_end, dec) == 0) {
                 tmp = malloc((strlen(names[j]) + 2) * sizeof(char));
                 strcpy(tmp, names[j]);
@@ -2782,6 +2925,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
         for (int j = 0; j < elm_count; j++) {
             free(names[j]);
         }
+
         free(inp_end);
         free(out_ids);
         free(names);
@@ -3062,7 +3206,7 @@ void start_shell() {
     while (1) {
         line[0] = '\0';
         do {
-            printf(FIRST_PROMPT, current_directory);
+            printf(exit_code[0] == '0' ? PROMPT_SUCC : PROMPT_FAIL, current_directory);
             fflush(stdout);
         } while(local_input(line, INPUT_SIZE, history, history_index));
 
@@ -3272,14 +3416,17 @@ int main(int argc, char **argv) {
     strcpy(current_directory, "/");
     if (USE_ENVVARS) setenv("PWD", "/", 1);
 
+    exit_code = malloc(5 * sizeof(char));
+    strcpy(exit_code, "0");
+
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
-    set_variable("exit", "0");
-    set_variable("spi",  "0");
+    set_variable("spi", "0");
+    set_sync_variable("exit", exit_code);
     set_sync_variable("path", current_directory);
 
     // init pseudo commands
@@ -3295,10 +3442,12 @@ int main(int argc, char **argv) {
         start_shell();
     }
 
-    free(current_directory);
     free_functions();
     free_pseudos();
     free_vars();
+
+    free(current_directory);
+    free(exit_code);
     free(args);
 
     return 0;

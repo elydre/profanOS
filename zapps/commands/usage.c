@@ -20,7 +20,7 @@ void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
 
 void add_mem_info(uint32_t *pixel_buffer) {
     char tmp[10];
-    
+
     int alloc_count = c_mem_get_info(4, 0) - c_mem_get_info(5, 0);
     int mem_used = c_mem_get_info(6, 0) / 1024;
 
