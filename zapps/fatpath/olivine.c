@@ -2464,9 +2464,7 @@ int execute_while(int line_count, char **lines, char **result) {
         int ret = execute_lines(lines + 1, line_end - 1, result);
         if (ret == -3) {
             break;
-        } if (ret == -2) {
-            continue;
-        } if (ret < 0) {
+        } if (ret < 0 && ret != -2) {
             line_end = ret;
             break;
         }
@@ -2474,8 +2472,8 @@ int execute_while(int line_count, char **lines, char **result) {
         verif = check_condition(condition);
         if (verif == -1) {
             // invalid condition for WHILE loop
-            free(condition);
-            return -1;
+            line_end = -1;
+            break;
         }
     }
 
