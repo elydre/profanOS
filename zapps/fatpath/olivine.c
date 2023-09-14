@@ -7,6 +7,7 @@
 
 #define ENABLE_DEBUG  0  // print function calls
 #define PROFANBUILD   1  // enable profan features
+#define USE_ENVVARS   1  // enable environment variables
 
 #define OLV_VERSION "0.6"
 
@@ -58,7 +59,8 @@
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
 
-#define USE_ENVVARS  1
+#define ERROR_CODE ((void *) 1)
+
 
 char *keywords[] = {
     "IF",
@@ -277,7 +279,7 @@ int set_pseudo(char *name, char *value) {
  *                            *
 ********************************/
 
-void print_function(char *name) {
+int print_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name == NULL) {
             break;
@@ -287,10 +289,11 @@ void print_function(char *name) {
             for (int j = 0; j < functions[i].line_count; j++) {
                 printf("| %s\n", functions[i].lines[j]);
             }
-            return;
+            return 0;
         }
     }
     raise_error(NULL, "Function %s does not exist", name);
+    return 1;
 }
 
 int del_function(char *name) {
@@ -343,7 +346,8 @@ int set_function(char *name, char **lines, int line_count) {
             return 0;
         }
     }
-    printf("Too many functions\n");
+
+    raise_error(NULL, "Cannot set function '%s', more than %d functions", name, MAX_FUNCTIONS);
     return 1;
 }
 
@@ -562,7 +566,7 @@ char *eval(ast_t *ast) {
 
     if (ast->center.type == AST_TYPE_NIL) {
         raise_error("eval", "No operator found in expression");
-        return NULL;
+        return ERROR_CODE;
     }
 
     // convert to int
@@ -634,7 +638,7 @@ char *eval(ast_t *ast) {
 char *if_eval(char **input) {
     if (input[0] == NULL) {
         raise_error("eval", "Requires at least one argument");
-        return NULL;
+        return ERROR_CODE;
     }
 
     // join input
@@ -833,7 +837,7 @@ char *if_set_var(char **input) {
 
     if (argc != 2) {
         raise_error("set", "Expected 2 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // get name
@@ -843,7 +847,9 @@ char *if_set_var(char **input) {
     char *value = input[1];
 
     // set variable
-    set_variable(name, value);
+    if (set_variable(name, value)) {
+        return ERROR_CODE;
+    }
 
     return NULL;
 }
@@ -857,7 +863,7 @@ char *if_del_var(char **input) {
 
     if (argc != 1) {
         raise_error("del", "Expected 1 argument, got %d\n", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // get name
@@ -865,7 +871,7 @@ char *if_del_var(char **input) {
 
     // delete variable
     if (del_variable(name)) {
-        raise_error("del", "Variable '%s' not found\n", name);
+        return ERROR_CODE;
     }
 
     return NULL;
@@ -880,12 +886,12 @@ char *if_export(char **input) {
 
     if (argc != 2) {
         raise_error("export", "Expected 2 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     if (!USE_ENVVARS) {
         raise_error("export", "Environment variables are disabled");
-        return NULL;
+        return ERROR_CODE;
     }
 
     setenv(input[0], input[1], 1);
@@ -902,14 +908,16 @@ char *if_del_func(char **input) {
 
     if (argc != 1) {
         raise_error("delfunc", "Expected 1 argument, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // get name
     char *name = input[0];
 
     // delete function
-    del_function(name);
+    if (del_function(name)) {
+        return ERROR_CODE;
+    }
 
     return NULL;
 }
@@ -939,11 +947,11 @@ char *if_debug(char **input) {
         } else {
             raise_error("debug", "Unknown argument '%s'", input[0]);
             printf("expected '-v', '-if', '-f', '-p' or '-a'\n");
-            return NULL;
+            return ERROR_CODE;
         }
     } else {
         raise_error("debug", "Expected 0 or 1 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // print variables
@@ -1028,7 +1036,7 @@ char *if_go_binfile(char **input) {
 
     if (argc < 1) {
         raise_error("go", "Expected at least 1 argument, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // get file name
@@ -1041,7 +1049,7 @@ char *if_go_binfile(char **input) {
     if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
         raise_error("go", "File '%s' does not exist", file_path);
         free(file_path);
-        return NULL;
+        return ERROR_CODE;
     }
 
     int sleep = 1;
@@ -1084,12 +1092,13 @@ char *if_go_binfile(char **input) {
     free(file_name);
     free(argv);
     free(tmp);
+    return exit_code[0] == '0' ? NULL : ERROR_CODE;
 
     #else
     raise_error("go", "Not available in this build");
-    #endif
+    return ERROR_CODE;
 
-    return NULL;
+    #endif
 }
 
 void execute_file(char *file);
@@ -1102,7 +1111,7 @@ char *if_exec(char **input) {
 
     if (argc != 1) {
         raise_error("exec", "Expected 1 argument, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     execute_file(input[0]);
@@ -1119,7 +1128,7 @@ char *if_change_dir(char **input) {
 
     if (argc > 1) {
         raise_error("cd", "Expected 1 argument, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // change to default if no arguments
@@ -1143,7 +1152,7 @@ char *if_change_dir(char **input) {
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
         raise_error("cd", "Directory '%s' does not exist", dir);
         free(dir);
-        return NULL;
+        return ERROR_CODE;
     }
     #else
     strcpy(dir, input[0]);
@@ -1169,7 +1178,7 @@ char *if_make_pseudo(char **input) {
 
     if (argc != 2) {
         raise_error("pseudo", "Expected 2 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     // get name
@@ -1197,7 +1206,7 @@ char *if_range(char **input) {
 
     if (argc != 2) {
         raise_error("range", "Expected 2 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     int start = atoi(input[0]);
@@ -1205,7 +1214,7 @@ char *if_range(char **input) {
 
     if (start >= end) {
         raise_error("range", "Start must be less than end, got %d and %d", start, end);
-        return NULL;
+        return ERROR_CODE;
     }
 
     char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
@@ -1242,7 +1251,7 @@ char *if_find(char **input) {
 
     if (argc > 2) {
         raise_error("find", "Expected at most 2 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     int required_type = 0;
@@ -1265,7 +1274,7 @@ char *if_find(char **input) {
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
         raise_error("find", "Directory '%s' does not exist", path);
         free(path);
-        return NULL;
+        return ERROR_CODE;
     }
 
     sid_t *out_ids;
@@ -1316,7 +1325,7 @@ char *if_find(char **input) {
     return copy;
     #else
     raise_error("find", "Not supported in this build");
-    return NULL;
+    return ERROR_CODE;
     #endif
 }
 
@@ -1333,7 +1342,7 @@ char *if_name(char **input) {
 
     if (argc != 1) {
         raise_error("name", "Expected 1 argument, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     int len = strlen(input[0]);
@@ -1374,7 +1383,7 @@ char *if_ticks(char **input) {
 
     if (argc != 0) {
         raise_error("ticks", "Expected 0 arguments, got %d", argc);
-        return NULL;
+        return ERROR_CODE;
     }
 
     char *output = malloc(11 * sizeof(char));
@@ -1598,6 +1607,7 @@ char *execute_function(function_t *function, char **args) {
         local_itoa(argc, tmp);
         set_variable(tmp, args[argc]);
     }
+
     local_itoa(argc, tmp);
     set_variable("#", tmp);
 
@@ -1609,12 +1619,13 @@ char *execute_function(function_t *function, char **args) {
         local_itoa(i, tmp);
         del_variable(tmp);
     }
+
     del_variable("#");
 
     if (ret == -1) {
         // function failed
         free(result);
-        return NULL;
+        return ERROR_CODE;
     }
 
     return result;
@@ -1626,9 +1637,6 @@ char *check_pseudos(char *line);
 
 
 char *execute_line(char *full_line) {
-    // set the exit code variable to 0
-    strcpy(exit_code, "0");
-
     // check for function and variable
     char *line = check_subfunc(full_line);
 
@@ -1652,7 +1660,7 @@ char *execute_line(char *full_line) {
 
     if (function == NULL) {
         raise_error(NULL, "Function '%s' not found", function_name);
-        result = NULL;
+        result = ERROR_CODE;
     } else {
         // generate the arguments array
         char **function_args = gen_args(line + name_size);
@@ -1679,6 +1687,11 @@ char *execute_line(char *full_line) {
     if (line != full_line) {
         free(line);
     }
+
+    // set the exit code variable to 0
+    if (result != ERROR_CODE) {
+        strcpy(exit_code, "0");
+    } else return NULL;
 
     return result;
 }
