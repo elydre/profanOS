@@ -3320,11 +3320,11 @@ typedef struct {
     char *file;
 } olivine_args_t;
 
-void show_help(int full, char *name) {
+int show_help(int full, char *name) {
     printf("Usage: %s [options] [file]\n", name);
     if (!full) {
         printf("Try '%s --help' for more information.\n", name);
-        return;
+        return 1;
     }
     printf("Options:\n"
         "  -h, --help     show this help message and exit\n"
@@ -3336,6 +3336,7 @@ void show_help(int full, char *name) {
         "Use 'exec' to execute a file from the shell instead\n"
         "of relaunching a new instance of olivine.\n"
     );
+    return 0;
 }
 
 void show_version(void) {
@@ -3371,8 +3372,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
         } else {
             printf("Error: unknown option '%s'\n", argv[i]);
             args->help = 1;
-            free(args);
-            return NULL;
+            return args;
         }
     }
 
@@ -3401,9 +3401,9 @@ int main(int argc, char **argv) {
     }
 
     if (args->help) {
-        show_help(args->help == 2, argv[0]);
+        int ret = show_help(args->help == 2, argv[0]);
         free(args);
-        return args->help == 2 ? 0 : 1;
+        return ret;
     }
 
     if (args->version) {
