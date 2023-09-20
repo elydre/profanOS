@@ -156,6 +156,11 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     index = 0;
 
     last_addr = MEM_BASE_ADDR;
+
+    if (MEM_PARTS[0].state != 2) {
+        sys_fatal("snowflake is corrupted");
+    }
+
     for (int i = 0; i <= part_size; i++) {
         if (i == part_size) {
             sys_fatal("recursive linked list detected in mem_alloc");
@@ -170,7 +175,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
             break;
         }
 
-        if (MEM_PARTS[index].addr - last_addr >= size + gap) {
+        if (MEM_PARTS[index].addr - last_addr >= size + gap && last_addr != MEM_BASE_ADDR) {
             // we can allocate the part here
             exit_mode = 0;
             break;

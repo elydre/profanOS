@@ -59,6 +59,7 @@ vdisk_t *vdisk_create(uint32_t initsize);
 void     vdisk_destroy(vdisk_t *vdisk);
 int      vdisk_is_sector_used(vdisk_t *vdisk, sid_t sid);
 int      vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data);
+int      vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data);
 uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid);
 int      vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save);
 
@@ -98,6 +99,5 @@ sid_t    fu_path_to_sid(filesys_t *filesys, sid_t from, char *path);
 // filesys.c
 filesys_t *fs_get_main();
 int      filesys_init();
-
 
 #endif

@@ -4,9 +4,8 @@
 #include <ktype.h>
 
 
-int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t offset, uint32_t size, int is_read) {
+int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t offset, uint32_t size, int is_read, uint8_t *alloc_buf) {
     vdisk_t *vdisk;
-    uint8_t *data;
 
     // check if offset is valid
     if (offset >= BYTE_IN_CORE) {
@@ -25,10 +24,10 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     }
 
     // check if sector is core
-    data = vdisk_load_sector(vdisk, core_sid);
+    // data = vdisk_load_sector(vdisk, core_sid);
+    vdisk_read_sector(vdisk, core_sid, alloc_buf);
 
-    if (data[0] != ST_CONT || data[1] != SF_CORE) {
-        vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
+    if (alloc_buf[0] != ST_CONT || alloc_buf[1] != SF_CORE) {
         return -1;
     }
 
@@ -36,12 +35,12 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     offset += 2;
 
     if (!is_read) {
-        mem_copy(data + offset, buf, size);
+        mem_copy(alloc_buf + offset, buf, size);
+        vdisk_write_sector(vdisk, core_sid, alloc_buf);
     } else {
-        mem_copy(buf, data + offset, size);
+        mem_copy(buf, alloc_buf + offset, size);
     }
 
-    vdisk_unload_sector(vdisk, core_sid, data, is_read ? NO_SAVE : SAVE);
     return size + offset - 2;
 }
 
@@ -49,7 +48,8 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
     sid_t next_loca_sid;
     vdisk_t *vdisk;
 
-    uint8_t *data;
+    uint8_t *alloc_buf = malloc(FS_SECTOR_SIZE);
+    uint8_t *data = malloc(FS_SECTOR_SIZE);
     int tmp;
 
     vdisk = fs_get_vdisk(filesys, loca_sid.device);
@@ -62,14 +62,18 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
     while (index < size) {
         // check if sector is used
         if (!vdisk_is_sector_used(vdisk, loca_sid)) {
+            free(alloc_buf);
+            free(data);
             return 1;
         }
 
         // check if sector is locator
-        data = vdisk_load_sector(vdisk, loca_sid);
+        // data = vdisk_load_sector(vdisk, loca_sid);
+        vdisk_read_sector(vdisk, loca_sid, data);
 
         if (data[0] != ST_CONT || data[1] != SF_LOCA) {
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
+            free(alloc_buf);
+            free(data);
             return 1;
         }
 
@@ -78,7 +82,8 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
         } else {
             for (int i = 0; i < LINKS_IN_LOCA; i++) {
                 if (index >= size) {
-                    vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
+                    free(alloc_buf);
+                    free(data);
                     return 0;
                 }
                 if (index + BYTE_IN_CORE <= 0) {
@@ -88,18 +93,21 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
                 sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
                 if (IS_NULL_SID(core_sid)) {
                     kprintf("no more core, but still %d bytes to %s\n", size - max(index, 0) , is_read ? "read" : "write");
-                    vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
+                    free(alloc_buf);
+                    free(data);
                     return 1;
                 }
-                tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index), size - max(index, 0), is_read);
+                tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index), size - max(index, 0), is_read, alloc_buf);
                 if (tmp == -1) {
                     kprintf("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
-                    vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
+                    free(alloc_buf);
+                    free(data);
                     return 1;
                 }
                 index += tmp;
             }
         }
+
         next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
         if (IS_NULL_SID(next_loca_sid) && index < size) {
             kprintf("no more locator after d%ds%d, but still %d bytes to %s\n",
@@ -108,12 +116,14 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
                     size - index,
                     is_read ? "read" : "write"
             );
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
+            free(alloc_buf);
+            free(data);
             return 1;
         }
-        vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
         loca_sid = next_loca_sid;
     }
+    free(alloc_buf);
+    free(data);
     return 0;
 }
 

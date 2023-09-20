@@ -109,6 +109,15 @@ int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
     return 0;
 }
 
+int vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
+    if (sid.sector >= vdisk->size) {
+        sys_error("cannot read sector, out of range");
+        return 1;
+    }
+    mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
+    return 0;
+}
+
 uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
     if (sid.sector >= vdisk->size) {
         sys_error("cannot load sector, out of range");
