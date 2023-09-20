@@ -148,12 +148,12 @@ void sort_size_and_type(int count, char **names, sid_t *ids) {
 }
 
 
-void print_help(int full) {
+int print_help(int full) {
     puts("Usage: ls [options] [path]\n");
 
     if (!full) {
         puts("try 'ls -h' for more information\n");
-        return;
+        return 1;
     }
 
     puts(
@@ -165,6 +165,7 @@ void print_help(int full) {
         "  -p  show file size in physical size\n"
         "  -z  sort by size\n"
     );
+    return 0;
 }
 
 ls_args_t *parse_args(int argc, char **argv) {
@@ -220,9 +221,9 @@ ls_args_t *parse_args(int argc, char **argv) {
 int main(int argc, char **argv) {
     ls_args_t *args = parse_args(argc, argv);
     if (args->showhelp) {
-        print_help(args->showhelp == LS_FULL_HELP);
+        int ret = print_help(args->showhelp == LS_FULL_HELP);
         free(args);
-        return 1;
+        return ret;
     }
 
     char *ls_path = malloc(512);
