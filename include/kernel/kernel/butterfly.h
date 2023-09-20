@@ -100,5 +100,4 @@ sid_t    fu_path_to_sid(filesys_t *filesys, sid_t from, char *path);
 filesys_t *fs_get_main();
 int      filesys_init();
 
-
 #endif
