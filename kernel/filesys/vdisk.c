@@ -136,4 +136,3 @@ int vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save) {
     free(data);
     return 0;
 }
-
