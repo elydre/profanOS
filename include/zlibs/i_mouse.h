@@ -1,23 +1,16 @@
-#ifndef MOUSE_ID
-#define MOUSE_ID 1010
+#ifndef I_MOUSE_H
+#define I_MOUSE_H
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
+#include <syscall.h>
 
-/*
-int main();
-int mouse_get_x();
-int mouse_get_y();
-int mouse_get_button(int button);
-void mouse_set_x(int x);
-void mouse_set_y(int y);
-void mouse_reset();
-*/
+#define mouse_get_x() c_mouse_call(0, 0)
+#define mouse_get_y() c_mouse_call(1, 0)
 
-#define mouse_get_x ((int (*)(void)) get_func_addr(MOUSE_ID, 2))
-#define mouse_get_y ((int (*)(void)) get_func_addr(MOUSE_ID, 3))
-#define mouse_get_button ((int (*)(int)) get_func_addr(MOUSE_ID, 4))
-#define mouse_set_x ((void (*)(int)) get_func_addr(MOUSE_ID, 5))
-#define mouse_set_y ((void (*)(int)) get_func_addr(MOUSE_ID, 6))
-#define mouse_reset ((void (*)(void)) get_func_addr(MOUSE_ID, 7))
+#define mouse_get_button(button) c_mouse_call(2, button)
+
+#define mouse_set_x(x) c_mouse_call(3, x)
+#define mouse_set_y(y) c_mouse_call(4, y)
+
+#define mouse_reset() c_mouse_call(5, 0)
 
 #endif
