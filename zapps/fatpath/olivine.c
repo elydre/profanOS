@@ -1678,7 +1678,7 @@ void debug_print(char *function_name, char **function_args) {
         printf(DEBUG_COLOR "'%s') [%d]\n", function_args[i], i + 1);
         return;
     }
-    printf(DEBUG_COLOR ") [0]$$\n");
+    printf(DEBUG_COLOR ") [0]$7\n");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -1973,21 +1973,22 @@ char *check_pseudos(char *line) {
 ***********************/
 
 char **lexe_program(char *program) {
-    int line_count = 1;
+    int line_index = 1;
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
-            line_count++;
+            line_index++;
         }
     }
+    int index_size = (line_index + 1) * sizeof(char*);
+    line_index = 0;
 
     int program_len = strlen(program) + 1;
     char *tmp = malloc((program_len) * sizeof(char));
 
-    int index_size = (line_count + 1) * sizeof(char*);
-    char **lines = malloc(index_size + (program_len) * sizeof(char));
+    char **lines = calloc(index_size + (program_len), sizeof(char));
+
     char *line_ptr = (char*) lines + index_size;
 
-    int line_index = 0;
     int tmp_index = 0;
     int is_string_begin = 1;
     for (int i = 0; program[i] != '\0'; i++) {
@@ -1999,7 +2000,6 @@ char **lexe_program(char *program) {
             }
 
             if (tmp_index == 0) {
-                line_count--;
                 continue;
             }
 
@@ -2034,16 +2034,15 @@ char **lexe_program(char *program) {
 
         // remove comments
         if (program[i] == '/' && program[i + 1] == '/') {
-            while (program[i] != '\n' && program[i] != '\0') i++;
+            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
+            if (program[i] == '\0') break;
             continue;
         }
 
         tmp[tmp_index++] = program[i];
     }
 
-    if (tmp_index == 0) {
-        line_count--;
-    } else {
+    if (tmp_index != 0) {
         while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
             tmp_index--;
         }
@@ -2053,8 +2052,6 @@ char **lexe_program(char *program) {
     }
 
     free(tmp);
-
-    lines[line_count] = NULL;
 
     return lines;
 }
@@ -2714,13 +2711,12 @@ void olv_print(char *str, int len) {
      * unknown function: red
      * variable: yellow
      * brackets: green
+     * comments: dark green
     **/
 
     if (len == 0) {
         return;
     }
-
-    char *tmp = malloc((len + 1) * sizeof(char));
 
     int is_var = 0;
     int i = 0;
@@ -2731,6 +2727,17 @@ void olv_print(char *str, int len) {
         i++;
     }
 
+    if (str[i] == '/' && str[i + 1] == '/') {
+        printf("$9");
+        for (i = 0; str[i] != ';'; i++) {
+            if (i == len) return;
+            printf("%c", str[i]);
+        }
+        olv_print(str + i, len - i);
+        return;
+    }
+
+    char *tmp = malloc((len + 1) * sizeof(char));
     while (!(str[i] == '!' || str[i] == ' '  || str[i] == ';') && i != len) {
         i++;
     }
@@ -2741,6 +2748,17 @@ void olv_print(char *str, int len) {
 
     int from = i;
     for (; i < len; i++) {
+        if (str[i] == '/' && str[i+1] == '/') {
+            if (from != i) {
+                memcpy(tmp, str + from, i - from);
+                tmp[i - from] = '\0';
+                printf("$%c%s", is_var ? '5' : '$', tmp);
+            }
+            olv_print(str + i, len - i);
+            free(tmp);
+            return;
+        }
+
         if (str[i] == '!' && str[i + 1] == '(') {
             // print from from to i
             if (from != i) {
@@ -2782,7 +2800,7 @@ void olv_print(char *str, int len) {
                 printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
-            printf("$6;$$");
+            printf("$6;$7");
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
@@ -3206,7 +3224,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
         printf("\033[?25h\033[u");
         olv_print(buffer, buffer_actual_size);
-        printf(" $$\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" $7\033[u\033[%dC\033[?25l", buffer_index);
         fflush(stdout);
     }
 
