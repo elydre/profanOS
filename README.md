@@ -110,7 +110,7 @@ the installation script `tools/install.sh` or any other image flasher.
 - pf4 ([@elydre](https://github.com/elydre))
 - Loris ([@Lorisredstone](https://github.com/Lorisredstone))
 
-Contact us on [discord](http://pf4.ddns.net/discord)
+Contact us on [discord](https://discord.gg/PFbymQ3d97)
 
 ## Source & Acknowledgment
 
