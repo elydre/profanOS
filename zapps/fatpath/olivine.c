@@ -61,6 +61,9 @@
 
 #define ERROR_CODE ((void *) 1)
 
+#ifndef LOWERCASE
+  #define LOWERCASE(x) ((x) >= 'A' && (x) <= 'Z' ? (x) + 32 : (x))
+#endif
 
 char *keywords[] = {
     "IF",
@@ -396,22 +399,44 @@ void local_itoa(int n, char *buffer) {
 }
 
 int local_atoi(char *str, int *result) {
-    int i = 0;
-    int sign = 0;
+    int sign, found, base;
     int res = 0;
+
+    char *base_str;
 
     if (str[0] == '-') {
         sign = 1;
-        i++;
+        str++;
+    } else {
+        sign = 0;
     }
 
-    while (str[i] != '\0') {
-        if (str[i] < '0' || str[i] > '9') {
+    if (str[0] == '0' && str[1] == 'x') {
+        base_str = "0123456789abcdef";
+        base = 16;
+        str += 2;
+    } else if (str[0] == '0' && str[1] == 'b') {
+        base_str = "01";
+        base = 2;
+        str += 2;
+    } else {
+        base_str = "0123456789";
+        base = 10;
+    }
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        found = 0;
+        for (int j = 0; base_str[j] != '\0'; j++) {
+            if (LOWERCASE(str[i]) == base_str[j]) {
+                res *= base;
+                res += j;
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
             return 1;
         }
-        res *= 10;
-        res += str[i] - '0';
-        i++;
     }
 
     if (sign) {
@@ -645,15 +670,20 @@ char *calculate_strings(char *left, char *right, char *op) {
     }
     return res;
 }
-    
 
 char *eval(ast_t *ast) {
+    int left, right, no_number = 0;
     char *res;
 
     // if only one element return it
     if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
         res = malloc(strlen((char *) ast->center.ptr) + 1);
-        strcpy(res, (char *) ast->center.ptr);
+        no_number = local_atoi((char *) ast->center.ptr, &left);
+        if (no_number) {
+            strcpy(res, (char *) ast->center.ptr);
+        } else {
+            local_itoa(left, res);
+        }
         return res;
     }
 
@@ -664,7 +694,6 @@ char *eval(ast_t *ast) {
 
     // convert to int
     char *op = (char *) ast->center.ptr;
-    int left, right, no_number = 0;
     char *left_str, *right_str;
 
     if (ast->left.type == AST_TYPE_AST) {
@@ -679,7 +708,7 @@ char *eval(ast_t *ast) {
         right_str = (char *) ast->right.ptr;
     }
 
-    if (right_str != NULL && left_str != NULL) {
+    if (left_str != NULL && right_str != NULL) {
         no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
         res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
     }
