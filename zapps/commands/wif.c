@@ -8,8 +8,8 @@
 
 
 int main(int argc, char** argv) {
-    if (argc != 4) {
-        puts("$BUsage: $3wif <file> <content>$$\n");
+    if (argc != 3) {
+        puts("$BUsage: $3wif <file> <content>$7\n");
         return 1;
     }
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    printf("$Bpath $3%s$B not found$$\n", path);
+    printf("$Bpath $3%s$B not found$7\n", path);
     free(path);
     return 1;
 }
