@@ -985,34 +985,6 @@ char *if_print(char **input) {
     return NULL;
 }
 
-char *if_upper(char **input) {
-    int required_size = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        required_size += strlen(input[i]) + 3;
-    }
-
-    char *result = malloc(required_size * sizeof(char));
-
-    int result_i = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        result[result_i++] = STRING_CHAR;
-        for (int j = 0; input[i][j] != '\0'; j++) {
-            if (input[i][j] >= 'a' && input[i][j] <= 'z') {
-                result[result_i] = input[i][j] - 32;
-            } else {
-                result[result_i] = input[i][j];
-            }
-            result_i++;
-        }
-        result[result_i++] = STRING_CHAR;
-        result[result_i++] = ' ';
-    }
-
-    result[required_size - 1] = '\0';
-
-    return result;
-}
-
 char *if_set_var(char **input) {
     // get argc
     int argc = 0;
@@ -1669,7 +1641,6 @@ internal_function_t internal_functions[] = {
     {"sprintf", if_sprintf},
     {"strlen", if_strlen},
     {"ticks", if_ticks},
-    {"upper", if_upper},
     {NULL, NULL}
 };
 

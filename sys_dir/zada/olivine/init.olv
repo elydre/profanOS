@@ -24,6 +24,15 @@ FUNC show
     END
 END
 
+FUNC upper
+    IF !(eval !# ~ 1)
+        echo upper: require one argument, !# given
+        RETURN
+    END
+
+    RETURN !(rep '!0' abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ)
+END
+
 FUNC tree
     FUNC tree_rec
         FOR f !(find -f !0)
