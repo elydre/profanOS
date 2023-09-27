@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.7"
+#define OLV_VERSION "0.7 rev 2"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -75,11 +75,6 @@ char *keywords[] = {
     "RETURN",
     "BREAK",
     "CONTINUE",
-    NULL
-};
-
-char *var_no_inheritance[] = {
-    "#",
     NULL
 };
 
@@ -220,34 +215,18 @@ void raise_error(char *part, char *format, ...) {
 ********************************/
 
 int get_variable_index(char *name) {
-    int best_index = -1;
-
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
             break;
         }
 
         if (strcmp(variables[i].name, name) == 0
-            && variables[i].level <= current_level
-            && (best_index == -1 || variables[i].level > variables[best_index].level)
-        ) {
-            best_index = i;
-            if (variables[i].level == current_level) break;
-
-            for (int j = 0; var_no_inheritance[j] != NULL; j++) {
-                if (strcmp(var_no_inheritance[j], name) == 0) {
-                    best_index = -1;
-                    break;
-                }
-            }
-
-            if (local_atoi(name, NULL) == 0) {
-                best_index = -1;
-            }
-        }
+            && (variables[i].level == current_level
+            || variables[i].level == 0)
+        ) return i;
     }
 
-    return best_index;
+    return -1;
 }
 
 char *get_variable(char *name) {
@@ -278,6 +257,7 @@ int set_variable_withlen(char *name, char *value, int str_len) {
         if (variables[index].value && (!variables[index].sync)) {
             free(variables[index].value);
         }
+        variables[index].level = variables[index].level ? current_level : 0;
         variables[index].value = value_copy;
         variables[index].sync = 0;
         return 0;
@@ -306,6 +286,7 @@ int set_sync_variable(char *name, char *value) {
         if (variables[index].value && (!variables[index].sync)) {
             free(variables[index].value);
         }
+        variables[index].level = variables[index].level ? current_level : 0;
         variables[index].value = value;
         variables[index].sync = 1;
         return 0;
@@ -537,7 +518,7 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
-char ops[] = "=<>@&~|.+-*/^()![],{}\\";
+char ops[] = "=~<>@.+-*/^()";
 
 void free_ast(ast_t *ast) {
     if (ast->left.type == AST_TYPE_AST) {
@@ -1007,6 +988,39 @@ char *if_set_var(char **input) {
     if (set_variable(name, value)) {
         return ERROR_CODE;
     }
+
+    return NULL;
+}
+
+char *if_global(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 2) {
+        raise_error("global", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // get value
+    char *value = input[1];
+
+    // copy the current level
+    int old_level = current_level;
+    current_level = 0;
+
+    // set variable
+    if (set_variable(name, value)) {
+        return ERROR_CODE;
+    }
+
+    // restore the current level
+    current_level = old_level;
 
     return NULL;
 }
@@ -1495,47 +1509,6 @@ char *if_find(char **input) {
     #endif
 }
 
-char *if_name(char **input) {
-    /*
-     * input: ["/dir/subdir/file1.txt"]
-     * output: "'file1'"
-    */
-
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc != 1) {
-        raise_error("name", "Expected 1 argument, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    int len = strlen(input[0]);
-    char *name = malloc((len + 1) * sizeof(char));
-
-    for (int i = len - 1; i >= 0; i--) {
-        if (input[0][i] == '/') {
-            strcpy(name, input[0] + i + 1);
-            break;
-        }
-    }
-
-    // remove extension
-    for (int i = strlen(name) - 1; i >= 0; i--) {
-        if (name[i] == '.') {
-            name[i] = '\0';
-            break;
-        }
-    }
-
-    char *output = malloc((strlen(name) + 3) * sizeof(char));
-    sprintf(output, "'%s'", name);
-    free(name);
-
-    return output;
-}
-
 char *if_ticks(char **input) {
     /*
      * input: []
@@ -1631,7 +1604,7 @@ internal_function_t internal_functions[] = {
     {"exec", if_exec},
     {"export", if_export},
     {"find", if_find},
-    {"name", if_name},
+    {"global", if_global},
     {"go", if_go_binfile},
     {"pseudo", if_make_pseudo},
     {"range", if_range},

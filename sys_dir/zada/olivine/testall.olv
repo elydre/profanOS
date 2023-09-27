@@ -1,4 +1,4 @@
-IF !(eval 4 + 6 * (3 - 1) = 16);
+IF !(eval 4 + 6 * (3 - 1) = 16)
     echo if and eval passed
 END; ELSE
     echo if and eval failed
@@ -6,7 +6,7 @@ END
 
 
 set var 43
-IF !(eval !var = 43);
+IF !(eval !var = 43)
     echo variable passed
 END; ELSE
     echo variable failed
@@ -19,7 +19,7 @@ FOR i !(range 1 11)
     set sum !(eval !sum + !i)
 END
 
-IF !(eval !sum = 55);
+IF !(eval !sum = 55)
     echo for passed
 END; ELSE
     echo for failed
@@ -33,7 +33,7 @@ WHILE !(eval !i < 101)
     set i !(eval !i + 1)
 END
 
-IF !(eval !i = 101);
+IF !(eval !i = 101)
     echo while passed
 END; ELSE
     echo while failed
@@ -42,12 +42,12 @@ END
 set i 0
 WHILE 1
     set i !(eval !i + 1)
-    IF !(eval !i = 101);
+    IF !(eval !i = 101)
         BREAK
-    END;
+    END
 END
 
-IF !(eval !i = 101);
+IF !(eval !i = 101)
     echo while break passed
 END; ELSE
     echo while break failed
@@ -58,9 +58,9 @@ set sum 0
 
 WHILE !(eval !i ~ 101)
     set i !(eval !i + 1)
-    IF !(eval !i ^ 2);
+    IF !(eval !i ^ 2)
         CONTINUE
-    END;
+    END
     set sum !(eval !sum + !i)
 END
 
@@ -75,27 +75,28 @@ del i
 
 FOR e 1 2 3 4 5 6 7 8 9 10
     set last !e
-    IF !(eval !e = 7);
+    IF !(eval !e = 7)
         BREAK
-    END;
+    END
 END
 
-IF !(eval !last = 7);
+IF !(eval !last = 7)
     echo for break passed
 END; ELSE
     echo for break failed
 END
 
+del last
+
 set sum 0
 FOR e 1 2 3 4 5 6 7 8 9 10
-    set last !e
-    IF !(eval !e ^ 2);
+    IF !(eval !e ^ 2)
         CONTINUE
-    END;
+    END
     set sum !(eval !sum + !e)
 END
 
-IF !(eval !sum = 30);
+IF !(eval !sum = 30)
     echo for continue passed
 END; ELSE
     echo for continue failed
@@ -107,7 +108,7 @@ FUNC testargc
     RETURN !#
 END
 
-IF !(eval !(testargc 1 2 3 4 5) = 5);
+IF !(eval !(testargc 1 2 3 4 5) = 5)
     echo function argc passed
 END; ELSE
     echo function argc failed
@@ -121,7 +122,7 @@ FUNC testargv
     END;
 END
 
-IF !(eval !(testargv 5) = 10);
+IF !(eval !(testargv 5) = 10)
     echo function argv passed
 END; ELSE
     echo function argv failed
@@ -129,3 +130,96 @@ END
 
 delfunc testargc
 delfunc testargv
+
+FUNC testglobal
+    global var 42
+    set var 43
+END
+
+testglobal
+
+IF !(eval !var = 43)
+    echo global variable passed
+END; ELSE
+    echo global variable failed
+END
+
+del var
+delfunc testglobal
+
+set l0 66
+
+FUNC testlocalsub
+    set tmp 13
+END
+
+FUNC testlocal
+    IF !(eval !l0 = 66)
+        set tmp 12
+        testlocalsub
+        IF !(eval !tmp = 12)
+            RETURN 1
+        END
+    END
+
+    RETURN 0
+END
+
+IF !(testlocal)
+    echo local variable passed
+END; ELSE
+    echo local variable failed
+END
+
+del l0
+delfunc testlocalsub
+delfunc testlocal
+
+FUNC deepeval
+    IF !(eval 43 ~ 43)
+        echo eval failed (simple equality)
+        RETURN
+    END; IF !(eval 42 + 1 ~ 43)
+        echo eval failed (addition, equality)
+        RETURN
+    END; IF !(eval 1+32*2 ~ 65)
+        echo eval failed (simple priority)
+        RETURN
+    END; IF !(eval 1 + (31 + 1) * 2 ~ 66 - 1)
+        echo eval failed (complex priority)
+        RETURN
+    END; IF !(eval 30 ^ 8 ~ 36 / 6)
+        echo eval failed (division, modulo)
+        RETURN
+    END; IF !(eval ab + 2 ~ ab2)
+        echo eval failed (str + int)
+        RETURN
+    END; IF !(eval 2 + ab ~ 2ab)
+        echo eval failed (int + str)
+        RETURN
+    END; IF !(eval ab + cd ~ abcd)
+        echo eval failed (str + str)
+        RETURN
+    END; IF !(eval ab . cd ~ abcd)
+        echo eval failed (str . str)
+        RETURN
+    END; IF !(eval 4 . 0 ~ 40)
+        echo eval failed (int . int)
+        RETURN
+    END; IF !(eval 0x42 ~ 66)
+        echo eval failed (hex)
+        RETURN
+    END; IF !(eval 0b101010 ~ 42)
+        echo eval failed (bin)
+        RETURN
+    END; IF !(eval coucou @ 2 ~ u)
+        echo eval failed (char at index)
+        RETURN
+    END;
+
+    echo all eval tests passed
+END
+
+deepeval
+
+delfunc deepeval
