@@ -519,7 +519,7 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
-char ops[] = "=<>+-*/~^&|~()%![],{}\\";
+char ops[] = "=<>+-*/~^&|~()%![],{}\\@";
 
 void free_ast(ast_t *ast) {
     if (ast->left.type == AST_TYPE_AST) {
@@ -687,7 +687,14 @@ char *calculate_integers(int left, int right, char *op) {
 }
 
 char *calculate_strings(char *left, char *right, char *op) {
-    char *res;
+    char *res, *tmp;
+    int nb = 0;
+
+    if (local_atoi(left, &nb)) {
+        if (local_atoi(right, &nb)) tmp = NULL;
+        else tmp = left;
+    } else tmp = right;
+
     if (op[0] == '+') {
         res = malloc(strlen(left) + strlen(right) + 1);
         strcpy(res, left);
@@ -699,6 +706,28 @@ char *calculate_strings(char *left, char *right, char *op) {
     } else if (op[0] == '~') {
         res = malloc(sizeof(char) * 2);
         res[0] = (strcmp(left, right) != 0) + '0';
+        res[1] = '\0';
+    } else if (op[0] == '*') {
+        if (tmp == NULL) {
+            raise_error("eval", "Cannot multiply string by string");
+            return NULL;
+        }
+        res = malloc(sizeof(char) * (strlen(tmp) + 1) * nb + 1);
+        res[0] = '\0';
+        for (int i = 0; i < nb; i++) {
+            strcat(res, tmp);
+        }
+    } else if (op[0] == '@') {
+        if (tmp == NULL) {
+            raise_error("eval", "Cannot get character from string");
+            return NULL;
+        }
+        if (nb < 0 || nb >= (int) strlen(tmp)) {
+            raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
+            return NULL;
+        }
+        res = malloc(sizeof(char) * 2);
+        res[0] = tmp[nb];
         res[1] = '\0';
     } else {
         raise_error("eval", "Unknown operator '%s' between strings", op);
@@ -724,7 +753,7 @@ char *eval(ast_t *ast) {
     }
 
     if (ast->center.type == AST_TYPE_NIL) {
-        raise_error("eval", "No operator found in expression");
+        raise_error("eval", "Operators must be surrounded by two elements");
         return ERROR_CODE;
     }
 
@@ -1329,13 +1358,20 @@ char *if_range(char **input) {
         argc++;
     }
 
-    if (argc != 2) {
-        raise_error("range", "Expected 2 arguments, got %d", argc);
+    if (argc == 0 || argc > 2) {
+        raise_error("range", "Expected 1 or 2 arguments, got %d", argc);
         return ERROR_CODE;
     }
 
-    int start = atoi(input[0]);
-    int end = atoi(input[1]);
+    int start, end;
+    
+    if (argc == 1) {
+        start = 0;
+        end = atoi(input[0]);
+    } else {
+        start = atoi(input[0]);
+        end = atoi(input[1]);
+    }
 
     if (start >= end) {
         raise_error("range", "Start must be less than end, got %d and %d", start, end);
