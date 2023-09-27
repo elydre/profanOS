@@ -1,12 +1,19 @@
+pseudo testall 'exec /zada/olivine/testall.olv'
+pseudo xclear 'clear -x'
+pseudo pwd 'echo !path'
+
 FOR dir '/bin/commands' '/bin/fatpath'
     FOR e !(find -f !dir)
         pseudo !(name !e) 'go !e'
     END
 END
 
-pseudo testall 'exec /zada/olivine/testall.olv'
-pseudo xclear 'clear -x'
-pseudo pwd 'echo !path'
+FUNC echo
+    FOR i !(range !#)
+        print '!!i '
+    END
+    print \n
+END
 
 FUNC show
     echo argc: !#

@@ -1,0 +1,205 @@
+set bf_mem 00
+set bf_mem_len 1
+set bf_mem_ptr 0
+
+FUNC nb_to_hex
+    IF !(eval !# ~ 1)
+        echo nb_to_hex requires 1 argument
+        RETURN
+    END
+
+    IF !(eval !0 < 0)
+        echo nb_to_hex requires a number between 0 and 15
+        RETURN
+    END
+
+    IF !(eval !0 < 10);  RETURN !0;  END
+    IF !(eval !0 = 10); RETURN 'a'; END
+    IF !(eval !0 = 11); RETURN 'b'; END
+    IF !(eval !0 = 12); RETURN 'c'; END
+    IF !(eval !0 = 13); RETURN 'd'; END
+    IF !(eval !0 = 14); RETURN 'e'; END
+    IF !(eval !0 = 15); RETURN 'f'; END
+
+    echo nb_to_hex requires a number between 0 and 15, got !0
+END
+
+FUNC hex_to_nb
+    IF !(eval !# ~ 1)
+        echo nb_to_hex requires 1 argument
+        RETURN
+    END
+
+    IF !(eval !0 = 'a'); RETURN 10; END
+    IF !(eval !0 = 'b'); RETURN 11; END
+    IF !(eval !0 = 'c'); RETURN 12; END
+    IF !(eval !0 = 'd'); RETURN 13; END
+    IF !(eval !0 = 'e'); RETURN 14; END
+    IF !(eval !0 = 'f'); RETURN 15; END
+
+    RETURN !0
+END
+
+
+FUNC bf_set_me
+    IF !(eval !# ~ 2)
+        echo get_mem_elm: usage: set_mem_elm <pos> <val>
+        RETURN
+    END
+
+    IF !(eval !0 < 0)
+        echo get_mem_elm requires a number superior to 0
+        RETURN
+    END
+
+    IF !(eval !1 < 0)
+        echo get_mem_elm requires a number superior to 0
+        RETURN
+    END
+
+    IF !(eval !1 > 255)
+        set 1 !(eval !1 ^ 255)
+    END
+
+    IF !(eval !0 > !(eval !bf_mem_len - 1))
+        FOR i !(range !(eval !bf_mem_len - 1) !0)
+            set bf_mem !(eval !bf_mem . 00)
+        END
+        set bf_mem_len !(eval !0 + 1)
+    END
+
+    set pos !(eval !0 * 2)
+
+    IF !(eval !pos = 0)
+        set new !(nb_to_hex !(eval !1 / 16))
+    END; ELSE
+        set new 0
+    END
+
+    FOR i !(range 1 !(eval !bf_mem_len * 2))
+        IF !(eval !i = !pos)
+            set new !(eval !new . !(nb_to_hex !(eval !1 / 16)))
+        END; ELSE
+            IF !(eval !i = !pos + 1)
+                set new !(eval !new . !(nb_to_hex !(eval !1 ^ 16)))
+            END; ELSE
+                set new !(eval !new . !(eval !bf_mem @ !i))
+            END
+        END
+    END
+
+    set bf_mem !new
+END
+
+FUNC bf_get_me
+    IF !(eval !# ~ 1)
+        echo get_mem_elm: usage: get_mem_elm <pos>
+        RETURN 0
+    END
+
+    IF !(eval !0 < 0)
+        echo get_mem_elm requires a number superior to 0
+        RETURN 0
+    END
+
+    IF !(eval !0 > !(eval !bf_mem_len - 1))
+        RETURN 0
+    END
+
+    set pos !(eval !0 * 2)
+
+    set tmp !(hex_to_nb !(eval !bf_mem @ !pos))
+    set pos !(eval !pos + 1)
+    RETURN !(eval !tmp * 16 + !(hex_to_nb !(eval !bf_mem @ !pos)))
+END
+
+FUNC bf_execute
+    IF !(eval !# ~ 1)
+        echo execute: usage: execute <code>
+        RETURN
+    END
+
+    set 0 !(rep !0 ><+-.,[] 01234567)
+
+    set index 0
+    set code_len !(strlen !0)
+
+    WHILE !(eval !index < !code_len)
+        set c !(eval !0 @ !index)
+
+        IF !(eval !c = 0)
+            set bf_mem_ptr !(eval !bf_mem_ptr + 1)
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 1)
+            set bf_mem_ptr !(eval !bf_mem_ptr - 1)
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 2)
+            bf_set_me !bf_mem_ptr !(eval !(bf_get_me !bf_mem_ptr) + 1)
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 3)
+            bf_set_me !bf_mem_ptr !(eval !(bf_get_me !bf_mem_ptr) - 1)
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 4)
+            print !(sprintf %c !(bf_get_me !bf_mem_ptr))
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 5)
+            set bf_mem !(eval !bf_mem . !(read))
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 6)
+            IF !(eval !(bf_get_me !bf_mem_ptr) = 0)
+                WHILE !(eval !c ~ 7)
+                    set index !(eval !index + 1)
+                    set c !(eval !0 @ !index)
+                END
+            END;
+
+            set index !(eval !index + 1)
+            CONTINUE
+        END
+
+        IF !(eval !c = 7)
+            IF !(eval !(bf_get_me !bf_mem_ptr) ~ 0)
+                set index !(eval !index + 1)
+                WHILE !(eval !c ~ 6)
+                    set index !(eval !index - 1)
+                    set c !(eval !0 @ !index)
+                END
+                set index !(eval !index + 1)
+            END; ELSE
+                set index !(eval !index + 1)
+            END
+            CONTINUE
+        END
+
+        set index !(eval !index + 1)
+    END
+END
+
+bf_execute '++++++++++[>+>+++>+++++++>++++++++++<<<<-]>>>>+++++++++++.---.---.+++++++++++++.-------------.+++++.---------.<<<.'
+
+delfunc nb_to_hex
+delfunc hex_to_nb
+delfunc bf_set_me
+delfunc bf_get_me
+delfunc bf_execute
+del bf_mem
+del bf_mem_len
+del bf_mem_ptr

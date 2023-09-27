@@ -78,6 +78,11 @@ char *keywords[] = {
     NULL
 };
 
+char *var_no_inheritance[] = {
+    "#",
+    NULL
+};
+
 typedef struct {
     char* name;
     char* (*function)(char**);
@@ -109,7 +114,104 @@ internal_function_t internal_functions[];
 char *current_directory, *exit_code;
 int current_level;
 
-void raise_error(char *part, char *format, ...);
+
+/****************************
+ *                         *
+ *  Local Tools Functions  *
+ *                         *
+****************************/
+
+void local_itoa(int n, char *buffer) {
+    int i = 0;
+    int sign = 0;
+
+    if (n < 0) {
+        sign = 1;
+        n = -n;
+    }
+
+    do {
+        buffer[i++] = n % 10 + '0';
+    } while ((n /= 10) > 0);
+
+    if (sign) {
+        buffer[i++] = '-';
+    }
+
+    buffer[i] = '\0';
+
+    for (int j = 0; j < i / 2; j++) {
+        char tmp = buffer[j];
+        buffer[j] = buffer[i - j - 1];
+        buffer[i - j - 1] = tmp;
+    }
+}
+
+int local_atoi(char *str, int *result) {
+    int sign, found, base;
+    int res = 0;
+
+    char *base_str;
+
+    if (str[0] == '-') {
+        sign = 1;
+        str++;
+    } else {
+        sign = 0;
+    }
+
+    if (str[0] == '0' && str[1] == 'x') {
+        base_str = "0123456789abcdef";
+        base = 16;
+        str += 2;
+    } else if (str[0] == '0' && str[1] == 'b') {
+        base_str = "01";
+        base = 2;
+        str += 2;
+    } else {
+        base_str = "0123456789";
+        base = 10;
+    }
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        found = 0;
+        for (int j = 0; base_str[j] != '\0'; j++) {
+            if (LOWERCASE(str[i]) == base_str[j]) {
+                res *= base;
+                res += j;
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            return 1;
+        }
+    }
+
+    if (sign) {
+        res = -res;
+    }
+
+    if (result != NULL) {
+        *result = res;
+    }
+
+    return 0;
+}
+
+void raise_error(char *part, char *format, ...) {
+    if (part == NULL) printf("OLIVINE raise: ");
+    else printf("'%s' raise: ", part);
+
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+
+    printf("\n");
+
+    strcpy(exit_code, "1");
+}
 
 /*******************************
  *                            *
@@ -130,6 +232,18 @@ int get_variable_index(char *name) {
             && (best_index == -1 || variables[i].level > variables[best_index].level)
         ) {
             best_index = i;
+            if (variables[i].level == current_level) break;
+
+            for (int j = 0; var_no_inheritance[j] != NULL; j++) {
+                if (strcmp(var_no_inheritance[j], name) == 0) {
+                    best_index = -1;
+                    break;
+                }
+            }
+
+            if (local_atoi(name, NULL) == 0) {
+                best_index = -1;
+            }
         }
     }
 
@@ -402,102 +516,6 @@ function_t *get_function(char *name) {
     return NULL;
 }
 
-/****************************
- *                         *
- *  Local Tools Functions  *
- *                         *
-****************************/
-
-void local_itoa(int n, char *buffer) {
-    int i = 0;
-    int sign = 0;
-
-    if (n < 0) {
-        sign = 1;
-        n = -n;
-    }
-
-    do {
-        buffer[i++] = n % 10 + '0';
-    } while ((n /= 10) > 0);
-
-    if (sign) {
-        buffer[i++] = '-';
-    }
-
-    buffer[i] = '\0';
-
-    for (int j = 0; j < i / 2; j++) {
-        char tmp = buffer[j];
-        buffer[j] = buffer[i - j - 1];
-        buffer[i - j - 1] = tmp;
-    }
-}
-
-int local_atoi(char *str, int *result) {
-    int sign, found, base;
-    int res = 0;
-
-    char *base_str;
-
-    if (str[0] == '-') {
-        sign = 1;
-        str++;
-    } else {
-        sign = 0;
-    }
-
-    if (str[0] == '0' && str[1] == 'x') {
-        base_str = "0123456789abcdef";
-        base = 16;
-        str += 2;
-    } else if (str[0] == '0' && str[1] == 'b') {
-        base_str = "01";
-        base = 2;
-        str += 2;
-    } else {
-        base_str = "0123456789";
-        base = 10;
-    }
-
-    for (int i = 0; str[i] != '\0'; i++) {
-        found = 0;
-        for (int j = 0; base_str[j] != '\0'; j++) {
-            if (LOWERCASE(str[i]) == base_str[j]) {
-                res *= base;
-                res += j;
-                found = 1;
-                break;
-            }
-        }
-        if (!found) {
-            return 1;
-        }
-    }
-
-    if (sign) {
-        res = -res;
-    }
-
-    *result = res;
-
-    return 0;
-}
-
-void raise_error(char *part, char *format, ...) {
-    if (part == NULL) printf("OLIVINE raise: ");
-    else printf("'%s' raise: ", part);
-
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-
-    printf("\n");
-
-    strcpy(exit_code, "1");
-}
-
 /***********************************
  *                                *
  *  Olivine Integrated Evaluator  *
@@ -519,7 +537,7 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
-char ops[] = "=<>+-*/~^&|~()%![],{}\\@";
+char ops[] = "=<>@&~|.+-*/^()![],{}\\";
 
 void free_ast(ast_t *ast) {
     if (ast->left.type == AST_TYPE_AST) {
@@ -647,6 +665,16 @@ ast_t *gen_ast(char **str, int len) {
 
 char *calculate_integers(int left, int right, char *op) {
     int result;
+    if (op[0] == '/' && right == 0) {
+        raise_error("eval", "Cannot divide by 0");
+        return NULL;
+    }
+
+    if (op[0] == '^' && right == 0) {
+        raise_error("eval", "Cannot modulo by 0");
+        return NULL;
+    }
+
     switch (op[0]) {
         case '+':
             result = left + right;
@@ -690,12 +718,12 @@ char *calculate_strings(char *left, char *right, char *op) {
     char *res, *tmp;
     int nb = 0;
 
-    if (local_atoi(left, &nb)) {
-        if (local_atoi(right, &nb)) tmp = NULL;
-        else tmp = left;
-    } else tmp = right;
+    if (local_atoi(right, &nb)) {
+        if (local_atoi(left, &nb)) tmp = NULL;
+        else tmp = right;
+    } else tmp = left;
 
-    if (op[0] == '+') {
+    if (op[0] == '+' || op[0] == '.') {
         res = malloc(strlen(left) + strlen(right) + 1);
         strcpy(res, left);
         strcat(res, right);
@@ -753,7 +781,10 @@ char *eval(ast_t *ast) {
     }
 
     if (ast->center.type == AST_TYPE_NIL) {
-        raise_error("eval", "Operators must be surrounded by two elements");
+        raise_error("eval", "Operators must be surrounded by two elements (got '%s', '%s')",
+            ast->left.type == AST_TYPE_NIL ? "nil" : ast->left.type == AST_TYPE_STR ? (char *) ast->left.ptr : "ast",
+            ast->right.type == AST_TYPE_NIL ? "nil" :  ast->right.type == AST_TYPE_STR ? (char *) ast->right.ptr : "ast"
+        );
         return ERROR_CODE;
     }
 
@@ -775,6 +806,7 @@ char *eval(ast_t *ast) {
 
     if (left_str != NULL && right_str != NULL) {
         no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
+        no_number |= op[0] == '.' || op[0] == '@';
         res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
     }
 
@@ -871,12 +903,85 @@ char *if_eval(char **input) {
  *                                   *
 **************************************/
 
-
-char *if_echo(char **input) {
+char *if_sprintf(char **input) {
+    int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
-        printf("%s ", input[i]);
+        argc++;
     }
-    printf("\n");
+
+    if (argc < 1) {
+        raise_error("printf", "Expected at least 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    char *format = input[0];
+
+
+    int arg_i = 1;
+
+    char *res = malloc(0x1000);
+    res[0] = '\0';
+    int res_i = 0;
+
+    for (int format_i = 0; format[format_i] != '\0'; format_i++) {
+        if (format[format_i] != '%') {
+            res[res_i++] = format[format_i];
+            continue;
+        }
+
+        format_i++;
+        if (format[format_i] == '%') {
+            res[res_i++] = '%';
+            continue;
+        }
+
+        if (input[arg_i] == NULL) {
+            raise_error("printf", "%%%c requires an argument, but none given", format[format_i]);
+            return ERROR_CODE;
+        }
+
+        if (format[format_i] == 's') {
+            for (int i = 0; input[arg_i][i] != '\0'; i++) {
+                res[res_i++] = input[arg_i][i];
+            }
+        } else if (format[format_i] == 'd') {
+            int nb;
+            if (local_atoi(input[arg_i], &nb)) {
+                raise_error("printf", "%%%c requires an integer, but got '%s'", format[format_i], input[arg_i]);
+                return ERROR_CODE;
+            }
+            char *nb_str = malloc(12);
+            local_itoa(nb, nb_str);
+            for (int i = 0; nb_str[i] != '\0'; i++) {
+                res[res_i++] = nb_str[i];
+            }
+            free(nb_str);
+        } else if (format[format_i] == 'c') {
+            int nb;
+            if (local_atoi(input[arg_i], &nb) || nb < 0 || nb > 255) {
+                if (strlen(input[arg_i]) == 1) {
+                    res[res_i++] = input[arg_i][0];
+                } else {
+                    raise_error("printf", "%%%c requires a character, but got '%s'", format[format_i], input[arg_i]);
+                    return ERROR_CODE;
+                }
+            }
+            res[res_i++] = nb;
+        } else {
+            raise_error("printf", "Unknown format specifier '%%%c'", format[format_i]);
+            return ERROR_CODE;
+        }
+    }
+
+    res[res_i] = '\0';
+
+    return res;
+}
+
+char *if_print(char **input) {
+    for (int i = 0; input[i] != NULL; i++) {
+        printf("%s", input[i]);
+    }
     return NULL;
 }
 
@@ -898,80 +1003,6 @@ char *if_upper(char **input) {
                 result[result_i] = input[i][j];
             }
             result_i++;
-        }
-        result[result_i++] = STRING_CHAR;
-        result[result_i++] = ' ';
-    }
-
-    result[required_size - 1] = '\0';
-
-    return result;
-}
-
-char *if_join(char **input) {
-    /*
-     * input: ["hello", "world"]
-     * output: "'hello world'"
-    */
-
-    if (input[0] == NULL) return NULL;
-
-    int required_size = 2;
-    for (int i = 0; input[i] != NULL; i++) {
-        required_size += strlen(input[i]) + 1;
-    }
-
-    char *result = malloc(required_size * sizeof(char));
-
-    int result_i = 0;
-    result[result_i++] = STRING_CHAR;
-
-    for (int i = 0; input[i] != NULL; i++) {
-        for (int j = 0; input[i][j] != '\0'; j++) {
-            result[result_i++] = input[i][j];
-        }
-        result[result_i++] = ' ';
-    }
-
-    result[required_size - 2] = STRING_CHAR;
-    result[required_size - 1] = '\0';
-
-    return result;
-}
-
-char *if_split(char **input) {
-    /*
-     * input: ["hello world", "test"]
-     * output: "'hello' 'world' 'test'"
-    */
-
-    if (input[0] == NULL) return NULL;
-
-    int required_size = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        for (int j = 0; input[i][j] != '\0'; j++) {
-            if (input[i][j] == ' ') {
-                required_size += 2;
-            }
-            required_size++;
-        }
-        required_size += 3;
-    }
-
-    char *result = malloc(required_size * sizeof(char));
-
-    int result_i = 0;
-
-    for (int i = 0; input[i] != NULL; i++) {
-        result[result_i++] = STRING_CHAR;
-        for (int j = 0; input[i][j] != '\0'; j++) {
-            if (input[i][j] == ' ') {
-                result[result_i++] = STRING_CHAR;
-                result[result_i++] = ' ';
-                result[result_i++] = STRING_CHAR;
-            } else {
-                result[result_i++] = input[i][j];
-            }
         }
         result[result_i++] = STRING_CHAR;
         result[result_i++] = ' ';
@@ -1373,9 +1404,11 @@ char *if_range(char **input) {
         end = atoi(input[1]);
     }
 
-    if (start >= end) {
+    if (start > end) {
         raise_error("range", "Start must be less than end, got %d and %d", start, end);
         return ERROR_CODE;
+    } else if (start == end) {
+        return NULL;
     }
 
     char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
@@ -1558,25 +1591,85 @@ char *if_ticks(char **input) {
     return output;
 }
 
+char *if_strlen(char **input) {
+    /*
+     * input: ["hello world"]
+     * output: "11"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        raise_error("strlen", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    char *output = malloc(11 * sizeof(char));
+
+    local_itoa(strlen(input[0]), output);
+
+    return output;
+}
+
+char *if_rep(char **input) {
+    /*
+     * input ["hello", "hl", "HP"]
+     * output: "HePPo"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 3) {
+        raise_error("rep", "Expected 3 arguments, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    if (strlen(input[1]) != strlen(input[2])) {
+        raise_error("rep", "Expected 2nd and 3rd arguments to have the same length, got %d and %d", strlen(input[1]), strlen(input[2]));
+        return ERROR_CODE;
+    }
+
+    char *ret = malloc((strlen(input[0]) + 1) * sizeof(char));
+    strcpy(ret, input[0]);
+
+    for (int i = 0; ret[i] != '\0'; i++) {
+        for (int j = 0; input[1][j] != '\0'; j++) {
+            if (ret[i] == input[1][j]) {
+                ret[i] = input[2][j];
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
 internal_function_t internal_functions[] = {
-    {"echo", if_echo},
-    {"upper", if_upper},
-    {"join", if_join},
-    {"split", if_split},
-    {"set", if_set_var},
-    {"export", if_export},
+    {"cd", if_change_dir},
+    {"debug", if_debug},
     {"del", if_del_var},
     {"delfunc", if_del_func},
-    {"debug", if_debug},
     {"eval", if_eval},
-    {"go", if_go_binfile},
     {"exec", if_exec},
-    {"cd", if_change_dir},
-    {"pseudo", if_make_pseudo},
-    {"range", if_range},
+    {"export", if_export},
     {"find", if_find},
     {"name", if_name},
+    {"go", if_go_binfile},
+    {"pseudo", if_make_pseudo},
+    {"range", if_range},
+    {"rep", if_rep},
+    {"set", if_set_var},
+    {"print", if_print},
+    {"sprintf", if_sprintf},
+    {"strlen", if_strlen},
     {"ticks", if_ticks},
+    {"upper", if_upper},
     {NULL, NULL}
 };
 
@@ -2092,6 +2185,24 @@ char **lexe_program(char *program) {
 
         // remove tabs and carriage returns
         if (program[i] == '\t' || program[i] == '\r') {
+            continue;
+        }
+
+        // interpret \\n, \\t, \\r, \\\", \\\', \\\\, \\$
+        if (program[i] == '\\') {
+            if (program[i + 1] == 'n') {
+                tmp[tmp_index++] = '\n';
+            } else if (program[i + 1] == 't') {
+                tmp[tmp_index++] = '\t';
+            } else if (program[i + 1] == 'r') {
+                tmp[tmp_index++] = '\r';
+            } else if (program[i + 1] == '\\') {
+                tmp[tmp_index++] = '\\';
+            } else {
+                tmp[tmp_index++] = '\\';
+                tmp[tmp_index++] = program[i + 1];
+            }
+            i++;
             continue;
         }
 
