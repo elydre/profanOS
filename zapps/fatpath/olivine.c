@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.6"
+#define OLV_VERSION "0.7"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -87,6 +87,7 @@ typedef struct {
     char* name;
     char* value;
     int sync;
+    int level;
 } variable_t;
 
 typedef struct {
@@ -105,8 +106,8 @@ pseudo_t *pseudos;
 function_t *functions;
 internal_function_t internal_functions[];
 
-char *current_directory;
-char *exit_code;
+char *current_directory, *exit_code;
+int current_level;
 
 void raise_error(char *part, char *format, ...);
 
@@ -116,14 +117,30 @@ void raise_error(char *part, char *format, ...);
  *                            *
 ********************************/
 
-char *get_variable(char *name) {
+int get_variable_index(char *name) {
+    int best_index = -1;
+
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
             break;
         }
-        if (strcmp(variables[i].name, name) == 0) {
-            return variables[i].value;
+
+        if (strcmp(variables[i].name, name) == 0
+            && variables[i].level <= current_level
+            && (best_index == -1 || variables[i].level > variables[best_index].level)
+        ) {
+            best_index = i;
         }
+    }
+
+    return best_index;
+}
+
+char *get_variable(char *name) {
+    int index = get_variable_index(name);
+
+    if (index != -1) {
+        return variables[index].value;
     }
 
     if (USE_ENVVARS) {
@@ -142,20 +159,23 @@ int set_variable_withlen(char *name, char *value, int str_len) {
     strncpy(value_copy, value, str_len);
     value_copy[str_len] = '\0';
 
+    int index = get_variable_index(name);
+    if (index != -1) {
+        if (variables[index].value && (!variables[index].sync)) {
+            free(variables[index].value);
+        }
+        variables[index].value = value_copy;
+        variables[index].sync = 0;
+        return 0;
+    }
+
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
             char *name_copy = malloc(strlen(name) + 1);
             strcpy(name_copy, name);
             variables[i].name = name_copy;
             variables[i].value = value_copy;
-            variables[i].sync = 0;
-            return 0;
-        }
-        if (strcmp(variables[i].name, name) == 0) {
-            if (variables[i].value && (!variables[i].sync)) {
-                free(variables[i].value);
-            }
-            variables[i].value = value_copy;
+            variables[i].level = current_level;
             variables[i].sync = 0;
             return 0;
         }
@@ -166,62 +186,54 @@ int set_variable_withlen(char *name, char *value, int str_len) {
 }
 
 int set_sync_variable(char *name, char *value) {
+    int index = get_variable_index(name);
+
+    if (index != -1) {
+        if (variables[index].value && (!variables[index].sync)) {
+            free(variables[index].value);
+        }
+        variables[index].value = value;
+        variables[index].sync = 1;
+        return 0;
+    }
+
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name == NULL) {
             variables[i].name = name;
             variables[i].value = value;
-            variables[i].sync = 1;
-            return 0;
-        }
-        if (strcmp(variables[i].name, name) == 0) {
-            if (variables[i].value && (!variables[i].sync)) {
-                free(variables[i].value);
-            }
-            variables[i].value = value;
+            variables[i].level = current_level;
             variables[i].sync = 1;
             return 0;
         }
     }
+
+    raise_error(NULL, "Cannot set value of '%s', more than %d variables", name, MAX_VARIABLES);
     return 1;
 }
 
 int does_variable_exist(char *name) {
-    for (int i = 0; i < MAX_VARIABLES; i++) {
-        if (variables[i].name == NULL) {
-            break;
-        }
-        if (strcmp(variables[i].name, name) == 0) {
-            return 1;
-        }
-    }
-
-    if (USE_ENVVARS && getenv(name)) {
-        return 1;
-    }
-
-    return 0;
+    return (get_variable_index(name) != -1) ||
+        (USE_ENVVARS && getenv(name));
 }
 
 int del_variable(char *name) {
-    for (int i = 0; i < MAX_VARIABLES; i++) {
-        if (variables[i].name == NULL) {
-            break;
-        }
-        if (strcmp(variables[i].name, name) == 0) {
-            if (variables[i].value && (!variables[i].sync)) {
-                free(variables[i].value);
-                free(variables[i].name);
-            }
-            variables[i].name = NULL;
-            variables[i].value = NULL;
-            variables[i].sync = 0;
+    int index = get_variable_index(name);
 
-            // shift all variables down
-            for (int j = i; j < MAX_VARIABLES - 1; j++) {
-                variables[j] = variables[j + 1];
-            }
-            return 0;
+    if (index != -1) {
+        if (variables[index].value && (!variables[index].sync)) {
+            free(variables[index].value);
+            free(variables[index].name);
         }
+        variables[index].value = NULL;
+        variables[index].name = NULL;
+        variables[index].level = 0;
+        variables[index].sync = 0;
+
+        // shift all variables down
+        for (int j = index; j < MAX_VARIABLES - 1; j++) {
+            variables[j] = variables[j + 1];
+        }
+        return 0;
     }
 
     if (USE_ENVVARS && getenv(name)) {
@@ -232,6 +244,30 @@ int del_variable(char *name) {
     raise_error(NULL, "Variable '%s' does not exist", name);
 
     return 1;
+}
+
+void del_variable_level(int level) {
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL) {
+            break;
+        }
+        if (variables[i].level >= level) {
+            if (variables[i].value && (!variables[i].sync)) {
+                free(variables[i].value);
+                free(variables[i].name);
+            }
+            variables[i].value = NULL;
+            variables[i].name = NULL;
+            variables[i].level = 0;
+            variables[i].sync = 0;
+
+            // shift all variables down
+            for (int j = i; j < MAX_VARIABLES - 1; j++) {
+                variables[j] = variables[j + 1];
+            }
+            i--;
+        }
+    }
 }
 
 /*****************************
@@ -1047,7 +1083,7 @@ char *if_debug(char **input) {
     if (mode == 0 || mode == 1) {
         printf("VARIABLES\n");
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-            printf("  %s: '%s'\n", variables[i].name, variables[i].value);
+            printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].sync, variables[i].value);
         }
     }
 
@@ -1085,7 +1121,7 @@ char *if_debug(char **input) {
     // print variables
     fprintf(f, "VARIABLES (max %d):", MAX_VARIABLES);
     for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-        fprintf(f, " %s='%s'", variables[i].name, variables[i].value);
+        fprintf(f, " %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].sync, variables[i].value);
     }
 
     // print internal functions
@@ -1690,6 +1726,8 @@ char *execute_function(function_t *function, char **args) {
     // !2: third argument
     // !#: argument count
 
+    current_level++;
+
     int argc = 0;
     char tmp[4];
     for (argc = 0; args[argc] != NULL; argc++) {
@@ -1704,12 +1742,9 @@ char *execute_function(function_t *function, char **args) {
     int ret = execute_lines(function->lines, function->line_count, &result);
 
     // free variables
-    for (int i = 0; i < argc; i++) {
-        local_itoa(i, tmp);
-        del_variable(tmp);
-    }
+    del_variable_level(current_level);
 
-    del_variable("#");
+    current_level--;
 
     if (ret == -1) {
         // function failed
@@ -3458,6 +3493,8 @@ int main(int argc, char **argv) {
         free(args);
         return 0;
     }
+
+    current_level = 0;
 
     current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
     strcpy(current_directory, "/");
