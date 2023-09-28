@@ -731,11 +731,27 @@ sid_t fu_path_to_sid(sid_t from, char *path) {
     sid_t ret;
 
     if (strcmp("/", path) == 0) {
-        ret = ROOT_SID;
-    } else if (path[0] == '/') {
-        ret = fu_rec_path_to_sid(filesys, from, path + 1);
+        return ROOT_SID;
+    }
+
+    int len = strlen(path) - 1;
+    char *tmp;
+
+    if (path[len] == '/') {
+        tmp = strdup(path);
+        tmp[len] = '\0';
     } else {
-        ret = fu_rec_path_to_sid(filesys, from, path);
+        tmp = path;
+    }
+
+    if (tmp[0] == '/') {
+        ret = fu_rec_path_to_sid(filesys, from, tmp + 1);
+    } else {
+        ret = fu_rec_path_to_sid(filesys, from, tmp);
+    }
+
+    if (tmp != path) {
+        free(tmp);
     }
 
     return ret;
