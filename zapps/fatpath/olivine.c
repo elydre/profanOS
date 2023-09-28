@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.7 rev 2"
+#define OLV_VERSION "0.7 rev 3"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -109,6 +109,7 @@ internal_function_t internal_functions[];
 char *current_directory, *exit_code;
 int current_level;
 
+void execute_file(char *file);
 
 /****************************
  *                         *
@@ -747,7 +748,7 @@ char *calculate_strings(char *left, char *right, char *op) {
 
 char *eval(ast_t *ast) {
     int left, right, no_number = 0;
-    char *res;
+    char *res = NULL;
 
     // if only one element return it
     if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
@@ -785,17 +786,20 @@ char *eval(ast_t *ast) {
         right_str = (char *) ast->right.ptr;
     }
 
+    right_str = right_str == ERROR_CODE ? NULL : right_str;
+    left_str = left_str == ERROR_CODE ? NULL : left_str;
+
     if (left_str != NULL && right_str != NULL) {
         no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
         no_number |= op[0] == '.' || op[0] == '@';
         res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
     }
 
-    if (ast->left.type == AST_TYPE_AST && left_str != NULL) {
+    if (left_str != NULL && ast->left.type == AST_TYPE_AST) {
         free(left_str);
     }
 
-    if (ast->right.type == AST_TYPE_AST && right_str != NULL) {
+    if (right_str != NULL && ast->right.type == AST_TYPE_AST) {
         free(right_str);
     }
 
@@ -884,211 +888,52 @@ char *if_eval(char **input) {
  *                                   *
 **************************************/
 
-char *if_sprintf(char **input) {
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc < 1) {
-        raise_error("printf", "Expected at least 1 argument, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    char *format = input[0];
-
-
-    int arg_i = 1;
-
-    char *res = malloc(0x1000);
-    res[0] = '\0';
-    int res_i = 0;
-
-    for (int format_i = 0; format[format_i] != '\0'; format_i++) {
-        if (format[format_i] != '%') {
-            res[res_i++] = format[format_i];
-            continue;
-        }
-
-        format_i++;
-        if (format[format_i] == '%') {
-            res[res_i++] = '%';
-            continue;
-        }
-
-        if (input[arg_i] == NULL) {
-            raise_error("printf", "%%%c requires an argument, but none given", format[format_i]);
-            return ERROR_CODE;
-        }
-
-        if (format[format_i] == 's') {
-            for (int i = 0; input[arg_i][i] != '\0'; i++) {
-                res[res_i++] = input[arg_i][i];
-            }
-        } else if (format[format_i] == 'd') {
-            int nb;
-            if (local_atoi(input[arg_i], &nb)) {
-                raise_error("printf", "%%%c requires an integer, but got '%s'", format[format_i], input[arg_i]);
-                return ERROR_CODE;
-            }
-            char *nb_str = malloc(12);
-            local_itoa(nb, nb_str);
-            for (int i = 0; nb_str[i] != '\0'; i++) {
-                res[res_i++] = nb_str[i];
-            }
-            free(nb_str);
-        } else if (format[format_i] == 'c') {
-            int nb;
-            if (local_atoi(input[arg_i], &nb) || nb < 0 || nb > 255) {
-                if (strlen(input[arg_i]) == 1) {
-                    res[res_i++] = input[arg_i][0];
-                } else {
-                    raise_error("printf", "%%%c requires a character, but got '%s'", format[format_i], input[arg_i]);
-                    return ERROR_CODE;
-                }
-            }
-            res[res_i++] = nb;
-        } else {
-            raise_error("printf", "Unknown format specifier '%%%c'", format[format_i]);
-            return ERROR_CODE;
-        }
-    }
-
-    res[res_i] = '\0';
-
-    return res;
-}
-
-char *if_print(char **input) {
-    for (int i = 0; input[i] != NULL; i++) {
-        printf("%s", input[i]);
-    }
-    return NULL;
-}
-
-char *if_set_var(char **input) {
+char *if_cd(char **input) {
     // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
 
-    if (argc != 2) {
-        raise_error("set", "Expected 2 arguments, got %d", argc);
+    if (argc > 1) {
+        raise_error("cd", "Expected 1 argument, got %d", argc);
         return ERROR_CODE;
     }
 
-    // get name
-    char *name = input[0];
+    // change to default if no arguments
+    if (argc == 0) {
+        strcpy(current_directory, CD_DEFAULT);
+        if (!USE_ENVVARS) return NULL;
+        setenv("PWD", current_directory, 1);
+        return NULL;
+    }
 
-    // get value
-    char *value = input[1];
+    // get dir
+    char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
 
-    // set variable
-    if (set_variable(name, value)) {
+    #if PROFANBUILD
+    // check if dir exists
+    assemble_path(current_directory, input[0], dir);
+    // simplify path
+    fu_simplify_path(dir);
+
+    sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
+    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
+        raise_error("cd", "Directory '%s' does not exist", dir);
+        free(dir);
         return ERROR_CODE;
     }
+    #else
+    strcpy(dir, input[0]);
+    #endif
 
-    return NULL;
-}
-
-char *if_global(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
+    // change directory
+    strcpy(current_directory, dir);
+    if (USE_ENVVARS) {
+        setenv("PWD", current_directory, 1);
     }
 
-    if (argc != 2) {
-        raise_error("global", "Expected 2 arguments, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    // get name
-    char *name = input[0];
-
-    // get value
-    char *value = input[1];
-
-    // copy the current level
-    int old_level = current_level;
-    current_level = 0;
-
-    // set variable
-    if (set_variable(name, value)) {
-        return ERROR_CODE;
-    }
-
-    // restore the current level
-    current_level = old_level;
-
-    return NULL;
-}
-
-char *if_del_var(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc != 1) {
-        raise_error("del", "Expected 1 argument, got %d\n", argc);
-        return ERROR_CODE;
-    }
-
-    // get name
-    char *name = input[0];
-
-    // delete variable
-    if (del_variable(name)) {
-        return ERROR_CODE;
-    }
-
-    return NULL;
-}
-
-char *if_export(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc != 2) {
-        raise_error("export", "Expected 2 arguments, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    if (!USE_ENVVARS) {
-        raise_error("export", "Environment variables are disabled");
-        return ERROR_CODE;
-    }
-
-    setenv(input[0], input[1], 1);
-
-    return NULL;
-}
-
-char *if_del_func(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc != 1) {
-        raise_error("delfunc", "Expected 1 argument, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    // get name
-    char *name = input[0];
-
-    // delete function
-    if (del_function(name)) {
-        return ERROR_CODE;
-    }
+    free(dir);
 
     return NULL;
 }
@@ -1195,84 +1040,52 @@ char *if_debug(char **input) {
     return NULL;
 }
 
-
-char *if_go_binfile(char **input) {
-    #if PROFANBUILD
-
+char *if_del_var(char **input) {
     // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
 
-    if (argc < 1) {
-        raise_error("go", "Expected at least 1 argument, got %d", argc);
+    if (argc != 1) {
+        raise_error("del", "Expected 1 argument, got %d\n", argc);
         return ERROR_CODE;
     }
 
-    // get file name
-    char *file_path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, input[0], file_path);
-    // check if file exists
+    // get name
+    char *name = input[0];
 
-    sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
-
-    if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
-        raise_error("go", "File '%s' does not exist", file_path);
-        free(file_path);
+    // delete variable
+    if (del_variable(name)) {
         return ERROR_CODE;
     }
 
-    int sleep = 1;
-    if (strcmp(input[argc - 1], "&") == 0) {
-        sleep = 0;
-        argc--;
-    };
-
-    char *file_name = malloc((strlen(input[0]) + 1) * sizeof(char));
-    strcpy(file_name, input[0]);
-    // remove the extension
-    char *dot = strrchr(file_name, '.');
-    if (dot) *dot = '\0';
-    // remove the path
-    char *slash = strrchr(file_name, '/');
-    if (slash) memmove(file_name, slash + 1, strlen(slash));
-
-    char **argv = malloc((argc + 1) * sizeof(char*));
-    argv[0] = file_name;
-    for (int i = 1; i < argc; i++) {
-        argv[i] = input[i];
-    }
-    argv[argc] = NULL;
-
-    int pid;
-    local_itoa(c_run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
-    ), exit_code);
-
-    if (!sleep) {
-        printf("GO: started with pid %d\n", pid);
-    }
-
-    char *tmp = malloc(10 * sizeof(char));
-
-    local_itoa(pid, tmp);
-    set_variable("spi", tmp);
-
-    free(file_path);
-    free(file_name);
-    free(argv);
-    free(tmp);
-    return exit_code[0] == '0' ? NULL : ERROR_CODE;
-
-    #else
-    raise_error("go", "Not available in this build");
-    return ERROR_CODE;
-
-    #endif
+    return NULL;
 }
 
-void execute_file(char *file);
+char *if_delfunc(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        raise_error("delfunc", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // delete function
+    if (del_function(name)) {
+        return ERROR_CODE;
+    }
+
+    return NULL;
+}
+
 char *if_exec(char **input) {
     // get argc
     int argc = 0;
@@ -1290,57 +1103,7 @@ char *if_exec(char **input) {
     return NULL;
 }
 
-char *if_change_dir(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc > 1) {
-        raise_error("cd", "Expected 1 argument, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    // change to default if no arguments
-    if (argc == 0) {
-        strcpy(current_directory, CD_DEFAULT);
-        if (!USE_ENVVARS) return NULL;
-        setenv("PWD", current_directory, 1);
-        return NULL;
-    }
-
-    // get dir
-    char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
-
-    #if PROFANBUILD
-    // check if dir exists
-    assemble_path(current_directory, input[0], dir);
-    // simplify path
-    fu_simplify_path(dir);
-
-    sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
-    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
-        raise_error("cd", "Directory '%s' does not exist", dir);
-        free(dir);
-        return ERROR_CODE;
-    }
-    #else
-    strcpy(dir, input[0]);
-    #endif
-
-    // change directory
-    strcpy(current_directory, dir);
-    if (USE_ENVVARS) {
-        setenv("PWD", current_directory, 1);
-    }
-
-    free(dir);
-
-    return NULL;
-}
-
-char *if_make_pseudo(char **input) {
+char *if_export(char **input) {
     // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
@@ -1348,73 +1111,18 @@ char *if_make_pseudo(char **input) {
     }
 
     if (argc != 2) {
-        raise_error("pseudo", "Expected 2 arguments, got %d", argc);
+        raise_error("export", "Expected 2 arguments, got %d", argc);
         return ERROR_CODE;
     }
 
-    // get name
-    char *name = input[0];
+    if (!USE_ENVVARS) {
+        raise_error("export", "Environment variables are disabled");
+        return ERROR_CODE;
+    }
 
-    // get value
-    char *value = input[1];
-
-    // set pseudo
-    set_pseudo(name, value);
+    setenv(input[0], input[1], 1);
 
     return NULL;
-}
-
-char *if_range(char **input) {
-    /*
-     * input: ["1", "5"]
-     * output: "1 2 3 4 5"
-    */
-
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc == 0 || argc > 2) {
-        raise_error("range", "Expected 1 or 2 arguments, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    int start, end;
-    
-    if (argc == 1) {
-        start = 0;
-        end = atoi(input[0]);
-    } else {
-        start = atoi(input[0]);
-        end = atoi(input[1]);
-    }
-
-    if (start > end) {
-        raise_error("range", "Start must be less than end, got %d and %d", start, end);
-        return ERROR_CODE;
-    } else if (start == end) {
-        return NULL;
-    }
-
-    char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
-    char *tmp = malloc(12 * sizeof(char));
-    tmp[0] = '\0';
-
-    int output_len = 0;
-
-    for (int i = start; i < end; i++) {
-        local_itoa(i, tmp);
-        strcat(tmp, " ");
-        for (int j = 0; tmp[j] != '\0'; j++) {
-            output[output_len++] = tmp[j];
-        }
-    }
-    output[--output_len] = '\0';
-
-    free(tmp);
-
-    return output;
 }
 
 char *if_find(char **input) {
@@ -1509,37 +1217,119 @@ char *if_find(char **input) {
     #endif
 }
 
-char *if_ticks(char **input) {
-    /*
-     * input: []
-     * output: "'123456789'"
-    */
-
+char *if_global(char **input) {
+    // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
 
-    if (argc != 0) {
-        raise_error("ticks", "Expected 0 arguments, got %d", argc);
+    if (argc != 2) {
+        raise_error("global", "Expected 2 arguments, got %d", argc);
         return ERROR_CODE;
     }
 
-    char *output = malloc(11 * sizeof(char));
+    // get name
+    char *name = input[0];
 
-    #if PROFANBUILD
-    local_itoa(c_timer_get_ms(), output);
-    #else
-    strcpy(output, "0");
-    #endif
+    // get value
+    char *value = input[1];
 
-    return output;
+    // copy the current level
+    int old_level = current_level;
+    current_level = 0;
+
+    // set variable
+    if (set_variable(name, value)) {
+        return ERROR_CODE;
+    }
+
+    // restore the current level
+    current_level = old_level;
+
+    return NULL;
 }
 
-char *if_strlen(char **input) {
+char *if_go_binfile(char **input) {
+    #if PROFANBUILD
+
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc < 1) {
+        raise_error("go", "Expected at least 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    // get file name
+    char *file_path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, input[0], file_path);
+    // check if file exists
+
+    sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
+
+    if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
+        raise_error("go", "File '%s' does not exist", file_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+
+    int sleep = 1;
+    if (strcmp(input[argc - 1], "&") == 0) {
+        sleep = 0;
+        argc--;
+    };
+
+    char *file_name = malloc((strlen(input[0]) + 1) * sizeof(char));
+    strcpy(file_name, input[0]);
+    // remove the extension
+    char *dot = strrchr(file_name, '.');
+    if (dot) *dot = '\0';
+    // remove the path
+    char *slash = strrchr(file_name, '/');
+    if (slash) memmove(file_name, slash + 1, strlen(slash));
+
+    char **argv = malloc((argc + 1) * sizeof(char*));
+    argv[0] = file_name;
+    for (int i = 1; i < argc; i++) {
+        argv[i] = input[i];
+    }
+    argv[argc] = NULL;
+
+    int pid;
+    local_itoa(c_run_ifexist_full(
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
+    ), exit_code);
+
+    if (!sleep) {
+        printf("GO: started with pid %d\n", pid);
+    }
+
+    char *tmp = malloc(10 * sizeof(char));
+
+    local_itoa(pid, tmp);
+    set_variable("spi", tmp);
+
+    free(file_path);
+    free(file_name);
+    free(argv);
+    free(tmp);
+    return exit_code[0] == '0' ? NULL : ERROR_CODE;
+
+    #else
+    raise_error("go", "Not available in this build");
+    return ERROR_CODE;
+
+    #endif
+}
+
+char *if_name(char **input) {
     /*
-     * input: ["hello world"]
-     * output: "11"
+     * input: ["/dir/subdir/file1.txt"]
+     * output: "'file1'"
     */
 
     int argc = 0;
@@ -1548,13 +1338,115 @@ char *if_strlen(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("strlen", "Expected 1 argument, got %d", argc);
+        raise_error("name", "Expected 1 argument, got %d", argc);
         return ERROR_CODE;
     }
 
-    char *output = malloc(11 * sizeof(char));
+    int len = strlen(input[0]);
+    char *name = malloc((len + 1) * sizeof(char));
 
-    local_itoa(strlen(input[0]), output);
+    for (int i = len - 1; i >= 0; i--) {
+        if (input[0][i] == '/') {
+            strcpy(name, input[0] + i + 1);
+            break;
+        }
+    }
+
+    // remove extension
+    for (int i = strlen(name) - 1; i >= 0; i--) {
+        if (name[i] == '.') {
+            name[i] = '\0';
+            break;
+        }
+    }
+
+    char *output = malloc((strlen(name) + 3) * sizeof(char));
+    sprintf(output, "'%s'", name);
+    free(name);
+
+    return output;
+}
+
+char *if_print(char **input) {
+    for (int i = 0; input[i] != NULL; i++) {
+        printf("%s", input[i]);
+    }
+    return NULL;
+}
+
+char *if_pseudo(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 2) {
+        raise_error("pseudo", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // get value
+    char *value = input[1];
+
+    // set pseudo
+    set_pseudo(name, value);
+
+    return NULL;
+}
+
+char *if_range(char **input) {
+    /*
+     * input: ["1", "5"]
+     * output: "1 2 3 4 5"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc == 0 || argc > 2) {
+        raise_error("range", "Expected 1 or 2 arguments, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    int start, end;
+    
+    if (argc == 1) {
+        start = 0;
+        end = atoi(input[0]);
+    } else {
+        start = atoi(input[0]);
+        end = atoi(input[1]);
+    }
+
+    if (start > end) {
+        raise_error("range", "Start must be less than end, got %d and %d", start, end);
+        return ERROR_CODE;
+    } else if (start == end) {
+        return NULL;
+    }
+
+    char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
+    char *tmp = malloc(12 * sizeof(char));
+    tmp[0] = '\0';
+
+    int output_len = 0;
+
+    for (int i = start; i < end; i++) {
+        local_itoa(i, tmp);
+        strcat(tmp, " ");
+        for (int j = 0; tmp[j] != '\0'; j++) {
+            output[output_len++] = tmp[j];
+        }
+    }
+    output[--output_len] = '\0';
+
+    free(tmp);
 
     return output;
 }
@@ -1595,18 +1487,171 @@ char *if_rep(char **input) {
     return ret;
 }
 
+char *if_set_var(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 2) {
+        raise_error("set", "Expected 2 arguments, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    // get name
+    char *name = input[0];
+
+    // get value
+    char *value = input[1];
+
+    // set variable
+    if (set_variable(name, value)) {
+        return ERROR_CODE;
+    }
+
+    return NULL;
+}
+
+char *if_sprintf(char **input) {
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc < 1) {
+        raise_error("printf", "Expected at least 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    char *format = input[0];
+
+
+    int arg_i = 1;
+
+    char *res = malloc(0x1000);
+    res[0] = '\0';
+    int res_i = 0;
+
+    for (int format_i = 0; format[format_i] != '\0'; format_i++) {
+        if (format[format_i] != '%') {
+            res[res_i++] = format[format_i];
+            continue;
+        }
+
+        format_i++;
+        if (format[format_i] == '%') {
+            res[res_i++] = '%';
+            continue;
+        }
+
+        if (input[arg_i] == NULL) {
+            raise_error("printf", "%%%c requires an argument, but none given", format[format_i]);
+            return ERROR_CODE;
+        }
+
+        if (format[format_i] == 's') {
+            for (int i = 0; input[arg_i][i] != '\0'; i++) {
+                res[res_i++] = input[arg_i][i];
+            }
+        } else if (format[format_i] == 'd') {
+            int nb;
+            if (local_atoi(input[arg_i], &nb)) {
+                raise_error("printf", "%%%c requires an integer, but got '%s'", format[format_i], input[arg_i]);
+                return ERROR_CODE;
+            }
+            char *nb_str = malloc(12);
+            local_itoa(nb, nb_str);
+            for (int i = 0; nb_str[i] != '\0'; i++) {
+                res[res_i++] = nb_str[i];
+            }
+            free(nb_str);
+        } else if (format[format_i] == 'c') {
+            int nb;
+            if (local_atoi(input[arg_i], &nb) || nb < 0 || nb > 255) {
+                if (strlen(input[arg_i]) == 1) {
+                    res[res_i++] = input[arg_i][0];
+                } else {
+                    raise_error("printf", "%%%c requires a character, but got '%s'", format[format_i], input[arg_i]);
+                    return ERROR_CODE;
+                }
+            }
+            res[res_i++] = nb;
+        } else {
+            raise_error("printf", "Unknown format specifier '%%%c'", format[format_i]);
+            return ERROR_CODE;
+        }
+    }
+
+    res[res_i] = '\0';
+
+    return res;
+}
+
+char *if_strlen(char **input) {
+    /*
+     * input: ["hello world"]
+     * output: "11"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        raise_error("strlen", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    char *output = malloc(11 * sizeof(char));
+
+    local_itoa(strlen(input[0]), output);
+
+    return output;
+}
+
+char *if_ticks(char **input) {
+    /*
+     * input: []
+     * output: "'123456789'"
+    */
+
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 0) {
+        raise_error("ticks", "Expected 0 arguments, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    char *output = malloc(11 * sizeof(char));
+
+    #if PROFANBUILD
+    local_itoa(c_timer_get_ms(), output);
+    #else
+    strcpy(output, "0");
+    #endif
+
+    return output;
+}
+
+
 internal_function_t internal_functions[] = {
-    {"cd", if_change_dir},
+    {"cd", if_cd},
     {"debug", if_debug},
     {"del", if_del_var},
-    {"delfunc", if_del_func},
+    {"delfunc", if_delfunc},
     {"eval", if_eval},
     {"exec", if_exec},
     {"export", if_export},
     {"find", if_find},
     {"global", if_global},
     {"go", if_go_binfile},
-    {"pseudo", if_make_pseudo},
+    {"pseudo", if_pseudo},
+    {"name", if_name},
     {"range", if_range},
     {"rep", if_rep},
     {"set", if_set_var},
@@ -2976,7 +3021,7 @@ int add_to_suggest(char **suggests, int count, char *str) {
     return count;
 }
 
-char *olv_autocomplete(char *str, int len, char **other) {
+char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     other[0] = NULL;
 
     if (len == 0) {
@@ -2990,6 +3035,8 @@ char *olv_autocomplete(char *str, int len, char **other) {
     int is_var = 0;
     int dec = 0;
     int i = 0;
+
+    *dec_ptr = 0;
 
     // check for ';' or '!('
     for (int j = 0; j < len; j++) {
@@ -3067,6 +3114,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
         path[last_slash + (last_slash == 0)] = '\0';
 
         dec = strlen(inp_end);
+        *dec_ptr = dec;
 
         // check if the path is valid
         sid_t dir = fu_path_to_sid(ROOT_SID, path);
@@ -3120,6 +3168,7 @@ char *olv_autocomplete(char *str, int len, char **other) {
     // variables
     if (in_var) {
         int size = len - in_var;
+        *dec_ptr = size;
 
         if (size != 0) {
             memcpy(tmp, str + in_var, size);
@@ -3145,6 +3194,8 @@ char *olv_autocomplete(char *str, int len, char **other) {
 
     memcpy(tmp, str + dec, i - dec);
     tmp[i] = '\0';
+
+    *dec_ptr = i - dec;
 
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
@@ -3188,7 +3239,8 @@ char *olv_autocomplete(char *str, int len, char **other) {
 #endif
 
 
-int local_input(char *buffer, int size, char **history, int history_end) {
+int local_input(char *buffer, int size, char **history, int history_end, int buffer_index) {
+    // return -1 if the input is valid, else return the cursor position
     #if PROFANBUILD
 
     history_end++;
@@ -3199,10 +3251,11 @@ int local_input(char *buffer, int size, char **history, int history_end) {
     int sc, last_sc, last_sc_sgt = 0;
 
     int buffer_actual_size = strlen(buffer);
-    int buffer_index = buffer_actual_size;
+    if (buffer_index == -1) buffer_index = buffer_actual_size;
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
+        printf(" $7\033[u\033[%dC\033[?25l", buffer_index);
     }
 
     fflush(stdout);
@@ -3213,7 +3266,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
     int history_index = history_end;
 
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
-    int ret_val = 0;
+    int ret_val = -1;
 
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
@@ -3304,17 +3357,43 @@ int local_input(char *buffer, int size, char **history, int history_end) {
         }
 
         else if (sc == TAB) {
-            char *suggestion = olv_autocomplete(buffer, buffer_index, other_suggests);
+            int dec;
+            char *suggestion = olv_autocomplete(buffer, buffer_index, other_suggests, &dec);
             if (suggestion == NULL && other_suggests[0] != NULL) {
                 // print other suggestions
+                char *common_beginning = malloc((strlen(other_suggests[0]) + 1) * sizeof(char));
+                strcpy(common_beginning, other_suggests[0] + dec);
                 printf("\n");
+
                 for (int i = 0; other_suggests[i] != NULL; i++) {
                     printf("%s   ", other_suggests[i]);
-                }
-                for (int i = 0; other_suggests[i] != NULL; i++) {
+                    for (int j = 0; other_suggests[i][j + dec] != '\0'; j++) {
+                        if (other_suggests[i][j + dec] != common_beginning[j]) {
+                            common_beginning[j] = '\0';
+                            break;
+                        }
+                    }
                     free(other_suggests[i]);
                 }
-                ret_val = 1;
+
+                // add the common beginning to the buffer
+                int common_len = strlen(common_beginning);
+                if (buffer_actual_size + common_len >= size) {
+                    ret_val = buffer_index;
+                    break;
+                }
+
+                for (int i = buffer_actual_size; i >= buffer_index; i--) {
+                    buffer[i + common_len] = buffer[i];
+                }
+                for (int i = 0; i < common_len; i++) {
+                    buffer[buffer_index + i] = common_beginning[i];
+                }
+                buffer_actual_size += common_len;
+                buffer_index += common_len;
+                free(common_beginning);
+
+                ret_val = buffer_index;
                 break;
             }
 
@@ -3364,7 +3443,7 @@ int local_input(char *buffer, int size, char **history, int history_end) {
 
     #else
     fgets(buffer, size, stdin);
-    return 0;
+    return -1;
     #endif
 }
 
@@ -3374,14 +3453,16 @@ void start_shell() {
 
     char **history = calloc(HISTORY_SIZE, sizeof(char *));
     int history_index = 0;
-    int len;
+    int cursor_pos, len;
+    cursor_pos = -1;
 
     while (1) {
         line[0] = '\0';
         do {
             printf(exit_code[0] == '0' ? PROMPT_SUCC : PROMPT_FAIL, current_directory);
             fflush(stdout);
-        } while(local_input(line, INPUT_SIZE, history, history_index));
+            cursor_pos = local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
+        } while(cursor_pos != -1);
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
@@ -3395,7 +3476,8 @@ void start_shell() {
             do {
                 printf(OTHER_PROMPT);
                 fflush(stdout);
-            } while(local_input(line + len, INPUT_SIZE - len, history, history_index));
+                cursor_pos = local_input(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
+            } while(cursor_pos != -1);
         }
 
         len = strlen(line);

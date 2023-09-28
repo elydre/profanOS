@@ -9,49 +9,6 @@ FUNC echo
     print \n
 END
 
-FUNC name
-    IF !(eval !# ~ 1)
-        echo fname: require one argument, !# given
-        RETURN
-    END
-
-    set 0 !(rep !0 ./ }{)
-
-    set i !(eval !(strlen !0) - 1)
-    set out !(eval !0 @ !i)    
-    IF !(eval !i = 0)
-        RETURN !(rep !out }{ ./)
-    END
-    set i !(eval !i - 1)
-
-    WHILE !(eval ( !0 @ !i ) ~ {)
-        IF !(eval !0 @ !i = })
-            WHILE !(eval !i ~ 0)
-                IF !(eval !0 @ !i = {)
-                    set i 0
-                    BREAK
-                END
-                IF !(eval !0 @ !i ~ })
-                    BREAK
-                END
-                set i !(eval !i - 1)
-            END
-            IF !(eval !i = 0)
-                BREAK
-            END
-            set out !(eval !0 @ !i)
-        END; ELSE
-            set out !(eval ( !0 @ !i ) . !out)
-        END
-        IF !(eval !i = 0)
-            BREAK
-        END
-        set i !(eval !i - 1)
-    END
-
-    RETURN !(rep !out }{ ./)
-END
-
 FOR dir '/bin/commands' '/bin/fatpath'
     FOR e !(find -f !dir)
         pseudo !(name !e) 'go !e'
