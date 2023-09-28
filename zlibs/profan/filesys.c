@@ -460,7 +460,7 @@ sid_t fu_file_create(int device_id, char *path) {
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        printf("failed to create file\n");
+        printf("failed to initialize container\n");
         free(parent);
         free(name);
         return NULL_SID;
@@ -555,7 +555,7 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        printf("failed to create file\n");
+        printf("failed to initialize container\n");
         free(parent);
         free(name);
         return NULL_SID;

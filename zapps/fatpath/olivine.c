@@ -1170,7 +1170,7 @@ char *if_find(char **input) {
 
     int elm_count = fu_get_dir_content(dir_id, &out_ids, &names);
 
-    if (elm_count == 0) {
+    if (elm_count < 1) {
         free(path);
         return NULL;
     }
