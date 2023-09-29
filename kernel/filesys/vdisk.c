@@ -60,9 +60,10 @@ int vdisk_note_sector_unused(vdisk_t *vdisk, sid_t sid) {
         return 1;
     }
 
+    vdisk->used_count--;
+
     vdisk->free[vdisk->used_count] = sid.sector;
     vdisk->used[sid.sector] = 0;
-    vdisk->used_count--;
     return 0;
 }
 
