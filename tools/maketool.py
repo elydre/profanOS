@@ -365,8 +365,8 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
 
     cprint(COLOR_INFO, "starting qemu...")
 
-    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -drive file=initrd.bin,format=raw -boot order=d {qemu_args}")
-    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -drive file=initrd.bin,format=raw -boot order=a {qemu_args}")
+    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -boot order=d {qemu_args}")
+    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -boot order=a {qemu_args}")
 
 def make_help():
     aide = (
