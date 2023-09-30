@@ -490,41 +490,26 @@ int printf(const char *restrict format, ...) {
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
+
     return 0;
 }
 
+int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist);
 int fprintf(FILE *restrict stream, const char *restrict format, ...) {
-    // if the stream is read only, we can't write to it
-    if ((stream != stdout && stream != stderr) && (
-        stream == stdin ||
-        strcmp(stream->mode, "r")   == 0 ||
-        strcmp(stream->mode, "r+")  == 0 ||
-        strcmp(stream->mode, "rb")  == 0 ||
-        strcmp(stream->mode, "rb+") == 0
-    )) return 0;
-
-    // we allocate a buffer to store the formatted string
-    char *buffer = malloc(0x4000);
-
-    // we copy format to a buffer because we need to modify it
     va_list args;
     va_start(args, format);
-    dopr(buffer, 0x4000, format, args);
+    vfprintf(stream, format, args);
     va_end(args);
 
-    // we write the string
-    int count = fwrite(buffer, 1, strlen(buffer), stream);
-
-    free(buffer);
-    return count;
+    return 0;
 }
 
 int sprintf(char *restrict buffer, const char *restrict format, ...) {
     va_list args;
-    // we copy format to a buffer because we need to modify it
     va_start(args, format);
     dopr(buffer, -1, format, args);
     va_end(args);
+
     return 0;
 }
 
@@ -575,11 +560,25 @@ int vprintf(const char *restrict format, va_list vlist) {
 }
 
 int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    if (stream == stdout) {
-        vprintf(format, vlist);
-        return strlen(format); // TODO : return the true number of characters written
-    }
-    puts("vfprintf not implemented yet, WHY DO YOU USE IT ?\n");
+    // if the stream is read only, we can't write to it
+    if ((stream != stdout && stream != stderr) && (
+        stream == stdin ||
+        strcmp(stream->mode, "r")   == 0 ||
+        strcmp(stream->mode, "r+")  == 0 ||
+        strcmp(stream->mode, "rb")  == 0 ||
+        strcmp(stream->mode, "rb+") == 0
+    )) return 0;
+
+    // we allocate a buffer to store the formatted string
+    char *buffer = malloc(0x4000);
+
+    // we copy format to a buffer because we need to modify it
+    dopr(buffer, 0x4000, format, vlist);
+
+    // we write the string
+    fwrite(buffer, 1, strlen(buffer), stream);
+
+    free(buffer);
     return 0;
 }
 
