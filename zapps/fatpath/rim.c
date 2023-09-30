@@ -187,12 +187,10 @@ void display_data(int from_line, int to_line, int x_offset) {
 
 void realloc_buffer() {
     if (g_lines_count % 1024 == 0) {
-        printf("reallocating data lines with size %d\n", g_lines_count + 1024);
         g_data_lines = realloc(g_data_lines, (g_lines_count + 1024) * sizeof(int));
     }
 
     if (g_data_size % 1024 == 0 && g_data_size != 0) {
-        printf("reallocating data with size %d\n", g_data_size + 1024);
         g_data = realloc(g_data, (g_data_size + 1024) * sizeof(char));
     }
 }
