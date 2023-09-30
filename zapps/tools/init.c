@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define run_ifexist_pid(path, argc, argv, pid) \
+        c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
+        argc, argv, 0, 0, 0, 1}, pid)
+
 typedef struct {
     int id;
     char path[256];
@@ -65,7 +69,7 @@ int redirect_devio(char *file, int id) {
     );
 }
 
-void welcome_print() {
+void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
     char *kver = malloc(256);
     c_sys_kinfo(kver);
@@ -74,12 +78,30 @@ void welcome_print() {
     free(kver);
 }
 
-int main() {
-    int sum = 0;
-    int total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
+char wait_key(void) {
+    while (c_kb_get_scfh());
+
+    char key_char = 0;
+
+    do {
+        c_process_sleep(c_process_get_pid(), 50);
+        key_char = c_kb_scancode_to_char(c_kb_get_scfh(), 0);
+    } while (key_char != 'g' && key_char != 'h' && key_char != 'j');
+
+    return key_char;
+}
+
+int main(void) {
+    int sum, total, usage_pid;
+    char key_char;
+
+    total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
+    sum = 0;
+
     for (int i = 0; i < total; i++) {
         sum += !print_load_status(i);
     }
+
     printf("Loaded %d/%d libraries\n\n", sum, total);
 
     panda_set_start(c_get_cursor_offset());
@@ -93,16 +115,32 @@ int main() {
             c_kprint("Failed to redirect stderr\n");
             return 1;
         }
-        c_run_ifexist("/bin/commands/usage.bin", 0, NULL);
+        run_ifexist_pid("/bin/commands/usage.bin", 0, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
     }
 
     welcome_print();
-    c_run_ifexist("/bin/fatpath/olivine.bin", 0, NULL);
 
-    printf("olivine exited, sleeping\n");
-    c_process_sleep(c_process_get_pid(), 0);
+    do {
+        c_run_ifexist("/bin/fatpath/olivine.bin", 0, NULL);
+
+        printf("[init] olivine exited,\nAction keys:\n"
+            " g - start olivine again\n"
+            " h - unload all libraries and exit\n"
+            " j - reboot profanOS\n"
+        );
+
+        if ((key_char = wait_key()) == 'j') {
+            c_sys_reboot();
+        }
+
+    } while (key_char != 'h');
+
+    c_kprint("\033[2J");
+    if (c_process_get_state(usage_pid) < 4) {
+        c_process_kill(usage_pid);
+    }
 
     // unload libraries
     for (int i = 0; i < total; i++) {
