@@ -1,9 +1,9 @@
 $5 USEFUL COMMANDS $6
-cat     - show file content         ls      - list the current dir
-cc      - compile C source file     mkdir   - create a new dir
-clear   - clear the screen          mkfile  - create a new file
-cpu     - start cpu usage monitor   proc    - show process info
+cat     - show file content         mkdir   - create a new dir
+cc      - compile C source file     mkfile  - create a new file
+clear   - clear the screen          proc    - process utility
 info    - show time, mem, disk      rim     - start text editor
+ls      - list the current dir      wif     - write in file
 
 all commands are in /bin/commands and /bin/fatpath$7
 
