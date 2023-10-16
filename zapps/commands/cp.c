@@ -17,10 +17,6 @@ int copy_elem(sid_t src_sid, char *src_path, char *dst_path) {
         return raise_and_free("Not a file", src_path, NULL);
     }
 
-    sid_t dst_sid = fu_path_to_sid(ROOT_SID, dst_path);
-    if (!IS_NULL_SID(dst_sid))
-        return raise_and_free("File already exists", dst_path, NULL);
-
     char *parent;
     char *name;
 
@@ -33,7 +29,17 @@ int copy_elem(sid_t src_sid, char *src_path, char *dst_path) {
     if (IS_NULL_SID(parent_sid))
         return raise_and_free("No such file or directory", dst_path, NULL);
 
-    sid_t new_sid = fu_file_create(0, dst_path);
+    sid_t new_sid = fu_path_to_sid(ROOT_SID, dst_path);
+
+    if (IS_NULL_SID(new_sid)) {
+        new_sid = fu_file_create(0, dst_path);
+        if (IS_NULL_SID(new_sid))
+            return raise_and_free("Failed to create file", dst_path, NULL);
+    } else if (IS_SAME_SID(src_sid, new_sid)) {
+        printf("cp: '%s' and '%s' are the same file\n", src_path, dst_path);
+        return 1;
+    }
+
     if (IS_NULL_SID(new_sid))
         return raise_and_free("Failed to create file", dst_path, NULL);
 
@@ -73,6 +79,22 @@ int main(int argc, char **argv) {
     if (IS_NULL_SID(src_sid)) {
         printf("cp: cannot copy '%s': No such file or directory\n", src_path);
         return 1;
+    }
+
+    if (fu_is_dir(src_sid)) {
+        printf("cp: cannot copy '%s': Is a directory\n", src_path);
+        return 1;
+    }
+
+    sid_t dst_sid = fu_path_to_sid(ROOT_SID, dst_path);
+    if (!IS_NULL_SID(dst_sid) && fu_is_dir(dst_sid)) {
+        char *name;
+        fu_sep_path(src_path, NULL, &name);
+        char *new_dst_path = malloc(strlen(dst_path) + strlen(name) + 2);
+        assemble_path(dst_path, name, new_dst_path);
+        free(dst_path);
+        dst_path = new_dst_path;
+        free(name);
     }
 
     int ret = copy_elem(src_sid, src_path, dst_path);
