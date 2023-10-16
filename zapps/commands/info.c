@@ -70,7 +70,7 @@ int main(void) {
 
     pl_and_pf("$4kernel:     $2%s\n", kver);
 
-    pl_and_pf("$4UTC time:   $2%02d$7:$2%02d$7:$2%02d %02d$7/$2%02d$7/$2%02d\n",
+    pl_and_pf("$4RTC time:   $2%02d$7:$2%02d$7:$2%02d %02d$7/$2%02d$7/$2%02d\n",
         time.hours, time.minutes, time.seconds,
         time.day_of_month, time.month, time.year
     );
