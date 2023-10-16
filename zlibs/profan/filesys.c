@@ -46,15 +46,21 @@ int main(void) {
 void fu_sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
-    *parent = (char *) malloc(META_MAXLEN);
-    *cnt = (char *) malloc(META_MAXLEN);
-    (*parent)[0] = '\0';
-    (*cnt)[0] = '\0';
+    if (parent != NULL) {
+        *parent = (char *) malloc(META_MAXLEN);
+        (*parent)[0] = '\0';
+    }
+
+    if (cnt != NULL) {
+        *cnt = (char *) malloc(META_MAXLEN);
+        (*cnt)[0] = '\0';
+    }   
 
     len = strlen(fullpath);
 
     if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        strcpy((*cnt), "/");
+        if (parent != NULL) strcpy(*parent, "/");
+        if (cnt != NULL) strcpy((*cnt), "/");
         return;
     }
 
@@ -70,12 +76,14 @@ void fu_sep_path(char *fullpath, char **parent, char **cnt) {
     }
 
     if (i <= 0) {
-        strcpy(*parent, "/");
-        strncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
+        if (parent != NULL) strcpy(*parent, "/");
+        if (cnt != NULL) strncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
     } else {
-        strncpy(*parent, fullpath, i);
-        (*parent)[i] = '\0';
-        strncpy(*cnt, fullpath + i + 1, META_MAXLEN);
+        if (parent != NULL) {
+            strncpy(*parent, fullpath, i);
+            (*parent)[i] = '\0';
+        }
+        if (cnt != NULL) strncpy(*cnt, fullpath + i + 1, META_MAXLEN);
     }
 }
 
