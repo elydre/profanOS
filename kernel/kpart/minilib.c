@@ -249,7 +249,7 @@ void kinput(char *buffer, int size) {
         } else if (sc <= SC_MAX) {
             if (size < index + 2) continue;
             c = kb_scancode_to_char(sc, shift);
-            if (c == '?') continue;
+            if (c == '\0') continue;
             kcnprint(&c, 1, c_blue);
             buffer[index] = c;
             index++;

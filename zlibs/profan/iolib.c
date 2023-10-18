@@ -219,7 +219,7 @@ void open_input(char *buffer, int size) {
 
         else if (sc <= SC_MAX) {
             if (size < buffer_actual_size + 2) continue;
-            if (c_kb_scancode_to_char(sc, shift) == '?') continue;
+            if (c_kb_scancode_to_char(sc, shift) == '\0') continue;
             for (int i = buffer_actual_size; i > buffer_index; i--) {
                 buffer[i] = buffer[i - 1];
             }
