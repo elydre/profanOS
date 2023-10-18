@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <filesys.h>
 #include <i_iolib.h>
+#include <profan.h>
 #include <panda.h>
 
 #include <stdlib.h>
@@ -17,7 +18,6 @@ typedef struct {
 
 lib_t libs_at_boot[] = {
     {1000, "/lib/profan/iolib.bin"},
-    {1002, "/lib/profan/profan.bin"},
     {1004, "/lib/profan/itime.bin"},
     {1006, "/lib/profan/vgui.bin"},
     {1007, "/lib/ports/stdlib.bin"},
@@ -25,6 +25,7 @@ lib_t libs_at_boot[] = {
     {1010, "/lib/profan/filesys.bin"},
     {1015, "/lib/profan/devio.bin"},
     {1009, "/lib/ports/stdio.bin"},
+    {1002, "/lib/profan/profan.bin"},
     {1011, "/lib/ports/math.bin"},
     {1012, "/lib/ports/time.bin"},
     {1013, "/lib/ports/setjmp.bin"},
@@ -85,7 +86,7 @@ char wait_key(void) {
 
     do {
         c_process_sleep(c_process_get_pid(), 50);
-        key_char = c_kb_scancode_to_char(c_kb_get_scfh(), 0);
+        key_char = profan_kb_get_char(c_kb_get_scfh(), 0);
     } while (key_char != 'g' && key_char != 'h' && key_char != 'j');
 
     return key_char;

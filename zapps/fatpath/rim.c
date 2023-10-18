@@ -366,7 +366,7 @@ void main_loop(char *path) {
             for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
                 g_data[i] = g_data[i - 1];
 
-            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = c_kb_scancode_to_char(key, shift_pressed);
+            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = profan_kb_get_char(key, shift_pressed);
             g_data_size++;
 
             for (int i = g_cursor_line + 1; i < g_lines_count; i++)
