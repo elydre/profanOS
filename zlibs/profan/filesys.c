@@ -803,6 +803,7 @@ char *fu_link_get_path(sid_t link_sid, int pid) {
         memcpy(&tmp_pid, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2), sizeof(uint32_t));
         memcpy(&tmp_path_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2) + sizeof(uint32_t), sizeof(uint32_t));
 
+        tmp_path_offset += sizeof(uint32_t) + count * (sizeof(uint32_t) * 2);
         if ((int) tmp_pid == pid) {
             char *ret = strdup((char *) buf + tmp_path_offset);
             free(buf);
@@ -842,8 +843,6 @@ int fu_link_add_path(sid_t link_sid, int pid, char *path) {
     // get the number of elements
     memcpy(&count, buf, sizeof(uint32_t));
 
-    printf("count: %d\n", count);
-
     // move the paths
     memmove(
         buf + sizeof(uint32_t) + (count + 1) * (sizeof(uint32_t) * 2),
@@ -851,15 +850,12 @@ int fu_link_add_path(sid_t link_sid, int pid, char *path) {
         size - (sizeof(uint32_t) + count * (sizeof(uint32_t) * 2))
     );
 
-    printf("size: %d\n", size);
-
     int path_offset = (size + sizeof(uint32_t) * 2) - (sizeof(uint32_t) + (count + 1) * (sizeof(uint32_t) * 2));
 
     // add the new path
     memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) * 2), &pid, sizeof(uint32_t));
     memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) * 2) + sizeof(uint32_t), &path_offset, sizeof(uint32_t));
 
-    printf("path_offset: %d\n", path_offset);
     strcpy((void *) buf + (size + sizeof(uint32_t) * 2), path);
 
     count++;

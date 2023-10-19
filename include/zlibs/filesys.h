@@ -60,7 +60,7 @@
 #define fu_fctf_get_addr ((uint32_t (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 15))
 #define fu_is_link ((int (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 16))
 #define fu_link_create ((sid_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 17))
-#define fu_link_get_path ((char* (*)(sid_t, int)) get_func_addr(FILESYS_LIB_ID, 18))
+#define fu_link_get_path ((char *(*)(sid_t, int)) get_func_addr(FILESYS_LIB_ID, 18))
 #define fu_link_add_path ((int (*)(sid_t, int, char *)) get_func_addr(FILESYS_LIB_ID, 19))
 
 #define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 21))
