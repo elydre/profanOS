@@ -748,6 +748,17 @@ sid_t fu_link_create(int device_id, char *path) {
         return NULL_SID;
     }
 
+    // set the initial size
+    c_fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
+
+    // write the number of elements
+    if (c_fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, sizeof(uint32_t))) {
+        RAISE_ERROR("link_create: failed to write to d%ds%d\n", head_sid.device, head_sid.sector);
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
     free(parent);
     free(name);
 
@@ -761,6 +772,7 @@ sid_t fu_link_create(int device_id, char *path) {
 char *fu_link_get_path(sid_t link_sid, int pid) {
     filesys_t *filesys = c_fs_get_main();
 
+    // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("link_get_path: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
@@ -783,48 +795,25 @@ char *fu_link_get_path(sid_t link_sid, int pid) {
     // get the number of elements
     memcpy(&count, buf, sizeof(uint32_t));
 
-    if (count == 0) {
-        free(buf);
-        return NULL;
-    }
-
-    // get the elements
-    char **paths = malloc(sizeof(char *) * count);
-    uint32_t *pids = malloc(sizeof(uint32_t) * count);
-
-    for (uint32_t i = 0; i < count; i++) {
-        memcpy(&pids[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
-        char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + pids[i];
-        paths[i] = malloc(strlen(tmp) + 1);
-        strcpy(paths[i], tmp);
-    }
-    free(buf);
-
     // search for the path
-    char *ret = NULL;
     for (uint32_t i = 0; i < count; i++) {
-        if ((int) pids[i] == pid) {
-            ret = paths[i];
-            break;
-        }
-    }
+        uint32_t tmp_pid;
+        uint32_t tmp_path_offset;
 
-    if (ret == NULL) {
-        for (uint32_t i = 0; i < count; i++) {
-            if (pids[i] == 0) {
-                ret = paths[i];
-                break;
-            }
+        memcpy(&tmp_pid, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2), sizeof(uint32_t));
+        memcpy(&tmp_path_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2) + sizeof(uint32_t), sizeof(uint32_t));
+
+        if ((int) tmp_pid == pid) {
+            char *ret = strdup((char *) buf + tmp_path_offset);
+            free(buf);
+            return ret;
         }
     }
 
     // free
-    for (uint32_t i = 0; i < count; i++) {
-        free(paths[i]);
-    }
-    free(paths);
+    free(buf);
 
-    return ret;
+    return NULL;
 }
 
 int fu_link_add_path(sid_t link_sid, int pid, char *path) {
@@ -843,7 +832,7 @@ int fu_link_add_path(sid_t link_sid, int pid, char *path) {
     }
 
     // read the directory
-    uint8_t *buf = malloc(size);
+    uint8_t *buf = malloc(size + strlen(path) + 1 + sizeof(uint32_t) * 2);
     if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
         RAISE_ERROR("link_add_path: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
         return 1;
@@ -853,30 +842,40 @@ int fu_link_add_path(sid_t link_sid, int pid, char *path) {
     // get the number of elements
     memcpy(&count, buf, sizeof(uint32_t));
 
-    if (count > 0) {
-        // move paths
-        for (uint32_t i = size - 1; i >= sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)); i--) {
-            buf[i + strlen(path) + 1] = buf[i];
-        }
-    }
+    printf("count: %d\n", count);
 
-    // insert the new element
-    memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)), &pid, sizeof(uint32_t));
-    uint32_t path_offset = size - sizeof(uint32_t) - count * (sizeof(uint32_t) + sizeof(uint32_t));
-    memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t), &path_offset, sizeof(uint32_t));
+    // move the paths
+    memmove(
+        buf + sizeof(uint32_t) + (count + 1) * (sizeof(uint32_t) * 2),
+        buf + sizeof(uint32_t) + count * (sizeof(uint32_t) * 2),
+        size - (sizeof(uint32_t) + count * (sizeof(uint32_t) * 2))
+    );
 
-    // update the number of elements
+    printf("size: %d\n", size);
+
+    int path_offset = (size + sizeof(uint32_t) * 2) - (sizeof(uint32_t) + (count + 1) * (sizeof(uint32_t) * 2));
+
+    // add the new path
+    memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) * 2), &pid, sizeof(uint32_t));
+    memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) * 2) + sizeof(uint32_t), &path_offset, sizeof(uint32_t));
+
+    printf("path_offset: %d\n", path_offset);
+    strcpy((void *) buf + (size + sizeof(uint32_t) * 2), path);
+
     count++;
     memcpy(buf, &count, sizeof(uint32_t));
 
-    strcpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) + count * sizeof(uint32_t) + path_offset, path);
+    // set the size
+    size += strlen(path) + 1 + sizeof(uint32_t) * 2;
+    c_fs_cnt_set_size(filesys, link_sid, size);
 
-    // write the directory
-    if (c_fs_cnt_write(filesys, link_sid, buf, 0, size + strlen(path) + 1)) {
+    // write the link
+    if (c_fs_cnt_write(filesys, link_sid, buf, 0, size)) {
         RAISE_ERROR("link_add_path: failed to write to d%ds%d\n", link_sid.device, link_sid.sector);
         return 1;
     }
 
+    // free
     free(buf);
 
     return 0;
