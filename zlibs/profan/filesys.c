@@ -18,6 +18,7 @@
 sid_t fu_path_to_sid(sid_t from, char *path);
 
 #define CACHE_FCTF_SIZE 16
+#define RAISE_ERROR(...) printf("[FS MODULE ERROR] " __VA_ARGS__)
 
 typedef struct {
     sid_t sid;
@@ -124,21 +125,21 @@ int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
     filesys_t *filesys = c_fs_get_main();
 
     if (!fu_is_dir(dir_sid)) {
-        printf("not a directory\n");
+        RAISE_ERROR("get_dir_content: d%ds%d is not a directory\n", dir_sid.device, dir_sid.sector);
         return -1;
     }
 
     // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
-        printf("failed to get directory size\n");
+        RAISE_ERROR("get_dir_content: failed to get size of d%ds%d\n", dir_sid.device, dir_sid.sector);
         return -1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size);
     if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
-        printf("failed to read directory\n");
+        RAISE_ERROR("get_dir_content: failed to read from d%ds%d\n", dir_sid.device, dir_sid.sector);
         return -1;
     }
 
@@ -173,25 +174,25 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
     // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
-        printf("failed to get directory size\n");
+        RAISE_ERROR("add_element_to_dir: failed to get size of d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
     if (!fu_is_dir(dir_sid)) {
-        printf("not a directory\n");
+        RAISE_ERROR("add_element_to_dir: d%ds%d is not a directory\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
     // extend the directory
     if (c_fs_cnt_set_size(filesys, dir_sid, size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1)) {
-        printf("failed to extend directory\n");
+        RAISE_ERROR("add_element_to_dir: failed to extend d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1);
     if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
-        printf("failed to read directory\n");
+        RAISE_ERROR("add_element_to_dir: failed to read from d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
@@ -219,7 +220,7 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
 
     // write the directory
     if (c_fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1)) {
-        printf("failed to write directory\n");
+        RAISE_ERROR("add_element_to_dir: failed to write to d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
@@ -234,19 +235,19 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
     // read the directory and get size
     uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
-        printf("failed to get directory size\n");
+        RAISE_ERROR("remove_element_from_dir: failed to get size of d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
     if (!fu_is_dir(dir_sid)) {
-        printf("not a directory\n");
+        RAISE_ERROR("remove_element_from_dir: d%ds%d is not a directory\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size);
     if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
-        printf("failed to read directory\n");
+        RAISE_ERROR("remove_element_from_dir: failed to read from d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
@@ -278,7 +279,7 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
     }
 
     if (index == 0) {
-        printf("element not found\n");
+        RAISE_ERROR("remove_element_from_dir: element not found in d%ds%d\n", dir_sid.device, dir_sid.sector);
         free(name_offsets);
         free(buf);
         free(ids);
@@ -308,7 +309,7 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
     if (c_fs_cnt_write(filesys, dir_sid, buf, 0,
         size - (sizeof(uint32_t) + sizeof(sid_t)))
     ) {
-        printf("failed to write directory\n");
+        RAISE_ERROR("remove_element_from_dir: failed to write to d%ds%d\n", dir_sid.device, dir_sid.sector);
         free(name_offsets);
         free(buf);
         free(ids);
@@ -330,23 +331,24 @@ sid_t fu_dir_create(int device_id, char *path) {
     sid_t parent_sid;
     sid_t head_sid;
 
-    // check if the the directory already exists
+    // check if the the path already exists
     head_sid = fu_path_to_sid(ROOT_SID, path);
     if (!IS_NULL_SID(head_sid)) {
-        return head_sid;
+        RAISE_ERROR("dir_create: '%s' already exists\n", path);
+        return NULL_SID;
     }
 
     fu_sep_path(path, &parent, &name);
     if (parent[0]) {
         parent_sid = fu_path_to_sid(ROOT_SID, parent);
         if (IS_NULL_SID(parent_sid)) {
-            printf("failed to find parent directory\n");
+            RAISE_ERROR("dir_create: failed to find parent directory of '%s'\n", path);
             free(parent);
             free(name);
             return NULL_SID;
         }
         if (!fu_is_dir(parent_sid)) {
-            printf("parent is not a directory\n");
+            RAISE_ERROR("dir_create: parent of '%s' is not a directory\n", path);
             free(parent);
             free(name);
             return NULL_SID;
@@ -364,7 +366,7 @@ sid_t fu_dir_create(int device_id, char *path) {
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        printf("failed to create directory\n");
+        RAISE_ERROR("dir_create: failed to create directory '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -373,7 +375,7 @@ sid_t fu_dir_create(int device_id, char *path) {
     // create a link in parent directory
     if (parent[0]) {
         if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
-            printf("failed to add directory to parent\n");
+            RAISE_ERROR("dir_create: failed to add directory '%s' to parent\n", path);
             free(parent);
             free(name);
             return NULL_SID;
@@ -385,14 +387,14 @@ sid_t fu_dir_create(int device_id, char *path) {
 
     // create '.' and '..'
     if (fu_add_element_to_dir(head_sid, parent_sid, "..")) {
-        printf("failed to add '..' to directory\n");
+        RAISE_ERROR("dir_create: failed to add '..' to directory '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
     }
 
     if (fu_add_element_to_dir(head_sid, head_sid, ".")) {
-        printf("failed to add '.' to directory\n");
+        RAISE_ERROR("dir_create: failed to add '.' to directory '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -432,15 +434,16 @@ sid_t fu_file_create(int device_id, char *path) {
     sid_t parent_sid;
     sid_t head_sid;
 
-    // check if the the directory already exists
+    // check if the the path already exists
     head_sid = fu_path_to_sid(ROOT_SID, path);
     if (!IS_NULL_SID(head_sid)) {
-        return head_sid;
+        RAISE_ERROR("file_create: '%s' already exists\n", path);
+        return NULL_SID;
     }
 
     fu_sep_path(path, &parent, &name);
     if (!parent[0]) {
-        printf("parent unreachable\n");
+        RAISE_ERROR("file_create: parent of '%s' is unreachable\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -448,13 +451,13 @@ sid_t fu_file_create(int device_id, char *path) {
 
     parent_sid = fu_path_to_sid(ROOT_SID, parent);
     if (IS_NULL_SID(parent_sid)) {
-        printf("failed to find parent directory\n");
+        RAISE_ERROR("file_create: failed to find parent directory of '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
     }
     if (!fu_is_dir(parent_sid)) {
-        printf("parent is not a directory\n");
+        RAISE_ERROR("file_create: parent of '%s' is not a directory\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -468,7 +471,7 @@ sid_t fu_file_create(int device_id, char *path) {
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        printf("failed to initialize container\n");
+        RAISE_ERROR("file_create: failed to initialize container '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -476,7 +479,7 @@ sid_t fu_file_create(int device_id, char *path) {
 
     // create a link in parent directory
     if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
-        printf("failed to add directory to parent\n");
+        RAISE_ERROR("file_create: failed to add file '%s' to parent\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -526,15 +529,16 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     sid_t parent_sid;
     sid_t head_sid;
 
-    // check if the the directory already exists
+    // check if the the path already exists
     head_sid = fu_path_to_sid(ROOT_SID, path);
     if (!IS_NULL_SID(head_sid)) {
-        return head_sid;
+        RAISE_ERROR("fctf_create: '%s' already exists\n", path);
+        return NULL_SID;
     }
 
     fu_sep_path(path, &parent, &name);
     if (!parent[0]) {
-        printf("parent unreachable\n");
+        RAISE_ERROR("fctf_create: parent of '%s' is unreachable\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -542,13 +546,13 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
 
     parent_sid = fu_path_to_sid(ROOT_SID, parent);
     if (IS_NULL_SID(parent_sid)) {
-        printf("failed to find parent directory\n");
+        RAISE_ERROR("fctf_create: failed to find parent directory of '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
     }
     if (!fu_is_dir(parent_sid)) {
-        printf("parent is not a directory\n");
+        RAISE_ERROR("fctf_create: parent of '%s' is not a directory\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -563,7 +567,7 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        printf("failed to initialize container\n");
+        RAISE_ERROR("fctf_create: failed to initialize container '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -571,7 +575,7 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
 
     // create a link in parent directory
     if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
-        printf("failed to add directory to parent\n");
+        RAISE_ERROR("fctf_create: failed to add file '%s' to parent\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -580,7 +584,7 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     // write the function pointer
     c_fs_cnt_set_size(filesys, head_sid, sizeof(void *));
     if (c_fs_cnt_write(filesys, head_sid, (void *) &fct, 0, sizeof(void *))) {
-        printf("failed to write function pointer\n");
+        RAISE_ERROR("fctf_create: failed to write function pointer to '%s'\n", path);
         free(parent);
         free(name);
         return NULL_SID;
@@ -607,7 +611,7 @@ int fu_fctf_rw(sid_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_
     if (addr == NULL) {
         // read container
         if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
-            printf("failed to read function pointer\n");
+            RAISE_ERROR("fctf_rw: failed to read function pointer from d%ds%d\n", file_sid.device, file_sid.sector);
             return 1;
         }
 
@@ -644,7 +648,7 @@ uint32_t fu_fctf_get_addr(sid_t file_sid) {
     if (addr == NULL) {
         // read container
         if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
-            printf("failed to read function pointer\n");
+            RAISE_ERROR("fctf_get_addr: failed to read function pointer from d%ds%d\n", file_sid.device, file_sid.sector);
             return 1;
         }
 
@@ -667,6 +671,91 @@ uint32_t fu_fctf_get_addr(sid_t file_sid) {
 
 /**************************************************
  *                                               *
+ *         Standard Text Links Operations        *
+ *                                               *
+**************************************************/
+
+int fu_is_link(sid_t link_sid) {
+    if (IS_NULL_SID(link_sid)) return 0;
+
+    filesys_t *filesys = c_fs_get_main();
+    char *name = c_fs_cnt_get_meta(filesys, link_sid);
+    if (name == NULL) return 0;
+    if (name[0] == 'L') {
+        free(name);
+        return 1;
+    }
+    free(name);
+    return 0;
+}
+
+sid_t fu_link_create(int device_id, char *path) {
+    filesys_t *filesys = c_fs_get_main();
+
+    char *parent, *name;
+
+    sid_t parent_sid;
+    sid_t head_sid;
+
+    // check if the the path already exists
+    head_sid = fu_path_to_sid(ROOT_SID, path);
+    if (!IS_NULL_SID(head_sid)) {
+        RAISE_ERROR("link_create: '%s' already exists\n", path);
+        return NULL_SID;
+    }
+
+    fu_sep_path(path, &parent, &name);
+    if (!parent[0]) {
+        RAISE_ERROR("link_create: parent of '%s' is unreachable\n", path);
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    if (IS_NULL_SID(parent_sid)) {
+        RAISE_ERROR("link_create: failed to find parent directory of '%s'\n", path);
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+    if (!fu_is_dir(parent_sid)) {
+        RAISE_ERROR("link_create: parent of '%s' is not a directory\n", path);
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    // generate the meta
+    char *meta = malloc(META_MAXLEN);
+    snprintf(meta, META_MAXLEN, "L-%s", name);
+
+    head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    free(meta);
+
+    if (IS_NULL_SID(head_sid)) {
+        RAISE_ERROR("link_create: failed to initialize container '%s'\n", path);
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    // create a link in parent directory
+    if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
+        RAISE_ERROR("link_create: failed to add file '%s' to parent\n", path);
+        free(parent);
+        free(name);
+        return NULL_SID;
+    }
+
+    free(parent);
+    free(name);
+
+    return head_sid;
+}
+
+/**************************************************
+ *                                               *
  *            Path to SID conversion             *
  *                                               *
 **************************************************/
@@ -679,7 +768,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     // read the directory
     uint32_t size = c_fs_cnt_get_size(filesys, parent);
     if (size == UINT32_MAX) {
-        printf("failed to get directory size\n");
+        RAISE_ERROR("rec_path_to_sid: failed to get size of d%ds%d\n", parent.device, parent.sector);
         return NULL_SID;
     }
 
@@ -706,7 +795,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     count = fu_get_dir_content(parent, &sids, &names);
 
     if (count == -1) {
-        printf("failed to get directory content during path search\n");
+        RAISE_ERROR("rec_path_to_sid: failed to get directory content of d%ds%d\n", parent.device, parent.sector);
         return NULL_SID;
     }
 
@@ -770,7 +859,7 @@ void fu_simplify_path(char *path) {
     // this function simplifies them to: /a/c/d/f
 
     if (path[0] != '/') {
-        printf("Cannot simplify relative path\n");
+        RAISE_ERROR("simplify_path: cannot simplify relative path '%s'\n", path);
         return;
     }
 
