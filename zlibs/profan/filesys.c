@@ -754,6 +754,134 @@ sid_t fu_link_create(int device_id, char *path) {
     return head_sid;
 }
 
+// text links can be use by path_to_sid to redirect to another path
+// link can save serveral paths according to the PID
+// if a PID dont have associated path, the PPID is used (and so on)
+
+char *fu_link_get_path(sid_t link_sid, int pid) {
+    filesys_t *filesys = c_fs_get_main();
+
+    uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
+    if (size == UINT32_MAX) {
+        RAISE_ERROR("link_get_path: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
+        return NULL;
+    }
+
+    if (!fu_is_link(link_sid)) {
+        RAISE_ERROR("link_get_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
+        return NULL;
+    }
+
+    // read the directory
+    uint8_t *buf = malloc(size);
+    if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
+        RAISE_ERROR("link_get_path: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
+        return NULL;
+    }
+
+    uint32_t count = 0;
+    // get the number of elements
+    memcpy(&count, buf, sizeof(uint32_t));
+
+    if (count == 0) {
+        free(buf);
+        return NULL;
+    }
+
+    // get the elements
+    char **paths = malloc(sizeof(char *) * count);
+    uint32_t *pids = malloc(sizeof(uint32_t) * count);
+
+    for (uint32_t i = 0; i < count; i++) {
+        memcpy(&pids[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
+        char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + pids[i];
+        paths[i] = malloc(strlen(tmp) + 1);
+        strcpy(paths[i], tmp);
+    }
+    free(buf);
+
+    // search for the path
+    char *ret = NULL;
+    for (uint32_t i = 0; i < count; i++) {
+        if ((int) pids[i] == pid) {
+            ret = paths[i];
+            break;
+        }
+    }
+
+    if (ret == NULL) {
+        for (uint32_t i = 0; i < count; i++) {
+            if (pids[i] == 0) {
+                ret = paths[i];
+                break;
+            }
+        }
+    }
+
+    // free
+    for (uint32_t i = 0; i < count; i++) {
+        free(paths[i]);
+    }
+    free(paths);
+
+    return ret;
+}
+
+int fu_link_add_path(sid_t link_sid, int pid, char *path) {
+    filesys_t *filesys = c_fs_get_main();
+
+    // read the directory and get size
+    uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
+    if (size == UINT32_MAX) {
+        RAISE_ERROR("link_add_path: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    if (!fu_is_link(link_sid)) {
+        RAISE_ERROR("link_add_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    // read the directory
+    uint8_t *buf = malloc(size);
+    if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
+        RAISE_ERROR("link_add_path: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    uint32_t count = 0;
+    // get the number of elements
+    memcpy(&count, buf, sizeof(uint32_t));
+
+    if (count > 0) {
+        // move paths
+        for (uint32_t i = size - 1; i >= sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)); i--) {
+            buf[i + strlen(path) + 1] = buf[i];
+        }
+    }
+
+    // insert the new element
+    memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)), &pid, sizeof(uint32_t));
+    uint32_t path_offset = size - sizeof(uint32_t) - count * (sizeof(uint32_t) + sizeof(uint32_t));
+    memcpy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t), &path_offset, sizeof(uint32_t));
+
+    // update the number of elements
+    count++;
+    memcpy(buf, &count, sizeof(uint32_t));
+
+    strcpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) + count * sizeof(uint32_t) + path_offset, path);
+
+    // write the directory
+    if (c_fs_cnt_write(filesys, link_sid, buf, 0, size + strlen(path) + 1)) {
+        RAISE_ERROR("link_add_path: failed to write to d%ds%d\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    free(buf);
+
+    return 0;
+}
+
 /**************************************************
  *                                               *
  *            Path to SID conversion             *
