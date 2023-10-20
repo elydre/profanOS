@@ -52,7 +52,7 @@ extern int signgam;
 
 #define math_errhandling MATH_ERRNO | MATH_ERREXCEPT
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 // functions
 #define fpclassify(x) ((int (*)(float)) get_func_addr(MATH_ID, 3))(x)

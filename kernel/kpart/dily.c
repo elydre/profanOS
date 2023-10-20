@@ -6,21 +6,27 @@
 #include <ktype.h>
 
 uint32_t **lib_functions = 0;
-int lib_count = 0;
 
-int dily_does_loaded(int lib_id) {
-    for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id)
-            continue;
-        return 1;
-    }
-    return 0;
+int dily_does_loaded(uint32_t lib_id) {
+    return !(
+        (lib_id < 1000             ||
+         lib_id >= DILY_MAX + 1000 ||
+         lib_functions == 0
+        ) || (
+         lib_functions[lib_id - 1000] == 0
+        )
+    );
 }
 
-int dily_load(char *path, int lib_id) {
+int dily_load(char *path, uint32_t lib_id) {
     sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
     if (IS_NULL_SID(file) || !fu_is_file(fs_get_main(), file)) {
         sys_error("Lib file not found");
+        return 1;
+    }
+
+    if (lib_id < 1000 || lib_id >= DILY_MAX + 1000) {
+        sys_error("Invalid lib id");
         return 1;
     }
 
@@ -29,32 +35,38 @@ int dily_load(char *path, int lib_id) {
         return 1;
     }
 
+    // allocate the lib_functions array if it doesnt exist
     if (lib_functions == 0) {
-        lib_functions = calloc(0x400);
+        lib_functions = (void *) mem_alloc(DILY_MAX * sizeof(uint32_t *), 0, 5);    // 5: library
+        mem_set((uint8_t *) lib_functions, 0, DILY_MAX * sizeof(uint32_t *));
     }
 
     uint32_t file_size = fs_cnt_get_size(fs_get_main(), file);
-    uint8_t *binary_mem = (uint8_t *) mem_alloc(file_size + RUN_LIB_STACK, 0, 5); // 5: library
+    uint8_t *binary_mem = (uint8_t *) mem_alloc(file_size + RUN_LIB_STACK, 0, 5);   // 5: library
 
     fs_cnt_read(fs_get_main(), file, binary_mem, 0, file_size);
 
-    uint32_t *addr_list = (uint32_t *) mem_alloc(0x800, 0, 5); // 6: as kernel
-    addr_list[0] = (uint32_t) lib_id;
+    int function_count = 0;
 
-    int addr_list_size = 1;
-
+    // count the number of functions
     for (uint32_t i = 0; i < file_size; i++) {
-        if (!(binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89))
-            continue;
-        addr_list[addr_list_size] = (uint32_t) &binary_mem[i];
-        addr_list_size++;
+        if (binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89)
+            function_count++;
+    }
 
-        if (addr_list_size >= 512) {
-            sys_fatal("Too many functions in library");
-            return 1;
+    // save the function addresses
+    uint32_t *addr_list = (uint32_t *) mem_alloc((function_count + 1) * sizeof(uint32_t), 0, 5); // 5: library
+    addr_list[0] = function_count;
+
+    function_count = 1;
+    for (uint32_t i = 0; i < file_size; i++) {
+        if (binary_mem[i] == 0x55 && binary_mem[i + 1] == 0x89) {
+            addr_list[function_count] = (uint32_t) &binary_mem[i];
+            function_count++;
         }
     }
 
+    // call the library entry point to initialize the library
     uint8_t *stack = binary_mem + file_size;
     mem_set((uint8_t *) stack, 0, RUN_LIB_STACK);
     uint32_t old_esp = 0;
@@ -65,39 +77,36 @@ int dily_load(char *path, int lib_id) {
 
     asm volatile("mov %0, %%esp" :: "r" (old_esp));
 
-    lib_functions[lib_count] = addr_list;
-    lib_count++;
+    // save the address list
+    lib_functions[lib_id - 1000] = addr_list;
 
     return 0;
 }
 
-int dily_unload(int lib_id) {
-    for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id)
-            continue;
+int dily_unload(uint32_t lib_id) {
+    if (!dily_does_loaded(lib_id)) {
+        sys_error("Lib not loaded");
+        return 1;
+    }
+    free(lib_functions[lib_id - 1000]);
+    lib_functions[lib_id - 1000] = 0;
 
-        free(lib_functions[i]);
-        lib_functions[i] = 0;
+    return 0;
+}
+
+uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id) {
+    if (!dily_does_loaded(lib_id)) {
+        serial_kprintf("lib %d not loaded\n", lib_id);
+        sys_fatal("Library not found");
         return 0;
     }
 
-    sys_error("Library not found");
-    return 1;
-}
-
-int dily_get_func(int lib_id, int func_id) {
-    for (int i = 0; i < lib_count; i++) {
-        if (lib_functions[i][0] != (uint32_t) lib_id)
-            continue;
-
-        // the first value is the standard lib entry
-        int val = (int) lib_functions[i][func_id + 1];
-
-        if (!val) sys_error("Function not found");
-        return val;
+    uint32_t *addr_list = lib_functions[lib_id - 1000];
+    if (func_id >= addr_list[0]) {
+        serial_kprintf("func %d not found\n", func_id);
+        sys_fatal("Function not found");
+        return 0;
     }
 
-    serial_kprintf("lib %d not found\n", lib_id);
-    sys_fatal("Library not found");
-    return 0;
+    return addr_list[func_id + 1];
 }

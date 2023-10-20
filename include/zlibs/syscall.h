@@ -22,7 +22,7 @@
 #define c_fs_cnt_write(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
 
 // nothing better than shit code art
-#define hi_func_addr(id) ((int (*)(int)) *(int *)WATFUNC_ADDR)(id)
+#define hi_func_addr(id) ((uint32_t (*)(uint32_t)) *(uint32_t *) WATFUNC_ADDR)(id)
 
 #define KB_A 16
 #define KB_Z 17
@@ -142,7 +142,7 @@
 
 #define c_exit_pid ((int (*)(int, int)) hi_func_addr(41))
 
-#define c_dily_unload ((int (*)(int)) hi_func_addr(42))
-#define c_dily_load ((int (*)(char *, int)) hi_func_addr(43))
+#define c_dily_unload ((int (*)(uint32_t)) hi_func_addr(42))
+#define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(43))
 
 #endif

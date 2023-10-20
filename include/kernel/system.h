@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.0.3c"
+#define KERNEL_VERSION  "1.0.4"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
@@ -21,6 +21,7 @@
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count (auto expand)
 #define RUN_BIN_VEXPD   16          // sucessive page create during page fault
 
+#define DILY_MAX        128         // max dily loaded library
 #define RUN_LIB_STACK   0x1000      // left stack size for library
 
 #define PROCESS_ESP     0x4000      // process stack size
@@ -60,11 +61,10 @@ int run_ifexist_full(runtime_args_t args, int *pid);
 int force_exit_pid(int pid, int ret_code);
 
 // dily.c
-int dily_does_loaded(int lib_id);
-int dily_get_func(int lib_id, int func_id);
-int dily_load(char *path, int lib_id);
-int dily_unload(int lib_id);
-int dily_init();
+int      dily_does_loaded(uint32_t lib_id);
+int      dily_load(char *path, uint32_t lib_id);
+int      dily_unload(uint32_t lib_id);
+uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
 
 // watfunc.c
 int init_watfunc();

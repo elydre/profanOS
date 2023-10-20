@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #define color_print ((uint32_t (*)(char *)) get_func_addr(IOLIB_ID, 3))
 #define panda_color_print ((uint32_t (*)(char *, char, int)) get_func_addr(IOLIB_ID, 4))
