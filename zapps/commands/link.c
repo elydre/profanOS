@@ -1,5 +1,8 @@
 #include <filesys.h>
+#include <profan.h>
+
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 int print_help(int full) {
@@ -133,39 +136,52 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
+    char *path = malloc(strlen(pwd) + strlen(args->link) + 2);
+    assemble_path(pwd, args->link, path);
+    args->link = path;
+
     sid_t link_sid = fu_path_to_sid(ROOT_SID, args->link);
 
     if (IS_NULL_SID(link_sid)) {
         if (args->action != ACTION_CREATE) {
             printf("link '%s' does not exist\n", args->link);
+            free(args->link);
             free(args);
             return 1;
         }
         ret = IS_NULL_SID(fu_link_create(0, args->link));
+        free(args->link);
         free(args);
         return ret;
     }
 
     if (!fu_is_link(link_sid)) {
         printf("'%s' is not a link\n", args->link);
+        free(args->link);
         free(args);
         return 1;
     }
 
     if (args->action == ACTION_CREATE) {
         printf("link '%s' already exists\n", args->link);
+        free(args->link);
         free(args);
         return 1;
     }
 
     if (args->action == ACTION_ADD) {
         ret = fu_link_add_path(link_sid, args->pid, args->path);
+        free(args->link);
         free(args);
         return ret;
     }
 
     if (args->action == ACTION_REMOVE) {
         ret = fu_link_remove_path(link_sid, args->pid);
+        free(args->link);
         free(args);
         return ret;
     }
@@ -175,11 +191,13 @@ int main(int argc, char **argv) {
 
         if (path == NULL) {
             printf("pid %d not found in link '%s'\n", args->pid, args->link);
+            free(args->link);
             free(args);
             return 1;
         }
 
         printf("%s\n", path);
+        free(args->link);
         free(path);
         free(args);
         return 0;
@@ -192,6 +210,7 @@ int main(int argc, char **argv) {
 
         if (count == 0) {
             printf("link '%s' is empty\n", args->link);
+            free(args->link);
             free(args);
             return 0;
         }
@@ -201,6 +220,7 @@ int main(int argc, char **argv) {
             free(paths[i]);
         }
 
+        free(args->link);
         free(paths);
         free(pids);
         free(args);
@@ -208,6 +228,7 @@ int main(int argc, char **argv) {
     }
 
     puts("Internal error\n");
+    free(args->link);
     free(args);
     return 1;
 }

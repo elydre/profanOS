@@ -845,6 +845,17 @@ int fu_link_add_path(sid_t link_sid, int pid, char *path) {
     // get the number of elements
     memcpy(&count, buf, sizeof(uint32_t));
 
+    // check if the pid already exists
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t tmp_pid;
+        memcpy(&tmp_pid, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2), sizeof(uint32_t));
+        if ((int) tmp_pid == pid) {
+            RAISE_ERROR("link_add_path: pid %d already exists in d%ds%d\n", pid, link_sid.device, link_sid.sector);
+            free(buf);
+            return 1;
+        }
+    }
+
     // move the paths
     memmove(
         buf + sizeof(uint32_t) + (count + 1) * (sizeof(uint32_t) * 2),
