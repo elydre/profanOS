@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        printf("$BUsage: $3rdr <path>$$\n");
+        printf("$BUsage: $3crrd <path>$$\n");
         return 1;
     }
 
