@@ -1415,7 +1415,7 @@ char *if_range(char **input) {
     }
 
     int start, end;
-    
+
     if (argc == 1) {
         start = 0;
         end = atoi(input[0]);

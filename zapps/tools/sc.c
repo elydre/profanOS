@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
             ms_sleep(10);
             continue;
         }
-        
+
         min_val = profan_kb_get_char(last_sc, 0);
         max_val = profan_kb_get_char(last_sc, 1);
 

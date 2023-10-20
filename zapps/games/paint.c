@@ -9,7 +9,7 @@ uint32_t *screen;
 #define WIDTH 640
 #define HEIGHT 480
 
-#define esc 
+#define esc
 
 void draw_cursor(int x, int y) {
     int i;

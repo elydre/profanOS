@@ -55,7 +55,7 @@ void fu_sep_path(char *fullpath, char **parent, char **cnt) {
     if (cnt != NULL) {
         *cnt = (char *) malloc(META_MAXLEN);
         (*cnt)[0] = '\0';
-    }   
+    }
 
     len = strlen(fullpath);
 
