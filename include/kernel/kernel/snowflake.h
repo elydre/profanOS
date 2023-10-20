@@ -48,10 +48,8 @@ int mem_free_all(int task_id);
  * 06: used memory size            *
  * 07: ca count by task *get_arg*  *
  * 08: ca size by task *get_arg*   *
- * 09: ca count for bin_run        *
- * 10: ca size for bin_run         *
- * 11: ca count for loaded libs    *
- * 12: ca size for loaded libs     *
+ * 09: ca count of type *get_arg*  *
+ * 10: ca size of type *get_arg*   *
 ************************************/
 
 int mem_get_info(char get_mode, int get_arg);

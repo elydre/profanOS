@@ -286,7 +286,6 @@ int mem_free_all(int task_id) {
 
 int mem_get_info(char get_mode, int get_arg) {
     // check the header for informations about the get_mode
-
     if (get_mode == 0) return phys_size;
     if (get_mode == 1) return MEM_BASE_ADDR;
     if (get_mode == 2) return sizeof(allocated_part_t) * part_size;
@@ -295,27 +294,31 @@ int mem_get_info(char get_mode, int get_arg) {
     if (get_mode == 5) return free_count;
 
     int index = 0;
+    int info[3];
+    for (int i = 0; i < 3; i++)
+        info[i] = 0;
 
-    int info[7];
-    for (int i = 0; i < 7; i++) info[i] = 0;
-
-    while (MEM_PARTS[index].state) {
-        info[0] += MEM_PARTS[index].size;
-        if (MEM_PARTS[index].task_id == get_arg && MEM_PARTS[index].state > 0) {
-            info[1]++;
-            info[2] += MEM_PARTS[index].size;
+    if (get_mode >= 6 && get_mode <= 8) {
+        while (MEM_PARTS[index].state) {
+            info[0] += MEM_PARTS[index].size;
+            if (MEM_PARTS[index].task_id == get_arg && MEM_PARTS[index].state == 1) {
+                info[1]++;
+                info[2] += MEM_PARTS[index].size;
+            }
+            index = MEM_PARTS[index].next;
         }
-        if (MEM_PARTS[index].state == 4) { // bin_run
-            info[3]++;
-            info[4] += MEM_PARTS[index].size;
-        }
-        if (MEM_PARTS[index].state == 5) { // libs
-            info[5]++;
-            info[6] += MEM_PARTS[index].size;
-        }
-        index = MEM_PARTS[index].next;
+        return info[get_mode - 6];
     }
 
-    if (get_mode > 5 && get_mode < 13) return info[get_mode - 6];
+    if (get_mode == 9 || get_mode == 10) {
+        while (MEM_PARTS[index].state) {
+            if (MEM_PARTS[index].state == get_arg) {
+                info[0]++;
+                info[1] += MEM_PARTS[index].size;
+            }
+            index = MEM_PARTS[index].next;
+        }
+        return info[get_mode - 9];
+    }
     return -1;
 }
