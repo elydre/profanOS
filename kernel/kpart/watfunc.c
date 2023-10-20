@@ -11,7 +11,7 @@
 #include <minilib.h>
 #include <system.h>
 
-int wf_get_func_addr(int func_id);
+uint32_t wf_get_func_addr(uint32_t func_id);
 
 int init_watfunc() {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
@@ -91,9 +91,9 @@ void *SYSCALL_ARRAY[] = {
     dily_load,
 };
 
-int wf_get_func_addr(int func_id) {
-    if (func_id < 0 || func_id >= ARYLEN(SYSCALL_ARRAY)) {
-        return (int) unknown_func;
+uint32_t wf_get_func_addr(uint32_t func_id) {
+    if (func_id >= ARYLEN(SYSCALL_ARRAY)) {
+        return (uint32_t) unknown_func;
     }
-    return (int) SYSCALL_ARRAY[func_id];
+    return (uint32_t) SYSCALL_ARRAY[func_id];
 }

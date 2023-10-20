@@ -3,7 +3,7 @@
 
 #include <type.h>
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 // Null pointer constant.
 #ifndef NULL

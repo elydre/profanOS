@@ -1,7 +1,9 @@
 #ifndef SETJMP_ID
 #define SETJMP_ID 1013
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
+#include <type.h>
+
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 /*
 int setjmp(jmp_buf var);

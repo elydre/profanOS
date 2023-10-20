@@ -40,7 +40,7 @@
 #define fu_fctf_flush(sid) (fu_fctf_rw(sid, NULL, 0, 0, 2))
 
 
-#define get_func_addr ((int (*)(int, int)) *(int *) 0x1ffffb)
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #ifndef FILESYS_LIB_C
 
