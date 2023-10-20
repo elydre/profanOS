@@ -906,6 +906,13 @@ int fu_link_get_all(sid_t link_sid, int **pid, char ***names) {
     // get the number of elements
     memcpy(&count, buf, sizeof(uint32_t));
 
+    if (count == 0) {
+        *names = NULL;
+        *pid = NULL;
+        free(buf);
+        return 0;
+    }
+
     // get the elements
     *pid = malloc(sizeof(uint32_t) * count);
     *names = malloc(sizeof(char *) * count);
