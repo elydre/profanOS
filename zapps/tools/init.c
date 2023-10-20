@@ -116,7 +116,7 @@ int main(void) {
             c_kprint("Failed to redirect stderr\n");
             return 1;
         }
-        run_ifexist_pid("/bin/commands/usage.bin", 0, NULL, &usage_pid);
+        run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
     }
