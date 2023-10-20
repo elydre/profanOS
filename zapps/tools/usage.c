@@ -25,7 +25,7 @@ void add_mem_info(uint32_t *pixel_buffer) {
     int mem_used = c_mem_get_info(6, 0) / 1024;
 
     itoa(mem_used, tmp, 10);
-    strcat(tmp, "KB");
+    strcat(tmp, "kB");
     buffer_print(pixel_buffer, HISTOTY_SIZE - (strlen(tmp) * 8 + 3), 0, tmp);
 
     itoa(alloc_count, tmp, 10);

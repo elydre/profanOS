@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
 
                 size = fu_get_file_size(cnt_ids[i]);
                 if (args->size_type == LS_SIZE_PHYS || size < 1024) printf("%d B", size);
-                else if (size < 1024 * 1024) printf("%d.%d KB", size / 1024, (size % 1024) / 10);
+                else if (size < 1024 * 1024) printf("%d.%d kB", size / 1024, (size % 1024) / 10);
                 else printf("%d.%d MB", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
             } else if (fu_is_fctf(cnt_ids[i])) {
                 printf("$4%s\033[u\033[22C$7", cnt_names[i]);
