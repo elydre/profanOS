@@ -41,7 +41,7 @@ void assemble_path(char *old, char *new, char *result) {
     }
 }
 
-void profan_stacktrace() {
+void profan_print_stacktrace(void) {
     struct stackframe *stk;
     asm ("movl %%ebp,%0" : "=r"(stk) ::);
     printf("Stack trace:\n");
@@ -52,6 +52,32 @@ void profan_stacktrace() {
         size++;
     }
     printf("total size: %d\n", size);
+}
+
+void profan_print_memory(void *addr, uint32_t size) {
+    for (uint32_t i = 0; i < size / 16 + (size % 16 != 0); i++) {
+        printf("%08x: ", (uint32_t) addr + i * 16);
+
+        for (int j = 0; j < 16; j++) {
+            if (i * 16 + j < size)
+                printf("%02x ", *((unsigned char *) addr + i * 16 + j));
+            else
+                printf("   ");
+            if (j % 4 == 3)
+                printf(" ");
+        }
+
+        for (int j = 0; j < 16; j++) {
+            unsigned char c = *((unsigned char *) addr + i * 16 + j);
+            if (i * 16 + j >= size)
+                break;
+            if (c >= 32 && c <= 126)
+                printf("%c", c);
+            else
+                printf(".");
+        }
+        printf("\n");
+    }
 }
 
 int profan_kb_load_map(char *path) {

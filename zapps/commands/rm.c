@@ -64,7 +64,7 @@ rm_options_t *parse_options(int argc, char **argv) {
     return options;
 }
 
-int remove_link(sid_t elem, char *path) {
+int remove_hard_link(sid_t elem, char *path) {
     char *parent;
     char *name;
 
@@ -83,7 +83,7 @@ int remove_link(sid_t elem, char *path) {
 }
 
 int remove_elem(sid_t elem, char *path, rm_options_t *options) {
-    if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
+    if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem) || fu_is_link(elem))) {
         printf("rm: cannot remove '%s': Unknown element type\n", path);
         return 1;
     }
@@ -130,7 +130,7 @@ int remove_elem(sid_t elem, char *path, rm_options_t *options) {
         return 0;
 
     // remove link
-    if (remove_link(elem, path))
+    if (remove_hard_link(elem, path))
         return 1;
     if (options->link_only)
         return 0;

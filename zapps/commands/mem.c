@@ -1,29 +1,5 @@
+#include <profan.h>
 #include <stdio.h>
-
-void print_memory_contents(void *addr, int size) {
-    for (int i = 0; i < size / 16; i++) {
-        printf("%08x: ", (unsigned int)addr + i * 16);
-        for (int j = 0; j < 16; j++) {
-            if (i * 16 + j < size)
-                printf("%02x ", *((unsigned char *)addr + i * 16 + j));
-            else
-                printf("   ");
-            if (j % 4 == 3)
-                printf(" ");
-        }
-        for (int j = 0; j < 16; j++) {
-            unsigned char c = *((unsigned char *)addr + i * 16 + j);
-            if (i * 16 + j >= size)
-                break;
-            if (c >= 32 && c <= 126) {
-                printf("%c", c);
-            } else {
-                printf(".");
-            }
-        }
-        printf("\n");
-    }
-}
 
 int str_to_int(char *str) {
     int ret = 0;
@@ -70,6 +46,6 @@ int main(int argc, char *argv[]) {
         printf("$3%s$B is not a valid size$$\n", argv[2]);
         return 1;
     }
-    print_memory_contents((void *)addr, size);
+    profan_print_memory((void *)addr, size);
     return 0;
 }

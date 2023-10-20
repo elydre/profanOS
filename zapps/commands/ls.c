@@ -284,7 +284,8 @@ int main(int argc, char **argv) {
         for (int i = 0; i < elm_count; i++) {
             if (fu_is_dir(cnt_ids[i])) printf("$2%s", cnt_names[i]);
             else if (fu_is_file(cnt_ids[i])) printf("$1%s", cnt_names[i]);
-            else if (fu_is_fctf(cnt_ids[i])) printf("$5%s", cnt_names[i]);
+            else if (fu_is_fctf(cnt_ids[i])) printf("$4%s", cnt_names[i]);
+            else if (fu_is_link(cnt_ids[i])) printf("$5%s", cnt_names[i]);
             else printf("$3%s", cnt_names[i]);
             if (i != elm_count - 1) printf("$$, ");
             free(cnt_names[i]);
@@ -306,7 +307,8 @@ int main(int argc, char **argv) {
             for (int j = i; j < elm_count; j += rows) {
                 if (fu_is_dir(cnt_ids[j])) printf("$2%s$$", cnt_names[j]);
                 else if (fu_is_file(cnt_ids[j])) printf("$1%s$$", cnt_names[j]);
-                else if (fu_is_fctf(cnt_ids[j])) printf("$5%s$$", cnt_names[j]);
+                else if (fu_is_fctf(cnt_ids[j])) printf("$4%s$$", cnt_names[j]);
+                else if (fu_is_link(cnt_ids[j])) printf("$5%s$$", cnt_names[j]);
                 else printf("$3%s$$", cnt_names[j]);
                 for (uint32_t k = 0; k < max_len - strlen(cnt_names[j]) + 1; k++) putchar(' ');
                 free(cnt_names[j]);
@@ -335,10 +337,17 @@ int main(int argc, char **argv) {
                 else if (size < 1024 * 1024) printf("%d.%d KB", size / 1024, (size % 1024) / 10);
                 else printf("%d.%d MB", size / (1024 * 1024), (size % (1024 * 1024)) / 10);
             } else if (fu_is_fctf(cnt_ids[i])) {
-                printf("$5%s\033[u\033[22C$7", cnt_names[i]);
+                printf("$4%s\033[u\033[22C$7", cnt_names[i]);
 
                 if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
                 else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+            } else if (fu_is_link(cnt_ids[i])) {
+                printf("$5%s\033[u\033[22C$7", cnt_names[i]);
+                if (args->size_type == LS_SIZE_VIRT) {
+                    printf("text link");
+                } else {
+                    printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+                }
             } else {
                 printf("$3%s\033[u\033[22C$7unk", cnt_names[i]);
             }
