@@ -772,19 +772,20 @@ sid_t fu_link_create(int device_id, char *path) {
 char *fu_link_get_path(sid_t link_sid, int pid) {
     filesys_t *filesys = c_fs_get_main();
 
-    // read the directory and get size
+    // check if the sid is a link header
+    if (!fu_is_link(link_sid)) {
+        RAISE_ERROR("link_get_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
+        return NULL;
+    }
+
+    // read the link and get size
     uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("link_get_path: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
         return NULL;
     }
 
-    if (!fu_is_link(link_sid)) {
-        RAISE_ERROR("link_get_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
-        return NULL;
-    }
-
-    // read the directory
+    // read the link
     uint8_t *buf = malloc(size);
     if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
         RAISE_ERROR("link_get_path: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
@@ -820,19 +821,20 @@ char *fu_link_get_path(sid_t link_sid, int pid) {
 int fu_link_add_path(sid_t link_sid, int pid, char *path) {
     filesys_t *filesys = c_fs_get_main();
 
-    // read the directory and get size
+    // check if the sid is a link header
+    if (!fu_is_link(link_sid)) {
+        RAISE_ERROR("link_add_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    // read the link and get size
     uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("link_add_path: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
         return 1;
     }
 
-    if (!fu_is_link(link_sid)) {
-        RAISE_ERROR("link_add_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
-        return 1;
-    }
-
-    // read the directory
+    // read the link
     uint8_t *buf = malloc(size + strlen(path) + 1 + sizeof(uint32_t) * 2);
     if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
         RAISE_ERROR("link_add_path: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
@@ -873,6 +875,122 @@ int fu_link_add_path(sid_t link_sid, int pid, char *path) {
 
     // free
     free(buf);
+
+    return 0;
+}
+
+int fu_link_get_all(sid_t link_sid, int **pid, char ***names) {
+    filesys_t *filesys = c_fs_get_main();
+
+    // check if the sid is a link header
+    if (!fu_is_link(link_sid)) {
+        RAISE_ERROR("link_get_all: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    // read the link and get size
+    uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
+    if (size == UINT32_MAX) {
+        RAISE_ERROR("link_get_all: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    // read the link
+    uint8_t *buf = malloc(size);
+    if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
+        RAISE_ERROR("link_get_all: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    uint32_t count = 0;
+    // get the number of elements
+    memcpy(&count, buf, sizeof(uint32_t));
+
+    // get the elements
+    *pid = malloc(sizeof(uint32_t) * count);
+    *names = malloc(sizeof(char *) * count);
+
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t tmp_pid;
+        uint32_t tmp_path_offset;
+
+        memcpy(&tmp_pid, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2), sizeof(uint32_t));
+        memcpy(&tmp_path_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) * 2) + sizeof(uint32_t), sizeof(uint32_t));
+
+        tmp_path_offset += sizeof(uint32_t) + count * (sizeof(uint32_t) * 2);
+
+        (*pid)[i] = tmp_pid;
+        (*names)[i] = strdup((char *) buf + tmp_path_offset);
+    }
+
+    // free
+    free(buf);
+
+    return count;
+}
+
+int fu_link_remove_path(sid_t link_sid, int pid) {
+    filesys_t *filesys = c_fs_get_main();
+
+    // check if the sid is a link header
+    if (!fu_is_link(link_sid)) {
+        RAISE_ERROR("link_remove_path: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    // get all the paths
+    int *pids;
+    char **paths;
+
+    int count = fu_link_get_all(link_sid, &pids, &paths);
+
+    if (count == -1) {
+        RAISE_ERROR("link_remove_path: failed to get all paths of d%ds%d\n", link_sid.device, link_sid.sector);
+        return 1;
+    }
+
+    // remove the path from lists
+    int found = 0;
+
+    for (int i = 0; i < count; i++) {
+        if (pids[i] == pid) {
+            found = 1;
+            free(paths[i]);
+            for (int j = i; j < count - 1; j++) {
+                pids[j] = pids[j + 1];
+                paths[j] = paths[j + 1];
+            }
+            break;
+        }
+    }
+
+    if (!found) {
+        RAISE_ERROR("link_remove_path: pid %d not found in d%ds%d\n", pid, link_sid.device, link_sid.sector);
+        for (int i = 0; i < count; i++) {
+            free(paths[i]);
+        }
+        free(paths);
+        free(pids);
+        return 1;
+    }
+
+    // clean the link container
+    c_fs_cnt_set_size(filesys, link_sid, sizeof(uint32_t));
+
+    // write zero as number of elements
+    c_fs_cnt_write(filesys, link_sid, "\0\0\0\0", 0, sizeof(uint32_t));
+
+    // write the new paths
+    for (int i = 0; i < count - 1; i++) {
+        fu_link_add_path(link_sid, pids[i], paths[i]);
+    }
+
+    // free
+    for (int i = 0; i < count - 1; i++) {
+        free(paths[i]);
+    }
+    free(paths);
+    free(pids);
 
     return 0;
 }

@@ -62,10 +62,12 @@
 #define fu_link_create ((sid_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 17))
 #define fu_link_get_path ((char *(*)(sid_t, int)) get_func_addr(FILESYS_LIB_ID, 18))
 #define fu_link_add_path ((int (*)(sid_t, int, char *)) get_func_addr(FILESYS_LIB_ID, 19))
+#define fu_link_get_all ((int (*)(sid_t, int**, char***)) get_func_addr(FILESYS_LIB_ID, 20))
+#define fu_link_remove_path ((int (*)(sid_t, int)) get_func_addr(FILESYS_LIB_ID, 21))
 
-#define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 21))
-#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 22))
-#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 23))
+#define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 23))
+#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 24))
+#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 25))
 
 #endif
 

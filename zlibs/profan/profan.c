@@ -57,6 +57,7 @@ void profan_print_stacktrace(void) {
 void profan_print_memory(void *addr, uint32_t size) {
     for (uint32_t i = 0; i < size / 16 + (size % 16 != 0); i++) {
         printf("%08x: ", (uint32_t) addr + i * 16);
+
         for (int j = 0; j < 16; j++) {
             if (i * 16 + j < size)
                 printf("%02x ", *((unsigned char *) addr + i * 16 + j));
@@ -65,15 +66,15 @@ void profan_print_memory(void *addr, uint32_t size) {
             if (j % 4 == 3)
                 printf(" ");
         }
+
         for (int j = 0; j < 16; j++) {
             unsigned char c = *((unsigned char *) addr + i * 16 + j);
             if (i * 16 + j >= size)
                 break;
-            if (c >= 32 && c <= 126) {
+            if (c >= 32 && c <= 126)
                 printf("%c", c);
-            } else {
+            else
                 printf(".");
-            }
         }
         printf("\n");
     }
