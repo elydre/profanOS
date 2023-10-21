@@ -115,8 +115,8 @@ void memory_print_usage(void) {
     printf("AT free count     %15d\n", free_count);
     printf("base address      %15p\n", c_mem_get_info(1, 0));
     printf("MEM_PARTS addr    %15p\n", c_mem_get_info(3, 0));
-    printf("MEM_PARTS size    %12d kB | 1\n", c_mem_get_info(2, 0));
-    printf("Used memory       %12d kB | %d\n", c_mem_get_info(6, 0), alloc_count - free_count);
+    printf("MEM_PARTS size    %12d B  | 1\n", c_mem_get_info(2, 0));
+    printf("Used memory       %12d kB | %d\n", c_mem_get_info(6, 0) / 1024, alloc_count - free_count);
 
     printf("\n      ------- Per types -------\n");
 
