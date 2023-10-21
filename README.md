@@ -75,15 +75,20 @@ loaded into memory, however a few megabytes are enough.
 | CPU (x86) | 1@100Mhz| 1@2Ghz      |
 | RAM       | 2MB     | 16MB        |
 | screen    | 640x480 | 1024x768    |
- 
+
+<p align="center">
+    <img src="https://elydre.github.io/img/profan/banner.png" width="820px">
+</p>
+
+
 ## The kernel
 
 The profanOS kernel (generally called generic kernel or profan kernel) is at the heart
 of the OS, it is extremely minimalist and can be completed by adding libraries
 loaded from disk such as drivers or file system extensions.
+
 profanOS is **not** a SASOS - single address space operating system, but part of the memory is shared,
 like the kernel and the libraries. Processes can therefore freely access kernel functions.
-
 
 Here is a list of the main kernel features:
 
