@@ -233,7 +233,7 @@ int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-void init_devio() {
+void init_devio(void) {
     fu_fctf_create(0, "/dev/zero",   devzero_rw);
     fu_fctf_create(0, "/dev/null",   devnull_rw);
     fu_fctf_create(0, "/dev/random", devrand_rw);

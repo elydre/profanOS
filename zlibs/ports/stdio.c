@@ -27,12 +27,12 @@ sid_t *SIDS = NULL;
 #define stdout_sid SIDS[1]
 #define stderr_sid SIDS[2]
 
-int main() {
+int main(void) {
     init_func();
     return 0;
 }
 
-void init_func() {
+void init_func(void) {
     sid_t *dup = malloc(sizeof(sid_t) * 3);
 
     dup[1] = fu_path_to_sid(ROOT_SID, "/dev/stdout");
@@ -482,6 +482,7 @@ int vsscanf_s(const char *restrict buffer, const char *restrict format, va_list 
 }
 
 int printf(const char *restrict format, ...) {
+    c_kprint("WTF!!!\n");
     va_list args;
     va_start(args, format);
     vprintf(format, args);
