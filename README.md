@@ -76,11 +76,6 @@ loaded into memory, however a few megabytes are enough.
 | RAM       | 2MB     | 16MB        |
 | screen    | 640x480 | 1024x768    |
 
-<p align="center">
-    <img src="https://elydre.github.io/img/profan/banner.png" width="820px">
-</p>
-
-
 ## The kernel
 
 The profanOS kernel (generally called generic kernel or profan kernel) is at the heart
