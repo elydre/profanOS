@@ -76,6 +76,13 @@ loaded into memory, however a few megabytes are enough.
 | RAM       | 2MB     | 16MB        |
 | screen    | 640x480 | 1024x768    |
 
+## First look
+
+When starting profanOS, you will be greeted by the Olivine shell, a language similar to bash.
+You can then run the `help` command to see a list of useful commands.
+
+![banner](https://elydre.github.io/img/profan/banner.png)
+
 ## The kernel
 
 The profanOS kernel (generally called generic kernel or profan kernel) is at the heart
@@ -102,8 +109,7 @@ Here is a list of the main kernel features:
 
 ### Programing languages
 
-The kernel and userspace are developed mainly in C. In profanOS you will be greeted by
-the Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)).
+The kernel and userspace are developed mainly in C. The Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
 You can also use the lua, sulfur, C and C++ languages to create your own programs.
 
 ### The Olivine Shell
