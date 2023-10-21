@@ -7,9 +7,13 @@
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
-The profan Operating System is an independent OS supporting multitasking and virtual memory, developed from scratch.
+The profan Operating System is an independent OS developed from scratch.
+It is not intended to be used massively or to have broad hardware support.
 
-You can find the list of things to do [here](https://framindmap.org/c/maps/1263862/embed)
+profanOS is characterized by its ring0-only preemptive modular multitasking
+minimalist kernel and colorful-looking command line-based user interface.
+
+You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)...
 
 ## Setup
 
@@ -38,28 +42,71 @@ make run
 make
 ```
 
+Each time the disk is modified you must force its reconstruction with `make disk`.
+The main ports are not included in the repo source code but are easily
+downloadable with `make addons disk` (more information in the [ports](#major-ports) section).
+
+### Build images
+
 You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
 or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
 
-## OS documentation
 
-### Main kernel features
+```bash
+# Run the iso image in qemu
+qemu-system-i386 -cdrom profanOS.iso
+
+# With KVM acceleration
+qemu-system-i386 -cdrom profanOS.iso -enable-kvm
+```
+
+profanOS can also be tested online with two clicks with the [v86 copy](https://github.com/copy/v86)
+emulator [here](https://elydre.github.io/profan).
+
+### Hardware requirements
+
+profanOS is a 32-bit operating system, it is therefore necessary to have a 32-bit
+processor to run it.
+There is no exact RAM value to have, but without disk the entire file system is
+loaded into memory, however a few megabytes are enough.
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| CPU (x86) | 1@100Mhz| 1@2Ghz      |
+| RAM       | 2MB     | 16MB        |
+| screen    | 640x480 | 1024x768    |
+ 
+## The kernel
+
+The profanOS kernel (generally called generic kernel or profan kernel) is at the heart
+of the OS, it is extremely minimalist and can be completed by adding libraries
+loaded from disk such as drivers or file system extensions.
+profanOS is **not** a SASOS - single address space operating system, but part of the memory is shared,
+like the kernel and the libraries. Processes can therefore freely access kernel functions.
+
+
+Here is a list of the main kernel features:
 
 - multiboot support
 - 32 bits protected mode
 - PS/2 mouse and keyboard
 - ATA hard disk
-- filesystem (custom)
-- processing, idle and sleep
-- physical memory management
+- custom filesystem
+- preemptive multi-tasking
+- memory allocation
 - virtual memory management
-- custom dynamic library
+- librarys and modules
+- ring0 only
+
+## The userspace
 
 ### Programing languages
 
 The kernel and userspace are developed mainly in C. In profanOS you will be greeted by
 the Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)).
 You can also use the lua, sulfur, C and C++ languages to create your own programs.
+
+### The Olivine Shell
 
 ### Major ports
 
@@ -71,7 +118,7 @@ You can also use the lua, sulfur, C and C++ languages to create your own program
 
 All the ports are available with the command `make addons` or by building them manually.
 
-### Real-Hardware
+## Real-Hardware
 
 profanOS works on pc with legacy bios but not with uefi. However profanOS
 can work on recent pc by activating bios compatibility.
@@ -83,6 +130,33 @@ the installation script `tools/install.sh` or any other image flasher.
 > installing an OS on a real machine can be risky and
 > must be done with knowledge of the possible risks
 
+### Install on USB key
+
+- Download ISO or build it in linux
+- Flash the ISO on the USB key with `dd` or any other image flasher
+- Activate the legacy bios in the bios settings (if not already done)
+- Boot on the USB key from the bios boot menu
+- select the graphical mode
+
+### Install on internal disk
+
+This method is dangerous and will cause the complete erasure of your machine's disk.
+Please make a backup of your data and be sure of what you are doing.
+
+- Activate the legacy bios in the bios settings (if not already done)
+- Boot on a live linux
+- Download ISO or build it in linux
+- Flash the ISO with `tools/install.sh` or any other image flasher
+
+```sh
+# replace sdX with the disk to flash
+sudo sh install.sh /dev/sdX profanOS.iso
+```
+
+- Reboot on the internal disk
+
+## About
+
 ### Known major bugs
 
 | bug name   | since | description                            | cause | fixed ?   |
@@ -91,33 +165,25 @@ the installation script `tools/install.sh` or any other image flasher.
 | BOBCAT     | 0.4.2 | some C compiler build broken zlibs     | dily  | no        |
 | no KB      | ?     | keyboard not working sometimes         | ?     | no        |
 
-## Stable releases
-
-| nickname  | version | downloads |
-|-----------|---------|-----------|
-| sequoia   | 0.12.4  | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/sequoia/total?color=999999&label=iso+file&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/sequoia) |
-| waterlily | 0.6.9   | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/waterlily/total?color=999999&label=iso+file&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/waterlily) |
-| mimosa    | 0.1.9   | [![dl_count](https://img.shields.io/github/downloads/elydre/profanOS/mimosa/total?color=999999&label=floppy&style=flat-square)](https://github.com/elydre/profanOS/releases/tag/mimosa) |
-
-## Screenshots
+### Screenshots
 
 | ![shell](https://elydre.github.io/img/profan/screen/shell.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
 |------------------------------------------------------------------|-------------------------------------------------------------------|
 | ![windaube](https://elydre.github.io/img/profan/screen/windaube.png) | ![lua](https://elydre.github.io/img/profan/screen/lua.png) |
 
-## Author & Contact
+### Author & Contact
 
 - pf4 ([@elydre](https://github.com/elydre))
-- Loris ([@Lorisredstone](https://github.com/Lorisredstone))
 
-Contact us on [discord](https://discord.gg/PFbymQ3d97)
+Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 
-## Source & Acknowledgment
+### Source & Acknowledgment
 
-- [os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial
-- [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
+- **[os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial**
+- **[@Lorisredstone](https://github.com/Lorisredstone) for all the help and ideas**
+- **[@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build**
+- **[osdev wiki](https://wiki.osdev.org/) for the documentation made by the community**
 - [framindmap](https://framindmap.org) for the mindmap of the todo list
-- [osdev wiki](https://wiki.osdev.org/Cooperative_Multitasking) for the multitasking
 - [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 - [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
