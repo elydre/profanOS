@@ -697,6 +697,7 @@ sid_t fu_link_create(int device_id, char *path) {
     sid_t parent_sid;
     sid_t head_sid;
 
+
     // check if the the path already exists
     head_sid = fu_path_to_sid(ROOT_SID, path);
     if (!IS_NULL_SID(head_sid)) {
@@ -728,7 +729,9 @@ sid_t fu_link_create(int device_id, char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "L-%s", name);
+    strcpy(meta, "L-");
+    strncpy(meta + 2, name, META_MAXLEN - 2);
+    
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
@@ -896,21 +899,21 @@ int fu_link_get_all(sid_t link_sid, int **pid, char ***names) {
     // check if the sid is a link header
     if (!fu_is_link(link_sid)) {
         RAISE_ERROR("link_get_all: d%ds%d is not a link\n", link_sid.device, link_sid.sector);
-        return 1;
+        return -1;
     }
 
     // read the link and get size
     uint32_t size = c_fs_cnt_get_size(filesys, link_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("link_get_all: failed to get size of d%ds%d\n", link_sid.device, link_sid.sector);
-        return 1;
+        return -1;
     }
 
     // read the link
     uint8_t *buf = malloc(size);
     if (c_fs_cnt_read(filesys, link_sid, buf, 0, size)) {
         RAISE_ERROR("link_get_all: failed to read from d%ds%d\n", link_sid.device, link_sid.sector);
-        return 1;
+        return -1;
     }
 
     uint32_t count = 0;

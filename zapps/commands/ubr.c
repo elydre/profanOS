@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
+    /*if (argc != 3) {
         printf("Usage: ubr <buffer name> <redirection file>\n");
         return 1;
     }
@@ -38,7 +38,9 @@ int main(int argc, char **argv) {
     if (devio_change_redirection(buffer_id, redirection_sid)) {
         printf("Failed to change redirection\n");
         return 1;
-    }
+    }*/
+
+    puts("// TODO: implemented");
 
     return 0;
 }

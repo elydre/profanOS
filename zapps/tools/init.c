@@ -62,12 +62,14 @@ int print_load_status(int i) {
 }
 
 int redirect_devio(char *file, int id) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, file);
+    // TODO: implement
+    /*sid_t sid = fu_path_to_sid(ROOT_SID, file);
 
     return (IS_NULL_SID(sid)
         || !(fu_is_file(sid) || fu_is_fctf(sid))
         || devio_change_redirection(id, sid)
-    );
+    );*/
+    return 0;
 }
 
 void welcome_print(void) {
