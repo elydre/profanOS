@@ -13,7 +13,7 @@ It is not intended to be used massively or to have broad hardware support.
 profanOS is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
 
-You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)...
+You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
 
 ## Setup
 
@@ -43,8 +43,8 @@ make
 ```
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
-The main ports are not included in the repo source code but are easily
-downloadable with `make addons disk` (more information in the [ports](#major-ports) section).
+The main ports (more information in the [ports](#major-ports) section) are not included
+in the repo source code but are easily downloadable with `make addons disk`.
 
 ### Build images
 
@@ -181,8 +181,8 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 
 - **[os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial**
 - **[@Lorisredstone](https://github.com/Lorisredstone) for all the help and ideas**
-- **[@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build**
-- **[osdev wiki](https://wiki.osdev.org/) for the documentation made by the community**
+- [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
+- [osdev wiki](https://wiki.osdev.org/) for the documentation made by the community
 - [framindmap](https://framindmap.org) for the mindmap of the todo list
 - [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
