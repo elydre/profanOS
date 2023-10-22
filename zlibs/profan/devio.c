@@ -19,6 +19,7 @@ void init_lcbuffer();
 typedef struct {
     sid_t link;
     int pid;
+    uint32_t offset;
     sid_t redirection;
 } link_history_t;
 
@@ -59,6 +60,7 @@ int devio_set_redirection(sid_t link, char *redirection, int pid) {
 
     // check if the pid is in the array
     int pid_in, default_in;
+    pid_in = default_in = 0;
     for (int i = 0; i < link_count; i++) {
         if (pids[i] == pid) {
             pid_in = 1;
@@ -86,8 +88,6 @@ int devio_set_redirection(sid_t link, char *redirection, int pid) {
     for (int i = 0; i < LINK_HISTORY_SIZE; i++) {
         if (IS_SAME_SID(link_history[i].link, link)) {
             link_history[i].link = NULL_SID;
-            link_history[i].pid = 0;
-            link_history[i].redirection = NULL_SID;
         }
     }
 
@@ -95,6 +95,8 @@ int devio_set_redirection(sid_t link, char *redirection, int pid) {
 }
 
 int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, uint8_t is_write, int pid) {
+    int ret;
+    
     if (IS_NULL_SID(sid)) {
         return -1;
     }
@@ -132,10 +134,12 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     // check if the pid is in the history
     for (int i = 0; i < LINK_HISTORY_SIZE; i++) {
         if (IS_SAME_SID(link_history[i].link, sid) && link_history[i].pid == pid) {
-            return devio_file_rw_from(link_history[i].redirection, buffer, offset, size, is_write, pid);
+            ret = devio_file_rw_from(link_history[i].redirection, buffer, link_history[i].offset, size, is_write, pid);
+            link_history[i].offset += ret;
+            return ret;
         }
     }
-    
+
     char **paths;
     int *pids;
     
@@ -208,10 +212,13 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
             link_history[0].link = sid;
             link_history[0].pid = pid;
             link_history[0].redirection = new_sid;
+            link_history[0].offset = 0;
         }
     }
 
-    return devio_file_rw_from(new_sid, buffer, offset, size, is_write, pid);
+    ret = devio_file_rw_from(new_sid, buffer, 0, size, is_write, pid);
+    link_history[0].offset = ret;
+    return ret;
 }
 
 int devnull_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
