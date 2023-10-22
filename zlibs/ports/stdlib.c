@@ -34,6 +34,8 @@ env_t ENV = {NULL, 0};
 #define isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
 #endif
 
+#define SHELL_PATH "/bin/fatpath/olivine.bin"
+
 int main() {
     init_func();
     return 0;
@@ -596,16 +598,16 @@ int putenv(char *string) {
     return 0;
 }
 
-void srand48 (long seedval) {
+void srand48(long seedval) {
     puts("srand48 not implemented yet, WHY DO YOU USE IT ?\n");
 }
 
-int srand48_r (long int seedval, struct drand48_data *buffer) {
+int srand48_r(long int seedval, struct drand48_data *buffer) {
     puts("srand48_r not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
-double strtod (char *str, char **ptr) {
+double strtod(char *str, char **ptr) {
     char *p;
 
     if (ptr == (char **) 0)
@@ -741,7 +743,40 @@ unsigned long long int strtoull_l(const char* str, char** end, int base, locale_
 }
 
 int system(const char *command) {
-    puts("system not implemented yet, WHY DO YOU USE IT ?\n");
+    // get a temporary file name
+    char *tmp_file = malloc(20);
+    if (tmpnam_s(tmp_file, 20)) {
+        puts("system: tmpnam_s failed\n");
+        return -1;
+    }
+
+    // try to open the file
+    FILE *f = fopen(tmp_file, "w");
+    if (f == NULL) {
+        puts("system: fopen failed\n");
+        return -1;
+    }
+
+    // write the command to the file
+    fputs(command, f);
+    fclose(f);
+
+    // generate the arguments
+    char **args = malloc(3 * sizeof(char *));
+    args[0] = SHELL_PATH;
+    args[1] = tmp_file;
+    args[2] = NULL;
+
+    // run the command
+    c_run_ifexist(args[0], 2, args);
+
+    // remove the temporary file
+    remove(tmp_file);
+
+    // free the memory
+    free(tmp_file);
+    free(args);
+
     return 0;
 }
 

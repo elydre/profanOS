@@ -431,7 +431,10 @@ int putc(int ch, FILE *stream) {
 }
 
 int fputs(const char *restrict str, FILE *restrict stream) {
-    puts("fputs not implemented yet, WHY DO YOU USE IT ?\n");
+    uint32_t len = strlen(str);
+    if (fwrite(str, 1, len, stream) != len) {
+        return EOF;
+    }
     return 0;
 }
 
@@ -697,7 +700,43 @@ void perror(const char *s) {
 }
 
 int remove(const char *fname) {
-    puts("remove not implemented yet, WHY DO YOU USE IT ?\n");
+    char *pwd = getenv("PWD");
+    char *full_path = malloc(strlen(fname) + strlen(pwd) + 2);
+    assemble_path(pwd, (char *) fname, full_path);
+
+    sid_t elem = fu_path_to_sid(ROOT_SID, full_path);
+    if (IS_NULL_SID(elem) || !fu_is_file(elem)) {
+        printf("remove: cannot remove '%s': No such file\n", fname);
+        free(full_path);
+        return 1;
+    }
+
+    char *parent;
+
+    fu_sep_path(full_path, &parent, NULL);
+
+    sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    free(parent);
+
+    if (IS_NULL_SID(parent_sid)) {
+        printf("remove: cannot remove '%s': Unreachable path\n", fname);
+        free(full_path);
+        return 1;
+    }
+
+    // remove element from directory
+    if (fu_remove_element_from_dir(parent_sid, elem)) {
+        printf("remove: cannot remove '%s': Failed to remove element from directory\n", fname);
+        return 1;
+    }
+
+    // delete container
+    if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
+        printf("rm: cannot remove '%s': Failed to delete container\n", fname);
+        return 1;
+    }
+
+    free(full_path);
     return 0;
 }
 
@@ -722,7 +761,18 @@ char *tmpnam(char *filename) {
 }
 
 errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
-    puts("tmpnam_s not implemented yet, WHY DO YOU USE IT ?\n");
+    if (maxsize < 12) {
+        return 1;
+    }
+
+    strcpy(filename_s, "/tmp/");
+    filename_s[11] = 0;
+    do {
+        for (int i = 5; i < 11; i++) {
+            filename_s[i] = 'a' + rand() % 26;
+        }
+    } while (!IS_NULL_SID(fu_path_to_sid(ROOT_SID, filename_s)));
+
     return 0;
 }
 
