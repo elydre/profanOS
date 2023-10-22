@@ -16,6 +16,16 @@
 void init_devio();
 void init_lcbuffer();
 
+typedef struct {
+    sid_t link;
+    int pid;
+    sid_t redirection;
+} link_history_t;
+
+link_history_t *link_history = NULL;
+
+#define LINK_HISTORY_SIZE 10
+
 int main(void) {
     init_devio();
     return 0;
@@ -72,6 +82,15 @@ int devio_set_redirection(sid_t link, char *redirection, int pid) {
     free(paths);
     free(pids);
 
+    // remove the redirection from the history
+    for (int i = 0; i < LINK_HISTORY_SIZE; i++) {
+        if (IS_SAME_SID(link_history[i].link, link)) {
+            link_history[i].link = NULL_SID;
+            link_history[i].pid = 0;
+            link_history[i].redirection = NULL_SID;
+        }
+    }
+
     return 0;
 }
 
@@ -80,7 +99,9 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
         return -1;
     }
 
-    c_kprint("salut\n");
+    if (size == 0) {
+        return 0;
+    }
 
     // function call though filesystem
     if (fu_is_fctf(sid)) {
@@ -107,6 +128,13 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     // text link
     if (pid < 0)
         pid = c_process_get_pid();
+
+    // check if the pid is in the history
+    for (int i = 0; i < LINK_HISTORY_SIZE; i++) {
+        if (IS_SAME_SID(link_history[i].link, sid) && link_history[i].pid == pid) {
+            return devio_file_rw_from(link_history[i].redirection, buffer, offset, size, is_write, pid);
+        }
+    }
     
     char **paths;
     int *pids;
@@ -161,6 +189,26 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     if (IS_NULL_SID(new_sid)) {
         c_kprint("[DEVIO] file_rw: error while getting sid\n");
         return -1;
+    }
+
+    for (int i = 0; i < LINK_HISTORY_SIZE; i++) {
+        if (IS_NULL_SID(link_history[i].link)) {
+            link_history[i].link = sid;
+            link_history[i].pid = pid;
+            link_history[i].redirection = new_sid;
+            break;
+        }
+        if (i == LINK_HISTORY_SIZE - 1) {
+            // move all the history
+            for (int j = 0; j < LINK_HISTORY_SIZE - 2; j++) {
+                link_history[j + 1].link = link_history[j].link;
+                link_history[j + 1].pid = link_history[j].pid;
+                link_history[j + 1].redirection = link_history[j].redirection;
+            }
+            link_history[0].link = sid;
+            link_history[0].pid = pid;
+            link_history[0].redirection = new_sid;
+        }
     }
 
     return devio_file_rw_from(new_sid, buffer, offset, size, is_write, pid);
@@ -243,12 +291,8 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/panda",  devpanda_rw);
     fu_fctf_create(0, "/dev/serial", devserial_rw);
 
-    // TODO: security
-    sid_t sid;
+    link_history = calloc(LINK_HISTORY_SIZE, sizeof(link_history_t));
     
-    sid = fu_link_create(0, "/dev/stdout");
-    devio_set_redirection(sid, "/dev/panda", 0);
-    
-    sid = fu_link_create(0, "/dev/stderr");
-    devio_set_redirection(sid, "/dev/panda", 0);
+    devio_set_redirection(fu_link_create(0, "/dev/stdout"), "/dev/parrot", 0);
+    devio_set_redirection(fu_link_create(0, "/dev/stderr"), "/dev/parrot", 0);
 }

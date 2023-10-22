@@ -482,7 +482,6 @@ int vsscanf_s(const char *restrict buffer, const char *restrict format, va_list 
 }
 
 int printf(const char *restrict format, ...) {
-    c_kprint("WTF!!!\n");
     va_list args;
     va_start(args, format);
     vprintf(format, args);
