@@ -3268,6 +3268,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
     int ret_val = -1;
 
+    sc = 0;
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
         sc = c_kb_get_scfh();

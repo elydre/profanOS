@@ -163,6 +163,7 @@ void open_input(char *buffer, int size) {
     int key_ticks = 0;
     int shift = 0;
 
+    sc = 0;
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
         sc = c_kb_get_scfh();
