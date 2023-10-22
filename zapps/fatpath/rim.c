@@ -93,7 +93,7 @@ void load_file(char *path) {
 
     fu_file_read(file, g_data, 0, read_size);
 
-    for (int i = 0; i < file_size; i++) {
+    for (int i = 0; i < g_data_size - 1; i++) {
         if (g_data[i] != '\n') continue;
         g_data[i] = '\0';
         g_data_lines[g_lines_count] = i + 1;
