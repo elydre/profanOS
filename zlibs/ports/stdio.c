@@ -291,6 +291,8 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
           strcmp(stream->mode, "ab+") == 0)
     ) return 0;
 
+    fflush(stream);
+
     // grow the size if the stream is a file
     if (stream->type == FILE_TYPE_FILE) {
         int file_size = fu_get_file_size(stream->sid);
