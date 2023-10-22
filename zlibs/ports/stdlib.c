@@ -606,7 +606,6 @@ int srand48_r (long int seedval, struct drand48_data *buffer) {
 }
 
 double strtod (char *str, char **ptr) {
-    printf("strtod '%s'\n", str);
     char *p;
 
     if (ptr == (char **) 0)
