@@ -13,19 +13,20 @@
 #include <stdio.h>
 
 #define FILE_TYPE_FILE 0
-#define FILE_TYPE_FCTF 1
+#define FILE_TYPE_OTHER 1
+
+#define FILE_BUFFER_SIZE 0x1000
 
 void init_func();
 
 int puts(const char *str);
+int fflush(FILE *stream);
+int fclose(FILE *stream);
 
 int vprintf(const char *restrict format, va_list vlist);
 int dopr(char* str, size_t size, const char* format, va_list arg);
 
-sid_t *SIDS = NULL;
-
-#define stdout_sid SIDS[1]
-#define stderr_sid SIDS[2]
+FILE *STD_STREAM = NULL;
 
 int main(void) {
     init_func();
@@ -33,26 +34,50 @@ int main(void) {
 }
 
 void init_func(void) {
-    sid_t *dup = malloc(sizeof(sid_t) * 3);
+    FILE *dup = malloc(sizeof(FILE) * 3);
 
-    dup[1] = fu_path_to_sid(ROOT_SID, "/dev/stdout");
-    if (IS_NULL_SID(dup[1])) {
-        c_kprint("\n Can't find /dev/stdout");
-    }
+    // init stdin
+    dup[0].filename = "/dev/stdin";
+    dup[0].mode = "r";
 
-    dup[2] = fu_path_to_sid(ROOT_SID, "/dev/stderr");
-    if (IS_NULL_SID(dup[2])) {
-        c_kprint("\n Can't find /dev/stderr");
-    }
+    dup[0].buffer = malloc(FILE_BUFFER_SIZE);
+    dup[0].buffer_size = 0;
 
-    SIDS = dup;
+    dup[0].type = FILE_TYPE_OTHER;
+    dup[0].buffer_size = 0;
+    dup[0].file_pos = 0;
+    dup[0].sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
+
+    // init stdout
+    dup[1].filename = "/dev/stdout";
+    dup[1].mode = "w";
+
+    dup[1].buffer = malloc(FILE_BUFFER_SIZE);
+    dup[1].buffer_size = 0;
+
+    dup[1].type = FILE_TYPE_OTHER;
+    dup[1].buffer_size = 0;
+    dup[1].file_pos = 0;
+    dup[1].sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+
+    // init stderr
+    dup[2].filename = "/dev/stderr";
+    dup[2].mode = "w";
+
+    dup[2].buffer = malloc(FILE_BUFFER_SIZE);
+    dup[2].buffer_size = 0;
+
+    dup[2].type = FILE_TYPE_OTHER;
+    dup[2].buffer_size = 0;
+    dup[2].file_pos = 0;
+    dup[2].sid = fu_path_to_sid(ROOT_SID, "/dev/stderr");
+
+    STD_STREAM = dup;
 }
 
 void clearerr(FILE *stream) {
     puts("clearerr not implemented yet, WHY DO YOU USE IT ?\n");
 }
-
-int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
     // check for null pointers
@@ -112,12 +137,8 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
     // get the file type
     if (fu_is_file(file_id)) {
         file->type = FILE_TYPE_FILE;
-    } else if (fu_is_fctf(file_id)) {
-        file->type = FILE_TYPE_FCTF;
     } else {
-        free(file);
-        free(path);
-        return NULL;
+        file->type = FILE_TYPE_OTHER;
     }
 
     // copy the filename
@@ -151,6 +172,10 @@ errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filenam
 }
 
 FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
+    if (stream == stdin || stream == stdout || stream == stderr) {
+        return NULL;
+    }
+
     // close the file
     fclose(stream);
     // open the file
@@ -158,6 +183,10 @@ FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *re
 }
 
 errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
+    if (stream == stdin || stream == stdout || stream == stderr) {
+        return 0;
+    }
+
     // close the file
     fclose(stream);
     // open the file
@@ -166,18 +195,13 @@ errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict fi
 }
 
 int fclose(FILE *stream) {
-    // check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
-    // check for stdout/stderr/stdin
-    if (stream == stdout || stream == stderr || stream == stdin) {
+    // check for stdin, stdout and stderr
+    if (stream == stdin || stream == stdout || stream == stderr) {
         return 0;
     }
 
     // check if the file is open for writing
-    /*if (!(strcmp(stream->mode, "w") &&
+    if (!(strcmp(stream->mode, "w") &&
         strcmp(stream->mode, "w+")  &&
         strcmp(stream->mode, "a")   &&
         strcmp(stream->mode, "a+")  &&
@@ -185,7 +209,7 @@ int fclose(FILE *stream) {
         strcmp(stream->mode, "wb+") &&
         strcmp(stream->mode, "ab")  &&
         strcmp(stream->mode, "ab+"))
-    ) fflush(stream);*/
+    ) fflush(stream);
 
     // free the structure
     free(stream->filename);
@@ -198,7 +222,38 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    return 0;
+    // check if the file is stdin
+    if (stream == stdin) {
+        return 0;
+    }
+
+    if (stream == stdout || stream == stderr) {
+        stream = STD_STREAM + (stream == stdout ? 1 : 2);
+    }
+
+    // check if the file is open for writing, else return 0
+    if (!(strcmp(stream->mode, "w")   == 0 ||
+          strcmp(stream->mode, "w+")  == 0 ||
+          strcmp(stream->mode, "a")   == 0 ||
+          strcmp(stream->mode, "a+")  == 0 ||
+          strcmp(stream->mode, "wb")  == 0 ||
+          strcmp(stream->mode, "wb+") == 0 ||
+          strcmp(stream->mode, "ab")  == 0 ||
+          strcmp(stream->mode, "ab+") == 0)
+    ) return EOF;
+
+    uint32_t buffer_size = stream->buffer_size;
+    stream->buffer_size = 0;
+
+    // write the file
+    int written = devio_file_write(stream->sid, stream->buffer, stream->file_pos, buffer_size);
+    if (written < 0) written = 0;
+
+    // increment the file position
+    stream->file_pos += written;
+
+    // return the number of elements written
+    return written ? 0 : EOF;
 }
 
 void setbuf(FILE *restrict stream, char *restrict buffer) {
@@ -216,17 +271,14 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    // check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
     // check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr || stream == stdin) {
+    if (stream == stdout || stream == stderr) {
         return 0;
     }
 
-    int mode_len = strlen(stream->mode);
+    if (stream == stdin) {
+        stream = STD_STREAM + 0;
+    }
 
     // check if the file is open for reading, else return 0
     if (!(strcmp(stream->mode, "r")   == 0 ||
@@ -239,10 +291,10 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
           strcmp(stream->mode, "ab+") == 0)
     ) return 0;
 
-    // get the file size
-    int file_size = fu_get_file_size(stream->sid);
-
+    // grow the size if the stream is a file
     if (stream->type == FILE_TYPE_FILE) {
+        int file_size = fu_get_file_size(stream->sid);
+
         // check if the file is at the end
         if (stream->file_pos >= file_size) {
             return 0;
@@ -266,18 +318,13 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    // check if the file is null
-    if (stream == NULL) {
+    // check if the file is stdin
+    if (stream == stdin) {
         return 0;
     }
 
-    // check if the file is stdout or stderr
-    if (stream == stdout) {
-        return devio_file_write(stdout_sid, (void *) buffer, 0, count);
-    }
-
-    if (stream == stderr) {
-        return devio_file_write(stderr_sid, (void *) buffer, 0, count);
+    if (stream == stdout || stream == stderr) {
+        stream = STD_STREAM + (stream == stdout ? 1 : 2);
     }
 
     // check if the file is open for writing, else return 0
@@ -291,24 +338,42 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
           strcmp(stream->mode, "ab+") == 0)
     ) return 0;
 
-    // write the file
-    int written = devio_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
-    if (written < 0) written = 0;
+    count *= size;
 
-    // increment the file position
-    stream->file_pos += written;
+    // write in the buffer
+    uint32_t ret = count;
+    int need_flush = 0;
+
+    for (uint32_t i = 0; i < count; i++) {
+        // check if the buffer is full
+        if (stream->buffer_size >= 0x4000) {
+            if (fflush(stream) == EOF) {
+                ret = 0;
+                break;
+            }
+            need_flush = 0;
+            break;
+        }
+
+        if (((char *) buffer)[i] == '\n') {
+            need_flush = 1;
+        }
+
+        // write the character
+        stream->buffer[stream->buffer_size++] = ((char *) buffer)[i];
+    }
+
+    // flush the buffer if needed
+    if (need_flush && fflush(stream) == EOF) {
+        ret = 0;
+    }
 
     // return the number of elements written
-    return written;
+    return ret;
 }
 
 int fseek(FILE *stream, long offset, int whence) {
-    // check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
-    // check if the file is stdout or stderr
+    // check if the file is stdin, stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
@@ -395,7 +460,7 @@ int puts(const char *str) {
     int len = strlen(str);
 
     // write the string
-    return devio_file_write(stdout_sid, (void *) str, 0, len);
+    return devio_file_write(STD_STREAM[1].sid, (char *) str, 0, len);
 }
 
 int ungetc(int ch, FILE *stream) {

@@ -167,6 +167,9 @@ typedef struct FILE {
     char *filename;
     char *mode;
 
+    char *buffer;
+    int   buffer_size;
+
     int   file_pos;
     int   type;
     sid_t sid;
