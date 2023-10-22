@@ -73,3 +73,16 @@ FUNC mv
         rm !0
     END
 END
+
+FUNC redir
+    IF !(eval !# ~ 2)
+        echo redir: require two arguments, !# given
+        RETURN
+    END
+
+    mkfile !0
+
+    ubr /dev/stdout !0
+    !1
+    ubr /dev/stdout /dev/panda
+END
