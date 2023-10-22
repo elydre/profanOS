@@ -133,7 +133,6 @@ int main(void) {
         if ((key_char = wait_key()) == 'j') {
             c_sys_reboot();
         }
-
     } while (key_char != 'h');
 
     c_kprint("\033[2J");

@@ -82,9 +82,9 @@ uint32_t color_print(char *s) {
     return msg_len;
 }
 
-char panda_color_print(char *s, char c, int len) {
+char panda_color_print(char *s, char c, uint32_t len) {
     uint32_t from = 0;
-    int i = 0;
+    uint32_t i = 0;
 
     while (i < len) {
         for (i = from; i < len - 1; i++) {
@@ -114,7 +114,8 @@ char panda_color_print(char *s, char c, int len) {
         }
         i++;
     }
-    panda_print_string(s + from, i - from, c);
+    if (from < len)
+        panda_print_string(s + from, i - from, c);
     return c;
 }
 
