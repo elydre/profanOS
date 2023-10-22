@@ -743,41 +743,19 @@ unsigned long long int strtoull_l(const char* str, char** end, int base, locale_
 }
 
 int system(const char *command) {
-    // get a temporary file name
-    char *tmp_file = malloc(20);
-    if (tmpnam_s(tmp_file, 20)) {
-        puts("system: tmpnam_s failed\n");
-        return -1;
-    }
-
-    // try to open the file
-    FILE *f = fopen(tmp_file, "w");
-    if (f == NULL) {
-        puts("system: fopen failed\n");
-        return -1;
-    }
-
-    // write the command to the file
-    fputs(command, f);
-    fclose(f);
-
     // generate the arguments
-    char **args = malloc(3 * sizeof(char *));
+    char **args = malloc(4 * sizeof(char *));
     args[0] = SHELL_PATH;
-    args[1] = tmp_file;
-    args[2] = NULL;
+    args[1] = "-c";
+    args[2] = (char *) command;
+    args[3] = NULL;
 
     // run the command
-    c_run_ifexist(args[0], 2, args);
+    int ret = c_run_ifexist(args[0], 3, args);
 
-    // remove the temporary file
-    remove(tmp_file);
-
-    // free the memory
-    free(tmp_file);
     free(args);
 
-    return 0;
+    return ret;
 }
 
 int grantpt(int fd) {
