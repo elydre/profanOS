@@ -55,12 +55,12 @@ void clearerr(FILE *stream) {
 int fclose(FILE *stream);
 
 FILE *fopen(const char *restrict filename, const char *restrict mode) {
-    // we check for null pointers
+    // check for null pointers
     if (filename == NULL || mode == NULL) {
         return NULL;
     }
 
-    // if path is relative, we add the current directory
+    // if path is relative, add the current directory
     char *path;
     if (filename[0] != '/') {
         char *pwd = getenv("PWD");
@@ -73,7 +73,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         path = strdup(filename);
     }
 
-    // first we check if the file exists
+    // first check if the file exists
     sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
 
     int exists = !IS_NULL_SID(file_id);
@@ -95,7 +95,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         return NULL;
     }
 
-    // the file exists but we want to create it
+    // create the file if it doesnt exist
     if (!exists) {
         file_id = fu_file_create(0, (char *) path);
     }
@@ -106,7 +106,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         return NULL;
     }
 
-    // now we create the file structure
+    // now create the file structure
     FILE *file = malloc(sizeof(FILE));
 
     // get the file type
@@ -120,22 +120,22 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         return NULL;
     }
 
-    // we copy the filename
+    // copy the filename
     file->filename = path;
     file->sid = file_id;
 
-    // we copy the mode
+    // copy the mode
     file->mode = strdup(mode);
     file->file_pos = 0;
 
-    // if the file is open for appending, we set the file pos to the end of the file
+    // if the file is open for appending, set the file pos to the end of the file
     if (strcmp(mode, "a")  == 0 ||
         strcmp(mode, "a+") == 0 ||
         strcmp(mode, "ab") == 0 ||
         strcmp(mode, "ab+") == 0
     ) file->file_pos = fu_get_file_size(file_id);
 
-    // else if the file is open for writing, we set the file pos to the beginning of the file
+    // else if the file is open for writing, set the file pos to the beginning of the file
     else if (strcmp(mode, "w")  == 0 ||
              strcmp(mode, "w+") == 0 ||
              strcmp(mode, "wb") == 0 ||
@@ -151,32 +151,32 @@ errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filenam
 }
 
 FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
-    // we close the file
+    // close the file
     fclose(stream);
-    // we open the file
+    // open the file
     return fopen(filename, mode);
 }
 
 errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
-    // we close the file
+    // close the file
     fclose(stream);
-    // we open the file
+    // open the file
     *newstreamptr = fopen(filename, mode);
     return 0;
 }
 
 int fclose(FILE *stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check for stdout/stderr/stdin
+    // check for stdout/stderr/stdin
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
 
-    // we check if the file is open for writing
+    // check if the file is open for writing
     /*if (!(strcmp(stream->mode, "w") &&
         strcmp(stream->mode, "w+")  &&
         strcmp(stream->mode, "a")   &&
@@ -187,11 +187,11 @@ int fclose(FILE *stream) {
         strcmp(stream->mode, "ab+"))
     ) fflush(stream);*/
 
-    // we free the structure
+    // free the structure
     free(stream->filename);
     free(stream->mode);
 
-    // we free the file
+    // free the file
     free(stream);
 
     return 0;
@@ -216,19 +216,19 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
 
     int mode_len = strlen(stream->mode);
 
-    // we check if the file is open for reading, else we return 0
+    // check if the file is open for reading, else return 0
     if (!(strcmp(stream->mode, "r")   == 0 ||
           strcmp(stream->mode, "r+")  == 0 ||
           strcmp(stream->mode, "w+")  == 0 ||
@@ -243,40 +243,35 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     int file_size = fu_get_file_size(stream->sid);
 
     if (stream->type == FILE_TYPE_FILE) {
-        // we check if the file is at the end
+        // check if the file is at the end
         if (stream->file_pos >= file_size) {
             return 0;
         }
 
-        // we check if the file is at the end
+        // check if the file is at the end
         if (stream->file_pos + (int) count >= file_size) {
             count = file_size - stream->file_pos;
         }
     }
 
-    // we read the file
-    int read;
-    if (stream->type == FILE_TYPE_FILE) {
-        read = fu_file_read(stream->sid, (void *) buffer, stream->file_pos, count);
-    } else if (stream->type == FILE_TYPE_FCTF) {
-        read = fu_fctf_read(stream->sid, (void *) buffer, stream->file_pos, count);
-    }
-    read = read == 0 ? count : 0;
+    // read the file
+    int read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+    if (read < 0) read = 0;
 
-    // we increment the file position
+    // increment the file position
     stream->file_pos += read;
 
-    // we return the number of elements read
+    // return the number of elements read
     return read;
 }
 
 size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout) {
         return devio_file_write(stdout_sid, (void *) buffer, 0, count);
     }
@@ -285,7 +280,7 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
         return devio_file_write(stderr_sid, (void *) buffer, 0, count);
     }
 
-    // we check if the file is open for writing, else we return 0
+    // check if the file is open for writing, else return 0
     if (!(strcmp(stream->mode, "w")   == 0 ||
           strcmp(stream->mode, "w+")  == 0 ||
           strcmp(stream->mode, "a")   == 0 ||
@@ -296,37 +291,24 @@ size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *rest
           strcmp(stream->mode, "ab+") == 0)
     ) return 0;
 
-    // we get the current file size
-    int file_size = fu_get_file_size(stream->sid);
+    // write the file
+    int written = devio_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
+    if (written < 0) written = 0;
 
-    // if file is too small, we resize it
-    if (stream->type == FILE_TYPE_FILE && file_size < stream->file_pos + (int) count) {
-        fu_set_file_size(stream->sid, stream->file_pos + (int) count);
-    }
-
-    // we write the file
-    int written;
-    if (stream->type == FILE_TYPE_FILE) {
-        written = fu_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
-    } else if (stream->type == FILE_TYPE_FCTF) {
-        written = fu_fctf_write(stream->sid, (void *) buffer, stream->file_pos, count);
-    }
-    written = written == 0 ? count : 0;
-
-    // we increment the file position
+    // increment the file position
     stream->file_pos += written;
 
-    // we return the number of elements written
+    // return the number of elements written
     return written;
 }
 
 int fseek(FILE *stream, long offset, int whence) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
@@ -404,15 +386,15 @@ int putchar(int ch) {
 }
 
 int puts(const char *str) {
-    // we check if the string is null
+    // check if the string is null
     if (str == NULL) {
         return EOF;
     }
 
-    // we get the string length
+    // get the string length
     int len = strlen(str);
 
-    // we write the string
+    // write the string
     return devio_file_write(stdout_sid, (void *) str, 0, len);
 }
 
@@ -556,7 +538,7 @@ int vprintf(const char *restrict format, va_list vlist) {
 }
 
 int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    // if the stream is read only, we can't write to it
+    // if the stream is read only, can't write to it
     if ((stream != stdout && stream != stderr) && (
         stream == stdin ||
         strcmp(stream->mode, "r")   == 0 ||
@@ -565,13 +547,13 @@ int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) 
         strcmp(stream->mode, "rb+") == 0
     )) return 0;
 
-    // we allocate a buffer to store the formatted string
+    // allocate a buffer to store the formatted string
     char *buffer = malloc(0x4000);
 
-    // we copy format to a buffer because we need to modify it
+    // copy format to a buffer because need to modify it
     dopr(buffer, 0x4000, format, vlist);
 
-    // we write the string
+    // write the string
     fwrite(buffer, 1, strlen(buffer), stream);
 
     free(buffer);
@@ -607,12 +589,12 @@ int vsnprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict forma
 }
 
 long ftell(FILE *stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
@@ -621,20 +603,20 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
 
-    // we get the file size
+    // get the file size
     int file_size = fu_get_file_size(stream->sid);
 
-    // we check if the file is at the end
+    // check if the file is at the end
     return (stream->file_pos >= file_size);
 }
 
@@ -1120,14 +1102,14 @@ print_remainder(char* buf, int max, double r, int prec)
     unsigned long cap = 1;
     unsigned long value;
     int len, i;
-    if(prec > 19) prec = 19; /* max we can do */
+    if(prec > 19) prec = 19; /* max can do */
     if(max < prec) return 0;
     for(i=0; i<prec; i++) {
         cap *= 10;
     }
     r *= (double)cap;
     value = (unsigned long)r;
-    /* see if we need to round up */
+    /* see if need to round up */
     if(((unsigned long)((r - (double)value)*10.0)) >= 5) {
         value++;
         /* that might carry to numbers before the comma, if so,
@@ -1149,7 +1131,7 @@ static int
 print_float(char* buf, int max, double value, int prec)
 {
     /* as xxx.xxx  if prec==0, no '.', with prec decimals after . */
-    /* no conversion for NAN and INF, because we do not want to require
+    /* no conversion for NAN and INF, because do not want to require
        linking with -lm. */
     /* Thus, the conversions use 64bit integers to convert the numbers,
      * which makes 19 digits before and after the decimal point the max */
@@ -1302,7 +1284,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
             ret++;
         }
 
-        /* see if we are at end */
+        /* see if are at end */
         if(!*fmt) break;
 
         /* fetch next argument % designation from format string */
@@ -1311,7 +1293,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
         /********************************/
         /* get the argument designation */
         /********************************/
-        /* we must do this vararg stuff inside this function for
+        /* must do this vararg stuff inside this function for
          * portability.  Hence, get_designation, and print_designation
          * are not their own functions. */
 
