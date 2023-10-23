@@ -332,12 +332,11 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     for (uint32_t i = 0; i < count; i++) {
         // check if the buffer is full
         if (stream->buffer_size >= (FILE_BUFFER_SIZE - 1)) {
+            need_flush = 0;
             if (fflush(stream) == EOF) {
                 ret = 0;
                 break;
             }
-            need_flush = 0;
-            break;
         }
 
         if (((char *) buffer)[i] == '\n') {
