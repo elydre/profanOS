@@ -96,7 +96,7 @@ int devio_set_redirection(sid_t link, char *redirection, int pid) {
 
 int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, uint8_t is_write, int pid) {
     int ret;
-    
+
     if (IS_NULL_SID(sid)) {
         return -1;
     }
@@ -142,7 +142,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
 
     char **paths;
     int *pids;
-    
+
     int link_count = fu_link_get_all(sid, &pids, &paths);
 
     if (link_count < 0) {
@@ -294,7 +294,7 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/serial", devserial_rw);
 
     link_history = calloc(LINK_HISTORY_SIZE, sizeof(link_history_t));
-    
+
     fu_link_create(0, "/dev/stdin");
     devio_set_redirection(fu_link_create(0, "/dev/stdout"), "/dev/parrot", 0);
     devio_set_redirection(fu_link_create(0, "/dev/stderr"), "/dev/parrot", 0);
