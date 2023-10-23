@@ -17,6 +17,10 @@
 
 #define FILE_BUFFER_SIZE 0x1000
 
+#define MODE_READ   1 << 0
+#define MODE_WRITE  1 << 1
+#define MODE_APPEND 1 << 2
+
 void init_func();
 
 int puts(const char *str);
@@ -38,7 +42,7 @@ void init_func(void) {
 
     // init stdin
     dup[0].filename = "/dev/stdin";
-    dup[0].mode = "r";
+    dup[0].mode = MODE_READ;
 
     dup[0].buffer = malloc(FILE_BUFFER_SIZE);
     dup[0].buffer_size = 0;
@@ -50,7 +54,7 @@ void init_func(void) {
 
     // init stdout
     dup[1].filename = "/dev/stdout";
-    dup[1].mode = "w";
+    dup[1].mode = MODE_WRITE;
 
     dup[1].buffer = malloc(FILE_BUFFER_SIZE);
     dup[1].buffer_size = 0;
@@ -62,7 +66,7 @@ void init_func(void) {
 
     // init stderr
     dup[2].filename = "/dev/stderr";
-    dup[2].mode = "w";
+    dup[2].mode = MODE_WRITE;
 
     dup[2].buffer = malloc(FILE_BUFFER_SIZE);
     dup[2].buffer_size = 0;
@@ -103,13 +107,26 @@ FILE *fopen(const char *filename, const char *mode) {
 
     int exists = !IS_NULL_SID(file_id);
 
+    uint32_t interpeted_mode = 0;
+    for (uint32_t i = 0; i < strlen(mode); i++) {
+        switch (mode[i]) {
+            case 'r':
+                interpeted_mode |= MODE_READ;
+                break;
+            case 'w':
+                interpeted_mode |= MODE_WRITE;
+                break;
+            case 'a':
+                interpeted_mode |= MODE_APPEND | MODE_WRITE;
+                break;
+            case '+':
+                interpeted_mode |= MODE_READ | MODE_WRITE;
+                break;
+        }
+    }
+
     // the file doesn't exist but it should
-    if (!exists && (
-        strcmp(mode, "r") == 0 ||
-        strcmp(mode, "r+") == 0 ||
-        strcmp(mode, "rb") == 0 ||
-        strcmp(mode, "rb+") == 0
-    )) {
+    if (!exists && !(interpeted_mode & MODE_WRITE)) {
         free(path);
         return NULL;
     }
@@ -146,22 +163,16 @@ FILE *fopen(const char *filename, const char *mode) {
     file->sid = file_id;
 
     // copy the mode
-    file->mode = strdup(mode);
+    file->mode = interpeted_mode;
     file->file_pos = 0;
 
     // if the file is open for appending, set the file pos to the end of the file
-    if (strcmp(mode, "a")  == 0 ||
-        strcmp(mode, "a+") == 0 ||
-        strcmp(mode, "ab") == 0 ||
-        strcmp(mode, "ab+") == 0
-    ) file->file_pos = fu_get_file_size(file_id);
+    if (interpeted_mode & MODE_APPEND)
+        file->file_pos = fu_get_file_size(file_id);
 
     // else if the file is open for writing, set the file pos to the beginning of the file
-    else if (strcmp(mode, "w")  == 0 ||
-             strcmp(mode, "w+") == 0 ||
-             strcmp(mode, "wb") == 0 ||
-             strcmp(mode, "wb+") == 0
-    ) fu_set_file_size(file_id, 0);
+    else if (interpeted_mode & MODE_WRITE)
+        file->file_pos = 0;
 
     return file;
 }
@@ -200,20 +211,8 @@ int fclose(FILE *stream) {
         return 0;
     }
 
-    // check if the file is open for writing
-    if (!(strcmp(stream->mode, "w") &&
-        strcmp(stream->mode, "w+")  &&
-        strcmp(stream->mode, "a")   &&
-        strcmp(stream->mode, "a+")  &&
-        strcmp(stream->mode, "wb")  &&
-        strcmp(stream->mode, "wb+") &&
-        strcmp(stream->mode, "ab")  &&
-        strcmp(stream->mode, "ab+"))
-    ) fflush(stream);
-
     // free the structure
     free(stream->filename);
-    free(stream->mode);
 
     // free the file
     free(stream);
@@ -232,15 +231,7 @@ int fflush(FILE *stream) {
     }
 
     // check if the file is open for writing, else return 0
-    if (!(strcmp(stream->mode, "w")   == 0 ||
-          strcmp(stream->mode, "w+")  == 0 ||
-          strcmp(stream->mode, "a")   == 0 ||
-          strcmp(stream->mode, "a+")  == 0 ||
-          strcmp(stream->mode, "wb")  == 0 ||
-          strcmp(stream->mode, "wb+") == 0 ||
-          strcmp(stream->mode, "ab")  == 0 ||
-          strcmp(stream->mode, "ab+") == 0)
-    ) return EOF;
+    if (!(stream->mode & MODE_WRITE)) return 0;
 
     uint32_t buffer_size = stream->buffer_size;
     stream->buffer_size = 0;
@@ -281,15 +272,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // check if the file is open for reading, else return 0
-    if (!(strcmp(stream->mode, "r")   == 0 ||
-          strcmp(stream->mode, "r+")  == 0 ||
-          strcmp(stream->mode, "w+")  == 0 ||
-          strcmp(stream->mode, "a+")  == 0 ||
-          strcmp(stream->mode, "rb")  == 0 ||
-          strcmp(stream->mode, "rb+") == 0 ||
-          strcmp(stream->mode, "wb+") == 0 ||
-          strcmp(stream->mode, "ab+") == 0)
-    ) return 0;
+    if (!(stream->mode & MODE_READ)) return 0;
 
     fflush(stream);
 
@@ -330,15 +313,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // check if the file is open for writing, else return 0
-    if (!(strcmp(stream->mode, "w")   == 0 ||
-          strcmp(stream->mode, "w+")  == 0 ||
-          strcmp(stream->mode, "a")   == 0 ||
-          strcmp(stream->mode, "a+")  == 0 ||
-          strcmp(stream->mode, "wb")  == 0 ||
-          strcmp(stream->mode, "wb+") == 0 ||
-          strcmp(stream->mode, "ab")  == 0 ||
-          strcmp(stream->mode, "ab+") == 0)
-    ) return 0;
+    if (!(stream->mode & MODE_WRITE)) return 0;
 
     count *= size;
 
@@ -598,14 +573,20 @@ int vprintf(const char *format, va_list vlist) {
 }
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
+    // check if the file is stdin
+    if (stream == stdin) {
+        return 0;
+    }
+
+    // check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr) {
+        stream = STD_STREAM + (stream == stdout ? 1 : 2);
+    }
+
     // if the stream is read only, can't write to it
-    if ((stream != stdout && stream != stderr) && (
-        stream == stdin ||
-        strcmp(stream->mode, "r")   == 0 ||
-        strcmp(stream->mode, "r+")  == 0 ||
-        strcmp(stream->mode, "rb")  == 0 ||
-        strcmp(stream->mode, "rb+") == 0
-    )) return 0;
+    if (!(stream->mode & MODE_WRITE)) {
+        return 0;
+    }
 
     // allocate a buffer to store the formatted string
     char *buffer = malloc(0x4000);
