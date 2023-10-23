@@ -9,7 +9,7 @@
 
 int main(int argc, char** argv) {
     if (argc != 3) {
-        puts("$BUsage: $3wif <file> <content>$7\n");
+        puts("$BUsage: $3wif <file> <content>$7");
         return 1;
     }
 

@@ -98,12 +98,12 @@ char *dirname(char *path) {
 }
 
 int ffs(int i) {
-    puts("ffs not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ffs not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int ffsll(long long int i) {
-    puts("ffsll not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ffsll not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -117,7 +117,7 @@ void *memccpy(void *restrict s1, const void *restrict s2, int c, size_t n) {
 }
 
 void *memchr(const void *s, int c, size_t n) {
-    puts("memchr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("memchr not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -229,7 +229,7 @@ void *memset(void *s, int c, size_t n) {
 }
 
 void psignal(int signum, register const char *message) {
-    puts("psignal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("psignal not implemented yet, WHY DO YOU USE IT ?");
 }
 
 void *rawmemchr(const void *s, int c) {
@@ -268,12 +268,12 @@ int strcasecmp (const char *s1, const char *s2) {
 }
 
 int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc) {
-    puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *strcasestr(const char *s1, const char *s2) {
-    puts("strcasestr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcasestr not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -299,7 +299,7 @@ char *strchr(const char *p, int ch) {
 }
 
 char *strchrnul(register const char *s, int c) {
-    puts("strchrnul not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strchrnul not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -325,7 +325,7 @@ char *strcpy(char *restrict s1, const char *restrict s2) {
 }
 
 size_t strcspn(const char *s1, const char *s2) {
-    puts("strcspn not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strcspn not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -337,7 +337,7 @@ char *strdup(register const char *s) {
 }
 
 char *strerror(int errnum) {
-    puts("strerror not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strerror not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -418,7 +418,7 @@ int strncasecmp(register const char *s1, register const char *s2, size_t n) {
 }
 
 int strncasecmp_l(register const char *s1, register const char *s2, size_t n, locale_t loc) {
-    puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -463,7 +463,7 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
 }
 
 char *strndup(register const char *s1, size_t n) {
-    puts("strndup not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strndup not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -504,12 +504,12 @@ char *strrchr(register const  char *s, int c) {
 }
 
 char *strsep(char **restrict s1, const char *restrict s2) {
-    puts("strsep not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strsep not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 char *strsignal(int signum) {
-    puts("strsignal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strsignal not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -559,17 +559,17 @@ char *strstr(register char *string, char *substring) {
 }
 
 char *strtok(char *restrict s1, const char *restrict s2) {
-    puts("strtok not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtok not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 char *strtok_r(char *restrict s1, const char *restrict s2,
                  char **restrict next_start) {
-    puts("strtok_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtok_r not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 int strverscmp(const char *s1, const char *s2) {
-    puts("strverscmp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strverscmp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }

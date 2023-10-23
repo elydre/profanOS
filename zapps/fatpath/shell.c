@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
         printf(SHELL_PROMPT, current_dir);
         fflush(stdout);
         open_input(char_buffer, BFR_SIZE);
-        puts("\n");
+        puts("");
         if (shell_command(char_buffer)) break;
     }
     return 0;

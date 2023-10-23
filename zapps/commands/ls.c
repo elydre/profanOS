@@ -149,10 +149,10 @@ void sort_size_and_type(int count, char **names, sid_t *ids) {
 
 
 int print_help(int full) {
-    puts("Usage: ls [options] [path]\n");
+    puts("Usage: ls [options] [path]");
 
     if (!full) {
-        puts("try 'ls -h' for more information\n");
+        puts("try 'ls -h' for more information");
         return 1;
     }
 
@@ -163,7 +163,7 @@ int print_help(int full) {
         "  -l  print files in separate lines\n"
         "  -m  print files in comma separated list\n"
         "  -p  show file size in physical size\n"
-        "  -z  sort by size\n"
+        "  -z  sort by size"
     );
     return 0;
 }
@@ -290,7 +290,7 @@ int main(int argc, char **argv) {
             if (i != elm_count - 1) printf("$7, ");
             free(cnt_names[i]);
         }
-        puts("$7\n");
+        puts("$7");
     }
 
     else if (args->format == LS_FORMAT_COLS) {

@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        printf("Usage: ubr <link> <redirection>\n");
+        puts("Usage: ubr <link> <redirection>");
         return 1;
     }
 
@@ -22,21 +22,21 @@ int main(int argc, char **argv) {
 
     sid_t link_sid = fu_path_to_sid(ROOT_SID, link);
     if (IS_NULL_SID(link_sid) || !fu_is_link(link_sid)) {
-        printf("Failed to get link sid\n");
+        puts("Failed to get link sid");
         free(redirection);
         free(link);
         return 1;
     }
 
     if (IS_NULL_SID(fu_path_to_sid(ROOT_SID, redirection))) {
-        printf("Failed to get redirection sid\n");
+        puts("Failed to get redirection sid");
         free(redirection);
         free(link);
         return 1;
     }
 
     if (devio_set_redirection(link_sid, redirection, c_process_get_ppid(c_process_get_pid()))) {
-        printf("Failed to change redirection\n");
+        puts("Failed to change redirection");
         free(redirection);
         free(link);
         return 1;

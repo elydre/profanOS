@@ -17,7 +17,7 @@ int showhelp() {
         "Usage: clear [OPTION]\n"
         " -a   use ANSI escape codes to clear the screen\n"
         " -h   show this help message\n"
-        " -x   set all pixels to black and clear the screen\n"
+        " -x   set all pixels to black and clear the screen"
     );
     return 0;
 }

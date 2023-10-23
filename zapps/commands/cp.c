@@ -63,7 +63,7 @@ int copy_elem(sid_t src_sid, char *src_path, char *dst_path) {
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        puts("Usage: cp <src> <dst>\n");
+        puts("Usage: cp <src> <dst>");
         return 1;
     }
 

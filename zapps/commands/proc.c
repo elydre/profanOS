@@ -64,9 +64,9 @@ typedef struct {
 #define MODE_WKUP 5
 
 void show_help(int full) {
-    puts("Usage: proc [mode] [pid]\n");
+    puts("Usage: proc [mode] [pid]");
     if (!full) {
-        puts("Use -h for more help\n");
+        puts("Use -h for more help");
         return;
     }
     puts("Modes:\n"
@@ -74,7 +74,7 @@ void show_help(int full) {
         "  -l: list all processes\n"
         "  -k: kill a process\n"
         "  -s: asleep a process\n"
-        "  -w: wake up a process\n"
+        "  -w: wake up a process"
     );
 }
 

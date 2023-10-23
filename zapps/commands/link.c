@@ -6,10 +6,10 @@
 #include <stdio.h>
 
 int print_help(int full) {
-    puts("Usage: link <flag> [options]\n");
+    puts("Usage: link <flag> [options]");
 
     if (!full) {
-        puts("try 'link -h' for more information\n");
+        puts("try 'link -h' for more information");
         return 1;
     }
 
@@ -20,7 +20,7 @@ int print_help(int full) {
         "  -r <link> <pid>        Remove a path from the link\n"
         "  -g <link> <pid>        Get the path of a pid\n"
         "  -l <link>              List all paths\n"
-        "  -h                     Print this help\n"
+        "  -h                     Print this help"
     );
 
     return 0;
@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    puts("Internal error\n");
+    puts("Internal error");
     free(args->link);
     free(args);
     return 1;

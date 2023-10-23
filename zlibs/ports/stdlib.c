@@ -122,7 +122,7 @@ long int a64l(const char *string) {
 }
 
 void abort() {
-    puts("abort not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("abort not implemented yet, WHY DO YOU USE IT ?");
     // TODO : implement abort, it's totally possible
 }
 
@@ -131,7 +131,7 @@ int abs(int j) {
 }
 
 void atexit(void (*func)()) {
-    puts("atexit not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atexit not implemented yet, WHY DO YOU USE IT ?");
 }
 
 double atof(const char *s) {
@@ -190,23 +190,23 @@ int atoi(const char *nptr) {
 }
 
 long atol(const char *nptr) {
-    puts("atol not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atol not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long atoll(const char *nptr) {
-    puts("atoll not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atoll not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 void *bsearch(const void *key, const void *base, size_t /* nmemb */ high,
               size_t size, int (*compar)(const void *, const void *)) {
-    puts("bsearch not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("bsearch not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 char *canonicalize_file_name (const char *name) {
-    puts("canonicalize_file_name not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("canonicalize_file_name not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -218,27 +218,27 @@ div_t div(int numer, int denom) {
 }
 
 double drand48(void) {
-    puts("drand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("drand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0.0;
 }
 
 int drand48_r(struct drand48_data *buffer, double *result) {
-    puts("drand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("drand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int __drand48_iterate(unsigned short int xsubi[3], struct drand48_data *buffer) {
-    puts("__drand48_iterate not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("__drand48_iterate not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double erand48(unsigned short int xsubi[3]) {
-    puts("erand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0.0;
 }
 
 int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *result) {
-    puts("erand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -247,7 +247,7 @@ void exit(int rv) {
 }
 
 char *gcvt(double number, int ndigit, char *buf) {
-    puts("gcvt not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("gcvt not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -262,17 +262,17 @@ char *getenv(const char *var) {
 }
 
 int getpt(void) {
-    puts("getpt not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("getpt not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long int jrand48(unsigned short int xsubi[3]){
-    puts("jrand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("jrand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int jrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result){
-    puts("jrand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("jrand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -315,11 +315,11 @@ long int labs(long int j) {
 }
 
 void lcong48(unsigned short int param[7]) {
-    puts("lcong48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lcong48 not implemented yet, WHY DO YOU USE IT ?");
 }
 
 ldiv_t ldiv (long int numer, long int denom) {
-    puts("ldiv not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ldiv not implemented yet, WHY DO YOU USE IT ?");
     ldiv_t result;
     result = (ldiv_t) {0, 0}; // temporary, to avoid warnings
     return result;
@@ -330,119 +330,119 @@ long long int llabs(long long int j) {
 }
 
 lldiv_t lldiv (long long int numer, long long int denom) {
-    puts("lldiv not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lldiv not implemented yet, WHY DO YOU USE IT ?");
     lldiv_t result;
     result = (lldiv_t) {0, 0}; // temporary, to avoid warnings
     return result;
 }
 
 long int lrand48(void) {
-    puts("lrand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lrand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int lrand48_r(struct drand48_data *buffer, long int *result) {
-    puts("lrand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lrand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mblen(register const char *s, size_t n) {
-    puts("mblen not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mblen not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 size_t mbstowcs(wchar_t * __restrict pwcs, const char * __restrict s, size_t n) {
-    puts("mbstowcs not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mbstowcs not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mbtowc(wchar_t *__restrict pwc, register const char *__restrict s, size_t n) {
-    puts("mbtowc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mbtowc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *mkdtemp(char *template) {
-    puts("mkdtemp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkdtemp not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 int mkostemp(char *template, int flags) {
-    puts("mkostemp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkostemp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkostemp64(char *template, int flags) {
-    puts("mkostemp64 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkostemp64 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkostemps(char *template, int suffixlen, int flags) {
-    puts("mkostemps not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkostemps not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkostemps64(char *template, int suffixlen, int flags) {
-    puts("mkostemps64 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkostemps64 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkstemp (char *template) {
-    puts("mkstemp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkstemp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkstemp64 (char *template) {
-    puts("mkstemp64 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkstemp64 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkstemps (char *template, int suffixlen) {
-    puts("mkstemps not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkstemps not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mkstemps64 (char *template, int suffixlen) {
-    puts("mkstemps64 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mkstemps64 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *mktemp(char *template) {
-    puts("mktemp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mktemp not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 long int mrand48(void) {
-    puts("mrand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mrand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int mrand48_r(struct drand48_data *buffer, long int *result) {
-    puts("mrand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("mrand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long int nrand48 (unsigned short int xsubi[3]) {
-    puts("nrand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nrand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int nrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result) {
-    puts("nrand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nrand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int on_exit(oefuncp func, void *arg) {
-    puts("on_exit not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("on_exit not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
-    puts("posix_memalign not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("posix_memalign not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *ptsname (int fd) {
-    puts("ptsname not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ptsname not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -462,7 +462,7 @@ void qsort(void  *base, size_t nel, size_t width, __compar_fn_t comp) {
 }
 
 void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
-    puts("qsort_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("qsort_r not implemented yet, WHY DO YOU USE IT ?");
 }
 
 int rand(void) {
@@ -497,37 +497,37 @@ int rand_r (unsigned int *seed) {
 }
 
 long int random(void) {
-    puts("random not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("random not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int random_r(struct random_data *buf, int32_t *result) {
-    puts("random_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("random_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *realpath(const char *path, char *got_path) {
-    puts("realpath not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("realpath not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 int rpmatch (const char *__response) {
-    puts("rpmatch not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("rpmatch not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *secure_getenv(const char *name) {
-    puts("(OK) secure_getenv not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("(OK) secure_getenv not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 unsigned short int *seed48(unsigned short int seed16v[3]) {
-    puts("seed48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("seed48 not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
-    puts("seed48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("seed48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -594,16 +594,16 @@ int clearenv(void) {
 }
 
 int putenv(char *string) {
-    puts("putenv not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("putenv not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 void srand48(long seedval) {
-    puts("srand48 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("srand48 not implemented yet, WHY DO YOU USE IT ?");
 }
 
 int srand48_r(long int seedval, struct drand48_data *buffer) {
-    puts("srand48_r not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("srand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -688,7 +688,7 @@ double strtod(char *str, char **ptr) {
 }
 
 long double strtod_l(const char* str, char** end, locale_t loc) {
-    puts("strtod_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtod_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -697,48 +697,48 @@ float strtof(const char *str, char **end) {
 }
 
 long double strtof_l(const char* str, char** end, locale_t loc) {
-    puts("strtof_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtof_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long int strtol(const char* str, char** end, int base) {
-    puts("strtol not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtol not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long int strtol_l(const char* str, char** end, int base, locale_t loc) {
-    puts("strtol_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtol_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 
 long long strtoll(const char* str, char** end, int base) {
-    puts("strtoll not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtoll not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long int strtoll_l(const char* str, char** end, int base, locale_t loc) {
-    puts("strtoll_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtoll_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long int strtoul(const char* str, char** end, int base) {
-    puts("strtoul not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtoul not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long long int strtoul_l(const char* str, char** end, int base, locale_t loc) {
-    puts("strtoul_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long long int strtoull(const char* str, char** end, int base) {
-    puts("strtoull not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtoull not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long long int strtoull_l(const char* str, char** end, int base, locale_t loc) {
-    puts("strtoull_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("strtoull_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -759,88 +759,88 @@ int system(const char *command) {
 }
 
 int grantpt(int fd) {
-    puts("grantpt not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("grantpt not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int unlockpt(int fd) {
-    puts("unlockpt not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("unlockpt not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 #define __ptr_t void *
 __ptr_t valloc(size_t size) {
-    puts("valloc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("valloc not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 double wcstod(const wchar_t *nptr, wchar_t **endptr) {
-    puts("wcstod not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstod not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double wcstod_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc) {
-    puts("wcstod_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstod_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float wcstof(const wchar_t *nptr, wchar_t **endptr) {
-    puts("wcstof not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstof not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double wcstof_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc) {
-    puts("wcstof_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstof_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long int wcstol(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstol not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstol not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long int wcstol_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstol_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstol_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long int wcstoll(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstoll not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstoll not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long int wcstoll_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstoll_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstoll_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 size_t wcstombs(char * __restrict s, const wchar_t * __restrict pwcs, size_t n) {
-    puts("wcstombs not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstombs not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstoul not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstoul not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstoul_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long long int wcstoull(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstoull not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstoull not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 unsigned long long int wcstoull_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstoull_l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wcstoull_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int wctomb(char *s, wchar_t wchar) {
-    puts("wctomb not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("wctomb not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 

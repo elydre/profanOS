@@ -23,7 +23,7 @@ int puts(const char *str);
 int fflush(FILE *stream);
 int fclose(FILE *stream);
 
-int vprintf(const char *restrict format, va_list vlist);
+int vprintf(const char *format, va_list vlist);
 int dopr(char* str, size_t size, const char* format, va_list arg);
 
 FILE *STD_STREAM = NULL;
@@ -76,10 +76,10 @@ void init_func(void) {
 }
 
 void clearerr(FILE *stream) {
-    puts("clearerr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("clearerr not implemented yet, WHY DO YOU USE IT ?");
 }
 
-FILE *fopen(const char *restrict filename, const char *restrict mode) {
+FILE *fopen(const char *filename, const char *mode) {
     // check for null pointers
     if (filename == NULL || mode == NULL) {
         return NULL;
@@ -166,12 +166,12 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
     return file;
 }
 
-errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filename, const char *restrict mode) {
-    puts("fopen_s not implemented yet, WHY DO YOU USE IT ?\n");
+errno_t fopen_s(FILE **streamptr, const char *filename, const char *mode) {
+    puts("fopen_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
+FILE *freopen(const char *filename, const char *mode, FILE *stream) {
     if (stream == stdin || stream == stdout || stream == stderr) {
         return NULL;
     }
@@ -182,7 +182,7 @@ FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *re
     return fopen(filename, mode);
 }
 
-errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
+errno_t freopen_s(FILE **newstreamptr, const char *filename, const char *mode, FILE *stream) {
     if (stream == stdin || stream == stdout || stream == stderr) {
         return 0;
     }
@@ -256,21 +256,21 @@ int fflush(FILE *stream) {
     return written ? 0 : EOF;
 }
 
-void setbuf(FILE *restrict stream, char *restrict buffer) {
-    puts("setbuf not implemented yet, WHY DO YOU USE IT ?\n");
+void setbuf(FILE *stream, char *buffer) {
+    puts("setbuf not implemented yet, WHY DO YOU USE IT ?");
 }
 
-int setvbuf(FILE *restrict stream, char *restrict buffer, int mode, size_t size) {
-    puts("setvbuf not implemented yet, WHY DO YOU USE IT ?\n");
+int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
+    puts("setvbuf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int fwide(FILE *stream, int mode) {
-    puts("fwide not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fwide not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
+size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr) {
         return 0;
@@ -319,7 +319,7 @@ size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict st
     return read;
 }
 
-size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
+size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     // check if the file is stdin
     if (stream == stdin) {
         return 0;
@@ -398,7 +398,7 @@ int fseek(FILE *stream, long offset, int whence) {
 }
 
 int fgetc(FILE *stream) {
-    puts("fgetc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fgetc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -410,10 +410,10 @@ int getc(FILE *stream) {
     return c;
 }
 
-char *fgets(char *restrict str, int count, FILE *restrict stream) {
+char *fgets(char *str, int count, FILE *stream) {
     if (stream == stdin) {
         open_input(str, count);
-        puts("\n");
+        puts("");
         return str;
     }
 
@@ -421,119 +421,109 @@ char *fgets(char *restrict str, int count, FILE *restrict stream) {
 }
 
 int fputc(int ch, FILE *stream) {
-    puts("fputc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fputc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int putc(int ch, FILE *stream) {
-    puts("putc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("putc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fputs(const char *restrict str, FILE *restrict stream) {
+int fputs(const char *str, FILE *stream) {
     uint32_t len = strlen(str);
-    if (fwrite(str, 1, len, stream) != len) {
-        return EOF;
-    }
-    return 0;
+    return fwrite(str, 1, len, stream) == len ? 0 : EOF;
 }
 
 int getchar(void) {
     // Equivalent to getc(stdin). (https://en.cppreference.com/w/c/io/getchar)
-    puts("getchar not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("getchar not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *gets_s(char *str, rsize_t n ) {
-    puts("gets_s not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("gets_s not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 int putchar(int ch) {
-    char tmp[2] = {ch, 0};
-    puts(tmp);
+    fwrite(&ch, 1, 1, stdout);
     return ch;
 }
 
 int puts(const char *str) {
-    // check if the string is null
-    if (str == NULL) {
-        return EOF;
-    }
-
-    // get the string length
-    int len = strlen(str);
-
-    // write the string
-    return devio_file_write(STD_STREAM[1].sid, (char *) str, 0, len);
+    uint32_t len = strlen(str);
+    return (fwrite(str, 1, len, stdout) == len &&
+            fwrite("\n", 1, 1, stdout) == 1
+        ) ? 0 : EOF;
 }
 
 int ungetc(int ch, FILE *stream) {
-    puts("ungetc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ungetc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int scanf(const char *restrict format, ...) {
-    puts("scanf not implemented yet, WHY DO YOU USE IT ?\n");
+int scanf(const char *format, ...) {
+    puts("scanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fscanf(FILE *restrict stream, const char *restrict format, ...) {
-    puts("fscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int fscanf(FILE *stream, const char *format, ...) {
+    puts("fscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int sscanf(const char *restrict buffer, const char *restrict format, ...) {
-    puts("sscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int sscanf(const char *buffer, const char *format, ...) {
+    puts("sscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int scanf_s(const char *restrict format, ...) {
-    puts("scanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int scanf_s(const char *format, ...) {
+    puts("scanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fscanf_s(FILE *restrict stream, const char *restrict format, ...) {
-    puts("fscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int fscanf_s(FILE *stream, const char *format, ...) {
+    puts("fscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int sscanf_s(const char *restrict buffer, const char *restrict format, ...) {
-    puts("sscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int sscanf_s(const char *buffer, const char *format, ...) {
+    puts("sscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vscanf(const char *restrict format, va_list vlist) {
-    puts("vscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int vscanf(const char *format, va_list vlist) {
+    puts("vscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vfscanf(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    puts("vfscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int vfscanf(FILE *stream, const char *format, va_list vlist) {
+    puts("vfscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsscanf(const char *restrict buffer, const char *restrict format, va_list vlist) {
-    puts("vsscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int vsscanf(const char *buffer, const char *format, va_list vlist) {
+    puts("vsscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vscanf_s(const char *restrict format, va_list vlist) {
-    puts("vscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vscanf_s(const char *format, va_list vlist) {
+    puts("vscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vfscanf_s(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    puts("vfscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vfscanf_s(FILE *stream, const char *format, va_list vlist) {
+    puts("vfscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsscanf_s(const char *restrict buffer, const char *restrict format, va_list vlist) {
-    puts("vsscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vsscanf_s(const char *buffer, const char *format, va_list vlist) {
+    puts("vsscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int printf(const char *restrict format, ...) {
+int printf(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -542,8 +532,8 @@ int printf(const char *restrict format, ...) {
     return 0;
 }
 
-int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist);
-int fprintf(FILE *restrict stream, const char *restrict format, ...) {
+int vfprintf(FILE *stream, const char *format, va_list vlist);
+int fprintf(FILE *stream, const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stream, format, args);
@@ -552,7 +542,7 @@ int fprintf(FILE *restrict stream, const char *restrict format, ...) {
     return 0;
 }
 
-int sprintf(char *restrict buffer, const char *restrict format, ...) {
+int sprintf(char *buffer, const char *format, ...) {
     va_list args;
     va_start(args, format);
     dopr(buffer, -1, format, args);
@@ -570,17 +560,17 @@ int snprintf(char* str, size_t size, const char* format, ...) {
     return r;
 }
 
-int printf_s(const char *restrict format, ...) {
-    puts("printf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int printf_s(const char *format, ...) {
+    puts("printf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fprintf_s(FILE *restrict stream, const char *restrict format, ...) {
-    puts("fprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int fprintf_s(FILE *stream, const char *format, ...) {
+    puts("fprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int sprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, ...) {
+int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
     va_list args;
     va_start(args, format);
     dopr(buffer, bufsz, format, args);
@@ -588,12 +578,12 @@ int sprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format,
     return 0;
 }
 
-int snprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, ...) {
-    puts("snprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
+    puts("snprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vprintf(const char *restrict format, va_list vlist) {
+int vprintf(const char *format, va_list vlist) {
     int count;
 
     // use dopr to print the string
@@ -601,13 +591,13 @@ int vprintf(const char *restrict format, va_list vlist) {
     dopr(buffer, 0x4000, format, vlist);
 
     // print the string
-    count = puts(buffer);
+    count = fputs(buffer, stdout);
 
     free(buffer);
     return count;
 }
 
-int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) {
+int vfprintf(FILE *stream, const char *format, va_list vlist) {
     // if the stream is read only, can't write to it
     if ((stream != stdout && stream != stderr) && (
         stream == stdin ||
@@ -630,31 +620,31 @@ int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) 
     return 0;
 }
 
-int vsprintf(char *restrict buffer, const char *restrict format, va_list vlist) {
+int vsprintf(char *buffer, const char *format, va_list vlist) {
     return dopr(buffer, -1, format, vlist);
 }
 
-int vsnprintf(char *restrict str, size_t count, const char *restrict fmt, va_list args) {
+int vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
     return dopr(str, count, fmt, args);
 }
 
-int vprintf_s(const char *restrict format, va_list vlist) {
-    puts("vprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vprintf_s(const char *format, va_list vlist) {
+    puts("vprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vfprintf_s(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    puts("vfprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vfprintf_s(FILE *stream, const char *format, va_list vlist) {
+    puts("vfprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, va_list vlist) {
-    puts("vsprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vsprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
+    puts("vsprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsnprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, va_list vlist) {
-    puts("vsnprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
+    puts("vsnprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -696,7 +686,7 @@ int ferror(FILE *stream) {
 }
 
 void perror(const char *s) {
-    puts("perror not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("perror not implemented yet, WHY DO YOU USE IT ?");
 }
 
 int remove(const char *fname) {
@@ -741,22 +731,22 @@ int remove(const char *fname) {
 }
 
 int rename(const char *old_filename, const char *new_filename) {
-    puts("rename not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("rename not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 FILE *tmpfile(void) {
-    puts("tmpfile not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("tmpfile not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-errno_t tmpfile_s(FILE * restrict * restrict streamptr) {
-    puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?\n");
+errno_t tmpfile_s(FILE * * streamptr) {
+    puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *tmpnam(char *filename) {
-    puts("tmpnam not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("tmpnam not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 

@@ -139,7 +139,7 @@ void rainbow_print(char *message) {
     new[i * 3 + 1] = '7';
     new[i * 3 + 2] = '\0';
 
-    puts(new);
+    fputs(new, stdout);
     free(new);
 }
 

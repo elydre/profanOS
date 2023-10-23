@@ -15,16 +15,16 @@ typedef struct {
 } rm_options_t;
 
 void print_help(int full) {
-    puts("Usage: rm [options] <path>\n");
+    puts("Usage: rm [options] <path>");
     if (!full) {
-        puts("Try 'rm -h' for more information.\n");
+        puts("Try 'rm -h' for more information.");
         return;
     }
     puts("Options:\n"
         "  -h   display this help and exit\n"
         "  -v   explain what is being done\n"
         "  -l   remove only the link\n"
-        "  -p   do not remove anything, only preview\n"
+        "  -p   do not remove anything, only preview"
     );
 }
 
