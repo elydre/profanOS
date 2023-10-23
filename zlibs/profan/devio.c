@@ -34,7 +34,7 @@ int main(void) {
 
 int devio_set_redirection(sid_t link, char *redirection, int pid) {
     if (!fu_is_link(link)) {
-        c_kprint("[DEVIO] set_redirection: given sid is not a link\n");
+        printf("[DEVIO] set_redirection: given sid is not a link\n");
         return 1;
     }
 
@@ -47,7 +47,7 @@ int devio_set_redirection(sid_t link, char *redirection, int pid) {
     int link_count = fu_link_get_all(link, &pids, &paths);
 
     if (link_count < 0) {
-        c_kprint("[DEVIO] set_redirection: error while getting link\n");
+        printf("[DEVIO] set_redirection: error while getting link\n");
         return 1;
     }
 
@@ -123,7 +123,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     }
 
     if (!fu_is_link(sid)) {
-        c_kprint("no method to write in sid\n");// d%ds%d\n", sid.device, sid.sector);
+        printf("no method to write in sid\n");// d%ds%d\n", sid.device, sid.sector);
         return -1;
     }
 
@@ -183,7 +183,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     free(pids);
 
     if (!path) {
-        c_kprint("[DEVIO] file_rw: no path found\n");
+        printf("[DEVIO] file_rw: no path found\n");
         return -1;
     }
 
@@ -191,7 +191,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     free(path);
 
     if (IS_NULL_SID(new_sid)) {
-        c_kprint("[DEVIO] file_rw: error while getting sid\n");
+        printf("[DEVIO] file_rw: error while getting sid\n");
         return -1;
     }
 
@@ -204,10 +204,8 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
         }
         if (i == LINK_HISTORY_SIZE - 1) {
             // move all the history
-            for (int j = 0; j < LINK_HISTORY_SIZE - 2; j++) {
-                link_history[j + 1].link = link_history[j].link;
-                link_history[j + 1].pid = link_history[j].pid;
-                link_history[j + 1].redirection = link_history[j].redirection;
+            for (int j = LINK_HISTORY_SIZE - 2; j >= 0; j--) {
+                link_history[j + 1] = link_history[j];
             }
             link_history[0].link = sid;
             link_history[0].pid = pid;
