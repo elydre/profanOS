@@ -211,6 +211,9 @@ int fclose(FILE *stream) {
         return 0;
     }
 
+    // fflush the stream
+    fflush(stream);
+
     // free the structure
     free(stream->filename);
 
