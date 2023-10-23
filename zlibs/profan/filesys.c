@@ -731,7 +731,7 @@ sid_t fu_link_create(int device_id, char *path) {
     char *meta = malloc(META_MAXLEN);
     strcpy(meta, "L-");
     strncpy(meta + 2, name, META_MAXLEN - 2);
-    
+
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
