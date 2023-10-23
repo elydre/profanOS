@@ -166,6 +166,10 @@ FILE *fopen(const char *filename, const char *mode) {
     file->mode = interpeted_mode;
     file->file_pos = 0;
 
+    // set the buffer
+    file->buffer = malloc(FILE_BUFFER_SIZE);
+    file->buffer_size = 0;
+
     // if the file is open for appending, set the file pos to the end of the file
     if (interpeted_mode & MODE_APPEND)
         file->file_pos = fu_get_file_size(file_id);
@@ -214,10 +218,9 @@ int fclose(FILE *stream) {
     // fflush the stream
     fflush(stream);
 
-    // free the structure
+    // free the stream
     free(stream->filename);
-
-    // free the file
+    free(stream->buffer);
     free(stream);
 
     return 0;
@@ -238,6 +241,8 @@ int fflush(FILE *stream) {
 
     uint32_t buffer_size = stream->buffer_size;
     stream->buffer_size = 0;
+
+    stream->buffer[buffer_size] = 0;
 
     // write the file
     int written = devio_file_write(stream->sid, stream->buffer, stream->file_pos, buffer_size);
@@ -326,7 +331,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 
     for (uint32_t i = 0; i < count; i++) {
         // check if the buffer is full
-        if (stream->buffer_size >= 0x4000) {
+        if (stream->buffer_size >= (FILE_BUFFER_SIZE - 1)) {
             if (fflush(stream) == EOF) {
                 ret = 0;
                 break;
