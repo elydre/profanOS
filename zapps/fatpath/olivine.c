@@ -3268,6 +3268,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
     int ret_val = -1;
 
+    sc = 0;
     while (sc != ENTER) {
         ms_sleep(SLEEP_T);
         sc = c_kb_get_scfh();
@@ -3573,6 +3574,7 @@ typedef struct {
     int inter;
 
     char *file;
+    char *command;
 } olivine_args_t;
 
 int show_help(int full, char *name) {
@@ -3582,10 +3584,11 @@ int show_help(int full, char *name) {
         return 1;
     }
     printf("Options:\n"
+        "  -c, --command  execute argument as code line\n"
+        "  -i, --inter    start a shell after executing\n\n"
         "  -h, --help     show this help message and exit\n"
-        "  -v, --version  show program's version number\n"
         "  -n, --no-init  don't execute the init program\n\n"
-        "  -i, --inter    start a shell after executing the file\n\n"
+        "  -v, --version  show program's version number\n"
 
         "Without file, the program will start a shell.\n"
         "Use 'exec' to execute a file from the shell instead\n"
@@ -3604,6 +3607,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
     args->version = 0;
     args->no_init = 0;
     args->file = NULL;
+    args->command = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0
@@ -3622,6 +3626,16 @@ olivine_args_t *parse_args(int argc, char **argv) {
             || strcmp(argv[i], "--inter") == 0
         ) {
             args->inter = 1;
+        } else if (strcmp(argv[i], "-c") == 0
+            || strcmp(argv[i], "--command") == 0
+        ) {
+            if (i + 1 == argc) {
+                printf("Error: no command given\n");
+                args->help = 1;
+                return args;
+            }
+            args->command = argv[i + 1];
+            i++;
         } else if (argv[i][0] != '-') {
             args->file = argv[i];
         } else {
@@ -3693,6 +3707,10 @@ int main(int argc, char **argv) {
 
     if (args->file != NULL) {
         execute_file(args->file);
+    }
+
+    if (args->command != NULL) {
+        execute_program(args->command);
     }
 
     if (args->inter || args->file == NULL) {

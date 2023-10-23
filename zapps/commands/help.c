@@ -14,7 +14,7 @@ int main(void) {
         char *char_content = malloc(size + 2);
 
         fu_file_read(file, char_content, 0, size);
-        puts(char_content);
+        fputs(char_content, stdout);
 
         free(char_content);
         return 0;

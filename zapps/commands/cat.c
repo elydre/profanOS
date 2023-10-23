@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         fu_file_read(file, char_content, 0, size);
         make_printable(char_content, size);
 
-        puts(char_content);
+        fputs(char_content, stdout);
 
         free(char_content);
         free(path);

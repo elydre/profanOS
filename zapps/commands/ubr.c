@@ -1,44 +1,48 @@
 #include <filesys.h>
+#include <syscall.h>
+#include <profan.h>
+
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        printf("Usage: ubr <buffer name> <redirection file>\n");
+        puts("Usage: ubr <link> <redirection>");
         return 1;
     }
 
-    char *buffer_name = argv[1];
-    char *redirection_file = argv[2];
+    char *pwd = getenv("PWD");
 
-    uint32_t buffer_id = 0;
-    if (strcmp(buffer_name, "stdout") == 0) {
-        buffer_id = DEVIO_STDOUT;
-    } else if (strcmp(buffer_name, "stderr") == 0) {
-        buffer_id = DEVIO_STDERR;
-    } else if (strcmp(buffer_name, "buffer") == 0) {
-        buffer_id = DEVIO_BUFFER;
-    } else {
-        printf("Invalid buffer name: %s, must be one of stdout, stderr, buffer\n", buffer_name);
+    char *link = malloc(strlen(pwd) + strlen(argv[1]) + 2);
+    assemble_path(pwd, argv[1], link);
+
+    char *redirection = malloc(strlen(pwd) + strlen(argv[2]) + 2);
+    assemble_path(pwd, argv[2], redirection);
+
+    sid_t link_sid = fu_path_to_sid(ROOT_SID, link);
+    if (IS_NULL_SID(link_sid) || !fu_is_link(link_sid)) {
+        puts("Failed to get link sid");
+        free(redirection);
+        free(link);
         return 1;
     }
 
-    sid_t redirection_sid = fu_path_to_sid(ROOT_SID, redirection_file);
-
-    if (IS_NULL_SID(redirection_sid)) {
-        printf("Invalid redirection file: %s\n", redirection_file);
+    if (IS_NULL_SID(fu_path_to_sid(ROOT_SID, redirection))) {
+        puts("Failed to get redirection sid");
+        free(redirection);
+        free(link);
         return 1;
     }
 
-    if (!(fu_is_file(redirection_sid) || fu_is_fctf(redirection_sid))) {
-        printf("Redirection file must be a file or a FCTF\n");
+    if (devio_set_redirection(link_sid, redirection, c_process_get_ppid(c_process_get_pid()))) {
+        puts("Failed to change redirection");
+        free(redirection);
+        free(link);
         return 1;
     }
 
-    if (devio_change_redirection(buffer_id, redirection_sid)) {
-        printf("Failed to change redirection\n");
-        return 1;
-    }
-
+    free(redirection);
+    free(link);
     return 0;
 }

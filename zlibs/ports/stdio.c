@@ -13,54 +13,83 @@
 #include <stdio.h>
 
 #define FILE_TYPE_FILE 0
-#define FILE_TYPE_FCTF 1
+#define FILE_TYPE_OTHER 1
+
+#define FILE_BUFFER_SIZE 0x1000
+
+#define MODE_READ   1 << 0
+#define MODE_WRITE  1 << 1
+#define MODE_APPEND 1 << 2
 
 void init_func();
 
 int puts(const char *str);
+int fflush(FILE *stream);
+int fclose(FILE *stream);
 
-int vprintf(const char *restrict format, va_list vlist);
+int vprintf(const char *format, va_list vlist);
 int dopr(char* str, size_t size, const char* format, va_list arg);
 
-sid_t *SIDS = NULL;
+FILE *STD_STREAM = NULL;
 
-#define stdout_sid SIDS[1]
-#define stderr_sid SIDS[2]
-
-int main() {
+int main(void) {
     init_func();
     return 0;
 }
 
-void init_func() {
-    sid_t *dup = malloc(sizeof(sid_t) * 3);
+void init_func(void) {
+    FILE *dup = malloc(sizeof(FILE) * 3);
 
-    dup[1] = fu_path_to_sid(ROOT_SID, "/dev/stdout");
-    if (IS_NULL_SID(dup[1]) || !fu_is_fctf(dup[1])) {
-        c_kprint("\n Can't find /dev/stdout");
-    }
+    // init stdin
+    dup[0].filename = "/dev/stdin";
+    dup[0].mode = MODE_READ;
 
-    dup[2] = fu_path_to_sid(ROOT_SID, "/dev/stderr");
-    if (IS_NULL_SID(dup[2]) || !fu_is_fctf(dup[2])) {
-        c_kprint("\n Can't find /dev/stderr");
-    }
+    dup[0].buffer = malloc(FILE_BUFFER_SIZE);
+    dup[0].buffer_size = 0;
 
-    SIDS = dup;
+    dup[0].type = FILE_TYPE_OTHER;
+    dup[0].buffer_size = 0;
+    dup[0].file_pos = 0;
+    dup[0].sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
+
+    // init stdout
+    dup[1].filename = "/dev/stdout";
+    dup[1].mode = MODE_WRITE;
+
+    dup[1].buffer = malloc(FILE_BUFFER_SIZE);
+    dup[1].buffer_size = 0;
+
+    dup[1].type = FILE_TYPE_OTHER;
+    dup[1].buffer_size = 0;
+    dup[1].file_pos = 0;
+    dup[1].sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+
+    // init stderr
+    dup[2].filename = "/dev/stderr";
+    dup[2].mode = MODE_WRITE;
+
+    dup[2].buffer = malloc(FILE_BUFFER_SIZE);
+    dup[2].buffer_size = 0;
+
+    dup[2].type = FILE_TYPE_OTHER;
+    dup[2].buffer_size = 0;
+    dup[2].file_pos = 0;
+    dup[2].sid = fu_path_to_sid(ROOT_SID, "/dev/stderr");
+
+    STD_STREAM = dup;
 }
 
 void clearerr(FILE *stream) {
-    puts("clearerr not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("clearerr not implemented yet, WHY DO YOU USE IT ?");
 }
 
-int fclose(FILE *stream);
-
-FILE *fopen(const char *restrict filename, const char *restrict mode) {
-    // we check for null pointers
+FILE *fopen(const char *filename, const char *mode) {
+    // check for null pointers
     if (filename == NULL || mode == NULL) {
         return NULL;
     }
 
-    // if path is relative, we add the current directory
+    // if path is relative, add the current directory
     char *path;
     if (filename[0] != '/') {
         char *pwd = getenv("PWD");
@@ -73,18 +102,31 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         path = strdup(filename);
     }
 
-    // first we check if the file exists
+    // first check if the file exists
     sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
 
     int exists = !IS_NULL_SID(file_id);
 
+    uint32_t interpeted_mode = 0;
+    for (uint32_t i = 0; i < strlen(mode); i++) {
+        switch (mode[i]) {
+            case 'r':
+                interpeted_mode |= MODE_READ;
+                break;
+            case 'w':
+                interpeted_mode |= MODE_WRITE;
+                break;
+            case 'a':
+                interpeted_mode |= MODE_APPEND | MODE_WRITE;
+                break;
+            case '+':
+                interpeted_mode |= MODE_READ | MODE_WRITE;
+                break;
+        }
+    }
+
     // the file doesn't exist but it should
-    if (!exists && (
-        strcmp(mode, "r") == 0 ||
-        strcmp(mode, "r+") == 0 ||
-        strcmp(mode, "rb") == 0 ||
-        strcmp(mode, "rb+") == 0
-    )) {
+    if (!exists && !(interpeted_mode & MODE_WRITE)) {
         free(path);
         return NULL;
     }
@@ -95,7 +137,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         return NULL;
     }
 
-    // the file exists but we want to create it
+    // create the file if it doesnt exist
     if (!exists) {
         file_id = fu_file_create(0, (char *) path);
     }
@@ -106,231 +148,212 @@ FILE *fopen(const char *restrict filename, const char *restrict mode) {
         return NULL;
     }
 
-    // now we create the file structure
+    // now create the file structure
     FILE *file = malloc(sizeof(FILE));
 
     // get the file type
     if (fu_is_file(file_id)) {
         file->type = FILE_TYPE_FILE;
-    } else if (fu_is_fctf(file_id)) {
-        file->type = FILE_TYPE_FCTF;
     } else {
-        free(file);
-        free(path);
-        return NULL;
+        file->type = FILE_TYPE_OTHER;
     }
 
-    // we copy the filename
+    // copy the filename
     file->filename = path;
     file->sid = file_id;
 
-    // we copy the mode
-    file->mode = strdup(mode);
+    // copy the mode
+    file->mode = interpeted_mode;
     file->file_pos = 0;
 
-    // if the file is open for appending, we set the file pos to the end of the file
-    if (strcmp(mode, "a")  == 0 ||
-        strcmp(mode, "a+") == 0 ||
-        strcmp(mode, "ab") == 0 ||
-        strcmp(mode, "ab+") == 0
-    ) file->file_pos = fu_get_file_size(file_id);
+    // if the file is open for appending, set the file pos to the end of the file
+    if (interpeted_mode & MODE_APPEND)
+        file->file_pos = fu_get_file_size(file_id);
 
-    // else if the file is open for writing, we set the file pos to the beginning of the file
-    else if (strcmp(mode, "w")  == 0 ||
-             strcmp(mode, "w+") == 0 ||
-             strcmp(mode, "wb") == 0 ||
-             strcmp(mode, "wb+") == 0
-    ) fu_set_file_size(file_id, 0);
+    // else if the file is open for writing, set the file pos to the beginning of the file
+    else if (interpeted_mode & MODE_WRITE)
+        file->file_pos = 0;
 
     return file;
 }
 
-errno_t fopen_s(FILE *restrict *restrict streamptr, const char *restrict filename, const char *restrict mode) {
-    puts("fopen_s not implemented yet, WHY DO YOU USE IT ?\n");
+errno_t fopen_s(FILE **streamptr, const char *filename, const char *mode) {
+    puts("fopen_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-FILE *freopen(const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
-    // we close the file
+FILE *freopen(const char *filename, const char *mode, FILE *stream) {
+    if (stream == stdin || stream == stdout || stream == stderr) {
+        return NULL;
+    }
+
+    // close the file
     fclose(stream);
-    // we open the file
+    // open the file
     return fopen(filename, mode);
 }
 
-errno_t freopen_s(FILE *restrict *restrict newstreamptr, const char *restrict filename, const char *restrict mode, FILE *restrict stream) {
-    // we close the file
+errno_t freopen_s(FILE **newstreamptr, const char *filename, const char *mode, FILE *stream) {
+    if (stream == stdin || stream == stdout || stream == stderr) {
+        return 0;
+    }
+
+    // close the file
     fclose(stream);
-    // we open the file
+    // open the file
     *newstreamptr = fopen(filename, mode);
     return 0;
 }
 
 int fclose(FILE *stream) {
-    // we check if the file is null
-    if (stream == NULL) {
+    // check for stdin, stdout and stderr
+    if (stream == stdin || stream == stdout || stream == stderr) {
         return 0;
     }
 
-    // we check for stdout/stderr/stdin
-    if (stream == stdout || stream == stderr || stream == stdin) {
-        return 0;
-    }
+    // fflush the stream
+    fflush(stream);
 
-    // we check if the file is open for writing
-    /*if (!(strcmp(stream->mode, "w") &&
-        strcmp(stream->mode, "w+")  &&
-        strcmp(stream->mode, "a")   &&
-        strcmp(stream->mode, "a+")  &&
-        strcmp(stream->mode, "wb")  &&
-        strcmp(stream->mode, "wb+") &&
-        strcmp(stream->mode, "ab")  &&
-        strcmp(stream->mode, "ab+"))
-    ) fflush(stream);*/
-
-    // we free the structure
+    // free the structure
     free(stream->filename);
-    free(stream->mode);
 
-    // we free the file
+    // free the file
     free(stream);
 
     return 0;
 }
 
 int fflush(FILE *stream) {
-    if (stream == stdout) {
-        fu_fctf_flush(stdout_sid);
+    // check if the file is stdin
+    if (stream == stdin) {
+        return 0;
     }
 
-    return 0;
+    if (stream == stdout || stream == stderr) {
+        stream = STD_STREAM + (stream == stdout ? 1 : 2);
+    }
+
+    // check if the file is open for writing, else return 0
+    if (!(stream->mode & MODE_WRITE)) return 0;
+
+    uint32_t buffer_size = stream->buffer_size;
+    stream->buffer_size = 0;
+
+    // write the file
+    int written = devio_file_write(stream->sid, stream->buffer, stream->file_pos, buffer_size);
+    if (written < 0) written = 0;
+
+    // increment the file position
+    stream->file_pos += written;
+
+    // return the number of elements written
+    return written ? 0 : EOF;
 }
 
-void setbuf(FILE *restrict stream, char *restrict buffer) {
-    puts("setbuf not implemented yet, WHY DO YOU USE IT ?\n");
+void setbuf(FILE *stream, char *buffer) {
+    puts("setbuf not implemented yet, WHY DO YOU USE IT ?");
 }
 
-int setvbuf(FILE *restrict stream, char *restrict buffer, int mode, size_t size) {
-    puts("setvbuf not implemented yet, WHY DO YOU USE IT ?\n");
+int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
+    puts("setvbuf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int fwide(FILE *stream, int mode) {
-    puts("fwide not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fwide not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-size_t fread(void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    // we check if the file is null
-    if (stream == NULL) {
+size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
+    // check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr || stream == stdin) {
-        return 0;
+    if (stream == stdin) {
+        stream = STD_STREAM + 0;
     }
 
-    int mode_len = strlen(stream->mode);
+    // check if the file is open for reading, else return 0
+    if (!(stream->mode & MODE_READ)) return 0;
 
-    // we check if the file is open for reading, else we return 0
-    if (!(strcmp(stream->mode, "r")   == 0 ||
-          strcmp(stream->mode, "r+")  == 0 ||
-          strcmp(stream->mode, "w+")  == 0 ||
-          strcmp(stream->mode, "a+")  == 0 ||
-          strcmp(stream->mode, "rb")  == 0 ||
-          strcmp(stream->mode, "rb+") == 0 ||
-          strcmp(stream->mode, "wb+") == 0 ||
-          strcmp(stream->mode, "ab+") == 0)
-    ) return 0;
+    fflush(stream);
 
-    // get the file size
-    int file_size = fu_get_file_size(stream->sid);
-
+    // grow the size if the stream is a file
     if (stream->type == FILE_TYPE_FILE) {
-        // we check if the file is at the end
+        int file_size = fu_get_file_size(stream->sid);
+
+        // check if the file is at the end
         if (stream->file_pos >= file_size) {
             return 0;
         }
 
-        // we check if the file is at the end
+        // check if the file is at the end
         if (stream->file_pos + (int) count >= file_size) {
             count = file_size - stream->file_pos;
         }
     }
 
-    // we read the file
-    int read;
-    if (stream->type == FILE_TYPE_FILE) {
-        read = fu_file_read(stream->sid, (void *) buffer, stream->file_pos, count);
-    } else if (stream->type == FILE_TYPE_FCTF) {
-        read = fu_fctf_read(stream->sid, (void *) buffer, stream->file_pos, count);
-    }
-    read = read == 0 ? count : 0;
+    // read the file
+    int read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+    if (read < 0) read = 0;
 
-    // we increment the file position
+    // increment the file position
     stream->file_pos += read;
 
-    // we return the number of elements read
+    // return the number of elements read
     return read;
 }
 
-size_t fwrite(const void *restrict buffer, size_t size, size_t count, FILE *restrict stream) {
-    // we check if the file is null
-    if (stream == NULL) {
+size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
+    // check if the file is stdin
+    if (stream == stdin) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
-    if (stream == stdout) {
-        return fu_fctf_write(stdout_sid, (void *) buffer, 0, count) ? 0 : count;
+    if (stream == stdout || stream == stderr) {
+        stream = STD_STREAM + (stream == stdout ? 1 : 2);
     }
 
-    if (stream == stderr) {
-        return fu_fctf_write(stderr_sid, (void *) buffer, 0, count) ? 0 : count;
+    // check if the file is open for writing, else return 0
+    if (!(stream->mode & MODE_WRITE)) return 0;
+
+    count *= size;
+
+    // write in the buffer
+    uint32_t ret = count;
+    int need_flush = 0;
+
+    for (uint32_t i = 0; i < count; i++) {
+        // check if the buffer is full
+        if (stream->buffer_size >= 0x4000) {
+            if (fflush(stream) == EOF) {
+                ret = 0;
+                break;
+            }
+            need_flush = 0;
+            break;
+        }
+
+        if (((char *) buffer)[i] == '\n') {
+            need_flush = 1;
+        }
+
+        // write the character
+        stream->buffer[stream->buffer_size++] = ((char *) buffer)[i];
     }
 
-    // we check if the file is open for writing, else we return 0
-    if (!(strcmp(stream->mode, "w")   == 0 ||
-          strcmp(stream->mode, "w+")  == 0 ||
-          strcmp(stream->mode, "a")   == 0 ||
-          strcmp(stream->mode, "a+")  == 0 ||
-          strcmp(stream->mode, "wb")  == 0 ||
-          strcmp(stream->mode, "wb+") == 0 ||
-          strcmp(stream->mode, "ab")  == 0 ||
-          strcmp(stream->mode, "ab+") == 0)
-    ) return 0;
-
-    // we get the current file size
-    int file_size = fu_get_file_size(stream->sid);
-
-    // if file is too small, we resize it
-    if (stream->type == FILE_TYPE_FILE && file_size < stream->file_pos + (int) count) {
-        fu_set_file_size(stream->sid, stream->file_pos + (int) count);
+    // flush the buffer if needed
+    if (need_flush && fflush(stream) == EOF) {
+        ret = 0;
     }
 
-    // we write the file
-    int written;
-    if (stream->type == FILE_TYPE_FILE) {
-        written = fu_file_write(stream->sid, (void *) buffer, stream->file_pos, count);
-    } else if (stream->type == FILE_TYPE_FCTF) {
-        written = fu_fctf_write(stream->sid, (void *) buffer, stream->file_pos, count);
-    }
-    written = written == 0 ? count : 0;
-
-    // we increment the file position
-    stream->file_pos += written;
-
-    // we return the number of elements written
-    return written;
+    // return the number of elements written
+    return ret;
 }
 
 int fseek(FILE *stream, long offset, int whence) {
-    // we check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
-    // we check if the file is stdout or stderr
+    // check if the file is stdin, stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
@@ -353,7 +376,7 @@ int fseek(FILE *stream, long offset, int whence) {
 }
 
 int fgetc(FILE *stream) {
-    puts("fgetc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fgetc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -365,10 +388,10 @@ int getc(FILE *stream) {
     return c;
 }
 
-char *fgets(char *restrict str, int count, FILE *restrict stream) {
+char *fgets(char *str, int count, FILE *stream) {
     if (stream == stdin) {
         open_input(str, count);
-        puts("\n");
+        puts("");
         return str;
     }
 
@@ -376,116 +399,109 @@ char *fgets(char *restrict str, int count, FILE *restrict stream) {
 }
 
 int fputc(int ch, FILE *stream) {
-    puts("fputc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fputc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int putc(int ch, FILE *stream) {
-    puts("putc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("putc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fputs(const char *restrict str, FILE *restrict stream) {
-    puts("fputs not implemented yet, WHY DO YOU USE IT ?\n");
-    return 0;
+int fputs(const char *str, FILE *stream) {
+    uint32_t len = strlen(str);
+    return fwrite(str, 1, len, stream) == len ? 0 : EOF;
 }
 
 int getchar(void) {
     // Equivalent to getc(stdin). (https://en.cppreference.com/w/c/io/getchar)
-    puts("getchar not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("getchar not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *gets_s(char *str, rsize_t n ) {
-    puts("gets_s not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("gets_s not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 int putchar(int ch) {
-    char tmp[2] = {ch, 0};
-    puts(tmp);
+    fwrite(&ch, 1, 1, stdout);
     return ch;
 }
 
 int puts(const char *str) {
-    // we check if the string is null
-    if (str == NULL) {
-        return EOF;
-    }
-
-    // we get the string length
-    int len = strlen(str);
-
-    // we write the string
-    return fu_fctf_write(stdout_sid, (void *) str, 0, len) ? EOF : len;
+    uint32_t len = strlen(str);
+    return (fwrite(str, 1, len, stdout) == len &&
+            fwrite("\n", 1, 1, stdout) == 1
+        ) ? 0 : EOF;
 }
 
 int ungetc(int ch, FILE *stream) {
-    puts("ungetc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ungetc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int scanf(const char *restrict format, ...) {
-    puts("scanf not implemented yet, WHY DO YOU USE IT ?\n");
+int scanf(const char *format, ...) {
+    puts("scanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fscanf(FILE *restrict stream, const char *restrict format, ...) {
-    puts("fscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int fscanf(FILE *stream, const char *format, ...) {
+    puts("fscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int sscanf(const char *restrict buffer, const char *restrict format, ...) {
-    puts("sscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int sscanf(const char *buffer, const char *format, ...) {
+    puts("sscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int scanf_s(const char *restrict format, ...) {
-    puts("scanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int scanf_s(const char *format, ...) {
+    puts("scanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fscanf_s(FILE *restrict stream, const char *restrict format, ...) {
-    puts("fscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int fscanf_s(FILE *stream, const char *format, ...) {
+    puts("fscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int sscanf_s(const char *restrict buffer, const char *restrict format, ...) {
-    puts("sscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int sscanf_s(const char *buffer, const char *format, ...) {
+    puts("sscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vscanf(const char *restrict format, va_list vlist) {
-    puts("vscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int vscanf(const char *format, va_list vlist) {
+    puts("vscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vfscanf(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    puts("vfscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int vfscanf(FILE *stream, const char *format, va_list vlist) {
+    puts("vfscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsscanf(const char *restrict buffer, const char *restrict format, va_list vlist) {
-    puts("vsscanf not implemented yet, WHY DO YOU USE IT ?\n");
+int vsscanf(const char *buffer, const char *format, va_list vlist) {
+    puts("vsscanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vscanf_s(const char *restrict format, va_list vlist) {
-    puts("vscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vscanf_s(const char *format, va_list vlist) {
+    puts("vscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vfscanf_s(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    puts("vfscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vfscanf_s(FILE *stream, const char *format, va_list vlist) {
+    puts("vfscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsscanf_s(const char *restrict buffer, const char *restrict format, va_list vlist) {
-    puts("vsscanf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vsscanf_s(const char *buffer, const char *format, va_list vlist) {
+    puts("vsscanf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int printf(const char *restrict format, ...) {
+int printf(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -494,8 +510,8 @@ int printf(const char *restrict format, ...) {
     return 0;
 }
 
-int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist);
-int fprintf(FILE *restrict stream, const char *restrict format, ...) {
+int vfprintf(FILE *stream, const char *format, va_list vlist);
+int fprintf(FILE *stream, const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stream, format, args);
@@ -504,7 +520,7 @@ int fprintf(FILE *restrict stream, const char *restrict format, ...) {
     return 0;
 }
 
-int sprintf(char *restrict buffer, const char *restrict format, ...) {
+int sprintf(char *buffer, const char *format, ...) {
     va_list args;
     va_start(args, format);
     dopr(buffer, -1, format, args);
@@ -522,17 +538,17 @@ int snprintf(char* str, size_t size, const char* format, ...) {
     return r;
 }
 
-int printf_s(const char *restrict format, ...) {
-    puts("printf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int printf_s(const char *format, ...) {
+    puts("printf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int fprintf_s(FILE *restrict stream, const char *restrict format, ...) {
-    puts("fprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int fprintf_s(FILE *stream, const char *format, ...) {
+    puts("fprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int sprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, ...) {
+int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
     va_list args;
     va_start(args, format);
     dopr(buffer, bufsz, format, args);
@@ -540,12 +556,12 @@ int sprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format,
     return 0;
 }
 
-int snprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, ...) {
-    puts("snprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
+    puts("snprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vprintf(const char *restrict format, va_list vlist) {
+int vprintf(const char *format, va_list vlist) {
     int count;
 
     // use dopr to print the string
@@ -553,70 +569,76 @@ int vprintf(const char *restrict format, va_list vlist) {
     dopr(buffer, 0x4000, format, vlist);
 
     // print the string
-    count = puts(buffer);
+    count = fputs(buffer, stdout);
 
     free(buffer);
     return count;
 }
 
-int vfprintf(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    // if the stream is read only, we can't write to it
-    if ((stream != stdout && stream != stderr) && (
-        stream == stdin ||
-        strcmp(stream->mode, "r")   == 0 ||
-        strcmp(stream->mode, "r+")  == 0 ||
-        strcmp(stream->mode, "rb")  == 0 ||
-        strcmp(stream->mode, "rb+") == 0
-    )) return 0;
+int vfprintf(FILE *stream, const char *format, va_list vlist) {
+    // check if the file is stdin
+    if (stream == stdin) {
+        return 0;
+    }
 
-    // we allocate a buffer to store the formatted string
+    // check if the file is stdout or stderr
+    if (stream == stdout || stream == stderr) {
+        stream = STD_STREAM + (stream == stdout ? 1 : 2);
+    }
+
+    // if the stream is read only, can't write to it
+    if (!(stream->mode & MODE_WRITE)) {
+        return 0;
+    }
+
+    // allocate a buffer to store the formatted string
     char *buffer = malloc(0x4000);
 
-    // we copy format to a buffer because we need to modify it
+    // copy format to a buffer because need to modify it
     dopr(buffer, 0x4000, format, vlist);
 
-    // we write the string
+    // write the string
     fwrite(buffer, 1, strlen(buffer), stream);
 
     free(buffer);
     return 0;
 }
 
-int vsprintf(char *restrict buffer, const char *restrict format, va_list vlist) {
+int vsprintf(char *buffer, const char *format, va_list vlist) {
     return dopr(buffer, -1, format, vlist);
 }
 
-int vsnprintf(char *restrict str, size_t count, const char *restrict fmt, va_list args) {
+int vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
     return dopr(str, count, fmt, args);
 }
 
-int vprintf_s(const char *restrict format, va_list vlist) {
-    puts("vprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vprintf_s(const char *format, va_list vlist) {
+    puts("vprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vfprintf_s(FILE *restrict stream, const char *restrict format, va_list vlist) {
-    puts("vfprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vfprintf_s(FILE *stream, const char *format, va_list vlist) {
+    puts("vfprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, va_list vlist) {
-    puts("vsprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vsprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
+    puts("vsprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int vsnprintf_s(char *restrict buffer, rsize_t bufsz, const char *restrict format, va_list vlist) {
-    puts("vsnprintf_s not implemented yet, WHY DO YOU USE IT ?\n");
+int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
+    puts("vsnprintf_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long ftell(FILE *stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
@@ -625,20 +647,20 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
-    // we check if the file is null
+    // check if the file is null
     if (stream == NULL) {
         return 0;
     }
 
-    // we check if the file is stdout or stderr
+    // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr || stream == stdin) {
         return 0;
     }
 
-    // we get the file size
+    // get the file size
     int file_size = fu_get_file_size(stream->sid);
 
-    // we check if the file is at the end
+    // check if the file is at the end
     return (stream->file_pos >= file_size);
 }
 
@@ -648,36 +670,83 @@ int ferror(FILE *stream) {
 }
 
 void perror(const char *s) {
-    puts("perror not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("perror not implemented yet, WHY DO YOU USE IT ?");
 }
 
 int remove(const char *fname) {
-    puts("remove not implemented yet, WHY DO YOU USE IT ?\n");
+    char *pwd = getenv("PWD");
+    char *full_path = malloc(strlen(fname) + strlen(pwd) + 2);
+    assemble_path(pwd, (char *) fname, full_path);
+
+    sid_t elem = fu_path_to_sid(ROOT_SID, full_path);
+    if (IS_NULL_SID(elem) || !fu_is_file(elem)) {
+        printf("remove: cannot remove '%s': No such file\n", fname);
+        free(full_path);
+        return 1;
+    }
+
+    char *parent;
+
+    fu_sep_path(full_path, &parent, NULL);
+
+    sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    free(parent);
+
+    if (IS_NULL_SID(parent_sid)) {
+        printf("remove: cannot remove '%s': Unreachable path\n", fname);
+        free(full_path);
+        return 1;
+    }
+
+    // remove element from directory
+    if (fu_remove_element_from_dir(parent_sid, elem)) {
+        printf("remove: cannot remove '%s': Failed to remove element from directory\n", fname);
+        return 1;
+    }
+
+    // delete container
+    if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
+        printf("rm: cannot remove '%s': Failed to delete container\n", fname);
+        return 1;
+    }
+
+    free(full_path);
     return 0;
 }
 
 int rename(const char *old_filename, const char *new_filename) {
-    puts("rename not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("rename not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 FILE *tmpfile(void) {
-    puts("tmpfile not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("tmpfile not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-errno_t tmpfile_s(FILE * restrict * restrict streamptr) {
-    puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?\n");
+errno_t tmpfile_s(FILE * * streamptr) {
+    puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *tmpnam(char *filename) {
-    puts("tmpnam not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("tmpnam not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
-    puts("tmpnam_s not implemented yet, WHY DO YOU USE IT ?\n");
+    if (maxsize < 12) {
+        return 1;
+    }
+
+    strcpy(filename_s, "/tmp/");
+    filename_s[11] = 0;
+    do {
+        for (int i = 5; i < 11; i++) {
+            filename_s[i] = 'a' + rand() % 26;
+        }
+    } while (!IS_NULL_SID(fu_path_to_sid(ROOT_SID, filename_s)));
+
     return 0;
 }
 
@@ -1124,14 +1193,14 @@ print_remainder(char* buf, int max, double r, int prec)
     unsigned long cap = 1;
     unsigned long value;
     int len, i;
-    if(prec > 19) prec = 19; /* max we can do */
+    if(prec > 19) prec = 19; /* max can do */
     if(max < prec) return 0;
     for(i=0; i<prec; i++) {
         cap *= 10;
     }
     r *= (double)cap;
     value = (unsigned long)r;
-    /* see if we need to round up */
+    /* see if need to round up */
     if(((unsigned long)((r - (double)value)*10.0)) >= 5) {
         value++;
         /* that might carry to numbers before the comma, if so,
@@ -1153,7 +1222,7 @@ static int
 print_float(char* buf, int max, double value, int prec)
 {
     /* as xxx.xxx  if prec==0, no '.', with prec decimals after . */
-    /* no conversion for NAN and INF, because we do not want to require
+    /* no conversion for NAN and INF, because do not want to require
        linking with -lm. */
     /* Thus, the conversions use 64bit integers to convert the numbers,
      * which makes 19 digits before and after the decimal point the max */
@@ -1306,7 +1375,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
             ret++;
         }
 
-        /* see if we are at end */
+        /* see if are at end */
         if(!*fmt) break;
 
         /* fetch next argument % designation from format string */
@@ -1315,7 +1384,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
         /********************************/
         /* get the argument designation */
         /********************************/
-        /* we must do this vararg stuff inside this function for
+        /* must do this vararg stuff inside this function for
          * portability.  Hence, get_designation, and print_designation
          * are not their own functions. */
 

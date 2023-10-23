@@ -72,7 +72,12 @@
 #endif
 
 #ifndef DEVIO_LIB_C
-#define devio_change_redirection ((int (*)(uint32_t, sid_t)) get_func_addr(DEVIO_LIB_ID, 2))
-#endif
 
+#define devio_file_read(sid, buf, offset, size) (devio_file_rw_from(sid, buf, offset, size, 0, -1))
+#define devio_file_write(sid, buf, offset, size) (devio_file_rw_from(sid, buf, offset, size, 1, -1))
+
+#define devio_set_redirection ((int (*)(sid_t, char *, int)) get_func_addr(DEVIO_LIB_ID, 2))
+#define devio_file_rw_from ((int (*)(sid_t, void *, uint32_t, uint32_t, uint8_t, int)) get_func_addr(DEVIO_LIB_ID, 3))
+
+#endif
 #endif

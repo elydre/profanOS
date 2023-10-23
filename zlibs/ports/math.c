@@ -562,61 +562,61 @@ int main() {
 void init_func() {; }
 
 int fpclassify(float x) {
-    puts("fpclassify not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fpclassify not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isfinite(float x) {
-    puts("isfinite not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isfinite not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 int isinf(float x) {
-    puts("isinf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isinf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isnan(float x) {
-    puts("isnan not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isnan not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isnormal(float x) {
-    puts("isnormal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isnormal not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int signbit(float x) {
-    puts("signbit not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("signbit not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isgreater(float x, float y) {
-    puts("isgreater not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isgreater not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isgreaterequal(float x, float y) {
-    puts("isgreaterequal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isgreaterequal not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isless(float x, float y) {
-    puts("isless not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isless not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int islessequal(float x, float y) {
-    puts("islessequal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("islessequal not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int islessgreater(float x, float y) {
-    puts("islessgreater not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("islessgreater not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int isunordered(float x, float y) {
-    puts("isunordered not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("isunordered not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -749,147 +749,147 @@ float acosf(float x) {
 }
 
 double acosh(double a) {
-    puts("acosh not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("acosh not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float acoshf(float a) {
-    puts("acoshf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("acoshf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double acoshl(long double a) {
-    puts("acoshl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("acoshl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double acosl(long double a) {
-    puts("acosl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("acosl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double asin(double a) {
-    puts("asin not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("asin not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float asinf(float a) {
-    puts("asinf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("asinf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double asinh(double a) {
-    puts("asinh not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("asinh not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float asinhf(float a) {
-    puts("asinhf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("asinhf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double asinhl(long double a) {
-    puts("asinhl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("asinhl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double asinl(long double a) {
-    puts("asinl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("asinl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double atan(double a) {
-    puts("atan not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atan not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double atan2(double a, double b) {
-    puts("atan2 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atan2 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float atan2f(float a, float b) {
-    puts("atan2f not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atan2f not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double atan2l(long double a, long double b) {
-    puts("atan2l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atan2l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float atanf(float a) {
-    puts("atanf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double atanh(double a) {
-    puts("atanh not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atanh not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float atanhf(float a) {
-    puts("atanhf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atanhf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double atanhl(long double a) {
-    puts("atanhl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atanhl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double atanl(long double a) {
-    puts("atanl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("atanl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double cbrt(double a) {
-    puts("cbrt not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("cbrt not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float cbrtf(float a) {
-    puts("cbrtf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("cbrtf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double cbrtl(long double a) {
-    puts("cbrtl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("cbrtl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double ceil(double a) {
-    puts("ceil not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ceil not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float ceilf(float a) {
-    puts("ceilf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ceilf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double ceill(long double a) {
-    puts("ceill not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ceill not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double copysign(double a, double b) {
-    puts("copysign not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("copysign not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float copysignf(float a, float b) {
-    puts("copysignf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("copysignf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double copysignl(long double a, long double b) {
-    puts("copysignl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("copysignl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double cos(double a) {
-    puts("cos not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("cos not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -962,87 +962,87 @@ float cosf(float x) {
 }
 
 double cosh(double a) {
-    puts("cosh not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("cosh not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float coshf(float a) {
-    puts("coshf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("coshf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double coshl(long double a) {
-    puts("coshl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("coshl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double cosl(long double a) {
-    puts("cosl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("cosl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double erf(double a) {
-    puts("erf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double erfc(double a) {
-    puts("erfc not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erfc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float erfcf(float a) {
-    puts("erfcf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erfcf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double erfcl(long double a) {
-    puts("erfcl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erfcl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float erff(float a) {
-    puts("erff not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erff not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double erfl(long double a) {
-    puts("erfl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("erfl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double exp(double a) {
-    puts("exp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("exp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double exp2(double a) {
-    puts("exp2 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("exp2 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float exp2f(float a) {
-    puts("exp2f not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("exp2f not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double exp2l(long double a) {
-    puts("exp2l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("exp2l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float expf(float x) {
-    puts("expf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("expf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double expl(long double a) {
-    puts("expl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("expl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double expm1(double a) {
-    puts("expm1 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("expm1 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -1142,37 +1142,37 @@ float expm1f(float x) {
 }
 
 long double expm1l(long double a) {
-    puts("expm1l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("expm1l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double fabs(double a) {
-    puts("fabs not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fabs not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float fabsf(float a) {
-    puts("fabsf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fabsf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double fabsl(long double a) {
-    puts("fabsl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fabsl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double fdim(double a, double b) {
-    puts("fdim not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fdim not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float fdimf(float a, float b) {
-    puts("fdimf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fdimf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double fdiml(long double a, long double b) {
-    puts("fdiml not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fdiml not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -1214,72 +1214,72 @@ float floorf(float a) {
 }
 
 long double floorl(long double a) {
-    puts("floorl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("floorl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double fma(double a, double b, double c) {
-    puts("fma not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fma not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float fmaf(float a, float b, float c) {
-    puts("fmaf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmaf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double fmal(long double a, long double b, long double c) {
-    puts("fmal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmal not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double fmax(double a, double b) {
-    puts("fmax not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmax not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float fmaxf(float a, float b) {
-    puts("fmaxf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmaxf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double fmaxl(long double a, long double b) {
-    puts("fmaxl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmaxl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double fmin(double a, double b) {
-    puts("fmin not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmin not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float fminf(float a, float b) {
-    puts("fminf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fminf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double fminl(long double a, long double b) {
-    puts("fminl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fminl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double fmod(double a, double b) {
-    puts("fmod not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmod not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float fmodf(float a, float b) {
-    puts("fmodf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmodf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double fmodl(long double a, long double b) {
-    puts("fmodl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("fmodl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double frexp(double a, int *b) {
-    puts("frexp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("frexp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -1304,117 +1304,117 @@ float frexpf(float x, int *e) {
 }
 
 long double frexpl(long double a, int *b) {
-    puts("frexpl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("frexpl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double hypot(double a, double b) {
-    puts("hypot not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("hypot not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float hypotf(float a, float b) {
-    puts("hypotf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("hypotf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double hypotl(long double a, long double b) {
-    puts("hypotl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("hypotl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int ilogb(double a) {
-    puts("ilogb not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ilogb not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int ilogbf(float a) {
-    puts("ilogbf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ilogbf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int ilogbl(long double a) {
-    puts("ilogbl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ilogbl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double j0(double a) {
-    puts("j0 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("j0 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double j1(double a) {
-    puts("j1 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("j1 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double jn(int a, double b) {
-    puts("jn not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("jn not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double ldexp(double a, int b) {
-    puts("ldexp not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ldexp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float ldexpf(float a, int b) {
-    puts("ldexpf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ldexpf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double ldexpl(long double a, int b) {
-    puts("ldexpl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("ldexpl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double lgamma(double a) {
-    puts("lgamma not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lgamma not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float lgammaf(float a) {
-    puts("lgammaf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lgammaf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double lgammal(long double a) {
-    puts("lgammal not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lgammal not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long llrint(double a) {
-    puts("llrint not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("llrint not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long llrintf(float a) {
-    puts("llrintf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("llrintf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long llrintl(long double a) {
-    puts("llrintl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("llrintl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long llround(double a) {
-    puts("llround not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("llround not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long llroundf(float a) {
-    puts("llroundf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("llroundf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long long llroundl(long double a) {
-    puts("llroundl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("llroundl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double log(double a) {
-    puts("log not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -1503,177 +1503,177 @@ double log10(double x) {
 }
 
 float log10f(float a) {
-    puts("log10f not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log10f not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double log10l(long double a) {
-    puts("log10l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log10l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double log1p(double a) {
-    puts("log1p not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log1p not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float log1pf(float a) {
-    puts("log1pf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log1pf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double log1pl(long double a) {
-    puts("log1pl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log1pl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double log2(double a) {
-    puts("log2 not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log2 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float log2f(float a) {
-    puts("log2f not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log2f not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double log2l(long double a) {
-    puts("log2l not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("log2l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double logb(double a) {
-    puts("logb not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("logb not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float logbf(float a) {
-    puts("logbf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("logbf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double logbl(long double a) {
-    puts("logbl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("logbl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float logf(float a) {
-    puts("logf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("logf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double logl(long double a) {
-    puts("logl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("logl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long lrint(double a) {
-    puts("lrint not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lrint not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long lrintf(float a) {
-    puts("lrintf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lrintf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long lrintl(long double a) {
-    puts("lrintl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lrintl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long lround(double a) {
-    puts("lround not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lround not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long lroundf(float a) {
-    puts("lroundf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lroundf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long lroundl(long double a) {
-    puts("lroundl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("lroundl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double modf(double a, double *b) {
-    puts("modf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("modf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float modff(float a, float *b) {
-    puts("modff not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("modff not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double modfl(long double a, long double *b) {
-    puts("modfl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("modfl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double nan(const char *a) {
-    puts("nan not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nan not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float nanf(const char *a) {
-    puts("nanf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nanf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double nanl(const char *a) {
-    puts("nanl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nanl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double nearbyint(double a) {
-    puts("nearbyint not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nearbyint not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float nearbyintf(float a) {
-    puts("nearbyintf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nearbyintf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double nearbyintl(long double a) {
-    puts("nearbyintl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nearbyintl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double nextafter(double a, double b) {
-    puts("nextafter not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nextafter not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float nextafterf(float a, float b) {
-    puts("nextafterf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nextafterf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double nextafterl(long double a, long double b) {
-    puts("nextafterl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nextafterl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double nexttoward(double a, long double b) {
-    puts("nexttoward not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nexttoward not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float nexttowardf(float a, long double b) {
-    puts("nexttowardf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nexttowardf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double nexttowardl(long double a, long double b) {
-    puts("nexttowardl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("nexttowardl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double pow(double a, double b) {
-    puts("pow not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("pow not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -1913,87 +1913,87 @@ ipowf:
 }
 
 long double powl(long double a, long double b) {
-    puts("powl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("powl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double remainder(double a, double b) {
-    puts("remainder not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("remainder not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float remainderf(float a, float b) {
-    puts("remainderf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("remainderf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double remainderl(long double a, long double b) {
-    puts("remainderl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("remainderl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double remquo(double a, double b, int *c) {
-    puts("remquo not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("remquo not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float remquof(float a, float b, int *c) {
-    puts("remquof not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("remquof not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double remquol(long double a, long double b, int *c) {
-    puts("remquol not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("remquol not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double rint(double a) {
-    puts("rint not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("rint not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float rintf(float a) {
-    puts("rintf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("rintf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double rintl(long double a) {
-    puts("rintl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("rintl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double round(double a) {
-    puts("round not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("round not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float roundf(float a) {
-    puts("roundf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("roundf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double roundl(long double a) {
-    puts("roundl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("roundl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double scalb(double a, double b) {
-    puts("scalb not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("scalb not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double scalbln(double a, long b) {
-    puts("scalbln not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("scalbln not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 float scalblnf(float a, long b) {
-    puts("scalblnf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("scalblnf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double scalblnl(long double a, long b) {
-    puts("scalblnl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("scalblnl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -2028,17 +2028,17 @@ double scalbn(double x, int n) {
 }
 
 float scalbnf(float a, int b) {
-    puts("scalbnf not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("scalbnf not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 long double scalbnl(long double a, int b) {
-    puts("scalbnl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("scalbnl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double sin(double a) {
-    puts("sin not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("sin not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -2094,7 +2094,7 @@ float sinf(float x) {
 }
 
 double sinh(double a) {
-    puts("sinh not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("sinh not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -2340,12 +2340,12 @@ float sqrtf(float x) {
 }
 
 long double sqrtl(long double a) {
-    puts("sqrtl not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("sqrtl not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 double tan(double a) {
-    puts("tan is not implemented yet, WHY DO YOU USE IT?\n");
+    puts("tan is not implemented yet, WHY DO YOU USE IT?");
     return 0;
 }
 
@@ -2406,7 +2406,7 @@ float tanf(float x) {
 }
 
 double tanh(double a) {
-    puts("tanh is not implemented yet, WHY DO YOU USE IT?\n");
+    puts("tanh is not implemented yet, WHY DO YOU USE IT?");
     return 0;
 }
 
@@ -2640,17 +2640,17 @@ long double truncl(long double x) {
 }
 
 double y0(double a) {
-    puts("y0 is not implemented yet, WHY DO YOU USE IT?\n");
+    puts("y0 is not implemented yet, WHY DO YOU USE IT?");
     return 0;
 }
 
 double y1(double a) {
-    puts("y1 is not implemented yet, WHY DO YOU USE IT?\n");
+    puts("y1 is not implemented yet, WHY DO YOU USE IT?");
     return 0;
 }
 
 double yn(int a, double b) {
-    puts("yn is not implemented yet, WHY DO YOU USE IT?\n");
+    puts("yn is not implemented yet, WHY DO YOU USE IT?");
     return 0;
 }
 

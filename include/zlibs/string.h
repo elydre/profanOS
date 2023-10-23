@@ -5,12 +5,6 @@
 
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
-/*
-int main();
-char *basename(const char *path);
-void bcopy(const void *s2, void *s1, size_t n);
-*/
-
 #define basename(path) ((char *(*)(const char *)) get_func_addr(STRING_ID, 3))(path)
 #define bcopy(s2, s1, n) ((void (*)(const void *, void *, size_t)) get_func_addr(STRING_ID, 4))(s2, s1, n)
 #define bzero(s, n) ((void (*)(void *, size_t)) get_func_addr(STRING_ID, 5))(s, n)
