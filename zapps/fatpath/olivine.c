@@ -1086,6 +1086,7 @@ char *if_delfunc(char **input) {
     return NULL;
 }
 
+
 char *if_exec(char **input) {
     // get argc
     int argc = 0;
@@ -1101,6 +1102,42 @@ char *if_exec(char **input) {
     execute_file(input[0]);
 
     return NULL;
+}
+
+char *if_exists(char **input) {
+    int file_exists = 0;
+
+    #if PROFANBUILD
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        raise_error("exists", "Expected 1 argument, got %d", argc);
+        return ERROR_CODE;
+    }
+
+    // get path
+    char *path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, input[0], path);
+
+    // check if file exists
+    sid_t file_id = fu_path_to_sid(ROOT_SID, path);
+
+    if (!IS_NULL_SID(file_id)) {
+        file_exists = 1;
+    }
+
+    free(path);
+    #endif
+
+    char *res = malloc(sizeof(char) * 2);
+    res[0] = file_exists + '0';
+    res[1] = '\0';
+
+    return res;
 }
 
 char *if_export(char **input) {
@@ -1646,6 +1683,7 @@ internal_function_t internal_functions[] = {
     {"delfunc", if_delfunc},
     {"eval", if_eval},
     {"exec", if_exec},
+    {"exists", if_exists},
     {"export", if_export},
     {"find", if_find},
     {"global", if_global},

@@ -74,15 +74,17 @@ FUNC mv
     END
 END
 
-FUNC redir
+FUNC chout
     IF !(eval !# ~ 2)
-        echo redir: require two arguments, !# given
+        echo chout: require two arguments, !# given
         RETURN
     END
 
-    mkfile !0
+    IF !(eval !(exists !1) = 0)
+        mkfile !1
+    END
 
-    ubr /dev/stdout !0
-    !1
+    ubr /dev/stdout !1
+    !0
     ubr /dev/stdout /dev/panda
 END
