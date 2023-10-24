@@ -119,6 +119,9 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
                 if (fu_set_file_size(sid, size + offset)) return 0;
             return fu_file_write(sid, buffer, offset, size) ? 0 : size;
         }
+        if (size + offset > fu_get_file_size(sid))
+            size = fu_get_file_size(sid) - offset;
+        if (size == 0) return 0;
         return fu_file_read(sid, buffer, offset, size) ? 0 : size;
     }
 
@@ -195,14 +198,15 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
         return -1;
     }
 
-    for (int i = 0; i < LINK_HISTORY_SIZE; i++) {
-        if (IS_NULL_SID(link_history[i].link)) {
-            link_history[i].link = sid;
-            link_history[i].pid = pid;
-            link_history[i].redirection = new_sid;
+    int index = 0;
+    for (index = 0; index < LINK_HISTORY_SIZE; index++) {
+        if (IS_NULL_SID(link_history[index].link)) {
+            link_history[index].link = sid;
+            link_history[index].pid = pid;
+            link_history[index].redirection = new_sid;
             break;
         }
-        if (i == LINK_HISTORY_SIZE - 1) {
+        if (index == LINK_HISTORY_SIZE - 1) {
             // move all the history
             for (int j = LINK_HISTORY_SIZE - 2; j >= 0; j--) {
                 link_history[j + 1] = link_history[j];
@@ -211,11 +215,13 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
             link_history[0].pid = pid;
             link_history[0].redirection = new_sid;
             link_history[0].offset = 0;
+            index = 0;
+            break;
         }
     }
 
     ret = devio_file_rw_from(new_sid, buffer, 0, size, is_write, pid);
-    link_history[0].offset = ret;
+    link_history[index].offset = ret;
     return ret;
 }
 
@@ -282,6 +288,14 @@ int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
+int devkb_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+    if (mode == MODE_READD) {
+        return open_input(buffer, size);
+    }
+
+    return 0;
+}
+
 void init_devio(void) {
     fu_fctf_create(0, "/dev/null",   devnull_rw);
     fu_fctf_create(0, "/dev/random", devrand_rw);
@@ -290,10 +304,11 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/parrot", devparrot_rw);
     fu_fctf_create(0, "/dev/panda",  devpanda_rw);
     fu_fctf_create(0, "/dev/serial", devserial_rw);
+    fu_fctf_create(0, "/dev/kb",     devkb_rw);
 
     link_history = calloc(LINK_HISTORY_SIZE, sizeof(link_history_t));
 
-    fu_link_create(0, "/dev/stdin");
+    devio_set_redirection(fu_link_create(0, "/dev/stdin"),  "/dev/kb", 0);
     devio_set_redirection(fu_link_create(0, "/dev/stdout"), "/dev/parrot", 0);
     devio_set_redirection(fu_link_create(0, "/dev/stderr"), "/dev/parrot", 0);
 }

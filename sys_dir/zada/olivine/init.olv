@@ -74,17 +74,30 @@ FUNC mv
     END
 END
 
-FUNC chout
-    IF !(eval !# ~ 2)
-        echo chout: require two arguments, !# given
+FUNC chio
+    IF !(eval !# < 2)
+        echo chio: require at least two arguments, !# given
         RETURN
     END
 
-    IF !(eval !(exists !1) = 0)
-        mkfile !1
+    IF !(eval !# = 2)
+        set 2 !1
+        set 1 !0
+        set 0 /dev/kb
     END
 
-    ubr /dev/stdout !1
-    !0
+    IF !(eval !(exists !0) = 0)
+        echo chio: !0: no such file or directory
+        RETURN
+    END
+
+    IF !(eval !(exists !2) = 0)
+        mkfile !2
+    END
+
+    ubr /dev/stdin !0
+    ubr /dev/stdout !2
+    !1
     ubr /dev/stdout /dev/panda
+    ubr /dev/stdin /dev/kb
 END

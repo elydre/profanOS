@@ -147,17 +147,17 @@ void rainbow_print(char *message) {
  * INPUT PUBLIC FUNCS *
 ***********************/
 
-void open_input(char *buffer, int size) {
+uint32_t open_input(char *buffer, uint32_t size) {
     // save the current cursor position and show it
     printf("\033[s\033[?25l");
     fflush(stdout);
 
     int sc, last_sc, last_sc_sgt = 0;
 
-    int buffer_actual_size = 0;
-    int buffer_index = 0;
+    uint32_t buffer_actual_size = 0;
+    uint32_t buffer_index = 0;
 
-    for (int i = 0; i < size; i++)
+    for (uint32_t i = 0; i < size; i++)
         buffer[i] = '\0';
 
     int key_ticks = 0;
@@ -204,7 +204,7 @@ void open_input(char *buffer, int size) {
         else if (sc == BACK) {
             if (!buffer_index) continue;
             buffer_index--;
-            for (int i = buffer_index; i < buffer_actual_size; i++) {
+            for (uint32_t i = buffer_index; i < buffer_actual_size; i++) {
                 buffer[i] = buffer[i + 1];
             }
             buffer[buffer_actual_size] = '\0';
@@ -213,7 +213,7 @@ void open_input(char *buffer, int size) {
 
         else if (sc == DEL) {
             if (buffer_index == buffer_actual_size) continue;
-            for (int i = buffer_index; i < buffer_actual_size; i++) {
+            for (uint32_t i = buffer_index; i < buffer_actual_size; i++) {
                 buffer[i] = buffer[i + 1];
             }
             buffer[buffer_actual_size] = '\0';
@@ -223,7 +223,7 @@ void open_input(char *buffer, int size) {
         else if (sc <= SC_MAX) {
             if (size < buffer_actual_size + 2) continue;
             if (profan_kb_get_char(sc, shift) == '\0') continue;
-            for (int i = buffer_actual_size; i > buffer_index; i--) {
+            for (uint32_t i = buffer_actual_size; i > buffer_index; i--) {
                 buffer[i] = buffer[i - 1];
             }
             buffer[buffer_index] = profan_kb_get_char(sc, shift);
@@ -237,7 +237,9 @@ void open_input(char *buffer, int size) {
         fflush(stdout);
     }
 
-    buffer[buffer_actual_size] = '\n';
-    buffer[buffer_actual_size + 1] = '\0';
-    printf("\033[?25h");
+    buffer[buffer_actual_size++] = '\n';
+    buffer[buffer_actual_size] = '\0';
+    printf("\033[?25h\n");
+
+    return buffer_actual_size;
 }

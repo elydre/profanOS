@@ -393,13 +393,7 @@ int getc(FILE *stream) {
 }
 
 char *fgets(char *str, int count, FILE *stream) {
-    if (stream == stdin) {
-        open_input(str, count);
-        puts("");
-        return str;
-    }
-
-    return NULL;
+    return fread(str, 1, count, stream) == 0 ? NULL : str;
 }
 
 int fputc(int ch, FILE *stream) {
