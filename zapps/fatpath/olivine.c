@@ -1612,12 +1612,14 @@ char *if_sprintf(char **input) {
                     raise_error("printf", "%%%c requires a character, but got '%s'", format[format_i], input[arg_i]);
                     return ERROR_CODE;
                 }
+            } else {
+                res[res_i++] = nb;
             }
-            res[res_i++] = nb;
         } else {
             raise_error("printf", "Unknown format specifier '%%%c'", format[format_i]);
             return ERROR_CODE;
         }
+        arg_i++;
     }
 
     res[res_i] = '\0';
