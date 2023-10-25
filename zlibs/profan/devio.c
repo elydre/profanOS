@@ -161,8 +161,6 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     char *path = NULL;
     int tmp;
 
-    char fe[256];
-
     // check if the pid is in the array
     // else check for the ppids
     tmp = pid;

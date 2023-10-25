@@ -1,8 +1,10 @@
 #include <syscall.h>
-#include <i_iolib.h>
-#include <type.h>
+#include <filesys.h>
+
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+#include <type.h>
 
 int main(void) {
     return 0;
@@ -216,9 +218,70 @@ char *getwd(char *a) {
     return NULL;
 }
 
-int isatty(int a) {
-    puts("isatty is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int isatty(int id) {
+    // check if the linked file is a fcft
+
+    if (id < 0 || id > 2) {
+        return 0;
+    }
+
+    sid_t sid;
+    if (id == 0)
+        sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
+    else if (id == 1)
+        sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+    else
+        sid = fu_path_to_sid(ROOT_SID, "/dev/stderr");
+
+    if (IS_NULL_SID(sid)) {
+        return 0;
+    }
+
+    char **paths;
+    int *pids;
+
+    int link_count = fu_link_get_all(sid, &pids, &paths);
+
+    if (link_count < 1) {
+        return 1;
+    }
+
+    int pid = c_process_get_pid();
+    char *path = NULL;
+
+    // check if the pid is in the array
+    // else check for the ppids
+    while (!path) {
+        for (int i = 0; i < link_count; i++) {
+            if (pids[i] == pid) {
+                path = strdup(paths[i]);
+                break;
+            }
+        }
+        if (pid == 0) break;
+
+        pid = c_process_get_ppid(pid);
+    }
+
+    // free the arrays
+    for (int i = 0; i < link_count; i++) {
+        free(paths[i]);
+    }
+    free(paths);
+    free(pids);
+
+    if (!path) {
+        return 1;
+    }
+
+    sid_t new_sid = fu_path_to_sid(ROOT_SID, path);
+    free(path);
+
+    if (IS_NULL_SID(new_sid)) {
+        return 1;
+    }
+
+    return fu_is_fctf(new_sid);
 }
 
 int lchown(const char *a, uid_t b, gid_t c) {
