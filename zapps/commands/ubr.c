@@ -7,8 +7,8 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        puts("Usage: ubr <link> <redirection>");
+    if (argc != 3 && argc != 4) {
+        puts("Usage: ubr <link> <redirection> [pid]");
         return 1;
     }
 
@@ -23,13 +23,20 @@ int main(int argc, char **argv) {
     sid_t link_sid = fu_path_to_sid(ROOT_SID, link);
     sid_t redirection_sid = fu_path_to_sid(ROOT_SID, redirection);
 
+    int pid;
+    if (argc == 4) {
+        pid = atoi(argv[3]);
+    } else {
+        pid = c_process_get_ppid(c_process_get_pid());
+    }
+
     if (IS_NULL_SID(link_sid) || !fu_is_link(link_sid)) {
         puts("Failed to get link sid");
     } else if (IS_NULL_SID(redirection_sid)) {
         puts("Failed to get redirection sid");
     } else if (!(fu_is_file(redirection_sid) || fu_is_fctf(redirection_sid))) {
         puts("Redirection must be a file or a fctf");
-    } else if (devio_set_redirection(link_sid, redirection, c_process_get_ppid(c_process_get_pid()))) {
+    } else if (devio_set_redirection(link_sid, redirection, pid)) {
         puts("Failed to change redirection");
     } else {
         free(redirection);
