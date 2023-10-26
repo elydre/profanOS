@@ -465,9 +465,9 @@ void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *
     puts("qsort_r not implemented yet, WHY DO YOU USE IT ?");
 }
 
+int rand_r (unsigned int *seed);
 int rand(void) {
-    rand_seed = rand_seed * 1103515245 + 12345;
-    return (int) (rand_seed / 65536) % 32768;
+    return rand_r(&rand_seed);
 }
 
 /* This algorithm is mentioned in the ISO C standard, here extended

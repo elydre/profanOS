@@ -237,7 +237,7 @@ int devrand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     }
 
     for (uint32_t i = 0; i < size; i++) {
-        ((uint8_t *) buffer)[i] = (uint8_t) rand();
+        ((uint8_t *) buffer)[i] = (uint8_t) rand() & 0xFF;
     }
 
     return size;
