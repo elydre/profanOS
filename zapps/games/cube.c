@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <i_time.h>
 #include <i_vgui.h>
 #include <stdlib.h>
 
@@ -6,7 +7,7 @@
 #define PI 3.141592
 #define MATH_LOOP 100
 #define FOCAL_DISTANCE 100
-#define CUBE_COLOR 0xFFFFFF
+#define CUBE_COLOR 0xFFdd99
 #define TRIN_COLOR 0xFFFF00
 
 typedef struct point3_t {
@@ -199,5 +200,7 @@ int show_fps(vgui_t *vgui, int time) {
     char fps_str[10];
     itoa(fps, fps_str, 10);
     vgui_print(vgui, 0, 0, fps_str, 0xFFFFFF);
+    if (fps > 40)
+        ms_sleep(10);
     return new_time;
 }
