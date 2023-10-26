@@ -41,9 +41,8 @@ shape_t rotate(shape_t *shape, int x, int y, int z);
 void draw(shape_t *shape, vgui_t *vgui);
 int show_fps(vgui_t *vgui, int time);
 
-
 int main(int argc, char** argv) {
-    vgui_t vgui = vgui_setup(320, 200);
+    vgui_t vgui = vgui_setup(200, 200);
 
     shape_t shape = cube(120);
     int time;
@@ -72,7 +71,7 @@ point2_t project(point3_t point) {
 shape_t cube(int size) {
     shape_t shape;
     shape.PointsCount = 8;
-    shape.LinesCount = 18;
+    shape.LinesCount = 12; // 18 for triangles
     shape.Points = malloc(sizeof(point3_t) * shape.PointsCount);
     shape.Lines = malloc(sizeof(line_t) * shape.LinesCount);
 
@@ -98,13 +97,14 @@ shape_t cube(int size) {
     shape.Lines[10] = (line_t){2, 6, CUBE_COLOR};
     shape.Lines[11] = (line_t){3, 7, CUBE_COLOR};
 
-    // make squares into triangles
+    /* make squares into triangles
     shape.Lines[12] = (line_t){0, 2, TRIN_COLOR};
     shape.Lines[13] = (line_t){4, 6, TRIN_COLOR};
     shape.Lines[14] = (line_t){0, 5, TRIN_COLOR};
     shape.Lines[15] = (line_t){1, 6, TRIN_COLOR};
     shape.Lines[16] = (line_t){2, 7, TRIN_COLOR};
     shape.Lines[17] = (line_t){3, 4, TRIN_COLOR};
+    */
 
     shape.ScreenPoints = malloc(sizeof(point2_t) * shape.PointsCount);
     return shape;
