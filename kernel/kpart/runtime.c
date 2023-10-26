@@ -170,6 +170,9 @@ int run_binary(runtime_args_t args, int *pid_ptr) {
 
     process_set_comm(pid, comm);
 
+    if (args.sleep == 2)
+        return 0;
+
     if (args.sleep)
         process_handover(pid);
     else
