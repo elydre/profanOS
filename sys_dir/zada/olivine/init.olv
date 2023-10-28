@@ -87,7 +87,7 @@ FUNC chio
     END
 
     IF !(eval !(exists !0) = 0)
-        echo chio: !0: no such file or directory
+        echo chio: '!0': no such file or directory
         RETURN
     END
 

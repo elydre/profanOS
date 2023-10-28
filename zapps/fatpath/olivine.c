@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.7 rev 3"
+#define OLV_VERSION "0.8 rev 1"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -196,15 +196,15 @@ int local_atoi(char *str, int *result) {
 }
 
 void raise_error(char *part, char *format, ...) {
-    if (part == NULL) printf("OLIVINE raise: ");
-    else printf("'%s' raise: ", part);
+    if (part == NULL) fputs("OLIVINE raise: ", stderr);
+    else fprintf(stderr, "'%s' raise: ", part);
 
     va_list args;
     va_start(args, format);
-    vprintf(format, args);
+    vfprintf(stderr, format, args);
     va_end(args);
 
-    printf("\n");
+    fputs("\n", stderr);
 
     strcpy(exit_code, "1");
 }
@@ -881,6 +881,130 @@ char *if_eval(char **input) {
     return res;
 }
 
+/*****************************
+ *                          *
+ *  Olivine Pipe Processor  *
+ *                          *
+*****************************/
+
+char *execute_line(char *full_line);
+
+char *pp_rejoin(char **input, int to) {
+    int required_size = 1;
+    for (int i = 0; i < to; i++) {
+        required_size += strlen(input[i]) + 3;
+    }
+
+    char *joined_input = malloc(required_size * sizeof(char));
+    joined_input[0] = '\0';
+
+    // add quotes if needed
+    for (int i = 0; i < to; i++) {
+        if (strchr(input[i], ' ') != NULL) {
+            strcat(joined_input, "'");
+            strcat(joined_input, input[i]);
+            strcat(joined_input, "'");
+        } else {
+            strcat(joined_input, input[i]);
+        }
+        if (i != to - 1) {
+            strcat(joined_input, " ");
+        }
+    }
+    return joined_input;
+}
+
+char *if_pp(char **input) {
+    #if PROFANBUILD
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc == 0) {
+        raise_error("pp", "Requires at least one argument");
+        return ERROR_CODE;
+    }
+
+    sid_t stdin_sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
+    sid_t stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+
+    if (IS_NULL_SID(stdin_sid) || IS_NULL_SID(stdout_sid)) {
+        raise_error("pp", "IO files unreachable");
+        return ERROR_CODE;
+    }
+
+    char *in_tmp = calloc(15, sizeof(char));
+    char *out_tmp = calloc(15, sizeof(char));
+
+    char *line;
+
+    int i, from_index = 0;
+    for (i = 0; i <= argc; i++) {
+        if (strcmp(input[i], "|") && i != argc) {
+            continue;
+        }
+
+        if (i == from_index) {
+            if (i == argc) break;
+            devio_set_redirection(stdout_sid, "/dev/panda", -1);
+            devio_set_redirection(stdin_sid, "/dev/kb", -1);
+            raise_error("pp", "Empty command");
+            free(out_tmp);
+            free(in_tmp);
+            return ERROR_CODE;
+        }
+
+        if (*out_tmp) {
+            strcpy(in_tmp, out_tmp);
+        } else {
+            in_tmp[0] = '\0';
+        }
+
+        if (i == argc) {
+            strcpy(out_tmp, "/dev/panda");
+        } else {
+            tmpnam_s(out_tmp, 15);
+            fu_file_create(0, out_tmp);
+        }
+
+        if (in_tmp)
+            devio_set_redirection(stdin_sid, in_tmp, -1);
+
+        devio_set_redirection(stdout_sid, out_tmp, -1);
+
+        line = pp_rejoin(input + from_index, i - from_index);
+        // fprintf(stderr, "Executing: \"%s\"\n", line);
+        free(execute_line(line));
+        fflush(stdout);
+        free(line);
+
+        from_index = i + 1;
+    }
+    devio_set_redirection(stdin_sid, "/dev/kb", -1);
+    free(in_tmp);
+
+    if (i != argc) {
+        free(out_tmp);
+        return NULL;
+    }
+
+    devio_set_redirection(stdout_sid, "/dev/panda", -1);
+
+    sid_t out_sid = fu_path_to_sid(ROOT_SID, out_tmp);
+    i = fu_get_file_size(out_sid);
+    line = malloc(i + 1);
+    fu_file_read(out_sid, line, 0, i);
+    line[i] = '\0';
+
+    free(out_tmp);
+    return line;
+
+    #endif
+    raise_error("pp", "Not supported in this build");
+    return NULL;
+}
 
 /**************************************
  *                                   *
@@ -1690,12 +1814,13 @@ internal_function_t internal_functions[] = {
     {"find", if_find},
     {"global", if_global},
     {"go", if_go_binfile},
+    {"pp", if_pp},
+    {"print", if_print},
     {"pseudo", if_pseudo},
     {"name", if_name},
     {"range", if_range},
     {"rep", if_rep},
     {"set", if_set_var},
-    {"print", if_print},
     {"sprintf", if_sprintf},
     {"strlen", if_strlen},
     {"ticks", if_ticks},
