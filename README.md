@@ -112,8 +112,6 @@ Here is a list of the main kernel features:
 The kernel and userspace are developed mainly in C. The Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
 You can also use the lua, sulfur, C and C++ languages to create your own programs.
 
-### The Olivine Shell
-
 ### Major ports
 
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
