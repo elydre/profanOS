@@ -318,6 +318,11 @@ void panda_get_cursor(uint32_t *x, uint32_t *y) {
     *y = g_panda->cursor_y;
 }
 
+void panda_get_size(uint32_t *x, uint32_t *y) {
+    *x = g_panda->max_cols;
+    *y = g_panda->max_lines;
+}
+
 int panda_change_font(char *file) {
     font_data_t *font = load_psf_font(file);
     if (font == NULL) return 1;
