@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.8 rev 1"
+#define OLV_VERSION "0.8 rev 2"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -19,7 +19,6 @@
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
-
 
 /******************************
  *                           *
@@ -881,131 +880,6 @@ char *if_eval(char **input) {
     return res;
 }
 
-/*****************************
- *                          *
- *  Olivine Pipe Processor  *
- *                          *
-*****************************/
-
-char *execute_line(char *full_line);
-
-char *pp_rejoin(char **input, int to) {
-    int required_size = 1;
-    for (int i = 0; i < to; i++) {
-        required_size += strlen(input[i]) + 3;
-    }
-
-    char *joined_input = malloc(required_size * sizeof(char));
-    joined_input[0] = '\0';
-
-    // add quotes if needed
-    for (int i = 0; i < to; i++) {
-        if (strchr(input[i], ' ') != NULL) {
-            strcat(joined_input, "'");
-            strcat(joined_input, input[i]);
-            strcat(joined_input, "'");
-        } else {
-            strcat(joined_input, input[i]);
-        }
-        if (i != to - 1) {
-            strcat(joined_input, " ");
-        }
-    }
-    return joined_input;
-}
-
-char *if_pp(char **input) {
-    #if PROFANBUILD
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc == 0) {
-        raise_error("pp", "Requires at least one argument");
-        return ERROR_CODE;
-    }
-
-    sid_t stdin_sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
-    sid_t stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
-
-    if (IS_NULL_SID(stdin_sid) || IS_NULL_SID(stdout_sid)) {
-        raise_error("pp", "IO files unreachable");
-        return ERROR_CODE;
-    }
-
-    char *in_tmp = calloc(15, sizeof(char));
-    char *out_tmp = calloc(15, sizeof(char));
-
-    char *line;
-
-    int i, from_index = 0;
-    for (i = 0; i <= argc; i++) {
-        if (strcmp(input[i], "|") && i != argc) {
-            continue;
-        }
-
-        if (i == from_index) {
-            if (i == argc) break;
-            devio_set_redirection(stdout_sid, "/dev/panda", -1);
-            devio_set_redirection(stdin_sid, "/dev/kb", -1);
-            raise_error("pp", "Empty command");
-            free(out_tmp);
-            free(in_tmp);
-            return ERROR_CODE;
-        }
-
-        if (*out_tmp) {
-            strcpy(in_tmp, out_tmp);
-        } else {
-            in_tmp[0] = '\0';
-        }
-
-        if (i == argc) {
-            strcpy(out_tmp, "/dev/panda");
-        } else {
-            tmpnam_s(out_tmp, 15);
-            fu_file_create(0, out_tmp);
-        }
-
-        if (in_tmp)
-            devio_set_redirection(stdin_sid, in_tmp, -1);
-
-        devio_set_redirection(stdout_sid, out_tmp, -1);
-
-        line = pp_rejoin(input + from_index, i - from_index);
-        // fprintf(stderr, "Executing: \"%s\"\n", line);
-        free(execute_line(line));
-        fflush(stdout);
-        free(line);
-
-        from_index = i + 1;
-    }
-    devio_set_redirection(stdin_sid, "/dev/kb", -1);
-    free(in_tmp);
-
-    if (i != argc) {
-        free(out_tmp);
-        return NULL;
-    }
-
-    devio_set_redirection(stdout_sid, "/dev/panda", -1);
-
-    sid_t out_sid = fu_path_to_sid(ROOT_SID, out_tmp);
-    i = fu_get_file_size(out_sid);
-    line = malloc(i + 1);
-    fu_file_read(out_sid, line, 0, i);
-    line[i] = '\0';
-
-    free(out_tmp);
-    return line;
-
-    #endif
-    raise_error("pp", "Not supported in this build");
-    return NULL;
-}
-
 /**************************************
  *                                   *
  *  Olivine Lang Internal Functions  *
@@ -1814,7 +1688,6 @@ internal_function_t internal_functions[] = {
     {"find", if_find},
     {"global", if_global},
     {"go", if_go_binfile},
-    {"pp", if_pp},
     {"print", if_print},
     {"pseudo", if_pseudo},
     {"name", if_name},
@@ -1917,6 +1790,31 @@ char **gen_args(char *string) {
     return argv;
 }
 
+char *args_rejoin(char **input, int to) {
+    int required_size = 1;
+    for (int i = 0; i < to; i++) {
+        required_size += strlen(input[i]) + 3;
+    }
+
+    char *joined_input = malloc(required_size * sizeof(char));
+    joined_input[0] = '\0';
+
+    // add quotes if needed
+    for (int i = 0; i < to; i++) {
+        if (strchr(input[i], ' ') != NULL) {
+            strcat(joined_input, "'");
+            strcat(joined_input, input[i]);
+            strcat(joined_input, "'");
+        } else {
+            strcat(joined_input, input[i]);
+        }
+        if (i != to - 1) {
+            strcat(joined_input, " ");
+        }
+    }
+    return joined_input;
+}
+
 char *get_if_function_name(char *string, int *size) {
     int in_string = 0;
     for (int i = 0; string[i] != '\0'; i++) {
@@ -1942,6 +1840,12 @@ char *get_if_function_name(char *string, int *size) {
     remove_quotes(function_name);
     return function_name;
 }
+
+/*******************************
+ *                            *
+ *  Freeing Memory Functions  *
+ *                            *
+*******************************/
 
 void free_args(char **argv) {
     for (int i = 0; argv[i] != NULL; i++) {
@@ -1978,6 +1882,106 @@ void free_functions() {
         }
     }
     free(functions);
+}
+
+/*****************************
+ *                          *
+ *  Olivine Pipe Processor  *
+ *                          *
+*****************************/
+
+char *execute_line(char *full_line);
+
+char *pipe_processor(char **input) {
+    #if PROFANBUILD
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc == 0) {
+        raise_error("pp", "Requires at least one argument");
+        return ERROR_CODE;
+    }
+
+    sid_t stdin_sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
+    sid_t stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+
+    if (IS_NULL_SID(stdin_sid) || IS_NULL_SID(stdout_sid)) {
+        raise_error("pp", "IO files unreachable");
+        return ERROR_CODE;
+    }
+
+    char *in_tmp = calloc(15, sizeof(char));
+    char *out_tmp = calloc(15, sizeof(char));
+
+    char *line;
+
+    int i, from_index = 0;
+    for (i = 0; i <= argc; i++) {
+        if (strcmp(input[i], "|") && i != argc) {
+            continue;
+        }
+
+        if (i == from_index) {
+            if (i == argc) break;
+            devio_set_redirection(stdout_sid, "/dev/panda", -1);
+            devio_set_redirection(stdin_sid, "/dev/kb", -1);
+            raise_error("pp", "Empty command");
+            free(out_tmp);
+            free(in_tmp);
+            return ERROR_CODE;
+        }
+
+        if (*out_tmp) {
+            strcpy(in_tmp, out_tmp);
+        } else {
+            in_tmp[0] = '\0';
+        }
+
+        if (i == argc) {
+            strcpy(out_tmp, "/dev/panda");
+        } else {
+            tmpnam_s(out_tmp, 15);
+            fu_file_create(0, out_tmp);
+        }
+
+        if (in_tmp)
+            devio_set_redirection(stdin_sid, in_tmp, -1);
+
+        devio_set_redirection(stdout_sid, out_tmp, -1);
+
+        line = args_rejoin(input + from_index, i - from_index);
+        // fprintf(stderr, "Executing: \"%s\"\n", line);
+        free(execute_line(line));
+        fflush(stdout);
+        free(line);
+
+        from_index = i + 1;
+    }
+    devio_set_redirection(stdin_sid, "/dev/kb", -1);
+    free(in_tmp);
+
+    if (i != argc) {
+        free(out_tmp);
+        return NULL;
+    }
+
+    devio_set_redirection(stdout_sid, "/dev/panda", -1);
+
+    sid_t out_sid = fu_path_to_sid(ROOT_SID, out_tmp);
+    i = fu_get_file_size(out_sid);
+    line = malloc(i + 1);
+    fu_file_read(out_sid, line, 0, i);
+    line[i] = '\0';
+
+    free(out_tmp);
+    return line;
+
+    #endif
+    raise_error("pp", "Not supported in this build");
+    return NULL;
 }
 
 /**************************
@@ -2042,10 +2046,10 @@ char *check_subfunc(char *line);
 char *check_variables(char *line);
 char *check_pseudos(char *line);
 
-
 char *execute_line(char *full_line) {
     // check for function and variable
     char *line = check_subfunc(full_line);
+    int pipe = 0;
 
     if (line == NULL) {
         // subfunction failed
@@ -2070,17 +2074,26 @@ char *execute_line(char *full_line) {
         result = ERROR_CODE;
     } else {
         // generate the arguments array
-        char **function_args = gen_args(line + name_size);
+        char **function_args = gen_args(line);
+
+        // check if "|" is present
+        for (int i = 0; function_args[i] != NULL; i++) {
+            if (function_args[i][0] == '|' && function_args[i][1] == '\0') {
+                pipe = 1;
+                break;
+            }
+        }
 
         if (ENABLE_DEBUG)
             debug_print(function_name, function_args);
 
         // execute the function
-        if (isif) {
-            result = ((char* (*)(char**)) function)(function_args);
-        } else {
-            result = execute_function(function, function_args);
-        }
+        if (pipe)
+            result = pipe_processor(function_args);
+        else if (isif)
+            result = ((char* (*)(char**)) function)(function_args + 1);
+        else
+            result = execute_function(function, function_args + 1);
 
         if (result == NULL) {
             result = malloc(1 * sizeof(char));
