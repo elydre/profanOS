@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
         putchar(buffer[i]);
         if (buffer[i] != '\n')
             continue;
-        
+
         line_count++;
         if (line_count < line_limit)
             continue;
