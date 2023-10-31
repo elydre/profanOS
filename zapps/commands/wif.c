@@ -1,4 +1,5 @@
 #include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -6,10 +7,32 @@
 #include <filesys.h>
 #include <profan.h>
 
+char *read_stdin(int *len) {
+    char *buffer = malloc(1025);
+    int rcount = 0;
+
+    if (isatty(0)) {
+        fputs("wif > ", stdout);
+        *len = fread(buffer, 1, 1024, stdin);
+        return buffer;
+    }
+
+    *len = 0;
+
+    while ((rcount = fread(buffer + *len, 1, 1024, stdin)) > 0) {
+        buffer = realloc(buffer, *len + rcount + 1025);
+        *len += rcount;
+    }
+
+    buffer[*len] = '\0';
+
+    return buffer;
+}
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        puts("$BUsage: $3wif <file> <content>$7");
+    if (!(argc == 2 || argc == 3) || (argc == 2 && !strcmp(argv[1], "-h"))) {
+        puts("Usage: wif <file> [content]");
+        puts("If no content is given, stdin is used.");
         return 1;
     }
 
@@ -20,18 +43,24 @@ int main(int argc, char** argv) {
     assemble_path(pwd, argv[1], path);
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
-
-    if (!IS_NULL_SID(file) && fu_is_file(file)) {
-        int len = strlen(argv[2]);
-
-        fu_set_file_size(file, len);
-        fu_file_write(file, (uint8_t *) argv[2], 0, len);
-
+    if (IS_NULL_SID(file) || !fu_is_file(file)) {
+        printf("File not found: %s\n", path);
         free(path);
-        return 0;
+        return 1;
     }
 
-    printf("$Bpath $3%s$B not found$7\n", path);
+    int len;
+    if (argc == 2) {
+        char *content = read_stdin(&len);
+        fu_set_file_size(file, len);
+        fu_file_write(file, content, 0, len);
+        free(content);
+    } else {
+        len = strlen(argv[2]);
+        fu_set_file_size(file, len);
+        fu_file_write(file, argv[2], 0, len);
+    }
+
     free(path);
-    return 1;
+    return 0;
 }
