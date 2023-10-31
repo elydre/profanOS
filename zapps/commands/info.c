@@ -84,7 +84,7 @@ int main(void) {
 
     pl_and_pf("$4phys mem:   $2%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
 
-    pl_and_pf("$4screen:     $2%dx$2%d (%s)\n",
+    pl_and_pf("$4screen:     $2%d$7x$2%d (%s)\n",
         abs(c_vesa_get_width()), abs(c_vesa_get_height()),
         c_vesa_get_width() < 0 ? "text" : "graphics"
     );
