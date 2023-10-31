@@ -55,7 +55,7 @@ int print_load_status(int i) {
     if (c_dily_load(lib->path, lib->id)) {
         c_kprint("FAILED TO LOAD ");
         c_kprint(get_name(lib->path));
-        c_kprint("LIBRARY\n");
+        c_kprint(" LIBRARY\n");
         return 1;
     }
     return 0;
