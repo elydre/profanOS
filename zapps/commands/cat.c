@@ -22,7 +22,7 @@ void make_printable(char *str, int size) {
 
 void show_help() {
     puts("Usage: cat [options] <path>\n"
-        "Options:"
+        "Options:\n"
         "  -h       display this help message\n"
         "  -r       read file in raw mode\n"
         "  -f       read FCTF content\n"
