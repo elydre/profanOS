@@ -263,7 +263,7 @@ void draw_cursor(int errase) {
 }
 
 void panda_print_string(char *string, int len, char color) {
-    if (g_panda->screen_buffer == NULL) return;
+    if (!g_panda) return;
     uint32_t tmp, y;
     for (int i = 0; (len < 0) ? (string[i]) : (i < len); i++) {
         if (!g_panda->cursor_is_hidden)
@@ -305,7 +305,7 @@ void panda_print_string(char *string, int len, char color) {
 #define offset_to_cursor_y(offset, max_cols) ((offset) / (2 * (max_cols)))
 
 void panda_set_start(int kernel_cursor) {
-    if (g_panda->screen_buffer == NULL) return;
+    if (!g_panda) return;
     uint32_t kmax_cols = c_vesa_get_width() / 8;
 
     g_panda->cursor_x = 0;
@@ -314,16 +314,27 @@ void panda_set_start(int kernel_cursor) {
 }
 
 void panda_get_cursor(uint32_t *x, uint32_t *y) {
-    *x = g_panda->cursor_x;
-    *y = g_panda->cursor_y;
+    if (!g_panda) {
+        *x = 0;
+        *y = 0;
+    } else {
+        *x = g_panda->cursor_x;
+        *y = g_panda->cursor_y;
+    }
 }
 
 void panda_get_size(uint32_t *x, uint32_t *y) {
-    *x = g_panda->max_cols;
-    *y = g_panda->max_lines;
+    if (!g_panda) {
+        *x = 0;
+        *y = 0;
+    } else {
+        *x = g_panda->max_cols;
+        *y = g_panda->max_lines;
+    }
 }
 
 int panda_change_font(char *file) {
+    if (!g_panda) return 1;
     font_data_t *font = load_psf_font(file);
     if (font == NULL) return 1;
 
@@ -336,6 +347,7 @@ int panda_change_font(char *file) {
 }
 
 void panda_clear_screen() {
+    if (!g_panda) return;
     for (uint32_t i = 0; i < g_panda->max_lines; i++) {
         for (uint32_t j = 0; j < g_panda->max_cols; j++) {
             if (g_panda->screen_buffer[i * g_panda->max_cols + j].content == ' ') continue;
@@ -352,7 +364,7 @@ void panda_clear_screen() {
 void init_panda() {
     if (c_vesa_get_height() < 0) {
         printf("[panda] VESA is not enabled\n");
-        g_panda->screen_buffer = NULL;
+        g_panda = NULL;
         return;
     }
 
