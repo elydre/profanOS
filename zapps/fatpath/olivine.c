@@ -3077,7 +3077,7 @@ void olv_print(char *str, int len) {
     }
 
     if (str[i] == '/' && str[i + 1] == '/') {
-        printf("$9");
+        fputs("$9", stdout);
         for (i = 0; str[i] != ';'; i++) {
             if (i == len) return;
             printf("%c", str[i]);
@@ -3097,7 +3097,7 @@ void olv_print(char *str, int len) {
 
     int from = i;
     for (; i < len; i++) {
-        if (str[i] == '/' && str[i+1] == '/') {
+        if (i < len - 1 && str[i] == '/' && str[i+1] == '/') {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
@@ -3134,7 +3134,7 @@ void olv_print(char *str, int len) {
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                printf("$1)");
+                fputs("$1)", stdout);
             }
 
             i = j;
@@ -3149,7 +3149,30 @@ void olv_print(char *str, int len) {
                 printf("$%c%s", is_var ? '5' : '$', tmp);
                 from = i;
             }
-            printf("$6;$7");
+            fputs("$6;$7", stdout);
+            olv_print(str + i + 1, len - i - 1);
+            free(tmp);
+            return;
+        }
+
+        else if (str[i] == '|') {
+            if (!(i && (str[i + 1] == str[i - 1] && (str[i + 1] == ' ' || str[i + 1] == '\''))) &&
+                !(i == len - 1 && i && str[i - 1] == ' ')
+            ) continue;
+
+            // print from from to i
+            if (from != i) {
+                memcpy(tmp, str + from, i - from);
+                tmp[i - from] = '\0';
+                printf("$%c%s", is_var ? '5' : '$', tmp);
+                from = i;
+            }
+
+            fputs("$6|$7", stdout);
+            if (str[i + 1] == '\'') {
+                fputs("'", stdout);
+                i++;
+            }
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
