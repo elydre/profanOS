@@ -62,9 +62,10 @@ int print_load_status(int i) {
 }
 
 int redirect_devio(char *link, char *redirection) {
-    // TODO: implement
     sid_t sid = fu_path_to_sid(ROOT_SID, link);
-
+    if (IS_NULL_SID(sid)) {
+        return 1;
+    }
     return (devio_set_redirection(sid, redirection, 0));
 }
 
