@@ -270,6 +270,10 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
+    // return if total size is 0
+    count *= size;
+    if (count == 0) return 0;
+
     // check if the file is stdout or stderr
     if (stream == stdout || stream == stderr) {
         return 0;
@@ -311,6 +315,10 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
+    // return if total size is 0
+    count *= size;
+    if (count == 0) return 0;
+
     // check if the file is stdin
     if (stream == stdin) {
         return 0;
@@ -322,8 +330,6 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 
     // check if the file is open for writing, else return 0
     if (!(stream->mode & MODE_WRITE)) return 0;
-
-    count *= size;
 
     // write in the buffer
     uint32_t ret = count;
