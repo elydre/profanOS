@@ -74,7 +74,7 @@ loaded into memory, however a few megabytes are enough.
 |-----------|---------|-------------|
 | CPU (x86) | 1@100Mhz| 1@2Ghz      |
 | RAM       | 2MB     | 16MB        |
-| screen    | 640x480 | 1024x768    |
+| screen    | text    | 1024x768    |
 
 ## First look
 
