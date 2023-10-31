@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.8 rev 2"
+#define OLV_VERSION "0.8 rev 3"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -960,7 +960,7 @@ char *if_debug(char **input) {
             mode = 5;
         } else {
             raise_error("debug", "Unknown argument '%s'", input[0]);
-            printf("expected '-v', '-if', '-f', '-p' or '-a'\n");
+            puts("expected '-v', '-if', '-f', '-p' or '-a'");
             return ERROR_CODE;
         }
     } else {
@@ -970,7 +970,7 @@ char *if_debug(char **input) {
 
     // print variables
     if (mode == 0 || mode == 1) {
-        printf("VARIABLES\n");
+        puts("VARIABLES");
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
             printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].sync, variables[i].value);
         }
@@ -978,7 +978,7 @@ char *if_debug(char **input) {
 
     // print internal functions
     if (mode == 0 || mode == 2) {
-        printf("INTERNAL FUNCTIONS\n");
+        puts("INTERNAL FUNCTIONS");
         for (int i = 0; internal_functions[i].name != NULL; i++) {
             printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
         }
@@ -986,7 +986,7 @@ char *if_debug(char **input) {
 
     // print functions
     if (mode == 0 || mode == 3) {
-        printf("FUNCTIONS\n");
+        puts("FUNCTIONS");
         for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
             printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
         }
@@ -994,7 +994,7 @@ char *if_debug(char **input) {
 
     // print pseudos
     if (mode == 0 || mode == 4) {
-        printf("PSEUDOS\n");
+        puts("PSEUDOS");
         for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
             printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
         }
@@ -1404,7 +1404,7 @@ char *if_name(char **input) {
 
 char *if_print(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
-        printf("%s", input[i]);
+        fputs(input[i], stdout);
     }
     return NULL;
 }
@@ -1555,7 +1555,7 @@ char *if_sprintf(char **input) {
     }
 
     if (argc < 1) {
-        raise_error("printf", "Expected at least 1 argument, got %d", argc);
+        raise_error("sprintf", "Expected at least 1 argument, got %d", argc);
         return ERROR_CODE;
     }
 
@@ -1581,7 +1581,7 @@ char *if_sprintf(char **input) {
         }
 
         if (input[arg_i] == NULL) {
-            raise_error("printf", "%%%c requires an argument, but none given", format[format_i]);
+            raise_error("sprintf", "%%%c requires an argument, but none given", format[format_i]);
             return ERROR_CODE;
         }
 
@@ -1592,7 +1592,7 @@ char *if_sprintf(char **input) {
         } else if (format[format_i] == 'd') {
             int nb;
             if (local_atoi(input[arg_i], &nb)) {
-                raise_error("printf", "%%%c requires an integer, but got '%s'", format[format_i], input[arg_i]);
+                raise_error("sprintf", "%%%c requires an integer, but got '%s'", format[format_i], input[arg_i]);
                 return ERROR_CODE;
             }
             char *nb_str = malloc(12);
@@ -1607,14 +1607,14 @@ char *if_sprintf(char **input) {
                 if (strlen(input[arg_i]) == 1) {
                     res[res_i++] = input[arg_i][0];
                 } else {
-                    raise_error("printf", "%%%c requires a character, but got '%s'", format[format_i], input[arg_i]);
+                    raise_error("sprintf", "%%%c requires a character, but got '%s'", format[format_i], input[arg_i]);
                     return ERROR_CODE;
                 }
             } else {
                 res[res_i++] = nb;
             }
         } else {
-            raise_error("printf", "Unknown format specifier '%%%c'", format[format_i]);
+            raise_error("sprintf", "Unknown format specifier '%%%c'", format[format_i]);
             return ERROR_CODE;
         }
         arg_i++;
@@ -1742,7 +1742,7 @@ int does_startwith(char *str, char *start) {
 }
 
 char **gen_args(char *string) {
-    if (string == NULL || strlen(string) == 0) {
+    if (string == NULL || !*string) {
         char **argv = malloc(1 * sizeof(char*));
         argv[0] = NULL;
         return argv;
@@ -1758,6 +1758,11 @@ char **gen_args(char *string) {
         } if (string[i] == ' ' && !in_string) {
             argc++;
         }
+    }
+
+    if (in_string) {
+        raise_error(NULL, "String not closed");
+        return ERROR_CODE;
     }
 
     // allocate the arguments array
@@ -1815,7 +1820,7 @@ char *args_rejoin(char **input, int to) {
     return joined_input;
 }
 
-char *get_if_function_name(char *string, int *size) {
+char *get_if_function_name(char *string) {
     int in_string = 0;
     for (int i = 0; string[i] != '\0'; i++) {
         if (string[i] == STRING_CHAR) {
@@ -1827,7 +1832,6 @@ char *get_if_function_name(char *string, int *size) {
             strncpy(function_name, string, i);
             function_name[i] = '\0';
 
-            *size = i + 1; // also include the space
             remove_quotes(function_name);
             return function_name;
         }
@@ -1835,7 +1839,6 @@ char *get_if_function_name(char *string, int *size) {
 
     char *function_name = malloc((strlen(string) + 1) * sizeof(char));
     strcpy(function_name, string);
-    *size = strlen(string);
 
     remove_quotes(function_name);
     return function_name;
@@ -1991,17 +1994,17 @@ char *pipe_processor(char **input) {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf(DEBUG_COLOR "'%s'(", function_name);
+    printf(DEBUG_COLOR "'%s' (", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
-            printf(DEBUG_COLOR "'%s', ", function_args[i]);
+            printf("'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR "'%s') [%d]\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR "'%s') [%d]$7\n", function_args[i], i + 1);
         return;
     }
-    printf(DEBUG_COLOR ") [0]$7\n");
+    puts(DEBUG_COLOR ") [0]$7");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2057,8 +2060,8 @@ char *execute_line(char *full_line) {
     }
 
     // get the function name
-    int name_size, isif;
-    char *function_name = get_if_function_name(line, &name_size);
+    int isif;
+    char *function_name = get_if_function_name(line);
 
     // get the function address
     void *function = get_if_function(function_name);
@@ -2075,6 +2078,15 @@ char *execute_line(char *full_line) {
     } else {
         // generate the arguments array
         char **function_args = gen_args(line);
+        if (function_args == ERROR_CODE) {
+            free(function_name);
+
+            if (line != full_line) {
+                free(line);
+            }
+
+            return NULL;
+        }
 
         // check if "|" is present
         for (int i = 0; function_args[i] != NULL; i++) {
@@ -2583,7 +2595,7 @@ int execute_lines(char **lines, int line_end, char **result) {
 
         if (res != NULL) {
             if (res[0] != '\0') {
-                printf("%s\n", res);
+                puts(res);
             }
             free(res);
         }
@@ -3156,7 +3168,7 @@ void olv_print(char *str, int len) {
         }
 
         else if (str[i] == '|') {
-            if (!(i && (str[i + 1] == str[i - 1] && (str[i + 1] == ' ' || str[i + 1] == '\''))) &&
+            if (!(i && (str[i + 1] == str[i - 1] && (str[i + 1] == ' ' || str[i + 1] == STRING_CHAR))) &&
                 !(i == len - 1 && i && str[i - 1] == ' ')
             ) continue;
 
@@ -3169,8 +3181,8 @@ void olv_print(char *str, int len) {
             }
 
             fputs("$6|$7", stdout);
-            if (str[i + 1] == '\'') {
-                fputs("'", stdout);
+            if (str[i + 1] == STRING_CHAR) {
+                putchar(STRING_CHAR);
                 i++;
             }
             olv_print(str + i + 1, len - i - 1);
@@ -3447,7 +3459,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     history_end++;
 
     // save the current cursor position and show it
-    printf("\033[s\033[?25l");
+    fputs("\033[s\033[?25l", stdout);
 
     int sc, last_sc, last_sc_sgt = 0;
 
@@ -3534,7 +3546,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
             } else {
-                printf("\033[u\033[K");
+                fputs("\033[u\033[K", stdout);
                 strcpy(buffer, history[history_index]);
                 buffer_actual_size = strlen(buffer);
                 buffer_index = buffer_actual_size;
@@ -3546,7 +3558,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
-            printf("\033[u\033[K");
+            fputs("\033[u\033[K", stdout);
             if (history[history_index] == NULL || history_index == history_end) {
                 buffer[0] = '\0';
                 buffer_actual_size = 0;
@@ -3565,7 +3577,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
                 // print other suggestions
                 char *common_beginning = malloc((strlen(other_suggests[0]) + 1) * sizeof(char));
                 strcpy(common_beginning, other_suggests[0] + dec);
-                printf("\n");
+                putchar('\n');
 
                 for (int i = 0; other_suggests[i] != NULL; i++) {
                     printf("%s   ", other_suggests[i]);
@@ -3629,7 +3641,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
         else continue;
 
-        printf("\033[?25h\033[u");
+        fputs("\033[?25h\033[u", stdout);
         olv_print(buffer, buffer_actual_size);
         printf(" $7\033[u\033[%dC\033[?25l", buffer_index);
         fflush(stdout);
@@ -3639,7 +3651,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     buffer[buffer_actual_size] = '\0';
 
-    printf("\033[?25h\n");
+    puts("\033[?25h");
 
     return ret_val;
 
@@ -3676,7 +3688,7 @@ void start_shell() {
             len = strlen(line);
             line[len] = '\0';
             do {
-                printf(OTHER_PROMPT);
+                fputs(OTHER_PROMPT, stdout);
                 fflush(stdout);
                 cursor_pos = local_input(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
             } while(cursor_pos != -1);
@@ -3784,7 +3796,7 @@ int show_help(int full, char *name) {
         printf("Try '%s --help' for more information.\n", name);
         return 1;
     }
-    printf("Options:\n"
+    puts("Options:\n"
         "  -c, --command  execute argument as code line\n"
         "  -i, --inter    start a shell after executing\n\n"
         "  -h, --help     show this help message and exit\n"
@@ -3793,7 +3805,7 @@ int show_help(int full, char *name) {
 
         "Without file, the program will start a shell.\n"
         "Use 'exec' to execute a file from the shell instead\n"
-        "of relaunching a new instance of olivine.\n"
+        "of relaunching a new instance of olivine."
     );
     return 0;
 }
@@ -3831,7 +3843,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
             || strcmp(argv[i], "--command") == 0
         ) {
             if (i + 1 == argc) {
-                printf("Error: no command given\n");
+                puts("Error: no command given");
                 args->help = 1;
                 return args;
             }
