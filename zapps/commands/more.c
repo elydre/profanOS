@@ -1,10 +1,12 @@
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+
+#include <syscall.h>
 #include <profan.h>
 #include <i_time.h>
 #include <panda.h>
-#include <syscall.h>
 
 char *read_stdin(void) {
     // read from stdin
@@ -32,6 +34,11 @@ int count_newlines(char *buffer) {
 
 int get_terminal_height(void) {
     uint32_t width, height;
+
+    // check if the terminal is a panda terminal
+    char *term = getenv("TERM");
+    if (term == NULL || strcmp(term, "/dev/panda") != 0)
+        return -1;
     panda_get_size(&width, &height);
     return height;
 }
