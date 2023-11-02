@@ -107,6 +107,7 @@ int main(void) {
     panda_set_start(c_get_cursor_offset());
 
     if (c_vesa_get_width() > 0) {
+        setenv("TERM", "/dev/panda", 1);
         if (redirect_devio("/dev/stdout", "/dev/panda")) {
             c_kprint("Failed to redirect stdout\n");
             return 1;

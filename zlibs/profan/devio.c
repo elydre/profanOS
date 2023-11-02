@@ -223,7 +223,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     return ret;
 }
 
-int devnull_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_null_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_READD) {
         memset(buffer, 0, size);
         return size;
@@ -231,7 +231,7 @@ int devnull_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int devrand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_rand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode != MODE_READD) {
         return 0;
     }
@@ -243,7 +243,7 @@ int devrand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return size;
 }
 
-int devzebra_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_kprint_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
         c_kcprint((char *) buffer, c_dgreen);
         return size;
@@ -252,7 +252,7 @@ int devzebra_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int devparrot_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_kterm_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
         color_print((char *) buffer);
         return size;
@@ -261,7 +261,7 @@ int devparrot_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int devpanda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_panda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     static char color = c_white;
     if (mode == MODE_WRITE) {
         color = panda_color_print((char *) buffer, color, size);
@@ -277,7 +277,7 @@ int devpanda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_serial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
         c_serial_print(SERIAL_PORT_A, (char *) buffer);
         return size;
@@ -286,7 +286,7 @@ int devserial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int devkb_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+int dev_kb_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_READD) {
         return open_input(buffer, size);
     }
@@ -295,18 +295,19 @@ int devkb_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 }
 
 void init_devio(void) {
-    fu_fctf_create(0, "/dev/null",   devnull_rw);
-    fu_fctf_create(0, "/dev/random", devrand_rw);
+    fu_fctf_create(0, "/dev/null",   dev_null_rw);
+    fu_fctf_create(0, "/dev/random", dev_rand_rw);
 
-    fu_fctf_create(0, "/dev/zebra",  devzebra_rw);
-    fu_fctf_create(0, "/dev/parrot", devparrot_rw);
-    fu_fctf_create(0, "/dev/panda",  devpanda_rw);
-    fu_fctf_create(0, "/dev/serial", devserial_rw);
-    fu_fctf_create(0, "/dev/kb",     devkb_rw);
+    fu_fctf_create(0, "/dev/kprint", dev_kprint_rw);
+    fu_fctf_create(0, "/dev/kterm",  dev_kterm_rw);
+    fu_fctf_create(0, "/dev/panda",  dev_panda_rw);
+    fu_fctf_create(0, "/dev/serial", dev_serial_rw);
+    fu_fctf_create(0, "/dev/kb",     dev_kb_rw);
 
     link_history = calloc(LINK_HISTORY_SIZE, sizeof(link_history_t));
 
     devio_set_redirection(fu_link_create(0, "/dev/stdin"),  "/dev/kb", 0);
-    devio_set_redirection(fu_link_create(0, "/dev/stdout"), "/dev/parrot", 0);
-    devio_set_redirection(fu_link_create(0, "/dev/stderr"), "/dev/parrot", 0);
+    devio_set_redirection(fu_link_create(0, "/dev/stdout"), "/dev/kterm", 0);
+    devio_set_redirection(fu_link_create(0, "/dev/stderr"), "/dev/kterm", 0);
+    setenv("TERM", "/dev/kterm", 1);
 }

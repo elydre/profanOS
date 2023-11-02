@@ -98,6 +98,6 @@ FUNC chio
     ubr /dev/stdin !0
     ubr /dev/stdout !2
     !1
-    ubr /dev/stdout /dev/panda
+    ubr /dev/stdout !TERM
     ubr /dev/stdin /dev/kb
 END

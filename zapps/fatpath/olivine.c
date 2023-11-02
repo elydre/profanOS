@@ -1904,7 +1904,7 @@ char *pipe_processor(char **input) {
     }
 
     if (argc == 0) {
-        raise_error("pp", "Requires at least one argument");
+        raise_error("Pipe Processor", "Requires at least one argument");
         return ERROR_CODE;
     }
 
@@ -1912,7 +1912,13 @@ char *pipe_processor(char **input) {
     sid_t stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
 
     if (IS_NULL_SID(stdin_sid) || IS_NULL_SID(stdout_sid)) {
-        raise_error("pp", "IO files unreachable");
+        raise_error("Pipe Processor", "IO files unreachable");
+        return ERROR_CODE;
+    }
+
+    char *term_path = getenv("TERM");
+    if (term_path == NULL) {
+        raise_error("Pipe Processor", "TERM environment variable not set");
         return ERROR_CODE;
     }
 
@@ -1929,9 +1935,9 @@ char *pipe_processor(char **input) {
 
         if (i == from_index) {
             if (i == argc) break;
-            devio_set_redirection(stdout_sid, "/dev/panda", -1);
+            devio_set_redirection(stdout_sid, term_path, -1);
             devio_set_redirection(stdin_sid, "/dev/kb", -1);
-            raise_error("pp", "Empty command");
+            raise_error("Pipe Processor", "Empty command");
             free(out_tmp);
             free(in_tmp);
             return ERROR_CODE;
@@ -1944,7 +1950,7 @@ char *pipe_processor(char **input) {
         }
 
         if (i == argc) {
-            strcpy(out_tmp, "/dev/panda");
+            strcpy(out_tmp, term_path);
         } else {
             tmpnam_s(out_tmp, 15);
             fu_file_create(0, out_tmp);
@@ -1971,7 +1977,7 @@ char *pipe_processor(char **input) {
         return NULL;
     }
 
-    devio_set_redirection(stdout_sid, "/dev/panda", -1);
+    devio_set_redirection(stdout_sid, term_path, -1);
 
     sid_t out_sid = fu_path_to_sid(ROOT_SID, out_tmp);
     i = fu_get_file_size(out_sid);
@@ -1983,7 +1989,7 @@ char *pipe_processor(char **input) {
     return line;
 
     #endif
-    raise_error("pp", "Not supported in this build");
+    raise_error("Pipe Processor", "Not supported in this build");
     return NULL;
 }
 
