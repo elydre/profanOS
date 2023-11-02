@@ -48,7 +48,7 @@ uint32_t color_print(char *s) {
     uint32_t i = 0;
     char c = c_white;
 
-    while (s[i] != '\0') {
+    while (i < msg_len) {
         for (i = from; i < msg_len - 1; i++) {
             if (s[i] != '$') continue;
             s[i] = '\0';
@@ -78,7 +78,8 @@ uint32_t color_print(char *s) {
         }
         i++;
     }
-    c_kcprint(s + from, c);
+    if (from < msg_len)
+        c_kcprint(s + from, c);
     return msg_len;
 }
 
