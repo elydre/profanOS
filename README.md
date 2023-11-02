@@ -46,11 +46,10 @@ Each time the disk is modified you must force its reconstruction with `make disk
 The main ports (more information in the [ports](#major-ports) section) are not included
 in the repo source code but are easily downloadable with `make addons disk`.
 
-### Build images
+### Automated build
 
-You can also download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
+You can download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
 or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
-
 
 ```bash
 # Run the iso image in qemu
@@ -62,6 +61,8 @@ qemu-system-i386 -cdrom profanOS.iso -enable-kvm
 
 profanOS can also be tested online with two clicks with the [v86 copy](https://github.com/copy/v86)
 emulator [here](https://elydre.github.io/profan).
+
+For information about real hardware boot and instalation see the [dedicated section](#real-hardware)
 
 ### Hardware requirements
 
