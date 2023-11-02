@@ -129,7 +129,7 @@ int compute_ansi_escape(char *str) {
         int offset = get_cursor_offset();
         int row = get_offset_row(offset);
         int col = get_offset_col(offset);
-        for (int i = col; i < gt_get_max_cols(); i++) {
+        for (int i = col; i < gt_get_max_cols() - 1; i++) {
             kprint_char(' ', 0x0);
         }
         set_cursor_offset(get_offset(col, row));
