@@ -84,11 +84,22 @@ int main(int argc, char *argv[]) {
     int line_count = 0;
     int line_limit = get_terminal_height() - 2;
 
+    if (line_limit < 0) {
+        for (int i = 0; buffer[i]; i++) {
+            putchar(buffer[i]);
+            if (buffer[i] == '\n' && get_user_input() == 'q')
+                break;
+        }
+        free(buffer);
+        return 0;
+    }
+
     if (count_newlines(buffer) < line_limit) {
         printf(buffer);
         free(buffer);
         return 0;
     }
+
     // clear screen
     printf("\033[2J");
     fflush(stdout);
