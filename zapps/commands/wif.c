@@ -12,9 +12,7 @@ char *read_stdin(int *len) {
     int rcount = 0;
 
     if (isatty(0)) {
-        fputs("wif > ", stdout);
-        *len = fread(buffer, 1, 1024, stdin);
-        return buffer;
+        puts("Enter content. Press ESC to finish.");
     }
 
     *len = 0;
