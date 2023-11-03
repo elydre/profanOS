@@ -81,8 +81,8 @@ FUNC chio
     END
 
     IF !(eval !# = 2)
-        set 2 !1
-        set 1 !0
+        set 2 '!1'
+        set 1 '!0'
         set 0 /dev/kb
     END
 
@@ -91,12 +91,12 @@ FUNC chio
         RETURN
     END
 
-    IF !(eval !(exists !2) = 0)
-        mkfile !2
+    IF !(eval !(exists '!2') = 0)
+        mkfile '!2'
     END
 
-    ubr /dev/stdin !0
-    ubr /dev/stdout !2
+    ubr /dev/stdin '!0'
+    ubr /dev/stdout '!2'
     !1
     ubr /dev/stdout !TERM
     ubr /dev/stdin /dev/kb
