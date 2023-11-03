@@ -9,7 +9,7 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 
-#define OLV_VERSION "0.8 rev 3"
+#define OLV_VERSION "0.8 rev 4"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2127,9 +2127,8 @@ char *execute_line(char *full_line) {
     }
 
     // set the exit code variable to 0
-    if (result != ERROR_CODE) {
-        strcpy(exit_code, "0");
-    } else return NULL;
+    if (result == ERROR_CODE)
+        return NULL;
 
     return result;
 }
@@ -2503,6 +2502,7 @@ int execute_lines(char **lines, int line_end, char **result) {
     }
 
     int lastif_state = 2; // 0: false, 1: true, 2: not set
+    char *res;
 
     for (int i = 0; i < line_end; i++) {
         if (i >= line_end) {
@@ -2510,7 +2510,7 @@ int execute_lines(char **lines, int line_end, char **result) {
             return -1;
         }
 
-        if (does_startwith(lines[i], "FOR")) {
+        else if (does_startwith(lines[i], "FOR")) {
             int ret = execute_for(line_end - i, lines + i, result);
             if (ret == -1) {
                 // invalid FOR loop
@@ -2520,10 +2520,9 @@ int execute_lines(char **lines, int line_end, char **result) {
             }
 
             i += ret;
-            continue;
         }
 
-        if (does_startwith(lines[i], "IF")) {
+        else if (does_startwith(lines[i], "IF")) {
             int ret = execute_if(line_end - i, lines + i, result, &lastif_state);
 
             if (ret == -1) {
@@ -2534,10 +2533,9 @@ int execute_lines(char **lines, int line_end, char **result) {
             }
 
             i += ret;
-            continue;
         }
 
-        if (does_startwith(lines[i], "ELSE")) {
+        else if (does_startwith(lines[i], "ELSE")) {
             int ret = execute_else(line_end - i, lines + i, result, lastif_state);
 
             if (ret == -1) {
@@ -2548,11 +2546,9 @@ int execute_lines(char **lines, int line_end, char **result) {
             }
 
             i += ret;
-
-            continue;
         }
 
-        if (does_startwith(lines[i], "WHILE")) {
+        else if (does_startwith(lines[i], "WHILE")) {
             int ret = execute_while(line_end - i, lines + i, result);
 
             if (ret == -1) {
@@ -2563,10 +2559,9 @@ int execute_lines(char **lines, int line_end, char **result) {
             }
 
             i += ret;
-            continue;
         }
 
-        if (does_startwith(lines[i], "FUNC")) {
+        else if (does_startwith(lines[i], "FUNC")) {
             int ret = save_function(line_end - i, lines + i);
 
             if (ret == -1) {
@@ -2577,34 +2572,39 @@ int execute_lines(char **lines, int line_end, char **result) {
             }
 
             i += ret;
-            continue;
         }
 
-        if (does_startwith(lines[i], "END")) {
+        else if (does_startwith(lines[i], "END")) {
             raise_error(NULL, "Suspicious END line %d", i + 1);
             return -1;
         }
 
-        if (does_startwith(lines[i], "BREAK")) {
+        else if (does_startwith(lines[i], "BREAK")) {
             return -3;
         }
 
-        if (does_startwith(lines[i], "CONTINUE")) {
+        else if (does_startwith(lines[i], "CONTINUE")) {
             return -2;
         }
 
-        if (does_startwith(lines[i], "RETURN")) {
+        else if (does_startwith(lines[i], "RETURN")) {
             return execute_return(lines[i], result);
         }
 
-        char *res = execute_line(lines[i]);
+        else {
+            res = execute_line(lines[i]);
 
-        if (res != NULL) {
-            if (res[0] != '\0') {
-                puts(res);
+            if (res != NULL) {
+                if (res[0] != '\0') {
+                    puts(res);
+                }
+                free(res);
+            } else {
+                return -1;
             }
-            free(res);
         }
+
+        strcpy(exit_code, "0");
     }
     return 0;
 }
