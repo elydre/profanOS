@@ -23,6 +23,7 @@
 #define NEWER 80
 #define BACKSPACE 14
 #define DEL 83
+#define ESC 1
 #define ENTER 28
 #define RESEND 224
 
@@ -219,6 +220,10 @@ uint32_t open_input(char *buffer, uint32_t size) {
             }
             buffer[buffer_actual_size] = '\0';
             buffer_actual_size--;
+        }
+
+        else if (sc == ESC) {
+            return buffer_actual_size;
         }
 
         else if (sc <= SC_MAX) {
