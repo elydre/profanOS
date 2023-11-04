@@ -311,7 +311,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     stream->file_pos += read;
 
     // return the number of elements read
-    return read;
+    return read / size;
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
@@ -359,7 +359,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // return the number of elements written
-    return ret;
+    return ret / size;
 }
 
 int fseek(FILE *stream, long offset, int whence) {
