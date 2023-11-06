@@ -17,21 +17,17 @@ unsigned char bcd2bin(unsigned char in_bcd) {
     return (bcd) ? ((in_bcd >> 4) * 10) + (in_bcd & 0x0F) : in_bcd;
 }
 
-void time_get(i_time_t *target) {
-    target->seconds = bcd2bin(read_register(0x00));
-    target->minutes = bcd2bin(read_register(0x02));
-    target->hours = bcd2bin(read_register(0x04));
-    target->day_of_week = bcd2bin(read_register(0x06));
-    target->day_of_month = bcd2bin(read_register(0x07));
-    target->month = bcd2bin(read_register(0x08));
-    target->year = bcd2bin(read_register(0x09));
+void time_get(tm_t *target) {
+    target->tm_sec = bcd2bin(read_register(0x00));
+    target->tm_min = bcd2bin(read_register(0x02));
+    target->tm_hour = bcd2bin(read_register(0x04));
+    target->tm_wday = bcd2bin(read_register(0x06));
+    target->tm_mday = bcd2bin(read_register(0x07));
+    target->tm_mon = bcd2bin(read_register(0x08));
+    target->tm_year = bcd2bin(read_register(0x09));
 
-    target->full[0] = target->seconds;
-    target->full[1] = target->minutes;
-    target->full[2] = target->hours;
-    target->full[3] = target->day_of_month;
-    target->full[4] = target->month;
-    target->full[5] = target->year;
+    target->tm_yday = -1;
+    target->tm_isdst = -1;
 }
 
 int rtc_init() {

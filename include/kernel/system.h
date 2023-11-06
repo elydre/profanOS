@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.0.4d"
+#define KERNEL_VERSION  "1.0.5"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
