@@ -1,5 +1,5 @@
-#include <i_time.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 
 int main(int argc, char **argv) {
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ms_sleep(time);
+    usleep(time * 1000);
 
     return 0;
 }

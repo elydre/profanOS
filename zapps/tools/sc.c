@@ -1,7 +1,6 @@
 #include <syscall.h>
 #include <profan.h>
-#include <i_time.h>
-
+#include <unistd.h>
 #include <stdio.h>
 
 int main(int argc, char **argv) {
@@ -12,7 +11,7 @@ int main(int argc, char **argv) {
 
     while ((last_sc = c_kb_get_scfh()) != 1) {
         if (last_sc == 0) {
-            ms_sleep(10);
+            usleep(10000);
             continue;
         }
 

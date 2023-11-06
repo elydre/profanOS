@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <i_time.h>
+#include <unistd.h>
 
 uint32_t *screen;
 
@@ -109,7 +109,7 @@ int main(void) {
             }
             draw_cursor(cursor_x, cursor_y);
         }
-        ms_sleep(10);
+        usleep(10000);
     }
 
     free(screen);

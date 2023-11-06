@@ -1,7 +1,7 @@
 #include <syscall.h>
 #include <i_mouse.h>
 #include <stdlib.h>
-#include <i_time.h>
+#include <unistd.h>
 #include <i_vgui.h>
 #include <stdio.h>
 
@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
         // // we draw a rectangle
         printf("x: %d, y: %d, %d %d %d\n", x, y, mouse_get_button(0), mouse_get_button(1), mouse_get_button(2));
         draw_mouse(x, y);
-        ms_sleep(25);
+        usleep(25000);
     }
     return 0;
 }

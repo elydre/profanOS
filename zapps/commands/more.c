@@ -5,7 +5,6 @@
 
 #include <syscall.h>
 #include <profan.h>
-#include <i_time.h>
 #include <panda.h>
 
 char *read_stdin(void) {
@@ -61,7 +60,7 @@ char get_user_input(void) {
             c = ' ';
             break;
         }
-        ms_sleep(100);
+        usleep(100000);
     }
 
     printf("\033[u\033[K");

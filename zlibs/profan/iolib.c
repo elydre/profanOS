@@ -1,9 +1,9 @@
 #include <syscall.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 
-#include <i_time.h>
 #include <profan.h>
 #include <panda.h>
 
@@ -167,7 +167,7 @@ uint32_t open_input(char *buffer, uint32_t size) {
 
     sc = 0;
     while (sc != ENTER) {
-        ms_sleep(SLEEP_T);
+        usleep(SLEEP_T * 1000);
         sc = c_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {

@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <i_time.h>
 #include <i_vgui.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 
 #define PI 3.141592
@@ -201,6 +201,6 @@ int show_fps(vgui_t *vgui, int time) {
     itoa(fps, fps_str, 10);
     vgui_print(vgui, 0, 0, fps_str, 0xFFFFFF);
     if (fps > 40)
-        ms_sleep(10);
+        usleep(10000);
     return new_time;
 }

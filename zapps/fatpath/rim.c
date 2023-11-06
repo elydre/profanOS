@@ -5,9 +5,9 @@
 #include <syscall.h>
 #include <filesys.h>
 #include <profan.h>
+#include <unistd.h>
 
 #include <i_vgui.h>
-#include <i_time.h>
 
 // SETTINGS
 
@@ -220,7 +220,7 @@ void main_loop(char *path) {
         last_key = key;
 
         if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
-            ms_sleep(SLEEP_T);
+            usleep(SLEEP_T * 1000);
             continue;
         }
 
