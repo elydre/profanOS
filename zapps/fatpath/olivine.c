@@ -36,7 +36,7 @@
 #if PROFANBUILD
   #include <syscall.h>
   #include <filesys.h>
-  #include <i_time.h>
+  #include <unistd.h>
   #include <profan.h>
 
   // profanOS config
@@ -85,7 +85,7 @@ typedef struct {
 typedef struct {
     char* name;
     char* value;
-    int sync;
+    int is_sync;
     int level;
 } variable_t;
 
@@ -254,12 +254,12 @@ int set_variable_withlen(char *name, char *value, int str_len) {
 
     int index = get_variable_index(name);
     if (index != -1) {
-        if (variables[index].value && (!variables[index].sync)) {
+        if (variables[index].value && (!variables[index].is_sync)) {
             free(variables[index].value);
         }
         variables[index].level = variables[index].level ? current_level : 0;
         variables[index].value = value_copy;
-        variables[index].sync = 0;
+        variables[index].is_sync = 0;
         return 0;
     }
 
@@ -270,7 +270,7 @@ int set_variable_withlen(char *name, char *value, int str_len) {
             variables[i].name = name_copy;
             variables[i].value = value_copy;
             variables[i].level = current_level;
-            variables[i].sync = 0;
+            variables[i].is_sync = 0;
             return 0;
         }
     }
@@ -279,16 +279,16 @@ int set_variable_withlen(char *name, char *value, int str_len) {
     return 1;
 }
 
-int set_sync_variable(char *name, char *value) {
+int set_is_sync_variable(char *name, char *value) {
     int index = get_variable_index(name);
 
     if (index != -1) {
-        if (variables[index].value && (!variables[index].sync)) {
+        if (variables[index].value && (!variables[index].is_sync)) {
             free(variables[index].value);
         }
         variables[index].level = variables[index].level ? current_level : 0;
         variables[index].value = value;
-        variables[index].sync = 1;
+        variables[index].is_sync = 1;
         return 0;
     }
 
@@ -297,7 +297,7 @@ int set_sync_variable(char *name, char *value) {
             variables[i].name = name;
             variables[i].value = value;
             variables[i].level = current_level;
-            variables[i].sync = 1;
+            variables[i].is_sync = 1;
             return 0;
         }
     }
@@ -315,14 +315,14 @@ int del_variable(char *name) {
     int index = get_variable_index(name);
 
     if (index != -1) {
-        if (variables[index].value && (!variables[index].sync)) {
+        if (variables[index].value && (!variables[index].is_sync)) {
             free(variables[index].value);
             free(variables[index].name);
         }
         variables[index].value = NULL;
         variables[index].name = NULL;
         variables[index].level = 0;
-        variables[index].sync = 0;
+        variables[index].is_sync = 0;
 
         // shift all variables down
         for (int j = index; j < MAX_VARIABLES - 1; j++) {
@@ -347,14 +347,14 @@ void del_variable_level(int level) {
             break;
         }
         if (variables[i].level >= level) {
-            if (variables[i].value && (!variables[i].sync)) {
+            if (variables[i].value && (!variables[i].is_sync)) {
                 free(variables[i].value);
                 free(variables[i].name);
             }
             variables[i].value = NULL;
             variables[i].name = NULL;
             variables[i].level = 0;
-            variables[i].sync = 0;
+            variables[i].is_sync = 0;
 
             // shift all variables down
             for (int j = i; j < MAX_VARIABLES - 1; j++) {
@@ -972,7 +972,7 @@ char *if_debug(char **input) {
     if (mode == 0 || mode == 1) {
         puts("VARIABLES");
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-            printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].sync, variables[i].value);
+            printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
         }
     }
 
@@ -1010,7 +1010,7 @@ char *if_debug(char **input) {
     // print variables
     fprintf(f, "VARIABLES (max %d):", MAX_VARIABLES);
     for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-        fprintf(f, " %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].sync, variables[i].value);
+        fprintf(f, " %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
     }
 
     // print internal functions
@@ -1312,9 +1312,9 @@ char *if_go_binfile(char **input) {
         return ERROR_CODE;
     }
 
-    int sleep = 1;
+    int wait_end = 1;
     if (strcmp(input[argc - 1], "&") == 0) {
-        sleep = 0;
+        wait_end = 0;
         argc--;
     };
 
@@ -1336,10 +1336,10 @@ char *if_go_binfile(char **input) {
 
     int pid;
     local_itoa(c_run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, sleep}, &pid
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, wait_end}, &pid
     ), exit_code);
 
-    if (!sleep) {
+    if (!wait_end) {
         printf("GO: started with pid %d\n", pid);
     }
 
@@ -1859,7 +1859,7 @@ void free_args(char **argv) {
 
 void free_vars() {
     for (int i = 0; i < MAX_VARIABLES; i++) {
-        if (variables[i].name != NULL && (!variables[i].sync)) {
+        if (variables[i].name != NULL && (!variables[i].is_sync)) {
             free(variables[i].value);
             free(variables[i].name);
         }
@@ -2058,7 +2058,7 @@ char *check_pseudos(char *line);
 char *execute_line(char *full_line) {
     // check for function and variable
     char *line = check_subfunc(full_line);
-    int pipe = 0;
+    int pipe_after = 0;
 
     if (line == NULL) {
         // subfunction failed
@@ -2097,7 +2097,7 @@ char *execute_line(char *full_line) {
         // check if "|" is present
         for (int i = 0; function_args[i] != NULL; i++) {
             if (function_args[i][0] == '|' && function_args[i][1] == '\0') {
-                pipe = 1;
+                pipe_after = 1;
                 break;
             }
         }
@@ -2106,7 +2106,7 @@ char *execute_line(char *full_line) {
             debug_print(function_name, function_args);
 
         // execute the function
-        if (pipe)
+        if (pipe_after)
             result = pipe_processor(function_args);
         else if (isif)
             result = ((char* (*)(char**)) function)(function_args + 1);
@@ -3489,7 +3489,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     sc = 0;
     while (sc != ENTER) {
-        ms_sleep(SLEEP_T);
+        usleep(SLEEP_T * 1000);
         sc = c_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
@@ -3916,8 +3916,8 @@ int main(int argc, char **argv) {
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
     set_variable("spi", "0");
-    set_sync_variable("exit", exit_code);
-    set_sync_variable("path", current_directory);
+    set_is_sync_variable("exit", exit_code);
+    set_is_sync_variable("path", current_directory);
 
     // init pseudo commands
     if (!args->no_init) {

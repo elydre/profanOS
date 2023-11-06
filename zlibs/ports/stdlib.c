@@ -1,7 +1,7 @@
 #include <syscall.h>
-#include <i_time.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 void init_func();
 
@@ -42,7 +42,7 @@ int main() {
 }
 
 void init_func() {
-    rand_seed = time_gen_unix();
+    rand_seed = time(NULL);
     ENV.vars = NULL;
     ENV.size = 0;
 }

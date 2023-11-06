@@ -3,7 +3,6 @@
 
 #include <syscall.h>
 #include <filesys.h>
-#include <i_time.h>
 
 #define pl_and_pf(...) print_logo_line(); printf(__VA_ARGS__)
 
@@ -63,14 +62,14 @@ int main(void) {
     char kver[32];
     c_sys_kinfo(kver);
 
-    i_time_t time;
+    tm_t time;
     c_time_get(&time);
 
     pl_and_pf("$4kernel:     $2%s\n", kver);
 
     pl_and_pf("$4RTC time:   $2%02d$7:$2%02d$7:$2%02d %02d$7/$2%02d$7/$2%02d\n",
-        time.hours, time.minutes, time.seconds,
-        time.day_of_month, time.month, time.year
+        time.tm_hour, time.tm_min, time.tm_sec,
+        time.tm_mday, time.tm_mon + 1, time.tm_year + 2000
     );
     print_fs_info();
 
