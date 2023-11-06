@@ -158,7 +158,7 @@ int getgroups(int a, gid_t *b) {
     return 0;
 }
 
-long  gethostid() {
+long gethostid() {
     puts("gethostid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -309,7 +309,7 @@ int nice(int a) {
     return 0;
 }
 
-long  pathconf(const char *a, int b) {
+long pathconf(const char *a, int b) {
     puts("pathconf is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -324,22 +324,22 @@ int pipe(int a[2]) {
     return 0;
 }
 
-ssize_t  pread(int a, void *b, size_t c, off_t d) {
+ssize_t pread(int a, void *b, size_t c, off_t d) {
     puts("pread is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-ssize_t  pwrite(int a, const void *b, size_t c, off_t d) {
+ssize_t pwrite(int a, const void *b, size_t c, off_t d) {
     puts("pwrite is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-ssize_t  read(int a, void *b, size_t c) {
+ssize_t read(int a, void *b, size_t c) {
     puts("read is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-ssize_t  readlink(const char *restrict a, char *restrict b, size_t c) {
+ssize_t readlink(const char *restrict a, char *restrict b, size_t c) {
     puts("readlink is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -395,11 +395,11 @@ int setuid(uid_t a) {
 }
 
 unsigned sleep(unsigned a) {
-    puts("sleep is not implemented yet, WHY DO YOU USE IT ?");
+    c_process_sleep(c_process_get_pid(), a * 1000);
     return 0;
 }
 
-void  swab(const void *restrict a, void *restrict n, ssize_t c) {
+void swab(const void *restrict a, void *restrict n, ssize_t c) {
     puts("swab is not implemented yet, WHY DO YOU USE IT ?");
 }
 
@@ -442,7 +442,7 @@ int ttyname_r(int a, char *b, size_t c) {
     return 0;
 }
 
-useconds_t   ualarm(useconds_t a, useconds_t b) {
+useconds_t ualarm(useconds_t a, useconds_t b) {
     puts("ualarm is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -453,7 +453,7 @@ int unlink(const char *a) {
 }
 
 int usleep(useconds_t a) {
-    puts("usleep is not implemented yet, WHY DO YOU USE IT ?");
+    c_process_sleep(c_process_get_pid(), a / 1000);
     return 0;
 }
 
