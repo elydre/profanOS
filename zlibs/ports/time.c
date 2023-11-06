@@ -9,15 +9,9 @@ int       daylight;
 long int  timezone;
 char     **tzname;
 
-void init_func(void);
 
 int main(void) {
-    init_func();
     return 0;
-}
-
-void init_func(void) {
-    return;
 }
 
 char *asctime(const tm_t *a) {
@@ -106,12 +100,12 @@ size_t strftime(char *a, size_t b, const char *c, const tm_t *d) {
 }
 
 char *strptime(const char *a, const char *b, tm_t *c) {
-    c_serial_print(SERIAL_PORT_A, "Strptime is not implemented yet, WHY DO YOU USE IT ?\n");
+    puts("Strptime is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 time_t time(time_t *a) {
-    puts("Time is not implemented yet, WHY DO YOU USE IT ?");
+    c_serial_print(SERIAL_PORT_A, "Time is not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
 }
 
