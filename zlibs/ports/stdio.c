@@ -288,7 +288,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     fflush(stream);
 
-    // grow the size if the stream is a file
+    // check if the file is at the end
     if (stream->type == FILE_TYPE_FILE) {
         int file_size = fu_get_file_size(stream->sid);
 
@@ -399,7 +399,29 @@ int getc(FILE *stream) {
 }
 
 char *fgets(char *str, int count, FILE *stream) {
-    return fread(str, 1, count, stream) == 0 ? NULL : str;
+    if (count <= 0 || stream == stdout || stream == stderr) {
+        return NULL;
+    }
+
+    if (stream == stdin) {
+        stream = STD_STREAM + 0;
+    }
+
+    size_t rcount = fread(str, 1, count - 1, stream);
+    if (rcount == 0) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < rcount; i++) {
+        if (str[i] == '\n') {
+            str[i + 1] = 0;
+            stream->file_pos -= rcount - i - 1;
+            return str;
+        }
+    }
+
+    str[rcount] = 0;
+    return str;
 }
 
 int fputc(int ch, FILE *stream) {
@@ -506,40 +528,48 @@ int vsscanf_s(const char *buffer, const char *format, va_list vlist) {
 }
 
 int printf(const char *format, ...) {
+    int count;
     va_list args;
+
     va_start(args, format);
-    vprintf(format, args);
+    count = vprintf(format, args);
     va_end(args);
 
-    return 0;
+    return count;
 }
 
 int vfprintf(FILE *stream, const char *format, va_list vlist);
 int fprintf(FILE *stream, const char *format, ...) {
+    int count;
     va_list args;
+
     va_start(args, format);
-    vfprintf(stream, format, args);
+    count = vfprintf(stream, format, args);
     va_end(args);
 
-    return 0;
+    return count;
 }
 
 int sprintf(char *buffer, const char *format, ...) {
+    int count;
     va_list args;
+
     va_start(args, format);
-    dopr(buffer, -1, format, args);
+    count = dopr(buffer, -1, format, args);
     va_end(args);
 
-    return 0;
+    return count;
 }
 
 int snprintf(char* str, size_t size, const char* format, ...) {
-    int r;
+    int count;
     va_list args;
+
     va_start(args, format);
-    r = dopr(str, size, format, args);
+    count = dopr(str, size, format, args);
     va_end(args);
-    return r;
+
+    return count;
 }
 
 int printf_s(const char *format, ...) {
@@ -553,11 +583,14 @@ int fprintf_s(FILE *stream, const char *format, ...) {
 }
 
 int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
+    int count;
     va_list args;
+
     va_start(args, format);
-    dopr(buffer, bufsz, format, args);
+    count = dopr(buffer, bufsz, format, args);
     va_end(args);
-    return 0;
+
+    return count;
 }
 
 int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
@@ -568,11 +601,8 @@ int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
 int vprintf(const char *format, va_list vlist) {
     int count;
 
-    // use dopr to print the string
     char *buffer = malloc(0x4000);
     dopr(buffer, 0x4000, format, vlist);
-
-    // print the string
     count = fputs(buffer, stdout);
 
     free(buffer);
@@ -599,7 +629,7 @@ int vfprintf(FILE *stream, const char *format, va_list vlist) {
     char *buffer = malloc(0x4000);
 
     // copy format to a buffer because need to modify it
-    dopr(buffer, 0x4000, format, vlist);
+    int count = dopr(buffer, 0x4000, format, vlist);
 
     // write the string
     fwrite(buffer, 1, strlen(buffer), stream);
