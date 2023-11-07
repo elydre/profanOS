@@ -26,10 +26,10 @@ jobs:
         make addons elf bdisk iso
         cd out/disk && zip -r ../../initrd-build.zip * && cd ../..
         cp initrd.bin disk-$VERSION.bin
-        cp initrd.bin profanOS-initrd.bin
         cp profanOS.iso profanOS-$VERSION.iso
         cp profanOS.elf profanOS-kernel.elf
         make miso
+        mv initrd.bin profanOS-initrd.bin
         mv profanOS.iso profanOS-fullgrub.iso
         rm -Rf out/ && make iso
         mv profanOS.iso profanOS-lite.iso
