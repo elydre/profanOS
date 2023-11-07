@@ -30,7 +30,9 @@ jobs:
         cp profanOS.iso profanOS-$VERSION.iso
         cp profanOS.elf profanOS-kernel.elf
         make miso
-        cp profanOS.iso profanOS-fullgrub.iso
+        mv profanOS.iso profanOS-fullgrub.iso
+        make iso
+        mv profanOS.iso profanOS-lite.iso
 
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
@@ -65,6 +67,7 @@ jobs:
         files: |
           ${{ env.PROFAN_ISO }}
           profanOS-fullgrub.iso
+          profanOS-lite.iso
           profanOS-kernel.elf
           profanOS-initrd.bin
           initrd-build.zip
