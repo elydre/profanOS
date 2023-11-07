@@ -34,6 +34,20 @@ jobs:
         rm -Rf out/ && make iso
         mv profanOS.iso profanOS-lite.iso
 
+    - name: Release to GitHub
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        title: ${{ env.PROFAN_VER }}
+        automatic_release_tag: latest
+        repo_token: "${{ secrets.GIT_TOKEN }}"
+        files: |
+          ${{ env.PROFAN_ISO }}
+          profanOS-fullgrub.iso
+          profanOS-lite.iso
+          profanOS-kernel.elf
+          profanOS-initrd.bin
+          initrd-build.zip
+
     - name: push iso to github
       uses: dmnemec/copy_file_to_another_repo_action@main
       env:
@@ -57,17 +71,3 @@ jobs:
         user_email: 'pf4_@gmail.com'
         user_name: 'esolangs'
         commit_message: 'new build'
-
-    - name: Release to GitHub
-      uses: marvinpinto/action-automatic-releases@latest
-      with:
-        title: ${{ env.PROFAN_VER }}
-        automatic_release_tag: latest
-        repo_token: "${{ secrets.GIT_TOKEN }}"
-        files: |
-          ${{ env.PROFAN_ISO }}
-          profanOS-fullgrub.iso
-          profanOS-lite.iso
-          profanOS-kernel.elf
-          profanOS-initrd.bin
-          initrd-build.zip
