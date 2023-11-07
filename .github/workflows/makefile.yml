@@ -31,7 +31,7 @@ jobs:
         cp profanOS.elf profanOS-kernel.elf
         make miso
         mv profanOS.iso profanOS-fullgrub.iso
-        make iso
+        rm -Rf out/ && make iso
         mv profanOS.iso profanOS-lite.iso
 
     - name: push iso to github
