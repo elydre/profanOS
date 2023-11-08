@@ -8,8 +8,9 @@
 #define ENABLE_DEBUG  0  // print function calls
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
+#define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 4"
+#define OLV_VERSION "0.8 rev 5"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2599,7 +2600,7 @@ int execute_lines(char **lines, int line_end, char **result) {
                     puts(res);
                 }
                 free(res);
-            } else {
+            } else if (STOP_ON_ERROR) {
                 return -1;
             }
         }
