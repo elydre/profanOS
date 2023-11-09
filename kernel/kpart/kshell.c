@@ -12,7 +12,7 @@
 
 #define BFR_SIZE 65
 
-void kernel_switch_back() {
+void kernel_switch_back(void) {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
@@ -34,7 +34,7 @@ void kernel_switch_back() {
     }
 }
 
-void kernel_exit_current() {
+void kernel_exit_current(void) {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
@@ -63,7 +63,7 @@ void shell_so(char *suffix) {
     run_ifexist(path, 0, (char **)0);
 }
 
-void shell_help() {
+void shell_help(void) {
     char *help[] = {
         "ADDR   - show main address",
         "ALLOC  - allocate *0x1000",
@@ -80,7 +80,7 @@ void shell_help() {
     }
 }
 
-void shell_addr() {
+void shell_addr(void) {
     kprintf("vesa fb: %x\n", vesa_get_framebuffer());
     kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
     kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 1024 / 1024);
@@ -89,7 +89,7 @@ void shell_addr() {
     kprintf("watfunc: %x\n", WATFUNC_ADDR);
 }
 
-void shell_mem() {
+void shell_mem(void) {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
@@ -138,7 +138,7 @@ int shell_command(char *command) {
     return 0;
 }
 
-void start_kshell() {
+void start_kshell(void) {
     sys_warning("You are now in the kernel-level shell");
     kprint("\n");
     char char_buffer[BFR_SIZE];

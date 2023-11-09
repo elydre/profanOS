@@ -31,11 +31,11 @@ char kb_scancode_to_char(int scancode, int shift) {
     return (shift) ? sc_ascii_maj[scancode] : sc_ascii_min[scancode];
 }
 
-int kb_get_scancode() {
+int kb_get_scancode(void) {
     return (int) port_byte_in(0x60);
 }
 
-int kb_get_scfh() {
+int kb_get_scfh(void) {
     // get scancode from history
     for (int i = HISTORY_SIZE - 1; i >= 0; i--) {
         if (sc_history[i] == 0) continue;
@@ -66,7 +66,7 @@ static void keyboard_callback(registers_t *regs) {
     }
 }
 
-int keyboard_init() {
+int keyboard_init(void) {
     register_interrupt_handler(IRQ1, keyboard_callback);
     for (int i = 0; i < HISTORY_SIZE; i++) {
         sc_history[i] = 0;

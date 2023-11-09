@@ -62,7 +62,7 @@ uint16_t getSubClassId(uint16_t bus, uint16_t device, uint16_t function) {
     return (pci_read_word(bus, device, function, 0xA) & ~0xFF00);
 }
 
-void pci_probe() {
+void pci_probe(void) {
     for (uint32_t bus = 0; bus < 256; bus++) {
         for (uint32_t slot = 0; slot < 32; slot++) {
             for (uint32_t function = 0; function < 8; function++) {

@@ -17,8 +17,8 @@
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
 
-int txt_get_cursor_offset();
 void txt_set_cursor_offset(int offset);
+int  txt_get_cursor_offset(void);
 
 void txt_print_char(char c, char attr) {
     int offset = txt_get_cursor_offset();
@@ -59,12 +59,12 @@ void txt_print_char(char c, char attr) {
     txt_set_cursor_offset(offset);
 }
 
-void txt_backspace() {
+void txt_backspace(void) {
     txt_set_cursor_offset(get_cursor_offset() - 2);
     txt_print_char(0x08, c_white);
 }
 
-void txt_clear() {
+void txt_clear(void) {
     int screen_size = MAX_COLS * MAX_ROWS;
     int i;
     uint8_t *screen = (uint8_t*) VIDEO_ADDRESS;
@@ -76,7 +76,7 @@ void txt_clear() {
     txt_set_cursor_offset(get_offset(0, 0));
 }
 
-int txt_get_cursor_offset() {
+int txt_get_cursor_offset(void) {
     /* Use the VGA ports to get the current cursor position
      * 1. Ask for high byte of the cursor offset (data 14)
      * 2. Ask for low byte (data 15) */

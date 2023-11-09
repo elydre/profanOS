@@ -15,7 +15,7 @@ char *kb_map;
 
 int profan_kb_load_map(char *path);
 
-int main() {
+int main(void) {
     kb_map = NULL;
     if (profan_kb_load_map("/zada/keymap/azerty.map")) {
         printf("Failed to load keyboard map\n");

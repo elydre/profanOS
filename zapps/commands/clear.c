@@ -1,18 +1,18 @@
 #include <syscall.h>
 #include <stdio.h>
 
-int ansiclear() {
+int ansiclear(void) {
     printf("\033[2J");
     return 0;
 }
 
-int hardclear() {
+int hardclear(void) {
     c_kprint("\033[2J");
     ansiclear();
     return 0;
 }
 
-int showhelp() {
+int showhelp(void) {
     puts(
         "Usage: clear [OPTION]\n"
         " -a   use ANSI escape codes to clear the screen\n"

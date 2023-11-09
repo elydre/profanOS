@@ -61,7 +61,7 @@ int force_exit_pid(int pid, int ret_code) {
     return process_kill(pid);
 }
 
-void tasked_program() {
+void tasked_program(void) {
     int pid = process_get_pid();
     int ppid = process_get_ppid(pid);
 

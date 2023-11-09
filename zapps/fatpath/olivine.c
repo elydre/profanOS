@@ -1858,7 +1858,7 @@ void free_args(char **argv) {
     free(argv);
 }
 
-void free_vars() {
+void free_vars(void) {
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name != NULL && (!variables[i].is_sync)) {
             free(variables[i].value);
@@ -1868,7 +1868,7 @@ void free_vars() {
     free(variables);
 }
 
-void free_pseudos() {
+void free_pseudos(void) {
     for (int i = 0; i < MAX_PSEUDOS; i++) {
         if (pseudos[i].name != NULL) {
             free(pseudos[i].name);
@@ -1878,7 +1878,7 @@ void free_pseudos() {
     free(pseudos);
 }
 
-void free_functions() {
+void free_functions(void) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name != NULL) {
             free(functions[i].name);
@@ -3668,7 +3668,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     #endif
 }
 
-void start_shell() {
+void start_shell(void) {
     // use execute_program() to create a shell
     char *line = malloc(INPUT_SIZE * sizeof(char));
 

@@ -9,15 +9,15 @@
 void tef_print_char(char c, uint32_t color, uint32_t bg_color);
 void tef_set_cursor_offset(int offset);
 void tef_cursor_blink(int on);
-int  tef_get_cursor_offset();
-void tef_clear();
+int  tef_get_cursor_offset(void);
+void tef_clear(void);
 
 void txt_print_char(char c, char color);
 void txt_set_cursor_offset(int offset);
 void txt_cursor_blink(int on);
-int  txt_get_cursor_offset();
-void txt_backspace();
-void txt_clear();
+int  txt_get_cursor_offset(void);
+void txt_backspace(void);
+void txt_clear(void);
 
 
 uint32_t gt_convert_color(char c) {
@@ -42,11 +42,11 @@ uint32_t gt_convert_color(char c) {
     }
 }
 
-int gt_get_max_cols() {
+int gt_get_max_cols(void) {
     return vesa_does_enable() ? vesa_get_width() / FONT_WIDTH : 80;
 }
 
-int gt_get_max_rows() {
+int gt_get_max_rows(void) {
     return vesa_does_enable() ? vesa_get_height() / FONT_HEIGHT : 25;
 }
 
@@ -58,7 +58,7 @@ void kprint_char(char c, char color) {
     }
 }
 
-int get_cursor_offset() {
+int get_cursor_offset(void) {
     if (vesa_does_enable()) {
         return tef_get_cursor_offset();
     } else {
@@ -74,7 +74,7 @@ void set_cursor_offset(int offset) {
     }
 }
 
-void kprint_backspace() {
+void kprint_backspace(void) {
     if (vesa_does_enable()) {
         tef_print_char(0x08, 0, 0); // we don't care about the color
     } else {
@@ -82,7 +82,7 @@ void kprint_backspace() {
     }
 }
 
-void clear_screen() {
+void clear_screen(void) {
     if (vesa_does_enable()) {
         tef_clear();
     } else {

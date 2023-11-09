@@ -48,7 +48,7 @@ void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t 
     process->esp_addr = esp_alloc;
 }
 
-int i_get_free_place() {
+int i_get_free_place(void) {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_DEAD) return i;
     }
@@ -62,7 +62,7 @@ int i_pid_to_place(int pid) {
     return ERROR_CODE;
 }
 
-void i_end_sheduler() {
+void i_end_sheduler(void) {
     if (pid_current != 1) {
         scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
     }
@@ -105,7 +105,7 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
-void i_optimize_shdlr_queue() {
+void i_optimize_shdlr_queue(void) {
     // TODO: separate all occurrences of each number as much as possible
     return;
 }
@@ -142,7 +142,7 @@ int i_remove_from_shdlr_queue(int pid) {
     return 0;
 }
 
-void i_clean_killed() {
+void i_clean_killed(void) {
     need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
@@ -157,7 +157,7 @@ void i_clean_killed() {
     }
 }
 
-void i_refresh_tsleep_interact() {
+void i_refresh_tsleep_interact(void) {
     tsleep_interact = 0;
     for (int i = 0; i < tsleep_list_length; i++) {
         if (tsleep_list[i]->sleep_to < tsleep_interact || !tsleep_interact) {
@@ -199,7 +199,7 @@ void i_remove_from_tsleep_list(int pid) {
  * IDLE PROCESS *
 *****************/
 
-void idle_process() {
+void idle_process(void) {
     while (1) asm volatile("hlt");
 }
 
@@ -207,7 +207,7 @@ void idle_process() {
  * PUBLIC FUNCTIONS *
 *********************/
 
-int process_init() {
+int process_init(void) {
     plist = calloc(sizeof(process_t) * PROCESS_MAX);
     shdlr_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
     tsleep_list = calloc(sizeof(process_t *) * PROCESS_MAX);
@@ -605,7 +605,7 @@ void process_set_priority(int pid, int priority) {
     }
 }
 
-int process_get_pid() {
+int process_get_pid(void) {
     return pid_current;
 }
 

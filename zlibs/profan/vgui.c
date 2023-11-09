@@ -11,7 +11,7 @@ typedef struct {
     int changed_pixels_count;
 } vgui_t;
 
-int main() {
+int main(void) {
     return 0;
 }
 

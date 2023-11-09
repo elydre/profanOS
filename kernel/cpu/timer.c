@@ -14,15 +14,15 @@ static void timer_callback(registers_t *regs) {
     schedule(ticks);
 }
 
-uint32_t timer_get_ticks() {
+uint32_t timer_get_ticks(void) {
     return ticks;
 }
 
-uint32_t timer_get_ms() {
+uint32_t timer_get_ms(void) {
     return ticks * 1000 / RATE_TIMER_TICK;
 }
 
-int timer_init() {
+int timer_init(void) {
     if (ticks > 1000) ticks = 0;
 
     // set the timer interrupt handler

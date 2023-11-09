@@ -11,7 +11,7 @@
  * panic and reboot system *
 ****************************/
 
-void sys_stop() {
+void sys_stop(void) {
     kcprint("profanOS has been stopped ", 0x0D);
     kcprint(":", 0x0B);
     kcprint("(\n", 0x0D);
@@ -44,7 +44,7 @@ struct stackframe {
     uint32_t eip;
 };
 
-void profan_stacktrace() {
+void profan_stacktrace(void) {
     struct stackframe *stk;
     asm ("movl %%ebp,%0" : "=r"(stk) ::);
     serial_kprintf("Stack trace:");
@@ -113,7 +113,7 @@ void sys_interrupt(int code, int err_code) {
     sys_stop();
 }
 
-void sys_reboot() {
+void sys_reboot(void) {
     uint8_t good = 0x02;
     while (good & 0x02)
         good = port_byte_in(0x64);
@@ -121,7 +121,7 @@ void sys_reboot() {
     asm volatile("hlt");
 }
 
-void sys_shutdown() {
+void sys_shutdown(void) {
     port_word_out(0x604, 0x2000);   // qemu
     port_word_out(0xB004, 0x2000);  // bochs
     port_word_out(0x4004, 0x3400);  // virtualbox
@@ -132,7 +132,7 @@ void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(eax));
 }
 
-int sys_init_fpu() {
+int sys_init_fpu(void) {
     // get if fpu is present
     uint32_t eax, ebx, ecx, edx;
     cpuid(1, &eax, &ebx, &ecx, &edx);

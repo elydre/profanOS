@@ -20,7 +20,7 @@ void make_printable(char *str, int size) {
     str[size + 1] = '\0';
 }
 
-void show_help() {
+void show_help(void) {
     puts("Usage: cat [options] <path>\n"
         "Options:\n"
         "  -h       display this help message\n"

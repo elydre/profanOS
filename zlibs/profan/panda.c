@@ -346,7 +346,7 @@ int panda_change_font(char *file) {
     return 0;
 }
 
-void panda_clear_screen() {
+void panda_clear_screen(void) {
     if (!g_panda) return;
     for (uint32_t i = 0; i < g_panda->max_lines; i++) {
         for (uint32_t j = 0; j < g_panda->max_cols; j++) {
@@ -361,7 +361,7 @@ void panda_clear_screen() {
     g_panda->scroll_offset = 0;
 }
 
-void init_panda() {
+void init_panda(void) {
     if (c_vesa_get_height() < 0) {
         printf("[panda] VESA is not enabled\n");
         g_panda = NULL;

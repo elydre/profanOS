@@ -15,6 +15,6 @@ struct gdt_ptr {
     unsigned int base;
 } __attribute__((packed));
 
-void gdt_init();
+void gdt_init(void);
 
 #endif

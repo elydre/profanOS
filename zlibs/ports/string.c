@@ -12,12 +12,12 @@
 
 void init_func();
 
-int main() {
+int main(void) {
     init_func();
     return 0;
 }
 
-void init_func() {; }
+void init_func(void) {; }
 
 char *basename(const char *path) {
     register const char *s;

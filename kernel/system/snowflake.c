@@ -28,7 +28,7 @@ int part_size;
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state);
 int mem_free_addr(uint32_t addr);
 
-uint32_t mem_get_phys_size() {
+uint32_t mem_get_phys_size(void) {
     uint32_t *addr_min = (uint32_t *) 0x200000;
     uint32_t *addr_max = (uint32_t *) 0x40000000;
     uint32_t *addr_test;
@@ -48,7 +48,7 @@ uint32_t mem_get_phys_size() {
 
 int instance_count;
 
-int mem_init() {
+int mem_init(void) {
     alloc_count = 0;
     free_count = 0;
 
@@ -109,7 +109,7 @@ void del_occurence(int index) {
     }
 }
 
-void dynamize_mem() {
+void dynamize_mem(void) {
     int sum = 0;
     for (int i = 0; i < part_size; i++) {
         sum += !MEM_PARTS[i].state;

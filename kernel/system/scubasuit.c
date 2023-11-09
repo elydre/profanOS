@@ -10,7 +10,7 @@ scuba_directory_t *kernel_directory;
 scuba_directory_t *current_directory;
 uint32_t g_map_to_addr;
 
-scuba_directory_t *scuba_get_kernel_directory() {
+scuba_directory_t *scuba_get_kernel_directory(void) {
     return kernel_directory;
 }
 
@@ -27,7 +27,7 @@ void *i_allign_calloc(uint32_t size, int state) {
  *                       *
 **************************/
 
-void scuba_enable() {
+void scuba_enable(void) {
     // enable paging
     uint32_t cr0;
     asm volatile("mov %%cr0, %0": "=r"(cr0));
@@ -41,7 +41,7 @@ void scuba_switch(scuba_directory_t *dir) {
     asm volatile("mov %0, %%cr3":: "r"(dir));
 }
 
-void scuba_flush_tlb() {
+void scuba_flush_tlb(void) {
     // flush the TLB
 
     uint32_t cr3;
@@ -55,7 +55,7 @@ void scuba_flush_tlb() {
  *                       *
 **************************/
 
-int scuba_init() {
+int scuba_init(void) {
     // allocate a page directory
     kernel_directory = scuba_directory_create(0);
 

@@ -3,12 +3,11 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.0.5b"
-#define KERNEL_EDITING  "generic"
+#define KERNEL_VERSION  "SOD 01"
+#define KERNEL_EDITING  "sod"
 
 #define PROCESS_MAX     20          // max process count
 #define KERNEL_PRIORITY 5           // default kernel process priority
-#define RAMDISK_SECTOR  2048        // ramdisk sector count
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define FS_MAX_DISKS    256         // max disk count
 #define RUN_DEFAULT     "/bin/tools/init.bin"
@@ -32,22 +31,22 @@
 
 
 // system.c
-void sys_reboot();
-void sys_shutdown();
-void sys_stop();
+void sys_reboot(void);
+void sys_shutdown(void);
+void sys_stop(void);
 
 int  sys_warning(char *msg);
 int  sys_error(char *msg);
 void sys_fatal(char *msg);
 void sys_interrupt(int code, int err_code); // reserved cpu interrupt
 
-int sys_init_fpu();
+int sys_init_fpu(void);
 void sys_kinfo(char *dest);
 
 // kshell.c
-void start_kshell();
-void kernel_switch_back();
-void kernel_exit_current();
+void start_kshell(void);
+void kernel_switch_back(void);
+void kernel_exit_current(void);
 
 // runtime.c
 #define run_ifexist(path, argc, argv) \
@@ -65,6 +64,6 @@ int      dily_unload(uint32_t lib_id);
 uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
 
 // watfunc.c
-int init_watfunc();
+int init_watfunc(void);
 
 #endif

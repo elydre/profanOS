@@ -5,7 +5,7 @@
 #include <ktype.h>
 
 
-filesys_t *fs_create() {
+filesys_t *fs_create(void) {
     filesys_t *filesys = malloc(sizeof(filesys_t));
     filesys->max_disks = FS_MAX_DISKS;
     filesys->vdisk = calloc(sizeof(vdisk_t *) * filesys->max_disks);
@@ -51,11 +51,11 @@ void fs_print_status(filesys_t *filesys) {
 
 filesys_t *MAIN_FS;
 
-filesys_t *fs_get_main() {
+filesys_t *fs_get_main(void) {
     return MAIN_FS;
 }
 
-vdisk_t *initrd_to_vdisk() {
+vdisk_t *initrd_to_vdisk(void) {
     uint8_t *initrd = (uint8_t *) diskiso_get_start();
     uint32_t initrd_size = diskiso_get_size();
 
@@ -80,7 +80,7 @@ vdisk_t *initrd_to_vdisk() {
     return vdisk;
 }
 
-int filesys_init() {
+int filesys_init(void) {
     MAIN_FS = fs_create();
 
     vdisk_t *d0 = vdisk_create(500);

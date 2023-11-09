@@ -113,7 +113,7 @@ int fdatasync(int a) {
     return 0;
 }
 
-pid_t fork() {
+pid_t fork(void) {
     puts("fork is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -138,17 +138,17 @@ char *getcwd(char *a, size_t b) {
     return 0;
 }
 
-gid_t getegid() {
+gid_t getegid(void) {
     puts("getegid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-uid_t geteuid() {
+uid_t geteuid(void) {
     puts("geteuid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-gid_t getgid() {
+gid_t getgid(void) {
     puts("getgid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -158,7 +158,7 @@ int getgroups(int a, gid_t *b) {
     return 0;
 }
 
-long gethostid() {
+long gethostid(void) {
     puts("gethostid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -168,7 +168,7 @@ int gethostname(char *a, size_t n) {
     return 0;
 }
 
-char *getlogin() {
+char *getlogin(void) {
     puts("getlogin is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
@@ -188,17 +188,17 @@ pid_t getpgid(pid_t a) {
     return 0;
 }
 
-pid_t getpgrp() {
+pid_t getpgrp(void) {
     puts("getpgrp is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-pid_t getpid() {
+pid_t getpid(void) {
     puts("getpid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-pid_t getppid() {
+pid_t getppid(void) {
     puts("getppid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -208,7 +208,7 @@ pid_t getsid(pid_t a) {
     return 0;
 }
 
-uid_t getuid() {
+uid_t getuid(void) {
     puts("getuid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -314,7 +314,7 @@ long pathconf(const char *a, int b) {
     return 0;
 }
 
-int pause() {
+int pause(void) {
     puts("pause is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -369,7 +369,7 @@ int setpgid(pid_t a, pid_t b) {
     return 0;
 }
 
-pid_t setpgrp() {
+pid_t setpgrp(void) {
     puts("setpgrp is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -384,7 +384,7 @@ int setreuid(uid_t a, uid_t b) {
     return 0;
 }
 
-pid_t setsid() {
+pid_t setsid(void) {
     puts("setsid is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -408,7 +408,7 @@ int symlink(const char *a, const char *b) {
     return 0;
 }
 
-void  sync() {
+void  sync(void) {
     puts("sync is not implemented yet, WHY DO YOU USE IT ?");
 }
 
@@ -457,7 +457,7 @@ int usleep(useconds_t a) {
     return 0;
 }
 
-pid_t vfork() {
+pid_t vfork(void) {
     puts("vfork is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }

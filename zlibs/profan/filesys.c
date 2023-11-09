@@ -1178,7 +1178,7 @@ void fu_simplify_path(char *path) {
  *                                               *
 **************************************************/
 
-uint32_t *fu_get_vdisk_info() {
+uint32_t *fu_get_vdisk_info(void) {
     // array:
     // [0] = vdisk_count
     // [3n + 1] = vdisk[n] mount point

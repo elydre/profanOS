@@ -30,7 +30,7 @@ void time_get(tm_t *target) {
     target->tm_isdst = -1;
 }
 
-int rtc_init() {
+int rtc_init(void) {
     unsigned char status;
     status = read_register(0x0B);
     status |=  0x02;             // 24 hour clock

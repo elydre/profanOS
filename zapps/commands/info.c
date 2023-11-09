@@ -26,7 +26,7 @@ char *LOGO[] = {
 int curent_line;
 int logo_line;
 
-void print_logo_line() {
+void print_logo_line(void) {
     // chek if we need to print a new line
     if (LOGO_START_LINE + logo_line > curent_line || LOGO_START_LINE + LOGO_LINES <= curent_line) {
         printf("                       ");
@@ -37,7 +37,7 @@ void print_logo_line() {
     curent_line++;
 }
 
-void print_fs_info() {
+void print_fs_info(void) {
     print_logo_line();
     printf("$4fs vdisk:   $2");
 

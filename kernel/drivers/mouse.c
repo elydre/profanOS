@@ -26,7 +26,7 @@ int mouse_y;
 
 uint8_t buttons[3];
 
-void mouse_reset();
+void mouse_reset(void);
 
 // mouse functions
 void mouse_handler(registers_t *a_r) { // (not used but just there)
@@ -99,12 +99,12 @@ void mouse_write(uint8_t a_write) {
     port_byte_out(0x60, a_write);
 }
 
-uint8_t mouse_read() {
+uint8_t mouse_read(void) {
     // get's response from mouse
     return port_byte_in(0x60);
 }
 
-int mouse_init() {
+int mouse_init(void) {
     if(was_installed) {
         return 1;
     }
@@ -137,7 +137,7 @@ int mouse_init() {
 }
 
 // reset data
-void mouse_reset() {
+void mouse_reset(void) {
     mouse_x = 0;
     mouse_y = 0;
     buttons[0] = 0;

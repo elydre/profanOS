@@ -13,13 +13,13 @@
 
 uint32_t wf_get_func_addr(uint32_t func_id);
 
-int init_watfunc() {
+int init_watfunc(void) {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
     *(int *)(WATDILY_ADDR) = (int) dily_get_func;
     return 0;
 }
 
-void unknown_func() {
+void unknown_func(void) {
     sys_error("Unknown syscall");
 }
 
