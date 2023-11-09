@@ -3,22 +3,22 @@
 #include <minilib.h>
 #include <system.h>
 
-#define FONT_WIDTH 8
 #define FONT_HEIGHT 16
+#define FONT_WIDTH  8
 
+void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color);
 void tef_print_char(char c, uint32_t color, uint32_t bg_color);
 void tef_set_cursor_offset(int offset);
-void tef_cursor_blink(int on);
 int  tef_get_cursor_offset(void);
+void tef_cursor_blink(int on);
 void tef_clear(void);
 
+void txt_set_char(int x, int y, char c, char color);
 void txt_print_char(char c, char color);
 void txt_set_cursor_offset(int offset);
 void txt_cursor_blink(int on);
 int  txt_get_cursor_offset(void);
-void txt_backspace(void);
 void txt_clear(void);
-
 
 uint32_t gt_convert_color(char c) {
     // vga 16 color palette
@@ -50,11 +50,19 @@ int gt_get_max_rows(void) {
     return vesa_does_enable() ? vesa_get_height() / FONT_HEIGHT : 25;
 }
 
-void kprint_char(char c, char color) {
-    if (vesa_does_enable()) {
-        tef_print_char(c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+void kprint_char_at(int x, int y, char c, char color) {
+    if (x < 0 || y < 0) {
+        if (vesa_does_enable()) {
+            tef_print_char(c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+        } else {
+            txt_print_char(c, color);
+        }
     } else {
-        txt_print_char(c, color);
+        if (vesa_does_enable()) {
+            tef_set_char(x, y, c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+        } else {
+            txt_set_char(x, y, c, color);
+        }
     }
 }
 
@@ -71,14 +79,6 @@ void set_cursor_offset(int offset) {
         tef_set_cursor_offset(offset);
     } else {
         txt_set_cursor_offset(offset);
-    }
-}
-
-void kprint_backspace(void) {
-    if (vesa_does_enable()) {
-        tef_print_char(0x08, 0, 0); // we don't care about the color
-    } else {
-        txt_backspace();
     }
 }
 
@@ -130,7 +130,7 @@ int compute_ansi_escape(char *str) {
         int row = get_offset_row(offset);
         int col = get_offset_col(offset);
         for (int i = col; i < gt_get_max_cols() - 1; i++) {
-            kprint_char(' ', 0x0);
+            kprint_char_at(-1, -1, ' ', 0x0);
         }
         set_cursor_offset(get_offset(col, row));
     }
@@ -185,7 +185,7 @@ void kcnprint(char *message, int len, char color) {
         if (message[i] == '\033') {
             i += compute_ansi_escape(message + i);
         } else {
-            kprint_char(message[i], color);
+            kprint_char_at(-1, -1, message[i], color);
         }
         i++;
     }

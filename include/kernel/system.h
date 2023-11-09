@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SOD 01"
+#define KERNEL_VERSION  "SOD 02"
 #define KERNEL_EDITING  "sod"
 
 #define PROCESS_MAX     20          // max process count
@@ -40,8 +40,8 @@ int  sys_error(char *msg);
 void sys_fatal(char *msg);
 void sys_interrupt(int code, int err_code); // reserved cpu interrupt
 
-int sys_init_fpu(void);
-void sys_kinfo(char *dest);
+int   sys_init_fpu(void);
+char *sys_kinfo(void);
 
 // kshell.c
 void start_kshell(void);
@@ -65,5 +65,9 @@ uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
 
 // watfunc.c
 int init_watfunc(void);
+
+#define sod_fatal_call(msg) sod_fatal(__FILE__, __LINE__, msg)
+void sod_fatal(char *file_name, int line, char *msg);
+
 
 #endif

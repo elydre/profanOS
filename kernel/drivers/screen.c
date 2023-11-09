@@ -59,9 +59,12 @@ void txt_print_char(char c, char attr) {
     txt_set_cursor_offset(offset);
 }
 
-void txt_backspace(void) {
-    txt_set_cursor_offset(get_cursor_offset() - 2);
-    txt_print_char(0x08, c_white);
+void txt_set_char(int x, int y, char c, char color) {
+    int offset = get_offset(x, y);
+    if (offset >= MAX_ROWS * MAX_COLS * 2) return;
+    uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;
+    vidmem[offset] = c;
+    vidmem[offset+1] = color;
 }
 
 void txt_clear(void) {
