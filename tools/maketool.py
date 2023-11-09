@@ -248,8 +248,7 @@ def make_iso(force = False, more_option = False):
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
     print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
-
-    print_and_exec(f"echo TITE | cat initrd.bin - > {OUT_DIR}/isodir/boot/initrd.bin")
+    print_and_exec(f"cp initrd.bin {OUT_DIR}/isodir/boot/")
 
     if more_option:
         print_and_exec(f"cp boot/full.cfg {OUT_DIR}/isodir/boot/grub/grub.cfg")
