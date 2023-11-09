@@ -6,36 +6,27 @@
 uint32_t diskiso_start;
 uint32_t diskiso_size;
 
-int analyze_sectors(uint32_t *pos) {
-    // magic number is 'TITE' for This Is The End
-    uint32_t magic = 'T' | ('I' << 8) | ('T' << 16) | ('E' << 24);
-    int sector_count;
+int init_diskiso(void) {
+    uint32_t mod_end, end_pos, start;
 
-    for (sector_count = 0; pos[sector_count * 64] != magic; sector_count++);
-    return sector_count;
-}
-
-int init_diskiso() {
     diskiso_size = 0;
 
     if (!mboot_get(6)) {
         return 0;
     }
 
-    uint32_t sector_count = analyze_sectors((uint32_t *) GRUBMOD_START);
+    start = *(uint32_t *) mboot_get(6);
+    diskiso_size = (*(uint32_t *) (mboot_get(6) + 4) - start) / 256;
 
-    uint32_t pos = MEM_BASE_ADDR + PARTS_COUNT * sizeof(allocated_part_t) + 1;
-    diskiso_start = pos;
+    diskiso_start = MEM_BASE_ADDR + PARTS_COUNT * sizeof(allocated_part_t) + 1;
 
-    uint32_t mod_end = GRUBMOD_START + sector_count * 256;
-    uint32_t end_pos = pos + sector_count * 256;
+    mod_end = start + diskiso_size * 256;
+    end_pos = diskiso_start + diskiso_size * 256;
 
     // copy the module to the new position starting from the end
-    for (uint32_t i = 0; i <= sector_count * 256; i++) {
+    for (uint32_t i = 0; i <= diskiso_size * 256; i++) {
         *((uint8_t *) (end_pos - i)) = *((uint8_t *) (mod_end - i));
     }
-
-    diskiso_size = sector_count;
 
     return 2;   // enabled
 }

@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.0.5"
+#define KERNEL_VERSION  "1.0.5b"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
@@ -29,8 +29,6 @@
 #define WATFUNC_ADDR    0x1ffff7
 #define WATDILY_ADDR    0x1ffffb
 #define MEM_BASE_ADDR   0x1fffff
-
-#define GRUBMOD_START   0x116000    // grub module start (increase 0x1000)
 
 
 // system.c
