@@ -46,8 +46,6 @@ void kernel_main(void *mboot_ptr) {
 
     kprintf("successfully booted in %d ms\n", timer_get_ms());
 
-    sod_fatal_call("Just a fatal error test");
-
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 0, NULL);
 

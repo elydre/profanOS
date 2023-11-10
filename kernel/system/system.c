@@ -39,24 +39,7 @@ int sys_error(char *msg) {
     return 0;
 }
 
-struct stackframe {
-    struct stackframe* ebp;
-    uint32_t eip;
-};
-
-void profan_stacktrace(void) {
-    struct stackframe *stk;
-    asm ("movl %%ebp,%0" : "=r"(stk) ::);
-    serial_kprintf("Stack trace:");
-    while (stk->eip) {
-        serial_kprintf(" %x", stk->eip);
-        stk = stk->ebp;
-    }
-    serial_kprintf("\n");
-}
-
 void sys_fatal(char *msg) {
-    profan_stacktrace();
     kcprint("FATAL: ", 0x05);
     kcprint(msg, 0x0D);
     kprint("\n");
@@ -66,8 +49,8 @@ void sys_fatal(char *msg) {
 }
 
 void sys_interrupt(int code, int err_code) {
-    /* do not use this function, is
-    * reserved for cpu interrupts*/
+    // do not use this function, is
+    // reserved for cpu interrupts
 
     serial_kprintf("received interrupt %d from cpu\n", code);
 
@@ -77,40 +60,7 @@ void sys_interrupt(int code, int err_code) {
         return;
     }
 
-    kcprint("CPU INTERRUPT ", 0x05);
-
-    char msg[30];
-    int2str(code, msg);
-    kcprint(msg, 0x0D);
-    kcprint(": ", 0x05);
-
-    char *interrupts[] = {
-        "Division by zero",
-        "Debug",
-        "Non-maskable interrupt",
-        "Breakpoint",
-        "Overflow",
-        "Out of bounds",
-        "Invalid opcode",
-        "No coprocessor",
-        "Double fault",
-        "Coprocessor segment overrun",
-        "Bad TSS",
-        "Segment not present",
-        "Stack fault",
-        "General protection fault",
-        "Page fault",
-        "Unknown interrupt",
-        "Coprocessor fault",
-        "Alignment check",
-        "Machine check",
-    };
-
-    if (code < 19) kcprint(interrupts[code], 0x0D);
-    else kcprint("Reserved", 0x0D);
-    kprint("\n");
-
-    sys_stop();
+    sod_interrupt(code, err_code);
 }
 
 void sys_reboot(void) {
