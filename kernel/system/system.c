@@ -11,16 +11,6 @@
  * panic and reboot system *
 ****************************/
 
-void sys_stop(void) {
-    kcprint("profanOS has been stopped ", 0x0D);
-    kcprint(":", 0x0B);
-    kcprint("(\n", 0x0D);
-
-    serial_debug("SYSTEM", "profanOS has been stopped");
-    asm volatile("cli");
-    asm volatile("hlt");
-}
-
 int sys_warning(char *msg) {
     kcprint("WARNING: ", 0x06);
     kcprint(msg, 0x0E);
@@ -39,15 +29,7 @@ int sys_error(char *msg) {
     return 0;
 }
 
-void sys_fatal(char *msg) {
-    kcprint("FATAL: ", 0x05);
-    kcprint(msg, 0x0D);
-    kprint("\n");
-
-    serial_debug("FATAL", msg);
-    sys_stop();
-}
-
+void sod_interrupt(int code, int err_code);
 void sys_interrupt(int code, int err_code) {
     // do not use this function, is
     // reserved for cpu interrupts
@@ -75,7 +57,14 @@ void sys_shutdown(void) {
     port_word_out(0x604, 0x2000);   // qemu
     port_word_out(0xB004, 0x2000);  // bochs
     port_word_out(0x4004, 0x3400);  // virtualbox
-    sys_stop();                     // halt if above didn't work
+
+    kcprint("profanOS has been stopped ", 0x0D);
+    kcprint(":", 0x0B);
+    kcprint("(\n", 0x0D);
+
+    serial_debug("SYSTEM", "profanOS has been stopped");
+    asm volatile("cli");
+    asm volatile("hlt");
 }
 
 void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {

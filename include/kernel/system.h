@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SOD 03"
+#define KERNEL_VERSION  "SOD 04"
 #define KERNEL_EDITING  "sod"
 
 #define PROCESS_MAX     20          // max process count
@@ -15,10 +15,9 @@
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
 
-#define RUN_BIN_STACK   0x10000     // stack size (not auto expand)
 #define RUN_BIN_VBASE   0xC0000000  // virtual base address for binary
-#define RUN_BIN_VCUNT   0x10000     // virtual memory count (auto expand)
-#define RUN_BIN_VEXPD   16          // sucessive page create during page fault
+#define RUN_BIN_VCUNT   0x10000     // virtual memory count
+#define RUN_BIN_STACK   0x10000     // stack size
 
 #define DILY_MAX        128         // max dily loaded library
 #define RUN_LIB_STACK   0x1000      // left stack size for library
@@ -33,11 +32,9 @@
 // system.c
 void sys_reboot(void);
 void sys_shutdown(void);
-void sys_stop(void);
 
 int  sys_warning(char *msg);
 int  sys_error(char *msg);
-void sys_fatal(char *msg);
 void sys_interrupt(int code, int err_code); // reserved cpu interrupt
 
 int   sys_init_fpu(void);
@@ -66,7 +63,7 @@ uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
 // watfunc.c
 int init_watfunc(void);
 
-#define sod_fatal_call(msg) sod_fatal(__FILE__, __LINE__, msg)
+#define sys_fatal(msg) sod_fatal(__FILE__, __LINE__, msg)
 void sod_fatal(char *file_name, int line, char *msg);
 
 

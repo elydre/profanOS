@@ -87,13 +87,12 @@ void sod_print_generic_info(int is_cpu_error) {
     if (is_cpu_error) {
         sod_print_at(4, 1, "profanOS received an interrupt", 0x0D);
         sod_print_at(6, 3, "the CPU raised an unexpected interrupt, your", 0x05);
-        sod_print_at(6, 4, "system has been halted to prevent damage...", 0x05);
-
     } else {
         sod_print_at(4, 1, "profanOS kernel FATAL ERROR", 0x0D);
         sod_print_at(6, 3, "the kernel has encountered a fatal error, your", 0x05);
-        sod_print_at(6, 4, "system has been halted to prevent damage...", 0x05);
     }
+    sod_print_at(6, 4, "system has been halted to prevent damage...", 0x05);
+
     sod_print_at(6, 6, "kernel", 0x05);
     sod_print_at(13, 6, sys_kinfo(), 0x0D);
 
@@ -146,11 +145,6 @@ void sod_print_angel() {
     }
 }
 
-void sod_stop(void) {
-    asm volatile("cli");
-    asm volatile("hlt");
-}
-
 struct stackframe {
     struct stackframe* ebp;
     uint32_t eip;
@@ -167,7 +161,7 @@ void sod_print_stacktrace(void) {
     sod_print_at(4, 13, "Stack trace:", 0x05);
     for (int i = 14; stk->eip; i++) {
         if (i > size_y - 4) {
-            sod_print_at(4, i, "...", 0x05);
+            sod_print_at(6, i, "[...]", 0x05);
             break;
         }
         sod_putaddr_at(6, i, stk->eip, 0x0D);
@@ -177,6 +171,7 @@ void sod_print_stacktrace(void) {
 }
 
 void sod_fatal(char *file_name, int line, char *msg) {
+    asm volatile("cli");
     size_x = gt_get_max_cols();
     size_y = gt_get_max_rows();
 
@@ -191,11 +186,12 @@ void sod_fatal(char *file_name, int line, char *msg) {
 
     sod_print_stacktrace();
 
-    sod_stop();
+    asm volatile("hlt");
 }
 
 
 void sod_interrupt(int code, int err_code) {
+    asm volatile("cli");
     size_x = gt_get_max_cols();
     size_y = gt_get_max_rows();
 
@@ -220,5 +216,5 @@ void sod_interrupt(int code, int err_code) {
 
     sod_print_stacktrace();
 
-    sod_stop();
+    asm volatile("hlt");
 }
