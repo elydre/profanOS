@@ -42,107 +42,14 @@ int clean_buffer(char *buffer, int size) {
  * PRINT PUBLIC FUNCTIONS  *
 ***************************/
 
-uint32_t color_print(char *s) {
-    uint32_t msg_len = strlen(s);
-
-    uint32_t from = 0;
-    uint32_t i = 0;
-    char c = c_white;
-
-    while (i < msg_len) {
-        for (i = from; i < msg_len - 1; i++) {
-            if (s[i] != '$') continue;
-            s[i] = '\0';
-            c_kcprint(s + from, c);
-            s[i] = '$';
-            switch (s[i + 1]) {
-                case '0': c = c_blue;     break;
-                case '1': c = c_green;    break;
-                case '2': c = c_cyan;     break;
-                case '3': c = c_red;      break;
-                case '4': c = c_magenta;  break;
-                case '5': c = c_yellow;   break;
-                case '6': c = c_grey;     break;
-                case '7': c = c_white;    break;
-                case '8': c = c_dblue;    break;
-                case '9': c = c_dgreen;   break;
-                case 'A': c = c_dcyan;    break;
-                case 'B': c = c_dred;     break;
-                case 'C': c = c_dmagenta; break;
-                case 'D': c = c_dyellow;  break;
-                case 'E': c = c_dgrey;    break;
-                default:  c = c_white;    break;
-            }
-            i += 2;
-            from = i;
-            break;
-        }
-        i++;
-    }
-    if (from < msg_len)
-        c_kcprint(s + from, c);
-    return msg_len;
-}
-
-char panda_color_print(char *s, char c, uint32_t len) {
-    uint32_t from = 0;
-    uint32_t i = 0;
-
-    while (i < len) {
-        for (i = from; i < len - 1; i++) {
-            if (s[i] != '$') continue;
-            panda_print_string(s + from, i - from, c);
-            switch (s[i + 1]) {
-                case '0': c = c_blue;     break;
-                case '1': c = c_green;    break;
-                case '2': c = c_cyan;     break;
-                case '3': c = c_red;      break;
-                case '4': c = c_magenta;  break;
-                case '5': c = c_yellow;   break;
-                case '6': c = c_grey;     break;
-                case '7': c = c_white;    break;
-                case '8': c = c_dblue;    break;
-                case '9': c = c_dgreen;   break;
-                case 'A': c = c_dcyan;    break;
-                case 'B': c = c_dred;     break;
-                case 'C': c = c_dmagenta; break;
-                case 'D': c = c_dyellow;  break;
-                case 'E': c = c_dgrey;    break;
-                default:  c = c_white;    break;
-            }
-            i += 2;
-            from = i;
-            break;
-        }
-        i++;
-    }
-    if (from < len)
-        panda_print_string(s + from, i - from, c);
-    return c;
-}
-
 void rainbow_print(char *message) {
     // char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
-    char rainbow_colors[] = {'1', '2', '0', '4', '3', '5'};
-    int color_index = 0;
-
-    char *new = malloc((strlen(message) + 1) * 3);
-    // set color codes evry chars
+    char rainbow_colors[] = {'2', '6', '4', '5', '1', '3'};
 
     int i;
     for (i = 0; message[i]; i++) {
-        new[i * 3] = '$';
-        new[i * 3 + 1] = rainbow_colors[color_index];
-        new[i * 3 + 2] = message[i];
-        color_index = (color_index + 1) % 6;
+        printf("\033[9%cm%c", rainbow_colors[i % 6], message[i]);
     }
-
-    new[i * 3] = '$';
-    new[i * 3 + 1] = '7';
-    new[i * 3 + 2] = '\0';
-
-    fputs(new, stdout);
-    free(new);
 }
 
 /***********************

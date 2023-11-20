@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    printf("$4have %d arguments$$\n", argc);
+    printf("\033[95mhave %d arguments\033[0m\n", argc);
     for (int i = 0; i < argc; i++) {
-        printf("$4 arg %d: $1%s$$\n", i, argv[i]);
+        printf("\033[95m arg %d: \033[92m%s\033[0m\n", i, argv[i]);
     }
     return 0;
 }

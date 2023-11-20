@@ -6,6 +6,7 @@
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <minilib.h>
+#include <system.h>
 
 // string functions
 
@@ -260,42 +261,39 @@ void kinput(char *buffer, int size) {
     kprint("\033[?25h");
 }
 
-void func_printf(int output, char *fmt, ...) {
-    // printf kernel level
-    // don't use va
-    char *args = (char *) &fmt;
-    args += 4;
-    int i = 0;
-    char char_buffer[256];
-    int buffer_i = 0;
+void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
+    int output, buffer_i, i;
+    output = buffer_i = i = 0;
+
+    if ((uint32_t) char_buffer < 2) {
+        output = char_buffer[0] + 1;
+        char_buffer = sys_safe_buffer;
+    }
+
     while (fmt[i] != '\0') {
         if (fmt[i] == '%') {
             i++;
             if (fmt[i] == 's') {
-                char *s = *((char **) args);
-                args += 4;
+                char *s = va_arg(args, char *);
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
             } else if (fmt[i] == 'c') {
-                char c = *((char *) args);
-                args += 4;
+                char c = va_arg(args, int);
                 char_buffer[buffer_i] = c;
                 buffer_i++;
             } else if (fmt[i] == 'd') {
-                int n = *((int *) args);
-                args += 4;
-                char s[20];
+                int n = va_arg(args, int);
+                char s[12];
                 int2str(n, s);
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
             } else if (fmt[i] == 'x') {
-                uint32_t n = *((int *) args);
-                args += 4;
-                char s[20];
+                uint32_t n = va_arg(args, int);
+                char s[12];
                 hex2str(n, s);
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
@@ -312,11 +310,18 @@ void func_printf(int output, char *fmt, ...) {
         i++;
     }
     char_buffer[buffer_i] = '\0';
-    if (output == 0) {
+    if (output == 1) {
         kprint(char_buffer);
-    } else if (output == 1) {
+    } else if (output == 2) {
         serial_print(SERIAL_PORT_A, char_buffer);
     }
+}
+
+void kprintf_buf(char *char_buffer, char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    kprintf_va2buf(char_buffer, fmt, args);
+    va_end(args);
 }
 
 void krainbow(char *message) {

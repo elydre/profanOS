@@ -71,7 +71,7 @@ int redirect_devio(char *link, char *redirection) {
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
 
-    printf("$CKernel: $4%s$$\n\n", c_sys_kinfo());
+    printf("\033[35mKernel: \033[95m%s\033[0m\n\n", c_sys_kinfo());
 }
 
 char wait_key(void) {

@@ -92,7 +92,6 @@ int profan_kb_load_map(char *path) {
     fu_file_read(sid, file_content, 0, file_size);
     file_content[file_size] = '\0';
 
-
     if (strncmp(file_content, "#KEYMAP", 7)) {
         free(file_content);
         return 1;

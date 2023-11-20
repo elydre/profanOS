@@ -96,14 +96,14 @@ int dily_unload(uint32_t lib_id) {
 
 uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id) {
     if (!dily_does_loaded(lib_id)) {
-        serial_kprintf("lib %d not loaded\n", lib_id);
+        kprintf_serial("lib %d not loaded\n", lib_id);
         sys_fatal("Library not found");
         return 0;
     }
 
     uint32_t *addr_list = lib_functions[lib_id - 1000];
     if (func_id >= addr_list[0]) {
-        serial_kprintf("func %d not found\n", func_id);
+        kprintf_serial("func %d not found\n", func_id);
         sys_fatal("Function not found");
         return 0;
     }

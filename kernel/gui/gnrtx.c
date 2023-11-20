@@ -113,7 +113,33 @@ void cursor_blink(int on) {
 uint32_t saved_cursor_x = 0;
 uint32_t saved_cursor_y = 0;
 
-int compute_ansi_escape(char *str) {
+char compute_ansi_color(char ansi_nb, int part, char old_color) {
+    char fg = old_color & 0xF;
+    char bg = (old_color >> 4) & 0xF;
+
+    switch (ansi_nb) {
+        case '0': ansi_nb = 0; break;
+        case '1': ansi_nb = 4; break;
+        case '2': ansi_nb = 2; break;
+        case '3': ansi_nb = 6; break;
+        case '4': ansi_nb = 1; break;
+        case '5': ansi_nb = 5; break;
+        case '6': ansi_nb = 3; break;
+        default:  ansi_nb = 7; break;
+    }
+
+    if (part == 0) {
+        fg = ansi_nb;
+    } else if (part == 1) {
+        fg = ansi_nb + 8;
+    } else if (part == 2) {
+        bg = ansi_nb;
+    }
+
+    return (bg << 4) | fg;
+}
+
+int compute_ansi_escape(char *str, char *color) {
     char *start = str;
 
     if (str[1] == '[') str += 2;
@@ -143,6 +169,24 @@ int compute_ansi_escape(char *str) {
             cursor_blink(0);
         }
         return 5;
+    }
+
+    // font color
+    if (str[0] == '3' && str[2] == 'm') {
+        *color = compute_ansi_color(str[1], 0, *color);
+        return 4;
+    }
+
+    // highlight font color
+    if (str[0] == '9' && str[2] == 'm') {
+        *color = compute_ansi_color(str[1], 1, *color);
+        return 4;
+    }
+
+    // background color
+    if (str[0] == '4' && str[2] == 'm') {
+        *color = compute_ansi_color(str[1], 2, *color);
+        return 4;
     }
 
     // clear screen
@@ -183,7 +227,7 @@ void kcnprint(char *message, int len, char color) {
     if (len == -1) len = str_len(message);
     while (i < len) {
         if (message[i] == '\033') {
-            i += compute_ansi_escape(message + i);
+            i += compute_ansi_escape(message + i, &color);
         } else {
             kprint_char_at(-1, -1, message[i], color);
         }
