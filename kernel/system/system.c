@@ -18,9 +18,7 @@ void *reporter_addr;
 
 int sys_default_reporter(char *msg) {
     kprint(msg);
-    kprint("\n");
     serial_print(SERIAL_PORT_A, msg);
-    serial_print(SERIAL_PORT_A, "\n");
     return 0;
 }
 
@@ -40,7 +38,7 @@ void sys_warning(char *msg, ...) {
 
     str_cpy(sys_safe_buffer, "\033[33mWARNING: \033[93m");
     kprintf_va2buf(sys_safe_buffer + 19, msg, args);
-    str_cat(sys_safe_buffer, "\033[0m");
+    str_cat(sys_safe_buffer, "\033[0m\n");
 
     va_end(args);
     sys_report(sys_safe_buffer);
@@ -52,7 +50,7 @@ void sys_error(char *msg, ...) {
 
     str_cpy(sys_safe_buffer, "\033[31mERROR: \033[91m");
     kprintf_va2buf(sys_safe_buffer + 17, msg, args);
-    str_cat(sys_safe_buffer, "\033[0m");
+    str_cat(sys_safe_buffer, "\033[0m\n");
 
     va_end(args);
     sys_report(sys_safe_buffer);

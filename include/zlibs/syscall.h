@@ -12,7 +12,7 @@
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
 #define c_kcprint(message, color) c_kcnprint(message, -1, color)
-#define c_kprint(message) c_kcprint(message, c_white)
+#define c_kprint(message) c_kcprint(message, 0x0F)
 
 #define c_run_ifexist(path, argc, argv) \
         c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
@@ -23,73 +23,6 @@
 
 // nothing better than shit code art
 #define hi_func_addr(id) ((uint32_t (*)(uint32_t)) *(uint32_t *) WATFUNC_ADDR)(id)
-
-#define KB_A 16
-#define KB_Z 17
-#define KB_E 18
-#define KB_R 19
-#define KB_T 20
-#define KB_Y 21
-#define KB_U 22
-#define KB_I 23
-#define KB_O 24
-#define KB_P 25
-#define KB_Q 30
-#define KB_S 31
-#define KB_D 32
-#define KB_F 33
-#define KB_G 34
-#define KB_H 35
-#define KB_J 36
-#define KB_K 37
-#define KB_L 38
-#define KB_M 39
-#define KB_N 49
-#define KB_W 44
-#define KB_X 45
-#define KB_C 46
-#define KB_V 47
-#define KB_B 48
-
-#define KB_ESC 1
-#define KB_ALT 56
-#define KB_CTRL 29
-#define KB_SHIFT 42
-#define KB_MAJ 58
-#define KB_TAB 15
-
-// keyboard scancodes
-#define SC_MAX 57
-
-#define LSHIFT 42
-#define RSHIFT 54
-#define LEFT 75
-#define RIGHT 77
-#define OLDER 72
-#define NEWER 80
-#define BACKSPACE 14
-#define DEL 83
-#define ENTER 28
-
-#define KB_released_value 128
-#define KB_released(key) (key + KB_released_value)
-
-#define c_blue      0x09
-#define c_green     0x0a
-#define c_cyan      0x0b
-#define c_red       0x0c
-#define c_magenta   0x0d
-#define c_yellow    0x0e
-#define c_grey      0x07
-#define c_white     0x0f
-
-#define c_dblue     0x01
-#define c_dgreen    0x02
-#define c_dcyan     0x03
-#define c_dred      0x04
-#define c_dmagenta  0x05
-#define c_dyellow   0x06
-#define c_dgrey     0x08
 
 #define c_fs_get_main ((filesys_t *(*)(void)) hi_func_addr(0))
 #define c_fs_cnt_set_size ((int (*)(filesys_t *, sid_t, uint32_t)) hi_func_addr(1))
@@ -144,5 +77,6 @@
 
 #define c_dily_unload ((int (*)(uint32_t)) hi_func_addr(42))
 #define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(43))
+#define c_sys_set_reporter ((void (*)(int (*)(char *))) hi_func_addr(44))
 
 #endif

@@ -112,6 +112,7 @@ int main(void) {
             c_kprint("Failed to redirect stderr\n");
             return 1;
         }
+        c_sys_set_reporter(userspace_reporter);
         run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");

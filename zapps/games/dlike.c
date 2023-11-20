@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <stdlib.h>
 #include <i_vgui.h>
+#include <profan.h>
 
 #define MAP_SIZE 10
 #define PI 3.14159

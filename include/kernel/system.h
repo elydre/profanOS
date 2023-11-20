@@ -31,6 +31,7 @@
 
 // system.c
 extern char sys_safe_buffer[256];
+void sys_set_reporter(int (*reporter)(char *));
 
 void sys_reboot(void);
 void sys_shutdown(void);

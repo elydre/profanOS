@@ -33,9 +33,10 @@ int main(void) {
     return 0;
 }
 
-int clean_buffer(char *buffer, int size) {
-    for (int i = 0; i < size; i++) buffer[i] = '\0';
-    return 0;
+int userspace_reporter(char *message) {
+    int c = fputs(message, stderr);
+    c_serial_print(SERIAL_PORT_A, message);
+    return c == EOF;
 }
 
 /***************************

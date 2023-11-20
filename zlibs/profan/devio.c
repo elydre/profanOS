@@ -245,7 +245,7 @@ int dev_rand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 
 int dev_kterm_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
-        c_kcprint((char *) buffer, c_white);
+        c_kprint((char *) buffer);
         return size;
     }
 

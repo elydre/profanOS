@@ -86,9 +86,10 @@ void *SYSCALL_ARRAY[] = {
     // minilib.h
     force_exit_pid,
 
-    // system.h (dily)
+    // system.h
     dily_unload,
     dily_load,
+    sys_set_reporter,
 };
 
 uint32_t wf_get_func_addr(uint32_t func_id) {
