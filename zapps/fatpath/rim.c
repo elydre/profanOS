@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
         sid_t elm = fu_path_to_sid(ROOT_SID, file);
 
         if (IS_NULL_SID(elm) || !fu_is_file(elm)) {
-            printf("$3%s$B file not found$$\n", file);
+            printf("\033[91m%s\033[31m file not found\033[0m\n", file);
             free(file);
             return 1;
         }

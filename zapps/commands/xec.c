@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        printf("$BUsage: $3xec <input> <output>$$\n");
+        printf("\033[31mUsage: \033[91mxec <input> <output>\033[0m\n");
         return 1;
     }
 
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 
     // check if the file exists
     if (IS_NULL_SID(input_sid)) {
-        printf("$Bfile $3%s$B not found$$\n", input_file);
+        printf("\033[31mfile \033[91m%s\033[31m not found\033[0m\n", input_file);
         free(input_file);
         return 1;
     }
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     uint32_t size = fu_get_file_size(input_sid);
 
     if (size < 0x1000) {
-        printf("$Bfile $3%s$B is too small$$\n", input_file);
+        printf("\033[31mfile \033[91m%s\033[31m is too small\033[0m\n", input_file);
         free(input_file);
         return 1;
     }
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     // create the file
     output_sid = fu_file_create(0, output_file);
     if (IS_NULL_SID(output_sid)) {
-        printf("$Bfailed to create file $3%s$$\n", output_file);
+        printf("\033[31mfailed to create file \033[91m%s\033[0m\n", output_file);
         free(output_file);
         free(input_file);
         free(data);

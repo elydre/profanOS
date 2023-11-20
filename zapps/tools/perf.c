@@ -4,7 +4,7 @@
 int is_prime(int n);
 
 int main(int argc, char **argv) {
-    printf("$4Starting the performance test...$$\n");
+    printf("\033[95mStarting the performance test...\033[0m\n");
 
     int start_time = c_timer_get_ms();
     int n = 15 * 1000 * 1000;
@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
         count += is_prime(i);
 
     int time = c_timer_get_ms() - start_time;
-    printf("$4Find $1%d $4prime numbers in $1%d $4ms$$\n", count, time);
+    printf("\033[95mFind \033[92m%d \033[95mprime numbers in \033[92m%d \033[95mms\033[0m\n", count, time);
     return 0;
 }
 
