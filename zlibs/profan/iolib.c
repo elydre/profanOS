@@ -147,7 +147,7 @@ uint32_t open_input(char *buffer, uint32_t size) {
 
         else continue;
 
-        printf("\033[?25h\033[u\033[34m%s \033[0m\033[u\033[%dC\033[?25l", buffer, buffer_index);
+        printf("\033[?25h\033[u\033[94m%s \033[0m\033[u\033[%dC\033[?25l", buffer, buffer_index);
         fflush(stdout);
     }
 

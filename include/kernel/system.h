@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SOD 06"
+#define KERNEL_VERSION  "SOD 07"
 #define KERNEL_EDITING  "sod"
 
 #define PROCESS_MAX     20          // max process count
@@ -66,7 +66,7 @@ uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
 // watfunc.c
 int init_watfunc(void);
 
-#define sys_fatal(msg) sod_fatal(__FILE__, __LINE__, msg)
-void sod_fatal(char *file_name, int line, char *msg);
+#define sys_fatal(msg, ...) sod_fatal(__FILE__, __LINE__, msg, ##__VA_ARGS__)
+void sod_fatal(char *file_name, int line, char *msg, ...);
 
 #endif

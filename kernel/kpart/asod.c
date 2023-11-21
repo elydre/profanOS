@@ -170,8 +170,13 @@ void sod_print_stacktrace(void) {
     }
 }
 
-void sod_fatal(char *file_name, int line, char *msg) {
+void sod_fatal(char *file_name, int line, char *msg, ...) {
     asm volatile("cli");
+    va_list args;
+    va_start(args, msg);
+    kprintf_va2buf(sys_safe_buffer, msg, args);
+    va_end(args);
+
     size_x = gt_get_max_cols();
     size_y = gt_get_max_rows();
 
@@ -182,7 +187,7 @@ void sod_fatal(char *file_name, int line, char *msg) {
     sod_print_file_info(file_name, line);
 
     sod_print_at(6, 11, "-> ", 0xD0);
-    sod_print_at(9, 11, msg, 0xD0);
+    sod_print_at(9, 11, sys_safe_buffer, 0xD0);
 
     sod_print_stacktrace();
 

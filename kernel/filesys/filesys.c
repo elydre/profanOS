@@ -36,19 +36,6 @@ int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
     return did;
 }
 
-void fs_print_status(filesys_t *filesys) {
-    kprintf("\n====================\n");
-    kprintf("vdisk_count: %d\n", filesys->vdisk_count);
-    for (uint32_t i = 0; i < filesys->max_disks; i++) {
-        if (filesys->vdisk[i] == NULL) continue;
-        kprintf("vdisk[%d] size: %d, used: %d\n", i,
-            filesys->vdisk[i]->size,
-            filesys->vdisk[i]->used_count
-        );
-    }
-    kprintf("====================\n\n");
-}
-
 filesys_t *MAIN_FS;
 
 filesys_t *fs_get_main(void) {
