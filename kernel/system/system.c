@@ -23,6 +23,9 @@ int sys_default_reporter(char *msg) {
 }
 
 void sys_set_reporter(int (*reporter)(char *)) {
+    if (reporter == NULL) {
+        reporter = sys_default_reporter;
+    }
     reporter_addr = reporter;
 }
 

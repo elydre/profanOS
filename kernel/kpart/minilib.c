@@ -264,6 +264,7 @@ void kinput(char *buffer, int size) {
 void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
     int output, buffer_i, i;
     output = buffer_i = i = 0;
+    char s[12];
 
     if ((uint32_t) char_buffer < 2) {
         output = (int) char_buffer + 1;
@@ -274,27 +275,22 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
         if (fmt[i] == '%') {
             i++;
             if (fmt[i] == 's') {
-                char *s = va_arg(args, char *);
-                for (int j = 0; s[j] != '\0'; j++) {
-                    char_buffer[buffer_i] = s[j];
+                char *tmp = va_arg(args, char *);
+                for (int j = 0; tmp[j] != '\0'; j++) {
+                    char_buffer[buffer_i] = tmp[j];
                     buffer_i++;
                 }
             } else if (fmt[i] == 'c') {
-                char c = va_arg(args, int);
-                char_buffer[buffer_i] = c;
+                char_buffer[buffer_i] = va_arg(args, int);
                 buffer_i++;
             } else if (fmt[i] == 'd') {
-                int n = va_arg(args, int);
-                char s[12];
-                int2str(n, s);
+                int2str(va_arg(args, int), s);
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
             } else if (fmt[i] == 'x') {
-                uint32_t n = va_arg(args, int);
-                char s[12];
-                hex2str(n, s);
+                hex2str(va_arg(args, int), s);
                 for (int j = 0; s[j] != '\0'; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;

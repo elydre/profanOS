@@ -213,8 +213,6 @@ def build_app_lib():
             cprint(COLOR_EXEC, f"creating '{OUT_DIR}/{dir_name}' directory")
             os.makedirs(f"{OUT_DIR}/{dir_name}")
 
-    build_list = [x for x in build_list if not x.startswith("zapps/projets")]
-
     # check if zapps need to be rebuild
     updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
     cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (active: {len(build_list)}, skipped: {skip_count}, total: {len(build_list) + skip_count})")
@@ -327,14 +325,6 @@ def gen_disk(force=False, with_src=False):
 
     if with_src:
         add_src_to_disk()
-
-    try:
-        for dossier in os.listdir(f"{OUT_DIR}/disk/bin/projets"):
-            print_and_exec(f"make -C zapps/projets/{dossier}/ build")
-            print_and_exec(f"cp zapps/projets/{dossier}/*.bin {OUT_DIR}/disk/bin/projets/")
-            print_and_exec(f"rm -Rf {OUT_DIR}/disk/bin/projets/{dossier}/ zapps/projets/{dossier}/*.bin")
-    except Exception as e:
-        cprint(COLOR_EROR, f"Error while building projets {e}")
 
     if HBL_FILE: write_build_logs()
 

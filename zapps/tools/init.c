@@ -88,8 +88,8 @@ char wait_key(void) {
 }
 
 int main(void) {
+    char key_char, use_panda = 0;
     int sum, total, usage_pid;
-    char key_char;
 
     total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
     sum = 0;
@@ -104,6 +104,7 @@ int main(void) {
 
     if (c_vesa_get_width() > 0) {
         setenv("TERM", "/dev/panda", 1);
+        use_panda = 1;
         if (redirect_devio("/dev/stdout", "/dev/panda")) {
             c_kprint("Failed to redirect stdout\n");
             return 1;
@@ -133,6 +134,10 @@ int main(void) {
             c_sys_reboot();
         }
     } while (key_char != 'h');
+
+    if (use_panda) {
+        c_sys_set_reporter(NULL);
+    }
 
     c_kprint("\033[2J");
     if (c_process_get_state(usage_pid) < 4) {
