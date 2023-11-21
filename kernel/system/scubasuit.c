@@ -315,13 +315,12 @@ void scuba_fault_handler(int err_code) {
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
-    kprintf("Page fault during %s at %x, pid %d, code %x\n",
+    sys_error("Page fault during %s at %x (pid %d, code %x)",
             (err_code & 0x2) ? "write" : "read",
             faulting_address,
             pid,
             err_code
     );
-    sys_error("Page fault, killing process");
 
     // exit with the standard segfault code
     if (force_exit_pid(pid, 139)) {

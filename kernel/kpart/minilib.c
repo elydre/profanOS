@@ -266,7 +266,7 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
     output = buffer_i = i = 0;
 
     if ((uint32_t) char_buffer < 2) {
-        output = char_buffer[0] + 1;
+        output = (int) char_buffer + 1;
         char_buffer = sys_safe_buffer;
     }
 

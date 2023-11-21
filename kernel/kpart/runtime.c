@@ -103,12 +103,11 @@ void tasked_program(void) {
     int not_free_mem = mem_get_info(7, pid);
 
     if (not_free_mem) {
-        sys_warning("Memory leak detected");
-
-        kprintf("[auto free] %d alloc will be auto freed (total: %d bytes, pid: %d)\n",
+        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
                 not_free_mem,
-                mem_get_info(8, pid),
-                pid
+                not_free_mem == 1 ? "" : "s",
+                pid,
+                mem_get_info(8, pid)
         );
 
         mem_free_all(pid);
