@@ -150,7 +150,7 @@ int main(void) {
         c_dily_unload(lib->id);
     }
 
-    c_kprint("all libraries unloaded, bye!\n");
+    c_kprint("all libraries unloaded - bye (._. )\n");
 
     c_mem_free_all(c_process_get_pid());
 

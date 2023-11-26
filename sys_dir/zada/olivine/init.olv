@@ -2,17 +2,18 @@ pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
 pseudo pwd 'echo !path'
 
-FUNC echo
-    FOR i !(range !#)
-        print '!!i '
-    END
-    print \n
-END
-
 FOR dir '/bin/commands' '/bin/fatpath'
     FOR e !(find -f !dir)
         pseudo !(name !e) 'go !e'
     END
+END
+
+FUNC help
+    IF !#
+        !0 -h
+        RETURN
+    END
+    cat /zada/common/shell_help.txt | echo -e
 END
 
 FUNC show
