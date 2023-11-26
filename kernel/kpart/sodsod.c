@@ -69,7 +69,6 @@ void sod_print_at(int x, int y, char *str, char color) {
 }
 
 void sod_putaddr_at(int x, int y, uint32_t addr, char color) {
-    // always 
     char str[10];
     for (int i = 0; i < 8; i++) {
         str[i < 4 ? i : i + 1] = "0123456789ABCDEF"[(addr >> (28 - i * 4)) & 0xF];

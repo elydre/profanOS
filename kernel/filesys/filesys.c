@@ -24,11 +24,11 @@ void fs_destroy(filesys_t *filesys) {
 
 int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
     if (did > filesys->max_disks) {
-        sys_error("disk id is too big");
+        sys_warning("[mount_vdisk] Disk id is too big");
         return -1;
     }
     if (filesys->vdisk[did - 1] != NULL) {
-        sys_error("disk id is already used");
+        sys_warning("[mount_vdisk] Disk id is already used");
         return -1;
     }
     filesys->vdisk[did - 1] = vdisk;
@@ -47,7 +47,7 @@ vdisk_t *initrd_to_vdisk(void) {
     uint32_t initrd_size = diskiso_get_size();
 
     if (initrd_size == 0) {
-        sys_error("initrd is empty/missing");
+        sys_error("Initrd is empty or missing");
         return NULL;
     }
 

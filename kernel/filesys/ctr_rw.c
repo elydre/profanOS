@@ -134,14 +134,8 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
 
     vdisk = fs_get_vdisk(filesys, head_sid.device);
 
-    if (vdisk == NULL) {
-        sys_error("failed to r/w, vdisk not found");
-        return 1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        sys_error("failed to r/w, sector not used");
+    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
+        sys_warning("[cnt_rw] Invalid sector id");
         return 1;
     }
 
@@ -149,19 +143,18 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     data = vdisk_load_sector(vdisk, head_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_HEAD) {
-        sys_error("failed to r/w, sector not cnt header");
+        sys_warning("[cnt_rw] Sector is not cnt header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
 
     // check if offset+size is valid
     if (offset + size > *((uint32_t *) (data + 2 + META_MAXLEN))) {
-        kprintf("cannot %s beyond cnt size, %d max, %d requested\n",
+        sys_warning("[cnt_rw] cannot %s beyond cnt size (%d requested, %d max)\n",
                 is_read ? "read" : "write",
                 *((uint32_t *) (data + 2 + META_MAXLEN)),
                 offset + size
         );
-        sys_error("failed to r/w, offset+size is invalid");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
@@ -170,7 +163,7 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
     if (loca_sid.device != 0 || loca_sid.sector != 0) {
         if (fs_cnt_rw_loca(filesys, loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
-            sys_error("failed to r/w, failed to r/w locator");
+            sys_error("[cnt_rw] failed to %s locator", is_read ? "read" : "write");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }

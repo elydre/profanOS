@@ -99,7 +99,7 @@ int vdisk_get_unused_sector(vdisk_t *vdisk) {
 
 int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
     if (sid.sector >= vdisk->size) {
-        sys_error("Cannot write sector, out of range");
+        sys_error("[vdisk_write] Sector out of range");
         return 1;
     }
     mem_copy(vdisk->sectors + sid.sector, data, FS_SECTOR_SIZE);
@@ -108,7 +108,7 @@ int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
 
 int vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
     if (sid.sector >= vdisk->size) {
-        sys_error("Cannot read sector, out of range");
+        sys_error("[vdisk_read] Sector out of range");
         return 1;
     }
     mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
@@ -117,10 +117,9 @@ int vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
 
 uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
     if (sid.sector >= vdisk->size) {
-        sys_error("Cannot load sector, out of range");
+        sys_error("[vdisk_load] Sector out of range");
         return NULL;
     }
-    // return (uint8_t *) (vdisk->sectors + sid.sector);
     uint8_t *data = malloc(FS_SECTOR_SIZE);
     mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
     return data;
