@@ -9,14 +9,8 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
 
     vdisk = fs_get_vdisk(filesys, loca_sid.device);
 
-    if (vdisk == NULL) {
-        sys_error("failed to shrink container, device not found");
-        return -1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-        sys_error("failed to shrink container, sector not used");
+    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, loca_sid)) {
+        sys_error("[cnt_shrink_size] Invalid sector id");
         return -1;
     }
 
@@ -24,7 +18,7 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
     data = vdisk_load_sector(vdisk, loca_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_LOCA) {
-        sys_error("failed to shrink container, sector not locator");
+        sys_error("[cnt_shrink_size] Sector is not container locator");
         free(data);
         return -1;
     }
@@ -69,7 +63,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     vdisk = fs_get_vdisk(filesys, loca_sid.device);
 
     if (vdisk == NULL) {
-        sys_error("failed to grow container, device not found");
+        sys_error("[cnt_grow_size] vdisk not found");
         return -1;
     }
 
@@ -78,7 +72,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     do {
         // check if sector is used
         if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-            sys_error("failed to grow container, sector not used");
+            sys_error("[cnt_grow_size] Invalid sector id");
             return -1;
         }
 
@@ -86,7 +80,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
         data = vdisk_load_sector(vdisk, loca_sid);
 
         if (data[0] != ST_CONT || data[1] != SF_LOCA) {
-            sys_error("failed to grow container, sector not locator");
+            sys_error("[cnt_grow_size] Sector is not container locator");
             free(data);
             return -1;
         }
@@ -119,12 +113,12 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
         core_sid.device = loca_sid.device;
         core_sid.sector = vdisk_get_unused_sector(vdisk);
         if (IS_NULL_SID(core_sid)) {
-            sys_error("failed to grow container, no more sectors");
+            sys_error("[cnt_grow_size] No more free sectors");
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return -1;
         }
         if (fs_cnt_init_core_in_sector(vdisk, core_sid) == -1) {
-            sys_error("failed to grow container, failed to init core");
+            sys_error("[cnt_grow_size] Could not init core");
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return -1;
         }
@@ -145,13 +139,13 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
         new_loca_sid.sector = vdisk_get_unused_sector(vdisk);
 
         if (IS_NULL_SID(new_loca_sid)) {
-            sys_error("failed to grow container, no more sectors");
+            sys_error("[cnt_grow_size] No more free sectors");
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return -1;
         }
 
         if (fs_cnt_init_loca_in_sector(vdisk, new_loca_sid) == -1) {
-            sys_error("failed to grow container, failed to init locator");
+            sys_error("[cnt_grow_size] Could not init locator");
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return -1;
         }
@@ -169,12 +163,12 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             core_sid.device = loca_sid.device;
             core_sid.sector = vdisk_get_unused_sector(vdisk);
             if (IS_NULL_SID(core_sid)) {
-                sys_error("failed to grow container, no more sectors");
+                sys_error("[cnt_grow_size] No more free sectors");
                 vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                 return -1;
             }
             if (fs_cnt_init_core_in_sector(vdisk, core_sid) == -1) {
-                sys_error("failed to grow container, failed to init core");
+                sys_error("[cnt_grow_size] Could not init core");
                 vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                 return -1;
             }
@@ -194,14 +188,8 @@ int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
 
     vdisk = fs_get_vdisk(filesys, head_sid.device);
 
-    if (vdisk == NULL) {
-        sys_error("failed to set container size, device not found");
-        return 1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        sys_error("failed to set container size, sector not used");
+    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
+        sys_warning("[cnt_set_size] Invalid sector id");
         return 1;
     }
 
@@ -209,7 +197,7 @@ int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
     data = vdisk_load_sector(vdisk, head_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_HEAD) {
-        sys_error("failed to set container size, sector not container header");
+        sys_warning("[cnt_set_size] Sector is not container header");
         free(data);
         return 1;
     }
@@ -245,14 +233,8 @@ uint32_t fs_cnt_get_size(filesys_t *filesys, sid_t head_sid) {
 
     vdisk = fs_get_vdisk(filesys, head_sid.device);
 
-    if (vdisk == NULL) {
-        sys_error("failed to get container size, device not found");
-        return UINT32_MAX;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        sys_error("failed to get container size, sector not used");
+    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
+        sys_warning("[cnt_get_size] Invalid sector id");
         return UINT32_MAX;
     }
 
@@ -260,7 +242,7 @@ uint32_t fs_cnt_get_size(filesys_t *filesys, sid_t head_sid) {
     data = vdisk_load_sector(vdisk, head_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_HEAD) {
-        sys_error("failed to get container size, sector not container header");
+        sys_warning("[cnt_get_size] Sector is not container header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return UINT32_MAX;
     }

@@ -32,7 +32,7 @@ DIR STRUCTURE
 
 int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***names) {
     if (!fu_is_dir(filesys, dir_sid)) {
-        sys_error("failed to get dir content, not a directory");
+        sys_warning("[get_dir_content] Sector is not a directory");
         return -1;
     }
 
@@ -45,7 +45,6 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     // read the directory
     uint8_t *buf = malloc(size);
     if (fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
-        sys_error("failed to get dir content, read failed");
         return -1;
     }
 
@@ -80,13 +79,8 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
 }
 
 int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, char *name) {
-    if (IS_NULL_SID(element_sid) || IS_NULL_SID(dir_sid)) {
-        sys_error("failed to add element to dir, null sid given");
-        return 1;
-    }
-
-    if (!fu_is_dir(filesys, dir_sid)) {
-        sys_error("failed to add element to dir, not a directory");
+    if (IS_NULL_SID(element_sid) || IS_NULL_SID(dir_sid) || !fu_is_dir(filesys, dir_sid)) {
+        sys_error("[add_element_to_dir] Invalid given sector id");
         return 1;
     }
 
@@ -149,13 +143,14 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     if (parent[0]) {
         parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
         if (IS_NULL_SID(parent_sid)) {
-            sys_error("failed to create directory, parent not found");
+            sys_warning("[dir_create] Parent not found");
             free(parent);
             free(name);
             return NULL_SID;
         }
+
         if (!fu_is_dir(filesys, parent_sid)) {
-            sys_error("failed to create directory, parent not a directory");
+            sys_warning("[dir_create] Parent not a directory");
             free(parent);
             free(name);
             return NULL_SID;
@@ -174,7 +169,6 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
-        sys_error("failed to create directory, init failed");
         free(parent);
         free(name);
         return NULL_SID;
@@ -183,7 +177,6 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     // create a link in parent directory
     if (parent[0]) {
         if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
-            sys_error("failed to create directory, add to parent failed");
             free(parent);
             free(name);
             return NULL_SID;
