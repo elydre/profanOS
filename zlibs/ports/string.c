@@ -303,16 +303,13 @@ char *strchrnul(register const char *s, int c) {
     return NULL;
 }
 
-size_t strlen(const char *s);
 int strcmp(register const char *s1, register const char *s2) {
-    if (strlen(s1) != strlen(s2)) {
-        return -1;
+    while (*s1 == *s2++) {
+        if (*s1++ == 0) {
+            return 0;
+        }
     }
-    int i;
-    for (i = 0; s1[i] == s2[i]; i++) {
-        if (s1[i] == '\0') return 0;
-    }
-    return s1[i] - s2[i];
+    return *(unsigned char *) s1 - *(unsigned char *) --s2;
 }
 
 char *strcpy(char *restrict s1, const char *restrict s2) {
@@ -329,6 +326,7 @@ size_t strcspn(const char *s1, const char *s2) {
     return 0;
 }
 
+size_t strlen(const char *s);
 char *strdup(register const char *s) {
     size_t l = strlen(s);
     char *d = malloc(l+1);
