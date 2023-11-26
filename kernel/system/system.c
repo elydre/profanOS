@@ -1,5 +1,6 @@
 #include <kernel/scubasuit.h>
 #include <drivers/serial.h>
+#include <kernel/process.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
@@ -16,6 +17,8 @@
 char sys_safe_buffer[256];
 void *reporter_addr;
 
+int RECURSIVE_COUNT;
+
 int sys_default_reporter(char *msg) {
     kprint(msg);
     serial_print(SERIAL_PORT_A, msg);
@@ -30,12 +33,26 @@ void sys_set_reporter(int (*reporter)(char *)) {
 }
 
 void sys_report(char *msg) {
-    if (((int (*)(char *)) reporter_addr)(msg)) {
-        sys_default_reporter(msg);
+    char *copy = malloc(str_len(msg) + 1);
+    str_cpy(copy, msg);
+
+    if (reporter_addr != sys_default_reporter &&
+        (reporter_addr == NULL ||
+        ((uint8_t *) reporter_addr)[0] != 0x55 ||
+        ((uint8_t *) reporter_addr)[1] != 0x89 ||
+        RECURSIVE_COUNT > 1)
+    ) {
+        reporter_addr = sys_default_reporter;
+        sys_warning("Invalid reporter address, using default reporter");
     }
+
+    ((int (*)(char *)) reporter_addr)(copy);
+    free(copy);
 }
 
 void sys_warning(char *msg, ...) {
+    RECURSIVE_COUNT++;
+
     va_list args;
     va_start(args, msg);
 
@@ -45,9 +62,13 @@ void sys_warning(char *msg, ...) {
 
     va_end(args);
     sys_report(sys_safe_buffer);
+    RECURSIVE_COUNT--;
 }
 
 void sys_error(char *msg, ...) {
+    RECURSIVE_COUNT++;
+    int current_pid = process_get_pid();
+
     va_list args;
     va_start(args, msg);
 
@@ -57,6 +78,11 @@ void sys_error(char *msg, ...) {
 
     va_end(args);
     sys_report(sys_safe_buffer);
+
+    RECURSIVE_COUNT--;
+    if (current_pid > 1 && force_exit_pid(current_pid, 130)) {
+        sys_fatal("Failed to exit process");
+    }
 }
 
 void sod_interrupt(int code, int err_code);
@@ -127,6 +153,7 @@ int sys_init(void) {
     asm volatile("or $0x600, %eax");
     asm volatile("mov %eax, %cr4");
 
+    RECURSIVE_COUNT = 0;
     sys_set_reporter(sys_default_reporter);
 
     return 0;

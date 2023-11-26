@@ -20,7 +20,7 @@ int init_watfunc(void) {
 }
 
 void unknown_func(void) {
-    sys_error("Unknown syscall");
+    sys_warning("Trying to call an unknown syscall");
 }
 
 void *SYSCALL_ARRAY[] = {

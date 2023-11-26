@@ -30,6 +30,10 @@ typedef struct {
 direct_return_t last_return;
 
 int force_exit_pid(int pid, int ret_code) {
+    if (pid == 0 || pid == 1) {
+        return 1;
+    }
+
     // clean memory
     mem_free_all(pid);
 
@@ -135,9 +139,7 @@ void tasked_program(void) {
 }
 
 int run_binary(runtime_args_t args, int *pid_ptr) {
-    serial_debug("RUNTIME", args.path);
-
-    int pid = process_create(tasked_program, 2, args.path);
+    int pid = process_create(tasked_program, 2, args.path == NULL ? "unknown file" : args.path);
 
     if (pid == -1)
         return -1;
@@ -189,11 +191,10 @@ int run_ifexist_full(runtime_args_t args, int *pid) {
     */
 
     if (args.path == NULL && IS_NULL_SID(args.sid)) {
-        sys_error("No path or sid provided");
+        sys_warning("[run_ifexist] No path or sid given");
         return -1;
     }
 
-    args.path = args.path == NULL ? "serenity" : args.path;
     args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(fs_get_main(), ROOT_SID, args.path) : args.sid;
 
     args.vbase = args.vbase ? args.vbase : RUN_BIN_VBASE;
@@ -204,6 +205,10 @@ int run_ifexist_full(runtime_args_t args, int *pid) {
         return run_binary(args, pid);
     }
 
-    sys_error("Program not found");
+    if (args.path)
+        sys_warning("[run_ifexist] File not found: %s", args.path);
+    else
+        sys_warning("[run_ifexist] Sector d%ds%d is not a file", args.sid.device, args.sid.sector);
+
     return -1;
 }

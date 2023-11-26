@@ -321,9 +321,4 @@ void scuba_fault_handler(int err_code) {
             pid,
             err_code
     );
-
-    // exit with the standard segfault code
-    if (force_exit_pid(pid, 139)) {
-        sys_fatal("Failed to exit process");
-    }
 }
