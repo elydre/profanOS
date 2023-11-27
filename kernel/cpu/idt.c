@@ -17,4 +17,3 @@ void set_idt(void) {
     idt_reg.limit = IDT_ENTRIES * sizeof(idt_gate_t) - 1;
     asm volatile("lidtl (%0)" : : "r" (&idt_reg));
 }
-

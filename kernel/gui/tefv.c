@@ -165,4 +165,3 @@ void tef_clear(void) {
         }
     }
 }
-

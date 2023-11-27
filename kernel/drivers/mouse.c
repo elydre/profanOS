@@ -167,4 +167,3 @@ int mouse_call(int thing, int val) {
             return 0;
     }
 }
-
