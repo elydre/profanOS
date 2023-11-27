@@ -1,7 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {

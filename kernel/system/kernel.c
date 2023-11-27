@@ -15,7 +15,6 @@
 #include <cpu/gdt.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 void kernel_main(void *mboot_ptr) {

@@ -5,7 +5,6 @@
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
 #include <minilib.h>
-
 #include <system.h>
 
 /********************************

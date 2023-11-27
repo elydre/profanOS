@@ -37,3 +37,4 @@ void gdt_init(void) {
 
     gdt_flush();
 }
+

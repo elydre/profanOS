@@ -1,7 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 int fs_cnt_delete_core(filesys_t *filesys, sid_t core_sid) {

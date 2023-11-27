@@ -6,9 +6,9 @@
 
 void serial_enable(int device) {
     port_byte_out(device + 1, 0x00);
-    port_byte_out(device + 3, 0x80); // Enable divisor mode
-    port_byte_out(device + 0, 0x03); // Div Low:  03 Set the port to 38400 bps
-    port_byte_out(device + 1, 0x00); // Div High: 00
+    port_byte_out(device + 3, 0x80); // enable divisor mode
+    port_byte_out(device + 0, 0x03); // div Low:  03 Set the port to 38400 bps
+    port_byte_out(device + 1, 0x00); // div High: 00
     port_byte_out(device + 3, 0x03);
     port_byte_out(device + 2, 0xC7);
     port_byte_out(device + 4, 0x0B);

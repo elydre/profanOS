@@ -3,7 +3,6 @@
 #include <kernel/process.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 uint32_t **lib_functions = 0;
 

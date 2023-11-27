@@ -1,8 +1,7 @@
 #include <kernel/snowflake.h>
 #include <drivers/keyboard.h>
-#include <kernel/process.h>
 #include <drivers/serial.h>
-#include <drivers/rtc.h>
+#include <kernel/process.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <minilib.h>

@@ -3,6 +3,25 @@
 #include <minilib.h>
 #include <system.h>
 
+/***************************************
+ *                                    *
+ *  SODSOD - Angelic screen of death  *
+ *                                    *
+***************************************/
+
+struct stackframe {
+    struct stackframe* ebp;
+    uint32_t eip;
+};
+
+int size_x, size_y;
+
+/***************************************
+ *                                    *
+ *   Interrupts messages and angel    *
+ *                                    *
+***************************************/
+
 char *interrupts[] = {
     "Division by zero",
     "Debug",
@@ -58,7 +77,11 @@ char *angel2 =
 "        __/\0"
 "       '\0";
 
-int size_x, size_y;
+/***************************************
+ *                                    *
+ *    SODSOD graphics manipulation    *
+ *                                    *
+***************************************/
 
 void sod_print_at(int x, int y, char *str, char color) {
     int i = 0;
@@ -144,11 +167,6 @@ void sod_print_angel() {
     }
 }
 
-struct stackframe {
-    struct stackframe* ebp;
-    uint32_t eip;
-};
-
 void sod_print_stacktrace(void) {
     struct stackframe *stk;
     asm ("movl %%ebp,%0" : "=r"(stk) ::);
@@ -168,6 +186,12 @@ void sod_print_stacktrace(void) {
         stk = stk->ebp;
     }
 }
+
+/***************************************
+ *                                    *
+ *       SODSOD main functions        *
+ *                                    *
+***************************************/
 
 void sod_fatal(char *file_name, int line, char *msg, ...) {
     asm volatile("cli");
@@ -192,7 +216,6 @@ void sod_fatal(char *file_name, int line, char *msg, ...) {
 
     asm volatile("hlt");
 }
-
 
 void sod_interrupt(int code, int err_code) {
     asm volatile("cli");

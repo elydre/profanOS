@@ -2,7 +2,6 @@
 #include <drivers/diskiso.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 filesys_t *fs_create(void) {

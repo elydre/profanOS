@@ -43,3 +43,4 @@ void diskiso_free(void) {
     diskiso_size = 0;
     free((void *) diskiso_start);
 }
+

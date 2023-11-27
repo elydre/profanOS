@@ -1,7 +1,6 @@
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>
-#include <system.h>
 
 #define FONT_HEIGHT 16
 #define FONT_WIDTH  8

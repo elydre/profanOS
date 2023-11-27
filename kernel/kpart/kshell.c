@@ -1,10 +1,8 @@
 #include <kernel/snowflake.h>
-#include <kernel/scubasuit.h>
 #include <drivers/diskiso.h>
 #include <kernel/process.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
-#include <cpu/timer.h>
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>

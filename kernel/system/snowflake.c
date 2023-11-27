@@ -5,8 +5,6 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <gui/gnrtx.h>
-
 
 /* * * * * * * * * * * * * * * * * * * *
  *        _             _              *

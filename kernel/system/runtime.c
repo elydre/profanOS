@@ -3,7 +3,6 @@
 #include <kernel/process.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 /************************************************************
  *     - kernel runtime memory layout and sharing -     e  *
@@ -182,13 +181,6 @@ int run_binary(runtime_args_t args, int *pid_ptr) {
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid) {
-    /*vbase = vbase ? vbase : RUN_BIN_VBASE;
-    vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
-    stack = stack ? stack : RUN_BIN_STACK;
-
-    sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
-    */
-
     if (args.path == NULL && IS_NULL_SID(args.sid)) {
         sys_warning("[run_ifexist] No path or sid given");
         return -1;

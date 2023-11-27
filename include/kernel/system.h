@@ -3,8 +3,8 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SOD 13"
-#define KERNEL_EDITING  "sod"
+#define KERNEL_VERSION  "1.1.1"
+#define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
 #define KERNEL_PRIORITY 5           // default kernel process priority

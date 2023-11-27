@@ -1,7 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 vdisk_t *vdisk_create(uint32_t initsize) {

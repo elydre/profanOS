@@ -13,7 +13,7 @@
 
 #define VIDEO_ADDRESS 0xb8000
 
-// Screen i/o ports
+// screen i/o ports
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
 
@@ -41,7 +41,7 @@ void txt_print_char(char c, char attr) {
         offset += 2;
     }
 
-    // Check if the offset is over screen size and scroll
+    // check if the offset is over screen size and scroll
     if (offset >= MAX_ROWS * MAX_COLS * 2) {
         int i;
         for (i = 1; i < MAX_ROWS; i++)
@@ -49,7 +49,7 @@ void txt_print_char(char c, char attr) {
                     (uint8_t*)(get_offset(0, i) + VIDEO_ADDRESS),
                     MAX_COLS * 2);
 
-        // Blank last line
+        // blank last line
         char *last_line = (char*) (get_offset(0, MAX_ROWS-1) + (uint8_t*) VIDEO_ADDRESS);
         for (i = 0; i < MAX_COLS * 2; i++) last_line[i] = 0;
 
@@ -80,19 +80,19 @@ void txt_clear(void) {
 }
 
 int txt_get_cursor_offset(void) {
-    /* Use the VGA ports to get the current cursor position
-     * 1. Ask for high byte of the cursor offset (data 14)
-     * 2. Ask for low byte (data 15) */
+    /* use the VGA ports to get the current cursor position
+     * 1. ask for high byte of the cursor offset (data 14)
+     * 2. ask for low byte (data 15) */
 
     port_byte_out(REG_SCREEN_CTRL, 14);
-    int offset = port_byte_in(REG_SCREEN_DATA) << 8; // High byte: << 8
+    int offset = port_byte_in(REG_SCREEN_DATA) << 8;
     port_byte_out(REG_SCREEN_CTRL, 15);
     offset += port_byte_in(REG_SCREEN_DATA);
     return offset * 2; // position * size of character cell
 }
 
 void txt_set_cursor_offset(int offset) {
-    // Similar to get_cursor_offset, but instead of reading we write data
+    // similar to get_cursor_offset, but instead of reading we write data
     offset /= 2;
     port_byte_out(REG_SCREEN_CTRL, 14);
     port_byte_out(REG_SCREEN_DATA, (uint8_t)(offset >> 8));

@@ -45,7 +45,7 @@ void *SYSCALL_ARRAY[] = {
     time_get,
     timer_get_ms,
 
-    // gnrtx.h
+    // gnrtx.h + vesa.h
     font_get,
     kcnprint,
     get_cursor_offset,
