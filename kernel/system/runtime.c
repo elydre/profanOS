@@ -1,7 +1,6 @@
 #include <kernel/snowflake.h>
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
-#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
 #include <ktype.h>

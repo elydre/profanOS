@@ -34,11 +34,3 @@ void serial_print(int device, char *out) {
         serial_send(device, out[i]);
     }
 }
-
-void serial_debug(char *source, char *message) {
-    serial_send(SERIAL_PORT_A, '[');
-    serial_print(SERIAL_PORT_A, source);
-    serial_print(SERIAL_PORT_A, "] - ");
-    serial_print(SERIAL_PORT_A, message);
-    serial_print(SERIAL_PORT_A, "\r\n");
-}

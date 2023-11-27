@@ -121,7 +121,6 @@ void sys_shutdown(void) {
     kcprint(":", 0x0B);
     kcprint("(\n", 0x0D);
 
-    serial_debug("SYSTEM", "profanOS has been stopped");
     asm volatile("cli");
     asm volatile("hlt");
 }

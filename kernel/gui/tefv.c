@@ -1,4 +1,3 @@
-#include <drivers/serial.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>
@@ -84,8 +83,6 @@ void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
         cursor_y++;
     } else if (c == '\r') {
         cursor_x = 0;
-    } else if (c == '\a') {
-        serial_debug("TEFV", "BEEEEEEEEPPP (^_^ )");
     } else if (c == '\t') {
         tef_set_char(cursor_x, cursor_y, ' ', color, bg_color);
         cursor_x++;

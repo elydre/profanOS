@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "SOD 12"
+#define KERNEL_VERSION  "SOD 13"
 #define KERNEL_EDITING  "sod"
 
 #define PROCESS_MAX     20          // max process count

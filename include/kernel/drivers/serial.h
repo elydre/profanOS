@@ -8,7 +8,6 @@
 
 
 int  serial_init(void);
-void serial_debug(char *source, char *message);
 void serial_print(int device, char *out);
 
 #endif

@@ -1,5 +1,4 @@
 #include <kernel/butterfly.h>
-#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
 #include <ktype.h>
@@ -91,7 +90,6 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
 
 int vdisk_get_unused_sector(vdisk_t *vdisk) {
     if (vdisk->used_count >= vdisk->size) {
-        serial_debug("VDISK", "vdisk full, extending...");
         vdisk_extend(vdisk, vdisk->size + 1000);
     }
     return vdisk->free[vdisk->used_count];

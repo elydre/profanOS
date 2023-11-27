@@ -133,8 +133,6 @@ void dynamize_mem(void) {
     MEM_PARTS = (allocated_part_t *) new_add;
     part_size += GROW_SIZE;
     mem_free_addr(old_add);
-
-    serial_debug("SNOWFLAKE", "Memory successfully dynamized");
 }
 
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {

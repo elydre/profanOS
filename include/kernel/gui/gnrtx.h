@@ -12,15 +12,6 @@
 #define c_grey      0x07
 #define c_white     0x0f
 
-#define c_dblue     0x01
-#define c_dgreen    0x02
-#define c_dcyan     0x03
-#define c_dred      0x04
-#define c_dmagenta  0x05
-#define c_dyellow   0x06
-#define c_dgrey     0x08
-
-
 #define kcprint(message, color) kcnprint(message, -1, color)
 #define kprint(message) kcprint(message, c_white)
 

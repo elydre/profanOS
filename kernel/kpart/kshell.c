@@ -1,7 +1,6 @@
 #include <kernel/snowflake.h>
 #include <kernel/scubasuit.h>
 #include <drivers/diskiso.h>
-#include <drivers/serial.h>
 #include <kernel/process.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>

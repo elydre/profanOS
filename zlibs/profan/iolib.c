@@ -44,7 +44,6 @@ int userspace_reporter(char *message) {
 ***************************/
 
 void rainbow_print(char *message) {
-    // char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
     char rainbow_colors[] = {'2', '6', '4', '5', '1', '3'};
 
     int i;
