@@ -84,9 +84,9 @@ char *get_text(char **args) {
             text = str_join(text, " ");
         }
     }
-
+    text = str_join(text, "\n");
     return text;
-}   
+}
 
 int main(int argc, char **argv) {
     int ansicolor = 0;
@@ -122,6 +122,5 @@ int main(int argc, char **argv) {
     fputs(tmp, stdout);
     free(tmp);
 
-    putchar('\n');
     return 0;
 }
