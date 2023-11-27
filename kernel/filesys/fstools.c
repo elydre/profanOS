@@ -1,6 +1,5 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
-#include <ktype.h>
 
 
 void sep_path(char *fullpath, char **parent, char **cnt) {

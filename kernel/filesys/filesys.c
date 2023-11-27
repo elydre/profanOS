@@ -2,10 +2,9 @@
 #include <drivers/diskiso.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
-filesys_t *fs_create() {
+filesys_t *fs_create(void) {
     filesys_t *filesys = malloc(sizeof(filesys_t));
     filesys->max_disks = FS_MAX_DISKS;
     filesys->vdisk = calloc(sizeof(vdisk_t *) * filesys->max_disks);
@@ -24,11 +23,11 @@ void fs_destroy(filesys_t *filesys) {
 
 int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
     if (did > filesys->max_disks) {
-        sys_error("disk id is too big");
+        sys_warning("[mount_vdisk] Disk id is too big");
         return -1;
     }
     if (filesys->vdisk[did - 1] != NULL) {
-        sys_error("disk id is already used");
+        sys_warning("[mount_vdisk] Disk id is already used");
         return -1;
     }
     filesys->vdisk[did - 1] = vdisk;
@@ -36,31 +35,18 @@ int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint32_t did) {
     return did;
 }
 
-void fs_print_status(filesys_t *filesys) {
-    kprintf("\n====================\n");
-    kprintf("vdisk_count: %d\n", filesys->vdisk_count);
-    for (uint32_t i = 0; i < filesys->max_disks; i++) {
-        if (filesys->vdisk[i] == NULL) continue;
-        kprintf("vdisk[%d] size: %d, used: %d\n", i,
-            filesys->vdisk[i]->size,
-            filesys->vdisk[i]->used_count
-        );
-    }
-    kprintf("====================\n\n");
-}
-
 filesys_t *MAIN_FS;
 
-filesys_t *fs_get_main() {
+filesys_t *fs_get_main(void) {
     return MAIN_FS;
 }
 
-vdisk_t *initrd_to_vdisk() {
+vdisk_t *initrd_to_vdisk(void) {
     uint8_t *initrd = (uint8_t *) diskiso_get_start();
     uint32_t initrd_size = diskiso_get_size();
 
     if (initrd_size == 0) {
-        sys_error("initrd is empty/missing");
+        sys_error("Initrd is empty or missing");
         return NULL;
     }
 
@@ -80,7 +66,7 @@ vdisk_t *initrd_to_vdisk() {
     return vdisk;
 }
 
-int filesys_init() {
+int filesys_init(void) {
     MAIN_FS = fs_create();
 
     vdisk_t *d0 = vdisk_create(500);

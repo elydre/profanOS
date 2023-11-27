@@ -48,7 +48,7 @@ void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t 
     process->esp_addr = esp_alloc;
 }
 
-int i_get_free_place() {
+int i_get_free_place(void) {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_DEAD) return i;
     }
@@ -62,7 +62,7 @@ int i_pid_to_place(int pid) {
     return ERROR_CODE;
 }
 
-void i_end_sheduler() {
+void i_end_sheduler(void) {
     if (pid_current != 1) {
         scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
     }
@@ -70,7 +70,7 @@ void i_end_sheduler() {
     if (sheduler_state == SHDLR_RUNN) {
         sheduler_state = SHDLR_ENBL;
     } else {
-        sys_error("sheduler is not running but sheduler is exiting");
+        sys_fatal("Sheduler is not running but sheduler is exiting");
     }
 
     sheduler_count--;
@@ -105,14 +105,14 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
-void i_optimize_shdlr_queue() {
+void i_optimize_shdlr_queue(void) {
     // TODO: separate all occurrences of each number as much as possible
     return;
 }
 
 int i_add_to_shdlr_queue(int pid, int priority) {
     if (shdlr_queue_length + priority > PROCESS_MAX * 10) {
-        sys_error("process queue is full");
+        sys_error("Process queue is full");
         return ERROR_CODE;
     }
 
@@ -142,7 +142,7 @@ int i_remove_from_shdlr_queue(int pid) {
     return 0;
 }
 
-void i_clean_killed() {
+void i_clean_killed(void) {
     need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
@@ -157,7 +157,7 @@ void i_clean_killed() {
     }
 }
 
-void i_refresh_tsleep_interact() {
+void i_refresh_tsleep_interact(void) {
     tsleep_interact = 0;
     for (int i = 0; i < tsleep_list_length; i++) {
         if (tsleep_list[i]->sleep_to < tsleep_interact || !tsleep_interact) {
@@ -173,7 +173,7 @@ void i_tsleep_awake(uint32_t ticks) {
                 tsleep_list[i]->state = PROCESS_WAITING;
                 i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
             } else {
-                sys_error("process in tsleep list is not in tsleep state");
+                sys_fatal("Process in tsleep list is not in tsleep state");
             }
 
             tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
@@ -199,7 +199,7 @@ void i_remove_from_tsleep_list(int pid) {
  * IDLE PROCESS *
 *****************/
 
-void idle_process() {
+void idle_process(void) {
     while (1) asm volatile("hlt");
 }
 
@@ -207,7 +207,7 @@ void idle_process() {
  * PUBLIC FUNCTIONS *
 *********************/
 
-int process_init() {
+int process_init(void) {
     plist = calloc(sizeof(process_t) * PROCESS_MAX);
     shdlr_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
     tsleep_list = calloc(sizeof(process_t *) * PROCESS_MAX);
@@ -267,20 +267,15 @@ int process_init() {
 
 
 int process_create(void (*func)(), int priority, char *name) {
-    if (priority > 10) {
-        sys_error("Priority can't be higher than 10");
-        return ERROR_CODE;
-    }
-
-    if (priority < 1) {
-        sys_error("Priority can't be lower than 1");
+    if (priority > 10 || priority < 1) {
+        sys_warning("[create] priority %d is not valid", priority);
         return ERROR_CODE;
     }
 
     int place = i_get_free_place();
 
     if (place == ERROR_CODE) {
-        sys_error("Too many processes");
+        sys_warning("[create] Too many processes");
         return ERROR_CODE;
     }
 
@@ -320,22 +315,22 @@ int process_sleep(int pid, uint32_t ms) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[sleep] pid %d not found", pid);
         return ERROR_CODE;
     }
 
     if (plist[place].state == PROCESS_IDLETIME) {
-        sys_error("Can't interact with idle process");
+        sys_warning("[sleep] Can't interact with idle process");
         return ERROR_CODE;
     }
 
     if (plist[place].state == PROCESS_FSLPING) {
-        sys_error("Process already sleeping");
+        sys_warning("[sleep] pid %d already sleeping", pid);
         return ERROR_CODE;
     }
 
     if (plist[place].state >= PROCESS_KILLED) {
-        sys_error("Process already dead");
+        sys_warning("[sleep] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
@@ -371,22 +366,22 @@ int process_wakeup(int pid) {   // TODO: sleep to exit gestion
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[wakeup] pid %d not found", pid);
         return ERROR_CODE;
     }
 
     if (plist[place].state == PROCESS_IDLETIME) {
-        sys_error("Can't interact with idle process");
+        sys_warning("[wakeup] Can't interact with idle process");
         return ERROR_CODE;
     }
 
     if (plist[place].state == PROCESS_DEAD) {
-        sys_error("Process already dead");
+        sys_warning("[wakeup] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
     if (!(plist[place].state == PROCESS_FSLPING || plist[place].state == PROCESS_TSLPING)) {
-        sys_error("Process not sleeping");
+        sys_warning("[wakeup] pid %d not sleeping", pid);
         return ERROR_CODE;
     }
 
@@ -412,12 +407,12 @@ int process_handover(int pid) {
     int current_place = i_pid_to_place(pid_current);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[handover] pid %d not found", pid);
         return ERROR_CODE;
     }
 
     if (plist[place].state == PROCESS_IDLETIME) {
-        sys_error("Can't interact with idle process");
+        sys_warning("[handover] Can't interact with idle process");
         return ERROR_CODE;
     }
 
@@ -427,12 +422,12 @@ int process_handover(int pid) {
     }
 
     if (plist[place].state == PROCESS_DEAD) {
-        sys_error("Process already dead");
+        sys_warning("[handover] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
     if (!(plist[place].state == PROCESS_FSLPING || plist[place].state == PROCESS_TSLPING)) {
-        sys_error("Process not sleeping");
+        sys_warning("[handover] pid %d not sleeping", pid);
         return ERROR_CODE;
     }
 
@@ -462,24 +457,24 @@ int process_handover(int pid) {
 
 int process_kill(int pid) {
     if (pid == 0) {
-        sys_error("Cannot kill kernel (^_^ )");
+        sys_warning("[kill] Can't kill kernel (^_^ )");
         return ERROR_CODE;
     }
 
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[kill] pid %d not found", pid);
         return ERROR_CODE;
     }
 
     if (plist[place].state == PROCESS_IDLETIME) {
-        sys_error("Can't interact with idle process");
+        sys_warning("[kill] Can't interact with idle process");
         return ERROR_CODE;
     }
 
     if (plist[place].state >= PROCESS_KILLED) {
-        sys_error("Process already dead");
+        sys_warning("[kill] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
@@ -570,7 +565,6 @@ void schedule(uint32_t ticks) {
     }
 }
 
-
 /************************
  * GET / SET FUNCTIONS *
 ************************/
@@ -579,17 +573,12 @@ void process_set_priority(int pid, int priority) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[set_priority] pid %d not found", pid);
         return;
     }
 
-    if (priority > 10) {
-        sys_error("Priority can't be higher than 10");
-        return;
-    }
-
-    if (priority < 1) {
-        sys_error("Priority can't be lower than 1");
+    if (priority > 10 || priority < 1) {
+        sys_warning("[set_priority] priority %d is not valid", priority);
         return;
     }
 
@@ -605,7 +594,7 @@ void process_set_priority(int pid, int priority) {
     }
 }
 
-int process_get_pid() {
+int process_get_pid(void) {
     return pid_current;
 }
 
@@ -613,7 +602,7 @@ void process_set_comm(int pid, void *comm) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[set_comm] pid %d not found", pid);
         return;
     }
 
@@ -624,7 +613,7 @@ void *process_get_comm(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[get_comm] pid %d not found", pid);
         return 0;
     }
 
@@ -635,7 +624,7 @@ int process_get_ppid(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[get_ppid] pid %d not found", pid);
         return 0;
     }
 
@@ -658,7 +647,7 @@ int process_get_name(int pid, char *name) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[get_name] pid %d not found", pid);
         return 0;
     }
 
@@ -680,7 +669,7 @@ int process_get_priority(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[get_priority] pid %d not found", pid);
         return 0;
     }
 
@@ -691,7 +680,7 @@ uint32_t process_get_run_time(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[get_run_time] pid %d not found", pid);
         return 0;
     }
 
@@ -702,7 +691,7 @@ scuba_directory_t *process_get_directory(int pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
-        sys_error("Process not found");
+        sys_warning("[get_directory] pid %d not found", pid);
         return 0;
     }
 

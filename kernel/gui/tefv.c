@@ -1,4 +1,3 @@
-#include <drivers/serial.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>
@@ -27,7 +26,7 @@ int hidden_cursor = 1;
 
 screen_char_t *screen_buffer = NULL;
 
-int tef_init() {
+int tef_init(void) {
     screen_buffer = calloc(MAX_COLS * MAX_ROWS * sizeof(screen_char_t));
     return screen_buffer == NULL;
 }
@@ -84,8 +83,6 @@ void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
         cursor_y++;
     } else if (c == '\r') {
         cursor_x = 0;
-    } else if (c == '\a') {
-        serial_debug("TEFV", "BEEEEEEEEPPP (^_^ )");
     } else if (c == '\t') {
         tef_set_char(cursor_x, cursor_y, ' ', color, bg_color);
         cursor_x++;
@@ -123,7 +120,7 @@ void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
     tef_draw_cursor(CURSOR_COLOR);
 }
 
-int tef_get_cursor_offset() {
+int tef_get_cursor_offset(void) {
     // we have to multiply by 2 for the text mode compatibility
     return (cursor_y * MAX_COLS + cursor_x) * 2;
 }
@@ -147,7 +144,7 @@ void tef_cursor_blink(int on) {
     tef_draw_cursor(on ? CURSOR_COLOR : 0);
 }
 
-void tef_clear() {
+void tef_clear(void) {
     tef_draw_cursor(0);
     cursor_x = 0;
     cursor_y = 0;
@@ -159,8 +156,8 @@ void tef_clear() {
         }
     }
     // set pixel to black
-    int width = vesa_get_width();
     int height = vesa_get_height();
+    int width  = vesa_get_width();
 
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {

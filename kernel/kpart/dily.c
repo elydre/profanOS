@@ -1,9 +1,8 @@
 #include <kernel/snowflake.h>
 #include <kernel/butterfly.h>
-#include <drivers/serial.h>
+#include <kernel/process.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 uint32_t **lib_functions = 0;
 
@@ -31,7 +30,7 @@ int dily_load(char *path, uint32_t lib_id) {
     }
 
     if (dily_does_loaded(lib_id)) {
-        sys_error("Lib already loaded");
+        sys_error("Library %d already loaded", lib_id);
         return 1;
     }
 
@@ -85,7 +84,7 @@ int dily_load(char *path, uint32_t lib_id) {
 
 int dily_unload(uint32_t lib_id) {
     if (!dily_does_loaded(lib_id)) {
-        sys_error("Lib not loaded");
+        sys_error("Library %d not loaded", lib_id);
         return 1;
     }
     free(lib_functions[lib_id - 1000]);
@@ -96,15 +95,13 @@ int dily_unload(uint32_t lib_id) {
 
 uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id) {
     if (!dily_does_loaded(lib_id)) {
-        serial_kprintf("lib %d not loaded\n", lib_id);
-        sys_fatal("Library not found");
+        sys_error("Library %d not loaded requested by pid %d", lib_id, process_get_pid());
         return 0;
     }
 
     uint32_t *addr_list = lib_functions[lib_id - 1000];
     if (func_id >= addr_list[0]) {
-        serial_kprintf("func %d not found\n", func_id);
-        sys_fatal("Function not found");
+        sys_error("Function %d not found in library %d", func_id, lib_id);
         return 0;
     }
 

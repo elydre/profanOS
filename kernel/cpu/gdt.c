@@ -5,7 +5,7 @@
 struct gdt_entry gdt[3];
 struct gdt_ptr gdt_p;
 
-void gdt_flush() {
+void gdt_flush(void) {
     asm volatile("lgdtl (%0)" : : "r" (&gdt_p));
     asm volatile("mov $0x10, %ax");
     asm volatile("mov %ax, %ds");
@@ -27,7 +27,7 @@ void gdt_init_entry(int index, unsigned long base, unsigned long limit, unsigned
     gdt[index].access = access;
 }
 
-void gdt_init() {
+void gdt_init(void) {
     gdt_p.limit = (sizeof(struct gdt_entry) * 3) - 1;
     gdt_p.base = (unsigned int) gdt;
 

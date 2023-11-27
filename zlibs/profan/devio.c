@@ -243,18 +243,9 @@ int dev_rand_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     return size;
 }
 
-int dev_kprint_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
-    if (mode == MODE_WRITE) {
-        c_kcprint((char *) buffer, c_dgreen);
-        return size;
-    }
-
-    return 0;
-}
-
 int dev_kterm_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
     if (mode == MODE_WRITE) {
-        color_print((char *) buffer);
+        c_kprint((char *) buffer);
         return size;
     }
 
@@ -262,9 +253,8 @@ int dev_kterm_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 }
 
 int dev_panda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
-    static char color = c_white;
     if (mode == MODE_WRITE) {
-        color = panda_color_print((char *) buffer, color, size);
+        panda_print_string((char *) buffer, size);
         return size;
     } else if (mode == MODE_READD) {
         if (size < 2 * sizeof(uint32_t)) {
@@ -298,7 +288,6 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/null",   dev_null_rw);
     fu_fctf_create(0, "/dev/random", dev_rand_rw);
 
-    fu_fctf_create(0, "/dev/kprint", dev_kprint_rw);
     fu_fctf_create(0, "/dev/kterm",  dev_kterm_rw);
     fu_fctf_create(0, "/dev/panda",  dev_panda_rw);
     fu_fctf_create(0, "/dev/serial", dev_serial_rw);

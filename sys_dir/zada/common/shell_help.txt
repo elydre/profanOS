@@ -1,4 +1,4 @@
-$5 USEFUL COMMANDS $6
+\e[0m USEFUL COMMANDS \e[37m
 cat     - show file content         mkfile  - create a new file
 cc      - compile C source file     more    - read line by line
 clear   - clear the screen          proc    - process utility
@@ -6,16 +6,16 @@ info    - show time, mem, disk      rim     - start text editor
 kb      - set keyboard layout       rm      - remove file or dir
 ls      - list the current dir      wif     - write in file
 
-all commands are in /bin/commands and /bin/fatpath$7
+all commands are in /bin/commands and /bin/fatpath
 
-$5 OLIVINE LANGUAGE $6
+\e[0m OLIVINE LANGUAGE \e[37m
 cd      - change dir                go     - start file as binary
 eval    - calculate expression      set    - set variable
 
 Some examples:
 
-$4FOR $7i $1!($2find$7 -d /user$1)              $4FUNC$7 double
-    $2echo $5!i                             $4RETURN $1!($2eval$7 !0 * 2$1)
-$4END                                 END
+\e[95mFOR \e[0mi \e[92m!(\e[96mfind\e[0m -d /user\e[92m)              \e[95mFUNC\e[0m double
+    \e[94mecho \e[93m!i                             \e[95mRETURN \e[92m!(\e[96meval\e[0m !0 * 2\e[92m)
+\e[95mEND                                 END
 
-$6See $7man olivine$6 for more info.$7
+\e[37mSee \e[0mman olivine\e[37m for more info.\e[0m

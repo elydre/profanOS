@@ -70,11 +70,8 @@ int redirect_devio(char *link, char *redirection) {
 
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
-    char *kver = malloc(256);
-    c_sys_kinfo(kver);
 
-    printf("$CKernel: $4%s$$\n\n", kver);
-    free(kver);
+    printf("\033[35mKernel: \033[95m%s\033[0m\n\n", c_sys_kinfo());
 }
 
 char wait_key(void) {
@@ -91,8 +88,8 @@ char wait_key(void) {
 }
 
 int main(void) {
+    char key_char, use_panda = 0;
     int sum, total, usage_pid;
-    char key_char;
 
     total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
     sum = 0;
@@ -107,6 +104,7 @@ int main(void) {
 
     if (c_vesa_get_width() > 0) {
         setenv("TERM", "/dev/panda", 1);
+        use_panda = 1;
         if (redirect_devio("/dev/stdout", "/dev/panda")) {
             c_kprint("Failed to redirect stdout\n");
             return 1;
@@ -115,6 +113,7 @@ int main(void) {
             c_kprint("Failed to redirect stderr\n");
             return 1;
         }
+        c_sys_set_reporter(userspace_reporter);
         run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
@@ -136,6 +135,10 @@ int main(void) {
         }
     } while (key_char != 'h');
 
+    if (use_panda) {
+        c_sys_set_reporter(NULL);
+    }
+
     c_kprint("\033[2J");
     if (c_process_get_state(usage_pid) < 4) {
         c_process_kill(usage_pid);
@@ -147,7 +150,7 @@ int main(void) {
         c_dily_unload(lib->id);
     }
 
-    c_kprint("all libraries unloaded, bye!\n");
+    c_kprint("all libraries unloaded - bye (._. )\n");
 
     c_mem_free_all(c_process_get_pid());
 

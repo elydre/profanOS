@@ -1,10 +1,8 @@
 #include <kernel/snowflake.h>
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
-#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 /************************************************************
  *     - kernel runtime memory layout and sharing -     e  *
@@ -30,6 +28,10 @@ typedef struct {
 direct_return_t last_return;
 
 int force_exit_pid(int pid, int ret_code) {
+    if (pid == 0 || pid == 1) {
+        return 1;
+    }
+
     // clean memory
     mem_free_all(pid);
 
@@ -61,7 +63,7 @@ int force_exit_pid(int pid, int ret_code) {
     return process_kill(pid);
 }
 
-void tasked_program() {
+void tasked_program(void) {
     int pid = process_get_pid();
     int ppid = process_get_ppid(pid);
 
@@ -103,12 +105,11 @@ void tasked_program() {
     int not_free_mem = mem_get_info(7, pid);
 
     if (not_free_mem) {
-        sys_warning("Memory leak detected");
-
-        kprintf("[auto free] %d alloc will be auto freed (total: %d bytes, pid: %d)\n",
+        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
                 not_free_mem,
-                mem_get_info(8, pid),
-                pid
+                not_free_mem == 1 ? "" : "s",
+                pid,
+                mem_get_info(8, pid)
         );
 
         mem_free_all(pid);
@@ -136,9 +137,7 @@ void tasked_program() {
 }
 
 int run_binary(runtime_args_t args, int *pid_ptr) {
-    serial_debug("RUNTIME", args.path);
-
-    int pid = process_create(tasked_program, 2, args.path);
+    int pid = process_create(tasked_program, 2, args.path == NULL ? "unknown file" : args.path);
 
     if (pid == -1)
         return -1;
@@ -182,19 +181,11 @@ int run_binary(runtime_args_t args, int *pid_ptr) {
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid) {
-    /*vbase = vbase ? vbase : RUN_BIN_VBASE;
-    vcunt = vcunt ? vcunt : RUN_BIN_VCUNT;
-    stack = stack ? stack : RUN_BIN_STACK;
-
-    sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
-    */
-
     if (args.path == NULL && IS_NULL_SID(args.sid)) {
-        sys_error("No path or sid provided");
+        sys_warning("[run_ifexist] No path or sid given");
         return -1;
     }
 
-    args.path = args.path == NULL ? "serenity" : args.path;
     args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(fs_get_main(), ROOT_SID, args.path) : args.sid;
 
     args.vbase = args.vbase ? args.vbase : RUN_BIN_VBASE;
@@ -205,6 +196,10 @@ int run_ifexist_full(runtime_args_t args, int *pid) {
         return run_binary(args, pid);
     }
 
-    sys_error("Program not found");
+    if (args.path)
+        sys_warning("[run_ifexist] File not found: %s", args.path);
+    else
+        sys_warning("[run_ifexist] Sector d%ds%d is not a file", args.sid.device, args.sid.sector);
+
     return -1;
 }

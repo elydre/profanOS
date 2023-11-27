@@ -5,9 +5,7 @@
 
 isr_t interrupt_handlers[256];
 
-/* Can't do this with a loop because we need the address
- * of the function names */
-int isr_install() {
+int isr_install(void) {
     set_idt_gate(0, (uint32_t)isr0);
     set_idt_gate(1, (uint32_t)isr1);
     set_idt_gate(2, (uint32_t)isr2);
@@ -53,7 +51,7 @@ int isr_install() {
     port_byte_out(0x21, 0x0);
     port_byte_out(0xA1, 0x0);
 
-    // Install the IRQs
+    // install the IRQs
     set_idt_gate(32, (uint32_t)irq0);
     set_idt_gate(33, (uint32_t)irq1);
     set_idt_gate(34, (uint32_t)irq2);
@@ -71,7 +69,7 @@ int isr_install() {
     set_idt_gate(46, (uint32_t)irq14);
     set_idt_gate(47, (uint32_t)irq15);
 
-    set_idt(); // Load with ASM
+    set_idt(); // load with ASM
 
     return 0;
 }
@@ -85,20 +83,20 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 }
 
 void irq_handler(registers_t *r) {
-    /* After every interrupt we need to send an EOI to the PICs
+    /* after every interrupt we need to send an EOI to the PICs
      * or they will not send another interrupt again */
     if (r->int_no >= 40) port_byte_out(0xA0, 0x20); // slave
-    port_byte_out(0x20, 0x20); /* master */
+    port_byte_out(0x20, 0x20); // master
 
-    // Handle the interrupt in a more modular way
+    // handle the interrupt in a more modular way
     if (interrupt_handlers[r->int_no] != 0) {
         isr_t handler = interrupt_handlers[r->int_no];
         handler(r);
     }
 }
 
-int irq_install() {
-    // Enable interruptions
+int irq_install(void) {
+    // enable interruptions
     asm volatile("sti");
     return 0;
 }

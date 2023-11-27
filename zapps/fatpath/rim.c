@@ -67,7 +67,7 @@ char *g_current_screen;
 
 // FUNCTIONS
 
-void draw_interface() {
+void draw_interface(void) {
     draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
     draw_line(FONT_W * 3 + 2, FONT_H, FONT_W * 3 + 2, SCREEN_H, COLOR_F2);
 }
@@ -185,7 +185,7 @@ void display_data(int from_line, int to_line, int x_offset) {
     g_current_screen = new_screen;
 }
 
-void realloc_buffer() {
+void realloc_buffer(void) {
     if (g_lines_count % 1024 == 0) {
         g_data_lines = realloc(g_data_lines, (g_lines_count + 1024) * sizeof(int));
     }
@@ -401,7 +401,7 @@ void main_loop(char *path) {
     }
 }
 
-void quit() {
+void quit(void) {
     vgui_exit(g_vgui);
     free(g_title);
     free(g_data);
@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
         sid_t elm = fu_path_to_sid(ROOT_SID, file);
 
         if (IS_NULL_SID(elm) || !fu_is_file(elm)) {
-            printf("$3%s$B file not found$$\n", file);
+            printf("\033[91m%s\033[31m file not found\033[0m\n", file);
             free(file);
             return 1;
         }

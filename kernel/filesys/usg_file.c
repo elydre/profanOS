@@ -1,7 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
@@ -24,7 +23,7 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
 
     sep_path(path, &parent, &name);
     if (!parent[0]) {
-        sys_error("failed to create file, parent unreachable");
+        sys_warning("[file_create] Parent unreachable");
         free(parent);
         free(name);
         return NULL_SID;
@@ -32,14 +31,14 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
 
     parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
     if (IS_NULL_SID(parent_sid)) {
-        sys_error("failed to create file, parent not found");
+        sys_warning("[file_create] Parent not found");
         free(parent);
         free(name);
         return NULL_SID;
     }
 
     if (!fu_is_dir(filesys, parent_sid)) {
-        sys_error("failed to create file, parent not a directory");
+        sys_warning("[file_create] Parent not a directory");
         free(parent);
         free(name);
         return NULL_SID;

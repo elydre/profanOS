@@ -1,18 +1,15 @@
 #include <kernel/snowflake.h>
-#include <kernel/scubasuit.h>
 #include <drivers/diskiso.h>
-#include <drivers/serial.h>
 #include <kernel/process.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
-#include <cpu/timer.h>
 #include <gui/vesa.h>
 #include <minilib.h>
 #include <system.h>
 
 #define BFR_SIZE 65
 
-void kernel_switch_back() {
+void kernel_switch_back(void) {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
@@ -34,7 +31,7 @@ void kernel_switch_back() {
     }
 }
 
-void kernel_exit_current() {
+void kernel_exit_current(void) {
     int pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
@@ -55,24 +52,16 @@ void kernel_exit_current() {
     }
 }
 
-void shell_so(char *suffix) {
-    char path[100] = "/bin/";
-    str_cat(path, suffix);
-    str_cat(path, ".bin");
-    kprintf("path: %s\n", path);
-    run_ifexist(path, 0, (char **)0);
-}
-
-void shell_help() {
+void shell_help(void) {
     char *help[] = {
         "ADDR   - show main address",
-        "ALLOC  - allocate *0x1000",
+        "CLEAR  - clear the screen",
         "EXIT   - quit the kshell",
         "GO     - go file as binary",
         "HELP   - show this help",
         "MEM    - show memory allocs",
         "REBOOT - reboot the system",
-        "SO     - run file in /bin",
+        "H/K/W  - handover/kill/wakeup",
     };
 
     for (int i = 0; i < ARYLEN(help); i++) {
@@ -80,7 +69,7 @@ void shell_help() {
     }
 }
 
-void shell_addr() {
+void shell_addr(void) {
     kprintf("vesa fb: %x\n", vesa_get_framebuffer());
     kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
     kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 1024 / 1024);
@@ -89,7 +78,7 @@ void shell_addr() {
     kprintf("watfunc: %x\n", WATFUNC_ADDR);
 }
 
-void shell_mem() {
+void shell_mem(void) {
     allocated_part_t *mem_parts = (void *) mem_get_info(3, 0);
     int index = 0;
     while (mem_parts[index].state) {
@@ -105,6 +94,8 @@ void shell_mem() {
 }
 
 int shell_command(char *command) {
+    if (command[0] == '\0') return 0;
+
     char prefix[BFR_SIZE], suffix[BFR_SIZE];
     int part = 0;
     int i;
@@ -120,27 +111,29 @@ int shell_command(char *command) {
     if (part == 0) prefix[i] = '\0';
     else suffix[i - str_len(prefix) - 1] = '\0';
 
-    if      (str_cmp(prefix, "addr") == 0) shell_addr();
-    else if (str_cmp(prefix, "alloc") == 0) malloc(str2int(suffix) * 0x1000);
-    else if (str_cmp(prefix, "exit") == 0) return 1;
-    else if (str_cmp(prefix, "go") == 0) run_ifexist(suffix, 0, (char **)0);
-    else if (str_cmp(prefix, "help") == 0) shell_help();
-    else if (str_cmp(prefix, "mem") == 0) shell_mem();
-    else if (str_cmp(prefix, "reboot") == 0) sys_reboot();
-    else if (str_cmp(prefix, "so") == 0) shell_so(suffix);
+    if      (!str_cmp(prefix, "addr"))   shell_addr();
+    else if (!str_cmp(prefix, "clear"))  clear_screen();
+    else if (!str_cmp(prefix, "exit"))   return 1;
+    else if (!str_cmp(prefix, "go"))     run_ifexist(suffix, NULL, (char **) NULL);
+    else if (!str_cmp(prefix, "help"))   shell_help();
+    else if (!str_cmp(prefix, "mem"))    shell_mem();
+    else if (!str_cmp(prefix, "reboot")) sys_reboot();
 
-    else if (str_cmp(prefix, "h") == 0) process_handover(str2int(suffix));
-    else if (str_cmp(prefix, "k") == 0) process_kill(str2int(suffix));
-    else if (str_cmp(prefix, "w") == 0) process_wakeup(str2int(suffix));
+    else if (!str_cmp(prefix, "h")) process_handover(str2int(suffix));
+    else if (!str_cmp(prefix, "k")) process_kill(str2int(suffix));
+    else if (!str_cmp(prefix, "w")) process_wakeup(str2int(suffix));
 
-    else if (prefix[0] != '\0') kprintf("not found: %s\n", prefix);
+    else kprintf("not found: %s\n", prefix);
 
     return 0;
 }
 
-void start_kshell() {
-    sys_warning("You are now in the kernel-level shell");
-    kprint("\n");
+void start_kshell(void) {
+    kprint("\033[93m"
+        "Welcome to the profanOS kernel shell!\n"
+        "Use 'help' to see the commands.\033[0m\n\n"
+    );
+
     char char_buffer[BFR_SIZE];
     while (1) {
         krainbow("kernel-shell> ");

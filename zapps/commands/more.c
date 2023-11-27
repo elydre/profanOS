@@ -46,7 +46,7 @@ char get_user_input(void) {
     int scancode;
     char c;
 
-    printf("\033[s$2 -- MORE - Press space to continue, q to quit -- $7");
+    printf("\033[s\033[96m -- MORE - Press space to continue, q to quit -- \033[0m");
     fflush(stdout);
 
     while (1) {

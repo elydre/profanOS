@@ -1,7 +1,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 int fs_cnt_delete_core(filesys_t *filesys, sid_t core_sid) {
@@ -92,14 +91,8 @@ int fs_cnt_delete(filesys_t *filesys, sid_t head_sid) {
 
     vdisk = fs_get_vdisk(filesys, head_sid.device);
 
-    if (vdisk == NULL) {
-        sys_error("failed to delete container, vdisk not found");
-        return 1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        sys_error("failed to delete container, sector not used");
+    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
+        sys_warning("[cnt_delete] Invalid sector id");
         return 1;
     }
 
@@ -107,7 +100,7 @@ int fs_cnt_delete(filesys_t *filesys, sid_t head_sid) {
     data = vdisk_load_sector(vdisk, head_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_HEAD) {
-        sys_error("failed to delete container, sector not container header");
+        sys_warning("[cnt_delete] Sector not container header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
@@ -116,7 +109,7 @@ int fs_cnt_delete(filesys_t *filesys, sid_t head_sid) {
     loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
     if (!IS_NULL_SID(loca_sid)) {
         if (fs_cnt_delete_loca_recur(filesys, loca_sid)) {
-            sys_error("failed to delete container, failed to delete locator");
+            sys_error("[cnt_delete] Failed to delete locator");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }

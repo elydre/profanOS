@@ -72,4 +72,23 @@ typedef struct {
     uint8_t sleep; // sleep after start
 } runtime_args_t;
 
+typedef struct {
+    int      argc;
+    char   **argv;
+
+    sid_t    file;
+
+    uint32_t vbase;
+    uint32_t vcunt;
+    uint32_t stack_size;
+    uint32_t stack;
+} comm_struct_t;
+
+// va_list
+typedef __builtin_va_list va_list;
+
+#define va_start(v, l) __builtin_va_start(v, l)
+#define va_arg(v, l) __builtin_va_arg(v, l)
+#define va_end(v) __builtin_va_end(v)
+
 #endif

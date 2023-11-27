@@ -4,6 +4,6 @@
 #include <ktype.h>
 
 void time_get(tm_t *time);
-int rtc_init();
+int  rtc_init(void);
 
 #endif

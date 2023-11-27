@@ -1,8 +1,6 @@
 #include <kernel/butterfly.h>
-#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 vdisk_t *vdisk_create(uint32_t initsize) {
@@ -35,16 +33,12 @@ void vdisk_destroy(vdisk_t *vdisk) {
 
 int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
     if (vdisk->used[sid.sector] == 1) {
-        sys_error("sector already used");
+        sys_error("Sector already used");
         return 1;
     }
 
     if (vdisk->free[vdisk->used_count] != sid.sector) {
-        kprintf("cannot use s%d, expected s%d\n",
-            sid.sector,
-            vdisk->free[vdisk->used_count]
-        );
-        sys_fatal("vdisk error");
+        sys_fatal("Sector %d is not the next free sector", sid.sector);
         return 1;
     }
 
@@ -56,7 +50,7 @@ int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
 
 int vdisk_note_sector_unused(vdisk_t *vdisk, sid_t sid) {
     if (vdisk->used[sid.sector] == 0) {
-        sys_error("sector already unused");
+        sys_error("Sector already unused");
         return 1;
     }
 
@@ -81,7 +75,7 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
     vdisk->sectors = realloc_as_kernel(vdisk->sectors, sizeof(sector_t) * newsize);
 
     if (vdisk->sectors == NULL) {
-        sys_fatal("could not allocate memory for vdisk");
+        sys_fatal("Could not allocate memory for vdisk");
     }
 
     for (uint32_t i = vdisk->size; i < newsize; i++) {
@@ -95,7 +89,6 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
 
 int vdisk_get_unused_sector(vdisk_t *vdisk) {
     if (vdisk->used_count >= vdisk->size) {
-        serial_debug("VDISK", "vdisk full, extending...");
         vdisk_extend(vdisk, vdisk->size + 1000);
     }
     return vdisk->free[vdisk->used_count];
@@ -103,7 +96,7 @@ int vdisk_get_unused_sector(vdisk_t *vdisk) {
 
 int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
     if (sid.sector >= vdisk->size) {
-        sys_error("cannot write sector, out of range");
+        sys_error("[vdisk_write] Sector out of range");
         return 1;
     }
     mem_copy(vdisk->sectors + sid.sector, data, FS_SECTOR_SIZE);
@@ -112,7 +105,7 @@ int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
 
 int vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
     if (sid.sector >= vdisk->size) {
-        sys_error("cannot read sector, out of range");
+        sys_error("[vdisk_read] Sector out of range");
         return 1;
     }
     mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
@@ -121,10 +114,9 @@ int vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
 
 uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
     if (sid.sector >= vdisk->size) {
-        sys_error("cannot load sector, out of range");
+        sys_error("[vdisk_load] Sector out of range");
         return NULL;
     }
-    // return (uint8_t *) (vdisk->sectors + sid.sector);
     uint8_t *data = malloc(FS_SECTOR_SIZE);
     mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
     return data;

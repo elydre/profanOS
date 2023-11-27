@@ -3,7 +3,7 @@
 
 #include <ktype.h>
 
-void mboot_save(void *mboot_ptr);
+void     mboot_save(void *mboot_ptr);
 uint32_t mboot_get(int index);
 
 #endif

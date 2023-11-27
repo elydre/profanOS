@@ -15,7 +15,6 @@
 #include <cpu/gdt.h>
 #include <minilib.h>
 #include <system.h>
-#include <ktype.h>
 
 
 void kernel_main(void *mboot_ptr) {
@@ -39,7 +38,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(scuba_init,   "Loading", "scubasuit virtual MM");
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
-    status_print(sys_init_fpu, "Initing", "floating point unit");
+    status_print(sys_init,     "Initing", "FPU and error reporting");
     status_print(process_init, "Starting", "process manager");
     status_print(filesys_init, "Loading", "butterfly filesystem");
     status_print(init_watfunc, "Initing", "watfunc");

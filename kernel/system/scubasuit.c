@@ -10,7 +10,7 @@ scuba_directory_t *kernel_directory;
 scuba_directory_t *current_directory;
 uint32_t g_map_to_addr;
 
-scuba_directory_t *scuba_get_kernel_directory() {
+scuba_directory_t *scuba_get_kernel_directory(void) {
     return kernel_directory;
 }
 
@@ -27,7 +27,7 @@ void *i_allign_calloc(uint32_t size, int state) {
  *                       *
 **************************/
 
-void scuba_enable() {
+void scuba_enable(void) {
     // enable paging
     uint32_t cr0;
     asm volatile("mov %%cr0, %0": "=r"(cr0));
@@ -41,7 +41,7 @@ void scuba_switch(scuba_directory_t *dir) {
     asm volatile("mov %0, %%cr3":: "r"(dir));
 }
 
-void scuba_flush_tlb() {
+void scuba_flush_tlb(void) {
     // flush the TLB
 
     uint32_t cr3;
@@ -55,7 +55,7 @@ void scuba_flush_tlb() {
  *                       *
 **************************/
 
-int scuba_init() {
+int scuba_init(void) {
     // allocate a page directory
     kernel_directory = scuba_directory_create(0);
 
@@ -309,32 +309,16 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
 
 void scuba_fault_handler(int err_code) {
     // get the faulting address
-    uint32_t faulting_address, new_address;
+    uint32_t faulting_address;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
-    if (faulting_address >= RUN_BIN_VBASE) {
-        new_address = faulting_address - (faulting_address % 0x1000);
-        if (scuba_create_virtual(current_directory, new_address, RUN_BIN_VEXPD)) {
-            sys_error("Failed to create virtual pages");
-        } else {
-            serial_kprintf("Created virtual pages for %x\n", faulting_address);
-            return;
-        }
-    } else {
-        kprintf("Page fault during %s at %x, pid %d, code %x\n",
-                (err_code & 0x2) ? "write" : "read",
-                faulting_address,
-                pid,
-                err_code
-        );
-        sys_error("Page fault, killing process");
-    }
-
-    // exit with the standard segfault code
-    if (force_exit_pid(pid, 139)) {
-        sys_fatal("Failed to exit process");
-    }
+    sys_error("Page fault during %s at %x (pid %d, code %x)",
+            (err_code & 0x2) ? "write" : "read",
+            faulting_address,
+            pid,
+            err_code
+    );
 }

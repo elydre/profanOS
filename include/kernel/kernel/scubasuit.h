@@ -50,9 +50,9 @@ typedef struct {
 #define scuba_map(dir, virt, phys) scuba_map_func(dir, virt, phys, 0)
 #define scuba_map_from_kernel(dir, virt, phys) scuba_map_func(dir, virt, phys, 1)
 
-scuba_directory_t *scuba_get_kernel_directory();
+scuba_directory_t *scuba_get_kernel_directory(void);
 
-int scuba_init();
+int scuba_init(void);
 
 void scuba_process_switch(scuba_directory_t *dir);
 

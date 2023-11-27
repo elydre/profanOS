@@ -1,24 +1,23 @@
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>
-#include <system.h>
 
-#define FONT_WIDTH 8
 #define FONT_HEIGHT 16
+#define FONT_WIDTH  8
 
+void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color);
 void tef_print_char(char c, uint32_t color, uint32_t bg_color);
 void tef_set_cursor_offset(int offset);
+int  tef_get_cursor_offset(void);
 void tef_cursor_blink(int on);
-int  tef_get_cursor_offset();
-void tef_clear();
+void tef_clear(void);
 
+void txt_set_char(int x, int y, char c, char color);
 void txt_print_char(char c, char color);
 void txt_set_cursor_offset(int offset);
 void txt_cursor_blink(int on);
-int  txt_get_cursor_offset();
-void txt_backspace();
-void txt_clear();
-
+int  txt_get_cursor_offset(void);
+void txt_clear(void);
 
 uint32_t gt_convert_color(char c) {
     // vga 16 color palette
@@ -42,23 +41,31 @@ uint32_t gt_convert_color(char c) {
     }
 }
 
-int gt_get_max_cols() {
+int gt_get_max_cols(void) {
     return vesa_does_enable() ? vesa_get_width() / FONT_WIDTH : 80;
 }
 
-int gt_get_max_rows() {
+int gt_get_max_rows(void) {
     return vesa_does_enable() ? vesa_get_height() / FONT_HEIGHT : 25;
 }
 
-void kprint_char(char c, char color) {
-    if (vesa_does_enable()) {
-        tef_print_char(c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+void kprint_char_at(int x, int y, char c, char color) {
+    if (x < 0 || y < 0) {
+        if (vesa_does_enable()) {
+            tef_print_char(c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+        } else {
+            txt_print_char(c, color);
+        }
     } else {
-        txt_print_char(c, color);
+        if (vesa_does_enable()) {
+            tef_set_char(x, y, c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+        } else {
+            txt_set_char(x, y, c, color);
+        }
     }
 }
 
-int get_cursor_offset() {
+int get_cursor_offset(void) {
     if (vesa_does_enable()) {
         return tef_get_cursor_offset();
     } else {
@@ -74,15 +81,7 @@ void set_cursor_offset(int offset) {
     }
 }
 
-void kprint_backspace() {
-    if (vesa_does_enable()) {
-        tef_print_char(0x08, 0, 0); // we don't care about the color
-    } else {
-        txt_backspace();
-    }
-}
-
-void clear_screen() {
+void clear_screen(void) {
     if (vesa_does_enable()) {
         tef_clear();
     } else {
@@ -113,7 +112,33 @@ void cursor_blink(int on) {
 uint32_t saved_cursor_x = 0;
 uint32_t saved_cursor_y = 0;
 
-int compute_ansi_escape(char *str) {
+char compute_ansi_color(char ansi_nb, int part, char old_color) {
+    char fg = old_color & 0xF;
+    char bg = (old_color >> 4) & 0xF;
+
+    switch (ansi_nb) {
+        case '0': ansi_nb = 0; break;
+        case '1': ansi_nb = 4; break;
+        case '2': ansi_nb = 2; break;
+        case '3': ansi_nb = 6; break;
+        case '4': ansi_nb = 1; break;
+        case '5': ansi_nb = 5; break;
+        case '6': ansi_nb = 3; break;
+        default:  ansi_nb = 7; break;
+    }
+
+    if (part == 0) {
+        fg = ansi_nb;
+    } else if (part == 1) {
+        fg = ansi_nb + 8;
+    } else if (part == 2) {
+        bg = ansi_nb;
+    }
+
+    return (bg << 4) | fg;
+}
+
+int compute_ansi_escape(char *str, char *color) {
     char *start = str;
 
     if (str[1] == '[') str += 2;
@@ -130,7 +155,7 @@ int compute_ansi_escape(char *str) {
         int row = get_offset_row(offset);
         int col = get_offset_col(offset);
         for (int i = col; i < gt_get_max_cols() - 1; i++) {
-            kprint_char(' ', 0x0);
+            kprint_char_at(-1, -1, ' ', 0x0);
         }
         set_cursor_offset(get_offset(col, row));
     }
@@ -143,6 +168,24 @@ int compute_ansi_escape(char *str) {
             cursor_blink(0);
         }
         return 5;
+    }
+
+    // font color
+    if (str[0] == '3' && str[2] == 'm') {
+        *color = compute_ansi_color(str[1], 0, *color);
+        return 4;
+    }
+
+    // highlight font color
+    if (str[0] == '9' && str[2] == 'm') {
+        *color = compute_ansi_color(str[1], 1, *color);
+        return 4;
+    }
+
+    // background color
+    if (str[0] == '4' && str[2] == 'm') {
+        *color = compute_ansi_color(str[1], 2, *color);
+        return 4;
     }
 
     // clear screen
@@ -183,9 +226,9 @@ void kcnprint(char *message, int len, char color) {
     if (len == -1) len = str_len(message);
     while (i < len) {
         if (message[i] == '\033') {
-            i += compute_ansi_escape(message + i);
+            i += compute_ansi_escape(message + i, &color);
         } else {
-            kprint_char(message[i], color);
+            kprint_char_at(-1, -1, message[i], color);
         }
         i++;
     }

@@ -42,9 +42,9 @@
 
 char kb_scancode_to_char(int scancode, int shift);
 
-int  kb_get_scancode();
-int  kb_get_scfh();
+int  kb_get_scancode(void);
+int  kb_get_scfh(void);
 
-int keyboard_init();
+int keyboard_init(void);
 
 #endif

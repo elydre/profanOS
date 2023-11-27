@@ -41,10 +41,10 @@
   #include <profan.h>
 
   // profanOS config
-  #define PROMPT_SUCC "profanOS [$4%s$7] > "
-  #define PROMPT_FAIL "profanOS [$4%s$7] $3>$7 "
+  #define PROMPT_SUCC "profanOS [\033[95m%s\033[0m] > "
+  #define PROMPT_FAIL "profanOS [\033[95m%s\033[0m] \033[91m>\033[0m "
 
-  #define DEBUG_COLOR  "$6"
+  #define DEBUG_COLOR  "\033[37m"
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
@@ -1858,7 +1858,7 @@ void free_args(char **argv) {
     free(argv);
 }
 
-void free_vars() {
+void free_vars(void) {
     for (int i = 0; i < MAX_VARIABLES; i++) {
         if (variables[i].name != NULL && (!variables[i].is_sync)) {
             free(variables[i].value);
@@ -1868,7 +1868,7 @@ void free_vars() {
     free(variables);
 }
 
-void free_pseudos() {
+void free_pseudos(void) {
     for (int i = 0; i < MAX_PSEUDOS; i++) {
         if (pseudos[i].name != NULL) {
             free(pseudos[i].name);
@@ -1878,7 +1878,7 @@ void free_pseudos() {
     free(pseudos);
 }
 
-void free_functions() {
+void free_functions(void) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
         if (functions[i].name != NULL) {
             free(functions[i].name);
@@ -2008,10 +2008,10 @@ void debug_print(char *function_name, char **function_args) {
             printf("'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR "'%s') [%d]$7\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR "'%s') [%d]\033[0m\n", function_args[i], i + 1);
         return;
     }
-    puts(DEBUG_COLOR ") [0]$7");
+    puts(DEBUG_COLOR ") [0]\033[0m");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2373,7 +2373,7 @@ char **lexe_program(char *program) {
             continue;
         }
 
-        // interpret \\n, \\t, \\r, \\\", \\\', \\\\, \\$
+        // interpret double backslashes
         if (program[i] == '\\') {
             if (program[i + 1] == 'n') {
                 tmp[tmp_index++] = '\n';
@@ -3045,31 +3045,31 @@ int does_syntax_fail(char *program) {
 #define TAB    15
 
 #if PROFANBUILD
-char get_func_color(char *str) {
+char *get_func_color(char *str) {
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (strcmp(str, keywords[i]) == 0) {
-            return '4';
+            return "95";
         }
     }
 
     // functions: dark cyan
     if (get_function(str) != NULL) {
-        return 'A';
+        return "36";
     }
 
     // pseudos: blue
     if (get_pseudo(str) != NULL) {
-        return '0';
+        return "94";
     }
 
     // internal functions: cyan
     if (get_if_function(str) != NULL) {
-        return '2';
+        return "96";
     }
 
     // unknown functions: dark red
-    return 'B';
+    return "31";
 }
 
 void olv_print(char *str, int len) {
@@ -3096,10 +3096,10 @@ void olv_print(char *str, int len) {
     }
 
     if (str[i] == '/' && str[i + 1] == '/') {
-        fputs("$9", stdout);
+        fputs("\033[32m", stdout);
         for (i = 0; str[i] != ';'; i++) {
             if (i == len) return;
-            printf("%c", str[i]);
+            putchar(str[i]);
         }
         olv_print(str + i, len - i);
         return;
@@ -3112,7 +3112,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    printf("$%c%s", get_func_color(tmp + dec), tmp);
+    printf("\033[%sm%s", get_func_color(tmp + dec), tmp);
 
     int from = i;
     for (; i < len; i++) {
@@ -3120,7 +3120,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("$%c%s", is_var ? '5' : '$', tmp);
+                printf("\033[9%cm%s", is_var ? '9' : '7', tmp);
             }
             olv_print(str + i, len - i);
             free(tmp);
@@ -3132,7 +3132,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("$%c%s", is_var ? '5' : '$', tmp);
+                printf("\033[9%cm%s", is_var ? '9' : '7', tmp);
             }
 
             // find the closing bracket
@@ -3149,11 +3149,11 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            printf("$%c!(", (j == len) ? '3' : '1');
+            printf("\033[9%cm!(", (j == len) ? '1' : '2');
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                fputs("$1)", stdout);
+                fputs("\033[92m)", stdout);
             }
 
             i = j;
@@ -3165,10 +3165,10 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("$%c%s", is_var ? '5' : '$', tmp);
+                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
-            fputs("$6;$7", stdout);
+            fputs("\033[37m;\033[0m", stdout);
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
@@ -3183,11 +3183,11 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("$%c%s", is_var ? '5' : '$', tmp);
+                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
 
-            fputs("$6|$7", stdout);
+            fputs("\033[37m|\033[0m", stdout);
             if (str[i + 1] == STRING_CHAR) {
                 putchar(STRING_CHAR);
                 i++;
@@ -3203,7 +3203,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("$%c%s", is_var ? '5' : '$', tmp);
+                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
             is_var = 1;
@@ -3214,7 +3214,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("$%c%s", is_var ? '5' : '$', tmp);
+                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
             is_var = 0;
@@ -3224,7 +3224,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        printf("$%c%s", is_var ? '5' : '$', tmp);
+        printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
     }
 
     free(tmp);
@@ -3475,7 +3475,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        printf(" $7\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" \033[0m\033[u\033[%dC\033[?25l", buffer_index);
     }
 
     fflush(stdout);
@@ -3650,7 +3650,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
         fputs("\033[?25h\033[u", stdout);
         olv_print(buffer, buffer_actual_size);
-        printf(" $7\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" \033[0m\033[u\033[%dC\033[?25l", buffer_index);
         fflush(stdout);
     }
 
@@ -3668,7 +3668,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     #endif
 }
 
-void start_shell() {
+void start_shell(void) {
     // use execute_program() to create a shell
     char *line = malloc(INPUT_SIZE * sizeof(char));
 

@@ -6,15 +6,15 @@
 
 void serial_enable(int device) {
     port_byte_out(device + 1, 0x00);
-    port_byte_out(device + 3, 0x80); // Enable divisor mode
-    port_byte_out(device + 0, 0x03); // Div Low:  03 Set the port to 38400 bps
-    port_byte_out(device + 1, 0x00); // Div High: 00
+    port_byte_out(device + 3, 0x80); // enable divisor mode
+    port_byte_out(device + 0, 0x03); // div Low:  03 Set the port to 38400 bps
+    port_byte_out(device + 1, 0x00); // div High: 00
     port_byte_out(device + 3, 0x03);
     port_byte_out(device + 2, 0xC7);
     port_byte_out(device + 4, 0x0B);
 }
 
-int serial_init() {
+int serial_init(void) {
     serial_enable(SERIAL_PORT_A);
     serial_enable(SERIAL_PORT_B);
     return 0;
@@ -33,12 +33,4 @@ void serial_print(int device, char *out) {
     for (uint32_t i = 0; i < (uint32_t) str_len(out); ++i) {
         serial_send(device, out[i]);
     }
-}
-
-void serial_debug(char *source, char *message) {
-    serial_send(SERIAL_PORT_A, '[');
-    serial_print(SERIAL_PORT_A, source);
-    serial_print(SERIAL_PORT_A, "] - ");
-    serial_print(SERIAL_PORT_A, message);
-    serial_print(SERIAL_PORT_A, "\r\n");
 }

@@ -13,14 +13,14 @@
 
 uint32_t wf_get_func_addr(uint32_t func_id);
 
-int init_watfunc() {
+int init_watfunc(void) {
     *(int *)(WATFUNC_ADDR) = (int) wf_get_func_addr;
     *(int *)(WATDILY_ADDR) = (int) dily_get_func;
     return 0;
 }
 
-void unknown_func() {
-    sys_error("Unknown syscall");
+void unknown_func(void) {
+    sys_warning("Trying to call an unknown syscall");
 }
 
 void *SYSCALL_ARRAY[] = {
@@ -45,7 +45,7 @@ void *SYSCALL_ARRAY[] = {
     time_get,
     timer_get_ms,
 
-    // gnrtx.h
+    // gnrtx.h + vesa.h
     font_get,
     kcnprint,
     get_cursor_offset,
@@ -86,9 +86,10 @@ void *SYSCALL_ARRAY[] = {
     // minilib.h
     force_exit_pid,
 
-    // system.h (dily)
+    // system.h
     dily_unload,
     dily_load,
+    sys_set_reporter,
 };
 
 uint32_t wf_get_func_addr(uint32_t func_id) {

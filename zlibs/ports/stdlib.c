@@ -36,12 +36,12 @@ env_t ENV = {NULL, 0};
 
 #define SHELL_PATH "/bin/fatpath/olivine.bin"
 
-int main() {
+int main(void) {
     init_func();
     return 0;
 }
 
-void init_func() {
+void init_func(void) {
     rand_seed = time(NULL);
     ENV.vars = NULL;
     ENV.size = 0;
@@ -121,7 +121,7 @@ long int a64l(const char *string) {
     return (long int) result;
 }
 
-void abort() {
+void abort(void) {
     puts("abort not implemented yet, WHY DO YOU USE IT ?");
     // TODO : implement abort, it's totally possible
 }

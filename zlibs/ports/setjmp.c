@@ -1,6 +1,6 @@
 typedef int jmp_buf[6];
 
-int main() {
+int main(void) {
     return 0;
 }
 

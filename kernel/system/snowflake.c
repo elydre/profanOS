@@ -5,8 +5,6 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <gui/gnrtx.h>
-
 
 /* * * * * * * * * * * * * * * * * * * *
  *        _             _              *
@@ -28,7 +26,7 @@ int part_size;
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state);
 int mem_free_addr(uint32_t addr);
 
-uint32_t mem_get_phys_size() {
+uint32_t mem_get_phys_size(void) {
     uint32_t *addr_min = (uint32_t *) 0x200000;
     uint32_t *addr_max = (uint32_t *) 0x40000000;
     uint32_t *addr_test;
@@ -48,7 +46,7 @@ uint32_t mem_get_phys_size() {
 
 int instance_count;
 
-int mem_init() {
+int mem_init(void) {
     alloc_count = 0;
     free_count = 0;
 
@@ -70,7 +68,7 @@ int mem_init() {
     MEM_PARTS[0].task_id = 0;
 
     if (mem_alloc(sizeof(allocated_part_t) * part_size, 0, 3) != (uint32_t) MEM_PARTS) {
-        sys_fatal("snowflake address is illogical");
+        sys_fatal("Snowflake address is illogical");
     }
 
     // allocate the diskiso module if needed
@@ -79,7 +77,7 @@ int mem_init() {
     uint32_t start = mem_alloc(diskiso_get_size(), 0, 1);
 
     if (start != diskiso_get_start()) {
-        sys_error("diskiso address is illogical");
+        sys_error("Diskiso address is illogical");
         mem_free_addr(start);
     }
 
@@ -91,7 +89,7 @@ int mm_get_unused_index(int not_index) {
         if (MEM_PARTS[i].state == 0 && i != not_index) return i;
     }
 
-    sys_fatal("no more memory, dynamizing do not work");
+    sys_fatal("No more memory, dynamizing do not work");
     return -1;
 }
 
@@ -103,13 +101,13 @@ void del_occurence(int index) {
             return;
         }
         if (count > part_size) {
-            sys_fatal("recursive linked list detected in del_occurence");
+            sys_fatal("Recursive linked list detected in snowflake");
         }
         i = MEM_PARTS[i].next;
     }
 }
 
-void dynamize_mem() {
+void dynamize_mem(void) {
     int sum = 0;
     for (int i = 0; i < part_size; i++) {
         sum += !MEM_PARTS[i].state;
@@ -121,7 +119,7 @@ void dynamize_mem() {
     uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 0, 3);
 
     if (new_add == 0) {
-        sys_fatal("memory dynamizing failed");
+        sys_fatal("Memory dynamizing failed");
         return;
     }
 
@@ -133,8 +131,6 @@ void dynamize_mem() {
     MEM_PARTS = (allocated_part_t *) new_add;
     part_size += GROW_SIZE;
     mem_free_addr(old_add);
-
-    serial_debug("SNOWFLAKE", "memory successfully dynamized");
 }
 
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
@@ -147,7 +143,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     }
 
     if (instance_count > 1) {
-        sys_fatal("instance count is too high in mem_alloc");
+        sys_fatal("[mem_alloc] Instance count is too high");
     }
 
     // traversing the list of allocated parts
@@ -158,12 +154,12 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     last_addr = MEM_BASE_ADDR;
 
     if (MEM_PARTS[0].state != 2) {
-        sys_fatal("snowflake is corrupted");
+        sys_fatal("[mem_alloc] Snowflake is corrupted");
     }
 
     for (int i = 0; i <= part_size; i++) {
         if (i == part_size) {
-            sys_fatal("recursive linked list detected in mem_alloc");
+            sys_fatal("Recursive linked list detected in snowflake");
         }
 
         // calculate the gap
@@ -188,7 +184,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     }
 
     if (exit_mode == 2) {
-        sys_error("Cannot alloc: out of physical memory");
+        sys_error("[mem_alloc] Not enough memory");
         if (state != 3) instance_count--;
         process_enable_sheduler();
         return 0;
@@ -227,7 +223,7 @@ int mem_free_addr(uint32_t addr) {
     instance_count++;
 
     if (instance_count > 1) {
-        sys_fatal("instance count is too high in mem_free_addr");
+        sys_fatal("[mem_free] Instance count is too high");
     }
 
     int index = 0;
@@ -240,7 +236,7 @@ int mem_free_addr(uint32_t addr) {
         }
 
         if (MEM_PARTS[index].state == 2) {
-            sys_error("cannot free first block");
+            sys_warning("Cannot free snowflake memory");
             instance_count--;
             process_enable_sheduler();
             return 0; // error
@@ -255,7 +251,7 @@ int mem_free_addr(uint32_t addr) {
         return 1; // success
     }
 
-    sys_warning("block not found");
+    sys_warning("Cannot free memory at address 0x%x", addr);
     instance_count--;
     process_enable_sheduler();
     return 0; // error

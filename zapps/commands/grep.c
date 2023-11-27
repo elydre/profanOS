@@ -24,11 +24,11 @@ void print_with_color(int line_number, char *line, char *pattern) {
     char *pattern_end = pattern_start + strlen(pattern);
     char *line_end = strchr(line, '\0');
 
-    printf("$2% 3d$7: ", line_number);
+    printf("\033[96m% 3d\033[0m: ", line_number);
     fwrite(line, 1, pattern_start - line, stdout);
-    printf("$4");
+    printf("\033[95m");
     fwrite(pattern_start, 1, pattern_end - pattern_start, stdout);
-    printf("$7");
+    printf("\033[0m");
     fwrite(pattern_end, 1, line_end - pattern_end, stdout);
     printf("\n");
 }

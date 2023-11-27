@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        printf("$BUsage: $3mkdir <name>$$\n");
+        printf("\033[31mUsage: \033[91mmkdir <name>\033[0m\n");
         return 1;
     }
 
@@ -41,12 +41,12 @@ int main(int argc, char **argv) {
     sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent_path);
 
     if (IS_NULL_SID(parent_sid) || !fu_is_dir(parent_sid)) {
-        printf("$3%s$B is not a existing directory$$\n", parent_path);
+        printf("\033[91m%s\033[31m is not a existing directory\033[0m\n", parent_path);
     }
 
     // check if the file already exists
     else if (!IS_NULL_SID(fu_path_to_sid(ROOT_SID, full_path))) {
-        printf("$3%s$B already exists$$\n", full_path);
+        printf("\033[91m%s\033[31m already exists\033[0m\n", full_path);
     }
 
     // create the file

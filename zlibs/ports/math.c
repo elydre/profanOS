@@ -554,12 +554,12 @@ float __math_xflowf(uint32_t sign, float y);
 static inline float fp_barrierf(float x);
 
 
-int main() {
+int main(void) {
     init_func();
     return 0;
 }
 
-void init_func() {; }
+void init_func(void) {; }
 
 int fpclassify(float x) {
     puts("fpclassify not implemented yet, WHY DO YOU USE IT ?");

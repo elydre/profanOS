@@ -28,7 +28,7 @@ typedef struct allocated_part_t {
  * 7: scuba vpage   *
 *********************/
 
-int mem_init();
+int mem_init(void);
 
 uint32_t mem_get_alloc_size(uint32_t addr);
 uint32_t mem_alloc(uint32_t size, uint32_t align, int task_id);

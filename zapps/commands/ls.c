@@ -282,15 +282,15 @@ int main(int argc, char **argv) {
 
     if (args->format == LS_FORMAT_COMMA) {
         for (int i = 0; i < elm_count; i++) {
-            if (fu_is_dir(cnt_ids[i])) printf("$2%s", cnt_names[i]);
-            else if (fu_is_file(cnt_ids[i])) printf("$1%s", cnt_names[i]);
-            else if (fu_is_fctf(cnt_ids[i])) printf("$4%s", cnt_names[i]);
-            else if (fu_is_link(cnt_ids[i])) printf("$5%s", cnt_names[i]);
-            else printf("$3%s", cnt_names[i]);
-            if (i != elm_count - 1) printf("$7, ");
+            if (fu_is_dir(cnt_ids[i])) printf("\033[96m%s", cnt_names[i]);
+            else if (fu_is_file(cnt_ids[i])) printf("\033[92m%s", cnt_names[i]);
+            else if (fu_is_fctf(cnt_ids[i])) printf("\033[95m%s", cnt_names[i]);
+            else if (fu_is_link(cnt_ids[i])) printf("\033[93m%s", cnt_names[i]);
+            else printf("\033[91m%s", cnt_names[i]);
+            if (i != elm_count - 1) printf("\033[0m, ");
             free(cnt_names[i]);
         }
-        puts("$7");
+        puts("\033[0m");
     }
 
     else if (args->format == LS_FORMAT_COLS) {
@@ -305,11 +305,11 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < rows; i++) {
             for (int j = i; j < elm_count; j += rows) {
-                if (fu_is_dir(cnt_ids[j])) printf("$2%s$7", cnt_names[j]);
-                else if (fu_is_file(cnt_ids[j])) printf("$1%s$7", cnt_names[j]);
-                else if (fu_is_fctf(cnt_ids[j])) printf("$4%s$7", cnt_names[j]);
-                else if (fu_is_link(cnt_ids[j])) printf("$5%s$7", cnt_names[j]);
-                else printf("$3%s$7", cnt_names[j]);
+                if (fu_is_dir(cnt_ids[j])) printf("\033[96m%s\033[0m", cnt_names[j]);
+                else if (fu_is_file(cnt_ids[j])) printf("\033[92m%s\033[0m", cnt_names[j]);
+                else if (fu_is_fctf(cnt_ids[j])) printf("\033[95m%s\033[0m", cnt_names[j]);
+                else if (fu_is_link(cnt_ids[j])) printf("\033[93m%s\033[0m", cnt_names[j]);
+                else printf("\033[91m%s\033[0m", cnt_names[j]);
                 for (uint32_t k = 0; k < max_len - strlen(cnt_names[j]) + 1; k++) putchar(' ');
                 free(cnt_names[j]);
             }
@@ -328,26 +328,26 @@ int main(int argc, char **argv) {
                 } else {
                     printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
                 }
-                printf("\033[u\033[22C$2%s$7", cnt_names[i]);
+                printf("\033[u\033[22C\033[96m%s\033[0m", cnt_names[i]);
             } else if (fu_is_file(cnt_ids[i])) {
                 size = fu_get_file_size(cnt_ids[i]);
                 if (args->size_type == LS_SIZE_PHYS || size < 10000) printf("%d B", size);
                 else if (size < 10000000) printf("%d kB", size / 1024);
                 else printf("%d MB", size / (1024 * 1024));
-                printf("\033[u\033[22C$1%s$7", cnt_names[i]);
+                printf("\033[u\033[22C\033[92m%s\033[0m", cnt_names[i]);
             } else if (fu_is_fctf(cnt_ids[i])) {
                 if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
                 else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
-                printf("\033[u\033[22C$4%s$7", cnt_names[i]);
+                printf("\033[u\033[22C\033[95m%s\033[0m", cnt_names[i]);
             } else if (fu_is_link(cnt_ids[i])) {
                 if (args->size_type == LS_SIZE_VIRT) {
                     printf("text-link");
                 } else {
                     printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
                 }
-                printf("\033[u\033[22C$5%s$7", cnt_names[i]);
+                printf("\033[u\033[22C\033[93m%s\033[0m", cnt_names[i]);
             } else {
-                printf("\033[u\033[22C$3%s$7unk", cnt_names[i]);
+                printf("\033[u\033[22C\033[91m%s\033[0munk", cnt_names[i]);
             }
             free(cnt_names[i]);
             putchar('\n');
