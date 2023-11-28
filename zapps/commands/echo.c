@@ -70,7 +70,7 @@ char *str_join(char *s1, char *s2) {
     return output;
 }
 
-char *get_text(char **args) {
+char *get_text(char **args, int start) {
     if (!isatty(0)) {
         return read_stdin();
     }
@@ -78,7 +78,7 @@ char *get_text(char **args) {
     char *text = malloc(1);
     text[0] = '\0';
 
-    for (int i = 1; args[i]; i++) {
+    for (int i = start; args[i]; i++) {
         text = str_join(text, args[i]);
         if (args[i + 1]) {
             text = str_join(text, " ");
@@ -100,7 +100,6 @@ int main(int argc, char **argv) {
     if (argc > 1 && argv[1][0] == '-') {
         if (strcmp(argv[1], "-e") == 0) {
             ansicolor = 1;
-            start = 2;
         } else if (strcmp(argv[1], "-h") == 0) {
             show_help();
             return 0;
@@ -111,7 +110,7 @@ int main(int argc, char **argv) {
         start = 2;
     }
 
-    char *text = get_text(argv);
+    char *text = get_text(argv, start);
     char *tmp = text;
 
     if (ansicolor) {
