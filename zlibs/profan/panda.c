@@ -162,7 +162,9 @@ void panda_clear_screen(void) {
     if (!g_panda) return;
     for (uint32_t i = 0; i < g_panda->max_lines; i++) {
         for (uint32_t j = 0; j < g_panda->max_cols; j++) {
-            if (g_panda->screen_buffer[i * g_panda->max_cols + j].content == ' ') continue;
+            if (g_panda->screen_buffer[i * g_panda->max_cols + j].content == ' ' &&
+                g_panda->screen_buffer[i * g_panda->max_cols + j].color == 0xF
+            ) continue;
             g_panda->screen_buffer[i * g_panda->max_cols + j].content = ' ';
             g_panda->screen_buffer[i * g_panda->max_cols + j].color = 0xF;
             print_char(j * g_panda->font->width, i * g_panda->font->height, ' ', 0xF);
@@ -303,7 +305,7 @@ void panda_scroll(uint32_t line_count) {
     for (uint32_t i = 0; i < line_count; i++) {
         for (uint32_t j = 0; j < g_panda->max_cols; j++) {
             new_offset = (g_panda->max_lines - 1 - i) * g_panda->max_cols + j;
-            if (g_panda->screen_buffer[new_offset].content == ' ') continue;
+            if (g_panda->screen_buffer[new_offset].content == ' ' && g_panda->screen_buffer[new_offset].color == 0xF) continue;
             g_panda->screen_buffer[new_offset].content = ' ';
             g_panda->screen_buffer[new_offset].color = 0xF;
             print_char(j * g_panda->font->width, (g_panda->max_lines - 1 - i) * g_panda->font->height, g_panda->screen_buffer[new_offset].content, g_panda->screen_buffer[new_offset].color);
