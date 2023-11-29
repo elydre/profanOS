@@ -146,7 +146,7 @@ void scuba_directory_init(scuba_directory_t *dir) {
         // pixel buffer
         from = (uint32_t) vesa_get_framebuffer();
         to = from + vesa_get_pitch() * vesa_get_height() * 4 + 0x1000;
-    }
+    } else return;
 
     for (uint32_t i = from; i < to; i += 0x1000) {
         scuba_map_from_kernel(dir, i, i);

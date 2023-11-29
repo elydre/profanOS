@@ -188,6 +188,12 @@ int compute_ansi_escape(char *str, char *color) {
         return 4;
     }
 
+    // reset color
+    if (str[0] == '0' && str[1] == 'm') {
+        *color = 0x0F;
+        return 3;
+    }
+
     // clear screen
     if (str[0] == '2' && str[1] == 'J') {
         clear_screen();

@@ -222,6 +222,7 @@ void kinput(char *buffer, int size) {
     int shift = 0;
     char c;
 
+    sc = last_sc = 0;
     while (sc != ENTER) {
         process_sleep(process_get_pid(), SLEEP_T);
         sc = kb_get_scfh();
