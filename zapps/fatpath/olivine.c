@@ -3468,7 +3468,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     // save the current cursor position and show it
     fputs("\033[s\033[?25l", stdout);
 
-    int sc, last_sc, last_sc_sgt = 0;
+    int sc, last_sc = 0, last_sc_sgt = 0;
 
     int buffer_actual_size = strlen(buffer);
     if (buffer_index == -1) buffer_index = buffer_actual_size;

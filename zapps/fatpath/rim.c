@@ -199,7 +199,7 @@ void main_loop(char *path) {
     uint8_t shift_pressed = 0;
     int future_cursor_pos;
 
-    int last_key, key_sgt = 0;
+    int last_key = 0, key_sgt = 0;
     int key, key_ticks = 0;
 
     int y_offset = 0;

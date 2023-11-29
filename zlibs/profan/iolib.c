@@ -73,6 +73,7 @@ uint32_t open_input(char *buffer, uint32_t size) {
     int shift = 0;
 
     sc = 0;
+    last_sc = 0;
     while (sc != ENTER) {
         usleep(SLEEP_T * 1000);
         sc = c_kb_get_scfh();
