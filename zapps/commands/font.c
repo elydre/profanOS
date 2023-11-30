@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
     if (!pwd) pwd = "/";
 
     if (argc != 2) {
-        printf("Usage: font [font path]\n");
+        printf("Usage: font <font path>\n");
         return 1;
     }
 

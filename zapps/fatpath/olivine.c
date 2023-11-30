@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 6"
+#define OLV_VERSION "0.8 rev 7"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -895,7 +895,7 @@ char *if_cd(char **input) {
     }
 
     if (argc > 1) {
-        raise_error("cd", "Expected 1 argument, got %d", argc);
+        raise_error("cd", "Usage: cd [dir]");
         return ERROR_CODE;
     }
 
@@ -965,7 +965,7 @@ char *if_debug(char **input) {
             return ERROR_CODE;
         }
     } else {
-        raise_error("debug", "Expected 0 or 1 arguments, got %d", argc);
+        raise_error("debug", "Usage: debug [-v|-if|-f|-p|-a]");
         return ERROR_CODE;
     }
 
@@ -1047,7 +1047,7 @@ char *if_del_var(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("del", "Expected 1 argument, got %d\n", argc);
+        raise_error("del", "Usage: del <variable name>");
         return ERROR_CODE;
     }
 
@@ -1070,7 +1070,7 @@ char *if_delfunc(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("delfunc", "Expected 1 argument, got %d", argc);
+        raise_error("delfunc", "Usage: delfunc <function name>");
         return ERROR_CODE;
     }
 
@@ -1085,7 +1085,6 @@ char *if_delfunc(char **input) {
     return NULL;
 }
 
-
 char *if_exec(char **input) {
     // get argc
     int argc = 0;
@@ -1094,49 +1093,13 @@ char *if_exec(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("exec", "Expected 1 argument, got %d", argc);
+        raise_error("exec", "Usage: exec <file>");
         return ERROR_CODE;
     }
 
     execute_file(input[0]);
 
     return NULL;
-}
-
-char *if_exists(char **input) {
-    int file_exists = 0;
-
-    #if PROFANBUILD
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc != 1) {
-        raise_error("exists", "Expected 1 argument, got %d", argc);
-        return ERROR_CODE;
-    }
-
-    // get path
-    char *path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, input[0], path);
-
-    // check if file exists
-    sid_t file_id = fu_path_to_sid(ROOT_SID, path);
-
-    if (!IS_NULL_SID(file_id)) {
-        file_exists = 1;
-    }
-
-    free(path);
-    #endif
-
-    char *res = malloc(sizeof(char) * 2);
-    res[0] = file_exists + '0';
-    res[1] = '\0';
-
-    return res;
 }
 
 char *if_export(char **input) {
@@ -1147,7 +1110,7 @@ char *if_export(char **input) {
     }
 
     if (argc != 2) {
-        raise_error("export", "Expected 2 arguments, got %d", argc);
+        raise_error("export", "Usage: export <name> <value>");
         return ERROR_CODE;
     }
 
@@ -1174,7 +1137,7 @@ char *if_find(char **input) {
     }
 
     if (argc > 2) {
-        raise_error("find", "Expected at most 2 arguments, got %d", argc);
+        raise_error("find", "Usage: find [-f|-d] [dir]");
         return ERROR_CODE;
     }
 
@@ -1253,6 +1216,47 @@ char *if_find(char **input) {
     #endif
 }
 
+char *if_fsize(char **input) {
+    int file_size = 0;
+
+    #if PROFANBUILD
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) {
+        argc++;
+    }
+
+    if (argc != 1) {
+        raise_error("fsize", "Usage: fsize <file>");
+        return ERROR_CODE;
+    }
+
+    // get path
+    char *path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+    assemble_path(current_directory, input[0], path);
+
+    sid_t file_id = fu_path_to_sid(ROOT_SID, path);
+
+    // check if file exists
+    if (IS_NULL_SID(file_id)) {
+        file_size = -1;
+    } else {
+        file_size = c_fs_cnt_get_size(c_fs_get_main(), file_id);
+    }
+
+    free(path);
+    #endif
+
+    char *res = malloc(sizeof(char) * 12);
+    if (file_size == -1) {
+        strcpy(res, "null");
+    } else {
+        local_itoa(file_size, res);
+    }
+
+    return res;
+}
+
 char *if_global(char **input) {
     // get argc
     int argc = 0;
@@ -1261,7 +1265,7 @@ char *if_global(char **input) {
     }
 
     if (argc != 2) {
-        raise_error("global", "Expected 2 arguments, got %d", argc);
+        raise_error("global", "Usage: global <name> <value>");
         return ERROR_CODE;
     }
 
@@ -1296,7 +1300,7 @@ char *if_go_binfile(char **input) {
     }
 
     if (argc < 1) {
-        raise_error("go", "Expected at least 1 argument, got %d", argc);
+        raise_error("go", "Usage: go <file> [args] [&]");
         return ERROR_CODE;
     }
 
@@ -1374,7 +1378,7 @@ char *if_name(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("name", "Expected 1 argument, got %d", argc);
+        raise_error("name", "Usage: name <path>");
         return ERROR_CODE;
     }
 
@@ -1418,7 +1422,7 @@ char *if_pseudo(char **input) {
     }
 
     if (argc != 2) {
-        raise_error("pseudo", "Expected 2 arguments, got %d", argc);
+        raise_error("pseudo", "Usage: pseudo <name> <value>");
         return ERROR_CODE;
     }
 
@@ -1446,7 +1450,7 @@ char *if_range(char **input) {
     }
 
     if (argc == 0 || argc > 2) {
-        raise_error("range", "Expected 1 or 2 arguments, got %d", argc);
+        raise_error("range", "Usage: range [start] <end>");
         return ERROR_CODE;
     }
 
@@ -1499,7 +1503,7 @@ char *if_rep(char **input) {
     }
 
     if (argc != 2 && argc != 3) {
-        raise_error("rep", "Expected 2 or 3 arguments, got %d", argc);
+        raise_error("rep", "Usage: rep <string> <chars> [replacements]");
         return ERROR_CODE;
     }
 
@@ -1509,7 +1513,7 @@ char *if_rep(char **input) {
     }
 
     char *ret = malloc((strlen(input[0]) + 1) * sizeof(char));
-    
+
     if (argc == 3) {
         strcpy(ret, input[0]);
 
@@ -1550,7 +1554,7 @@ char *if_set_var(char **input) {
     }
 
     if (argc != 2) {
-        raise_error("set", "Expected 2 arguments, got %d", argc);
+        raise_error("set", "Usage: set <name> <value>");
         return ERROR_CODE;
     }
 
@@ -1575,7 +1579,7 @@ char *if_sprintf(char **input) {
     }
 
     if (argc < 1) {
-        raise_error("sprintf", "Expected at least 1 argument, got %d", argc);
+        raise_error("sprintf", "Usage: sprintf <format> [arg1] [arg2] ...");
         return ERROR_CODE;
     }
 
@@ -1657,7 +1661,7 @@ char *if_strlen(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("strlen", "Expected 1 argument, got %d", argc);
+        raise_error("strlen", "Usage: strlen <string>");
         return ERROR_CODE;
     }
 
@@ -1680,7 +1684,7 @@ char *if_ticks(char **input) {
     }
 
     if (argc != 0) {
-        raise_error("ticks", "Expected 0 arguments, got %d", argc);
+        raise_error("ticks", "Usage: ticks");
         return ERROR_CODE;
     }
 
@@ -1703,7 +1707,7 @@ internal_function_t internal_functions[] = {
     {"delfunc", if_delfunc},
     {"eval", if_eval},
     {"exec", if_exec},
-    {"exists", if_exists},
+    {"fsize", if_fsize},
     {"export", if_export},
     {"find", if_find},
     {"global", if_global},

@@ -7,7 +7,7 @@
 #include <profan.h>
 
 
-#define HELP_USAGE "Usage: lib <mode> [args]\n"
+#define HELP_USAGE "Usage: lib <flag> [args]\n"
 #define HELP_HELP "Try 'lib -h' for more information.\n"
 
 int is_file(char *path) {
@@ -25,19 +25,19 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char mode = *(argv[1] + 1);
-    if (mode == '-') {
-        mode = *(argv[1] + 2);
+    char flag = *(argv[1] + 1);
+    if (flag == '-') {
+        flag = *(argv[1] + 2);
     }
 
-    if (mode == '\0') {
-        printf("lib: invalid mode '%s'\n" HELP_HELP, argv[1]);
+    if (flag == '\0') {
+        printf("lib: invalid flag '%s'\n" HELP_HELP, argv[1]);
         return 1;
     }
 
-    if (mode == 'h') {
+    if (flag == 'h') {
         printf(HELP_USAGE);
-        printf("Available modes:\n");
+        printf("Available flags:\n");
         printf("  -h              print this help message\n");
         printf("  -u <id>         unload a library\n");
         printf("  -l <id> <path>  load a library\n");
@@ -45,9 +45,9 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (mode == 'u') {
+    if (flag == 'u') {
         if (argc < 3) {
-            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[1]);
+            printf("lib: missing argument to flag '%s'\n" HELP_HELP, argv[1]);
             return 1;
         }
 
@@ -66,9 +66,9 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (mode == 'l') {
+    if (flag == 'l') {
         if (argc < 4) {
-            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[1]);
+            printf("lib: missing argument to flag '%s'\n" HELP_HELP, argv[1]);
             return 1;
         }
 
@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (mode == 'r') {
+    if (flag == 'r') {
         if (argc < 4) {
-            printf("lib: missing argument to mode '%s'\n" HELP_HELP, argv[1]);
+            printf("lib: missing argument to flag '%s'\n" HELP_HELP, argv[1]);
             return 1;
         }
 
@@ -129,6 +129,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    printf("lib: invalid mode '%s'\n" HELP_HELP, argv[1]);
+    printf("lib: invalid flag '%s'\n" HELP_HELP, argv[1]);
     return 1;
 }

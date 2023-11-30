@@ -7,7 +7,7 @@
 #define OPTION_C 3
 
 void show_help(void) {
-    puts("Usage: <CMD> | wc <option>\n"
+    puts("Usage: <CMD> | wc [option]\n"
         "Print newline, word, and byte counts from stdin.\n"
         "  -l    only print newline count\n"
         "  -w    only print word count\n"
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     int option;
 
     if (argc > 2) {
-        puts("Usage: <CMD> | wc <option>\n"
+        puts("Usage: <CMD> | wc [option]\n"
             "Try 'wc -h' for more information.");
         return 1;
     }
@@ -105,4 +105,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-  
