@@ -4,15 +4,14 @@
 #include <ktype.h>
 
 void     init_vesa(void);
-int      vesa_does_enable(void);
-
 void     vesa_set_pixel(int x, int y, uint32_t c);
-uint32_t vesa_get_pixel(int x, int y);
 
-void    *vesa_get_framebuffer(void);
+#define vesa_get_width()    vesa_get_info(0)
+#define vesa_get_height()   vesa_get_info(1)
+#define vesa_get_pitch()    vesa_get_info(2)
+#define vesa_get_fb() (void *) vesa_get_info(3)
+#define vesa_does_enable()  vesa_get_info(4)
 
-uint32_t vesa_get_pitch(void);
-int      vesa_get_width(void);
-int      vesa_get_height(void);
+uint32_t vesa_get_info(int id);
 
 #endif

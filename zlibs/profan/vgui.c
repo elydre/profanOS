@@ -58,9 +58,11 @@ uint32_t vgui_get_pixel(vgui_t *vgui, int x, int y) {
 }
 
 void vgui_render(vgui_t *vgui, int render_mode) {
+    uint32_t *fb = c_vesa_get_fb();
+    uint32_t pitch = c_vesa_get_pitch();
     if (render_mode) {
         for (int i = 0; i < vgui->width * vgui->height; i++) {
-            c_vesa_set_pixel(i % vgui->width, i / vgui->width, vgui->framebuffer[i]);
+            fb[i % vgui->width + i / vgui->width * pitch] = vgui->framebuffer[i];
             vgui->old_framebuffer[i] = vgui->framebuffer[i];
         }
     } else {
@@ -68,7 +70,7 @@ void vgui_render(vgui_t *vgui, int render_mode) {
         for (int i = 0; i < vgui->changed_pixels_count; i++) {
             poss = vgui->changed_pixels[i];
             if (vgui->framebuffer[poss] != vgui->old_framebuffer[poss]) {
-                c_vesa_set_pixel(poss % vgui->width, poss / vgui->width, vgui->framebuffer[poss]);
+                fb[poss % vgui->width + poss / vgui->width * pitch] = vgui->framebuffer[poss];
                 vgui->old_framebuffer[poss] = vgui->framebuffer[poss];
             }
         }

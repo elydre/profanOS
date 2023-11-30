@@ -59,14 +59,14 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             }
             // now we add the coordinates (and take care of the sign)
             if (mouse_byte[0] & 0x10) {
-                mouse_x += (mouse_byte[1]);
+                mouse_x += mouse_byte[1];
             } else {
-                mouse_x += (mouse_byte[1]);
+                mouse_x += mouse_byte[1];
             }
             if (mouse_byte[0] & 0x20) {
-                mouse_y += -(mouse_byte[2]);
+                mouse_y -= mouse_byte[2];
             } else {
-                mouse_y += -(mouse_byte[2]);
+                mouse_y -= mouse_byte[2];
             }
             // we check if the mouse is out of the screen
             if (mouse_x < 0) {
@@ -75,10 +75,10 @@ void mouse_handler(registers_t *a_r) { // (not used but just there)
             if (mouse_y < 0) {
                 mouse_y = 0;
             }
-            if (mouse_x > vesa_get_width()) {
+            if (mouse_x > (int) vesa_get_width()) {
                 mouse_x = vesa_get_width();
             }
-            if (mouse_y > vesa_get_height()) {
+            if (mouse_y > (int) vesa_get_height()) {
                 mouse_y = vesa_get_height();
             }
 

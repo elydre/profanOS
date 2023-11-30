@@ -50,8 +50,8 @@ void *SYSCALL_ARRAY[] = {
     kcnprint,
     get_cursor_offset,
     vesa_set_pixel,
-    vesa_get_width,
-    vesa_get_height,
+    vesa_get_info,
+    sys_set_reporter,
 
     // keyboard.h
     kb_scancode_to_char,
@@ -89,7 +89,6 @@ void *SYSCALL_ARRAY[] = {
     // system.h
     dily_unload,
     dily_load,
-    sys_set_reporter,
 };
 
 uint32_t wf_get_func_addr(uint32_t func_id) {

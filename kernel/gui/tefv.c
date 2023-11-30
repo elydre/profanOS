@@ -156,12 +156,5 @@ void tef_clear(void) {
         }
     }
     // set pixel to black
-    int height = vesa_get_height();
-    int width  = vesa_get_width();
-
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            vesa_set_pixel(i, j, 0);
-        }
-    }
+    mem_set(vesa_get_fb(), 0, vesa_get_height() * vesa_get_pitch() * sizeof(uint32_t));
 }

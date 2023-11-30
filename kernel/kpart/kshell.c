@@ -70,7 +70,7 @@ void shell_help(void) {
 }
 
 void shell_addr(void) {
-    kprintf("vesa fb: %x\n", vesa_get_framebuffer());
+    kprintf("vesa fb: %x\n", vesa_get_fb());
     kprintf("max add: %x (%dMo)\n", mem_get_info(0, 0), mem_get_info(0, 0) / 1024 / 1024);
     kprintf("diskiso: %x (%dMo)\n", diskiso_get_start(), diskiso_get_size() / 1024 / 1024);
     kprintf("mm base: %x\n", MEM_BASE_ADDR);

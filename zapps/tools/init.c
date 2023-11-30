@@ -102,7 +102,7 @@ int main(void) {
 
     panda_set_start(c_get_cursor_offset());
 
-    if (c_vesa_get_width() > 0) {
+    if (c_vesa_does_enable()) {
         setenv("TERM", "/dev/panda", 1);
         use_panda = 1;
         if (redirect_devio("/dev/stdout", "/dev/panda")) {

@@ -33,10 +33,12 @@ void add_mem_info(uint32_t *pixel_buffer) {
 }
 
 int main(void) {
-    void (*set_pixel)(int, int, uint32_t) = c_vesa_set_pixel;
+    uint32_t *fb = c_vesa_get_fb();
+    uint32_t pitch = c_vesa_get_pitch();
+    uint32_t width = c_vesa_get_width();
 
-    int x_offset = c_vesa_get_width() - HISTOTY_SIZE;
-    if (x_offset < 0) {
+    int x_offset = width - HISTOTY_SIZE;
+    if (x_offset < 0 || !c_vesa_does_enable()) {
         printf("[cpu] fail to start: screen too small\n");
         return 1;
     }
@@ -81,7 +83,7 @@ int main(void) {
 
         for (int i = 0; i < HISTOTY_SIZE; i++) {
             for (int j = 0; j < 100; j++) {
-                set_pixel(x_offset + i, j, pixel_buffer[i + HISTOTY_SIZE * j]);
+                fb[(x_offset + i) % width + j * pitch] = pixel_buffer[i + HISTOTY_SIZE * j];
             }
         }
 

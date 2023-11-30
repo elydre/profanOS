@@ -21,6 +21,12 @@
 #define c_fs_cnt_read(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
 #define c_fs_cnt_write(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
 
+#define c_vesa_get_width()   c_vesa_get_info(0)
+#define c_vesa_get_height()  c_vesa_get_info(1)
+#define c_vesa_get_pitch()   c_vesa_get_info(2)
+#define c_vesa_get_fb() (void *) c_vesa_get_info(3)
+#define c_vesa_does_enable() c_vesa_get_info(4)
+
 // nothing better than shit code art
 #define hi_func_addr(id) ((uint32_t (*)(uint32_t)) *(uint32_t *) WATFUNC_ADDR)(id)
 
@@ -46,8 +52,9 @@
 #define c_kcnprint ((void (*)(char *, int, char)) hi_func_addr(16))
 #define c_get_cursor_offset ((int (*)(void)) hi_func_addr(17))
 #define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(18))
-#define c_vesa_get_width ((int (*)(void)) hi_func_addr(19))
-#define c_vesa_get_height ((int (*)(void)) hi_func_addr(20))
+#define c_vesa_get_info ((int (*)(int)) hi_func_addr(19))
+
+#define c_sys_set_reporter ((void (*)(int (*)(char *))) hi_func_addr(19))
 
 #define c_kb_scancode_to_char ((char (*)(int, int)) hi_func_addr(21))
 #define c_kb_get_scancode ((int (*)(void)) hi_func_addr(22))
@@ -77,6 +84,5 @@
 
 #define c_dily_unload ((int (*)(uint32_t)) hi_func_addr(42))
 #define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(43))
-#define c_sys_set_reporter ((void (*)(int (*)(char *))) hi_func_addr(44))
 
 #endif

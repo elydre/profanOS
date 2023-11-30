@@ -81,8 +81,8 @@ int main(void) {
     pl_and_pf("\033[95mphys mem:   \033[96m%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
 
     pl_and_pf("\033[95mscreen:     \033[96m%d\033[0mx\033[96m%d (%s)\n",
-        abs(c_vesa_get_width()), abs(c_vesa_get_height()),
-        c_vesa_get_width() < 0 ? "text" : "graphics"
+        c_vesa_get_width(), c_vesa_get_height(),
+        c_vesa_does_enable() ? "text" : "graphics"
     );
 
     pl_and_pf("\n");

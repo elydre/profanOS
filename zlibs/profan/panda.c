@@ -35,12 +35,18 @@ typedef struct {
     uint8_t cursor_is_hidden;
     char color;
 
+    uint32_t *fb;
+    uint32_t pitch;
+
     screen_char_t *screen_buffer;
 
     font_data_t *font;
 } panda_global_t;
 
 panda_global_t *g_panda;
+
+#define set_pixel(x, y, color) \
+    g_panda->fb[(x) + (y) * g_panda->pitch] = color
 
 void init_panda();
 
@@ -321,7 +327,7 @@ void draw_cursor(int errase) {
     uint32_t offset;
     if (!errase) {
         for (uint32_t i = 0; i < g_panda->font->height; i++) {
-            c_vesa_set_pixel(g_panda->cursor_x * g_panda->font->width + 1, (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height + i, 0xFFFFFF);
+            set_pixel(g_panda->cursor_x * g_panda->font->width + 1, (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height + i, 0xFFFFFF);
         }
     } else {
         offset = (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->max_cols + g_panda->cursor_x;
@@ -418,7 +424,7 @@ int panda_change_font(char *file) {
 }
 
 void init_panda(void) {
-    if (c_vesa_get_height() < 0) {
+    if (!c_vesa_does_enable()) {
         printf("[panda] VESA is not enabled\n");
         g_panda = NULL;
         return;
@@ -444,6 +450,9 @@ void init_panda(void) {
 
     g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
     g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
+
+    g_panda->fb = c_vesa_get_fb();
+    g_panda->pitch = c_vesa_get_pitch();
 
     int buffer_size = g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t);
     g_panda->screen_buffer = malloc_as_kernel(buffer_size);
