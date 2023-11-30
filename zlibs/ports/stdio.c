@@ -440,9 +440,7 @@ int fputs(const char *str, FILE *stream) {
 }
 
 int getchar(void) {
-    // Equivalent to getc(stdin). (https://en.cppreference.com/w/c/io/getchar)
-    puts("getchar not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return getc(stdin);
 }
 
 char *gets_s(char *str, rsize_t n ) {
