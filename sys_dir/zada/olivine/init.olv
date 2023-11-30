@@ -16,24 +16,6 @@ FUNC help
     cat /zada/common/shell_help.txt | echo -e
 END
 
-FUNC show
-    echo argc: !#
-    IF !#
-        FOR i !(range 0 !#)
-            echo arg[!i']:' !!i
-        END
-    END
-END
-
-FUNC upper
-    IF !(eval !# ~ 1)
-        echo Usage: upper [string]
-        RETURN
-    END
-
-    RETURN !(rep '!0' abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ)
-END
-
 FUNC tree
     IF !(eval !# = 0)
         set 0 .
@@ -50,9 +32,39 @@ FUNC tree
     END
 END
 
+FUNC dirsize
+    set size 0
+    set level 0
+
+    IF !(eval !# = 0)
+        set 0 !path
+    END
+
+    IF !(eval !# = 2)
+        set level '!1'
+    END
+
+    FOR d !(find -d !0)
+        set size !(eval !size + !(dirsize !d !(eval !level + 1)))
+    END
+
+    FOR f !(find -f !0)
+        set size !(eval !size + !(fsize !f))
+    END
+
+    IF !level
+        RETURN !size
+    END
+
+    IF !(eval !size > 1000)
+        set size !(eval !size / 1000 . kB)
+    END
+    echo '!0': !size
+END
+
 FUNC time
     IF !(eval !# ~ 1)
-        echo Usage: time [command]
+        echo Usage: time <command>
         RETURN
     END
 
@@ -65,7 +77,7 @@ END
 
 FUNC mv
     IF !(eval !# ~ 2)
-        echo Usage: mv [source] [destination]
+        echo Usage: mv <source> <destination>
         RETURN
     END
 
@@ -77,7 +89,7 @@ END
 
 FUNC chio
     IF !(eval !# < 2)
-        echo Usage: chio <input> [output]
+        echo Usage: chio [input] <output>
         RETURN
     END
 
@@ -87,12 +99,12 @@ FUNC chio
         set 0 /dev/kb
     END
 
-    IF !(eval !(exists !0) = 0)
+    IF !(eval !(fsize !0) = null)
         echo chio: '!0': no such file or directory
         RETURN
     END
 
-    IF !(eval !(exists '!2') = 0)
+    IF !(eval !(fsize '!2') = null)
         mkfile '!2'
     END
 
@@ -105,7 +117,12 @@ END
 
 FUNC setterm
     IF !(eval !# ~ 1)
-        echo Usage: setterm [out path]
+        echo Usage: setterm <out path>
+        RETURN
+    END
+
+    IF !(eval !(fsize '!0') = null)
+        echo setterm: '!0': no such file or directory
         RETURN
     END
 
