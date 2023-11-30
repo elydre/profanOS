@@ -186,8 +186,12 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
         g_panda->saved_cursor_x = g_panda->cursor_x;
         g_panda->saved_cursor_y = g_panda->cursor_y;
     } else if (str[0] == 'u') {
+        if (g_panda->saved_cursor_y < g_panda->scroll_offset) {
+            g_panda->saved_cursor_y = g_panda->scroll_offset;
+        } else {
+            g_panda->cursor_y = g_panda->saved_cursor_y;
+        }
         g_panda->cursor_x = g_panda->saved_cursor_x;
-        g_panda->cursor_y = g_panda->saved_cursor_y;
     } else if (str[0] == 'K') {
         for (uint32_t i = g_panda->cursor_x; i < g_panda->max_cols; i++) {
             g_panda->screen_buffer[(g_panda->cursor_y - g_panda->scroll_offset) * g_panda->max_cols + i].content = ' ';
