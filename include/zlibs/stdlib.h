@@ -16,6 +16,7 @@
 #define malloc_ask(size) malloc_func(size, 1)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
+#define getfullenv() ((char** (*)(void)) get_func_addr(STDLIB_ID, 2))()
 #define calloc_func(nmemb, lsize, as_kernel) ((void *(*)(uint32_t, uint32_t, int)) get_func_addr(STDLIB_ID, 3))(nmemb, lsize, as_kernel)
 #define free(mem) ((void (*)(void *)) get_func_addr(STDLIB_ID, 4))(mem)
 #define malloc_func(size, as_kernel) ((void *(*)(uint32_t, int)) get_func_addr(STDLIB_ID, 5))(size, as_kernel)

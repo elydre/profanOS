@@ -3,20 +3,10 @@
 #include <stdio.h>
 #include <time.h>
 
-void init_func();
-
-typedef struct {
-    char *name;
-    char *value;
-} env_var_t;
-
-typedef struct {
-    env_var_t *vars;
-    int size;
-} env_t;
-
 uint32_t rand_seed = 0;
-env_t ENV = {NULL, 0};
+char **g_env;
+
+void *malloc_func(uint32_t size, int as_kernel);
 
 #define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
 #define malloc(size) malloc_func(size, 0)
@@ -37,14 +27,14 @@ env_t ENV = {NULL, 0};
 #define SHELL_PATH "/bin/fatpath/olivine.bin"
 
 int main(void) {
-    init_func();
+    rand_seed = time(NULL);
+    g_env = malloc(sizeof(char *));
+    g_env[0] = NULL;
     return 0;
 }
 
-void init_func(void) {
-    rand_seed = time(NULL);
-    ENV.vars = NULL;
-    ENV.size = 0;
+char **get_environ_ptr(void) {
+    return g_env;
 }
 
 void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
@@ -253,9 +243,13 @@ char *gcvt(double number, int ndigit, char *buf) {
 
 char *getenv(const char *var) {
     // check if the variable already exists
-    for (int i = 0; i < ENV.size; i++) {
-        if (strcmp(ENV.vars[i].name, var) == 0) {
-            return ENV.vars[i].value;
+    for (int i = 0; g_env[i] != NULL; i++) {
+        for (int j = 0; ; j++) {
+            if (var[j] == '\0' && g_env[i][j] == '=') {
+                // found the variable
+                return g_env[i] + j + 1;
+            }
+            if (var[j] != g_env[i][j]) break;
         }
     }
     return NULL;
@@ -533,63 +527,65 @@ int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
 
 int setenv(const char *name, const char *value, int replace) {
     // check if the variable already exists
-    for (int i = 0; i < ENV.size; i++) {
-        if (strcmp(ENV.vars[i].name, name) == 0) {
-            if (replace) {
-                // replace the value
-                free(ENV.vars[i].value);
-                char *new_value = malloc_ask(strlen(value) + 1);
-                strcpy(new_value, value);
-                ENV.vars[i].value = new_value;
-                return 0;
-            } else {
-                // do nothing
+    for (int i = 0; g_env[i] != NULL; i++) {
+        for (int j = 0; ; j++) {
+            if (name[j] == '\0' && g_env[i][j] == '=') {
+                // found the variable
+                if (replace) {
+                    // replace the variable
+                    free(g_env[i]);
+                    g_env[i] = malloc(strlen(name) + strlen(value) + 2);
+                    strcpy(g_env[i], name);
+                    strcat(g_env[i], "=");
+                    strcat(g_env[i], value);
+                }
                 return 0;
             }
+            if (name[j] != g_env[i][j]) break;
         }
     }
 
-    // add the variable
-    ENV.size++;
-    ENV.vars = realloc_ask(ENV.vars, sizeof(env_var_t) * ENV.size);
+    // the variable doesn't exist, create it
+    int len = strlen(name) + strlen(value) + 2;
+    char *new_var = malloc(len);
+    strcpy(new_var, name);
+    strcat(new_var, "=");
+    strcat(new_var, value);
 
-    char *new_name = malloc_ask(strlen(name) + 1);
-    strcpy(new_name, name);
-    ENV.vars[ENV.size - 1].name = new_name;
-
-    char *new_value = malloc_ask(strlen(value) + 1);
-    strcpy(new_value, value);
-    ENV.vars[ENV.size - 1].value = new_value;
+    // add the variable to the environment
+    int i = 0;
+    while (g_env[i] != NULL) i++;
+    g_env = realloc(g_env, (i + 2) * sizeof(char *));
+    g_env[i] = new_var;
+    g_env[i + 1] = NULL;
 
     return 0;
 }
 
 int unsetenv(const char *name) {
     // check if the variable already exists
-    for (int i = 0; i < ENV.size; i++) {
-        if (strcmp(ENV.vars[i].name, name) == 0) {
-            // remove the variable
-            free(ENV.vars[i].name);
-            free(ENV.vars[i].value);
-            for (int j = i; j < ENV.size - 1; j++) {
-                ENV.vars[j] = ENV.vars[j + 1];
+    for (int i = 0; g_env[i] != NULL; i++) {
+        for (int j = 0; ; j++) {
+            if (name[j] == '\0' && g_env[i][j] == '=') {
+                // found the variable
+                free(g_env[i]);
+                for (int k = i; g_env[k] != NULL; k++) {
+                    g_env[k] = g_env[k + 1];
+                }
+                return 0;
             }
-            ENV.size--;
-            ENV.vars = realloc_ask(ENV.vars, sizeof(env_var_t) * ENV.size);
-            return 0;
+            if (name[j] != g_env[i][j]) break;
         }
     }
     return 0;
 }
 
 int clearenv(void) {
-    // remove all variables
-    for (int i = 0; i < ENV.size; i++) {
-        free(ENV.vars[i].name);
-        free(ENV.vars[i].value);
+    for (int i = 0; g_env[i] != NULL; i++) {
+        free(g_env[i]);
     }
-    ENV.size = 0;
-    ENV.vars = NULL;
+    realloc(g_env, sizeof(char *));
+    g_env[0] = NULL;
     return 0;
 }
 
