@@ -34,8 +34,12 @@ int main(void) {
 }
 
 int userspace_reporter(char *message) {
+    char *term = getenv("TERM");
     int c = fputs(message, stderr);
-    c_serial_print(SERIAL_PORT_A, message);
+
+    if (term && strcmp(term, "/dev/serial")) {
+        c_serial_print(SERIAL_PORT_A, message);
+    }
     return c == EOF;
 }
 

@@ -27,7 +27,7 @@ END
 
 FUNC upper
     IF !(eval !# ~ 1)
-        echo upper: require one argument, !# given
+        echo Usage: upper [string]
         RETURN
     END
 
@@ -52,7 +52,7 @@ END
 
 FUNC time
     IF !(eval !# ~ 1)
-        echo TIME: require one argument, !# given
+        echo Usage: time [command]
         RETURN
     END
 
@@ -65,7 +65,7 @@ END
 
 FUNC mv
     IF !(eval !# ~ 2)
-        echo mv: require two arguments, !# given
+        echo Usage: mv [source] [destination]
         RETURN
     END
 
@@ -77,7 +77,7 @@ END
 
 FUNC chio
     IF !(eval !# < 2)
-        echo chio: require at least two arguments, !# given
+        echo Usage: chio <input> [output]
         RETURN
     END
 
@@ -101,4 +101,16 @@ FUNC chio
     !1
     ubr /dev/stdout !TERM
     ubr /dev/stdin /dev/kb
+END
+
+FUNC setterm
+    IF !(eval !# ~ 1)
+        echo Usage: setterm [out path]
+        RETURN
+    END
+
+    export TERM '!0'
+
+    ubr /dev/stdout !TERM
+    ubr /dev/stderr !TERM
 END
