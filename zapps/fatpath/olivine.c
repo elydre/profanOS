@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 5"
+#define OLV_VERSION "0.8 rev 6"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1498,27 +1498,46 @@ char *if_rep(char **input) {
         argc++;
     }
 
-    if (argc != 3) {
-        raise_error("rep", "Expected 3 arguments, got %d", argc);
+    if (argc != 2 && argc != 3) {
+        raise_error("rep", "Expected 2 or 3 arguments, got %d", argc);
         return ERROR_CODE;
     }
 
-    if (strlen(input[1]) != strlen(input[2])) {
+    if (argc == 3 && strlen(input[1]) != strlen(input[2])) {
         raise_error("rep", "Expected 2nd and 3rd arguments to have the same length, got %d and %d", strlen(input[1]), strlen(input[2]));
         return ERROR_CODE;
     }
 
     char *ret = malloc((strlen(input[0]) + 1) * sizeof(char));
-    strcpy(ret, input[0]);
+    
+    if (argc == 3) {
+        strcpy(ret, input[0]);
 
-    for (int i = 0; ret[i] != '\0'; i++) {
+        for (int i = 0; ret[i] != '\0'; i++) {
+            for (int j = 0; input[1][j] != '\0'; j++) {
+                if (ret[i] == input[1][j]) {
+                    ret[i] = input[2][j];
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
+    int index = 0;
+    for (int i = 0; input[0][i] != '\0'; i++) {
+        int found = 0;
         for (int j = 0; input[1][j] != '\0'; j++) {
-            if (ret[i] == input[1][j]) {
-                ret[i] = input[2][j];
+            if (input[0][i] == input[1][j]) {
+                found = 1;
                 break;
             }
         }
+        if (!found) {
+            ret[index++] = input[0][i];
+        }
     }
+    ret[index] = '\0';
 
     return ret;
 }
