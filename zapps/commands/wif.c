@@ -42,9 +42,11 @@ int main(int argc, char** argv) {
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(file) || !fu_is_file(file)) {
-        printf("File not found: %s\n", path);
-        free(path);
-        return 1;
+        file = fu_file_create(0, path);
+        if (IS_NULL_SID(file)) {
+            free(path);
+            return 1;
+        }
     }
 
     int len;
