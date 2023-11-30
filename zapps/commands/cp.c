@@ -78,11 +78,15 @@ int main(int argc, char **argv) {
     sid_t src_sid = fu_path_to_sid(ROOT_SID, src_path);
     if (IS_NULL_SID(src_sid)) {
         printf("cp: cannot copy '%s': No such file or directory\n", src_path);
+        free(src_path);
+        free(dst_path);
         return 1;
     }
 
     if (fu_is_dir(src_sid)) {
         printf("cp: cannot copy '%s': Is a directory\n", src_path);
+        free(src_path);
+        free(dst_path);
         return 1;
     }
 
