@@ -56,8 +56,10 @@ FUNC dirsize
         RETURN !size
     END
 
-    IF !(eval !size > 1000)
+    IF !(eval !size > 10000)
         set size !(eval !size / 1000 . kB)
+    END; ELSE
+        set size !(eval !size . B)
     END
     echo '!0': !size
 END
