@@ -64,6 +64,39 @@ ADDONS = {
     }
 }
 
+WADDONS = {
+    "halfix": {
+        "description": "port of the Halfix x86 emulator for profanOS",
+        "files": [
+            {
+                "name": "halfix",
+                "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.bin",
+                "path": [profan_path, "out", "zapps", "fatpath", "halfix.bin"]
+            },
+            {
+                "name": "bios.bin",
+                "url": "https://github.com/elydre/halfix-profan/raw/master/bios.bin",
+                "path": [profan_path, "out", "zada", "halfix", "bios.bin"]
+            },
+            {
+                "name": "vgabios.bin",
+                "url": "https://github.com/elydre/halfix-profan/raw/master/vgabios.bin",
+                "path": [profan_path, "out", "zada", "halfix", "vgabios.bin"]
+            },
+            {
+                "name": "default.cfg",
+                "url": "https://raw.githubusercontent.com/elydre/halfix-profan/master/default.conf",
+                "path": [profan_path, "out", "zada", "halfix", "default.cfg"]
+            },
+            {
+                "name": "linux.iso",
+                "url": "https://github.com/copy/images/raw/master/linux.iso",
+                "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
+            }
+        ]
+    }
+}
+
 # functions
 
 def get_size(url: str) -> int:
@@ -85,12 +118,14 @@ def download(url: str, path: str) -> bool:
     return True
 
 def get_addon(name: str) -> bool:
-    if name not in ADDONS:
+    all_addons = {**ADDONS, **WADDONS}
+
+    if name not in all_addons:
         print("ERROR: Unknown addon:", name)
         return False
 
-    print(f"Install {name.upper()}: {ADDONS[name]['description']}")
-    for sub in ADDONS[name]["files"]:
+    print(f"Install {name.upper()}: {all_addons[name]['description']}")
+    for sub in all_addons[name]["files"]:
         print(f" Getting {name} part: {sub['name']} ({get_size(sub['url'])}Ko)")
         # check if parent directory exists
         parent = os.sep.join(sub["path"][:-1])
@@ -112,11 +147,16 @@ def show_help():
            "  -h: show this help",
            "  -l: list available addons",
            "  -a: get all addons",
+           "  -w: get all weighty addons",
            "ADDONS:",
     ]
 
     for addon in ADDONS:
         msg += [f"  {addon}: {ADDONS[addon]['description']}"]
+    
+    msg += ["WEIGHTY ADDONS:"]
+    for addon in WADDONS:
+        msg += [f"  {addon}: {WADDONS[addon]['description']}"]
 
     msg += ["EXAMPLES:",
            "  python3 get_addons.py -l",
@@ -135,6 +175,7 @@ table = {
     "-h": show_help,
     "-l": show_list,
     "-a": lambda: [get_addon(addon) for addon in ADDONS],
+    "-w": lambda: [get_addon(addon) for addon in [*ADDONS, *WADDONS]]
 }
 
 # main
