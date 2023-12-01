@@ -3947,7 +3947,7 @@ int main(int argc, char **argv) {
         execute_program(args->command);
     }
 
-    if (args->inter || args->file == NULL) {
+    if (args->inter || (args->file == NULL && args->command == NULL)) {
         start_shell();
     }
 
