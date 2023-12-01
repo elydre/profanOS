@@ -144,6 +144,8 @@ int main(void) {
         c_process_kill(usage_pid);
     }
 
+    clearenv();
+
     // unload libraries
     for (int i = 0; i < total; i++) {
         lib_t *lib = &libs_at_boot[i];
