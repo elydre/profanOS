@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 7"
+#define OLV_VERSION "0.8 rev 8"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1197,8 +1197,7 @@ char *if_find(char **input) {
         }
     }
 
-    char *copy = malloc((strlen(output)) * sizeof(char));
-    strcpy(copy, output + 1);
+    char *copy = strdup(output + 1);
     free(output);
 
     for (int i = 0; i < elm_count; i++) {
@@ -1323,8 +1322,7 @@ char *if_go_binfile(char **input) {
         argc--;
     };
 
-    char *file_name = malloc((strlen(input[0]) + 1) * sizeof(char));
-    strcpy(file_name, input[0]);
+    char *file_name = strdup(input[0]);
     // remove the extension
     char *dot = strrchr(file_name, '.');
     if (dot) *dot = '\0';
@@ -1810,8 +1808,7 @@ char **gen_args(char *string) {
     }
 
     // add the last argument
-    argv[argc - 1] = malloc((strlen(string) - old_i + 1) * sizeof(char));
-    strcpy(argv[argc - 1], string + old_i);
+    argv[argc - 1] = strdup(string + old_i);
     remove_quotes(argv[argc - 1]);
 
     argv[argc] = NULL;
@@ -1861,8 +1858,7 @@ char *get_if_function_name(char *string) {
         }
     }
 
-    char *function_name = malloc((strlen(string) + 1) * sizeof(char));
-    strcpy(function_name, string);
+    char *function_name = strdup(string);
 
     remove_quotes(function_name);
     return function_name;
@@ -3255,8 +3251,7 @@ void olv_print(char *str, int len) {
 
 int add_to_suggest(char **suggests, int count, char *str) {
     if (count < MAX_SUGGESTS) {
-        suggests[count] = malloc((strlen(str) + 1) * sizeof(char));
-        strcpy(suggests[count], str);
+        suggests[count] = strdup(str);
         count++;
         suggests[count] = NULL;
         return count;
@@ -3395,8 +3390,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         free(names);
 
         if (suggest == 1) {
-            ret = malloc(strlen(other[0]) + 1);
-            strcpy(ret, other[0] + dec);
+            ret = strdup(other[0] + dec);
             free(other[0]);
             return ret;
         }
@@ -3427,8 +3421,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         free(tmp);
 
         if (suggest == 1) {
-            ret = malloc(strlen(other[0]) + 1);
-            strcpy(ret, other[0] + size);
+            ret = strdup(other[0] + size);
             free(other[0]);
         }
 
@@ -3471,8 +3464,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     free(tmp);
 
     if (suggest == 1) {
-        ret = malloc(strlen(other[0]) + 1);
-        strcpy(ret, other[0] + i - dec);
+        ret = strdup(other[0] + i - dec);
         free(other[0]);
     }
 
@@ -3605,15 +3597,17 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             char *suggestion = olv_autocomplete(buffer, buffer_index, other_suggests, &dec);
             if (suggestion == NULL && other_suggests[0] != NULL) {
                 // print other suggestions
-                char *common_beginning = malloc((strlen(other_suggests[0]) + 1) * sizeof(char));
-                strcpy(common_beginning, other_suggests[0] + dec);
+                char *common_beginning = strdup(other_suggests[0] + dec);
                 putchar('\n');
 
                 for (int i = 0; other_suggests[i] != NULL; i++) {
                     printf("%s   ", other_suggests[i]);
-                    for (int j = 0; other_suggests[i][j + dec] != '\0'; j++) {
+                    for (int j = 0;; j++) {
                         if (other_suggests[i][j + dec] != common_beginning[j]) {
                             common_beginning[j] = '\0';
+                            break;
+                        }
+                        if (other_suggests[i][j + dec] == '\0') {
                             break;
                         }
                     }
@@ -3724,18 +3718,15 @@ void start_shell(void) {
             } while(cursor_pos != -1);
         }
 
-        len = strlen(line);
-
         // add to history if not empty and not the same as the last command
-        if (len > 0 && (history[history_index] == NULL || strcmp(line, history[history_index]) != 0)) {
+        if (line[0] && (history[history_index] == NULL || strcmp(line, history[history_index]) != 0)) {
             history_index = (history_index + 1) % HISTORY_SIZE;
 
             if (history[history_index] != NULL) {
                 free(history[history_index]);
             }
 
-            history[history_index] = malloc(len + 1);
-            strcpy(history[history_index], line);
+            history[history_index] = strdup(line);
         }
 
         execute_program(line);
