@@ -1190,15 +1190,15 @@ char *if_find(char **input) {
             assemble_path(path, names[i], tmp_path);
             fu_simplify_path(tmp_path);
             char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
-            strcpy(tmp, output);
-            sprintf(tmp, "%s '%s'", tmp, tmp_path);
+            if (output[0] != '\0') {
+                sprintf(tmp, "%s '%s'", output, tmp_path);
+            } else {
+                sprintf(tmp, "'%s'", tmp_path);
+            }
             free(output);
             output = tmp;
         }
     }
-
-    char *copy = strdup(output + 1);
-    free(output);
 
     for (int i = 0; i < elm_count; i++) {
         free(names[i]);
@@ -1208,7 +1208,7 @@ char *if_find(char **input) {
     free(names);
     free(path);
 
-    return copy;
+    return output;
     #else
     raise_error("find", "Not supported in this build");
     return ERROR_CODE;
