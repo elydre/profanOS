@@ -139,7 +139,7 @@ void memory_print_usage(void) {
         pid = pid_list[i];
         if (pid == 1) continue;
         c_process_get_name(pid, name);
-        printf("PID %02d  %-15s %6d kB | %d\n",
+        printf("PID %-3.02d %-15s %6d kB | %d\n",
                 pid, (strchr(name, '/') ? strrchr(name, '/') + 1 : name),
                 c_mem_get_info(8, pid) / 1024,
                 c_mem_get_info(7, pid)
