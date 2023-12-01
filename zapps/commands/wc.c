@@ -35,7 +35,7 @@ int parse_option(char *option) {
             break;
     }
     printf("Invalid option: %s\nTry 'wc -h' "
-        "for more information.", option);
+        "for more information.\n", option);
     exit(1);
     return 0;
 }
