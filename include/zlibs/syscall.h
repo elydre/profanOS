@@ -54,7 +54,7 @@
 #define c_vesa_set_pixel ((void (*)(int, int, uint32_t)) hi_func_addr(18))
 #define c_vesa_get_info ((int (*)(int)) hi_func_addr(19))
 
-#define c_sys_set_reporter ((void (*)(int (*)(char *))) hi_func_addr(19))
+#define c_sys_set_reporter ((void (*)(int (*)(char *))) hi_func_addr(20))
 
 #define c_kb_scancode_to_char ((char (*)(int, int)) hi_func_addr(21))
 #define c_kb_get_scancode ((int (*)(void)) hi_func_addr(22))
