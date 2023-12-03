@@ -24,9 +24,11 @@ You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
 
 ### Install dependencies
 
-```bash
+```
 sudo apt-get update
-sudo apt-get install -y gcc g++ nasm make qemu-system-i386 python3 grub-common xorriso grub-pc-bin mtools
+
+sudo apt-get install -y make python3 gcc g++ nasm mtools \
+        qemu-system-i386 grub-common xorriso grub-pc-bin 
 ```
 
 ### Compile & Run
@@ -164,11 +166,11 @@ sudo sh install.sh /dev/sdX profanOS.iso
 
 ### Known major bugs
 
-| bug name   | since | description                            | cause | fixed ?   |
-|------------|-------|----------------------------------------|-------|-----------|
-| lagged lag | ?     | all profanOS is getting very slow      | ?     | partially |
-| BOBCAT     | 0.4.2 | some C compiler build broken zlibs     | dily  | no        |
-| no KB      | ?     | keyboard not working sometimes         | ?     | no        |
+| bug name   | since | description                          | cause | fixed ? |
+|------------|-------|--------------------------------------|-------|---------|
+| lagged lag | ?     | all profanOS is getting very slow    | ?     | maybe   |
+| BOBCAT     | 0.4.2 | some C compiler build broken zlibs   | dily  | no      |
+| no KB      | ?     | keyboard not working sometimes       | ?     | no      |
 
 ### Screenshots
 
