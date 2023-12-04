@@ -1342,6 +1342,14 @@ char *if_go_binfile(char **input) {
         (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, wait_end}, &pid
     ), exit_code);
 
+    if (pid == -1) {
+        raise_error("go", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        return ERROR_CODE;
+    }
+
     if (!wait_end) {
         printf("GO: started with pid %d\n", pid);
     }
