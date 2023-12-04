@@ -174,6 +174,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
         if (tmp == 0) break;
 
         tmp = c_process_get_ppid(tmp);
+        if (tmp == -1) break;
     }
 
     // free the arrays
@@ -184,7 +185,7 @@ int devio_file_rw_from(sid_t sid, void *buffer, uint32_t offset, uint32_t size, 
     free(pids);
 
     if (!path) {
-        printf("[DEVIO] file_rw: no path found\n");
+        c_kprint("[DEVIO] file_rw: no redirection found\n");
         return -1;
     }
 
