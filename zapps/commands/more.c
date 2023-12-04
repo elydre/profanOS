@@ -7,18 +7,24 @@
 #include <profan.h>
 #include <panda.h>
 
-char *read_stdin(void) {
-    // read from stdin
+char *read_file(char *filename) {
+    // read from file
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+        return NULL;
+
     char *buffer = malloc(1024);
     int buffer_size = 0;
     int rcount = 0;
 
-    while ((rcount = fread(buffer + buffer_size, 1, 1024, stdin)) > 0) {
+    while ((rcount = fread(buffer + buffer_size, 1, 1024, fp)) > 0) {
         buffer = realloc(buffer, buffer_size + rcount + 1025);
         buffer_size += rcount;
     }
 
     buffer[buffer_size] = '\0';
+
+    fclose(fp);
 
     return buffer;
 }
@@ -68,22 +74,15 @@ char get_user_input(void) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 1) {
-        puts("more takes no arguments");
-        puts("Usage: command | more");
+    if (argc > 2 || (argc == 2 && argv[1][0] == '-')) {
+        puts("Usage: more [file]");
         return 1;
     }
 
-    if (isatty(0)) {
-        puts("more takes input from stdin");
-        puts("Usage: command | more");
-        return 1;
-    }
-
-    char *buffer = read_stdin();
+    char *buffer = read_file(argv[1] ? argv[1] : "/dev/stdin");
 
     if (buffer == NULL) {
-        puts("Error reading stdin");
+        puts("more: failed to read file");
         return 1;
     }
 
