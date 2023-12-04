@@ -261,6 +261,7 @@ int isatty(int id) {
         if (pid == 0) break;
 
         pid = c_process_get_ppid(pid);
+        if (pid == -1) break;
     }
 
     // free the arrays
