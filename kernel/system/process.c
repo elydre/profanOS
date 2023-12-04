@@ -25,6 +25,7 @@ int *shdlr_queue;
 uint8_t sheduler_state = SHDLR_DEAD;
 uint8_t sheduler_count;
 uint8_t need_clean;
+int sheduler_disable_count;
 
 int pid_current;
 
@@ -257,6 +258,7 @@ int process_init(void) {
 
     // enable sheduler
     sheduler_state = SHDLR_ENBL;
+    sheduler_disable_count = 0;
 
     // create idle process
     process_create(idle_process, 1, "idle");
@@ -504,13 +506,19 @@ int process_kill(int pid) {
 
 void process_set_sheduler(int state) {
     // disable sheduler
-    if (!state && sheduler_state == SHDLR_ENBL) {
-        sheduler_state = SHDLR_DISL;
+    if (!state) {
+        sheduler_disable_count++;
+        if (sheduler_state == SHDLR_ENBL) {
+            sheduler_state = SHDLR_DISL;
+        }
     }
 
     // enable sheduler
-    else if (state && sheduler_state == SHDLR_DISL) {
-        sheduler_state = SHDLR_ENBL;
+    else if (state) {
+        sheduler_disable_count--;
+        if (sheduler_state == SHDLR_DISL && !sheduler_disable_count) {
+            sheduler_state = SHDLR_ENBL;
+        }
     }
 }
 
@@ -614,7 +622,7 @@ void *process_get_comm(int pid) {
 
     if (place < 0) {
         sys_warning("[get_comm] pid %d not found", pid);
-        return 0;
+        return NULL;
     }
 
     return plist[place].comm;
@@ -625,7 +633,7 @@ int process_get_ppid(int pid) {
 
     if (place < 0) {
         sys_warning("[get_ppid] pid %d not found", pid);
-        return 0;
+        return -1;
     }
 
     return plist[place].ppid;
@@ -648,11 +656,11 @@ int process_get_name(int pid, char *name) {
 
     if (place < 0) {
         sys_warning("[get_name] pid %d not found", pid);
-        return 0;
+        return 1;
     }
 
     str_cpy(name, plist[place].name);
-    return 1;
+    return 0;
 }
 
 int process_get_state(int pid) {

@@ -28,6 +28,8 @@ typedef struct {
 direct_return_t last_return;
 
 int force_exit_pid(int pid, int ret_code) {
+    int ppid, pstate;
+    
     if (pid == 0 || pid == 1) {
         return 1;
     }
@@ -55,10 +57,15 @@ int force_exit_pid(int pid, int ret_code) {
     last_return.ret = ret_code;
 
     // wake up the parent process
-    int pstate = process_get_state(process_get_ppid(pid));
+    ppid = process_get_ppid(pid);
 
-    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
-        process_wakeup(process_get_ppid(pid));
+    if (ppid != -1) {
+        pstate = process_get_state(ppid);
+
+        if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING) {
+            process_wakeup(ppid);
+        }
+    }
 
     return process_kill(pid);
 }
@@ -128,10 +135,13 @@ void tasked_program(void) {
     last_return.ret = ret;
 
     // wake up the parent process
-    int pstate = process_get_state(ppid);
+    if (ppid != -1) {
+        int pstate = process_get_state(ppid);
 
-    if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING)
-        process_wakeup(ppid);
+        if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING) {
+            process_wakeup(ppid);
+        }
+    }
 
     process_kill(pid);
 }
@@ -139,8 +149,11 @@ void tasked_program(void) {
 int run_binary(runtime_args_t args, int *pid_ptr) {
     int pid = process_create(tasked_program, 2, args.path == NULL ? "unknown file" : args.path);
 
-    if (pid == -1)
+    if (pid == -1) {
+        if (pid_ptr != NULL)
+            *pid_ptr = -1;
         return -1;
+    }
 
     if (pid == 2)
         last_return.pid = -1;

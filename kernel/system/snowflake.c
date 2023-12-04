@@ -114,8 +114,6 @@ void dynamize_mem(void) {
         if (sum > 4) return;
     }
 
-    process_disable_sheduler();
-
     uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 0, 3);
 
     if (new_add == 0) {
@@ -136,9 +134,10 @@ void dynamize_mem(void) {
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     if (!(size && state)) return 0;
 
+    process_disable_sheduler();
+
     if (state != 3) {
         dynamize_mem();
-        process_disable_sheduler();
         instance_count++;
     }
 

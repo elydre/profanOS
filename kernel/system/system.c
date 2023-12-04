@@ -50,6 +50,7 @@ void sys_report(char *msg) {
 }
 
 void sys_warning(char *msg, ...) {
+    process_disable_sheduler();
     RECURSIVE_COUNT++;
 
     va_list args;
@@ -61,11 +62,15 @@ void sys_warning(char *msg, ...) {
 
     va_end(args);
     sys_report(sys_safe_buffer);
+
     RECURSIVE_COUNT--;
+    process_enable_sheduler();
 }
 
 void sys_error(char *msg, ...) {
+    process_disable_sheduler();
     RECURSIVE_COUNT++;
+
     int current_pid = process_get_pid();
 
     va_list args;
@@ -79,6 +84,8 @@ void sys_error(char *msg, ...) {
     sys_report(sys_safe_buffer);
 
     RECURSIVE_COUNT--;
+    process_enable_sheduler();
+
     if (current_pid > 1 && force_exit_pid(current_pid, 130)) {
         sys_fatal("Failed to exit process");
     }
@@ -86,6 +93,7 @@ void sys_error(char *msg, ...) {
 
 void sod_interrupt(int code, int err_code);
 void sys_interrupt(int code, int err_code) {
+    asm volatile("cli");
     kprintf_serial("received interrupt %d from cpu\n", code);
 
     // page fault issue handler
