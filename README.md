@@ -112,7 +112,8 @@ Here is a list of the main kernel features:
 
 ### Programing languages
 
-The kernel and userspace are developed mainly in C. The Olivine Shell (see the [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
+The kernel and userspace are developed mainly in C. The Olivine Shell (see the
+[language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
 You can also use the lua, sulfur, C and C++ languages to create your own programs.
 
 ### Major ports
@@ -122,8 +123,10 @@ You can also use the lua, sulfur, C and C++ languages to create your own program
 - [sulfur](https://github.com/asqel/sulfur_lang) programming language, a project of a friend
 - [tcc](https://github.com/elydre/tinycc-profan) compiler, a small and fast c compiler
 - [vlink](https://github.com/elydre/vlink-profan) linker with multi-format support
+- [halfix](https://github.com/elydre/halfix-profan) x86 emulator, with 32-bit support
 
-All the ports are available with the command `make addons` or by building them manually.
+All the ports are available with the command `make addons` / `make waddons` (all ports)
+or by building them manually.
 
 ## Real-Hardware
 
