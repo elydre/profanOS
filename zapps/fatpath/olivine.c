@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 8"
+#define OLV_VERSION "0.8 rev 9"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2506,7 +2506,7 @@ int get_line_end(int line_count, char **lines) {
 }
 
 int execute_if(int line_count, char **lines, char **result, int *cnd_state);
-int execute_else(int line_count, char **lines, char **result, int last_if_state);
+int execute_else(int line_count, char **lines, char **result, int *last_if_state);
 int execute_while(int line_count, char **lines, char **result);
 int execute_for(int line_count, char **lines, char **result);
 int save_function(int line_count, char **lines);
@@ -2530,7 +2530,7 @@ int execute_lines(char **lines, int line_end, char **result) {
     }
 
     int lastif_state = 2; // 0: false, 1: true, 2: not set
-    char *res;
+    char *res = NULL;
 
     for (int i = 0; i < line_end; i++) {
         if (i >= line_end) {
@@ -2564,7 +2564,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         else if (does_startwith(lines[i], "ELSE")) {
-            int ret = execute_else(line_end - i, lines + i, result, lastif_state);
+            int ret = execute_else(line_end - i, lines + i, result, &lastif_state);
 
             if (ret == -1) {
                 // invalid ELSE statement
@@ -2627,12 +2627,17 @@ int execute_lines(char **lines, int line_end, char **result) {
                     puts(res);
                 }
                 free(res);
-            } else if (STOP_ON_ERROR) {
-                return -1;
+                res = NULL;
+            } else {
+                if (STOP_ON_ERROR)
+                    return -1;
+                res = ERROR_CODE;
             }
         }
 
-        strcpy(exit_code, "0");
+        if (res != ERROR_CODE) {
+            strcpy(exit_code, "0");
+        }
     }
     return 0;
 }
@@ -2856,10 +2861,10 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     return line_end;
 }
 
-int execute_else(int line_count, char **lines, char **result, int last_if_state) {
+int execute_else(int line_count, char **lines, char **result, int *last_if_state) {
     char *else_line = lines[0];
 
-    if (last_if_state == 2) {   // not set
+    if (*last_if_state == 2) {   // not set
         raise_error(NULL, "ELSE statement without IF");
         return -1;
     }
@@ -2876,10 +2881,12 @@ int execute_else(int line_count, char **lines, char **result, int last_if_state)
         return -1;
     }
 
-    if (!last_if_state) {
+    if (!(*last_if_state)) {
         int ret = execute_lines(lines + 1, line_end - 1, result);
         if (ret < 0) line_end = ret;
     }
+
+    *last_if_state = !(*last_if_state);
 
     return line_end;
 }
