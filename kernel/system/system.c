@@ -93,7 +93,6 @@ void sys_error(char *msg, ...) {
 
 void sod_interrupt(int code, int err_code);
 void sys_interrupt(int code, int err_code) {
-    asm volatile("cli");
     kprintf_serial("received interrupt %d from cpu\n", code);
 
     // page fault issue handler

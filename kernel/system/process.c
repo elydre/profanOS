@@ -523,6 +523,7 @@ void process_set_sheduler(int state) {
 }
 
 void schedule(uint32_t ticks) {
+    if (sheduler_count) return;
     sheduler_count++;
 
     if (sheduler_state != SHDLR_ENBL) {
@@ -534,7 +535,7 @@ void schedule(uint32_t ticks) {
 
     // tick perfect backup verification system
     if (sheduler_count > 1) {
-        sheduler_count--;
+        sys_fatal("Multiple sheduler security fail");
         return;
     }
 

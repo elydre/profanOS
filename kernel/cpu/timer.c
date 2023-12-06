@@ -4,7 +4,7 @@
 #include <cpu/isr.h>
 #include <system.h>
 
-uint32_t ticks = 0;
+uint32_t ticks;
 
 static void timer_callback(registers_t *regs) {
     (void) regs;
@@ -23,7 +23,7 @@ uint32_t timer_get_ms(void) {
 }
 
 int timer_init(void) {
-    if (ticks > 1000) ticks = 0;
+    ticks = 0;
 
     // set the timer interrupt handler
     register_interrupt_handler(IRQ0, timer_callback);
