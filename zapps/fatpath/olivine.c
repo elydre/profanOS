@@ -10,10 +10,11 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 10"
+#define OLV_VERSION "0.9 rev 1"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
+#define PROMPT_SIZE   100
 #define MAX_PATH_SIZE 256
 #define MAX_SUGGESTS  10
 
@@ -41,20 +42,16 @@
   #include <profan.h>
 
   // profanOS config
-  #define PROMPT_SUCC "profanOS [\033[95m%s\033[0m] > "
-  #define PROMPT_FAIL "profanOS [\033[95m%s\033[0m] \033[91m>\033[0m "
-
-  #define DEBUG_COLOR  "\033[37m"
+  #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[91m$)>$(\e[0m$) "
 #else
   #define uint32_t unsigned int
   #define uint8_t  unsigned char
 
   // unix config
-  #define PROMPT_SUCC "olivine [%s] > "
-  #define PROMPT_FAIL "-ERROR- [%s] > "
-
-  #define DEBUG_COLOR  ""
+  #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
+
+#define DEBUG_COLOR  "\033[37m"
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
@@ -63,6 +60,10 @@
 
 #ifndef LOWERCASE
   #define LOWERCASE(x) ((x) >= 'A' && (x) <= 'Z' ? (x) + 32 : (x))
+#endif
+
+#ifndef min
+  #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 char *keywords[] = {
@@ -106,8 +107,8 @@ pseudo_t *pseudos;
 function_t *functions;
 internal_function_t internal_functions[];
 
-char *current_directory, *exit_code;
-int current_level;
+char *g_current_directory, *g_exit_code, *g_prompt;
+int g_current_level;
 
 void execute_file(char *file);
 
@@ -206,7 +207,7 @@ void raise_error(char *part, char *format, ...) {
 
     fputs("\n", stderr);
 
-    strcpy(exit_code, "1");
+    strcpy(g_exit_code, "1");
 }
 
 /*******************************
@@ -222,7 +223,7 @@ int get_variable_index(char *name) {
         }
 
         if (strcmp(variables[i].name, name) == 0
-            && (variables[i].level == current_level
+            && (variables[i].level == g_current_level
             || variables[i].level == 0)
         ) return i;
     }
@@ -247,20 +248,28 @@ char *get_variable(char *name) {
 #define set_variable(name, value) set_variable_withlen(name, value, -1)
 
 int set_variable_withlen(char *name, char *value, int str_len) {
-    if (str_len == -1) str_len = strlen(value);
-
-    char *value_copy = malloc(str_len + 1);
-    strncpy(value_copy, value, str_len);
-    value_copy[str_len] = '\0';
+    char *value_copy = NULL;
 
     int index = get_variable_index(name);
+
+    if (str_len == -1) str_len = strlen(value);
+
+    if ((index != -1 && !variables[index].is_sync) || index == -1) {
+        value_copy = malloc(str_len + 1);
+        strncpy(value_copy, value, str_len);
+        value_copy[str_len] = '\0';
+    } else value_copy = NULL;
+
     if (index != -1) {
-        if (variables[index].value && (!variables[index].is_sync)) {
-            free(variables[index].value);
+        if (variables[index].is_sync) {
+            strncpy(variables[index].value, value, min(str_len, variables[index].is_sync));
+            variables[index].value[min(str_len, variables[index].is_sync)] = '\0';
+        } else {
+            if (variables[index].value) {
+                free(variables[index].value);
+            }
+            variables[index].value = value_copy;
         }
-        variables[index].level = variables[index].level ? current_level : 0;
-        variables[index].value = value_copy;
-        variables[index].is_sync = 0;
         return 0;
     }
 
@@ -270,7 +279,7 @@ int set_variable_withlen(char *name, char *value, int str_len) {
             strcpy(name_copy, name);
             variables[i].name = name_copy;
             variables[i].value = value_copy;
-            variables[i].level = current_level;
+            variables[i].level = g_current_level;
             variables[i].is_sync = 0;
             return 0;
         }
@@ -280,16 +289,16 @@ int set_variable_withlen(char *name, char *value, int str_len) {
     return 1;
 }
 
-int set_is_sync_variable(char *name, char *value) {
+int set_sync_variable(char *name, char *value, int max_len) {
     int index = get_variable_index(name);
 
     if (index != -1) {
         if (variables[index].value && (!variables[index].is_sync)) {
             free(variables[index].value);
         }
-        variables[index].level = variables[index].level ? current_level : 0;
+        variables[index].level = variables[index].level ? g_current_level : 0;
         variables[index].value = value;
-        variables[index].is_sync = 1;
+        variables[index].is_sync = max_len;
         return 0;
     }
 
@@ -297,8 +306,8 @@ int set_is_sync_variable(char *name, char *value) {
         if (variables[i].name == NULL) {
             variables[i].name = name;
             variables[i].value = value;
-            variables[i].level = current_level;
-            variables[i].is_sync = 1;
+            variables[i].level = g_current_level;
+            variables[i].is_sync = max_len;
             return 0;
         }
     }
@@ -901,18 +910,18 @@ char *if_cd(char **input) {
 
     // change to default if no arguments
     if (argc == 0) {
-        strcpy(current_directory, CD_DEFAULT);
+        strcpy(g_current_directory, CD_DEFAULT);
         if (!USE_ENVVARS) return NULL;
-        setenv("PWD", current_directory, 1);
+        setenv("PWD", g_current_directory, 1);
         return NULL;
     }
 
     // get dir
-    char *dir = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
+    char *dir = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
 
     #if PROFANBUILD
     // check if dir exists
-    assemble_path(current_directory, input[0], dir);
+    assemble_path(g_current_directory, input[0], dir);
     // simplify path
     fu_simplify_path(dir);
 
@@ -927,9 +936,9 @@ char *if_cd(char **input) {
     #endif
 
     // change directory
-    strcpy(current_directory, dir);
+    strcpy(g_current_directory, dir);
     if (USE_ENVVARS) {
-        setenv("PWD", current_directory, 1);
+        setenv("PWD", g_current_directory, 1);
     }
 
     free(dir);
@@ -1153,8 +1162,8 @@ char *if_find(char **input) {
     if (argc == 1 && !required_type) user_path = input[0];
     if (argc == 2) user_path = input[1];
 
-    char *path = malloc(strlen(user_path) + strlen(current_directory) + 2);
-    assemble_path(current_directory, user_path, path);
+    char *path = malloc(strlen(user_path) + strlen(g_current_directory) + 2);
+    assemble_path(g_current_directory, user_path, path);
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
@@ -1231,8 +1240,8 @@ char *if_fsize(char **input) {
     }
 
     // get path
-    char *path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, input[0], path);
+    char *path = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
+    assemble_path(g_current_directory, input[0], path);
 
     sid_t file_id = fu_path_to_sid(ROOT_SID, path);
 
@@ -1275,8 +1284,8 @@ char *if_global(char **input) {
     char *value = input[1];
 
     // copy the current level
-    int old_level = current_level;
-    current_level = 0;
+    int old_level = g_current_level;
+    g_current_level = 0;
 
     // set variable
     if (set_variable(name, value)) {
@@ -1284,7 +1293,7 @@ char *if_global(char **input) {
     }
 
     // restore the current level
-    current_level = old_level;
+    g_current_level = old_level;
 
     return NULL;
 }
@@ -1304,8 +1313,8 @@ char *if_go_binfile(char **input) {
     }
 
     // get file name
-    char *file_path = malloc((strlen(input[0]) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, input[0], file_path);
+    char *file_path = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
+    assemble_path(g_current_directory, input[0], file_path);
     // check if file exists
 
     sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
@@ -1340,7 +1349,7 @@ char *if_go_binfile(char **input) {
     int pid;
     local_itoa(c_run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, wait_end}, &pid
-    ), exit_code);
+    ), g_exit_code);
 
     if (pid == -1) {
         raise_error("go", "Cannot execute file '%s'", file_path);
@@ -1363,7 +1372,7 @@ char *if_go_binfile(char **input) {
     free(file_name);
     free(argv);
     free(tmp);
-    return exit_code[0] == '0' ? NULL : ERROR_CODE;
+    return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
 
     #else
     raise_error("go", "Not available in this build");
@@ -2054,7 +2063,7 @@ char *execute_function(function_t *function, char **args) {
     // !2: third argument
     // !#: argument count
 
-    current_level++;
+    g_current_level++;
 
     int argc = 0;
     char tmp[4];
@@ -2070,9 +2079,9 @@ char *execute_function(function_t *function, char **args) {
     int ret = execute_lines(function->lines, function->line_count, &result);
 
     // free variables
-    del_variable_level(current_level);
+    del_variable_level(g_current_level);
 
-    current_level--;
+    g_current_level--;
 
     if (ret == -1) {
         // function failed
@@ -2529,7 +2538,7 @@ int execute_lines(char **lines, int line_end, char **result) {
     }
 
     if (line_end == 0) {
-        strcpy(exit_code, "0");
+        strcpy(g_exit_code, "0");
         return 0;
     }
 
@@ -2640,7 +2649,7 @@ int execute_lines(char **lines, int line_end, char **result) {
         }
 
         if (res != ERROR_CODE) {
-            strcpy(exit_code, "0");
+            strcpy(g_exit_code, "0");
         }
     }
     return 0;
@@ -3353,7 +3362,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
             break;
         }
 
-        assemble_path(current_directory, inp_end, path);
+        assemble_path(g_current_directory, inp_end, path);
         if (path[strlen(path) - 1] != '/'
             && (inp_end[strlen(inp_end) - 1] == '/'
             || !inp_end[0])
@@ -3704,6 +3713,51 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     #endif
 }
 
+
+/***************************
+ *                        *
+ *  Shell/File functions  *
+ *                        *
+***************************/
+
+void display_prompt(void) {
+    for (int i = 0; g_prompt[i] != '\0'; i++) {
+        if (g_prompt[i] != '$') {
+            putchar(g_prompt[i]);
+            continue;
+        }
+        switch (g_prompt[i + 1]) {
+            case 'v':
+                fputs(OLV_VERSION, stdout);
+                break;
+            case 'd':
+                fputs(g_current_directory, stdout);
+                break;
+            case '(':
+                if (g_exit_code[0] == '0') {
+                    for (; g_prompt[i] != ')'; i++);
+                    i--;
+                }
+                break;
+            case '{':
+                if (g_exit_code[0] != '0') {
+                    for (; g_prompt[i] != '}'; i++);
+                    i--;
+                }
+                break;
+            case ')':
+                break;
+            case '}':
+                break;
+            default:
+                putchar('$');
+                break;
+        }
+        i++;
+    }
+    fflush(stdout);
+}
+
 void start_shell(void) {
     // use execute_program() to create a shell
     char *line = malloc(INPUT_SIZE * sizeof(char));
@@ -3716,10 +3770,9 @@ void start_shell(void) {
     while (1) {
         line[0] = '\0';
         do {
-            printf(exit_code[0] == '0' ? PROMPT_SUCC : PROMPT_FAIL, current_directory);
-            fflush(stdout);
+            display_prompt();
             cursor_pos = local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
-        } while(cursor_pos != -1);
+        } while (cursor_pos != -1);
 
         if (strncmp(line, "exit", 4) == 0) {
             break;
@@ -3763,8 +3816,8 @@ void start_shell(void) {
 void execute_file(char *file) {
     #if PROFANBUILD
 
-    char *path = malloc((strlen(file) + strlen(current_directory) + 2) * sizeof(char));
-    assemble_path(current_directory, file, path);
+    char *path = malloc((strlen(file) + strlen(g_current_directory) + 2) * sizeof(char));
+    assemble_path(g_current_directory, file, path);
 
     sid_t id = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(id) || !fu_is_file(id)) {
@@ -3933,14 +3986,17 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    current_level = 0;
+    g_current_level = 0;
 
-    current_directory = malloc(MAX_PATH_SIZE * sizeof(char));
-    strcpy(current_directory, "/");
+    g_current_directory = malloc((MAX_PATH_SIZE + 1) * sizeof(char));
+    strcpy(g_current_directory, "/");
     if (USE_ENVVARS) setenv("PWD", "/", 1);
 
-    exit_code = malloc(5 * sizeof(char));
-    strcpy(exit_code, "0");
+    g_exit_code = malloc(5 * sizeof(char));
+    strcpy(g_exit_code, "0");
+    
+    g_prompt = malloc((PROMPT_SIZE + 1) * sizeof(char));
+    strcpy(g_prompt, DEFAULT_PROMPT);
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
@@ -3949,8 +4005,10 @@ int main(int argc, char **argv) {
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
     set_variable("spi", "0");
-    set_is_sync_variable("exit", exit_code);
-    set_is_sync_variable("path", current_directory);
+
+    set_sync_variable("path", g_current_directory, MAX_PATH_SIZE);
+    set_sync_variable("exit", g_exit_code, 4);
+    set_sync_variable("prompt", g_prompt, PROMPT_SIZE);
 
     // init pseudo commands
     if (!args->no_init) {
@@ -3973,8 +4031,9 @@ int main(int argc, char **argv) {
     free_pseudos();
     free_vars();
 
-    free(current_directory);
-    free(exit_code);
+    free(g_current_directory);
+    free(g_exit_code);
+    free(g_prompt);
     free(args);
 
     return 0;
