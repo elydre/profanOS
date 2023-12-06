@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.8 rev 9"
+#define OLV_VERSION "0.8 rev 10"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1748,6 +1748,10 @@ void *get_if_function(char *name) {
 void remove_quotes(char *string) {
     int i, dec = 0;
     for (i = 0; string[i] != '\0'; i++) {
+        if (string[i] == '\\' && string[i + 1] == STRING_CHAR) {
+            string[i - dec] = STRING_CHAR;
+            continue;
+        }
         if (string[i] == STRING_CHAR) {
             dec++;
             continue;
@@ -1783,7 +1787,7 @@ char **gen_args(char *string) {
     int argc = 1;
 
     for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == STRING_CHAR) {
+        if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
         } if (string[i] == ' ' && !in_string) {
             argc++;
@@ -1791,7 +1795,7 @@ char **gen_args(char *string) {
     }
 
     if (in_string) {
-        raise_error(NULL, "String not closed");
+        raise_error(NULL, "String not closed (%s)", string);
         return ERROR_CODE;
     }
 
@@ -1802,7 +1806,7 @@ char **gen_args(char *string) {
     int old_i = 0;
     int arg_i = 0;
     for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == STRING_CHAR) {
+        if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
         } if (string[i] == ' ' && !in_string) {
             argv[arg_i] = malloc((i - old_i + 1) * sizeof(char));
@@ -3753,7 +3757,6 @@ void start_shell(void) {
         }
     }
     free(history);
-
     free(line);
 }
 

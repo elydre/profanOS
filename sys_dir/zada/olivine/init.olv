@@ -13,7 +13,14 @@ FUNC help
         !0 -h
         RETURN
     END
-    cat /zada/common/shell_help.txt | echo -e
+    chio /zada/common/shell_help.txt 'echo -e' !TERM
+END
+
+FUNC args
+    echo called with !# arguments
+    FOR i !(range !#)
+        echo '!i': !!i
+    END
 END
 
 FUNC tree
