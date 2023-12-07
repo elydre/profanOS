@@ -61,7 +61,8 @@ int main(void) {
         idle = c_process_get_run_time(1);
         total = c_timer_get_ms();
 
-        cpu = 100 - (idle - last_idle) * 100 / (total - last_total);
+        cpu = total - last_total;
+        cpu = 100 - (idle - last_idle) * 100 / (cpu ? cpu : 1);
 
         for (int i = HISTOTY_SIZE - 1; i > 0; i--) {
             history[i] = history[i - 1];
