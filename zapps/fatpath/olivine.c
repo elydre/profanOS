@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 2"
+#define OLV_VERSION "0.9 rev 3"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1149,6 +1149,31 @@ char *if_exec(char **input) {
     return NULL;
 }
 
+char *if_exit(char **input) {
+    // get argc
+    int argc = 0;
+    for (int i = 0; input[i] != NULL; i++) argc++;
+
+    if (argc > 1) {
+        raise_error("exit", "Usage: exit [code]");
+        return ERROR_CODE;
+    }
+
+    // get code
+    int code = 0;
+    if (argc == 1) {
+        if (local_atoi(input[0], &code)) {
+            raise_error("exit", "Invalid code '%s'", input[0]);
+            return ERROR_CODE;
+        }
+    }
+
+    // exit
+    exit(code);
+
+    return NULL;
+}
+
 char *if_export(char **input) {
     // get argc
     int argc = 0;
@@ -1760,6 +1785,7 @@ internal_function_t internal_functions[] = {
     {"delfunc", if_delfunc},
     {"eval", if_eval},
     {"exec", if_exec},
+    {"exit", if_exit},
     {"export", if_export},
     {"find", if_find},
     {"fsize", if_fsize},
@@ -3812,7 +3838,8 @@ void start_shell(void) {
             cursor_pos = local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
         } while (cursor_pos != -1);
 
-        if (strncmp(line, "exit", 4) == 0) {
+        if (strcmp(line, "shellexit") == 0) {
+            puts("Exiting olivine shell, bye!");
             break;
         }
 
@@ -3829,7 +3856,7 @@ void start_shell(void) {
         }
 
         // add to history if not empty and not the same as the last command
-        if (line[0] && (history[history_index] == NULL || strcmp(line, history[history_index]) != 0)) {
+        if (line[0] && (history[history_index] == NULL || strcmp(line, history[history_index]))) {
             history_index = (history_index + 1) % HISTORY_SIZE;
 
             if (history[history_index] != NULL) {
@@ -3999,7 +4026,6 @@ olivine_args_t *parse_args(int argc, char **argv) {
 ********************/
 
 char init_prog[] = ""
-"pseudo exit 'echo exit not available';"
 "IF !profan;"
 " exec '/zada/olivine/init.olv';"
 "END";
