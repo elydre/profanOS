@@ -19,12 +19,11 @@ char *read_stdin(void) {
     return buffer;
 }
 
-void print_with_color(int line_number, char *line, char *pattern) {
+void print_with_color(char *line, char *pattern) {
     char *pattern_start = strstr(line, pattern);
     char *pattern_end = pattern_start + strlen(pattern);
     char *line_end = strchr(line, '\0');
 
-    printf("\033[96m% 3d\033[0m: ", line_number);
     fwrite(line, 1, pattern_start - line, stdout);
     printf("\033[95m");
     fwrite(pattern_start, 1, pattern_end - pattern_start, stdout);
@@ -42,7 +41,6 @@ int main(int argc, char **argv) {
     char *buffer = read_stdin();
     char *line = buffer;
     char *next_line = NULL;
-    int line_number = 1;
 
     while (1) {
         next_line = strchr(line, '\n');
@@ -50,8 +48,7 @@ int main(int argc, char **argv) {
             break;
         *next_line = '\0';
         if (strstr(line, argv[1]) != NULL)
-            print_with_color(line_number, line, argv[1]);
-        line_number++;
+            print_with_color(line, argv[1]);
         line = next_line + 1;
     }
 
