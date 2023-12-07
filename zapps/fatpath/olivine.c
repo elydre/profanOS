@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 1"
+#define OLV_VERSION "0.9 rev 2"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -815,10 +815,48 @@ char *eval(ast_t *ast) {
     return res;
 }
 
+void eval_help(void) {
+    puts("Olivine Integrated Evaluator\n"
+        "Usage: eval <string> [string...]\n"
+        "Spaces are not required between operators\n\n"
+        "Number operators:\n"
+        " +  Addition\n"
+        " -  Substraction\n"
+        " *  Multiplication\n"
+        " /  Division\n"
+        " ^  Modulo\n"
+        " <  Less than\n"
+        " >  Greater than\n"
+        " =  Equal\n"
+        " ~  Not equal\n"
+        "String operators:\n"
+        " +  Concatenation\n"
+        " .  Concatenation (with number)\n"
+        " *  Repeat\n"
+        " @  Get character\n"
+        " =  Equal\n"
+        " ~  Not equal\n\n"
+        "Operators priority (from lowest to highest):");
+    for (uint32_t i = 0; i < sizeof(ops); i++) {
+        printf(" %c", ops[i]);
+    }
+    puts("\n\nExample: eval 1 + 2 * 3\n"
+        "         eval 'hello ' * 3\n"
+        "         eval (1+3)*2=8\n");
+}
+
 char *if_eval(char **input) {
     if (input[0] == NULL) {
         raise_error("eval", "Requires at least one argument");
         return ERROR_CODE;
+    }
+
+    if (input[1] == NULL && (
+        strcmp(input[0], "-h") == 0 ||
+        strcmp(input[0], "--help") == 0
+    )) {
+        eval_help();
+        return NULL;
     }
 
     // join input
