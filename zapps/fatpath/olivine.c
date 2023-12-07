@@ -1862,16 +1862,16 @@ char *args_rejoin(char **input, int to) {
     return joined_input;
 }
 
-char *get_if_function_name(char *string) {
+char *get_function_name(char *line) {
     int in_string = 0;
-    for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == STRING_CHAR) {
+    for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == STRING_CHAR) {
             in_string = !in_string;
         }
 
-        if (string[i] == ' ' && !in_string) {
+        if (line[i] == ' ' && !in_string) {
             char *function_name = malloc((i + 1) * sizeof(char));
-            strncpy(function_name, string, i);
+            strncpy(function_name, line, i);
             function_name[i] = '\0';
 
             remove_quotes(function_name);
@@ -1879,7 +1879,7 @@ char *get_if_function_name(char *string) {
         }
     }
 
-    char *function_name = strdup(string);
+    char *function_name = strdup(line);
 
     remove_quotes(function_name);
     return function_name;
@@ -2108,7 +2108,7 @@ char *execute_line(char *full_line) {
 
     // get the function name
     int isif;
-    char *function_name = get_if_function_name(line);
+    char *function_name = get_function_name(line);
 
     // get the function address
     void *function = get_if_function(function_name);
