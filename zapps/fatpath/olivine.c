@@ -1532,14 +1532,20 @@ char *if_range(char **input) {
         return ERROR_CODE;
     }
 
-    int start, end;
+    int start, end, nb_len;
 
     if (argc == 1) {
         start = 0;
+		nb_len = strlen(input[0]);
         end = atoi(input[0]);
     } else {
         start = atoi(input[0]);
         end = atoi(input[1]);
+		if (strlen(input[0]) > strlen(input[1])) {
+			nb_len = strlen(input[0]);
+		} else {
+			nb_len = strlen(input[1]);
+		}
     }
 
     if (start > end) {
@@ -1549,7 +1555,7 @@ char *if_range(char **input) {
         return NULL;
     }
 
-    char *output = malloc((strlen(input[1]) + 1) * (end - start + 1));
+    char *output = malloc((nb_len + 1) * (end - start + 1));
     char *tmp = malloc(12 * sizeof(char));
     tmp[0] = '\0';
 
