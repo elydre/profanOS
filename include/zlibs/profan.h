@@ -25,5 +25,6 @@
 #define profan_print_memory ((void (*)(void *, uint32_t)) get_func_addr(PROFAN_LIB_ID, 4))
 #define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 5))
 #define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 6))
+#define profan_wait_pid ((void (*)(uint32_t)) get_func_addr(PROFAN_LIB_ID, 7)) 
 
 #endif

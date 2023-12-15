@@ -22,43 +22,45 @@ typedef struct {
 
 typedef struct {
     proc_rgs_t regs;
-    int pid, ppid, priority, state;
-    uint32_t esp_addr, sleep_to, run_time;
     scuba_directory_t *scuba_dir;
-    void *comm;
-    char name[64];
-} process_t;
 
+    uint32_t pid, ppid, use_parent_dir;
+	uint32_t priority, run_time;
+    uint32_t esp_addr, sleep_to, state;
+
+    char name[64];
+    void *comm;
+} process_t;
 
 // setup and call
 int  process_init(void);
 void schedule(uint32_t ticks);
 
 // process gestion
-int process_create(void (*func)(void), int priority, char *name);
-int process_handover(int pid);
-int process_wakeup(int pid);
-int process_sleep(int pid, uint32_t ms);
-int process_kill(int pid);
+int process_create(void (*func)(void), int use_parent_dir, char *name);
+int process_handover(uint32_t pid);
+int process_wakeup(uint32_t pid);
+int process_sleep(uint32_t pid, uint32_t ms);
+int process_kill(uint32_t pid);
 
 // sheduler control
 void process_set_sheduler(int state);
 
 // process info
 int process_get_pid(void);
-int process_get_ppid(int pid);
-int process_get_state(int pid);
-int process_generate_pid_list(int *list, int max);
-int process_get_name(int pid, char *name);
-uint32_t process_get_run_time(int pid);
+int process_get_ppid(uint32_t pid);
+int process_get_state(uint32_t pid);
+int process_generate_pid_list(uint32_t *list, int max);
+int process_get_name(uint32_t pid, char *name);
+uint32_t process_get_run_time(uint32_t pid);
 
-void  process_set_comm(int pid, void *comm);
-void *process_get_comm(int pid);
+void  process_set_comm(uint32_t pid, void *comm);
+void *process_get_comm(uint32_t pid);
 
-void process_set_priority(int pid, int priority);
-int  process_get_priority(int pid);
+void process_set_priority(uint32_t pid, int priority);
+int  process_get_priority(uint32_t pid);
 
-scuba_directory_t *process_get_directory(int pid);
+scuba_directory_t *process_get_directory(uint32_t pid);
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);

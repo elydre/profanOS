@@ -93,7 +93,7 @@ mem_args_t *parse_args(int argc, char **argv) {
     return ret;
 }
 
-void sort_tab(int *tab, int size) {
+void sort_tab(uint32_t *tab, int size) {
     int tmp;
     for (int i = 0; i < size; i++) {
         for (int j = i; j > 0 && tab[j] < tab[j - 1]; j--) {
@@ -129,7 +129,7 @@ void memory_print_usage(void) {
 
     printf("\n      ------ Per process ------\n");
 
-    int pid_list[PROCESS_MAX]; // it's a define
+    uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
     sort_tab(pid_list, pid_list_len);
 

@@ -27,7 +27,7 @@ uint8_t sheduler_count;
 uint8_t need_clean;
 int sheduler_disable_count;
 
-int pid_current;
+uint32_t pid_current;
 
 
 /***********************
@@ -56,7 +56,7 @@ int i_get_free_place(void) {
     return ERROR_CODE;
 }
 
-int i_pid_to_place(int pid) {
+int i_pid_to_place(uint32_t pid) {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].pid == pid) return i;
     }
@@ -151,7 +151,8 @@ void i_clean_killed(void) {
                 need_clean = 1;
                 continue;
             }
-            scuba_directory_destroy(plist[i].scuba_dir);
+            if (!plist[i].use_parent_dir) 
+                scuba_directory_destroy(plist[i].scuba_dir);
             free((void *) plist[i].esp_addr);
             plist[i].state = PROCESS_DEAD;
         }
@@ -185,7 +186,7 @@ void i_tsleep_awake(uint32_t ticks) {
     i_refresh_tsleep_interact();
 }
 
-void i_remove_from_tsleep_list(int pid) {
+void i_remove_from_tsleep_list(uint32_t pid) {
     for (int i = 0; i < tsleep_list_length; i++) {
         if (tsleep_list[i]->pid == pid) {
             tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
@@ -241,7 +242,7 @@ int process_init(void) {
 
     kern_proc->pid = 0;
     kern_proc->ppid = 0; // it's worse than inbreeding!
-    kern_proc->priority = KERNEL_PRIORITY;
+    kern_proc->priority = PROC_PRIORITY;
     kern_proc->comm = NULL;
 
     tsleep_interact = 0;
@@ -252,7 +253,7 @@ int process_init(void) {
 
     shdlr_queue_length = 0;
 
-    i_add_to_shdlr_queue(0, KERNEL_PRIORITY);
+    i_add_to_shdlr_queue(0, PROC_PRIORITY);
 
     kern_proc->scuba_dir = scuba_get_kernel_directory();
 
@@ -268,12 +269,8 @@ int process_init(void) {
 }
 
 
-int process_create(void (*func)(), int priority, char *name) {
-    if (priority > 10 || priority < 1) {
-        sys_warning("[create] priority %d is not valid", priority);
-        return ERROR_CODE;
-    }
-
+int process_create(void (*func)(), int use_parent_dir, char *name) {
+    int parent_place = i_pid_to_place(pid_current);
     int place = i_get_free_place();
 
     if (place == ERROR_CODE) {
@@ -281,31 +278,38 @@ int process_create(void (*func)(), int priority, char *name) {
         return ERROR_CODE;
     }
 
+    if (parent_place == ERROR_CODE) {
+        sys_error("[create] Parent process not found");
+        return ERROR_CODE;
+    }
+
     static int pid_incrament = 0;
     pid_incrament++;
 
-    process_t *kern_proc = &plist[0];
+    process_t *parent_proc = &plist[parent_place];
     process_t *new_proc = &plist[place];
 
-    str_cpy(new_proc->name, name);
+    str_ncpy(new_proc->name, name, 63);
 
     new_proc->pid = pid_incrament;
     new_proc->ppid = pid_current;
 
+    new_proc->use_parent_dir = use_parent_dir;
+
     new_proc->state = PROCESS_FSLPING;
-    new_proc->priority = priority;
+    new_proc->priority = PROC_PRIORITY;
 
     new_proc->sleep_to = 0;
     new_proc->run_time = 0;
 
     new_proc->comm = NULL;
 
-    i_new_process(new_proc, func, kern_proc->regs.eflags, (uint32_t *) kern_proc->regs.cr3);
+    i_new_process(new_proc, func, parent_proc->regs.eflags, (uint32_t *) parent_proc->scuba_dir);
 
-    if (pid_incrament == 1) {
-        new_proc->scuba_dir = NULL;
+    if (use_parent_dir) {
+        new_proc->scuba_dir = parent_proc->scuba_dir;
     } else {
-        new_proc->scuba_dir = scuba_directory_create(pid_incrament);
+        new_proc->scuba_dir = scuba_directory_create();
         scuba_directory_init(new_proc->scuba_dir);
     }
 
@@ -313,7 +317,7 @@ int process_create(void (*func)(), int priority, char *name) {
 }
 
 
-int process_sleep(int pid, uint32_t ms) {
+int process_sleep(uint32_t pid, uint32_t ms) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -364,7 +368,7 @@ int process_sleep(int pid, uint32_t ms) {
 }
 
 
-int process_wakeup(int pid) {   // TODO: sleep to exit gestion
+int process_wakeup(uint32_t pid) {   // TODO: sleep to exit gestion
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -404,7 +408,7 @@ int process_wakeup(int pid) {   // TODO: sleep to exit gestion
 }
 
 
-int process_handover(int pid) {
+int process_handover(uint32_t pid) {
     int place = i_pid_to_place(pid);
     int current_place = i_pid_to_place(pid_current);
 
@@ -457,7 +461,7 @@ int process_handover(int pid) {
 }
 
 
-int process_kill(int pid) {
+int process_kill(uint32_t pid) {
     if (pid == 0) {
         sys_warning("[kill] Can't kill kernel (^_^ )");
         return ERROR_CODE;
@@ -559,7 +563,7 @@ void schedule(uint32_t ticks) {
         shdlr_queue_index = 0;
     }
 
-    int pid;
+    uint32_t pid;
 
     if (shdlr_queue_length == 0) {
         pid = 1;    // idle process
@@ -578,7 +582,7 @@ void schedule(uint32_t ticks) {
  * GET / SET FUNCTIONS *
 ************************/
 
-void process_set_priority(int pid, int priority) {
+void process_set_priority(uint32_t pid, int priority) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -607,7 +611,7 @@ int process_get_pid(void) {
     return pid_current;
 }
 
-void process_set_comm(int pid, void *comm) {
+void process_set_comm(uint32_t pid, void *comm) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -618,7 +622,7 @@ void process_set_comm(int pid, void *comm) {
     plist[place].comm = comm;
 }
 
-void *process_get_comm(int pid) {
+void *process_get_comm(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -629,7 +633,7 @@ void *process_get_comm(int pid) {
     return plist[place].comm;
 }
 
-int process_get_ppid(int pid) {
+int process_get_ppid(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -640,7 +644,7 @@ int process_get_ppid(int pid) {
     return plist[place].ppid;
 }
 
-int process_generate_pid_list(int *list, int max) {
+int process_generate_pid_list(uint32_t *list, int max) {
     int i = 0;
     for (int j = 0; j < PROCESS_MAX; j++) {
         if (plist[j].state != PROCESS_DEAD) {
@@ -652,7 +656,7 @@ int process_generate_pid_list(int *list, int max) {
     return i;
 }
 
-int process_get_name(int pid, char *name) {
+int process_get_name(uint32_t pid, char *name) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -664,7 +668,7 @@ int process_get_name(int pid, char *name) {
     return 0;
 }
 
-int process_get_state(int pid) {
+int process_get_state(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -674,7 +678,7 @@ int process_get_state(int pid) {
     return plist[place].state;
 }
 
-int process_get_priority(int pid) {
+int process_get_priority(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -685,7 +689,7 @@ int process_get_priority(int pid) {
     return plist[place].priority;
 }
 
-uint32_t process_get_run_time(int pid) {
+uint32_t process_get_run_time(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -696,7 +700,7 @@ uint32_t process_get_run_time(int pid) {
     return plist[place].run_time;
 }
 
-scuba_directory_t *process_get_directory(int pid) {
+scuba_directory_t *process_get_directory(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {

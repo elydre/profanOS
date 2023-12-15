@@ -3,11 +3,11 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.1.3b"
+#define KERNEL_VERSION  "1.1.4"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
-#define KERNEL_PRIORITY 5           // default kernel process priority
+#define PROC_PRIORITY   2           // default process priority
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define FS_MAX_DISKS    256         // max disk count
 #define RUN_DEFAULT     "/bin/tools/init.bin"

@@ -57,7 +57,7 @@ void scuba_flush_tlb(void) {
 
 int scuba_init(void) {
     // allocate a page directory
-    kernel_directory = scuba_directory_create(0);
+    kernel_directory = scuba_directory_create();
 
     g_map_to_addr = SCUBA_MAP_TO;
     uint32_t physical_end = mem_get_info(0, 0);
@@ -98,7 +98,6 @@ int scuba_init(void) {
 
 void scuba_process_switch(scuba_directory_t *dir) {
     if (current_directory == dir) return;
-    if (dir->pid == 1) return;
 
     // switch to the new page directory
     scuba_switch(dir);
@@ -113,12 +112,11 @@ void scuba_process_switch(scuba_directory_t *dir) {
  *                       *
 **************************/
 
-scuba_directory_t *scuba_directory_create(int target_pid) {
+scuba_directory_t *scuba_directory_create(void) {
     // allocate a page directory
     scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t), 6);
 
     dir->to_free_index = 0;
-    dir->pid = target_pid;
 
     // setup directory entries
     for (int i = 0; i < 1024; i++) {

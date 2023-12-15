@@ -70,15 +70,15 @@
 
 #define c_process_set_sheduler ((void (*)(int)) hi_func_addr(30))
 #define c_process_create ((int (*)(void (*func)(), int, char *)) hi_func_addr(31))
-#define c_process_sleep ((void (*)(int, uint32_t)) hi_func_addr(32))
-#define c_process_wakeup ((void (*)(int)) hi_func_addr(33))
-#define c_process_kill ((void (*)(int)) hi_func_addr(34))
+#define c_process_sleep ((void (*)(uint32_t, uint32_t)) hi_func_addr(32))
+#define c_process_wakeup ((void (*)(uint32_t)) hi_func_addr(33))
+#define c_process_kill ((void (*)(uint32_t)) hi_func_addr(34))
 #define c_process_get_pid ((int (*)(void)) hi_func_addr(35))
-#define c_process_get_ppid ((int (*)(int)) hi_func_addr(36))
-#define c_process_generate_pid_list ((int (*)(int *, int)) hi_func_addr(37))
-#define c_process_get_name ((int (*)(int, char *)) hi_func_addr(38))
-#define c_process_get_state ((int (*)(int)) hi_func_addr(39))
-#define c_process_get_run_time ((uint32_t (*)(int)) hi_func_addr(40))
+#define c_process_get_ppid ((int (*)(uint32_t)) hi_func_addr(36))
+#define c_process_generate_pid_list ((int (*)(uint32_t *, int)) hi_func_addr(37))
+#define c_process_get_name ((int (*)(uint32_t, char *)) hi_func_addr(38))
+#define c_process_get_state ((int (*)(uint32_t)) hi_func_addr(39))
+#define c_process_get_run_time ((uint32_t (*)(uint32_t)) hi_func_addr(40))
 
 #define c_exit_pid ((int (*)(int, int)) hi_func_addr(41))
 

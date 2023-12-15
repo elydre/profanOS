@@ -18,8 +18,8 @@ char *get_state(int state) {
     }
 }
 
-void sort_tab(int *tab, int size) {
-    int tmp;
+void sort_tab(uint32_t *tab, int size) {
+    uint32_t tmp;
     for (int i = 0; i < size; i++) {
         for (int j = i; j > 0 && tab[j] < tab[j - 1]; j--) {
             tmp = tab[j];
@@ -30,7 +30,7 @@ void sort_tab(int *tab, int size) {
 }
 
 void list_process(void) {
-    int pid_list[PROCESS_MAX]; // it's a define
+    uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
     sort_tab(pid_list, pid_list_len);
 

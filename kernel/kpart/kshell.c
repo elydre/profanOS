@@ -10,7 +10,7 @@
 #define BFR_SIZE 65
 
 void kernel_switch_back(void) {
-    int pid_list[PROCESS_MAX]; // it's a define
+    uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
 
@@ -32,7 +32,7 @@ void kernel_switch_back(void) {
 }
 
 void kernel_exit_current(void) {
-    int pid_list[PROCESS_MAX]; // it's a define
+    uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
     int pid;
 

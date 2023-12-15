@@ -136,3 +136,16 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
         return kb_map[scancode * 2 + 1];
     return kb_map[scancode * 2];
 }
+
+void profan_wait_pid(uint32_t pid) {
+    uint32_t current_pid = c_process_get_pid();
+
+    if (pid == current_pid) {
+        c_process_sleep(current_pid, 0);
+        return;
+    }
+
+    while (c_process_get_state(pid) != 5) {
+        c_process_sleep(current_pid, 10);
+    }
+}

@@ -43,8 +43,6 @@ typedef struct {
 
     uint32_t to_free_index;
     void *to_free[SCUBA_MAX_TO_FREE];
-
-    uint32_t pid;
 } scuba_directory_t;
 
 #define scuba_map(dir, virt, phys) scuba_map_func(dir, virt, phys, 0)
@@ -56,7 +54,7 @@ int scuba_init(void);
 
 void scuba_process_switch(scuba_directory_t *dir);
 
-scuba_directory_t *scuba_directory_create(int target_pid);
+scuba_directory_t *scuba_directory_create(void);
 void scuba_directory_init(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
