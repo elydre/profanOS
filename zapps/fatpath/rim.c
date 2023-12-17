@@ -407,6 +407,10 @@ void quit(void) {
     free(g_data);
     free(g_data_lines);
     free(g_current_screen);
+
+    c_kprint("\033[2J");
+    fputs("\033[2J", stdout);
+    fflush(stdout);
 }
 
 int main(int argc, char **argv) {
@@ -425,7 +429,14 @@ int main(int argc, char **argv) {
 
         sid_t elm = fu_path_to_sid(ROOT_SID, file);
 
-        if (IS_NULL_SID(elm) || !fu_is_file(elm)) {
+        if (IS_NULL_SID(elm)) {
+            elm = fu_file_create(0, file);
+            if (IS_NULL_SID(elm)) {
+                printf("\033[91m%s\033[31m failed to create file\033[0m\n", file);
+                free(file);
+                return 1;
+            }
+        } else if (!fu_is_file(elm)) {
             printf("\033[91m%s\033[31m file not found\033[0m\n", file);
             free(file);
             return 1;
