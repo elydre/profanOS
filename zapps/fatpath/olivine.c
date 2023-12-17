@@ -3778,7 +3778,12 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     return ret_val;
 
     #else
-    fgets(buffer, size, stdin);
+
+    if (!fgets(buffer, size, stdin)) {
+        puts("");
+        exit(0);
+    }
+
     return -1;
     #endif
 }
