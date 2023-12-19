@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 3"
+#define OLV_VERSION "0.9 rev 4"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1637,7 +1637,7 @@ char *if_set_var(char **input) {
         argc++;
     }
 
-    if (argc != 2) {
+    if (argc > 2) {
         raise_error("set", "Usage: set <name> <value>");
         return ERROR_CODE;
     }
@@ -1648,10 +1648,31 @@ char *if_set_var(char **input) {
     // get value
     char *value = input[1];
 
+    // set variable if a value is given
+    if (value) {
+        if (set_variable(name, value)) {
+            return ERROR_CODE;
+        }
+        return NULL;
+    }
+
+    // get value from stdin
+    if (argc == 1) {
+        value = malloc(INPUT_SIZE * sizeof(char));
+        if (!fgets(value, INPUT_SIZE, stdin)) {
+            raise_error("set", "Cannot read from stdin");
+            free(value);
+            return ERROR_CODE;
+        }
+        value[strlen(value) - 1] = '\0';
+    }
+
     // set variable
     if (set_variable(name, value)) {
         return ERROR_CODE;
     }
+
+    free(value);
 
     return NULL;
 }
