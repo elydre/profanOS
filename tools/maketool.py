@@ -360,27 +360,31 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
 def make_help():
     aide = (
         ("make [help]", "show this help message"),
-
+        None,
         ("make elf",        "build the kernel in elf format"),
         ("make iso",        "build the iso image of profanOS"),
         ("make miso",       "build the iso with more grub options"),
-
+        None,
         ("make disk",       "build classic disk image"),
         ("make bdisk",    "build disk image with source code"),
-
+        None,
         ("make addons",     "download all addons in disk source"),
         ("make waddons",    "download all weighty addons in disk source"),
-
+        None,
         ("make clean",      "delete all build files"),
         ("make fclean",     "reset the repository"),
-
+        None,
         ("make run",        "run the profanOS.iso in qemu"),
         ("make erun",       "run the profanOS.elf in qemu"),
         ("make krun",       "run the profanOS.iso with kvm"),
         ("make srun",       "run the profanOS.iso with sound"),
     )
 
-    for command, description in aide:
+    for e in aide:
+        if e is None:
+            print()
+            continue
+        command, description = e
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")

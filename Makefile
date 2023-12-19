@@ -5,7 +5,7 @@ PY_ADDON = tools/addons.py
 
 # list off available commands
 help:
-	python3 $(PY_BUILD) help
+	@python3 $(PY_BUILD) help
 
 # build kernel
 elf:
