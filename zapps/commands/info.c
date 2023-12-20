@@ -82,7 +82,7 @@ int main(void) {
 
     pl_and_pf("\033[95mscreen:     \033[96m%d\033[0mx\033[96m%d (%s)\n",
         c_vesa_get_width(), c_vesa_get_height(),
-        c_vesa_does_enable() ? "text" : "graphics"
+        c_vesa_does_enable() ? "graphic" : "text"
     );
 
     pl_and_pf("\n");
