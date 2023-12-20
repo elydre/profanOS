@@ -1637,20 +1637,17 @@ char *if_set_var(char **input) {
         argc++;
     }
 
-    if (argc > 2) {
-        raise_error("set", "Usage: set <name> <value>");
+    if (argc == 0 || argc > 2) {
+        raise_error("set", "Usage: set <name> [value]");
         return ERROR_CODE;
     }
-
-    // get name
-    char *name = input[0];
 
     // get value
     char *value = input[1];
 
     // set variable if a value is given
     if (value) {
-        if (set_variable(name, value)) {
+        if (set_variable(input[0], value)) {
             return ERROR_CODE;
         }
         return NULL;
@@ -1668,7 +1665,7 @@ char *if_set_var(char **input) {
     }
 
     // set variable
-    if (set_variable(name, value)) {
+    if (set_variable(input[0], value)) {
         return ERROR_CODE;
     }
 
