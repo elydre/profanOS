@@ -5,8 +5,8 @@
 #define FONT_HEIGHT 16
 #define FONT_WIDTH  8
 
-void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color);
-void tef_print_char(char c, uint32_t color, uint32_t bg_color);
+void tef_set_char(int x, int y, char c, char color);
+void tef_print_char(char c, char color);
 void tef_set_cursor_offset(int offset);
 int  tef_get_cursor_offset(void);
 void tef_cursor_blink(int on);
@@ -19,28 +19,6 @@ void txt_cursor_blink(int on);
 int  txt_get_cursor_offset(void);
 void txt_clear(void);
 
-uint32_t gt_convert_color(char c) {
-    // vga 16 color palette
-    switch (c) {
-        case 0x0: return 0x000000;
-        case 0x1: return 0x0000AA;
-        case 0x2: return 0x00AA00;
-        case 0x3: return 0x00AAAA;
-        case 0x4: return 0xAA0000;
-        case 0x5: return 0xAA00AA;
-        case 0x6: return 0xAA5500;
-        case 0x7: return 0xAAAAAA;
-        case 0x8: return 0x555555;
-        case 0x9: return 0x5555FF;
-        case 0xA: return 0x55FF55;
-        case 0xB: return 0x55FFFF;
-        case 0xC: return 0xFF5555;
-        case 0xD: return 0xFF55FF;
-        case 0xE: return 0xFFFF55;
-        default:  return 0xFFFFFF;
-    }
-}
-
 int gt_get_max_cols(void) {
     return vesa_does_enable() ? vesa_get_width() / FONT_WIDTH : 80;
 }
@@ -52,13 +30,13 @@ int gt_get_max_rows(void) {
 void kprint_char_at(int x, int y, char c, char color) {
     if (x < 0 || y < 0) {
         if (vesa_does_enable()) {
-            tef_print_char(c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+            tef_print_char(c, color);
         } else {
             txt_print_char(c, color);
         }
     } else {
         if (vesa_does_enable()) {
-            tef_set_char(x, y, c, gt_convert_color(color & 0xF), gt_convert_color((color >> 4) & 0xF));
+            tef_set_char(x, y, c, color);
         } else {
             txt_set_char(x, y, c, color);
         }

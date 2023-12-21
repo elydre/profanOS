@@ -15,8 +15,7 @@
 
 typedef struct {
     char content;
-    uint32_t color;
-    uint32_t bg_color;
+    char color;
 } screen_char_t;
 
 int cursor_x = 0;
@@ -31,24 +30,35 @@ int tef_init(void) {
     return screen_buffer == NULL;
 }
 
+uint32_t compute_color(uint8_t color) {
+    uint32_t rgb[] = {
+        0x000000, 0x0000AA, 0x00AA00, 0x00AAAA,
+        0xAA0000, 0xAA00AA, 0xAA5500, 0xAAAAAA,
+        0x555555, 0x5555FF, 0x55FF55, 0x55FFFF,
+        0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF
+    };
+    if (color > 0xF) return 0xFFFFFF;
+    return rgb[(int) color];
+}
+
 // a character at a given position
-void tef_set_char(int x, int y, char c, uint32_t color, uint32_t bg_color) {
+void tef_set_char(int x, int y, char c, char color) {
     if (x < 0 || x >= MAX_COLS || y < 0 || y >= MAX_ROWS) return;
     if (screen_buffer != NULL) {
         if (screen_buffer[y * MAX_COLS + x].content == c &&
-            screen_buffer[y * MAX_COLS + x].color == color &&
-            screen_buffer[y * MAX_COLS + x].bg_color == bg_color) {
+            screen_buffer[y * MAX_COLS + x].color == color) {
             return;
         }
         screen_buffer[y * MAX_COLS + x].content = c;
         screen_buffer[y * MAX_COLS + x].color = color;
-        screen_buffer[y * MAX_COLS + x].bg_color = bg_color;
     }
+    uint32_t bg_color = compute_color(color >> 4);
+    uint32_t fg_color = compute_color(color & 0xF);
     int i, j;
     for (i = 0; i < FONT_WIDTH; i++) {
         for (j = 0; j < FONT_HEIGHT; j++) {
             if (FONT_TABLE[c * FONT_HEIGHT + j] & (1 << i)) {
-                vesa_set_pixel((x + 1) * FONT_WIDTH - i, y * FONT_HEIGHT + j, color);
+                vesa_set_pixel((x + 1) * FONT_WIDTH - i, y * FONT_HEIGHT + j, fg_color);
             } else {
                 vesa_set_pixel((x + 1) * FONT_WIDTH - i, y * FONT_HEIGHT + j, bg_color);
             }
@@ -69,14 +79,14 @@ void tef_draw_cursor(uint32_t color) {
     }
 }
 
-void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
+void tef_print_char(char c, char color) {
     tef_draw_cursor(0);
 
     if (c == '\n') {
         // fill the rest of the line with spaces
         for (int i = cursor_x; i < MAX_COLS; i++) {
             if (screen_buffer[cursor_y * MAX_COLS + i].content == '\0') {
-                tef_set_char(i, cursor_y, ' ', color, bg_color);
+                tef_set_char(i, cursor_y, ' ', color);
             }
         }
         cursor_x = 0;
@@ -84,15 +94,15 @@ void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
     } else if (c == '\r') {
         cursor_x = 0;
     } else if (c == '\t') {
-        tef_set_char(cursor_x, cursor_y, ' ', color, bg_color);
+        tef_set_char(cursor_x, cursor_y, ' ', color);
         cursor_x++;
     } else if (c == 0x08) {
         // str_backspace
         tef_draw_cursor(0);
         cursor_x--;
-        tef_set_char(cursor_x, cursor_y, ' ', color, bg_color);
+        tef_set_char(cursor_x, cursor_y, ' ', color);
     } else {
-        tef_set_char(cursor_x, cursor_y, c, color, bg_color);
+        tef_set_char(cursor_x, cursor_y, c, color);
         cursor_x++;
     }
 
@@ -107,12 +117,12 @@ void tef_print_char(char c, uint32_t color, uint32_t bg_color) {
         for (int i = 0; i < MAX_ROWS - SCROLLED_LINES; i++) {
             for (int j = 0; j < MAX_COLS; j++) {
                 index = (i + SCROLLED_LINES) * MAX_COLS + j;
-                tef_set_char(j, i, screen_buffer[index].content, screen_buffer[index].color, screen_buffer[index].bg_color);
+                tef_set_char(j, i, screen_buffer[index].content, screen_buffer[index].color);
             }
         }
         for (int i = MAX_ROWS - SCROLLED_LINES; i < MAX_ROWS; i++) {
             for (int j = 0; j < MAX_COLS; j++) {
-                tef_set_char(j, i, ' ', color, bg_color);
+                tef_set_char(j, i, ' ', color);
             }
         }
         cursor_y = MAX_ROWS - SCROLLED_LINES;
@@ -149,11 +159,8 @@ void tef_clear(void) {
     cursor_x = 0;
     cursor_y = 0;
     for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
-        if (!(screen_buffer[i].content == ' ' && screen_buffer[i].bg_color == 0)) {
-            screen_buffer[i].content = ' ';
-            screen_buffer[i].color = 0;
-            screen_buffer[i].bg_color = 0;
-        }
+        screen_buffer[i].content = ' ';
+        screen_buffer[i].color = 0;
     }
     // set pixel to black
     mem_set(vesa_get_fb(), 0, vesa_get_height() * vesa_get_pitch() * sizeof(uint32_t));
