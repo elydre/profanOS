@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 4"
+#define OLV_VERSION "0.9 rev 5"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2054,7 +2054,7 @@ char *pipe_processor(char **input) {
     char *in_tmp = calloc(15, sizeof(char));
     char *out_tmp = calloc(15, sizeof(char));
 
-    char *line;
+    char *line, *res;
 
     int i, from_index = 0;
     for (i = 0; i <= argc; i++) {
@@ -2091,11 +2091,20 @@ char *pipe_processor(char **input) {
         devio_set_redirection(stdout_sid, out_tmp, -1);
 
         line = args_rejoin(input + from_index, i - from_index);
-        // fprintf(stderr, "Executing: \"%s\"\n", line);
-        free(execute_line(line));
-        fflush(stdout);
-        free(line);
 
+        if ((res = execute_line(line)) == ERROR_CODE) {
+            devio_set_redirection(stdin_sid, "/dev/kb", -1);
+            devio_set_redirection(stdout_sid, term_path, -1);
+            free(out_tmp);
+            free(in_tmp);
+            free(line);
+            return ERROR_CODE;
+        }
+
+        free(line);
+        free(res);
+
+        fflush(stdout);
         from_index = i + 1;
     }
     devio_set_redirection(stdin_sid, "/dev/kb", -1);
@@ -2112,6 +2121,9 @@ char *pipe_processor(char **input) {
     i = fu_get_file_size(out_sid);
     line = malloc(i + 1);
     fu_file_read(out_sid, line, 0, i);
+
+    while (line[i - 1] == '\n')
+        i--;
     line[i] = '\0';
 
     free(out_tmp);
@@ -2242,22 +2254,12 @@ char *execute_line(char *full_line) {
         else
             result = execute_function(function, function_args + 1);
 
-        if (result == NULL) {
-            result = malloc(1 * sizeof(char));
-            result[0] = '\0';
-        }
-
         free_args(function_args);
     }
-    free(function_name);
 
-    if (line != full_line) {
+    if (line != full_line)
         free(line);
-    }
-
-    // set the exit code variable to 0
-    if (result == ERROR_CODE)
-        return NULL;
+    free(function_name);
 
     return result;
 }
@@ -2315,24 +2317,33 @@ char *check_subfunc(char *line) {
     char *subfunc_result = execute_line(subfunc);
     free(subfunc);
 
-    if (subfunc_result == NULL) {
+    if (subfunc_result == ERROR_CODE) {
         // subfunc execution failed
         return NULL;
     }
 
     // replace the subfunc with its result
-    char *new_line = malloc((strlen(line) - (end - start) + strlen(subfunc_result) + 1) * sizeof(char));
-    strncpy(new_line, line, start);
-    new_line[start] = '\0';
+    char *new_line;
 
-    strcat(new_line, subfunc_result);
-    strcat(new_line, line + end + 1);
+    if (subfunc_result) {
+        new_line = malloc((strlen(line) - (end - start) + strlen(subfunc_result) + 1) * sizeof(char));
+        strncpy(new_line, line, start);
+        new_line[start] = '\0';
 
-    free(subfunc_result);
+        strcat(new_line, subfunc_result);
+        strcat(new_line, line + end + 1);
+        free(subfunc_result);
+    } else {
+        new_line = malloc((strlen(line) - (end - start) + 1) * sizeof(char));
+        strncpy(new_line, line, start);
+        new_line[start] = '\0';
+
+        strcat(new_line, line + end + 1);
+    }
 
     char *rec = check_subfunc(new_line);
 
-    if (rec != new_line) {
+    if (rec != new_line && new_line != line) {
         free(new_line);
     }
 
@@ -2723,16 +2734,14 @@ int execute_lines(char **lines, int line_end, char **result) {
         else {
             res = execute_line(lines[i]);
 
-            if (res != NULL) {
-                if (res[0] != '\0') {
-                    puts(res);
-                }
-                free(res);
-                res = NULL;
-            } else {
+            if (res == ERROR_CODE) {
                 if (STOP_ON_ERROR)
                     return -1;
-                res = ERROR_CODE;
+            } else if (res) {
+                if (res[0] != '\0')
+                    puts(res);
+                free(res);
+                res = NULL;
             }
         }
 
@@ -4054,7 +4063,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
  *                 *
 ********************/
 
-char init_prog[] = ""
+char init_prog[] =
 "IF !profan;"
 " exec '/zada/olivine/init.olv';"
 "END";

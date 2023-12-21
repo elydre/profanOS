@@ -223,3 +223,31 @@ END
 deepeval
 
 delfunc deepeval
+
+FUNC temp
+    echo test
+    RETURN 42
+END
+
+FUNC pp_tester
+    IF !(eval !(print coucou |) ~ coucou)
+        echo pipe failed (print)
+        RETURN
+    END; IF !(eval !(echo coucou |) ~ coucou)
+        echo pipe failed (echo)
+        RETURN
+    END; IF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
+        echo pipe failed (print + wc)
+        RETURN
+    END; IF !(eval !(temp | temp |) ~ test)
+        echo pipe failed (function)
+        RETURN
+    END
+
+    echo pipe tests passed
+END
+
+pp_tester
+
+delfunc pp_tester
+delfunc temp
