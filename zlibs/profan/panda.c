@@ -96,25 +96,15 @@ void free_font(font_data_t *pff) {
     free(pff);
 }
 
-uint32_t compute_color(char color) {
-    switch (color) {
-        case 0x0: return 0x000000;
-        case 0x1: return 0x0000AA;
-        case 0x2: return 0x00AA00;
-        case 0x3: return 0x00AAAA;
-        case 0x4: return 0xAA0000;
-        case 0x5: return 0xAA00AA;
-        case 0x6: return 0xAA5500;
-        case 0x7: return 0xAAAAAA;
-        case 0x8: return 0x555555;
-        case 0x9: return 0x5555FF;
-        case 0xA: return 0x55FF55;
-        case 0xB: return 0x55FFFF;
-        case 0xC: return 0xFF5555;
-        case 0xD: return 0xFF55FF;
-        case 0xE: return 0xFFFF55;
-        default:  return 0xFFFFFF;
-    }
+uint32_t compute_color(uint8_t color) {
+    uint32_t rgb[] = {
+        0x000000, 0x0000AA, 0x00AA00, 0x00AAAA,
+        0xAA0000, 0xAA00AA, 0xAA5500, 0xAAAAAA,
+        0x555555, 0x5555FF, 0x55FF55, 0x55FFFF,
+        0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF
+    };
+    if (color > 0xF) return 0xFFFFFF;
+    return rgb[(int) color];
 }
 
 char compute_ansi_color(char ansi_nb, int part, char old_color) {
