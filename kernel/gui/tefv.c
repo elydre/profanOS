@@ -52,7 +52,7 @@ void tef_set_char(int x, int y, char c, char color) {
         screen_buffer[y * MAX_COLS + x].content = c;
         screen_buffer[y * MAX_COLS + x].color = color;
     }
-    uint32_t bg_color = compute_color(color >> 4);
+    uint32_t bg_color = compute_color(color >> 4 & 0xF);
     uint32_t fg_color = compute_color(color & 0xF);
     int i, j;
     for (i = 0; i < FONT_WIDTH; i++) {
