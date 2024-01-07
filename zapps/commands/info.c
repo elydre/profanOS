@@ -66,7 +66,7 @@ int main(void) {
 
     pl_and_pf("\033[95mRTC time:   \033[96m%02d\033[0m:\033[96m%02d\033[0m:\033[96m%02d %02d\033[0m/\033[96m%02d\033[0m/\033[96m%02d\n",
         time.tm_hour, time.tm_min, time.tm_sec,
-        time.tm_mday, time.tm_mon + 1, time.tm_year + 2000
+        time.tm_mday, time.tm_mon, time.tm_year + 2000
     );
     print_fs_info();
 
