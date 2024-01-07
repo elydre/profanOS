@@ -4,8 +4,6 @@
 
 /*********************************************************/
 
-struct __pci_driver;
-
 typedef struct {
     uint32_t vendor;
     uint32_t device;
