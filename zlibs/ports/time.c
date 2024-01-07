@@ -121,7 +121,7 @@ time_t mktime(tm_t *time) {
     unix_time += (time->tm_mday - 1) * seconde_in_day;
 
     // Add months
-    unix_time += seconde_in_month[time->tm_mon];
+    unix_time += seconde_in_month[time->tm_mon - 1];
 
     // Add years
     for (int i = start_year; i < time->tm_year + century; i++) {
