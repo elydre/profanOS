@@ -156,7 +156,7 @@ struct random_data {
     int32_t *end_ptr;   /* Pointer behind state table.  */
 };
 
-typedef void *locale_t; // PLACEHOLDER, //TODO : implement locale_t
+typedef void *locale_t; // TODO : implement locale_t
 
 typedef unsigned char __string_uchar_t;
 typedef int            errno_t;
@@ -171,7 +171,7 @@ typedef struct FILE {
     char *buffer;
     int   buffer_size;
 
-    int   file_pos;
+    uint32_t file_pos;
     int   type;
     sid_t sid;
 } FILE;

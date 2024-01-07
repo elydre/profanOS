@@ -16,6 +16,7 @@
 #define FILE_TYPE_OTHER 1
 
 #define FILE_BUFFER_SIZE 0x1000
+#define FILE_BUFFER_READ 100
 
 #define MODE_READ   1 << 0
 #define MODE_WRITE  1 << 1
@@ -238,6 +239,7 @@ int fflush(FILE *stream) {
 
     // check if the file is open for writing, else return 0
     if (!(stream->mode & MODE_WRITE)) return 0;
+    if (stream->buffer_size <= 0) return 0;
 
     uint32_t buffer_size = stream->buffer_size;
     stream->buffer_size = 0;
@@ -288,30 +290,79 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     fflush(stream);
 
+    int read, rfrom_buffer = 0;
+
+    if (stream->type == FILE_TYPE_OTHER) {
+        // read the file
+        read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+        if (read < 0) return 0;
+
+        // increment the file position
+        stream->file_pos += read;
+
+        // return the number of elements read
+        return read / size;
+    }
+  
+    uint32_t file_size = fu_get_file_size(stream->sid);
+
     // check if the file is at the end
-    if (stream->type == FILE_TYPE_FILE) {
-        int file_size = fu_get_file_size(stream->sid);
-
-        // check if the file is at the end
-        if (stream->file_pos >= file_size) {
-            return 0;
-        }
-
-        // check if the file is at the end
-        if (stream->file_pos + (int) count >= file_size) {
-            count = file_size - stream->file_pos;
-        }
+    if (stream->file_pos >= file_size) {
+        return 0;
     }
 
-    // read the file
-    int read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+    // check if the file is at the end
+    if (stream->file_pos + (int) count >= file_size) {
+        count = file_size - stream->file_pos;
+    }
+
+    // read the file from the buffer if possible
+    if (stream->buffer_size < 0) {
+        if ((uint32_t) -stream->buffer_size > count) {
+            memcpy(buffer, stream->buffer, count);
+            stream->buffer_size += count;
+            stream->file_pos += count;
+            
+            // move the buffer
+            memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
+            return count / size;
+        }
+
+        memcpy(buffer, stream->buffer, -stream->buffer_size);
+        stream->buffer_size = 0;
+        stream->file_pos += -stream->buffer_size;
+
+        buffer += -stream->buffer_size;
+        count -= -stream->buffer_size;
+
+        rfrom_buffer = -stream->buffer_size;
+    }
+
+    // read the file from the filesystem
+    if (count >= FILE_BUFFER_READ || stream->file_pos + count == file_size) {
+        read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+        if (read < 0) read = 0;
+
+        // increment the file position
+        stream->file_pos += read;
+
+        // return the number of elements read
+        return (count + rfrom_buffer) / size;
+    }
+
+    read = devio_file_read(stream->sid, stream->buffer, stream->file_pos, FILE_BUFFER_READ);
     if (read < 0) read = 0;
+    if ((uint32_t) read < count) count = read;
+
+    memcpy(buffer, stream->buffer, count);
+    stream->buffer_size = -read + count;
+    memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
 
     // increment the file position
-    stream->file_pos += read;
+    stream->file_pos += count;
 
     // return the number of elements read
-    return read / size;
+    return (count + rfrom_buffer) / size;
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
@@ -330,6 +381,11 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 
     // check if the file is open for writing, else return 0
     if (!(stream->mode & MODE_WRITE)) return 0;
+
+    // if buffer is used for reading
+    if (stream->buffer_size < 0) {
+        stream->buffer_size = 0;
+    }
 
     // write in the buffer
     uint32_t ret = count;
@@ -386,16 +442,13 @@ int fseek(FILE *stream, long offset, int whence) {
 }
 
 int fgetc(FILE *stream) {
-    puts("fgetc not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    int c;
+    return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
 int getc(FILE *stream) {
     int c;
-    if (fread(&c, 1, 1, stream) == 0) {
-        return EOF;
-    }
-    return c;
+    return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
 char *fgets(char *str, int count, FILE *stream) {
@@ -689,11 +742,8 @@ int feof(FILE *stream) {
         return 0;
     }
 
-    // get the file size
-    int file_size = fu_get_file_size(stream->sid);
-
     // check if the file is at the end
-    return (stream->file_pos >= file_size);
+    return (stream->file_pos >= fu_get_file_size(stream->sid));
 }
 
 int ferror(FILE *stream) {
