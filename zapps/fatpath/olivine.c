@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 5"
+#define OLV_VERSION "0.9 rev 6"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -4071,15 +4071,16 @@ char init_prog[] =
 
 int main(int argc, char **argv) {
     olivine_args_t *args = parse_args(argc, argv);
+    int ret_val = 0;
 
     if (args == NULL) {
         return 1;
     }
 
     if (args->help) {
-        int ret = show_help(args->help == 2, argv[0]);
+        ret_val = show_help(args->help == 2, argv[0]);
         free(args);
-        return ret;
+        return ret_val;
     }
 
     if (args->version) {
@@ -4129,6 +4130,8 @@ int main(int argc, char **argv) {
         start_shell();
     }
 
+    ret_val = atoi(g_exit_code);
+
     free_functions();
     free_pseudos();
     free_vars();
@@ -4138,5 +4141,5 @@ int main(int argc, char **argv) {
     free(g_prompt);
     free(args);
 
-    return 0;
+    return ret_val;
 }
