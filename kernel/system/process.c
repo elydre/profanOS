@@ -151,7 +151,7 @@ void i_clean_killed(void) {
                 need_clean = 1;
                 continue;
             }
-            if (!plist[i].use_parent_dir) 
+            if (!plist[i].use_parent_dir)
                 scuba_directory_destroy(plist[i].scuba_dir);
             free((void *) plist[i].esp_addr);
             plist[i].state = PROCESS_DEAD;

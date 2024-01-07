@@ -29,7 +29,7 @@ direct_return_t last_return;
 
 int force_exit_pid(int pid, int ret_code) {
     int ppid, pstate;
-    
+
     if (pid == 0 || pid == 1) {
         return 1;
     }

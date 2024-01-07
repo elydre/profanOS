@@ -28,7 +28,7 @@ You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
 sudo apt-get update
 
 sudo apt-get install -y make python3 gcc g++ nasm mtools \
-        qemu-system-i386 grub-common xorriso grub-pc-bin 
+        qemu-system-i386 grub-common xorriso grub-pc-bin
 ```
 
 ### Compile & Run

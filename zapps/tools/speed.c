@@ -10,7 +10,7 @@ int check_args(int argc, char **argv) {
     } else if (argc == 2 && strcmp(argv[1], "1") == 0) {
         return 1;
     }
-    
+
     puts("Usage: speed [0|1]\n"
         "  0: keep sheduler enabled during the loop\n"
         "  1: disable sheduler during the loop\n\n"

@@ -4096,7 +4096,7 @@ int main(int argc, char **argv) {
 
     g_exit_code = malloc(5 * sizeof(char));
     strcpy(g_exit_code, "0");
-    
+
     g_prompt = malloc((PROMPT_SIZE + 1) * sizeof(char));
     strcpy(g_prompt, DEFAULT_PROMPT);
 

@@ -153,7 +153,7 @@ def show_help():
 
     for addon in ADDONS:
         msg += [f"  {addon}: {ADDONS[addon]['description']}"]
-    
+
     msg += ["WEIGHTY ADDONS:"]
     for addon in WADDONS:
         msg += [f"  {addon}: {WADDONS[addon]['description']}"]
