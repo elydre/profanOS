@@ -1711,10 +1711,9 @@ float powf(float x, float y) {
 
         if (0 == absux) {
             //if y is an odd integer
-            if( 0 == fractionalBits && 0 != onesBit ) {
+            if (0 == fractionalBits && 0 != onesBit) {
                 if (y < 0.0f)
                     return 1.0f / x;
-
                 return x;
             }
 
@@ -1731,13 +1730,13 @@ float powf(float x, float y) {
                 return 1.0f;
 
             if (absux > 0x3f800000) {    // |x| > 1.0f
-                if( 0.0f < y )
+                if (0.0f < y)
                     return y;
                 else
                     return 0.0f;
             }
             else {      // |x| < 1.0f
-                if( 0.0f < y )
+                if (0.0f < y)
                     return 0.0f;
                 else
                     return __builtin_fabsf(y);
@@ -1746,7 +1745,7 @@ float powf(float x, float y) {
 
         // we can also deal with x == +inf at this point.
         if (x == __builtin_inff()) {
-            if( y < 0.0f )
+            if (y < 0.0f)
                 return 0.0f;
             else
                 return x;
@@ -1761,7 +1760,7 @@ float powf(float x, float y) {
 
         // At this point, we know that x is in { +-0, -Inf } and y is finite non-zero.
         // Deal with y is odd integer cases
-        if (0 == fractionalBits && 0 != onesBit)    // if( |y| >= 1.0f || |y| < 0x1.0p24f )
+        if (0 == fractionalBits && 0 != onesBit)    // if (|y| >= 1.0f || |y| < 0x1.0p24f)
             return 0.0f < y ? x : -0.0f;
 
         // x == -inf
@@ -1855,26 +1854,25 @@ float powf(float x, float y) {
     double z = 1.0;
 
     // don't set inexact if we don't need to
-    if( 0.0 != f ) {
+    if (0.0 != f) {
         double ff = f * f;
-        double s7 = c7overc8 * f;            double s3 = c3 * f;
-        double s5 = c5overc8 * f;            double s1 = c1 * f;
+        double s7 = c7overc8 * f;           double s3 = c3 * f;
+        double s5 = c5overc8 * f;           double s1 = c1 * f;
         double ffff = ff * ff;
-        s7 += c6overc8;                        s3 += c2;
-        s5 += c4overc8;                        s1 += c0;
-        s7 *= ff;                            s3 *= ff;
+        s7 += c6overc8;                     s3 += c2;
+        s5 += c4overc8;                     s1 += c0;
+        s7 *= ff;                           s3 *= ff;
         s5 += ffff;
         double c8ffff = ffff * c8;
-        s7 += s5;                            s3 += s1;
+        s7 += s5;                           s3 += s1;
         s7 *= c8ffff;
         z = s3 + s7;
     }
 
-
     // prepare 2**i
     union { uint64_t u; double d; } two_exp = { ((uint64_t) exp + 1023) << 52 };
 
-    return (float) (z * two_exp.d );
+    return (float) (z * two_exp.d);
 
     // one last edge case -- pow(x, y) returns NaN and raises invalid for x < 0 and finite non-integer y
     // and one special case --    call sqrt for |y| == 0.5
@@ -2572,7 +2570,7 @@ float tgammaf(float x) {
  *
  * long double x, y, tgammal();
  *
- * y = tgammal( x );
+ * y = tgammal(x);
  *
  *
  * DESCRIPTION:
@@ -2747,8 +2745,8 @@ int __rem_pio2f(float x, double *y)
  *
  * The method is to compute the integer (mod 8) and fraction parts of
  * (2/pi)*x without doing the full multiplication. In general we
- * skip the part of the product that are known to be a huge integer (
- * more accurately, = 0 mod 8 ). Thus the number of operations are
+ * skip the part of the product that are known to be a huge integer
+ * (more accurately, = 0 mod 8). Thus the number of operations are
  * independent of the exponent of the input.
  *
  * (2/pi) is represented by an array of 24-bit integers in ipio2[].
@@ -2816,7 +2814,7 @@ int __rem_pio2f(float x, double *y)
  *
  *      jv      index for pointing to the suitable ipio2[] for the
  *              computation. In general, we want
- *                      ( 2^e0*x[0] * ipio2[jv-1]*2^(-24jv) )/8
+ *                      (2^e0*x[0] * ipio2[jv-1]*2^(-24jv)) / 8
  *              is an integer. Thus
  *                      e0-3-24*jv >= 0 or (e0-3)/24 >= jv
  *              Hence jv = max(0,(e0-3)/24).
@@ -3183,7 +3181,7 @@ static double S(double x)
  * is preserved.
  * ====================================================
  */
-/* __sin( x, y, iy)
+/* __sin(x, y, iy)
  * kernel sin function on ~[-pi/4, pi/4] (except on -0), pi/4 ~ 0.7854
  * Input x is assumed to be bounded by ~pi/4 in magnitude.
  * Input y is the tail of x.
@@ -3201,7 +3199,7 @@ static double S(double x)
  *         where
  *
  *      |sin(x)         2     4     6     8     10     12  |     -58
- *      |----- - (1+S1*x +S2*x +S3*x +S4*x +S5*x  +S6*x   )| <= 2
+ *      |----- - (1+S1*x +S2*x +S3*x +S4*x +S5*x  +S6*x)   | <= 2
  *      |  x                                               |
  *
  *      4. sin(x+y) = sin(x) + sin'(x')*y
@@ -3238,7 +3236,7 @@ double __sin(double x, double y, int iy)
  * ====================================================
  */
 /*
- * __cos( x,  y )
+ * __cos(x, y)
  * kernel cos function on [-pi/4, pi/4], pi/4 ~ 0.785398164
  * Input x is assumed to be bounded by ~pi/4 in magnitude.
  * Input y is the tail of x.
@@ -3253,7 +3251,7 @@ double __sin(double x, double y, int iy)
  *         where the remez error is
  *
  *      |              2     4     6     8     10    12     14 |     -58
- *      |cos(x)-(1-.5*x +C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  )| <= 2
+ *      |cos(x)-(1-.5*x +C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x)  | <= 2
  *      |                                                      |
  *
  *                     4     6     8     10    12     14

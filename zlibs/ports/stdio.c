@@ -496,7 +496,7 @@ int getchar(void) {
     return getc(stdin);
 }
 
-char *gets_s(char *str, rsize_t n ) {
+char *gets_s(char *str, rsize_t n) {
     puts("gets_s not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }

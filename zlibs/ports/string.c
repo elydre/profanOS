@@ -241,7 +241,7 @@ void *rawmemchr(const void *s, int c) {
 }
 
 char *stpcpy(register char *restrict s1, const char *restrict s2) {
-    while ( (*s1++ = *s2++) != 0 );
+    while ((*s1++ = *s2++) != 0);
 
     return s1 - 1;
 }
@@ -480,8 +480,8 @@ char *strpbrk(const char *s1, const char *s2) {
     register const char *s;
     register const char *p;
 
-    for ( s=s1 ; *s ; s++ ) {
-        for ( p=s2 ; *p ; p++ ) {
+    for (s=s1 ; *s ; s++) {
+        for (p=s2 ; *p ; p++) {
             if (*p == *s) return (char *) s; /* silence the warning */
         }
     }
