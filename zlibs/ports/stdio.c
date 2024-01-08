@@ -39,42 +39,27 @@ int main(void) {
 }
 
 void init_func(void) {
-    FILE *dup = malloc(sizeof(FILE) * 3);
+    FILE *dup = calloc(3, sizeof(FILE));
 
     // init stdin
     dup[0].filename = "/dev/stdin";
     dup[0].mode = MODE_READ;
-
-    dup[0].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[0].buffer_size = 0;
-
+    dup[0].buffer = NULL;
     dup[0].type = FILE_TYPE_OTHER;
-    dup[0].buffer_size = 0;
-    dup[0].file_pos = 0;
     dup[0].sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
 
     // init stdout
     dup[1].filename = "/dev/stdout";
     dup[1].mode = MODE_WRITE;
-
     dup[1].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[1].buffer_size = 0;
-
     dup[1].type = FILE_TYPE_OTHER;
-    dup[1].buffer_size = 0;
-    dup[1].file_pos = 0;
     dup[1].sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
 
     // init stderr
     dup[2].filename = "/dev/stderr";
     dup[2].mode = MODE_WRITE;
-
     dup[2].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[2].buffer_size = 0;
-
     dup[2].type = FILE_TYPE_OTHER;
-    dup[2].buffer_size = 0;
-    dup[2].file_pos = 0;
     dup[2].sid = fu_path_to_sid(ROOT_SID, "/dev/stderr");
 
     STD_STREAM = dup;
@@ -170,6 +155,7 @@ FILE *fopen(const char *filename, const char *mode) {
     // set the buffer
     file->buffer = malloc(FILE_BUFFER_SIZE);
     file->buffer_size = 0;
+    file->buffer_pid = -1;
 
     // if the file is open for appending, set the file pos to the end of the file
     if (interpeted_mode & MODE_APPEND)
@@ -247,7 +233,9 @@ int fflush(FILE *stream) {
     stream->buffer[buffer_size] = 0;
 
     // write the file
-    int written = devio_file_write(stream->sid, stream->buffer, stream->file_pos, buffer_size);
+    int written = devio_file_rw_from(stream->sid, stream->buffer, stream->file_pos,
+                        buffer_size, 1, stream->buffer_pid);
+
     if (written < 0) written = 0;
 
     // increment the file position
@@ -366,6 +354,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
+    int pid;
+
     // return if total size is 0
     count *= size;
     if (count == 0) return 0;
@@ -385,6 +375,13 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     // if buffer is used for reading
     if (stream->buffer_size < 0) {
         stream->buffer_size = 0;
+    }
+
+    if (stream->buffer_pid != -1 && stream->buffer_pid != (pid = c_process_get_pid())) {
+        if (stream->buffer_size > 0) {
+            fflush(stream);
+        }
+        stream->buffer_pid = pid;
     }
 
     // write in the buffer
