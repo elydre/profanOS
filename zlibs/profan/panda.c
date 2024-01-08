@@ -236,6 +236,13 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
         return 3;
     }
 
+    // set top left
+    if (str[0] == 'H') {
+        g_panda->cursor_x = 0;
+        g_panda->cursor_y = 0;
+        return 2;
+    }
+
     // number
     char *tmp = str;
     while (*tmp >= '0' && *tmp <= '9') tmp++;
