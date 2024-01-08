@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 6"
+#define OLV_VERSION "0.9 rev 7"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1371,15 +1371,15 @@ char *if_go_binfile(char **input) {
     }
 
     if (argc < 1) {
-        raise_error("go", "Usage: go <file> [args] [&]");
+        raise_error("go", "Usage: go <file> [args] [&] [> <stdout>]");
         return ERROR_CODE;
     }
 
     // get file name
     char *file_path = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
     assemble_path(g_current_directory, input[0], file_path);
-    // check if file exists
 
+    // check if file exists
     sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
 
     if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
@@ -1394,6 +1394,45 @@ char *if_go_binfile(char **input) {
         argc--;
     };
 
+    char *stdout_path = NULL;
+    sid_t sid;
+
+    if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
+        stdout_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
+        assemble_path(g_current_directory, input[argc - 1], stdout_path);
+        argc -= 2;
+    }
+
+    if (strcmp(input[argc - 1], "&") == 0) {
+        wait_end = 0;
+        argc--;
+    }
+
+    if (argc < 1) {
+        raise_error("go", "No given executable path");
+        free(stdout_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+
+    if (stdout_path) {
+        sid = fu_path_to_sid(ROOT_SID, stdout_path);
+        if (IS_NULL_SID(sid)) {
+            if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
+                free(stdout_path);
+                free(file_path);
+                return ERROR_CODE;
+            }
+        }
+        else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
+            raise_error("go", "Cannot redirect stdout to '%s'", stdout_path);
+            free(stdout_path);
+            free(file_path);
+            return ERROR_CODE;
+        }
+    }
+
+    // get args
     char *file_name = strdup(input[0]);
     // remove the extension
     char *dot = strrchr(file_name, '.');
@@ -1409,10 +1448,23 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
+    if (stdout_path) {
+        sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+        devio_set_redirection(sid, stdout_path, -1);
+    }
+
     int pid;
     local_itoa(c_run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, wait_end}, &pid
     ), g_exit_code);
+
+    if (stdout_path) {
+        if (c_process_get_state(pid) < 4) {
+            devio_set_redirection(sid, stdout_path, pid);
+        }
+        devio_set_redirection(sid, getenv("TERM"), -1);
+        free(stdout_path);
+    }
 
     if (pid == -1) {
         raise_error("go", "Cannot execute file '%s'", file_path);
