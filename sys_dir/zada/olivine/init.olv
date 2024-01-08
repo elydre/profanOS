@@ -28,14 +28,14 @@ FUNC tree
         set 0 .
     END
 
-    echo !0
+    print !0'\n'
 
     FOR d !(find -d !0)
         tree !d
     END
 
     FOR f !(find -f !0)
-        echo !f
+        print !f'\n'
     END
 END
 
