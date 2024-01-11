@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 7"
+#define OLV_VERSION "0.9 rev 8"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1588,16 +1588,16 @@ char *if_range(char **input) {
 
     if (argc == 1) {
         start = 0;
-		nb_len = strlen(input[0]);
+        nb_len = strlen(input[0]);
         end = atoi(input[0]);
     } else {
         start = atoi(input[0]);
         end = atoi(input[1]);
-		if (strlen(input[0]) > strlen(input[1])) {
-			nb_len = strlen(input[0]);
-		} else {
-			nb_len = strlen(input[1]);
-		}
+        if (strlen(input[0]) > strlen(input[1])) {
+            nb_len = strlen(input[0]);
+        } else {
+            nb_len = strlen(input[1]);
+        }
     }
 
     if (start > end) {
@@ -3617,13 +3617,6 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         }
     }
 
-    // functions
-    for (int j = 0; functions[j].name != NULL; j++) {
-        if (strncmp(tmp, functions[j].name, i - dec) == 0) {
-            suggest = add_to_suggest(other, suggest, functions[j].name);
-        }
-    }
-
     // pseudos
     for (int j = 0; pseudos[j].name != NULL; j++) {
         if (strncmp(tmp, pseudos[j].name, i - dec) == 0) {
@@ -3635,6 +3628,13 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     for (int j = 0; internal_functions[j].name != NULL; j++) {
         if (strncmp(tmp, internal_functions[j].name, i - dec) == 0) {
             suggest = add_to_suggest(other, suggest, internal_functions[j].name);
+        }
+    }
+
+    // functions
+    for (int j = 0; functions[j].name != NULL; j++) {
+        if (strncmp(tmp, functions[j].name, i - dec) == 0) {
+            suggest = add_to_suggest(other, suggest, functions[j].name);
         }
     }
 
@@ -3888,16 +3888,14 @@ void display_prompt(void) {
                 fputs(g_current_directory, stdout);
                 break;
             case '(':
-                if (g_exit_code[0] == '0') {
-                    for (; g_prompt[i] != ')'; i++);
-                    i--;
-                }
+                if (g_exit_code[0] != '0') break;
+                for (; g_prompt[i] != ')'; i++);
+                i--;
                 break;
             case '{':
-                if (g_exit_code[0] != '0') {
-                    for (; g_prompt[i] != '}'; i++);
-                    i--;
-                }
+                if (g_exit_code[0] == '0') break;
+                for (; g_prompt[i] != '}'; i++);
+                i--;
                 break;
             case ')':
                 break;
