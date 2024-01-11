@@ -291,7 +291,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         // return the number of elements read
         return read / size;
     }
-  
+
     uint32_t file_size = fu_get_file_size(stream->sid);
 
     // check if the file is at the end
@@ -310,7 +310,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
             memcpy(buffer, stream->buffer, count);
             stream->buffer_size += count;
             stream->file_pos += count;
-            
+
             // move the buffer
             memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
             return count / size;
