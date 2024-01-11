@@ -375,11 +375,11 @@ void del_variable_level(int level) {
     }
 }
 
-/*****************************
- *                          *
- * pseudo Get/Set Functions  *
- *                          *
-*****************************/
+/*******************************
+ *                            *
+ *  pseudo Get/Set Functions  *
+ *                            *
+*******************************/
 
 char *get_pseudo(char *name) {
     for (int i = 0; i < MAX_PSEUDOS; i++) {
