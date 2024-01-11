@@ -395,8 +395,9 @@ int setuid(uid_t a) {
     return 0;
 }
 
-unsigned sleep(unsigned a) {
-    c_process_sleep(c_process_get_pid(), a * 1000);
+unsigned sleep(unsigned seconds) {
+    if (seconds == 0) return 0;
+    c_process_sleep(c_process_get_pid(), seconds * 1000);
     return 0;
 }
 
@@ -453,8 +454,9 @@ int unlink(const char *a) {
     return 0;
 }
 
-int usleep(useconds_t a) {
-    c_process_sleep(c_process_get_pid(), a / 1000);
+int usleep(useconds_t usec) {
+    if (usec == 0) return 0;
+    c_process_sleep(c_process_get_pid(), usec / 1000);
     return 0;
 }
 
