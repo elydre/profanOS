@@ -25,7 +25,7 @@ typedef struct {
     scuba_directory_t *scuba_dir;
 
     uint32_t pid, ppid, use_parent_dir;
-	uint32_t priority, run_time;
+    uint32_t priority, run_time;
     uint32_t esp_addr, sleep_to, state;
 
     char name[64];
