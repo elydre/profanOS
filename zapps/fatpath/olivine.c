@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.9 rev 8"
+#define OLV_VERSION "0.10 rev 1"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -414,6 +414,26 @@ int set_pseudo(char *name, char *value) {
         }
     }
     raise_error(NULL, "Cannot set value of '%s', more than %d pseudos", name, MAX_PSEUDOS);
+    return 1;
+}
+
+int del_pseudo(char *name) {
+    for (int i = 0; i < MAX_PSEUDOS; i++) {
+        if (pseudos[i].name == NULL) {
+            break;
+        }
+        if (strcmp(pseudos[i].name, name) == 0) {
+            free(pseudos[i].value);
+            free(pseudos[i].name);
+
+            // shift all pseudos down
+            for (int j = i; j < MAX_PSEUDOS - 1; j++) {
+                pseudos[j] = pseudos[j + 1];
+            }
+            return 0;
+        }
+    }
+    raise_error(NULL, "Pseudo '%s' does not exist", name);
     return 1;
 }
 
@@ -1562,9 +1582,45 @@ char *if_pseudo(char **input) {
     // get value
     char *value = input[1];
 
-    // set pseudo
-    set_pseudo(name, value);
+    if (strcmp(name, value) == 0) {
+        raise_error("pseudo", "Cannot set pseudo '%s' to itself", name);
+        return ERROR_CODE;
+    }
 
+    // set pseudo
+    if (set_pseudo(name, value)) {
+        return ERROR_CODE;
+    }
+
+    // check for infinite loop
+    char **history = calloc(MAX_PSEUDOS, sizeof(char *));
+    int history_len = 0, rec_found = 0;
+
+    while ((value = get_pseudo(value)) != NULL) {
+        for (int i = 0; i < history_len; i++) {
+            if (strcmp(history[i], value) == 0) {
+                rec_found = 1;
+                break;
+            }
+        }
+        if (rec_found) break;
+        history[history_len++] = value;
+    }
+    history_len--;
+
+    if (rec_found) {
+        raise_error("pseudo", "Setting pseudo '%s' would create a infinite loop", name);
+        fprintf(stderr, "Detailed chain: [%s -> %s -> ", name, history[history_len]);
+        for (int i = 0; i < history_len; i++) {
+            fprintf(stderr, "%s%s", history[i], i == history_len - 1 ? "]\n" : " -> ");
+        }
+
+        free(history);
+        del_pseudo(name);
+        return ERROR_CODE;
+    }
+
+    free(history);
     return NULL;
 }
 
@@ -2217,15 +2273,21 @@ char *execute_function(function_t *function, char **args) {
 
     g_current_level++;
 
-    int argc = 0;
+    int argc;
     char tmp[4];
     for (argc = 0; args[argc] != NULL; argc++) {
         local_itoa(argc, tmp);
-        set_variable(tmp, args[argc]);
+        if (!set_variable(tmp, args[argc]))
+            continue;
+        g_current_level--;
+        return ERROR_CODE;
     }
 
     local_itoa(argc, tmp);
-    set_variable("#", tmp);
+    if (set_variable("#", tmp)) {
+        g_current_level--;
+        return ERROR_CODE;
+    }
 
     char *result = malloc(sizeof(char));
     int ret = execute_lines(function->lines, function->line_count, &result);
