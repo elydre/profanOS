@@ -177,6 +177,11 @@ int compute_ansi_escape(char *str, char *color) {
         clear_screen();
         return 3;
     }
+    // set top left
+    if (str[0] == 'H') {
+        set_cursor_offset(0);
+        return 2;
+    }
 
     // number
     char *tmp = str;

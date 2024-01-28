@@ -22,28 +22,6 @@ int size_x, size_y;
  *                                    *
 ***************************************/
 
-char *interrupts[] = {
-    "Division by zero",
-    "Debug",
-    "Non-maskable interrupt",
-    "Breakpoint",
-    "Overflow",
-    "Out of bounds",
-    "Invalid opcode",
-    "No coprocessor",
-    "Double fault",
-    "Coprocessor segment overrun",
-    "Bad TSS",
-    "Segment not present",
-    "Stack fault",
-    "General protection fault",
-    "Page fault",
-    "Unknown interrupt",
-    "Coprocessor fault",
-    "Alignment check",
-    "Machine check",
-};
-
 char *angel1 =
 "\0\0"
 "    ___    \0"
@@ -217,7 +195,7 @@ void sod_fatal(char *file_name, int line, char *msg, ...) {
     asm volatile("hlt");
 }
 
-void sod_interrupt(int code, int err_code) {
+void sod_interrupt(int code, int err_code, char *msg) {
     asm volatile("cli");
     size_x = gt_get_max_cols();
     size_y = gt_get_max_rows();
@@ -237,7 +215,7 @@ void sod_interrupt(int code, int err_code) {
 
     sod_print_at(6, 11, "-> ", 0xD0);
     if (code < 19)
-        sod_print_at(9, 11, interrupts[code], 0xD0);
+        sod_print_at(9, 11, msg, 0xD0);
     else
         sod_print_at(9, 11, "Unknown interrupt", 0xD0);
 

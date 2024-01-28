@@ -9,6 +9,34 @@
 
 /********************************
  *                             *
+ *  CPU interrupt information  *
+ *                             *
+********************************/
+
+char *interrupts[] = {
+    "Division by zero",
+    "Debug",
+    "Non-maskable interrupt",
+    "Breakpoint",
+    "Overflow",
+    "Out of bounds",
+    "Invalid opcode",
+    "No coprocessor",
+    "Double fault",
+    "Coprocessor segment overrun",
+    "Bad TSS",
+    "Segment not present",
+    "Stack fault",
+    "General protection fault",
+    "Page fault",
+    "Unknown interrupt",
+    "Coprocessor fault",
+    "Alignment check",
+    "Machine check",
+};
+
+/********************************
+ *                             *
  *  error reporting functions  *
  *                             *
 ********************************/
@@ -91,7 +119,7 @@ void sys_error(char *msg, ...) {
     }
 }
 
-void sod_interrupt(int code, int err_code);
+void sod_interrupt(int code, int err_code, char *msg);
 void sys_interrupt(int code, int err_code) {
     kprintf_serial("received interrupt %d from cpu\n", code);
 
@@ -101,7 +129,12 @@ void sys_interrupt(int code, int err_code) {
         return;
     }
 
-    sod_interrupt(code, err_code);
+    if (process_get_pid() == 0) {
+        sod_interrupt(code, err_code, interrupts[code]);
+        return;
+    }
+
+    sys_error("CPU raised interrupt %d (%s)", code, interrupts[code]);
 }
 
 /********************************
