@@ -25,10 +25,10 @@ You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
 ### Install dependencies
 
 ```
-sudo apt-get update
+sudo apt update
 
-sudo apt-get install -y make python3 gcc g++ nasm mtools \
-        qemu-system-i386 grub-common xorriso grub-pc-bin
+sudo apt install -y make python3 gcc g++ nasm qemu-system-i386 \
+                    grub-common xorriso grub-pc-bin mtools
 ```
 
 ### Compile & Run
