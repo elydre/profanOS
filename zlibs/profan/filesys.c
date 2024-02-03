@@ -1128,7 +1128,7 @@ void fu_simplify_path(char *path) {
     char *tmp = malloc(strlen(path) + 2);
     strcpy(tmp, path);
     strcat(tmp, "/");
-    
+
     int i;
     for (i = 0; tmp[i]; i++) {
         if (tmp[i] == '/' && tmp[i + 1] == '/') {

@@ -1,6 +1,7 @@
 #ifndef FILESYS_LIB_ID
 #define FILESYS_LIB_ID 1010
 #define DEVIO_LIB_ID   1015
+#define FMOPEN_LIB_ID  1016
 
 #include <type.h>
 
@@ -70,7 +71,6 @@
 #define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 25))
 
 #endif
-
 #ifndef DEVIO_LIB_C
 
 #define devio_file_read(sid, buf, offset, size) (devio_file_rw_from(sid, buf, offset, size, 0, -1))
@@ -78,6 +78,19 @@
 
 #define devio_set_redirection ((int (*)(sid_t, char *, int)) get_func_addr(DEVIO_LIB_ID, 2))
 #define devio_file_rw_from ((int (*)(sid_t, void *, uint32_t, uint32_t, uint8_t, int)) get_func_addr(DEVIO_LIB_ID, 3))
+
+#endif
+#ifndef FMOPEN_LIB_C
+
+#define fm_open ((int (*)(char *)) get_func_addr(FMOPEN_LIB_ID, 2))
+#define fm_reopen ((int (*)(int, char *)) get_func_addr(FMOPEN_LIB_ID, 3))
+#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 4))
+#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
+#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 6))
+#define fm_seek ((int (*)(int, uint32_t, int)) get_func_addr(FMOPEN_LIB_ID, 7))
+#define fm_tell ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
+#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
+#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
 
 #endif
 #endif

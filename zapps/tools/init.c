@@ -24,6 +24,7 @@ lib_t libs_at_boot[] = {
     {1008, "/lib/ports/string.bin"},
     {1010, "/lib/profan/filesys.bin"},
     {1015, "/lib/profan/devio.bin"},
+    {1016, "/lib/profan/fmopen.bin"},
     {1009, "/lib/ports/stdio.bin"},
     {1002, "/lib/profan/profan.bin"},
     {1011, "/lib/ports/math.bin"},
