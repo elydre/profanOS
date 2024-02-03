@@ -1128,47 +1128,38 @@ void fu_simplify_path(char *path) {
     char *tmp = malloc(strlen(path) + 2);
     strcpy(tmp, path);
     strcat(tmp, "/");
-
-    int i = 0;
-    int k = 0;
-
-    while (tmp[i]) {
-        if (tmp[i] == '.' && tmp[i + 1] == '.') {
-            i += 2;
-            for (k -= 2; k >= 0 && path[k] != '/'; k--);
+    
+    int i;
+    for (i = 0; tmp[i]; i++) {
+        if (tmp[i] == '/' && tmp[i + 1] == '/') {
+            memmove(tmp + i, tmp + i + 1, strlen(tmp + i));
+            i--;
             continue;
         }
-        if (tmp[i] == '.' && tmp[i + 1] == '/') {
-            i += 2;
+        if (tmp[i] == '/' && tmp[i + 1] == '.' && tmp[i + 2] == '/') {
+            memmove(tmp + i, tmp + i + 2, strlen(tmp + i));
+            i--;
             continue;
         }
-        path[k] = tmp[i];
-        i++;
-        k++;
-    }
-
-    if (k > 1 && path[k - 1] == '/') {
-        path[k - 1] = '\0';
-    } else {
-        path[k] = '\0';
-    }
-
-    // remove successive slashes
-    i = 1;
-    while (path[i]) {
-        if (path[i] == '/' && path[i - 1] == '/') {
-            for (k = i; path[k]; k++) {
-                path[k] = path[k + 1];
+        if (tmp[i] == '/' && tmp[i + 1] == '.' && tmp[i + 2] == '.' && tmp[i + 3] == '/') {
+            if (i == 0) {
+                memmove(tmp, tmp + 3, strlen(tmp + 2));
+                i = -1;
+                continue;
+            }
+            int j = i - 1;
+            while (j >= 0 && tmp[j] != '/') j--;
+            if (j >= 0) {
+                memmove(tmp + j, tmp + i + 3, strlen(tmp + i));
+                i = j - 1;
             }
             continue;
         }
-        i++;
     }
-
-    if (i > 1 && path[i - 1] == '/' && path[i - 2] != '/') {
-        path[i - 1] = '\0';
+    if (tmp[i - 1] == '/' && i > 1) {
+        tmp[i - 1] = '\0';
     }
-
+    strcpy(path, tmp);
     free(tmp);
 }
 
