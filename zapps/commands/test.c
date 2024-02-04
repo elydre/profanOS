@@ -19,5 +19,7 @@ int main(void) {
 
     printf("Writing (fd 1): %d\n", fm_write(1, "in stdout\n", 10));
 
+    fm_close(fd);
+
     return 0;
 }

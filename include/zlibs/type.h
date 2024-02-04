@@ -174,7 +174,7 @@ typedef struct FILE {
 
     uint32_t file_pos;
     int   type;
-    sid_t sid;
+    int   fd;
 } FILE;
 
 typedef struct fpos_t {

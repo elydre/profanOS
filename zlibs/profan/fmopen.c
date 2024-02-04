@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #define FMOPEN_LIB_C
 
@@ -31,6 +32,8 @@ int stdhist_len;
 int fm_add_stdhist(int fd, int pid);
 int fm_resol012(int fd, int pid);
 int fm_reopen(int fd, char *path);
+
+void debug_print(char *frm, ...);
 
 int main(void) {
     opened = calloc_ask(MAX_OPENED - 3, sizeof(opened_t));
@@ -101,11 +104,13 @@ int fm_reopen(int fd, char *path) {
 }
 
 int fm_close(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED || !opened[fd].type)
+    if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     fd -= 3;
+    if (!opened[fd].type)
+        return -1;
 
     opened[fd].type = 0;
     return 0;
@@ -145,7 +150,7 @@ int fm_write(int fd, void *buf, uint32_t size) {
         fd = fm_resol012(fd, -1);
     fd -= 3;
 
-    printf("fm_write: %d %d\n", fd, opened[fd].type);
+    debug_print("fm_write: %d %d\n", fd, opened[fd].type);
 
     switch (opened[fd].type) {
         case TYPE_FILE:
@@ -164,39 +169,57 @@ int fm_write(int fd, void *buf, uint32_t size) {
     return write_count;
 }
 
-int fm_seek(int fd, uint32_t offset) {
-    if (fd < 0 || fd >= MAX_OPENED || !opened[fd].type)
+int fm_lseek(int fd, int offset, int whence) {
+    if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     fd -= 3;
+    if (!opened[fd].type)
+        return -1;
 
-    opened[fd].offset = offset;
-    return 0;
+    switch (whence) {
+        case SEEK_SET:
+            opened[fd].offset = offset;
+            break;
+        case SEEK_CUR:
+            opened[fd].offset += offset;
+            break;
+        case SEEK_END:
+            opened[fd].offset = c_fs_cnt_get_size(c_fs_get_main(), opened[fd].sid) + offset;
+            break;
+        default:
+            return -1;
+    }
+    return opened[fd].offset;
 }
 
 int fm_tell(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED || !opened[fd].type)
+    if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     fd -= 3;
+    if (fd < 0 || fd >= MAX_OPENED)
+        return -1;
     return opened[fd].offset;
 }
 
 int fm_dup(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED || !opened[fd].type)
+    if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     fd -= 3;
+    if (!opened[fd].type)
+        return -1;
 
     int index;
     for (index = 0; index < MAX_OPENED; index++) {
         if (!opened[index].type) break;
     }
     if (index == MAX_OPENED) {
-        printf("fm_dup: no more file descriptors\n");
+        debug_print("fm_dup: no more file descriptors\n");
         return -1;
     }
 
@@ -205,15 +228,18 @@ int fm_dup(int fd) {
     opened[index].offset = opened[fd].offset;
     if (opened[index].type == TYPE_FCTF)
         opened[index].fctf = opened[fd].fctf;
+    debug_print("fm_dup: %d %d\n", fd, index + 3);
     return index + 3;
 }
 
 int fm_dup2(int fd, int new_fd) {
-    if (fd < 0 || fd >= MAX_OPENED || !opened[fd].type)
+    if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     fd -= 3;
+    if (!opened[fd].type)
+        return -1;
 
     if (new_fd < 0 || new_fd >= MAX_OPENED)
         return -1;
@@ -276,11 +302,10 @@ int fm_add_stdhist(int fd, int pid) {
         }
     }
 
-    printf("fm_add_stdhist (pid: %d, fd: %d): %d (type: %d)\n", pid, fd, res, opened[res - 3].type);
+    debug_print("fm_add_stdhist (pid: %d, fd: %d): %d (type: %d)\n", pid, fd, res, opened[res - 3].type);
 
     return res;
 }
-
 
 int fm_resol012(int fd, int pid) {
     if (fd < 0 || fd >= 3)
@@ -289,26 +314,37 @@ int fm_resol012(int fd, int pid) {
     if (pid < 0)
         pid = c_process_get_pid();
 
+    debug_print("fm_resol012: %d %d\n", fd, pid);
+
     int key = stdhist_len / 2;
-    int old_key = key;
+    int maj = key;
     // use dichotomy to find the right stdhist
     while (1) {
+        debug_print("DDD %d %d\n", key, maj);
         if (stdhist[key].pid == pid) {
-            if (stdhist[key].fd[fd]) {
-                printf("fm_resol012 (pid: %d, fd: %d): %d\n", pid, fd, stdhist[key].fd[fd]);
-                return stdhist[key].fd[fd];
-            }
+            debug_print("fm_resol012 (pid: %d, fd: %d): %d\n", pid, fd, stdhist[key].fd[fd]);
+            return stdhist[key].fd[fd];
         } else if (stdhist[key].pid < pid) {
-            key += key / 2;
-            if (old_key == key)
+            maj = (maj + 1) / 2;
+            if (maj <= 1)
                 return fm_add_stdhist(fd, pid);
-            old_key = key;
+            key += maj;
         } else {
-            key -= key / 2;
-            if (old_key == key)
+            maj = (maj + 1) / 2;
+            if (maj <= 1)
                 return fm_add_stdhist(fd, pid);
-            old_key = key;
+            key -= maj;
         }
     }
     return -1;
+}
+
+void debug_print(char *frm, ...) {
+    va_list args;
+    va_start(args, frm);
+    char *str = malloc(1024);
+    vsprintf(str, frm, args);
+    c_serial_print(SERIAL_PORT_A, str);
+    free(str);
+    va_end(args);
 }

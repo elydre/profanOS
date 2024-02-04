@@ -87,10 +87,12 @@
 #define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 4))
 #define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
 #define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 6))
-#define fm_seek ((int (*)(int, uint32_t, int)) get_func_addr(FMOPEN_LIB_ID, 7))
+#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 7))
 #define fm_tell ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
 #define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
 #define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
+#define fm_debug ((int (*)(void)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_resol012 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 13))
 
 #endif
 #endif

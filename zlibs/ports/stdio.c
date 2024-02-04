@@ -46,21 +46,21 @@ void init_func(void) {
     dup[0].mode = MODE_READ;
     dup[0].buffer = NULL;
     dup[0].type = FILE_TYPE_OTHER;
-    dup[0].sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
+    dup[0].fd = 0;
 
     // init stdout
     dup[1].filename = "/dev/stdout";
     dup[1].mode = MODE_WRITE;
     dup[1].buffer = malloc(FILE_BUFFER_SIZE);
     dup[1].type = FILE_TYPE_OTHER;
-    dup[1].sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+    dup[1].fd = 1;
 
     // init stderr
     dup[2].filename = "/dev/stderr";
     dup[2].mode = MODE_WRITE;
     dup[2].buffer = malloc(FILE_BUFFER_SIZE);
     dup[2].type = FILE_TYPE_OTHER;
-    dup[2].sid = fu_path_to_sid(ROOT_SID, "/dev/stderr");
+    dup[2].fd = 2;
 
     STD_STREAM = dup;
 }
@@ -88,11 +88,7 @@ FILE *fopen(const char *filename, const char *mode) {
         path = strdup(filename);
     }
 
-    // first check if the file exists
-    sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
-
-    int exists = !IS_NULL_SID(file_id);
-
+    // compute the mode
     uint32_t interpeted_mode = 0;
     for (uint32_t i = 0; i < strlen(mode); i++) {
         switch (mode[i]) {
@@ -110,6 +106,10 @@ FILE *fopen(const char *filename, const char *mode) {
                 break;
         }
     }
+
+    // first check if the file exists
+    sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
+    int exists = !IS_NULL_SID(file_id);
 
     // the file doesn't exist but it should
     if (!exists && !(interpeted_mode & MODE_WRITE)) {
@@ -146,7 +146,7 @@ FILE *fopen(const char *filename, const char *mode) {
 
     // copy the filename
     file->filename = path;
-    file->sid = file_id;
+    file->fd = fm_open((char *) path);
 
     // copy the mode
     file->mode = interpeted_mode;
@@ -205,6 +205,9 @@ int fclose(FILE *stream) {
     // fflush the stream
     fflush(stream);
 
+    // close the file
+    fm_close(stream->fd);
+
     // free the stream
     free(stream->filename);
     free(stream->buffer);
@@ -232,9 +235,13 @@ int fflush(FILE *stream) {
 
     stream->buffer[buffer_size] = 0;
 
+    int fd = stream->fd;
+    if (fd < 3)
+        fd = fm_resol012(fd, stream->buffer_pid);
+
     // write the file
-    int written = devio_file_rw_from(stream->sid, stream->buffer, stream->file_pos,
-                        buffer_size, 1, stream->buffer_pid);
+    fm_lseek(fd, stream->file_pos, SEEK_SET);
+    int written = fm_write(fd, stream->buffer, buffer_size);
 
     if (written < 0) written = 0;
 
@@ -282,7 +289,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     if (stream->type == FILE_TYPE_OTHER) {
         // read the file
-        read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+        fm_lseek(stream->fd, stream->file_pos, SEEK_SET);
+        read = fm_read(stream->fd, buffer, count);
         if (read < 0) return 0;
 
         // increment the file position
@@ -292,7 +300,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         return read / size;
     }
 
-    uint32_t file_size = fu_get_file_size(stream->sid);
+    uint32_t file_size = fm_lseek(stream->fd, 0, SEEK_END);
 
     // check if the file is at the end
     if (stream->file_pos >= file_size) {
@@ -328,7 +336,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     // read the file from the filesystem
     if (count >= FILE_BUFFER_READ || stream->file_pos + count == file_size) {
-        read = devio_file_read(stream->sid, buffer, stream->file_pos, count);
+        fm_lseek(stream->fd, stream->file_pos, SEEK_SET);
+        read = fm_read(stream->fd, buffer, count);
         if (read < 0) read = 0;
 
         // increment the file position
@@ -338,7 +347,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         return (count + rfrom_buffer) / size;
     }
 
-    read = devio_file_read(stream->sid, stream->buffer, stream->file_pos, FILE_BUFFER_READ);
+    fm_lseek(stream->fd, stream->file_pos, SEEK_SET);
+    read = fm_read(stream->fd, stream->buffer, FILE_BUFFER_READ);
     if (read < 0) read = 0;
     if ((uint32_t) read < count) count = read;
 
@@ -429,7 +439,7 @@ int fseek(FILE *stream, long offset, int whence) {
             stream->file_pos += offset;
             break;
         case SEEK_END:
-            stream->file_pos = fu_get_file_size(stream->sid) + offset;
+            stream->file_pos = fm_lseek(stream->fd, 0, SEEK_END) + offset;
             break;
         default:
             return 0;
@@ -740,7 +750,7 @@ int feof(FILE *stream) {
     }
 
     // check if the file is at the end
-    return (stream->file_pos >= fu_get_file_size(stream->sid));
+    return (stream->file_pos >= (uint32_t) fm_lseek(stream->fd, 0, SEEK_END));
 }
 
 int ferror(FILE *stream) {

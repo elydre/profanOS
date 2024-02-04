@@ -7,6 +7,10 @@
 #define NULL 0
 #endif
 
+#ifndef SEEK_SET
+#define SEEK_SET 0
+#endif
+
 #ifndef SEEK_CUR
 #define SEEK_CUR 1
 #endif
@@ -15,13 +19,9 @@
 #define SEEK_END 2
 #endif
 
-#ifndef SEEK_SET
-#define SEEK_SET 0
-#endif
-
-#define STDERR_FILENO 2
-#define STDIN_FILENO 0
+#define STDIN_FILENO  0
 #define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 
 extern char  *optarg;
 extern int    optind, opterr, optopt;
