@@ -41,8 +41,8 @@ int main(void) {
     stdhist_len = 0;
 
     fm_reopen(3, "/dev/kb");
-    fm_reopen(4, "/dev/panda");
-    fm_reopen(5, "/dev/panda");
+    fm_reopen(4, "/dev/kterm");
+    fm_reopen(5, "/dev/kterm");
 
     return 0;
 }

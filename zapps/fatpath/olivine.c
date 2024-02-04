@@ -22,6 +22,8 @@
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
 
+#define devio_set_redirection(a, b, c) 0
+
 /******************************
  *                           *
  *  Structs and Definitions  *

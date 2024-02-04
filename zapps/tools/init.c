@@ -61,14 +61,6 @@ int print_load_status(int i) {
     return 0;
 }
 
-int redirect_devio(char *link, char *redirection) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, link);
-    if (IS_NULL_SID(sid)) {
-        return 1;
-    }
-    return (devio_set_redirection(sid, redirection, 0));
-}
-
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
 
@@ -104,16 +96,13 @@ int main(void) {
     panda_set_start(c_get_cursor_offset());
 
     if (c_vesa_does_enable()) {
-        setenv("TERM", "/dev/panda", 1);
         use_panda = 1;
-        if (redirect_devio("/dev/stdout", "/dev/panda")) {
-            c_kprint("Failed to redirect stdout\n");
-            return 1;
-        }
-        if (redirect_devio("/dev/stderr", "/dev/panda")) {
-            c_kprint("Failed to redirect stderr\n");
-            return 1;
-        }
+        if (fm_reopen(1, "/dev/panda") < 0 ||
+            fm_reopen(2, "/dev/panda") < 0 ||
+            fm_reopen(4, "/dev/panda") < 0 ||
+            fm_reopen(5, "/dev/panda") < 0
+        ) c_kprint("Failed to redirect to panda\n");
+        setenv("TERM", "/dev/panda", 1);
         c_sys_set_reporter(userspace_reporter);
         run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
     } else {
@@ -159,3 +148,4 @@ int main(void) {
 
     return 0;
 }
+

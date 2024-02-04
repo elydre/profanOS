@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 3 && argc != 4) {
+    /*if (argc != 3 && argc != 4) {
         puts("Usage: ubr <link> <redirection> [pid]");
         return 1;
     }
@@ -47,4 +47,7 @@ int main(int argc, char **argv) {
     free(redirection);
     free(link);
     return 1;
+    */
+    puts("oui");
+    return 0;
 }
