@@ -172,7 +172,6 @@ typedef struct FILE {
     int   buffer_size;
     int   buffer_pid;
 
-    uint32_t file_pos;
     int   type;
     int   fd;
 } FILE;

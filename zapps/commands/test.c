@@ -13,11 +13,11 @@ int main(void) {
     printf("Writing : %d\n", fm_write(fd, "Hello, World!\n", 14));
     printf("Writing : %d\n", fm_write(fd, "oui\n", 4));
 
-    printf("Writing (fd 1): %d\n", fm_write(1, "in stdout\n", 10));
+    printf("Writing (fd 1): %d\n", fm_write(1, "in stdout (not redirected)\n", 27));
 
     fm_dup2(fd, 1);
 
-    printf("Writing (fd 1): %d\n", fm_write(1, "in stdout\n", 10));
+    printf("Writing (fd 1): %d\n", fm_write(1, "in stdout (redirected)\n", 23));
 
     fm_close(fd);
 

@@ -50,17 +50,15 @@ char *ctermid(char *a) {
     return 0;
 }
 
-int dup(int a) {
-    puts("dup is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int dup(int fd) {
+    return fm_dup(fd);
 }
 
-int dup2(int a, int b) {
-    puts("dup2 is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int dup2(int fd, int newfd) {
+    return fm_dup2(fd, newfd);
 }
 
-void  encrypt(char a[64], int b) {
+void encrypt(char a[64], int b) {
     puts("encrypt is not implemented yet, WHY DO YOU USE IT ?");
 }
 
@@ -94,7 +92,7 @@ int execvp(const char *a, char *const *b) {
     return 0;
 }
 
-void  _exit(int a) {
+void _exit(int a) {
     puts("exit is not implemented yet, WHY DO YOU USE IT ?");
 }
 
@@ -118,7 +116,7 @@ pid_t fork(void) {
     return 0;
 }
 
-long  fpathconf(int a, int b) {
+long fpathconf(int a, int b) {
     puts("fpathconf is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -218,9 +216,8 @@ char *getwd(char *a) {
     return NULL;
 }
 
-int isatty(int id) {
-    puts("isatty is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int isatty(int fd) {
+    return !fm_isfile(fd);
 }
 
 int lchown(const char *a, uid_t b, gid_t c) {
@@ -238,9 +235,8 @@ int lockf(int a, int b, off_t c) {
     return 0;
 }
 
-off_t lseek(int a, off_t b, int c) {
-    puts("lseek is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+off_t lseek(int fd, off_t offset, int whence) {
+    return fm_lseek(fd, offset, whence);
 }
 
 int nice(int a) {
@@ -273,9 +269,8 @@ ssize_t pwrite(int a, const void *b, size_t c, off_t d) {
     return 0;
 }
 
-ssize_t read(int a, void *b, size_t c) {
-    puts("read is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+ssize_t read(int fd, void *buf, size_t count) {
+    return fm_read(fd, buf, count);
 }
 
 ssize_t readlink(const char *restrict a, char *restrict b, size_t c) {
@@ -348,11 +343,11 @@ int symlink(const char *a, const char *b) {
     return 0;
 }
 
-void  sync(void) {
+void sync(void) {
     puts("sync is not implemented yet, WHY DO YOU USE IT ?");
 }
 
-long  sysconf(int a) {
+long sysconf(int a) {
     puts("sysconf is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -403,7 +398,6 @@ pid_t vfork(void) {
     return 0;
 }
 
-ssize_t  write(int a, const void *b, size_t c) {
-    puts("write is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+ssize_t write(int fd, const void *buf, size_t count) {
+    return fm_write(fd, (void *) buf, count);
 }

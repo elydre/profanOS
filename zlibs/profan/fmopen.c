@@ -14,6 +14,7 @@ typedef struct {
     sid_t sid;
     int (*fctf)(void *, uint32_t, uint32_t, uint8_t);
     int type;
+    int pid;
     uint32_t offset;
 } opened_t;
 
@@ -47,7 +48,6 @@ int main(void) {
     return 0;
 }
 
-
 int fm_open(char *path) {
     sid_t sid = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(sid)) {
@@ -70,6 +70,7 @@ int fm_open(char *path) {
     }
 
     opened[index].sid = sid;
+    opened[index].pid = c_process_get_pid();
     opened[index].type = fu_is_fctf(sid) ? TYPE_FCTF : TYPE_FILE;
     opened[index].offset = 0;
     if (opened[index].type == TYPE_FCTF)
@@ -255,6 +256,17 @@ int fm_dup2(int fd, int new_fd) {
     return 0;
 }
 
+int fm_isfile(int fd) {
+    if (fd < 0 || fd >= MAX_OPENED)
+        return -1;
+    if (fd < 3)
+        fd = fm_resol012(fd, -1);
+    fd -= 3;
+    if (!opened[fd].type)
+        return -1;
+    return opened[fd].type == TYPE_FILE;
+}
+
 void fm_debug(void) {
     printf("stdhist_len: %d\n", stdhist_len);
     for (int i = 0; i < stdhist_len; i++) {
@@ -265,6 +277,30 @@ void fm_debug(void) {
         if (!opened[i].type) continue;
         printf("fd: %d, sid: d%ds%d, type: %d, offset: %d\n", i + 3, opened[i].sid.device, opened[i].sid.sector, opened[i].type, opened[i].offset);
     }
+}
+
+void fm_clean(void) {
+    int count012 = 0;
+    int countother = 0;
+
+    for (int i = 0; i < stdhist_len; i++) {
+        if (c_process_get_state(stdhist[i].pid) < 4)
+            continue;
+        fm_close(stdhist[i].fd[0]);
+        fm_close(stdhist[i].fd[1]);
+        fm_close(stdhist[i].fd[2]);
+        memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
+        count012++;
+        stdhist_len--;
+    }
+    for (int i = 0; i < MAX_OPENED - 3; i++) {
+        if (!opened[i].type) continue;
+        if (c_process_get_state(opened[i].pid) < 4)
+            continue;
+        fm_close(i + 3);
+        countother++;
+    }
+    printf("fm_clean: %d stdhist, %d other\n", count012, countother);
 }
 
 int fm_add_stdhist(int fd, int pid) {
