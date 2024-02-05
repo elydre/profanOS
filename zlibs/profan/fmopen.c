@@ -22,7 +22,7 @@ typedef struct {
     int pid;
 } stdhist_t;
 
-opened_t *opened;
+opened_t  *opened;
 stdhist_t *stdhist;
 int stdhist_len;
 
@@ -150,7 +150,7 @@ int fm_write(int fd, void *buf, uint32_t size) {
         fd = fm_resol012(fd, -1);
     fd -= 3;
 
-    debug_print("fm_write: %d %d\n", fd, opened[fd].type);
+    // debug_print("fm_write: %d %d\n", fd, opened[fd].type);
 
     switch (opened[fd].type) {
         case TYPE_FILE:
@@ -255,16 +255,16 @@ int fm_dup2(int fd, int new_fd) {
     return 0;
 }
 
-int fm_debug(void) {
+void fm_debug(void) {
     printf("stdhist_len: %d\n", stdhist_len);
     for (int i = 0; i < stdhist_len; i++) {
         printf("pid: %d, fd: %d %d %d\n", stdhist[i].pid, stdhist[i].fd[0], stdhist[i].fd[1], stdhist[i].fd[2]);
     }
     printf("opened:\n");
-    for (int i = 0; i < MAX_OPENED; i++) {
-        printf("fd: %d, sid: %d, type: %d, offset: %d\n", i, opened[i].sid, opened[i].type, opened[i].offset);
+    for (int i = 0; i < MAX_OPENED - 3; i++) {
+        if (!opened[i].type) continue;
+        printf("fd: %d, sid: d%ds%d, type: %d, offset: %d\n", i + 3, opened[i].sid.device, opened[i].sid.sector, opened[i].type, opened[i].offset);
     }
-    return 0;
 }
 
 int fm_add_stdhist(int fd, int pid) {
@@ -275,6 +275,7 @@ int fm_add_stdhist(int fd, int pid) {
             fm_close(stdhist[i].fd[0]);
             fm_close(stdhist[i].fd[1]);
             fm_close(stdhist[i].fd[2]);
+            debug_print("fm_add_stdhist: pid %d has been closed\n", stdhist[i].pid);
             memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
             stdhist_len--;
         }
@@ -314,29 +315,26 @@ int fm_resol012(int fd, int pid) {
     if (pid < 0)
         pid = c_process_get_pid();
 
-    debug_print("fm_resol012: %d %d\n", fd, pid);
-
     int key = stdhist_len / 2;
     int maj = key;
     // use dichotomy to find the right stdhist
     while (1) {
-        debug_print("DDD %d %d\n", key, maj);
         if (stdhist[key].pid == pid) {
             debug_print("fm_resol012 (pid: %d, fd: %d): %d\n", pid, fd, stdhist[key].fd[fd]);
             return stdhist[key].fd[fd];
         } else if (stdhist[key].pid < pid) {
             maj = (maj + 1) / 2;
-            if (maj <= 1)
-                return fm_add_stdhist(fd, pid);
             key += maj;
         } else {
             maj = (maj + 1) / 2;
-            if (maj <= 1)
-                return fm_add_stdhist(fd, pid);
             key -= maj;
         }
+        if (maj == 0 || key < 0 || key >= stdhist_len) {
+            debug_print("fm_resol012: no stdhist found for pid %d\n", pid);
+            break;
+        }
     }
-    return -1;
+    return fm_add_stdhist(fd, pid);
 }
 
 void debug_print(char *frm, ...) {

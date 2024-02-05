@@ -12,16 +12,16 @@
 #define SLEEP_T 15
 
 // keyboard scancodes
-#define ESC		1
-#define BACK	14
-#define ENTER	28
-#define LSHIFT	42
-#define RSHIFT	54
-#define SC_MAX	57
-#define LEFT	75
-#define RIGHT	77
-#define DEL		83
-#define RESEND	224
+#define ESC     1
+#define BACK    14
+#define ENTER   28
+#define LSHIFT  42
+#define RSHIFT  54
+#define SC_MAX  57
+#define LEFT    75
+#define RIGHT   77
+#define DEL     83
+#define RESEND  224
 
 struct stackframe {
     struct stackframe* ebp;

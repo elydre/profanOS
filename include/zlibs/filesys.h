@@ -76,7 +76,7 @@
 #define fm_tell ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
 #define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
 #define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
-#define fm_debug ((int (*)(void)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_debug ((void (*)(void)) get_func_addr(FMOPEN_LIB_ID, 11))
 #define fm_resol012 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 13))
 
 #endif
