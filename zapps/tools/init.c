@@ -1,6 +1,5 @@
 #include <syscall.h>
 #include <filesys.h>
-#include <i_iolib.h>
 #include <profan.h>
 #include <panda.h>
 
@@ -17,7 +16,6 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1000, "/lib/profan/iolib.bin"},
     {1012, "/lib/ports/time.bin"},
     {1006, "/lib/profan/vgui.bin"},
     {1007, "/lib/ports/stdlib.bin"},
@@ -59,6 +57,15 @@ int print_load_status(int i) {
         return 1;
     }
     return 0;
+}
+
+void rainbow_print(char *message) {
+    char rainbow_colors[] = {'2', '6', '4', '5', '1', '3'};
+
+    int i;
+    for (i = 0; message[i]; i++) {
+        printf("\033[9%cm%c", rainbow_colors[i % 6], message[i]);
+    }
 }
 
 void welcome_print(void) {
