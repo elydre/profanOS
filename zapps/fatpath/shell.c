@@ -9,7 +9,7 @@
 #define BFR_SIZE 90
 #define SC_MAX 57
 
-#define SHELL_PROMPT "profanOS [\033[32m%s\033[0m] > "
+#define SHELL_PROMPT "profanOS [\e[32m%s\e[0m] > "
 
 static char current_dir[256] = "/";
 
@@ -96,7 +96,7 @@ int shell_command(char *buffer) {
         if (!IS_NULL_SID(elm) && fu_is_dir(elm))
             strcpy(current_dir, new_path);
         else
-            printf("\033[91m%s\033[31m path not found\033[0m\n", new_path);
+            printf("\e[91m%s\e[31m path not found\e[0m\n", new_path);
 
         free(new_path);
     } else if (!strcmp(prefix, "go")) {
@@ -109,7 +109,7 @@ int shell_command(char *buffer) {
         if (!IS_NULL_SID(elm) && fu_is_file(elm))
             go(file, prefix, suffix);
         else
-            printf("\033[91m%s\033[31m file not found\033[0m\n", file);
+            printf("\e[91m%s\e[31m file not found\e[0m\n", file);
 
         free(file);
     } else {  // shell command
@@ -128,7 +128,7 @@ int shell_command(char *buffer) {
             if (!IS_NULL_SID(elm) && fu_is_file(elm)) {
                 go(file, old_prefix, suffix);
             } else if (strcmp(old_prefix, "")) {
-                printf("\033[91m%s\033[31m is not a valid command.\033[0m\n", old_prefix);
+                printf("\e[91m%s\e[31m is not a valid command.\e[0m\n", old_prefix);
             }
         }
         free(file);

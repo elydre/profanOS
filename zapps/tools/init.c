@@ -64,14 +64,14 @@ void rainbow_print(char *message) {
 
     int i;
     for (i = 0; message[i]; i++) {
-        printf("\033[9%cm%c", rainbow_colors[i % 6], message[i]);
+        printf("\e[9%cm%c", rainbow_colors[i % 6], message[i]);
     }
 }
 
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
 
-    printf("\033[35mKernel: \033[95m%s\033[0m\n\n", c_sys_kinfo());
+    printf("\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());
 }
 
 char wait_key(void) {
@@ -136,7 +136,7 @@ int main(void) {
         c_sys_set_reporter(NULL);
     }
 
-    c_kprint("\033[2J");
+    c_kprint("\e[2J");
     if (c_process_get_state(usage_pid) < 4) {
         c_process_kill(usage_pid);
     }

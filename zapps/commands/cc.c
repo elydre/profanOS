@@ -40,7 +40,7 @@ void new_rand_name(char *name) {
 }
 
 int execute_command(char *path, char *args) {
-    printf("\033[37m%s %s\033[0m\n", path, args ? args : "");
+    printf("\e[37m%s %s\e[0m\n", path, args ? args : "");
     // generate argv
 
     int argc = 1;
@@ -136,16 +136,16 @@ int main(int argc, char **argv) {
 
     if (options & OPTION_CHDEP) {
         printf("Dependencies:\n"
-            " tcc.bin     %s\033[0m\n"
-            " vlink.bin   %s\033[0m\n"
-            " xec.bin     %s\033[0m\n"
-            " zentry      %s\033[0m\n"
-            " tcclib      %s\033[0m\n",
-            does_file_exist(TCC_PATH) ? "\033[92mfound" : "\033[91mnot found",
-            does_file_exist(VLK_PATH) ? "\033[92mfound" : "\033[91mnot found",
-            does_file_exist(XEC_PATH) ? "\033[92mfound" : "\033[91mnot found",
-            does_file_exist(ZEO_PATH) ? "\033[92mfound" : does_file_exist(ZEC_PATH) ? "\033[96msource" : "\033[91mnot found",
-            does_file_exist(TLO_PATH) ? "\033[92mfound" : does_file_exist(TLC_PATH) ? "\033[96msource" : "\033[91mnot found"
+            " tcc.bin     %s\e[0m\n"
+            " vlink.bin   %s\e[0m\n"
+            " xec.bin     %s\e[0m\n"
+            " zentry      %s\e[0m\n"
+            " tcclib      %s\e[0m\n",
+            does_file_exist(TCC_PATH) ? "\e[92mfound" : "\e[91mnot found",
+            does_file_exist(VLK_PATH) ? "\e[92mfound" : "\e[91mnot found",
+            does_file_exist(XEC_PATH) ? "\e[92mfound" : "\e[91mnot found",
+            does_file_exist(ZEO_PATH) ? "\e[92mfound" : does_file_exist(ZEC_PATH) ? "\e[96msource" : "\e[91mnot found",
+            does_file_exist(TLO_PATH) ? "\e[92mfound" : does_file_exist(TLC_PATH) ? "\e[96msource" : "\e[91mnot found"
         );
         return 0;
     }

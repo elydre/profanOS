@@ -12,15 +12,15 @@
 #define LOGO_START_LINE ((INFO_LINES - LOGO_LINES) / 2)
 
 char *LOGO[] = {
-    "       \033[91m*\033[95m*\033[91m*\033[95m*\033[91m*     ",
-    "     \033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m   ",
-    "    \033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m*\033[95m*\033[91m  ",
-    "    \033[91m*\033[95m*\033[91m*\033[95m*\033[0m/|\\\033[95m*\033[91m*\033[95m*\033[91m*  ",
-    "     \033[91m*\033[95m*\033[0m//|\\\\\033[95m*\033[91m*   ",
-    "      \033[0m///|\\\\\\\033[91m    ",
-    "     \033[0m////|\\\\\\\\\033[91m   ",
-    "\033[36m####\033[0m///\033[36m#####\033[0m\\\\\\  ",
-    "   \033[96m#\033[36m####   \033[96m#\033[36m##\033[0m\\\\ ",
+    "       \e[91m*\e[95m*\e[91m*\e[95m*\e[91m*     ",
+    "     \e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m   ",
+    "    \e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m*\e[95m*\e[91m  ",
+    "    \e[91m*\e[95m*\e[91m*\e[95m*\e[0m/|\\\e[95m*\e[91m*\e[95m*\e[91m*  ",
+    "     \e[91m*\e[95m*\e[0m//|\\\\\e[95m*\e[91m*   ",
+    "      \e[0m///|\\\\\\\e[91m    ",
+    "     \e[0m////|\\\\\\\\\e[91m   ",
+    "\e[36m####\e[0m///\e[36m#####\e[0m\\\\\\  ",
+    "   \e[96m#\e[36m####   \e[96m#\e[36m##\e[0m\\\\ ",
 };
 
 int curent_line;
@@ -39,22 +39,22 @@ void print_logo_line(void) {
 
 void print_fs_info(void) {
     print_logo_line();
-    printf("\033[95mfs vdisk:   \033[96m");
+    printf("\e[95mfs vdisk:   \e[96m");
 
     uint32_t *info = fu_get_vdisk_info();
 
     uint32_t dcount = info[0];
     for (uint32_t i = 0; i < dcount; i++) {
         printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] * FS_SECTOR_SIZE / 1024);
-        if (i != dcount - 1) printf("\033[0m, \033[96m");
+        if (i != dcount - 1) printf("\e[0m, \e[96m");
     }
-    printf("\033[0m\n");
+    printf("\e[0m\n");
 
     free(info);
 }
 
 int main(void) {
-    printf("\n \033[96m-\033[36m Welcome to the profan Operating System \033[96m-\n\n");
+    printf("\n \e[96m-\e[36m Welcome to the profan Operating System \e[96m-\n\n");
 
     curent_line = 0;
     logo_line = 0;
@@ -62,32 +62,32 @@ int main(void) {
     tm_t time;
     c_time_get(&time);
 
-    pl_and_pf("\033[95mkernel:     \033[96m%s\n", c_sys_kinfo());
+    pl_and_pf("\e[95mkernel:     \e[96m%s\n", c_sys_kinfo());
 
-    pl_and_pf("\033[95mRTC time:   \033[96m%02d\033[0m:\033[96m%02d\033[0m:\033[96m%02d %02d\033[0m/\033[96m%02d\033[0m/\033[96m%02d\n",
+    pl_and_pf("\e[95mRTC time:   \e[96m%02d\e[0m:\e[96m%02d\e[0m:\e[96m%02d %02d\e[0m/\e[96m%02d\e[0m/\e[96m%02d\n",
         time.tm_hour, time.tm_min, time.tm_sec,
         time.tm_mday, time.tm_mon, time.tm_year + 2000
     );
     print_fs_info();
 
-    pl_and_pf("\033[95mwork time:  \033[96m%gs\n", c_timer_get_ms() / 1000.0);
-    pl_and_pf("\033[95mused mem:   \033[96m%dkB\n", c_mem_get_info(6, 0) / 1024);
+    pl_and_pf("\e[95mwork time:  \e[96m%gs\n", c_timer_get_ms() / 1000.0);
+    pl_and_pf("\e[95mused mem:   \e[96m%dkB\n", c_mem_get_info(6, 0) / 1024);
 
-    pl_and_pf("\033[95mact alloc:  \033[96m%d\033[0m/\033[96m%d\n",
+    pl_and_pf("\e[95mact alloc:  \e[96m%d\e[0m/\e[96m%d\n",
         c_mem_get_info(4, 0) - c_mem_get_info(5, 0),
         c_mem_get_info(4, 0)
     );
 
-    pl_and_pf("\033[95mphys mem:   \033[96m%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
+    pl_and_pf("\e[95mphys mem:   \e[96m%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
 
-    pl_and_pf("\033[95mscreen:     \033[96m%d\033[0mx\033[96m%d (%s)\n",
+    pl_and_pf("\e[95mscreen:     \e[96m%d\e[0mx\e[96m%d (%s)\n",
         c_vesa_get_width(), c_vesa_get_height(),
         c_vesa_does_enable() ? "graphic" : "text"
     );
 
     pl_and_pf("\n");
 
-    printf("\033[0m\n");
+    printf("\e[0m\n");
 
     return 0;
 }

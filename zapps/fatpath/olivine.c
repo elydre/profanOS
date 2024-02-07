@@ -53,7 +53,7 @@
   #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
 
-#define DEBUG_COLOR  "\033[37m"
+#define DEBUG_COLOR  "\e[37m"
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
@@ -2254,10 +2254,10 @@ void debug_print(char *function_name, char **function_args) {
             printf("'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR "'%s') [%d]\033[0m\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR "'%s') [%d]\e[0m\n", function_args[i], i + 1);
         return;
     }
-    puts(DEBUG_COLOR ") [0]\033[0m");
+    puts(DEBUG_COLOR ") [0]\e[0m");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -3352,7 +3352,7 @@ void olv_print(char *str, int len) {
     }
 
     if (str[i] == '/' && str[i + 1] == '/') {
-        fputs("\033[32m", stdout);
+        fputs("\e[32m", stdout);
         for (i = 0; str[i] != ';'; i++) {
             if (i == len) return;
             putchar(str[i]);
@@ -3368,7 +3368,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    printf("\033[%sm%s", get_func_color(tmp + dec), tmp);
+    printf("\e[%sm%s", get_func_color(tmp + dec), tmp);
 
     int from = i;
     for (; i < len; i++) {
@@ -3376,7 +3376,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '9' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '9' : '7', tmp);
             }
             olv_print(str + i, len - i);
             free(tmp);
@@ -3388,7 +3388,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '9' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '9' : '7', tmp);
             }
 
             // find the closing bracket
@@ -3405,11 +3405,11 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            printf("\033[9%cm!(", (j == len) ? '1' : '2');
+            printf("\e[9%cm!(", (j == len) ? '1' : '2');
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                fputs("\033[92m)", stdout);
+                fputs("\e[92m)", stdout);
             }
 
             i = j;
@@ -3421,10 +3421,10 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
-            fputs("\033[37m;\033[0m", stdout);
+            fputs("\e[37m;\e[0m", stdout);
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
@@ -3439,11 +3439,11 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
 
-            fputs("\033[37m|\033[0m", stdout);
+            fputs("\e[37m|\e[0m", stdout);
             if (str[i + 1] == STRING_CHAR) {
                 putchar(STRING_CHAR);
                 i++;
@@ -3459,7 +3459,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
             is_var = 1;
@@ -3470,7 +3470,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
             is_var = 0;
@@ -3480,7 +3480,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+        printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
     }
 
     free(tmp);
@@ -3718,7 +3718,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     history_end++;
 
     // save the current cursor position and show it
-    fputs("\033[s\033[?25l", stdout);
+    fputs("\e[s\e[?25l", stdout);
 
     int sc, last_sc = 0, last_sc_sgt = 0;
 
@@ -3727,7 +3727,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        printf(" \033[0m\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
     }
 
     fflush(stdout);
@@ -3805,7 +3805,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
             } else {
-                fputs("\033[u\033[K", stdout);
+                fputs("\e[u\e[K", stdout);
                 strcpy(buffer, history[history_index]);
                 buffer_actual_size = strlen(buffer);
                 buffer_index = buffer_actual_size;
@@ -3817,7 +3817,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
-            fputs("\033[u\033[K", stdout);
+            fputs("\e[u\e[K", stdout);
             if (history[history_index] == NULL || history_index == history_end) {
                 buffer[0] = '\0';
                 buffer_actual_size = 0;
@@ -3902,9 +3902,9 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
         else continue;
 
-        fputs("\033[?25h\033[u", stdout);
+        fputs("\e[?25h\e[u", stdout);
         olv_print(buffer, buffer_actual_size);
-        printf(" \033[0m\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
         fflush(stdout);
     }
 
@@ -3912,7 +3912,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     buffer[buffer_actual_size] = '\0';
 
-    puts("\033[?25h");
+    puts("\e[?25h");
 
     return ret_val;
 

@@ -210,7 +210,7 @@ void status_print(int (*func)(), char *verb, char *noun) {
 #define SC_MAX  57
 
 void kinput(char *buffer, int size) {
-    kprint("\033[?25l");
+    kprint("\e[?25l");
 
     int sc, last_sc, last_sc_sgt = 0;
     int index = 0;
@@ -246,7 +246,7 @@ void kinput(char *buffer, int size) {
             if (index == 0) continue;
             buffer[index] = '\0';
             index--;
-            kprint("\033[1D \033[1D");
+            kprint("\e[1D \e[1D");
         } else if (sc <= SC_MAX) {
             if (size < index + 2) continue;
             c = kb_scancode_to_char(sc, shift);
@@ -258,7 +258,7 @@ void kinput(char *buffer, int size) {
     }
 
     buffer[index] = '\0';
-    kprint("\033[?25h");
+    kprint("\e[?25h");
 }
 
 void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {

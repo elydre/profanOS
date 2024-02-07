@@ -37,8 +37,8 @@ void draw_line(char *buf, int percent) {
     buf[52] = '\0';
 
     // add colors
-    str_insert(buf, "\033[0m", (percent == 100 ? 99: percent) / 2 + 2);
-    str_insert(buf, "\033[31m", 1);
+    str_insert(buf, "\e[0m", (percent == 100 ? 99: percent) / 2 + 2);
+    str_insert(buf, "\e[31m", 1);
 }
 
 char *get_state(int state) {
@@ -123,11 +123,11 @@ int main(int argc, char **argv) {
     idle = total = 0;
 
     // clear screen
-    printf("\033[2J");
+    printf("\e[2J");
 
     while (1) {
         // move cursor to top left
-        printf("\033[H");
+        printf("\e[H");
 
         last_idle = idle;
         last_total = total;

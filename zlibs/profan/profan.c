@@ -179,7 +179,7 @@ void profan_wait_pid(uint32_t pid) {
 
 uint32_t open_input(char *buffer, uint32_t size) {
     // save the current cursor position and show it
-    printf("\033[s\033[?25l");
+    printf("\e[s\e[?25l");
     fflush(stdout);
 
     int sc, last_sc, last_sc_sgt = 0;
@@ -268,13 +268,13 @@ uint32_t open_input(char *buffer, uint32_t size) {
 
         else continue;
 
-        printf("\033[?25h\033[u\033[94m%s \033[0m\033[u\033[%dC\033[?25l", buffer, buffer_index);
+        printf("\e[?25h\e[u\e[94m%s \e[0m\e[u\e[%dC\e[?25l", buffer, buffer_index);
         fflush(stdout);
     }
 
     buffer[buffer_actual_size++] = '\n';
     buffer[buffer_actual_size] = '\0';
-    printf("\033[?25h\n");
+    printf("\e[?25h\n");
 
     return buffer_actual_size;
 }

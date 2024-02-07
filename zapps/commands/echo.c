@@ -9,7 +9,7 @@ char *app_ansi_color(char *str) {
 
     for (int dup_index = 0; str[str_index]; dup_index++) {
         if (str[str_index] == '\\' && (str[str_index + 1] == 'e' || str[str_index + 1] == 'E')) {
-            out[dup_index] = '\033';
+            out[dup_index] = '\e';
             str_index += 2;
         } else if (
             str[str_index] == '\\' &&
@@ -17,7 +17,7 @@ char *app_ansi_color(char *str) {
             str[str_index + 2] == '3' &&
             str[str_index + 3] == '3'
         ) {
-            out[dup_index] = '\033';
+            out[dup_index] = '\e';
             str_index += 4;
         } else {
             out[dup_index] = str[str_index];

@@ -129,9 +129,9 @@ int shell_command(char *command) {
 }
 
 void start_kshell(void) {
-    kprint("\033[93m"
+    kprint("\e[93m"
         "Welcome to the profanOS kernel shell!\n"
-        "Use 'help' to see the commands.\033[0m\n\n"
+        "Use 'help' to see the commands.\e[0m\n\n"
     );
 
     char char_buffer[BFR_SIZE];

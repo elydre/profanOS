@@ -25,9 +25,9 @@ void print_with_color(char *line, char *pattern) {
     char *line_end = strchr(line, '\0');
 
     fwrite(line, 1, pattern_start - line, stdout);
-    printf("\033[95m");
+    printf("\e[95m");
     fwrite(pattern_start, 1, pattern_end - pattern_start, stdout);
-    printf("\033[0m");
+    printf("\e[0m");
     fwrite(pattern_end, 1, line_end - pattern_end, stdout);
     printf("\n");
 }
