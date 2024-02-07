@@ -1470,22 +1470,18 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
-    if (stdout_path) {
-        sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
-        devio_set_redirection(sid, stdout_path, -1);
-    }
-
     int pid;
     local_itoa(c_run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, wait_end}, &pid
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, stdout_path ? 2 : wait_end}, &pid
     ), g_exit_code);
 
     if (stdout_path) {
-        if (c_process_get_state(pid) < 4) {
-            devio_set_redirection(sid, stdout_path, pid);
-        }
-        devio_set_redirection(sid, getenv("TERM"), -1);
+        fm_reopen(fm_resol012(1, pid), stdout_path);
         free(stdout_path);
+        c_process_wakeup(pid);
+        if (wait_end) {
+            profan_wait_pid(pid);
+        }
     }
 
     if (pid == -1) {
