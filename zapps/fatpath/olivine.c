@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 1"
+#define OLV_VERSION "0.10 rev 2"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2145,27 +2145,45 @@ char *pipe_processor(char **input) {
 
     int old_stdout = dup(1);
     int old_stdin =  dup(0);
-    char *line;
+    char *line, *ret = NULL;
     int fd[2], fdin, start = 0;
     fdin = old_stdin;
-    for (int i = 0; i < argc; i++) {
-        if (strcmp(input[i], "|") && i != argc - 1)
+    for (int i = 0; i < argc + 1; i++) {
+        if (strcmp(input[i], "|") && i != argc)
             continue;
 
+        if (argc == i) {
+            dup2(old_stdout, 1);
+            dup2(old_stdout, 4);
+            dup2(fdin, 0);
+            dup2(fdin, 3);
+        }
+
         if (i == start) {
-            raise_error("Pipe Processor", "Empty command");
-            continue;
+            if (i != argc) {
+                raise_error("Pipe Processor", "Empty command");
+                ret = ERROR_CODE;
+                break;
+            }
+            fm_debug(fd[0]);
+            // copy pipe data to ret
+            int n, s = 0;
+            ret = malloc(101);
+            while ((n = read(fdin, ret + s, 100)) > 0) {
+                s += n;
+                ret = realloc(ret, s + 101);
+            }
+            while (ret[s - 1] == '\n' || ret[s - 1] == '\0') {
+                s--;
+            }
+            ret[s] = '\0';
+            break;
         }
 
         line = args_rejoin(input + start, i - start);
         start = i + 1; 
 
-        if (argc - 1 == i) {
-            dup2(old_stdout, 1);
-            dup2(old_stdout, 4);
-            dup2(fdin, 0);
-            dup2(fdin, 3);
-        } else {
+        if (argc != i) {
             pipe(fd);
             dup2(fdin, 0);
             dup2(fdin, 3);
@@ -2173,7 +2191,6 @@ char *pipe_processor(char **input) {
             dup2(fd[1], 4);
         }
 
-        printf("line: %s\n", line);
         execute_line(line);
         fm_debug(fd[1]);
         close(fd[1]);
@@ -2182,14 +2199,12 @@ char *pipe_processor(char **input) {
         free(line);
     }
 
+    dup2(old_stdout, 4);
     dup2(old_stdout, 1);
     dup2(old_stdin, 0);
-    dup2(old_stdout, 4);
     dup2(old_stdin, 3);
-    close(old_stdout);
-    close(old_stdin);
 
-    return NULL;
+    return ret;
     #endif
     raise_error("Pipe Processor", "Not supported in this build");
     return NULL;
