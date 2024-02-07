@@ -2143,98 +2143,53 @@ char *pipe_processor(char **input) {
         return ERROR_CODE;
     }
 
-    sid_t stdin_sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
-    sid_t stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+    int old_stdout = dup(1);
+    int old_stdin =  dup(0);
+    char *line;
+    int fd[2], fdin, start = 0;
+    fdin = old_stdin;
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(input[i], "|") && i != argc - 1)
+            continue;
 
-    if (IS_NULL_SID(stdin_sid) || IS_NULL_SID(stdout_sid)) {
-        raise_error("Pipe Processor", "IO files unreachable");
-        return ERROR_CODE;
-    }
-
-    char *term_path = getenv("TERM");
-    if (term_path == NULL) {
-        raise_error("Pipe Processor", "TERM environment variable not set");
-        return ERROR_CODE;
-    }
-
-    char *in_tmp = calloc(15, sizeof(char));
-    char *out_tmp = calloc(15, sizeof(char));
-
-    char *line, *res;
-
-    int i, from_index = 0;
-    for (i = 0; i <= argc; i++) {
-        if (strcmp(input[i], "|") && i != argc) {
+        if (i == start) {
+            raise_error("Pipe Processor", "Empty command");
             continue;
         }
 
-        if (i == from_index) {
-            if (i == argc) break;
-            devio_set_redirection(stdout_sid, term_path, -1);
-            devio_set_redirection(stdin_sid, "/dev/kb", -1);
-            raise_error("Pipe Processor", "Empty command");
-            free(out_tmp);
-            free(in_tmp);
-            return ERROR_CODE;
-        }
+        line = args_rejoin(input + start, i - start);
+        start = i + 1; 
 
-        if (*out_tmp) {
-            strcpy(in_tmp, out_tmp);
+        if (argc - 1 == i) {
+            dup2(old_stdout, 1);
+            dup2(old_stdout, 4);
+            dup2(fdin, 0);
+            dup2(fdin, 3);
         } else {
-            in_tmp[0] = '\0';
+            pipe(fd);
+            dup2(fdin, 0);
+            dup2(fdin, 3);
+            dup2(fd[1], 1);
+            dup2(fd[1], 4);
         }
 
-        if (i == argc) {
-            strcpy(out_tmp, term_path);
-        } else {
-            tmpnam_s(out_tmp, 15);
-            fu_file_create(0, out_tmp);
-        }
-
-        if (in_tmp)
-            devio_set_redirection(stdin_sid, in_tmp, -1);
-
-        devio_set_redirection(stdout_sid, out_tmp, -1);
-
-        line = args_rejoin(input + from_index, i - from_index);
-
-        if ((res = execute_line(line)) == ERROR_CODE) {
-            devio_set_redirection(stdin_sid, "/dev/kb", -1);
-            devio_set_redirection(stdout_sid, term_path, -1);
-            free(out_tmp);
-            free(in_tmp);
-            free(line);
-            return ERROR_CODE;
-        }
+        printf("line: %s\n", line);
+        execute_line(line);
+        fm_debug(fd[1]);
+        close(fd[1]);
+        fdin = fd[0];
 
         free(line);
-        free(res);
-
-        fflush(stdout);
-        from_index = i + 1;
-    }
-    devio_set_redirection(stdin_sid, "/dev/kb", -1);
-    free(in_tmp);
-
-    if (i != argc) {
-        free(out_tmp);
-        return NULL;
     }
 
-    devio_set_redirection(stdout_sid, term_path, -1);
+    dup2(old_stdout, 1);
+    dup2(old_stdin, 0);
+    dup2(old_stdout, 4);
+    dup2(old_stdin, 3);
+    close(old_stdout);
+    close(old_stdin);
 
-    sid_t out_sid = fu_path_to_sid(ROOT_SID, out_tmp);
-    i = fu_get_file_size(out_sid);
-    line = malloc(i + 1);
-    fu_file_read(out_sid, line, 0, i);
-
-    while (line[i - 1] == '\n')
-        i--;
-    line[i] = '\0';
-
-    free(out_tmp);
-    return line;
-
+    return NULL;
     #endif
     raise_error("Pipe Processor", "Not supported in this build");
     return NULL;

@@ -1,6 +1,7 @@
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
 pseudo pwd 'echo !path'
+pseudo t 'ls -l | upper o'
 
 FOR dir '/bin/commands' '/bin/fatpath'
     FOR e !(find -f !dir)

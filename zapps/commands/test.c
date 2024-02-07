@@ -29,7 +29,6 @@ int main(void) {
     close(fd[0]);
     close(fd[1]);
 
-
     fm_debug(fm_resol012(1, p1));
     fm_debug(fm_resol012(0, p2));
 

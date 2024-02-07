@@ -17,6 +17,7 @@ typedef struct {
     uint32_t writed;
     int      wpid[20];
     int      wpcnt;
+    int      refs;
 } pipe_t;
 
 typedef struct {
@@ -142,7 +143,11 @@ int fm_close(int fd) {
                 break;
             }
         }
-        if (!opened[fd].pipe->wpcnt) {
+    }
+    
+    if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
+        opened[fd].pipe->refs--;
+        if (!opened[fd].pipe->refs) {
             free(opened[fd].pipe->data);
             free(opened[fd].pipe);
         }
@@ -285,10 +290,17 @@ int fm_dup(int fd) {
     opened[index].pid = opened[fd].pid;
     if (opened[index].type == TYPE_FCTF)
         opened[index].fctf = opened[fd].fctf;
-    else if (opened[index].type == TYPE_RPIP)
+    else if (opened[index].type == TYPE_RPIP) {
         opened[index].pipe = opened[fd].pipe;
-    else if (opened[index].type == TYPE_WPIP) {
+        opened[index].pipe->refs++;
+    } else if (opened[index].type == TYPE_WPIP) {
         opened[index].pipe = opened[fd].pipe;
+        opened[index].pipe->refs++;
+        for (int i = 0; i < opened[index].pipe->wpcnt; i++) {
+            debug_print("%d %d\n", opened[index].pipe->wpid[i], opened[index].pid);
+            if (opened[index].pipe->wpid[i] == opened[index].pid)
+                return index;
+        }
         opened[index].pipe->wpid[opened[index].pipe->wpcnt++] = opened[index].pid;
     } else
         opened[index].sid = opened[fd].sid;
@@ -314,10 +326,17 @@ int fm_dup2(int fd, int new_fd) {
     opened[new_fd].offset = opened[fd].offset;
     if (opened[new_fd].type == TYPE_FCTF)
         opened[new_fd].fctf = opened[fd].fctf;
-    else if (opened[new_fd].type == TYPE_RPIP)
+    else if (opened[new_fd].type == TYPE_RPIP) {
         opened[new_fd].pipe = opened[fd].pipe;
-    else if (opened[new_fd].type == TYPE_WPIP) {
+        opened[new_fd].pipe->refs++;
+    } else if (opened[new_fd].type == TYPE_WPIP) {
         opened[new_fd].pipe = opened[fd].pipe;
+        opened[new_fd].pipe->refs++;
+        for (int i = 0; i < opened[new_fd].pipe->wpcnt; i++) {
+            debug_print("%d %d\n", opened[new_fd].pipe->wpid[i], opened[new_fd].pid);
+            if (opened[new_fd].pipe->wpid[i] == opened[new_fd].pid)
+                return 0;
+        }
         opened[new_fd].pipe->wpid[opened[new_fd].pipe->wpcnt++] = opened[new_fd].pid;
     } else
         opened[new_fd].sid = opened[fd].sid;
@@ -329,7 +348,7 @@ int fm_dup2(int fd, int new_fd) {
 int fm_pipe(int fd[2]) {
     int i1, i2, pid;
     pipe_t *pipe = calloc_ask(1, sizeof(pipe_t));
-    
+
     for (i1 = 0; i1 < MAX_OPENED; i1++)
         if (!opened[i1].type) break;
     for (i2 = i1 + 1; i2 < MAX_OPENED; i2++)
@@ -346,6 +365,7 @@ int fm_pipe(int fd[2]) {
     pipe->writed = 0;
     pipe->wpid[0] = pid;
     pipe->wpcnt = 1;
+    pipe->refs = 2;
 
     opened[i1].type = TYPE_RPIP;
     opened[i1].pipe = pipe;
@@ -363,7 +383,7 @@ int fm_pipe(int fd[2]) {
     return 0;
 }
 
-int fm_isfile(int fd) {
+int fm_isatty(int fd) {
     if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
@@ -371,7 +391,7 @@ int fm_isfile(int fd) {
 
     if (!opened[fd].type)
         return -1;
-    return opened[fd].type == TYPE_FILE;
+    return opened[fd].type == TYPE_FCTF;
 }
 
 void fm_debug(int fd) {
@@ -404,8 +424,12 @@ void fm_debug(int fd) {
         debug_print("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
     else if (opened[fd].type == TYPE_FCTF)
         debug_print("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
-    else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP)
-        debug_print("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
+    else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
+        debug_print("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
+        for (int i = 0; i < opened[fd].pipe->wpcnt; i++)
+            debug_print("%d, ", opened[fd].pipe->wpid[i]);
+        debug_print("]\n");
+    }
     else
         debug_print("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
 }
@@ -494,7 +518,7 @@ int fm_resol012(int fd, int pid) {
     do {
         if (stdhist[key].pid == pid)
             return stdhist[key].fd[fd];
-        
+
         if (stdhist[key].pid < pid) {
             maj = (maj + 1) / 2;
             key += maj;
