@@ -172,14 +172,14 @@ void profan_wait_pid(uint32_t pid) {
         return;
     }
 
-    while (c_process_get_state(pid) != 5) {
+    while (c_process_get_state(pid) < 4) {
         c_process_sleep(current_pid, 10);
     }
 }
 
 uint32_t open_input(char *buffer, uint32_t size) {
     // save the current cursor position and show it
-    printf("\e[s\e[?25l");
+    fputs("\e[s\e[?25l", stdout);
     fflush(stdout);
 
     int sc, last_sc, last_sc_sgt = 0;
@@ -274,7 +274,7 @@ uint32_t open_input(char *buffer, uint32_t size) {
 
     buffer[buffer_actual_size++] = '\n';
     buffer[buffer_actual_size] = '\0';
-    printf("\e[?25h\n");
+    puts("\e[?25h\n");
 
     return buffer_actual_size;
 }

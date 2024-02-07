@@ -23,8 +23,7 @@
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
-extern char  *optarg;
-extern int    optind, opterr, optopt;
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #define access ((int (*)(const char *, int)) get_func_addr(UNISTD_ID, 2))
 #define alarm ((unsigned int (*)(unsigned int)) get_func_addr(UNISTD_ID, 3))
