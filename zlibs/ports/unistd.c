@@ -30,9 +30,8 @@ int chown(const char *a, uid_t b, gid_t c) {
     return 0;
 }
 
-int close(int a) {
-    puts("close is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int close(int fd) {
+    return fm_close(fd);
 }
 
 size_t confstr(int a, char *b, size_t c) {
@@ -254,9 +253,8 @@ int pause(void) {
     return 0;
 }
 
-int pipe(int a[2]) {
-    puts("pipe is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int pipe(int fd[2]) {
+    return fm_pipe(fd);
 }
 
 ssize_t pread(int a, void *b, size_t c, off_t d) {

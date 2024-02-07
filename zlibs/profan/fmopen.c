@@ -1,38 +1,49 @@
 #include <syscall.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdarg.h>
 
 #define FMOPEN_LIB_C
 
 #include <filesys.h>
+
 #define MAX_OPENED 100
 #define MAX_STDHIST 20
 
 typedef struct {
-    sid_t sid;
-    int (*fctf)(void *, uint32_t, uint32_t, uint8_t);
-    int type;
-    int pid;
+    uint8_t *data;
+    uint32_t size;
+    uint32_t writed;
+    int      ref;
+} pipe_t;
+
+typedef struct {
+    sid_t    sid;
+    int    (*fctf)(void *, uint32_t, uint32_t, uint8_t);
+    int      type;
+    int      pid;
     uint32_t offset;
+    pipe_t  *pipe;
 } opened_t;
 
 typedef struct {
-    int fd[3];
-    int pid;
+    int      fd[3];
+    int      pid;
 } stdhist_t;
 
-opened_t  *opened;
-stdhist_t *stdhist;
-int stdhist_len;
+opened_t    *opened;
+stdhist_t   *stdhist;
+int          stdhist_len;
 
 #define TYPE_FILE 1
 #define TYPE_FCTF 2
+#define TYPE_PIPE 3
 
 int fm_add_stdhist(int fd, int pid);
 int fm_resol012(int fd, int pid);
 int fm_reopen(int fd, char *path);
+int fm_close(int fd);
 
 void debug_print(char *frm, ...);
 
@@ -73,6 +84,7 @@ int fm_open(char *path) {
     opened[index].pid = c_process_get_pid();
     opened[index].type = fu_is_fctf(sid) ? TYPE_FCTF : TYPE_FILE;
     opened[index].offset = 0;
+    opened[index].pipe = NULL;
     if (opened[index].type == TYPE_FCTF)
         opened[index].fctf = (void *) fu_fctf_get_addr(sid);
     return index + 3;
@@ -83,6 +95,8 @@ int fm_reopen(int fd, char *path) {
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
+
+    fm_close(fd);
     fd -= 3;
 
     sid_t sid = fu_path_to_sid(ROOT_SID, path);
@@ -110,8 +124,17 @@ int fm_close(int fd) {
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     fd -= 3;
+
     if (!opened[fd].type)
         return -1;
+
+    if (opened[fd].type == TYPE_PIPE) {
+        opened[fd].pipe->ref--;
+        if (!opened[fd].pipe->ref) {
+            free(opened[fd].pipe->data);
+            free(opened[fd].pipe);
+        }
+    }
 
     opened[fd].type = 0;
     return 0;
@@ -134,6 +157,17 @@ int fm_read(int fd, void *buf, uint32_t size) {
             break;
         case TYPE_FCTF:
             read_count = opened[fd].fctf(buf, opened[fd].offset, size, 1);
+            break;
+        case TYPE_PIPE:
+            while (opened[fd].pipe->writed <= opened[fd].offset) {
+                if (opened[fd].pipe->ref < 2)
+                    return 0;
+                c_process_sleep(c_process_get_pid(), 10);
+            }
+            read_count = opened[fd].pipe->writed - opened[fd].offset;
+            if (read_count > (int) size)
+                read_count = size;
+            memcpy(buf, opened[fd].pipe->data + opened[fd].offset, read_count);
             break;
         default:
             return -1;
@@ -162,6 +196,15 @@ int fm_write(int fd, void *buf, uint32_t size) {
         case TYPE_FCTF:
             write_count = opened[fd].fctf(buf, opened[fd].offset, size, 0);
             break;
+        case TYPE_PIPE:
+            if (opened[fd].pipe->writed + size > opened[fd].pipe->size) {
+                opened[fd].pipe->size = opened[fd].pipe->writed + size;
+                opened[fd].pipe->data = realloc(opened[fd].pipe->data, opened[fd].pipe->size);
+            }
+            memcpy(opened[fd].pipe->data + opened[fd].pipe->writed, buf, size);
+            opened[fd].pipe->writed += size;
+            write_count = size;
+            break;
         default:
             return -1;
     }
@@ -187,6 +230,8 @@ int fm_lseek(int fd, int offset, int whence) {
             opened[fd].offset += offset;
             break;
         case SEEK_END:
+            if (opened[fd].type != TYPE_FILE)
+                return -1;
             opened[fd].offset = c_fs_cnt_get_size(c_fs_get_main(), opened[fd].sid) + offset;
             break;
         default:
@@ -224,35 +269,82 @@ int fm_dup(int fd) {
         return -1;
     }
 
-    opened[index].sid = opened[fd].sid;
     opened[index].type = opened[fd].type;
     opened[index].offset = opened[fd].offset;
     if (opened[index].type == TYPE_FCTF)
         opened[index].fctf = opened[fd].fctf;
+    if (opened[index].type == TYPE_PIPE) {
+        opened[index].pipe = opened[fd].pipe;
+        opened[index].pipe->ref++;
+    } else
+        opened[index].sid = opened[fd].sid;
     debug_print("fm_dup: %d %d\n", fd, index + 3);
     return index + 3;
 }
 
 int fm_dup2(int fd, int new_fd) {
-    if (fd < 0 || fd >= MAX_OPENED)
+    if (fd < 0 || fd >= MAX_OPENED || new_fd < 0 || new_fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
+    if (new_fd < 3)
+        new_fd = fm_resol012(new_fd, -1);
     fd -= 3;
+    new_fd -= 3;
     if (!opened[fd].type)
         return -1;
 
-    if (new_fd < 0 || new_fd >= MAX_OPENED)
-        return -1;
-    if (new_fd < 3)
-        new_fd = fm_resol012(new_fd, -1);
-    new_fd -= 3;
+    if (opened[new_fd].type)
+        fm_close(new_fd + 3);
 
-    opened[new_fd].sid = opened[fd].sid;
     opened[new_fd].type = opened[fd].type;
     opened[new_fd].offset = opened[fd].offset;
     if (opened[new_fd].type == TYPE_FCTF)
         opened[new_fd].fctf = opened[fd].fctf;
+    if (opened[new_fd].type == TYPE_PIPE) {
+        opened[new_fd].pipe = opened[fd].pipe;
+        opened[new_fd].pipe->ref++;
+    } else
+        opened[new_fd].sid = opened[fd].sid;
+
+    return 0;
+}
+
+int fm_pipe(int fd[2]) {
+    int i1, i2;
+    pipe_t *pipe = malloc_ask(sizeof(pipe_t));
+    
+    for (i1 = 0; i1 < MAX_OPENED; i1++)
+        if (!opened[i1].type) break;
+    for (i2 = i1 + 1; i2 < MAX_OPENED; i2++)
+        if (!opened[i2].type) break;
+    if (i1 == MAX_OPENED || i2 == MAX_OPENED) {
+        debug_print("fm_pipe: no more file descriptors\n");
+        return -1;
+    }
+
+    pipe->data = malloc_ask(1024);
+    pipe->size = 1024;
+    pipe->writed = 0;
+    pipe->ref = 2;
+
+    opened[i1].type = TYPE_PIPE;
+    opened[i1].pipe = pipe;
+    opened[i1].offset = 0;
+    opened[i1].pid = c_process_get_pid();
+    opened[i1].sid.device = 0;
+    opened[i1].sid.sector = 0;
+
+    opened[i2].type = TYPE_PIPE;
+    opened[i2].pipe = pipe;
+    opened[i2].offset = 0;
+    opened[i2].pid = c_process_get_pid();
+    opened[i2].sid.device = 0;
+    opened[i2].sid.sector = 0;
+
+    fd[0] = i1 + 3;
+    fd[1] = i2 + 3;
+
     return 0;
 }
 
@@ -374,6 +466,7 @@ int fm_resol012(int fd, int pid) {
 }
 
 void debug_print(char *frm, ...) {
+    return;
     va_list args;
     va_start(args, frm);
     char *str = malloc(1024);
