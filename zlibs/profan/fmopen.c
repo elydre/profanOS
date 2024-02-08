@@ -53,10 +53,9 @@ int fm_close(int fd);
 void debug_print(char *frm, ...);
 
 int main(void) {
-    opened = calloc_ask(MAX_OPENED - 3, sizeof(opened_t));
+    opened = calloc_ask(MAX_OPENED, sizeof(opened_t));
     stdhist = calloc_ask(MAX_STDHIST, sizeof(stdhist_t));
     stdhist_len = 0;
-    opened += 3;
 
     fm_reopen(3, "/dev/kb");
     fm_reopen(4, "/dev/kterm");
@@ -78,7 +77,7 @@ int fm_open(char *path) {
     }
 
     int index;
-    for (index = 0; index < MAX_OPENED; index++) {
+    for (index = 3; index < MAX_OPENED; index++) {
         if (!opened[index].type) break;
     }
     if (index == MAX_OPENED) {
@@ -277,7 +276,7 @@ int fm_dup(int fd) {
         return -1;
 
     int index;
-    for (index = 0; index < MAX_OPENED; index++) {
+    for (index = 3; index < MAX_OPENED; index++) {
         if (!opened[index].type) break;
     }
     if (index == MAX_OPENED) {
@@ -349,7 +348,7 @@ int fm_pipe(int fd[2]) {
     int i1, i2, pid;
     pipe_t *pipe = calloc_ask(1, sizeof(pipe_t));
 
-    for (i1 = 0; i1 < MAX_OPENED; i1++)
+    for (i1 = 3; i1 < MAX_OPENED; i1++)
         if (!opened[i1].type) break;
     for (i2 = i1 + 1; i2 < MAX_OPENED; i2++)
         if (!opened[i2].type) break;
@@ -441,21 +440,22 @@ void fm_clean(void) {
     for (int i = 0; i < stdhist_len; i++) {
         if (c_process_get_state(stdhist[i].pid) < 4)
             continue;
+        printf("fm_clean: stdhist %d (pid: %d) is still alive\n", i, stdhist[i].pid);
         fm_close(stdhist[i].fd[0]);
         fm_close(stdhist[i].fd[1]);
         fm_close(stdhist[i].fd[2]);
         memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
-        count012++;
         stdhist_len--;
+        count012++;
+        i--;
     }
     for (int i = 3; i < MAX_OPENED; i++) {
         if (!opened[i].type) continue;
         if (c_process_get_state(opened[i].pid) < 4)
             continue;
+        printf("fm_clean: opened %d (pid: %d) is still alive\n", i, opened[i].pid);
         fm_close(i);
-        countother++;
     }
-    printf("fm_clean: %d stdhist, %d other\n", count012, countother);
 }
 
 int fm_add_stdhist(int fd, int pid) {
@@ -500,35 +500,22 @@ int fm_add_stdhist(int fd, int pid) {
 }
 
 int fm_resol012(int fd, int pid) {
+    int key, maj;
+
     if (fd < 0 || fd >= 3)
         return -1;
 
     if (pid < 0)
         pid = c_process_get_pid();
 
-    int key = stdhist_len / 2 - 1;
-    int maj = key;
+    if (pid > stdhist[stdhist_len - 1].pid)
+        return fm_add_stdhist(fd, pid);
 
-    /* for (int i = 0; i < stdhist_len; i++) {
-        debug_print("pid: %d, fd: %d %d %d\n", stdhist[i].pid, stdhist[i].fd[0], stdhist[i].fd[1], stdhist[i].fd[2]);
-    }
-    debug_print("\n");*/
-
-    // use dichotomy to find the right stdhist
-    do {
-        if (stdhist[key].pid == pid)
-            return stdhist[key].fd[fd];
-
-        if (stdhist[key].pid < pid) {
-            maj = (maj + 1) / 2;
-            key += maj;
-        } else {
-            maj = (maj + 1) / 2;
-            key -= maj;
+    for (int i = 0; i < stdhist_len; i++) {
+        if (stdhist[i].pid == pid) {
+            return stdhist[i].fd[fd];
         }
-    } while (!(key <= 0 || key >= stdhist_len ||
-        (stdhist[key].pid < pid && stdhist[key + 1].pid > pid))
-    );
+    }
 
     return fm_add_stdhist(fd, pid);
 }
