@@ -158,7 +158,7 @@ int fm_close(int fd) {
 
 int fm_read(int fd, void *buf, uint32_t size) {
     int read_count;
-    int tmp;
+    uint32_t tmp;
 
     if (fd < 0 || fd >= MAX_OPENED)
         return -1;
@@ -167,8 +167,11 @@ int fm_read(int fd, void *buf, uint32_t size) {
 
     switch (opened[fd].type) {
         case TYPE_FILE:
-            if (opened[fd].offset + size > c_fs_cnt_get_size(c_fs_get_main(), opened[fd].sid))
+            tmp = c_fs_cnt_get_size(c_fs_get_main(), opened[fd].sid);
+            if (opened[fd].offset > tmp)
                 return -1;
+            if (opened[fd].offset + size > tmp)
+                size = tmp - opened[fd].offset;
             read_count = c_fs_cnt_read(c_fs_get_main(), opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
             break;
         case TYPE_FCTF:
@@ -382,7 +385,7 @@ int fm_pipe(int fd[2]) {
     return 0;
 }
 
-int fm_isatty(int fd) {
+int fm_isfctf(int fd) {
     if (fd < 0 || fd >= MAX_OPENED)
         return -1;
     if (fd < 3)
