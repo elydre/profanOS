@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 2"
+#define OLV_VERSION "0.10 rev 3"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1417,11 +1417,24 @@ char *if_go_binfile(char **input) {
     };
 
     char *stdout_path = NULL;
+    char *stdin_path = NULL;
     sid_t sid;
+
+    if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
+        stdin_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
+        assemble_path(g_current_directory, input[argc - 1], stdin_path);
+        argc -= 2;
+    }
 
     if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
         stdout_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
         assemble_path(g_current_directory, input[argc - 1], stdout_path);
+        argc -= 2;
+    }
+
+    if (!stdin_path && argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
+        stdin_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
+        assemble_path(g_current_directory, input[argc - 1], stdin_path);
         argc -= 2;
     }
 
@@ -1433,8 +1446,20 @@ char *if_go_binfile(char **input) {
     if (argc < 1) {
         raise_error("go", "No given executable path");
         free(stdout_path);
+        free(stdin_path);
         free(file_path);
         return ERROR_CODE;
+    }
+
+    if (stdin_path) {
+        sid = fu_path_to_sid(ROOT_SID, stdin_path);
+        if (IS_NULL_SID(sid)) {
+            raise_error("go", "Cannot redirect stdin from '%s'", stdin_path);
+            free(stdout_path);
+            free(stdin_path);
+            free(file_path);
+            return ERROR_CODE;
+        }
     }
 
     if (stdout_path) {
@@ -1442,6 +1467,7 @@ char *if_go_binfile(char **input) {
         if (IS_NULL_SID(sid)) {
             if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
                 free(stdout_path);
+                free(stdin_path);
                 free(file_path);
                 return ERROR_CODE;
             }
@@ -1449,6 +1475,7 @@ char *if_go_binfile(char **input) {
         else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
             raise_error("go", "Cannot redirect stdout to '%s'", stdout_path);
             free(stdout_path);
+            free(stdin_path);
             free(file_path);
             return ERROR_CODE;
         }
@@ -1472,12 +1499,20 @@ char *if_go_binfile(char **input) {
 
     int pid;
     local_itoa(c_run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, stdout_path ? 2 : wait_end}, &pid
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
     ), g_exit_code);
+
+    if (stdin_path) {
+        fm_reopen(fm_resol012(0, pid), stdin_path);
+        free(stdin_path);
+    }
 
     if (stdout_path) {
         fm_reopen(fm_resol012(1, pid), stdout_path);
         free(stdout_path);
+    }
+
+    if (stdout_path || stdin_path) {
         c_process_wakeup(pid);
         if (wait_end) {
             profan_wait_pid(pid);
