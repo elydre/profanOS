@@ -128,6 +128,14 @@ You can also use the lua, sulfur, C and C++ languages to create your own program
 All the ports are available with the command `make addons` / `make waddons` (all ports)
 or by building them manually.
 
+### Libraries
+
+Libraries are loaded from disk. Currently the libraries are not dynamically linked,
+they are loaded only once and are shared between all processes.
+
+- Internal libraries: devio, filesys, fmopen, panda, profan, vgui
+- Standard libraries: math, setjmp, stdio, stdlib, string, time, unistd
+
 ## Real-Hardware
 
 profanOS works on pc with legacy bios but not with uefi. However profanOS
