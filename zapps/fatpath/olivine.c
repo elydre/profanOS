@@ -2143,18 +2143,23 @@ char *pipe_processor(char **input) {
         return ERROR_CODE;
     }
 
-    int old_stdout = dup(1);
-    int old_stdin =  dup(0);
+    int old_fds[4] = {
+        dup(0),
+        dup(1),
+        dup(3),
+        dup(4)
+    };
+
     char *line, *ret = NULL;
     int fd[2], fdin, start = 0;
-    fdin = old_stdin;
+    fdin = dup(0);
     for (int i = 0; i < argc + 1; i++) {
         if (strcmp(input[i], "|") && i != argc)
             continue;
 
         if (argc == i) {
-            dup2(old_stdout, 1);
-            dup2(old_stdout, 4);
+            dup2(old_fds[1], 1);
+            dup2(old_fds[3], 4);
             dup2(fdin, 0);
             dup2(fdin, 3);
         }
@@ -2165,7 +2170,7 @@ char *pipe_processor(char **input) {
                 ret = ERROR_CODE;
                 break;
             }
-            fm_debug(fd[0]);
+
             // copy pipe data to ret
             int n, s = 0;
             ret = malloc(101);
@@ -2185,24 +2190,30 @@ char *pipe_processor(char **input) {
 
         if (argc != i) {
             pipe(fd);
-            dup2(fdin, 0);
             dup2(fdin, 3);
-            dup2(fd[1], 1);
+            dup2(fdin, 0);
             dup2(fd[1], 4);
+            dup2(fd[1], 1);
         }
 
         execute_line(line);
-        fm_debug(fd[1]);
         close(fd[1]);
+        close(fdin);
+
         fdin = fd[0];
 
         free(line);
     }
+    close(fdin);
 
-    dup2(old_stdout, 4);
-    dup2(old_stdout, 1);
-    dup2(old_stdin, 0);
-    dup2(old_stdin, 3);
+    dup2(old_fds[1], 1);
+    dup2(old_fds[3], 4);
+    dup2(old_fds[0], 0);
+    dup2(old_fds[2], 3);
+
+    for (int i = 0; i < 4; i++) {
+        close(old_fds[i]);
+    }
 
     return ret;
     #endif
