@@ -11,9 +11,6 @@
 #define STDIO_C
 #include <stdio.h>
 
-#define FILE_TYPE_FILE 0
-#define FILE_TYPE_OTHER 1
-
 #define FILE_BUFFER_SIZE 0x1000
 #define FILE_BUFFER_READ 100
 
@@ -27,8 +24,9 @@ int puts(const char *str);
 int fflush(FILE *stream);
 int fclose(FILE *stream);
 
-int vprintf(const char *format, va_list vlist);
 int dopr(char* str, size_t size, const char* format, va_list arg);
+int vfprintf(FILE *stream, const char *format, va_list vlist);
+int vprintf(const char *format, va_list vlist);
 
 FILE *STD_STREAM = NULL;
 
@@ -44,21 +42,18 @@ void init_func(void) {
     dup[0].filename = "/dev/stdin";
     dup[0].mode = MODE_READ;
     dup[0].buffer = NULL;
-    dup[0].type = FILE_TYPE_OTHER;
     dup[0].fd = 0;
 
     // init stdout
     dup[1].filename = "/dev/stdout";
     dup[1].mode = MODE_WRITE;
     dup[1].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[1].type = FILE_TYPE_OTHER;
     dup[1].fd = 1;
 
     // init stderr
     dup[2].filename = "/dev/stderr";
     dup[2].mode = MODE_WRITE;
     dup[2].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[2].type = FILE_TYPE_OTHER;
     dup[2].fd = 2;
 
     STD_STREAM = dup;
@@ -135,13 +130,6 @@ FILE *fopen(const char *filename, const char *mode) {
 
     // now create the file structure
     FILE *file = malloc(sizeof(FILE));
-
-    // get the file type
-    if (fu_is_file(file_id)) {
-        file->type = FILE_TYPE_FILE;
-    } else {
-        file->type = FILE_TYPE_OTHER;
-    }
 
     // copy the filename
     file->filename = path;
@@ -276,7 +264,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     int read, rfrom_buffer = 0;
 
-    if (stream->type == FILE_TYPE_OTHER) {
+    if (fm_isfctf(stream->fd)) {
         // read the file
         read = fm_read(stream->fd, buffer, count);
         if (read < 0) return 0;
@@ -578,7 +566,6 @@ int printf(const char *format, ...) {
     return count;
 }
 
-int vfprintf(FILE *stream, const char *format, va_list vlist);
 int fprintf(FILE *stream, const char *format, ...) {
     int count;
     va_list args;
