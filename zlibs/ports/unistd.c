@@ -216,7 +216,7 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    return fm_isatty(fd);
+    return fm_isfctf(fd);
 }
 
 int lchown(const char *a, uid_t b, gid_t c) {
