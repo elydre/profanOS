@@ -841,7 +841,9 @@ int wctomb(char *s, wchar_t wchar) {
 }
 
 void I_swap(char *x, char *y) {
-    char t = *x; *x = *y; *y = t;
+    char t = *x;
+    *x = *y;
+    *y = t;
 }
 
 // Function to reverse `buffer[i..j]`
