@@ -218,7 +218,7 @@ int fm_write(int fd, void *buf, uint32_t size) {
         case TYPE_WPIP:
             if (opened[fd].pipe->writed + size > opened[fd].pipe->size) {
                 opened[fd].pipe->size = opened[fd].pipe->writed + size;
-                opened[fd].pipe->data = realloc(opened[fd].pipe->data, opened[fd].pipe->size);
+                opened[fd].pipe->data = realloc_ask(opened[fd].pipe->data, opened[fd].pipe->size);
             }
             memcpy(opened[fd].pipe->data + opened[fd].pipe->writed, buf, size);
             opened[fd].pipe->writed += size;
@@ -407,8 +407,12 @@ void fm_debug(int fd) {
                 debug_print("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
             else if (opened[fd].type == TYPE_FCTF)
                 debug_print("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
-            else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP)
-                debug_print("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
+            else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
+                debug_print("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
+                for (int i = 0; i < opened[fd].pipe->wpcnt; i++)
+                    debug_print("%d, ", opened[fd].pipe->wpid[i]);
+                debug_print("]\n");
+            }
             else
                 debug_print("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
         }
@@ -463,11 +467,13 @@ int fm_add_stdhist(int fd, int pid) {
         for (int i = 0; i < stdhist_len; i++) {
             if (c_process_get_state(stdhist[i].pid) < 4)
                 continue;
+            debug_print("fm_add_stdhist: stdhist %d (pid: %d) is still alive\n", i, stdhist[i].pid);
             fm_close(stdhist[i].fd[0]);
             fm_close(stdhist[i].fd[1]);
             fm_close(stdhist[i].fd[2]);
             memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
             stdhist_len--;
+            i--;
         }
     }
     if (stdhist_len == MAX_STDHIST) {
