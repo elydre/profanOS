@@ -150,15 +150,6 @@ int fm_close(int fd) {
         }
     }
 
-    /* for (int i = 0; i < stdhist_len; i++) {
-        for (int j = 0; j < 3; j++) {
-            if (stdhist[i].fd[j] == fd) {
-                opened[fd].type = TYPE_RESV;
-                return 0;
-            }
-        }
-    }*/
-
     opened[fd].type = 0;
     return 0;
 }
@@ -395,50 +386,6 @@ int fm_isfctf(int fd) {
     if (!opened[fd].type)
         return -1;
     return opened[fd].type == TYPE_FCTF;
-}
-
-void fm_debug(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED) {
-        serial_debug("stdhist_len: %d\n", stdhist_len);
-        for (int i = 0; i < stdhist_len; i++) {
-            serial_debug("pid: %d, fd: %d %d %d\n", stdhist[i].pid, stdhist[i].fd[0], stdhist[i].fd[1], stdhist[i].fd[2]);
-        }
-        serial_debug("opened:\n");
-        for (int i = 3; i < MAX_OPENED; i++) {
-            if (!opened[i].type) continue;
-            fd = i;
-            if (opened[fd].type == TYPE_FILE)
-                serial_debug("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
-            else if (opened[fd].type == TYPE_FCTF)
-                serial_debug("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
-            else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
-                serial_debug("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
-                for (int i = 0; i < opened[fd].pipe->wpcnt; i++)
-                    serial_debug("%d, ", opened[fd].pipe->wpid[i]);
-                serial_debug("]\n");
-            }
-            else
-                serial_debug("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
-        }
-        return;
-    }
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-
-    if (!opened[fd].type)
-        serial_debug("fd %d is not opened\n", fd);
-    else if (opened[fd].type == TYPE_FILE)
-        serial_debug("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
-    else if (opened[fd].type == TYPE_FCTF)
-        serial_debug("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
-    else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
-        serial_debug("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
-        for (int i = 0; i < opened[fd].pipe->wpcnt; i++)
-            serial_debug("%d, ", opened[fd].pipe->wpid[i]);
-        serial_debug("]\n");
-    }
-    else
-        serial_debug("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
 }
 
 void fm_clean(void) {

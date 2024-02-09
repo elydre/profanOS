@@ -78,9 +78,8 @@
 #define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
 #define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 11))
 #define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
-#define fm_debug ((void (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
-#define fm_clean ((void (*)(void)) get_func_addr(FMOPEN_LIB_ID, 14))
-#define fm_resol012 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 16))
+#define fm_clean ((void (*)(void)) get_func_addr(FMOPEN_LIB_ID, 13))
+#define fm_resol012 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 15))
 
 #endif
 #endif
