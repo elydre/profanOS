@@ -354,7 +354,7 @@ void panda_print_string(char *string, int len) {
                     ' ',
                     g_panda->color
                 );
-        } else if (string[i] == '\033')
+        } else if (string[i] == '\e')
             i += compute_ansi_escape(string + i, g_panda);
         else {
             y = g_panda->cursor_y - g_panda->scroll_offset;

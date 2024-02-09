@@ -84,9 +84,9 @@ void sys_warning(char *msg, ...) {
     va_list args;
     va_start(args, msg);
 
-    str_cpy(sys_safe_buffer, "\033[33mWARNING: \033[93m");
+    str_cpy(sys_safe_buffer, "\e[33mWARNING: \e[93m");
     kprintf_va2buf(sys_safe_buffer + 19, msg, args);
-    str_cat(sys_safe_buffer, "\033[0m\n");
+    str_cat(sys_safe_buffer, "\e[0m\n");
 
     va_end(args);
     sys_report(sys_safe_buffer);
@@ -104,9 +104,9 @@ void sys_error(char *msg, ...) {
     va_list args;
     va_start(args, msg);
 
-    str_cpy(sys_safe_buffer, "\033[31mERROR: \033[91m");
+    str_cpy(sys_safe_buffer, "\e[31mERROR: \e[91m");
     kprintf_va2buf(sys_safe_buffer + 17, msg, args);
-    str_cat(sys_safe_buffer, "\033[0m\n");
+    str_cat(sys_safe_buffer, "\e[0m\n");
 
     va_end(args);
     sys_report(sys_safe_buffer);

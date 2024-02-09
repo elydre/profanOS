@@ -13,7 +13,7 @@ FUNC help
         !0 -h
         RETURN
     END
-    chio /zada/common/shell_help.txt 'echo -e' !TERM
+    echo -e < /zada/common/shell_help.txt
 END
 
 FUNC args
@@ -94,49 +94,4 @@ FUNC mv
     IF !(eval !exit = 0)
         rm !0
     END
-END
-
-FUNC chio
-    IF !(eval !# < 2)
-        echo Usage: chio [input] <output>
-        RETURN
-    END
-
-    IF !(eval !# = 2)
-        set 2 '!1'
-        set 1 '!0'
-        set 0 /dev/kb
-    END
-
-    IF !(eval !(fsize !0) = null)
-        echo chio: '!0': no such file or directory
-        RETURN
-    END
-
-    IF !(eval !(fsize '!2') = null)
-        mkfile '!2'
-    END
-
-    ubr /dev/stdin '!0'
-    ubr /dev/stdout '!2'
-    !1
-    ubr /dev/stdout !TERM
-    ubr /dev/stdin /dev/kb
-END
-
-FUNC setterm
-    IF !(eval !# ~ 1)
-        echo Usage: setterm <out path>
-        RETURN
-    END
-
-    IF !(eval !(fsize '!0') = null)
-        echo setterm: '!0': no such file or directory
-        RETURN
-    END
-
-    export TERM '!0'
-
-    ubr /dev/stdout !TERM
-    ubr /dev/stderr !TERM
 END

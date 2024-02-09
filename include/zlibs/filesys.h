@@ -1,6 +1,7 @@
 #ifndef FILESYS_LIB_ID
 #define FILESYS_LIB_ID 1010
 #define DEVIO_LIB_ID   1015
+#define FMOPEN_LIB_ID  1016
 
 #include <type.h>
 
@@ -58,26 +59,27 @@
 #define fu_fctf_create ((sid_t (*)(int, char *, int (*)(void *, uint32_t, uint32_t, uint8_t))) get_func_addr(FILESYS_LIB_ID, 13))
 #define fu_fctf_rw ((int (*)(sid_t, void *, uint32_t, uint32_t, uint8_t)) get_func_addr(FILESYS_LIB_ID, 14))
 #define fu_fctf_get_addr ((uint32_t (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 15))
-#define fu_is_link ((int (*)(sid_t)) get_func_addr(FILESYS_LIB_ID, 16))
-#define fu_link_create ((sid_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 17))
-#define fu_link_get_path ((char *(*)(sid_t, int)) get_func_addr(FILESYS_LIB_ID, 18))
-#define fu_link_add_path ((int (*)(sid_t, int, char *)) get_func_addr(FILESYS_LIB_ID, 19))
-#define fu_link_get_all ((int (*)(sid_t, int**, char***)) get_func_addr(FILESYS_LIB_ID, 20))
-#define fu_link_remove_path ((int (*)(sid_t, int)) get_func_addr(FILESYS_LIB_ID, 21))
 
-#define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 23))
-#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 24))
-#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 25))
+#define fu_path_to_sid ((sid_t (*)(sid_t, char *)) get_func_addr(FILESYS_LIB_ID, 17))
+#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 18))
+#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 19))
 
 #endif
+#ifndef FMOPEN_LIB_C
 
-#ifndef DEVIO_LIB_C
-
-#define devio_file_read(sid, buf, offset, size) (devio_file_rw_from(sid, buf, offset, size, 0, -1))
-#define devio_file_write(sid, buf, offset, size) (devio_file_rw_from(sid, buf, offset, size, 1, -1))
-
-#define devio_set_redirection ((int (*)(sid_t, char *, int)) get_func_addr(DEVIO_LIB_ID, 2))
-#define devio_file_rw_from ((int (*)(sid_t, void *, uint32_t, uint32_t, uint8_t, int)) get_func_addr(DEVIO_LIB_ID, 3))
+#define fm_open ((int (*)(char *)) get_func_addr(FMOPEN_LIB_ID, 2))
+#define fm_reopen ((int (*)(int, char *)) get_func_addr(FMOPEN_LIB_ID, 3))
+#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 4))
+#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
+#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 6))
+#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 7))
+#define fm_tell ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
+#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
+#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
+#define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_clean ((void (*)(void)) get_func_addr(FMOPEN_LIB_ID, 13))
+#define fm_resol012 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 15))
 
 #endif
 #endif

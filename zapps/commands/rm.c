@@ -83,7 +83,7 @@ int remove_hard_link(sid_t elem, char *path) {
 }
 
 int remove_elem(sid_t elem, char *path, rm_options_t *options) {
-    if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem) || fu_is_link(elem))) {
+    if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
         printf("rm: cannot remove '%s': Unknown element type\n", path);
         return 1;
     }

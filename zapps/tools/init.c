@@ -1,6 +1,5 @@
 #include <syscall.h>
 #include <filesys.h>
-#include <i_iolib.h>
 #include <profan.h>
 #include <panda.h>
 
@@ -17,13 +16,13 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1000, "/lib/profan/iolib.bin"},
     {1012, "/lib/ports/time.bin"},
     {1006, "/lib/profan/vgui.bin"},
     {1007, "/lib/ports/stdlib.bin"},
     {1008, "/lib/ports/string.bin"},
     {1010, "/lib/profan/filesys.bin"},
     {1015, "/lib/profan/devio.bin"},
+    {1016, "/lib/profan/fmopen.bin"},
     {1009, "/lib/ports/stdio.bin"},
     {1002, "/lib/profan/profan.bin"},
     {1011, "/lib/ports/math.bin"},
@@ -60,18 +59,19 @@ int print_load_status(int i) {
     return 0;
 }
 
-int redirect_devio(char *link, char *redirection) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, link);
-    if (IS_NULL_SID(sid)) {
-        return 1;
+void rainbow_print(char *message) {
+    char rainbow_colors[] = {'2', '6', '4', '5', '1', '3'};
+
+    int i;
+    for (i = 0; message[i]; i++) {
+        printf("\e[9%cm%c", rainbow_colors[i % 6], message[i]);
     }
-    return (devio_set_redirection(sid, redirection, 0));
 }
 
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
 
-    printf("\033[35mKernel: \033[95m%s\033[0m\n\n", c_sys_kinfo());
+    printf("\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());
 }
 
 char wait_key(void) {
@@ -103,16 +103,13 @@ int main(void) {
     panda_set_start(c_get_cursor_offset());
 
     if (c_vesa_does_enable()) {
-        setenv("TERM", "/dev/panda", 1);
         use_panda = 1;
-        if (redirect_devio("/dev/stdout", "/dev/panda")) {
-            c_kprint("Failed to redirect stdout\n");
-            return 1;
-        }
-        if (redirect_devio("/dev/stderr", "/dev/panda")) {
-            c_kprint("Failed to redirect stderr\n");
-            return 1;
-        }
+        if (fm_reopen(1, "/dev/panda") < 0 ||
+            fm_reopen(2, "/dev/panda") < 0 ||
+            fm_reopen(4, "/dev/panda") < 0 ||
+            fm_reopen(5, "/dev/panda") < 0
+        ) c_kprint("Failed to redirect to panda\n");
+        setenv("TERM", "/dev/panda", 1);
         c_sys_set_reporter(userspace_reporter);
         run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
     } else {
@@ -139,7 +136,7 @@ int main(void) {
         c_sys_set_reporter(NULL);
     }
 
-    c_kprint("\033[2J");
+    c_kprint("\e[2J");
     if (c_process_get_state(usage_pid) < 4) {
         c_process_kill(usage_pid);
     }
@@ -158,3 +155,4 @@ int main(void) {
 
     return 0;
 }
+

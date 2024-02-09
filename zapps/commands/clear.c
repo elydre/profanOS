@@ -2,12 +2,12 @@
 #include <stdio.h>
 
 int ansiclear(void) {
-    printf("\033[2J");
+    printf("\e[2J");
     return 0;
 }
 
 int hardclear(void) {
-    c_kprint("\033[2J");
+    c_kprint("\e[2J");
     ansiclear();
     return 0;
 }

@@ -282,15 +282,14 @@ int main(int argc, char **argv) {
 
     if (args->format == LS_FORMAT_COMMA) {
         for (int i = 0; i < elm_count; i++) {
-            if (fu_is_dir(cnt_ids[i])) printf("\033[96m%s", cnt_names[i]);
-            else if (fu_is_file(cnt_ids[i])) printf("\033[92m%s", cnt_names[i]);
-            else if (fu_is_fctf(cnt_ids[i])) printf("\033[95m%s", cnt_names[i]);
-            else if (fu_is_link(cnt_ids[i])) printf("\033[93m%s", cnt_names[i]);
-            else printf("\033[91m%s", cnt_names[i]);
-            if (i != elm_count - 1) printf("\033[0m, ");
+            if (fu_is_dir(cnt_ids[i])) printf("\e[96m%s", cnt_names[i]);
+            else if (fu_is_file(cnt_ids[i])) printf("\e[92m%s", cnt_names[i]);
+            else if (fu_is_fctf(cnt_ids[i])) printf("\e[93m%s", cnt_names[i]);
+            else printf("\e[91m%s", cnt_names[i]);
+            if (i != elm_count - 1) printf("\e[0m, ");
             free(cnt_names[i]);
         }
-        puts("\033[0m");
+        puts("\e[0m");
     }
 
     else if (args->format == LS_FORMAT_COLS) {
@@ -305,11 +304,10 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < rows; i++) {
             for (int j = i; j < elm_count; j += rows) {
-                if (fu_is_dir(cnt_ids[j])) printf("\033[96m%s\033[0m", cnt_names[j]);
-                else if (fu_is_file(cnt_ids[j])) printf("\033[92m%s\033[0m", cnt_names[j]);
-                else if (fu_is_fctf(cnt_ids[j])) printf("\033[95m%s\033[0m", cnt_names[j]);
-                else if (fu_is_link(cnt_ids[j])) printf("\033[93m%s\033[0m", cnt_names[j]);
-                else printf("\033[91m%s\033[0m", cnt_names[j]);
+                if (fu_is_dir(cnt_ids[j])) printf("\e[96m%s\e[0m", cnt_names[j]);
+                else if (fu_is_file(cnt_ids[j])) printf("\e[92m%s\e[0m", cnt_names[j]);
+                else if (fu_is_fctf(cnt_ids[j])) printf("\e[93m%s\e[0m", cnt_names[j]);
+                else printf("\e[91m%s\e[0m", cnt_names[j]);
                 for (uint32_t k = 0; k < max_len - strlen(cnt_names[j]) + 1; k++) putchar(' ');
                 free(cnt_names[j]);
             }
@@ -320,7 +318,7 @@ int main(int argc, char **argv) {
     else {
         int size;
         for (int i = 0; i < elm_count; i++) {
-            printf("\033[sd%ds%d\033[u\033[10C", cnt_ids[i].device, cnt_ids[i].sector);
+            printf("\e[sd%ds%d\e[u\e[10C", cnt_ids[i].device, cnt_ids[i].sector);
 
             if (fu_is_dir(cnt_ids[i])) {
                 if (args->size_type == LS_SIZE_VIRT) {
@@ -328,26 +326,19 @@ int main(int argc, char **argv) {
                 } else {
                     printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
                 }
-                printf("\033[u\033[22C\033[96m%s\033[0m", cnt_names[i]);
+                printf("\e[u\e[22C\e[96m%s\e[0m", cnt_names[i]);
             } else if (fu_is_file(cnt_ids[i])) {
                 size = fu_get_file_size(cnt_ids[i]);
                 if (args->size_type == LS_SIZE_PHYS || size < 10000) printf("%d B", size);
                 else if (size < 10000000) printf("%d kB", size / 1024);
                 else printf("%d MB", size / (1024 * 1024));
-                printf("\033[u\033[22C\033[92m%s\033[0m", cnt_names[i]);
+                printf("\e[u\e[22C\e[92m%s\e[0m", cnt_names[i]);
             } else if (fu_is_fctf(cnt_ids[i])) {
                 if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
                 else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
-                printf("\033[u\033[22C\033[95m%s\033[0m", cnt_names[i]);
-            } else if (fu_is_link(cnt_ids[i])) {
-                if (args->size_type == LS_SIZE_VIRT) {
-                    printf("text-link");
-                } else {
-                    printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
-                }
-                printf("\033[u\033[22C\033[93m%s\033[0m", cnt_names[i]);
+                printf("\e[u\e[22C\e[93m%s\e[0m", cnt_names[i]);
             } else {
-                printf("\033[u\033[22C\033[91m%s\033[0munk", cnt_names[i]);
+                printf("\e[u\e[22C\e[91m%s\e[0munk", cnt_names[i]);
             }
             free(cnt_names[i]);
             putchar('\n');

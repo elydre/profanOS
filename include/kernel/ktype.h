@@ -69,7 +69,7 @@ typedef struct {
 
     uint32_t stack; // stack size
 
-    uint8_t sleep; // sleep after start
+    uint8_t sleep;  // sleep mode
 } runtime_args_t;
 
 typedef struct {

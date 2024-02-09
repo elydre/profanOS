@@ -214,7 +214,7 @@ void kcnprint(char *message, int len, char color) {
     int i = 0;
     if (len == -1) len = str_len(message);
     while (i < len) {
-        if (message[i] == '\033') {
+        if (message[i] == '\e') {
             i += compute_ansi_escape(message + i, &color);
         } else {
             kprint_char_at(-1, -1, message[i], color);

@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 1"
+#define OLV_VERSION "0.10 rev 4"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -21,6 +21,8 @@
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
+
+#define devio_set_redirection(a, b, c) 0
 
 /******************************
  *                           *
@@ -51,7 +53,7 @@
   #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
 
-#define DEBUG_COLOR  "\033[37m"
+#define DEBUG_COLOR  "\e[37m"
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
@@ -1415,11 +1417,24 @@ char *if_go_binfile(char **input) {
     };
 
     char *stdout_path = NULL;
+    char *stdin_path = NULL;
     sid_t sid;
+
+    if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
+        stdin_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
+        assemble_path(g_current_directory, input[argc - 1], stdin_path);
+        argc -= 2;
+    }
 
     if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
         stdout_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
         assemble_path(g_current_directory, input[argc - 1], stdout_path);
+        argc -= 2;
+    }
+
+    if (!stdin_path && argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
+        stdin_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
+        assemble_path(g_current_directory, input[argc - 1], stdin_path);
         argc -= 2;
     }
 
@@ -1431,8 +1446,20 @@ char *if_go_binfile(char **input) {
     if (argc < 1) {
         raise_error("go", "No given executable path");
         free(stdout_path);
+        free(stdin_path);
         free(file_path);
         return ERROR_CODE;
+    }
+
+    if (stdin_path) {
+        sid = fu_path_to_sid(ROOT_SID, stdin_path);
+        if (IS_NULL_SID(sid)) {
+            raise_error("go", "Cannot redirect stdin from '%s'", stdin_path);
+            free(stdout_path);
+            free(stdin_path);
+            free(file_path);
+            return ERROR_CODE;
+        }
     }
 
     if (stdout_path) {
@@ -1440,6 +1467,7 @@ char *if_go_binfile(char **input) {
         if (IS_NULL_SID(sid)) {
             if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
                 free(stdout_path);
+                free(stdin_path);
                 free(file_path);
                 return ERROR_CODE;
             }
@@ -1447,6 +1475,7 @@ char *if_go_binfile(char **input) {
         else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
             raise_error("go", "Cannot redirect stdout to '%s'", stdout_path);
             free(stdout_path);
+            free(stdin_path);
             free(file_path);
             return ERROR_CODE;
         }
@@ -1468,22 +1497,26 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
-    if (stdout_path) {
-        sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
-        devio_set_redirection(sid, stdout_path, -1);
-    }
-
     int pid;
     local_itoa(c_run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, wait_end}, &pid
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
     ), g_exit_code);
 
+    if (stdin_path) {
+        fm_reopen(fm_resol012(0, pid), stdin_path);
+        free(stdin_path);
+    }
+
     if (stdout_path) {
-        if (c_process_get_state(pid) < 4) {
-            devio_set_redirection(sid, stdout_path, pid);
-        }
-        devio_set_redirection(sid, getenv("TERM"), -1);
+        fm_reopen(fm_resol012(1, pid), stdout_path);
         free(stdout_path);
+    }
+
+    if (stdout_path || stdin_path) {
+        c_process_wakeup(pid);
+        if (wait_end) {
+            profan_wait_pid(pid);
+        }
     }
 
     if (pid == -1) {
@@ -1561,6 +1594,7 @@ char *if_print(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         fputs(input[i], stdout);
     }
+    fflush(stdout);
     return NULL;
 }
 
@@ -2145,98 +2179,79 @@ char *pipe_processor(char **input) {
         return ERROR_CODE;
     }
 
-    sid_t stdin_sid = fu_path_to_sid(ROOT_SID, "/dev/stdin");
-    sid_t stdout_sid = fu_path_to_sid(ROOT_SID, "/dev/stdout");
+    int old_fds[4] = {
+        dup(0),
+        dup(1),
+        dup(3),
+        dup(4)
+    };
 
-    if (IS_NULL_SID(stdin_sid) || IS_NULL_SID(stdout_sid)) {
-        raise_error("Pipe Processor", "IO files unreachable");
-        return ERROR_CODE;
-    }
-
-    char *term_path = getenv("TERM");
-    if (term_path == NULL) {
-        raise_error("Pipe Processor", "TERM environment variable not set");
-        return ERROR_CODE;
-    }
-
-    char *in_tmp = calloc(15, sizeof(char));
-    char *out_tmp = calloc(15, sizeof(char));
-
-    char *line, *res;
-
-    int i, from_index = 0;
-    for (i = 0; i <= argc; i++) {
-        if (strcmp(input[i], "|") && i != argc) {
+    char *line, *ret = NULL;
+    int fd[2], fdin, start = 0;
+    fdin = dup(0);
+    for (int i = 0; i < argc + 1; i++) {
+        if (strcmp(input[i], "|") && i != argc)
             continue;
+
+        if (argc == i) {
+            dup2(old_fds[1], 1);
+            dup2(old_fds[3], 4);
+            dup2(fdin, 0);
+            dup2(fdin, 3);
         }
 
-        if (i == from_index) {
-            if (i == argc) break;
-            devio_set_redirection(stdout_sid, term_path, -1);
-            devio_set_redirection(stdin_sid, "/dev/kb", -1);
-            raise_error("Pipe Processor", "Empty command");
-            free(out_tmp);
-            free(in_tmp);
-            return ERROR_CODE;
+        if (i == start) {
+            if (i != argc) {
+                raise_error("Pipe Processor", "Empty command");
+                ret = ERROR_CODE;
+                break;
+            }
+
+            // copy pipe data to ret
+            int n, s = 0;
+            ret = malloc(101);
+            while ((n = read(fdin, ret + s, 100)) > 0) {
+                s += n;
+                ret = realloc(ret, s + 101);
+            }
+            while (ret[s - 1] == '\n' || ret[s - 1] == '\0') {
+                s--;
+            }
+            ret[s] = '\0';
+            break;
         }
 
-        if (*out_tmp) {
-            strcpy(in_tmp, out_tmp);
-        } else {
-            in_tmp[0] = '\0';
+        line = args_rejoin(input + start, i - start);
+        start = i + 1;
+
+        if (argc != i) {
+            pipe(fd);
+            dup2(fdin, 3);
+            dup2(fdin, 0);
+            dup2(fd[1], 4);
+            dup2(fd[1], 1);
         }
 
-        if (i == argc) {
-            strcpy(out_tmp, term_path);
-        } else {
-            tmpnam_s(out_tmp, 15);
-            fu_file_create(0, out_tmp);
-        }
+        execute_line(line);
+        close(fd[1]);
+        close(fdin);
 
-        if (in_tmp)
-            devio_set_redirection(stdin_sid, in_tmp, -1);
-
-        devio_set_redirection(stdout_sid, out_tmp, -1);
-
-        line = args_rejoin(input + from_index, i - from_index);
-
-        if ((res = execute_line(line)) == ERROR_CODE) {
-            devio_set_redirection(stdin_sid, "/dev/kb", -1);
-            devio_set_redirection(stdout_sid, term_path, -1);
-            free(out_tmp);
-            free(in_tmp);
-            free(line);
-            return ERROR_CODE;
-        }
+        fdin = fd[0];
 
         free(line);
-        free(res);
-
-        fflush(stdout);
-        from_index = i + 1;
     }
-    devio_set_redirection(stdin_sid, "/dev/kb", -1);
-    free(in_tmp);
+    close(fdin);
 
-    if (i != argc) {
-        free(out_tmp);
-        return NULL;
+    dup2(old_fds[1], 1);
+    dup2(old_fds[3], 4);
+    dup2(old_fds[0], 0);
+    dup2(old_fds[2], 3);
+
+    for (int i = 0; i < 4; i++) {
+        close(old_fds[i]);
     }
 
-    devio_set_redirection(stdout_sid, term_path, -1);
-
-    sid_t out_sid = fu_path_to_sid(ROOT_SID, out_tmp);
-    i = fu_get_file_size(out_sid);
-    line = malloc(i + 1);
-    fu_file_read(out_sid, line, 0, i);
-
-    while (line[i - 1] == '\n')
-        i--;
-    line[i] = '\0';
-
-    free(out_tmp);
-    return line;
-
+    return ret;
     #endif
     raise_error("Pipe Processor", "Not supported in this build");
     return NULL;
@@ -2256,10 +2271,10 @@ void debug_print(char *function_name, char **function_args) {
             printf("'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR "'%s') [%d]\033[0m\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR "'%s') [%d]\e[0m\n", function_args[i], i + 1);
         return;
     }
-    puts(DEBUG_COLOR ") [0]\033[0m");
+    puts(DEBUG_COLOR ") [0]\e[0m");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -3354,7 +3369,7 @@ void olv_print(char *str, int len) {
     }
 
     if (str[i] == '/' && str[i + 1] == '/') {
-        fputs("\033[32m", stdout);
+        fputs("\e[32m", stdout);
         for (i = 0; str[i] != ';'; i++) {
             if (i == len) return;
             putchar(str[i]);
@@ -3370,7 +3385,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    printf("\033[%sm%s", get_func_color(tmp + dec), tmp);
+    printf("\e[%sm%s", get_func_color(tmp + dec), tmp);
 
     int from = i;
     for (; i < len; i++) {
@@ -3378,7 +3393,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '9' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '9' : '7', tmp);
             }
             olv_print(str + i, len - i);
             free(tmp);
@@ -3390,7 +3405,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '9' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '9' : '7', tmp);
             }
 
             // find the closing bracket
@@ -3407,11 +3422,11 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            printf("\033[9%cm!(", (j == len) ? '1' : '2');
+            printf("\e[9%cm!(", (j == len) ? '1' : '2');
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                fputs("\033[92m)", stdout);
+                fputs("\e[92m)", stdout);
             }
 
             i = j;
@@ -3423,10 +3438,10 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
-            fputs("\033[37m;\033[0m", stdout);
+            fputs("\e[37m;\e[0m", stdout);
             olv_print(str + i + 1, len - i - 1);
             free(tmp);
             return;
@@ -3441,11 +3456,11 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
 
-            fputs("\033[37m|\033[0m", stdout);
+            fputs("\e[37m|\e[0m", stdout);
             if (str[i + 1] == STRING_CHAR) {
                 putchar(STRING_CHAR);
                 i++;
@@ -3461,7 +3476,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
             is_var = 1;
@@ -3472,7 +3487,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
                 from = i;
             }
             is_var = 0;
@@ -3482,7 +3497,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        printf("\033[9%cm%s", is_var ? '3' : '7', tmp);
+        printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
     }
 
     free(tmp);
@@ -3720,7 +3735,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     history_end++;
 
     // save the current cursor position and show it
-    fputs("\033[s\033[?25l", stdout);
+    fputs("\e[s\e[?25l", stdout);
 
     int sc, last_sc = 0, last_sc_sgt = 0;
 
@@ -3729,7 +3744,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        printf(" \033[0m\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
     }
 
     fflush(stdout);
@@ -3807,7 +3822,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             if (history[history_index] == NULL || history_index == history_end) {
                 history_index = old_index;
             } else {
-                fputs("\033[u\033[K", stdout);
+                fputs("\e[u\e[K", stdout);
                 strcpy(buffer, history[history_index]);
                 buffer_actual_size = strlen(buffer);
                 buffer_index = buffer_actual_size;
@@ -3819,7 +3834,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
-            fputs("\033[u\033[K", stdout);
+            fputs("\e[u\e[K", stdout);
             if (history[history_index] == NULL || history_index == history_end) {
                 buffer[0] = '\0';
                 buffer_actual_size = 0;
@@ -3904,9 +3919,9 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
         else continue;
 
-        fputs("\033[?25h\033[u", stdout);
+        fputs("\e[?25h\e[u", stdout);
         olv_print(buffer, buffer_actual_size);
-        printf(" \033[0m\033[u\033[%dC\033[?25l", buffer_index);
+        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
         fflush(stdout);
     }
 
@@ -3914,7 +3929,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
 
     buffer[buffer_actual_size] = '\0';
 
-    puts("\033[?25h");
+    puts("\e[?25h");
 
     return ret_val;
 

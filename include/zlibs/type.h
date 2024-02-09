@@ -78,7 +78,7 @@ typedef struct {
 
     uint32_t stack; // stack size
 
-    uint8_t sleep; // sleep after start
+    uint8_t sleep;  // sleep mode
 } runtime_args_t;
 
 #endif
@@ -171,10 +171,9 @@ typedef struct FILE {
     char *buffer;
     int   buffer_size;
     int   buffer_pid;
+    int   old_offset;
 
-    uint32_t file_pos;
-    int   type;
-    sid_t sid;
+    int   fd;
 } FILE;
 
 typedef struct fpos_t {

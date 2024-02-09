@@ -52,7 +52,7 @@ char get_user_input(void) {
     int scancode;
     char c;
 
-    printf("\033[s\033[96m -- MORE - Press space to continue, q to quit -- \033[0m");
+    printf("\e[s\e[96m -- MORE - Press space to continue, q to quit -- \e[0m");
     fflush(stdout);
 
     while (1) {
@@ -69,7 +69,7 @@ char get_user_input(void) {
         usleep(100000);
     }
 
-    printf("\033[u\033[K");
+    printf("\e[u\e[K");
     return c;
 }
 
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     }
 
     // clear screen
-    printf("\033[2J");
+    printf("\e[2J");
     fflush(stdout);
 
     for (int i = 0; buffer[i]; i++) {
