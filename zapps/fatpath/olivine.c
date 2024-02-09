@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 3"
+#define OLV_VERSION "0.10 rev 4"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1594,6 +1594,7 @@ char *if_print(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         fputs(input[i], stdout);
     }
+    fflush(stdout);
     return NULL;
 }
 
