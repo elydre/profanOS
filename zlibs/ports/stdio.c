@@ -27,6 +27,7 @@ int fclose(FILE *stream);
 int dopr(char* str, size_t size, const char* format, va_list arg);
 int vfprintf(FILE *stream, const char *format, va_list vlist);
 int vprintf(const char *format, va_list vlist);
+int printf(const char *format, ...);
 
 FILE *STD_STREAM = NULL;
 
@@ -273,26 +274,11 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         return read / size;
     }
 
-    uint32_t file_pos = fm_lseek(stream->fd, 0, SEEK_CUR);
-    uint32_t file_size = fm_lseek(stream->fd, 0, SEEK_END);
-    fm_lseek(stream->fd, file_pos, SEEK_SET);
-
-    // check if the file is at the end
-    if (file_pos >= file_size) {
-        return 0;
-    }
-
-    // check if the file is at the end
-    if (file_pos + (int) count >= file_size) {
-        count = file_size - file_pos;
-    }
-
     // read the file from the buffer if possible
     if (stream->buffer_size < 0) {
         if ((uint32_t) -stream->buffer_size > count) {
             memcpy(buffer, stream->buffer, count);
             stream->buffer_size += count;
-            file_pos += count;
 
             // move the buffer
             memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
@@ -300,36 +286,27 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         }
 
         memcpy(buffer, stream->buffer, -stream->buffer_size);
-        stream->buffer_size = 0;
-        file_pos += -stream->buffer_size;
-
-        buffer += -stream->buffer_size;
-        count -= -stream->buffer_size;
-
         rfrom_buffer = -stream->buffer_size;
+        count += stream->buffer_size;
+
+        stream->buffer_size = 0;
     }
 
-    // read the file from the filesystem
-    if (count >= FILE_BUFFER_READ || file_pos + count == file_size) {
-        fm_lseek(stream->fd, file_pos, SEEK_SET);
-        read = fm_read(stream->fd, buffer, count);
-        if (read < 0) read = 0;
-
-        // return the number of elements read
-        return (count + rfrom_buffer) / size;
+    // read the file
+    if (count > FILE_BUFFER_READ) {
+        read = fm_read(stream->fd, buffer + rfrom_buffer, count);
+        if (read < 0) return 0;
+        return (read + rfrom_buffer) / size;
     }
 
-    fm_lseek(stream->fd, file_pos, SEEK_SET);
     read = fm_read(stream->fd, stream->buffer, FILE_BUFFER_READ);
-    if (read < 0) read = 0;
-    if ((uint32_t) read < count) count = read;
+    if (read < 0) return 0;
+    if ((uint32_t) read < count)
+        count = read;
 
-    memcpy(buffer, stream->buffer, count);
-    stream->buffer_size = -read + count;
-    memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
-
-    // set file position
-    fm_lseek(stream->fd, file_pos + count, SEEK_SET);
+    memcpy(buffer + rfrom_buffer, stream->buffer, count);
+    memmove(stream->buffer, stream->buffer + count, read - count);
+    stream->buffer_size = -(read - count);
 
     // return the number of elements read
     return (count + rfrom_buffer) / size;
