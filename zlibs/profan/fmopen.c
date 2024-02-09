@@ -1,5 +1,4 @@
 #include <syscall.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -7,6 +6,7 @@
 #define FMOPEN_LIB_C
 
 #include <filesys.h>
+#include <profan.h>
 
 #define MAX_OPENED 100
 #define MAX_STDHIST 20
@@ -49,8 +49,6 @@ int fm_add_stdhist(int fd, int pid);
 int fm_resol012(int fd, int pid);
 int fm_reopen(int fd, char *path);
 int fm_close(int fd);
-
-void debug_print(char *frm, ...);
 
 int main(void) {
     opened = calloc_ask(MAX_OPENED, sizeof(opened_t));
@@ -152,6 +150,15 @@ int fm_close(int fd) {
         }
     }
 
+    /* for (int i = 0; i < stdhist_len; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (stdhist[i].fd[j] == fd) {
+                opened[fd].type = TYPE_RESV;
+                return 0;
+            }
+        }
+    }*/
+
     opened[fd].type = 0;
     return 0;
 }
@@ -206,8 +213,6 @@ int fm_write(int fd, void *buf, uint32_t size) {
         return -1;
     if (fd < 3)
         fd = fm_resol012(fd, -1);
-
-    // debug_print("fm_write: %d %d\n", fd, opened[fd].type);
 
     switch (opened[fd].type) {
         case TYPE_FILE:
@@ -283,7 +288,7 @@ int fm_dup(int fd) {
         if (!opened[index].type) break;
     }
     if (index == MAX_OPENED) {
-        debug_print("fm_dup: no more file descriptors\n");
+        serial_debug("fm_dup: no more file descriptors\n");
         return -1;
     }
 
@@ -299,14 +304,12 @@ int fm_dup(int fd) {
         opened[index].pipe = opened[fd].pipe;
         opened[index].pipe->refs++;
         for (int i = 0; i < opened[index].pipe->wpcnt; i++) {
-            debug_print("%d %d\n", opened[index].pipe->wpid[i], opened[index].pid);
             if (opened[index].pipe->wpid[i] == opened[index].pid)
                 return index;
         }
         opened[index].pipe->wpid[opened[index].pipe->wpcnt++] = opened[index].pid;
     } else
         opened[index].sid = opened[fd].sid;
-    // debug_print("fm_dup: %d %d\n", fd, index);
     return index;
 }
 
@@ -335,7 +338,6 @@ int fm_dup2(int fd, int new_fd) {
         opened[new_fd].pipe = opened[fd].pipe;
         opened[new_fd].pipe->refs++;
         for (int i = 0; i < opened[new_fd].pipe->wpcnt; i++) {
-            debug_print("%d %d\n", opened[new_fd].pipe->wpid[i], opened[new_fd].pid);
             if (opened[new_fd].pipe->wpid[i] == opened[new_fd].pid)
                 return 0;
         }
@@ -343,7 +345,6 @@ int fm_dup2(int fd, int new_fd) {
     } else
         opened[new_fd].sid = opened[fd].sid;
 
-    debug_print("fm_dup2: %d -> %d (pid: %d)\n", fd, new_fd, opened[new_fd].pid);
     return 0;
 }
 
@@ -356,7 +357,7 @@ int fm_pipe(int fd[2]) {
     for (i2 = i1 + 1; i2 < MAX_OPENED; i2++)
         if (!opened[i2].type) break;
     if (i1 == MAX_OPENED || i2 == MAX_OPENED) {
-        debug_print("fm_pipe: no more file descriptors\n");
+        serial_debug("fm_pipe: no more file descriptors\n");
         return -1;
     }
 
@@ -398,26 +399,26 @@ int fm_isfctf(int fd) {
 
 void fm_debug(int fd) {
     if (fd < 0 || fd >= MAX_OPENED) {
-        debug_print("stdhist_len: %d\n", stdhist_len);
+        serial_debug("stdhist_len: %d\n", stdhist_len);
         for (int i = 0; i < stdhist_len; i++) {
-            debug_print("pid: %d, fd: %d %d %d\n", stdhist[i].pid, stdhist[i].fd[0], stdhist[i].fd[1], stdhist[i].fd[2]);
+            serial_debug("pid: %d, fd: %d %d %d\n", stdhist[i].pid, stdhist[i].fd[0], stdhist[i].fd[1], stdhist[i].fd[2]);
         }
-        debug_print("opened:\n");
+        serial_debug("opened:\n");
         for (int i = 3; i < MAX_OPENED; i++) {
             if (!opened[i].type) continue;
             fd = i;
             if (opened[fd].type == TYPE_FILE)
-                debug_print("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
+                serial_debug("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
             else if (opened[fd].type == TYPE_FCTF)
-                debug_print("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
+                serial_debug("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
             else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
-                debug_print("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
+                serial_debug("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
                 for (int i = 0; i < opened[fd].pipe->wpcnt; i++)
-                    debug_print("%d, ", opened[fd].pipe->wpid[i]);
-                debug_print("]\n");
+                    serial_debug("%d, ", opened[fd].pipe->wpid[i]);
+                serial_debug("]\n");
             }
             else
-                debug_print("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
+                serial_debug("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
         }
         return;
     }
@@ -425,61 +426,71 @@ void fm_debug(int fd) {
         fd = fm_resol012(fd, -1);
 
     if (!opened[fd].type)
-        debug_print("fd %d is not opened\n", fd);
+        serial_debug("fd %d is not opened\n", fd);
     else if (opened[fd].type == TYPE_FILE)
-        debug_print("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
+        serial_debug("fd: %d, sid: d%ds%d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].sid.device, opened[fd].sid.sector, opened[fd].type, opened[fd].offset, opened[fd].pid);
     else if (opened[fd].type == TYPE_FCTF)
-        debug_print("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
+        serial_debug("fd: %d, fctf: %p, type: %d, offset: %d, pid: %d\n", fd, opened[fd].fctf, opened[fd].type, opened[fd].offset, opened[fd].pid);
     else if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
-        debug_print("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
+        serial_debug("fd: %d, pipe: %p, type: %d, offset: %d, pid: %d, wpid: [", fd, opened[fd].pipe, opened[fd].type, opened[fd].offset, opened[fd].pid);
         for (int i = 0; i < opened[fd].pipe->wpcnt; i++)
-            debug_print("%d, ", opened[fd].pipe->wpid[i]);
-        debug_print("]\n");
+            serial_debug("%d, ", opened[fd].pipe->wpid[i]);
+        serial_debug("]\n");
     }
     else
-        debug_print("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
+        serial_debug("fd: %d, type: %d, offset: %d, pid: %d\n", fd, opened[fd].type, opened[fd].offset, opened[fd].pid);
 }
 
 void fm_clean(void) {
-    int count012 = 0;
-    int countother = 0;
+    int fd_free = 0;
 
     for (int i = 0; i < stdhist_len; i++) {
         if (c_process_get_state(stdhist[i].pid) < 4)
             continue;
-        printf("fm_clean: stdhist %d (pid: %d) is still alive\n", i, stdhist[i].pid);
+        printf("fm_clean: stdhist %d (pid: %d)\n", i, stdhist[i].pid);
         fm_close(stdhist[i].fd[0]);
         fm_close(stdhist[i].fd[1]);
         fm_close(stdhist[i].fd[2]);
         memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
         stdhist_len--;
-        count012++;
         i--;
     }
+
     for (int i = 3; i < MAX_OPENED; i++) {
         if (!opened[i].type) continue;
         if (c_process_get_state(opened[i].pid) < 4)
             continue;
-        printf("fm_clean: opened %d (pid: %d) is still alive\n", i, opened[i].pid);
+        printf("fm_clean: opened %d (pid: %d) [WARNING]\n", i, opened[i].pid);
         fm_close(i);
     }
+
+    for (int i = 3; i < MAX_OPENED; i++) {
+        if (!opened[i].type) {
+            fd_free++;
+            continue;
+        }
+    }
+
+    printf("fm_clean: %d file descriptors are free\n", fd_free);
 }
 
 int fm_add_stdhist(int fd, int pid) {
-    if (stdhist_len == MAX_STDHIST) {
+    if (stdhist_len >= MAX_STDHIST) {
         for (int i = 0; i < stdhist_len; i++) {
             if (c_process_get_state(stdhist[i].pid) < 4)
                 continue;
-            debug_print("fm_add_stdhist: stdhist %d (pid: %d) is still alive\n", i, stdhist[i].pid);
-            fm_close(stdhist[i].fd[0]);
-            fm_close(stdhist[i].fd[1]);
-            fm_close(stdhist[i].fd[2]);
+            for (int j = 0; j < 3; j++) {
+                if (opened[stdhist[i].fd[j]].pid != stdhist[i].pid)
+                    continue;
+                fm_close(stdhist[i].fd[j]);
+            }
             memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
             stdhist_len--;
             i--;
         }
     }
-    if (stdhist_len == MAX_STDHIST) {
+
+    if (stdhist_len >= MAX_STDHIST) {
         printf("fm_add_stdhist: no more space in stdhist\n");
         return -1;
     }
@@ -502,9 +513,6 @@ int fm_add_stdhist(int fd, int pid) {
             stdhist[i - 1] = tmp;
         }
     }
-
-    debug_print("fm_add_stdhist (pid: %d, fd: %d): %d (type: %d)\n", opened[res].pid, fd, res, opened[res].type);
-
     return res;
 }
 
@@ -527,14 +535,4 @@ int fm_resol012(int fd, int pid) {
     }
 
     return fm_add_stdhist(fd, pid);
-}
-
-void debug_print(char *frm, ...) {
-    va_list args;
-    va_start(args, frm);
-    char *str = malloc(1024);
-    vsprintf(str, frm, args);
-    c_serial_print(SERIAL_PORT_A, str);
-    free(str);
-    va_end(args);
 }

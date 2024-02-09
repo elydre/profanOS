@@ -28,5 +28,5 @@
 #define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 7))
 #define profan_wait_pid ((void (*)(uint32_t)) get_func_addr(PROFAN_LIB_ID, 8))
 #define open_input ((uint32_t (*)(char *, uint32_t)) get_func_addr(PROFAN_LIB_ID, 9))
-
+#define serial_debug ((int (*)(char *, ...)) get_func_addr(PROFAN_LIB_ID, 10))
 #endif

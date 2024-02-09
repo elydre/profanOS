@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #include <syscall.h>
@@ -277,4 +278,21 @@ uint32_t open_input(char *buffer, uint32_t size) {
     puts("\e[?25h");
 
     return buffer_actual_size;
+}
+
+int serial_debug(char *frm, ...) {
+    va_list args;
+    char *str;
+    int len;
+
+    va_start(args, frm);
+    str = malloc(1024);
+
+    len = vsprintf(str, frm, args);
+    c_serial_print(SERIAL_PORT_A, str);
+
+    free(str);
+    va_end(args);
+
+    return len;
 }
