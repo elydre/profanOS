@@ -141,7 +141,7 @@ int fm_close(int fd) {
             }
         }
     }
-    
+
     if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
         opened[fd].pipe->refs--;
         if (!opened[fd].pipe->refs) {
