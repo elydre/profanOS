@@ -2222,7 +2222,7 @@ char *pipe_processor(char **input) {
         }
 
         line = args_rejoin(input + start, i - start);
-        start = i + 1; 
+        start = i + 1;
 
         if (argc != i) {
             pipe(fd);
