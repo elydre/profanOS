@@ -274,7 +274,7 @@ uint32_t open_input(char *buffer, uint32_t size) {
 
     buffer[buffer_actual_size++] = '\n';
     buffer[buffer_actual_size] = '\0';
-    puts("\e[?25h\n");
+    puts("\e[?25h");
 
     return buffer_actual_size;
 }
