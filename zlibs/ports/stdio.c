@@ -143,6 +143,7 @@ FILE *fopen(const char *filename, const char *mode) {
     file->buffer = malloc(FILE_BUFFER_SIZE);
     file->buffer_size = 0;
     file->buffer_pid = -1;
+    file->old_offset = 0;
 
     // if the file is open for appending, set the file pos to the end of the file
     if (interpeted_mode & MODE_APPEND)
@@ -275,7 +276,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // read the file from the buffer if possible
-    if (stream->buffer_size < 0) {
+    if (stream->buffer_size < 0 && stream->old_offset == fm_tell(stream->fd)) {
         if ((uint32_t) -stream->buffer_size > count) {
             memcpy(buffer, stream->buffer, count);
             stream->buffer_size += count;
@@ -307,6 +308,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     memcpy(buffer + rfrom_buffer, stream->buffer, count);
     memmove(stream->buffer, stream->buffer + count, read - count);
     stream->buffer_size = -(read - count);
+
+    stream->old_offset = fm_tell(stream->fd);
 
     // return the number of elements read
     return (count + rfrom_buffer) / size;
@@ -376,16 +379,12 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 
 int fseek(FILE *stream, long offset, int whence) {
     // check if the file is stdin
-    if (stream == stdin) {
-        return 0;
-    }
-
-    if (stream == stdout || stream == stderr) {
-        stream = STD_STREAM + (stream == stdout ? 1 : 2);
-    }
-
-    // check if the file is open for writing, else return 0
-    if (!(stream->mode & MODE_WRITE)) return 0;
+    if (stream == stdin)
+        stream = STD_STREAM + 0;
+    else if (stream == stdout)
+        stream = STD_STREAM + 1;
+    else if (stream == stderr)
+        stream = STD_STREAM + 2;
 
     // flush the buffer
     fflush(stream);

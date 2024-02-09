@@ -171,6 +171,7 @@ typedef struct FILE {
     char *buffer;
     int   buffer_size;
     int   buffer_pid;
+    int   old_offset;
 
     int   fd;
 } FILE;
