@@ -20,7 +20,7 @@ You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
 > [!NOTE]
 > Compilation is guaranteed only on ubuntu 22.04 with
 > **gcc 11**, it is also possible in windows with virtualization
-> solutions like wsl (on windows 11) or hyperV...
+> solutions like wsl (on windows 11) or hyperV.
 
 ### Install dependencies
 
