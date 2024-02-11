@@ -18,9 +18,9 @@ You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
 ## Setup
 
 > [!NOTE]
-> compilation is guaranteed only on ubuntu 22.04 with
-> gcc 11, it is also possible in windows with virtualization
-> solutions like wsl (on windows 11) or hyperV
+> Compilation is guaranteed only on ubuntu 22.04 with
+> **gcc 11**, it is also possible in windows with virtualization
+> solutions like wsl (on windows 11) or hyperV...
 
 ### Install dependencies
 
@@ -87,7 +87,7 @@ You can then run the `help` command to see a list of useful commands.
 ![banner](https://elydre.github.io/img/profan/banner.png)
 
 > [!TIP]
-> to switch the keyboard layout use the `kb <layout>` command, such as `kb qwerty`
+> To switch the keyboard layout use the `kb <layout>` command, such as `kb qwerty`.
 
 ## The kernel
 
@@ -148,8 +148,8 @@ To install profanOS on a USB key or an internal disk, it is possible to use
 the installation script `tools/install.sh` or any other image flasher.
 
 > [!WARNING]
-> installing an OS on a real machine can be risky and
-> must be done with knowledge of the possible risks
+> Installing an OS on a real machine can be risky and
+> must be done with knowledge of the possible risks!
 
 ### Install on USB key
 
