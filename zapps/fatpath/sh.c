@@ -855,17 +855,21 @@ int start_pipex(pipex_t *pipex) {
     int pid = -1;
 
     for (int i = 0; i < pipex->command_count; i++) {
-        if (pipex->commands[i]->input_file == NULL) {
-            // already in pipe
-            fds[i * 2] = pipefd[0];
-        } else {
-            fds[i * 2] = local_open(pipex->commands[i]->input_file, 0);
+        if (i != 0 || pipex->commands[i]->input_file != NULL) {
+            if (pipex->commands[i]->input_file == NULL) {
+                // already in pipe
+                fds[i * 2] = pipefd[0];
+            } else {
+                fds[i * 2] = local_open(pipex->commands[i]->input_file, 0);
+            }
         }
-        if (pipex->commands[i]->output_file == NULL) {
-            pipe(pipefd);
-            fds[i * 2 + 1] = pipefd[1];
-        } else {
-            fds[i * 2 + 1] = local_open(pipex->commands[i]->output_file, 1 + pipex->commands[i]->append_in_output);
+        if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL) {
+            if (pipex->commands[i]->output_file == NULL) {
+                pipe(pipefd);
+                fds[i * 2 + 1] = pipefd[1];
+            } else {
+                fds[i * 2 + 1] = local_open(pipex->commands[i]->output_file, 1 + pipex->commands[i]->append_in_output);
+            }
         }
     }
 
@@ -876,16 +880,22 @@ int start_pipex(pipex_t *pipex) {
             pipex->commands[i]->args,
             0, 0, 0, 2
         }, &pid) == -1) {
-            close(fds[i * 2]);
-            close(fds[i * 2 + 1]);
+            if (i != 0 || pipex->commands[i]->input_file != NULL)
+                close(fds[i * 2]);
+            if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL)
+                close(fds[i * 2 + 1]);
             continue;
         }
 
-        // dup2(fds[i * 2], fm_resol012(0, pid));
-        // dup2(fds[i * 2 + 1], fm_resol012(1, pid));
+        if (i != 0 || pipex->commands[i]->input_file != NULL) {
+            dup2(fds[i * 2], fm_resol012(0, pid));
+            close(fds[i * 2]);
+        }
 
-        // close(fds[i * 2]);
-        // close(fds[i * 2 + 1]);
+        if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL) {
+            dup2(fds[i * 2 + 1], fm_resol012(1, pid));
+            close(fds[i * 2 + 1]);
+        }
 
         c_process_wakeup(pid);
     };
@@ -964,11 +974,6 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        if (pipex->commands[0]->input_file == NULL)
-            pipex->commands[0]->input_file = strdup("/dev/stdin");
-        if (pipex->commands[pipex->command_count - 1]->output_file == NULL)
-            pipex->commands[pipex->command_count - 1]->output_file = strdup("/dev/stdout");
-
         for (i = 1; i < pipex->command_count; i++)
             if (pipex->commands[i]->input_file == NULL && pipex->commands[i - 1]->output_file != NULL)
                 pipex->commands[i]->input_file = strdup("/dev/null");
@@ -977,7 +982,7 @@ int main(int argc, char **argv) {
             if (pipex->commands[i]->output_file == NULL && pipex->commands[i + 1]->input_file != NULL)
                 pipex->commands[i]->output_file = strdup("/dev/null");
 
-        print_struct_pipex(pipex);
+        // print_struct_pipex(pipex);
 
         if (fucking_unchiled(pipex, &last_exit))
             last_exit = start_pipex(pipex);
