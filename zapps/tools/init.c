@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define SHELL_PATH "/bin/fatpath/sh.bin"
+#define SHELL_NAME "minishell"
+
 #define run_ifexist_pid(path, argc, argv, pid) \
         c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
         argc, argv, 0, 0, 0, 1}, pid)
@@ -119,10 +122,11 @@ int main(void) {
     welcome_print();
 
     do {
-        c_run_ifexist("/bin/fatpath/olivine.bin", 0, NULL);
+        setenv("PATH", "/bin/commands:/bin/fatpath", 0);
+        c_run_ifexist(SHELL_PATH, 0, NULL);
 
-        printf("[init] olivine exited,\nAction keys:\n"
-            " g - start olivine again\n"
+        printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
+            " g - start "SHELL_NAME" again\n"
             " h - unload all libraries and exit\n"
             " j - reboot profanOS\n"
         );

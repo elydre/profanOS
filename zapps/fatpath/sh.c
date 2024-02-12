@@ -42,9 +42,26 @@ int open(const char *pathname, int flags, ...) {
     return 0;
 }
 
-int waitpid(int pid, int *status, int options) {
-    puts("waitpid");
-    return 0;
+int local_open(char *file, int mode) {
+    // mode 0 -> no creation
+    // mode 1 -> create if not exists
+    // mode 2 -> mode 1 + append
+    int fd;
+
+    if (mode) {
+        if (IS_NULL_SID(fu_path_to_sid(ROOT_SID, file))) {
+            fu_file_create(0, file);
+        }
+    }
+
+    fd = fm_open(file);
+    if (fd < 0)
+        return fd;
+
+    if (mode == 2)
+        fm_lseek(fd, 0, SEEK_END);
+
+    return fd;
 }
 
 /************************************************************/
@@ -170,27 +187,38 @@ char *get_path(char *file) {
     char *path_part;
     char **allpath;
     char *path;
-    int i;
+    sid_t sid;
 
-    if (file[0] == '/' || file[0] == '.')
-        return (dup_strft(file, 0, -1));
-    i = -1;
+    if (file[0] == '/' || file[0] == '.') {
+        char *wd = getenv("PWD");
+        if (!wd) return strdup(file);
+        char *full_path = malloc(strlen(wd) + strlen(file) + 2);
+        assemble_path(wd, file, full_path);
+        return full_path;
+    }
+
     allpath = get_all_path();
     if (allpath == NULL)
         return (strdup(file));
-    while (allpath[++i])
-    {
+    for (int i = 0; allpath[i]; i++) {
         path_part = ft_strjoin(allpath[i], "/");
         path = ft_strjoin(path_part, file);
         free(path_part);
-        sid_t sid = fu_path_to_sid(ROOT_SID, path);
-        if (!IS_NULL_SID(sid) && fu_is_file(sid))
-        {
-            path_part = dup_strft(path, 0, -1);
+        sid = fu_path_to_sid(ROOT_SID, path);
+        if (!IS_NULL_SID(sid) && fu_is_file(sid)) {
             free_tab(allpath);
-            free(path);
-            return (path_part);
+            return path;
         }
+
+        path_part = path;
+        path = ft_strjoin(path_part, ".bin");
+        free(path_part);
+        sid = fu_path_to_sid(ROOT_SID, path);
+        if (!IS_NULL_SID(sid) && fu_is_file(sid)) {
+            free_tab(allpath);
+            return path;
+        }
+        
         free(path);
     }
     free_tab(allpath);
@@ -812,21 +840,6 @@ int free_mem(int ret, command_t *cmd) {
 int child_process(int in_fd, int out_fd, command_t *command) {
     int (*builtin)(char **) = get_builtin_func(command->args[0]);
 
-    if (!builtin && access(command->full_path, X_OK) == -1) {
-        printf("Command not found: '%s'\n", command->full_path);
-        return (free_mem(127, command));
-    }
-
-    if (dup2(in_fd, STDIN_FILENO) == -1) {
-        printf("Input file '%s' not found\n", command->input_file);
-        return (free_mem(1, command));
-    }
-
-    if (dup2(out_fd, STDOUT_FILENO) == -1) {
-        printf("Output file '%s' not found\n", command->output_file);
-        return (free_mem(1, command));
-    }
-
     if (builtin) {
         return (free_mem(builtin(command->args), command));
     }
@@ -839,53 +852,58 @@ int child_process(int in_fd, int out_fd, command_t *command) {
 int start_pipex(pipex_t *pipex) {
     int *fds = malloc(sizeof(int) * pipex->command_count * 2);
     int pipefd[2];
-    pid_t pid = 0;
+    int pid = -1;
+
     for (int i = 0; i < pipex->command_count; i++) {
         if (pipex->commands[i]->input_file == NULL) {
             // already in pipe
             fds[i * 2] = pipefd[0];
         } else {
-            fds[i * 2] = open(pipex->commands[i]->input_file, O_RDONLY);
+            fds[i * 2] = local_open(pipex->commands[i]->input_file, 0);
         }
         if (pipex->commands[i]->output_file == NULL) {
             pipe(pipefd);
             fds[i * 2 + 1] = pipefd[1];
         } else {
-            fds[i * 2 + 1] = open(pipex->commands[i]->output_file, O_WRONLY | O_CREAT | (pipex->commands[i]->append_in_output ? O_APPEND : O_TRUNC), 0644);
+            fds[i * 2 + 1] = local_open(pipex->commands[i]->output_file, 1 + pipex->commands[i]->append_in_output);
         }
     }
 
     for (int i = 0; i < pipex->command_count; i++) {
-        pid = fork();
-        if (pid == -1)
-            return -1;
-        if (pid == 0) {
-            int t = child_process(fds[i * 2], fds[i * 2 + 1], pipex->commands[i]);
-            free(fds);
-            exit(t);
-        } else {
+        if (c_run_ifexist_full((runtime_args_t){
+            pipex->commands[i]->full_path, NULL_SID,
+            pipex->commands[i]->arg_count,
+            pipex->commands[i]->args,
+            0, 0, 0, 2
+        }, &pid) == -1) {
+            close(fds[i * 2]);
             close(fds[i * 2 + 1]);
+            continue;
         }
-    }
 
-    int status;
+        // dup2(fds[i * 2], fm_resol012(0, pid));
+        // dup2(fds[i * 2 + 1], fm_resol012(1, pid));
 
-    waitpid(pid, &status, 0);
+        // close(fds[i * 2]);
+        // close(fds[i * 2 + 1]);
 
-    for (int i = 0; i < pipex->command_count; i++) {
-        close(fds[i * 2]);
-    }
+        c_process_wakeup(pid);
+    };
+
     free(fds);
 
-    return status;
+    if (pid > 0)
+        profan_wait_pid(pid);
+
+    return 0;
 }
 
 int main(int argc, char **argv) {
-    if (argc != 1)
-    {
+    if (argc > 1) {
         fputs("Error: too many arguments\n", stderr);
         return 1;
     }
+
     char *line, *prompt, *last_line = NULL;
 
     pipex_t *pipex;
