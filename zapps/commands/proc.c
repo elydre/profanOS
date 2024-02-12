@@ -64,11 +64,11 @@ typedef struct {
 #define MODE_SLPP 4
 #define MODE_WKUP 5
 
-void show_help(int full) {
+int show_help(int full) {
     puts("Usage: proc [mode] [pid]");
     if (!full) {
         puts("Use -h for more help");
-        return;
+        return 1;
     }
     puts("Modes:\n"
         "  -h: show this help\n"
@@ -77,6 +77,7 @@ void show_help(int full) {
         "  -s: asleep a process\n"
         "  -w: wake up a process"
     );
+    return 0;
 }
 
 proc_args_t parse_args(int argc, char **argv) {
@@ -125,9 +126,9 @@ int main(int argc, char **argv) {
     if (args.mode == MODE_LIST)
         list_process();
     else if (args.mode == MODE_LHLP)
-        show_help(0);
+        return show_help(0);
     else if (args.mode == MODE_FHLP)
-        show_help(1);
+        return show_help(1);
     else if (args.mode == MODE_KILL)
         c_process_kill(args.pid);
     else if (args.mode == MODE_SLPP)
