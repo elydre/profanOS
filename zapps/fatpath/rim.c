@@ -361,7 +361,7 @@ void main_loop(char *path) {
         }
 
         // check if key is printable
-        else if (key < 58 && key > 0) {
+        else if (key < 58 && key > 0 && profan_kb_get_char(key, shift_pressed)) {
             // add character to data buffer
             for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
                 g_data[i] = g_data[i - 1];
