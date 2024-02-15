@@ -28,19 +28,11 @@ typedef struct pipex_s {
     int         command_count;
 } pipex_t;
 
-#define O_APPEND 02000
-#define O_CREAT 0100
-#define O_RDONLY 00
-#define O_WRONLY 01
-#define O_RDWR 02
-#define O_TRUNC 01000
-#define X_OK 1
-#define F_OK 0
-
-int open(const char *pathname, int flags, ...) {
-    puts("open");
-    return 0;
-}
+/****************************************
+ *                                     *
+ *                UTILS                *
+ *                                     *
+****************************************/
 
 int local_open(char *file, int mode) {
     // mode 0 -> no creation
@@ -64,8 +56,6 @@ int local_open(char *file, int mode) {
     return fd;
 }
 
-/************************************************************/
-
 char *dup_strft(char *src, int start, int end) {
     char *res;
     int i;
@@ -74,8 +64,7 @@ char *dup_strft(char *src, int start, int end) {
         end = strlen(src);
     res = malloc(sizeof(char) * (end - start + 1));
     i = 0;
-    while (i < end - start && src[start + i])
-    {
+    while (i < end - start && src[start + i]) {
         res[i] = src[start + i];
         i++;
     }
@@ -84,20 +73,15 @@ char *dup_strft(char *src, int start, int end) {
 }
 
 void free_tab(char **tab) {
-    int i = 0;
-    while (tab[i])
-        free(tab[i++]);
+    for (int i = 0; tab[i]; i++)
+        free(tab[i]);
     free(tab);
 }
 
 int inchrset(char c, char *set) {
-    int i = 0;
-    while (set[i])
-    {
-        if (set[i] == c)
+    for (int i = 0; set[i]; i++)
+        if (c == set[i])
             return 1;
-        i++;
-    }
     return 0;
 }
 
@@ -115,13 +99,11 @@ char *ft_strjoin(char *s1, char *s2) {
         return (NULL);
     i = 0;
     j = 0;
-    while (i < len1)
-    {
+    while (i < len1) {
         res[i] = s1[i];
         i++;
     }
-    while (j < len2)
-    {
+    while (j < len2) {
         res[i + j] = s2[j];
         j++;
     }
@@ -129,8 +111,7 @@ char *ft_strjoin(char *s1, char *s2) {
     return (res);
 }
 
-char **ft_split(char *s, char c)
-{
+char **ft_split(char *s, char c) {
     char **res;
     int start;
     int i_tab;
@@ -140,8 +121,7 @@ char **ft_split(char *s, char c)
     start = 0;
     i_tab = 0;
     res = malloc(sizeof(char *) * (strlen(s) + 1));
-    while (s[i])
-    {
+    while (s[i]) {
         while (s[i] && c == s[i])
             i++;
         start = i;
@@ -154,10 +134,8 @@ char **ft_split(char *s, char c)
     return (res);
 }
 
-void free_pipex(pipex_t *pipex)
-{
-    for (int i = 0; i < pipex->command_count; i++)
-    {
+void free_pipex(pipex_t *pipex) {
+    for (int i = 0; i < pipex->command_count; i++) {
         if (pipex->commands[i] == NULL)
             continue;
         free(pipex->commands[i]->full_path);
@@ -236,11 +214,9 @@ char *readline(char *prompt) {
 }
 
 
-void print_struct_pipex(pipex_t *pipex)
-{
+void print_struct_pipex(pipex_t *pipex) {
     printf("command_count: %d\n", pipex->command_count);
-    for (int i = 0; i < pipex->command_count; i++)
-    {
+    for (int i = 0; i < pipex->command_count; i++) {
         printf("command[%d]: %s\n", i, pipex->commands[i]->full_path);
         printf("| input_file: %s\n", pipex->commands[i]->input_file);
         printf("| output_file: %s%s\n", pipex->commands[i]->output_file,
@@ -252,22 +228,17 @@ void print_struct_pipex(pipex_t *pipex)
     }
 }
 
-/************************************************************/
+/****************************************
+ *                                     *
+ *                SPLIT                *
+ *                                     *
+****************************************/
 
 #define NOT_IN_QUOTE 0
 #define IN_SIMPLE_QUOTE 1
 #define IN_DOUBLE_QUOTE 2
 
-int is_chrset(char c, char *set)
-{
-    for (int i = 0; set[i]; i++)
-        if (c == set[i])
-            return 1;
-    return 0;
-}
-
-char **ss_ft_split(char *str, char sep, char *other)
-{
+char **ss_ft_split(char *str, char sep, char *other) {
     char **res;
     int i_res;
     int i_str;
@@ -278,19 +249,16 @@ char **ss_ft_split(char *str, char sep, char *other)
     i_res = 0;
     i_str = 0;
     res = malloc(sizeof(char *) * (strlen(str) + 1));
-    while (str[i_str])
-    {
+    while (str[i_str]) {
         while (str[i_str] == sep)
             i_str++;
         start = i_str;
-        while (str[i_str] && (str[i_str] != sep || quote != NOT_IN_QUOTE))
-        {
-            if (other && is_chrset(str[i_str], other) && quote == NOT_IN_QUOTE)
-            {
+        while (str[i_str] && (str[i_str] != sep || quote != NOT_IN_QUOTE)) {
+            if (other && inchrset(str[i_str], other) && quote == NOT_IN_QUOTE) {
                 if (start < i_str)
                     res[i_res++] = dup_strft(str, start, i_str);
                 start = i_str;
-                while (is_chrset(str[i_str], other))
+                while (inchrset(str[i_str], other))
                     i_str++;
                 break;
             }
@@ -305,8 +273,7 @@ char **ss_ft_split(char *str, char sep, char *other)
             i_str++;
 
         }
-        if (start < i_str)
-        {
+        if (start < i_str) {
             res[i_res++] = dup_strft(str, start, i_str);
         }
     }
@@ -314,15 +281,11 @@ char **ss_ft_split(char *str, char sep, char *other)
     return (res);
 }
 
-char *ss_remove_quotes(char *arg)
-{
-    int i_str;
-    int quote;
+char *ss_remove_quotes(char *arg) {
+    int quote = NOT_IN_QUOTE;
+    int i_str = 0;
 
-    quote = NOT_IN_QUOTE;
-    i_str = 0;
-    for (int i = 0; arg[i]; i++)
-    {
+    for (int i = 0; arg[i]; i++) {
         if (arg[i] == '\'' && quote == NOT_IN_QUOTE)
             quote = IN_SIMPLE_QUOTE;
         else if (arg[i] == '\'' && quote == IN_SIMPLE_QUOTE)
@@ -341,12 +304,9 @@ char *ss_remove_quotes(char *arg)
 }
 
 char *ss_mv_single(char *arg, int last_exit) {
-    int tmp;
-    int quote;
+    int tmp, quote = NOT_IN_QUOTE;
 
-    quote = NOT_IN_QUOTE;
-    for (int j = 0; arg[j]; j++)
-    {
+    for (int j = 0; arg[j]; j++) {
         if (arg[j] == '\'' && quote == NOT_IN_QUOTE)
             quote = IN_SIMPLE_QUOTE;
         else if (arg[j] == '\'' && quote == IN_SIMPLE_QUOTE)
@@ -355,8 +315,7 @@ char *ss_mv_single(char *arg, int last_exit) {
             quote = IN_DOUBLE_QUOTE;
         else if (arg[j] == '\"' && quote == IN_DOUBLE_QUOTE)
             quote = NOT_IN_QUOTE;
-        else if (arg[j] == '$' && quote != IN_SIMPLE_QUOTE)
-        {
+        else if (arg[j] == '$' && quote != IN_SIMPLE_QUOTE) {
             tmp = j++;
             if (arg[j] == '?')
                 j++;
@@ -395,7 +354,11 @@ void ss_manage_variables(char **args, int last_exit) {
         args[i] = ss_mv_single(args[i], last_exit);
 }
 
-/************************************************************/
+/****************************************
+ *                                     *
+ *               BULTIN                *
+ *                                     *
+****************************************/
 
 int builtin_pwd(char **args) {
     if (args[1] != NULL) {
@@ -514,8 +477,7 @@ int builtin_cd(char **args) {
     return 0;
 }
 
-typedef struct
-{
+typedef struct {
     char *name;
     int (*func)(char **);
 } builtin_t;
@@ -529,8 +491,7 @@ builtin_t builtins[] = {
     {NULL, NULL}
 };
 
-int (*get_builtin_func(char *cmd))(char **)
-{
+int (*get_builtin_func(char *cmd))(char **) {
     int i = -1;
     while (builtins[++i].name)
         if (strcmp(builtins[i].name, cmd) == 0)
@@ -538,8 +499,13 @@ int (*get_builtin_func(char *cmd))(char **)
     return (NULL);
 }
 
-int fucking_unchiled(pipex_t *pipex, int *ret)
-{
+/****************************************
+ *                                     *
+ *              UNCHILED               *
+ *                                     *
+****************************************/
+
+int fucking_unchiled(pipex_t *pipex, int *ret) {
     if (pipex->command_count != 1)
         return 1;
 
@@ -547,20 +513,28 @@ int fucking_unchiled(pipex_t *pipex, int *ret)
     if (!builtin)
         return 1;
 
-    int in_fd = open(pipex->commands[0]->input_file, O_RDONLY);
-    int out_fd = open(pipex->commands[0]->output_file, O_WRONLY | O_CREAT | (pipex->commands[0]->append_in_output ? O_APPEND : O_TRUNC), 0644);
-    int saved_in = dup(STDIN_FILENO);
-    int saved_out = dup(STDOUT_FILENO);
+    int in_fd, out_fd, saved_in, saved_out;
+    saved_in = saved_out = -1;
 
-    if (dup2(in_fd, STDIN_FILENO) == -1) {
-        printf("Input file '%s' not found\n", pipex->commands[0]->input_file);
-        return 0;
+    if (pipex->commands[0]->input_file) {
+        in_fd = local_open(pipex->commands[0]->input_file, 0);
+        saved_in = dup(STDIN_FILENO);
+        if (dup2(in_fd, STDIN_FILENO) == -1) {
+            printf("Input file '%s' not found\n", pipex->commands[0]->input_file);
+            *ret = 1;
+            return 0;
+        }
     }
 
-    if (dup2(out_fd, STDOUT_FILENO) == -1) {
-        printf("Output file '%s' not found\n", pipex->commands[0]->output_file);
-        dup2(saved_in, STDIN_FILENO);
-        return 0;
+    if (pipex->commands[0]->output_file) {
+        out_fd = local_open(pipex->commands[0]->output_file, 1 + pipex->commands[0]->append_in_output);
+        saved_out = dup(STDOUT_FILENO);
+        if (dup2(out_fd, STDOUT_FILENO) == -1) {
+            printf("Output file '%s' not found\n", pipex->commands[0]->output_file);
+            dup2(saved_in, STDIN_FILENO);
+            *ret = 1;
+            return 0;
+        }
     }
 
     if (!strcmp(pipex->commands[0]->args[0], "exit")) {
@@ -572,6 +546,16 @@ int fucking_unchiled(pipex_t *pipex, int *ret)
 
     dup2(saved_in, STDIN_FILENO);
     dup2(saved_out, STDOUT_FILENO);
+    if (saved_in != -1) {
+        close(saved_in);
+        close(in_fd);
+    }
+
+    if (saved_out != -1) {
+        close(saved_out);
+        close(out_fd);
+    }
+
     return 0;
 }
 
@@ -580,13 +564,19 @@ void putendl_fd(char *s, int fd) {
     write(fd, "\n", 1);
 }
 
+/****************************************
+ *                                     *
+ *               HEREDOC               *
+ *                                     *
+****************************************/
+
 char *gen_heredoc_file(char *end) {
     static int i = 0;
     char *filename = malloc(37);
     strcpy(filename, "/tmp/minishell_heredoc_");
     itoa(i++, filename + 23, 10);
 
-    int fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, 0644);
+    int fd = local_open(filename, 1);
     if (fd == -1) {
         perror("open");
         return NULL;
@@ -605,22 +595,26 @@ char *gen_heredoc_file(char *end) {
     return filename;
 }
 
+/****************************************
+ *                                     *
+ *               PARSING               *
+ *                                     *
+****************************************/
+
 // error codes:
 // 0: no error
 // 1: missing file name
 // 2: empty file name
 // 3: too many redirections
-int manage_io(command_t *command, int last_exit)
-{
+int manage_io(command_t *command, int last_exit) {
     command->input_file = NULL;
     command->output_file = NULL;
     command->append_in_output = 0;
-    for (int j = 0; j < command->arg_count; j++)
-    {
+    for (int j = 0; j < command->arg_count; j++) {
         if (command->args[j] == NULL)
             continue;
-        if (strcmp(command->args[j], "<") == 0)
-        {
+
+        if (strcmp(command->args[j], "<") == 0) {
             if (command->input_file != NULL)
                 free(command->input_file);
             if (command->args[j + 1] == NULL)
@@ -636,8 +630,8 @@ int manage_io(command_t *command, int last_exit)
             command->args[j] = NULL;
             continue;
         }
-        if (strcmp(command->args[j], ">") == 0)
-        {
+
+        if (strcmp(command->args[j], ">") == 0) {
             if (command->output_file != NULL)
                 free(command->output_file);
             if (command->args[j + 1] == NULL)
@@ -653,8 +647,8 @@ int manage_io(command_t *command, int last_exit)
             command->args[j] = NULL;
             continue;
         }
-        if (strcmp(command->args[j], ">>") == 0)
-        {
+
+        if (strcmp(command->args[j], ">>") == 0) {
             if (command->output_file != NULL)
                 free(command->output_file);
             if (command->args[j + 1] == NULL)
@@ -671,8 +665,8 @@ int manage_io(command_t *command, int last_exit)
             command->args[j] = NULL;
             continue;
         }
-        if (strcmp(command->args[j], "<<") == 0)
-        {
+
+        if (strcmp(command->args[j], "<<") == 0) {
             if (command->input_file != NULL)
                 free(command->input_file);
             if (command->args[j + 1] == NULL)
@@ -688,9 +682,9 @@ int manage_io(command_t *command, int last_exit)
             command->args[j] = NULL;
             continue;
         }
+
         // <<<, >>>>>, etc raise an error
-        if (command->args[j][0] == '<' || command->args[j][0] == '>')
-        {
+        if (command->args[j][0] == '<' || command->args[j][0] == '>') {
             return 3;
         }
     }
@@ -746,8 +740,7 @@ pipex_t *parse_to_pipex(char *str, int last_exit) {
     pipex->commands = malloc(sizeof(command_t *) * pipex->command_count + 1);
     for (int i = 0; i < pipex->command_count; i++)
         pipex->commands[i] = NULL;
-    for (int i = 0; fspt[i]; i++)
-    {
+    for (int i = 0; fspt[i]; i++) {
         command_t *command = malloc(sizeof(command_t));
         command->full_path = NULL;
         command->pipex_ptr = pipex;
@@ -774,80 +767,12 @@ pipex_t *parse_to_pipex(char *str, int last_exit) {
     return pipex;
 }
 
-void remove_null_args(pipex_t *pipex)
-{
-    for (int i = 0; i < pipex->command_count; i++)
-    {
-        int j = 0;
-        while (j < pipex->commands[i]->arg_count)
-        {
-            if (pipex->commands[i]->args[j] == NULL || strcmp(pipex->commands[i]->args[j], "") == 0)
-            {
-                if (pipex->commands[i]->args[j])
-                    free(pipex->commands[i]->args[j]);
-                for (int k = j; k < pipex->commands[i]->arg_count - 1; k++)
-                    pipex->commands[i]->args[k] = pipex->commands[i]->args[k + 1];
-                pipex->commands[i]->arg_count--;
-            }
-            else
-                j++;
-        }
-    }
-    for (int i = 0; i < pipex->command_count; i++)
-        pipex->commands[i]->args[pipex->commands[i]->arg_count] = NULL;
-}
+/****************************************
+ *                                     *
+ *                PIPEX                *
+ *                                     *
+****************************************/
 
-char *get_prompt(int last_exit, int fist_line) {
-    return strdup("oui # ");
-}
-
-void patch_tilde(pipex_t *pipex, char *home) {
-    if (home == NULL)
-        return;
-    for (int i = 0; i < pipex->command_count; i++) {
-        if (pipex->commands[i]->input_file && pipex->commands[i]->input_file[0] == '~') {
-            char *tmp = ft_strjoin(home, pipex->commands[i]->input_file + 1);
-            free(pipex->commands[i]->input_file);
-            pipex->commands[i]->input_file = tmp;
-        }
-        if (pipex->commands[i]->output_file && pipex->commands[i]->output_file[0] == '~') {
-            char *tmp = ft_strjoin(home, pipex->commands[i]->output_file + 1);
-            free(pipex->commands[i]->output_file);
-            pipex->commands[i]->output_file = tmp;
-        }
-        for (int j = 0; j < pipex->commands[i]->arg_count; j++) {
-            if (pipex->commands[i]->args[j][0] == '~') {
-                char *tmp = ft_strjoin(home, pipex->commands[i]->args[j] + 1);
-                free(pipex->commands[i]->args[j]);
-                pipex->commands[i]->args[j] = tmp;
-            }
-        }
-    }
-}
-
-int just_spaces(char *str) {
-    for (int i = 0; str[i]; i++)
-        if (str[i] != ' ' && str[i] != '\t')
-            return 0;
-    return 1;
-}
-
-int free_mem(int ret, command_t *cmd) {
-    free_pipex(cmd->pipex_ptr);
-    return (ret);
-}
-
-int child_process(int in_fd, int out_fd, command_t *command) {
-    int (*builtin)(char **) = get_builtin_func(command->args[0]);
-
-    if (builtin) {
-        return (free_mem(builtin(command->args), command));
-    }
-
-    execve(command->full_path, command->args, NULL);
-    exit(1);
-    return 1;
-}
 
 int start_pipex(pipex_t *pipex) {
     int *fds = malloc(sizeof(int) * pipex->command_count * 2);
@@ -908,6 +833,66 @@ int start_pipex(pipex_t *pipex) {
     return 0;
 }
 
+/****************************************
+ *                                     *
+ *                MAIN                 *
+ *                                     *
+****************************************/
+
+void remove_null_args(pipex_t *pipex) {
+    for (int i = 0; i < pipex->command_count; i++) {
+        int j = 0;
+        while (j < pipex->commands[i]->arg_count) {
+            if (pipex->commands[i]->args[j] == NULL || strcmp(pipex->commands[i]->args[j], "") == 0) {
+                if (pipex->commands[i]->args[j])
+                    free(pipex->commands[i]->args[j]);
+                for (int k = j; k < pipex->commands[i]->arg_count - 1; k++)
+                    pipex->commands[i]->args[k] = pipex->commands[i]->args[k + 1];
+                pipex->commands[i]->arg_count--;
+            }
+            else
+                j++;
+        }
+    }
+    for (int i = 0; i < pipex->command_count; i++)
+        pipex->commands[i]->args[pipex->commands[i]->arg_count] = NULL;
+}
+
+char *get_prompt(int last_exit, int fist_line) {
+    return strdup("oui # ");
+}
+
+void patch_tilde(pipex_t *pipex, char *home) {
+    if (home == NULL)
+        return;
+    for (int i = 0; i < pipex->command_count; i++) {
+        if (pipex->commands[i]->input_file && pipex->commands[i]->input_file[0] == '~') {
+            char *tmp = ft_strjoin(home, pipex->commands[i]->input_file + 1);
+            free(pipex->commands[i]->input_file);
+            pipex->commands[i]->input_file = tmp;
+        }
+        if (pipex->commands[i]->output_file && pipex->commands[i]->output_file[0] == '~') {
+            char *tmp = ft_strjoin(home, pipex->commands[i]->output_file + 1);
+            free(pipex->commands[i]->output_file);
+            pipex->commands[i]->output_file = tmp;
+        }
+        for (int j = 0; j < pipex->commands[i]->arg_count; j++) {
+            if (pipex->commands[i]->args[j][0] == '~') {
+                char *tmp = ft_strjoin(home, pipex->commands[i]->args[j] + 1);
+                free(pipex->commands[i]->args[j]);
+                pipex->commands[i]->args[j] = tmp;
+            }
+        }
+    }
+}
+
+int just_spaces(char *str) {
+    for (int i = 0; str[i]; i++)
+        if (str[i] != ' ' && str[i] != '\t')
+            return 0;
+    return 1;
+}
+
 int main(int argc, char **argv) {
     if (argc > 1) {
         fputs("Error: too many arguments\n", stderr);
@@ -959,8 +944,7 @@ int main(int argc, char **argv) {
 
         remove_null_args(pipex);
         patch_tilde(pipex, getenv("HOME"));
-        for (i = 0; i < pipex->command_count; i++)
-        {
+        for (i = 0; i < pipex->command_count; i++) {
             if (pipex->commands[i]->arg_count == 0) {
                 printf("Error: no given command in block %d\n", i + 1);
                 last_exit = 1;
