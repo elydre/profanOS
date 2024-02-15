@@ -977,11 +977,11 @@ char *if_cd(char **input) {
     }
 
     // get dir
-    char *dir = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
+    char *dir;
 
     #if PROFANBUILD
     // check if dir exists
-    assemble_path(g_current_directory, input[0], dir);
+    dir = assemble_path(g_current_directory, input[0]);
     // simplify path
     fu_simplify_path(dir);
 
@@ -992,7 +992,7 @@ char *if_cd(char **input) {
         return ERROR_CODE;
     }
     #else
-    strcpy(dir, input[0]);
+    dir = strdup(input[0]);
     #endif
 
     // change directory
@@ -1247,8 +1247,7 @@ char *if_find(char **input) {
     if (argc == 1 && !required_type) user_path = input[0];
     if (argc == 2) user_path = input[1];
 
-    char *path = malloc(strlen(user_path) + strlen(g_current_directory) + 2);
-    assemble_path(g_current_directory, user_path, path);
+    char *path = assemble_path(g_current_directory, user_path);
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
@@ -1271,7 +1270,7 @@ char *if_find(char **input) {
     char *output = malloc(1 * sizeof(char));
     output[0] = '\0';
 
-    char *tmp_path = malloc(MAX_PATH_SIZE * sizeof(char));
+    char *tmp_path;
 
     for (int i = 0; i < elm_count; i++) {
         if (!required_type ||
@@ -1281,7 +1280,7 @@ char *if_find(char **input) {
             if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
                 continue;
             }
-            assemble_path(path, names[i], tmp_path);
+            tmp_path = assemble_path(path, names[i]);
             fu_simplify_path(tmp_path);
             char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
             if (output[0] != '\0') {
@@ -1289,6 +1288,7 @@ char *if_find(char **input) {
             } else {
                 sprintf(tmp, "'%s'", tmp_path);
             }
+            free(tmp_path);
             free(output);
             output = tmp;
         }
@@ -1297,7 +1297,6 @@ char *if_find(char **input) {
     for (int i = 0; i < elm_count; i++) {
         free(names[i]);
     }
-    free(tmp_path);
     free(out_ids);
     free(names);
     free(path);
@@ -1325,8 +1324,7 @@ char *if_fsize(char **input) {
     }
 
     // get path
-    char *path = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
-    assemble_path(g_current_directory, input[0], path);
+    char *path = assemble_path(g_current_directory, input[0]);
 
     sid_t file_id = fu_path_to_sid(ROOT_SID, path);
 
@@ -1398,8 +1396,7 @@ char *if_go_binfile(char **input) {
     }
 
     // get file name
-    char *file_path = malloc((strlen(input[0]) + strlen(g_current_directory) + 2) * sizeof(char));
-    assemble_path(g_current_directory, input[0], file_path);
+    char *file_path = assemble_path(g_current_directory, input[0]);
 
     // check if file exists
     sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
@@ -1421,20 +1418,17 @@ char *if_go_binfile(char **input) {
     sid_t sid;
 
     if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
-        stdin_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
-        assemble_path(g_current_directory, input[argc - 1], stdin_path);
+        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
     }
 
     if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
-        stdout_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
-        assemble_path(g_current_directory, input[argc - 1], stdout_path);
+        stdout_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
     }
 
     if (!stdin_path && argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
-        stdin_path = malloc((strlen(input[argc - 1]) + strlen(g_current_directory) + 2) * sizeof(char));
-        assemble_path(g_current_directory, input[argc - 1], stdin_path);
+        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
     }
 
@@ -3588,7 +3582,10 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
             break;
         }
 
-        assemble_path(g_current_directory, inp_end, path);
+        char *tmp = assemble_path(g_current_directory, inp_end);
+        strcpy(path, tmp);
+        free(tmp);
+
         if (path[strlen(path) - 1] != '/'
             && (inp_end[strlen(inp_end) - 1] == '/'
             || !inp_end[0])
@@ -4046,8 +4043,7 @@ void start_shell(void) {
 void execute_file(char *file) {
     #if PROFANBUILD
 
-    char *path = malloc((strlen(file) + strlen(g_current_directory) + 2) * sizeof(char));
-    assemble_path(g_current_directory, file, path);
+    char *path = assemble_path(g_current_directory, file);
 
     sid_t id = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(id) || !fu_is_file(id)) {

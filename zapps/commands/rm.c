@@ -111,8 +111,7 @@ int remove_elem(sid_t elem, char *path, rm_options_t *options) {
                 continue;
             }
 
-            new_path = malloc(strlen(path) + strlen(names[i]) + 2);
-            assemble_path(path, names[i], new_path);
+            new_path = assemble_path(path, names[i]);
 
             if (remove_elem(content[i], new_path, options))
                 exit(1);
@@ -174,8 +173,7 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *path = malloc(strlen(pwd) + strlen(options->path) + 2);
-    assemble_path(pwd, options->path, path);
+    char *path = assemble_path(pwd, options->path);
 
     sid_t elem = fu_path_to_sid(ROOT_SID, path);
 

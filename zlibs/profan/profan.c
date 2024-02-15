@@ -53,20 +53,28 @@ int userspace_reporter(char *message) {
     return c == EOF;
 }
 
-void assemble_path(char *old, char *new, char *result) {
-    result[0] = '\0';
+char *assemble_path(char *old, char *new) {
+    char *result;
+    int len;
+
     if (new[0] == '/') {
-        strcpy(result, new);
-        return;
+        return strdup(new);
     }
+
+    result = malloc(strlen(old) + strlen(new) + 2);
     strcpy(result, old);
+
     if (result[strlen(result) - 1] != '/') {
         strcat(result, "/");
     }
     strcat(result, new);
-    if (result[strlen(result) - 1] == '/' && strlen(result) != 1) {
-        result[strlen(result) - 1] = '\0';
+
+    len = strlen(result) - 1;
+    if (result[len] == '/' && len > 0) {
+        result[len] = '\0';
     }
+
+    return result;
 }
 
 void profan_print_stacktrace(void) {

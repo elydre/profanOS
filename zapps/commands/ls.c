@@ -226,13 +226,15 @@ int main(int argc, char **argv) {
         return ret;
     }
 
-    char *ls_path = malloc(512);
+    char *ls_path;
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    if (args->path) {
-        assemble_path(pwd, args->path, ls_path);
-    } else strcpy(ls_path, pwd);
+    if (args->path)
+        ls_path = assemble_path(pwd, args->path);
+    else
+        ls_path = strdup(pwd);
+
     fu_simplify_path(ls_path);
 
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);

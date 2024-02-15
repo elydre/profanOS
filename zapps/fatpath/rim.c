@@ -424,8 +424,7 @@ int main(int argc, char **argv) {
         char *pwd = getenv("PWD");
         if (!pwd) pwd = "/";
 
-        file = malloc(strlen(pwd) + strlen(argv[1]) + 2);
-        assemble_path(pwd, argv[1], file);
+        file = assemble_path(pwd, argv[1]);
 
         sid_t elm = fu_path_to_sid(ROOT_SID, file);
 

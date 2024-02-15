@@ -14,8 +14,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *full_path = malloc(256);
-    assemble_path(pwd, argv[1], full_path);
+    char *full_path = assemble_path(pwd, argv[1]);
 
     sid_t file = fu_path_to_sid(ROOT_SID, full_path);
     if (IS_NULL_SID(file) || !fu_is_file(file)) {
