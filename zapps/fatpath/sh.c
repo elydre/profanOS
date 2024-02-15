@@ -28,6 +28,13 @@ typedef struct pipex_s {
     int         command_count;
 } pipex_t;
 
+typedef struct {
+    char *name;
+    int (*func)(char **);
+} builtin_t;
+
+#define CD_DEFAULT "/"
+
 /****************************************
  *                                     *
  *                UTILS                *
@@ -38,21 +45,22 @@ int local_open(char *file, int mode) {
     // mode 0 -> no creation
     // mode 1 -> create if not exists
     // mode 2 -> mode 1 + append
-    int fd;
 
-    if (mode) {
-        if (IS_NULL_SID(fu_path_to_sid(ROOT_SID, file))) {
-            fu_file_create(0, file);
-        }
+    char *pwd = getenv("PWD");
+    if (!pwd) return -1;
+
+    char *full_path = assemble_path(pwd, file);
+
+    if (mode && IS_NULL_SID(fu_path_to_sid(ROOT_SID, full_path))) {
+        fu_file_create(0, full_path);
     }
 
-    fd = fm_open(file);
-    if (fd < 0)
-        return fd;
+    int fd = fm_open(full_path);
 
-    if (mode == 2)
+    if (fd >= 0 && mode == 2)
         fm_lseek(fd, 0, SEEK_END);
 
+    free(full_path);
     return fd;
 }
 
@@ -170,8 +178,7 @@ char *get_path(char *file) {
     if (file[0] == '/' || file[0] == '.') {
         char *wd = getenv("PWD");
         if (!wd) return strdup(file);
-        char *full_path = malloc(strlen(wd) + strlen(file) + 2);
-        assemble_path(wd, file, full_path);
+        char *full_path = assemble_path(wd, file);
         return full_path;
     }
 
@@ -365,21 +372,16 @@ int builtin_pwd(char **args) {
         fputs("pwd: too many arguments\n", stderr);
         return 1;
     }
-    char *pwd = getcwd(NULL, 0);
+    char *pwd = getenv("PWD");
     if (pwd == NULL) {
-        fputs("pwd: getcwd failed\n", stderr);
+        fputs("pwd: PWD not set\n", stderr);
         return 1;
     }
-    printf("%s\n", pwd);
-    free(pwd);
+    puts(pwd);
     return 0;
 }
 
 int builtin_exit(char **args) {
-    if (args[1] != NULL) {
-        fputs("exit: too many arguments\n", stderr);
-        return 1;
-    }
     fputs("exit can't be used with pipes/redirects\n", stderr);
     return 1;
 }
@@ -473,14 +475,42 @@ int builtin_unset(char **args) {
 }
 
 int builtin_cd(char **args) {
-    printf("cd: %s\n", args[1]);
+    // get argc
+
+    if (args[1] && args[2]) {
+        fputs("cd: too many arguments\n", stderr);
+        return 1;
+    }
+
+    char *current_path = getenv("PWD");
+    if (current_path == NULL) {
+        fputs("cd: PWD not set\n", stderr);
+        return 1;
+    }
+
+    // change to default if no arguments
+    if (args[1] == NULL) {
+        setenv("PWD", CD_DEFAULT, 1);
+        return 0;
+    }
+
+    // assemble and simplify path
+    char *dir = assemble_path(current_path, args[1]);
+    fu_simplify_path(dir);
+
+    sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
+    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
+        fprintf(stderr, "cd: %s: No such file or directory\n", args[1]);
+        free(dir);
+        return 1;
+    }
+
+    // change directory
+    setenv("PWD", dir, 1);
+    free(dir);
+
     return 0;
 }
-
-typedef struct {
-    char *name;
-    int (*func)(char **);
-} builtin_t;
 
 builtin_t builtins[] = {
     {"pwd",    builtin_pwd},
@@ -858,10 +888,6 @@ void remove_null_args(pipex_t *pipex) {
         pipex->commands[i]->args[pipex->commands[i]->arg_count] = NULL;
 }
 
-char *get_prompt(int last_exit, int fist_line) {
-    return strdup("oui # ");
-}
-
 void patch_tilde(pipex_t *pipex, char *home) {
     if (home == NULL)
         return;
@@ -893,6 +919,16 @@ int just_spaces(char *str) {
     return 1;
 }
 
+char *get_prompt(int last_exit) {
+    char *pwd = getenv("PWD");
+    if (pwd == NULL) pwd = "<?>";
+
+    char *prompt = malloc(strlen(pwd) + 30);
+    sprintf(prompt, "(sh)-[\e[36m%s\e[0m] # ", pwd);
+
+    return prompt;
+}
+
 int main(int argc, char **argv) {
     if (argc > 1) {
         fputs("Error: too many arguments\n", stderr);
@@ -900,15 +936,14 @@ int main(int argc, char **argv) {
     }
 
     char *line, *prompt, *last_line = NULL;
-
+    int i, last_exit = 0;
     pipex_t *pipex;
 
-    int i, last_exit = 0;
+    setenv("PWD", "/", 0);
+
     while (1) {
-        prompt = get_prompt(last_exit, 0);
-
+        prompt = get_prompt(last_exit);
         line = readline(prompt);
-
         free(prompt);
 
         if (line == NULL || strcmp(line, "exit") == 0) {
