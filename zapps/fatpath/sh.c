@@ -900,7 +900,7 @@ char *get_prompt(int last_exit) {
     char *pwd = getenv("PWD");
     if (pwd == NULL) pwd = "<?>";
 
-    char *prompt = malloc(strlen(pwd) + 30);
+    char *prompt = malloc(strlen(pwd) + 40);
     sprintf(prompt, "\e[0m\e[37m(sh)-[\e[36m%s\e[37m] # \e[0m", pwd);
 
     return prompt;
