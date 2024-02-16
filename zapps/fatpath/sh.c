@@ -9,28 +9,28 @@
 #include <profan.h>
 
 typedef struct {
-    char    *full_path;
-    char    **args;
-    int        arg_count;
+    char  *full_path;
+    char **args;
+    int    arg_count;
 
-    char    *input_file;
-    char    *output_file;
-    int        append_in_output;
+    char  *input_file;
+    char  *output_file;
+    int    append_in_output;
 
     struct pipex_s *pipex_ptr;
 } command_t;
 
 typedef struct pipex_s {
-    char        *prompt_env;
-    char        *promt;
+    char  *prompt_env;
+    char  *promt;
 
-    command_t    **commands;
+    command_t **commands;
     int         command_count;
 } pipex_t;
 
 typedef struct {
-    char *name;
-    int (*func)(char **);
+    char  *name;
+    int  (*func)(char **);
 } builtin_t;
 
 #define CD_DEFAULT "/"
