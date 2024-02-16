@@ -89,8 +89,7 @@ int shell_command(char *buffer) {
     if (!strcmp(prefix, "exit")) {
         return_value = 1;
     } else if (!strcmp(prefix, "cd")) {
-        char *new_path = calloc(256, sizeof(char));
-        assemble_path(current_dir, suffix, new_path);
+        char *new_path = assemble_path(current_dir, suffix);
         elm = fu_path_to_sid(ROOT_SID, new_path);
 
         if (!IS_NULL_SID(elm) && fu_is_dir(elm))
@@ -101,8 +100,7 @@ int shell_command(char *buffer) {
         free(new_path);
     } else if (!strcmp(prefix, "go")) {
         if (!str_count(suffix, '.')) strncat(suffix, ".bin", 4);
-        char *file = malloc(strlen(suffix) + strlen(current_dir) + 3);
-        assemble_path(current_dir, suffix, file);
+        char *file = assemble_path(current_dir, suffix);
         suffix[0] = '\0';
         elm = fu_path_to_sid(ROOT_SID, file);
 
@@ -116,14 +114,14 @@ int shell_command(char *buffer) {
         char *old_prefix = malloc(strlen(prefix) + 1);
         strcpy(old_prefix, prefix);
         if (!str_count(prefix, '.')) strncat(prefix, ".bin", 4);
-        char *file = malloc(strlen(prefix) + 17);
-        assemble_path("/bin/commands", prefix, file);
+        char *file = assemble_path("/bin/commands", prefix);
         elm = fu_path_to_sid(ROOT_SID, file);
 
         if (!IS_NULL_SID(elm) && fu_is_file(elm))
             go(file, old_prefix, suffix);
         else {
-            assemble_path("/bin/fatpath", prefix, file);
+            free(file);
+            file = assemble_path("/bin/fatpath", prefix);
             elm = fu_path_to_sid(ROOT_SID, file);
             if (!IS_NULL_SID(elm) && fu_is_file(elm)) {
                 go(file, old_prefix, suffix);

@@ -16,8 +16,7 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *full_path = malloc(256);
-    assemble_path(pwd, argv[1], full_path);
+    char *full_path = assemble_path(pwd, argv[1]);
 
     int len = strlen(full_path);
 

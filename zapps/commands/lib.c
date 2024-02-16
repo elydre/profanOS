@@ -80,8 +80,7 @@ int main(int argc, char **argv) {
         }
 
         // assemble new path
-        char *new_path = malloc(strlen(pwd) + strlen(argv[3]) + 3);
-        assemble_path(pwd, argv[3], new_path);
+        char *new_path = assemble_path(pwd, argv[3]);
 
         if (!is_file(new_path)) {
             printf("lib: file '%s' does not exist\n" HELP_HELP, new_path);
@@ -110,8 +109,7 @@ int main(int argc, char **argv) {
         }
 
         // assemble new path
-        char *new_path = malloc(strlen(pwd) + strlen(argv[3]) + 3);
-        assemble_path(pwd, argv[3], new_path);
+        char *new_path = assemble_path(pwd, argv[3]);
 
         if (!is_file(new_path)) {
             printf("lib: file '%s' does not exist\n" HELP_HELP, new_path);

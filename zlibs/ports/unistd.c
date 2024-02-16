@@ -112,7 +112,7 @@ int fdatasync(int a) {
 
 pid_t fork(void) {
     puts("fork is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return c_process_get_pid();
 }
 
 long fpathconf(int a, int b) {

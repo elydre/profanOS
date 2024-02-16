@@ -37,8 +37,7 @@ int main(int argc, char** argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *path = malloc(strlen(pwd) + strlen(argv[1]) + 2);
-    assemble_path(pwd, argv[1], path);
+    char *path = assemble_path(pwd, argv[1]);
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(file) || !fu_is_file(file)) {

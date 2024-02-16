@@ -70,10 +70,10 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (pwd == NULL) pwd = "/";
 
-    char *src_path = malloc(strlen(pwd) + strlen(argv[1]) + 2);
-    char *dst_path = malloc(strlen(pwd) + strlen(argv[2]) + 2);
-    assemble_path(pwd, argv[1], src_path);
-    assemble_path(pwd, argv[2], dst_path);
+    char *src_path = assemble_path(pwd, argv[1]);
+    char *dst_path = assemble_path(pwd, argv[2]);
+    
+    
 
     sid_t src_sid = fu_path_to_sid(ROOT_SID, src_path);
     if (IS_NULL_SID(src_sid)) {
@@ -94,8 +94,7 @@ int main(int argc, char **argv) {
     if (!IS_NULL_SID(dst_sid) && fu_is_dir(dst_sid)) {
         char *name;
         fu_sep_path(src_path, NULL, &name);
-        char *new_dst_path = malloc(strlen(dst_path) + strlen(name) + 2);
-        assemble_path(dst_path, name, new_dst_path);
+        char *new_dst_path = assemble_path(dst_path, name);
         free(dst_path);
         dst_path = new_dst_path;
         free(name);

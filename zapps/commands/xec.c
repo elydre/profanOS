@@ -14,8 +14,7 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *input_file = malloc(256);
-    assemble_path(pwd, argv[1], input_file);
+    char *input_file = assemble_path(pwd, argv[1]);
 
     sid_t input_sid = fu_path_to_sid(ROOT_SID, input_file);
 
@@ -39,8 +38,7 @@ int main(int argc, char **argv) {
     fu_file_read(input_sid, data, 0, size);
     data[size] = '\0';
 
-    char *output_file = malloc(256);
-    assemble_path(pwd, argv[2], output_file);
+    char *output_file = assemble_path(pwd, argv[2]);
 
     sid_t output_sid = fu_path_to_sid(ROOT_SID, output_file);
 

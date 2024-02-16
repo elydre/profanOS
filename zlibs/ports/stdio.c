@@ -76,8 +76,7 @@ FILE *fopen(const char *filename, const char *mode) {
         char *pwd = getenv("PWD");
         if (pwd == NULL) pwd = "/";
 
-        path = malloc(strlen(pwd) + strlen(filename) + 2);
-        assemble_path(pwd, (char *) filename, path);
+        path = assemble_path(pwd, (char *) filename);
         filename = path;
     } else {
         path = strdup(filename);
@@ -711,8 +710,7 @@ void perror(const char *s) {
 
 int remove(const char *fname) {
     char *pwd = getenv("PWD");
-    char *full_path = malloc(strlen(fname) + strlen(pwd) + 2);
-    assemble_path(pwd, (char *) fname, full_path);
+    char *full_path = assemble_path(pwd, (char *) fname);
 
     sid_t elem = fu_path_to_sid(ROOT_SID, full_path);
     if (IS_NULL_SID(elem) || !fu_is_file(elem)) {

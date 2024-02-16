@@ -106,8 +106,7 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *path = malloc(strlen(pwd) + strlen(args->path) + 2);
-    assemble_path(pwd, args->path, path);
+    char *path = assemble_path(pwd, args->path);
 
     sid_t file = fu_path_to_sid(ROOT_SID, path);
 

@@ -166,8 +166,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *full_path = malloc(strlen(pwd) + strlen(path) + 2);
-    assemble_path(pwd, path, full_path);
+    char *full_path = assemble_path(pwd, path);
 
     if (!does_file_exist(full_path)) {
         printf("cc: %s file not found\n", full_path);
@@ -235,13 +234,11 @@ int main(int argc, char **argv) {
             strcat(elf_file, ".elf");
         }
 
-        bin_file = malloc(256);
-
         // get the name of the input file
         int len = strlen(full_path);
         for (int i = len - 1; i >= 0; i--) {
             if (full_path[i] == '/') {
-                assemble_path(pwd, full_path + i + 1, bin_file);
+                bin_file = assemble_path(pwd, full_path + i + 1);
                 break;
             }
         }
