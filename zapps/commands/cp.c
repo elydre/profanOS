@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
 
     char *src_path = assemble_path(pwd, argv[1]);
     char *dst_path = assemble_path(pwd, argv[2]);
-    
-    
+
+
 
     sid_t src_sid = fu_path_to_sid(ROOT_SID, src_path);
     if (IS_NULL_SID(src_sid)) {
