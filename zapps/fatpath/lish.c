@@ -218,7 +218,7 @@ char *get_path(char *file) {
             free_tab(allpath);
             return path;
         }
-        
+
         free(path);
     }
     free_tab(allpath);
@@ -938,14 +938,10 @@ void sh_print_help(int full) {
 int sh_parse_args(int argc, char **argv) {
     if (argc < 2)
         return 0;
-    if (argc == 2 && strcmp(argv[1], "-h") == 0) {
-        sh_print_help(1);
-        return 0;
-    }
-    if (argc == 2 && strcmp(argv[1], "-d") == 0) {
+    if (argc == 2 && strcmp(argv[1], "-h") == 0)
+        return 2;
+    if (argc == 2 && strcmp(argv[1], "-d") == 0)
         return 1;
-    }
-    sh_print_help(0);
     return -1;
 }
 
@@ -956,8 +952,15 @@ int main(int argc, char **argv) {
 
     int mode = sh_parse_args(argc, argv);
 
-    if (mode == -1)
+    if (mode == -1) {   // invalid args
+        sh_print_help(0);
         return 1;
+    }
+
+    if (mode == 2) {  // help
+        sh_print_help(1);
+        return 0;
+    }
 
     setenv("PWD", "/", 0);
 
@@ -1018,7 +1021,7 @@ int main(int argc, char **argv) {
         for (i = 0; i < pipex->command_count - 1; i++)
             if (pipex->commands[i]->output_file == NULL && pipex->commands[i + 1]->input_file != NULL)
                 pipex->commands[i]->output_file = strdup("/dev/null");
-        
+
         if (mode == 1)
             print_struct_pipex(pipex);
 
