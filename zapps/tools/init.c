@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define SHELL_PATH "/bin/fatpath/sh.bin"
-#define SHELL_NAME "minishell"
+#define SHELL_PATH "/bin/fatpath/olivine.bin"
+#define SHELL_NAME "olivine"
 
 #define run_ifexist_pid(path, argc, argv, pid) \
         c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
