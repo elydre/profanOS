@@ -34,6 +34,7 @@ typedef struct {
 } builtin_t;
 
 #define CD_DEFAULT "/"
+#define SHELL_NAME "sh"
 
 /****************************************
  *                                     *
@@ -220,7 +221,6 @@ char *readline(char *prompt) {
     return line;
 }
 
-
 void print_struct_pipex(pipex_t *pipex) {
     printf("command_count: %d\n", pipex->command_count);
     for (int i = 0; i < pipex->command_count; i++) {
@@ -381,85 +381,53 @@ int builtin_pwd(char **args) {
     return 0;
 }
 
-int builtin_exit(char **args) {
-    fputs("exit can't be used with pipes/redirects\n", stderr);
-    return 1;
-}
-
 int builtin_export(char **args) {
-    static char **unnamed = NULL;
-    // free unnamed
-    if (args == NULL) {
-        if (unnamed != NULL) {
-            for (int i = 0; unnamed[i] != NULL; i++) {
-                free(unnamed[i]);
-            }
-            free(unnamed);
-        }
-        return 0;
-    }
-
-    if (unnamed == NULL) {
-        unnamed = malloc(sizeof(char *));
-        unnamed[0] = NULL;
-    }
-
     int ret = 0;
     for (int args_i = 1; args[args_i]; args_i++) {
         if (args[args_i][0] == '-') {
-            printf("export: %s: invalid option\n", args[args_i]);
+            fprintf(stderr, "export: %s: invalid option\n", args[args_i]);
             ret = 1;
             continue;
         }
 
         if (!isalpha(args[args_i][0]) && args[args_i][0] != '_') {
-            printf("export: %s: not a valid identifier\n", args[args_i]);
+            fprintf(stderr, "export: %s: not a valid identifier\n", args[args_i]);
             ret = 1;
             continue;
         }
 
         for (int j = 1; args[args_i][j] && args[args_i][j] != '='; j++) {
             if (!isalnum(args[args_i][j]) && args[args_i][j] != '_') {
-                printf("export: %s: not a valid identifier\n", args[args_i]);
+                fprintf(stderr, "export: %s: not a valid identifier\n", args[args_i]);
                 ret = 1;
                 continue;
             }
         }
 
-        if (strchr(args[args_i], '=')) {
-            char *name = malloc(strlen(args[args_i]) + 1);
-            char *value = malloc(strlen(args[args_i]) + 1);
-            int i = -1;
-            while (args[args_i][++i] != '=') name[i] = args[args_i][i];
-            name[i] = '\0';
-            int j;
-            for (j = 0; args[args_i][i + j + 1] != '\0'; j++) value[j] = args[args_i][i + j + 1];
-            value[j] = '\0';
-            // if name in unnamed, remove it
-            for (int i = 0; unnamed[i] != NULL; i++) {
-                if (strcmp(unnamed[i], name) == 0) {
-                    free(unnamed[i]);
-                    unnamed[i] = NULL;
-                    for (int j = i; unnamed[j] != NULL; j++) {
-                        unnamed[j] = unnamed[j + 1];
-                    }
-                }
-            }
-            setenv(name, value, 1);
-            free(name);
-            free(value);
+        if (!strchr(args[args_i], '=')) {
+            fprintf(stderr, "export: %s: not a valid identifier\n", args[args_i]);
+            ret = 1;
             continue;
         }
 
-        // add name to unnamed
-        int i = 0;
-        while (unnamed[i] != NULL) i++;
-        unnamed = realloc(unnamed, sizeof(char *) * (i + 2));
-        unnamed[i] = malloc(strlen(args[args_i]) + 1);
-        strcpy(unnamed[i], args[args_i]);
-        unnamed[i + 1] = NULL;
+        char *name = malloc(strlen(args[args_i]) + 1);
+        char *value = malloc(strlen(args[args_i]) + 1);
+
+        int i = -1;
+        while (args[args_i][++i] != '=')
+            name[i] = args[args_i][i];
+        name[i] = '\0';
+
+        int j;
+        for (j = 0; args[args_i][i + j + 1] != '\0'; j++)
+            value[j] = args[args_i][i + j + 1];
+        value[j] = '\0';
+
+        setenv(name, value, 1);
+        free(value);
+        free(name);
     }
-    return (ret);
+    return ret;
 }
 
 int builtin_unset(char **args) {
@@ -514,7 +482,6 @@ int builtin_cd(char **args) {
 
 builtin_t builtins[] = {
     {"pwd",    builtin_pwd},
-    {"exit",   builtin_exit},
     {"cd",     builtin_cd},
     {"export", builtin_export},
     {"unset",  builtin_unset},
@@ -607,10 +574,9 @@ char *gen_heredoc_file(char *end) {
     itoa(i++, filename + 23, 10);
 
     int fd = local_open(filename, 1);
-    if (fd == -1) {
-        perror("open");
+    if (fd == -1)
         return NULL;
-    }
+
     char *line = readline("> ");
     while (line) {
         if (strcmp(line, end) == 0) {
@@ -723,11 +689,11 @@ int manage_io(command_t *command, int last_exit) {
 
 void raise_manage_io(int code, int command_nb) {
     if (code == 1)
-        printf("Error: missing file name for redirection in command %d\n", command_nb);
+        fprintf(stderr, SHELL_NAME": missing file name for redirection in command %d\n", command_nb);
     else if (code == 2)
-        printf("Error: empty file name for redirection in command %d\n", command_nb);
+        fprintf(stderr, SHELL_NAME": empty file name for redirection in command %d\n", command_nb);
     else if (code == 3)
-        printf("Error: invalid redirection syntax in command %d\n", command_nb);
+        fprintf(stderr, SHELL_NAME": invalid redirection syntax in command %d\n", command_nb);
 }
 
 int start_end_pipe(char *str) {
@@ -735,7 +701,7 @@ int start_end_pipe(char *str) {
         if (str[i] == ' ' || str[i] == '\t')
             continue;
         if (str[i] == '|') {
-            printf("Error: pipe at beginning of command\n");
+            fprintf(stderr, SHELL_NAME": pipe at start of command\n");
             return 1;
         }
         else
@@ -745,7 +711,7 @@ int start_end_pipe(char *str) {
         if (str[i] == ' ' || str[i] == '\t')
             continue;
         if (str[i] == '|') {
-            printf("Error: pipe at end of command\n");
+            fprintf(stderr, SHELL_NAME": pipe at end of command\n");
             return 1;
         }
         else
@@ -803,6 +769,12 @@ pipex_t *parse_to_pipex(char *str, int last_exit) {
  *                                     *
 ****************************************/
 
+void close_fds(pipex_t *pipex, int *fds, int i) {
+    if (i != 0 || pipex->commands[i]->input_file != NULL)
+        close(fds[i * 2]);
+    if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL)
+        close(fds[i * 2 + 1]);
+}
 
 int start_pipex(pipex_t *pipex) {
     int *fds = malloc(sizeof(int) * pipex->command_count * 2);
@@ -829,16 +801,21 @@ int start_pipex(pipex_t *pipex) {
     }
 
     for (int i = 0; i < pipex->command_count; i++) {
-        if (c_run_ifexist_full((runtime_args_t){
-            pipex->commands[i]->full_path, NULL_SID,
-            pipex->commands[i]->arg_count,
-            pipex->commands[i]->args,
-            0, 0, 0, 2
-        }, &pid) == -1) {
-            if (i != 0 || pipex->commands[i]->input_file != NULL)
-                close(fds[i * 2]);
-            if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL)
-                close(fds[i * 2 + 1]);
+        sid_t sid = fu_path_to_sid(ROOT_SID, pipex->commands[i]->full_path);
+        if (IS_NULL_SID(sid) || !fu_is_file(sid)) {
+            fprintf(stderr, "%s: command not found\n", pipex->commands[i]->args[0]);
+            close_fds(pipex, fds, i);
+            continue;
+        }
+
+        if (c_run_ifexist_full((runtime_args_t) {
+                pipex->commands[i]->full_path, NULL_SID,
+                pipex->commands[i]->arg_count,
+                pipex->commands[i]->args,
+                0, 0, 0, 2
+            }, &pid) == -1
+        ) {
+            close_fds(pipex, fds, i);
             continue;
         }
 
@@ -924,20 +901,59 @@ char *get_prompt(int last_exit) {
     if (pwd == NULL) pwd = "<?>";
 
     char *prompt = malloc(strlen(pwd) + 30);
-    sprintf(prompt, "(sh)-[\e[36m%s\e[0m] # ", pwd);
+    sprintf(prompt, "\e[0m\e[37m(sh)-[\e[36m%s\e[37m] # \e[0m", pwd);
 
     return prompt;
 }
 
-int main(int argc, char **argv) {
-    if (argc > 1) {
-        fputs("Error: too many arguments\n", stderr);
+void sh_print_help(int full) {
+    puts("Usage: "SHELL_NAME" [-h|-d]");
+    if (!full) {
+        puts("try '"SHELL_NAME" -h' for more information");
+        return;
+    }
+    puts(
+        "Options:\n"
+        "  -h  display this help and exit\n"
+        "  -d  debug mode\n"
+        "Builtins:\n"
+        "  pwd    print working directory\n"
+        "  cd     change directory\n"
+        "  exit   exit the shell\n"
+        "  export set environment variables\n"
+        "  unset  unset environment variables\n"
+        "Redirections:\n"
+        "  >     output to file\n"
+        "  >>    append output to file\n"
+        "  <     input from file\n"
+        "  <<    input from heredoc\n"
+        "  |     pipe"
+    );
+}
+
+int sh_parse_args(int argc, char **argv) {
+    if (argc < 2)
+        return 0;
+    if (argc == 2 && strcmp(argv[1], "-h") == 0) {
+        sh_print_help(1);
+        return 0;
+    }
+    if (argc == 2 && strcmp(argv[1], "-d") == 0) {
         return 1;
     }
+    sh_print_help(0);
+    return -1;
+}
 
-    char *line, *prompt, *last_line = NULL;
+int main(int argc, char **argv) {
+    char *line, *prompt;
     int i, last_exit = 0;
     pipex_t *pipex;
+
+    int mode = sh_parse_args(argc, argv);
+
+    if (mode == -1)
+        return 1;
 
     setenv("PWD", "/", 0);
 
@@ -961,10 +977,8 @@ int main(int argc, char **argv) {
             if (line[i] == '\t')
                 line[i] = ' ';
 
-        free(last_line);
-        last_line = line;
-
         pipex = parse_to_pipex(line, last_exit);
+        free(line);
 
         if (!pipex) {
             last_exit = 1;
@@ -981,7 +995,7 @@ int main(int argc, char **argv) {
         patch_tilde(pipex, getenv("HOME"));
         for (i = 0; i < pipex->command_count; i++) {
             if (pipex->commands[i]->arg_count == 0) {
-                printf("Error: no given command in block %d\n", i + 1);
+                fprintf(stderr, SHELL_NAME": no executable given in command %d\n", i + 1);
                 last_exit = 1;
                 i = -1;
                 break;
@@ -1000,14 +1014,14 @@ int main(int argc, char **argv) {
         for (i = 0; i < pipex->command_count - 1; i++)
             if (pipex->commands[i]->output_file == NULL && pipex->commands[i + 1]->input_file != NULL)
                 pipex->commands[i]->output_file = strdup("/dev/null");
-
-        // print_struct_pipex(pipex);
+        
+        if (mode == 1)
+            print_struct_pipex(pipex);
 
         if (fucking_unchiled(pipex, &last_exit))
             last_exit = start_pipex(pipex);
 
         free_pipex(pipex);
     }
-    free(last_line);
     return 0;
 }
