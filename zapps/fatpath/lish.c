@@ -34,7 +34,7 @@ typedef struct {
 } builtin_t;
 
 #define CD_DEFAULT "/"
-#define SHELL_NAME "sh"
+#define SHELL_NAME "lish"
 
 /****************************************
  *                                     *
@@ -63,6 +63,20 @@ int local_open(char *file, int mode) {
 
     free(full_path);
     return fd;
+}
+
+char *readline(char *prompt) {
+    char *line = malloc(100);
+    fputs(prompt, stdout);
+    int len = open_input(line, 100);
+    if (len == 0) {
+        puts("");
+        free(line);
+        return NULL;
+    }
+    if (line[len - 1] == '\n')
+        line[len - 1] = '\0';
+    return line;
 }
 
 char *dup_strft(char *src, int start, int end) {
@@ -209,16 +223,6 @@ char *get_path(char *file) {
     }
     free_tab(allpath);
     return (strdup(file));
-}
-
-char *readline(char *prompt) {
-    char *line = malloc(100);
-    fputs(prompt, stdout);
-    open_input(line, 100);
-    int len = strlen(line);
-    if (line[len - 1] == '\n')
-        line[len - 1] = '\0';
-    return line;
 }
 
 void print_struct_pipex(pipex_t *pipex) {
@@ -569,9 +573,9 @@ void putendl_fd(char *s, int fd) {
 
 char *gen_heredoc_file(char *end) {
     static int i = 0;
-    char *filename = malloc(37);
-    strcpy(filename, "/tmp/minishell_heredoc_");
-    itoa(i++, filename + 23, 10);
+    char *filename = malloc(30);
+    strcpy(filename, "/tmp/sh_heredoc_");
+    itoa(i++, filename + 16, 10);
 
     int fd = local_open(filename, 1);
     if (fd == -1)
@@ -900,8 +904,8 @@ char *get_prompt(int last_exit) {
     char *pwd = getenv("PWD");
     if (pwd == NULL) pwd = "<?>";
 
-    char *prompt = malloc(strlen(pwd) + 40);
-    sprintf(prompt, "\e[0m\e[37m(sh)-[\e[36m%s\e[37m] # \e[0m", pwd);
+    char *prompt = malloc(strlen(pwd) + 40 + strlen(SHELL_NAME));
+    sprintf(prompt, "\e[0m\e[37m("SHELL_NAME")-[\e[36m%s\e[37m] # \e[0m", pwd);
 
     return prompt;
 }
