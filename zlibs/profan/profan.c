@@ -14,6 +14,8 @@
 // input() setings
 #define FIRST_L 12
 #define SLEEP_T 15
+#define INP_CLR "\e[94m"
+#define INP_RST "\e[0m"
 
 // keyboard scancodes
 #define ESC     1
@@ -197,7 +199,7 @@ char *open_input(int *size) {
 
     FILE *term = fopen(term_path, "w");
 
-    fputs("\e[s\e[?25l", term);
+    fputs("\e[?25l", term);
     fflush(term);
 
     uint32_t buffer_actual_size, buffer_index, buffer_size;
@@ -240,11 +242,13 @@ char *open_input(int *size) {
         if (sc == LEFT) {
             if (!buffer_index) continue;
             buffer_index--;
+            fputs("\e[1D", term);
         }
 
         else if (sc == RIGHT) {
             if (buffer_index == buffer_actual_size) continue;
             buffer_index++;
+            fputs("\e[1C", term);
         }
 
         else if (sc == BACK) {
@@ -253,8 +257,10 @@ char *open_input(int *size) {
             for (uint32_t i = buffer_index; i < buffer_actual_size; i++) {
                 buffer[i] = buffer[i + 1];
             }
-            buffer[buffer_actual_size] = '\0';
-            buffer_actual_size--;
+            buffer[buffer_actual_size--] = '\0';
+            fputs("\e[1D\e[s"INP_CLR, term);
+            fputs(buffer + buffer_index, term);
+            fputs(INP_RST" \e[u", term);
         }
 
         else if (sc == DEL) {
@@ -262,8 +268,10 @@ char *open_input(int *size) {
             for (uint32_t i = buffer_index; i < buffer_actual_size; i++) {
                 buffer[i] = buffer[i + 1];
             }
-            buffer[buffer_actual_size] = '\0';
-            buffer_actual_size--;
+            buffer[buffer_actual_size--] = '\0';
+            fputs("\e[s"INP_CLR, term);
+            fputs(buffer + buffer_index, term);
+            fputs(INP_RST" \e[u", term);
         }
 
         else if (sc == ESC) {
@@ -275,21 +283,28 @@ char *open_input(int *size) {
         }
 
         else if (sc <= SC_MAX) {
-            if (profan_kb_get_char(sc, shift) == '\0') continue;
+            char c = profan_kb_get_char(sc, shift);
+            if (c == '\0') continue;
             if (buffer_size < buffer_actual_size + 2) {
                 buffer_size *= 2;
                 buffer = realloc(buffer, buffer_size);
             }
-            for (uint32_t i = buffer_actual_size; i > buffer_index; i--) {
-                buffer[i] = buffer[i - 1];
-            }
-            buffer[buffer_index++] = profan_kb_get_char(sc, shift);
+            fputs(INP_CLR, term);
+            fputc(c, term);
+            if (buffer_index < buffer_actual_size) {
+                for (uint32_t i = buffer_actual_size; i > buffer_index; i--) {
+                    buffer[i] = buffer[i - 1];
+                }
+                fputs("\e[s", term);
+                fputs(buffer + buffer_index + 1, term);
+                fputs(INP_RST"\e[u", term);
+            } else
+                fputs(INP_RST, term);
+            buffer[buffer_index++] = c;
             buffer[++buffer_actual_size] = '\0';
         }
 
         else continue;
-
-        fprintf(term, "\e[?25h\e[u\e[94m%s \e[0m\e[u\e[%dC\e[?25l", buffer, buffer_index);
         fflush(term);
     }
 
