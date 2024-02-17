@@ -73,11 +73,34 @@ int dev_serial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 }
 
 int dev_kb_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
-    if (mode == MODE_READD) {
-        return open_input(buffer, size);
+    static char *buffer_addr = NULL;
+    static uint32_t already_read = 0;
+
+    if (mode != MODE_READD) {
+        return 0;
     }
 
-    return 0;
+    if (buffer_addr == NULL) {
+        buffer_addr = open_input(NULL);
+        already_read = 0;
+    }
+
+    uint32_t to_read = size;
+    uint32_t buffer_size = strlen(buffer_addr);
+
+    if (already_read + to_read > buffer_size) {
+        to_read = buffer_size - already_read;
+    }
+
+    memcpy(buffer, buffer_addr + already_read, to_read);
+    already_read += to_read;
+
+    if (already_read >= buffer_size) {
+        free(buffer_addr);
+        buffer_addr = NULL;
+    }
+
+    return to_read;
 }
 
 int dev_stdin_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
