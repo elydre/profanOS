@@ -42,29 +42,6 @@ typedef struct {
  *                                     *
 ****************************************/
 
-int local_open(char *file, int mode) {
-    // mode 0 -> no creation
-    // mode 1 -> create if not exists
-    // mode 2 -> mode 1 + append
-
-    char *pwd = getenv("PWD");
-    if (!pwd) return -1;
-
-    char *full_path = assemble_path(pwd, file);
-
-    if (mode && IS_NULL_SID(fu_path_to_sid(ROOT_SID, full_path))) {
-        fu_file_create(0, full_path);
-    }
-
-    int fd = fm_open(full_path);
-
-    if (fd >= 0 && mode == 2)
-        fm_lseek(fd, 0, SEEK_END);
-
-    free(full_path);
-    return fd;
-}
-
 char *readline(char *prompt) {
     char *line = malloc(100);
     fputs(prompt, stdout);
@@ -373,12 +350,12 @@ void ss_manage_variables(char **args, int last_exit) {
 
 int builtin_pwd(char **args) {
     if (args[1] != NULL) {
-        fputs("pwd: too many arguments\n", stderr);
+        fputs(SHELL_NAME": pwd: too many arguments\n", stderr);
         return 1;
     }
     char *pwd = getenv("PWD");
     if (pwd == NULL) {
-        fputs("pwd: PWD not set\n", stderr);
+        fputs(SHELL_NAME": pwd: PWD not set\n", stderr);
         return 1;
     }
     puts(pwd);
@@ -435,11 +412,6 @@ int builtin_export(char **args) {
 }
 
 int builtin_unset(char **args) {
-    if (args[1] == NULL) {
-        fputs("unset: not enough arguments\n", stderr);
-        return 1;
-    }
-
     for (int i = 1; args[i] != NULL; i++) {
         unsetenv(args[i]);
     }
@@ -450,13 +422,13 @@ int builtin_cd(char **args) {
     // get argc
 
     if (args[1] && args[2]) {
-        fputs("cd: too many arguments\n", stderr);
+        fputs(SHELL_NAME": cd: too many arguments\n", stderr);
         return 1;
     }
 
     char *current_path = getenv("PWD");
     if (current_path == NULL) {
-        fputs("cd: PWD not set\n", stderr);
+        fputs(SHELL_NAME": cd: PWD not set\n", stderr);
         return 1;
     }
 
@@ -472,7 +444,7 @@ int builtin_cd(char **args) {
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
-        fprintf(stderr, "cd: %s: No such file or directory\n", args[1]);
+        fprintf(stderr, SHELL_NAME": cd: %s: no such file or directory\n", args[1]);
         free(dir);
         return 1;
     }
@@ -518,20 +490,21 @@ int fucking_unchiled(pipex_t *pipex, int *ret) {
     saved_in = saved_out = -1;
 
     if (pipex->commands[0]->input_file) {
-        in_fd = local_open(pipex->commands[0]->input_file, 0);
+        in_fd = profan_open(pipex->commands[0]->input_file, O_RDONLY);
         saved_in = dup(STDIN_FILENO);
         if (dup2(in_fd, STDIN_FILENO) == -1) {
-            printf("Input file '%s' not found\n", pipex->commands[0]->input_file);
+            fprintf(stderr, SHELL_NAME": %s: no such file or directory");
             *ret = 1;
             return 0;
         }
     }
 
     if (pipex->commands[0]->output_file) {
-        out_fd = local_open(pipex->commands[0]->output_file, 1 + pipex->commands[0]->append_in_output);
+        out_fd = profan_open(pipex->commands[0]->output_file,
+                O_WRONLY | O_CREAT | (pipex->commands[0]->append_in_output ? O_APPEND : O_TRUNC));
         saved_out = dup(STDOUT_FILENO);
         if (dup2(out_fd, STDOUT_FILENO) == -1) {
-            printf("Output file '%s' not found\n", pipex->commands[0]->output_file);
+            fprintf(stderr, SHELL_NAME": %s: no such file or directory");
             dup2(saved_in, STDIN_FILENO);
             *ret = 1;
             return 0;
@@ -577,7 +550,7 @@ char *gen_heredoc_file(char *end) {
     strcpy(filename, "/tmp/sh_heredoc_");
     itoa(i++, filename + 16, 10);
 
-    int fd = local_open(filename, 1);
+    int fd = profan_open(filename, O_WRONLY | O_CREAT | O_TRUNC);
     if (fd == -1)
         return NULL;
 
@@ -791,7 +764,7 @@ int start_pipex(pipex_t *pipex) {
                 // already in pipe
                 fds[i * 2] = pipefd[0];
             } else {
-                fds[i * 2] = local_open(pipex->commands[i]->input_file, 0);
+                fds[i * 2] = profan_open(pipex->commands[i]->input_file, O_RDONLY);
             }
         }
         if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL) {
@@ -799,7 +772,8 @@ int start_pipex(pipex_t *pipex) {
                 pipe(pipefd);
                 fds[i * 2 + 1] = pipefd[1];
             } else {
-                fds[i * 2 + 1] = local_open(pipex->commands[i]->output_file, 1 + pipex->commands[i]->append_in_output);
+                fds[i * 2 + 1] = profan_open(pipex->commands[i]->output_file,
+                        O_WRONLY | O_CREAT | (pipex->commands[i]->append_in_output ? O_APPEND : O_TRUNC));
             }
         }
     }
@@ -807,7 +781,7 @@ int start_pipex(pipex_t *pipex) {
     for (int i = 0; i < pipex->command_count; i++) {
         sid_t sid = fu_path_to_sid(ROOT_SID, pipex->commands[i]->full_path);
         if (IS_NULL_SID(sid) || !fu_is_file(sid)) {
-            fprintf(stderr, "%s: command not found\n", pipex->commands[i]->args[0]);
+            fprintf(stderr, SHELL_NAME": %s: command not found\n", pipex->commands[i]->args[0]);
             close_fds(pipex, fds, i);
             continue;
         }
@@ -824,15 +798,24 @@ int start_pipex(pipex_t *pipex) {
         }
 
         if (i != 0 || pipex->commands[i]->input_file != NULL) {
-            dup2(fds[i * 2], fm_resol012(0, pid));
-            close(fds[i * 2]);
+            if (dup2(fds[i * 2], fm_resol012(0, pid)) == -1) {
+                fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->input_file);
+                close_fds(pipex, fds, i);
+                c_process_kill(pid);
+                continue;
+            }
         }
 
         if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL) {
-            dup2(fds[i * 2 + 1], fm_resol012(1, pid));
-            close(fds[i * 2 + 1]);
+            if (dup2(fds[i * 2 + 1], fm_resol012(1, pid)) == -1) {
+                fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->output_file);
+                close_fds(pipex, fds, i);
+                c_process_kill(pid);
+                continue;
+            }
         }
-
+        
+        close_fds(pipex, fds, i);
         c_process_wakeup(pid);
     };
 
