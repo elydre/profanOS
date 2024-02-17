@@ -189,24 +189,27 @@ void profan_wait_pid(uint32_t pid) {
     }
 }
 
-uint32_t open_input(char *buffer, uint32_t size) {
+char *open_input(int *size) {
     // save the current cursor position and show it
-    fputs("\e[s\e[?25l", stdout);
-    fflush(stdout);
+    char *term_path = getenv("TERM");
+    if (!term_path)
+        return NULL;
 
-    int sc, last_sc, last_sc_sgt = 0;
+    FILE *term = fopen(term_path, "w");
 
-    uint32_t buffer_actual_size = 0;
-    uint32_t buffer_index = 0;
+    fputs("\e[s\e[?25l", term);
+    fflush(term);
 
-    for (uint32_t i = 0; i < size; i++)
-        buffer[i] = '\0';
+    uint32_t buffer_actual_size, buffer_index, buffer_size;
+    int sc, last_sc, last_sc_sgt, key_ticks, shift;
 
-    int key_ticks = 0;
-    int shift = 0;
+    char *buffer = malloc(100);
+    buffer[0] = '\0';
+    buffer_size = 100;
 
-    sc = 0;
-    last_sc = 0;
+    sc = last_sc = last_sc_sgt = key_ticks = shift = 0;
+    buffer_actual_size = buffer_index = 0;
+
     while (sc != ENTER) {
         usleep(SLEEP_T * 1000);
         sc = c_kb_get_scfh();
@@ -264,31 +267,41 @@ uint32_t open_input(char *buffer, uint32_t size) {
         }
 
         else if (sc == ESC) {
-            return buffer_actual_size;
+            fclose(term);
+            buffer = realloc(buffer, buffer_actual_size + 1);
+            if (size)
+                *size = buffer_actual_size;
+            return buffer;
         }
 
         else if (sc <= SC_MAX) {
-            if (size < buffer_actual_size + 2) continue;
             if (profan_kb_get_char(sc, shift) == '\0') continue;
+            if (buffer_size < buffer_actual_size + 2) {
+                buffer_size *= 2;
+                buffer = realloc(buffer, buffer_size);
+            }
             for (uint32_t i = buffer_actual_size; i > buffer_index; i--) {
                 buffer[i] = buffer[i - 1];
             }
-            buffer[buffer_index] = profan_kb_get_char(sc, shift);
-            buffer_actual_size++;
-            buffer_index++;
+            buffer[buffer_index++] = profan_kb_get_char(sc, shift);
+            buffer[++buffer_actual_size] = '\0';
         }
 
         else continue;
 
-        printf("\e[?25h\e[u\e[94m%s \e[0m\e[u\e[%dC\e[?25l", buffer, buffer_index);
-        fflush(stdout);
+        fprintf(term, "\e[?25h\e[u\e[94m%s \e[0m\e[u\e[%dC\e[?25l", buffer, buffer_index);
+        fflush(term);
     }
 
     buffer[buffer_actual_size++] = '\n';
     buffer[buffer_actual_size] = '\0';
-    puts("\e[?25h");
+    fputs("\e[?25h\n", term);
+    fclose(term);
 
-    return buffer_actual_size;
+    buffer = realloc(buffer, buffer_actual_size + 1);
+    if (size)
+        *size = buffer_actual_size;
+    return buffer;
 }
 
 int serial_debug(char *frm, ...) {

@@ -35,7 +35,7 @@
 #define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 6))
 #define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 7))
 #define profan_wait_pid ((void (*)(uint32_t)) get_func_addr(PROFAN_LIB_ID, 8))
-#define open_input ((uint32_t (*)(char *, uint32_t)) get_func_addr(PROFAN_LIB_ID, 9))
+#define open_input ((char *(*)(int *)) get_func_addr(PROFAN_LIB_ID, 9))
 #define serial_debug ((int (*)(char *, ...)) get_func_addr(PROFAN_LIB_ID, 10))
 #define profan_open ((int (*)(char *, int, ...)) get_func_addr(PROFAN_LIB_ID, 11))
 #endif
