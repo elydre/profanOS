@@ -134,6 +134,10 @@ FILE *fopen(const char *filename, const char *mode) {
     // copy the filename
     file->filename = path;
     file->fd = fm_open((char *) path);
+    if (file->fd < 0) {
+        free(file);
+        return NULL;
+    }
 
     // copy the mode
     file->mode = interpeted_mode;
