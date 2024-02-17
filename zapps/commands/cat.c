@@ -6,185 +6,160 @@
 #include <filesys.h>
 #include <profan.h>
 
-void make_printable(char *str, int size) {
-    int i;
-    for (i = 0; i < size; i++) {
-        if (str[i] == '\0')
-            str[i] = 176;
-    }
-    if (str[size - 1] == '\n') {
-        str[size] = '\0';
-        return;
-    }
-    str[size] = '\n';
-    str[size + 1] = '\0';
-}
-
 void show_help(void) {
-    puts("Usage: cat [options] <path>\n"
+    puts("Usage: cat [options] [files]\n"
         "Options:\n"
-        "  -h       display this help message\n"
-        "  -r       read file in raw mode\n"
-        "  -f       read FCTF content\n"
-        "  -c -C    canonical display\n"
-        "  -s       max file print size\n"
-        "Without options, cat will print the file\n"
-        "content in printable mode."
+        "  -c/-C    canonical hex+ASCII display\n"
+        "  -e       display $ at end of each line\n"
+        "  -h       display this help message"
     );
 }
 
 typedef struct {
-    int raw_mode;
     int canonical;
-    int max_size;
-    int fctf;
     int help;
-    char *path;
+    int end_of_line;
+    int failed;
+    char **paths;
 } cat_args_t;
 
 cat_args_t *parse_args(int argc, char **argv) {
     cat_args_t *args = malloc(sizeof(cat_args_t));
-    args->raw_mode = 0;
     args->canonical = 0;
-    args->max_size = 0;
+    args->end_of_line = 0;
     args->help = 0;
-    args->path = NULL;
+    args->failed = 0;
+    args->paths = calloc(argc, sizeof(char *));
 
-    int i;
-    for (i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            if (argv[i][1] == 'h') {
-                args->help = 1;
-            } else if (argv[i][1] == 'r') {
-                args->raw_mode = 1;
-            } else if (argv[i][1] == 'f') {
-                args->fctf = 1;
-            } else if (argv[i][1] == 'c' || argv[i][1] == 'C') {
+    int path_count = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-' && argv[i][1] != '\0') {
+            if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "-C") == 0) {
                 args->canonical = 1;
-            } else if (argv[i][1] == 's') {
-                if (i + 1 >= argc) {
-                    printf("Error: -s option requires an argument\n");
-                    free(args);
-                    exit(1);
-                }
-                args->max_size = atoi(argv[++i]);
+            } else if (strcmp(argv[i], "-e") == 0) {
+                args->end_of_line = 1;
+            } else if (strcmp(argv[i], "-h") == 0) {
+                args->help = 1;
+            } else {
+                printf("cat: invalid option -- '%s'\n", argv[i]);
+                args->failed = 1;
             }
         } else {
-            args->path = argv[i];
+            args->paths[path_count++] = argv[i];
         }
     }
 
     return args;
 }
 
+void free_args(cat_args_t *args) {
+    free(args->paths);
+    free(args);
+}
+
+void cat_canonical(FILE *file, char *path) {
+    if (file == NULL) {
+        printf("cat: %s: No such file or directory\n", path);
+        return;
+    }
+
+    char buffer[16];
+    int read;
+    int offset = 0;
+    while ((read = fread(buffer, 1, 16, file)) > 0) {
+        printf("%08x  ", offset);
+        for (int i = 0; i < 16; i++) {
+            if (i < read) {
+                printf("%02x ", buffer[i]);
+            } else {
+                printf("   ");
+            }
+        }
+        printf(" |");
+        for (int i = 0; i < 16; i++) {
+            if (i < read) {
+                printf("%c", buffer[i] >= 32 && buffer[i] < 127 ? buffer[i] : '.');
+            } else {
+                printf(" ");
+            }
+        }
+        printf("|\n");
+        offset += 16;
+    }
+
+    fclose(file);
+}
+
+void cat(FILE *file, char *path, int end_of_line) {
+    if (file == NULL) {
+        printf("cat: %s: No such file or directory\n", path);
+        return;
+    }
+
+    char buffer[1024];
+    int read;
+    while ((read = fread(buffer, 1, 1024, file)) > 0) {
+        if (end_of_line) {
+            for (int i = 0; i < read; i++) {
+                if (buffer[i] == '\n') {
+                    putchar('$');
+                }
+                putchar(buffer[i]);
+            }
+        } else {
+            fwrite(buffer, 1, read, stdout);
+        }
+    }
+
+    fclose(file);
+}
+
 int main(int argc, char **argv) {
     cat_args_t *args = parse_args(argc, argv);
+    if (args->failed) {
+        free_args(args);
+        return 1;
+    }
+
     if (args->help) {
         show_help();
-        free(args);
+        free_args(args);
         return 0;
     }
 
-    if (!args->path) {
-        printf("Error: no path specified\n");
-        free(args);
+    if (args->end_of_line && args->canonical) {
+        puts("cat: cannot use -e and -c together");
+        free_args(args);
         return 1;
     }
 
-    if (args->raw_mode && args->fctf) {
-        printf("Error: -r and -f options are incompatible\n");
-        free(args);
-        return 1;
-    }
-
-    if (args->max_size < 0) {
-        printf("Error: -s option requires a positive integer\n");
-        free(args);
-        return 1;
-    }
-
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
-    char *path = assemble_path(pwd, args->path);
-
-    sid_t file = fu_path_to_sid(ROOT_SID, path);
-
-    if (IS_NULL_SID(file)) {
-        printf("Error: '%s' unreachable path\n", path);
-        free(path);
-        free(args);
-        return 1;
-    }
-
-    free(path);
-
-    if (args->raw_mode) {
-        int size = c_fs_cnt_get_size(c_fs_get_main(), file);
-        if (args->max_size && size > args->max_size)
-            size = args->max_size;
-
-        char *char_content = malloc(size + 1);
-
-        c_fs_cnt_read(c_fs_get_main(), file, char_content, 0, size);
-        if (args->canonical)
-            profan_print_memory(char_content, size);
-        else
-            fwrite(char_content, 1, size, stdout);
-
-        free(char_content);
-        free(args);
-        return 0;
-    }
-
-    if (args->fctf) {
-        if (!args->max_size) {
-            printf("Error: -s option is required for FCTF files\n");
-            free(args);
-            return 1;
+    if (args->canonical) {
+        if (args->paths[0] == NULL)
+            cat_canonical(stdin, "stdin");
+        for (int i = 0; args->paths[i] != NULL; i++) {
+            if (args->paths[i] == NULL)
+                continue;
+            if (args->paths[i][0] == '-') {
+                cat_canonical(stdin, "stdin");
+                continue;
+            }
+            cat_canonical(fopen(args->paths[i], "r"), args->paths[i]);
         }
-
-        if (!fu_is_fctf(file)) {
-            printf("Error: '%s' is not a FCTF file\n", args->path);
-            free(args);
-            return 1;
+    } else {
+        if (args->paths[0] == NULL)
+            cat(stdin, "stdin", args->end_of_line);
+        for (int i = 0; args->paths[i] != NULL; i++) {
+            if (args->paths[i] == NULL)
+                continue;
+            if (args->paths[i][0] == '-') {
+                cat(stdin, "stdin", args->end_of_line);
+                continue;
+            }
+            cat(fopen(args->paths[i], "r"), args->paths[i], args->end_of_line);
         }
-
-        char *char_content = malloc(args->max_size + 1);
-
-        fu_fctf_read(file, char_content, 0, args->max_size);
-        if (args->canonical)
-            profan_print_memory(char_content, args->max_size);
-        else
-            fwrite(char_content, 1, args->max_size, stdout);
-
-        free(char_content);
-        free(args);
-        return 0;
     }
 
-    if (!fu_is_file(file)) {
-        printf("Error: '%s' is not a file\n", args->path);
-        free(args);
-        return 1;
-    }
-
-    int size = fu_get_file_size(file);
-
-    if (args->max_size && size > args->max_size)
-        size = args->max_size;
-
-    char *char_content = malloc(size + 2);
-
-    fu_file_read(file, char_content, 0, size);
-    if (args->canonical)
-        profan_print_memory(char_content, size);
-    else {
-        make_printable(char_content, size);
-        fputs(char_content, stdout);
-    }
-
-    free(char_content);
-    free(args);
+    free_args(args);
     return 0;
 }
