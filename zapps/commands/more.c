@@ -79,6 +79,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (argc < 2 && isatty(STDIN_FILENO)) {
+        puts("more: stdin is a tty");
+        return 1;
+    }
+
     char *buffer = read_file(argv[1] ? argv[1] : "/dev/stdin");
 
     if (buffer == NULL) {
