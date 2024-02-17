@@ -2180,7 +2180,7 @@ char *pipe_processor(char **input) {
         dup(4)
     };
 
-    char *line, *ret = NULL;
+    char *line, *tmp, *ret = NULL;
     int fd[2], fdin, start = 0;
     fdin = dup(0);
     for (int i = 0; i < argc + 1; i++) {
@@ -2226,20 +2226,40 @@ char *pipe_processor(char **input) {
             dup2(fd[1], 1);
         }
 
-        execute_line(line);
+        tmp = execute_line(line);
+        free(line);
+
         close(fd[1]);
         close(fdin);
 
         fdin = fd[0];
 
-        free(line);
+        if (tmp == ERROR_CODE) {
+            ret = ERROR_CODE;
+            break;
+        }
+        free(tmp);
     }
-    close(fdin);
 
     dup2(old_fds[1], 1);
     dup2(old_fds[3], 4);
     dup2(old_fds[0], 0);
     dup2(old_fds[2], 3);
+
+    // if line execution failed, print pipe content
+    if (tmp == ERROR_CODE) {
+        raise_error("Pipe Processor", "Command failed");
+        puts("\e[37m  --- Pipe Content ---\e[0m");
+        int n;
+        char buffer[101];
+        while ((n = read(fdin, buffer, 100)) > 0) {
+            buffer[n] = '\0';
+            fputs(buffer, stdout);
+        }
+        puts("\e[37m  --------------------\e[0m");
+    }
+
+    close(fdin);
 
     for (int i = 0; i < 4; i++) {
         close(old_fds[i]);
@@ -2248,7 +2268,7 @@ char *pipe_processor(char **input) {
     return ret;
     #endif
     raise_error("Pipe Processor", "Not supported in this build");
-    return NULL;
+    return ERROR_CODE;
 }
 
 /**************************
@@ -2326,7 +2346,7 @@ char *execute_line(char *full_line) {
 
     if (line == NULL) {
         // subfunction failed
-        return NULL;
+        return ERROR_CODE;
     }
 
     // get the function name
@@ -2355,7 +2375,7 @@ char *execute_line(char *full_line) {
                 free(line);
             }
 
-            return NULL;
+            return ERROR_CODE;
         }
 
         // check if "|" is present
