@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 4"
+#define OLV_VERSION "0.10 rev 5"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
