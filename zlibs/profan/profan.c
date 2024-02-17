@@ -4,8 +4,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#define PROFAN_C
+
 #include <syscall.h>
 #include <filesys.h>
+#include <profan.h>
 #include <type.h>
 
 // input() setings
@@ -303,4 +306,33 @@ int serial_debug(char *frm, ...) {
     va_end(args);
 
     return len;
+}
+
+int profan_open(char *path, int flags, ...) {
+    // mode is ignored, permissions are always 777
+
+    sid_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_NULL_SID(sid) && (flags & O_CREAT)) {
+        sid = fu_file_create(0, path);
+    }
+
+    if (IS_NULL_SID(sid)) {
+        return -1;
+    }
+
+    if (flags & O_TRUNC) {
+        fu_set_file_size(sid, 0);
+    }
+
+    int fd = fm_open(path);
+
+    if (fd < 0) {
+        return -1;
+    }
+
+    if (flags & O_APPEND) {
+        fm_lseek(fd, 0, SEEK_END);
+    }
+
+    return fd;
 }

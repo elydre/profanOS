@@ -18,6 +18,14 @@
 #define KB_S 31
 #define KB_released_value 128
 
+#define O_RDONLY    00
+#define O_WRONLY    01
+#define O_RDWR      02
+#define O_CREAT     0100
+#define O_TRUNC     01000
+#define O_APPEND    02000
+
+#ifndef PROFAN_C
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #define userspace_reporter ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 2))
@@ -29,4 +37,7 @@
 #define profan_wait_pid ((void (*)(uint32_t)) get_func_addr(PROFAN_LIB_ID, 8))
 #define open_input ((uint32_t (*)(char *, uint32_t)) get_func_addr(PROFAN_LIB_ID, 9))
 #define serial_debug ((int (*)(char *, ...)) get_func_addr(PROFAN_LIB_ID, 10))
+#define profan_open ((int (*)(char *, int, ...)) get_func_addr(PROFAN_LIB_ID, 11))
+#endif
+
 #endif
