@@ -430,13 +430,11 @@ char *fgets(char *str, int count, FILE *stream) {
 }
 
 int fputc(int ch, FILE *stream) {
-    puts("fputc not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return fwrite(&ch, 1, 1, stream) == 1 ? ch : EOF;
 }
 
 int putc(int ch, FILE *stream) {
-    puts("putc not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return fwrite(&ch, 1, 1, stream) == 1 ? ch : EOF;
 }
 
 int fputs(const char *str, FILE *stream) {
@@ -449,8 +447,25 @@ int getchar(void) {
 }
 
 char *gets_s(char *str, rsize_t n) {
-    puts("gets_s not implemented yet, WHY DO YOU USE IT ?");
-    return NULL;
+    if (n == 0) {
+        return NULL;
+    }
+
+    char *ptr = str;
+    int c;
+    while ((c = getc(stdin)) != EOF && c != '\n') {
+        if (n > 1) {
+            *ptr++ = c;
+            n--;
+        }
+    }
+
+    if (c == EOF && ptr == str) {
+        return NULL;
+    }
+
+    *ptr = 0;
+    return str;
 }
 
 int putchar(int ch) {
