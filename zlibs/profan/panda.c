@@ -22,15 +22,15 @@ typedef struct {
 } screen_char_t;
 
 typedef struct {
-    uint32_t cursor_x;
-    uint32_t cursor_y;
-    uint32_t scroll_offset;
+    int cursor_x;
+    int cursor_y;
+    int scroll_offset;
 
-    uint32_t max_lines;
-    uint32_t max_cols;
+    int max_lines;
+    int max_cols;
 
-    uint32_t saved_cursor_x;
-    uint32_t saved_cursor_y;
+    int saved_cursor_x;
+    int saved_cursor_y;
 
     uint8_t cursor_is_hidden;
     char color;
@@ -156,8 +156,8 @@ void print_char(uint32_t xo, uint32_t yo, char c, char color_code) {
 
 void panda_clear_screen(void) {
     if (!g_panda) return;
-    for (uint32_t i = 0; i < g_panda->max_lines; i++) {
-        for (uint32_t j = 0; j < g_panda->max_cols; j++) {
+    for (int i = 0; i < g_panda->max_lines; i++) {
+        for (int j = 0; j < g_panda->max_cols; j++) {
             if (g_panda->screen_buffer[i * g_panda->max_cols + j].content == ' ' &&
                 g_panda->screen_buffer[i * g_panda->max_cols + j].color == 0xF
             ) continue;
@@ -189,7 +189,7 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
         }
         g_panda->cursor_x = g_panda->saved_cursor_x;
     } else if (str[0] == 'K') {
-        for (uint32_t i = g_panda->cursor_x; i < g_panda->max_cols; i++) {
+        for (int i = g_panda->cursor_x; i < g_panda->max_cols; i++) {
             g_panda->screen_buffer[(g_panda->cursor_y - g_panda->scroll_offset) * g_panda->max_cols + i].content = ' ';
             g_panda->screen_buffer[(g_panda->cursor_y - g_panda->scroll_offset) * g_panda->max_cols + i].color = 0x0F;
             print_char(i * g_panda->font->width, (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height, ' ', 0x0F);
@@ -263,12 +263,20 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
     if (tmp[0] == 'C') {
         int n = atoi(str);
         g_panda->cursor_x += n;
+        if (g_panda->cursor_x >= g_panda->max_cols) {
+            g_panda->cursor_x -= g_panda->max_cols;
+            g_panda->cursor_y++;
+        }
     }
 
     // cursor backward
     if (tmp[0] == 'D') {
         int n = atoi(str);
         g_panda->cursor_x -= n;
+        if (g_panda->cursor_x < 0) {
+            g_panda->cursor_x += g_panda->max_cols;
+            g_panda->cursor_y--;
+        }
     }
 
     return tmp - start;
@@ -296,7 +304,7 @@ void panda_scroll(uint32_t line_count) {
     // scroll the display and print it
     int new_offset;
     for (uint32_t i = 0; i < g_panda->max_lines - line_count; i++) {
-        for (uint32_t j = 0; j < g_panda->max_cols; j++) {
+        for (int j = 0; j < g_panda->max_cols; j++) {
             new_offset = i * g_panda->max_cols + j;
             offset = new_offset + g_panda->max_cols * line_count;
             if (g_panda->screen_buffer[new_offset].content == g_panda->screen_buffer[offset].content &&
@@ -310,7 +318,7 @@ void panda_scroll(uint32_t line_count) {
 
     // clear the last line
     for (uint32_t i = 0; i < line_count; i++) {
-        for (uint32_t j = 0; j < g_panda->max_cols; j++) {
+        for (int j = 0; j < g_panda->max_cols; j++) {
             new_offset = (g_panda->max_lines - 1 - i) * g_panda->max_cols + j;
             if (g_panda->screen_buffer[new_offset].content == ' ' && g_panda->screen_buffer[new_offset].color == 0xF) continue;
             g_panda->screen_buffer[new_offset].content = ' ';
@@ -338,7 +346,7 @@ void draw_cursor(int errase) {
 
 void panda_print_string(char *string, int len) {
     if (!g_panda) return;
-    uint32_t tmp, y;
+    int tmp, y;
     for (int i = 0; (len < 0) ? (string[i]) : (i < len); i++) {
         if (!g_panda->cursor_is_hidden)
             draw_cursor(1);
