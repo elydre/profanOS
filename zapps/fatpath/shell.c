@@ -5,10 +5,6 @@
 #include <profan.h>
 #include <stdio.h>
 
-
-#define BFR_SIZE 90
-#define SC_MAX 57
-
 #define SHELL_PROMPT "profanOS [\e[32m%s\e[0m] > "
 
 static char current_dir[256] = "/";
@@ -52,14 +48,16 @@ int str_count(char *str, char thing) {
 }
 
 int main(int argc, char **argv) {
-    char char_buffer[BFR_SIZE];
+    char *char_buffer = NULL;
 
-    while (1) {
+    do {
+        free(char_buffer);
         printf(SHELL_PROMPT, current_dir);
         fflush(stdout);
-        open_input(char_buffer, BFR_SIZE);
-        if (shell_command(char_buffer)) break;
-    }
+        char_buffer = open_input(NULL);
+    } while (shell_command(char_buffer));
+    free(char_buffer);
+
     return 0;
 }
 
