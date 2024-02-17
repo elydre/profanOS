@@ -43,9 +43,12 @@ typedef struct {
 ****************************************/
 
 char *readline(char *prompt) {
-    char *line = malloc(100);
+    int len;
+
     fputs(prompt, stdout);
-    int len = open_input(line, 100);
+    fflush(stdout);
+
+    char *line = open_input(&len);
     if (len == 0) {
         puts("");
         free(line);
@@ -754,9 +757,9 @@ void close_fds(pipex_t *pipex, int *fds, int i) {
 }
 
 int start_pipex(pipex_t *pipex) {
-    int *fds = malloc(sizeof(int) * pipex->command_count * 2);
+    int *fds = malloc(pipex->command_count * 2 * sizeof(int));
+    int *pids = calloc(pipex->command_count, sizeof(int));
     int pipefd[2];
-    int pid = -1;
 
     for (int i = 0; i < pipex->command_count; i++) {
         if (i != 0 || pipex->commands[i]->input_file != NULL) {
@@ -791,38 +794,42 @@ int start_pipex(pipex_t *pipex) {
                 pipex->commands[i]->arg_count,
                 pipex->commands[i]->args,
                 0, 0, 0, 2
-            }, &pid) == -1
+            }, pids + i) == -1
         ) {
             close_fds(pipex, fds, i);
             continue;
         }
 
         if (i != 0 || pipex->commands[i]->input_file != NULL) {
-            if (dup2(fds[i * 2], fm_resol012(0, pid)) == -1) {
+            if (dup2(fds[i * 2], fm_resol012(0, pids[i])) == -1) {
                 fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->input_file);
                 close_fds(pipex, fds, i);
-                c_process_kill(pid);
+                c_process_kill(pids[i]);
                 continue;
             }
         }
 
         if (i != pipex->command_count - 1 || pipex->commands[i]->output_file != NULL) {
-            if (dup2(fds[i * 2 + 1], fm_resol012(1, pid)) == -1) {
+            if (dup2(fds[i * 2 + 1], fm_resol012(1, pids[i])) == -1) {
                 fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->output_file);
                 close_fds(pipex, fds, i);
-                c_process_kill(pid);
+                c_process_kill(pids[i]);
                 continue;
             }
         }
-        
+
         close_fds(pipex, fds, i);
-        c_process_wakeup(pid);
+        c_process_wakeup(pids[i]);
     };
 
     free(fds);
 
-    if (pid > 0)
-        profan_wait_pid(pid);
+    for (int i = 0; i < pipex->command_count; i++) {
+        if (pids[i] > 0)
+            profan_wait_pid(pids[i]);
+    }
+
+    free(pids);
 
     return 0;
 }
