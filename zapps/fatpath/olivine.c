@@ -1493,7 +1493,7 @@ char *if_go_binfile(char **input) {
 
     int pid;
     local_itoa(c_run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
+        (runtime_args_t){file_path, file_id, argc, argv, 0, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
     ), g_exit_code);
 
     if (stdin_path) {

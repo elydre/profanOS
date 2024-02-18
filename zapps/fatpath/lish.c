@@ -793,7 +793,7 @@ int start_pipex(pipex_t *pipex) {
                 pipex->commands[i]->full_path, NULL_SID,
                 pipex->commands[i]->arg_count,
                 pipex->commands[i]->args,
-                0, 0, 0, 2
+                0, 0, 2
             }, pids + i) == -1
         ) {
             close_fds(pipex, fds, i);
