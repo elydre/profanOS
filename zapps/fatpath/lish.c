@@ -804,7 +804,7 @@ int start_pipex(pipex_t *pipex) {
             if (dup2(fds[i * 2], fm_resol012(0, pids[i])) == -1) {
                 fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->input_file);
                 close_fds(pipex, fds, i);
-                c_process_kill(pids[i]);
+                c_exit_pid(pids[i], 1);
                 continue;
             }
         }
@@ -813,7 +813,7 @@ int start_pipex(pipex_t *pipex) {
             if (dup2(fds[i * 2 + 1], fm_resol012(1, pids[i])) == -1) {
                 fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->output_file);
                 close_fds(pipex, fds, i);
-                c_process_kill(pids[i]);
+                c_exit_pid(pids[i], 1);
                 continue;
             }
         }
@@ -824,14 +824,15 @@ int start_pipex(pipex_t *pipex) {
 
     free(fds);
 
+    int exit_code = 0;
     for (int i = 0; i < pipex->command_count; i++) {
         if (pids[i] > 0)
-            profan_wait_pid(pids[i]);
+            exit_code = profan_wait_pid(pids[i]);
     }
 
     free(pids);
 
-    return 0;
+    return exit_code;
 }
 
 /****************************************
@@ -894,8 +895,11 @@ char *get_prompt(int last_exit) {
     char *pwd = getenv("PWD");
     if (pwd == NULL) pwd = "<?>";
 
-    char *prompt = malloc(strlen(pwd) + 40 + strlen(SHELL_NAME));
-    sprintf(prompt, "\e[0m\e[37m("SHELL_NAME")-[\e[36m%s\e[37m] # \e[0m", pwd);
+    char *prompt = malloc(strlen(pwd) + 50 + strlen(SHELL_NAME));
+    if (last_exit)
+        sprintf(prompt, "\e[37m(\e[91m#%3d\e[37m)-[\e[36m%s\e[37m] $ \e[0m", last_exit, pwd);
+    else
+        sprintf(prompt, "\e[37m("SHELL_NAME")-[\e[36m%s\e[37m] $ \e[0m", pwd);
 
     return prompt;
 }

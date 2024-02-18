@@ -178,17 +178,18 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     return kb_map[scancode * 2];
 }
 
-void profan_wait_pid(uint32_t pid) {
+int profan_wait_pid(uint32_t pid) {
     uint32_t current_pid = c_process_get_pid();
 
     if (pid == current_pid) {
         c_process_sleep(current_pid, 0);
-        return;
+        return 0;
     }
 
     while (c_process_get_state(pid) < 4) {
         c_process_sleep(current_pid, 10);
     }
+    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
 char *open_input(int *size) {

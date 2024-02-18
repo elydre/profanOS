@@ -134,11 +134,11 @@ void memory_print_usage(void) {
     sort_tab(pid_list, pid_list_len);
 
     int pid;
-    char name[64];
+    char *name;
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        c_process_get_name(pid, name);
+        name = (char *) c_process_get_info(pid, PROCESS_INFO_NAME);
         printf("PID %-3.02d %-15s %6d kB | %d\n",
                 pid, (strchr(name, '/') ? strrchr(name, '/') + 1 : name),
                 c_mem_get_info(8, pid) / 1024,

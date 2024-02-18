@@ -36,10 +36,10 @@ void list_process(void) {
 
     puts(" PID PPID     STATE     TIME      MEM ALLOC NAME");
     int pid;
-    char name[64];
+    char *name;
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        c_process_get_name(pid, name);
+        name = (char *) c_process_get_info(pid, PROCESS_INFO_NAME);
         printf("%4d %4d %9s %7gs %7dK %5d %-36s\n",
                 pid,
                 c_process_get_ppid(pid),
