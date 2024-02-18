@@ -77,13 +77,10 @@ void *SYSCALL_ARRAY[] = {
     process_wakeup,
     process_kill,
     process_get_pid,
-    process_get_ppid,
     process_generate_pid_list,
-    process_get_name,
-    process_get_state,
-    process_get_run_time,
+    process_get_info,
 
-    // minilib.h
+    // runtime.h
     force_exit_pid,
 
     // system.h

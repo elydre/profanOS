@@ -8,6 +8,18 @@
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8
 
+#define PROCESS_INFO_PPID       0
+#define PROCESS_INFO_PRIORITY   1
+#define PROCESS_INFO_STATE      2
+#define PROCESS_INFO_SLEEP_TO   3
+#define PROCESS_INFO_RUN_TIME   4
+#define PROCESS_INFO_EXIT_CODE  5
+#define PROCESS_INFO_NAME       6
+
+#define c_process_get_ppid(pid) c_process_get_info(pid, PROCESS_INFO_PPID)
+#define c_process_get_state(pid) c_process_get_info(pid, PROCESS_INFO_STATE)
+#define c_process_get_run_time(pid) c_process_get_info(pid, PROCESS_INFO_RUN_TIME)
+
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 
@@ -70,19 +82,16 @@
 
 #define c_process_set_sheduler ((void (*)(int)) hi_func_addr(30))
 #define c_process_create ((int (*)(void (*func)(), int, char *)) hi_func_addr(31))
-#define c_process_sleep ((void (*)(uint32_t, uint32_t)) hi_func_addr(32))
-#define c_process_wakeup ((void (*)(uint32_t)) hi_func_addr(33))
+#define c_process_sleep ((int (*)(uint32_t, uint32_t)) hi_func_addr(32))
+#define c_process_wakeup ((int (*)(uint32_t)) hi_func_addr(33))
 #define c_process_kill ((void (*)(uint32_t)) hi_func_addr(34))
-#define c_process_get_pid ((int (*)(void)) hi_func_addr(35))
-#define c_process_get_ppid ((int (*)(uint32_t)) hi_func_addr(36))
-#define c_process_generate_pid_list ((int (*)(uint32_t *, int)) hi_func_addr(37))
-#define c_process_get_name ((int (*)(uint32_t, char *)) hi_func_addr(38))
-#define c_process_get_state ((int (*)(uint32_t)) hi_func_addr(39))
-#define c_process_get_run_time ((uint32_t (*)(uint32_t)) hi_func_addr(40))
+#define c_process_get_pid ((uint32_t (*)(void)) hi_func_addr(35))
+#define c_process_generate_pid_list ((int (*)(uint32_t *, int)) hi_func_addr(36))
+#define c_process_get_info ((uint32_t (*)(uint32_t, int)) hi_func_addr(37))
 
-#define c_exit_pid ((int (*)(int, int)) hi_func_addr(41))
+#define c_exit_pid ((int (*)(int, int)) hi_func_addr(38))
 
-#define c_dily_unload ((int (*)(uint32_t)) hi_func_addr(42))
-#define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(43))
+#define c_dily_unload ((int (*)(uint32_t)) hi_func_addr(39))
+#define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(40))
 
 #endif

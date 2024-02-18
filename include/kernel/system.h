@@ -17,12 +17,11 @@
 
 #define RUN_BIN_VBASE   0xC0000000  // virtual base address for binary
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count
-#define RUN_BIN_STACK   0x10000     // stack size
 
 #define DILY_MAX        128         // max dily loaded library
 #define RUN_LIB_STACK   0x1000      // left stack size for library
 
-#define PROCESS_ESP     0x4000      // process stack size
+#define PROCESS_ESP     0x10000     // process stack size
 
 #define WATFUNC_ADDR    0x1ffff7
 #define WATDILY_ADDR    0x1ffffb

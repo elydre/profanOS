@@ -12,7 +12,7 @@
 void kernel_switch_back(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
-    int pid;
+    uint32_t pid;
 
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
@@ -34,7 +34,7 @@ void kernel_switch_back(void) {
 void kernel_exit_current(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
-    int pid;
+    uint32_t pid;
 
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];

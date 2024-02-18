@@ -20,13 +20,6 @@
  *  |                                 | : |             |  *
 ************************************************************/
 
-typedef struct {
-    int pid;
-    int ret;
-} direct_return_t;
-
-direct_return_t last_return;
-
 int force_exit_pid(int pid, int ret_code) {
     int ppid, pstate;
 
@@ -46,15 +39,14 @@ int force_exit_pid(int pid, int ret_code) {
         free((void *) comm->argv);
 
         // free the stack
-        free((void *) comm->stack);
+        // free((void *) comm->stack);
 
         // free comm struct
         free(comm);
     }
 
     // set return value
-    last_return.pid = pid;
-    last_return.ret = ret_code;
+    process_set_return(pid, ret_code);
 
     // wake up the parent process
     ppid = process_get_ppid(pid);
@@ -75,7 +67,7 @@ void tasked_program(void) {
     int ppid = process_get_ppid(pid);
 
     comm_struct_t *comm = process_get_comm(pid);
-    uint32_t stack_size = comm->stack_size;
+    // uint32_t stack_size = comm->stack_size;
 
     int vsize = comm->vcunt;
     int fsize = fs_cnt_get_size(fs_get_main(), comm->file);
@@ -93,20 +85,20 @@ void tasked_program(void) {
     fs_cnt_read(fs_get_main(), comm->file, (uint8_t *) comm->vbase, 0, real_fsize);
 
     // malloc a new stack
-    comm->stack = mem_alloc(stack_size, 0, 4);
+    /*comm->stack = mem_alloc(stack_size, 0, 4);
     mem_set((uint8_t *) comm->stack, 0, stack_size);
 
     // setup stack
     uint32_t old_esp = 0;
     asm volatile("mov %%esp, %0" : "=r" (old_esp));
-    asm volatile("mov %0, %%esp" :: "r" (comm->stack + stack_size - 0x80));
+    asm volatile("mov %0, %%esp" :: "r" (comm->stack + stack_size - 0x80));*/
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
     int ret = main(comm->argc, comm->argv) & 0xFF;
 
-    // restore stack
-    asm volatile("mov %0, %%esp" :: "r" (old_esp));
+    /*// restore stack
+    asm volatile("mov %0, %%esp" :: "r" (old_esp));*/
 
     // free forgeted allocations
     int not_free_mem = mem_get_info(7, pid);
@@ -131,8 +123,7 @@ void tasked_program(void) {
     free(comm);
 
     // set return value
-    last_return.pid = pid;
-    last_return.ret = ret;
+    process_set_return(pid, ret);
 
     // wake up the parent process
     if (ppid != -1) {
@@ -154,9 +145,6 @@ int run_binary(runtime_args_t args, int *pid_ptr) {
             *pid_ptr = -1;
         return -1;
     }
-
-    if (pid == 2)
-        last_return.pid = -1;
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
@@ -190,7 +178,9 @@ int run_binary(runtime_args_t args, int *pid_ptr) {
     else
         process_wakeup(pid);
 
-    return (last_return.pid == pid) ? last_return.ret : 0;
+    if (process_get_state(pid) < PROCESS_KILLED)
+        return 0;
+    return process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid) {
@@ -203,7 +193,7 @@ int run_ifexist_full(runtime_args_t args, int *pid) {
 
     args.vbase = args.vbase ? args.vbase : RUN_BIN_VBASE;
     args.vcunt = args.vcunt ? args.vcunt : RUN_BIN_VCUNT;
-    args.stack = args.stack ? args.stack : RUN_BIN_STACK;
+    args.stack = args.stack ? args.stack : 0;
 
     if (!IS_NULL_SID(args.sid) && fu_is_file(fs_get_main(), args.sid)) {
         return run_binary(args, pid);

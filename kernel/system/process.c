@@ -28,14 +28,14 @@ uint8_t need_clean;
 int sheduler_disable_count;
 
 uint32_t pid_current;
-
+uint8_t *exit_codes;
 
 /***********************
  * INTERNAL FUNCTIONS *
 ***********************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
-    uint32_t esp_alloc = (uint32_t) mem_alloc(PROCESS_ESP, 0, 6);
+    uint32_t esp_alloc = mem_alloc(PROCESS_ESP, 0, 6);
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -253,6 +253,8 @@ int process_init(void) {
 
     shdlr_queue_length = 0;
 
+    exit_codes = calloc(10 * sizeof(uint8_t));
+
     i_add_to_shdlr_queue(0, PROC_PRIORITY);
 
     kern_proc->scuba_dir = scuba_get_kernel_directory();
@@ -285,6 +287,11 @@ int process_create(void (*func)(), int use_parent_dir, char *name) {
 
     static int pid_incrament = 0;
     pid_incrament++;
+
+    if (pid_incrament % 10 == 9) {
+        exit_codes = realloc_as_kernel(exit_codes, (pid_incrament + 10) * sizeof(uint8_t));
+        mem_set(exit_codes + pid_incrament, 0, 10);
+    }
 
     process_t *parent_proc = &plist[parent_place];
     process_t *new_proc = &plist[place];
@@ -582,17 +589,17 @@ void schedule(uint32_t ticks) {
  * GET / SET FUNCTIONS *
 ************************/
 
-void process_set_priority(uint32_t pid, int priority) {
+int process_set_priority(uint32_t pid, int priority) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
         sys_warning("[set_priority] pid %d not found", pid);
-        return;
+        return 1;
     }
 
     if (priority > 10 || priority < 1) {
         sys_warning("[set_priority] priority %d is not valid", priority);
-        return;
+        return 1;
     }
 
     plist[place].priority = priority;
@@ -605,24 +612,27 @@ void process_set_priority(uint32_t pid, int priority) {
 
         process_enable_sheduler();
     }
+
+    return 0;
 }
 
-int process_get_pid(void) {
+uint32_t process_get_pid(void) {
     return pid_current;
 }
 
-void process_set_comm(uint32_t pid, void *comm) {
+int process_set_comm(uint32_t pid, comm_struct_t *comm) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
         sys_warning("[set_comm] pid %d not found", pid);
-        return;
+        return 1;
     }
 
     plist[place].comm = comm;
+    return 0;
 }
 
-void *process_get_comm(uint32_t pid) {
+comm_struct_t *process_get_comm(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -631,17 +641,6 @@ void *process_get_comm(uint32_t pid) {
     }
 
     return plist[place].comm;
-}
-
-int process_get_ppid(uint32_t pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[get_ppid] pid %d not found", pid);
-        return -1;
-    }
-
-    return plist[place].ppid;
 }
 
 int process_generate_pid_list(uint32_t *list, int max) {
@@ -656,50 +655,6 @@ int process_generate_pid_list(uint32_t *list, int max) {
     return i;
 }
 
-int process_get_name(uint32_t pid, char *name) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[get_name] pid %d not found", pid);
-        return 1;
-    }
-
-    str_cpy(name, plist[place].name);
-    return 0;
-}
-
-int process_get_state(uint32_t pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        return PROCESS_DEAD;
-    }
-
-    return plist[place].state;
-}
-
-int process_get_priority(uint32_t pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[get_priority] pid %d not found", pid);
-        return 0;
-    }
-
-    return plist[place].priority;
-}
-
-uint32_t process_get_run_time(uint32_t pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[get_run_time] pid %d not found", pid);
-        return 0;
-    }
-
-    return plist[place].run_time;
-}
-
 scuba_directory_t *process_get_directory(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
@@ -709,4 +664,53 @@ scuba_directory_t *process_get_directory(uint32_t pid) {
     }
 
     return plist[place].scuba_dir;
+}
+
+int process_set_return(uint32_t pid, uint32_t ret) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_warning("[set_return] pid %d not found", pid);
+        return 1;
+    }
+
+    exit_codes[pid] = ret;
+    return 0;
+}
+
+uint32_t process_get_info(uint32_t pid, int info_id) {
+    int place = i_pid_to_place(pid);
+
+    if (info_id == PROCESS_INFO_EXIT_CODE) {
+        if (place < 0)
+            return 0;
+        return exit_codes[pid];
+    }
+
+    if (info_id == PROCESS_INFO_STATE) {
+        if (place < 0)
+            return PROCESS_DEAD;
+        return plist[place].state;
+    }
+
+    if (place < 0) {
+        sys_warning("[get_info] pid %d not found", pid);
+        return 1;
+    }
+
+    switch (info_id) {
+        case PROCESS_INFO_PPID:
+            return plist[place].ppid;
+        case PROCESS_INFO_PRIORITY:
+            return plist[place].priority;
+        case PROCESS_INFO_SLEEP_TO:
+            return plist[place].sleep_to;
+        case PROCESS_INFO_RUN_TIME:
+            return plist[place].run_time;
+        case PROCESS_INFO_NAME:
+            return (uint32_t) plist[place].name;
+        default:
+            sys_warning("[get_info] info_id %d not found", info_id);
+            return 1;
+    }
 }
