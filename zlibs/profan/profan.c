@@ -348,7 +348,7 @@ int profan_open(char *path, int flags, ...) {
         return -1;
     }
 
-    if (flags & O_TRUNC) {
+    if (flags & O_TRUNC && fu_is_file(sid)) {
         fu_set_file_size(sid, 0);
     }
 

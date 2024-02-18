@@ -612,7 +612,7 @@ int fu_fctf_rw(sid_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_
         // read container
         if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
             RAISE_ERROR("fctf_rw: failed to read function pointer from d%ds%d\n", file_sid.device, file_sid.sector);
-            return 1;
+            return -1;
         }
 
         // add to cache
