@@ -118,7 +118,6 @@ void tasked_program(void) {
     for (int i = 0; i < comm->argc; i++)
         free((void *) comm->argv[i]);
 
-    free((void *) comm->stack);
     free((void *) comm->argv);
     free(comm);
 
@@ -166,7 +165,6 @@ int run_binary(runtime_args_t args, int *pid_ptr) {
 
     comm->vbase = args.vbase;
     comm->vcunt = args.vcunt;
-    comm->stack_size = args.stack;
 
     process_set_comm(pid, comm);
 
@@ -193,7 +191,6 @@ int run_ifexist_full(runtime_args_t args, int *pid) {
 
     args.vbase = args.vbase ? args.vbase : RUN_BIN_VBASE;
     args.vcunt = args.vcunt ? args.vcunt : RUN_BIN_VCUNT;
-    args.stack = args.stack ? args.stack : 0;
 
     if (!IS_NULL_SID(args.sid) && fu_is_file(fs_get_main(), args.sid)) {
         return run_binary(args, pid);

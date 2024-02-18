@@ -22,7 +22,7 @@ typedef struct allocated_part_t {
  * 1: simple alloc  *
  * 2: initial block *
  * 3: mm struct     *
- * 4: run stack     *
+ * 4: process stack *
  * 5: loaded lib    *
  * 6: as kernel     *
  * 7: scuba vpage   *

@@ -28,7 +28,7 @@
 
 #define c_run_ifexist(path, argc, argv) \
         c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 0, 0, 1}, NULL)
+        argc, argv, 0, 0, 1}, NULL)
 
 #define c_fs_cnt_read(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
 #define c_fs_cnt_write(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 0)

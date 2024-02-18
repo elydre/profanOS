@@ -76,8 +76,6 @@ typedef struct {
     uint32_t vbase; // virtual base address
     uint32_t vcunt; // virtual count
 
-    uint32_t stack; // stack size
-
     uint8_t sleep;  // sleep mode
 } runtime_args_t;
 

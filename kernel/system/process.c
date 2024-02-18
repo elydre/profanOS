@@ -35,7 +35,7 @@ uint8_t *exit_codes;
 ***********************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
-    uint32_t esp_alloc = mem_alloc(PROCESS_ESP, 0, 6);
+    uint32_t esp_alloc = mem_alloc(PROCESS_ESP, 0, 4);
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
