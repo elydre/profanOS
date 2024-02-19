@@ -27,6 +27,7 @@ uint8_t sheduler_count;
 uint8_t need_clean;
 int sheduler_disable_count;
 
+uint32_t pid_incrament;
 uint32_t pid_current;
 uint8_t *exit_codes;
 
@@ -250,6 +251,7 @@ int process_init(void) {
     need_clean = 0;
 
     sheduler_count = 0;
+    pid_incrament = 0;
 
     shdlr_queue_length = 0;
 
@@ -270,7 +272,7 @@ int process_init(void) {
     return 0;
 }
 
-void test(void) { 
+void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
@@ -278,7 +280,7 @@ void test(void) {
     force_exit_pid(process_get_pid(), eax);
 }
 
-int process_create(void (*func)(), int use_parent_dir, char *name, int nargs, ...) {
+int process_create(void *func, int use_parent_dir, char *name, int nargs, ...) {
     int parent_place = i_pid_to_place(pid_current);
     int place = i_get_free_place();
 
@@ -292,7 +294,6 @@ int process_create(void (*func)(), int use_parent_dir, char *name, int nargs, ..
         return ERROR_CODE;
     }
 
-    static int pid_incrament = 0;
     pid_incrament++;
 
     if (pid_incrament % 10 == 9) {
@@ -338,13 +339,64 @@ int process_create(void (*func)(), int use_parent_dir, char *name, int nargs, ..
     }
 
     // push exit function pointer
-    esp[0] = (uint32_t) &test;
+    esp[0] = (uint32_t) i_process_final_jump;
 
     new_proc->regs.esp = (uint32_t) esp;
 
     return pid_incrament;
 }
 
+int test(void) {
+    kprintf_serial("test\n");
+    return 0;
+}
+
+int process_fork(void) {
+    int pid = process_create(test, 1, "fork", 0);
+
+    if (pid == ERROR_CODE) {
+        return ERROR_CODE;
+    }
+
+    // copy stack
+    int parent_place = i_pid_to_place(pid_current);
+    int child_place = i_pid_to_place(pid);
+
+    process_t *parent_proc = &plist[parent_place];
+    process_t *child_proc = &plist[child_place];
+
+    uint32_t parent_esp;
+    asm volatile("movl %%esp, %0" : "=r" (parent_esp));
+
+    kprintf_serial("parent_esp: %x\n", parent_esp);
+
+    uint32_t parent_stack = parent_proc->esp_addr;
+    uint32_t child_stack = child_proc->esp_addr;
+
+    mem_copy((void *) child_stack, (void *) parent_stack, PROCESS_ESP);
+
+    uint32_t offset = parent_esp - parent_stack + 19 * 4;
+
+    for (uint32_t v = child_stack + offset; v < child_stack + PROCESS_ESP; v += 4) {
+        uint32_t *p = (uint32_t *) v;
+        kprintf_serial("child_stack: %x\n", *p);
+    }
+
+    kprintf_serial("offset: %x\n", offset);
+
+    child_proc->regs.esp = child_stack + offset;
+
+    // asm volatile("movl %%ebp, %0" : "=r" (child_proc->regs.ebp));
+    asm volatile("movl %%ebx, %0" : "=r" (child_proc->regs.ebx));
+    // asm volatile("movl %%ecx, %0" : "=r" (child_proc->regs.ecx));
+    // asm volatile("movl %%edx, %0" : "=r" (child_proc->regs.edx));
+    // asm volatile("movl %%esi, %0" : "=r" (child_proc->regs.esi));
+    // asm volatile("movl %%edi, %0" : "=r" (child_proc->regs.edi));
+
+    process_wakeup(pid);
+
+    return pid;
+}
 
 int process_sleep(uint32_t pid, uint32_t ms) {
     int place = i_pid_to_place(pid);

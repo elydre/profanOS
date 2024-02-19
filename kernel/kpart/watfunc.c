@@ -73,6 +73,7 @@ void *SYSCALL_ARRAY[] = {
     // process.h
     process_set_sheduler,
     process_create,
+    process_fork,
     process_sleep,
     process_wakeup,
     process_kill,
