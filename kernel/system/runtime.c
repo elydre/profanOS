@@ -137,7 +137,7 @@ void tasked_program(void) {
 }
 
 int run_binary(runtime_args_t args, int *pid_ptr) {
-    int pid = process_create(tasked_program, 0, args.path == NULL ? "unknown file" : args.path);
+    int pid = process_create(tasked_program, 0, args.path == NULL ? "unknown file" : args.path, 0);
 
     if (pid == -1) {
         if (pid_ptr != NULL)

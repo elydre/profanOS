@@ -264,14 +264,21 @@ int process_init(void) {
     sheduler_disable_count = 0;
 
     // create idle process
-    process_create(idle_process, 1, "idle");
+    process_create(idle_process, 1, "idle", 0);
     plist[1].state = PROCESS_IDLETIME;
 
     return 0;
 }
 
+void test(void) { 
+    // get return value
+    uint32_t eax;
+    asm volatile("movl %%eax, %0" : "=r" (eax));
+    kprintf_serial("return value: %d\n", eax);
+    force_exit_pid(process_get_pid(), eax);
+}
 
-int process_create(void (*func)(), int use_parent_dir, char *name) {
+int process_create(void (*func)(), int use_parent_dir, char *name, int nargs, ...) {
     int parent_place = i_pid_to_place(pid_current);
     int place = i_get_free_place();
 
@@ -319,6 +326,21 @@ int process_create(void (*func)(), int use_parent_dir, char *name) {
         new_proc->scuba_dir = scuba_directory_create();
         scuba_directory_init(new_proc->scuba_dir);
     }
+
+    // push arguments to the new process
+    uint32_t *esp = (uint32_t *) new_proc->regs.esp;
+    uint32_t *args = (uint32_t *) &nargs;
+    esp -= nargs + 1;
+
+    for (int i = 1; i <= nargs; i++) {
+        esp[i] = args[i];
+        kprintf_serial("arg %d: %x\n", i, esp[i]);
+    }
+
+    // push exit function pointer
+    esp[0] = (uint32_t) &test;
+
+    new_proc->regs.esp = (uint32_t) esp;
 
     return pid_incrament;
 }
