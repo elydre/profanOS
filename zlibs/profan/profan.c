@@ -178,17 +178,23 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     return kb_map[scancode * 2];
 }
 
+int serial_debug(char *frm, ...);
+
 int profan_wait_pid(uint32_t pid) {
     uint32_t current_pid = c_process_get_pid();
 
-    if (pid == current_pid) {
-        c_process_sleep(current_pid, 0);
+    if (pid == current_pid || !pid)
         return 0;
-    }
+
+    serial_debug("Waiting for pid %d\n", pid);
 
     while (c_process_get_state(pid) < 4) {
+        serial_debug("Waiting for pid %d\n", pid);
         c_process_sleep(current_pid, 10);
     }
+
+    serial_debug("Pid %d is done\n", pid);
+
     return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 

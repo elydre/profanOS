@@ -43,6 +43,7 @@ void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t 
     process->regs.ebx = 0;
     process->regs.ecx = 0;
     process->regs.edx = 0;
+    process->regs.ebp = 0;
     process->regs.esi = 0;
     process->regs.edi = 0;
     process->regs.eflags = flags;
@@ -205,8 +206,9 @@ int i_fork_entry(void) {
 }
 
 int i_process_fork(uint32_t ebx, uint32_t ecx, uint32_t edx,
-        uint32_t esi, uint32_t edi, uint32_t esp)
+        uint32_t esi, uint32_t edi, uint32_t ebp, uint32_t esp)
 {
+    kprintf_serial("forking process %x %x %x %x %x\n", ebx, ecx, edx, esi, edi);
     int pid = process_create(i_fork_entry, 2, "fork", 0);
 
     if (pid == ERROR_CODE) {
@@ -225,12 +227,16 @@ int i_process_fork(uint32_t ebx, uint32_t ecx, uint32_t edx,
 
     mem_copy((void *) child_stack, (void *) parent_stack, PROCESS_ESP);
 
+    kprintf_serial("esp offset: %x\n", esp - parent_stack);
+    kprintf_serial("ebp offset: %x\n", ebp - parent_stack);
+
     child_proc->regs.esp = child_stack + (esp - parent_stack);
-    child_proc->regs.ebx = ebx;
+    child_proc->regs.ebp = child_stack + (ebp - parent_stack);
     child_proc->regs.ecx = ecx;
-    child_proc->regs.edx = edx;
-    child_proc->regs.esi = esi;
     child_proc->regs.edi = edi;
+    child_proc->regs.esi = esi;
+    child_proc->regs.edx = edx;
+    child_proc->regs.ebx = ebx;
 
     process_wakeup(pid);
 
@@ -241,8 +247,8 @@ void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
-    kprintf_serial("return value: %d\n", eax);
-    force_exit_pid(process_get_pid(), eax);
+    kprintf_serial("return value: %d, pid: %d\n", eax, pid_current);
+    force_exit_pid(pid_current, eax);
 }
 
 /**************************
@@ -543,6 +549,8 @@ int process_handover(uint32_t pid) {
 
 
 int process_kill(uint32_t pid) {
+    kprintf_serial("killing pid %d\n", pid);
+
     if (pid == 0) {
         sys_warning("[kill] Can't kill kernel (^_^ )");
         return ERROR_CODE;
