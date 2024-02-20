@@ -111,8 +111,7 @@ int fdatasync(int a) {
 }
 
 pid_t fork(void) {
-    puts("fork is not implemented yet, WHY DO YOU USE IT ?");
-    return c_process_get_pid();
+    return c_process_fork();
 }
 
 long fpathconf(int a, int b) {
@@ -191,13 +190,11 @@ pid_t getpgrp(void) {
 }
 
 pid_t getpid(void) {
-    puts("getpid is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return c_process_get_pid();
 }
 
 pid_t getppid(void) {
-    puts("getppid is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return c_process_get_ppid(c_process_get_pid());
 }
 
 pid_t getsid(pid_t a) {

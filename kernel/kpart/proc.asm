@@ -1,6 +1,10 @@
 global process_asm_switch
-extern i_end_sheduler
+global process_fork
 
+extern i_end_sheduler
+extern i_process_fork
+
+align 4
 process_asm_switch:
     pusha
     pushf
@@ -49,3 +53,15 @@ process_asm_switch:
     mov    eax, [eax]
     call i_end_sheduler     ; all the end of the sheduler (process.c)
     ret                     ; this ends all
+
+align 4
+process_fork:
+    push esp    ; push stack pointer
+    push edi    ; push edi
+    push esi    ; push esi
+    push edx    ; push edx
+    push ecx    ; push ecx
+    push ebx    ; push ebx
+    call i_process_fork
+    add esp, 24 ; pop the arguments
+    ret

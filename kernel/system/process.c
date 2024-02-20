@@ -31,9 +31,11 @@ uint32_t pid_incrament;
 uint32_t pid_current;
 uint8_t *exit_codes;
 
-/***********************
- * INTERNAL FUNCTIONS *
-***********************/
+/**************************
+ *                       *
+ *  INTERNAL FUNCTIONS   *
+ *                       *
+**************************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
     uint32_t esp_alloc = mem_alloc(PROCESS_ESP, 0, 4);
@@ -171,18 +173,18 @@ void i_refresh_tsleep_interact(void) {
 
 void i_tsleep_awake(uint32_t ticks) {
     for (int i = 0; i < tsleep_list_length; i++) {
-        if (tsleep_list[i]->sleep_to <= ticks) {
-            if (tsleep_list[i]->state == PROCESS_TSLPING) {
-                tsleep_list[i]->state = PROCESS_WAITING;
-                i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
-            } else {
-                sys_fatal("Process in tsleep list is not in tsleep state");
-            }
-
-            tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-            tsleep_list_length--;
-            i--;
+        if (tsleep_list[i]->sleep_to > ticks)
+            continue;
+        if (tsleep_list[i]->state == PROCESS_TSLPING) {
+            tsleep_list[i]->state = PROCESS_WAITING;
+            i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
+        } else {
+            sys_fatal("Process in tsleep list is not in tsleep state");
         }
+
+        tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
+        tsleep_list_length--;
+        i--;
     }
     i_refresh_tsleep_interact();
 }
@@ -198,17 +200,66 @@ void i_remove_from_tsleep_list(uint32_t pid) {
     i_refresh_tsleep_interact();
 }
 
-/*****************
- * IDLE PROCESS *
-*****************/
+int i_fork_entry(void) {
+    return 0;
+}
+
+int i_process_fork(uint32_t ebx, uint32_t ecx, uint32_t edx,
+        uint32_t esi, uint32_t edi, uint32_t esp)
+{
+    int pid = process_create(i_fork_entry, 2, "fork", 0);
+
+    if (pid == ERROR_CODE) {
+        return ERROR_CODE;
+    }
+
+    // copy stack
+    int parent_place = i_pid_to_place(pid_current);
+    int child_place = i_pid_to_place(pid);
+
+    process_t *parent_proc = &plist[parent_place];
+    process_t *child_proc = &plist[child_place];
+
+    uint32_t parent_stack = parent_proc->esp_addr;
+    uint32_t child_stack = child_proc->esp_addr;
+
+    mem_copy((void *) child_stack, (void *) parent_stack, PROCESS_ESP);
+
+    child_proc->regs.esp = child_stack + (esp - parent_stack);
+    child_proc->regs.ebx = ebx;
+    child_proc->regs.ecx = ecx;
+    child_proc->regs.edx = edx;
+    child_proc->regs.esi = esi;
+    child_proc->regs.edi = edi;
+
+    process_wakeup(pid);
+
+    return pid;
+}
+
+void i_process_final_jump(void) {
+    // get return value
+    uint32_t eax;
+    asm volatile("movl %%eax, %0" : "=r" (eax));
+    kprintf_serial("return value: %d\n", eax);
+    force_exit_pid(process_get_pid(), eax);
+}
+
+/**************************
+ *                       *
+ *     IDLE PROCESS      *
+ *                       *
+**************************/
 
 void idle_process(void) {
     while (1) asm volatile("hlt");
 }
 
-/*********************
- * PUBLIC FUNCTIONS *
-*********************/
+/**************************
+ *                       *
+ *   PUBLIC FUNCTIONS    *
+ *                       *
+**************************/
 
 int process_init(void) {
     plist = calloc(sizeof(process_t) * PROCESS_MAX);
@@ -272,15 +323,12 @@ int process_init(void) {
     return 0;
 }
 
-void i_process_final_jump(void) {
-    // get return value
-    uint32_t eax;
-    asm volatile("movl %%eax, %0" : "=r" (eax));
-    kprintf_serial("return value: %d\n", eax);
-    force_exit_pid(process_get_pid(), eax);
-}
 
-int process_create(void *func, int use_parent_dir, char *name, int nargs, ...) {
+int process_create(void *func, int dir_mode, char *name, int nargs, ...) {
+    // dir mode: 0 = clean
+    //           1 = use parent dir
+    //           2 = copy parent dir
+
     int parent_place = i_pid_to_place(pid_current);
     int place = i_get_free_place();
 
@@ -309,7 +357,7 @@ int process_create(void *func, int use_parent_dir, char *name, int nargs, ...) {
     new_proc->pid = pid_incrament;
     new_proc->ppid = pid_current;
 
-    new_proc->use_parent_dir = use_parent_dir;
+    new_proc->use_parent_dir = dir_mode == 1;
 
     new_proc->state = PROCESS_FSLPING;
     new_proc->priority = PROC_PRIORITY;
@@ -321,11 +369,15 @@ int process_create(void *func, int use_parent_dir, char *name, int nargs, ...) {
 
     i_new_process(new_proc, func, parent_proc->regs.eflags, (uint32_t *) parent_proc->scuba_dir);
 
-    if (use_parent_dir) {
+    if (dir_mode == 1) {
         new_proc->scuba_dir = parent_proc->scuba_dir;
+    } else if (dir_mode == 0) {
+        new_proc->scuba_dir = scuba_directory_inited();
+    } else if (dir_mode == 2) {
+        new_proc->scuba_dir = scuba_directory_copy(parent_proc->scuba_dir);
     } else {
-        new_proc->scuba_dir = scuba_directory_create();
-        scuba_directory_init(new_proc->scuba_dir);
+        sys_warning("[create] dir_mode %d not found", dir_mode);
+        return ERROR_CODE;
     }
 
     // push arguments to the new process
@@ -344,58 +396,6 @@ int process_create(void *func, int use_parent_dir, char *name, int nargs, ...) {
     new_proc->regs.esp = (uint32_t) esp;
 
     return pid_incrament;
-}
-
-int test(void) {
-    kprintf_serial("test\n");
-    return 0;
-}
-
-int process_fork(void) {
-    int pid = process_create(test, 1, "fork", 0);
-
-    if (pid == ERROR_CODE) {
-        return ERROR_CODE;
-    }
-
-    // copy stack
-    int parent_place = i_pid_to_place(pid_current);
-    int child_place = i_pid_to_place(pid);
-
-    process_t *parent_proc = &plist[parent_place];
-    process_t *child_proc = &plist[child_place];
-
-    uint32_t parent_esp;
-    asm volatile("movl %%esp, %0" : "=r" (parent_esp));
-
-    kprintf_serial("parent_esp: %x\n", parent_esp);
-
-    uint32_t parent_stack = parent_proc->esp_addr;
-    uint32_t child_stack = child_proc->esp_addr;
-
-    mem_copy((void *) child_stack, (void *) parent_stack, PROCESS_ESP);
-
-    uint32_t offset = parent_esp - parent_stack + 19 * 4;
-
-    for (uint32_t v = child_stack + offset; v < child_stack + PROCESS_ESP; v += 4) {
-        uint32_t *p = (uint32_t *) v;
-        kprintf_serial("child_stack: %x\n", *p);
-    }
-
-    kprintf_serial("offset: %x\n", offset);
-
-    child_proc->regs.esp = child_stack + offset;
-
-    // asm volatile("movl %%ebp, %0" : "=r" (child_proc->regs.ebp));
-    asm volatile("movl %%ebx, %0" : "=r" (child_proc->regs.ebx));
-    // asm volatile("movl %%ecx, %0" : "=r" (child_proc->regs.ecx));
-    // asm volatile("movl %%edx, %0" : "=r" (child_proc->regs.edx));
-    // asm volatile("movl %%esi, %0" : "=r" (child_proc->regs.esi));
-    // asm volatile("movl %%edi, %0" : "=r" (child_proc->regs.edi));
-
-    process_wakeup(pid);
-
-    return pid;
 }
 
 int process_sleep(uint32_t pid, uint32_t ms) {
@@ -585,9 +585,11 @@ int process_kill(uint32_t pid) {
     return 0;
 }
 
-/************************
- * SCHEUDLER FUNCTIONS *
-************************/
+/**************************
+ *                       *
+ *  SCHEUDLER FUNCTIONS  *
+ *                       *
+**************************/
 
 void process_set_sheduler(int state) {
     // disable sheduler
@@ -659,9 +661,11 @@ void schedule(uint32_t ticks) {
     }
 }
 
-/************************
- * GET / SET FUNCTIONS *
-************************/
+/**************************
+ *                       *
+ *  GET / SET FUNCTIONS  *
+ *                       *
+**************************/
 
 int process_set_priority(uint32_t pid, int priority) {
     int place = i_pid_to_place(pid);

@@ -207,11 +207,11 @@ typedef struct sigevent_t {
 #define LDOUBLE long double
 #define LLONG long long
 
-typedef unsigned int uid_t;
-typedef unsigned int gid_t;
-typedef int pid_t;
+typedef uint32_t uid_t;
+typedef uint32_t gid_t;
+typedef uint32_t pid_t;
 typedef int off_t;
 typedef int ssize_t;
-typedef unsigned int useconds_t;
+typedef uint32_t useconds_t;
 
 #endif
