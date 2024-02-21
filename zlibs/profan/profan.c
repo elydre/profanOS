@@ -186,14 +186,8 @@ int profan_wait_pid(uint32_t pid) {
     if (pid == current_pid || !pid)
         return 0;
 
-    serial_debug("Waiting for pid %d\n", pid);
-
-    while (c_process_get_state(pid) < 4) {
-        serial_debug("Waiting for pid %d\n", pid);
+    while (c_process_get_state(pid) < 4)
         c_process_sleep(current_pid, 10);
-    }
-
-    serial_debug("Pid %d is done\n", pid);
 
     return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }

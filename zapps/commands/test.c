@@ -17,5 +17,6 @@ int main(void) {
     printf("waiting for pid %d\n", pid);
     profan_wait_pid(pid);
     printf("done waiting for pid %d\n", pid);
+    exit(0);
     return 0;
 }

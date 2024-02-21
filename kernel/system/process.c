@@ -208,7 +208,6 @@ int i_fork_entry(void) {
 int i_process_fork(uint32_t ebx, uint32_t ecx, uint32_t edx,
         uint32_t esi, uint32_t edi, uint32_t ebp, uint32_t esp)
 {
-    kprintf_serial("forking process %x %x %x %x %x\n", ebx, ecx, edx, esi, edi);
     int pid = process_create(i_fork_entry, 2, "fork", 0);
 
     if (pid == ERROR_CODE) {
@@ -227,9 +226,6 @@ int i_process_fork(uint32_t ebx, uint32_t ecx, uint32_t edx,
 
     mem_copy((void *) child_stack, (void *) parent_stack, PROCESS_ESP);
 
-    kprintf_serial("esp offset: %x\n", esp - parent_stack);
-    kprintf_serial("ebp offset: %x\n", ebp - parent_stack);
-
     child_proc->regs.esp = child_stack + (esp - parent_stack);
     child_proc->regs.ebp = child_stack + (ebp - parent_stack);
     child_proc->regs.ecx = ecx;
@@ -247,7 +243,6 @@ void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
-    kprintf_serial("return value: %d, pid: %d\n", eax, pid_current);
     force_exit_pid(pid_current, eax);
 }
 
@@ -393,7 +388,6 @@ int process_create(void *func, int dir_mode, char *name, int nargs, ...) {
 
     for (int i = 1; i <= nargs; i++) {
         esp[i] = args[i];
-        kprintf_serial("arg %d: %x\n", i, esp[i]);
     }
 
     // push exit function pointer
@@ -549,8 +543,6 @@ int process_handover(uint32_t pid) {
 
 
 int process_kill(uint32_t pid) {
-    kprintf_serial("killing pid %d\n", pid);
-
     if (pid == 0) {
         sys_warning("[kill] Can't kill kernel (^_^ )");
         return ERROR_CODE;
