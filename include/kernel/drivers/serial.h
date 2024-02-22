@@ -8,6 +8,7 @@
 
 
 int  serial_init(void);
-void serial_print(int device, char *out);
+void serial_write(int device, char *buf, uint32_t len);
+void serial_read(int device, char *buf, uint32_t len);
 
 #endif

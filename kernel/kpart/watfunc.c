@@ -65,7 +65,8 @@ void *SYSCALL_ARRAY[] = {
     sys_kinfo,
 
     // serial.h
-    serial_print,
+    serial_read,
+    serial_write,
 
     // mouse.h
     mouse_call,

@@ -48,7 +48,7 @@ int RECURSIVE_COUNT;
 
 int sys_default_reporter(char *msg) {
     kprint(msg);
-    serial_print(SERIAL_PORT_A, msg);
+    serial_write(SERIAL_PORT_A, msg, str_len(msg));
     return 0;
 }
 

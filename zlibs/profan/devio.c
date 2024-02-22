@@ -64,9 +64,20 @@ int dev_panda_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
 }
 
 int dev_serial_rw(void *buffer, uint32_t offset, uint32_t size, uint8_t mode) {
+    uint32_t i = 0;
+    char c;
+
     if (mode == MODE_WRITE) {
-        c_serial_print(SERIAL_PORT_A, (char *) buffer);
+        c_serial_write(SERIAL_PORT_A, (char *) buffer, size);
         return size;
+    } else if (mode == MODE_READD) {
+        while (i < size) {
+            c_serial_read(SERIAL_PORT_A, &c, 1);
+            ((char *) buffer)[i++] = c;
+            if (c == '\n' || c == '\r')
+                break;
+        }
+        return i;
     }
 
     return 0;

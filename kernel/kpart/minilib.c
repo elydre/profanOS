@@ -316,7 +316,7 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
     if (output == 1) {
         kprint(char_buffer);
     } else if (output == 2) {
-        serial_print(SERIAL_PORT_A, char_buffer);
+        serial_write(SERIAL_PORT_A, char_buffer, buffer_i);
     }
 }
 

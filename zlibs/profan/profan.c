@@ -53,7 +53,7 @@ int userspace_reporter(char *message) {
     int c = fputs(message, stderr);
 
     if (term && strcmp(term, "/dev/serial")) {
-        c_serial_print(SERIAL_PORT_A, message);
+        c_serial_write(SERIAL_PORT_A, message, strlen(message));
     }
     return c == EOF;
 }
@@ -329,7 +329,7 @@ int serial_debug(char *frm, ...) {
     str = malloc(1024);
 
     len = vsprintf(str, frm, args);
-    c_serial_print(SERIAL_PORT_A, str);
+    c_serial_write(SERIAL_PORT_A, str, len);
 
     free(str);
     va_end(args);
