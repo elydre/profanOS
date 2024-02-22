@@ -804,7 +804,7 @@ int start_pipex(pipex_t *pipex) {
             if (dup2(fds[i * 2], fm_resol012(0, pids[i])) == -1) {
                 fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->input_file);
                 close_fds(pipex, fds, i);
-                c_exit_pid(pids[i], 1);
+                c_exit_pid(pids[i], 1, 0);
                 continue;
             }
         }
@@ -813,7 +813,7 @@ int start_pipex(pipex_t *pipex) {
             if (dup2(fds[i * 2 + 1], fm_resol012(1, pids[i])) == -1) {
                 fprintf(stderr, SHELL_NAME": %s: no such file or directory\n", pipex->commands[i]->output_file);
                 close_fds(pipex, fds, i);
-                c_exit_pid(pids[i], 1);
+                c_exit_pid(pids[i], 1, 0);
                 continue;
             }
         }

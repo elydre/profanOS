@@ -50,7 +50,7 @@ void kernel_exit_current(void);
 // runtime.c
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
 int binary_exec(sid_t sid, uint32_t vcunt, char **argv);
-int force_exit_pid(int pid, int ret_code);
+int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // dily.c
 int      dily_does_loaded(uint32_t lib_id);

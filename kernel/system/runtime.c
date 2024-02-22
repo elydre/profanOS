@@ -20,8 +20,8 @@
  *  |                                 | : |             |  *
 ************************************************************/
 
-int force_exit_pid(int pid, int ret_code) {
-    int ppid, pstate;
+int force_exit_pid(int pid, int ret_code, int warn_leaks) {
+    int ppid, pstate, leaks;
 
     if (pid == 0 || pid == 1) {
         return 1;
@@ -38,18 +38,15 @@ int force_exit_pid(int pid, int ret_code) {
         free(comm);
     }
 
-    int not_free_mem = mem_get_info(7, pid);
-
-    if (not_free_mem) {
+    if (warn_leaks && (leaks = mem_get_info(7, pid)) > 0) {
         sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
-                not_free_mem,
-                not_free_mem == 1 ? "" : "s",
+                leaks,
+                leaks == 1 ? "" : "s",
                 pid,
                 mem_get_info(8, pid)
         );
-
-        mem_free_all(pid);
     }
+    mem_free_all(pid);
 
     // set return value
     process_set_return(pid, ret_code);
@@ -73,7 +70,7 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
 
     if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_warning("[binary_exec] File not found");
-        force_exit_pid(pid, 1);
+        force_exit_pid(pid, 1, 0);
     }
 
     if (vcunt == 0)
@@ -118,7 +115,7 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
     int ret = main(argc, argv) & 0xFF;
-    return force_exit_pid(process_get_pid(), ret);
+    return force_exit_pid(process_get_pid(), ret, 1);
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {

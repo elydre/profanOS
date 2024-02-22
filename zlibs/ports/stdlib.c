@@ -234,7 +234,7 @@ int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *
 }
 
 void exit(int rv) {
-    c_exit_pid(c_process_get_pid(), rv);
+    c_exit_pid(c_process_get_pid(), rv, 0);
 }
 
 char *gcvt(double number, int ndigit, char *buf) {

@@ -34,19 +34,13 @@ void kernel_switch_back(void) {
 void kernel_exit_current(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
-    uint32_t pid;
+    uint32_t pid, state;
 
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];
-        if (process_get_state(pid) == PROCESS_RUNNING && pid) {
-            force_exit_pid(pid, 130);
-            return;
-        }
-    }
-    for (int i = pid_list_len - 1; i >= 0; i--) {
-        pid = pid_list[i];
-        if (process_get_state(pid) == PROCESS_TSLPING && pid) {
-            force_exit_pid(pid, 130);
+        state = process_get_state(pid);
+        if (pid && state < 3 && pid != process_get_pid()) {
+            force_exit_pid(pid, 143, 0);
             return;
         }
     }

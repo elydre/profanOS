@@ -243,7 +243,7 @@ void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
-    force_exit_pid(pid_current, eax);
+    force_exit_pid(pid_current, eax, 1);
 }
 
 /**************************

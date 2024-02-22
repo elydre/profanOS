@@ -62,7 +62,7 @@ static void keyboard_callback(registers_t *regs) {
     if (sc_history[0] == 59) {          // F1
         kernel_switch_back();
     } else if (sc_history[0] == 60) {   // F2
-        kernel_exit_current();
+        process_wakeup(process_create(kernel_exit_current, 0, "exit_current", 0));
     }
 }
 

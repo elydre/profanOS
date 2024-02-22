@@ -87,7 +87,7 @@
 #define c_process_generate_pid_list ((int (*)(uint32_t *, int)) hi_func_addr(38))
 #define c_process_get_info ((uint32_t (*)(uint32_t, int)) hi_func_addr(39))
 
-#define c_exit_pid ((int (*)(int, int)) hi_func_addr(40))
+#define c_exit_pid ((int (*)(int, int, int)) hi_func_addr(40))
 
 #define c_dily_unload ((int (*)(uint32_t)) hi_func_addr(41))
 #define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(42))
