@@ -48,12 +48,8 @@ void kernel_switch_back(void);
 void kernel_exit_current(void);
 
 // runtime.c
-#define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 1}, NULL)
-
-int run_ifexist_full(runtime_args_t args, int *pid);
-
+int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
+int binary_exec(sid_t sid, uint32_t vcunt, char **argv);
 int force_exit_pid(int pid, int ret_code);
 
 // dily.c

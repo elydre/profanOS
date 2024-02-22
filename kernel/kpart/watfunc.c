@@ -61,7 +61,7 @@ void *SYSCALL_ARRAY[] = {
     // system.h
     sys_reboot,
     sys_shutdown,
-    run_ifexist_full,
+    binary_exec,
     sys_kinfo,
 
     // serial.h
@@ -75,6 +75,7 @@ void *SYSCALL_ARRAY[] = {
     process_create,
     process_fork,
     process_sleep,
+    process_handover,
     process_wakeup,
     process_kill,
     process_get_pid,

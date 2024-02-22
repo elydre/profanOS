@@ -114,7 +114,7 @@ int shell_command(char *command) {
     if      (!str_cmp(prefix, "addr"))   shell_addr();
     else if (!str_cmp(prefix, "clear"))  clear_screen();
     else if (!str_cmp(prefix, "exit"))   return 1;
-    else if (!str_cmp(prefix, "go"))     run_ifexist(suffix, NULL, (char **) NULL);
+    else if (!str_cmp(prefix, "go"))     run_ifexist(suffix, 1, NULL, NULL);
     else if (!str_cmp(prefix, "help"))   shell_help();
     else if (!str_cmp(prefix, "mem"))    shell_mem();
     else if (!str_cmp(prefix, "reboot")) sys_reboot();

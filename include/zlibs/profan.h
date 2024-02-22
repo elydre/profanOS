@@ -3,6 +3,10 @@
 
 #include <type.h>
 
+#define run_ifexist(path, argc, argv) \
+        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
+        argc, argv, 0, 1}, NULL)
+
 #define KB_LEFT 75
 #define KB_RIGHT 77
 #define KB_OLDER 72
@@ -38,6 +42,8 @@
 #define open_input ((char *(*)(int *)) get_func_addr(PROFAN_LIB_ID, 9))
 #define serial_debug ((int (*)(char *, ...)) get_func_addr(PROFAN_LIB_ID, 10))
 #define profan_open ((int (*)(char *, int, ...)) get_func_addr(PROFAN_LIB_ID, 11))
+#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 12)) 
+
 #endif
 
 #endif

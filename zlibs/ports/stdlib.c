@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <string.h>
+#include <profan.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -747,7 +748,7 @@ int system(const char *command) {
     args[3] = NULL;
 
     // run the command
-    int ret = c_run_ifexist(args[0], 3, args);
+    int ret = run_ifexist(args[0], 3, args);
 
     free(args);
 

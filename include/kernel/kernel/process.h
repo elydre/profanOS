@@ -19,6 +19,7 @@
 #define PROCESS_INFO_RUN_TIME   4
 #define PROCESS_INFO_EXIT_CODE  5
 #define PROCESS_INFO_NAME       6
+#define PROCESS_INFO_STACK      7
 
 #define process_disable_sheduler() process_set_sheduler(0)
 #define process_enable_sheduler()  process_set_sheduler(1)

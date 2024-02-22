@@ -2,6 +2,7 @@
 #include <filesys.h>
 
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 #include <type.h>
@@ -61,32 +62,66 @@ void encrypt(char a[64], int b) {
     puts("encrypt is not implemented yet, WHY DO YOU USE IT ?");
 }
 
-int execl(const char *a, const char *b, ...) {
-    puts("execl is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int execve(const char *fullpath, char *const argv[], char *const envp[]);
+int execl(const char *fullpath, const char *first, ...) {
+    va_list args;
+    va_start(args, first);
+
+    // count the number of arguments
+    int argc = 1;
+    const char *arg;
+    while ((arg = va_arg(args, const char *)) != NULL) {
+        argc++;
+    }
+
+    va_end(args);
+
+    // create the argv array
+    char **argv = malloc((argc + 1) * sizeof(char *));
+    argv[0] = (char *)first;
+    va_start(args, first);
+    for (int i = 1; i < argc; i++) {
+        argv[i] = va_arg(args, char *);
+    }
+    va_end(args);
+    argv[argc] = NULL;
+
+    return execve(fullpath, argv, NULL);
 }
 
-int execle(const char *a, const char *b, ...) {
+int execle(const char *fullpath, const char *arg, ...) {
     puts("execle is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int execlp(const char *a, const char *b, ...) {
+int execlp(const char *file, const char *arg, ...) {
     puts("execlp is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int execv(const char *a, char *const *b) {
-    puts("execv is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int execv(const char *fullpath, char *const argv[]) {
+    return execve(fullpath, argv, NULL);
 }
 
-int execve(const char *a, char *const *b, char *const *c) {
-    puts("execve is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int execve(const char *fullpath, char *const argv[], char *const envp[]) {
+    sid_t sid = fu_path_to_sid(ROOT_SID, (void *) fullpath);
+    if (IS_NULL_SID(sid) || !fu_is_file(sid)) {
+        return -1;
+    }
+    int argc = 0;
+    while (argv && argv[argc] != NULL)
+        argc++;
+    char **new_args = malloc_ask((argc + 1) * sizeof(char *));
+    for (int i = 0; i < argc; i++) {
+        new_args[i] = malloc_ask(strlen(argv[i]) + 1);
+        strcpy(new_args[i], argv[i]);
+    }
+    new_args[argc] = NULL;
+    c_mem_free_all(c_process_get_pid());
+    return c_binary_exec(sid, 0, (void *) new_args);
 }
 
-int execvp(const char *a, char *const *b) {
+int execvp(const char *file, char *const argv[]) {
     puts("execvp is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }

@@ -812,6 +812,8 @@ uint32_t process_get_info(uint32_t pid, int info_id) {
             return plist[place].run_time;
         case PROCESS_INFO_NAME:
             return (uint32_t) plist[place].name;
+        case PROCESS_INFO_STACK:
+            return plist[place].esp_addr;
         default:
             sys_warning("[get_info] info_id %d not found", info_id);
             return 1;

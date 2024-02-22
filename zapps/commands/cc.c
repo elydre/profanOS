@@ -67,7 +67,7 @@ int execute_command(char *path, char *args) {
     argv[0] = path;
     argv[argc] = NULL;
 
-    int ret = c_run_ifexist(path, argc, argv);
+    int ret = run_ifexist(path, argc, argv);
 
     free(argv);
     return ret;

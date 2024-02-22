@@ -1492,7 +1492,7 @@ char *if_go_binfile(char **input) {
     argv[argc] = NULL;
 
     int pid;
-    local_itoa(c_run_ifexist_full(
+    local_itoa(run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
     ), g_exit_code);
 

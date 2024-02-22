@@ -75,7 +75,7 @@ typedef struct {
 
     uint32_t vcunt; // virtual count
 
-    uint8_t sleep;  // sleep mode
+    uint8_t sleep_mode;  // sleep mode
 } runtime_args_t;
 
 #endif

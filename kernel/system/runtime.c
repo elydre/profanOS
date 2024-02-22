@@ -27,6 +27,17 @@ int force_exit_pid(int pid, int ret_code) {
         return 1;
     }
 
+    comm_struct_t *comm = process_get_comm(pid);
+    if (comm != NULL) {
+        // free the argv
+        for (int i = 0; comm->argv[i] != NULL; i++)
+            free((void *) comm->argv[i]);
+        free((void *) comm->argv);
+
+        // free comm struct
+        free(comm);
+    }
+
     int not_free_mem = mem_get_info(7, pid);
 
     if (not_free_mem) {
@@ -38,21 +49,6 @@ int force_exit_pid(int pid, int ret_code) {
         );
 
         mem_free_all(pid);
-    }
-
-    comm_struct_t *comm = process_get_comm(pid);
-
-    if (comm != NULL) {
-        // free the argv
-        for (int i = 0; comm->argv[i] != NULL; i++)
-            free((void *) comm->argv[i]);
-        free((void *) comm->argv);
-
-        // free the stack
-        // free((void *) comm->stack);
-
-        // free comm struct
-        free(comm);
     }
 
     // set return value
@@ -72,10 +68,16 @@ int force_exit_pid(int pid, int ret_code) {
     return process_kill(pid);
 }
 
-void binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
-    kprintf_serial("binary_exec s%dd%d, vcunt %x, argv %x\n", sid.device, sid.sector, vcunt, argv);
-
+int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     int pid = process_get_pid();
+
+    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+        sys_warning("[binary_exec] File not found");
+        force_exit_pid(pid, 1);
+    }
+
+    if (vcunt == 0)
+        vcunt = RUN_BIN_VCUNT;
 
     comm_struct_t *comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
     comm->argv = argv;
@@ -102,52 +104,54 @@ void binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     // load binary
     fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
 
-    // TODO: reset the stack
+    // move the stack if needed
+    uint32_t *stack_top = (uint32_t *) process_get_info(pid, PROCESS_INFO_STACK);
+    uint32_t *stack;
+    asm volatile("mov %%esp, %0" : "=r" (stack));
+    if (stack < stack_top - 10) {
+        kprintf_serial("move stack\n");
+        mem_move(stack_top - 10, stack, 10 * 4);
+        stack = stack_top - 10;
+        asm volatile("mov %0, %%esp" : : "r" (stack));
+    }
 
     // call main
     int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
-    force_exit_pid(process_get_pid(), main(argc, argv) & 0xFF);
+    int ret = main(argc, argv) & 0xFF;
+    return force_exit_pid(process_get_pid(), ret);
 }
 
-int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
-    if (args.path == NULL && IS_NULL_SID(args.sid)) {
-        sys_warning("[run_ifexist] No path or sid given");
+int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
+    sid_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
+
+    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+        sys_warning("[run_ifexist] File not found: %s", file);
         return -1;
     }
 
-    args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(fs_get_main(), ROOT_SID, args.path) : args.sid;
+    int argc = 0;
+    while (argv && argv[argc] != NULL)
+        argc++;
 
-    args.vcunt = args.vcunt ? args.vcunt : RUN_BIN_VCUNT;
+    char **nargv = (char **) mem_alloc((argc + 1) * sizeof(char *), 0, 6);
+    mem_set((void *) nargv, 0, (argc + 1) * sizeof(char *));
 
-    if (IS_NULL_SID(args.sid) || !fu_is_file(fs_get_main(), args.sid)) {
-        if (args.path)
-            sys_warning("[run_ifexist] File not found: %s", args.path);
-        else
-            sys_warning("[run_ifexist] Sector d%ds%d is not a file", args.sid.device, args.sid.sector);
-        return -1;
+    for (int i = 0; i < argc; i++) {
+        nargv[i] = (char *) mem_alloc(str_len(argv[i]) + 1, 0, 6);
+        str_cpy(nargv[i], argv[i]);
     }
 
-    // duplicate argv
-    int size = sizeof(char *) * (args.argc + 1);
-    char **nargv = (char **) mem_alloc(size, 0, 6);
-    mem_set((void *) nargv, 0, size);
-
-    for (int i = 0; i < args.argc; i++) {
-        nargv[i] = (char *) mem_alloc(str_len(args.argv[i]) + 1, 0, 6);
-        str_cpy(nargv[i], args.argv[i]);
-    }
-
-    int pid = process_create(binary_exec, 1, args.path ? args.path : "unknown file", 4, args.sid, args.vcunt, nargv);
+    int pid = process_create(binary_exec, 1, file, 4, sid, 0, nargv);
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
     if (pid == -1)
         return -1;
 
-    if (args.sleep == 2)
+    if (sleep == 2)
         return 0;
 
-    if (args.sleep)
+    if (sleep)
         process_handover(pid);
     else
         process_wakeup(pid);

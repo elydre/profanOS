@@ -10,7 +10,7 @@
 #define SHELL_NAME "olivine"
 
 #define run_ifexist_pid(path, argc, argv, pid) \
-        c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
+        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
         argc, argv, 0, 1}, pid)
 
 typedef struct {
@@ -123,7 +123,7 @@ int main(void) {
 
     do {
         setenv("PATH", "/bin/commands:/bin/fatpath", 0);
-        c_run_ifexist(SHELL_PATH, 0, NULL);
+        run_ifexist(SHELL_PATH, 0, NULL);
 
         printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"

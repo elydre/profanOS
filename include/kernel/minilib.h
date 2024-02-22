@@ -20,9 +20,9 @@ int  str_count(char *s, char c);
 void str_append(char *s, char c);
 
 // memory functions
-void mem_copy(void *dest, void *source, int nbytes);
+#define mem_copy(dest, source, nbytes) mem_move(dest, source, nbytes)
 void mem_set(void *dest, uint8_t val, uint32_t len);
-void mem_move(void *source, void *dest, int nbytes);
+void mem_move(void *dest, void *source, uint32_t nbytes);
 
 void  free(void *addr);
 void *malloc(uint32_t size);

@@ -365,3 +365,41 @@ int profan_open(char *path, int flags, ...) {
 
     return fd;
 }
+
+int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
+    if (args.path == NULL && IS_NULL_SID(args.sid)) {
+        return -1;
+    }
+
+    args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(ROOT_SID, args.path) : args.sid;
+    if (IS_NULL_SID(args.sid) || !fu_is_file(args.sid)) {
+        return -1;
+    }
+
+    // duplicate argv
+    int size = sizeof(char *) * (args.argc + 1);
+    char **nargv = (char **) c_mem_alloc(size, 0, 6);
+    memset((void *) nargv, 0, size);
+
+    for (int i = 0; i < args.argc; i++) {
+        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i]) + 1, 0, 6);
+        strcpy(nargv[i], args.argv[i]);
+    }
+
+    int pid = c_process_create(c_binary_exec, 1, args.path ? args.path : "unknown file", 4, args.sid, args.vcunt, nargv);
+
+    if (pid_ptr != NULL)
+        *pid_ptr = pid;
+    if (pid == -1)
+        return -1;
+
+    if (args.sleep_mode == 2)
+        return 0;
+
+    if (args.sleep_mode)
+        c_process_handover(pid);
+    else
+        c_process_wakeup(pid);
+
+    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
+}

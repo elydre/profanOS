@@ -789,7 +789,7 @@ int start_pipex(pipex_t *pipex) {
             continue;
         }
 
-        if (c_run_ifexist_full((runtime_args_t) {
+        if (run_ifexist_full((runtime_args_t) {
                 pipex->commands[i]->full_path, NULL_SID,
                 pipex->commands[i]->arg_count,
                 pipex->commands[i]->args,
