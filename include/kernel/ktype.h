@@ -64,20 +64,13 @@ typedef struct {
     int argc;       // argument count
     char **argv;    // argument list
 
-    uint32_t vbase; // virtual base address
     uint32_t vcunt; // virtual count
 
     uint8_t sleep;  // sleep mode
 } runtime_args_t;
 
 typedef struct {
-    int      argc;
     char   **argv;
-
-    sid_t    file;
-
-    uint32_t vbase;
-    uint32_t vcunt;
 } comm_struct_t;
 
 // va_list

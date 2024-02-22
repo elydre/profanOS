@@ -50,7 +50,7 @@ void kernel_exit_current(void);
 // runtime.c
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 0, 1}, NULL)
+        argc, argv, 0, 1}, NULL)
 
 int run_ifexist_full(runtime_args_t args, int *pid);
 

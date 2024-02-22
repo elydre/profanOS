@@ -73,7 +73,6 @@ typedef struct {
     int argc;       // argument count
     char **argv;    // argument list
 
-    uint32_t vbase; // virtual base address
     uint32_t vcunt; // virtual count
 
     uint8_t sleep;  // sleep mode

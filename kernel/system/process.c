@@ -744,6 +744,31 @@ scuba_directory_t *process_get_directory(uint32_t pid) {
     return plist[place].scuba_dir;
 }
 
+void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir) {
+    int place = i_pid_to_place(pid);
+
+    if (place < 0) {
+        sys_warning("[set_directory] pid %d not found", pid);
+        return;
+    }
+
+    scuba_directory_t *old_dir = plist[place].scuba_dir;
+
+    plist[place].scuba_dir = new_dir;
+
+    if (pid == pid_current) {
+        process_disable_sheduler();
+        scuba_process_switch(new_dir);
+        process_enable_sheduler();
+    }
+
+    if (!plist[place].use_parent_dir) {
+        scuba_directory_destroy(old_dir);
+    }
+
+    plist[place].use_parent_dir = 0;
+}
+
 int process_set_return(uint32_t pid, uint32_t ret) {
     int place = i_pid_to_place(pid);
 
