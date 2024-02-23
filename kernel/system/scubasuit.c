@@ -134,7 +134,7 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
 
         // allocate a new page table
         scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t));
-        
+
         // add the page table to the list of page tables to free
         new_dir->to_free[new_dir->to_free_index++] = new_table;
 
