@@ -192,12 +192,7 @@ int profan_wait_pid(uint32_t pid) {
     return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
-char *open_input(int *size) {
-    // save the current cursor position and show it
-    char *term_path = getenv("TERM");
-    if (!term_path)
-        return NULL;
-
+char *open_input_keyboard(int *size, char *term_path) {
     FILE *term = fopen(term_path, "w");
 
     fputs("\e[?25l", term);
@@ -318,6 +313,50 @@ char *open_input(int *size) {
     if (size)
         *size = buffer_actual_size;
     return buffer;
+}
+
+char *open_input_serial(int *size, int serial_port) {
+    char *buffer = malloc(100);
+    int buffer_size = 100;
+    int i = 0;
+    char c = 0;
+
+     while (c != '\n') {
+        c_serial_read(serial_port, &c, 1);
+        if (c == '\r')
+            c = '\n';
+        if (c == 127) {
+            if (i) {
+                i--;
+                c_serial_write(serial_port, "\b \b", 3);
+            }
+            continue;
+        }
+        if ((c < 32 || c > 126) && c != '\n')
+            continue;
+        ((char *) buffer)[i++] = c;
+        c_serial_write(serial_port, &c, 1);
+        if (i == buffer_size) {
+            buffer_size *= 2;
+            buffer = realloc(buffer, buffer_size);
+        }
+    }
+
+    buffer = realloc(buffer, i + 1);
+    buffer[i] = '\0';
+
+    if (size)
+        *size = i;
+    return buffer;
+}
+
+char *open_input(int *size) {
+    char *term = getenv("TERM");
+    if (!term)
+        return NULL;
+    if (strstr(term, "serial"))
+        return open_input_serial(size, SERIAL_PORT_A);
+    return open_input_keyboard(size, term);
 }
 
 int serial_debug(char *frm, ...) {

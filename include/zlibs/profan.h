@@ -39,10 +39,12 @@
 #define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 6))
 #define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 7))
 #define profan_wait_pid ((int (*)(uint32_t)) get_func_addr(PROFAN_LIB_ID, 8))
-#define open_input ((char *(*)(int *)) get_func_addr(PROFAN_LIB_ID, 9))
-#define serial_debug ((int (*)(char *, ...)) get_func_addr(PROFAN_LIB_ID, 10))
-#define profan_open ((int (*)(char *, int, ...)) get_func_addr(PROFAN_LIB_ID, 11))
-#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 12)) 
+#define open_input_keyboard ((char *(*)(int *, char *)) get_func_addr(PROFAN_LIB_ID, 9))
+#define open_input_serial ((char *(*)(int *, int)) get_func_addr(PROFAN_LIB_ID, 10))
+#define open_input ((char *(*)(int *)) get_func_addr(PROFAN_LIB_ID, 11))
+#define serial_debug ((int (*)(char *, ...)) get_func_addr(PROFAN_LIB_ID, 12))
+#define profan_open ((int (*)(char *, int, ...)) get_func_addr(PROFAN_LIB_ID, 13))
+#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 14))
 
 #endif
 
