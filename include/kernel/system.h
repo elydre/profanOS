@@ -4,7 +4,7 @@
 // build settings
 
 #define KERNEL_VERSION  "1.1.6"
-#define KERNEL_EDITING  "dev"
+#define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
 #define PROC_PRIORITY   2           // default process priority
