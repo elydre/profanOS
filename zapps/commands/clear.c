@@ -5,6 +5,7 @@
 
 int ansiclear(void) {
     printf(ANSI_CLEAR);
+    fflush(stdout);
     return 0;
 }
 
