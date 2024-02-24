@@ -240,6 +240,7 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
     if (str[0] == 'H') {
         g_panda->cursor_x = 0;
         g_panda->cursor_y = 0;
+        g_panda->scroll_offset = 0;
         return 2;
     }
 
