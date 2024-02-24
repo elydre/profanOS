@@ -61,12 +61,12 @@ char *find_cmd(char *cmd) {
         strcat(res, ".bin");
         sid = fu_path_to_sid(ROOT_SID, res);
         if (!IS_NULL_SID(sid) && fu_is_file(sid)) {
-            free(paths);
+            free_tab(paths);
             return res;
         }
         free(res);
     }
-    free(paths);
+    free_tab(paths);
     return NULL;
 }
 
@@ -140,8 +140,11 @@ int main(void) {
         printf("(%d) %s # ", res, getenv("PWD"));
         fflush(stdout);
         line = open_input(NULL);
-        if (line == NULL)
+        if (!line || !*line) {
+            putchar('\n');
+            free(line);
             break;
+        }
         remove_trailing_newline(line);
         res = execute_line(line);
         free(line);
