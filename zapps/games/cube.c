@@ -5,9 +5,7 @@
 #include <math.h>
 
 
-#define PI 3.141592
-#define MATH_LOOP 100
-#define FOCAL_DISTANCE 100
+#define FOCAL_DISTANCE 150
 #define CUBE_COLOR 0xFFdd99
 #define TRIN_COLOR 0xFFFF00
 
@@ -97,14 +95,14 @@ void delete_shape(shape_t *shape) {
 
 float cos_call(int angle) {
     // convert to radians
-    float x = angle * PI / 180;
+    float x = angle * M_PI / 180;
     // cos of x in radians
     return cosf(x);
 }
 
 float sin_call(int angle) {
     // convert to radians
-    float x = angle * PI / 180;
+    float x = angle * M_PI / 180;
     // sin of x in radians
     return sinf(x);
 }
@@ -169,7 +167,7 @@ int main(int argc, char** argv) {
     int time = c_timer_get_ms();
 
     shape_t nshape = new_shape();
-    for (int i = 0; c_kb_get_scancode() != 1; i = (i + 1) % 360) {
+    for (int i = 0;; i = (i + 1) % 360) {
         rotate(&nshape, &shape, i, i * 2 % 360, i);
         draw(&nshape, &vgui);
         time = show_fps(&vgui, time);
