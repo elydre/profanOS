@@ -17,11 +17,15 @@ int main(void) {
 }
 
 int dev_null(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    if (is_read) {
+    if (is_read)
+        return 0;
+    return size;
+}
+
+int dev_zero(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    if (is_read)
         memset(buffer, 0, size);
-        return size;
-    }
-    return 0;
+    return size;
 }
 
 int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
@@ -46,12 +50,16 @@ int dev_panda(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     return size;
 }
 
-int dev_isap(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
 
     if (!is_read) {
-        c_serial_write(SERIAL_PORT_A, (char *) buffer, size);
+        for (uint32_t i = 0; i < size; i++) {
+            if (((char *) buffer)[i] == '\n')
+                c_serial_write(SERIAL_PORT_A, "\r", 1);
+            c_serial_write(SERIAL_PORT_A, (char *) buffer + i, 1);
+        }
         return size;
     }
 
@@ -114,11 +122,12 @@ int dev_stderr(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 
 void init_devio(void) {
     fu_fctf_create(0, "/dev/null",   dev_null);
+    fu_fctf_create(0, "/dev/zero",   dev_zero);
     fu_fctf_create(0, "/dev/random", dev_rand);
 
-    fu_fctf_create(0, "/dev/kterm",  dev_kterm);
-    fu_fctf_create(0, "/dev/panda",  dev_panda);
-    fu_fctf_create(0, "/dev/isap",    dev_isap);
+    fu_fctf_create(0, "/dev/kterm",   dev_kterm);
+    fu_fctf_create(0, "/dev/panda",   dev_panda);
+    fu_fctf_create(0, "/dev/userial", dev_userial);
     fu_fctf_create(0, "/dev/serialA", dev_serial_a);
     fu_fctf_create(0, "/dev/serialB", dev_serial_b);
 
