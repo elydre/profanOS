@@ -1,13 +1,15 @@
 #include <syscall.h>
 #include <stdio.h>
 
+#define ANSI_CLEAR "\e[2J\e[H"
+
 int ansiclear(void) {
-    printf("\e[2J");
+    printf(ANSI_CLEAR);
     return 0;
 }
 
 int hardclear(void) {
-    c_kprint("\e[2J");
+    c_kprint(ANSI_CLEAR);
     ansiclear();
     return 0;
 }
