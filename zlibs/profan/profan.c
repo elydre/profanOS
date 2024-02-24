@@ -323,8 +323,10 @@ char *open_input_serial(int *size, int serial_port) {
 
      while (c != '\n') {
         c_serial_read(serial_port, &c, 1);
-        if (c == '\r')
+        if (c == '\r') {
+            c_serial_write(serial_port, "\r", 1);
             c = '\n';
+        }
         if (c == 127) {
             if (i) {
                 i--;
