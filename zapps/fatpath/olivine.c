@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 5"
+#define OLV_VERSION "0.10 rev 6"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -210,6 +210,18 @@ void raise_error(char *part, char *format, ...) {
     fputs("\n", stderr);
 
     strcpy(g_exit_code, "1");
+}
+
+int local_strncmp_nocase(char *str1, char *str2, int n) {
+    for (int i = 0; i < n || n < 0; i++) {
+        if (str1[i] == '\0' || str2[i] == '\0') {
+            return str1[i] - str2[i];
+        }
+        if (LOWERCASE(str1[i]) != LOWERCASE(str2[i])) {
+            return str1[i] - str2[i];
+        }
+    }
+    return 0;
 }
 
 /*******************************
@@ -1995,17 +2007,16 @@ void remove_quotes(char *string) {
 }
 
 int does_startwith(char *str, char *start) {
-    uint32_t len = strlen(start);
-    if (strlen(str) < len) {
-        return 0;
-    }
-
-    for (uint32_t i = 0; i < len; i++) {
-        if (str[i] != start[i]) {
+    int i;
+    for (i = 0; start[i] != '\0'; i++) {
+        if (LOWERCASE(str[i]) != LOWERCASE(start[i])) {
             return 0;
         }
     }
-    return 1;
+    if (str[i] == '\0' || str[i] == ' ') {
+        return 1;
+    }
+    return 0;
 }
 
 char **gen_args(char *string) {
@@ -3283,27 +3294,18 @@ int does_syntax_fail(char *program) {
     int open = 0;
     for (int i = 0; lines[i] != NULL; i++) {
         char *line = lines[i];
-        if (strncmp(line, "IF", 2) == 0) {
-            open++;
-        } else if (strncmp(line, "WHILE", 5) == 0) {
-            open++;
-        } else if (strncmp(line, "FOR", 3) == 0) {
-            open++;
-        } else if (strncmp(line, "ELSE", 4) == 0) {
-            open++;
-        } else if (strncmp(line, "FUNC", 4) == 0) {
-            open++;
-        } else if (strncmp(line, "END", 3) == 0) {
+        if (does_startwith(line, "IF ") ||
+            does_startwith(line, "WHILE ") ||
+            does_startwith(line, "FOR ") ||
+            does_startwith(line, "FUNC ") ||
+            does_startwith(line, "ELSE ")
+        ) open++;
+        else if (does_startwith(line, "END"))
             open--;
-        }
     }
     free(lines);
 
-    if (open > 0) {
-        return 1;
-    }
-
-    return 0;
+    return open > 0;
 }
 
 /**********************
@@ -3335,7 +3337,7 @@ int does_syntax_fail(char *program) {
 char *get_func_color(char *str) {
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
-        if (strcmp(str, keywords[i]) == 0) {
+        if (local_strncmp_nocase(str, keywords[i], -1) == 0) {
             return "95";
         }
     }
@@ -3704,10 +3706,32 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
     *dec_ptr = i - dec;
 
+    int is_upper;
+    char *lower;
+
     // keywords
     for (int j = 0; keywords[j] != NULL; j++) {
-        if (strncmp(tmp, keywords[j], i - dec) == 0) {
-            suggest = add_to_suggest(other, suggest, keywords[j]);
+        if (local_strncmp_nocase(tmp, keywords[j], i - dec) == 0) {
+            is_upper = 1;
+            for (int k = 0; k < i - dec; k++) {
+                if (tmp[k] >= 'a' && tmp[k] <= 'z') {
+                    is_upper = 0;
+                    break;
+                }
+            }
+            if (is_upper) {
+                suggest = add_to_suggest(other, suggest, keywords[j]);
+                continue;
+            }
+            lower = calloc(strlen(keywords[j]) + 1, sizeof(char));
+            for (int k = 0; keywords[j][k] != '\0'; k++) {
+                if (k < i - dec)
+                    lower[k] = tmp[k];
+                else
+                    lower[k] = LOWERCASE(keywords[j][k]);
+            }
+            suggest = add_to_suggest(other, suggest, lower);
+            free(lower);
         }
     }
 
