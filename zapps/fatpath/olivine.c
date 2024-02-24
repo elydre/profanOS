@@ -3744,10 +3744,17 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
 #endif
 
-
 int local_input(char *buffer, int size, char **history, int history_end, int buffer_index) {
     // return -1 if the input is valid, else return the cursor position
     #if PROFANBUILD
+    char *term = getenv("TERM");
+    if (term && strcmp(term, "/dev/panda") && strcmp(term, "/dev/kterm")) {
+        if (!fgets(buffer, size, stdin)) {
+            puts("");
+            exit(0);
+        }
+        return -1;
+    }
 
     history_end++;
 
