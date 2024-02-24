@@ -95,7 +95,7 @@ int dily_unload(uint32_t lib_id) {
 
 uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id) {
     if (!dily_does_loaded(lib_id)) {
-        sys_error("Library %d not loaded requested by pid %d", lib_id, process_get_pid());
+        sys_error("Library %d (func %d) not loaded requested by pid %d", lib_id, func_id, process_get_pid());
         return 0;
     }
 

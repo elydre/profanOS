@@ -1,6 +1,7 @@
 #include <kernel/snowflake.h>
-#include <kernel/process.h>
+#include <kernel/multiboot.h>
 #include <drivers/diskiso.h>
+#include <kernel/process.h>
 #include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
@@ -27,10 +28,15 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state);
 int mem_free_addr(uint32_t addr);
 
 uint32_t mem_get_phys_size(void) {
-    uint32_t *addr_min = (uint32_t *) 0x200000;
-    uint32_t *addr_max = (uint32_t *) 0x40000000;
-    uint32_t *addr_test;
-    uint32_t old_value;
+    uint32_t *addr_min, *addr_max;
+    uint32_t *addr_test, old_value;
+
+    addr_test = (uint32_t *) (mboot_get(2) * 1024);
+    if (addr_test) return (uint32_t) addr_test;
+
+    // if the multiboot info is not available
+    addr_min = (uint32_t *) 0x200000;
+    addr_max = (uint32_t *) 0x40000000;
     while (addr_max - addr_min > 1) {
         addr_test = addr_min + (addr_max - addr_min) / 2;
         old_value = *addr_test;

@@ -53,7 +53,7 @@ int userspace_reporter(char *message) {
     int c = fputs(message, stderr);
 
     if (term && strcmp(term, "/dev/serial")) {
-        c_serial_print(SERIAL_PORT_A, message);
+        c_serial_write(SERIAL_PORT_A, message, strlen(message));
     }
     return c == EOF;
 }
@@ -178,25 +178,21 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     return kb_map[scancode * 2];
 }
 
-void profan_wait_pid(uint32_t pid) {
+int serial_debug(char *frm, ...);
+
+int profan_wait_pid(uint32_t pid) {
     uint32_t current_pid = c_process_get_pid();
 
-    if (pid == current_pid) {
-        c_process_sleep(current_pid, 0);
-        return;
-    }
+    if (pid == current_pid || !pid)
+        return 0;
 
-    while (c_process_get_state(pid) < 4) {
+    while (c_process_get_state(pid) < 4)
         c_process_sleep(current_pid, 10);
-    }
+
+    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
-char *open_input(int *size) {
-    // save the current cursor position and show it
-    char *term_path = getenv("TERM");
-    if (!term_path)
-        return NULL;
-
+char *open_input_keyboard(int *size, char *term_path) {
     FILE *term = fopen(term_path, "w");
 
     fputs("\e[?25l", term);
@@ -319,6 +315,52 @@ char *open_input(int *size) {
     return buffer;
 }
 
+char *open_input_serial(int *size, int serial_port) {
+    char *buffer = malloc(100);
+    int buffer_size = 100;
+    int i = 0;
+    char c = 0;
+
+     while (c != '\n') {
+        c_serial_read(serial_port, &c, 1);
+        if (c == '\r') {
+            c_serial_write(serial_port, "\r", 1);
+            c = '\n';
+        }
+        if (c == 127) {
+            if (i) {
+                i--;
+                c_serial_write(serial_port, "\b \b", 3);
+            }
+            continue;
+        }
+        if ((c < 32 || c > 126) && c != '\n')
+            continue;
+        ((char *) buffer)[i++] = c;
+        c_serial_write(serial_port, &c, 1);
+        if (i == buffer_size) {
+            buffer_size *= 2;
+            buffer = realloc(buffer, buffer_size);
+        }
+    }
+
+    buffer = realloc(buffer, i + 1);
+    buffer[i] = '\0';
+
+    if (size)
+        *size = i;
+    return buffer;
+}
+
+char *open_input(int *size) {
+    char *term = getenv("TERM");
+    if (!term)
+        return NULL;
+    if (strstr(term, "serial"))
+        return open_input_serial(size, SERIAL_PORT_A);
+    return open_input_keyboard(size, term);
+}
+
 int serial_debug(char *frm, ...) {
     va_list args;
     char *str;
@@ -328,7 +370,7 @@ int serial_debug(char *frm, ...) {
     str = malloc(1024);
 
     len = vsprintf(str, frm, args);
-    c_serial_print(SERIAL_PORT_A, str);
+    c_serial_write(SERIAL_PORT_A, str, len);
 
     free(str);
     va_end(args);
@@ -363,4 +405,42 @@ int profan_open(char *path, int flags, ...) {
     }
 
     return fd;
+}
+
+int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
+    if (args.path == NULL && IS_NULL_SID(args.sid)) {
+        return -1;
+    }
+
+    args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(ROOT_SID, args.path) : args.sid;
+    if (IS_NULL_SID(args.sid) || !fu_is_file(args.sid)) {
+        return -1;
+    }
+
+    // duplicate argv
+    int size = sizeof(char *) * (args.argc + 1);
+    char **nargv = (char **) c_mem_alloc(size, 0, 6);
+    memset((void *) nargv, 0, size);
+
+    for (int i = 0; i < args.argc; i++) {
+        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i]) + 1, 0, 6);
+        strcpy(nargv[i], args.argv[i]);
+    }
+
+    int pid = c_process_create(c_binary_exec, 1, args.path ? args.path : "unknown file", 4, args.sid, args.vcunt, nargv);
+
+    if (pid_ptr != NULL)
+        *pid_ptr = pid;
+    if (pid == -1)
+        return -1;
+
+    if (args.sleep_mode == 2)
+        return 0;
+
+    if (args.sleep_mode)
+        c_process_handover(pid);
+    else
+        c_process_wakeup(pid);
+
+    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }

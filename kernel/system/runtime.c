@@ -9,52 +9,47 @@
  *                                                      l  *
  *  |             |                   | E               y  *
  *  | kernel      | allocable memory  | N               d  *
- *  | -0x100000   | - 0x200000        | D               r  *
+ *  | `0x100000   | `0x200000         | D               r  *
  *  |             |                   |                 e  *
  *        ^     ^     ^     ^     ^                        *
  *        |     |     |     |     '---SCUBA----.           *
  *        |     |     |     |                  |           *
  *  |                                 | : |             |  *
  *  | physical (shared)   [STACK]     | : | virtual     |  *
- *  |                                 | : | -0xC0000000 |  *
+ *  |                                 | : | `0xC0000000 |  *
  *  |                                 | : |             |  *
 ************************************************************/
 
-typedef struct {
-    int pid;
-    int ret;
-} direct_return_t;
-
-direct_return_t last_return;
-
-int force_exit_pid(int pid, int ret_code) {
-    int ppid, pstate;
+int force_exit_pid(int pid, int ret_code, int warn_leaks) {
+    int ppid, pstate, leaks;
 
     if (pid == 0 || pid == 1) {
         return 1;
     }
 
-    // clean memory
-    mem_free_all(pid);
-
     comm_struct_t *comm = process_get_comm(pid);
-
     if (comm != NULL) {
         // free the argv
-        for (int i = 0; i < comm->argc; i++)
+        for (int i = 0; comm->argv[i] != NULL; i++)
             free((void *) comm->argv[i]);
         free((void *) comm->argv);
-
-        // free the stack
-        free((void *) comm->stack);
 
         // free comm struct
         free(comm);
     }
 
+    if (warn_leaks && (leaks = mem_get_info(7, pid)) > 0) {
+        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
+                leaks,
+                leaks == 1 ? "" : "s",
+                pid,
+                mem_get_info(8, pid)
+        );
+    }
+    mem_free_all(pid);
+
     // set return value
-    last_return.pid = pid;
-    last_return.ret = ret_code;
+    process_set_return(pid, ret_code);
 
     // wake up the parent process
     ppid = process_get_ppid(pid);
@@ -70,149 +65,93 @@ int force_exit_pid(int pid, int ret_code) {
     return process_kill(pid);
 }
 
-void tasked_program(void) {
+int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     int pid = process_get_pid();
-    int ppid = process_get_ppid(pid);
 
-    comm_struct_t *comm = process_get_comm(pid);
-    uint32_t stack_size = comm->stack_size;
+    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+        sys_warning("[binary_exec] File not found");
+        force_exit_pid(pid, 1, 0);
+    }
 
-    int vsize = comm->vcunt;
-    int fsize = fs_cnt_get_size(fs_get_main(), comm->file);
-    int real_fsize = fsize;
+    if (vcunt == 0)
+        vcunt = RUN_BIN_VCUNT;
+
+    comm_struct_t *comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
+    comm->argv = argv;
+    process_set_comm(pid, comm);
+
+    uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
+    uint32_t real_fsize = fsize;
 
     // setup private memory
     fsize = fsize + (0x1000 - (fsize % 0x1000));
 
-    if (vsize < fsize * 2)
-        vsize = fsize * 2;
+    if (vcunt < fsize * 2)
+        vcunt = fsize * 2;
 
-    scuba_create_virtual(process_get_directory(pid), comm->vbase, vsize / 0x1000);
+    scuba_directory_t *dir = scuba_directory_inited();
+    scuba_create_virtual(dir, RUN_BIN_VBASE, vcunt / 0x1000);
+    process_switch_directory(pid, dir);
+
+    // get argc
+    int argc = 0;
+    while (argv && argv[argc] != NULL)
+        argc++;
 
     // load binary
-    fs_cnt_read(fs_get_main(), comm->file, (uint8_t *) comm->vbase, 0, real_fsize);
+    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
 
-    // malloc a new stack
-    comm->stack = mem_alloc(stack_size, 0, 4);
-    mem_set((uint8_t *) comm->stack, 0, stack_size);
-
-    // setup stack
-    uint32_t old_esp = 0;
-    asm volatile("mov %%esp, %0" : "=r" (old_esp));
-    asm volatile("mov %0, %%esp" :: "r" (comm->stack + stack_size - 0x80));
+    // move the stack if needed
+    uint32_t *stack_top = (uint32_t *) process_get_info(pid, PROCESS_INFO_STACK);
+    uint32_t *stack;
+    asm volatile("mov %%esp, %0" : "=r" (stack));
+    if (stack < stack_top - 10) {
+        kprintf_serial("move stack\n");
+        mem_move(stack_top - 10, stack, 10 * 4);
+        stack = stack_top - 10;
+        asm volatile("mov %0, %%esp" : : "r" (stack));
+    }
 
     // call main
-    int (*main)(int, char **) = (int (*)(int, char **)) comm->vbase;
-    int ret = main(comm->argc, comm->argv) & 0xFF;
-
-    // restore stack
-    asm volatile("mov %0, %%esp" :: "r" (old_esp));
-
-    // free forgeted allocations
-    int not_free_mem = mem_get_info(7, pid);
-
-    if (not_free_mem) {
-        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
-                not_free_mem,
-                not_free_mem == 1 ? "" : "s",
-                pid,
-                mem_get_info(8, pid)
-        );
-
-        mem_free_all(pid);
-    }
-
-    // free the comm struct
-    for (int i = 0; i < comm->argc; i++)
-        free((void *) comm->argv[i]);
-
-    free((void *) comm->stack);
-    free((void *) comm->argv);
-    free(comm);
-
-    // set return value
-    last_return.pid = pid;
-    last_return.ret = ret;
-
-    // wake up the parent process
-    if (ppid != -1) {
-        int pstate = process_get_state(ppid);
-
-        if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING) {
-            process_wakeup(ppid);
-        }
-    }
-
-    process_kill(pid);
+    int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
+    int ret = main(argc, argv) & 0xFF;
+    return force_exit_pid(process_get_pid(), ret, 1);
 }
 
-int run_binary(runtime_args_t args, int *pid_ptr) {
-    int pid = process_create(tasked_program, 0, args.path == NULL ? "unknown file" : args.path);
+int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
+    sid_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
 
-    if (pid == -1) {
-        if (pid_ptr != NULL)
-            *pid_ptr = -1;
+    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+        sys_warning("[run_ifexist] File not found: %s", file);
         return -1;
     }
 
-    if (pid == 2)
-        last_return.pid = -1;
+    int argc = 0;
+    while (argv && argv[argc] != NULL)
+        argc++;
+
+    char **nargv = (char **) mem_alloc((argc + 1) * sizeof(char *), 0, 6);
+    mem_set((void *) nargv, 0, (argc + 1) * sizeof(char *));
+
+    for (int i = 0; i < argc; i++) {
+        nargv[i] = (char *) mem_alloc(str_len(argv[i]) + 1, 0, 6);
+        str_cpy(nargv[i], argv[i]);
+    }
+
+    int pid = process_create(binary_exec, 1, file, 4, sid, 0, nargv);
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
+    if (pid == -1)
+        return -1;
 
-    // duplicate argv
-    int size = sizeof(char *) * (args.argc + 1);
-    char **nargv = (char **) mem_alloc(size, 0, 6);
-    mem_set((void *) nargv, 0, size);
-
-    for (int i = 0; i < args.argc; i++) {
-        nargv[i] = (char *) mem_alloc(str_len(args.argv[i]) + 1, 0, 6);
-        str_cpy(nargv[i], args.argv[i]);
-    }
-
-    comm_struct_t *comm = (comm_struct_t *) mem_alloc(sizeof(comm_struct_t), 0, 6);
-    comm->argc = args.argc;
-    comm->argv = nargv;
-    comm->file = args.sid;
-
-    comm->vbase = args.vbase;
-    comm->vcunt = args.vcunt;
-    comm->stack_size = args.stack;
-
-    process_set_comm(pid, comm);
-
-    if (args.sleep == 2)
+    if (sleep == 2)
         return 0;
 
-    if (args.sleep)
+    if (sleep)
         process_handover(pid);
     else
         process_wakeup(pid);
 
-    return (last_return.pid == pid) ? last_return.ret : 0;
-}
-
-int run_ifexist_full(runtime_args_t args, int *pid) {
-    if (args.path == NULL && IS_NULL_SID(args.sid)) {
-        sys_warning("[run_ifexist] No path or sid given");
-        return -1;
-    }
-
-    args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(fs_get_main(), ROOT_SID, args.path) : args.sid;
-
-    args.vbase = args.vbase ? args.vbase : RUN_BIN_VBASE;
-    args.vcunt = args.vcunt ? args.vcunt : RUN_BIN_VCUNT;
-    args.stack = args.stack ? args.stack : RUN_BIN_STACK;
-
-    if (!IS_NULL_SID(args.sid) && fu_is_file(fs_get_main(), args.sid)) {
-        return run_binary(args, pid);
-    }
-
-    if (args.path)
-        sys_warning("[run_ifexist] File not found: %s", args.path);
-    else
-        sys_warning("[run_ifexist] Sector d%ds%d is not a file", args.sid.device, args.sid.sector);
-
-    return -1;
+    return process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }

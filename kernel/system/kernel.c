@@ -46,7 +46,7 @@ void kernel_main(void *mboot_ptr) {
     kprintf("successfully booted in %d ms\n", timer_get_ms());
 
     // launch of the default program
-    run_ifexist(RUN_DEFAULT, 0, NULL);
+    run_ifexist(RUN_DEFAULT, 1, NULL, NULL);
 
     start_kshell();
 

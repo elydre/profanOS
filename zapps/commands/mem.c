@@ -122,7 +122,7 @@ void memory_print_usage(void) {
 
     printf("Simple alloc   %15d kB | %d\n", c_mem_get_info(10, 1) / 1024, c_mem_get_info(9, 1));
     printf("Mem struct     %15d kB | %d\n", c_mem_get_info(10, 3) / 1024, c_mem_get_info(9, 3));
-    printf("Runtime stacks %15d kB | %d\n", c_mem_get_info(10, 4) / 1024, c_mem_get_info(9, 4));
+    printf("Process stack  %15d kB | %d\n", c_mem_get_info(10, 4) / 1024, c_mem_get_info(9, 4));
     printf("Dily           %15d kB | %d\n", c_mem_get_info(10, 5) / 1024, c_mem_get_info(9, 5));
     printf("As kernel      %15d kB | %d\n", c_mem_get_info(10, 6) / 1024, c_mem_get_info(9, 6));
     printf("Scuba vpage    %15d kB | %d\n", c_mem_get_info(10, 7) / 1024, c_mem_get_info(9, 7));
@@ -134,11 +134,11 @@ void memory_print_usage(void) {
     sort_tab(pid_list, pid_list_len);
 
     int pid;
-    char name[64];
+    char *name;
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        c_process_get_name(pid, name);
+        name = (char *) c_process_get_info(pid, PROCESS_INFO_NAME);
         printf("PID %-3.02d %-15s %6d kB | %d\n",
                 pid, (strchr(name, '/') ? strrchr(name, '/') + 1 : name),
                 c_mem_get_info(8, pid) / 1024,

@@ -12,7 +12,7 @@
 void kernel_switch_back(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
-    int pid;
+    uint32_t pid;
 
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
@@ -34,19 +34,13 @@ void kernel_switch_back(void) {
 void kernel_exit_current(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
-    int pid;
+    uint32_t pid, state;
 
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];
-        if (process_get_state(pid) == PROCESS_RUNNING && pid) {
-            force_exit_pid(pid, 130);
-            return;
-        }
-    }
-    for (int i = pid_list_len - 1; i >= 0; i--) {
-        pid = pid_list[i];
-        if (process_get_state(pid) == PROCESS_TSLPING && pid) {
-            force_exit_pid(pid, 130);
+        state = process_get_state(pid);
+        if (pid && state < 3 && pid != process_get_pid()) {
+            force_exit_pid(pid, 143, 0);
             return;
         }
     }
@@ -114,7 +108,7 @@ int shell_command(char *command) {
     if      (!str_cmp(prefix, "addr"))   shell_addr();
     else if (!str_cmp(prefix, "clear"))  clear_screen();
     else if (!str_cmp(prefix, "exit"))   return 1;
-    else if (!str_cmp(prefix, "go"))     run_ifexist(suffix, NULL, (char **) NULL);
+    else if (!str_cmp(prefix, "go"))     run_ifexist(suffix, 1, NULL, NULL);
     else if (!str_cmp(prefix, "help"))   shell_help();
     else if (!str_cmp(prefix, "mem"))    shell_mem();
     else if (!str_cmp(prefix, "reboot")) sys_reboot();

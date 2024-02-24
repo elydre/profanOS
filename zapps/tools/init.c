@@ -10,8 +10,8 @@
 #define SHELL_NAME "olivine"
 
 #define run_ifexist_pid(path, argc, argv, pid) \
-        c_run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 0, 0, 1}, pid)
+        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
+        argc, argv, 0, 1}, pid)
 
 typedef struct {
     int id;
@@ -108,7 +108,7 @@ int main(void) {
     if (c_vesa_does_enable()) {
         use_panda = 1;
         if (fm_reopen(1, "/dev/panda") < 0 ||
-            fm_reopen(2, "/dev/panda") < 0 ||
+            fm_reopen(3, "/dev/panda") < 0 ||
             fm_reopen(4, "/dev/panda") < 0 ||
             fm_reopen(5, "/dev/panda") < 0
         ) c_kprint("Failed to redirect to panda\n");
@@ -123,7 +123,7 @@ int main(void) {
 
     do {
         setenv("PATH", "/bin/commands:/bin/fatpath", 0);
-        c_run_ifexist(SHELL_PATH, 0, NULL);
+        run_ifexist(SHELL_PATH, 0, NULL);
 
         printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"

@@ -1,3 +1,4 @@
+#include <kernel/process.h>
 #include <drivers/serial.h>
 #include <cpu/ports.h>
 #include <minilib.h>
@@ -20,17 +21,25 @@ int serial_init(void) {
     return 0;
 }
 
-int serial_transmit_empty(int device) {
-    return port_byte_in(device + 5) & 0x20;
-}
-
 void serial_send(int device, char out) {
-    while (serial_transmit_empty(device) == 0);
+    while (!(port_byte_in(device + 5) & 0x20));
     port_byte_out(device, out);
 }
 
-void serial_print(int device, char *out) {
-    for (uint32_t i = 0; i < (uint32_t) str_len(out); ++i) {
-        serial_send(device, out[i]);
+char serial_recv(int device) {
+    while (!(port_byte_in(device + 5) & 1))
+        process_sleep(process_get_pid(), 1);
+    return port_byte_in(device);
+}
+
+void serial_write(int device, char *buf, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        serial_send(device, buf[i]);
+    }
+}
+
+void serial_read(int device, char *buf, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        buf[i] = serial_recv(device);
     }
 }

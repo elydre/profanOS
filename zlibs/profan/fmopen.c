@@ -55,7 +55,7 @@ int main(void) {
     stdhist = calloc_ask(MAX_STDHIST, sizeof(stdhist_t));
     stdhist_len = 0;
 
-    fm_reopen(3, "/dev/kb");
+    fm_reopen(3, "/dev/kterm");
     fm_reopen(4, "/dev/kterm");
     fm_reopen(5, "/dev/kterm");
 

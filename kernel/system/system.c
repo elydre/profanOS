@@ -48,7 +48,7 @@ int RECURSIVE_COUNT;
 
 int sys_default_reporter(char *msg) {
     kprint(msg);
-    serial_print(SERIAL_PORT_A, msg);
+    serial_write(SERIAL_PORT_A, msg, str_len(msg));
     return 0;
 }
 
@@ -114,7 +114,7 @@ void sys_error(char *msg, ...) {
     RECURSIVE_COUNT--;
     process_enable_sheduler();
 
-    if (current_pid > 1 && force_exit_pid(current_pid, 130)) {
+    if (current_pid > 1 && force_exit_pid(current_pid, 143, 0)) {
         sys_fatal("Failed to exit process");
     }
 }

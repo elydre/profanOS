@@ -61,11 +61,12 @@ void *SYSCALL_ARRAY[] = {
     // system.h
     sys_reboot,
     sys_shutdown,
-    run_ifexist_full,
+    binary_exec,
     sys_kinfo,
 
     // serial.h
-    serial_print,
+    serial_read,
+    serial_write,
 
     // mouse.h
     mouse_call,
@@ -73,17 +74,16 @@ void *SYSCALL_ARRAY[] = {
     // process.h
     process_set_sheduler,
     process_create,
+    process_fork,
     process_sleep,
+    process_handover,
     process_wakeup,
     process_kill,
     process_get_pid,
-    process_get_ppid,
     process_generate_pid_list,
-    process_get_name,
-    process_get_state,
-    process_get_run_time,
+    process_get_info,
 
-    // minilib.h
+    // runtime.h
     force_exit_pid,
 
     // system.h

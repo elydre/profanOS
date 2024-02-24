@@ -58,30 +58,7 @@ typedef struct {
 } filesys_t;
 
 typedef struct {
-    char *path;     // path to file
-    sid_t sid;      // sector id (can be null)
-
-    int argc;       // argument count
-    char **argv;    // argument list
-
-    uint32_t vbase; // virtual base address
-    uint32_t vcunt; // virtual count
-
-    uint32_t stack; // stack size
-
-    uint8_t sleep;  // sleep mode
-} runtime_args_t;
-
-typedef struct {
-    int      argc;
     char   **argv;
-
-    sid_t    file;
-
-    uint32_t vbase;
-    uint32_t vcunt;
-    uint32_t stack_size;
-    uint32_t stack;
 } comm_struct_t;
 
 // va_list

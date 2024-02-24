@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <string.h>
+#include <profan.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -233,7 +234,7 @@ int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *
 }
 
 void exit(int rv) {
-    c_exit_pid(c_process_get_pid(), rv);
+    c_exit_pid(c_process_get_pid(), rv, 0);
 }
 
 char *gcvt(double number, int ndigit, char *buf) {
@@ -747,7 +748,7 @@ int system(const char *command) {
     args[3] = NULL;
 
     // run the command
-    int ret = c_run_ifexist(args[0], 3, args);
+    int ret = run_ifexist(args[0], 3, args);
 
     free(args);
 

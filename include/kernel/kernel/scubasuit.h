@@ -54,8 +54,8 @@ int scuba_init(void);
 
 void scuba_process_switch(scuba_directory_t *dir);
 
-scuba_directory_t *scuba_directory_create(void);
-void scuba_directory_init(scuba_directory_t *dir);
+scuba_directory_t *scuba_directory_inited(void);
+scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
 int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);

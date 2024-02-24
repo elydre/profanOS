@@ -120,7 +120,7 @@ int execute_line(char *line) {
         printf("Command not found: %s\n", args[0]);
         return 1;
     }
-    res = c_run_ifexist(cmd, argc, args);
+    res = run_ifexist(cmd, argc, args);
     free_tab(args);
     free(cmd);
     return res;

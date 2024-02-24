@@ -719,7 +719,7 @@ int feof(FILE *stream) {
 }
 
 int ferror(FILE *stream) {
-    c_serial_print(SERIAL_PORT_A, "WARNING: ferror not correctly implemented...\n");
+    c_serial_write(SERIAL_PORT_A, "WARNING: ferror not correctly implemented...\n", 45);
     return 0;   // return 0 if no error found
 }
 

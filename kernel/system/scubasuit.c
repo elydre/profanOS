@@ -10,16 +10,36 @@ scuba_directory_t *kernel_directory;
 scuba_directory_t *current_directory;
 uint32_t g_map_to_addr;
 
-scuba_directory_t *scuba_get_kernel_directory(void) {
-    return kernel_directory;
-}
+/**************************
+ *                       *
+ *     INTERNAL UTIL     *
+ *                       *
+**************************/
 
-void *i_allign_calloc(uint32_t size, int state) {
-    void *ptr = (void *) mem_alloc(size, 0x1000, state); // we need to allign to 4KB
+void *i_allign_calloc(uint32_t size) {
+    void *ptr = (void *) mem_alloc(size, 0x1000, 7); // we need to allign to 4KB
     mem_set(ptr, 0, size);
     return ptr;
 }
 
+scuba_directory_t *i_directory_create(void) {
+    // allocate a page directory
+    scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t));
+
+    dir->to_free_index = 0;
+
+    // setup directory entries
+    for (int i = 0; i < 1024; i++) {
+        dir->entries[i].present = 0;
+        dir->entries[i].rw = 1;
+        dir->entries[i].user = 1;
+        dir->entries[i].accessed = 0;
+        dir->entries[i].unused = 0;
+        dir->entries[i].frame = 0;
+    }
+
+    return dir;
+}
 
 /**************************
  *                       *
@@ -51,13 +71,107 @@ void scuba_flush_tlb(void) {
 
 /**************************
  *                       *
+ *     SCUBA PROCESS     *
+ *                       *
+**************************/
+
+void scuba_process_switch(scuba_directory_t *dir) {
+    if (current_directory == dir) return;
+
+    // switch to the new page directory
+    scuba_switch(dir);
+
+    // flush the TLB
+    scuba_flush_tlb();
+}
+
+/**************************
+ *                       *
+ *    SCUBA DIRECTORY    *
+ *                       *
+**************************/
+
+scuba_directory_t *scuba_get_kernel_directory(void) {
+    return kernel_directory;
+}
+
+scuba_directory_t *scuba_directory_inited(void) {
+    scuba_directory_t *dir = i_directory_create();
+
+    // map the memory to itself
+    for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {
+        scuba_map_from_kernel(dir, i, i);
+    }
+
+    // video memory
+    uint32_t from, to;
+
+    if (!vesa_does_enable()) {
+        return dir;
+    }
+
+    // pixel buffer
+    from = (uint32_t) vesa_get_fb();
+    to = from + vesa_get_pitch() * vesa_get_height() * 4 + 0x1000;
+
+    for (uint32_t i = from; i < to; i += 0x1000) {
+        scuba_map_from_kernel(dir, i, i);
+    }
+
+    return dir;
+}
+
+scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
+    // allocate a new page directory
+    scuba_directory_t *new_dir = i_directory_create();
+
+    // copy the page tables
+    for (int i = 0; i < 1024; i++) {
+        if (!dir->entries[i].frame) continue;
+
+        // get the page table
+        scuba_page_table_t *table = (scuba_page_table_t *) (dir->entries[i].frame * 0x1000);
+
+        // allocate a new page table
+        scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t));
+
+        // add the page table to the list of page tables to free
+        new_dir->to_free[new_dir->to_free_index++] = new_table;
+
+        // copy the page table
+        for (int j = 0; j < 1024; j++) {
+            new_table->pages[j] = table->pages[j];
+        }
+
+        // map the new page table
+        new_dir->tables[i] = new_table;
+
+        new_dir->entries[i] = dir->entries[i];
+        new_dir->entries[i].frame = (uint32_t) new_table / 0x1000;
+    }
+
+    return new_dir;
+}
+
+void scuba_directory_destroy(scuba_directory_t *dir) {
+    // free all page tables
+    for (uint32_t i = 0; i < dir->to_free_index; i++) {
+        free(dir->to_free[i]);
+    }
+
+    // free the page directory
+    free(dir);
+}
+
+/**************************
+ *                       *
  *      SCUBA INIT       *
  *                       *
 **************************/
 
 int scuba_init(void) {
     // allocate a page directory
-    kernel_directory = scuba_directory_create();
+    kernel_directory = i_directory_create();
 
     g_map_to_addr = SCUBA_MAP_TO;
     uint32_t physical_end = mem_get_info(0, 0);
@@ -88,77 +202,6 @@ int scuba_init(void) {
     scuba_enable();
 
     return 0;
-}
-
-/**************************
- *                       *
- *     SCUBA PROCESS     *
- *                       *
-**************************/
-
-void scuba_process_switch(scuba_directory_t *dir) {
-    if (current_directory == dir) return;
-
-    // switch to the new page directory
-    scuba_switch(dir);
-
-    // flush the TLB
-    scuba_flush_tlb();
-}
-
-/**************************
- *                       *
- *    SCUBA DIRECTORY    *
- *                       *
-**************************/
-
-scuba_directory_t *scuba_directory_create(void) {
-    // allocate a page directory
-    scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t), 6);
-
-    dir->to_free_index = 0;
-
-    // setup directory entries
-    for (int i = 0; i < 1024; i++) {
-        dir->entries[i].present = 0;
-        dir->entries[i].rw = 1;
-        dir->entries[i].user = 1;
-        dir->entries[i].accessed = 0;
-        dir->entries[i].unused = 0;
-        dir->entries[i].frame = 0;
-    }
-
-    return dir;
-}
-
-void scuba_directory_init(scuba_directory_t *dir) {
-    // map the memory to itself
-    for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {
-        scuba_map_from_kernel(dir, i, i);
-    }
-
-    // video memory
-    uint32_t from, to;
-
-    if (vesa_does_enable()) {
-        // pixel buffer
-        from = (uint32_t) vesa_get_fb();
-        to = from + vesa_get_pitch() * vesa_get_height() * 4 + 0x1000;
-    } else return;
-
-    for (uint32_t i = from; i < to; i += 0x1000) {
-        scuba_map_from_kernel(dir, i, i);
-    }
-}
-
-void scuba_directory_destroy(scuba_directory_t *dir) {
-    // free all page tables
-    for (uint32_t i = 0; i < dir->to_free_index; i++) {
-        free(dir->to_free[i]);
-    }
-
-    // free the page directory
-    free(dir);
 }
 
 /**************************
@@ -195,7 +238,7 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int fro
             }
 
             // create a new page table
-            table = i_allign_calloc(sizeof(scuba_page_table_t), 6);
+            table = i_allign_calloc(sizeof(scuba_page_table_t));
             dir->to_free[dir->to_free_index++] = table;
         }
         dir->tables[table_index] = table;
@@ -229,7 +272,7 @@ int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
     }
 
     // alloc a page
-    uint32_t phys = (uint32_t) i_allign_calloc(0x1000 * count, 7);
+    uint32_t phys = (uint32_t) i_allign_calloc(0x1000 * count);
 
     if (!phys) {
         sys_error("Failed to alloc page");

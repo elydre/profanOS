@@ -125,9 +125,16 @@ void str_append(char *s, char c) {
 
 // memory management
 
-void mem_copy(void *dest, void *source, int nbytes) {
-    for (int i = 0; i < nbytes; i++)
-        *((uint8_t *) dest + i) = *((uint8_t *) source + i);
+void mem_move(void *dest, void *source, uint32_t nbytes) {
+    if (dest < source) {
+        for (uint32_t i = 0; i < nbytes; i++) {
+            ((char *) dest)[i] = ((char *) source)[i];
+        }
+    } else {
+        for (int i = nbytes - 1; i >= 0; i--) {
+            ((char *) dest)[i] = ((char *) source)[i];
+        }
+    }
 }
 
 void mem_set(void *dest, uint8_t val, uint32_t len) {
@@ -309,7 +316,7 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
     if (output == 1) {
         kprint(char_buffer);
     } else if (output == 2) {
-        serial_print(SERIAL_PORT_A, char_buffer);
+        serial_write(SERIAL_PORT_A, char_buffer, buffer_i);
     }
 }
 

@@ -3,7 +3,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.1.5"
+#define KERNEL_VERSION  "1.1.6"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count
@@ -17,12 +17,11 @@
 
 #define RUN_BIN_VBASE   0xC0000000  // virtual base address for binary
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count
-#define RUN_BIN_STACK   0x10000     // stack size
 
 #define DILY_MAX        128         // max dily loaded library
 #define RUN_LIB_STACK   0x1000      // left stack size for library
 
-#define PROCESS_ESP     0x4000      // process stack size
+#define PROCESS_ESP     0x10000     // process stack size
 
 #define WATFUNC_ADDR    0x1ffff7
 #define WATDILY_ADDR    0x1ffffb
@@ -49,13 +48,9 @@ void kernel_switch_back(void);
 void kernel_exit_current(void);
 
 // runtime.c
-#define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 0, 0, 1}, NULL)
-
-int run_ifexist_full(runtime_args_t args, int *pid);
-
-int force_exit_pid(int pid, int ret_code);
+int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
+int binary_exec(sid_t sid, uint32_t vcunt, char **argv);
+int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // dily.c
 int      dily_does_loaded(uint32_t lib_id);
