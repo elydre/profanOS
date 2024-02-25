@@ -10,7 +10,7 @@
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.10 rev 6"
+#define OLV_VERSION "0.10 rev 7"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -106,7 +106,7 @@ typedef struct {
 
 variable_t *variables;
 pseudo_t *pseudos;
-function_t *functions;
+function_t *functions = NULL;
 internal_function_t internal_functions[];
 
 char *g_current_directory, *g_exit_code, *g_prompt;
@@ -2614,7 +2614,7 @@ char *check_pseudos(char *line) {
  *                    *
 ***********************/
 
-char **lexe_program(char *program) {
+char **lexe_program(char *program, int interp_bckslsh) {
     int line_index = 1;
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
@@ -2667,7 +2667,7 @@ char **lexe_program(char *program) {
         }
 
         // interpret double backslashes
-        if (program[i] == '\\') {
+        if (program[i] == '\\' && interp_bckslsh) {
             if (program[i + 1] == 'n') {
                 tmp[tmp_index++] = '\n';
             } else if (program[i + 1] == 't') {
@@ -3276,7 +3276,7 @@ int save_function(int line_count, char **lines) {
 }
 
 void execute_program(char *program) {
-    char **lines = lexe_program(program);
+    char **lines = lexe_program(program, 1);
     int line_count = 0;
     for (int i = 0; lines[i] != NULL; i++) {
         line_count++;
@@ -3288,7 +3288,7 @@ void execute_program(char *program) {
 }
 
 int does_syntax_fail(char *program) {
-    char **lines = lexe_program(program);
+    char **lines = lexe_program(program, 1);
 
     // check if all 'IF', 'WHILE', 'FOR' and 'FUNC' have a matching 'END'
     int open = 0;
@@ -3333,13 +3333,16 @@ int does_syntax_fail(char *program) {
 #define RESEND 224
 #define TAB    15
 
-#if PROFANBUILD
 char *get_func_color(char *str) {
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (local_strncmp_nocase(str, keywords[i], -1) == 0) {
             return "95";
         }
+    }
+
+    if (functions == NULL) {
+        return "94";
     }
 
     // functions: dark cyan
@@ -3519,6 +3522,7 @@ void olv_print(char *str, int len) {
     free(tmp);
 }
 
+#if PROFANBUILD
 int add_to_suggest(char **suggests, int count, char *str) {
     if (count < MAX_SUGGESTS) {
         suggests[count] = strdup(str);
@@ -4092,30 +4096,6 @@ void start_shell(void) {
 }
 
 void execute_file(char *file) {
-    #if PROFANBUILD
-
-    char *path = assemble_path(g_current_directory, file);
-
-    sid_t id = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(id) || !fu_is_file(id)) {
-        printf("file '%s' does not exist\n", path);
-        free(path);
-        return;
-    }
-
-    int file_size = fu_get_file_size(id);
-    char *contents = malloc((file_size + 1) * sizeof(char));
-    contents[file_size] = '\0';
-
-    fu_file_read(id, (uint8_t *) contents, 0, file_size);
-
-    execute_program(contents);
-
-    free(contents);
-    free(path);
-
-    #else
-
     FILE *f = fopen(file, "r");
     if (f == NULL) {
         printf("file '%s' does not exist\n", file);
@@ -4139,8 +4119,59 @@ void execute_file(char *file) {
     execute_program(program);
 
     free(program);
+}
 
-    #endif
+void print_file_highlighted(char *file) {
+    FILE *f = fopen(file, "r");
+    if (f == NULL) {
+        printf("file '%s' does not exist\n", file);
+        return;
+    }
+
+    char *line = malloc(INPUT_SIZE * sizeof(char));
+    char *program = malloc(sizeof(char));
+    program[0] = '\0';
+
+    while (fgets(line, INPUT_SIZE, f) != NULL) {
+        // realloc program
+        int len = strlen(line);
+        program = realloc(program, (strlen(program) + len + 1) * sizeof(char));
+        strcat(program, line);
+    }
+
+    fclose(f);
+    free(line);
+
+    int tmp, indent = 0;
+
+    char **lines = lexe_program(program, 0);
+    for (int i = 0; lines[i] != NULL; i++) {
+        if ((tmp = does_startwith(lines[i], "END"))) {
+            indent--;
+        }
+        for (int j = 0; j < indent * 4; j++) {
+            putchar(' ');
+        }
+        olv_print(lines[i], strlen(lines[i]));
+        putchar('\n');
+        if (tmp && !indent && lines[i + 1]) {
+            putchar('\n');
+            continue;
+        }
+
+        if (does_startwith(lines[i], "IF")    ||
+            does_startwith(lines[i], "WHILE") ||
+            does_startwith(lines[i], "FOR")   ||
+            does_startwith(lines[i], "FUNC")  ||
+            does_startwith(lines[i], "ELSE")
+        ) {
+            indent++;
+        }
+    }
+    fputs("\e[0m", stdout);
+
+    free(program);
+    free(lines);
 }
 
 /************************
@@ -4154,6 +4185,7 @@ typedef struct {
     int version;
     int no_init;
     int inter;
+    int print;
 
     char *file;
     char *command;
@@ -4167,10 +4199,11 @@ int show_help(int full, char *name) {
     }
     puts("Options:\n"
         "  -c, --command  execute argument as code line\n"
-        "  -i, --inter    start a shell after executing\n\n"
+        "  -i, --inter    start a shell after executing\n"
         "  -h, --help     show this help message and exit\n"
-        "  -n, --no-init  don't execute the init program\n\n"
-        "  -v, --version  show program's version number\n"
+        "  -n, --no-init  don't execute the init program\n"
+        "  -p, --print    show file with syntax highlighting\n"
+        "  -v, --version  display program's version number\n"
 
         "Without file, the program will start a shell.\n"
         "Use 'exec' to execute a file from the shell instead\n"
@@ -4200,6 +4233,10 @@ olivine_args_t *parse_args(int argc, char **argv) {
             || strcmp(argv[i], "--version") == 0
         ) {
             args->version = 1;
+        } else if (strcmp(argv[i], "-p") == 0
+            || strcmp(argv[i], "--print") == 0
+        ) {
+            args->print = 1;
         } else if (strcmp(argv[i], "-n") == 0
             || strcmp(argv[i], "--no-init") == 0
         ) {
@@ -4245,6 +4282,7 @@ char init_prog[] =
 
 int main(int argc, char **argv) {
     olivine_args_t *args = parse_args(argc, argv);
+    char *pwd;
     int ret_val = 0;
 
     if (args == NULL) {
@@ -4263,11 +4301,23 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    if (args->print) {
+        if (args->file == NULL) {
+            puts("Error: no file given");
+            free(args);
+            return 1;
+        }
+        print_file_highlighted(args->file);
+        free(args);
+        return 0;
+    }
+
     g_current_level = 0;
 
     g_current_directory = malloc((MAX_PATH_SIZE + 1) * sizeof(char));
-    strcpy(g_current_directory, "/");
-    if (USE_ENVVARS) setenv("PWD", "/", 1);
+    setenv("PWD", "/", 0);
+    pwd = getenv("PWD");
+    strcpy(g_current_directory, pwd);
 
     g_exit_code = malloc(5 * sizeof(char));
     strcpy(g_exit_code, "0");
