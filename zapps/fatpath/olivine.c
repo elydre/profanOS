@@ -3294,11 +3294,11 @@ int does_syntax_fail(char *program) {
     int open = 0;
     for (int i = 0; lines[i] != NULL; i++) {
         char *line = lines[i];
-        if (does_startwith(line, "IF ") ||
-            does_startwith(line, "WHILE ") ||
-            does_startwith(line, "FOR ") ||
-            does_startwith(line, "FUNC ") ||
-            does_startwith(line, "ELSE ")
+        if (does_startwith(line, "IF")    ||
+            does_startwith(line, "WHILE") ||
+            does_startwith(line, "FOR")   ||
+            does_startwith(line, "FUNC")  ||
+            does_startwith(line, "ELSE")
         ) open++;
         else if (does_startwith(line, "END"))
             open--;
