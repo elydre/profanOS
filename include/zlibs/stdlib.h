@@ -6,6 +6,8 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+#define RAND_MAX 0x7fffffff
+
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
@@ -16,6 +18,7 @@
 #define malloc_ask(size) malloc_func(size, 1)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
+#ifndef STDLIB_C
 #define getfullenv() ((char** (*)(void)) get_func_addr(STDLIB_ID, 2))()
 #define calloc_func(nmemb, lsize, as_kernel) ((void *(*)(uint32_t, uint32_t, int)) get_func_addr(STDLIB_ID, 3))(nmemb, lsize, as_kernel)
 #define free(mem) ((void (*)(void *)) get_func_addr(STDLIB_ID, 4))(mem)
@@ -119,5 +122,6 @@
 #define wcstoull_l(nptr, endptr, base, loc) ((unsigned long long int (*)(const wchar_t *, wchar_t **, int, locale_t)) get_func_addr(STDLIB_ID, 102))(nptr, endptr, base, loc)
 #define wctomb(s, wchar) ((int (*)(char *, wchar_t)) get_func_addr(STDLIB_ID, 103))(s, wchar)
 #define itoa(value, str, base) ((char *(*)(int, char *, int)) get_func_addr(STDLIB_ID, 106))(value, str, base)
+#endif
 
 #endif

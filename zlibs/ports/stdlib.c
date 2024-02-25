@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <time.h>
 
+#define STDLIB_C
+#include <stdlib.h>
+
 uint32_t rand_seed = 0;
 char **g_env;
 
@@ -460,9 +463,8 @@ void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *
     puts("qsort_r not implemented yet, WHY DO YOU USE IT ?");
 }
 
-int rand_r (unsigned int *seed);
 int rand(void) {
-    return rand_r(&rand_seed);
+    return ((rand_seed = rand_seed * 1103515245 + 12345) % ((unsigned) RAND_MAX + 1));
 }
 
 /* This algorithm is mentioned in the ISO C standard, here extended
