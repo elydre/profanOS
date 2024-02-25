@@ -98,39 +98,37 @@ void vgui_print(vgui_t *vgui, int x, int y, char *msg, uint32_t color) {
     }
 }
 
-void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color) {
-    // accelerated horizontal and vertical lines
-    if (x1 == x2) {
-        for (int i = y1; i <= y2; i++) {
-            vgui_set_pixel(vgui, x1, i, color);
-        }
-        return;
-    }
-    if (y1 == y2) {
-        for (int i = x1; i <= x2; i++) {
-            vgui_set_pixel(vgui, i, y1, color);
-        }
-        return;
-    }
 
-    // Bresenham's line algorithm
+void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color) {
     int dx = abs(x2 - x1);
     int dy = abs(y2 - y1);
-    int sx = (x1 < x2) ? 1 : -1;
-    int sy = (y1 < y2) ? 1 : -1;
-    int err = dx - dy;
+    int xinc = (x2 > x1) ? 1 : -1;
+    int yinc = (y2 > y1) ? 1 : -1;
+    
+    int cumul;
+    int i;
 
-    while (1) {
-        vgui_set_pixel(vgui, x1, y1, color);
-        if (x1 == x2 && y1 == y2) break;
-        int e2 = 2 * err;
-        if (e2 > -dy) {
-            err -= dy;
-            x1 += sx;
+    if (dx > dy) {
+        cumul = dx / 2;
+        for (i = 0; i < dx; i++) {
+            x1 += xinc;
+            cumul += dy;
+            if (cumul >= dx) {
+                cumul -= dx;
+                y1 += yinc;
+            }
+            vgui_set_pixel(vgui, x1, y1, color);
         }
-        if (e2 < dx) {
-            err += dx;
-            y1 += sy;
+    } else {
+        cumul = dy / 2;
+        for (i = 0; i < dy; i++) {
+            y1 += yinc;
+            cumul += dx;
+            if (cumul >= dy) {
+                cumul -= dy;
+                x1 += xinc;
+            }
+            vgui_set_pixel(vgui, x1, y1, color);
         }
     }
 }
