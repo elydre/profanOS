@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <math.h>
 
-
 #define FOCAL_DISTANCE 150
 #define CUBE_COLOR 0xFFdd99
 #define TRIN_COLOR 0xFFFF00
@@ -129,32 +128,23 @@ void rotate(shape_t *new_shape, shape_t *shape, int x, int y, int z) {
     }
     for (int i = 0; i < new_shape->LinesCount; i++) {
         new_shape->Lines[i] = shape->Lines[i];
+        new_shape->ScreenPoints[i] = project(new_shape->Points[i]);
     }
 }
 
-void draw(shape_t *shape, vgui_t *vgui) {
-    vgui_clear(vgui, 0);
-    for (int i = 0; i < shape->PointsCount; i++) {
-        point2_t p = project(shape->Points[i]);
-        shape->ScreenPoints[i] = p;
-    }
+void draw(shape_t *shape, vgui_t *vgui, int erase) {
     for (int i = 0; i < shape->LinesCount; i++) {
         line_t line = shape->Lines[i];
         point2_t p1 = shape->ScreenPoints[line.i1];
         point2_t p2 = shape->ScreenPoints[line.i2];
 
-        vgui_draw_line(vgui, p1.x+100, p1.y+100, p2.x+100, p2.y+100, line.color);
+        vgui_draw_line(vgui, p1.x+100, p1.y+100, p2.x+100, p2.y+100, erase ? 0 : line.color);
     }
 }
 
-int show_fps(vgui_t *vgui, int time) {
+int fps_limiter(int time) {
     int new_time = c_timer_get_ms();
     int fps = 1000 / (new_time - time + 1);
-    /*
-    char fps_str[10];
-    itoa(fps, fps_str, 10);
-    vgui_print(vgui, 0, 0, fps_str, 0xFFFFFF);
-    */
     if (fps > 30)
         usleep(10000);
     return new_time;
@@ -169,9 +159,10 @@ int main(int argc, char** argv) {
     shape_t nshape = new_shape();
     for (int i = 0;; i = (i + 1) % 360) {
         rotate(&nshape, &shape, i, i * 2 % 360, i);
-        draw(&nshape, &vgui);
-        time = show_fps(&vgui, time);
+        draw(&nshape, &vgui, 0);
         vgui_render(&vgui, 0);
+        draw(&nshape, &vgui, 1);
+        time = fps_limiter(time);
     }
 
     delete_shape(&nshape);
