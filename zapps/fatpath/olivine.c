@@ -147,7 +147,7 @@ void local_itoa(int n, char *buffer) {
 }
 
 int local_atoi(char *str, int *result) {
-    int sign, found, base;
+    int sign, found, base = 0;
     int res = 0;
 
     char *base_str;
@@ -168,11 +168,16 @@ int local_atoi(char *str, int *result) {
         base = 2;
         str += 2;
     } else {
-        base_str = "0123456789";
-        base = 10;
+        for (int i = 0; str[i] != '\0'; i++) {
+            res *= 10;
+            if (str[i] < '0' || str[i] > '9') {
+                return 1;
+            }
+            res += str[i] - '0';
+        }
     }
 
-    for (int i = 0; str[i] != '\0'; i++) {
+    for (int i = 0; base && str[i] != '\0'; i++) {
         found = 0;
         for (int j = 0; base_str[j] != '\0'; j++) {
             if (LOWERCASE(str[i]) == base_str[j]) {
@@ -4221,6 +4226,8 @@ olivine_args_t *parse_args(int argc, char **argv) {
     args->help = 0;
     args->version = 0;
     args->no_init = 0;
+    args->inter = 0;
+    args->print = 0;
     args->file = NULL;
     args->command = NULL;
 
