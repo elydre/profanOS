@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 
 #include <syscall.h>
@@ -18,6 +19,7 @@ typedef struct {
 #define LS_FORMAT_COMMA 0
 #define LS_FORMAT_LINES 1
 #define LS_FORMAT_COLS  2
+#define LS_FORMAT_BASIC 3
 
 #define LS_SORT_ALPHA   0
 #define LS_SORT_SIZE    1
@@ -159,6 +161,7 @@ int print_help(int full) {
     puts(
         "Options:\n"
         "  -a  show all elements\n"
+        "  -f  line by line, no color\n"
         "  -h  display this help\n"
         "  -l  print files in separate lines\n"
         "  -m  print files in comma separated list\n"
@@ -170,7 +173,7 @@ int print_help(int full) {
 
 ls_args_t *parse_args(int argc, char **argv) {
     ls_args_t *args = malloc(sizeof(ls_args_t));
-    args->format = LS_FORMAT_COLS;
+    args->format = isatty(1) ? LS_FORMAT_COLS : LS_FORMAT_BASIC;
     args->sort_mode = LS_SORT_ALPHA;
     args->showall = 0;
     args->showhelp = LS_NO_HELP;
@@ -199,6 +202,9 @@ ls_args_t *parse_args(int argc, char **argv) {
                     case 'z':
                         args->sort_mode = LS_SORT_SIZE;
                         break;
+                    case 'f':
+                        args->format = LS_FORMAT_BASIC;
+                        break;
                     default:
                         printf("ls: invalid option -- '%c'\n", argv[i][j]);
                         args->showhelp = 1;
@@ -216,6 +222,78 @@ ls_args_t *parse_args(int argc, char **argv) {
     }
 
     return args;
+}
+
+void print_comma(int elm_count, char **cnt_names, sid_t *cnt_ids) {
+    for (int i = 0; i < elm_count; i++) {
+        if (fu_is_dir(cnt_ids[i])) printf("\e[96m%s", cnt_names[i]);
+        else if (fu_is_file(cnt_ids[i])) printf("\e[92m%s", cnt_names[i]);
+        else if (fu_is_fctf(cnt_ids[i])) printf("\e[93m%s", cnt_names[i]);
+        else printf("\e[91m%s", cnt_names[i]);
+        if (i != elm_count - 1) printf("\e[0m, ");
+        free(cnt_names[i]);
+    }
+    puts("\e[0m");
+}
+
+void print_cols(int elm_count, char **cnt_names, sid_t *cnt_ids) {
+    uint32_t max_len = 0;
+    for (int i = 0; i < elm_count; i++) {
+        if (strlen(cnt_names[i]) > max_len) max_len = strlen(cnt_names[i]);
+    }
+    max_len++;
+
+    int cols = 80 / (max_len + 1);
+    int rows = elm_count / cols + (elm_count % cols ? 1 : 0);
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = i; j < elm_count; j += rows) {
+            if (fu_is_dir(cnt_ids[j])) printf("\e[96m%s\e[0m", cnt_names[j]);
+            else if (fu_is_file(cnt_ids[j])) printf("\e[92m%s\e[0m", cnt_names[j]);
+            else if (fu_is_fctf(cnt_ids[j])) printf("\e[93m%s\e[0m", cnt_names[j]);
+            else printf("\e[91m%s\e[0m", cnt_names[j]);
+            for (uint32_t k = 0; k < max_len - strlen(cnt_names[j]) + 1; k++) putchar(' ');
+            free(cnt_names[j]);
+        }
+        putchar('\n');
+    }
+}
+
+void print_lines(int elm_count, char **cnt_names, sid_t *cnt_ids, ls_args_t *args) {
+    int size;
+    for (int i = 0; i < elm_count; i++) {
+        printf("\e[sd%ds%d\e[u\e[10C", cnt_ids[i].device, cnt_ids[i].sector);
+
+        if (fu_is_dir(cnt_ids[i])) {
+            if (args->size_type == LS_SIZE_VIRT) {
+                printf("%d elm", fu_get_dir_content(cnt_ids[i], NULL, NULL));
+            } else {
+                printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+            }
+            printf("\e[u\e[22C\e[96m%s\e[0m", cnt_names[i]);
+        } else if (fu_is_file(cnt_ids[i])) {
+            size = fu_get_file_size(cnt_ids[i]);
+            if (args->size_type == LS_SIZE_PHYS || size < 10000) printf("%d B", size);
+            else if (size < 10000000) printf("%d kB", size / 1024);
+            else printf("%d MB", size / (1024 * 1024));
+            printf("\e[u\e[22C\e[92m%s\e[0m", cnt_names[i]);
+        } else if (fu_is_fctf(cnt_ids[i])) {
+            if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
+            else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+            printf("\e[u\e[22C\e[93m%s\e[0m", cnt_names[i]);
+        } else {
+            printf("unk\e[u\e[22C\e[91m%s\e[0m", cnt_names[i]);
+        }
+        free(cnt_names[i]);
+        putchar('\n');
+    }
+}
+
+void print_basic(int elm_count, char **cnt_names) {
+    for (int i = 0; i < elm_count; i++) {
+        puts(cnt_names[i]);
+        free(cnt_names[i]);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -282,70 +360,15 @@ int main(int argc, char **argv) {
         sort_size_and_type(elm_count, cnt_names, cnt_ids);
     }
 
-    if (args->format == LS_FORMAT_COMMA) {
-        for (int i = 0; i < elm_count; i++) {
-            if (fu_is_dir(cnt_ids[i])) printf("\e[96m%s", cnt_names[i]);
-            else if (fu_is_file(cnt_ids[i])) printf("\e[92m%s", cnt_names[i]);
-            else if (fu_is_fctf(cnt_ids[i])) printf("\e[93m%s", cnt_names[i]);
-            else printf("\e[91m%s", cnt_names[i]);
-            if (i != elm_count - 1) printf("\e[0m, ");
-            free(cnt_names[i]);
-        }
-        puts("\e[0m");
-    }
+    if (args->format == LS_FORMAT_COMMA)
+        print_comma(elm_count, cnt_names, cnt_ids);
+    else if (args->format == LS_FORMAT_COLS)
+        print_cols(elm_count, cnt_names, cnt_ids);
+    else if (args->format == LS_FORMAT_LINES)
+        print_lines(elm_count, cnt_names, cnt_ids, args);
+    else
+        print_basic(elm_count, cnt_names);
 
-    else if (args->format == LS_FORMAT_COLS) {
-        uint32_t max_len = 0;
-        for (int i = 0; i < elm_count; i++) {
-            if (strlen(cnt_names[i]) > max_len) max_len = strlen(cnt_names[i]);
-        }
-        max_len++;
-
-        int cols = 80 / (max_len + 1);
-        int rows = elm_count / cols + (elm_count % cols ? 1 : 0);
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = i; j < elm_count; j += rows) {
-                if (fu_is_dir(cnt_ids[j])) printf("\e[96m%s\e[0m", cnt_names[j]);
-                else if (fu_is_file(cnt_ids[j])) printf("\e[92m%s\e[0m", cnt_names[j]);
-                else if (fu_is_fctf(cnt_ids[j])) printf("\e[93m%s\e[0m", cnt_names[j]);
-                else printf("\e[91m%s\e[0m", cnt_names[j]);
-                for (uint32_t k = 0; k < max_len - strlen(cnt_names[j]) + 1; k++) putchar(' ');
-                free(cnt_names[j]);
-            }
-            putchar('\n');
-        }
-    }
-
-    else {
-        int size;
-        for (int i = 0; i < elm_count; i++) {
-            printf("\e[sd%ds%d\e[u\e[10C", cnt_ids[i].device, cnt_ids[i].sector);
-
-            if (fu_is_dir(cnt_ids[i])) {
-                if (args->size_type == LS_SIZE_VIRT) {
-                    printf("%d elm", fu_get_dir_content(cnt_ids[i], NULL, NULL));
-                } else {
-                    printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
-                }
-                printf("\e[u\e[22C\e[96m%s\e[0m", cnt_names[i]);
-            } else if (fu_is_file(cnt_ids[i])) {
-                size = fu_get_file_size(cnt_ids[i]);
-                if (args->size_type == LS_SIZE_PHYS || size < 10000) printf("%d B", size);
-                else if (size < 10000000) printf("%d kB", size / 1024);
-                else printf("%d MB", size / (1024 * 1024));
-                printf("\e[u\e[22C\e[92m%s\e[0m", cnt_names[i]);
-            } else if (fu_is_fctf(cnt_ids[i])) {
-                if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
-                else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
-                printf("\e[u\e[22C\e[93m%s\e[0m", cnt_names[i]);
-            } else {
-                printf("unk\e[u\e[22C\e[91m%s\e[0m", cnt_names[i]);
-            }
-            free(cnt_names[i]);
-            putchar('\n');
-        }
-    }
 
     free(cnt_names);
     free(cnt_ids);
