@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
                 else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
                 printf("\e[u\e[22C\e[93m%s\e[0m", cnt_names[i]);
             } else {
-                printf("\e[u\e[22C\e[91m%s\e[0munk", cnt_names[i]);
+                printf("unk\e[u\e[22C\e[91m%s\e[0m", cnt_names[i]);
             }
             free(cnt_names[i]);
             putchar('\n');
