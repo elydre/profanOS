@@ -9,8 +9,9 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
+#define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.10 rev 7"
+#define OLV_VERSION "0.11 rev 1"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -46,14 +47,15 @@
   // profanOS config
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[91m$)>$(\e[0m$) "
 #else
-  #define uint32_t unsigned int
-  #define uint8_t  unsigned char
+  #include <unistd.h>
+  #include <sys/wait.h>
+  #include <stdint.h>
 
   // unix config
   #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
 
-#define DEBUG_COLOR  "\e[37m"
+#define DEBUG_COLOR  "\e[90m"
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
@@ -399,6 +401,57 @@ void del_variable_level(int level) {
  *  pseudo Get/Set Functions  *
  *                            *
 *******************************/
+
+char *get_bin_path(char *name) {
+    char *path = getenv("PATH");
+    if (path == NULL) {
+        return NULL;
+    }
+
+    char *path_copy = strdup(path);
+    char *path_ptr = path_copy;
+    char *path_end = path_ptr;
+
+    if (name[0] )
+
+    while (path_ptr != NULL) {
+        path_end = strchr(path_ptr, ':');
+
+        if (path_end != NULL) {
+            *path_end = '\0';
+        }
+
+        char *file = malloc(strlen(path_ptr) + strlen(name) + 7);
+        strcpy(file, path_ptr);
+        strcat(file, "/");
+        strcat(file, name);
+    
+        #if PROFANBUILD
+        strcat(file, ".bin");
+        sid_t file_id = fu_path_to_sid(ROOT_SID, file);
+        if (!IS_NULL_SID(file_id) && fu_is_file(file_id)) {
+            free(path_copy);
+            return file;
+        }
+        #else
+        if (access(file, F_OK | X_OK) != -1) {
+            free(path_copy);
+            return file;
+        }
+        #endif
+        free(file);
+
+        if (path_end != NULL) {
+            *path_end = ':';
+            path_ptr = path_end + 1;
+        } else {
+            path_ptr = NULL;
+        }
+    }
+
+    free(path_copy);
+    return NULL;
+}
 
 char *get_pseudo(char *name) {
     for (int i = 0; i < MAX_PSEUDOS; i++) {
@@ -1091,36 +1144,32 @@ char *if_debug(char **input) {
         return NULL;
     }
 
-    // save all info in a file
-    FILE *f = fopen("debug.txt", "w");
-
     // print variables
-    fprintf(f, "VARIABLES (max %d):", MAX_VARIABLES);
+    printf("VARIABLES (max %d):", MAX_VARIABLES);
     for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-        fprintf(f, " %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
+        printf(" %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
     }
 
     // print internal functions
-    fprintf(f, "\nINTERNAL FUNCTIONS:");
+    printf("\nINTERNAL FUNCTIONS:");
     for (int i = 0; internal_functions[i].name != NULL; i++) {
-        fprintf(f, " %s:%p", internal_functions[i].name, internal_functions[i].function);
+        printf(" %s:%p", internal_functions[i].name, internal_functions[i].function);
     }
 
     // print pseudos
-    fprintf(f, "\nPSEUDOS (max %d):", MAX_PSEUDOS);
+    printf("\nPSEUDOS (max %d):", MAX_PSEUDOS);
     for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
-        fprintf(f, " %s='%s'", pseudos[i].name, pseudos[i].value);
+        printf(" %s='%s'", pseudos[i].name, pseudos[i].value);
     }
 
     // print functions
-    fprintf(f, "\nFUNCTIONS (max %d):", MAX_FUNCTIONS);
+    printf("\nFUNCTIONS (max %d):", MAX_FUNCTIONS);
     for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
-        fprintf(f, "\n  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
+        printf("\n  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
         for (int j = 0; j < functions[i].line_count; j++) {
-            fprintf(f, "  | %s\n", functions[i].lines[j]);
+            printf("  | %s\n", functions[i].lines[j]);
         }
     }
-    fclose(f);
 
     return NULL;
 }
@@ -1399,8 +1448,6 @@ char *if_global(char **input) {
 }
 
 char *if_go_binfile(char **input) {
-    #if PROFANBUILD
-
     // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
@@ -1412,6 +1459,7 @@ char *if_go_binfile(char **input) {
         return ERROR_CODE;
     }
 
+    #if PROFANBUILD
     // get file name
     char *file_path = assemble_path(g_current_directory, input[0]);
 
@@ -1423,6 +1471,17 @@ char *if_go_binfile(char **input) {
         free(file_path);
         return ERROR_CODE;
     }
+    #else
+    // get file name
+    char *file_path = strdup(input[0]);
+
+    // check if file exists
+    if (access(file_path, F_OK | X_OK) == -1) {
+        raise_error("go", "File '%s' does not exist", file_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+    #endif
 
     int wait_end = 1;
     if (strcmp(input[argc - 1], "&") == 0) {
@@ -1432,8 +1491,8 @@ char *if_go_binfile(char **input) {
 
     char *stdout_path = NULL;
     char *stdin_path = NULL;
-    sid_t sid;
 
+    #if PROFANBUILD
     if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
         stdin_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
@@ -1448,6 +1507,7 @@ char *if_go_binfile(char **input) {
         stdin_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
     }
+    #endif
 
     if (strcmp(input[argc - 1], "&") == 0) {
         wait_end = 0;
@@ -1461,6 +1521,9 @@ char *if_go_binfile(char **input) {
         free(file_path);
         return ERROR_CODE;
     }
+
+    #if PROFANBUILD
+    sid_t sid;
 
     if (stdin_path) {
         sid = fu_path_to_sid(ROOT_SID, stdin_path);
@@ -1491,6 +1554,7 @@ char *if_go_binfile(char **input) {
             return ERROR_CODE;
         }
     }
+    #endif
 
     // get args
     char *file_name = strdup(input[0]);
@@ -1508,6 +1572,7 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
+    #if PROFANBUILD
     int pid;
     local_itoa(run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
@@ -1541,6 +1606,33 @@ char *if_go_binfile(char **input) {
     if (!wait_end) {
         printf("GO: started with pid %d\n", pid);
     }
+    #else
+    pid_t pid = fork();
+    if (pid == -1) {
+        raise_error("go", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        return ERROR_CODE;
+    }
+
+    if (pid == 0) {
+        execv(file_path, argv);
+        raise_error("go", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        exit(1);
+    }
+
+    if (wait_end) {
+        int status;
+        waitpid(pid, &status, 0);
+        local_itoa(WEXITSTATUS(status), g_exit_code);
+    } else {
+        printf("GO: started with pid %d\n", pid);
+    }
+    #endif
 
     char *tmp = malloc(10 * sizeof(char));
 
@@ -1552,12 +1644,6 @@ char *if_go_binfile(char **input) {
     free(argv);
     free(tmp);
     return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
-
-    #else
-    raise_error("go", "Not available in this build");
-    return ERROR_CODE;
-
-    #endif
 }
 
 char *if_name(char **input) {
@@ -2294,17 +2380,17 @@ char *pipe_processor(char **input) {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf(DEBUG_COLOR "'%s' (", function_name);
+    printf(DEBUG_COLOR"'%s' (", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
             printf("'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR "'%s') [%d]\e[0m\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR"'%s') [%d]\e[0m\n", function_args[i], i + 1);
         return;
     }
-    puts(DEBUG_COLOR ") [0]\e[0m");
+    puts(DEBUG_COLOR") [0]\e[0m");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2355,6 +2441,26 @@ char *check_subfunc(char *line);
 char *check_variables(char *line);
 char *check_pseudos(char *line);
 
+char *check_bin(char *name, char *line, void **function, char *old_line) {
+    char *bin_path = get_bin_path(name);
+    if (bin_path == NULL) {
+        return line;
+    }
+
+    *function = if_go_binfile;
+    char *new_line = malloc((strlen(line) + strlen(bin_path) + 2) * sizeof(char));
+    strcpy(new_line, "go ");
+    strcat(new_line, bin_path);
+    strcat(new_line, line + strlen(name));
+    free(bin_path);
+
+    if (old_line != line) {
+        free(line);
+    }
+
+    return new_line;
+}
+
 char *execute_line(char *full_line) {
     // check for function and variable
     char *line = check_subfunc(full_line);
@@ -2366,17 +2472,21 @@ char *execute_line(char *full_line) {
     }
 
     // get the function name
-    int isif;
+    int isif = 0;
     char *function_name = get_function_name(line);
 
     // get the function address
-    void *function = get_if_function(function_name);
+    void *function = get_function(function_name);
     if (function == NULL) {
-        function = get_function(function_name);
-        isif = 0;
-    } else isif = 1;
+        function = get_if_function(function_name);
+        isif = 1;
+    }
 
     char *result;
+
+    if (function == NULL && BIN_AS_PSEUDO) {
+        line = check_bin(function_name, line, &function, full_line);
+    }
 
     if (function == NULL) {
         raise_error(NULL, "Function '%s' not found", function_name);
@@ -2422,6 +2532,7 @@ char *execute_line(char *full_line) {
 
     return result;
 }
+
 
 char *check_subfunc(char *line) {
     // check if !( ... ) is present
@@ -2582,9 +2693,11 @@ char *check_variables(char *line) {
 }
 
 char *check_pseudos(char *line) {
-    char *pseudo_name = malloc((strlen(line) + 1) * sizeof(char));
-    int len = strlen(line);
-    int i;
+    int i, len = strlen(line);
+    char *pseudo_name, *pseudo_value;
+    
+    pseudo_name = malloc((len + 1) * sizeof(char));
+
     for (i = 0; i < len; i++) {
         if (line[i] == ' ') {
             break;
@@ -2593,14 +2706,14 @@ char *check_pseudos(char *line) {
     }
     pseudo_name[i] = '\0';
 
-    char *pseudo_value = get_pseudo(pseudo_name);
+    pseudo_value = get_pseudo(pseudo_name);
 
     free(pseudo_name);
     if (pseudo_value == NULL) {
         return line;
     }
 
-    char *new_line = malloc((strlen(line) - i + strlen(pseudo_value) + 2) * sizeof(char));
+    char *new_line = malloc((len - i + strlen(pseudo_value) + 2) * sizeof(char));
     strcpy(new_line, pseudo_value);
     strcat(new_line, line + i);
 
@@ -3339,11 +3452,18 @@ int does_syntax_fail(char *program) {
 #define TAB    15
 
 char *get_func_color(char *str) {
+    char *tmp;
+
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (local_strncmp_nocase(str, keywords[i], -1) == 0) {
             return "95";
         }
+    }
+
+    // internal functions: cyan
+    if (get_if_function(str) != NULL) {
+        return "96";
     }
 
     if (functions == NULL) {
@@ -3355,14 +3475,15 @@ char *get_func_color(char *str) {
         return "36";
     }
 
-    // pseudos: blue
+    // pseudos: dark blue
     if (get_pseudo(str) != NULL) {
-        return "94";
+        return "34";
     }
 
-    // internal functions: cyan
-    if (get_if_function(str) != NULL) {
-        return "96";
+    // bin: blue
+    if ((tmp = get_bin_path(str)) != NULL) {
+        free(tmp);
+        return "94";
     }
 
     // unknown functions: dark red
