@@ -133,9 +133,12 @@ char compute_ansi_color(char ansi_nb, int part, char old_color) {
     return (bg << 4) | fg;
 }
 
-void print_char(uint32_t xo, uint32_t yo, char c, char color_code) {
-    uint32_t fg_color = compute_color(color_code & 0xF);
+void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color_code) {
     uint32_t bg_color = compute_color((color_code >> 4) & 0xF);
+    uint32_t fg_color = compute_color(color_code & 0xF);
+
+    uint32_t pitch = c_vesa_get_pitch();
+    uint32_t *fb = c_vesa_get_fb();
 
     uint8_t *char_data = g_panda->font->data + (c * g_panda->font->charsize);
 
@@ -147,7 +150,7 @@ void print_char(uint32_t xo, uint32_t yo, char c, char color_code) {
             y++;
         }
         for (int j = 7; j >= 0; j--) {
-            c_vesa_set_pixel(xo + x, yo + y, char_data[i] & (1 << j) ? fg_color : bg_color);
+            fb[(xo + x) + (yo + y) * pitch] = char_data[i] & (1 << j) ? fg_color : bg_color;
             if (x >= g_panda->font->width) break;
             x++;
         }
