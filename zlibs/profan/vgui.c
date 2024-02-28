@@ -104,7 +104,7 @@ void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color
     int dy = abs(y2 - y1);
     int xinc = (x2 > x1) ? 1 : -1;
     int yinc = (y2 > y1) ? 1 : -1;
-    
+
     int cumul;
     int i;
 

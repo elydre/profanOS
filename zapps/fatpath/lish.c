@@ -561,7 +561,7 @@ char *gen_heredoc_file(char *end) {
     while (line) {
         if (strcmp(line, end) == 0) {
             free(line);
-            break ;
+            break;
         }
         putendl_fd(line, fd);
         free(line);

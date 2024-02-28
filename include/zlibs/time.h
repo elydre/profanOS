@@ -16,7 +16,7 @@
 #define CLOCKS_PER_SEC 1000
 
 typedef struct timespec_t {
-    time_t  tv_sec ; // seconds
+    time_t  tv_sec;  // seconds
     long    tv_nsec; // nanoseconds
 } timespec_t;
 
