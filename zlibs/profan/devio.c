@@ -32,7 +32,7 @@ int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (!is_read)
         return 0;
     for (uint32_t i = 0; i < size; i++)
-        ((uint8_t *) buffer)[i] = (uint8_t) (rand() % 256);
+        ((uint8_t *) buffer)[i] = (uint8_t) (rand() & 0xFF);
     return size;
 }
 
