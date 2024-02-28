@@ -110,7 +110,7 @@ def gen_need_dict():
             except FileNotFoundError: cprint(COLOR_EROR, f"{fulldir} directory not found")
 
     for file in need["h"]:
-        if file1_newer(file, "profanOS.elf"):
+        if file1_newer(file, "kernel.elf"):
             cprint(COLOR_INFO, f"header '{file}' was modified, need to rebuild all")
             del need["h"]
             return need, out
@@ -163,7 +163,7 @@ def elf_image():
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
-        print_and_exec(f"ld {KERN_LINK} {in_files} -o profanOS.elf")
+        print_and_exec(f"ld {KERN_LINK} {in_files} -o kernel.elf")
 
 
 def build_app_lib():
@@ -240,12 +240,12 @@ def make_iso(force = False, more_option = False):
 
     gen_disk()
 
-    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "profanOS.elf") and file1_newer("profanOS.iso", "initrd.bin") and not force:
+    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "kernel.elf") and file1_newer("profanOS.iso", "initrd.bin") and not force:
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
 
     cprint(COLOR_INFO, "building iso...")
     print_and_exec(f"mkdir -p {OUT_DIR}/isodir/boot/grub")
-    print_and_exec(f"cp profanOS.elf {OUT_DIR}/isodir/boot/")
+    print_and_exec(f"cp kernel.elf {OUT_DIR}/isodir/boot/")
     print_and_exec(f"cp initrd.bin {OUT_DIR}/isodir/boot/")
 
     if more_option:
@@ -355,7 +355,7 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
     cprint(COLOR_INFO, "starting qemu...")
 
     if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -boot order=d {qemu_args}")
-    else: print_and_exec(f"{qemu_cmd} -kernel profanOS.elf -boot order=a {qemu_args}")
+    else: print_and_exec(f"{qemu_cmd} -kernel kernel.elf -boot order=a {qemu_args}")
 
 def make_help():
     aide = (
@@ -375,7 +375,7 @@ def make_help():
         ("make fclean",     "reset the repository"),
         None,
         ("make run",        "run the profanOS.iso in qemu"),
-        ("make erun",       "run the profanOS.elf in qemu"),
+        ("make erun",       "run the kernel.elf in qemu"),
         ("make krun",       "run the profanOS.iso with kvm"),
         ("make srun",       "run the profanOS.iso with sound"),
     )
