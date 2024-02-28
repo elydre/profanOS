@@ -12,7 +12,7 @@ int init_diskiso(void) {
     diskiso_size = 0;
 
     if (!mboot_get(6)) {
-        return 0;
+        return 1;
     }
 
     start = *(uint32_t *) mboot_get(6);
@@ -28,7 +28,7 @@ int init_diskiso(void) {
         *((uint8_t *) (end_pos - i)) = *((uint8_t *) (mod_end - i));
     }
 
-    return 2;   // enabled
+    return 0;
 }
 
 uint32_t diskiso_get_size(void) {
