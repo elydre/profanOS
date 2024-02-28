@@ -33,9 +33,9 @@ void kernel_main(void *mboot_ptr) {
     status_print(keyboard_init,"Setuping", "PS/2 keyboard");
     status_print(mouse_init,   "Setuping", "PS/2 mouse");
     status_print(serial_init,  "Enabling", "serial port (A and B)");
-    status_print(init_diskiso, "Checking", "disk in iso mode");
+    status_print(init_diskiso, "Loading", "initial ramdisk");
     status_print(mem_init,     "Initing", "snowflake physical MM");
-    status_print(scuba_init,   "Loading", "scubasuit virtual MM");
+    status_print(scuba_init,   "Setuping", "scubasuit virtual MM");
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
     status_print(sys_init,     "Initing", "FPU and error reporting");

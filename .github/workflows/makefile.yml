@@ -27,7 +27,7 @@ jobs:
         cd out/disk && zip -r ../../initrd-build.zip * && cd ../..
         cp initrd.bin disk-$VERSION.bin
         cp profanOS.iso profanOS-$VERSION.iso
-        cp profanOS.elf profanOS-kernel.elf
+        cp kernel.elf profanOS-kernel.elf
         make miso
         mv initrd.bin profanOS-initrd.bin
         mv profanOS.iso profanOS-fullgrub.iso

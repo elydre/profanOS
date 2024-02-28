@@ -51,12 +51,6 @@ void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
 
 void free(void *mem) {
     if (mem == NULL) return;
-    int size = c_mem_get_alloc_size((uint32_t) mem);
-    if (size == 0) {
-        printf("free(%p) : invalid pointer\n", mem);
-        return;
-    }
-    memset((uint8_t *) mem, 0, size);
     c_mem_free_addr((int) mem);
 }
 

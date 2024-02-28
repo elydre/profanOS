@@ -71,7 +71,7 @@ void cat_canonical(FILE *file, char *path) {
         printf("%08x  ", offset);
         for (int i = 0; i < 16; i++) {
             if (i < read) {
-                printf("%02x ", buffer[i]);
+                printf("%02x ", (uint8_t) buffer[i]);
             } else {
                 printf("   ");
             }

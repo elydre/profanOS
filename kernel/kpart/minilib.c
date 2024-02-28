@@ -145,13 +145,6 @@ void mem_set(void *dest, uint8_t val, uint32_t len) {
 
 void free(void *addr) {
     if (addr == NULL) return;
-    int size = mem_get_alloc_size((uint32_t) addr);
-    if (size == 0) {
-        kprintf("kernel free: %x not allocated\n", addr);
-        return;
-    }
-
-    mem_set((uint8_t *) addr, 0, size);
     mem_free_addr((int) addr);
 }
 

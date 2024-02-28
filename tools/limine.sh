@@ -8,7 +8,7 @@ TIMEOUT=3
 PROTOCOL=multiboot1
 
 CMDLINE=root=/ emergency=yes
-KERNEL_PATH=boot:///profanOS.elf
+KERNEL_PATH=boot:///kernel.elf
 MODULE_PATH=boot:///initrd.bin
 
 :profanOS no-rd
@@ -16,12 +16,12 @@ MODULE_PATH=boot:///initrd.bin
 PROTOCOL=multiboot1
 
 CMDLINE=root=/ emergency=yes
-KERNEL_PATH=boot:///profanOS.elf
+KERNEL_PATH=boot:///kernel.elf
 "
 
-# check if profanOS.elf and initrd.bin exist
-if [ ! -f profanOS.elf ]; then
-    echo "ERROR: profanOS.elf required!"
+# check if kernel.elf and initrd.bin exist
+if [ ! -f kernel.elf ]; then
+    echo "ERROR: kernel.elf required!"
     exit 1
 fi
 
@@ -60,9 +60,9 @@ else
     mkdir out/isodir
 fi
 
-# copy profanOS.elf and initrd.bin to out/isodir
-echo "| copying profanOS.elf and initrd.bin to out/isodir"
-cp profanOS.elf out/isodir
+# copy kernel.elf and initrd.bin to out/isodir
+echo "| copying kernel.elf and initrd.bin to out/isodir"
+cp kernel.elf out/isodir
 cp initrd.bin out/isodir
 
 # copy limine.sys limine-cd.bin to out/isodir
