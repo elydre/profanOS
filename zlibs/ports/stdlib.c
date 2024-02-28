@@ -453,18 +453,19 @@ void qsort(void  *base, size_t nel, size_t width, __compar_fn_t comp) {
     }
 }
 
-void qsort_r(void  *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
+void qsort_r(void *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
     puts("qsort_r not implemented yet, WHY DO YOU USE IT ?");
 }
 
+int rand_r(unsigned int *seed);
 int rand(void) {
-    return ((rand_seed = rand_seed * 1103515245 + 12345) % ((unsigned) RAND_MAX + 1));
+    return rand_r(&rand_seed) & RAND_MAX;
 }
 
 /* This algorithm is mentioned in the ISO C standard, here extended
    for 32 bits.  */
 // FROM THE STDLIB
-int rand_r (unsigned int *seed) {
+int rand_r(unsigned int *seed) {
     unsigned int next = *seed;
     int result;
 
@@ -502,7 +503,7 @@ char *realpath(const char *path, char *got_path) {
     return NULL;
 }
 
-int rpmatch (const char *__response) {
+int rpmatch(const char *__response) {
     puts("rpmatch not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
