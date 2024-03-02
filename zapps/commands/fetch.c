@@ -7,7 +7,9 @@
 #define pl_and_pf(...) print_logo_line(); printf(__VA_ARGS__)
 
 #define LOGO_LINES 9
-#define INFO_LINES 9
+#define INFO_LINES 11
+
+#define FULL_CHAR 219
 
 #define LOGO_START_LINE ((INFO_LINES - LOGO_LINES) / 2)
 
@@ -53,6 +55,15 @@ void print_fs_info(void) {
     free(info);
 }
 
+char *gen_all_colors(int base_color) {
+    char *ret = malloc(1000);
+    char *ptr = ret;
+    for (int i = 0; i < 8; i++) {
+        ptr += sprintf(ptr, "\e[%d%dm%c%c%c", base_color, i, FULL_CHAR, FULL_CHAR, FULL_CHAR);
+    }
+    return ret;
+}
+
 int main(void) {
     printf("\n \e[96m-\e[36m Welcome to the profan Operating System \e[96m-\n\n");
 
@@ -71,14 +82,12 @@ int main(void) {
     print_fs_info();
 
     pl_and_pf("\e[95mwork time:  \e[96m%gs\n", c_timer_get_ms() / 1000.0);
-    pl_and_pf("\e[95mused mem:   \e[96m%dkB\n", c_mem_get_info(6, 0) / 1024);
+    pl_and_pf("\e[95mmemory:     \e[96m%.2f%% of %dMB\n", (float) c_mem_get_info(6, 0) / (float) c_mem_get_info(0, 0) * 100, c_mem_get_info(0, 0) / 1024 / 1024);
 
     pl_and_pf("\e[95mact alloc:  \e[96m%d\e[0m/\e[96m%d\n",
         c_mem_get_info(4, 0) - c_mem_get_info(5, 0),
         c_mem_get_info(4, 0)
     );
-
-    pl_and_pf("\e[95mphys mem:   \e[96m%gMo\n", ((double) c_mem_get_info(0, 0) / 1024) / 1024);
 
     pl_and_pf("\e[95mscreen:     \e[96m%d\e[0mx\e[96m%d (%s)\n",
         c_vesa_get_width(), c_vesa_get_height(),
@@ -86,6 +95,15 @@ int main(void) {
     );
 
     pl_and_pf("\n");
+
+    char *all_colors;
+
+    all_colors = gen_all_colors(3);
+    pl_and_pf("%s\n", all_colors);
+    free(all_colors);
+    all_colors = gen_all_colors(9);
+    pl_and_pf("%s\n", all_colors);
+    free(all_colors);
 
     printf("\e[0m\n");
 
