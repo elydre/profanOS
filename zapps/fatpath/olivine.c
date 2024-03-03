@@ -412,8 +412,6 @@ char *get_bin_path(char *name) {
     char *path_ptr = path_copy;
     char *path_end = path_ptr;
 
-    if (name[0] )
-
     while (path_ptr != NULL) {
         path_end = strchr(path_ptr, ':');
 
