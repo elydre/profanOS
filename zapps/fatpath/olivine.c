@@ -404,7 +404,7 @@ void del_variable_level(int level) {
 *******************************/
 
 char **load_bin_names(void) {
-    #if PROFANBUILD
+    #if BIN_AS_PSEUDO && PROFANBUILD
     int size = 0;
     int bin_count = 0;
     
@@ -3976,11 +3976,13 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     }
 
     // bin
+    #if BIN_AS_PSEUDO
     for (int j = 0; bin_names[j] != NULL; j++) {
         if (strncmp(tmp, bin_names[j], i - dec) == 0) {
             suggest = add_to_suggest(other, suggest, bin_names[j]);
         }
     }
+    #endif
 
     free(tmp);
 
