@@ -110,6 +110,7 @@ variable_t *variables;
 pseudo_t *pseudos;
 function_t *functions = NULL;
 internal_function_t internal_functions[];
+char **bin_names;
 
 char *g_current_directory, *g_exit_code, *g_prompt;
 int g_current_level;
@@ -398,9 +399,109 @@ void del_variable_level(int level) {
 
 /*******************************
  *                            *
- *  pseudo Get/Set Functions  *
+ *   bin Get/load Functions   *
  *                            *
 *******************************/
+
+char **load_bin_names(void) {
+    #if PROFANBUILD
+    int size = 0;
+    int bin_count = 0;
+    
+    char *path = getenv("PATH");
+    if (path == NULL) {
+        return NULL;
+    }
+
+    char *path_copy = strdup(path);
+    char *path_ptr = path_copy;
+    char *path_end = path_ptr;
+
+    sid_t *cnt_ids;
+    char **cnt_names;
+
+    char **tmp_names = NULL;
+
+    while (path_ptr != NULL) {
+        path_end = strchr(path_ptr, ':');
+
+        if (path_end != NULL) {
+            *path_end = '\0';
+        }
+
+        sid_t dir_id = fu_path_to_sid(ROOT_SID, path_ptr);
+        if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id))
+            goto next;
+
+        int elm_count = fu_get_dir_content(dir_id, &cnt_ids, &cnt_names);
+        if (!elm_count)
+            goto next;
+
+        tmp_names = realloc(tmp_names, sizeof(char *) * (bin_count + elm_count));
+
+        for (int i = 0; i < elm_count; i++) {
+            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".bin")) {
+                size += strlen(cnt_names[i]) - 3;
+                tmp_names[bin_count++] = cnt_names[i];
+            } else {
+                free(cnt_names[i]);
+            }
+        }
+        free(cnt_names);
+        free(cnt_ids);
+
+        next:
+        if (path_end != NULL) {
+            *path_end = ':';
+            path_ptr = path_end + 1;
+        } else {
+            path_ptr = NULL;
+        }
+    }
+
+    size += sizeof(char *) * (bin_count + 1);
+    char **ret = malloc(size);
+    char *ret_ptr = (char *) ret + sizeof(char *) * (bin_count + 1);
+
+    for (int i = 0; i < bin_count; i++) {
+        int tmp = strlen(tmp_names[i]) - 4;
+        ret[i] = ret_ptr;
+        strncpy(ret_ptr, tmp_names[i], tmp);
+        ret_ptr[tmp] = '\0';
+        ret_ptr += tmp + 1;
+        free(tmp_names[i]);
+    }
+    if (size != (int) ret_ptr - (int) ret) {
+        raise_error(NULL, "Error while loading bin names");
+        free(ret);
+        free(tmp_names);
+        free(path_copy);
+        return NULL;
+    }
+
+    ret[bin_count] = NULL;
+    free(tmp_names);
+    free(path_copy);
+
+    return ret;
+    #else
+    return NULL;
+    #endif
+}
+
+int in_bin_names(char *name) {
+    if (bin_names == NULL) {
+        return 0;
+    }
+
+    for (int i = 0; bin_names[i] != NULL; i++) {
+        if (strcmp(bin_names[i], name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 char *get_bin_path(char *name) {
     char *path = getenv("PATH");
@@ -450,6 +551,12 @@ char *get_bin_path(char *name) {
     free(path_copy);
     return NULL;
 }
+
+/*******************************
+ *                            *
+ *  pseudo Get/Set Functions  *
+ *                            *
+*******************************/
 
 char *get_pseudo(char *name) {
     for (int i = 0; i < MAX_PSEUDOS; i++) {
@@ -1083,32 +1190,30 @@ char *if_debug(char **input) {
 
     int mode = 0;
 
-    if (argc == 0) {
-        mode = 0;
-    } else if (argc == 1) {
+    if (argc == 1) {
         if (strcmp(input[0], "-v") == 0) {
             mode = 1;
-        } else if (strcmp(input[0], "-if") == 0) {
+        } else if (strcmp(input[0], "-i") == 0) {
             mode = 2;
         } else if (strcmp(input[0], "-f") == 0) {
             mode = 3;
         } else if (strcmp(input[0], "-p") == 0) {
             mode = 4;
-        } else if (strcmp(input[0], "-a") == 0) {
+        } else if (strcmp(input[0], "-l") == 0) {
             mode = 5;
         } else {
             raise_error("debug", "Unknown argument '%s'", input[0]);
-            puts("expected '-v', '-if', '-f', '-p' or '-a'");
+            puts("expected '-v', '-i', '-f', '-p' or '-l'");
             return ERROR_CODE;
         }
-    } else {
-        raise_error("debug", "Usage: debug [-v|-if|-f|-p|-a]");
+    } else if (argc > 1) {
+        raise_error("debug", "Usage: debug [-v|-i|-f|-p|-l]");
         return ERROR_CODE;
     }
 
     // print variables
     if (mode == 0 || mode == 1) {
-        puts("VARIABLES");
+        printf("VARIABLES (max %d):\n", MAX_VARIABLES);
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
             printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
         }
@@ -1124,7 +1229,7 @@ char *if_debug(char **input) {
 
     // print functions
     if (mode == 0 || mode == 3) {
-        puts("FUNCTIONS");
+        printf("FUNCTIONS (max %d):\n", MAX_FUNCTIONS);
         for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
             printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
         }
@@ -1132,7 +1237,7 @@ char *if_debug(char **input) {
 
     // print pseudos
     if (mode == 0 || mode == 4) {
-        puts("PSEUDOS");
+        printf("PSEUDOS (max %d):\n", MAX_PSEUDOS);
         for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
             printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
         }
@@ -1142,32 +1247,19 @@ char *if_debug(char **input) {
         return NULL;
     }
 
-    // print variables
-    printf("VARIABLES (max %d):", MAX_VARIABLES);
-    for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-        printf(" %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
-    }
+    // print functions lines
+    FILE *file = fopen("funcs.olv", "w");
 
-    // print internal functions
-    printf("\nINTERNAL FUNCTIONS:");
-    for (int i = 0; internal_functions[i].name != NULL; i++) {
-        printf(" %s:%p", internal_functions[i].name, internal_functions[i].function);
-    }
-
-    // print pseudos
-    printf("\nPSEUDOS (max %d):", MAX_PSEUDOS);
-    for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
-        printf(" %s='%s'", pseudos[i].name, pseudos[i].value);
-    }
-
-    // print functions
-    printf("\nFUNCTIONS (max %d):", MAX_FUNCTIONS);
     for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
-        printf("\n  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
+        fprintf(file, "FUNC %s\n", functions[i].name);
         for (int j = 0; j < functions[i].line_count; j++) {
-            printf("  | %s\n", functions[i].lines[j]);
+            fprintf(file, "%s\n", functions[i].lines[j]);
         }
+        fputs("END\n", file);
     }
+
+    fclose(file);
+    puts("Functions saved to 'funcs.olv' use 'olivine -p funcs.olv' to display them");
 
     return NULL;
 }
@@ -3479,8 +3571,7 @@ char *get_func_color(char *str) {
     }
 
     // bin: blue
-    if ((tmp = get_bin_path(str)) != NULL) {
-        free(tmp);
+    if (in_bin_names(str)) {
         return "94";
     }
 
@@ -3881,6 +3972,13 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     for (int j = 0; functions[j].name != NULL; j++) {
         if (strncmp(tmp, functions[j].name, i - dec) == 0) {
             suggest = add_to_suggest(other, suggest, functions[j].name);
+        }
+    }
+
+    // bin
+    for (int j = 0; bin_names[j] != NULL; j++) {
+        if (strncmp(tmp, bin_names[j], i - dec) == 0) {
+            suggest = add_to_suggest(other, suggest, bin_names[j]);
         }
     }
 
@@ -4454,6 +4552,7 @@ int main(int argc, char **argv) {
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
+    bin_names = load_bin_names();
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
@@ -4485,6 +4584,8 @@ int main(int argc, char **argv) {
     free_functions();
     free_pseudos();
     free_vars();
+
+    free(bin_names);
 
     free(g_current_directory);
     free(g_exit_code);
