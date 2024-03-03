@@ -119,6 +119,9 @@ The kernel and userspace are developed mainly in C. The Olivine Shell (see the
 [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
 You can also use the lua, sulfur, C and C++ languages to create your own programs.
 
+If you prefer a bash like rather than Olivine, there is `lish`, a basic implementation
+of a bash-style shell interpreter.
+
 ### Major ports
 
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
