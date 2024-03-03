@@ -1,11 +1,8 @@
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
-pseudo pwd 'echo !path'
 
-FOR dir '/bin/commands' '/bin/fatpath'
-    FOR e !(find -f !dir)
-        pseudo !(name !e) 'go !e'
-    END
+FUNC pwd
+    echo !path
 END
 
 FUNC help

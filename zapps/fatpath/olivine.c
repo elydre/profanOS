@@ -9,8 +9,9 @@
 #define PROFANBUILD   1  // enable profan features
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
+#define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.10 rev 7"
+#define OLV_VERSION "0.11 rev 1"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -46,14 +47,15 @@
   // profanOS config
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[91m$)>$(\e[0m$) "
 #else
-  #define uint32_t unsigned int
-  #define uint8_t  unsigned char
+  #include <unistd.h>
+  #include <sys/wait.h>
+  #include <stdint.h>
 
   // unix config
   #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
 
-#define DEBUG_COLOR  "\e[37m"
+#define DEBUG_COLOR  "\e[90m"
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
@@ -108,6 +110,7 @@ variable_t *variables;
 pseudo_t *pseudos;
 function_t *functions = NULL;
 internal_function_t internal_functions[];
+char **bin_names;
 
 char *g_current_directory, *g_exit_code, *g_prompt;
 int g_current_level;
@@ -392,6 +395,161 @@ void del_variable_level(int level) {
             i--;
         }
     }
+}
+
+/*******************************
+ *                            *
+ *   bin Get/load Functions   *
+ *                            *
+*******************************/
+
+char **load_bin_names(void) {
+    #if BIN_AS_PSEUDO && PROFANBUILD
+    int size = 0;
+    int bin_count = 0;
+    
+    char *path = getenv("PATH");
+    if (path == NULL) {
+        return NULL;
+    }
+
+    char *path_copy = strdup(path);
+    char *path_ptr = path_copy;
+    char *path_end = path_ptr;
+
+    sid_t *cnt_ids;
+    char **cnt_names;
+
+    char **tmp_names = NULL;
+
+    while (path_ptr != NULL) {
+        path_end = strchr(path_ptr, ':');
+
+        if (path_end != NULL) {
+            *path_end = '\0';
+        }
+
+        sid_t dir_id = fu_path_to_sid(ROOT_SID, path_ptr);
+        if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id))
+            goto next;
+
+        int elm_count = fu_get_dir_content(dir_id, &cnt_ids, &cnt_names);
+        if (!elm_count)
+            goto next;
+
+        tmp_names = realloc(tmp_names, sizeof(char *) * (bin_count + elm_count));
+
+        for (int i = 0; i < elm_count; i++) {
+            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".bin")) {
+                size += strlen(cnt_names[i]) - 3;
+                tmp_names[bin_count++] = cnt_names[i];
+            } else {
+                free(cnt_names[i]);
+            }
+        }
+        free(cnt_names);
+        free(cnt_ids);
+
+        next:
+        if (path_end != NULL) {
+            *path_end = ':';
+            path_ptr = path_end + 1;
+        } else {
+            path_ptr = NULL;
+        }
+    }
+
+    size += sizeof(char *) * (bin_count + 1);
+    char **ret = malloc(size);
+    char *ret_ptr = (char *) ret + sizeof(char *) * (bin_count + 1);
+
+    for (int i = 0; i < bin_count; i++) {
+        int tmp = strlen(tmp_names[i]) - 4;
+        ret[i] = ret_ptr;
+        strncpy(ret_ptr, tmp_names[i], tmp);
+        ret_ptr[tmp] = '\0';
+        ret_ptr += tmp + 1;
+        free(tmp_names[i]);
+    }
+    if (size != (int) ret_ptr - (int) ret) {
+        raise_error(NULL, "Error while loading bin names");
+        free(ret);
+        free(tmp_names);
+        free(path_copy);
+        return NULL;
+    }
+
+    ret[bin_count] = NULL;
+    free(tmp_names);
+    free(path_copy);
+
+    return ret;
+    #else
+    return NULL;
+    #endif
+}
+
+int in_bin_names(char *name) {
+    if (bin_names == NULL) {
+        return 0;
+    }
+
+    for (int i = 0; bin_names[i] != NULL; i++) {
+        if (strcmp(bin_names[i], name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+char *get_bin_path(char *name) {
+    char *path = getenv("PATH");
+    if (path == NULL) {
+        return NULL;
+    }
+
+    char *path_copy = strdup(path);
+    char *path_ptr = path_copy;
+    char *path_end = path_ptr;
+
+    while (path_ptr != NULL) {
+        path_end = strchr(path_ptr, ':');
+
+        if (path_end != NULL) {
+            *path_end = '\0';
+        }
+
+        char *file = malloc(strlen(path_ptr) + strlen(name) + 7);
+        strcpy(file, path_ptr);
+        strcat(file, "/");
+        strcat(file, name);
+    
+        #if PROFANBUILD
+        strcat(file, ".bin");
+        sid_t file_id = fu_path_to_sid(ROOT_SID, file);
+        if (!IS_NULL_SID(file_id) && fu_is_file(file_id)) {
+            free(path_copy);
+            return file;
+        }
+        #else
+        if (access(file, F_OK | X_OK) != -1) {
+            free(path_copy);
+            return file;
+        }
+        #endif
+        free(file);
+
+        if (path_end != NULL) {
+            *path_end = ':';
+            path_ptr = path_end + 1;
+        } else {
+            path_ptr = NULL;
+        }
+    }
+
+    free(path_copy);
+    return NULL;
 }
 
 /*******************************
@@ -1032,32 +1190,30 @@ char *if_debug(char **input) {
 
     int mode = 0;
 
-    if (argc == 0) {
-        mode = 0;
-    } else if (argc == 1) {
+    if (argc == 1) {
         if (strcmp(input[0], "-v") == 0) {
             mode = 1;
-        } else if (strcmp(input[0], "-if") == 0) {
+        } else if (strcmp(input[0], "-i") == 0) {
             mode = 2;
         } else if (strcmp(input[0], "-f") == 0) {
             mode = 3;
         } else if (strcmp(input[0], "-p") == 0) {
             mode = 4;
-        } else if (strcmp(input[0], "-a") == 0) {
+        } else if (strcmp(input[0], "-l") == 0) {
             mode = 5;
         } else {
             raise_error("debug", "Unknown argument '%s'", input[0]);
-            puts("expected '-v', '-if', '-f', '-p' or '-a'");
+            puts("expected '-v', '-i', '-f', '-p' or '-l'");
             return ERROR_CODE;
         }
-    } else {
-        raise_error("debug", "Usage: debug [-v|-if|-f|-p|-a]");
+    } else if (argc > 1) {
+        raise_error("debug", "Usage: debug [-v|-i|-f|-p|-l]");
         return ERROR_CODE;
     }
 
     // print variables
     if (mode == 0 || mode == 1) {
-        puts("VARIABLES");
+        printf("VARIABLES (max %d):\n", MAX_VARIABLES);
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
             printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
         }
@@ -1073,7 +1229,7 @@ char *if_debug(char **input) {
 
     // print functions
     if (mode == 0 || mode == 3) {
-        puts("FUNCTIONS");
+        printf("FUNCTIONS (max %d):\n", MAX_FUNCTIONS);
         for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
             printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
         }
@@ -1081,7 +1237,7 @@ char *if_debug(char **input) {
 
     // print pseudos
     if (mode == 0 || mode == 4) {
-        puts("PSEUDOS");
+        printf("PSEUDOS (max %d):\n", MAX_PSEUDOS);
         for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
             printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
         }
@@ -1091,36 +1247,19 @@ char *if_debug(char **input) {
         return NULL;
     }
 
-    // save all info in a file
-    FILE *f = fopen("debug.txt", "w");
+    // print functions lines
+    FILE *file = fopen("funcs.olv", "w");
 
-    // print variables
-    fprintf(f, "VARIABLES (max %d):", MAX_VARIABLES);
-    for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-        fprintf(f, " %s(l%d, s%d)='%s'", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
-    }
-
-    // print internal functions
-    fprintf(f, "\nINTERNAL FUNCTIONS:");
-    for (int i = 0; internal_functions[i].name != NULL; i++) {
-        fprintf(f, " %s:%p", internal_functions[i].name, internal_functions[i].function);
-    }
-
-    // print pseudos
-    fprintf(f, "\nPSEUDOS (max %d):", MAX_PSEUDOS);
-    for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
-        fprintf(f, " %s='%s'", pseudos[i].name, pseudos[i].value);
-    }
-
-    // print functions
-    fprintf(f, "\nFUNCTIONS (max %d):", MAX_FUNCTIONS);
     for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
-        fprintf(f, "\n  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
+        fprintf(file, "FUNC %s\n", functions[i].name);
         for (int j = 0; j < functions[i].line_count; j++) {
-            fprintf(f, "  | %s\n", functions[i].lines[j]);
+            fprintf(file, "%s\n", functions[i].lines[j]);
         }
+        fputs("END\n", file);
     }
-    fclose(f);
+
+    fclose(file);
+    puts("Functions saved to 'funcs.olv' use 'olivine -p funcs.olv' to display them");
 
     return NULL;
 }
@@ -1399,8 +1538,6 @@ char *if_global(char **input) {
 }
 
 char *if_go_binfile(char **input) {
-    #if PROFANBUILD
-
     // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
@@ -1412,6 +1549,7 @@ char *if_go_binfile(char **input) {
         return ERROR_CODE;
     }
 
+    #if PROFANBUILD
     // get file name
     char *file_path = assemble_path(g_current_directory, input[0]);
 
@@ -1423,6 +1561,17 @@ char *if_go_binfile(char **input) {
         free(file_path);
         return ERROR_CODE;
     }
+    #else
+    // get file name
+    char *file_path = strdup(input[0]);
+
+    // check if file exists
+    if (access(file_path, F_OK | X_OK) == -1) {
+        raise_error("go", "File '%s' does not exist", file_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+    #endif
 
     int wait_end = 1;
     if (strcmp(input[argc - 1], "&") == 0) {
@@ -1432,8 +1581,8 @@ char *if_go_binfile(char **input) {
 
     char *stdout_path = NULL;
     char *stdin_path = NULL;
-    sid_t sid;
 
+    #if PROFANBUILD
     if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
         stdin_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
@@ -1448,6 +1597,7 @@ char *if_go_binfile(char **input) {
         stdin_path = assemble_path(g_current_directory, input[argc - 1]);
         argc -= 2;
     }
+    #endif
 
     if (strcmp(input[argc - 1], "&") == 0) {
         wait_end = 0;
@@ -1461,6 +1611,9 @@ char *if_go_binfile(char **input) {
         free(file_path);
         return ERROR_CODE;
     }
+
+    #if PROFANBUILD
+    sid_t sid;
 
     if (stdin_path) {
         sid = fu_path_to_sid(ROOT_SID, stdin_path);
@@ -1491,6 +1644,7 @@ char *if_go_binfile(char **input) {
             return ERROR_CODE;
         }
     }
+    #endif
 
     // get args
     char *file_name = strdup(input[0]);
@@ -1508,6 +1662,7 @@ char *if_go_binfile(char **input) {
     }
     argv[argc] = NULL;
 
+    #if PROFANBUILD
     int pid;
     local_itoa(run_ifexist_full(
         (runtime_args_t){file_path, file_id, argc, argv, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
@@ -1541,6 +1696,33 @@ char *if_go_binfile(char **input) {
     if (!wait_end) {
         printf("GO: started with pid %d\n", pid);
     }
+    #else
+    pid_t pid = fork();
+    if (pid == -1) {
+        raise_error("go", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        return ERROR_CODE;
+    }
+
+    if (pid == 0) {
+        execv(file_path, argv);
+        raise_error("go", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        exit(1);
+    }
+
+    if (wait_end) {
+        int status;
+        waitpid(pid, &status, 0);
+        local_itoa(WEXITSTATUS(status), g_exit_code);
+    } else {
+        printf("GO: started with pid %d\n", pid);
+    }
+    #endif
 
     char *tmp = malloc(10 * sizeof(char));
 
@@ -1552,12 +1734,6 @@ char *if_go_binfile(char **input) {
     free(argv);
     free(tmp);
     return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
-
-    #else
-    raise_error("go", "Not available in this build");
-    return ERROR_CODE;
-
-    #endif
 }
 
 char *if_name(char **input) {
@@ -2294,17 +2470,17 @@ char *pipe_processor(char **input) {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf(DEBUG_COLOR "'%s' (", function_name);
+    printf(DEBUG_COLOR"'%s' (", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
             printf("'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR "'%s') [%d]\e[0m\n", function_args[i], i + 1);
+        printf(DEBUG_COLOR"'%s') [%d]\e[0m\n", function_args[i], i + 1);
         return;
     }
-    puts(DEBUG_COLOR ") [0]\e[0m");
+    puts(DEBUG_COLOR") [0]\e[0m");
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2355,6 +2531,26 @@ char *check_subfunc(char *line);
 char *check_variables(char *line);
 char *check_pseudos(char *line);
 
+char *check_bin(char *name, char *line, void **function, char *old_line) {
+    char *bin_path = get_bin_path(name);
+    if (bin_path == NULL) {
+        return line;
+    }
+
+    *function = if_go_binfile;
+    char *new_line = malloc((strlen(line) + strlen(bin_path) + 2) * sizeof(char));
+    strcpy(new_line, "go ");
+    strcat(new_line, bin_path);
+    strcat(new_line, line + strlen(name));
+    free(bin_path);
+
+    if (old_line != line) {
+        free(line);
+    }
+
+    return new_line;
+}
+
 char *execute_line(char *full_line) {
     // check for function and variable
     char *line = check_subfunc(full_line);
@@ -2366,17 +2562,21 @@ char *execute_line(char *full_line) {
     }
 
     // get the function name
-    int isif;
+    int isif = 0;
     char *function_name = get_function_name(line);
 
     // get the function address
-    void *function = get_if_function(function_name);
+    void *function = get_function(function_name);
     if (function == NULL) {
-        function = get_function(function_name);
-        isif = 0;
-    } else isif = 1;
+        function = get_if_function(function_name);
+        isif = 1;
+    }
 
     char *result;
+
+    if (function == NULL && BIN_AS_PSEUDO) {
+        line = check_bin(function_name, line, &function, full_line);
+    }
 
     if (function == NULL) {
         raise_error(NULL, "Function '%s' not found", function_name);
@@ -2422,6 +2622,7 @@ char *execute_line(char *full_line) {
 
     return result;
 }
+
 
 char *check_subfunc(char *line) {
     // check if !( ... ) is present
@@ -2582,9 +2783,11 @@ char *check_variables(char *line) {
 }
 
 char *check_pseudos(char *line) {
-    char *pseudo_name = malloc((strlen(line) + 1) * sizeof(char));
-    int len = strlen(line);
-    int i;
+    int i, len = strlen(line);
+    char *pseudo_name, *pseudo_value;
+    
+    pseudo_name = malloc((len + 1) * sizeof(char));
+
     for (i = 0; i < len; i++) {
         if (line[i] == ' ') {
             break;
@@ -2593,14 +2796,14 @@ char *check_pseudos(char *line) {
     }
     pseudo_name[i] = '\0';
 
-    char *pseudo_value = get_pseudo(pseudo_name);
+    pseudo_value = get_pseudo(pseudo_name);
 
     free(pseudo_name);
     if (pseudo_value == NULL) {
         return line;
     }
 
-    char *new_line = malloc((strlen(line) - i + strlen(pseudo_value) + 2) * sizeof(char));
+    char *new_line = malloc((len - i + strlen(pseudo_value) + 2) * sizeof(char));
     strcpy(new_line, pseudo_value);
     strcat(new_line, line + i);
 
@@ -3339,11 +3542,18 @@ int does_syntax_fail(char *program) {
 #define TAB    15
 
 char *get_func_color(char *str) {
+    char *tmp;
+
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (local_strncmp_nocase(str, keywords[i], -1) == 0) {
             return "95";
         }
+    }
+
+    // internal functions: cyan
+    if (get_if_function(str) != NULL) {
+        return "96";
     }
 
     if (functions == NULL) {
@@ -3355,14 +3565,14 @@ char *get_func_color(char *str) {
         return "36";
     }
 
-    // pseudos: blue
+    // pseudos: dark blue
     if (get_pseudo(str) != NULL) {
-        return "94";
+        return "34";
     }
 
-    // internal functions: cyan
-    if (get_if_function(str) != NULL) {
-        return "96";
+    // bin: blue
+    if (in_bin_names(str)) {
+        return "94";
     }
 
     // unknown functions: dark red
@@ -3764,6 +3974,15 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
             suggest = add_to_suggest(other, suggest, functions[j].name);
         }
     }
+
+    // bin
+    #if BIN_AS_PSEUDO
+    for (int j = 0; bin_names[j] != NULL; j++) {
+        if (strncmp(tmp, bin_names[j], i - dec) == 0) {
+            suggest = add_to_suggest(other, suggest, bin_names[j]);
+        }
+    }
+    #endif
 
     free(tmp);
 
@@ -4335,6 +4554,7 @@ int main(int argc, char **argv) {
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
     pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
+    bin_names = load_bin_names();
 
     set_variable("version", OLV_VERSION);
     set_variable("profan", PROFANBUILD ? "1" : "0");
@@ -4366,6 +4586,8 @@ int main(int argc, char **argv) {
     free_functions();
     free_pseudos();
     free_vars();
+
+    free(bin_names);
 
     free(g_current_directory);
     free(g_exit_code);
