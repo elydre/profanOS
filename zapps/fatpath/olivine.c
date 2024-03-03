@@ -407,7 +407,7 @@ char **load_bin_names(void) {
     #if BIN_AS_PSEUDO && PROFANBUILD
     int size = 0;
     int bin_count = 0;
-    
+
     char *path = getenv("PATH");
     if (path == NULL) {
         return NULL;
@@ -524,7 +524,7 @@ char *get_bin_path(char *name) {
         strcpy(file, path_ptr);
         strcat(file, "/");
         strcat(file, name);
-    
+
         #if PROFANBUILD
         strcat(file, ".bin");
         sid_t file_id = fu_path_to_sid(ROOT_SID, file);
@@ -2785,7 +2785,7 @@ char *check_variables(char *line) {
 char *check_pseudos(char *line) {
     int i, len = strlen(line);
     char *pseudo_name, *pseudo_value;
-    
+
     pseudo_name = malloc((len + 1) * sizeof(char));
 
     for (i = 0; i < len; i++) {
