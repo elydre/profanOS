@@ -40,6 +40,7 @@ jobs:
         title: ${{ env.PROFAN_VER }}
         automatic_release_tag: latest
         repo_token: "${{ secrets.GIT_TOKEN }}"
+        prerelease: false
         files: |
           ${{ env.PROFAN_ISO }}
           profanOS-fullgrub.iso
