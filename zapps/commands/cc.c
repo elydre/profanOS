@@ -234,19 +234,11 @@ int main(int argc, char **argv) {
             strcat(elf_file, ".elf");
         }
 
-        // get the name of the input file
-        int len = strlen(full_path);
-        for (int i = len - 1; i >= 0; i--) {
-            if (full_path[i] == '/') {
-                bin_file = assemble_path(pwd, full_path + i + 1);
-                break;
-            }
-        }
-
-        // remove extension from file name
+        // get the name of the binary file
+        bin_file = malloc(strlen(full_path) + 5);
+        strcpy(bin_file, full_path);
         char *dot = strrchr(bin_file, '.');
         if (dot != NULL) *dot = '\0';
-
         strcat(bin_file, ".bin");
 
         char *args = malloc(strlen(full_path) * 2 + 256);
