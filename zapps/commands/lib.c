@@ -60,9 +60,9 @@ int main(int argc, char **argv) {
 
         printf("lib: unloading %d\n", id);
 
-        c_process_set_sheduler(0);
+        c_process_set_scheduler(0);
         c_dily_unload(id);
-        c_process_set_sheduler(1);
+        c_process_set_scheduler(1);
         return 0;
     }
 
@@ -118,10 +118,10 @@ int main(int argc, char **argv) {
 
         printf("lib: replacing %d with %s\n", id, new_path);
 
-        c_process_set_sheduler(0);
+        c_process_set_scheduler(0);
         c_dily_unload(id);
         c_dily_load(new_path, id);
-        c_process_set_sheduler(1);
+        c_process_set_scheduler(1);
 
         free(new_path);
         return 0;

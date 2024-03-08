@@ -72,7 +72,7 @@ void *SYSCALL_ARRAY[] = {
     mouse_call,
 
     // process.h
-    process_set_sheduler,
+    process_set_scheduler,
     process_create,
     process_fork,
     process_sleep,

@@ -12,8 +12,8 @@ int check_args(int argc, char **argv) {
     }
 
     puts("Usage: speed [0|1]\n"
-        "  0: keep sheduler enabled during the loop\n"
-        "  1: disable sheduler during the loop\n\n"
+        "  0: keep scheduler enabled during the loop\n"
+        "  1: disable scheduler during the loop\n\n"
         "This program will do a loop and print the time it took\n"
         "to do the loop. The loop is done 100 million times.\n"
         "The cpu speed is calculated by dividing the number of\n"
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
         return 1;
 
     if (mode)
-        c_process_set_sheduler(0);
+        c_process_set_scheduler(0);
 
     // get the time before the loop
     int start = c_timer_get_ms();
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     int end = c_timer_get_ms();
 
     if (mode)
-        c_process_set_sheduler(1);
+        c_process_set_scheduler(1);
 
     // print the time difference
     printf("loop time: %dms\n", end - start);

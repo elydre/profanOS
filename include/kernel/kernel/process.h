@@ -21,8 +21,8 @@
 #define PROCESS_INFO_NAME       6
 #define PROCESS_INFO_STACK      7
 
-#define process_disable_sheduler() process_set_sheduler(0)
-#define process_enable_sheduler()  process_set_sheduler(1)
+#define process_disable_scheduler() process_set_scheduler(0)
+#define process_enable_scheduler()  process_set_scheduler(1)
 
 #define process_get_ppid(pid) process_get_info(pid, PROCESS_INFO_PPID)
 #define process_get_state(pid) process_get_info(pid, PROCESS_INFO_STATE)
@@ -55,8 +55,8 @@ int process_wakeup(uint32_t pid);
 int process_sleep(uint32_t pid, uint32_t ms);
 int process_kill(uint32_t pid);
 
-// sheduler control
-void process_set_sheduler(int state);
+// scheduler control
+void process_set_scheduler(int state);
 
 // process info
 uint32_t process_get_pid(void);

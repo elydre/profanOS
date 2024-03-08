@@ -6,10 +6,10 @@
 
 #define ERROR_CODE (-1)
 
-#define SHDLR_ENBL 0    // sheduler enabled
-#define SHDLR_RUNN 1    // sheduler running
-#define SHDLR_DISL 2    // sheduler disabled
-#define SHDLR_DEAD 3    // sheduler dead
+#define SHDLR_ENBL 0    // scheduler enabled
+#define SHDLR_RUNN 1    // scheduler running
+#define SHDLR_DISL 2    // scheduler disabled
+#define SHDLR_DEAD 3    // scheduler dead
 
 #define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
 
@@ -22,10 +22,10 @@ int tsleep_list_length;
 int shdlr_queue_length;
 int *shdlr_queue;
 
-uint8_t sheduler_state = SHDLR_DEAD;
-uint8_t sheduler_count;
+uint8_t scheduler_state = SHDLR_DEAD;
+uint8_t scheduler_count;
 uint8_t need_clean;
-int sheduler_disable_count;
+int scheduler_disable_count;
 
 uint32_t pid_incrament;
 uint32_t pid_current;
@@ -67,18 +67,18 @@ int i_pid_to_place(uint32_t pid) {
     return ERROR_CODE;
 }
 
-void i_end_sheduler(void) {
+void i_end_scheduler(void) {
     if (pid_current != 1) {
         scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
     }
 
-    if (sheduler_state == SHDLR_RUNN) {
-        sheduler_state = SHDLR_ENBL;
+    if (scheduler_state == SHDLR_RUNN) {
+        scheduler_state = SHDLR_ENBL;
     } else {
-        sys_fatal("Sheduler is not running but sheduler is exiting");
+        sys_fatal("Scheduler is not running but scheduler is exiting");
     }
 
-    sheduler_count--;
+    scheduler_count--;
 }
 
 void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
@@ -302,7 +302,7 @@ int process_init(void) {
     pid_current = 0;
     need_clean = 0;
 
-    sheduler_count = 0;
+    scheduler_count = 0;
     pid_incrament = 0;
 
     shdlr_queue_length = 0;
@@ -313,9 +313,9 @@ int process_init(void) {
 
     kern_proc->scuba_dir = scuba_get_kernel_directory();
 
-    // enable sheduler
-    sheduler_state = SHDLR_ENBL;
-    sheduler_disable_count = 0;
+    // enable scheduler
+    scheduler_state = SHDLR_ENBL;
+    scheduler_disable_count = 0;
 
     // create idle process
     process_create(idle_process, 1, "idle", 0);
@@ -421,7 +421,7 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         return ERROR_CODE;
     }
 
-    process_disable_sheduler();
+    process_disable_scheduler();
 
     if (plist[place].state == PROCESS_TSLPING) {
         i_remove_from_tsleep_list(pid);
@@ -440,7 +440,7 @@ int process_sleep(uint32_t pid, uint32_t ms) {
 
     i_remove_from_shdlr_queue(pid);
 
-    process_enable_sheduler();
+    process_enable_scheduler();
     if (pid == pid_current) {
         schedule(0);
     }
@@ -472,7 +472,7 @@ int process_wakeup(uint32_t pid) {   // TODO: sleep to exit gestion
         return ERROR_CODE;
     }
 
-    process_disable_sheduler();
+    process_disable_scheduler();
 
     if (plist[place].state == PROCESS_TSLPING) {
         i_remove_from_tsleep_list(pid);
@@ -483,7 +483,7 @@ int process_wakeup(uint32_t pid) {   // TODO: sleep to exit gestion
 
     i_refresh_tsleep_interact();
 
-    process_enable_sheduler();
+    process_enable_scheduler();
 
     return 0;
 }
@@ -518,7 +518,7 @@ int process_handover(uint32_t pid) {
         return ERROR_CODE;
     }
 
-    process_disable_sheduler();
+    process_disable_scheduler();
 
     if (plist[place].state == PROCESS_TSLPING) {
         i_remove_from_tsleep_list(pid);
@@ -534,7 +534,7 @@ int process_handover(uint32_t pid) {
     plist[current_place].state = PROCESS_FSLPING;
     i_remove_from_shdlr_queue(pid_current);
 
-    process_enable_sheduler();
+    process_enable_scheduler();
 
     schedule(0);
 
@@ -565,7 +565,7 @@ int process_kill(uint32_t pid) {
         return ERROR_CODE;
     }
 
-    process_disable_sheduler();
+    process_disable_scheduler();
 
     if (plist[place].state == PROCESS_TSLPING) {
         i_remove_from_tsleep_list(pid);
@@ -576,7 +576,7 @@ int process_kill(uint32_t pid) {
 
     need_clean = 1;
 
-    process_enable_sheduler();
+    process_enable_scheduler();
 
     if (pid == pid_current) {
         schedule(0);
@@ -591,38 +591,38 @@ int process_kill(uint32_t pid) {
  *                       *
 **************************/
 
-void process_set_sheduler(int state) {
-    // disable sheduler
+void process_set_scheduler(int state) {
+    // disable scheduler
     if (!state) {
-        sheduler_disable_count++;
-        if (sheduler_state == SHDLR_ENBL) {
-            sheduler_state = SHDLR_DISL;
+        scheduler_disable_count++;
+        if (scheduler_state == SHDLR_ENBL) {
+            scheduler_state = SHDLR_DISL;
         }
     }
 
-    // enable sheduler
+    // enable scheduler
     else if (state) {
-        sheduler_disable_count--;
-        if (sheduler_state == SHDLR_DISL && !sheduler_disable_count) {
-            sheduler_state = SHDLR_ENBL;
+        scheduler_disable_count--;
+        if (scheduler_state == SHDLR_DISL && !scheduler_disable_count) {
+            scheduler_state = SHDLR_ENBL;
         }
     }
 }
 
 void schedule(uint32_t ticks) {
-    if (sheduler_count) return;
-    sheduler_count++;
+    if (scheduler_count) return;
+    scheduler_count++;
 
-    if (sheduler_state != SHDLR_ENBL) {
-        sheduler_count--;
+    if (scheduler_state != SHDLR_ENBL) {
+        scheduler_count--;
         return;
     }
 
-    sheduler_state = SHDLR_RUNN;
+    scheduler_state = SHDLR_RUNN;
 
     // tick perfect backup verification system
-    if (sheduler_count > 1) {
-        sys_fatal("Multiple sheduler security fail");
+    if (scheduler_count > 1) {
+        sys_fatal("Multiple scheduler security fail");
         return;
     }
 
@@ -631,7 +631,7 @@ void schedule(uint32_t ticks) {
     }
 
     if (ticks % SCHEDULER_EVRY) {
-        i_end_sheduler();
+        i_end_scheduler();
         return;
     }
 
@@ -657,7 +657,7 @@ void schedule(uint32_t ticks) {
     if (pid != pid_current) {
         i_process_switch(pid_current, pid, ticks);
     } else {
-        i_end_sheduler();
+        i_end_scheduler();
     }
 }
 
@@ -683,12 +683,12 @@ int process_set_priority(uint32_t pid, int priority) {
     plist[place].priority = priority;
 
     if (plist[place].state < PROCESS_TSLPING) {
-        process_disable_sheduler();
+        process_disable_scheduler();
 
         i_remove_from_shdlr_queue(pid);
         i_add_to_shdlr_queue(pid, priority);
 
-        process_enable_sheduler();
+        process_enable_scheduler();
     }
 
     return 0;
@@ -757,9 +757,9 @@ void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir) {
     plist[place].scuba_dir = new_dir;
 
     if (pid == pid_current) {
-        process_disable_sheduler();
+        process_disable_scheduler();
         scuba_process_switch(new_dir);
-        process_enable_sheduler();
+        process_enable_scheduler();
     }
 
     if (!plist[place].use_parent_dir) {

@@ -140,7 +140,7 @@ void dynamize_mem(void) {
 uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     if (!(size && state)) return 0;
 
-    process_disable_sheduler();
+    process_disable_scheduler();
 
     if (state != 3) {
         dynamize_mem();
@@ -189,9 +189,9 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     }
 
     if (exit_mode == 2) {
-        sys_error("[mem_alloc] Not enough memory");
         if (state != 3) instance_count--;
-        process_enable_sheduler();
+        process_enable_scheduler();
+        sys_error("[mem_alloc] Not enough memory");
         return 0;
     }
 
@@ -218,13 +218,13 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
 
     alloc_count++;
     if (state != 3) instance_count--;
-    process_enable_sheduler();
+    process_enable_scheduler();
 
     return last_addr + gap;
 }
 
 int mem_free_addr(uint32_t addr) {
-    process_disable_sheduler();
+    process_disable_scheduler();
     instance_count++;
 
     if (instance_count > 1) {
@@ -241,9 +241,9 @@ int mem_free_addr(uint32_t addr) {
         }
 
         if (MEM_PARTS[index].state == 2) {
-            sys_warning("Cannot free snowflake memory");
             instance_count--;
-            process_enable_sheduler();
+            sys_warning("Cannot free snowflake memory");
+            process_enable_scheduler();
             return 0; // error
         }
 
@@ -251,14 +251,13 @@ int mem_free_addr(uint32_t addr) {
         MEM_PARTS[last_index].next = MEM_PARTS[index].next;
         MEM_PARTS[index].state = 0;
         instance_count--;
-        process_enable_sheduler();
-
+        process_enable_scheduler();
         return 1; // success
     }
 
-    sys_warning("Cannot free memory at address 0x%x", addr);
     instance_count--;
-    process_enable_sheduler();
+    sys_warning("Cannot free memory at address %x", addr);
+    process_enable_scheduler();
     return 0; // error
 }
 

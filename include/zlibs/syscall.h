@@ -77,7 +77,7 @@
 #define c_serial_write ((void (*)(int, char *, uint32_t)) hi_func_addr(29))
 #define c_mouse_call ((int (*)(int, int)) hi_func_addr(30))
 
-#define c_process_set_sheduler ((void (*)(int)) hi_func_addr(31))
+#define c_process_set_scheduler ((void (*)(int)) hi_func_addr(31))
 #define c_process_create ((int (*)(void *func, int, char *, int, ...)) hi_func_addr(32))
 #define c_process_fork ((int (*)(void)) hi_func_addr(33))
 #define c_process_sleep ((int (*)(uint32_t, uint32_t)) hi_func_addr(34))

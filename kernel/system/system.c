@@ -78,7 +78,7 @@ void sys_report(char *msg) {
 }
 
 void sys_warning(char *msg, ...) {
-    process_disable_sheduler();
+    process_disable_scheduler();
     RECURSIVE_COUNT++;
 
     va_list args;
@@ -92,11 +92,11 @@ void sys_warning(char *msg, ...) {
     sys_report(sys_safe_buffer);
 
     RECURSIVE_COUNT--;
-    process_enable_sheduler();
+    process_enable_scheduler();
 }
 
 void sys_error(char *msg, ...) {
-    process_disable_sheduler();
+    process_disable_scheduler();
     RECURSIVE_COUNT++;
 
     int current_pid = process_get_pid();
@@ -112,7 +112,7 @@ void sys_error(char *msg, ...) {
     sys_report(sys_safe_buffer);
 
     RECURSIVE_COUNT--;
-    process_enable_sheduler();
+    process_enable_scheduler();
 
     if (current_pid > 1 && force_exit_pid(current_pid, 143, 0)) {
         sys_fatal("Failed to exit process");

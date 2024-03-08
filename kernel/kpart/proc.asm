@@ -1,7 +1,7 @@
 global process_asm_switch
 global process_fork
 
-extern i_end_sheduler
+extern i_end_scheduler
 extern i_process_fork
 
 align 4
@@ -51,7 +51,7 @@ process_asm_switch:
     mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
-    call i_end_sheduler     ; all the end of the sheduler (process.c)
+    call i_end_scheduler    ; all the end of the scheduler (process.c)
     ret                     ; this ends all
 
 align 4
