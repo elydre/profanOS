@@ -142,9 +142,8 @@ int profan_kb_load_map(char *path) {
 
     int tmp_i = 0;
     for (int i = 7; i < file_size; i++) {
-        if (file_content[i] == '\n') {
+        if (file_content[i] < 32 || file_content[i] > 126)
             continue;
-        }
         if (file_content[i] == '\\') {
             i++;
             if (file_content[i] == '\\') {
