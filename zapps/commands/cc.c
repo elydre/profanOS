@@ -21,6 +21,7 @@
 #define OPTION_NOADDS   1 << 3
 #define OPTION_NORAND   1 << 4
 #define OPTION_CHDEP    1 << 5
+#define OPTION_DEPOLY   1 << 6
 
 uint32_t g_rand_val;
 
@@ -73,6 +74,29 @@ int execute_command(char *path, char *args) {
     return ret;
 }
 
+char *get_bin_name(char *full_path, char *pwd) {
+    char *bin_file = malloc(strlen(full_path) + 4);
+    char *cp = bin_file;
+    strcpy(bin_file, full_path);
+
+    // remove extension from file name
+    char *dot = strrchr(bin_file, '.');
+    if (dot != NULL) *dot = '\0';
+
+    // remove path from file name
+    char *slash = strrchr(bin_file, '/');
+    if (slash != NULL) {
+        bin_file = slash + 1;
+    }
+    strcat(bin_file, ".bin");
+
+    // add path to file name
+    bin_file = assemble_path(pwd, bin_file);
+    free(cp);
+
+    return bin_file;
+}
+
 uint32_t parse_options(int argc, char **argv, char **path) {
     // uint32_t options = parse_options(argc, argv);
     // options & OPTION_HELP;    // -h
@@ -100,6 +124,9 @@ uint32_t parse_options(int argc, char **argv, char **path) {
                     case 'c':
                         options |= OPTION_CHDEP;
                         break;
+                    case 'd':
+                        options |= OPTION_DEPOLY;
+                        break;
                     default:
                         options |= OPTION_ERROR;
                         printf("cc: invalid option -- '%c'\n", argv[i][j]);
@@ -114,6 +141,29 @@ uint32_t parse_options(int argc, char **argv, char **path) {
     return options;
 }
 
+int build_dependencies(void) {
+    if (!does_file_exist(ZEO_PATH)) {
+        if (does_file_exist(ZEC_PATH)) {
+            if (execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH)) {
+                return 1;
+            }
+        } else {
+            printf("cc: zentry.c and zentry.o not found, cannot compile\n");
+            return 1;
+        }
+    }
+    if (!does_file_exist(TLO_PATH)) {
+        if (does_file_exist(TLC_PATH)) {
+            if (execute_command(TCC_PATH, "-c " TLC_PATH " -o " TLO_PATH)) {
+                return 1;
+            }
+        } else {
+            printf("cc: tcclib.c and tcclib.o not found, cannot compile\n");
+            return 1;
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -154,6 +204,7 @@ int main(int argc, char **argv) {
         printf("Usage: cc [option] <file>\n");
         printf("Options:\n");
         printf("  -c  Check dependencies\n");
+        printf("  -d  Compile dependencies\n");
         printf("  -h  Display this information\n");
         printf("  -n  Not include zentry.o, tcclib.o\n");
         printf("  -r  Compile and run\n");
@@ -162,6 +213,9 @@ int main(int argc, char **argv) {
     }
 
     if (path == NULL) {
+        if (options & OPTION_DEPOLY) {
+            return build_dependencies();
+        }
         printf("cc: no input files\n");
         return 1;
     }
@@ -178,29 +232,9 @@ int main(int argc, char **argv) {
         printf("cc: xec.bin not found\n");
     } else {
         if (!(options & OPTION_NOADDS)) {
-            if (!does_file_exist(ZEO_PATH)) {
-                if (does_file_exist(ZEC_PATH)) {
-                    if (execute_command(TCC_PATH, "-c " ZEC_PATH " -o " ZEO_PATH)) {
-                        free(full_path);
-                        return 1;
-                    }
-                } else {
-                    printf("cc: zentry.c and zentry.o not found, cannot compile\n");
-                    free(full_path);
-                    return 1;
-                }
-            }
-            if (!does_file_exist(TLO_PATH)) {
-                if (does_file_exist(TLC_PATH)) {
-                    if (execute_command(TCC_PATH, "-c " TLC_PATH " -o " TLO_PATH)) {
-                        free(full_path);
-                        return 1;
-                    }
-                } else {
-                    printf("cc: tcclib.c and tcclib.o not found, cannot compile\n");
-                    free(full_path);
-                    return 1;
-                }
+            if (build_dependencies()) {
+                free(full_path);
+                return 1;
             }
         }
 
@@ -235,11 +269,7 @@ int main(int argc, char **argv) {
         }
 
         // get the name of the binary file
-        bin_file = malloc(strlen(full_path) + 5);
-        strcpy(bin_file, full_path);
-        char *dot = strrchr(bin_file, '.');
-        if (dot != NULL) *dot = '\0';
-        strcat(bin_file, ".bin");
+        bin_file = get_bin_name(full_path, pwd);
 
         char *args = malloc(strlen(full_path) * 2 + 256);
 
