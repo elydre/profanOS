@@ -6,8 +6,10 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        printf("\e[31mUsage: \e[91mxec <input> <output>\e[0m\n");
+    if (argc < 3 || argc > 4 || (argc == 4 && strcmp(argv[3], "-t"))) {
+        puts("Usage: xec <input> <output> [-t]\n"
+            "  add -t to use with tcc instead of vlink\n"
+        );
         return 1;
     }
 
@@ -20,7 +22,7 @@ int main(int argc, char **argv) {
 
     // check if the file exists
     if (IS_NULL_SID(input_sid)) {
-        printf("\e[31mfile \e[91m%s\e[31m not found\e[0m\n", input_file);
+        printf("file %s not found\n", input_file);
         free(input_file);
         return 1;
     }
@@ -28,8 +30,8 @@ int main(int argc, char **argv) {
     // read the file
     uint32_t size = fu_get_file_size(input_sid);
 
-    if (size < 0x1000) {
-        printf("\e[31mfile \e[91m%s\e[31m is too small\e[0m\n", input_file);
+    if ((argc == 4 && size < 0x184) || (argc == 3 && size < 0x1000)) {
+        printf("file %s is too small\n", input_file);
         free(input_file);
         return 1;
     }
@@ -42,28 +44,31 @@ int main(int argc, char **argv) {
 
     sid_t output_sid = fu_path_to_sid(ROOT_SID, output_file);
 
-    if (!IS_NULL_SID(output_sid)) {
-        fu_set_file_size(output_sid, size - 0x1000);
-        fu_file_write(output_sid, data + 0x1000, 0, size - 0x1000);
-        free(output_file);
-        free(input_file);
-        free(data);
-        return 0;
+    if (IS_NULL_SID(output_sid)) {
+        output_sid = fu_file_create(0, output_file);
     }
 
     // create the file
-    output_sid = fu_file_create(0, output_file);
     if (IS_NULL_SID(output_sid)) {
-        printf("\e[31mfailed to create file \e[91m%s\e[0m\n", output_file);
+        printf("failed to create file %s\n", output_file);
         free(output_file);
         free(input_file);
         free(data);
         return 1;
     }
 
-    // write the file
-    fu_set_file_size(output_sid, size - 0x1000);
-    fu_file_write(output_sid, data + 0x1000, 0, size - 0x1000);
+    if (argc == 3) {
+        // vlink
+        fu_set_file_size(output_sid, size - 0x1000);
+        fu_file_write(output_sid, data + 0x1000, 0, size - 0x1000);
+    } else {
+        // tcc
+        uint8_t *zero = calloc(1, 0x2000 + 0x184);
+        fu_set_file_size(output_sid, 0x2000 + size);
+        fu_file_write(output_sid, zero, 0, 0x2000 + 0x184);
+        fu_file_write(output_sid, data + 0x184, 0x2000 + 0x184, size - 0x184);
+        free(zero);
+    }
 
     free(output_file);
     free(input_file);
