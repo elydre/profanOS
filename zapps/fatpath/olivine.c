@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 1"
+#define OLV_VERSION "0.11 rev 2"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1635,13 +1635,14 @@ char *if_go_binfile(char **input) {
                 free(file_path);
                 return ERROR_CODE;
             }
-        }
-        else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
+        } else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
             raise_error("go", "Cannot redirect stdout to '%s'", stdout_path);
             free(stdout_path);
             free(stdin_path);
             free(file_path);
             return ERROR_CODE;
+        } else if (fu_is_file(sid)) {
+            fu_set_file_size(sid, 0);
         }
     }
     #endif
