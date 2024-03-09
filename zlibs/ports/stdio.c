@@ -149,8 +149,11 @@ FILE *fopen(const char *filename, const char *mode) {
     file->old_offset = 0;
 
     // if the file is open for appending, set the file pos to the end of the file
-    if (interpeted_mode & MODE_APPEND)
+    if (interpeted_mode & MODE_APPEND) {
         fm_lseek(file->fd, 0, SEEK_END);
+    } else if (exists && (interpeted_mode & MODE_WRITE)) {
+        fu_set_file_size(file_id, 0);
+    }
 
     return file;
 }
