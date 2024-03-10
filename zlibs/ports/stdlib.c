@@ -1,3 +1,4 @@
+#include <i_memreg.h>
 #include <syscall.h>
 #include <string.h>
 #include <profan.h>
@@ -15,18 +16,21 @@
 #define LONG_MIN (-LONG_MAX - 1L)
 #endif
 
-uint32_t rand_seed = 0;
+uint8_t enable_malloc_debug;
+uint32_t rand_seed;
 char **g_env;
 
-void *malloc_func(uint32_t size, int as_kernel);
+void *malloc_func(uint32_t size, int as_kernel, int line, const char *file);
 
-#define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
-#define malloc(size) malloc_func(size, 0)
-#define realloc(mem, new_size) realloc_func(mem, new_size, 0)
+#define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0, __LINE__, __FILE__)
+#define malloc(size) malloc_func(size, 0, __LINE__, __FILE__)
+#define realloc(mem, new_size) realloc_func(mem, new_size, 0, __LINE__, __FILE__)
 
-#define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
-#define malloc_ask(size) malloc_func(size, 1)
-#define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
+#define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1, __LINE__, __FILE__)
+#define malloc_ask(size) malloc_func(size, 1, __LINE__, __FILE__)
+#define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1, __LINE__, __FILE__)
+
+#define free(mem) free_func(mem, __LINE__, __FILE__)
 
 #ifndef isdigit
 #define isdigit(c) ((c) >= '0' && (c) <= '9')
@@ -41,6 +45,7 @@ void *malloc_func(uint32_t size, int as_kernel);
 int main(void) {
     rand_seed = time(NULL);
     g_env = malloc(sizeof(char *));
+    enable_malloc_debug = 0;
     g_env[0] = NULL;
     return 0;
 }
@@ -49,35 +54,45 @@ char **get_environ_ptr(void) {
     return g_env;
 }
 
-void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
+void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel, int line, const char *file) {
     uint32_t size = lsize * nmemb;
-    int addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
-    if (addr == 0) return NULL;
+    uint32_t addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
+    if (enable_malloc_debug && !as_kernel)
+        memreg_alloc(addr, size, line, file);
+    if (addr == 0)
+        return NULL;
     memset((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
 
-void free(void *mem) {
-    if (mem == NULL) return;
+void free_func(void *mem, int line, const char *file) {
+    if (mem == NULL)
+        return;
+    if (enable_malloc_debug)
+        memreg_free((uint32_t) mem, line, file);
     c_mem_free_addr((int) mem);
 }
 
-void *malloc_func(uint32_t size, int as_kernel) {
+void *malloc_func(uint32_t size, int as_kernel, int line, const char *file) {
     uint32_t addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
-    if (addr == 0) return NULL; // error
+    if (enable_malloc_debug && !as_kernel)
+        memreg_alloc(addr, size, line, file);
     return (void *) addr;
 }
 
-void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
-    if (mem == NULL) return malloc_func(new_size, as_kernel);
+void *realloc_func(void *mem, uint32_t new_size, int as_kernel, int line, const char *file) {
     uint32_t addr = (uint32_t) mem;
     uint32_t new_addr = c_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
-    if (new_addr == 0) return NULL;
+    if (enable_malloc_debug && !as_kernel)
+        memreg_alloc(new_addr, new_size, line, file);
+    if (new_addr == 0 || addr == 0)
+        return (void *) new_addr;
+    if (enable_malloc_debug)
+        memreg_free((uint32_t) mem, line, file);
     memcpy((uint8_t *) new_addr, (uint8_t *) addr, new_size);
     free(mem);
     return (void *) new_addr;
 }
-
 
 #define TABLE_BASE 0x2e
 #define TABLE_SIZE 0x4d
@@ -933,23 +948,34 @@ int wctomb(char *s, wchar_t wchar) {
     return 0;
 }
 
-void I_swap(char *x, char *y) {
-    char t = *x;
-    *x = *y;
-    *y = t;
+int manage_malloc_debug(int enable) {
+    if (enable != 0 && enable != 1) {
+        return -1;
+    }
+    if (enable_malloc_debug == enable) {
+        return 1;
+    }
+    enable_malloc_debug = enable;
+    if (!enable) {
+        memreg_clean(-1);
+    }
+    return 0;
 }
 
 // Function to reverse `buffer[i..j]`
-char* I_reverse(char *buffer, int i, int j)
-{
+char *I_reverse(char *buffer, int i, int j) {
+    char temp;
+
     while (i < j) {
-        I_swap(&buffer[i++], &buffer[j--]);
+        temp = buffer[i];
+        buffer[i++] = buffer[j];
+        buffer[j--] = temp;
     }
 
     return buffer;
 }
 
-char* itoa(int value, char* buffer, int base) {
+char *itoa(int value, char *buffer, int base) {
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;

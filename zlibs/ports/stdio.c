@@ -626,8 +626,8 @@ int vprintf(const char *format, va_list vlist) {
     int count;
 
     char *buffer = malloc(0x4000);
-    dopr(buffer, 0x4000, format, vlist);
-    count = fputs(buffer, stdout);
+    count = dopr(buffer, 0x4000, format, vlist);
+    fputs(buffer, stdout);
 
     free(buffer);
     return count;

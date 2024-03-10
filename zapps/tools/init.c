@@ -30,6 +30,7 @@ lib_t libs_at_boot[] = {
     {1002, "/lib/profan/profan.bin"},
     {1011, "/lib/ports/math.bin"},
     {1013, "/lib/ports/setjmp.bin"},
+    {1004, "/lib/profan/memreg.bin"},
     {1014, "/lib/ports/unistd.bin"},
     {1005, "/lib/profan/panda.bin"},
 };
