@@ -50,6 +50,11 @@ ADDONS = {
                 "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.bin",
                 "path": [profan_path, "out", "zapps", "fatpath", "tcc.bin"]
             },
+            {
+                "name": "libtcc.a",
+                "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
+                "path": [profan_path, "out", "sys", "libtcc.a"]
+            },
         ]
     },
     "vlink": {

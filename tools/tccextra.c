@@ -30,23 +30,3 @@ void *memmove(void *dest, const void *src, unsigned int n) {
     }
     return dest;
 }
-
-// __fixxfdi
-long long __fixxfdi(long double x) {
-    return (long long) x;
-}
-
-// __fixdfdi
-long long __fixdfdi(double x) {
-    return (long long) x;
-}
-
-// __ashldi3
-long long __ashldi3(long long u, unsigned int b) {
-    return u << b;
-}
-
-// __ashrdi3
-long long __ashrdi3(long long u, unsigned int b) {
-    return u >> b;
-}

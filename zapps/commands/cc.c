@@ -12,8 +12,9 @@
 #define XEC_PATH "/bin/commands/xec.bin"    // elf to binary
 #define ZEC_PATH "/sys/zentry.c"            // zentry source
 #define ZEO_PATH "/sys/zentry.o"            // zentry object
-#define TLC_PATH "/sys/tcclib.c"            // tcclib source
-#define TLO_PATH "/sys/tcclib.o"            // tcclib object
+#define TEC_PATH "/sys/tccextra.c"          // tccextra source
+#define TEO_PATH "/sys/tccextra.o"          // tccextra object
+#define TLA_PATH "/sys/libtcc.a"            // libtcc archive
 
 #define OPTION_ERROR    1 << 0
 #define OPTION_HELP     1 << 1
@@ -152,13 +153,13 @@ int build_dependencies(void) {
             return 1;
         }
     }
-    if (!does_file_exist(TLO_PATH)) {
-        if (does_file_exist(TLC_PATH)) {
-            if (execute_command(TCC_PATH, "-c " TLC_PATH " -o " TLO_PATH)) {
+    if (!does_file_exist(TEO_PATH)) {
+        if (does_file_exist(TEC_PATH)) {
+            if (execute_command(TCC_PATH, "-c " TEC_PATH " -o " TEO_PATH)) {
                 return 1;
             }
         } else {
-            printf("cc: tcclib.c and tcclib.o not found, cannot compile\n");
+            printf("cc: tccextra.c and tccextra.o not found, cannot compile\n");
             return 1;
         }
     }
@@ -190,12 +191,14 @@ int main(int argc, char **argv) {
             " vlink.bin   %s\e[0m\n"
             " xec.bin     %s\e[0m\n"
             " zentry      %s\e[0m\n"
-            " tcclib      %s\e[0m\n",
+            " tccextra    %s\e[0m\n"
+            " libtcc      %s\e[0m\n",
             does_file_exist(TCC_PATH) ? "\e[92mfound" : "\e[91mnot found",
             does_file_exist(VLK_PATH) ? "\e[92mfound" : "\e[91mnot found",
             does_file_exist(XEC_PATH) ? "\e[92mfound" : "\e[91mnot found",
             does_file_exist(ZEO_PATH) ? "\e[92mfound" : does_file_exist(ZEC_PATH) ? "\e[96msource" : "\e[91mnot found",
-            does_file_exist(TLO_PATH) ? "\e[92mfound" : does_file_exist(TLC_PATH) ? "\e[96msource" : "\e[91mnot found"
+            does_file_exist(TEO_PATH) ? "\e[92mfound" : does_file_exist(TEC_PATH) ? "\e[96msource" : "\e[91mnot found",
+            does_file_exist(TLA_PATH) ? "\e[92mfound" : "\e[91mnot found"
         );
         return 0;
     }
@@ -206,10 +209,15 @@ int main(int argc, char **argv) {
         printf("  -c  Check dependencies\n");
         printf("  -d  Compile dependencies\n");
         printf("  -h  Display this information\n");
-        printf("  -n  Not include zentry.o, tcclib.o\n");
+        printf("  -n  Not include zentry.o, tcceextra.o and libtcc.a\n");
         printf("  -r  Compile and run\n");
         printf("  -x  Do not use tmp files\n");
         return 0;
+    }
+
+    if (!does_file_exist(TCC_PATH)) {
+        printf("cc: tcc.bin not found\n");
+        return 1;
     }
 
     if (path == NULL) {
@@ -220,16 +228,25 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (!does_file_exist(VLK_PATH)) {
+        printf("cc: vlink.bin not found\n");
+        return 1;
+    }
+
+    if (!does_file_exist(XEC_PATH)) {
+        printf("cc: xec.bin not found\n");
+        return 1;
+    }
+
+    if (!does_file_exist(TLA_PATH)) {
+        printf("cc: libtcc.a not found\n");
+        return 1;
+    }
+
     char *full_path = assemble_path(pwd, path);
 
     if (!does_file_exist(full_path)) {
         printf("cc: %s file not found\n", full_path);
-    } else if (!does_file_exist(TCC_PATH)) {
-        printf("cc: tcc.bin not found\n");
-    } else if (!does_file_exist(VLK_PATH)) {
-        printf("cc: vlink.bin not found\n");
-    } else if (!does_file_exist(XEC_PATH)) {
-        printf("cc: xec.bin not found\n");
     } else {
         if (!(options & OPTION_NOADDS)) {
             if (build_dependencies()) {
@@ -275,11 +292,10 @@ int main(int argc, char **argv) {
 
         sprintf(args, "-c %s -o %s", full_path, obj_file);
         if (!execute_command(TCC_PATH, args)) {
-            // add zentry.o and tcclib.o to link if -n option is not set
             if (options & OPTION_NOADDS) {
                 sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s", elf_file, obj_file);
             } else {
-                sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s %s", elf_file, ZEO_PATH, obj_file, TLO_PATH);
+                sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s %s %s", elf_file, ZEO_PATH, obj_file, TEO_PATH, TLA_PATH);
             }
             if (!execute_command(VLK_PATH, args)) {
                 sprintf(args, "%s %s", elf_file, bin_file);
