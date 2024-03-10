@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 2"
+#define OLV_VERSION "0.11 rev 3"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -230,6 +230,35 @@ int local_strncmp_nocase(char *str1, char *str2, int n) {
         }
     }
     return 0;
+}
+
+int is_valid_name(char *name) {
+    if (name == NULL || name[0] == '\0') {
+        return 0;
+    }
+
+    if (name[0] >= '0' && name[0] <= '9') {
+        return 0;
+    }
+
+    for (int i = 0; keywords[i] != NULL; i++) {
+        if (local_strncmp_nocase(name, keywords[i], -1) == 0) {
+            return 0;
+        }
+    }
+
+    for (int i = 0; name[i] != '\0'; i++) {
+        if (
+            (name[i] < 'a' || name[i] > 'z') &&
+            (name[i] < 'A' || name[i] > 'Z') &&
+            (name[i] < '0' || name[i] > '9') &&
+            name[i] != '_'
+        ) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 /*******************************
@@ -1264,50 +1293,35 @@ char *if_debug(char **input) {
     return NULL;
 }
 
-char *if_del_var(char **input) {
+char *if_del(char **input) {
     // get argc
     int argc = 0;
     for (int i = 0; input[i] != NULL; i++) {
         argc++;
     }
 
-    if (argc != 1) {
-        raise_error("del", "Usage: del <variable name>");
-        return ERROR_CODE;
+    if (argc == 1 && input[0][0] != '-') {
+        del_variable(input[0]);
+        return NULL;
     }
 
-    // get name
-    char *name = input[0];
-
-    // delete variable
-    if (del_variable(name)) {
-        return ERROR_CODE;
+    if (argc == 2) {
+        if (strcmp(input[0], "-v") == 0) {
+            del_variable(input[1]);
+            return NULL;
+        } else if (strcmp(input[0], "-f") == 0) {
+            del_function(input[1]);
+            return NULL;
+        } else if (strcmp(input[0], "-p") == 0) {
+            del_pseudo(input[1]);
+            return NULL;
+        }
     }
 
-    return NULL;
-}
+    raise_error("del", "Usage: del [arg] <name>");
+    puts("  arg: -v (variable, default), -f (function), -p (pseudo)");
 
-char *if_delfunc(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
-    if (argc != 1) {
-        raise_error("delfunc", "Usage: delfunc <function name>");
-        return ERROR_CODE;
-    }
-
-    // get name
-    char *name = input[0];
-
-    // delete function
-    if (del_function(name)) {
-        return ERROR_CODE;
-    }
-
-    return NULL;
+    return ERROR_CODE;
 }
 
 char *if_exec(char **input) {
@@ -1369,6 +1383,11 @@ char *if_export(char **input) {
         return ERROR_CODE;
     }
 
+    if (!is_valid_name(input[0])) {
+        raise_error("export", "Invalid name '%s'", input[0]);
+        return ERROR_CODE;
+    }
+
     setenv(input[0], input[1], 1);
 
     return NULL;
@@ -1381,29 +1400,46 @@ char *if_find(char **input) {
     */
 
     #if PROFANBUILD
-    int argc = 0;
+    
+    int required_type = 0;
+    char *path, *dir = NULL;
+    char *ext = NULL;
+
     for (int i = 0; input[i] != NULL; i++) {
-        argc++;
+        if (strcmp(input[i], "-f") == 0) {
+            required_type = 1;
+        } else if (strcmp(input[i], "-d") == 0) {
+            required_type = 2;
+        } else if (strcmp(input[i], "-e") == 0) {
+            if (input[i + 1] == NULL) {
+                raise_error("find", "Usage: find [-f|-d] [-e <ext>] [dir]");
+                return ERROR_CODE;
+            }
+            ext = input[i + 1];
+            required_type = 1;
+            i++;
+        } else if (input[i][0] != '-') {
+            if (dir != NULL) {
+                raise_error("find", "Usage: find [-f|-d] [-e <ext>] [dir]");
+                return ERROR_CODE;
+            }
+            dir = input[i];
+        } else {
+            raise_error("find", "Unknown argument '%s'", input[i]);
+            return ERROR_CODE;
+        }
     }
 
-    if (argc > 2) {
-        raise_error("find", "Usage: find [-f|-d] [dir]");
+    if (required_type == 2 && ext != NULL) {
+        raise_error("find", "Cannot use -e with -d");
         return ERROR_CODE;
     }
 
-    int required_type = 0;
-    if (strcmp(input[0], "-f") == 0) {
-        required_type = 1;
-    } else if (strcmp(input[0], "-d") == 0) {
-        required_type = 2;
+    if (dir == NULL) {
+        dir = ".";
     }
 
-    char *user_path;
-    if (argc == 0 || (argc == 1 && required_type)) user_path = "";
-    if (argc == 1 && !required_type) user_path = input[0];
-    if (argc == 2) user_path = input[1];
-
-    char *path = assemble_path(g_current_directory, user_path);
+    path = assemble_path(g_current_directory, dir);
 
     sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
@@ -1435,6 +1471,12 @@ char *if_find(char **input) {
         ) {
             if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
                 continue;
+            }
+            if (ext != NULL && fu_is_file(out_ids[i])) {
+                char *tmp = strrchr(names[i], '.') + 1;
+                if (tmp == NULL || strcmp(tmp, ext) != 0) {
+                    continue;
+                }
             }
             tmp_path = assemble_path(path, names[i]);
             fu_simplify_path(tmp_path);
@@ -1521,6 +1563,11 @@ char *if_global(char **input) {
 
     // get value
     char *value = input[1];
+
+    if (!is_valid_name(name)) {
+        raise_error("global", "Invalid name '%s'", name);
+        return ERROR_CODE;
+    }
 
     // copy the current level
     int old_level = g_current_level;
@@ -1804,6 +1851,11 @@ char *if_pseudo(char **input) {
     // get value
     char *value = input[1];
 
+    if (!is_valid_name(name)) {
+        raise_error("pseudo", "Invalid name '%s'", name);
+        return ERROR_CODE;
+    }
+
     if (strcmp(name, value) == 0) {
         raise_error("pseudo", "Cannot set pseudo '%s' to itself", name);
         return ERROR_CODE;
@@ -1972,6 +2024,11 @@ char *if_set_var(char **input) {
         return ERROR_CODE;
     }
 
+    if (!is_valid_name(input[0])) {
+        raise_error("set", "Invalid name '%s'", input[0]);
+        return ERROR_CODE;
+    }
+
     // get value
     char *value = input[1];
 
@@ -2135,8 +2192,7 @@ char *if_ticks(char **input) {
 internal_function_t internal_functions[] = {
     {"cd", if_cd},
     {"debug", if_debug},
-    {"del", if_del_var},
-    {"delfunc", if_delfunc},
+    {"del", if_del},
     {"eval", if_eval},
     {"exec", if_exec},
     {"exit", if_exit},
@@ -3473,6 +3529,12 @@ int save_function(int line_count, char **lines) {
 
     if (line_end == 0) {
         raise_error(NULL, "Missing END for FUNC");
+        free(func_name);
+        return -1;
+    }
+
+    if (!is_valid_name(func_name)) {
+        raise_error(NULL, "Invalid function name '%s'", func_name);
         free(func_name);
         return -1;
     }

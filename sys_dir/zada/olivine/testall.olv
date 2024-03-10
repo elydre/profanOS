@@ -128,8 +128,8 @@ END; ELSE
     echo function argv failed
 END
 
-delfunc testargc
-delfunc testargv
+del -f testargc
+del -f testargv
 
 FUNC testglobal
     global var 42
@@ -145,7 +145,7 @@ END; ELSE
 END
 
 del var
-delfunc testglobal
+del -f testglobal
 
 set l0 66
 
@@ -172,8 +172,8 @@ END; ELSE
 END
 
 del l0
-delfunc testlocalsub
-delfunc testlocal
+del -f testlocalsub
+del -f testlocal
 
 FUNC deepeval
     IF !(eval 43 ~ 43)
@@ -222,7 +222,7 @@ END
 
 deepeval
 
-delfunc deepeval
+del -f deepeval
 
 FUNC temp
     echo test
@@ -249,5 +249,5 @@ END
 
 pp_tester
 
-delfunc pp_tester
-delfunc temp
+del -f pp_tester
+del -f temp

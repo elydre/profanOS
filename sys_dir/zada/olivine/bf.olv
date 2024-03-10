@@ -195,11 +195,11 @@ END
 
 bf_execute '++++++++++[>+>+++>+++++++>++++++++++<<<<-]>>>>+++++++++++.---.---.+++++++++++++.-------------.+++++.---------.<<<.'
 
-delfunc nb_to_hex
-delfunc hex_to_nb
-delfunc bf_set_me
-delfunc bf_get_me
-delfunc bf_execute
+del -f nb_to_hex
+del -f hex_to_nb
+del -f bf_set_me
+del -f bf_get_me
+del -f bf_execute
 del bf_mem
 del bf_mem_len
 del bf_mem_ptr
