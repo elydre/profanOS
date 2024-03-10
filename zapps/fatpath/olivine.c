@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 3"
+#define OLV_VERSION "0.11 rev 4"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2898,8 +2898,9 @@ char **lexe_program(char *program, int interp_bckslsh) {
 
     int tmp_index = 0;
     int is_string_begin = 1;
+    int in_quote = 0;
     for (int i = 0; program[i] != '\0'; i++) {
-        if (program[i] == '\n' || program[i] == ';') {
+        if (program[i] == '\n' || (program[i] == ';' && !in_quote)) {
             is_string_begin = 1;
 
             while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
@@ -2919,6 +2920,10 @@ char **lexe_program(char *program, int interp_bckslsh) {
             line_index++;
             tmp_index = 0;
             continue;
+        }
+
+        if (program[i] == STRING_CHAR) {
+            in_quote = !in_quote;
         }
 
         // remove multiple spaces
@@ -3676,7 +3681,7 @@ void olv_print(char *str, int len) {
     }
 
     char *tmp = malloc((len + 1) * sizeof(char));
-    while (!(str[i] == '!' || str[i] == ' '  || str[i] == ';') && i != len) {
+    while (!(str[i] == '!' || str[i] == ' ' || str[i] == ';') && i != len) {
         i++;
     }
 
@@ -3685,6 +3690,7 @@ void olv_print(char *str, int len) {
     printf("\e[%sm%s", get_func_color(tmp + dec), tmp);
 
     int from = i;
+    int in_quote = 0;
     for (; i < len; i++) {
         if (i < len - 1 && str[i] == '/' && str[i+1] == '/') {
             if (from != i) {
@@ -3695,6 +3701,10 @@ void olv_print(char *str, int len) {
             olv_print(str + i, len - i);
             free(tmp);
             return;
+        }
+
+        if (str[i] == STRING_CHAR) {
+            in_quote = !in_quote;
         }
 
         if (str[i] == '!' && str[i + 1] == '(') {
@@ -3730,7 +3740,7 @@ void olv_print(char *str, int len) {
             from = i + 1;
         }
 
-        else if (str[i] == ';') {
+        else if (str[i] == ';' && !in_quote) {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
@@ -3830,15 +3840,19 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
     // check for ';' or '!('
     for (int j = 0; j < len; j++) {
+        if (str[j] == STRING_CHAR)
+            is_var = !is_var;
         if (str[j] == '!' && str[j + 1] == '(') {
             dec = j + 2;
             i = dec;
             j++;
-        } else if (str[j] == ';') {
+        } else if (str[j] == ';' && !is_var) {
             dec = j + 1;
             i = dec;
         }
     }
+
+    is_var = 0;
 
     while (str[i] == ' ' && i != len) {
         dec++;
