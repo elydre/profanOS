@@ -380,12 +380,16 @@ int serial_debug(char *frm, ...) {
 int profan_open(char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
+    char *cwd = getenv("PWD");
+    char *fullpath = cwd ? assemble_path(cwd, path) : strdup(path);
+
+    sid_t sid = fu_path_to_sid(ROOT_SID, fullpath);
     if (IS_NULL_SID(sid) && (flags & O_CREAT)) {
-        sid = fu_file_create(0, path);
+        sid = fu_file_create(0, fullpath);
     }
 
     if (IS_NULL_SID(sid)) {
+        free(fullpath);
         return -1;
     }
 
@@ -393,9 +397,10 @@ int profan_open(char *path, int flags, ...) {
         fu_set_file_size(sid, 0);
     }
 
-    int fd = fm_open(path);
+    int fd = fm_open(fullpath);
 
     if (fd < 0) {
+        free(fullpath);
         return -1;
     }
 
@@ -403,6 +408,7 @@ int profan_open(char *path, int flags, ...) {
         fm_lseek(fd, 0, SEEK_END);
     }
 
+    free(fullpath);
     return fd;
 }
 
