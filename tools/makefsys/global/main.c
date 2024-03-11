@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 
     filesys_t *filesys = fs_create();
 
-    vdisk_t *d0 = vdisk_create(10000);
+    vdisk_t *d0 = vdisk_create(1000);
     fs_mount_vdisk(filesys, d0, 2);
     fs_print_status(filesys);
 

@@ -92,7 +92,7 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
 int vdisk_get_unused_sector(vdisk_t *vdisk) {
     if (vdisk->used_count >= vdisk->size) {
         printf("vdisk %p is full, extend...\n", vdisk);
-        vdisk_extend(vdisk, vdisk->size + 10000);
+        vdisk_extend(vdisk, vdisk->size + 1000);
     }
     return vdisk->free[vdisk->used_count];
 }
