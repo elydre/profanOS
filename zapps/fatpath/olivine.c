@@ -1400,7 +1400,7 @@ char *if_find(char **input) {
     */
 
     #if PROFANBUILD
-    
+
     int required_type = 0;
     char *path, *dir = NULL;
     char *ext = NULL;
