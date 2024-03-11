@@ -175,6 +175,9 @@ def show_list():
     print("Available addons:")
     for addon in ADDONS:
         print(f"  {addon}: {ADDONS[addon]['description']}")
+    print("Weighty addons:")
+    for addon in WADDONS:
+        print(f"  {addon}: {WADDONS[addon]['description']}")
 
 table = {
     "-h": show_help,
