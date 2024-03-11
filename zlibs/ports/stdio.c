@@ -353,7 +353,6 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // write in the buffer
-    uint32_t ret = count;
     int need_flush = 0;
 
     for (uint32_t i = 0; i < count; i++) {
@@ -361,8 +360,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
         if (stream->buffer_size >= (FILE_BUFFER_SIZE - 1)) {
             need_flush = 0;
             if (fflush(stream) == EOF) {
-                ret = 0;
-                break;
+                return 0;
             }
         }
 
@@ -375,12 +373,9 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // flush the buffer if needed
-    if (need_flush && fflush(stream) == EOF) {
-        ret = 0;
-    }
-
-    // return the number of elements written
-    return ret / size;
+    if (need_flush && fflush(stream) == EOF)
+        return 0;
+    return count / size;
 }
 
 int fseek(FILE *stream, long offset, int whence) {
@@ -698,6 +693,9 @@ long ftell(FILE *stream) {
         stream = STD_STREAM + 1;
     else if (stream == stderr)
         stream = STD_STREAM + 2;
+
+    // flush the buffer
+    fflush(stream);
 
     return fm_tell(stream->fd);
 }
