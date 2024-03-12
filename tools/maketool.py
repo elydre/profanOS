@@ -270,11 +270,16 @@ def get_kernel_version(print_info = True):
 def write_build_logs():
     cprint(COLOR_EXEC, "writing build logs...")
 
+    try:
+        user_name = os.getlogin()
+    except Exception:
+        user_name = "unknown"
+
     text = "- initrd.bin BUILD LOGS -\n"
     text += "UTC build time: " + datetime.datetime.now(datetime.timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
-    text += f"machine name:   {os.uname().nodename} ({os.uname().sysname}) by {os.getlogin()}\n"
+    text += f"machine name:   {os.uname().nodename} ({os.uname().sysname}) by {user_name}\n"
     text += f"build for:      profanOS kernel {get_kernel_version(False)}\n"
     text += f"CC version:     {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
     text += f"ld version:     {os.popen('ld --version').read().splitlines()[0]}\n"
