@@ -274,11 +274,12 @@ def write_build_logs():
     text += "UTC build time: " + datetime.datetime.now(datetime.timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
-    text += f"machine name:   {os.uname().nodename} ({os.uname().sysname})\n"
-    text += f"build for:      profanOS {get_kernel_version(False)}\n"
+    text += f"machine name:   {os.uname().nodename} ({os.uname().sysname}) by {os.getlogin()}\n"
+    text += f"build for:      profanOS kernel {get_kernel_version(False)}\n"
     text += f"CC version:     {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
     text += f"ld version:     {os.popen('ld --version').read().splitlines()[0]}\n"
     text += f"python version: {os.popen('python3 --version').read().splitlines()[0]}\n"
+    text += f"grub version:   {os.popen('grub-mkrescue --version').read().splitlines()[0]}\n"
 
     with open(f"{OUT_DIR}/disk/user/hbl.txt", "w") as f:
         f.write(text)
