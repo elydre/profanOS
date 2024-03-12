@@ -334,13 +334,13 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
     print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ || true")
 
-    if not file_exists(f"{OUT_DIR}/make/makefsys.bin"):
+    if not file_exists(f"{OUT_DIR}/make/makefsys"):
         cprint(COLOR_INFO, "building makefsys...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"{CC} -o {OUT_DIR}/make/makefsys.bin -Wall -Wextra {TOOLS_DIR}/makefsys/*/*.c")
+        print_and_exec(f"{CC} -o {OUT_DIR}/make/makefsys -Wall -Wextra -g {TOOLS_DIR}/makefsys/*/*.c")
 
     cprint(COLOR_INFO, "building initrd.bin...")
-    print_and_exec(f"./{OUT_DIR}/make/makefsys.bin \"$(pwd)/{OUT_DIR}/disk\"")
+    print_and_exec(f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
 
 
 def qemu_run(iso_run = True, kvm = False, audio = False):

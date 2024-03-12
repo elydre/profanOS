@@ -13,7 +13,7 @@ vdisk_t *vdisk_create(uint32_t initsize) {
     vdisk->used = malloc(sizeof(uint8_t) * initsize);
     vdisk->used_count = 0;
     for (uint32_t i = 0; i < initsize; i++) {
-        vdisk->sectors[i] = malloc(sizeof(sector_t));
+        vdisk->sectors[i] = calloc(1, sizeof(sector_t));
         if (vdisk->sectors[i] == NULL) {
             printf("error: could not allocate sector %d\n", i);
             exit(1);
@@ -81,7 +81,7 @@ int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
     vdisk->free = realloc(vdisk->free, sizeof(uint32_t) * newsize);
     vdisk->used = realloc(vdisk->used, sizeof(uint8_t) * newsize);
     for (uint32_t i = vdisk->size; i < newsize; i++) {
-        vdisk->sectors[i] = malloc(sizeof(sector_t));
+        vdisk->sectors[i] = calloc(1, sizeof(sector_t));
         vdisk->used[i] = 0;
         vdisk->free[i] = i;
     }

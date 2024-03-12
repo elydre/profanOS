@@ -6,7 +6,7 @@
 
 filesys_t *fs_create(void) {
     filesys_t *filesys = malloc(sizeof(filesys_t));
-    filesys->vdisk = malloc(sizeof(vdisk_t *) * FS_DISKS);
+    filesys->vdisk = calloc(FS_DISKS, sizeof(vdisk_t *));
     filesys->vdisk_count = 0;
     return filesys;
 }
