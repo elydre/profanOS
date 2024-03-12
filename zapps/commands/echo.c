@@ -5,9 +5,9 @@
 
 char *app_ansi_color(char *str) {
     char *out = malloc(strlen(str) + 1);
-    int str_index = 0;
+    int dup_index, str_index = 0;
 
-    for (int dup_index = 0; str[str_index]; dup_index++) {
+    for (dup_index = 0; str[str_index]; dup_index++) {
         if (str[str_index] == '\\' && (str[str_index + 1] == 'e' || str[str_index + 1] == 'E')) {
             out[dup_index] = '\e';
             str_index += 2;
@@ -25,14 +25,15 @@ char *app_ansi_color(char *str) {
         }
     }
 
+    out[dup_index] = '\0';
     return out;
 }
 
 void show_help(void) {
     puts("Usage: echo [options] [string ...]\n"
         "Echo the STRING(s) to standard output.\n\n"
-        "  -e        recognize ANSI color escape sequences\n"
-        "  -h        display this help and exit"
+        "  -e     recognize ANSI color escape sequences\n"
+        "  -h     display this help and exit"
     );
 }
 
