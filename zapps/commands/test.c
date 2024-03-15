@@ -53,11 +53,20 @@ typedef struct {
     unsigned char *data;
 } Elf32_Str;
 
+// rel
+typedef struct {
+    unsigned int r_offset;      // Address
+    unsigned int r_info;        // Relocation type and symbol index
+} Elf32_Rel;
+
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
 #define ET_DYN          3
 #define EM_386          3
 #define SHT_PROGBITS    1
+
+#define ELF32_R_SYM(i)  ((i) >> 8)
+#define ELF32_R_TYPE(i) ((unsigned char)(i))
 
 typedef struct {
     uint32_t size;
@@ -90,7 +99,7 @@ int load_sections(dl_t *dl) {
             required_size = shdr[i].sh_addr + shdr[i].sh_size;
         }
     }
-    
+
     printf("required_size = %d\n", required_size);
 
     dl->mem = (void *) c_mem_alloc(required_size, 0x1000, 6);
@@ -105,9 +114,29 @@ int load_sections(dl_t *dl) {
     return 0;
 }
 
+int file_relocate(dl_t *dl) {
+    puts("");
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
+    
+    for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_type == 9) { // SHT_REL
+            printf("rel in section %d\n", i);
+            Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
+            for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
+                printf("rel[%d].r_offset = %p\n", j, dl->mem + rel[j].r_offset);
+                *(uint32_t *)(dl->mem + rel[j].r_offset) += (uint32_t) dl->mem;
+            }
+        }
+    }
+    puts("");
+
+    return 0;
+}
+
 void *dlopen(const char *filename, int flag) {
     dl_t *dl = malloc(sizeof(dl_t));
-    
+
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         return NULL;
@@ -128,6 +157,7 @@ void *dlopen(const char *filename, int flag) {
     }
 
     load_sections(dl);
+    file_relocate(dl);
 
     return dl;
 }
@@ -188,9 +218,16 @@ int main(int c) {
         return 1;
     }
 
-    int (*add)(int, int) = dlsym(handle, "add");
+    void (*set_val)(int) = dlsym(handle, "set_val");
+    int (*get_val)() = dlsym(handle, "get_val");
 
-    printf("add(1, 2) = %d\n", add(1, 2));
+    if (set_val == NULL || get_val == NULL) {
+        fprintf(stderr, "dlsym failed...\n");
+        return 1;
+    }
+
+    set_val(42);
+    printf("get_val() = %d\n", get_val());
 
     dlclose(handle);
     return 0;
