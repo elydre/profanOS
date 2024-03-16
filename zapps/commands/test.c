@@ -48,11 +48,6 @@ typedef struct {
     unsigned short st_shndx;    // Section index
 } Elf32_Sym;
 
-// dynstr
-typedef struct {
-    unsigned char *data;
-} Elf32_Str;
-
 // rel
 typedef struct {
     unsigned int r_offset;      // Address
@@ -71,7 +66,11 @@ typedef struct {
 typedef struct {
     uint32_t size;
     uint8_t *file;
+
     uint8_t *mem;
+
+    uint8_t *dymsym;
+    uint8_t *dynstr;
 } dl_t;
 
 int is_valid_elf(void *data) {
@@ -95,18 +94,18 @@ int load_sections(dl_t *dl) {
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS) {
-            required_size = shdr[i].sh_addr + shdr[i].sh_size;
-        }
+        if (shdr[i].sh_type == SHT_PROGBITS &&
+            shdr[i].sh_addr + shdr[i].sh_size > required_size
+        ) required_size = shdr[i].sh_addr + shdr[i].sh_size;
     }
 
-    printf("required_size = %d\n", required_size);
+    printf("required_size: %d\n", required_size);
 
-    dl->mem = (void *) c_mem_alloc(required_size, 0x1000, 6);
+    dl->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == SHT_PROGBITS) {
-            printf("loading section %d at %p\n", i, dl->mem + shdr[i].sh_addr);
+            // printf("loading section %d at %p\n", i, dl->mem + shdr[i].sh_addr);
             memcpy(dl->mem + shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
         }
     }
@@ -115,21 +114,19 @@ int load_sections(dl_t *dl) {
 }
 
 int file_relocate(dl_t *dl) {
-    puts("");
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
-    
+
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
             printf("rel in section %d\n", i);
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                printf("rel[%d].r_offset = %p\n", j, dl->mem + rel[j].r_offset);
+                // printf("rel[%d].r_offset = %p\n", j, dl->mem + rel[j].r_offset);
                 *(uint32_t *)(dl->mem + rel[j].r_offset) += (uint32_t) dl->mem;
             }
         }
     }
-    puts("");
 
     return 0;
 }
@@ -156,8 +153,26 @@ void *dlopen(const char *filename, int flag) {
         return NULL;
     }
 
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_type == 11) {
+            dl->dymsym = dl->file + shdr[i].sh_offset;
+            dl->dynstr = dl->file + shdr[shdr[i].sh_link].sh_offset;
+            break;
+        }
+    }
+
+    if (dl->dymsym == NULL || dl->dynstr == NULL) {
+        free(dl->file);
+        free(dl);
+        return NULL;
+    }
+
     load_sections(dl);
     file_relocate(dl);
+    puts("");
 
     return dl;
 }
@@ -165,35 +180,12 @@ void *dlopen(const char *filename, int flag) {
 void *dlsym(void *handle, const char *symbol) {
     dl_t *dl = (dl_t *)handle;
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
-
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
-    uint8_t *dymsym = NULL;
-    uint8_t *dynstr = NULL;
 
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 11) {
-            dymsym = dl->file + shdr[i].sh_offset;
-            dynstr = dl->file + shdr[shdr[i].sh_link].sh_offset;
-            break;
-        }
-    }
-
-    if (dymsym == NULL || dynstr == NULL) {
-        printf("dymsym or dynstr is NULL\n");
-        return NULL;
-    }
-
-    printf("dymsym = %p, dynstr = %p\n", dymsym - dl->file, dynstr - dl->file);
-
-    for (uint8_t *p = dymsym; p < dymsym + shdr[1].sh_size; p += sizeof(Elf32_Sym)) {
+    for (uint8_t *p = dl->dymsym; p < dl->dymsym + shdr[1].sh_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
-        if (strcmp((char *) dynstr + sym->st_name, symbol) == 0) {
+        if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
             printf("symbol found: %s\n", symbol);
-            printf("sym->st_value = %p\n", sym->st_value);
-            printf("sym->st_size = %d\n", sym->st_size);
-            printf("sym->st_info = %d\n", sym->st_info);
-            printf("sym->st_other = %d\n", sym->st_other);
-            printf("sym->st_shndx = %d\n", sym->st_shndx);
             return (void *)(dl->mem + sym->st_value);
         }
     }
@@ -205,13 +197,15 @@ void *dlsym(void *handle, const char *symbol) {
 int dlclose(void *handle) {
     dl_t *dl = (dl_t *)handle;
     free(dl->file);
+    free(dl->mem);
     free(dl);
     return 0;
 }
 
 int main(int c) {
-    system("cc -d; tcc -shared /user/lib.c -o /user/libtest.so");
-    if (c != 1) return 0;
+    if (c == 1)
+        system("cc -d; tcc -shared /user/lib.c -o /user/libtest.so");
+
     void *handle = dlopen("/user/libtest.so", 42);
     if (handle == NULL) {
         fprintf(stderr, "dlopen failed...\n");
