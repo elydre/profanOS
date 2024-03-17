@@ -6,52 +6,48 @@
 
 // elf header
 
-// Elf32_Ehdr
 typedef struct {
-    unsigned char e_ident[16];  // ELF identification
-    unsigned short e_type;      // Object file type
-    unsigned short e_machine;   // Machine type
-    unsigned int e_version;     // Object file version
-    unsigned int e_entry;       // Entry point address
-    unsigned int e_phoff;       // Program header offset
-    unsigned int e_shoff;       // Section header offset
-    unsigned int e_flags;       // Processor-specific flags
-    unsigned short e_ehsize;    // ELF header size
-    unsigned short e_phentsize; // Size of program header entry
-    unsigned short e_phnum;     // Number of program header entries
-    unsigned short e_shentsize; // Size of section header entry
-    unsigned short e_shnum;     // Number of section header entries
-    unsigned short e_shstrndx;  // Section name string table index
+    uint8_t  e_ident[16];   // ELF identification
+    uint16_t e_type;        // Object file type
+    uint16_t e_machine;     // Machine type
+    uint32_t e_version;     // Object file version
+    uint32_t e_entry;       // Entry point address
+    uint32_t e_phoff;       // Program header offset
+    uint32_t e_shoff;       // Section header offset
+    uint32_t e_flags;       // Processor-specific flags
+    uint16_t e_ehsize;      // ELF header size
+    uint16_t e_phentsize;   // Size of program header entry
+    uint16_t e_phnum;       // Number of program header entries
+    uint16_t e_shentsize;   // Size of section header entry
+    uint16_t e_shnum;       // Number of section header entries
+    uint16_t e_shstrndx;    // Section name string table index
 } Elf32_Ehdr;
 
-// Elf32_Shdr
 typedef struct {
-    unsigned int sh_name;       // Section name (string tbl index)
-    unsigned int sh_type;       // Section type
-    unsigned int sh_flags;      // Section flags
-    unsigned int sh_addr;       // Address where section is to be loaded
-    unsigned int sh_offset;     // File offset of section data
-    unsigned int sh_size;       // Size of section data
-    unsigned int sh_link;       // Section index linked to this section
-    unsigned int sh_info;       // Extra information
-    unsigned int sh_addralign;  // Section alignment
-    unsigned int sh_entsize;    // Entry size if section holds table
+    uint32_t sh_name;       // Section name (string tbl index)
+    uint32_t sh_type;       // Section type
+    uint32_t sh_flags;      // Section flags
+    uint32_t sh_addr;       // Address where section is to be loaded
+    uint32_t sh_offset;     // File offset of section data
+    uint32_t sh_size;       // Size of section data
+    uint32_t sh_link;       // Section index linked to this section
+    uint32_t sh_info;       // Extra information
+    uint32_t sh_addralign;  // Section alignment
+    uint32_t sh_entsize;    // Entry size if section holds table
 } Elf32_Shdr;
 
-// dymsym
 typedef struct {
-    unsigned int st_name;       // Symbol name (string tbl index)
-    unsigned int st_value;      // Symbol value
-    unsigned int st_size;       // Symbol size
-    unsigned char st_info;      // Symbol type and binding
-    unsigned char st_other;     // Symbol visibility
-    unsigned short st_shndx;    // Section index
+    uint32_t st_name;       // Symbol name (string tbl index)
+    uint32_t st_value;      // Symbol value
+    uint32_t st_size;       // Symbol size
+    uint8_t  st_info;       // Symbol type and binding
+    uint8_t  st_other;      // Symbol visibility
+    uint16_t st_shndx;      // Section index
 } Elf32_Sym;
 
-// rel
 typedef struct {
-    unsigned int r_offset;      // Address
-    unsigned int r_info;        // Relocation type and symbol index
+    uint32_t r_offset;      // Address
+    uint32_t r_info;        // Relocation type and symbol index
 } Elf32_Rel;
 
 #define ELFMAG          "\177ELF"
@@ -61,7 +57,7 @@ typedef struct {
 #define SHT_PROGBITS    1
 
 #define ELF32_R_SYM(i)  ((i) >> 8)
-#define ELF32_R_TYPE(i) ((unsigned char)(i))
+#define ELF32_R_TYPE(i) ((uint8_t)(i))
 
 typedef struct {
     uint32_t size;
@@ -203,8 +199,8 @@ int dlclose(void *handle) {
 }
 
 int main(int c) {
-    if (c == 1)
-        system("cc -d; tcc -shared /user/lib.c -o /user/libtest.so");
+    /*
+    system("cc -d; tcc -shared /user/lib.c -o /user/libtest.so");
 
     void *handle = dlopen("/user/libtest.so", 42);
     if (handle == NULL) {
@@ -224,5 +220,13 @@ int main(int c) {
     printf("get_val() = %d\n", get_val());
 
     dlclose(handle);
+    */
+
+    system(
+        "cc -d;"
+        "tcc -shared /user/lib.c -o /user/libtest.so;"
+        "tcc -ltest /user/test.c -o /test.elf -L/user"
+    );
+
     return 0;
 }
