@@ -50,6 +50,14 @@ typedef struct {
     uint32_t r_info;        // Relocation type and symbol index
 } Elf32_Rel;
 
+typedef struct {
+    uint32_t d_tag;         // Entry type
+    union {
+        uint32_t d_val;     // Integer value
+        uint32_t d_ptr;     // Address value
+    } d_un;
+} Elf32_Dyn;
+
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
 #define ET_EXEC         2
@@ -59,6 +67,8 @@ typedef struct {
 
 #define ELF32_R_SYM(i)  ((i) >> 8)
 #define ELF32_R_TYPE(i) ((uint8_t)(i))
+
+#define ELF32_ST_BIND(i) ((i) >> 4)
 
 typedef struct {
     uint32_t size;
@@ -203,7 +213,7 @@ void *dlsym(void *handle, const char *symbol) {
     for (uint8_t *p = dl->dymsym; p < dl->dymsym + shdr[1].sh_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
         if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
-            printf("symbol found: %s\n", symbol);
+            printf("symbol found: %s at %p\n", symbol, dl->mem + sym->st_value);
             return (void *)(dl->mem + sym->st_value);
         }
     }
@@ -221,7 +231,32 @@ int dlclose(void *handle) {
 }
 
 int dynamic_linker(dl_t *exec, dl_t *lib) {
-    // use dlsym to find symbols in lib and replace them in exec
+    // resolve symbols in the executable using the library
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)exec->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(exec->file + ehdr->e_shoff);
+
+
+    int size = 0;
+
+    for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_type == 9) { // SHT_REL
+            printf("rel in section %d\n", i);
+            Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
+            for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
+                char *name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+                
+                printf("rel[%d].r_offset = %p (%s)\n", j, rel[j].r_offset, name);
+        
+                void *sym = dlsym(lib, name);
+
+                *(uint32_t *)(rel[j].r_offset) = (uint32_t) sym;
+            }
+        }
+    }
+
+    
+
     return 0;
 }
 
