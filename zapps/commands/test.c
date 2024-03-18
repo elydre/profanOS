@@ -80,6 +80,8 @@ typedef struct {
     uint8_t *dynstr;
 } dl_t;
 
+void *dlsym(void *handle, const char *symbol);
+
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     if (memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0) {
@@ -120,10 +122,8 @@ int load_sections(dl_t *dl, uint16_t type) {
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == SHT_PROGBITS) {
             // printf("loading section %d at %p\n", i, dl->mem + shdr[i].sh_addr);
-            if (type == ET_EXEC) {
-                printf("loading section %d at %p\n", i, shdr[i].sh_addr);
+            if (type == ET_EXEC)
                 memcpy((void *) shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
-            }
             else
                 memcpy(dl->mem + shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
         }
@@ -141,7 +141,18 @@ int file_relocate(dl_t *dl) {
             printf("rel in section %d\n", i);
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                // printf("rel[%d].r_offset = %p\n", j, dl->mem + rel[j].r_offset);
+                char *name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+                // i m not sure about this
+                if (name[0]) {
+                    uint32_t sym = (uint32_t) dlsym(dl, name);
+                    if (sym) {
+                        printf("rel[%d].r_offset = %p (%s) [dlsym] (%p, %p)\n", j, rel[j].r_offset, name, sym, *(uint32_t *)(dl->mem + rel[j].r_offset) + (uint32_t) dl->mem);
+                        *(uint32_t *)(dl->mem + rel[j].r_offset) = sym;
+                        continue;
+                    }
+                }
+                // end
+                printf("rel[%d].r_offset = %p (%s)\n", j, rel[j].r_offset, name);
                 *(uint32_t *)(dl->mem + rel[j].r_offset) += (uint32_t) dl->mem;
             }
         }
@@ -198,10 +209,11 @@ void *open_elf(const char *filename, uint16_t required_type) {
 
 void *dlopen(const char *filename, int flag) {
     dl_t *dl = open_elf(filename, ET_DYN);
+    if (dl == NULL) {
+        return NULL;
+    }
     load_sections(dl, ET_DYN);
     file_relocate(dl);
-    puts("");
-
     return dl;
 }
 
@@ -213,7 +225,7 @@ void *dlsym(void *handle, const char *symbol) {
     for (uint8_t *p = dl->dymsym; p < dl->dymsym + shdr[1].sh_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
         if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
-            printf("symbol found: %s at %p\n", symbol, dl->mem + sym->st_value);
+            printf("symbol found: %s -> %p\n", symbol, dl->mem + sym->st_value);
             return (void *)(dl->mem + sym->st_value);
         }
     }
@@ -245,17 +257,15 @@ int dynamic_linker(dl_t *exec, dl_t *lib) {
             Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 char *name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
-                
+
                 printf("rel[%d].r_offset = %p (%s)\n", j, rel[j].r_offset, name);
-        
+
                 void *sym = dlsym(lib, name);
 
                 *(uint32_t *)(rel[j].r_offset) = (uint32_t) sym;
             }
         }
     }
-
-    
 
     return 0;
 }
@@ -284,6 +294,12 @@ int main(int c) {
     dlclose(handle);
     */
 
+    /*system(
+        "cc -d;"
+        "tcc -shared /user/lib.c -o /user/libtest.so;"
+        "tcc -lft /user/test.c -o /test.elf -L/user"
+    );*/
+
     system(
         "cc -d;"
         "tcc -shared /user/lib.c -o /user/libtest.so;"
@@ -303,7 +319,9 @@ int main(int c) {
     }
 
     load_sections(test, ET_EXEC);
+
     dynamic_linker(test, lib);
+    puts("");
 
     int (*main)() = (int (*)()) ((Elf32_Ehdr *)test->file)->e_entry;
     printf("main = %p\n", main);

@@ -1,9 +1,10 @@
-int globle_val = 0;
+#include <stdio.h>
 
-void set_val(int val) {
-    globle_val = val;
+void func2(void) {
+    printf("func2\n");
 }
 
-int get_val(void) {
-    return globle_val;
+void func1(void) {
+    printf("func1\n");
+    func2();
 }

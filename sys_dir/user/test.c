@@ -1,10 +1,8 @@
 #include <stdio.h>
-
-void set_val(int val);
-int get_val(void);
+void func1(void);
 
 int main(void) {
-    set_val(10);
-    printf("get_val() = %d\n", get_val());
-    return 42;
+    printf("Hello %p\n", func1);
+    func1();
+    return 0;
 }
