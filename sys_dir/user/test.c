@@ -6,5 +6,5 @@ int get_val(void);
 int main(void) {
     set_val(10);
     printf("get_val() = %d\n", get_val());
-    return 0;
+    return 42;
 }

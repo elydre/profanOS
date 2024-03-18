@@ -66,6 +66,10 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
 }
 
 int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
+    uint32_t vbase = RUN_BIN_VBASE;
+    if (str_cmp(argv[0], "test") == 0)
+        vbase = 0xB0000000;
+
     int pid = process_get_pid();
 
     if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
@@ -90,7 +94,7 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
         vcunt = fsize * 2;
 
     scuba_directory_t *dir = scuba_directory_inited();
-    scuba_create_virtual(dir, RUN_BIN_VBASE, vcunt / 0x1000);
+    scuba_create_virtual(dir, vbase, vcunt / 0x1000);
     process_switch_directory(pid, dir);
 
     // get argc
@@ -99,7 +103,7 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
         argc++;
 
     // load binary
-    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
+    fs_cnt_read(fs_get_main(), sid, (void *) vbase, 0, real_fsize);
 
     // move the stack if needed
     uint32_t *stack_top = (uint32_t *) process_get_info(pid, PROCESS_INFO_STACK);
@@ -113,7 +117,7 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     }
 
     // call main
-    int (*main)(int, char **) = (int (*)(int, char **)) RUN_BIN_VBASE;
+    int (*main)(int, char **) = (int (*)(int, char **)) vbase;
     int ret = main(argc, argv) & 0xFF;
     return force_exit_pid(process_get_pid(), ret, 1);
 }

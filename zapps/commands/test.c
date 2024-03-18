@@ -52,6 +52,7 @@ typedef struct {
 
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
+#define ET_EXEC         2
 #define ET_DYN          3
 #define EM_386          3
 #define SHT_PROGBITS    1
@@ -69,12 +70,12 @@ typedef struct {
     uint8_t *dynstr;
 } dl_t;
 
-int is_valid_elf(void *data) {
+int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     if (memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0) {
         return 0;
     }
-    if (ehdr->e_type != ET_DYN) {
+    if (ehdr->e_type != required_type) {
         return 0;
     }
     if (ehdr->e_machine != EM_386) {
@@ -83,7 +84,7 @@ int is_valid_elf(void *data) {
     return 1;
 }
 
-int load_sections(dl_t *dl) {
+int load_sections(dl_t *dl, uint16_t type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
@@ -94,15 +95,27 @@ int load_sections(dl_t *dl) {
             shdr[i].sh_addr + shdr[i].sh_size > required_size
         ) required_size = shdr[i].sh_addr + shdr[i].sh_size;
     }
+    required_size -= ehdr->e_entry;
+    required_size = (required_size + 0xFFF) & ~0xFFF;
 
-    printf("required_size: %d\n", required_size);
+    printf("required_size: %x\n", required_size);
 
-    dl->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
+    if (type == ET_EXEC) {
+        dl->mem = (void *) 0xC0000000;
+        c_scuba_add(0xC0000000, required_size / 0x1000);
+    } else {
+        dl->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
+    }
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == SHT_PROGBITS) {
             // printf("loading section %d at %p\n", i, dl->mem + shdr[i].sh_addr);
-            memcpy(dl->mem + shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
+            if (type == ET_EXEC) {
+                printf("loading section %d at %p\n", i, shdr[i].sh_addr);
+                memcpy((void *) shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
+            }
+            else
+                memcpy(dl->mem + shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
         }
     }
 
@@ -127,11 +140,13 @@ int file_relocate(dl_t *dl) {
     return 0;
 }
 
-void *dlopen(const char *filename, int flag) {
+void *open_elf(const char *filename, uint16_t required_type) {
     dl_t *dl = malloc(sizeof(dl_t));
 
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
+        printf("file not found: %s\n", filename);
+        free(dl);
         return NULL;
     }
 
@@ -143,7 +158,8 @@ void *dlopen(const char *filename, int flag) {
     fread(dl->file, 1, dl->size, file);
     fclose(file);
 
-    if (dl->size < sizeof(Elf32_Ehdr) || !is_valid_elf(dl->file)) {
+    if (dl->size < sizeof(Elf32_Ehdr) || !is_valid_elf(dl->file, required_type)) {
+        printf("invalid elf file\n");
         free(dl->file);
         free(dl);
         return NULL;
@@ -161,12 +177,18 @@ void *dlopen(const char *filename, int flag) {
     }
 
     if (dl->dymsym == NULL || dl->dynstr == NULL) {
+        printf("no dynamic symbols found\n");
         free(dl->file);
         free(dl);
         return NULL;
     }
 
-    load_sections(dl);
+    return dl;
+}
+
+void *dlopen(const char *filename, int flag) {
+    dl_t *dl = open_elf(filename, ET_DYN);
+    load_sections(dl, ET_DYN);
     file_relocate(dl);
     puts("");
 
@@ -195,6 +217,11 @@ int dlclose(void *handle) {
     free(dl->file);
     free(dl->mem);
     free(dl);
+    return 0;
+}
+
+int dynamic_linker(dl_t *exec, dl_t *lib) {
+    // use dlsym to find symbols in lib and replace them in exec
     return 0;
 }
 
@@ -228,5 +255,28 @@ int main(int c) {
         "tcc -ltest /user/test.c -o /test.elf -L/user"
     );
 
+    void *lib = dlopen("/user/libtest.so", 42);
+    if (lib == NULL) {
+        fprintf(stderr, "dlopen failed...\n");
+        return 1;
+    }
+
+    dl_t *test = open_elf("/test.elf", ET_EXEC);
+    if (test == NULL) {
+        fprintf(stderr, "open_elf failed...\n");
+        return 1;
+    }
+
+    load_sections(test, ET_EXEC);
+    dynamic_linker(test, lib);
+
+    int (*main)() = (int (*)()) ((Elf32_Ehdr *)test->file)->e_entry;
+    printf("main = %p\n", main);
+    printf("main() = %d\n", main());
+
+    free(test->file);
+    free(test);
+
+    dlclose(lib);
     return 0;
 }
