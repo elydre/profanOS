@@ -132,6 +132,19 @@ int load_sections(dl_t *dl, uint16_t type) {
     return 0;
 }
 
+#define R_386_NONE      0   // None
+#define R_386_32        1   // word32  S + A
+#define R_386_PC32      2   // word32  S + A - P
+#define R_386_GOT32     3   // word32  G + A
+#define R_386_PLT32     4   // word32  L + A - P
+#define R_386_COPY      5   // None
+#define R_386_GLOB_DAT  6   // word32  S
+#define R_386_JMP_SLOT  7   // word32  S
+#define R_386_RELATIVE  8   // word32  B + A
+#define R_386_GOTOFF    9   // word32  S + A - GOT
+#define R_386_GOTPC     10  // word32  GOT + A - P
+#define R_386_32PLT     11  // word32  L + A
+
 int file_relocate(dl_t *dl) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
@@ -143,16 +156,18 @@ int file_relocate(dl_t *dl) {
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 char *name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
                 // i m not sure about this
+                printf("rel[%d].r_offset = %p (name: \"%s\", sym: %d, type: %d)\n", j, rel[j].r_offset, name, ELF32_R_SYM(rel[j].r_info), ELF32_R_TYPE(rel[j].r_info));
                 if (name[0]) {
                     uint32_t sym = (uint32_t) dlsym(dl, name);
                     if (sym) {
-                        printf("rel[%d].r_offset = %p (%s) [dlsym] (%p, %p)\n", j, rel[j].r_offset, name, sym, *(uint32_t *)(dl->mem + rel[j].r_offset) + (uint32_t) dl->mem);
+                        sym += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                        sym -= (uint32_t) dl->mem + rel[j].r_offset;
+                        printf("%p to %p\n", *(uint32_t *)(dl->mem + rel[j].r_offset), sym);
                         *(uint32_t *)(dl->mem + rel[j].r_offset) = sym;
                         continue;
                     }
                 }
                 // end
-                printf("rel[%d].r_offset = %p (%s)\n", j, rel[j].r_offset, name);
                 *(uint32_t *)(dl->mem + rel[j].r_offset) += (uint32_t) dl->mem;
             }
         }
