@@ -103,11 +103,13 @@ int load_sections(dl_t *dl, uint16_t type) {
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS &&
-            shdr[i].sh_addr + shdr[i].sh_size > required_size
-        ) required_size = shdr[i].sh_addr + shdr[i].sh_size;
+        if (shdr[i].sh_type == SHT_PROGBITS) {
+            if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
+                required_size = shdr[i].sh_addr + shdr[i].sh_size;
+        }
     }
-    required_size -= ehdr->e_entry;
+    if (type == ET_EXEC)
+        required_size -= 0xC0000000;
     required_size = (required_size + 0xFFF) & ~0xFFF;
 
     printf("required_size: %x\n", required_size);
@@ -357,11 +359,12 @@ int main(int c) {
         "tcc -lft /user/test.c -o /test.elf -L/user"
     );*/
 
-    system(
-        "cc -d;"
-        "tcc -shared /user/lib.c -o /user/libtest.so;"
-        "tcc -ltest /user/test.c -o /test.elf -L/user"
-    );
+    if (c > 1)
+        system(
+            "cc -d;"
+            "tcc -shared /user/lib.c -o /user/libtest.so;"
+            "tcc -ltest /user/test.c -o /test.elf -L/user"
+        );
 
     void *lib = dlopen("/user/libtest.so", 42);
     if (lib == NULL) {

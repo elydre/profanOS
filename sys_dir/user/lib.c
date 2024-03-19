@@ -12,6 +12,7 @@ void func1(void) {
 }
 
 void set_val(int val) {
+    printf("Setting global (%p) to %d\n", &global, val);
     global = val;
 }
 
