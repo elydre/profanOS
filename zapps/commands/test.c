@@ -145,34 +145,70 @@ int load_sections(dl_t *dl, uint16_t type) {
 #define R_386_GOTPC     10  // word32  GOT + A - P
 #define R_386_32PLT     11  // word32  L + A
 
+// S: value of the symbol
+// A: addend
+// P: place of the storage unit being relocated
+// B: base address of the shared object
+// GOT: address of the global offset table
+// L: address of the procedure linkage table
+
+int does_type_required_sym(uint8_t type) {
+    switch (type) {
+        case R_386_32:
+        case R_386_PC32:
+        case R_386_GLOB_DAT:
+        case R_386_JMP_SLOT:
+        case R_386_GOTOFF:
+            return 1;
+        default:
+            return 0;
+    }       
+}
+
 int file_relocate(dl_t *dl) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
+
+    uint32_t val;
+    uint8_t type;
+    char *name;
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
             printf("rel in section %d\n", i);
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                char *name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
-                // i m not sure about this
-                printf("rel[%d].r_offset = %p (name: \"%s\", sym: %d, type: %d)\n", j, rel[j].r_offset, name, ELF32_R_SYM(rel[j].r_info), ELF32_R_TYPE(rel[j].r_info));
-                if (name[0]) {
-                    uint32_t sym = (uint32_t) dlsym(dl, name);
-                    if (sym) {
-                        sym += *(uint32_t *)(dl->mem + rel[j].r_offset);
-                        sym -= (uint32_t) dl->mem + rel[j].r_offset;
-                        printf("%p to %p\n", *(uint32_t *)(dl->mem + rel[j].r_offset), sym);
-                        *(uint32_t *)(dl->mem + rel[j].r_offset) = sym;
-                        continue;
-                    }
+                name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+                val = 0;
+                type = ELF32_R_TYPE(rel[j].r_info);
+                if (does_type_required_sym(type)) {
+                    val = (uint32_t) dlsym(dl, name);
                 }
-                // end
-                *(uint32_t *)(dl->mem + rel[j].r_offset) += (uint32_t) dl->mem;
+                printf("rel[%d].r_offset = %p (%s, type: %d)\n", j, rel[j].r_offset, name, type);
+                switch (type) {
+                    case R_386_32:          // word32  S + A
+                        val += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                        break;
+                    case R_386_PC32:        // word32  S + A - P
+                        val += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                        val -= (uint32_t) (dl->mem + rel[j].r_offset);
+                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                        break;
+                    case R_386_RELATIVE:    // word32  B + A
+                        val = (uint32_t) dl->mem;
+                        val += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                        break;
+                    default:
+                        printf("unsupported relocation type: %d\n", type);
+                        break;
+                }
             }
         }
     }
 
+    puts("");
     return 0;
 }
 
@@ -265,6 +301,7 @@ int dynamic_linker(dl_t *exec, dl_t *lib) {
 
 
     int size = 0;
+    uint8_t type;
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
@@ -273,7 +310,12 @@ int dynamic_linker(dl_t *exec, dl_t *lib) {
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 char *name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
 
-                printf("rel[%d].r_offset = %p (%s)\n", j, rel[j].r_offset, name);
+                type = ELF32_R_TYPE(rel[j].r_info);
+                printf("rel[%d].r_offset = %p (%s, type: %d)\n", j, rel[j].r_offset, name, type);
+                if (type != R_386_JMP_SLOT) {
+                    printf("unsupported relocation type: %d\n", type);
+                    while (1);
+                }
 
                 void *sym = dlsym(lib, name);
 
