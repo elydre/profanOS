@@ -202,8 +202,12 @@ int file_relocate(dl_t *dl) {
                         val += *(uint32_t *)(dl->mem + rel[j].r_offset);
                         *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
                         break;
+                    case R_386_JMP_SLOT:    // word32  S
+                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                        break;
                     default:
                         printf("unsupported relocation type: %d\n", type);
+                        while (1);
                         break;
                 }
             }
@@ -301,7 +305,6 @@ int dynamic_linker(dl_t *exec, dl_t *lib) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)exec->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(exec->file + ehdr->e_shoff);
 
-
     int size = 0;
     uint8_t type;
 
@@ -360,11 +363,11 @@ int main(int c) {
     );*/
 
     if (c > 1)
-        system(
+        if (system(
             "cc -d;"
             "tcc -shared /user/lib.c -o /user/libtest.so;"
             "tcc -ltest /user/test.c -o /test.elf -L/user"
-        );
+        )) return 1;
 
     void *lib = dlopen("/user/libtest.so", 42);
     if (lib == NULL) {
