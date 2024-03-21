@@ -2328,7 +2328,7 @@ char **gen_args(char *string) {
 
     return argv;
 }
-            
+
 
 char *args_rejoin(char **input, int to) {
     int required_size = 1;
