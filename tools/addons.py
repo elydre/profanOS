@@ -159,21 +159,22 @@ def graphic_menu(stdscr):
 
     def draw_menu(stdscr, checked, current):
         stdscr.clear()
-        stdscr.addstr(0, 0, "Select addons to install and press ENTER", curses.A_BOLD)
-        stdscr.addstr(1, 0, "SPACE: toggle, Q: quit, RIGHT: info")
+        stdscr.addstr(0, 0, "Select addons to install with ENTER", curses.A_BOLD)
+        stdscr.addstr(1, 0, "Q: cancel, RIGHT: info, V: validate")
 
-        stdscr.addstr(3, 0, "Select all" if not (any(checked[0]) or any(checked[1])) else "Unselect all", curses.A_REVERSE if current == 0 else 0)
+        stdscr.addstr(3, 1, "Download Selected" if any(checked[0]) or any(checked[1]) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
+        stdscr.addstr(4, 1, "Unselect all" if any(checked[0]) or any(checked[1]) else "Select all", curses.A_REVERSE if current == 1 else 0)
 
-        stdscr.addstr(5, 0, "Addons:", curses.A_BOLD)
+        stdscr.addstr(6, 0, "Addons:", curses.A_BOLD)
         for i, addon in enumerate(ADDONS):
-            stdscr.addstr(6 + i, 0, f"  [{'X' if checked[0][i] else ' '}] {addon.upper()}\t {ADDONS[addon]['description']}", curses.A_REVERSE if current == i + 1 else 0)
+            stdscr.addstr(7 + i, 1, f" [{'X' if checked[0][i] else ' '}] {addon.upper()}\t {ADDONS[addon]['description']}", curses.A_REVERSE if current == i + 2 else 0)
 
-        stdscr.addstr(7 + len(ADDONS), 0, "Weighty addons:", curses.A_BOLD)
+        stdscr.addstr(8 + len(ADDONS), 0, "Weighty addons:", curses.A_BOLD)
         for i, addon in enumerate(WADDONS):
-            stdscr.addstr(8 + len(ADDONS) + i, 0, f"  [{'X' if checked[1][i] else ' '}] {addon.upper()}\t {WADDONS[addon]['description']}", curses.A_REVERSE if current == i + 1 + len(ADDONS) else 0)
+            stdscr.addstr(9 + len(ADDONS) + i, 1, f" [{'X' if checked[1][i] else ' '}] {addon.upper()}\t {WADDONS[addon]['description']}", curses.A_REVERSE if current == i + 2 + len(ADDONS) else 0)
 
         stdscr.refresh()
-    
+
     def draw_info(stdscr, element):
         data = ADDONS[element] if element in ADDONS else WADDONS[element]
         stdscr.clear()
@@ -185,44 +186,50 @@ def graphic_menu(stdscr):
         stdscr.addstr(5 + len(data["files"]), 0, "Press any key to continue")
         stdscr.refresh()
         stdscr.getch()
-    
+
+    def download_selected(stdscr, checked):
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Installing selected addons...", curses.A_BOLD)
+        stdscr.refresh()
+        print("\n")
+        for i, addon in enumerate(ADDONS):
+            if checked[0][i]:
+                get_addon(addon)
+        for i, addon in enumerate(WADDONS):
+            if checked[1][i]:
+                get_addon(addon)
+
     while True:
         draw_menu(stdscr, checked, current)
         key = stdscr.getch()
         if key == ord("q"):
             break
         elif key == curses.KEY_DOWN:
-            current = (current + 1) % (len(ADDONS) + len(WADDONS) + 1)
+            current = min(current + 1, len(ADDONS) + len(WADDONS) + 1)
         elif key == curses.KEY_UP:
-            current = (current - 1) % (len(ADDONS) + len(WADDONS) + 1)
+            current = max(current - 1, 0)
         elif key == curses.KEY_RIGHT:
             if current > 0:
-                draw_info(stdscr, list(ADDONS.keys())[current - 1] if current <= len(ADDONS) else list(WADDONS.keys())[current - len(ADDONS) - 1])
+                draw_info(stdscr, list(ADDONS.keys())[current - 2] if current < len(ADDONS) + 2 else list(WADDONS.keys())[current - len(ADDONS) - 2])
         elif key == curses.KEY_LEFT:
             current = 0
-        elif key == ord(" "):
-            if current == 0:
+        elif key == 10 or key == ord(" "):
+            if current == 1:
                 if any(checked[0]) or any(checked[1]):
                     checked = [[False] * len(ADDONS)] + [[False] * len(WADDONS)]
                 else:
                     checked = [[True] * len(ADDONS)] + [[True] * len(WADDONS)]
-            elif current <= len(ADDONS):
-                checked[0][current - 1] = not checked[0][current - 1]
+            elif current == 0:
+                download_selected(stdscr, checked)
+                break
+            elif current < len(ADDONS) + 2:
+                checked[0][current - 2] = not checked[0][current - 2]
             else:
-                checked[1][current - len(ADDONS) - 1] = not checked[1][current - len(ADDONS) - 1]
-        elif key == 10:
-            stdscr.clear()
-            stdscr.addstr(0, 0, "Installing selected addons...", curses.A_BOLD)
-            stdscr.refresh()
-            print("\n")
-            for i, addon in enumerate(ADDONS):
-                if checked[0][i]:
-                    get_addon(addon)
-            for i, addon in enumerate(WADDONS):
-                if checked[1][i]:
-                    get_addon(addon)
+                checked[1][current - len(ADDONS) - 2] = not checked[1][current - len(ADDONS) - 2]
+        elif key == ord("v"):
+            download_selected(stdscr, checked)
             break
-    
+
     # restore terminal
     curses.endwin()
 
