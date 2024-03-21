@@ -50,14 +50,6 @@ typedef struct {
     uint32_t r_info;        // Relocation type and symbol index
 } Elf32_Rel;
 
-typedef struct {
-    uint32_t d_tag;         // Entry type
-    union {
-        uint32_t d_val;     // Integer value
-        uint32_t d_ptr;     // Address value
-    } d_un;
-} Elf32_Dyn;
-
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
 #define ET_EXEC         2
@@ -78,27 +70,22 @@ typedef struct {
 
     uint8_t *dymsym;
     uint8_t *dynstr;
-} dl_t;
+} elfobj_t;
 
 void *dlsym(void *handle, const char *symbol);
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
-    if (memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0) {
-        return 0;
-    }
-    if (ehdr->e_type != required_type) {
-        return 0;
-    }
-    if (ehdr->e_machine != EM_386) {
-        return 0;
-    }
-    return 1;
+    return !(
+        memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
+        ehdr->e_type != required_type ||
+        ehdr->e_machine != EM_386
+    );
 }
 
-int load_sections(dl_t *dl, uint16_t type) {
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
+int load_sections(elfobj_t *obj, uint16_t type) {
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
     uint32_t required_size = 0;
 
@@ -112,22 +99,19 @@ int load_sections(dl_t *dl, uint16_t type) {
         required_size -= 0xC0000000;
     required_size = (required_size + 0xFFF) & ~0xFFF;
 
-    printf("required_size: %x\n", required_size);
-
     if (type == ET_EXEC) {
-        dl->mem = (void *) 0xC0000000;
+        obj->mem = (void *) 0xC0000000;
         c_scuba_add(0xC0000000, required_size / 0x1000);
     } else {
-        dl->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
+        obj->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
     }
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == SHT_PROGBITS) {
-            // printf("loading section %d at %p\n", i, dl->mem + shdr[i].sh_addr);
             if (type == ET_EXEC)
-                memcpy((void *) shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
+                memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
-                memcpy(dl->mem + shdr[i].sh_addr, dl->file + shdr[i].sh_offset, shdr[i].sh_size);
+                memcpy(obj->mem + shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
         }
     }
 
@@ -167,7 +151,7 @@ int does_type_required_sym(uint8_t type) {
     }       
 }
 
-int file_relocate(dl_t *dl) {
+int file_relocate(elfobj_t *dl) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
@@ -177,7 +161,6 @@ int file_relocate(dl_t *dl) {
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
-            printf("rel in section %d\n", i);
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
@@ -186,7 +169,6 @@ int file_relocate(dl_t *dl) {
                 if (does_type_required_sym(type)) {
                     val = (uint32_t) dlsym(dl, name);
                 }
-                printf("rel[%d].r_offset = %p (%s, type: %d)\n", j, rel[j].r_offset, name, type);
                 switch (type) {
                     case R_386_32:          // word32  S + A
                         val += *(uint32_t *)(dl->mem + rel[j].r_offset);
@@ -219,7 +201,7 @@ int file_relocate(dl_t *dl) {
 }
 
 void *open_elf(const char *filename, uint16_t required_type) {
-    dl_t *dl = malloc(sizeof(dl_t));
+    elfobj_t *dl = malloc(sizeof(elfobj_t));
 
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
@@ -265,7 +247,7 @@ void *open_elf(const char *filename, uint16_t required_type) {
 }
 
 void *dlopen(const char *filename, int flag) {
-    dl_t *dl = open_elf(filename, ET_DYN);
+    elfobj_t *dl = open_elf(filename, ET_DYN);
     if (dl == NULL) {
         return NULL;
     }
@@ -275,33 +257,29 @@ void *dlopen(const char *filename, int flag) {
 }
 
 void *dlsym(void *handle, const char *symbol) {
-    dl_t *dl = (dl_t *)handle;
+    elfobj_t *dl = (elfobj_t *)handle;
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
     for (uint8_t *p = dl->dymsym; p < dl->dymsym + shdr[1].sh_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
         if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
-            printf("symbol found: %s -> %p\n", symbol, dl->mem + sym->st_value);
             return (void *)(dl->mem + sym->st_value);
         }
     }
 
-    printf("symbol not found: %s\n", symbol);
     return NULL;
 }
 
 int dlclose(void *handle) {
-    dl_t *dl = (dl_t *)handle;
+    elfobj_t *dl = (elfobj_t *) handle;
     free(dl->file);
     free(dl->mem);
     free(dl);
     return 0;
 }
 
-int dynamic_linker(dl_t *exec, dl_t *lib) {
-    // resolve symbols in the executable using the library
-
+int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)exec->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(exec->file + ehdr->e_shoff);
 
@@ -310,20 +288,21 @@ int dynamic_linker(dl_t *exec, dl_t *lib) {
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
-            printf("rel in section %d\n", i);
             Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 char *name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
 
                 type = ELF32_R_TYPE(rel[j].r_info);
-                printf("rel[%d].r_offset = %p (%s, type: %d)\n", j, rel[j].r_offset, name, type);
                 if (type != R_386_JMP_SLOT) {
                     printf("unsupported relocation type: %d\n", type);
                     while (1);
                 }
 
                 void *sym = dlsym(lib, name);
-
+                if (sym == NULL) {
+                    printf("symbol not found: %s\n", name);
+                    while (1);
+                }
                 *(uint32_t *)(rel[j].r_offset) = (uint32_t) sym;
             }
         }
@@ -375,7 +354,7 @@ int main(int c) {
         return 1;
     }
 
-    dl_t *test = open_elf("/test.elf", ET_EXEC);
+    elfobj_t *test = open_elf("/test.elf", ET_EXEC);
     if (test == NULL) {
         fprintf(stderr, "open_elf failed...\n");
         return 1;
@@ -387,8 +366,7 @@ int main(int c) {
     puts("");
 
     int (*main)() = (int (*)()) ((Elf32_Ehdr *)test->file)->e_entry;
-    printf("main = %p\n", main);
-    printf("main() = %d\n", main());
+    main();
 
     free(test->file);
     free(test);
