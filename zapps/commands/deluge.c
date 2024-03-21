@@ -195,8 +195,6 @@ int file_relocate(elfobj_t *dl) {
             }
         }
     }
-
-    puts("");
     return 0;
 }
 
@@ -311,42 +309,64 @@ int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
     return 0;
 }
 
-int main(int c) {
-    /*
-    system("cc -d; tcc -shared /user/lib.c -o /user/libtest.so");
+typedef struct {
+    char *name;
+    uint8_t bench;
+    int arg_offset;
+} deluge_args_t;
 
-    void *handle = dlopen("/user/libtest.so", 42);
-    if (handle == NULL) {
-        fprintf(stderr, "dlopen failed...\n");
-        return 1;
+void show_help(int full) {
+    puts("Usage: deluge [options] <file> [args]");
+    if (!full) {
+        puts("Try 'deluge -h' for more information.");
+        return;
     }
 
-    void (*set_val)(int) = dlsym(handle, "set_val");
-    int (*get_val)() = dlsym(handle, "get_val");
+    puts("Options:");
+    puts("  -h  Show this help message");
+    puts("  -b  Bench link time");
+}
 
-    if (set_val == NULL || get_val == NULL) {
-        fprintf(stderr, "dlsym failed...\n");
-        return 1;
+deluge_args_t deluge_parse(int argc, char **argv) {
+    deluge_args_t args;
+    args.name = NULL;
+    args.bench = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == 'h') {
+                show_help(1);
+                exit(0);
+            } else if (argv[i][1] == 'b') {
+                args.bench = 1;
+            } else {
+                printf("Unknown option: %s\n", argv[i]);
+                show_help(0);
+                exit(1);
+            }
+        } else {
+            args.name = argv[i];
+            args.arg_offset = i + 1;
+            break;
+        }
     }
 
-    set_val(42);
-    printf("get_val() = %d\n", get_val());
+    if (args.name == NULL) {
+        puts("No file specified.");
+        show_help(0);
+        exit(1);
+    }
 
-    dlclose(handle);
-    */
+    return args;
+}
 
-    /*system(
-        "cc -d;"
-        "tcc -shared /user/lib.c -o /user/libtest.so;"
-        "tcc -lft /user/test.c -o /test.elf -L/user"
-    );*/
+int main(int argc, char **argv) {
+    deluge_args_t args = deluge_parse(argc, argv);
+    uint32_t start;
 
-    if (c > 1)
-        if (system(
-            "cc -d;"
-            "tcc -shared /user/lib.c -o /user/libtest.so;"
-            "tcc -ltest /user/test.c -o /test.elf -L/user"
-        )) return 1;
+    if (args.bench) {
+        start = c_timer_get_ms();
+    }
 
     void *lib = dlopen("/user/libtest.so", 42);
     if (lib == NULL) {
@@ -354,16 +374,18 @@ int main(int c) {
         return 1;
     }
 
-    elfobj_t *test = open_elf("/test.elf", ET_EXEC);
+    elfobj_t *test = open_elf(args.name, ET_EXEC);
     if (test == NULL) {
         fprintf(stderr, "open_elf failed...\n");
         return 1;
     }
 
     load_sections(test, ET_EXEC);
-
     dynamic_linker(test, lib);
-    puts("");
+
+    if (args.bench) {
+        printf("Link time: %d ms\n", c_timer_get_ms() - start);
+    }
 
     int (*main)() = (int (*)()) ((Elf32_Ehdr *)test->file)->e_entry;
     main();

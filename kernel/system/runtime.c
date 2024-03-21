@@ -67,7 +67,7 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
 
 int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     uint32_t vbase = RUN_BIN_VBASE;
-    if (str_cmp(argv[0], "test") == 0)
+    if (str_cmp(argv[0], "deluge") == 0)
         vbase = 0xB0000000;
 
     int pid = process_get_pid();
