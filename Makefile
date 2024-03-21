@@ -1,4 +1,4 @@
-.PHONY: help elf iso miso disk bdisk run erun krun srun clean fclean addons waddons
+.PHONY: help elf iso miso disk bdisk run erun krun srun clean fclean addons gaddons
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
@@ -47,8 +47,8 @@ srun:
 addons:
 	python3 $(PY_ADDON) -a
 
-waddons:
-	python3 $(PY_ADDON) -w
+gaddons:
+	python3 $(PY_ADDON) -g
 
 # clean all build files
 clean:

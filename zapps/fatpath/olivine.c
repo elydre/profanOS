@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 4"
+#define OLV_VERSION "0.11 rev 5"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -22,8 +22,6 @@
 #define MAX_VARIABLES 100
 #define MAX_PSEUDOS   100
 #define MAX_FUNCTIONS 100
-
-#define devio_set_redirection(a, b, c) 0
 
 /******************************
  *                           *
@@ -68,6 +66,10 @@
 
 #ifndef min
   #define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef UNUSED
+  #define UNUSED(x) (void)(x)
 #endif
 
 char *keywords[] = {
@@ -1501,6 +1503,7 @@ char *if_find(char **input) {
 
     return output;
     #else
+    UNUSED(input);
     raise_error("find", "Not supported in this build");
     return ERROR_CODE;
     #endif
@@ -1534,6 +1537,8 @@ char *if_fsize(char **input) {
     }
 
     free(path);
+    #else
+    UNUSED(input);
     #endif
 
     char *res = malloc(sizeof(char) * 12);
@@ -2257,6 +2262,22 @@ int does_startwith(char *str, char *start) {
     return 0;
 }
 
+int quotes_less_copy(char *dest, char *src, int len) {
+    int i = 0;
+    int in_string = 0;
+    for (int j = 0; src[j] != '\0' && i < len; j++) {
+        if (src[j] == STRING_CHAR && (j == 0 || src[j - 1] != '\\')) {
+            in_string = !in_string;
+        } else if (in_string) {
+            dest[i++] = src[j];
+        } else if (src[j] != ' ') {
+            dest[i++] = src[j];
+        }
+    }
+    dest[i] = '\0';
+    return i;
+}
+
 char **gen_args(char *string) {
     if (string == NULL || !*string) {
         char **argv = malloc(1 * sizeof(char*));
@@ -2267,6 +2288,7 @@ char **gen_args(char *string) {
     // count the number of arguments
     int in_string = 0;
     int argc = 1;
+    int len = 0;
 
     for (int i = 0; string[i] != '\0'; i++) {
         if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
@@ -2274,6 +2296,7 @@ char **gen_args(char *string) {
         } if (string[i] == ' ' && !in_string) {
             argc++;
         }
+        len++;
     }
 
     if (in_string) {
@@ -2282,7 +2305,8 @@ char **gen_args(char *string) {
     }
 
     // allocate the arguments array
-    char **argv = malloc((argc + 1) * sizeof(char*));
+    char **argv = malloc((argc + 1) * sizeof(char*) + len + 1);
+    char *args = (char*)(argv + argc + 1);
 
     // fill the arguments array
     int old_i = 0;
@@ -2291,24 +2315,20 @@ char **gen_args(char *string) {
         if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
         } if (string[i] == ' ' && !in_string) {
-            argv[arg_i] = malloc((i - old_i + 1) * sizeof(char));
-            strncpy(argv[arg_i], string + old_i, i - old_i);
-            argv[arg_i][i - old_i] = '\0';
-
-            remove_quotes(argv[arg_i]);
+            int tmp = quotes_less_copy(args, string + old_i, i - old_i);
+            argv[arg_i++] = args;
             old_i = i + 1;
-            arg_i++;
+            args += tmp + 1;
         }
     }
 
-    // add the last argument
-    argv[argc - 1] = strdup(string + old_i);
-    remove_quotes(argv[argc - 1]);
-
-    argv[argc] = NULL;
+    len = quotes_less_copy(args, string + old_i, len - old_i);
+    argv[arg_i++] = args;
+    argv[arg_i] = NULL;
 
     return argv;
 }
+            
 
 char *args_rejoin(char **input, int to) {
     int required_size = 1;
@@ -2516,6 +2536,7 @@ char *pipe_processor(char **input) {
 
     return ret;
     #endif
+    UNUSED(input);
     raise_error("Pipe Processor", "Not supported in this build");
     return ERROR_CODE;
 }
@@ -2670,7 +2691,7 @@ char *execute_line(char *full_line) {
         else
             result = execute_function(function, function_args + 1);
 
-        free_args(function_args);
+        free(function_args);
     }
 
     if (line != full_line)
@@ -3610,8 +3631,6 @@ int does_syntax_fail(char *program) {
 #define TAB    15
 
 char *get_func_color(char *str) {
-    char *tmp;
-
     // keywords: purple
     for (int i = 0; keywords[i] != NULL; i++) {
         if (local_strncmp_nocase(str, keywords[i], -1) == 0) {
@@ -4287,6 +4306,9 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     return ret_val;
 
     #else
+    UNUSED(buffer_index);
+    UNUSED(history_end);
+    UNUSED(history);
 
     if (!fgets(buffer, size, stdin)) {
         puts("");
@@ -4585,7 +4607,6 @@ char init_prog[] =
 
 int main(int argc, char **argv) {
     olivine_args_t *args = parse_args(argc, argv);
-    char *pwd;
     int ret_val = 0;
 
     if (args == NULL) {
@@ -4619,8 +4640,7 @@ int main(int argc, char **argv) {
 
     g_current_directory = malloc((MAX_PATH_SIZE + 1) * sizeof(char));
     setenv("PWD", "/", 0);
-    pwd = getenv("PWD");
-    strcpy(g_current_directory, pwd);
+    strcpy(g_current_directory, getenv("PWD"));
 
     g_exit_code = malloc(5 * sizeof(char));
     strcpy(g_exit_code, "0");

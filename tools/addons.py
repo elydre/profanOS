@@ -1,14 +1,15 @@
 import urllib.request as urlreq
-import os, sys
-
-# setup
+import curses, os, sys
 
 path = os.path.dirname(os.path.abspath(__file__))
 profan_path = path.rsplit(os.sep, 1)[0]
 
+#######################################################
+#######################################################
+
 ADDONS = {
     "lua": {
-        "description": "port of the Lua interpreter for profanOS",
+        "description": "port of the Lua interpreter",
         "files": [
             {
                 "name": "lua",
@@ -58,7 +59,7 @@ ADDONS = {
         ]
     },
     "vlink": {
-        "description": "vlink linker port for profanOS",
+        "description": "vlink linker with multi-format support",
         "files": [
             {
                 "name": "vlink",
@@ -102,22 +103,22 @@ WADDONS = {
     }
 }
 
-# functions
+#######################################################
+#######################################################
 
-def get_size(url: str) -> int:
-    try: return int(urlreq.urlopen(url).info()["Content-Length"]) // 1024
-    except Exception: return 0
+def domain(url: str) -> str:
+    return url.split("/")[2]
 
 def download(url: str, path: str) -> bool:
     def show_progress(block_num, block_size, total_size):
         percent = int(block_num * block_size * 100 / total_size)
-        print(f" | Downloaded {percent}%", end="\r")
+        print(f"\r | Downloaded {percent}%", end="\r")
 
     # get file
     try:
         urlreq.urlretrieve(url, path, show_progress)
     except Exception:
-        print(" | ERROR: Could not download file")
+        print("\r | ERROR: Could not download file")
         return False
 
     return True
@@ -126,30 +127,114 @@ def get_addon(name: str) -> bool:
     all_addons = {**ADDONS, **WADDONS}
 
     if name not in all_addons:
-        print("ERROR: Unknown addon:", name)
+        print("\rERROR: Unknown addon:", name)
         return False
 
-    print(f"Install {name.upper()}: {all_addons[name]['description']}")
+    print(f"\rInstall {name.upper()}: {all_addons[name]['description']}")
     for sub in all_addons[name]["files"]:
-        print(f" Getting {name} part: {sub['name']} ({get_size(sub['url'])}Ko)")
+        print(f"\r Getting {name} part: {sub['name']}")
         # check if parent directory exists
         parent = os.sep.join(sub["path"][:-1])
         if not os.path.exists(parent):
-            print(" | Creating directory", parent)
+            print("\r | Creating directory", parent)
             os.makedirs(parent)
 
-        print(f" | Downloading {sub['url']}")
+        print(f"\r | Downloading {sub['url']}")
 
         # download
         if not download(sub["url"], os.sep.join(sub["path"])): return False
 
     return True
 
+#######################################################
+#######################################################
+
+def graphic_menu(stdscr):
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.refresh()
+
+    checked = [[False] * len(ADDONS)] + [[False] * len(WADDONS)]
+    current = 0
+
+    def draw_menu(stdscr, checked, current):
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Select addons to install and press ENTER", curses.A_BOLD)
+        stdscr.addstr(1, 0, "SPACE: toggle, Q: quit, RIGHT: info")
+
+        stdscr.addstr(3, 0, "Select all" if not (any(checked[0]) or any(checked[1])) else "Unselect all", curses.A_REVERSE if current == 0 else 0)
+
+        stdscr.addstr(5, 0, "Addons:", curses.A_BOLD)
+        for i, addon in enumerate(ADDONS):
+            stdscr.addstr(6 + i, 0, f"  [{'X' if checked[0][i] else ' '}] {addon.upper()}\t {ADDONS[addon]['description']}", curses.A_REVERSE if current == i + 1 else 0)
+
+        stdscr.addstr(7 + len(ADDONS), 0, "Weighty addons:", curses.A_BOLD)
+        for i, addon in enumerate(WADDONS):
+            stdscr.addstr(8 + len(ADDONS) + i, 0, f"  [{'X' if checked[1][i] else ' '}] {addon.upper()}\t {WADDONS[addon]['description']}", curses.A_REVERSE if current == i + 1 + len(ADDONS) else 0)
+
+        stdscr.refresh()
+    
+    def draw_info(stdscr, element):
+        data = ADDONS[element] if element in ADDONS else WADDONS[element]
+        stdscr.clear()
+        stdscr.addstr(0, 0, f"Info for {element.upper()}", curses.A_BOLD)
+        stdscr.addstr(1, 0, f"{data['description']}")
+        stdscr.addstr(3, 0, "Files to install:", curses.A_BOLD)
+        for i, file in enumerate(data["files"]):
+            stdscr.addstr(4 + i, 0, f"  {file['name']}{' ' * (max(0, 15 - len(file['name'])))} {domain(file['url'])}")
+        stdscr.addstr(5 + len(data["files"]), 0, "Press any key to continue")
+        stdscr.refresh()
+        stdscr.getch()
+    
+    while True:
+        draw_menu(stdscr, checked, current)
+        key = stdscr.getch()
+        if key == ord("q"):
+            break
+        elif key == curses.KEY_DOWN:
+            current = (current + 1) % (len(ADDONS) + len(WADDONS) + 1)
+        elif key == curses.KEY_UP:
+            current = (current - 1) % (len(ADDONS) + len(WADDONS) + 1)
+        elif key == curses.KEY_RIGHT:
+            if current > 0:
+                draw_info(stdscr, list(ADDONS.keys())[current - 1] if current <= len(ADDONS) else list(WADDONS.keys())[current - len(ADDONS) - 1])
+        elif key == curses.KEY_LEFT:
+            current = 0
+        elif key == ord(" "):
+            if current == 0:
+                if any(checked[0]) or any(checked[1]):
+                    checked = [[False] * len(ADDONS)] + [[False] * len(WADDONS)]
+                else:
+                    checked = [[True] * len(ADDONS)] + [[True] * len(WADDONS)]
+            elif current <= len(ADDONS):
+                checked[0][current - 1] = not checked[0][current - 1]
+            else:
+                checked[1][current - len(ADDONS) - 1] = not checked[1][current - len(ADDONS) - 1]
+        elif key == 10:
+            stdscr.clear()
+            stdscr.addstr(0, 0, "Installing selected addons...", curses.A_BOLD)
+            stdscr.refresh()
+            print("\n")
+            for i, addon in enumerate(ADDONS):
+                if checked[0][i]:
+                    get_addon(addon)
+            for i, addon in enumerate(WADDONS):
+                if checked[1][i]:
+                    get_addon(addon)
+            break
+    
+    # restore terminal
+    curses.endwin()
+
+#######################################################
+#######################################################
+
 def show_help():
     msg = [
-           "USAGE: python3 get_addons.py [options] [addon]",
+           "USAGE: python3 get_addons.py [options|addon]",
            "OPTIONS:",
            "  -h: show this help",
+           "  -g: graphic menu",
            "  -l: list available addons",
            "  -a: get all addons",
            "  -w: get all weighty addons",
@@ -164,7 +249,7 @@ def show_help():
         msg += [f"  {addon}: {WADDONS[addon]['description']}"]
 
     msg += ["EXAMPLES:",
-           "  python3 get_addons.py -l",
+           "  python3 get_addons.py -g",
            "  python3 get_addons.py -a",
            "  python3 get_addons.py lua",
     ]
@@ -183,19 +268,26 @@ table = {
     "-h": show_help,
     "-l": show_list,
     "-a": lambda: [get_addon(addon) for addon in ADDONS],
-    "-w": lambda: [get_addon(addon) for addon in [*ADDONS, *WADDONS]]
+    "-w": lambda: [get_addon(addon) for addon in [*ADDONS, *WADDONS]],
+    "-g": lambda: curses.wrapper(graphic_menu)
 }
+
+#######################################################
+#######################################################
 
 # main
 
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) == 0:
-        print("ERROR: No addon specified (use -h for help)")
+        print("ERROR: No addon specified (use -h for help or -g for graphic menu)")
         sys.exit(1)
     if args[0][0] == "-":
         if args[0] in table:
-            table[args[0]]()
+            try:
+                table[args[0]]()
+            except KeyboardInterrupt:
+                print("-- Aborted by user")
         else:
             print("ERROR: Unknown option:", args[0])
     else:

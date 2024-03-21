@@ -375,7 +375,7 @@ def make_help():
         ("make bdisk",    "build disk image with source code"),
         None,
         ("make addons",     "download all addons in disk source"),
-        ("make waddons",    "download all weighty addons in disk source"),
+        ("make gaddons",    "start graphical addons selection"),
         None,
         ("make clean",      "delete all build files"),
         ("make fclean",     "reset the repository"),

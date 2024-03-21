@@ -1,6 +1,15 @@
 local calls = require("calls")
 
+local function stop()
+    profan.pout(0x61, 1, profan.pin(0x61, 1) & 0xFC)
+end
+
 local function freq(frequency)
+    if frequency == 0 then
+        stop()
+        return
+    end
+
     -- set the PIT to the desired frequency
 
     local div = 1193180 // frequency
@@ -14,11 +23,6 @@ local function freq(frequency)
     if tmp ~= (tmp | 3) then
         profan.pout(0x61, 1, tmp | 3)
     end
-end
-
-
-local function stop()
-    profan.pout(0x61, 1, profan.pin(0x61, 1) & 0xFC)
 end
 
 -- Play() port from templeOS

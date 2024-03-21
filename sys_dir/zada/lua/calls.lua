@@ -1,9 +1,9 @@
 local syscalls = {
     malloc = 9,
     free = 10,
-    serial_print = 28,
-    process_sleep = 32,
-    process_get = 35,
+    serial_print = 29,
+    process_sleep = 34,
+    process_get = 38,
 }
 
 local function get_syscall(function_id)
@@ -34,7 +34,7 @@ local function serial_print(str, serial_port)
     profan.memset(ptr + #str, 1, 0)
 
     -- call serial_print
-    profan.call_c(get_syscall(syscalls.serial_print), 4, serial_port, 4, ptr)
+    profan.call_c(get_syscall(syscalls.serial_print), 4, serial_port, 4, ptr, 4, #str)
 
     free(ptr)
 end
