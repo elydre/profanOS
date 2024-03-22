@@ -50,6 +50,12 @@ typedef struct {
     uint32_t r_info;        // Relocation type and symbol index
 } Elf32_Rel;
 
+typedef struct {
+    uint32_t r_offset;      // Address
+    uint32_t r_info;        // Relocation type and symbol index
+    int32_t r_addend;       // Addend
+} Elf32_Rela;
+
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
 #define ET_EXEC         2
@@ -70,6 +76,7 @@ typedef struct {
 
     uint8_t *dymsym;
     uint8_t *dynstr;
+    int dynsym_size;
 } elfobj_t;
 
 void *dlsym(void *handle, const char *symbol);
@@ -161,6 +168,7 @@ int file_relocate(elfobj_t *dl) {
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
+            puts("SHT_REL (file_relocate)");
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
@@ -187,6 +195,9 @@ int file_relocate(elfobj_t *dl) {
                     case R_386_JMP_SLOT:    // word32  S
                         *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
                         break;
+                    case R_386_GLOB_DAT:    // word32  S
+                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                        break;
                     default:
                         printf("unsupported relocation type: %d\n", type);
                         while (1);
@@ -194,12 +205,18 @@ int file_relocate(elfobj_t *dl) {
                 }
             }
         }
+
+        else if (shdr[i].sh_type == 4) { // SHT_RELA
+            puts("SHT_RELA is not supported (file_relocate)");
+            while (1);
+        }
     }
+    puts("file_relocate done");
     return 0;
 }
 
 void *open_elf(const char *filename, uint16_t required_type) {
-    elfobj_t *dl = malloc(sizeof(elfobj_t));
+    elfobj_t *dl = calloc(sizeof(elfobj_t), 1);
 
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
@@ -227,15 +244,23 @@ void *open_elf(const char *filename, uint16_t required_type) {
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
+        // SHT_DYNSYM
         if (shdr[i].sh_type == 11) {
             dl->dymsym = dl->file + shdr[i].sh_offset;
             dl->dynstr = dl->file + shdr[shdr[i].sh_link].sh_offset;
-            break;
+            dl->dynsym_size = shdr[i].sh_size;
         }
+
+        /*// SHT_SYMTAB
+        if (shdr[i].sh_type == 2) {
+            dl->symtab = dl->file + shdr[i].sh_offset;
+            dl->strtab = dl->file + shdr[shdr[i].sh_link].sh_offset;
+            dl->symtab_size = shdr[i].sh_size;
+        }*/
     }
 
-    if (dl->dymsym == NULL || dl->dynstr == NULL) {
-        printf("no dynamic symbols found\n");
+    if (dl->dymsym == NULL) {
+        printf("no symbol table found\n");
         free(dl->file);
         free(dl);
         return NULL;
@@ -259,9 +284,10 @@ void *dlsym(void *handle, const char *symbol) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
-    for (uint8_t *p = dl->dymsym; p < dl->dymsym + shdr[1].sh_size; p += sizeof(Elf32_Sym)) {
+    for (uint8_t *p = dl->dymsym; p < dl->dymsym + dl->dynsym_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
         if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
+            printf("dymsym: %s\n", symbol);
             return (void *)(dl->mem + sym->st_value);
         }
     }
@@ -281,17 +307,34 @@ int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)exec->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(exec->file + ehdr->e_shoff);
 
-    int size = 0;
+    uint32_t val;
     uint8_t type;
+    char *name;
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
+            puts("SHT_REL (dynamic_linker)");
             Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                char *name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
-
+                name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+                val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
-                if (type != R_386_JMP_SLOT) {
+                if (does_type_required_sym(type)) {
+                    val = (uint32_t) dlsym(lib, name);
+                }
+                switch (type) {
+                    case R_386_JMP_SLOT:    // word32  S
+                        *(uint32_t *)(rel[j].r_offset) = val;
+                        break;
+                    case R_386_GLOB_DAT:    // word32  S
+                        *(uint32_t *)(rel[j].r_offset) = val;
+                        break;
+                    default:
+                        printf("unsupported relocation type: %d\n", type);
+                        while (1);
+                        break;
+                }
+                /*if (type != R_386_JMP_SLOT) {
                     printf("unsupported relocation type: %d\n", type);
                     while (1);
                 }
@@ -301,8 +344,13 @@ int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
                     printf("symbol not found: %s\n", name);
                     while (1);
                 }
-                *(uint32_t *)(rel[j].r_offset) = (uint32_t) sym;
+                *(uint32_t *)(rel[j].r_offset) = (uint32_t) sym;*/
             }
+        }
+
+        else if (shdr[i].sh_type == 4) { // SHT_RELA
+            puts("SHT_RELA is not supported (dynamic_linker)");
+            while (1);
         }
     }
 
