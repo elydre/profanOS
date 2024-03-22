@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 5"
+#define OLV_VERSION "0.11 rev 6"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2268,6 +2268,7 @@ int quotes_less_copy(char *dest, char *src, int len) {
     for (int j = 0; src[j] != '\0' && i < len; j++) {
         if (src[j] == STRING_CHAR && (j == 0 || src[j - 1] != '\\')) {
             in_string = !in_string;
+            len--;
         } else if (in_string) {
             dest[i++] = src[j];
         } else if (src[j] != ' ') {
@@ -2294,6 +2295,7 @@ char **gen_args(char *string) {
         if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
         } if (string[i] == ' ' && !in_string) {
+            while (string[i + 1] == ' ') i++;
             argc++;
         }
         len++;
@@ -2318,6 +2320,7 @@ char **gen_args(char *string) {
             int tmp = quotes_less_copy(args, string + old_i, i - old_i);
             argv[arg_i++] = args;
             old_i = i + 1;
+            while (string[i + 1] == ' ') i++;
             args += tmp + 1;
         }
     }
@@ -2548,17 +2551,17 @@ char *pipe_processor(char **input) {
 **************************/
 
 void debug_print(char *function_name, char **function_args) {
-    printf(DEBUG_COLOR"'%s' (", function_name);
+    fprintf(stderr, DEBUG_COLOR"'%s' (", function_name);
 
     for (int i = 0; function_args[i] != NULL; i++) {
         if (function_args[i + 1] != NULL) {
-            printf("'%s', ", function_args[i]);
+            fprintf(stderr, "'%s', ", function_args[i]);
             continue;
         }
-        printf(DEBUG_COLOR"'%s') [%d]\e[0m\n", function_args[i], i + 1);
+        fprintf(stderr, DEBUG_COLOR"'%s') [%d]\e[0m\n", function_args[i], i + 1);
         return;
     }
-    puts(DEBUG_COLOR") [0]\e[0m");
+    fputs(DEBUG_COLOR") [0]\e[0m\n", stderr);
 }
 
 int execute_lines(char **lines, int line_end, char **result);
@@ -2947,11 +2950,6 @@ char **lexe_program(char *program, int interp_bckslsh) {
             in_quote = !in_quote;
         }
 
-        // remove multiple spaces
-        if (program[i] == ' ' && program[i + 1] == ' ') {
-            continue;
-        }
-
         // remove tabs and carriage returns
         if (program[i] == '\t' || program[i] == '\r') {
             continue;
@@ -2994,6 +2992,7 @@ char **lexe_program(char *program, int interp_bckslsh) {
     }
 
     if (tmp_index != 0) {
+        // remove trailing spaces
         while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
             tmp_index--;
         }
@@ -3638,6 +3637,11 @@ char *get_func_color(char *str) {
         }
     }
 
+    // pseudos: dark blue
+    if (get_pseudo(str) != NULL) {
+        return "34";
+    }
+
     // internal functions: cyan
     if (get_if_function(str) != NULL) {
         return "96";
@@ -3650,11 +3654,6 @@ char *get_func_color(char *str) {
     // functions: dark cyan
     if (get_function(str) != NULL) {
         return "36";
-    }
-
-    // pseudos: dark blue
-    if (get_pseudo(str) != NULL) {
-        return "34";
     }
 
     // bin: blue
