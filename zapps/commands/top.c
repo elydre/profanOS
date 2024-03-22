@@ -143,14 +143,14 @@ int main(int argc, char **argv) {
         tm_t t;
         c_time_get(&t);
 
-        total_mem = c_mem_get_info(0, 0);
-        used_mem = c_mem_get_info(6, 0);
+        total_mem = c_mem_get_info(0, 0) / 1024;
+        used_mem = c_mem_get_info(6, 0) / 1024;
 
         sprintf(buf, "%d%%", cpu);
         draw_line(buf, cpu);
         printf("%s %02d:%02d:%02d UTC\n", buf, t.tm_hour, t.tm_min, t.tm_sec);
 
-        sprintf(buf, "%dM/%dM", used_mem / 1024 / 1024, total_mem / 1024 / 1024);
+        sprintf(buf, "%dM/%dM", used_mem / 1024, total_mem / 1024);
         draw_line(buf, used_mem * 100 / total_mem);
         printf("%s %d allocs    \n\n", buf, c_mem_get_info(4, 0) - c_mem_get_info(5, 0));
         list_process();
