@@ -56,6 +56,14 @@ typedef struct {
     int32_t r_addend;       // Addend
 } Elf32_Rela;
 
+typedef struct {
+    uint32_t d_tag;         // Entry type
+    union {
+        uint32_t d_val;      // Integer value
+        uint32_t d_ptr;      // Address value
+    } d_un;
+} Elf32_Dyn;
+
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
 #define ET_EXEC         2
@@ -88,6 +96,30 @@ int is_valid_elf(void *data, uint16_t required_type) {
         ehdr->e_type != required_type ||
         ehdr->e_machine != EM_386
     );
+}
+
+void print_required_libs(elfobj_t *obj) {
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
+    Elf32_Dyn *dyn = NULL;
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
+            dyn = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
+            break;
+        }
+    }
+
+    if (dyn == NULL) {
+        puts("no dynamic section found");
+        return;
+    }
+
+    for (int i = 0; dyn[i].d_tag != 0; i++) {
+        if (dyn[i].d_tag == 1) { // DT_NEEDED
+            printf("DT_NEEDED: %s\n", obj->dynstr + dyn[i].d_un.d_val);
+        }
+    }
 }
 
 int load_sections(elfobj_t *obj, uint16_t type) {
@@ -155,7 +187,7 @@ int does_type_required_sym(uint8_t type) {
             return 1;
         default:
             return 0;
-    }       
+    }
 }
 
 int file_relocate(elfobj_t *dl) {
@@ -168,7 +200,6 @@ int file_relocate(elfobj_t *dl) {
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
-            puts("SHT_REL (file_relocate)");
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
@@ -211,62 +242,63 @@ int file_relocate(elfobj_t *dl) {
             while (1);
         }
     }
-    puts("file_relocate done");
     return 0;
 }
 
 void *open_elf(const char *filename, uint16_t required_type) {
-    elfobj_t *dl = calloc(sizeof(elfobj_t), 1);
+    elfobj_t *obj = calloc(sizeof(elfobj_t), 1);
 
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         printf("file not found: %s\n", filename);
-        free(dl);
+        free(obj);
         return NULL;
     }
 
     fseek(file, 0, SEEK_END);
-    dl->size = ftell(file);
+    obj->size = ftell(file);
     fseek(file, 0, SEEK_SET);
-    dl->file = malloc(dl->size);
+    obj->file = malloc(obj->size);
 
-    fread(dl->file, 1, dl->size, file);
+    fread(obj->file, 1, obj->size, file);
     fclose(file);
 
-    if (dl->size < sizeof(Elf32_Ehdr) || !is_valid_elf(dl->file, required_type)) {
+    if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
         printf("invalid elf file\n");
-        free(dl->file);
-        free(dl);
+        free(obj->file);
+        free(obj);
         return NULL;
     }
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         // SHT_DYNSYM
         if (shdr[i].sh_type == 11) {
-            dl->dymsym = dl->file + shdr[i].sh_offset;
-            dl->dynstr = dl->file + shdr[shdr[i].sh_link].sh_offset;
-            dl->dynsym_size = shdr[i].sh_size;
+            obj->dymsym = obj->file + shdr[i].sh_offset;
+            obj->dynstr = obj->file + shdr[shdr[i].sh_link].sh_offset;
+            obj->dynsym_size = shdr[i].sh_size;
         }
 
         /*// SHT_SYMTAB
         if (shdr[i].sh_type == 2) {
-            dl->symtab = dl->file + shdr[i].sh_offset;
-            dl->strtab = dl->file + shdr[shdr[i].sh_link].sh_offset;
-            dl->symtab_size = shdr[i].sh_size;
+            obj->symtab = obj->file + shdr[i].sh_offset;
+            obj->strtab = obj->file + shdr[shdr[i].sh_link].sh_offset;
+            obj->symtab_size = shdr[i].sh_size;
         }*/
     }
 
-    if (dl->dymsym == NULL) {
+    if (obj->dymsym == NULL) {
         printf("no symbol table found\n");
-        free(dl->file);
-        free(dl);
+        free(obj->file);
+        free(obj);
         return NULL;
     }
 
-    return dl;
+    print_required_libs(obj);
+
+    return obj;
 }
 
 void *dlopen(const char *filename, int flag) {
@@ -287,10 +319,12 @@ void *dlsym(void *handle, const char *symbol) {
     for (uint8_t *p = dl->dymsym; p < dl->dymsym + dl->dynsym_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
         if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
-            printf("dymsym: %s\n", symbol);
             return (void *)(dl->mem + sym->st_value);
         }
     }
+
+    printf("symbol not found: %s\n", symbol);
+    while (1);
 
     return NULL;
 }
@@ -313,7 +347,6 @@ int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 9) { // SHT_REL
-            puts("SHT_REL (dynamic_linker)");
             Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
                 name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
@@ -334,17 +367,6 @@ int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
                         while (1);
                         break;
                 }
-                /*if (type != R_386_JMP_SLOT) {
-                    printf("unsupported relocation type: %d\n", type);
-                    while (1);
-                }
-
-                void *sym = dlsym(lib, name);
-                if (sym == NULL) {
-                    printf("symbol not found: %s\n", name);
-                    while (1);
-                }
-                *(uint32_t *)(rel[j].r_offset) = (uint32_t) sym;*/
             }
         }
 
@@ -394,7 +416,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
             }
         } else {
             args.name = argv[i];
-            args.arg_offset = i + 1;
+            args.arg_offset = i;
             break;
         }
     }
@@ -425,6 +447,7 @@ int main(int argc, char **argv) {
     elfobj_t *test = open_elf(args.name, ET_EXEC);
     if (test == NULL) {
         fprintf(stderr, "open_elf failed...\n");
+        dlclose(lib);
         return 1;
     }
 
@@ -435,8 +458,8 @@ int main(int argc, char **argv) {
         printf("Link time: %d ms\n", c_timer_get_ms() - start);
     }
 
-    int (*main)() = (int (*)()) ((Elf32_Ehdr *)test->file)->e_entry;
-    main();
+    int (*main)() = (int (*)(int, char **)) ((Elf32_Ehdr *) test->file)->e_entry;
+    main(argc - args.arg_offset, argv + args.arg_offset);
 
     free(test->file);
     free(test);
