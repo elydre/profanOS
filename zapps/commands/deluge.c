@@ -138,7 +138,6 @@ char **get_required_libs(elfobj_t *obj) {
 
     for (int i = 0; dyn[i].d_tag != 0; i++) {
         if (dyn[i].d_tag == 1) { // DT_NEEDED
-            printf("DT_NEEDED: %s\n", obj->dynstr + dyn[i].d_un.d_val);
             libs = realloc(libs, (lib_count + 2) * sizeof(char *));
             tmp = get_full_path((char *) obj->dynstr + dyn[i].d_un.d_val);
             if (tmp == NULL) {
@@ -305,6 +304,8 @@ void *open_elf(const char *filename, uint16_t required_type) {
         return NULL;
     }
 
+    obj->name = strdup(filename);
+
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
@@ -333,26 +334,30 @@ void *open_elf(const char *filename, uint16_t required_type) {
 
     char **new_libs = get_required_libs(obj);
     
-    if (new_libs != NULL) {
-        for (int i = 0; new_libs[i] != NULL; i++) {
-            int found = 0;
-            for (int j = 0; g_loaded_libs[j] != NULL; j++) {
-                if (strcmp(new_libs[i], g_loaded_libs[j]->name) == 0) {
-                    found = 1;
-                    break;
-                }
-            }
-            if (!found) {
-                elfobj_t *lib = dlopen(new_libs[i], ET_DYN);
-                if (lib == NULL) {
-                    printf("dlopen failed: %s\n", new_libs[i]);
-                    while (1);
-                }
-                g_loaded_libs = realloc(g_loaded_libs, (g_lib_count++) * sizeof(elfobj_t *));
-                g_loaded_libs[g_lib_count] = lib;
+    if (new_libs == NULL)
+        return obj;
+
+    for (int i = 0; new_libs[i] != NULL; i++) {
+        int found = 0;
+        for (int j = 0; g_loaded_libs && j < g_lib_count; j++) {
+            if (strcmp(new_libs[i], g_loaded_libs[j]->name) == 0) {
+                found = 1;
+                break;
             }
         }
+        if (!found) {
+            elfobj_t *lib = dlopen(new_libs[i], ET_DYN);
+            if (lib == NULL) {
+                printf("dlopen failed: %s\n", new_libs[i]);
+                while (1);
+            }
+            g_loaded_libs = realloc(g_loaded_libs, (g_lib_count + 1) * sizeof(elfobj_t *));
+            g_loaded_libs[g_lib_count] = lib;
+            g_lib_count++;
+        }
+        free(new_libs[i]);
     }
+    free(new_libs);
 
     return obj;
 }
@@ -388,6 +393,7 @@ void *dlsym(void *handle, const char *symbol) {
 int dlclose(void *handle) {
     elfobj_t *dl = (elfobj_t *) handle;
     free(dl->file);
+    free(dl->name);
     free(dl->mem);
     free(dl);
     return 0;
@@ -516,6 +522,13 @@ int main(int argc, char **argv) {
     main(argc - args.arg_offset, argv + args.arg_offset);
 
     free(test->file);
+    free(test->name);
     free(test);
+
+    for (int i = 0; i < g_lib_count; i++) {
+        dlclose(g_loaded_libs[i]);
+    }
+    free(g_loaded_libs);
+
     return 0;
 }
