@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include <filesys.h>
 #include <stdlib.h>
 #include <profan.h>
 #include <string.h>
@@ -79,6 +80,7 @@ typedef struct {
 typedef struct {
     uint32_t size;
     uint8_t *file;
+    char *name;
 
     uint8_t *mem;
 
@@ -87,7 +89,11 @@ typedef struct {
     int dynsym_size;
 } elfobj_t;
 
+elfobj_t **g_loaded_libs;
+int g_lib_count;
+
 void *dlsym(void *handle, const char *symbol);
+void *dlopen(const char *filename, int flag);
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
@@ -98,10 +104,25 @@ int is_valid_elf(void *data, uint16_t required_type) {
     );
 }
 
-void print_required_libs(elfobj_t *obj) {
+char *get_full_path(char *lib) {
+    char *full_path;
+    full_path = assemble_path("/user", lib);
+    if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
+        return full_path;
+    free(full_path);
+    full_path = assemble_path("/lib", lib);
+    if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
+        return full_path;
+    return NULL;
+}
+
+char **get_required_libs(elfobj_t *obj) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
     Elf32_Dyn *dyn = NULL;
+
+    char *tmp, **libs = NULL;
+    int lib_count = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
@@ -112,14 +133,27 @@ void print_required_libs(elfobj_t *obj) {
 
     if (dyn == NULL) {
         puts("no dynamic section found");
-        return;
+        return NULL;
     }
 
     for (int i = 0; dyn[i].d_tag != 0; i++) {
         if (dyn[i].d_tag == 1) { // DT_NEEDED
             printf("DT_NEEDED: %s\n", obj->dynstr + dyn[i].d_un.d_val);
+            libs = realloc(libs, (lib_count + 2) * sizeof(char *));
+            tmp = get_full_path((char *) obj->dynstr + dyn[i].d_un.d_val);
+            if (tmp == NULL) {
+                printf("library not found: %s\n", obj->dynstr + dyn[i].d_un.d_val);
+                while (1);
+            }
+            libs[lib_count++] = tmp;
         }
     }
+
+    if (lib_count == 0)
+        return NULL;
+
+    libs[lib_count] = NULL;
+    return libs;
 }
 
 int load_sections(elfobj_t *obj, uint16_t type) {
@@ -247,6 +281,7 @@ int file_relocate(elfobj_t *dl) {
 
 void *open_elf(const char *filename, uint16_t required_type) {
     elfobj_t *obj = calloc(sizeof(elfobj_t), 1);
+    printf("loading: %s\n", filename);
 
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
@@ -296,7 +331,28 @@ void *open_elf(const char *filename, uint16_t required_type) {
         return NULL;
     }
 
-    print_required_libs(obj);
+    char **new_libs = get_required_libs(obj);
+    
+    if (new_libs != NULL) {
+        for (int i = 0; new_libs[i] != NULL; i++) {
+            int found = 0;
+            for (int j = 0; g_loaded_libs[j] != NULL; j++) {
+                if (strcmp(new_libs[i], g_loaded_libs[j]->name) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                elfobj_t *lib = dlopen(new_libs[i], ET_DYN);
+                if (lib == NULL) {
+                    printf("dlopen failed: %s\n", new_libs[i]);
+                    while (1);
+                }
+                g_loaded_libs = realloc(g_loaded_libs, (g_lib_count++) * sizeof(elfobj_t *));
+                g_loaded_libs[g_lib_count] = lib;
+            }
+        }
+    }
 
     return obj;
 }
@@ -337,7 +393,7 @@ int dlclose(void *handle) {
     return 0;
 }
 
-int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
+int dynamic_linker(elfobj_t *exec) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)exec->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(exec->file + ehdr->e_shoff);
 
@@ -353,7 +409,9 @@ int dynamic_linker(elfobj_t *exec, elfobj_t *lib) {
                 val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
                 if (does_type_required_sym(type)) {
-                    val = (uint32_t) dlsym(lib, name);
+                    for (int k = 0; k < g_lib_count && val == 0; k++) {
+                        val = (uint32_t) dlsym(g_loaded_libs[k], name);
+                    }
                 }
                 switch (type) {
                     case R_386_JMP_SLOT:    // word32  S
@@ -431,6 +489,9 @@ deluge_args_t deluge_parse(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+    g_loaded_libs = NULL;
+    g_lib_count = 0;
+
     deluge_args_t args = deluge_parse(argc, argv);
     uint32_t start;
 
@@ -438,21 +499,14 @@ int main(int argc, char **argv) {
         start = c_timer_get_ms();
     }
 
-    void *lib = dlopen("/user/libtest.so", 42);
-    if (lib == NULL) {
-        fprintf(stderr, "dlopen failed...\n");
-        return 1;
-    }
-
     elfobj_t *test = open_elf(args.name, ET_EXEC);
     if (test == NULL) {
         fprintf(stderr, "open_elf failed...\n");
-        dlclose(lib);
         return 1;
     }
 
     load_sections(test, ET_EXEC);
-    dynamic_linker(test, lib);
+    dynamic_linker(test);
 
     if (args.bench) {
         printf("Link time: %d ms\n", c_timer_get_ms() - start);
@@ -463,7 +517,5 @@ int main(int argc, char **argv) {
 
     free(test->file);
     free(test);
-
-    dlclose(lib);
     return 0;
 }
