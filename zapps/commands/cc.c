@@ -76,7 +76,7 @@ int execute_command(char *path, char *args) {
 }
 
 char *get_bin_name(char *full_path, char *pwd) {
-    char *bin_file = malloc(strlen(full_path) + 4);
+    char *bin_file = malloc(strlen(full_path) + 5);
     char *cp = bin_file;
     strcpy(bin_file, full_path);
 
@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
         int ret = 1;
 
         if (options & OPTION_NORAND) {
-            obj_file = malloc(strlen(full_path) + 1);
+            obj_file = malloc(strlen(full_path) + 3);
             strcpy(obj_file, full_path);
 
             // remove extension from file name
