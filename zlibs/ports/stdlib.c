@@ -52,28 +52,33 @@ char **get_environ_ptr(void) {
 void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
     int addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
-    if (addr == 0) return NULL;
+    if (addr == 0)
+        return NULL;
     memset((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
 
 void free(void *mem) {
-    if (mem == NULL) return;
+    if (mem == NULL)
+        return;
     c_mem_free_addr((int) mem);
 }
 
 void *malloc_func(uint32_t size, int as_kernel) {
     uint32_t addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
-    if (addr == 0) return NULL; // error
     return (void *) addr;
 }
 
 void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
-    if (mem == NULL) return malloc_func(new_size, as_kernel);
-    uint32_t addr = (uint32_t) mem;
+    if (mem == NULL)
+        return malloc_func(new_size, as_kernel);
+
+    uint32_t old_size = c_mem_get_alloc_size((uint32_t) mem);
     uint32_t new_addr = c_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
-    if (new_addr == 0) return NULL;
-    memcpy((uint8_t *) new_addr, (uint8_t *) addr, new_size);
+    if (new_addr == 0)
+        return NULL;
+
+    memcpy((uint8_t *) new_addr, (uint8_t *) mem, old_size < new_size ? old_size : new_size);
     free(mem);
     return (void *) new_addr;
 }

@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 6"
+#define OLV_VERSION "0.11 rev 7"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2289,16 +2289,15 @@ char **gen_args(char *string) {
     // count the number of arguments
     int in_string = 0;
     int argc = 1;
-    int len = 0;
+    int len;
 
-    for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
+    for (len = 0; string[len] != '\0'; len++) {
+        if (string[len] == STRING_CHAR && (len == 0 || string[len - 1] != '\\')) {
             in_string = !in_string;
-        } if (string[i] == ' ' && !in_string) {
-            while (string[i + 1] == ' ') i++;
+        } if (string[len] == ' ' && !in_string) {
+            while (string[len + 1] == ' ') len++;
             argc++;
         }
-        len++;
     }
 
     if (in_string) {
@@ -2319,8 +2318,8 @@ char **gen_args(char *string) {
         } if (string[i] == ' ' && !in_string) {
             int tmp = quotes_less_copy(args, string + old_i, i - old_i);
             argv[arg_i++] = args;
-            old_i = i + 1;
             while (string[i + 1] == ' ') i++;
+            old_i = i + 1;
             args += tmp + 1;
         }
     }
@@ -2452,7 +2451,7 @@ char *pipe_processor(char **input) {
         dup(4)
     };
 
-    char *line, *tmp, *ret = NULL;
+    char *line, *tmp = NULL, *ret = NULL;
     int fd[2], fdin, start = 0;
     fdin = dup(0);
     for (int i = 0; i < argc + 1; i++) {

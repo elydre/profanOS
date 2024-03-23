@@ -42,7 +42,7 @@ void init_func(void) {
     // init stdin
     dup[0].filename = "/dev/stdin";
     dup[0].mode = MODE_READ;
-    dup[0].buffer = NULL;
+    dup[0].buffer = malloc(FILE_BUFFER_SIZE);
     dup[0].fd = 0;
 
     // init stdout
@@ -441,7 +441,7 @@ int putc(int ch, FILE *stream) {
 
 int fputs(const char *str, FILE *stream) {
     uint32_t len = strlen(str);
-    return fwrite(str, 1, len, stream) == len ? 0 : EOF;
+    return fwrite(str, 1, len, stream) == len ? (int) len : EOF;
 }
 
 int getchar(void) {
