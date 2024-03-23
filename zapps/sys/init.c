@@ -121,7 +121,7 @@ int main(void) {
     welcome_print();
 
     do {
-        setenv("PATH", "/bin/commands:/bin/fatpath", 0);
+        setenv("PATH", "/bin/cmd:/bin/fatpath", 0);
         run_ifexist(SHELL_PATH, 0, NULL);
 
         printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
