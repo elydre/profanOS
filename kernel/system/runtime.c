@@ -81,7 +81,7 @@ int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
     uint32_t real_fsize = fsize;
 
     scuba_directory_t *dir = scuba_directory_inited();
-    scuba_create_virtual(dir, RUN_BIN_VBASE, RUN_BIN_COUNT / 0x1000);
+    scuba_create_virtual(dir, RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
     process_switch_directory(pid, dir);
 
     // load binary
@@ -99,7 +99,7 @@ int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
     }
 
     // call main
-    int (*main)(int, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
+    int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
     int ret = main(argc, argv, envp) & 0xFF;
     return force_exit_pid(process_get_pid(), ret, 1);
 }

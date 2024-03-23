@@ -421,15 +421,20 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     }
 
     // duplicate argv
-    args.argc++;
+    args.argc += 2;
     int size = sizeof(char *) * (args.argc + 1);
     char **nargv = (char **) c_mem_alloc(size, 0, 6);
     memset((void *) nargv, 0, size);
 
     nargv[0] = strdup(ELF_INTERP);
-    for (int i = 1; i < args.argc; i++) {
-        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i-1]) + 1, 0, 6);
-        strcpy(nargv[i], args.argv[i-1]);
+    nargv[1] = strdup(args.path);
+    for (int i = 2; i < args.argc; i++) {
+        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i-2]) + 1, 0, 6);
+        strcpy(nargv[i], args.argv[i-2]);
+    }
+
+    for (int i = 0; i < args.argc; i++) {
+        serial_debug("nargv[%d] = %s\n", i, nargv[i]);
     }
 
     sid_t sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);

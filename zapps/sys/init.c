@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define SHELL_PATH "/bin/fatpath/olivine.bin"
+#define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
 #define run_ifexist_pid(path, argc, argv, pid) \
@@ -113,7 +113,7 @@ int main(void) {
         ) c_kprint("Failed to redirect to panda\n");
         setenv("TERM", "/dev/panda", 1);
         c_sys_set_reporter(userspace_reporter);
-        run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
+        run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
     }

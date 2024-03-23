@@ -202,7 +202,7 @@ def build_app_lib():
     bin_build_list += find_app_lib(ZLIBS_DIR, ".cpp")
 
     for e in elf_build_list:
-        if e.startswith("{ZAPPS_DIR}/sys"):
+        if e.startswith(f"{ZAPPS_DIR}/sys"):
             elf_build_list = [x for x in elf_build_list if x != e]
             bin_build_list.append(e)
 

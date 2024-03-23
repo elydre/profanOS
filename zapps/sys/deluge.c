@@ -227,6 +227,10 @@ int file_relocate(elfobj_t *dl) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
+    if (ehdr->e_type == ET_EXEC) {
+        return 0;
+    }
+
     uint32_t val;
     uint8_t type;
     char *name;
@@ -326,10 +330,14 @@ void *open_elf(const char *filename, uint16_t required_type) {
     }
 
     if (obj->dymsym == NULL) {
-        printf("no symbol table found\n");
-        free(obj->file);
-        free(obj);
-        return NULL;
+        if (required_type == ET_DYN) {
+            printf("no dynamic symbol table found\n");
+            free(obj->file);
+            free(obj->name);
+            free(obj);
+            return NULL;
+        }
+        return obj;
     }
 
     char **new_libs = get_required_libs(obj);
@@ -377,6 +385,10 @@ void *dlsym(void *handle, const char *symbol) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
+    if (ehdr->e_type != ET_DYN || !dl->dymsym) {
+        return NULL;
+    }
+
     for (uint8_t *p = dl->dymsym; p < dl->dymsym + dl->dynsym_size; p += sizeof(Elf32_Sym)) {
         Elf32_Sym *sym = (Elf32_Sym *)p;
         if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
@@ -402,6 +414,10 @@ int dlclose(void *handle) {
 int dynamic_linker(elfobj_t *exec) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)exec->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(exec->file + ehdr->e_shoff);
+
+    if (ehdr->e_type != ET_EXEC || !exec->dymsym) {
+        return 0;
+    }
 
     uint32_t val;
     uint8_t type;
@@ -459,12 +475,15 @@ void show_help(int full) {
     puts("Options:");
     puts("  -h  Show this help message");
     puts("  -b  Bench link time");
+    puts("  -e  use filename as argument");
 }
 
 deluge_args_t deluge_parse(int argc, char **argv) {
     deluge_args_t args;
     args.name = NULL;
     args.bench = 0;
+
+    int move_arg = 1;
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -473,6 +492,8 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 exit(0);
             } else if (argv[i][1] == 'b') {
                 args.bench = 1;
+            } else if (argv[i][1] == 'e') {
+                move_arg = 0;
             } else {
                 printf("Unknown option: %s\n", argv[i]);
                 show_help(0);
@@ -480,7 +501,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
             }
         } else {
             args.name = argv[i];
-            args.arg_offset = i;
+            args.arg_offset = i + move_arg;
             break;
         }
     }

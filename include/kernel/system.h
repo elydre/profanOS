@@ -10,7 +10,7 @@
 #define PROC_PRIORITY   2           // default process priority
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define FS_MAX_DISKS    256         // max disk count
-#define RUN_DEFAULT     "/sys/bin/init.bin"
+#define RUN_DEFAULT     "/bin/sys/init.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
@@ -49,7 +49,7 @@ void kernel_exit_current(void);
 
 // runtime.c
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
-int binary_exec(sid_t sid, uint32_t vcunt, char **argv);
+int binary_exec(sid_t sid, int argc, char **argv, char **envp);
 int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // dily.c
