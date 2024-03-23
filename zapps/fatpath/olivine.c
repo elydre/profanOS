@@ -2452,7 +2452,7 @@ char *pipe_processor(char **input) {
         dup(4)
     };
 
-    char *line, *tmp, *ret = NULL;
+    char *line, *tmp = NULL, *ret = NULL;
     int fd[2], fdin, start = 0;
     fdin = dup(0);
     for (int i = 0; i < argc + 1; i++) {
