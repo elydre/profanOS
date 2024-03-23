@@ -17,6 +17,8 @@
 #define INP_CLR "\e[94m"
 #define INP_RST "\e[0m"
 
+#define ELF_INTERP "/bin/sys/deluge.bin"
+
 // keyboard scancodes
 #define ESC     1
 #define BACK    14
@@ -413,26 +415,25 @@ int profan_open(char *path, int flags, ...) {
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
-    if (args.path == NULL && IS_NULL_SID(args.sid)) {
-        return -1;
-    }
-
-    args.sid = IS_NULL_SID(args.sid) ? fu_path_to_sid(ROOT_SID, args.path) : args.sid;
-    if (IS_NULL_SID(args.sid) || !fu_is_file(args.sid)) {
+    if (args.path == NULL) {
+        printf("file is required to run\n");
         return -1;
     }
 
     // duplicate argv
+    args.argc++;
     int size = sizeof(char *) * (args.argc + 1);
     char **nargv = (char **) c_mem_alloc(size, 0, 6);
     memset((void *) nargv, 0, size);
 
-    for (int i = 0; i < args.argc; i++) {
-        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i]) + 1, 0, 6);
-        strcpy(nargv[i], args.argv[i]);
+    nargv[0] = strdup(ELF_INTERP);
+    for (int i = 1; i < args.argc; i++) {
+        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i-1]) + 1, 0, 6);
+        strcpy(nargv[i], args.argv[i-1]);
     }
 
-    int pid = c_process_create(c_binary_exec, 1, args.path ? args.path : "unknown file", 4, args.sid, args.vcunt, nargv);
+    sid_t sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
+    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, NULL);
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

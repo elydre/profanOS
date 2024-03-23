@@ -58,7 +58,7 @@ char *find_cmd(char *cmd) {
         strcpy(res, paths[i]);
         strcat(res, "/");
         strcat(res, cmd);
-        strcat(res, ".bin");
+        strcat(res, ".elf");
         sid = fu_path_to_sid(ROOT_SID, res);
         if (!IS_NULL_SID(sid) && fu_is_file(sid)) {
             free_tab(paths);

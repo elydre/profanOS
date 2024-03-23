@@ -7,9 +7,8 @@
 #include <profan.h>
 
 
-#define TCC_PATH "/bin/fatpath/tcc.bin"     // c compiler
-#define VLK_PATH "/bin/fatpath/vlink.bin"   // linker
-#define XEC_PATH "/bin/commands/xec.bin"    // elf to binary
+#define TCC_PATH "/bin/fatpath/tcc.elf"     // c compiler
+#define VLK_PATH "/bin/fatpath/vlink.elf"   // linker
 #define ZEC_PATH "/sys/zentry.c"            // zentry source
 #define ZEO_PATH "/sys/zentry.o"            // zentry object
 #define TEC_PATH "/sys/tccextra.c"          // tccextra source
@@ -89,7 +88,7 @@ char *get_bin_name(char *full_path, char *pwd) {
     if (slash != NULL) {
         bin_file = slash + 1;
     }
-    strcat(bin_file, ".bin");
+    strcat(bin_file, ".elf");
 
     // add path to file name
     bin_file = assemble_path(pwd, bin_file);
@@ -187,15 +186,14 @@ int main(int argc, char **argv) {
 
     if (options & OPTION_CHDEP) {
         printf("Dependencies:\n"
-            " tcc.bin     %s\e[0m\n"
-            " vlink.bin   %s\e[0m\n"
-            " xec.bin     %s\e[0m\n"
+            " tcc.elf     %s\e[0m\n"
+            " vlink.elf   %s\e[0m\n"
+            " xec.elf     %s\e[0m\n"
             " zentry      %s\e[0m\n"
             " tccextra    %s\e[0m\n"
             " libtcc      %s\e[0m\n",
             does_file_exist(TCC_PATH) ? "\e[92mfound" : "\e[91mnot found",
             does_file_exist(VLK_PATH) ? "\e[92mfound" : "\e[91mnot found",
-            does_file_exist(XEC_PATH) ? "\e[92mfound" : "\e[91mnot found",
             does_file_exist(ZEO_PATH) ? "\e[92mfound" : does_file_exist(ZEC_PATH) ? "\e[96msource" : "\e[91mnot found",
             does_file_exist(TEO_PATH) ? "\e[92mfound" : does_file_exist(TEC_PATH) ? "\e[96msource" : "\e[91mnot found",
             does_file_exist(TLA_PATH) ? "\e[92mfound" : "\e[91mnot found"
@@ -216,7 +214,7 @@ int main(int argc, char **argv) {
     }
 
     if (!does_file_exist(TCC_PATH)) {
-        printf("cc: tcc.bin not found\n");
+        printf("cc: tcc.elf not found\n");
         return 1;
     }
 
@@ -229,12 +227,7 @@ int main(int argc, char **argv) {
     }
 
     if (!does_file_exist(VLK_PATH)) {
-        printf("cc: vlink.bin not found\n");
-        return 1;
-    }
-
-    if (!does_file_exist(XEC_PATH)) {
-        printf("cc: xec.bin not found\n");
+        printf("cc: vlink.elf not found\n");
         return 1;
     }
 
@@ -255,7 +248,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        char *obj_file, *elf_file, *bin_file;
+        char *obj_file, *elf_file;
         int ret = 1;
 
         if (options & OPTION_NORAND) {
@@ -286,7 +279,6 @@ int main(int argc, char **argv) {
         }
 
         // get the name of the binary file
-        bin_file = get_bin_name(full_path, pwd);
 
         char *args = malloc(strlen(full_path) * 2 + 256);
 
@@ -298,19 +290,15 @@ int main(int argc, char **argv) {
                 sprintf(args, "-nostdlib -T /sys/zlink.ld -o %s %s %s %s %s", elf_file, ZEO_PATH, obj_file, TEO_PATH, TLA_PATH);
             }
             if (!execute_command(VLK_PATH, args)) {
-                sprintf(args, "%s %s", elf_file, bin_file);
-                if (!execute_command(XEC_PATH, args)) {
-                    if (options & OPTION_RUN) {
-                        if (!execute_command(bin_file, NULL)) ret = 0;
-                    } else ret = 0;
-                }
+                if (options & OPTION_RUN) {
+                    if (!execute_command(elf_file, NULL)) ret = 0;
+                } else ret = 0;
             }
         }
 
         free(full_path);
         free(elf_file);
         free(obj_file);
-        free(bin_file);
         free(args);
 
         return ret;

@@ -10,8 +10,7 @@
 #define SHELL_NAME "olivine"
 
 #define run_ifexist_pid(path, argc, argv, pid) \
-        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 1}, pid)
+        run_ifexist_full((runtime_args_t){path, argc, argv, 1}, pid)
 
 typedef struct {
     int id;

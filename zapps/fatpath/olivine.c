@@ -471,7 +471,7 @@ char **load_bin_names(void) {
         tmp_names = realloc(tmp_names, sizeof(char *) * (bin_count + elm_count));
 
         for (int i = 0; i < elm_count; i++) {
-            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".bin")) {
+            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".elf")) {
                 size += strlen(cnt_names[i]) - 3;
                 tmp_names[bin_count++] = cnt_names[i];
             } else {
@@ -557,7 +557,7 @@ char *get_bin_path(char *name) {
         strcat(file, name);
 
         #if PROFANBUILD
-        strcat(file, ".bin");
+        strcat(file, ".elf");
         sid_t file_id = fu_path_to_sid(ROOT_SID, file);
         if (!IS_NULL_SID(file_id) && fu_is_file(file_id)) {
             free(path_copy);
@@ -1718,7 +1718,7 @@ char *if_go_binfile(char **input) {
     #if PROFANBUILD
     int pid;
     local_itoa(run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
+        (runtime_args_t){file_path, argc, argv, stdout_path || stdin_path ? 2 : wait_end}, &pid
     ), g_exit_code);
 
     if (stdin_path) {

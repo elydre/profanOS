@@ -118,7 +118,7 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
     }
     new_args[argc] = NULL;
     c_mem_free_all(c_process_get_pid());
-    return c_binary_exec(sid, 0, (void *) new_args);
+    return c_binary_exec(sid, argc, (void *) new_args, NULL);
 }
 
 int execvp(const char *file, char *const argv[]) {

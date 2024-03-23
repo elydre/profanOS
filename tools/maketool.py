@@ -32,7 +32,7 @@ CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-prote
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 
-KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/klink.ld -Map {OUT_DIR}/make/kernel.map"
+KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 
 QEMU_SPL = "qemu-system-i386"
 QEMU_KVM = "kvm"
@@ -172,22 +172,6 @@ def build_app_lib():
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
 
-    def build_file(name, fname):
-        global total
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/zlink.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
-        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
-        print_and_exec(f"rm {fname}.o {fname}.pe")
-        total -= 1
-
-    cprint(COLOR_INFO, "building zapps and zlibs")
-
-    build_list = find_app_lib(ZAPPS_DIR, ".c")
-    build_list += find_app_lib(ZAPPS_DIR, ".cpp")
-
-    build_list += find_app_lib(ZLIBS_DIR, ".c")
-    build_list += find_app_lib(ZLIBS_DIR, ".cpp")
-
     if not os.path.exists(f"{OUT_DIR}/zapps"):
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
@@ -196,15 +180,36 @@ def build_app_lib():
         cprint(COLOR_INFO, f"creating '{OUT_DIR}/zlibs' directory")
         os.makedirs(f"{OUT_DIR}/zlibs")
 
+    def build_bin_file(name, fname):
+        global total
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
+        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
+        print_and_exec(f"rm {fname}.o {fname}.pe")
+        total -= 1
+    
+    def build_elf_file(name, fname):
+        global total
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
+        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"rm {fname}.o")
+        total -= 1
+
+    elf_build_list = find_app_lib(ZAPPS_DIR, ".c")
+    elf_build_list += find_app_lib(ZAPPS_DIR, ".cpp")
+
+    bin_build_list = find_app_lib(ZLIBS_DIR, ".c")
+    bin_build_list += find_app_lib(ZLIBS_DIR, ".cpp")
+
+    for e in elf_build_list:
+        if e.startswith("{ZAPPS_DIR}/sys"):
+            elf_build_list = [x for x in elf_build_list if x != e]
+            bin_build_list.append(e)
+
     skip_count = 0
 
-    for file in build_list:
+    for file in elf_build_list + bin_build_list:
         if sum(x == "/" for x in file) <= 1:
-            continue
-
-        if file.split("/")[-2].startswith("_"):
-            skip_count += 1
-            build_list = [x for x in build_list if x != file]
             continue
 
         dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
@@ -214,26 +219,26 @@ def build_app_lib():
             os.makedirs(f"{OUT_DIR}/{dir_name}")
 
     # check if zapps need to be rebuild
-    updated_list = [file for file in build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    cprint(COLOR_INFO, f"{len(updated_list)} zapps and zlibs to build (active: {len(build_list)}, skipped: {skip_count}, total: {len(build_list) + skip_count})")
-    build_list = updated_list
+    total_elf = len(elf_build_list)
+    total_bin = len(bin_build_list)
 
-    if not build_list: return
+    elf_build_list = [file for file in elf_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
+    bin_build_list = [file for file in bin_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
+
+    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf and {len(bin_build_list)}/{total_bin} bin files to compile") 
 
     global total
-    total = len(build_list)
+    total = len(elf_build_list) + len(bin_build_list)
 
-    for name in build_list:
+    for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
+        threading.Thread(target = build_elf_file, args=(name, fname)).start()
+    
+    for name in bin_build_list:
+        fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
+        threading.Thread(target = build_bin_file, args=(name, fname)).start()
 
-        if file1_newer(f"{fname}.bin", f"{ZAPPS_DIR}/{name}"):
-            total -= 1
-            continue
-
-        threading.Thread(target = build_file, args = (name, fname)).start()
-
-    while total : pass # on attends que tout soit fini
-
+    while total: pass # on attends que tout soit fini
 
 def make_iso(force = False, more_option = False):
     elf_image()
@@ -336,7 +341,7 @@ def gen_disk(force=False, with_src=False):
 
     print_and_exec(f"cp {TOOLS_DIR}/zentry.c {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp {TOOLS_DIR}/tccextra.c {OUT_DIR}/disk/sys/")
-    print_and_exec(f"cp {TOOLS_DIR}/zlink.ld {OUT_DIR}/disk/sys/")
+    print_and_exec(f"cp {TOOLS_DIR}/link_elf.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
     print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ || true")
 

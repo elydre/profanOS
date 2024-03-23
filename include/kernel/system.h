@@ -10,12 +10,12 @@
 #define PROC_PRIORITY   2           // default process priority
 #define SCUBA_MAP_TO    0x7800000   // scuba map to 120MB
 #define FS_MAX_DISKS    256         // max disk count
-#define RUN_DEFAULT     "/bin/tools/init.bin"
+#define RUN_DEFAULT     "/sys/bin/init.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
 
-#define RUN_BIN_VBASE   0xC0000000  // virtual base address for binary
+#define RUN_BIN_VBASE   0xB0000000  // virtual base address for binary
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count
 
 #define DILY_MAX        128         // max dily loaded library

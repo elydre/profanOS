@@ -4,8 +4,7 @@
 #include <type.h>
 
 #define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 1}, NULL)
+        run_ifexist_full((runtime_args_t){path, argc, argv, 1}, NULL)
 
 #define KB_LEFT 75
 #define KB_RIGHT 77

@@ -70,7 +70,8 @@
 
 #define c_sys_reboot ((void (*)(void)) hi_func_addr(24))
 #define c_sys_shutdown ((void (*)(void)) hi_func_addr(25))
-#define c_binary_exec ((int (*)(sid_t, int, char **)) hi_func_addr(26))
+
+#define c_binary_exec ((int (*)(sid_t, int, char **, char **)) hi_func_addr(26))
 #define c_sys_kinfo ((char *(*)(void)) hi_func_addr(27))
 
 #define c_serial_read ((void (*)(int, char *, uint32_t)) hi_func_addr(28))

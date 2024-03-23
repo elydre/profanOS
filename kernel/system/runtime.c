@@ -65,20 +65,13 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     return process_kill(pid);
 }
 
-int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
-    uint32_t vbase = RUN_BIN_VBASE;
-    if (str_cmp(argv[0], "deluge") == 0)
-        vbase = 0xB0000000;
-
+int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
     int pid = process_get_pid();
 
     if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
-        sys_warning("[binary_exec] File not found");
-        force_exit_pid(pid, 1, 0);
+        sys_error("[binary_exec] File not found");
+        return force_exit_pid(pid, 1, 0);
     }
-
-    if (vcunt == 0)
-        vcunt = RUN_BIN_VCUNT;
 
     comm_struct_t *comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
     comm->argv = argv;
@@ -87,23 +80,12 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
     uint32_t real_fsize = fsize;
 
-    // setup private memory
-    fsize = fsize + (0x1000 - (fsize % 0x1000));
-
-    if (vcunt < fsize * 2)
-        vcunt = fsize * 2;
-
     scuba_directory_t *dir = scuba_directory_inited();
-    scuba_create_virtual(dir, vbase, vcunt / 0x1000);
+    scuba_create_virtual(dir, RUN_BIN_VBASE, RUN_BIN_COUNT / 0x1000);
     process_switch_directory(pid, dir);
 
-    // get argc
-    int argc = 0;
-    while (argv && argv[argc] != NULL)
-        argc++;
-
     // load binary
-    fs_cnt_read(fs_get_main(), sid, (void *) vbase, 0, real_fsize);
+    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
 
     // move the stack if needed
     uint32_t *stack_top = (uint32_t *) process_get_info(pid, PROCESS_INFO_STACK);
@@ -117,8 +99,8 @@ int binary_exec(sid_t sid, uint32_t vcunt, char **argv) {
     }
 
     // call main
-    int (*main)(int, char **) = (int (*)(int, char **)) vbase;
-    int ret = main(argc, argv) & 0xFF;
+    int (*main)(int, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
+    int ret = main(argc, argv, envp) & 0xFF;
     return force_exit_pid(process_get_pid(), ret, 1);
 }
 
@@ -146,6 +128,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
+
     if (pid == -1)
         return -1;
 

@@ -191,7 +191,7 @@ char *get_path(char *file) {
         }
 
         path_part = path;
-        path = ft_strjoin(path_part, ".bin");
+        path = ft_strjoin(path_part, ".elf");
         free(path_part);
         sid = fu_path_to_sid(ROOT_SID, path);
         if (!IS_NULL_SID(sid) && fu_is_file(sid)) {
@@ -790,10 +790,9 @@ int start_pipex(pipex_t *pipex) {
         }
 
         if (run_ifexist_full((runtime_args_t) {
-                pipex->commands[i]->full_path, NULL_SID,
+                pipex->commands[i]->full_path,
                 pipex->commands[i]->arg_count,
-                pipex->commands[i]->args,
-                0, 2
+                pipex->commands[i]->args, 2
             }, pids + i) == -1
         ) {
             close_fds(pipex, fds, i);

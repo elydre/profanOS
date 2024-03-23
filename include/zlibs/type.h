@@ -68,12 +68,9 @@ typedef struct {
 
 typedef struct {
     char *path;     // path to file
-    sid_t sid;      // sector id (can be null)
 
     int argc;       // argument count
     char **argv;    // argument list
-
-    uint32_t vcunt; // virtual count
 
     uint8_t sleep_mode;  // sleep mode
 } runtime_args_t;
