@@ -28,8 +28,6 @@ lib_t libs_at_boot[] = {
     {1009, "/lib/mod/stdio.bin"},
     {1002, "/lib/mod/profan.bin"},
     {1011, "/lib/mod/math.bin"},
-    {1013, "/lib/mod/setjmp.bin"},
-    {1014, "/lib/mod/unistd.bin"},
     {1005, "/lib/mod/panda.bin"},
 };
 

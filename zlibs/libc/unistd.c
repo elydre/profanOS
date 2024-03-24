@@ -1,15 +1,11 @@
 #include <syscall.h>
 #include <filesys.h>
 
-#include <old/string.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <type.h>
-
-int main(void) {
-    return 0;
-}
 
 int access(const char *a, int b) {
     puts("access is not implemented yet, WHY DO YOU USE IT ?");

@@ -1,6 +1,5 @@
 #include <old/string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -210,7 +209,7 @@ char *open_input_keyboard(int *size, char *term_path) {
     buffer_actual_size = buffer_index = 0;
 
     while (sc != ENTER) {
-        usleep(SLEEP_T * 1000);
+        c_process_sleep(c_process_get_pid(), SLEEP_T);
         sc = c_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {

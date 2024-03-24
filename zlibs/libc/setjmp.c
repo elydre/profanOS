@@ -1,9 +1,5 @@
 typedef int jmp_buf[6];
 
-int main(void) {
-    return 0;
-}
-
 int setjmp(jmp_buf var) {
     asm (
         "mov    8(%ebp), %eax   \n" // get pointer to jmp_buf, passed as argument on stack
@@ -21,7 +17,7 @@ int setjmp(jmp_buf var) {
     return 0;
 }
 
-void longjmp(jmp_buf var,int m) {
+void longjmp(jmp_buf var, int m) {
     asm (
         "mov    8(%ebp),%edx    \n" // get pointer to jmp_buf, passed as argument 1 on stack
         "mov    12(%ebp),%eax   \n" // get int val in eax, passed as argument 2 on stack
