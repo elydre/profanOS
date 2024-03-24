@@ -191,7 +191,7 @@ def build_app_lib():
     def build_elf_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"ld --nmagic -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o")
         print_and_exec(f"rm {fname}.o")
         total -= 1
 
