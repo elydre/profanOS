@@ -285,7 +285,7 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_flags & 2 || shdr[i].sh_type == SHT_PROGBITS) { // SHF_ALLOC
+        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_flags & 2) {
             if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
                 required_size = shdr[i].sh_addr + shdr[i].sh_size;
         }
@@ -301,9 +301,10 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     } else {
         obj->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
     }
+    memset(obj->mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_flags & 2 || shdr[i].sh_type == SHT_PROGBITS) { // SHF_ALLOC
+        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_flags & 2) {
             if (type == ET_EXEC)
                 memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
