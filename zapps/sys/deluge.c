@@ -197,7 +197,7 @@ typedef struct {
 
     uint8_t *mem;
 
-    uint8_t *dymsym;
+    Elf32_Sym *dymsym;
     char *dynstr;
 
     int dynsym_size;
@@ -285,7 +285,7 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_flags & 2) { // SHF_ALLOC
+        if (shdr[i].sh_flags & 2 || shdr[i].sh_type == SHT_PROGBITS) { // SHF_ALLOC
             if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
                 required_size = shdr[i].sh_addr + shdr[i].sh_size;
         }
@@ -303,7 +303,7 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     }
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_flags & 2) { // SHF_ALLOC
+        if (shdr[i].sh_flags & 2 || shdr[i].sh_type == SHT_PROGBITS) { // SHF_ALLOC
             if (type == ET_EXEC)
                 memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
@@ -363,7 +363,7 @@ int file_relocate(elfobj_t *dl) {
         if (shdr[i].sh_type == 9) { // SHT_REL
             Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                name = (char *) dl->dynstr + ((Elf32_Sym *) dl->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+                name = (char *) dl->dynstr + (((Elf32_Sym *) dl->dymsym) + ELF32_R_SYM(rel[j].r_info))->st_name;
                 val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
                 if (does_type_required_sym(type)) {
@@ -410,7 +410,7 @@ int file_relocate(elfobj_t *dl) {
 void *open_elf(const char *filename, uint16_t required_type) {
     elfobj_t *obj = malloc(sizeof(elfobj_t));
     memset(obj, 0, sizeof(elfobj_t));
-    fd_printf(1, "loading: %s\n", filename);
+    fd_printf(2, "loading: %s\n", filename);
 
     sid_t sid = fu_path_to_sid(ROOT_SID, (void *) filename);
     if (!fu_is_file(sid)) {
@@ -438,7 +438,7 @@ void *open_elf(const char *filename, uint16_t required_type) {
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 11) { // SHT_DYNSYM
-            obj->dymsym = obj->file + shdr[i].sh_offset;
+            obj->dymsym = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
             obj->dynstr = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
             obj->dynsym_size = shdr[i].sh_size;
         }
@@ -510,10 +510,9 @@ void *dlsym(void *handle, const char *symbol) {
         return NULL;
     }
 
-    for (uint8_t *p = dl->dymsym; p < dl->dymsym + dl->dynsym_size; p += sizeof(Elf32_Sym)) {
-        Elf32_Sym *sym = (Elf32_Sym *)p;
-        if (strcmp((char *) dl->dynstr + sym->st_name, symbol) == 0) {
-            return (void *)(dl->mem + sym->st_value);
+    for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
+        if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0) {
+            return dl->mem + dl->dymsym[i].st_value;
         }
     }
 
@@ -549,10 +548,7 @@ int init_lib(elfobj_t *lib) {
         return 0;
     }
 
-    fd_printf(1, "initializing: %s %d %d\n", lib->name, size, (int) init_array);
-
     for (int i = 0; i < size; i++) {
-        fd_printf(1, "calling: %d\n", i);
         init_array[i]();
     }
 
@@ -584,7 +580,7 @@ int dynamic_linker(elfobj_t *exec) {
         if (shdr[i].sh_type == 9) { // SHT_REL
             Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
             for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                name = (char *) exec->dynstr + ((Elf32_Sym *) exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+                name = (char *) exec->dynstr + (exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
                 val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
                 if (does_type_required_sym(type)) {
@@ -700,7 +696,7 @@ int main(int argc, char **argv) {
     dynamic_linker(test);
 
     if (args.bench) {
-        fd_printf(1, "Link time: %d ms\n", c_timer_get_ms() - start);
+        fd_printf(2, "Link time: %d ms\n", c_timer_get_ms() - start);
     }
 
     int (*main)() = (int (*)(int, char **)) ((Elf32_Ehdr *) test->file)->e_entry;
