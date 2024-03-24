@@ -1,4 +1,4 @@
-// standard entry point for all zapps and zlibs
+// standard entry point for binary compiled files
 
 extern int main(int argc, char **argv);
 

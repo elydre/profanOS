@@ -432,12 +432,21 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         strcpy(nargv[i], args.argv[i-2]);
     }
 
-    for (int i = 0; i < args.argc; i++) {
-        serial_debug("nargv[%d] = %s\n", i, nargv[i]);
+    // duplicate envp
+    size = 0;
+    while (args.envp[size] != NULL)
+        size++;
+    size *= sizeof(char *);
+    char **nenvp = (char **) c_mem_alloc(size + 1, 0, 6);
+    memset((void *) nenvp, 0, size + 1);
+
+    for (uint32_t i = 0; i < size / sizeof(char *); i++) {
+        nenvp[i] = (char *) c_mem_alloc(strlen(args.envp[i]) + 1, 0, 6);
+        strcpy(nenvp[i], args.envp[i]);
     }
 
     sid_t sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
-    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, NULL);
+    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenvp);
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

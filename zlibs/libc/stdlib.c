@@ -1,5 +1,5 @@
-#include <old/string.h>
 #include <syscall.h>
+#include <string.h>
 #include <profan.h>
 #include <stdio.h>
 #include <time.h>
@@ -38,11 +38,12 @@ void *malloc_func(uint32_t size, int as_kernel);
 
 #define SHELL_PATH "/bin/fatpath/olivine.bin"
 
-int main(void) {
+void __attribute__((constructor)) stdlib_init(void) {
     rand_seed = time(NULL);
-    g_env = malloc(sizeof(char *));
-    g_env[0] = NULL;
-    return 0;
+}
+
+void set_environ_ptr(char **env) {
+    g_env = env;
 }
 
 char **get_environ_ptr(void) {
@@ -821,7 +822,7 @@ unsigned long int strtoul(const char* str, char** end, int base) {
     return 0;
 }
 
-unsigned long long int strtoul_l(const char* str, char** end, int base, locale_t loc) {
+unsigned long int strtoul_l(const char* str, char** end, int base, locale_t loc) {
     puts("strtoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -845,7 +846,7 @@ int system(const char *command) {
     args[3] = NULL;
 
     // run the command
-    int ret = run_ifexist(args[0], 3, args);
+    int ret = run_ifexist(args[0], 3, args, g_env);
 
     free(args);
 
@@ -918,7 +919,7 @@ unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base) {
     return 0;
 }
 
-unsigned long long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
+unsigned long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
     puts("wcstoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -945,7 +946,7 @@ void I_swap(char *x, char *y) {
 }
 
 // Function to reverse `buffer[i..j]`
-char* I_reverse(char *buffer, int i, int j)
+char *I_reverse(char *buffer, int i, int j)
 {
     while (i < j) {
         I_swap(&buffer[i++], &buffer[j--]);
@@ -954,7 +955,7 @@ char* I_reverse(char *buffer, int i, int j)
     return buffer;
 }
 
-char* itoa(int value, char* buffer, int base) {
+char *itoa(int value, char* buffer, int base) {
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;

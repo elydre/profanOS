@@ -1718,7 +1718,7 @@ char *if_go_binfile(char **input) {
     #if PROFANBUILD
     int pid;
     local_itoa(run_ifexist_full(
-        (runtime_args_t){file_path, argc, argv, stdout_path || stdin_path ? 2 : wait_end}, &pid
+        (runtime_args_t){file_path, argc, argv, get_environ_ptr(), stdout_path || stdin_path ? 2 : wait_end}, &pid
     ), g_exit_code);
 
     if (stdin_path) {

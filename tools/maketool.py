@@ -185,14 +185,18 @@ def build_app_lib():
         cprint(COLOR_EXEC, f"creating '{OUT_DIR}/make' directory")
         os.makedirs(f"{OUT_DIR}/make")
 
-    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{TOOLS_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
-        cprint(COLOR_INFO, "building zentry...")
-        print_and_exec(f"{CC} -c {TOOLS_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
+    if not file_exists(f"{OUT_DIR}/make/entry_bin.o") or file1_newer("{TOOLS_DIR}/entry_bin.c", f"{OUT_DIR}/make/entry_bin.o"):
+        cprint(COLOR_INFO, "building binary entry...")
+        print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_bin.c -o {OUT_DIR}/make/entry_bin.o {ZAPP_FLAGS}")
+    
+    if not file_exists(f"{OUT_DIR}/make/entry_elf.o") or file1_newer("{TOOLS_DIR}/entry_elf.c", f"{OUT_DIR}/make/entry_elf.o"):
+        cprint(COLOR_INFO, "building ELF entry...")
+        print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_elf.c -o {OUT_DIR}/make/entry_elf.o {ZAPP_FLAGS}")
 
     def build_bin_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/entry_bin.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
@@ -201,7 +205,7 @@ def build_app_lib():
         # build object file and link it using shared libs
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o -lc")
+        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc")
         print_and_exec(f"rm {fname}.o")
         total -= 1
     

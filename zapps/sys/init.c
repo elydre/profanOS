@@ -3,14 +3,13 @@
 #include <profan.h>
 #include <panda.h>
 
-#include <stdlib.h>
 #include <stdio.h>
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
-#define run_ifexist_pid(path, argc, argv, pid) \
-        run_ifexist_full((runtime_args_t){path, argc, argv, 1}, pid)
+#define run_ifexist_pid(path, argc, argv, envp, pid) \
+        run_ifexist_full((runtime_args_t){path, argc, argv, envp, 1}, pid)
 
 typedef struct {
     int id;
@@ -18,9 +17,7 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1012, "/lib/mod/time.bin"},
     {1006, "/lib/mod/vgui.bin"},
-    {1007, "/lib/mod/stdlib.bin"},
     {1008, "/lib/mod/string.bin"},
     {1010, "/lib/mod/filesys.bin"},
     {1015, "/lib/mod/devio.bin"},
@@ -87,9 +84,27 @@ char wait_key(void) {
     return key_char;
 }
 
+char **envp;
+
+void set_env(char *line) {
+    if (envp == NULL) {
+        envp = malloc(2 * sizeof(char *));
+        envp[0] = line;
+        envp[1] = NULL;
+    } else {
+        int i;
+        for (i = 0; envp[i]; i++);
+        envp = realloc(envp, (i + 2) * sizeof(char *));
+        envp[i] = line;
+        envp[i + 1] = NULL;
+    }
+}
+
 int main(void) {
     char key_char, use_panda = 0;
     int sum, total, usage_pid;
+
+    envp = NULL;
 
     total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
     sum = 0;
@@ -109,9 +124,9 @@ int main(void) {
             fm_reopen(4, "/dev/panda") < 0 ||
             fm_reopen(5, "/dev/panda") < 0
         ) c_kprint("Failed to redirect to panda\n");
-        setenv("TERM", "/dev/panda", 1);
+        set_env("TERM=/dev/panda");
         c_sys_set_reporter(userspace_reporter);
-        run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, &usage_pid);
+        run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
     }
@@ -119,8 +134,8 @@ int main(void) {
     welcome_print();
 
     do {
-        setenv("PATH", "/bin/cmd:/bin/fatpath", 0);
-        run_ifexist(SHELL_PATH, 0, NULL);
+        set_env("PATH=/bin/cmd:/bin/fatpath");
+        run_ifexist(SHELL_PATH, 0, NULL, envp);
 
         printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
@@ -142,13 +157,13 @@ int main(void) {
         c_process_kill(usage_pid);
     }
 
-    clearenv();
-
     // unload libraries
     for (int i = 0; i < total; i++) {
         lib_t *lib = &libs_at_boot[i];
         c_dily_unload(lib->id);
     }
+
+    free(envp);
 
     c_kprint("all libraries unloaded - bye (._. )\n");
 
@@ -156,4 +171,3 @@ int main(void) {
 
     return 0;
 }
-

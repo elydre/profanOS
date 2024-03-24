@@ -1,26 +1,20 @@
-#ifndef TIME_ID
-#define TIME_ID 1012
+#ifndef TIME_H
+#define TIME_H
 
 #include <type.h>
 
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
-
-// Null pointer constant.
-#ifndef NULL
-#define NULL 0
-#endif
-
 // Number of clock ticks per second returned by the times() function (LEGACY).
 #define CLK_TCK 100
+
 // A number used to convert the value returned by the clock() function into seconds.
 #define CLOCKS_PER_SEC 1000
 
-typedef struct timespec_t {
+typedef struct timespec {
     time_t  tv_sec;  // seconds
     long    tv_nsec; // nanoseconds
 } timespec_t;
 
-typedef struct itimerspec_t {
+typedef struct itimerspec {
     timespec_t it_interval; // timer period
     timespec_t it_value;    // timer expiration
 } itimerspec_t;
@@ -30,32 +24,30 @@ typedef struct itimerspec_t {
 // Flag indicating time is absolute with respect to the clock associated with a timer.
 #define TIMER_ABSTIME 1
 
-#ifndef TIME_C
-#define asctime ((char * (*)(const tm_t *)) (get_func_addr(TIME_ID, 2)))
-#define asctime_r ((char * (*)(const tm_t *, char *)) (get_func_addr(TIME_ID, 3)))
-#define clock ((clock_t (*)(void)) (get_func_addr(TIME_ID, 4)))
-#define clock_getres ((int (*)(clockid_t, timespec_t *)) (get_func_addr(TIME_ID, 5)))
-#define clock_gettime ((int (*)(clockid_t, timespec_t *)) (get_func_addr(TIME_ID, 6)))
-#define clock_settime ((int (*)(clockid_t, const timespec_t *)) (get_func_addr(TIME_ID, 7)))
-#define ctime ((char * (*)(const time_t *)) (get_func_addr(TIME_ID, 8)))
-#define ctime_r ((char * (*)(const time_t *, char *)) (get_func_addr(TIME_ID, 9)))
-#define difftime ((double (*)(time_t, time_t)) (get_func_addr(TIME_ID, 10)))
-#define getdate ((tm_t * (*)(const char *)) (get_func_addr(TIME_ID, 11)))
-#define gmtime ((tm_t * (*)(const time_t *)) (get_func_addr(TIME_ID, 12)))
-#define gmtime_r ((tm_t * (*)(const time_t *, tm_t *)) (get_func_addr(TIME_ID, 13)))
-#define localtime ((tm_t * (*)(const time_t *)) (get_func_addr(TIME_ID, 14)))
-#define localtime_r ((tm_t * (*)(const time_t *, tm_t *)) (get_func_addr(TIME_ID, 15)))
-#define mktime ((time_t (*)(tm_t *)) (get_func_addr(TIME_ID, 16)))
-#define nanosleep ((int (*)(const timespec_t *, timespec_t *)) (get_func_addr(TIME_ID, 17)))
-#define strftime ((size_t (*)(char *, size_t, const char *, const tm_t *)) (get_func_addr(TIME_ID, 18)))
-#define strptime ((char * (*)(const char *, const char *, tm_t *)) (get_func_addr(TIME_ID, 19)))
-#define time ((time_t (*)(time_t *)) (get_func_addr(TIME_ID, 20)))
-#define timer_create ((int (*)(clockid_t, sigevent_t *, timer_t *)) (get_func_addr(TIME_ID, 21)))
-#define timer_delete ((int (*)(timer_t)) (get_func_addr(TIME_ID, 22)))
-#define timer_gettime ((int (*)(timer_t, itimerspec_t *)) (get_func_addr(TIME_ID, 23)))
-#define timer_getoverrun ((int (*)(timer_t)) (get_func_addr(TIME_ID, 24)))
-#define timer_settime ((int (*)(timer_t, int, const itimerspec_t *, itimerspec_t *)) (get_func_addr(TIME_ID, 25)))
-#define tzset ((void (*)(void)) (get_func_addr(TIME_ID, 26)))
-#endif
+char *asctime(const struct tm *a);
+char *asctime_r(const struct tm *a, char *b);
+clock_t clock(void);
+int clock_getres(clockid_t a, struct timespec *n);
+int clock_gettime(clockid_t a, struct timespec *b);
+int clock_settime(clockid_t a, const struct timespec *b);
+char *ctime(const time_t *a);
+char *ctime_r(const time_t *a, char *b);
+double difftime(time_t a, time_t b);
+struct tm *getdate(const char *a);
+struct tm *gmtime(const time_t *a);
+struct tm *gmtime_r(const time_t *a, struct tm *b);
+struct tm *localtime(const time_t *a);
+struct tm *localtime_r(const time_t *a, struct tm *b);
+time_t mktime(struct tm *time);
+int nanosleep(const struct timespec *a, struct timespec *b);
+size_t strftime(char *a, size_t b, const char *c, const struct tm *d);
+char *strptime(const char *a, const char *b, struct tm *c);
+time_t time(time_t *a);
+int timer_create(clockid_t a, sigevent_t *b, timer_t *c);
+int timer_delete(timer_t a);
+int timer_gettime(timer_t a, struct itimerspec *b);
+int timer_getoverrun(timer_t a);
+int timer_settime(timer_t a, int b, const struct itimerspec * c, struct itimerspec *d);
+void tzset(void);
 
 #endif

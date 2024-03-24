@@ -30,10 +30,6 @@ static uint32_t seconde_in_month[] = {
 #define start_year 1970
 #define century 2000
 
-int main(void) {
-    return 0;
-}
-
 char *asctime(const tm_t *a) {
     puts("Asctime is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
@@ -156,7 +152,7 @@ time_t time(time_t *a) {
     return mktime(&time);
 }
 
-int timer_create(clockid_t a, sigevent_t *b, timer_t c) {
+int timer_create(clockid_t a, sigevent_t *b, timer_t *c) {
     puts("Timer_create is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }

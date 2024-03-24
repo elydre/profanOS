@@ -8,8 +8,6 @@
 
 #define RAND_MAX 0x7fffffff
 
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
-
 #define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
 #define malloc(size) malloc_func(size, 0)
 #define realloc(mem, new_size) realloc_func(mem, new_size, 0)
@@ -18,110 +16,109 @@
 #define malloc_ask(size) malloc_func(size, 1)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
-#ifndef STDLIB_C
-#define getfullenv() ((char** (*)(void)) get_func_addr(STDLIB_ID, 2))()
-#define calloc_func(nmemb, lsize, as_kernel) ((void *(*)(uint32_t, uint32_t, int)) get_func_addr(STDLIB_ID, 3))(nmemb, lsize, as_kernel)
-#define free(mem) ((void (*)(void *)) get_func_addr(STDLIB_ID, 4))(mem)
-#define malloc_func(size, as_kernel) ((void *(*)(uint32_t, int)) get_func_addr(STDLIB_ID, 5))(size, as_kernel)
-#define realloc_func(ptr, size, as_kernel) ((void *(*)(void *, uint32_t, int)) get_func_addr(STDLIB_ID, 6))(ptr, size, as_kernel)
-#define a64l(str) ((long int (*)(const char *)) get_func_addr(STDLIB_ID, 7))(str)
-#define abort() ((void (*)(void)) get_func_addr(STDLIB_ID, 8))()
-#define abs(j) ((int (*)(int)) get_func_addr(STDLIB_ID, 9))(j)
-#define atexit(func) ((int (*)(void (*)(void))) get_func_addr(STDLIB_ID, 10))(func)
-#define atof(s) ((double (*)(const char *)) get_func_addr(STDLIB_ID, 11))(s)
-#define atoi(s) ((int (*)(const char *)) get_func_addr(STDLIB_ID, 12))(s)
-#define atol(s) ((long int (*)(const char *)) get_func_addr(STDLIB_ID, 13))(s)
-#define atoll(s) ((long long int (*)(const char *)) get_func_addr(STDLIB_ID, 14))(s)
-#define bsearch(key, base, nmemb, size, compar) ((void *(*)(const void *, const void *, uint32_t, uint32_t, int (*)(const void *, const void *))) get_func_addr(STDLIB_ID, 15))(key, base, nmemb, size, compar)
-#define canonicalize_file_name(name) ((char *(*)(const char *)) get_func_addr(STDLIB_ID, 16))(name)
-#define div(numer, denom) ((div_t (*)(int, int)) get_func_addr(STDLIB_ID, 17))(numer, denom)
-#define drand48() ((double (*)(void)) get_func_addr(STDLIB_ID, 18))()
-#define drand48_r(buffer, result) ((int (*)(struct drand48_data *, double *)) get_func_addr(STDLIB_ID, 19))(buffer, result)
-#define __drand48_iterate(xsubi, buffer) ((void (*)(unsigned short int [3], struct drand48_data *)) get_func_addr(STDLIB_ID, 20))(xsubi, buffer)
-#define erand48(xsubi) ((double (*)(unsigned short int [3])) get_func_addr(STDLIB_ID, 21))(xsubi)
-#define erand48_r(xsubi, buffer, result) ((int (*)(unsigned short int [3], struct drand48_data *, double *)) get_func_addr(STDLIB_ID, 22))(xsubi, buffer, result)
-#define exit(status) ((void (*)(int)) get_func_addr(STDLIB_ID, 23))(status)
-#define gcvt(number, ndigit, buf) ((char *(*)(double, int, char *)) get_func_addr(STDLIB_ID, 24))(number, ndigit, buf)
-#define getenv(var) ((char *(*)(const char *)) get_func_addr(STDLIB_ID, 25))(var)
-#define getpt() ((int (*)(void)) get_func_addr(STDLIB_ID, 26))()
-#define jrand48(xsubi) ((long int (*)(unsigned short int [3])) get_func_addr(STDLIB_ID, 27))(xsubi)
-#define jrand48_r(xsubi, buffer, result) ((int (*)(unsigned short int [3], struct drand48_data *, long int *)) get_func_addr(STDLIB_ID, 28))(xsubi, buffer, result)
-#define l64a(value) ((char *(*)(long int)) get_func_addr(STDLIB_ID, 29))(value)
-#define labs(j) ((long int (*)(long int)) get_func_addr(STDLIB_ID, 30))(j)
-#define lcong48(param) ((void (*)(unsigned short int [7])) get_func_addr(STDLIB_ID, 31))(param)
-#define ldiv(numer, denom) ((ldiv_t (*)(long int, long int)) get_func_addr(STDLIB_ID, 32))(numer, denom)
-#define llabs(j) ((long long int (*)(long long int)) get_func_addr(STDLIB_ID, 33))(j)
-#define lldiv(numer, denom) ((lldiv_t (*)(long long int, long long int)) get_func_addr(STDLIB_ID, 34))(numer, denom)
-#define lrand48() ((long int (*)(void)) get_func_addr(STDLIB_ID, 35))()
-#define lrand48_r(buffer, result) ((int (*)(struct drand48_data *, long int *)) get_func_addr(STDLIB_ID, 36))(buffer, result)
-#define mblen(s, n) ((int (*)(const char *, uint32_t)) get_func_addr(STDLIB_ID, 37))(s, n)
-#define mbstowcs(pwcs, s, n) ((uint32_t (*)(wchar_t *, const char *, uint32_t)) get_func_addr(STDLIB_ID, 38))(pwcs, s, n)
-#define mbtowc(pwc, s, n) ((int (*)(wchar_t *, const char *, uint32_t)) get_func_addr(STDLIB_ID, 39))(pwc, s, n)
-#define mkdtemp(template) ((char *(*)(char *)) get_func_addr(STDLIB_ID, 40))(template)
-#define mkostemp(template, flags) ((int (*)(char *, int)) get_func_addr(STDLIB_ID, 41))(template, flags)
-#define mkostemp64(template, flags) ((int (*)(char *, int)) get_func_addr(STDLIB_ID, 42))(template, flags)
-#define mkostemps(template, suffixlen, flags) ((int (*)(char *, int, int)) get_func_addr(STDLIB_ID, 43))(template, suffixlen, flags)
-#define mkostemps64(template, suffixlen, flags) ((int (*)(char *, int, int)) get_func_addr(STDLIB_ID, 44))(template, suffixlen, flags)
-#define mkstemp(template) ((int (*)(char *)) get_func_addr(STDLIB_ID, 45))(template)
-#define mkstemp64(template) ((int (*)(char *)) get_func_addr(STDLIB_ID, 46))(template)
-#define mkstemps(template, suffixlen) ((int (*)(char *, int)) get_func_addr(STDLIB_ID, 47))(template, suffixlen)
-#define mkstemps64(template, suffixlen) ((int (*)(char *, int)) get_func_addr(STDLIB_ID, 48))(template, suffixlen)
-#define mktemp(template) ((char *(*)(char *)) get_func_addr(STDLIB_ID, 49))(template)
-#define mrand48() ((long int (*)(void)) get_func_addr(STDLIB_ID, 50))()
-#define mrand48_r(buffer, result) ((int (*)(struct drand48_data *, long int *)) get_func_addr(STDLIB_ID, 51))(buffer, result)
-#define nrand48(xsubi) ((long int (*)(unsigned short int [3])) get_func_addr(STDLIB_ID, 52))(xsubi)
-#define nrand48_r(xsubi, buffer, result) ((int (*)(unsigned short int [3], struct drand48_data *, long int *)) get_func_addr(STDLIB_ID, 53))(xsubi, buffer, result)
-#define on_exit(func, arg) ((int (*)(void (*)(int, void *), void *)) get_func_addr(STDLIB_ID, 54))(func, arg)
-#define posix_memalign(memptr, alignment, size) ((int (*)(void **, size_t, size_t)) get_func_addr(STDLIB_ID, 55))(memptr, alignment, size)
-#define ptsname(fd) ((char *(*)(int)) get_func_addr(STDLIB_ID, 56))(fd)
-#define qsort(base, nmemb, size, compar) ((void (*)(void *, uint32_t, uint32_t, int (*)(const void *, const void *))) get_func_addr(STDLIB_ID, 57))(base, nmemb, size, compar)
-#define qsort_r(base, nmemb, size, compar, arg) ((void (*)(void *, uint32_t, uint32_t, int (*)(void *, const void *, const void *), void *)) get_func_addr(STDLIB_ID, 58))(base, nmemb, size, compar, arg)
-#define rand() ((int (*)(void)) get_func_addr(STDLIB_ID, 59))()
-#define rand_r(seed) ((int (*)(unsigned int *)) get_func_addr(STDLIB_ID, 60))(seed)
-#define random() ((long int (*)(void)) get_func_addr(STDLIB_ID, 61))()
-#define random_r(buffer, result) ((int (*)(struct random_data *, int32_t *)) get_func_addr(STDLIB_ID, 62))(buffer, result)
-#define realpath(path, resolved_path) ((char *(*)(const char *, char *)) get_func_addr(STDLIB_ID, 63))(path, resolved_path)
-#define rpmatch(response) ((int (*)(const char *)) get_func_addr(STDLIB_ID, 64))(response)
-#define secure_getenv(name) ((char *(*)(const char *)) get_func_addr(STDLIB_ID, 65))(name)
-#define seed48(seed16v) ((unsigned short int *(*)(unsigned short int [3])) get_func_addr(STDLIB_ID, 66))(seed16v)
-#define seed48_r(seed16v, buffer) ((int (*)(unsigned short int [3], struct drand48_data *)) get_func_addr(STDLIB_ID, 67))(seed16v, buffer)
-#define setenv(name, value, overwrite) ((int (*)(const char *, const char *, int)) get_func_addr(STDLIB_ID, 68))(name, value, overwrite)
-#define unsetenv(name) ((int (*)(const char *)) get_func_addr(STDLIB_ID, 69))(name)
-#define clearenv() ((void (*)(void)) get_func_addr(STDLIB_ID, 70))()
-#define putenv(string) ((int (*)(char *)) get_func_addr(STDLIB_ID, 71))(string)
-#define srand48(seedval) ((void (*)(long)) get_func_addr(STDLIB_ID, 72))(seedval)
-#define srand48_r(seedval, buffer) ((int (*)(long, struct drand48_data *)) get_func_addr(STDLIB_ID, 73))(seedval, buffer)
-#define strtod(nptr, endptr) ((double (*)(const char *, char **)) get_func_addr(STDLIB_ID, 74))(nptr, endptr)
-#define strtod_l(nptr, endptr, loc) ((double (*)(const char *, char **, locale_t)) get_func_addr(STDLIB_ID, 75))(nptr, endptr, loc)
-#define strtof(nptr, endptr) ((float (*)(const char *, char **)) get_func_addr(STDLIB_ID, 76))(nptr, endptr)
-#define strtof_l(nptr, endptr, loc) ((float (*)(const char *, char **, locale_t)) get_func_addr(STDLIB_ID, 77))(nptr, endptr, loc)
-#define strtol(nptr, endptr, base) ((long int (*)(const char *, char **, int)) get_func_addr(STDLIB_ID, 78))(nptr, endptr, base)
-#define strtol_l(nptr, endptr, base, loc) ((long int (*)(const char *, char **, int, locale_t)) get_func_addr(STDLIB_ID, 79))(nptr, endptr, base, loc)
-#define strtoll(nptr, endptr, base) ((long long int (*)(const char *, char **, int)) get_func_addr(STDLIB_ID, 80))(nptr, endptr, base)
-#define strtoll_l(nptr, endptr, base, loc) ((long long int (*)(const char *, char **, int, locale_t)) get_func_addr(STDLIB_ID, 81))(nptr, endptr, base, loc)
-#define strtoul(nptr, endptr, base) ((unsigned long int (*)(const char *, char **, int)) get_func_addr(STDLIB_ID, 82))(nptr, endptr, base)
-#define strtoul_l(nptr, endptr, base, loc) ((unsigned long int (*)(const char *, char **, int, locale_t)) get_func_addr(STDLIB_ID, 83))(nptr, endptr, base, loc)
-#define strtoull(nptr, endptr, base) ((unsigned long long int (*)(const char *, char **, int)) get_func_addr(STDLIB_ID, 84))(nptr, endptr, base)
-#define strtoull_l(nptr, endptr, base, loc) ((unsigned long long int (*)(const char *, char **, int, locale_t)) get_func_addr(STDLIB_ID, 85))(nptr, endptr, base, loc)
-#define system(command) ((int (*)(const char *)) get_func_addr(STDLIB_ID, 86))(command)
-#define grantpt(fd) ((int (*)(int)) get_func_addr(STDLIB_ID, 87))(fd)
-#define unlockpt(fd) ((int (*)(int)) get_func_addr(STDLIB_ID, 88))(fd)
-#define valloc(size) ((void *(*)(size_t)) get_func_addr(STDLIB_ID, 89))(size)
-#define wcstod(nptr, endptr) ((double (*)(const wchar_t *, wchar_t **)) get_func_addr(STDLIB_ID, 90))(nptr, endptr)
-#define wcstod_l(nptr, endptr, loc) ((double (*)(const wchar_t *, wchar_t **, locale_t)) get_func_addr(STDLIB_ID, 91))(nptr, endptr, loc)
-#define wcstof(nptr, endptr) ((float (*)(const wchar_t *, wchar_t **)) get_func_addr(STDLIB_ID, 92))(nptr, endptr)
-#define wcstof_l(nptr, endptr, loc) ((float (*)(const wchar_t *, wchar_t **, locale_t)) get_func_addr(STDLIB_ID, 93))(nptr, endptr, loc)
-#define wcstol(nptr, endptr, base) ((long int (*)(const wchar_t *, wchar_t **, int)) get_func_addr(STDLIB_ID, 94))(nptr, endptr, base)
-#define wcstol_l(nptr, endptr, base, loc) ((long int (*)(const wchar_t *, wchar_t **, int, locale_t)) get_func_addr(STDLIB_ID, 95))(nptr, endptr, base, loc)
-#define wcstoll(nptr, endptr, base) ((long long int (*)(const wchar_t *, wchar_t **, int)) get_func_addr(STDLIB_ID, 96))(nptr, endptr, base)
-#define wcstoll_l(nptr, endptr, base, loc) ((long long int (*)(const wchar_t *, wchar_t **, int, locale_t)) get_func_addr(STDLIB_ID, 97))(nptr, endptr, base, loc)
-#define wcstombs(s, pwcs, n) ((size_t (*)(char *, const wchar_t *, size_t)) get_func_addr(STDLIB_ID, 98))(s, pwcs, n)
-#define wcstoul(nptr, endptr, base) ((unsigned long int (*)(const wchar_t *, wchar_t **, int)) get_func_addr(STDLIB_ID, 99))(nptr, endptr, base)
-#define wcstoul_l(nptr, endptr, base, loc) ((unsigned long int (*)(const wchar_t *, wchar_t **, int, locale_t)) get_func_addr(STDLIB_ID, 100))(nptr, endptr, base, loc)
-#define wcstoull(nptr, endptr, base) ((unsigned long long int (*)(const wchar_t *, wchar_t **, int)) get_func_addr(STDLIB_ID, 101))(nptr, endptr, base)
-#define wcstoull_l(nptr, endptr, base, loc) ((unsigned long long int (*)(const wchar_t *, wchar_t **, int, locale_t)) get_func_addr(STDLIB_ID, 102))(nptr, endptr, base, loc)
-#define wctomb(s, wchar) ((int (*)(char *, wchar_t)) get_func_addr(STDLIB_ID, 103))(s, wchar)
-#define itoa(value, str, base) ((char *(*)(int, char *, int)) get_func_addr(STDLIB_ID, 106))(value, str, base)
-#endif
+void set_environ_ptr(char **env);
+char **get_environ_ptr(void);
+void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel);
+void free(void *mem);
+void *malloc_func(uint32_t size, int as_kernel);
+void *realloc_func(void *mem, uint32_t new_size, int as_kernel);
+long int a64l(const char *string);
+void abort(void);
+int abs(int j);
+void atexit(void (*func)());
+double atof(const char *s);
+int atoi(const char *nptr);
+long atol(const char *nptr);
+long long atoll(const char *nptr);
+void *bsearch(const void *key, const void *base, size_t high, size_t size, int (*compar)(const void *, const void *));
+char *canonicalize_file_name(const char *name);
+div_t div(int numer, int denom);
+double drand48(void);
+int drand48_r(struct drand48_data *buffer, double *result);
+int __drand48_iterate(unsigned short int xsubi[3], struct drand48_data *buffer);
+double erand48(unsigned short int xsubi[3]);
+int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *result);
+void exit(int rv);
+char *gcvt(double number, int ndigit, char *buf);
+char *getenv(const char *var);
+int getpt(void);
+long int jrand48(unsigned short int xsubi[3]);
+int jrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result);
+char *l64a(long int n);
+long int labs(long int j);
+void lcong48(unsigned short int param[7]);
+ldiv_t ldiv(long int numer, long int denom);
+long long int llabs(long long int j);
+lldiv_t lldiv(long long int numer, long long int denom);
+long int lrand48(void);
+int lrand48_r(struct drand48_data *buffer, long int *result);
+int mblen(const char *s, size_t n);
+size_t mbstowcs(wchar_t *pwcs, const char *s, size_t n);
+int mbtowc(wchar_t *pwc, const char *s, size_t n);
+char *mkdtemp(char *template);
+int mkostemp(char *template, int flags);
+int mkostemp64(char *template, int flags);
+int mkostemps(char *template, int suffixlen, int flags);
+int mkostemps64(char *template, int suffixlen, int flags);
+int mkstemp(char *template);
+int mkstemp64(char *template);
+int mkstemps(char *template, int suffixlen);
+int mkstemps64(char *template, int suffixlen);
+char *mktemp(char *template);
+long int mrand48(void);
+int mrand48_r(struct drand48_data *buffer, long int *result);
+long int nrand48(unsigned short int xsubi[3]);
+int nrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result);
+int on_exit(oefuncp func, void *arg);
+int posix_memalign(void **memptr, size_t alignment, size_t size);
+char *ptsname (int fd);
+void qsort(void *base, size_t nel, size_t width, __compar_fn_t comp);
+void qsort_r(void *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg);
+int rand(void);
+int rand_r(unsigned int *seed);
+long int random(void);
+int random_r(struct random_data *buf, int32_t *result);
+char *realpath(const char *path, char *got_path);
+int rpmatch(const char *__response);
+char *secure_getenv(const char *name);
+unsigned short int *seed48(unsigned short int seed16v[3]);
+int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer);
+int setenv(const char *name, const char *value, int replace);
+int unsetenv(const char *name);
+int clearenv(void);
+int putenv(char *string);
+void srand48(long seedval);
+int srand48_r(long int seedval, struct drand48_data *buffer);
+double strtod(char *str, char **ptr);
+long double strtod_l(const char* str, char** end, locale_t loc);
+float strtof(const char *str, char **end);
+long double strtof_l(const char* str, char** end, locale_t loc);
+long int strtol(const char *str, char **end, int base);
+long int strtol_l(const char *str, char **end, int base, locale_t loc);
+long long int strtoll(const char* str, char** end, int base);
+long long int strtoll_l(const char* str, char** end, int base, locale_t loc);
+unsigned long int strtoul(const char* str, char** end, int base);
+unsigned long int strtoul_l(const char* str, char** end, int base, locale_t loc);
+unsigned long long int strtoull(const char* str, char** end, int base);
+unsigned long long int strtoull_l(const char* str, char** end, int base, locale_t loc);
+int system(const char *command);
+int grantpt(int fd);
+int unlockpt(int fd);
+void *valloc(size_t size);
+double wcstod(const wchar_t *nptr, wchar_t **endptr);
+long double wcstod_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc);
+float wcstof(const wchar_t *nptr, wchar_t **endptr);
+long double wcstof_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc);
+long int wcstol(const wchar_t *nptr, wchar_t **endptr, int base);
+long long int wcstol_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc);
+long long int wcstoll(const wchar_t *nptr, wchar_t **endptr, int base);
+long long int wcstoll_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc);
+size_t wcstombs(char *s, const wchar_t *pwcs, size_t n);
+unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base);
+unsigned long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc);
+unsigned long long int wcstoull(const wchar_t *nptr, wchar_t **endptr, int base);
+unsigned long long int wcstoull_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc);
+int wctomb(char *s, wchar_t wchar);
+char *itoa(int value, char *buffer, int base);
 
 #endif

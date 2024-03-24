@@ -71,6 +71,7 @@ typedef struct {
 
     int argc;       // argument count
     char **argv;    // argument list
+    char **envp;    // environment list
 
     uint8_t sleep_mode;  // sleep mode
 } runtime_args_t;
@@ -188,7 +189,7 @@ union sigval { /* Data passed with notification */
     void *sival_ptr; /* Pointer value */
 };
 
-typedef struct sigevent_t {
+typedef struct sigevent {
     int    sigev_notify;  /* Notification method */
     int    sigev_signo;   /* Notification signal */
     union sigval sigev_value; /* Data passed with notification */

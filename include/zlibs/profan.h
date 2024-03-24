@@ -3,8 +3,8 @@
 
 #include <type.h>
 
-#define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, argc, argv, 1}, NULL)
+#define run_ifexist(path, argc, argv, envp) \
+        run_ifexist_full((runtime_args_t){path, argc, argv, envp, 1}, NULL)
 
 #define KB_LEFT 75
 #define KB_RIGHT 77

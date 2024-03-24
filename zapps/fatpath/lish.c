@@ -792,7 +792,9 @@ int start_pipex(pipex_t *pipex) {
         if (run_ifexist_full((runtime_args_t) {
                 pipex->commands[i]->full_path,
                 pipex->commands[i]->arg_count,
-                pipex->commands[i]->args, 2
+                pipex->commands[i]->args, 
+                get_environ_ptr(),
+                2
             }, pids + i) == -1
         ) {
             close_fds(pipex, fds, i);
