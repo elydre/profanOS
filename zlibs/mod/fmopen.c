@@ -1,6 +1,6 @@
+#include <old/string.h>
 #include <syscall.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 
 #define FMOPEN_LIB_C

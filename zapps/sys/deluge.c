@@ -198,7 +198,8 @@ typedef struct {
     uint8_t *mem;
 
     uint8_t *dymsym;
-    uint8_t *dynstr;
+    char *dynstr;
+
     int dynsym_size;
 } elfobj_t;
 
@@ -284,11 +285,12 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS) {
+        if (shdr[i].sh_flags & 2) { // SHF_ALLOC
             if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
                 required_size = shdr[i].sh_addr + shdr[i].sh_size;
         }
     }
+
     if (type == ET_EXEC)
         required_size -= 0xC0000000;
     required_size = (required_size + 0xFFF) & ~0xFFF;
@@ -301,7 +303,7 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     }
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS) {
+        if (shdr[i].sh_flags & 2) { // SHF_ALLOC
             if (type == ET_EXEC)
                 memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
@@ -437,7 +439,7 @@ void *open_elf(const char *filename, uint16_t required_type) {
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == 11) { // SHT_DYNSYM
             obj->dymsym = obj->file + shdr[i].sh_offset;
-            obj->dynstr = obj->file + shdr[shdr[i].sh_link].sh_offset;
+            obj->dynstr = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
             obj->dynsym_size = shdr[i].sh_size;
         }
 
@@ -519,38 +521,39 @@ void *dlsym(void *handle, const char *symbol) {
 }
 
 int init_lib(elfobj_t *lib) {
-    // call _init
+    // call constructors
+
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
 
+    Elf32_Dyn *dyn;
+
+    void (**init_array)(void) = NULL;
+    int size = 0;
+
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 1) { // SHT_PROGBITS
-            if (strcmp((char *) lib->file + shdr[i].sh_name, ".init") == 0) {
-                void (*init)() = (void (*)()) (lib->mem + shdr[i].sh_addr);
-                fd_printf(1, "calling init: %s\n", lib->name);
-                init();
-                break;
+        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
+            dyn = (Elf32_Dyn *)(lib->file + shdr[i].sh_offset);
+            for (int j = 0; dyn[j].d_tag != 0; j++) {
+                if (dyn[j].d_tag == 25) { // DT_INIT
+                    init_array = (void (**)(void)) (lib->mem + dyn[j].d_un.d_ptr);
+                }
+                if (dyn[j].d_tag == 27) { // DT_INIT_ARRAYSZ
+                    size = dyn[j].d_un.d_val / sizeof(void *);
+                }
             }
         }
     }
 
-    return 0;
-}
+    if (init_array == NULL) {
+        return 0;
+    }
 
-int fini_lib(elfobj_t *lib) {
-    // call _fini
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
+    fd_printf(1, "initializing: %s %d %d\n", lib->name, size, (int) init_array);
 
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 1) { // SHT_PROGBITS
-            if (strcmp((char *) lib->file + shdr[i].sh_name, ".fini") == 0) {
-                void (*fini)() = (void (*)()) (lib->mem + shdr[i].sh_addr);
-                fd_printf(1, "calling fini: %s\n", lib->name);
-                fini();
-                break;
-            }
-        }
+    for (int i = 0; i < size; i++) {
+        fd_printf(1, "calling: %d\n", i);
+        init_array[i]();
     }
 
     return 0;
@@ -707,10 +710,6 @@ int main(int argc, char **argv) {
     free(test);
 
     int ret = main(argc - args.arg_offset, argv + args.arg_offset);
-
-    for (int i = 0; i < g_lib_count; i++) {
-        fini_lib(g_loaded_libs[i]);
-    }
 
     for (int i = 0; i < g_lib_count; i++) {
         dlclose(g_loaded_libs[i]);

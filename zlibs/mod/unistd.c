@@ -1,9 +1,9 @@
 #include <syscall.h>
 #include <filesys.h>
 
+#include <old/string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <string.h>
 #include <stdio.h>
 #include <type.h>
 

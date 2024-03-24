@@ -1,7 +1,7 @@
+#include <old/string.h>
 #include <syscall.h>
 #include <filesys.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 
 #define SCROLL_LINES 8

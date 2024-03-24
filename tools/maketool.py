@@ -197,17 +197,17 @@ def build_app_lib():
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
 
-    def build_elf_file(name, fname, libs_name):
+    def build_elf_file(name, fname):
         # build object file and link it using shared libs
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o {' '.join([f'-l{lib[3:]}' for lib in libs_name])}")
+        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o -lc")
         print_and_exec(f"rm {fname}.o")
         total -= 1
     
     def build_obj_file(name, fname):
         global total
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -fPIC -c {name} -o {fname}.o {ZAPP_FLAGS}")
         total -= 1
 
     lib_build_list = find_app_lib(ZLIBS_DIR, ".c")
@@ -268,7 +268,7 @@ def build_app_lib():
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
-        threading.Thread(target = build_elf_file, args=(name, fname, libs_name)).start()
+        threading.Thread(target = build_elf_file, args=(name, fname)).start()
 
     for name in bin_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"

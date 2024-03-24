@@ -1,5 +1,5 @@
+#include <old/string.h>
 #include <syscall.h>
-#include <string.h>
 #include <profan.h>
 #include <stdio.h>
 #include <time.h>
