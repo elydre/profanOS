@@ -5,11 +5,15 @@ import threading
 
 # SETUP
 
-SRC_DIRECTORY = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
-INCLUDE_DIR = ["include/kernel", "include/zlibs"]
+KERNEL_SRC = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
+KERNEL_HEADERS = ["include/kernel"]
 
 ZAPPS_DIR = "zapps"
 ZLIBS_DIR = "zlibs"
+ZHEADERS = ["include/zlibs"]
+ZAPPS_BIN = "zapps/sys"
+ZLIBS_MOD = "zlibs/mod"
+
 TOOLS_DIR = "tools"
 OUT_DIR   = "out"
 
@@ -27,6 +31,8 @@ HDD_MAP = {
 
 CC   = "gcc"
 CPPC = "g++"
+LD   = "ld"
+SHRD = "gcc -shared"
 
 CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
@@ -35,7 +41,7 @@ ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
 KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 
 QEMU_SPL = "qemu-system-i386"
-QEMU_KVM = "kvm"
+QEMU_KVM = "qemu-system-i386 -enable-kvm"
 
 QEMU_SERIAL = "-serial stdio"
 QEMU_AUDIO  = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
@@ -95,7 +101,7 @@ def print_and_exec(command):
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
 
-    for dir in SRC_DIRECTORY:
+    for dir in KERNEL_SRC:
         try:
             need["c"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".c")])
             need["asm"].extend([f"{dir}/{file}" for file in file_in_dir(dir, ".asm")])
@@ -104,7 +110,7 @@ def gen_need_dict():
         except FileNotFoundError:
             cprint(COLOR_EROR, f"{dir} directory not found")
 
-    for dir in INCLUDE_DIR:
+    for dir in KERNEL_HEADERS:
         for fulldir in [dir] + [f"{dir}/{subdir}" for subdir in os.listdir(dir) if os.path.isdir(f"{dir}/{subdir}")]:
             try: need["h"].extend([f"{fulldir}/{file}" for file in file_in_dir(fulldir, ".h")])
             except FileNotFoundError: cprint(COLOR_EROR, f"{fulldir} directory not found")
@@ -140,10 +146,10 @@ def elf_image():
 
         if type == "c":
             print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {KERN_FLAGS}")
-
         elif type == "asm":
             print_and_exec(f"nasm -f elf32 {file} -o {out_file_name(file, 'kernel')}")
-
+        else:
+            cprint(COLOR_EROR, f"unknown file type '{type}'")
         total -= 1
 
     global total
@@ -163,54 +169,68 @@ def elf_image():
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
-        print_and_exec(f"ld {KERN_LINK} {in_files} -o kernel.elf")
+        print_and_exec(f"{LD} {KERN_LINK} {in_files} -o kernel.elf")
 
 
 def build_app_lib():
-    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{TOOLS_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
-        cprint(COLOR_INFO, "building zentry...")
-        print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"{CC} -c {TOOLS_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
-
     if not os.path.exists(f"{OUT_DIR}/zapps"):
-        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zapps' directory")
+        cprint(COLOR_EXEC, f"creating '{OUT_DIR}/zapps' directory")
         os.makedirs(f"{OUT_DIR}/zapps")
 
     if not os.path.exists(f"{OUT_DIR}/zlibs"):
-        cprint(COLOR_INFO, f"creating '{OUT_DIR}/zlibs' directory")
+        cprint(COLOR_EXEC, f"creating '{OUT_DIR}/zlibs' directory")
         os.makedirs(f"{OUT_DIR}/zlibs")
+
+    if not os.path.exists(f"{OUT_DIR}/make"):
+        cprint(COLOR_EXEC, f"creating '{OUT_DIR}/make' directory")
+        os.makedirs(f"{OUT_DIR}/make")
+
+    if not file_exists(f"{OUT_DIR}/make/zentry.o") or file1_newer("{TOOLS_DIR}/zentry.c", f"{OUT_DIR}/make/zentry.o"):
+        cprint(COLOR_INFO, "building zentry...")
+        print_and_exec(f"{CC} -c {TOOLS_DIR}/zentry.c -o {OUT_DIR}/make/zentry.o {ZAPP_FLAGS}")
 
     def build_bin_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/zentry.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
-    
-    def build_elf_file(name, fname):
+
+    def build_elf_file(name, fname, libs_name):
+        # build object file and link it using shared libs
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"ld --nmagic -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o")
+        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/zentry.o {fname}.o {' '.join([f'-l{lib[3:]}' for lib in libs_name])}")
         print_and_exec(f"rm {fname}.o")
         total -= 1
+    
+    def build_obj_file(name, fname):
+        global total
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
+        total -= 1
+
+    lib_build_list = find_app_lib(ZLIBS_DIR, ".c")
+    lib_build_list += find_app_lib(ZLIBS_DIR, ".cpp")
+    bin_build_list = []
+
+    for e in lib_build_list:
+        if e.startswith(f"{ZLIBS_MOD}/"):
+            lib_build_list = [x for x in lib_build_list if x != e]
+            bin_build_list.append(e)
 
     elf_build_list = find_app_lib(ZAPPS_DIR, ".c")
     elf_build_list += find_app_lib(ZAPPS_DIR, ".cpp")
 
-    bin_build_list = find_app_lib(ZLIBS_DIR, ".c")
-    bin_build_list += find_app_lib(ZLIBS_DIR, ".cpp")
-
     for e in elf_build_list:
-        if e.startswith(f"{ZAPPS_DIR}/sys"):
+        if e.startswith(f"{ZAPPS_BIN}/"):
             elf_build_list = [x for x in elf_build_list if x != e]
             bin_build_list.append(e)
 
-    skip_count = 0
-
-    for file in elf_build_list + bin_build_list:
+    for file in elf_build_list + bin_build_list + lib_build_list:
         if sum(x == "/" for x in file) <= 1:
-            continue
+            cprint(COLOR_EROR, f"file '{file}' is not in a subdirectory")
+            exit(1)
 
         dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
 
@@ -225,15 +245,31 @@ def build_app_lib():
     elf_build_list = [file for file in elf_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
     bin_build_list = [file for file in bin_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
 
-    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf and {len(bin_build_list)}/{total_bin} bin files to compile") 
+    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} bin and {len(lib_build_list)} lib to compile")
 
     global total
+    total = len(lib_build_list)
+
+    for name in lib_build_list:
+        fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
+        threading.Thread(target = build_obj_file, args=(name, fname)).start()
+    
+    while total: pass # on attends que tout soit fini
+
+    # linking libs
+    libs_name = list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list]))
+    for name in libs_name:
+        objs = find_app_lib(f"{OUT_DIR}/zlibs/{name}", ".o")
+        print(objs)
+        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
+        print_and_exec(f"rm -Rf {OUT_DIR}/zlibs/{name}")
+
     total = len(elf_build_list) + len(bin_build_list)
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
-        threading.Thread(target = build_elf_file, args=(name, fname)).start()
-    
+        threading.Thread(target = build_elf_file, args=(name, fname, libs_name)).start()
+
     for name in bin_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
         threading.Thread(target = build_bin_file, args=(name, fname)).start()
@@ -302,12 +338,12 @@ def add_src_to_disk():
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
 
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/include")
-    for dir_name in INCLUDE_DIR:
+    for dir_name in ZHEADERS + KERNEL_HEADERS:
         if not os.path.exists(dir_name): continue
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/include")
 
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/kernel")
-    for dir_name in SRC_DIRECTORY:
+    for dir_name in KERNEL_SRC:
         if not os.path.exists(dir_name): continue
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/kernel")
 
@@ -369,7 +405,7 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
     else: print_and_exec(f"{qemu_cmd} -kernel kernel.elf -boot order=a {qemu_args}")
 
 def make_help():
-    aide = (
+    help_lines = (
         ("make [help]", "show this help message"),
         None,
         ("make elf",        "build the kernel in elf format"),
@@ -391,7 +427,7 @@ def make_help():
         ("make srun",       "run the profanOS.iso with sound"),
     )
 
-    for e in aide:
+    for e in help_lines:
         if e is None:
             print()
             continue

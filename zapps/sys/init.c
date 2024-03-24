@@ -18,19 +18,19 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1012, "/lib/ports/time.bin"},
-    {1006, "/lib/profan/vgui.bin"},
-    {1007, "/lib/ports/stdlib.bin"},
-    {1008, "/lib/ports/string.bin"},
-    {1010, "/lib/profan/filesys.bin"},
-    {1015, "/lib/profan/devio.bin"},
-    {1016, "/lib/profan/fmopen.bin"},
-    {1009, "/lib/ports/stdio.bin"},
-    {1002, "/lib/profan/profan.bin"},
-    {1011, "/lib/ports/math.bin"},
-    {1013, "/lib/ports/setjmp.bin"},
-    {1014, "/lib/ports/unistd.bin"},
-    {1005, "/lib/profan/panda.bin"},
+    {1012, "/lib/mod/time.bin"},
+    {1006, "/lib/mod/vgui.bin"},
+    {1007, "/lib/mod/stdlib.bin"},
+    {1008, "/lib/mod/string.bin"},
+    {1010, "/lib/mod/filesys.bin"},
+    {1015, "/lib/mod/devio.bin"},
+    {1016, "/lib/mod/fmopen.bin"},
+    {1009, "/lib/mod/stdio.bin"},
+    {1002, "/lib/mod/profan.bin"},
+    {1011, "/lib/mod/math.bin"},
+    {1013, "/lib/mod/setjmp.bin"},
+    {1014, "/lib/mod/unistd.bin"},
+    {1005, "/lib/mod/panda.bin"},
 };
 
 int local_strlen(char *str) {

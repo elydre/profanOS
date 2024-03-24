@@ -435,15 +435,14 @@ void *open_elf(const char *filename, uint16_t required_type) {
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        // SHT_DYNSYM
-        if (shdr[i].sh_type == 11) {
+        if (shdr[i].sh_type == 11) { // SHT_DYNSYM
             obj->dymsym = obj->file + shdr[i].sh_offset;
             obj->dynstr = obj->file + shdr[shdr[i].sh_link].sh_offset;
             obj->dynsym_size = shdr[i].sh_size;
         }
 
-        /*// SHT_SYMTAB
-        if (shdr[i].sh_type == 2) {
+        /*
+        if (shdr[i].sh_type == 2) { // SHT_SYMTAB
             obj->symtab = obj->file + shdr[i].sh_offset;
             obj->strtab = obj->file + shdr[shdr[i].sh_link].sh_offset;
             obj->symtab_size = shdr[i].sh_size;
@@ -462,7 +461,7 @@ void *open_elf(const char *filename, uint16_t required_type) {
     }
 
     char **new_libs = get_required_libs(obj);
-    
+
     if (new_libs == NULL)
         return obj;
 

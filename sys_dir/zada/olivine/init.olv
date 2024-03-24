@@ -1,13 +1,6 @@
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
 
-FUNC test
-    // cc -d
-    // tcc -shared /user/lib.c -o /user/libtest.so
-    // tcc -ltest /user/test.c -o /test.elf -L/user
-    deluge -b /user/test.elf
-END
-
 FUNC pwd
     echo !path
 END
