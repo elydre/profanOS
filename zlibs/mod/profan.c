@@ -273,7 +273,7 @@ char **dup_envp(char **envp) {
     if (envp == NULL)
         return calloc_ask(1, sizeof(char *));
     int envc, size = 0;
-    
+
     for (envc = 0; envp[envc] != NULL; envc++)
         size += strlen(envp[envc]) + 1;
     size += (envc + 1) * sizeof(char *);
@@ -293,29 +293,108 @@ char **dup_envp(char **envp) {
     return nenvp;
 }
 
+char *get_interp(sid_t sid) {
+    char *tmp = malloc_ask(11);
+    int size = 0;
+    int to_read = 10;
+
+    int file_size = fu_get_file_size(sid);
+    if (file_size < 10)
+        to_read = file_size;
+
+    do {
+        fu_file_read(sid, tmp + size, size + 2, to_read);
+        for (int i = size; i < size + to_read; i++) {
+            if (tmp[i] == '\n') {
+                tmp[i] = '\0';
+                fd_printf(1, "ret: '%s'\n", tmp);
+                return tmp;
+            }
+        }
+        size += to_read;
+        if (size + 2 + to_read > file_size)
+            to_read = file_size - size - 2;
+        if (to_read <= 0) {
+            tmp[size] = '\0';
+            return tmp;
+        }
+        tmp = realloc_ask(tmp, size + to_read + 1);
+    } while (1);
+}
+
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (args.path == NULL) {
-        fd_printf(2, "file is required to run\n");
+        fd_printf(2, "[run_ifexist] path is NULL\n");
         return -1;
     }
 
-    // duplicate argv
-    args.argc += 2;
-    int size = sizeof(char *) * (args.argc + 1);
-    char **nargv = malloc_ask(size);
-    memset((void *) nargv, 0, size);
-
-    nargv[0] = (char *) malloc_ask(strlen(ELF_INTERP) + 1);
-    strcpy(nargv[0], ELF_INTERP);
-    nargv[1] = (char *) malloc_ask(strlen(args.path) + 1);
-    strcpy(nargv[1], args.path);
-
-    for (int i = 2; i < args.argc; i++) {
-        nargv[i] = (char *) malloc_ask(strlen(args.argv[i-2]) + 1);
-        strcpy(nargv[i], args.argv[i-2]);
+    sid_t sid = fu_path_to_sid(ROOT_SID, args.path);
+    if (!fu_is_file(sid)) {
+        fd_printf(2, "[run_ifexist] path not found: %s\n", args.path);
+        return -1;
     }
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
+    uint8_t *magic = malloc(4);
+    fu_file_read(sid, magic, 0, 4);
+
+    char *exec_path = ELF_INTERP;
+    char **nargv;
+
+    if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
+        args.argc += 2;
+        nargv = calloc_ask(args.argc + 1, sizeof(char *));
+
+        nargv[0] = malloc_ask(strlen(ELF_INTERP) + 1);
+        strcpy(nargv[0], ELF_INTERP);
+
+        nargv[1] = malloc_ask(strlen(args.path) + 1);
+        strcpy(nargv[1], args.path);
+
+        for (int i = 2; i < args.argc; i++) {
+            nargv[i] = malloc_ask(strlen(args.argv[i-2]) + 1);
+            strcpy(nargv[i], args.argv[i-2]);
+        }
+    } else if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/') {
+        args.argc += 3;
+        nargv = calloc_ask(args.argc + 1, sizeof(char *));
+
+        nargv[0] = malloc_ask(strlen(ELF_INTERP) + 1);
+        strcpy(nargv[0], ELF_INTERP);
+
+        nargv[1] = get_interp(sid);
+
+        nargv[2] = malloc_ask(strlen(args.path) + 1);
+        strcpy(nargv[2], args.path);
+
+        for (int i = 3; i < args.argc; i++) {
+            nargv[i] = malloc_ask(strlen(args.argv[i-3]) + 1);
+            strcpy(nargv[i], args.argv[i-3]);
+        }
+    } else if (magic[0] == 0x55 && magic[1] == 0x89 && magic[2] == 0xE5) {
+        nargv = calloc_ask(args.argc + 1, sizeof(char *));
+    
+        for (int i = 0; i < args.argc; i++) {
+            nargv[i] = malloc_ask(strlen(args.argv[i]) + 1);
+            strcpy(nargv[i], args.argv[i]);
+        }
+        exec_path = args.path;
+    } else {
+        fd_printf(2, "[run_ifexist] no interpreter found\n");
+        return -1;
+    }
+    free(magic);
+
+
+    sid = fu_path_to_sid(ROOT_SID, exec_path);
+    if (IS_NULL_SID(sid)) {
+        fd_printf(2, "[run_ifexist] interpreter not found: %s\n", exec_path);
+        return -1;
+    }
+
+    for (int i = 0; i < args.argc; i++) {
+        fd_printf(1, "arg %d: %s\n", i, nargv[i]);
+    }
+
     int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, dup_envp(args.envp));
 
     if (pid_ptr != NULL)
