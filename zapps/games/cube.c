@@ -1,4 +1,4 @@
-// @LINK SHARED: libvgui
+// @LINK SHARED: libvgui, libm
 
 #include <syscall.h>
 #include <i_vgui.h>
