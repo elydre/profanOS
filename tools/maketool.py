@@ -390,7 +390,7 @@ def gen_disk(force=False, with_src=False):
 
     if HBL_FILE: write_build_logs()
 
-    print_and_exec(f"cp {TOOLS_DIR}/zentry.c {OUT_DIR}/disk/sys/")
+    print_and_exec(f"cp {TOOLS_DIR}/entry_elf.c {OUT_DIR}/disk/sys/zentry.c")
     print_and_exec(f"cp {TOOLS_DIR}/tccextra.c {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp {TOOLS_DIR}/link_elf.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")

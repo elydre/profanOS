@@ -432,7 +432,7 @@ int panda_change_font(char *file) {
 
 void init_panda(void) {
     if (!c_vesa_does_enable()) {
-        printf("[panda] VESA is not enabled\n");
+        fd_printf(2, "[panda] VESA is not enabled\n");
         g_panda = NULL;
         return;
     }
@@ -441,7 +441,7 @@ void init_panda(void) {
     g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
 
     if (g_panda->font == NULL) {
-        printf("\n Failed to load font\n");
+        fd_printf(2, "\n Failed to load font\n");
     }
 
     g_panda->cursor_x = 0;

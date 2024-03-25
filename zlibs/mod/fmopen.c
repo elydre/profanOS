@@ -62,12 +62,12 @@ int main(void) {
 int fm_open(char *path) {
     sid_t sid = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(sid)) {
-        printf("fm_open: %s not found\n", path);
+        fd_printf(2, "fm_open: %s not found\n", path);
         return -1;
     }
 
     if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
-        printf("fm_open: %s is not a file\n", path);
+        fd_printf(2, "fm_open: %s is not a file\n", path);
         return -1;
     }
 
@@ -76,7 +76,7 @@ int fm_open(char *path) {
         if (!opened[index].type) break;
     }
     if (index == MAX_OPENED) {
-        printf("fm_open: no more file descriptors\n");
+        fd_printf(2, "fm_open: no more file descriptors\n");
         return -1;
     }
 
@@ -101,12 +101,12 @@ int fm_reopen(int fd, char *path) {
 
     sid_t sid = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(sid)) {
-        printf("fm_reopen: %s not found\n", path);
+        fd_printf(2, "fm_reopen: %s not found\n", path);
         return -1;
     }
 
     if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
-        printf("fm_reopen: %s is not a file\n", path);
+        fd_printf(2, "fm_reopen: %s is not a file\n", path);
         return -1;
     }
 
@@ -391,7 +391,7 @@ void fm_clean(void) {
     for (int i = 0; i < stdhist_len; i++) {
         if (c_process_get_state(stdhist[i].pid) < 4)
             continue;
-        printf("fm_clean: stdhist %d (pid: %d)\n", i, stdhist[i].pid);
+        fd_printf(1, "fm_clean: stdhist %d (pid: %d)\n", i, stdhist[i].pid);
         fm_close(stdhist[i].fd[0]);
         fm_close(stdhist[i].fd[1]);
         fm_close(stdhist[i].fd[2]);
@@ -404,7 +404,7 @@ void fm_clean(void) {
         if (!opened[i].type) continue;
         if (c_process_get_state(opened[i].pid) < 4)
             continue;
-        printf("fm_clean: opened %d (pid: %d) [WARNING]\n", i, opened[i].pid);
+        fd_printf(1, "fm_clean: opened %d (pid: %d) [WARNING]\n", i, opened[i].pid);
         fm_close(i);
     }
 
@@ -415,7 +415,7 @@ void fm_clean(void) {
         }
     }
 
-    printf("fm_clean: %d file descriptors are free\n", fd_free);
+    fd_printf(1, "fm_clean: %d file descriptors are free\n", fd_free);
 }
 
 int fm_add_stdhist(int fd, int pid) {
@@ -435,7 +435,7 @@ int fm_add_stdhist(int fd, int pid) {
     }
 
     if (stdhist_len >= MAX_STDHIST) {
-        printf("fm_add_stdhist: no more space in stdhist\n");
+        fd_printf(2, "fm_add_stdhist: no more space in stdhist\n");
         return -1;
     }
 

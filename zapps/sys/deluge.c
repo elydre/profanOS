@@ -1,53 +1,8 @@
 #include <syscall.h>
 #include <filesys.h>
-#include <stdarg.h>
 #include <libmmq.h>
 
-// minilibc
-
 #define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt, ##__VA_ARGS__); exit(1); } while (0)
-
-void fd_putchar(int fd, char c) {
-    fm_write(fd, &c, 1);
-}
-
-void fd_putint(int fd, int n) {
-    if (n < 0) {
-        fd_putchar(fd, '-');
-        n = -n;
-    }
-    if (n / 10) {
-        fd_putint(fd, n / 10);
-    }
-    fd_putchar(fd, n % 10 + '0');
-}
-
-void fd_printf(int fd, const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    va_end(args);
-
-    for (int i = 0; fmt[i] != '\0';) {
-        if (fmt[i] == '%') {
-            i++;
-            if (fmt[i] == 's') {
-                char *tmp = va_arg(args, char *);
-                for (int j = 0; tmp[j] != '\0'; j++) {
-                    fd_putchar(fd, tmp[j]);
-                }
-            } else if (fmt[i] == 'c') {
-                fd_putchar(fd, va_arg(args, int));
-            } else if (fmt[i] == 'd') {
-                fd_putint(fd, va_arg(args, int));
-            } else {
-                fd_putchar(fd, '%');
-            }
-        } else {
-            fd_putchar(fd, fmt[i]);
-        }
-        i++;
-    }
-}
 
 // elf header
 

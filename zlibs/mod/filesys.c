@@ -15,7 +15,7 @@
 sid_t fu_path_to_sid(sid_t from, char *path);
 
 #define CACHE_FCTF_SIZE 16
-#define RAISE_ERROR(...) printf("[FS MODULE ERROR] " __VA_ARGS__)
+#define RAISE_ERROR(...) fd_printf(2, "[FS MODULE ERROR] " __VA_ARGS__)
 
 typedef struct {
     sid_t sid;
@@ -357,7 +357,8 @@ sid_t fu_dir_create(int device_id, char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "D-%s", name);
+    strcpy(meta, "D-");
+    strncpy(meta + 2, name, META_MAXLEN - 2);
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
@@ -462,7 +463,8 @@ sid_t fu_file_create(int device_id, char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "F-%s", name);
+    strcpy(meta, "F-");
+    strncpy(meta + 2, name, META_MAXLEN - 2);
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
