@@ -1,6 +1,6 @@
-set bf_mem 00
-set bf_mem_len 1
-set bf_mem_ptr 0
+global bf_mem 00
+global bf_mem_len 1
+global bf_mem_ptr 0
 
 FUNC nb_to_hex
     IF !(eval !# ~ 1)

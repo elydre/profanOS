@@ -147,7 +147,7 @@ END
 del var
 del -f testglobal
 
-set l0 66
+global l0 66
 
 FUNC testlocalsub
     set tmp 13
