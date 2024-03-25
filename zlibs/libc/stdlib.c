@@ -42,8 +42,21 @@ void __attribute__((constructor)) stdlib_init(void) {
     rand_seed = time(NULL);
 }
 
-void set_environ_ptr(char **env) {
-    g_env = env;
+void __attribute__((destructor)) stdlib_fini(void) {
+    // free the environment
+    for (int i = 0; g_env[i] != NULL; i++) {
+        free(g_env[i]);
+    }
+    free(g_env);
+}
+
+void init_environ_ptr(char **env) {
+    int size = 0;
+    while (env[size] != NULL) size++;
+    g_env = malloc((size + 1) * sizeof(char *));
+    for (int i = 0; i < size; i++)
+        g_env[i] = strdup(env[i]);
+    g_env[size] = NULL;
 }
 
 char **get_environ_ptr(void) {
@@ -546,7 +559,7 @@ int setenv(const char *name, const char *value, int replace) {
                 if (replace) {
                     // replace the variable
                     free(g_env[i]);
-                    g_env[i] = malloc_ask(strlen(name) + strlen(value) + 2);
+                    g_env[i] = malloc(strlen(name) + strlen(value) + 2);
                     strcpy(g_env[i], name);
                     strcat(g_env[i], "=");
                     strcat(g_env[i], value);
@@ -559,7 +572,7 @@ int setenv(const char *name, const char *value, int replace) {
 
     // the variable doesn't exist, create it
     int len = strlen(name) + strlen(value) + 2;
-    char *new_var = malloc_ask(len);
+    char *new_var = malloc(len);
     strcpy(new_var, name);
     strcat(new_var, "=");
     strcat(new_var, value);
@@ -567,7 +580,7 @@ int setenv(const char *name, const char *value, int replace) {
     // add the variable to the environment
     int i = 0;
     while (g_env[i] != NULL) i++;
-    g_env = realloc_ask(g_env, (i + 2) * sizeof(char *));
+    g_env = realloc(g_env, (i + 2) * sizeof(char *));
     g_env[i] = new_var;
     g_env[i + 1] = NULL;
 
@@ -596,7 +609,7 @@ int clearenv(void) {
     for (int i = 0; g_env[i] != NULL; i++) {
         free(g_env[i]);
     }
-    realloc_ask(g_env, sizeof(char *));
+    realloc(g_env, sizeof(char *));
     g_env[0] = NULL;
     return 0;
 }

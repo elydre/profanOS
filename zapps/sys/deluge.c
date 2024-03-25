@@ -442,6 +442,42 @@ int init_lib(elfobj_t *lib) {
     return 0;
 }
 
+int fini_lib(elfobj_t *lib) {
+    // call destructors
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
+
+    Elf32_Dyn *dyn;
+
+    void (**fini_array)(void) = NULL;
+    int size = 0;
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
+            dyn = (Elf32_Dyn *)(lib->file + shdr[i].sh_offset);
+            for (int j = 0; dyn[j].d_tag != 0; j++) {
+                if (dyn[j].d_tag == 26) { // DT_FINI
+                    fini_array = (void (**)(void)) (lib->mem + dyn[j].d_un.d_ptr);
+                }
+                if (dyn[j].d_tag == 28) { // DT_FINI_ARRAYSZ
+                    size = dyn[j].d_un.d_val / sizeof(void *);
+                }
+            }
+        }
+    }
+
+    if (fini_array == NULL) {
+        return 0;
+    }
+
+    for (int i = 0; i < size; i++) {
+        fini_array[i]();
+    }
+
+    return 0;
+}
+
 int dlclose(void *handle) {
     elfobj_t *dl = (elfobj_t *) handle;
     free(dl->file);
@@ -595,6 +631,7 @@ int main(int argc, char **argv, char **envp) {
     int ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
     for (int i = 0; i < g_lib_count; i++) {
+        fini_lib(g_loaded_libs[i]);
         dlclose(g_loaded_libs[i]);
     }
     free(g_loaded_libs);

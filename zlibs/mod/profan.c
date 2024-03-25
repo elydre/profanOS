@@ -269,6 +269,30 @@ char *open_input_serial(int *size, int serial_port) {
     return buffer;
 }
 
+char **dup_envp(char **envp) {
+    if (envp == NULL)
+        return calloc_ask(1, sizeof(char *));
+    int envc, size = 0;
+    
+    for (envc = 0; envp[envc] != NULL; envc++)
+        size += strlen(envp[envc]) + 1;
+    size += (envc + 1) * sizeof(char *);
+
+    char **nenvp = calloc_ask(1, size);
+
+    char *nenvp_start = (char *) nenvp + (envc + 1) * sizeof(char *);
+
+    for (int i = 0; envp[i] != NULL; i++) {
+        for (envc = 0; envp[i][envc] != '\0'; envc++) {
+            nenvp_start[envc] = envp[i][envc];
+        }
+        nenvp[i] = nenvp_start;
+        nenvp_start += envc + 1;
+    }
+
+    return nenvp;
+}
+
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (args.path == NULL) {
         fd_printf(2, "file is required to run\n");
@@ -291,22 +315,8 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         strcpy(nargv[i], args.argv[i-2]);
     }
 
-    // duplicate envp
-    size = 0;
-    if (args.envp != NULL) {
-        while (args.envp[size] != NULL)
-            size++;
-    }
-    char **nenvp = malloc_ask((size + 1) * sizeof(char *));
-    memset((void *) nenvp, 0, (size + 1) * sizeof(char *));
-
-    for (int i = 0; i < size; i++) {
-        nenvp[i] = malloc_ask(strlen(args.envp[i]) + 1);
-        strcpy(nenvp[i], args.envp[i]);
-    }
-
     sid_t sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
-    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenvp);
+    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, dup_envp(args.envp));
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

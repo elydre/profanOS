@@ -208,19 +208,17 @@ void fd_printf(int fd, const char *fmt, ...) {
     va_end(args);
 }
 
-int atoi(const char *str) {
-    int res = 0;
-    int sign = 1;
-    int i = 0;
+#define isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r' || (c) == '\f' || (c) == '\v')
+#define isdigit(c) ((c) >= '0' && (c) <= '9')
 
-    if (str[0] == '-') {
-        sign = -1;
-        i++;
+int atoi(const char *nptr) {
+    int n=0, neg=0;
+    while (isspace(*nptr)) nptr++;
+    switch (*nptr) {
+        case '-': {neg=1; nptr++; break;}
+        case '+': {nptr++; break;}
     }
-
-    for (; str[i] != '\0'; i++) {
-        res = res * 10 + str[i] - '0';
-    }
-
-    return sign * res;
+    while (isdigit(*nptr))
+        n = 10*n - (*nptr++ - '0');
+    return neg ? n : -n;
 }

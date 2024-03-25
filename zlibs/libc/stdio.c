@@ -20,27 +20,35 @@ int dopr(char* str, size_t size, const char* format, va_list arg);
 FILE *STD_STREAM = NULL;
 
 void __attribute__((constructor)) stdlio_init(void) {
-    FILE *dup = calloc(3, sizeof(FILE));
+    STD_STREAM = calloc(3, sizeof(FILE));
 
     // init stdin
-    dup[0].filename = "/dev/stdin";
-    dup[0].mode = MODE_READ;
-    dup[0].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[0].fd = 0;
+    STD_STREAM[0].filename = "/dev/stdin";
+    STD_STREAM[0].mode = MODE_READ;
+    STD_STREAM[0].buffer = malloc(FILE_BUFFER_SIZE);
+    STD_STREAM[0].fd = 0;
 
     // init stdout
-    dup[1].filename = "/dev/stdout";
-    dup[1].mode = MODE_WRITE;
-    dup[1].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[1].fd = 1;
+    STD_STREAM[1].filename = "/dev/stdout";
+    STD_STREAM[1].mode = MODE_WRITE;
+    STD_STREAM[1].buffer = malloc(FILE_BUFFER_SIZE);
+    STD_STREAM[1].fd = 1;
 
     // init stderr
-    dup[2].filename = "/dev/stderr";
-    dup[2].mode = MODE_WRITE;
-    dup[2].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[2].fd = 2;
+    STD_STREAM[2].filename = "/dev/stderr";
+    STD_STREAM[2].mode = MODE_WRITE;
+    STD_STREAM[2].buffer = malloc(FILE_BUFFER_SIZE);
+    STD_STREAM[2].fd = 2;
+}
 
-    STD_STREAM = dup;
+void __attribute__((destructor)) stdlio_destroy(void) {
+    for (int i = 0; i < 3; i++) {
+        fflush(STD_STREAM + i);
+        fm_close(STD_STREAM[i].fd);
+        free(STD_STREAM[i].buffer);
+    }
+
+    free(STD_STREAM);
 }
 
 void clearerr(FILE *stream) {

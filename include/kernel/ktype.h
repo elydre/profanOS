@@ -58,7 +58,8 @@ typedef struct {
 } filesys_t;
 
 typedef struct {
-    char   **argv;
+    char **argv;
+    char **envp;
 } comm_struct_t;
 
 // va_list

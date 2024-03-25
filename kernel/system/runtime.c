@@ -31,8 +31,9 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     if (comm != NULL) {
         // free the argv
         for (int i = 0; comm->argv[i] != NULL; i++)
-            free((void *) comm->argv[i]);
-        free((void *) comm->argv);
+            free(comm->argv[i]);
+        free(comm->argv);
+        free(comm->envp);
 
         // free comm struct
         free(comm);
@@ -75,6 +76,7 @@ int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
 
     comm_struct_t *comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
     comm->argv = argv;
+    comm->envp = envp;
     process_set_comm(pid, comm);
 
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
