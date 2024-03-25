@@ -254,10 +254,12 @@ int file_relocate(elfobj_t *dl) {
                 val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
                 if (does_type_required_sym(type)) {
-                    val = (uint32_t) dlsym(dl, name);
-                    if (val == 0) {
+                    for (int k = 0; k < g_lib_count && val == 0; k++)
+                        val = (uint32_t) dlsym(g_loaded_libs[k], name);
+                    if (val == 0)
+                        val = (uint32_t) dlsym(dl, name);
+                    if (val == 0)
                         raise_error("symbol '%s' not found in '%s'\n", name, dl->name);
-                    }
                 }
                 switch (type) {
                     case R_386_32:          // word32  S + A
@@ -507,13 +509,10 @@ int dynamic_linker(elfobj_t *exec) {
                 val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
                 if (does_type_required_sym(type)) {
-                    for (int k = 0; k < g_lib_count && val == 0; k++) {
+                    for (int k = 0; k < g_lib_count && val == 0; k++)
                         val = (uint32_t) dlsym(g_loaded_libs[k], name);
-                        break;
-                    }
-                    if (val == 0) {
-                        raise_error("symbol '%s' not found in any library\n", name);
-                    }
+                    if (val == 0)
+                        raise_error("symbol '%s' not found", name);
                 }
                 switch (type) {
                     case R_386_JMP_SLOT:    // word32  S
