@@ -35,7 +35,7 @@ int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 int dev_kterm(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (is_read)
         return keyboard_read(buffer, size, "/dev/kterm");
-    c_kprint((char *) buffer);
+    c_kcnprint((char *) buffer, size, 0x0F);
     return size;
 }
 

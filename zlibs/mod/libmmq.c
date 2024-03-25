@@ -12,7 +12,6 @@ int main(void) {
 void *memset(void *s, int c, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 
-
 void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
     int addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
@@ -93,25 +92,30 @@ void *memmove(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-int strcmp(const char *s1, const char *s2) {
-    while (*s1 && *s1 == *s2) {
-        s1++;
-        s2++;
+int strcmp(register const char *s1, register const char *s2) {
+    while (*s1 == *s2++) {
+        if (*s1++ == 0) {
+            return 0;
+        }
     }
-    return *(unsigned char *) s1 - *(unsigned char *) s2;
+    return *(unsigned char *) s1 - *(unsigned char *) --s2;
 }
 
-int strcpy(char *dest, const char *src) {
-    while ((*dest++ = *src++));
-    return 0;
+char *strcpy(char *restrict s1, const char *restrict s2) {
+    int i;
+    for (i = 0; s2[i] != '\0'; ++i) {
+        s1[i] = s2[i];
+    }
+    s1[i] = '\0';
+    return s1;
 }
 
 size_t strlen(const char *s) {
-    size_t len = 0;
-    while (*s++) {
-        len++;
-    }
-    return len;
+    register const char *p;
+
+    for (p=s ; *p ; p++);
+
+    return p - s;
 }
 
 char *strdup(const char *s) {
@@ -124,28 +128,37 @@ char *strdup(const char *s) {
     return d;
 }
 
-int strncmp(const char *s1, const char *s2, size_t n) {
-    while (n-- && *s1 && *s1 == *s2) {
-        s1++;
-        s2++;
-    }
-    return n ? *(unsigned char *) s1 - *(unsigned char *) s2 : 0;
-} 
+char *strncpy(char *restrict s1, register const char *restrict s2,
+               size_t n) {
+    register char *s = s1;
 
-char *strcat(char *dest, const char *src) {
-    strcpy(dest + strlen(dest), src);
-    return dest;
+    while (n) {
+        if ((*s = *s2) != 0) s2++; /* Need to fill tail with 0s. */
+        ++s;
+        --n;
+    }
+
+    return s1;
 }
 
-char *strncpy(char *dest, const char *src, size_t n) {
-    size_t i;
-    for (i = 0; i < n && src[i] != '\0'; i++) {
-        dest[i] = src[i];
-    }
-    for (; i < n; i++) {
-        dest[i] = '\0';
-    }
-    return dest;
+char *strcat(char *restrict s1, register const char *restrict s2) {
+    size_t i,j;
+    for (i = 0; s1[i] != '\0'; i++);
+    for (j = 0; s2[j] != '\0'; j++)
+        s1[i+j] = s2[j];
+    s1[i+j] = '\0';
+    return s1;
+}
+
+int strncmp(register const char *s1, register const char *s2, size_t n) {
+    if (n == 0) return 0;
+    do {
+        if (*s1 != *s2++)
+            return *(unsigned char *) s1 - *(unsigned char *) --s2;
+        if (*s1++ == 0)
+            break;
+    } while (--n != 0);
+    return 0;
 }
 
 void fd_putchar(int fd, char c) {
@@ -153,7 +166,7 @@ void fd_putchar(int fd, char c) {
 }
 
 void fd_putstr(int fd, const char *str) {
-    fm_write(fd, (void *) str, strlen(str));
+    fm_write(fd, (char *) str, strlen(str));
 }
 
 void fd_putint(int fd, int n) {
@@ -192,6 +205,7 @@ void fd_printf(int fd, const char *fmt, ...) {
         }
         i++;
     }
+    va_end(args);
 }
 
 int atoi(const char *str) {

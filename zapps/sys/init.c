@@ -43,6 +43,9 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     lib_t *lib = &libs_at_boot[i];
+    c_kprint("Loading ");
+    c_kprint(get_name(lib->path));
+    c_kprint(" library\n");
     if (c_dily_load(lib->path, lib->id)) {
         c_kprint("FAILED TO LOAD ");
         c_kprint(get_name(lib->path));
@@ -111,9 +114,8 @@ int main(void) {
 
     fd_printf(1, "Loaded %d/%d libraries\n\n", sum, total);
 
-    panda_set_start(c_get_cursor_offset());
-
     if (c_vesa_does_enable()) {
+        panda_set_start(c_get_cursor_offset());
         use_panda = 1;
         if (fm_reopen(1, "/dev/panda") < 0 ||
             fm_reopen(3, "/dev/panda") < 0 ||
