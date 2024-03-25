@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 7"
+#define OLV_VERSION "0.11 rev 8"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -117,7 +117,7 @@ char **bin_names;
 char *g_current_directory, *g_exit_code, *g_prompt;
 int g_current_level;
 
-void execute_file(char *file);
+int execute_file(char *file);
 
 /****************************
  *                         *
@@ -236,10 +236,6 @@ int local_strncmp_nocase(char *str1, char *str2, int n) {
 
 int is_valid_name(char *name) {
     if (name == NULL || name[0] == '\0') {
-        return 0;
-    }
-
-    if (name[0] >= '0' && name[0] <= '9') {
         return 0;
     }
 
@@ -1164,10 +1160,8 @@ char *if_eval(char **input) {
 
 char *if_cd(char **input) {
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc > 1) {
         raise_error("cd", "Usage: cd [dir]");
@@ -1338,8 +1332,8 @@ char *if_exec(char **input) {
         return ERROR_CODE;
     }
 
-    execute_file(input[0]);
-
+    if (execute_file(input[0]))
+        return ERROR_CODE;
     return NULL;
 }
 
@@ -1514,10 +1508,8 @@ char *if_fsize(char **input) {
 
     #if PROFANBUILD
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 1) {
         raise_error("fsize", "Usage: fsize <file>");
@@ -1553,10 +1545,8 @@ char *if_fsize(char **input) {
 
 char *if_global(char **input) {
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 2) {
         raise_error("global", "Usage: global <name> <value>");
@@ -1591,10 +1581,8 @@ char *if_global(char **input) {
 
 char *if_go_binfile(char **input) {
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc < 1) {
         raise_error("go", "Usage: go <file> [args] [&] [> <stdout>]");
@@ -1795,10 +1783,8 @@ char *if_name(char **input) {
      * output: "'file1'"
     */
 
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 1) {
         raise_error("name", "Usage: name <path>");
@@ -1840,10 +1826,8 @@ char *if_print(char **input) {
 
 char *if_pseudo(char **input) {
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 2) {
         raise_error("pseudo", "Usage: pseudo <name> <value>");
@@ -1909,10 +1893,8 @@ char *if_range(char **input) {
      * output: "1 2 3 4 5"
     */
 
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc == 0 || argc > 2) {
         raise_error("range", "Usage: range [start] <end>");
@@ -1968,10 +1950,8 @@ char *if_rep(char **input) {
      * output: "HePPo"
     */
 
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 2 && argc != 3) {
         raise_error("rep", "Usage: rep <string> <chars> [replacements]");
@@ -2019,10 +1999,8 @@ char *if_rep(char **input) {
 
 char *if_set_var(char **input) {
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc == 0 || argc > 2) {
         raise_error("set", "Usage: set <name> [value]");
@@ -2067,10 +2045,8 @@ char *if_set_var(char **input) {
 }
 
 char *if_sprintf(char **input) {
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc < 1) {
         raise_error("sprintf", "Usage: sprintf <format> [arg1] [arg2] ...");
@@ -2149,10 +2125,8 @@ char *if_strlen(char **input) {
      * output: "11"
     */
 
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 1) {
         raise_error("strlen", "Usage: strlen <string>");
@@ -2172,10 +2146,8 @@ char *if_ticks(char **input) {
      * output: "'123456789'"
     */
 
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc != 0) {
         raise_error("ticks", "Usage: ticks");
@@ -2434,10 +2406,8 @@ char *execute_line(char *full_line);
 char *pipe_processor(char **input) {
     #if PROFANBUILD
     // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc == 0) {
         raise_error("Pipe Processor", "Requires at least one argument");
@@ -2869,9 +2839,8 @@ char *check_pseudos(char *line) {
     pseudo_name = malloc((len + 1) * sizeof(char));
 
     for (i = 0; i < len; i++) {
-        if (line[i] == ' ') {
+        if (line[i] == ' ')
             break;
-        }
         pseudo_name[i] = line[i];
     }
     pseudo_name[i] = '\0';
@@ -3361,12 +3330,12 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
         return -1;
     }
 
-    int i;
-    for (i = 3; if_line[i] != '\0'; i++) {
-        condition[i - 3] = if_line[i];
+    int tmp;
+    for (tmp = 3; if_line[tmp] != '\0'; tmp++) {
+        condition[tmp - 3] = if_line[tmp];
     }
 
-    condition[i - 3] = '\0';
+    condition[tmp - 3] = '\0';
 
     // check condition length
     if (strlen(condition) == 0) {
@@ -3394,19 +3363,19 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     }
 
     // execute if statement
-    int verif = check_condition(condition);
+    tmp = check_condition(condition);
 
-    if (verif == -1) {
+    if (tmp == -1) {
         // invalid condition for WHILE loop
         free(condition);
         return -1;
     }
 
-    *cnd_state = verif;
+    *cnd_state = tmp;
 
-    if (verif) {
-        int ret = execute_lines(lines + 1, line_end - 1, result);
-        if (ret < 0) line_end = ret;
+    if (tmp) {
+        tmp = execute_lines(lines + 1, line_end - 1, result);
+        if (tmp < 0) line_end = tmp;
     }
 
     free(condition);
@@ -3572,12 +3541,10 @@ int save_function(int line_count, char **lines) {
 
 void execute_program(char *program) {
     char **lines = lexe_program(program, 1);
-    int line_count = 0;
-    for (int i = 0; lines[i] != NULL; i++) {
-        line_count++;
-    }
+    int lc;
+    for (lc = 0; lines[lc] != NULL; lc++);
 
-    execute_lines(lines, line_count, NULL);
+    execute_lines(lines, lc, NULL);
 
     free(lines);
 }
@@ -4418,11 +4385,11 @@ void start_shell(void) {
     free(line);
 }
 
-void execute_file(char *file) {
+int execute_file(char *file) {
     FILE *f = fopen(file, "r");
     if (f == NULL) {
         printf("file '%s' does not exist\n", file);
-        return;
+        return 1;
     }
 
     char *line = malloc(INPUT_SIZE * sizeof(char));
@@ -4439,9 +4406,21 @@ void execute_file(char *file) {
     fclose(f);
     free(line);
 
+    g_current_level++;
+    if (set_variable("filename", file)) {
+        g_current_level--;
+        free(program);
+        return 1;
+    }
+
     execute_program(program);
 
+    del_variable("filename");
+    g_current_level--;
+
     free(program);
+
+    return 0;
 }
 
 void print_file_highlighted(char *file) {
@@ -4666,8 +4645,8 @@ int main(int argc, char **argv) {
         execute_program(init_prog);
     }
 
-    if (args->file != NULL) {
-        execute_file(args->file);
+    if (args->file != NULL && execute_file(args->file)) {
+        ret_val = 1;
     }
 
     if (args->command != NULL) {
