@@ -3,7 +3,6 @@
 #include <libmmq.h>
 
 #define SCROLL_LINES 8
-#define malloc_as_kernel(size) ((void *) c_mem_alloc(size, 0, 6))
 
 typedef struct {
     uint32_t width;
@@ -76,10 +75,10 @@ font_data_t *load_psf_font(char *file) {
     if (magic != 0x864ab572 || version != 0)
         return NULL;
 
-    uint8_t *font = malloc_as_kernel(charcount * charsize);
+    uint8_t *font = malloc_ask(charcount * charsize);
     fu_file_read(sid, font, headersize, charcount * charsize);
 
-    font_data_t *psf = malloc_as_kernel(sizeof(font_data_t));
+    font_data_t *psf = malloc_ask(sizeof(font_data_t));
     psf->width = width;
     psf->height = height;
     psf->charcount = charcount;
@@ -437,7 +436,7 @@ void init_panda(void) {
         return;
     }
 
-    g_panda = malloc_as_kernel(sizeof(panda_global_t));
+    g_panda = malloc_ask(sizeof(panda_global_t));
     g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
 
     if (g_panda->font == NULL) {
@@ -462,6 +461,6 @@ void init_panda(void) {
     g_panda->pitch = c_vesa_get_pitch();
 
     int buffer_size = g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t);
-    g_panda->screen_buffer = malloc_as_kernel(buffer_size);
+    g_panda->screen_buffer = malloc_ask(buffer_size);
     memset(g_panda->screen_buffer, 0, buffer_size);
 }

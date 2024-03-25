@@ -558,7 +558,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     return args;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
     g_lib_count = 0;
 
@@ -586,13 +586,13 @@ int main(int argc, char **argv) {
         fd_printf(2, "Link time: %d ms\n", c_timer_get_ms() - start);
     }
 
-    int (*main)() = (int (*)(int, char **)) ((Elf32_Ehdr *) test->file)->e_entry;
+    int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) test->file)->e_entry;
 
     free(test->file);
     free(test->name);
     free(test);
 
-    int ret = main(argc - args.arg_offset, argv + args.arg_offset);
+    int ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
     for (int i = 0; i < g_lib_count; i++) {
         dlclose(g_loaded_libs[i]);

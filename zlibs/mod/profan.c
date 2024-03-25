@@ -278,26 +278,30 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     // duplicate argv
     args.argc += 2;
     int size = sizeof(char *) * (args.argc + 1);
-    char **nargv = (char **) c_mem_alloc(size, 0, 6);
+    char **nargv = malloc_ask(size);
     memset((void *) nargv, 0, size);
 
-    nargv[0] = strdup(ELF_INTERP);
-    nargv[1] = strdup(args.path);
+    nargv[0] = (char *) malloc_ask(strlen(ELF_INTERP) + 1);
+    strcpy(nargv[0], ELF_INTERP);
+    nargv[1] = (char *) malloc_ask(strlen(args.path) + 1);
+    strcpy(nargv[1], args.path);
+
     for (int i = 2; i < args.argc; i++) {
-        nargv[i] = (char *) c_mem_alloc(strlen(args.argv[i-2]) + 1, 0, 6);
+        nargv[i] = (char *) malloc_ask(strlen(args.argv[i-2]) + 1);
         strcpy(nargv[i], args.argv[i-2]);
     }
 
     // duplicate envp
     size = 0;
-    while (args.envp[size] != NULL)
-        size++;
-    size *= sizeof(char *);
-    char **nenvp = (char **) c_mem_alloc(size + 1, 0, 6);
-    memset((void *) nenvp, 0, size + 1);
+    if (args.envp != NULL) {
+        while (args.envp[size] != NULL)
+            size++;
+    }
+    char **nenvp = malloc_ask((size + 1) * sizeof(char *));
+    memset((void *) nenvp, 0, (size + 1) * sizeof(char *));
 
-    for (uint32_t i = 0; i < size / sizeof(char *); i++) {
-        nenvp[i] = (char *) c_mem_alloc(strlen(args.envp[i]) + 1, 0, 6);
+    for (int i = 0; i < size; i++) {
+        nenvp[i] = malloc_ask(strlen(args.envp[i]) + 1);
         strcpy(nenvp[i], args.envp[i]);
     }
 

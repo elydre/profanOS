@@ -15,16 +15,7 @@
 #define MODE_WRITE  1 << 1
 #define MODE_APPEND 1 << 2
 
-void init_func();
-
-int puts(const char *str);
-int fflush(FILE *stream);
-int fclose(FILE *stream);
-
 int dopr(char* str, size_t size, const char* format, va_list arg);
-int vfprintf(FILE *stream, const char *format, va_list vlist);
-int vprintf(const char *format, va_list vlist);
-int printf(const char *format, ...);
 
 FILE *STD_STREAM = NULL;
 

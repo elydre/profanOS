@@ -4071,9 +4071,11 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
     // bin
     #if BIN_AS_PSEUDO
-    for (int j = 0; bin_names[j] != NULL; j++) {
-        if (strncmp(tmp, bin_names[j], i - dec) == 0) {
-            suggest = add_to_suggest(other, suggest, bin_names[j]);
+    if (bin_names) {
+        for (int j = 0; bin_names[j] != NULL; j++) {
+            if (strncmp(tmp, bin_names[j], i - dec) == 0) {
+                suggest = add_to_suggest(other, suggest, bin_names[j]);
+            }
         }
     }
     #endif

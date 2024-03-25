@@ -43,9 +43,6 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     lib_t *lib = &libs_at_boot[i];
-    c_kprint("Loading ");
-    c_kprint(get_name(lib->path));
-    c_kprint(" library\n");
     if (c_dily_load(lib->path, lib->id)) {
         c_kprint("FAILED TO LOAD ");
         c_kprint(get_name(lib->path));
@@ -65,9 +62,12 @@ void rainbow_print(char *message) {
 }
 
 void welcome_print(void) {
-    rainbow_print("Welcome to profanOS!\n");
+    /*rainbow_print("Welcome to profanOS!\n");
 
-    fd_printf(1, "\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());
+    fd_printf(1, "\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());*/
+    fd_putstr(1, "\e[95mWelcome to profanOS!\nKernel: ");
+    fd_putstr(1, c_sys_kinfo());
+    fd_putstr(1, "\e[0m\n\n");
 }
 
 char wait_key(void) {
