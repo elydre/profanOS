@@ -152,6 +152,10 @@ void fd_putchar(int fd, char c) {
     fm_write(fd, &c, 1);
 }
 
+void fd_putstr(int fd, const char *str) {
+    fm_write(fd, (void *) str, strlen(str));
+}
+
 void fd_putint(int fd, int n) {
     if (n < 0) {
         fd_putchar(fd, '-');

@@ -276,7 +276,7 @@ int fm_dup(int fd) {
         if (!opened[index].type) break;
     }
     if (index == MAX_OPENED) {
-        serial_debug("fm_dup: no more file descriptors\n");
+        fd_printf(2, "fm_dup: no more file descriptors\n");
         return -1;
     }
 
@@ -345,7 +345,7 @@ int fm_pipe(int fd[2]) {
     for (i2 = i1 + 1; i2 < MAX_OPENED; i2++)
         if (!opened[i2].type) break;
     if (i1 == MAX_OPENED || i2 == MAX_OPENED) {
-        serial_debug("fm_pipe: no more file descriptors\n");
+        fd_printf(2, "fm_pipe: no more file descriptors\n");
         return -1;
     }
 

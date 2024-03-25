@@ -39,7 +39,7 @@ int profan_kb_load_map(char *path);
 int main(void) {
     kb_map = NULL;
     if (profan_kb_load_map("/zada/keymap/azerty.map")) {
-        printf("Failed to load keyboard map\n");
+        fd_printf(2, "Failed to load keyboard map\n");
         return 1;
     }
 
@@ -47,76 +47,11 @@ int main(void) {
 }
 
 int userspace_reporter(char *message) {
-    char *term = getenv("TERM");
-    int c = fputs(message, stderr);
-
-    if (term && strcmp(term, "/dev/serial")) {
-        c_serial_write(SERIAL_PORT_A, message, strlen(message));
-    }
-    return c == EOF;
-}
-
-char *assemble_path(char *old, char *new) {
-    char *result;
-    int len;
-
-    if (new[0] == '/') {
-        return strdup(new);
-    }
-
-    result = malloc(strlen(old) + strlen(new) + 2);
-    strcpy(result, old);
-
-    if (result[strlen(result) - 1] != '/') {
-        strcat(result, "/");
-    }
-    strcat(result, new);
-
-    len = strlen(result) - 1;
-    if (result[len] == '/' && len > 0) {
-        result[len] = '\0';
-    }
-
-    return result;
-}
-
-void profan_print_stacktrace(void) {
-    struct stackframe *stk;
-    asm ("movl %%ebp,%0" : "=r"(stk) ::);
-    printf("Stack trace:\n");
-    int size = 0;
-    while (stk->eip) {
-        printf("   %x\n", stk->eip);
-        stk = stk->ebp;
-        size++;
-    }
-    printf("total size: %d\n", size);
-}
-
-void profan_print_memory(void *addr, uint32_t size) {
-    for (uint32_t i = 0; i < size / 16 + (size % 16 != 0); i++) {
-        printf("%08x: ", (uint32_t) addr + i * 16);
-
-        for (int j = 0; j < 16; j++) {
-            if (i * 16 + j < size)
-                printf("%02x ", *((unsigned char *) addr + i * 16 + j));
-            else
-                printf("   ");
-            if (j % 4 == 3)
-                printf(" ");
-        }
-
-        for (int j = 0; j < 16; j++) {
-            unsigned char c = *((unsigned char *) addr + i * 16 + j);
-            if (i * 16 + j >= size)
-                break;
-            if (c >= 32 && c <= 126)
-                printf("%c", c);
-            else
-                printf(".");
-        }
-        printf("\n");
-    }
+    int len = 0;
+    while (message[len] != '\0')
+        len++;
+    fm_write(2, message, len);
+    return 0;
 }
 
 int profan_kb_load_map(char *path) {
@@ -175,25 +110,13 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     return kb_map[scancode * 2];
 }
 
-int serial_debug(char *frm, ...);
-
-int profan_wait_pid(uint32_t pid) {
-    uint32_t current_pid = c_process_get_pid();
-
-    if (pid == current_pid || !pid)
-        return 0;
-
-    while (c_process_get_state(pid) < 4)
-        c_process_sleep(current_pid, 10);
-
-    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
-}
-
 char *open_input_keyboard(int *size, char *term_path) {
-    FILE *term = fopen(term_path, "w");
+    int fd = fm_open(term_path);
+    if (fd == -1) {
+        return NULL;
+    }
 
-    fputs("\e[?25l", term);
-    fflush(term);
+    fd_putstr(fd, "\e[?25l");
 
     uint32_t buffer_actual_size, buffer_index, buffer_size;
     int sc, last_sc, last_sc_sgt, key_ticks, shift;
@@ -235,13 +158,13 @@ char *open_input_keyboard(int *size, char *term_path) {
         if (sc == LEFT) {
             if (!buffer_index) continue;
             buffer_index--;
-            fputs("\e[1D", term);
+            fd_putstr(fd, "\e[1D");
         }
 
         else if (sc == RIGHT) {
             if (buffer_index == buffer_actual_size) continue;
             buffer_index++;
-            fputs("\e[1C", term);
+            fd_putstr(fd, "\e[1C");
         }
 
         else if (sc == BACK) {
@@ -251,9 +174,9 @@ char *open_input_keyboard(int *size, char *term_path) {
                 buffer[i] = buffer[i + 1];
             }
             buffer[buffer_actual_size--] = '\0';
-            fputs("\e[1D\e[s"INP_CLR, term);
-            fputs(buffer + buffer_index, term);
-            fputs(INP_RST" \e[u", term);
+            fd_putstr(fd, "\e[1D\e[s"INP_CLR);
+            fd_putstr(fd, buffer + buffer_index);
+            fd_putstr(fd, INP_RST" \e[u");
         }
 
         else if (sc == DEL) {
@@ -262,13 +185,13 @@ char *open_input_keyboard(int *size, char *term_path) {
                 buffer[i] = buffer[i + 1];
             }
             buffer[buffer_actual_size--] = '\0';
-            fputs("\e[s"INP_CLR, term);
-            fputs(buffer + buffer_index, term);
-            fputs(INP_RST" \e[u", term);
+            fd_putstr(fd, "\e[s"INP_CLR);
+            fd_putstr(fd, buffer + buffer_index);
+            fd_putstr(fd, INP_RST" \e[u");
         }
 
         else if (sc == ESC) {
-            fclose(term);
+            fm_close(fd);
             buffer = realloc(buffer, buffer_actual_size + 1);
             if (size)
                 *size = buffer_actual_size;
@@ -282,29 +205,26 @@ char *open_input_keyboard(int *size, char *term_path) {
                 buffer_size *= 2;
                 buffer = realloc(buffer, buffer_size);
             }
-            fputs(INP_CLR, term);
-            fputc(c, term);
+            fd_putstr(fd, INP_CLR);
+            fd_putchar(fd, c);
             if (buffer_index < buffer_actual_size) {
                 for (uint32_t i = buffer_actual_size; i > buffer_index; i--) {
                     buffer[i] = buffer[i - 1];
                 }
-                fputs("\e[s", term);
-                fputs(buffer + buffer_index + 1, term);
-                fputs(INP_RST"\e[u", term);
+                fd_putstr(fd, "\e[s");
+                fd_putstr(fd, buffer + buffer_index + 1);
+                fd_putstr(fd, INP_RST"\e[u");
             } else
-                fputs(INP_RST, term);
+                fd_putstr(fd, INP_RST);
             buffer[buffer_index++] = c;
             buffer[++buffer_actual_size] = '\0';
         }
-
-        else continue;
-        fflush(term);
     }
 
     buffer[buffer_actual_size++] = '\n';
     buffer[buffer_actual_size] = '\0';
-    fputs("\e[?25h\n", term);
-    fclose(term);
+    fd_putstr(fd, "\e[?25h\n");
+    fm_close(fd);
 
     buffer = realloc(buffer, buffer_actual_size + 1);
     if (size)
@@ -349,70 +269,9 @@ char *open_input_serial(int *size, int serial_port) {
     return buffer;
 }
 
-char *open_input(int *size) {
-    char *term = getenv("TERM");
-    if (!term)
-        return NULL;
-    if (strstr(term, "serial"))
-        return open_input_serial(size, SERIAL_PORT_A);
-    return open_input_keyboard(size, term);
-}
-
-int serial_debug(char *frm, ...) {
-    va_list args;
-    char *str;
-    int len;
-
-    va_start(args, frm);
-    str = malloc(1024);
-
-    len = vsprintf(str, frm, args);
-    c_serial_write(SERIAL_PORT_A, str, len);
-
-    free(str);
-    va_end(args);
-
-    return len;
-}
-
-int profan_open(char *path, int flags, ...) {
-    // mode is ignored, permissions are always 777
-
-    char *cwd = getenv("PWD");
-    char *fullpath = cwd ? assemble_path(cwd, path) : strdup(path);
-
-    sid_t sid = fu_path_to_sid(ROOT_SID, fullpath);
-    if (IS_NULL_SID(sid) && (flags & O_CREAT)) {
-        sid = fu_file_create(0, fullpath);
-    }
-
-    if (IS_NULL_SID(sid)) {
-        free(fullpath);
-        return -1;
-    }
-
-    if (flags & O_TRUNC && fu_is_file(sid)) {
-        fu_set_file_size(sid, 0);
-    }
-
-    int fd = fm_open(fullpath);
-
-    if (fd < 0) {
-        free(fullpath);
-        return -1;
-    }
-
-    if (flags & O_APPEND) {
-        fm_lseek(fd, 0, SEEK_END);
-    }
-
-    free(fullpath);
-    return fd;
-}
-
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (args.path == NULL) {
-        printf("file is required to run\n");
+        fd_printf(2, "file is required to run\n");
         return -1;
     }
 

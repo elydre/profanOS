@@ -31,8 +31,9 @@
 #define strcat ((char *(*)(char *, const char *)) get_func_addr(LIBMMQ_ID, 13))
 #define strncmp ((int (*)(const char *, const char *, size_t)) get_func_addr(LIBMMQ_ID, 15))
 #define fd_putchar ((void (*)(int, char)) get_func_addr(LIBMMQ_ID, 16))
-#define fd_putint ((void (*)(int, int)) get_func_addr(LIBMMQ_ID, 17))
-#define fd_printf ((void (*)(int, const char *, ...)) get_func_addr(LIBMMQ_ID, 18))
-#define atoi ((int (*)(const char *)) get_func_addr(LIBMMQ_ID, 19))
+#define fd_putstr ((void (*)(int, const char *)) get_func_addr(LIBMMQ_ID, 17))
+#define fd_putint ((void (*)(int, int)) get_func_addr(LIBMMQ_ID, 18))
+#define fd_printf ((void (*)(int, const char *, ...)) get_func_addr(LIBMMQ_ID, 19))
+#define atoi ((int (*)(const char *)) get_func_addr(LIBMMQ_ID, 20))
 
 #endif
