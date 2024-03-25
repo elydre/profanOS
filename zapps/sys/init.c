@@ -4,8 +4,6 @@
 #include <libmmq.h>
 #include <panda.h>
 
-#include <stdio.h>
-
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
@@ -22,9 +20,7 @@ lib_t libs_at_boot[] = {
     {1010, "/lib/mod/filesys.bin"},
     {1015, "/lib/mod/devio.bin"},
     {1016, "/lib/mod/fmopen.bin"},
-    {1009, "/lib/mod/stdio.bin"},
     {1002, "/lib/mod/profan.bin"},
-    {1011, "/lib/mod/math.bin"},
     {1005, "/lib/mod/panda.bin"},
 };
 
@@ -61,14 +57,14 @@ void rainbow_print(char *message) {
 
     int i;
     for (i = 0; message[i]; i++) {
-        printf("\e[9%cm%c", rainbow_colors[i % 6], message[i]);
+        fd_printf(1, "\e[9%cm%c", rainbow_colors[i % 6], message[i]);
     }
 }
 
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!\n");
 
-    printf("\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());
+    fd_printf(1, "\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());
 }
 
 char wait_key(void) {
@@ -113,7 +109,7 @@ int main(void) {
         sum += !print_load_status(i);
     }
 
-    printf("Loaded %d/%d libraries\n\n", sum, total);
+    fd_printf(1, "Loaded %d/%d libraries\n\n", sum, total);
 
     panda_set_start(c_get_cursor_offset());
 
@@ -138,7 +134,7 @@ int main(void) {
         set_env("PATH=/bin/cmd:/bin/fatpath");
         run_ifexist(SHELL_PATH, 0, NULL, envp);
 
-        printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
+        fd_putstr(1, "[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
             " h - unload all libraries and exit\n"
             " j - reboot profanOS\n"

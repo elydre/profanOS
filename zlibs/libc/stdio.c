@@ -1,11 +1,11 @@
 #include <filesys.h>
 #include <syscall.h>
 #include <profan.h>
+#include <stdlib.h>
+#include <string.h>
 #include <type.h>
 
 #include <stdarg.h>
-
-#define STDIO_C
 #include <stdio.h>
 
 #define FILE_BUFFER_SIZE 0x1000
@@ -28,12 +28,7 @@ int printf(const char *format, ...);
 
 FILE *STD_STREAM = NULL;
 
-int main(void) {
-    init_func();
-    return 0;
-}
-
-void init_func(void) {
+void __attribute__((constructor)) stdlio_init(void) {
     FILE *dup = calloc(3, sizeof(FILE));
 
     // init stdin
@@ -142,7 +137,6 @@ FILE *fopen(const char *filename, const char *mode) {
     // set the buffer
     file->buffer = malloc(FILE_BUFFER_SIZE);
     file->buffer_size = 0;
-    file->buffer_pid = -1;
     file->old_offset = 0;
 
     // if the file is open for appending, set the file pos to the end of the file
@@ -222,12 +216,8 @@ int fflush(FILE *stream) {
 
     stream->buffer[buffer_size] = 0;
 
-    int fd = stream->fd;
-    if (fd < 3)
-        fd = fm_resol012(fd, stream->buffer_pid);
-
     // write the file
-    int written = fm_write(fd, stream->buffer, buffer_size);
+    int written = fm_write(stream->fd, stream->buffer, buffer_size);
     if (written < 0) written = 0;
 
     // return the number of elements written
@@ -319,8 +309,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
-    int pid;
-
     // return if total size is 0
     count *= size;
     if (count == 0) return 0;
@@ -340,13 +328,6 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     // if buffer is used for reading
     if (stream->buffer_size < 0) {
         stream->buffer_size = 0;
-    }
-
-    if (stream->buffer_pid != -1 && stream->buffer_pid != (pid = c_process_get_pid())) {
-        if (stream->buffer_size > 0) {
-            fflush(stream);
-        }
-        stream->buffer_pid = pid;
     }
 
     // write in the buffer
