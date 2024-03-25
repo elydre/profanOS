@@ -1,80 +1,11 @@
 #include <syscall.h>
 #include <filesys.h>
 #include <stdarg.h>
+#include <libmmq.h>
 
 // minilibc
 
-#define malloc(size) ((void *) c_mem_alloc((size), 0, 1))
-#define exit(code) c_exit_pid(c_process_get_pid(), code, 0)
 #define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt, ##__VA_ARGS__); exit(1); } while (0)
-
-void free(void *mem) {
-    if (mem == NULL)
-        return;
-    c_mem_free_addr((int) mem);
-}
-
-void *memcpy(void *dest, const void *src, size_t n) {
-    register uint8_t *d = (uint8_t *) dest;
-    register const uint8_t *s = (const uint8_t *) src;
-
-    while (n--) {
-        *d++ = *s++;
-    }
-
-    return dest;
-}
-
-int memcmp(const void *s1, const void *s2, size_t n) {
-    register const uint8_t *r1 = (const uint8_t *) s1;
-    register const uint8_t *r2 = (const uint8_t *) s2;
-
-    int r = 0;
-
-    while (n-- && ((r = ((int)(*r1++)) - *r2++) == 0));
-    return r;
-}
-
-void *memset(void *s, int c, size_t n) {
-    register uint8_t *p = (uint8_t *) s;
-    register uint8_t v = (uint8_t) c;
-
-    while (n--) {
-        *p++ = v;
-    }
-
-    return s;
-}
-
-void *realloc(void *ptr, size_t size) {
-    void *new_ptr = malloc(size);
-    if (ptr != NULL) {
-        memcpy(new_ptr, ptr, size);
-        free(ptr);
-    }
-    return new_ptr;
-}
-
-int strcmp(const char *s1, const char *s2) {
-    while (*s1 && *s1 == *s2) {
-        s1++;
-        s2++;
-    }
-    return *(unsigned char *) s1 - *(unsigned char *) s2;
-}
-
-int strcpy(char *dest, const char *src) {
-    while ((*dest++ = *src++));
-    return 0;
-}
-
-size_t strlen(const char *s) {
-    size_t len = 0;
-    while (*s++) {
-        len++;
-    }
-    return len;
-}
 
 void fd_putchar(int fd, char c) {
     fm_write(fd, &c, 1);

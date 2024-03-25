@@ -188,7 +188,7 @@ def build_app_lib():
     if not file_exists(f"{OUT_DIR}/make/entry_bin.o") or file1_newer("{TOOLS_DIR}/entry_bin.c", f"{OUT_DIR}/make/entry_bin.o"):
         cprint(COLOR_INFO, "building binary entry...")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_bin.c -o {OUT_DIR}/make/entry_bin.o {ZAPP_FLAGS}")
-    
+
     if not file_exists(f"{OUT_DIR}/make/entry_elf.o") or file1_newer("{TOOLS_DIR}/entry_elf.c", f"{OUT_DIR}/make/entry_elf.o"):
         cprint(COLOR_INFO, "building ELF entry...")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_elf.c -o {OUT_DIR}/make/entry_elf.o {ZAPP_FLAGS}")
@@ -201,14 +201,26 @@ def build_app_lib():
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
 
-    def build_elf_file(name, fname):
+    def build_elf_file(name, fname, liblist):
         # build object file and link it using shared libs
-        global total
+        required_libs = []
+        with open(name, "r") as f:
+            first_line = f.readline()
+            if first_line.startswith("// @LINK SHARED:"):
+                required_libs = first_line.split(":")[1].replace("\n", "").replace(",", " ").split()
+
+        for lib in required_libs:
+            if lib not in liblist:
+                cprint(COLOR_EROR, f"library '{lib}' is not found, available: {liblist}")
+                exit(1)
+
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc")
+        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc {' '.join([f'-l{lib[3:]}' for lib in required_libs])}")
         print_and_exec(f"rm {fname}.o")
+
+        global total
         total -= 1
-    
+
     def build_obj_file(name, fname):
         global total
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -fPIC -c {name} -o {fname}.o {ZAPP_FLAGS}")
@@ -257,14 +269,13 @@ def build_app_lib():
     for name in lib_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
         threading.Thread(target = build_obj_file, args=(name, fname)).start()
-    
+
     while total: pass # on attends que tout soit fini
 
     # linking libs
     libs_name = list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list]))
     for name in libs_name:
         objs = find_app_lib(f"{OUT_DIR}/zlibs/{name}", ".o")
-        print(objs)
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
         print_and_exec(f"rm -Rf {OUT_DIR}/zlibs/{name}")
 
@@ -272,7 +283,7 @@ def build_app_lib():
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
-        threading.Thread(target = build_elf_file, args=(name, fname)).start()
+        threading.Thread(target = build_elf_file, args=(name, fname, libs_name)).start()
 
     for name in bin_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"

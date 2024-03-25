@@ -1,11 +1,8 @@
-#include <old/string.h>
-#include <syscall.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #define FMOPEN_LIB_C
 
+#include <syscall.h>
 #include <filesys.h>
+#include <libmmq.h>
 #include <profan.h>
 
 #define MAX_OPENED 100

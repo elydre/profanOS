@@ -1,12 +1,8 @@
-#include <old/string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
+#include <filesys.h>
 #include <syscall.h>
 #include <profan.h>
+#include <libmmq.h>
 #include <panda.h>
-
-#include <filesys.h>
 
 void init_devio(void);
 int keyboard_read(void *buffer, uint32_t size, char *term);
@@ -134,8 +130,6 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/stdin",  dev_stdin);
     fu_fctf_create(0, "/dev/stdout", dev_stdout);
     fu_fctf_create(0, "/dev/stderr", dev_stderr);
-
-    setenv("TERM", "/dev/kterm", 1);
 }
 
 int keyboard_read(void *buffer, uint32_t size, char *term) {

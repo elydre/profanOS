@@ -1,9 +1,6 @@
 #include <filesys.h>
 #include <syscall.h>
 #include <profan.h>
-
-#include <old/string.h>
-#include <stdlib.h>
 #include <type.h>
 
 #include <stdarg.h>

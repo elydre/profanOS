@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <filesys.h>
 #include <profan.h>
+#include <libmmq.h>
 #include <panda.h>
 
 #include <stdio.h>
@@ -17,8 +18,7 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1006, "/lib/mod/vgui.bin"},
-    {1008, "/lib/mod/string.bin"},
+    {1008, "/lib/mod/libmmq.bin"},
     {1010, "/lib/mod/filesys.bin"},
     {1015, "/lib/mod/devio.bin"},
     {1016, "/lib/mod/fmopen.bin"},
@@ -129,6 +129,7 @@ int main(void) {
         run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
+        set_env("TERM=/dev/kterm");
     }
 
     welcome_print();

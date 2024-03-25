@@ -1,8 +1,6 @@
-#include <old/string.h>
 #include <syscall.h>
 #include <filesys.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <libmmq.h>
 
 #define SCROLL_LINES 8
 #define malloc_as_kernel(size) ((void *) c_mem_alloc(size, 0, 6))

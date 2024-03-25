@@ -1,8 +1,5 @@
-#include <old/string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include <syscall.h>
+#include <libmmq.h>
 #include <type.h>
 
 #define FILESYS_LIB_C

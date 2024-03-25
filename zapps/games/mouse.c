@@ -1,3 +1,5 @@
+// @LINK SHARED: libvgui
+
 #include <syscall.h>
 #include <i_mouse.h>
 #include <stdlib.h>

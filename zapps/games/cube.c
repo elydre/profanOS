@@ -1,3 +1,5 @@
+// @LINK SHARED: libvgui
+
 #include <syscall.h>
 #include <i_vgui.h>
 #include <stdlib.h>
