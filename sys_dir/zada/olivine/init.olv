@@ -1,5 +1,6 @@
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
+pseudo dlg '. /bin/sys/deluge.bin'
 
 FUNC pwd
     echo !path
@@ -92,3 +93,5 @@ FUNC mv
         rm !0
     END
 END
+
+. user/test.txt

@@ -293,8 +293,8 @@ char **dup_envp(char **envp) {
     return nenvp;
 }
 
-char *get_interp(sid_t sid) {
-    char *tmp = malloc_ask(11);
+char **get_interp(sid_t sid, int *c) {
+    char *tmp = malloc(11);
     int size = 0;
     int to_read = 10;
 
@@ -302,24 +302,50 @@ char *get_interp(sid_t sid) {
     if (file_size < 10)
         to_read = file_size;
 
-    do {
+    while (1) {
         fu_file_read(sid, tmp + size, size + 2, to_read);
         for (int i = size; i < size + to_read; i++) {
             if (tmp[i] == '\n') {
                 tmp[i] = '\0';
-                fd_printf(1, "ret: '%s'\n", tmp);
-                return tmp;
+                to_read = 0;
             }
         }
+        if (to_read == 0)
+            break;
         size += to_read;
         if (size + 2 + to_read > file_size)
             to_read = file_size - size - 2;
         if (to_read <= 0) {
             tmp[size] = '\0';
-            return tmp;
+            break;
         }
-        tmp = realloc_ask(tmp, size + to_read + 1);
-    } while (1);
+        tmp = realloc(tmp, size + to_read + 1);
+    }
+
+    char **interp = NULL;
+    *c = 0;
+
+    for (int from, i = 0; tmp[i];) {
+        while (tmp[i] == ' ' || tmp[i] == '\t')
+            i++;
+        from = i;
+        while (tmp[i] && tmp[i] != ' ' && tmp[i] != '\t')
+            i++;
+        interp = realloc(interp, (*c + 2) * sizeof(char *));
+        char *cpy = malloc_ask(i - from + 1);
+        memcpy(cpy, tmp + from, i - from);
+        cpy[i - from] = '\0';
+        interp[*c] = cpy;
+        (*c)++;
+    }
+    free(tmp);
+
+    if (*c == 0) {
+        return NULL;
+    }
+
+    interp[*c] = NULL;
+    return interp;
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
@@ -355,21 +381,30 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
             strcpy(nargv[i], args.argv[i-2]);
         }
     } else if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/') {
-        args.argc += 3;
-        nargv = calloc_ask(args.argc + 1, sizeof(char *));
+        int c;
+        char **interp = get_interp(sid, &c);
+
+        nargv = calloc_ask(args.argc + c + 4, sizeof(char *));
 
         nargv[0] = malloc_ask(strlen(ELF_INTERP) + 1);
         strcpy(nargv[0], ELF_INTERP);
 
-        nargv[1] = get_interp(sid);
+        nargv[1] = malloc_ask(3);
+        strcpy(nargv[1], "-e");
 
-        nargv[2] = malloc_ask(strlen(args.path) + 1);
-        strcpy(nargv[2], args.path);
-
-        for (int i = 3; i < args.argc; i++) {
-            nargv[i] = malloc_ask(strlen(args.argv[i-3]) + 1);
-            strcpy(nargv[i], args.argv[i-3]);
+        for (int i = 0; i < c; i++) {
+            nargv[i+2] = interp[i];
         }
+        free(interp);
+
+        nargv[c+2] = malloc_ask(strlen(args.path) + 1);
+        strcpy(nargv[c+2], args.path);
+
+        for (int i = 0; i < args.argc; i++) {
+            nargv[i+c+3] = malloc_ask(strlen(args.argv[i]) + 1);
+            strcpy(nargv[i+c+3], args.argv[i]);
+        }
+        args.argc += c + 2;
     } else if (magic[0] == 0x55 && magic[1] == 0x89 && magic[2] == 0xE5) {
         nargv = calloc_ask(args.argc + 1, sizeof(char *));
     
@@ -383,7 +418,6 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
     free(magic);
-
 
     sid = fu_path_to_sid(ROOT_SID, exec_path);
     if (IS_NULL_SID(sid)) {

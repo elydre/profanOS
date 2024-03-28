@@ -299,7 +299,7 @@ int file_relocate(elfobj_t *dl) {
 void *open_elf(const char *filename, uint16_t required_type) {
     elfobj_t *obj = malloc(sizeof(elfobj_t));
     memset(obj, 0, sizeof(elfobj_t));
-    fd_printf(2, "loading: %s\n", filename);
+    // fd_printf(2, "loading: %s\n", filename);
 
     sid_t sid = fu_path_to_sid(ROOT_SID, (void *) filename);
     if (!fu_is_file(sid)) {

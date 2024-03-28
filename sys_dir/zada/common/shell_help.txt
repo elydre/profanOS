@@ -9,7 +9,7 @@ ls      - list the current dir      wif     - write in file
 all commands are in /bin/cmd and /bin/fatpath
 
 \e[0m OLIVINE LANGUAGE \e[37m
-cd      - change dir                go     - start file as binary
+cd      - change dir                .      - execute file
 eval    - calculate expression      set    - set variable
 
 Some examples:
