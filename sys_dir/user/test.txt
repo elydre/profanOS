@@ -1,4 +1,0 @@
-#!/
-coucou
-ouiiii
-ls
