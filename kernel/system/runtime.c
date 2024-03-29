@@ -74,7 +74,18 @@ int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
         return force_exit_pid(pid, 1, 0);
     }
 
-    comm_struct_t *comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
+    comm_struct_t *comm = process_get_comm(pid);
+
+    if (comm != NULL) {
+        // free the argv
+        for (int i = 0; comm->argv[i] != NULL; i++)
+            free(comm->argv[i]);
+        free(comm->argv);
+        free(comm->envp);
+    } else {
+        comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
+    }
+
     comm->argv = argv;
     comm->envp = envp;
     process_set_comm(pid, comm);

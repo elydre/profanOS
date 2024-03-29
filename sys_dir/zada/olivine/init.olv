@@ -93,5 +93,3 @@ FUNC mv
         rm !0
     END
 END
-
-. user/test.txt
