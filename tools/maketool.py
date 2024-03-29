@@ -3,17 +3,12 @@ import os
 import sys
 import threading
 
+# SETTINGS
+SHOW_CMD    = True
+COMPCT_LINE = True
+HBL_FILE    = True
+
 # SETUP
-
-KERNEL_SRC = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
-KERNEL_HEADERS = ["include/kernel"]
-
-ZAPPS_DIR = "zapps"
-ZLIBS_DIR = "zlibs"
-ZHEADERS = ["include/zlibs"]
-ZAPPS_BIN = "zapps/sys"
-ZLIBS_MOD = "zlibs/mod"
-
 TOOLS_DIR = "tools"
 OUT_DIR   = "out"
 
@@ -34,6 +29,15 @@ CPPC = "g++"
 LD   = "ld"
 SHRD = "gcc -shared"
 
+KERNEL_SRC = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
+KERNEL_HEADERS = ["include/kernel"]
+
+ZAPPS_DIR = "zapps"
+ZLIBS_DIR = "zlibs"
+ZHEADERS = ["include/zlibs"]
+ZAPPS_BIN = "zapps/sys"
+ZLIBS_MOD = "zlibs/mod"
+
 CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
@@ -45,11 +49,6 @@ QEMU_KVM = "qemu-system-i386 -enable-kvm"
 
 QEMU_SERIAL = "-serial stdio"
 QEMU_AUDIO  = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
-
-# SETTINGS
-
-COMPCT_CMDS = True
-HBL_FILE    = True
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
@@ -87,9 +86,10 @@ def print_and_exec(command):
     except Exception:
         shell_len = 180
 
-    if COMPCT_CMDS and len(command) > shell_len:
-        cprint(COLOR_EXEC, f"{command[:shell_len - 3]}...")
-    else: cprint(COLOR_EXEC, command)
+    if SHOW_CMD:
+        if COMPCT_LINE and len(command) > shell_len:
+            cprint(COLOR_EXEC, f"{command[:shell_len - 3]}...")
+        else: cprint(COLOR_EXEC, command)
 
     code = os.system(command) >> 8
 
@@ -97,6 +97,18 @@ def print_and_exec(command):
         cprint(COLOR_EROR, f"command '{command}' failed with code {code}")
         os._exit(code)
 
+def print_info_line(text):
+    if SHOW_CMD:
+        return
+
+    try:
+        shell_len = os.get_terminal_size().columns
+    except Exception:
+        shell_len = 180
+    
+    if COMPCT_LINE and len(text) > shell_len:
+        cprint(COLOR_EXEC, f"{text[:shell_len - 3]}...")
+    else: cprint(COLOR_EXEC, text)
 
 def gen_need_dict():
     need, out = {"c":[], "h": [], "asm":[]}, []
@@ -144,6 +156,8 @@ def elf_image():
     def f_temp(file, type):
         global total
 
+        print_info_line(file)
+
         if type == "c":
             print_and_exec(f"{CC} -c {file} -o {out_file_name(file, 'kernel')} {KERN_FLAGS}")
         elif type == "asm":
@@ -169,6 +183,7 @@ def elf_image():
 
     if need["c"] or need["asm"]:
         in_files = " ".join(out)
+        print_info_line("linking kernel.elf")
         print_and_exec(f"{LD} {KERN_LINK} {in_files} -o kernel.elf")
 
 
@@ -195,6 +210,7 @@ def build_app_lib():
 
     def build_bin_file(name, fname):
         global total
+        print_info_line(name)
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
         print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/entry_bin.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
@@ -203,6 +219,7 @@ def build_app_lib():
 
     def build_elf_file(name, fname, liblist):
         # build object file and link it using shared libs
+        print_info_line(name)
         required_libs = []
         with open(name, "r") as f:
             first_line = f.readline()
@@ -223,6 +240,7 @@ def build_app_lib():
 
     def build_obj_file(name, fname):
         global total
+        print_info_line(name)
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -fPIC -c {name} -o {fname}.o {ZAPP_FLAGS}")
         total -= 1
 
@@ -257,11 +275,13 @@ def build_app_lib():
     # check if zapps need to be rebuild
     total_elf = len(elf_build_list)
     total_bin = len(bin_build_list)
+    total_lib = len(lib_build_list)
 
     elf_build_list = [file for file in elf_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
     bin_build_list = [file for file in bin_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
+    lib_build_list = [file for file in lib_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file)]
 
-    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} bin and {len(lib_build_list)} lib to compile")
+    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} bin and {len(lib_build_list)}/{total_lib} lib files to compile")
 
     global total
     total = len(lib_build_list)
@@ -276,8 +296,8 @@ def build_app_lib():
     libs_name = list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list]))
     for name in libs_name:
         objs = find_app_lib(f"{OUT_DIR}/zlibs/{name}", ".o")
+        print_info_line(f"linking {name}")
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
-        print_and_exec(f"rm -Rf {OUT_DIR}/zlibs/{name}")
 
     total = len(elf_build_list) + len(bin_build_list)
 
@@ -372,18 +392,21 @@ def gen_disk(force=False, with_src=False):
     cprint(COLOR_INFO, "generating initrd.bin...")
     print_and_exec(f"rm -Rf {OUT_DIR}/disk")
 
-    for dir in HDD_MAP:
-        print_and_exec(f"mkdir -p {OUT_DIR}/disk/{dir}")
+    for dir_name in HDD_MAP:
+        print_and_exec(f"mkdir -p {OUT_DIR}/disk/{dir_name}")
 
-        if HDD_MAP[dir] is None: continue
+        if HDD_MAP[dir_name] is None: continue
 
-        if isinstance(HDD_MAP[dir], str):
-            print_and_exec(f"cp -r {HDD_MAP[dir]}/* {OUT_DIR}/disk/{dir} || true")
+        if isinstance(HDD_MAP[dir_name], str):
+            if dir_name == "lib":
+                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* {HDD_MAP[dir_name]}/mod {OUT_DIR}/disk/{dir_name}")
+                continue
+            print_and_exec(f"cp -r {HDD_MAP[dir_name]}/* {OUT_DIR}/disk/{dir_name} 2> /dev/null || true")
             continue
 
-        for dir_name in HDD_MAP[dir]:
-            if not os.path.exists(dir_name): continue
-            print_and_exec(f"cp -r {dir_name}/* {OUT_DIR}/disk/{dir}")
+        for e in HDD_MAP[dir_name]:
+            if not os.path.exists(e): continue
+            print_and_exec(f"cp -r {e}/* {OUT_DIR}/disk/{dir_name}")
 
     if with_src:
         add_src_to_disk()
@@ -394,7 +417,7 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"cp {TOOLS_DIR}/tccextra.c {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp {TOOLS_DIR}/link_elf.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
-    print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ || true")
+    print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ 2> /dev/null || true")
 
     if not file_exists(f"{OUT_DIR}/make/makefsys"):
         cprint(COLOR_INFO, "building makefsys...")
