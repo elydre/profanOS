@@ -99,6 +99,7 @@ typedef struct {
 elfobj_t **g_loaded_libs;
 int g_lib_count;
 int g_list_deps;
+int g_cleanup;
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
@@ -462,6 +463,10 @@ void fini_lib(elfobj_t *lib) {
     }
 }
 
+void profan_cleanup(void) {
+    g_cleanup = 1;
+}
+
 int dlfcn_error = 0;
 
 void *dlopen(const char *filename, int flag) {
@@ -496,6 +501,9 @@ void *dlsym(void *handle, const char *symbol) {
             return dlerror;
         }
     }
+    if (strcmp(symbol, "profan_cleanup") == 0) {
+        return profan_cleanup;
+    }
 
     for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
         if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0) {
@@ -508,7 +516,8 @@ void *dlsym(void *handle, const char *symbol) {
 }
 
 int dlclose(void *handle) {
-    elfobj_t *dl = (elfobj_t *) handle;
+    elfobj_t *dl = handle;
+    fini_lib(dl);
     free(dl->file);
     free(dl->name);
     free(dl->mem);
@@ -639,6 +648,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
 int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
     g_lib_count = 0;
+    g_cleanup = 0;
 
     deluge_args_t args = deluge_parse(argc, argv);
     uint32_t start;
@@ -672,11 +682,12 @@ int main(int argc, char **argv, char **envp) {
 
     int ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
-    for (int i = 0; i < g_lib_count; i++) {
-        fini_lib(g_loaded_libs[i]);
+    for (int i = 0; i < g_lib_count; i++)
         dlclose(g_loaded_libs[i]);
-    }
     free(g_loaded_libs);
+
+    if (g_cleanup)
+        c_mem_free_all(c_process_get_pid());
 
     return ret;
 }

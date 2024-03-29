@@ -128,3 +128,8 @@ char *open_input(int *size) {
         return open_input_serial(size, SERIAL_PORT_A);
     return open_input_keyboard(size, term);
 }
+
+// defined in deluge
+void profan_cleanup(void) {
+    return;
+}

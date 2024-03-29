@@ -425,12 +425,14 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
 
+    char **nenv = dup_envp(args.envp);
+
     if (args.sleep_mode == 3) {
         c_mem_free_all(c_process_get_pid());
-        return c_binary_exec(sid, args.argc, nargv, dup_envp(args.envp));
+        return c_binary_exec(sid, args.argc, nargv, nenv);
     }
 
-    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, dup_envp(args.envp));
+    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenv);
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

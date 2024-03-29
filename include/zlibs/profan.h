@@ -34,6 +34,7 @@ char *assemble_path(char *old, char *new);
 int profan_wait_pid(uint32_t pid);
 int profan_open(char *path, int flags, ...);
 char *open_input(int *size);
+void profan_cleanup(void);
 
 #ifndef PROFAN_C
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
