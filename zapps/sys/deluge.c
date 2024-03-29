@@ -84,6 +84,7 @@ typedef struct {
     uint8_t *mem;
 
     Elf32_Sym *dymsym;
+    Elf32_Dyn *dynamic;
     char *dynstr;
 
     int dynsym_size;
@@ -94,6 +95,7 @@ int g_lib_count;
 
 void *dlsym(void *handle, const char *symbol);
 void *dlopen(const char *filename, int flag);
+int   dlclose(void *handle);
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
@@ -128,29 +130,21 @@ char *get_full_path(char *lib) {
 char **get_required_libs(elfobj_t *obj) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
-    Elf32_Dyn *dyn = NULL;
 
     char *tmp, **libs = NULL;
     int lib_count = 0;
 
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
-            dyn = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
-            break;
-        }
-    }
-
-    if (dyn == NULL) {
+    if (obj->dynamic == NULL) {
         raise_error("no dynamic section found in '%s'\n", obj->name);
         return NULL;
     }
 
-    for (int i = 0; dyn[i].d_tag != 0; i++) {
-        if (dyn[i].d_tag == 1) { // DT_NEEDED
+    for (int i = 0; obj->dynamic[i].d_tag != 0; i++) {
+        if (obj->dynamic[i].d_tag == 1) { // DT_NEEDED
             libs = realloc(libs, (lib_count + 2) * sizeof(char *));
-            tmp = get_full_path((char *) obj->dynstr + dyn[i].d_un.d_val);
+            tmp = get_full_path((char *) obj->dynstr + obj->dynamic[i].d_un.d_val);
             if (tmp == NULL) {
-                raise_error("library '%s' not found but required by '%s'\n", (char *) obj->dynstr + dyn[i].d_un.d_val, obj->name);
+                raise_error("library '%s' not found but required by '%s'\n", (char *) obj->dynstr + obj->dynamic[i].d_un.d_val, obj->name);
                 return NULL;
             }
             libs[lib_count++] = tmp;
@@ -332,12 +326,9 @@ void *open_elf(const char *filename, uint16_t required_type) {
             obj->dynsym_size = shdr[i].sh_size;
         }
 
-        /*
-        if (shdr[i].sh_type == 2) { // SHT_SYMTAB
-            obj->symtab = obj->file + shdr[i].sh_offset;
-            obj->strtab = obj->file + shdr[shdr[i].sh_link].sh_offset;
-            obj->symtab_size = shdr[i].sh_size;
-        }*/
+        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
+            obj->dynamic = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
+        }
     }
 
     if (obj->dymsym == NULL) {
@@ -380,6 +371,65 @@ void *open_elf(const char *filename, uint16_t required_type) {
     return obj;
 }
 
+void init_lib(elfobj_t *lib) {
+    // call constructors
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
+
+    if (lib->dynamic == NULL)
+        return;
+
+    void (**init_array)(void) = NULL;
+    int size = 0;
+
+    for (int j = 0; lib->dynamic[j].d_tag != 0; j++) {
+        if (lib->dynamic[j].d_tag == 25) { // DT_INIT
+            init_array = (void (**)(void)) (lib->mem + lib->dynamic[j].d_un.d_ptr);
+        }
+        if (lib->dynamic[j].d_tag == 27) { // DT_INIT_ARRAYSZ
+            size = lib->dynamic[j].d_un.d_val / sizeof(void *);
+        }
+    }
+
+    if (init_array == NULL)
+        return;
+
+    for (int i = 0; i < size; i++) {
+        init_array[i]();
+    }
+}
+
+void fini_lib(elfobj_t *lib) {
+    // call destructors
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
+
+    if (lib->dynamic == NULL)
+        return;
+
+    void (**fini_array)(void) = NULL;
+    int size = 0;
+
+    for (int j = 0; lib->dynamic[j].d_tag != 0; j++) {
+        if (lib->dynamic[j].d_tag == 26) { // DT_FINI
+            fini_array = (void (**)(void)) (lib->mem + lib->dynamic[j].d_un.d_ptr);
+        }
+        if (lib->dynamic[j].d_tag == 28) { // DT_FINI_ARRAYSZ
+            size = lib->dynamic[j].d_un.d_val / sizeof(void *);
+        }
+    }
+
+    if (fini_array == NULL)
+        return;
+
+    for (int i = 0; i < size; i++) {
+        fini_array[i]();
+    }
+}
+
+
 void *dlopen(const char *filename, int flag) {
     elfobj_t *dl = open_elf(filename, ET_DYN);
     if (dl == NULL) {
@@ -406,78 +456,6 @@ void *dlsym(void *handle, const char *symbol) {
     }
 
     return NULL;
-}
-
-int init_lib(elfobj_t *lib) {
-    // call constructors
-
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
-
-    Elf32_Dyn *dyn;
-
-    void (**init_array)(void) = NULL;
-    int size = 0;
-
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
-            dyn = (Elf32_Dyn *)(lib->file + shdr[i].sh_offset);
-            for (int j = 0; dyn[j].d_tag != 0; j++) {
-                if (dyn[j].d_tag == 25) { // DT_INIT
-                    init_array = (void (**)(void)) (lib->mem + dyn[j].d_un.d_ptr);
-                }
-                if (dyn[j].d_tag == 27) { // DT_INIT_ARRAYSZ
-                    size = dyn[j].d_un.d_val / sizeof(void *);
-                }
-            }
-        }
-    }
-
-    if (init_array == NULL) {
-        return 0;
-    }
-
-    for (int i = 0; i < size; i++) {
-        init_array[i]();
-    }
-
-    return 0;
-}
-
-int fini_lib(elfobj_t *lib) {
-    // call destructors
-
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
-
-    Elf32_Dyn *dyn;
-
-    void (**fini_array)(void) = NULL;
-    int size = 0;
-
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 6) { // SHT_DYNAMIC
-            dyn = (Elf32_Dyn *)(lib->file + shdr[i].sh_offset);
-            for (int j = 0; dyn[j].d_tag != 0; j++) {
-                if (dyn[j].d_tag == 26) { // DT_FINI
-                    fini_array = (void (**)(void)) (lib->mem + dyn[j].d_un.d_ptr);
-                }
-                if (dyn[j].d_tag == 28) { // DT_FINI_ARRAYSZ
-                    size = dyn[j].d_un.d_val / sizeof(void *);
-                }
-            }
-        }
-    }
-
-    if (fini_array == NULL) {
-        return 0;
-    }
-
-    for (int i = 0; i < size; i++) {
-        fini_array[i]();
-    }
-
-    return 0;
 }
 
 int dlclose(void *handle) {
