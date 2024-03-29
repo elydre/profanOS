@@ -93,4 +93,16 @@ double trunc(double x);
 float truncf(float x);
 long double truncl(long double x);
 
+float fabsf(float x);
+float asinf(float x);
+float atan2f(float y, float x);
+float fmodf(float x, float y);
+float ceilf(float x);
+float log2f(float x);
+float log10f(float x);
+float logf(float x);
+float ldexpf(float x, int exp);
+float expf(float x);
+
+
 #endif

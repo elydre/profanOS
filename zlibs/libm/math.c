@@ -538,6 +538,51 @@ double exp(double a) {
     return 0;
 }
 
+float fabsf(float x) {
+    fd_putstr(1, "fabsf not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float asinf(float x) {
+    fd_putstr(1, "asinf not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float atan2f(float y, float x) {
+    fd_putstr(1, "atan2f not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float fmodf(float x, float y) {
+    fd_putstr(1, "fmodf not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float ceilf(float x) {
+    fd_putstr(1, "ceilf not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float log2f(float x) {
+    fd_putstr(1, "log2f not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float log10f(float x) {
+    fd_putstr(1, "log10f not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float logf(float x) {
+    fd_putstr(1, "logf not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+float ldexpf(float x, int exp) {
+    fd_putstr(1, "ldexpf not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
 float expf(float x) {
     fd_putstr(1, "expf not implemented yet, WHY DO YOU USE IT ?\n");
     return 0;
