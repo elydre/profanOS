@@ -425,10 +425,6 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
 
-    for (int i = 0; i < args.argc; i++) {
-        fd_printf(1, "arg %d: %s\n", i, nargv[i]);
-    }
-
     if (args.sleep_mode == 3) {
         c_mem_free_all(c_process_get_pid());
         return c_binary_exec(sid, args.argc, nargv, dup_envp(args.envp));
