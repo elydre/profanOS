@@ -193,10 +193,8 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS) {
-            if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
-                required_size = shdr[i].sh_addr + shdr[i].sh_size;
-        }
+        if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
+            required_size = shdr[i].sh_addr + shdr[i].sh_size;
     }
 
     if (type == ET_EXEC)
@@ -477,6 +475,7 @@ void *dlopen(const char *filename, int flag) {
     }
     load_sections(dl, ET_DYN);
     file_relocate(dl);
+    init_lib(dl);
     return dl;
 }
 
@@ -661,10 +660,6 @@ int main(int argc, char **argv, char **envp) {
     if (test == NULL) {
         raise_error("failed to open '%s'\n", args.name);
         return 1;
-    }
-
-    for (int i = 0; i < g_lib_count; i++) {
-        init_lib(g_loaded_libs[i]);
     }
 
     load_sections(test, ET_EXEC);
