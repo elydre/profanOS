@@ -54,7 +54,7 @@ ADDONS = {
             {
                 "name": "libtcc.a",
                 "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
-                "path": [profan_path, "out", "sys", "libtcc.a"]
+                "path": [profan_path, "out", "zlibs", "libtcc.a"]
             },
         ]
     },
