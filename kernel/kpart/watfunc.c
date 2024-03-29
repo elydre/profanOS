@@ -23,10 +23,6 @@ void unknown_func(void) {
     sys_warning("Trying to call an unknown syscall");
 }
 
-void scuba_add_virtual(uint32_t addr, uint32_t size) {
-    scuba_create_virtual(process_get_directory(process_get_pid()), addr, size);
-}
-
 void *SYSCALL_ARRAY[] = {
     // butterfly.h
     fs_get_main,
@@ -94,7 +90,8 @@ void *SYSCALL_ARRAY[] = {
     dily_unload,
     dily_load,
 
-    scuba_add_virtual,
+    // scubasuit.h
+    scuba_generate
 };
 
 uint32_t wf_get_func_addr(uint32_t func_id) {
