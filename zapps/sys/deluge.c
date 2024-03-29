@@ -1,6 +1,7 @@
 #include <syscall.h>
 #include <filesys.h>
 #include <libmmq.h>
+#include <dlfcn.h>
 
 #define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt, ##__VA_ARGS__); exit(1); } while (0)
 
@@ -93,10 +94,6 @@ typedef struct {
 elfobj_t **g_loaded_libs;
 int g_lib_count;
 
-void *dlsym(void *handle, const char *symbol);
-void *dlopen(const char *filename, int flag);
-int   dlclose(void *handle);
-
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     return !(
@@ -106,7 +103,7 @@ int is_valid_elf(void *data, uint16_t required_type) {
     );
 }
 
-char *assemble_path(char *dir, char *file) {
+char *assemble_path(const char *dir, const char *file) {
     int len1 = strlen(dir);
     char *path = malloc(len1 + strlen(file) + 2);
     strcpy(path, dir);
@@ -115,8 +112,13 @@ char *assemble_path(char *dir, char *file) {
     return path;
 }
 
-char *get_full_path(char *lib) {
+char *get_full_path(const char *lib) {
     char *full_path;
+    if (lib[0] == '/') {
+        full_path = malloc(strlen(lib) + 1);
+        strcpy(full_path, lib);
+        return full_path;
+    }
     full_path = assemble_path("/user", lib);
     if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
         return full_path;
@@ -290,14 +292,18 @@ int file_relocate(elfobj_t *dl) {
     return 0;
 }
 
-void *open_elf(const char *filename, uint16_t required_type) {
+void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     elfobj_t *obj = malloc(sizeof(elfobj_t));
     memset(obj, 0, sizeof(elfobj_t));
     // fd_printf(2, "loading: %s\n", filename);
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, (void *) filename);
+    obj->name = get_full_path(filename);
+
+    sid_t sid = fu_path_to_sid(ROOT_SID, obj->name);
     if (!fu_is_file(sid)) {
-        raise_error("'%s' not found\n", filename);
+        if (isfatal)
+            raise_error("'%s' not found\n", filename);
+        free(obj->name);
         free(obj);
         return NULL;
     }
@@ -307,14 +313,13 @@ void *open_elf(const char *filename, uint16_t required_type) {
     fu_file_read(sid, obj->file, 0, obj->size);
 
     if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
-        raise_error("'%s' is not a valid ELF file\n", filename);
+        if (isfatal)
+            raise_error("'%s' is not a valid ELF file\n", filename);
         free(obj->file);
+        free(obj->name);
         free(obj);
         return NULL;
     }
-
-    obj->name = malloc(strlen(filename) + 1);
-    strcpy(obj->name, filename);
 
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
@@ -333,7 +338,8 @@ void *open_elf(const char *filename, uint16_t required_type) {
 
     if (obj->dymsym == NULL) {
         if (required_type == ET_DYN) {
-            raise_error("no dynamic symbol table found in '%s'\n", filename);
+            if (isfatal)
+                raise_error("no dynamic symbol table found in '%s'\n", filename);
             free(obj->file);
             free(obj->name);
             free(obj);
@@ -356,7 +362,7 @@ void *open_elf(const char *filename, uint16_t required_type) {
             }
         }
         if (!found) {
-            elfobj_t *lib = dlopen(new_libs[i], ET_DYN);
+            elfobj_t *lib = dlopen(new_libs[i], RTLD_FATAL);
             if (lib == NULL) {
                 raise_error("dlopen failed for '%s'\n", new_libs[i]);
             }
@@ -429,10 +435,12 @@ void fini_lib(elfobj_t *lib) {
     }
 }
 
+int dlfcn_error = 0;
 
 void *dlopen(const char *filename, int flag) {
-    elfobj_t *dl = open_elf(filename, ET_DYN);
+    elfobj_t *dl = open_elf(filename, ET_DYN, flag == RTLD_FATAL);
     if (dl == NULL) {
+        dlfcn_error = 1;
         return NULL;
     }
     load_sections(dl, ET_DYN);
@@ -446,7 +454,20 @@ void *dlsym(void *handle, const char *symbol) {
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
     if (ehdr->e_type != ET_DYN || !dl->dymsym) {
+        dlfcn_error = 2;
         return NULL;
+    }
+
+    if (*symbol && symbol[0] == 'd' && symbol[1] == 'l') {
+        if (strcmp(symbol, "dlclose") == 0) {
+            return dlclose;
+        } else if (strcmp(symbol, "dlopen") == 0) {
+            return dlopen;
+        } else if (strcmp(symbol, "dlsym") == 0) {
+            return dlsym;
+        } else if (strcmp(symbol, "dlerror") == 0) {
+            return dlerror;
+        }
     }
 
     for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
@@ -455,6 +476,7 @@ void *dlsym(void *handle, const char *symbol) {
         }
     }
 
+    dlfcn_error = 2;
     return NULL;
 }
 
@@ -465,6 +487,18 @@ int dlclose(void *handle) {
     free(dl->mem);
     free(dl);
     return 0;
+}
+
+char *dlerror(void) {
+    char *error;
+    if (!dlfcn_error)
+        return NULL;
+    if (dlfcn_error == 1)
+        error = "deluge dlfcn: failed to open file";
+    else
+        error = "deluge dlfcn: symbol not found";
+    dlfcn_error = 0;
+    return error;
 }
 
 int dynamic_linker(elfobj_t *exec) {
@@ -582,7 +616,7 @@ int main(int argc, char **argv, char **envp) {
         start = c_timer_get_ms();
     }
 
-    elfobj_t *test = open_elf(args.name, ET_EXEC);
+    elfobj_t *test = open_elf(args.name, ET_EXEC, 1);
     if (test == NULL) {
         raise_error("failed to open '%s'\n", args.name);
         return 1;

@@ -4,7 +4,7 @@ import sys
 import threading
 
 # SETTINGS
-SHOW_CMD    = True
+SHOW_CMD    = False
 COMPCT_LINE = True
 HBL_FILE    = True
 
@@ -229,7 +229,7 @@ def build_app_lib():
         for lib in required_libs:
             if lib not in liblist:
                 cprint(COLOR_EROR, f"library '{lib}' is not found, available: {liblist}")
-                exit(1)
+                os._exit(1)
 
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
         print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc {' '.join([f'-l{lib[3:]}' for lib in required_libs])}")
@@ -277,9 +277,11 @@ def build_app_lib():
     total_bin = len(bin_build_list)
     total_lib = len(lib_build_list)
 
+    libs_name = list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list]))
+
     elf_build_list = [file for file in elf_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
     bin_build_list = [file for file in bin_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    lib_build_list = [file for file in lib_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file)]
+    lib_build_list = [file for file in lib_build_list if not (file1_newer(f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file) and file1_newer(f"{OUT_DIR}/zlibs/{file.split('/')[1]}.so", file))]
 
     cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} bin and {len(lib_build_list)}/{total_lib} lib files to compile")
 
@@ -293,8 +295,7 @@ def build_app_lib():
     while total: pass # on attends que tout soit fini
 
     # linking libs
-    libs_name = list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list]))
-    for name in libs_name:
+    for name in list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list])):
         objs = find_app_lib(f"{OUT_DIR}/zlibs/{name}", ".o")
         print_info_line(f"linking {name}")
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
