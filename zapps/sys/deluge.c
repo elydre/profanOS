@@ -52,18 +52,23 @@ typedef struct {
 } Elf32_Rel;
 
 typedef struct {
-    uint32_t r_offset;      // Address
-    uint32_t r_info;        // Relocation type and symbol index
-    int32_t r_addend;       // Addend
-} Elf32_Rela;
-
-typedef struct {
     uint32_t d_tag;         // Entry type
     union {
         uint32_t d_val;      // Integer value
         uint32_t d_ptr;      // Address value
     } d_un;
 } Elf32_Dyn;
+
+typedef struct {
+    uint32_t p_type;        // Segment type
+    uint32_t p_offset;      // Segment offset
+    uint32_t p_vaddr;       // Virtual address of segment
+    uint32_t p_paddr;       // Physical address of segment
+    uint32_t p_filesz;      // Size of segment in file
+    uint32_t p_memsz;       // Size of segment in memory
+    uint32_t p_flags;       // Segment flags
+    uint32_t p_align;       // Segment alignment
+} Elf32_Phdr;
 
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
@@ -161,33 +166,52 @@ char **get_required_libs(elfobj_t *obj) {
     return libs;
 }
 
+void *get_base_addr(uint8_t *data, uint16_t type) {
+    if (type != ET_EXEC)
+        return 0;
+
+    // find the lowest address of a PT_LOAD segment
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
+    Elf32_Phdr *phdr = (Elf32_Phdr *)(data + ehdr->e_phoff);
+
+    uint32_t base_addr = 0xFFFFFFFF;
+
+    for (int i = 0; i < ehdr->e_phnum; i++) {
+        if (phdr[i].p_type == 1 && phdr[i].p_vaddr < base_addr)
+            base_addr = phdr[i].p_vaddr;
+    }
+
+    return (void *) base_addr;
+}
+
 int load_sections(elfobj_t *obj, uint16_t type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
+    void *base_addr = get_base_addr(obj->file, type);
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_flags & 2) {
+        if (shdr[i].sh_type == SHT_PROGBITS) {
             if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
                 required_size = shdr[i].sh_addr + shdr[i].sh_size;
         }
     }
 
     if (type == ET_EXEC)
-        required_size -= 0xC0000000;
+        required_size -= (uint32_t) base_addr;
     required_size = (required_size + 0xFFF) & ~0xFFF;
 
     if (type == ET_EXEC) {
-        obj->mem = (void *) 0xC0000000;
-        c_scuba_add(0xC0000000, required_size / 0x1000);
+        obj->mem = (void *) base_addr;
+        c_scuba_generate(base_addr, required_size / 0x1000);
     } else {
         obj->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
     }
     memset(obj->mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_flags & 2) {
+        if (shdr[i].sh_type == SHT_PROGBITS) {
             if (type == ET_EXEC)
                 memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
