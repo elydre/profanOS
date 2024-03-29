@@ -93,6 +93,7 @@ typedef struct {
 
 elfobj_t **g_loaded_libs;
 int g_lib_count;
+int g_list_deps;
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
@@ -295,7 +296,9 @@ int file_relocate(elfobj_t *dl) {
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     elfobj_t *obj = malloc(sizeof(elfobj_t));
     memset(obj, 0, sizeof(elfobj_t));
-    // fd_printf(2, "loading: %s\n", filename);
+    
+    if (g_list_deps)
+        fd_printf(2, "[deluge] Loading '%s'\n", filename);
 
     obj->name = get_full_path(filename);
 
@@ -566,12 +569,14 @@ void show_help(int full) {
     fd_printf(1, "  -h  Show this help message\n");
     fd_printf(1, "  -b  Bench link time\n");
     fd_printf(1, "  -e  use filename as argument\n");
+    fd_printf(1, "  -l  List dependencies\n");
 }
 
 deluge_args_t deluge_parse(int argc, char **argv) {
     deluge_args_t args;
     args.name = NULL;
     args.bench = 0;
+    g_list_deps = 0;
 
     int move_arg = 1;
 
@@ -584,6 +589,8 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 args.bench = 1;
             } else if (argv[i][1] == 'e') {
                 move_arg = 0;
+            } else if (argv[i][1] == 'l') {
+                g_list_deps = 1;
             } else {
                 fd_printf(2, "Unknown option: %s\n", argv[i]);
                 show_help(0);
