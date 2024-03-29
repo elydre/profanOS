@@ -103,6 +103,6 @@ float log10f(float x);
 float logf(float x);
 float ldexpf(float x, int exp);
 float expf(float x);
-
+double ldexp(double x, int exp);
 
 #endif
