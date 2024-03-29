@@ -331,6 +331,8 @@ char **get_interp(sid_t sid, int *c) {
         from = i;
         while (tmp[i] && tmp[i] != ' ' && tmp[i] != '\t')
             i++;
+        if (i == from)
+            break;
         interp = realloc(interp, (*c + 2) * sizeof(char *));
         char *cpy = malloc_ask(i - from + 1);
         memcpy(cpy, tmp + from, i - from);
