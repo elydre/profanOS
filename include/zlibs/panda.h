@@ -1,5 +1,5 @@
 #ifndef PANDA_ID
-#define PANDA_ID 1005
+#define PANDA_ID 1006
 
 #include <type.h>
 

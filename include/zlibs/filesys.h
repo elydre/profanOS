@@ -1,7 +1,7 @@
 #ifndef FILESYS_LIB_ID
-#define FILESYS_LIB_ID 1010
-#define DEVIO_LIB_ID   1015
-#define FMOPEN_LIB_ID  1016
+#define FILESYS_LIB_ID 1002
+#define DEVIO_LIB_ID   1003
+#define FMOPEN_LIB_ID  1004
 
 #include <type.h>
 

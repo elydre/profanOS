@@ -1,5 +1,5 @@
 #ifndef LIBMMQ_ID
-#define LIBMMQ_ID 1008
+#define LIBMMQ_ID 1001
 
 #include <type.h>
 

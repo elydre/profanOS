@@ -16,12 +16,12 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1008, "/lib/mod/libmmq.bin"},
-    {1010, "/lib/mod/filesys.bin"},
-    {1015, "/lib/mod/devio.bin"},
-    {1016, "/lib/mod/fmopen.bin"},
-    {1002, "/lib/mod/profan.bin"},
-    {1005, "/lib/mod/panda.bin"},
+    {1001, "/lib/mod/libmmq.bin"},
+    {1002, "/lib/mod/filesys.bin"},
+    {1003, "/lib/mod/devio.bin"},
+    {1004, "/lib/mod/fmopen.bin"},
+    {1005, "/lib/mod/profan.bin"},
+    {1006, "/lib/mod/panda.bin"},
 };
 
 int local_strlen(char *str) {

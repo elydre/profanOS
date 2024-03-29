@@ -1,5 +1,5 @@
 #ifndef PROFAN_LIB_ID
-#define PROFAN_LIB_ID 1002
+#define PROFAN_LIB_ID 1005
 
 #include <type.h>
 
