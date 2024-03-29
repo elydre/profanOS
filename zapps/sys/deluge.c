@@ -480,7 +480,13 @@ void *dlopen(const char *filename, int flag) {
 }
 
 void *dlsym(void *handle, const char *symbol) {
-    elfobj_t *dl = (elfobj_t *)handle;
+    if (handle == NULL) {
+        dlfcn_error = 2;
+        return NULL;
+    }
+
+    elfobj_t *dl = handle;
+
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
@@ -515,6 +521,9 @@ void *dlsym(void *handle, const char *symbol) {
 }
 
 int dlclose(void *handle) {
+    if (handle == NULL)
+        return 0;
+
     elfobj_t *dl = handle;
     fini_lib(dl);
     free(dl->file);
