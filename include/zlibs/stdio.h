@@ -1,6 +1,7 @@
-#ifndef STDIO_ID
-#define STDIO_ID 1009
+#ifndef STDIO_H
+#define STDIO_H
 
+#include <stdarg.h>
 #include <type.h>
 
 #define stdin  (FILE *) 3
@@ -32,72 +33,67 @@
 #define SEEK_SET 0
 #endif
 
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
-
-// we dont define functions if we are in the .c file
-#ifndef STDIO_C
-#define clearerr ((void (*)(FILE *)) get_func_addr(STDIO_ID, 3))
-#define fopen ((FILE * (*)(const char *, const char *)) get_func_addr(STDIO_ID, 4))
-#define fopen_s ((errno_t (*)(FILE * *, const char *, const char *)) get_func_addr(STDIO_ID, 5))
-#define freopen ((FILE * (*)(const char *, const char *, FILE *)) get_func_addr(STDIO_ID, 6))
-#define freopen_s ((errno_t (*)(FILE * *, const char *, const char *, FILE *)) get_func_addr(STDIO_ID, 7))
-#define fclose ((int (*)(FILE *)) get_func_addr(STDIO_ID, 8))
-#define fflush ((int (*)(FILE *)) get_func_addr(STDIO_ID, 9))
-#define setbuf ((void (*)(FILE *, char *)) get_func_addr(STDIO_ID, 10))
-#define setvbuf ((int (*)(FILE *, char *, int, size_t)) get_func_addr(STDIO_ID, 11))
-#define fwide ((int (*)(FILE *, int)) get_func_addr(STDIO_ID, 12))
-#define fread ((size_t (*)(void *, size_t, size_t, FILE *)) get_func_addr(STDIO_ID, 13))
-#define fwrite ((size_t (*)(const void *, size_t, size_t, FILE *)) get_func_addr(STDIO_ID, 14))
-#define fseek ((int (*)(FILE *, long, int)) get_func_addr(STDIO_ID, 15))
-#define fgetc ((int (*)(FILE *)) get_func_addr(STDIO_ID, 16))
-#define getc ((int (*)(FILE *)) get_func_addr(STDIO_ID, 17))
-#define fgets ((char * (*)(char *, int, FILE *)) get_func_addr(STDIO_ID, 18))
-#define fputc ((int (*)(int, FILE *)) get_func_addr(STDIO_ID, 19))
-#define putc ((int (*)(int, FILE *)) get_func_addr(STDIO_ID, 20))
-#define fputs ((int (*)(const char *, FILE *)) get_func_addr(STDIO_ID, 21))
-#define getchar ((int (*)(void)) get_func_addr(STDIO_ID, 22))
-#define gets_s ((errno_t (*)(char *, rsize_t)) get_func_addr(STDIO_ID, 23))
-#define putchar ((int (*)(int)) get_func_addr(STDIO_ID, 24))
-#define puts ((int (*)(const char *)) get_func_addr(STDIO_ID, 25))
-#define ungetc ((int (*)(int, FILE *)) get_func_addr(STDIO_ID, 26))
-#define scanf ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 27))
-#define fscanf ((int (*)(FILE *, const char *, ...)) get_func_addr(STDIO_ID, 28))
-#define sscanf ((int (*)(const char *, const char *, ...)) get_func_addr(STDIO_ID, 29))
-#define scanf_s ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 30))
-#define fscanf_s ((int (*)(FILE *, const char *, ...)) get_func_addr(STDIO_ID, 31))
-#define sscanf_s ((int (*)(const char *, const char *, ...)) get_func_addr(STDIO_ID, 32))
-#define vscanf ((int (*)(const char *, va_list)) get_func_addr(STDIO_ID, 33))
-#define vfscanf ((int (*)(FILE *, const char *, va_list)) get_func_addr(STDIO_ID, 34))
-#define vsscanf ((int (*)(const char *, const char *, va_list)) get_func_addr(STDIO_ID, 35))
-#define vscanf_s ((int (*)(const char *, va_list)) get_func_addr(STDIO_ID, 36))
-#define vfscanf_s ((int (*)(FILE *, const char *, va_list)) get_func_addr(STDIO_ID, 37))
-#define vsscanf_s ((int (*)(const char *, const char *, va_list)) get_func_addr(STDIO_ID, 38))
-#define printf ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 39))
-#define fprintf ((int (*)(FILE *, const char *, ...)) get_func_addr(STDIO_ID, 40))
-#define sprintf ((int (*)(char *, const char *, ...)) get_func_addr(STDIO_ID, 41))
-#define snprintf ((int (*)(char *, size_t, const char *, ...)) get_func_addr(STDIO_ID, 42))
-#define printf_s ((int (*)(const char *, ...)) get_func_addr(STDIO_ID, 43))
-#define fprintf_s ((int (*)(FILE *, const char *, ...)) get_func_addr(STDIO_ID, 44))
-#define sprintf_s ((int (*)(char *, rsize_t, const char *, ...)) get_func_addr(STDIO_ID, 45))
-#define snprintf_s ((int (*)(char *, rsize_t, rsize_t, const char *, ...)) get_func_addr(STDIO_ID, 46))
-#define vprintf ((int (*)(const char *, va_list)) get_func_addr(STDIO_ID, 47))
-#define vfprintf ((int (*)(FILE *, const char *, va_list)) get_func_addr(STDIO_ID, 48))
-#define vsprintf ((int (*)(char *, const char *, va_list)) get_func_addr(STDIO_ID, 49))
-#define vsnprintf ((int (*)(char *, size_t, const char *, va_list)) get_func_addr(STDIO_ID, 50))
-#define vprintf_s ((int (*)(const char *, va_list)) get_func_addr(STDIO_ID, 51))
-#define vfprintf_s ((int (*)(FILE *, const char *, va_list)) get_func_addr(STDIO_ID, 52))
-#define vsprintf_s ((int (*)(char *, rsize_t, const char *, va_list)) get_func_addr(STDIO_ID, 53))
-#define vsnprintf_s ((int (*)(char *, rsize_t, rsize_t, const char *, va_list)) get_func_addr(STDIO_ID, 54))
-#define ftell ((long (*)(FILE *)) get_func_addr(STDIO_ID, 55))
-#define feof ((int (*)(FILE *)) get_func_addr(STDIO_ID, 56))
-#define ferror ((int (*)(FILE *)) get_func_addr(STDIO_ID, 57))
-#define perror ((void (*)(const char *)) get_func_addr(STDIO_ID, 58))
-#define remove ((int (*)(const char *)) get_func_addr(STDIO_ID, 59))
-#define rename ((int (*)(const char *, const char *)) get_func_addr(STDIO_ID, 60))
-#define tmpfile ((FILE *(*)(void)) get_func_addr(STDIO_ID, 61))
-#define tmpfile_s ((errno_t (*)(FILE **)) get_func_addr(STDIO_ID, 62))
-#define tmpnam ((char *(*)(char *)) get_func_addr(STDIO_ID, 63))
-#define tmpnam_s ((errno_t (*)(char *, rsize_t)) get_func_addr(STDIO_ID, 64))
-#endif
+void clearerr(FILE *stream);
+FILE *fopen(const char *filename, const char *mode);
+errno_t fopen_s(FILE **streamptr, const char *filename, const char *mode);
+FILE *freopen(const char *filename, const char *mode, FILE *stream);
+errno_t freopen_s(FILE **newstreamptr, const char *filename, const char *mode, FILE *stream);
+int fclose(FILE *stream);
+int fflush(FILE *stream);
+void setbuf(FILE *stream, char *buffer);
+int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
+int fwide(FILE *stream, int mode);
+size_t fread(void *buffer, size_t size, size_t count, FILE *stream);
+size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream);
+int fseek(FILE *stream, long offset, int whence);
+int fgetc(FILE *stream);
+int getc(FILE *stream);
+char *fgets(char *str, int count, FILE *stream);
+int fputc(int ch, FILE *stream);
+int putc(int ch, FILE *stream);
+int fputs(const char *str, FILE *stream);
+int getchar(void);
+char *gets_s(char *str, rsize_t n);
+int putchar(int ch);
+int puts(const char *str);
+int ungetc(int ch, FILE *stream);
+int scanf(const char *format, ...);
+int fscanf(FILE *stream, const char *format, ...);
+int sscanf(const char *buffer, const char *format, ...);
+int scanf_s(const char *format, ...);
+int fscanf_s(FILE *stream, const char *format, ...);
+int sscanf_s(const char *buffer, const char *format, ...);
+int vscanf(const char *format, va_list vlist);
+int vfscanf(FILE *stream, const char *format, va_list vlist);
+int vsscanf(const char *buffer, const char *format, va_list vlist);
+int vscanf_s(const char *format, va_list vlist);
+int vfscanf_s(FILE *stream, const char *format, va_list vlist);
+int vsscanf_s(const char *buffer, const char *format, va_list vlist);
+int printf(const char *format, ...);
+int fprintf(FILE *stream, const char *format, ...);
+int sprintf(char *buffer, const char *format, ...);
+int snprintf(char* str, size_t size, const char* format, ...);
+int printf_s(const char *format, ...);
+int fprintf_s(FILE *stream, const char *format, ...);
+int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...);
+int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...);
+int vprintf(const char *format, va_list vlist);
+int vfprintf(FILE *stream, const char *format, va_list vlist);
+int vsprintf(char *buffer, const char *format, va_list vlist);
+int vsnprintf(char *str, size_t count, const char *fmt, va_list args);
+int vprintf_s(const char *format, va_list vlist);
+int vfprintf_s(FILE *stream, const char *format, va_list vlist);
+int vsprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist);
+int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist);
+long ftell(FILE *stream);
+int feof(FILE *stream);
+int ferror(FILE *stream);
+void perror(const char *s);
+int remove(const char *fname);
+int rename(const char *old_filename, const char *new_filename);
+FILE *tmpfile(void);
+errno_t tmpfile_s(FILE **streamptr);
+char *tmpnam(char *filename);
+errno_t tmpnam_s(char *filename_s, rsize_t maxsize);
 
 #endif

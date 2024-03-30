@@ -1,20 +1,6 @@
 #include <syscall.h>
 #include <stdlib.h>
-
-typedef struct {
-    int width;
-    int height;
-    uint32_t *old_framebuffer;
-    uint32_t *framebuffer;
-    uint32_t *changed_pixels; // coordinates of changed pixels (y * width + x)
-    int changed_pixels_count;
-} vgui_t;
-
-int main(void) {
-    return 0;
-}
-
-void vgui_render(vgui_t *vgui, int render_mode);
+#include <i_vgui.h>
 
 vgui_t vgui_setup(int width, int height) {
     vgui_t vgui;

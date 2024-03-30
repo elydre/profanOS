@@ -1,14 +1,11 @@
 #include <filesys.h>
 #include <syscall.h>
 #include <profan.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <type.h>
 
 #include <stdarg.h>
-
-#define STDIO_C
 #include <stdio.h>
 
 #define FILE_BUFFER_SIZE 0x1000
@@ -18,46 +15,40 @@
 #define MODE_WRITE  1 << 1
 #define MODE_APPEND 1 << 2
 
-void init_func();
-
-int puts(const char *str);
-int fflush(FILE *stream);
-int fclose(FILE *stream);
-
 int dopr(char* str, size_t size, const char* format, va_list arg);
-int vfprintf(FILE *stream, const char *format, va_list vlist);
-int vprintf(const char *format, va_list vlist);
-int printf(const char *format, ...);
 
 FILE *STD_STREAM = NULL;
 
-int main(void) {
-    init_func();
-    return 0;
-}
-
-void init_func(void) {
-    FILE *dup = calloc(3, sizeof(FILE));
+void __attribute__((constructor)) stdlio_init(void) {
+    STD_STREAM = calloc(3, sizeof(FILE));
 
     // init stdin
-    dup[0].filename = "/dev/stdin";
-    dup[0].mode = MODE_READ;
-    dup[0].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[0].fd = 0;
+    STD_STREAM[0].filename = "/dev/stdin";
+    STD_STREAM[0].mode = MODE_READ;
+    STD_STREAM[0].buffer = malloc(FILE_BUFFER_SIZE);
+    STD_STREAM[0].fd = 0;
 
     // init stdout
-    dup[1].filename = "/dev/stdout";
-    dup[1].mode = MODE_WRITE;
-    dup[1].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[1].fd = 1;
+    STD_STREAM[1].filename = "/dev/stdout";
+    STD_STREAM[1].mode = MODE_WRITE;
+    STD_STREAM[1].buffer = malloc(FILE_BUFFER_SIZE);
+    STD_STREAM[1].fd = 1;
 
     // init stderr
-    dup[2].filename = "/dev/stderr";
-    dup[2].mode = MODE_WRITE;
-    dup[2].buffer = malloc(FILE_BUFFER_SIZE);
-    dup[2].fd = 2;
+    STD_STREAM[2].filename = "/dev/stderr";
+    STD_STREAM[2].mode = MODE_WRITE;
+    STD_STREAM[2].buffer = malloc(FILE_BUFFER_SIZE);
+    STD_STREAM[2].fd = 2;
+}
 
-    STD_STREAM = dup;
+void __attribute__((destructor)) stdlio_destroy(void) {
+    for (int i = 0; i < 3; i++) {
+        fflush(STD_STREAM + i);
+        fm_close(STD_STREAM[i].fd);
+        free(STD_STREAM[i].buffer);
+    }
+
+    free(STD_STREAM);
 }
 
 void clearerr(FILE *stream) {
@@ -145,7 +136,6 @@ FILE *fopen(const char *filename, const char *mode) {
     // set the buffer
     file->buffer = malloc(FILE_BUFFER_SIZE);
     file->buffer_size = 0;
-    file->buffer_pid = -1;
     file->old_offset = 0;
 
     // if the file is open for appending, set the file pos to the end of the file
@@ -225,12 +215,8 @@ int fflush(FILE *stream) {
 
     stream->buffer[buffer_size] = 0;
 
-    int fd = stream->fd;
-    if (fd < 3)
-        fd = fm_resol012(fd, stream->buffer_pid);
-
     // write the file
-    int written = fm_write(fd, stream->buffer, buffer_size);
+    int written = fm_write(stream->fd, stream->buffer, buffer_size);
     if (written < 0) written = 0;
 
     // return the number of elements written
@@ -322,8 +308,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
-    int pid;
-
     // return if total size is 0
     count *= size;
     if (count == 0) return 0;
@@ -343,13 +327,6 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     // if buffer is used for reading
     if (stream->buffer_size < 0) {
         stream->buffer_size = 0;
-    }
-
-    if (stream->buffer_pid != -1 && stream->buffer_pid != (pid = c_process_get_pid())) {
-        if (stream->buffer_size > 0) {
-            fflush(stream);
-        }
-        stream->buffer_pid = pid;
     }
 
     // write in the buffer

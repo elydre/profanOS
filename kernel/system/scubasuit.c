@@ -271,6 +271,14 @@ int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
         return 1;
     }
 
+    // check if the pages are already mapped
+    for (int i = 0; i < count; i++) {
+        if (scuba_get_phys(dir, virt + i * 0x1000)) {
+            sys_error("Address already mapped");
+            return 1;
+        }
+    }
+
     // alloc a page
     uint32_t phys = (uint32_t) i_allign_calloc(0x1000 * count);
 
@@ -313,10 +321,15 @@ int scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
     return 0;
 }
 
+// used as syscall
+void scuba_generate(void *addr, uint32_t size) {
+    scuba_create_virtual(current_directory, (uint32_t) addr, size);
+}
+
 /**************************
  *                       *
  *    SCUBA GET PHYS     *
- *     ( not used )      *
+ *                       *
 **************************/
 
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {

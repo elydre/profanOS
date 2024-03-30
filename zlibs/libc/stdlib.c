@@ -38,11 +38,25 @@ void *malloc_func(uint32_t size, int as_kernel);
 
 #define SHELL_PATH "/bin/fatpath/olivine.bin"
 
-int main(void) {
+void __attribute__((constructor)) stdlib_init(void) {
     rand_seed = time(NULL);
-    g_env = malloc(sizeof(char *));
-    g_env[0] = NULL;
-    return 0;
+}
+
+void __attribute__((destructor)) stdlib_fini(void) {
+    // free the environment
+    for (int i = 0; g_env[i] != NULL; i++) {
+        free(g_env[i]);
+    }
+    free(g_env);
+}
+
+void init_environ_ptr(char **env) {
+    int size = 0;
+    while (env[size] != NULL) size++;
+    g_env = malloc((size + 1) * sizeof(char *));
+    for (int i = 0; i < size; i++)
+        g_env[i] = strdup(env[i]);
+    g_env[size] = NULL;
 }
 
 char **get_environ_ptr(void) {
@@ -545,7 +559,7 @@ int setenv(const char *name, const char *value, int replace) {
                 if (replace) {
                     // replace the variable
                     free(g_env[i]);
-                    g_env[i] = malloc_ask(strlen(name) + strlen(value) + 2);
+                    g_env[i] = malloc(strlen(name) + strlen(value) + 2);
                     strcpy(g_env[i], name);
                     strcat(g_env[i], "=");
                     strcat(g_env[i], value);
@@ -558,7 +572,7 @@ int setenv(const char *name, const char *value, int replace) {
 
     // the variable doesn't exist, create it
     int len = strlen(name) + strlen(value) + 2;
-    char *new_var = malloc_ask(len);
+    char *new_var = malloc(len);
     strcpy(new_var, name);
     strcat(new_var, "=");
     strcat(new_var, value);
@@ -566,7 +580,7 @@ int setenv(const char *name, const char *value, int replace) {
     // add the variable to the environment
     int i = 0;
     while (g_env[i] != NULL) i++;
-    g_env = realloc_ask(g_env, (i + 2) * sizeof(char *));
+    g_env = realloc(g_env, (i + 2) * sizeof(char *));
     g_env[i] = new_var;
     g_env[i + 1] = NULL;
 
@@ -595,7 +609,7 @@ int clearenv(void) {
     for (int i = 0; g_env[i] != NULL; i++) {
         free(g_env[i]);
     }
-    realloc_ask(g_env, sizeof(char *));
+    realloc(g_env, sizeof(char *));
     g_env[0] = NULL;
     return 0;
 }
@@ -603,6 +617,10 @@ int clearenv(void) {
 int putenv(char *string) {
     puts("putenv not implemented yet, WHY DO YOU USE IT ?");
     return 0;
+}
+
+void srand(unsigned int seed) {
+    rand_seed = seed;
 }
 
 void srand48(long seedval) {
@@ -821,7 +839,7 @@ unsigned long int strtoul(const char* str, char** end, int base) {
     return 0;
 }
 
-unsigned long long int strtoul_l(const char* str, char** end, int base, locale_t loc) {
+unsigned long int strtoul_l(const char* str, char** end, int base, locale_t loc) {
     puts("strtoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -845,7 +863,7 @@ int system(const char *command) {
     args[3] = NULL;
 
     // run the command
-    int ret = run_ifexist(args[0], 3, args);
+    int ret = run_ifexist(args[0], 3, args, g_env);
 
     free(args);
 
@@ -918,7 +936,7 @@ unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base) {
     return 0;
 }
 
-unsigned long long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
+unsigned long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
     puts("wcstoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -945,7 +963,7 @@ void I_swap(char *x, char *y) {
 }
 
 // Function to reverse `buffer[i..j]`
-char* I_reverse(char *buffer, int i, int j)
+char *I_reverse(char *buffer, int i, int j)
 {
     while (i < j) {
         I_swap(&buffer[i++], &buffer[j--]);
@@ -954,7 +972,7 @@ char* I_reverse(char *buffer, int i, int j)
     return buffer;
 }
 
-char* itoa(int value, char* buffer, int base) {
+char *itoa(int value, char* buffer, int base) {
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;

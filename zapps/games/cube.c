@@ -1,3 +1,5 @@
+// @LINK SHARED: libvgui, libm
+
 #include <syscall.h>
 #include <i_vgui.h>
 #include <stdlib.h>
@@ -110,8 +112,8 @@ void rotate(shape_t *new_shape, shape_t *shape, int x, int y, int z) {
     /* new object is required because the
      * floating point math is not exact
      * and the shape will be deformed */
-    int x1, y1, z1;
-    for (int i = 0; i < new_shape->PointsCount; i++) {
+    int x1, y1, z1, i;
+    for (i = 0; i < new_shape->PointsCount; i++) {
         x1 = shape->Points[i].x;
         y1 = shape->Points[i].y;
         z1 = shape->Points[i].z;
@@ -126,8 +128,11 @@ void rotate(shape_t *new_shape, shape_t *shape, int x, int y, int z) {
         new_shape->Points[i].y = y1 * cos_call(x) - z1 * sin_call(x);
         new_shape->Points[i].z = y1 * sin_call(x) + z1 * cos_call(x);
     }
-    for (int i = 0; i < new_shape->LinesCount; i++) {
+    for (i = 0; i < new_shape->LinesCount; i++) {
         new_shape->Lines[i] = shape->Lines[i];
+    }
+
+    for (i = 0; i < new_shape->PointsCount; i++) {
         new_shape->ScreenPoints[i] = project(new_shape->Points[i]);
     }
 }

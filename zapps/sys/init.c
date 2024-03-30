@@ -1,17 +1,14 @@
 #include <syscall.h>
 #include <filesys.h>
 #include <profan.h>
+#include <libmmq.h>
 #include <panda.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#define SHELL_PATH "/bin/fatpath/olivine.bin"
+#define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
-#define run_ifexist_pid(path, argc, argv, pid) \
-        run_ifexist_full((runtime_args_t){path, (sid_t){0, 0}, \
-        argc, argv, 0, 1}, pid)
+#define run_ifexist_pid(path, argc, argv, envp, pid) \
+        run_ifexist_full((runtime_args_t){path, argc, argv, envp, 1}, pid)
 
 typedef struct {
     int id;
@@ -19,19 +16,12 @@ typedef struct {
 } lib_t;
 
 lib_t libs_at_boot[] = {
-    {1012, "/lib/ports/time.bin"},
-    {1006, "/lib/profan/vgui.bin"},
-    {1007, "/lib/ports/stdlib.bin"},
-    {1008, "/lib/ports/string.bin"},
-    {1010, "/lib/profan/filesys.bin"},
-    {1015, "/lib/profan/devio.bin"},
-    {1016, "/lib/profan/fmopen.bin"},
-    {1009, "/lib/ports/stdio.bin"},
-    {1002, "/lib/profan/profan.bin"},
-    {1011, "/lib/ports/math.bin"},
-    {1013, "/lib/ports/setjmp.bin"},
-    {1014, "/lib/ports/unistd.bin"},
-    {1005, "/lib/profan/panda.bin"},
+    {1001, "/lib/mod/libmmq.bin"},
+    {1002, "/lib/mod/filesys.bin"},
+    {1003, "/lib/mod/devio.bin"},
+    {1004, "/lib/mod/fmopen.bin"},
+    {1005, "/lib/mod/profan.bin"},
+    {1006, "/lib/mod/panda.bin"},
 };
 
 int local_strlen(char *str) {
@@ -64,17 +54,21 @@ int print_load_status(int i) {
 
 void rainbow_print(char *message) {
     char rainbow_colors[] = {'2', '6', '4', '5', '1', '3'};
+    char tmp[] = "\e[9XmX";
 
-    int i;
-    for (i = 0; message[i]; i++) {
-        printf("\e[9%cm%c", rainbow_colors[i % 6], message[i]);
+    for (int i = 0; message[i]; i++) {
+        tmp[3] = rainbow_colors[i % 6];
+        tmp[5] = message[i];
+        fd_putstr(1, tmp);
     }
 }
 
 void welcome_print(void) {
-    rainbow_print("Welcome to profanOS!\n");
+    rainbow_print("Welcome to profanOS!");
 
-    printf("\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());
+    fd_putstr(1, "\n\e[35mKernel: \e[95m");
+    fd_putstr(1, c_sys_kinfo());
+    fd_putstr(1, "\e[0m\n\n");
 }
 
 char wait_key(void) {
@@ -90,9 +84,27 @@ char wait_key(void) {
     return key_char;
 }
 
+char **envp;
+
+void set_env(char *line) {
+    if (envp == NULL) {
+        envp = malloc(2 * sizeof(char *));
+        envp[0] = line;
+        envp[1] = NULL;
+    } else {
+        int i;
+        for (i = 0; envp[i]; i++);
+        envp = realloc(envp, (i + 2) * sizeof(char *));
+        envp[i] = line;
+        envp[i + 1] = NULL;
+    }
+}
+
 int main(void) {
     char key_char, use_panda = 0;
     int sum, total, usage_pid;
+
+    envp = NULL;
 
     total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
     sum = 0;
@@ -101,31 +113,31 @@ int main(void) {
         sum += !print_load_status(i);
     }
 
-    printf("Loaded %d/%d libraries\n\n", sum, total);
-
-    panda_set_start(c_get_cursor_offset());
+    fd_printf(1, "Loaded %d/%d libraries\n\n", sum, total);
 
     if (c_vesa_does_enable()) {
+        panda_set_start(c_get_cursor_offset());
         use_panda = 1;
         if (fm_reopen(1, "/dev/panda") < 0 ||
             fm_reopen(3, "/dev/panda") < 0 ||
             fm_reopen(4, "/dev/panda") < 0 ||
             fm_reopen(5, "/dev/panda") < 0
         ) c_kprint("Failed to redirect to panda\n");
-        setenv("TERM", "/dev/panda", 1);
+        set_env("TERM=/dev/panda");
         c_sys_set_reporter(userspace_reporter);
-        run_ifexist_pid("/bin/tools/usage.bin", 0, NULL, &usage_pid);
+        run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
     } else {
         c_kprint("[init] using kernel output for stdout\n");
+        set_env("TERM=/dev/kterm");
     }
 
     welcome_print();
 
     do {
-        setenv("PATH", "/bin/commands:/bin/fatpath", 0);
-        run_ifexist(SHELL_PATH, 0, NULL);
+        set_env("PATH=/bin/cmd:/bin/fatpath");
+        run_ifexist(SHELL_PATH, 0, NULL, envp);
 
-        printf("[init] "SHELL_NAME" exited,\nAction keys:\n"
+        fd_putstr(1, "[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
             " h - unload all libraries and exit\n"
             " j - reboot profanOS\n"
@@ -145,13 +157,13 @@ int main(void) {
         c_process_kill(usage_pid);
     }
 
-    clearenv();
-
     // unload libraries
     for (int i = 0; i < total; i++) {
         lib_t *lib = &libs_at_boot[i];
         c_dily_unload(lib->id);
     }
+
+    free(envp);
 
     c_kprint("all libraries unloaded - bye (._. )\n");
 
@@ -159,4 +171,3 @@ int main(void) {
 
     return 0;
 }
-

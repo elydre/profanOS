@@ -8,6 +8,7 @@
 *.iso
 *.elf
 *.bin
+*.so
 
 # archives
 *.zip

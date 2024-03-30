@@ -1,5 +1,6 @@
 #include <syscall.h>
 #include <stdlib.h>
+#include <profan.h>
 #include <stdio.h>
 
 /*********************************************************/
@@ -149,6 +150,6 @@ int main(void) {
         );
     }
 
-    c_mem_free_all(c_process_get_pid());
+    profan_cleanup();
     return 0;
 }

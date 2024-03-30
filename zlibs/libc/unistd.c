@@ -1,15 +1,12 @@
 #include <syscall.h>
 #include <filesys.h>
+#include <profan.h>
 
+#include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <string.h>
 #include <stdio.h>
 #include <type.h>
-
-int main(void) {
-    return 0;
-}
 
 int access(const char *a, int b) {
     puts("access is not implemented yet, WHY DO YOU USE IT ?");
@@ -104,21 +101,16 @@ int execv(const char *fullpath, char *const argv[]) {
 }
 
 int execve(const char *fullpath, char *const argv[], char *const envp[]) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, (void *) fullpath);
-    if (IS_NULL_SID(sid) || !fu_is_file(sid)) {
-        return -1;
-    }
     int argc = 0;
     while (argv && argv[argc] != NULL)
         argc++;
-    char **new_args = malloc_ask((argc + 1) * sizeof(char *));
-    for (int i = 0; i < argc; i++) {
-        new_args[i] = malloc_ask(strlen(argv[i]) + 1);
-        strcpy(new_args[i], argv[i]);
-    }
-    new_args[argc] = NULL;
-    c_mem_free_all(c_process_get_pid());
-    return c_binary_exec(sid, 0, (void *) new_args);
+    return run_ifexist_full((runtime_args_t) {
+        (char *) fullpath,
+        argc,
+        (char **) argv,
+        (char **) envp,
+        3
+    }, NULL);
 }
 
 int execvp(const char *file, char *const argv[]) {

@@ -10,15 +10,6 @@
 #define BITOP(a,b,op) \
  ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
 
-void init_func();
-
-int main(void) {
-    init_func();
-    return 0;
-}
-
-void init_func(void) {; }
-
 char *basename(const char *path) {
     register const char *s;
     register const char *p;

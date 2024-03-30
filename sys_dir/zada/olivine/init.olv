@@ -1,5 +1,7 @@
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear 'clear -x'
+pseudo dlg '. /bin/sys/deluge.bin'
+pseudo zentry 'tcc -c /sys/zentry.c -o /sys/zentry.o'
 
 FUNC pwd
     echo !path

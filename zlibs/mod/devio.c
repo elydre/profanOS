@@ -1,12 +1,8 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
+#include <filesys.h>
 #include <syscall.h>
 #include <profan.h>
+#include <libmmq.h>
 #include <panda.h>
-
-#include <filesys.h>
 
 void init_devio(void);
 int keyboard_read(void *buffer, uint32_t size, char *term);
@@ -32,14 +28,14 @@ int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (!is_read)
         return 0;
     for (uint32_t i = 0; i < size; i++)
-        ((uint8_t *) buffer)[i] = (uint8_t) (rand() & 0xFF);
+        ((uint8_t *) buffer)[i] = (uint8_t) 42;
     return size;
 }
 
 int dev_kterm(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (is_read)
         return keyboard_read(buffer, size, "/dev/kterm");
-    c_kprint((char *) buffer);
+    c_kcnprint((char *) buffer, size, 0x0F);
     return size;
 }
 
@@ -134,8 +130,6 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/stdin",  dev_stdin);
     fu_fctf_create(0, "/dev/stdout", dev_stdout);
     fu_fctf_create(0, "/dev/stderr", dev_stderr);
-
-    setenv("TERM", "/dev/kterm", 1);
 }
 
 int keyboard_read(void *buffer, uint32_t size, char *term) {

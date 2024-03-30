@@ -68,12 +68,10 @@ typedef struct {
 
 typedef struct {
     char *path;     // path to file
-    sid_t sid;      // sector id (can be null)
 
     int argc;       // argument count
     char **argv;    // argument list
-
-    uint32_t vcunt; // virtual count
+    char **envp;    // environment list
 
     uint8_t sleep_mode;  // sleep mode
 } runtime_args_t;
@@ -167,7 +165,6 @@ typedef struct FILE {
 
     char *buffer;
     int   buffer_size;
-    int   buffer_pid;
     int   old_offset;
 
     int   fd;
@@ -191,7 +188,7 @@ union sigval { /* Data passed with notification */
     void *sival_ptr; /* Pointer value */
 };
 
-typedef struct sigevent_t {
+typedef struct sigevent {
     int    sigev_notify;  /* Notification method */
     int    sigev_signo;   /* Notification signal */
     union sigval sigev_value; /* Data passed with notification */

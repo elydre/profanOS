@@ -13,8 +13,8 @@ ADDONS = {
         "files": [
             {
                 "name": "lua",
-                "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.bin",
-                "path": [profan_path, "out", "zapps", "fatpath", "lua.bin"]
+                "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
+                "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
             },
         ]
     },
@@ -23,8 +23,8 @@ ADDONS = {
         "files": [
             {
                 "name": "doom",
-                "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.bin",
-                "path": [profan_path, "out", "zapps", "fatpath", "doom.bin"]
+                "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
+                "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
             },
             {
                 "name": "doom1.wad",
@@ -38,8 +38,8 @@ ADDONS = {
         "files": [
             {
                 "name": "sulfur",
-                "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.bin",
-                "path": [profan_path, "out", "zapps", "fatpath", "sulfur.bin"]
+                "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
+                "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
             },
         ]
     },
@@ -48,13 +48,13 @@ ADDONS = {
         "files": [
             {
                 "name": "tcc",
-                "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.bin",
-                "path": [profan_path, "out", "zapps", "fatpath", "tcc.bin"]
+                "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.elf",
+                "path": [profan_path, "out", "zapps", "fatpath", "tcc.elf"]
             },
             {
                 "name": "libtcc.a",
                 "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
-                "path": [profan_path, "out", "sys", "libtcc.a"]
+                "path": [profan_path, "out", "zlibs", "libtcc.a"]
             },
         ]
     },
@@ -63,8 +63,8 @@ ADDONS = {
         "files": [
             {
                 "name": "vlink",
-                "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.bin",
-                "path": [profan_path, "out", "zapps", "fatpath", "vlink.bin"]
+                "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
+                "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
             },
         ]
     }
@@ -76,8 +76,8 @@ WADDONS = {
         "files": [
             {
                 "name": "halfix",
-                "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.bin",
-                "path": [profan_path, "out", "zapps", "fatpath", "halfix.bin"]
+                "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.elf",
+                "path": [profan_path, "out", "zapps", "fatpath", "halfix.elf"]
             },
             {
                 "name": "bios.bin",

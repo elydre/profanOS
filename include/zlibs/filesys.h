@@ -1,7 +1,7 @@
 #ifndef FILESYS_LIB_ID
-#define FILESYS_LIB_ID 1010
-#define DEVIO_LIB_ID   1015
-#define FMOPEN_LIB_ID  1016
+#define FILESYS_LIB_ID 1002
+#define DEVIO_LIB_ID   1003
+#define FMOPEN_LIB_ID  1004
 
 #include <type.h>
 
@@ -59,6 +59,19 @@
 #define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 19))
 
 #endif
+
+#ifndef SEEK_SET
+#define SEEK_SET 0
+#endif
+
+#ifndef SEEK_CUR
+#define SEEK_CUR 1
+#endif
+
+#ifndef SEEK_END
+#define SEEK_END 2
+#endif
+
 #ifndef FMOPEN_LIB_C
 
 #define fm_open ((int (*)(char *)) get_func_addr(FMOPEN_LIB_ID, 2))

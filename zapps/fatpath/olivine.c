@@ -467,7 +467,7 @@ char **load_bin_names(void) {
         tmp_names = realloc(tmp_names, sizeof(char *) * (bin_count + elm_count));
 
         for (int i = 0; i < elm_count; i++) {
-            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".bin")) {
+            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".elf")) {
                 size += strlen(cnt_names[i]) - 3;
                 tmp_names[bin_count++] = cnt_names[i];
             } else {
@@ -553,7 +553,7 @@ char *get_bin_path(char *name) {
         strcat(file, name);
 
         #if PROFANBUILD
-        strcat(file, ".bin");
+        strcat(file, ".elf");
         sid_t file_id = fu_path_to_sid(ROOT_SID, file);
         if (!IS_NULL_SID(file_id) && fu_is_file(file_id)) {
             free(path_copy);
@@ -1320,6 +1320,204 @@ char *if_del(char **input) {
     return ERROR_CODE;
 }
 
+char *if_dot(char **input) {
+    // get argc
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
+
+    if (argc < 1) {
+        raise_error("dot", "Usage: . <file> [args] [&] [> <stdout>]");
+        return ERROR_CODE;
+    }
+
+    #if PROFANBUILD
+    // get file name
+    char *file_path = assemble_path(g_current_directory, input[0]);
+
+    // check if file exists
+    sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
+
+    if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
+        raise_error("dot", "File '%s' does not exist", file_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+    #else
+    // get file name
+    char *file_path = strdup(input[0]);
+
+    // check if file exists
+    if (access(file_path, F_OK | X_OK) == -1) {
+        raise_error("dot", "File '%s' does not exist", file_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+    #endif
+
+    int wait_end = 1;
+    if (strcmp(input[argc - 1], "&") == 0) {
+        wait_end = 0;
+        argc--;
+    };
+
+    char *stdout_path = NULL;
+    char *stdin_path = NULL;
+
+    #if PROFANBUILD
+    if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
+        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
+        argc -= 2;
+    }
+
+    if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
+        stdout_path = assemble_path(g_current_directory, input[argc - 1]);
+        argc -= 2;
+    }
+
+    if (!stdin_path && argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
+        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
+        argc -= 2;
+    }
+    #endif
+
+    if (strcmp(input[argc - 1], "&") == 0) {
+        wait_end = 0;
+        argc--;
+    }
+
+    if (argc < 1) {
+        raise_error("dot", "No given executable path");
+        free(stdout_path);
+        free(stdin_path);
+        free(file_path);
+        return ERROR_CODE;
+    }
+
+    #if PROFANBUILD
+    sid_t sid;
+
+    if (stdin_path) {
+        sid = fu_path_to_sid(ROOT_SID, stdin_path);
+        if (IS_NULL_SID(sid)) {
+            raise_error("dot", "Cannot redirect stdin from '%s'", stdin_path);
+            free(stdout_path);
+            free(stdin_path);
+            free(file_path);
+            return ERROR_CODE;
+        }
+    }
+
+    if (stdout_path) {
+        sid = fu_path_to_sid(ROOT_SID, stdout_path);
+        if (IS_NULL_SID(sid)) {
+            if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
+                free(stdout_path);
+                free(stdin_path);
+                free(file_path);
+                return ERROR_CODE;
+            }
+        } else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
+            raise_error("dot", "Cannot redirect stdout to '%s'", stdout_path);
+            free(stdout_path);
+            free(stdin_path);
+            free(file_path);
+            return ERROR_CODE;
+        } else if (fu_is_file(sid)) {
+            fu_set_file_size(sid, 0);
+        }
+    }
+    #endif
+
+    // get args
+    char *file_name = strdup(input[0]);
+    // remove the extension
+    char *dot = strrchr(file_name, '.');
+    if (dot) *dot = '\0';
+    // remove the path
+    char *slash = strrchr(file_name, '/');
+    if (slash) memmove(file_name, slash + 1, strlen(slash));
+
+    char **argv = malloc((argc + 1) * sizeof(char*));
+    argv[0] = file_name;
+    for (int i = 1; i < argc; i++) {
+        argv[i] = input[i];
+    }
+    argv[argc] = NULL;
+
+    #if PROFANBUILD
+    int pid;
+    local_itoa(run_ifexist_full(
+        (runtime_args_t){file_path, argc, argv, get_environ_ptr(), stdout_path || stdin_path ? 2 : wait_end}, &pid
+    ), g_exit_code);
+
+    if (stdin_path) {
+        fm_reopen(fm_resol012(0, pid), stdin_path);
+        free(stdin_path);
+    }
+
+    if (stdout_path) {
+        fm_reopen(fm_resol012(1, pid), stdout_path);
+        free(stdout_path);
+    }
+
+    if (stdout_path || stdin_path) {
+        c_process_wakeup(pid);
+        if (wait_end) {
+            profan_wait_pid(pid);
+        }
+    }
+
+    if (pid == -1) {
+        raise_error("dot", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        return ERROR_CODE;
+    }
+
+    if (!wait_end) {
+        fprintf(stderr, "DOT: started with pid %d\n", pid);
+    }
+    #else
+    pid_t pid = fork();
+    if (pid == -1) {
+        raise_error("dot", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        return ERROR_CODE;
+    }
+
+    if (pid == 0) {
+        execv(file_path, argv);
+        raise_error("dot", "Cannot execute file '%s'", file_path);
+        free(file_path);
+        free(file_name);
+        free(argv);
+        exit(1);
+    }
+
+    if (wait_end) {
+        int status;
+        waitpid(pid, &status, 0);
+        local_itoa(WEXITSTATUS(status), g_exit_code);
+    } else {
+        fprintf(stderr, "DOT: started with pid %d\n", pid);
+    }
+    #endif
+
+    char *tmp = malloc(10 * sizeof(char));
+
+    local_itoa(pid, tmp);
+    set_variable("spi", tmp);
+
+    free(file_path);
+    free(file_name);
+    free(argv);
+    free(tmp);
+    return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
+}
+
 char *if_exec(char **input) {
     // get argc
     int argc = 0;
@@ -1577,204 +1775,6 @@ char *if_global(char **input) {
     g_current_level = old_level;
 
     return NULL;
-}
-
-char *if_go_binfile(char **input) {
-    // get argc
-    int argc;
-    for (argc = 0; input[argc] != NULL; argc++);
-
-    if (argc < 1) {
-        raise_error("go", "Usage: go <file> [args] [&] [> <stdout>]");
-        return ERROR_CODE;
-    }
-
-    #if PROFANBUILD
-    // get file name
-    char *file_path = assemble_path(g_current_directory, input[0]);
-
-    // check if file exists
-    sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
-
-    if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
-        raise_error("go", "File '%s' does not exist", file_path);
-        free(file_path);
-        return ERROR_CODE;
-    }
-    #else
-    // get file name
-    char *file_path = strdup(input[0]);
-
-    // check if file exists
-    if (access(file_path, F_OK | X_OK) == -1) {
-        raise_error("go", "File '%s' does not exist", file_path);
-        free(file_path);
-        return ERROR_CODE;
-    }
-    #endif
-
-    int wait_end = 1;
-    if (strcmp(input[argc - 1], "&") == 0) {
-        wait_end = 0;
-        argc--;
-    };
-
-    char *stdout_path = NULL;
-    char *stdin_path = NULL;
-
-    #if PROFANBUILD
-    if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
-        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
-        argc -= 2;
-    }
-
-    if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
-        stdout_path = assemble_path(g_current_directory, input[argc - 1]);
-        argc -= 2;
-    }
-
-    if (!stdin_path && argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
-        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
-        argc -= 2;
-    }
-    #endif
-
-    if (strcmp(input[argc - 1], "&") == 0) {
-        wait_end = 0;
-        argc--;
-    }
-
-    if (argc < 1) {
-        raise_error("go", "No given executable path");
-        free(stdout_path);
-        free(stdin_path);
-        free(file_path);
-        return ERROR_CODE;
-    }
-
-    #if PROFANBUILD
-    sid_t sid;
-
-    if (stdin_path) {
-        sid = fu_path_to_sid(ROOT_SID, stdin_path);
-        if (IS_NULL_SID(sid)) {
-            raise_error("go", "Cannot redirect stdin from '%s'", stdin_path);
-            free(stdout_path);
-            free(stdin_path);
-            free(file_path);
-            return ERROR_CODE;
-        }
-    }
-
-    if (stdout_path) {
-        sid = fu_path_to_sid(ROOT_SID, stdout_path);
-        if (IS_NULL_SID(sid)) {
-            if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
-                free(stdout_path);
-                free(stdin_path);
-                free(file_path);
-                return ERROR_CODE;
-            }
-        } else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
-            raise_error("go", "Cannot redirect stdout to '%s'", stdout_path);
-            free(stdout_path);
-            free(stdin_path);
-            free(file_path);
-            return ERROR_CODE;
-        } else if (fu_is_file(sid)) {
-            fu_set_file_size(sid, 0);
-        }
-    }
-    #endif
-
-    // get args
-    char *file_name = strdup(input[0]);
-    // remove the extension
-    char *dot = strrchr(file_name, '.');
-    if (dot) *dot = '\0';
-    // remove the path
-    char *slash = strrchr(file_name, '/');
-    if (slash) memmove(file_name, slash + 1, strlen(slash));
-
-    char **argv = malloc((argc + 1) * sizeof(char*));
-    argv[0] = file_name;
-    for (int i = 1; i < argc; i++) {
-        argv[i] = input[i];
-    }
-    argv[argc] = NULL;
-
-    #if PROFANBUILD
-    int pid;
-    local_itoa(run_ifexist_full(
-        (runtime_args_t){file_path, file_id, argc, argv, 0, stdout_path || stdin_path ? 2 : wait_end}, &pid
-    ), g_exit_code);
-
-    if (stdin_path) {
-        fm_reopen(fm_resol012(0, pid), stdin_path);
-        free(stdin_path);
-    }
-
-    if (stdout_path) {
-        fm_reopen(fm_resol012(1, pid), stdout_path);
-        free(stdout_path);
-    }
-
-    if (stdout_path || stdin_path) {
-        c_process_wakeup(pid);
-        if (wait_end) {
-            profan_wait_pid(pid);
-        }
-    }
-
-    if (pid == -1) {
-        raise_error("go", "Cannot execute file '%s'", file_path);
-        free(file_path);
-        free(file_name);
-        free(argv);
-        return ERROR_CODE;
-    }
-
-    if (!wait_end) {
-        printf("GO: started with pid %d\n", pid);
-    }
-    #else
-    pid_t pid = fork();
-    if (pid == -1) {
-        raise_error("go", "Cannot execute file '%s'", file_path);
-        free(file_path);
-        free(file_name);
-        free(argv);
-        return ERROR_CODE;
-    }
-
-    if (pid == 0) {
-        execv(file_path, argv);
-        raise_error("go", "Cannot execute file '%s'", file_path);
-        free(file_path);
-        free(file_name);
-        free(argv);
-        exit(1);
-    }
-
-    if (wait_end) {
-        int status;
-        waitpid(pid, &status, 0);
-        local_itoa(WEXITSTATUS(status), g_exit_code);
-    } else {
-        printf("GO: started with pid %d\n", pid);
-    }
-    #endif
-
-    char *tmp = malloc(10 * sizeof(char));
-
-    local_itoa(pid, tmp);
-    set_variable("spi", tmp);
-
-    free(file_path);
-    free(file_name);
-    free(argv);
-    free(tmp);
-    return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
 }
 
 char *if_name(char **input) {
@@ -2167,6 +2167,7 @@ char *if_ticks(char **input) {
 
 
 internal_function_t internal_functions[] = {
+    {".", if_dot},
     {"cd", if_cd},
     {"debug", if_debug},
     {"del", if_del},
@@ -2177,7 +2178,6 @@ internal_function_t internal_functions[] = {
     {"find", if_find},
     {"fsize", if_fsize},
     {"global", if_global},
-    {"go", if_go_binfile},
     {"print", if_print},
     {"pseudo", if_pseudo},
     {"name", if_name},
@@ -2587,9 +2587,9 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
         return line;
     }
 
-    *function = if_go_binfile;
+    *function = if_dot;
     char *new_line = malloc((strlen(line) + strlen(bin_path) + 2) * sizeof(char));
-    strcpy(new_line, "go ");
+    strcpy(new_line, ". ");
     strcat(new_line, bin_path);
     strcat(new_line, line + strlen(name));
     free(bin_path);
@@ -4038,9 +4038,11 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
     // bin
     #if BIN_AS_PSEUDO
-    for (int j = 0; bin_names[j] != NULL; j++) {
-        if (strncmp(tmp, bin_names[j], i - dec) == 0) {
-            suggest = add_to_suggest(other, suggest, bin_names[j]);
+    if (bin_names) {
+        for (int j = 0; bin_names[j] != NULL; j++) {
+            if (strncmp(tmp, bin_names[j], i - dec) == 0) {
+                suggest = add_to_suggest(other, suggest, bin_names[j]);
+            }
         }
     }
     #endif
