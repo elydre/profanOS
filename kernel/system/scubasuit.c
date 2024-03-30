@@ -376,4 +376,3 @@ void scuba_fault_handler(int err_code) {
             err_code
     );
 }
-

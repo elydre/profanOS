@@ -100,4 +100,3 @@ uint32_t wf_get_func_addr(uint32_t func_id) {
     }
     return (uint32_t) SYSCALL_ARRAY[func_id];
 }
-
