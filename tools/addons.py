@@ -57,7 +57,10 @@ ADDONS = {
                 "path": [profan_path, "out", "zlibs", "libtcc.a"]
             },
         ]
-    },
+    }
+}
+
+WADDONS = {
     "vlink": {
         "description": "vlink linker with multi-format support",
         "files": [
@@ -67,10 +70,7 @@ ADDONS = {
                 "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
             },
         ]
-    }
-}
-
-WADDONS = {
+    },
     "halfix": {
         "description": "port of the Halfix x86 emulator for profanOS",
         "files": [
