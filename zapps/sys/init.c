@@ -54,18 +54,19 @@ int print_load_status(int i) {
 
 void rainbow_print(char *message) {
     char rainbow_colors[] = {'2', '6', '4', '5', '1', '3'};
+    char tmp[] = "\e[9XmX";
 
-    int i;
-    for (i = 0; message[i]; i++) {
-        fd_printf(1, "\e[9%cm%c", rainbow_colors[i % 6], message[i]);
+    for (int i = 0; message[i]; i++) {
+        tmp[3] = rainbow_colors[i % 6];
+        tmp[5] = message[i];
+        fd_putstr(1, tmp);
     }
 }
 
 void welcome_print(void) {
-    /*rainbow_print("Welcome to profanOS!\n");
+    rainbow_print("Welcome to profanOS!");
 
-    fd_printf(1, "\e[35mKernel: \e[95m%s\e[0m\n\n", c_sys_kinfo());*/
-    fd_putstr(1, "\e[95mWelcome to profanOS!\nKernel: ");
+    fd_putstr(1, "\n\e[35mKernel: \e[95m");
     fd_putstr(1, c_sys_kinfo());
     fd_putstr(1, "\e[0m\n\n");
 }
