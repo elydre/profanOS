@@ -222,3 +222,4 @@ void kcnprint(char *message, int len, char color) {
         i++;
     }
 }
+
