@@ -318,7 +318,7 @@ int file_relocate(elfobj_t *dl) {
 
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
-    
+
     if (g_list_deps)
         fd_printf(2, "[deluge] Loading '%s'\n", filename);
 

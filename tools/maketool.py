@@ -105,7 +105,7 @@ def print_info_line(text):
         shell_len = os.get_terminal_size().columns
     except Exception:
         shell_len = 180
-    
+
     if COMPCT_LINE and len(text) > shell_len:
         cprint(COLOR_EXEC, f"{text[:shell_len - 3]}...")
     else: cprint(COLOR_EXEC, text)

@@ -409,7 +409,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         args.argc += c + 2;
     } else if (magic[0] == 0x55 && magic[1] == 0x89 && magic[2] == 0xE5) {
         nargv = calloc_ask(args.argc + 1, sizeof(char *));
-    
+
         for (int i = 0; i < args.argc; i++) {
             nargv[i] = malloc_ask(strlen(args.argv[i]) + 1);
             strcpy(nargv[i], args.argv[i]);
