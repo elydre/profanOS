@@ -593,6 +593,36 @@ double ldexp(double x, int exp) {
     return 0;
 }
 
+double fabs(double x) {
+    fd_putstr(1, "fabs not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+long double fabsl(long double x) {
+    fd_putstr(1, "fabsl not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+long double sqrtl(long double x) {
+    fd_putstr(1, "sqrtl not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+double cos(double x) {
+    fd_putstr(1, "cos not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+double log(double x) {
+    fd_putstr(1, "log not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
+double ceil(double x) {
+    fd_putstr(1, "ceil not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
 /* origin: FreeBSD /usr/src/lib/msun/src/e_acos.c */
 /*
  * ====================================================

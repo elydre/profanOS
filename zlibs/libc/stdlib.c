@@ -619,6 +619,10 @@ int putenv(char *string) {
     return 0;
 }
 
+void srand(unsigned int seed) {
+    rand_seed = seed;
+}
+
 void srand48(long seedval) {
     puts("srand48 not implemented yet, WHY DO YOU USE IT ?");
 }
