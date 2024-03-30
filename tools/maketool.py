@@ -345,7 +345,7 @@ def get_kernel_version(print_info = True):
 
 
 def write_build_logs():
-    cprint(COLOR_EXEC, "writing build logs...")
+    print_info_line("generating build logs")
 
     try:
         user_name = os.getlogin()
@@ -414,8 +414,9 @@ def gen_disk(force=False, with_src=False):
 
     if HBL_FILE: write_build_logs()
 
+    print_info_line("copy sys/ directory")
     print_and_exec(f"cp {TOOLS_DIR}/entry_elf.c {OUT_DIR}/disk/sys/zentry.c")
-    print_and_exec(f"cp {TOOLS_DIR}/tccextra.c {OUT_DIR}/disk/sys/")
+    print_and_exec(f"gcc -c {OUT_DIR}/disk/sys/zentry.c -o {OUT_DIR}/disk/sys/zentry.o {ZAPP_FLAGS}")
     print_and_exec(f"cp {TOOLS_DIR}/link_elf.ld {OUT_DIR}/disk/sys/")
     print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
     print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ 2> /dev/null || true")
