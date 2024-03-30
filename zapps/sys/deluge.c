@@ -3,7 +3,7 @@
 #include <libmmq.h>
 #include <dlfcn.h>
 
-#define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt, ##__VA_ARGS__); exit(1); } while (0)
+#define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); exit(1); } while (0)
 
 // elf header
 
@@ -144,7 +144,7 @@ char **get_required_libs(elfobj_t *obj) {
     int lib_count = 0;
 
     if (obj->dynamic == NULL) {
-        raise_error("no dynamic section found in '%s'\n", obj->name);
+        raise_error("no dynamic section found in '%s'", obj->name);
         return NULL;
     }
 
@@ -153,7 +153,7 @@ char **get_required_libs(elfobj_t *obj) {
             libs = realloc(libs, (lib_count + 2) * sizeof(char *));
             tmp = get_full_path((char *) obj->dynstr + obj->dynamic[i].d_un.d_val);
             if (tmp == NULL) {
-                raise_error("library '%s' not found but required by '%s'\n", (char *) obj->dynstr + obj->dynamic[i].d_un.d_val, obj->name);
+                raise_error("library '%s' not found but required by '%s'", (char *) obj->dynstr + obj->dynamic[i].d_un.d_val, obj->name);
                 return NULL;
             }
             libs[lib_count++] = tmp;
@@ -279,7 +279,7 @@ int file_relocate(elfobj_t *dl) {
                     if (val == 0)
                         val = (uint32_t) dlsym(dl, name);
                     if (val == 0)
-                        raise_error("symbol '%s' not found in '%s'\n", name, dl->name);
+                        raise_error("symbol '%s' not found in '%s'", name, dl->name);
                 }
                 switch (type) {
                     case R_386_32:          // word32  S + A
@@ -303,22 +303,21 @@ int file_relocate(elfobj_t *dl) {
                         *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
                         break;
                     default:
-                        raise_error("relocation type %d in '%s' not supported\n", type, dl->name);
+                        raise_error("relocation type %d in '%s' not supported", type, dl->name);
                         break;
                 }
             }
         }
 
         else if (shdr[i].sh_type == 4) { // SHT_RELA
-            raise_error("SHT_RELA is not supported but found in '%s'\n", dl->name);
+            raise_error("SHT_RELA is not supported but found in '%s'", dl->name);
         }
     }
     return 0;
 }
 
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
-    elfobj_t *obj = malloc(sizeof(elfobj_t));
-    memset(obj, 0, sizeof(elfobj_t));
+    elfobj_t *obj = calloc(1, sizeof(elfobj_t));
     
     if (g_list_deps)
         fd_printf(2, "[deluge] Loading '%s'\n", filename);
@@ -328,7 +327,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     sid_t sid = fu_path_to_sid(ROOT_SID, obj->name);
     if (!fu_is_file(sid)) {
         if (isfatal)
-            raise_error("'%s' not found\n", filename);
+            raise_error("'%s' not found", filename);
         free(obj->name);
         free(obj);
         return NULL;
@@ -365,7 +364,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (obj->dymsym == NULL) {
         if (required_type == ET_DYN) {
             if (isfatal)
-                raise_error("no dynamic symbol table found in '%s'\n", filename);
+                raise_error("no dynamic symbol table found in '%s'", filename);
             free(obj->file);
             free(obj->name);
             free(obj);
@@ -390,7 +389,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         if (!found) {
             elfobj_t *lib = dlopen(new_libs[i], RTLD_FATAL);
             if (lib == NULL) {
-                raise_error("dlopen failed for '%s'\n", new_libs[i]);
+                raise_error("dlopen failed for '%s'", new_libs[i]);
             }
             g_loaded_libs = realloc(g_loaded_libs, (g_lib_count + 1) * sizeof(elfobj_t *));
             g_loaded_libs[g_lib_count] = lib;
@@ -490,9 +489,17 @@ void *dlsym(void *handle, const char *symbol) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
-    if (ehdr->e_type != ET_DYN || !dl->dymsym) {
+    if (!dl->dymsym) {
         dlfcn_error = 2;
         return NULL;
+    }
+
+    if (ehdr->e_type == ET_EXEC) {
+        for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
+            if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0) {
+                return (void *) dl->dymsym[i].st_value;
+            }
+        }
     }
 
     if (*symbol && symbol[0] == 'd' && symbol[1] == 'l') {
@@ -565,7 +572,8 @@ int dynamic_linker(elfobj_t *exec) {
                 val = 0;
                 type = ELF32_R_TYPE(rel[j].r_info);
                 if (does_type_required_sym(type)) {
-                    for (int k = 0; k < g_lib_count && val == 0; k++)
+                    val = (uint32_t) dlsym(exec, name);
+                    for (int k = 0; !val && k < g_lib_count; k++)
                         val = (uint32_t) dlsym(g_loaded_libs[k], name);
                     if (val == 0)
                         raise_error("symbol '%s' not found", name);
@@ -578,14 +586,14 @@ int dynamic_linker(elfobj_t *exec) {
                         *(uint32_t *)(rel[j].r_offset) = val;
                         break;
                     default:
-                        raise_error("relocation type %d in '%s' not supported\n", type, exec->name);
+                        raise_error("relocation type %d in '%s' not supported", type, exec->name);
                         break;
                 }
             }
         }
 
         else if (shdr[i].sh_type == 4) { // SHT_RELA
-            raise_error("SHT_RELA is not supported but found in '%s'\n", exec->name);
+            raise_error("SHT_RELA is not supported but found in '%s'", exec->name);
             while (1);
         }
     }
@@ -667,7 +675,7 @@ int main(int argc, char **argv, char **envp) {
 
     elfobj_t *test = open_elf(args.name, ET_EXEC, 1);
     if (test == NULL) {
-        raise_error("failed to open '%s'\n", args.name);
+        raise_error("failed to open '%s'", args.name);
         return 1;
     }
 
@@ -683,6 +691,8 @@ int main(int argc, char **argv, char **envp) {
     free(test->file);
     free(test->name);
     free(test);
+
+    dlfcn_error = 0;
 
     int ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
