@@ -268,7 +268,6 @@ int does_type_required_sym(uint8_t type) {
 }
 
 int file_relocate(elfobj_t *dl) {
-    fd_printf(1, "file_relocate %s\n", dl->name);
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
@@ -417,7 +416,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
             }
         }
         if (!found) {
-            elfobj_t *lib = dlopen(new_libs[i], RTLD_FATAL);
+            elfobj_t *lib = open_elf(new_libs[i], ET_DYN, isfatal);
             if (lib == NULL)
                 raise_error("dlopen failed for '%s'", new_libs[i]);
             g_loaded_libs = realloc(g_loaded_libs, (g_lib_count + 1) * sizeof(elfobj_t *));
@@ -727,6 +726,15 @@ int main(int argc, char **argv, char **envp) {
     if (test == NULL) {
         raise_error("failed to open '%s'", args.name);
         return 1;
+    }
+
+    for (int i = 0; i < g_lib_count; i++) {
+        load_sections(g_loaded_libs[i], ET_DYN);
+    }
+
+    for (int i = 0; i < g_lib_count; i++) {
+        file_relocate(g_loaded_libs[i]);
+        init_lib(g_loaded_libs[i]);
     }
 
     load_sections(test, ET_EXEC);
