@@ -86,6 +86,7 @@ typedef struct {
     uint32_t size;
     uint8_t *file;
     char *name;
+    int open_count;
 
     uint8_t *mem;
 
@@ -98,8 +99,20 @@ typedef struct {
 
 elfobj_t **g_loaded_libs;
 int g_lib_count;
-int g_list_deps;
 int g_cleanup;
+
+int g_print_indent;
+int g_list_deps;
+
+void list_print(const char *str, const char *name) {
+    if (!g_list_deps)
+        return;
+    fd_putstr(2, "\033[37m[DELUGE] ");
+    for (int i = 1; i < g_print_indent; i++)
+        fd_putstr(2, "  ");
+    fd_printf(2, "%s '%s'", str, name);
+    fd_putstr(2, "\033[0m\n");
+}
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
@@ -255,6 +268,7 @@ int does_type_required_sym(uint8_t type) {
 }
 
 int file_relocate(elfobj_t *dl) {
+    fd_printf(1, "file_relocate %s\n", dl->name);
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
@@ -279,7 +293,7 @@ int file_relocate(elfobj_t *dl) {
                     if (val == 0)
                         val = (uint32_t) dlsym(dl, name);
                     if (val == 0)
-                        raise_error("symbol '%s' not found in '%s'", name, dl->name);
+                        raise_error("symbol '%s' not found, required by '%s'", name, dl->name);
                 }
                 switch (type) {
                     case R_386_32:          // word32  S + A
@@ -317,10 +331,19 @@ int file_relocate(elfobj_t *dl) {
 }
 
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
+    g_print_indent++;
+    for (int i = 0; i < g_lib_count; i++) {
+        if (strcmp(g_loaded_libs[i]->name, filename) == 0) {
+            list_print("Using cached", filename);
+            g_loaded_libs[i]->open_count++;
+            g_print_indent--;
+            return g_loaded_libs[i];
+        }
+    }
+
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
-    if (g_list_deps)
-        fd_printf(2, "[deluge] Loading '%s'\n", filename);
+    list_print("Opening", filename);
 
     obj->name = get_full_path(filename);
 
@@ -328,6 +351,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (!fu_is_file(sid)) {
         if (isfatal)
             raise_error("'%s' not found", filename);
+        g_print_indent--;
         free(obj->name);
         free(obj);
         return NULL;
@@ -335,11 +359,14 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     obj->size = fu_get_file_size(sid);
     obj->file = malloc(obj->size);
+    obj->open_count = 1;
+
     fu_file_read(sid, obj->file, 0, obj->size);
 
     if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
         if (isfatal)
             raise_error("'%s' is not a valid ELF file", filename);
+        g_print_indent--;
         free(obj->file);
         free(obj->name);
         free(obj);
@@ -362,6 +389,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     }
 
     if (obj->dymsym == NULL) {
+        g_print_indent--;
         if (required_type == ET_DYN) {
             if (isfatal)
                 raise_error("no dynamic symbol table found in '%s'", filename);
@@ -375,8 +403,10 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     char **new_libs = get_required_libs(obj);
 
-    if (new_libs == NULL)
+    if (new_libs == NULL) {
+        g_print_indent--;
         return obj;
+    }
 
     for (int i = 0; new_libs[i] != NULL; i++) {
         int found = 0;
@@ -388,9 +418,8 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         }
         if (!found) {
             elfobj_t *lib = dlopen(new_libs[i], RTLD_FATAL);
-            if (lib == NULL) {
+            if (lib == NULL)
                 raise_error("dlopen failed for '%s'", new_libs[i]);
-            }
             g_loaded_libs = realloc(g_loaded_libs, (g_lib_count + 1) * sizeof(elfobj_t *));
             g_loaded_libs[g_lib_count] = lib;
             g_lib_count++;
@@ -399,6 +428,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     }
     free(new_libs);
 
+    g_print_indent--;
     return obj;
 }
 
@@ -472,6 +502,11 @@ void *dlopen(const char *filename, int flag) {
         dlfcn_error = 1;
         return NULL;
     }
+
+    dlfcn_error = 0;
+    if (dl->open_count > 1)
+        return dl;
+
     load_sections(dl, ET_DYN);
     file_relocate(dl);
     init_lib(dl);
@@ -480,6 +515,13 @@ void *dlopen(const char *filename, int flag) {
 
 void *dlsym(void *handle, const char *symbol) {
     if (handle == NULL) {
+        for (int i = 0; i < g_lib_count; i++) {
+            void *ret = dlsym(g_loaded_libs[i], symbol);
+            if (ret) {
+                dlfcn_error = 0;
+                return ret;
+            }
+        }
         dlfcn_error = 2;
         return NULL;
     }
@@ -494,6 +536,7 @@ void *dlsym(void *handle, const char *symbol) {
         return NULL;
     }
 
+    dlfcn_error = 0;
     if (ehdr->e_type == ET_EXEC) {
         for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
             if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0) {
@@ -518,9 +561,9 @@ void *dlsym(void *handle, const char *symbol) {
     }
 
     for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
-        if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0) {
-            return dl->mem + dl->dymsym[i].st_value;
-        }
+        if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0 &&
+            dl->dymsym[i].st_shndx != 0 // STB_LOCAL (symbol defined in this object)
+        ) return dl->mem + dl->dymsym[i].st_value;
     }
 
     dlfcn_error = 2;
@@ -532,6 +575,10 @@ int dlclose(void *handle) {
         return 0;
 
     elfobj_t *dl = handle;
+
+    if (--dl->open_count > 0)
+        return 0;
+
     fini_lib(dl);
     free(dl->file);
     free(dl->name);
@@ -627,6 +674,8 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     args.bench = 0;
     g_list_deps = 0;
 
+    g_print_indent = 0;
+
     int move_arg = 1;
 
     for (int i = 1; i < argc; i++) {
@@ -668,6 +717,7 @@ int main(int argc, char **argv, char **envp) {
 
     deluge_args_t args = deluge_parse(argc, argv);
     uint32_t start;
+    int ret = 0;
 
     if (args.bench) {
         start = c_timer_get_ms();
@@ -694,10 +744,14 @@ int main(int argc, char **argv, char **envp) {
 
     dlfcn_error = 0;
 
-    int ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
+    if (!args.bench) {
+        ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
+    }
 
-    for (int i = 0; i < g_lib_count; i++)
+    for (int i = 0; i < g_lib_count; i++) {
+        g_loaded_libs[i]->open_count = 1;
         dlclose(g_loaded_libs[i]);
+    }
     free(g_loaded_libs);
 
     if (g_cleanup)
