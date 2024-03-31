@@ -339,7 +339,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
         if (isfatal)
-            raise_error("'%s' is not a valid ELF file\n", filename);
+            raise_error("'%s' is not a valid ELF file", filename);
         free(obj->file);
         free(obj->name);
         free(obj);
