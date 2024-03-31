@@ -863,7 +863,7 @@ int system(const char *command) {
     args[3] = NULL;
 
     // run the command
-    int ret = run_ifexist(args[0], 3, args, g_env);
+    int ret = run_ifexist(args[0], 3, args);
 
     free(args);
 

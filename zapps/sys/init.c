@@ -135,7 +135,7 @@ int main(void) {
 
     do {
         set_env("PATH=/bin/cmd:/bin/fatpath");
-        run_ifexist(SHELL_PATH, 0, NULL, envp);
+        run_ifexist_pid(SHELL_PATH, 0, NULL, envp, NULL);
 
         fd_putstr(1, "[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
