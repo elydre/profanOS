@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 8"
+#define OLV_VERSION "0.11 rev 9"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -117,7 +117,7 @@ char **bin_names;
 char *g_current_directory, *g_exit_code, *g_prompt;
 int g_current_level;
 
-int execute_file(char *file);
+int execute_file(char *file, char **args);
 
 /****************************
  *                         *
@@ -1207,68 +1207,70 @@ char *if_cd(char **input) {
 }
 
 char *if_debug(char **input) {
-    // get argc
-    int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
-        argc++;
-    }
-
     int mode = 0;
 
-    if (argc == 1) {
-        if (strcmp(input[0], "-v") == 0) {
+    if (input[0] && !input[1]) {
+        if (strcmp(input[0], "-d") == 0) {
             mode = 1;
-        } else if (strcmp(input[0], "-i") == 0) {
-            mode = 2;
-        } else if (strcmp(input[0], "-f") == 0) {
-            mode = 3;
-        } else if (strcmp(input[0], "-p") == 0) {
-            mode = 4;
         } else if (strcmp(input[0], "-l") == 0) {
-            mode = 5;
-        } else {
-            raise_error("debug", "Unknown argument '%s'", input[0]);
-            puts("expected '-v', '-i', '-f', '-p' or '-l'");
-            return ERROR_CODE;
+            mode = 2;
+        } else if (strcmp(input[0], "-h") == 0) {
+            mode = 3;
+        } else if (strcmp(input[0], "-r") == 0) {
+            mode = 4;
         }
-    } else if (argc > 1) {
-        raise_error("debug", "Usage: debug [-v|-i|-f|-p|-l]");
+    }
+
+    if (mode == 0) {
+        raise_error("debug", "Wrong usage, try 'debug -h'");
         return ERROR_CODE;
     }
 
-    // print variables
-    if (mode == 0 || mode == 1) {
+    // print help
+    if (mode == 3) {
+        puts("Debug mode help\n"
+            "Usage: debug [-d|-l|-h|-r]\n"
+            "  -d: dump vars, funcs, pseudos\n"
+            "  -l: save functions to file\n"
+            "  -h: print this help\n"
+            "  -r: reload bin names");
+        return NULL;
+    }
+
+    // dump info
+    if (mode == 1) {
         printf("VARIABLES (max %d):\n", MAX_VARIABLES);
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
             printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
         }
-    }
 
-    // print internal functions
-    if (mode == 0 || mode == 2) {
         puts("INTERNAL FUNCTIONS");
         for (int i = 0; internal_functions[i].name != NULL; i++) {
             printf("  %s: %p\n", internal_functions[i].name, internal_functions[i].function);
         }
-    }
 
-    // print functions
-    if (mode == 0 || mode == 3) {
         printf("FUNCTIONS (max %d):\n", MAX_FUNCTIONS);
         for (int i = 0; i < MAX_FUNCTIONS && functions[i].name != NULL; i++) {
             printf("  %s: %d lines (%p)\n", functions[i].name, functions[i].line_count, functions[i].lines);
         }
-    }
 
-    // print pseudos
-    if (mode == 0 || mode == 4) {
         printf("PSEUDOS (max %d):\n", MAX_PSEUDOS);
         for (int i = 0; i < MAX_PSEUDOS && pseudos[i].name != NULL; i++) {
             printf("  %s: '%s'\n", pseudos[i].name, pseudos[i].value);
         }
+
+        return NULL;
     }
 
-    if (mode != 5) {
+    if (mode != 2) {
+        free(bin_names);
+        bin_names = load_bin_names();
+
+        // count bin names
+        int c;
+        for (c = 0; bin_names[c] != NULL; c++);
+        printf("Reloaded %d bin names\n", c);
+
         return NULL;
     }
 
@@ -1526,11 +1528,11 @@ char *if_exec(char **input) {
     }
 
     if (argc != 1) {
-        raise_error("exec", "Usage: exec <file>");
+        raise_error("exec", "Usage: exec <file> [arg1 arg2 ...]");
         return ERROR_CODE;
     }
 
-    if (execute_file(input[0]))
+    if (execute_file(input[0], input + 1))
         return ERROR_CODE;
     return NULL;
 }
@@ -2564,9 +2566,7 @@ char *execute_function(function_t *function, char **args) {
     int ret = execute_lines(function->lines, function->line_count, &result);
 
     // free variables
-    del_variable_level(g_current_level);
-
-    g_current_level--;
+    del_variable_level(g_current_level--);
 
     if (ret == -1) {
         // function failed
@@ -3604,7 +3604,7 @@ char *get_func_color(char *str) {
     }
 
     // pseudos: dark blue
-    if (get_pseudo(str) != NULL) {
+    if (pseudos && get_pseudo(str) != NULL) {
         return "34";
     }
 
@@ -4385,7 +4385,7 @@ void start_shell(void) {
     free(line);
 }
 
-int execute_file(char *file) {
+int execute_file(char *file, char **args) {
     FILE *f = fopen(file, "r");
     if (f == NULL) {
         printf("file '%s' does not exist\n", file);
@@ -4413,10 +4413,26 @@ int execute_file(char *file) {
         return 1;
     }
 
+    int argc;
+    char tmp[4];
+    for (argc = 0; args[argc] != NULL; argc++) {
+        local_itoa(argc, tmp);
+        if (!set_variable(tmp, args[argc]))
+            continue;
+        g_current_level--;
+        return 1;
+    }
+
+    local_itoa(argc, tmp);
+    if (set_variable("#", tmp)) {
+        g_current_level--;
+        return 1;
+    }
+
     execute_program(program);
 
-    del_variable("filename");
-    g_current_level--;
+    // free variables
+    del_variable_level(g_current_level--);
 
     free(program);
 
@@ -4429,6 +4445,9 @@ void print_file_highlighted(char *file) {
         printf("file '%s' does not exist\n", file);
         return;
     }
+
+    functions = NULL;
+    pseudos = NULL;
 
     char *line = malloc(INPUT_SIZE * sizeof(char));
     char *program = malloc(sizeof(char));
@@ -4483,18 +4502,19 @@ void print_file_highlighted(char *file) {
 ************************/
 
 typedef struct {
-    int help;
-    int version;
-    int no_init;
-    int inter;
-    int print;
+    char help;
+    char version;
+    char no_init;
+    char inter;
+    char print;
+    int arg_offset;
 
     char *file;
     char *command;
 } olivine_args_t;
 
 int show_help(int full, char *name) {
-    printf("Usage: %s [options] [file]\n", name);
+    printf("Usage: %s [options] [file] [arg1 arg2 ...]\n", name);
     if (!full) {
         printf("Try '%s --help' for more information.\n", name);
         return 1;
@@ -4519,14 +4539,7 @@ void show_version(void) {
 }
 
 olivine_args_t *parse_args(int argc, char **argv) {
-    olivine_args_t *args = malloc(sizeof(olivine_args_t));
-    args->help = 0;
-    args->version = 0;
-    args->no_init = 0;
-    args->inter = 0;
-    args->print = 0;
-    args->file = NULL;
-    args->command = NULL;
+    olivine_args_t *args = calloc(1, sizeof(olivine_args_t));
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0
@@ -4561,6 +4574,8 @@ olivine_args_t *parse_args(int argc, char **argv) {
             i++;
         } else if (argv[i][0] != '-') {
             args->file = argv[i];
+            args->arg_offset = i + 1;
+            break;
         } else {
             printf("Error: unknown option '%s'\n", argv[i]);
             args->help = 1;
@@ -4645,7 +4660,7 @@ int main(int argc, char **argv) {
         execute_program(init_prog);
     }
 
-    if (args->file != NULL && execute_file(args->file)) {
+    if (args->file != NULL && execute_file(args->file, argv + args->arg_offset)) {
         ret_val = 1;
     }
 
