@@ -11,36 +11,24 @@ void free_tab(char **tab) {
     free(tab);
 }
 
-char *dup_strft(char *src, int start, int end) {
-    char *res;
-    int i;
-
-    res = malloc(sizeof(char) * (end - start + 1));
-
-    for (i = 0; i < end - start; i++)
-        res[i] = src[start + i];
-    res[i] = '\0';
-
-    return res;
-}
-
 char **ft_split(char *s, char c) {
-    int start, i_tab;
     char **res;
+    int i, j, k;
 
-    start = 0;
-    i_tab = 0;
-    res = malloc(sizeof(char *) * (strlen(s) + 1));
-    for (int i = 0; s[i]; i++) {
-        if (s[i] != c) {
-            start = i;
-            while (s[i] && s[i] != c)
-                i++;
-            res[i_tab] = dup_strft(s, start, i);
-            i_tab++;
-        }
+    res = malloc((strlen(s) + 1) * sizeof(char *));
+    for (i = 0, j = 0, k = 0; s[i]; i++) {
+        if (s[i] != c)
+            continue;
+        res[j] = malloc(i - k + 1);
+        memcpy(res[j], s + k, i - k);
+        res[j][i - k] = '\0';
+        j++;
+        k = i + 1;
     }
-    res[i_tab] = NULL;
+    res[j] = malloc(i - k + 1);
+    memcpy(res[j], s + k, i - k);
+    res[j][i - k] = '\0';
+    res[j + 1] = NULL;
     return res;
 }
 
@@ -54,7 +42,7 @@ char *find_cmd(char *cmd) {
         return NULL;
     paths = ft_split(path, ':');
     for (int i = 0; paths[i]; i++) {
-        res = malloc(sizeof(char) * (strlen(paths[i]) + strlen(cmd) + 6));
+        res = malloc(strlen(paths[i]) + strlen(cmd) + 6);
         strcpy(res, paths[i]);
         strcat(res, "/");
         strcat(res, cmd);
@@ -118,6 +106,8 @@ int execute_line(char *line) {
     cmd = find_cmd(args[0]);
     if (cmd == NULL) {
         printf("Command not found: %s\n", args[0]);
+        free_tab(args);
+        free(cmd);
         return 1;
     }
     res = run_ifexist(cmd, argc, args);
