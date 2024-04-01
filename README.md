@@ -34,9 +34,6 @@ sudo apt install -y make python3 gcc g++ nasm qemu-system-i386 \
 ### Compile & Run
 
 ```bash
-# Simple compilation
-make iso
-
 # Compile and run
 make run
 
@@ -46,7 +43,7 @@ make
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
 The main ports (more information in the [ports](#major-ports) section) are not included
-in the repo source code but are easily downloadable with `make addons disk`.
+in the repo source code but are easily downloadable with `make gaddons disk`.
 
 ### Automated build
 
@@ -76,7 +73,7 @@ loaded into memory, however a few megabytes are enough.
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
 | CPU (x86) | 1@100Mhz| 1@2Ghz      |
-| RAM       | 2MB     | 16MB        |
+| RAM       | 16MB    | 128MB       |
 | screen    | text    | 1024x768    |
 
 ## First look
@@ -96,7 +93,7 @@ of the OS, it is extremely minimalist and can be completed by adding modules loa
 from disk such as drivers or file system extensions.
 
 profanOS is **not** a SASOS - single address space operating system, but part of the memory is shared,
-like the kernel and the libraries. Processes can therefore freely access kernel functions.
+like kernel and modules. Processes can therefore freely access kernel functions.
 
 Here is a list of the main kernel features:
 
