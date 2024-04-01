@@ -33,7 +33,8 @@ void show_help(void) {
     puts("Usage: echo [options] [string ...]\n"
         "Echo the STRING(s) to standard output.\n\n"
         "  -e     recognize ANSI color escape sequences\n"
-        "  -h     display this help and exit"
+        "  -h     display this help and exit\n"
+        "  -n     do not output the trailing newline"
     );
 }
 
@@ -85,42 +86,70 @@ char *get_text(char **args, int start) {
             text = str_join(text, " ");
         }
     }
-    text = str_join(text, "\n");
     return text;
 }
 
+#define ECHO_ERRR 1
+#define ECHO_ANSI 2
+#define ECHO_HELP 4
+#define ECHO_NONL 8
+
+uint32_t parse_args(char **argv, int *offset) {
+    uint32_t flags = 0;
+
+    int i;
+    for (i = 1; argv[i] && argv[i][0] == '-'; i++) {
+        if (strcmp(argv[i], "-e") == 0) {
+            flags |= ECHO_ANSI;
+        } else if (strcmp(argv[i], "-h") == 0) {
+            flags |= ECHO_HELP;
+        } else if (strcmp(argv[i], "-n") == 0) {
+            flags |= ECHO_NONL;
+        } else {
+            flags |= ECHO_ERRR;
+        }
+    }
+
+    *offset = i;
+
+    return flags;
+}
+
 int main(int argc, char **argv) {
-    int ansicolor = 0;
-    int start = 1;
+    uint32_t flags;
+    int offset;
 
     if (argv == 0) {
         printf("\n");
         return 0;
     }
 
-    if (argc > 1 && argv[1][0] == '-') {
-        if (strcmp(argv[1], "-e") == 0) {
-            ansicolor = 1;
-        } else if (strcmp(argv[1], "-h") == 0) {
-            show_help();
-            return 0;
-        } else {
-            printf("echo: invalid option: %s\n", argv[1]);
-            return 1;
-        }
-        start = 2;
+    flags = parse_args(argv, &offset);
+
+    if (flags & ECHO_ERRR) {
+        fprintf(stderr, "echo: invalid option -- '%s'\n", argv[offset]);
+        fprintf(stderr, "Try 'echo -h' for more information.\n");
+        return 1;
     }
 
-    char *text = get_text(argv, start);
-    char *tmp = text;
-
-    if (ansicolor) {
-        tmp = app_ansi_color(text);
-        free(text);
+    if (flags & ECHO_HELP) {
+        show_help();
+        return 0;
     }
 
-    fputs(tmp, stdout);
-    free(tmp);
+    char *text = get_text(argv, offset);
+
+    if (flags & ECHO_ANSI) {
+        text = app_ansi_color(text);
+    }
+
+    fputs(text, stdout);
+
+    if (!(flags & ECHO_NONL)) {
+        fputs("\n", stdout);
+    }
+
+    free(text);
 
     return 0;
 }
