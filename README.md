@@ -92,8 +92,8 @@ You can then run the `help` command to see a list of useful commands.
 ## The kernel
 
 The profanOS kernel (generally called generic kernel or profan kernel) is at the heart
-of the OS, it is extremely minimalist and can be completed by adding libraries
-loaded from disk such as drivers or file system extensions.
+of the OS, it is extremely minimalist and can be completed by adding modules loaded
+from disk such as drivers or file system extensions.
 
 profanOS is **not** a SASOS - single address space operating system, but part of the memory is shared,
 like the kernel and the libraries. Processes can therefore freely access kernel functions.
@@ -108,7 +108,7 @@ Here is a list of the main kernel features:
 - preemptive multi-tasking
 - memory allocation
 - virtual memory management
-- librarys and modules
+- kernel modules
 - ring0 only
 
 ## The userspace
@@ -122,7 +122,7 @@ You can also use the lua, sulfur, C and C++ languages to create your own program
 If you prefer a bash like rather than Olivine, there is `lish`, a basic implementation
 of a bash-style shell interpreter.
 
-### Major ports
+### Major ports - Addons
 
 - [lua](https://github.com/elydre/lua-profan) programming language, with custom library
 - [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
@@ -131,16 +131,36 @@ of a bash-style shell interpreter.
 - [vlink](https://github.com/elydre/vlink-profan) linker with multi-format support
 - [halfix](https://github.com/elydre/halfix-profan) x86 emulator, with 32-bit support
 
-All the ports are available with the command `make addons` / `make waddons` (all ports)
+All the ports are available with the command `make addons` / `make gaddons` (graphical menu)
 or by building them manually.
 
 ### Libraries
 
-Libraries are loaded from disk. Currently the libraries are not dynamically linked,
-they are loaded only once and are shared between all processes.
+Libraries are loaded from file system and are dynamically linked to executables using
+`deluge` (profan dynamic linker). Kernel modules, for their part, are shared between
+the process and their content are accessible using syscalls.
 
-- Internal libraries: devio, filesys, fmopen, panda, profan, vgui
-- Standard libraries: math, setjmp, stdio, stdlib, string, time, unistd
+Here is a list of the main libraries and kernel modules:
+
+- kernel modules
+  - devio
+  - filesys
+  - fmopen
+  - libmmq
+  - panda
+  - profan
+- `libc` - standard C library
+  - dlfcn
+  - profan
+  - setjmp
+  - stdio
+  - stdlib
+  - string
+  - time
+  - unistd
+- `libm` - standard math lib
+- `libvgui` - optimized graphic lib
+- `libtcc` - tinyCC lib (addons)
 
 ## Real-Hardware
 
@@ -186,7 +206,7 @@ sudo sh install.sh /dev/sdX profanOS.iso
 | bug name   | since | description                          | cause | fixed ? |
 |------------|-------|--------------------------------------|-------|---------|
 | lagged lag | ?     | all profanOS is getting very slow    | ?     | maybe   |
-| BOBCAT     | 0.4.2 | some C compiler build broken zlibs   | dily  | no      |
+| BOBCAT     | 0.4.2 | some C compiler build broken modules | dily  | no      |
 | no KB      | ?     | keyboard not working sometimes       | ?     | no      |
 
 ### Screenshots
@@ -205,14 +225,15 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 
 - **[os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial**
 - **[@Lorisredstone](https://github.com/Lorisredstone) for all the help and ideas**
+- [@asqel](https://github.com/asqel) for tests, [ATC](https://github.com/asqel/act) and the sulfur language
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
 - [osdev wiki](https://wiki.osdev.org/) for the documentation made by the community
+- [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
 - [framindmap](https://framindmap.org) for the mindmap of the todo list
 - [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 - [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
 - [szhou42](https://github.com/szhou42/osdev) for the ata driver
 - [@ProtoByter](https://github.com/ProtoByter) for the first pull request
-- [@asqel](https://github.com/asqel) for the real hardware test and sulfur lang
 
 *be careful with our friend 55*
