@@ -26,6 +26,8 @@ char *app_ansi_color(char *str) {
     }
 
     out[dup_index] = '\0';
+    free(str);
+
     return out;
 }
 
