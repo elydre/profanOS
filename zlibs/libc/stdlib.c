@@ -44,6 +44,9 @@ void __attribute__((constructor)) stdlib_init(void) {
 
 void __attribute__((destructor)) stdlib_fini(void) {
     // free the environment
+    if (g_env == NULL)
+        return;
+
     for (int i = 0; g_env[i] != NULL; i++) {
         free(g_env[i]);
     }
