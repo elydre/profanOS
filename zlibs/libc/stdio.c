@@ -44,10 +44,8 @@ void __attribute__((constructor)) stdlio_init(void) {
 void __attribute__((destructor)) stdlio_destroy(void) {
     for (int i = 0; i < 3; i++) {
         fflush(STD_STREAM + i);
-        fm_close(STD_STREAM[i].fd);
         free(STD_STREAM[i].buffer);
     }
-
     free(STD_STREAM);
 }
 
