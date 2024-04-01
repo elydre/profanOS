@@ -143,21 +143,9 @@ the process and their content are accessible using syscalls.
 Here is a list of the main libraries and kernel modules:
 
 - kernel modules
-  - devio
-  - filesys
-  - fmopen
-  - libmmq
-  - panda
-  - profan
+  - devio, filesys, fmopen, libmmq, panda, profan
 - `libc` - standard C library
-  - dlfcn
-  - profan
-  - setjmp
-  - stdio
-  - stdlib
-  - string
-  - time
-  - unistd
+  - dlfcn, profan, setjmp, stdio, stdlib, string, time, unistd
 - `libm` - standard math lib
 - `libvgui` - optimized graphic lib
 - `libtcc` - tinyCC lib (addons)
