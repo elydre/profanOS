@@ -11,7 +11,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 9"
+#define OLV_VERSION "0.11 rev 10"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2891,7 +2891,13 @@ char **lexe_program(char *program, int interp_bckslsh) {
     int tmp_index = 0;
     int is_string_begin = 1;
     int in_quote = 0;
-    for (int i = 0; program[i] != '\0'; i++) {
+    int i = 0;
+
+    if (strncmp(program, "#!", 2) == 0) {
+        for (; program[i] && program[i] != '\n'; i++);
+    }
+
+    for (; program[i] != '\0'; i++) {
         if (program[i] == '\n' || (program[i] == ';' && !in_quote)) {
             is_string_begin = 1;
 

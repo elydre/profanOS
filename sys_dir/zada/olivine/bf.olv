@@ -1,3 +1,5 @@
+#!/bin/fatpath/olivine.elf
+
 global bf_mem 00
 global bf_mem_len 1
 global bf_mem_ptr 0
