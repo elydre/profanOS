@@ -196,7 +196,7 @@ sudo sh install.sh /dev/sdX profanOS.iso
 
 ### Screenshots
 
-| ![shell](https://elydre.github.io/img/profan/screen/shell.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
+| ![halfix](https://elydre.github.io/img/profan/screen/halfix.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
 |------------------------------------------------------------------|-------------------------------------------------------------------|
 | ![windaube](https://elydre.github.io/img/profan/screen/windaube.png) | ![lua](https://elydre.github.io/img/profan/screen/lua.png) |
 
