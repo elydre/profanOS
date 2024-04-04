@@ -906,13 +906,14 @@ char *get_prompt(int last_exit) {
 }
 
 void sh_print_help(int full) {
-    puts("Usage: "SHELL_NAME" [-h|-d]");
+    puts("Usage: "SHELL_NAME" [-h|-d|-c command]");
     if (!full) {
         puts("try '"SHELL_NAME" -h' for more information");
         return;
     }
     puts(
         "Options:\n"
+        "  -c  run command and exit\n"
         "  -h  display this help and exit\n"
         "  -d  debug mode\n"
         "Builtins:\n"
@@ -933,10 +934,12 @@ void sh_print_help(int full) {
 int sh_parse_args(int argc, char **argv) {
     if (argc < 2)
         return 0;
-    if (argc == 2 && strcmp(argv[1], "-h") == 0)
-        return 2;
     if (argc == 2 && strcmp(argv[1], "-d") == 0)
         return 1;
+    if (argc == 2 && strcmp(argv[1], "-h") == 0)
+        return 2;
+    if (argc == 3 && strcmp(argv[1], "-c") == 0)
+        return 3;
     return -1;
 }
 
@@ -959,10 +962,14 @@ int main(int argc, char **argv) {
 
     setenv("PWD", "/", 0);
 
-    while (1) {
-        prompt = get_prompt(last_exit);
-        line = readline(prompt);
-        free(prompt);
+   do {
+        if (mode == 3) {
+            line = strdup(argv[2]);
+        } else {
+            prompt = get_prompt(last_exit);
+            line = readline(prompt);
+            free(prompt);
+        }
 
         if (line == NULL || strcmp(line, "exit") == 0) {
             fputs("exit\n", stderr);
@@ -1024,6 +1031,7 @@ int main(int argc, char **argv) {
             last_exit = start_pipex(pipex);
 
         free_pipex(pipex);
-    }
+    } while (mode != 3);
+
     return 0;
 }
