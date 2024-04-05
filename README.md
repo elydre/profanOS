@@ -212,13 +212,14 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 - **[@Lorisredstone](https://github.com/Lorisredstone) for all the help and ideas**
 - [@asqel](https://github.com/asqel) for tests, [ATC](https://github.com/asqel/act) and the sulfur language
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
-- [osdev wiki](https://wiki.osdev.org/) for the documentation made by the community
+- [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
-- [framindmap](https://framindmap.org) for the mindmap of the todo list
+- [framindmap](https://framindmap.org) for mindmap of the todo list
 - [Terry Davis](https://templeos.org) for the inspiration and his courage
+- [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
 - [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 - [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
-- [szhou42](https://github.com/szhou42/osdev) for the ata driver
+- [szhou42](https://github.com/szhou42/osdev) for ata driver
 - [@ProtoByter](https://github.com/ProtoByter) for the first pull request
 
 *be careful with our friend 55*
