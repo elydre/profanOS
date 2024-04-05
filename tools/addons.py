@@ -8,100 +8,134 @@ profan_path = path.rsplit(os.sep, 1)[0]
 #######################################################
 
 ADDONS = {
-    "lua": {
-        "description": "port of the Lua interpreter",
-        "files": [
-            {
-                "name": "lua",
-                "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
-                "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
-            },
-        ]
-    },
-    "doom": {
-        "description": "port of the Doom game for profanOS",
-        "files": [
-            {
-                "name": "doom",
-                "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
-                "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
-            },
-            {
-                "name": "doom1.wad",
-                "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
-                "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
-            }
-        ]
-    },
-    "sulfur": {
-        "description": "official sulfur language interpreter",
-        "files": [
-            {
-                "name": "sulfur",
-                "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
-                "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
-            },
-        ]
-    },
-    "tcc": {
-        "description": "Tiny C Compiler port for profanOS",
-        "files": [
-            {
-                "name": "tcc",
-                "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.elf",
-                "path": [profan_path, "out", "zapps", "fatpath", "tcc.elf"]
-            },
-            {
-                "name": "libtcc.a",
-                "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
-                "path": [profan_path, "out", "zlibs", "libtcc.a"]
-            },
-        ]
-    }
+    "best programs": [
+        {
+            "name": "tcc",
+            "description": "Tiny C Compiler port for profanOS",
+            "files": [
+                {
+                    "name": "tcc",
+                    "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "tcc.elf"]
+                },
+                {
+                    "name": "libtcc.a",
+                    "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
+                    "path": [profan_path, "out", "zlibs", "libtcc.a"]
+                },
+            ]
+        },
+        {
+            "name": "lua",
+            "description": "port of the Lua interpreter",
+            "files": [
+                {
+                    "name": "lua",
+                    "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
+                },
+            ]
+        },
+        {
+            "name": "doom",
+            "description": "port of the Doom game for profanOS",
+            "files": [
+                {
+                    "name": "doom",
+                    "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
+                },
+                {
+                    "name": "doom1.wad",
+                    "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
+                    "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
+                }
+            ]
+        }
+    ],
+    "dev libraries": [
+        {
+            "name": "zlib",
+            "description": "zlib compression library",
+            "files": [
+                {
+                    "name": "libz.so",
+                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libz.so",
+                    "path": [profan_path, "out", "zlibs", "libz.so"]
+                },
+                {
+                    "name": "zlib.h",
+                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/zlib.h",
+                    "path": [profan_path, "include", "addons", "zlib.h"]
+                }
+            ]
+        },
+    ],
+    "extra programs": [
+        {
+            "name": "sulfur",
+            "description": "official sulfur language interpreter",
+            "files": [
+                {
+                    "name": "sulfur",
+                    "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
+                },
+            ]
+        },
+        {
+            "name": "vlink",
+            "description": "vlink linker with multi-format support",
+            "files": [
+                {
+                    "name": "vlink",
+                    "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
+                },
+            ]
+        },
+        {
+            "name": "halfix",
+            "description": "port of the Halfix x86 emulator for profanOS",
+            "files": [
+                {
+                    "name": "halfix",
+                    "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "halfix.elf"]
+                },
+                {
+                    "name": "bios.bin",
+                    "url": "https://github.com/elydre/halfix-profan/raw/master/bios.bin",
+                    "path": [profan_path, "out", "zada", "halfix", "bios.bin"]
+                },
+                {
+                    "name": "vgabios.bin",
+                    "url": "https://github.com/elydre/halfix-profan/raw/master/vgabios.bin",
+                    "path": [profan_path, "out", "zada", "halfix", "vgabios.bin"]
+                },
+                {
+                    "name": "default.cfg",
+                    "url": "https://raw.githubusercontent.com/elydre/halfix-profan/master/default.conf",
+                    "path": [profan_path, "out", "zada", "halfix", "default.cfg"]
+                },
+                {
+                    "name": "linux.iso",
+                    "url": "https://github.com/copy/images/raw/master/linux.iso",
+                    "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
+                }
+            ]
+        }
+    ]
 }
 
-WADDONS = {
-    "vlink": {
-        "description": "vlink linker with multi-format support",
-        "files": [
-            {
-                "name": "vlink",
-                "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
-                "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
-            },
-        ]
-    },
-    "halfix": {
-        "description": "port of the Halfix x86 emulator for profanOS",
-        "files": [
-            {
-                "name": "halfix",
-                "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.elf",
-                "path": [profan_path, "out", "zapps", "fatpath", "halfix.elf"]
-            },
-            {
-                "name": "bios.bin",
-                "url": "https://github.com/elydre/halfix-profan/raw/master/bios.bin",
-                "path": [profan_path, "out", "zada", "halfix", "bios.bin"]
-            },
-            {
-                "name": "vgabios.bin",
-                "url": "https://github.com/elydre/halfix-profan/raw/master/vgabios.bin",
-                "path": [profan_path, "out", "zada", "halfix", "vgabios.bin"]
-            },
-            {
-                "name": "default.cfg",
-                "url": "https://raw.githubusercontent.com/elydre/halfix-profan/master/default.conf",
-                "path": [profan_path, "out", "zada", "halfix", "default.cfg"]
-            },
-            {
-                "name": "linux.iso",
-                "url": "https://github.com/copy/images/raw/master/linux.iso",
-                "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
-            }
-        ]
-    }
-}
+ALL_ADOONS = [e for category in ADDONS for e in ADDONS[category]]
+
+def get_addons(name: str) -> dict:
+    for category in ADDONS:
+        for addon in ADDONS[category]:
+            if addon["name"] == name:
+                return addon
+    return None
 
 #######################################################
 #######################################################
@@ -123,16 +157,10 @@ def download(url: str, path: str) -> bool:
 
     return True
 
-def get_addon(name: str) -> bool:
-    all_addons = {**ADDONS, **WADDONS}
-
-    if name not in all_addons:
-        print("\rERROR: Unknown addon:", name)
-        return False
-
-    print(f"\rInstall {name.upper()}: {all_addons[name]['description']}")
-    for sub in all_addons[name]["files"]:
-        print(f"\r Getting {name} part: {sub['name']}")
+def download_addon(dic: dict) -> bool:
+    print(f"\rInstall {dic['name']}: {dic['description']}")
+    for sub in dic["files"]:
+        print(f"\r Getting {dic['name']} part: {sub['name']}")
         # check if parent directory exists
         parent = os.sep.join(sub["path"][:-1])
         if not os.path.exists(parent):
@@ -153,8 +181,10 @@ def graphic_menu(stdscr):
     curses.curs_set(0)
     stdscr.clear()
     stdscr.refresh()
-
-    checked = [[False] * len(ADDONS)] + [[False] * len(WADDONS)]
+    
+    checked = [False] * len(ALL_ADOONS) 
+    print(len(ALL_ADOONS))
+    
     current = 0
 
     def draw_menu(stdscr, checked, current):
@@ -162,21 +192,23 @@ def graphic_menu(stdscr):
         stdscr.addstr(0, 0, "Select addons to install with ENTER", curses.A_BOLD)
         stdscr.addstr(1, 0, "Q: cancel, RIGHT: info, V: validate")
 
-        stdscr.addstr(3, 1, "Download Selected" if any(checked[0]) or any(checked[1]) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
-        stdscr.addstr(4, 1, "Unselect all" if any(checked[0]) or any(checked[1]) else "Select all", curses.A_REVERSE if current == 1 else 0)
+        stdscr.addstr(3, 1, "Download Selected" if any(checked) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
+        stdscr.addstr(4, 1, "Unselect all" if any(checked) else "Select all", curses.A_REVERSE if current == 1 else 0)
 
-        stdscr.addstr(6, 0, "Addons:", curses.A_BOLD)
-        for i, addon in enumerate(ADDONS):
-            stdscr.addstr(7 + i, 1, f" [{'X' if checked[0][i] else ' '}] {addon.upper()}\t {ADDONS[addon]['description']}", curses.A_REVERSE if current == i + 2 else 0)
-
-        stdscr.addstr(8 + len(ADDONS), 0, "Weighty addons:", curses.A_BOLD)
-        for i, addon in enumerate(WADDONS):
-            stdscr.addstr(9 + len(ADDONS) + i, 1, f" [{'X' if checked[1][i] else ' '}] {addon.upper()}\t {WADDONS[addon]['description']}", curses.A_REVERSE if current == i + 2 + len(ADDONS) else 0)
+        index = 0
+        line_offset = 6
+        for category in ADDONS:
+            stdscr.addstr(index + line_offset, 1, category.upper(), curses.A_BOLD)
+            line_offset += 1
+            for addon in ADDONS[category]:
+                stdscr.addstr(index + line_offset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} - {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
+                index += 1
+            line_offset += 1
 
         stdscr.refresh()
 
     def draw_info(stdscr, element):
-        data = ADDONS[element] if element in ADDONS else WADDONS[element]
+        data = ALL_ADOONS[element]
         stdscr.clear()
         stdscr.addstr(0, 0, f"Info for {element.upper()}", curses.A_BOLD)
         stdscr.addstr(1, 0, f"{data['description']}")
@@ -192,12 +224,9 @@ def graphic_menu(stdscr):
         stdscr.addstr(0, 0, "Installing selected addons...", curses.A_BOLD)
         stdscr.refresh()
         print("\n")
-        for i, addon in enumerate(ADDONS):
-            if checked[0][i]:
-                get_addon(addon)
-        for i, addon in enumerate(WADDONS):
-            if checked[1][i]:
-                get_addon(addon)
+        for i, addon in enumerate(ALL_ADOONS):
+            if checked[i]:
+                download_addon(addon)
 
     while True:
         draw_menu(stdscr, checked, current)
@@ -205,27 +234,25 @@ def graphic_menu(stdscr):
         if key == ord("q"):
             break
         elif key == curses.KEY_DOWN:
-            current = min(current + 1, len(ADDONS) + len(WADDONS) + 1)
+            current = min(current + 1, len(ALL_ADOONS) + 1)
         elif key == curses.KEY_UP:
             current = max(current - 1, 0)
         elif key == curses.KEY_RIGHT:
             if current > 0:
-                draw_info(stdscr, list(ADDONS.keys())[current - 2] if current < len(ADDONS) + 2 else list(WADDONS.keys())[current - len(ADDONS) - 2])
+                draw_info(stdscr, ALL_ADOONS[current - 2])
         elif key == curses.KEY_LEFT:
             current = 0
         elif key == 10 or key == ord(" "):
             if current == 1:
-                if any(checked[0]) or any(checked[1]):
-                    checked = [[False] * len(ADDONS)] + [[False] * len(WADDONS)]
+                if any(checked):
+                    checked = [False] * len(ALL_ADOONS)
                 else:
-                    checked = [[True] * len(ADDONS)] + [[True] * len(WADDONS)]
+                    checked = [True] * len(ALL_ADOONS)
             elif current == 0:
                 download_selected(stdscr, checked)
                 break
-            elif current < len(ADDONS) + 2:
-                checked[0][current - 2] = not checked[0][current - 2]
             else:
-                checked[1][current - len(ADDONS) - 2] = not checked[1][current - len(ADDONS) - 2]
+                checked[current - 2] = not checked[current - 2]
         elif key == ord("v"):
             download_selected(stdscr, checked)
             break
@@ -237,45 +264,41 @@ def graphic_menu(stdscr):
 #######################################################
 
 def show_help():
-    msg = [
-           "USAGE: python3 get_addons.py [options|addon]",
-           "OPTIONS:",
-           "  -h: show this help",
-           "  -g: graphic menu",
-           "  -l: list available addons",
-           "  -a: get all addons",
-           "  -w: get all weighty addons",
-           "ADDONS:",
-    ]
+    print(
+        "USAGE: python3 get_addons.py [options|addon]",
+        "OPTIONS:",
+        "  -h: show this help",
+        "  -g: graphic menu",
+        "  -l: list available addons",
+        "  -a: get all addons",
+        "  -w: get all weighty addons",
+        "ADDONS:"
+    )
 
-    for addon in ADDONS:
-        msg += [f"  {addon}: {ADDONS[addon]['description']}"]
+    for category in ADDONS:
+        print(f"  {category}:")
+        for addon in ADDONS[category]:
+            print(f"    {addon}: {ADDONS[category][addon]['description']}")
 
-    msg += ["WEIGHTY ADDONS:"]
-    for addon in WADDONS:
-        msg += [f"  {addon}: {WADDONS[addon]['description']}"]
-
-    msg += ["EXAMPLES:",
-           "  python3 get_addons.py -g",
-           "  python3 get_addons.py -a",
-           "  python3 get_addons.py lua",
-    ]
-
-    print("\n".join(msg))
+    print(
+        "EXAMPLES:"
+        "  python3 get_addons.py -g"
+        "  python3 get_addons.py -a"
+        "  python3 get_addons.py lua"
+    )
 
 def show_list():
     print("Available addons:")
-    for addon in ADDONS:
-        print(f"  {addon}: {ADDONS[addon]['description']}")
-    print("Weighty addons:")
-    for addon in WADDONS:
-        print(f"  {addon}: {WADDONS[addon]['description']}")
+    for category in ADDONS:
+        print(f"  {category}:")
+        for addon in ADDONS[category]:
+            print(f"    {addon}: {ADDONS[category][addon]['description']}")
 
 table = {
     "-h": show_help,
     "-l": show_list,
-    "-a": lambda: [get_addon(addon) for addon in ADDONS],
-    "-w": lambda: [get_addon(addon) for addon in [*ADDONS, *WADDONS]],
+    "-a": lambda: [download_addon(addon) for addon in ADDONS["best programs"]],
+    "-w": lambda: [download_addon(addon) for addon in ALL_ADOONS],
     "-g": lambda: curses.wrapper(graphic_menu)
 }
 
@@ -298,4 +321,4 @@ if __name__ == "__main__":
         else:
             print("ERROR: Unknown option:", args[0])
     else:
-        get_addon(args[0])
+        download_addon(args[0])

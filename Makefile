@@ -52,7 +52,7 @@ gaddons:
 
 # clean all build files
 clean:
-	rm -Rf out/ extracted/
+	rm -Rf out/ extracted/ include/addons/
 	rm -Rf *.iso *.elf *.bin
 
 # remove git ignored and discard all changes

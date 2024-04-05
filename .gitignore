@@ -17,6 +17,9 @@
 # build dir
 out/
 
+# extra headers
+include/addons/
+
 # vscode dir
 .vscode/
 .vs/

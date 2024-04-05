@@ -34,13 +34,13 @@ KERNEL_HEADERS = ["include/kernel"]
 
 ZAPPS_DIR = "zapps"
 ZLIBS_DIR = "zlibs"
-ZHEADERS = ["include/zlibs"]
+ZHEADERS = ["include/zlibs", "include/addons"]
 ZAPPS_BIN = "zapps/sys"
 ZLIBS_MOD = "zlibs/mod"
 
-CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686"
+CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686 -nostdinc"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
-ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror -I include/zlibs"
+ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror"
 
 KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 
@@ -54,6 +54,9 @@ COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
 
+for e in ZHEADERS:
+    if os.path.exists(e):
+        ZAPP_FLAGS += f" -I {e}"
 
 last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
@@ -277,8 +280,6 @@ def build_app_lib():
     total_bin = len(bin_build_list)
     total_lib = len(lib_build_list)
 
-    libs_name = list(dict.fromkeys([f"{name.split('/')[1]}" for name in lib_build_list]))
-
     elf_build_list = [file for file in elf_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
     bin_build_list = [file for file in bin_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
     lib_build_list = [file for file in lib_build_list if not (file1_newer(f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file) and file1_newer(f"{OUT_DIR}/zlibs/{file.split('/')[1]}.so", file))]
@@ -301,6 +302,9 @@ def build_app_lib():
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
 
     total = len(elf_build_list) + len(bin_build_list)
+    
+    # get .so files
+    libs_name = [e[:-3] for e in file_in_dir(f"{OUT_DIR}/zlibs", ".so")]
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
