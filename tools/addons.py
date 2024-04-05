@@ -201,7 +201,7 @@ def graphic_menu(stdscr):
             stdscr.addstr(index + line_offset, 1, category.upper(), curses.A_BOLD)
             line_offset += 1
             for addon in ADDONS[category]:
-                stdscr.addstr(index + line_offset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} - {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
+                stdscr.addstr(index + line_offset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} {' ' * (10-len(addon['name']))} {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
                 index += 1
             line_offset += 1
 
