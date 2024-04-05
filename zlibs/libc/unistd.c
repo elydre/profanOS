@@ -404,8 +404,42 @@ useconds_t ualarm(useconds_t a, useconds_t b) {
     return 0;
 }
 
-int unlink(const char *a) {
-    puts("unlink is not implemented yet, WHY DO YOU USE IT ?");
+int unlink(const char *filename) {
+    // add the current working directory to the filename
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+    char *path = assemble_path(pwd, (char *) filename);
+
+    // check if the file exists
+    sid_t parent_sid, elem = fu_path_to_sid(ROOT_SID, path);
+    if (!fu_is_file(elem)) {
+        fprintf(stderr, "unlink: %s: not a file\n", filename);
+        free(path);
+        return -1;
+    }
+
+    // get the parent directory sid
+    char *parent, *name;
+    fu_sep_path(path, &parent, &name);
+    parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    free(parent);
+    free(name);
+    free(path);
+
+    if (IS_NULL_SID(parent_sid)) {
+        fprintf(stderr, "unlink: %s: parent not found\n", filename);
+        return -1;
+    }
+
+    // remove the element from the parent directory
+    fu_remove_element_from_dir(parent_sid, elem);
+
+    // delete the file content
+    if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
+        fprintf(stderr, "unlink: %s: failed to delete\n", filename);
+        return -1;
+    }
+
     return 0;
 }
 
