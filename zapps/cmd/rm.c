@@ -66,13 +66,11 @@ rm_options_t *parse_options(int argc, char **argv) {
 
 int remove_hard_link(sid_t elem, char *path) {
     char *parent;
-    char *name;
 
-    fu_sep_path(path, &parent, &name);
+    fu_sep_path(path, &parent, NULL);
 
     sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
     free(parent);
-    free(name);
 
     if (IS_NULL_SID(parent_sid)) {
         printf("rm: cannot remove '%s': Unreachable path\n", path);
