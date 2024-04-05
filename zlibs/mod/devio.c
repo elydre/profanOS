@@ -25,10 +25,13 @@ int dev_zero(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 }
 
 int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    static uint32_t rand_seed = 0;
     if (!is_read)
         return 0;
-    for (uint32_t i = 0; i < size; i++)
-        ((uint8_t *) buffer)[i] = (uint8_t) 42;
+    for (uint32_t i = 0; i < size; i++) {
+        rand_seed = rand_seed * 1103515245 + 12345;
+        ((uint8_t *) buffer)[i] = (uint8_t) (rand_seed / 65536) % 256;
+    }
     return size;
 }
 
