@@ -222,14 +222,13 @@ def graphic_menu(stdscr):
         stdscr.refresh()
 
     def draw_info(stdscr, element):
-        data = ALL_ADOONS[element]
         stdscr.clear()
-        stdscr.addstr(0, 0, f"Info for {element.upper()}", curses.A_BOLD)
-        stdscr.addstr(1, 0, f"{data['description']}")
+        stdscr.addstr(0, 0, f"Info for {element['name']}", curses.A_BOLD)
+        stdscr.addstr(1, 0, f"{element['description']}")
         stdscr.addstr(3, 0, "Files to install:", curses.A_BOLD)
-        for i, file in enumerate(data["files"]):
+        for i, file in enumerate(element["files"]):
             stdscr.addstr(4 + i, 0, f"  {file['name']}{' ' * (max(0, 15 - len(file['name'])))} {domain(file['url'])}")
-        stdscr.addstr(5 + len(data["files"]), 0, "Press any key to continue")
+        stdscr.addstr(5 + len(element["files"]), 0, "Press any key to continue")
         stdscr.refresh()
         stdscr.getch()
 
