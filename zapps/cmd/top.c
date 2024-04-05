@@ -1,4 +1,4 @@
-#include <syscall.h>
+#include <profan/syscall.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,12 +71,12 @@ void list_process(void) {
     int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
     sort_tab(pid_list, pid_list_len);
 
-    int line_len = snprintf(info_line, 81, "  profanOS . kernel %s . %d processes . uptime %ds (%ds IDLE)",
+    int line_len = snprintf(info_line, 81, "  profanOS . kernel %s . %d processes . uptime %ds (%ds IDLE)  ",
             c_sys_kinfo(),
             pid_list_len - 2,
             c_timer_get_ms() / 1000,
             c_process_get_run_time(1) / 1000
-    );
+    ) - 1;
 
     // center info line
     int spaces = (79 - line_len) / 2;

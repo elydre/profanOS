@@ -1,11 +1,11 @@
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan.h>
+
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <syscall.h>
-#include <filesys.h>
-#include <profan.h>
 
 char *read_stdin(int *len) {
     char *buffer = malloc(1025);

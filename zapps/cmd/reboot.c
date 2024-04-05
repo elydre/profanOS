@@ -1,4 +1,4 @@
-#include <syscall.h>
+#include <profan/syscall.h>
 
 int main(int argc, char **argv) {
     if (argc == 1)

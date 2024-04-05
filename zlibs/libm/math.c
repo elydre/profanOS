@@ -1,6 +1,7 @@
-#include "math_private.h"
-#include <libmmq.h>
+#include <profan/libmmq.h>
 #include <math.h>
+
+#include "math_private.h"
 
 #define math_errhandling MATH_ERRNO | MATH_ERREXCEPT
 

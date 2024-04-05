@@ -15,7 +15,7 @@
 #ifndef _MATH_PRIVATE_H
 #define _MATH_PRIVATE_H
 
-#include <type.h>
+#include <profan/type.h>
 
 /* The original fdlibm code used statements like:
     n0 = ((*(int*)&one)>>29)^1;        * index of high word *

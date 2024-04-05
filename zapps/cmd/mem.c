@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <syscall.h>
+#include <profan/syscall.h>
 #include <profan.h>
 
 #define PROCESS_MAX 20

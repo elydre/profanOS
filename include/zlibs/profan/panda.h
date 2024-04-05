@@ -1,7 +1,7 @@
 #ifndef PANDA_ID
 #define PANDA_ID 1006
 
-#include <type.h>
+#include <profan/type.h>
 
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 

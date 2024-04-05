@@ -1,7 +1,7 @@
 #ifndef MATH_H
 #define MATH_H
 
-#include <type.h>
+#include <profan/type.h>
 
 extern int signgam;
 

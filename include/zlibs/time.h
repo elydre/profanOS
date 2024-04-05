@@ -1,7 +1,7 @@
 #ifndef TIME_H
 #define TIME_H
 
-#include <type.h>
+#include <profan/type.h>
 
 // Number of clock ticks per second returned by the times() function (LEGACY).
 #define CLK_TCK 100

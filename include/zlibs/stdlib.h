@@ -1,7 +1,7 @@
 #ifndef STDLIB_ID
 #define STDLIB_ID 1007
 
-#include <type.h>
+#include <profan/type.h>
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1

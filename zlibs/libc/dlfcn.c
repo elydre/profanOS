@@ -1,4 +1,4 @@
-#include <type.h>
+#include <profan/type.h>
 
 // real function are defined in the dynamic linker (/bin/sys/deluge)
 // this file is just a stratagem to make the compiler happy

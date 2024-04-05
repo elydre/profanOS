@@ -1,10 +1,10 @@
+#include <profan/filesys.h>
+#include <profan/syscall.h>
+#include <profan.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-#include <filesys.h>
-#include <syscall.h>
-#include <profan.h>
 
 int raise_and_free(char *msg, char *name, char *buf) {
     printf("cp: cannot copy '%s': %s\n", name, msg);

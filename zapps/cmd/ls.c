@@ -3,8 +3,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <syscall.h>
-#include <filesys.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
 #include <profan.h>
 
 typedef struct {

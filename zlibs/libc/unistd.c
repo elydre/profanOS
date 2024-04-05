@@ -1,12 +1,12 @@
-#include <syscall.h>
-#include <filesys.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/type.h>
 #include <profan.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <type.h>
 
 int access(const char *a, int b) {
     puts("access is not implemented yet, WHY DO YOU USE IT ?");

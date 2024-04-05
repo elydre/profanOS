@@ -1,6 +1,6 @@
-#include <filesys.h>
+#include <profan/filesys.h>
+#include <profan/panda.h>
 #include <profan.h>
-#include <panda.h>
 
 #include <stdlib.h>
 #include <stdio.h>

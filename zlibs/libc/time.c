@@ -1,7 +1,8 @@
-#include <syscall.h>
+#include <profan/syscall.h>
+#include <profan/type.h>
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <type.h>
 
 #define TIME_C
 #include <time.h>

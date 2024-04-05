@@ -2,7 +2,7 @@
 #define STDIO_H
 
 #include <stdarg.h>
-#include <type.h>
+#include <profan/type.h>
 
 #define stdin  (FILE *) 3
 #define stdout (FILE *) 1

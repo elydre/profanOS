@@ -1,5 +1,6 @@
-#include <syscall.h>
+#include <profan/syscall.h>
 #include <profan.h>
+
 #include <unistd.h>
 #include <stdio.h>
 

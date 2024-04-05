@@ -1,4 +1,4 @@
-#include <syscall.h>
+#include <profan/syscall.h>
 #include <stdio.h>
 
 #define ANSI_CLEAR "\e[2J\e[H"

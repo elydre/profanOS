@@ -1,8 +1,9 @@
-#include <syscall.h>
+#include <profan/syscall.h>
+#include <profan.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <profan.h>
 #include <stdio.h>
 
 uint32_t *screen;

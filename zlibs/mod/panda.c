@@ -1,6 +1,6 @@
-#include <syscall.h>
-#include <filesys.h>
-#include <libmmq.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/libmmq.h>
 
 #define SCROLL_LINES 8
 

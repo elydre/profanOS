@@ -1,11 +1,12 @@
 #define PROFAN_C
 
-#include <syscall.h>
-#include <filesys.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/libmmq.h>
+#include <profan/type.h>
 #include <profan.h>
+
 #include <stdarg.h>
-#include <libmmq.h>
-#include <type.h>
 
 // input() setings
 #define FIRST_L 12

@@ -1,7 +1,7 @@
 #ifndef LIBMMQ_ID
 #define LIBMMQ_ID 1001
 
-#include <type.h>
+#include <profan/type.h>
 
 #define malloc(size) ((void *) c_mem_alloc((size), 0, 1))
 #define malloc_ask(size) ((void *) c_mem_alloc((size), 0, 6))

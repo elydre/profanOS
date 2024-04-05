@@ -1,7 +1,7 @@
 #ifndef UNISTD_H
 #define UNISTD_H
 
-#include <type.h>
+#include <profan/type.h>
 
 #ifndef NULL
 #define NULL 0

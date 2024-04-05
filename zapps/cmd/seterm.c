@@ -1,7 +1,8 @@
-#include <filesys.h>
+#include <profan/filesys.h>
+#include <profan.h>
+
 #include <unistd.h>
 #include <stdlib.h>
-#include <profan.h>
 #include <stdio.h>
 
 int is_valid_file(char *path) {

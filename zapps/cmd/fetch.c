@@ -1,8 +1,8 @@
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <syscall.h>
-#include <filesys.h>
 
 #define pl_and_pf(...) print_logo_line(); printf(__VA_ARGS__)
 

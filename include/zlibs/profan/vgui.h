@@ -1,7 +1,7 @@
 #ifndef VGUI_H
 #define VGUI_H
 
-#include <type.h>
+#include <profan/type.h>
 
 typedef struct {
     int width;

@@ -1,10 +1,10 @@
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-#include <syscall.h>
-#include <filesys.h>
-#include <profan.h>
 
 void show_help(void) {
     puts("Usage: cat [options] [files]\n"

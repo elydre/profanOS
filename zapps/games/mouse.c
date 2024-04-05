@@ -1,10 +1,11 @@
 // @LINK SHARED: libvgui
 
-#include <syscall.h>
-#include <i_mouse.h>
+#include <profan/syscall.h>
+#include <profan/mouse.h>
+#include <profan/vgui.h>
+
 #include <stdlib.h>
 #include <unistd.h>
-#include <i_vgui.h>
 #include <stdio.h>
 
 void draw_mouse(int x, int y);

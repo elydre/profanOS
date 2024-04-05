@@ -1,11 +1,11 @@
+#include <profan/syscall.h>
+#include <profan/panda.h>
+#include <profan.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-
-#include <syscall.h>
-#include <profan.h>
-#include <panda.h>
 
 char *read_file(char *filename) {
     // read from file

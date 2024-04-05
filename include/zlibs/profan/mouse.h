@@ -1,7 +1,7 @@
 #ifndef I_MOUSE_H
 #define I_MOUSE_H
 
-#include <syscall.h>
+#include <profan/syscall.h>
 
 #define mouse_get_x() c_mouse_call(0, 0)
 #define mouse_get_y() c_mouse_call(1, 0)

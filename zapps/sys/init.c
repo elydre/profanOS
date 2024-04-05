@@ -1,8 +1,8 @@
-#include <syscall.h>
-#include <filesys.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/libmmq.h>
+#include <profan/panda.h>
 #include <profan.h>
-#include <libmmq.h>
-#include <panda.h>
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"

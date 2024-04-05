@@ -1,15 +1,14 @@
 // @LINK SHARED: libvgui
 
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/vgui.h>
+#include <profan.h>
+
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
-
-#include <syscall.h>
-#include <filesys.h>
-#include <profan.h>
 #include <unistd.h>
-
-#include <i_vgui.h>
+#include <stdio.h>
 
 // SETTINGS
 

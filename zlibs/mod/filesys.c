@@ -1,9 +1,9 @@
-#include <syscall.h>
-#include <libmmq.h>
-#include <type.h>
+#include <profan/syscall.h>
+#include <profan/libmmq.h>
+#include <profan/type.h>
 
 #define FILESYS_LIB_C
-#include <filesys.h>
+#include <profan/filesys.h>
 
 
 /********************************************

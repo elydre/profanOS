@@ -1,4 +1,4 @@
-#include <syscall.h>
+#include <profan/syscall.h>
 #include <stdio.h>
 
 int is_prime(int n);

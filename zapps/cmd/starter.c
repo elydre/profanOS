@@ -1,8 +1,9 @@
-#include <syscall.h>
-#include <filesys.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan.h>
+
 #include <string.h>
 #include <stdlib.h>
-#include <profan.h>
 #include <stdio.h>
 
 void free_tab(char **tab) {

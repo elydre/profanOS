@@ -1,12 +1,12 @@
+#include <profan/filesys.h>
+#include <profan/syscall.h>
+#include <profan.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
-
-#include <filesys.h>
-#include <syscall.h>
-#include <profan.h>
 
 typedef struct {
     char  *full_path;

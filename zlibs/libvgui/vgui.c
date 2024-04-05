@@ -1,6 +1,7 @@
-#include <syscall.h>
+#include <profan/syscall.h>
+#include <profan/vgui.h>
+
 #include <stdlib.h>
-#include <i_vgui.h>
 
 vgui_t vgui_setup(int width, int height) {
     vgui_t vgui;

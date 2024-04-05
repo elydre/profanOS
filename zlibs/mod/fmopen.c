@@ -1,8 +1,8 @@
 #define FMOPEN_LIB_C
 
-#include <syscall.h>
-#include <filesys.h>
-#include <libmmq.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/libmmq.h>
 #include <profan.h>
 
 #define MAX_OPENED 100

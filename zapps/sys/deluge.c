@@ -1,6 +1,7 @@
-#include <syscall.h>
-#include <filesys.h>
-#include <libmmq.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/libmmq.h>
+
 #include <dlfcn.h>
 
 #define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); exit(1); } while (0)

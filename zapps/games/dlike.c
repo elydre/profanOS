@@ -1,9 +1,10 @@
 // @LINK SHARED: libvgui
 
-#include <syscall.h>
-#include <stdlib.h>
-#include <i_vgui.h>
+#include <profan/syscall.h>
+#include <profan/vgui.h>
 #include <profan.h>
+
+#include <stdlib.h>
 
 #define MAP_SIZE 10
 #define PI 3.14159

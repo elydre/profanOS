@@ -1,7 +1,7 @@
 #ifndef PROFAN_LIB_ID
 #define PROFAN_LIB_ID 1005
 
-#include <type.h>
+#include <profan/type.h>
 
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, argc, argv, get_environ_ptr(), 1}, NULL)

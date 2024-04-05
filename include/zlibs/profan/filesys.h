@@ -3,7 +3,7 @@
 #define DEVIO_LIB_ID   1003
 #define FMOPEN_LIB_ID  1004
 
-#include <type.h>
+#include <profan/type.h>
 
 #ifndef NULL_SID
 #define NULL_SID ((sid_t) {0, 0})

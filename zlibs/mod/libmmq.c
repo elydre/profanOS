@@ -1,7 +1,8 @@
-#include <syscall.h>
-#include <filesys.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/type.h>
+
 #include <stdarg.h>
-#include <type.h>
 
 #define malloc(size) ((void *) c_mem_alloc((size), 0, 1))
 

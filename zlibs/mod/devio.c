@@ -1,8 +1,8 @@
-#include <filesys.h>
-#include <syscall.h>
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/libmmq.h>
+#include <profan/panda.h>
 #include <profan.h>
-#include <libmmq.h>
-#include <panda.h>
 
 void init_devio(void);
 int keyboard_read(void *buffer, uint32_t size, char *term);

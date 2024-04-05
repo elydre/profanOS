@@ -1,7 +1,8 @@
-#include <syscall.h>
+#include <profan/syscall.h>
+#include <profan/type.h>
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <type.h>
 
 #ifndef TOLOWER
 #define TOLOWER(c) ((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))

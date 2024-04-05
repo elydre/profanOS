@@ -1,7 +1,8 @@
 // @LINK SHARED: libvgui, libm
 
-#include <syscall.h>
-#include <i_vgui.h>
+#include <profan/syscall.h>
+#include <profan/vgui.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
