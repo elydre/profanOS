@@ -419,11 +419,10 @@ int unlink(const char *filename) {
     }
 
     // get the parent directory sid
-    char *parent, *name;
-    fu_sep_path(path, &parent, &name);
+    char *parent;
+    fu_sep_path(path, &parent, NULL);
     parent_sid = fu_path_to_sid(ROOT_SID, parent);
     free(parent);
-    free(name);
     free(path);
 
     if (IS_NULL_SID(parent_sid)) {
