@@ -7,11 +7,13 @@ profan_path = path.rsplit(os.sep, 1)[0]
 #######################################################
 #######################################################
 
+RECOMMENDED = ["tcc", "lua", "zlib", "doom"]
+
 ADDONS = {
-    "best programs": [
+    "compilation tools": [
         {
             "name": "tcc",
-            "description": "Tiny C Compiler port for profanOS",
+            "description": "Small and fast C compiler",
             "files": [
                 {
                     "name": "tcc",
@@ -26,37 +28,21 @@ ADDONS = {
             ]
         },
         {
-            "name": "lua",
-            "description": "port of the Lua interpreter",
+            "name": "vlink",
+            "description": "Linker with multi-format support",
             "files": [
                 {
-                    "name": "lua",
-                    "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
+                    "name": "vlink",
+                    "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
                 },
             ]
         },
-        {
-            "name": "doom",
-            "description": "port of the Doom game for profanOS",
-            "files": [
-                {
-                    "name": "doom",
-                    "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
-                },
-                {
-                    "name": "doom1.wad",
-                    "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
-                    "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
-                }
-            ]
-        }
     ],
-    "dev libraries": [
+    "libraries": [
         {
             "name": "zlib",
-            "description": "zlib compression library + gzip command",
+            "description": "Compression library + gzip command",
             "files": [
                 {
                     "name": "libz.so",
@@ -76,32 +62,27 @@ ADDONS = {
             ]
         },
     ],
-    "extra programs": [
+    "graphics": [
         {
-            "name": "sulfur",
-            "description": "official sulfur language interpreter",
+            "name": "doom",
+            "description": "Raycasting first person shooter",
             "files": [
                 {
-                    "name": "sulfur",
-                    "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
+                    "name": "doom",
+                    "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
                 },
-            ]
-        },
-        {
-            "name": "vlink",
-            "description": "vlink linker with multi-format support",
-            "files": [
                 {
-                    "name": "vlink",
-                    "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
-                },
+                    "name": "doom1.wad",
+                    "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
+                    "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
+                }
             ]
         },
+
         {
             "name": "halfix",
-            "description": "port of the Halfix x86 emulator for profanOS",
+            "description": "x86 emulator with provided linux image",
             "files": [
                 {
                     "name": "halfix",
@@ -129,8 +110,32 @@ ADDONS = {
                     "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
                 }
             ]
-        }
-    ]
+        },
+    ],
+    "interpreters": [
+        {
+            "name": "lua",
+            "description": "Lightweight scripting language",
+            "files": [
+                {
+                    "name": "lua",
+                    "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
+                },
+            ]
+        },
+        {
+            "name": "sulfur",
+            "description": "Bytecode high-performance language",
+            "files": [
+                {
+                    "name": "sulfur",
+                    "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
+                },
+            ]
+        },
+    ],
 }
 
 ALL_ADOONS = [e for category in ADDONS for e in ADDONS[category]]
@@ -187,10 +192,14 @@ def graphic_menu(stdscr):
     stdscr.clear()
     stdscr.refresh()
     
-    checked = [False] * len(ALL_ADOONS) 
+    checked = [False] * len(ALL_ADOONS)
+    for i, addon in enumerate(ALL_ADOONS):
+        if addon["name"] in RECOMMENDED:
+            checked[i] = True
+
     print(len(ALL_ADOONS))
     
-    current = 0
+    current = 1
 
     def draw_menu(stdscr, checked, current):
         stdscr.clear()
@@ -302,7 +311,7 @@ def show_list():
 table = {
     "-h": show_help,
     "-l": show_list,
-    "-a": lambda: [download_addon(addon) for addon in ADDONS["best programs"]],
+    "-a": lambda: [download_addon(addon) for addon in [get_addons(name) for name in RECOMMENDED]],
     "-w": lambda: [download_addon(addon) for addon in ALL_ADOONS],
     "-g": lambda: curses.wrapper(graphic_menu)
 }
