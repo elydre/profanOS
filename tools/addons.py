@@ -56,7 +56,7 @@ ADDONS = {
     "dev libraries": [
         {
             "name": "zlib",
-            "description": "zlib compression library",
+            "description": "zlib compression library + gzip command",
             "files": [
                 {
                     "name": "libz.so",
@@ -67,6 +67,11 @@ ADDONS = {
                     "name": "zlib.h",
                     "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/zlib.h",
                     "path": [profan_path, "include", "addons", "zlib.h"]
+                },
+                {
+                    "name": "gzip",
+                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/gzip.elf",
+                    "path": [profan_path, "out", "zapps", "cmd", "gzip.elf"]
                 }
             ]
         },
