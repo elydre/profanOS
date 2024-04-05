@@ -121,12 +121,13 @@ of a bash-style shell interpreter.
 
 ### Major ports - Addons
 
-- [lua](https://github.com/elydre/lua-profan) programming language, with custom library
-- [doom](https://github.com/elydre/doom-profan) engine, playable with keyboard
-- [sulfur](https://github.com/asqel/sulfur_lang) programming language, a project of a friend
-- [tcc](https://github.com/elydre/tinycc-profan) compiler, a small and fast c compiler
-- [vlink](https://github.com/elydre/vlink-profan) linker with multi-format support
-- [halfix](https://github.com/elydre/halfix-profan) x86 emulator, with 32-bit support
+- [tcc](https://github.com/elydre/tinycc-profan) Small and fast C compiler
+- [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
+- [lua](https://github.com/elydre/lua-profan) Lightweight scripting language
+- [halfix](https://github.com/elydre/halfix-profan) x86 emulator with provided linux image
+- [zlib](https://github.com/elydre/libs-profan) Compression library and gzip command
+- [sulfur](https://github.com/asqel/sulfur_lang) Bytecode high-performance language
+- [vlink](https://github.com/elydre/vlink-profan) Linker with multi-format support
 
 All the ports are available with the command `make addons` / `make gaddons` (graphical menu)
 or by building them manually.
@@ -146,6 +147,7 @@ Here is a list of the main libraries and kernel modules:
 - `libm` - standard math lib
 - `libvgui` - optimized graphic lib
 - `libtcc` - tinyCC lib (addons)
+- `libz` - compression lib (addons)
 
 ## Real-Hardware
 
