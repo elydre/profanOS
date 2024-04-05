@@ -118,7 +118,7 @@ FILE *fopen(const char *filename, const char *mode) {
     }
 
     // now create the file structure
-    FILE *file = malloc(sizeof(FILE));
+    FILE *file = calloc(1, sizeof(FILE));
 
     // copy the filename
     file->filename = path;
@@ -133,8 +133,6 @@ FILE *fopen(const char *filename, const char *mode) {
 
     // set the buffer
     file->buffer = malloc(FILE_BUFFER_SIZE);
-    file->buffer_size = 0;
-    file->old_offset = 0;
 
     // if the file is open for appending, set the file pos to the end of the file
     if (interpeted_mode & MODE_APPEND) {
@@ -215,7 +213,10 @@ int fflush(FILE *stream) {
 
     // write the file
     int written = fm_write(stream->fd, stream->buffer, buffer_size);
-    if (written < 0) written = 0;
+    if (written < 0) {
+        stream->error = 1;
+        written = 0;
+    }
 
     // return the number of elements written
     return written ? 0 : EOF;
@@ -259,7 +260,10 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     if (fm_isfctf(stream->fd)) {
         // read the file
         read = fm_read(stream->fd, buffer, count);
-        if (read < 0) return 0;
+        if (read < 0) {
+            stream->error = 1;
+            return 0;
+        }
 
         // return the number of elements read
         return read / size;
@@ -286,12 +290,18 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     // read the file
     if (count > FILE_BUFFER_READ) {
         read = fm_read(stream->fd, buffer + rfrom_buffer, count);
-        if (read < 0) return 0;
+        if (read < 0) {
+            stream->error = 1;
+            return 0;
+        }
         return (read + rfrom_buffer) / size;
     }
 
     read = fm_read(stream->fd, stream->buffer, FILE_BUFFER_READ);
-    if (read < 0) return 0;
+    if (read < 0) {
+        stream->error = 1;
+        return 0;
+    }
     if ((uint32_t) read < count)
         count = read;
 
@@ -333,10 +343,9 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     for (uint32_t i = 0; i < count; i++) {
         // check if the buffer is full
         if (stream->buffer_size >= (FILE_BUFFER_SIZE - 1)) {
-            need_flush = 0;
-            if (fflush(stream) == EOF) {
+            if (fflush(stream) == EOF)
                 return 0;
-            }
+            need_flush = 0;
         }
 
         if (((char *) buffer)[i] == '\n') {
@@ -661,7 +670,6 @@ int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) 
 }
 
 long ftell(FILE *stream) {
-    // check if the file is stdout or stderr
     if (stream == stdin)
         stream = STD_STREAM;
     else if (stream == stdout)
@@ -676,15 +684,12 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
-    // check if the file is null
-    if (stream == NULL) {
-        return 0;
-    }
-
-    // check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr || stream == stdin) {
-        return 0;
-    }
+    if (stream == stdin)
+        stream = STD_STREAM;
+    else if (stream == stdout)
+        stream = STD_STREAM + 1;
+    else if (stream == stderr)
+        stream = STD_STREAM + 2;
 
     // check if the file is at the end
     uint32_t file_pos = fm_lseek(stream->fd, 0, SEEK_CUR);
@@ -695,8 +700,14 @@ int feof(FILE *stream) {
 }
 
 int ferror(FILE *stream) {
-    c_serial_write(SERIAL_PORT_A, "WARNING: ferror not correctly implemented...\n", 45);
-    return 0;   // return 0 if no error found
+    if (stream == stdin)
+        stream = STD_STREAM;
+    else if (stream == stdout)
+        stream = STD_STREAM + 1;
+    else if (stream == stderr)
+        stream = STD_STREAM + 2;
+
+    return stream->error;
 }
 
 void perror(const char *s) {
@@ -705,6 +716,7 @@ void perror(const char *s) {
 
 int remove(const char *fname) {
     char *pwd = getenv("PWD");
+    if (pwd == NULL) pwd = "/";
     char *full_path = assemble_path(pwd, (char *) fname);
 
     sid_t elem = fu_path_to_sid(ROOT_SID, full_path);

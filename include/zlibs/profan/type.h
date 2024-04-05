@@ -161,7 +161,8 @@ typedef size_t rsize_t;
 
 typedef struct FILE {
     char *filename;
-    uint32_t mode;
+    uint8_t mode;
+    uint8_t error;
 
     char *buffer;
     int   buffer_size;
