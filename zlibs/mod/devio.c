@@ -45,7 +45,14 @@ int dev_kterm(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 int dev_panda(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (is_read)
         return keyboard_read(buffer, size, "/dev/panda");
-    panda_print_string((char *) buffer, size);
+    panda_print_string((char *) buffer, size, -1);
+    return size;
+}
+
+int dev_pander(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    if (is_read)
+        return keyboard_read(buffer, size, "/dev/pander");
+    panda_print_string((char *) buffer, size, 0x07);
     return size;
 }
 
@@ -126,6 +133,7 @@ void init_devio(void) {
 
     fu_fctf_create(0, "/dev/kterm",   dev_kterm);
     fu_fctf_create(0, "/dev/panda",   dev_panda);
+    fu_fctf_create(0, "/dev/pander",  dev_pander);
     fu_fctf_create(0, "/dev/userial", dev_userial);
     fu_fctf_create(0, "/dev/serialA", dev_serial_a);
     fu_fctf_create(0, "/dev/serialB", dev_serial_b);
