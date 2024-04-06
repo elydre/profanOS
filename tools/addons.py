@@ -193,9 +193,6 @@ def graphic_menu(stdscr):
     stdscr.refresh()
     
     checked = [False] * len(ALL_ADOONS)
-    for i, addon in enumerate(ALL_ADOONS):
-        if addon["name"] in RECOMMENDED:
-            checked[i] = True
 
     print(len(ALL_ADOONS))
     
