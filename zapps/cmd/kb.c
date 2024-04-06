@@ -6,8 +6,8 @@
 int main(int argc, char *argv[]) {
     char *fullpath;
 
-    if (argc != 2) {
-        printf("Usage: kb <mapname>\n");
+    if (argc != 2 || argv[1][0] == '-') {
+        fputs("Usage: kb <mapname>\n", stderr);
         return 1;
     }
 
@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
 
     // change the keymap
     if (profan_kb_load_map(fullpath)) {
-        printf("Failed to load keyboard map %s\n", argv[1]);
-        printf("check that the map exists in /zada/keymap\n");
+        fprintf(stderr, "kb: %s: Failed to load keymap\n", argv[1]);
+        fputs("check that the map exists in /zada/keymap\n", stderr);
 
         free(fullpath);
         return 1;

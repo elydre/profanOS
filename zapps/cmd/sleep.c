@@ -39,7 +39,7 @@ int parse_args(int argc, char **argv) {
 int main(int argc, char **argv) {
     int arg = parse_args(argc, argv);
     if (arg == -1) {
-        puts("Invalid arguments\ntype 'sleep -h' for help");
+        fputs("sleep: Invalid arguments\nTry 'sleep -h' for more information.\n", stderr);
         return 1;
     } else if (arg == 2) {
         puts("Usage: sleep <args>\n"
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
     int tosleep = atoi(argv[arg + 1]);
     if (tosleep <= 0) {
-        printf("'%s' is not a valid time\n", argv[arg + 1]);
+        fprintf(stderr, "sleep: '%s' is not a valid time\n", argv[arg + 1]);
         return 1;
     }
 

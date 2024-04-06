@@ -19,7 +19,7 @@ unsigned build_number(char *file) {
 
     fp = fopen(file, "r");
     if (fp == NULL) {
-        printf("Error opening file %s\n", file);
+        fprintf(stderr, "cfi: %s: File not found\n", file);
         exit(1);
     }
 
@@ -35,11 +35,15 @@ unsigned build_number(char *file) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("Usage: %s <file1> [file2] [...]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <file1> [file2] [...]\n", argv[0]);
         return 1;
     }
 
     for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            fprintf(stderr, "cfi: %s: Invalid option\n", argv[i]);
+            return 1;
+        }
         printf("%s: %x\n", argv[i], build_number(argv[i]));
     }
 

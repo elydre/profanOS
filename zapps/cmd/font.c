@@ -9,8 +9,8 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    if (argc != 2) {
-        printf("Usage: font <font path>\n");
+    if (argc != 2 || argv[1][0] == '-') {
+        fprintf(stderr, "Usage: font <file>\n");
         return 1;
     }
 
@@ -18,13 +18,13 @@ int main(int argc, char **argv) {
 
     sid_t file = fu_path_to_sid(ROOT_SID, full_path);
     if (IS_NULL_SID(file) || !fu_is_file(file)) {
-        printf("File not found: %s\n", full_path);
+        fprintf(stderr, "font: %s: File not found\n", full_path);
         free(full_path);
         return 1;
     }
 
     if (panda_change_font(full_path)) {
-        printf("Failed to change font, invalid file\n");
+        fprintf(stderr, "font: %s: Failed to change font\n", full_path);
         free(full_path);
         return 1;
     }

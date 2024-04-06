@@ -75,19 +75,19 @@ char get_user_input(void) {
 
 int main(int argc, char *argv[]) {
     if (argc > 2 || (argc == 2 && argv[1][0] == '-')) {
-        puts("Usage: more [file]");
+        fputs("Usage: more [file]", stderr);
         return 1;
     }
 
     if (argc < 2 && isatty(STDIN_FILENO)) {
-        puts("more: stdin is a tty");
+        fputs("more: stdin is a tty", stderr);
         return 1;
     }
 
     char *buffer = read_file(argv[1] ? argv[1] : "/dev/stdin");
 
     if (buffer == NULL) {
-        puts("more: failed to read file");
+        fprintf(stderr, "more: %s: File not found\n", argv[1] ? argv[1] : "stdin");
         return 1;
     }
 

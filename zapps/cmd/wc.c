@@ -17,7 +17,7 @@ void show_help(void) {
 
 int parse_option(char *option) {
     if (option[0] != '-') {
-        puts("Invalid option.");
+        fprintf(stderr, "wc: Invalid option -- '%s'\n", option);
         exit(1);
     }
 
@@ -34,8 +34,8 @@ int parse_option(char *option) {
         default:
             break;
     }
-    printf("Invalid option: %s\nTry 'wc -h' "
-        "for more information.\n", option);
+    fprintf(stderr, "wc: Invalid option -- '%s'\n"
+            "Try 'wc -h' for more information.\n", option);
     exit(1);
     return 0;
 }
@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
     int option;
 
     if (argc > 2) {
-        puts("Usage: <CMD> | wc [option]\n"
-            "Try 'wc -h' for more information.");
+        fputs("Usage: <CMD> | wc [option]\n"
+            "Try 'wc -h' for more information.\n", stderr);
         return 1;
     }
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     }
 
     if (isatty(STDIN_FILENO)) {
-        puts("wc: stdin is a tty");
+        fputs("wc: stdin is a tty\n", stderr);
         return 1;
     }
 

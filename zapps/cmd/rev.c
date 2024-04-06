@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc != 1) {
-        puts("Usage: rev\n");
+        fputs("Usage: <CMD> | rev\n", stderr);
         return 1;
     }
 

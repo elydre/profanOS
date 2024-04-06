@@ -64,13 +64,10 @@ typedef struct {
 #define MODE_SLPP 4
 #define MODE_WKUP 5
 
-int show_help(int full) {
-    puts("Usage: proc [mode] [pid]");
-    if (!full) {
-        puts("Use -h for more help");
-        return 1;
-    }
-    puts("Modes:\n"
+int show_help(void) {
+    puts(
+        "Usage: proc [mode] [pid]\n"
+        "Modes:\n"
         "  -h: show this help\n"
         "  -l: list all processes\n"
         "  -k: kill a process\n"
@@ -96,6 +93,7 @@ proc_args_t parse_args(int argc, char **argv) {
             args.mode = MODE_LIST;
             return args;
         }
+        fprintf(stderr, "proc: invalid option -- '%s'\n", argv[1]);
         args.mode = MODE_LHLP;
         return args;
     }
@@ -110,12 +108,14 @@ proc_args_t parse_args(int argc, char **argv) {
             args.mode = MODE_WKUP;
         }
         else {
+            fprintf(stderr, "proc: invalid option -- '%s'\n", argv[1]);
             args.mode = MODE_LHLP;
             return args;
         }
         args.pid = atoi(argv[2]);
         return args;
     }
+    fputs("Usage: proc [mode] [pid]\n", stderr);
     args.mode = MODE_LHLP;
     return args;
 }
@@ -123,12 +123,15 @@ proc_args_t parse_args(int argc, char **argv) {
 int main(int argc, char **argv) {
     proc_args_t args = parse_args(argc, argv);
 
+    if (args.mode == MODE_LHLP) {
+        fputs("Try 'proc -h' for more information.\n", stderr);
+        return 1;
+    }
+    
     if (args.mode == MODE_LIST)
         list_process();
-    else if (args.mode == MODE_LHLP)
-        return show_help(0);
     else if (args.mode == MODE_FHLP)
-        return show_help(1);
+        return show_help();
     else if (args.mode == MODE_KILL)
         c_process_kill(args.pid);
     else if (args.mode == MODE_SLPP)

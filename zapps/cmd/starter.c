@@ -64,7 +64,7 @@ int internal_cd(int argc, char **argv) {
     sid_t sid;
 
     if (argc != 2) {
-        printf("Usage: cd <dir>\n");
+        fprintf(stderr, "Usage: cd <dir>\n");
         return 1;
     }
 
@@ -77,7 +77,7 @@ int internal_cd(int argc, char **argv) {
 
     sid = fu_path_to_sid(ROOT_SID, dir);
     if (IS_NULL_SID(sid) || !fu_is_dir(sid)) {
-        printf("%s: directory not found\n", dir);
+        fprintf(stderr, "cd: %s: No such directory\n", argv[1]);
         free(dir);
         return 1;
     }
@@ -106,7 +106,7 @@ int execute_line(char *line) {
 
     cmd = find_cmd(args[0]);
     if (cmd == NULL) {
-        printf("Command not found: %s\n", args[0]);
+        fprintf(stderr, "%s: command not found\n", args[0]);
         free_tab(args);
         free(cmd);
         return 1;

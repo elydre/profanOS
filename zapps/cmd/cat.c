@@ -42,8 +42,9 @@ cat_args_t *parse_args(int argc, char **argv) {
             } else if (strcmp(argv[i], "-h") == 0) {
                 args->help = 1;
             } else {
-                printf("cat: invalid option -- '%s'\n", argv[i]);
+                fprintf(stderr, "cat: invalid option -- '%s'\n", argv[i]);
                 args->failed = 1;
+                return args;
             }
         } else {
             args->paths[path_count++] = argv[i];
@@ -60,7 +61,7 @@ void free_args(cat_args_t *args) {
 
 void cat_canonical(FILE *file, char *path) {
     if (file == NULL) {
-        printf("cat: %s: No such file or directory\n", path);
+        fprintf(stderr, "cat: %s: File not found\n", path);
         return;
     }
 
@@ -93,7 +94,7 @@ void cat_canonical(FILE *file, char *path) {
 
 void cat(FILE *file, char *path, int end_of_line) {
     if (file == NULL) {
-        printf("cat: %s: No such file or directory\n", path);
+        fprintf(stderr, "cat: %s: File not found\n", path);
         return;
     }
 
@@ -118,6 +119,7 @@ void cat(FILE *file, char *path, int end_of_line) {
 int main(int argc, char **argv) {
     cat_args_t *args = parse_args(argc, argv);
     if (args->failed) {
+        fputs("Try 'cat -h' for more information.\n", stderr);
         free_args(args);
         return 1;
     }
@@ -129,7 +131,7 @@ int main(int argc, char **argv) {
     }
 
     if (args->end_of_line && args->canonical) {
-        puts("cat: cannot use -e and -c together");
+        fputs("cat: Cannot use -e and -c together\n", stderr);
         free_args(args);
         return 1;
     }

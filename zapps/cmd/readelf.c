@@ -154,7 +154,7 @@ int main(const int argc, const char *argv[]) {
             char *p_char; // points to the matched char in option_chars
 
             if (strlen(arg) != 2 || (p_char = strchr(option_chars, arg[1])) == NULL) {
-                printf("ELF-reader: invalid option '%s' \n", arg);
+                printf("ELF-reader: invalid option '%s'\n", arg);
                 print_usage();
                 return 0;
             }
@@ -171,7 +171,7 @@ int main(const int argc, const char *argv[]) {
             }
 
             if (option == NULL) {
-                printf("ELF-reader: invalid option '%s' \n", arg);
+                printf("ELF-reader: invalid option '%s'\n", arg);
                 print_usage();
                 return 0;
             }
@@ -181,7 +181,7 @@ int main(const int argc, const char *argv[]) {
     }
 
     if (arg_i == argc) {
-        printf("ELF-reader: No input files \n");
+        printf("ELF-reader: No input files\n");
         print_usage();
         return 0;
     }
@@ -193,7 +193,7 @@ int main(const int argc, const char *argv[]) {
         // open file for reading
         FILE *fp = fopen(g_filename, "r");
         if (fp == NULL) {
-            printf("ELF-reader: Error: '%s': failed to open file \n", g_filename);
+            printf("ELF-reader: Error: '%s': failed to open file\n", g_filename);
             return 1;
         }
 
@@ -203,7 +203,7 @@ int main(const int argc, const char *argv[]) {
         fseek(fp, 0, SEEK_SET);
 
         if ((g_buf = malloc(file_size)) == NULL || fread((void*)g_buf, 1, file_size, fp) != file_size) {
-            printf("ELF-reader: Error: '%s': failed to read file \n", g_filename);
+            printf("ELF-reader: Error: '%s': failed to read file\n", g_filename);
             fclose(fp);
             return 1;
         }
@@ -212,7 +212,7 @@ int main(const int argc, const char *argv[]) {
         // check for ELF magic number
         Elf32_Ehdr *p_header = (Elf32_Ehdr *)g_buf;
         if (strncmp((void*)p_header, ELFMAG, SELFMAG) != 0) {
-            printf("ELF-reader: Notice: file '%s' is not an ELF. \n", g_filename);
+            printf("ELF-reader: Notice: file '%s' is not an ELF.\n", g_filename);
             return 0;
         }
 
@@ -222,12 +222,12 @@ int main(const int argc, const char *argv[]) {
                 // ok
             break;
         case ELFCLASS64:
-            printf("ELF-reader: Notice: sorry, ELF64 file '%s' is currently not supported \n", g_filename);
+            printf("ELF-reader: Notice: sorry, ELF64 file '%s' is currently not supported\n", g_filename);
             arg_i ++;
             continue;
         case ELFCLASSNONE:
         default:
-            printf("ELF-reader: Notice: file '%s' is an invalid ELF. \n", g_filename);
+            printf("ELF-reader: Notice: file '%s' is an invalid ELF.\n", g_filename);
             arg_i ++;
             continue;
         }
@@ -237,7 +237,7 @@ int main(const int argc, const char *argv[]) {
             if (procs[i] == NULL) continue;
 
             if (procs[i]() == 1) {
-                printf("ELF-reader: Error: failed to process file '%s', skip it \n", g_filename);
+                printf("ELF-reader: Error: failed to process file '%s', skip it\n", g_filename);
                 break;
             }
         }
@@ -294,28 +294,28 @@ int display_file_header(void) {
     // the list goes on... See elf.h for more info
 
     // All ok. now print header info
-    printf("Elf Header: \n");
+    printf("Elf Header:\n");
     // Header identification. Magic number and other iWarningnfo
-    printf(" off len  field: value \n");
-    printf("  %02d -%2d  Magic: .%3.3s \n", EI_MAG0, SELFMAG, (char*)header + 1);
-    printf("  %02d -%2d  Class: %s \n", EI_CLASS, 1, elf_classes[header->e_ident[EI_CLASS]]);
-    printf("  %02d -%2d  Data : %s \n", EI_DATA, 1, elf_endians[header->e_ident[EI_DATA]]);
-    printf("  %02d -%2d  Version: %d (current) \n", EI_VERSION, 1, header->e_ident[EI_VERSION]);
-    printf("  %02d -%2d  OS/ABI: %s \n", EI_OSABI, 1, elf_os[header->e_ident[EI_OSABI]] ? : "unknown");
-    printf("  %02d -%2d  ABI Version: %d \n", EI_ABIVERSION, 1, header->e_ident[EI_ABIVERSION]);
-    printf("  %02d -%2d  Padding... \n", EI_PAD, EI_NIDENT - 1 - EI_PAD);
+    printf(" off len  field: value\n");
+    printf("  %02d -%2d  Magic: .%3.3s\n", EI_MAG0, SELFMAG, (char*)header + 1);
+    printf("  %02d -%2d  Class: %s\n", EI_CLASS, 1, elf_classes[header->e_ident[EI_CLASS]]);
+    printf("  %02d -%2d  Data : %s\n", EI_DATA, 1, elf_endians[header->e_ident[EI_DATA]]);
+    printf("  %02d -%2d  Version: %d (current)\n", EI_VERSION, 1, header->e_ident[EI_VERSION]);
+    printf("  %02d -%2d  OS/ABI: %s\n", EI_OSABI, 1, elf_os[header->e_ident[EI_OSABI]] ? : "unknown");
+    printf("  %02d -%2d  ABI Version: %d\n", EI_ABIVERSION, 1, header->e_ident[EI_ABIVERSION]);
+    printf("  %02d -%2d  Padding...\n", EI_PAD, EI_NIDENT - 1 - EI_PAD);
 
     size_t idx = EI_NIDENT;
     size_t field_size;
 
     // Object file type
     field_size = sizeof(header->e_type);
-    printf("  %02ld -%2ld  Type: %s \n", idx, field_size, elf_types[header->e_type]);
+    printf("  %02ld -%2ld  Type: %s\n", idx, field_size, elf_types[header->e_type]);
     idx += field_size;
 
     // Architecture
     field_size = sizeof(header->e_machine);
-    printf("  %02ld -%2ld  Arch: %s \n", idx, field_size, elf_machines[header->e_machine] ? : "unknown");
+    printf("  %02ld -%2ld  Arch: %s\n", idx, field_size, elf_machines[header->e_machine] ? : "unknown");
     idx += field_size;
 
     // Object file version
@@ -325,44 +325,44 @@ int display_file_header(void) {
 
     // Entry point virtual address
     field_size = sizeof(header->e_entry);
-    printf("  %02ld -%2ld  Entry: 0x%08x \n", idx, field_size, header->e_entry);
+    printf("  %02ld -%2ld  Entry: 0x%08x\n", idx, field_size, header->e_entry);
     idx += field_size;
 
     // Program header table file offset
     field_size = sizeof(header->e_phoff);
-    printf("  %02ld -%2ld  Start of program header: %d (bytes into file) \n", idx, field_size, header->e_phoff);
+    printf("  %02ld -%2ld  Start of program header: %d (bytes into file)\n", idx, field_size, header->e_phoff);
     idx += field_size;
 
     // Section header table file offset
-    printf("  %02ld -%2ld  Start of section header: %d (bytes into file) \n", idx, field_size, header->e_shoff);
+    printf("  %02ld -%2ld  Start of section header: %d (bytes into file)\n", idx, field_size, header->e_shoff);
     idx += field_size;
 
     // Processor-specific flags
-    printf("  %02ld -%2ld  Flags: 0x%x \n", idx, field_size, header->e_flags);
+    printf("  %02ld -%2ld  Flags: 0x%x\n", idx, field_size, header->e_flags);
     idx += field_size;
 
     // ELF header size in bytes
-    printf("  %02ld -%2ld  Size of this header: %d (bytes) \n", idx, field_size, header->e_ehsize);
+    printf("  %02ld -%2ld  Size of this header: %d (bytes)\n", idx, field_size, header->e_ehsize);
     idx += field_size;
 
     // Program header table entry size
-    printf("  %02ld -%2ld  Size of program headers: %d (bytes) \n", idx, field_size, header->e_phentsize);
+    printf("  %02ld -%2ld  Size of program headers: %d (bytes)\n", idx, field_size, header->e_phentsize);
     idx += field_size;
 
     // Program header table entry count
-    printf("  %02ld -%2ld  Number of program headers: %d \n", idx, field_size, header->e_phnum);
+    printf("  %02ld -%2ld  Number of program headers: %d\n", idx, field_size, header->e_phnum);
     idx += field_size;
 
     // Section header table entry count
-    printf("  %02ld -%2ld  Size of section headers: %d (bytes) \n", idx, field_size, header->e_shentsize);
+    printf("  %02ld -%2ld  Size of section headers: %d (bytes)\n", idx, field_size, header->e_shentsize);
     idx += field_size;
 
     // Section header table
-    printf("  %02ld -%2ld  Number of section headers: %d \n", idx, field_size, header->e_shnum);
+    printf("  %02ld -%2ld  Number of section headers: %d\n", idx, field_size, header->e_shnum);
     idx += field_size;
 
     // Section header string table index
-    printf("  %02ld -%2ld  Section number string table index: %d \n", idx, field_size, header->e_shstrndx);
+    printf("  %02ld -%2ld  Section number string table index: %d\n", idx, field_size, header->e_shstrndx);
     idx += field_size;
 
     return 0;
@@ -392,10 +392,10 @@ int display_section_headers(void) {
 
     // display section header infos
     if (procs[OPT_h] == NULL){
-        printf("There are %d section headers, starting at offset 0x%x \n", eh->e_shnum, eh->e_shoff);
+        printf("There are %d section headers, starting at offset 0x%x\n", eh->e_shnum, eh->e_shoff);
     }
     printf("\nSection Headers:\n");    // Note 'ES' is entry size for some sections
-    printf(" [Nr] %-17s %-15s %-8s %-6s %-6s %s %s %s %s %s \n",
+    printf(" [Nr] %-17s %-15s %-8s %-6s %-6s %s %s %s %s %s\n",
         "Name", "Type", "Addr", "Off", "Size", "ES", "Flg", "LK", "Inf", "Al");
 
     for(int i = 0; i < eh->e_shnum; i ++) {
@@ -428,20 +428,20 @@ int display_section_headers(void) {
         unsigned int align = sh->sh_addralign;
 
         if (procs[OPT__DEC]) {
-            printf(" [%2d] %-17.17s %-15s %-8.8x %6.6d %6.6d %2.2x %3s %2d %3d %2d \n",
+            printf(" [%2d] %-17.17s %-15s %-8.8x %6.6d %6.6d %2.2x %3s %2d %3d %2d\n",
                 i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
         } else {
-            printf(" [%2d] %-17.17s %-15s %-8.8x %6.6x %6.6x %2.2x %3s %2d %3d %2d \n",
+            printf(" [%2d] %-17.17s %-15s %-8.8x %6.6x %6.6x %2.2x %3s %2d %3d %2d\n",
                 i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
         }
     }
 
     // print flags explanation
-    printf("Key to Flags: \n"
-            "W (write), A (alloc), X (execute), M (merge), S (strings), I (info), \n"
-            "L (link order), O (extra OS processing required), G (group), T (TLS), \n"
-            "C (compressed), x (unknown), o (OS specific), E (exclude) \n"
-            "p (processor specific) \n\n"
+    printf("Key to Flags:\n"
+            "W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n"
+            "L (link order), O (extra OS processing required), G (group), T (TLS),\n"
+            "C (compressed), x (unknown), o (OS specific), E (exclude)\n"
+            "p (processor specific)\n\n"
     );
 
     return 0;
@@ -463,19 +463,19 @@ int display_symbol_table(void) {
         Elf32_Shdr *sh = sh_base + i;
         if (sh->sh_type == SHT_SYMTAB) {
             sym_sh = sh;
-            printf("got symtab with idx: %d \n", i);
+            printf("got symtab with idx: %d\n", i);
             break;
         }
     }
 
     // check
     if (sym_sh == NULL) {
-        printf("ELF-reader: Notice: there is no symbol table in '%s' \n", g_filename);
+        printf("ELF-reader: Notice: there is no symbol table in '%s'\n", g_filename);
         return 0;
     }
     // check symbol entry size in the table
     if (sym_sh->sh_entsize != sizeof(Elf32_Sym)) {
-        printf("ELF-reader: Error: symbol table entry size should be %ld but is %d \n",
+        printf("ELF-reader: Error: symbol table entry size should be %ld but is %d\n",
             sizeof(Elf32_Sym), (unsigned int)sym_sh->sh_entsize);
             return 0;
     }
@@ -490,7 +490,7 @@ int display_symbol_table(void) {
 
     // print symbol table header
     const int symbol_cnt = sym_sh->sh_size / sizeof(Elf32_Sym);
-    printf("Symbol table '%s' contains %d entries: \n", shstr_table + sym_sh->sh_name, symbol_cnt);
+    printf("Symbol table '%s' contains %d entries:\n", shstr_table + sym_sh->sh_name, symbol_cnt);
     printf("%7.4s %8.8s %5.4s %-7.7s %-6.6s %-8.8s %3.3s %s\n",
         "Num:", "Value", "Size", "Type", "Bind", "Vis", "Ndx", "Name");
 
@@ -529,7 +529,7 @@ int display_symbol_table(void) {
         }
         const char *name = str_table + symbol->st_name;
 
-        printf("%6d: %08d %5d %-7s %-6s %-8s %3s %s \n",
+        printf("%6d: %08d %5d %-7s %-6s %-8s %3s %s\n",
              i, value, size, type, bind ,visibility, index, name);
     }
 

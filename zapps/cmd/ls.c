@@ -150,15 +150,9 @@ void sort_size_and_type(int count, char **names, sid_t *ids) {
 }
 
 
-int print_help(int full) {
-    puts("Usage: ls [options] [path]");
-
-    if (!full) {
-        puts("try 'ls -h' for more information");
-        return 1;
-    }
-
+int print_help(void) {
     puts(
+        "Usage: ls [options] [path]\n"
         "Options:\n"
         "  -a  show all elements\n"
         "  -f  line by line, no color\n"
@@ -206,14 +200,14 @@ ls_args_t *parse_args(int argc, char **argv) {
                         args->format = LS_FORMAT_BASIC;
                         break;
                     default:
-                        printf("ls: invalid option -- '%c'\n", argv[i][j]);
+                        fprintf(stderr, "ls: invalid option -- '%c'\n", argv[i][j]);
                         args->showhelp = 1;
                         return args;
                 }
             }
         } else {
             if (i != argc - 1) {
-                printf("ls: invalid argument -- '%s'\n", argv[i]);
+                fprintf(stderr, "ls: invalid argument -- '%s'\n", argv[i]);
                 args->showhelp = 1;
                 break;
             }
@@ -298,10 +292,16 @@ void print_basic(int elm_count, char **cnt_names) {
 
 int main(int argc, char **argv) {
     ls_args_t *args = parse_args(argc, argv);
-    if (args->showhelp) {
-        int ret = print_help(args->showhelp == LS_FULL_HELP);
+    if (args->showhelp == LS_SHORT_HELP) {
+        fputs("Try 'ls -h' for more information.\n", stderr);
         free(args);
-        return ret;
+        return 1;
+    }
+
+    if (args->showhelp) {
+        print_help();
+        free(args);
+        return 0;
     }
 
     char *ls_path;
@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
     sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);
 
     if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
-        printf("%s is not a directory\n", ls_path);
+        fprintf(stderr, "ls: %s: No such directory\n", ls_path);
         free(ls_path);
         free(args);
         return 1;

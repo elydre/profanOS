@@ -37,7 +37,9 @@ int main(int argc, char **argv) {
         case 'x':
             return hardclear();
         default:
-            return showhelp();
+            fprintf(stderr, "clear: invalid option -- '%c'\n", argv[1][1]);
+            fputs("Try 'clear -h' for more information.\n", stderr);
+            return 1;
     }
     return 0;
 }

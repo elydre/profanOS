@@ -32,14 +32,8 @@ int str_to_int(char *str) {
 }
 
 int print_help(int full) {
-    puts("Usage: mem [options]");
-
-    if (!full) {
-        puts("try 'mem -h' for more information");
-        return 1;
-    }
-
     puts(
+        "Usage: mem [options]\n"
         "Options:\n"
         "  -p <f> [s] print memory area\n"
         "  -h         display this help message\n"
@@ -159,8 +153,8 @@ int main(int argc, char *argv[]) {
     mem_args_t *args = parse_args(argc, argv);
 
     if (args->mode == ACTION_ERROR) {
-        puts("Invalid arguments");
-        print_help(0);
+        fputs("mem: Invalid argument\n", stderr);
+        fputs("Try 'mem -h' for more information.\n", stderr);
         free(args);
         return 1;
     }
@@ -189,7 +183,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    puts("Internal error");
+    fputs("mem: Internal error\n", stderr);
 
     free(args);
     return 1;

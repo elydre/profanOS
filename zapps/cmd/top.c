@@ -107,7 +107,7 @@ void list_process(void) {
 
 int check_arg(int argc, char **argv) {
     if (argc > 2 || (argc == 2 && (argv[1][0] < '0' || argv[1][0] > '9'))) {
-        printf("Usage: %s [sleep]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [sleep]\n", argv[0]);
         exit(1);
     }
     return argc == 2 ? atoi(argv[1]) : 1;

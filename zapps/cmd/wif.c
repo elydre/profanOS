@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define ERROR_MSG "Usage: wif <file> [content]\nIf no content is given, stdin is used.\n"
+
 char *read_stdin(int *len) {
     char *buffer = malloc(1025);
     int rcount = 0;
@@ -28,10 +30,16 @@ char *read_stdin(int *len) {
 }
 
 int main(int argc, char** argv) {
-    if (!(argc == 2 || argc == 3) || (argc == 2 && !strcmp(argv[1], "-h"))) {
-        puts("Usage: wif <file> [content]");
-        puts("If no content is given, stdin is used.");
+    if (argc < 2 || argc > 3) {
+        fputs(ERROR_MSG, stderr);
         return 1;
+    }
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            fprintf(stderr, "wif: %s: Invalid option\n" ERROR_MSG, argv[i]);
+            return 1;
+        }
     }
 
     char *pwd = getenv("PWD");

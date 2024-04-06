@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
     flags = parse_args(argv, &offset);
 
     if (flags & ECHO_ERRR) {
-        fprintf(stderr, "echo: invalid option -- '%s'\n", argv[offset]);
+        fprintf(stderr, "echo: Invalid option -- '%s'\n", argv[offset]);
         fprintf(stderr, "Try 'echo -h' for more information.\n");
         return 1;
     }

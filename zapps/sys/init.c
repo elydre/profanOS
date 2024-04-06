@@ -121,7 +121,7 @@ int main(void) {
         if (fm_reopen(1, "/dev/panda") < 0 ||
             fm_reopen(3, "/dev/panda") < 0 ||
             fm_reopen(4, "/dev/panda") < 0 ||
-            fm_reopen(5, "/dev/panda") < 0
+            fm_reopen(5, "/dev/pander") < 0
         ) c_kprint("Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
         c_sys_set_reporter(userspace_reporter);

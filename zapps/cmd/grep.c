@@ -34,7 +34,7 @@ void print_with_color(char *line, char *pattern) {
 
 int main(int argc, char **argv) {
     if (argc != 2 || isatty(0)) {
-        printf("Usage: <CMD> | grep <pattern>\n");
+        fprintf(stderr, "Usage: <CMD> | grep <pattern>\n");
         return 1;
     }
 

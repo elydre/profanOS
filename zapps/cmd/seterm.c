@@ -8,11 +8,11 @@
 int is_valid_file(char *path) {
     sid_t sid = fu_path_to_sid(ROOT_SID, path);
     if (IS_NULL_SID(sid)) {
-        printf("seterm: %s: No such file or directory\n", path);
+        fprintf(stderr, "seterm: %s: No such file or directory\n", path);
         return 0;
     }
     if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
-        printf("seterm: %s: Not a file or a fctf\n", path);
+        fprintf(stderr, "seterm: %s: Not a file or a fctf\n", path);
         return 0;
     }
     return 1;
@@ -20,23 +20,17 @@ int is_valid_file(char *path) {
 
 char *process_path(char *path) {
     char *cwd = getenv("PWD");
-    if (cwd == NULL)
-        return NULL;
+    if (!cwd) cwd = "/";
     return assemble_path(cwd, path);
 }
 
 int main(int argc, char **argv) {
     if (argc != 2 || argv[1][0] == '-') {
-        printf("Usage: seterm <file>\n", argv[0]);
+        fprintf(stderr, "Usage: seterm <file>\n", argv[0]);
         return 1;
     }
 
     char *path = process_path(argv[1]);
-
-    if (path == NULL) {
-        printf("seterm: PWD not set\n");
-        return 1;
-    }
 
     if (!is_valid_file(argv[1])) {
         free(path);

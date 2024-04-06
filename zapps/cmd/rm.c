@@ -6,6 +6,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#define RM_USAGE "Usage: rm [options] <path>\n"
+#define RM_INFO "Try 'rm -h' for more information.\n"
+
 typedef struct {
     int help;
     int verbose;
@@ -14,13 +17,10 @@ typedef struct {
     char *path;
 } rm_options_t;
 
-void print_help(int full) {
-    puts("Usage: rm [options] <path>");
-    if (!full) {
-        puts("Try 'rm -h' for more information.");
-        return;
-    }
-    puts("Options:\n"
+void print_help(void) {
+    puts(
+        "Usage: rm [options] <path>\n"
+        "Options:\n"
         "  -h   display this help and exit\n"
         "  -v   explain what is being done\n"
         "  -l   remove only the link\n"
@@ -49,12 +49,12 @@ rm_options_t *parse_options(int argc, char **argv) {
                 options->preview = 1;
                 options->verbose = 1;
             } else {
-                printf("rm: invalid option -- '%s'\n", argv[i]);
+                fprintf(stderr, "rm: Invalid option -- '%s'\n", argv[i]);
                 options->help = 1;
             }
         } else {
             if (options->path) {
-                printf("rm: extra operand '%s'\n", argv[i]);
+                fprintf(stderr, "rm: Extra operand '%s'\n", argv[i]);
                 options->help = 1;
             } else {
                 options->path = argv[i];
@@ -73,7 +73,7 @@ int remove_hard_link(sid_t elem, char *path) {
     free(parent);
 
     if (IS_NULL_SID(parent_sid)) {
-        printf("rm: cannot remove '%s': Unreachable path\n", path);
+        fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);
         return 1;
     }
 
@@ -82,21 +82,21 @@ int remove_hard_link(sid_t elem, char *path) {
 
 int remove_elem(sid_t elem, char *path, rm_options_t *options) {
     if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
-        printf("rm: cannot remove '%s': Unknown element type\n", path);
+        fprintf(stderr, "rm: Cannot remove '%s': Unknown element type\n", path);
         return 1;
     }
 
     // recursive remove directory
     if (fu_is_dir(elem)) {
         if (options->verbose)
-            printf("rm: going into directory '%s'\n", path);
+            printf("rm: Going into directory '%s'\n", path);
 
         sid_t *content;
         char **names;
         int count = fu_get_dir_content(elem, &content, &names);
 
         if (count < 0) {
-            printf("rm: cannot remove '%s': Failed to get directory content\n", path);
+            fprintf(stderr, "rm: Cannot remove '%s': Failed to get directory content\n", path);
             return 1;
         }
         if (count == 0) {
@@ -134,7 +134,7 @@ int remove_elem(sid_t elem, char *path, rm_options_t *options) {
 
     // delete container
     if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
-        printf("rm: cannot remove '%s': Failed to delete container\n", path);
+        fprintf(stderr, "rm: Cannot remove '%s': Failed to delete container\n", path);
         return 1;
     }
 
@@ -142,28 +142,27 @@ int remove_elem(sid_t elem, char *path, rm_options_t *options) {
 }
 
 int main(int argc, char **argv) {
-    if (argc == 1) {
-        print_help(0);
+    if (argc < 2) {
+        fputs(RM_USAGE RM_INFO, stderr);
         return 1;
     }
 
     rm_options_t *options = parse_options(argc, argv);
 
     if (options->help == 1) {
-        print_help(options->help);
+        fputs(RM_USAGE, stderr);
         free(options);
         return 1;
     }
 
     if (options->help == 2) {
-        print_help(options->help);
+        print_help();
         free(options);
         return 0;
     }
 
     if (!options->path) {
-        printf("rm: missing operand\n");
-        print_help(0);
+        fputs("rm: Missing path\n" RM_INFO, stderr);
         free(options);
         return 1;
     }
@@ -176,7 +175,7 @@ int main(int argc, char **argv) {
     sid_t elem = fu_path_to_sid(ROOT_SID, path);
 
     if (IS_NULL_SID(elem)) {
-        printf("rm: cannot remove '%s': Unreachable path\n", path);
+        fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);
         free(options);
         free(path);
         return 1;

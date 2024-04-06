@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 int raise_and_free(char *msg, char *name, char *buf) {
-    printf("cp: cannot copy '%s': %s\n", name, msg);
+    fprintf(stderr, "cp: Cannot copy '%s': %s\n", name, msg);
     free(buf);
     return 1;
 }
@@ -36,7 +36,7 @@ int copy_elem(sid_t src_sid, char *src_path, char *dst_path) {
         if (IS_NULL_SID(new_sid))
             return raise_and_free("Failed to create file", dst_path, NULL);
     } else if (IS_SAME_SID(src_sid, new_sid)) {
-        printf("cp: '%s' and '%s' are the same file\n", src_path, dst_path);
+        fprintf(stderr, "cp: '%s' and '%s' are the same file\n", src_path, dst_path);
         return 1;
     }
 
@@ -62,8 +62,13 @@ int copy_elem(sid_t src_sid, char *src_path, char *dst_path) {
 }
 
 int main(int argc, char **argv) {
+    if (argc == 3 && (argv[1][0] == '-' || argv[2][0] == '-')) {
+        fputs("cp: Invalid argument\n", stderr);
+        argc = 0;
+    }
+
     if (argc != 3) {
-        puts("Usage: cp <src> <dst>");
+        fputs("Usage: cp <src> <dst>\n", stderr);
         return 1;
     }
 
@@ -73,18 +78,16 @@ int main(int argc, char **argv) {
     char *src_path = assemble_path(pwd, argv[1]);
     char *dst_path = assemble_path(pwd, argv[2]);
 
-
-
     sid_t src_sid = fu_path_to_sid(ROOT_SID, src_path);
     if (IS_NULL_SID(src_sid)) {
-        printf("cp: cannot copy '%s': No such file or directory\n", src_path);
+        fprintf(stderr, "cp: Cannot copy '%s': No such file or directory\n", src_path);
         free(src_path);
         free(dst_path);
         return 1;
     }
 
     if (fu_is_dir(src_sid)) {
-        printf("cp: cannot copy '%s': Is a directory\n", src_path);
+        fprintf(stderr, "cp: Cannot copy '%s': Is a directory\n", src_path);
         free(src_path);
         free(dst_path);
         return 1;
