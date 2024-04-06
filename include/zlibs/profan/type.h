@@ -107,10 +107,6 @@ struct drand48_data {
     unsigned long long __a; /* Factor in congruential formula.  */
 };
 
-// more things for stdlib :
-typedef unsigned int size_t;
-typedef unsigned short wchar_t;
-
 typedef struct _Mbstatet
 { // state of a multibyte translation
     unsigned long _Wchar;
@@ -153,6 +149,7 @@ struct random_data {
 
 typedef void *locale_t; // TODO : implement locale_t
 
+typedef __SIZE_TYPE__ size_t;
 typedef unsigned char __string_uchar_t;
 typedef int            errno_t;
 typedef unsigned short wctype_t;

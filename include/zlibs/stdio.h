@@ -1,8 +1,9 @@
 #ifndef STDIO_H
 #define STDIO_H
 
-#include <stdarg.h>
 #include <profan/type.h>
+#include <stdarg.h>
+#include <stddef.h>
 
 #define stdin  (FILE *) 3
 #define stdout (FILE *) 1

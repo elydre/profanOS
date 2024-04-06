@@ -2,6 +2,7 @@
 #define STDLIB_ID 1007
 
 #include <profan/type.h>
+#include <stddef.h>
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
