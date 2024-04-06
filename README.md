@@ -211,7 +211,7 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 ### Source & Acknowledgment
 
 - **[os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial**
-- **[@Lorisredstone](https://github.com/Lorisredstone) for all the help and ideas**
+- **[@Sarah](https://github.com/Sarenard) for all the help and ideas**
 - [@asqel](https://github.com/asqel) for tests, [ATC](https://github.com/asqel/act) and the sulfur language
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
