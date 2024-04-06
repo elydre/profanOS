@@ -1,8 +1,19 @@
 #ifndef CTYPE_H
 #define CTYPE_H
 
-#define isdigit(c) ((c) >= '0' && (c) <= '9')
-#define isalpha(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
-#define isalnum(c) (isdigit(c) || isalpha(c))
+int isalnum(int c);
+int isalpha(int c);
+int iscntrl(int c);
+int isdigit(int c);
+int isgraph(int c);
+int islower(int c);
+int isprint(int c);
+int ispunct(int c);
+int isspace(int c);
+int isupper(int c);
+int isxdigit(int c);
+
+int tolower(int c);
+int toupper(int c);
 
 #endif

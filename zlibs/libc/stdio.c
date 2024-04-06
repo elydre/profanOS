@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
 #include <stdio.h>
 
 #define FILE_BUFFER_SIZE 0x1000
@@ -711,7 +712,12 @@ int ferror(FILE *stream) {
 }
 
 void perror(const char *s) {
-    puts("perror not implemented yet, WHY DO YOU USE IT ?");
+    if (s != NULL) {
+        fputs(s, stderr);
+        fputs(": ", stderr);
+    }
+    fputs(strerror(errno), stderr);
+    fputs("\n", stderr);
 }
 
 int remove(const char *fname) {
@@ -1573,11 +1579,7 @@ int dopr(char* str, size_t size, const char* format, va_list arg) {
             *va_arg(arg, int*) = ret;
             break;
         case 'm':
-            /*
             print_str(&at, &left, &ret, strerror(errno),
-                minw, precision, prgiven, minus);
-            */
-            print_str(&at, &left, &ret, "strerror(errno)",
                 minw, precision, prgiven, minus);
             break;
         case 'p':

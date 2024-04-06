@@ -3,10 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifndef TOLOWER
-#define TOLOWER(c) ((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
-#endif
+#include <ctype.h>
 
 #define BITOP(a,b,op) \
  ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
@@ -325,10 +322,7 @@ char *strdup(register const char *s) {
     return memcpy(d, s, l+1);
 }
 
-char *strerror(int errnum) {
-    puts("strerror not implemented yet, WHY DO YOU USE IT ?");
-    return NULL;
-}
+// strerror is defined in errno.c
 
 size_t strlcat(register char *restrict dst,
                register const char *restrict src,
@@ -397,8 +391,8 @@ int strncasecmp(register const char *s1, register const char *s2, size_t n) {
     unsigned char *ucs2 = (unsigned char *) s2;
     int d = 0;
     for ( ; n != 0; n--) {
-        int c1 = TOLOWER(*ucs1);
-        int c2 = TOLOWER(*ucs2);
+        int c1 = tolower(*ucs1);
+        int c2 = tolower(*ucs2);
         if (((d = c1 - c2) != 0) || (c2 == '\0')) break;
         ucs1++;
         ucs2++;

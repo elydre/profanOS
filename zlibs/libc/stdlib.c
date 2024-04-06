@@ -2,11 +2,11 @@
 #include <profan.h>
 
 #include <string.h>
-#include <stdio.h>
-#include <time.h>
-
-#define STDLIB_C
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <ctype.h>
+#include <time.h>
 
 #ifndef LONG_MAX
 #define LONG_MAX 0x7fffffffL
@@ -28,14 +28,6 @@ void *malloc_func(uint32_t size, int as_kernel);
 #define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
 #define malloc_ask(size) malloc_func(size, 1)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
-
-#ifndef isdigit
-#define isdigit(c) ((c) >= '0' && (c) <= '9')
-#endif
-
-#ifndef isspace
-#define isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
-#endif
 
 #define SHELL_PATH "/bin/fatpath/olivine.bin"
 
@@ -817,10 +809,10 @@ long int strtol_l(const char *str, char **end, int base, locale_t loc) {
     }
     if (any < 0) {
         acc = neg ? LONG_MIN : LONG_MAX;
-        // errno = ERANGE;
+        errno = ERANGE;
     } else if (!any) {
 noconv:
-        // errno = EINVAL;
+        errno = EINVAL;
     } else if (neg)
         acc = -acc;
     if (end != NULL)

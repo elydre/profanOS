@@ -3,8 +3,6 @@
 
 #include "math_private.h"
 
-#define math_errhandling MATH_ERRNO | MATH_ERREXCEPT
-
 #define DBL_EPSILON 2.2204460492503131e-16
 #if FLT_EVAL_METHOD==0 || FLT_EVAL_METHOD==1
 #define EPS DBL_EPSILON
