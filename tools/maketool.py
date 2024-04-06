@@ -422,8 +422,14 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(f"cp {TOOLS_DIR}/entry_elf.c {OUT_DIR}/disk/sys/zentry.c")
     print_and_exec(f"gcc -c {OUT_DIR}/disk/sys/zentry.c -o {OUT_DIR}/disk/sys/zentry.o {ZAPP_FLAGS}")
     print_and_exec(f"cp {TOOLS_DIR}/link_elf.ld {OUT_DIR}/disk/sys/")
-    print_and_exec(f"cp -r include/zlibs {OUT_DIR}/disk/sys/include/")
     print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ 2> /dev/null || true")
+
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/sys/include")
+    for dir_name in ZHEADERS:
+        if not os.path.exists(dir_name):
+            continue
+        for subdir in os.listdir(dir_name):
+            print_and_exec(f"cp -r {dir_name}/{subdir} {OUT_DIR}/disk/sys/include")
 
     if not file_exists(f"{OUT_DIR}/make/makefsys"):
         cprint(COLOR_INFO, "building makefsys...")
