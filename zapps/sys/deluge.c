@@ -293,7 +293,7 @@ int file_relocate(elfobj_t *dl) {
                     if (val == 0)
                         val = (uint32_t) dlsym(dl, name);
                     if (val == 0)
-                        raise_error("symbol '%s' not found, required by '%s'", name, dl->name);
+                        raise_error("'%s' requires symbol '%s'", dl->name, name);
                 }
                 switch (type) {
                     case R_386_32:          // word32  S + A
@@ -623,13 +623,15 @@ int dynamic_linker(elfobj_t *exec) {
                     for (int k = 0; !val && k < g_lib_count; k++)
                         val = (uint32_t) dlsym(g_loaded_libs[k], name);
                     if (val == 0)
-                        raise_error("symbol '%s' not found", name);
+                        raise_error("'%s' requires symbol '%s'", exec->name, name);
                 }
                 switch (type) {
-                    case R_386_JMP_SLOT:    // word32  S
-                        *(uint32_t *)(rel[j].r_offset) = val;
+                    case R_386_COPY:        // None
                         break;
                     case R_386_GLOB_DAT:    // word32  S
+                        *(uint32_t *)(rel[j].r_offset) = val;
+                        break;
+                    case R_386_JMP_SLOT:    // word32  S
                         *(uint32_t *)(rel[j].r_offset) = val;
                         break;
                     default:
