@@ -1,29 +1,12 @@
-// @LINK SHARED: libvgui
-
 #include <profan/syscall.h>
 #include <profan/filesys.h>
-#include <profan/vgui.h>
+#include <profan/panda.h>
 #include <profan.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-
-// SETTINGS
-
-#define SCREEN_W 640
-#define SCREEN_H 480
-
-#define FONT_W 8
-#define FONT_H 16
-
-#define COLOR_BG 0x111111 // ((c_timer_get_ms() * 0xf) & 0xAAAAAA)
-#define COLOR_T1 0xffffff
-#define COLOR_T2 0xaaaaaa
-
-#define COLOR_F1 0xffff88
-#define COLOR_F2 0xaaaa44
 
 // input settings
 #define SLEEP_T 15
@@ -35,25 +18,20 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define set_pixel(x, y, color) vgui_set_pixel(g_vgui, x, y, color)
-#define render_screen() vgui_render(g_vgui, 0)
-#define print(x, y, text, color) vgui_print(g_vgui, x, y, text, color)
-#define gputc(x, y, c, color, bg) vgui_putc(g_vgui, x, y, c, color, bg)
-#define draw_line(x1, y1, x2, y2, color) vgui_draw_line(g_vgui, x1, y1, x2, y2, color)
-#define draw_rect(x, y, width, height, color) vgui_draw_rect(g_vgui, x, y, width, height, color)
-#define clear_screen(color) vgui_clear(g_vgui, color)
+#ifndef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
-#define cursor_max_at_line(line) ((line < g_lines_count - 1) ? \
-                                  g_data_lines[line + 1] - g_data_lines[line] - 1 : \
+#define cursor_max_at_line(line) (((line) < g_lines_count - 1) ? \
+                                  g_data_lines[(line) + 1] - g_data_lines[line] - 1 : \
                                   g_data_size - g_data_lines[line] - 1)
 
-#define PRINTABLE_LINES (SCREEN_H / FONT_H)
-#define PRINTABLE_COLS ((SCREEN_W - (FONT_W * 3 + 5)) / FONT_W)
+#define COLOR_T 0x8F    // title
+#define COLOR_L 0x8F    // line number
+#define COLOR_D 0x0F    // data
+#define COLOR_M 0x70    // more data (>)
 
 // GLOBALS
-
-vgui_t *g_vgui;
-char *g_title;
 
 char *g_data;
 int g_data_size;
@@ -66,19 +44,27 @@ int g_cursor_pos;
 
 char *g_current_screen;
 
+int SCREEN_W;
+int SCREEN_H;
+
 // FUNCTIONS
 
-void draw_interface(void) {
-    draw_line(0, FONT_H, SCREEN_W - 1, FONT_H, COLOR_F2);
-    draw_line(FONT_W * 3 + 2, FONT_H, FONT_W * 3 + 2, SCREEN_H, COLOR_F2);
-}
+void gui_print(uint32_t x, uint32_t y, char *str, char color) {
+    while (*str) {
+        panda_set_char(x, y, *str, color);
+        x++;
+        str++;
+    }
+}  
 
 void set_title(char *path) {
-    strcpy(g_title, "rim - ");
-    strcat(g_title, path);
-
-    draw_rect(0, 0, SCREEN_H, FONT_H, COLOR_BG);
-    print(0, 0, g_title, COLOR_T1);
+    char *title = malloc(SCREEN_W + 1);
+    memset(title, ' ', SCREEN_W);
+    memcpy(title, "RIM", 3);
+    memcpy(title + 4, path, min(strlen(path), (uint32_t) SCREEN_W - 4));
+    title[SCREEN_W] = '\0';
+    gui_print(0, 0, title, COLOR_T);
+    free(title);
 }
 
 void load_file(char *path) {
@@ -122,14 +108,14 @@ void save_file(char *path) {
 }
 
 char *calc_new_screen(int from_line, int to_line, int x_offset) {
-    char *new_screen = calloc((PRINTABLE_LINES + 1) * (PRINTABLE_COLS + 1), sizeof(char));
+    char *new_screen = calloc((SCREEN_H + 1) * (SCREEN_W + 1), sizeof(char));
 
     int line = 0;
     int max;
     for (int i = from_line; i < to_line; i++) {
         max = cursor_max_at_line(i);
-        for (int j = x_offset; j < min(max, x_offset + PRINTABLE_COLS); j++) {
-            new_screen[line * PRINTABLE_COLS + j - x_offset] = g_data[g_data_lines[i] + j];
+        for (int j = x_offset; j < min(max, x_offset + SCREEN_W + 1); j++) {
+            new_screen[line * SCREEN_W + j - x_offset] = g_data[g_data_lines[i] + j];
         }
         line++;
     }
@@ -137,51 +123,61 @@ char *calc_new_screen(int from_line, int to_line, int x_offset) {
 }
 
 void display_data(int from_line, int to_line, int x_offset) {
-    if (to_line - from_line > PRINTABLE_LINES) {
+    if (to_line - from_line > SCREEN_H) {
         printf("error: too many lines to display\n");
         return;
     }
 
-    // clear line numbers
-    draw_rect(0, FONT_H + 1, FONT_W * 3, SCREEN_H - FONT_H - 1, COLOR_BG);
+    static int old_lo = 0;
 
     char *new_screen = calc_new_screen(from_line, to_line, x_offset);
 
-    static int old_cursor_x = 0;
-    static int old_cursor_y = 0;
-
-    // remove cursor
-    draw_line(old_cursor_x, old_cursor_y, old_cursor_x, old_cursor_y + FONT_H, COLOR_BG);
-
     // display data
-    int y = FONT_H + 2;
-    int pos;
-    char line_str[10];
+    int y = 1;
+    int pos, line_offset;
+    char line_str[15];
     line_str[0] = ' ';
     line_str[1] = ' ';
-    for (int i = 0; i <= to_line - from_line; i++) {
-        // line content
-        for (int j = 0; j < PRINTABLE_COLS; j++) {
-            if (g_current_screen == NULL || new_screen[i * PRINTABLE_COLS + j] != g_current_screen[i * PRINTABLE_COLS + j]) {
-                gputc(FONT_W * 3 + 5 + j * FONT_W, y, new_screen[i * PRINTABLE_COLS + j], COLOR_T1, COLOR_BG);
-            }
-        }
+    itoa(to_line, line_str + 2, 10);
 
-        if (i + from_line == g_cursor_line) {
-            pos = (g_cursor_pos - x_offset) * FONT_W + FONT_W * 3 + 5;
-            draw_line(pos, y, pos, y + FONT_H, COLOR_F1);
-            old_cursor_x = pos;
-            old_cursor_y = y;
+    line_offset = strlen(line_str) - 2;
+    for (int i = 0; i <= to_line - from_line - 1; i++) {
+        // line content
+        for (int j = 0; j < SCREEN_W - line_offset - 1; j++) {
+            pos = i * SCREEN_W + j;
+            if (g_current_screen == NULL || new_screen[pos] != g_current_screen[pos] || old_lo != line_offset) {
+                if (new_screen[pos] == '\0') {
+                    panda_set_char(j + line_offset + 1, y, ' ', COLOR_D);
+                } else if (j == SCREEN_W - line_offset - 2) {
+                    panda_set_char(j + line_offset + 1, y, '>', COLOR_M);
+                } else {
+                    panda_set_char(j + line_offset + 1, y, new_screen[pos], COLOR_D);
+                }
+            }
         }
 
         if (i < to_line - from_line) {
             // line number
             itoa(from_line + i + 1, line_str + 2, 10);
-            print(0, y, line_str + strlen(line_str) - 3, COLOR_T2);
+            gui_print(0, y, line_str + strlen(line_str) - line_offset, COLOR_L);
+            panda_set_char(line_offset, y, ' ', COLOR_D);
         }
 
-        y += FONT_H;
+        y++;
     }
+
+    old_lo = line_offset;
+
+    for (int i = y; i <= SCREEN_H; i++) {
+        for (int j = 0; j < line_offset; j++) {
+            panda_set_char(j, i, ' ', COLOR_L);
+        }
+        panda_set_char(line_offset, i, ' ', COLOR_D);
+    }
+
+    // cursor
+    panda_draw_cursor(g_cursor_pos - x_offset + line_offset + 1, g_cursor_line - from_line + 1);
+
     if (g_current_screen != NULL) free(g_current_screen);
     g_current_screen = new_screen;
 }
@@ -379,39 +375,38 @@ void main_loop(char *path) {
         }
 
         // smart scrolling (y axis)
-        if (g_cursor_line - 1 < y_offset && g_cursor_line > 0) {
-            y_offset = g_cursor_line - 1;
-        } else if (g_cursor_line + 3 > y_offset + PRINTABLE_LINES) {
-            y_offset = g_cursor_line + 3 - PRINTABLE_LINES;
+        if (g_cursor_line - 2 < y_offset && g_cursor_line > 1) {
+            y_offset = g_cursor_line - 2;
+        } else if (g_cursor_line + 3 > y_offset + SCREEN_H) {
+            y_offset = g_cursor_line + 3 - SCREEN_H;
         }
 
         // smart scrolling (x axis)
-        if (g_cursor_pos - 1 < x_offset && g_cursor_pos > 0) {
-            x_offset = g_cursor_pos - 1;
-        } else if (g_cursor_pos + 3 > x_offset + PRINTABLE_COLS) {
-            x_offset = g_cursor_pos + 3 - PRINTABLE_COLS;
+        if (g_cursor_pos - 2 < x_offset && g_cursor_pos > 1) {
+            x_offset = g_cursor_pos - 2;
+        } else if (g_cursor_pos + 3 > x_offset + SCREEN_W - 8) {
+            x_offset = g_cursor_pos + 3 - SCREEN_W + 8;
         } else if (g_cursor_pos == 0) {
             x_offset = 0;
         }
 
         // display data
-        display_data(y_offset, min(g_lines_count, y_offset + PRINTABLE_LINES), x_offset);
-
-        // render screen
-        render_screen();
+        display_data(y_offset, min(g_lines_count, y_offset + SCREEN_H), x_offset);
     }
 }
 
+void clear_screen(void) {
+    c_kprint("\e[2J");
+    fputs("\e[2J", stdout);
+    fflush(stdout);
+}
+
 void quit(void) {
-    vgui_exit(g_vgui);
-    free(g_title);
     free(g_data);
     free(g_data_lines);
     free(g_current_screen);
 
-    c_kprint("\e[2J");
-    fputs("\e[2J", stdout);
-    fflush(stdout);
+    clear_screen();
 }
 
 int main(int argc, char **argv) {
@@ -420,6 +415,14 @@ int main(int argc, char **argv) {
         printf("Usage: rim [file]\n");
         return 1;
     }
+
+    panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
+    if (SCREEN_W * SCREEN_H == 0) {
+        printf("rim: panda is required\n");
+        return 1;
+    }
+    SCREEN_H--;
+    SCREEN_W--;
 
     if (argc == 2) {
         char *pwd = getenv("PWD");
@@ -443,11 +446,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    vgui_t vgui = vgui_setup(SCREEN_W, SCREEN_H);
-    g_vgui = &vgui;
-
-    g_title = calloc(256, sizeof(char));
-
     g_data = calloc(1024, sizeof(char));
     g_data_size = 1;
 
@@ -459,8 +457,7 @@ int main(int argc, char **argv) {
 
     g_current_screen = NULL;
 
-    clear_screen(COLOR_BG);
-    draw_interface();
+    clear_screen();
 
     if (file) {
         set_title(file);
@@ -469,8 +466,7 @@ int main(int argc, char **argv) {
         set_title("DEMO MODE");
     }
 
-    display_data(0, min(g_lines_count, PRINTABLE_LINES), 0);
-    render_screen();
+    display_data(0, min(g_lines_count, SCREEN_H), 0);
 
     main_loop(file);
 
