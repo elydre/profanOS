@@ -622,6 +622,11 @@ double ceil(double x) {
     return 0;
 }
 
+double fmod(double x, double y) {
+    fd_putstr(1, "fmod not implemented yet, WHY DO YOU USE IT ?\n");
+    return 0;
+}
+
 /* origin: FreeBSD /usr/src/lib/msun/src/e_acos.c */
 /*
  * ====================================================
