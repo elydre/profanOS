@@ -12,7 +12,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 10"
+#define OLV_VERSION "0.11 rev 11"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2590,8 +2590,19 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
     char *new_line = malloc((strlen(line) + strlen(bin_path) + 2) * sizeof(char));
     strcpy(new_line, ". ");
     strcat(new_line, bin_path);
-    strcat(new_line, line + strlen(name));
     free(bin_path);
+
+    int in_quote = 0;
+
+    for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == STRING_CHAR && (i == 0 || line[i - 1] != '\\')) {
+            in_quote = !in_quote;
+        }
+        if (line[i] == ' ' && !in_quote) {
+            strcat(new_line, line + i);
+            break;
+        }
+    }
 
     if (old_line != line) {
         free(line);
