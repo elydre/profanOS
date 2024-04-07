@@ -16,26 +16,20 @@
 #define LONG_MIN (-LONG_MAX - 1L)
 #endif
 
-uint32_t rand_seed = 0;
-char **g_env;
+uint32_t g_rand_seed = 0;
 
-void *malloc_func(uint32_t size, int as_kernel);
+void **g_atexit_funcs = NULL;
+char **g_env = NULL;
 
-#define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
-#define malloc(size) malloc_func(size, 0)
-#define realloc(mem, new_size) realloc_func(mem, new_size, 0)
-
-#define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
-#define malloc_ask(size) malloc_func(size, 1)
-#define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
+void *g_entry_exit = NULL;
 
 #define SHELL_PATH "/bin/fatpath/olivine.bin"
 
-void __attribute__((constructor)) stdlib_init(void) {
-    rand_seed = time(NULL);
+void __attribute__((constructor)) __stdlib_init(void) {
+    g_rand_seed = time(NULL);
 }
 
-void __attribute__((destructor)) stdlib_fini(void) {
+void __attribute__((destructor)) __stdlib_fini(void) {
     // free the environment
     if (g_env == NULL)
         return;
@@ -46,17 +40,30 @@ void __attribute__((destructor)) stdlib_fini(void) {
     free(g_env);
 }
 
-void init_environ_ptr(char **env) {
+void __init_libc(char **env, void *entry_exit) {
     int size = 0;
     while (env[size] != NULL) size++;
     g_env = malloc((size + 1) * sizeof(char *));
     for (int i = 0; i < size; i++)
         g_env[i] = strdup(env[i]);
     g_env[size] = NULL;
+
+    g_entry_exit = entry_exit;
 }
 
-char **get_environ_ptr(void) {
+char **__get_environ_ptr(void) {
     return g_env;
+}
+
+void __exit_libc(void) {
+    if (g_atexit_funcs == NULL)
+        return;
+
+    for (int i = 0; g_atexit_funcs[i] != NULL; i++) {
+        void (*func)() = g_atexit_funcs[i];
+        func();
+    }
+    free(g_atexit_funcs);
 }
 
 void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
@@ -133,8 +140,7 @@ long int a64l(const char *string) {
 }
 
 void abort(void) {
-    puts("abort not implemented yet, WHY DO YOU USE IT ?");
-    // TODO : implement abort, it's totally possible
+    exit(1);
 }
 
 int abs(int j) {
@@ -142,7 +148,16 @@ int abs(int j) {
 }
 
 void atexit(void (*func)()) {
-    puts("atexit not implemented yet, WHY DO YOU USE IT ?");
+    if (g_atexit_funcs == NULL) {
+        g_atexit_funcs = calloc(2, sizeof(void *));
+        g_atexit_funcs[0] = func;
+    } else {
+        int i = 0;
+        while (g_atexit_funcs[i] != NULL) i++;
+        g_atexit_funcs = realloc(g_atexit_funcs, (i + 2) * sizeof(void *));
+        g_atexit_funcs[i] = func;
+        g_atexit_funcs[i + 1] = NULL;
+    }
 }
 
 double atof(const char *s) {
@@ -254,6 +269,12 @@ int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *
 }
 
 void exit(int rv) {
+    profan_cleanup();
+    if (g_entry_exit != NULL) {
+        void (*entry_exit)(int) = g_entry_exit;
+        entry_exit(rv);
+    }
+    fputs("no entry_exit function found\n", stderr);
     c_exit_pid(c_process_get_pid(), rv, 0);
 }
 
@@ -480,9 +501,8 @@ void qsort_r(void *base, size_t nel, size_t width, __compar_d_fn_t comp, void *a
     puts("qsort_r not implemented yet, WHY DO YOU USE IT ?");
 }
 
-int rand_r(unsigned int *seed);
 int rand(void) {
-    return rand_r(&rand_seed) & RAND_MAX;
+    return rand_r(&g_rand_seed) & RAND_MAX;
 }
 
 /* This algorithm is mentioned in the ISO C standard, here extended
@@ -616,7 +636,7 @@ int putenv(char *string) {
 }
 
 void srand(unsigned int seed) {
-    rand_seed = seed;
+    g_rand_seed = seed;
 }
 
 void srand48(long seedval) {
