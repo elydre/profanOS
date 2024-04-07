@@ -12,7 +12,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 11"
+#define OLV_VERSION "0.11 rev 12"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1151,6 +1151,159 @@ char *if_eval(char **input) {
     return res;
 }
 
+/*************************************
+ *                                  *
+ *  Olivine Find Internal Function  *
+ *                                  *
+*************************************/
+
+#if PROFANBUILD
+
+char *find_recursive(char *path, uint8_t required_type, char *ext, int recursive) {
+    sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
+
+    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
+        raise_error("find", "Directory '%s' does not exist", path);
+        return ERROR_CODE;
+    }
+
+    sid_t *out_ids;
+    char **names;
+
+    int elm_count = fu_get_dir_content(dir_id, &out_ids, &names);
+
+    if (elm_count < 1) {
+        return NULL;
+    }
+
+    char *output = malloc(1 * sizeof(char));
+    output[0] = '\0';
+
+    char *tmp, *tmp_path;
+
+    for (int i = 0; i < elm_count; i++) {
+        if (required_type == 2 && !fu_is_dir(out_ids[i])) {
+            continue;
+        }
+        if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
+            continue;
+        }
+        if (ext != NULL && fu_is_file(out_ids[i])) {
+            char *tmp = strrchr(names[i], '.') + 1;
+            if (tmp == NULL || strcmp(tmp, ext) != 0) {
+                continue;
+            }
+        }
+        tmp_path = assemble_path(path, names[i]);
+        fu_simplify_path(tmp_path);
+
+        if ((required_type == 0) ||
+            (required_type == 1 && fu_is_file(out_ids[i])) ||
+            (required_type == 2 && fu_is_dir(out_ids[i]))
+        ){
+            tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
+            if (output[0] != '\0') {
+                sprintf(tmp, "%s '%s'", output, tmp_path);
+            } else {
+                sprintf(tmp, "'%s'", tmp_path);
+            }
+            free(output);
+            output = tmp;
+        }
+
+        if (recursive && fu_is_dir(out_ids[i])) {
+            char *tmp_output = find_recursive(tmp_path, required_type, ext, recursive);
+            if (tmp_output != NULL && tmp_output[0] != '\0') {
+                char *tmp = malloc((strlen(output) + strlen(tmp_output) + 4));
+                if (output[0] != '\0') {
+                    sprintf(tmp, "%s %s", output, tmp_output);
+                } else {
+                    sprintf(tmp, "%s", tmp_output);
+                }
+                free(output);
+                output = tmp;
+            }
+            free(tmp_output);
+        }
+
+        free(tmp_path);
+    }
+
+    for (int i = 0; i < elm_count; i++) {
+        free(names[i]);
+    }
+    free(out_ids);
+    free(names);
+
+    return output;
+}
+
+
+#endif
+
+char *if_find(char **input) {
+    /*
+     * input: ["-f", "/dir/subdir"]
+     * output: "'/dir/subdir/file1' '/dir/subdir/file2'"
+    */
+
+    #if PROFANBUILD
+
+    uint8_t required_type = 0;
+    uint8_t recursive = 0;
+    char *ret, *dir = NULL;
+    char *ext = NULL;
+
+    for (int i = 0; input[i] != NULL; i++) {
+        if (strcmp(input[i], "-f") == 0) {
+            required_type = 1;
+        } else if (strcmp(input[i], "-r") == 0) {
+            recursive = 1;
+        } else if (strcmp(input[i], "-d") == 0) {
+            required_type = 2;
+        } else if (strcmp(input[i], "-e") == 0) {
+            if (input[i + 1] == NULL) {
+                raise_error("find", "Usage: find [-f|-d] [-r] [-e <ext>] [dir]");
+                return ERROR_CODE;
+            }
+            ext = input[i + 1];
+            required_type = 1;
+            i++;
+        } else if (input[i][0] != '-') {
+            if (dir != NULL) {
+                raise_error("find", "Usage: find [-f|-d] [-r] [-e <ext>] [dir]");
+                return ERROR_CODE;
+            }
+            dir = input[i];
+        } else {
+            raise_error("find", "Unknown argument -- '%s'", input[i]);
+            return ERROR_CODE;
+        }
+    }
+
+    if (required_type == 2 && ext != NULL) {
+        raise_error("find", "Cannot use -e with -d");
+        return ERROR_CODE;
+    }
+
+    if (dir == NULL) {
+        dir = ".";
+    }
+
+    dir = assemble_path(g_current_directory, dir);
+    ret = find_recursive(dir, required_type, ext, recursive);
+    free(dir);
+
+    return ret;
+
+    #else
+    UNUSED(input);
+    raise_error("find", "Not supported in this build");
+    return ERROR_CODE;
+    #endif
+}
+
+
 /**************************************
  *                                   *
  *  Olivine Lang Internal Functions  *
@@ -1586,120 +1739,6 @@ char *if_export(char **input) {
     setenv(input[0], input[1], 1);
 
     return NULL;
-}
-
-char *if_find(char **input) {
-    /*
-     * input: ["-f", "/dir/subdir"]
-     * output: "'/dir/subdir/file1' '/dir/subdir/file2'"
-    */
-
-    #if PROFANBUILD
-
-    int required_type = 0;
-    char *path, *dir = NULL;
-    char *ext = NULL;
-
-    for (int i = 0; input[i] != NULL; i++) {
-        if (strcmp(input[i], "-f") == 0) {
-            required_type = 1;
-        } else if (strcmp(input[i], "-d") == 0) {
-            required_type = 2;
-        } else if (strcmp(input[i], "-e") == 0) {
-            if (input[i + 1] == NULL) {
-                raise_error("find", "Usage: find [-f|-d] [-e <ext>] [dir]");
-                return ERROR_CODE;
-            }
-            ext = input[i + 1];
-            required_type = 1;
-            i++;
-        } else if (input[i][0] != '-') {
-            if (dir != NULL) {
-                raise_error("find", "Usage: find [-f|-d] [-e <ext>] [dir]");
-                return ERROR_CODE;
-            }
-            dir = input[i];
-        } else {
-            raise_error("find", "Unknown argument '%s'", input[i]);
-            return ERROR_CODE;
-        }
-    }
-
-    if (required_type == 2 && ext != NULL) {
-        raise_error("find", "Cannot use -e with -d");
-        return ERROR_CODE;
-    }
-
-    if (dir == NULL) {
-        dir = ".";
-    }
-
-    path = assemble_path(g_current_directory, dir);
-
-    sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
-
-    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
-        raise_error("find", "Directory '%s' does not exist", path);
-        free(path);
-        return ERROR_CODE;
-    }
-
-    sid_t *out_ids;
-    char **names;
-
-    int elm_count = fu_get_dir_content(dir_id, &out_ids, &names);
-
-    if (elm_count < 1) {
-        free(path);
-        return NULL;
-    }
-
-    char *output = malloc(1 * sizeof(char));
-    output[0] = '\0';
-
-    char *tmp_path;
-
-    for (int i = 0; i < elm_count; i++) {
-        if (!required_type ||
-            (fu_is_dir(out_ids[i]) && required_type == 2) ||
-            (fu_is_file(out_ids[i]) && required_type == 1)
-        ) {
-            if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
-                continue;
-            }
-            if (ext != NULL && fu_is_file(out_ids[i])) {
-                char *tmp = strrchr(names[i], '.') + 1;
-                if (tmp == NULL || strcmp(tmp, ext) != 0) {
-                    continue;
-                }
-            }
-            tmp_path = assemble_path(path, names[i]);
-            fu_simplify_path(tmp_path);
-            char *tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
-            if (output[0] != '\0') {
-                sprintf(tmp, "%s '%s'", output, tmp_path);
-            } else {
-                sprintf(tmp, "'%s'", tmp_path);
-            }
-            free(tmp_path);
-            free(output);
-            output = tmp;
-        }
-    }
-
-    for (int i = 0; i < elm_count; i++) {
-        free(names[i]);
-    }
-    free(out_ids);
-    free(names);
-    free(path);
-
-    return output;
-    #else
-    UNUSED(input);
-    raise_error("find", "Not supported in this build");
-    return ERROR_CODE;
-    #endif
 }
 
 char *if_fsize(char **input) {

@@ -21,22 +21,6 @@ FUNC args
     END
 END
 
-FUNC tree
-    IF !(eval !# = 0)
-        set 0 .
-    END
-
-    print !0'\n'
-
-    FOR d !(find -d !0)
-        tree !d
-    END
-
-    FOR f !(find -f !0)
-        print !f'\n'
-    END
-END
-
 FUNC dirsize
     set size 0
     set level 0
