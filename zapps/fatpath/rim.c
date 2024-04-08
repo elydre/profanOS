@@ -470,7 +470,7 @@ char *compute_args(int argc, char **argv) {
                 );
                 exit(0);
             } else {
-                fprintf(stderr, "rim: Unknown option -- '%s'\n", argv[i]);
+                fprintf(stderr, "rim: Unknown option -- '%s'\n", argv[i] + 1);
                 exit(1);
             }
         } else {
