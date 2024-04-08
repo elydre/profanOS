@@ -12,7 +12,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 12"
+#define OLV_VERSION "0.11 rev 13"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -1484,26 +1484,40 @@ char *if_dot(char **input) {
         return ERROR_CODE;
     }
 
+    // check if file ends with .olv
+    int len = strlen(input[0]);
+    if (len < 5 || !strcmp(input[0] + len - 4, ".olv")) {
+        FILE *file = fopen(input[0], "r");
+        char line[16];
+        if (file != NULL) {
+            if (fgets(line, sizeof(line), file) != NULL && strcmp(line, "//olivine:exec\n") == 0) {
+                fclose(file);
+                return execute_file(input[0], input + 1) ? ERROR_CODE : NULL;
+            }
+            printf("DOT: file '%s' start with %s\n", input[0], line);
+            fclose(file);
+        }
+    }
+
+    char *file_path = input[0];
     #if PROFANBUILD
     // get file name
-    char *file_path = assemble_path(g_current_directory, input[0]);
+    if (file_path[0] != '/')
+        file_path = assemble_path(g_current_directory, input[0]);
 
     // check if file exists
-    sid_t file_id = fu_path_to_sid(ROOT_SID, file_path);
+    sid_t sid = fu_path_to_sid(ROOT_SID, file_path);
 
-    if (IS_NULL_SID(file_id) || !fu_is_file(file_id)) {
+    if (IS_NULL_SID(sid) || !fu_is_file(sid)) {
         raise_error("dot", "File '%s' does not exist", file_path);
-        free(file_path);
+        if (file_path != input[0])
+            free(file_path);
         return ERROR_CODE;
     }
     #else
-    // get file name
-    char *file_path = strdup(input[0]);
-
     // check if file exists
     if (access(file_path, F_OK | X_OK) == -1) {
         raise_error("dot", "File '%s' does not exist", file_path);
-        free(file_path);
         return ERROR_CODE;
     }
     #endif
@@ -1541,22 +1555,22 @@ char *if_dot(char **input) {
 
     if (argc < 1) {
         raise_error("dot", "No given executable path");
+        if (file_path != input[0])
+            free(file_path);
         free(stdout_path);
         free(stdin_path);
-        free(file_path);
         return ERROR_CODE;
     }
 
     #if PROFANBUILD
-    sid_t sid;
-
     if (stdin_path) {
         sid = fu_path_to_sid(ROOT_SID, stdin_path);
         if (IS_NULL_SID(sid)) {
             raise_error("dot", "Cannot redirect stdin from '%s'", stdin_path);
+            if (file_path != input[0])
+                free(file_path);
             free(stdout_path);
             free(stdin_path);
-            free(file_path);
             return ERROR_CODE;
         }
     }
@@ -1565,16 +1579,18 @@ char *if_dot(char **input) {
         sid = fu_path_to_sid(ROOT_SID, stdout_path);
         if (IS_NULL_SID(sid)) {
             if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
+                if (file_path != input[0])
+                    free(file_path);
                 free(stdout_path);
                 free(stdin_path);
-                free(file_path);
                 return ERROR_CODE;
             }
         } else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
             raise_error("dot", "Cannot redirect stdout to '%s'", stdout_path);
+            if (file_path != input[0])
+                free(file_path);
             free(stdout_path);
             free(stdin_path);
-            free(file_path);
             return ERROR_CODE;
         } else if (fu_is_file(sid)) {
             fu_set_file_size(sid, 0);
@@ -1623,7 +1639,8 @@ char *if_dot(char **input) {
 
     if (pid == -1) {
         raise_error("dot", "Cannot execute file '%s'", file_path);
-        free(file_path);
+        if (file_path != input[0])
+            free(file_path);
         free(file_name);
         free(argv);
         return ERROR_CODE;
@@ -1636,7 +1653,6 @@ char *if_dot(char **input) {
     pid_t pid = fork();
     if (pid == -1) {
         raise_error("dot", "Cannot execute file '%s'", file_path);
-        free(file_path);
         free(file_name);
         free(argv);
         return ERROR_CODE;
@@ -1645,7 +1661,6 @@ char *if_dot(char **input) {
     if (pid == 0) {
         execv(file_path, argv);
         raise_error("dot", "Cannot execute file '%s'", file_path);
-        free(file_path);
         free(file_name);
         free(argv);
         exit(1);
@@ -1665,7 +1680,8 @@ char *if_dot(char **input) {
     local_itoa(pid, tmp);
     set_variable("spi", tmp);
 
-    free(file_path);
+    if (file_path != input[0])
+        free(file_path);
     free(file_name);
     free(argv);
     free(tmp);
