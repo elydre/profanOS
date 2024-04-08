@@ -191,11 +191,11 @@ def graphic_menu(stdscr):
     curses.curs_set(0)
     stdscr.clear()
     stdscr.refresh()
-    
+
     checked = [False] * len(ALL_ADOONS)
 
     print(len(ALL_ADOONS))
-    
+
     current = 1
 
     def draw_menu(stdscr, checked, current):
