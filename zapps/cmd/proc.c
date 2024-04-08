@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
         fputs("Try 'proc -h' for more information.\n", stderr);
         return 1;
     }
-    
+
     if (args.mode == MODE_LIST)
         list_process();
     else if (args.mode == MODE_FHLP)

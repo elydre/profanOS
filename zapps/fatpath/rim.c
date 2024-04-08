@@ -58,7 +58,7 @@ void gui_print(uint32_t x, uint32_t y, char *str, char color) {
         x++;
         str++;
     }
-}  
+}
 
 void set_title(char *path) {
     char *title = malloc(SCREEN_W + 1);

@@ -400,7 +400,7 @@ void panda_get_cursor(uint32_t *x, uint32_t *y) {
 
 void panda_draw_cursor(uint32_t x, uint32_t y) {
     if (!g_panda) return;
-    draw_cursor(1);   
+    draw_cursor(1);
     g_panda->cursor_x = x;
     g_panda->cursor_y = y;
     draw_cursor(0);
