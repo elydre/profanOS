@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
 
 // input settings
 #define SLEEP_T 15
@@ -26,10 +27,12 @@
                                   g_data_lines[(line) + 1] - g_data_lines[line] - 1 : \
                                   g_data_size - g_data_lines[line] - 1)
 
-#define COLOR_T 0x8F    // title
+#define COLOR_T 0x70    // title
 #define COLOR_L 0x8F    // line number
 #define COLOR_D 0x0F    // data
 #define COLOR_M 0x70    // more data (>)
+#define COLOR_U 0x80    // unknown character
+#define COLOR_W 0x08    // whitespace
 
 // GLOBALS
 
@@ -42,7 +45,7 @@ int g_lines_count;
 int g_cursor_line;
 int g_cursor_pos;
 
-char *g_current_screen;
+int g_always_tab;
 
 int SCREEN_W;
 int SCREEN_H;
@@ -107,15 +110,31 @@ void save_file(char *path) {
     free(data_copy);
 }
 
-char *calc_new_screen(int from_line, int to_line, int x_offset) {
-    char *new_screen = calloc((SCREEN_H + 1) * (SCREEN_W + 1), sizeof(char));
+uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_patch) {
+    uint16_t *new_screen = calloc((SCREEN_H + 1) * (SCREEN_W + 1), sizeof(uint16_t));
 
     int line = 0;
-    int max;
+    int max, x;
     for (int i = from_line; i < to_line; i++) {
-        max = cursor_max_at_line(i);
-        for (int j = x_offset; j < min(max, x_offset + SCREEN_W + 1); j++) {
-            new_screen[line * SCREEN_W + j - x_offset] = g_data[g_data_lines[i] + j];
+        max = min(cursor_max_at_line(i), x_offset + SCREEN_W + 1);
+        x = 0;
+        for (int j = x_offset; j < max; j++) {
+            if (g_data[g_data_lines[i] + j] == '\t') {
+                for (int k = 0; k < 4; k++) {
+                    new_screen[line * SCREEN_W + j - x_offset + x] = '>' | (COLOR_W << 8);
+                    if ((j + x) % 4 == 3) break;
+                    x++;
+                    if (i == g_cursor_line && j + x <= g_cursor_pos + *cursor_patch)
+                        (*cursor_patch)++;
+                }
+                continue;
+            }
+            if (!isprint(g_data[g_data_lines[i] + j]))
+                new_screen[line * SCREEN_W + j - x_offset + x] = '?' | (COLOR_U << 8);
+            else if (g_data[g_data_lines[i] + j] == ' ')
+                new_screen[line * SCREEN_W + j - x_offset + x] = '.' | (COLOR_W << 8);
+            else
+                new_screen[line * SCREEN_W + j - x_offset + x] = g_data[g_data_lines[i] + j] | (COLOR_D << 8);
         }
         line++;
     }
@@ -124,13 +143,13 @@ char *calc_new_screen(int from_line, int to_line, int x_offset) {
 
 void display_data(int from_line, int to_line, int x_offset) {
     if (to_line - from_line > SCREEN_H) {
-        printf("error: too many lines to display\n");
-        return;
+        fputs("rim: error: too many lines to display\n", stderr);
+        exit(1);
     }
 
-    static int old_lo = 0;
+    int cursor_patch = 0;
 
-    char *new_screen = calc_new_screen(from_line, to_line, x_offset);
+    uint16_t *new_screen = calc_new_screen(from_line, to_line, x_offset, &cursor_patch);
 
     // display data
     int y = 1;
@@ -145,14 +164,12 @@ void display_data(int from_line, int to_line, int x_offset) {
         // line content
         for (int j = 0; j < SCREEN_W - line_offset - 1; j++) {
             pos = i * SCREEN_W + j;
-            if (g_current_screen == NULL || new_screen[pos] != g_current_screen[pos] || old_lo != line_offset) {
-                if (new_screen[pos] == '\0') {
-                    panda_set_char(j + line_offset + 1, y, ' ', COLOR_D);
-                } else if (j == SCREEN_W - line_offset - 2) {
-                    panda_set_char(j + line_offset + 1, y, '>', COLOR_M);
-                } else {
-                    panda_set_char(j + line_offset + 1, y, new_screen[pos], COLOR_D);
-                }
+            if (new_screen[pos] == 0) {
+                panda_set_char(j + line_offset + 1, y, ' ', COLOR_D);
+            } else if (j == SCREEN_W - line_offset - 2) {
+                panda_set_char(j + line_offset + 1, y, '>', COLOR_M);
+            } else {
+                panda_set_char(j + line_offset + 1, y, new_screen[pos] & 0xFF, new_screen[pos] >> 8);
             }
         }
 
@@ -166,9 +183,10 @@ void display_data(int from_line, int to_line, int x_offset) {
         y++;
     }
 
-    old_lo = line_offset;
-
     for (int i = y; i <= SCREEN_H; i++) {
+        for (int j = line_offset; j < SCREEN_W; j++) {
+            panda_set_char(j, i, ' ', COLOR_D);
+        }
         for (int j = 0; j < line_offset; j++) {
             panda_set_char(j, i, ' ', COLOR_L);
         }
@@ -176,10 +194,9 @@ void display_data(int from_line, int to_line, int x_offset) {
     }
 
     // cursor
-    panda_draw_cursor(g_cursor_pos - x_offset + line_offset + 1, g_cursor_line - from_line + 1);
+    panda_draw_cursor(g_cursor_pos - x_offset + line_offset + 1 + cursor_patch, g_cursor_line - from_line + 1);
 
-    if (g_current_screen != NULL) free(g_current_screen);
-    g_current_screen = new_screen;
+    free(new_screen);
 }
 
 void realloc_buffer(void) {
@@ -189,6 +206,48 @@ void realloc_buffer(void) {
 
     if (g_data_size % 1024 == 0 && g_data_size != 0) {
         g_data = realloc(g_data, (g_data_size + 1024) * sizeof(char));
+    }
+}
+
+void insert_tab(void) {
+    int tab = 0;
+
+    if (g_always_tab) {
+        tab = 1;
+    } else for (int j = g_data_lines[g_cursor_line]; g_data[j] != '\0'; j++) {
+        if (g_data[j] == '\t') {
+            tab = 1;
+            break;
+        }
+    }
+
+    if (tab) {
+        // add character to data buffer
+        for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+            g_data[i] = g_data[i - 1];
+
+        g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = '\t';
+        g_data_size++;
+
+        for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+            g_data_lines[i]++;
+
+        g_cursor_pos++;
+    } else {
+        int spaces = 4 - (g_cursor_pos % 4);
+        // add character to data buffer
+        for (int i = g_data_size + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+            g_data[i] = g_data[i - spaces];
+
+        for (int i = 0; i < spaces; i++)
+            g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] = ' ';
+
+        g_data_size += spaces;
+
+        for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+            g_data_lines[i] += spaces;
+
+        g_cursor_pos += spaces;
     }
 }
 
@@ -303,20 +362,7 @@ void main_loop(char *path) {
 
         // check if key is tab
         else if (key == 15) {
-            int spaces = 4 - (g_cursor_pos % 4);
-            // add character to data buffer
-            for (int i = g_data_size + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-                g_data[i] = g_data[i - spaces];
-
-            for (int i = 0; i < spaces; i++)
-                g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] = ' ';
-
-            g_data_size += spaces;
-
-            for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-                g_data_lines[i] += spaces;
-
-            g_cursor_pos += spaces;
+            insert_tab();
         }
 
         // check if key is arrow left
@@ -404,17 +450,60 @@ void clear_screen(void) {
 void quit(void) {
     free(g_data);
     free(g_data_lines);
-    free(g_current_screen);
 
     clear_screen();
 }
 
-int main(int argc, char **argv) {
+char *compute_args(int argc, char **argv) {
     char *file = NULL;
-    if (argc > 2) {
-        printf("Usage: rim [file]\n");
-        return 1;
+    g_always_tab = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == 't') {
+                g_always_tab = 1;
+            } else if (argv[i][1] == 'h') {
+                puts("Usage: rim [-h|-t] [file]"
+                    "\nOptions:"
+                    "\n  -h    display this help message"
+                    "\n  -t    always insert tab character"
+                );
+                exit(0);
+            } else {
+                fprintf(stderr, "rim: Unknown option -- '%s'\n", argv[i]);
+                exit(1);
+            }
+        } else {
+            file = argv[i];
+        }
     }
+
+    if (!file)
+        return NULL;
+
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
+    file = assemble_path(pwd, file);
+
+    sid_t elm = fu_path_to_sid(ROOT_SID, file);
+
+    if (IS_NULL_SID(elm)) {
+        elm = fu_file_create(0, file);
+        if (IS_NULL_SID(elm)) {
+            fprintf(stderr, "rim: %s: failed to create file\n", file);
+            exit(1);
+        }
+    } else if (!fu_is_file(elm)) {
+        fprintf(stderr, "rim :%s: file not found\n", file);
+        exit(1);
+    }
+
+    return file;
+}
+
+int main(int argc, char **argv) {
+    char *file = compute_args(argc, argv);
 
     panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
     if (SCREEN_W * SCREEN_H == 0) {
@@ -425,25 +514,6 @@ int main(int argc, char **argv) {
     SCREEN_W--;
 
     if (argc == 2) {
-        char *pwd = getenv("PWD");
-        if (!pwd) pwd = "/";
-
-        file = assemble_path(pwd, argv[1]);
-
-        sid_t elm = fu_path_to_sid(ROOT_SID, file);
-
-        if (IS_NULL_SID(elm)) {
-            elm = fu_file_create(0, file);
-            if (IS_NULL_SID(elm)) {
-                printf("\e[91m%s\e[31m failed to create file\e[0m\n", file);
-                free(file);
-                return 1;
-            }
-        } else if (!fu_is_file(elm)) {
-            printf("\e[91m%s\e[31m file not found\e[0m\n", file);
-            free(file);
-            return 1;
-        }
     }
 
     g_data = calloc(1024, sizeof(char));
@@ -454,8 +524,6 @@ int main(int argc, char **argv) {
 
     g_cursor_line = 0;
     g_cursor_pos = 0;
-
-    g_current_screen = NULL;
 
     clear_screen();
 
