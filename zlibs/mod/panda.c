@@ -96,10 +96,11 @@ void free_font(font_data_t *pff) {
 uint32_t compute_color(uint8_t color) {
     uint32_t rgb[] = {
         0x000000, 0x0000AA, 0x00AA00, 0x00AAAA,
-        0xAA0000, 0xAA00AA, 0xAA5500, 0xAAAAAA,
+        0xAA0000, 0xAA00AA, 0xAA8800, 0xAAAAAA,
         0x555555, 0x5555FF, 0x55FF55, 0x55FFFF,
         0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF
     };
+
     if (color > 0xF) return 0xFFFFFF;
     return rgb[(int) color];
 }
