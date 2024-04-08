@@ -28,7 +28,7 @@
                                   g_data_size - g_data_lines[line] - 1)
 
 #define COLOR_T 0x70    // title
-#define COLOR_L 0x8F    // line number
+#define COLOR_L 0x87    // line number
 #define COLOR_D 0x0F    // data
 #define COLOR_M 0x70    // more data (>)
 #define COLOR_U 0x80    // unknown character
@@ -110,16 +110,101 @@ void save_file(char *path) {
     free(data_copy);
 }
 
+int word_isnumber(char *word, int size) {
+    if (size == 0) return 0;
+    if (size > 2 && word[0] == '0' && (word[1] == 'x' || word[1] == 'X')) {
+        for (int i = 2; i < size; i++) {
+            if (!isxdigit(word[i])) return 0;
+        }
+        return 1;
+    }
+    for (int i = 0; i < size; i++) {
+        if (!isdigit(word[i])) return 0;
+    }
+    return 1;
+}
+
+int word_purple(char *word, uint32_t size) {
+    char *types[] = {"if", "else", "while", "for", "do", "switch", "case", "default", "break", "continue", "return", "goto"};
+    for (uint32_t i = 0; i < (sizeof(types) / sizeof(char *)); i++) {
+        if (size == strlen(types[i]) && !memcmp(word, types[i], size)) return 1;
+    }
+    return 0;
+}
+
+int word_isblue(char *word, uint32_t size) {
+    char *types[] = {"char", "short", "int", "long", "float", "double", "void", "struct", "enum", "union", "signed", "unsigned", "const", "volatile", "static", "extern", "register", "auto", "typedef", "bool", "sizeof", "NULL", "true", "false", "inline", "restrict"};
+    for (uint32_t i = 0; i < (sizeof(types) / sizeof(char *)); i++) {
+        if (size == strlen(types[i]) && !memcmp(word, types[i], size)) return 1;
+    }
+    return (size > 2 && word[size - 1] == 't' && word[size - 2] == '_');
+}
+
+int word_isbrace(char *word, uint32_t size) {
+    return (size == 1 && (word[0] == '(' || word[0] == ')' || word[0] == '{' || word[0] == '}' || word[0] == '[' || word[0] == ']'));
+}
+
+int word_paraft(char *word, uint32_t size) {
+    for (uint32_t i = size; word[i]; i++) {
+        if (word[i] == '(') return 1;
+        if (!isspace(word[i])) return 0;
+    }
+    return 0;
+}
+
+void put_word(int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
+    char color = 0x0F;
+    if (in_word == 2) color = 0x0E;
+    else if (in_word == 1) {
+        color = 0x07;
+        if (word_isnumber(word, size)) color = 0x0A;
+        else if (word_isblue(word, size)) color = 0x09;
+        else if (word_purple(word, size)) color = 0x0D;
+        else if (word_paraft(word, size)) color = 0x06;        
+    } else if (word_isbrace(word, size)) color = 0x0B;
+
+    for (int k = 0; k < size; k++) {
+        new_screen[new_screen_i + k] = word[k] | (color << 8);
+    }
+}
+
 uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_patch) {
     uint16_t *new_screen = calloc((SCREEN_H + 1) * (SCREEN_W + 1), sizeof(uint16_t));
 
     int line = 0;
     int max, x;
+
+    int world_start, in_word;
+    char chr_str;
+
     for (int i = from_line; i < to_line; i++) {
         max = min(cursor_max_at_line(i), x_offset + SCREEN_W + 1);
         x = 0;
+        in_word = world_start = 0;
+        for (int j = 0; j < x_offset; j++) {
+            if (in_word == 2 && g_data[g_data_lines[i] + j] != chr_str) {
+                in_word = 0;
+            }
+            else if (g_data[g_data_lines[i] + j] == '\"' || g_data[g_data_lines[i] + j] == '\'') {
+                chr_str = g_data[g_data_lines[i] + j];
+                in_word = 2;
+            }
+            if (in_word == 2)
+                continue;
+            if (isalnum(g_data[g_data_lines[i] + j]) || g_data[g_data_lines[i] + j] == '_') {
+                if (!in_word) {
+                    in_word = 1;
+                    world_start = j;
+                }
+            } else {
+                in_word = 0;
+            }
+        }
         for (int j = x_offset; j < max; j++) {
             if (g_data[g_data_lines[i] + j] == '\t') {
+                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                world_start = j + 1;
+                if (in_word != 2) in_word = 0;
                 for (int k = 0; k < 4; k++) {
                     new_screen[line * SCREEN_W + j - x_offset + x] = '>' | (COLOR_W << 8);
                     if ((j + x) % 4 == 3) break;
@@ -129,13 +214,48 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
                 }
                 continue;
             }
-            if (!isprint(g_data[g_data_lines[i] + j]))
+            if (!isprint(g_data[g_data_lines[i] + j])) {
                 new_screen[line * SCREEN_W + j - x_offset + x] = '?' | (COLOR_U << 8);
-            else if (g_data[g_data_lines[i] + j] == ' ')
+                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                world_start = j + 1;
+                if (in_word != 2) in_word = 0;
+                continue;
+            }
+            else if (g_data[g_data_lines[i] + j] == ' ') {
                 new_screen[line * SCREEN_W + j - x_offset + x] = '.' | (COLOR_W << 8);
-            else
-                new_screen[line * SCREEN_W + j - x_offset + x] = g_data[g_data_lines[i] + j] | (COLOR_D << 8);
+                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                world_start = j + 1;
+                if (in_word != 2) in_word = 0;
+                continue;
+            }
+
+            if (in_word == 2 && g_data[g_data_lines[i] + j] == chr_str) {
+                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start + 1);
+                world_start = j + 1;
+                in_word = 0;
+
+            } else if (g_data[g_data_lines[i] + j] == '\"' || g_data[g_data_lines[i] + j] == '\'') {
+                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                chr_str = g_data[g_data_lines[i] + j];
+                world_start = j;
+                in_word = 2;
+            }
+
+            else if (in_word != 2) {
+                if (isalnum(g_data[g_data_lines[i] + j]) || g_data[g_data_lines[i] + j] == '_') {
+                    if (!in_word) {
+                        put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                        world_start = j;
+                        in_word = 1;
+                    }
+                } else {
+                    put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                    world_start = j;
+                    in_word = 0;
+                }
+            }
         }
+        put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, max - world_start);
         line++;
     }
     return new_screen;
