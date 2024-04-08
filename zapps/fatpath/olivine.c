@@ -43,7 +43,7 @@
   #include <profan.h>
 
   // profanOS config
-  #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[91m$)>$(\e[0m$) "
+  #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #else
   #include <sys/wait.h>
   #include <stdint.h>
