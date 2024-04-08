@@ -302,7 +302,7 @@ def build_app_lib():
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
 
     total = len(elf_build_list) + len(bin_build_list)
-    
+
     # get .so files
     libs_name = [e[:-3] for e in file_in_dir(f"{OUT_DIR}/zlibs", ".so")]
 
