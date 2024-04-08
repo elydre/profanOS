@@ -52,7 +52,7 @@ int dev_panda(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 int dev_pander(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (is_read)
         return keyboard_read(buffer, size, "/dev/pander");
-    panda_print_string((char *) buffer, size, 0x07);
+    panda_print_string((char *) buffer, size, 0x0C);
     return size;
 }
 
