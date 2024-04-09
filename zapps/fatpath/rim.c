@@ -35,6 +35,18 @@
 #define COLOR_W 0x08    // whitespace
 
 // GLOBALS
+typedef struct {
+    uint8_t words;
+    uint8_t numbers;
+    uint8_t funccalls;
+    uint8_t braces;
+    uint8_t strings;
+    uint8_t ctypes;
+    char **keywords;
+    char **blues;
+} rim_syntax_t;
+
+rim_syntax_t *g_syntax;
 
 char *g_data;
 int g_data_size;
@@ -111,7 +123,7 @@ void save_file(char *path) {
 }
 
 int word_isnumber(char *word, int size) {
-    if (size == 0) return 0;
+    if (!g_syntax->numbers) return 0;
     if (size > 2 && word[0] == '0' && (word[1] == 'x' || word[1] == 'X')) {
         for (int i = 2; i < size; i++) {
             if (!isxdigit(word[i])) return 0;
@@ -125,26 +137,29 @@ int word_isnumber(char *word, int size) {
 }
 
 int word_purple(char *word, uint32_t size) {
-    char *types[] = {"if", "else", "while", "for", "do", "switch", "case", "default", "break", "continue", "return", "goto"};
-    for (uint32_t i = 0; i < (sizeof(types) / sizeof(char *)); i++) {
-        if (size == strlen(types[i]) && !memcmp(word, types[i], size)) return 1;
+    if (!g_syntax->keywords) return 0;
+    for (uint32_t i = 0; g_syntax->keywords[i]; i++) {
+        if (size == strlen(g_syntax->keywords[i]) && !memcmp(word, g_syntax->keywords[i], size)) return 1;
     }
     return 0;
 }
 
 int word_isblue(char *word, uint32_t size) {
-    char *types[] = {"char", "short", "int", "long", "float", "double", "void", "struct", "enum", "union", "signed", "unsigned", "const", "volatile", "static", "extern", "register", "auto", "typedef", "bool", "sizeof", "NULL", "true", "false", "inline", "restrict"};
-    for (uint32_t i = 0; i < (sizeof(types) / sizeof(char *)); i++) {
-        if (size == strlen(types[i]) && !memcmp(word, types[i], size)) return 1;
+    if (g_syntax->ctypes && size > 2 && word[size - 1] == 't' && word[size - 2] == '_') return 1;
+    if (!g_syntax->blues) return 0;
+    for (uint32_t i = 0; g_syntax->blues[i]; i++) {
+        if (size == strlen(g_syntax->blues[i]) && !memcmp(word, g_syntax->blues[i], size)) return 1;
     }
-    return (size > 2 && word[size - 1] == 't' && word[size - 2] == '_');
+    return 0;
 }
 
 int word_isbrace(char *word, uint32_t size) {
+    if (!g_syntax->braces) return 0;
     return (size == 1 && (word[0] == '(' || word[0] == ')' || word[0] == '{' || word[0] == '}' || word[0] == '[' || word[0] == ']'));
 }
 
 int word_paraft(char *word, uint32_t size) {
+    if (!g_syntax->funccalls) return 0;
     for (uint32_t i = size; word[i]; i++) {
         if (word[i] == '(') return 1;
         if (!isspace(word[i])) return 0;
@@ -153,9 +168,10 @@ int word_paraft(char *word, uint32_t size) {
 }
 
 void put_word(int line, int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
+    if (size == 0) return;
     char color = 0x0F;
-    if (in_word == 2) color = 0x0E;
-    else if (in_word == 1) {
+    if (in_word == 2 && g_syntax->strings) color = 0x0E;
+    else if (in_word == 1 && g_syntax->words) {
         color = 0x07;
         if (word_isnumber(word, size)) color = 0x0A;
         else if (word_isblue(word, size)) color = 0x09;
@@ -591,6 +607,10 @@ void quit(void) {
     free(g_data);
     free(g_data_lines);
 
+    free(g_syntax->keywords);
+    free(g_syntax->blues);
+    free(g_syntax);
+
     clear_screen();
 }
 
@@ -642,14 +662,82 @@ char *compute_args(int argc, char **argv) {
     return file;
 }
 
+char **copy_array(char **array) {
+    int len;
+    for (len = 0; array[len] != NULL; len++);
+    char **copy = malloc((len + 1) * sizeof(char *));
+    for (int i = 0; i < len; i++) {
+        copy[i] = array[i];
+    }
+    copy[len] = NULL;
+    return copy;
+}
+
+void rim_syntax_init(char *lang) {
+    g_syntax = calloc(1, sizeof(rim_syntax_t));
+
+    if (strcmp(lang, "c") == 0) {
+        g_syntax->words = 1;
+        g_syntax->numbers = 1;
+        g_syntax->funccalls = 1;
+        g_syntax->braces = 1;
+        g_syntax->strings = 1;
+        g_syntax->ctypes = 1;
+
+        g_syntax->keywords = copy_array((char *[]) {
+            "if", "else", "while", "for", "do", "switch", "case",
+            "default", "break", "continue", "return", "goto", "end", NULL
+        });
+
+        g_syntax->blues = copy_array((char *[]) {
+            "char", "short", "int", "long", "float", "double", "void",
+            "struct", "enum", "union", "signed", "unsigned", "const",
+            "volatile", "static", "extern", "register", "auto", "typedef",
+            "bool", "sizeof", "NULL", "true", "false", "inline", "restrict", NULL
+        });
+    }
+
+    else if (strcmp(lang, "lua") == 0) {
+        g_syntax->words = 1;
+        g_syntax->numbers = 1;
+        g_syntax->funccalls = 1;
+        g_syntax->braces = 1;
+        g_syntax->strings = 1;
+
+        g_syntax->keywords = copy_array((char *[]) {
+            "if", "then", "else", "elseif", "while", "do", "for", "in",
+            "repeat", "until", "function", "return", "break", NULL
+        });
+
+        g_syntax->blues = copy_array((char *[]) {
+            "nil", "true", "false", "function", "local", NULL
+        });
+    }
+
+    else if (strcmp(lang, "olv") == 0) {
+        g_syntax->words = 1;
+        g_syntax->numbers = 1;
+        g_syntax->strings = 1;
+
+        g_syntax->keywords = copy_array((char *[]) {
+            "IF", "ELSE", "WHILE", "FOR", "FUNC", "END", "RETURN", "BREAK", "CONTINUE",
+            "if", "else", "while", "for", "func", "end", "return", "break", "continue", NULL
+        });
+    }
+}
+
 int main(int argc, char **argv) {
     char *file = compute_args(argc, argv);
+
+    char *ext = file ? strrchr(file, '.') : NULL;
+    rim_syntax_init((ext) ? ext + 1 : "txt");
 
     panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
     if (SCREEN_W * SCREEN_H == 0) {
         printf("rim: panda is required\n");
         return 1;
     }
+
     SCREEN_H--;
     SCREEN_W--;
 
