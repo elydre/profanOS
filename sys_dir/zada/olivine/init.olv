@@ -77,5 +77,3 @@ FUNC mv
         rm !0
     END
 END
-
-rim /src/zapps/fatpath/olivine.c
