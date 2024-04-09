@@ -467,6 +467,47 @@ int puts(const char *str) {
         ) ? 0 : EOF;
 }
 
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
+    if (stream == stdin) {
+        stream = STD_STREAM + 0;
+    }
+
+    if (stream == stdout || stream == stderr) {
+        return -1;
+    }
+
+    size_t i = 0;
+    int c;
+    while ((c = fgetc(stream)) != EOF) {
+        if (*lineptr == NULL) {
+            *lineptr = malloc(100);
+            *n = 100;
+        }
+
+        if (i >= *n) {
+            *n *= 2;
+            *lineptr = realloc(*lineptr, *n);
+        }
+
+        (*lineptr)[i++] = c;
+        if (c == delim) {
+            break;
+        }
+    }
+
+    if (i == 0) {
+        return -1;
+    }
+
+    (*lineptr)[i] = 0;
+    return i;
+}
+
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+    return getdelim(lineptr, n, '\n', stream);
+}
+
+
 int ungetc(int ch, FILE *stream) {
     puts("ungetc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
