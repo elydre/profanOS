@@ -152,7 +152,7 @@ int word_paraft(char *word, uint32_t size) {
     return 0;
 }
 
-void put_word(int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
+void put_word(int line, int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
     char color = 0x0F;
     if (in_word == 2) color = 0x0E;
     else if (in_word == 1) {
@@ -160,13 +160,23 @@ void put_word(int in_word, uint16_t *new_screen, int new_screen_i, char *word, i
         if (word_isnumber(word, size)) color = 0x0A;
         else if (word_isblue(word, size)) color = 0x09;
         else if (word_purple(word, size)) color = 0x0D;
-        else if (word_paraft(word, size)) color = 0x06;        
+        else if (word_paraft(word, size)) color = 0x06;
     } else if (word_isbrace(word, size)) color = 0x0B;
+
+    if (line > new_screen_i) {
+        size = size - (line - new_screen_i);
+        if (size <= 0) return;
+        word += line - new_screen_i;
+        new_screen_i = line;
+    }
 
     for (int k = 0; k < size; k++) {
         new_screen[new_screen_i + k] = word[k] | (color << 8);
     }
 }
+
+#define localput_word(X) put_word((i - from_line) * SCREEN_W, in_word, new_screen, \
+    line * SCREEN_W + x + world_start - x_offset, g_data + g_data_lines[i] + world_start, X)
 
 uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_patch) {
     uint16_t *new_screen = calloc((SCREEN_H + 1) * (SCREEN_W + 1), sizeof(uint16_t));
@@ -200,9 +210,10 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
                 in_word = 0;
             }
         }
+
         for (int j = x_offset; j < max; j++) {
             if (g_data[g_data_lines[i] + j] == '\t') {
-                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                localput_word(j - world_start);
                 world_start = j + 1;
                 if (in_word != 2) in_word = 0;
                 for (int k = 0; k < 4; k++) {
@@ -216,26 +227,31 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
             }
             if (!isprint(g_data[g_data_lines[i] + j])) {
                 new_screen[line * SCREEN_W + j - x_offset + x] = '?' | (COLOR_U << 8);
-                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                localput_word(j - world_start);
                 world_start = j + 1;
                 if (in_word != 2) in_word = 0;
                 continue;
             }
+
             else if (g_data[g_data_lines[i] + j] == ' ') {
                 new_screen[line * SCREEN_W + j - x_offset + x] = '.' | (COLOR_W << 8);
-                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                localput_word(j - world_start);
                 world_start = j + 1;
                 if (in_word != 2) in_word = 0;
                 continue;
             }
 
-            if (in_word == 2 && g_data[g_data_lines[i] + j] == chr_str) {
-                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start + 1);
-                world_start = j + 1;
-                in_word = 0;
+            if (in_word == 2) {
+                if (g_data[g_data_lines[i] + j] == chr_str) {
+                    localput_word(j - world_start + 1);
+                    world_start = j + 1;
+                    in_word = 0;
+                }
+                continue;
+            }
 
-            } else if (g_data[g_data_lines[i] + j] == '\"' || g_data[g_data_lines[i] + j] == '\'') {
-                put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+            else if (g_data[g_data_lines[i] + j] == '\"' || g_data[g_data_lines[i] + j] == '\'') {
+                localput_word(j - world_start);
                 chr_str = g_data[g_data_lines[i] + j];
                 world_start = j;
                 in_word = 2;
@@ -244,18 +260,18 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
             else if (in_word != 2) {
                 if (isalnum(g_data[g_data_lines[i] + j]) || g_data[g_data_lines[i] + j] == '_') {
                     if (!in_word) {
-                        put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                        localput_word(j - world_start);
                         world_start = j;
                         in_word = 1;
                     }
                 } else {
-                    put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, j - world_start);
+                    localput_word(j - world_start);
                     world_start = j;
                     in_word = 0;
                 }
             }
         }
-        put_word(in_word, new_screen, line * SCREEN_W + x + world_start, g_data + g_data_lines[i] + world_start, max - world_start);
+        localput_word(max - world_start);
         line++;
     }
     return new_screen;
@@ -381,6 +397,8 @@ void main_loop(char *path) {
     int y_offset = 0;
     int x_offset = 0;
 
+    int refresh_ticks = 0;
+
     while (1) {
         // wait for key
         key = c_kb_get_scfh();
@@ -396,7 +414,7 @@ void main_loop(char *path) {
         last_key = key;
 
         if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
-            usleep(SLEEP_T * 1000);
+            usleep(max((SLEEP_T - refresh_ticks) * 1000, 0));
             continue;
         }
 
@@ -557,7 +575,9 @@ void main_loop(char *path) {
         }
 
         // display data
+        refresh_ticks = c_timer_get_ms();
         display_data(y_offset, min(g_lines_count, y_offset + SCREEN_H), x_offset);
+        refresh_ticks = c_timer_get_ms() - refresh_ticks;
     }
 }
 
