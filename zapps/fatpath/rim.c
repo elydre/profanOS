@@ -706,7 +706,7 @@ void rim_syntax_init(char *lang) {
 
         g_syntax->keywords = copy_array((char *[]) {
             "if", "then", "else", "elseif", "while", "do", "for", "in",
-            "repeat", "until", "function", "return", "break", NULL
+            "repeat", "until", "function", "return", "break", "end", NULL
         });
 
         g_syntax->blues = copy_array((char *[]) {
