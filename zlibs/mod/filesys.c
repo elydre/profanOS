@@ -44,26 +44,17 @@ int main(void) {
 void fu_sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
+    len = strlen(fullpath);
+
     if (parent != NULL) {
-        *parent = (char *) malloc(META_MAXLEN);
-        (*parent)[0] = '\0';
+        *parent = calloc(1, len + 2);
     }
 
     if (cnt != NULL) {
-        *cnt = (char *) malloc(META_MAXLEN);
-        (*cnt)[0] = '\0';
+        *cnt = calloc(1, len + 2);
     }
 
-    len = strlen(fullpath);
-
-    if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        if (parent != NULL) strcpy(*parent, "/");
-        if (cnt != NULL) strcpy((*cnt), "/");
-        return;
-    }
-
-    if (fullpath[len - 1] == '/') {
-        fullpath[len - 1] = '\0';
+    while (len > 0 && fullpath[len - 1] == '/') {
         len--;
     }
 
@@ -73,15 +64,16 @@ void fu_sep_path(char *fullpath, char **parent, char **cnt) {
         }
     }
 
-    if (i <= 0) {
-        if (parent != NULL) strcpy(*parent, "/");
-        if (cnt != NULL) strncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
-    } else {
-        if (parent != NULL) {
+    if (parent != NULL && i >= 0) {
+        if (i == 0) {
+            strcpy(*parent, "/");
+        } else {
             strncpy(*parent, fullpath, i);
-            (*parent)[i] = '\0';
         }
-        if (cnt != NULL) strncpy(*cnt, fullpath + i + 1, META_MAXLEN);
+    }
+
+    if (cnt != NULL) {
+        strcpy(*cnt, fullpath + i + 1);
     }
 }
 
@@ -358,7 +350,8 @@ sid_t fu_dir_create(int device_id, char *path) {
     // generate the meta
     char *meta = malloc(META_MAXLEN);
     strcpy(meta, "D-");
-    strncpy(meta + 2, name, META_MAXLEN - 2);
+    strncpy(meta + 2, name, META_MAXLEN - 3);
+    meta[META_MAXLEN - 1] = '\0';
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
@@ -464,7 +457,8 @@ sid_t fu_file_create(int device_id, char *path) {
     // generate the meta
     char *meta = malloc(META_MAXLEN);
     strcpy(meta, "F-");
-    strncpy(meta + 2, name, META_MAXLEN - 2);
+    strncpy(meta + 2, name, META_MAXLEN - 3);
+    meta[META_MAXLEN - 1] = '\0';
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
@@ -560,7 +554,8 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     // generate the meta
     char *meta = malloc(META_MAXLEN);
     strcpy(meta, "C-");
-    strncpy(meta + 2, name, META_MAXLEN - 2);
+    strncpy(meta + 2, name, META_MAXLEN - 3);
+    meta[META_MAXLEN - 1] = '\0';
 
     head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
