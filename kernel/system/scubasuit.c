@@ -173,13 +173,7 @@ int scuba_init(void) {
     // allocate a page directory
     kernel_directory = i_directory_create();
 
-    g_map_to_addr = SCUBA_MAP_TO;
-    uint32_t physical_end = mem_get_info(0, 0);
-
-    if (g_map_to_addr > physical_end) {
-        g_map_to_addr = physical_end;
-        sys_warning("Cannot map memory to desired limit");
-    }
+    g_map_to_addr = mem_get_info(0, 0);
 
     // map the memory to itself
     for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {

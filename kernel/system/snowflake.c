@@ -59,6 +59,9 @@ int mem_init(void) {
     instance_count = 0;
 
     phys_size = mem_get_phys_size();
+    if (phys_size > SCUBA_MAP_MAX) {
+        phys_size = SCUBA_MAP_MAX;
+    }
 
     part_size = PARTS_COUNT;
 
@@ -191,7 +194,7 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     if (exit_mode == 2) {
         if (state != 3) instance_count--;
         process_enable_scheduler();
-        sys_error("[mem_alloc] Not enough memory");
+        sys_error("[mem_alloc] %dk of memory is not available", size / 1024);
         return 0;
     }
 
