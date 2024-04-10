@@ -5,20 +5,17 @@
 void sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
-    *parent = (char *) malloc(META_MAXLEN);
-    *cnt = (char *) malloc(META_MAXLEN);
-    (*parent)[0] = '\0';
-    (*cnt)[0] = '\0';
-
     len = str_len(fullpath);
 
-    if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        str_cpy((*cnt), "/");
-        return;
+    if (parent != NULL) {
+        *parent = calloc(len + 2);
     }
 
-    if (fullpath[len - 1] == '/') {
-        fullpath[len - 1] = '\0';
+    if (cnt != NULL) {
+        *cnt = calloc(len + 2);
+    }
+
+    while (len > 0 && fullpath[len - 1] == '/') {
         len--;
     }
 
@@ -28,13 +25,16 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
         }
     }
 
-    if (i <= 0) {
-        str_cpy(*parent, "/");
-        str_ncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
-    } else {
-        str_ncpy(*parent, fullpath, i);
-        (*parent)[i] = '\0';
-        str_ncpy(*cnt, fullpath + i + 1, META_MAXLEN);
+    if (parent != NULL && i >= 0) {
+        if (i == 0) {
+            str_cpy(*parent, "/");
+        } else {
+            str_ncpy(*parent, fullpath, i);
+        }
+    }
+
+    if (cnt != NULL) {
+        str_cpy(*cnt, fullpath + i + 1);
     }
 }
 
