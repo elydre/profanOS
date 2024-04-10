@@ -5,6 +5,7 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
+#include <profan/panda.h>
 #include <profan.h>
 
 typedef struct {
@@ -41,6 +42,16 @@ int cmp_string_alpha(char *s1, char *s2) {
     if (s1[i]) return 1;
     else if (s2[i]) return -1;
     else return 0;
+}
+
+int get_terminal_width(void) {
+    uint32_t width, height;
+
+    char *term = getenv("TERM");
+    if (term == NULL || strcmp(term, "/dev/panda"))
+        return 80;
+    panda_get_size(&width, &height);
+    return width;
 }
 
 void sort_alpha_and_type(int count, char **names, sid_t *ids) {
@@ -218,12 +229,16 @@ ls_args_t *parse_args(int argc, char **argv) {
     return args;
 }
 
+void print_name(sid_t id, char *name) {
+    if (fu_is_dir(id)) printf("\e[96m%s", name);
+    else if (fu_is_file(id)) printf("\e[92m%s", name);
+    else if (fu_is_fctf(id)) printf("\e[93m%s", name);
+    else printf("\e[91m%s", name);
+}
+
 void print_comma(int elm_count, char **cnt_names, sid_t *cnt_ids) {
     for (int i = 0; i < elm_count; i++) {
-        if (fu_is_dir(cnt_ids[i])) printf("\e[96m%s", cnt_names[i]);
-        else if (fu_is_file(cnt_ids[i])) printf("\e[92m%s", cnt_names[i]);
-        else if (fu_is_fctf(cnt_ids[i])) printf("\e[93m%s", cnt_names[i]);
-        else printf("\e[91m%s", cnt_names[i]);
+        print_name(cnt_ids[i], cnt_names[i]);
         if (i != elm_count - 1) printf("\e[0m, ");
         free(cnt_names[i]);
     }
@@ -231,26 +246,52 @@ void print_comma(int elm_count, char **cnt_names, sid_t *cnt_ids) {
 }
 
 void print_cols(int elm_count, char **cnt_names, sid_t *cnt_ids) {
-    uint32_t max_len = 0;
-    for (int i = 0; i < elm_count; i++) {
-        if (strlen(cnt_names[i]) > max_len) max_len = strlen(cnt_names[i]);
-    }
-    max_len++;
+    uint32_t max_len, *lens, *col_lens;
+    
+    col_lens = malloc(elm_count * sizeof(uint32_t));
+    lens = malloc(elm_count * sizeof(uint32_t));
 
-    int cols = 80 / (max_len + 1);
-    int rows = elm_count / cols + (elm_count % cols ? 1 : 0);
+    for (int i = 0; i < elm_count; i++) {
+        lens[i] = strlen(cnt_names[i]);
+    }
+
+    int cols, rows, width, k, term_w;
+    term_w = get_terminal_width();
+
+    for (int raw = 1; raw <= elm_count; raw++) {
+        cols = (elm_count + raw - 1) / raw;
+        rows = (elm_count + cols - 1) / cols;
+        width = k = 0;
+
+        for (int i = 0; i < cols; i++) {
+            max_len = 0;
+            for (int j = 0; j < rows; j++) {
+                if (k >= elm_count) break;
+                if (lens[k] > max_len) max_len = lens[k];
+                k++;
+            }
+            max_len += 2;
+            col_lens[i] = max_len;
+            width += max_len;
+        }
+        if (width <= term_w) break;
+    }
 
     for (int i = 0; i < rows; i++) {
         for (int j = i; j < elm_count; j += rows) {
-            if (fu_is_dir(cnt_ids[j])) printf("\e[96m%s\e[0m", cnt_names[j]);
-            else if (fu_is_file(cnt_ids[j])) printf("\e[92m%s\e[0m", cnt_names[j]);
-            else if (fu_is_fctf(cnt_ids[j])) printf("\e[93m%s\e[0m", cnt_names[j]);
-            else printf("\e[91m%s\e[0m", cnt_names[j]);
-            for (uint32_t k = 0; k < max_len - strlen(cnt_names[j]) + 1; k++) putchar(' ');
+            print_name(cnt_ids[j], cnt_names[j]);
+            if (j + rows < elm_count && cols > 1)
+                for (uint32_t k = lens[j]; k < col_lens[j / rows]; k++)
+                    putchar(' ');
             free(cnt_names[j]);
         }
         putchar('\n');
     }
+
+    fputs("\e[0m", stdout);
+
+    free(col_lens);
+    free(lens);
 }
 
 void print_lines(int elm_count, char **cnt_names, sid_t *cnt_ids, ls_args_t *args) {
