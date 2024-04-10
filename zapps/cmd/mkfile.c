@@ -8,8 +8,8 @@
 
 
 int main(int argc, char **argv) {
-    if (argc != 2 || argv[1][0] == '-') {
-        printf("Usage: mkfile <file>\n");
+    if (argc != 2 || !argv[1][0] || argv[1][0] == '-') {
+        fprintf(stderr, "Usage: mkfile <file>\n");
         return 1;
     }
 
@@ -40,12 +40,12 @@ int main(int argc, char **argv) {
     sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent_path);
 
     if (IS_NULL_SID(parent_sid) || !fu_is_dir(parent_sid)) {
-        printf("mkfile: %s: No such file or directory\n", parent_path);
+        fprintf(stderr, "mkfile: %s: No such file or directory\n", parent_path);
     }
 
     // check if the file already exists
     else if (!IS_NULL_SID(fu_path_to_sid(ROOT_SID, full_path))) {
-        printf("mkfile: %s: Already exists\n", full_path);
+        fprintf(stderr, "mkfile: %s: Already exists\n", full_path);
     }
 
     // create the file
