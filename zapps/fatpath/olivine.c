@@ -12,7 +12,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 13"
+#define OLV_VERSION "0.11 rev 14"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -4265,7 +4265,10 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
                 putchar('\n');
 
                 for (int i = 0; other_suggests[i] != NULL; i++) {
-                    printf("%s   ", other_suggests[i]);
+                    fputs(other_suggests[i], stdout);
+                    if (other_suggests[i + 1] != NULL) {
+                        fputs("   ", stdout);
+                    }
                     for (int j = 0;; j++) {
                         if (other_suggests[i][j + dec] != common_beginning[j]) {
                             common_beginning[j] = '\0';
