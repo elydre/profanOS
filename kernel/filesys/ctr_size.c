@@ -29,18 +29,16 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
 
     if (!IS_NULL_SID(next_sid)) {
         int ret = fs_cnt_shrink_size(filesys, next_sid, to_shrink);
-        if (ret == -1) {
+        if (ret <= 0) {
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return -1;
+            return ret == 0 ? -2 : ret;
         }
-        // next locator is empty, remove it
-        vdisk_note_sector_unused(vdisk, next_sid);
         mem_set(data + LAST_SID_OFFSET, 0, sizeof(sid_t));
         to_shrink = ret;
     }
 
     // remove core sectors
-    for (uint32_t byte = LAST_SID_OFFSET - sizeof(sid_t); byte > 0; byte -= sizeof(sid_t)) {
+    for (uint32_t byte = LAST_SID_OFFSET - sizeof(sid_t); to_shrink && byte > 0; byte -= sizeof(sid_t)) {
         sid_t core_sid;
         mem_copy(&core_sid, data + byte, sizeof(sid_t));
         if (core_sid.device == 0 && core_sid.sector == 0)
@@ -48,10 +46,13 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
         vdisk_note_sector_unused(vdisk, core_sid);
         mem_set(data + byte, 0, sizeof(sid_t));
         to_shrink--;
-        if (to_shrink == 0) {
-            break;
-        }
     }
+
+    // remove locator if empty
+    if (to_shrink) {
+        vdisk_note_sector_unused(vdisk, loca_sid);
+    }
+
     vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
     return to_shrink;
 }
@@ -216,7 +217,10 @@ int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
         }
     } else if (old_count > new_count) {
         // shrink cnt
-        if (fs_cnt_shrink_size(filesys, loca_sid, old_count - new_count)) {
+        int ret = fs_cnt_shrink_size(filesys, loca_sid, old_count - new_count);
+        if (ret == -2) ret = 0;
+        if (ret) {
+            sys_warning("[cnt_set_size] Could not shrink cnt");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }
