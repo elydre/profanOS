@@ -15,7 +15,7 @@ local function get_lib_func(lib_id, func_id)
 end
 
 local function malloc(size)
-    return profan.call_c(get_syscall(syscalls.malloc), 4, size, 4, 1)
+    return profan.call_c(get_syscall(syscalls.malloc), 4, size, 4, 0, 4, 1)
 end
 
 local function free(ptr)
