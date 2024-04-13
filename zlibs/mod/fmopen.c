@@ -440,11 +440,27 @@ int fm_add_stdhist(int fd, int pid) {
     }
 
     stdhist[stdhist_len].pid = pid;
+    
+    int ppid = c_process_get_ppid(pid);
+
+    if (ppid >= 0) {
+        for (int i = 0; i < stdhist_len; i++) {
+            if (stdhist[i].pid != ppid)
+                continue;
+            for (int j = 0; j < 3; j++) {
+                stdhist[stdhist_len].fd[j] = fm_dup(stdhist[i].fd[j]);
+                opened[stdhist[stdhist_len].fd[j]].pid = pid;
+            }
+            goto end;
+        }
+    }  
+
     for (int i = 0; i < 3; i++) {
         stdhist[stdhist_len].fd[i] = fm_dup(i + 3);
         opened[stdhist[stdhist_len].fd[i]].pid = pid;
     }
 
+    end:
     int res = stdhist[stdhist_len].fd[fd];
 
     stdhist_len++;
