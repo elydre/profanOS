@@ -118,8 +118,8 @@ int execvp(const char *file, char *const argv[]) {
     return 0;
 }
 
-void _exit(int a) {
-    puts("exit is not implemented yet, WHY DO YOU USE IT ?");
+void _exit(int status) {
+    exit(status);
 }
 
 int fchown(int a, uid_t b, gid_t c) {
@@ -450,7 +450,7 @@ int usleep(useconds_t usec) {
 
 pid_t vfork(void) {
     puts("vfork is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return -1;
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
