@@ -12,7 +12,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 14"
+#define OLV_VERSION "0.11 rev 15"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -2460,7 +2460,6 @@ void free_functions(void) {
 char *execute_line(char *full_line);
 
 char *pipe_processor(char **input) {
-    #if PROFANBUILD
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -2470,25 +2469,21 @@ char *pipe_processor(char **input) {
         return ERROR_CODE;
     }
 
-    int old_fds[4] = {
+    int old_fds[2] = {
         dup(0),
         dup(1),
-        dup(3),
-        dup(4)
     };
 
     char *line, *tmp = NULL, *ret = NULL;
     int fd[2], fdin, start = 0;
     fdin = dup(0);
     for (int i = 0; i < argc + 1; i++) {
-        if (strcmp(input[i], "|") && i != argc)
+        if (i != argc && strcmp(input[i], "|"))
             continue;
 
         if (argc == i) {
             dup2(old_fds[1], 1);
-            dup2(old_fds[3], 4);
             dup2(fdin, 0);
-            dup2(fdin, 3);
         }
 
         if (i == start) {
@@ -2517,9 +2512,7 @@ char *pipe_processor(char **input) {
 
         if (argc != i) {
             pipe(fd);
-            dup2(fdin, 3);
             dup2(fdin, 0);
-            dup2(fd[1], 4);
             dup2(fd[1], 1);
         }
 
@@ -2539,9 +2532,7 @@ char *pipe_processor(char **input) {
     }
 
     dup2(old_fds[1], 1);
-    dup2(old_fds[3], 4);
     dup2(old_fds[0], 0);
-    dup2(old_fds[2], 3);
 
     // if line execution failed, print pipe content
     if (tmp == ERROR_CODE) {
@@ -2563,10 +2554,6 @@ char *pipe_processor(char **input) {
     }
 
     return ret;
-    #endif
-    UNUSED(input);
-    raise_error("Pipe Processor", "Not supported in this build");
-    return ERROR_CODE;
 }
 
 /**************************
