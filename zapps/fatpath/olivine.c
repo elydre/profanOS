@@ -2511,7 +2511,11 @@ char *pipe_processor(char **input) {
         start = i + 1;
 
         if (argc != i) {
-            pipe(fd);
+            if (pipe(fd) == -1) {
+                raise_error("Pipe Processor", "Pipe failed");
+                ret = ERROR_CODE;
+                break;
+            }
             dup2(fdin, 0);
             dup2(fd[1], 1);
         }
@@ -2549,9 +2553,8 @@ char *pipe_processor(char **input) {
 
     close(fdin);
 
-    for (int i = 0; i < 4; i++) {
-        close(old_fds[i]);
-    }
+    close(old_fds[0]);
+    close(old_fds[1]);
 
     return ret;
 }
