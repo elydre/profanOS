@@ -1,8 +1,8 @@
 #include <profan/syscall.h>
 #include <profan.h>
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include <stdio.h>
 #include <errno.h>
@@ -218,9 +218,23 @@ long long atoll(const char *nptr) {
     return 0;
 }
 
-void *bsearch(const void *key, const void *base, size_t /* nmemb */ high,
-              size_t size, int (*compar)(const void *, const void *)) {
-    puts("bsearch not implemented yet, WHY DO YOU USE IT ?");
+void *bsearch(register const void *key, const void *base0, size_t nmemb, register size_t size,
+                register int (*compar)(const void *, const void *)) {
+    register const char *base = base0;
+    register const void *p;
+    register size_t lim;
+    register int cmp;
+
+    for (lim = nmemb; lim != 0; lim >>= 1) {
+        p = base + (lim >> 1) * size;
+        cmp = (*compar)(key, p);
+        if (cmp == 0)
+            return ((void *)p);
+        if (cmp > 0) {  // key > p: move right
+            base = (char *)p + size;
+            lim--;
+        }   // else move left
+    }
     return NULL;
 }
 
