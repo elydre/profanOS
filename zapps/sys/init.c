@@ -118,9 +118,10 @@ int main(void) {
     if (c_vesa_does_enable()) {
         panda_set_start(c_get_cursor_offset());
         use_panda = 1;
-        if (fm_reopen(1, "/dev/panda") < 0 ||
-            fm_reopen(3, "/dev/panda") < 0 ||
-            fm_reopen(4, "/dev/panda") < 0 ||
+        if (fm_reopen(1, "/dev/panda")  < 0 ||
+            fm_reopen(2, "/dev/pander") < 0 ||
+            fm_reopen(3, "/dev/panda")  < 0 ||
+            fm_reopen(4, "/dev/panda")  < 0 ||
             fm_reopen(5, "/dev/pander") < 0
         ) c_kprint("Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
