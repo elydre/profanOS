@@ -61,6 +61,22 @@ ADDONS = {
                 }
             ]
         },
+        {
+            "name": "libupng",
+            "description": "Lightweight PNG Decoding Library",
+            "files": [
+                {
+                    "name": "libupng.so",
+                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libupng.so",
+                    "path": [profan_path, "out", "zlibs", "libupng.so"]
+                },
+                {
+                    "name": "upng.h",
+                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/upng.h",
+                    "path": [profan_path, "include", "addons", "upng.h"]
+                },
+            ]
+        },
     ],
     "graphics": [
         {
