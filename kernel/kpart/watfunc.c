@@ -91,7 +91,10 @@ void *SYSCALL_ARRAY[] = {
     dily_load,
 
     // scubasuit.h
-    scuba_generate
+    scuba_call_generate,
+    scuba_call_map,
+    scuba_call_unmap,
+    scuba_call_phys
 };
 
 uint32_t wf_get_func_addr(uint32_t func_id) {

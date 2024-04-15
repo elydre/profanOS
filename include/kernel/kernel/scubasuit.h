@@ -17,7 +17,8 @@ typedef struct {
     uint32_t user :     1;
     uint32_t accessed : 1;
     uint32_t dirty :    1;
-    uint32_t unused :   7;
+    uint32_t unused :   6;
+    uint32_t allocate : 1;
     uint32_t frame :   20;
 } scuba_page_t;
 
@@ -32,14 +33,14 @@ typedef struct {
     uint32_t user :     1;
     uint32_t accessed : 1;
     uint32_t dirty :    1;
-    uint32_t unused :   7;
-    uint32_t frame :   20;
+    uint32_t unused :   6;
+    uint32_t fkernel :  1;
+    uint32_t frame :   20; // page table
 } scuba_dir_entry_t;
 
 // Max 4GB per directory
 typedef struct {
     scuba_dir_entry_t entries[1024];
-    scuba_page_table_t *tables[1024];
 
     uint32_t to_free_index;
     void *to_free[SCUBA_MAX_TO_FREE];
@@ -50,23 +51,28 @@ typedef struct {
 
 scuba_directory_t *scuba_get_kernel_directory(void);
 
+// init, switch
 int scuba_init(void);
-
 void scuba_process_switch(scuba_directory_t *dir);
 
+// directory creation, destruction
 scuba_directory_t *scuba_directory_inited(void);
 scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
+// map, unmap
 int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);
 int scuba_unmap(scuba_directory_t *dir, uint32_t virt);
-
-void scuba_generate(void *addr, uint32_t size);
-
 int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
 
+// get physical, fault handler
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
-
 void scuba_fault_handler(int err_code);
+
+// syscall functions
+void scuba_call_generate(void *addr, uint32_t size);
+void scuba_call_map(void *addr, void *phys);
+void scuba_call_unmap(void *addr);
+void *scuba_call_phys(void *addr);
 
 #endif
