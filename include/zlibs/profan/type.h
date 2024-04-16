@@ -156,8 +156,6 @@ typedef struct fpos_t {
 
 typedef unsigned long DWORD, *PDWORD, *LPDWORD;
 
-typedef int bool;
-
 typedef uint64_t time_t;
 typedef int timer_t;
 typedef int clockid_t;
