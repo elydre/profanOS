@@ -7,5 +7,4 @@ assignees: ''
 
 ---
 
-**Explain your issue**
-A clear and concise description of what the issue is.
+Thank you for your return. Please provide as much information as possible.
