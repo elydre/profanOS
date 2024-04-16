@@ -118,6 +118,7 @@ scuba_directory_t *scuba_directory_inited(void) {
 }
 
 scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
+    kprintf_serial("Copying page directory %x\n", dir);
     // allocate a new page directory
     scuba_directory_t *new_dir = i_directory_create();
 
@@ -128,19 +129,25 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
         // get the page table
         scuba_page_table_t *table = (scuba_page_table_t *) (dir->entries[i].frame * 0x1000);
 
+        // if the page is from the kernel use the kernel page table
+        if (dir->entries[i].fkernel) {
+            new_dir->entries[i] = dir->entries[i];
+            continue;
+        }
+
         // allocate a new page table
         scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t));
 
         // copy the page table
         for (int j = 0; j < 1024; j++) {
             new_table->pages[j] = table->pages[j];
-            if (table->pages[j].present) {
-                // clone the page
-                uint32_t data = mem_alloc(0x1000, 0x1000, 7);
-                mem_copy((void *) data, (void *) (table->pages[j].frame * 0x1000), 0x1000);
-                new_table->pages[j].frame = (uint32_t) data / 0x1000;
-                new_table->pages[j].allocate = 1;
-            }
+            if (!(table->pages[j].present && table->pages[j].deepcopy))
+                continue;
+            // clone the page
+            uint32_t data = mem_alloc(0x1000, 0x1000, 7);
+            mem_copy((void *) data, (void *) (table->pages[j].frame * 0x1000), 0x1000);
+            new_table->pages[j].frame = (uint32_t) data / 0x1000;
+            new_table->pages[j].allocate = 1;
         }
 
         // map the new page table
@@ -149,17 +156,16 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
         new_dir->entries[i].present = 1;
     }
 
+    kprintf_serial("Copied page directory %x to %x\n", dir, new_dir);
+
     return new_dir;
 }
 
 void scuba_directory_destroy(scuba_directory_t *dir) {
     // free all pages (if not from kernel)
     for (uint32_t i = 0; i < 1024; i++) {
-        if (!dir->entries[i].frame || dir->entries[i].fkernel) {
-            if (dir->entries[i].frame)
-                kprintf_serial("Skipping page table %x (%x)\n", dir->entries[i].frame, dir->entries[i].fkernel);
+        if (!dir->entries[i].frame || dir->entries[i].fkernel)
             continue;
-        }
 
         // get the page table
         scuba_page_table_t *table = (scuba_page_table_t *) (dir->entries[i].frame * 0x1000);
@@ -224,15 +230,20 @@ int scuba_init(void) {
  *                       *
 **************************/
 
-int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel) {
+// mode 0: normal
+// mode 1: use kernel table
+// mode 2: is kernel
+// mode 3: child no copy
+int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mode) {
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
+    int fkernel = (mode == 1 || mode == 2);
 
     // get the page table
     scuba_page_table_t *table = (void *) (dir->entries[table_index].frame * 0x1000);
     // if the page table doesn't exist, create it
     if (!table) {
-        if (from_kernel == 1) {
+        if (mode == 1) {
             // use the kernel page table
             table = (void *) (kernel_directory->entries[table_index].frame * 0x1000);
             if (!table) {
@@ -246,21 +257,21 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int fro
         } else {
             // create a new page table
             table = i_allign_calloc(sizeof(scuba_page_table_t));
-            kprintf_serial("Creating page table %x (%d)\n", table, from_kernel);
+            kprintf_serial("Creating page table %x (%d)\n", table, mode);
         }
         dir->entries[table_index].present = 1;
         dir->entries[table_index].rw = 1;
         dir->entries[table_index].user = 1;
         dir->entries[table_index].accessed = 0;
         dir->entries[table_index].dirty = 0;
-        dir->entries[table_index].fkernel = from_kernel ? 1 : 0;
+        dir->entries[table_index].fkernel = fkernel;
         dir->entries[table_index].frame = (uint32_t) table / 0x1000;
-    } else if (dir->entries[table_index].fkernel && !from_kernel) {
+    } else if (dir->entries[table_index].fkernel && !fkernel) {
         sys_error("Cannot map to kernel page table");
         return 1;
     }
 
-    if (from_kernel == 1) return 0;
+    if (mode == 1) return 0;
 
     // get the page index
     uint32_t page_index = (virt / 0x1000) % 1024;
@@ -270,6 +281,7 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int fro
     table->pages[page_index].present = 1;
     table->pages[page_index].rw = 1;
     table->pages[page_index].user = 1;
+    table->pages[page_index].deepcopy = (mode == 0);
 
     return 0;
 }
@@ -371,8 +383,8 @@ void scuba_call_generate(void *addr, uint32_t size) {
     scuba_create_virtual(current_directory, (uint32_t) addr, size);
 }
 
-void scuba_call_map(void *addr, void *phys) {
-    scuba_map(current_directory, (uint32_t) addr, (uint32_t) phys);
+void scuba_call_map(void *addr, void *phys, int cic) {
+    scuba_map_func(current_directory, (uint32_t) addr, (uint32_t) phys, cic ? 0 : 3);
 }
 
 void scuba_call_unmap(void *addr) {

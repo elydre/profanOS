@@ -17,7 +17,8 @@ typedef struct {
     uint32_t user :     1;
     uint32_t accessed : 1;
     uint32_t dirty :    1;
-    uint32_t unused :   6;
+    uint32_t unused :   5;
+    uint32_t deepcopy : 1;
     uint32_t allocate : 1;
     uint32_t frame :   20;
 } scuba_page_t;
@@ -61,7 +62,7 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
 // map, unmap
-int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int from_kernel);
+int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mode);
 int scuba_unmap(scuba_directory_t *dir, uint32_t virt);
 int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
 
@@ -71,7 +72,7 @@ void scuba_fault_handler(int err_code);
 
 // syscall functions
 void scuba_call_generate(void *addr, uint32_t size);
-void scuba_call_map(void *addr, void *phys);
+void scuba_call_map(void *addr, void *phys, int cic);
 void scuba_call_unmap(void *addr);
 void *scuba_call_phys(void *addr);
 
