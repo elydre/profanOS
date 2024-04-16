@@ -1,4 +1,3 @@
-#include <drivers/mouse.h>
 #include <cpu/ports.h>
 #include <gui/vesa.h>
 #include <cpu/isr.h>
