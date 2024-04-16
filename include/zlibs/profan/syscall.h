@@ -95,5 +95,8 @@
 #define c_dily_load ((int (*)(char *, uint32_t)) hi_func_addr(43))
 
 #define c_scuba_generate ((void (*)(void *, uint32_t)) hi_func_addr(44))
+#define c_scuba_map ((void (*)(void *, void *, int)) hi_func_addr(45))
+#define c_scuba_unmap ((void (*)(void *)) hi_func_addr(46))
+#define c_scuba_phys ((void *(*)(void *)) hi_func_addr(47))
 
 #endif
