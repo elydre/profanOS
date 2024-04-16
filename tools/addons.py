@@ -9,191 +9,183 @@ profan_path = path.rsplit(os.sep, 1)[0]
 
 RECOMMENDED = ["tcc", "lua", "zlib", "doom"]
 
+FILEARRAY = [
+    {
+        "name": "tcc.elf",
+        "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "tcc.elf"]
+    },
+    {
+        "name": "libtcc.a",
+        "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
+        "path": [profan_path, "out", "zlibs", "libtcc.a"]
+    },
+    {
+        "name": "vlink.elf",
+        "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
+    },
+    {
+        "name": "libm.so",
+        "url": "https://github.com/elydre/libs-profan/releases/download/latest/libm.so",
+        "path": [profan_path, "out", "zlibs", "libm.so"]
+    },
+    {
+        "name": "math.h",
+        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/math.h",
+        "path": [profan_path, "include", "addons", "math.h"]
+    },
+    {
+        "name": "complex.h",
+        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/complex.h",
+        "path": [profan_path, "include", "addons", "complex.h"]
+    },
+    {
+        "name": "fenv.h",
+        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/fenv.h",
+        "path": [profan_path, "include", "addons", "fenv.h"]
+    },
+    {
+        "name": "libm.h",
+        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/libm.h",
+        "path": [profan_path, "include", "addons", "libm.h"]
+    },
+    {
+        "name": "libz.so",
+        "url": "https://github.com/elydre/libs-profan/releases/download/latest/libz.so",
+        "path": [profan_path, "out", "zlibs", "libz.so"]
+    },
+    {
+        "name": "zlib.h",
+        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/zlib.h",
+        "path": [profan_path, "include", "addons", "zlib.h"]
+    },
+    {
+        "name": "gzip.elf",
+        "url": "https://github.com/elydre/libs-profan/releases/download/latest/gzip.elf",
+        "path": [profan_path, "out", "zapps", "cmd", "gzip.elf"]
+    },
+    {
+        "name": "libupng.so",
+        "url": "https://github.com/elydre/libs-profan/releases/download/latest/libupng.so",
+        "path": [profan_path, "out", "zlibs", "libupng.so"]
+    },
+    {
+        "name": "upng.h",
+        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/upng.h",
+        "path": [profan_path, "include", "addons", "upng.h"]
+    },
+    {
+        "name": "dash.elf",
+        "url": "https://github.com/elydre/dash-profan/releases/download/latest/dash.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "dash.elf"]
+    },
+    {
+        "name": "doom.elf",
+        "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
+    },
+    {
+        "name": "doom1.wad",
+        "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
+        "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
+    },
+    {
+        "name": "halfix",
+        "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "halfix.elf"]
+    },
+    {
+        "name": "bios.bin",
+        "url": "https://github.com/elydre/halfix-profan/raw/master/bios.bin",
+        "path": [profan_path, "out", "zada", "halfix", "bios.bin"]
+    },
+    {
+        "name": "vgabios.bin",
+        "url": "https://github.com/elydre/halfix-profan/raw/master/vgabios.bin",
+        "path": [profan_path, "out", "zada", "halfix", "vgabios.bin"]
+    },
+    {
+        "name": "halfix.cfg",
+        "url": "https://raw.githubusercontent.com/elydre/halfix-profan/master/default.conf",
+        "path": [profan_path, "out", "zada", "halfix", "default.cfg"]
+    },
+    {
+        "name": "linux.iso",
+        "url": "https://github.com/copy/images/raw/master/linux.iso",
+        "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
+    },
+    {
+        "name": "lua.elf",
+        "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
+    },
+    {
+        "name": "sulfur.elf",
+        "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
+    }
+]
+
 ADDONS = {
     "compilation tools": [
         {
             "name": "tcc",
             "description": "Small and fast C compiler",
-            "files": [
-                {
-                    "name": "tcc",
-                    "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "tcc.elf"]
-                },
-                {
-                    "name": "libtcc.a",
-                    "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
-                    "path": [profan_path, "out", "zlibs", "libtcc.a"]
-                },
-            ]
+            "files": ["tcc.elf", "libtcc.a", "libm.so"]
         },
         {
             "name": "vlink",
             "description": "multi-target linker [deprecated]",
-            "files": [
-                {
-                    "name": "vlink",
-                    "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
-                },
-            ]
+            "files": ["vlink.elf"]
         },
     ],
     "libraries": [
         {
             "name": "libm",
             "description": "Math library",
-            "files": [
-                {
-                    "name": "libm.so",
-                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libm.so",
-                    "path": [profan_path, "out", "zlibs", "libm.so"]
-                },
-                {
-                    "name": "math.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/math.h",
-                    "path": [profan_path, "include", "addons", "math.h"]
-                },
-                {
-                    "name": "complex.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/complex.h",
-                    "path": [profan_path, "include", "addons", "complex.h"]
-                },
-                {
-                    "name": "fenv.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/fenv.h",
-                    "path": [profan_path, "include", "addons", "fenv.h"]
-                },
-                {
-                    "name": "libm.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/libm.h",
-                    "path": [profan_path, "include", "addons", "libm.h"]
-                }
-            ]
+            "files": ["libm.so", "libm.h", "math.h", "complex.h", "fenv.h"]
         },
         {
             "name": "zlib",
             "description": "Compression library + gzip command",
-            "files": [
-                {
-                    "name": "libz.so",
-                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libz.so",
-                    "path": [profan_path, "out", "zlibs", "libz.so"]
-                },
-                {
-                    "name": "zlib.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/zlib.h",
-                    "path": [profan_path, "include", "addons", "zlib.h"]
-                },
-                {
-                    "name": "gzip",
-                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/gzip.elf",
-                    "path": [profan_path, "out", "zapps", "cmd", "gzip.elf"]
-                }
-            ]
+            "files": ["libz.so", "zlib.h", "gzip.elf"]
         },
         {
             "name": "libupng",
             "description": "Lightweight PNG Decoding Library",
-            "files": [
-                {
-                    "name": "libupng.so",
-                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libupng.so",
-                    "path": [profan_path, "out", "zlibs", "libupng.so"]
-                },
-                {
-                    "name": "upng.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/upng.h",
-                    "path": [profan_path, "include", "addons", "upng.h"]
-                },
-            ]
+            "files": ["libupng.so", "upng.h"]
         }
     ],
     "extra shells": [
         {
             "name": "dash",
             "description": "POSIX compliant shell [experimental]",
-            "files": [
-                {
-                    "name": "dash",
-                    "url": "https://github.com/elydre/dash-profan/releases/download/latest/dash.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "dash.elf"]
-                },
-            ]
+            "files": ["dash.elf"]
         },
     ],
     "graphics": [
         {
             "name": "doom",
             "description": "Raycasting first person shooter",
-            "files": [
-                {
-                    "name": "doom",
-                    "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
-                },
-                {
-                    "name": "doom1.wad",
-                    "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
-                    "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
-                }
-            ]
+            "files": ["doom.elf", "doom1.wad", "libm.so"]
         },
-
         {
             "name": "halfix",
             "description": "x86 emulator with provided linux image",
-            "files": [
-                {
-                    "name": "halfix",
-                    "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "halfix.elf"]
-                },
-                {
-                    "name": "bios.bin",
-                    "url": "https://github.com/elydre/halfix-profan/raw/master/bios.bin",
-                    "path": [profan_path, "out", "zada", "halfix", "bios.bin"]
-                },
-                {
-                    "name": "vgabios.bin",
-                    "url": "https://github.com/elydre/halfix-profan/raw/master/vgabios.bin",
-                    "path": [profan_path, "out", "zada", "halfix", "vgabios.bin"]
-                },
-                {
-                    "name": "default.cfg",
-                    "url": "https://raw.githubusercontent.com/elydre/halfix-profan/master/default.conf",
-                    "path": [profan_path, "out", "zada", "halfix", "default.cfg"]
-                },
-                {
-                    "name": "linux.iso",
-                    "url": "https://github.com/copy/images/raw/master/linux.iso",
-                    "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
-                }
-            ]
+            "files": ["halfix", "bios.bin", "vgabios.bin", "halfix.cfg", "linux.iso"]
         },
     ],
     "interpreters": [
         {
             "name": "lua",
             "description": "Lightweight scripting language",
-            "files": [
-                {
-                    "name": "lua",
-                    "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
-                },
-            ]
+            "files": ["lua.elf", "libm.so"]
         },
         {
             "name": "sulfur",
             "description": "Bytecode high-performance language",
-            "files": [
-                {
-                    "name": "sulfur",
-                    "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
-                    "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
-                },
-            ]
+            "files": ["sulfur.elf", "libm.so"]
         },
     ],
 }
@@ -214,35 +206,37 @@ def domain(url: str) -> str:
     return url.split("/")[2]
 
 def download(url: str, path: str) -> bool:
-    def show_progress(block_num, block_size, total_size):
-        percent = int(block_num * block_size * 100 / total_size)
-        print(f"\r | Downloaded {percent}%", end="\r")
-
-    # get file
     try:
-        urlreq.urlretrieve(url, path, show_progress)
-    except Exception:
-        print("\r | ERROR: Could not download file")
+        with urlreq.urlopen(url) as response:
+            with open(path, "wb") as file:
+                file.write(response.read())
+    except Exception as e:
+        print(f"ERROR: {e}")
         return False
 
     return True
 
-def download_addon(dic: dict) -> bool:
-    print(f"\rInstall {dic['name']}: {dic['description']}")
-    for sub in dic["files"]:
-        print(f"\r Getting {dic['name']} part: {sub['name']}")
+def download_addons(addons: list) -> bool:
+    required = list(set([file for addon in addons for file in addon["files"]]))
+    for file in required:
+        e = None
+        for f in FILEARRAY:
+            if f["name"] == file:
+                e = f
+                break
+        if e is None:
+            print(f"ERROR: File {file} not found")
+            return False
+
+        print(f"\r Getting {file}")
+
         # check if parent directory exists
-        parent = os.sep.join(sub["path"][:-1])
+        parent = os.sep.join(e["path"][:-1])
         if not os.path.exists(parent):
-            print("\r | Creating directory", parent)
             os.makedirs(parent)
 
-        print(f"\r | Downloading {sub['url']}")
-
         # download
-        if not download(sub["url"], os.sep.join(sub["path"])): return False
-
-    return True
+        if not download(e["url"], os.sep.join(e["path"])): return False
 
 #######################################################
 #######################################################
@@ -294,9 +288,8 @@ def graphic_menu(stdscr):
         stdscr.addstr(0, 0, "Installing selected addons...", curses.A_BOLD)
         stdscr.refresh()
         print("\n")
-        for i, addon in enumerate(ALL_ADOONS):
-            if checked[i]:
-                download_addon(addon)
+        requested = [ALL_ADOONS[i] for i in range(len(ALL_ADOONS)) if checked[i]]
+        download_addons(requested)
 
     while True:
         draw_menu(stdscr, checked, current)
@@ -367,8 +360,8 @@ def show_list():
 table = {
     "-h": show_help,
     "-l": show_list,
-    "-a": lambda: [download_addon(addon) for addon in [get_addons(name) for name in RECOMMENDED]],
-    "-w": lambda: [download_addon(addon) for addon in ALL_ADOONS],
+    "-a": lambda: [download_addons([get_addons(e) for e in RECOMMENDED])],
+    "-w": lambda: [download_addons(ALL_ADOONS)],
     "-g": lambda: curses.wrapper(graphic_menu)
 }
 
@@ -391,4 +384,4 @@ if __name__ == "__main__":
         else:
             print("ERROR: Unknown option:", args[0])
     else:
-        download_addon(get_addons(args[0]))
+        download_addons([get_addons(args[0])])
