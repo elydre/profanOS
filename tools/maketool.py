@@ -50,6 +50,12 @@ QEMU_KVM = "qemu-system-i386 -enable-kvm"
 QEMU_SERIAL = "-serial stdio"
 QEMU_AUDIO  = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
 
+ethernet = True
+# the port 2222:22 is temporary
+ETHERNET_PORT = 2222
+ETHERNET_HOST = 22
+QEMU_ETHERNET = f"-net nic,model=rtl8139,netdev=net0,macaddr=00:11:22:33:44:55 -netdev user,id=net0,hostfwd=tcp::{ETHERNET_PORT}-:{ETHERNET_HOST}"
+
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
@@ -448,6 +454,7 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
 
     qemu_args = QEMU_SERIAL
     if audio: qemu_args += f" {QEMU_AUDIO}"
+    if ethernet : qemu_args += f" {QEMU_ETHERNET}"
 
     cprint(COLOR_INFO, "starting qemu...")
 

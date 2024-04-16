@@ -96,4 +96,6 @@
 
 #define c_scuba_generate ((void (*)(void *, uint32_t)) hi_func_addr(44))
 
+#define c_ethernet_call ((int (*)(int)) hi_func_addr(45))
+
 #endif
