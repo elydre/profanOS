@@ -41,6 +41,37 @@ ADDONS = {
     ],
     "libraries": [
         {
+            "name": "libm",
+            "description": "Math library",
+            "files": [
+                {
+                    "name": "libm.so",
+                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libm.so",
+                    "path": [profan_path, "out", "zlibs", "libm.so"]
+                },
+                {
+                    "name": "math.h",
+                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/math.h",
+                    "path": [profan_path, "include", "addons", "math.h"]
+                },
+                {
+                    "name": "complex.h",
+                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/complex.h",
+                    "path": [profan_path, "include", "addons", "complex.h"]
+                },
+                {
+                    "name": "fenv.h",
+                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/fenv.h",
+                    "path": [profan_path, "include", "addons", "fenv.h"]
+                },
+                {
+                    "name": "libm.h",
+                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/libm.h",
+                    "path": [profan_path, "include", "addons", "libm.h"]
+                }
+            ]
+        },
+        {
             "name": "zlib",
             "description": "Compression library + gzip command",
             "files": [
@@ -74,32 +105,6 @@ ADDONS = {
                     "name": "upng.h",
                     "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/upng.h",
                     "path": [profan_path, "include", "addons", "upng.h"]
-                },
-            ]
-        },
-        {
-            "name": "libm",
-            "description": "Math library",
-            "files": [
-                {
-                    "name": "libm.so",
-                    "url": "https://github.com/elydre/libs-profan/releases/download/latest/libm.so",
-                    "path": [profan_path, "out", "zlibs", "libm.so"]
-                },
-                {
-                    "name": "math.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/math.h",
-                    "path": [profan_path, "include", "addons", "math.h"]
-                },
-                {
-                    "name": "complex.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/complex.h",
-                    "path": [profan_path, "include", "addons", "complex.h"]
-                },
-                {
-                    "name": "fenv.h",
-                    "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/fenv.h",
-                    "path": [profan_path, "include", "addons", "fenv.h"]
                 },
             ]
         }
@@ -386,4 +391,4 @@ if __name__ == "__main__":
         else:
             print("ERROR: Unknown option:", args[0])
     else:
-        download_addon(args[0])
+        download_addon(get_addons(args[0]))
