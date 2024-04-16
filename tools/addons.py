@@ -29,7 +29,7 @@ ADDONS = {
         },
         {
             "name": "vlink",
-            "description": "Linker with multi-format support",
+            "description": "multi-target linker [deprecated]",
             "files": [
                 {
                     "name": "vlink",
@@ -74,6 +74,19 @@ ADDONS = {
                     "name": "upng.h",
                     "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/upng.h",
                     "path": [profan_path, "include", "addons", "upng.h"]
+                },
+            ]
+        },
+    ],
+    "extra shells": [
+        {
+            "name": "dash",
+            "description": "POSIX compliant shell [experimental]",
+            "files": [
+                {
+                    "name": "dash",
+                    "url": "https://github.com/elydre/dash-profan/releases/download/latest/dash.elf",
+                    "path": [profan_path, "out", "zapps", "fatpath", "dash.elf"]
                 },
             ]
         },
