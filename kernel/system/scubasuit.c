@@ -118,7 +118,6 @@ scuba_directory_t *scuba_directory_inited(void) {
 }
 
 scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
-    kprintf_serial("Copying page directory %x\n", dir);
     // allocate a new page directory
     scuba_directory_t *new_dir = i_directory_create();
 
@@ -156,8 +155,6 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
         new_dir->entries[i].present = 1;
     }
 
-    kprintf_serial("Copied page directory %x to %x\n", dir, new_dir);
-
     return new_dir;
 }
 
@@ -169,12 +166,10 @@ void scuba_directory_destroy(scuba_directory_t *dir) {
 
         // get the page table
         scuba_page_table_t *table = (scuba_page_table_t *) (dir->entries[i].frame * 0x1000);
-        kprintf_serial("Freeing page table %x\n", table);
 
         // free all pages
         for (uint32_t j = 0; j < 1024; j++) {
             if (table->pages[j].present && table->pages[j].allocate) {
-                kprintf_serial("Freeing page %x\n", table->pages[j].frame * 0x1000);
                 free((void *) (table->pages[j].frame * 0x1000));
             }
         }
@@ -257,7 +252,6 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mod
         } else {
             // create a new page table
             table = i_allign_calloc(sizeof(scuba_page_table_t));
-            kprintf_serial("Creating page table %x (%d)\n", table, mode);
         }
         dir->entries[table_index].present = 1;
         dir->entries[table_index].rw = 1;
