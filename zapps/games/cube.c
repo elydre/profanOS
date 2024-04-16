@@ -1,11 +1,11 @@
-// @LINK SHARED: libvgui, libm
+// @LINK SHARED: libvgui, libpm
 
 #include <profan/syscall.h>
+#include <profan/math.h>
 #include <profan/vgui.h>
 
 #include <stdlib.h>
 #include <unistd.h>
-#include <math.h>
 
 #define FOCAL_DISTANCE 150
 #define CUBE_COLOR 0xFFdd99

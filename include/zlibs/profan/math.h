@@ -23,29 +23,6 @@ extern int signgam;
 #define M_SQRT1_2 0.70710678118654752440
 
 #define MAXFLOAT 3.40282346638528860e+38F
-#define HUGE_VAL 1e5000
-#define HUGE_VALF 1e50
-#define HUGE_VALL 1e5000L
-#define INFINITY HUGE_VALF
-#define NAN HUGE_VALF
-
-#define FP_INFINITE 1
-#define FP_NAN 2
-#define FP_NORMAL 3
-#define FP_SUBNORMAL 4
-#define FP_ZERO 5
-
-#define FP_FAST_FMA 1
-#define FP_FAST_FMAF 1
-#define FP_FAST_FMAL 1
-
-#define FP_ILOGB0 (-2147483647 - 1)
-#define FP_ILOGBNAN (-2147483647 - 1)
-
-#define MATH_ERRNO 1
-#define MATH_ERREXCEPT 2
-
-#define math_errhandling MATH_ERRNO | MATH_ERREXCEPT
 
 // libm header
 #define FORCE_EVAL(x) do {                      \
@@ -69,50 +46,14 @@ extern int signgam;
 double acos(double x);
 float acosf(float x);
 float cosf(float x);
-float expm1f(float x);
 double floor(double x);
-float floorf(float a);
-float frexpf(float x, int *e);
 double log10(double x);
 float powf(float x, float y);
-double scalbn(double x, int n);
 float sinf(float x);
-float sinhf(float x);
-long double sinhl(long double x);
-long double sinl(long double x);
 double sqrt(double x);
 float sqrtf(float x);
 float tanf(float x);
-float tanhf(float x);
-long double tanhl(long double x);
-long double tanl(long double x);
-double tgamma(double x);
-float tgammaf(float x);
-long double tgammal(long double x);
 double trunc(double x);
 float truncf(float x);
-long double truncl(long double x);
-
-float fabsf(float x);
-float asinf(float x);
-float atan2f(float y, float x);
-float fmodf(float x, float y);
-float ceilf(float x);
-float log2f(float x);
-float log10f(float x);
-float logf(float x);
-float ldexpf(float x, int exp);
-float expf(float x);
-double ldexp(double x, int exp);
-double fabs(double x);
-long double fabsl(long double x);
-long double sqrtl(long double x);
-double cos(double x);
-double log(double x);
-double ceil(double x);
-double tan(double x);
-double sin(double x);
-double pow(double x, double y);
-double fmod(double x, double y);
 
 #endif
