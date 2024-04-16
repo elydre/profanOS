@@ -248,7 +248,7 @@ void print_comma(int elm_count, char **cnt_names, sid_t *cnt_ids) {
 void print_cols(int elm_count, char **cnt_names, sid_t *cnt_ids) {
     uint32_t max_len, *lens, *col_lens;
     int cols, rows, width, k, term_w;
-    
+
     col_lens = malloc(elm_count * sizeof(uint32_t));
     lens = malloc(elm_count * sizeof(uint32_t));
 

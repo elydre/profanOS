@@ -440,7 +440,7 @@ int fm_add_stdhist(int fd, int pid) {
     }
 
     stdhist[stdhist_len].pid = pid;
-    
+
     int ppid = c_process_get_ppid(pid);
 
     if (ppid >= 0) {
@@ -453,7 +453,7 @@ int fm_add_stdhist(int fd, int pid) {
             }
             goto end;
         }
-    }  
+    }
 
     for (int i = 0; i < 3; i++) {
         stdhist[stdhist_len].fd[i] = fm_dup(i + 3);
