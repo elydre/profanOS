@@ -199,6 +199,12 @@ def get_addons(name: str) -> dict:
                 return addon
     return None
 
+def get_file(name: str) -> dict:
+    for file in FILEARRAY:
+        if file["name"] == name:
+            return file
+    return None
+
 #######################################################
 #######################################################
 
@@ -219,11 +225,7 @@ def download(url: str, path: str) -> bool:
 def download_addons(addons: list) -> bool:
     required = list(set([file for addon in addons for file in addon["files"]]))
     for file in required:
-        e = None
-        for f in FILEARRAY:
-            if f["name"] == file:
-                e = f
-                break
+        e = get_file(file)
         if e is None:
             print(f"ERROR: File {file} not found")
             return False
@@ -278,7 +280,8 @@ def graphic_menu(stdscr):
         stdscr.addstr(1, 0, f"{element['description']}")
         stdscr.addstr(3, 0, "Files to install:", curses.A_BOLD)
         for i, file in enumerate(element["files"]):
-            stdscr.addstr(4 + i, 0, f"  {file['name']}{' ' * (max(0, 15 - len(file['name'])))} {domain(file['url'])}")
+            e = get_file(file)
+            stdscr.addstr(4 + i, 0, f"  {file}{' ' * (max(0, 15 - len(file)))} {domain(e['url'])}")
         stdscr.addstr(5 + len(element["files"]), 0, "Press any key to continue")
         stdscr.refresh()
         stdscr.getch()
