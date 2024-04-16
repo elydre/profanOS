@@ -116,18 +116,18 @@ The kernel and userspace are developed mainly in C. The Olivine Shell (see the
 [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
 You can also use the lua, sulfur, C and C++ languages to create your own programs.
 
-If you prefer a bash like rather than Olivine, there is `lish`, a basic implementation
-of a bash-style shell interpreter.
+If you prefer a bash like rather than Olivine, you can use the `dash` port which is
+POSIX compliant and often used as `/bin/sh` in linux systems.
 
 ### Major ports - Addons
 
 - [tcc](https://github.com/elydre/tinycc-profan) Small and fast C compiler
-- [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
+- [dash](https://github.com/elydre/dash-profan) POSIX compliant shell
 - [lua](https://github.com/elydre/lua-profan) Lightweight scripting language
+- [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
 - [halfix](https://github.com/elydre/halfix-profan) x86 emulator with provided linux image
 - [zlib](https://github.com/elydre/libs-profan) Compression library and gzip command
 - [sulfur](https://github.com/asqel/sulfur_lang) Bytecode high-performance language
-- [vlink](https://github.com/elydre/vlink-profan) Linker with multi-format support
 
 All the ports are available with the command `make addons` / `make gaddons` (graphical menu)
 or by building them manually.
@@ -144,10 +144,12 @@ Here is a list of the main libraries and kernel modules:
   - devio, filesys, fmopen, libmmq, panda, profan
 - `libc` - standard C library
   - dlfcn, profan, setjmp, stdio, stdlib, string, time, unistd
-- `libm` - standard math lib
+- `libpm` - profanOS minimalistic math lib
 - `libvgui` - optimized graphic lib
-- `libtcc` - tinyCC lib (addons)
-- `libz` - compression lib (addons)
+- `libm` - openlibm port . *addons*
+- `libtcc` - tinyCC lib . *addons*
+- `libupng` - png decoding lib . *addons*
+- `libz` - compression lib . *addons*
 
 ## Real-Hardware
 
