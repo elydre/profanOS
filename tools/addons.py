@@ -81,6 +81,11 @@ FILEARRAY = [
         "path": [profan_path, "out", "zapps", "fatpath", "dash.elf"]
     },
     {
+        "name": "lish.elf",
+        "url": "https://github.com/elydre/libs-profan/releases/download/latest/lish.elf",
+        "path": [profan_path, "out", "zapps", "fatpath", "lish.elf"]
+    },
+    {
         "name": "doom.elf",
         "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
         "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
@@ -153,7 +158,7 @@ ADDONS = {
         },
         {
             "name": "libupng",
-            "description": "Lightweight PNG Decoding Library",
+            "description": "Small PNG Decoding Library",
             "files": ["libupng.so", "upng.h"]
         }
     ],
@@ -163,6 +168,11 @@ ADDONS = {
             "description": "POSIX compliant shell [experimental]",
             "files": ["dash.elf"]
         },
+        {
+            "name": "lish",
+            "description": "Lightweight bash-like shell",
+            "files": ["lish.elf"]
+        }
     ],
     "graphics": [
         {
@@ -255,22 +265,27 @@ def graphic_menu(stdscr):
     current = 1
 
     def draw_menu(stdscr, checked, current):
-        stdscr.clear()
-        stdscr.addstr(0, 0, "Select addons to install with ENTER", curses.A_BOLD)
-        stdscr.addstr(1, 0, "Q: cancel, RIGHT: info, V: validate")
+        try:
+            stdscr.clear()
+            stdscr.addstr(0, 0, "Select addons to install with ENTER", curses.A_BOLD)
+            stdscr.addstr(1, 0, "Q: cancel, RIGHT: info, V: validate")
 
-        stdscr.addstr(3, 1, "Download Selected" if any(checked) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
-        stdscr.addstr(4, 1, "Unselect all" if any(checked) else "Select all", curses.A_REVERSE if current == 1 else 0)
+            stdscr.addstr(3, 1, "Download Selected" if any(checked) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
+            stdscr.addstr(4, 1, "Unselect all" if any(checked) else "Select all", curses.A_REVERSE if current == 1 else 0)
 
-        index = 0
-        line_offset = 6
-        for category in ADDONS:
-            stdscr.addstr(index + line_offset, 1, category.upper(), curses.A_BOLD)
-            line_offset += 1
-            for addon in ADDONS[category]:
-                stdscr.addstr(index + line_offset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} {' ' * (10-len(addon['name']))} {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
-                index += 1
-            line_offset += 1
+            index = 0
+            line_offset = 6
+            for category in ADDONS:
+                stdscr.addstr(index + line_offset, 1, category.upper(), curses.A_BOLD)
+                line_offset += 1
+                for addon in ADDONS[category]:
+                    stdscr.addstr(index + line_offset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} {' ' * (10-len(addon['name']))} {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
+                    index += 1
+                line_offset += 1
+        except curses.error:
+            curses.endwin()
+            print("ERROR: Terminal too small to display menu")
+            sys.exit(1)
 
         stdscr.refresh()
 
