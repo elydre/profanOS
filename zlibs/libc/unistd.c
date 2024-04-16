@@ -167,7 +167,7 @@ gid_t getegid(void) {
 }
 
 uid_t geteuid(void) {
-    puts("geteuid is not implemented yet, WHY DO YOU USE IT ?");
+    // withouth user system, we just return 0 for 'root'
     return 0;
 }
 
@@ -230,7 +230,7 @@ pid_t getsid(pid_t a) {
 }
 
 uid_t getuid(void) {
-    puts("getuid is not implemented yet, WHY DO YOU USE IT ?");
+    // withouth user system, we just return 0 for 'root'
     return 0;
 }
 
