@@ -50,9 +50,11 @@ int dev_panda(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 }
 
 int dev_pander(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    static uint8_t color = 0x0C;
     if (is_read)
         return keyboard_read(buffer, size, "/dev/pander");
-    panda_print_string((char *) buffer, size, 0x0C);
+    color = panda_print_string((char *) buffer, size, color);
+    if (color == 0x0F) color = 0x0C;
     return size;
 }
 

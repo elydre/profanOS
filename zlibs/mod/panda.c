@@ -30,7 +30,7 @@ typedef struct {
     int saved_cursor_y;
 
     uint8_t cursor_is_hidden;
-    char color;
+    uint8_t color;
 
     uint32_t *fb;
     uint32_t pitch;
@@ -340,8 +340,8 @@ void draw_cursor(int errase) {
     }
 }
 
-void panda_print_string(char *string, int len, int tmp_color) {
-    if (!g_panda) return;
+uint8_t panda_print_string(char *string, int len, int tmp_color) {
+    if (!g_panda) return 0;
     int tmp, old_color;
 
     if (tmp_color != -1) {
@@ -374,8 +374,10 @@ void panda_print_string(char *string, int len, int tmp_color) {
             draw_cursor(0);
     }
     if (tmp_color != -1) {
+        tmp_color = g_panda->color;
         g_panda->color = old_color;
     }
+    return tmp_color;
 }
 
 #define offset_to_cursor_y(offset, max_cols) ((offset) / (2 * (max_cols)))
