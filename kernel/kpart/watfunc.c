@@ -1,7 +1,7 @@
 #include <drivers/keyboard.h>
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
-#include <drivers/ethernet.h>
+#include <drivers/rtl8139.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <drivers/mouse.h>
@@ -92,10 +92,7 @@ void *SYSCALL_ARRAY[] = {
     dily_load,
 
     // scubasuit.h
-    scuba_generate,
-
-    // ethernet.h
-    ethernet_call
+    scuba_generate
 };
 
 uint32_t wf_get_func_addr(uint32_t func_id) {

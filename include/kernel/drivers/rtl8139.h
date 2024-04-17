@@ -4,7 +4,7 @@
 #include <cpu/isr.h>
 #include <ktype.h>
 
-void ethernet_call(int id);
-int ethernet_init();
+void read_mac_addr();
+int rtl8139_init();
 
 #endif
