@@ -5,5 +5,6 @@
 #include <ktype.h>
 
 void ethernet_call(int id);
+int ethernet_init();
 
 #endif

@@ -10,10 +10,6 @@
 #include <profan/ethernet.h>
 
 void main() {
-    printf("PCI init\n");
-    pci_init();
-    printf("RTL8139 init\n");
-    rtl8139_init();
     printf("Read MAC address\n");
     read_mac_address();
 }

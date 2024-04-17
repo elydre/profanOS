@@ -5,6 +5,8 @@
 #include <system.h>
 #include <ktype.h>
 
+#define DEBUG 0
+
 void outportb(uint16_t port, uint8_t val) {
     asm volatile("outb %1, %0" : : "dN"(port), "a"(val));
 }
@@ -211,7 +213,7 @@ pci_dev_t pci_get_device(uint16_t vendor_id, uint16_t device_id, int device_type
 	// Handle multiple pci host controllers
 
 	if(pci_reach_end(dev_zero)) {
-		kprintf("PCI Get device failed...\n");
+		if (DEBUG) {kprintf("PCI Get device failed...\n");}
 	}
 	for(int function = 1; function < FUNCTION_PER_DEVICE; function++) {
 		pci_dev_t dev = {0};
@@ -329,14 +331,14 @@ uint8_t TSAD_array[4] = {0x20, 0x24, 0x28, 0x2C};
 uint8_t TSD_array[4] = {0x10, 0x14, 0x18, 0x1C};
 
 void rtl8139_handler(registers_t* reg) {
-    kprintf("RTL8139 interript was fired !!!! \n");
+    if (DEBUG) {kprintf("RTL8139 interript was fired !!!! \n");}
     uint16_t status = inports(rtl8139_device.io_base + 0x3e);
 
     if(status & TOK) {
-        kprintf("Packet sent\n");
+        if (DEBUG) {kprintf("Packet sent\n");}
     }
     if (status & ROK) {
-        kprintf("Received packet\n");
+        if (DEBUG) {kprintf("Received packet\n");}
         //receive_packet();
     }
 
@@ -352,7 +354,7 @@ void rtl8139_init() {
     // Get io base or mem base by extracting the high 28/30 bits
     rtl8139_device.io_base = ret & (~0x3);
     rtl8139_device.mem_base = ret & (~0xf);
-    kprintf("rtl8139 use %s access (base: %x)\n", (rtl8139_device.bar_type == 0)? "mem based":"port based", (rtl8139_device.bar_type != 0)?rtl8139_device.io_base:rtl8139_device.mem_base);
+    if (DEBUG) {kprintf("rtl8139 use %s access (base: %x)\n", (rtl8139_device.bar_type == 0)? "mem based":"port based", (rtl8139_device.bar_type != 0)?rtl8139_device.io_base:rtl8139_device.mem_base);}
 
     // Set current TSAD
     rtl8139_device.tx_cur = 0;
@@ -363,7 +365,7 @@ void rtl8139_init() {
         pci_command_reg |= (1 << 2);
         pci_write(pci_rtl8139_device, PCI_COMMAND, pci_command_reg);
     }
-    kprintf("Bus mastering enabled\n");
+    if (DEBUG) {kprintf("Bus mastering enabled\n");}
 
     // Send 0x00 to the CONFIG_1 register (0x52) to set the LWAKE + LWPTN to active high. this should essentially *power on* the device.
     outportb(rtl8139_device.io_base + 0x52, 0x0);
@@ -392,7 +394,8 @@ void rtl8139_init() {
 
 }
 
-// BROKEN
+// NOW WORKING ! letsgo
+// maybe i should store it in a global variable?
 void read_mac_addr() {
     uint32_t mac_part1 = inportl(rtl8139_device.io_base + 0x00);
     uint16_t mac_part2 = inports(rtl8139_device.io_base + 0x04);
@@ -403,27 +406,21 @@ void read_mac_addr() {
 
     rtl8139_device.mac_addr[4] = mac_part2 >> 0;
     rtl8139_device.mac_addr[5] = mac_part2 >> 8;
-    kprintf("MAC Address: %01x:%01x:%01x:%01x:%01x:%01x\n", rtl8139_device.mac_addr[0], rtl8139_device.mac_addr[1], rtl8139_device.mac_addr[2], rtl8139_device.mac_addr[3], rtl8139_device.mac_addr[4], rtl8139_device.mac_addr[5]);
+    kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n", rtl8139_device.mac_addr[0], rtl8139_device.mac_addr[1], rtl8139_device.mac_addr[2], rtl8139_device.mac_addr[3], rtl8139_device.mac_addr[4], rtl8139_device.mac_addr[5]);
+}
+
+int ethernet_init() {
+    pci_init();
+    rtl8139_init();
+    return 0;
 }
 
 void ethernet_call(int thing) {
     switch(thing) {
         case 0:
-            pci_init();
-            break;
-        case 1:
-            rtl8139_init();
-            break;
-        case 2:
             read_mac_addr();
             break;
         default:
             return;
     }
 }
-/*
-void main() {
-    pci_init();
-    rtl8139_init();
-}
-*/

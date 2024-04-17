@@ -4,6 +4,7 @@
 #include <kernel/snowflake.h>
 #include <kernel/scubasuit.h>
 #include <drivers/diskiso.h>
+#include <drivers/ethernet.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <drivers/mouse.h>
@@ -42,6 +43,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(process_init, "Starting", "process manager");
     status_print(filesys_init, "Loading", "butterfly filesystem");
     status_print(init_watfunc, "Initing", "watfunc");
+    status_print(ethernet_init,"Initing", "ethernet");
 
     kprintf("successfully booted in %d ms\n", timer_get_ms());
 
