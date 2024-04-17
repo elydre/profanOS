@@ -209,7 +209,7 @@ char *open_input_keyboard(int *size, char *term_path) {
             fd_putstr(fd, INP_CLR);
             fd_putchar(fd, c);
             if (buffer_index < buffer_actual_size) {
-                for (uint32_t i = buffer_actual_size; i > buffer_index; i--) {
+                for (uint32_t i = buffer_actual_size + 1; i > buffer_index; i--) {
                     buffer[i] = buffer[i - 1];
                 }
                 fd_putstr(fd, "\e[s");
