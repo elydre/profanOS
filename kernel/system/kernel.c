@@ -4,6 +4,7 @@
 #include <kernel/snowflake.h>
 #include <kernel/scubasuit.h>
 #include <drivers/diskiso.h>
+#include <drivers/ethernet.h>
 #include <drivers/rtl8139.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
@@ -46,6 +47,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(init_watfunc, "Initing", "watfunc");
     status_print(pci_init,     "Initing", "PCI bus");
     status_print(rtl8139_init, "Initing", "rtl8139 card");
+    status_print(ethernet_init,"Initing", "ethernet");
 
     kprintf("successfully booted in %d ms\n", timer_get_ms());
 

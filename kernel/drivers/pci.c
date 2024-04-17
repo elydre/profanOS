@@ -120,7 +120,7 @@ pci_dev_t pci_get_device(uint16_t vendor_id, uint16_t device_id, int device_type
 	// Handle multiple pci host controllers
 
 	if(pci_reach_end(dev_zero)) {
-		if (DEBUG) {kprintf("PCI Get device failed...\n");}
+		sys_fatal("No PCI host controller found");
 	}
 	for(int function = 1; function < FUNCTION_PER_DEVICE; function++) {
 		pci_dev_t dev = {0};

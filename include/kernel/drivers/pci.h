@@ -3,8 +3,6 @@
 
 #include <cpu/isr.h>
 
-#define DEBUG 1
-
 typedef union pci_dev {
     uint32_t bits;
     struct {
