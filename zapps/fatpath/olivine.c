@@ -12,7 +12,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 15"
+#define OLV_VERSION "0.11 rev 16"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -85,25 +85,25 @@ char *keywords[] = {
 };
 
 typedef struct {
-    char* name;
-    char* (*function)(char**);
+    char *name;
+    char *(*function)(char **);
 } internal_function_t;
 
 typedef struct {
-    char* name;
-    char* value;
+    char *name;
+    char *value;
     int is_sync;
     int level;
 } variable_t;
 
 typedef struct {
-    char* name;
-    char* value;
+    char *name;
+    char *value;
 } pseudo_t;
 
 typedef struct {
-    char* name;
-    char** lines;
+    char *name;
+    char **lines;
     int line_count;
 } function_t;
 
@@ -2994,6 +2994,10 @@ char **lexe_program(char *program, int interp_bckslsh) {
                 tmp[tmp_index++] = '\r';
             } else if (program[i + 1] == '\\') {
                 tmp[tmp_index++] = '\\';
+            } else if (program[i + 1] == STRING_CHAR) {
+                tmp[tmp_index++] = STRING_CHAR;
+            } else if (program[i + 1] == ';') {
+                tmp[tmp_index++] = ';';
             } else {
                 tmp[tmp_index++] = '\\';
                 tmp[tmp_index++] = program[i + 1];
@@ -3785,7 +3789,7 @@ void olv_print(char *str, int len) {
             from = i + 1;
         }
 
-        else if (str[i] == ';' && !in_quote) {
+        else if (!in_quote && str[i] == ';' && (i == 0 || str[i - 1] != '\\')) {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
