@@ -1,3 +1,4 @@
+#include <drivers/rtl8139.h>
 #include <drivers/pci.h>
 #include <cpu/ports.h>
 #include <gui/vesa.h>
@@ -173,8 +174,6 @@ int rtl8139_init() {
     return 0;
 }
 
-// NOW WORKING ! letsgo
-// maybe i should store it in a global variable?
 void read_mac_addr() {
     uint32_t mac_part1 = inportl(rtl8139_device.io_base + 0x00);
     uint16_t mac_part2 = inports(rtl8139_device.io_base + 0x04);
@@ -187,15 +186,4 @@ void read_mac_addr() {
     rtl8139_device.mac_addr[5] = mac_part2 >> 8;
 
     kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n", rtl8139_device.mac_addr[0], rtl8139_device.mac_addr[1], rtl8139_device.mac_addr[2], rtl8139_device.mac_addr[3], rtl8139_device.mac_addr[4], rtl8139_device.mac_addr[5]);
-}
-
-
-void rtl8139_call(int thing) {
-    switch(thing) {
-        case 0:
-            read_mac_addr();
-            break;
-        default:
-            return;
-    }
 }
