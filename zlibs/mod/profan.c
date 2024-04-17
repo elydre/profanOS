@@ -8,13 +8,14 @@
 
 #include <stdarg.h>
 
+#define DEFAULT_KB "/zada/keymap/azerty.map"
+#define ELF_INTERP "/bin/sys/deluge.bin"
+
 // input() setings
 #define FIRST_L 12
 #define SLEEP_T 15
 #define INP_CLR "\e[94m"
 #define INP_RST "\e[0m"
-
-#define ELF_INTERP "/bin/sys/deluge.bin"
 
 // keyboard scancodes
 #define ESC     1
@@ -39,7 +40,7 @@ int profan_kb_load_map(char *path);
 
 int main(void) {
     kb_map = NULL;
-    if (profan_kb_load_map("/zada/keymap/azerty.map")) {
+    if (profan_kb_load_map(DEFAULT_KB)) {
         fd_printf(2, "Failed to load keyboard map\n");
         return 1;
     }
