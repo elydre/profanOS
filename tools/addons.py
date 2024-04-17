@@ -1,5 +1,5 @@
 import urllib.request as urlreq
-import curses, os, sys
+import curses, os, sys, json
 
 path = os.path.dirname(os.path.abspath(__file__))
 profan_path = path.rsplit(os.sep, 1)[0]
@@ -7,198 +7,23 @@ profan_path = path.rsplit(os.sep, 1)[0]
 #######################################################
 #######################################################
 
-RECOMMENDED = ["tcc", "lua", "zlib", "doom"]
+def json_from_url(url):
+    try:
+        with urlreq.urlopen(url) as response:
+            data = response.read()
+        return json.loads(data)
+    except Exception as e:
+        print("Failed to retrieve JSON data from URL:", e)
+        sys.exit(1)
 
-FILEARRAY = [
-    {
-        "name": "tcc.elf",
-        "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/tcc.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "tcc.elf"]
-    },
-    {
-        "name": "libtcc.a",
-        "url": "https://github.com/elydre/tinycc-profan/releases/download/latest/libtcc.a",
-        "path": [profan_path, "out", "zlibs", "libtcc.a"]
-    },
-    {
-        "name": "vlink.elf",
-        "url": "https://github.com/elydre/vlink-profan/releases/download/latest/vlink.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "vlink.elf"]
-    },
-    {
-        "name": "libm.so",
-        "url": "https://github.com/elydre/libs-profan/releases/download/latest/libm.so",
-        "path": [profan_path, "out", "zlibs", "libm.so"]
-    },
-    {
-        "name": "math.h",
-        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/math.h",
-        "path": [profan_path, "include", "addons", "math.h"]
-    },
-    {
-        "name": "complex.h",
-        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/complex.h",
-        "path": [profan_path, "include", "addons", "complex.h"]
-    },
-    {
-        "name": "fenv.h",
-        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/fenv.h",
-        "path": [profan_path, "include", "addons", "fenv.h"]
-    },
-    {
-        "name": "libm.h",
-        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/libm/libm.h",
-        "path": [profan_path, "include", "addons", "libm.h"]
-    },
-    {
-        "name": "libz.so",
-        "url": "https://github.com/elydre/libs-profan/releases/download/latest/libz.so",
-        "path": [profan_path, "out", "zlibs", "libz.so"]
-    },
-    {
-        "name": "zlib.h",
-        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/zlib.h",
-        "path": [profan_path, "include", "addons", "zlib.h"]
-    },
-    {
-        "name": "gzip.elf",
-        "url": "https://github.com/elydre/libs-profan/releases/download/latest/gzip.elf",
-        "path": [profan_path, "out", "zapps", "cmd", "gzip.elf"]
-    },
-    {
-        "name": "libupng.so",
-        "url": "https://github.com/elydre/libs-profan/releases/download/latest/libupng.so",
-        "path": [profan_path, "out", "zlibs", "libupng.so"]
-    },
-    {
-        "name": "upng.h",
-        "url": "https://raw.githubusercontent.com/elydre/libs-profan/main/_headers/upng.h",
-        "path": [profan_path, "include", "addons", "upng.h"]
-    },
-    {
-        "name": "dash.elf",
-        "url": "https://github.com/elydre/dash-profan/releases/download/latest/dash.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "dash.elf"]
-    },
-    {
-        "name": "lish.elf",
-        "url": "https://github.com/elydre/libs-profan/releases/download/latest/lish.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "lish.elf"]
-    },
-    {
-        "name": "doom.elf",
-        "url": "https://github.com/elydre/doom-profan/releases/download/latest/doom.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "doom.elf"]
-    },
-    {
-        "name": "doom1.wad",
-        "url": "https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad",
-        "path": [profan_path, "out", "zada", "doom", "DOOM1.WAD"]
-    },
-    {
-        "name": "halfix",
-        "url": "https://github.com/elydre/halfix-profan/releases/download/latest/halfix.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "halfix.elf"]
-    },
-    {
-        "name": "bios.bin",
-        "url": "https://github.com/elydre/halfix-profan/raw/master/bios.bin",
-        "path": [profan_path, "out", "zada", "halfix", "bios.bin"]
-    },
-    {
-        "name": "vgabios.bin",
-        "url": "https://github.com/elydre/halfix-profan/raw/master/vgabios.bin",
-        "path": [profan_path, "out", "zada", "halfix", "vgabios.bin"]
-    },
-    {
-        "name": "halfix.cfg",
-        "url": "https://raw.githubusercontent.com/elydre/halfix-profan/master/default.conf",
-        "path": [profan_path, "out", "zada", "halfix", "default.cfg"]
-    },
-    {
-        "name": "linux.iso",
-        "url": "https://github.com/copy/images/raw/master/linux.iso",
-        "path": [profan_path, "out", "zada", "halfix", "linux.iso"]
-    },
-    {
-        "name": "lua.elf",
-        "url": "https://github.com/elydre/lua-profan/releases/download/latest/lua.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "lua.elf"]
-    },
-    {
-        "name": "sulfur.elf",
-        "url": "https://github.com/elydre/sulfur_lang/releases/download/latest/sulfur-profanOS-i386.elf",
-        "path": [profan_path, "out", "zapps", "fatpath", "sulfur.elf"]
-    }
-]
+addons_json = json_from_url("https://elydre.github.io/profan/addons.json")
 
-ADDONS = {
-    "compilation tools": [
-        {
-            "name": "tcc",
-            "description": "Small and fast C compiler",
-            "files": ["tcc.elf", "libtcc.a", "libm.so"]
-        },
-        {
-            "name": "vlink",
-            "description": "multi-target linker [deprecated]",
-            "files": ["vlink.elf"]
-        },
-    ],
-    "libraries": [
-        {
-            "name": "libm",
-            "description": "Math library",
-            "files": ["libm.so", "libm.h", "math.h", "complex.h", "fenv.h"]
-        },
-        {
-            "name": "zlib",
-            "description": "Compression library + gzip command",
-            "files": ["libz.so", "zlib.h", "gzip.elf"]
-        },
-        {
-            "name": "libupng",
-            "description": "Small PNG Decoding Library",
-            "files": ["libupng.so", "upng.h"]
-        }
-    ],
-    "extra shells": [
-        {
-            "name": "dash",
-            "description": "POSIX compliant shell [experimental]",
-            "files": ["dash.elf"]
-        },
-        {
-            "name": "lish",
-            "description": "Lightweight bash-like shell",
-            "files": ["lish.elf"]
-        }
-    ],
-    "graphics": [
-        {
-            "name": "doom",
-            "description": "Raycasting first person shooter",
-            "files": ["doom.elf", "doom1.wad", "libm.so"]
-        },
-        {
-            "name": "halfix",
-            "description": "x86 emulator with provided linux image",
-            "files": ["halfix", "bios.bin", "vgabios.bin", "halfix.cfg", "linux.iso"]
-        },
-    ],
-    "interpreters": [
-        {
-            "name": "lua",
-            "description": "Lightweight scripting language",
-            "files": ["lua.elf", "libm.so"]
-        },
-        {
-            "name": "sulfur",
-            "description": "Bytecode high-performance language",
-            "files": ["sulfur.elf", "libm.so"]
-        },
-    ],
-}
+RECOMMENDED = addons_json["RECOMMENDED"]
+ADDONS = addons_json["ADDONS"]
+FILEARRAY = addons_json["FILEARRAY"]
+
+for e in FILEARRAY:
+    e["path"] = [profan_path] + e["make_path"]
 
 ALL_ADOONS = [e for category in ADDONS for e in ADDONS[category]]
 
@@ -253,10 +78,11 @@ def download_addons(addons: list) -> bool:
 #######################################################
 #######################################################
 
-def graphic_menu(stdscr):
+def graphic_menu(stdscr: curses.window):
     curses.curs_set(0)
     stdscr.clear()
     stdscr.refresh()
+
 
     checked = [False] * len(ALL_ADOONS)
 
@@ -264,28 +90,51 @@ def graphic_menu(stdscr):
 
     current = 1
 
+    def draw_ifposible(stdscr, y, x, text, mode):
+        max_y, max_x = stdscr.getmaxyx()
+        if len(text) + x > max_x - 1:
+            text = text[:max_x - x - 2] + "."
+        if y < max_y and y >= 0:
+            stdscr.addstr(y, x, text, mode)
+
+    def get_current_y():
+        index = 0
+        line_offset = 6
+        for category in ADDONS:
+            line_offset += 1
+            for _ in ADDONS[category]:
+                if index + 2 == current:
+                    return line_offset + index
+                index += 1
+            line_offset += 1
+        return 0
+
     def draw_menu(stdscr, checked, current):
-        try:
-            stdscr.clear()
-            stdscr.addstr(0, 0, "Select addons to install with ENTER", curses.A_BOLD)
-            stdscr.addstr(1, 0, "Q: cancel, RIGHT: info, V: validate")
+        yoffset = get_current_y()
+        max_y, max_x = stdscr.getmaxyx()
+    
+        if yoffset > max_y - 3:
+            yoffset -= max_y - 3
+        else:
+            yoffset = 0
 
-            stdscr.addstr(3, 1, "Download Selected" if any(checked) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
-            stdscr.addstr(4, 1, "Unselect all" if any(checked) else "Select all", curses.A_REVERSE if current == 1 else 0)
+        
+        stdscr.clear()
+        draw_ifposible(stdscr, 0 - yoffset, 0, "Select addons to install with ENTER", curses.A_BOLD)
+        draw_ifposible(stdscr, 1 - yoffset, 0, "Q: cancel, RIGHT: info, V: validate", 0)
 
-            index = 0
-            line_offset = 6
-            for category in ADDONS:
-                stdscr.addstr(index + line_offset, 1, category.upper(), curses.A_BOLD)
-                line_offset += 1
-                for addon in ADDONS[category]:
-                    stdscr.addstr(index + line_offset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} {' ' * (10-len(addon['name']))} {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
-                    index += 1
-                line_offset += 1
-        except curses.error:
-            curses.endwin()
-            print("ERROR: Terminal too small to display menu")
-            sys.exit(1)
+        draw_ifposible(stdscr, 3 - yoffset, 1, "Download Selected" if any(checked) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
+        draw_ifposible(stdscr, 4 - yoffset, 1, "Unselect all" if any(checked) else "Select all", curses.A_REVERSE if current == 1 else 0)
+
+        index = 0
+        line_offset = 6
+        for category in ADDONS:
+            draw_ifposible(stdscr, index + line_offset - yoffset, 1, category.upper(), curses.A_BOLD)
+            line_offset += 1
+            for addon in ADDONS[category]:
+                draw_ifposible(stdscr, index + line_offset - yoffset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} {' ' * (10-len(addon['name']))} {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
+                index += 1
+            line_offset += 1
 
         stdscr.refresh()
 
