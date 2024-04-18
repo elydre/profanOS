@@ -52,17 +52,18 @@ def download(url: str, path: str) -> bool:
             with open(path, "wb") as file:
                 file.write(response.read())
     except Exception as e:
-        print(f"ERROR: {e}")
+        print(f"\rERROR: {e}")
         return False
-
     return True
 
 def download_addons(addons: list) -> bool:
     required = list(set([file for addon in addons for file in addon["files"]]))
+    required.sort()
+
     for file in required:
         e = get_file(file)
         if e is None:
-            print(f"ERROR: File {file} not found")
+            print(f"\rERROR: File {file} not found")
             return False
 
         print(f"\r Getting {file}")
@@ -74,6 +75,7 @@ def download_addons(addons: list) -> bool:
 
         # download
         if not download(e["url"], os.sep.join(e["path"])): return False
+    return True
 
 #######################################################
 #######################################################
@@ -111,13 +113,12 @@ def graphic_menu(stdscr: curses.window):
 
     def draw_menu(stdscr, checked, current):
         yoffset = get_current_y()
-        max_y, max_x = stdscr.getmaxyx()
+        max_y, _ = stdscr.getmaxyx()
     
         if yoffset > max_y - 3:
             yoffset -= max_y - 3
         else:
             yoffset = 0
-
         
         stdscr.clear()
         draw_ifposible(stdscr, 0 - yoffset, 0, "Select addons to install with ENTER", curses.A_BOLD)
@@ -156,7 +157,8 @@ def graphic_menu(stdscr: curses.window):
         stdscr.refresh()
         print("\n")
         requested = [ALL_ADOONS[i] for i in range(len(ALL_ADOONS)) if checked[i]]
-        download_addons(requested)
+        if not download_addons(requested):
+            stdscr.getch()
 
     while True:
         draw_menu(stdscr, checked, current)
