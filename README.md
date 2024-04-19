@@ -13,7 +13,8 @@ It is not intended to be used massively or to have broad hardware support.
 profanOS is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
 
-You can find a progress map [here](https://framindmap.org/c/maps/1263862/embed)
+You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7)
+and global mindmap [here](https://framindmap.org/c/maps/1263862/embed).
 
 ## Setup
 
@@ -126,7 +127,6 @@ POSIX compliant and often used as `/bin/sh` in linux systems.
 - [lua](https://github.com/elydre/lua-profan) Lightweight scripting language
 - [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
 - [halfix](https://github.com/elydre/halfix-profan) x86 emulator with provided linux image
-- [zlib](https://github.com/elydre/libs-profan) Compression library and gzip command
 - [sulfur](https://github.com/asqel/sulfur_lang) Bytecode high-performance language
 
 All the ports are available with the command `make addons` / `make gaddons` (graphical menu)
@@ -148,7 +148,6 @@ Here is a list of the main libraries and kernel modules:
 - `libvgui` - optimized graphic lib
 - `libm` - openlibm port . *addons*
 - `libtcc` - tinyCC lib . *addons*
-- `libupng` - png decoding lib . *addons*
 - `libz` - compression lib . *addons*
 
 ## Real-Hardware
