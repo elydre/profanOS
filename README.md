@@ -19,17 +19,22 @@ and global mindmap [here](https://framindmap.org/c/maps/1263862/embed).
 ## Setup
 
 > [!NOTE]
-> Compilation is guaranteed only on ubuntu 22.04 with
-> **gcc 11**, it is also possible in windows with virtualization
+> Compilation is guaranteed only on linux with **gcc 11**
+> it is also possible in windows with virtualization
 > solutions like wsl (on windows 11) or hyperV.
 
 ### Install dependencies
 
-```
+```bash
+# Debian based
 sudo apt update
-
 sudo apt install -y make python3 gcc g++ nasm qemu-system-i386 \
                     grub-common xorriso grub-pc-bin mtools
+
+# Arch based
+sudo pacman -Syu
+sudo pacman -S      make python gcc nasm qemu-full xorriso \
+                    grub-common mtools
 ```
 
 ### Compile & Run
