@@ -155,7 +155,14 @@ int word_isblue(char *word, uint32_t size) {
 
 int word_isbrace(char *word, uint32_t size) {
     if (!g_syntax->braces) return 0;
-    return (size == 1 && (word[0] == '(' || word[0] == ')' || word[0] == '{' || word[0] == '}' || word[0] == '[' || word[0] == ']'));
+    return (size == 1 && (
+        word[0] == '(' ||
+        word[0] == ')' ||
+        word[0] == '{' ||
+        word[0] == '}' ||
+        word[0] == '[' ||
+        word[0] == ']'
+    ));
 }
 
 int word_paraft(char *word, uint32_t size) {

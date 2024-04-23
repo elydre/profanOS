@@ -167,7 +167,8 @@ char **get_required_libs(elfobj_t *obj) {
             libs = realloc(libs, (lib_count + 2) * sizeof(char *));
             tmp = get_full_path((char *) obj->dynstr + obj->dynamic[i].d_un.d_val);
             if (tmp == NULL) {
-                raise_error("library '%s' not found but required by '%s'", (char *) obj->dynstr + obj->dynamic[i].d_un.d_val, obj->name);
+                raise_error("library '%s' not found but required by '%s'",
+                        (char *) obj->dynstr + obj->dynamic[i].d_un.d_val, obj->name);
                 return NULL;
             }
             libs[lib_count++] = tmp;

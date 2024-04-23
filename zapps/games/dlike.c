@@ -68,7 +68,8 @@ int main(int argc, char **argv) {
         tick_count[0] = c_timer_get_ms();
 
         for (int i = 0; i < width; i++) {
-            center = (int) (half_height * BLOCK_HEIGHT / get_distance(x, y, rot + (FOV / 2) - (FOV * i / width), &color));
+            center = (int) (half_height * BLOCK_HEIGHT /
+                    get_distance(x, y, rot + (FOV / 2) - (FOV * i / width), &color));
             top = (int) (half_height - center);
             bottom = (int) (half_height + center);
 
@@ -81,11 +82,14 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
+                vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE,
+                        j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, convert_color(MAP[i + j * MAP_SIZE]));
                 if (i == (int) x && j == (int) y)
-                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
+                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE,
+                            j * MINIMAP_SIZE, MINIMAP_SIZE, MINIMAP_SIZE, 0xFFFFFF);
                 if (i == (int)(x + cos(rot) * 2) && j == (int)(y + sin(rot) * 2))
-                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE, j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
+                    vgui_draw_rect(&vgui, width - MINIMAP_SIZE * MAP_SIZE + i * MINIMAP_SIZE,
+                            j * MINIMAP_SIZE, MINIMAP_SIZE / 2, MINIMAP_SIZE / 2, 0x00FF00);
             }
         }
 

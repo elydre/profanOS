@@ -148,7 +148,8 @@ int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
     uint32_t name_offset;
     for (uint32_t i = 0; i < count; i++) {
         memcpy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
-        memcpy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
+        memcpy(&name_offset,
+                buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(strlen(tmp) + 1);
         strcpy((*names)[i], tmp);
@@ -199,7 +200,9 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
     // insert the new element
     memcpy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)), &element_sid, sizeof(sid_t));
     uint32_t name_offset = size - sizeof(uint32_t) - count * (sizeof(sid_t) + sizeof(uint32_t));
-    memcpy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), &name_offset, sizeof(uint32_t));
+
+    memcpy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t),
+            &name_offset, sizeof(uint32_t));
 
     // update the number of elements
     count++;
@@ -255,7 +258,8 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
 
     for (uint32_t i = 0; i < count; i++) {
         memcpy(&ids[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
-        memcpy(&name_offsets[i], buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
+        memcpy(&name_offsets[i],
+                buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), sizeof(uint32_t));
     }
 
     // search for the element
@@ -281,7 +285,8 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
         ids[i] = ids[i + 1];
         name_offsets[i] = name_offsets[i + 1];
         memcpy(buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), &ids[i], sizeof(sid_t));
-        memcpy(buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), &name_offsets[i], sizeof(uint32_t));
+        memcpy(buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t),
+                &name_offsets[i], sizeof(uint32_t));
     }
 
     // move names
@@ -642,7 +647,8 @@ uint32_t fu_fctf_get_addr(sid_t file_sid) {
     if (addr == NULL) {
         // read container
         if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
-            RAISE_ERROR("fctf_get_addr: failed to read function pointer from d%ds%d\n", file_sid.device, file_sid.sector);
+            RAISE_ERROR("fctf_get_addr: failed to read function pointer from d%ds%d\n",
+                    file_sid.device, file_sid.sector);
             return 1;
         }
 

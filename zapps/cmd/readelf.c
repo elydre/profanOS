@@ -127,7 +127,8 @@ int dummy_proc(void);
 
 static const char *option_chars = "hS s";
 static const char *option_strs[] = {"--file-header", "--section-headers", "--dec", "--symbols", NULL};
-static const proc option_procs[] = {display_file_header, display_section_headers, dummy_proc, display_symbol_table, NULL};
+static const proc option_procs[] = {display_file_header, display_section_headers,
+        dummy_proc, display_symbol_table, NULL};
 
 #define PROC_COUNT (sizeof(option_procs) / sizeof(proc))
 // invoke produces in 'procs' if not NULL, after options and files have been parsed
@@ -401,7 +402,7 @@ int display_section_headers(void) {
         Elf32_Shdr *sh = sh_base + i;
 
         const char *name = str_table + sh->sh_name;
-        const char *type = sh->sh_type < SHT_NUM ? sh_types[sh->sh_type] : "???"; //TODO support other section header type
+        const char *type = sh->sh_type < SHT_NUM ? sh_types[sh->sh_type] : "???";
         unsigned int addr = sh->sh_addr;
         unsigned int off = sh->sh_offset;
         unsigned int size = sh->sh_size;

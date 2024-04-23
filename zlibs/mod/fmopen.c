@@ -132,7 +132,8 @@ int fm_close(int fd) {
     if (opened[fd].type == TYPE_WPIP) {
         for (int i = 0; i < opened[fd].pipe->wpcnt; i++) {
             if (opened[fd].pipe->wpid[i] == opened[fd].pid) {
-                memmove(opened[fd].pipe->wpid + i, opened[fd].pipe->wpid + i + 1, (opened[fd].pipe->wpcnt - i - 1) * sizeof(int));
+                memmove(opened[fd].pipe->wpid + i, opened[fd].pipe->wpid + i + 1,
+                        (opened[fd].pipe->wpcnt - i - 1) * sizeof(int));
                 opened[fd].pipe->wpcnt--;
                 break;
             }

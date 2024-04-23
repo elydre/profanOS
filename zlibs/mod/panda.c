@@ -312,7 +312,8 @@ void panda_scroll(uint32_t line_count) {
             ) continue;
             g_panda->screen_buffer[new_offset].content = g_panda->screen_buffer[offset].content;
             g_panda->screen_buffer[new_offset].color = g_panda->screen_buffer[offset].color;
-            print_char(j * g_panda->font->width, i * g_panda->font->height, g_panda->screen_buffer[new_offset].content, g_panda->screen_buffer[new_offset].color);
+            print_char(j * g_panda->font->width, i * g_panda->font->height,
+                    g_panda->screen_buffer[new_offset].content, g_panda->screen_buffer[new_offset].color);
         }
     }
 
@@ -328,7 +329,8 @@ void draw_cursor(int errase) {
     uint32_t offset;
     if (!errase) {
         for (uint32_t i = 0; i < g_panda->font->height; i++) {
-            set_pixel(g_panda->cursor_x * g_panda->font->width + 1, (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height + i, 0xFFFFFF);
+            set_pixel(g_panda->cursor_x * g_panda->font->width + 1,
+                    (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height + i, 0xFFFFFF);
         }
     } else {
         offset = (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->max_cols + g_panda->cursor_x;

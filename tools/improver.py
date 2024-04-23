@@ -52,7 +52,7 @@ def scan_file(path):
                 line = line.rstrip()
 
             # warning if line is too long
-            if len(line) > 120 and not path.endswith(".md"):
+            if len(line) > 120 and not path.endswith(".md") and not path.endswith(".h"):
                 analyzed["too_long"] += 1
                 print(f"{path}:{l} is too long")
 

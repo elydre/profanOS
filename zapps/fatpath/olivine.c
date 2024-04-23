@@ -1393,7 +1393,8 @@ char *if_debug(char **input) {
     if (mode == 1) {
         printf("VARIABLES (max %d):\n", MAX_VARIABLES);
         for (int i = 0; i < MAX_VARIABLES && variables[i].name != NULL; i++) {
-            printf("  %s (lvl: %d, sync: %d): '%s'\n", variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
+            printf("  %s (lvl: %d, sync: %d): '%s'\n",
+                    variables[i].name, variables[i].level, variables[i].is_sync, variables[i].value);
         }
 
         puts("INTERNAL FUNCTIONS");
@@ -2015,7 +2016,8 @@ char *if_rep(char **input) {
     }
 
     if (argc == 3 && strlen(input[1]) != strlen(input[2])) {
-        raise_error("rep", "Expected 2nd and 3rd arguments to have the same length, got %d and %d", strlen(input[1]), strlen(input[2]));
+        raise_error("rep", "Expected 2nd and 3rd arguments to have the same length, got %d and %d",
+                strlen(input[1]), strlen(input[2]));
         return ERROR_CODE;
     }
 

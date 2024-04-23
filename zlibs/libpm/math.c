@@ -1123,8 +1123,13 @@ float powf(float x, float y) {
         // figure out if y is an odd integer
         // Find out if y is an integer or not without raising inexact
         // Note -- independently tested over entire range. Fails for Inf/NaN. We don't care about that here.
-        uint32_t fractMask = 0x3fffffffU >> gMaskShift[absuy >> 23];        // mask bits cover fractional part of value
-        uint32_t onesMask = 0x40000000U >> gMaskShift[absuy >> 23];         // we get away with this because leading exponent bit is never set for |y| < 2.0
+
+        // mask bits cover fractional part of value
+        uint32_t fractMask = 0x3fffffffU >> gMaskShift[absuy >> 23];
+
+        // we get away with this because leading exponent bit is never set for |y| < 2.0
+        uint32_t onesMask = 0x40000000U >> gMaskShift[absuy >> 23];
+
         uint32_t fractionalBits = absuy & fractMask;
         uint32_t onesBit = absuy & onesMask;
 
@@ -1223,10 +1228,14 @@ float powf(float x, float y) {
         const double *tablep = (void*) powf_log_table + index;
         double r = (double) m.f;
 
-        // reduce
-        r *= tablep[0];        // reduce r to  1-2**-7 < r < 1+2**-7
-        log2x += tablep[1]; // do this early to force -1.0 + 1.0 to cancel so that we don't end up with (1.0 + tiny) - 1.0 later on.
-        r -= 1.0;            // -2**-7 < r < 1+2**-7
+        // reduce r to  1-2**-7 < r < 1+2**-7
+        r *= tablep[0];
+
+        // do this early to force -1.0 + 1.0 to cancel so that we don't end up with (1.0 + tiny) - 1.0 later on.
+        log2x += tablep[1];
+
+        // -2**-7 < r < 1+2**-7
+        r -= 1.0;
 
         // ln(1+r) = r - rr/2 + rrr/3 - rrrr/4 + rrrrr/5
         // should provide log(1+r) to at least 35 bits of accuracy for the worst case
@@ -1250,9 +1259,9 @@ float powf(float x, float y) {
     if (ylog2x >= 128.0)
         return (float) (0x1.0p128 * ylog2x);    //set overflow and return inf
 
-    // deal with underflow
+    // minimum y * maximum log2(x) is ~-1.0p128 * ~128 = -1.0p135, so we can be sure that we'll drive this to underflow
     if (ylog2x <= -150.0)
-        return (float) (ylog2x * 0x1.0p-1022);  //minimum y * maximum log2(x) is ~-1.0p128 * ~128 = -1.0p135, so we can be sure that we'll drive this to underflow
+        return (float) (ylog2x * 0x1.0p-1022);
 
     // separate ylog2x into integer and fractional parts
     int exp = (int) ylog2x;
