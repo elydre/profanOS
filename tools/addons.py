@@ -114,12 +114,12 @@ def graphic_menu(stdscr: curses.window):
     def draw_menu(stdscr, checked, current):
         yoffset = get_current_y()
         max_y, _ = stdscr.getmaxyx()
-    
+
         if yoffset > max_y - 3:
             yoffset -= max_y - 3
         else:
             yoffset = 0
-        
+
         stdscr.clear()
         draw_ifposible(stdscr, 0 - yoffset, 0, "Select addons to install with ENTER", curses.A_BOLD)
         draw_ifposible(stdscr, 1 - yoffset, 0, "Q: cancel, RIGHT: info, V: validate", 0)

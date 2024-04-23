@@ -13,7 +13,21 @@ analyzed = {
     "files": 0,
     "lines": 0,
     "patch": 0,
+    "too_long": 0,
 }
+
+def tab_to_spaces(line, tab_size=4):
+    new_line = ""
+    i = 0
+    for c in line:
+        if c == "\t":
+            u = tab_size - i % tab_size
+            new_line += " " * u
+            i += u
+        else:
+            new_line += c
+            i += 1
+    return new_line
 
 # scan file and remove trailing whitespace
 def scan_file(path):
@@ -21,17 +35,28 @@ def scan_file(path):
     contant = ""
     with open(path) as f:
         for l, c in enumerate(f, 1):
+            analyzed["lines"] += 1
+
             line = c[:-1] # remove newline
 
-            # check if line ends with whitespace
-            if line.endswith(" ") or line.endswith("\t"):
+            # check if line contains tab
+            if "\t" in line:
+                analyzed["patch"] += 1
+                print(f"{path}:{l} contains tab")
+                line = tab_to_spaces(line)
+
+            # check if line ends with space
+            if line.endswith(" "):
                 analyzed["patch"] += 1
                 print(f"{path}:{l} ends with whitespace")
-                contant += c.rstrip() + "\n"
+                line = line.rstrip()
 
-            else:
-                analyzed["lines"] += 1
-                contant += c
+            # warning if line is too long
+            if len(line) > 120 and not path.endswith(".md"):
+                analyzed["too_long"] += 1
+                print(f"{path}:{l} is too long")
+
+            contant += line + "\n"
 
     with open(path, "w") as f:
         f.write(contant)
@@ -54,4 +79,4 @@ def scan_dir(path):
 if __name__ == "__main__":
     scan_dir(".")
     print(f"End of scan, {analyzed['lines']} lines analyzed in {analyzed['files']} files!")
-    print(f"{analyzed['patch']} lines with trailing whitespace")
+    print(f"{analyzed['patch']} lines edited, {analyzed['too_long']} lines too long")
