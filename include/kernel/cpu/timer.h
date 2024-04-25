@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == timer.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef TIMER_H
 #define TIMER_H
 

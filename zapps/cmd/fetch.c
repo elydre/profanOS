@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == fetch.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Display system information with colors          q. /|\ .p   |
-|   and a OS logo (like neofetch)                    '// \\'    |
+|   Display system information with colors          q. /|\  u   |
+|   and a OS logo (like neofetch)                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

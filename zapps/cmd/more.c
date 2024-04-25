@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == more.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix more command implementation                q. /|\ .p   |
-|   waits for user input to display more lines       '// \\'    |
+|   Unix more command implementation                q. /|\  u   |
+|   waits for user input to display more lines       `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

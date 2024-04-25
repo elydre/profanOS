@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == filesys.c ==                                  .pi0iq.    |
 |                                                   d"  . `'b   |
-|   File System - FSv3 extension mudule             q. /|\ .p   |
-|   for profanOS (wiki/lib_filesys)                  '// \\'    |
+|   File System - FSv3 extension mudule             q. /|\  u   |
+|   for profanOS (wiki/lib_filesys)                  `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

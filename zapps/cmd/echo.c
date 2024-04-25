@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == echo.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix echo command implementation                q. /|\ .p   |
-|   print arguments to standard output               '// \\'    |
+|   Unix echo command implementation                q. /|\  u   |
+|   print arguments to standard output               `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

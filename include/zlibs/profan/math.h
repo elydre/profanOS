@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == math.h ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Header for profanOS mini libm                   q. /|\ .p   |
-|                                                    '// \\'    |
+|   Header for profanOS mini libm                   q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

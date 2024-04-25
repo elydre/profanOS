@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == upper.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix upper command implementation               q. /|\ .p   |
-|                                                    '// \\'    |
+|   Unix upper command implementation               q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

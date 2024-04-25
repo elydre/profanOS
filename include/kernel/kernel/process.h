@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == process.h ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef TASK_H
 #define TASK_H
 

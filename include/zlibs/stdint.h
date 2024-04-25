@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == stdint.h ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of stdint.h header file          q. /|\ .p   |
-|   see mintsuki/freestanding-headers                '// \\'    |
+|   Implementation of stdint.h header file          q. /|\  u   |
+|   see mintsuki/freestanding-headers                `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

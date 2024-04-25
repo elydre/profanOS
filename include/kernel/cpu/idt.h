@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == idt.h ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef IDT_H
 #define IDT_H
 

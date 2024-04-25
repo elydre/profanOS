@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == rm.c ==                                       .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix rm command implementation                  q. /|\ .p   |
-|   removes files and directories                    '// \\'    |
+|   Unix rm command implementation                  q. /|\  u   |
+|   removes files and directories                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

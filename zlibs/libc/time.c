@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == time.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of time.h functions              q. /|\ .p   |
-|   from the C standard library                      '// \\'    |
+|   Implementation of time.h functions              q. /|\  u   |
+|   from the C standard library                      `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

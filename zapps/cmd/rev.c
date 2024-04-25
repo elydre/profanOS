@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == rev.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix rev command implementation                 q. /|\ .p   |
-|   reverses the lines of input                      '// \\'    |
+|   Unix rev command implementation                 q. /|\  u   |
+|   reverses the lines of input                      `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

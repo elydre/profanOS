@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == cat.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix cat command implementation                 q. /|\ .p   |
-|   concatenates and displays files                  '// \\'    |
+|   Unix cat command implementation                 q. /|\  u   |
+|   concatenates and displays files                  `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

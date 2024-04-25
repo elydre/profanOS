@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == syscall.h ==                                  .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Header for the profanOS syscall interface       q. /|\ .p   |
-|                                                    '// \\'    |
+|   Header for the profanOS syscall interface       q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

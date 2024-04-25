@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == sleep.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix sleep command implementation               q. /|\ .p   |
-|   sleeps for a specified amount of time            '// \\'    |
+|   Unix sleep command implementation               q. /|\  u   |
+|   sleeps for a specified amount of time            `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

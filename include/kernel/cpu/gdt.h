@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == gdt.h ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef GDT_H
 #define GDT_H
 

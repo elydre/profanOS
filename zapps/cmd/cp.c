@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == cp.c ==                                       .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix cp command implementation                  q. /|\ .p   |
-|   copies files from source to destination          '// \\'    |
+|   Unix cp command implementation                  q. /|\  u   |
+|   copies files from source to destination          `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

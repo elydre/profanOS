@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == grep.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix grep command implementation                q. /|\ .p   |
-|   prints lines containing a pattern in color       '// \\'    |
+|   Unix grep command implementation                q. /|\  u   |
+|   prints lines containing a pattern in color       `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

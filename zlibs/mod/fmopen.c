@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == fmopen.c ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix file manipulation compatibility layer      q. /|\ .p   |
-|   as kernel module                                 '// \\'    |
+|   Unix file manipulation compatibility layer      q. /|\  u   |
+|   as kernel module                                 `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

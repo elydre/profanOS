@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == mod.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Command to load and unload kernel modules       q. /|\ .p   |
-|                                                    '// \\'    |
+|   Command to load and unload kernel modules       q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

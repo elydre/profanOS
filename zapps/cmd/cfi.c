@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == cfi.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Checksum File Integrity                         q. /|\ .p   |
-|                                                    '// \\'    |
+|   Checksum File Integrity                         q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

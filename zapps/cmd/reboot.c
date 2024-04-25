@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == reboot.c ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix reboot command implementation              q. /|\ .p   |
-|   reboots and shuts down the system                '// \\'    |
+|   Unix reboot command implementation              q. /|\  u   |
+|   reboots and shuts down the system                `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

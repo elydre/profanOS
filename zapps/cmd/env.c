@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == env.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix env command implementation                 q. /|\ .p   |
-|   prints environment variables to stdout           '// \\'    |
+|   Unix env command implementation                 q. /|\  u   |
+|   prints environment variables to stdout           `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == errno.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of strerror function             q. /|\ .p   |
-|   from the C standard library                      '// \\'    |
+|   Implementation of strerror function             q. /|\  u   |
+|   from the C standard library                      `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == butterfly.h ==                                .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Part of the filesystem creation tool            q. /|\ .p   |
-|                                                    '// \\'    |
+|   Part of the filesystem creation tool            q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

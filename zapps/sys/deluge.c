@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == deluge.c ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   profanOS dynamic linker, load and run ELF       q. /|\ .p   |
-|   files like /lib/ld.so in Linux                   '// \\'    |
+|   profanOS dynamic linker, load and run ELF       q. /|\  u   |
+|   files like /lib/ld.so in Linux                   `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

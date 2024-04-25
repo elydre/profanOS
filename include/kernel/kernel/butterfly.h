@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == butterfly.h ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef BUTTERFLY_H
 #define BUTTERFLY_H
 

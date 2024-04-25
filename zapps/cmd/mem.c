@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == mem.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Command to display memory usage                 q. /|\ .p   |
-|                                                    '// \\'    |
+|   Command to display memory usage                 q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

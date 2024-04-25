@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == assert.c ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of assert internal function      q. /|\ .p   |
-|   for the C standard library                       '// \\'    |
+|   Implementation of assert internal function      q. /|\  u   |
+|   for the C standard library                       `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

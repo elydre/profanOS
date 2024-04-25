@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == devio.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of /dev devices in a kernel      q. /|\ .p   |
-|   module                                           '// \\'    |
+|   Implementation of /dev devices in a kernel      q. /|\  u   |
+|   module                                           `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == profan.h ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Usefull functions for profanOS                  q. /|\ .p   |
-|   see wiki/lib_profan                              '// \\'    |
+|   Usefull functions for profanOS                  q. /|\  u   |
+|   see wiki/lib_profan                              `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

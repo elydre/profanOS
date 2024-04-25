@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == mouse.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Basic mouse input test                          q. /|\ .p   |
-|                                                    '// \\'    |
+|   Basic mouse input test                          q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

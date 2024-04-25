@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == rim.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   A simple CLI text editor with syntax            q. /|\ .p   |
-|   highlighting and smart scrolling.                '// \\'    |
+|   A simple CLI text editor with syntax            q. /|\  u   |
+|   highlighting and smart scrolling.                `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == fmclean.c ==                                  .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Command to clean the fmopen lib cache           q. /|\ .p   |
-|                                                    '// \\'    |
+|   Command to clean the fmopen lib cache           q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

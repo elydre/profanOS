@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == perf.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Performance test                                q. /|\ .p   |
-|                                                    '// \\'    |
+|   Performance test                                q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

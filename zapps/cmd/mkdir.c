@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == mkdir.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix mkdir command implementation               q. /|\ .p   |
-|   creates a directory                              '// \\'    |
+|   Unix mkdir command implementation               q. /|\  u   |
+|   creates a directory                              `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

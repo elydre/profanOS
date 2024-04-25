@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == limits.h ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of limits.h header file          q. /|\ .p   |
-|   see mintsuki/freestanding-headers                '// \\'    |
+|   Implementation of limits.h header file          q. /|\  u   |
+|   see mintsuki/freestanding-headers                `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == font.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Command to change the font of the terminal      q. /|\ .p   |
-|   like the Unix `setfont` command                  '// \\'    |
+|   Command to change the font of the terminal      q. /|\  u   |
+|   like the Unix `setfont` command                  `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

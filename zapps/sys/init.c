@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == init.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   First user-space program to run on boot         q. /|\ .p   |
-|                                                    '// \\'    |
+|   First user-space program to run on boot         q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

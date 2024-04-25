@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == dlike.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   A raycasting game                               q. /|\ .p   |
-|                                                    '// \\'    |
+|   A raycasting game                               q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

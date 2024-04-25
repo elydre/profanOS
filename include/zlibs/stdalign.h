@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == stdalign.h ==                                 .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Implementation of stdalign.h header file        q. /|\ .p   |
-|   see mintsuki/freestanding-headers                '// \\'    |
+|   Implementation of stdalign.h header file        q. /|\  u   |
+|   see mintsuki/freestanding-headers                `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

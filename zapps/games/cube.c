@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == cube.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Good performance 3D cube rotation               q. /|\ .p   |
-|                                                    '// \\'    |
+|   Good performance 3D cube rotation               q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

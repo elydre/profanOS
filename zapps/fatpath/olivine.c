@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == olivine.c ==                                  .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Command line shell programming language         q. /|\ .p   |
-|   inspired by POSIX shell for multiple OS          '// \\'    |
+|   Command line shell programming language         q. /|\  u   |
+|   inspired by POSIX shell for multiple OS          `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == scubasuit.h ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef SCUBASUIT_H
 #define SCUBASUIT_H
 

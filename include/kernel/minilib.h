@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == minilib.h ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef MINILIB_H
 #define MINILIB_H
 

@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == libmmq.c ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Extra small libC as kernel module for           q. /|\ .p   |
-|   non-elf files                                    '// \\'    |
+|   Extra small libC as kernel module for           q. /|\  u   |
+|   non-elf files                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

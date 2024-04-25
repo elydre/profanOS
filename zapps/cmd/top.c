@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == top.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Unix top command implementation                 q. /|\ .p   |
-|                                                    '// \\'    |
+|   Unix top command implementation                 q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

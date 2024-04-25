@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == sc.c ==                                       .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Keyboard scancode viewer                        q. /|\ .p   |
-|                                                    '// \\'    |
+|   Keyboard scancode viewer                        q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

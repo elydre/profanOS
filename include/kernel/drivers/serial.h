@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == serial.h ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|                                                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef SERIAL_H
 #define SERIAL_H
 

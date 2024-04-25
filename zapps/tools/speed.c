@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == speed.c ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|   CPU speed test                                  q. /|\ .p   |
-|                                                    '// \\'    |
+|   CPU speed test                                  q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

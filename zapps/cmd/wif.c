@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == wif.c ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Write-In-File command                           q. /|\ .p   |
-|                                                    '// \\'    |
+|   Write-In-File command                           q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/

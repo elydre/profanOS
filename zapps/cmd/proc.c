@@ -1,8 +1,8 @@
 /****** This file is part of profanOS **************************\
 |   == proc.c ==                                     .pi0iq.    |
 |                                                   d"  . `'b   |
-|   Basic process management tool                   q. /|\ .p   |
-|                                                    '// \\'    |
+|   Basic process management tool                   q. /|\  u   |
+|                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
 \***************************************************************/
