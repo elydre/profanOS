@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == keyboard.c ==                                 .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Keyboard driver                          q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <drivers/keyboard.h>
 #include <kernel/process.h>
 #include <cpu/ports.h>

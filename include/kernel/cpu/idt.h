@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == idt.h ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel Interrupt Descriptor Table header        q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

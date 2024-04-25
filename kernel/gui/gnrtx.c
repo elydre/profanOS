@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == gnrtx.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel ansii escape multi-terminal support      q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>

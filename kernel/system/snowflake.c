@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == snowflake.c ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel physical memory allocator                q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <kernel/multiboot.h>
 #include <drivers/diskiso.h>

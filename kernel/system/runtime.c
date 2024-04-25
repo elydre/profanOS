@@ -1,24 +1,33 @@
+/****** This file is part of profanOS **************************\
+|   == runtime.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel binary execution functions               q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <minilib.h>
 #include <system.h>
 
-/************************************************************
- *     - kernel runtime memory layout and sharing -     e  *
- *                                                      l  *
- *  |             |                   | E               y  *
- *  | kernel      | allocable memory  | N               d  *
- *  | `0x100000   | `0x200000         | D               r  *
- *  |             |                   |                 e  *
- *        ^     ^     ^     ^     ^                        *
- *        |     |     |     |     '---SCUBA----.           *
- *        |     |     |     |                  |           *
- *  |                                 | : |             |  *
- *  | physical (shared)   [STACK]     | : | virtual     |  *
- *  |                                 | : | `0xB0000000 |  *
- *  |                                 | : |             |  *
-************************************************************/
+/***************************************************************\
+|      - kernel runtime memory layout and sharing -         e   |
+|                                                           l   |
+|   |                |                    | E               y   |
+|   | kernel         | allocable memory   | N               d   |
+|   | `0x100000      | `0x200000          | D               r   |
+|   |                |                    |                 e   |
+|       ^     ^         ^     ^      ^                          |
+|       |     |         |     |      '---SCUBA----.             |
+|       |     |         |     |                   |             |
+|   |                                    | : |              | V |
+|   | physical (shared)     [STACK]      | : | virtual      | E |
+|   |                                    | : | `0xB0000000  | S |
+|   |                                    | : |              | A |
+\***************************************************************/
 
 int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     int ppid, pstate, leaks;

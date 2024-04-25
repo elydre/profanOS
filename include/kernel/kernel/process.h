@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == process.h ==                                  .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel process manager v2.1 header              q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

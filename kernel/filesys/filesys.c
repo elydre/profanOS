@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == filesys.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel filesystem functions                     q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/butterfly.h>
 #include <drivers/diskiso.h>
 #include <minilib.h>

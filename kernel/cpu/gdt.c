@@ -1,6 +1,14 @@
-#include <cpu/gdt.h>
+/****** This file is part of profanOS **************************\
+|   == gdt.c ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel GDT (Global Descriptor Table)            q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
 
-// GDT: global descriptor table
+#include <cpu/gdt.h>
+#include <ktype.h>
 
 struct gdt_entry gdt[3];
 struct gdt_ptr gdt_p;
@@ -17,7 +25,7 @@ void gdt_flush(void) {
     asm volatile("next:");
 }
 
-void gdt_init_entry(int index, unsigned long base, unsigned long limit, unsigned char access, unsigned char granularity) {
+void gdt_init_entry(int index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity) {
     gdt[index].base_low = (base & 0xFFFF);
     gdt[index].base_middle = (base >> 16) & 0xFF;
     gdt[index].base_high = (base >> 24) & 0xFF;

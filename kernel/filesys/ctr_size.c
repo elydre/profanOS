@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == ctr_size.c ==                                 .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel container size functions                 q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>

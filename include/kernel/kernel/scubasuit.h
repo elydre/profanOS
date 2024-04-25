@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == scubasuit.h ==                                .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel virtual memory manager header            q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

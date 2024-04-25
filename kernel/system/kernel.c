@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == kernel.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel main file                                q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <drivers/keyboard.h>
 #include <kernel/butterfly.h>
 #include <kernel/multiboot.h>

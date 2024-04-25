@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == usg_ptsid.c ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel path resolution functions                q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/butterfly.h>
 #include <minilib.h>
 

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == ports.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Input/Output ports functions             q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <cpu/ports.h>
 
 #include <ktype.h>

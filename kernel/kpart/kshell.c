@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == kshell.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel shell                                    q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <drivers/diskiso.h>
 #include <kernel/process.h>

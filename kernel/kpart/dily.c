@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == dily.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Dynamic Library loader                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <kernel/butterfly.h>
 #include <kernel/process.h>

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == system.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel system functions                         q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/scubasuit.h>
 #include <drivers/serial.h>
 #include <kernel/process.h>

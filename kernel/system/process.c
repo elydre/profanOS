@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == process.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel process manager v2.1                     q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
 #include <cpu/timer.h>

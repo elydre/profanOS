@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == gdt.h ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel Global Descriptor Table header           q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

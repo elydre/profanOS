@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == font.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel font data for graphical mode             q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <gui/gnrtx.h>
 
 static unsigned char font_8x16[4096] = {

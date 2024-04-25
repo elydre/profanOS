@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == ports.h ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel Input/Output ports header                q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

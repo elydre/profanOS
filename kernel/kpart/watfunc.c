@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == watfunc.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel syscall handler                          q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <drivers/keyboard.h>
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>

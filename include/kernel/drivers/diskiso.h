@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == diskiso.h ==                                  .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel Disk ISO (grub module) header            q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

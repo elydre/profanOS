@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == gnrtx.h ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel multi output terminal header             q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

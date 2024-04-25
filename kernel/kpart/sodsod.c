@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == sodsod.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel SODSOD (Angelic screen of death)         q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/process.h>
 #include <gui/gnrtx.h>
 #include <minilib.h>

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == tefv.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Text Mode Emulator for VESA              q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
 #include <minilib.h>

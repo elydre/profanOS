@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == idt.c ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel IDT (Interrupt Descriptor Table)         q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <cpu/idt.h>
 #include <ktype.h>
 

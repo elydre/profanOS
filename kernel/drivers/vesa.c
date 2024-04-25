@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == vesa.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel VESA framebuffer driver                  q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/multiboot.h>
 #include <gui/vesa.h>
 

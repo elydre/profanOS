@@ -10,7 +10,7 @@ scan_externtions = [
 ]
 
 ignore_directories = [
-    "out"
+    "out",
     "include/addons",
 ]
 
@@ -47,6 +47,7 @@ empty_header = [
 ]
 
 def print_note(file, line, message):
+    line += 1
     analyzed["patch"] += 1
     if instant_print:
         print(f"{C_NOTE}    {file}:{line} {message}{C_END}")
@@ -54,6 +55,7 @@ def print_note(file, line, message):
     analyzed["l_n"] += f"{C_NOTE}    {file}:{line} {message}{C_END}\n"
 
 def print_warning(file, line, message):
+    line += 1
     analyzed["unpatch"] += 1
     if instant_print:
         print(f"{C_WARNING}    {file}:{line} {message}{C_END}")

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == rtc.c ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Real Time Clock driver                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <drivers/rtc.h>
 #include <cpu/ports.h>
 

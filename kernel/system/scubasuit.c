@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == scubasuit.c ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel virtual memory manager                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/scubasuit.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>

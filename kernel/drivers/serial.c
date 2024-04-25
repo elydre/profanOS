@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == serial.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Serial driver                            q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <cpu/ports.h>

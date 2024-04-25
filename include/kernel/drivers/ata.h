@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == ata.h ==                                      .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel ATA driver header                        q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

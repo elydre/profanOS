@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == ktype.h ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel types header                             q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

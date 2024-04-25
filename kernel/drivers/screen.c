@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == screen.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Text Mode Screen driver                  q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <gui/gnrtx.h>
 #include <cpu/ports.h>
 #include <minilib.h>

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == timer.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Timer (PIT) management                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/process.h>
 #include <cpu/ports.h>
 #include <cpu/timer.h>

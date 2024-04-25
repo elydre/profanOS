@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == minilib.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel mini-library functions                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <drivers/keyboard.h>
 #include <drivers/serial.h>

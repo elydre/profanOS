@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == mouse.h ==                                    .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel Mouse driver header                      q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

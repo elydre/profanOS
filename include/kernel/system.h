@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == system.h ==                                   .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel main header                              q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
@@ -12,7 +12,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.1.8"
+#define KERNEL_VERSION  "1.1.8b"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count

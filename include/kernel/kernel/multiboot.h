@@ -1,7 +1,7 @@
 /****** This file is part of profanOS **************************\
 |   == multiboot.h ==                                .pi0iq.    |
 |                                                   d"  . `'b   |
-|                                                   q. /|\  u   |
+|   Kernel Multiboot header                         q. /|\  u   |
 |                                                    `// \\     |
 |                                                    //   \\    |
 |   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |

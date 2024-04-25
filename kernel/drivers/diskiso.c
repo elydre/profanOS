@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == diskiso.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Disk ISO (grub module) functions         q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/snowflake.h>
 #include <kernel/multiboot.h>
 #include <minilib.h>

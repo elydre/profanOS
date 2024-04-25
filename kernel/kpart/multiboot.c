@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == multiboot.c ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel Multiboot data handler                   q. /|\  u   |
+|                                                    `// \\     |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <kernel/multiboot.h>
 
 /* a part of the multiboot data can be 0 if the
