@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == stdlib.h ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation of stdlib.h header file          q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef STDLIB_ID
 #define STDLIB_ID 1007
 

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == stdio.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation of stdio.h header file           q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef STDIO_H
 #define STDIO_H
 

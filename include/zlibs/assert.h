@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == assert.h ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation assert.h header file             q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef ASSERT_H
 #define ASSERT_H
 

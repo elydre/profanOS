@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == time.h ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation of time.h header file            q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef TIME_H
 #define TIME_H
 

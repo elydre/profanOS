@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == ctype.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation ctype.h header file              q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef CTYPE_H
 #define CTYPE_H
 

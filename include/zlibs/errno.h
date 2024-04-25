@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == errno.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation errno.h header file              q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef ERRNO_H
 #define ERRNO_H
 

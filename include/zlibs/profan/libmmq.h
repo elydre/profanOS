@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == libmmq.h ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel module header for minimalistic           q. /|\ .p   |
+|   libC implementation.                             '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef LIBMMQ_ID
 #define LIBMMQ_ID 1001
 

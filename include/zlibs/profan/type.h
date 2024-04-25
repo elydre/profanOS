@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == type.h ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Type definitions for profanOS - missing         q. /|\ .p   |
+|   headers and kernel types.                        '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef TYPE_H
 #define TYPE_H
 

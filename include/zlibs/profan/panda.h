@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == panda.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel module header for panda terminal         q. /|\ .p   |
+|   emulator                                         '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef PANDA_ID
 #define PANDA_ID 1006
 

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == dlfcn.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation dlfcn.h header file              q. /|\ .p   |
+|   for the C standard library                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef DLFCN_H
 #define DLFCN_H
 

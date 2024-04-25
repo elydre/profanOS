@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == filesys.h ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Kernel module header for filesystem             q. /|\ .p   |
+|   extension (see wiki/lib_filesys)                 '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef FILESYS_LIB_ID
 #define FILESYS_LIB_ID 1002
 #define DEVIO_LIB_ID   1003

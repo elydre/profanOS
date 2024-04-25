@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == mouse.h ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Mouse aliases for userland                      q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef I_MOUSE_H
 #define I_MOUSE_H
 

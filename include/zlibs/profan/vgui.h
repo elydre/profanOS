@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == vgui.h ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Header for the profanOS graphical library       q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef VGUI_H
 #define VGUI_H
 

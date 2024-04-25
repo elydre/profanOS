@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == syscall.h ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Header for the profanOS syscall interface       q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
