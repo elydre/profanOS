@@ -54,6 +54,8 @@ COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
 
+LINK_SHARED_LINE = 10
+
 for e in ZHEADERS:
     if os.path.exists(e):
         ZAPP_FLAGS += f" -I {e}"
@@ -229,7 +231,8 @@ def build_app_lib():
         print_info_line(name)
         required_libs = []
         with open(name, "r") as f:
-            first_line = f.readline()
+            for _ in range(LINK_SHARED_LINE):
+                first_line = f.readline()
             if first_line.startswith("// @LINK SHARED:"):
                 required_libs = first_line.split(":")[1].replace("\n", "").replace(",", " ").split()
 
