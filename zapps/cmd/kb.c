@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == kb.c ==                                       .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Command to change the keymap of the terminal    q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <profan.h>
 #include <string.h>

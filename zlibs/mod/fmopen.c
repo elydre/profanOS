@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == fmopen.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix file manipulation compatibility layer      q. /|\ .p   |
+|   as kernel module                                 '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #define FMOPEN_LIB_C
 
 #include <profan/syscall.h>

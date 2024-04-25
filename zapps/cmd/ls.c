@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == ls.c ==                                       .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix ls command implementation                  q. /|\ .p   |
+|   prints directory content to stdout               '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

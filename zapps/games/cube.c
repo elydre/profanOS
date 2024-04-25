@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == cube.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Good performance 3D cube rotation               q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 // @LINK SHARED: libvgui, libpm
 
 #include <profan/syscall.h>

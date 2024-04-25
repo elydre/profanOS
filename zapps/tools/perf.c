@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == perf.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Performance test                                q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <stdio.h>
 

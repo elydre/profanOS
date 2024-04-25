@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == proc.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Basic process management tool                   q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <string.h>
 #include <stdlib.h>

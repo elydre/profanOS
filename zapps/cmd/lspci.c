@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == lspci.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix lspci command implementation               q. /|\ .p   |
+|   prints PCI devices to stdout                     '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <stdlib.h>
 #include <profan.h>

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == readelf.c ==                                  .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix readelf command implementation             q. /|\ .p   |
+|   displays information about ELF files             '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

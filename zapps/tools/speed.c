@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == speed.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   CPU speed test                                  q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <string.h>
 #include <stdio.h>

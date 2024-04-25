@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == dlike.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   A raycasting game                               q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 // @LINK SHARED: libvgui
 
 #include <profan/syscall.h>

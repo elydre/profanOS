@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == clear.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix clear command implementation               q. /|\ .p   |
+|   clears the terminal screen                       '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <stdio.h>
 

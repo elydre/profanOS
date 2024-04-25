@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == panda.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Terminal emulator as kernel module with psf     q. /|\ .p   |
+|   font and ANSI escape sequences support           '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/libmmq.h>

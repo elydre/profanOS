@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == mkfile.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Command to create a file                        q. /|\ .p   |
+|   similar to the Unix touch command                '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

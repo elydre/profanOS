@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == reboot.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix reboot command implementation              q. /|\ .p   |
+|   reboots and shuts down the system                '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 
 int main(int argc, char **argv) {

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == rim.c ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|   A simple CLI text editor with syntax            q. /|\ .p   |
+|   highlighting and smart scrolling.                '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/panda.h>

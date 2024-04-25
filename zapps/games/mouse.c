@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == mouse.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Basic mouse input test                          q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 // @LINK SHARED: libvgui
 
 #include <profan/syscall.h>

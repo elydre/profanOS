@@ -1,4 +1,11 @@
-// standard entry point for ELF compiled files
+/****** This file is part of profanOS **************************\
+|   == entry_elf.c ==                                .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Standard entry point for ELF compiled files     q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
 
 #include <setjmp.h>
 

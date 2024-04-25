@@ -1,5 +1,24 @@
+/****** This file is part of profanOS **************************\
+|   == math.c ==                                     .pi0iq.    |
+|                                                   d"  . `'b   |
+|   profanOS mini libm functions                    q. /|\ .p   |
+|   Some code from sun microsystems (see below)      '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/math.h>
 #include "math_private.h"
+
+/*
+ * ====================================================
+ * Copyright 1993, 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
 
 #define DBL_EPSILON 2.2204460492503131e-16
 #if FLT_EVAL_METHOD==0 || FLT_EVAL_METHOD==1
@@ -428,20 +447,11 @@ static const double powf_log_table[256] = {
     0x1p-1,                  0x1p+0,                // 0.5, -log2l(0.5)
 };
 
-/* origin: FreeBSD /usr/src/lib/msun/src/e_rem_pio2f.c */
+// origin: FreeBSD /usr/src/lib/msun/src/e_rem_pio2f.c
+
 /*
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  * Debugged and optimized by Bruce D. Evans.
- */
-/*
- * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
- *
- * Developed at SunPro, a Sun Microsystems, Inc. business.
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
  */
 
 /* __rem_pio2f(x,y)
@@ -695,19 +705,11 @@ static int __rem_pio2f(float x, double *y) {
     return n;
 }
 
-/* origin: FreeBSD /usr/src/lib/msun/src/k_tanf.c */
+// origin: FreeBSD /usr/src/lib/msun/src/k_tanf.c
+
 /*
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  * Optimized by Bruce D. Evans.
- */
-/*
- * ====================================================
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
- *
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
  */
 
 static float __tandf(double x, int odd) {
@@ -804,17 +806,8 @@ static float __math_invalidf(float x) {
     return (x - x) / (x - x);
 }
 
-/* origin: FreeBSD /usr/src/lib/msun/src/e_acos.c */
-/*
- * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
- *
- * Developed at SunSoft, a Sun Microsystems, Inc. business.
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
- */
+// origin: FreeBSD /usr/src/lib/msun/src/e_acos.c
+
 /* acos(x)
  * Method :
  *      acos(x)  = pi/2 - asin(x)
@@ -881,19 +874,10 @@ double acos(double x) {
     return 2*(df+w);
 }
 
-/* origin: FreeBSD /usr/src/lib/msun/src/e_acosf.c */
+// origin: FreeBSD /usr/src/lib/msun/src/e_acosf.c
+
 /*
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
- */
-/*
- * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
- *
- * Developed at SunPro, a Sun Microsystems, Inc. business.
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
  */
 
 float acosf(float x) {
@@ -934,20 +918,11 @@ float acosf(float x) {
     return 2*(df+w);
 }
 
-/* origin: FreeBSD /usr/src/lib/msun/src/s_cosf.c */
+// origin: FreeBSD /usr/src/lib/msun/src/s_cosf.c
+
 /*
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  * Optimized by Bruce D. Evans.
- */
-/*
- * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
- *
- * Developed at SunPro, a Sun Microsystems, Inc. business.
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
  */
 
 float cosf(float x) {
@@ -1011,17 +986,8 @@ double floor(double x) {
     return (double) interger;
 }
 
-/* origin: FreeBSD /usr/src/lib/msun/src/e_log10.c */
-/*
- * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
- *
- * Developed at SunSoft, a Sun Microsystems, Inc. business.
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
- */
+// origin: FreeBSD /usr/src/lib/msun/src/e_log10.c
+
 /*
  * Return the base 10 logarithm of x.  See log.c for most comments.
  *
@@ -1539,20 +1505,11 @@ float sqrtf(float x) {
     return y;
 }
 
-/* origin: FreeBSD /usr/src/lib/msun/src/s_tanf.c */
+// origin: FreeBSD /usr/src/lib/msun/src/s_tanf.c
+
 /*
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  * Optimized by Bruce D. Evans.
- */
-/*
- * ====================================================
- * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
- *
- * Developed at SunPro, a Sun Microsystems, Inc. business.
- * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice
- * is preserved.
- * ====================================================
  */
 
 float tanf(float x) {

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == fetch.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Display system information with colors          q. /|\ .p   |
+|   and a OS logo (like neofetch)                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 

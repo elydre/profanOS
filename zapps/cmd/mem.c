@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == mem.c ==                                      .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Command to display memory usage                 q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == rm.c ==                                       .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix rm command implementation                  q. /|\ .p   |
+|   removes files and directories                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan.h>

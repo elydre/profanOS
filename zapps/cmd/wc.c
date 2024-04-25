@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == wc.c ==                                       .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix wc command implementation                  q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>

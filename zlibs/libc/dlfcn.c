@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == dlfcn.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation of dlfcn functions for libc      q. /|\ .p   |
+|   see details below                                '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/type.h>
 
 // real function are defined in the dynamic linker (/bin/sys/deluge)

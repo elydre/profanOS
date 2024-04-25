@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == cp.c ==                                       .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix cp command implementation                  q. /|\ .p   |
+|   copies files from source to destination          '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/filesys.h>
 #include <profan/syscall.h>
 #include <profan.h>

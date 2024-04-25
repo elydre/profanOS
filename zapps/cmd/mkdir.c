@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == mkdir.c ==                                    .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Unix mkdir command implementation               q. /|\ .p   |
+|   creates a directory                              '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

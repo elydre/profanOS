@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == string.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Implementation of string.h functions            q. /|\ .p   |
+|   from the C standard library                      '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include <profan/syscall.h>
 #include <profan/type.h>
 

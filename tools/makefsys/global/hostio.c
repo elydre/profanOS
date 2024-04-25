@@ -1,3 +1,12 @@
+/****** This file is part of profanOS **************************\
+|   == hostio.c ==                                   .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Part of the filesystem creation tool            q. /|\ .p   |
+|                                                    '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
 #include "../butterfly.h"
 #include <stdlib.h>
 #include <string.h>

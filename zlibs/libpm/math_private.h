@@ -1,3 +1,17 @@
+/****** This file is part of profanOS **************************\
+|   == math_private.h ==                             .pi0iq.    |
+|                                                   d"  . `'b   |
+|   Private header file for profanOS mini libm      q. /|\ .p   |
+|   Original code from sun microsystems (see below)  '// \\'    |
+|                                                    //   \\    |
+|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
+\***************************************************************/
+
+#ifndef _MATH_PRIVATE_H
+#define _MATH_PRIVATE_H
+
+#include <profan/type.h>
+
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -8,28 +22,7 @@
  * is preserved.
  * ====================================================
  */
-/*
- * from: @(#)fdlibm.h 5.1 93/09/24
- */
 
-#ifndef _MATH_PRIVATE_H
-#define _MATH_PRIVATE_H
-
-#include <profan/type.h>
-
-/* The original fdlibm code used statements like:
-    n0 = ((*(int*)&one)>>29)^1;        * index of high word *
-    ix0 = *(n0+(int*)&x);            * high word of x *
-    ix1 = *((1-n0)+(int*)&x);        * low word of x *
-   to dig two 32 bit words out of the 64 bit IEEE floating point
-   value.  That is non-ANSI, and, moreover, the gcc instruction
-   scheduler gets it wrong.  We instead use the following macros.
-   Unlike the original code, we determine the endianness at compile
-   time, not at run time; I don't see much benefit to selecting
-   endianness at run time.  */
-
-/* A union which permits us to convert between a double and two 32 bit
-   ints.  */
 typedef union
 {
   double value;
@@ -41,7 +34,23 @@ typedef union
   uint64_t word;
 } ieee_double_shape_type;
 
-/* Get two 32 bit ints from a double.  */
+typedef union {
+    float value;
+    uint32_t word;
+} ieee_float_shape_type;
+
+/* The original fdlibm code used statements like:
+    n0 = ((*(int*)&one)>>29)^1;        * index of high word *
+    ix0 = *(n0+(int*)&x);              * high word of x *
+    ix1 = *((1-n0)+(int*)&x);          * low word of x *
+   to dig two 32 bit words out of the 64 bit IEEE floating point
+   value.  That is non-ANSI, and, moreover, the gcc instruction
+   scheduler gets it wrong.  We instead use the following macros.
+   Unlike the original code, we determine the endianness at compile
+   time, not at run time; I don't see much benefit to selecting
+   endianness at run time.  */
+
+// Get two 32 bit ints from a double.
 #define EXTRACT_WORDS(ix0,ix1,d)    \
 do {                                \
   ieee_double_shape_type ew_u;      \
@@ -50,7 +59,7 @@ do {                                \
   (ix1) = ew_u.parts.lsw;           \
 } while (0)
 
-/* Get the more significant 32 bit int from a double.  */
+// Get the more significant 32 bit int from a double.
 #ifndef GET_HIGH_WORD
 # define GET_HIGH_WORD(i,d)         \
 do {                                \
@@ -60,7 +69,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Get the less significant 32 bit int from a double.  */
+// Get the less significant 32 bit int from a double.
 #ifndef GET_LOW_WORD
 # define GET_LOW_WORD(i,d)          \
 do {                                \
@@ -70,7 +79,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Get all in one, efficient on 64-bit machines.  */
+// Get all in one, efficient on 64-bit machines.
 #ifndef EXTRACT_WORDS64
 # define EXTRACT_WORDS64(i,d)       \
 do {                                \
@@ -80,7 +89,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Set a double from two 32 bit ints.  */
+// Set a double from two 32 bit ints.
 #ifndef INSERT_WORDS
 # define INSERT_WORDS(d,ix0,ix1)    \
 do {                                \
@@ -91,7 +100,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Get all in one, efficient on 64-bit machines.  */
+// Get all in one, efficient on 64-bit machines.
 #ifndef INSERT_WORDS64
 # define INSERT_WORDS64(d,i)        \
 do {                                \
@@ -101,7 +110,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Set the more significant 32 bits of a double from an int.  */
+// Set the more significant 32 bits of a double from an int.
 #ifndef SET_HIGH_WORD
 #define SET_HIGH_WORD(d,v)          \
 do {                                \
@@ -112,7 +121,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Set the less significant 32 bits of a double from an int.  */
+// Set the less significant 32 bits of a double from an int.
 #ifndef SET_LOW_WORD
 # define SET_LOW_WORD(d,v)          \
 do {                                \
@@ -123,15 +132,7 @@ do {                                \
 } while (0)
 #endif
 
-/* A union which permits us to convert between a float and a 32 bit
-   int.  */
-
-typedef union {
-    float value;
-    uint32_t word;
-} ieee_float_shape_type;
-
-/* Get a 32 bit int from a float.  */
+// Get a 32 bit int from a float.
 #ifndef GET_FLOAT_WORD
 # define GET_FLOAT_WORD(i,d)        \
 do {                                \
@@ -141,7 +142,7 @@ do {                                \
 } while (0)
 #endif
 
-/* Set a float from a 32 bit int.  */
+// Set a float from a 32 bit int.
 #ifndef SET_FLOAT_WORD
 # define SET_FLOAT_WORD(d,i)        \
 do {                                \
@@ -150,4 +151,5 @@ do {                                \
     (d) = sf_u.value;               \
 } while (0)
 #endif
+
 #endif
