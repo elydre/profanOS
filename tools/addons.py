@@ -124,8 +124,10 @@ def graphic_menu(stdscr: curses.window):
         draw_ifposible(stdscr, 0 - yoffset, 0, "Select addons to install with ENTER", curses.A_BOLD)
         draw_ifposible(stdscr, 1 - yoffset, 0, "Q: cancel, RIGHT: info, V: validate", 0)
 
-        draw_ifposible(stdscr, 3 - yoffset, 1, "Download Selected" if any(checked) else "Exit without downloading", curses.A_REVERSE if current == 0 else 0)
-        draw_ifposible(stdscr, 4 - yoffset, 1, "Unselect all" if any(checked) else "Select all", curses.A_REVERSE if current == 1 else 0)
+        draw_ifposible(stdscr, 3 - yoffset, 1, "Download Selected" if any(checked) else "Exit without downloading",
+                       curses.A_REVERSE if current == 0 else 0)
+        draw_ifposible(stdscr, 4 - yoffset, 1, "Unselect all" if any(checked) else "Select all",
+                       curses.A_REVERSE if current == 1 else 0)
 
         index = 0
         line_offset = 6
@@ -133,7 +135,10 @@ def graphic_menu(stdscr: curses.window):
             draw_ifposible(stdscr, index + line_offset - yoffset, 1, category.upper(), curses.A_BOLD)
             line_offset += 1
             for addon in ADDONS[category]:
-                draw_ifposible(stdscr, index + line_offset - yoffset, 3, f"[{'X' if checked[index] else ' '}] {addon['name']} {' ' * (10-len(addon['name']))} {addon['description']}", curses.A_REVERSE if index + 2 == current else 0)
+                draw_ifposible(stdscr, index + line_offset - yoffset, 3,
+                               f"[{'X' if checked[index] else ' '}] {addon['name']}" +
+                               f"{' ' * (10-len(addon['name']))} {addon['description']}",
+                               curses.A_REVERSE if index + 2 == current else 0)
                 index += 1
             line_offset += 1
 

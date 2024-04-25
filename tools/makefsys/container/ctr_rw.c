@@ -95,11 +95,13 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
                 }
                 sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
                 if (IS_NULL_SID(core_sid)) {
-                    printf("no more core, but still %d bytes to %s\n", size - max(index, 0) , is_read ? "read" : "write");
+                    printf("no more core, but still %d bytes to %s\n", size - max(index, 0),
+                            is_read ? "read" : "write");
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                     return 1;
                 }
-                tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index), size - max(index, 0), is_read);
+                tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
+                        size - max(index, 0), is_read);
                 if (tmp == -1) {
                     printf("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);

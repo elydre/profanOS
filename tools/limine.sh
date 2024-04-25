@@ -82,7 +82,8 @@ fi
 
 # create profanOS.iso
 echo "| creating profanOS.iso"
-xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --protective-msdos-label out/isodir -o profanOS.iso > /dev/null 2>&1
+xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 \
+        -boot-info-table --protective-msdos-label out/isodir -o profanOS.iso > /dev/null 2>&1
 
 # check if profanOS.iso exists
 if [ ! -f profanOS.iso ]; then

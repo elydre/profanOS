@@ -62,7 +62,8 @@ last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
 file_in_dir = lambda directory, extension: [file for file in os.listdir(directory) if file.endswith(extension)]
 out_file_name = lambda file_path, sub_dir: f"{OUT_DIR}/{sub_dir}/{file_path.split('/')[-1].split('.')[0]}.o"
-file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if file_exists(file1) and file_exists(file2) else False
+file1_newer = lambda file1, file2: last_modif(file1) > last_modif(file2) if (
+                                   file_exists(file1) and file_exists(file2)) else False
 
 
 def find_app_lib(directory, extention):
@@ -203,11 +204,13 @@ def build_app_lib():
         cprint(COLOR_EXEC, f"creating '{OUT_DIR}/make' directory")
         os.makedirs(f"{OUT_DIR}/make")
 
-    if not file_exists(f"{OUT_DIR}/make/entry_bin.o") or file1_newer("{TOOLS_DIR}/entry_bin.c", f"{OUT_DIR}/make/entry_bin.o"):
+    if not file_exists(f"{OUT_DIR}/make/entry_bin.o") or file1_newer(
+                "{TOOLS_DIR}/entry_bin.c", f"{OUT_DIR}/make/entry_bin.o"):
         cprint(COLOR_INFO, "building binary entry...")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_bin.c -o {OUT_DIR}/make/entry_bin.o {ZAPP_FLAGS}")
 
-    if not file_exists(f"{OUT_DIR}/make/entry_elf.o") or file1_newer("{TOOLS_DIR}/entry_elf.c", f"{OUT_DIR}/make/entry_elf.o"):
+    if not file_exists(f"{OUT_DIR}/make/entry_elf.o") or file1_newer(
+                "{TOOLS_DIR}/entry_elf.c", f"{OUT_DIR}/make/entry_elf.o"):
         cprint(COLOR_INFO, "building ELF entry...")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_elf.c -o {OUT_DIR}/make/entry_elf.o {ZAPP_FLAGS}")
 
@@ -215,7 +218,8 @@ def build_app_lib():
         global total
         print_info_line(name)
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o {fname}.pe {OUT_DIR}/make/entry_bin.o {fname}.o")
+        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o " +
+                       f"{fname}.pe {OUT_DIR}/make/entry_bin.o {fname}.o")
         print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
@@ -235,7 +239,9 @@ def build_app_lib():
                 os._exit(1)
 
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o {fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc {' '.join([f'-l{lib[3:]}' for lib in required_libs])}")
+        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o " +
+                       f"{fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc " +
+                       ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
         print_and_exec(f"rm {fname}.o")
 
         global total
@@ -280,11 +286,16 @@ def build_app_lib():
     total_bin = len(bin_build_list)
     total_lib = len(lib_build_list)
 
-    elf_build_list = [file for file in elf_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
-    bin_build_list = [file for file in bin_build_list if not file1_newer(f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
-    lib_build_list = [file for file in lib_build_list if not (file1_newer(f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file) and file1_newer(f"{OUT_DIR}/zlibs/{file.split('/')[1]}.so", file))]
+    elf_build_list = [file for file in elf_build_list if not file1_newer(
+            f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
+    bin_build_list = [file for file in bin_build_list if not file1_newer(
+            f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
+    lib_build_list = [file for file in lib_build_list if not (file1_newer(
+            f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file
+            ) and file1_newer(f"{OUT_DIR}/zlibs/{file.split('/')[1]}.so", file))]
 
-    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} bin and {len(lib_build_list)}/{total_lib} lib files to compile")
+    cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} " +
+           f"bin and {len(lib_build_list)}/{total_lib} lib files to compile")
 
     global total
     total = len(lib_build_list)
@@ -321,7 +332,8 @@ def make_iso(force = False, more_option = False):
 
     gen_disk()
 
-    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "kernel.elf") and file1_newer("profanOS.iso", "initrd.bin") and not force:
+    if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "kernel.elf") and (
+            file1_newer("profanOS.iso", "initrd.bin") and not force):
         return cprint(COLOR_INFO, "profanOS.iso is up to date")
 
     cprint(COLOR_INFO, "building iso...")
