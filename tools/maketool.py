@@ -54,7 +54,7 @@ COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
 
-LINK_SHARED_LINE = 10
+LINK_SHARED_LINE = 12
 
 for e in ZHEADERS:
     if os.path.exists(e):

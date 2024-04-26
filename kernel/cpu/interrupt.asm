@@ -1,13 +1,13 @@
-/*****************************************************************************\
-|   === interrupt.asm : 2024 ===                                              |
-|                                                                             |
-|    ISR and IRQ definitions and common stubs                      .pi0iq.    |
-|                                                                 d"  . `'b   |
-|    This file is part of profanOS and is released under          q. /|\  "   |
-|    the terms of the GNU General Public License                   `// \\     |
-|                                                                  //   \\    |
-|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
-\*****************************************************************************/
+;*****************************************************************************;
+;   === interrupt.asm : 2024 ===                                              ;
+;                                                                             ;
+;    ISR and IRQ definitions and common stubs                      .pi0iq.    ;
+;                                                                 d"  . `'b   ;
+;    This file is part of profanOS and is released under          q. /|\  "   ;
+;    the terms of the GNU General Public License                   `// \\     ;
+;                                                                  //   \\    ;
+;   === elydre : https://github.com/elydre/profanOS ===         #######  \\   ;
+;*****************************************************************************;
 
 ; Defined in isr.c
 [extern isr_handler]

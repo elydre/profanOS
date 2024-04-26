@@ -21,7 +21,7 @@ ignore_line_too_long = [
 file_with_header = [
     ".c",   ".h",
     ".cpp", ".hpp",
-    ".asm", ".ld"
+    ".ld"
 ]
 
 analyzed = {
