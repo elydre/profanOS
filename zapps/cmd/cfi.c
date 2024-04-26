@@ -16,7 +16,7 @@
 unsigned buffer_hash(char *buffer, int length) {
     unsigned hash = 0;
 
-    for (int i = 0; i < length; i++) {
+    for (int i = 0; i < length; i++) {                                   
         hash += buffer[i] * (i + 1);
     }
 
