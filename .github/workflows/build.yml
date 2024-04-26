@@ -1,4 +1,4 @@
-name: build iso
+name: build iso and push
 
 on:
   push:
