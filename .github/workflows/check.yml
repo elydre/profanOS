@@ -1,0 +1,27 @@
+name: check norme and build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc g++ nasm make genisoimage python3 mtools
+      
+    - name: check norme
+      run: |
+        python3 tools/improver.py -s
+
+    - name: build img
+      run: |
+        make elf bdisk iso
