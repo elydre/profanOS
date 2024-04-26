@@ -25,11 +25,9 @@
  * ====================================================
  */
 
-typedef union
-{
+typedef union {
   double value;
-  struct
-  {
+  struct {
     uint32_t lsw;
     uint32_t msw;
   } parts;
