@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == screen.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Text Mode Screen driver                  q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === screen.c : 2024 ===                                                   |
+|                                                                             |
+|    Kernel Text Mode Screen driver                                .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <gui/gnrtx.h>
 #include <cpu/ports.h>

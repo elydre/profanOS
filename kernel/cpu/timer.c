@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == timer.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Timer (PIT) management                   q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === timer.c : 2024 ===                                                    |
+|                                                                             |
+|    Kernel Timer (PIT) management                                 .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/process.h>
 #include <cpu/ports.h>

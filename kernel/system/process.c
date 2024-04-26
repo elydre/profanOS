@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == process.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel process manager v2.1                     q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === process.c : 2024 ===                                                  |
+|                                                                             |
+|    Kernel process manager v2.1                                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/snowflake.h>
 #include <kernel/process.h>

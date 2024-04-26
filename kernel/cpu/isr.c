@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == isr.c ==                                      .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel ISR (Interrupt Service Routine)          q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === isr.c : 2024 ===                                                      |
+|                                                                             |
+|    Kernel ISR (Interrupt Service Routine)                        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <cpu/ports.h>
 #include <cpu/idt.h>

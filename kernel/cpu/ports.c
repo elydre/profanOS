@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == ports.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Input/Output ports functions             q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === ports.c : 2024 ===                                                    |
+|                                                                             |
+|    Kernel Input/Output ports functions                           .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <cpu/ports.h>
 

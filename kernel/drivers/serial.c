@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == serial.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Serial driver                            q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === serial.c : 2024 ===                                                   |
+|                                                                             |
+|    Kernel Serial driver                                          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/process.h>
 #include <drivers/serial.h>

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == usg_dir.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel-only directory manipulation functions    q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === usg_dir.c : 2024 ===                                                  |
+|                                                                             |
+|    Kernel-only directory manipulation functions                  .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/butterfly.h>
 #include <minilib.h>

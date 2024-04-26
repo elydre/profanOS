@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == system.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel system functions                         q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === system.c : 2024 ===                                                   |
+|                                                                             |
+|    Kernel system functions                                       .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/scubasuit.h>
 #include <drivers/serial.h>

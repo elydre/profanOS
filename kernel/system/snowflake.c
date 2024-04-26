@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == snowflake.c ==                                .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel physical memory allocator                q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === snowflake.c : 2024 ===                                                |
+|                                                                             |
+|    Kernel physical memory allocator                              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/snowflake.h>
 #include <kernel/multiboot.h>

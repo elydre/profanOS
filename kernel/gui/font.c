@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == font.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel font data for graphical mode             q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === font.c : 2024 ===                                                     |
+|                                                                             |
+|    Kernel font data for graphical mode                           .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <gui/gnrtx.h>
 

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == ata.c ==                                      .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel ATA driver functions                     q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === ata.c : 2024 ===                                                      |
+|                                                                             |
+|    Kernel ATA driver functions                                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <drivers/ata.h>
 #include <cpu/ports.h>

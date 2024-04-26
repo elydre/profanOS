@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == mouse.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Mouse driver                             q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === mouse.c : 2024 ===                                                    |
+|                                                                             |
+|    Kernel Mouse driver                                           .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <drivers/mouse.h>
 #include <cpu/ports.h>

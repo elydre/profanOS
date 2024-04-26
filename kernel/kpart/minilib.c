@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == minilib.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel mini-library functions                   q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === minilib.c : 2024 ===                                                  |
+|                                                                             |
+|    Kernel mini-library functions                                 .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/snowflake.h>
 #include <drivers/keyboard.h>

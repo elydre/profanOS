@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == filesys.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel filesystem functions                     q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === filesys.c : 2024 ===                                                  |
+|                                                                             |
+|    Kernel filesystem functions                                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/butterfly.h>
 #include <drivers/diskiso.h>

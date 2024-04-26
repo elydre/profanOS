@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == kshell.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel shell                                    q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === kshell.c : 2024 ===                                                   |
+|                                                                             |
+|    Kernel shell                                                  .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/snowflake.h>
 #include <drivers/diskiso.h>

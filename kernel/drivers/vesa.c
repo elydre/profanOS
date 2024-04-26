@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == vesa.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel VESA framebuffer driver                  q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === vesa.c : 2024 ===                                                     |
+|                                                                             |
+|    Kernel VESA framebuffer driver                                .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <kernel/multiboot.h>
 #include <gui/vesa.h>
