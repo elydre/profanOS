@@ -1,6 +1,6 @@
 # The profan Operating System
 
-[![Makefile CI](https://github.com/elydre/profanOS/actions/workflows/makefile.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/makefile.yml)
+[![status](https://github.com/elydre/profanOS/actions/workflows/build.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/build.yml)
 [![nbr](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
 [![lines](https://img.shields.io/badge/dynamic/json?color=blue&label=code%20lines&query=profan_lines&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan)
 [![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=click%20to%20test&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan/latest.html)
