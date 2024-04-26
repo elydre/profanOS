@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == rm.c ==                                       .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix rm command implementation                  q. /|\  u   |
-|   removes files and directories                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === rm.c : 2024 ===                                                       |
+|                                                                             |
+|    Unix command implementation - removes files and dirs          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>

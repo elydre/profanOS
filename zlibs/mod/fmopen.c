@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == fmopen.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix file manipulation compatibility layer      q. /|\  u   |
-|   as kernel module                                 `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === fmopen.c : 2024 ===                                                   |
+|                                                                             |
+|    Unix file manipulation compatibility layer as module          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #define FMOPEN_LIB_C
 

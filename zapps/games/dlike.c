@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == dlike.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   A raycasting game                               q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === dlike.c : 2024 ===                                                    |
+|                                                                             |
+|    A raycasting game                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 // @LINK SHARED: libvgui
 

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == init.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   First user-space program to run on boot         q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === init.c : 2024 ===                                                     |
+|                                                                             |
+|    First user-space program to run on boot                       .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == extra.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Extra functions for libC                        q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === extra.c : 2024 ===                                                    |
+|                                                                             |
+|    Extra functions for libC                                      .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>

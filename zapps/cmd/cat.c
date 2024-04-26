@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == cat.c ==                                      .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix cat command implementation                 q. /|\  u   |
-|   concatenates and displays files                  `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === cat.c : 2024 ===                                                      |
+|                                                                             |
+|    Unix command implementation - concatenates files              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>

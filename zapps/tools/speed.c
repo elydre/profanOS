@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == speed.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   CPU speed test                                  q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === speed.c : 2024 ===                                                    |
+|                                                                             |
+|    CPU speed test                                                .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <string.h>

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == profan.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Usefull functions for profanOS as kernel        q. /|\  u   |
-|   module (wiki/lib_profan)                         `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === profan.c : 2024 ===                                                   |
+|                                                                             |
+|    Usefull functions for profanOS (wiki/lib_profan)              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #define PROFAN_C
 

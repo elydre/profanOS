@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == time.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Implementation of time.h functions              q. /|\  u   |
-|   from the C standard library                      `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === time.c : 2024 ===                                                     |
+|                                                                             |
+|    Implementation of time functions from libC                    .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/type.h>

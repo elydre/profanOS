@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == butterfly.h ==                                .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Part of the filesystem creation tool            q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === butterfly.h : 2024 ===                                                |
+|                                                                             |
+|    Part of the filesystem creation tool                          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef BUTTERFLY_H
 #define BUTTERFLY_H

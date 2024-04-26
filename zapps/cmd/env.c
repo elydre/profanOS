@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == env.c ==                                      .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix env command implementation                 q. /|\  u   |
-|   prints environment variables to stdout           `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === env.c : 2024 ===                                                      |
+|                                                                             |
+|    Unix command implementation - dump environment to stdout      .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <stdio.h>

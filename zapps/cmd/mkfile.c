@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == mkfile.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Command to create a file                        q. /|\  u   |
-|   similar to the Unix touch command                `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === mkfile.c : 2024 ===                                                   |
+|                                                                             |
+|    Command to create a file - similar to touch                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>

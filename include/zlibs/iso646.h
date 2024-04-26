@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == iso646.h ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Implementation of iso646.h header file          q. /|\  u   |
-|   see mintsuki/freestanding-headers                `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === iso646.h : 2024 ===                                                   |
+|                                                                             |
+|    Implementation of the iso646.h header file from libC          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
+|    Original header - mintsuki/freestanding-headers               `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef __FSTD_HDRS_ISO646_H
 #define __FSTD_HDRS_ISO646_H 1

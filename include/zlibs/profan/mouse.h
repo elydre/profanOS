@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == mouse.h ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Mouse aliases for userland                      q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === mouse.h : 2024 ===                                                    |
+|                                                                             |
+|    Mouse aliases for userland                                    .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef I_MOUSE_H
 #define I_MOUSE_H

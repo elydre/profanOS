@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == errno.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Implementation of strerror function             q. /|\  u   |
-|   from the C standard library                      `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === errno.c : 2024 ===                                                    |
+|                                                                             |
+|    Implementation of strerror function from libC                 .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <errno.h>
 

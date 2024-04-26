@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == olivine.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Command line shell programming language         q. /|\  u   |
-|   inspired by POSIX shell for multiple OS          `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === olivine.c : 2024 ===                                                  |
+|                                                                             |
+|    Command line shell programming language (wiki/olivine)        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>

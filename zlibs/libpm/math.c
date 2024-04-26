@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == math.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   profanOS mini libm functions                    q. /|\  u   |
-|   Some code from sun microsystems (see below)      `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === math.c : 2024 ===                                                     |
+|                                                                             |
+|    Mini libm implementation from profanOS                        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
+|    Original code from sun microsystems (see below)               `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/math.h>
 #include "math_private.h"

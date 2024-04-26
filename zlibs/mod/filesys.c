@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == filesys.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   File System - FSv3 extension mudule             q. /|\  u   |
-|   for profanOS (wiki/lib_filesys)                  `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === filesys.c : 2024 ===                                                  |
+|                                                                             |
+|    File System extension module (wiki/lib_filesys)               .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/libmmq.h>

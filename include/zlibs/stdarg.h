@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == stdarg.h ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Implementation of stdarg.h header file          q. /|\  u   |
-|   see mintsuki/freestanding-headers                `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === stdarg.h : 2024 ===                                                   |
+|                                                                             |
+|    Implementation of the stdarg.h header file from libC          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
+|    Original header - mintsuki/freestanding-headers               `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #if !defined(__FSTD_HDRS_STDARG_H) || defined(__FSTD_HDRS_CXX_WRAP)
 

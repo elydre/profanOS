@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == mkdir.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix mkdir command implementation               q. /|\  u   |
-|   creates a directory                              `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === mkdir.c : 2024 ===                                                    |
+|                                                                             |
+|    Unix command implementation - create a directory              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>

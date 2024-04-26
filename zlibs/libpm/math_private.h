@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == math_private.h ==                             .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Private header file for profanOS mini libm      q. /|\  u   |
-|   Original code from sun microsystems (see below)  `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === math_private.h : 2024 ===                                             |
+|                                                                             |
+|    Private header file for profanOS mini libm                    .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
+|    Original code from sun microsystems (see below)               `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef _MATH_PRIVATE_H
 #define _MATH_PRIVATE_H

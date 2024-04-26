@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == reboot.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix reboot command implementation              q. /|\  u   |
-|   reboots and shuts down the system                `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === reboot.c : 2024 ===                                                   |
+|                                                                             |
+|    Command to reboot or shutdown the system                      .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == mouse.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Basic mouse input test                          q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === mouse.c : 2024 ===                                                    |
+|                                                                             |
+|    Basic mouse input test                                        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 // @LINK SHARED: libvgui
 

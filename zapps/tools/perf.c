@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == perf.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Performance test                                q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === perf.c : 2024 ===                                                     |
+|                                                                             |
+|    Performance test                                              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <stdio.h>

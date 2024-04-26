@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == panda.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Terminal emulator as kernel module with psf     q. /|\  u   |
-|   font and ANSI escape sequences support           `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === panda.c : 2024 ===                                                    |
+|                                                                             |
+|    Terminal emulator as kernel module with psf font              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>

@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, time
 
 scan_externtions = [
     ".py",  ".sh",
@@ -19,7 +19,9 @@ ignore_line_too_long = [
 ]
 
 file_with_header = [
-    ".c", ".h", ".cpp", ".hpp",
+    ".c",   ".h",
+    ".cpp", ".hpp",
+    ".asm", ".ld"
 ]
 
 analyzed = {
@@ -36,14 +38,16 @@ C_WARNING = "\033[93m"
 C_END = "\033[0m"
 
 empty_header = [
-    "/****** This file is part of profanOS **************************\\\n",
-    "|   ==                                               .pi0iq.    |\n",
-    "|                                                   d\"  . `'b   |\n",
-    "|                                                   q. /|\\  u   |\n",
-    "|                                                    `// \\\\     |\n",
-    "|                                                    //   \\\\    |\n",
-    "|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\\\   |\n",
-    "\\***************************************************************/\n"
+    "/*****************************************************************************\\\n",
+    "|   ===                                                                       |\n",
+    "|                                                                             |\n",
+    "|    -                                                             .pi0iq.    |\n",
+    "|                                                                 d\"  . `'b   |\n",
+    "|    This file is part of profanOS and is released under          q. /|\\  \"   |\n",
+    "|    the terms of the GNU General Public License                   `// \\\\     |\n",
+    "|                                                                  //   \\\\    |\n",
+    "|   === elydre : https://github.com/elydre/profanOS ===         #######  \\\\   |\n",
+    "\\*****************************************************************************/\n"
 ]
 
 def print_note(file, line, message):
@@ -90,31 +94,32 @@ def add_header(lines, path):
             lines = lines[len(empty_header) + 1:]
 
     copy = empty_header.copy()
-    copy[1] = "|   == " + path.split("/")[-1] + " ==" + " " * (43 - len(path.split("/")[-1])) + ".pi0iq.    |\n"
+    name = f"{path.split('/')[-1]} : {time.strftime('%Y')}"
+    copy[1] = "|   === " + name + " ===" + " " * (66 - len(name)) + "|\n"
     return copy + ["\n"] + lines
 
 def check_for_header(lines, path):
-    if len(lines) < 8:
+    if len(lines) < 10:
         lines = add_header(lines, path)
-    for l in [0, 2, 5, 6, 7]:
+    for l in [0, 2, 7, 8, 9]:
         if lines[l] != empty_header[l]:
             lines = add_header(lines, path)
             break
-    if lines[1] == empty_header[1] or sum([e == "=" for e in lines[1]]) != 4:
+    if sum([e == "=" for e in lines[1]]) != 6 or not (path.split("/")[-1] in lines[1]):
         print_warning(path, 1, "no file name in header")
     if lines[3] == empty_header[3]:
         print_warning(path, 3, "no file description in header")
-    elif not (lines[3][4].isupper() or lines[3][4:].startswith("profan")):
+    elif not (lines[3][5].isupper() or lines[3][5:].startswith("profan")):
         print_warning(path, 3, "file description should start with uppercase")
     for l in range(len(empty_header)):
         if len(lines[l]) != len(empty_header[l]):
             print_warning(path, l, "Non-standard header length")
             continue
-        for i in range(4):
+        for i in range(5):
             if lines[l][i] != empty_header[l][i]:
                 print_warning(path, l, "Non-standard header start")
                 break
-        for i in range(-15, 0):
+        for i in range(-18, 0):
             if lines[l][i] != empty_header[l][i]:
                 print_warning(path, l, "Non-standard header end")
                 break

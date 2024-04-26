@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == readelf.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix readelf command implementation             q. /|\  u   |
-|   displays information about ELF files             `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === readelf.c : 2024 ===                                                  |
+|                                                                             |
+|    Unix command implementation - print ELF file information      .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>

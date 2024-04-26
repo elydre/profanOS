@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == echo.c ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix echo command implementation                q. /|\  u   |
-|   print arguments to standard output               `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === echo.c : 2024 ===                                                     |
+|                                                                             |
+|    Unix command implementation - print arguments to stdoud       .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>

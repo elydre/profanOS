@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == mod.c ==                                      .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Command to load and unload kernel modules       q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === mod.c : 2024 ===                                                      |
+|                                                                             |
+|    Command to load and unload kernel modules                     .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>

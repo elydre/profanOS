@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == entry_elf.c ==                                .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Standard entry point for ELF compiled files     q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === entry_elf.c : 2024 ===                                                |
+|                                                                             |
+|    Standard entry point for ELF compiled files                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <setjmp.h>
 

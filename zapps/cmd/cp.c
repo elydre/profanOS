@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == cp.c ==                                       .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix cp command implementation                  q. /|\  u   |
-|   copies files from source to destination          `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === cp.c : 2024 ===                                                       |
+|                                                                             |
+|    Unix command implementation - clears the terminal screen      .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/filesys.h>
 #include <profan/syscall.h>

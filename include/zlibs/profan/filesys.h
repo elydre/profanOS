@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == filesys.h ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel module header for filesystem             q. /|\  u   |
-|   extension (see wiki/lib_filesys)                 `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === filesys.h : 2024 ===                                                  |
+|                                                                             |
+|    Header for filesystem extension (see wiki/lib_filesys)        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef FILESYS_LIB_ID
 #define FILESYS_LIB_ID 1002

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == fmclean.c ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Command to clean the fmopen lib cache           q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === fmclean.c : 2024 ===                                                  |
+|                                                                             |
+|    Command to clean the fmopen lib cache                         .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/filesys.h>
 

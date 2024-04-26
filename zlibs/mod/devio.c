@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == devio.c ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Implementation of /dev devices in a kernel      q. /|\  u   |
-|   module                                           `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === devio.c : 2024 ===                                                    |
+|                                                                             |
+|    Implementation of /dev devices in a kernel module             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>

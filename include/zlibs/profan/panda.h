@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == panda.h ==                                    .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel module header for panda terminal         q. /|\  u   |
-|   emulator                                         `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === panda.h : 2024 ===                                                    |
+|                                                                             |
+|    Kernel module header for panda terminal emulator              .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef PANDA_ID
 #define PANDA_ID 1006

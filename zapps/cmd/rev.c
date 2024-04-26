@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == rev.c ==                                      .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Unix rev command implementation                 q. /|\  u   |
-|   reverses the lines of input                      `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === rev.c : 2024 ===                                                      |
+|                                                                             |
+|    Unix command implementation - reverse lines from stdin        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <unistd.h>
 #include <stdlib.h>

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == ctr_rw.c ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Part of the filesystem creation tool            q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === ctr_rw.c : 2024 ===                                                   |
+|                                                                             |
+|    Part of the filesystem creation tool                          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>
