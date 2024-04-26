@@ -1,4 +1,4 @@
-name: check norme and build
+name: checks
 
 on:
   push:
