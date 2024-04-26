@@ -27,7 +27,7 @@
 #define MODE_WRITE  1 << 1
 #define MODE_APPEND 1 << 2
 
-int dopr(char* str, size_t size, const char* format, va_list arg);
+int vsnprintf(char* str, size_t size, const char* format, va_list arg);
 
 FILE *STD_STREAM = NULL;
 
@@ -611,7 +611,7 @@ int sprintf(char *buffer, const char *format, ...) {
     va_list args;
 
     va_start(args, format);
-    count = dopr(buffer, -1, format, args);
+    count = vsnprintf(buffer, -1, format, args);
     va_end(args);
 
     return count;
@@ -622,7 +622,7 @@ int snprintf(char* str, size_t size, const char* format, ...) {
     va_list args;
 
     va_start(args, format);
-    count = dopr(str, size, format, args);
+    count = vsnprintf(str, size, format, args);
     va_end(args);
 
     return count;
@@ -643,7 +643,7 @@ int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
     va_list args;
 
     va_start(args, format);
-    count = dopr(buffer, bufsz, format, args);
+    count = vsnprintf(buffer, bufsz, format, args);
     va_end(args);
 
     return count;
@@ -658,7 +658,7 @@ int vprintf(const char *format, va_list vlist) {
     int count;
 
     char *buffer = malloc(0x4000);
-    dopr(buffer, 0x4000, format, vlist);
+    vsnprintf(buffer, 0x4000, format, vlist);
     count = fputs(buffer, stdout);
 
     free(buffer);
@@ -685,7 +685,7 @@ int vfprintf(FILE *stream, const char *format, va_list vlist) {
     char *buffer = malloc(0x4000);
 
     // copy format to a buffer because need to modify it
-    int count = dopr(buffer, 0x4000, format, vlist);
+    int count = vsnprintf(buffer, 0x4000, format, vlist);
 
     // write the string
     fwrite(buffer, 1, strlen(buffer), stream);
@@ -695,11 +695,7 @@ int vfprintf(FILE *stream, const char *format, va_list vlist) {
 }
 
 int vsprintf(char *buffer, const char *format, va_list vlist) {
-    return dopr(buffer, -1, format, vlist);
-}
-
-int vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
-    return dopr(str, count, fmt, args);
+    return vsnprintf(buffer, -1, format, vlist);
 }
 
 int vprintf_s(const char *format, va_list vlist) {
@@ -849,11 +845,11 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
     return 0;
 }
 
-/********************************
- *                             *
- *  INTERNAL FUNCTIONS - DOPR  *
- *                             *
-********************************/
+/*************************************
+ *                                  *
+ *  INTERNAL FUNCTIONS - vsnprintf  *
+ *                                  *
+*************************************/
 
 /* snprintf - compatibility implementation of snprintf, vsnprintf
  *
@@ -898,16 +894,10 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
  *   This includes width, precision, flags 0- +, and *(arg for wid,prec).
  * %f, %g, %m, %p have reduced support, support for wid,prec,flags,*, but
  *   less floating point range, no %e formatting for %g.
-
- * -- profanOS edit note --
- * snprintf renamed to dopr
- * long long changed to long
 */
 
 /** add padding to string */
-static void
-print_pad(char** at, size_t* left, int* ret, char p, int num)
-{
+static void print_pad(char** at, size_t* left, int* ret, char p, int num) {
     while(num--) {
         if(*left > 1) {
             *(*at)++ = p;
@@ -918,9 +908,7 @@ print_pad(char** at, size_t* left, int* ret, char p, int num)
 }
 
 /** get negative symbol, 0 if none */
-static char
-get_negsign(int negative, int plus, int space)
-{
+static char get_negsign(int negative, int plus, int space) {
     if(negative)
         return '-';
     if(plus)
@@ -932,9 +920,7 @@ get_negsign(int negative, int plus, int space)
 
 #define PRINT_DEC_BUFSZ 32 /* 20 is enough for 64 bit decimals */
 /** print decimal into buffer, returns length */
-static int
-print_dec(char* buf, int max, unsigned int value)
-{
+static int print_dec(char* buf, int max, unsigned int value) {
     int i = 0;
     if(value == 0) {
         if(max > 0) {
@@ -949,9 +935,7 @@ print_dec(char* buf, int max, unsigned int value)
 }
 
 /** print long decimal into buffer, returns length */
-static int
-print_dec_l(char* buf, int max, unsigned long value)
-{
+static int print_dec_l(char* buf, int max, unsigned long value) {
     int i = 0;
     if(value == 0) {
         if(max > 0) {
@@ -966,9 +950,7 @@ print_dec_l(char* buf, int max, unsigned long value)
 }
 
 /** print long decimal into buffer, returns length */
-static int
-print_dec_ll(char* buf, int max, unsigned long value)
-{
+static int print_dec_ll(char* buf, int max, unsigned long value) {
     int i = 0;
     if(value == 0) {
         if(max > 0) {
@@ -983,9 +965,7 @@ print_dec_ll(char* buf, int max, unsigned long value)
 }
 
 /** print hex into buffer, returns length */
-static int
-print_hex(char* buf, int max, unsigned int value)
-{
+static int print_hex(char* buf, int max, unsigned int value) {
     const char* h = "0123456789abcdef";
     int i = 0;
     if(value == 0) {
@@ -1001,9 +981,7 @@ print_hex(char* buf, int max, unsigned int value)
 }
 
 /** print long hex into buffer, returns length */
-static int
-print_hex_l(char* buf, int max, unsigned long value)
-{
+static int print_hex_l(char* buf, int max, unsigned long value) {
     const char* h = "0123456789abcdef";
     int i = 0;
     if(value == 0) {
@@ -1019,9 +997,7 @@ print_hex_l(char* buf, int max, unsigned long value)
 }
 
 /** print long hex into buffer, returns length */
-static int
-print_hex_ll(char* buf, int max, unsigned long value)
-{
+static int print_hex_ll(char* buf, int max, unsigned long value) {
     const char* h = "0123456789abcdef";
     int i = 0;
     if(value == 0) {
@@ -1037,9 +1013,7 @@ print_hex_ll(char* buf, int max, unsigned long value)
 }
 
 /** copy string into result, reversed */
-static void
-spool_str_rev(char** at, size_t* left, int* ret, const char* buf, int len)
-{
+static void spool_str_rev(char** at, size_t* left, int* ret, const char* buf, int len) {
     int i = len;
     while(i) {
         if(*left > 1) {
@@ -1051,9 +1025,7 @@ spool_str_rev(char** at, size_t* left, int* ret, const char* buf, int len)
 }
 
 /** copy string into result */
-static void
-spool_str(char** at, size_t* left, int* ret, const char* buf, int len)
-{
+static void spool_str(char** at, size_t* left, int* ret, const char* buf, int len) {
     int i;
     for(i=0; i<len; i++) {
         if(*left > 1) {
@@ -1065,10 +1037,9 @@ spool_str(char** at, size_t* left, int* ret, const char* buf, int len)
 }
 
 /** print number formatted */
-static void
-print_num(char** at, size_t* left, int* ret, int minw, int precision,
-    int prgiven, int zeropad, int minus, int plus, int space,
-    int zero, int negative, char* buf, int len)
+static void print_num(char** at, size_t* left, int* ret, int minw,
+        int precision, int prgiven, int zeropad, int minus, int plus,
+        int space, int zero, int negative, char* buf, int len)
 {
     int w = len; /* excludes minus sign */
     char s = get_negsign(negative, plus, space);
@@ -1122,10 +1093,9 @@ print_num(char** at, size_t* left, int* ret, int minw, int precision,
 }
 
 /** print %d and %i */
-static void
-print_num_d(char** at, size_t* left, int* ret, int value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_d(char** at, size_t* left, int* ret, int value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = (value < 0);
@@ -1137,10 +1107,9 @@ print_num_d(char** at, size_t* left, int* ret, int value,
 }
 
 /** print %ld and %li */
-static void
-print_num_ld(char** at, size_t* left, int* ret, long value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_ld(char** at, size_t* left, int* ret, long value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = (value < 0);
@@ -1152,10 +1121,9 @@ print_num_ld(char** at, size_t* left, int* ret, long value,
 }
 
 /** print %lld and %lli */
-static void
-print_num_lld(char** at, size_t* left, int* ret, long value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_lld(char** at, size_t* left, int* ret, long value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = (value < 0);
@@ -1167,10 +1135,9 @@ print_num_lld(char** at, size_t* left, int* ret, long value,
 }
 
 /** print %u */
-static void
-print_num_u(char** at, size_t* left, int* ret, unsigned int value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_u(char** at, size_t* left, int* ret, unsigned int value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1181,10 +1148,9 @@ print_num_u(char** at, size_t* left, int* ret, unsigned int value,
 }
 
 /** print %lu */
-static void
-print_num_lu(char** at, size_t* left, int* ret, unsigned long value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_lu(char** at, size_t* left, int* ret, unsigned long value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1195,10 +1161,9 @@ print_num_lu(char** at, size_t* left, int* ret, unsigned long value,
 }
 
 /** print %llu */
-static void
-print_num_llu(char** at, size_t* left, int* ret, unsigned long value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_llu(char** at, size_t* left, int* ret, unsigned long value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1209,10 +1174,9 @@ print_num_llu(char** at, size_t* left, int* ret, unsigned long value,
 }
 
 /** print %x */
-static void
-print_num_x(char** at, size_t* left, int* ret, unsigned int value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_x(char** at, size_t* left, int* ret, unsigned int value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1223,10 +1187,9 @@ print_num_x(char** at, size_t* left, int* ret, unsigned int value,
 }
 
 /** print %lx */
-static void
-print_num_lx(char** at, size_t* left, int* ret, unsigned long value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_lx(char** at, size_t* left, int* ret, unsigned long value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1237,10 +1200,9 @@ print_num_lx(char** at, size_t* left, int* ret, unsigned long value,
 }
 
 /** print %llx */
-static void
-print_num_llx(char** at, size_t* left, int* ret, unsigned long value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_llx(char** at, size_t* left, int* ret, unsigned long value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1251,10 +1213,9 @@ print_num_llx(char** at, size_t* left, int* ret, unsigned long value,
 }
 
 /** print %llp */
-static void
-print_num_llp(char** at, size_t* left, int* ret, void* value,
-    int minw, int precision, int prgiven, int zeropad, int minus,
-    int plus, int space)
+static void print_num_llp(char** at, size_t* left, int* ret, void* value,
+        int minw, int precision, int prgiven, int zeropad, int minus,
+        int plus, int space)
 {
     char buf[PRINT_DEC_BUFSZ];
     int negative = 0;
@@ -1286,9 +1247,7 @@ print_num_llp(char** at, size_t* left, int* ret, void* value,
 
 #define PRINT_FLOAT_BUFSZ 64 /* xx.yy with 20.20 about the max */
 /** spool remainder after the decimal point to buffer, in reverse */
-static int
-print_remainder(char* buf, int max, double r, int prec)
-{
+static int print_remainder(char* buf, int max, double r, int prec) {
     unsigned long cap = 1;
     unsigned long value;
     int len, i;
@@ -1317,9 +1276,7 @@ print_remainder(char* buf, int max, double r, int prec)
 }
 
 /** spool floating point to buffer */
-static int
-print_float(char* buf, int max, double value, int prec)
-{
+static int print_float(char* buf, int max, double value, int prec) {
     /* as xxx.xxx  if prec==0, no '.', with prec decimals after . */
     /* no conversion for NAN and INF, because do not want to require
        linking with -lm. */
@@ -1352,9 +1309,7 @@ print_num_f(char** at, size_t* left, int* ret, double value,
 }
 
 /* rudimentary %g support */
-static int
-print_float_g(char* buf, int max, double value, int prec)
-{
+static int print_float_g(char* buf, int max, double value, int prec) {
     unsigned long whole = (unsigned long)value;
     double remain = value - (double)whole;
     int before = 0;
@@ -1399,9 +1354,7 @@ print_num_g(char** at, size_t* left, int* ret, double value,
 
 
 /** strnlen (compat implementation) */
-static int
-my_strnlen(const char* s, int max)
-{
+static int my_strnlen(const char* s, int max) {
     int i;
     for(i=0; i<max; i++)
         if(s[i]==0)
@@ -1428,10 +1381,7 @@ print_str(char** at, size_t* left, int* ret, char* s,
 }
 
 /** print %c */
-static void
-print_char(char** at, size_t* left, int* ret, int c,
-    int minw, int minus)
-{
+static void print_char(char** at, size_t* left, int* ret, int c, int minw, int minus) {
     if(1 < minw && !minus)
         print_pad(at, left, ret, ' ', minw - 1);
     print_pad(at, left, ret, c, 1);
@@ -1458,7 +1408,7 @@ print_char(char** at, size_t* left, int* ret, int c,
  *     and %%.
  */
 
-int dopr(char* str, size_t size, const char* format, va_list arg) {
+int vsnprintf(char* str, size_t size, const char* format, va_list arg) {
     char* at = str;
     size_t left = size;
     int ret = 0;
