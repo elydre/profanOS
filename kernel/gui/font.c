@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === font.c : 2024 ===                                                     |
+|                                                                             |
+|    Kernel font data for graphical mode                           .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <gui/gnrtx.h>
 
 static unsigned char font_8x16[4096] = {

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === fmopen.c : 2024 ===                                                   |
+|                                                                             |
+|    Unix file manipulation compatibility layer as module          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #define FMOPEN_LIB_C
 
 #include <profan/syscall.h>

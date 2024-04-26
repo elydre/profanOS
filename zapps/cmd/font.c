@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === font.c : 2024 ===                                                     |
+|                                                                             |
+|    Command to change the font of the terminal                    .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <profan/filesys.h>
 #include <profan/panda.h>
 #include <profan.h>

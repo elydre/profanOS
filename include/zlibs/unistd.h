@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === unistd.h : 2024 ===                                                   |
+|                                                                             |
+|    Implementation of the unistd.h header file from libC          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef UNISTD_H
 #define UNISTD_H
 

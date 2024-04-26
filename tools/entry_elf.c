@@ -1,4 +1,13 @@
-// standard entry point for ELF compiled files
+/*****************************************************************************\
+|   === entry_elf.c : 2024 ===                                                |
+|                                                                             |
+|    Standard entry point for ELF compiled files                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #include <setjmp.h>
 

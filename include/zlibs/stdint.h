@@ -1,16 +1,13 @@
-/* Copyright (C) 2022-2024 mintsuki and contributors.
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+/*****************************************************************************\
+|   === stdint.h : 2024 ===                                                   |
+|                                                                             |
+|    Implementation of the stdint.h header file from libC          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
+|    Original header - mintsuki/freestanding-headers               `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #if !defined(__FSTD_HDRS_STDINT_H) || defined(__FSTD_HDRS_CXX_WRAP)
 #if !defined(__FSTD_HDRS_CXX_WRAP)

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === grep.c : 2024 ===                                                     |
+|                                                                             |
+|    Unix command implementation - search pattern in file          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>

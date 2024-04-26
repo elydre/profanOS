@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === type.h : 2024 ===                                                     |
+|                                                                             |
+|    Type definitions form missing headers and kernel types        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef TYPE_H
 #define TYPE_H
 

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === idt.c : 2024 ===                                                      |
+|                                                                             |
+|    Kernel IDT (Interrupt Descriptor Table)                       .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <cpu/idt.h>
 #include <ktype.h>
 

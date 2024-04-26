@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === watfunc.c : 2024 ===                                                  |
+|                                                                             |
+|    Kernel syscall handler                                        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <drivers/keyboard.h>
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>

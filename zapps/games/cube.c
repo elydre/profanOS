@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === cube.c : 2024 ===                                                     |
+|                                                                             |
+|    Good performance 3D cube rotation                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 // @LINK SHARED: libvgui, libpm
 
 #include <profan/syscall.h>

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === link_kernel.ld : 2024 ===                                             |
+|                                                                             |
+|    Linker script for the kernel                                  .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 ENTRY(loader)                       /* entry label name */
 
 kernel_start = .;

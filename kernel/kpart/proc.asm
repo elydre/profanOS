@@ -1,3 +1,14 @@
+;*****************************************************************************;
+;   === proc.asm : 2024 ===                                                   ;
+;                                                                             ;
+;    Process switch and fork entry                                 .pi0iq.    ;
+;                                                                 d"  . `'b   ;
+;    This file is part of profanOS and is released under          q. /|\  "   ;
+;    the terms of the GNU General Public License                   `// \\     ;
+;                                                                  //   \\    ;
+;   === elydre : https://github.com/elydre/profanOS ===         #######  \\   ;
+;*****************************************************************************;
+
 global process_asm_switch
 global process_fork
 

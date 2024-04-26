@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === rtc.c : 2024 ===                                                      |
+|                                                                             |
+|    Kernel Real Time Clock driver                                 .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <drivers/rtc.h>
 #include <cpu/ports.h>
 

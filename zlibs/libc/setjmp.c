@@ -1,7 +1,18 @@
+/*****************************************************************************\
+|   === setjmp.c : 2024 ===                                                   |
+|                                                                             |
+|    Implementation of setjmp functions from libC                  .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 typedef int jmp_buf[6];
 
 int setjmp(jmp_buf var) {
-    asm (
+    asm volatile (
         "mov    8(%ebp), %eax   \n" // get pointer to jmp_buf, passed as argument on stack
         "mov    %ebx, (%eax)    \n" // jmp_buf[0] = ebx
         "mov    %esi, 4(%eax)   \n" // jmp_buf[1] = esi
@@ -18,7 +29,7 @@ int setjmp(jmp_buf var) {
 }
 
 void longjmp(jmp_buf var, int m) {
-    asm (
+    asm volatile (
         "mov    8(%ebp),%edx    \n" // get pointer to jmp_buf, passed as argument 1 on stack
         "mov    12(%ebp),%eax   \n" // get int val in eax, passed as argument 2 on stack
         "test   %eax,%eax       \n" // is int val == 0?

@@ -1,9 +1,20 @@
+/*****************************************************************************\
+|   === ctr_rw.c : 2024 ===                                                   |
+|                                                                             |
+|    Kernel container read/write functions                         .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <kernel/butterfly.h>
 #include <minilib.h>
 #include <system.h>
 
-
-int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t offset, uint32_t size, int is_read, uint8_t *alloc_buf) {
+int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t offset,
+        uint32_t size, int is_read, uint8_t *alloc_buf) {
     vdisk_t *vdisk;
 
     // check if offset is valid
@@ -43,7 +54,8 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     return size + offset - 2;
 }
 
-int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t offset, int size, int is_read) {
+int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf,
+        uint32_t offset, int size, int is_read) {
     sid_t next_loca_sid;
     vdisk_t *vdisk;
 
@@ -78,33 +90,32 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
 
         if (index + LINKS_IN_LOCA * BYTE_IN_CORE < 0) {
             index += LINKS_IN_LOCA * BYTE_IN_CORE;
-        } else {
-            for (int i = 0; i < LINKS_IN_LOCA; i++) {
-                if (index >= size) {
-                    free(alloc_buf);
-                    free(data);
-                    return 0;
-                }
-                if (index + BYTE_IN_CORE <= 0) {
-                    index += BYTE_IN_CORE;
-                    continue;
-                }
-                sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
-                if (IS_NULL_SID(core_sid)) {
-                    kprintf("no more core, but still %d bytes to %s\n", size - max(index, 0) , is_read ? "read" : "write");
-                    free(alloc_buf);
-                    free(data);
-                    return 1;
-                }
-                tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index), size - max(index, 0), is_read, alloc_buf);
-                if (tmp == -1) {
-                    kprintf("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
-                    free(alloc_buf);
-                    free(data);
-                    return 1;
-                }
-                index += tmp;
+        } else for (int i = 0; i < LINKS_IN_LOCA; i++) {
+            if (index >= size) {
+                free(alloc_buf);
+                free(data);
+                return 0;
             }
+            if (index + BYTE_IN_CORE <= 0) {
+                index += BYTE_IN_CORE;
+                continue;
+            }
+            sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
+            if (IS_NULL_SID(core_sid)) {
+                kprintf("no more core, but still %d bytes to %s\n", size - max(index, 0), is_read ? "read" : "write");
+                free(alloc_buf);
+                free(data);
+                return 1;
+            }
+            tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
+                    size - max(index, 0), is_read, alloc_buf);
+            if (tmp == -1) {
+                kprintf("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
+                free(alloc_buf);
+                free(data);
+                return 1;
+            }
+            index += tmp;
         }
 
         next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));

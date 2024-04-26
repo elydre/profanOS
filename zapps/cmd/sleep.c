@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === sleep.c : 2024 ===                                                    |
+|                                                                             |
+|    Unix command implementation - sleep for a specified time      .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <profan/syscall.h>
 #include <stdlib.h>
 #include <unistd.h>

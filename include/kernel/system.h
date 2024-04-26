@@ -1,9 +1,20 @@
+/*****************************************************************************\
+|   === system.h : 2024 ===                                                   |
+|                                                                             |
+|    Kernel main header                                            .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
 // build settings
 
-#define KERNEL_VERSION  "1.1.8"
+#define KERNEL_VERSION  "1.1.8b"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     20          // max process count

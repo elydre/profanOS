@@ -1,4 +1,13 @@
-; profanOS kernel entry with multiboot support
+;*****************************************************************************;
+;   === entry.asm : 2024 ===                                                  ;
+;                                                                             ;
+;    Kernel entry point with multiboot support                     .pi0iq.    ;
+;                                                                 d"  . `'b   ;
+;    This file is part of profanOS and is released under          q. /|\  "   ;
+;    the terms of the GNU General Public License                   `// \\     ;
+;                                                                  //   \\    ;
+;   === elydre : https://github.com/elydre/profanOS ===         #######  \\   ;
+;*****************************************************************************;
 
 [extern kernel_main]
 [global loader]

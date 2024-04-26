@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === multiboot.c : 2024 ===                                                |
+|                                                                             |
+|    Kernel Multiboot data handler                                 .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <kernel/multiboot.h>
 
 /* a part of the multiboot data can be 0 if the

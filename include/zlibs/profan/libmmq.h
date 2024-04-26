@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === libmmq.h : 2024 ===                                                   |
+|                                                                             |
+|    Kernel module header for minimalistic libC implementation     .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef LIBMMQ_ID
 #define LIBMMQ_ID 1001
 
