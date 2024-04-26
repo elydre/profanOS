@@ -1,4 +1,4 @@
-name: build iso and push
+name: publish
 
 on:
   push:
