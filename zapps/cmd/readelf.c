@@ -496,8 +496,8 @@ int display_symbol_table(void) {
 
     // prepare string tables
     str_sh = sh_base + sym_sh->sh_link;
-    char *str_table = (char*) (g_buf + str_sh->sh_offset);
-    char *shstr_table = (char*) (g_buf + shstr_sh->sh_offset);
+    char *str_table = (char *) (g_buf + str_sh->sh_offset);
+    char *shstr_table = (char *) (g_buf + shstr_sh->sh_offset);
 
     // print symbol table header
     const int symbol_cnt = sym_sh->sh_size / sizeof(Elf32_Sym);
@@ -510,7 +510,7 @@ int display_symbol_table(void) {
     static char *symbol_binds[STB_NUM] = {"LOCAL", "GLOBAL", "WEAK"};
     static char *symbol_vis[] = {"DEFAULT", "INTERNAL", "HIDDEN", "PROTECTED"};
 
-    for (int i = 0; i < symbol_cnt; i ++) {
+    for (int i = 0; i < symbol_cnt; i++) {
         symbol = symbol_table + i;
 
         unsigned int value = symbol->st_value;
@@ -519,6 +519,7 @@ int display_symbol_table(void) {
         char *bind = symbol_binds[ELF32_ST_BIND(symbol->st_info)];
         char *visibility = symbol_vis[ELF32_ST_VISIBILITY(symbol->st_other)];
         char *index = "";
+
         {
             unsigned int idx = symbol->st_shndx;
             if (idx >= SHN_LORESERVE && idx <= SHN_HIRESERVE) {
@@ -538,6 +539,7 @@ int display_symbol_table(void) {
                 index = buf;
             }
         }
+
         const char *name = str_table + symbol->st_name;
 
         printf("%6d: %08d %5d %-7s %-6s %-8s %3s %s\n",
