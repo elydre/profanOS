@@ -126,10 +126,17 @@ def check_for_header(lines, path):
 
     return lines
 
+def detecte_brace(line, prev_line, path, l):
+    if line.strip() == "{" and prev_line is not None and not prev_line.strip() == "":
+        if (len(line) - len(line.lstrip())) < (len(prev_line) - len(prev_line.lstrip())):
+            return
+        print_warning(path, l, "brace should not be on a new line")
+
 # scan file and remove trailing whitespace
 def scan_file(path):
     analyzed["files"] += 1
     contant = ""
+    last_line = None
     with open(path) as f:
         lines = f.readlines()
         if os.path.splitext(path)[1] in file_with_header:
@@ -155,11 +162,14 @@ def scan_file(path):
                     print_note(path, l, "[fixed] ends with whitespace")
                     line = line.rstrip()
 
+            detecte_brace(line, last_line, path, l)
+
             # warning if line is too long
             if len(line) > 120 and not os.path.splitext(path)[1] in ignore_line_too_long:
                 print_warning(path, l, "line is too long")
 
             contant += line + "\n"
+            last_line = line
 
     with open(path, "w") as f:
         f.write(contant)
