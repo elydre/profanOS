@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == vesa.h ==                                     .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel grub VESA driver header                  q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === vesa.h : 2024 ===                                                     |
+|                                                                             |
+|    Kernel grub VESA driver header                                .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef VESA_H
 #define VESA_H

@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == process.h ==                                  .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel process manager v2.1 header              q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === process.h : 2024 ===                                                  |
+|                                                                             |
+|    Kernel process manager v2.1 header                            .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef TASK_H
 #define TASK_H

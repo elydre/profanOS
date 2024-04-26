@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == keyboard.h ==                                 .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Keyboard driver header                   q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === keyboard.h : 2024 ===                                                 |
+|                                                                             |
+|    Kernel Keyboard driver header                                 .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef KEYBOARD_H
 #define KEYBOARD_H

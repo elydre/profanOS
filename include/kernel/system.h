@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == system.h ==                                   .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel main header                              q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === system.h : 2024 ===                                                   |
+|                                                                             |
+|    Kernel main header                                            .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef SYSTEM_H
 #define SYSTEM_H

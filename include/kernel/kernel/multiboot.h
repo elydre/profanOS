@@ -1,11 +1,13 @@
-/****** This file is part of profanOS **************************\
-|   == multiboot.h ==                                .pi0iq.    |
-|                                                   d"  . `'b   |
-|   Kernel Multiboot header                         q. /|\  u   |
-|                                                    `// \\     |
-|                                                    //   \\    |
-|   [ github.com/elydre/profanOS - GPLv3 ]          //     \\   |
-\***************************************************************/
+/*****************************************************************************\
+|   === multiboot.h : 2024 ===                                                |
+|                                                                             |
+|    Kernel Multiboot header                                       .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 #ifndef MULTIBOOT_H
 #define MULTIBOOT_H
