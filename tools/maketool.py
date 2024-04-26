@@ -54,7 +54,7 @@ COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
 
-LINK_SHARED_LINE = 12
+LD_LINE_MAX = 12
 
 for e in ZHEADERS:
     if os.path.exists(e):
@@ -231,10 +231,12 @@ def build_app_lib():
         print_info_line(name)
         required_libs = []
         with open(name, "r") as f:
-            for _ in range(LINK_SHARED_LINE):
+            for _ in range(LD_LINE_MAX):
                 first_line = f.readline()
-            if first_line.startswith("// @LINK SHARED:"):
+                if not first_line.startswith("// @LINK SHARED:"):
+                    continue
                 required_libs = first_line.split(":")[1].replace("\n", "").replace(",", " ").split()
+                break
 
         for lib in required_libs:
             if lib not in liblist:
