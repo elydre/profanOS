@@ -23,7 +23,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.11 rev 16"
+#define OLV_VERSION "0.12 rev 1"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -275,15 +275,28 @@ int is_valid_name(char *name) {
  *                            *
 ********************************/
 
-int get_variable_index(char *name) {
-    for (int i = 0; i < MAX_VARIABLES; i++) {
-        if (variables[i].name == NULL) {
-            break;
+#define GETVAL_GNO    0
+#define GETVAL_GALLOW 1
+#define GETVAL_GONLY  2
+
+int get_variable_index(char *name, int allow_global) {
+    if (allow_global != GETVAL_GONLY)
+        for (int i = 0; i < MAX_VARIABLES; i++) {
+            if (variables[i].name == NULL)
+                break;
+            if (strcmp(variables[i].name, name) == 0 &&
+                (variables[i].level == g_current_level)
+            ) return i;
         }
 
-        if (strcmp(variables[i].name, name) == 0
-            && (variables[i].level == g_current_level
-            || variables[i].level == 0)
+    if (allow_global == GETVAL_GNO)
+        return -1;
+
+    for (int i = 0; i < MAX_VARIABLES; i++) {
+        if (variables[i].name == NULL)
+            break;
+        if (strcmp(variables[i].name, name) == 0 &&
+            (variables[i].level == -1)
         ) return i;
     }
 
@@ -291,7 +304,7 @@ int get_variable_index(char *name) {
 }
 
 char *get_variable(char *name) {
-    int index = get_variable_index(name);
+    int index = get_variable_index(name, GETVAL_GALLOW);
 
     if (index != -1) {
         return variables[index].value;
@@ -304,14 +317,15 @@ char *get_variable(char *name) {
     return NULL;
 }
 
-#define set_variable(name, value) set_variable_withlen(name, value, -1)
+#define set_variable(name, value) set_variable_withlen(name, value, -1, 0)
+#define set_variable_global(name, value) set_variable_withlen(name, value, -1, 1)
 
-int set_variable_withlen(char *name, char *value, int str_len) {
+int set_variable_withlen(char *name, char *value, int str_len, int is_global) {
     char *value_copy = NULL;
+    int index = get_variable_index(name, is_global ? GETVAL_GONLY : GETVAL_GNO);
 
-    int index = get_variable_index(name);
-
-    if (str_len == -1) str_len = strlen(value);
+    if (str_len == -1)
+        str_len = strlen(value);
 
     if ((index != -1 && !variables[index].is_sync) || index == -1) {
         value_copy = malloc(str_len + 1);
@@ -320,15 +334,15 @@ int set_variable_withlen(char *name, char *value, int str_len) {
     } else value_copy = NULL;
 
     if (index != -1) {
-        if (variables[index].is_sync) {
-            strncpy(variables[index].value, value, min(str_len, variables[index].is_sync));
-            variables[index].value[min(str_len, variables[index].is_sync)] = '\0';
-        } else {
-            if (variables[index].value) {
+        if (!variables[index].is_sync) {
+            if (variables[index].value)
                 free(variables[index].value);
-            }
             variables[index].value = value_copy;
+            return 0;
         }
+        int len = min(str_len, variables[index].is_sync);
+        strncpy(variables[index].value, value, len);
+        variables[index].value[len] = '\0';
         return 0;
     }
 
@@ -338,24 +352,26 @@ int set_variable_withlen(char *name, char *value, int str_len) {
             strcpy(name_copy, name);
             variables[i].name = name_copy;
             variables[i].value = value_copy;
-            variables[i].level = g_current_level;
+            variables[i].level = is_global ? -1 : g_current_level;
             variables[i].is_sync = 0;
             return 0;
         }
     }
+
+    free(value_copy);
 
     raise_error(NULL, "Cannot set value of '%s', more than %d variables", name, MAX_VARIABLES);
     return 1;
 }
 
 int set_sync_variable(char *name, char *value, int max_len) {
-    int index = get_variable_index(name);
+    int index = get_variable_index(name, GETVAL_GALLOW);
 
     if (index != -1) {
         if (variables[index].value && (!variables[index].is_sync)) {
             free(variables[index].value);
         }
-        variables[index].level = variables[index].level ? g_current_level : 0;
+        variables[index].level = -1;
         variables[index].value = value;
         variables[index].is_sync = max_len;
         return 0;
@@ -365,7 +381,7 @@ int set_sync_variable(char *name, char *value, int max_len) {
         if (variables[i].name == NULL) {
             variables[i].name = name;
             variables[i].value = value;
-            variables[i].level = g_current_level;
+            variables[i].level = -1;
             variables[i].is_sync = max_len;
             return 0;
         }
@@ -375,13 +391,13 @@ int set_sync_variable(char *name, char *value, int max_len) {
     return 1;
 }
 
-int does_variable_exist(char *name) {
-    return (get_variable_index(name) != -1) ||
+int does_variable_exist(char *name, int allow_global) {
+    return (get_variable_index(name, allow_global ? GETVAL_GONLY : GETVAL_GNO) != -1) ||
         (USE_ENVVARS && getenv(name));
 }
 
-int del_variable(char *name) {
-    int index = get_variable_index(name);
+int del_variable(char *name, int allow_global) {
+    int index = get_variable_index(name, allow_global ? GETVAL_GONLY : GETVAL_GNO);
 
     if (index != -1) {
         if (variables[index].value && (!variables[index].is_sync)) {
@@ -1463,25 +1479,43 @@ char *if_del(char **input) {
     }
 
     if (argc == 1 && input[0][0] != '-') {
-        del_variable(input[0]);
+        del_variable(input[0], 0);
         return NULL;
     }
 
-    if (argc == 2) {
-        if (strcmp(input[0], "-v") == 0) {
-            del_variable(input[1]);
-            return NULL;
-        } else if (strcmp(input[0], "-f") == 0) {
-            del_function(input[1]);
-            return NULL;
-        } else if (strcmp(input[0], "-p") == 0) {
-            del_pseudo(input[1]);
-            return NULL;
+    if (argc == 2 && input[0][0] == '-') {
+        switch (input[0][1]) {
+            case 'v':
+                del_variable(input[1], 0);
+                return NULL;
+            case 'f':
+                del_function(input[1]);
+                return NULL;
+            case 'p':
+                del_pseudo(input[1]);
+                return NULL;
+            case 'g':
+                del_variable(input[1], 1);
+                return NULL;
+            case 'e':
+                unsetenv(input[1]);
+                return NULL;
+            case 'h':
+                puts("Usage: del [arg] <name>\n"
+                    "  -v   variable (default)\n"
+                    "  -f   function\n"
+                    "  -p   pseudo\n"
+                    "  -g   global)\n"
+                    "  -e   environment"
+                );
+                return NULL;
+            default:
+                break;
         }
     }
 
     raise_error("del", "Usage: del [arg] <name>");
-    puts("  arg: -v (variable, default), -f (function), -p (pseudo)");
+    fputs("Try 'del -h' for more information\n", stderr);
 
     return ERROR_CODE;
 }
@@ -1822,25 +1856,15 @@ char *if_global(char **input) {
     // get name
     char *name = input[0];
 
-    // get value
-    char *value = input[1];
-
     if (!is_valid_name(name)) {
         raise_error("global", "Invalid name '%s'", name);
         return ERROR_CODE;
     }
 
-    // copy the current level
-    int old_level = g_current_level;
-    g_current_level = 0;
-
     // set variable
-    if (set_variable(name, value)) {
+    if (set_variable_global(name, input[1])) {
         return ERROR_CODE;
     }
-
-    // restore the current level
-    g_current_level = old_level;
 
     return NULL;
 }
@@ -3333,8 +3357,7 @@ int execute_for(int line_count, char **lines, char **result) {
         return -1;
     }
 
-    int var_exist_before = does_variable_exist(var_name);
-
+    int var_exist_before = does_variable_exist(var_name, 0);
 
     int var_len = 0;
     int string_index = 0;
@@ -3353,7 +3376,7 @@ int execute_for(int line_count, char **lines, char **result) {
             }
         }
 
-        set_variable_withlen(var_name, string + string_index, var_len);
+        set_variable_withlen(var_name, string + string_index, var_len, 0);
 
         string_index += var_len;
 
@@ -3379,7 +3402,7 @@ int execute_for(int line_count, char **lines, char **result) {
 
     // delete variable
     if (!var_exist_before) {
-        del_variable(var_name);
+        del_variable(var_name, 0);
     }
 
     if (for_line != lines[0]) {
@@ -4728,9 +4751,9 @@ int main(int argc, char **argv) {
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
     bin_names = load_bin_names();
 
-    set_variable("version", OLV_VERSION);
-    set_variable("profan", PROFANBUILD ? "1" : "0");
-    set_variable("spi", "0");
+    set_variable_global("version", OLV_VERSION);
+    set_variable_global("profan", PROFANBUILD ? "1" : "0");
+    set_variable_global("spi", "0");
 
     set_sync_variable("path", g_current_directory, MAX_PATH_SIZE);
     set_sync_variable("exit", g_exit_code, 4);

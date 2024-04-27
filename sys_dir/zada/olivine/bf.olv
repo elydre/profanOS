@@ -65,9 +65,9 @@ FUNC bf_set_me
 
     IF !(eval !0 > !(eval !bf_mem_len - 1))
         FOR i !(range !(eval !bf_mem_len - 1) !0)
-            set bf_mem !(eval !bf_mem . 00)
+            global bf_mem !(eval !bf_mem . 00)
         END
-        set bf_mem_len !(eval !0 + 1)
+        global bf_mem_len !(eval !0 + 1)
     END
 
     set pos !(eval !0 * 2)
@@ -90,7 +90,7 @@ FUNC bf_set_me
         END
     END
 
-    set bf_mem !new
+    global bf_mem !new
 END
 
 FUNC bf_get_me
@@ -130,13 +130,13 @@ FUNC bf_execute
         set c !(eval !0 @ !index)
 
         IF !(eval !c = 0)
-            set bf_mem_ptr !(eval !bf_mem_ptr + 1)
+            global bf_mem_ptr !(eval !bf_mem_ptr + 1)
             set index !(eval !index + 1)
             CONTINUE
         END
 
         IF !(eval !c = 1)
-            set bf_mem_ptr !(eval !bf_mem_ptr - 1)
+            global bf_mem_ptr !(eval !bf_mem_ptr - 1)
             set index !(eval !index + 1)
             CONTINUE
         END
@@ -160,7 +160,7 @@ FUNC bf_execute
         END
 
         IF !(eval !c = 5)
-            set bf_mem !(eval !bf_mem . !(read))
+            global bf_mem !(eval !bf_mem . !(read))
             set index !(eval !index + 1)
             CONTINUE
         END
@@ -202,6 +202,6 @@ del -f hex_to_nb
 del -f bf_set_me
 del -f bf_get_me
 del -f bf_execute
-del bf_mem
-del bf_mem_len
-del bf_mem_ptr
+del -g bf_mem
+del -g bf_mem_len
+del -g bf_mem_ptr

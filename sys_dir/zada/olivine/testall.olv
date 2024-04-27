@@ -132,19 +132,30 @@ del -f testargc
 del -f testargv
 
 FUNC testglobal
-    global var 42
-    set var 43
+    global var 1
+    set v2 1
+    set var 2
 END
 
 testglobal
 
-IF !(eval !var = 43)
+global var 0
+global v2  0
+
+IF !(eval !var = 1)
     echo global variable passed
 END; ELSE
     echo global variable failed
 END
 
-del var
+IF !(eval !v2 = 0)
+    echo local overload passed
+END; ELSE
+    echo local overload failed
+END
+
+del -g var
+del -g v2
 del -f testglobal
 
 global l0 66
@@ -171,7 +182,7 @@ END; ELSE
     echo local variable failed
 END
 
-del l0
+del -g l0
 del -f testlocalsub
 del -f testlocal
 
