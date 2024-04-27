@@ -23,7 +23,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.12 rev 1"
+#define OLV_VERSION "0.12 rev 2"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
@@ -56,7 +56,9 @@
   // profanOS config
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #else
-  #include <sys/wait.h>
+  #include <sys/wait.h> // waitpid
+  #include <sys/time.h> // if_ticks
+  #include <fcntl.h>    // if_fsize
   #include <stdint.h>
 
   // unix config
@@ -1347,6 +1349,9 @@ char *if_cd(char **input) {
         return ERROR_CODE;
     }
 
+    char *dir;
+
+    #if PROFANBUILD
     // change to default if no arguments
     if (argc == 0) {
         strcpy(g_current_directory, CD_DEFAULT);
@@ -1355,10 +1360,6 @@ char *if_cd(char **input) {
         return NULL;
     }
 
-    // get dir
-    char *dir;
-
-    #if PROFANBUILD
     // check if dir exists
     dir = assemble_path(g_current_directory, input[0]);
     // simplify path
@@ -1371,7 +1372,22 @@ char *if_cd(char **input) {
         return ERROR_CODE;
     }
     #else
-    dir = strdup(input[0]);
+
+    if (argc == 0) {
+        dir = getenv("HOME");
+        if (dir == NULL) {
+            raise_error("cd", "HOME environment variable not set");
+            return ERROR_CODE;
+        }
+    } else {
+        dir = input[0];
+    }
+
+    if (chdir(dir) != 0) {
+        raise_error("cd", "Directory '%s' does not exist", dir);
+        return ERROR_CODE;
+    }
+
     #endif
 
     // change directory
@@ -1380,7 +1396,9 @@ char *if_cd(char **input) {
         setenv("PWD", g_current_directory, 1);
     }
 
+    #if PROFANBUILD
     free(dir);
+    #endif
 
     return NULL;
 }
@@ -1806,7 +1824,6 @@ char *if_export(char **input) {
 char *if_fsize(char **input) {
     int file_size = 0;
 
-    #if PROFANBUILD
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -1816,6 +1833,7 @@ char *if_fsize(char **input) {
         return ERROR_CODE;
     }
 
+    #if PROFANBUILD
     // get path
     char *path = assemble_path(g_current_directory, input[0]);
 
@@ -1830,7 +1848,15 @@ char *if_fsize(char **input) {
 
     free(path);
     #else
-    UNUSED(input);
+
+    int fd = open(input[0], O_RDONLY);
+    if (fd == -1) {
+        file_size = -1;
+    } else {
+        file_size = lseek(fd, 0, SEEK_END);
+        close(fd);
+    }
+
     #endif
 
     char *res = malloc(sizeof(char) * 12);
@@ -2252,7 +2278,11 @@ char *if_ticks(char **input) {
     #if PROFANBUILD
     local_itoa(c_timer_get_ms(), output);
     #else
-    strcpy(output, "0");
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    local_itoa(tv.tv_sec * 1000 + tv.tv_usec / 1000, output);
+
     #endif
 
     return output;
