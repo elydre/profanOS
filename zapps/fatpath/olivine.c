@@ -9,16 +9,18 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <unistd.h>
 #include <stdio.h>
 
 #define STRING_CHAR '\''
 
-#define ENABLE_DEBUG  0  // print function calls
 #define PROFANBUILD   1  // enable profan features
+#define UNIXBUILD     0  // enable unix features
+
+#define ENABLE_DEBUG  0  // print function calls
 #define USE_ENVVARS   1  // enable environment variables
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
@@ -41,27 +43,27 @@
  *                           *
 ******************************/
 
-#ifdef NoProfan
-  #ifdef PROFANBUILD
-    #undef PROFANBUILD
-  #endif
+#ifdef olvUnix
+  #undef PROFANBUILD
+  #undef UNIXBUILD
   #define PROFANBUILD 0
+  #define UNIXBUILD   1
 #endif
 
 #if PROFANBUILD
   #include <profan/syscall.h>
   #include <profan/filesys.h>
   #include <profan.h>
+  #include <unistd.h>
 
-  // profanOS config
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
-#else
+#elif UNIXBUILD
   #include <sys/wait.h> // waitpid
   #include <sys/time.h> // if_ticks
-  #include <fcntl.h>    // if_fsize
-  #include <stdint.h>
+  #include <unistd.h>
 
-  // unix config
+  #define DEFAULT_PROMPT "\e[0molivine [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
+#else
   #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
 
@@ -69,6 +71,10 @@
 
 #define OTHER_PROMPT "> "
 #define CD_DEFAULT   "/"
+
+#if PROFANBUILD && UNIXBUILD
+  #error "Cannot build with both PROFANBUILD and MINIBUILD"
+#endif
 
 #define ERROR_CODE ((void *) 1)
 
@@ -559,6 +565,7 @@ int in_bin_names(char *name) {
 }
 
 char *get_bin_path(char *name) {
+    #if BIN_AS_PSEUDO && (PROFANBUILD || UNIXBUILD)
     char *path = getenv("PATH");
     if (path == NULL) {
         return NULL;
@@ -604,6 +611,9 @@ char *get_bin_path(char *name) {
     }
 
     free(path_copy);
+    #else
+    UNUSED(name);
+    #endif
     return NULL;
 }
 
@@ -1340,6 +1350,7 @@ char *if_find(char **input) {
 **************************************/
 
 char *if_cd(char **input) {
+    #if PROFANBUILD || UNIXBUILD
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -1371,7 +1382,7 @@ char *if_cd(char **input) {
         free(dir);
         return ERROR_CODE;
     }
-    #else
+    #elif UNIXBUILD
 
     if (argc == 0) {
         dir = getenv("HOME");
@@ -1387,7 +1398,6 @@ char *if_cd(char **input) {
         raise_error("cd", "Directory '%s' does not exist", dir);
         return ERROR_CODE;
     }
-
     #endif
 
     // change directory
@@ -1401,6 +1411,11 @@ char *if_cd(char **input) {
     #endif
 
     return NULL;
+    #else
+    UNUSED(input);
+    raise_error("cd", "Not supported in this build");
+    return ERROR_CODE;
+    #endif
 }
 
 char *if_debug(char **input) {
@@ -1539,6 +1554,7 @@ char *if_del(char **input) {
 }
 
 char *if_dot(char **input) {
+    #if PROFANBUILD || UNIXBUILD
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -1750,6 +1766,11 @@ char *if_dot(char **input) {
     free(argv);
     free(tmp);
     return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
+    #else
+    UNUSED(input);
+    raise_error("dot", "Not supported in this build");
+    return ERROR_CODE;
+    #endif
 }
 
 char *if_exec(char **input) {
@@ -1849,12 +1870,13 @@ char *if_fsize(char **input) {
     free(path);
     #else
 
-    int fd = open(input[0], O_RDONLY);
-    if (fd == -1) {
+    FILE *file = fopen(input[0], "r");
+    if (file == NULL) {
         file_size = -1;
     } else {
-        file_size = lseek(fd, 0, SEEK_END);
-        close(fd);
+        fseek(file, 0, SEEK_END);
+        file_size = ftell(file);
+        fclose(file);
     }
 
     #endif
@@ -2273,16 +2295,16 @@ char *if_ticks(char **input) {
         return ERROR_CODE;
     }
 
-    char *output = malloc(11 * sizeof(char));
+    char *output = malloc(12 * sizeof(char));
 
     #if PROFANBUILD
     local_itoa(c_timer_get_ms(), output);
-    #else
-
+    #elif UNIXBUILD
     struct timeval tv;
     gettimeofday(&tv, NULL);
     local_itoa(tv.tv_sec * 1000 + tv.tv_usec / 1000, output);
-
+    #else
+    local_itoa(0, output);
     #endif
 
     return output;
@@ -2527,6 +2549,7 @@ void free_functions(void) {
 char *execute_line(char *full_line);
 
 char *pipe_processor(char **input) {
+    #if PROFANBUILD || UNIXBUILD
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -2624,6 +2647,11 @@ char *pipe_processor(char **input) {
     close(old_fds[1]);
 
     return ret;
+    #else
+    UNUSED(input);
+    raise_error("Pipe Processor", "Not supported in this build");
+    return ERROR_CODE;
+    #endif
 }
 
 /**************************
@@ -4195,11 +4223,10 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     #if PROFANBUILD
     char *term = getenv("TERM");
     if (term && strcmp(term, "/dev/panda") && strcmp(term, "/dev/kterm")) {
-        if (!fgets(buffer, size, stdin)) {
-            puts("");
-            exit(0);
-        }
-        return -1;
+        if (fgets(buffer, size, stdin))
+            return -1;
+        puts("");
+        return -2;
     }
 
     history_end++;
@@ -4411,12 +4438,11 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     UNUSED(history_end);
     UNUSED(history);
 
-    if (!fgets(buffer, size, stdin)) {
-        puts("");
-        exit(0);
-    }
+    if (fgets(buffer, size, stdin))
+        return -1;
+    puts("");
+    return -2;
 
-    return -1;
     #endif
 }
 
@@ -4477,9 +4503,9 @@ void start_shell(void) {
         do {
             display_prompt();
             cursor_pos = local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
-        } while (cursor_pos != -1);
+        } while (cursor_pos >= 0);
 
-        if (strcmp(line, "shellexit") == 0) {
+        if (cursor_pos == -2 || strcmp(line, "shellexit") == 0) {
             puts("Exiting olivine shell, bye!");
             break;
         }
