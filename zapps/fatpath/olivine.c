@@ -15,22 +15,23 @@
 #include <string.h>
 #include <stdio.h>
 
-#define STRING_CHAR '\''
+#define OLV_VERSION "0.12 rev 4"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
 
-#define ENABLE_DEBUG  0  // print function calls
-#define USE_ENVVARS   1  // enable environment variables
-#define STOP_ON_ERROR 0  // stop after first error
+#define USE_READLINE  1  // readline for input (unix only)
 #define BIN_AS_PSEUDO 1  // check for binaries in path
+#define USE_ENVVARS   1  // enable environment variables
+#define ENABLE_DEBUG  0  // print function calls
+#define STOP_ON_ERROR 0  // stop after first error
 
-#define OLV_VERSION "0.12 rev 3"
+#define STRING_CHAR '\''
 
 #define HISTORY_SIZE  100
-#define INPUT_SIZE    1024
+#define INPUT_SIZE    2048
 #define PROMPT_SIZE   100
-#define MAX_PATH_SIZE 256
+#define MAX_PATH_SIZE 512
 #define MAX_SUGGESTS  10
 
 #define MAX_VARIABLES 100
@@ -67,6 +68,16 @@
   #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
 #endif
 
+#if !UNIXBUILD
+  #undef USE_READLINE
+  #define USE_READLINE 0
+#endif
+
+#if USE_READLINE
+  #include <readline/readline.h>
+  #include <readline/history.h>
+#endif
+
 #define DEBUG_COLOR  "\e[90m"
 
 #define OTHER_PROMPT "> "
@@ -74,6 +85,10 @@
 
 #if PROFANBUILD && UNIXBUILD
   #error "Cannot build with both PROFANBUILD and MINIBUILD"
+#endif
+
+#if __CHAR_BIT__ != 8
+  #error "olivine requires 8-bit bytes"
 #endif
 
 #define ERROR_CODE ((void *) 1)
@@ -962,7 +977,7 @@ char *calculate_integers(int left, int right, char *op) {
     }
 
     // convert back to string
-    char *ret = malloc(sizeof(char) * 12);
+    char *ret = malloc(12);
     local_itoa(result, ret);
     return ret;
 }
@@ -981,11 +996,11 @@ char *calculate_strings(char *left, char *right, char *op) {
         strcpy(res, left);
         strcat(res, right);
     } else if (op[0] == '=') {
-        res = malloc(sizeof(char) * 2);
+        res = malloc(2);
         res[0] = (strcmp(left, right) == 0) + '0';
         res[1] = '\0';
     } else if (op[0] == '~') {
-        res = malloc(sizeof(char) * 2);
+        res = malloc(2);
         res[0] = (strcmp(left, right) != 0) + '0';
         res[1] = '\0';
     } else if (op[0] == '*') {
@@ -993,7 +1008,7 @@ char *calculate_strings(char *left, char *right, char *op) {
             raise_error("eval", "Cannot multiply string by string");
             return NULL;
         }
-        res = malloc(sizeof(char) * (strlen(tmp) + 1) * nb + 1);
+        res = malloc((strlen(tmp) + 1) * nb + 1);
         res[0] = '\0';
         for (int i = 0; i < nb; i++) {
             strcat(res, tmp);
@@ -1007,7 +1022,7 @@ char *calculate_strings(char *left, char *right, char *op) {
             raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
             return NULL;
         }
-        res = malloc(sizeof(char) * 2);
+        res = malloc(2);
         res[0] = tmp[nb];
         res[1] = '\0';
     } else {
@@ -1127,7 +1142,7 @@ char *if_eval(char **input) {
         required_size += strlen(input[i]);
     }
 
-    char *joined_input = malloc(required_size * sizeof(char));
+    char *joined_input = malloc(required_size);
     joined_input[0] = '\0';
     for (int i = 0; input[i] != NULL; i++) {
         strcat(joined_input, input[i]);
@@ -1144,13 +1159,13 @@ char *if_eval(char **input) {
             if (joined_input[i] != ops[j]) continue;
 
             if (old_cut != i) {
-                elms[len] = malloc(sizeof(char) * (i - old_cut + 1));
+                elms[len] = malloc((i - old_cut + 1));
                 memcpy(elms[len], joined_input + old_cut, i - old_cut);
                 elms[len][i - old_cut] = '\0';
                 len++;
             }
 
-            elms[len] = malloc(sizeof(char) * 2);
+            elms[len] = malloc(2);
             elms[len][0] = joined_input[i];
             elms[len][1] = '\0';
             len++;
@@ -1161,7 +1176,7 @@ char *if_eval(char **input) {
     }
 
     if (old_cut != str_len) {
-        elms[len] = malloc(sizeof(char) * (str_len - old_cut + 1));
+        elms[len] = malloc(str_len - old_cut + 1);
         memcpy(elms[len], joined_input + old_cut, str_len - old_cut);
         elms[len][str_len - old_cut] = '\0';
         len++;
@@ -1215,7 +1230,7 @@ char *find_recursive(char *path, uint8_t required_type, char *ext, int recursive
         return NULL;
     }
 
-    char *output = malloc(1 * sizeof(char));
+    char *output = malloc(1);
     output[0] = '\0';
 
     char *tmp, *tmp_path;
@@ -1755,7 +1770,7 @@ char *if_dot(char **input) {
     }
     #endif
 
-    char *tmp = malloc(10 * sizeof(char));
+    char *tmp = malloc(12);
 
     local_itoa(pid, tmp);
     set_variable("spi", tmp);
@@ -1881,7 +1896,7 @@ char *if_fsize(char **input) {
 
     #endif
 
-    char *res = malloc(sizeof(char) * 12);
+    char *res = malloc(12);
     if (file_size == -1) {
         strcpy(res, "null");
     } else {
@@ -1932,7 +1947,7 @@ char *if_name(char **input) {
     }
 
     int len = strlen(input[0]);
-    char *name = malloc((len + 1) * sizeof(char));
+    char *name = malloc(len + 1);
 
     for (int i = len - 1; i >= 0; i--) {
         if (input[0][i] == '/') {
@@ -1949,7 +1964,7 @@ char *if_name(char **input) {
         }
     }
 
-    char *output = malloc((strlen(name) + 3) * sizeof(char));
+    char *output = malloc((strlen(name) + 3));
     sprintf(output, "'%s'", name);
     free(name);
 
@@ -2065,7 +2080,7 @@ char *if_range(char **input) {
     }
 
     char *output = malloc((nb_len + 1) * (end - start + 1));
-    char *tmp = malloc(12 * sizeof(char));
+    char *tmp = malloc(12);
     tmp[0] = '\0';
 
     int output_len = 0;
@@ -2104,7 +2119,7 @@ char *if_rep(char **input) {
         return ERROR_CODE;
     }
 
-    char *ret = malloc((strlen(input[0]) + 1) * sizeof(char));
+    char *ret = malloc(strlen(input[0]) + 1);
 
     if (argc == 3) {
         strcpy(ret, input[0]);
@@ -2166,7 +2181,7 @@ char *if_set_var(char **input) {
 
     // get value from stdin
     if (argc == 1) {
-        value = malloc(INPUT_SIZE * sizeof(char));
+        value = malloc(INPUT_SIZE + 1);
         if (!fgets(value, INPUT_SIZE, stdin)) {
             raise_error("set", "Cannot read from stdin");
             free(value);
@@ -2274,7 +2289,7 @@ char *if_strlen(char **input) {
         return ERROR_CODE;
     }
 
-    char *output = malloc(11 * sizeof(char));
+    char *output = malloc(11);
 
     local_itoa(strlen(input[0]), output);
 
@@ -2295,7 +2310,7 @@ char *if_ticks(char **input) {
         return ERROR_CODE;
     }
 
-    char *output = malloc(12 * sizeof(char));
+    char *output = malloc(12);
 
     #if PROFANBUILD
     local_itoa(c_timer_get_ms(), output);
@@ -2455,7 +2470,7 @@ char *args_rejoin(char **input, int to) {
         required_size += strlen(input[i]) + 3;
     }
 
-    char *joined_input = malloc(required_size * sizeof(char));
+    char *joined_input = malloc(required_size);
     joined_input[0] = '\0';
 
     // add quotes if needed
@@ -2482,7 +2497,7 @@ char *get_function_name(char *line) {
         }
 
         if (line[i] == ' ' && !in_string) {
-            char *function_name = malloc((i + 1) * sizeof(char));
+            char *function_name = malloc(i + 1);
             strncpy(function_name, line, i);
             function_name[i] = '\0';
 
@@ -2701,7 +2716,7 @@ char *execute_function(function_t *function, char **args) {
         return ERROR_CODE;
     }
 
-    char *result = malloc(sizeof(char));
+    char *result = malloc(1);
     int ret = execute_lines(function->lines, function->line_count, &result);
 
     // free variables
@@ -2727,7 +2742,7 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
     }
 
     *function = if_dot;
-    char *new_line = malloc((strlen(line) + strlen(bin_path) + 2) * sizeof(char));
+    char *new_line = malloc(strlen(line) + strlen(bin_path) + 2);
     strcpy(new_line, ". ");
     strcat(new_line, bin_path);
     free(bin_path);
@@ -2869,7 +2884,7 @@ char *check_subfunc(char *line) {
         return NULL;
     }
 
-    char *subfunc = malloc((end - start - 1) * sizeof(char));
+    char *subfunc = malloc(end - start - 1);
     strncpy(subfunc, line + start + 2, end - start - 2);
     subfunc[end - start - 2] = '\0';
 
@@ -2886,7 +2901,7 @@ char *check_subfunc(char *line) {
     char *new_line;
 
     if (subfunc_result) {
-        new_line = malloc((strlen(line) - (end - start) + strlen(subfunc_result) + 1) * sizeof(char));
+        new_line = malloc(strlen(line) - (end - start) + strlen(subfunc_result) + 1);
         strncpy(new_line, line, start);
         new_line[start] = '\0';
 
@@ -2894,7 +2909,7 @@ char *check_subfunc(char *line) {
         strcat(new_line, line + end + 1);
         free(subfunc_result);
     } else {
-        new_line = malloc((strlen(line) - (end - start) + 1) * sizeof(char));
+        new_line = malloc(strlen(line) - (end - start) + 1);
         strncpy(new_line, line, start);
         new_line[start] = '\0';
 
@@ -2945,7 +2960,7 @@ char *check_variables(char *line) {
 
     if (end == -1) end = i;
 
-    char *var_name = malloc((end - start) * sizeof(char));
+    char *var_name = malloc(end - start);
     strncpy(var_name, line + start + 1, end - start - 1);
     var_name[end - start - 1] = '\0';
 
@@ -2961,7 +2976,7 @@ char *check_variables(char *line) {
     free(var_name);
 
     // replace the variable with its value
-    char *new_line = malloc((strlen(line) - (end - start) + strlen(var_value) + 1) * sizeof(char));
+    char *new_line = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
     strncpy(new_line, line, start);
     new_line[start] = '\0';
 
@@ -2986,7 +3001,7 @@ char *check_pseudos(char *line) {
     int i, len = strlen(line);
     char *pseudo_name, *pseudo_value;
 
-    pseudo_name = malloc((len + 1) * sizeof(char));
+    pseudo_name = malloc(len + 1);
 
     for (i = 0; i < len; i++) {
         if (line[i] == ' ')
@@ -3002,7 +3017,7 @@ char *check_pseudos(char *line) {
         return line;
     }
 
-    char *new_line = malloc((len - i + strlen(pseudo_value) + 2) * sizeof(char));
+    char *new_line = malloc(len - i + strlen(pseudo_value) + 2);
     strcpy(new_line, pseudo_value);
     strcat(new_line, line + i);
 
@@ -3032,7 +3047,7 @@ char **lexe_program(char *program, int interp_bckslsh) {
     line_index = 0;
 
     int program_len = strlen(program) + 1;
-    char *tmp = malloc((program_len) * sizeof(char));
+    char *tmp = malloc(program_len);
 
     char **lines = calloc(index_size + (program_len), sizeof(char));
 
@@ -3357,8 +3372,8 @@ int execute_for(int line_count, char **lines, char **result) {
         return -1;
     }
 
-    char *var_name = malloc((strlen(for_line) + 1) * sizeof(char));
-    char *string = malloc((strlen(for_line) + 1) * sizeof(char));
+    char *var_name = malloc(strlen(for_line) + 1);
+    char *string = malloc(strlen(for_line) + 1);
 
     if (for_line[3] != ' ') {
         raise_error(NULL, "Missing space after FOR");
@@ -3476,7 +3491,7 @@ int execute_for(int line_count, char **lines, char **result) {
 int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     char *if_line = lines[0];
 
-    char *condition = malloc((strlen(if_line) + 1) * sizeof(char));
+    char *condition = malloc(strlen(if_line) + 1);
 
     if (if_line[2] != ' ') {
         raise_error(NULL, "Missing space after IF");
@@ -3575,7 +3590,7 @@ int execute_else(int line_count, char **lines, char **result, int *last_if_state
 int execute_while(int line_count, char **lines, char **result) {
     char *while_line = lines[0];
 
-    char *condition = malloc((strlen(while_line) + 1) * sizeof(char));
+    char *condition = malloc(strlen(while_line) + 1);
 
     if (while_line[5] != ' ') {
         raise_error(NULL, "Missing space after WHILE");
@@ -3663,7 +3678,7 @@ int save_function(int line_count, char **lines) {
         return -1;
     }
 
-    char *func_name = malloc((strlen(func_line) + 1) * sizeof(char));
+    char *func_name = malloc(strlen(func_line) + 1);
     int i;
     for (i = 5; func_line[i] != '\0'; i++) {
         func_name[i - 5] = func_line[i];
@@ -3729,30 +3744,11 @@ int does_syntax_fail(char *program) {
     return open > 0;
 }
 
-/**********************
- *                   *
- *  Input Functions  *
- *                   *
-**********************/
-
-// input() setings
-#define SLEEP_T 11
-#define FIRST_L 12
-
-// keyboard scancodes
-#define SC_MAX 57
-
-#define LSHIFT 42
-#define RSHIFT 54
-#define LEFT   75
-#define RIGHT  77
-#define OLDER  72
-#define NEWER  80
-#define BACK   14
-#define DEL    83
-#define ENTER  28
-#define RESEND 224
-#define TAB    15
+/***********************
+ *                    *
+ *  Program Printing  *
+ *                    *
+***********************/
 
 char *get_func_color(char *str) {
     // keywords: purple
@@ -3823,7 +3819,7 @@ void olv_print(char *str, int len) {
         return;
     }
 
-    char *tmp = malloc((len + 1) * sizeof(char));
+    char *tmp = malloc(len + 1);
     while (!(str[i] == '!' || str[i] == ' ' || str[i] == ';') && i != len) {
         i++;
     }
@@ -3953,7 +3949,113 @@ void olv_print(char *str, int len) {
     free(tmp);
 }
 
+/********************
+ *                 *
+ *  prompt render  *
+ *                 *
+********************/
+
 #if PROFANBUILD
+
+void display_prompt(void) {
+    for (int i = 0; g_prompt[i] != '\0'; i++) {
+        if (g_prompt[i] != '$') {
+            putchar(g_prompt[i]);
+            continue;
+        }
+        switch (g_prompt[i + 1]) {
+            case 'v':
+                fputs(OLV_VERSION, stdout);
+                break;
+            case 'd':
+                fputs(g_current_directory, stdout);
+                break;
+            case '(':
+                if (g_exit_code[0] != '0') break;
+                for (; g_prompt[i] != ')'; i++);
+                i--;
+                break;
+            case '{':
+                if (g_exit_code[0] == '0') break;
+                for (; g_prompt[i] != '}'; i++);
+                i--;
+                break;
+            case ')':
+                break;
+            case '}':
+                break;
+            default:
+                putchar('$');
+                break;
+        }
+        i++;
+    }
+    fflush(stdout);
+}
+
+#else
+
+char *render_prompt(char *output, int output_size) {
+    int output_i = 0;
+    for (int i = 0; g_prompt[i] != '\0'; i++) {
+        if (output_i >= output_size - 1) {
+            break;
+        }
+        if (g_prompt[i] != '$') {
+            output[output_i++] = g_prompt[i];
+            continue;
+        }
+        switch (g_prompt[i + 1]) {
+            case 'v':
+                for (int j = 0; OLV_VERSION[j] != '\0' && output_i < output_size - 1; j++) {
+                    output[output_i++] = OLV_VERSION[j];
+                }
+                break;
+            case 'd':
+                for (int j = 0; g_current_directory[j] != '\0' && output_i < output_size - 1; j++) {
+                    output[output_i++] = g_current_directory[j];
+                }
+                break;
+            case '(':
+                if (g_exit_code[0] != '0') break;
+                for (; g_prompt[i] != ')'; i++);
+                i--;
+                break;
+            case '{':
+                if (g_exit_code[0] == '0') break;
+                for (; g_prompt[i] != '}'; i++);
+                i--;
+                break;
+            case ')':
+                break;
+            case '}':
+                break;
+            default:
+                output[output_i++] = g_prompt[i];
+                break;
+        }
+        i++;
+    }
+    output[output_i] = '\0';
+    return output;
+}
+
+#endif
+
+/*********************
+ *                  *
+ *  profanOS input  *
+ *                  *
+*********************/
+
+#if PROFANBUILD
+
+// input() setings
+#define SLEEP_T 11
+#define FIRST_L 12
+
+#define SC_MAX 57
+
 int add_to_suggest(char **suggests, int count, char *str) {
     if (count < MAX_SUGGESTS) {
         suggests[count] = strdup(str);
@@ -4026,8 +4128,8 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     if (i < len && !in_var) {
         #if PROFANBUILD
         // ls the current directory
-        char *path = malloc(MAX_PATH_SIZE * sizeof(char));
-        char *inp_end = malloc(MAX_PATH_SIZE * sizeof(char));
+        char *path = malloc(MAX_PATH_SIZE);
+        char *inp_end = malloc(MAX_PATH_SIZE);
 
         memcpy(inp_end, str + i + 1, len - (i + 1));
         len = len - (i + 1);
@@ -4084,7 +4186,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         for (int j = 0; j < elm_count; j++) {
             if (names[j][0] == '.' && inp_end[0] != '.') continue;
             if (strncmp(names[j], inp_end, dec) == 0) {
-                tmp = malloc((strlen(names[j]) + 2) * sizeof(char));
+                tmp = malloc(strlen(names[j]) + 2);
                 strcpy(tmp, names[j]);
                 if (fu_is_dir(out_ids[j]))
                     strcat(tmp, "/");
@@ -4112,7 +4214,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         return NULL;
     }
 
-    tmp = malloc((len + 1) * sizeof(char));
+    tmp = malloc(len + 1);
 
     // variables
     if (in_var) {
@@ -4216,11 +4318,8 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     return ret;
 }
 
-#endif
-
-int local_input(char *buffer, int size, char **history, int history_end, int buffer_index) {
+int profan_local_input(char *buffer, int size, char **history, int history_end, int buffer_index) {
     // return -1 if the input is valid, else return the cursor position
-    #if PROFANBUILD
     char *term = getenv("TERM");
     if (term && strcmp(term, "/dev/panda") && strcmp(term, "/dev/kterm")) {
         if (fgets(buffer, size, stdin))
@@ -4255,11 +4354,11 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     int ret_val = -1;
 
     sc = 0;
-    while (sc != ENTER) {
+    while (sc != KB_ENTER) {
         usleep(SLEEP_T * 1000);
         sc = c_kb_get_scfh();
 
-        if (sc == RESEND || sc == 0) {
+        if (sc == KB_RESEND || sc == 0) {
             sc = last_sc_sgt;
         } else {
             last_sc_sgt = sc;
@@ -4272,27 +4371,27 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             continue;
         }
 
-        if (sc == LSHIFT || sc == RSHIFT) {
+        if (sc == KB_LSHIFT || sc == KB_RSHIFT) {
             shift = 1;
             continue;
         }
 
-        if (sc == LSHIFT + 128 || sc == RSHIFT + 128) {
+        if (sc == KB_LSHIFT + 128 || sc == KB_RSHIFT + 128) {
             shift = 0;
             continue;
         }
 
-        if (sc == LEFT) {
+        if (sc == KB_LEFT) {
             if (!buffer_index) continue;
             buffer_index--;
         }
 
-        else if (sc == RIGHT) {
+        else if (sc == KB_RIGHT) {
             if (buffer_index == buffer_actual_size) continue;
             buffer_index++;
         }
 
-        else if (sc == BACK) {
+        else if (sc == KB_BACK) {
             if (!buffer_index) continue;
             buffer_index--;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
@@ -4302,7 +4401,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             buffer_actual_size--;
         }
 
-        else if (sc == DEL) {
+        else if (sc == KB_DEL) {
             if (buffer_index == buffer_actual_size) continue;
             for (int i = buffer_index; i < buffer_actual_size; i++) {
                 buffer[i] = buffer[i + 1];
@@ -4311,7 +4410,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             buffer_actual_size--;
         }
 
-        else if (sc == OLDER) {
+        else if (sc == KB_TOP) {
             // read from history
             int old_index = history_index;
             history_index = (history_index - 1);
@@ -4326,7 +4425,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             }
         }
 
-        else if (sc == NEWER) {
+        else if (sc == KB_BOT) {
             // read from history
             int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
@@ -4343,7 +4442,7 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             }
         }
 
-        else if (sc == TAB) {
+        else if (sc == KB_TAB) {
             int dec;
             char *suggestion = olv_autocomplete(buffer, buffer_index, other_suggests, &dec);
             if (suggestion == NULL && other_suggests[0] != NULL) {
@@ -4394,24 +4493,23 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
             }
 
             int suggestion_len = strlen(suggestion);
-            if (buffer_actual_size + suggestion_len >= size) continue;
-            for (int i = buffer_actual_size; i >= buffer_index; i--) {
+            if (buffer_actual_size + suggestion_len >= size)
+                continue;
+            for (int i = buffer_actual_size; i >= buffer_index; i--)
                 buffer[i + suggestion_len] = buffer[i];
-            }
-            for (int i = 0; i < suggestion_len; i++) {
+            for (int i = 0; i < suggestion_len; i++)
                 buffer[buffer_index + i] = suggestion[i];
-            }
             buffer_actual_size += suggestion_len;
             buffer_index += suggestion_len;
             free(suggestion);
         }
 
         else if (sc <= SC_MAX) {
-            if (size < buffer_actual_size + 2) continue;
-            if (profan_kb_get_char(sc, shift) == '\0') continue;
-            for (int i = buffer_actual_size; i > buffer_index; i--) {
+            if (size < buffer_actual_size + 2 ||
+                    profan_kb_get_char(sc, shift) == '\0')
+                continue;
+            for (int i = buffer_actual_size; i > buffer_index; i--)
                 buffer[i] = buffer[i - 1];
-            }
             buffer[buffer_index] = profan_kb_get_char(sc, shift);
             buffer_actual_size++;
             buffer_index++;
@@ -4432,19 +4530,54 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
     puts("\e[?25h");
 
     return ret_val;
+}
 
-    #else
-    UNUSED(buffer_index);
+/*********************
+ *                  *
+ *  readline input  *
+ *                  *
+*********************/
+
+#elif USE_READLINE
+
+int unix_local_input(char *buffer, int size, char **history, int history_end, char *prompt) {
+    char *line = readline(prompt);
+    if (line == NULL) {
+        return -2;
+    }
+
+    if (line[0] && (history[history_end] == NULL || strcmp(line, history[history_end]))) {
+        add_history(line);
+    }
+
+    strncpy(buffer, line, size);
+    free(line);
+
+    return -1;
+}
+
+/*********************
+ *                  *
+ *  standard input  *
+ *                  *
+*********************/
+
+#else
+
+int unix_local_input(char *buffer, int size, char **history, int history_end, char *prompt) {
     UNUSED(history_end);
     UNUSED(history);
+
+    fputs(prompt, stdout);
+    fflush(stdout);
 
     if (fgets(buffer, size, stdin))
         return -1;
     puts("");
     return -2;
-
-    #endif
 }
+
+#endif
 
 
 /***************************
@@ -4453,45 +4586,9 @@ int local_input(char *buffer, int size, char **history, int history_end, int buf
  *                        *
 ***************************/
 
-void display_prompt(void) {
-    for (int i = 0; g_prompt[i] != '\0'; i++) {
-        if (g_prompt[i] != '$') {
-            putchar(g_prompt[i]);
-            continue;
-        }
-        switch (g_prompt[i + 1]) {
-            case 'v':
-                fputs(OLV_VERSION, stdout);
-                break;
-            case 'd':
-                fputs(g_current_directory, stdout);
-                break;
-            case '(':
-                if (g_exit_code[0] != '0') break;
-                for (; g_prompt[i] != ')'; i++);
-                i--;
-                break;
-            case '{':
-                if (g_exit_code[0] == '0') break;
-                for (; g_prompt[i] != '}'; i++);
-                i--;
-                break;
-            case ')':
-                break;
-            case '}':
-                break;
-            default:
-                putchar('$');
-                break;
-        }
-        i++;
-    }
-    fflush(stdout);
-}
-
 void start_shell(void) {
     // use execute_program() to create a shell
-    char *line = malloc(INPUT_SIZE * sizeof(char));
+    char *line = malloc(INPUT_SIZE + 1);
 
     char **history = calloc(HISTORY_SIZE, sizeof(char *));
     int history_index = 0;
@@ -4501,8 +4598,12 @@ void start_shell(void) {
     while (1) {
         line[0] = '\0';
         do {
+            #if PROFANBUILD
             display_prompt();
-            cursor_pos = local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
+            cursor_pos = profan_local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
+            #else
+            cursor_pos = unix_local_input(line, INPUT_SIZE, history, history_index, render_prompt(line, INPUT_SIZE));
+            #endif
         } while (cursor_pos >= 0);
 
         if (cursor_pos == -2 || strcmp(line, "shellexit") == 0) {
@@ -4516,9 +4617,13 @@ void start_shell(void) {
             len = strlen(line);
             line[len] = '\0';
             do {
+                #if PROFANBUILD
                 fputs(OTHER_PROMPT, stdout);
                 fflush(stdout);
-                cursor_pos = local_input(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
+                cursor_pos = profan_local_input(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
+                #else
+                cursor_pos = unix_local_input(line + len, INPUT_SIZE - len, history, history_index, OTHER_PROMPT);
+                #endif
             } while(cursor_pos != -1);
         }
 
@@ -4541,6 +4646,11 @@ void start_shell(void) {
             free(history[i]);
         }
     }
+
+    #if USE_READLINE
+    rl_clear_history();
+    #endif
+
     free(history);
     free(line);
 }
@@ -4552,14 +4662,14 @@ int execute_file(char *file, char **args) {
         return 1;
     }
 
-    char *line = malloc(INPUT_SIZE * sizeof(char));
-    char *program = malloc(sizeof(char));
+    char *line = malloc(INPUT_SIZE + 1);
+    char *program = malloc(1);
     program[0] = '\0';
 
     while (fgets(line, INPUT_SIZE, f) != NULL) {
         // realloc program
         int len = strlen(line);
-        program = realloc(program, (strlen(program) + len + 1) * sizeof(char));
+        program = realloc(program, strlen(program) + len + 1);
         strcat(program, line);
     }
 
@@ -4609,14 +4719,14 @@ void print_file_highlighted(char *file) {
     functions = NULL;
     pseudos = NULL;
 
-    char *line = malloc(INPUT_SIZE * sizeof(char));
-    char *program = malloc(sizeof(char));
+    char *line = malloc(INPUT_SIZE + 1);
+    char *program = malloc(1);
     program[0] = '\0';
 
     while (fgets(line, INPUT_SIZE, f) != NULL) {
         // realloc program
         int len = strlen(line);
-        program = realloc(program, (strlen(program) + len + 1) * sizeof(char));
+        program = realloc(program, strlen(program) + len + 1);
         strcat(program, line);
     }
 
@@ -4792,14 +4902,14 @@ int main(int argc, char **argv) {
 
     g_current_level = 0;
 
-    g_current_directory = malloc((MAX_PATH_SIZE + 1) * sizeof(char));
+    g_current_directory = malloc(MAX_PATH_SIZE + 1);
     setenv("PWD", "/", 0);
     strcpy(g_current_directory, getenv("PWD"));
 
-    g_exit_code = malloc(5 * sizeof(char));
+    g_exit_code = malloc(5);
     strcpy(g_exit_code, "0");
 
-    g_prompt = malloc((PROMPT_SIZE + 1) * sizeof(char));
+    g_prompt = malloc(PROMPT_SIZE + 1);
     strcpy(g_prompt, DEFAULT_PROMPT);
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
