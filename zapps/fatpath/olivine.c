@@ -25,7 +25,7 @@
 #define STOP_ON_ERROR 0  // stop after first error
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 
-#define OLV_VERSION "0.12 rev 2"
+#define OLV_VERSION "0.12 rev 3"
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    1024
