@@ -15,9 +15,13 @@
 
 #include <dlfcn.h>
 
-#define raise_error(fmt, ...) do { fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); exit(1); } while (0)
+#define DELUGE_VERSION "1.2"
 
-// elf header
+/*********************
+ *                  *
+ *    ELF header    *
+ *                  *
+ ********************/
 
 typedef struct {
     uint8_t  e_ident[16];   // ELF identification
@@ -94,6 +98,24 @@ typedef struct {
 
 #define ELF32_ST_BIND(i) ((i) >> 4)
 
+/****************************
+ *                         *
+ *    Types and globals    *
+ *                         *
+****************************/
+
+#define raise_error(fmt, ...) do {  \
+            fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
+            exit(1);  \
+        } while (0)
+
+typedef struct {
+    const char *key;
+    void *data;
+    uint32_t hash;
+    void *next;
+} hash_t;
+
 typedef struct {
     uint32_t size;
     uint8_t *file;
@@ -106,7 +128,8 @@ typedef struct {
     Elf32_Dyn *dynamic;
     char *dynstr;
 
-    int dynsym_size;
+    uint32_t dynsym_size;
+    hash_t *sym_table;
 } elfobj_t;
 
 elfobj_t **g_loaded_libs;
@@ -116,6 +139,12 @@ int g_cleanup;
 int g_print_indent;
 int g_list_deps;
 
+/**********************
+ *                   *
+ *    Extra utils    *
+ *                   *
+ *********************/
+
 void list_print(const char *str, const char *name) {
     if (!g_list_deps)
         return;
@@ -124,15 +153,6 @@ void list_print(const char *str, const char *name) {
         fd_putstr(2, "  ");
     fd_printf(2, "%s '%s'", str, name);
     fd_putstr(2, "\033[0m\n");
-}
-
-int is_valid_elf(void *data, uint16_t required_type) {
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
-    return !(
-        memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
-        ehdr->e_type != required_type ||
-        ehdr->e_machine != EM_386
-    );
 }
 
 char *assemble_path(const char *dir, const char *file) {
@@ -159,6 +179,96 @@ char *get_full_path(const char *lib) {
     if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
         return full_path;
     return NULL;
+}
+
+/***************************
+ *                        *
+ *    Hash table funcs    *
+ *                        *
+***************************/
+
+uint32_t hash(const char *str) {
+    uint32_t hash = 0;
+    for (int i = 0; str[i]; i++) {
+        hash = (hash << 5) + str[i];
+    }
+    return hash;
+}
+
+hash_t *hash_create(elfobj_t *obj) {
+    uint32_t size = obj->dynsym_size / sizeof(Elf32_Sym);
+
+    hash_t *table = calloc(size, sizeof(hash_t));
+    hash_t *later = calloc(size, sizeof(hash_t));
+    int later_index = 0;
+
+    for (uint32_t i = 0; i < size; i++) {
+        const char *key = obj->dynstr + obj->dymsym[i].st_name;
+        uint32_t full_h = hash(key);
+        uint32_t h = full_h % size;
+
+        if (!table[h].data) {
+            table[h].data = (void *) obj->dymsym[i].st_value;
+            table[h].key = key;
+            table[h].hash = full_h;
+        } else {
+            later[later_index].data = (void *) obj->dymsym[i].st_value;
+            later[later_index].key = key;
+            later[later_index].hash = full_h;
+            later_index++;
+        }
+    }
+
+    uint32_t table_index = 0;
+    for (int i = 0; i < later_index; i++) {
+        uint32_t h = later[i].hash % size;
+        hash_t *entry = &table[h];
+
+        while (table[table_index].data) {
+            table_index++;
+            if (table_index == size) {
+                raise_error("Internal error: hash table is full");
+            }
+        }
+    
+        table[table_index] = later[i];
+
+        while (entry->next)
+            entry = (void *) entry->next;
+        entry->next = (void *) &table[table_index];
+
+        table_index++;
+    }
+    free(later);
+
+    return table;
+}
+
+void *hash_get(elfobj_t *obj, const char *key) {
+    uint32_t full_h = hash(key);
+    hash_t *entry = obj->sym_table + full_h % (obj->dynsym_size / sizeof(Elf32_Sym));;
+
+    while (entry) {
+        if (entry->hash == full_h && strcmp(entry->key, key) == 0)
+            return entry->data;
+        entry = entry->next;
+    }
+    return NULL;
+}
+
+/************************
+ *                     *
+ *    ELF functions    *
+ *                     *
+ ***********************/
+
+int is_valid_elf(void *data, uint16_t required_type) {
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
+    return !(
+        memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
+        ehdr->e_type != required_type ||
+        ehdr->e_machine != EM_386
+    );
 }
 
 char **get_required_libs(elfobj_t *obj) {
@@ -413,6 +523,8 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         return obj;
     }
 
+    obj->sym_table = hash_create(obj);
+
     char **new_libs = get_required_libs(obj);
 
     if (new_libs == NULL) {
@@ -539,6 +651,7 @@ void *dlsym(void *handle, const char *symbol) {
     }
 
     elfobj_t *dl = handle;
+    void *ret;
 
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
@@ -550,11 +663,10 @@ void *dlsym(void *handle, const char *symbol) {
 
     dlfcn_error = 0;
     if (ehdr->e_type == ET_EXEC) {
-        for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
-            if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0) {
-                return (void *) dl->dymsym[i].st_value;
-            }
-        }
+        ret = hash_get(dl, symbol);
+        if (!ret)
+            dlfcn_error = 2;
+        return ret;
     }
 
     if (*symbol && symbol[0] == 'd' && symbol[1] == 'l') {
@@ -572,14 +684,13 @@ void *dlsym(void *handle, const char *symbol) {
         return profan_cleanup;
     }
 
-    for (uint32_t i = 0; i < dl->dynsym_size / sizeof(Elf32_Sym); i++) {
-        if (strcmp(dl->dynstr + dl->dymsym[i].st_name, symbol) == 0 &&
-            dl->dymsym[i].st_shndx != 0 // STB_LOCAL (symbol defined in this object)
-        ) return dl->mem + dl->dymsym[i].st_value;
+    ret = (void *) hash_get(dl, symbol);
+    if (ret) {
+        ret = dl->mem + (uint32_t) ret;
+    } else {
+        dlfcn_error = 2;
     }
-
-    dlfcn_error = 2;
-    return NULL;
+    return ret;
 }
 
 int dlclose(void *handle) {
@@ -592,6 +703,7 @@ int dlclose(void *handle) {
         return 0;
 
     fini_lib(dl);
+    free(dl->sym_table);
     free(dl->file);
     free(dl->name);
     free(dl->mem);
@@ -666,6 +778,12 @@ int dynamic_linker(elfobj_t *exec) {
     return 0;
 }
 
+/*********************************
+ *                              *
+ *    Command line Interface    *
+ *                              *
+*********************************/
+
 typedef struct {
     char *name;
     uint8_t bench;
@@ -680,10 +798,11 @@ void show_help(int full) {
     }
 
     fd_printf(1, "Options:\n");
-    fd_printf(1, "  -h  Show this help message\n");
     fd_printf(1, "  -b  Bench link time\n");
     fd_printf(1, "  -e  use filename as argument\n");
+    fd_printf(1, "  -h  Show this help message\n");
     fd_printf(1, "  -l  List dependencies\n");
+    fd_printf(1, "  -v  Show version\n");
 }
 
 deluge_args_t deluge_parse(int argc, char **argv) {
@@ -700,6 +819,9 @@ deluge_args_t deluge_parse(int argc, char **argv) {
         if (argv[i][0] == '-') {
             if (argv[i][1] == 'h') {
                 show_help(1);
+                exit(0);
+            } else if (argv[i][1] == 'v') {
+                fd_printf(1, "deluge %s\n", DELUGE_VERSION);
                 exit(0);
             } else if (argv[i][1] == 'b') {
                 args.bench = 1;
@@ -742,6 +864,7 @@ int main(int argc, char **argv, char **envp) {
     }
 
     elfobj_t *test = open_elf(args.name, ET_EXEC, 1);
+
     if (test == NULL) {
         raise_error("failed to open '%s'", args.name);
         return 1;
@@ -765,6 +888,7 @@ int main(int argc, char **argv, char **envp) {
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) test->file)->e_entry;
 
+    free(test->sym_table);
     free(test->file);
     free(test->name);
     free(test);
