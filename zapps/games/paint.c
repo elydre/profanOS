@@ -92,8 +92,8 @@ int main(void) {
         if (k == KB_ESC) break;
         if (k % 128 == KB_LEFT) keys[0] = !(k / 128);
         if (k % 128 == KB_RIGHT) keys[1] = !(k / 128);
-        if (k % 128 == KB_OLDER) keys[2] = !(k / 128);
-        if (k % 128 == KB_NEWER) keys[3] = !(k / 128);
+        if (k % 128 == KB_TOP) keys[2] = !(k / 128);
+        if (k % 128 == KB_BOT) keys[3] = !(k / 128);
         if (k % 128 == KB_CTRL) keys[4] = !(k / 128);
 
         if (k % 128 == KB_A && !(k / 128)) {

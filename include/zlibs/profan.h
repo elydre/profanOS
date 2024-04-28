@@ -17,20 +17,28 @@
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, argc, argv, __get_environ_ptr(), 1}, NULL)
 
-#define KB_LEFT 75
-#define KB_RIGHT 77
-#define KB_OLDER 72
-#define KB_NEWER 80
-#define KB_CTRL 29
-#define KB_ESC 1
-#define KB_A 16
-#define KB_Q 30
-#define KB_E 18
-#define KB_R 19
-#define KB_D 32
-#define KB_Z 17
-#define KB_S 31
-#define KB_released_value 128
+#define KB_ESC      1
+#define KB_BACK     14
+#define KB_TAB      15
+#define KB_ENTER    28
+#define KB_CTRL     29
+#define KB_LSHIFT   42
+#define KB_RSHIFT   54
+#define KB_TOP      72
+#define KB_LEFT     75
+#define KB_RIGHT    77
+#define KB_BOT      80
+#define KB_DEL      83
+#define KB_RVAL     128
+#define KB_RESEND   224
+
+#define KB_A        16
+#define KB_Q        30
+#define KB_E        18
+#define KB_R        19
+#define KB_D        32
+#define KB_Z        17
+#define KB_S        31
 
 #define O_RDONLY    00
 #define O_WRONLY    01

@@ -117,10 +117,10 @@ int main(int argc, char **argv) {
         key = c_kb_get_scfh();
         if (last_key != key && key != 0) {
             last_key = key;
-            if (last_key < KB_released_value && !(val_in_buffer(last_key, 20, key_buffer))) {
+            if (last_key < KB_RVAL && !(val_in_buffer(last_key, 20, key_buffer))) {
                 add_to_buffer(last_key, key_buffer);
-            } else if (last_key >= KB_released_value) {
-                remove_from_buffer(last_key - KB_released_value, key_buffer);
+            } else if (last_key >= KB_RVAL) {
+                remove_from_buffer(last_key - KB_RVAL, key_buffer);
             }
         }
 
