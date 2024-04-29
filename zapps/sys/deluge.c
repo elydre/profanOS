@@ -143,7 +143,7 @@ int g_list_deps;
  *                   *
  *    Extra utils    *
  *                   *
- *********************/
+**********************/
 
 void list_print(const char *str, const char *name) {
     if (!g_list_deps)
@@ -261,7 +261,7 @@ void *hash_get(elfobj_t *obj, const char *key) {
  *                     *
  *    ELF functions    *
  *                     *
- ***********************/
+************************/
 
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
