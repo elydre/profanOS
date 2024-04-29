@@ -798,11 +798,11 @@ void show_help(int full) {
     }
 
     fd_printf(1, "Options:\n");
-    fd_printf(1, "  -b  Bench link time\n");
+    fd_printf(1, "  -b  bench link time\n");
     fd_printf(1, "  -e  use filename as argument\n");
-    fd_printf(1, "  -h  Show this help message\n");
-    fd_printf(1, "  -l  List dependencies\n");
-    fd_printf(1, "  -v  Show version\n");
+    fd_printf(1, "  -h  show this help message\n");
+    fd_printf(1, "  -l  list dependencies\n");
+    fd_printf(1, "  -v  show version\n");
 }
 
 deluge_args_t deluge_parse(int argc, char **argv) {
