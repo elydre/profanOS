@@ -171,13 +171,14 @@ char *get_full_path(const char *lib) {
         strcpy(full_path, lib);
         return full_path;
     }
+    full_path = assemble_path("/lib", lib);
+    if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
+        return full_path;
+    free(full_path);
     full_path = assemble_path("/user", lib);
     if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
         return full_path;
     free(full_path);
-    full_path = assemble_path("/lib", lib);
-    if (!full_path || fu_is_file(fu_path_to_sid(ROOT_SID, full_path)))
-        return full_path;
     return NULL;
 }
 
@@ -230,7 +231,7 @@ hash_t *hash_create(elfobj_t *obj) {
                 raise_error("Internal error: hash table is full");
             }
         }
-    
+
         table[table_index] = later[i];
 
         while (entry->next)
@@ -403,50 +404,50 @@ int file_relocate(elfobj_t *dl) {
     char *name;
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 9) { // SHT_REL
-            Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
-            for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                name = (char *) dl->dynstr + (((Elf32_Sym *) dl->dymsym) + ELF32_R_SYM(rel[j].r_info))->st_name;
-                val = 0;
-                type = ELF32_R_TYPE(rel[j].r_info);
-                if (does_type_required_sym(type)) {
-                    for (int k = 0; k < g_lib_count && val == 0; k++)
-                        val = (uint32_t) dlsym(g_loaded_libs[k], name);
-                    if (val == 0)
-                        val = (uint32_t) dlsym(dl, name);
-                    if (val == 0)
-                        raise_error("'%s' requires symbol '%s'", dl->name, name);
-                }
-                switch (type) {
-                    case R_386_32:          // word32  S + A
-                        val += *(uint32_t *)(dl->mem + rel[j].r_offset);
-                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
-                        break;
-                    case R_386_PC32:        // word32  S + A - P
-                        val += *(uint32_t *)(dl->mem + rel[j].r_offset);
-                        val -= (uint32_t) (dl->mem + rel[j].r_offset);
-                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
-                        break;
-                    case R_386_RELATIVE:    // word32  B + A
-                        val = (uint32_t) dl->mem;
-                        val += *(uint32_t *)(dl->mem + rel[j].r_offset);
-                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
-                        break;
-                    case R_386_JMP_SLOT:    // word32  S
-                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
-                        break;
-                    case R_386_GLOB_DAT:    // word32  S
-                        *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
-                        break;
-                    default:
-                        raise_error("relocation type %d in '%s' not supported", type, dl->name);
-                        break;
-                }
-            }
-        }
-
-        else if (shdr[i].sh_type == 4) { // SHT_RELA
+        if (shdr[i].sh_type == 4) // SHT_RELA
             raise_error("SHT_RELA is not supported but found in '%s'", dl->name);
+
+        if (shdr[i].sh_type != 9) // SHT_REL
+            continue;
+
+        Elf32_Rel *rel = (Elf32_Rel *)(dl->file + shdr[i].sh_offset);
+        for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
+            name = (char *) dl->dynstr + (((Elf32_Sym *) dl->dymsym) + ELF32_R_SYM(rel[j].r_info))->st_name;
+            val = 0;
+            type = ELF32_R_TYPE(rel[j].r_info);
+            if (does_type_required_sym(type)) {
+                for (int k = 0; k < g_lib_count && val == 0; k++)
+                    val = (uint32_t) dlsym(g_loaded_libs[k], name);
+                if (val == 0)
+                    val = (uint32_t) dlsym(dl, name);
+                if (val == 0)
+                    raise_error("'%s' requires symbol '%s'", dl->name, name);
+            }
+            switch (type) {
+                case R_386_32:          // word32  S + A
+                    val += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                    *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                    break;
+                case R_386_PC32:        // word32  S + A - P
+                    val += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                    val -= (uint32_t) (dl->mem + rel[j].r_offset);
+                    *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                    break;
+                case R_386_RELATIVE:    // word32  B + A
+                    val = (uint32_t) dl->mem;
+                    val += *(uint32_t *)(dl->mem + rel[j].r_offset);
+                    *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                    break;
+                case R_386_JMP_SLOT:    // word32  S
+                    *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                    break;
+                case R_386_GLOB_DAT:    // word32  S
+                    *(uint32_t *)(dl->mem + rel[j].r_offset) = val;
+                    break;
+                default:
+                    raise_error("relocation type %d in '%s' not supported", type, dl->name);
+                    break;
+            }
         }
     }
     return 0;
@@ -736,42 +737,41 @@ int dynamic_linker(elfobj_t *exec) {
     char *name;
 
     for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == 9) { // SHT_REL
-            Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
-            for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-                name = (char *) exec->dynstr + (exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
-                val = 0;
-                type = ELF32_R_TYPE(rel[j].r_info);
-                if (does_type_required_sym(type)) {
-                    val = (uint32_t) dlsym(exec, name);
-                    for (int k = 0; !val && k < g_lib_count; k++)
-                        val = (uint32_t) dlsym(g_loaded_libs[k], name);
-                    if (val == 0)
-                        raise_error("'%s' requires symbol '%s'", exec->name, name);
-                }
-                switch (type) {
-                    case R_386_32:          // word32  S + A
-                        val += *(uint32_t *)(rel[j].r_offset);
-                        *(uint32_t *)(rel[j].r_offset) = val;
-                        break;
-                    case R_386_COPY:        // None
-                        break;
-                    case R_386_GLOB_DAT:    // word32  S
-                        *(uint32_t *)(rel[j].r_offset) = val;
-                        break;
-                    case R_386_JMP_SLOT:    // word32  S
-                        *(uint32_t *)(rel[j].r_offset) = val;
-                        break;
-                    default:
-                        raise_error("relocation type %d in '%s' not supported", type, exec->name);
-                        break;
-                }
-            }
-        }
-
-        else if (shdr[i].sh_type == 4) { // SHT_RELA
+        if (shdr[i].sh_type == 4) // SHT_RELA
             raise_error("SHT_RELA is not supported but found in '%s'", exec->name);
-            while (1);
+
+        if (shdr[i].sh_type != 9) // SHT_REL
+            continue;
+
+        Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
+        for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
+            name = (char *) exec->dynstr + (exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
+            val = 0;
+            type = ELF32_R_TYPE(rel[j].r_info);
+            if (does_type_required_sym(type)) {
+                val = (uint32_t) dlsym(exec, name);
+                for (int k = 0; !val && k < g_lib_count; k++)
+                    val = (uint32_t) dlsym(g_loaded_libs[k], name);
+                if (val == 0)
+                    raise_error("'%s' requires symbol '%s'", exec->name, name);
+            }
+            switch (type) {
+                case R_386_32:          // word32  S + A
+                    val += *(uint32_t *)(rel[j].r_offset);
+                    *(uint32_t *)(rel[j].r_offset) = val;
+                    break;
+                case R_386_COPY:        // None
+                    break;
+                case R_386_GLOB_DAT:    // word32  S
+                    *(uint32_t *)(rel[j].r_offset) = val;
+                    break;
+                case R_386_JMP_SLOT:    // word32  S
+                    *(uint32_t *)(rel[j].r_offset) = val;
+                    break;
+                default:
+                    raise_error("relocation type %d in '%s' not supported", type, exec->name);
+                    break;
+            }
         }
     }
 
