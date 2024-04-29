@@ -16,7 +16,7 @@
 #include <profan/libmmq.h>
 #include <profan.h>
 
-#define MAX_OPENED 100
+#define MAX_OPENED 512
 #define MAX_STDHIST 20
 
 typedef struct {
@@ -47,6 +47,7 @@ typedef struct {
 opened_t    *opened;
 stdhist_t   *stdhist;
 int          stdhist_len;
+uint32_t    stdlinks[3];
 
 #define TYPE_FILE 1
 #define TYPE_FCTF 2
@@ -62,6 +63,10 @@ int main(void) {
     opened = calloc_ask(MAX_OPENED, sizeof(opened_t));
     stdhist = calloc_ask(MAX_STDHIST, sizeof(stdhist_t));
     stdhist_len = 0;
+
+    stdlinks[0] = fu_fctf_get_addr(fu_path_to_sid(ROOT_SID, "/dev/stdin"));
+    stdlinks[1] = fu_fctf_get_addr(fu_path_to_sid(ROOT_SID, "/dev/stdout"));
+    stdlinks[2] = fu_fctf_get_addr(fu_path_to_sid(ROOT_SID, "/dev/stderr"));
 
     fm_reopen(3, "/dev/kterm");
     fm_reopen(4, "/dev/kterm");
@@ -105,16 +110,27 @@ int fm_open(char *path) {
 int fm_reopen(int fd, char *path) {
     if (fd < 0 || fd >= MAX_OPENED)
         return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-
-    fm_close(fd);
 
     sid_t sid = fu_path_to_sid(ROOT_SID, path);
+
+
     if (IS_NULL_SID(sid)) {
         fd_printf(2, "fm_reopen: %s not found\n", path);
         return -1;
     }
+
+    if (fu_is_fctf(sid)) {
+        uint32_t addr = fu_fctf_get_addr(sid);
+        if (addr == stdlinks[0] ||
+            addr == stdlinks[1] ||
+            addr == stdlinks[2]
+        ) return 0;
+    }
+
+    if (fd < 3)
+        fd = fm_resol012(fd, -1);
+
+    fm_close(fd);
 
     if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
         fd_printf(2, "fm_reopen: %s is not a file\n", path);
@@ -316,10 +332,20 @@ int fm_dup(int fd) {
 int fm_dup2(int fd, int new_fd) {
     if (fd < 0 || fd >= MAX_OPENED || new_fd < 0 || new_fd >= MAX_OPENED)
         return -1;
+    if (fd == new_fd)
+        return 0;
+
     if (fd < 3)
         fd = fm_resol012(fd, -1);
     if (new_fd < 3)
         new_fd = fm_resol012(new_fd, -1);
+
+    if (opened[fd].type == TYPE_FCTF) {
+        if (opened[fd].fctf == (void *) stdlinks[0] ||
+            opened[fd].fctf == (void *) stdlinks[1] ||
+            opened[fd].fctf == (void *) stdlinks[2]
+        ) return 0;
+    }
 
     if (!opened[fd].type)
         return -1;
