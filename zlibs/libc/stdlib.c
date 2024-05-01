@@ -27,7 +27,7 @@ char **g_env = NULL;
 
 void *g_entry_exit = NULL;
 
-#define SHELL_PATH "/bin/fatpath/olivine.bin"
+#define SHELL_PATH "/bin/fatpath/olivine.elf"
 
 void __attribute__((constructor)) __stdlib_init(void) {
     g_rand_seed = time(NULL);
