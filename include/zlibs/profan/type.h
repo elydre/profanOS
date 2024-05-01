@@ -150,13 +150,11 @@ typedef long           __time32_t;
 typedef size_t rsize_t;
 
 typedef struct FILE {
-    char *filename;
     uint8_t mode;
     uint8_t error;
 
     char *buffer;
     int   buffer_size;
-    int   old_offset;
 
     int   fd;
 } FILE;

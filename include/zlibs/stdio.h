@@ -16,9 +16,15 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-#define stdin  (FILE *) 3
-#define stdout (FILE *) 1
-#define stderr (FILE *) 2
+// standard streams
+extern FILE *stdin;
+extern FILE *stdout;
+extern FILE *stderr;
+
+// make old C revisions happy
+#define stdin stdin
+#define stdout stdout
+#define stderr stderr
 
 #define _IOFBF 0
 #define _IOLBF 1

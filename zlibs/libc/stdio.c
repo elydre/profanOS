@@ -27,38 +27,48 @@
 #define MODE_WRITE  1 << 1
 #define MODE_APPEND 1 << 2
 
+#if FILE_BUFFER_SIZE < FILE_BUFFER_READ
+  #error "stdio buffer size must be changed"
+#endif
+
 int vsnprintf(char* str, size_t size, const char* format, va_list arg);
 
-FILE *STD_STREAM = NULL;
+FILE *stdin = NULL;
+FILE *stdout = NULL;
+FILE *stderr = NULL;
 
-void __attribute__((constructor)) stdlio_init(void) {
-    STD_STREAM = calloc(3, sizeof(FILE));
-
+void __attribute__((constructor)) stdio_init(void) {
     // init stdin
-    STD_STREAM[0].filename = "/dev/stdin";
-    STD_STREAM[0].mode = MODE_READ;
-    STD_STREAM[0].buffer = malloc(FILE_BUFFER_SIZE);
-    STD_STREAM[0].fd = 0;
+    stdin = calloc(1, sizeof(FILE));
+    stdin->mode = MODE_READ;
+    stdin->buffer = malloc(FILE_BUFFER_SIZE);
+    stdin->fd = 0;
 
     // init stdout
-    STD_STREAM[1].filename = "/dev/stdout";
-    STD_STREAM[1].mode = MODE_WRITE;
-    STD_STREAM[1].buffer = malloc(FILE_BUFFER_SIZE);
-    STD_STREAM[1].fd = 1;
+    stdout = calloc(1, sizeof(FILE));
+    stdout->mode = MODE_WRITE;
+    stdout->buffer = malloc(FILE_BUFFER_SIZE);
+    stdout->fd = 1;
 
     // init stderr
-    STD_STREAM[2].filename = "/dev/stderr";
-    STD_STREAM[2].mode = MODE_WRITE;
-    STD_STREAM[2].buffer = malloc(FILE_BUFFER_SIZE);
-    STD_STREAM[2].fd = 2;
+    stderr = calloc(1, sizeof(FILE));
+    stderr->mode = MODE_WRITE;
+    stderr->buffer = malloc(FILE_BUFFER_SIZE);
+    stderr->fd = 2;
 }
 
-void __attribute__((destructor)) stdlio_destroy(void) {
-    for (int i = 0; i < 3; i++) {
-        fflush(STD_STREAM + i);
-        free(STD_STREAM[i].buffer);
-    }
-    free(STD_STREAM);
+void __attribute__((destructor)) stdio_destroy(void) {
+    fflush(stdin);
+    free(stdin->buffer);
+    free(stdin);
+
+    fflush(stdout);
+    free(stdout->buffer);
+    free(stdout);
+
+    fflush(stderr);
+    free(stderr->buffer);
+    free(stderr);
 }
 
 void clearerr(FILE *stream) {
@@ -132,9 +142,10 @@ FILE *fopen(const char *filename, const char *mode) {
     // now create the file structure
     FILE *file = calloc(1, sizeof(FILE));
 
-    // copy the filename
-    file->filename = path;
+    // open the file
     file->fd = fm_open((char *) path);
+    free(path);
+
     if (file->fd < 0) {
         free(file);
         return NULL;
@@ -156,11 +167,6 @@ FILE *fopen(const char *filename, const char *mode) {
     return file;
 }
 
-errno_t fopen_s(FILE **streamptr, const char *filename, const char *mode) {
-    puts("fopen_s not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
-}
-
 FILE *freopen(const char *filename, const char *mode, FILE *stream) {
     if (stream == stdin || stream == stdout || stream == stderr) {
         return NULL;
@@ -168,20 +174,9 @@ FILE *freopen(const char *filename, const char *mode, FILE *stream) {
 
     // close the file
     fclose(stream);
+
     // open the file
     return fopen(filename, mode);
-}
-
-errno_t freopen_s(FILE **newstreamptr, const char *filename, const char *mode, FILE *stream) {
-    if (stream == stdin || stream == stdout || stream == stderr) {
-        return 0;
-    }
-
-    // close the file
-    fclose(stream);
-    // open the file
-    *newstreamptr = fopen(filename, mode);
-    return 0;
 }
 
 int fclose(FILE *stream) {
@@ -197,7 +192,6 @@ int fclose(FILE *stream) {
     fm_close(stream->fd);
 
     // free the stream
-    free(stream->filename);
     free(stream->buffer);
     free(stream);
 
@@ -205,18 +199,11 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    // check if the file is stdin
-    if (stream == stdin) {
+    if (!(stream->mode & MODE_WRITE))
         return 0;
-    }
 
-    if (stream == stdout || stream == stderr) {
-        stream = STD_STREAM + (stream == stdout ? 1 : 2);
-    }
-
-    // check if the file is open for writing, else return 0
-    if (!(stream->mode & MODE_WRITE)) return 0;
-    if (stream->buffer_size <= 0) return 0;
+    if (stream->buffer_size <= 0)
+        return 0;
 
     uint32_t buffer_size = stream->buffer_size;
     stream->buffer_size = 0;
@@ -249,52 +236,48 @@ int fwide(FILE *stream, int mode) {
 }
 
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
-    // return if total size is 0
     count *= size;
-    if (count == 0) return 0;
 
-    // check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr) {
+    if (count == 0)
         return 0;
-    }
 
-    if (stream == stdin) {
-        stream = STD_STREAM + 0;
-    }
-
-    // check if the file is open for reading, else return 0
-    if (!(stream->mode & MODE_READ)) return 0;
+    // check if the file is open for reading
+    if (!(stream->mode & MODE_READ))
+        return 0;
 
     fflush(stream);
 
     int read, rfrom_buffer = 0;
 
+    // check if the file is a function call
     if (fm_isfctf(stream->fd)) {
-        // read the file
         read = fm_read(stream->fd, buffer, count);
         if (read < 0) {
             stream->error = 1;
             return 0;
         }
 
-        // return the number of elements read
         return read / size;
     }
 
     // read the file from the buffer if possible
-    if (stream->buffer_size < 0 && stream->old_offset == fm_tell(stream->fd)) {
-        if ((uint32_t) -stream->buffer_size > count) {
+    if (stream->buffer_size < 0) {
+        if ((uint32_t) -stream->buffer_size >= count) {
             memcpy(buffer, stream->buffer, count);
             stream->buffer_size += count;
 
             // move the buffer
             memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
+
+            fm_lseek(stream->fd, count, SEEK_CUR);
             return count / size;
         }
 
         memcpy(buffer, stream->buffer, -stream->buffer_size);
         rfrom_buffer = -stream->buffer_size;
         count += stream->buffer_size;
+
+        fm_lseek(stream->fd, -stream->buffer_size, SEEK_CUR);
 
         stream->buffer_size = 0;
     }
@@ -314,6 +297,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         stream->error = 1;
         return 0;
     }
+
     if ((uint32_t) read < count)
         count = read;
 
@@ -321,33 +305,25 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     memmove(stream->buffer, stream->buffer + count, read - count);
     stream->buffer_size = -(read - count);
 
-    stream->old_offset = fm_tell(stream->fd);
+    fm_lseek(stream->fd, stream->buffer_size, SEEK_CUR);
 
     // return the number of elements read
     return (count + rfrom_buffer) / size;
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
-    // return if total size is 0
     count *= size;
-    if (count == 0) return 0;
 
-    // check if the file is stdin
-    if (stream == stdin) {
+    if (count == 0)
         return 0;
-    }
 
-    if (stream == stdout || stream == stderr) {
-        stream = STD_STREAM + (stream == stdout ? 1 : 2);
-    }
-
-    // check if the file is open for writing, else return 0
-    if (!(stream->mode & MODE_WRITE)) return 0;
+    // check if the file is open for writing
+    if (!(stream->mode & MODE_WRITE))
+        return 0;
 
     // if buffer is used for reading
-    if (stream->buffer_size < 0) {
+    if (stream->buffer_size < 0)
         stream->buffer_size = 0;
-    }
 
     // write in the buffer
     int need_flush = 0;
@@ -375,16 +351,11 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 int fseek(FILE *stream, long offset, int whence) {
-    // check if the file is stdin
-    if (stream == stdin)
-        stream = STD_STREAM + 0;
-    else if (stream == stdout)
-        stream = STD_STREAM + 1;
-    else if (stream == stderr)
-        stream = STD_STREAM + 2;
-
     // flush the buffer
     fflush(stream);
+
+    // reset the buffer
+    stream->buffer_size = 0;
 
     // set the file position
     return fm_lseek(stream->fd, offset, whence) < 0 ? -1 : 0;
@@ -401,29 +372,26 @@ int getc(FILE *stream) {
 }
 
 char *fgets(char *str, int count, FILE *stream) {
-    if (count <= 0 || stream == stdout || stream == stderr) {
+    if (count <= 0)
         return NULL;
-    }
 
-    if (stream == stdin) {
-        stream = STD_STREAM + 0;
-    }
+    for (int i = 0; i < count - 1; i++) {
+        char c = fread(&c, 1, 1, stream) == 1 ? c : EOF;
+        if (c == EOF) {
+            if (i == 0)
+                return NULL;
+            str[i] = 0;
+            return str;
+        }
 
-    size_t rcount = fread(str, 1, count - 1, stream);
-    if (rcount == 0) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < rcount; i++) {
-        if (str[i] == '\n') {
+        str[i] = c;
+        if (c == '\n') {
             str[i + 1] = 0;
-            // stream->file_pos -= rcount - i - 1;
-            fm_lseek(stream->fd, -rcount + i + 1, SEEK_CUR);
             return str;
         }
     }
-
-    str[rcount] = 0;
+    
+    str[count - 1] = 0;
     return str;
 }
 
@@ -441,7 +409,9 @@ int fputs(const char *str, FILE *stream) {
 }
 
 int getchar(void) {
-    return getc(stdin);
+    // equivalent to fgetc(stdin)
+    int c;
+    return fread(&c, 1, 1, stdin) == 1 ? c : EOF;
 }
 
 char *gets_s(char *str, rsize_t n) {
@@ -479,11 +449,7 @@ int puts(const char *str) {
 }
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
-    if (stream == stdin) {
-        stream = STD_STREAM + 0;
-    }
-
-    if (stream == stdout || stream == stderr) {
+    if (!lineptr || !n || !(stream->mode & MODE_READ)) {
         return -1;
     }
 
@@ -666,16 +632,6 @@ int vprintf(const char *format, va_list vlist) {
 }
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
-    // check if the file is stdin
-    if (stream == stdin) {
-        return 0;
-    }
-
-    // check if the file is stdout or stderr
-    if (stream == stdout || stream == stderr) {
-        stream = STD_STREAM + (stream == stdout ? 1 : 2);
-    }
-
     // if the stream is read only, can't write to it
     if (!(stream->mode & MODE_WRITE)) {
         return 0;
@@ -719,13 +675,6 @@ int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) 
 }
 
 long ftell(FILE *stream) {
-    if (stream == stdin)
-        stream = STD_STREAM;
-    else if (stream == stdout)
-        stream = STD_STREAM + 1;
-    else if (stream == stderr)
-        stream = STD_STREAM + 2;
-
     // flush the buffer
     fflush(stream);
 
@@ -733,13 +682,6 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
-    if (stream == stdin)
-        stream = STD_STREAM;
-    else if (stream == stdout)
-        stream = STD_STREAM + 1;
-    else if (stream == stderr)
-        stream = STD_STREAM + 2;
-
     // check if the file is at the end
     uint32_t file_pos = fm_lseek(stream->fd, 0, SEEK_CUR);
     uint32_t file_size = fm_lseek(stream->fd, 0, SEEK_END);
@@ -749,13 +691,6 @@ int feof(FILE *stream) {
 }
 
 int ferror(FILE *stream) {
-    if (stream == stdin)
-        stream = STD_STREAM;
-    else if (stream == stdout)
-        stream = STD_STREAM + 1;
-    else if (stream == stderr)
-        stream = STD_STREAM + 2;
-
     return stream->error;
 }
 
@@ -898,8 +833,8 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
 
 /** add padding to string */
 static void print_pad(char** at, size_t* left, int* ret, char p, int num) {
-    while(num--) {
-        if(*left > 1) {
+    while (num--) {
+        if (*left > 1) {
             *(*at)++ = p;
             (*left)--;
         }
@@ -909,11 +844,11 @@ static void print_pad(char** at, size_t* left, int* ret, char p, int num) {
 
 /** get negative symbol, 0 if none */
 static char get_negsign(int negative, int plus, int space) {
-    if(negative)
+    if (negative)
         return '-';
-    if(plus)
+    if (plus)
         return '+';
-    if(space)
+    if (space)
         return ' ';
     return 0;
 }
@@ -922,12 +857,12 @@ static char get_negsign(int negative, int plus, int space) {
 /** print decimal into buffer, returns length */
 static int print_dec(char* buf, int max, unsigned int value) {
     int i = 0;
-    if(value == 0) {
-        if(max > 0) {
+    if (value == 0) {
+        if (max > 0) {
             buf[0] = '0';
             i = 1;
         }
-    } else while(value && i < max) {
+    } else while (value && i < max) {
         buf[i++] = '0' + value % 10;
         value /= 10;
     }
@@ -937,12 +872,12 @@ static int print_dec(char* buf, int max, unsigned int value) {
 /** print long decimal into buffer, returns length */
 static int print_dec_l(char* buf, int max, unsigned long value) {
     int i = 0;
-    if(value == 0) {
-        if(max > 0) {
+    if (value == 0) {
+        if (max > 0) {
             buf[0] = '0';
             i = 1;
         }
-    } else while(value && i < max) {
+    } else while (value && i < max) {
         buf[i++] = '0' + value % 10;
         value /= 10;
     }
@@ -952,12 +887,12 @@ static int print_dec_l(char* buf, int max, unsigned long value) {
 /** print long decimal into buffer, returns length */
 static int print_dec_ll(char* buf, int max, unsigned long value) {
     int i = 0;
-    if(value == 0) {
-        if(max > 0) {
+    if (value == 0) {
+        if (max > 0) {
             buf[0] = '0';
             i = 1;
         }
-    } else while(value && i < max) {
+    } else while (value && i < max) {
         buf[i++] = '0' + value % 10;
         value /= 10;
     }
@@ -968,12 +903,12 @@ static int print_dec_ll(char* buf, int max, unsigned long value) {
 static int print_hex(char* buf, int max, unsigned int value) {
     const char* h = "0123456789abcdef";
     int i = 0;
-    if(value == 0) {
-        if(max > 0) {
+    if (value == 0) {
+        if (max > 0) {
             buf[0] = '0';
             i = 1;
         }
-    } else while(value && i < max) {
+    } else while (value && i < max) {
         buf[i++] = h[value & 0x0f];
         value >>= 4;
     }
@@ -984,12 +919,12 @@ static int print_hex(char* buf, int max, unsigned int value) {
 static int print_hex_l(char* buf, int max, unsigned long value) {
     const char* h = "0123456789abcdef";
     int i = 0;
-    if(value == 0) {
-        if(max > 0) {
+    if (value == 0) {
+        if (max > 0) {
             buf[0] = '0';
             i = 1;
         }
-    } else while(value && i < max) {
+    } else while (value && i < max) {
         buf[i++] = h[value & 0x0f];
         value >>= 4;
     }
@@ -1000,12 +935,12 @@ static int print_hex_l(char* buf, int max, unsigned long value) {
 static int print_hex_ll(char* buf, int max, unsigned long value) {
     const char* h = "0123456789abcdef";
     int i = 0;
-    if(value == 0) {
-        if(max > 0) {
+    if (value == 0) {
+        if (max > 0) {
             buf[0] = '0';
             i = 1;
         }
-    } else while(value && i < max) {
+    } else while (value && i < max) {
         buf[i++] = h[value & 0x0f];
         value >>= 4;
     }
@@ -1015,8 +950,8 @@ static int print_hex_ll(char* buf, int max, unsigned long value) {
 /** copy string into result, reversed */
 static void spool_str_rev(char** at, size_t* left, int* ret, const char* buf, int len) {
     int i = len;
-    while(i) {
-        if(*left > 1) {
+    while (i) {
+        if (*left > 1) {
             *(*at)++ = buf[--i];
             (*left)--;
         } else --i;
@@ -1027,8 +962,8 @@ static void spool_str_rev(char** at, size_t* left, int* ret, const char* buf, in
 /** copy string into result */
 static void spool_str(char** at, size_t* left, int* ret, const char* buf, int len) {
     int i;
-    for(i=0; i<len; i++) {
-        if(*left > 1) {
+    for (i=0; i<len; i++) {
+        if (*left > 1) {
             *(*at)++ = buf[i];
             (*left)--;
         }
@@ -1043,49 +978,49 @@ static void print_num(char** at, size_t* left, int* ret, int minw,
 {
     int w = len; /* excludes minus sign */
     char s = get_negsign(negative, plus, space);
-    if(minus) {
+    if (minus) {
         /* left adjust the number into the field, space padding */
         /* calc numw = [sign][zeroes][number] */
         int numw = w;
-        if(precision == 0 && zero) numw = 0;
-        if(numw < precision) numw = precision;
-        if(s) numw++;
+        if (precision == 0 && zero) numw = 0;
+        if (numw < precision) numw = precision;
+        if (s) numw++;
 
         /* sign */
-        if(s) print_pad(at, left, ret, s, 1);
+        if (s) print_pad(at, left, ret, s, 1);
 
         /* number */
-        if(precision == 0 && zero) {
+        if (precision == 0 && zero) {
             /* "" for the number */
         } else {
-            if(w < precision)
+            if (w < precision)
                 print_pad(at, left, ret, '0', precision - w);
             spool_str_rev(at, left, ret, buf, len);
         }
         /* spaces */
-        if(numw < minw)
+        if (numw < minw)
             print_pad(at, left, ret, ' ', minw - numw);
     } else {
         /* pad on the left of the number */
         /* calculate numw has width of [sign][zeroes][number] */
         int numw = w;
-        if(precision == 0 && zero) numw = 0;
-        if(numw < precision) numw = precision;
-        if(!prgiven && zeropad && numw < minw) numw = minw;
-        else if(s) numw++;
+        if (precision == 0 && zero) numw = 0;
+        if (numw < precision) numw = precision;
+        if (!prgiven && zeropad && numw < minw) numw = minw;
+        else if (s) numw++;
 
         /* pad with spaces */
-        if(numw < minw)
+        if (numw < minw)
             print_pad(at, left, ret, ' ', minw - numw);
         /* print sign (and one less zeropad if so) */
-        if(s) {
+        if (s) {
             print_pad(at, left, ret, s, 1);
             numw--;
         }
         /* pad with zeroes */
-        if(w < numw)
+        if (w < numw)
             print_pad(at, left, ret, '0', numw - w);
-        if(precision == 0 && zero)
+        if (precision == 0 && zero)
             return;
         /* print the characters for the value */
         spool_str_rev(at, left, ret, buf, len);
@@ -1227,7 +1162,7 @@ static void print_num_llp(char** at, size_t* left, int* ret, void* value,
     unsigned long llvalue = (unsigned long)value;
 #endif
     int len = print_hex_ll(buf, (int)sizeof(buf), llvalue);
-    if(zero) {
+    if (zero) {
         buf[0]=')';
         buf[1]='l';
         buf[2]='i';
@@ -1236,9 +1171,9 @@ static void print_num_llp(char** at, size_t* left, int* ret, void* value,
         len = 5;
     } else {
         /* put '0x' in front of the (reversed) buffer result */
-        if(len < PRINT_DEC_BUFSZ)
+        if (len < PRINT_DEC_BUFSZ)
             buf[len++] = 'x';
-        if(len < PRINT_DEC_BUFSZ)
+        if (len < PRINT_DEC_BUFSZ)
             buf[len++] = '0';
     }
     print_num(at, left, ret, minw, precision, prgiven, zeropad, minus,
@@ -1251,26 +1186,26 @@ static int print_remainder(char* buf, int max, double r, int prec) {
     unsigned long cap = 1;
     unsigned long value;
     int len, i;
-    if(prec > 19) prec = 19; /* max can do */
-    if(max < prec) return 0;
-    for(i=0; i<prec; i++) {
+    if (prec > 19) prec = 19; /* max can do */
+    if (max < prec) return 0;
+    for (i=0; i<prec; i++) {
         cap *= 10;
     }
     r *= (double)cap;
     value = (unsigned long)r;
     /* see if need to round up */
-    if(((unsigned long)((r - (double)value)*10.0)) >= 5) {
+    if (((unsigned long)((r - (double)value)*10.0)) >= 5) {
         value++;
         /* that might carry to numbers before the comma, if so,
          * just ignore that rounding. failure because 64bitprintout */
-        if(value >= cap)
+        if (value >= cap)
             value = cap-1;
     }
     len = print_dec_ll(buf, max, value);
-    while(len < prec) { /* pad with zeroes, e.g. if 0.0012 */
+    while (len < prec) { /* pad with zeroes, e.g. if 0.0012 */
         buf[len++] = '0';
     }
-    if(len < max)
+    if (len < max)
         buf[len++] = '.';
     return len;
 }
@@ -1285,7 +1220,7 @@ static int print_float(char* buf, int max, double value, int prec) {
     unsigned long whole = (unsigned long)value;
     double remain = value - (double)whole;
     int len = 0;
-    if(prec != 0)
+    if (prec != 0)
         len = print_remainder(buf, max, remain, prec);
     len += print_dec_ll(buf+len, max-len, whole);
     return len;
@@ -1301,7 +1236,7 @@ print_num_f(char** at, size_t* left, int* ret, double value,
     int negative = (value < 0);
     int zero = 0;
     int len;
-    if(!prgiven) precision = 6;
+    if (!prgiven) precision = 6;
     len = print_float(buf, (int)sizeof(buf), negative?-value:value,
         precision);
     print_num(at, left, ret, minw, 1, 0, zeropad, minus,
@@ -1316,16 +1251,16 @@ static int print_float_g(char* buf, int max, double value, int prec) {
     int len = 0;
 
     /* number of digits before the decimal point */
-    while(whole > 0) {
+    while (whole > 0) {
         before++;
         whole /= 10;
     }
     whole = (unsigned long)value;
 
-    if(prec > before && remain != 0.0) {
+    if (prec > before && remain != 0.0) {
         /* see if the last decimals are zero, if so, skip them */
         len = print_remainder(buf, max, remain, prec-before);
-        while(len > 0 && buf[0]=='0') {
+        while (len > 0 && buf[0]=='0') {
             memmove(buf, buf+1, --len);
         }
     }
@@ -1344,8 +1279,8 @@ print_num_g(char** at, size_t* left, int* ret, double value,
     int negative = (value < 0);
     int zero = 0;
     int len;
-    if(!prgiven) precision = 6;
-    if(precision == 0) precision = 1;
+    if (!prgiven) precision = 6;
+    if (precision == 0) precision = 1;
     len = print_float_g(buf, (int)sizeof(buf), negative?-value:value,
         precision);
     print_num(at, left, ret, minw, 1, 0, zeropad, minus,
@@ -1356,8 +1291,8 @@ print_num_g(char** at, size_t* left, int* ret, double value,
 /** strnlen (compat implementation) */
 static int my_strnlen(const char* s, int max) {
     int i;
-    for(i=0; i<max; i++)
-        if(s[i]==0)
+    for (i=0; i<max; i++)
+        if (s[i]==0)
             return i;
     return max;
 }
@@ -1370,22 +1305,23 @@ print_str(char** at, size_t* left, int* ret, char* s,
     if (s == NULL) s = "(null)"; /* unofficial modification */
     int w;
     /* with prec: no more than x characters from this string, stop at 0 */
-    if(prgiven)
+    if (prgiven)
         w = my_strnlen(s, precision);
-    else    w = (int)strlen(s); /* up to the nul */
-    if(w < minw && !minus)
+    else
+        w = (int)strlen(s); /* up to the nul */
+    if (w < minw && !minus)
         print_pad(at, left, ret, ' ', minw - w);
     spool_str(at, left, ret, s, w);
-    if(w < minw && minus)
+    if (w < minw && minus)
         print_pad(at, left, ret, ' ', minw - w);
 }
 
 /** print %c */
 static void print_char(char** at, size_t* left, int* ret, int c, int minw, int minus) {
-    if(1 < minw && !minus)
+    if (1 < minw && !minus)
         print_pad(at, left, ret, ' ', minw - 1);
     print_pad(at, left, ret, c, 1);
-    if(1 < minw && minus)
+    if (1 < minw && minus)
         print_pad(at, left, ret, ' ', minw - 1);
 }
 
@@ -1414,10 +1350,10 @@ int vsnprintf(char* str, size_t size, const char* format, va_list arg) {
     int ret = 0;
     const char* fmt = format;
     int conv, minw, precision, prgiven, zeropad, minus, plus, space, length;
-    while(*fmt) {
+    while (*fmt) {
         /* copy string before % */
-        while(*fmt && *fmt!='%') {
-            if(left > 1) {
+        while (*fmt && *fmt!='%') {
+            if (left > 1) {
                 *at++ = *fmt++;
                 left--;
             } else fmt++;
@@ -1425,7 +1361,8 @@ int vsnprintf(char* str, size_t size, const char* format, va_list arg) {
         }
 
         /* see if are at end */
-        if(!*fmt) break;
+        if (!*fmt)
+            break;
 
         /* fetch next argument % designation from format string */
         fmt++; /* skip the '%' */
@@ -1470,59 +1407,62 @@ int vsnprintf(char* str, size_t size, const char* format, va_list arg) {
         length = 0;
 
         /* get flags in any order */
-        for(;;) {
-            if(*fmt == '0')
+        for (;;) {
+            if (*fmt == '0')
                 zeropad = 1;
-            else if(*fmt == '-')
+            else if (*fmt == '-')
                 minus = 1;
-            else if(*fmt == '+')
+            else if (*fmt == '+')
                 plus = 1;
-            else if(*fmt == ' ')
+            else if (*fmt == ' ')
                 space = 1;
-            else break;
+            else
+                break;
             fmt++;
         }
 
         /* field width */
-        if(*fmt == '*') {
+        if (*fmt == '*') {
             fmt++; /* skip char */
             minw = va_arg(arg, int);
-            if(minw < 0) {
+            if (minw < 0) {
                 minus = 1;
                 minw = -minw;
             }
-        } else while(*fmt >= '0' && *fmt <= '9') {
+        } else while (*fmt >= '0' && *fmt <= '9') {
             minw = minw*10 + (*fmt++)-'0';
         }
 
         /* precision */
-        if(*fmt == '.') {
+        if (*fmt == '.') {
             fmt++; /* skip period */
             prgiven = 1;
             precision = 0;
-            if(*fmt == '*') {
+            if (*fmt == '*') {
                 fmt++; /* skip char */
                 precision = va_arg(arg, int);
-                if(precision < 0)
+                if (precision < 0)
                     precision = 0;
-            } else while(*fmt >= '0' && *fmt <= '9') {
+            } else while (*fmt >= '0' && *fmt <= '9') {
                 precision = precision*10 + (*fmt++)-'0';
             }
         }
 
         /* length */
-        if(*fmt == 'l') {
+        if (*fmt == 'l') {
             fmt++; /* skip char */
             length = 1;
-            if(*fmt == 'l') {
+            if (*fmt == 'l') {
                 fmt++; /* skip char */
                 length = 2;
             }
         }
 
         /* get the conversion */
-        if(!*fmt) conv = 0;
-        else    conv = *fmt++;
+        if (!*fmt)
+            conv = 0;
+        else
+            conv = *fmt++;
 
         /***********************************/
         /* print that argument designation */
@@ -1530,41 +1470,41 @@ int vsnprintf(char* str, size_t size, const char* format, va_list arg) {
         switch(conv) {
         case 'i':
         case 'd':
-            if(length == 0)
+            if (length == 0)
                 print_num_d(&at, &left, &ret, va_arg(arg, int),
                 minw, precision, prgiven, zeropad, minus, plus, space);
-            else if(length == 1)
+            else if (length == 1)
                 print_num_ld(&at, &left, &ret, va_arg(arg, long),
                 minw, precision, prgiven, zeropad, minus, plus, space);
-            else if(length == 2)
+            else if (length == 2)
                 print_num_lld(&at, &left, &ret,
                 va_arg(arg, long),
                 minw, precision, prgiven, zeropad, minus, plus, space);
             break;
         case 'u':
-            if(length == 0)
+            if (length == 0)
                 print_num_u(&at, &left, &ret,
                 va_arg(arg, unsigned int),
                 minw, precision, prgiven, zeropad, minus, plus, space);
-            else if(length == 1)
+            else if (length == 1)
                 print_num_lu(&at, &left, &ret,
                 va_arg(arg, unsigned long),
                 minw, precision, prgiven, zeropad, minus, plus, space);
-            else if(length == 2)
+            else if (length == 2)
                 print_num_llu(&at, &left, &ret,
                 va_arg(arg, unsigned long),
                 minw, precision, prgiven, zeropad, minus, plus, space);
             break;
         case 'x':
-            if(length == 0)
+            if (length == 0)
                 print_num_x(&at, &left, &ret,
                 va_arg(arg, unsigned int),
                 minw, precision, prgiven, zeropad, minus, plus, space);
-            else if(length == 1)
+            else if (length == 1)
                 print_num_lx(&at, &left, &ret,
                 va_arg(arg, unsigned long),
                 minw, precision, prgiven, zeropad, minus, plus, space);
-            else if(length == 2)
+            else if (length == 2)
                 print_num_llx(&at, &left, &ret,
                 va_arg(arg, unsigned long),
                 minw, precision, prgiven, zeropad, minus, plus, space);
@@ -1606,7 +1546,7 @@ int vsnprintf(char* str, size_t size, const char* format, va_list arg) {
     }
 
     /* zero terminate */
-    if(left > 0)
+    if (left > 0)
         *at = 0;
     return ret;
 }
