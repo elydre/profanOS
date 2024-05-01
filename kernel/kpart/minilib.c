@@ -117,23 +117,6 @@ int str_ncmp(char *s1, char *s2, int n) {
     return s1[i] - s2[i];
 }
 
-int str_count(char *s, char c) {
-    int i = 0;
-    int count = 0;
-    while (s[i] != '\0') {
-        if (s[i] == c) count++;
-        i++;
-    }
-    return count;
-}
-
-void str_append(char *s, char c) {
-    int i = 0;
-    while (s[i] != '\0') i++;
-    s[i] = c;
-    s[i+1] = '\0';
-}
-
 // memory management
 
 void mem_move(void *dest, void *source, uint32_t nbytes) {
@@ -155,31 +138,36 @@ void mem_set(void *dest, uint8_t val, uint32_t len) {
 }
 
 void free(void *addr) {
-    if (addr == NULL) return;
-    mem_free_addr((int) addr);
+    if (addr == NULL)
+        return;
+    mem_free_addr((uint32_t) addr);
 }
 
 void *malloc(uint32_t size) {
-    uint32_t addr = mem_alloc(size, 0, 1);
-    if (addr == 0) return NULL; // error
-    return (void *) addr;
+    return (void *) mem_alloc(size, 0, 1);
 }
 
 void *realloc_as_kernel(void *ptr, uint32_t size) {
-    uint32_t addr = (uint32_t) ptr;
-    uint32_t new_addr = mem_alloc(size, 0, 6);
-    if (new_addr == 0) return NULL;
-    if (addr == 0) return (void *) new_addr;
-    mem_copy((uint8_t *) new_addr, (uint8_t *) addr, size);
-    mem_free_addr(addr);
-    return (void *) new_addr;
+    void *new_addr = (void *) mem_alloc(size, 0, 6);
+
+    if (new_addr == NULL)
+        return NULL;
+
+    if (ptr == NULL)
+        return new_addr;
+
+    mem_copy(new_addr, ptr, size);
+    mem_free_addr((uint32_t) ptr);
+
+    return new_addr;
 }
 
 void *calloc(uint32_t size) {
-    int addr = mem_alloc(size, 0, 1);
-    if (addr == 0) return NULL;
-    mem_set((uint8_t *) addr, 0, size);
-    return (void *) addr;
+    void *addr = (void *) mem_alloc(size, 0, 1);
+    if (addr == NULL)
+        return NULL;
+    mem_set(addr, 0, size);
+    return addr;
 }
 
 // input/output functions
@@ -203,7 +191,7 @@ void status_print(int (*func)(), char *verb, char *noun) {
     if (status == 0) {
         kcprint(" OK ", 0x0A);
     } else if (status == 2) {
-        kcprint("ENBL", 0x0B);
+        kcprint("PASS", 0x0E);
     } else {
         kcprint("FAIL", 0x0C);
     }

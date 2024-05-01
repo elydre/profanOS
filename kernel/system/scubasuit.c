@@ -106,7 +106,7 @@ scuba_directory_t *scuba_directory_inited(void) {
     scuba_directory_t *dir = i_directory_create();
 
     // map the memory to itself
-    for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {
+    for (uint32_t i = 0x1000; i < g_map_to_addr; i += 0x1000) {
         scuba_map_from_kernel(dir, i, i);
     }
 
@@ -208,7 +208,7 @@ int scuba_init(void) {
     g_map_to_addr = mem_get_info(0, 0);
 
     // map the memory to itself
-    for (uint32_t i = 0; i < g_map_to_addr; i += 0x1000) {
+    for (uint32_t i = 0x1000; i < g_map_to_addr; i += 0x1000) {
         scuba_map_func(kernel_directory, i, i, 2);
     }
 

@@ -37,6 +37,8 @@ int hidden_cursor = 1;
 screen_char_t *screen_buffer = NULL;
 
 int tef_init(void) {
+    if (!vesa_does_enable())
+        return 2;
     screen_buffer = calloc(MAX_COLS * MAX_ROWS * sizeof(screen_char_t));
     return screen_buffer == NULL;
 }
@@ -96,7 +98,7 @@ void tef_print_char(char c, char color) {
     if (c == '\n') {
         // fill the rest of the line with spaces
         for (int i = cursor_x; i < MAX_COLS; i++) {
-            if (screen_buffer[cursor_y * MAX_COLS + i].content == '\0') {
+            if (!screen_buffer || screen_buffer[cursor_y * MAX_COLS + i].content == '\0') {
                 tef_set_char(i, cursor_y, ' ', color);
             }
         }

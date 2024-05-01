@@ -35,9 +35,6 @@ uint32_t free_count;
 uint32_t phys_size;
 int part_size;
 
-uint32_t mem_alloc(uint32_t size, uint32_t allign, int state);
-int mem_free_addr(uint32_t addr);
-
 uint32_t mem_get_phys_size(void) {
     uint32_t *addr_min, *addr_max;
     uint32_t *addr_test, old_value;

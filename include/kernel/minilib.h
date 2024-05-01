@@ -27,8 +27,6 @@ void int2str(int n, char *s);
 int  str2int(char *s);
 int  str_cmp(char *s1, char *s2);
 int  str_ncmp(char *s1, char *s2, int n);
-int  str_count(char *s, char c);
-void str_append(char *s, char c);
 
 // memory functions
 #define mem_copy(dest, source, nbytes) mem_move(dest, source, nbytes)
