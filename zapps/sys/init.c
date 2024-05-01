@@ -24,9 +24,9 @@
 typedef struct {
     int id;
     char path[256];
-} lib_t;
+} mod_t;
 
-lib_t libs_at_boot[] = {
+mod_t mods_at_boot[] = {
     {1001, "/lib/mod/libmmq.bin"},
     {1002, "/lib/mod/filesys.bin"},
     {1003, "/lib/mod/devio.bin"},
@@ -37,15 +37,13 @@ lib_t libs_at_boot[] = {
 
 int local_strlen(char *str) {
     int i = 0;
-    while (str[i] != 0) {
+    while (str[i])
         i++;
-    }
-    return i;
+    return i;    
 }
 
 char *get_name(char *path) {
-    int len = local_strlen(path);
-    int i = len - 1;
+    int i = local_strlen(path) - 1;
     while (i >= 0 && path[i] != '/') {
         i--;
     }
@@ -53,11 +51,11 @@ char *get_name(char *path) {
 }
 
 int print_load_status(int i) {
-    lib_t *lib = &libs_at_boot[i];
-    if (c_dily_load(lib->path, lib->id)) {
+    mod_t *mod = &mods_at_boot[i];
+    if (c_dily_load(mod->path, mod->id)) {
         c_kprint("FAILED TO LOAD ");
-        c_kprint(get_name(lib->path));
-        c_kprint(" LIBRARY\n");
+        c_kprint(get_name(mod->path));
+        c_kprint(" MODULE\n");
         return 1;
     }
     return 0;
@@ -117,14 +115,14 @@ int main(void) {
 
     envp = NULL;
 
-    total = (int) (sizeof(libs_at_boot) / sizeof(lib_t));
+    total = (int) (sizeof(mods_at_boot) / sizeof(mod_t));
     sum = 0;
 
     for (int i = 0; i < total; i++) {
         sum += !print_load_status(i);
     }
 
-    fd_printf(1, "Loaded %d/%d libraries\n\n", sum, total);
+    fd_printf(1, "Loaded %d/%d modules\n\n", sum, total);
 
     if (c_vesa_does_enable()) {
         panda_set_start(c_get_cursor_offset());
@@ -152,7 +150,7 @@ int main(void) {
 
         fd_putstr(1, "[init] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
-            " h - unload all libraries and exit\n"
+            " h - unload all modules and exit\n"
             " j - reboot profanOS\n"
         );
 
@@ -170,15 +168,15 @@ int main(void) {
         c_process_kill(usage_pid);
     }
 
-    // unload libraries
+    // unload all modules
     for (int i = 0; i < total; i++) {
-        lib_t *lib = &libs_at_boot[i];
-        c_dily_unload(lib->id);
+        mod_t *mod = &mods_at_boot[i];
+        c_dily_unload(mod->id);
     }
 
     free(envp);
 
-    c_kprint("all libraries unloaded - bye (._. )\n");
+    c_kprint("all modules unloaded\n");
 
     c_mem_free_all(c_process_get_pid());
 
