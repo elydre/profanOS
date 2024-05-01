@@ -347,7 +347,7 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     memset(obj->mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS) {
+        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_addr) {
             if (type == ET_EXEC)
                 memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
