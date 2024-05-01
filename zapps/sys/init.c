@@ -39,7 +39,7 @@ int local_strlen(char *str) {
     int i = 0;
     while (str[i])
         i++;
-    return i;    
+    return i;
 }
 
 char *get_name(char *path) {
