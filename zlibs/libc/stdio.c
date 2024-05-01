@@ -390,7 +390,7 @@ char *fgets(char *str, int count, FILE *stream) {
             return str;
         }
     }
-    
+
     str[count - 1] = 0;
     return str;
 }
