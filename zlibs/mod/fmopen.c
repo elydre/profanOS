@@ -36,7 +36,7 @@ typedef struct {
     };
     int      type;
     int      pid;
-    uint32_t offset;
+    int      offset;
 } opened_t;
 
 typedef struct {
@@ -191,7 +191,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
     switch (opened[fd].type) {
         case TYPE_FILE:
             tmp = c_fs_cnt_get_size(c_fs_get_main(), opened[fd].sid);
-            if (opened[fd].offset > tmp)
+            if (opened[fd].offset > (int) tmp)
                 return -1;
             if (opened[fd].offset + size > tmp)
                 size = tmp - opened[fd].offset;
@@ -201,7 +201,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
             read_count = opened[fd].fctf(buf, opened[fd].offset, size, 1);
             break;
         case TYPE_RPIP:
-            while (opened[fd].pipe->writed <= opened[fd].offset) {
+            while ((int) opened[fd].pipe->writed <= opened[fd].offset) {
                 tmp = opened[fd].pipe->wpcnt;
                 for (int i = 0; i < opened[fd].pipe->wpcnt; i++) {
                     if (c_process_get_state(opened[fd].pipe->wpid[i]) >= 4)
@@ -280,6 +280,8 @@ int fm_lseek(int fd, int offset, int whence) {
         default:
             return -1;
     }
+    if (opened[fd].offset < 0)
+        opened[fd].offset = 0;
     return opened[fd].offset;
 }
 
