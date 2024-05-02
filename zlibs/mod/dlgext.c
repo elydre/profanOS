@@ -152,7 +152,7 @@ void *open_elf(char *filename) {
 
     obj->size = fu_get_file_size(sid);
     obj->file = malloc(obj->size);
-    obj->name = "libc.so";
+    obj->name = filename;
     obj->ref_count = -1;
 
     fu_file_read(sid, obj->file, 0, obj->size);

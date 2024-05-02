@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "1.3"
+#define DELUGE_VERSION "1.4"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -30,19 +30,16 @@
             exit(1);  \
         } while (0)
 
+// internal variables
 elfobj_t **g_loaded_libs;
-char **g_envp;
+
+int g_print_indent;
 int g_lib_count;
 int g_cleanup;
 
-int g_print_indent;
-int g_list_deps;
-
-/**********************
- *                   *
- *    Extra utils    *
- *                   *
-**********************/
+// command line options
+char *g_extralib_path;
+int   g_list_deps;
 
 void list_print(const char *str, const char *name) {
     if (!g_list_deps)
@@ -54,22 +51,53 @@ void list_print(const char *str, const char *name) {
     fd_putstr(2, "\033[0m\n");
 }
 
+void add_loaded_lib(elfobj_t *lib) {
+    g_loaded_libs = realloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
+    g_loaded_libs[g_lib_count - 1] = lib;
+}
+
+/**************************
+ *                       *
+ *    Find file funcs    *
+ *                       *
+**************************/
+
 char *assemble_path(const char *dir, const char *file) {
     int len1 = strlen(dir);
     char *path = malloc(len1 + strlen(file) + 2);
     strcpy(path, dir);
-    strcpy(path + len1, "/");
+    path[len1] = '/';
     strcpy(path + len1 + 1, file);
     return path;
 }
 
-sid_t shearch_elf_sid(const char *lib, uint16_t type) {
-    if (type == ET_EXEC)
-        return fu_path_to_sid(ROOT_SID, lib);
+sid_t shearch_elf_sid(const char *lib, uint16_t type, char **path) {
+    sid_t sid;
+
+    if (type == ET_EXEC || lib[0] == '/') {
+        sid = fu_path_to_sid(ROOT_SID, lib);
+        if (!IS_NULL_SID(sid) && path)
+            *path = strdup(lib);
+        return sid;
+    }
 
     char *full_path = assemble_path("/lib", lib);
-    sid_t sid = fu_path_to_sid(ROOT_SID, full_path);
-    free(full_path);
+    sid = fu_path_to_sid(ROOT_SID, full_path);
+
+    if (IS_NULL_SID(sid)) {
+        free(full_path);
+        if (!g_extralib_path)
+            return NULL_SID;
+        full_path = assemble_path(g_extralib_path, lib);
+        sid = fu_path_to_sid(ROOT_SID, full_path);
+        if (IS_NULL_SID(sid))
+            free(full_path);
+        else if (path)
+            *path = full_path;
+    } else if (path) {
+        *path = full_path;
+    }
+
     return sid;
 }
 
@@ -346,46 +374,53 @@ int file_relocate(elfobj_t *dl) {
 }
 
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
+    elfobj_t *obj;
+    char *path = NULL;
+
     g_print_indent++;
+
+    if (strcmp(filename, "libc.so")      == 0 ||
+        strcmp(filename, "/lib/libc.so") == 0
+    ) {
+        list_print("Use dlgext", filename);
+        obj = dlgext_libc();
+        add_loaded_lib(obj);
+        g_print_indent--;
+        return obj;
+    }
+
+    sid_t sid = shearch_elf_sid(filename, required_type, &path);
+    if (IS_NULL_SID(sid)) {
+        if (isfatal)
+            raise_error("'%s' not found", filename);
+        g_print_indent--;
+        return NULL;
+    }
+
     for (int i = 0; i < g_lib_count; i++) {
-        if (strcmp(g_loaded_libs[i]->name, filename))
+        if (strcmp(g_loaded_libs[i]->name, path))
             continue;
-        list_print("Use cached", filename);
+        list_print("Use cached", path);
         g_loaded_libs[i]->ref_count++;
         g_print_indent--;
         return g_loaded_libs[i];
     }
 
-    if (strcmp(filename, "libc.so") == 0) {
-        list_print("Use dlgext", filename);
-        g_print_indent--;
-        return dlgext_libc();
-    }
+    list_print("Opening", path);
 
-    elfobj_t *obj = calloc(1, sizeof(elfobj_t));
-
-    list_print("Opening", filename);
-
-    sid_t sid = shearch_elf_sid(filename, required_type);
-    if (IS_NULL_SID(sid)) {
-        if (isfatal)
-            raise_error("'%s' not found", filename);
-        g_print_indent--;
-        free(obj);
-        return NULL;
-    }
+    obj = calloc(1, sizeof(elfobj_t));
 
     obj->size = fu_get_file_size(sid);
-    obj->name = strdup(filename);
     obj->file = malloc(obj->size);
     obj->ref_count = 1;
     obj->need_free = 1;
+    obj->name = path;
 
     fu_file_read(sid, obj->file, 0, obj->size);
 
     if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
         if (isfatal)
-            raise_error("'%s' is not a valid ELF file", filename);
+            raise_error("'%s' is not a valid ELF file", path);
         g_print_indent--;
         free(obj->file);
         free(obj->name);
@@ -412,7 +447,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         g_print_indent--;
         if (required_type == ET_DYN) {
             if (isfatal)
-                raise_error("no dynamic symbol table found in '%s'", filename);
+                raise_error("no dynamic symbol table found in '%s'", path);
             free(obj->file);
             free(obj->name);
             free(obj);
@@ -423,7 +458,13 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     obj->sym_table = hash_create(obj);
 
-    char **new_libs = required_type == ET_EXEC ? get_required_libs(obj) : NULL;
+    if (required_type == ET_DYN) {
+        add_loaded_lib(obj);
+        g_print_indent--;
+        return obj;
+    }
+
+    char **new_libs = get_required_libs(obj);
 
     if (new_libs == NULL) {
         g_print_indent--;
@@ -433,20 +474,18 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     for (int i = 0; new_libs[i] != NULL; i++) {
         int found = 0;
         for (int j = 0; g_loaded_libs && j < g_lib_count; j++) {
-            if (strcmp(new_libs[i], g_loaded_libs[j]->name) == 0) {
-                found = 1;
-                break;
-            }
+            if (strcmp(new_libs[i], g_loaded_libs[j]->name))
+                continue;
+            found = 1;
+            break;
         }
-        if (!found) {
-            elfobj_t *lib = open_elf(new_libs[i], ET_DYN, isfatal);
-            if (lib == NULL)
-                raise_error("dlopen failed for '%s'", new_libs[i]);
-            g_loaded_libs = realloc(g_loaded_libs, (g_lib_count + 1) * sizeof(elfobj_t *));
-            g_loaded_libs[g_lib_count] = lib;
-            g_lib_count++;
-        }
+        if (found) continue;
+
+        elfobj_t *lib = open_elf(new_libs[i], ET_DYN, isfatal);
+        if (lib == NULL)
+            raise_error("dlopen failed for '%s'", new_libs[i]);
     }
+
     free(new_libs);
 
     g_print_indent--;
@@ -696,12 +735,15 @@ void show_help(int full) {
         return;
     }
 
-    fd_printf(1, "Options:\n");
-    fd_printf(1, "  -b  bench link time\n");
-    fd_printf(1, "  -e  use filename as argument\n");
-    fd_printf(1, "  -h  show this help message\n");
-    fd_printf(1, "  -l  list dependencies\n");
-    fd_printf(1, "  -v  show version\n");
+    fd_printf(1,
+        "Options:\n"
+        "  -b  bench link time and exit\n"
+        "  -e  use filename as argument\n"
+        "  -h  show this help message\n"
+        "  -l  list dependencies\n"
+        "  -p  add path to extra libraries\n"
+        "  -v  show version\n"
+    );
 }
 
 deluge_args_t deluge_parse(int argc, char **argv) {
@@ -710,33 +752,53 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     args.bench = 0;
     g_list_deps = ALWAYS_DEBUG;
 
+    g_extralib_path = NULL;
     g_print_indent = 0;
 
     int move_arg = 1;
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            if (argv[i][1] == 'h') {
-                show_help(1);
-                exit(0);
-            } else if (argv[i][1] == 'v') {
-                fd_printf(1, "deluge %s\n", DELUGE_VERSION);
-                exit(0);
-            } else if (argv[i][1] == 'b') {
-                args.bench = 1;
-            } else if (argv[i][1] == 'e') {
-                move_arg = 0;
-            } else if (argv[i][1] == 'l') {
-                g_list_deps = 1;
-            } else {
-                fd_printf(2, "Unknown option: %s\n", argv[i]);
-                show_help(0);
-                exit(1);
-            }
-        } else {
+        if (argv[i][0] != '-') {
             args.name = argv[i];
             args.arg_offset = i + move_arg;
             break;
+        }
+        switch (argv[i][1]) {
+            case 'h':
+                show_help(1);
+                exit(0);
+                break; // unreachable
+            case 'v':
+                fd_printf(1, "deluge %s\n", DELUGE_VERSION);
+                exit(0);
+                break; // unreachable
+            case 'b':
+                args.bench = 1;
+                break;
+            case 'e':
+                move_arg = 0;
+                break;
+            case 'p':
+                if (i + 1 >= argc) {
+                    fd_printf(2, "Missing argument for option: %s\n", argv[i]);
+                    show_help(0);
+                    exit(1);
+                }
+                if (g_extralib_path) {
+                    fd_printf(2, "Extra library path already set\n");
+                    show_help(0);
+                    exit(1);
+                }
+                g_extralib_path = argv[++i];
+                break;
+            case 'l':
+                g_list_deps = 1;
+                break;
+            default:
+                fd_printf(2, "Unknown option: %s\n", argv[i]);
+                show_help(0);
+                exit(1);
+                break; // unreachable
         }
     }
 
@@ -753,7 +815,6 @@ int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
     g_lib_count = 0;
     g_cleanup = 0;
-    g_envp = envp;
 
     deluge_args_t args = deluge_parse(argc, argv);
     uint32_t start;
