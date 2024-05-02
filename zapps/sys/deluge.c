@@ -861,7 +861,7 @@ int main(int argc, char **argv, char **envp) {
     dynamic_linker(prog);
 
     debug_printf (
-        "Link time: %d ms", c_timer_get_ms() - start 
+        "Link time: %d ms", c_timer_get_ms() - start
     ) else if (args.bench) fd_printf(1,
         "Link time: %d ms\n", c_timer_get_ms() - start
     );
