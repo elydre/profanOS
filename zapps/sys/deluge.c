@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "1.4"
+#define DELUGE_VERSION "1.5"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -30,6 +30,12 @@
             exit(1);  \
         } while (0)
 
+#define debug_printf(fmt, ...) if (g_print_deps) {  \
+            fd_putstr(2, "\e[37m[DELUGE] ");  \
+            fd_printf(2, fmt, __VA_ARGS__);  \
+            fd_putstr(2, "\e[0m\n");  \
+        }
+
 // internal variables
 elfobj_t **g_loaded_libs;
 
@@ -39,16 +45,16 @@ int g_cleanup;
 
 // command line options
 char *g_extralib_path;
-int   g_list_deps;
+int   g_print_deps;
 
 void list_print(const char *str, const char *name) {
-    if (!g_list_deps)
+    if (!g_print_deps)
         return;
-    fd_putstr(2, "\033[37m[DELUGE] ");
+    fd_putstr(2, "\e[37m[DELUGE] ");
     for (int i = 1; i < g_print_indent; i++)
         fd_putstr(2, "  ");
     fd_printf(2, "%s '%s'", str, name);
-    fd_putstr(2, "\033[0m\n");
+    fd_putstr(2, "\e[0m\n");
 }
 
 void add_loaded_lib(elfobj_t *lib) {
@@ -374,7 +380,7 @@ int file_relocate(elfobj_t *dl) {
 }
 
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
-    elfobj_t *obj;
+    static elfobj_t *libc = NULL;
     char *path = NULL;
 
     g_print_indent++;
@@ -382,11 +388,19 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (strcmp(filename, "libc.so")      == 0 ||
         strcmp(filename, "/lib/libc.so") == 0
     ) {
-        list_print("Use dlgext", filename);
-        obj = dlgext_libc();
-        add_loaded_lib(obj);
+        if (libc) {
+            list_print("EXT cache", filename);
+            libc->ref_count++;
+            g_print_indent--;
+            return libc;
+        }
+
+        list_print("EXT open", filename);
+        libc = dlgext_libc();
+        add_loaded_lib(libc);
+        libc->ref_count = 1;
         g_print_indent--;
-        return obj;
+        return libc;
     }
 
     sid_t sid = shearch_elf_sid(filename, required_type, &path);
@@ -408,7 +422,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     list_print("Opening", path);
 
-    obj = calloc(1, sizeof(elfobj_t));
+    elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
     obj->size = fu_get_file_size(sid);
     obj->file = malloc(obj->size);
@@ -634,8 +648,11 @@ int dlclose(void *handle) {
 
     elfobj_t *dl = handle;
 
-    if (--dl->ref_count > 0)
+    if (--dl->ref_count > 0) {
+        if (g_print_deps)
+            list_print("Decrement", dl->name);
         return 0;
+    }
 
     fini_lib(dl);
 
@@ -738,10 +755,10 @@ void show_help(int full) {
     fd_printf(1,
         "Options:\n"
         "  -b  bench link time and exit\n"
+        "  -d  add debug in stderr\n"
         "  -e  use filename as argument\n"
         "  -h  show this help message\n"
-        "  -l  list dependencies\n"
-        "  -p  add path to extra libraries\n"
+        "  -l  add path to extra libraries\n"
         "  -v  show version\n"
     );
 }
@@ -750,7 +767,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     deluge_args_t args;
     args.name = NULL;
     args.bench = 0;
-    g_list_deps = ALWAYS_DEBUG;
+    g_print_deps = ALWAYS_DEBUG;
 
     g_extralib_path = NULL;
     g_print_indent = 0;
@@ -764,21 +781,20 @@ deluge_args_t deluge_parse(int argc, char **argv) {
             break;
         }
         switch (argv[i][1]) {
-            case 'h':
-                show_help(1);
-                exit(0);
-                break; // unreachable
-            case 'v':
-                fd_printf(1, "deluge %s\n", DELUGE_VERSION);
-                exit(0);
-                break; // unreachable
             case 'b':
                 args.bench = 1;
+                break;
+            case 'd':
+                g_print_deps = 1;
                 break;
             case 'e':
                 move_arg = 0;
                 break;
-            case 'p':
+            case 'h':
+                show_help(1);
+                exit(0);
+                break; // unreachable
+            case 'l':
                 if (i + 1 >= argc) {
                     fd_printf(2, "Missing argument for option: %s\n", argv[i]);
                     show_help(0);
@@ -791,9 +807,10 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 }
                 g_extralib_path = argv[++i];
                 break;
-            case 'l':
-                g_list_deps = 1;
-                break;
+            case 'v':
+                fd_printf(1, "deluge %s\n", DELUGE_VERSION);
+                exit(0);
+                break; // unreachable
             default:
                 fd_printf(2, "Unknown option: %s\n", argv[i]);
                 show_help(0);
@@ -820,13 +837,13 @@ int main(int argc, char **argv, char **envp) {
     uint32_t start;
     int ret = 0;
 
-    if (args.bench || g_list_deps) {
+    if (args.bench || g_print_deps) {
         start = c_timer_get_ms();
     }
 
-    elfobj_t *test = open_elf(args.name, ET_EXEC, 1);
+    elfobj_t *prog = open_elf(args.name, ET_EXEC, 1);
 
-    if (test == NULL) {
+    if (prog == NULL) {
         raise_error("failed to open '%s'", args.name);
         return 1;
     }
@@ -840,21 +857,19 @@ int main(int argc, char **argv, char **envp) {
         init_lib(g_loaded_libs[i]);
     }
 
-    load_sections(test, ET_EXEC);
-    dynamic_linker(test);
+    load_sections(prog, ET_EXEC);
+    dynamic_linker(prog);
 
-    if (args.bench || g_list_deps) {
-        fd_putstr(2, "\033[37m[DELUGE] Link time: ");
-        fd_printf(2, "%d ms", c_timer_get_ms() - start);
-        fd_putstr(2, "\e[0m\n");
+    if (args.bench || g_print_deps) {
+        debug_printf("Link time: %d ms", c_timer_get_ms() - start);
     }
 
-    int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) test->file)->e_entry;
+    int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) prog->file)->e_entry;
 
-    free(test->sym_table);
-    free(test->file);
-    free(test->name);
-    free(test);
+    free(prog->sym_table);
+    free(prog->file);
+    free(prog->name);
+    free(prog);
 
     dlfcn_error = 0;
 
@@ -862,14 +877,27 @@ int main(int argc, char **argv, char **envp) {
         ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
     }
 
+    debug_printf("Exiting with code %d", ret);
+
     for (int i = 0; i < g_lib_count; i++) {
         g_loaded_libs[i]->ref_count = 1;
         dlclose(g_loaded_libs[i]);
     }
     free(g_loaded_libs);
 
-    if (g_cleanup)
-        c_mem_free_all(c_process_get_pid());
+    if (g_cleanup) {
+        int pid = c_process_get_pid();
+        int leaks = c_mem_get_info(7, pid);
+
+        debug_printf("Cleaning up %d alloc%s (%d bytes)",
+            leaks,
+            leaks == 1 ? "" : "s",
+            c_mem_get_info(8, pid)
+        );
+        if (leaks > 0) {
+            c_mem_free_all(pid);
+        }
+    }
 
     return ret;
 }
