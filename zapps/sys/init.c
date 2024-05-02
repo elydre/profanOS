@@ -33,6 +33,7 @@ mod_t mods_at_boot[] = {
     {1004, "/lib/mod/fmopen.bin"},
     {1005, "/lib/mod/profan.bin"},
     {1006, "/lib/mod/panda.bin"},
+    {1007, "/lib/mod/dlgext.bin"},
 };
 
 int local_strlen(char *str) {
