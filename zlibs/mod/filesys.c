@@ -23,7 +23,7 @@
  *                                         *
 ********************************************/
 
-sid_t fu_path_to_sid(sid_t from, char *path);
+sid_t fu_path_to_sid(sid_t from, const char *path);
 
 #define CACHE_FCTF_SIZE 16
 #define RAISE_ERROR(...) fd_printf(2, "[FS MODULE ERROR] " __VA_ARGS__)
@@ -686,7 +686,7 @@ uint32_t fu_fctf_get_addr(sid_t file_sid) {
  *                                               *
 **************************************************/
 
-sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
+sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, const char *path) {
     sid_t ret;
 
     ret = NULL_SID;
@@ -748,7 +748,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     return ret;
 }
 
-sid_t fu_path_to_sid(sid_t from, char *path) {
+sid_t fu_path_to_sid(sid_t from, const char *path) {
     filesys_t *filesys = c_fs_get_main();
 
     sid_t ret;
@@ -764,7 +764,7 @@ sid_t fu_path_to_sid(sid_t from, char *path) {
         tmp = strdup(path);
         tmp[len] = '\0';
     } else {
-        tmp = path;
+        tmp = (char *) path;
     }
 
     if (tmp[0] == '/') {
