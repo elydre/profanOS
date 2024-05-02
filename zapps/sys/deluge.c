@@ -860,9 +860,11 @@ int main(int argc, char **argv, char **envp) {
     load_sections(prog, ET_EXEC);
     dynamic_linker(prog);
 
-    if (args.bench || g_print_deps) {
-        debug_printf("Link time: %d ms", c_timer_get_ms() - start);
-    }
+    debug_printf (
+        "Link time: %d ms", c_timer_get_ms() - start 
+    ) else if (args.bench) fd_printf(1,
+        "Link time: %d ms\n", c_timer_get_ms() - start
+    );
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) prog->file)->e_entry;
 
