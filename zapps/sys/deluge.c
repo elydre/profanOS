@@ -96,8 +96,6 @@ typedef struct {
 #define ELF32_R_SYM(i)  ((i) >> 8)
 #define ELF32_R_TYPE(i) ((uint8_t)(i))
 
-#define ELF32_ST_BIND(i) ((i) >> 4)
-
 /****************************
  *                         *
  *    Types and globals    *
@@ -655,7 +653,6 @@ void *dlsym(void *handle, const char *symbol) {
     void *ret;
 
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
     if (!dl->dymsym) {
         dlfcn_error = 2;
