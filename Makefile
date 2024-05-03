@@ -1,3 +1,14 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#   === Makefile : 2024 ===                                                   #
+#                                                                             #
+#    Makefile entry for profanOS                                   .pi0iq.    #
+#                                                                 d"  . `'b   #
+#    This file is part of profanOS and is released under          q. /|\  "   #
+#    the terms of the GNU General Public License                   `// \\     #
+#                                                                  //   \\    #
+#   === elydre : https://github.com/elydre/profanOS ===         #######  \\   #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
 .PHONY: help elf iso miso disk bdisk run erun krun srun clean fclean addons gaddons
 
 PY_BUILD = tools/maketool.py
