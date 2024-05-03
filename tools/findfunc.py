@@ -1,11 +1,19 @@
-# read out/make/kernel.map and find the function name from the address
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#   === findfunc.py : 2024 ===                                                #
+#                                                                             #
+#    Python script to get func name from addr and map file         .pi0iq.    #
+#                                                                 d"  . `'b   #
+#    This file is part of profanOS and is released under          q. /|\  "   #
+#    the terms of the GNU General Public License                   `// \\     #
+#                                                                  //   \\    #
+#   === elydre : https://github.com/elydre/profanOS ===         #######  \\   #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import sys
 
 if len(sys.argv) < 2:
     print(f"Usage: {sys.argv[0]} <address>")
     sys.exit(1)
-
 
 def findfunc(addr):
     # address is in hex and can be imprecise

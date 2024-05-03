@@ -1,11 +1,21 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#   === addons.py : 2024 ===                                                  #
+#                                                                             #
+#    Python script to download and install addons for profanOS     .pi0iq.    #
+#                                                                 d"  . `'b   #
+#    This file is part of profanOS and is released under          q. /|\  "   #
+#    the terms of the GNU General Public License                   `// \\     #
+#                                                                  //   \\    #
+#   === elydre : https://github.com/elydre/profanOS ===         #######  \\   #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
 import urllib.request as urlreq
 import curses, os, sys, json
 
 path = os.path.dirname(os.path.abspath(__file__))
 profan_path = path.rsplit(os.sep, 1)[0]
 
-#######################################################
-#######################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 def json_from_url(url):
     try:
@@ -40,8 +50,7 @@ def get_file(name: str) -> dict:
             return file
     return None
 
-#######################################################
-#######################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 def domain(url: str) -> str:
     return url.split("/")[2]
@@ -77,8 +86,7 @@ def download_addons(addons: list) -> bool:
         if not download(e["url"], os.sep.join(e["path"])): return False
     return True
 
-#######################################################
-#######################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 def graphic_menu(stdscr: curses.window):
     curses.curs_set(0)
@@ -197,8 +205,7 @@ def graphic_menu(stdscr: curses.window):
     # restore terminal
     curses.endwin()
 
-#######################################################
-#######################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 def show_help():
     print(
@@ -239,8 +246,7 @@ table = {
     "-g": lambda: curses.wrapper(graphic_menu)
 }
 
-#######################################################
-#######################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 # main
 
