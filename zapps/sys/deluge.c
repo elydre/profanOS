@@ -746,13 +746,12 @@ typedef struct {
 } deluge_args_t;
 
 void show_help(int full) {
-    fd_printf(1, "Usage: deluge [options] <file> [args]\n");
     if (!full) {
-        fd_printf(1, "Try 'deluge -h' for more information.\n");
-        return;
+        fd_printf(2, "Try 'deluge -h' for more information.\n");
+        exit(1);
     }
-
     fd_printf(1,
+        "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
         "  -b  bench link time and exit\n"
         "  -d  add debug in stderr\n"
@@ -796,14 +795,12 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 break; // unreachable
             case 'l':
                 if (i + 1 >= argc) {
-                    fd_printf(2, "Missing argument for option: %s\n", argv[i]);
+                    fd_printf(2, "deluge: missing argument for -l\n");
                     show_help(0);
-                    exit(1);
                 }
                 if (g_extralib_path) {
-                    fd_printf(2, "Extra library path already set\n");
+                    fd_printf(2, "deluge: extra library path already set\n");
                     show_help(0);
-                    exit(1);
                 }
                 g_extralib_path = argv[++i];
                 break;
@@ -812,9 +809,8 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 exit(0);
                 break; // unreachable
             default:
-                fd_printf(2, "Unknown option: %s\n", argv[i]);
+                fd_printf(2, "deluge: invalid option -- '%c'\n", argv[i][1]);
                 show_help(0);
-                exit(1);
                 break; // unreachable
         }
     }
@@ -822,7 +818,6 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     if (args.name == NULL) {
         fd_printf(2, "No file specified\n");
         show_help(0);
-        exit(1);
     }
 
     return args;
