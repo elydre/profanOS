@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "1.5"
+#define DELUGE_VERSION "1.6"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -39,23 +39,12 @@
 // internal variables
 elfobj_t **g_loaded_libs;
 
-int g_print_indent;
 int g_lib_count;
 int g_cleanup;
 
 // command line options
 char *g_extralib_path;
 int   g_print_deps;
-
-void list_print(const char *str, const char *name) {
-    if (!g_print_deps)
-        return;
-    fd_putstr(2, "\e[37m[DELUGE] ");
-    for (int i = 1; i < g_print_indent; i++)
-        fd_putstr(2, "  ");
-    fd_printf(2, "%s '%s'", str, name);
-    fd_putstr(2, "\e[0m\n");
-}
 
 void add_loaded_lib(elfobj_t *lib) {
     g_loaded_libs = realloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
@@ -383,23 +372,19 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     static elfobj_t *libc = NULL;
     char *path = NULL;
 
-    g_print_indent++;
-
     if (strcmp(filename, "libc.so")      == 0 ||
         strcmp(filename, "/lib/libc.so") == 0
     ) {
         if (libc) {
-            list_print("EXT cache", filename);
+            debug_printf("| E-Rf '%s'", filename);
             libc->ref_count++;
-            g_print_indent--;
             return libc;
         }
 
-        list_print("EXT open", filename);
+        debug_printf("| E-CP '%s'", filename);
         libc = dlgext_libc();
         add_loaded_lib(libc);
         libc->ref_count = 1;
-        g_print_indent--;
         return libc;
     }
 
@@ -407,20 +392,18 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (IS_NULL_SID(sid)) {
         if (isfatal)
             raise_error("'%s' not found", filename);
-        g_print_indent--;
         return NULL;
     }
 
     for (int i = 0; i < g_lib_count; i++) {
         if (strcmp(g_loaded_libs[i]->name, path))
             continue;
-        list_print("Use cached", path);
+        debug_printf("| Find '%s'", path);
         g_loaded_libs[i]->ref_count++;
-        g_print_indent--;
         return g_loaded_libs[i];
     }
 
-    list_print("Opening", path);
+    debug_printf("| Open '%s'", path);
 
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
@@ -435,7 +418,6 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
         if (isfatal)
             raise_error("'%s' is not a valid ELF file", path);
-        g_print_indent--;
         free(obj->file);
         free(obj->name);
         free(obj);
@@ -458,7 +440,6 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     }
 
     if (obj->dymsym == NULL) {
-        g_print_indent--;
         if (required_type == ET_DYN) {
             if (isfatal)
                 raise_error("no dynamic symbol table found in '%s'", path);
@@ -474,14 +455,12 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     if (required_type == ET_DYN) {
         add_loaded_lib(obj);
-        g_print_indent--;
         return obj;
     }
 
     char **new_libs = get_required_libs(obj);
 
     if (new_libs == NULL) {
-        g_print_indent--;
         return obj;
     }
 
@@ -502,7 +481,6 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     free(new_libs);
 
-    g_print_indent--;
     return obj;
 }
 
@@ -649,9 +627,21 @@ int dlclose(void *handle) {
     elfobj_t *dl = handle;
 
     if (--dl->ref_count > 0) {
-        if (g_print_deps)
-            list_print("Decrement", dl->name);
+        debug_printf("| Dref '%s' (%d)", dl->name, dl->ref_count);
         return 0;
+    }
+
+    debug_printf("| Free '%s'", dl->name);
+
+    // remove from loaded libs
+    for (int i = 0; i < g_lib_count; i++) {
+        if (g_loaded_libs[i] != dl)
+            continue;
+        g_lib_count--;
+        for (int j = i; j < g_lib_count; j++) {
+            g_loaded_libs[j] = g_loaded_libs[j + 1];
+        }
+        break;
     }
 
     fini_lib(dl);
@@ -766,10 +756,9 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     deluge_args_t args;
     args.name = NULL;
     args.bench = 0;
-    g_print_deps = ALWAYS_DEBUG;
 
+    g_print_deps = ALWAYS_DEBUG;
     g_extralib_path = NULL;
-    g_print_indent = 0;
 
     int move_arg = 1;
 
@@ -874,19 +863,23 @@ int main(int argc, char **argv, char **envp) {
         ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
     }
 
-    debug_printf("Exiting with code %d", ret);
+    debug_printf("Exit with code %d", ret);
 
-    for (int i = 0; i < g_lib_count; i++) {
-        g_loaded_libs[i]->ref_count = 1;
-        dlclose(g_loaded_libs[i]);
+    while (g_lib_count) {
+        if (g_loaded_libs[0]->ref_count > 1) {
+            debug_printf("Unclosed library '%s'", g_loaded_libs[0]->name);
+            g_loaded_libs[0]->ref_count = 1;
+        }
+        dlclose(g_loaded_libs[0]);
     }
+
     free(g_loaded_libs);
 
     if (g_cleanup) {
         int pid = c_process_get_pid();
         int leaks = c_mem_get_info(7, pid);
 
-        debug_printf("Cleaning up %d alloc%s (%d bytes)",
+        debug_printf("Clean up %d alloc%s (%d bytes)",
             leaks,
             leaks == 1 ? "" : "s",
             c_mem_get_info(8, pid)
