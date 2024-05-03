@@ -44,7 +44,7 @@ char *app_ansi_color(char *str) {
 
 void show_help(void) {
     puts("Usage: echo [options] [string ...]\n"
-        "Echo the STRING(s) to standard output.\n\n"
+        "Options:\n"
         "  -e     recognize ANSI color escape sequences\n"
         "  -h     display this help and exit\n"
         "  -n     do not output the trailing newline"
@@ -120,6 +120,7 @@ uint32_t parse_args(char **argv, int *offset) {
             flags |= ECHO_NONL;
         } else {
             flags |= ECHO_ERRR;
+            break;
         }
     }
 
@@ -140,7 +141,7 @@ int main(int argc, char **argv) {
     flags = parse_args(argv, &offset);
 
     if (flags & ECHO_ERRR) {
-        fprintf(stderr, "echo: Invalid option -- '%s'\n", argv[offset]);
+        fprintf(stderr, "echo: Invalid option -- '%s'\n", argv[offset] + 1);
         fprintf(stderr, "Try 'echo -h' for more information.\n");
         return 1;
     }
