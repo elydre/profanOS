@@ -66,7 +66,7 @@ char *assemble_path(const char *dir, const char *file) {
     return path;
 }
 
-sid_t shearch_elf_sid(const char *lib, uint16_t type, char **path) {
+sid_t search_elf_sid(const char *lib, uint16_t type, char **path) {
     sid_t sid;
 
     if (type == ET_EXEC || lib[0] == '/') {
@@ -388,7 +388,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         return libc;
     }
 
-    sid_t sid = shearch_elf_sid(filename, required_type, &path);
+    sid_t sid = search_elf_sid(filename, required_type, &path);
     if (IS_NULL_SID(sid)) {
         if (isfatal)
             raise_error("'%s' not found", filename);
