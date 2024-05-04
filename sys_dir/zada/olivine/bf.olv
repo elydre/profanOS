@@ -15,7 +15,7 @@ FUNC nb_to_hex
         RETURN
     END
 
-    IF !(eval !0 < 10);  RETURN !0;  END
+    IF !(eval !0 < 10); RETURN !0;  END
     IF !(eval !0 = 10); RETURN 'a'; END
     IF !(eval !0 = 11); RETURN 'b'; END
     IF !(eval !0 = 12); RETURN 'c'; END
