@@ -2470,7 +2470,7 @@ char **gen_args(char *string) {
     }
 
     if (in_string) {
-        raise_error(NULL, "String not closed (%s)", string);
+        raise_error(NULL, "String not closed");
         return ERROR_CODE;
     }
 
@@ -3128,7 +3128,7 @@ char **lexe_program(char *program, int interp_bckslsh) {
             continue;
         }
 
-        if (program[i] == USER_VARDF) {
+        if (program[i] == USER_VARDF && !in_quote) {
             tmp[tmp_index++] = INTR_VARDF;
             continue;
         }
@@ -3171,7 +3171,7 @@ char **lexe_program(char *program, int interp_bckslsh) {
         }
 
         // remove comments
-        if (program[i] == '/' && program[i + 1] == '/') {
+        if (!in_quote && program[i] == '/' && program[i + 1] == '/') {
             while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
             if (program[i] == '\0') break;
             continue;
@@ -3881,7 +3881,7 @@ void olv_print(char *str, int len) {
     int from = i;
     int in_quote = 0;
     for (; i < len; i++) {
-        if (i < len - 1 && str[i] == '/' && str[i+1] == '/') {
+        if (!in_quote && i < len - 1 && str[i] == '/' && str[i+1] == '/') {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
@@ -3892,8 +3892,12 @@ void olv_print(char *str, int len) {
             return;
         }
 
-        if (str[i] == USER_QUOTE) {
+        if (str[i] == USER_QUOTE && (i == 0 || str[i - 1] != '\\')) {
             in_quote = !in_quote;
+        }
+
+        if (in_quote) {
+            continue;
         }
 
         if (str[i] == USER_VARDF && str[i + 1] == '(') {
@@ -3967,7 +3971,7 @@ void olv_print(char *str, int len) {
         }
 
         // variable
-        else if (str[i] == USER_VARDF) {
+        else if (str[i] == USER_VARDF && (i == 0 || str[i - 1] != '\\')) {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
@@ -3978,7 +3982,7 @@ void olv_print(char *str, int len) {
             is_var = 1;
         }
 
-        else if (str[i] == ' ' || str[i] == USER_QUOTE) {
+        else if (!IS_NAME_CHAR(str[i]) && str[i] != '#') {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
@@ -4791,13 +4795,22 @@ void print_file_highlighted(char *file) {
 
     char **lines = lexe_program(program, 0);
     for (int i = 0; lines[i] != NULL; i++) {
-        if ((tmp = does_startwith(lines[i], "END"))) {
+        if ((tmp = does_startwith(lines[i], "END")))
             indent--;
-        }
-        for (int j = 0; j < indent * 4; j++) {
+
+        for (int j = 0; j < indent * 4; j++)
             putchar(' ');
+
+        int len;
+        for (len = 0; lines[i][len] != '\0'; len++) {
+            if (lines[i][len] == INTR_QUOTE) {
+                lines[i][len] = USER_QUOTE;
+            } else if (lines[i][len] == INTR_VARDF) {
+                lines[i][len] = USER_VARDF;
+            }
         }
-        olv_print(lines[i], strlen(lines[i]));
+
+        olv_print(lines[i], len);
         putchar('\n');
         if (tmp && !indent && lines[i + 1]) {
             putchar('\n');
@@ -4809,9 +4822,7 @@ void print_file_highlighted(char *file) {
             does_startwith(lines[i], "FOR")   ||
             does_startwith(lines[i], "FUNC")  ||
             does_startwith(lines[i], "ELSE")
-        ) {
-            indent++;
-        }
+        ) indent++;
     }
     fputs("\e[0m", stdout);
 
