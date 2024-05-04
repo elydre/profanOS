@@ -1,7 +1,7 @@
 IF !(eval 4 + 6 * (3 - 1) = 16)
     echo if and eval passed
 END; ELSE
-    echo if and eval failed
+    echo if and eval FAILED
 END
 
 
@@ -9,7 +9,7 @@ set var 43
 IF !(eval !var = 43)
     echo variable passed
 END; ELSE
-    echo variable failed
+    echo variable FAILED
 END
 del var
 
@@ -22,7 +22,7 @@ END
 IF !(eval !sum = 55)
     echo for passed
 END; ELSE
-    echo for failed
+    echo for FAILED
 END
 
 del sum
@@ -36,7 +36,7 @@ END
 IF !(eval !i = 101)
     echo while passed
 END; ELSE
-    echo while failed
+    echo while FAILED
 END
 
 set i 0
@@ -50,7 +50,7 @@ END
 IF !(eval !i = 101)
     echo while break passed
 END; ELSE
-    echo while break failed
+    echo while break FAILED
 END
 
 set i 0
@@ -67,7 +67,7 @@ END
 IF !(eval !sum = 2550);
     echo while continue passed
 END; ELSE
-    echo while continue failed
+    echo while continue FAILED
 END
 
 del sum
@@ -83,7 +83,7 @@ END
 IF !(eval !last = 7)
     echo for break passed
 END; ELSE
-    echo for break failed
+    echo for break FAILED
 END
 
 del last
@@ -99,7 +99,7 @@ END
 IF !(eval !sum = 30)
     echo for continue passed
 END; ELSE
-    echo for continue failed
+    echo for continue FAILED
 END
 
 del sum
@@ -111,7 +111,7 @@ END
 IF !(eval !(testargc 1 2 3 4 5) = 5)
     echo function argc passed
 END; ELSE
-    echo function argc failed
+    echo function argc FAILED
 END
 
 FUNC testargv
@@ -125,7 +125,7 @@ END
 IF !(eval !(testargv 5) = 10)
     echo function argv passed
 END; ELSE
-    echo function argv failed
+    echo function argv FAILED
 END
 
 del -f testargc
@@ -137,21 +137,21 @@ FUNC testglobal
     set var 2
 END
 
-testglobal
-
 global var 0
 global v2  0
+
+testglobal
 
 IF !(eval !var = 1)
     echo global variable passed
 END; ELSE
-    echo global variable failed
+    echo global variable FAILED
 END
 
 IF !(eval !v2 = 0)
     echo local overload passed
 END; ELSE
-    echo local overload failed
+    echo local overload FAILED
 END
 
 del -g var
@@ -179,7 +179,7 @@ END
 IF !(testlocal)
     echo local variable passed
 END; ELSE
-    echo local variable failed
+    echo local variable FAILED
 END
 
 del -g l0
@@ -188,43 +188,43 @@ del -f testlocal
 
 FUNC deepeval
     IF !(eval 43 ~ 43)
-        echo eval failed (simple equality)
+        echo eval FAILED (simple equality)
         RETURN
     END; IF !(eval 42 + 1 ~ 43)
-        echo eval failed (addition, equality)
+        echo eval FAILED (addition, equality)
         RETURN
     END; IF !(eval 1+32*2 ~ 65)
-        echo eval failed (simple priority)
+        echo eval FAILED (simple priority)
         RETURN
     END; IF !(eval 1 + (31 + 1) * 2 ~ 66 - 1)
-        echo eval failed (complex priority)
+        echo eval FAILED (complex priority)
         RETURN
     END; IF !(eval 30 ^ 8 ~ 36 / 6)
-        echo eval failed (division, modulo)
+        echo eval FAILED (division, modulo)
         RETURN
     END; IF !(eval ab + 2 ~ ab2)
-        echo eval failed (str + int)
+        echo eval FAILED (str + int)
         RETURN
     END; IF !(eval 2 + ab ~ 2ab)
-        echo eval failed (int + str)
+        echo eval FAILED (int + str)
         RETURN
     END; IF !(eval ab + cd ~ abcd)
-        echo eval failed (str + str)
+        echo eval FAILED (str + str)
         RETURN
     END; IF !(eval ab . cd ~ abcd)
-        echo eval failed (str . str)
+        echo eval FAILED (str . str)
         RETURN
     END; IF !(eval 4 . 0 ~ 40)
-        echo eval failed (int . int)
+        echo eval FAILED (int . int)
         RETURN
     END; IF !(eval 0x42 ~ 66)
-        echo eval failed (hex)
+        echo eval FAILED (hex)
         RETURN
     END; IF !(eval 0b101010 ~ 42)
-        echo eval failed (bin)
+        echo eval FAILED (bin)
         RETURN
     END; IF !(eval coucou @ 2 ~ u)
-        echo eval failed (char at index)
+        echo eval FAILED (char at index)
         RETURN
     END;
 
@@ -242,16 +242,16 @@ END
 
 FUNC pp_tester
     IF !(eval !(print coucou |) ~ coucou)
-        echo pipe failed (print)
+        echo pipe FAILED (print)
         RETURN
     END; IF !(eval !(echo coucou |) ~ coucou)
-        echo pipe failed (echo)
+        echo pipe FAILED (echo)
         RETURN
     END; IF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
-        echo pipe failed (print + wc)
+        echo pipe FAILED (print + wc)
         RETURN
     END; IF !(eval !(temp | temp |) ~ test)
-        echo pipe failed (function)
+        echo pipe FAILED (function)
         RETURN
     END
 
