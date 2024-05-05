@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 1"
+#define OLV_VERSION "1.0 rev 2"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -108,6 +108,10 @@
 
 #undef  UNUSED
 #define UNUSED(x) (void)(x)
+
+#ifndef INT_MAX
+  #define INT_MAX 2147483647
+#endif
 
 #define IS_NAME_CHAR(x) (       \
     ((x) >= 'a' && (x) <= 'z') || \
@@ -810,6 +814,8 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
+#define IS_THIS_OP(str, op) ((str)[0] == (op) && (str)[1] == '\0')
+
 char ops[] = "=~<>@.+-*/^()";
 
 void free_ast(ast_t *ast) {
@@ -831,22 +837,9 @@ ast_t *gen_ast(char **str, int len) {
     ast->center.type = AST_TYPE_NIL;
 
     // if start with parenthesis and end with parenthesis remove them
-    if (len > 2 && str[0][0] == '(') {
-        int count = 1;
-        int good = 1;
-        for (int i = 1; i < len; i++) {
-            if (str[i][0] == '(') {
-                count++;
-            } else if (str[i][0] == ')') {
-                count--;
-            }
-            if (count == 0 && i != len - 1) {
-                good = 0;
-            }
-        } if (good) {
-            str++;
-            len -= 2;
-        }
+    if (len > 2 && IS_THIS_OP(str[0], '(') && IS_THIS_OP(str[len - 1], ')')) {
+        len -= 2;
+        str++;
     }
 
     // check if only one element
@@ -883,17 +876,25 @@ ast_t *gen_ast(char **str, int len) {
     int op_priority = 999;
     int op_parenthesis = 0;
     for (int i = 0; i < len; i++) {
-        if (str[i][0] == '(') {
+        if (IS_THIS_OP(str[i], '(')) {
             op_parenthesis++;
-        } else if (str[i][0] == ')') {
+            continue;
+        }
+
+        if (IS_THIS_OP(str[i], ')')) {
             op_parenthesis--;
-        } else if (op_parenthesis == 0) {
-            for (int j = 0; j < (int) sizeof(ops); j++) {
-                if (str[i][0] == ops[j] && j < op_priority) {
-                    op_index = i;
-                    op_priority = j;
-                    break;
-                }
+            continue;
+        }
+
+        if (op_parenthesis) {
+            continue;
+        }
+
+        for (int j = 0; j < (int) sizeof(ops); j++) {
+            if (IS_THIS_OP(str[i], ops[j]) && j < op_priority) {
+                op_index = i;
+                op_priority = j;
+                break;
             }
         }
     }
@@ -987,9 +988,34 @@ char *calculate_integers(int left, int right, char *op) {
     return ret;
 }
 
+char *eval_string_copy(char *dest, char *src) {
+    int len = strlen(src);
+
+    if (src[0] != '"') {
+        raise_error("eval", "String must start with '\"' - got '%s'", src);
+        free(dest);
+        return NULL;
+    }
+
+    if (src[len - 1] != '"') {
+        raise_error("eval", "String must end with '\"' - got '%s'", src);
+        free(dest);
+        return NULL;
+    }
+
+    if (dest == NULL) {
+        dest = malloc(len + 1);
+    }
+
+    strncpy(dest, src + 1, len - 2);
+    dest[len - 2] = '\0';
+
+    return dest;
+}
+
 char *calculate_strings(char *left, char *right, char *op) {
     char *res, *tmp;
-    int nb = 0;
+    int len, nb = 0;
 
     if (local_atoi(right, &nb)) {
         if (local_atoi(left, &nb)) tmp = NULL;
@@ -997,9 +1023,12 @@ char *calculate_strings(char *left, char *right, char *op) {
     } else tmp = left;
 
     if (op[0] == '+' || op[0] == '.') {
-        res = malloc(strlen(left) + strlen(right) + 1);
-        strcpy(res, left);
-        strcat(res, right);
+        len = strlen(left);
+        res = malloc(len + strlen(right) + 3);
+        res[0] = '"';
+        strcpy(res + 1, left);
+        strcpy(res + len + 1, right);
+        strcat(res + len + 1, "\"");
     } else if (op[0] == '=') {
         res = malloc(2);
         res[0] = (strcmp(left, right) == 0) + '0';
@@ -1013,11 +1042,12 @@ char *calculate_strings(char *left, char *right, char *op) {
             raise_error("eval", "Cannot multiply string by string");
             return NULL;
         }
-        res = malloc((strlen(tmp) + 1) * nb + 1);
-        res[0] = '\0';
-        for (int i = 0; i < nb; i++) {
-            strcat(res, tmp);
-        }
+        len = strlen(tmp);
+        res = malloc(len * nb + 3);
+        res[0] = '"';
+        for (int i = 0; i < nb; i++)
+            memcpy(res + 1 + i * len, tmp, len);
+        res[1 + len * nb] = '"';
     } else if (op[0] == '@') {
         if (tmp == NULL) {
             raise_error("eval", "Cannot get character from string");
@@ -1027,9 +1057,11 @@ char *calculate_strings(char *left, char *right, char *op) {
             raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
             return NULL;
         }
-        res = malloc(2);
-        res[0] = tmp[nb];
-        res[1] = '\0';
+        res = malloc(4);
+        res[0] = '"';
+        res[1] = tmp[nb];
+        res[2] = '"';
+        res[3] = '\0';
     } else {
         raise_error("eval", "Unknown operator '%s' between strings", op);
         return NULL;
@@ -1038,19 +1070,12 @@ char *calculate_strings(char *left, char *right, char *op) {
 }
 
 char *eval(ast_t *ast) {
-    int left, right, no_number = 0;
+    int left, right;
     char *res = NULL;
 
     // if only one element return it
     if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
-        res = malloc(strlen((char *) ast->center.ptr) + 1);
-        no_number = local_atoi((char *) ast->center.ptr, &left);
-        if (no_number) {
-            strcpy(res, (char *) ast->center.ptr);
-        } else {
-            local_itoa(left, res);
-        }
-        return res;
+        return strdup(ast->center.ptr);
     }
 
     if (ast->center.type == AST_TYPE_NIL) {
@@ -1063,7 +1088,7 @@ char *eval(ast_t *ast) {
 
     // convert to int
     char *op = (char *) ast->center.ptr;
-    char *left_str, *right_str;
+    char *left_str, *right_str, *s1, *s2;
 
     if (ast->left.type == AST_TYPE_AST) {
         left_str = eval((ast_t *) ast->left.ptr);
@@ -1081,9 +1106,21 @@ char *eval(ast_t *ast) {
     left_str = left_str == ERROR_CODE ? NULL : left_str;
 
     if (left_str != NULL && right_str != NULL) {
-        no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
-        no_number |= op[0] == '.' || op[0] == '@';
-        res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
+        if (local_atoi(left_str, &left))
+            left = INT_MAX;
+        if (local_atoi(right_str, &right))
+            right = INT_MAX;
+        if (left != INT_MAX && right != INT_MAX && !(op[0] == '.' || op[0] == '@'))
+            res = calculate_integers(left, right, op);
+        else {
+            s1 = (left == INT_MAX) ? eval_string_copy(NULL, left_str) : left_str;
+            s2 = (right == INT_MAX) ? eval_string_copy(NULL, right_str) : right_str;
+            res = (s1 == NULL || s2 == NULL) ? NULL : calculate_strings(s1, s2, op);
+            if (left == INT_MAX)
+                free(s1);
+            if (right == INT_MAX)
+                free(s2);
+        }
     }
 
     if (left_str != NULL && ast->left.type == AST_TYPE_AST) {
@@ -1099,7 +1136,7 @@ char *eval(ast_t *ast) {
 
 void eval_help(void) {
     puts("Olivine Integrated Evaluator\n"
-        "Usage: eval <string> [string...]\n"
+        "Usage: eval [args...]\n"
         "Spaces are not required between operators\n\n"
         "Number operators:\n"
         " +  Addition\n"
@@ -1123,17 +1160,21 @@ void eval_help(void) {
         printf(" %c", ops[i]);
     }
     puts("\n\nExample: eval 1 + 2 * 3\n"
-        "         eval 'hello ' * 3\n"
-        "         eval (1+3)*2=8\n");
+        "         eval \"hello\" * 3\n"
+        "         eval ( 1 + 3 ) * 2 = 8\n");
 }
 
 char *if_eval(char **input) {
-    if (input[0] == NULL) {
+    // get argc
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
+
+    if (argc < 1) {
         raise_error("eval", "Requires at least one argument");
         return ERROR_CODE;
     }
 
-    if (input[1] == NULL && (
+    if (argc == 1 && (
         strcmp(input[0], "-h") == 0 ||
         strcmp(input[0], "--help") == 0
     )) {
@@ -1141,71 +1182,23 @@ char *if_eval(char **input) {
         return NULL;
     }
 
-    // join input
-    int required_size = 1;
-    for (int i = 0; input[i] != NULL; i++) {
-        required_size += strlen(input[i]);
-    }
-
-    char *joined_input = malloc(required_size);
-    joined_input[0] = '\0';
-    for (int i = 0; input[i] != NULL; i++) {
-        strcat(joined_input, input[i]);
-    }
-
-    char **elms = malloc(sizeof(char *) * (strlen(joined_input) + 1));
-    int len = 0;
-    int str_len = strlen(joined_input);
-    int old_cut = 0;
-
-    for (int i = 0; i < str_len; i++) {
-        // check if operator
-        for (uint32_t j = 0; j < sizeof(ops); j++) {
-            if (joined_input[i] != ops[j]) continue;
-
-            if (old_cut != i) {
-                elms[len] = malloc((i - old_cut + 1));
-                memcpy(elms[len], joined_input + old_cut, i - old_cut);
-                elms[len][i - old_cut] = '\0';
-                len++;
-            }
-
-            elms[len] = malloc(2);
-            elms[len][0] = joined_input[i];
-            elms[len][1] = '\0';
-            len++;
-
-            old_cut = i + 1;
-            break;
-        }
-    }
-
-    if (old_cut != str_len) {
-        elms[len] = malloc(str_len - old_cut + 1);
-        memcpy(elms[len], joined_input + old_cut, str_len - old_cut);
-        elms[len][str_len - old_cut] = '\0';
-        len++;
-    }
-
-    elms[len] = NULL;
-
-    free(joined_input);
-
-    ast_t *ast = gen_ast(elms, len);
-    char *res;
+    ast_t *ast = gen_ast(input, argc);
+    char *res = NULL;
 
     if (ast) {
         res = eval(ast);
         free_ast(ast);
-    } else {
-        res = NULL;
     }
 
-    for (int i = 0; i < len; i++) {
-        free(elms[i]);
+    if (res == NULL) {
+        return ERROR_CODE;
     }
 
-    free(elms);
+    if (res[0] == '"') {
+        int len = strlen(res);
+        memmove(res, res + 1, len - 1);
+        res[len - 2] = '\0';
+    }
 
     return res;
 }
