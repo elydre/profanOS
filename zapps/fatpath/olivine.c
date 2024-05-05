@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 2"
+#define OLV_VERSION "1.0 rev 3"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -164,6 +164,7 @@ char **bin_names;
 char *g_current_directory, *g_exit_code, *g_prompt;
 int g_current_level;
 
+char **lexe_program(char *program, int interp_bckslsh);
 int execute_file(char *file, char **args);
 
 /****************************
@@ -1209,6 +1210,8 @@ char *if_eval(char **input) {
  *                                    *
 ***************************************/
 
+#define IF_SEARCH_USAGE "Usage: search [-f|-d] [-r] [-e <ext>] [dir]"
+
 #if PROFANBUILD
 
 char *search_recursive(char *path, uint8_t required_type, char *ext, int recursive) {
@@ -1315,7 +1318,8 @@ char *if_search(char **input) {
             required_type = 2;
         } else if (strcmp(input[i], "-e") == 0) {
             if (input[i + 1] == NULL) {
-                raise_error("search", "Usage: search [-f|-d] [-r] [-e <ext>] [dir]");
+                raise_error("search", "Option -e requires an argument");
+                fputs(IF_SEARCH_USAGE"\n", stderr);
                 return ERROR_CODE;
             }
             ext = input[i + 1];
@@ -1323,18 +1327,21 @@ char *if_search(char **input) {
             i++;
         } else if (input[i][0] != '-') {
             if (dir != NULL) {
-                raise_error("search", "Usage: search [-f|-d] [-r] [-e <ext>] [dir]");
+                raise_error("search", "Directory already set to '%s'", dir);
+                fputs(IF_SEARCH_USAGE"\n", stderr);
                 return ERROR_CODE;
             }
             dir = input[i];
         } else {
             raise_error("search", "Unknown argument -- '%s'", input[i]);
+            fputs(IF_SEARCH_USAGE"\n", stderr);
             return ERROR_CODE;
         }
     }
 
     if (required_type == 2 && ext != NULL) {
         raise_error("search", "Cannot use -e with -d");
+        fputs(IF_SEARCH_USAGE"\n", stderr);
         return ERROR_CODE;
     }
 
@@ -2761,7 +2768,6 @@ char *execute_function(function_t *function, char **args) {
 }
 
 char *check_subfunc(char *line);
-char *check_variables(char *line);
 char *check_pseudos(char *line);
 
 char *check_bin(char *name, char *line, void **function, char *old_line) {
@@ -2867,15 +2873,78 @@ char *execute_line(char *full_line) {
     return result;
 }
 
+char *check_variables(char *line) {
+    // check if !... is present
+    int start = -1;
+    for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == INTR_VARDF && line[i + 1] != INTR_VARDF) {
+            start = i;
+            break;
+        }
+    }
+
+    if (start == -1) {
+        return line;
+    }
+
+    int i, end = -1;
+    for (i = start + 1; line[i] != '\0'; i++) {
+        if (!IS_NAME_CHAR(line[i]) && line[i] != '#') {
+            end = i;
+            break;
+        }
+    }
+
+    if (end == -1)
+        end = i;
+
+    if (end - start == 1) {
+        raise_error(NULL, "Empty variable name");
+        return NULL;
+    }
+
+    char *var_name = malloc(end - start);
+    strncpy(var_name, line + start + 1, end - start - 1);
+    var_name[end - start - 1] = '\0';
+
+    // get the variable value
+    char *var_value = get_variable(var_name);
+
+    if (var_value == NULL) {
+        raise_error(NULL, "Variable '%s' not found", var_name);
+        free(var_name);
+        return NULL;
+    }
+
+    free(var_name);
+
+    // replace the variable with its value
+    char *new_line = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
+    strncpy(new_line, line, start);
+    new_line[start] = '\0';
+
+    strcat(new_line, var_value);
+    strcat(new_line, line + end);
+
+    char *rec = check_variables(new_line);
+
+    if (rec == NULL) {
+        free(new_line);
+        return NULL;
+    }
+
+    if (rec != new_line) {
+        free(new_line);
+    }
+
+    return rec;
+}
 
 char *check_subfunc(char *line) {
     // check if !( ... ) is present
     int start = -1;
-    int in_string = 0;
     for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == INTR_QUOTE && (i == 0 || line[i - 1] != '\\'))
-            in_string = !in_string;
-        if (!in_string && line[i] == INTR_VARDF && line[i + 1] == '(') {
+        if (line[i] == INTR_VARDF && line[i + 1] == '(') {
             start = i;
             break;
         }
@@ -2958,75 +3027,6 @@ char *check_subfunc(char *line) {
     return rec;
 }
 
-char *check_variables(char *line) {
-    // check if !... is present
-    int start = -1;
-    int in_string = 0;
-    for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == INTR_QUOTE && (i == 0 || line[i - 1] != '\\'))
-            in_string = !in_string;
-        if (!in_string && line[i] == INTR_VARDF && line[i + 1] != INTR_VARDF) {
-            start = i;
-            break;
-        }
-    }
-
-    if (start == -1) {
-        return line;
-    }
-
-    int i, end = -1;
-    for (i = start + 1; line[i] != '\0'; i++) {
-        if (!IS_NAME_CHAR(line[i]) && line[i] != '#') {
-            end = i;
-            break;
-        }
-    }
-
-    if (end == -1)
-        end = i;
-
-    if (end - start == 1) {
-        return line;
-    }
-
-    char *var_name = malloc(end - start);
-    strncpy(var_name, line + start + 1, end - start - 1);
-    var_name[end - start - 1] = '\0';
-
-    // get the variable value
-    char *var_value = get_variable(var_name);
-
-    if (var_value == NULL) {
-        raise_error(NULL, "Variable '%s' not found", var_name);
-        free(var_name);
-        return NULL;
-    }
-
-    free(var_name);
-
-    // replace the variable with its value
-    char *new_line = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
-    strncpy(new_line, line, start);
-    new_line[start] = '\0';
-
-    strcat(new_line, var_value);
-    strcat(new_line, line + end);
-
-    char *rec = check_variables(new_line);
-
-    if (rec == NULL) {
-        free(new_line);
-        return NULL;
-    }
-
-    if (rec != new_line) {
-        free(new_line);
-    }
-
-    return rec;
-}
-
 char *check_pseudos(char *line) {
     int i, len = strlen(line);
     char *pseudo_name, *pseudo_value;
@@ -3058,134 +3058,6 @@ char *check_pseudos(char *line) {
     }
 
     return rec;
-}
-
-/***********************
- *                    *
- *  Lexing Functions  *
- *                    *
-***********************/
-
-char **lexe_program(char *program, int interp_bckslsh) {
-    int line_index = 1;
-    for (int i = 0; program[i] != '\0'; i++) {
-        if (program[i] == '\n' || program[i] == ';') {
-            line_index++;
-        }
-    }
-    int index_size = (line_index + 1) * sizeof(char*);
-    line_index = 0;
-
-    int program_len = strlen(program) + 1;
-    char *tmp = malloc(program_len);
-
-    char **lines = calloc(index_size + (program_len), sizeof(char));
-
-    char *line_ptr = (char*) lines + index_size;
-
-    int tmp_index = 0;
-    int is_string_begin = 1;
-    int in_quote = 0;
-    int i = 0;
-
-    if (strncmp(program, "#!", 2) == 0) {
-        for (; program[i] && program[i] != '\n'; i++);
-    }
-
-    for (; program[i] != '\0'; i++) {
-        if (program[i] == '\n' || (program[i] == ';' && !in_quote)) {
-            is_string_begin = 1;
-
-            while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
-                tmp_index--;
-            }
-
-            if (tmp_index == 0) {
-                continue;
-            }
-
-            tmp[tmp_index++] = '\0';
-
-            lines[line_index] = line_ptr;
-            strcpy(lines[line_index], tmp);
-
-            line_ptr += tmp_index;
-            line_index++;
-            tmp_index = 0;
-            continue;
-        }
-
-        if (program[i] == USER_QUOTE) {
-            in_quote = !in_quote;
-            tmp[tmp_index++] = INTR_QUOTE;
-            continue;
-        }
-
-        if (program[i] == USER_VARDF && !in_quote) {
-            tmp[tmp_index++] = INTR_VARDF;
-            continue;
-        }
-
-        // remove tabs and carriage returns
-        if (program[i] == '\t' || program[i] == '\r') {
-            continue;
-        }
-
-        // interpret double backslashes
-        if (program[i] == '\\' && interp_bckslsh) {
-            if (program[i + 1] == 'n') {
-                tmp[tmp_index++] = '\n';
-            } else if (program[i + 1] == 't') {
-                tmp[tmp_index++] = '\t';
-            } else if (program[i + 1] == 'r') {
-                tmp[tmp_index++] = '\r';
-            } else if (program[i + 1] == '\\') {
-                tmp[tmp_index++] = '\\';
-            } else if (program[i + 1] == USER_QUOTE) {
-                tmp[tmp_index++] = USER_QUOTE;
-            } else if (program[i + 1] == USER_VARDF) {
-                tmp[tmp_index++] = USER_VARDF;
-            } else if (program[i + 1] == ';') {
-                tmp[tmp_index++] = ';';
-            } else {
-                tmp[tmp_index++] = '\\';
-                tmp[tmp_index++] = program[i + 1];
-            }
-            i++;
-            continue;
-        }
-
-        // remove spaces at the beginning of the line
-        if (is_string_begin) {
-            if (program[i] == ' ') {
-                continue;
-            }
-            is_string_begin = 0;
-        }
-
-        // remove comments
-        if (!in_quote && program[i] == '/' && program[i + 1] == '/') {
-            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
-            if (program[i] == '\0') break;
-            continue;
-        }
-
-        tmp[tmp_index++] = program[i];
-    }
-
-    if (tmp_index != 0) {
-        // remove trailing spaces
-        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
-            tmp_index--;
-        }
-        tmp[tmp_index++] = '\0';
-        lines[line_index] = line_ptr;
-        strcpy(lines[line_index], tmp);
-    }
-
-    free(tmp);
-
-    return lines;
 }
 
 /*************************
@@ -3785,6 +3657,133 @@ int does_syntax_fail(char *program) {
 
 /***********************
  *                    *
+ *  Lexing Functions  *
+ *                    *
+***********************/
+
+char **lexe_program(char *program, int interp_bckslsh) {
+    int line_index = 1;
+    for (int i = 0; program[i] != '\0'; i++) {
+        if (program[i] == '\n' || program[i] == ';') {
+            line_index++;
+        }
+    }
+    int index_size = (line_index + 1) * sizeof(char*);
+    line_index = 0;
+
+    int program_len = strlen(program) + 1;
+    char *tmp = malloc(program_len);
+
+    char **lines = calloc(index_size + (program_len), sizeof(char));
+
+    char *line_ptr = (char*) lines + index_size;
+
+    int tmp_index = 0;
+    int is_string_begin = 1;
+    int in_quote = 0;
+    int i = 0;
+
+    if (strncmp(program, "#!", 2) == 0) {
+        for (; program[i] && program[i] != '\n'; i++);
+    }
+
+    for (; program[i] != '\0'; i++) {
+        if (program[i] == '\n' || (program[i] == ';' && !in_quote)) {
+            is_string_begin = 1;
+
+            while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+                tmp_index--;
+            }
+
+            if (tmp_index == 0) {
+                continue;
+            }
+
+            tmp[tmp_index++] = '\0';
+
+            lines[line_index] = line_ptr;
+            strcpy(lines[line_index], tmp);
+
+            line_ptr += tmp_index;
+            line_index++;
+            tmp_index = 0;
+            continue;
+        }
+
+        if (program[i] == USER_QUOTE) {
+            in_quote = !in_quote;
+            tmp[tmp_index++] = INTR_QUOTE;
+            continue;
+        }
+
+        if (program[i] == USER_VARDF) {
+            tmp[tmp_index++] = INTR_VARDF;
+            continue;
+        }
+
+        // remove tabs and carriage returns
+        if (program[i] == '\t' || program[i] == '\r') {
+            continue;
+        }
+
+        // interpret double backslashes
+        if (program[i] == '\\' && interp_bckslsh) {
+            if (program[i + 1] == 'n') {
+                tmp[tmp_index++] = '\n';
+            } else if (program[i + 1] == 't') {
+                tmp[tmp_index++] = '\t';
+            } else if (program[i + 1] == 'r') {
+                tmp[tmp_index++] = '\r';
+            } else if (program[i + 1] == '\\') {
+                tmp[tmp_index++] = '\\';
+            } else if (program[i + 1] == USER_QUOTE) {
+                tmp[tmp_index++] = USER_QUOTE;
+            } else if (program[i + 1] == USER_VARDF) {
+                tmp[tmp_index++] = USER_VARDF;
+            } else if (program[i + 1] == ';') {
+                tmp[tmp_index++] = ';';
+            } else {
+                tmp[tmp_index++] = '\\';
+                tmp[tmp_index++] = program[i + 1];
+            }
+            i++;
+            continue;
+        }
+
+        // remove spaces at the beginning of the line
+        if (is_string_begin) {
+            if (program[i] == ' ')
+                continue;
+            is_string_begin = 0;
+        }
+
+        // remove comments
+        if (!in_quote && program[i] == '/' && program[i + 1] == '/') {
+            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
+            if (program[i] == '\0') break;
+            continue;
+        }
+
+        tmp[tmp_index++] = program[i];
+    }
+
+    if (tmp_index != 0) {
+        // remove trailing spaces
+        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+            tmp_index--;
+        }
+        tmp[tmp_index++] = '\0';
+        lines[line_index] = line_ptr;
+        strcpy(lines[line_index], tmp);
+    }
+
+    free(tmp);
+
+    return lines;
+}
+
+/***********************
+ *                    *
  *  Program Printing  *
  *                    *
 ***********************/
@@ -3887,10 +3886,6 @@ void olv_print(char *str, int len) {
 
         if (str[i] == USER_QUOTE && (i == 0 || str[i - 1] != '\\')) {
             in_quote = !in_quote;
-        }
-
-        if (in_quote) {
-            continue;
         }
 
         if (str[i] == USER_VARDF && str[i + 1] == '(') {
@@ -4872,25 +4867,20 @@ olivine_args_t *parse_args(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0
             || strcmp(argv[i], "--help") == 0
-        ) {
-            args->help = 2;
-        } else if (strcmp(argv[i], "-v") == 0
+        ) args->help = 2;
+        else if (strcmp(argv[i], "-v") == 0
             || strcmp(argv[i], "--version") == 0
-        ) {
-            args->version = 1;
-        } else if (strcmp(argv[i], "-p") == 0
+        ) args->version = 1;
+        else if (strcmp(argv[i], "-p") == 0
             || strcmp(argv[i], "--print") == 0
-        ) {
-            args->print = 1;
-        } else if (strcmp(argv[i], "-n") == 0
+        ) args->print = 1;
+        else if (strcmp(argv[i], "-n") == 0
             || strcmp(argv[i], "--no-init") == 0
-        ) {
-            args->no_init = 1;
-        } else if (strcmp(argv[i], "-i") == 0
+        ) args->no_init = 1;
+        else if (strcmp(argv[i], "-i") == 0
             || strcmp(argv[i], "--inter") == 0
-        ) {
-            args->inter = 1;
-        } else if (strcmp(argv[i], "-c") == 0
+        ) args->inter = 1;
+        else if (strcmp(argv[i], "-c") == 0
             || strcmp(argv[i], "--command") == 0
         ) {
             if (i + 1 == argc) {
