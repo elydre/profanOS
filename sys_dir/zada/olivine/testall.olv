@@ -1,4 +1,4 @@
-IF !(eval 4 + 6 * (3 - 1) = 16)
+IF !(eval 4 + 6 * ( 3 - 1 ) = 16)
     echo if and eval passed
 END; ELSE
     echo if and eval FAILED
@@ -193,25 +193,25 @@ FUNC deepeval
     END; IF !(eval 42 + 1 ~ 43)
         echo eval FAILED (addition, equality)
         RETURN
-    END; IF !(eval 1+32*2 ~ 65)
+    END; IF !(eval 1 + 32 * 2 ~ 65)
         echo eval FAILED (simple priority)
         RETURN
-    END; IF !(eval 1 + (31 + 1) * 2 ~ 66 - 1)
+    END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
         echo eval FAILED (complex priority)
         RETURN
     END; IF !(eval 30 ^ 8 ~ 36 / 6)
         echo eval FAILED (division, modulo)
         RETURN
-    END; IF !(eval ab + 2 ~ ab2)
+    END; IF !(eval "ab" + 2 ~ "ab2")
         echo eval FAILED (str + int)
         RETURN
-    END; IF !(eval 2 + ab ~ 2ab)
+    END; IF !(eval 2 + "ab" ~ "2ab")
         echo eval FAILED (int + str)
         RETURN
-    END; IF !(eval ab + cd ~ abcd)
+    END; IF !(eval "ab" + "cd" ~ "abcd")
         echo eval FAILED (str + str)
         RETURN
-    END; IF !(eval ab . cd ~ abcd)
+    END; IF !(eval "ab" . "cd" ~ "abcd")
         echo eval FAILED (str . str)
         RETURN
     END; IF !(eval 4 . 0 ~ 40)
@@ -223,7 +223,7 @@ FUNC deepeval
     END; IF !(eval 0b101010 ~ 42)
         echo eval FAILED (bin)
         RETURN
-    END; IF !(eval coucou @ 2 ~ u)
+    END; IF !(eval "coucou" @ 2 ~ "u")
         echo eval FAILED (char at index)
         RETURN
     END;
@@ -241,16 +241,16 @@ FUNC temp
 END
 
 FUNC pp_tester
-    IF !(eval !(print coucou |) ~ coucou)
+    IF !(eval "!(print coucou |)" ~ "coucou")
         echo pipe FAILED (print)
         RETURN
-    END; IF !(eval !(echo coucou |) ~ coucou)
+    END; IF !(eval "!(echo coucou |)" ~ "coucou")
         echo pipe FAILED (echo)
         RETURN
     END; IF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
         echo pipe FAILED (print + wc)
         RETURN
-    END; IF !(eval !(temp | temp |) ~ test)
+    END; IF !(eval "!(temp | temp |)" ~ "test")
         echo pipe FAILED (function)
         RETURN
     END
