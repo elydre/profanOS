@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 3"
+#define OLV_VERSION "1.0 rev 4"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -838,9 +838,19 @@ ast_t *gen_ast(char **str, int len) {
     ast->center.type = AST_TYPE_NIL;
 
     // if start with parenthesis and end with parenthesis remove them
-    if (len > 2 && IS_THIS_OP(str[0], '(') && IS_THIS_OP(str[len - 1], ')')) {
-        len -= 2;
-        str++;
+    if (len > 2 && IS_THIS_OP(str[0], '(')) {
+        int i, parenthesis = 1;
+        for (i = 1; i < len && parenthesis; i++) {
+            if (IS_THIS_OP(str[i], '(')) {
+                parenthesis++;
+            } else if (IS_THIS_OP(str[i], ')')) {
+                parenthesis--;
+            }
+        }
+        if (parenthesis == 0 && i == len) {
+            str++;
+            len -= 2;
+        }
     }
 
     // check if only one element
@@ -1191,7 +1201,7 @@ char *if_eval(char **input) {
         free_ast(ast);
     }
 
-    if (res == NULL) {
+    if (res == NULL || res == ERROR_CODE) {
         return ERROR_CODE;
     }
 
