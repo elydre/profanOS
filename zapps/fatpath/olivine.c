@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "0.12 rev 4"
+#define OLV_VERSION "1.0 rev 3"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -26,7 +26,8 @@
 #define ENABLE_DEBUG  0  // print function calls
 #define STOP_ON_ERROR 0  // stop after first error
 
-#define STRING_CHAR '\''
+#define USER_QUOTE '\''  // quote character
+#define USER_VARDF '!'   // variable & subfunc character
 
 #define HISTORY_SIZE  100
 #define INPUT_SIZE    2048
@@ -93,17 +94,30 @@
 
 #define ERROR_CODE ((void *) 1)
 
-#ifndef LOWERCASE
-  #define LOWERCASE(x) ((x) >= 'A' && (x) <= 'Z' ? (x) + 32 : (x))
+#define INTR_QUOTE '\1'
+#define INTR_VARDF '\2'
+
+#define INTR_QUOTE_STR "\1"
+#define INTR_VARDF_STR "\2"
+
+#undef  LOWERCASE
+#define LOWERCASE(x) ((x) >= 'A' && (x) <= 'Z' ? (x) + 32 : (x))
+
+#undef  min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+#undef  UNUSED
+#define UNUSED(x) (void)(x)
+
+#ifndef INT_MAX
+  #define INT_MAX 2147483647
 #endif
 
-#ifndef min
-  #define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
-#ifndef UNUSED
-  #define UNUSED(x) (void)(x)
-#endif
+#define IS_NAME_CHAR(x) (       \
+    ((x) >= 'a' && (x) <= 'z') || \
+    ((x) >= 'A' && (x) <= 'Z') || \
+    ((x) >= '0' && (x) <= '9') || \
+    ((x) == '_'))
 
 char *keywords[] = {
     "IF",
@@ -150,6 +164,7 @@ char **bin_names;
 char *g_current_directory, *g_exit_code, *g_prompt;
 int g_current_level;
 
+char **lexe_program(char *program, int interp_bckslsh);
 int execute_file(char *file, char **args);
 
 /****************************
@@ -279,12 +294,7 @@ int is_valid_name(char *name) {
     }
 
     for (int i = 0; name[i] != '\0'; i++) {
-        if (
-            (name[i] < 'a' || name[i] > 'z') &&
-            (name[i] < 'A' || name[i] > 'Z') &&
-            (name[i] < '0' || name[i] > '9') &&
-            name[i] != '_'
-        ) {
+        if (!IS_NAME_CHAR(name[i])) {
             return 0;
         }
     }
@@ -805,6 +815,8 @@ typedef struct {
 #define AST_TYPE_NIL   1
 #define AST_TYPE_STR   3
 
+#define IS_THIS_OP(str, op) ((str)[0] == (op) && (str)[1] == '\0')
+
 char ops[] = "=~<>@.+-*/^()";
 
 void free_ast(ast_t *ast) {
@@ -826,22 +838,9 @@ ast_t *gen_ast(char **str, int len) {
     ast->center.type = AST_TYPE_NIL;
 
     // if start with parenthesis and end with parenthesis remove them
-    if (len > 2 && str[0][0] == '(') {
-        int count = 1;
-        int good = 1;
-        for (int i = 1; i < len; i++) {
-            if (str[i][0] == '(') {
-                count++;
-            } else if (str[i][0] == ')') {
-                count--;
-            }
-            if (count == 0 && i != len - 1) {
-                good = 0;
-            }
-        } if (good) {
-            str++;
-            len -= 2;
-        }
+    if (len > 2 && IS_THIS_OP(str[0], '(') && IS_THIS_OP(str[len - 1], ')')) {
+        len -= 2;
+        str++;
     }
 
     // check if only one element
@@ -878,17 +877,25 @@ ast_t *gen_ast(char **str, int len) {
     int op_priority = 999;
     int op_parenthesis = 0;
     for (int i = 0; i < len; i++) {
-        if (str[i][0] == '(') {
+        if (IS_THIS_OP(str[i], '(')) {
             op_parenthesis++;
-        } else if (str[i][0] == ')') {
+            continue;
+        }
+
+        if (IS_THIS_OP(str[i], ')')) {
             op_parenthesis--;
-        } else if (op_parenthesis == 0) {
-            for (int j = 0; j < (int) sizeof(ops); j++) {
-                if (str[i][0] == ops[j] && j < op_priority) {
-                    op_index = i;
-                    op_priority = j;
-                    break;
-                }
+            continue;
+        }
+
+        if (op_parenthesis) {
+            continue;
+        }
+
+        for (int j = 0; j < (int) sizeof(ops); j++) {
+            if (IS_THIS_OP(str[i], ops[j]) && j < op_priority) {
+                op_index = i;
+                op_priority = j;
+                break;
             }
         }
     }
@@ -982,9 +989,34 @@ char *calculate_integers(int left, int right, char *op) {
     return ret;
 }
 
+char *eval_string_copy(char *dest, char *src) {
+    int len = strlen(src);
+
+    if (src[0] != '"') {
+        raise_error("eval", "String must start with '\"' - got '%s'", src);
+        free(dest);
+        return NULL;
+    }
+
+    if (src[len - 1] != '"') {
+        raise_error("eval", "String must end with '\"' - got '%s'", src);
+        free(dest);
+        return NULL;
+    }
+
+    if (dest == NULL) {
+        dest = malloc(len + 1);
+    }
+
+    strncpy(dest, src + 1, len - 2);
+    dest[len - 2] = '\0';
+
+    return dest;
+}
+
 char *calculate_strings(char *left, char *right, char *op) {
     char *res, *tmp;
-    int nb = 0;
+    int len, nb = 0;
 
     if (local_atoi(right, &nb)) {
         if (local_atoi(left, &nb)) tmp = NULL;
@@ -992,9 +1024,12 @@ char *calculate_strings(char *left, char *right, char *op) {
     } else tmp = left;
 
     if (op[0] == '+' || op[0] == '.') {
-        res = malloc(strlen(left) + strlen(right) + 1);
-        strcpy(res, left);
-        strcat(res, right);
+        len = strlen(left);
+        res = malloc(len + strlen(right) + 3);
+        res[0] = '"';
+        strcpy(res + 1, left);
+        strcpy(res + len + 1, right);
+        strcat(res + len + 1, "\"");
     } else if (op[0] == '=') {
         res = malloc(2);
         res[0] = (strcmp(left, right) == 0) + '0';
@@ -1008,11 +1043,12 @@ char *calculate_strings(char *left, char *right, char *op) {
             raise_error("eval", "Cannot multiply string by string");
             return NULL;
         }
-        res = malloc((strlen(tmp) + 1) * nb + 1);
-        res[0] = '\0';
-        for (int i = 0; i < nb; i++) {
-            strcat(res, tmp);
-        }
+        len = strlen(tmp);
+        res = malloc(len * nb + 3);
+        res[0] = '"';
+        for (int i = 0; i < nb; i++)
+            memcpy(res + 1 + i * len, tmp, len);
+        res[1 + len * nb] = '"';
     } else if (op[0] == '@') {
         if (tmp == NULL) {
             raise_error("eval", "Cannot get character from string");
@@ -1022,9 +1058,11 @@ char *calculate_strings(char *left, char *right, char *op) {
             raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
             return NULL;
         }
-        res = malloc(2);
-        res[0] = tmp[nb];
-        res[1] = '\0';
+        res = malloc(4);
+        res[0] = '"';
+        res[1] = tmp[nb];
+        res[2] = '"';
+        res[3] = '\0';
     } else {
         raise_error("eval", "Unknown operator '%s' between strings", op);
         return NULL;
@@ -1033,19 +1071,12 @@ char *calculate_strings(char *left, char *right, char *op) {
 }
 
 char *eval(ast_t *ast) {
-    int left, right, no_number = 0;
+    int left, right;
     char *res = NULL;
 
     // if only one element return it
     if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
-        res = malloc(strlen((char *) ast->center.ptr) + 1);
-        no_number = local_atoi((char *) ast->center.ptr, &left);
-        if (no_number) {
-            strcpy(res, (char *) ast->center.ptr);
-        } else {
-            local_itoa(left, res);
-        }
-        return res;
+        return strdup(ast->center.ptr);
     }
 
     if (ast->center.type == AST_TYPE_NIL) {
@@ -1058,7 +1089,7 @@ char *eval(ast_t *ast) {
 
     // convert to int
     char *op = (char *) ast->center.ptr;
-    char *left_str, *right_str;
+    char *left_str, *right_str, *s1, *s2;
 
     if (ast->left.type == AST_TYPE_AST) {
         left_str = eval((ast_t *) ast->left.ptr);
@@ -1076,9 +1107,21 @@ char *eval(ast_t *ast) {
     left_str = left_str == ERROR_CODE ? NULL : left_str;
 
     if (left_str != NULL && right_str != NULL) {
-        no_number = local_atoi(left_str, &left) || local_atoi(right_str, &right);
-        no_number |= op[0] == '.' || op[0] == '@';
-        res = no_number ? calculate_strings(left_str, right_str, op) : calculate_integers(left, right, op);
+        if (local_atoi(left_str, &left))
+            left = INT_MAX;
+        if (local_atoi(right_str, &right))
+            right = INT_MAX;
+        if (left != INT_MAX && right != INT_MAX && !(op[0] == '.' || op[0] == '@'))
+            res = calculate_integers(left, right, op);
+        else {
+            s1 = (left == INT_MAX) ? eval_string_copy(NULL, left_str) : left_str;
+            s2 = (right == INT_MAX) ? eval_string_copy(NULL, right_str) : right_str;
+            res = (s1 == NULL || s2 == NULL) ? NULL : calculate_strings(s1, s2, op);
+            if (left == INT_MAX)
+                free(s1);
+            if (right == INT_MAX)
+                free(s2);
+        }
     }
 
     if (left_str != NULL && ast->left.type == AST_TYPE_AST) {
@@ -1094,7 +1137,7 @@ char *eval(ast_t *ast) {
 
 void eval_help(void) {
     puts("Olivine Integrated Evaluator\n"
-        "Usage: eval <string> [string...]\n"
+        "Usage: eval [args...]\n"
         "Spaces are not required between operators\n\n"
         "Number operators:\n"
         " +  Addition\n"
@@ -1118,17 +1161,21 @@ void eval_help(void) {
         printf(" %c", ops[i]);
     }
     puts("\n\nExample: eval 1 + 2 * 3\n"
-        "         eval 'hello ' * 3\n"
-        "         eval (1+3)*2=8\n");
+        "         eval \"hello\" * 3\n"
+        "         eval ( 1 + 3 ) * 2 = 8\n");
 }
 
 char *if_eval(char **input) {
-    if (input[0] == NULL) {
+    // get argc
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
+
+    if (argc < 1) {
         raise_error("eval", "Requires at least one argument");
         return ERROR_CODE;
     }
 
-    if (input[1] == NULL && (
+    if (argc == 1 && (
         strcmp(input[0], "-h") == 0 ||
         strcmp(input[0], "--help") == 0
     )) {
@@ -1136,88 +1183,42 @@ char *if_eval(char **input) {
         return NULL;
     }
 
-    // join input
-    int required_size = 1;
-    for (int i = 0; input[i] != NULL; i++) {
-        required_size += strlen(input[i]);
-    }
-
-    char *joined_input = malloc(required_size);
-    joined_input[0] = '\0';
-    for (int i = 0; input[i] != NULL; i++) {
-        strcat(joined_input, input[i]);
-    }
-
-    char **elms = malloc(sizeof(char *) * (strlen(joined_input) + 1));
-    int len = 0;
-    int str_len = strlen(joined_input);
-    int old_cut = 0;
-
-    for (int i = 0; i < str_len; i++) {
-        // check if operator
-        for (uint32_t j = 0; j < sizeof(ops); j++) {
-            if (joined_input[i] != ops[j]) continue;
-
-            if (old_cut != i) {
-                elms[len] = malloc((i - old_cut + 1));
-                memcpy(elms[len], joined_input + old_cut, i - old_cut);
-                elms[len][i - old_cut] = '\0';
-                len++;
-            }
-
-            elms[len] = malloc(2);
-            elms[len][0] = joined_input[i];
-            elms[len][1] = '\0';
-            len++;
-
-            old_cut = i + 1;
-            break;
-        }
-    }
-
-    if (old_cut != str_len) {
-        elms[len] = malloc(str_len - old_cut + 1);
-        memcpy(elms[len], joined_input + old_cut, str_len - old_cut);
-        elms[len][str_len - old_cut] = '\0';
-        len++;
-    }
-
-    elms[len] = NULL;
-
-    free(joined_input);
-
-    ast_t *ast = gen_ast(elms, len);
-    char *res;
+    ast_t *ast = gen_ast(input, argc);
+    char *res = NULL;
 
     if (ast) {
         res = eval(ast);
         free_ast(ast);
-    } else {
-        res = NULL;
     }
 
-    for (int i = 0; i < len; i++) {
-        free(elms[i]);
+    if (res == NULL) {
+        return ERROR_CODE;
     }
 
-    free(elms);
+    if (res[0] == '"') {
+        int len = strlen(res);
+        memmove(res, res + 1, len - 1);
+        res[len - 2] = '\0';
+    }
 
     return res;
 }
 
-/*************************************
- *                                  *
- *  Olivine Find Internal Function  *
- *                                  *
-*************************************/
+/***************************************
+ *                                    *
+ *  Olivine Search Internal Function  *
+ *                                    *
+***************************************/
+
+#define IF_SEARCH_USAGE "Usage: search [-f|-d] [-r] [-e <ext>] [dir]"
 
 #if PROFANBUILD
 
-char *find_recursive(char *path, uint8_t required_type, char *ext, int recursive) {
+char *search_recursive(char *path, uint8_t required_type, char *ext, int recursive) {
     sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
     if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
-        raise_error("find", "Directory '%s' does not exist", path);
+        raise_error("search", "Directory '%s' does not exist", path);
         return ERROR_CODE;
     }
 
@@ -1257,16 +1258,16 @@ char *find_recursive(char *path, uint8_t required_type, char *ext, int recursive
         ){
             tmp = malloc((strlen(output) + strlen(tmp_path) + 4));
             if (output[0] != '\0') {
-                sprintf(tmp, "%s '%s'", output, tmp_path);
+                sprintf(tmp, "%s "INTR_QUOTE_STR"%s"INTR_QUOTE_STR, output, tmp_path);
             } else {
-                sprintf(tmp, "'%s'", tmp_path);
+                sprintf(tmp, INTR_QUOTE_STR"%s"INTR_QUOTE_STR, tmp_path);
             }
             free(output);
             output = tmp;
         }
 
         if (recursive && fu_is_dir(out_ids[i])) {
-            char *tmp_output = find_recursive(tmp_path, required_type, ext, recursive);
+            char *tmp_output = search_recursive(tmp_path, required_type, ext, recursive);
             if (tmp_output != NULL && tmp_output[0] != '\0') {
                 char *tmp = malloc((strlen(output) + strlen(tmp_output) + 4));
                 if (output[0] != '\0') {
@@ -1295,7 +1296,7 @@ char *find_recursive(char *path, uint8_t required_type, char *ext, int recursive
 
 #endif
 
-char *if_find(char **input) {
+char *if_search(char **input) {
     /*
      * input: ["-f", "/dir/subdir"]
      * output: "'/dir/subdir/file1' '/dir/subdir/file2'"
@@ -1317,7 +1318,8 @@ char *if_find(char **input) {
             required_type = 2;
         } else if (strcmp(input[i], "-e") == 0) {
             if (input[i + 1] == NULL) {
-                raise_error("find", "Usage: find [-f|-d] [-r] [-e <ext>] [dir]");
+                raise_error("search", "Option -e requires an argument");
+                fputs(IF_SEARCH_USAGE"\n", stderr);
                 return ERROR_CODE;
             }
             ext = input[i + 1];
@@ -1325,18 +1327,21 @@ char *if_find(char **input) {
             i++;
         } else if (input[i][0] != '-') {
             if (dir != NULL) {
-                raise_error("find", "Usage: find [-f|-d] [-r] [-e <ext>] [dir]");
+                raise_error("search", "Directory already set to '%s'", dir);
+                fputs(IF_SEARCH_USAGE"\n", stderr);
                 return ERROR_CODE;
             }
             dir = input[i];
         } else {
-            raise_error("find", "Unknown argument -- '%s'", input[i]);
+            raise_error("search", "Unknown argument -- '%s'", input[i]);
+            fputs(IF_SEARCH_USAGE"\n", stderr);
             return ERROR_CODE;
         }
     }
 
     if (required_type == 2 && ext != NULL) {
-        raise_error("find", "Cannot use -e with -d");
+        raise_error("search", "Cannot use -e with -d");
+        fputs(IF_SEARCH_USAGE"\n", stderr);
         return ERROR_CODE;
     }
 
@@ -1345,14 +1350,14 @@ char *if_find(char **input) {
     }
 
     dir = assemble_path(g_current_directory, dir);
-    ret = find_recursive(dir, required_type, ext, recursive);
+    ret = search_recursive(dir, required_type, ext, recursive);
     free(dir);
 
     return ret;
 
     #else
     UNUSED(input);
-    raise_error("find", "Not supported in this build");
+    raise_error("search", "Not supported in this build");
     return ERROR_CODE;
     #endif
 }
@@ -1712,7 +1717,12 @@ char *if_dot(char **input) {
     #if PROFANBUILD
     int pid;
     local_itoa(run_ifexist_full(
-        (runtime_args_t){file_path, argc, argv, __get_environ_ptr(), stdout_path || stdin_path ? 2 : wait_end}, &pid
+        (runtime_args_t) {
+            file_path,
+            argc, argv,
+            __get_environ_ptr(),
+            stdout_path || stdin_path ? 2 : wait_end
+        }, &pid
     ), g_exit_code);
 
     if (stdin_path) {
@@ -1932,6 +1942,32 @@ char *if_global(char **input) {
     return NULL;
 }
 
+char *if_inter(char **input) {
+    // make variable and quote usable for olivine
+
+    if (input[0] == NULL || input[1] != NULL) {
+        raise_error("inter", "Usage: inter <string>");
+        return ERROR_CODE;
+    }
+
+    char *output = malloc(strlen(input[0]) + 1);
+
+    int i;
+    for (i = 0; input[0][i] != '\0'; i++) {
+        if (input[0][i] == USER_QUOTE) {
+            output[i] = INTR_QUOTE;
+        } else if (input[0][i] == USER_VARDF) {
+            output[i] = INTR_VARDF;
+        } else {
+            output[i] = input[0][i];
+        }
+    }
+
+    output[i] = '\0';
+
+    return output;
+}
+
 char *if_name(char **input) {
     /*
      * input: ["/dir/subdir/file1.txt"]
@@ -1965,7 +2001,7 @@ char *if_name(char **input) {
     }
 
     char *output = malloc((strlen(name) + 3));
-    sprintf(output, "'%s'", name);
+    sprintf(output, INTR_QUOTE_STR"%s"INTR_QUOTE_STR, name);
     free(name);
 
     return output;
@@ -2335,14 +2371,15 @@ internal_function_t internal_functions[] = {
     {"exec", if_exec},
     {"exit", if_exit},
     {"export", if_export},
-    {"find", if_find},
     {"fsize", if_fsize},
     {"global", if_global},
+    {"inter", if_inter},
     {"print", if_print},
     {"pseudo", if_pseudo},
     {"name", if_name},
     {"range", if_range},
     {"rep", if_rep},
+    {"search", if_search},
     {"set", if_set_var},
     {"sprintf", if_sprintf},
     {"strlen", if_strlen},
@@ -2368,11 +2405,11 @@ void *get_if_function(char *name) {
 void remove_quotes(char *string) {
     int i, dec = 0;
     for (i = 0; string[i] != '\0'; i++) {
-        if (string[i] == '\\' && string[i + 1] == STRING_CHAR) {
-            string[i - dec] = STRING_CHAR;
+        if (string[i] == '\\' && string[i + 1] == INTR_QUOTE) {
+            string[i - dec] = INTR_QUOTE;
             continue;
         }
-        if (string[i] == STRING_CHAR) {
+        if (string[i] == INTR_QUOTE) {
             dec++;
             continue;
         }
@@ -2398,7 +2435,7 @@ int quotes_less_copy(char *dest, char *src, int len) {
     int i = 0;
     int in_string = 0;
     for (int j = 0; src[j] != '\0' && i < len; j++) {
-        if (src[j] == STRING_CHAR && (j == 0 || src[j - 1] != '\\')) {
+        if (src[j] == INTR_QUOTE && (j == 0 || src[j - 1] != '\\')) {
             in_string = !in_string;
             len--;
         } else if (in_string) {
@@ -2424,7 +2461,7 @@ char **gen_args(char *string) {
     int len;
 
     for (len = 0; string[len] != '\0'; len++) {
-        if (string[len] == STRING_CHAR && (len == 0 || string[len - 1] != '\\')) {
+        if (string[len] == INTR_QUOTE && (len == 0 || string[len - 1] != '\\')) {
             in_string = !in_string;
         } if (string[len] == ' ' && !in_string) {
             while (string[len + 1] == ' ') len++;
@@ -2433,7 +2470,7 @@ char **gen_args(char *string) {
     }
 
     if (in_string) {
-        raise_error(NULL, "String not closed (%s)", string);
+        raise_error(NULL, "String not closed");
         return ERROR_CODE;
     }
 
@@ -2445,7 +2482,7 @@ char **gen_args(char *string) {
     int old_i = 0;
     int arg_i = 0;
     for (int i = 0; string[i] != '\0'; i++) {
-        if (string[i] == STRING_CHAR && (i == 0 || string[i - 1] != '\\')) {
+        if (string[i] == INTR_QUOTE && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
         } if (string[i] == ' ' && !in_string) {
             int tmp = quotes_less_copy(args, string + old_i, i - old_i);
@@ -2463,7 +2500,6 @@ char **gen_args(char *string) {
     return argv;
 }
 
-
 char *args_rejoin(char **input, int to) {
     int required_size = 1;
     for (int i = 0; i < to; i++) {
@@ -2476,9 +2512,9 @@ char *args_rejoin(char **input, int to) {
     // add quotes if needed
     for (int i = 0; i < to; i++) {
         if (strchr(input[i], ' ') != NULL) {
-            strcat(joined_input, "'");
+            strcat(joined_input, INTR_QUOTE_STR);
             strcat(joined_input, input[i]);
-            strcat(joined_input, "'");
+            strcat(joined_input, INTR_QUOTE_STR);
         } else {
             strcat(joined_input, input[i]);
         }
@@ -2492,7 +2528,7 @@ char *args_rejoin(char **input, int to) {
 char *get_function_name(char *line) {
     int in_string = 0;
     for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == STRING_CHAR) {
+        if (line[i] == INTR_QUOTE) {
             in_string = !in_string;
         }
 
@@ -2732,7 +2768,6 @@ char *execute_function(function_t *function, char **args) {
 }
 
 char *check_subfunc(char *line);
-char *check_variables(char *line);
 char *check_pseudos(char *line);
 
 char *check_bin(char *name, char *line, void **function, char *old_line) {
@@ -2750,7 +2785,7 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
     int in_quote = 0;
 
     for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == STRING_CHAR && (i == 0 || line[i - 1] != '\\')) {
+        if (line[i] == INTR_QUOTE && (i == 0 || line[i - 1] != '\\')) {
             in_quote = !in_quote;
         }
         if (line[i] == ' ' && !in_quote) {
@@ -2838,13 +2873,78 @@ char *execute_line(char *full_line) {
     return result;
 }
 
+char *check_variables(char *line) {
+    // check if !... is present
+    int start = -1;
+    for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == INTR_VARDF && line[i + 1] != INTR_VARDF) {
+            start = i;
+            break;
+        }
+    }
+
+    if (start == -1) {
+        return line;
+    }
+
+    int i, end = -1;
+    for (i = start + 1; line[i] != '\0'; i++) {
+        if (!IS_NAME_CHAR(line[i]) && line[i] != '#') {
+            end = i;
+            break;
+        }
+    }
+
+    if (end == -1)
+        end = i;
+
+    if (end - start == 1) {
+        raise_error(NULL, "Empty variable name");
+        return NULL;
+    }
+
+    char *var_name = malloc(end - start);
+    strncpy(var_name, line + start + 1, end - start - 1);
+    var_name[end - start - 1] = '\0';
+
+    // get the variable value
+    char *var_value = get_variable(var_name);
+
+    if (var_value == NULL) {
+        raise_error(NULL, "Variable '%s' not found", var_name);
+        free(var_name);
+        return NULL;
+    }
+
+    free(var_name);
+
+    // replace the variable with its value
+    char *new_line = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
+    strncpy(new_line, line, start);
+    new_line[start] = '\0';
+
+    strcat(new_line, var_value);
+    strcat(new_line, line + end);
+
+    char *rec = check_variables(new_line);
+
+    if (rec == NULL) {
+        free(new_line);
+        return NULL;
+    }
+
+    if (rec != new_line) {
+        free(new_line);
+    }
+
+    return rec;
+}
 
 char *check_subfunc(char *line) {
     // check if !( ... ) is present
     int start = -1;
-    int end = -1;
     for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == '!' && line[i + 1] == '(') {
+        if (line[i] == INTR_VARDF && line[i + 1] == '(') {
             start = i;
             break;
         }
@@ -2865,7 +2965,9 @@ char *check_subfunc(char *line) {
         return pseudo_line;
     }
 
-    int open_parentheses = 1;
+    int open_parentheses, end = -1;
+
+    open_parentheses = 1;
     for (int i = start + 2; line[i] != '\0'; i++) {
         if (line[i] == '(') {
             open_parentheses++;
@@ -2922,78 +3024,6 @@ char *check_subfunc(char *line) {
         free(new_line);
     }
 
-    char *var_line = check_variables(rec);
-    if (var_line != rec) {
-        free(rec);
-    }
-
-    char *pseudo_line = check_pseudos(var_line);
-    if (pseudo_line != var_line) {
-        free(var_line);
-    }
-
-    return pseudo_line;
-}
-
-char *check_variables(char *line) {
-    // check if !... is present
-    int start = -1;
-    int end = -1;
-    for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == '!' && line[i + 1] != '!') {
-            start = i;
-            break;
-        }
-    }
-
-    if (start == -1) {
-        return line;
-    }
-
-    int i;
-    for (i = start + 1; line[i] != '\0'; i++) {
-        if (line[i] == ' ' || line[i] == '!' || line[i] == STRING_CHAR) {
-            end = i;
-            break;
-        }
-    }
-
-    if (end == -1) end = i;
-
-    char *var_name = malloc(end - start);
-    strncpy(var_name, line + start + 1, end - start - 1);
-    var_name[end - start - 1] = '\0';
-
-    // get the variable value
-    char *var_value = get_variable(var_name);
-
-    if (var_value == NULL) {
-        raise_error(NULL, "Variable '%s' not found", var_name);
-        free(var_name);
-        return NULL;
-    }
-
-    free(var_name);
-
-    // replace the variable with its value
-    char *new_line = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
-    strncpy(new_line, line, start);
-    new_line[start] = '\0';
-
-    strcat(new_line, var_value);
-    strcat(new_line, line + end);
-
-    char *rec = check_variables(new_line);
-
-    if (rec == NULL) {
-        free(new_line);
-        return NULL;
-    }
-
-    if (rec != new_line) {
-        free(new_line);
-    }
-
     return rec;
 }
 
@@ -3028,125 +3058,6 @@ char *check_pseudos(char *line) {
     }
 
     return rec;
-}
-
-/***********************
- *                    *
- *  Lexing Functions  *
- *                    *
-***********************/
-
-char **lexe_program(char *program, int interp_bckslsh) {
-    int line_index = 1;
-    for (int i = 0; program[i] != '\0'; i++) {
-        if (program[i] == '\n' || program[i] == ';') {
-            line_index++;
-        }
-    }
-    int index_size = (line_index + 1) * sizeof(char*);
-    line_index = 0;
-
-    int program_len = strlen(program) + 1;
-    char *tmp = malloc(program_len);
-
-    char **lines = calloc(index_size + (program_len), sizeof(char));
-
-    char *line_ptr = (char*) lines + index_size;
-
-    int tmp_index = 0;
-    int is_string_begin = 1;
-    int in_quote = 0;
-    int i = 0;
-
-    if (strncmp(program, "#!", 2) == 0) {
-        for (; program[i] && program[i] != '\n'; i++);
-    }
-
-    for (; program[i] != '\0'; i++) {
-        if (program[i] == '\n' || (program[i] == ';' && !in_quote)) {
-            is_string_begin = 1;
-
-            while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
-                tmp_index--;
-            }
-
-            if (tmp_index == 0) {
-                continue;
-            }
-
-            tmp[tmp_index++] = '\0';
-
-            lines[line_index] = line_ptr;
-            strcpy(lines[line_index], tmp);
-
-            line_ptr += tmp_index;
-            line_index++;
-            tmp_index = 0;
-            continue;
-        }
-
-        if (program[i] == STRING_CHAR) {
-            in_quote = !in_quote;
-        }
-
-        // remove tabs and carriage returns
-        if (program[i] == '\t' || program[i] == '\r') {
-            continue;
-        }
-
-        // interpret double backslashes
-        if (program[i] == '\\' && interp_bckslsh) {
-            if (program[i + 1] == 'n') {
-                tmp[tmp_index++] = '\n';
-            } else if (program[i + 1] == 't') {
-                tmp[tmp_index++] = '\t';
-            } else if (program[i + 1] == 'r') {
-                tmp[tmp_index++] = '\r';
-            } else if (program[i + 1] == '\\') {
-                tmp[tmp_index++] = '\\';
-            } else if (program[i + 1] == STRING_CHAR) {
-                tmp[tmp_index++] = STRING_CHAR;
-            } else if (program[i + 1] == ';') {
-                tmp[tmp_index++] = ';';
-            } else {
-                tmp[tmp_index++] = '\\';
-                tmp[tmp_index++] = program[i + 1];
-            }
-            i++;
-            continue;
-        }
-
-        // remove spaces at the beginning of the line
-        if (is_string_begin) {
-            if (program[i] == ' ') {
-                continue;
-            }
-            is_string_begin = 0;
-        }
-
-        // remove comments
-        if (program[i] == '/' && program[i + 1] == '/') {
-            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
-            if (program[i] == '\0') break;
-            continue;
-        }
-
-        tmp[tmp_index++] = program[i];
-    }
-
-    if (tmp_index != 0) {
-        // remove trailing spaces
-        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
-            tmp_index--;
-        }
-        tmp[tmp_index++] = '\0';
-        lines[line_index] = line_ptr;
-        strcpy(lines[line_index], tmp);
-    }
-
-    free(tmp);
-
-    return lines;
 }
 
 /*************************
@@ -3442,7 +3353,7 @@ int execute_for(int line_count, char **lines, char **result) {
         // set the the variable
 
         for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
-            if (string[string_index + var_len] == STRING_CHAR) {
+            if (string[string_index + var_len] == INTR_QUOTE) {
                 in_string = !in_string;
             } else if (!in_string && string[string_index + var_len] == ' ') {
                 break;
@@ -3746,6 +3657,133 @@ int does_syntax_fail(char *program) {
 
 /***********************
  *                    *
+ *  Lexing Functions  *
+ *                    *
+***********************/
+
+char **lexe_program(char *program, int interp_bckslsh) {
+    int line_index = 1;
+    for (int i = 0; program[i] != '\0'; i++) {
+        if (program[i] == '\n' || program[i] == ';') {
+            line_index++;
+        }
+    }
+    int index_size = (line_index + 1) * sizeof(char*);
+    line_index = 0;
+
+    int program_len = strlen(program) + 1;
+    char *tmp = malloc(program_len);
+
+    char **lines = calloc(index_size + (program_len), sizeof(char));
+
+    char *line_ptr = (char*) lines + index_size;
+
+    int tmp_index = 0;
+    int is_string_begin = 1;
+    int in_quote = 0;
+    int i = 0;
+
+    if (strncmp(program, "#!", 2) == 0) {
+        for (; program[i] && program[i] != '\n'; i++);
+    }
+
+    for (; program[i] != '\0'; i++) {
+        if (program[i] == '\n' || (program[i] == ';' && !in_quote)) {
+            is_string_begin = 1;
+
+            while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+                tmp_index--;
+            }
+
+            if (tmp_index == 0) {
+                continue;
+            }
+
+            tmp[tmp_index++] = '\0';
+
+            lines[line_index] = line_ptr;
+            strcpy(lines[line_index], tmp);
+
+            line_ptr += tmp_index;
+            line_index++;
+            tmp_index = 0;
+            continue;
+        }
+
+        if (program[i] == USER_QUOTE) {
+            in_quote = !in_quote;
+            tmp[tmp_index++] = INTR_QUOTE;
+            continue;
+        }
+
+        if (program[i] == USER_VARDF) {
+            tmp[tmp_index++] = INTR_VARDF;
+            continue;
+        }
+
+        // remove tabs and carriage returns
+        if (program[i] == '\t' || program[i] == '\r') {
+            continue;
+        }
+
+        // interpret double backslashes
+        if (program[i] == '\\' && interp_bckslsh) {
+            if (program[i + 1] == 'n') {
+                tmp[tmp_index++] = '\n';
+            } else if (program[i + 1] == 't') {
+                tmp[tmp_index++] = '\t';
+            } else if (program[i + 1] == 'r') {
+                tmp[tmp_index++] = '\r';
+            } else if (program[i + 1] == '\\') {
+                tmp[tmp_index++] = '\\';
+            } else if (program[i + 1] == USER_QUOTE) {
+                tmp[tmp_index++] = USER_QUOTE;
+            } else if (program[i + 1] == USER_VARDF) {
+                tmp[tmp_index++] = USER_VARDF;
+            } else if (program[i + 1] == ';') {
+                tmp[tmp_index++] = ';';
+            } else {
+                tmp[tmp_index++] = '\\';
+                tmp[tmp_index++] = program[i + 1];
+            }
+            i++;
+            continue;
+        }
+
+        // remove spaces at the beginning of the line
+        if (is_string_begin) {
+            if (program[i] == ' ')
+                continue;
+            is_string_begin = 0;
+        }
+
+        // remove comments
+        if (!in_quote && program[i] == '/' && program[i + 1] == '/') {
+            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
+            if (program[i] == '\0') break;
+            continue;
+        }
+
+        tmp[tmp_index++] = program[i];
+    }
+
+    if (tmp_index != 0) {
+        // remove trailing spaces
+        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+            tmp_index--;
+        }
+        tmp[tmp_index++] = '\0';
+        lines[line_index] = line_ptr;
+        strcpy(lines[line_index], tmp);
+    }
+
+    free(tmp);
+
+    return lines;
+}
+
+/***********************
+ *                    *
  *  Program Printing  *
  *                    *
 ***********************/
@@ -3820,9 +3858,13 @@ void olv_print(char *str, int len) {
     }
 
     char *tmp = malloc(len + 1);
-    while (!(str[i] == '!' || str[i] == ' ' || str[i] == ';') && i != len) {
-        i++;
-    }
+    while (
+        !(
+            str[i] == USER_VARDF ||
+            str[i] == ' '        ||
+            str[i] == ';'
+        ) && i != len
+    ) i++;
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
@@ -3831,7 +3873,7 @@ void olv_print(char *str, int len) {
     int from = i;
     int in_quote = 0;
     for (; i < len; i++) {
-        if (i < len - 1 && str[i] == '/' && str[i+1] == '/') {
+        if (!in_quote && i < len - 1 && str[i] == '/' && str[i+1] == '/') {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
@@ -3842,11 +3884,11 @@ void olv_print(char *str, int len) {
             return;
         }
 
-        if (str[i] == STRING_CHAR) {
+        if (str[i] == USER_QUOTE && (i == 0 || str[i - 1] != '\\')) {
             in_quote = !in_quote;
         }
 
-        if (str[i] == '!' && str[i + 1] == '(') {
+        if (str[i] == USER_VARDF && str[i + 1] == '(') {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
@@ -3894,7 +3936,7 @@ void olv_print(char *str, int len) {
         }
 
         else if (str[i] == '|') {
-            if (!(i && (str[i + 1] == str[i - 1] && (str[i + 1] == ' ' || str[i + 1] == STRING_CHAR))) &&
+            if (!(i && (str[i + 1] == str[i - 1] && (str[i + 1] == ' ' || str[i + 1] == USER_QUOTE))) &&
                 !(i == len - 1 && i && str[i - 1] == ' ')
             ) continue;
 
@@ -3907,8 +3949,8 @@ void olv_print(char *str, int len) {
             }
 
             fputs("\e[37m|\e[0m", stdout);
-            if (str[i + 1] == STRING_CHAR) {
-                putchar(STRING_CHAR);
+            if (str[i + 1] == USER_QUOTE) {
+                putchar(USER_QUOTE);
                 i++;
             }
             olv_print(str + i + 1, len - i - 1);
@@ -3917,7 +3959,7 @@ void olv_print(char *str, int len) {
         }
 
         // variable
-        else if (str[i] == '!') {
+        else if (str[i] == USER_VARDF && (i == 0 || str[i - 1] != '\\')) {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
@@ -3928,7 +3970,7 @@ void olv_print(char *str, int len) {
             is_var = 1;
         }
 
-        else if (str[i] == ' ' || str[i] == STRING_CHAR) {
+        else if (!IS_NAME_CHAR(str[i]) && str[i] != '#') {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
@@ -4085,9 +4127,9 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
     // check for ';' or '!('
     for (int j = 0; j < len; j++) {
-        if (str[j] == STRING_CHAR)
+        if (str[j] == USER_QUOTE)
             is_var = !is_var;
-        if (str[j] == '!' && str[j + 1] == '(') {
+        if (str[j] == USER_VARDF && str[j + 1] == '(') {
             dec = j + 2;
             i = dec;
             j++;
@@ -4107,18 +4149,22 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     // check if we are in the middle of a variable
     int in_var = 0;
     for (int j = i; j < len; j++) {
-        if (str[j] == '!') {
+        if (str[j] == USER_VARDF) {
             in_var = j + 1;
-        } else if (str[j] == ' ' || str[j] == STRING_CHAR) {
+        } else if (str[j] == ' ' || str[j] == USER_QUOTE) {
             in_var = 0;
         }
     }
 
     if (in_var) i++;
 
-    while (!(str[i] == '!' || str[i] == ' ' || str[i] == STRING_CHAR) && i != len) {
-        i++;
-    }
+    while (
+        !(
+            str[i] == USER_VARDF ||
+            str[i] == ' '        ||
+            str[i] == USER_QUOTE
+        ) && i != len
+    ) i++;
 
     if (i - dec == 0) {
         return NULL;
@@ -4658,7 +4704,7 @@ void start_shell(void) {
 int execute_file(char *file, char **args) {
     FILE *f = fopen(file, "r");
     if (f == NULL) {
-        printf("file '%s' does not exist\n", file);
+        raise_error(NULL, "File '%s' does not exist", file);
         return 1;
     }
 
@@ -4712,7 +4758,7 @@ int execute_file(char *file, char **args) {
 void print_file_highlighted(char *file) {
     FILE *f = fopen(file, "r");
     if (f == NULL) {
-        printf("file '%s' does not exist\n", file);
+        raise_error(NULL, "File '%s' does not exist", file);
         return;
     }
 
@@ -4737,13 +4783,22 @@ void print_file_highlighted(char *file) {
 
     char **lines = lexe_program(program, 0);
     for (int i = 0; lines[i] != NULL; i++) {
-        if ((tmp = does_startwith(lines[i], "END"))) {
+        if ((tmp = does_startwith(lines[i], "END")))
             indent--;
-        }
-        for (int j = 0; j < indent * 4; j++) {
+
+        for (int j = 0; j < indent * 4; j++)
             putchar(' ');
+
+        int len;
+        for (len = 0; lines[i][len] != '\0'; len++) {
+            if (lines[i][len] == INTR_QUOTE) {
+                lines[i][len] = USER_QUOTE;
+            } else if (lines[i][len] == INTR_VARDF) {
+                lines[i][len] = USER_VARDF;
+            }
         }
-        olv_print(lines[i], strlen(lines[i]));
+
+        olv_print(lines[i], len);
         putchar('\n');
         if (tmp && !indent && lines[i + 1]) {
             putchar('\n');
@@ -4755,9 +4810,7 @@ void print_file_highlighted(char *file) {
             does_startwith(lines[i], "FOR")   ||
             does_startwith(lines[i], "FUNC")  ||
             does_startwith(lines[i], "ELSE")
-        ) {
-            indent++;
-        }
+        ) indent++;
     }
     fputs("\e[0m", stdout);
 
@@ -4814,25 +4867,20 @@ olivine_args_t *parse_args(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0
             || strcmp(argv[i], "--help") == 0
-        ) {
-            args->help = 2;
-        } else if (strcmp(argv[i], "-v") == 0
+        ) args->help = 2;
+        else if (strcmp(argv[i], "-v") == 0
             || strcmp(argv[i], "--version") == 0
-        ) {
-            args->version = 1;
-        } else if (strcmp(argv[i], "-p") == 0
+        ) args->version = 1;
+        else if (strcmp(argv[i], "-p") == 0
             || strcmp(argv[i], "--print") == 0
-        ) {
-            args->print = 1;
-        } else if (strcmp(argv[i], "-n") == 0
+        ) args->print = 1;
+        else if (strcmp(argv[i], "-n") == 0
             || strcmp(argv[i], "--no-init") == 0
-        ) {
-            args->no_init = 1;
-        } else if (strcmp(argv[i], "-i") == 0
+        ) args->no_init = 1;
+        else if (strcmp(argv[i], "-i") == 0
             || strcmp(argv[i], "--inter") == 0
-        ) {
-            args->inter = 1;
-        } else if (strcmp(argv[i], "-c") == 0
+        ) args->inter = 1;
+        else if (strcmp(argv[i], "-c") == 0
             || strcmp(argv[i], "--command") == 0
         ) {
             if (i + 1 == argc) {
@@ -4847,7 +4895,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
             args->arg_offset = i + 1;
             break;
         } else {
-            printf("Error: unknown option '%s'\n", argv[i]);
+            printf("Error: invalid option -- '%s'\n", argv[i]);
             args->help = 1;
             return args;
         }
