@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 4"
+#define OLV_VERSION "1.0 rev 5"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1033,49 +1033,89 @@ char *calculate_strings(char *left, char *right, char *op) {
         else tmp = right;
     } else tmp = left;
 
-    if (op[0] == '+' || op[0] == '.') {
-        len = strlen(left);
-        res = malloc(len + strlen(right) + 3);
-        res[0] = '"';
-        strcpy(res + 1, left);
-        strcpy(res + len + 1, right);
-        strcat(res + len + 1, "\"");
-    } else if (op[0] == '=') {
-        res = malloc(2);
-        res[0] = (strcmp(left, right) == 0) + '0';
-        res[1] = '\0';
-    } else if (op[0] == '~') {
-        res = malloc(2);
-        res[0] = (strcmp(left, right) != 0) + '0';
-        res[1] = '\0';
-    } else if (op[0] == '*') {
-        if (tmp == NULL) {
-            raise_error("eval", "Cannot multiply string by string");
+    switch (op[0]) {
+        case '+':
+        case '.':
+            len = strlen(left);
+            res = malloc(len + strlen(right) + 3);
+            res[0] = '"';
+            strcpy(res + 1, left);
+            strcpy(res + len + 1, right);
+            strcat(res + len + 1, "\"");
+            break;
+        case '=':
+            res = malloc(2);
+            res[0] = (strcmp(left, right) == 0) + '0';
+            res[1] = '\0';
+            break;
+        case '~':
+            res = malloc(2);
+            res[0] = (strcmp(left, right) != 0) + '0';
+            res[1] = '\0';
+            break;
+        case '*':
+            if (tmp == NULL) {
+                raise_error("eval", "Integer expected for string repeat");
+                return NULL;
+            }
+            len = strlen(tmp);
+            res = malloc(len * nb + 3);
+            res[0] = '"';
+            for (int i = 0; i < nb; i++)
+                memcpy(res + 1 + i * len, tmp, len);
+            res[1 + len * nb] = '"';
+            res[2 + len * nb] = '\0';
+            break;
+        case '@':
+            if (tmp == NULL) {
+                raise_error("eval", "Integer expected for string character");
+                return NULL;
+            }
+            if (nb < 0 || nb >= (int) strlen(tmp)) {
+                raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
+                return NULL;
+            }
+            res = malloc(4);
+            res[0] = '"';
+            res[1] = tmp[nb];
+            res[2] = '"';
+            res[3] = '\0';
+            break;
+        case '>':
+            if (tmp == NULL) {
+                raise_error("eval", "Integer expected for string shift");
+                return NULL;
+            }
+            len = strlen(tmp);
+            if (nb < 0 || nb > len) {
+                raise_error("eval", "Cannot shift string by %d", nb);
+                return NULL;
+            }
+            res = malloc(len + 3 - nb);
+            res[0] = '"';
+            memcpy(res + 1, tmp + nb, len - nb);
+            res[len - nb + 1] = '"';
+            res[len - nb + 2] = '\0';
+            break;
+        case '<':
+            if (tmp == NULL) {
+                raise_error("eval", "Integer expected for string shift");
+                return NULL;
+            }
+            len = strlen(tmp);
+            if (nb < 0 || nb > len) {
+                raise_error("eval", "Cannot shift string by %d", nb);
+                return NULL;
+            }
+            res = malloc(len + 3 - nb);
+            res[0] = '"';
+            memcpy(res + 1, tmp, len - nb);
+            res[len - nb + 1] = '"';
+            res[len - nb + 2] = '\0';
+            break;
+        default:
+            raise_error("eval", "Unknown operator '%s' between strings", op);
             return NULL;
-        }
-        len = strlen(tmp);
-        res = malloc(len * nb + 3);
-        res[0] = '"';
-        for (int i = 0; i < nb; i++)
-            memcpy(res + 1 + i * len, tmp, len);
-        res[1 + len * nb] = '"';
-    } else if (op[0] == '@') {
-        if (tmp == NULL) {
-            raise_error("eval", "Cannot get character from string");
-            return NULL;
-        }
-        if (nb < 0 || nb >= (int) strlen(tmp)) {
-            raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
-            return NULL;
-        }
-        res = malloc(4);
-        res[0] = '"';
-        res[1] = tmp[nb];
-        res[2] = '"';
-        res[3] = '\0';
-    } else {
-        raise_error("eval", "Unknown operator '%s' between strings", op);
-        return NULL;
     }
     return res;
 }
@@ -1717,7 +1757,7 @@ char *if_dot(char **input) {
     char *slash = strrchr(file_name, '/');
     if (slash) memmove(file_name, slash + 1, strlen(slash));
 
-    char **argv = malloc((argc + 1) * sizeof(char*));
+    char **argv = malloc((argc + 1) * sizeof(char *));
     argv[0] = file_name;
     for (int i = 1; i < argc; i++) {
         argv[i] = input[i];
@@ -2459,11 +2499,14 @@ int quotes_less_copy(char *dest, char *src, int len) {
 }
 
 char **gen_args(char *string) {
-    if (string == NULL || !*string) {
-        char **argv = malloc(1 * sizeof(char*));
-        argv[0] = NULL;
-        return argv;
-    }
+    if (string == NULL)
+        return calloc(1, sizeof(char *));
+
+    while (*string == ' ')
+        string++;
+
+    if (*string == '\0')
+        return calloc(1, sizeof(char *));
 
     // count the number of arguments
     int in_string = 0;
@@ -2485,13 +2528,13 @@ char **gen_args(char *string) {
     }
 
     // allocate the arguments array
-    char **argv = malloc((argc + 1) * sizeof(char*) + len + 1);
-    char *args = (char*)(argv + argc + 1);
+    char **argv = malloc((argc + 1) * sizeof(char *) + len + 1);
+    char *args = (char *)(argv + argc + 1);
 
     // fill the arguments array
-    int old_i = 0;
-    int arg_i = 0;
-    for (int i = 0; string[i] != '\0'; i++) {
+    int old_i, arg_i, i;
+    old_i = arg_i = 0;
+    for (i = 0; string[i] != '\0'; i++) {
         if (string[i] == INTR_QUOTE && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
         } if (string[i] == ' ' && !in_string) {
@@ -2503,10 +2546,12 @@ char **gen_args(char *string) {
         }
     }
 
-    len = quotes_less_copy(args, string + old_i, len - old_i);
-    argv[arg_i++] = args;
-    argv[arg_i] = NULL;
+    if (old_i != i) {
+        len = quotes_less_copy(args, string + old_i, len - old_i);
+        argv[arg_i++] = args;
+    }
 
+    argv[arg_i] = NULL;
     return argv;
 }
 
@@ -2536,6 +2581,10 @@ char *args_rejoin(char **input, int to) {
 }
 
 char *get_function_name(char *line) {
+    while (*line == ' ')
+        line++;
+    if (*line == '\0')
+        return NULL;
     int in_string = 0;
     for (int i = 0; line[i] != '\0'; i++) {
         if (line[i] == INTR_QUOTE) {
@@ -2825,6 +2874,13 @@ char *execute_line(char *full_line) {
     int isif = 0;
     char *function_name = get_function_name(line);
 
+    if (function_name == NULL) {
+        raise_error(NULL, "Expected function name, but got empty string");
+        if (line != full_line)
+            free(line);
+        return ERROR_CODE;
+    }
+
     // get the function address
     void *function = get_function(function_name);
     if (function == NULL) {
@@ -2847,10 +2903,8 @@ char *execute_line(char *full_line) {
         if (function_args == ERROR_CODE) {
             free(function_name);
 
-            if (line != full_line) {
+            if (line != full_line)
                 free(line);
-            }
-
             return ERROR_CODE;
         }
 
@@ -2869,7 +2923,7 @@ char *execute_line(char *full_line) {
         if (pipe_after)
             result = pipe_processor(function_args);
         else if (isif)
-            result = ((char* (*)(char**)) function)(function_args + 1);
+            result = ((char *(*)(char **)) function)(function_args + 1);
         else
             result = execute_function(function, function_args + 1);
 
@@ -3592,24 +3646,18 @@ int save_function(int line_count, char **lines) {
     //  ...
     // END
 
-    char *func_line = lines[0];
+    char *func_line = lines[0] + 4;
 
-    if (func_line[4] != ' ') {
+    if (*func_line != ' ') {
         raise_error(NULL, "Missing space after FUNC");
         return -1;
     }
 
-    char *func_name = malloc(strlen(func_line) + 1);
-    int i;
-    for (i = 5; func_line[i] != '\0'; i++) {
-        func_name[i - 5] = func_line[i];
-    }
+    while (*func_line == ' ')
+        func_line++;
 
-    func_name[i - 5] = '\0';
-
-    if (strlen(func_name) == 0) {
+    if (strlen(func_line) == 0) {
         raise_error(NULL, "Missing function name");
-        free(func_name);
         return -1;
     }
 
@@ -3617,9 +3665,10 @@ int save_function(int line_count, char **lines) {
 
     if (line_end == 0) {
         raise_error(NULL, "Missing END for FUNC");
-        free(func_name);
         return -1;
     }
+
+    char *func_name = strdup(func_line);
 
     if (!is_valid_name(func_name)) {
         raise_error(NULL, "Invalid function name '%s'", func_name);
@@ -3678,7 +3727,7 @@ char **lexe_program(char *program, int interp_bckslsh) {
             line_index++;
         }
     }
-    int index_size = (line_index + 1) * sizeof(char*);
+    int index_size = (line_index + 1) * sizeof(char *);
     line_index = 0;
 
     int program_len = strlen(program) + 1;
@@ -3686,7 +3735,7 @@ char **lexe_program(char *program, int interp_bckslsh) {
 
     char **lines = calloc(index_size + (program_len), sizeof(char));
 
-    char *line_ptr = (char*) lines + index_size;
+    char *line_ptr = (char *) lines + index_size;
 
     int tmp_index = 0;
     int is_string_begin = 1;
@@ -4868,7 +4917,15 @@ int show_help(int full, char *name) {
 }
 
 void show_version(void) {
-    printf("Olivine %s, profanOS feature %s\n", OLV_VERSION, PROFANBUILD ? "enabled" : "disabled");
+    printf(
+        "Olivine %s, %s, %s%s%s%s\n",
+        OLV_VERSION,
+        PROFANBUILD ? "profanOS" : UNIXBUILD ? "Unix" : "Default",
+        USE_READLINE ? "R" : "S",
+        BIN_AS_PSEUDO ? "B" : "",
+        USE_ENVVARS ? "E" : "",
+        STOP_ON_ERROR ? "S" : ""
+    );
 }
 
 olivine_args_t *parse_args(int argc, char **argv) {
