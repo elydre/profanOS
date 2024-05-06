@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "2.0"
+#define DELUGE_VERSION "2.1"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -24,6 +24,8 @@
  *    Types and globals    *
  *                         *
 ****************************/
+
+void profan_cleanup(void);
 
 #define raise_error(fmt, ...) do {  \
             fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
@@ -39,6 +41,7 @@
 // internal variables
 elfobj_t **g_loaded_libs;
 
+char **g_envp;
 int g_lib_count;
 int g_cleanup;
 
@@ -47,17 +50,14 @@ char *g_extralib_path;
 int   g_dlfcn_error;
 int   g_print_debug;
 
-// extra symbols
+// extra symbols structure
 typedef struct {
     const char *name;
     uint32_t hash;
     void *data;
 } dlg_extra_t;
 
-void profan_cleanup(void) {
-    g_cleanup = 1;
-}
-
+// extra symbols table
 dlg_extra_t g_extra_syms[] = {
     { "profan_cleanup", 0x9E824710, profan_cleanup },
     { "dlclose"       , 0xDE67CAC5, dlclose        },
@@ -67,16 +67,25 @@ dlg_extra_t g_extra_syms[] = {
     { NULL, 0, NULL }
 };
 
+/*************************
+ *                      *
+ *    Misc functions    *
+ *                      *
+*************************/
+
 void add_loaded_lib(elfobj_t *lib) {
     g_loaded_libs = realloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
     g_loaded_libs[g_lib_count - 1] = lib;
 }
 
-/**************************
- *                       *
- *    Find file funcs    *
- *                       *
-**************************/
+char *ft_getenv(const char *name) {
+    uint32_t len = strlen(name);
+    for (int i = 0; g_envp[i]; i++) {
+        if (strncmp(g_envp[i], name, len) == 0 && g_envp[i][len] == '=')
+            return g_envp[i] + len + 1;
+    }
+    return NULL;
+}
 
 char *assemble_path(const char *dir, const char *file) {
     int len1 = strlen(dir);
@@ -87,24 +96,91 @@ char *assemble_path(const char *dir, const char *file) {
     return path;
 }
 
-sid_t search_elf_sid(const char *lib, uint16_t type, char **path) {
-    sid_t sid;
+void profan_cleanup(void) {
+    g_cleanup = 1;
+}
 
-    if (type == ET_EXEC || lib[0] == '/') {
-        sid = fu_path_to_sid(ROOT_SID, lib);
-        if (!IS_NULL_SID(sid) && path)
-            *path = strdup(lib);
-        return sid;
+/**************************
+ *                       *
+ *    Find file funcs    *
+ *                       *
+**************************/
+
+sid_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
+    char *path = strdup(src_path);
+
+    char *fullname = malloc(strlen(filename) + 5); // 5 => .elf + null
+    strcpy(fullname, filename);
+    strcat(fullname, ".elf");
+
+    int start = 0;
+    for (int i = 0;; i++) {
+        if (path[i] != ':' && path[i] != '\0')
+            continue;
+        path[i] = '\0';
+        sid_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        if (!IS_NULL_SID(sid)) {
+            sid = fu_path_to_sid(sid, fullname);
+            if (fu_is_file(sid)) {
+                if (path)
+                    *fullpath = assemble_path(path + start, fullname);
+                free(fullname);
+                free(path);
+                return sid;
+            }
+        }
+        if (src_path[i] == '\0')
+            break;
+        start = i + 1;
     }
 
-    char *full_path = assemble_path("/lib", lib);
+    free(fullname);
+    free(path);
+    return NULL_SID;
+}
+
+sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
+    sid_t sid;
+
+    if (name == NULL)
+        return NULL_SID;
+
+    if (type == ET_EXEC) {
+        if (name[0] == '/') {
+            sid = fu_path_to_sid(ROOT_SID, name);
+            if (!IS_NULL_SID(sid) && path)
+                *path = strdup(name);
+            return sid;
+        }
+
+        if (name[0] == '.' && name[1] == '/') {
+            char *cwd = ft_getenv("PWD");
+            if (!cwd)
+                return NULL_SID;
+            char *full_path = assemble_path(cwd, name + 2);
+            fu_simplify_path(full_path);
+            sid = fu_path_to_sid(ROOT_SID, full_path);
+            if (!IS_NULL_SID(sid) && path)
+                *path = full_path;
+            else
+                free(full_path);
+            return sid;
+        }
+
+        char *env_path = ft_getenv("PATH");
+        if (!env_path)
+            return NULL_SID;
+        return search_inpath(env_path, name, path);
+    }
+
+    char *full_path = assemble_path("/lib", name);
     sid = fu_path_to_sid(ROOT_SID, full_path);
 
     if (IS_NULL_SID(sid)) {
         free(full_path);
         if (!g_extralib_path)
             return NULL_SID;
-        full_path = assemble_path(g_extralib_path, lib);
+        full_path = assemble_path(g_extralib_path, name);
         sid = fu_path_to_sid(ROOT_SID, full_path);
         if (IS_NULL_SID(sid))
             free(full_path);
@@ -839,6 +915,7 @@ int main(int argc, char **argv, char **envp) {
     g_dlfcn_error = 0;
     g_lib_count = 0;
     g_cleanup = 0;
+    g_envp = envp;
 
     deluge_args_t args = deluge_parse(argc, argv);
     int start, ret;
