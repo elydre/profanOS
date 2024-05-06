@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "1.6"
+#define DELUGE_VERSION "1.7"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -297,6 +297,7 @@ int does_type_required_sym(uint8_t type) {
     switch (type) {
         case R_386_32:
         case R_386_PC32:
+        case R_386_COPY:
         case R_386_GLOB_DAT:
         case R_386_JMP_SLOT:
         case R_386_GOTOFF:
@@ -694,9 +695,10 @@ int dynamic_linker(elfobj_t *exec) {
             val = 0;
             type = ELF32_R_TYPE(rel[j].r_info);
             if (does_type_required_sym(type)) {
-                val = (uint32_t) dlsym(exec, name);
                 for (int k = 0; !val && k < g_lib_count; k++)
                     val = (uint32_t) dlsym(g_loaded_libs[k], name);
+                if (val == 0)
+                    val = (uint32_t) dlsym(exec, name);
                 if (val == 0)
                     raise_error("'%s' requires symbol '%s'", exec->name, name);
             }
@@ -705,7 +707,8 @@ int dynamic_linker(elfobj_t *exec) {
                     val += *(uint32_t *)(rel[j].r_offset);
                     *(uint32_t *)(rel[j].r_offset) = val;
                     break;
-                case R_386_COPY:        // None
+                case R_386_COPY:        // symbol  S
+                    *(uint32_t *)(rel[j].r_offset) = *(uint32_t *)val;
                     break;
                 case R_386_GLOB_DAT:    // word32  S
                     *(uint32_t *)(rel[j].r_offset) = val;
