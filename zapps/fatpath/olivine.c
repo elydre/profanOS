@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 5"
+#define OLV_VERSION "1.0 rev 6"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -591,54 +591,70 @@ int in_bin_names(char *name) {
 
 char *get_bin_path(char *name) {
     #if BIN_AS_PSEUDO && (PROFANBUILD || UNIXBUILD)
-    char *path = getenv("PATH");
-    if (path == NULL) {
+    char *src_path = getenv("PATH");
+    if (!src_path)
         return NULL;
+    char *path = strdup(src_path);
+    #if PROFANBUILD
+    char *fullname = malloc(strlen(name) + 5); // 5 => .elf + null
+    strcpy(fullname, name);
+    strcat(fullname, ".elf");
+
+    int start = 0;
+    for (int i = 0;; i++) {
+        if (path[i] != ':' && path[i] != '\0')
+            continue;
+        path[i] = '\0';
+        sid_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        if (!IS_NULL_SID(sid) && fu_is_file(fu_path_to_sid(sid, fullname))) {
+            char *result = assemble_path(path + start, fullname);
+            free(fullname);
+            free(path);
+            return result;
+        }
+        if (src_path[i] == '\0')
+            break;
+        start = i + 1;
     }
 
-    char *path_copy = strdup(path);
-    char *path_ptr = path_copy;
-    char *path_end = path_ptr;
+    free(fullname);
 
-    while (path_ptr != NULL) {
-        path_end = strchr(path_ptr, ':');
+    #elif UNIXBUILD
+    char *path_copy = path;
+    char *path_end = path;
+
+    while (path_copy != NULL) {
+        path_end = strchr(path_copy, ':');
 
         if (path_end != NULL) {
             *path_end = '\0';
         }
 
-        char *file = malloc(strlen(path_ptr) + strlen(name) + 7);
-        strcpy(file, path_ptr);
-        strcat(file, "/");
-        strcat(file, name);
+        char *result = malloc(strlen(path_copy) + strlen(name) + 2);
+        strcpy(result, path_copy);
+        strcat(result, "/");
+        strcat(result, name);
 
-        #if PROFANBUILD
-        strcat(file, ".elf");
-        sid_t file_id = fu_path_to_sid(ROOT_SID, file);
-        if (!IS_NULL_SID(file_id) && fu_is_file(file_id)) {
-            free(path_copy);
-            return file;
+        if (access(result, F_OK) == 0) {
+            free(path);
+            return result;
         }
-        #else
-        if (access(file, F_OK | X_OK) != -1) {
-            free(path_copy);
-            return file;
-        }
-        #endif
-        free(file);
+
+        free(result);
 
         if (path_end != NULL) {
             *path_end = ':';
-            path_ptr = path_end + 1;
+            path_copy = path_end + 1;
         } else {
-            path_ptr = NULL;
+            path_copy = NULL;
         }
     }
 
-    free(path_copy);
-    #else
-    UNUSED(name);
     #endif
+    free(path);
+    return NULL;
+    #endif // BIN_AS_PSEUDO
+    UNUSED(name);
     return NULL;
 }
 
