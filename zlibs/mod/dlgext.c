@@ -77,11 +77,11 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
         uint32_t h = full_h % size;
 
         if (!table[h].data) {
-            table[h].data = (void *) obj->dymsym[i].st_value;
+            table[h].data = obj->dymsym + i;
             table[h].key = key;
             table[h].hash = full_h;
         } else {
-            later[later_index].data = (void *) obj->dymsym[i].st_value;
+            later[later_index].data = obj->dymsym + i;
             later[later_index].key = key;
             later[later_index].hash = full_h;
             later_index++;
@@ -94,8 +94,7 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
         dlg_hash_t *entry = &table[h];
 
         while (table[table_index].data) {
-            table_index++;
-            if (table_index == size) {
+            if (++table_index == size) {
                 raise_error("Internal error: hash table is full");
             }
         }
@@ -111,18 +110,6 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
     free(later);
 
     return table;
-}
-
-void *hash_get(elfobj_t *obj, const char *key) {
-    uint32_t full_h = hash(key);
-    dlg_hash_t *entry = obj->sym_table + full_h % (obj->dynsym_size / sizeof(Elf32_Sym));;
-
-    while (entry) {
-        if (entry->hash == full_h && strcmp(entry->key, key) == 0)
-            return entry->data;
-        entry = entry->next;
-    }
-    return NULL;
 }
 
 /************************

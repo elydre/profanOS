@@ -99,7 +99,7 @@ typedef struct {
 
 typedef struct {
     const char *key;
-    void *data;
+    Elf32_Sym *data;
     uint32_t hash;
     void *next;
 } dlg_hash_t;

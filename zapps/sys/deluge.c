@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "1.7"
+#define DELUGE_VERSION "2.0"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -30,7 +30,7 @@
             exit(1);  \
         } while (0)
 
-#define debug_printf(fmt, ...) if (g_print_deps) {  \
+#define debug_printf(fmt, ...) if (g_print_debug) {  \
             fd_putstr(2, "\e[37m[DELUGE] ");  \
             fd_printf(2, fmt, __VA_ARGS__);  \
             fd_putstr(2, "\e[0m\n");  \
@@ -44,7 +44,28 @@ int g_cleanup;
 
 // command line options
 char *g_extralib_path;
-int   g_print_deps;
+int   g_dlfcn_error;
+int   g_print_debug;
+
+// extra symbols
+typedef struct {
+    const char *name;
+    uint32_t hash;
+    void *data;
+} dlg_extra_t;
+
+void profan_cleanup(void) {
+    g_cleanup = 1;
+}
+
+dlg_extra_t g_extra_syms[] = {
+    { "profan_cleanup", 0x9E824710, profan_cleanup },
+    { "dlclose"       , 0xDE67CAC5, dlclose        },
+    { "dlopen"        , 0xCEF94D0E, dlopen         },
+    { "dlsym"         , 0x0677DB8D, dlsym          },
+    { "dlerror"       , 0xDE8AD652, dlerror        },
+    { NULL, 0, NULL }
+};
 
 void add_loaded_lib(elfobj_t *lib) {
     g_loaded_libs = realloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
@@ -123,11 +144,11 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
         uint32_t h = full_h % size;
 
         if (!table[h].data) {
-            table[h].data = (void *) obj->dymsym[i].st_value;
+            table[h].data = obj->dymsym + i;
             table[h].key = key;
             table[h].hash = full_h;
         } else {
-            later[later_index].data = (void *) obj->dymsym[i].st_value;
+            later[later_index].data = obj->dymsym + i;
             later[later_index].key = key;
             later[later_index].hash = full_h;
             later_index++;
@@ -158,8 +179,7 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
     return table;
 }
 
-void *hash_get(elfobj_t *obj, const char *key) {
-    uint32_t full_h = hash(key);
+Elf32_Sym *hash_get(elfobj_t *obj, uint32_t full_h, const char *key) {
     dlg_hash_t *entry = obj->sym_table + full_h % (obj->dynsym_size / sizeof(Elf32_Sym));;
 
     while (entry) {
@@ -307,6 +327,33 @@ int does_type_required_sym(uint8_t type) {
     }
 }
 
+uint32_t get_sym_extra(const char *name, uint32_t full_h) {
+    for (int i = 0; g_extra_syms[i].name; i++) {
+        if (g_extra_syms[i].hash == full_h && strcmp(g_extra_syms[i].name, name) == 0)
+            return (uint32_t) g_extra_syms[i].data;
+    }
+    return 0;
+}
+
+uint32_t get_sym_value(const char *name, Elf32_Sym **sym_ptr) {
+    Elf32_Sym *sym;
+
+    uint32_t val, full_h = hash(name);
+
+    val = get_sym_extra(name, full_h);
+    if (val) return val;
+
+    for (int k = 0; k < g_lib_count; k++) {
+        sym = hash_get(g_loaded_libs[k], full_h, name);
+        if (!sym || sym->st_shndx == 0)
+            continue;
+        if (sym_ptr)
+            *sym_ptr = sym;
+        return (uint32_t) sym->st_value + (uint32_t) g_loaded_libs[k]->mem;
+    }
+    return 0;
+}
+
 int file_relocate(elfobj_t *dl) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
@@ -332,10 +379,7 @@ int file_relocate(elfobj_t *dl) {
             val = 0;
             type = ELF32_R_TYPE(rel[j].r_info);
             if (does_type_required_sym(type)) {
-                for (int k = 0; k < g_lib_count && val == 0; k++)
-                    val = (uint32_t) dlsym(g_loaded_libs[k], name);
-                if (val == 0)
-                    val = (uint32_t) dlsym(dl, name);
+                val = get_sym_value(name, NULL);
                 if (val == 0)
                     raise_error("'%s' requires symbol '%s'", dl->name, name);
             }
@@ -543,20 +587,14 @@ void fini_lib(elfobj_t *lib) {
     }
 }
 
-void profan_cleanup(void) {
-    g_cleanup = 1;
-}
-
-int dlfcn_error = 0;
-
 void *dlopen(const char *filename, int flag) {
     elfobj_t *dl = open_elf(filename, ET_DYN, flag == RTLD_FATAL);
     if (dl == NULL) {
-        dlfcn_error = 1;
+        g_dlfcn_error = 1;
         return NULL;
     }
 
-    dlfcn_error = 0;
+    g_dlfcn_error = 0;
     if (dl->ref_count > 1)
         return dl;
 
@@ -568,57 +606,35 @@ void *dlopen(const char *filename, int flag) {
 
 void *dlsym(void *handle, const char *symbol) {
     if (handle == NULL) {
-        for (int i = 0; i < g_lib_count; i++) {
-            void *ret = dlsym(g_loaded_libs[i], symbol);
-            if (ret) {
-                dlfcn_error = 0;
-                return ret;
-            }
-        }
-        dlfcn_error = 2;
-        return NULL;
+        return (void *) get_sym_value(symbol, NULL);
     }
 
+    uint32_t val, full_h = hash(symbol);
     elfobj_t *dl = handle;
-    void *ret;
+    Elf32_Sym *ret;
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) dl->file;
 
-    if (!dl->dymsym) {
-        dlfcn_error = 2;
+    g_dlfcn_error = 0;
+    if (ehdr->e_type == ET_EXEC) {
+        ret = hash_get(dl, full_h, symbol);
+        if (!ret)
+            g_dlfcn_error = 2;
+        return (void *) ret->st_value;
+    }
+
+    val = get_sym_extra(symbol, full_h);
+    if (!val) {
+        g_dlfcn_error = 2;
         return NULL;
     }
 
-    dlfcn_error = 0;
-    if (ehdr->e_type == ET_EXEC) {
-        ret = hash_get(dl, symbol);
-        if (!ret)
-            dlfcn_error = 2;
-        return ret;
+    ret = hash_get(dl, full_h, symbol);
+    if (!ret) {
+        g_dlfcn_error = 2;
+        return NULL;
     }
-
-    if (*symbol && symbol[0] == 'd' && symbol[1] == 'l') {
-        if (strcmp(symbol, "dlclose") == 0) {
-            return dlclose;
-        } else if (strcmp(symbol, "dlopen") == 0) {
-            return dlopen;
-        } else if (strcmp(symbol, "dlsym") == 0) {
-            return dlsym;
-        } else if (strcmp(symbol, "dlerror") == 0) {
-            return dlerror;
-        }
-    }
-    if (strcmp(symbol, "profan_cleanup") == 0) {
-        return profan_cleanup;
-    }
-
-    ret = (void *) hash_get(dl, symbol);
-    if (ret) {
-        ret = dl->mem + (uint32_t) ret;
-    } else {
-        dlfcn_error = 2;
-    }
-    return ret;
+    return (void *) dl->mem + ret->st_value;
 }
 
 int dlclose(void *handle) {
@@ -660,13 +676,13 @@ int dlclose(void *handle) {
 
 char *dlerror(void) {
     char *error;
-    if (!dlfcn_error)
+    if (!g_dlfcn_error)
         return NULL;
-    if (dlfcn_error == 1)
+    if (g_dlfcn_error == 1)
         error = "deluge dlfcn: failed to open file";
     else
         error = "deluge dlfcn: symbol not found";
-    dlfcn_error = 0;
+    g_dlfcn_error = 0;
     return error;
 }
 
@@ -678,6 +694,7 @@ int dynamic_linker(elfobj_t *exec) {
         return 0;
     }
 
+    Elf32_Sym *sym;
     uint32_t val;
     uint8_t type;
     char *name;
@@ -692,15 +709,15 @@ int dynamic_linker(elfobj_t *exec) {
         Elf32_Rel *rel = (Elf32_Rel *)(exec->file + shdr[i].sh_offset);
         for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
             name = (char *) exec->dynstr + (exec->dymsym + ELF32_R_SYM(rel[j].r_info))->st_name;
-            val = 0;
             type = ELF32_R_TYPE(rel[j].r_info);
             if (does_type_required_sym(type)) {
-                for (int k = 0; !val && k < g_lib_count; k++)
-                    val = (uint32_t) dlsym(g_loaded_libs[k], name);
-                if (val == 0)
-                    val = (uint32_t) dlsym(exec, name);
-                if (val == 0)
-                    raise_error("'%s' requires symbol '%s'", exec->name, name);
+                val = get_sym_value(name, &sym);
+                if (!val) {
+                    sym = hash_get(exec, hash(name), name);
+                    if (!sym || sym->st_shndx == 0)
+                        raise_error("'%s' requires symbol '%s'", exec->name, name);
+                    val = (uint32_t) sym->st_value;
+                }
             }
             switch (type) {
                 case R_386_32:          // word32  S + A
@@ -708,7 +725,7 @@ int dynamic_linker(elfobj_t *exec) {
                     *(uint32_t *)(rel[j].r_offset) = val;
                     break;
                 case R_386_COPY:        // symbol  S
-                    *(uint32_t *)(rel[j].r_offset) = *(uint32_t *)val;
+                    memcpy((void *) rel[j].r_offset, (void *) val, sym->st_size);
                     break;
                 case R_386_GLOB_DAT:    // word32  S
                     *(uint32_t *)(rel[j].r_offset) = val;
@@ -746,7 +763,7 @@ void show_help(int full) {
     fd_printf(1,
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
-        "  -b  bench link time and exit\n"
+        "  -b  bench link and run time\n"
         "  -d  add debug in stderr\n"
         "  -e  use filename as argument\n"
         "  -h  show this help message\n"
@@ -758,9 +775,10 @@ void show_help(int full) {
 deluge_args_t deluge_parse(int argc, char **argv) {
     deluge_args_t args;
     args.name = NULL;
-    args.bench = 0;
 
-    g_print_deps = ALWAYS_DEBUG;
+    g_print_debug = ALWAYS_DEBUG;
+    args.bench = ALWAYS_DEBUG;
+
     g_extralib_path = NULL;
 
     int move_arg = 1;
@@ -776,7 +794,8 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 args.bench = 1;
                 break;
             case 'd':
-                g_print_deps = 1;
+                args.bench = 1;
+                g_print_debug = 1;
                 break;
             case 'e':
                 move_arg = 0;
@@ -817,14 +836,14 @@ deluge_args_t deluge_parse(int argc, char **argv) {
 
 int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
+    g_dlfcn_error = 0;
     g_lib_count = 0;
     g_cleanup = 0;
 
     deluge_args_t args = deluge_parse(argc, argv);
-    uint32_t start;
-    int ret = 0;
+    int start, ret;
 
-    if (args.bench || g_print_deps) {
+    if (args.bench) {
         start = c_timer_get_ms();
     }
 
@@ -860,13 +879,19 @@ int main(int argc, char **argv, char **envp) {
     free(prog->name);
     free(prog);
 
-    dlfcn_error = 0;
+    g_dlfcn_error = 0;
 
-    if (!args.bench) {
-        ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
+    if (args.bench) {
+        start = c_timer_get_ms();
     }
 
-    debug_printf("Exit with code %d", ret);
+    ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
+
+    debug_printf(
+        "Exit with code %d in %d ms", ret, c_timer_get_ms() - start
+    ) else if (args.bench) fd_printf(1,
+        "Exit with code %d in %d ms\n", ret, c_timer_get_ms() - start
+    );
 
     while (g_lib_count) {
         if (g_loaded_libs[0]->ref_count > 1) {
@@ -879,13 +904,15 @@ int main(int argc, char **argv, char **envp) {
     free(g_loaded_libs);
 
     if (g_cleanup) {
-        int pid = c_process_get_pid();
-        int leaks = c_mem_get_info(7, pid);
+        int leaks, count, pid = c_process_get_pid();
+        leaks = c_mem_get_info(7, pid);
+        count = leaks ? c_mem_get_info(8, pid) : 0;
 
-        debug_printf("Clean up %d alloc%s (%d bytes)",
+        debug_printf("Clean up %d alloc%s (%d byte%s)",
             leaks,
-            leaks == 1 ? "" : "s",
-            c_mem_get_info(8, pid)
+            leaks > 1 ? "s" : "",
+            count,
+            count > 1 ? "s" : ""
         );
         if (leaks > 0) {
             c_mem_free_all(pid);
