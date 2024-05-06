@@ -143,5 +143,6 @@ char *open_input(int *size) {
 
 // defined in deluge
 void profan_cleanup(void) {
+    puts("libc extra: profan_cleanup: should not be called");
     return;
 }
