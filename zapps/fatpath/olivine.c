@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 6"
+#define OLV_VERSION "1.0 rev 7"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -2716,9 +2716,8 @@ char *pipe_processor(char **input) {
                 s += n;
                 ret = realloc(ret, s + 101);
             }
-            while (ret[s - 1] == '\n' || ret[s - 1] == '\0') {
+            while (s && (ret[s - 1] == '\n' || ret[s - 1] == '\0'))
                 s--;
-            }
             ret[s] = '\0';
             break;
         }
@@ -2757,14 +2756,16 @@ char *pipe_processor(char **input) {
     // if line execution failed, print pipe content
     if (tmp == ERROR_CODE) {
         raise_error("Pipe Processor", "Command failed");
-        puts("\e[37m  --- Pipe Content ---\e[0m");
-        int n;
         char buffer[101];
-        while ((n = read(fdin, buffer, 100)) > 0) {
-            buffer[n] = '\0';
-            fputs(buffer, stdout);
+        int n = read(fdin, buffer, 100);
+        if (n > 0) {
+            puts("\e[37m  --- Pipe Content ---\e[0m");
+            do {
+                buffer[n] = '\0';
+                fputs(buffer, stdout);
+            } while ((n = read(fdin, buffer, 100)) > 0);
+            puts("\e[37m  --------------------\e[0m");
         }
-        puts("\e[37m  --------------------\e[0m");
     }
 
     close(fdin);
@@ -3963,7 +3964,7 @@ void olv_print(char *str, int len) {
             in_quote = !in_quote;
         }
 
-        if (str[i] == USER_VARDF && str[i + 1] == '(') {
+        if (str[i] == USER_VARDF && str[i + 1] == '(' && (i == 0 || str[i - 1] != '\\')) {
             // print from from to i
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
