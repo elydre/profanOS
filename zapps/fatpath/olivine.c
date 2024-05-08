@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 7"
+#define OLV_VERSION "1.0 rev 8"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -3874,7 +3874,7 @@ char *get_func_color(char *str) {
 
     // pseudos: dark blue
     if (pseudos && get_pseudo(str) != NULL) {
-        return "34";
+        return "44";
     }
 
     // internal functions: cyan
@@ -3899,6 +3899,11 @@ char *get_func_color(char *str) {
     // unknown functions: dark red
     return "31";
 }
+
+#define olv_print_ivfc(str, is_var) do {   \
+        if (!is_var) fputs(tmp, stdout);   \
+        else printf("\e[93m%s\e[0m", tmp); \
+    } while (0)
 
 void olv_print(char *str, int len) {
     /* colored print
@@ -3929,6 +3934,7 @@ void olv_print(char *str, int len) {
             if (i == len) return;
             putchar(str[i]);
         }
+        fputs("\e[0m", stdout);
         olv_print(str + i, len - i);
         return;
     }
@@ -3944,7 +3950,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    printf("\e[%sm%s", get_func_color(tmp + dec), tmp);
+    printf("\e[%sm%s\e[0m", get_func_color(tmp + dec), tmp);
 
     int from = i;
     int in_quote = 0;
@@ -3953,7 +3959,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\e[9%cm%s", is_var ? '9' : '7', tmp);
+                olv_print_ivfc(tmp, is_var);
             }
             olv_print(str + i, len - i);
             free(tmp);
@@ -3969,7 +3975,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\e[9%cm%s", is_var ? '9' : '7', tmp);
+                olv_print_ivfc(tmp, is_var);
             }
 
             // find the closing bracket
@@ -3986,11 +3992,11 @@ void olv_print(char *str, int len) {
                 }
             }
 
-            printf("\e[9%cm!(", (j == len) ? '1' : '2');
+            printf("\e[9%cm!(\e[0m", (j == len) ? '1' : '2');
             olv_print(str + i + 2, j - i - 2);
 
             if (j != len) {
-                fputs("\e[92m)", stdout);
+                fputs("\e[92m)\e[0m", stdout);
             }
 
             i = j;
@@ -4002,7 +4008,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
+                olv_print_ivfc(tmp, is_var);
                 from = i;
             }
             fputs("\e[37m;\e[0m", stdout);
@@ -4020,7 +4026,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
+                olv_print_ivfc(tmp, is_var);
                 from = i;
             }
 
@@ -4040,7 +4046,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
+                olv_print_ivfc(tmp, is_var);
                 from = i;
             }
             is_var = 1;
@@ -4051,7 +4057,7 @@ void olv_print(char *str, int len) {
             if (from != i) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
-                printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
+                olv_print_ivfc(tmp, is_var);
                 from = i;
             }
             is_var = 0;
@@ -4061,7 +4067,7 @@ void olv_print(char *str, int len) {
     if (from != i) {
         memcpy(tmp, str + from, i - from);
         tmp[i - from] = '\0';
-        printf("\e[9%cm%s", is_var ? '3' : '7', tmp);
+        olv_print_ivfc(tmp, is_var);
     }
 
     free(tmp);
@@ -4089,12 +4095,14 @@ void display_prompt(void) {
                 fputs(g_current_directory, stdout);
                 break;
             case '(':
-                if (g_exit_code[0] != '0') break;
+                if (g_exit_code[0] != '0')
+                    break;
                 for (; g_prompt[i] != ')'; i++);
                 i--;
                 break;
             case '{':
-                if (g_exit_code[0] == '0') break;
+                if (g_exit_code[0] == '0')
+                    break;
                 for (; g_prompt[i] != '}'; i++);
                 i--;
                 break;
@@ -4116,31 +4124,30 @@ void display_prompt(void) {
 char *render_prompt(char *output, int output_size) {
     int output_i = 0;
     for (int i = 0; g_prompt[i] != '\0'; i++) {
-        if (output_i >= output_size - 1) {
+        if (output_i >= output_size - 1)
             break;
-        }
         if (g_prompt[i] != '$') {
             output[output_i++] = g_prompt[i];
             continue;
         }
         switch (g_prompt[i + 1]) {
             case 'v':
-                for (int j = 0; OLV_VERSION[j] != '\0' && output_i < output_size - 1; j++) {
+                for (int j = 0; OLV_VERSION[j] != '\0' && output_i < output_size - 1; j++)
                     output[output_i++] = OLV_VERSION[j];
-                }
                 break;
             case 'd':
-                for (int j = 0; g_current_directory[j] != '\0' && output_i < output_size - 1; j++) {
+                for (int j = 0; g_current_directory[j] != '\0' && output_i < output_size - 1; j++)
                     output[output_i++] = g_current_directory[j];
-                }
                 break;
             case '(':
-                if (g_exit_code[0] != '0') break;
+                if (g_exit_code[0] != '0')
+                    break;
                 for (; g_prompt[i] != ')'; i++);
                 i--;
                 break;
             case '{':
-                if (g_exit_code[0] == '0') break;
+                if (g_exit_code[0] == '0')
+                    break;
                 for (; g_prompt[i] != '}'; i++);
                 i--;
                 break;
