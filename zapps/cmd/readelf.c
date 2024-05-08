@@ -120,7 +120,6 @@ typedef struct {
 const char *g_buf;            // global buf that holds each file contents
 const char *g_filename;
 
-void print_usage(void);
 
 typedef int (*proc)(void);
 
@@ -128,33 +127,49 @@ typedef int (*proc)(void);
 int display_file_header(void);
 int display_section_headers(void);
 int display_symbol_table(void);
+int print_help(void);
 int dummy_proc(void);
 
 // procedure indexes in the following 'option_xxx' arrays
-#define OPT_h        0
-#define OPT_S        1
-#define OPT__DEC     2
-#define OPT_s        3
+#define OPT_h       0
+#define OPT_H       1
+#define OPT_S       2
+#define OPT_DEC     3
+#define OPT_s       4
 
-static const char *option_chars = "hS s";
-static const char *option_strs[] = {"--file-header", "--section-headers", "--dec", "--symbols", NULL};
-static const proc option_procs[] = {display_file_header, display_section_headers,
+static const char *option_chars = "hHSds";
+static const char *option_strs[] = {"--help", "--file-header", "--section-headers", "--dec", "--symbols", NULL};
+static const proc option_procs[] = {print_help, display_file_header, display_section_headers,
         dummy_proc, display_symbol_table, NULL};
 
 #define PROC_COUNT (sizeof(option_procs) / sizeof(proc))
 // invoke produces in 'procs' if not NULL, after options and files have been parsed
 proc procs[PROC_COUNT] = {NULL};
 
+int print_help(void) {
+    puts("Usage: readelf <option(s)> elf-file(s)");
+    puts(" Display information about the contents of ELF format files");
+    puts(" Options are:");
+    puts(" -h --help              Display this information");
+    puts(" -H --file-header       Display the ELF file header");
+    puts(" -d --dec               Display in decimal format");
+    puts(" -S --section-headers   Display the sections' header");
+    puts(" -s --symbols           Display the symbol table");
+    return 0;
+}
+
 int main(const int argc, const char *argv[]) {
-    if (argc < 3) {
-        print_usage();
+    if (argc < 2) {
+        print_help();
         return 0;
+    } else if (argc == 2) {
+        procs[OPT_H] = display_file_header;
     }
 
     int arg_i;
 
     // parse options
-    for(arg_i = 1; arg_i < argc; arg_i ++) {
+    for (arg_i = 1; arg_i < argc; arg_i ++) {
         const char *arg = argv[arg_i];
         int option_idx = 0;
 
@@ -165,36 +180,41 @@ int main(const int argc, const char *argv[]) {
             char *p_char; // points to the matched char in option_chars
 
             if (strlen(arg) != 2 || (p_char = strchr(option_chars, arg[1])) == NULL) {
-                printf("ELF-reader: invalid option '%s'\n", arg);
-                print_usage();
-                return 0;
+                fprintf(stderr, "readelf: invalid option -- '%s'\n", arg + 1);
+                fputs("Try 'readelf -h' for more information.\n", stderr);
+                return 1;
             }
 
             option_idx = p_char - option_chars;
-        } // arg: --file-header --section-headers ...
-        else if (arg[1] == '-') {
+        } else if (arg[1] == '-') {
             int i = 0;
             const char *option;
 
-            while((option = option_strs[i++]) != NULL) {
-                if (strcmp(option, arg) == 0) break;
-                option_idx ++;
+            while ((option = option_strs[i++]) != NULL) {
+                if (strcmp(option, arg) == 0)
+                    break;
+                option_idx++;
             }
 
             if (option == NULL) {
-                printf("ELF-reader: invalid option '%s'\n", arg);
-                print_usage();
-                return 0;
+                fprintf(stderr, "readelf: invalid option -- '%s'\n", arg + 2);
+                fputs("Try 'readelf -h' for more information.\n", stderr);
+                return 1;
             }
         }
 
         procs[option_idx] = option_procs[option_idx];
     }
 
-    if (arg_i == argc) {
-        printf("ELF-reader: No input files\n");
-        print_usage();
+    if (procs[OPT_h] != NULL) {
+        procs[OPT_h]();
         return 0;
+    }
+
+    if (arg_i == argc) {
+        fprintf(stderr, "readelf: No input files\n");
+        fputs("Try 'readelf -h' for more information.\n", stderr);
+        return 1;
     }
 
     // read and process input files one by one
@@ -204,7 +224,7 @@ int main(const int argc, const char *argv[]) {
         // open file for reading
         FILE *fp = fopen(g_filename, "r");
         if (fp == NULL) {
-            printf("ELF-reader: Error: '%s': failed to open file\n", g_filename);
+            fprintf(stderr, "readelf: Error: '%s': failed to open file\n", g_filename);
             return 1;
         }
 
@@ -213,8 +233,8 @@ int main(const int argc, const char *argv[]) {
         size_t file_size = ftell(fp);
         fseek(fp, 0, SEEK_SET);
 
-        if ((g_buf = malloc(file_size)) == NULL || fread((void*)g_buf, 1, file_size, fp) != file_size) {
-            printf("ELF-reader: Error: '%s': failed to read file\n", g_filename);
+        if ((g_buf = malloc(file_size)) == NULL || fread((void*) g_buf, 1, file_size, fp) != file_size) {
+            fprintf(stderr, "readelf: Error: '%s': failed to read file\n", g_filename);
             fclose(fp);
             return 1;
         }
@@ -223,7 +243,8 @@ int main(const int argc, const char *argv[]) {
         // check for ELF magic number
         Elf32_Ehdr *p_header = (Elf32_Ehdr *)g_buf;
         if (strncmp((void*)p_header, ELFMAG, SELFMAG) != 0) {
-            printf("ELF-reader: Notice: file '%s' is not an ELF.\n", g_filename);
+            fprintf(stderr, "readelf: Notice: file '%s' is not an ELF.\n", g_filename);
+            free((void*) g_buf);
             return 0;
         }
 
@@ -232,43 +253,34 @@ int main(const int argc, const char *argv[]) {
             case ELFCLASS32:
                 // ok
             break;
-        case ELFCLASS64:
-            printf("ELF-reader: Notice: sorry, ELF64 file '%s' is currently not supported\n", g_filename);
-            arg_i ++;
-            continue;
-        case ELFCLASSNONE:
-        default:
-            printf("ELF-reader: Notice: file '%s' is an invalid ELF.\n", g_filename);
-            arg_i ++;
-            continue;
+            case ELFCLASS64:
+                fprintf(stderr, "readelf: Notice: ELF64 file '%s' is not supported\n", g_filename);
+                arg_i ++;
+                continue;
+            default:
+                fprintf(stderr, "readelf: Notice: file '%s' is an invalid ELF.\n", g_filename);
+                arg_i ++;
+                continue;
         }
 
         // now invoke each procedure in proc array
         for(uint32_t i = 0; i < PROC_COUNT; i ++) {
-            if (procs[i] == NULL) continue;
+            if (procs[i] == NULL)
+                continue;
 
             if (procs[i]() == 1) {
-                printf("ELF-reader: Error: failed to process file '%s', skip it\n", g_filename);
+                fprintf(stderr, "readelf: Error: failed to process file '%s'\n", g_filename);
                 break;
             }
         }
-        free((void*)g_buf);
+        free((void*) g_buf);
         arg_i ++;
     }
 
     return 0;
 }
 
-void print_usage(void) {
-    puts("Usage: ELF-reader <option(s)> elf-file(s)");
-    puts(" Display information about the contents of ELF format files");
-    puts(" Options are:");
-    puts(" -h --file-header       Display the ELF file header");
-    puts(" -S --section-headers   Display the sections' header");
-    puts(" -s --symbols           Display the symbol table");
-}
-
-// procedures for each ELF-reader options
+// procedures for each readelf options
 int display_file_header(void) {
     const Elf32_Ehdr *header = (Elf32_Ehdr*)g_buf;
 
@@ -396,7 +408,7 @@ int display_section_headers(void) {
 
     // check section header size
     if (eh->e_shentsize != sizeof(Elf32_Shdr)) {
-        printf("ELF-reader: Error: section header in '%s' should be %ld but is %d bytes. skip it.",
+        fprintf(stderr, "readelf: Error: section header in '%s' should be %ld but is %d bytes. skip it.",
             g_filename, sizeof(Elf32_Shdr), eh->e_shentsize);
         return 1;
     }
@@ -438,7 +450,7 @@ int display_section_headers(void) {
         unsigned int info = sh->sh_info;
         unsigned int align = sh->sh_addralign;
 
-        if (procs[OPT__DEC]) {
+        if (procs[OPT_DEC]) {
             printf(" [%2d] %-17.17s %-15s %-8.8x %6.6d %6.6d %2.2x %3s %2d %3d %2d\n",
                 i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
         } else {
@@ -481,12 +493,12 @@ int display_symbol_table(void) {
 
     // check
     if (sym_sh == NULL) {
-        printf("ELF-reader: Notice: there is no symbol table in '%s'\n", g_filename);
+        fprintf(stderr, "readelf: Notice: there is no symbol table in '%s'\n", g_filename);
         return 0;
     }
     // check symbol entry size in the table
     if (sym_sh->sh_entsize != sizeof(Elf32_Sym)) {
-        printf("ELF-reader: Error: symbol table entry size should be %ld but is %d\n",
+        fprintf(stderr, "readelf: Error: symbol table entry size should be %ld but is %d\n",
             sizeof(Elf32_Sym), (unsigned int)sym_sh->sh_entsize);
             return 0;
     }
