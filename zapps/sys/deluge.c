@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "2.1"
+#define DELUGE_VERSION "2.2"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -840,10 +840,10 @@ void show_help(int full) {
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
         "  -b  bench link and run time\n"
-        "  -d  add debug in stderr\n"
-        "  -e  use filename as argument\n"
+        "  -e  don't use filename as argument\n"
         "  -h  show this help message\n"
-        "  -l  add path to extra libraries\n"
+        "  -l  list main linking steps\n"
+        "  -p  add path to extra libraries\n"
         "  -v  show version\n"
     );
 }
@@ -857,7 +857,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
 
     g_extralib_path = NULL;
 
-    int move_arg = 1;
+    int move_arg = 0;
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] != '-') {
@@ -869,18 +869,18 @@ deluge_args_t deluge_parse(int argc, char **argv) {
             case 'b':
                 args.bench = 1;
                 break;
-            case 'd':
+            case 'l':
                 args.bench = 1;
                 g_print_debug = 1;
                 break;
             case 'e':
-                move_arg = 0;
+                move_arg = 1;
                 break;
             case 'h':
                 show_help(1);
                 exit(0);
                 break; // unreachable
-            case 'l':
+            case 'p':
                 if (i + 1 >= argc) {
                     fd_printf(2, "deluge: missing argument for -l\n");
                     show_help(0);
@@ -903,7 +903,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     }
 
     if (args.name == NULL) {
-        fd_printf(2, "No file specified\n");
+        fd_printf(2, "deluge: missing file name\n");
         show_help(0);
     }
 
@@ -945,7 +945,7 @@ int main(int argc, char **argv, char **envp) {
 
     debug_printf (
         "Link time: %d ms", c_timer_get_ms() - start
-    ) else if (args.bench) fd_printf(1,
+    ) else if (args.bench) fd_printf(2,
         "Link time: %d ms\n", c_timer_get_ms() - start
     );
 
@@ -966,7 +966,7 @@ int main(int argc, char **argv, char **envp) {
 
     debug_printf(
         "Exit with code %d in %d ms", ret, c_timer_get_ms() - start
-    ) else if (args.bench) fd_printf(1,
+    ) else if (args.bench) fd_printf(2,
         "Exit with code %d in %d ms\n", ret, c_timer_get_ms() - start
     );
 
