@@ -554,7 +554,7 @@ int display_symbol_table(void) {
 
         const char *name = str_table + symbol->st_name;
 
-        printf("%6d: %08d %5d %-7s %-6s %-8s %3s %s\n",
+        printf("%6d: %08x %5d %-7s %-6s %-8s %3s %s\n",
              i, value, size, type, bind ,visibility, index, name);
     }
 
