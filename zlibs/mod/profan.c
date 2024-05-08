@@ -369,57 +369,69 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
 
+    static sid_t elf_sid = NULL_SID;
+
+    if (IS_NULL_SID(elf_sid)) {
+        elf_sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
+        if (IS_NULL_SID(elf_sid)) {
+            fd_printf(2, "[run_ifexist] interpreter not found: %s\n", ELF_INTERP);
+            return -1;
+        }
+    }
+
     sid_t sid = fu_path_to_sid(ROOT_SID, args.path);
     if (!fu_is_file(sid)) {
         fd_printf(2, "[run_ifexist] path not found: %s\n", args.path);
         return -1;
     }
 
-    uint8_t *magic = malloc(4);
+    uint8_t magic[4];
     fu_file_read(sid, magic, 0, 4);
 
     char *exec_path = ELF_INTERP;
     char **nargv;
 
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
-        args.argc += 2;
+        args.argc += 3;
         nargv = calloc_ask(args.argc + 1, sizeof(char *));
 
-        nargv[0] = malloc_ask(strlen(ELF_INTERP) + 1);
-        strcpy(nargv[0], ELF_INTERP);
-
-        nargv[1] = malloc_ask(strlen(args.path) + 1);
-        strcpy(nargv[1], args.path);
-
-        for (int i = 2; i < args.argc; i++) {
-            nargv[i] = malloc_ask(strlen(args.argv[i-2]) + 1);
-            strcpy(nargv[i], args.argv[i-2]);
-        }
-    } else if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/') {
-        int c;
-        char **interp = get_interp(sid, &c);
-
-        nargv = calloc_ask(args.argc + c + 4, sizeof(char *));
-
-        nargv[0] = malloc_ask(strlen(ELF_INTERP) + 1);
-        strcpy(nargv[0], ELF_INTERP);
+        nargv[0] = malloc_ask(4);
+        strcpy(nargv[0], "dlg");
 
         nargv[1] = malloc_ask(3);
         strcpy(nargv[1], "-e");
 
+        nargv[2] = malloc_ask(strlen(args.path) + 1);
+        strcpy(nargv[2], args.path);
+
+        for (int i = 3; i < args.argc; i++) {
+            nargv[i] = malloc_ask(strlen(args.argv[i-3]) + 1);
+            strcpy(nargv[i], args.argv[i-3]);
+        }
+        sid = elf_sid;
+    } else if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/') {
+        int c;
+        char **interp = get_interp(sid, &c);
+
+        nargv = calloc_ask(args.argc + c + 3, sizeof(char *));
+
+        nargv[0] = malloc_ask(4);
+        strcpy(nargv[0], "dlg");
+
         for (int i = 0; i < c; i++) {
-            nargv[i+2] = interp[i];
+            nargv[i+1] = interp[i];
         }
         free(interp);
 
-        nargv[c+2] = malloc_ask(strlen(args.path) + 1);
-        strcpy(nargv[c+2], args.path);
+        nargv[c+1] = malloc_ask(strlen(args.path) + 1);
+        strcpy(nargv[c+1], args.path);
 
         for (int i = 0; i < args.argc; i++) {
-            nargv[i+c+3] = malloc_ask(strlen(args.argv[i]) + 1);
-            strcpy(nargv[i+c+3], args.argv[i]);
+            nargv[i+c+2] = malloc_ask(strlen(args.argv[i]) + 1);
+            strcpy(nargv[i+c+2], args.argv[i]);
         }
-        args.argc += c + 2;
+        args.argc += c + 1;
+        sid = elf_sid;
     } else if (magic[0] == 0x55 && magic[1] == 0x89 && magic[2] == 0xE5) {
         nargv = calloc_ask(args.argc + 1, sizeof(char *));
 
@@ -430,13 +442,6 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         exec_path = args.path;
     } else {
         fd_printf(2, "[run_ifexist] no interpreter found\n");
-        return -1;
-    }
-    free(magic);
-
-    sid = fu_path_to_sid(ROOT_SID, exec_path);
-    if (IS_NULL_SID(sid)) {
-        fd_printf(2, "[run_ifexist] interpreter not found: %s\n", exec_path);
         return -1;
     }
 
