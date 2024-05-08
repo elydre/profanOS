@@ -53,7 +53,7 @@ cat_args_t *parse_args(int argc, char **argv) {
             } else if (strcmp(argv[i], "-h") == 0) {
                 args->help = 1;
             } else {
-                fprintf(stderr, "cat: invalid option -- '%s'\n", argv[i]);
+                fprintf(stderr, "cat: invalid option -- '%s'\n", argv[i] + 1);
                 args->failed = 1;
                 return args;
             }
