@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 8"
+#define OLV_VERSION "1.0 rev 9"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1652,7 +1652,7 @@ char *if_dot(char **input) {
 
     // check if file ends with .olv
     int len = strlen(input[0]);
-    if (len < 5 || !strcmp(input[0] + len - 4, ".olv")) {
+    if (len > 4 && strcmp(input[0] + len - 4, ".olv") == 0) {
         FILE *file = fopen(input[0], "r");
         char line[16];
         if (file != NULL) {
@@ -1660,7 +1660,6 @@ char *if_dot(char **input) {
                 fclose(file);
                 return execute_file(input[0], input + 1) ? ERROR_CODE : NULL;
             }
-            printf("DOT: file '%s' start with %s\n", input[0], line);
             fclose(file);
         }
     }
