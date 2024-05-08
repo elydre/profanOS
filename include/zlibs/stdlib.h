@@ -36,7 +36,7 @@ void *realloc_func(void *mem, uint32_t new_size, int as_kernel);
 long int a64l(const char *string);
 void abort(void);
 int abs(int j);
-void atexit(void (*func)());
+void atexit(void (*func)(void));
 double atof(const char *s);
 int atoi(const char *nptr);
 long atol(const char *nptr);
