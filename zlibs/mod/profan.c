@@ -339,10 +339,10 @@ char **get_interp(sid_t sid, int *c) {
     *c = 0;
 
     for (int from, i = 0; tmp[i];) {
-        while (tmp[i] == ' ' || tmp[i] == '\t')
+        while (tmp[i] == ' ' || tmp[i] == '\t' || tmp[i] == '\r')
             i++;
         from = i;
-        while (tmp[i] && tmp[i] != ' ' && tmp[i] != '\t')
+        while (tmp[i] && tmp[i] != ' ' && tmp[i] != '\t' && tmp[i] != '\r')
             i++;
         if (i == from)
             break;

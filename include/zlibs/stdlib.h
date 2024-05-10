@@ -20,19 +20,14 @@
 
 #define RAND_MAX 0x7fffffff
 
-#define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
-#define malloc(size) malloc_func(size, 0)
-#define realloc(mem, new_size) realloc_func(mem, new_size, 0)
-
-#define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
-#define malloc_ask(size) malloc_func(size, 1)
-#define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
-
 char **__get_environ_ptr(void);
-void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel);
+void *calloc(uint32_t nmemb, uint32_t lsize);
+void *malloc(uint32_t size);
+void *realloc(void *mem, uint32_t new_size);
+void *calloc_ask(uint32_t nmemb, uint32_t lsize);
+void *malloc_ask(uint32_t size);
+void *realloc_ask(void *mem, uint32_t new_size);
 void free(void *mem);
-void *malloc_func(uint32_t size, int as_kernel);
-void *realloc_func(void *mem, uint32_t new_size, int as_kernel);
 long int a64l(const char *string);
 void abort(void);
 int abs(int j);

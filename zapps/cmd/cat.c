@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdio.h>
 
 void show_help(void) {
@@ -112,15 +113,21 @@ void cat(FILE *file, char *path, int end_of_line) {
     char buffer[1024];
     int read;
     while ((read = fread(buffer, 1, 1024, file)) > 0) {
-        if (end_of_line) {
-            for (int i = 0; i < read; i++) {
-                if (buffer[i] == '\n') {
-                    putchar('$');
-                }
-                putchar(buffer[i]);
-            }
-        } else {
+        if (!end_of_line) {
             fwrite(buffer, 1, read, stdout);
+            continue;
+        }
+
+        for (int i = 0; i < read; i++) {
+            if (buffer[i] == '\n') {
+                putchar('$');
+                putchar('\n');
+            } else if (isprint(buffer[i])) {
+                putchar(buffer[i]);
+            } else {
+                putchar('^');
+                putchar(buffer[i] + 64);
+            }
         }
     }
 

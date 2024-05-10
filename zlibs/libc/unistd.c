@@ -94,7 +94,7 @@ int execl(const char *fullpath, const char *first, ...) {
     va_end(args);
     argv[argc] = NULL;
 
-    return execve(fullpath, argv, NULL);
+    return execve(fullpath, argv, __get_environ_ptr());
 }
 
 int execle(const char *fullpath, const char *arg, ...) {
