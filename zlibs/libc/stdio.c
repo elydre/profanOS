@@ -362,12 +362,12 @@ int fseek(FILE *stream, long offset, int whence) {
 }
 
 int fgetc(FILE *stream) {
-    int c;
+    char c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
 int getc(FILE *stream) {
-    int c;
+    char c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
@@ -410,7 +410,7 @@ int fputs(const char *str, FILE *stream) {
 
 int getchar(void) {
     // equivalent to fgetc(stdin)
-    int c;
+    char c;
     return fread(&c, 1, 1, stdin) == 1 ? c : EOF;
 }
 
