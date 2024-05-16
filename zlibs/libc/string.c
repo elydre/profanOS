@@ -13,6 +13,7 @@
 #include <profan/type.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -260,8 +261,6 @@ char *stpncpy(register char *restrict s1,
     return s1 + (s2 - p);
 }
 
-int strncasecmp(register const char *s1, register const char *s2, size_t n);
-
 int strcasecmp (const char *s1, const char *s2) {
     int result = strncasecmp(s1, s2, -1);
     return result;
@@ -460,7 +459,6 @@ size_t strlen(const char *s) {
 }
 
 int strncasecmp(register const char *s1, register const char *s2, size_t n) {
-    int is = strcmp(s1, "PNAMES");
     unsigned char *ucs1 = (unsigned char *) s1;
     unsigned char *ucs2 = (unsigned char *) s2;
     int d = 0;
@@ -585,8 +583,8 @@ size_t strspn(const char *s, const char *c) {
     return s-a;
 }
 
-char *strstr(register char *string, char *substring) {
-    register char *a, *b;
+char *strstr(register const char *string, const char *substring) {
+    register const char *a, *b;
 
     /* First scan quickly through the two strings looking for a
      * single-character match.  When it's found, then compare the
@@ -595,7 +593,7 @@ char *strstr(register char *string, char *substring) {
 
     b = substring;
     if (*b == 0) {
-        return string;
+        return (char *) string;
     }
     for ( ; *string != 0; string += 1) {
         if (*string != *b) {
@@ -604,7 +602,7 @@ char *strstr(register char *string, char *substring) {
         a = string;
         while (1) {
             if (*b == 0) {
-                return string;
+                return (char *) string;
             }
             if (*a++ != *b++) {
                 break;
