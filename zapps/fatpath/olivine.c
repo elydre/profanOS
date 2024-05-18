@@ -1204,7 +1204,7 @@ char *eval(ast_t *ast) {
 void eval_help(void) {
     puts("Olivine Integrated Evaluator\n"
         "Usage: eval [args...]\n"
-        "Spaces are not required between operators\n\n"
+        "Spaces are required between operators\n\n"
         "Number operators:\n"
         " +  Addition\n"
         " -  Substraction\n"
