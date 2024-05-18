@@ -1,9 +1,9 @@
 \e[0m USEFUL COMMANDS \e[37m
 cat     - show file content         mkdir   - create directory
 clear   - clear the screen          more    - read line by line
-fetch   - show time, mem, disk      proc    - process utility
-kb      - set keyboard layout       rim     - start text editor
-lish    - start bash like shell     rm      - remove file or dir
+echo    - print text to stdout      proc    - process utility
+fetch   - show time, mem, disk      rim     - start text editor
+kb      - set keyboard layout       rm      - remove file or dir
 ls      - list the current dir      wif     - write in file
 
 all commands are in /bin/cmd and /bin/fatpath
