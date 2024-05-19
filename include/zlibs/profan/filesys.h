@@ -14,6 +14,7 @@
 #define DEVIO_LIB_ID   1003
 #define FMOPEN_LIB_ID  1004
 
+#include <profan/syscall.h>
 #include <profan/type.h>
 
 #ifndef NULL_SID

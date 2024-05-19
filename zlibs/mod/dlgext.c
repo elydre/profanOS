@@ -11,7 +11,6 @@
 
 #define DLGEXT_C
 
-#include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 #include <profan/dlgext.h>

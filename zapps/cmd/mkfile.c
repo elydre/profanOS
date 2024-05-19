@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan.h>
 
