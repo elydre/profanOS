@@ -63,7 +63,6 @@ void bzero(void *s, size_t n) {
     }
 }
 
-
 char *dirname(char *path) {
     static const char null_or_empty_or_noslash[] = ".";
     register char *s;
@@ -98,14 +97,24 @@ char *dirname(char *path) {
     return (char *) null_or_empty_or_noslash;
 }
 
-int ffs(int i) {
-    puts("ffs not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+int ffs(register int mask) {
+    register int bit;
+
+    if (mask == 0)
+        return 0;
+
+    for (bit = 1; !(mask & 1); bit++)
+        mask >>= 1;
+
+    return bit;
 }
 
 int ffsll(long long int i) {
-    puts("ffsll not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    unsigned long long int x = i & -i;
+
+    if (x <= 0xffffffff)
+        return ffs (i);
+    return 32 + ffs (i >> 32);
 }
 
 void *memccpy(void *restrict s1, const void *restrict s2, int c, size_t n) {
@@ -117,9 +126,15 @@ void *memccpy(void *restrict s1, const void *restrict s2, int c, size_t n) {
     return (n == (size_t) -1) ? NULL : r1;
 }
 
-void *memchr(const void *s, int c, size_t n) {
-    puts("memchr not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+void *memchr(const void *bigptr, int ch, size_t length) {
+    const char *big = (const char *) bigptr;
+    size_t n;
+
+    for (n = 0; n < length; n++)
+        if (big[n] == ch)
+            return (void *) &big[n];
+
+    return NULL;
 }
 
 int memcmp(const void *s1, const void *s2, size_t n) {
@@ -206,12 +221,11 @@ void *mempcpy(void *restrict s1, const void *restrict s2, size_t n) {
 void *memrchr(const void *s, int c, size_t n) {
     register const unsigned char *r;
 
-    r = ((unsigned char *)s) + ((size_t) n);
+    r = ((unsigned char *) s) + ((size_t) n);
 
     while (n) {
-        if (*--r == ((unsigned char)c)) {
-            return (void *) r;    /* silence the warning */
-        }
+        if (*--r == ((unsigned char) c))
+            return (void *) r;
         --n;
     }
 
@@ -236,9 +250,10 @@ void psignal(int signum, register const char *message) {
 void *rawmemchr(const void *s, int c) {
     register const unsigned char *r = s;
 
-    while (*r != ((unsigned char)c)) ++r;
+    while (*r != ((unsigned char) c))
+        ++r;
 
-    return (void *) r;    /* silence the warning */
+    return (void *) r;
 }
 
 char *stpcpy(register char *restrict s1, const char *restrict s2) {
@@ -254,14 +269,15 @@ char *stpncpy(register char *restrict s1,
     const char *p = s2;
 
     while (n) {
-        if ((*s = *s2) != 0) s2++; /* Need to fill tail with 0s. */
+        if ((*s = *s2) != 0) // Need to fill tail with 0
+            s2++;
         ++s;
         --n;
     }
     return s1 + (s2 - p);
 }
 
-int strcasecmp (const char *s1, const char *s2) {
+int strcasecmp(const char *s1, const char *s2) {
     int result = strncasecmp(s1, s2, -1);
     return result;
 }
@@ -271,9 +287,22 @@ int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc)
     return 0;
 }
 
-char *strcasestr(const char *s1, const char *s2) {
-    puts("strcasestr not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+char *strcasestr(const char *s, const char *find) {
+    size_t len;
+    char c, sc;
+
+    if ((c = *find++) != 0) {
+        c = tolower((unsigned char) c);
+        len = strlen(find);
+        do {
+            do {
+                if ((sc = *s++) == 0)
+                    return (NULL);
+            } while ((char) tolower((unsigned char) sc) != c);
+        } while (strncasecmp(s, find, len) != 0);
+        s--;
+    }
+    return (char *) s;
 }
 
 char *strcat(char *restrict s1, register const char *restrict s2) {
@@ -337,7 +366,7 @@ char *strchrnul(const char *s, int c_in) {
             return (char *) cp;
         if (*++cp == c || *cp == '\0')
             return (char *) cp;
-        if (sizeof (longword) > 4) {
+        if (sizeof(longword) > 4) {
             if (*++cp == c || *cp == '\0')
                 return (char *) cp;
             if (*++cp == c || *cp == '\0')
@@ -503,7 +532,6 @@ int strncmp(register const char *s1, register const char *s2, size_t n) {
     return 0;
 }
 
-
 char *strncpy(char *restrict s1, register const char *restrict s2,
                size_t n) {
     register char *s = s1;
@@ -517,9 +545,18 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
     return s1;
 }
 
-char *strndup(register const char *s1, size_t n) {
-    puts("strndup not implemented yet, WHY DO YOU USE IT ?");
-    return NULL;
+char *strndup(const char *str, size_t n) {
+    size_t len;
+    char *copy;
+
+    for (len = 0; len < n && str[len]; len++);
+
+    if ((copy = malloc(len + 1)) == NULL)
+        return NULL;
+
+    memcpy(copy, str, len);
+    copy[len] = '\0';
+    return copy;
 }
 
 size_t strnlen(const char *s, size_t max) {
@@ -539,7 +576,8 @@ char *strpbrk(const char *s1, const char *s2) {
 
     for (s=s1 ; *s ; s++) {
         for (p=s2 ; *p ; p++) {
-            if (*p == *s) return (char *) s; /* silence the warning */
+            if (*p == *s)
+                return (char *) s;
         }
     }
     return NULL;
@@ -555,12 +593,33 @@ char *strrchr(register const  char *s, int c) {
         }
     } while (*s++);
 
-    return (char *) p;            /* silence the warning */
+    return (char *) p;
 }
 
-char *strsep(char **restrict s1, const char *restrict s2) {
-    puts("strsep not implemented yet, WHY DO YOU USE IT ?");
-    return NULL;
+char *strsep(register char **stringp, register const char *delim) {
+    register const char *spanp;
+    register int c, sc;
+    register char *s;
+    char *tok;
+
+    if ((s = *stringp) == NULL)
+        return (NULL);
+
+    for (tok = s;;) {
+        c = *s++;
+        spanp = delim;
+        do {
+            if ((sc = *spanp++) == c) {
+                if (c == 0)
+                    s = NULL;
+                else
+                    s[-1] = 0;
+                *stringp = s;
+                return (tok);
+            }
+        } while (sc != 0);
+    }
+    // NOTREACHED
 }
 
 char *strsignal(int signum) {
@@ -572,7 +631,9 @@ size_t strspn(const char *s, const char *c) {
     const char *a = s;
     size_t byteset[32 / sizeof(size_t)] = { 0 };
 
-    if (!c[0]) return 0;
+    if (!c[0])
+        return 0;
+
     if (!c[1]) {
         for (; *s == *c; s++);
         return s-a;
@@ -601,12 +662,10 @@ char *strstr(register const char *string, const char *substring) {
         }
         a = string;
         while (1) {
-            if (*b == 0) {
+            if (*b == 0)
                 return (char *) string;
-            }
-            if (*a++ != *b++) {
+            if (*a++ != *b++)
                 break;
-            }
         }
         b = substring;
     }
@@ -652,10 +711,34 @@ cont:
     // NOTREACHED
 }
 
-char *strtok_r(char *restrict s1, const char *restrict s2,
-                 char **restrict next_start) {
-    puts("strtok_r not implemented yet, WHY DO YOU USE IT ?");
-    return NULL;
+char *strtok_r(char *s, const char *delim, char **save_ptr) {
+    char *end;
+
+    if (s == NULL)
+        s = *save_ptr;
+
+    if (*s == '\0') {
+        *save_ptr = s;
+        return NULL;
+    }
+
+    // Scan leading delimiters
+    s += strspn(s, delim);
+    if (*s == '\0') {
+        *save_ptr = s;
+        return NULL;
+    }
+
+    // Find the end of the token
+    end = s + strcspn(s, delim);
+    if (*end == '\0') {
+        *save_ptr = end;
+        return s;
+    }
+
+    *end = '\0';
+    *save_ptr = end + 1;
+    return s;
 }
 
 int strverscmp(const char *s1, const char *s2) {
