@@ -178,7 +178,7 @@ gid_t getegid(void) {
 }
 
 uid_t geteuid(void) {
-    // withouth user system, we just return 0 for 'root'
+    // without user system, we just return 0 for 'root'
     return 0;
 }
 
@@ -362,8 +362,8 @@ int setuid(uid_t a) {
 }
 
 unsigned sleep(unsigned seconds) {
-    if (seconds == 0) return 0;
-    c_process_sleep(c_process_get_pid(), seconds * 1000);
+    if (seconds)
+        c_process_sleep(c_process_get_pid(), seconds * 1000);
     return 0;
 }
 
@@ -454,9 +454,9 @@ int unlink(const char *filename) {
 }
 
 int usleep(useconds_t usec) {
-    if (usec == 0) return 0;
-    c_process_sleep(c_process_get_pid(), usec / 1000);
-    return 0;
+    if (usec < 1000)
+        return 0;
+    return c_process_sleep(c_process_get_pid(), usec / 1000) ? -1 : 0;
 }
 
 pid_t vfork(void) {
