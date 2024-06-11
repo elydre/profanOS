@@ -16,7 +16,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "2.2"
+#define DELUGE_VERSION "2.3"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -32,7 +32,7 @@ void profan_cleanup(void);
             exit(1);  \
         } while (0)
 
-#define debug_printf(fmt, ...) if (g_print_debug) {  \
+#define debug_printf(lvl, fmt, ...) if (g_print_debug >= lvl) {  \
             fd_putstr(2, "\e[37m[DELUGE] ");  \
             fd_printf(2, fmt, __VA_ARGS__);  \
             fd_putstr(2, "\e[0m\n");  \
@@ -337,6 +337,8 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
+    debug_printf(2, "| Load '%s'", obj->name);
+
     void *base_addr = get_base_addr(obj->file, type);
     uint32_t required_size = 0;
 
@@ -434,6 +436,8 @@ int file_relocate(elfobj_t *dl) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)dl->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(dl->file + ehdr->e_shoff);
 
+    debug_printf(2, "| RLoc '%s'", dl->name);
+
     if (ehdr->e_type == ET_EXEC) {
         return 0;
     }
@@ -497,12 +501,12 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         strcmp(filename, "/lib/libc.so") == 0
     ) {
         if (libc) {
-            debug_printf("| E-Rf '%s'", filename);
+            debug_printf(1, "| E-Rf '%s'", filename);
             libc->ref_count++;
             return libc;
         }
 
-        debug_printf("| E-CP '%s'", filename);
+        debug_printf(1, "| E-CP '%s'", filename);
         libc = dlgext_libc();
         add_loaded_lib(libc);
         libc->ref_count = 1;
@@ -519,12 +523,12 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     for (int i = 0; i < g_lib_count; i++) {
         if (strcmp(g_loaded_libs[i]->name, path))
             continue;
-        debug_printf("| Find '%s'", path);
+        debug_printf(1, "| Find '%s'", path);
         g_loaded_libs[i]->ref_count++;
         return g_loaded_libs[i];
     }
 
-    debug_printf("| Open '%s'", path);
+    debug_printf(1, "| Open '%s'", path);
 
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
@@ -611,6 +615,8 @@ void init_lib(elfobj_t *lib) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
 
+    debug_printf(2, "| Init '%s'", lib->name);
+
     if (lib->dynamic == NULL)
         return;
 
@@ -642,6 +648,8 @@ void fini_lib(elfobj_t *lib) {
 
     if (lib->dynamic == NULL)
         return;
+
+    debug_printf(2, "| Fini '%s'", lib->name);
 
     void (**fini_array)(void) = NULL;
     int size = 0;
@@ -720,11 +728,11 @@ int dlclose(void *handle) {
     elfobj_t *dl = handle;
 
     if (--dl->ref_count > 0) {
-        debug_printf("| Dref '%s' (%d)", dl->name, dl->ref_count);
+        debug_printf(1, "| Dref '%s' (%d)", dl->name, dl->ref_count);
         return 0;
     }
 
-    debug_printf("| Free '%s'", dl->name);
+    debug_printf(1, "| Free '%s'", dl->name);
 
     // remove from loaded libs
     for (int i = 0; i < g_lib_count; i++) {
@@ -769,6 +777,8 @@ int dynamic_linker(elfobj_t *exec) {
     if (ehdr->e_type != ET_EXEC || !exec->dymsym) {
         return 0;
     }
+
+    debug_printf(1, "| Link '%s'", exec->name);
 
     Elf32_Sym *sym;
     uint32_t val;
@@ -840,6 +850,7 @@ void show_help(int full) {
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
         "  -b  bench link and run time\n"
+        "  -d  show additional debug info\n"
         "  -e  don't use filename as argument\n"
         "  -h  show this help message\n"
         "  -l  list main linking steps\n"
@@ -871,7 +882,12 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 break;
             case 'l':
                 args.bench = 1;
-                g_print_debug = 1;
+                if (!g_print_debug)
+                    g_print_debug = 1;
+                break;
+            case 'd':
+                args.bench = 1;
+                g_print_debug = 2;
                 break;
             case 'e':
                 move_arg = 1;
@@ -937,13 +953,16 @@ int main(int argc, char **argv, char **envp) {
 
     for (int i = 0; i < g_lib_count; i++) {
         file_relocate(g_loaded_libs[i]);
+    }
+
+    for (int i = 0; i < g_lib_count; i++) {
         init_lib(g_loaded_libs[i]);
     }
 
     load_sections(prog, ET_EXEC);
     dynamic_linker(prog);
 
-    debug_printf (
+    debug_printf (1,
         "Link time: %d ms", c_timer_get_ms() - start
     ) else if (args.bench) fd_printf(2,
         "Link time: %d ms\n", c_timer_get_ms() - start
@@ -964,7 +983,7 @@ int main(int argc, char **argv, char **envp) {
 
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
-    debug_printf(
+    debug_printf(1,
         "Exit with code %d in %d ms", ret, c_timer_get_ms() - start
     ) else if (args.bench) fd_printf(2,
         "Exit with code %d in %d ms\n", ret, c_timer_get_ms() - start
@@ -972,7 +991,7 @@ int main(int argc, char **argv, char **envp) {
 
     while (g_lib_count) {
         if (g_loaded_libs[0]->ref_count > 1) {
-            debug_printf("Unclosed library '%s'", g_loaded_libs[0]->name);
+            debug_printf(1, "Unclosed library '%s'", g_loaded_libs[0]->name);
             g_loaded_libs[0]->ref_count = 1;
         }
         dlclose(g_loaded_libs[0]);
@@ -985,7 +1004,7 @@ int main(int argc, char **argv, char **envp) {
         leaks = c_mem_get_info(7, pid);
         count = leaks ? c_mem_get_info(8, pid) : 0;
 
-        debug_printf("Clean up %d alloc%s (%d byte%s)",
+        debug_printf(1, "Clean up %d alloc%s (%d byte%s)",
             leaks,
             leaks > 1 ? "s" : "",
             count,
