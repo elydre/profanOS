@@ -45,14 +45,27 @@ void __attribute__((destructor)) __stdlib_fini(void) {
 }
 
 void __init_libc(char **env, void *entry_exit) {
-    int size = 0;
-    while (env[size] != NULL) size++;
-    g_env = malloc((size + 1) * sizeof(char *));
-    for (int i = 0; i < size; i++)
-        g_env[i] = strdup(env[i]);
-    g_env[size] = NULL;
+    int size, offset;
 
     g_entry_exit = entry_exit;
+
+    if (env == NULL)
+        return;
+
+    // check if the libc environment is already initialized
+    if (g_env != NULL) {
+        for (offset = 0; g_env[offset] != NULL; offset++);
+    } else {
+        offset = 0;
+    }
+
+    // copy the new environment
+    for (size = 0; env[size] != NULL; size++);
+
+    g_env = realloc(g_env, (size + offset + 1) * sizeof(char *));
+    for (int i = 0; i < size; i++)
+        g_env[i + offset] = strdup(env[i]);
+    g_env[size + offset] = NULL;
 }
 
 char **__get_environ_ptr(void) {
@@ -267,6 +280,8 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
+    if (g_env == NULL)
+        return NULL;
     // check if the variable already exists
     for (int i = 0; g_env[i] != NULL; i++) {
         for (int j = 0; ; j++) {
@@ -369,12 +384,12 @@ int mblen(register const char *s, size_t n) {
     return 0;
 }
 
-size_t mbstowcs(wchar_t * __restrict pwcs, const char * __restrict s, size_t n) {
+size_t mbstowcs(wchar_t * restrict pwcs, const char * restrict s, size_t n) {
     puts("mbstowcs not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int mbtowc(wchar_t *__restrict pwc, register const char *__restrict s, size_t n) {
+int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
     puts("mbtowc not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -549,35 +564,39 @@ int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
 }
 
 int setenv(const char *name, const char *value, int replace) {
+    if (g_env == NULL) {
+        g_env = malloc(sizeof(char *));
+        g_env[0] = NULL;
+    }
+
+    int i;
     // check if the variable already exists
-    for (int i = 0; g_env[i] != NULL; i++) {
-        for (int j = 0; ; j++) {
+    for (i = 0; g_env[i] != NULL; i++) {
+        for (int j = 0;; j++) {
             if (name[j] == '\0' && g_env[i][j] == '=') {
                 // found the variable
-                if (replace) {
-                    // replace the variable
-                    free(g_env[i]);
-                    g_env[i] = malloc(strlen(name) + strlen(value) + 2);
-                    strcpy(g_env[i], name);
-                    strcat(g_env[i], "=");
-                    strcat(g_env[i], value);
-                }
+                if (!replace)
+                    return 0;
+                // replace the variable
+                free(g_env[i]);
+                g_env[i] = malloc(strlen(name) + strlen(value) + 2);
+                strcpy(g_env[i], name);
+                strcat(g_env[i], "=");
+                strcat(g_env[i], value);
                 return 0;
             }
-            if (name[j] != g_env[i][j]) break;
+            if (name[j] != g_env[i][j] || name[j] == '\0')
+                break;
         }
     }
 
     // the variable doesn't exist, create it
-    int len = strlen(name) + strlen(value) + 2;
-    char *new_var = malloc(len);
+    char *new_var = malloc(strlen(name) + strlen(value) + 2);
     strcpy(new_var, name);
     strcat(new_var, "=");
     strcat(new_var, value);
 
     // add the variable to the environment
-    int i = 0;
-    while (g_env[i] != NULL) i++;
     g_env = realloc(g_env, (i + 2) * sizeof(char *));
     g_env[i] = new_var;
     g_env[i + 1] = NULL;
@@ -586,29 +605,34 @@ int setenv(const char *name, const char *value, int replace) {
 }
 
 int unsetenv(const char *name) {
+    if (g_env == NULL)
+        return 0;
     // check if the variable already exists
     for (int i = 0; g_env[i] != NULL; i++) {
         for (int j = 0; ; j++) {
             if (name[j] == '\0' && g_env[i][j] == '=') {
                 // found the variable
                 free(g_env[i]);
-                for (int k = i; g_env[k] != NULL; k++) {
+                for (int k = i; g_env[k] != NULL; k++)
                     g_env[k] = g_env[k + 1];
-                }
                 return 0;
             }
-            if (name[j] != g_env[i][j]) break;
+            if (name[j] != g_env[i][j] || name[j] == '\0')
+                break;
         }
     }
     return 0;
 }
 
 int clearenv(void) {
-    for (int i = 0; g_env[i] != NULL; i++) {
+    if (g_env == NULL)
+        return 0;
+
+    for (int i = 0; g_env[i] != NULL; i++)
         free(g_env[i]);
-    }
-    realloc(g_env, sizeof(char *));
-    g_env[0] = NULL;
+    free(g_env);
+
+    g_env = NULL;
     return 0;
 }
 
@@ -1046,7 +1070,7 @@ long long int wcstoll_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_
     return 0;
 }
 
-size_t wcstombs(char * __restrict s, const wchar_t * __restrict pwcs, size_t n) {
+size_t wcstombs(char * restrict s, const wchar_t * restrict pwcs, size_t n) {
     puts("wcstombs not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
