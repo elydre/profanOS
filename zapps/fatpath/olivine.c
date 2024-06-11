@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 9"
+#define OLV_VERSION "1.0 rev 10"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1619,18 +1619,20 @@ char *if_del(char **input) {
             case 'e':
                 unsetenv(input[1]);
                 return NULL;
-            case 'h':
-                puts("Usage: del [arg] <name>\n"
-                    "  -v   variable (default)\n"
-                    "  -f   function\n"
-                    "  -p   pseudo\n"
-                    "  -g   global)\n"
-                    "  -e   environment"
-                );
-                return NULL;
             default:
                 break;
         }
+    }
+
+    if (argc == 1 && strcmp(input[0], "-h") == 0) {
+        puts("Usage: del [arg] <name>\n"
+            "  -v   variable (default)\n"
+            "  -f   function\n"
+            "  -p   pseudo\n"
+            "  -g   global\n"
+            "  -e   environment"
+        );
+        return NULL;
     }
 
     raise_error("del", "Usage: del [arg] <name>");
