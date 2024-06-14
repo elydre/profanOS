@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 10"
+#define OLV_VERSION "1.0 rev 11"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1297,9 +1297,7 @@ char *search_recursive(char *path, uint8_t required_type, char *ext, int recursi
         return NULL;
     }
 
-    char *output = malloc(1);
-    output[0] = '\0';
-
+    char *output = calloc(1, sizeof(char));
     char *tmp, *tmp_path;
 
     for (int i = 0; i < elm_count; i++) {
@@ -1310,8 +1308,8 @@ char *search_recursive(char *path, uint8_t required_type, char *ext, int recursi
             continue;
         }
         if (ext != NULL && fu_is_file(out_ids[i])) {
-            char *tmp = strrchr(names[i], '.') + 1;
-            if (tmp == NULL || strcmp(tmp, ext) != 0) {
+            tmp = strrchr(names[i], '.');
+            if (tmp == NULL || strcmp(tmp + 1, ext) != 0) {
                 continue;
             }
         }
@@ -3318,7 +3316,11 @@ int execute_lines(char **lines, int line_end, char **result) {
                 if (STOP_ON_ERROR)
                     return -1;
             } else if (res) {
-                if (res[0] != '\0')
+                for (int i = 0; res[i]; i++) {
+                    if (res[i] == INTR_QUOTE)
+                        res[i] = USER_QUOTE;
+                }
+                if (res[0])
                     puts(res);
                 free(res);
                 res = NULL;
