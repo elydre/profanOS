@@ -40,18 +40,10 @@
 #define KB_Z        17
 #define KB_S        31
 
-#define O_RDONLY    00
-#define O_WRONLY    01
-#define O_RDWR      02
-#define O_CREAT     0100
-#define O_TRUNC     01000
-#define O_APPEND    02000
-
 int serial_debug(char *frm, ...);
 void profan_print_memory(void *addr, uint32_t size);
 char *assemble_path(const char *old, const char *new);
 int profan_wait_pid(uint32_t pid);
-int profan_open(const char *path, int flags, ...);
 char *open_input(int *size);
 void profan_cleanup(void);
 

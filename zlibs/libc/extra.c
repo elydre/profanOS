@@ -97,41 +97,6 @@ int profan_wait_pid(uint32_t pid) {
     return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
-int profan_open(const char *path, int flags, ...) {
-    // mode is ignored, permissions are always 777
-
-    char *cwd = getenv("PWD");
-    char *fullpath = cwd ? assemble_path(cwd, path) : strdup(path);
-
-    sid_t sid = fu_path_to_sid(ROOT_SID, fullpath);
-    if (IS_NULL_SID(sid) && (flags & O_CREAT)) {
-        sid = fu_file_create(0, fullpath);
-    }
-
-    if (IS_NULL_SID(sid)) {
-        free(fullpath);
-        return -1;
-    }
-
-    if (flags & O_TRUNC && fu_is_file(sid)) {
-        fu_set_file_size(sid, 0);
-    }
-
-    int fd = fm_open(fullpath);
-
-    if (fd < 0) {
-        free(fullpath);
-        return -1;
-    }
-
-    if (flags & O_APPEND) {
-        fm_lseek(fd, 0, SEEK_END);
-    }
-
-    free(fullpath);
-    return fd;
-}
-
 char *open_input(int *size) {
     char *term = getenv("TERM");
     if (!term)

@@ -196,5 +196,6 @@ typedef uint32_t pid_t;
 typedef int off_t;
 typedef int ssize_t;
 typedef uint32_t useconds_t;
+typedef uint32_t mode_t;
 
 #endif
