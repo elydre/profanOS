@@ -898,7 +898,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 break; // unreachable
             case 'p':
                 if (i + 1 >= argc) {
-                    fd_printf(2, "deluge: missing argument for -l\n");
+                    fd_printf(2, "deluge: missing argument for -p\n");
                     show_help(0);
                 }
                 if (g_extralib_path) {
