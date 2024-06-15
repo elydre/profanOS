@@ -43,62 +43,62 @@ static uint32_t seconde_in_month[] = {
 #define century 2000
 
 char *asctime(const tm_t *a) {
-    puts("Asctime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("asctime is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 char *asctime_r(const tm_t *a, char *b) {
-    puts("Asctime_r is not implemented yet, WHY DO YOU USE IT ?");
+    puts("asctime_r is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 clock_t clock(void) {
-    puts("Clock is not implemented yet, WHY DO YOU USE IT ?");
+    puts("clock is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int clock_getres(clockid_t a, timespec_t *n) {
-    puts("Clock_getres is not implemented yet, WHY DO YOU USE IT ?");
+    puts("clock_getres is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int clock_gettime(clockid_t a, timespec_t *b) {
-    puts("Clock_gettime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("clock_gettime is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int clock_settime(clockid_t a, const timespec_t *b) {
-    puts("Clock_settime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("clock_settime is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *ctime(const time_t *a) {
-    puts("Ctime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("ctime is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 char *ctime_r(const time_t *a, char *b) {
-    puts("Ctime_r is not implemented yet, WHY DO YOU USE IT ?");
+    puts("ctime_r is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 double difftime(time_t a, time_t b) {
-    puts("Difftime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("difftime is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 tm_t *getdate(const char *a) {
-    puts("Getdate is not implemented yet, WHY DO YOU USE IT ?");
+    puts("getdate is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 tm_t *gmtime(const time_t *a) {
-    puts("Gmtime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("gmtime is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
 tm_t *gmtime_r(const time_t *a, tm_t *b) {
-    puts("Gmtime_r is not implemented yet, WHY DO YOU USE IT ?");
+    puts("gmtime_r is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -109,7 +109,7 @@ tm_t *localtime(const time_t *a) {
 }
 
 tm_t *localtime_r(const time_t *a, tm_t *b) {
-    puts("Localtime_r is not implemented yet, WHY DO YOU USE IT ?");
+    puts("localtime_r is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -140,17 +140,17 @@ time_t mktime(tm_t *time) {
 }
 
 int nanosleep(const timespec_t *a, timespec_t *b) {
-    puts("Nanosleep is not implemented yet, WHY DO YOU USE IT ?");
+    puts("nanosleep is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 size_t strftime(char *a, size_t b, const char *c, const tm_t *d) {
-    puts("Strftime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("strftime is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 char *strptime(const char *a, const char *b, tm_t *c) {
-    puts("Strptime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("strptime is not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
@@ -165,31 +165,30 @@ time_t time(time_t *a) {
 }
 
 int timer_create(clockid_t a, sigevent_t *b, timer_t *c) {
-    puts("Timer_create is not implemented yet, WHY DO YOU USE IT ?");
+    puts("timer_create is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int timer_delete(timer_t a) {
-    puts("Timer_delete is not implemented yet, WHY DO YOU USE IT ?");
+    puts("timer_delete is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int timer_gettime(timer_t a, itimerspec_t *b) {
-    puts("Timer_gettime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("timer_gettime is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int timer_getoverrun(timer_t a) {
-    puts("Timer_getoverrun is not implemented yet, WHY DO YOU USE IT ?");
+    puts("timer_getoverrun is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 int timer_settime(timer_t a, int b, const itimerspec_t * c, itimerspec_t *d) {
-    puts("Timer_settime is not implemented yet, WHY DO YOU USE IT ?");
+    puts("timer_settime is not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
 void tzset(void) {
-    puts("Tzset is not implemented yet, WHY DO YOU USE IT ?");
+    puts("tzset is not implemented yet, WHY DO YOU USE IT ?");
 }
-
