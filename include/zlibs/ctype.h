@@ -14,6 +14,7 @@
 
 int isalnum(int c);
 int isalpha(int c);
+int isascii(int c);
 int iscntrl(int c);
 int isdigit(int c);
 int isgraph(int c);

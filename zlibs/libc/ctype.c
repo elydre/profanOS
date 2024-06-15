@@ -19,6 +19,10 @@ int isalpha(int c) {
     return islower(c) || isupper(c);
 }
 
+int isascii(int c) {
+    return c <= 127 && c >= 0;
+}
+
 int iscntrl(int c) {
     return (c >= 0 && c <= 0x1F) || c == 0x7F;
 }
