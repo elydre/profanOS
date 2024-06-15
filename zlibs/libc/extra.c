@@ -61,7 +61,7 @@ void profan_print_memory(void *addr, uint32_t size) {
     }
 }
 
-char *assemble_path(char *old, char *new) {
+char *assemble_path(const char *old, const char *new) {
     char *result;
     int len;
 
@@ -97,7 +97,7 @@ int profan_wait_pid(uint32_t pid) {
     return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
-int profan_open(char *path, int flags, ...) {
+int profan_open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
     char *cwd = getenv("PWD");

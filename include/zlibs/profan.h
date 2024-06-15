@@ -49,9 +49,9 @@
 
 int serial_debug(char *frm, ...);
 void profan_print_memory(void *addr, uint32_t size);
-char *assemble_path(char *old, char *new);
+char *assemble_path(const char *old, const char *new);
 int profan_wait_pid(uint32_t pid);
-int profan_open(char *path, int flags, ...);
+int profan_open(const char *path, int flags, ...);
 char *open_input(int *size);
 void profan_cleanup(void);
 
