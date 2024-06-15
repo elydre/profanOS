@@ -481,7 +481,7 @@ char *ptsname (int fd) {
 
 void qsort(void  *base, size_t nel, size_t width, __compar_fn_t comp) {
     // bubble sort
-    char *arr = (char*) base;
+    char *arr = (char *) base;
     char temp[width];
     for (size_t i = 0; i < nel; i++) {
         for (size_t j = 0; j < nel - i - 1; j++) {
@@ -734,8 +734,13 @@ double strtod(char *str, char **ptr) {
     return 0.0;
 }
 
-long double strtod_l(const char* str, char** end, locale_t loc) {
+long double strtod_l(const char *str, char **end, locale_t loc) {
     puts("strtod_l not implemented yet, WHY DO YOU USE IT ?");
+    return 0;
+}
+
+long double strtold(const char *str, char **end) {
+    puts("strtold not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
@@ -743,7 +748,7 @@ float strtof(const char *str, char **end) {
     return (float) strtod((char *) str, end);
 }
 
-long double strtof_l(const char* str, char** end, locale_t loc) {
+long double strtof_l(const char *str, char **end, locale_t loc) {
     puts("strtof_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -846,12 +851,12 @@ noconv:
     return acc;
 }
 
-long long strtoll(const char* str, char** end, int base) {
+long long strtoll(const char *str, char **end, int base) {
     puts("strtoll not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-long long int strtoll_l(const char* str, char** end, int base, locale_t loc) {
+long long int strtoll_l(const char *str, char **end, int base, locale_t loc) {
     puts("strtoll_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -909,7 +914,7 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base) {
     return (acc);
 }
 
-unsigned long int strtoul_l(const char* str, char** end, int base, locale_t loc) {
+unsigned long int strtoul_l(const char *str, char **end, int base, locale_t loc) {
     puts("strtoul_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -993,7 +998,7 @@ noconv:
     return (acc);
 }
 
-unsigned long long int strtoull_l(const char* str, char** end, int base, locale_t loc) {
+unsigned long long int strtoull_l(const char *str, char **end, int base, locale_t loc) {
     puts("strtoull_l not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -1115,7 +1120,7 @@ static char *I_reverse(char *buffer, int i, int j) {
     return buffer;
 }
 
-char *itoa(int value, char* buffer, int base) {
+char *itoa(int value, char *buffer, int base) {
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;
