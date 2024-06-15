@@ -43,7 +43,6 @@ char  *strchrnul(const char *s, int c);
 int    strcmp(const char *s1, const char *s2);
 char  *strcpy(char *s1, const char *s2);
 size_t strcspn(const char *s1, const char *s2);
-size_t strlen(const char *s);
 char  *strdup(const char *s);
 char  *strerror(int errnum);
 size_t strlcat(char *dst, const char *src, size_t n);
