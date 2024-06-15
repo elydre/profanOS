@@ -18,15 +18,15 @@ profan_path = path.rsplit(os.sep, 1)[0]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 def json_from_url(url):
-    try:
-        with urlreq.urlopen(url) as response:
-            data = response.read()
-        return json.loads(data)
-    except Exception as e:
-        print("Failed to retrieve JSON data from URL:", e)
-        sys.exit(1)
+    with urlreq.urlopen(url) as response:
+        data = response.read()
+    return json.loads(data)
 
-addons_json = json_from_url("https://elydre.github.io/profan/addons.json")
+try:
+    addons_json = json_from_url("https://elydre.github.io/profan/addons.json")
+except Exception as e:
+    print("Failed to retrieve JSON data from URL:", e)
+    sys.exit(1)
 
 RECOMMENDED = addons_json["RECOMMENDED"]
 ADDONS = addons_json["ADDONS"]
@@ -55,15 +55,22 @@ def get_file(name: str) -> dict:
 def domain(url: str) -> str:
     return url.split("/")[2]
 
-def download(url: str, path: str) -> bool:
-    try:
-        with urlreq.urlopen(url) as response:
-            with open(path, "wb") as file:
-                file.write(response.read())
-    except Exception as e:
-        print(f"\rERROR: {e}")
-        return False
-    return True
+def download(url: str, path: str):
+    with urlreq.urlopen(url) as response:
+        with open(path, "wb") as file:
+            file.write(response.read())
+
+def download_targz(url: str, path: str):
+    targz = path + ".tar.gz"
+
+    download(url, targz)
+
+    if os.path.exists(path):
+        os.remove(path)
+    os.makedirs(path)
+
+    os.system(f"tar -xf {targz} -C {path}")
+    os.remove(targz)
 
 def download_addons(addons: list) -> bool:
     required = list(set([file for addon in addons for file in addon["files"]]))
@@ -83,7 +90,14 @@ def download_addons(addons: list) -> bool:
             os.makedirs(parent)
 
         # download
-        if not download(e["url"], os.sep.join(e["path"])): return False
+        try:
+            if "is_targz" in e.keys() and e["is_targz"]:
+                download_targz(e["url"], os.sep.join(e["path"]))
+            else:
+                download(e["url"], os.sep.join(e["path"]))
+        except Exception as e:
+            print(f"\rERROR: {e}")
+            return False
     return True
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
