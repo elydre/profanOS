@@ -146,14 +146,17 @@ the process and their content are accessible using syscalls.
 Here is a list of the main libraries and kernel modules:
 
 - kernel modules
-  - devio, filesys, fmopen, libmmq, panda, profan
+  - devio,
+    [filesys](https://github.com/elydre/profanOS/wiki/lib_filesys),
+    fmopen,
+    libmmq,
+    panda,
+    [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
 - `libc` - standard C library
-  - dlfcn, profan, setjmp, stdio, stdlib, string, time, unistd
 - `libpm` - profanOS minimalistic math lib
 - `libvgui` - optimized graphic lib
-- `libm` - openlibm port . *addons*
-- `libtcc` - tinyCC lib . *addons*
-- `libz` - compression lib . *addons*
+
+Find all the libraries available on the [wiki](https://github.com/elydre/profanOS/wiki/Dev-Links).
 
 ## Real-Hardware
 
