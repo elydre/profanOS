@@ -192,7 +192,7 @@ typedef struct sigevent {
 
 typedef uint32_t uid_t;
 typedef uint32_t gid_t;
-typedef uint32_t pid_t;
+typedef int pid_t;
 typedef int off_t;
 typedef int ssize_t;
 typedef uint32_t useconds_t;
