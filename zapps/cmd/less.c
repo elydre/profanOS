@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === less.c : 2024 ===                                                     |
 |                                                                             |
-|    Unix command implementation - display file line by line       .pi0iq.    |
+|    Unix command implementation - show file with libtsi           .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -44,12 +44,12 @@ int main(int argc, char *argv[]) {
     char *buffer, *filename, *title;
 
     if (argc > 2 || (argc == 2 && argv[1][0] == '-')) {
-        fputs("Usage: more [file]", stderr);
+        fputs("Usage: less [file]\n", stderr);
         return 1;
     }
 
     if (argc < 2 && isatty(STDIN_FILENO)) {
-        fputs("more: stdin is a tty", stderr);
+        fputs("less: stdin is a tty\n", stderr);
         return 1;
     }
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     buffer = read_file(filename);
 
     if (buffer == NULL) {
-        fprintf(stderr, "more: %s: File not found\n", filename);
+        fprintf(stderr, "less: %s: File not found\n", filename);
         return 1;
     }
 
@@ -71,4 +71,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
