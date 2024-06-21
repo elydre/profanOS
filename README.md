@@ -145,11 +145,11 @@ the process and their content are accessible using syscalls.
 
 Here is a list of the main libraries and kernel modules:
 
-- kernel modules
+- **kernel modules**:
   - devio,
     [filesys](https://github.com/elydre/profanOS/wiki/lib_filesys),
     fmopen,
-    libmmq,
+    [libmmq](https://github.com/elydre/profanOS/wiki/lib_mmq),
     [panda](https://github.com/elydre/profanOS/wiki/lib_panda),
     [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
 - **libc** - standard C library
