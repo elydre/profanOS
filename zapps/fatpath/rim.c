@@ -628,8 +628,6 @@ void quit(void) {
     free(g_syntax->keywords);
     free(g_syntax->blues);
     free(g_syntax);
-
-    clear_screen();
 }
 
 char *compute_args(int argc, char **argv) {
@@ -756,11 +754,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    void *old_screen = panda_screen_backup();
+
     SCREEN_H--;
     SCREEN_W--;
-
-    if (argc == 2) {
-    }
 
     g_data = calloc(1024, sizeof(char));
     g_data_size = 1;
@@ -784,8 +781,12 @@ int main(int argc, char **argv) {
 
     main_loop(file);
 
-    if (file) free(file);
+    if (file)
+        free(file);
     quit();
+
+    panda_screen_restore(old_screen);
+    panda_screen_free(old_screen);
 
     return 0;
 }

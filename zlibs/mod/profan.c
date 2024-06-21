@@ -388,7 +388,6 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     uint8_t magic[4];
     fu_file_read(sid, magic, 0, 4);
 
-    char *exec_path = ELF_INTERP;
     char **nargv;
 
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
@@ -439,7 +438,6 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
             nargv[i] = malloc_ask(strlen(args.argv[i]) + 1);
             strcpy(nargv[i], args.argv[i]);
         }
-        exec_path = args.path;
     } else {
         fd_printf(2, "[run_ifexist] no interpreter found\n");
         return -1;

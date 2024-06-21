@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === env.c : 2024 ===                                                      |
+|   === libtsi.h : 2024 ===                                                   |
 |                                                                             |
-|    Unix command implementation - dump environment to stdout      .pi0iq.    |
+|    Terminal based scrollable interface library header            .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,16 +9,10 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef LIBTSI_H
+#define LIBTSI_H
 
-int main(int argc, char **argv, char **envp) {
-    (void) argc;
-    (void) argv;
+int tsi_start(const char *title, const char *string);
+int tsi_start_array(const char *title, const char **lines);
 
-    for (int i = 0; envp[i]; i++) {
-        printf("%s\n", envp[i]);
-    }
-
-    return 0;
-}
+#endif

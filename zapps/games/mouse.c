@@ -19,24 +19,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-void draw_mouse(int x, int y);
-
-int main(int argc, char **argv) {
-    printf("\e[2J");
-
-    int x, y;
-
-    while (1) {
-        x = mouse_get_x();
-        y = mouse_get_y();
-        // // we draw a rectangle
-        printf("x: %d, y: %d, %d %d %d\n", x, y, mouse_get_button(0), mouse_get_button(1), mouse_get_button(2));
-        draw_mouse(x, y);
-        usleep(25000);
-    }
-    return 0;
-}
-
 void draw_mouse(int x, int y) {
     int red = 0xFF0000;
     int white = 0xFFFFFF;
@@ -81,4 +63,20 @@ void draw_mouse(int x, int y) {
 
         }
     }
+}
+
+int main(void) {
+    printf("\e[2J");
+
+    int x, y;
+
+    while (1) {
+        x = mouse_get_x();
+        y = mouse_get_y();
+        // // we draw a rectangle
+        printf("x: %d, y: %d, %d %d %d\n", x, y, mouse_get_button(0), mouse_get_button(1), mouse_get_button(2));
+        draw_mouse(x, y);
+        usleep(25000);
+    }
+    return 0;
 }

@@ -24,52 +24,75 @@ int main(void) {
 }
 
 int dev_null(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) buffer;
+    (void) offset;
+
     if (is_read)
         return 0;
     return size;
 }
 
 int dev_zero(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
     if (is_read)
         memset(buffer, 0, size);
     return size;
 }
 
 int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
+
     static uint32_t rand_seed = 0;
+
     if (!is_read)
         return 0;
+
     for (uint32_t i = 0; i < size; i++) {
         rand_seed = rand_seed * 1103515245 + 12345;
         ((uint8_t *) buffer)[i] = (uint8_t) (rand_seed / 65536) % 256;
     }
+
     return size;
 }
 
 int dev_kterm(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
+
     if (is_read)
         return keyboard_read(buffer, size, "/dev/kterm");
+
     c_kcnprint((char *) buffer, size, 0x0F);
     return size;
 }
 
 int dev_panda(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
+
     if (is_read)
         return keyboard_read(buffer, size, "/dev/panda");
+
     panda_print_string((char *) buffer, size, -1);
     return size;
 }
 
 int dev_pander(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
+
     static uint8_t color = 0x0C;
+
     if (is_read)
         return keyboard_read(buffer, size, "/dev/pander");
+
     color = panda_print_string((char *) buffer, size, color);
-    if (color == 0x0F) color = 0x0C;
+    if (color == 0x0F)
+        color = 0x0C;
+
     return size;
 }
 
 int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
+
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
 
@@ -106,6 +129,7 @@ int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 }
 
 int dev_serial_a(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
     if (is_read)
         c_serial_read(SERIAL_PORT_A, buffer, size);
     else
@@ -114,6 +138,7 @@ int dev_serial_a(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) 
 }
 
 int dev_serial_b(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
     if (is_read)
         c_serial_read(SERIAL_PORT_B, buffer, size);
     else
@@ -122,18 +147,21 @@ int dev_serial_b(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) 
 }
 
 int dev_stdin(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
     if (is_read)
         return fm_read(0, buffer, size);
     return 0;
 }
 
 int dev_stdout(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
     if (is_read)
         return 0;
     return fm_write(1, buffer, size);
 }
 
 int dev_stderr(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
+    (void) offset;
     if (is_read)
         return 0;
     return fm_write(2, buffer, size);

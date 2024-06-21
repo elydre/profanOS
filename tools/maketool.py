@@ -51,7 +51,8 @@ ZLIBS_MOD = "zlibs/mod"
 
 CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686 -nostdinc"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
-ZAPP_FLAGS = f"{CFLAGS} -Wno-unused -Werror"
+ZAPP_FLAGS = f"{CFLAGS} -Werror"
+ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror"
 
 KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 
@@ -70,6 +71,7 @@ LD_LINE_MAX = 12
 for e in ZHEADERS:
     if os.path.exists(e):
         ZAPP_FLAGS += f" -I {e}"
+        ZLIB_FLAGS += f" -I {e}"
 
 last_modif = lambda path: os.stat(path).st_mtime
 file_exists = lambda path: os.path.exists(path) and os.path.isfile(path)
@@ -266,7 +268,7 @@ def build_app_lib():
     def build_obj_file(name, fname):
         global total
         print_info_line(name)
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -fPIC -c {name} -o {fname}.o {ZAPP_FLAGS}")
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -fPIC -c {name} -o {fname}.o {ZLIB_FLAGS}")
         total -= 1
 
     lib_build_list = find_app_lib(ZLIBS_DIR, ".c")
