@@ -205,17 +205,17 @@ static void tsi_main_loop(const char **lines, int line_count) {
         keyc = profan_kb_get_char(key, 0);
 
         need_redraw = 1;
-        if (key == KB_TOP) {
+        if (!line_count);
+        else if (key == KB_TOP)
             y = max(y - 1, 0);
-        } else if (key == KB_BOT) {
+        else if (key == KB_BOT)
             y = min(y + 1, line_count - 1);
-        } else if (keyc == 'm' || keyc == 'M') {
+        else if (keyc == 'm' || keyc == 'M')
             y = min(y + SCREEN_H - 2, line_count - 1);
-        } else if (keyc == 'p' || keyc == 'P') {
+        else if (keyc == 'p' || keyc == 'P')
             y = max(y - SCREEN_H + 2, 0);
-        } else {
+        else
             need_redraw = 0;
-        }
 
         usleep(10000);
     } while (keyc != 'q' && keyc != 'Q' && key != KB_ESC);
