@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc) {
     if (argc != 1) {
         fputs("Usage: <CMD> | rev\n", stderr);
         return 1;

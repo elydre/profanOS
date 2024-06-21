@@ -286,9 +286,6 @@ char **get_required_libs(elfobj_t *obj) {
         return NULL;
     }
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
-
     char **libs = NULL;
     int lib_count = 0;
     int max_libs = 0;
@@ -612,9 +609,6 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 void init_lib(elfobj_t *lib) {
     // call constructors
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
-
     debug_printf(2, "| Init '%s'", lib->name);
 
     if (lib->dynamic == NULL)
@@ -642,9 +636,6 @@ void init_lib(elfobj_t *lib) {
 
 void fini_lib(elfobj_t *lib) {
     // call destructors
-
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)lib->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(lib->file + ehdr->e_shoff);
 
     if (lib->dynamic == NULL)
         return;

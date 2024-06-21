@@ -55,7 +55,7 @@ uint32_t convert_color(int color);
 double cos(double x);
 double sin(double x);
 
-int main(int argc, char **argv) {
+int main(void) {
     double x = 5, y = 5;
     double rot = 0; // in radians
 

@@ -4559,7 +4559,6 @@ int profan_local_input(char *buffer, int size, char **history, int history_end, 
 
         else if (sc == KB_BOT) {
             // read from history
-            int old_index = history_index;
             if (history[history_index] == NULL || history_index == history_end) continue;
             history_index = (history_index + 1) % HISTORY_SIZE;
             fputs("\e[u\e[K", stdout);

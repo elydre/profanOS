@@ -517,8 +517,6 @@ int fm_add_stdhist(int fd, int pid) {
 }
 
 int fm_resol012(int fd, int pid) {
-    int key, maj;
-
     if (fd < 0 || fd >= 3)
         return -1;
 

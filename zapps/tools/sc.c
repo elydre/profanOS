@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-int main(int argc, char **argv) {
+int main(void) {
     int last_sc = 0;
     char min_val, max_val;
 

@@ -42,7 +42,7 @@ int str_to_int(char *str) {
     return ret;
 }
 
-int print_help(int full) {
+int print_help(void) {
     puts(
         "Usage: mem [options]\n"
         "Options:\n"
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (args->mode == ACTION_HELP) {
-        print_help(1);
+        print_help();
         free(args);
         return 0;
     }

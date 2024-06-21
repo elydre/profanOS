@@ -167,7 +167,7 @@ int fps_limiter(int time) {
     return new_time;
 }
 
-int main(int argc, char** argv) {
+int main(void) {
     vgui_t vgui = vgui_setup(200, 200);
 
     shape_t shape = cube(120);

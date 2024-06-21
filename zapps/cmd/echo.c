@@ -133,8 +133,8 @@ int main(int argc, char **argv) {
     uint32_t flags;
     int offset;
 
-    if (argv == 0) {
-        printf("\n");
+    if (argc < 2) {
+        fputs("\n", stdout);
         return 0;
     }
 

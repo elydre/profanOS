@@ -11,7 +11,7 @@
 
 #include <profan/syscall.h>
 
-int main(int argc, char **argv) {
+int main(int argc) {
     if (argc == 1)
         c_sys_reboot();
     c_sys_shutdown();
