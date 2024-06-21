@@ -19,7 +19,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define TSI_VERSION "0.1"
+#define TSI_VERSION "0.2"
+
+#define TSI_TEXT_COLOR 0x0F
+#define TSI_TITLE_COLOR 0x70
+#define TSI_FOOTER_COLOR 0x70
+#define TSI_EOF_COLOR 0x08
 
 int SCREEN_W;
 int SCREEN_H;
@@ -35,20 +40,26 @@ static void tsi_draw_title(const char *title) {
     int i, x = (SCREEN_W - len) / 2;
 
     for (i = 0; i < x; i++)
-        panda_set_char(i, 0, ' ', 0x70);
+        panda_set_char(i, 0, ' ', TSI_TITLE_COLOR);
     for (; i < SCREEN_W && title[i - x]; i++)
-        panda_set_char(i, 0, title[i - x], 0x70);
+        panda_set_char(i, 0, title[i - x], TSI_TITLE_COLOR);
     for (; i < SCREEN_W; i++)
-        panda_set_char(i, 0, ' ', 0x70);
+        panda_set_char(i, 0, ' ', TSI_TITLE_COLOR);
 }
 
-static void tsi_draw_footer(void) {
-    char *footer = "libtsi v"TSI_VERSION" - press q to quit, arrows to scroll, P/M to move page";
+static void tsi_draw_footer(char *buffer, int line, int line_count) {
     int i;
-    for (i = 0; i < SCREEN_W && footer[i]; i++)
-        panda_set_char(i, SCREEN_H - 1, footer[i], 0x70);
+
+    snprintf (
+            buffer, SCREEN_W,
+            " libtsi v"TSI_VERSION"  [%d / %d]  press q to quit, arrows or P/M to scroll",
+            line, line_count
+    );
+
+    for (i = 0; i < SCREEN_W && buffer[i]; i++)
+        panda_set_char(i, SCREEN_H - 1, buffer[i], TSI_FOOTER_COLOR);
     for (; i < SCREEN_W; i++)
-        panda_set_char(i, SCREEN_H - 1, ' ', 0x70);
+        panda_set_char(i, SCREEN_H - 1, ' ', TSI_FOOTER_COLOR);
 }
 
 static void tsi_draw_lines(const char **lines) {
@@ -58,20 +69,20 @@ static void tsi_draw_lines(const char **lines) {
         x = 0;
         for (int i = 0; x < SCREEN_W; i++) {
             if (lines[y][i] != '\n' && lines[y][i] != '\0') {
-                panda_set_char(x, y + 1, lines[y][i], 0x07);
+                panda_set_char(x, y + 1, lines[y][i], TSI_TEXT_COLOR);
                 x++;
                 continue;
             }
             for (; x < SCREEN_W; x++) {
-                panda_set_char(x, y + 1, ' ', 0x07);
+                panda_set_char(x, y + 1, ' ', TSI_TEXT_COLOR);
             }
         }
     }
 
     for (; y < SCREEN_H - 2; y++) {
-        panda_set_char(0, y + 1, '~', 0x08);
+        panda_set_char(0, y + 1, '~', TSI_EOF_COLOR);
         for (x = 1; x < SCREEN_W; x++) {
-            panda_set_char(x, y + 1, ' ', 0x07);
+            panda_set_char(x, y + 1, ' ', TSI_TEXT_COLOR);
         }
     }
 }
@@ -92,9 +103,7 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
         }
     }
 
-    lines = malloc(sizeof(char *) * (line_count + 1));
-    serial_debug("line_count: %d\n", line_count);
-    lines[line_count] = NULL;
+    lines = malloc(sizeof(char *) * (line_count + 2));
 
     line_count = 0;
     x = 0;
@@ -114,6 +123,8 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
         x++;
     }
 
+    lines[line_count] = NULL;
+
     serial_debug("line_count: %d\n", line_count);
 
     *line_count_ptr = line_count;
@@ -126,10 +137,12 @@ static void tsi_main_loop(const char **lines, int line_count) {
 
     int need_redraw = 1;
 
+    char *buffer = malloc(SCREEN_W + 1);
+
     do {
         if (need_redraw) {            
             tsi_draw_lines(lines + y);
-            tsi_draw_footer();
+            tsi_draw_footer(buffer, y + 1, line_count);
         }
 
         int key = c_kb_get_scfh();
@@ -152,9 +165,10 @@ static void tsi_main_loop(const char **lines, int line_count) {
 
         usleep(10000);
     } while (keyc != 'q');
+    free(buffer);
 }
 
-int tsi_start(const char *title, const char *data) {
+int tsi_start(const char *title, const char *string) {
     const char **lines;
     int line_count;
 
@@ -168,12 +182,34 @@ int tsi_start(const char *title, const char *data) {
 
     tsi_draw_title(title);
 
-    lines = tsi_gen_lines(data, &line_count);
+    lines = tsi_gen_lines(string, &line_count);
 
     tsi_main_loop(lines, line_count);
 
     clear_screen();
     free(lines);
+
+    return 0;
+}
+
+int tsi_start_array(const char *title, const char **lines) {
+    int line_count;
+
+    panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
+
+    if (SCREEN_W * SCREEN_H == 0) {
+        return 1;
+    }
+
+    clear_screen();
+
+    tsi_draw_title(title);
+
+    for (line_count = 0; lines[line_count]; line_count++);    
+
+    tsi_main_loop(lines, line_count);
+
+    clear_screen();
 
     return 0;
 }

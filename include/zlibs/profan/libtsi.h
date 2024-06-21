@@ -12,6 +12,7 @@
 #ifndef LIBTSI_H
 #define LIBTSI_H
 
-int tsi_start(const char *title, const char *data);
+int tsi_start(const char *title, const char *string);
+int tsi_start_array(const char *title, const char **lines);
 
 #endif
