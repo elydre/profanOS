@@ -18,8 +18,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
 
-#define TSI_VERSION "0.4"
+#define TSI_VERSION "0.5"
 
 #define TSI_TEXT_COLOR   0x0F
 #define TSI_TITLE_COLOR  0x70
@@ -70,6 +71,42 @@ static void tsi_draw_footer(char *buffer, int line, int line_count) {
         panda_set_char(i, SCREEN_H - 1, ' ', TSI_FOOTER_COLOR);
 }
 
+static uint8_t tsi_ansi_to_panda(char l) {
+    switch (l) {
+        case '0': return 0;
+        case '1': return 4;
+        case '2': return 2;
+        case '3': return 6;
+        case '4': return 1;
+        case '5': return 5;
+        case '6': return 3;
+    }
+    return 7;
+}
+
+static int tsi_compute_ansi(const char *data, uint8_t *color_ptr) {
+    int i, len = 0;
+
+    if (data[0] == '\e' && data[1] == '[') {
+        if (data[2] == '0' && data[3] == 'm') {
+            if (color_ptr)
+                *color_ptr = TSI_TEXT_COLOR;
+            return 3;
+        }
+        if (data[2] == '3' && data[3] >= '0' && data[3] <= '7' && data[4] == 'm') {
+            if (color_ptr)
+                *color_ptr = tsi_ansi_to_panda(data[3]);
+            return 4;
+        }
+        if (data[2] == '9' && data[3] >= '0' && data[3] <= '7' && data[4] == 'm') {
+            if (color_ptr)
+                *color_ptr = tsi_ansi_to_panda(data[3]) | 0x08;
+            return 4;
+        }
+    }
+    return 0;
+}
+
 static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
     const char **lines = malloc(sizeof(char *) * 2);
     int x, line_count, alloc_size = 2;
@@ -78,6 +115,8 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
     for (int i = 0; data[i]; i++) {
         if (data[i] == '\t')
             x += TSI_TAB_SIZE - (x % TSI_TAB_SIZE);
+        else if (data[i] == '\e')
+            i += tsi_compute_ansi(data + i, NULL);
         else
             x++;
 
@@ -107,6 +146,7 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
 }
 
 static void tsi_draw_lines(const char **lines) {
+    uint8_t color = TSI_TEXT_COLOR;
     int x, y;
 
     for (y = 0; lines[y] && y < SCREEN_H - 2; y++) {
@@ -120,7 +160,16 @@ static void tsi_draw_lines(const char **lines) {
                     } while (x % TSI_TAB_SIZE);
                     continue;
                 }
-                panda_set_char(x, y + 1, lines[y][i], TSI_TEXT_COLOR);
+                if (lines[y][i] == '\e') {
+                    i += tsi_compute_ansi(lines[y] + i, &color);
+                    continue;
+                }
+                if (lines[y][i] == ' ')
+                    panda_set_char(x, y + 1, ' ', TSI_TEXT_COLOR);
+                else if (isprint(lines[y][i]))
+                    panda_set_char(x, y + 1, lines[y][i], color);
+                else
+                    panda_set_char(x, y + 1, '?', TSI_EOF_COLOR);
                 x++;
                 continue;
             }
