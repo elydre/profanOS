@@ -16,15 +16,17 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <unistd.h>
+#include <stdio.h>
 
-#define TSI_VERSION "0.3"
+#define TSI_VERSION "0.4"
 
-#define TSI_TEXT_COLOR 0x0F
-#define TSI_TITLE_COLOR 0x70
+#define TSI_TEXT_COLOR   0x0F
+#define TSI_TITLE_COLOR  0x70
 #define TSI_FOOTER_COLOR 0x70
-#define TSI_EOF_COLOR 0x08
+#define TSI_EOF_COLOR    0x08
+
+#define TSI_TAB_SIZE 4
 
 #undef max
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -68,6 +70,42 @@ static void tsi_draw_footer(char *buffer, int line, int line_count) {
         panda_set_char(i, SCREEN_H - 1, ' ', TSI_FOOTER_COLOR);
 }
 
+static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
+    const char **lines = malloc(sizeof(char *) * 2);
+    int x, line_count, alloc_size = 2;
+
+    line_count = x = 0;
+    for (int i = 0; data[i]; i++) {
+        if (data[i] == '\t')
+            x += TSI_TAB_SIZE - (x % TSI_TAB_SIZE);
+        else
+            x++;
+
+        if (i == 0) {
+            lines[line_count] = data + i;
+            line_count++;
+        } else if (data[i] == '\n') {
+            lines[line_count] = data + i + 1;
+            x = 0;
+            line_count++;
+        } else if (x >= SCREEN_W) {
+            lines[line_count] = data + i + 1;
+            line_count++;
+            x = 0;
+        }
+
+        if (line_count >= alloc_size - 1) {
+            alloc_size *= 2;
+            lines = realloc(lines, sizeof(char *) * alloc_size);
+        }
+    }
+
+    lines[line_count] = NULL;
+
+    *line_count_ptr = line_count;
+    return lines;
+}
+
 static void tsi_draw_lines(const char **lines) {
     int x, y;
 
@@ -75,6 +113,13 @@ static void tsi_draw_lines(const char **lines) {
         x = 0;
         for (int i = 0; x < SCREEN_W; i++) {
             if (lines[y][i] != '\n' && lines[y][i] != '\0') {
+                if (lines[y][i] == '\t') {
+                    do {
+                        panda_set_char(x, y + 1, ' ', TSI_TEXT_COLOR);
+                        x++;
+                    } while (x % TSI_TAB_SIZE);
+                    continue;
+                }
                 panda_set_char(x, y + 1, lines[y][i], TSI_TEXT_COLOR);
                 x++;
                 continue;
@@ -93,50 +138,8 @@ static void tsi_draw_lines(const char **lines) {
     }
 }
 
-static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
-    const char **lines;
-    int line_count = 0;
-
-    int i, x = 0;
-    for (i = 0; data[i]; i++) {
-        x++;
-        if (data[i] == '\n') {
-            line_count++;
-            x = 0;
-        } else if (x > SCREEN_W) {
-            line_count++;
-            x = 0;
-        }
-    }
-
-    lines = malloc(sizeof(char *) * (line_count + 2));
-
-    line_count = 0;
-    x = 0;
-    for (i = 0; data[i]; i++) {
-        if (i == 0) {
-            lines[line_count] = data + i;
-            line_count++;
-        } else if (data[i] == '\n') {
-            lines[line_count] = data + i + 1;
-            x = 0;
-            line_count++;
-        } else if (x > SCREEN_W) {
-            lines[line_count] = data + i - x + 1;
-            line_count++;
-            x = 0;
-        }
-        x++;
-    }
-
-    lines[line_count] = NULL;
-
-    *line_count_ptr = line_count;
-    return lines;
-}
-
 static void tsi_main_loop(const char **lines, int line_count) {
-    int y = 0;
+    int key, y = 0;
     char keyc;
 
     int need_redraw = 1;
@@ -149,7 +152,7 @@ static void tsi_main_loop(const char **lines, int line_count) {
             tsi_draw_footer(buffer, y + 1, line_count);
         }
 
-        int key = c_kb_get_scfh();
+        key = c_kb_get_scfh();
         keyc = profan_kb_get_char(key, 0);
 
         need_redraw = 1;
@@ -166,7 +169,7 @@ static void tsi_main_loop(const char **lines, int line_count) {
         }
 
         usleep(10000);
-    } while (keyc != 'q');
+    } while (keyc != 'q' && keyc != 'Q' && key != KB_ESC);
     free(buffer);
 }
 
