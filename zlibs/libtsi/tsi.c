@@ -19,12 +19,18 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define TSI_VERSION "0.2"
+#define TSI_VERSION "0.3"
 
 #define TSI_TEXT_COLOR 0x0F
 #define TSI_TITLE_COLOR 0x70
 #define TSI_FOOTER_COLOR 0x70
 #define TSI_EOF_COLOR 0x08
+
+#undef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
+#undef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 int SCREEN_W;
 int SCREEN_H;
@@ -125,8 +131,6 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
 
     lines[line_count] = NULL;
 
-    serial_debug("line_count: %d\n", line_count);
-
     *line_count_ptr = line_count;
     return lines;
 }
@@ -150,15 +154,13 @@ static void tsi_main_loop(const char **lines, int line_count) {
 
         need_redraw = 1;
         if (key == KB_TOP) {
-            y--;
-            if (y < 0) {
-                y = 0;
-            }
+            y = max(y - 1, 0);
         } else if (key == KB_BOT) {
-            y++;
-            if (y >= line_count) {
-                y = line_count - 1;
-            }
+            y = min(y + 1, line_count - 1);
+        } else if (keyc == 'm' || keyc == 'M') {
+            y = min(y + SCREEN_H - 2, line_count - 1);
+        } else if (keyc == 'p' || keyc == 'P') {
+            y = max(y - SCREEN_H + 2, 0);
         } else {
             need_redraw = 0;
         }
