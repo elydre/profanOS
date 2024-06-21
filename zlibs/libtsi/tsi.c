@@ -140,7 +140,7 @@ static void tsi_main_loop(const char **lines, int line_count) {
     char *buffer = malloc(SCREEN_W + 1);
 
     do {
-        if (need_redraw) {            
+        if (need_redraw) {
             tsi_draw_lines(lines + y);
             tsi_draw_footer(buffer, y + 1, line_count);
         }
@@ -178,6 +178,8 @@ int tsi_start(const char *title, const char *string) {
         return 1;
     }
 
+    void *old_screen = panda_screen_backup();
+
     clear_screen();
 
     tsi_draw_title(title);
@@ -186,9 +188,10 @@ int tsi_start(const char *title, const char *string) {
 
     tsi_main_loop(lines, line_count);
 
-    clear_screen();
     free(lines);
 
+    panda_screen_restore(old_screen);
+    panda_screen_free(old_screen);
     return 0;
 }
 
@@ -201,15 +204,17 @@ int tsi_start_array(const char *title, const char **lines) {
         return 1;
     }
 
+    void *old_screen = panda_screen_backup();
+
     clear_screen();
 
     tsi_draw_title(title);
 
-    for (line_count = 0; lines[line_count]; line_count++);    
+    for (line_count = 0; lines[line_count]; line_count++);
 
     tsi_main_loop(lines, line_count);
 
-    clear_screen();
-
+    panda_screen_restore(old_screen);
+    panda_screen_free(old_screen);
     return 0;
 }

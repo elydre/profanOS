@@ -445,6 +445,82 @@ int panda_change_font(char *file) {
     return 0;
 }
 
+void *panda_screen_backup(void) {
+    if (!g_panda)
+        return NULL;
+
+    font_data_t *font = malloc(sizeof(font_data_t));
+    memcpy(font, g_panda->font, sizeof(font_data_t));
+    font->data = malloc(font->charcount * font->charsize);
+    memcpy(font->data, g_panda->font->data, font->charcount * font->charsize);
+
+    screen_char_t *screen = malloc(g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
+    memcpy(screen, g_panda->screen_buffer, g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
+
+    panda_global_t *panda = malloc(sizeof(panda_global_t));
+    memcpy(panda, g_panda, sizeof(panda_global_t));
+    panda->font = font;
+    panda->screen_buffer = screen;
+
+    return panda;
+}
+
+void panda_screen_restore(void *data) {
+    panda_global_t *source = (panda_global_t *) data;
+
+    if (!g_panda || !data)
+        return;
+
+    draw_cursor(1);
+
+    c_process_set_scheduler(0);
+
+    // restore font
+    g_panda->font->data = realloc_ask( g_panda->font->data, source->font->charcount * source->font->charsize);
+    memcpy(g_panda->font->data, source->font->data, source->font->charcount * source->font->charsize);
+    g_panda->font->charcount = source->font->charcount;
+    g_panda->font->charsize = source->font->charsize;
+    g_panda->font->height = source->font->height;
+    g_panda->font->width = source->font->width;
+
+    // restore screen buffer
+    g_panda->screen_buffer = realloc_ask(g_panda->screen_buffer,
+            source->max_lines * source->max_cols * sizeof(screen_char_t));
+    memcpy(g_panda->screen_buffer, source->screen_buffer,
+            source->max_lines * source->max_cols * sizeof(screen_char_t));
+
+    // restore other fields
+    g_panda->cursor_is_hidden = source->cursor_is_hidden;
+    g_panda->scroll_offset = source->scroll_offset;
+    g_panda->max_lines = source->max_lines;
+    g_panda->max_cols = source->max_cols;
+    g_panda->cursor_x = source->cursor_x;
+    g_panda->cursor_y = source->cursor_y;
+    g_panda->color = source->color;
+
+    c_process_set_scheduler(1);
+
+    for (int i = 0; i < g_panda->max_lines; i++) {
+        for (int j = 0; j < g_panda->max_cols; j++) {
+            print_char(j * g_panda->font->width, i * g_panda->font->height,
+                    g_panda->screen_buffer[i * g_panda->max_cols + j].content,
+                    g_panda->screen_buffer[i * g_panda->max_cols + j].color
+            );
+        }
+    }
+
+    if (!g_panda->cursor_is_hidden)
+        draw_cursor(0);
+}
+
+void panda_screen_free(void *data) {
+    panda_global_t *panda = (panda_global_t *) data;
+    if (!panda) return;
+    free_font(panda->font);
+    free(panda->screen_buffer);
+    free(panda);
+}
+
 void init_panda(void) {
     if (!c_vesa_does_enable()) {
         fd_printf(2, "[panda] VESA is not enabled\n");
