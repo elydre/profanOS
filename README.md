@@ -150,7 +150,7 @@ Here is a list of the main libraries and kernel modules:
     [filesys](https://github.com/elydre/profanOS/wiki/lib_filesys),
     fmopen,
     libmmq,
-    panda,
+    [panda](https://github.com/elydre/profanOS/wiki/lib_panda),
     [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
 - `libc` - standard C library
 - `libpm` - profanOS minimalistic math lib
