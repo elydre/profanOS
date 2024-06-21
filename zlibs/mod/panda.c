@@ -63,7 +63,7 @@ int main(void) {
     return 0;
 }
 
-font_data_t *load_psf_font(char *file) {
+font_data_t *load_psf_font(const char *file) {
     sid_t sid = fu_path_to_sid(ROOT_SID, file);
     if (IS_NULL_SID(sid)) return NULL;
 
@@ -166,7 +166,7 @@ void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color_code) {
     }
 }
 
-void set_char(uint32_t x, uint32_t y, char c, char color) {
+void panda_set_char(uint32_t x, uint32_t y, uint8_t c, uint8_t color) {
     uint32_t offset = y * g_panda->max_cols + x;
     if (g_panda->screen_buffer[offset].content == c && g_panda->screen_buffer[offset].color == color) return;
     g_panda->screen_buffer[offset].content = c;
@@ -178,7 +178,7 @@ void panda_clear_screen(void) {
     if (!g_panda) return;
     for (int i = 0; i < g_panda->max_lines; i++) {
         for (int j = 0; j < g_panda->max_cols; j++) {
-            set_char(j, i, ' ', 0xF);
+            panda_set_char(j, i, ' ', 0xF);
         }
     }
     g_panda->cursor_x = 0;
@@ -186,8 +186,8 @@ void panda_clear_screen(void) {
     g_panda->scroll_offset = 0;
 }
 
-int compute_ansi_escape(char *str, panda_global_t *g_panda) {
-    char *start = str;
+int compute_ansi_escape(const char *str, panda_global_t *g_panda) {
+    const char *start = str;
 
     if (str[1] == '[') str += 2;
     else return 1;
@@ -205,7 +205,7 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
         g_panda->cursor_x = g_panda->saved_cursor_x;
     } else if (str[0] == 'K') {
         for (int i = g_panda->cursor_x; i < g_panda->max_cols; i++) {
-            set_char(i, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
+            panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
         }
     }
 
@@ -258,7 +258,7 @@ int compute_ansi_escape(char *str, panda_global_t *g_panda) {
     }
 
     // number
-    char *tmp = str;
+    const char *tmp = str;
     while (*tmp >= '0' && *tmp <= '9') tmp++;
 
     // cursor up
@@ -305,7 +305,7 @@ void panda_scroll(uint32_t line_count) {
     if (g_panda->cursor_y - g_panda->scroll_offset < g_panda->max_lines) {
         // fill new line with spaces
         for (int j = 0; j < g_panda->max_cols; j++) {
-            set_char(j, g_panda->cursor_y - g_panda->scroll_offset, ' ', 0xF);
+            panda_set_char(j, g_panda->cursor_y - g_panda->scroll_offset, ' ', 0xF);
         }
         return;
     }
@@ -331,7 +331,7 @@ void panda_scroll(uint32_t line_count) {
     // clear the last line
     for (uint32_t i = 0; i < line_count; i++) {
         for (int j = 0; j < g_panda->max_cols; j++) {
-            set_char(j, g_panda->max_lines - 1 - i, ' ', 0xF);
+            panda_set_char(j, g_panda->max_lines - 1 - i, ' ', 0xF);
         }
     }
 }
@@ -353,7 +353,7 @@ void draw_cursor(int errase) {
     }
 }
 
-uint8_t panda_print_string(char *string, int len, int tmp_color) {
+uint8_t panda_print_string(const char *string, int len, int tmp_color) {
     if (!g_panda) return 0;
     int tmp, old_color;
 
@@ -372,11 +372,11 @@ uint8_t panda_print_string(char *string, int len, int tmp_color) {
         else if (string[i] == '\t') {
             tmp = g_panda->cursor_x + 4 - (g_panda->cursor_x % 4);
             for (; g_panda->cursor_x < tmp; g_panda->cursor_x++)
-                set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
+                panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
         } else if (string[i] == '\e')
             i += compute_ansi_escape(string + i, g_panda);
         else {
-            set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, string[i], g_panda->color);
+            panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, string[i], g_panda->color);
             g_panda->cursor_x++;
         }
         if (g_panda->cursor_x >= g_panda->max_cols)
@@ -432,7 +432,7 @@ void panda_get_size(uint32_t *x, uint32_t *y) {
     }
 }
 
-int panda_change_font(char *file) {
+int panda_change_font(const char *file) {
     if (!g_panda) return 1;
     font_data_t *font = load_psf_font(file);
     if (font == NULL) return 1;
