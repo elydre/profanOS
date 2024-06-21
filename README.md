@@ -152,9 +152,10 @@ Here is a list of the main libraries and kernel modules:
     libmmq,
     [panda](https://github.com/elydre/profanOS/wiki/lib_panda),
     [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
-- `libc` - standard C library
-- `libpm` - profanOS minimalistic math lib
-- `libvgui` - optimized graphic lib
+- **libc** - standard C library
+- **libpm** - profanOS minimalistic math lib
+- [libtsi](https://github.com/elydre/profanOS/wiki/lib_tsi) - text scrollable interface lib
+- **libvgui** - optimized graphic lib
 
 Find all the libraries available on the [wiki](https://github.com/elydre/profanOS/wiki/Dev-Links).
 
