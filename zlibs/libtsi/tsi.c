@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define TSI_VERSION "0.5"
+#define TSI_VERSION "0.6"
 
 #define TSI_TEXT_COLOR   0x0F
 #define TSI_TITLE_COLOR  0x70
@@ -210,15 +210,15 @@ static void tsi_main_loop(const char **lines, int line_count) {
             y = max(y - 1, 0);
         else if (key == KB_BOT)
             y = min(y + 1, line_count - 1);
-        else if (keyc == 'm' || keyc == 'M')
+        else if (keyc == 'm' || keyc == ' ')
             y = min(y + SCREEN_H - 2, line_count - 1);
-        else if (keyc == 'p' || keyc == 'P')
+        else if (keyc == 'p')
             y = max(y - SCREEN_H + 2, 0);
         else
             need_redraw = 0;
 
         usleep(10000);
-    } while (keyc != 'q' && keyc != 'Q' && key != KB_ESC);
+    } while (keyc != 'q' && key != KB_ESC);
     free(buffer);
 }
 
