@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 11"
+#define OLV_VERSION "1.0 rev 12"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -3371,7 +3371,7 @@ int execute_for(int line_count, char **lines, char **result) {
     char *string = malloc(strlen(for_line) + 1);
 
     if (for_line[3] != ' ') {
-        raise_error(NULL, "Missing space after FOR");
+        raise_error(NULL, "Missing variable name for FOR loop");
         free(var_name);
         free(string);
 
@@ -3489,7 +3489,7 @@ int execute_if(int line_count, char **lines, char **result, int *cnd_state) {
     char *condition = malloc(strlen(if_line) + 1);
 
     if (if_line[2] != ' ') {
-        raise_error(NULL, "Missing space after IF");
+        raise_error(NULL, "Missing condition for IF statement");
         free(condition);
 
         if (if_line != lines[0]) {
@@ -3588,7 +3588,7 @@ int execute_while(int line_count, char **lines, char **result) {
     char *condition = malloc(strlen(while_line) + 1);
 
     if (while_line[5] != ' ') {
-        raise_error(NULL, "Missing space after WHILE");
+        raise_error(NULL, "Missing condition for WHILE loop");
         free(condition);
 
         if (while_line != lines[0]) {
@@ -3667,11 +3667,6 @@ int save_function(int line_count, char **lines) {
     // END
 
     char *func_line = lines[0] + 4;
-
-    if (*func_line != ' ') {
-        raise_error(NULL, "Missing space after FUNC");
-        return -1;
-    }
 
     while (*func_line == ' ')
         func_line++;
@@ -5054,7 +5049,7 @@ int main(int argc, char **argv) {
     strcpy(g_prompt, DEFAULT_PROMPT);
 
     variables = calloc(MAX_VARIABLES, sizeof(variable_t));
-    pseudos   = calloc(MAX_PSEUDOS, sizeof(pseudo_t));
+    pseudos   = calloc(MAX_PSEUDOS,   sizeof(pseudo_t));
     functions = calloc(MAX_FUNCTIONS, sizeof(function_t));
     bin_names = load_bin_names();
 
