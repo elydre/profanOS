@@ -1,6 +1,6 @@
 echo starting unit tests for Olivine interpreter
 echo version: !version
-print ------\n
+print '------\n'
 
 IF !(eval 4 + 6 * ( 3 - 1 ) = 16)
     echo [ OK ] if and eval
@@ -267,4 +267,4 @@ pp_tester
 del -f pp_tester
 del -f temp
 
-print ------\n
+print '------\n'

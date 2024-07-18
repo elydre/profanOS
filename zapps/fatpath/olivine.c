@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 12"
+#define OLV_VERSION "1.0 rev 13"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -77,6 +77,8 @@
 #if USE_READLINE
   #include <readline/readline.h>
   #include <readline/history.h>
+  #undef  DEFAULT_PROMPT
+  #define DEFAULT_PROMPT "olivine [\1\e[95m\2$d\1\e[0m\2] $(\1\e[31m\2$)>$(\1\e[0m\2$) "
 #endif
 
 #define DEBUG_COLOR  "\e[90m"
@@ -113,19 +115,24 @@
   #define INT_MAX 2147483647
 #endif
 
-#define IS_NAME_CHAR(x) (       \
+#define IS_NAME_CHAR(x) (         \
     ((x) >= 'a' && (x) <= 'z') || \
     ((x) >= 'A' && (x) <= 'Z') || \
     ((x) >= '0' && (x) <= '9') || \
     ((x) == '_'))
 
+#define IS_SPACE_CHAR(x) (        \
+    (x) == ' ' || (x) == '\t'  || \
+    (x) == '\n' || (x) == '\r' || \
+    (x) == '\v' || (x) == '\f')
+
 char *keywords[] = {
+    "END",
     "IF",
     "ELSE",
-    "WHILE",
     "FOR",
+    "WHILE",
     "FUNC",
-    "END",
     "RETURN",
     "BREAK",
     "CONTINUE",
@@ -2505,7 +2512,7 @@ int quotes_less_copy(char *dest, char *src, int len) {
             len--;
         } else if (in_string) {
             dest[i++] = src[j];
-        } else if (src[j] != ' ') {
+        } else if (!IS_SPACE_CHAR(src[j])) {
             dest[i++] = src[j];
         }
     }
@@ -2517,7 +2524,7 @@ char **gen_args(char *string) {
     if (string == NULL)
         return calloc(1, sizeof(char *));
 
-    while (*string == ' ')
+    while (IS_SPACE_CHAR(*string))
         string++;
 
     if (*string == '\0')
@@ -2528,11 +2535,12 @@ char **gen_args(char *string) {
     int argc = 1;
     int len;
 
-    for (len = 0; string[len] != '\0'; len++) {
+    for (len = 0; string[len]; len++) {
         if (string[len] == INTR_QUOTE && (len == 0 || string[len - 1] != '\\')) {
             in_string = !in_string;
-        } if (string[len] == ' ' && !in_string) {
-            while (string[len + 1] == ' ') len++;
+        } if (IS_SPACE_CHAR(string[len]) && !in_string) {
+            while (IS_SPACE_CHAR(string[len + 1]))
+                len++;
             argc++;
         }
     }
@@ -2552,10 +2560,13 @@ char **gen_args(char *string) {
     for (i = 0; string[i] != '\0'; i++) {
         if (string[i] == INTR_QUOTE && (i == 0 || string[i - 1] != '\\')) {
             in_string = !in_string;
-        } if (string[i] == ' ' && !in_string) {
+        }
+
+        if (IS_SPACE_CHAR(string[i]) && !in_string) {
             int tmp = quotes_less_copy(args, string + old_i, i - old_i);
             argv[arg_i++] = args;
-            while (string[i + 1] == ' ') i++;
+            while (IS_SPACE_CHAR(string[i + 1]))
+                i++;
             old_i = i + 1;
             args += tmp + 1;
         }
@@ -2571,32 +2582,32 @@ char **gen_args(char *string) {
 }
 
 char *args_rejoin(char **input, int to) {
-    int required_size = 1;
+    int size = 1;
     for (int i = 0; i < to; i++) {
-        required_size += strlen(input[i]) + 3;
+        size += strlen(input[i]) + 3;
     }
 
-    char *joined_input = malloc(required_size);
+    char *joined_input = malloc(size);
     joined_input[0] = '\0';
 
-    // add quotes if needed
+    size = 0;
     for (int i = 0; i < to; i++) {
-        if (strchr(input[i], ' ') != NULL) {
-            strcat(joined_input, INTR_QUOTE_STR);
-            strcat(joined_input, input[i]);
-            strcat(joined_input, INTR_QUOTE_STR);
-        } else {
-            strcat(joined_input, input[i]);
+        joined_input[size++] = INTR_QUOTE;
+        for (int j = 0; input[i][j] != '\0'; j++) {
+            joined_input[size++] = input[i][j];
         }
+        joined_input[size++] = INTR_QUOTE;
         if (i != to - 1) {
-            strcat(joined_input, " ");
+            joined_input[size++] = ' ';
         }
     }
+    joined_input[size] = '\0';
+
     return joined_input;
 }
 
 char *get_function_name(char *line) {
-    while (*line == ' ')
+    while (IS_SPACE_CHAR(*line))
         line++;
     if (*line == '\0')
         return NULL;
@@ -2606,7 +2617,7 @@ char *get_function_name(char *line) {
             in_string = !in_string;
         }
 
-        if (line[i] == ' ' && !in_string) {
+        if (IS_SPACE_CHAR(line[i]) && !in_string) {
             char *function_name = malloc(i + 1);
             strncpy(function_name, line, i);
             function_name[i] = '\0';
