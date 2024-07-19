@@ -218,16 +218,16 @@ void *bsearch(register const void *key, const void *base0, size_t nmemb, registe
         p = base + (lim >> 1) * size;
         cmp = (*compar)(key, p);
         if (cmp == 0)
-            return ((void *)p);
+            return ((void *) p);
         if (cmp > 0) {  // key > p: move right
-            base = (char *)p + size;
+            base = (char *) p + size;
             lim--;
         }   // else move left
     }
     return NULL;
 }
 
-char *canonicalize_file_name (const char *name) {
+char *canonicalize_file_name(const char *name) {
     puts("canonicalize_file_name not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
@@ -300,12 +300,12 @@ int getpt(void) {
     return 0;
 }
 
-long int jrand48(unsigned short int xsubi[3]){
+long int jrand48(unsigned short int xsubi[3]) {
     puts("jrand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int jrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result){
+int jrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result) {
     puts("jrand48_r not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -351,7 +351,7 @@ void lcong48(unsigned short int param[7]) {
     puts("lcong48 not implemented yet, WHY DO YOU USE IT ?");
 }
 
-ldiv_t ldiv (long int numer, long int denom) {
+ldiv_t ldiv(long int numer, long int denom) {
     puts("ldiv not implemented yet, WHY DO YOU USE IT ?");
     ldiv_t result;
     result = (ldiv_t) {0, 0}; // temporary, to avoid warnings
@@ -362,7 +362,7 @@ long long int llabs(long long int j) {
     return (j >= 0) ? j : -j;
 }
 
-lldiv_t lldiv (long long int numer, long long int denom) {
+lldiv_t lldiv(long long int numer, long long int denom) {
     puts("lldiv not implemented yet, WHY DO YOU USE IT ?");
     lldiv_t result;
     result = (lldiv_t) {0, 0}; // temporary, to avoid warnings
@@ -419,22 +419,22 @@ int mkostemps64(char *template, int suffixlen, int flags) {
     return 0;
 }
 
-int mkstemp (char *template) {
+int mkstemp(char *template) {
     puts("mkstemp not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int mkstemp64 (char *template) {
+int mkstemp64(char *template) {
     puts("mkstemp64 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int mkstemps (char *template, int suffixlen) {
+int mkstemps(char *template, int suffixlen) {
     puts("mkstemps not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
 
-int mkstemps64 (char *template, int suffixlen) {
+int mkstemps64(char *template, int suffixlen) {
     puts("mkstemps64 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -454,7 +454,7 @@ int mrand48_r(struct drand48_data *buffer, long int *result) {
     return 0;
 }
 
-long int nrand48 (unsigned short int xsubi[3]) {
+long int nrand48(unsigned short int xsubi[3]) {
     puts("nrand48 not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
@@ -474,12 +474,12 @@ int posix_memalign(void **memptr, size_t alignment, size_t size) {
     return 0;
 }
 
-char *ptsname (int fd) {
+char *ptsname(int fd) {
     puts("ptsname not implemented yet, WHY DO YOU USE IT ?");
     return NULL;
 }
 
-void qsort(void  *base, size_t nel, size_t width, __compar_fn_t comp) {
+void qsort(void *base, size_t nel, size_t width, __compar_fn_t comp) {
     // bubble sort
     char *arr = (char *) base;
     char temp[width];
