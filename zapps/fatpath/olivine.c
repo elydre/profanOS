@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 13"
+#define OLV_VERSION "1.0 rev 14"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -4928,9 +4928,9 @@ typedef struct {
 } olivine_args_t;
 
 int show_help(int full, char *name) {
-    printf("Usage: %s [options] [file] [arg1 arg2 ...]\n", name);
+    fprintf(full ? stdout : stderr, "Usage: %s [options] [file] [arg1 arg2 ...]\n", name);
     if (!full) {
-        printf("Try '%s --help' for more information.\n", name);
+        fprintf(stderr, "Try '%s --help' for more information.\n", name);
         return 1;
     }
     puts("Options:\n"
@@ -4983,7 +4983,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
             || strcmp(argv[i], "--command") == 0
         ) {
             if (i + 1 == argc) {
-                puts("Error: no command given");
+                fputs("Error: no command given", stderr);
                 args->help = 1;
                 return args;
             }
@@ -4994,7 +4994,7 @@ olivine_args_t *parse_args(int argc, char **argv) {
             args->arg_offset = i + 1;
             break;
         } else {
-            printf("Error: invalid option -- '%s'\n", argv[i]);
+            fprintf(stderr, "Error: invalid option -- '%s'\n", argv[i]);
             args->help = 1;
             return args;
         }
