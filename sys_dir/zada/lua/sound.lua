@@ -105,6 +105,10 @@ local function play(song)
             current_duration = math.floor(current_duration * 3 / 2)
         elseif c == "1" then
             current_octave = 1
+        elseif c == "2" then
+            current_octave = 2
+        elseif c == "3" then
+            current_octave = 3
         elseif c == "4" then
             current_octave = 4
         elseif c == "5" then
