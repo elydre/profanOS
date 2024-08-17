@@ -14,8 +14,8 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.1.8c"
-#define KERNEL_EDITING  "generic"
+#define KERNEL_VERSION  "sc-01"
+#define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
 #define PROC_PRIORITY   2           // default process priority
@@ -48,7 +48,7 @@ void sys_shutdown(void);
 
 void sys_warning(char *msg, ...);
 void sys_error(char *msg, ...);
-void sys_interrupt(int code, int err_code); // reserved cpu interrupt
+void sys_interrupt(uint8_t code, int err_code); // reserved cpu interrupt
 
 int   sys_init(void);
 char *sys_kinfo(void);

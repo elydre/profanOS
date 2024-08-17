@@ -104,6 +104,7 @@ global isr28
 global isr29
 global isr30
 global isr31
+global isr128
 ; IRQs
 global irq0
 global irq1
@@ -306,6 +307,12 @@ isr30:
 isr31:
     push byte 0
     push byte 31
+    jmp isr_common_stub
+
+; 128: System Call
+isr128:
+    push byte 0
+    push byte 128
     jmp isr_common_stub
 
 ; IRQ handlers

@@ -206,7 +206,7 @@ void sod_fatal(char *file_name, int line, char *msg, ...) {
     asm volatile("hlt");
 }
 
-void sod_interrupt(int code, int err_code, char *msg) {
+void sod_interrupt(uint8_t code, int err_code, char *msg) {
     asm volatile("cli");
     size_x = gt_get_max_cols();
     size_y = gt_get_max_rows();

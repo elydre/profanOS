@@ -130,8 +130,8 @@ void sys_error(char *msg, ...) {
     }
 }
 
-void sod_interrupt(int code, int err_code, char *msg);
-void sys_interrupt(int code, int err_code) {
+void sod_interrupt(uint8_t code, int err_code, char *msg);
+void sys_interrupt(uint8_t code, int err_code) {
     kprintf_serial("received interrupt %d from cpu\n", code);
 
     // page fault issue handler
@@ -141,11 +141,11 @@ void sys_interrupt(int code, int err_code) {
     }
 
     if (process_get_pid() == 0) {
-        sod_interrupt(code, err_code, interrupts[code]);
+        sod_interrupt(code, err_code, code < 19 ? interrupts[code] : "?");
         return;
     }
 
-    sys_error("CPU raised interrupt %d (%s)", code, interrupts[code]);
+    sys_error("CPU raised interrupt %d (%s)", code, code < 19 ? interrupts[code] : "?");
 }
 
 /********************************

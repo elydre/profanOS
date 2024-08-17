@@ -9,6 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <kernel/syscall.h>
 #include <cpu/ports.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
@@ -49,6 +50,7 @@ int isr_install(void) {
     set_idt_gate(29, (uint32_t)isr29);
     set_idt_gate(30, (uint32_t)isr30);
     set_idt_gate(31, (uint32_t)isr31);
+    set_idt_gate(128, (uint32_t)isr128);
 
     // Remap the PIC
     port_byte_out(0x20, 0x11);
@@ -86,7 +88,14 @@ int isr_install(void) {
 }
 
 void isr_handler(registers_t *r) {
-    sys_interrupt(r->int_no, r->err_code);
+    r->int_no = r->int_no & 0xFF;
+
+    if (r->int_no != 128) {
+        sys_interrupt(r->int_no & 0xFF, r->err_code);
+        return;
+    }
+
+    syscall_handler(r);
 }
 
 void register_interrupt_handler(uint8_t n, isr_t handler) {
