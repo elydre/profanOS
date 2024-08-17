@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-01"
+#define KERNEL_VERSION  "sc-02"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -40,6 +40,8 @@
 
 
 // system.c
+void kernel_exit_current(void);
+
 extern char sys_safe_buffer[256];
 void sys_set_reporter(int (*reporter)(char *));
 
@@ -52,11 +54,6 @@ void sys_interrupt(uint8_t code, int err_code); // reserved cpu interrupt
 
 int   sys_init(void);
 char *sys_kinfo(void);
-
-// kshell.c
-void start_kshell(void);
-void kernel_switch_back(void);
-void kernel_exit_current(void);
 
 // runtime.c
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);

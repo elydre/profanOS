@@ -59,7 +59,5 @@ void kernel_main(void *mboot_ptr) {
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 1, NULL, NULL);
 
-    start_kshell();
-
     sys_fatal("Nothing to run!");
 }
