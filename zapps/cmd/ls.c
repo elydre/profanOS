@@ -65,9 +65,9 @@ int get_terminal_width(void) {
     return width;
 }
 
-void sort_alpha_and_type(int count, char **names, sid_t *ids) {
+void sort_alpha_and_type(int count, char **names, uint32_t *ids) {
     char *tmp_name;
-    sid_t tmp_id;
+    uint32_t tmp_id;
     int i, j;
 
     int dir_count = 0;
@@ -118,9 +118,9 @@ void sort_alpha_and_type(int count, char **names, sid_t *ids) {
     }
 }
 
-void sort_size_and_type(int count, char **names, sid_t *ids) {
+void sort_size_and_type(int count, char **names, uint32_t *ids) {
     char *tmp_name;
-    sid_t tmp_id;
+    uint32_t tmp_id;
     int i, j;
 
     int dir_count = 0;
@@ -240,14 +240,14 @@ ls_args_t *parse_args(int argc, char **argv) {
     return args;
 }
 
-void print_name(sid_t id, char *name) {
+void print_name(uint32_t id, char *name) {
     if (fu_is_dir(id)) printf("\e[96m%s", name);
     else if (fu_is_file(id)) printf("\e[92m%s", name);
     else if (fu_is_fctf(id)) printf("\e[93m%s", name);
     else printf("\e[91m%s", name);
 }
 
-void print_comma(int elm_count, char **cnt_names, sid_t *cnt_ids) {
+void print_comma(int elm_count, char **cnt_names, uint32_t *cnt_ids) {
     for (int i = 0; i < elm_count; i++) {
         print_name(cnt_ids[i], cnt_names[i]);
         if (i != elm_count - 1) printf("\e[0m, ");
@@ -256,7 +256,7 @@ void print_comma(int elm_count, char **cnt_names, sid_t *cnt_ids) {
     puts("\e[0m");
 }
 
-void print_cols(int elm_count, char **cnt_names, sid_t *cnt_ids) {
+void print_cols(int elm_count, char **cnt_names, uint32_t *cnt_ids) {
     uint32_t max_len, *lens, *col_lens;
     int cols, rows, width, k, term_w;
     rows = cols = 0;
@@ -306,10 +306,10 @@ void print_cols(int elm_count, char **cnt_names, sid_t *cnt_ids) {
     free(lens);
 }
 
-void print_lines(int elm_count, char **cnt_names, sid_t *cnt_ids, ls_args_t *args) {
+void print_lines(int elm_count, char **cnt_names, uint32_t *cnt_ids, ls_args_t *args) {
     int size;
     for (int i = 0; i < elm_count; i++) {
-        printf("\e[sd%ds%d\e[u\e[10C", cnt_ids[i].device, cnt_ids[i].sector);
+        printf("\e[sd%ds%d\e[u\e[10C", SID_DISK(cnt_ids[i]), SID_SECTOR(cnt_ids[i]));
 
         if (fu_is_dir(cnt_ids[i])) {
             if (args->size_type == LS_SIZE_VIRT) {
@@ -368,16 +368,16 @@ int main(int argc, char **argv) {
 
     fu_simplify_path(ls_path);
 
-    sid_t dir = fu_path_to_sid(ROOT_SID, ls_path);
+    uint32_t dir = fu_path_to_sid(ROOT_SID, ls_path);
 
-    if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
+    if (IS_SID_NULL(dir) || !fu_is_dir(dir)) {
         fprintf(stderr, "ls: %s: No such directory\n", ls_path);
         free(ls_path);
         free(args);
         return 1;
     }
 
-    sid_t *cnt_ids;
+    uint32_t *cnt_ids;
     char **cnt_names;
 
     int elm_count = fu_get_dir_content(dir, &cnt_ids, &cnt_names);

@@ -108,7 +108,7 @@ void profan_cleanup(void) {
  *                       *
 **************************/
 
-sid_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
+uint32_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
     char *path = strdup(src_path);
 
     char *fullname = malloc(strlen(filename) + 5); // 5 => .elf + null
@@ -120,8 +120,8 @@ sid_t search_inpath(const char *src_path, const char *filename, char **fullpath)
         if (path[i] != ':' && path[i] != '\0')
             continue;
         path[i] = '\0';
-        sid_t sid = fu_path_to_sid(ROOT_SID, path + start);
-        if (!IS_NULL_SID(sid)) {
+        uint32_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        if (!IS_SID_NULL(sid)) {
             sid = fu_path_to_sid(sid, fullname);
             if (fu_is_file(sid)) {
                 if (path)
@@ -138,19 +138,19 @@ sid_t search_inpath(const char *src_path, const char *filename, char **fullpath)
 
     free(fullname);
     free(path);
-    return NULL_SID;
+    return SID_NULL;
 }
 
-sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
-    sid_t sid;
+uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
+    uint32_t sid;
 
     if (name == NULL)
-        return NULL_SID;
+        return SID_NULL;
 
     if (type == ET_EXEC) {
         if (name[0] == '/') {
             sid = fu_path_to_sid(ROOT_SID, name);
-            if (!IS_NULL_SID(sid) && path)
+            if (!IS_SID_NULL(sid) && path)
                 *path = strdup(name);
             return sid;
         }
@@ -158,11 +158,11 @@ sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
         if (name[0] == '.' && name[1] == '/') {
             char *cwd = ft_getenv("PWD");
             if (!cwd)
-                return NULL_SID;
+                return SID_NULL;
             char *full_path = assemble_path(cwd, name + 2);
             fu_simplify_path(full_path);
             sid = fu_path_to_sid(ROOT_SID, full_path);
-            if (!IS_NULL_SID(sid) && path)
+            if (!IS_SID_NULL(sid) && path)
                 *path = full_path;
             else
                 free(full_path);
@@ -171,20 +171,20 @@ sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
 
         char *env_path = ft_getenv("PATH");
         if (!env_path)
-            return NULL_SID;
+            return SID_NULL;
         return search_inpath(env_path, name, path);
     }
 
     char *full_path = assemble_path("/lib", name);
     sid = fu_path_to_sid(ROOT_SID, full_path);
 
-    if (IS_NULL_SID(sid)) {
+    if (IS_SID_NULL(sid)) {
         free(full_path);
         if (!g_extralib_path)
-            return NULL_SID;
+            return SID_NULL;
         full_path = assemble_path(g_extralib_path, name);
         sid = fu_path_to_sid(ROOT_SID, full_path);
-        if (IS_NULL_SID(sid))
+        if (IS_SID_NULL(sid))
             free(full_path);
         else if (path)
             *path = full_path;
@@ -512,8 +512,8 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         return libc;
     }
 
-    sid_t sid = search_elf_sid(filename, required_type, &path);
-    if (IS_NULL_SID(sid)) {
+    uint32_t sid = search_elf_sid(filename, required_type, &path);
+    if (IS_SID_NULL(sid)) {
         if (isfatal)
             raise_error("'%s' not found", filename);
         return NULL;

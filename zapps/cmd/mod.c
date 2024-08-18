@@ -22,8 +22,8 @@
 #define HELP_HELP "Try 'mod -h' for more information.\n"
 
 int is_file(char *path) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(sid)) return 0;
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_SID_NULL(sid)) return 0;
     return fu_is_file(sid);
 }
 

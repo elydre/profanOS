@@ -57,10 +57,10 @@ int main(int argc, char** argv) {
 
     char *path = assemble_path(pwd, argv[1]);
 
-    sid_t file = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(file) || !fu_is_file(file)) {
+    uint32_t file = fu_path_to_sid(ROOT_SID, path);
+    if (IS_SID_NULL(file) || !fu_is_file(file)) {
         file = fu_file_create(0, path);
-        if (IS_NULL_SID(file)) {
+        if (IS_SID_NULL(file)) {
             free(path);
             return 1;
         }

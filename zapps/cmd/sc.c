@@ -19,7 +19,7 @@ int main(void) {
     printf("syscall vesa get info (0) -> %d\n", syscall_vesa_get_info(0));
     printf("syscall vesa get info (1) -> %d\n", syscall_vesa_get_info(1));
 
-    printf("sizeof(sid_t) -> %d\n", sizeof(sid_t));
+    printf("sizeof(uint32_t) -> %d\n", sizeof(uint32_t));
 
     return 0;
 }

@@ -94,7 +94,7 @@ void set_title(char *path) {
 }
 
 void load_file(char *path) {
-    sid_t file = fu_path_to_sid(ROOT_SID, path);
+    uint32_t file = fu_path_to_sid(ROOT_SID, path);
     int file_size = fu_get_file_size(file);
     int read_size = file_size;
 
@@ -126,7 +126,7 @@ void save_file(char *path) {
         if (data_copy[i] == '\0') data_copy[i] = '\n';
     }
 
-    sid_t file = fu_path_to_sid(ROOT_SID, path);
+    uint32_t file = fu_path_to_sid(ROOT_SID, path);
     fu_set_file_size(file, g_data_size - 1);
     fu_file_write(file, data_copy, 0, g_data_size - 1);
 
@@ -662,11 +662,11 @@ char *compute_args(int argc, char **argv) {
 
     file = assemble_path(pwd, file);
 
-    sid_t elm = fu_path_to_sid(ROOT_SID, file);
+    uint32_t elm = fu_path_to_sid(ROOT_SID, file);
 
-    if (IS_NULL_SID(elm)) {
+    if (IS_SID_NULL(elm)) {
         elm = fu_file_create(0, file);
-        if (IS_NULL_SID(elm)) {
+        if (IS_SID_NULL(elm)) {
             fprintf(stderr, "rim: %s: failed to create file\n", file);
             exit(1);
         }

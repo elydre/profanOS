@@ -510,7 +510,7 @@ char **load_bin_names(void) {
     char *path_ptr = path_copy;
     char *path_end = path_ptr;
 
-    sid_t *cnt_ids;
+    uint32_t *cnt_ids;
     char **cnt_names;
 
     char **tmp_names = NULL;
@@ -522,8 +522,8 @@ char **load_bin_names(void) {
             *path_end = '\0';
         }
 
-        sid_t dir_id = fu_path_to_sid(ROOT_SID, path_ptr);
-        if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id))
+        uint32_t dir_id = fu_path_to_sid(ROOT_SID, path_ptr);
+        if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id))
             goto next;
 
         int elm_count = fu_get_dir_content(dir_id, &cnt_ids, &cnt_names);
@@ -612,8 +612,8 @@ char *get_bin_path(char *name) {
         if (path[i] != ':' && path[i] != '\0')
             continue;
         path[i] = '\0';
-        sid_t sid = fu_path_to_sid(ROOT_SID, path + start);
-        if (!IS_NULL_SID(sid) && fu_is_file(fu_path_to_sid(sid, fullname))) {
+        uint32_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        if (!IS_SID_NULL(sid) && fu_is_file(fu_path_to_sid(sid, fullname))) {
             char *result = assemble_path(path + start, fullname);
             free(fullname);
             free(path);
@@ -1288,14 +1288,14 @@ char *if_eval(char **input) {
 #if PROFANBUILD
 
 char *search_recursive(char *path, uint8_t required_type, char *ext, int recursive) {
-    sid_t dir_id = fu_path_to_sid(ROOT_SID, path);
+    uint32_t dir_id = fu_path_to_sid(ROOT_SID, path);
 
-    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
+    if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id)) {
         raise_error("search", "Directory '%s' does not exist", path);
         return ERROR_CODE;
     }
 
-    sid_t *out_ids;
+    uint32_t *out_ids;
     char **names;
 
     int elm_count = fu_get_dir_content(dir_id, &out_ids, &names);
@@ -1467,8 +1467,8 @@ char *if_cd(char **input) {
     // simplify path
     fu_simplify_path(dir);
 
-    sid_t dir_id = fu_path_to_sid(ROOT_SID, dir);
-    if (IS_NULL_SID(dir_id) || !fu_is_dir(dir_id)) {
+    uint32_t dir_id = fu_path_to_sid(ROOT_SID, dir);
+    if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id)) {
         raise_error("cd", "Directory '%s' does not exist", dir);
         free(dir);
         return ERROR_CODE;
@@ -1678,9 +1678,9 @@ char *if_dot(char **input) {
         file_path = assemble_path(g_current_directory, input[0]);
 
     // check if file exists
-    sid_t sid = fu_path_to_sid(ROOT_SID, file_path);
+    uint32_t sid = fu_path_to_sid(ROOT_SID, file_path);
 
-    if (IS_NULL_SID(sid) || !fu_is_file(sid)) {
+    if (IS_SID_NULL(sid) || !fu_is_file(sid)) {
         raise_error("dot", "File '%s' does not exist", file_path);
         if (file_path != input[0])
             free(file_path);
@@ -1737,7 +1737,7 @@ char *if_dot(char **input) {
     #if PROFANBUILD
     if (stdin_path) {
         sid = fu_path_to_sid(ROOT_SID, stdin_path);
-        if (IS_NULL_SID(sid)) {
+        if (IS_SID_NULL(sid)) {
             raise_error("dot", "Cannot redirect stdin from '%s'", stdin_path);
             if (file_path != input[0])
                 free(file_path);
@@ -1749,8 +1749,8 @@ char *if_dot(char **input) {
 
     if (stdout_path) {
         sid = fu_path_to_sid(ROOT_SID, stdout_path);
-        if (IS_NULL_SID(sid)) {
-            if (IS_NULL_SID(fu_file_create(0, stdout_path))) {
+        if (IS_SID_NULL(sid)) {
+            if (IS_SID_NULL(fu_file_create(0, stdout_path))) {
                 if (file_path != input[0])
                     free(file_path);
                 free(stdout_path);
@@ -1955,10 +1955,10 @@ char *if_fsize(char **input) {
     // get path
     char *path = assemble_path(g_current_directory, input[0]);
 
-    sid_t file_id = fu_path_to_sid(ROOT_SID, path);
+    uint32_t file_id = fu_path_to_sid(ROOT_SID, path);
 
     // check if file exists
-    if (IS_NULL_SID(file_id)) {
+    if (IS_SID_NULL(file_id)) {
         file_size = -1;
     } else {
         file_size = syscall_fs_cnt_get_size(syscall_fs_get_main(), file_id);
@@ -4307,17 +4307,17 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         *dec_ptr = dec;
 
         // check if the path is valid
-        sid_t dir = fu_path_to_sid(ROOT_SID, path);
+        uint32_t dir = fu_path_to_sid(ROOT_SID, path);
         free(path);
 
-        if (IS_NULL_SID(dir) || !fu_is_dir(dir)) {
+        if (IS_SID_NULL(dir) || !fu_is_dir(dir)) {
             free(inp_end);
             return NULL;
         }
 
         // get the directory content
         char **names;
-        sid_t *out_ids;
+        uint32_t *out_ids;
 
         int elm_count = fu_get_dir_content(dir, &out_ids, &names);
 
