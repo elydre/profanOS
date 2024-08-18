@@ -52,8 +52,8 @@
 #define NO_SAVE 0
 
 typedef struct {
-    uint32_t device;            // device id
-    uint32_t sector;            // sector id
+    uint32_t device : 8;        // device id
+    uint32_t sector : 24;       // sector id
 } sid_t;
 
 typedef struct {

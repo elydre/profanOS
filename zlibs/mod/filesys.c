@@ -97,7 +97,7 @@ void fu_sep_path(char *fullpath, char **parent, char **cnt) {
 int fu_is_dir(sid_t dir_sid) {
     if (IS_NULL_SID(dir_sid)) return 0;
     filesys_t *filesys = c_fs_get_main();
-    char *name = c_fs_cnt_get_meta(filesys, dir_sid);
+    char *name = c_fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'D') {
         free(name);
@@ -423,7 +423,7 @@ int fu_is_file(sid_t dir_sid) {
     if (IS_NULL_SID(dir_sid)) return 0;
 
     filesys_t *filesys = c_fs_get_main();
-    char *name = c_fs_cnt_get_meta(filesys, dir_sid);
+    char *name = c_fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
         free(name);
@@ -520,7 +520,7 @@ int fu_is_fctf(sid_t file_sid) {
     if (IS_NULL_SID(file_sid)) return 0;
 
     filesys_t *filesys = c_fs_get_main();
-    char *name = c_fs_cnt_get_meta(filesys, file_sid);
+    char *name = c_fs_cnt_meta(filesys, file_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'C') {
         free(name);

@@ -37,9 +37,6 @@
 #define c_kcprint(message, color) c_kcnprint(message, -1, color)
 #define c_kprint(message) c_kcprint(message, 0x0F)
 
-#define c_fs_cnt_read(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
-#define c_fs_cnt_write(fs, head_sid, buf, offset, size) c_fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
-
 #define c_vesa_get_width()   c_vesa_get_info(0)
 #define c_vesa_get_height()  c_vesa_get_info(1)
 #define c_vesa_get_pitch()   c_vesa_get_info(2)
@@ -53,10 +50,10 @@
 #define c_fs_cnt_set_size ((int (*)(filesys_t *, sid_t, uint32_t)) hi_func_addr(1))
 #define c_fs_cnt_get_size ((uint32_t (*)(filesys_t *, sid_t)) hi_func_addr(2))
 #define c_fs_cnt_delete ((int (*)(filesys_t *, sid_t)) hi_func_addr(3))
-#define c_fs_cnt_rw ((int (*)(filesys_t *, sid_t, void *, uint32_t, uint32_t, int)) hi_func_addr(4))
-#define c_fs_cnt_init ((sid_t (*)(filesys_t *, uint32_t, char *)) hi_func_addr(5))
-#define c_fs_cnt_get_meta ((char *(*)(filesys_t *, sid_t)) hi_func_addr(6))
-#define c_fs_cnt_change_meta ((void (*)(filesys_t *, sid_t, char *)) hi_func_addr(7))
+#define c_fs_cnt_read ((int (*)(filesys_t *, sid_t, void *, uint32_t, uint32_t)) hi_func_addr(4))
+#define c_fs_cnt_write ((int (*)(filesys_t *, sid_t, void *, uint32_t, uint32_t)) hi_func_addr(5))
+#define c_fs_cnt_init ((sid_t (*)(filesys_t *, uint32_t, char *)) hi_func_addr(6))
+#define c_fs_cnt_meta ((char *(*)(filesys_t *, sid_t, char *)) hi_func_addr(7))
 
 #define c_mem_get_alloc_size ((uint32_t (*)(uint32_t)) hi_func_addr(8))
 #define c_mem_alloc ((uint32_t (*)(uint32_t, uint32_t, int)) hi_func_addr(9))

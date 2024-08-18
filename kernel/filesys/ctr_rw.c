@@ -73,6 +73,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf,
     while (index < size) {
         // check if sector is used
         if (!vdisk_is_sector_used(vdisk, loca_sid)) {
+            sys_error("[cnt_rw] locator not used");
             free(alloc_buf);
             free(data);
             return 1;
@@ -102,7 +103,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf,
             }
             sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
             if (IS_NULL_SID(core_sid)) {
-                kprintf("no more core, but still %d bytes to %s\n", size - max(index, 0), is_read ? "read" : "write");
+                sys_error("no more core, but still %d bytes to %s\n", size - max(index, 0), is_read ? "read" : "write");
                 free(alloc_buf);
                 free(data);
                 return 1;
@@ -110,7 +111,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf,
             tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
                     size - max(index, 0), is_read, alloc_buf);
             if (tmp == -1) {
-                kprintf("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
+                sys_error("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
                 free(alloc_buf);
                 free(data);
                 return 1;
@@ -120,7 +121,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf,
 
         next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
         if (IS_NULL_SID(next_loca_sid) && index < size) {
-            kprintf("no more locator after d%ds%d, but still %d bytes to %s\n",
+            sys_error("no more locator after d%ds%d, but still %d bytes to %s\n",
                     loca_sid.device,
                     loca_sid.sector,
                     size - index,
@@ -173,7 +174,6 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
     if (loca_sid.device != 0 || loca_sid.sector != 0) {
         if (fs_cnt_rw_loca(filesys, loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
-            sys_error("[cnt_rw] failed to %s locator", is_read ? "read" : "write");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }
@@ -181,4 +181,12 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
 
     vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
     return 0;
+}
+
+int fs_cnt_read(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, uint32_t size) {
+    return fs_cnt_rw(filesys, head_sid, buf, offset, size, 1);
+}
+
+int fs_cnt_write(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, uint32_t size) {
+    return fs_cnt_rw(filesys, head_sid, buf, offset, size, 0);
 }

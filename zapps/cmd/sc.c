@@ -9,27 +9,17 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define SYSCALL_CREATE_FUNCS
+
+#include <profan/syscall_for_real.h>
 #include <stdio.h>
 
 int main(void) {
 
-    printf("before syscall\n");
+    printf("syscall vesa get info (0) -> %d\n", syscall_vesa_get_info(0));
+    printf("syscall vesa get info (1) -> %d\n", syscall_vesa_get_info(1));
 
-    int ret = 0;
-
-    asm volatile(
-        "mov $0, %%eax\n"
-        "mov $30, %%ebx\n"
-        "mov $13, %%ecx\n"
-        "int $0x80\n"
-        // get return value
-        "mov %%eax, %0\n"
-        : "=r"(ret)
-        :
-        : "%eax", "%ebx", "%ecx"
-    );
-
-    printf("after syscall, ret = %d\n", ret);
+    printf("sizeof(sid_t) -> %d\n", sizeof(sid_t));
 
     return 0;
 }

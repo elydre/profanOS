@@ -109,46 +109,29 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     return main_sid;
 }
 
-char *fs_cnt_get_meta(filesys_t *filesys, sid_t sid) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-    char *meta;
-
-    vdisk = fs_get_vdisk(filesys, sid.device);
-    if (vdisk == NULL) {
-        sys_warning("[cnt_get_meta] vdisk not found");
-        return NULL;
-    }
-
-    data = vdisk_load_sector(vdisk, sid);
-    if (data == NULL) {
-        return NULL;
-    }
-
-    meta = calloc(META_MAXLEN);
-    mem_copy(meta, data + 2, META_MAXLEN - 1);
-
-    vdisk_unload_sector(vdisk, sid, data, NO_SAVE);
-
-    return meta;
-}
-
-void fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta) {
+char *fs_cnt_meta(filesys_t *filesys, sid_t sid, char *meta) {
     vdisk_t *vdisk;
     uint8_t *data;
 
     vdisk = fs_get_vdisk(filesys, sid.device);
     if (vdisk == NULL) {
-        sys_warning("[cnt_change_meta] vdisk not found");
-        return;
+        sys_warning("[cnt_meta] vdisk not found");
+        return NULL;
     }
 
     data = vdisk_load_sector(vdisk, sid);
-    if (data == NULL) {
-        return;
-    }
 
-    mem_copy(data + 2, meta, META_MAXLEN - 1);
+    if (data == NULL)
+        return NULL;
+
+    if (meta) {
+        mem_copy(data + 2, meta, META_MAXLEN - 1);
+    } else {
+        meta = calloc(META_MAXLEN);
+        mem_copy(meta, data + 2, META_MAXLEN - 1);
+    }
 
     vdisk_unload_sector(vdisk, sid, data, SAVE);
+
+    return meta;
 }

@@ -16,7 +16,7 @@
 
 int fu_is_dir(filesys_t *filesys, sid_t dir_sid) {
     if (IS_NULL_SID(dir_sid)) return 0;
-    char *name = fs_cnt_get_meta(filesys, dir_sid);
+    char *name = fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'D') {
         free(name);

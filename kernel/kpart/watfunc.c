@@ -40,10 +40,10 @@ void *WATFUNC_ARRAY[] = {
     fs_cnt_set_size,
     fs_cnt_get_size,
     fs_cnt_delete,
-    fs_cnt_rw,
+    fs_cnt_read,
+    fs_cnt_write,
     fs_cnt_init,
-    fs_cnt_get_meta,
-    fs_cnt_change_meta,
+    fs_cnt_meta,
 
     // snowflake.h
     mem_get_alloc_size,
