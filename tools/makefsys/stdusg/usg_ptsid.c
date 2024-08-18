@@ -15,16 +15,16 @@
 
 #include "../butterfly.h"
 
-sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
-    sid_t ret;
+uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
+    uint32_t ret;
 
-    ret = NULL_SID;
+    ret = SID_NULL;
 
     // read the directory
     uint32_t size = fs_cnt_get_size(filesys, parent);
     if (size == UINT32_MAX) {
         printf("failed to get directory size\n");
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // generate the path part to search for
@@ -44,14 +44,14 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
 
     // get the directory content
     char **names;
-    sid_t *sids;
+    uint32_t *sids;
     int count;
 
     count = fu_get_dir_content(filesys, parent, &sids, &names);
 
     if (count == -1) {
         printf("failed to get directory content during path search\n");
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // search for the path part
@@ -79,8 +79,8 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     return ret;
 }
 
-sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path) {
-    sid_t ret;
+uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path) {
+    uint32_t ret;
 
     if (strcmp("/", path) == 0) {
         ret = ROOT_SID;
@@ -90,9 +90,9 @@ sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path) {
         ret = fu_rec_path_to_sid(filesys, from, path);
     }
 
-    if (IS_NULL_SID(ret)) {
+    if (IS_SID_NULL(ret)) {
         printf("failed to find path %s\n", path);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     return ret;

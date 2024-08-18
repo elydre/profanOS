@@ -15,7 +15,7 @@
 
 #include "../butterfly.h"
 
-int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
+int fu_is_file(filesys_t *filesys, uint32_t dir_sid) {
     char *name = fs_cnt_get_meta(filesys, dir_sid);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
@@ -26,46 +26,46 @@ int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
     return 0;
 }
 
-sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
+uint32_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
     char *parent, *name;
 
-    sid_t parent_sid;
-    sid_t head_sid;
+    uint32_t parent_sid;
+    uint32_t head_sid;
 
     sep_path(path, &parent, &name);
     if (!parent[0]) {
         printf("parent unreachable\n");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
-    if (IS_NULL_SID(parent_sid)) {
+    if (IS_SID_NULL(parent_sid)) {
         printf("failed to find parent directory\n");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
     if (!fu_is_dir(filesys, parent_sid)) {
         printf("parent is not a directory\n");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
     snprintf(meta, META_MAXLEN, "F-%s", name);
 
-    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_NULL_SID(head_sid)) {
+    if (IS_SID_NULL(head_sid)) {
         printf("failed to create file\n");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // create a link in parent directory
@@ -74,7 +74,7 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
         printf("failed to add directory to parent\n");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     free(parent);

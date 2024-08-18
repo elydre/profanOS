@@ -45,15 +45,15 @@ void vdisk_destroy(vdisk_t *vdisk) {
     free(vdisk);
 }
 
-int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
-    if (vdisk->used[sid.sector] == 1) {
-        printf("d%ds%d already used\n", sid.device, sid.sector);
+int vdisk_note_sector_used(vdisk_t *vdisk, uint32_t sid) {
+    if (vdisk->used[SID_SECTOR(sid)] == 1) {
+        printf("d%ds%d already used\n", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
 
-    if (vdisk->free[vdisk->used_count] != sid.sector) {
+    if (vdisk->free[vdisk->used_count] != SID_SECTOR(sid)) {
         printf("cannot use s%d, expected s%d\n",
-            sid.sector,
+            SID_SECTOR(sid),
             vdisk->free[vdisk->used_count]
         );
         exit(1);
@@ -61,25 +61,25 @@ int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
     }
 
     vdisk->free[vdisk->used_count] = 42;
-    vdisk->used[sid.sector] = 1;
+    vdisk->used[SID_SECTOR(sid)] = 1;
     vdisk->used_count++;
     return 0;
 }
 
-int vdisk_note_sector_unused(vdisk_t *vdisk, sid_t sid) {
-    if (vdisk->used[sid.sector] == 0) {
-        printf("d%ds%d already unused\n", sid.device, sid.sector);
+int vdisk_note_sector_unused(vdisk_t *vdisk, uint32_t sid) {
+    if (vdisk->used[SID_SECTOR(sid)] == 0) {
+        printf("d%ds%d already unused\n", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
 
-    vdisk->free[vdisk->used_count] = sid.sector;
-    vdisk->used[sid.sector] = 0;
+    vdisk->free[vdisk->used_count] = SID_SECTOR(sid);
+    vdisk->used[SID_SECTOR(sid)] = 0;
     vdisk->used_count--;
     return 0;
 }
 
-int vdisk_is_sector_used(vdisk_t *vdisk, sid_t sid) {
-    return vdisk->used[sid.sector];
+int vdisk_is_sector_used(vdisk_t *vdisk, uint32_t sid) {
+    return vdisk->used[SID_SECTOR(sid)];
 }
 
 
@@ -108,26 +108,26 @@ int vdisk_get_unused_sector(vdisk_t *vdisk) {
     return vdisk->free[vdisk->used_count];
 }
 
-int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
-    if (sid.sector >= vdisk->size) {
-        printf("d%ds%d out of range\n", sid.device, sid.sector);
+int vdisk_write_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data) {
+    if (SID_SECTOR(sid) >= vdisk->size) {
+        printf("d%ds%d out of range\n", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
-    memcpy(vdisk->sectors[sid.sector], data, sizeof(sector_t));
+    memcpy(vdisk->sectors[SID_SECTOR(sid)], data, sizeof(sector_t));
     return 0;
 }
 
-uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
-    if (sid.sector >= vdisk->size) {
-        printf("d%ds%d out of range\n", sid.device, sid.sector);
+uint8_t *vdisk_load_sector(vdisk_t *vdisk, uint32_t sid) {
+    if (SID_SECTOR(sid) >= vdisk->size) {
+        printf("d%ds%d out of range\n", SID_DISK(sid), SID_SECTOR(sid));
         return NULL;
     }
-    return (uint8_t *) vdisk->sectors[sid.sector];
+    return (uint8_t *) vdisk->sectors[SID_SECTOR(sid)];
 }
 
-int vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save) {
-    if (sid.sector >= vdisk->size) {
-        printf("d%ds%d out of range\n", sid.device, sid.sector);
+int vdisk_unload_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data, int save) {
+    if (SID_SECTOR(sid) >= vdisk->size) {
+        printf("d%ds%d out of range\n", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
     (void) save;
