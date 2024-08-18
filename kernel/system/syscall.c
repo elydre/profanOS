@@ -13,6 +13,31 @@
 #include <minilib.h>
 #include <system.h>
 
+uint32_t saCduSYScallBAHnonSAfaitJUSTElaSOMME(uint32_t a, uint32_t b) {
+    return a + b;
+}
+
+void *SYSCALL_ARRAY[] = {
+    saCduSYScallBAHnonSAfaitJUSTElaSOMME
+};
+
+
+#define SYSCALL_COUNT 1
+
 void syscall_handler(registers_t *r) {
-    kprintf("syscall %d\n", r->eax);
+    uint32_t syscall_id = r->eax;
+
+    if (syscall_id >= SYSCALL_COUNT) {
+        kprintf("syscall %d not found\n", syscall_id);
+        return;
+    }
+
+    kprintf("syscall %d\n", syscall_id);
+
+    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = SYSCALL_ARRAY[syscall_id];
+    r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
+
+    kprintf("syscall %d done\n", syscall_id);
+
+    return;
 }

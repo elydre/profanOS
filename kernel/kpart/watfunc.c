@@ -34,7 +34,7 @@ void unknown_func(void) {
     sys_warning("Trying to call an unknown syscall");
 }
 
-void *SYSCALL_ARRAY[] = {
+void *WATFUNC_ARRAY[] = {
     // butterfly.h
     fs_get_main,
     fs_cnt_set_size,
@@ -108,9 +108,11 @@ void *SYSCALL_ARRAY[] = {
     scuba_call_phys
 };
 
+#define SYSCALL_COUNT 48
+
 uint32_t wf_get_func_addr(uint32_t func_id) {
-    if (func_id >= ARYLEN(SYSCALL_ARRAY)) {
+    if (func_id >= SYSCALL_COUNT) {
         return (uint32_t) unknown_func;
     }
-    return (uint32_t) SYSCALL_ARRAY[func_id];
+    return (uint32_t) WATFUNC_ARRAY[func_id];
 }

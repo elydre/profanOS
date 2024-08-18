@@ -15,12 +15,21 @@ int main(void) {
 
     printf("before syscall\n");
 
+    int ret = 0;
+
     asm volatile(
-        "mov $0x4, %eax\n"
+        "mov $0, %%eax\n"
+        "mov $30, %%ebx\n"
+        "mov $13, %%ecx\n"
         "int $0x80\n"
+        // get return value
+        "mov %%eax, %0\n"
+        : "=r"(ret)
+        :
+        : "%eax", "%ebx", "%ecx"
     );
 
-    printf("after syscall\n");
+    printf("after syscall, ret = %d\n", ret);
 
     return 0;
 }

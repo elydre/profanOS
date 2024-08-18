@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-02"
+#define KERNEL_VERSION  "sc-03"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count

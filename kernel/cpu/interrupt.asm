@@ -312,7 +312,7 @@ isr31:
 ; 128: System Call
 isr128:
     push byte 0
-    push byte 128
+    push byte -128 ; -128 = 128 (:
     jmp isr_common_stub
 
 ; IRQ handlers
