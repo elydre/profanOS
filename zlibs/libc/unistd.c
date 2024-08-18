@@ -422,7 +422,7 @@ int unlink(const char *filename) {
     char *path = assemble_path(pwd, (char *) filename);
 
     // check if the file exists
-    sid_t parent_sid, elem = fu_path_to_sid(ROOT_SID, path);
+    uint32_t parent_sid, elem = fu_path_to_sid(ROOT_SID, path);
     if (!fu_is_file(elem)) {
         fprintf(stderr, "unlink: %s: not a file\n", filename);
         free(path);
@@ -436,7 +436,7 @@ int unlink(const char *filename) {
     free(parent);
     free(path);
 
-    if (IS_NULL_SID(parent_sid)) {
+    if (IS_SID_NULL(parent_sid)) {
         fprintf(stderr, "unlink: %s: parent not found\n", filename);
         return -1;
     }

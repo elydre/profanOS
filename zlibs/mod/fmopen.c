@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
     union {
-        sid_t    sid;
+        uint32_t    sid;
         pipe_t  *pipe;
         int    (*fctf)(void *, uint32_t, uint32_t, uint8_t);
     };
@@ -76,8 +76,8 @@ int main(void) {
 }
 
 int fm_open(char *path) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(sid)) {
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_SID_NULL(sid)) {
         fd_printf(2, "fm_open: %s not found\n", path);
         return -1;
     }
@@ -111,10 +111,10 @@ int fm_reopen(int fd, char *path) {
     if (fd < 0 || fd >= MAX_OPENED)
         return -1;
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
 
 
-    if (IS_NULL_SID(sid)) {
+    if (IS_SID_NULL(sid)) {
         fd_printf(2, "fm_reopen: %s not found\n", path);
         return -1;
     }

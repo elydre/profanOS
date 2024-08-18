@@ -68,8 +68,8 @@ int userspace_reporter(char *message) {
 }
 
 int profan_kb_load_map(char *path) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(sid)) {
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_SID_NULL(sid)) {
         return 1;
     }
 
@@ -306,7 +306,7 @@ char **dup_envp(char **envp) {
     return nenvp;
 }
 
-char **get_interp(sid_t sid, int *c) {
+char **get_interp(uint32_t sid, int *c) {
     char *tmp = malloc(11);
     int size = 0;
     int to_read = 10;
@@ -369,17 +369,17 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
 
-    static sid_t elf_sid = NULL_SID;
+    static uint32_t elf_sid = SID_NULL;
 
-    if (IS_NULL_SID(elf_sid)) {
+    if (IS_SID_NULL(elf_sid)) {
         elf_sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
-        if (IS_NULL_SID(elf_sid)) {
+        if (IS_SID_NULL(elf_sid)) {
             fd_printf(2, "[run_ifexist] interpreter not found: %s\n", ELF_INTERP);
             return -1;
         }
     }
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, args.path);
+    uint32_t sid = fu_path_to_sid(ROOT_SID, args.path);
     if (!fu_is_file(sid)) {
         fd_printf(2, "[run_ifexist] path not found: %s\n", args.path);
         return -1;

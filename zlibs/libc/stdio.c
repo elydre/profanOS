@@ -113,8 +113,8 @@ FILE *fopen(const char *filename, const char *mode) {
     }
 
     // first check if the file exists
-    sid_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
-    int exists = !IS_NULL_SID(file_id);
+    uint32_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
+    int exists = !IS_SID_NULL(file_id);
 
     // the file doesn't exist but it should
     if (!exists && !(interpeted_mode & MODE_WRITE)) {
@@ -134,7 +134,7 @@ FILE *fopen(const char *filename, const char *mode) {
     }
 
     // check for failure
-    if (IS_NULL_SID(file_id)) {
+    if (IS_SID_NULL(file_id)) {
         free(path);
         return NULL;
     }
@@ -708,8 +708,8 @@ int remove(const char *fname) {
     if (pwd == NULL) pwd = "/";
     char *full_path = assemble_path(pwd, (char *) fname);
 
-    sid_t elem = fu_path_to_sid(ROOT_SID, full_path);
-    if (IS_NULL_SID(elem) || !fu_is_file(elem)) {
+    uint32_t elem = fu_path_to_sid(ROOT_SID, full_path);
+    if (IS_SID_NULL(elem) || !fu_is_file(elem)) {
         printf("remove: cannot remove '%s': No such file\n", fname);
         free(full_path);
         return 1;
@@ -719,10 +719,10 @@ int remove(const char *fname) {
 
     fu_sep_path(full_path, &parent, NULL);
 
-    sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
     free(parent);
 
-    if (IS_NULL_SID(parent_sid)) {
+    if (IS_SID_NULL(parent_sid)) {
         printf("remove: cannot remove '%s': Unreachable path\n", fname);
         free(full_path);
         return 1;
@@ -775,7 +775,7 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
         for (int i = 5; i < 11; i++) {
             filename_s[i] = 'a' + rand() % 26;
         }
-    } while (!IS_NULL_SID(fu_path_to_sid(ROOT_SID, filename_s)));
+    } while (!IS_SID_NULL(fu_path_to_sid(ROOT_SID, filename_s)));
 
     return 0;
 }
