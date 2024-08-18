@@ -110,32 +110,32 @@ void sort_tab(uint32_t *tab, int size) {
 }
 
 void memory_print_usage(void) {
-    int alloc_count = c_mem_get_info(4, 0);
-    int free_count = c_mem_get_info(5, 0);
+    int alloc_count = syscall_mem_get_info(4, 0);
+    int free_count = syscall_mem_get_info(5, 0);
 
     printf("      -------- General --------\n");
 
-    printf("Total memory      %12d MB\n", c_mem_get_info(0, 0) / 1024 / 1024);
+    printf("Total memory      %12d MB\n", syscall_mem_get_info(0, 0) / 1024 / 1024);
     printf("AT alloc count    %15d\n", alloc_count);
     printf("AT free count     %15d\n", free_count);
-    printf("base address      %15p\n", c_mem_get_info(1, 0));
-    printf("MEM_PARTS addr    %15p\n", c_mem_get_info(3, 0));
-    printf("MEM_PARTS size    %12d B  | 1\n", c_mem_get_info(2, 0));
-    printf("Used memory       %12d kB | %d\n", c_mem_get_info(6, 0) / 1024, alloc_count - free_count);
+    printf("base address      %15p\n", syscall_mem_get_info(1, 0));
+    printf("MEM_PARTS addr    %15p\n", syscall_mem_get_info(3, 0));
+    printf("MEM_PARTS size    %12d B  | 1\n", syscall_mem_get_info(2, 0));
+    printf("Used memory       %12d kB | %d\n", syscall_mem_get_info(6, 0) / 1024, alloc_count - free_count);
 
     printf("\n      ------- Per types -------\n");
 
-    printf("Simple alloc   %15d kB | %d\n", c_mem_get_info(10, 1) / 1024, c_mem_get_info(9, 1));
-    printf("Mem struct     %15d kB | %d\n", c_mem_get_info(10, 3) / 1024, c_mem_get_info(9, 3));
-    printf("Process stack  %15d kB | %d\n", c_mem_get_info(10, 4) / 1024, c_mem_get_info(9, 4));
-    printf("Dily           %15d kB | %d\n", c_mem_get_info(10, 5) / 1024, c_mem_get_info(9, 5));
-    printf("As kernel      %15d kB | %d\n", c_mem_get_info(10, 6) / 1024, c_mem_get_info(9, 6));
-    printf("Scuba vpage    %15d kB | %d\n", c_mem_get_info(10, 7) / 1024, c_mem_get_info(9, 7));
+    printf("Simple alloc   %15d kB | %d\n", syscall_mem_get_info(10, 1) / 1024, syscall_mem_get_info(9, 1));
+    printf("Mem struct     %15d kB | %d\n", syscall_mem_get_info(10, 3) / 1024, syscall_mem_get_info(9, 3));
+    printf("Process stack  %15d kB | %d\n", syscall_mem_get_info(10, 4) / 1024, syscall_mem_get_info(9, 4));
+    printf("Dily           %15d kB | %d\n", syscall_mem_get_info(10, 5) / 1024, syscall_mem_get_info(9, 5));
+    printf("As kernel      %15d kB | %d\n", syscall_mem_get_info(10, 6) / 1024, syscall_mem_get_info(9, 6));
+    printf("Scuba vpage    %15d kB | %d\n", syscall_mem_get_info(10, 7) / 1024, syscall_mem_get_info(9, 7));
 
     printf("\n      ------ Per process ------\n");
 
     uint32_t pid_list[PROCESS_MAX]; // it's a define
-    int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid_list_len = syscall_process_generate_pid_list(pid_list, PROCESS_MAX);
     sort_tab(pid_list, pid_list_len);
 
     int pid;
@@ -143,19 +143,19 @@ void memory_print_usage(void) {
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        name = (char *) c_process_get_info(pid, PROCESS_INFO_NAME);
+        name = (char *) syscall_process_get_info(pid, PROCESS_INFO_NAME);
         printf("PID %-3.02d %-15s %6d kB | %d\n",
                 pid, (strchr(name, '/') ? strrchr(name, '/') + 1 : name),
-                c_mem_get_info(8, pid) / 1024,
-                c_mem_get_info(7, pid)
+                syscall_mem_get_info(8, pid) / 1024,
+                syscall_mem_get_info(7, pid)
         );
     }
     printf("\n");
 }
 
 void memory_print_summary(void) {
-    int current = c_mem_get_info(6, 0);
-    int total = c_mem_get_info(0, 0);
+    int current = syscall_mem_get_info(6, 0);
+    int total = syscall_mem_get_info(0, 0);
     printf("About %.2f %% of memory is currently used,\n", (float) current / (float) total * 100);
     printf("In total, %d MB can be allocated!\n", total / 1024 / 1024);
 }

@@ -435,7 +435,7 @@ void main_loop(char *path) {
 
     while (1) {
         // wait for key
-        key = c_kb_get_scfh();
+        key = syscall_kb_get_scfh();
 
         if (key == 224 || key == 0) {   // RESEND or 0
             key = key_sgt;
@@ -609,14 +609,14 @@ void main_loop(char *path) {
         }
 
         // display data
-        refresh_ticks = c_timer_get_ms();
+        refresh_ticks = syscall_timer_get_ms();
         display_data(y_offset, min(g_lines_count, y_offset + SCREEN_H), x_offset);
-        refresh_ticks = c_timer_get_ms() - refresh_ticks;
+        refresh_ticks = syscall_timer_get_ms() - refresh_ticks;
     }
 }
 
 void clear_screen(void) {
-    c_kprint("\e[2J");
+    syscall_kprint("\e[2J");
     fputs("\e[2J", stdout);
     fflush(stdout);
 }

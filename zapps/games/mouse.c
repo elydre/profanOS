@@ -54,10 +54,10 @@ void draw_mouse(int x, int y) {
                 case 0:
                     break;
                 case 1:
-                    c_vesa_set_pixel(x + j, y + i, red);
+                    syscall_vesa_set_pixel(x + j, y + i, red);
                     break;
                 case 2:
-                    c_vesa_set_pixel(x + j, y + i, white);
+                    syscall_vesa_set_pixel(x + j, y + i, white);
                     break;
             }
 

@@ -104,7 +104,7 @@ tm_t *gmtime_r(const time_t *a, tm_t *b) {
 
 tm_t *localtime(const time_t *a) {
     tm_t *time = malloc(sizeof(tm_t));
-    c_time_get(time);
+    syscall_time_get(time);
     return time;
 }
 
@@ -156,7 +156,7 @@ char *strptime(const char *a, const char *b, tm_t *c) {
 
 time_t time(time_t *a) {
     tm_t time;
-    c_time_get(&time);
+    syscall_time_get(&time);
 
     if (a != NULL) {
         *a = mktime(&time);

@@ -61,7 +61,7 @@ int dev_kterm(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (is_read)
         return keyboard_read(buffer, size, "/dev/kterm");
 
-    c_kcnprint((char *) buffer, size, 0x0F);
+    syscall_kcnprint((char *) buffer, size, 0x0F);
     return size;
 }
 
@@ -99,8 +99,8 @@ int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     if (!is_read) {
         for (uint32_t i = 0; i < size; i++) {
             if (((char *) buffer)[i] == '\n')
-                c_serial_write(SERIAL_PORT_A, "\r", 1);
-            c_serial_write(SERIAL_PORT_A, (char *) buffer + i, 1);
+                syscall_serial_write(SERIAL_PORT_A, "\r", 1);
+            syscall_serial_write(SERIAL_PORT_A, (char *) buffer + i, 1);
         }
         return size;
     }
@@ -131,18 +131,18 @@ int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
 int dev_serial_a(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     (void) offset;
     if (is_read)
-        c_serial_read(SERIAL_PORT_A, buffer, size);
+        syscall_serial_read(SERIAL_PORT_A, buffer, size);
     else
-        c_serial_write(SERIAL_PORT_A, (char *) buffer, size);
+        syscall_serial_write(SERIAL_PORT_A, (char *) buffer, size);
     return size;
 }
 
 int dev_serial_b(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     (void) offset;
     if (is_read)
-        c_serial_read(SERIAL_PORT_B, buffer, size);
+        syscall_serial_read(SERIAL_PORT_B, buffer, size);
     else
-        c_serial_write(SERIAL_PORT_B, (char *) buffer, size);
+        syscall_serial_write(SERIAL_PORT_B, (char *) buffer, size);
     return size;
 }
 
@@ -210,3 +210,7 @@ int keyboard_read(void *buffer, uint32_t size, char *term) {
 
     return to_read;
 }
+
+#undef SYSCALL_H
+#define _SYSCALL_CREATE_FUNCS
+#include <profan/syscall.h>

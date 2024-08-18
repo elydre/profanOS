@@ -11,7 +11,7 @@
 
 #define SYSCALL_CREATE_FUNCS
 
-#include <profan/syscall_for_real.h>
+#include <profan/syscall.h>
 #include <stdio.h>
 
 int main(void) {

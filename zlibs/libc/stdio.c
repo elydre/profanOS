@@ -735,7 +735,7 @@ int remove(const char *fname) {
     }
 
     // delete container
-    if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
+    if (syscall_fs_cnt_delete(syscall_fs_get_main(), elem)) {
         printf("rm: cannot remove '%s': Failed to delete container\n", fname);
         return 1;
     }

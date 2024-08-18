@@ -117,7 +117,7 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     if (scancode > 64)
         return '\0';
     if (kb_map == NULL)
-        return c_kb_scancode_to_char(scancode, shift);
+        return syscall_kb_scancode_to_char(scancode, shift);
     if (shift)
         return kb_map[scancode * 2 + 1];
     return kb_map[scancode * 2];
@@ -142,8 +142,8 @@ char *open_input_keyboard(int *size, char *term_path) {
     buffer_actual_size = buffer_index = 0;
 
     while (sc != ENTER) {
-        c_process_sleep(c_process_get_pid(), SLEEP_T);
-        sc = c_kb_get_scfh();
+        syscall_process_sleep(syscall_process_get_pid(), SLEEP_T);
+        sc = syscall_kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;
@@ -252,22 +252,22 @@ char *open_input_serial(int *size, int serial_port) {
     char c = 0;
 
      while (c != '\n') {
-        c_serial_read(serial_port, &c, 1);
+        syscall_serial_read(serial_port, &c, 1);
         if (c == '\r') {
-            c_serial_write(serial_port, "\r", 1);
+            syscall_serial_write(serial_port, "\r", 1);
             c = '\n';
         }
         if (c == 127) {
             if (i) {
                 i--;
-                c_serial_write(serial_port, "\b \b", 3);
+                syscall_serial_write(serial_port, "\b \b", 3);
             }
             continue;
         }
         if ((c < 32 || c > 126) && c != '\n')
             continue;
         ((char *) buffer)[i++] = c;
-        c_serial_write(serial_port, &c, 1);
+        syscall_serial_write(serial_port, &c, 1);
         if (i == buffer_size) {
             buffer_size *= 2;
             buffer = realloc(buffer, buffer_size);
@@ -446,11 +446,11 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     char **nenv = dup_envp(args.envp);
 
     if (args.sleep_mode == 3) {
-        c_mem_free_all(c_process_get_pid());
-        return c_binary_exec(sid, args.argc, nargv, nenv);
+        syscall_mem_free_all(syscall_process_get_pid());
+        return syscall_binary_exec(sid, args.argc, nargv, nenv);
     }
 
-    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenv);
+    int pid = syscall_process_create(syscall_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenv);
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
@@ -461,9 +461,13 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return 0;
 
     if (args.sleep_mode)
-        c_process_handover(pid);
+        syscall_process_handover(pid);
     else
-        c_process_wakeup(pid);
+        syscall_process_wakeup(pid);
 
-    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
+    return syscall_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
+
+#undef SYSCALL_H
+#define _SYSCALL_CREATE_FUNCS
+#include <profan/syscall.h>

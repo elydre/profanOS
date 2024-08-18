@@ -96,8 +96,8 @@ void fu_sep_path(char *fullpath, char **parent, char **cnt) {
 
 int fu_is_dir(sid_t dir_sid) {
     if (IS_NULL_SID(dir_sid)) return 0;
-    filesys_t *filesys = c_fs_get_main();
-    char *name = c_fs_cnt_meta(filesys, dir_sid, NULL);
+    filesys_t *filesys = syscall_fs_get_main();
+    char *name = syscall_fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'D') {
         free(name);
@@ -122,7 +122,7 @@ DIR STRUCTURE
 */
 
 int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     if (!fu_is_dir(dir_sid)) {
         RAISE_ERROR("get_dir_content: d%ds%d is not a directory\n", dir_sid.device, dir_sid.sector);
@@ -130,7 +130,7 @@ int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
     }
 
     // read the directory and get size
-    uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
+    uint32_t size = syscall_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("get_dir_content: failed to get size of d%ds%d\n", dir_sid.device, dir_sid.sector);
         return -1;
@@ -138,7 +138,7 @@ int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
 
     // read the directory
     uint8_t *buf = malloc(size);
-    if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
+    if (syscall_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
         RAISE_ERROR("get_dir_content: failed to read from d%ds%d\n", dir_sid.device, dir_sid.sector);
         return -1;
     }
@@ -170,10 +170,10 @@ int fu_get_dir_content(sid_t dir_sid, sid_t **ids, char ***names) {
 }
 
 int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     // read the directory and get size
-    uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
+    uint32_t size = syscall_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("add_element_to_dir: failed to get size of d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
@@ -185,14 +185,14 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
     }
 
     // extend the directory
-    if (c_fs_cnt_set_size(filesys, dir_sid, size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1)) {
+    if (syscall_fs_cnt_set_size(filesys, dir_sid, size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1)) {
         RAISE_ERROR("add_element_to_dir: failed to extend d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1);
-    if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
+    if (syscall_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
         RAISE_ERROR("add_element_to_dir: failed to read from d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
@@ -222,7 +222,7 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
     strcpy((char *) buf + sizeof(uint32_t) + count * sizeof(sid_t) + count * sizeof(uint32_t) + name_offset, name);
 
     // write the directory
-    if (c_fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1)) {
+    if (syscall_fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(sid_t) + sizeof(uint32_t) + strlen(name) + 1)) {
         RAISE_ERROR("add_element_to_dir: failed to write to d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
@@ -233,10 +233,10 @@ int fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, char *name) {
 }
 
 int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     // read the directory and get size
-    uint32_t size = c_fs_cnt_get_size(filesys, dir_sid);
+    uint32_t size = syscall_fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {
         RAISE_ERROR("remove_element_from_dir: failed to get size of d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
@@ -249,7 +249,7 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
 
     // read the directory
     uint8_t *buf = malloc(size);
-    if (c_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
+    if (syscall_fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
         RAISE_ERROR("remove_element_from_dir: failed to read from d%ds%d\n", dir_sid.device, dir_sid.sector);
         return 1;
     }
@@ -311,7 +311,7 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
     memcpy(buf, &count, sizeof(uint32_t));
 
     // write the directory
-    if (c_fs_cnt_write(filesys, dir_sid, buf, 0,
+    if (syscall_fs_cnt_write(filesys, dir_sid, buf, 0,
         size - (sizeof(uint32_t) + sizeof(sid_t)))
     ) {
         RAISE_ERROR("remove_element_from_dir: failed to write to d%ds%d\n", dir_sid.device, dir_sid.sector);
@@ -329,7 +329,7 @@ int fu_remove_element_from_dir(sid_t dir_sid, sid_t element_sid) {
 }
 
 sid_t fu_dir_create(int device_id, char *path) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     char *parent, *name;
 
@@ -369,7 +369,7 @@ sid_t fu_dir_create(int device_id, char *path) {
     strncpy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
-    head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    head_sid = syscall_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
@@ -389,8 +389,8 @@ sid_t fu_dir_create(int device_id, char *path) {
         }
     }
 
-    c_fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
-    c_fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
+    syscall_fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
+    syscall_fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
     if (fu_add_element_to_dir(head_sid, parent_sid, "..")) {
@@ -422,8 +422,8 @@ sid_t fu_dir_create(int device_id, char *path) {
 int fu_is_file(sid_t dir_sid) {
     if (IS_NULL_SID(dir_sid)) return 0;
 
-    filesys_t *filesys = c_fs_get_main();
-    char *name = c_fs_cnt_meta(filesys, dir_sid, NULL);
+    filesys_t *filesys = syscall_fs_get_main();
+    char *name = syscall_fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
         free(name);
@@ -434,7 +434,7 @@ int fu_is_file(sid_t dir_sid) {
 }
 
 sid_t fu_file_create(int device_id, char *path) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     char *parent, *name;
 
@@ -476,7 +476,7 @@ sid_t fu_file_create(int device_id, char *path) {
     strncpy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
-    head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    head_sid = syscall_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
@@ -501,11 +501,11 @@ sid_t fu_file_create(int device_id, char *path) {
 }
 
 int fu_file_read(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
-    return (!fu_is_file(file_sid) || c_fs_cnt_read(c_fs_get_main(), file_sid, buf, offset, size));
+    return (!fu_is_file(file_sid) || syscall_fs_cnt_read(syscall_fs_get_main(), file_sid, buf, offset, size));
 }
 
 int fu_file_write(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
-    return (!fu_is_file(file_sid) || c_fs_cnt_write(c_fs_get_main(), file_sid, buf, offset, size));
+    return (!fu_is_file(file_sid) || syscall_fs_cnt_write(syscall_fs_get_main(), file_sid, buf, offset, size));
 }
 
 /**************************************************
@@ -519,8 +519,8 @@ int fu_file_write(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
 int fu_is_fctf(sid_t file_sid) {
     if (IS_NULL_SID(file_sid)) return 0;
 
-    filesys_t *filesys = c_fs_get_main();
-    char *name = c_fs_cnt_meta(filesys, file_sid, NULL);
+    filesys_t *filesys = syscall_fs_get_main();
+    char *name = syscall_fs_cnt_meta(filesys, file_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'C') {
         free(name);
@@ -530,8 +530,10 @@ int fu_is_fctf(sid_t file_sid) {
     return 0;
 }
 
+void k_putint(int n);
+
 sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uint32_t, uint8_t)) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     char *parent, *name;
 
@@ -573,7 +575,11 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     strncpy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
-    head_sid = c_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    syscall_kprint("fctf_create\n");
+    k_putint(device_id);
+    k_putint(parent_sid.device);
+
+    head_sid = syscall_fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
     free(meta);
 
     if (IS_NULL_SID(head_sid)) {
@@ -592,8 +598,8 @@ sid_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uin
     }
 
     // write the function pointer
-    c_fs_cnt_set_size(filesys, head_sid, sizeof(void *));
-    if (c_fs_cnt_write(filesys, head_sid, (void *) &fct, 0, sizeof(void *))) {
+    syscall_fs_cnt_set_size(filesys, head_sid, sizeof(void *));
+    if (syscall_fs_cnt_write(filesys, head_sid, (void *) &fct, 0, sizeof(void *))) {
         RAISE_ERROR("fctf_create: failed to write function pointer to '%s'\n", path);
         free(parent);
         free(name);
@@ -620,7 +626,7 @@ int fu_fctf_rw(sid_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_
 
     if (addr == NULL) {
         // read container
-        if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
+        if (syscall_fs_cnt_read(syscall_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
             RAISE_ERROR("fctf_rw: failed to read function pointer from d%ds%d\n", file_sid.device, file_sid.sector);
             return -1;
         }
@@ -657,7 +663,7 @@ uint32_t fu_fctf_get_addr(sid_t file_sid) {
 
     if (addr == NULL) {
         // read container
-        if (c_fs_cnt_read(c_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
+        if (syscall_fs_cnt_read(syscall_fs_get_main(), file_sid, &addr, 0, sizeof(void *))) {
             RAISE_ERROR("fctf_get_addr: failed to read function pointer from d%ds%d\n",
                     file_sid.device, file_sid.sector);
             return 1;
@@ -692,7 +698,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, const char *path) {
     ret = NULL_SID;
 
     // read the directory
-    uint32_t size = c_fs_cnt_get_size(filesys, parent);
+    uint32_t size = syscall_fs_cnt_get_size(filesys, parent);
     if (size == UINT32_MAX) {
         RAISE_ERROR("rec_path_to_sid: failed to get size of d%ds%d\n", parent.device, parent.sector);
         return NULL_SID;
@@ -749,7 +755,7 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, const char *path) {
 }
 
 sid_t fu_path_to_sid(sid_t from, const char *path) {
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     sid_t ret;
 
@@ -841,7 +847,7 @@ uint32_t *fu_get_vdisk_info(void) {
     // [3n + 3] = vdisk[n] size
     // ...
 
-    filesys_t *filesys = c_fs_get_main();
+    filesys_t *filesys = syscall_fs_get_main();
 
     uint32_t *ret = malloc(sizeof(uint32_t) * (filesys->vdisk_count * 3 + 1));
     ret[0] = filesys->vdisk_count;
@@ -855,4 +861,19 @@ uint32_t *fu_get_vdisk_info(void) {
     }
 
     return ret;
+}
+
+#undef SYSCALL_H
+#define _SYSCALL_CREATE_FUNCS
+#include <profan/syscall.h>
+
+void k_putint(int n) {
+    if (n < 0) {
+        syscall_kprint("-");
+        n = -n;
+    }
+    if (n / 10) {
+        k_putint(n / 10);
+    }
+    syscall_kcnprint(n % 10 + "0123456789", 1, 0xF0);
 }

@@ -97,10 +97,10 @@ void *SYSCALL_ARRAY[] = {
     scuba_call_generate,
     scuba_call_map,
     scuba_call_unmap,
-    scuba_call_phys
+    scuba_call_phys,
 };
 
-#define SYSCALL_COUNT 48
+#define SYSCALL_COUNT 49
 
 void syscall_handler(registers_t *r) {
     uint32_t syscall_id = r->eax;
@@ -110,12 +110,12 @@ void syscall_handler(registers_t *r) {
         return;
     }
 
-    kprintf("syscall %d\n", syscall_id);
+    kprintf_serial("syscall IN %d\n", syscall_id);
 
     uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = SYSCALL_ARRAY[syscall_id];
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 
-    kprintf("syscall %d done\n", syscall_id);
+    kprintf_serial("syscall OUT %d\n", syscall_id);
 
     return;
 }

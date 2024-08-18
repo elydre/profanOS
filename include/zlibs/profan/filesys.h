@@ -41,8 +41,8 @@
 #define IS_SAME_SID(sid1, sid2) (sid1.device == sid2.device && sid1.sector == sid2.sector)
 #endif
 
-#define fu_get_file_size(sid) (c_fs_cnt_get_size(c_fs_get_main(), sid))
-#define fu_set_file_size(sid, size) (c_fs_cnt_set_size(c_fs_get_main(), sid, size))
+#define fu_get_file_size(sid) (syscall_fs_cnt_get_size(syscall_fs_get_main(), sid))
+#define fu_set_file_size(sid, size) (syscall_fs_cnt_set_size(syscall_fs_get_main(), sid, size))
 
 #define fu_fctf_write(sid, buf, offset, size) (fu_fctf_rw(sid, buf, offset, size, 0))
 #define fu_fctf_read(sid, buf, offset, size) (fu_fctf_rw(sid, buf, offset, size, 1))

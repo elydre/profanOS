@@ -13,7 +13,7 @@
 
 int main(int argc) {
     if (argc == 1)
-        c_sys_reboot();
-    c_sys_shutdown();
+        syscall_sys_reboot();
+    syscall_sys_shutdown();
     return 1;
 }

@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
         printf("%ld\n", time(NULL));
         return 0;
     } else if (arg == 4) {
-        printf("%d\n", c_timer_get_ms());
+        printf("%d\n", syscall_timer_get_ms());
         return 0;
     }
 

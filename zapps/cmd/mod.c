@@ -72,9 +72,9 @@ int main(int argc, char **argv) {
 
         printf("mod: Unloading %d\n", id);
 
-        c_process_set_scheduler(0);
-        c_dily_unload(id);
-        c_process_set_scheduler(1);
+        syscall_process_set_scheduler(0);
+        syscall_dily_unload(id);
+        syscall_process_set_scheduler(1);
         return 0;
     }
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 
         printf("mod: Loading %s as %d\n", new_path, id);
 
-        c_dily_load(new_path, id);
+        syscall_dily_load(new_path, id);
 
         free(new_path);
         return 0;
@@ -130,10 +130,10 @@ int main(int argc, char **argv) {
 
         printf("mod: Replacing %d with %s\n", id, new_path);
 
-        c_process_set_scheduler(0);
-        c_dily_unload(id);
-        c_dily_load(new_path, id);
-        c_process_set_scheduler(1);
+        syscall_process_set_scheduler(0);
+        syscall_dily_unload(id);
+        syscall_dily_load(new_path, id);
+        syscall_process_set_scheduler(1);
 
         free(new_path);
         return 0;

@@ -176,3 +176,7 @@ void *open_elf(char *filename) {
 
     return obj;
 }
+
+#undef SYSCALL_H
+#define _SYSCALL_CREATE_FUNCS
+#include <profan/syscall.h>

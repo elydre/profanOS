@@ -42,7 +42,7 @@ void sort_tab(uint32_t *tab, int size) {
 
 void list_process(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
-    int pid_list_len = c_process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid_list_len = syscall_process_generate_pid_list(pid_list, PROCESS_MAX);
     sort_tab(pid_list, pid_list_len);
 
     puts(" PID PPID     STATE     TIME      MEM ALLOC NAME");
@@ -50,14 +50,14 @@ void list_process(void) {
     char *name;
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        name = (char *) c_process_get_info(pid, PROCESS_INFO_NAME);
+        name = (char *) syscall_process_get_info(pid, PROCESS_INFO_NAME);
         printf("%4d %4d %9s %7gs %7dK %5d %-36s\n",
                 pid,
-                c_process_get_ppid(pid),
-                get_state(c_process_get_state(pid)),
-                c_process_get_run_time(pid) / 1000.0,
-                c_mem_get_info(8, pid) / 1024,
-                c_mem_get_info(7, pid),
+                syscall_process_get_ppid(pid),
+                get_state(syscall_process_get_state(pid)),
+                syscall_process_get_run_time(pid) / 1000.0,
+                syscall_mem_get_info(8, pid) / 1024,
+                syscall_mem_get_info(7, pid),
                 name
         );
     }
@@ -144,11 +144,11 @@ int main(int argc, char **argv) {
     else if (args.mode == MODE_FHLP)
         return show_help();
     else if (args.mode == MODE_KILL)
-        c_process_kill(args.pid);
+        syscall_process_kill(args.pid);
     else if (args.mode == MODE_SLPP)
-        c_process_sleep(args.pid, 0);
+        syscall_process_sleep(args.pid, 0);
     else if (args.mode == MODE_WKUP)
-        c_process_wakeup(args.pid);
+        syscall_process_wakeup(args.pid);
     else return 1;
     return 0;
 }

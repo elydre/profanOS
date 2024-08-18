@@ -1808,7 +1808,7 @@ char *if_dot(char **input) {
     }
 
     if (stdout_path || stdin_path) {
-        c_process_wakeup(pid);
+        syscall_process_wakeup(pid);
         if (wait_end) {
             profan_wait_pid(pid);
         }
@@ -1961,7 +1961,7 @@ char *if_fsize(char **input) {
     if (IS_NULL_SID(file_id)) {
         file_size = -1;
     } else {
-        file_size = c_fs_cnt_get_size(c_fs_get_main(), file_id);
+        file_size = syscall_fs_cnt_get_size(syscall_fs_get_main(), file_id);
     }
 
     free(path);
@@ -2421,7 +2421,7 @@ char *if_ticks(char **input) {
     char *output = malloc(12);
 
     #if PROFANBUILD
-    local_itoa(c_timer_get_ms(), output);
+    local_itoa(syscall_timer_get_ms(), output);
     #elif UNIXBUILD
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -4494,7 +4494,7 @@ int profan_local_input(char *buffer, int size, char **history, int history_end, 
     sc = 0;
     while (sc != KB_ENTER) {
         usleep(SLEEP_T * 1000);
-        sc = c_kb_get_scfh();
+        sc = syscall_kb_get_scfh();
 
         if (sc == KB_RESEND || sc == 0) {
             sc = last_sc_sgt;

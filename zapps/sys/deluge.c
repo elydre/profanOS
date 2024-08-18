@@ -9,6 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_FUNCS
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
@@ -350,9 +352,9 @@ int load_sections(elfobj_t *obj, uint16_t type) {
 
     if (type == ET_EXEC) {
         obj->mem = (void *) base_addr;
-        c_scuba_generate(base_addr, required_size / 0x1000);
+        syscall_scuba_generate(base_addr, required_size / 0x1000);
     } else {
-        obj->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
+        obj->mem = (void *) syscall_mem_alloc(required_size, 0x1000, 1);
     }
     memset(obj->mem, 0, required_size);
 
@@ -928,7 +930,7 @@ int main(int argc, char **argv, char **envp) {
     int start, ret;
 
     if (args.bench) {
-        start = c_timer_get_ms();
+        start = syscall_timer_get_ms();
     }
 
     elfobj_t *prog = open_elf(args.name, ET_EXEC, 1);
@@ -954,9 +956,9 @@ int main(int argc, char **argv, char **envp) {
     dynamic_linker(prog);
 
     debug_printf (1,
-        "Link time: %d ms", c_timer_get_ms() - start
+        "Link time: %d ms", syscall_timer_get_ms() - start
     ) else if (args.bench) fd_printf(2,
-        "Link time: %d ms\n", c_timer_get_ms() - start
+        "Link time: %d ms\n", syscall_timer_get_ms() - start
     );
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) prog->file)->e_entry;
@@ -969,15 +971,15 @@ int main(int argc, char **argv, char **envp) {
     g_dlfcn_error = 0;
 
     if (args.bench) {
-        start = c_timer_get_ms();
+        start = syscall_timer_get_ms();
     }
 
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
     debug_printf(1,
-        "Exit with code %d in %d ms", ret, c_timer_get_ms() - start
+        "Exit with code %d in %d ms", ret, syscall_timer_get_ms() - start
     ) else if (args.bench) fd_printf(2,
-        "Exit with code %d in %d ms\n", ret, c_timer_get_ms() - start
+        "Exit with code %d in %d ms\n", ret, syscall_timer_get_ms() - start
     );
 
     while (g_lib_count) {
@@ -991,9 +993,9 @@ int main(int argc, char **argv, char **envp) {
     free(g_loaded_libs);
 
     if (g_cleanup) {
-        int leaks, count, pid = c_process_get_pid();
-        leaks = c_mem_get_info(7, pid);
-        count = leaks ? c_mem_get_info(8, pid) : 0;
+        int leaks, count, pid = syscall_process_get_pid();
+        leaks = syscall_mem_get_info(7, pid);
+        count = leaks ? syscall_mem_get_info(8, pid) : 0;
 
         debug_printf(1, "Clean up %d alloc%s (%d byte%s)",
             leaks,
@@ -1002,7 +1004,7 @@ int main(int argc, char **argv, char **envp) {
             count > 1 ? "s" : ""
         );
         if (leaks > 0) {
-            c_mem_free_all(pid);
+            syscall_mem_free_all(pid);
         }
     }
 

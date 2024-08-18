@@ -9,6 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_FUNCS
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
@@ -53,10 +55,10 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     mod_t *mod = &mods_at_boot[i];
-    if (c_dily_load(mod->path, mod->id)) {
-        c_kprint("FAILED TO LOAD ");
-        c_kprint(get_name(mod->path));
-        c_kprint(" MODULE\n");
+    if (syscall_dily_load(mod->path, mod->id)) {
+        syscall_kprint("FAILED TO LOAD ");
+        syscall_kprint(get_name(mod->path));
+        syscall_kprint(" MODULE\n");
         return 1;
     }
     return 0;
@@ -77,18 +79,18 @@ void welcome_print(void) {
     rainbow_print("Welcome to profanOS!");
 
     fd_putstr(1, "\n\e[35mKernel: \e[95m");
-    fd_putstr(1, c_sys_kinfo());
+    fd_putstr(1, syscall_sys_kinfo());
     fd_putstr(1, "\e[0m\n\n");
 }
 
 char wait_key(void) {
-    while (c_kb_get_scfh());
+    while (syscall_kb_get_scfh());
 
     char key_char = 0;
 
     do {
-        c_process_sleep(c_process_get_pid(), 50);
-        key_char = profan_kb_get_char(c_kb_get_scfh(), 0);
+        syscall_process_sleep(syscall_process_get_pid(), 50);
+        key_char = profan_kb_get_char(syscall_kb_get_scfh(), 0);
     } while (key_char != 'g' && key_char != 'h' && key_char != 'j');
 
     return key_char;
@@ -125,8 +127,8 @@ int main(void) {
 
     fd_printf(1, "Loaded %d/%d modules\n\n", sum, total);
 
-    if (c_vesa_does_enable()) {
-        panda_set_start(c_get_cursor_offset());
+    if (syscall_vesa_does_enable()) {
+        panda_set_start(syscall_get_cursor_offset());
         use_panda = 1;
         if (fm_reopen(0, "/dev/panda")  < 0 ||
             fm_reopen(1, "/dev/panda")  < 0 ||
@@ -134,12 +136,12 @@ int main(void) {
             fm_reopen(3, "/dev/panda")  < 0 ||
             fm_reopen(4, "/dev/panda")  < 0 ||
             fm_reopen(5, "/dev/pander") < 0
-        ) c_kprint("Failed to redirect to panda\n");
+        ) syscall_kprint("Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
-        c_sys_set_reporter(userspace_reporter);
+        syscall_sys_set_reporter(userspace_reporter);
         run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
     } else {
-        c_kprint("[init] using kernel output for stdout\n");
+        syscall_kprint("[init] using kernel output for stdout\n");
         set_env("TERM=/dev/kterm");
     }
 
@@ -156,30 +158,30 @@ int main(void) {
         );
 
         if ((key_char = wait_key()) == 'j') {
-            c_sys_reboot();
+            syscall_sys_reboot();
         }
     } while (key_char != 'h');
 
     if (use_panda) {
-        c_sys_set_reporter(NULL);
+        syscall_sys_set_reporter(NULL);
     }
 
-    c_kprint("\e[2J");
-    if (c_process_get_state(usage_pid) < 4) {
-        c_process_kill(usage_pid);
+    syscall_kprint("\e[2J");
+    if (syscall_process_get_state(usage_pid) < 4) {
+        syscall_process_kill(usage_pid);
     }
 
     // unload all modules
     for (int i = 0; i < total; i++) {
         mod_t *mod = &mods_at_boot[i];
-        c_dily_unload(mod->id);
+        syscall_dily_unload(mod->id);
     }
 
     free(envp);
 
-    c_kprint("all modules unloaded\n");
+    syscall_kprint("all modules unloaded\n");
 
-    c_mem_free_all(c_process_get_pid());
+    syscall_mem_free_all(syscall_process_get_pid());
 
     return 0;
 }

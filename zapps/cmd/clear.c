@@ -21,7 +21,7 @@ int ansiclear(void) {
 }
 
 int hardclear(void) {
-    c_kprint(ANSI_CLEAR);
+    syscall_kprint(ANSI_CLEAR);
     ansiclear();
     return 0;
 }

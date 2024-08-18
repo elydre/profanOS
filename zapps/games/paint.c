@@ -28,11 +28,11 @@ void draw_cursor(int x, int y) {
     int i;
     for (i = -4; i < 5; i++) {
         if (x + i < 0 || x + i >= WIDTH) continue;
-        c_vesa_set_pixel(x + i, y, 0xffffff);
+        syscall_vesa_set_pixel(x + i, y, 0xffffff);
     }
     for (i = -4; i < 5; i++) {
         if (y + i < 0 || y + i >= HEIGHT) continue;
-        c_vesa_set_pixel(x, y + i, 0xffffff);
+        syscall_vesa_set_pixel(x, y + i, 0xffffff);
     }
 }
 
@@ -40,17 +40,17 @@ void clear_cursor(int x, int y) {
     int i;
     for (i = -4; i < 5; i++) {
         if (x + i < 0 || x + i >= WIDTH) continue;
-        c_vesa_set_pixel(x + i, y, screen[y * WIDTH + x + i]);
+        syscall_vesa_set_pixel(x + i, y, screen[y * WIDTH + x + i]);
     }
     for (i = -4; i < 5; i++) {
         if (y + i < 0 || y + i >= HEIGHT) continue;
-        c_vesa_set_pixel(x, y + i, screen[(y + i) * WIDTH + x]);
+        syscall_vesa_set_pixel(x, y + i, screen[(y + i) * WIDTH + x]);
     }
 }
 
 void draw_col(uint32_t col) {
     for (int i = 0; i < WIDTH; i++) {
-        c_vesa_set_pixel(i, 0, col);
+        syscall_vesa_set_pixel(i, 0, col);
         screen[i] = col;
     }
 }
@@ -80,7 +80,7 @@ int main(void) {
     screen = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     for (int x = 0; x < WIDTH; x++) {
         for (int y = 0; y < HEIGHT; y++) {
-            c_vesa_set_pixel(x, y, 0);
+            syscall_vesa_set_pixel(x, y, 0);
         }
     }
 
@@ -88,7 +88,7 @@ int main(void) {
     draw_col(colors[color]);
 
     while (1) {
-        k = c_kb_get_scfh();
+        k = syscall_kb_get_scfh();
         if (k == KB_ESC) break;
         if (k % 128 == KB_LEFT) keys[0] = !(k / 128);
         if (k % 128 == KB_RIGHT) keys[1] = !(k / 128);
@@ -117,7 +117,7 @@ int main(void) {
         if (old_x != cursor_x || old_y != cursor_y) {
             clear_cursor(old_x, old_y);
             if (keys[4]) {
-                c_vesa_set_pixel(cursor_x, cursor_y, colors[color]);
+                syscall_vesa_set_pixel(cursor_x, cursor_y, colors[color]);
                 screen[cursor_y * WIDTH + cursor_x] = colors[color];
             }
             draw_cursor(cursor_x, cursor_y);

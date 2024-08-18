@@ -315,7 +315,7 @@ void print_lines(int elm_count, char **cnt_names, sid_t *cnt_ids, ls_args_t *arg
             if (args->size_type == LS_SIZE_VIRT) {
                 printf("%d elm", fu_get_dir_content(cnt_ids[i], NULL, NULL));
             } else {
-                printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+                printf("%d B", syscall_fs_cnt_get_size(syscall_fs_get_main(), cnt_ids[i]));
             }
             printf("\e[u\e[22C\e[96m%s\e[0m", cnt_names[i]);
         } else if (fu_is_file(cnt_ids[i])) {
@@ -326,7 +326,7 @@ void print_lines(int elm_count, char **cnt_names, sid_t *cnt_ids, ls_args_t *arg
             printf("\e[u\e[22C\e[92m%s\e[0m", cnt_names[i]);
         } else if (fu_is_fctf(cnt_ids[i])) {
             if (args->size_type == LS_SIZE_VIRT) printf("F:%x", (uint32_t) fu_fctf_get_addr(cnt_ids[i]));
-            else printf("%d B", c_fs_cnt_get_size(c_fs_get_main(), cnt_ids[i]));
+            else printf("%d B", syscall_fs_cnt_get_size(syscall_fs_get_main(), cnt_ids[i]));
             printf("\e[u\e[22C\e[93m%s\e[0m", cnt_names[i]);
         } else {
             printf("unk\e[u\e[22C\e[91m%s\e[0m", cnt_names[i]);

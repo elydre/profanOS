@@ -45,6 +45,7 @@ int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
 #define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
 
 sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
+    kprintf_serial("fs_cnt_init\n");
     vdisk_t *vdisk;
     sid_t main_sid;
     sid_t loca_sid;
@@ -53,12 +54,16 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     int ret_sect;
 
     main_sid.device = device_id;
+    kprintf_serial("device_id: %d\n", device_id);
+    kprintf_serial("device_id: %d\n", main_sid.device);
 
     vdisk = fs_get_vdisk(filesys, main_sid.device);
+    kprintf_serial("fs_cnt_ini 2 455422 t\n");
     if (vdisk == NULL) {
         sys_warning("[cnt_init] vdisk not found");
         return NULL_SID;
     }
+
 
     // get unused sector for header
     ret_sect = vdisk_get_unused_sector(vdisk);
@@ -113,6 +118,8 @@ char *fs_cnt_meta(filesys_t *filesys, sid_t sid, char *meta) {
     vdisk_t *vdisk;
     uint8_t *data;
 
+    kprintf_serial("fs_cnt_meta\n");
+
     vdisk = fs_get_vdisk(filesys, sid.device);
     if (vdisk == NULL) {
         sys_warning("[cnt_meta] vdisk not found");
@@ -132,6 +139,7 @@ char *fs_cnt_meta(filesys_t *filesys, sid_t sid, char *meta) {
     }
 
     vdisk_unload_sector(vdisk, sid, data, SAVE);
+    kprintf_serial("fs_cnt_metasdqds\n");
 
     return meta;
 }

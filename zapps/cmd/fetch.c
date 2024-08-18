@@ -82,9 +82,9 @@ int main(void) {
     logo_line = 0;
 
     tm_t time;
-    c_time_get(&time);
+    syscall_time_get(&time);
 
-    pl_and_pf("\e[95mkernel:     \e[96m%s\n", c_sys_kinfo());
+    pl_and_pf("\e[95mkernel:     \e[96m%s\n", syscall_sys_kinfo());
 
     pl_and_pf("\e[95mRTC time:   \e[96m%02d\e[0m:\e[96m%02d\e[0m:\e[96m%02d %02d\e[0m/\e[96m%02d\e[0m/\e[96m%02d\n",
         time.tm_hour, time.tm_min, time.tm_sec,
@@ -92,21 +92,21 @@ int main(void) {
     );
     print_fs_info();
 
-    int mem_usage = (uint32_t) c_mem_get_info(6, 0) / 1024;
-    int mem_total = (uint32_t) c_mem_get_info(0, 0) / 1024;
+    int mem_usage = (uint32_t) syscall_mem_get_info(6, 0) / 1024;
+    int mem_total = (uint32_t) syscall_mem_get_info(0, 0) / 1024;
 
-    pl_and_pf("\e[95mwork time:  \e[96m%gs\n", c_timer_get_ms() / 1000.0);
+    pl_and_pf("\e[95mwork time:  \e[96m%gs\n", syscall_timer_get_ms() / 1000.0);
     pl_and_pf("\e[95mmemory:     \e[96m%.2f%% of %dMB\n",
             (float) mem_usage * 100 / (float) mem_total, mem_total / 1024);
 
     pl_and_pf("\e[95mact alloc:  \e[96m%d\e[0m/\e[96m%d\n",
-        c_mem_get_info(4, 0) - c_mem_get_info(5, 0),
-        c_mem_get_info(4, 0)
+        syscall_mem_get_info(4, 0) - syscall_mem_get_info(5, 0),
+        syscall_mem_get_info(4, 0)
     );
 
     pl_and_pf("\e[95mscreen:     \e[96m%d\e[0mx\e[96m%d (%s)\n",
-        c_vesa_get_width(), c_vesa_get_height(),
-        c_vesa_does_enable() ? "graphic" : "text"
+        syscall_vesa_get_width(), syscall_vesa_get_height(),
+        syscall_vesa_does_enable() ? "graphic" : "text"
     );
 
     pl_and_pf("\n");

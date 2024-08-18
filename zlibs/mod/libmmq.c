@@ -15,7 +15,7 @@
 
 #include <stdarg.h>
 
-#define malloc(size) ((void *) c_mem_alloc((size), 0, 1))
+#define malloc(size) ((void *) syscall_mem_alloc((size), 0, 1))
 
 int main(void) {
     return 0;
@@ -26,7 +26,7 @@ void *memcpy(void *dest, const void *src, size_t n);
 
 void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
-    int addr = c_mem_alloc(size, 0, as_kernel ? 6 : 1);
+    int addr = syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
     if (addr == 0)
         return NULL;
     memset((uint8_t *) addr, 0, size);
@@ -36,15 +36,15 @@ void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
 void free(void *mem) {
     if (mem == NULL)
         return;
-    c_mem_free_addr((int) mem);
+    syscall_mem_free_addr((int) mem);
 }
 
 void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL)
-        return (void *) c_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
+        return (void *) syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
 
-    uint32_t old_size = c_mem_get_alloc_size((uint32_t) mem);
-    uint32_t new_addr = c_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
+    uint32_t old_size = syscall_mem_get_alloc_size((uint32_t) mem);
+    uint32_t new_addr = syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
     if (new_addr == 0)
         return NULL;
 
@@ -234,3 +234,7 @@ int atoi(const char *nptr) {
         n = 10*n - (*nptr++ - '0');
     return neg ? n : -n;
 }
+
+#undef SYSCALL_H
+#define _SYSCALL_CREATE_FUNCS
+#include <profan/syscall.h>

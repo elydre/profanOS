@@ -14,8 +14,8 @@
 
 #include <profan/type.h>
 
-#define malloc(size) ((void *) c_mem_alloc((size), 0, 1))
-#define malloc_ask(size) ((void *) c_mem_alloc((size), 0, 6))
+#define malloc(size) ((void *) syscall_mem_alloc((size), 0, 1))
+#define malloc_ask(size) ((void *) syscall_mem_alloc((size), 0, 6))
 
 #define calloc(nmemb, lsize) calloc_func(nmemb, lsize, 0)
 #define calloc_ask(nmemb, lsize) calloc_func(nmemb, lsize, 1)
@@ -23,7 +23,7 @@
 #define realloc(mem, new_size) realloc_func(mem, new_size, 0)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
-#define exit(code) c_exit_pid(c_process_get_pid(), code, 0)
+#define exit(code) syscall_exit_pid(syscall_process_get_pid(), code, 0)
 
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
