@@ -14,11 +14,11 @@
 #include <system.h>
 
 
-int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
+int fs_cnt_shrink_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_shrink) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, loca_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, loca_sid)) {
         sys_error("[cnt_shrink_size] Invalid sector id");
@@ -35,27 +35,27 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
     }
 
     // check if sector linked to another locator
-    sid_t next_sid;
-    mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
+    uint32_t next_sid;
+    mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(uint32_t));
 
-    if (!IS_NULL_SID(next_sid)) {
+    if (!IS_SID_NULL(next_sid)) {
         int ret = fs_cnt_shrink_size(filesys, next_sid, to_shrink);
         if (ret <= 0) {
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return ret == 0 ? -2 : ret;
         }
-        mem_set(data + LAST_SID_OFFSET, 0, sizeof(sid_t));
+        mem_set(data + LAST_SID_OFFSET, 0, sizeof(uint32_t));
         to_shrink = ret;
     }
 
     // remove core sectors
-    for (uint32_t byte = LAST_SID_OFFSET - sizeof(sid_t); to_shrink && byte > 0; byte -= sizeof(sid_t)) {
-        sid_t core_sid;
-        mem_copy(&core_sid, data + byte, sizeof(sid_t));
-        if (core_sid.device == 0 && core_sid.sector == 0)
+    for (uint32_t byte = LAST_SID_OFFSET - sizeof(uint32_t); to_shrink && byte > 0; byte -= sizeof(uint32_t)) {
+        uint32_t core_sid;
+        mem_copy(&core_sid, data + byte, sizeof(uint32_t));
+        if (core_sid == 0)
             continue;
         vdisk_note_sector_unused(vdisk, core_sid);
-        mem_set(data + byte, 0, sizeof(sid_t));
+        mem_set(data + byte, 0, sizeof(uint32_t));
         to_shrink--;
     }
 
@@ -68,18 +68,18 @@ int fs_cnt_shrink_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_shrink) {
     return to_shrink;
 }
 
-int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
+int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, loca_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
 
     if (vdisk == NULL) {
         sys_error("[cnt_grow_size] vdisk not found");
         return -1;
     }
 
-    sid_t next_sid;
+    uint32_t next_sid;
 
     do {
         // check if sector is used
@@ -97,10 +97,10 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             return -1;
         }
 
-        mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(sid_t));
+        mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(uint32_t));
         vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
 
-        if (IS_NULL_SID(next_sid)) {
+        if (IS_SID_NULL(next_sid)) {
             break;
         }
 
@@ -108,23 +108,22 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     } while (1);
 
     uint32_t core_count = 0;
-    sid_t new_loca_sid;
-    sid_t core_sid;
+    uint32_t new_loca_sid;
+    uint32_t core_sid;
 
     data = vdisk_load_sector(vdisk, loca_sid);
 
     // check if loca is full
-    for (uint32_t byte = sizeof(sid_t); byte < LAST_SID_OFFSET; byte += sizeof(sid_t)) {
-        mem_copy(&core_sid, data + byte, sizeof(sid_t));
-        if (IS_NULL_SID(core_sid)) break;
+    for (uint32_t byte = sizeof(uint32_t); byte < LAST_SID_OFFSET; byte += sizeof(uint32_t)) {
+        mem_copy(&core_sid, data + byte, sizeof(uint32_t));
+        if (IS_SID_NULL(core_sid)) break;
         core_count += 1;
     }
 
     // fill loca
     while (core_count < LINKS_IN_LOCA && to_grow > 0) {
-        core_sid.device = loca_sid.device;
-        core_sid.sector = vdisk_get_unused_sector(vdisk);
-        if (IS_NULL_SID(core_sid)) {
+        core_sid = SID_FORMAT(SID_DISK(loca_sid), vdisk_get_unused_sector(vdisk));
+        if (IS_SID_NULL(core_sid)) {
             sys_error("[cnt_grow_size] No more free sectors");
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return -1;
@@ -135,7 +134,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             return -1;
         }
         core_count += 1;
-        mem_copy(data + core_count * sizeof(sid_t), &core_sid, sizeof(sid_t));
+        mem_copy(data + core_count * sizeof(uint32_t), &core_sid, sizeof(uint32_t));
         to_grow -= 1;
     }
 
@@ -147,10 +146,9 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     while (to_grow > 0) {
         // create new locator
 
-        new_loca_sid.device = loca_sid.device;
-        new_loca_sid.sector = vdisk_get_unused_sector(vdisk);
+        new_loca_sid = SID_FORMAT(SID_DISK(loca_sid), vdisk_get_unused_sector(vdisk));
 
-        if (IS_NULL_SID(new_loca_sid)) {
+        if (IS_SID_NULL(new_loca_sid)) {
             sys_error("[cnt_grow_size] No more free sectors");
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return -1;
@@ -162,7 +160,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
             return -1;
         }
 
-        mem_copy(data + LAST_SID_OFFSET, &new_loca_sid, sizeof(sid_t));
+        mem_copy(data + LAST_SID_OFFSET, &new_loca_sid, sizeof(uint32_t));
         vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
 
         loca_sid = new_loca_sid;
@@ -172,9 +170,8 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
         // fill loca
         core_count = 0;
         while (core_count < LINKS_IN_LOCA && to_grow > 0) {
-            core_sid.device = loca_sid.device;
-            core_sid.sector = vdisk_get_unused_sector(vdisk);
-            if (IS_NULL_SID(core_sid)) {
+            core_sid = SID_FORMAT(SID_DISK(loca_sid), vdisk_get_unused_sector(vdisk));
+            if (IS_SID_NULL(core_sid)) {
                 sys_error("[cnt_grow_size] No more free sectors");
                 vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                 return -1;
@@ -185,7 +182,7 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
                 return -1;
             }
             core_count += 1;
-            mem_copy(data + core_count * sizeof(sid_t), &core_sid, sizeof(sid_t));
+            mem_copy(data + core_count * sizeof(uint32_t), &core_sid, sizeof(uint32_t));
             to_grow -= 1;
         }
     }
@@ -194,11 +191,11 @@ int fs_cnt_grow_size(filesys_t *filesys, sid_t loca_sid, uint32_t to_grow) {
     return 0;
 }
 
-int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
+int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, head_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_set_size] Invalid sector id");
@@ -219,7 +216,7 @@ int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
     old_count = (old_count / BYTE_IN_CORE) + (old_count % BYTE_IN_CORE ? 1 : 0);
     if (size) new_count++;
 
-    sid_t loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
+    uint32_t loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
     if (old_count < new_count) {
         // grow cnt
         if (fs_cnt_grow_size(filesys, loca_sid, new_count - old_count)) {
@@ -242,11 +239,11 @@ int fs_cnt_set_size(filesys_t *filesys, sid_t head_sid, uint32_t size) {
     return 0;
 }
 
-uint32_t fs_cnt_get_size(filesys_t *filesys, sid_t head_sid) {
+uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, head_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_get_size] Invalid sector id");

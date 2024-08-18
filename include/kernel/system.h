@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-05"
+#define KERNEL_VERSION  "sc-06"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -57,7 +57,7 @@ char *sys_kinfo(void);
 
 // runtime.c
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
-int binary_exec(sid_t sid, int argc, char **argv, char **envp);
+int binary_exec(uint32_t sid, int argc, char **argv, char **envp);
 int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // dily.c

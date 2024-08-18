@@ -161,13 +161,13 @@
 ************************************/
 
 DEFN_SYSCALL0(0,  filesys_t *, fs_get_main)
-DEFN_SYSCALL3(1,  int, fs_cnt_set_size, filesys_t *, sid_t, uint32_t)
-DEFN_SYSCALL2(2,  uint32_t, fs_cnt_get_size, filesys_t *, sid_t)
-DEFN_SYSCALL2(3,  int, fs_cnt_delete, filesys_t *, sid_t)
-DEFN_SYSCALL5(4,  int, fs_cnt_read, filesys_t *, sid_t, void *, uint32_t, uint32_t)
-DEFN_SYSCALL5(5,  int, fs_cnt_write, filesys_t *, sid_t, void *, uint32_t, uint32_t)
-DEFN_SYSCALL3(6,  sid_t, fs_cnt_init, filesys_t *, uint32_t, char *)
-DEFN_SYSCALL3(7,  char *, fs_cnt_meta, filesys_t *, sid_t, char *)
+DEFN_SYSCALL3(1,  int, fs_cnt_set_size, filesys_t *, uint32_t, uint32_t)
+DEFN_SYSCALL2(2,  uint32_t, fs_cnt_get_size, filesys_t *, uint32_t)
+DEFN_SYSCALL2(3,  int, fs_cnt_delete, filesys_t *, uint32_t)
+DEFN_SYSCALL5(4,  int, fs_cnt_read, filesys_t *, uint32_t, void *, uint32_t, uint32_t)
+DEFN_SYSCALL5(5,  int, fs_cnt_write, filesys_t *, uint32_t, void *, uint32_t, uint32_t)
+DEFN_SYSCALL3(6,  uint32_t, fs_cnt_init, filesys_t *, uint32_t, char *)
+DEFN_SYSCALL3(7,  char *, fs_cnt_meta, filesys_t *, uint32_t, char *)
 DEFN_SYSCALL1(8,  uint32_t, mem_get_alloc_size, uint32_t)
 DEFN_SYSCALL3(9,  uint32_t, mem_alloc, uint32_t, uint32_t, int)
 DEFN_SYSCALL1(10, int, mem_free_addr, uint32_t)
@@ -186,7 +186,7 @@ DEFN_SYSCALL0(22, int, kb_get_scancode)
 DEFN_SYSCALL0(23, int, kb_get_scfh)
 DEFN_SYSCALL0(24, int, sys_reboot) // no return value
 DEFN_SYSCALL0(25, int, sys_shutdown) // no return value
-DEFN_SYSCALL4(26, int, binary_exec, sid_t, int, char **, char **)
+DEFN_SYSCALL4(26, int, binary_exec, uint32_t, int, char **, char **)
 DEFN_SYSCALL0(27, char *, sys_kinfo)
 DEFN_SYSCALL3(28, int, serial_read, int, char *, uint32_t) // no return value
 DEFN_SYSCALL3(29, int, serial_write, int, char *, uint32_t) // no return value

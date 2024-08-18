@@ -29,8 +29,8 @@ int dily_does_loaded(uint32_t lib_id) {
 }
 
 int dily_load(char *path, uint32_t lib_id) {
-    sid_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
-    if (IS_NULL_SID(file) || !fu_is_file(fs_get_main(), file)) {
+    uint32_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
+    if (IS_SID_NULL(file) || !fu_is_file(fs_get_main(), file)) {
         sys_error("Lib file not found");
         return 1;
     }

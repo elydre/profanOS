@@ -14,8 +14,8 @@
 #include <system.h>
 
 
-int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
-    if (IS_NULL_SID(dir_sid)) return 0;
+int fu_is_file(filesys_t *filesys, uint32_t dir_sid) {
+    if (IS_SID_NULL(dir_sid)) return 0;
     char *name = fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'F') {
@@ -26,33 +26,33 @@ int fu_is_file(filesys_t *filesys, sid_t dir_sid) {
     return 0;
 }
 
-sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
+uint32_t fu_file_create(filesys_t *filesys, uint8_t device_id, char *path) {
     char *parent, *name;
 
-    sid_t parent_sid;
-    sid_t head_sid;
+    uint32_t parent_sid;
+    uint32_t head_sid;
 
     sep_path(path, &parent, &name);
     if (!parent[0]) {
         sys_warning("[file_create] Parent unreachable");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
-    if (IS_NULL_SID(parent_sid)) {
+    if (IS_SID_NULL(parent_sid)) {
         sys_warning("[file_create] Parent not found");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     if (!fu_is_dir(filesys, parent_sid)) {
         sys_warning("[file_create] Parent not a directory");
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // generate the meta
@@ -60,13 +60,13 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
     str_cpy(meta, "F-");
     str_ncpy(meta + 2, name, META_MAXLEN - 3);
 
-    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_NULL_SID(head_sid)) {
+    if (IS_SID_NULL(head_sid)) {
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // create a link in parent directory
@@ -74,7 +74,7 @@ sid_t fu_file_create(filesys_t *filesys, int device_id, char *path) {
     if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     free(parent);

@@ -77,10 +77,10 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     return process_kill(pid);
 }
 
-int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
+int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     int pid = process_get_pid();
 
-    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_error("[binary_exec] File not found");
         return force_exit_pid(pid, 1, 0);
     }
@@ -129,9 +129,9 @@ int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
-    sid_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
+    uint32_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
 
-    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_warning("[run_ifexist] File not found: %s", file);
         return -1;
     }

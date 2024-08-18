@@ -67,14 +67,8 @@ typedef struct {
 } vdisk_t;
 
 typedef struct {
-    uint32_t device;            // device id
-    uint32_t sector;            // sector id
-} sid_t;
-
-typedef struct {
     vdisk_t **vdisk;            // list mounted virtual disks
     uint32_t vdisk_count;       // virtual disk count
-    uint32_t max_disks;         // maximum virtual disk count
 } filesys_t;
 
 typedef struct {

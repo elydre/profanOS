@@ -14,7 +14,7 @@
 #include <system.h>
 
 
-int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
+int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
     uint8_t *data;
 
     // check if sector unused
@@ -44,52 +44,45 @@ int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
 #define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
 #define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
 
-sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
-    kprintf_serial("fs_cnt_init\n");
-    vdisk_t *vdisk;
-    sid_t main_sid;
-    sid_t loca_sid;
+uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta) {
+    uint32_t main_sid;
+    uint32_t loca_sid;
 
+    vdisk_t *vdisk;
     uint8_t *data;
     int ret_sect;
 
-    main_sid.device = device_id;
-    kprintf_serial("device_id: %d\n", device_id);
-    kprintf_serial("device_id: %d\n", main_sid.device);
 
-    vdisk = fs_get_vdisk(filesys, main_sid.device);
-    kprintf_serial("fs_cnt_ini 2 455422 t\n");
+    vdisk = fs_get_vdisk(filesys, device_id);
     if (vdisk == NULL) {
         sys_warning("[cnt_init] vdisk not found");
-        return NULL_SID;
+        return SID_NULL;
     }
-
 
     // get unused sector for header
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
         sys_error("[cnt_init] No more free sectors");
-        return NULL_SID;
+        return SID_NULL;
     }
-    main_sid.sector = (uint32_t) ret_sect;
+    main_sid = SID_FORMAT(device_id, ret_sect);
     vdisk_note_sector_used(vdisk, main_sid);
 
     // get unused sector for locator
-    loca_sid.device = main_sid.device;
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
         sys_error("[cnt_init] No more free sectors");
         vdisk_note_sector_unused(vdisk, main_sid);
-        return NULL_SID;
+        return SID_NULL;
     }
-    loca_sid.sector = (uint32_t) ret_sect;
+    loca_sid = SID_FORMAT(SID_DISK(main_sid), (uint32_t) ret_sect);
 
     // init locator
     if (fs_cnt_init_loca_in_sector(vdisk, loca_sid)) {
         sys_error("[cnt_init] Could not init locator");
         vdisk_note_sector_unused(vdisk, main_sid);
         vdisk_note_sector_unused(vdisk, loca_sid);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     data = calloc(FS_SECTOR_SIZE);
@@ -105,7 +98,7 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     // add meta and core sid
     mem_copy(data + 2, meta, min(str_len(meta), META_MAXLEN - 1));
 
-    mem_copy(data + LAST_SID_OFFSET, &loca_sid, sizeof(sid_t));
+    mem_copy(data + LAST_SID_OFFSET, &loca_sid, sizeof(uint32_t));
 
     vdisk_write_sector(vdisk, main_sid, data);
 
@@ -114,13 +107,11 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     return main_sid;
 }
 
-char *fs_cnt_meta(filesys_t *filesys, sid_t sid, char *meta) {
+char *fs_cnt_meta(filesys_t *filesys, uint32_t sid, char *meta) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    kprintf_serial("fs_cnt_meta\n");
-
-    vdisk = fs_get_vdisk(filesys, sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(sid));
     if (vdisk == NULL) {
         sys_warning("[cnt_meta] vdisk not found");
         return NULL;
@@ -139,7 +130,6 @@ char *fs_cnt_meta(filesys_t *filesys, sid_t sid, char *meta) {
     }
 
     vdisk_unload_sector(vdisk, sid, data, SAVE);
-    kprintf_serial("fs_cnt_metasdqds\n");
 
     return meta;
 }

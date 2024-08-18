@@ -110,12 +110,8 @@ void syscall_handler(registers_t *r) {
         return;
     }
 
-    kprintf_serial("syscall IN %d\n", syscall_id);
-
     uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = SYSCALL_ARRAY[syscall_id];
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
-
-    kprintf_serial("syscall OUT %d\n", syscall_id);
 
     return;
 }
