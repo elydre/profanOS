@@ -1961,7 +1961,7 @@ char *if_fsize(char **input) {
     if (IS_SID_NULL(file_id)) {
         file_size = -1;
     } else {
-        file_size = syscall_fs_cnt_get_size(syscall_fs_get_main(), file_id);
+        file_size = syscall_fs_get_size(NULL, file_id);
     }
 
     free(path);
@@ -4496,7 +4496,7 @@ int profan_local_input(char *buffer, int size, char **history, int history_end, 
     sc = 0;
     while (sc != KB_ENTER) {
         usleep(SLEEP_T * 1000);
-        sc = syscall_kb_get_scfh();
+        sc = syscall_sc_get();
 
         if (sc == KB_RESEND || sc == 0) {
             sc = last_sc_sgt;

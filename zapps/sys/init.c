@@ -84,13 +84,13 @@ void welcome_print(void) {
 }
 
 char wait_key(void) {
-    while (syscall_kb_get_scfh());
+    while (syscall_sc_get());
 
     char key_char = 0;
 
     do {
-        syscall_process_sleep(syscall_process_get_pid(), 50);
-        key_char = profan_kb_get_char(syscall_kb_get_scfh(), 0);
+        syscall_process_sleep(syscall_process_pid(), 50);
+        key_char = profan_kb_get_char(syscall_sc_get(), 0);
     } while (key_char != 'g' && key_char != 'h' && key_char != 'j');
 
     return key_char;
@@ -127,8 +127,8 @@ int main(void) {
 
     fd_printf(1, "Loaded %d/%d modules\n\n", sum, total);
 
-    if (syscall_vesa_does_enable()) {
-        panda_set_start(syscall_get_cursor_offset());
+    if (syscall_vesa_state()) {
+        panda_set_start(syscall_get_cursor());
         use_panda = 1;
         if (fm_reopen(0, "/dev/panda")  < 0 ||
             fm_reopen(1, "/dev/panda")  < 0 ||
@@ -158,7 +158,7 @@ int main(void) {
         );
 
         if ((key_char = wait_key()) == 'j') {
-            syscall_sys_reboot();
+            syscall_sys_power(0);
         }
     } while (key_char != 'h');
 
@@ -167,8 +167,8 @@ int main(void) {
     }
 
     syscall_kprint("\e[2J");
-    if (syscall_process_get_state(usage_pid) < 4) {
-        syscall_process_kill(usage_pid);
+    if (syscall_process_state(usage_pid) < 4) {
+        syscall_process_exit(usage_pid, 0, 0);
     }
 
     // unload all modules
@@ -181,7 +181,7 @@ int main(void) {
 
     syscall_kprint("all modules unloaded\n");
 
-    syscall_mem_free_all(syscall_process_get_pid());
+    syscall_mem_free_all(syscall_process_pid());
 
     return 0;
 }

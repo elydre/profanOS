@@ -144,7 +144,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
         return 0;
 
     // delete container
-    if (syscall_fs_cnt_delete(syscall_fs_get_main(), elem)) {
+    if (syscall_fs_delete(NULL, elem)) {
         fprintf(stderr, "rm: Cannot remove '%s': Failed to delete container\n", path);
         return 1;
     }

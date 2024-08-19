@@ -62,7 +62,7 @@ int copy_elem(uint32_t src_sid, char *src_path, char *dst_path) {
     if (fu_file_read(src_sid, buf, 0, size))
         return raise_and_free("Failed to read file", src_path, buf);
 
-    if (syscall_fs_cnt_set_size(syscall_fs_get_main(), new_sid, size))
+    if (syscall_fs_set_size(NULL, new_sid, size))
         return raise_and_free("Failed to set file size", dst_path, buf);
 
     if (fu_file_write(new_sid, buf, 0, size))

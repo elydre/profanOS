@@ -47,6 +47,9 @@ void draw_mouse(int x, int y) {
         {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0},
     };
 
+    uint32_t pitch = syscall_vesa_pitch();
+    uint32_t *fb = syscall_vesa_fb();
+
     // draw the mouse
     for (int i = 0; i < 21; i++) {
         for (int j = 0; j < 12; j++) {
@@ -54,10 +57,10 @@ void draw_mouse(int x, int y) {
                 case 0:
                     break;
                 case 1:
-                    syscall_vesa_set_pixel(x + j, y + i, red);
+                    fb[(y + i) * pitch + (x + j)] = red;
                     break;
                 case 2:
-                    syscall_vesa_set_pixel(x + j, y + i, white);
+                    fb[(y + i) * pitch + (x + j)] = white;
                     break;
             }
 

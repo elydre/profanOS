@@ -117,7 +117,7 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     if (scancode > 64)
         return '\0';
     if (kb_map == NULL)
-        return syscall_kb_scancode_to_char(scancode, shift);
+        return syscall_sc_to_char(scancode, shift);
     if (shift)
         return kb_map[scancode * 2 + 1];
     return kb_map[scancode * 2];
@@ -142,8 +142,8 @@ char *open_input_keyboard(int *size, char *term_path) {
     buffer_actual_size = buffer_index = 0;
 
     while (sc != ENTER) {
-        syscall_process_sleep(syscall_process_get_pid(), SLEEP_T);
-        sc = syscall_kb_get_scfh();
+        syscall_process_sleep(syscall_process_pid(), SLEEP_T);
+        sc = syscall_sc_get();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;
@@ -446,7 +446,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     char **nenv = dup_envp(args.envp);
 
     if (args.sleep_mode == 3) {
-        syscall_mem_free_all(syscall_process_get_pid());
+        syscall_mem_free_all(syscall_process_pid());
         return syscall_binary_exec(sid, args.argc, nargv, nenv);
     }
 
@@ -465,7 +465,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     else
         syscall_process_wakeup(pid);
 
-    return syscall_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
+    return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
 #undef SYSCALL_H

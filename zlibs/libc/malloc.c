@@ -15,7 +15,7 @@
 void free(void *mem) {
     if (mem == NULL)
         return;
-    syscall_mem_free_addr((uint32_t) mem);
+    syscall_mem_free((uint32_t) mem);
 }
 
 void *malloc(uint32_t size) {

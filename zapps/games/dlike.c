@@ -73,8 +73,7 @@ int main(void) {
     tick_count[3] = 0;
 
     vgui_t vgui = vgui_setup(320, 200);
-    for (int i = 0; i < 100; i++) syscall_kb_get_scfh();
-    while (syscall_kb_get_scancode() != 1) {
+    while (1) {
         tick_count[1] = syscall_timer_get_ms() - tick_count[0];
         tick_count[0] = syscall_timer_get_ms();
 
@@ -114,7 +113,7 @@ int main(void) {
         vgui_render(&vgui, 0);
         tick_count[3] = syscall_timer_get_ms() - tick_count[2];
 
-        key = syscall_kb_get_scfh();
+        key = syscall_sc_get();
         if (last_key != key && key != 0) {
             last_key = key;
             if (last_key < KB_RVAL && !(val_in_buffer(last_key, 20, key_buffer))) {
@@ -164,6 +163,8 @@ int main(void) {
 
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
+
+        if (key == KB_ESC) break;
     }
     vgui_exit(&vgui);
 

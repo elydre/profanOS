@@ -228,11 +228,11 @@ pid_t getpgrp(void) {
 }
 
 pid_t getpid(void) {
-    return syscall_process_get_pid();
+    return syscall_process_pid();
 }
 
 pid_t getppid(void) {
-    return syscall_process_get_ppid(syscall_process_get_pid());
+    return syscall_process_ppid(syscall_process_pid());
 }
 
 pid_t getsid(pid_t a) {
@@ -363,7 +363,7 @@ int setuid(uid_t a) {
 
 unsigned sleep(unsigned seconds) {
     if (seconds)
-        syscall_process_sleep(syscall_process_get_pid(), seconds * 1000);
+        syscall_process_sleep(syscall_process_pid(), seconds * 1000);
     return 0;
 }
 
@@ -445,7 +445,7 @@ int unlink(const char *filename) {
     fu_remove_element_from_dir(parent_sid, elem);
 
     // delete the file content
-    if (syscall_fs_cnt_delete(syscall_fs_get_main(), elem)) {
+    if (syscall_fs_delete(NULL, elem)) {
         fprintf(stderr, "unlink: %s: failed to delete\n", filename);
         return -1;
     }
@@ -456,7 +456,7 @@ int unlink(const char *filename) {
 int usleep(useconds_t usec) {
     if (usec < 1000)
         return 0;
-    return syscall_process_sleep(syscall_process_get_pid(), usec / 1000) ? -1 : 0;
+    return syscall_process_sleep(syscall_process_pid(), usec / 1000) ? -1 : 0;
 }
 
 pid_t vfork(void) {

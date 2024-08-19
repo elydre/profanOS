@@ -92,21 +92,21 @@ int main(void) {
     );
     print_fs_info();
 
-    int mem_usage = (uint32_t) syscall_mem_get_info(6, 0) / 1024;
-    int mem_total = (uint32_t) syscall_mem_get_info(0, 0) / 1024;
+    int mem_usage = (uint32_t) syscall_mem_info(6, 0) / 1024;
+    int mem_total = (uint32_t) syscall_mem_info(0, 0) / 1024;
 
     pl_and_pf("\e[95mwork time:  \e[96m%gs\n", syscall_timer_get_ms() / 1000.0);
     pl_and_pf("\e[95mmemory:     \e[96m%.2f%% of %dMB\n",
             (float) mem_usage * 100 / (float) mem_total, mem_total / 1024);
 
     pl_and_pf("\e[95mact alloc:  \e[96m%d\e[0m/\e[96m%d\n",
-        syscall_mem_get_info(4, 0) - syscall_mem_get_info(5, 0),
-        syscall_mem_get_info(4, 0)
+        syscall_mem_info(4, 0) - syscall_mem_info(5, 0),
+        syscall_mem_info(4, 0)
     );
 
     pl_and_pf("\e[95mscreen:     \e[96m%d\e[0mx\e[96m%d (%s)\n",
-        syscall_vesa_get_width(), syscall_vesa_get_height(),
-        syscall_vesa_does_enable() ? "graphic" : "text"
+        syscall_vesa_width(), syscall_vesa_height(),
+        syscall_vesa_state() ? "graphic" : "text"
     );
 
     pl_and_pf("\n");

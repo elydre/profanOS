@@ -201,7 +201,7 @@ static void tsi_main_loop(const char **lines, int line_count) {
             tsi_draw_footer(buffer, y + 1, line_count);
         }
 
-        key = syscall_kb_get_scfh();
+        key = syscall_sc_get();
         keyc = profan_kb_get_char(key, 0);
 
         need_redraw = 1;

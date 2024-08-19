@@ -79,14 +79,14 @@ void sort_tab(uint32_t *tab, int size) {
 void list_process(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     char info_line[81];
-    int pid_list_len = syscall_process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
     sort_tab(pid_list, pid_list_len);
 
     int line_len = snprintf(info_line, 81, "  profanOS . kernel %s . %d processes . uptime %ds (%ds IDLE)  ",
             syscall_sys_kinfo(),
             pid_list_len - 2,
             syscall_timer_get_ms() / 1000,
-            syscall_process_get_run_time(1) / 1000
+            syscall_process_run_time(1) / 1000
     ) - 1;
 
     // center info line
@@ -102,14 +102,14 @@ void list_process(void) {
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        name = (char *) syscall_process_get_info(pid, PROCESS_INFO_NAME);
+        name = (char *) syscall_process_info(pid, PROCESS_INFO_NAME);
         printf("%4d %4d %9s %7gs %7dK %5d %-36s\n",
                 pid,
-                syscall_process_get_ppid(pid),
-                get_state(syscall_process_get_state(pid)),
-                syscall_process_get_run_time(pid) / 1000.0,
-                syscall_mem_get_info(8, pid) / 1024,
-                syscall_mem_get_info(7, pid),
+                syscall_process_ppid(pid),
+                get_state(syscall_process_state(pid)),
+                syscall_process_run_time(pid) / 1000.0,
+                syscall_mem_info(8, pid) / 1024,
+                syscall_mem_info(7, pid),
                 name
         );
     }
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
         last_idle = idle;
         last_total = total;
 
-        idle = syscall_process_get_run_time(1);
+        idle = syscall_process_run_time(1);
         total = syscall_timer_get_ms();
 
         cpu = total - last_total;
@@ -154,8 +154,8 @@ int main(int argc, char **argv) {
         tm_t t;
         syscall_time_get(&t);
 
-        total_mem = syscall_mem_get_info(0, 0) / 1024;
-        used_mem = syscall_mem_get_info(6, 0) / 1024;
+        total_mem = syscall_mem_info(0, 0) / 1024;
+        used_mem = syscall_mem_info(6, 0) / 1024;
 
         sprintf(buf, "%d%%", cpu);
         draw_line(buf, cpu);
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 
         sprintf(buf, "%dM/%dM", used_mem / 1024, total_mem / 1024);
         draw_line(buf, used_mem * 100 / total_mem);
-        printf("%s %d allocs    \n\n", buf, syscall_mem_get_info(4, 0) - syscall_mem_get_info(5, 0));
+        printf("%s %d allocs    \n\n", buf, syscall_mem_info(4, 0) - syscall_mem_info(5, 0));
         list_process();
         sleep(to_sleep);
     }

@@ -435,7 +435,7 @@ void main_loop(char *path) {
 
     while (1) {
         // wait for key
-        key = syscall_kb_get_scfh();
+        key = syscall_sc_get();
 
         if (key == 224 || key == 0) {   // RESEND or 0
             key = key_sgt;

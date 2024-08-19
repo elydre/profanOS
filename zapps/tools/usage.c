@@ -19,7 +19,7 @@
 void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = syscall_font_get(0) + msg[i] * 16;
+        glyph = syscall_font_get() + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
@@ -32,8 +32,8 @@ void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
 void add_mem_info(uint32_t *pixel_buffer) {
     char tmp[10];
 
-    int alloc_count = syscall_mem_get_info(4, 0) - syscall_mem_get_info(5, 0);
-    int mem_used = syscall_mem_get_info(6, 0) / 1024;
+    int alloc_count = syscall_mem_info(4, 0) - syscall_mem_info(5, 0);
+    int mem_used = syscall_mem_info(6, 0) / 1024;
 
     itoa(mem_used, tmp, 10);
     strcat(tmp, "kB");
@@ -44,18 +44,18 @@ void add_mem_info(uint32_t *pixel_buffer) {
 }
 
 int main(void) {
-    uint32_t *fb = syscall_vesa_get_fb();
-    uint32_t pitch = syscall_vesa_get_pitch();
-    uint32_t width = syscall_vesa_get_width();
+    uint32_t *fb = syscall_vesa_fb();
+    uint32_t pitch = syscall_vesa_pitch();
+    uint32_t width = syscall_vesa_width();
 
     int x_offset = width - HISTOTY_SIZE;
-    if (x_offset < 0 || !syscall_vesa_does_enable()) {
+    if (x_offset < 0 || !syscall_vesa_state()) {
         printf("[cpu] fail to start: screen too small\n");
         return 1;
     }
 
     // wake up the parent process
-    syscall_process_wakeup(syscall_process_get_ppid(syscall_process_get_pid()));
+    syscall_process_wakeup(syscall_process_ppid(syscall_process_pid()));
 
     int *history = calloc(HISTOTY_SIZE, sizeof(int));
 
@@ -69,7 +69,7 @@ int main(void) {
         last_idle = idle;
         last_total = total;
 
-        idle = syscall_process_get_run_time(1);
+        idle = syscall_process_run_time(1);
         total = syscall_timer_get_ms();
 
         cpu = total - last_total;
@@ -99,6 +99,6 @@ int main(void) {
             }
         }
 
-        syscall_process_sleep(syscall_process_get_pid(), 200);
+        syscall_process_sleep(syscall_process_pid(), 200);
     }
 }

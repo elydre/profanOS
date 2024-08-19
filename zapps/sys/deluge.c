@@ -993,9 +993,9 @@ int main(int argc, char **argv, char **envp) {
     free(g_loaded_libs);
 
     if (g_cleanup) {
-        int leaks, count, pid = syscall_process_get_pid();
-        leaks = syscall_mem_get_info(7, pid);
-        count = leaks ? syscall_mem_get_info(8, pid) : 0;
+        int leaks, count, pid = syscall_process_pid();
+        leaks = syscall_mem_info(7, pid);
+        count = leaks ? syscall_mem_info(8, pid) : 0;
 
         debug_printf(1, "Clean up %d alloc%s (%d byte%s)",
             leaks,

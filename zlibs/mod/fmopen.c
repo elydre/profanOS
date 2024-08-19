@@ -96,7 +96,7 @@ int fm_open(char *path) {
         return -1;
     }
 
-    opened[index].pid = syscall_process_get_pid();
+    opened[index].pid = syscall_process_pid();
     opened[index].type = fu_is_fctf(sid) ? TYPE_FCTF : TYPE_FILE;
     opened[index].offset = 0;
     opened[index].pipe = NULL;
@@ -137,7 +137,7 @@ int fm_reopen(int fd, char *path) {
         return -1;
     }
 
-    opened[fd].pid = syscall_process_get_pid();
+    opened[fd].pid = syscall_process_pid();
     opened[fd].type = fu_is_fctf(sid) ? TYPE_FCTF : TYPE_FILE;
     opened[fd].offset = 0;
     if (opened[fd].type == TYPE_FCTF)
@@ -190,12 +190,12 @@ int fm_read(int fd, void *buf, uint32_t size) {
 
     switch (opened[fd].type) {
         case TYPE_FILE:
-            tmp = syscall_fs_cnt_get_size(syscall_fs_get_main(), opened[fd].sid);
+            tmp = syscall_fs_get_size(NULL, opened[fd].sid);
             if (opened[fd].offset > (int) tmp)
                 return -1;
             if (opened[fd].offset + size > tmp)
                 size = tmp - opened[fd].offset;
-            read_count = syscall_fs_cnt_read(syscall_fs_get_main(), opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
+            read_count = syscall_fs_read(NULL, opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
             break;
         case TYPE_FCTF:
             read_count = opened[fd].fctf(buf, opened[fd].offset, size, 1);
@@ -204,11 +204,11 @@ int fm_read(int fd, void *buf, uint32_t size) {
             while ((int) opened[fd].pipe->writed <= opened[fd].offset) {
                 tmp = opened[fd].pipe->wpcnt;
                 for (int i = 0; i < opened[fd].pipe->wpcnt; i++) {
-                    if (syscall_process_get_state(opened[fd].pipe->wpid[i]) >= 4)
+                    if (syscall_process_state(opened[fd].pipe->wpid[i]) >= 4)
                         tmp--;
                 }
                 if (!tmp) break;
-                syscall_process_sleep(syscall_process_get_pid(), 10);
+                syscall_process_sleep(syscall_process_pid(), 10);
             }
             read_count = opened[fd].pipe->writed - opened[fd].offset;
             if (read_count > (int) size)
@@ -232,9 +232,9 @@ int fm_write(int fd, void *buf, uint32_t size) {
 
     switch (opened[fd].type) {
         case TYPE_FILE:
-            if (opened[fd].offset + size > syscall_fs_cnt_get_size(syscall_fs_get_main(), opened[fd].sid))
-                syscall_fs_cnt_set_size(syscall_fs_get_main(), opened[fd].sid, opened[fd].offset + size);
-            write_count = syscall_fs_cnt_write(syscall_fs_get_main(), opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
+            if (opened[fd].offset + size > syscall_fs_get_size(NULL, opened[fd].sid))
+                syscall_fs_set_size(NULL, opened[fd].sid, opened[fd].offset + size);
+            write_count = syscall_fs_write(NULL, opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
             break;
         case TYPE_FCTF:
             write_count = opened[fd].fctf(buf, opened[fd].offset, size, 0);
@@ -275,7 +275,7 @@ int fm_lseek(int fd, int offset, int whence) {
         case SEEK_END:
             if (opened[fd].type != TYPE_FILE)
                 return -1;
-            opened[fd].offset = syscall_fs_cnt_get_size(syscall_fs_get_main(), opened[fd].sid) + offset;
+            opened[fd].offset = syscall_fs_get_size(NULL, opened[fd].sid) + offset;
             break;
         default:
             return -1;
@@ -389,7 +389,7 @@ int fm_pipe(int fd[2]) {
         return -1;
     }
 
-    pid = syscall_process_get_pid();
+    pid = syscall_process_pid();
 
     pipe->data = malloc_ask(1024);
     pipe->size = 1024;
@@ -429,7 +429,7 @@ void fm_clean(void) {
     int fd_free = 0;
 
     for (int i = 0; i < stdhist_len; i++) {
-        if (syscall_process_get_state(stdhist[i].pid) < 4)
+        if (syscall_process_state(stdhist[i].pid) < 4)
             continue;
         fd_printf(1, "fm_clean: stdhist %d (pid: %d)\n", i, stdhist[i].pid);
         fm_close(stdhist[i].fd[0]);
@@ -442,7 +442,7 @@ void fm_clean(void) {
 
     for (int i = 3; i < MAX_OPENED; i++) {
         if (!opened[i].type) continue;
-        if (syscall_process_get_state(opened[i].pid) < 4)
+        if (syscall_process_state(opened[i].pid) < 4)
             continue;
         fd_printf(1, "fm_clean: opened %d (pid: %d) [WARNING]\n", i, opened[i].pid);
         fm_close(i);
@@ -461,7 +461,7 @@ void fm_clean(void) {
 int fm_add_stdhist(int fd, int pid) {
     if (stdhist_len >= MAX_STDHIST) {
         for (int i = 0; i < stdhist_len; i++) {
-            if (syscall_process_get_state(stdhist[i].pid) < 4)
+            if (syscall_process_state(stdhist[i].pid) < 4)
                 continue;
             for (int j = 0; j < 3; j++) {
                 if (opened[stdhist[i].fd[j]].pid != stdhist[i].pid)
@@ -481,7 +481,7 @@ int fm_add_stdhist(int fd, int pid) {
 
     stdhist[stdhist_len].pid = pid;
 
-    int ppid = syscall_process_get_ppid(pid);
+    int ppid = syscall_process_ppid(pid);
 
     if (ppid >= 0) {
         for (int i = 0; i < stdhist_len; i++) {
@@ -521,7 +521,7 @@ int fm_resol012(int fd, int pid) {
         return -1;
 
     if (pid < 0)
-        pid = syscall_process_get_pid();
+        pid = syscall_process_pid();
 
     if (pid > stdhist[stdhist_len - 1].pid)
         return fm_add_stdhist(fd, pid);

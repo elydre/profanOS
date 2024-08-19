@@ -36,7 +36,7 @@ void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
 void free(void *mem) {
     if (mem == NULL)
         return;
-    syscall_mem_free_addr((int) mem);
+    syscall_mem_free((int) mem);
 }
 
 void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {

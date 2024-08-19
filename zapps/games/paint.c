@@ -25,32 +25,40 @@ uint32_t *screen;
 #define esc
 
 void draw_cursor(int x, int y) {
+    uint32_t pitch = syscall_vesa_pitch();
+    uint32_t *fb = syscall_vesa_fb();
+
     int i;
     for (i = -4; i < 5; i++) {
         if (x + i < 0 || x + i >= WIDTH) continue;
-        syscall_vesa_set_pixel(x + i, y, 0xffffff);
+        fb[y * pitch + x + i] = 0xffffff;
     }
     for (i = -4; i < 5; i++) {
         if (y + i < 0 || y + i >= HEIGHT) continue;
-        syscall_vesa_set_pixel(x, y + i, 0xffffff);
+        fb[(y + i) * pitch + x] = 0xffffff;
     }
 }
 
 void clear_cursor(int x, int y) {
+    uint32_t pitch = syscall_vesa_pitch();
+    uint32_t *fb = syscall_vesa_fb();
+
     int i;
     for (i = -4; i < 5; i++) {
         if (x + i < 0 || x + i >= WIDTH) continue;
-        syscall_vesa_set_pixel(x + i, y, screen[y * WIDTH + x + i]);
+        fb[y * pitch + x + i] = screen[y * WIDTH + x + i];
     }
     for (i = -4; i < 5; i++) {
         if (y + i < 0 || y + i >= HEIGHT) continue;
-        syscall_vesa_set_pixel(x, y + i, screen[(y + i) * WIDTH + x]);
+        fb[(y + i) * pitch + x] = screen[(y + i) * WIDTH + x];
     }
 }
 
 void draw_col(uint32_t col) {
+    uint32_t *fb = syscall_vesa_fb();
+
     for (int i = 0; i < WIDTH; i++) {
-        syscall_vesa_set_pixel(i, 0, col);
+        fb[i] = col;
         screen[i] = col;
     }
 }
@@ -75,12 +83,15 @@ int main(void) {
 
     int old_x, old_y;
 
+    uint32_t *fb = syscall_vesa_fb();
+    uint32_t pitch = syscall_vesa_pitch();
+
     memset(keys, 0, sizeof(keys));
 
     screen = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
     for (int x = 0; x < WIDTH; x++) {
         for (int y = 0; y < HEIGHT; y++) {
-            syscall_vesa_set_pixel(x, y, 0);
+            fb[y * pitch + x] = 0;
         }
     }
 
@@ -88,7 +99,7 @@ int main(void) {
     draw_col(colors[color]);
 
     while (1) {
-        k = syscall_kb_get_scfh();
+        k = syscall_sc_get();
         if (k == KB_ESC) break;
         if (k % 128 == KB_LEFT) keys[0] = !(k / 128);
         if (k % 128 == KB_RIGHT) keys[1] = !(k / 128);
@@ -117,8 +128,8 @@ int main(void) {
         if (old_x != cursor_x || old_y != cursor_y) {
             clear_cursor(old_x, old_y);
             if (keys[4]) {
-                syscall_vesa_set_pixel(cursor_x, cursor_y, colors[color]);
                 screen[cursor_y * WIDTH + cursor_x] = colors[color];
+                fb[cursor_y * pitch + cursor_x] = colors[color];
             }
             draw_cursor(cursor_x, cursor_y);
         }
