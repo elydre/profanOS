@@ -18,8 +18,8 @@
 #define SERIAL_PORT_B 0x2F8
 
 
-int  serial_init(void);
-void serial_write(int device, char *buf, uint32_t len);
-void serial_read(int device, char *buf, uint32_t len);
+int serial_init(void);
+int serial_write(int device, char *buf, uint32_t len);
+int serial_read(int device, char *buf, uint32_t len);
 
 #endif

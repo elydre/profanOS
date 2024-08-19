@@ -221,15 +221,19 @@ int compute_ansi_escape(char *str, char *color) {
     return tmp - start;
 }
 
-void kcnprint(char *message, int len, char color) {
+int kcnprint(char *message, int len, char color) {
     int i = 0;
-    if (len == -1) len = str_len(message);
+
+    if (len == -1)
+        len = str_len(message);
+
     while (i < len) {
-        if (message[i] == '\e') {
+        if (message[i] == '\e')
             i += compute_ansi_escape(message + i, &color);
-        } else {
+        else
             kprint_char_at(-1, -1, message[i], color);
-        }
         i++;
     }
+
+    return len;
 }

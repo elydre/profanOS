@@ -601,7 +601,7 @@ int process_kill(uint32_t pid) {
  *                       *
 **************************/
 
-void process_set_scheduler(int state) {
+int process_set_scheduler(int state) {
     // disable scheduler
     if (!state) {
         scheduler_disable_count++;
@@ -617,6 +617,8 @@ void process_set_scheduler(int state) {
             scheduler_state = SHDLR_ENBL;
         }
     }
+
+    return 0;
 }
 
 void schedule(uint32_t ticks) {

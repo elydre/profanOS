@@ -114,7 +114,10 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf, uint32_t
                 tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
                         size - max(index, 0), is_read);
                 if (tmp == -1) {
-                    printf("failed to %s core d%ds%d\n", is_read ? "read" : "write", SID_DISK(core_sid), SID_SECTOR(core_sid));
+                    printf("failed to %s core d%ds%d\n",
+                            is_read ? "read" : "write",
+                            SID_DISK(core_sid), SID_SECTOR(core_sid)
+                    );
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                     return 1;
                 }
@@ -171,7 +174,10 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
     loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
     if (loca_sid) {
         if (fs_cnt_rw_loca(filesys, loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
-            printf("? failed to %s locator d%ds%d\n", is_read ? "read" : "write", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+            printf("? failed to %s locator d%ds%d\n",
+                    is_read ? "read" : "write",
+                    SID_DISK(loca_sid), SID_SECTOR(loca_sid)
+            );
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }

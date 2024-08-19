@@ -67,7 +67,7 @@ int process_sleep(uint32_t pid, uint32_t ms);
 int process_kill(uint32_t pid);
 
 // scheduler control
-void process_set_scheduler(int state);
+int process_set_scheduler(int state);
 
 // process info
 uint32_t process_get_pid(void);

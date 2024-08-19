@@ -74,7 +74,11 @@ void draw_tree(filesys_t *filesys, uint32_t sid, int depth) {
         for (int j = 0; j < depth; j++) {
             printf("  ");
         }
-        printf("%s, d%ds%d: %dB\n", names[i], SID_DISK(sids[i]), SID_SECTOR(sids[i]), fs_cnt_get_size(filesys, sids[i]));
+        printf("%s, d%ds%d: %dB\n", names[i],
+                SID_DISK(sids[i]),
+                SID_SECTOR(sids[i]),
+                fs_cnt_get_size(filesys, sids[i])
+        );
         if (fu_is_dir(filesys, sids[i])) {
             draw_tree(filesys, sids[i], depth + 1);
         }

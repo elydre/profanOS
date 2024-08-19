@@ -84,11 +84,12 @@ int sys_default_reporter(char *msg) {
     return 0;
 }
 
-void sys_set_reporter(int (*reporter)(char *)) {
+int sys_set_reporter(int (*reporter)(char *)) {
     if (reporter == NULL) {
         reporter = sys_default_reporter;
     }
     reporter_addr = reporter;
+    return 0;
 }
 
 void sys_report(char *msg) {

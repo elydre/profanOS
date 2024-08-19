@@ -157,7 +157,9 @@ int fu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     for (uint32_t i = 0; i < count; i++) {
         memcpy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
         memcpy(&name_offset,
-                buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t), sizeof(uint32_t));
+                buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t),
+                sizeof(uint32_t)
+        );
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(strlen(tmp) + 1);
         strcpy((*names)[i], tmp);
@@ -263,7 +265,9 @@ int fu_remove_element_from_dir(uint32_t dir_sid, uint32_t element_sid) {
     for (uint32_t i = 0; i < count; i++) {
         memcpy(&ids[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
         memcpy(&name_offsets[i],
-                buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t), sizeof(uint32_t));
+                buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t),
+                sizeof(uint32_t)
+        );
     }
 
     // search for the element
@@ -605,7 +609,10 @@ int fu_fctf_rw(uint32_t file_sid, void *buf, uint32_t offset, uint32_t size, uin
     if (addr == NULL) {
         // read container
         if (syscall_fs_read(NULL, file_sid, &addr, 0, sizeof(void *))) {
-            RAISE_ERROR("fctf_rw: failed to read function pointer from d%ds%d\n", SID_DISK(file_sid), SID_SECTOR(file_sid));
+            RAISE_ERROR("fctf_rw: failed to read function pointer from d%ds%d\n",
+                    SID_DISK(file_sid),
+                    SID_SECTOR(file_sid)
+            );
             return -1;
         }
 
@@ -705,7 +712,10 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const char *pat
     count = fu_get_dir_content(parent, &sids, &names);
 
     if (count == -1) {
-        RAISE_ERROR("rec_path_to_sid: failed to get directory content of d%ds%d\n", SID_DISK(parent), SID_SECTOR(parent));
+        RAISE_ERROR("rec_path_to_sid: failed to get directory content of d%ds%d\n",
+                SID_DISK(parent),
+                SID_SECTOR(parent)
+        );
         return SID_NULL;
     }
 

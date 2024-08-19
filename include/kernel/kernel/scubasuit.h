@@ -82,9 +82,9 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);
 void scuba_fault_handler(int err_code);
 
 // syscall functions
-void scuba_call_generate(void *addr, uint32_t size);
-void scuba_call_map(void *addr, void *phys, int cic);
-void scuba_call_unmap(void *addr);
+int scuba_call_generate(void *addr, uint32_t size);
+int scuba_call_map(void *addr, void *phys, int cic);
+int scuba_call_unmap(void *addr);
 void *scuba_call_phys(void *addr);
 
 #endif

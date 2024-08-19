@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-08"
+#define KERNEL_VERSION  "sc-09"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -43,7 +43,7 @@
 void kernel_exit_current(void);
 
 extern char sys_safe_buffer[256];
-void sys_set_reporter(int (*reporter)(char *));
+int sys_set_reporter(int (*reporter)(char *));
 
 void sys_reboot(void);
 void sys_shutdown(void);

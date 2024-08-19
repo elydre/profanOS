@@ -103,7 +103,10 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
             }
             uint32_t core_sid = *((uint32_t *) (data + (i + 1) * sizeof(uint32_t)));
             if (IS_SID_NULL(core_sid)) {
-                sys_error("no more core, but still %d bytes to %s\n", size - max(index, 0), is_read ? "read" : "write");
+                sys_error("no more core, but still %d bytes to %s\n",
+                        size - max(index, 0),
+                        is_read ? "read" : "write"
+                );
                 free(alloc_buf);
                 free(data);
                 return 1;
@@ -111,7 +114,10 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
             tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
                     size - max(index, 0), is_read, alloc_buf);
             if (tmp == -1) {
-                sys_error("failed to %s core d%ds%d\n", is_read ? "read" : "write", SID_DISK(core_sid), SID_SECTOR(core_sid));
+                sys_error("failed to %s core d%ds%d\n",
+                        is_read ? "read" : "write",
+                        SID_DISK(core_sid), SID_SECTOR(core_sid)
+                );
                 free(alloc_buf);
                 free(data);
                 return 1;

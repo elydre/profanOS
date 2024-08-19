@@ -384,16 +384,16 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
  *                      *
 *************************/
 
-void scuba_call_generate(void *addr, uint32_t size) {
-    scuba_create_virtual(current_directory, (uint32_t) addr, size);
+int scuba_call_generate(void *addr, uint32_t size) {
+    return scuba_create_virtual(current_directory, (uint32_t) addr, size);
 }
 
-void scuba_call_map(void *addr, void *phys, int cic) {
-    scuba_map_func(current_directory, (uint32_t) addr, (uint32_t) phys, cic ? 0 : 3);
+int scuba_call_map(void *addr, void *phys, int cic) {
+    return scuba_map_func(current_directory, (uint32_t) addr, (uint32_t) phys, cic ? 0 : 3);
 }
 
-void scuba_call_unmap(void *addr) {
-    scuba_unmap(current_directory, (uint32_t) addr);
+int scuba_call_unmap(void *addr) {
+    return scuba_unmap(current_directory, (uint32_t) addr);
 }
 
 void *scuba_call_phys(void *addr) {

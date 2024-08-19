@@ -174,27 +174,27 @@ DEFN_SYSCALL1(11, uint32_t,  mem_get_alloc_size, uint32_t)
 DEFN_SYSCALL2(12, int,       mem_info, int, int)
 
 DEFN_SYSCALL0(13, uint32_t,  timer_get_ms)
-DEFN_SYSCALL1(14, int,       time_get, tm_t *)                  // no return value
+DEFN_SYSCALL1(14, int,       time_get, tm_t *)
 
 DEFN_SYSCALL0(15, uint8_t *, font_get)
-DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)       // no return value
+DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)
 DEFN_SYSCALL0(17, int,       get_cursor)
 DEFN_SYSCALL1(18, int,       vesa_info, int)
 
-DEFN_SYSCALL3(19, int,       serial_read, int, char *, uint32_t)  // no return value
-DEFN_SYSCALL3(20, int,       serial_write, int, char *, uint32_t) // no return value
+DEFN_SYSCALL3(19, int,       serial_read, int, char *, uint32_t)
+DEFN_SYSCALL3(20, int,       serial_write, int, char *, uint32_t)
 
 DEFN_SYSCALL2(21, char,      sc_to_char, int, int)
 DEFN_SYSCALL0(22, int,       sc_get)
 DEFN_SYSCALL2(23, int,       mouse_call, int, int)
 
-DEFN_SYSCALL1(24, int,       sys_set_reporter, void *)          // no return value
-DEFN_SYSCALL1(25, int,       sys_power, int)                    // no return value
+DEFN_SYSCALL1(24, int,       sys_set_reporter, void *)
+DEFN_SYSCALL1(25, int,       sys_power, int)
 DEFN_SYSCALL0(26, char *,    sys_kinfo)
 
 DEFN_SYSCALL4(27, int,       binary_exec, uint32_t, int, char **, char **)
 
-DEFN_SYSCALL1(28, int,       process_set_scheduler, int)        // no return value
+DEFN_SYSCALL1(28, int,       process_set_scheduler, int)
 DEFN_SYSCALL5(29, int,       process_create, void *, int, char *, int, uint32_t *)
 DEFN_SYSCALL0(30, int,       process_fork)
 DEFN_SYSCALL2(31, int,       process_sleep, uint32_t, uint32_t)
@@ -208,9 +208,9 @@ DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 DEFN_SYSCALL2(38, int,       dily_load, char *, uint32_t)
 DEFN_SYSCALL1(39, int,       dily_unload, uint32_t)
 
-DEFN_SYSCALL2(40, int,       scuba_generate, void *, uint32_t)  // no return value
-DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)    // no return value
-DEFN_SYSCALL1(42, int,       scuba_unmap, void *)               // no return value
+DEFN_SYSCALL2(40, int,       scuba_generate, void *, uint32_t)
+DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)
+DEFN_SYSCALL1(42, int,       scuba_unmap, void *)
 DEFN_SYSCALL1(43, void *,    scuba_phys, void *)
 
 #endif
