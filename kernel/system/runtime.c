@@ -148,7 +148,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
         str_cpy(nargv[i], argv[i]);
     }
 
-    int pid = process_create(binary_exec, 1, file, 5, sid, 0, nargv, NULL);
+    int pid = process_create(binary_exec, 1, file, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

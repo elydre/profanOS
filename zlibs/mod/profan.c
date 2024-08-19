@@ -450,7 +450,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return syscall_binary_exec(sid, args.argc, nargv, nenv);
     }
 
-    int pid = syscall_process_create(syscall_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenv);
+    int pid = syscall_process_create(syscall_binary_exec, 1, args.path, 4, (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

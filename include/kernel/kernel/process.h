@@ -59,7 +59,7 @@ int  process_init(void);
 void schedule(uint32_t ticks);
 
 // process gestion
-int process_create(void *func, int use_parent_dir, char *name, int nargs, ...);
+int process_create(void *func, int use_parent_dir, char *name, int nargs, uint32_t *args);
 int process_fork(void);
 int process_handover(uint32_t pid);
 int process_wakeup(uint32_t pid);

@@ -219,7 +219,7 @@ int i_fork_entry(void) {
 int i_process_fork(uint32_t ebx, uint32_t ecx, uint32_t edx,
         uint32_t esi, uint32_t edi, uint32_t ebp, uint32_t esp)
 {
-    int pid = process_create(i_fork_entry, 2, "fork", 0);
+    int pid = process_create(i_fork_entry, 2, "fork", 0, NULL);
 
     if (pid == ERROR_CODE) {
         return ERROR_CODE;
@@ -329,14 +329,14 @@ int process_init(void) {
     scheduler_disable_count = 0;
 
     // create idle process
-    process_create(idle_process, 1, "idle", 0);
+    process_create(idle_process, 1, "idle", 0, NULL);
     plist[1].state = PROCESS_IDLETIME;
 
     return 0;
 }
 
 
-int process_create(void *func, int dir_mode, char *name, int nargs, ...) {
+int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *args) {
     // dir mode: 0 = clean
     //           1 = use parent dir
     //           2 = copy parent dir
@@ -394,11 +394,10 @@ int process_create(void *func, int dir_mode, char *name, int nargs, ...) {
 
     // push arguments to the new process
     uint32_t *esp = (uint32_t *) new_proc->regs.esp;
-    uint32_t *args = (uint32_t *) &nargs;
     esp -= nargs + 1;
 
-    for (int i = 1; i <= nargs; i++) {
-        esp[i] = args[i];
+    for (int i = 0; i < nargs; i++) {
+        esp[i + 1] = args[i];
     }
 
     // push exit function pointer

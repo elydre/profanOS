@@ -18,8 +18,6 @@
 
 #define WATFUNC_ADDR 0x1ffff7
 
-#define hi_func_addr(id) ((uint32_t (*)(uint32_t)) *(uint32_t *) WATFUNC_ADDR)(id)
-#define syscall_process_create ((int (*)(void *func, int, char *, int, ...)) hi_func_addr(32))
 
 /**********************************
  *                               *
@@ -192,11 +190,7 @@ DEFN_SYSCALL3(28, int, serial_read, int, char *, uint32_t) // no return value
 DEFN_SYSCALL3(29, int, serial_write, int, char *, uint32_t) // no return value
 DEFN_SYSCALL2(30, int, mouse_call, int, int)
 DEFN_SYSCALL1(31, int, process_set_scheduler, int) // no return value
-
-/*
-#define syscall_process_create ((int (*)(void *func, int, char *, int, ...)) hi_func_addr(32))
-*/
-
+DEFN_SYSCALL5(32, int, process_create, void *, int, char *, int, uint32_t *)
 DEFN_SYSCALL0(33, int, process_fork)
 DEFN_SYSCALL2(34, int, process_sleep, uint32_t, uint32_t)
 DEFN_SYSCALL1(35, int, process_handover, uint32_t)
