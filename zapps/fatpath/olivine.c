@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 14"
+#define OLV_VERSION "1.0 rev 15"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -3829,6 +3829,8 @@ char **lexe_program(char *program, int interp_bckslsh) {
                 tmp[tmp_index++] = ';';
             } else {
                 tmp[tmp_index++] = '\\';
+                if (!program[i + 1])
+                    break;
                 tmp[tmp_index++] = program[i + 1];
             }
             i++;
