@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-07"
+#define KERNEL_VERSION  "sc-08"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -47,6 +47,7 @@ void sys_set_reporter(int (*reporter)(char *));
 
 void sys_reboot(void);
 void sys_shutdown(void);
+int  sys_power(int action);
 
 void sys_warning(char *msg, ...);
 void sys_error(char *msg, ...);
@@ -65,9 +66,6 @@ int      dily_does_loaded(uint32_t lib_id);
 int      dily_load(char *path, uint32_t lib_id);
 int      dily_unload(uint32_t lib_id);
 uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
-
-// watfunc.c
-int init_watfunc(void);
 
 #define sys_fatal(msg, ...) sod_fatal(__FILE__, __LINE__, msg, ##__VA_ARGS__)
 void sod_fatal(char *file_name, int line, char *msg, ...);

@@ -72,7 +72,7 @@ void process_set_scheduler(int state);
 // process info
 uint32_t process_get_pid(void);
 
-int process_generate_pid_list(uint32_t *list, int max);
+int process_list_all(uint32_t *list, int max);
 uint32_t process_get_info(uint32_t pid, int info_id);
 
 int process_set_comm(uint32_t pid, comm_struct_t *comm);

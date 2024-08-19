@@ -52,7 +52,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(sys_init,     "Initing", "FPU and error reporting");
     status_print(process_init, "Starting", "process manager");
     status_print(filesys_init, "Loading", "butterfly filesystem");
-    status_print(init_watfunc, "Initing", "watfunc");
+    *(int *)(WATDILY_ADDR) = (int) dily_get_func;
 
     kprintf("successfully booted in %d ms\n", timer_get_ms());
 

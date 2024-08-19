@@ -23,7 +23,7 @@
 #define realloc(mem, new_size) realloc_func(mem, new_size, 0)
 #define realloc_ask(mem, new_size) realloc_func(mem, new_size, 1)
 
-#define exit(code) syscall_exit_pid(syscall_process_get_pid(), code, 0)
+#define exit(code) syscall_process_exit(syscall_process_pid(), code, 0)
 
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 

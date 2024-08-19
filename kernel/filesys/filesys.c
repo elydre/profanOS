@@ -14,6 +14,7 @@
 #include <minilib.h>
 #include <system.h>
 
+filesys_t *MAIN_FS;
 
 filesys_t *fs_create(void) {
     filesys_t *filesys = malloc(sizeof(filesys_t));
@@ -40,8 +41,6 @@ int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint8_t device_id) {
     filesys->vdisk_count++;
     return device_id;
 }
-
-filesys_t *MAIN_FS;
 
 filesys_t *fs_get_main(void) {
     return MAIN_FS;

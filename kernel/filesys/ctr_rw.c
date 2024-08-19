@@ -143,6 +143,9 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
     uint8_t *data;
     uint32_t loca_sid;
 
+    if (filesys == NULL)
+        filesys = MAIN_FS;
+
     vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {

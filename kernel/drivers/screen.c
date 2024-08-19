@@ -28,20 +28,20 @@
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
 
-void txt_set_cursor_offset(int offset);
-int  txt_get_cursor_offset(void);
+void txt_cursor_set_offset(int offset);
+int  txt_cursor_get_offset(void);
 
 void txt_print_char(char c, char attr) {
-    int offset = txt_get_cursor_offset();
-    int row = get_offset_row(offset);
+    int offset = txt_cursor_get_offset();
+    int row = cursor_calc_row(offset);
 
     uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;
 
     if (c == '\n') {
-        row = get_offset_row(offset);
-        offset = get_offset(0, row+1);
+        row = cursor_calc_row(offset);
+        offset = cursor_calc_offset(0, row+1);
     } else if (c == '\r') {
-        offset = get_offset(0, row);
+        offset = cursor_calc_offset(0, row);
     } else if (c == 0x08) {
         // str_backspace
         vidmem[offset] = ' ';
@@ -56,22 +56,22 @@ void txt_print_char(char c, char attr) {
     if (offset >= MAX_ROWS * MAX_COLS * 2) {
         int i;
         for (i = 1; i < MAX_ROWS; i++)
-            mem_copy((uint8_t*)(get_offset(0, i-1) + VIDEO_ADDRESS),
-                    (uint8_t*)(get_offset(0, i) + VIDEO_ADDRESS),
+            mem_copy((uint8_t*)(cursor_calc_offset(0, i-1) + VIDEO_ADDRESS),
+                    (uint8_t*)(cursor_calc_offset(0, i) + VIDEO_ADDRESS),
                     MAX_COLS * 2);
 
         // blank last line
-        char *last_line = (char*) (get_offset(0, MAX_ROWS-1) + (uint8_t*) VIDEO_ADDRESS);
+        char *last_line = (char*) (cursor_calc_offset(0, MAX_ROWS-1) + (uint8_t*) VIDEO_ADDRESS);
         for (i = 0; i < MAX_COLS * 2; i++) last_line[i] = 0;
 
         offset -= 2 * MAX_COLS;
     }
 
-    txt_set_cursor_offset(offset);
+    txt_cursor_set_offset(offset);
 }
 
 void txt_set_char(int x, int y, char c, char color) {
-    int offset = get_offset(x, y);
+    int offset = cursor_calc_offset(x, y);
     if (offset >= MAX_ROWS * MAX_COLS * 2) return;
     uint8_t *vidmem = (uint8_t*) VIDEO_ADDRESS;
     vidmem[offset] = c;
@@ -87,10 +87,10 @@ void txt_clear(void) {
         screen[i*2] = ' ';
         screen[i*2+1] = 0x00;
     }
-    txt_set_cursor_offset(get_offset(0, 0));
+    txt_cursor_set_offset(cursor_calc_offset(0, 0));
 }
 
-int txt_get_cursor_offset(void) {
+int txt_cursor_get_offset(void) {
     /* use the VGA ports to get the current cursor position
      * 1. ask for high byte of the cursor offset (data 14)
      * 2. ask for low byte (data 15) */
@@ -102,8 +102,8 @@ int txt_get_cursor_offset(void) {
     return offset * 2; // position * size of character cell
 }
 
-void txt_set_cursor_offset(int offset) {
-    // similar to get_cursor_offset, but instead of reading we write data
+void txt_cursor_set_offset(int offset) {
+    // similar to cursor_get_offset, but instead of reading we write data
     offset /= 2;
     port_byte_out(REG_SCREEN_CTRL, 14);
     port_byte_out(REG_SCREEN_DATA, (uint8_t)(offset >> 8));

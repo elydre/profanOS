@@ -13,7 +13,7 @@
 #include <gui/vesa.h>
 #include <minilib.h>
 
-#define FONT_TABLE font_get(FONT_8X16)
+#define FONT_TABLE font_8x16
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
@@ -143,12 +143,12 @@ void tef_print_char(char c, char color) {
     tef_draw_cursor(CURSOR_COLOR);
 }
 
-int tef_get_cursor_offset(void) {
+int tef_cursor_get_offset(void) {
     // we have to multiply by 2 for the text mode compatibility
     return (cursor_y * MAX_COLS + cursor_x) * 2;
 }
 
-void tef_set_cursor_offset(int offset) {
+void tef_cursor_set_offset(int offset) {
     // clean the actual cursor
     tef_draw_cursor(0);
 

@@ -52,6 +52,8 @@ uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta) {
     uint8_t *data;
     int ret_sect;
 
+    if (filesys == NULL)
+        filesys = MAIN_FS;
 
     vdisk = fs_get_vdisk(filesys, device_id);
     if (vdisk == NULL) {
@@ -110,6 +112,9 @@ uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta) {
 char *fs_cnt_meta(filesys_t *filesys, uint32_t sid, char *meta) {
     vdisk_t *vdisk;
     uint8_t *data;
+
+    if (filesys == NULL)
+        filesys = MAIN_FS;
 
     vdisk = fs_get_vdisk(filesys, SID_DISK(sid));
     if (vdisk == NULL) {

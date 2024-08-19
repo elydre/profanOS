@@ -731,7 +731,7 @@ comm_struct_t *process_get_comm(uint32_t pid) {
     return plist[place].comm;
 }
 
-int process_generate_pid_list(uint32_t *list, int max) {
+int process_list_all(uint32_t *list, int max) {
     int i = 0;
     for (int j = 0; j < PROCESS_MAX; j++) {
         if (plist[j].state != PROCESS_DEAD) {

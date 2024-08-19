@@ -54,7 +54,7 @@ char *interrupts[] = {
 
 void kernel_exit_current(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
-    int pid_list_len = process_generate_pid_list(pid_list, PROCESS_MAX);
+    int pid_list_len = process_list_all(pid_list, PROCESS_MAX);
     uint32_t pid, state;
 
     for (int i = pid_list_len - 1; i >= 0; i--) {
@@ -194,6 +194,20 @@ void sys_shutdown(void) {
 
     asm volatile("cli");
     asm volatile("hlt");
+}
+
+int sys_power(int action) {
+    switch (action) {
+        case 0:
+            sys_reboot();
+            break;
+        case 1:
+            sys_shutdown();
+            break;
+        default:
+            return 1;
+    }
+    return 0;
 }
 
 /******************************

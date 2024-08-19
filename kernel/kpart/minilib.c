@@ -176,7 +176,7 @@ void status_print(int (*func)(), char *verb, char *noun) {
     int old_cursor, new_cursor, status;
 
     kcprint("[", 0x0F);
-    old_cursor = get_cursor_offset();
+    old_cursor = cursor_get_offset();
     kcprint("WORK", 0x0E);
     kcprint("]  ", 0x0F);
     kcprint(verb, 0x07);
@@ -185,8 +185,8 @@ void status_print(int (*func)(), char *verb, char *noun) {
     kcprint("\n", 0x0F);
 
     status = func();
-    new_cursor = get_cursor_offset();
-    set_cursor_offset(old_cursor);
+    new_cursor = cursor_get_offset();
+    cursor_set_offset(old_cursor);
 
     if (status == 0) {
         kcprint(" OK ", 0x0A);
@@ -196,7 +196,7 @@ void status_print(int (*func)(), char *verb, char *noun) {
         kcprint("FAIL", 0x0C);
     }
 
-    set_cursor_offset(new_cursor);
+    cursor_set_offset(new_cursor);
 }
 
 #define LSHIFT  42
@@ -248,7 +248,7 @@ void kinput(char *buffer, int size) {
             kprint("\e[1D \e[1D");
         } else if (sc <= SC_MAX) {
             if (size < index + 2) continue;
-            c = kb_scancode_to_char(sc, shift);
+            c = kb_sc_to_char(sc, shift);
             if (c == '\0') continue;
             kcnprint(&c, 1, c_blue);
             buffer[index] = c;

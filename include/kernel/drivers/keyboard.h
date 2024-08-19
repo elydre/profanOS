@@ -51,7 +51,7 @@
 #define KB_released_value 128
 #define KB_released(key) (key + KB_released_value)
 
-char kb_scancode_to_char(int scancode, int shift);
+char kb_sc_to_char(int scancode, int shift);
 
 int  kb_get_scancode(void);
 int  kb_get_scfh(void);

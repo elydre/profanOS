@@ -195,6 +195,9 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
     vdisk_t *vdisk;
     uint8_t *data;
 
+    if (filesys == NULL)
+        filesys = MAIN_FS;
+
     vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
@@ -242,6 +245,9 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
 uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
+
+    if (filesys == NULL)
+        filesys = MAIN_FS;
 
     vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 

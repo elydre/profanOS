@@ -28,76 +28,69 @@
 
 void *SYSCALL_ARRAY[] = {
     // butterfly.h
-    fs_get_main,
-    fs_cnt_set_size,
-    fs_cnt_get_size,
-    fs_cnt_delete,
-    fs_cnt_read,
-    fs_cnt_write,
-    fs_cnt_init,
-    fs_cnt_meta,
+    fs_get_main,        // 0
+    fs_cnt_read,        // 1
+    fs_cnt_write,       // 2
+    fs_cnt_set_size,    // 3
+    fs_cnt_get_size,    // 4
+    fs_cnt_delete,      // 5
+    fs_cnt_init,        // 6
+    fs_cnt_meta,        // 7
 
     // snowflake.h
-    mem_get_alloc_size,
-    mem_alloc,
-    mem_free_addr,
-    mem_get_info,
-    mem_free_all,
+    mem_alloc,          // 8
+    mem_free_addr,      // 9
+    mem_free_all,       // 10
+    mem_get_alloc_size, // 11
+    mem_get_info,       // 12
 
     // rtc.h + timer.h
-    time_get,
-    timer_get_ms,
+    timer_get_ms,       // 13
+    time_get,           // 14
 
     // gnrtx.h + vesa.h
-    font_get,
-    kcnprint,
-    get_cursor_offset,
-    vesa_set_pixel,
-    vesa_get_info,
-    sys_set_reporter,
-
-    // keyboard.h
-    kb_scancode_to_char,
-    kb_get_scancode,
-    kb_get_scfh,
-
-    // system.h
-    sys_reboot,
-    sys_shutdown,
-    binary_exec,
-    sys_kinfo,
+    font_get,           // 15
+    kcnprint,           // 16
+    cursor_get_offset,  // 17
+    vesa_get_info,      // 18
 
     // serial.h
-    serial_read,
-    serial_write,
+    serial_read,        // 19
+    serial_write,       // 20
 
-    // mouse.h
-    mouse_call,
-
-    // process.h
-    process_set_scheduler,
-    process_create,
-    process_fork,
-    process_sleep,
-    process_handover,
-    process_wakeup,
-    process_kill,
-    process_get_pid,
-    process_generate_pid_list,
-    process_get_info,
-
-    // runtime.h
-    force_exit_pid,
+    // keyboard.h + mouse.h
+    kb_sc_to_char,      // 21
+    kb_get_scfh,        // 22
+    mouse_call,         // 23
 
     // system.h
-    dily_unload,
-    dily_load,
+    sys_set_reporter,   // 24
+    sys_power,          // 25
+    sys_kinfo,          // 26
+
+    binary_exec,        // 27
+
+    // process.h + runtime.h
+    process_set_scheduler, // 28
+    process_create,     // 29
+    process_fork,       // 30
+    process_sleep,      // 31
+    process_wakeup,     // 32
+    process_handover,   // 33
+    force_exit_pid,     // 34
+    process_get_pid,    // 35
+    process_get_info,   // 36
+    process_list_all,   // 37
+
+    // system.h
+    dily_load,          // 38
+    dily_unload,        // 39
 
     // scubasuit.h
-    scuba_call_generate,
-    scuba_call_map,
-    scuba_call_unmap,
-    scuba_call_phys,
+    scuba_call_generate,// 40
+    scuba_call_map,     // 41
+    scuba_call_unmap,   // 42
+    scuba_call_phys,    // 43
 };
 
 #define SYSCALL_COUNT 49

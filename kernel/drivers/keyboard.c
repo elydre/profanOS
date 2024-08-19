@@ -20,7 +20,7 @@
 
 static int sc_history[HISTORY_SIZE];
 
-char kb_scancode_to_char(int scancode, int shift) {
+char kb_sc_to_char(int scancode, int shift) {
     char sc_ascii_min[] = {
         '\0', '\0', '&', '~', '"', '\'','(', '-', '`', '_',
         '+', '@', ')', '=', '\0', '\0', 'a', 'z', 'e', 'r',

@@ -62,6 +62,9 @@
 #define IS_SID_NULL(sid) (sid == SID_NULL)
 #define IS_SAME_SID(sid1, sid2) (sid1 == sid2)
 
+// filesys.c
+extern filesys_t *MAIN_FS;
+
 // vdisk.c
 int      vdisk_note_sector_used(vdisk_t *vdisk, uint32_t sid);
 int      vdisk_note_sector_unused(vdisk_t *vdisk, uint32_t sid);
