@@ -99,11 +99,17 @@ void syscall_handler(registers_t *r) {
     uint32_t syscall_id = r->eax;
 
     if (syscall_id >= SYSCALL_COUNT) {
-        kprintf("syscall %d not found\n", syscall_id);
+        sys_error("syscall %d not found\n", syscall_id);
         return;
     }
 
     uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = SYSCALL_ARRAY[syscall_id];
+    
+    if ((void *) func == process_fork) {
+        r->eax = process_fork(r);
+        return;
+    }
+    
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 
     return;

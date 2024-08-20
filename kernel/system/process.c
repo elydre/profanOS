@@ -211,68 +211,6 @@ void i_remove_from_tsleep_list(uint32_t pid) {
     i_refresh_tsleep_interact();
 }
 
-
-/*
-typedef struct {
-    uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
-} proc_rgs_t;
-*/
-
-void test_func(void) {
-    kprintf_serial("Hello from forked process\n");
-    while (1);
-}
-
-int process_fork(void) {
-    /*proc_rgs_t regs;
-    uint32_t entry_pid = pid_current;
-
-    asm volatile("movl %%eax, %0" : "=r" (regs.eax));
-    asm volatile("movl %%ebx, %0" : "=r" (regs.ebx));
-    asm volatile("movl %%ecx, %0" : "=r" (regs.ecx));
-    asm volatile("movl %%edx, %0" : "=r" (regs.edx));
-    asm volatile("movl %%esi, %0" : "=r" (regs.esi));
-    asm volatile("movl %%edi, %0" : "=r" (regs.edi));
-    asm volatile("movl %%esp, %0" : "=r" (regs.esp));
-    asm volatile("movl %%ebp, %0" : "=r" (regs.ebp));
-
-    if (entry_pid != pid_current) {
-        kprintf_serial("Forking successfull (child)\n");
-        return 0;
-    }*/
-
-    process_disable_scheduler();
-
-    int new_pid = process_create(test_func, 2, "forked", 0, NULL);
-
-    /*if (new_pid == ERROR_CODE) {
-        process_enable_scheduler();
-        return ERROR_CODE;
-    }
-
-  //  process_t *new_proc = &plist[i_pid_to_place(new_pid)];
-  //  process_t *old_proc = &plist[i_pid_to_place(pid_current)];
-
-   //  new_proc->regs.eip = test_func;
-
-    // uint32_t stack_offset = new_proc->esp_addr - old_proc->esp_addr;
-
-    // new_proc->regs.esp += stack_offset;
-
-    // kprintf_serial("old addr esp: %x, new addr esp: %x\n", old_proc->esp_addr, new_proc->esp_addr);
-    // kprintf_serial("old reg esp : %x, new reg esp : %x\n", regs.esp, new_proc->regs.esp);
-
-    // mem_copy((void *) new_proc->esp_addr, (void *) old_proc->esp_addr, PROCESS_ESP);*/
-
-    process_enable_scheduler();
-
-//    process_wakeup(new_pid);
-
-    kprintf_serial("Forking successfull (parent)\n");
-
-    return new_pid;
-}
-
 void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
@@ -429,6 +367,47 @@ int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *ar
     new_proc->regs.esp = (uint32_t) esp;
 
     return pid_incrament;
+}
+
+int process_fork(registers_t *regs) {
+    process_disable_scheduler();
+
+    int new_pid = process_create(NULL, 2, "forked", 0, NULL);
+
+    if (new_pid == ERROR_CODE) {
+        process_enable_scheduler();
+        return ERROR_CODE;
+    }
+
+    process_t *new_proc = &plist[i_pid_to_place(new_pid)];
+    process_t *old_proc = &plist[i_pid_to_place(pid_current)];
+
+    new_proc->regs.eax = regs->eax;
+    new_proc->regs.ebx = regs->ebx;
+    new_proc->regs.ecx = regs->ecx;
+    new_proc->regs.edx = regs->edx;
+    new_proc->regs.esi = regs->esi;
+    new_proc->regs.edi = regs->edi;
+    new_proc->regs.eip = regs->eip;
+
+    new_proc->regs.esp = new_proc->esp_addr + (regs->esp - old_proc->esp_addr) + 20;
+    new_proc->regs.ebp = new_proc->esp_addr + (regs->ebp - old_proc->esp_addr);
+    new_proc->regs.eflags = regs->eflags;
+
+    kprintf_serial("old addr esp: %x, new addr esp: %x\n", old_proc->esp_addr, new_proc->esp_addr);
+    kprintf_serial("old reg esp : %x, new reg esp : %x\n", regs->esp, new_proc->regs.esp);
+    kprintf_serial("old reg ebp : %x, new reg ebp : %x\n", regs->ebp, new_proc->regs.ebp);
+
+    mem_copy((void *) new_proc->esp_addr, (void *) old_proc->esp_addr, PROCESS_ESP);
+
+    process_enable_scheduler();
+
+    // process_wakeup(new_pid);
+    process_handover(new_pid);
+
+    kprintf_serial("Forking successfull (parent)\n");
+
+    return new_pid;
 }
 
 int process_sleep(uint32_t pid, uint32_t ms) {
@@ -610,8 +589,6 @@ int process_kill(uint32_t pid) {
     need_clean = 1;
 
     process_enable_scheduler();
-
-    asm volatile("sti");
 
     if (pid == pid_current) {
         schedule(0);

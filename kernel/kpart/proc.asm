@@ -10,10 +10,7 @@
 ;*****************************************************************************;
 
 global process_asm_switch
-global process_fork
-
 extern i_end_scheduler
-extern i_process_fork
 
 align 4
 process_asm_switch:
