@@ -87,6 +87,14 @@ int isr_install(void) {
     return 0;
 }
 
+int is_interrupts_enabled(void) {
+    unsigned long flags;
+    asm volatile("pushf\n\t"
+                 "pop %0"
+                 : "=g"(flags));
+    return flags & (1 << 9);
+}
+
 void isr_handler(registers_t *r) {
     r->int_no = r->int_no & 0xFF;
 

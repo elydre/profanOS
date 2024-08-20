@@ -122,6 +122,8 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
         asm volatile("mov %0, %%esp" : : "r" (stack));
     }
 
+    asm volatile("sti");
+
     // call main
     int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
     int ret = main(argc, argv, envp) & 0xFF;

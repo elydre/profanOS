@@ -25,6 +25,7 @@ isr_common_stub:
     mov fs, ax
     mov gs, ax
     push esp ; registers_t *r
+
     ; 2. Call C handler
     cld ; C code following the sysV ABI requires DF to be clear on function entry
     call isr_handler
@@ -38,6 +39,7 @@ isr_common_stub:
     mov gs, ax
     popa
     add esp, 8  ; Cleans up the pushed error code and pushed ISR number
+    sti         ; Enable interrupts
     iret        ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
 ; Common IRQ code. Identical to ISR code except for the 'call'

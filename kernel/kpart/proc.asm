@@ -64,16 +64,3 @@ process_asm_switch:
     mov    eax, [eax]
     call i_end_scheduler    ; all the end of the scheduler (process.c)
     ret                     ; this ends all
-
-align 4
-process_fork:
-    push esp    ; push stack pointer
-    push ebp    ; push base pointer
-    push edi    ; push edi
-    push esi    ; push esi
-    push edx    ; push edx
-    push ecx    ; push ecx
-    push ebx    ; push ebx
-    call i_process_fork
-    add esp, 28 ; remove the arguments
-    ret
