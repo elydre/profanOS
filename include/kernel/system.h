@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-11"
+#define KERNEL_VERSION  "sc-12"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -32,11 +32,11 @@
 #define DILY_MAX        128         // max dily loaded library
 #define RUN_LIB_STACK   0x1000      // left stack size for library
 
-#define PROCESS_ESP     0x10000     // process stack size
+#define PROC_ESP_SIZE   0x10000     // process stack size
+#define PROC_ESP_ADDR   RUN_BIN_VBASE - PROC_ESP_SIZE
 
-#define WATFUNC_ADDR    0x1ffff7
-#define WATDILY_ADDR    0x1ffffb
-#define MEM_BASE_ADDR   0x1fffff
+#define WATDILY_ADDR    0x1FFFFB
+#define MEM_BASE_ADDR   0x1FFFFF
 
 
 // system.c

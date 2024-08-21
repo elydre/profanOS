@@ -12,6 +12,10 @@
 global process_asm_switch
 extern i_end_scheduler
 
+section .data
+    ; variable for eax copy
+    eax_copy dd 0
+
 align 4
 process_asm_switch:
     pusha
@@ -50,10 +54,19 @@ process_asm_switch:
     push   eax
     popf
     pop    eax
-    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
-    push   eax
+
+    ; backup eax in memory
+    mov    [eax_copy], eax
+
     mov    eax, [eax+0x28]  ; CR3
     mov    cr3, eax
+
+    ; restore eax
+    mov    eax, [eax_copy]
+
+    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
+    push   eax
+
     pop    eax
     push   eax
     mov    eax, [eax+0x20]  ; EIP

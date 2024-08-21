@@ -49,7 +49,6 @@ uint8_t *exit_codes;
 **************************/
 
 void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
-    uint32_t esp_alloc = mem_alloc(PROCESS_ESP, 0, 4);
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -60,8 +59,7 @@ void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t 
     process->regs.eflags = flags;
     process->regs.eip = (uint32_t) func;
     process->regs.cr3 = (uint32_t) pagedir;
-    process->regs.esp = esp_alloc + PROCESS_ESP;
-    process->esp_addr = esp_alloc;
+    process->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE;
 }
 
 int i_get_free_place(void) {
@@ -79,10 +77,6 @@ int i_pid_to_place(uint32_t pid) {
 }
 
 void i_end_scheduler(void) {
-    if (pid_current != 1) {
-        scuba_process_switch(plist[i_pid_to_place(pid_current)].scuba_dir);
-    }
-
     if (scheduler_state == SHDLR_RUNN) {
         scheduler_state = SHDLR_ENBL;
     } else {
@@ -93,6 +87,7 @@ void i_end_scheduler(void) {
 }
 
 void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
+    kprintf_serial("Switching from %d to %d\n", from_pid, to_pid);
     // this function is called when a process is
     // switched so we don't need security checks
 
@@ -165,9 +160,7 @@ void i_clean_killed(void) {
                 need_clean = 1;
                 continue;
             }
-            if (!plist[i].use_parent_dir)
-                scuba_directory_destroy(plist[i].scuba_dir);
-            free((void *) plist[i].esp_addr);
+            scuba_directory_destroy(plist[i].scuba_dir);
             plist[i].state = PROCESS_DEAD;
         }
     }
@@ -212,6 +205,7 @@ void i_remove_from_tsleep_list(uint32_t pid) {
 }
 
 void i_process_final_jump(void) {
+    kprintf_serial("Process final jump\n");
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
@@ -290,18 +284,13 @@ int process_init(void) {
     scheduler_disable_count = 0;
 
     // create idle process
-    process_create(idle_process, 1, "idle", 0, NULL);
+    process_create(idle_process, 0, "idle", 0, NULL);
     plist[1].state = PROCESS_IDLETIME;
 
     return 0;
 }
 
-
-int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *args) {
-    // dir mode: 0 = clean
-    //           1 = use parent dir
-    //           2 = copy parent dir
-
+int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *args) {
     int parent_place = i_pid_to_place(pid_current);
     int place = i_get_free_place();
 
@@ -330,8 +319,6 @@ int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *ar
     new_proc->pid = pid_incrament;
     new_proc->ppid = pid_current;
 
-    new_proc->use_parent_dir = dir_mode == 1;
-
     new_proc->state = PROCESS_FSLPING;
     new_proc->priority = PROC_PRIORITY;
 
@@ -340,21 +327,27 @@ int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *ar
 
     new_proc->comm = NULL;
 
-    i_new_process(new_proc, func, parent_proc->regs.eflags, (uint32_t *) parent_proc->scuba_dir);
+    uint32_t phys_stack;
 
-    if (dir_mode == 1) {
-        new_proc->scuba_dir = parent_proc->scuba_dir;
-    } else if (dir_mode == 0) {
-        new_proc->scuba_dir = scuba_directory_inited();
-    } else if (dir_mode == 2) {
+    if (copy_page) {
         new_proc->scuba_dir = scuba_directory_copy(parent_proc->scuba_dir);
+        phys_stack = scuba_get_phys(new_proc->scuba_dir, PROC_ESP_ADDR);
     } else {
-        sys_warning("[create] dir_mode %d not found", dir_mode);
-        return ERROR_CODE;
+        new_proc->scuba_dir = scuba_directory_inited();
+        phys_stack = scuba_create_virtual(new_proc->scuba_dir, PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
     }
 
+    i_new_process(new_proc, func, parent_proc->regs.eflags, (uint32_t *) new_proc->scuba_dir);
+
+    if (func == NULL) {
+        new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE;
+        return pid_incrament;
+    }
+
+    kprintf_serial("phys_stack: %x\n", phys_stack);
+
     // push arguments to the new process
-    uint32_t *esp = (uint32_t *) new_proc->regs.esp;
+    uint32_t *esp = (void *) (phys_stack + PROC_ESP_SIZE);
     esp -= nargs + 1;
 
     for (int i = 0; i < nargs; i++) {
@@ -362,9 +355,13 @@ int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *ar
     }
 
     // push exit function pointer
-    esp[0] = (uint32_t) i_process_final_jump;
+    esp[0] = (uint32_t) i_process_final_jump; // todo: check if this is the right address
 
-    new_proc->regs.esp = (uint32_t) esp;
+    for (uint32_t *i = esp; i < esp + nargs + 1; i++) {
+        kprintf_serial("esp: %x, arg: %x\n", i, *i);
+    }
+    new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - (nargs + 1) * sizeof(uint32_t);
+    kprintf_serial("esp: %x\n", new_proc->regs.esp);
 
     return pid_incrament;
 }
@@ -372,7 +369,7 @@ int process_create(void *func, int dir_mode, char *name, int nargs, uint32_t *ar
 int process_fork(registers_t *regs) {
     process_disable_scheduler();
 
-    int new_pid = process_create(NULL, 2, "forked", 0, NULL);
+    int new_pid = process_create(NULL, 1, "forked", 0, NULL);
 
     if (new_pid == ERROR_CODE) {
         process_enable_scheduler();
@@ -380,7 +377,7 @@ int process_fork(registers_t *regs) {
     }
 
     process_t *new_proc = &plist[i_pid_to_place(new_pid)];
-    process_t *old_proc = &plist[i_pid_to_place(pid_current)];
+    // process_t *old_proc = &plist[i_pid_to_place(pid_current)];
 
     new_proc->regs.eax = regs->eax;
     new_proc->regs.ebx = regs->ebx;
@@ -389,16 +386,9 @@ int process_fork(registers_t *regs) {
     new_proc->regs.esi = regs->esi;
     new_proc->regs.edi = regs->edi;
     new_proc->regs.eip = regs->eip;
-
-    new_proc->regs.esp = new_proc->esp_addr + (regs->esp - old_proc->esp_addr) + 20;
-    new_proc->regs.ebp = new_proc->esp_addr + (regs->ebp - old_proc->esp_addr);
+    new_proc->regs.esp = regs->esp + 20;
+    new_proc->regs.ebp = regs->ebp;
     new_proc->regs.eflags = regs->eflags;
-
-    kprintf_serial("old addr esp: %x, new addr esp: %x\n", old_proc->esp_addr, new_proc->esp_addr);
-    kprintf_serial("old reg esp : %x, new reg esp : %x\n", regs->esp, new_proc->regs.esp);
-    kprintf_serial("old reg ebp : %x, new reg ebp : %x\n", regs->ebp, new_proc->regs.ebp);
-
-    mem_copy((void *) new_proc->esp_addr, (void *) old_proc->esp_addr, PROCESS_ESP);
 
     process_enable_scheduler();
 
@@ -758,7 +748,7 @@ scuba_directory_t *process_get_directory(uint32_t pid) {
     return plist[place].scuba_dir;
 }
 
-void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir) {
+void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir, int now) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -770,17 +760,15 @@ void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir) {
 
     plist[place].scuba_dir = new_dir;
 
+    if (!now) return;
+
     if (pid == pid_current) {
         process_disable_scheduler();
-        scuba_process_switch(new_dir);
+        scuba_switch(new_dir);
         process_enable_scheduler();
     }
 
-    if (!plist[place].use_parent_dir) {
-        scuba_directory_destroy(old_dir);
-    }
-
-    plist[place].use_parent_dir = 0;
+    scuba_directory_destroy(old_dir);
 }
 
 int process_set_return(uint32_t pid, uint32_t ret) {
@@ -827,7 +815,7 @@ uint32_t process_get_info(uint32_t pid, int info_id) {
         case PROCESS_INFO_NAME:
             return (uint32_t) plist[place].name;
         case PROCESS_INFO_STACK:
-            return plist[place].esp_addr;
+            return PROC_ESP_ADDR;
         default:
             sys_warning("[get_info] info_id %d not found", info_id);
             return 1;

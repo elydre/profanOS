@@ -38,6 +38,8 @@
 #define process_get_ppid(pid) process_get_info(pid, PROCESS_INFO_PPID)
 #define process_get_state(pid) process_get_info(pid, PROCESS_INFO_STATE)
 
+extern uint32_t pid_current;
+
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
 } proc_rgs_t;
@@ -46,9 +48,9 @@ typedef struct {
     proc_rgs_t regs;
     scuba_directory_t *scuba_dir;
 
-    uint32_t pid, ppid, use_parent_dir;
+    uint32_t pid, ppid;
     uint32_t priority, run_time;
-    uint32_t esp_addr, sleep_to, state;
+    uint32_t sleep_to, state;
 
     char name[64];
     comm_struct_t *comm;
@@ -59,7 +61,7 @@ int  process_init(void);
 void schedule(uint32_t ticks);
 
 // process gestion
-int process_create(void *func, int use_parent_dir, char *name, int nargs, uint32_t *args);
+int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *args);
 int process_fork(registers_t *regs);
 int process_handover(uint32_t pid);
 int process_wakeup(uint32_t pid);
@@ -82,7 +84,7 @@ int process_set_priority(uint32_t pid, int priority);
 int process_set_return(uint32_t pid, uint32_t ret);
 
 scuba_directory_t *process_get_directory(uint32_t pid);
-void process_switch_directory(uint32_t pid, scuba_directory_t *dir);
+void process_switch_directory(uint32_t pid, scuba_directory_t *dir, int now);
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);

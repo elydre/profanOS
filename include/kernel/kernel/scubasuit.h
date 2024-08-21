@@ -65,7 +65,7 @@ scuba_directory_t *scuba_get_kernel_directory(void);
 
 // init, switch
 int scuba_init(void);
-void scuba_process_switch(scuba_directory_t *dir);
+void scuba_switch(scuba_directory_t *dir);
 
 // directory creation, destruction
 scuba_directory_t *scuba_directory_inited(void);
@@ -75,7 +75,7 @@ void scuba_directory_destroy(scuba_directory_t *dir);
 // map, unmap
 int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mode);
 int scuba_unmap(scuba_directory_t *dir, uint32_t virt);
-int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
+uint32_t scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count);
 
 // get physical, fault handler
 uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt);

@@ -18,7 +18,6 @@
 
 
 scuba_directory_t *kernel_directory;
-scuba_directory_t *current_directory;
 uint32_t g_map_to_addr;
 
 /**************************
@@ -63,7 +62,6 @@ void scuba_enable(void) {
 }
 
 void scuba_switch(scuba_directory_t *dir) {
-    current_directory = dir;
     // switch to the new page directory
     asm volatile("mov %0, %%cr3":: "r"(dir));
 }
@@ -74,22 +72,6 @@ void scuba_flush_tlb(void) {
     uint32_t cr3;
     asm volatile("mov %%cr3, %0": "=r"(cr3));
     asm volatile("mov %0, %%cr3":: "r"(cr3));
-}
-
-/**************************
- *                       *
- *     SCUBA PROCESS     *
- *                       *
-**************************/
-
-void scuba_process_switch(scuba_directory_t *dir) {
-    if (current_directory == dir) return;
-
-    // switch to the new page directory
-    scuba_switch(dir);
-
-    // flush the TLB
-    scuba_flush_tlb();
 }
 
 /**************************
@@ -253,11 +235,11 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mod
             // use the kernel page table
             table = (void *) (kernel_directory->entries[table_index].frame * 0x1000);
             if (!table) {
-                sys_error("Cannot use non-existant kernel page table");
+                sys_error("Cannot use non-existant kernel page (pid: %d, addr: %x)", process_get_pid(), virt);
                 return 1;
             }
             if (!table->pages[(virt / 0x1000) % 1024].present) {
-                sys_error("Address not mapped in kernel page table");
+                sys_error("Address not mapped in kernel page (pid: %d, addr: %x)", process_get_pid(), virt);
                 return 1;
             }
         } else {
@@ -272,7 +254,7 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mod
         dir->entries[table_index].fkernel = fkernel;
         dir->entries[table_index].frame = (uint32_t) table / 0x1000;
     } else if (dir->entries[table_index].fkernel && !fkernel) {
-        sys_error("Cannot map to kernel page table");
+        sys_error("Cannot map to kernel page (pid: %d, addr: %x)", process_get_pid(), virt);
         return 1;
     }
 
@@ -291,17 +273,17 @@ int scuba_map_func(scuba_directory_t *dir, uint32_t virt, uint32_t phys, int mod
     return 0;
 }
 
-int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
+uint32_t scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
     if (dir->to_free_index + 1 >= SCUBA_MAX_TO_FREE) {
-        sys_error("Too many pages to free");
-        return 1;
+        sys_error("Too many pages to free (pid: %d)", process_get_pid());
+        return 0;
     }
 
     // check if the pages are already mapped
     for (int i = 0; i < count; i++) {
         if (scuba_get_phys(dir, virt + i * 0x1000)) {
-            sys_error("Address already mapped");
-            return 1;
+            sys_error("Address already mapped (pid: %d, addr: %x)", process_get_pid(), virt + i * 0x1000);
+            return 0;
         }
     }
 
@@ -309,8 +291,8 @@ int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
     uint32_t phys = (uint32_t) i_allign_calloc(0x1000 * count);
 
     if (!phys) {
-        sys_error("Failed to alloc page");
-        return 1;
+        sys_error("Failed to alloc page (pid: %d)", process_get_pid());
+        return 0;
     }
 
     // add the page to the list of pages to free
@@ -319,16 +301,14 @@ int scuba_create_virtual(scuba_directory_t *dir, uint32_t virt, int count) {
     // map the page
     for (int i = 0; i < count; i++) {
         if (!scuba_map(dir, virt + i * 0x1000, phys + i * 0x1000)) continue;
-        sys_error("Failed to map page");
-        return 1;
+        sys_error("Failed to map page (pid: %d, addr: %x)", process_get_pid(), virt + i * 0x1000);
+        return 0;
     }
 
-    return 0;
+    return phys;
 }
 
 int scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
-    sys_error("Unmapping %x", virt);
-
     // get the page table index
     uint32_t table_index = virt / 0x1000 / 1024;
 
@@ -337,7 +317,7 @@ int scuba_unmap(scuba_directory_t *dir, uint32_t virt) {
 
     // if the page table doesn't exist, return
     if (!table) {
-        sys_error("Page table doesn't exist");
+        sys_error("Page table doesn't exist (pid: %d, addr: %x)", process_get_pid(), virt);
         return 1;
     }
 
@@ -385,19 +365,19 @@ uint32_t scuba_get_phys(scuba_directory_t *dir, uint32_t virt) {
 *************************/
 
 int scuba_call_generate(void *addr, uint32_t size) {
-    return scuba_create_virtual(current_directory, (uint32_t) addr, size);
+    return scuba_create_virtual(process_get_directory(pid_current), (uint32_t) addr, size);
 }
 
 int scuba_call_map(void *addr, void *phys, int cic) {
-    return scuba_map_func(current_directory, (uint32_t) addr, (uint32_t) phys, cic ? 0 : 3);
+    return scuba_map_func(process_get_directory(pid_current), (uint32_t) addr, (uint32_t) phys, cic ? 0 : 3);
 }
 
 int scuba_call_unmap(void *addr) {
-    return scuba_unmap(current_directory, (uint32_t) addr);
+    return scuba_unmap(process_get_directory(pid_current), (uint32_t) addr);
 }
 
 void *scuba_call_phys(void *addr) {
-    return (void *) scuba_get_phys(current_directory, (uint32_t) addr);
+    return (void *) scuba_get_phys(process_get_directory(pid_current), (uint32_t) addr);
 }
 
 /***************************
@@ -414,7 +394,7 @@ void scuba_fault_handler(int err_code) {
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
-    sys_error("Page fault during %s at %x (pid %d, code %x)",
+    sys_fatal("Page fault during %s at %x (pid %d, code %x)",
             (err_code & 0x2) ? "write" : "read",
             faulting_address,
             pid,
