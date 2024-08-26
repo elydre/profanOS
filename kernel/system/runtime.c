@@ -78,7 +78,6 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
 }
 
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
-    kprintf_serial("binary_exec: sid=%x, argc=%d\n", sid, argc);
     int pid = process_get_pid();
 
     if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
@@ -105,36 +104,27 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
     uint32_t real_fsize = fsize;
 
-    kprintf_serial("binary_exec: fsize=%d\n", fsize);
-
     scuba_directory_t *dir = scuba_directory_inited();
 
     // create program memory
-    scuba_create_virtual(dir, RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
+    scuba_create_virtual(dir, (void *) RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
 
     // create stack
-    uint32_t *phys_stack = (uint32_t *) scuba_create_virtual(dir, PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
-
-    kprintf_serial("binary_exec: created stack at %x\n", phys_stack);
+    uint32_t *phys_stack = scuba_create_virtual(dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
 
     process_disable_scheduler();
 
-    mem_copy(phys_stack, (void *) (PROC_ESP_ADDR), PROC_ESP_SIZE);
-
-    kprintf_serial("binary_exec: copied stack\n");
+    mem_copy(phys_stack, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
 
     process_switch_directory(pid, dir, 0);
 
+    // switch to new directory
     asm volatile("mov %0, %%cr3":: "r"(dir));
 
     process_enable_scheduler();
 
-    kprintf_serial("binary_exec: switched directory\n");
-
     // load binary
     fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
-
-    kprintf_serial("binary_exec: loaded binary\n");
 
     // call main
     int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;

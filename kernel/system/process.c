@@ -87,7 +87,6 @@ void i_end_scheduler(void) {
 }
 
 void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
-    kprintf_serial("Switching from %d to %d\n", from_pid, to_pid);
     // this function is called when a process is
     // switched so we don't need security checks
 
@@ -205,7 +204,6 @@ void i_remove_from_tsleep_list(uint32_t pid) {
 }
 
 void i_process_final_jump(void) {
-    kprintf_serial("Process final jump\n");
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
@@ -290,6 +288,7 @@ int process_init(void) {
     return 0;
 }
 
+
 int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *args) {
     int parent_place = i_pid_to_place(pid_current);
     int place = i_get_free_place();
@@ -327,14 +326,14 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
 
     new_proc->comm = NULL;
 
-    uint32_t phys_stack;
+    void *phys_stack;
 
     if (copy_page) {
         new_proc->scuba_dir = scuba_directory_copy(parent_proc->scuba_dir);
-        phys_stack = scuba_get_phys(new_proc->scuba_dir, PROC_ESP_ADDR);
+        phys_stack = scuba_get_phys(new_proc->scuba_dir, (void *) PROC_ESP_ADDR);
     } else {
         new_proc->scuba_dir = scuba_directory_inited();
-        phys_stack = scuba_create_virtual(new_proc->scuba_dir, PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
+        phys_stack = scuba_create_virtual(new_proc->scuba_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
     }
 
     i_new_process(new_proc, func, parent_proc->regs.eflags, (uint32_t *) new_proc->scuba_dir);
@@ -344,10 +343,8 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
         return pid_incrament;
     }
 
-    kprintf_serial("phys_stack: %x\n", phys_stack);
-
     // push arguments to the new process
-    uint32_t *esp = (void *) (phys_stack + PROC_ESP_SIZE);
+    uint32_t *esp = phys_stack + PROC_ESP_SIZE;
     esp -= nargs + 1;
 
     for (int i = 0; i < nargs; i++) {
@@ -357,14 +354,11 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
     // push exit function pointer
     esp[0] = (uint32_t) i_process_final_jump; // todo: check if this is the right address
 
-    for (uint32_t *i = esp; i < esp + nargs + 1; i++) {
-        kprintf_serial("esp: %x, arg: %x\n", i, *i);
-    }
     new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - (nargs + 1) * sizeof(uint32_t);
-    kprintf_serial("esp: %x\n", new_proc->regs.esp);
 
     return pid_incrament;
 }
+
 
 int process_fork(registers_t *regs) {
     process_disable_scheduler();
@@ -377,7 +371,6 @@ int process_fork(registers_t *regs) {
     }
 
     process_t *new_proc = &plist[i_pid_to_place(new_pid)];
-    // process_t *old_proc = &plist[i_pid_to_place(pid_current)];
 
     new_proc->regs.eax = regs->eax;
     new_proc->regs.ebx = regs->ebx;
@@ -386,19 +379,17 @@ int process_fork(registers_t *regs) {
     new_proc->regs.esi = regs->esi;
     new_proc->regs.edi = regs->edi;
     new_proc->regs.eip = regs->eip;
-    new_proc->regs.esp = regs->esp + 20;
+    new_proc->regs.esp = regs->esp + 20; // popa (interrupt.asm: isr_common_stub)
     new_proc->regs.ebp = regs->ebp;
     new_proc->regs.eflags = regs->eflags;
 
     process_enable_scheduler();
 
-    // process_wakeup(new_pid);
-    process_handover(new_pid);
-
-    kprintf_serial("Forking successfull (parent)\n");
+    process_wakeup(new_pid);
 
     return new_pid;
 }
+
 
 int process_sleep(uint32_t pid, uint32_t ms) {
     int place = i_pid_to_place(pid);

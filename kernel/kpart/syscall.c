@@ -104,12 +104,12 @@ void syscall_handler(registers_t *r) {
     }
 
     uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = SYSCALL_ARRAY[syscall_id];
-    
+
     if ((void *) func == process_fork) {
         r->eax = process_fork(r);
         return;
     }
-    
+
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 
     return;

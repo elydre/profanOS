@@ -208,7 +208,7 @@ DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 DEFN_SYSCALL2(38, int,       dily_load, char *, uint32_t)
 DEFN_SYSCALL1(39, int,       dily_unload, uint32_t)
 
-DEFN_SYSCALL2(40, int,       scuba_generate, void *, uint32_t)
+DEFN_SYSCALL2(40, void *,    scuba_generate, void *, uint32_t)
 DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)
 DEFN_SYSCALL1(42, int,       scuba_unmap, void *)
 DEFN_SYSCALL1(43, void *,    scuba_phys, void *)
