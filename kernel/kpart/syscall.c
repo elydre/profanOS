@@ -71,7 +71,7 @@ void *SYSCALL_ARRAY[] = {
     binary_exec,        // 27
 
     // process.h + runtime.h
-    process_set_scheduler, // 28
+    process_auto_schedule, // 28
     process_create,     // 29
     process_fork,       // 30
     process_sleep,      // 31

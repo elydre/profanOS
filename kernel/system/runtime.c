@@ -112,16 +112,12 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     // create stack
     uint32_t *phys_stack = scuba_create_virtual(dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
 
-    process_disable_scheduler();
-
     mem_copy(phys_stack, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
 
     process_switch_directory(pid, dir, 0);
 
     // switch to new directory
     asm volatile("mov %0, %%cr3":: "r"(dir));
-
-    process_enable_scheduler();
 
     // load binary
     fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);

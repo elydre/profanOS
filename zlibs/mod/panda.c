@@ -473,7 +473,7 @@ void panda_screen_restore(void *data) {
 
     draw_cursor(1);
 
-    syscall_process_set_scheduler(0);
+    syscall_process_auto_schedule(0);
 
     // restore font
     g_panda->font->data = realloc_ask( g_panda->font->data, source->font->charcount * source->font->charsize);
@@ -498,7 +498,7 @@ void panda_screen_restore(void *data) {
     g_panda->cursor_y = source->cursor_y;
     g_panda->color = source->color;
 
-    syscall_process_set_scheduler(1);
+    syscall_process_auto_schedule(1);
 
     for (int i = 0; i < g_panda->max_lines; i++) {
         for (int j = 0; j < g_panda->max_cols; j++) {

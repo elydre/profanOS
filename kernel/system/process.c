@@ -26,21 +26,20 @@
 
 process_t *plist;
 
-process_t **tsleep_list;
-uint32_t tsleep_interact;
-int tsleep_list_length;
+process_t **g_tsleep_list;
+uint32_t g_tsleep_interact;
+int g_tsleep_list_length;
 
-int shdlr_queue_length;
-int *shdlr_queue;
+int g_shdlr_queue_length;
+int *g_shdlr_queue;
 
-uint8_t scheduler_state = SHDLR_DEAD;
-uint8_t scheduler_count;
-uint8_t need_clean;
-int scheduler_disable_count;
+uint8_t g_scheduler_state = SHDLR_DEAD;
+uint8_t g_need_clean;
+int g_scheduler_disable_count;
 
-uint32_t pid_incrament;
-uint32_t pid_current;
-uint8_t *exit_codes;
+uint32_t g_pid_incrament;
+uint32_t g_pid_current;
+uint8_t *g_exit_codes;
 
 /**************************
  *                       *
@@ -77,13 +76,11 @@ int i_pid_to_place(uint32_t pid) {
 }
 
 void i_end_scheduler(void) {
-    if (scheduler_state == SHDLR_RUNN) {
-        scheduler_state = SHDLR_ENBL;
+    if (g_scheduler_state == SHDLR_RUNN) {
+        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
     } else {
         sys_fatal("Scheduler is not running but scheduler is exiting");
     }
-
-    scheduler_count--;
 }
 
 void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
@@ -109,7 +106,7 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
         proc2->state = PROCESS_RUNNING;
     }
 
-    pid_current = to_pid;
+    g_pid_current = to_pid;
 
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
@@ -119,44 +116,44 @@ void i_optimize_shdlr_queue(void) {
     return;
 }
 
-int i_add_to_shdlr_queue(int pid, int priority) {
-    if (shdlr_queue_length + priority > PROCESS_MAX * 10) {
+int i_add_to_g_shdlr_queue(int pid, int priority) {
+    if (g_shdlr_queue_length + priority > PROCESS_MAX * 10) {
         sys_error("Process queue is full");
         return ERROR_CODE;
     }
 
     for (int i = 0; i < priority; i++) {
-        shdlr_queue[shdlr_queue_length + i] = pid;
+        g_shdlr_queue[g_shdlr_queue_length + i] = pid;
     }
 
-    shdlr_queue_length += priority;
+    g_shdlr_queue_length += priority;
 
-    i_optimize_shdlr_queue();
+    // i_optimize_shdlr_queue();
 
     return 0;
 }
 
 int i_remove_from_shdlr_queue(int pid) {
-    // remove all occurences of pid from shdlr_queue
-    for (int i = 0; i < shdlr_queue_length; i++) {
-        if (shdlr_queue[i] == pid) {
-            shdlr_queue[i] = shdlr_queue[shdlr_queue_length - 1];
-            shdlr_queue_length--;
+    // remove all occurences of pid from g_shdlr_queue
+    for (int i = 0; i < g_shdlr_queue_length; i++) {
+        if (g_shdlr_queue[i] == pid) {
+            g_shdlr_queue[i] = g_shdlr_queue[g_shdlr_queue_length - 1];
+            g_shdlr_queue_length--;
             i--;
         }
     }
 
-    i_optimize_shdlr_queue();
+    // i_optimize_shdlr_queue();
 
     return 0;
 }
 
 void i_clean_killed(void) {
-    need_clean = 0;
+    g_need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
-            if (plist[i].pid == pid_current) {
-                need_clean = 1;
+            if (plist[i].pid == g_pid_current) {
+                g_need_clean = 1;
                 continue;
             }
             scuba_directory_destroy(plist[i].scuba_dir);
@@ -166,37 +163,37 @@ void i_clean_killed(void) {
 }
 
 void i_refresh_tsleep_interact(void) {
-    tsleep_interact = 0;
-    for (int i = 0; i < tsleep_list_length; i++) {
-        if (tsleep_list[i]->sleep_to < tsleep_interact || !tsleep_interact) {
-            tsleep_interact = tsleep_list[i]->sleep_to;
+    g_tsleep_interact = 0;
+    for (int i = 0; i < g_tsleep_list_length; i++) {
+        if (g_tsleep_list[i]->sleep_to < g_tsleep_interact || !g_tsleep_interact) {
+            g_tsleep_interact = g_tsleep_list[i]->sleep_to;
         }
     }
 }
 
 void i_tsleep_awake(uint32_t ticks) {
-    for (int i = 0; i < tsleep_list_length; i++) {
-        if (tsleep_list[i]->sleep_to > ticks)
+    for (int i = 0; i < g_tsleep_list_length; i++) {
+        if (g_tsleep_list[i]->sleep_to > ticks)
             continue;
-        if (tsleep_list[i]->state == PROCESS_TSLPING) {
-            tsleep_list[i]->state = PROCESS_WAITING;
-            i_add_to_shdlr_queue(tsleep_list[i]->pid, tsleep_list[i]->priority);
+        if (g_tsleep_list[i]->state == PROCESS_TSLPING) {
+            g_tsleep_list[i]->state = PROCESS_WAITING;
+            i_add_to_g_shdlr_queue(g_tsleep_list[i]->pid, g_tsleep_list[i]->priority);
         } else {
             sys_fatal("Process in tsleep list is not in tsleep state");
         }
 
-        tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-        tsleep_list_length--;
+        g_tsleep_list[i] = g_tsleep_list[g_tsleep_list_length - 1];
+        g_tsleep_list_length--;
         i--;
     }
     i_refresh_tsleep_interact();
 }
 
-void i_remove_from_tsleep_list(uint32_t pid) {
-    for (int i = 0; i < tsleep_list_length; i++) {
-        if (tsleep_list[i]->pid == pid) {
-            tsleep_list[i] = tsleep_list[tsleep_list_length - 1];
-            tsleep_list_length--;
+void i_remove_from_g_tsleep_list(uint32_t pid) {
+    for (int i = 0; i < g_tsleep_list_length; i++) {
+        if (g_tsleep_list[i]->pid == pid) {
+            g_tsleep_list[i] = g_tsleep_list[g_tsleep_list_length - 1];
+            g_tsleep_list_length--;
             i--;
         }
     }
@@ -207,7 +204,7 @@ void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
-    force_exit_pid(pid_current, eax, 1);
+    force_exit_pid(g_pid_current, eax, 1);
 }
 
 /**************************
@@ -228,8 +225,8 @@ void idle_process(void) {
 
 int process_init(void) {
     plist = calloc(sizeof(process_t) * PROCESS_MAX);
-    shdlr_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
-    tsleep_list = calloc(sizeof(process_t *) * PROCESS_MAX);
+    g_shdlr_queue = calloc(sizeof(int) * PROCESS_MAX * 10);
+    g_tsleep_list = calloc(sizeof(process_t *) * PROCESS_MAX);
 
     for (int i = 0; i < PROCESS_MAX; i++) {
         plist[i].state = PROCESS_DEAD;
@@ -262,24 +259,23 @@ int process_init(void) {
     kern_proc->priority = PROC_PRIORITY;
     kern_proc->comm = NULL;
 
-    tsleep_interact = 0;
-    pid_current = 0;
-    need_clean = 0;
+    g_tsleep_interact = 0;
+    g_pid_current = 0;
+    g_need_clean = 0;
 
-    scheduler_count = 0;
-    pid_incrament = 0;
+    g_pid_incrament = 0;
 
-    shdlr_queue_length = 0;
+    g_shdlr_queue_length = 0;
 
-    exit_codes = calloc(10 * sizeof(uint8_t));
+    g_exit_codes = calloc(10 * sizeof(uint8_t));
 
-    i_add_to_shdlr_queue(0, PROC_PRIORITY);
+    i_add_to_g_shdlr_queue(0, PROC_PRIORITY);
 
     kern_proc->scuba_dir = scuba_get_kernel_directory();
 
     // enable scheduler
-    scheduler_state = SHDLR_ENBL;
-    scheduler_disable_count = 0;
+    g_scheduler_state = SHDLR_ENBL;
+    g_scheduler_disable_count = 0;
 
     // create idle process
     process_create(idle_process, 0, "idle", 0, NULL);
@@ -290,7 +286,7 @@ int process_init(void) {
 
 
 int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *args) {
-    int parent_place = i_pid_to_place(pid_current);
+    int parent_place = i_pid_to_place(g_pid_current);
     int place = i_get_free_place();
 
     if (place == ERROR_CODE) {
@@ -303,11 +299,11 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
         return ERROR_CODE;
     }
 
-    pid_incrament++;
+    g_pid_incrament++;
 
-    if (pid_incrament % 10 == 9) {
-        exit_codes = realloc_as_kernel(exit_codes, (pid_incrament + 10) * sizeof(uint8_t));
-        mem_set(exit_codes + pid_incrament, 0, 10);
+    if (g_pid_incrament % 10 == 9) {
+        g_exit_codes = realloc_as_kernel(g_exit_codes, (g_pid_incrament + 10) * sizeof(uint8_t));
+        mem_set(g_exit_codes + g_pid_incrament, 0, 10);
     }
 
     process_t *parent_proc = &plist[parent_place];
@@ -315,8 +311,8 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
 
     str_ncpy(new_proc->name, name, 63);
 
-    new_proc->pid = pid_incrament;
-    new_proc->ppid = pid_current;
+    new_proc->pid = g_pid_incrament;
+    new_proc->ppid = g_pid_current;
 
     new_proc->state = PROCESS_FSLPING;
     new_proc->priority = PROC_PRIORITY;
@@ -340,7 +336,7 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
 
     if (func == NULL) {
         new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE;
-        return pid_incrament;
+        return g_pid_incrament;
     }
 
     // push arguments to the new process
@@ -356,17 +352,14 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
 
     new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - (nargs + 1) * sizeof(uint32_t);
 
-    return pid_incrament;
+    return g_pid_incrament;
 }
 
 
 int process_fork(registers_t *regs) {
-    process_disable_scheduler();
-
     int new_pid = process_create(NULL, 1, "forked", 0, NULL);
 
     if (new_pid == ERROR_CODE) {
-        process_enable_scheduler();
         return ERROR_CODE;
     }
 
@@ -382,8 +375,6 @@ int process_fork(registers_t *regs) {
     new_proc->regs.esp = regs->esp + 20; // popa (interrupt.asm: isr_common_stub)
     new_proc->regs.ebp = regs->ebp;
     new_proc->regs.eflags = regs->eflags;
-
-    process_enable_scheduler();
 
     process_wakeup(new_pid);
 
@@ -414,10 +405,8 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         return ERROR_CODE;
     }
 
-    process_disable_scheduler();
-
     if (plist[place].state == PROCESS_TSLPING) {
-        i_remove_from_tsleep_list(pid);
+        i_remove_from_g_tsleep_list(pid);
     }
 
     if (ms == 0) {
@@ -426,15 +415,14 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         plist[place].state = PROCESS_TSLPING;
         // convert ms to ticks
         plist[place].sleep_to = timer_get_ticks() + (ms * 1000 / RATE_TIMER_TICK);
-        tsleep_list[tsleep_list_length] = &plist[place];
-        tsleep_list_length++;
+        g_tsleep_list[g_tsleep_list_length] = &plist[place];
+        g_tsleep_list_length++;
         i_refresh_tsleep_interact();
     }
 
     i_remove_from_shdlr_queue(pid);
 
-    process_enable_scheduler();
-    if (pid == pid_current) {
+    if (pid == g_pid_current) {
         schedule(0);
     }
 
@@ -465,18 +453,14 @@ int process_wakeup(uint32_t pid) {   // TODO: sleep to exit gestion
         return ERROR_CODE;
     }
 
-    process_disable_scheduler();
-
     if (plist[place].state == PROCESS_TSLPING) {
-        i_remove_from_tsleep_list(pid);
+        i_remove_from_g_tsleep_list(pid);
     }
 
     plist[place].state = PROCESS_WAITING;
-    i_add_to_shdlr_queue(pid, plist[place].priority);
+    i_add_to_g_shdlr_queue(pid, plist[place].priority);
 
     i_refresh_tsleep_interact();
-
-    process_enable_scheduler();
 
     return 0;
 }
@@ -484,7 +468,7 @@ int process_wakeup(uint32_t pid) {   // TODO: sleep to exit gestion
 
 int process_handover(uint32_t pid) {
     int place = i_pid_to_place(pid);
-    int current_place = i_pid_to_place(pid_current);
+    int current_place = i_pid_to_place(g_pid_current);
 
     if (place < 0) {
         sys_warning("[handover] pid %d not found", pid);
@@ -511,23 +495,19 @@ int process_handover(uint32_t pid) {
         return ERROR_CODE;
     }
 
-    process_disable_scheduler();
-
     if (plist[place].state == PROCESS_TSLPING) {
-        i_remove_from_tsleep_list(pid);
+        i_remove_from_g_tsleep_list(pid);
     }
 
     plist[place].state = PROCESS_WAITING;
-    i_add_to_shdlr_queue(pid, plist[place].priority);
+    i_add_to_g_shdlr_queue(pid, plist[place].priority);
 
     if (plist[current_place].state == PROCESS_TSLPING) {
-        i_remove_from_tsleep_list(pid_current);
+        i_remove_from_g_tsleep_list(g_pid_current);
     }
 
     plist[current_place].state = PROCESS_FSLPING;
-    i_remove_from_shdlr_queue(pid_current);
-
-    process_enable_scheduler();
+    i_remove_from_shdlr_queue(g_pid_current);
 
     schedule(0);
 
@@ -558,20 +538,16 @@ int process_kill(uint32_t pid) {
         return ERROR_CODE;
     }
 
-    process_disable_scheduler();
-
     if (plist[place].state == PROCESS_TSLPING) {
-        i_remove_from_tsleep_list(pid);
+        i_remove_from_g_tsleep_list(pid);
     }
 
     plist[place].state = PROCESS_KILLED;
     i_remove_from_shdlr_queue(pid);
 
-    need_clean = 1;
+    g_need_clean = 1;
 
-    process_enable_scheduler();
-
-    if (pid == pid_current) {
+    if (pid == g_pid_current) {
         schedule(0);
     }
 
@@ -584,20 +560,18 @@ int process_kill(uint32_t pid) {
  *                       *
 **************************/
 
-int process_set_scheduler(int state) {
-    // disable scheduler
-    if (!state) {
-        scheduler_disable_count++;
-        if (scheduler_state == SHDLR_ENBL) {
-            scheduler_state = SHDLR_DISL;
+int process_auto_schedule(int acitve) {
+    if (!acitve) {
+        g_scheduler_disable_count++;
+        if (g_scheduler_state == SHDLR_ENBL) {
+            g_scheduler_state = SHDLR_DISL;
         }
-    }
-
-    // enable scheduler
-    else if (state) {
-        scheduler_disable_count--;
-        if (scheduler_state == SHDLR_DISL && !scheduler_disable_count) {
-            scheduler_state = SHDLR_ENBL;
+    } else {
+        g_scheduler_disable_count--;
+        if (g_scheduler_disable_count < 0)
+            g_scheduler_disable_count = 0;
+        if (g_scheduler_state == SHDLR_DISL && !g_scheduler_disable_count) {
+            g_scheduler_state = SHDLR_ENBL;
         }
     }
 
@@ -605,23 +579,13 @@ int process_set_scheduler(int state) {
 }
 
 void schedule(uint32_t ticks) {
-    if (scheduler_count) return;
-    scheduler_count++;
-
-    if (scheduler_state != SHDLR_ENBL) {
-        scheduler_count--;
+    if (ticks && g_scheduler_state != SHDLR_ENBL) {
         return;
     }
 
-    scheduler_state = SHDLR_RUNN;
+    g_scheduler_state = SHDLR_RUNN;
 
-    // tick perfect backup verification system
-    if (scheduler_count > 1) {
-        sys_fatal("Multiple scheduler security fail");
-        return;
-    }
-
-    if (tsleep_interact && tsleep_interact <= ticks && ticks) {
+    if (g_tsleep_interact && g_tsleep_interact <= ticks && ticks) {
         i_tsleep_awake(ticks);
     }
 
@@ -630,27 +594,27 @@ void schedule(uint32_t ticks) {
         return;
     }
 
-    if (need_clean) {
+    if (g_need_clean) {
         i_clean_killed();
     }
 
-    static int shdlr_queue_index = 0;
-    shdlr_queue_index++;
+    static int g_shdlr_queue_index = 0;
+    g_shdlr_queue_index++;
 
-    if (shdlr_queue_index >= shdlr_queue_length) {
-        shdlr_queue_index = 0;
+    if (g_shdlr_queue_index >= g_shdlr_queue_length) {
+        g_shdlr_queue_index = 0;
     }
 
     uint32_t pid;
 
-    if (shdlr_queue_length == 0) {
+    if (g_shdlr_queue_length == 0) {
         pid = 1;    // idle process
     } else {
-        pid = shdlr_queue[shdlr_queue_index];
+        pid = g_shdlr_queue[g_shdlr_queue_index];
     }
 
-    if (pid != pid_current) {
-        i_process_switch(pid_current, pid, ticks);
+    if (pid != g_pid_current) {
+        i_process_switch(g_pid_current, pid, ticks);
     } else {
         i_end_scheduler();
     }
@@ -678,19 +642,15 @@ int process_set_priority(uint32_t pid, int priority) {
     plist[place].priority = priority;
 
     if (plist[place].state < PROCESS_TSLPING) {
-        process_disable_scheduler();
-
         i_remove_from_shdlr_queue(pid);
-        i_add_to_shdlr_queue(pid, priority);
-
-        process_enable_scheduler();
+        i_add_to_g_shdlr_queue(pid, priority);
     }
 
     return 0;
 }
 
 uint32_t process_get_pid(void) {
-    return pid_current;
+    return g_pid_current;
 }
 
 int process_set_comm(uint32_t pid, comm_struct_t *comm) {
@@ -753,10 +713,8 @@ void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir, int now)
 
     if (!now) return;
 
-    if (pid == pid_current) {
-        process_disable_scheduler();
+    if (pid == g_pid_current) {
         scuba_switch(new_dir);
-        process_enable_scheduler();
     }
 
     scuba_directory_destroy(old_dir);
@@ -770,7 +728,7 @@ int process_set_return(uint32_t pid, uint32_t ret) {
         return 1;
     }
 
-    exit_codes[pid] = ret;
+    g_exit_codes[pid] = ret;
     return 0;
 }
 
@@ -780,7 +738,7 @@ uint32_t process_get_info(uint32_t pid, int info_id) {
     if (info_id == PROCESS_INFO_EXIT_CODE) {
         if (place < 0)
             return 0;
-        return exit_codes[pid];
+        return g_exit_codes[pid];
     }
 
     if (info_id == PROCESS_INFO_STATE) {

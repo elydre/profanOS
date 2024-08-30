@@ -32,13 +32,10 @@
 #define PROCESS_INFO_NAME       6
 #define PROCESS_INFO_STACK      7
 
-#define process_disable_scheduler() process_set_scheduler(0)
-#define process_enable_scheduler()  process_set_scheduler(1)
-
 #define process_get_ppid(pid) process_get_info(pid, PROCESS_INFO_PPID)
 #define process_get_state(pid) process_get_info(pid, PROCESS_INFO_STATE)
 
-extern uint32_t pid_current;
+extern uint32_t g_pid_current;
 
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
@@ -69,7 +66,7 @@ int process_sleep(uint32_t pid, uint32_t ms);
 int process_kill(uint32_t pid);
 
 // scheduler control
-int process_set_scheduler(int state);
+int process_auto_schedule(int state);
 
 // process info
 uint32_t process_get_pid(void);

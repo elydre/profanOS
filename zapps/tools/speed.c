@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
         return 1;
 
     if (mode)
-        syscall_process_set_scheduler(0);
+        syscall_process_auto_schedule(0);
 
     // get the time before the loop
     int start = syscall_timer_get_ms();
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     int end = syscall_timer_get_ms();
 
     if (mode)
-        syscall_process_set_scheduler(1);
+        syscall_process_auto_schedule(1);
 
     // print the time difference
     printf("loop time: %dms\n", end - start);

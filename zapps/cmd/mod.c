@@ -72,9 +72,9 @@ int main(int argc, char **argv) {
 
         printf("mod: Unloading %d\n", id);
 
-        syscall_process_set_scheduler(0);
+        syscall_process_auto_schedule(0);
         syscall_dily_unload(id);
-        syscall_process_set_scheduler(1);
+        syscall_process_auto_schedule(1);
         return 0;
     }
 
@@ -130,10 +130,10 @@ int main(int argc, char **argv) {
 
         printf("mod: Replacing %d with %s\n", id, new_path);
 
-        syscall_process_set_scheduler(0);
+        syscall_process_auto_schedule(0);
         syscall_dily_unload(id);
         syscall_dily_load(new_path, id);
-        syscall_process_set_scheduler(1);
+        syscall_process_auto_schedule(1);
 
         free(new_path);
         return 0;

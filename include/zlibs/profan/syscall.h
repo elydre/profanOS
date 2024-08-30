@@ -194,7 +194,7 @@ DEFN_SYSCALL0(26, char *,    sys_kinfo)
 
 DEFN_SYSCALL4(27, int,       binary_exec, uint32_t, int, char **, char **)
 
-DEFN_SYSCALL1(28, int,       process_set_scheduler, int)
+DEFN_SYSCALL1(28, int,       process_auto_schedule, int)
 DEFN_SYSCALL5(29, int,       process_create, void *, int, char *, int, uint32_t *)
 DEFN_SYSCALL0(30, int,       process_fork)
 DEFN_SYSCALL2(31, int,       process_sleep, uint32_t, uint32_t)

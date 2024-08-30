@@ -34,7 +34,7 @@ uint32_t timer_get_ms(void) {
 }
 
 int timer_init(void) {
-    ticks = 0;
+    ticks = 1;
 
     // set the timer interrupt handler
     register_interrupt_handler(IRQ0, timer_callback);

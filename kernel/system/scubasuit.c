@@ -365,19 +365,19 @@ void *scuba_get_phys(scuba_directory_t *dir, void *virt) {
 *************************/
 
 void *scuba_call_generate(void *addr, uint32_t size) {
-    return scuba_create_virtual(process_get_directory(pid_current), addr, size);
+    return scuba_create_virtual(process_get_directory(g_pid_current), addr, size);
 }
 
 int scuba_call_map(void *addr, void *phys, int cic) {
-    return scuba_map_func(process_get_directory(pid_current), addr, phys, cic ? 0 : 3);
+    return scuba_map_func(process_get_directory(g_pid_current), addr, phys, cic ? 0 : 3);
 }
 
 int scuba_call_unmap(void *addr) {
-    return scuba_unmap(process_get_directory(pid_current), addr);
+    return scuba_unmap(process_get_directory(g_pid_current), addr);
 }
 
 void *scuba_call_phys(void *addr) {
-    return (void *) scuba_get_phys(process_get_directory(pid_current), addr);
+    return (void *) scuba_get_phys(process_get_directory(g_pid_current), addr);
 }
 
 /***************************
