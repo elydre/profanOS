@@ -78,15 +78,15 @@ uint8_t IN_KERNEL = 1;
 void sys_entry_kernel(void) {
     if (IN_KERNEL)
         sys_fatal("Already in kernel mode");
-    process_auto_schedule(0);
+    process_auto_schedule(0); // lock before entering kernel
     IN_KERNEL = 1;
 }
 
 void sys_exit_kernel(void) {
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
-    process_auto_schedule(1);
     IN_KERNEL = 0;
+    process_auto_schedule(1); // unlock after exiting kernel
 }
 
 /********************************

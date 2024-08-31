@@ -76,21 +76,20 @@ int i_pid_to_place(uint32_t pid) {
 }
 
 void i_end_scheduler(void) {
+    process_t *proc = &plist[i_pid_to_place(g_pid_current)];
+
+    if (IN_KERNEL != proc->in_kernel) {
+        if (proc->in_kernel) {
+            sys_entry_kernel();
+        } else {
+            sys_exit_kernel();
+        }
+    }
+
     if (g_scheduler_state == SHDLR_RUNN) {
         g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
     } else {
         sys_fatal("Scheduler is not running but scheduler is exiting");
-    }
-
-    process_t *proc = &plist[i_pid_to_place(g_pid_current)];
-
-    if (IN_KERNEL == proc->in_kernel) {
-        return;
-    }
-    if (proc->in_kernel) {
-        sys_entry_kernel();
-    } else {
-        sys_exit_kernel();
     }
 }
 
@@ -596,17 +595,15 @@ void schedule(uint32_t ticks) {
         return;
     }
 
-    if (ticks == 0) {
-        kprintf_serial("schedule 0\n");
-    }
-
     g_scheduler_state = SHDLR_RUNN;
 
-    if (g_tsleep_interact && g_tsleep_interact <= ticks && ticks) {
+    if (g_tsleep_interact && ticks && g_tsleep_interact <= ticks) {
         i_tsleep_awake(ticks);
     }
 
-    if (ticks % SCHEDULER_EVRY) {
+    if (ticks == 0) {   // manual schedule
+        ticks = timer_get_ticks();
+    } else if (ticks % SCHEDULER_EVRY) {
         g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
         return;
     }

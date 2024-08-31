@@ -16,10 +16,12 @@
 
 #define HISTOTY_SIZE 80
 
+void *kfont;
+
 void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = syscall_font_get() + msg[i] * 16;
+        glyph = kfont + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
@@ -64,6 +66,8 @@ int main(void) {
     int total = 0;
 
     uint32_t *pixel_buffer = calloc(HISTOTY_SIZE * 100, sizeof(uint32_t));
+
+    kfont = syscall_font_get();
 
     while (1) {
         last_idle = idle;
