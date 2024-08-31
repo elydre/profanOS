@@ -49,6 +49,8 @@ typedef struct {
     uint32_t priority, run_time;
     uint32_t sleep_to, state;
 
+    uint8_t in_kernel;
+
     char name[64];
     comm_struct_t *comm;
 } process_t;

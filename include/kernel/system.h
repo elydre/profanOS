@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-14"
+#define KERNEL_VERSION  "sc-15"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -41,6 +41,11 @@
 
 // system.c
 void kernel_exit_current(void);
+
+extern uint8_t IN_KERNEL;
+
+void sys_entry_kernel(void);
+void sys_exit_kernel(void);
 
 extern char sys_safe_buffer[256];
 int sys_set_reporter(int (*reporter)(char *));

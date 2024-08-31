@@ -16,18 +16,17 @@
 ; Common ISR code
 isr_common_stub:
     ; 1. Save CPU state
-    pusha ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
-    mov ax, ds ; Lower 16-bits of eax = ds.
-    push eax ; save the data segment descriptor
-    mov ax, 0x10  ; kernel data segment descriptor
+    pusha           ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+    mov ax, ds      ; Lower 16-bits of eax = ds.
+    push eax        ; save the data segment descriptor
+    mov ax, 0x10    ; kernel data segment descriptor
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    push esp ; registers_t *r
+    push esp        ; registers_t *r
 
     ; 2. Call C handler
-    sti ; Enable interrupts
     cld ; C code following the sysV ABI requires DF to be clear on function entry
     call isr_handler
 
@@ -54,9 +53,11 @@ irq_common_stub:
     mov fs, ax
     mov gs, ax
     push esp
+
     cld
-    call irq_handler ; Different than the ISR code
-    pop ebx  ; Different than the ISR code
+    call irq_handler
+
+    pop ebx         ; Different than the ISR code
     pop ebx
     mov ds, bx
     mov es, bx
@@ -314,7 +315,7 @@ isr31:
 ; 128: System Call
 isr128:
     push byte 0
-    push byte -128 ; -128 = 128 (:
+    push byte -128 ; -128 => 128  :)
     jmp isr_common_stub
 
 ; IRQ handlers

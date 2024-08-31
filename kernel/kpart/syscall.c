@@ -103,6 +103,8 @@ void syscall_handler(registers_t *r) {
         return;
     }
 
+    kprintf_serial("syscall %d\n", syscall_id);
+
     uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = SYSCALL_ARRAY[syscall_id];
 
     if ((void *) func == process_fork) {

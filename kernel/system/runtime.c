@@ -123,8 +123,13 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
 
     // call main
+
     int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
+
+    sys_exit_kernel();
     int ret = main(argc, argv, envp) & 0xFF;
+    sys_entry_kernel();
+
     return force_exit_pid(process_get_pid(), ret, 1);
 }
 

@@ -21,21 +21,23 @@
 // string functions
 
 void str_cat(char *s1, char *s2) {
-    char *start = s1;
-    while(*start != '\0') start++;
-    while(*s2 != '\0') *start++ = *s2++;
-    *start = '\0';
+    while (*s1)
+        s1++;
+    while (*s2)
+        *s1++ = *s2++;
+    *s1 = '\0';
 }
 
 int str_len(char *s) {
     int i = 0;
-    while (s[i] != '\0') i++;
+    while (s[i])
+        i++;
     return i;
 }
 
 void str_cpy(char *s1, char *s2) {
     int i;
-    for (i = 0; s2[i] != '\0'; i++) {
+    for (i = 0; s2[i]; i++) {
         s1[i] = s2[i];
     }
     s1[i] = '\0';
@@ -43,7 +45,7 @@ void str_cpy(char *s1, char *s2) {
 
 void  str_ncpy(char *s1, char *s2, int n) {
     int i;
-    for (i = 0; i < n && s2[i] != '\0'; i++) {
+    for (i = 0; i < n && s2[i]; i++) {
         s1[i] = s2[i];
     }
     s1[i] = '\0';
@@ -270,12 +272,12 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
         char_buffer = sys_safe_buffer;
     }
 
-    while (fmt[i] != '\0') {
+    while (fmt[i]) {
         if (fmt[i] == '%') {
             i++;
             if (fmt[i] == 's') {
                 char *tmp = va_arg(args, char *);
-                for (int j = 0; tmp[j] != '\0'; j++) {
+                for (int j = 0; tmp[j]; j++) {
                     char_buffer[buffer_i] = tmp[j];
                     buffer_i++;
                 }
@@ -284,13 +286,13 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
                 buffer_i++;
             } else if (fmt[i] == 'd') {
                 int2str(va_arg(args, int), s);
-                for (int j = 0; s[j] != '\0'; j++) {
+                for (int j = 0; s[j]; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
             } else if (fmt[i] == 'x') {
                 hex2str(va_arg(args, int), s);
-                for (int j = 0; s[j] != '\0'; j++) {
+                for (int j = 0; s[j]; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }

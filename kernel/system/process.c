@@ -81,6 +81,17 @@ void i_end_scheduler(void) {
     } else {
         sys_fatal("Scheduler is not running but scheduler is exiting");
     }
+
+    process_t *proc = &plist[i_pid_to_place(g_pid_current)];
+
+    if (IN_KERNEL == proc->in_kernel) {
+        return;
+    }
+    if (proc->in_kernel) {
+        sys_entry_kernel();
+    } else {
+        sys_exit_kernel();
+    }
 }
 
 void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
@@ -108,12 +119,9 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
 
     g_pid_current = to_pid;
 
-    process_asm_switch(&proc1->regs, &proc2->regs);
-}
+    proc1->in_kernel = IN_KERNEL;
 
-void i_optimize_shdlr_queue(void) {
-    // TODO: separate all occurrences of each number as much as possible
-    return;
+    process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
 int i_add_to_g_shdlr_queue(int pid, int priority) {
@@ -274,12 +282,13 @@ int process_init(void) {
     kern_proc->scuba_dir = scuba_get_kernel_directory();
 
     // enable scheduler
-    g_scheduler_state = SHDLR_ENBL;
-    g_scheduler_disable_count = 0;
+    g_scheduler_state = SHDLR_DISL;
+    g_scheduler_disable_count = 1;
 
     // create idle process
     process_create(idle_process, 0, "idle", 0, NULL);
     plist[1].state = PROCESS_IDLETIME;
+    plist[1].in_kernel = 0;
 
     return 0;
 }
@@ -321,6 +330,8 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
     new_proc->run_time = 0;
 
     new_proc->comm = NULL;
+
+    new_proc->in_kernel = (uint32_t) func < 0x200000;
 
     void *phys_stack;
 
@@ -364,6 +375,8 @@ int process_fork(registers_t *regs) {
     }
 
     process_t *new_proc = &plist[i_pid_to_place(new_pid)];
+
+    new_proc->in_kernel = 0; // cannot call this without a syscall
 
     new_proc->regs.eax = regs->eax;
     new_proc->regs.ebx = regs->ebx;
@@ -583,6 +596,10 @@ void schedule(uint32_t ticks) {
         return;
     }
 
+    if (ticks == 0) {
+        kprintf_serial("schedule 0\n");
+    }
+
     g_scheduler_state = SHDLR_RUNN;
 
     if (g_tsleep_interact && g_tsleep_interact <= ticks && ticks) {
@@ -590,7 +607,7 @@ void schedule(uint32_t ticks) {
     }
 
     if (ticks % SCHEDULER_EVRY) {
-        i_end_scheduler();
+        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
         return;
     }
 
@@ -613,11 +630,12 @@ void schedule(uint32_t ticks) {
         pid = g_shdlr_queue[g_shdlr_queue_index];
     }
 
-    if (pid != g_pid_current) {
-        i_process_switch(g_pid_current, pid, ticks);
-    } else {
-        i_end_scheduler();
+    if (pid == g_pid_current) {
+        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
+        return;
     }
+
+    i_process_switch(g_pid_current, pid, ticks);
 }
 
 /**************************
