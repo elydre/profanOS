@@ -24,18 +24,15 @@
 #define PROCESS_IDLETIME 6
 
 #define PROCESS_INFO_PPID       0
-#define PROCESS_INFO_PRIORITY   1
-#define PROCESS_INFO_STATE      2
-#define PROCESS_INFO_SLEEP_TO   3
-#define PROCESS_INFO_RUN_TIME   4
-#define PROCESS_INFO_EXIT_CODE  5
-#define PROCESS_INFO_NAME       6
-#define PROCESS_INFO_STACK      7
+#define PROCESS_INFO_STATE      1
+#define PROCESS_INFO_SLEEP_TO   2
+#define PROCESS_INFO_RUN_TIME   3
+#define PROCESS_INFO_EXIT_CODE  4
+#define PROCESS_INFO_NAME       5
+#define PROCESS_INFO_STACK      6
 
 #define process_get_ppid(pid) process_get_info(pid, PROCESS_INFO_PPID)
 #define process_get_state(pid) process_get_info(pid, PROCESS_INFO_STATE)
-
-extern uint32_t g_pid_current;
 
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
@@ -45,9 +42,8 @@ typedef struct {
     proc_rgs_t regs;
     scuba_directory_t *scuba_dir;
 
-    uint32_t pid, ppid;
-    uint32_t priority, run_time;
-    uint32_t sleep_to, state;
+    uint32_t pid, ppid, state;
+    uint32_t run_time, sleep_to;
 
     uint8_t in_kernel;
 
@@ -79,7 +75,6 @@ uint32_t process_get_info(uint32_t pid, int info_id);
 int process_set_comm(uint32_t pid, comm_struct_t *comm);
 comm_struct_t *process_get_comm(uint32_t pid);
 
-int process_set_priority(uint32_t pid, int priority);
 int process_set_return(uint32_t pid, uint32_t ret);
 
 scuba_directory_t *process_get_directory(uint32_t pid);

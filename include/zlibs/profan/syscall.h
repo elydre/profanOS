@@ -29,12 +29,11 @@
 #define SERIAL_PORT_B 0x2F8
 
 #define PROCESS_INFO_PPID       0
-#define PROCESS_INFO_PRIORITY   1
-#define PROCESS_INFO_STATE      2
-#define PROCESS_INFO_SLEEP_TO   3
-#define PROCESS_INFO_RUN_TIME   4
-#define PROCESS_INFO_EXIT_CODE  5
-#define PROCESS_INFO_NAME       6
+#define PROCESS_INFO_STATE      1
+#define PROCESS_INFO_SLEEP_TO   2
+#define PROCESS_INFO_RUN_TIME   3
+#define PROCESS_INFO_EXIT_CODE  4
+#define PROCESS_INFO_NAME       5
 
 #define syscall_process_ppid(pid) syscall_process_info(pid, PROCESS_INFO_PPID)
 #define syscall_process_state(pid) syscall_process_info(pid, PROCESS_INFO_STATE)

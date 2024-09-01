@@ -14,11 +14,10 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-18"
+#define KERNEL_VERSION  "sc-20"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
-#define PROC_PRIORITY   2           // default process priority
 #define SCUBA_MAP_MAX   0x10000000  // scuba map to 256MB max
 #define FS_MAX_DISKS    256         // max disk count
 #define RUN_DEFAULT     "/bin/sys/init.bin"

@@ -12,6 +12,7 @@
 #include <profan/syscall.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #define PROCESS_MAX 20
@@ -146,7 +147,7 @@ int main(int argc, char **argv) {
     else if (args.mode == MODE_EXIT)
         syscall_process_exit(args.pid, 1, 0);
     else if (args.mode == MODE_SLPP)
-        syscall_process_sleep(args.pid, 0);
+        syscall_process_sleep(args.pid, UINT32_MAX);
     else if (args.mode == MODE_WKUP)
         syscall_process_wakeup(args.pid);
     else return 1;

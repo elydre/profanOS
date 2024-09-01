@@ -362,8 +362,7 @@ int setuid(uid_t a) {
 }
 
 unsigned sleep(unsigned seconds) {
-    if (seconds)
-        syscall_process_sleep(syscall_process_pid(), seconds * 1000);
+    syscall_process_sleep(syscall_process_pid(), seconds * 1000);
     return 0;
 }
 
@@ -454,8 +453,7 @@ int unlink(const char *filename) {
 }
 
 int usleep(useconds_t usec) {
-    if (usec < 1000)
-        return 0;
+    if (usec == 0) return 0;
     return syscall_process_sleep(syscall_process_pid(), usec / 1000) ? -1 : 0;
 }
 
