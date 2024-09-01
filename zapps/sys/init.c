@@ -20,6 +20,8 @@
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
+#define START_USAGE_GRAPH 1
+
 #define run_ifexist_pid(path, argc, argv, envp, pid) \
         run_ifexist_full((runtime_args_t){path, argc, argv, envp, 1}, pid)
 
@@ -139,7 +141,8 @@ int main(void) {
         ) syscall_kprint("Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);
-        run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
+        if (START_USAGE_GRAPH)
+            run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
     } else {
         syscall_kprint("[init] using kernel output for stdout\n");
         set_env("TERM=/dev/kterm");

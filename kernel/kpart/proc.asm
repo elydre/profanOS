@@ -72,5 +72,8 @@ process_asm_switch:
     mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
+
+    cld                     ; C code following the sysV ABI requires DF to be clear on function entry
     call i_end_scheduler    ; all the end of the scheduler (process.c)
+
     ret                     ; this ends all

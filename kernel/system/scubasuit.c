@@ -394,7 +394,7 @@ void scuba_fault_handler(int err_code) {
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
-    sys_fatal("Page fault during %s at %x (pid %d, code %x)",
+    sys_error("Page fault during %s at %x (pid %d, code %x)",
             (err_code & 0x2) ? "write" : "read",
             faulting_address,
             pid,

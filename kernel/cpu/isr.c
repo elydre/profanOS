@@ -89,16 +89,10 @@ int isr_install(void) {
     return 0;
 }
 
-int is_interrupt_enabled(void) {
-    unsigned long flags;
-    asm volatile("pushf\n\t"
-                 "pop %0"
-                 : "=g"(flags));
-    return flags & (1 << 9);
-}
+#include <minilib.h>
 
 void isr_handler(registers_t *r) {
-    sys_entry_kernel();
+    int in_kernel = !sys_entry_kernel(1);
 
     // restore interrupts
     asm volatile("sti");
@@ -109,8 +103,9 @@ void isr_handler(registers_t *r) {
         syscall_handler(r);
     else
         sys_interrupt(r->int_no & 0xFF, r->err_code);
-
-    sys_exit_kernel();
+    
+    if (in_kernel)
+        sys_exit_kernel(1);
 }
 
 void register_interrupt_handler(uint8_t n, isr_t handler) {

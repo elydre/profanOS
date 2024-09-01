@@ -9,7 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <kernel/snowflake.h>
 #include <kernel/process.h>
 #include <cpu/timer.h>
 #include <minilib.h>
@@ -28,14 +27,15 @@ process_t *plist;
 
 process_t **g_tsleep_list;
 uint32_t g_tsleep_interact;
-int g_tsleep_list_length;
+uint32_t g_tsleep_list_length;
 
-int g_shdlr_queue_length;
-int *g_shdlr_queue;
+uint32_t g_shdlr_queue_length;
+uint32_t *g_shdlr_queue;
+
+int g_scheduler_disable_count;
 
 uint8_t g_scheduler_state = SHDLR_DEAD;
 uint8_t g_need_clean;
-int g_scheduler_disable_count;
 
 uint32_t g_pid_incrament;
 uint32_t g_pid_current;
@@ -80,9 +80,9 @@ void i_end_scheduler(void) {
 
     if (IN_KERNEL != proc->in_kernel) {
         if (proc->in_kernel) {
-            sys_entry_kernel();
+            sys_entry_kernel(0);
         } else {
-            sys_exit_kernel();
+            sys_exit_kernel(0);
         }
     }
 
@@ -99,10 +99,6 @@ void i_process_switch(int from_pid, int to_pid, uint32_t ticks) {
 
     process_t *proc1 = &plist[i_pid_to_place(from_pid)];
     process_t *proc2 = &plist[i_pid_to_place(to_pid)];
-
-    if (!ticks) {
-        ticks = timer_get_ticks();
-    }
 
     static uint32_t last_switch = 0;
 
@@ -140,9 +136,9 @@ int i_add_to_g_shdlr_queue(int pid, int priority) {
     return 0;
 }
 
-int i_remove_from_shdlr_queue(int pid) {
+int i_remove_from_shdlr_queue(uint32_t pid) {
     // remove all occurences of pid from g_shdlr_queue
-    for (int i = 0; i < g_shdlr_queue_length; i++) {
+    for (uint32_t i = 0; i < g_shdlr_queue_length; i++) {
         if (g_shdlr_queue[i] == pid) {
             g_shdlr_queue[i] = g_shdlr_queue[g_shdlr_queue_length - 1];
             g_shdlr_queue_length--;
@@ -171,7 +167,7 @@ void i_clean_killed(void) {
 
 void i_refresh_tsleep_interact(void) {
     g_tsleep_interact = 0;
-    for (int i = 0; i < g_tsleep_list_length; i++) {
+    for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->sleep_to < g_tsleep_interact || !g_tsleep_interact) {
             g_tsleep_interact = g_tsleep_list[i]->sleep_to;
         }
@@ -179,7 +175,7 @@ void i_refresh_tsleep_interact(void) {
 }
 
 void i_tsleep_awake(uint32_t ticks) {
-    for (int i = 0; i < g_tsleep_list_length; i++) {
+    for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->sleep_to > ticks)
             continue;
         if (g_tsleep_list[i]->state == PROCESS_TSLPING) {
@@ -197,7 +193,7 @@ void i_tsleep_awake(uint32_t ticks) {
 }
 
 void i_remove_from_g_tsleep_list(uint32_t pid) {
-    for (int i = 0; i < g_tsleep_list_length; i++) {
+    for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->pid == pid) {
             g_tsleep_list[i] = g_tsleep_list[g_tsleep_list_length - 1];
             g_tsleep_list_length--;
@@ -612,7 +608,7 @@ void schedule(uint32_t ticks) {
         i_clean_killed();
     }
 
-    static int g_shdlr_queue_index = 0;
+    static uint32_t g_shdlr_queue_index = 0;
     g_shdlr_queue_index++;
 
     if (g_shdlr_queue_index >= g_shdlr_queue_length) {

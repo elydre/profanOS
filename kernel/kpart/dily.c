@@ -83,9 +83,9 @@ int dily_load(char *path, uint32_t lib_id) {
     asm volatile("mov %%esp, %0" : "=r" (old_esp));
     asm volatile("mov %0, %%esp" :: "r" (stack + RUN_LIB_STACK - 0x80));
 
-    sys_exit_kernel();
+    sys_exit_kernel(0);
     ((void (*)(void)) addr_list[1])();
-    sys_entry_kernel();
+    sys_entry_kernel(0);
 
     asm volatile("mov %0, %%esp" :: "r" (old_esp));
 

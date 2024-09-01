@@ -126,9 +126,9 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
 
     int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
 
-    sys_exit_kernel();
+    sys_exit_kernel(0);
     int ret = main(argc, argv, envp) & 0xFF;
-    sys_entry_kernel();
+    sys_entry_kernel(0);
 
     return force_exit_pid(process_get_pid(), ret, 1);
 }
