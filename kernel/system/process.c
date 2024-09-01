@@ -600,7 +600,7 @@ void schedule(uint32_t ticks) {
     if (ticks == 0) {   // manual schedule
         ticks = timer_get_ticks();
     } else if (ticks % SCHEDULER_EVRY) {
-        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
+        g_scheduler_state = SHDLR_ENBL;
         return;
     }
 

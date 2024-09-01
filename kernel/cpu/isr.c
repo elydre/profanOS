@@ -103,7 +103,7 @@ void isr_handler(registers_t *r) {
         syscall_handler(r);
     else
         sys_interrupt(r->int_no & 0xFF, r->err_code);
-    
+
     if (in_kernel)
         sys_exit_kernel(1);
 }
@@ -115,7 +115,9 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 void irq_handler(registers_t *r) {
     /* after every interrupt we need to send an EOI to the PICs
      * or they will not send another interrupt again */
-    if (r->int_no >= 40) port_byte_out(0xA0, 0x20); // slave
+
+    if (r->int_no >= 40)
+        port_byte_out(0xA0, 0x20); // slave
     port_byte_out(0x20, 0x20); // master
 
     // handle the interrupt in a more modular way

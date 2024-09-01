@@ -18,6 +18,8 @@ section .data
 
 align 4
 process_asm_switch:
+    cli                     ; disable interrupts
+
     pusha
     pushf
     mov    eax, cr3         ; push CR3
@@ -73,7 +75,9 @@ process_asm_switch:
     xchg   [esp], eax
     mov    eax, [eax]
 
-    cld                     ; C code following the sysV ABI requires DF to be clear on function entry
+    cld                     ; clear direction flag
     call i_end_scheduler    ; all the end of the scheduler (process.c)
+
+    sti                     ; enable interrupts
 
     ret                     ; this ends all
