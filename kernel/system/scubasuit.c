@@ -26,13 +26,13 @@ uint32_t g_map_to_addr;
  *                       *
 **************************/
 
-void *i_allign_calloc(uint32_t size) {
+static void *i_allign_calloc(uint32_t size) {
     void *ptr = (void *) mem_alloc(size, 0x1000, 7); // we need to allign to 4KB
     mem_set(ptr, 0, size);
     return ptr;
 }
 
-scuba_directory_t *i_directory_create(void) {
+static scuba_directory_t *i_directory_create(void) {
     // allocate a page directory
     scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t));
 

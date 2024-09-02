@@ -72,7 +72,7 @@ char *angel2 =
  *                                    *
 ***************************************/
 
-void sod_print_at(int x, int y, char *str, char color) {
+static void sod_print_at(int x, int y, char *str, char color) {
     int i = 0;
     while (str[i] != '\0') {
         kprint_char_at(x + i, y, str[i], color);
@@ -80,7 +80,7 @@ void sod_print_at(int x, int y, char *str, char color) {
     }
 }
 
-void sod_putaddr_at(int x, int y, uint32_t addr, char color) {
+static void sod_putaddr_at(int x, int y, uint32_t addr, char color) {
     char str[10];
     for (int i = 0; i < 8; i++) {
         str[i < 4 ? i : i + 1] = "0123456789ABCDEF"[(addr >> (28 - i * 4)) & 0xF];
@@ -91,7 +91,7 @@ void sod_putaddr_at(int x, int y, uint32_t addr, char color) {
     sod_print_at(x + 3, y, str, color);
 }
 
-void sod_print_generic_info(int is_cpu_error) {
+static void sod_print_generic_info(int is_cpu_error) {
     char str[64];
     int tmp;
 
@@ -119,7 +119,7 @@ void sod_print_generic_info(int is_cpu_error) {
     sod_print_at(4, size_y - 2, "and out of darkness - will guide you - the solitary angel", 0x05);
 }
 
-void sod_print_file_info(char *file_name, int line) {
+static void sod_print_file_info(char *file_name, int line) {
     char str[10];
     sod_print_at(6, 9, "in", 0x05);
     sod_print_at(9, 9, file_name, 0x0D);
@@ -129,7 +129,7 @@ void sod_print_file_info(char *file_name, int line) {
     sod_print_at(18 + str_len(file_name), 9, str, 0x0D);
 }
 
-void sod_print_angel() {
+static void sod_print_angel() {
     int x, index = 0;
     int x_offset = size_x - 21;
     for (int i = 0; i < 20; i++) {
@@ -156,7 +156,7 @@ void sod_print_angel() {
     }
 }
 
-void sod_print_stacktrace(void) {
+static void sod_print_stacktrace(void) {
     struct stackframe *stk;
     asm ("movl %%ebp,%0" : "=r"(stk) ::);
     if (stk == NULL) {

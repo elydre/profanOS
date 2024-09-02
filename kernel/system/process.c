@@ -53,13 +53,16 @@ uint32_t g_pid_incrament;
 // exit codes storage
 uint8_t *g_exit_codes;
 
+// last scheduler switch
+uint32_t g_last_switch;
+
 /**************************
  *                       *
  *  INTERNAL FUNCTIONS   *
  *                       *
 **************************/
 
-void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
+static void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -73,20 +76,21 @@ void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t 
     process->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE;
 }
 
-int i_get_free_place(void) {
+static int i_get_free_place(void) {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_DEAD) return i;
     }
     return ERROR_CODE;
 }
 
-int i_pid_to_place(uint32_t pid) {
+static int i_pid_to_place(uint32_t pid) {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].pid == pid) return i;
     }
     return ERROR_CODE;
 }
 
+// used in switch.asm
 void i_end_scheduler(void) {
     if (IN_KERNEL != g_proc_current->in_kernel) {
         if (g_proc_current->in_kernel) {
@@ -103,14 +107,9 @@ void i_end_scheduler(void) {
     }
 }
 
-void i_process_switch(process_t *proc1, process_t *proc2, uint32_t ticks) {
+static void i_process_switch(process_t *proc1, process_t *proc2) {
     // this function is called when a process is
     // switched so we don't need security checks
-
-    static uint32_t last_switch = 0;
-
-    proc1->run_time += ticks - last_switch;
-    last_switch = ticks;
 
     if (proc1->state == PROCESS_RUNNING) {
         proc1->state = PROCESS_WAITING;
@@ -126,7 +125,7 @@ void i_process_switch(process_t *proc1, process_t *proc2, uint32_t ticks) {
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
 
-int i_add_to_g_shdlr_queue(process_t *proc) {
+static int i_add_to_g_shdlr_queue(process_t *proc) {
     if (g_shdlr_queue_length >= PROCESS_MAX) {
         sys_fatal("Too many processes in scheduler queue");
         return 1;
@@ -144,7 +143,7 @@ int i_add_to_g_shdlr_queue(process_t *proc) {
     return 0;
 }
 
-int i_remove_from_shdlr_queue(process_t *proc) {
+static int i_remove_from_shdlr_queue(process_t *proc) {
     for (uint32_t i = 0; i < g_shdlr_queue_length; i++) {
         if (g_shdlr_queue[i] == proc) {
             g_shdlr_queue[i] = g_shdlr_queue[g_shdlr_queue_length - 1];
@@ -155,7 +154,7 @@ int i_remove_from_shdlr_queue(process_t *proc) {
     return 0;
 }
 
-void i_clean_killed(void) {
+static void i_clean_killed(void) {
     g_need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].state == PROCESS_KILLED) {
@@ -169,7 +168,7 @@ void i_clean_killed(void) {
     }
 }
 
-void i_refresh_tsleep_interact(void) {
+static void i_refresh_tsleep_interact(void) {
     g_tsleep_interact = 0;
     for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->sleep_to < g_tsleep_interact || !g_tsleep_interact) {
@@ -178,7 +177,7 @@ void i_refresh_tsleep_interact(void) {
     }
 }
 
-void i_tsleep_awake(uint32_t ticks) {
+static void i_tsleep_awake(uint32_t ticks) {
     for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->sleep_to > ticks)
             continue;
@@ -196,7 +195,7 @@ void i_tsleep_awake(uint32_t ticks) {
     i_refresh_tsleep_interact();
 }
 
-void i_remove_from_g_tsleep_list(uint32_t pid) {
+static void i_remove_from_g_tsleep_list(uint32_t pid) {
     for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->pid == pid) {
             g_tsleep_list[i] = g_tsleep_list[g_tsleep_list_length - 1];
@@ -207,7 +206,7 @@ void i_remove_from_g_tsleep_list(uint32_t pid) {
     i_refresh_tsleep_interact();
 }
 
-void i_process_final_jump(void) {
+static void i_process_final_jump(void) {
     // get return value
     uint32_t eax;
     asm volatile("movl %%eax, %0" : "=r" (eax));
@@ -268,6 +267,7 @@ int process_init(void) {
     g_proc_current = kern_proc;
 
     g_tsleep_interact = 0;
+    g_last_switch = 0;
     g_need_clean = 0;
 
     g_pid_incrament = 0;
@@ -580,6 +580,9 @@ int process_auto_schedule(int acitve) {
             g_scheduler_disable_count = 0;
         if (g_scheduler_state == SHDLR_DISL && !g_scheduler_disable_count) {
             g_scheduler_state = SHDLR_ENBL;
+            if (timer_get_ticks() - g_last_switch > SCHEDULER_EVRY) {
+                schedule(0);
+            }
         }
     }
 
@@ -623,12 +626,15 @@ void schedule(uint32_t ticks) {
         proc = g_shdlr_queue[g_shdlr_queue_index];
     }
 
+    g_proc_current->run_time += ticks - g_last_switch;
+    g_last_switch = ticks;
+
     if (proc == g_proc_current) {
         g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
         return;
     }
 
-    i_process_switch(g_proc_current, proc, ticks);
+    i_process_switch(g_proc_current, proc);
 }
 
 /**************************
