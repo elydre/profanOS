@@ -22,7 +22,6 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <kernel/syscall.h>
 #include <minilib.h>
 #include <system.h>
 

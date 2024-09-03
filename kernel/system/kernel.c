@@ -54,12 +54,10 @@ void kernel_main(void *mboot_ptr) {
     status_print(filesys_init, "Loading", "butterfly filesystem");
     status_print(pok_init,     "Initing", "kernel modules loader");
 
-    kprintf("successfully booted in %d ms\n", timer_get_ms());
+    kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
 
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 1, NULL, NULL);
 
-    while (2);
-
-    sys_fatal("Nothing to run!");
+    sys_nothing_todo(); 
 }

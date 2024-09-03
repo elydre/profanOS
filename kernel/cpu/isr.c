@@ -9,7 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <kernel/syscall.h>
 #include <cpu/ports.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
@@ -89,7 +88,7 @@ int isr_install(void) {
     return 0;
 }
 
-#include <minilib.h>
+extern void syscall_handler(registers_t *r);
 
 void isr_handler(registers_t *r) {
     int in_kernel = !sys_entry_kernel(1);

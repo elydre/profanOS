@@ -14,13 +14,13 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-22"
+#define KERNEL_VERSION  "sc-23"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
 #define SCUBA_MAP_MAX   0x10000000  // scuba map to 256MB max
 #define FS_MAX_DISKS    256         // max disk count
-#define RUN_DEFAULT     "/bin/sys/init.bin"
+#define RUN_DEFAULT     "/bin/sys/rosemary.bin"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
@@ -51,6 +51,7 @@ int sys_set_reporter(int (*reporter)(char *));
 void sys_reboot(void);
 void sys_shutdown(void);
 int  sys_power(int action);
+void sys_nothing_todo(void);
 
 void sys_warning(char *msg, ...);
 void sys_error(char *msg, ...);
@@ -66,7 +67,6 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // pok.c
 int      pok_init(void);
-int      pok_does_loaded(uint32_t lib_id);
 int      pok_load(char *path, uint32_t lib_id);
 int      pok_unload(uint32_t lib_id);
 uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id);

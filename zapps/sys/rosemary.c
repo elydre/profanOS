@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === init.c : 2024 ===                                                     |
+|   === rosemary.c : 2024 ===                                                 |
 |                                                                             |
-|    First user-space program to run on boot                       .pi0iq.    |
+|    Initialisation program for profanOS userspace.                .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -16,6 +16,8 @@
 #include <profan/libmmq.h>
 #include <profan/panda.h>
 #include <profan.h>
+
+#define LOADER_NAME "rosemary"
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
@@ -57,13 +59,40 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     mod_t *mod = &mods_at_boot[i];
-    if (syscall_pok_load(mod->path, mod->id)) {
-        syscall_kprint("FAILED TO LOAD ");
-        syscall_kprint(get_name(mod->path));
-        syscall_kprint(" MODULE\n");
-        return 1;
+    int error_code = syscall_pok_load(mod->path, mod->id);
+
+    if (error_code > 0)
+        return 0;
+
+    syscall_kprint("["LOADER_NAME"] FATAL: failed to load ");
+    syscall_kprint(get_name(mod->path));
+    syscall_kprint(": ");
+
+    switch (error_code) {
+        case -1:
+            syscall_kprint("file not found\n");
+            break;
+        case -2:
+            syscall_kprint("invalid module id range\n");
+            break;
+        case -3:
+            syscall_kprint("file is not a dynamic ELF\n");
+            break;
+        case -4:
+            syscall_kprint("ELF relocation failed\n");
+            break;
+        case -5:
+            syscall_kprint("failed to read functions\n");
+            break;
+        case -6:
+            syscall_kprint("init function exited with error\n");
+            break;
+        default:
+            syscall_kprint("unknown error\n");
+            break;
     }
-    return 0;
+
+    return 1;
 }
 
 void rainbow_print(char *message) {
@@ -116,18 +145,20 @@ void set_env(char *line) {
 
 int main(void) {
     char key_char, use_panda = 0;
-    int sum, total, usage_pid;
+    int total, usage_pid;
 
     envp = NULL;
 
     total = (int) (sizeof(mods_at_boot) / sizeof(mod_t));
-    sum = 0;
 
     for (int i = 0; i < total; i++) {
-        sum += !print_load_status(i);
+        if (!print_load_status(i))
+            continue;
+        syscall_kprint("["LOADER_NAME"] Module loading failed, exiting\n");
+        return 1;
     }
 
-    fd_printf(1, "Loaded %d/%d modules\n\n", sum, total);
+    fd_printf(1, "Successfully loaded %d modules\n\n", total);
 
     if (syscall_vesa_state()) {
         panda_set_start(syscall_get_cursor());
@@ -138,13 +169,13 @@ int main(void) {
             fm_reopen(3, "/dev/panda")  < 0 ||
             fm_reopen(4, "/dev/panda")  < 0 ||
             fm_reopen(5, "/dev/pander") < 0
-        ) syscall_kprint("Failed to redirect to panda\n");
+        ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);
         if (START_USAGE_GRAPH)
             run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
     } else {
-        syscall_kprint("[init] using kernel output for stdout\n");
+        syscall_kprint("["LOADER_NAME"] Using kernel output for stdout\n");
         set_env("TERM=/dev/kterm");
     }
 
@@ -154,7 +185,7 @@ int main(void) {
         set_env("PATH=/bin/cmd:/bin/fatpath");
         run_ifexist_pid(SHELL_PATH, 0, NULL, envp, NULL);
 
-        fd_putstr(1, "[init] "SHELL_NAME" exited,\nAction keys:\n"
+        fd_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
             " h - unload all modules and exit\n"
             " j - reboot profanOS\n"
@@ -169,18 +200,19 @@ int main(void) {
         syscall_sys_set_reporter(NULL);
     }
 
-    syscall_kprint("\e[2J");
     if (syscall_process_state(usage_pid) < 4) {
         syscall_process_exit(usage_pid, 0, 0);
     }
+
+    syscall_kprint("\e[2J");
+
+    free(envp);
 
     // unload all modules
     for (int i = 0; i < total; i++) {
         mod_t *mod = &mods_at_boot[i];
         syscall_pok_unload(mod->id);
     }
-
-    free(envp);
 
     syscall_kprint("all modules unloaded\n");
 

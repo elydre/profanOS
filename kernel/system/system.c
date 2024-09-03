@@ -223,6 +223,15 @@ void sys_shutdown(void) {
     asm volatile("hlt");
 }
 
+void sys_nothing_todo(void) {
+    kcprint("\nNothing to do, stopping profanOS ", 0x0D);
+    kcprint(":", 0x0B);
+    kcprint("(\n", 0x0D);
+
+    asm volatile("cli");
+    asm volatile("hlt");
+}
+
 int sys_power(int action) {
     switch (action) {
         case 0:
