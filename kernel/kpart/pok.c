@@ -114,9 +114,10 @@ uint32_t *i_pok_read_funcs(uint8_t *file, uint8_t *mem) {
     }
 
     // allocate the address list
-    uint32_t *addr_list = (uint32_t *) mem_alloc((func_count + 1) * sizeof(uint32_t), 0, 5); // 5: library
-    addr_list[0] = func_count;
-    func_count = 1;
+    uint32_t *addr_list = (uint32_t *) mem_alloc((func_count + 2) * sizeof(uint32_t), 0, 5); // 5: library
+    addr_list[0] = (uint32_t) mem;
+    addr_list[1] = func_count;
+    func_count = 2;
 
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
         Elf32_Sym *symbol = symbol_table + i;
@@ -127,7 +128,7 @@ uint32_t *i_pok_read_funcs(uint8_t *file, uint8_t *mem) {
     }
 
     // sort the functions by address
-    for (uint32_t i = 0; i < func_count; i++) {
+    for (uint32_t i = 2; i < func_count; i++) {
         for (uint32_t j = i + 1; j < func_count; j++) {
             if (addr_list[i] > addr_list[j]) {
                 uint32_t tmp = addr_list[i];
@@ -227,8 +228,6 @@ static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int pok_load(char *path, uint32_t lib_id) {
-    kprintf_serial("Loading library %d from %s\n", lib_id, path);
-
     uint32_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
     if (IS_SID_NULL(file) || !fu_is_file(fs_get_main(), file)) {
         return -1;
@@ -270,7 +269,7 @@ int pok_load(char *path, uint32_t lib_id) {
     }
 
     sys_exit_kernel(0);
-    int ret_code = ((int (*)(void)) addr_list[1])();
+    int ret_code = ((int (*)(void)) addr_list[2])();
     sys_entry_kernel(0);
 
     if (ret_code) {
@@ -283,15 +282,15 @@ int pok_load(char *path, uint32_t lib_id) {
     lib_functions[lib_id - 1000] = addr_list;
 
     // return the function count
-    return addr_list[0];
+    return addr_list[1];
 }
 
 int pok_unload(uint32_t lib_id) {
-    // TODO: free the memory allocated for the library
     if (!i_pok_does_loaded(lib_id)) {
         sys_error("Library %d not loaded", lib_id);
         return 1;
     }
+    free((void *) lib_functions[lib_id - 1000][0]);
     free(lib_functions[lib_id - 1000]);
     lib_functions[lib_id - 1000] = 0;
 
@@ -305,10 +304,10 @@ uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id) {
     }
 
     uint32_t *addr_list = lib_functions[lib_id - 1000];
-    if (func_id > addr_list[0]) {
+    if (func_id > addr_list[1]) {
         sys_error("Function %d not found in library %d", func_id, lib_id);
         return 0;
     }
 
-    return addr_list[func_id];
+    return addr_list[func_id + 1];
 }
