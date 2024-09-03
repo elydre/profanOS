@@ -95,7 +95,7 @@ void set_title(char *path) {
 
 void load_file(char *path) {
     uint32_t file = fu_path_to_sid(ROOT_SID, path);
-    int file_size = fu_get_file_size(file);
+    int file_size = fu_file_get_size(file);
     int read_size = file_size;
 
     g_data_size = file_size + 1;
@@ -127,7 +127,7 @@ void save_file(char *path) {
     }
 
     uint32_t file = fu_path_to_sid(ROOT_SID, path);
-    fu_set_file_size(file, g_data_size - 1);
+    fu_file_set_size(file, g_data_size - 1);
     fu_file_write(file, data_copy, 0, g_data_size - 1);
 
     free(data_copy);

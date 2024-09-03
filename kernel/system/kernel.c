@@ -52,12 +52,14 @@ void kernel_main(void *mboot_ptr) {
     status_print(sys_init,     "Initing", "FPU and error reporting");
     status_print(process_init, "Starting", "process manager");
     status_print(filesys_init, "Loading", "butterfly filesystem");
-    *(int *)(WATDILY_ADDR) = (int) dily_get_func;
+    status_print(pok_init,     "Initing", "kernel modules loader");
 
     kprintf("successfully booted in %d ms\n", timer_get_ms());
 
     // launch of the default program
     run_ifexist(RUN_DEFAULT, 1, NULL, NULL);
+
+    while (2);
 
     sys_fatal("Nothing to run!");
 }

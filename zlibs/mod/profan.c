@@ -11,7 +11,9 @@
 
 #define PROFAN_C
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 #include <profan/type.h>
@@ -73,7 +75,7 @@ int profan_kb_load_map(char *path) {
         return 1;
     }
 
-    int file_size = fu_get_file_size(sid);
+    int file_size = fu_file_get_size(sid);
     char *file_content = malloc(file_size + 1);
 
     fu_file_read(sid, file_content, 0, file_size);
@@ -311,7 +313,7 @@ char **get_interp(uint32_t sid, int *c) {
     int size = 0;
     int to_read = 10;
 
-    int file_size = fu_get_file_size(sid);
+    int file_size = fu_file_get_size(sid);
     if (file_size < 10)
         to_read = file_size;
 
@@ -469,7 +471,3 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
 
     return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>

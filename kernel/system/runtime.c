@@ -88,6 +88,7 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
     uint32_t real_fsize = fsize;
 
+    scuba_directory_t *old_dir = process_get_directory(pid);
     scuba_directory_t *dir = scuba_directory_inited();
 
     // create program memory
@@ -95,13 +96,14 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
 
     // create stack
     uint32_t *phys_stack = scuba_create_virtual(dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
-
     mem_copy(phys_stack, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
 
     process_switch_directory(pid, dir, 0);
 
     // switch to new directory
     asm volatile("mov %0, %%cr3":: "r"(dir));
+
+    scuba_directory_destroy(old_dir);
 
     // load binary
     fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);

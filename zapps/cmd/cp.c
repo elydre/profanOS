@@ -54,7 +54,7 @@ int copy_elem(uint32_t src_sid, char *src_path, char *dst_path) {
     if (IS_SID_NULL(new_sid))
         return raise_and_free("Failed to create file", dst_path, NULL);
 
-    int size = fu_get_file_size(src_sid);
+    int size = fu_file_get_size(src_sid);
     if (size < 0)
         return raise_and_free("Failed to get file size", src_path, NULL);
 

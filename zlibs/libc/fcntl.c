@@ -35,7 +35,7 @@ int open(const char *path, int flags, ...) {
     }
 
     if (flags & O_TRUNC && fu_is_file(sid)) {
-        fu_set_file_size(sid, 0);
+        fu_file_set_size(sid, 0);
     }
 
     int fd = fm_open(fullpath);

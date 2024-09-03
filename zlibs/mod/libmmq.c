@@ -9,7 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/type.h>
 
@@ -51,6 +53,10 @@ void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
     memcpy((uint8_t *) new_addr, (uint8_t *) mem, old_size < new_size ? old_size : new_size);
     free(mem);
     return (void *) new_addr;
+}
+
+void *malloc_func(uint32_t size, int as_kernel) {
+    return (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
@@ -234,7 +240,3 @@ int atoi(const char *nptr) {
         n = 10*n - (*nptr++ - '0');
     return neg ? n : -n;
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>

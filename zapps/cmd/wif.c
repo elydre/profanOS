@@ -69,12 +69,12 @@ int main(int argc, char** argv) {
     int len;
     if (argc == 2) {
         char *content = read_stdin(&len);
-        fu_set_file_size(file, len);
+        fu_file_set_size(file, len);
         fu_file_write(file, content, 0, len);
         free(content);
     } else {
         len = strlen(argv[2]);
-        fu_set_file_size(file, len);
+        fu_file_set_size(file, len);
         fu_file_write(file, argv[2], 0, len);
     }
 

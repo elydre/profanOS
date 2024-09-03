@@ -9,7 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 #include <profan/panda.h>
@@ -210,7 +212,3 @@ int keyboard_read(void *buffer, uint32_t size, char *term) {
 
     return to_read;
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>

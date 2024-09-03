@@ -139,6 +139,17 @@ void mem_set(void *dest, uint8_t val, uint32_t len) {
         *temp++ = val;
 }
 
+int mem_cmp(void *s1, void *s2, uint32_t n) {
+    uint8_t *p1 = s1;
+    uint8_t *p2 = s2;
+    for (uint32_t i = 0; i < n; i++) {
+        if (p1[i] != p2[i]) {
+            return p1[i] - p2[i];
+        }
+    }
+    return 0;
+}
+
 void free(void *addr) {
     if (addr == NULL)
         return;

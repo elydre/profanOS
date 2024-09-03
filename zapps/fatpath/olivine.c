@@ -1765,7 +1765,7 @@ char *if_dot(char **input) {
             free(stdin_path);
             return ERROR_CODE;
         } else if (fu_is_file(sid)) {
-            fu_set_file_size(sid, 0);
+            fu_file_set_size(sid, 0);
         }
     }
     #endif

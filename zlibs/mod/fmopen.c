@@ -11,7 +11,9 @@
 
 #define FMOPEN_LIB_C
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 #include <profan.h>
@@ -534,7 +536,3 @@ int fm_resol012(int fd, int pid) {
 
     return fm_add_stdhist(fd, pid);
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>

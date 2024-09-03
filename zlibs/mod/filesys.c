@@ -9,7 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/libmmq.h>
 #include <profan/type.h>
 
@@ -424,6 +426,24 @@ int fu_is_file(uint32_t dir_sid) {
     }
     free(name);
     return 0;
+}
+
+int fu_file_set_size(uint32_t file_sid, uint32_t size) {
+    if (!fu_is_file(file_sid)) {
+        RAISE_ERROR("file_set_size: d%ds%d is not a file\n", SID_DISK(file_sid), SID_SECTOR(file_sid));
+        return 1;
+    }
+
+    return syscall_fs_set_size(NULL, file_sid, size);
+}
+
+uint32_t fu_file_get_size(uint32_t file_sid) {
+    if (!fu_is_file(file_sid)) {
+        RAISE_ERROR("file_get_size: d%ds%d is not a file\n", SID_DISK(file_sid), SID_SECTOR(file_sid));
+        return UINT32_MAX;
+    }
+
+    return syscall_fs_get_size(NULL, file_sid);
 }
 
 uint32_t fu_file_create(int device_id, char *path) {
@@ -848,7 +868,3 @@ uint32_t *fu_get_vdisk_info(void) {
 
     return ret;
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>

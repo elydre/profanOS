@@ -161,7 +161,7 @@ FILE *fopen(const char *filename, const char *mode) {
     if (interpeted_mode & MODE_APPEND) {
         fm_lseek(file->fd, 0, SEEK_END);
     } else if (exists && (interpeted_mode & MODE_WRITE)) {
-        fu_set_file_size(file_id, 0);
+        fu_file_set_size(file_id, 0);
     }
 
     return file;

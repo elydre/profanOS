@@ -128,7 +128,7 @@ void memory_print_usage(void) {
     printf("Simple alloc   %15d kB | %d\n", syscall_mem_info(10, 1) / 1024, syscall_mem_info(9, 1));
     printf("Mem struct     %15d kB | %d\n", syscall_mem_info(10, 3) / 1024, syscall_mem_info(9, 3));
     printf("Process stack  %15d kB | %d\n", syscall_mem_info(10, 4) / 1024, syscall_mem_info(9, 4));
-    printf("Dily           %15d kB | %d\n", syscall_mem_info(10, 5) / 1024, syscall_mem_info(9, 5));
+    printf("pok           %15d kB | %d\n", syscall_mem_info(10, 5) / 1024, syscall_mem_info(9, 5));
     printf("As kernel      %15d kB | %d\n", syscall_mem_info(10, 6) / 1024, syscall_mem_info(9, 6));
     printf("Scuba vpage    %15d kB | %d\n", syscall_mem_info(10, 7) / 1024, syscall_mem_info(9, 7));
 

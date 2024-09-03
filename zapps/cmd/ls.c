@@ -158,7 +158,7 @@ void sort_size_and_type(int count, char **names, uint32_t *ids) {
     // sort files
     for (i = dir_count; i < count; i++) {
         for (j = i + 1; j < count; j++) {
-            if (fu_get_file_size(ids[i]) < fu_get_file_size(ids[j])) {
+            if (fu_file_get_size(ids[i]) < fu_file_get_size(ids[j])) {
                 tmp_name = names[i];
                 names[i] = names[j];
                 names[j] = tmp_name;
@@ -319,7 +319,7 @@ void print_lines(int elm_count, char **cnt_names, uint32_t *cnt_ids, ls_args_t *
             }
             printf("\e[u\e[22C\e[96m%s\e[0m", cnt_names[i]);
         } else if (fu_is_file(cnt_ids[i])) {
-            size = fu_get_file_size(cnt_ids[i]);
+            size = fu_file_get_size(cnt_ids[i]);
             if (args->size_type == LS_SIZE_PHYS || size < 10000) printf("%d B", size);
             else if (size < 10000000) printf("%d kB", size / 1024);
             else printf("%d MB", size / (1024 * 1024));

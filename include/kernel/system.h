@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "sc-21"
+#define KERNEL_VERSION  "sc-22"
 #define KERNEL_EDITING  "syscall"
 
 #define PROCESS_MAX     20          // max process count
@@ -28,13 +28,12 @@
 #define RUN_BIN_VBASE   0xB0000000  // virtual base address for binary
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count
 
-#define DILY_MAX        128         // max dily loaded library
-#define RUN_LIB_STACK   0x1000      // left stack size for library
+#define POK_MAX         128         // max loaded modules
 
 #define PROC_ESP_SIZE   0x10000     // process stack size
 #define PROC_ESP_ADDR   RUN_BIN_VBASE - PROC_ESP_SIZE
 
-#define WATDILY_ADDR    0x1FFFFB
+#define WATPOK_ADDR     0x1FFFFB
 #define MEM_BASE_ADDR   0x1FFFFF
 
 
@@ -65,11 +64,12 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp);
 int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
-// dily.c
-int      dily_does_loaded(uint32_t lib_id);
-int      dily_load(char *path, uint32_t lib_id);
-int      dily_unload(uint32_t lib_id);
-uint32_t dily_get_func(uint32_t lib_id, uint32_t func_id);
+// pok.c
+int      pok_init(void);
+int      pok_does_loaded(uint32_t lib_id);
+int      pok_load(char *path, uint32_t lib_id);
+int      pok_unload(uint32_t lib_id);
+uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id);
 
 #define sys_fatal(msg, ...) sod_fatal(__FILE__, __LINE__, msg, ##__VA_ARGS__)
 void sod_fatal(char *file_name, int line, char *msg, ...);

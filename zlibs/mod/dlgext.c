@@ -136,7 +136,7 @@ void *open_elf(char *filename) {
         return NULL;
     }
 
-    obj->size = fu_get_file_size(sid);
+    obj->size = fu_file_get_size(sid);
     obj->file = malloc(obj->size);
     obj->name = filename;
     obj->ref_count = -1;
@@ -176,7 +176,3 @@ void *open_elf(char *filename) {
 
     return obj;
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>

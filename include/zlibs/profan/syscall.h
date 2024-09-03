@@ -129,6 +129,74 @@
         return a; \
     }
 
+#elif defined(_SYSCALL_CREATE_STATIC)
+
+#define DEFN_SYSCALL0(id, ret_type, name) \
+    static ret_type syscall_##name(void) { \
+        ret_type a; \
+        asm volatile( \
+            "int $0x80" \
+            : "=a" (a) \
+            : "a" (id) \
+        ); \
+        return a; \
+    }
+
+#define DEFN_SYSCALL1(id, ret_type, name, type1) \
+    static ret_type syscall_##name(type1 a1) { \
+        ret_type a; \
+        asm volatile( \
+            "int $0x80" \
+            : "=a" (a) \
+            : "a" (id), "b" (a1) \
+        ); \
+        return a; \
+    }
+
+#define DEFN_SYSCALL2(id, ret_type, name, type1, type2) \
+    static ret_type syscall_##name(type1 a1, type2 a2) { \
+        ret_type a; \
+        asm volatile( \
+            "int $0x80" \
+            : "=a" (a) \
+            : "a" (id), "b" (a1), "c" (a2) \
+        ); \
+        return a; \
+    }
+
+#define DEFN_SYSCALL3(id, ret_type, name, type1, type2, type3) \
+    static ret_type syscall_##name(type1 a1, type2 a2, type3 a3) { \
+        ret_type a; \
+        asm volatile( \
+            "int $0x80" \
+            : "=a" (a) \
+            : "a" (id), "b" (a1), "c" (a2), "d" (a3) \
+        ); \
+        return a; \
+    }
+
+#define DEFN_SYSCALL4(id, ret_type, name, type1, type2, type3, type4) \
+    static ret_type syscall_##name(type1 a1, type2 a2, type3 a3, type4 a4) { \
+        ret_type a; \
+        asm volatile( \
+            "int $0x80" \
+            : "=a" (a) \
+            : "a" (id), "b" (a1), "c" (a2), "d" (a3), "S" (a4) \
+        ); \
+        return a; \
+    }
+
+#define DEFN_SYSCALL5(id, ret_type, name, type1, type2, type3, type4, type5) \
+    static ret_type syscall_##name(type1 a1, type2 a2, type3 a3, type4 a4, type5 a5) { \
+        ret_type a; \
+        asm volatile( \
+            "int $0x80" \
+            : "=a" (a) \
+            : "a" (id), "b" (a1), "c" (a2), "d" (a3), "S" (a4), "D" (a5) \
+        ); \
+        return a; \
+    }
+
 #else
 
 #define DEFN_SYSCALL0(id, ret_type, name) \
@@ -204,8 +272,8 @@ DEFN_SYSCALL0(35, uint32_t,  process_pid)
 DEFN_SYSCALL2(36, uint32_t,  process_info, uint32_t, int)
 DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 
-DEFN_SYSCALL2(38, int,       dily_load, char *, uint32_t)
-DEFN_SYSCALL1(39, int,       dily_unload, uint32_t)
+DEFN_SYSCALL2(38, int,       pok_load, char *, uint32_t)
+DEFN_SYSCALL1(39, int,       pok_unload, uint32_t)
 
 DEFN_SYSCALL2(40, void *,    scuba_generate, void *, uint32_t)
 DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)

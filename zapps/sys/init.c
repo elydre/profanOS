@@ -31,13 +31,13 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1001, "/lib/mod/libmmq.bin"},
-    {1002, "/lib/mod/filesys.bin"},
-    {1003, "/lib/mod/devio.bin"},
-    {1004, "/lib/mod/fmopen.bin"},
-    {1005, "/lib/mod/profan.bin"},
-    {1006, "/lib/mod/panda.bin"},
-    {1007, "/lib/mod/dlgext.bin"},
+    {1001, "/lib/mod/libmmq.pok"},
+    {1002, "/lib/mod/filesys.pok"},
+    {1003, "/lib/mod/devio.pok"},
+    {1004, "/lib/mod/fmopen.pok"},
+    {1005, "/lib/mod/profan.pok"},
+    {1006, "/lib/mod/panda.pok"},
+    {1007, "/lib/mod/dlgext.pok"},
 };
 
 int local_strlen(char *str) {
@@ -57,7 +57,7 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     mod_t *mod = &mods_at_boot[i];
-    if (syscall_dily_load(mod->path, mod->id)) {
+    if (syscall_pok_load(mod->path, mod->id)) {
         syscall_kprint("FAILED TO LOAD ");
         syscall_kprint(get_name(mod->path));
         syscall_kprint(" MODULE\n");
@@ -177,7 +177,7 @@ int main(void) {
     // unload all modules
     for (int i = 0; i < total; i++) {
         mod_t *mod = &mods_at_boot[i];
-        syscall_dily_unload(mod->id);
+        syscall_pok_unload(mod->id);
     }
 
     free(envp);

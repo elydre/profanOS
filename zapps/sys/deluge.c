@@ -531,7 +531,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
-    obj->size = fu_get_file_size(sid);
+    obj->size = fu_file_get_size(sid);
     obj->file = malloc(obj->size);
     obj->ref_count = 1;
     obj->need_free = 1;

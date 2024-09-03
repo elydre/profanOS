@@ -9,7 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 
@@ -554,7 +556,3 @@ void init_panda(void) {
 
     g_panda->screen_buffer = calloc_ask(g_panda->max_lines * g_panda->max_cols, sizeof(screen_char_t));
 }
-
-#undef SYSCALL_H
-#define _SYSCALL_CREATE_FUNCS
-#include <profan/syscall.h>
