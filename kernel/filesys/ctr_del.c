@@ -13,7 +13,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 int fs_cnt_delete_core(filesys_t *filesys, uint32_t core_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
@@ -134,3 +133,4 @@ int fs_cnt_delete(filesys_t *filesys, uint32_t head_sid) {
     vdisk_note_sector_unused(vdisk, head_sid);
     return 0;
 }
+

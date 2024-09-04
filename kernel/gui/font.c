@@ -273,3 +273,4 @@ uint8_t font_8x16[4096] = {
 uint8_t *font_get(void) {
     return font_8x16;
 }
+

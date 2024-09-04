@@ -16,7 +16,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 scuba_directory_t *kernel_directory;
 uint32_t g_map_to_addr;
 

@@ -13,7 +13,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 int fu_is_file(filesys_t *filesys, uint32_t dir_sid) {
     if (IS_SID_NULL(dir_sid)) return 0;
     char *name = fs_cnt_meta(filesys, dir_sid, NULL);
@@ -70,7 +69,6 @@ uint32_t fu_file_create(filesys_t *filesys, uint8_t device_id, char *path) {
     }
 
     // create a link in parent directory
-
     if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
         free(parent);
         free(name);

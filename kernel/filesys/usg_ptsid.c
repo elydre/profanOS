@@ -12,7 +12,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 
-
 uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
     uint32_t ret;
 

@@ -178,3 +178,4 @@ void tef_clear(void) {
     // set pixel to black
     mem_set(vesa_get_fb(), 0, vesa_get_height() * vesa_get_pitch() * sizeof(uint32_t));
 }
+

@@ -12,7 +12,6 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 
-
 void sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
@@ -48,7 +47,6 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
         str_cpy(*cnt, fullpath + i + 1);
     }
 }
-
 
 vdisk_t *fs_get_vdisk(filesys_t *fs, uint8_t device_id) {
     device_id -= 1;

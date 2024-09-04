@@ -52,3 +52,4 @@ int  corsor_calc_col(int offset);
 void cursor_blink(int on);
 
 #endif
+

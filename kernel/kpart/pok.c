@@ -80,7 +80,7 @@ static uint8_t *i_pok_resolve(uint8_t *file) {
     return mem;
 }
 
-uint32_t *i_pok_read_funcs(uint8_t *file, uint8_t *mem) {
+static uint32_t *i_pok_read_funcs(uint8_t *file, uint8_t *mem) {
     // read the symbol table and save function addresses in an array
 
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
@@ -287,7 +287,7 @@ int pok_load(char *path, uint32_t lib_id) {
 
 int pok_unload(uint32_t lib_id) {
     if (!i_pok_does_loaded(lib_id)) {
-        sys_error("Library %d not loaded", lib_id);
+        sys_warning("Library %d not loaded", lib_id);
         return 1;
     }
     free((void *) lib_functions[lib_id - 1000][0]);

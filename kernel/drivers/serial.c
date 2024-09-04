@@ -44,15 +44,13 @@ char serial_recv(int device) {
 }
 
 int serial_write(int device, char *buf, uint32_t len) {
-    for (uint32_t i = 0; i < len; i++) {
+    for (uint32_t i = 0; i < len; i++)
         serial_send(device, buf[i]);
-    }
     return len;
 }
 
 int serial_read(int device, char *buf, uint32_t len) {
-    for (uint32_t i = 0; i < len; i++) {
+    for (uint32_t i = 0; i < len; i++)
         buf[i] = serial_recv(device);
-    }
     return len;
 }

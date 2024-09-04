@@ -13,7 +13,6 @@
 #include <kernel/process.h>
 #include <cpu/ports.h>
 #include <cpu/isr.h>
-#include <minilib.h>
 #include <system.h>
 
 #define HISTORY_SIZE 5

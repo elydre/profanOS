@@ -54,3 +54,4 @@ int rtc_init(void) {
     write_register(0x0B, status);
     return 0;
 }
+

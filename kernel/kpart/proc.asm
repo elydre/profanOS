@@ -13,7 +13,7 @@ global process_asm_switch
 extern i_end_scheduler
 
 section .data
-    eax_copy dd 0   ; variable for eax copy
+    eax_copy dd 0           ; variable for eax copy
 
 align 4
 process_asm_switch:

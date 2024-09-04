@@ -13,7 +13,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 int fs_cnt_shrink_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_shrink) {
     vdisk_t *vdisk;
     uint8_t *data;

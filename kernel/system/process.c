@@ -350,7 +350,7 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
     }
 
     // push exit function pointer
-    esp[0] = (uint32_t) i_process_final_jump; // todo: check if this is the right address
+    esp[0] = (uint32_t) i_process_final_jump; // TODO: check if this is the right address
 
     new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - (nargs + 1) * sizeof(uint32_t);
 

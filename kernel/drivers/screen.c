@@ -115,3 +115,4 @@ void txt_cursor_blink(int on) {
     port_byte_out(REG_SCREEN_CTRL, 0x0A);
     port_byte_out(REG_SCREEN_DATA, (port_byte_in(REG_SCREEN_DATA) & 0xC0) | (on ? 0x0F : 0x0C));
 }
+

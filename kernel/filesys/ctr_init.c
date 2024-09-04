@@ -13,6 +13,8 @@
 #include <minilib.h>
 #include <system.h>
 
+#define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
+#define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
 
 int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
     uint8_t *data;
@@ -40,9 +42,6 @@ int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
 
     return 0;
 }
-
-#define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
-#define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
 
 uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta) {
     uint32_t main_sid;

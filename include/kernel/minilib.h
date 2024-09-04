@@ -45,6 +45,5 @@ void kprintf_buf(char *char_buffer, char *fmt, ...);
 
 void status_print(int (*func)(), char *verb, char *noun);
 void kinput(char *buffer, int size);
-void krainbow(char *message);
 
 #endif

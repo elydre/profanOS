@@ -18,7 +18,11 @@
 #include <minilib.h>
 #include <system.h>
 
-// string functions
+/*************************
+ *                      *
+ *   string functions   *
+ *                      *
+ ************************/
 
 void str_cat(char *s1, char *s2) {
     while (*s1)
@@ -119,7 +123,12 @@ int str_ncmp(char *s1, char *s2, int n) {
     return s1[i] - s2[i];
 }
 
-// memory management
+
+/**************************
+ *                       *
+ *   memory management   *
+ *                       *
+ *************************/
 
 void mem_move(void *dest, void *source, uint32_t nbytes) {
     if (dest < source) {
@@ -183,7 +192,11 @@ void *calloc(uint32_t size) {
     return addr;
 }
 
-// input/output functions
+/**************************
+ *                       *
+ *   user io functions   *
+ *                       *
+ *************************/
 
 void status_print(int (*func)(), char *verb, char *noun) {
     int old_cursor, new_cursor, status;
@@ -330,12 +343,4 @@ void kprintf_buf(char *char_buffer, char *fmt, ...) {
     va_start(args, fmt);
     kprintf_va2buf(char_buffer, fmt, args);
     va_end(args);
-}
-
-void krainbow(char *message) {
-    char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
-
-    for (int i = 0; message[i]; i++) {
-        kcnprint(&message[i], 1, rainbow_colors[i % 6]);
-    }
 }

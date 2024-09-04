@@ -13,7 +13,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 vdisk_t *vdisk_create(uint32_t initsize) {
     vdisk_t *vdisk = malloc(sizeof(vdisk_t));
 

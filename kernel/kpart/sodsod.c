@@ -234,3 +234,4 @@ void sod_interrupt(uint8_t code, int err_code, char *msg) {
 
     asm volatile("hlt");
 }
+

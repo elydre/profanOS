@@ -14,6 +14,8 @@
 #include <cpu/isr.h>
 #include <system.h>
 
+extern void syscall_handler(registers_t *r);
+
 isr_t interrupt_handlers[256];
 
 int isr_install(void) {
@@ -87,8 +89,6 @@ int isr_install(void) {
 
     return 0;
 }
-
-extern void syscall_handler(registers_t *r);
 
 void isr_handler(registers_t *r) {
     int in_kernel = !sys_entry_kernel(1);

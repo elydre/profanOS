@@ -88,3 +88,4 @@ int scuba_call_unmap(void *addr);
 void *scuba_call_phys(void *addr);
 
 #endif
+

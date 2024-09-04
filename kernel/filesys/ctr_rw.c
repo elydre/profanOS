@@ -34,7 +34,6 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
     }
 
     // check if sector is core
-    // data = vdisk_load_sector(vdisk, core_sid);
     vdisk_read_sector(vdisk, core_sid, alloc_buf);
 
     if (alloc_buf[0] != ST_CONT || alloc_buf[1] != SF_CORE) {
@@ -80,7 +79,6 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
         }
 
         // check if sector is locator
-        // data = vdisk_load_sector(vdisk, loca_sid);
         vdisk_read_sector(vdisk, loca_sid, data);
 
         if (data[0] != ST_CONT || data[1] != SF_LOCA) {
@@ -168,7 +166,7 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
         return 1;
     }
 
-    // check if offset+size is valid
+    // check if offset + size is valid
     if (offset + size > *((uint32_t *) (data + 2 + META_MAXLEN))) {
         sys_warning("[cnt_rw] cannot %s beyond cnt size (%d requested, %d max)",
                 is_read ? "read" : "write",

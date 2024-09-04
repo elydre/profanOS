@@ -13,7 +13,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 int fu_is_dir(filesys_t *filesys, uint32_t dir_sid) {
     if (IS_SID_NULL(dir_sid)) return 0;
     char *name = fs_cnt_meta(filesys, dir_sid, NULL);

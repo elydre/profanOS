@@ -124,9 +124,6 @@ int filesys_init(void) {
         ROOT_SID,
         src_sid,
         "src"
-    )) {
-        return 1;
-    }
-
+    )) return 1;
     return 0;
 }
