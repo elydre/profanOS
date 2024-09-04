@@ -398,4 +398,3 @@ irq15:
     push byte 15
     push byte 47
     jmp irq_common_stub
-

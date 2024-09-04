@@ -82,8 +82,8 @@ void *SYSCALL_ARRAY[] = {
     process_list_all,   // 37
 
     // system.h
-    pok_load,          // 38
-    pok_unload,        // 39
+    pok_load,           // 38
+    pok_unload,         // 39
 
     // scubasuit.h
     scuba_call_generate,// 40
@@ -113,4 +113,3 @@ void syscall_handler(registers_t *r) {
 
     return;
 }
-

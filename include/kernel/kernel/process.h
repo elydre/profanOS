@@ -84,4 +84,3 @@ void process_switch_directory(uint32_t pid, scuba_directory_t *dir, int now);
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);
 
 #endif
-

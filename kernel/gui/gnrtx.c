@@ -237,4 +237,3 @@ int kcnprint(char *message, int len, char color) {
 
     return len;
 }
-

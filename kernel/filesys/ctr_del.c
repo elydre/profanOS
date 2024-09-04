@@ -133,4 +133,3 @@ int fs_cnt_delete(filesys_t *filesys, uint32_t head_sid) {
     vdisk_note_sector_unused(vdisk, head_sid);
     return 0;
 }
-

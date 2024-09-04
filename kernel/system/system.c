@@ -288,4 +288,3 @@ int sys_init(void) {
 char *sys_kinfo(void) {
     return KERNEL_EDITING " " KERNEL_VERSION;
 }
-
