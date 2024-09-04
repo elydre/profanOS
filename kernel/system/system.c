@@ -46,6 +46,57 @@ char *interrupts[] = {
     "Machine check",
 };
 
+/*********************************
+ *                              *
+ *  F2 key - exit current proc  *
+ *                              *
+*********************************/
+
+void kernel_exit_current(void) {
+    uint32_t pid_list[PROCESS_MAX]; // it's a define
+    int pid_list_len = process_list_all(pid_list, PROCESS_MAX);
+    uint32_t pid, state;
+
+    for (int i = pid_list_len - 1; i >= 0; i--) {
+        pid = pid_list[i];
+        state = process_get_state(pid);
+        if (pid && state < 3 && pid != process_get_pid()) {
+            force_exit_pid(pid, 143, 0);
+            return;
+        }
+    }
+}
+
+/**********************************
+ *                               *
+ *  Kernel entry and exit funcs  *
+ *                               *
+**********************************/
+
+uint8_t IN_KERNEL = 1;
+
+int sys_entry_kernel(int tolerate_error) {
+    if (IN_KERNEL) {
+        if (tolerate_error)
+            return 1;
+        sys_fatal("Already in kernel mode");
+    }
+    process_auto_schedule(0); // lock before entering kernel
+    IN_KERNEL = 1;
+    return 0;
+}
+
+int sys_exit_kernel(int tolerate_error) {
+    if (!IN_KERNEL) {
+        if (tolerate_error)
+            return 1;
+        sys_fatal("Already in user mode");
+    }
+    IN_KERNEL = 0;
+    process_auto_schedule(1); // unlock after exiting kernel
+    return 0;
+}
+
 /********************************
  *                             *
  *  error reporting functions  *
@@ -63,11 +114,12 @@ int sys_default_reporter(char *msg) {
     return 0;
 }
 
-void sys_set_reporter(int (*reporter)(char *)) {
+int sys_set_reporter(int (*reporter)(char *)) {
     if (reporter == NULL) {
         reporter = sys_default_reporter;
     }
     reporter_addr = reporter;
+    return 0;
 }
 
 void sys_report(char *msg) {
@@ -89,7 +141,6 @@ void sys_report(char *msg) {
 }
 
 void sys_warning(char *msg, ...) {
-    process_disable_scheduler();
     RECURSIVE_COUNT++;
 
     va_list args;
@@ -103,11 +154,9 @@ void sys_warning(char *msg, ...) {
     sys_report(sys_safe_buffer);
 
     RECURSIVE_COUNT--;
-    process_enable_scheduler();
 }
 
 void sys_error(char *msg, ...) {
-    process_disable_scheduler();
     RECURSIVE_COUNT++;
 
     int current_pid = process_get_pid();
@@ -123,15 +172,14 @@ void sys_error(char *msg, ...) {
     sys_report(sys_safe_buffer);
 
     RECURSIVE_COUNT--;
-    process_enable_scheduler();
 
     if (current_pid > 1 && force_exit_pid(current_pid, 143, 0)) {
         sys_fatal("Failed to exit process");
     }
 }
 
-void sod_interrupt(int code, int err_code, char *msg);
-void sys_interrupt(int code, int err_code) {
+void sod_interrupt(uint8_t code, int err_code, char *msg);
+void sys_interrupt(uint8_t code, int err_code) {
     kprintf_serial("received interrupt %d from cpu\n", code);
 
     // page fault issue handler
@@ -141,11 +189,11 @@ void sys_interrupt(int code, int err_code) {
     }
 
     if (process_get_pid() == 0) {
-        sod_interrupt(code, err_code, interrupts[code]);
+        sod_interrupt(code, err_code, code < 19 ? interrupts[code] : "?");
         return;
     }
 
-    sys_error("CPU raised interrupt %d (%s)", code, interrupts[code]);
+    sys_error("CPU raised interrupt %d (%s)", code, code < 19 ? interrupts[code] : "?");
 }
 
 /********************************
@@ -173,6 +221,29 @@ void sys_shutdown(void) {
 
     asm volatile("cli");
     asm volatile("hlt");
+}
+
+void sys_nothing_todo(void) {
+    kcprint("\nNothing to do, stopping profanOS ", 0x0D);
+    kcprint(":", 0x0B);
+    kcprint("(\n", 0x0D);
+
+    asm volatile("cli");
+    asm volatile("hlt");
+}
+
+int sys_power(int action) {
+    switch (action) {
+        case 0:
+            sys_reboot();
+            break;
+        case 1:
+            sys_shutdown();
+            break;
+        default:
+            return 1;
+    }
+    return 0;
 }
 
 /******************************

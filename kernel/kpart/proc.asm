@@ -10,13 +10,14 @@
 ;*****************************************************************************;
 
 global process_asm_switch
-global process_fork
-
 extern i_end_scheduler
-extern i_process_fork
+
+section .data
+    eax_copy dd 0           ; variable for eax copy
 
 align 4
 process_asm_switch:
+    cli                     ; disable interrupts
     pusha
     pushf
     mov    eax, cr3         ; push CR3
@@ -53,27 +54,16 @@ process_asm_switch:
     push   eax
     popf
     pop    eax
-    mov    esp, [eax+0x18]  ; pf4 est pire que fuzeIII
-    push   eax
+    mov    [eax_copy], eax  ; backup eax in memory
     mov    eax, [eax+0x28]  ; CR3
     mov    cr3, eax
-    pop    eax
+    mov    eax, [eax_copy]  ; restore eax
+    mov    esp, [eax+0x18]  ; pf4 is worse than fuzeIII
     push   eax
     mov    eax, [eax+0x20]  ; EIP
     xchg   [esp], eax
     mov    eax, [eax]
+    cld                     ; clear direction flag
     call i_end_scheduler    ; all the end of the scheduler (process.c)
+    sti                     ; enable interrupts
     ret                     ; this ends all
-
-align 4
-process_fork:
-    push esp    ; push stack pointer
-    push ebp    ; push base pointer
-    push edi    ; push edi
-    push esi    ; push esi
-    push edx    ; push edx
-    push ecx    ; push ecx
-    push ebx    ; push ebx
-    call i_process_fork
-    add esp, 28 ; remove the arguments
-    ret

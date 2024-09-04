@@ -239,6 +239,14 @@ def build_app_lib():
         print_and_exec(f"rm {fname}.o {fname}.pe")
         total -= 1
 
+    def build_mod_file(name, fname):
+        global total
+        print_info_line(name)
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -fPIC -c {name} -o {fname}.o {ZLIB_FLAGS}")
+        print_and_exec(f"{SHRD} -m32 -nostdlib -o {fname}.pok {fname}.o")
+        print_and_exec(f"rm {fname}.o")
+        total -= 1
+
     def build_elf_file(name, fname, liblist):
         # build object file and link it using shared libs
         print_info_line(name)
@@ -274,11 +282,12 @@ def build_app_lib():
     lib_build_list = find_app_lib(ZLIBS_DIR, ".c")
     lib_build_list += find_app_lib(ZLIBS_DIR, ".cpp")
     bin_build_list = []
+    mod_build_list = []
 
     for e in lib_build_list:
         if e.startswith(f"{ZLIBS_MOD}/"):
             lib_build_list = [x for x in lib_build_list if x != e]
-            bin_build_list.append(e)
+            mod_build_list.append(e)
 
     elf_build_list = find_app_lib(ZAPPS_DIR, ".c")
     elf_build_list += find_app_lib(ZAPPS_DIR, ".cpp")
@@ -288,7 +297,7 @@ def build_app_lib():
             elf_build_list = [x for x in elf_build_list if x != e]
             bin_build_list.append(e)
 
-    for file in elf_build_list + bin_build_list + lib_build_list:
+    for file in elf_build_list + bin_build_list + lib_build_list + mod_build_list:
         if sum(x == "/" for x in file) <= 1:
             cprint(COLOR_EROR, f"file '{file}' is not in a subdirectory")
             exit(1)
@@ -301,6 +310,7 @@ def build_app_lib():
 
     # check if zapps need to be rebuild
     total_elf = len(elf_build_list)
+    total_mod = len(mod_build_list)
     total_bin = len(bin_build_list)
     total_lib = len(lib_build_list)
 
@@ -308,12 +318,14 @@ def build_app_lib():
             f"{OUT_DIR}/{file.replace('.c', '.elf').replace('.cpp', '.elf')}", file)]
     bin_build_list = [file for file in bin_build_list if not file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.bin').replace('.cpp', '.bin')}", file)]
+    mod_build_list = [file for file in mod_build_list if not file1_newer(
+            f"{OUT_DIR}/{file.replace('.c', '.pok').replace('.cpp', '.pok')}", file)]
     lib_build_list = [file for file in lib_build_list if not (file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.o').replace('.cpp', '.o')}", file
             ) and file1_newer(f"{OUT_DIR}/zlibs/{file.split('/')[1]}.so", file))]
 
     cprint(COLOR_INFO, f"{len(elf_build_list)}/{total_elf} elf, {len(bin_build_list)}/{total_bin} " +
-           f"bin and {len(lib_build_list)}/{total_lib} lib files to compile")
+           f"bin, {len(mod_build_list)}/{total_mod} mod, {len(lib_build_list)}/{total_lib} lib files to compile")
 
     global total
     total = len(lib_build_list)
@@ -330,10 +342,14 @@ def build_app_lib():
         print_info_line(f"linking {name}")
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
 
-    total = len(elf_build_list) + len(bin_build_list)
+    total = len(elf_build_list) + len(bin_build_list) + len(mod_build_list)
 
     # get .so files
     libs_name = [e[:-3] for e in file_in_dir(f"{OUT_DIR}/zlibs", ".so")]
+
+    for name in mod_build_list:
+        fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
+        threading.Thread(target = build_mod_file, args=(name, fname)).start()
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"

@@ -13,14 +13,13 @@
 #include <kernel/process.h>
 #include <cpu/ports.h>
 #include <cpu/isr.h>
-#include <minilib.h>
 #include <system.h>
 
 #define HISTORY_SIZE 5
 
 static int sc_history[HISTORY_SIZE];
 
-char kb_scancode_to_char(int scancode, int shift) {
+char kb_sc_to_char(int scancode, int shift) {
     char sc_ascii_min[] = {
         '\0', '\0', '&', '~', '"', '\'','(', '-', '`', '_',
         '+', '@', ')', '=', '\0', '\0', 'a', 'z', 'e', 'r',
@@ -70,10 +69,8 @@ static void keyboard_callback(registers_t *regs) {
     }
     sc_history[0] = sc;
 
-    if (sc_history[0] == 59) {          // F1
-        kernel_switch_back();
-    } else if (sc_history[0] == 60) {   // F2
-        process_wakeup(process_create(kernel_exit_current, 0, "exit_current", 0));
+    if (sc_history[0] == 60) {   // F2
+        process_wakeup(process_create(kernel_exit_current, 0, "exit_current", 0, NULL));
     }
 }
 

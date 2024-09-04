@@ -13,10 +13,9 @@
 #include <minilib.h>
 #include <system.h>
 
-
-int fu_is_dir(filesys_t *filesys, sid_t dir_sid) {
-    if (IS_NULL_SID(dir_sid)) return 0;
-    char *name = fs_cnt_get_meta(filesys, dir_sid);
+int fu_is_dir(filesys_t *filesys, uint32_t dir_sid) {
+    if (IS_SID_NULL(dir_sid)) return 0;
+    char *name = fs_cnt_meta(filesys, dir_sid, NULL);
     if (name == NULL) return 0;
     if (name[0] == 'D') {
         free(name);
@@ -40,7 +39,7 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***names) {
+int fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names) {
     if (!fu_is_dir(filesys, dir_sid)) {
         sys_warning("[get_dir_content] Sector is not a directory");
         return -1;
@@ -68,7 +67,7 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     }
 
     // get the elements
-    *ids = malloc(sizeof(sid_t) * count);
+    *ids = malloc(sizeof(uint32_t) * count);
     *names = malloc(sizeof(char *) * count);
 
     if (*ids == NULL || *names == NULL) {
@@ -77,10 +76,10 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
 
     uint32_t name_offset;
     for (uint32_t i = 0; i < count; i++) {
-        mem_copy(*ids + i, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)), sizeof(sid_t));
-        mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t),
+        mem_copy(*ids + i, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
+        mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t),
                 sizeof(uint32_t));
-        char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + name_offset;
+        char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(str_len(tmp) + 1);
         str_cpy((*names)[i], tmp);
     }
@@ -89,8 +88,8 @@ int fu_get_dir_content(filesys_t *filesys, sid_t dir_sid, sid_t **ids, char ***n
     return count;
 }
 
-int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, char *name) {
-    if (IS_NULL_SID(element_sid) || IS_NULL_SID(dir_sid) || !fu_is_dir(filesys, dir_sid)) {
+int fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name) {
+    if (IS_SID_NULL(element_sid) || IS_SID_NULL(dir_sid) || !fu_is_dir(filesys, dir_sid)) {
         sys_error("[add_element_to_dir] Invalid given sector id");
         return 1;
     }
@@ -102,12 +101,12 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
     }
 
     // extend the directory
-    if (fs_cnt_set_size(filesys, dir_sid, size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1)) {
+    if (fs_cnt_set_size(filesys, dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
         return 1;
     }
 
     // read the directory
-    uint8_t *buf = malloc(size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1);
+    uint8_t *buf = malloc(size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1);
     if (fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
         return 1;
     }
@@ -118,25 +117,25 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
 
     if (count > 0) {
         // move names
-        for (uint32_t i = size - 1; i >= sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)); i--) {
-            buf[i + sizeof(uint32_t) + sizeof(sid_t)] = buf[i];
+        for (uint32_t i = size - 1; i >= sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)); i--) {
+            buf[i + sizeof(uint32_t) + sizeof(uint32_t)] = buf[i];
         }
     }
 
     // insert the new element
-    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)), &element_sid, sizeof(sid_t));
-    uint32_t name_offset = size - sizeof(uint32_t) - count * (sizeof(sid_t) + sizeof(uint32_t));
-    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(sid_t) + sizeof(uint32_t)) + sizeof(sid_t), &name_offset,
+    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)), &element_sid, sizeof(uint32_t));
+    uint32_t name_offset = size - sizeof(uint32_t) - count * (sizeof(uint32_t) + sizeof(uint32_t));
+    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t), &name_offset,
             sizeof(uint32_t));
 
     // update the number of elements
     count++;
     mem_copy(buf, &count, sizeof(uint32_t));
 
-    str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(sid_t) + count * sizeof(uint32_t) + name_offset, name);
+    str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) + count * sizeof(uint32_t) + name_offset, name);
 
     // write the directory
-    if (fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(sid_t) + sizeof(uint32_t) + str_len(name) + 1)) {
+    if (fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
         return 1;
     }
 
@@ -145,31 +144,30 @@ int fu_add_element_to_dir(filesys_t *filesys, sid_t dir_sid, sid_t element_sid, 
     return 0;
 }
 
-sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
+uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path) {
     char *parent, *name;
 
-    sid_t parent_sid;
-    sid_t head_sid;
+    uint32_t parent_sid;
+    uint32_t head_sid;
 
     sep_path(path, &parent, &name);
     if (parent[0]) {
         parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
-        if (IS_NULL_SID(parent_sid)) {
+        if (IS_SID_NULL(parent_sid)) {
             sys_warning("[dir_create] Parent not found");
             free(parent);
             free(name);
-            return NULL_SID;
+            return SID_NULL;
         }
 
         if (!fu_is_dir(filesys, parent_sid)) {
             sys_warning("[dir_create] Parent not a directory");
             free(parent);
             free(name);
-            return NULL_SID;
+            return SID_NULL;
         }
     } else {
-        parent_sid.device = 1;
-        parent_sid.sector = 0;
+        parent_sid = ROOT_SID;
     }
 
     // generate the meta
@@ -177,13 +175,13 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     str_cpy(meta, "D-");
     str_ncpy(meta + 2, name, META_MAXLEN - 3);
 
-    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : parent_sid.device, meta);
+    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_NULL_SID(head_sid)) {
+    if (IS_SID_NULL(head_sid)) {
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // create a link in parent directory
@@ -191,7 +189,7 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
         if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
             free(parent);
             free(name);
-            return NULL_SID;
+            return SID_NULL;
         }
     }
 
@@ -202,13 +200,13 @@ sid_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     if (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..")) {
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     if (fu_add_element_to_dir(filesys, head_sid, head_sid, ".")) {
         free(parent);
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     free(parent);

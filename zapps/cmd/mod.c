@@ -22,8 +22,8 @@
 #define HELP_HELP "Try 'mod -h' for more information.\n"
 
 int is_file(char *path) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(sid)) return 0;
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_SID_NULL(sid)) return 0;
     return fu_is_file(sid);
 }
 
@@ -51,8 +51,7 @@ int main(int argc, char **argv) {
             "Available options:\n"
             "  -h              print this help message\n"
             "  -u <id>         unload a library\n"
-            "  -l <id> <path>  load a library\n"
-            "  -r <id> <path>  replace a library"
+            "  -l <id> <path>  load/replace a library\n"
         );
         return 0;
     }
@@ -72,9 +71,9 @@ int main(int argc, char **argv) {
 
         printf("mod: Unloading %d\n", id);
 
-        c_process_set_scheduler(0);
-        c_dily_unload(id);
-        c_process_set_scheduler(1);
+        syscall_process_auto_schedule(0);
+        syscall_pok_unload(id);
+        syscall_process_auto_schedule(1);
         return 0;
     }
 
@@ -101,42 +100,38 @@ int main(int argc, char **argv) {
 
         printf("mod: Loading %s as %d\n", new_path, id);
 
-        c_dily_load(new_path, id);
-
+        int error_code = syscall_pok_load(new_path, id);
         free(new_path);
-        return 0;
-    }
 
-    if (option == 'r') {
-        if (argc < 4) {
-            fprintf(stderr, "mod: Missing argument to option '%s'\n" HELP_HELP, argv[1]);
-            return 1;
+        if (error_code > 0) {
+            return 0;
         }
 
-        int id = atoi(argv[2]);
-
-        if (id == 0) {
-            fprintf(stderr, "mod: Invalid id '%s'\n" HELP_HELP, argv[2]);
-            return 1;
+        fprintf(stderr, "mod: ", error_code);
+        switch (error_code) {
+            case -1:
+                fputs("file not found\n", stderr);
+                break;
+            case -2:
+                fputs("invalid module id range\n", stderr);
+                break;
+            case -3:
+                fputs("file is not a dynamic ELF\n", stderr);
+                break;
+            case -4:
+                fputs("ELF relocation failed\n", stderr);
+                break;
+            case -5:
+                fputs("failed to read functions\n", stderr);
+                break;
+            case -6:
+                fputs("init function exited with error\n", stderr);
+                break;
+            default:
+                fputs("unknown error\n", stderr);
+                break;
         }
-
-        // assemble new path
-        char *new_path = assemble_path(pwd, argv[3]);
-
-        if (!is_file(new_path)) {
-            fprintf(stderr, "mod: '%s': File not found\n" HELP_HELP, new_path);
-            return 1;
-        }
-
-        printf("mod: Replacing %d with %s\n", id, new_path);
-
-        c_process_set_scheduler(0);
-        c_dily_unload(id);
-        c_dily_load(new_path, id);
-        c_process_set_scheduler(1);
-
-        free(new_path);
-        return 0;
+        return 1;
     }
 
     printf("mod: Invalid option -- '%s'\n" HELP_HELP, argv[1]);

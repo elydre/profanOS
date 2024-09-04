@@ -51,9 +51,9 @@ vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id) {
     return fs->vdisk[device_id];
 }
 
-void draw_tree(filesys_t *filesys, sid_t sid, int depth) {
+void draw_tree(filesys_t *filesys, uint32_t sid, int depth) {
     char **names;
-    sid_t *sids;
+    uint32_t *sids;
     int count;
 
     count = fu_get_dir_content(filesys, sid, &sids, &names);
@@ -74,7 +74,11 @@ void draw_tree(filesys_t *filesys, sid_t sid, int depth) {
         for (int j = 0; j < depth; j++) {
             printf("  ");
         }
-        printf("%s, d%ds%d: %dB\n", names[i], sids[i].device, sids[i].sector, fs_cnt_get_size(filesys, sids[i]));
+        printf("%s, d%ds%d: %dB\n", names[i],
+                SID_DISK(sids[i]),
+                SID_SECTOR(sids[i]),
+                fs_cnt_get_size(filesys, sids[i])
+        );
         if (fu_is_dir(filesys, sids[i])) {
             draw_tree(filesys, sids[i], depth + 1);
         }

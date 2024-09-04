@@ -94,8 +94,8 @@ void set_title(char *path) {
 }
 
 void load_file(char *path) {
-    sid_t file = fu_path_to_sid(ROOT_SID, path);
-    int file_size = fu_get_file_size(file);
+    uint32_t file = fu_path_to_sid(ROOT_SID, path);
+    int file_size = fu_file_get_size(file);
     int read_size = file_size;
 
     g_data_size = file_size + 1;
@@ -126,8 +126,8 @@ void save_file(char *path) {
         if (data_copy[i] == '\0') data_copy[i] = '\n';
     }
 
-    sid_t file = fu_path_to_sid(ROOT_SID, path);
-    fu_set_file_size(file, g_data_size - 1);
+    uint32_t file = fu_path_to_sid(ROOT_SID, path);
+    fu_file_set_size(file, g_data_size - 1);
     fu_file_write(file, data_copy, 0, g_data_size - 1);
 
     free(data_copy);
@@ -435,7 +435,7 @@ void main_loop(char *path) {
 
     while (1) {
         // wait for key
-        key = c_kb_get_scfh();
+        key = syscall_sc_get();
 
         if (key == 224 || key == 0) {   // RESEND or 0
             key = key_sgt;
@@ -609,14 +609,14 @@ void main_loop(char *path) {
         }
 
         // display data
-        refresh_ticks = c_timer_get_ms();
+        refresh_ticks = syscall_timer_get_ms();
         display_data(y_offset, min(g_lines_count, y_offset + SCREEN_H), x_offset);
-        refresh_ticks = c_timer_get_ms() - refresh_ticks;
+        refresh_ticks = syscall_timer_get_ms() - refresh_ticks;
     }
 }
 
 void clear_screen(void) {
-    c_kprint("\e[2J");
+    syscall_kprint("\e[2J");
     fputs("\e[2J", stdout);
     fflush(stdout);
 }
@@ -662,11 +662,11 @@ char *compute_args(int argc, char **argv) {
 
     file = assemble_path(pwd, file);
 
-    sid_t elm = fu_path_to_sid(ROOT_SID, file);
+    uint32_t elm = fu_path_to_sid(ROOT_SID, file);
 
-    if (IS_NULL_SID(elm)) {
+    if (IS_SID_NULL(elm)) {
         elm = fu_file_create(0, file);
-        if (IS_NULL_SID(elm)) {
+        if (IS_SID_NULL(elm)) {
             fprintf(stderr, "rim: %s: failed to create file\n", file);
             exit(1);
         }

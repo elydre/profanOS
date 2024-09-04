@@ -16,17 +16,18 @@
 ; Common ISR code
 isr_common_stub:
     ; 1. Save CPU state
-    pusha ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
-    mov ax, ds ; Lower 16-bits of eax = ds.
-    push eax ; save the data segment descriptor
-    mov ax, 0x10  ; kernel data segment descriptor
+    pusha           ; pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+    mov ax, ds      ; lower 16-bits of eax = ds.
+    push eax        ; save the data segment descriptor
+    mov ax, 0x10    ; kernel data segment descriptor
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    push esp ; registers_t *r
+    push esp        ; registers_t *r
+
     ; 2. Call C handler
-    cld ; C code following the sysV ABI requires DF to be clear on function entry
+    cld ; clear direction flag
     call isr_handler
 
     ; 3. Restore state
@@ -36,8 +37,8 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    popa
-    add esp, 8  ; Cleans up the pushed error code and pushed ISR number
+    popa        ; pops edi,esi,ebp,esp,ebx,edx,ecx,eax
+    add esp, 8  ; cleans up the pushed error code and pushed ISR number
     iret        ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
 ; Common IRQ code. Identical to ISR code except for the 'call'
@@ -52,9 +53,11 @@ irq_common_stub:
     mov fs, ax
     mov gs, ax
     push esp
+
     cld
-    call irq_handler ; Different than the ISR code
-    pop ebx  ; Different than the ISR code
+    call irq_handler
+
+    pop ebx         ; Different than the ISR code
     pop ebx
     mov ds, bx
     mov es, bx
@@ -104,6 +107,7 @@ global isr28
 global isr29
 global isr30
 global isr31
+global isr128
 ; IRQs
 global irq0
 global irq1
@@ -306,6 +310,12 @@ isr30:
 isr31:
     push byte 0
     push byte 31
+    jmp isr_common_stub
+
+; 128: System Call
+isr128:
+    push byte 0
+    push byte -128 ; -128 => 128  :)
     jmp isr_common_stub
 
 ; IRQ handlers

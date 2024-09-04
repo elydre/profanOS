@@ -13,12 +13,11 @@
 #include <minilib.h>
 #include <system.h>
 
-
-int fs_cnt_delete_core(filesys_t *filesys, sid_t core_sid) {
+int fs_cnt_delete_core(filesys_t *filesys, uint32_t core_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, core_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(core_sid));
 
     if (vdisk == NULL) {
         return 1;
@@ -44,12 +43,12 @@ int fs_cnt_delete_core(filesys_t *filesys, sid_t core_sid) {
     return 0;
 }
 
-int fs_cnt_delete_loca_recur(filesys_t *filesys, sid_t loca_sid) {
+int fs_cnt_delete_loca_recur(filesys_t *filesys, uint32_t loca_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
-    sid_t next_loca_sid;
+    uint32_t next_loca_sid;
 
-    vdisk = fs_get_vdisk(filesys, loca_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
 
     if (vdisk == NULL) {
         return 1;
@@ -70,8 +69,8 @@ int fs_cnt_delete_loca_recur(filesys_t *filesys, sid_t loca_sid) {
 
     // delete all cores
     for (uint32_t i = 0; i < LINKS_IN_LOCA; i++) {
-        sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
-        if (core_sid.device == 0 && core_sid.sector == 0) {
+        uint32_t core_sid = *((uint32_t *) (data + (i + 1) * sizeof(uint32_t)));
+        if (IS_SID_NULL(core_sid)) {
             break;
         }
         if (fs_cnt_delete_core(filesys, core_sid)) {
@@ -81,8 +80,8 @@ int fs_cnt_delete_loca_recur(filesys_t *filesys, sid_t loca_sid) {
     }
 
     // delete next locator
-    next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
-    if (next_loca_sid.device != 0 || next_loca_sid.sector != 0) {
+    next_loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
+    if (!IS_SID_NULL(next_loca_sid)) {
         if (fs_cnt_delete_loca_recur(filesys, next_loca_sid)) {
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
@@ -95,12 +94,15 @@ int fs_cnt_delete_loca_recur(filesys_t *filesys, sid_t loca_sid) {
     return 0;
 }
 
-int fs_cnt_delete(filesys_t *filesys, sid_t head_sid) {
+int fs_cnt_delete(filesys_t *filesys, uint32_t head_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
-    sid_t loca_sid;
+    uint32_t loca_sid;
 
-    vdisk = fs_get_vdisk(filesys, head_sid.device);
+    if (filesys == NULL)
+        filesys = MAIN_FS;
+
+    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_delete] Invalid sector id");
@@ -117,8 +119,8 @@ int fs_cnt_delete(filesys_t *filesys, sid_t head_sid) {
     }
 
     // delete locator
-    loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
-    if (!IS_NULL_SID(loca_sid)) {
+    loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
+    if (!IS_SID_NULL(loca_sid)) {
         if (fs_cnt_delete_loca_recur(filesys, loca_sid)) {
             sys_error("[cnt_delete] Failed to delete locator");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);

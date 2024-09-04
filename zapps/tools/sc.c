@@ -21,7 +21,7 @@ int main(void) {
 
     printf("enter scancode, press ESC to exit\n");
 
-    while ((last_sc = c_kb_get_scfh()) != 1) {
+    while ((last_sc = syscall_sc_get()) != 1) {
         if (last_sc == 0) {
             usleep(10000);
             continue;

@@ -28,7 +28,7 @@ unsigned char bcd2bin(unsigned char in_bcd) {
     return (bcd) ? ((in_bcd >> 4) * 10) + (in_bcd & 0x0F) : in_bcd;
 }
 
-void time_get(tm_t *target) {
+int time_get(tm_t *target) {
     target->tm_sec = bcd2bin(read_register(0x00));
     target->tm_min = bcd2bin(read_register(0x02));
     target->tm_hour = bcd2bin(read_register(0x04));
@@ -39,6 +39,8 @@ void time_get(tm_t *target) {
 
     target->tm_yday = -1;
     target->tm_isdst = -1;
+
+    return 0;
 }
 
 int rtc_init(void) {

@@ -47,6 +47,7 @@ extern void isr28(void);
 extern void isr29(void);
 extern void isr30(void);
 extern void isr31(void);
+extern void isr128(void);
 
 // IRQ definitions
 extern void irq0(void);
@@ -92,9 +93,9 @@ extern void irq15(void);
 
 typedef struct {
    uint32_t ds;                                          // Data segment selector
-   uint32_t edi, esi, ebp, useless, ebx, edx, ecx, eax;  // Pushed by pusha.
+   uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;      // Pushed by pusha.
    uint32_t int_no, err_code;                            // Interrupt number and error code (if applicable)
-   uint32_t eip, cs, eflags, esp, ss;                    // Pushed by the processor automatically
+   uint32_t eip, cs, eflags, useresp, ss;                // Pushed by the processor automatically.
 } registers_t;
 
 typedef void (*isr_t)(registers_t*);

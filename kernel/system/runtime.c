@@ -15,26 +15,16 @@
 #include <minilib.h>
 #include <system.h>
 
-/***************************************************************\
-|      - kernel runtime memory layout and sharing -         e   |
-|                                                           l   |
-|   |                |                    | E               y   |
-|   | kernel         | allocable memory   | N               d   |
-|   | `0x100000      | `0x200000          | D               r   |
-|   |                |                    |                 e   |
-|       ^     ^         ^     ^      ^                          |
-|       |     |         |     |      '---SCUBA----.             |
-|       |     |         |     |                   |             |
-|   |                                    | : |              | V |
-|   | physical (shared)     [STACK]      | : | virtual      | E |
-|   |                                    | : | `0xB0000000  | S |
-|   |                                    | : |              | A |
-\***************************************************************/
-
 int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     int ppid, pstate, leaks;
 
     if (pid == 0 || pid == 1) {
+        sys_warning("[exit pid] Attempt to kill system process %d", pid);
+        return 1;
+    }
+
+    if (process_get_state(pid) >= PROCESS_KILLED) {
+        sys_warning("[exit pid] Attempt to kill a non-existing process %d", pid);
         return 1;
     }
 
@@ -77,10 +67,10 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     return process_kill(pid);
 }
 
-int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
+int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     int pid = process_get_pid();
 
-    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_error("[binary_exec] File not found");
         return force_exit_pid(pid, 1, 0);
     }
@@ -104,34 +94,41 @@ int binary_exec(sid_t sid, int argc, char **argv, char **envp) {
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
     uint32_t real_fsize = fsize;
 
+    scuba_directory_t *old_dir = process_get_directory(pid);
     scuba_directory_t *dir = scuba_directory_inited();
-    scuba_create_virtual(dir, RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
-    process_switch_directory(pid, dir);
+
+    // create program memory
+    scuba_create_virtual(dir, (void *) RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
+
+    // create stack
+    uint32_t *phys_stack = scuba_create_virtual(dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
+    mem_copy(phys_stack, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
+
+    process_switch_directory(pid, dir, 0);
+
+    // switch to new directory
+    asm volatile("mov %0, %%cr3":: "r"(dir));
+
+    scuba_directory_destroy(old_dir);
 
     // load binary
     fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
 
-    // move the stack if needed
-    uint32_t *stack_top = (uint32_t *) process_get_info(pid, PROCESS_INFO_STACK);
-    uint32_t *stack;
-    asm volatile("mov %%esp, %0" : "=r" (stack));
-    if (stack < stack_top - 10) {
-        kprintf_serial("move stack\n");
-        mem_move(stack_top - 10, stack, 10 * 4);
-        stack = stack_top - 10;
-        asm volatile("mov %0, %%esp" : : "r" (stack));
-    }
-
     // call main
+
     int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
+
+    sys_exit_kernel(0);
     int ret = main(argc, argv, envp) & 0xFF;
+    sys_entry_kernel(0);
+
     return force_exit_pid(process_get_pid(), ret, 1);
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
-    sid_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
+    uint32_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
 
-    if (IS_NULL_SID(sid) || !fu_is_file(fs_get_main(), sid)) {
+    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_warning("[run_ifexist] File not found: %s", file);
         return -1;
     }
@@ -148,7 +145,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
         str_cpy(nargv[i], argv[i]);
     }
 
-    int pid = process_create(binary_exec, 1, file, 5, sid, 0, nargv, NULL);
+    int pid = process_create(binary_exec, 0, file, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;

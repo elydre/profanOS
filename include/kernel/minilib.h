@@ -32,6 +32,7 @@ int  str_ncmp(char *s1, char *s2, int n);
 #define mem_copy(dest, source, nbytes) mem_move(dest, source, nbytes)
 void mem_set(void *dest, uint8_t val, uint32_t len);
 void mem_move(void *dest, void *source, uint32_t nbytes);
+int mem_cmp(void *s1, void *s2, uint32_t n);
 
 void  free(void *addr);
 void *malloc(uint32_t size);
@@ -44,6 +45,5 @@ void kprintf_buf(char *char_buffer, char *fmt, ...);
 
 void status_print(int (*func)(), char *verb, char *noun);
 void kinput(char *buffer, int size);
-void krainbow(char *message);
 
 #endif

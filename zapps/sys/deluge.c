@@ -9,6 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_FUNCS
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
@@ -106,7 +108,7 @@ void profan_cleanup(void) {
  *                       *
 **************************/
 
-sid_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
+uint32_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
     char *path = strdup(src_path);
 
     char *fullname = malloc(strlen(filename) + 5); // 5 => .elf + null
@@ -118,8 +120,8 @@ sid_t search_inpath(const char *src_path, const char *filename, char **fullpath)
         if (path[i] != ':' && path[i] != '\0')
             continue;
         path[i] = '\0';
-        sid_t sid = fu_path_to_sid(ROOT_SID, path + start);
-        if (!IS_NULL_SID(sid)) {
+        uint32_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        if (!IS_SID_NULL(sid)) {
             sid = fu_path_to_sid(sid, fullname);
             if (fu_is_file(sid)) {
                 if (path)
@@ -136,19 +138,19 @@ sid_t search_inpath(const char *src_path, const char *filename, char **fullpath)
 
     free(fullname);
     free(path);
-    return NULL_SID;
+    return SID_NULL;
 }
 
-sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
-    sid_t sid;
+uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
+    uint32_t sid;
 
     if (name == NULL)
-        return NULL_SID;
+        return SID_NULL;
 
     if (type == ET_EXEC) {
         if (name[0] == '/') {
             sid = fu_path_to_sid(ROOT_SID, name);
-            if (!IS_NULL_SID(sid) && path)
+            if (!IS_SID_NULL(sid) && path)
                 *path = strdup(name);
             return sid;
         }
@@ -156,11 +158,11 @@ sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
         if (name[0] == '.' && name[1] == '/') {
             char *cwd = ft_getenv("PWD");
             if (!cwd)
-                return NULL_SID;
+                return SID_NULL;
             char *full_path = assemble_path(cwd, name + 2);
             fu_simplify_path(full_path);
             sid = fu_path_to_sid(ROOT_SID, full_path);
-            if (!IS_NULL_SID(sid) && path)
+            if (!IS_SID_NULL(sid) && path)
                 *path = full_path;
             else
                 free(full_path);
@@ -169,20 +171,20 @@ sid_t search_elf_sid(const char *name, uint16_t type, char **path) {
 
         char *env_path = ft_getenv("PATH");
         if (!env_path)
-            return NULL_SID;
+            return SID_NULL;
         return search_inpath(env_path, name, path);
     }
 
     char *full_path = assemble_path("/lib", name);
     sid = fu_path_to_sid(ROOT_SID, full_path);
 
-    if (IS_NULL_SID(sid)) {
+    if (IS_SID_NULL(sid)) {
         free(full_path);
         if (!g_extralib_path)
-            return NULL_SID;
+            return SID_NULL;
         full_path = assemble_path(g_extralib_path, name);
         sid = fu_path_to_sid(ROOT_SID, full_path);
-        if (IS_NULL_SID(sid))
+        if (IS_SID_NULL(sid))
             free(full_path);
         else if (path)
             *path = full_path;
@@ -350,9 +352,9 @@ int load_sections(elfobj_t *obj, uint16_t type) {
 
     if (type == ET_EXEC) {
         obj->mem = (void *) base_addr;
-        c_scuba_generate(base_addr, required_size / 0x1000);
+        syscall_scuba_generate(base_addr, required_size / 0x1000);
     } else {
-        obj->mem = (void *) c_mem_alloc(required_size, 0x1000, 1);
+        obj->mem = (void *) syscall_mem_alloc(required_size, 0x1000, 1);
     }
     memset(obj->mem, 0, required_size);
 
@@ -510,8 +512,8 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         return libc;
     }
 
-    sid_t sid = search_elf_sid(filename, required_type, &path);
-    if (IS_NULL_SID(sid)) {
+    uint32_t sid = search_elf_sid(filename, required_type, &path);
+    if (IS_SID_NULL(sid)) {
         if (isfatal)
             raise_error("'%s' not found", filename);
         return NULL;
@@ -529,7 +531,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
-    obj->size = fu_get_file_size(sid);
+    obj->size = fu_file_get_size(sid);
     obj->file = malloc(obj->size);
     obj->ref_count = 1;
     obj->need_free = 1;
@@ -928,7 +930,7 @@ int main(int argc, char **argv, char **envp) {
     int start, ret;
 
     if (args.bench) {
-        start = c_timer_get_ms();
+        start = syscall_timer_get_ms();
     }
 
     elfobj_t *prog = open_elf(args.name, ET_EXEC, 1);
@@ -954,9 +956,9 @@ int main(int argc, char **argv, char **envp) {
     dynamic_linker(prog);
 
     debug_printf (1,
-        "Link time: %d ms", c_timer_get_ms() - start
+        "Link time: %d ms", syscall_timer_get_ms() - start
     ) else if (args.bench) fd_printf(2,
-        "Link time: %d ms\n", c_timer_get_ms() - start
+        "Link time: %d ms\n", syscall_timer_get_ms() - start
     );
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) prog->file)->e_entry;
@@ -969,15 +971,15 @@ int main(int argc, char **argv, char **envp) {
     g_dlfcn_error = 0;
 
     if (args.bench) {
-        start = c_timer_get_ms();
+        start = syscall_timer_get_ms();
     }
 
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
     debug_printf(1,
-        "Exit with code %d in %d ms", ret, c_timer_get_ms() - start
+        "Exit with code %d in %d ms", ret, syscall_timer_get_ms() - start
     ) else if (args.bench) fd_printf(2,
-        "Exit with code %d in %d ms\n", ret, c_timer_get_ms() - start
+        "Exit with code %d in %d ms\n", ret, syscall_timer_get_ms() - start
     );
 
     while (g_lib_count) {
@@ -991,9 +993,9 @@ int main(int argc, char **argv, char **envp) {
     free(g_loaded_libs);
 
     if (g_cleanup) {
-        int leaks, count, pid = c_process_get_pid();
-        leaks = c_mem_get_info(7, pid);
-        count = leaks ? c_mem_get_info(8, pid) : 0;
+        int leaks, count, pid = syscall_process_pid();
+        leaks = syscall_mem_info(7, pid);
+        count = leaks ? syscall_mem_info(8, pid) : 0;
 
         debug_printf(1, "Clean up %d alloc%s (%d byte%s)",
             leaks,
@@ -1002,7 +1004,7 @@ int main(int argc, char **argv, char **envp) {
             count > 1 ? "s" : ""
         );
         if (leaks > 0) {
-            c_mem_free_all(pid);
+            syscall_mem_free_all(pid);
         }
     }
 

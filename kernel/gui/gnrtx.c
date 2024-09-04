@@ -18,16 +18,16 @@
 
 void tef_set_char(int x, int y, char c, char color);
 void tef_print_char(char c, char color);
-void tef_set_cursor_offset(int offset);
-int  tef_get_cursor_offset(void);
+void tef_cursor_set_offset(int offset);
+int  tef_cursor_get_offset(void);
 void tef_cursor_blink(int on);
 void tef_clear(void);
 
 void txt_set_char(int x, int y, char c, char color);
 void txt_print_char(char c, char color);
-void txt_set_cursor_offset(int offset);
+void txt_cursor_set_offset(int offset);
 void txt_cursor_blink(int on);
-int  txt_get_cursor_offset(void);
+int  txt_cursor_get_offset(void);
 void txt_clear(void);
 
 int gt_get_max_cols(void) {
@@ -54,19 +54,19 @@ void kprint_char_at(int x, int y, char c, char color) {
     }
 }
 
-int get_cursor_offset(void) {
+int cursor_get_offset(void) {
     if (vesa_does_enable()) {
-        return tef_get_cursor_offset();
+        return tef_cursor_get_offset();
     } else {
-        return txt_get_cursor_offset();
+        return txt_cursor_get_offset();
     }
 }
 
-void set_cursor_offset(int offset) {
+void cursor_set_offset(int offset) {
     if (vesa_does_enable()) {
-        tef_set_cursor_offset(offset);
+        tef_cursor_set_offset(offset);
     } else {
-        txt_set_cursor_offset(offset);
+        txt_cursor_set_offset(offset);
     }
 }
 
@@ -78,16 +78,16 @@ void clear_screen(void) {
     }
 }
 
-int get_offset(int col, int row) {
+int cursor_calc_offset(int col, int row) {
     return 2 * (row * gt_get_max_cols() + col);
 }
 
-int get_offset_row(int offset) {
+int cursor_calc_row(int offset) {
     return offset / (2 * gt_get_max_cols());
 }
 
-int get_offset_col(int offset) {
-    return (offset - (get_offset_row(offset) * 2 * gt_get_max_cols())) / 2;
+int cursor_calc_col(int offset) {
+    return (offset - (cursor_calc_row(offset) * 2 * gt_get_max_cols())) / 2;
 }
 
 void cursor_blink(int on) {
@@ -135,18 +135,18 @@ int compute_ansi_escape(char *str, char *color) {
 
     // cursor save and restore
     if (str[0] == 's') {
-        saved_cursor_x = get_offset_col(get_cursor_offset());
-        saved_cursor_y = get_offset_row(get_cursor_offset());
+        saved_cursor_x = cursor_calc_col(cursor_get_offset());
+        saved_cursor_y = cursor_calc_row(cursor_get_offset());
     } else if (str[0] == 'u') {
-        set_cursor_offset(get_offset(saved_cursor_x, saved_cursor_y));
+        cursor_set_offset(cursor_calc_offset(saved_cursor_x, saved_cursor_y));
     } else if (str[0] == 'K') {
-        int offset = get_cursor_offset();
-        int row = get_offset_row(offset);
-        int col = get_offset_col(offset);
+        int offset = cursor_get_offset();
+        int row = cursor_calc_row(offset);
+        int col = cursor_calc_col(offset);
         for (int i = col; i < gt_get_max_cols() - 1; i++) {
             kprint_char_at(-1, -1, ' ', 0x0);
         }
-        set_cursor_offset(get_offset(col, row));
+        cursor_set_offset(cursor_calc_offset(col, row));
     }
 
     // cursor hide and show
@@ -190,7 +190,7 @@ int compute_ansi_escape(char *str, char *color) {
     }
     // set top left
     if (str[0] == 'H') {
-        set_cursor_offset(0);
+        cursor_set_offset(0);
         return 2;
     }
 
@@ -200,36 +200,40 @@ int compute_ansi_escape(char *str, char *color) {
 
     // cursor up
     if (tmp[0] == 'A') {
-        set_cursor_offset(get_cursor_offset() - str2int(str) * 2 * gt_get_max_cols());
+        cursor_set_offset(cursor_get_offset() - str2int(str) * 2 * gt_get_max_cols());
     }
 
     // cursor down
     else if (tmp[0] == 'B') {
-        set_cursor_offset(get_cursor_offset() + str2int(str) * 2 * gt_get_max_cols());
+        cursor_set_offset(cursor_get_offset() + str2int(str) * 2 * gt_get_max_cols());
     }
 
     // cursor forward
     else if (tmp[0] == 'C') {
-        set_cursor_offset(get_cursor_offset() + str2int(str) * 2);
+        cursor_set_offset(cursor_get_offset() + str2int(str) * 2);
     }
 
     // cursor backward
     else if (tmp[0] == 'D') {
-        set_cursor_offset(get_cursor_offset() - str2int(str) * 2);
+        cursor_set_offset(cursor_get_offset() - str2int(str) * 2);
     }
 
     return tmp - start;
 }
 
-void kcnprint(char *message, int len, char color) {
+int kcnprint(char *message, int len, char color) {
     int i = 0;
-    if (len == -1) len = str_len(message);
+
+    if (len == -1)
+        len = str_len(message);
+
     while (i < len) {
-        if (message[i] == '\e') {
+        if (message[i] == '\e')
             i += compute_ansi_escape(message + i, &color);
-        } else {
+        else
             kprint_char_at(-1, -1, message[i], color);
-        }
         i++;
     }
+
+    return len;
 }

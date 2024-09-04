@@ -15,20 +15,20 @@
 
 #include "../butterfly.h"
 
-int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t offset, uint32_t size, int is_read) {
+int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t offset, uint32_t size, int is_read) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, core_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(core_sid));
 
     if (vdisk == NULL) {
-        printf("d%ds%d not found\n", core_sid.device, core_sid.sector);
+        printf("d%ds%d not found\n", SID_DISK(core_sid), SID_SECTOR(core_sid));
         return -1;
     }
 
     // check if sector is used
     if (!vdisk_is_sector_used(vdisk, core_sid)) {
-        printf("d%ds%d not used\n", core_sid.device, core_sid.sector);
+        printf("d%ds%d not used\n", SID_DISK(core_sid), SID_SECTOR(core_sid));
         return -1;
     }
 
@@ -36,7 +36,7 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     data = vdisk_load_sector(vdisk, core_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_CORE) {
-        printf("d%ds%d not core\n", core_sid.device, core_sid.sector);
+        printf("d%ds%d not core\n", SID_DISK(core_sid), SID_SECTOR(core_sid));
         vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
         return -1;
     }
@@ -61,17 +61,17 @@ int fs_cnt_rw_core(filesys_t *filesys, sid_t core_sid, uint8_t *buf, uint32_t of
     return size + offset - 2;
 }
 
-int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t offset, int size, int is_read) {
-    sid_t next_loca_sid;
+int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf, uint32_t offset, int size, int is_read) {
+    uint32_t next_loca_sid;
     vdisk_t *vdisk;
 
     uint8_t *data;
     int tmp;
 
-    vdisk = fs_get_vdisk(filesys, loca_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
 
     if (vdisk == NULL) {
-        printf("d%ds%d not found\n", loca_sid.device, loca_sid.sector);
+        printf("d%ds%d not found\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
         return 1;
     }
 
@@ -79,7 +79,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
     while (index < size) {
         // check if sector is used
         if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-            printf("d%ds%d not used\n", loca_sid.device, loca_sid.sector);
+            printf("d%ds%d not used\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             return 1;
         }
 
@@ -87,7 +87,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
         data = vdisk_load_sector(vdisk, loca_sid);
 
         if (data[0] != ST_CONT || data[1] != SF_LOCA) {
-            printf("d%ds%d not locator\n", loca_sid.device, loca_sid.sector);
+            printf("d%ds%d not locator\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
         }
@@ -104,8 +104,8 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
                     index += BYTE_IN_CORE;
                     continue;
                 }
-                sid_t core_sid = *((sid_t *) (data + (i + 1) * sizeof(sid_t)));
-                if (IS_NULL_SID(core_sid)) {
+                uint32_t core_sid = *((uint32_t *) (data + (i + 1) * sizeof(uint32_t)));
+                if (IS_SID_NULL(core_sid)) {
                     printf("no more core, but still %d bytes to %s\n", size - max(index, 0),
                             is_read ? "read" : "write");
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
@@ -114,16 +114,19 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
                 tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
                         size - max(index, 0), is_read);
                 if (tmp == -1) {
-                    printf("failed to %s core d%ds%d\n", is_read ? "read" : "write", core_sid.device, core_sid.sector);
+                    printf("failed to %s core d%ds%d\n",
+                            is_read ? "read" : "write",
+                            SID_DISK(core_sid), SID_SECTOR(core_sid)
+                    );
                     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
                     return 1;
                 }
                 index += tmp;
             }
         }
-        next_loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
-        if (IS_NULL_SID(next_loca_sid) && index < size) {
-            printf("no more locator after d%ds%d\n", loca_sid.device, loca_sid.sector);
+        next_loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
+        if (IS_SID_NULL(next_loca_sid) && index < size) {
+            printf("no more locator after d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
         }
@@ -133,21 +136,21 @@ int fs_cnt_rw_loca(filesys_t *filesys, sid_t loca_sid, uint8_t *buf, uint32_t of
     return 0;
 }
 
-int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
+int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
     vdisk_t *vdisk;
     uint8_t *data;
-    sid_t loca_sid;
+    uint32_t loca_sid;
 
-    vdisk = fs_get_vdisk(filesys, head_sid.device);
+    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
 
     if (vdisk == NULL) {
-        printf("d%ds%d not found\n", head_sid.device, head_sid.sector);
+        printf("d%ds%d not found\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return 1;
     }
 
     // check if sector is used
     if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        printf("d%ds%d not used\n", head_sid.device, head_sid.sector);
+        printf("d%ds%d not used\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return 1;
     }
 
@@ -155,7 +158,7 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     data = vdisk_load_sector(vdisk, head_sid);
 
     if (data[0] != ST_CONT || data[1] != SF_HEAD) {
-        printf("d%ds%d not cnt header\n", head_sid.device, head_sid.sector);
+        printf("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
@@ -168,13 +171,18 @@ int fs_cnt_rw(filesys_t *filesys, sid_t head_sid, void *buf, uint32_t offset, ui
     }
 
     // rw locator
-    loca_sid = *((sid_t *) (data + LAST_SID_OFFSET));
-    if (loca_sid.device != 0 || loca_sid.sector != 0) {
+    loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
+    if (loca_sid) {
         if (fs_cnt_rw_loca(filesys, loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
-            printf("? failed to %s locator d%ds%d\n", is_read ? "read" : "write", loca_sid.device, loca_sid.sector);
+            printf("? failed to %s locator d%ds%d\n",
+                    is_read ? "read" : "write",
+                    SID_DISK(loca_sid), SID_SECTOR(loca_sid)
+            );
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }
+    } else {
+        printf("no locator\n");
     }
 
     vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);

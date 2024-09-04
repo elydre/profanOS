@@ -26,10 +26,9 @@
 #define kcprint(message, color) kcnprint(message, -1, color)
 #define kprint(message) kcprint(message, c_white)
 
-#define FONT_8X16 0
-
 // font.c
-uint8_t *font_get(int font_id);
+extern uint8_t font_8x16[4096];
+uint8_t *font_get(void);
 
 // tefv.c
 int  tef_init(void);
@@ -40,15 +39,15 @@ int gt_get_max_rows(void);
 
 void clear_screen(void);
 
-void kcnprint(char *message, int len, char color);
+int kcnprint(char *message, int len, char color);
 
 void kprint_char_at(int x, int y, char c, char color);
 
-void set_cursor_offset(int offset);
-int  get_cursor_offset(void);
-int  get_offset(int col, int row);
-int  get_offset_row(int offset);
-int  get_offset_col(int offset);
+void cursor_set_offset(int offset);
+int  cursor_get_offset(void);
+int  cursor_calc_offset(int col, int row);
+int  cursor_calc_row(int offset);
+int  corsor_calc_col(int offset);
 
 void cursor_blink(int on);
 

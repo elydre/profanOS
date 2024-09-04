@@ -67,7 +67,7 @@ vdisk_t *load_vdisk(char *filename, uint32_t min_size) {
     for (uint32_t i = 0; i < size; i++) {
         fread(vdisk->sectors[i]->data, 1, SECTOR_SIZE, fp);
         if (vdisk->sectors[i]->data[0] && vdisk->sectors[i]->data[1]) {
-            vdisk_note_sector_used(vdisk, (sid_t) {0, i});
+            vdisk_note_sector_used(vdisk, i);
         }
     }
 
@@ -159,7 +159,7 @@ int internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path) {
     create_if_not_exists(extern_path);
 
     char **names;
-    sid_t *sids;
+    uint32_t *sids;
 
     int count = fu_get_dir_content(
         filesys,

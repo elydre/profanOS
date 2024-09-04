@@ -149,7 +149,7 @@ int fdatasync(int a) {
 }
 
 pid_t fork(void) {
-    return c_process_fork();
+    return syscall_process_fork();
 }
 
 long fpathconf(int a, int b) {
@@ -228,11 +228,11 @@ pid_t getpgrp(void) {
 }
 
 pid_t getpid(void) {
-    return c_process_get_pid();
+    return syscall_process_pid();
 }
 
 pid_t getppid(void) {
-    return c_process_get_ppid(c_process_get_pid());
+    return syscall_process_ppid(syscall_process_pid());
 }
 
 pid_t getsid(pid_t a) {
@@ -362,8 +362,7 @@ int setuid(uid_t a) {
 }
 
 unsigned sleep(unsigned seconds) {
-    if (seconds)
-        c_process_sleep(c_process_get_pid(), seconds * 1000);
+    syscall_process_sleep(syscall_process_pid(), seconds * 1000);
     return 0;
 }
 
@@ -422,7 +421,7 @@ int unlink(const char *filename) {
     char *path = assemble_path(pwd, (char *) filename);
 
     // check if the file exists
-    sid_t parent_sid, elem = fu_path_to_sid(ROOT_SID, path);
+    uint32_t parent_sid, elem = fu_path_to_sid(ROOT_SID, path);
     if (!fu_is_file(elem)) {
         fprintf(stderr, "unlink: %s: not a file\n", filename);
         free(path);
@@ -436,7 +435,7 @@ int unlink(const char *filename) {
     free(parent);
     free(path);
 
-    if (IS_NULL_SID(parent_sid)) {
+    if (IS_SID_NULL(parent_sid)) {
         fprintf(stderr, "unlink: %s: parent not found\n", filename);
         return -1;
     }
@@ -445,7 +444,7 @@ int unlink(const char *filename) {
     fu_remove_element_from_dir(parent_sid, elem);
 
     // delete the file content
-    if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
+    if (syscall_fs_delete(NULL, elem)) {
         fprintf(stderr, "unlink: %s: failed to delete\n", filename);
         return -1;
     }
@@ -454,9 +453,8 @@ int unlink(const char *filename) {
 }
 
 int usleep(useconds_t usec) {
-    if (usec < 1000)
-        return 0;
-    return c_process_sleep(c_process_get_pid(), usec / 1000) ? -1 : 0;
+    if (usec == 0) return 0;
+    return syscall_process_sleep(syscall_process_pid(), usec / 1000) ? -1 : 0;
 }
 
 pid_t vfork(void) {

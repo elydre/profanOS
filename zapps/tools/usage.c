@@ -16,10 +16,12 @@
 
 #define HISTOTY_SIZE 80
 
+void *kfont;
+
 void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = c_font_get(0) + msg[i] * 16;
+        glyph = kfont + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
@@ -32,8 +34,8 @@ void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
 void add_mem_info(uint32_t *pixel_buffer) {
     char tmp[10];
 
-    int alloc_count = c_mem_get_info(4, 0) - c_mem_get_info(5, 0);
-    int mem_used = c_mem_get_info(6, 0) / 1024;
+    int alloc_count = syscall_mem_info(4, 0) - syscall_mem_info(5, 0);
+    int mem_used = syscall_mem_info(6, 0) / 1024;
 
     itoa(mem_used, tmp, 10);
     strcat(tmp, "kB");
@@ -44,18 +46,18 @@ void add_mem_info(uint32_t *pixel_buffer) {
 }
 
 int main(void) {
-    uint32_t *fb = c_vesa_get_fb();
-    uint32_t pitch = c_vesa_get_pitch();
-    uint32_t width = c_vesa_get_width();
+    uint32_t *fb = syscall_vesa_fb();
+    uint32_t pitch = syscall_vesa_pitch();
+    uint32_t width = syscall_vesa_width();
 
     int x_offset = width - HISTOTY_SIZE;
-    if (x_offset < 0 || !c_vesa_does_enable()) {
+    if (x_offset < 0 || !syscall_vesa_state()) {
         printf("[cpu] fail to start: screen too small\n");
         return 1;
     }
 
     // wake up the parent process
-    c_process_wakeup(c_process_get_ppid(c_process_get_pid()));
+    syscall_process_wakeup(syscall_process_ppid(syscall_process_pid()));
 
     int *history = calloc(HISTOTY_SIZE, sizeof(int));
 
@@ -65,12 +67,14 @@ int main(void) {
 
     uint32_t *pixel_buffer = calloc(HISTOTY_SIZE * 100, sizeof(uint32_t));
 
+    kfont = syscall_font_get();
+
     while (1) {
         last_idle = idle;
         last_total = total;
 
-        idle = c_process_get_run_time(1);
-        total = c_timer_get_ms();
+        idle = syscall_process_run_time(1);
+        total = syscall_timer_get_ms();
 
         cpu = total - last_total;
         cpu = 100 - (idle - last_idle) * 100 / (cpu ? cpu : 1);
@@ -99,6 +103,6 @@ int main(void) {
             }
         }
 
-        c_process_sleep(c_process_get_pid(), 200);
+        syscall_process_sleep(syscall_process_pid(), 200);
     }
 }

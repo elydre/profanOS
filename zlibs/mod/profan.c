@@ -11,7 +11,9 @@
 
 #define PROFAN_C
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 #include <profan/type.h>
@@ -68,12 +70,12 @@ int userspace_reporter(char *message) {
 }
 
 int profan_kb_load_map(char *path) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, path);
-    if (IS_NULL_SID(sid)) {
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (IS_SID_NULL(sid)) {
         return 1;
     }
 
-    int file_size = fu_get_file_size(sid);
+    int file_size = fu_file_get_size(sid);
     char *file_content = malloc(file_size + 1);
 
     fu_file_read(sid, file_content, 0, file_size);
@@ -117,7 +119,7 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     if (scancode > 64)
         return '\0';
     if (kb_map == NULL)
-        return c_kb_scancode_to_char(scancode, shift);
+        return syscall_sc_to_char(scancode, shift);
     if (shift)
         return kb_map[scancode * 2 + 1];
     return kb_map[scancode * 2];
@@ -142,8 +144,8 @@ char *open_input_keyboard(int *size, char *term_path) {
     buffer_actual_size = buffer_index = 0;
 
     while (sc != ENTER) {
-        c_process_sleep(c_process_get_pid(), SLEEP_T);
-        sc = c_kb_get_scfh();
+        syscall_process_sleep(syscall_process_pid(), SLEEP_T);
+        sc = syscall_sc_get();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;
@@ -252,22 +254,22 @@ char *open_input_serial(int *size, int serial_port) {
     char c = 0;
 
      while (c != '\n') {
-        c_serial_read(serial_port, &c, 1);
+        syscall_serial_read(serial_port, &c, 1);
         if (c == '\r') {
-            c_serial_write(serial_port, "\r", 1);
+            syscall_serial_write(serial_port, "\r", 1);
             c = '\n';
         }
         if (c == 127) {
             if (i) {
                 i--;
-                c_serial_write(serial_port, "\b \b", 3);
+                syscall_serial_write(serial_port, "\b \b", 3);
             }
             continue;
         }
         if ((c < 32 || c > 126) && c != '\n')
             continue;
         ((char *) buffer)[i++] = c;
-        c_serial_write(serial_port, &c, 1);
+        syscall_serial_write(serial_port, &c, 1);
         if (i == buffer_size) {
             buffer_size *= 2;
             buffer = realloc(buffer, buffer_size);
@@ -306,12 +308,12 @@ char **dup_envp(char **envp) {
     return nenvp;
 }
 
-char **get_interp(sid_t sid, int *c) {
+char **get_interp(uint32_t sid, int *c) {
     char *tmp = malloc(11);
     int size = 0;
     int to_read = 10;
 
-    int file_size = fu_get_file_size(sid);
+    int file_size = fu_file_get_size(sid);
     if (file_size < 10)
         to_read = file_size;
 
@@ -369,17 +371,17 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
 
-    static sid_t elf_sid = NULL_SID;
+    static uint32_t elf_sid = SID_NULL;
 
-    if (IS_NULL_SID(elf_sid)) {
+    if (IS_SID_NULL(elf_sid)) {
         elf_sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
-        if (IS_NULL_SID(elf_sid)) {
+        if (IS_SID_NULL(elf_sid)) {
             fd_printf(2, "[run_ifexist] interpreter not found: %s\n", ELF_INTERP);
             return -1;
         }
     }
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, args.path);
+    uint32_t sid = fu_path_to_sid(ROOT_SID, args.path);
     if (!fu_is_file(sid)) {
         fd_printf(2, "[run_ifexist] path not found: %s\n", args.path);
         return -1;
@@ -446,11 +448,13 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     char **nenv = dup_envp(args.envp);
 
     if (args.sleep_mode == 3) {
-        c_mem_free_all(c_process_get_pid());
-        return c_binary_exec(sid, args.argc, nargv, nenv);
+        syscall_mem_free_all(syscall_process_pid());
+        return syscall_binary_exec(sid, args.argc, nargv, nenv);
     }
 
-    int pid = c_process_create(c_binary_exec, 1, args.path, 5, sid, args.argc, nargv, nenv);
+    int pid = syscall_process_create(syscall_binary_exec, 0, args.path,
+            4, (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
+    );
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
@@ -461,9 +465,9 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return 0;
 
     if (args.sleep_mode)
-        c_process_handover(pid);
+        syscall_process_handover(pid);
     else
-        c_process_wakeup(pid);
+        syscall_process_wakeup(pid);
 
-    return c_process_get_info(pid, PROCESS_INFO_EXIT_CODE);
+    return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
 }

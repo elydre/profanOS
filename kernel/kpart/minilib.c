@@ -18,24 +18,30 @@
 #include <minilib.h>
 #include <system.h>
 
-// string functions
+/*************************
+ *                      *
+ *   string functions   *
+ *                      *
+ ************************/
 
 void str_cat(char *s1, char *s2) {
-    char *start = s1;
-    while(*start != '\0') start++;
-    while(*s2 != '\0') *start++ = *s2++;
-    *start = '\0';
+    while (*s1)
+        s1++;
+    while (*s2)
+        *s1++ = *s2++;
+    *s1 = '\0';
 }
 
 int str_len(char *s) {
     int i = 0;
-    while (s[i] != '\0') i++;
+    while (s[i])
+        i++;
     return i;
 }
 
 void str_cpy(char *s1, char *s2) {
     int i;
-    for (i = 0; s2[i] != '\0'; i++) {
+    for (i = 0; s2[i]; i++) {
         s1[i] = s2[i];
     }
     s1[i] = '\0';
@@ -43,7 +49,7 @@ void str_cpy(char *s1, char *s2) {
 
 void  str_ncpy(char *s1, char *s2, int n) {
     int i;
-    for (i = 0; i < n && s2[i] != '\0'; i++) {
+    for (i = 0; i < n && s2[i]; i++) {
         s1[i] = s2[i];
     }
     s1[i] = '\0';
@@ -117,7 +123,12 @@ int str_ncmp(char *s1, char *s2, int n) {
     return s1[i] - s2[i];
 }
 
-// memory management
+
+/**************************
+ *                       *
+ *   memory management   *
+ *                       *
+ *************************/
 
 void mem_move(void *dest, void *source, uint32_t nbytes) {
     if (dest < source) {
@@ -135,6 +146,17 @@ void mem_set(void *dest, uint8_t val, uint32_t len) {
     uint8_t *temp = dest;
     for ( ; len != 0; len--)
         *temp++ = val;
+}
+
+int mem_cmp(void *s1, void *s2, uint32_t n) {
+    uint8_t *p1 = s1;
+    uint8_t *p2 = s2;
+    for (uint32_t i = 0; i < n; i++) {
+        if (p1[i] != p2[i]) {
+            return p1[i] - p2[i];
+        }
+    }
+    return 0;
 }
 
 void free(void *addr) {
@@ -170,13 +192,17 @@ void *calloc(uint32_t size) {
     return addr;
 }
 
-// input/output functions
+/**************************
+ *                       *
+ *   user io functions   *
+ *                       *
+ *************************/
 
 void status_print(int (*func)(), char *verb, char *noun) {
     int old_cursor, new_cursor, status;
 
     kcprint("[", 0x0F);
-    old_cursor = get_cursor_offset();
+    old_cursor = cursor_get_offset();
     kcprint("WORK", 0x0E);
     kcprint("]  ", 0x0F);
     kcprint(verb, 0x07);
@@ -185,8 +211,8 @@ void status_print(int (*func)(), char *verb, char *noun) {
     kcprint("\n", 0x0F);
 
     status = func();
-    new_cursor = get_cursor_offset();
-    set_cursor_offset(old_cursor);
+    new_cursor = cursor_get_offset();
+    cursor_set_offset(old_cursor);
 
     if (status == 0) {
         kcprint(" OK ", 0x0A);
@@ -196,7 +222,7 @@ void status_print(int (*func)(), char *verb, char *noun) {
         kcprint("FAIL", 0x0C);
     }
 
-    set_cursor_offset(new_cursor);
+    cursor_set_offset(new_cursor);
 }
 
 #define LSHIFT  42
@@ -248,7 +274,7 @@ void kinput(char *buffer, int size) {
             kprint("\e[1D \e[1D");
         } else if (sc <= SC_MAX) {
             if (size < index + 2) continue;
-            c = kb_scancode_to_char(sc, shift);
+            c = kb_sc_to_char(sc, shift);
             if (c == '\0') continue;
             kcnprint(&c, 1, c_blue);
             buffer[index] = c;
@@ -270,12 +296,12 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
         char_buffer = sys_safe_buffer;
     }
 
-    while (fmt[i] != '\0') {
+    while (fmt[i]) {
         if (fmt[i] == '%') {
             i++;
             if (fmt[i] == 's') {
                 char *tmp = va_arg(args, char *);
-                for (int j = 0; tmp[j] != '\0'; j++) {
+                for (int j = 0; tmp[j]; j++) {
                     char_buffer[buffer_i] = tmp[j];
                     buffer_i++;
                 }
@@ -284,13 +310,13 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
                 buffer_i++;
             } else if (fmt[i] == 'd') {
                 int2str(va_arg(args, int), s);
-                for (int j = 0; s[j] != '\0'; j++) {
+                for (int j = 0; s[j]; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
             } else if (fmt[i] == 'x') {
                 hex2str(va_arg(args, int), s);
-                for (int j = 0; s[j] != '\0'; j++) {
+                for (int j = 0; s[j]; j++) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
@@ -317,12 +343,4 @@ void kprintf_buf(char *char_buffer, char *fmt, ...) {
     va_start(args, fmt);
     kprintf_va2buf(char_buffer, fmt, args);
     va_end(args);
-}
-
-void krainbow(char *message) {
-    char rainbow_colors[] = {c_green, c_cyan, c_blue, c_magenta, c_red, c_yellow};
-
-    for (int i = 0; message[i]; i++) {
-        kcnprint(&message[i], 1, rainbow_colors[i % 6]);
-    }
 }

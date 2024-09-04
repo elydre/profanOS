@@ -160,7 +160,7 @@ void draw(shape_t *shape, vgui_t *vgui, int erase) {
 }
 
 int fps_limiter(int time) {
-    int new_time = c_timer_get_ms();
+    int new_time = syscall_timer_get_ms();
     int fps = 1000 / (new_time - time + 1);
     if (fps > 30)
         usleep(10000);
@@ -171,7 +171,7 @@ int main(void) {
     vgui_t vgui = vgui_setup(200, 200);
 
     shape_t shape = cube(120);
-    int time = c_timer_get_ms();
+    int time = syscall_timer_get_ms();
 
     shape_t nshape = new_shape();
     for (int i = 0;; i = (i + 1) % 360) {

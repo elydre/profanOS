@@ -75,15 +75,15 @@ rm_options_t *parse_options(int argc, char **argv) {
     return options;
 }
 
-int remove_hard_link(sid_t elem, char *path) {
+int remove_hard_link(uint32_t elem, char *path) {
     char *parent;
 
     fu_sep_path(path, &parent, NULL);
 
-    sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
     free(parent);
 
-    if (IS_NULL_SID(parent_sid)) {
+    if (IS_SID_NULL(parent_sid)) {
         fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);
         return 1;
     }
@@ -91,7 +91,7 @@ int remove_hard_link(sid_t elem, char *path) {
     return fu_remove_element_from_dir(parent_sid, elem);
 }
 
-int remove_elem(sid_t elem, char *path, rm_options_t *options) {
+int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
     if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
         fprintf(stderr, "rm: Cannot remove '%s': Unknown element type\n", path);
         return 1;
@@ -102,7 +102,7 @@ int remove_elem(sid_t elem, char *path, rm_options_t *options) {
         if (options->verbose)
             printf("rm: Going into directory '%s'\n", path);
 
-        sid_t *content;
+        uint32_t *content;
         char **names;
         int count = fu_get_dir_content(elem, &content, &names);
 
@@ -144,7 +144,7 @@ int remove_elem(sid_t elem, char *path, rm_options_t *options) {
         return 0;
 
     // delete container
-    if (c_fs_cnt_delete(c_fs_get_main(), elem)) {
+    if (syscall_fs_delete(NULL, elem)) {
         fprintf(stderr, "rm: Cannot remove '%s': Failed to delete container\n", path);
         return 1;
     }
@@ -183,9 +183,9 @@ int main(int argc, char **argv) {
 
     char *path = assemble_path(pwd, options->path);
 
-    sid_t elem = fu_path_to_sid(ROOT_SID, path);
+    uint32_t elem = fu_path_to_sid(ROOT_SID, path);
 
-    if (IS_NULL_SID(elem)) {
+    if (IS_SID_NULL(elem)) {
         fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);
         free(options);
         free(path);

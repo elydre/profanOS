@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
 
     char *full_path = assemble_path(pwd, argv[1]);
 
-    sid_t file = fu_path_to_sid(ROOT_SID, full_path);
-    if (IS_NULL_SID(file) || !fu_is_file(file)) {
+    uint32_t file = fu_path_to_sid(ROOT_SID, full_path);
+    if (IS_SID_NULL(file) || !fu_is_file(file)) {
         fprintf(stderr, "font: %s: File not found\n", full_path);
         free(full_path);
         return 1;

@@ -55,8 +55,8 @@ uint32_t vgui_get_pixel(vgui_t *vgui, int x, int y) {
 }
 
 void vgui_render(vgui_t *vgui, int render_mode) {
-    uint32_t *fb = c_vesa_get_fb();
-    uint32_t pitch = c_vesa_get_pitch();
+    uint32_t *fb = syscall_vesa_fb();
+    uint32_t pitch = syscall_vesa_pitch();
     if (render_mode) {
         for (int i = 0; i < vgui->width * vgui->height; i++) {
             fb[i % vgui->width + i / vgui->width * pitch] = vgui->framebuffer[i];
@@ -86,7 +86,7 @@ void vgui_draw_rect(vgui_t *vgui, int x, int y, int width, int height, uint32_t 
 void vgui_print(vgui_t *vgui, int x, int y, char *msg, uint32_t color) {
     unsigned char *glyph;
     for (int i = 0; msg[i] != '\0'; i++) {
-        glyph = c_font_get(0) + msg[i] * 16;
+        glyph = syscall_font_get() + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
                 if (!(glyph[j] & (1 << k))) continue;
@@ -141,7 +141,7 @@ void vgui_clear(vgui_t *vgui, uint32_t color) {
 
 void vgui_putc(vgui_t *vgui, int x, int y, char c, uint32_t color, int bg_color) {
     unsigned char *glyph;
-    glyph = c_font_get(0) + c * 16;
+    glyph = syscall_font_get() + c * 16;
     for (int j = 0; j < 16; j++) {
         for (int k = 0; k < 8; k++) {
             if (!(glyph[j] & (1 << k))) {

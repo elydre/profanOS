@@ -69,14 +69,13 @@ int main(void) {
     int key_buffer[20];
     for (int i = 0; i < 20; i++) key_buffer[i] = 0;
     int tick_count[4];
-    tick_count[0] = c_timer_get_ms();
+    tick_count[0] = syscall_timer_get_ms();
     tick_count[3] = 0;
 
     vgui_t vgui = vgui_setup(320, 200);
-    for (int i = 0; i < 100; i++) c_kb_get_scfh();
-    while (c_kb_get_scancode() != 1) {
-        tick_count[1] = c_timer_get_ms() - tick_count[0];
-        tick_count[0] = c_timer_get_ms();
+    while (1) {
+        tick_count[1] = syscall_timer_get_ms() - tick_count[0];
+        tick_count[0] = syscall_timer_get_ms();
 
         for (int i = 0; i < width; i++) {
             center = (int) (half_height * BLOCK_HEIGHT /
@@ -110,11 +109,11 @@ int main(void) {
         itoa(1000 / (tick_count[1] + 1), convert, 10);
         vgui_print(&vgui, 0, 8, convert, 0x0000AA);
 
-        tick_count[2] = c_timer_get_ms();
+        tick_count[2] = syscall_timer_get_ms();
         vgui_render(&vgui, 0);
-        tick_count[3] = c_timer_get_ms() - tick_count[2];
+        tick_count[3] = syscall_timer_get_ms() - tick_count[2];
 
-        key = c_kb_get_scfh();
+        key = syscall_sc_get();
         if (last_key != key && key != 0) {
             last_key = key;
             if (last_key < KB_RVAL && !(val_in_buffer(last_key, 20, key_buffer))) {
@@ -164,6 +163,8 @@ int main(void) {
 
         if (rot > PI) rot -= 2 * PI;
         if (rot < -PI) rot += 2 * PI;
+
+        if (key == KB_ESC) break;
     }
     vgui_exit(&vgui);
 

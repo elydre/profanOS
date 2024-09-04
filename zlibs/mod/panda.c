@@ -9,7 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
+
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 
@@ -64,8 +66,8 @@ int main(void) {
 }
 
 font_data_t *load_psf_font(const char *file) {
-    sid_t sid = fu_path_to_sid(ROOT_SID, file);
-    if (IS_NULL_SID(sid)) return NULL;
+    uint32_t sid = fu_path_to_sid(ROOT_SID, file);
+    if (IS_SID_NULL(sid)) return NULL;
 
     uint32_t magic;
     uint32_t version;
@@ -146,8 +148,8 @@ void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color_code) {
     uint32_t bg_color = compute_color((color_code >> 4) & 0xF);
     uint32_t fg_color = compute_color(color_code & 0xF);
 
-    uint32_t pitch = c_vesa_get_pitch();
-    uint32_t *fb = c_vesa_get_fb();
+    uint32_t pitch = syscall_vesa_pitch();
+    uint32_t *fb = syscall_vesa_fb();
 
     uint8_t *char_data = g_panda->font->data + (c * g_panda->font->charsize);
 
@@ -397,7 +399,7 @@ uint8_t panda_print_string(const char *string, int len, int tmp_color) {
 
 void panda_set_start(int kernel_cursor) {
     if (!g_panda) return;
-    uint32_t kmax_cols = c_vesa_get_width() / 8;
+    uint32_t kmax_cols = syscall_vesa_width() / 8;
 
     g_panda->cursor_x = 0;
     g_panda->cursor_y = ((offset_to_cursor_y(kernel_cursor, kmax_cols) + 1) * 16) / g_panda->font->height;
@@ -440,8 +442,8 @@ int panda_change_font(const char *file) {
     panda_clear_screen();
     free_font(g_panda->font);
     g_panda->font = font;
-    g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
-    g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
+    g_panda->max_lines = syscall_vesa_height() / g_panda->font->height;
+    g_panda->max_cols = syscall_vesa_width() / g_panda->font->width;
     return 0;
 }
 
@@ -473,7 +475,7 @@ void panda_screen_restore(void *data) {
 
     draw_cursor(1);
 
-    c_process_set_scheduler(0);
+    syscall_process_auto_schedule(0);
 
     // restore font
     g_panda->font->data = realloc_ask( g_panda->font->data, source->font->charcount * source->font->charsize);
@@ -498,7 +500,7 @@ void panda_screen_restore(void *data) {
     g_panda->cursor_y = source->cursor_y;
     g_panda->color = source->color;
 
-    c_process_set_scheduler(1);
+    syscall_process_auto_schedule(1);
 
     for (int i = 0; i < g_panda->max_lines; i++) {
         for (int j = 0; j < g_panda->max_cols; j++) {
@@ -522,7 +524,7 @@ void panda_screen_free(void *data) {
 }
 
 void init_panda(void) {
-    if (!c_vesa_does_enable()) {
+    if (!syscall_vesa_state()) {
         fd_printf(2, "[panda] VESA is not enabled\n");
         g_panda = NULL;
         return;
@@ -546,11 +548,11 @@ void init_panda(void) {
     g_panda->cursor_is_hidden = 1;
     g_panda->color = 0x0F;
 
-    g_panda->max_lines = c_vesa_get_height() / g_panda->font->height;
-    g_panda->max_cols = c_vesa_get_width() / g_panda->font->width;
+    g_panda->max_lines = syscall_vesa_height() / g_panda->font->height;
+    g_panda->max_cols = syscall_vesa_width() / g_panda->font->width;
 
-    g_panda->fb = c_vesa_get_fb();
-    g_panda->pitch = c_vesa_get_pitch();
+    g_panda->fb = syscall_vesa_fb();
+    g_panda->pitch = syscall_vesa_pitch();
 
     g_panda->screen_buffer = calloc_ask(g_panda->max_lines * g_panda->max_cols, sizeof(screen_char_t));
 }

@@ -271,7 +271,7 @@ void exit(int rv) {
         entry_exit(rv);
     }
     fputs("no entry_exit function found\n", stderr);
-    c_exit_pid(c_process_get_pid(), rv, 0);
+    syscall_process_exit(syscall_process_pid(), rv, 0);
 }
 
 char *gcvt(double number, int ndigit, char *buf) {

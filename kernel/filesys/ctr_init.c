@@ -13,8 +13,10 @@
 #include <minilib.h>
 #include <system.h>
 
+#define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
+#define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
 
-int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
+int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
     uint8_t *data;
 
     // check if sector unused
@@ -41,50 +43,47 @@ int fs_cnt_init_sector(vdisk_t *vdisk, sid_t sid, int type) {
     return 0;
 }
 
-#define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
-#define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
+uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta) {
+    uint32_t main_sid;
+    uint32_t loca_sid;
 
-sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     vdisk_t *vdisk;
-    sid_t main_sid;
-    sid_t loca_sid;
-
     uint8_t *data;
     int ret_sect;
 
-    main_sid.device = device_id;
+    if (filesys == NULL)
+        filesys = MAIN_FS;
 
-    vdisk = fs_get_vdisk(filesys, main_sid.device);
+    vdisk = fs_get_vdisk(filesys, device_id);
     if (vdisk == NULL) {
         sys_warning("[cnt_init] vdisk not found");
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // get unused sector for header
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
         sys_error("[cnt_init] No more free sectors");
-        return NULL_SID;
+        return SID_NULL;
     }
-    main_sid.sector = (uint32_t) ret_sect;
+    main_sid = SID_FORMAT(device_id, ret_sect);
     vdisk_note_sector_used(vdisk, main_sid);
 
     // get unused sector for locator
-    loca_sid.device = main_sid.device;
     ret_sect = vdisk_get_unused_sector(vdisk);
     if (ret_sect == -1) {
         sys_error("[cnt_init] No more free sectors");
         vdisk_note_sector_unused(vdisk, main_sid);
-        return NULL_SID;
+        return SID_NULL;
     }
-    loca_sid.sector = (uint32_t) ret_sect;
+    loca_sid = SID_FORMAT(SID_DISK(main_sid), (uint32_t) ret_sect);
 
     // init locator
     if (fs_cnt_init_loca_in_sector(vdisk, loca_sid)) {
         sys_error("[cnt_init] Could not init locator");
         vdisk_note_sector_unused(vdisk, main_sid);
         vdisk_note_sector_unused(vdisk, loca_sid);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     data = calloc(FS_SECTOR_SIZE);
@@ -100,7 +99,7 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     // add meta and core sid
     mem_copy(data + 2, meta, min(str_len(meta), META_MAXLEN - 1));
 
-    mem_copy(data + LAST_SID_OFFSET, &loca_sid, sizeof(sid_t));
+    mem_copy(data + LAST_SID_OFFSET, &loca_sid, sizeof(uint32_t));
 
     vdisk_write_sector(vdisk, main_sid, data);
 
@@ -109,46 +108,32 @@ sid_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     return main_sid;
 }
 
-char *fs_cnt_get_meta(filesys_t *filesys, sid_t sid) {
+char *fs_cnt_meta(filesys_t *filesys, uint32_t sid, char *meta) {
     vdisk_t *vdisk;
     uint8_t *data;
-    char *meta;
 
-    vdisk = fs_get_vdisk(filesys, sid.device);
+    if (filesys == NULL)
+        filesys = MAIN_FS;
+
+    vdisk = fs_get_vdisk(filesys, SID_DISK(sid));
     if (vdisk == NULL) {
-        sys_warning("[cnt_get_meta] vdisk not found");
+        sys_warning("[cnt_meta] vdisk not found");
         return NULL;
     }
 
     data = vdisk_load_sector(vdisk, sid);
-    if (data == NULL) {
+
+    if (data == NULL)
         return NULL;
+
+    if (meta) {
+        mem_copy(data + 2, meta, META_MAXLEN - 1);
+    } else {
+        meta = calloc(META_MAXLEN);
+        mem_copy(meta, data + 2, META_MAXLEN - 1);
     }
-
-    meta = calloc(META_MAXLEN);
-    mem_copy(meta, data + 2, META_MAXLEN - 1);
-
-    vdisk_unload_sector(vdisk, sid, data, NO_SAVE);
-
-    return meta;
-}
-
-void fs_cnt_change_meta(filesys_t *filesys, sid_t sid, char *meta) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-
-    vdisk = fs_get_vdisk(filesys, sid.device);
-    if (vdisk == NULL) {
-        sys_warning("[cnt_change_meta] vdisk not found");
-        return;
-    }
-
-    data = vdisk_load_sector(vdisk, sid);
-    if (data == NULL) {
-        return;
-    }
-
-    mem_copy(data + 2, meta, META_MAXLEN - 1);
 
     vdisk_unload_sector(vdisk, sid, data, SAVE);
+
+    return meta;
 }

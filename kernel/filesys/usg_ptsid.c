@@ -12,16 +12,15 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 
+uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
+    uint32_t ret;
 
-sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
-    sid_t ret;
-
-    ret = NULL_SID;
+    ret = SID_NULL;
 
     // read the directory
     uint32_t size = fs_cnt_get_size(filesys, parent);
     if (size == UINT32_MAX) {
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // generate the path part to search for
@@ -41,18 +40,18 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
 
     // get the directory content
     char **names;
-    sid_t *sids;
+    uint32_t *sids;
     int count;
 
     count = fu_get_dir_content(filesys, parent, &sids, &names);
 
     if (count == -1) {
-        return NULL_SID;
+        return SID_NULL;
     }
 
     if (count == 0) {
         free(name);
-        return NULL_SID;
+        return SID_NULL;
     }
 
     // search for the path part
@@ -80,8 +79,8 @@ sid_t fu_rec_path_to_sid(filesys_t *filesys, sid_t parent, char *path) {
     return ret;
 }
 
-sid_t fu_path_to_sid(filesys_t *filesys, sid_t from, char *path) {
-    sid_t ret;
+uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path) {
+    uint32_t ret;
 
     if (str_cmp("/", path) == 0) {
         ret = ROOT_SID;

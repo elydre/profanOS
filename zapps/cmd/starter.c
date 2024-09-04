@@ -46,7 +46,7 @@ char **ft_split(char *s, char c) {
 char *find_cmd(char *cmd) {
     char *path, *res;
     char **paths;
-    sid_t sid;
+    uint32_t sid;
 
     path = getenv("PATH");
     if (path == NULL)
@@ -59,7 +59,7 @@ char *find_cmd(char *cmd) {
         strcat(res, cmd);
         strcat(res, ".elf");
         sid = fu_path_to_sid(ROOT_SID, res);
-        if (!IS_NULL_SID(sid) && fu_is_file(sid)) {
+        if (!IS_SID_NULL(sid) && fu_is_file(sid)) {
             free_tab(paths);
             return res;
         }
@@ -71,7 +71,7 @@ char *find_cmd(char *cmd) {
 
 int internal_cd(int argc, char **argv) {
     char *current_path, *dir;
-    sid_t sid;
+    uint32_t sid;
 
     if (argc != 2) {
         fprintf(stderr, "Usage: cd <dir>\n");
@@ -86,7 +86,7 @@ int internal_cd(int argc, char **argv) {
     fu_simplify_path(dir);
 
     sid = fu_path_to_sid(ROOT_SID, dir);
-    if (IS_NULL_SID(sid) || !fu_is_dir(sid)) {
+    if (IS_SID_NULL(sid) || !fu_is_dir(sid)) {
         fprintf(stderr, "cd: %s: No such directory\n", argv[1]);
         free(dir);
         return 1;

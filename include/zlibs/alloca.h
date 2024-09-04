@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === serial.h : 2024 ===                                                   |
+|   === alloca.h : 2024 ===                                                   |
 |                                                                             |
-|    Kernel Serial driver header                                   .pi0iq.    |
+|    Implementation of the alloca.h header file                    .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,17 +9,17 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef SERIAL_H
-#define SERIAL_H
+#ifndef ALLOCA_H
+#define ALLOCA_H
 
-#include <ktype.h>
+#include <stddef.h>
 
-#define SERIAL_PORT_A 0x3F8
-#define SERIAL_PORT_B 0x2F8
+#undef alloca
 
-int serial_init(void);
+void *alloca(size_t size);
 
-int serial_write(int device, char *buf, uint32_t len);
-int serial_read(int device, char *buf, uint32_t len);
+#ifdef __GNUC__ // GCC
+#define alloca(size) __builtin_alloca(size)
+#endif
 
 #endif

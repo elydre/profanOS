@@ -18,43 +18,43 @@
 
 // Elf32_Ehdr
 typedef struct {
-    unsigned char e_ident[16];    // ELF identification
-    unsigned short e_type;        // Object file type
-    unsigned short e_machine;    // Machine type
-    unsigned int e_version;        // Object file version
-    unsigned int e_entry;        // Entry point address
-    unsigned int e_phoff;        // Program header offset
-    unsigned int e_shoff;        // Section header offset
-    unsigned int e_flags;        // Processor-specific flags
-    unsigned short e_ehsize;        // ELF header size
-    unsigned short e_phentsize;    // Size of program header entry
-    unsigned short e_phnum;        // Number of program header entries
-    unsigned short e_shentsize;    // Size of section header entry
-    unsigned short e_shnum;        // Number of section header entries
-    unsigned short e_shstrndx;    // Section name string table index
+    unsigned char e_ident[16];  // ELF identification
+    unsigned short e_type;      // Object file type
+    unsigned short e_machine;   // Machine type
+    unsigned int e_version;     // Object file version
+    unsigned int e_entry;       // Entry point address
+    unsigned int e_phoff;       // Program header offset
+    unsigned int e_shoff;       // Section header offset
+    unsigned int e_flags;       // Processor-specific flags
+    unsigned short e_ehsize;    // ELF header size
+    unsigned short e_phentsize; // Size of program header entry
+    unsigned short e_phnum;     // Number of program header entries
+    unsigned short e_shentsize; // Size of section header entry
+    unsigned short e_shnum;     // Number of section header entries
+    unsigned short e_shstrndx;  // Section name string table index
 } Elf32_Ehdr;
 
 // Elf32_Shdr
 typedef struct {
-    unsigned int sh_name;        // Section name (string tbl index)
-    unsigned int sh_type;        // Section type
-    unsigned int sh_flags;        // Section flags
-    unsigned int sh_addr;        // Address where section is to be loaded
-    unsigned int sh_offset;        // File offset of section data
-    unsigned int sh_size;        // Size of section data
-    unsigned int sh_link;        // Section index linked to this section
-    unsigned int sh_info;        // Extra information
-    unsigned int sh_addralign;    // Section alignment
+    unsigned int sh_name;       // Section name (string tbl index)
+    unsigned int sh_type;       // Section type
+    unsigned int sh_flags;      // Section flags
+    unsigned int sh_addr;       // Address where section is to be loaded
+    unsigned int sh_offset;     // File offset of section data
+    unsigned int sh_size;       // Size of section data
+    unsigned int sh_link;       // Section index linked to this section
+    unsigned int sh_info;       // Extra information
+    unsigned int sh_addralign;  // Section alignment
     unsigned int sh_entsize;    // Entry size if section holds table
 } Elf32_Shdr;
 
 // Elf32_Sym
 typedef struct {
-    unsigned int st_name;        // Symbol name (string tbl index)
-    unsigned int st_value;        // Symbol value
-    unsigned int st_size;        // Symbol size
-    unsigned char st_info;        // Symbol type and binding
-    unsigned char st_other;        // Symbol visibility
+    unsigned int st_name;       // Symbol name (string tbl index)
+    unsigned int st_value;      // Symbol value
+    unsigned int st_size;       // Symbol size
+    unsigned char st_info;      // Symbol type and binding
+    unsigned char st_other;     // Symbol visibility
     unsigned short st_shndx;    // Section index
 } Elf32_Sym;
 

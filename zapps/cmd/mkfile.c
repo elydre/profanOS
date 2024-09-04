@@ -47,14 +47,14 @@ int main(int argc, char **argv) {
     }
 
     // chek if the parent directory exists
-    sid_t parent_sid = fu_path_to_sid(ROOT_SID, parent_path);
+    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent_path);
 
-    if (IS_NULL_SID(parent_sid) || !fu_is_dir(parent_sid)) {
+    if (IS_SID_NULL(parent_sid) || !fu_is_dir(parent_sid)) {
         fprintf(stderr, "mkfile: %s: No such file or directory\n", parent_path);
     }
 
     // check if the file already exists
-    else if (!IS_NULL_SID(fu_path_to_sid(ROOT_SID, full_path))) {
+    else if (!IS_SID_NULL(fu_path_to_sid(ROOT_SID, full_path))) {
         fprintf(stderr, "mkfile: %s: Already exists\n", full_path);
     }
 

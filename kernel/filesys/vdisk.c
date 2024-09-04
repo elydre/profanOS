@@ -13,7 +13,6 @@
 #include <minilib.h>
 #include <system.h>
 
-
 vdisk_t *vdisk_create(uint32_t initsize) {
     vdisk_t *vdisk = malloc(sizeof(vdisk_t));
 
@@ -42,38 +41,38 @@ void vdisk_destroy(vdisk_t *vdisk) {
     free(vdisk);
 }
 
-int vdisk_note_sector_used(vdisk_t *vdisk, sid_t sid) {
-    if (vdisk->used[sid.sector] == 1) {
+int vdisk_note_sector_used(vdisk_t *vdisk, uint32_t sid) {
+    if (vdisk->used[SID_SECTOR(sid)] == 1) {
         sys_error("Sector already used");
         return 1;
     }
 
-    if (vdisk->free[vdisk->used_count] != sid.sector) {
-        sys_fatal("Sector %d is not the next free sector", sid.sector);
+    if (vdisk->free[vdisk->used_count] != SID_SECTOR(sid)) {
+        sys_fatal("Sector %d is not the next free sector", SID_SECTOR(sid));
         return 1;
     }
 
     vdisk->free[vdisk->used_count] = 42;
-    vdisk->used[sid.sector] = 1;
+    vdisk->used[SID_SECTOR(sid)] = 1;
     vdisk->used_count++;
     return 0;
 }
 
-int vdisk_note_sector_unused(vdisk_t *vdisk, sid_t sid) {
-    if (vdisk->used[sid.sector] == 0) {
+int vdisk_note_sector_unused(vdisk_t *vdisk, uint32_t sid) {
+    if (vdisk->used[SID_SECTOR(sid)] == 0) {
         sys_error("Sector already unused");
         return 1;
     }
 
     vdisk->used_count--;
 
-    vdisk->free[vdisk->used_count] = sid.sector;
-    vdisk->used[sid.sector] = 0;
+    vdisk->free[vdisk->used_count] = SID_SECTOR(sid);
+    vdisk->used[SID_SECTOR(sid)] = 0;
     return 0;
 }
 
-int vdisk_is_sector_used(vdisk_t *vdisk, sid_t sid) {
-    return vdisk->used[sid.sector];
+int vdisk_is_sector_used(vdisk_t *vdisk, uint32_t sid) {
+    return vdisk->used[SID_SECTOR(sid)];
 }
 
 int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
@@ -105,35 +104,35 @@ int vdisk_get_unused_sector(vdisk_t *vdisk) {
     return vdisk->free[vdisk->used_count];
 }
 
-int vdisk_write_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
-    if (sid.sector >= vdisk->size) {
+int vdisk_write_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data) {
+    if (SID_SECTOR(sid) >= vdisk->size) {
         sys_error("[vdisk_write] Sector out of range");
         return 1;
     }
-    mem_copy(vdisk->sectors + sid.sector, data, FS_SECTOR_SIZE);
+    mem_copy(vdisk->sectors + SID_SECTOR(sid), data, FS_SECTOR_SIZE);
     return 0;
 }
 
-int vdisk_read_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data) {
-    if (sid.sector >= vdisk->size) {
+int vdisk_read_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data) {
+    if (SID_SECTOR(sid) >= vdisk->size) {
         sys_error("[vdisk_read] Sector out of range");
         return 1;
     }
-    mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
+    mem_copy(data, vdisk->sectors + SID_SECTOR(sid), FS_SECTOR_SIZE);
     return 0;
 }
 
-uint8_t *vdisk_load_sector(vdisk_t *vdisk, sid_t sid) {
-    if (sid.sector >= vdisk->size) {
+uint8_t *vdisk_load_sector(vdisk_t *vdisk, uint32_t sid) {
+    if (SID_SECTOR(sid) >= vdisk->size) {
         sys_error("[vdisk_load] Sector out of range");
         return NULL;
     }
     uint8_t *data = malloc(FS_SECTOR_SIZE);
-    mem_copy(data, vdisk->sectors + sid.sector, FS_SECTOR_SIZE);
+    mem_copy(data, vdisk->sectors + SID_SECTOR(sid), FS_SECTOR_SIZE);
     return data;
 }
 
-int vdisk_unload_sector(vdisk_t *vdisk, sid_t sid, uint8_t *data, int save) {
+int vdisk_unload_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data, int save) {
     if (save) {
         vdisk_write_sector(vdisk, sid, data);
     }

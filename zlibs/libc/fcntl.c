@@ -23,19 +23,19 @@ int open(const char *path, int flags, ...) {
     char *fullpath, *cwd = getenv("PWD");
     fullpath = cwd ? assemble_path(cwd, path) : strdup(path);
 
-    sid_t sid = fu_path_to_sid(ROOT_SID, fullpath);
+    uint32_t sid = fu_path_to_sid(ROOT_SID, fullpath);
 
-    if (IS_NULL_SID(sid) && (flags & O_CREAT)) {
+    if (IS_SID_NULL(sid) && (flags & O_CREAT)) {
         sid = fu_file_create(0, fullpath);
     }
 
-    if (IS_NULL_SID(sid)) {
+    if (IS_SID_NULL(sid)) {
         free(fullpath);
         return -1;
     }
 
     if (flags & O_TRUNC && fu_is_file(sid)) {
-        fu_set_file_size(sid, 0);
+        fu_file_set_size(sid, 0);
     }
 
     int fd = fm_open(fullpath);
