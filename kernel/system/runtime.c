@@ -19,6 +19,12 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     int ppid, pstate, leaks;
 
     if (pid == 0 || pid == 1) {
+        sys_warning("[exit pid] Attempt to kill system process %d", pid);
+        return 1;
+    }
+
+    if (process_get_state(pid) >= PROCESS_KILLED) {
+        sys_warning("[exit pid] Attempt to kill a non-existing process %d", pid);
         return 1;
     }
 
