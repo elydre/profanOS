@@ -8,13 +8,10 @@
 ![wave](https://elydre.github.io/img/profan.svg)
 
 The profan Operating System is an independent OS developed from scratch.
-It is not intended to be used massively or to have broad hardware support.
-
-profanOS is characterized by its ring0-only preemptive modular multitasking
+It is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
 
-You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7)
-and global mindmap [here](https://framindmap.org/c/maps/1263862/embed).
+You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7).
 
 ## Setup
 
@@ -67,20 +64,7 @@ qemu-system-i386 -cdrom profanOS.iso -enable-kvm
 profanOS can also be tested online with two clicks with the [v86 copy](https://github.com/copy/v86)
 emulator [here](https://elydre.github.io/profan).
 
-For information about real hardware boot and instalation see the [dedicated section](#real-hardware)
-
-### Hardware requirements
-
-profanOS is a 32-bit operating system, it is therefore necessary to have a 32-bit
-processor to run it.
-There is no exact RAM value to have, but without disk the entire file system is
-loaded into memory, however a few megabytes are enough.
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU (x86) | 1@100Mhz| 1@2Ghz      |
-| RAM       | 16MB    | 128MB       |
-| screen    | text    | 1024x768    |
+For information about real hardware boot and instalation see the [dedicated section](#real-hardware).
 
 ## First look
 
@@ -99,7 +83,7 @@ of the OS, it is extremely minimalist and can be completed by adding modules loa
 from disk such as drivers or file system extensions.
 
 profanOS is **not** a SASOS - single address space operating system, but part of the memory is shared,
-like kernel and modules. Processes can therefore freely access kernel functions.
+like kernel and modules. Processes can therefore freely access kernel memory.
 
 Here is a list of the main kernel features:
 
@@ -200,11 +184,10 @@ sudo sh install.sh /dev/sdX profanOS.iso
 
 ### Known major bugs
 
-| bug name   | since | description                          | cause | fixed ? |
-|------------|-------|--------------------------------------|-------|---------|
-| lagged lag | ?     | all profanOS is getting very slow    | ?     | maybe   |
-| BOBCAT     | 0.4.2 | some C compiler build broken modules | dily  | no      |
-| no KB      | ?     | keyboard not working sometimes       | ?     | no      |
+| bug name   | since | description                       | cause           | fixed ? |
+|------------|-------|-----------------------------------|-----------------|---------|
+| lagged lag | ?     | all profanOS is getting very slow | memory access ? | partial |
+| no KB      | ?     | keyboard not working sometimes    | ?               | maybe   |
 
 ### Screenshots
 
