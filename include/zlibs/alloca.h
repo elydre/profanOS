@@ -12,6 +12,8 @@
 #ifndef ALLOCA_H
 #define ALLOCA_H
 
+#include <stddef.h>
+
 #undef alloca
 
 void *alloca(size_t size);
