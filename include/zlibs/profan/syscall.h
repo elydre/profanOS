@@ -14,11 +14,6 @@
 
 #include <profan/type.h>
 
-// TEMPORARY
-
-#define WATFUNC_ADDR 0x1ffff7
-
-
 /**********************************
  *                               *
  *  defines and macro functions  *
@@ -46,7 +41,7 @@
 #define syscall_vesa_height()  syscall_vesa_info(1)
 #define syscall_vesa_pitch()   syscall_vesa_info(2)
 #define syscall_vesa_fb() ((void *) syscall_vesa_info(3))
-#define syscall_vesa_state() syscall_vesa_info(4)
+#define syscall_vesa_state()   syscall_vesa_info(4)
 
 /************************************
  *                                 *
