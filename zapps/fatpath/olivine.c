@@ -3449,7 +3449,7 @@ int execute_for(int line_count, char **lines, char **result) {
             string_index++;
         if (string[string_index] == '\0')
             break;
-        
+
         // set the the variable
         for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
             if (string[string_index + var_len] == INTR_QUOTE) {
