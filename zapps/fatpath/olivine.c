@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 15"
+#define OLV_VERSION "1.0 rev 16"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -166,9 +166,9 @@ variable_t *variables;
 pseudo_t *pseudos;
 function_t *functions = NULL;
 internal_function_t internal_functions[];
-char **bin_names;
+char **bin_names, *g_current_directory;
 
-char *g_current_directory, *g_exit_code, *g_prompt;
+char *g_prompt, g_exit_code[5];
 int g_current_level;
 
 char **lexe_program(char *program, int interp_bckslsh);
@@ -3378,13 +3378,8 @@ int execute_for(int line_count, char **lines, char **result) {
         return -1;
     }
 
-    char *var_name = malloc(strlen(for_line) + 1);
-    char *string = malloc(strlen(for_line) + 1);
-
     if (for_line[3] != ' ') {
         raise_error(NULL, "Missing variable name for FOR loop");
-        free(var_name);
-        free(string);
 
         if (for_line != lines[0]) {
             free(for_line);
@@ -3393,6 +3388,8 @@ int execute_for(int line_count, char **lines, char **result) {
         return -1;
     }
 
+    char *var_name = malloc(strlen(for_line) + 1);
+
     int i;
     for (i = 4; for_line[i] != ' ' && for_line[i] != '\0'; i++) {
         var_name[i - 4] = for_line[i];
@@ -3400,6 +3397,7 @@ int execute_for(int line_count, char **lines, char **result) {
     var_name[i - 4] = '\0';
 
     int line_end = get_line_end(line_count, lines);
+    char *string = malloc(strlen(for_line) + 1);
 
     if (for_line[i] == '\0') {
         string[0] = '\0';
@@ -3445,8 +3443,15 @@ int execute_for(int line_count, char **lines, char **result) {
     int res;
     // execute the loop
     while (string[string_index]) {
-        // set the the variable
+        while (string[string_index] == ' ') {
+            string_index++;
+        }
 
+        if (string[string_index] == '\0') {
+            break;
+        }
+        
+        // set the the variable
         for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
             if (string[string_index + var_len] == INTR_QUOTE) {
                 in_string = !in_string;
@@ -3458,10 +3463,6 @@ int execute_for(int line_count, char **lines, char **result) {
         set_variable_withlen(var_name, string + string_index, var_len, 0);
 
         string_index += var_len;
-
-        while (string[string_index] == ' ') {
-            string_index++;
-        }
 
         // execute the iteration
         res = execute_lines(lines + 1, line_end - 1, result);
@@ -5055,7 +5056,6 @@ int main(int argc, char **argv) {
     setenv("PWD", "/", 0);
     strcpy(g_current_directory, getenv("PWD"));
 
-    g_exit_code = malloc(5);
     strcpy(g_exit_code, "0");
 
     g_prompt = malloc(PROMPT_SIZE + 1);
@@ -5100,7 +5100,6 @@ int main(int argc, char **argv) {
     free(bin_names);
 
     free(g_current_directory);
-    free(g_exit_code);
     free(g_prompt);
     free(args);
 
