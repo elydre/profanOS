@@ -3443,13 +3443,12 @@ int execute_for(int line_count, char **lines, char **result) {
     int res;
     // execute the loop
     while (string[string_index]) {
-        while (string[string_index] == ' ') {
-            string_index++;
-        }
 
-        if (string[string_index] == '\0') {
+        // skip spaces
+        while (string[string_index] == ' ')
+            string_index++;
+        if (string[string_index] == '\0')
             break;
-        }
         
         // set the the variable
         for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
