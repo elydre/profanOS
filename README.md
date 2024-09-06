@@ -192,27 +192,9 @@ sudo sh install.sh /dev/sdX profanOS.iso
 
 ### Screenshots
 
-<table><colgroup>
-        <col style="width: 50%;"/>
-        <col style="width: 50%;"/>
-    </colgroup><tr>
-    <td style="text-align: center;">
-        <img src="https://elydre.github.io/img/profan/screen/halfix.png" alt="halfix"/><br/>
-        <i>a Linux VM running in profanOS with halfix</i>
-    </td>
-    <td style="text-align: center;">
-        <img src="https://elydre.github.io/img/profan/screen/lua.png" alt="lua"/><br/>
-        <i>lua port with custom file system support</i>
-    </td></tr>
-    <tr><td style="text-align: center;">
-        <img src="https://elydre.github.io/img/profan/screen/windaube.png" alt="windaube"/><br/>
-        <i>windaube, a discontinued window manager</i>
-    </td>
-    <td style="text-align: center;">
-        <img src="https://elydre.github.io/img/profan/screen/doom.png" alt="doom"/><br/>
-        <i>the first time external code runs in profan</i>
-    </td>
-</tr></table>
+| ![halfix](https://elydre.github.io/img/profan/screen/halfix.png) | ![lua](https://elydre.github.io/img/profan/screen/lua.png) |
+|------------------------------------------------------------------|-------------------------------------------------------------------|
+| ![windaube](https://elydre.github.io/img/profan/screen/windaube.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
 
 ### Author & Contact
 
