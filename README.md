@@ -11,7 +11,8 @@ The profan Operating System is an independent OS developed from scratch.
 It is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
 
-You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7).
+You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7)
+and the [wiki](https://github.com/elydre/profanOS/wiki) for documentation.
 
 ## Setup
 
@@ -187,13 +188,31 @@ sudo sh install.sh /dev/sdX profanOS.iso
 | bug name   | since | description                       | cause           | fixed ? |
 |------------|-------|-----------------------------------|-----------------|---------|
 | lagged lag | ?     | all profanOS is getting very slow | memory access ? | partial |
-| no KB      | ?     | keyboard not working sometimes    | ?               | maybe   |
+| no KB      | ?     | keyboard not working sometimes    | ?               | no      |
 
 ### Screenshots
 
-| ![halfix](https://elydre.github.io/img/profan/screen/halfix.png) | ![lua](https://elydre.github.io/img/profan/screen/lua.png) |
-|------------------------------------------------------------------|-------------------------------------------------------------------|
-| ![windaube](https://elydre.github.io/img/profan/screen/windaube.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
+<table><colgroup>
+        <col style="width: 50%;"/>
+        <col style="width: 50%;"/>
+    </colgroup><tr>
+    <td style="text-align: center;">
+        <img src="https://elydre.github.io/img/profan/screen/halfix.png" alt="halfix"/><br/>
+        <i>a Linux VM running in profanOS with halfix</i>
+    </td>
+    <td style="text-align: center;">
+        <img src="https://elydre.github.io/img/profan/screen/lua.png" alt="lua"/><br/>
+        <i>lua port with custom file system support</i>
+    </td></tr>
+    <tr><td style="text-align: center;">
+        <img src="https://elydre.github.io/img/profan/screen/windaube.png" alt="windaube"/><br/>
+        <i>windaube, a discontinued window manager</i>
+    </td>
+    <td style="text-align: center;">
+        <img src="https://elydre.github.io/img/profan/screen/doom.png" alt="doom"/><br/>
+        <i>the first time external code runs in profan</i>
+    </td>
+</tr></table>
 
 ### Author & Contact
 
@@ -204,12 +223,11 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 ### Source & Acknowledgment
 
 - **[os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial**
-- [@asqel](https://github.com/asqel) for tests, [ATC](https://github.com/asqel/act) and the sulfur language
+- [@asqel](https://github.com/asqel) for tests, the sulfur language and all the ports
 - [@Sarah](https://github.com/Sarenard) for all the help and ideas
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
-- [framindmap](https://framindmap.org) for mindmap of the todo list
 - [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
 - [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
