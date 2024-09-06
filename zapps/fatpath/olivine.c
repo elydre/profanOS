@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 16"
+#define OLV_VERSION "1.0 rev 17"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -5067,7 +5067,7 @@ int main(int argc, char **argv) {
 
     set_variable_global("version", OLV_VERSION);
     set_variable_global("profan", PROFANBUILD ? "1" : "0");
-    set_variable_global("spi", "0");
+    set_variable("spi", "0");
 
     set_sync_variable("path", g_current_directory, MAX_PATH_SIZE);
     set_sync_variable("exit", g_exit_code, 4);
