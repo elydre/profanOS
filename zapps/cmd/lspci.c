@@ -9,9 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/syscall.h>
 #include <stdlib.h>
 #include <profan.h>
+#include <string.h>
 #include <stdio.h>
 
 /*********************************************************/
@@ -25,6 +25,8 @@ typedef struct {
     uint32_t bus;
     uint32_t slot;
     uint32_t func;
+
+    uint32_t bar[6];
 } pci_device_t;
 
 /*********************************************************/
@@ -86,6 +88,9 @@ void pci_probe(void) {
                 pdev->bus = bus;
                 pdev->slot = slot;
                 pdev->func = function;
+                for (uint32_t i = 0; i < 6; i++) {
+                    pdev->bar[i] = pci_read_word(bus, slot, function, 0x10 + i * 4);
+                }
                 add_pci_device(pdev);
             }
         }
@@ -138,13 +143,25 @@ char *get_class_name(uint16_t id) {
     }
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     devs = 0;
     pci_devices = malloc(32 * sizeof(pci_device_t *));
     pci_probe();
 
+    int show_bar = 0;
+
+    if (argc > 1) {
+        if (strcmp(argv[1], "-b") == 0) {
+            show_bar = 1;
+        } else {
+            fprintf(stderr, "Usage: lspci [-b]\n");
+            return 1;
+        }
+    }
+
     for (uint32_t i = 0; i < devs; i++) {
         pci_device_t *pci_dev = pci_devices[i];
+
         printf("%x,%x [%x:%x:%x] - %s %s (%x %x)\n",
             pci_dev->bus,
             pci_dev->slot,
@@ -159,6 +176,12 @@ int main(void) {
             pci_dev->class,
             pci_dev->subclass
         );
+
+        if (!show_bar)
+            continue;
+        for (uint32_t j = 0; j < 6; j++)
+            printf("BAR%d: %08x ", j, pci_dev->bar[j]);
+        puts("\n");
     }
 
     profan_cleanup();
