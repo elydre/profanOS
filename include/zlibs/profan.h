@@ -55,7 +55,7 @@ void profan_cleanup(void);
 #define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 4))
 #define open_input_keyboard ((char *(*)(int *, char *)) get_func_addr(PROFAN_LIB_ID, 5))
 #define open_input_serial ((char *(*)(int *, int)) get_func_addr(PROFAN_LIB_ID, 6))
-#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 9))
+#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 7))
 #endif
 
 #endif

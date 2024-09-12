@@ -23,6 +23,7 @@
 
 #define DEFAULT_KB "/zada/keymap/azerty.map"
 #define ELF_INTERP "/bin/sys/deluge.bin"
+#define ENV_INTERP "DEFRUN"
 
 // input() setings
 #define FIRST_L 12
@@ -284,7 +285,7 @@ char *open_input_serial(int *size, int serial_port) {
     return buffer;
 }
 
-char **dup_envp(char **envp) {
+static char **dup_envp(char **envp) {
     if (envp == NULL)
         return calloc_ask(1, sizeof(char *));
     int envc, size = 0;
@@ -308,7 +309,31 @@ char **dup_envp(char **envp) {
     return nenvp;
 }
 
-char **get_interp(uint32_t sid, int *c) {
+static char **split_interp(char *tmp, int *c) {
+    char **interp = calloc(1, sizeof(char *));
+    *c = 0;
+
+    for (int from, i = 0; tmp[i];) {
+        while (tmp[i] == ' ' || tmp[i] == '\t' || tmp[i] == '\r')
+            i++;
+        from = i;
+        while (tmp[i] && tmp[i] != ' ' && tmp[i] != '\t' && tmp[i] != '\r')
+            i++;
+        if (i == from)
+            break;
+        interp = realloc(interp, (*c + 2) * sizeof(char *));
+        char *cpy = malloc_ask(i - from + 1);
+        memcpy(cpy, tmp + from, i - from);
+        cpy[i - from] = '\0';
+        interp[*c] = cpy;
+        (*c)++;
+    }
+
+    interp[*c] = NULL;
+    return interp;
+}
+
+static char **get_interp(uint32_t sid, int *c) {
     char *tmp = malloc(11);
     int size = 0;
     int to_read = 10;
@@ -337,31 +362,9 @@ char **get_interp(uint32_t sid, int *c) {
         tmp = realloc(tmp, size + to_read + 1);
     }
 
-    char **interp = NULL;
-    *c = 0;
-
-    for (int from, i = 0; tmp[i];) {
-        while (tmp[i] == ' ' || tmp[i] == '\t' || tmp[i] == '\r')
-            i++;
-        from = i;
-        while (tmp[i] && tmp[i] != ' ' && tmp[i] != '\t' && tmp[i] != '\r')
-            i++;
-        if (i == from)
-            break;
-        interp = realloc(interp, (*c + 2) * sizeof(char *));
-        char *cpy = malloc_ask(i - from + 1);
-        memcpy(cpy, tmp + from, i - from);
-        cpy[i - from] = '\0';
-        interp[*c] = cpy;
-        (*c)++;
-    }
+    char **interp = split_interp(tmp, c);
     free(tmp);
 
-    if (*c == 0) {
-        return NULL;
-    }
-
-    interp[*c] = NULL;
     return interp;
 }
 
@@ -390,7 +393,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     uint8_t magic[4];
     fu_file_read(sid, magic, 0, 4);
 
-    char **nargv;
+    char **nargv = NULL;
 
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
         args.argc += 3;
@@ -427,9 +430,9 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         nargv[c+1] = malloc_ask(strlen(args.path) + 1);
         strcpy(nargv[c+1], args.path);
 
-        for (int i = 0; i < args.argc; i++) {
-            nargv[i+c+2] = malloc_ask(strlen(args.argv[i]) + 1);
-            strcpy(nargv[i+c+2], args.argv[i]);
+        for (int i = 1; i < args.argc; i++) {
+            nargv[i+c+1] = malloc_ask(strlen(args.argv[i]) + 1);
+            strcpy(nargv[i+c+1], args.argv[i]);
         }
         args.argc += c + 1;
         sid = elf_sid;
@@ -440,8 +443,38 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
             nargv[i] = malloc_ask(strlen(args.argv[i]) + 1);
             strcpy(nargv[i], args.argv[i]);
         }
-    } else {
-        fd_printf(2, "[run_ifexist] no interpreter found\n");
+    } else if (args.envp != NULL) {
+        for (int i = 0; args.envp[i] != NULL; i++) {
+            if (strncmp(args.envp[i], ENV_INTERP"=", strlen(ENV_INTERP)+1))
+                continue;
+            int c;
+            char **interp = split_interp(args.envp[i] + strlen(ENV_INTERP)+1, &c);
+
+            nargv = calloc_ask(args.argc + c + 3, sizeof(char *));
+
+            nargv[0] = malloc_ask(4);
+            strcpy(nargv[0], "dlg");
+
+            for (int i = 0; i < c; i++) {
+                nargv[i+1] = interp[i];
+            }
+            free(interp);
+
+            nargv[c+1] = malloc_ask(strlen(args.path) + 1);
+            strcpy(nargv[c+1], args.path);
+
+            for (int i = 1; i < args.argc; i++) {
+                nargv[i+c+1] = malloc_ask(strlen(args.argv[i]) + 1);
+                strcpy(nargv[i+c+1], args.argv[i]);
+            }
+            args.argc += c + 1;
+            sid = elf_sid;
+            break;
+        }
+    }
+
+    if (nargv == NULL) {
+        fd_printf(2, "[run_ifexist] %s: unknown file type\n", args.path);
         return -1;
     }
 
