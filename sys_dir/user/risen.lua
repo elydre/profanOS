@@ -1,3 +1,5 @@
+#!/bin/fatpath/lua.elf
+
 -- Play the templeOS theme song 'Risen' by Terry A. Davis
 -- Source:  Sup1Hymns/TOSTheme.HC
 --          Adam/ASnd.HC
