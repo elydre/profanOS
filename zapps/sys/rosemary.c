@@ -181,8 +181,10 @@ int main(void) {
 
     welcome_print();
 
+    set_env("PATH=/bin/cmd:/bin/fatpath");
+    set_env("DEFRUN=/bin/fatpath/tcc.elf -run");
+
     do {
-        set_env("PATH=/bin/cmd:/bin/fatpath");
         run_ifexist_pid(SHELL_PATH, 0, NULL, envp, NULL);
 
         fd_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
