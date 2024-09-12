@@ -23,6 +23,7 @@ scan_externtions = [
 ignore_directories = [
     "out",
     "include/addons",
+    "sys_dir/user",
 ]
 
 ignore_line_too_long = [
