@@ -208,9 +208,9 @@ void fd_printf(int fd, const char *fmt, ...) {
             i++;
             if (fmt[i] == 's') {
                 char *tmp = va_arg(args, char *);
-                for (int j = 0; tmp[j] != '\0'; j++) {
-                    fd_putchar(fd, tmp[j]);
-                }
+                if (tmp == NULL)
+                    tmp = "(null)";
+                fd_putstr(fd, tmp);
             } else if (fmt[i] == 'c') {
                 fd_putchar(fd, va_arg(args, int));
             } else if (fmt[i] == 'd') {
