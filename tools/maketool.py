@@ -17,7 +17,7 @@ import threading
 # SETTINGS
 SHOW_CMD    = False
 COMPCT_LINE = True
-HBL_FILE    = True
+LOG_FILE    = True
 
 # SETUP
 TOOLS_DIR = "tools"
@@ -383,16 +383,26 @@ def make_iso(force = False, more_option = False):
     print_and_exec("grub-mkrescue -o profanOS.iso out/isodir/")
 
 
-def get_kernel_version(print_info = True):
+def get_kernel_version(print_info = True, add_editing = False):
     path = os.path.dirname(os.path.abspath(__file__))
+
+    info = "unknown"
 
     with open(f"{path}/../include/kernel/system.h", "r") as f:
         for line in f:
-            if "KERNEL_VERSION" not in line: continue
-            info = line.split(" ")[-1][1:-2]
-            if print_info: print(info)
-            return info
+            if "KERNEL_VERSION" in line:
+                info = line.split(" ")[-1][1:-2]
+                if not add_editing:
+                    break
+            if "KERNEL_EDIT" not in line:
+                continue
+            info += f" ({line.split(' ')[-1][1:-2]})"
+            break
 
+    if print_info:
+        print(info)
+
+    return info
 
 def write_build_logs():
     print_info_line("generating build logs")
@@ -402,18 +412,22 @@ def write_build_logs():
     except Exception:
         user_name = "unknown"
 
-    text = "- initrd.bin BUILD LOGS -\n"
-    text += "UTC build time: " + datetime.datetime.now(datetime.timezone.utc).strftime(
+    linux_dist = os.popen("lsb_release -d").read().splitlines()[0].split(":")[1].strip()
+
+    text = "UTC TIME  " + datetime.datetime.now(datetime.timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
-    text += f"machine name:   {os.uname().nodename} ({os.uname().sysname}) by {user_name}\n"
-    text += f"build for:      profanOS kernel {get_kernel_version(False)}\n"
-    text += f"CC version:     {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
-    text += f"ld version:     {os.popen('ld --version').read().splitlines()[0]}\n"
-    text += f"python version: {os.popen('python3 --version').read().splitlines()[0]}\n"
-    text += f"grub version:   {os.popen('grub-mkrescue --version').read().splitlines()[0]}\n"
+    text += f"    HOST  {os.uname().nodename} ({linux_dist}, {os.uname().sysname}) by {user_name}\n"
+    text += f"  KERNEL  profanOS {get_kernel_version(False, True)}\n"
+    text += f"      CC  {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
+    text += f"      LD  {os.popen('ld --version').read().splitlines()[0]}\n"
+    text += f"  PYTHON  {os.popen('python3 --version').read().splitlines()[0]}\n"
+    text += f"    GRUB  {os.popen('grub-mkrescue --version').read().splitlines()[0]}\n"
+    text += f"GIT HASH  {os.popen('git rev-parse HEAD').read().splitlines()[0]}\n"
+    text += f"GIT REPO  {os.popen('git remote get-url origin').read().splitlines()[0]}"
+    text += f" [{os.popen('git rev-parse --abbrev-ref HEAD').read().splitlines()[0]}]\n"
 
-    with open(f"{OUT_DIR}/disk/user/hbl.txt", "w") as f:
+    with open(f"{OUT_DIR}/disk/user/build.log", "w") as f:
         f.write(text)
 
 
@@ -462,7 +476,8 @@ def gen_disk(force=False, with_src=False):
     if with_src:
         add_src_to_disk()
 
-    if HBL_FILE: write_build_logs()
+    if LOG_FILE:
+        write_build_logs()
 
     print_info_line("copy sys/ directory")
     print_and_exec(f"cp {TOOLS_DIR}/entry_elf.c {OUT_DIR}/disk/sys/zentry.c")
