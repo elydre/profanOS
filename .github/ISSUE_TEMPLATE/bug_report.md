@@ -16,4 +16,5 @@ sure that a `make clean` does not solve the problem.
 ### Screenshots
 
 ### Environment
-- `out/disk/user/hbl.txt` content if you can
+- `out/disk/user/build.log` content if possible
+- drop `profanOS.iso` file or other build artifacts 
