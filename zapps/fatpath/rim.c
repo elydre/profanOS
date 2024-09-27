@@ -10,13 +10,13 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
-#include <profan/filesys.h>
 #include <profan/panda.h>
 #include <profan.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -44,6 +44,8 @@
 #define COLOR_M 0x70    // more data (>)
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
+
+#define RIM_VERSION "6 rev 1"
 
 // GLOBALS
 typedef struct {
@@ -93,18 +95,44 @@ void set_title(char *path) {
     free(title);
 }
 
+void init_data(void) {
+    free(g_data);
+    g_data = malloc(1024);
+    g_data_size = 1;
+
+    free(g_data_lines);
+    g_data_lines = calloc(1024, sizeof(int));
+    g_lines_count = 1;
+}
+
 void load_file(char *path) {
-    uint32_t file = fu_path_to_sid(ROOT_SID, path);
-    int file_size = fu_file_get_size(file);
-    int read_size = file_size;
+    int malloc_size = 1024;
+    int read_size, fd;
 
-    g_data_size = file_size + 1;
-    file_size += 1024 - (file_size % 1024);
-    // printf("file size: %d\n", file_size);
+    init_data();
 
-    g_data = realloc(g_data, file_size);
+    if (path) {
+        fd = open(path, O_RDONLY | O_CREAT);
+        if (fd < 0)
+            exit(1);
+    } else {
+        fd = 0;
+    }
 
-    fu_file_read(file, g_data, 0, read_size);
+    while ((read_size = read(fd, g_data + g_data_size - 1, 1024))) {
+        if (read_size < 0) {
+            close(fd);
+            exit(1);
+        }
+
+        g_data_size += read_size;
+        if (malloc_size - g_data_size < 1024) {
+            g_data = realloc(g_data, g_data_size + 1024);
+            malloc_size += 1024;
+        }
+    }
+
+    close(fd);
 
     for (int i = 0; i < g_data_size - 1; i++) {
         if (g_data[i] != '\n') continue;
@@ -117,7 +145,15 @@ void load_file(char *path) {
 }
 
 void save_file(char *path) {
-    if (g_data_size - 1 == 0) return;
+    int fd;
+
+    if (path) {
+        fd = open(path, O_WRONLY | O_CREAT | O_TRUNC);
+        if (fd < 0)
+            return;
+    } else {
+        fd = 1;
+    }
 
     char *data_copy = malloc(g_data_size);
     memcpy(data_copy, g_data, g_data_size);
@@ -126,9 +162,8 @@ void save_file(char *path) {
         if (data_copy[i] == '\0') data_copy[i] = '\n';
     }
 
-    uint32_t file = fu_path_to_sid(ROOT_SID, path);
-    fu_file_set_size(file, g_data_size - 1);
-    fu_file_write(file, data_copy, 0, g_data_size - 1);
+    write(fd, data_copy, g_data_size - 1);
+    close(fd);
 
     free(data_copy);
 }
@@ -485,10 +520,8 @@ void main_loop(char *path) {
         }
 
         // check if key is ctrl
-        else if (key == 29) {
-            if (path != NULL) {
-                save_file(path);
-            }
+        else if (key == 29 && path) {
+            save_file(path);
         }
 
         // check if key is backspace
@@ -617,8 +650,7 @@ void main_loop(char *path) {
 
 void clear_screen(void) {
     syscall_kprint("\e[2J");
-    fputs("\e[2J", stdout);
-    fflush(stdout);
+    panda_print_string("\e[2J", 4, 0);
 }
 
 void quit(void) {
@@ -628,54 +660,6 @@ void quit(void) {
     free(g_syntax->keywords);
     free(g_syntax->blues);
     free(g_syntax);
-}
-
-char *compute_args(int argc, char **argv) {
-    char *file = NULL;
-    g_always_tab = 0;
-
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            if (argv[i][1] == 't') {
-                g_always_tab = 1;
-            } else if (argv[i][1] == 'h') {
-                puts("Usage: rim [-h|-t] [file]"
-                    "\nOptions:"
-                    "\n  -h    display this help message"
-                    "\n  -t    always insert tab character"
-                );
-                exit(0);
-            } else {
-                fprintf(stderr, "rim: Unknown option -- '%s'\n", argv[i] + 1);
-                exit(1);
-            }
-        } else {
-            file = argv[i];
-        }
-    }
-
-    if (!file)
-        return NULL;
-
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
-    file = assemble_path(pwd, file);
-
-    uint32_t elm = fu_path_to_sid(ROOT_SID, file);
-
-    if (IS_SID_NULL(elm)) {
-        elm = fu_file_create(0, file);
-        if (IS_SID_NULL(elm)) {
-            fprintf(stderr, "rim: %s: failed to create file\n", file);
-            exit(1);
-        }
-    } else if (!fu_is_file(elm)) {
-        fprintf(stderr, "rim :%s: file not found\n", file);
-        exit(1);
-    }
-
-    return file;
 }
 
 char **copy_array(char **array) {
@@ -691,6 +675,9 @@ char **copy_array(char **array) {
 
 void rim_syntax_init(char *lang) {
     g_syntax = calloc(1, sizeof(rim_syntax_t));
+
+    if (!lang)
+        return;
 
     if (strcmp(lang, "c") == 0) {
         g_syntax->words = 1;
@@ -742,16 +729,86 @@ void rim_syntax_init(char *lang) {
     }
 }
 
+char *compute_args(int argc, char **argv) {
+    char *file = NULL;
+    char *ext = NULL;
+
+    g_always_tab = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == 't') {
+                g_always_tab = 1;
+            } else if (argv[i][1] == 'h') {
+                puts("Usage: rim [-h|-t] [file]"
+                    "\nOptions:"
+                    "\n  -c    specify syntax highlighting"
+                    "\n  -h    display this help message"
+                    "\n  -n    disable syntax highlighting"
+                    "\n  -t    always insert tab character"
+                    "\n  -v    display version information"
+                );
+                exit(0);
+            } else if (argv[i][1] == 'n') {
+                ext = "txt";
+            } else if (argv[i][1] == 'c') {
+                if (i + 1 >= argc) {
+                    fprintf(stderr, "rim: Missing argument for option -- 'c'\n");
+                    exit(1);
+                }
+                ext = argv[++i];
+            } else if (argv[i][1] == 'v') {
+                puts("rim version " RIM_VERSION ", profanOS text editor");
+                exit(0);
+            } else {
+                fprintf(stderr, "rim: Unknown option -- '%s'\n", argv[i] + 1);
+                exit(1);
+            }
+        } else {
+            file = argv[i];
+        }
+    }
+
+    if (ext == NULL && file) {
+        ext = strrchr(file, '.');
+        if (ext) ext++;
+    }
+
+    rim_syntax_init(ext);
+
+    if (!file)
+        return NULL;
+
+
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+
+    file = assemble_path(pwd, file);
+
+    return file;
+}
+
 int main(int argc, char **argv) {
     char *file = compute_args(argc, argv);
-
-    char *ext = file ? strrchr(file, '.') : NULL;
-    rim_syntax_init((ext) ? ext + 1 : "txt");
+    char *title;
 
     panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
     if (SCREEN_W * SCREEN_H == 0) {
         printf("rim: panda is required\n");
-        return 1;
+        exit(1);
+    }
+
+    if (file) {
+        title = file;
+        load_file(file);
+    } else {
+        if (isatty(0)) {
+            title = "blank -> stdout";
+            init_data();
+        } else {
+            title = "stdin -> stdout";
+            load_file(NULL);
+        }
     }
 
     void *old_screen = panda_screen_backup();
@@ -759,34 +816,26 @@ int main(int argc, char **argv) {
     SCREEN_H--;
     SCREEN_W--;
 
-    g_data = calloc(1024, sizeof(char));
-    g_data_size = 1;
-
-    g_data_lines = calloc(1024, sizeof(int));
-    g_lines_count = 1;
-
     g_cursor_line = 0;
     g_cursor_pos = 0;
 
     clear_screen();
 
-    if (file) {
-        set_title(file);
-        load_file(file);
-    } else {
-        set_title("DEMO MODE");
-    }
+    set_title(title);
 
     display_data(0, min(g_lines_count, SCREEN_H), 0);
 
     main_loop(file);
 
-    if (file)
-        free(file);
-    quit();
-
     panda_screen_restore(old_screen);
     panda_screen_free(old_screen);
+
+    if (!file)
+        save_file(NULL);
+    else
+        free(file);
+
+    quit();
 
     return 0;
 }
