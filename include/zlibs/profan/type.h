@@ -22,7 +22,7 @@
 #define KTYPE_H
 
 #ifndef FS_SECTOR_SIZE
-#define FS_SECTOR_SIZE 256
+#define FS_SECTOR_SIZE 512
 #endif
 
 typedef struct tm {
