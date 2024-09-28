@@ -14,10 +14,10 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.2.1"
+#define KERNEL_VERSION  "1.2.1b"
 #define KERNEL_EDITING  "generic"
 
-#define PROCESS_MAX     20          // max process count
+#define PROCESS_MAX     64          // max process count
 #define SCUBA_MAP_MAX   0x10000000  // scuba map to 256MB max
 #define FS_MAX_DISKS    256         // max disk count
 #define RUN_DEFAULT     "/bin/sys/rosemary.bin"

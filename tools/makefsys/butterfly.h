@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-#define SECTOR_SIZE 256
+#define SECTOR_SIZE 512
 #define META_MAXLEN 64
 
 #define LAST_SID_OFFSET (SECTOR_SIZE - sizeof(uint32_t))

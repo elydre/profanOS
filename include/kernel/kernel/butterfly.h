@@ -14,10 +14,6 @@
 
 #include <ktype.h>
 
-#ifndef FS_SECTOR_SIZE
-#define FS_SECTOR_SIZE 256
-#endif
-
 #define META_MAXLEN 64
 
 #define LAST_SID_OFFSET (FS_SECTOR_SIZE - sizeof(uint32_t))
