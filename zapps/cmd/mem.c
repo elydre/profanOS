@@ -16,7 +16,7 @@
 #include <profan/syscall.h>
 #include <profan.h>
 
-#define PROCESS_MAX 20
+#define PROCESS_MAX 64
 
 int str_to_int(char *str) {
     int ret = 0;
