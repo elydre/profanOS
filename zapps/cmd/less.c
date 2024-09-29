@@ -17,6 +17,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
+
+#define HELP_MSG "Try 'less -h' for more information.\n"
 
 char *read_file(char *filename) {
     // read from file
@@ -40,20 +43,51 @@ char *read_file(char *filename) {
     return buffer;
 }
 
-int main(int argc, char *argv[]) {
-    char *buffer, *filename, *title;
+char *filename;
 
-    if (argc > 2 || (argc == 2 && argv[1][0] == '-')) {
-        fputs("Usage: less [file]\n", stderr);
-        return 1;
+uint32_t compute_args(int argc, char **argv) {
+    uint32_t flags = TSI_ALLOW_NON_PRINTABLE;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == '\0') {
+            switch (argv[i][1]) {
+                case 'n':
+                    flags &= ~TSI_ALLOW_NON_PRINTABLE;
+                    break;
+                case 'h':
+                    puts("Usage: less [-n] [file]");
+                    puts("Options:\n"
+                        "  -n  display non-printable characters\n"
+                        "  -h  Display this help message");
+                    return (exit(0), 0);
+                default:
+                    fprintf(stderr, "less: invalid option -- '%c'\n"HELP_MSG, argv[i][1]);
+                    exit(1);
+            }
+        } else if (argv[i][0] == '-') {
+            fprintf(stderr, "less: invalid option -- '%s'\n"HELP_MSG, argv[i]);
+            exit(1);
+        } else {
+            if (filename != NULL) {
+                fprintf(stderr, "less: Too many arguments\n"HELP_MSG);
+                exit(1);
+            }
+            filename = argv[i];
+        }
     }
 
-    if (argc < 2 && isatty(STDIN_FILENO)) {
-        fputs("less: stdin is a tty\n", stderr);
-        return 1;
+    if (filename == NULL) {
+        filename = "/dev/stdin";
     }
 
-    filename = argc == 2 ? argv[1] : "/dev/stdin";
+    return flags;
+}
+
+int main(int argc, char **argv) {
+    char *buffer, *title;
+
+    uint32_t flags = compute_args(argc, argv);
+
     buffer = read_file(filename);
 
     if (buffer == NULL) {
@@ -64,7 +98,7 @@ int main(int argc, char *argv[]) {
     title = malloc(strlen(filename) + 8);
     sprintf(title, "less: %s", filename);
 
-    tsi_start(title, buffer);
+    tsi_start(title, buffer, flags);
 
     free(buffer);
     free(title);
