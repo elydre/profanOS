@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define TSI_VERSION "0.6.1"
+#define TSI_VERSION "0.7.1"
 
 #define TSI_TEXT_COLOR   0x0F
 #define TSI_TITLE_COLOR  0x70
@@ -110,7 +110,10 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
     const char **lines = malloc(sizeof(char *) * 2);
     int x, line_count, alloc_size = 2;
 
-    line_count = x = 0;
+    lines[0] = data;
+    line_count = 1;
+    x = 0;
+
     for (int i = 0; data[i]; i++) {
         if (data[i] == '\t')
             x += TSI_TAB_SIZE - (x % TSI_TAB_SIZE);
@@ -119,10 +122,7 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
         else
             x++;
 
-        if (i == 0) {
-            lines[line_count] = data + i;
-            line_count++;
-        } else if (data[i] == '\n') {
+        if (data[i] == '\n') {
             lines[line_count] = data + i + 1;
             x = 0;
             line_count++;
@@ -144,7 +144,7 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
     return lines;
 }
 
-static void tsi_draw_lines(const char **lines) {
+static void tsi_draw_lines(const char **lines, uint32_t flags) {
     uint8_t color = TSI_TEXT_COLOR;
     int x, y;
 
@@ -165,7 +165,7 @@ static void tsi_draw_lines(const char **lines) {
                 }
                 if (lines[y][i] == ' ')
                     panda_set_char(x, y + 1, ' ', TSI_TEXT_COLOR);
-                else if (isprint(lines[y][i]))
+                else if (isprint(lines[y][i]) || flags & TSI_ALLOW_NON_PRINTABLE)
                     panda_set_char(x, y + 1, lines[y][i], color);
                 else
                     panda_set_char(x, y + 1, '?', TSI_EOF_COLOR);
@@ -186,7 +186,7 @@ static void tsi_draw_lines(const char **lines) {
     }
 }
 
-static void tsi_main_loop(const char **lines, int line_count) {
+static void tsi_main_loop(const char **lines, int line_count, uint32_t flags) {
     int key, y = 0;
     char keyc;
 
@@ -196,7 +196,7 @@ static void tsi_main_loop(const char **lines, int line_count) {
 
     do {
         if (need_redraw) {
-            tsi_draw_lines(lines + y);
+            tsi_draw_lines(lines + y, flags);
             tsi_draw_footer(buffer, y + 1, line_count);
         }
 
@@ -221,7 +221,7 @@ static void tsi_main_loop(const char **lines, int line_count) {
     free(buffer);
 }
 
-int tsi_start(const char *title, const char *string) {
+int tsi_start(const char *title, const char *string, uint32_t flags) {
     const char **lines;
     int line_count;
 
@@ -239,7 +239,7 @@ int tsi_start(const char *title, const char *string) {
 
     lines = tsi_gen_lines(string, &line_count);
 
-    tsi_main_loop(lines, line_count);
+    tsi_main_loop(lines, line_count, flags);
 
     free(lines);
 
@@ -248,7 +248,7 @@ int tsi_start(const char *title, const char *string) {
     return 0;
 }
 
-int tsi_start_array(const char *title, const char **lines) {
+int tsi_start_array(const char *title, const char **lines, uint32_t flags) {
     int line_count;
 
     panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
@@ -265,7 +265,7 @@ int tsi_start_array(const char *title, const char **lines) {
 
     for (line_count = 0; lines[line_count]; line_count++);
 
-    tsi_main_loop(lines, line_count);
+    tsi_main_loop(lines, line_count, flags);
 
     panda_screen_restore(old_screen);
     panda_screen_free(old_screen);

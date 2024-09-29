@@ -12,7 +12,12 @@
 #ifndef LIBTSI_H
 #define LIBTSI_H
 
-int tsi_start(const char *title, const char *string);
-int tsi_start_array(const char *title, const char **lines);
+#include <stdint.h>
+
+#undef TSI_ALLOW_NON_PRINTABLE
+#define TSI_ALLOW_NON_PRINTABLE 0x01
+
+int tsi_start(const char *title, const char *string, uint32_t flags);
+int tsi_start_array(const char *title, const char **lines, uint32_t flags);
 
 #endif
