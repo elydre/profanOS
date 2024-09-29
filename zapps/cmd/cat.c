@@ -20,8 +20,8 @@
 void show_help(void) {
     puts("Usage: cat [options] [files]\n"
         "Options:\n"
-        "  -c/-C    canonical hex+ASCII display\n"
-        "  -e       display $ at end of each line\n"
+        "  -C       canonical hex+ASCII display\n"
+        "  -e       non-printable and $ before newline\n"
         "  -h       display this help message"
     );
 }
@@ -46,7 +46,7 @@ cat_args_t *parse_args(int argc, char **argv) {
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] != '\0') {
-            if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "-C") == 0) {
+            if (strcmp(argv[i], "-C") == 0) {
                 args->canonical = 1;
             } else if (strcmp(argv[i], "-e") == 0) {
                 args->end_of_line = 1;
@@ -109,7 +109,7 @@ void cat(FILE *file, char *path, int end_of_line) {
         return;
     }
 
-    char buffer[1024];
+    uint8_t buffer[1024];
     int read;
     while ((read = fread(buffer, 1, 1024, file)) > 0) {
         if (!end_of_line) {
@@ -118,6 +118,11 @@ void cat(FILE *file, char *path, int end_of_line) {
         }
 
         for (int i = 0; i < read; i++) {
+            if (buffer[i] > 127) {
+                putchar('M');
+                putchar('-');
+                buffer[i] -= 128;
+            }
             if (buffer[i] == '\n') {
                 putchar('$');
                 putchar('\n');
