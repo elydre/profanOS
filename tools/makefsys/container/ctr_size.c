@@ -28,7 +28,7 @@ int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
 
     uint32_t next_sid;
 
-    do {
+    while (1) {
         // check if sector is used
         if (!vdisk_is_sector_used(vdisk, loca_sid)) {
             printf("d%ds%d not used\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
@@ -38,7 +38,7 @@ int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
         // check if sector is cnt locator
         data = vdisk_load_sector(vdisk, loca_sid);
 
-        if (data[0] != ST_CONT || data[1] != SF_LOCA) {
+        if (data[0] != SF_LOCA) {
             printf("d%ds%d not cnt locator\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             free(data);
             return -1;
@@ -52,7 +52,7 @@ int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
         }
 
         loca_sid = next_sid;
-    } while (1);
+    };
 
     uint32_t core_count = 0;
     uint32_t new_loca_sid;
@@ -156,13 +156,13 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         printf("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         free(data);
         return 1;
     }
 
-    uint32_t old_count = *((uint32_t *) (data + 2 + META_MAXLEN));
+    uint32_t old_count = *((uint32_t *) (data + 1 + META_MAXLEN));
     uint32_t new_count = size / BYTE_IN_CORE;
     old_count = (old_count / BYTE_IN_CORE) + (old_count % BYTE_IN_CORE ? 1 : 0);
     if (size) new_count++;
@@ -179,7 +179,7 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
         printf("shrink cnt not implemented\n");
     }
 
-    *((uint32_t *) (data + 2 + META_MAXLEN)) = size;
+    *((uint32_t *) (data + 1 + META_MAXLEN)) = size;
     vdisk_unload_sector(vdisk, head_sid, data, SAVE);
     return 0;
 }
@@ -204,13 +204,13 @@ uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid) {
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         printf("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return UINT32_MAX;
     }
 
-    uint32_t size = *((uint32_t *) (data + 2 + META_MAXLEN));
+    uint32_t size = *((uint32_t *) (data + 1 + META_MAXLEN));
     vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
     return size;
 }

@@ -200,7 +200,7 @@ uint32_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    if (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..")) {
+    if (fu_add_element_to_dir(filesys, head_sid, parent_sid == ROOT_SID ? SID_FORMAT(1, 0) : parent_sid, "..")) {
         printf("failed to add '..' to directory\n");
         free(parent);
         free(name);

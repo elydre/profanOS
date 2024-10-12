@@ -29,12 +29,7 @@ int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
     data = calloc(SECTOR_SIZE, sizeof(uint8_t));
 
     // add sector identifier
-    data[0] = ST_CONT;
-    data[1] = type;
-
-    for (int i = 2; i < SECTOR_SIZE; i++) {
-        data[i] = 0;
-    }
+    data[0] = type;
 
     vdisk_write_sector(vdisk, sid, data);
 
@@ -90,15 +85,10 @@ uint32_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
     data = calloc(SECTOR_SIZE, sizeof(uint8_t));
 
     // add sector identifier
-    data[0] = ST_CONT;
-    data[1] = SF_HEAD;
-
-    for (int i = 2; i < SECTOR_SIZE; i++) {
-        data[i] = 0;
-    }
+    data[0] = SF_HEAD;
 
     // add meta and core sid
-    memcpy(data + 2, meta, min(strlen(meta), META_MAXLEN - 1));
+    memcpy(data + 1, meta, min(strlen(meta), META_MAXLEN - 1));
 
     memcpy(data + LAST_SID_OFFSET, &loca_sid, sizeof(uint32_t));
 
@@ -127,7 +117,7 @@ char *fs_cnt_get_meta(filesys_t *filesys, uint32_t sid) {
     }
 
     meta = calloc(META_MAXLEN, sizeof(char));
-    memcpy(meta, data + 2, META_MAXLEN - 1);
+    memcpy(meta, data + 1, META_MAXLEN - 1);
 
     vdisk_unload_sector(vdisk, sid, data, NO_SAVE);
 

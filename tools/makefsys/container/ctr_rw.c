@@ -35,7 +35,7 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
     // check if sector is core
     data = vdisk_load_sector(vdisk, core_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_CORE) {
+    if (data[0] != SF_CORE) {
         printf("d%ds%d not core\n", SID_DISK(core_sid), SID_SECTOR(core_sid));
         vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
         return -1;
@@ -49,7 +49,7 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
     }
 
     size = min(size, BYTE_IN_CORE - offset);
-    offset += 2;
+    offset += 1;
 
     if (!is_read) {
         memcpy(data + offset, buf, size);
@@ -58,7 +58,7 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
     }
 
     vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
-    return size + offset - 2;
+    return size + offset - 1;
 }
 
 int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf, uint32_t offset, int size, int is_read) {
@@ -86,7 +86,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf, uint32_t
         // check if sector is locator
         data = vdisk_load_sector(vdisk, loca_sid);
 
-        if (data[0] != ST_CONT || data[1] != SF_LOCA) {
+        if (data[0] != SF_LOCA) {
             printf("d%ds%d not locator\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
@@ -157,14 +157,14 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         printf("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
 
     // check if offset+size is valid
-    if (offset + size > *((uint32_t *) (data + 2 + META_MAXLEN))) {
+    if (offset + size > *((uint32_t *) (data + 1 + META_MAXLEN))) {
         printf("cannot %s beyond cnt size\n", is_read ? "read" : "write");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
