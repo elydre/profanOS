@@ -56,10 +56,10 @@ srun:
 
 # install all addons
 addons:
-	python3 $(PY_ADDON) -a
+	python3 $(PY_ADDON) -g
 
 gaddons:
-	python3 $(PY_ADDON) -g
+	python3 $(PY_ADDON) -a
 
 # clean all build files
 clean:
