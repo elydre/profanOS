@@ -146,9 +146,10 @@ def graphic_menu(stdscr: curses.window):
         draw_ifposible(stdscr, 0 - yoffset, 0, "Select addons to install with ENTER", curses.A_BOLD)
         draw_ifposible(stdscr, 1 - yoffset, 0, "Q: cancel, RIGHT: info, V: validate", 0)
 
-        draw_ifposible(stdscr, 3 - yoffset, 1, "Download Selected" if any(checked) else "Exit without downloading",
+        draw_ifposible(stdscr, 3 - yoffset, 1,
+                       "Download selected and Exit" if any(checked) else "Exit without downloading",
                        curses.A_REVERSE if current == 0 else 0)
-        draw_ifposible(stdscr, 4 - yoffset, 1, "Unselect all" if any(checked) else "Select all",
+        draw_ifposible(stdscr, 4 - yoffset, 1, "Unselect all" if any(checked) else "Select recommended",
                        curses.A_REVERSE if current == 1 else 0)
 
         index = 0
@@ -206,7 +207,7 @@ def graphic_menu(stdscr: curses.window):
                 if any(checked):
                     checked = [False] * len(ALL_ADOONS)
                 else:
-                    checked = [True] * len(ALL_ADOONS)
+                    checked = [True if ALL_ADOONS[i]["name"] in RECOMMENDED else False for i in range(len(ALL_ADOONS))]
             elif current == 0:
                 download_selected(stdscr, checked)
                 break
