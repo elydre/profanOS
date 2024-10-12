@@ -696,37 +696,26 @@ uint32_t fu_fctf_get_addr(uint32_t file_sid) {
  *            Path to SID conversion             *
  *                                               *
 **************************************************/
-
 uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const char *path) {
-    uint32_t ret;
-
-    ret = SID_NULL;
-
-    // read the directory
-    uint32_t size = syscall_fs_get_size(filesys, parent);
-    if (size == UINT32_MAX) {
-        RAISE_ERROR("rec_path_to_sid: failed to get size of d%ds%d\n", SID_DISK(parent), SID_SECTOR(parent));
-        return SID_NULL;
-    }
+    uint32_t ret = SID_NULL;
 
     // generate the path part to search for
-    char *name;
-
-    name = calloc(1, strlen(path) + 1);
+    char *name = malloc(strlen(path) + 1);
     strcpy(name, path);
+
     uint32_t i = 0;
-    while (name[i]) {
-        if (name[i] == '/') {
-            name[i] = '\0';
-            break;
-        }
-        i++;
+    for (; name[i]; i++) {
+        if (name[i] != '/')
+            continue;
+        name[i] = '\0';
+        break;
     }
-    while (path[i] == '/') i++;
+
+    for (; path[i] == '/'; i++);
 
     // get the directory content
-    char **names;
     uint32_t *sids;
+    char **names;
     int count;
 
     count = fu_get_dir_content(parent, &sids, &names);
@@ -752,9 +741,8 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const char *pat
     }
 
     // free
-    for (int j = 0; j < count; j++) {
+    for (int j = 0; j < count; j++)
         free(names[j]);
-    }
     free(names);
     free(sids);
     free(name);
@@ -765,9 +753,8 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const char *pat
 uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     uint32_t ret;
 
-    if (strcmp("/", path) == 0) {
-        return ROOT_SID;
-    }
+    if (strcmp("/", path) == 0)
+        return from;
 
     int len = strlen(path) - 1;
     char *tmp;
@@ -779,15 +766,10 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
         tmp = (char *) path;
     }
 
-    if (tmp[0] == '/') {
-        ret = fu_rec_path_to_sid(NULL, from, tmp + 1);
-    } else {
-        ret = fu_rec_path_to_sid(NULL, from, tmp);
-    }
+    ret = fu_rec_path_to_sid(NULL, from, tmp + (tmp[0] == '/'));
 
-    if (tmp != path) {
+    if (tmp != path)
         free(tmp);
-    }
 
     return ret;
 }
