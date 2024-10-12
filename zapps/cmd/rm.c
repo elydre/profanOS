@@ -92,13 +92,13 @@ int remove_hard_link(uint32_t elem, char *path) {
 }
 
 int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
-    if (!(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
+    if (!options->link_only && !(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
         fprintf(stderr, "rm: Cannot remove '%s': Unknown element type\n", path);
         return 1;
     }
 
     // recursive remove directory
-    if (fu_is_dir(elem)) {
+    if (fu_is_dir(elem) && !options->link_only) {
         if (options->verbose)
             printf("rm: Going into directory '%s'\n", path);
 
