@@ -29,12 +29,7 @@ int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
     data = calloc(FS_SECTOR_SIZE);
 
     // add sector identifier
-    data[0] = ST_CONT;
-    data[1] = type;
-
-    for (int i = 2; i < FS_SECTOR_SIZE; i++) {
-        data[i] = 0;
-    }
+    data[0] = type;
 
     vdisk_write_sector(vdisk, sid, data);
 
@@ -89,15 +84,10 @@ uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta) {
     data = calloc(FS_SECTOR_SIZE);
 
     // add sector identifier
-    data[0] = ST_CONT;
-    data[1] = SF_HEAD;
-
-    for (int i = 2; i < FS_SECTOR_SIZE; i++) {
-        data[i] = 0;
-    }
+    data[0] = SF_HEAD;
 
     // add meta and core sid
-    mem_copy(data + 2, meta, min(str_len(meta), META_MAXLEN - 1));
+    mem_copy(data + 1, meta, min(str_len(meta), META_MAXLEN - 1));
 
     mem_copy(data + LAST_SID_OFFSET, &loca_sid, sizeof(uint32_t));
 
@@ -116,21 +106,17 @@ char *fs_cnt_meta(filesys_t *filesys, uint32_t sid, char *meta) {
         filesys = MAIN_FS;
 
     vdisk = fs_get_vdisk(filesys, SID_DISK(sid));
-    if (vdisk == NULL) {
-        sys_warning("[cnt_meta] vdisk not found");
+
+    if (vdisk == NULL || SID_SECTOR(sid) >= vdisk->size)
         return NULL;
-    }
 
     data = vdisk_load_sector(vdisk, sid);
 
-    if (data == NULL)
-        return NULL;
-
     if (meta) {
-        mem_copy(data + 2, meta, META_MAXLEN - 1);
+        mem_copy(data + 1, meta, META_MAXLEN - 1);
     } else {
         meta = calloc(META_MAXLEN);
-        mem_copy(meta, data + 2, META_MAXLEN - 1);
+        mem_copy(meta, data + 1, META_MAXLEN - 1);
     }
 
     vdisk_unload_sector(vdisk, sid, data, SAVE);

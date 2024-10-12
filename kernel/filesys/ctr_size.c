@@ -27,7 +27,7 @@ int fs_cnt_shrink_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_shrink
     // check if sector is cnt locator
     data = vdisk_load_sector(vdisk, loca_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_LOCA) {
+    if (data[0] != SF_LOCA) {
         sys_error("[cnt_shrink_size] Sector is not container locator");
         free(data);
         return -1;
@@ -90,7 +90,7 @@ int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
         // check if sector is cnt locator
         data = vdisk_load_sector(vdisk, loca_sid);
 
-        if (data[0] != ST_CONT || data[1] != SF_LOCA) {
+        if (data[0] != SF_LOCA) {
             sys_error("[cnt_grow_size] Sector is not container locator");
             free(data);
             return -1;
@@ -207,13 +207,13 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         sys_warning("[cnt_set_size] Sector is not container header");
         free(data);
         return 1;
     }
 
-    uint32_t old_count = *((uint32_t *) (data + 2 + META_MAXLEN));
+    uint32_t old_count = *((uint32_t *) (data + 1 + META_MAXLEN));
     uint32_t new_count = size / BYTE_IN_CORE;
     old_count = (old_count / BYTE_IN_CORE) + (old_count % BYTE_IN_CORE ? 1 : 0);
     if (size) new_count++;
@@ -236,7 +236,7 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
         }
     }
 
-    *((uint32_t *) (data + 2 + META_MAXLEN)) = size;
+    *((uint32_t *) (data + 1 + META_MAXLEN)) = size;
     vdisk_unload_sector(vdisk, head_sid, data, SAVE);
     return 0;
 }
@@ -258,13 +258,13 @@ uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid) {
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         sys_warning("[cnt_get_size] Sector is not container header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return UINT32_MAX;
     }
 
-    uint32_t size = *((uint32_t *) (data + 2 + META_MAXLEN));
+    uint32_t size = *((uint32_t *) (data + 1 + META_MAXLEN));
     vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
     return size;
 }

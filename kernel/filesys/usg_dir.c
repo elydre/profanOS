@@ -173,7 +173,7 @@ uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path) {
     // generate the meta
     char *meta = malloc(META_MAXLEN);
     str_cpy(meta, "D-");
-    str_ncpy(meta + 2, name, META_MAXLEN - 3);
+    str_ncpy(meta + 1, name, META_MAXLEN - 3);
 
     head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);

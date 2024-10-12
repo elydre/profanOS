@@ -59,9 +59,7 @@ vdisk_t *initrd_to_vdisk(void) {
 
     for (uint32_t i = 0; i < initrd_size / FS_SECTOR_SIZE; i++) {
         vdisk_write_sector(vdisk, SID_FORMAT(0, i), initrd + i * FS_SECTOR_SIZE);
-        if (((sector_t*) vdisk->sectors + i)->data[0] &&
-            ((sector_t*) vdisk->sectors + i)->data[1]
-        ) {
+        if (((sector_t*) vdisk->sectors + i)->data[0]) {
             vdisk_note_sector_used(vdisk, SID_FORMAT(0, i));
         }
     }
