@@ -15,9 +15,10 @@ import sys
 import threading
 
 # SETTINGS
-SHOW_CMD    = False
-COMPCT_LINE = True
-LOG_FILE    = True
+SHOW_CMD    = False     # show full command line [0]
+COMPCT_LINE = True      # cut line if too long [1]
+LOG_FILE    = True      # write build logs file [1]
+DEBUG_MKFS  = False     # run makefsys with valgrind [0]
 
 # SETUP
 TOOLS_DIR = "tools"
@@ -32,7 +33,6 @@ HDD_MAP = {
         "sys_dir/zada",
         f"{OUT_DIR}/zada",
     ],
-    "tmp" : None
 }
 
 CC   = "gcc"
@@ -498,7 +498,7 @@ def gen_disk(force=False, with_src=False):
         print_and_exec(f"{CC} -o {OUT_DIR}/make/makefsys -Wall -Wextra -g {TOOLS_DIR}/makefsys/*/*.c")
 
     cprint(COLOR_INFO, "building initrd.bin...")
-    print_and_exec(f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
+    print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
 
 
 def qemu_run(iso_run = True, kvm = False, audio = False):
