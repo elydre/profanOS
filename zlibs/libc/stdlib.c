@@ -29,18 +29,13 @@ void *g_entry_exit = NULL;
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 
-void __attribute__((constructor)) __stdlib_init(void) {
-    g_rand_seed = time(NULL);
-}
-
 void __attribute__((destructor)) __stdlib_fini(void) {
     // free the environment
     if (g_env == NULL)
         return;
 
-    for (int i = 0; g_env[i] != NULL; i++) {
+    for (int i = 0; g_env[i] != NULL; i++)
         free(g_env[i]);
-    }
     free(g_env);
 }
 
@@ -66,6 +61,10 @@ void __init_libc(char **env, void *entry_exit) {
     for (int i = 0; i < size; i++)
         g_env[i + offset] = strdup(env[i]);
     g_env[size + offset] = NULL;
+
+    // set working directory
+    if (getenv("PWD") == NULL)
+        setenv("PWD", "/", 1);
 }
 
 char **__get_environ_ptr(void) {
@@ -485,11 +484,11 @@ void qsort(void *base, size_t nel, size_t width, __compar_fn_t comp) {
     char temp[width];
     for (size_t i = 0; i < nel; i++) {
         for (size_t j = 0; j < nel - i - 1; j++) {
-            if (comp(arr + j * width, arr + (j + 1) * width) > 0) {
-                memcpy(temp, arr + j * width, width);
-                memcpy(arr + j * width, arr + (j + 1) * width, width);
-                memcpy(arr + (j + 1) * width, temp, width);
-            }
+            if (comp(arr + j * width, arr + (j + 1) * width) < 0)
+                continue;
+            memcpy(temp, arr + j * width, width);
+            memcpy(arr + j * width, arr + (j + 1) * width, width);
+            memcpy(arr + (j + 1) * width, temp, width);
         }
     }
 }

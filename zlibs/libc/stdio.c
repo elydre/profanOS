@@ -769,11 +769,14 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
         return 1;
     }
 
+    uint32_t seed = syscall_timer_get_ms();
+
     strcpy(filename_s, "/tmp/");
     filename_s[11] = 0;
     do {
         for (int i = 5; i < 11; i++) {
-            filename_s[i] = 'a' + rand() % 26;
+            seed = seed * 1103515245 + 12345;
+            filename_s[i] = 'a' + seed % 26;
         }
     } while (!IS_SID_NULL(fu_path_to_sid(ROOT_SID, filename_s)));
 
