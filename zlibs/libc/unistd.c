@@ -213,7 +213,7 @@ char *getcwd(char *buf, size_t size) {
     }
 
     strcpy(buf, working_directory);
-    return buf;       
+    return buf;
 }
 
 gid_t getegid(void) {
