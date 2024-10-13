@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 17"
+#define OLV_VERSION "1.0 rev 18"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -84,7 +84,6 @@
 #define DEBUG_COLOR  "\e[90m"
 
 #define OTHER_PROMPT "> "
-#define CD_DEFAULT   "/"
 
 #if PROFANBUILD && UNIXBUILD
   #error "Cannot build with both PROFANBUILD and MINIBUILD"
@@ -1453,28 +1452,6 @@ char *if_cd(char **input) {
 
     char *dir;
 
-    #if PROFANBUILD
-    // change to default if no arguments
-    if (argc == 0) {
-        strcpy(g_current_directory, CD_DEFAULT);
-        if (!USE_ENVVARS) return NULL;
-        setenv("PWD", g_current_directory, 1);
-        return NULL;
-    }
-
-    // check if dir exists
-    dir = assemble_path(g_current_directory, input[0]);
-    // simplify path
-    fu_simplify_path(dir);
-
-    uint32_t dir_id = fu_path_to_sid(ROOT_SID, dir);
-    if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id)) {
-        raise_error("cd", "Directory '%s' does not exist", dir);
-        free(dir);
-        return ERROR_CODE;
-    }
-    #elif UNIXBUILD
-
     if (argc == 0) {
         dir = getenv("HOME");
         if (dir == NULL) {
@@ -1489,19 +1466,24 @@ char *if_cd(char **input) {
         raise_error("cd", "Directory '%s' does not exist", dir);
         return ERROR_CODE;
     }
-    #endif
+
+    dir = getcwd(NULL, 0);
+
+    if (dir == NULL) {
+        raise_error("cd", "Error while getting current directory");
+        return ERROR_CODE;
+    }
 
     // change directory
     strcpy(g_current_directory, dir);
-    if (USE_ENVVARS) {
-        setenv("PWD", g_current_directory, 1);
-    }
 
-    #if PROFANBUILD
-    free(dir);
+    #if USE_ENVVARS && !PROFANBUILD
+    setenv("PWD", g_current_directory, 1);
     #endif
 
+    free(dir);
     return NULL;
+
     #else
     UNUSED(input);
     raise_error("cd", "Not supported in this build");
