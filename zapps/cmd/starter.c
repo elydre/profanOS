@@ -13,6 +13,7 @@
 #include <profan.h>
 
 #include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -70,32 +71,13 @@ char *find_cmd(char *cmd) {
 }
 
 int internal_cd(int argc, char **argv) {
-    char *current_path, *dir;
-    uint32_t sid;
-
-    if (argc != 2) {
+    if (argc != 2)
         fprintf(stderr, "Usage: cd <dir>\n");
-        return 1;
-    }
-
-    current_path = getenv("PWD");
-    if (current_path == NULL)
-        return 1;
-
-    dir = assemble_path(current_path, argv[1]);
-    fu_simplify_path(dir);
-
-    sid = fu_path_to_sid(ROOT_SID, dir);
-    if (IS_SID_NULL(sid) || !fu_is_dir(sid)) {
-        fprintf(stderr, "cd: %s: No such directory\n", argv[1]);
-        free(dir);
-        return 1;
-    }
-
-    setenv("PWD", dir, 1);
-    free(dir);
-
-    return 0;
+    else if (chdir(argv[1]) == -1)
+        fprintf(stderr, "cd: %s: No such file or directory\n", argv[1]);
+    else
+        return 0;
+    return 1;
 }
 
 int execute_line(char *line) {
@@ -103,11 +85,12 @@ int execute_line(char *line) {
     int res, argc;
 
     args = ft_split(line, ' ');
-    if (args[0] == NULL) {
-        free(args);
-        return 0;
-    }
+
+    if (args[0] == NULL)
+        return (free(args), 0);
+
     for (argc = 0; args[argc]; argc++);
+
     if (strcmp(args[0], "cd") == 0) {
         res = internal_cd(argc, args);
         free_tab(args);
@@ -115,15 +98,17 @@ int execute_line(char *line) {
     }
 
     cmd = find_cmd(args[0]);
+
     if (cmd == NULL) {
         fprintf(stderr, "%s: command not found\n", args[0]);
         free_tab(args);
-        free(cmd);
         return 1;
     }
+
     res = run_ifexist(cmd, argc, args);
     free_tab(args);
     free(cmd);
+
     return res;
 }
 
