@@ -58,6 +58,8 @@ void *realloc(void *mem, uint32_t new_size) {
 }
 
 void free(void *mem) {
+    if (mem == NULL)
+        return;
     switch (buddy_safe_free(g_buddy, mem, SIZE_MAX)) {
         case BUDDY_SAFE_FREE_SUCCESS:
             break;
