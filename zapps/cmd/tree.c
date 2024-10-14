@@ -133,9 +133,9 @@ int draw_tree(uint32_t sid, int depth) {
 
     // free
     for (int j = 0; j < count; j++)
-        free(names[j]);
-    free(names);
-    free(sids);
+        profan_free(names[j]);
+    profan_free(names);
+    profan_free(sids);
 
     return 0;
 }

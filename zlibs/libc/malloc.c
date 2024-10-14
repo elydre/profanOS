@@ -12,68 +12,63 @@
 #include <profan/syscall.h>
 #include <string.h>
 
-void free(void *mem) {
-    if (mem == NULL)
+#define BUDDY_ALLOC_IMPLEMENTATION
+#include "buddy_alloc.h"
+#undef BUDDY_ALLOC_IMPLEMENTATION
+
+struct buddy *g_buddy;
+
+#define PROFAN_BUDDY ((void *) 0xD0000000)
+
+void __buddy_init(void) {
+    syscall_serial_write(SERIAL_PORT_A, "buddy_init\n", 11);
+
+    size_t arena_size = 1024 * 1024;
+
+    void *ret = syscall_scuba_generate(PROFAN_BUDDY, arena_size / 4096);
+    if (ret == NULL) {
+        syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
         return;
-    syscall_mem_free((uint32_t) mem);
+    }
+
+    g_buddy = buddy_embed(PROFAN_BUDDY, arena_size);
+
+    if (g_buddy == NULL)
+        syscall_serial_write(SERIAL_PORT_A, "buddy_embed failed\n", 19);
+}
+
+void __buddy_fini(void) {
+    // free(buddy_arena);
+}
+
+void malloc_debug_print(void) {
+    buddy_debug(g_buddy);
 }
 
 void *malloc(uint32_t size) {
-    return (void *) syscall_mem_alloc(size, 0, 1);
-}
-
-void *malloc_ask(uint32_t size) {
-    return (void *) syscall_mem_alloc(size, 0, 6);
+    return buddy_malloc(g_buddy, size);
 }
 
 void *calloc(uint32_t nmemb, uint32_t lsize) {
-    uint32_t size = lsize * nmemb;
-    void *addr = (void *) syscall_mem_alloc(size, 0, 1);
-
-    if (addr == NULL)
-        return NULL;
-
-    memset(addr, 0, size);
-    return addr;
-}
-
-void *calloc_ask(uint32_t nmemb, uint32_t lsize) {
-    uint32_t size = lsize * nmemb;
-    void *addr = (void *) syscall_mem_alloc(size, 0, 6);
-
-    if (addr == NULL)
-        return NULL;
-
-    memset(addr, 0, size);
-    return addr;
+    return buddy_calloc(g_buddy, nmemb, lsize);
 }
 
 void *realloc(void *mem, uint32_t new_size) {
-    if (mem == NULL)
-        return (void *) syscall_mem_alloc(new_size, 0, 1);
-
-    uint32_t old_size = syscall_mem_get_alloc_size((uint32_t) mem);
-    void *new_addr = (void *) syscall_mem_alloc(new_size, 0, 1);
-
-    if (new_addr == NULL)
-        return NULL;
-
-    memcpy(new_addr, mem, old_size < new_size ? old_size : new_size);
-    free(mem);
-    return new_addr;
+    return buddy_realloc(g_buddy, mem, new_size, 0);
 }
 
-void *realloc_ask(void *mem, uint32_t new_size) {
-    if (mem == NULL)
-        return (void *) syscall_mem_alloc(new_size, 0, 6);
-
-    uint32_t old_size = syscall_mem_get_alloc_size((uint32_t) mem);
-    void *new_addr = (void *) syscall_mem_alloc(new_size, 0, 6);
-
-    if (new_addr == NULL)
-        return NULL;
-
-    memcpy(new_addr, mem, old_size < new_size ? old_size : new_size);
-    free(mem);
-    return new_addr;
+void free(void *mem) {
+    switch (buddy_safe_free(g_buddy, mem, SIZE_MAX)) {
+        case BUDDY_SAFE_FREE_SUCCESS:
+            break;
+        case BUDDY_SAFE_FREE_INVALID_ADDRESS:
+            fprintf(stderr, "free(%p): invalid pointer\n", mem);
+            break;
+        case BUDDY_SAFE_FREE_ALREADY_FREE:
+            fprintf(stderr, "free(%p): double free\n", mem);
+            break;
+        default:
+            fprintf(stderr, "free(%p): internal error\n", mem);
+            break;
+    }
 }

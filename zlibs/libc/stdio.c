@@ -37,7 +37,7 @@ FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
-void __attribute__((constructor)) stdio_init(void) {
+void __stdio_init(void) {
     // init stdin
     stdin = calloc(1, sizeof(FILE));
     stdin->mode = MODE_READ;
@@ -57,7 +57,7 @@ void __attribute__((constructor)) stdio_init(void) {
     stderr->fd = 2;
 }
 
-void __attribute__((destructor)) stdio_destroy(void) {
+void __stdio_fini(void) {
     fflush(stdin);
     free(stdin->buffer);
     free(stdin);
@@ -168,10 +168,6 @@ FILE *fopen(const char *filename, const char *mode) {
 }
 
 FILE *freopen(const char *filename, const char *mode, FILE *stream) {
-    if (stream == stdin || stream == stdout || stream == stderr) {
-        return NULL;
-    }
-
     // close the file
     fclose(stream);
 
@@ -180,9 +176,8 @@ FILE *freopen(const char *filename, const char *mode, FILE *stream) {
 }
 
 int fclose(FILE *stream) {
-    // check for stdin, stdout and stderr
-    if (stream == stdin || stream == stdout || stream == stderr) {
-        return 0;
+    if (stream == NULL) {
+        return EOF;
     }
 
     // fflush the stream
@@ -199,7 +194,7 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    if (!(stream->mode & MODE_WRITE))
+    if (!(stream && (stream->mode & MODE_WRITE)))
         return 0;
 
     if (stream->buffer_size <= 0)
@@ -238,11 +233,8 @@ int fwide(FILE *stream, int mode) {
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
-    if (count == 0)
-        return 0;
-
     // check if the file is open for reading
-    if (!(stream->mode & MODE_READ))
+    if (count == 0 || !(stream && (stream->mode & MODE_READ)))
         return 0;
 
     fflush(stream);
@@ -314,11 +306,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
-    if (count == 0)
-        return 0;
-
     // check if the file is open for writing
-    if (!(stream->mode & MODE_WRITE))
+    if (count == 0 || !(stream && (stream->mode & MODE_WRITE)))
         return 0;
 
     // if buffer is used for reading
@@ -351,6 +340,9 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 int fseek(FILE *stream, long offset, int whence) {
+    if (stream == NULL)
+        return -1;
+
     // flush the buffer
     fflush(stream);
 
@@ -449,7 +441,7 @@ int puts(const char *str) {
 }
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
-    if (!lineptr || !n || !(stream->mode & MODE_READ)) {
+    if (!lineptr || !n || !(stream && (stream->mode & MODE_READ))) {
         return -1;
     }
 
@@ -633,7 +625,7 @@ int vprintf(const char *format, va_list vlist) {
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
     // if the stream is read only, can't write to it
-    if (!(stream->mode & MODE_WRITE)) {
+    if (!(stream && (stream->mode & MODE_WRITE))) {
         return 0;
     }
 
@@ -675,6 +667,9 @@ int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) 
 }
 
 long ftell(FILE *stream) {
+    if (stream == NULL)
+        return -1;
+
     // flush the buffer
     fflush(stream);
 
@@ -682,6 +677,9 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
+    if (stream == NULL)
+        return 0;
+
     // check if the file is at the end
     uint32_t file_pos = fm_lseek(stream->fd, 0, SEEK_CUR);
     uint32_t file_size = fm_lseek(stream->fd, 0, SEEK_END);
@@ -691,7 +689,7 @@ int feof(FILE *stream) {
 }
 
 int ferror(FILE *stream) {
-    return stream->error;
+    return (stream && stream->error) ? 1 : 0;
 }
 
 void perror(const char *s) {
@@ -754,7 +752,7 @@ FILE *tmpfile(void) {
     return 0;
 }
 
-errno_t tmpfile_s(FILE * * streamptr) {
+errno_t tmpfile_s(FILE **streamptr) {
     puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }

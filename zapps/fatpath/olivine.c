@@ -497,7 +497,7 @@ void del_variable_level(int level) {
 
 char **load_bin_names(void) {
     #if BIN_AS_PSEUDO && PROFANBUILD
-    int size = 0;
+    uint32_t size = 0;
     int bin_count = 0;
 
     char *path = getenv("PATH");
@@ -536,11 +536,11 @@ char **load_bin_names(void) {
                 size += strlen(cnt_names[i]) - 3;
                 tmp_names[bin_count++] = cnt_names[i];
             } else {
-                free(cnt_names[i]);
+                profan_free(cnt_names[i]);
             }
         }
-        free(cnt_names);
-        free(cnt_ids);
+        profan_free(cnt_names);
+        profan_free(cnt_ids);
 
         next:
         if (path_end != NULL) {
@@ -561,13 +561,14 @@ char **load_bin_names(void) {
         strncpy(ret_ptr, tmp_names[i], tmp);
         ret_ptr[tmp] = '\0';
         ret_ptr += tmp + 1;
-        free(tmp_names[i]);
+        profan_free(tmp_names[i]);
     }
-    if (size != (int) ret_ptr - (int) ret) {
+
+    if (size != (uint32_t) ret_ptr - (uint32_t) ret) {
         raise_error(NULL, "Error while loading bin names");
-        free(ret);
         free(tmp_names);
         free(path_copy);
+        free(ret);
         return NULL;
     }
 
@@ -1354,11 +1355,10 @@ char *search_recursive(char *path, uint8_t required_type, char *ext, int recursi
         free(tmp_path);
     }
 
-    for (int i = 0; i < elm_count; i++) {
-        free(names[i]);
-    }
-    free(out_ids);
-    free(names);
+    for (int i = 0; i < elm_count; i++)
+        profan_free(names[i]);
+    profan_free(out_ids);
+    profan_free(names);
 
     return output;
 }
@@ -4317,13 +4317,11 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
             }
         }
 
-        for (int j = 0; j < elm_count; j++) {
-            free(names[j]);
-        }
-
+        for (int j = 0; j < elm_count; j++)
+            profan_free(names[j]);
+        profan_free(out_ids);
+        profan_free(names);
         free(inp_end);
-        free(out_ids);
-        free(names);
 
         if (suggest == 1) {
             ret = strdup(other[0] + dec);

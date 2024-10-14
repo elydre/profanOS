@@ -29,7 +29,24 @@ void *g_entry_exit = NULL;
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 
-void __attribute__((destructor)) __stdlib_fini(void) {
+/*******************************
+ *                            *
+ *   CALL BY DYNAMIC LINKER   *
+ *                            *
+*******************************/
+
+void __buddy_init(void);
+void __buddy_fini(void);
+
+void __stdio_init(void);
+void __stdio_fini(void);
+
+void __attribute__((constructor)) __libc_constructor(void) {
+    __buddy_init();
+    __stdio_init();
+}
+
+void __attribute__((destructor)) __libc_destructor(void) {
     // free the environment
     if (g_env == NULL)
         return;
@@ -37,7 +54,16 @@ void __attribute__((destructor)) __stdlib_fini(void) {
     for (int i = 0; g_env[i] != NULL; i++)
         free(g_env[i]);
     free(g_env);
+
+    __stdio_fini();
+    __buddy_fini();
 }
+
+/*******************************
+ *                            *
+ *   CALL BY ENTRY FUNCTION   *
+ *                            *
+*******************************/
 
 void __init_libc(char **env, void *entry_exit) {
     int size, offset;
@@ -67,9 +93,6 @@ void __init_libc(char **env, void *entry_exit) {
         setenv("PWD", "/", 1);
 }
 
-char **__get_environ_ptr(void) {
-    return g_env;
-}
 
 void __exit_libc(void) {
     if (g_atexit_funcs == NULL)
@@ -80,6 +103,10 @@ void __exit_libc(void) {
         func();
     }
     free(g_atexit_funcs);
+}
+
+char **__get_environ_ptr(void) {
+    return g_env;
 }
 
 #define TABLE_BASE 0x2e

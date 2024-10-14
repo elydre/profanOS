@@ -11,6 +11,7 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
+#include <profan.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -63,7 +64,7 @@ void print_fs_info(void) {
     }
     printf("\e[0m\n");
 
-    free(info);
+    profan_free(info);
 }
 
 char *gen_all_colors(int base_color) {

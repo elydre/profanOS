@@ -43,9 +43,14 @@
 int serial_debug(char *frm, ...);
 void profan_print_memory(void *addr, uint32_t size);
 char *assemble_path(const char *old, const char *new);
-int profan_wait_pid(uint32_t pid);
 char *open_input(int *size);
+int profan_wait_pid(uint32_t pid);
+
 void profan_cleanup(void);
+void *profan_malloc(uint32_t size, int as_kernel);
+void *profan_calloc(uint32_t nmemb, uint32_t lsize, int as_kernel);
+void *profan_realloc(void *mem, uint32_t new_size, int as_kernel);
+void profan_free(void *mem);
 
 #ifndef PROFAN_C
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
