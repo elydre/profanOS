@@ -31,7 +31,7 @@ int fs_cnt_delete_core(filesys_t *filesys, uint32_t core_sid) {
     // check if sector is core
     data = vdisk_load_sector(vdisk, core_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_CORE) {
+    if (data[0] != SF_CORE) {
         vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
         return 1;
     }
@@ -62,7 +62,7 @@ int fs_cnt_delete_loca_recur(filesys_t *filesys, uint32_t loca_sid) {
     // check if sector is locator
     data = vdisk_load_sector(vdisk, loca_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_LOCA) {
+    if (data[0] != SF_LOCA) {
         vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
         return 1;
     }
@@ -112,7 +112,7 @@ int fs_cnt_delete(filesys_t *filesys, uint32_t head_sid) {
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         sys_warning("[cnt_delete] Sector not container header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;

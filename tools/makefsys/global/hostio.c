@@ -27,7 +27,7 @@ int save_vdisk(vdisk_t *vdisk, char *filename) {
     // get the last used sector
     uint32_t last_sector = 0;
     for (uint32_t i = 0; i < vdisk->size; i++) {
-        if (vdisk->sectors[i]->data[0] && vdisk->sectors[i]->data[1]) {
+        if (vdisk->sectors[i]->data[0]) {
             last_sector = i;
         }
     }
@@ -66,7 +66,7 @@ vdisk_t *load_vdisk(char *filename, uint32_t min_size) {
     // read the file
     for (uint32_t i = 0; i < size; i++) {
         fread(vdisk->sectors[i]->data, 1, SECTOR_SIZE, fp);
-        if (vdisk->sectors[i]->data[0] && vdisk->sectors[i]->data[1]) {
+        if (vdisk->sectors[i]->data[0]) {
             vdisk_note_sector_used(vdisk, i);
         }
     }

@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <errno.h>
 
 int access(const char *a, int b) {
     puts("access is not implemented yet, WHY DO YOU USE IT ?");
@@ -29,8 +30,27 @@ unsigned alarm(unsigned a) {
     return 0;
 }
 
-int chdir(const char *a) {
-    puts("chdir is not implemented yet, WHY DO YOU USE IT ?");
+int chdir(const char *path) {
+    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    if (!fu_is_dir(sid)) {
+        errno = ENOTDIR;
+        return -1;
+    }
+
+    char *dir = getenv("PWD");
+    if (!dir) dir = "/";
+
+    // check if dir exists
+    dir = assemble_path(dir, path);
+    fu_simplify_path(dir);
+
+    if (setenv("PWD", dir, 1)) {
+        errno = ENOMEM;
+        free(dir);
+        return -1;
+    }
+
+    free(dir);
     return 0;
 }
 
@@ -167,9 +187,33 @@ int ftruncate(int a, off_t b) {
     return 0;
 }
 
-char *getcwd(char *a, size_t b) {
-    puts("getcwd is not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+char *getcwd(char *buf, size_t size) {
+    char *working_directory = getenv("PWD");
+    size_t wd_len;
+
+    if (!working_directory) {
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    wd_len = strlen(working_directory);
+
+    if (buf == NULL) {
+        if (size < wd_len + 1)
+            size = wd_len + 1;
+
+        buf = malloc(size);
+        strcpy(buf, working_directory);
+        return buf;
+    }
+
+    if (size < wd_len + 1) {
+        errno = ERANGE;
+        return NULL;
+    }
+
+    strcpy(buf, working_directory);
+    return buf;
 }
 
 gid_t getegid(void) {
@@ -246,7 +290,7 @@ uid_t getuid(void) {
 }
 
 char *getwd(char *a) {
-    puts("getwd is not implemented yet, WHY DO YOU USE IT ?");
+    puts("getwd is deprecated, use getcwd instead");
     return NULL;
 }
 
@@ -453,7 +497,6 @@ int unlink(const char *filename) {
 }
 
 int usleep(useconds_t usec) {
-    if (usec == 0) return 0;
     return syscall_process_sleep(syscall_process_pid(), usec / 1000) ? -1 : 0;
 }
 

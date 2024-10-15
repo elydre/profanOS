@@ -19,7 +19,7 @@
 
 #define LAST_SID_OFFSET (SECTOR_SIZE - sizeof(uint32_t))
 #define LINKS_IN_LOCA ((int) (SECTOR_SIZE / sizeof(uint32_t) - 2))
-#define BYTE_IN_CORE (SECTOR_SIZE - 2)
+#define BYTE_IN_CORE (SECTOR_SIZE - 1)
 
 #define SID_FORMAT(disk, sector) ((uint32_t) (((disk) << 24) | (sector)))
 #define SID_DISK(sid) ((sid) >> 24)
@@ -41,11 +41,6 @@
 #ifndef UINT32_MAX
 #define UINT32_MAX 0xffffffff
 #endif
-
-// sector types
-#define ST_CONT 1
-#define ST_SPAR 2
-#define ST_MEMS 3
 
 // sector functions
 #define SF_HEAD 1

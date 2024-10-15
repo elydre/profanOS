@@ -36,12 +36,12 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
     // check if sector is core
     vdisk_read_sector(vdisk, core_sid, alloc_buf);
 
-    if (alloc_buf[0] != ST_CONT || alloc_buf[1] != SF_CORE) {
+    if (alloc_buf[0] != SF_CORE) {
         return -1;
     }
 
     size = min(size, BYTE_IN_CORE - offset);
-    offset += 2;
+    offset += 1; // skip sector identifier
 
     if (!is_read) {
         mem_copy(alloc_buf + offset, buf, size);
@@ -50,7 +50,7 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
         mem_copy(buf, alloc_buf + offset, size);
     }
 
-    return size + offset - 2;
+    return size + offset - 1;
 }
 
 int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
@@ -81,7 +81,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
         // check if sector is locator
         vdisk_read_sector(vdisk, loca_sid, data);
 
-        if (data[0] != ST_CONT || data[1] != SF_LOCA) {
+        if (data[0] != SF_LOCA) {
             free(alloc_buf);
             free(data);
             return 1;
@@ -160,18 +160,18 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
     // check if sector is cnt header
     data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != ST_CONT || data[1] != SF_HEAD) {
+    if (data[0] != SF_HEAD) {
         sys_warning("[cnt_rw] Sector is not cnt header");
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;
     }
 
     // check if offset + size is valid
-    if (offset + size > *((uint32_t *) (data + 2 + META_MAXLEN))) {
+    if (offset + size > *((uint32_t *) (data + 1 + META_MAXLEN))) {
         sys_warning("[cnt_rw] cannot %s beyond cnt size (%d requested, %d max)",
                 is_read ? "read" : "write",
                 offset + size,
-                *((uint32_t *) (data + 2 + META_MAXLEN))
+                *((uint32_t *) (data + 1 + META_MAXLEN))
         );
         vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
         return 1;

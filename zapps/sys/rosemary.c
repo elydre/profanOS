@@ -183,6 +183,7 @@ int main(void) {
 
     set_env("PATH=/bin/cmd:/bin/fatpath");
     set_env("DEFRUN=/bin/fatpath/tcc.elf -run");
+    set_env("HOME=/");
 
     do {
         run_ifexist_pid(SHELL_PATH, 0, NULL, envp, NULL);
