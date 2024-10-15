@@ -16,7 +16,7 @@ jobs:
     - name: install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc g++ nasm make genisoimage python3 mtools
+        sudo apt-get install -y make python3 gcc g++ nasm grub-common xorriso grub-pc-bin mtools
       
     - name: check norme
       run: |
