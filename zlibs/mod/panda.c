@@ -444,6 +444,9 @@ int panda_change_font(const char *file) {
     g_panda->font = font;
     g_panda->max_lines = syscall_vesa_height() / g_panda->font->height;
     g_panda->max_cols = syscall_vesa_width() / g_panda->font->width;
+    g_panda->screen_buffer = realloc_ask(g_panda->screen_buffer,
+            g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
+
     return 0;
 }
 
