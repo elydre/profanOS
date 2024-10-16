@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.0 rev 18"
+#define OLV_VERSION "1.1 rev 0"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1628,6 +1628,13 @@ char *if_del(char **input) {
     return ERROR_CODE;
 }
 
+typedef struct {
+    char *world;
+    char *name;
+    int fd;
+    int append;
+} if_dot_redirect_t;
+
 char *if_dot(char **input) {
     #if PROFANBUILD || UNIXBUILD
     // get argc
@@ -1676,80 +1683,79 @@ char *if_dot(char **input) {
     }
     #endif
 
-    int wait_end = 1;
-    if (strcmp(input[argc - 1], "&") == 0) {
-        wait_end = 0;
-        argc--;
+    #if PROFANBUILD
+    if_dot_redirect_t redirect[] = {
+        {"<",   "stdin",  0, 0},
+        {">",   "stdout", 1, 0},
+        {">>",  "stdout", 1, 1},
+        {"2>",  "stderr", 2, 0},
+        {"2>>", "stderr", 2, 1}
     };
 
-    char *stdout_path = NULL;
-    char *stdin_path = NULL;
+    char *stdpaths[3] = {NULL, NULL, NULL};
+    int   append[3]   = {0, 0, 0};
+    int fd, wait_end = 1;
 
-    #if PROFANBUILD
-    if (argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
-        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
-        argc -= 2;
+    for (int i = argc - 1; i > 0; i--) {
+        if (strcmp(input[i], "&") == 0) {
+            input[i] = NULL;
+            wait_end = 0;
+            continue;
+        }
+        i--;
+        if (i < 1)
+            break;
+        for (int j = 0; j < 5; j++) {
+            if (strcmp(input[i], redirect[j].world))
+                continue;
+            fd = redirect[j].fd;
+            if (input[i + 1] == NULL) {
+                raise_error("dot", "No path specified for %s", redirect[j].name);
+                goto dot_redir_error;
+            }
+            if (stdpaths[fd] != NULL) {
+                raise_error("dot", "Multiple redirections for %s", redirect[j].name);
+                goto dot_redir_error;
+            }
+            stdpaths[fd] = assemble_path(g_current_directory, input[i + 1]);
+            append[fd] = redirect[j].append;
+            input[i] = NULL;
+            sid = fu_path_to_sid(ROOT_SID, stdpaths[fd]);
+            if (fd == 0) {
+                if (fu_is_file(sid) || fu_is_fctf(sid))
+                    break;
+                raise_error("dot", "Cannot redirect %s from '%s'", redirect[j].name, stdpaths[fd]);
+                goto dot_redir_error;
+            }
+            // fd == 1 || fd == 2
+            if (IS_SID_NULL(sid)) {
+                if (fu_file_create(0, stdpaths[fd]))
+                    break;
+                raise_error("dot", "Cannot create file '%s'", stdpaths[fd]);
+                goto dot_redir_error;
+            } else if (fu_is_dir(sid)) {
+                raise_error("dot", "Cannot redirect %s to the directory '%s'", redirect[j].name, stdpaths[fd]);
+                goto dot_redir_error;
+            }
+            break;
+        }
+        if (input[i])
+            break;
     }
 
-    if (argc >= 3 && strcmp(input[argc - 2], ">") == 0) {
-        stdout_path = assemble_path(g_current_directory, input[argc - 1]);
-        argc -= 2;
-    }
+    for (argc = 0; input[argc] != NULL; argc++);
 
-    if (!stdin_path && argc >= 3 && strcmp(input[argc - 2], "<") == 0) {
-        stdin_path = assemble_path(g_current_directory, input[argc - 1]);
-        argc -= 2;
-    }
-    #endif
-
-    if (strcmp(input[argc - 1], "&") == 0) {
-        wait_end = 0;
-        argc--;
-    }
-
-    if (argc < 1) {
-        raise_error("dot", "No given executable path");
+    if (0) {
+        dot_redir_error:
         if (file_path != input[0])
             free(file_path);
-        free(stdout_path);
-        free(stdin_path);
+        for (int i = 0; i < 3; i++) {
+            if (stdpaths[i] != NULL)
+                free(stdpaths[i]);
+        }
         return ERROR_CODE;
     }
 
-    #if PROFANBUILD
-    if (stdin_path) {
-        sid = fu_path_to_sid(ROOT_SID, stdin_path);
-        if (IS_SID_NULL(sid)) {
-            raise_error("dot", "Cannot redirect stdin from '%s'", stdin_path);
-            if (file_path != input[0])
-                free(file_path);
-            free(stdout_path);
-            free(stdin_path);
-            return ERROR_CODE;
-        }
-    }
-
-    if (stdout_path) {
-        sid = fu_path_to_sid(ROOT_SID, stdout_path);
-        if (IS_SID_NULL(sid)) {
-            if (IS_SID_NULL(fu_file_create(0, stdout_path))) {
-                if (file_path != input[0])
-                    free(file_path);
-                free(stdout_path);
-                free(stdin_path);
-                return ERROR_CODE;
-            }
-        } else if (!(fu_is_file(sid) || fu_is_fctf(sid))) {
-            raise_error("dot", "Cannot redirect stdout to '%s'", stdout_path);
-            if (file_path != input[0])
-                free(file_path);
-            free(stdout_path);
-            free(stdin_path);
-            return ERROR_CODE;
-        } else if (fu_is_file(sid)) {
-            fu_file_set_size(sid, 0);
-        }
-    }
     #endif
 
     // get args
@@ -1763,41 +1769,25 @@ char *if_dot(char **input) {
 
     char **argv = malloc((argc + 1) * sizeof(char *));
     argv[0] = file_name;
-    for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++)
         argv[i] = input[i];
-    }
     argv[argc] = NULL;
 
     #if PROFANBUILD
     int pid;
-    local_itoa(run_ifexist_full(
+    run_ifexist_full(
         (runtime_args_t) {
             file_path,
             argc, argv,
             __get_environ_ptr(),
-            stdout_path || stdin_path ? 2 : wait_end
+            2
         }, &pid
-    ), g_exit_code);
-
-    if (stdin_path) {
-        fm_reopen(fm_resol012(0, pid), stdin_path);
-        free(stdin_path);
-    }
-
-    if (stdout_path) {
-        fm_reopen(fm_resol012(1, pid), stdout_path);
-        free(stdout_path);
-    }
-
-    if (stdout_path || stdin_path) {
-        syscall_process_wakeup(pid);
-        if (wait_end) {
-            profan_wait_pid(pid);
-        }
-    }
+    );
 
     if (pid == -1) {
         raise_error("dot", "Cannot execute file '%s'", file_path);
+        for (int i = 0; i < 3; i++)
+            free(stdpaths[i]);
         if (file_path != input[0])
             free(file_path);
         free(file_name);
@@ -1805,9 +1795,28 @@ char *if_dot(char **input) {
         return ERROR_CODE;
     }
 
-    if (!wait_end) {
-        fprintf(stderr, "DOT: started with pid %d\n", pid);
+    for (int i = 0; i < 3; i++) {
+        if (stdpaths[i] == NULL)
+            continue;
+        fm_reopen(fm_resol012(i, pid), stdpaths[i]);
+        if (fu_is_file(sid)) {
+            if (append[i])
+                fm_lseek(fm_resol012(i, pid), 0, SEEK_END);
+            else
+                fu_file_set_size(sid, 0);
+        }
+        free(stdpaths[i]);
     }
+
+    if (wait_end) {
+        syscall_process_handover(pid);
+    } else {
+        fprintf(stderr, "DOT: started with pid %d\n", pid);
+        syscall_process_wakeup(pid);
+    }
+
+    local_itoa(syscall_process_info(pid, PROCESS_INFO_EXIT_CODE), g_exit_code);
+
     #else
     pid_t pid = fork();
     if (pid == -1) {
