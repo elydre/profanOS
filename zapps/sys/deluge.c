@@ -1041,9 +1041,7 @@ int main(int argc, char **argv, char **envp) {
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
 
     free(g_prog->hash_table);
-    free(g_prog->file);
     free(g_prog->name);
-    free(g_prog);
 
     g_dlfcn_error = 0;
 
@@ -1066,6 +1064,9 @@ int main(int argc, char **argv, char **envp) {
     if (args.show_leaks) {
         libc_show_leaks();
     }
+
+    free(g_prog->file);
+    free(g_prog);
 
     while (g_lib_count) {
         if (g_loaded_libs[0]->ref_count > 1) {

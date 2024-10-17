@@ -106,7 +106,6 @@ void __buddy_show_leaks(void) {
     fputs("MEMORY USAGE SUMMARY:\n", stderr);
     fprintf(stderr, "  Unfreed at exit:  %d bytes in %d blocks\n", total_size, total_leaks);
     fprintf(stderr, "  Total allocated:  %d allocs, %d frees, %d bytes\n", g_stat->total_allocs, g_stat->total_free, g_stat->total_size);
-    fputs("GROSSE MERDE\n", stderr);
 
     g_debug = 1;
 }
@@ -134,7 +133,6 @@ static void set_trace(int index) {
 }
 
 static void register_alloc(void *ptr, uint32_t size) {
-
     serial_debug("register_alloc: %p %d\n", ptr, size);
 
     g_stat->total_allocs++;
@@ -146,33 +144,27 @@ static void register_alloc(void *ptr, uint32_t size) {
         g_stat->allocs[i].size = size;
         g_stat->allocs[i].ptr = ptr;
         set_trace(i);
-        serial_debug("register_alloc: found %d\n", i);
         return;
     }
 
     serial_debug("register_alloc: realloc...\n", g_stat->tab_size);
-
     g_debug = 0;
     g_stat->allocs = realloc(g_stat->allocs, g_stat->tab_size * 2 * sizeof(leaks_stat_t));
     g_debug = 1;
 
-    serial_debug("register_alloc: realloc done\n");
+    for (int i = g_stat->tab_size; i < g_stat->tab_size * 2; i++)
+        g_stat->allocs[i].ptr = NULL;
 
     g_stat->allocs[g_stat->tab_size].size = size;
     g_stat->allocs[g_stat->tab_size].ptr = ptr;
 
-    serial_debug("register_alloc: set_trace %d\n", g_stat->tab_size);
-
     set_trace(g_stat->tab_size);
 
     g_stat->tab_size *= 2;
-
-    serial_debug("register_alloc: realloc %d\n", g_stat->tab_size);
 }
 
 static void register_free(void *ptr) {
     serial_debug("register_free: %p\n", ptr);
-
     g_stat->total_free++;
 
     for (int i = 0; i < g_stat->tab_size; i++) {
@@ -181,6 +173,8 @@ static void register_free(void *ptr) {
             return;
         }
     }
+
+    serial_debug("register_free: not found\n");
 }
 
 static void extend_virtual(uint32_t size) {
@@ -222,11 +216,11 @@ static void extend_virtual(uint32_t size) {
         syscall_serial_write(SERIAL_PORT_A, "buddy_resize failed\n", 20);
 }
 
-#define ALLOC_DO(ptr, size)         \
-    if (ptr) {                      \
-        if (g_debug)                \
-            register_alloc(ptr, size);   \
-        return ptr;                 \
+#define ALLOC_DO(ptr, size)             \
+    if (ptr) {                          \
+        if (g_debug)                    \
+            register_alloc(ptr, size);  \
+        return ptr;                     \
     }
 
 void *malloc(uint32_t size) {
@@ -256,6 +250,9 @@ void *calloc(uint32_t nmemb, uint32_t lsize) {
 }
 
 void *realloc(void *mem, uint32_t new_size) {
+    if (g_debug && mem)
+        register_free(mem);
+
     void *p = buddy_realloc(g_buddy, mem, new_size, 0);
     ALLOC_DO(p, new_size);
 
