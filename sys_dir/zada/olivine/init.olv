@@ -1,6 +1,8 @@
-pseudo testall 'exec /zada/olivine/testall.olv'
-pseudo xclear 'clear -x'
-pseudo dlg '. /bin/sys/deluge.bin'
+pseudo testall  'exec /zada/olivine/testall.olv'
+pseudo xclear   'clear -x'
+pseudo dlg      '. /bin/sys/deluge.bin'
+pseudo leaks    '. /bin/sys/deluge.bin -m'
+
 
 FUNC pwd
     echo !path

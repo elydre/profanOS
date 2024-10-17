@@ -47,14 +47,6 @@ void __attribute__((constructor)) __libc_constructor(void) {
 }
 
 void __attribute__((destructor)) __libc_destructor(void) {
-    // free the environment
-    if (g_env == NULL)
-        return;
-
-    for (int i = 0; g_env[i] != NULL; i++)
-        free(g_env[i]);
-    free(g_env);
-
     __stdio_fini();
     __buddy_fini();
 }
@@ -93,16 +85,21 @@ void __init_libc(char **env, void *entry_exit) {
         setenv("PWD", "/", 1);
 }
 
-
 void __exit_libc(void) {
-    if (g_atexit_funcs == NULL)
-        return;
-
-    for (int i = 0; g_atexit_funcs[i] != NULL; i++) {
-        void (*func)() = g_atexit_funcs[i];
-        func();
+    if (g_atexit_funcs) {
+        for (int i = 0; g_atexit_funcs[i] != NULL; i++) {
+            void (*func)() = g_atexit_funcs[i];
+            func();
+        }
+        free(g_atexit_funcs);
     }
-    free(g_atexit_funcs);
+
+    // free the environment
+    if (g_env) {
+    for (int i = 0; g_env[i] != NULL; i++)
+        free(g_env[i]);
+    free(g_env);
+    }
 }
 
 char **__get_environ_ptr(void) {

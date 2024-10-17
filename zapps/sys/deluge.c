@@ -831,6 +831,7 @@ int dynamic_linker(elfobj_t *exec) {
 typedef struct {
     char *name;
     uint8_t bench;
+    uint8_t show_leaks;
     int arg_offset;
 } deluge_args_t;
 
@@ -847,6 +848,7 @@ void show_help(int full) {
         "  -e  don't use filename as argument\n"
         "  -h  show this help message\n"
         "  -l  list main linking steps\n"
+        "  -m  show userspace memory leaks\n"
         "  -p  add path to extra libraries\n"
         "  -v  show version\n"
     );
@@ -889,6 +891,9 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 show_help(1);
                 exit(0);
                 break; // unreachable
+            case 'm':
+                args.show_leaks = 1;
+                break;
             case 'p':
                 if (i + 1 >= argc) {
                     fd_printf(2, "deluge: missing argument for -p\n");
@@ -917,6 +922,30 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     }
 
     return args;
+}
+
+void libc_enable_leaks(void) {
+    // void __buddy_enable_leaks(void);
+
+    void (*buddy_enable_leaks)(void) = (void *) get_sym_value("__buddy_enable_leaks", NULL);
+
+    if (buddy_enable_leaks) {
+        buddy_enable_leaks();
+    } else {
+        raise_error("failed to enable leaks");
+    }
+}
+
+void libc_show_leaks(void) {
+    // void __buddy_show_leaks(void);
+
+    void (*buddy_show_leaks)(void) = (void *) get_sym_value("__buddy_show_leaks", NULL);
+
+    if (buddy_show_leaks) {
+        buddy_show_leaks();
+    } else {
+        raise_error("failed to show leaks");
+    }
 }
 
 int main(int argc, char **argv, char **envp) {
@@ -974,6 +1003,10 @@ int main(int argc, char **argv, char **envp) {
         start = syscall_timer_get_ms();
     }
 
+    if (args.show_leaks) {
+        libc_enable_leaks();
+    }
+
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
     debug_printf(1,
@@ -981,6 +1014,10 @@ int main(int argc, char **argv, char **envp) {
     ) else if (args.bench) fd_printf(2,
         "Exit with code %d in %d ms\n", ret, syscall_timer_get_ms() - start
     );
+
+    if (args.show_leaks) {
+        libc_show_leaks();
+    }
 
     while (g_lib_count) {
         if (g_loaded_libs[0]->ref_count > 1) {
