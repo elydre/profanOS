@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.1 rev 0"
+#define OLV_VERSION "1.1 rev 1"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -620,7 +620,7 @@ char *get_bin_path(char *name) {
         }
         if (src_path[i] == '\0')
             break;
-        start = i + 1;
+        start = i;
     }
 
     free(fullname);
@@ -1834,13 +1834,9 @@ char *if_dot(char **input) {
         exit(1);
     }
 
-    if (wait_end) {
-        int status;
-        waitpid(pid, &status, 0);
-        local_itoa(WEXITSTATUS(status), g_exit_code);
-    } else {
-        fprintf(stderr, "DOT: started with pid %d\n", pid);
-    }
+    int status;
+    waitpid(pid, &status, 0);
+    local_itoa(WEXITSTATUS(status), g_exit_code);
     #endif
 
     char *tmp = malloc(12);
@@ -4257,7 +4253,6 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
 
     // path
     if (i < len && !in_var) {
-        #if PROFANBUILD
         // ls the current directory
         char *path = malloc(MAX_PATH_SIZE);
         char *inp_end = malloc(MAX_PATH_SIZE);
@@ -4339,8 +4334,6 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
             free(other[0]);
             return ret;
         }
-
-        #endif
 
         return NULL;
     }
