@@ -120,6 +120,13 @@ int profan_wait_pid(uint32_t pid) {
     return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
 }
 
+
+// defined in deluge
+char *profan_fn_name(void *ptr) {
+    puts("libc extra: profan_fn_name: should not be called");
+    return NULL;
+}
+
 /****************************
  *                         *
  *   KERNEL MEMORY ALLOC   *

@@ -96,9 +96,9 @@ void __exit_libc(void) {
 
     // free the environment
     if (g_env) {
-    for (int i = 0; g_env[i] != NULL; i++)
-        free(g_env[i]);
-    free(g_env);
+        for (int i = 0; g_env[i] != NULL; i++)
+            free(g_env[i]);
+        free(g_env);
     }
 }
 
