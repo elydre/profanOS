@@ -1,9 +1,20 @@
+/*****************************************************************************\
+|   === test.c : 2024 ===                                                     |
+|                                                                             |
+|    Temporary test file for malloc and fork functions             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <profan.h>
+#include <assert.h>
+#include <stdio.h>
 
 int main() {
     void *addr = malloc(1024);
