@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-ENTRY(entry)
+ENTRY(_start)
 
 SECTIONS {
     . = 0xB0000000;
