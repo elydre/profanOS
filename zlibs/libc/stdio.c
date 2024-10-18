@@ -37,6 +37,8 @@ FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
+char *g_printf_buffer = NULL;
+
 void __stdio_init(void) {
     // init stdin
     stdin = calloc(1, sizeof(FILE));
@@ -55,6 +57,9 @@ void __stdio_init(void) {
     stderr->mode = MODE_WRITE;
     stderr->buffer = malloc(FILE_BUFFER_SIZE);
     stderr->fd = 2;
+
+    // init printf buffer
+    g_printf_buffer = malloc(0x1000);
 }
 
 void __stdio_fini(void) {
@@ -69,6 +74,8 @@ void __stdio_fini(void) {
     fflush(stderr);
     free(stderr->buffer);
     free(stderr);
+
+    free(g_printf_buffer);
 }
 
 void clearerr(FILE *stream) {
@@ -613,13 +620,8 @@ int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
 }
 
 int vprintf(const char *format, va_list vlist) {
-    int count;
-
-    char *buffer = malloc(0x4000);
-    vsnprintf(buffer, 0x4000, format, vlist);
-    count = fputs(buffer, stdout);
-
-    free(buffer);
+    int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
+    fwrite(g_printf_buffer, 1, count, stdout);
     return count;
 }
 
@@ -629,17 +631,10 @@ int vfprintf(FILE *stream, const char *format, va_list vlist) {
         return 0;
     }
 
-    // allocate a buffer to store the formatted string
-    char *buffer = malloc(0x4000);
-
     // copy format to a buffer because need to modify it
-    int count = vsnprintf(buffer, 0x4000, format, vlist);
-
-    // write the string
-    fwrite(buffer, 1, strlen(buffer), stream);
-
-    free(buffer);
-    return 0;
+    int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
+    fwrite(g_printf_buffer, 1, count, stream);
+    return count;
 }
 
 int vsprintf(char *buffer, const char *format, va_list vlist) {

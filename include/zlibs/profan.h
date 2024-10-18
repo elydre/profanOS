@@ -46,7 +46,6 @@ char *assemble_path(const char *old, const char *new);
 char *open_input(int *size);
 int profan_wait_pid(uint32_t pid);
 
-void profan_cleanup(void);
 char *profan_fn_name(void *ptr);
 void *profan_malloc(uint32_t size, int as_kernel);
 void *profan_calloc(uint32_t nmemb, uint32_t lsize, int as_kernel);

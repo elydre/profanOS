@@ -290,7 +290,6 @@ int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *
 }
 
 void exit(int rv) {
-    profan_cleanup();
     if (g_entry_exit != NULL) {
         void (*entry_exit)(int) = g_entry_exit;
         entry_exit(rv);

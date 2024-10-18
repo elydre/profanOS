@@ -160,17 +160,17 @@ void *open_elf(char *filename) {
                 obj->sym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
                 obj->sym_size = shdr[i].sh_size;
                 break;
-            
+
             case 6: // SHT_STRTAB
                 obj->dynamic = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
                 break;
-            
+
             case 11: // SHT_DYNSYM
                 obj->dym_tab = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
                 obj->dym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
                 obj->dym_size = shdr[i].sh_size;
                 break;
-            
+
             default:
                 break;
         }

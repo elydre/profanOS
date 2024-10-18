@@ -28,7 +28,6 @@
 ****************************/
 
 char *profan_fn_name(void *ptr);
-void  profan_cleanup(void);
 
 #define raise_error(fmt, ...) do {  \
             fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
@@ -45,9 +44,9 @@ void  profan_cleanup(void);
 elfobj_t **g_loaded_libs;
 elfobj_t *g_prog;
 
-char **g_envp;
+int g_already_fini;
 int g_lib_count;
-int g_cleanup;
+char **g_envp;
 
 // command line options
 char *g_extralib_path;
@@ -63,7 +62,6 @@ typedef struct {
 
 // extra symbols table
 dlg_extra_t g_extra_syms[] = {
-    { "profan_cleanup", 0x9E824710, profan_cleanup },
     { "profan_fn_name", 0x62289205, profan_fn_name },
     { "dlclose"       , 0xDE67CAC5, dlclose        },
     { "dlopen"        , 0xCEF94D0E, dlopen         },
@@ -99,10 +97,6 @@ char *assemble_path(const char *dir, const char *file) {
     path[len1] = '/';
     strcpy(path + len1 + 1, file);
     return path;
-}
-
-void profan_cleanup(void) {
-    g_cleanup = 1;
 }
 
 /**************************
@@ -561,17 +555,17 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
                 obj->sym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
                 obj->sym_size = shdr[i].sh_size;
                 break;
-            
+
             case 6: // SHT_sym_str
                 obj->dynamic = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
                 break;
-            
+
             case 11: // SHT_DYNSYM
                 obj->dym_tab = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
                 obj->dym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
                 obj->dym_size = shdr[i].sh_size;
                 break;
-            
+
             default:
                 break;
         }
@@ -752,7 +746,9 @@ int dlclose(void *handle) {
         break;
     }
 
-    fini_lib(dl);
+    if (!g_already_fini) {
+        fini_lib(dl);
+    }
 
     if (dl->need_free) {
         free(dl->hash_table);
@@ -842,9 +838,9 @@ char *profan_fn_name(void *ptr) {
     // look inside the g_prog
     if (g_prog->sym_tab) {
         for (uint32_t j = 0; j < g_prog->sym_size / sizeof(Elf32_Sym); j++) {
-            if (addr >= g_prog->sym_tab[j].st_value && addr < g_prog->sym_tab[j].st_value + g_prog->sym_tab[j].st_size) {
-                return g_prog->sym_str + g_prog->sym_tab[j].st_name;
-            }
+            if (addr >= g_prog->sym_tab[j].st_value &&
+                addr < g_prog->sym_tab[j].st_value + g_prog->sym_tab[j].st_size
+            ) return g_prog->sym_str + g_prog->sym_tab[j].st_name;
         }
     }
 
@@ -988,9 +984,9 @@ deluge_args_t deluge_parse(int argc, char **argv) {
 
 int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
+    g_already_fini = 0;
     g_dlfcn_error = 0;
     g_lib_count = 0;
-    g_cleanup = 0;
     g_envp = envp;
 
     deluge_args_t args = deluge_parse(argc, argv);
@@ -1051,8 +1047,10 @@ int main(int argc, char **argv, char **envp) {
         "Exit with code %d in %d ms\n", ret, syscall_timer_get_ms() - start
     );
 
-    free(g_prog->file);
-    free(g_prog);
+    for (int i = 0; i < g_lib_count; i++)
+        fini_lib(g_loaded_libs[i]);
+
+    g_already_fini = 1;
 
     while (g_lib_count) {
         if (g_loaded_libs[0]->ref_count > 1) {
@@ -1063,22 +1061,8 @@ int main(int argc, char **argv, char **envp) {
     }
 
     free(g_loaded_libs);
-
-    if (g_cleanup) {
-        int leaks, count, pid = syscall_process_pid();
-        leaks = syscall_mem_info(7, pid);
-        count = leaks ? syscall_mem_info(8, pid) : 0;
-
-        debug_printf(1, "Clean up %d alloc%s (%d byte%s)",
-            leaks,
-            leaks > 1 ? "s" : "",
-            count,
-            count > 1 ? "s" : ""
-        );
-        if (leaks > 0) {
-            syscall_mem_free_all(pid);
-        }
-    }
+    free(g_prog->file);
+    free(g_prog);
 
     return ret;
 }

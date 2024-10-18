@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #define BUDDY_ALLOC_IMPLEMENTATION
-#include "buddy_alloc.h"
+#include "alloc_buddy.h"
 #undef BUDDY_ALLOC_IMPLEMENTATION
 
 #define DEFAULT_SIZE 16  // 8 pages (32KB)
@@ -31,10 +31,11 @@ typedef struct alloc_debug {
 
 typedef struct {
     struct alloc_debug *allocs;
+    uint32_t no_free_before;
     uint32_t total_allocs;
     uint32_t total_free;
     uint32_t total_size;
-    int tab_size;
+    uint32_t tab_size;
 } leaks_stat_t;
 
 leaks_stat_t *g_stat;
@@ -101,20 +102,22 @@ static void buddy_show_leaks(void) {
     uint32_t total_leaks = 0;
     uint32_t total_size = 0;
 
-    for (int i = 0; i < g_stat->tab_size; i++) {
+    for (uint32_t i = 0; i < g_stat->tab_size; i++) {
         if (!g_stat->allocs[i].ptr)
             continue;
-        fputs("===================  NOT  FREED  AT  EXIT  ===================\n", stderr);
-        break;
-    }
-
-    for (int i = 0; i < g_stat->tab_size; i++) {
-        if (!g_stat->allocs[i].ptr)
-            continue;
-        fprintf(stderr, "%d bytes at %p\n", g_stat->allocs[i].size, g_stat->allocs[i].ptr);
         total_size += g_stat->allocs[i].size;
         total_leaks++;
 
+        if (total_leaks == 1)
+            fputs("===================  NOT  FREED  AT  EXIT  ===================\n", stderr);
+
+        if (total_leaks == 1000)
+            fputs("Only the first 1000 leaks are shown\n", stderr);
+
+        if (total_leaks >= 1000)
+            continue;
+
+        fprintf(stderr, "%d bytes at %p\n", g_stat->allocs[i].size, g_stat->allocs[i].ptr);
         for (int j = 0; j < 4; j++) {
             void *ptr = g_stat->allocs[i].caller[j];
             if (ptr == NULL)
@@ -129,7 +132,8 @@ static void buddy_show_leaks(void) {
 
     fputs("\n==================  MEMORY  USAGE  SUMMARY  ==================\n\n", stderr);
     fprintf(stderr, "  Unfreed at exit:  %d bytes in %d blocks\n", total_size, total_leaks);
-    fprintf(stderr, "  Total allocated:  %d allocs, %d frees, %d bytes\n", g_stat->total_allocs, g_stat->total_free, g_stat->total_size);
+    fprintf(stderr, "  Total allocated:  %d allocs, %d frees, %d bytes\n",
+            g_stat->total_allocs, g_stat->total_free, g_stat->total_size);
     fputs("\n==============================================================\n", stderr);
 
     g_debug = 1;
@@ -157,14 +161,15 @@ static void set_trace(int index) {
 }
 
 static void register_alloc(void *ptr, uint32_t size) {
-    serial_debug("register_alloc: %p %d\n", ptr, size);
+    // serial_debug("register_alloc: %p %d\n", ptr, size);
 
     g_stat->total_allocs++;
     g_stat->total_size += size;
 
-    for (int i = 0; i < g_stat->tab_size; i++) {
+    for (uint32_t i = g_stat->no_free_before; i < g_stat->tab_size; i++) {
         if (g_stat->allocs[i].ptr)
             continue;
+        g_stat->no_free_before = i + 1;
         g_stat->allocs[i].size = size;
         g_stat->allocs[i].ptr = ptr;
         set_trace(i);
@@ -172,11 +177,22 @@ static void register_alloc(void *ptr, uint32_t size) {
     }
 
     g_debug = 0;
-    g_stat->allocs = realloc(g_stat->allocs, g_stat->tab_size * 2 * sizeof(leaks_stat_t));
+    alloc_debug_t *new = malloc(g_stat->tab_size * 2 * sizeof(alloc_debug_t));
+
+    if (new == NULL) {
+        g_debug = 1;
+        return;
+    }
+
+    memcpy(new, g_stat->allocs, g_stat->tab_size * sizeof(alloc_debug_t));
+    free(g_stat->allocs);
+
     g_debug = 1;
 
-    for (int i = g_stat->tab_size; i < g_stat->tab_size * 2; i++)
+    for (uint32_t i = g_stat->tab_size; i < g_stat->tab_size * 2; i++)
         g_stat->allocs[i].ptr = NULL;
+
+    g_stat->allocs = new;
 
     g_stat->allocs[g_stat->tab_size].size = size;
     g_stat->allocs[g_stat->tab_size].ptr = ptr;
@@ -190,11 +206,13 @@ static void register_free(void *ptr) {
     serial_debug("register_free: %p\n", ptr);
     g_stat->total_free++;
 
-    for (int i = 0; i < g_stat->tab_size; i++) {
-        if (g_stat->allocs[i].ptr == ptr) {
-            g_stat->allocs[i].ptr = NULL;
-            return;
-        }
+    for (uint32_t i = 0; i < g_stat->tab_size; i++) {
+        if (g_stat->allocs[i].ptr != ptr)
+            continue;
+        if (g_stat->no_free_before > i)
+            g_stat->no_free_before = i;
+        g_stat->allocs[i].ptr = NULL;
+        return;
     }
 
     serial_debug("register_free: not found\n");
@@ -210,11 +228,6 @@ static void extend_virtual(uint32_t size) {
 
     serial_debug("extend_virtual: %d -> %d\n", g_arena_count, req);
 
-    if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA + g_arena_count * 4096, req - g_arena_count)) {
-        syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
-        return;
-    }
-
     // grow the metadata if needed
     uint32_t mdata_count = buddy_sizeof(req * 4096) / 4096 + 1;
     if (mdata_count > g_mdata_count) {
@@ -229,6 +242,11 @@ static void extend_virtual(uint32_t size) {
             return;
         }
         g_mdata_count = mdata_count;
+    }
+
+    if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA + g_arena_count * 4096, req - g_arena_count)) {
+        syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
+        return;
     }
 
     g_arena_count = req;

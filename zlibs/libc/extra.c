@@ -133,12 +133,6 @@ char *profan_fn_name(void *ptr) {
  *                         *
 ****************************/
 
-// defined in deluge
-void profan_cleanup(void) {
-    puts("libc extra: profan_cleanup: should not be called");
-    return;
-}
-
 // kernel memory allocation functions
 void *profan_malloc(uint32_t size, int as_kernel) {
     return (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);

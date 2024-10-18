@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === buddy_alloc.h : 2024 ===                                              |
+|   === alloc_buddy.h : 2024 ===                                              |
 |                                                                             |
 |    Userspace binary buddy memory allocator                       .pi0iq.    |
 |                                                                 d"  . `'b   |
