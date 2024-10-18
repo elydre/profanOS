@@ -26,7 +26,7 @@
 #define DEFAULT_SIZE 16  // 8 pages (32KB)
 
 #define PROFAN_BUDDY_MDATA ((void *) 0xD0000000)
-#define PROFAN_BUDDY_ARENA ((void *) 0xD0100000)
+#define PROFAN_BUDDY_ARENA ((void *) 0xD0800000)
 
 typedef struct alloc_debug {
     void *ptr;
@@ -236,8 +236,10 @@ static int extend_virtual(uint32_t size) {
     uint32_t mdata_count = buddy_sizeof(req * 4096) / 4096 + 1;
     if (mdata_count > g_mdata_count) {
         mdata_count *= 2; // avoid too many resizes
-        if (mdata_count > (PROFAN_BUDDY_ARENA - PROFAN_BUDDY_MDATA) / 4096)
+        if (mdata_count > (PROFAN_BUDDY_ARENA - PROFAN_BUDDY_MDATA) / 4096) {
+            put_error("libc: extend_virtual: metadata overflow\n");
             return 1;
+        }
         if (!syscall_scuba_generate(PROFAN_BUDDY_MDATA + g_mdata_count * 4096, mdata_count - g_mdata_count))
             return 1;
         g_mdata_count = mdata_count;
@@ -250,7 +252,12 @@ static int extend_virtual(uint32_t size) {
 
     g_buddy = buddy_resize(g_buddy, g_arena_count * 4096);
 
-    return g_buddy == NULL;
+    if (g_buddy == NULL) {
+        put_error("libc: extend_virtual: buddy_resize failed\n");
+        return 1;
+    }
+
+    return 0;
 }
 
 #define ALLOC_DO(ptr, size)             \
@@ -292,6 +299,9 @@ void *realloc(void *mem, uint32_t new_size) {
 
     void *p = buddy_realloc(g_buddy, mem, new_size, 0);
     ALLOC_DO(p, new_size);
+
+    if (new_size == 0)
+        return NULL;
 
     extend_virtual(new_size);
 
