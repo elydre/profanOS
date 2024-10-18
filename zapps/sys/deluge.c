@@ -1026,7 +1026,6 @@ int main(int argc, char **argv, char **envp) {
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
 
     free(g_prog->hash_table);
-    free(g_prog->name);
 
     g_dlfcn_error = 0;
 
@@ -1064,6 +1063,7 @@ int main(int argc, char **argv, char **envp) {
 
     free(g_loaded_libs);
     free(g_prog->file);
+    free(g_prog->name);
     free(g_prog);
 
     return ret;
