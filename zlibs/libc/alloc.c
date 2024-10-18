@@ -119,7 +119,7 @@ static void buddy_show_leaks(void) {
         total_leaks++;
 
         if (total_leaks == 1)
-            fputs("===================  NOT  FREED  AT  EXIT  ===================\n", stderr);
+            fputs("===================  NOT  FREED  AT  EXIT  ===================\n\n", stderr);
 
         if (total_leaks == 1000)
             fputs("Only the first 1000 leaks are shown\n", stderr);

@@ -992,7 +992,7 @@ int main(int argc, char **argv, char **envp) {
 
     deluge_args_t args = deluge_parse(argc, argv);
     int pid, parent_pid = syscall_process_pid();
-    
+
     int start, ret;
 
     if (g_print_debug) {
