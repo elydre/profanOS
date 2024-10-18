@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "3.0"
+#define DELUGE_VERSION "3.1"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -895,7 +895,6 @@ void libc_enable_leaks(void) {
 
 typedef struct {
     char *name;
-    uint8_t bench;
     uint8_t show_leaks;
     int arg_offset;
 } deluge_args_t;
@@ -908,7 +907,6 @@ void show_help(int full) {
     fd_printf(1,
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
-        "  -b  bench link and run time\n"
         "  -d  show additional debug info\n"
         "  -e  don't use filename as argument\n"
         "  -h  show this help message\n"
@@ -924,7 +922,6 @@ deluge_args_t deluge_parse(int argc, char **argv) {
     args.name = NULL;
 
     g_print_debug = ALWAYS_DEBUG;
-    args.bench = ALWAYS_DEBUG;
     args.show_leaks = 0;
 
     g_extralib_path = NULL;
@@ -938,16 +935,11 @@ deluge_args_t deluge_parse(int argc, char **argv) {
             break;
         }
         switch (argv[i][1]) {
-            case 'b':
-                args.bench = 1;
-                break;
             case 'l':
-                args.bench = 1;
                 if (!g_print_debug)
                     g_print_debug = 1;
                 break;
             case 'd':
-                args.bench = 1;
                 g_print_debug = 2;
                 break;
             case 'e':
@@ -997,10 +989,13 @@ int main(int argc, char **argv, char **envp) {
     g_lib_count = 0;
     g_envp = envp;
 
+
     deluge_args_t args = deluge_parse(argc, argv);
+    int pid, parent_pid = syscall_process_pid();
+    
     int start, ret;
 
-    if (args.bench) {
+    if (g_print_debug) {
         start = syscall_timer_get_ms();
     }
 
@@ -1026,11 +1021,7 @@ int main(int argc, char **argv, char **envp) {
     load_sections(g_prog, ET_EXEC);
     dynamic_linker(g_prog);
 
-    debug_printf (1,
-        "Link time: %d ms", syscall_timer_get_ms() - start
-    ) else if (args.bench) fd_printf(2,
-        "Link time: %d ms\n", syscall_timer_get_ms() - start
-    );
+    debug_printf (1, "Link time: %d ms", syscall_timer_get_ms() - start);
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
 
@@ -1039,7 +1030,7 @@ int main(int argc, char **argv, char **envp) {
 
     g_dlfcn_error = 0;
 
-    if (args.bench) {
+    if (g_print_debug) {
         start = syscall_timer_get_ms();
     }
 
@@ -1049,11 +1040,14 @@ int main(int argc, char **argv, char **envp) {
 
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
-    debug_printf(1,
-        "Exit with code %d in %d ms", ret, syscall_timer_get_ms() - start
-    ) else if (args.bench) fd_printf(2,
-        "Exit with code %d in %d ms\n", ret, syscall_timer_get_ms() - start
-    );
+    pid = syscall_process_pid();
+
+    if (pid != parent_pid) {
+        debug_printf(1, "PID %d (child of %d) exit with code %d after %d ms", pid, parent_pid, ret, syscall_timer_get_ms() - start);
+        syscall_process_exit(pid, ret, 1);
+    }
+
+    debug_printf(1, "PID %d exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);
 
     for (int i = 0; i < g_lib_count; i++)
         fini_lib(g_loaded_libs[i]);
