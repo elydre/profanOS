@@ -28,16 +28,16 @@
 
 int serial_debug(char *frm, ...) {
     va_list args;
-    char str[1024];
+    char *str;
     int len;
 
     va_start(args, frm);
-    // str = malloc(1024);
+    str = malloc(1024);
 
     len = vsprintf(str, frm, args);
     syscall_serial_write(SERIAL_PORT_A, str, len);
 
-    // free(str);
+    free(str);
     va_end(args);
 
     return len;
