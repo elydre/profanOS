@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.1 rev 1"
+#define OLV_VERSION "1.1 rev 2"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -620,7 +620,7 @@ char *get_bin_path(char *name) {
         }
         if (src_path[i] == '\0')
             break;
-        start = i;
+        start = i + 1;
     }
 
     free(fullname);
@@ -3833,8 +3833,10 @@ char **lexe_program(char *program, int interp_bckslsh) {
 
         // remove comments
         if (!in_quote && program[i] == '/' && program[i + 1] == '/') {
-            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';') i++;
-            if (program[i] == '\0') break;
+            while (program[i] != '\0' && program[i + 1] != '\n' && program[i + 1] != ';')
+                i++;
+            if (program[i] == '\0')
+                break;
             continue;
         }
 
@@ -3843,9 +3845,8 @@ char **lexe_program(char *program, int interp_bckslsh) {
 
     if (tmp_index != 0) {
         // remove trailing spaces
-        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ') {
+        while (tmp_index > 0 && tmp[tmp_index - 1] == ' ')
             tmp_index--;
-        }
         tmp[tmp_index++] = '\0';
         lines[line_index] = line_ptr;
         strcpy(lines[line_index], tmp);

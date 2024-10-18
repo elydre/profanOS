@@ -152,7 +152,7 @@ FUNC bf_execute
         END
 
         IF !(eval "!c" = ".")
-            print !(sprintf %c !(bf_get_me !bf_mem_ptr))
+            print '!(sprintf %c !(bf_get_me !bf_mem_ptr))'
             set index !(eval !index + 1)
             CONTINUE
         END
