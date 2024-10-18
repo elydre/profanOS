@@ -230,8 +230,6 @@ static int extend_virtual(uint32_t size) {
     while (req & (req - 1))
         req += req & -req;
 
-    serial_debug("extend_virtual: %d -> %d\n", g_arena_count, req);
-
     // grow the metadata if needed
     uint32_t mdata_count = buddy_sizeof(req * 4096) / 4096 + 1;
     if (mdata_count > g_mdata_count) {
