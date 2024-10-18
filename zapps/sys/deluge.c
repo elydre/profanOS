@@ -27,7 +27,7 @@
  *                         *
 ****************************/
 
-char *profan_fn_name(void *ptr);
+char *profan_fn_name(void *ptr, char **libname);
 
 #define raise_error(fmt, ...) do {  \
             fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
@@ -832,15 +832,21 @@ int dynamic_linker(elfobj_t *exec) {
     return 0;
 }
 
-char *profan_fn_name(void *ptr) {
+char *profan_fn_name(void *ptr, char **libname) {
     uint32_t addr = (uint32_t) ptr;
+
+    if (libname)
+        *libname = NULL;
 
     // look inside the g_prog
     if (g_prog->sym_tab) {
         for (uint32_t j = 0; j < g_prog->sym_size / sizeof(Elf32_Sym); j++) {
-            if (addr >= g_prog->sym_tab[j].st_value &&
-                addr < g_prog->sym_tab[j].st_value + g_prog->sym_tab[j].st_size
-            ) return g_prog->sym_str + g_prog->sym_tab[j].st_name;
+            if (addr < g_prog->sym_tab[j].st_value ||
+                addr >= g_prog->sym_tab[j].st_value + g_prog->sym_tab[j].st_size
+            ) continue;
+            if (libname)
+                *libname = g_prog->name;
+            return g_prog->sym_str + g_prog->sym_tab[j].st_name;
         }
     }
 
@@ -854,9 +860,11 @@ char *profan_fn_name(void *ptr) {
 
         for (uint32_t k = 0; k < g_loaded_libs[i]->sym_size / sizeof(Elf32_Sym); k++) {
             uint32_t val = (uint32_t) g_loaded_libs[i]->mem + sym[k].st_value;
-            if (addr >= val && addr < val + sym[k].st_size) {
-                return sym_str + sym[k].st_name;
-            }
+            if (addr < val || addr >= val + sym[k].st_size)
+                continue;
+            if (libname)
+                *libname = g_loaded_libs[i]->name;
+            return sym_str + sym[k].st_name;
         }
     }
 

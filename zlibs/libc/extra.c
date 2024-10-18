@@ -122,7 +122,7 @@ int profan_wait_pid(uint32_t pid) {
 
 
 // defined in deluge
-char *profan_fn_name(void *ptr) {
+char *profan_fn_name(void *ptr, char **libname) {
     puts("libc extra: profan_fn_name: should not be called");
     return NULL;
 }

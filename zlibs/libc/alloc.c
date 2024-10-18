@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === malloc.c : 2024 ===                                                   |
 |                                                                             |
-|    Implementation of malloc functions from libC                  .pi0iq.    |
+|    Implementation of malloc functions and leak tracking          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -10,9 +10,14 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
-#include <string.h>
+#include <profan/filesys.h>
 #include <profan.h>
 #include <stdlib.h>
+
+#undef realloc
+#undef calloc
+#undef malloc
+#undef free
 
 #define BUDDY_ALLOC_IMPLEMENTATION
 #include "alloc_buddy.h"
@@ -48,26 +53,30 @@ int      g_debug;
 
 static void buddy_show_leaks(void);
 
+static void put_error(char *str) {
+    fm_write(2, str, strlen(str));
+}
+
 void __buddy_init(void) {
     g_stat = NULL;
     g_debug = 0;
 
     g_arena_count = DEFAULT_SIZE;
     if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA, g_arena_count)) {
-        syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
+        put_error("libc: init buddy: page allocation failed\n");
         return;
     }
 
     g_mdata_count = buddy_sizeof(g_arena_count * 4096) / 4096 + 1;
     if (!syscall_scuba_generate(PROFAN_BUDDY_MDATA, g_mdata_count)) {
-        syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
+        put_error("libc: init buddy: page allocation failed\n");
         return;
     }
 
     g_buddy = buddy_init(PROFAN_BUDDY_MDATA, PROFAN_BUDDY_ARENA, g_arena_count * 4096);
 
     if (g_buddy == NULL)
-        syscall_serial_write(SERIAL_PORT_A, "buddy_embed failed\n", 19);
+        put_error("libc: init buddy: buddy_init failed\n");
 }
 
 void __buddy_fini(void) {
@@ -101,6 +110,7 @@ static void buddy_show_leaks(void) {
 
     uint32_t total_leaks = 0;
     uint32_t total_size = 0;
+    char *libname;
 
     for (uint32_t i = 0; i < g_stat->tab_size; i++) {
         if (!g_stat->allocs[i].ptr)
@@ -122,10 +132,8 @@ static void buddy_show_leaks(void) {
             void *ptr = g_stat->allocs[i].caller[j];
             if (ptr == NULL)
                 break;
-            serial_debug("name for: 0x%08x\n", ptr);
-            char *name = profan_fn_name(ptr);
-            serial_debug("name resolution finished %p\n", name);
-            fprintf(stderr, "  0x%08x %s\n", ptr, name ? name : "???");
+            char *name = profan_fn_name(ptr, &libname);
+            fprintf(stderr, "  0x%08x %s (%s)\n", ptr, name ? name : "???", libname ? libname : "???");
         }
         fputs("  ...\n\n", stderr);
     }
@@ -161,8 +169,6 @@ static void set_trace(int index) {
 }
 
 static void register_alloc(void *ptr, uint32_t size) {
-    // serial_debug("register_alloc: %p %d\n", ptr, size);
-
     g_stat->total_allocs++;
     g_stat->total_size += size;
 
@@ -203,7 +209,6 @@ static void register_alloc(void *ptr, uint32_t size) {
 }
 
 static void register_free(void *ptr) {
-    serial_debug("register_free: %p\n", ptr);
     g_stat->total_free++;
 
     for (uint32_t i = 0; i < g_stat->tab_size; i++) {
@@ -215,16 +220,15 @@ static void register_free(void *ptr) {
         return;
     }
 
-    serial_debug("register_free: not found\n");
+    put_error("libc: leak tracking: internal error\n");
 }
 
-static void extend_virtual(uint32_t size) {
+static int extend_virtual(uint32_t size) {
     uint32_t req = g_arena_count + size / 2048 + 1;
 
     // align to the next power of 2 (11 -> 16)
-    while (req & (req - 1)) {
+    while (req & (req - 1))
         req += req & -req;
-    }
 
     serial_debug("extend_virtual: %d -> %d\n", g_arena_count, req);
 
@@ -232,29 +236,21 @@ static void extend_virtual(uint32_t size) {
     uint32_t mdata_count = buddy_sizeof(req * 4096) / 4096 + 1;
     if (mdata_count > g_mdata_count) {
         mdata_count *= 2; // avoid too many resizes
-        if (mdata_count > (PROFAN_BUDDY_ARENA - PROFAN_BUDDY_MDATA) / 4096) {
-            serial_debug("too many metadata pages\n");
-            return;
-        }
-        serial_debug("extend_virtual: mdata %d -> %d\n", g_mdata_count, mdata_count);
-        if (!syscall_scuba_generate(PROFAN_BUDDY_MDATA + g_mdata_count * 4096, mdata_count - g_mdata_count)) {
-            syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
-            return;
-        }
+        if (mdata_count > (PROFAN_BUDDY_ARENA - PROFAN_BUDDY_MDATA) / 4096)
+            return 1;
+        if (!syscall_scuba_generate(PROFAN_BUDDY_MDATA + g_mdata_count * 4096, mdata_count - g_mdata_count))
+            return 1;
         g_mdata_count = mdata_count;
     }
 
-    if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA + g_arena_count * 4096, req - g_arena_count)) {
-        syscall_serial_write(SERIAL_PORT_A, "scuba_generate failed\n", 22);
-        return;
-    }
+    if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA + g_arena_count * 4096, req - g_arena_count))
+        return 1;
 
     g_arena_count = req;
 
     g_buddy = buddy_resize(g_buddy, g_arena_count * 4096);
 
-    if (g_buddy == NULL)
-        syscall_serial_write(SERIAL_PORT_A, "buddy_resize failed\n", 20);
+    return g_buddy == NULL;
 }
 
 #define ALLOC_DO(ptr, size)             \
@@ -273,7 +269,7 @@ void *malloc(uint32_t size) {
     p = buddy_malloc(g_buddy, size);
     ALLOC_DO(p, size);
 
-    serial_debug("malloc failed\n");
+    put_error("libc: malloc failed\n");
     return NULL;
 }
 
@@ -286,7 +282,7 @@ void *calloc(uint32_t nmemb, uint32_t lsize) {
     p = buddy_calloc(g_buddy, nmemb, lsize);
     ALLOC_DO(p, nmemb * lsize);
 
-    serial_debug("calloc failed\n");
+    put_error("libc: calloc failed\n");
     return NULL;
 }
 
@@ -302,7 +298,7 @@ void *realloc(void *mem, uint32_t new_size) {
     p = buddy_realloc(g_buddy, mem, new_size, 0);
     ALLOC_DO(p, new_size);
 
-    serial_debug("realloc failed\n");
+    put_error("libc: realloc failed\n");
     return NULL;
 }
 
