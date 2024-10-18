@@ -29,15 +29,35 @@ void *g_entry_exit = NULL;
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 
-void __attribute__((destructor)) __stdlib_fini(void) {
-    // free the environment
-    if (g_env == NULL)
-        return;
+/*******************************
+ *                            *
+ *   CALL BY DYNAMIC LINKER   *
+ *                            *
+*******************************/
 
-    for (int i = 0; g_env[i] != NULL; i++)
-        free(g_env[i]);
-    free(g_env);
+void __buddy_disable_leaks(void);
+void __buddy_init(void);
+void __buddy_fini(void);
+
+void __stdio_init(void);
+void __stdio_fini(void);
+
+void __attribute__((constructor)) __libc_constructor(void) {
+    __buddy_init();
+    __stdio_init();
 }
+
+void __attribute__((destructor)) __libc_destructor(void) {
+    __buddy_disable_leaks();
+    __stdio_fini();
+    __buddy_fini();
+}
+
+/*******************************
+ *                            *
+ *   CALL BY ENTRY FUNCTION   *
+ *                            *
+*******************************/
 
 void __init_libc(char **env, void *entry_exit) {
     int size, offset;
@@ -67,19 +87,25 @@ void __init_libc(char **env, void *entry_exit) {
         setenv("PWD", "/", 1);
 }
 
-char **__get_environ_ptr(void) {
-    return g_env;
+void __exit_libc(void) {
+    if (g_atexit_funcs) {
+        for (int i = 0; g_atexit_funcs[i] != NULL; i++) {
+            void (*func)() = g_atexit_funcs[i];
+            func();
+        }
+        free(g_atexit_funcs);
+    }
+
+    // free the environment
+    if (g_env) {
+        for (int i = 0; g_env[i] != NULL; i++)
+            free(g_env[i]);
+        free(g_env);
+    }
 }
 
-void __exit_libc(void) {
-    if (g_atexit_funcs == NULL)
-        return;
-
-    for (int i = 0; g_atexit_funcs[i] != NULL; i++) {
-        void (*func)() = g_atexit_funcs[i];
-        func();
-    }
-    free(g_atexit_funcs);
+char **__get_environ_ptr(void) {
+    return g_env;
 }
 
 #define TABLE_BASE 0x2e
@@ -264,7 +290,6 @@ int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *
 }
 
 void exit(int rv) {
-    profan_cleanup();
     if (g_entry_exit != NULL) {
         void (*entry_exit)(int) = g_entry_exit;
         entry_exit(rv);

@@ -45,7 +45,8 @@
 #define fd_putchar ((void (*)(int, char)) get_func_addr(LIBMMQ_ID, 17))
 #define fd_putstr ((void (*)(int, const char *)) get_func_addr(LIBMMQ_ID, 18))
 #define fd_putint ((void (*)(int, int)) get_func_addr(LIBMMQ_ID, 19))
-#define fd_printf ((void (*)(int, const char *, ...)) get_func_addr(LIBMMQ_ID, 20))
-#define atoi ((int (*)(const char *)) get_func_addr(LIBMMQ_ID, 21))
+#define fd_puthex ((void (*)(int, uint32_t)) get_func_addr(LIBMMQ_ID, 20))
+#define fd_printf ((void (*)(int, const char *, ...)) get_func_addr(LIBMMQ_ID, 21))
+#define atoi ((int (*)(const char *)) get_func_addr(LIBMMQ_ID, 22))
 
 #endif

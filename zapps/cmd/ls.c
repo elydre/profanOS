@@ -90,30 +90,30 @@ void sort_alpha_and_type(int count, char **names, uint32_t *ids) {
     // sort directories
     for (i = 0; i < dir_count; i++) {
         for (j = i + 1; j < dir_count; j++) {
-            if (cmp_string_alpha(names[i], names[j]) > 0) {
-                tmp_name = names[i];
-                names[i] = names[j];
-                names[j] = tmp_name;
+            if (cmp_string_alpha(names[i], names[j]) <= 0)
+                continue;
+            tmp_name = names[i];
+            names[i] = names[j];
+            names[j] = tmp_name;
 
-                tmp_id = ids[i];
-                ids[i] = ids[j];
-                ids[j] = tmp_id;
-            }
+            tmp_id = ids[i];
+            ids[i] = ids[j];
+            ids[j] = tmp_id;
         }
     }
 
     // sort files
     for (i = dir_count; i < count; i++) {
         for (j = i + 1; j < count; j++) {
-            if (cmp_string_alpha(names[i], names[j]) > 0) {
-                tmp_name = names[i];
-                names[i] = names[j];
-                names[j] = tmp_name;
+            if (cmp_string_alpha(names[i], names[j]) <= 0)
+                continue;
+            tmp_name = names[i];
+            names[i] = names[j];
+            names[j] = tmp_name;
 
-                tmp_id = ids[i];
-                ids[i] = ids[j];
-                ids[j] = tmp_id;
-            }
+            tmp_id = ids[i];
+            ids[i] = ids[j];
+            ids[j] = tmp_id;
         }
     }
 }
@@ -251,7 +251,7 @@ void print_comma(int elm_count, char **cnt_names, uint32_t *cnt_ids) {
     for (int i = 0; i < elm_count; i++) {
         print_name(cnt_ids[i], cnt_names[i]);
         if (i != elm_count - 1) printf("\e[0m, ");
-        free(cnt_names[i]);
+        profan_free(cnt_names[i]);
     }
     puts("\e[0m");
 }
@@ -295,7 +295,7 @@ void print_cols(int elm_count, char **cnt_names, uint32_t *cnt_ids) {
             if (j + rows < elm_count && cols > 1)
                 for (uint32_t k = lens[j]; k < col_lens[j / rows]; k++)
                     putchar(' ');
-            free(cnt_names[j]);
+            profan_free(cnt_names[j]);
         }
         putchar('\n');
     }
@@ -331,7 +331,7 @@ void print_lines(int elm_count, char **cnt_names, uint32_t *cnt_ids, ls_args_t *
         } else {
             printf("unk\e[u\e[22C\e[91m%s\e[0m", cnt_names[i]);
         }
-        free(cnt_names[i]);
+        profan_free(cnt_names[i]);
         putchar('\n');
     }
 }
@@ -339,7 +339,7 @@ void print_lines(int elm_count, char **cnt_names, uint32_t *cnt_ids, ls_args_t *
 void print_basic(int elm_count, char **cnt_names) {
     for (int i = 0; i < elm_count; i++) {
         puts(cnt_names[i]);
-        free(cnt_names[i]);
+        profan_free(cnt_names[i]);
     }
 }
 
@@ -392,7 +392,7 @@ int main(int argc, char **argv) {
         int i = 0;
         while (i < elm_count) {
             if (cnt_names[i][0] == '.') {
-                free(cnt_names[i]);
+                profan_free(cnt_names[i]);
                 cnt_names[i] = cnt_names[--elm_count];
                 cnt_ids[i] = cnt_ids[elm_count];
             } else i++;
@@ -400,8 +400,8 @@ int main(int argc, char **argv) {
     }
 
     if (!elm_count) {
-        free(cnt_names);
-        free(cnt_ids);
+        profan_free(cnt_names);
+        profan_free(cnt_ids);
         free(ls_path);
         free(args);
         return 0;
@@ -423,8 +423,8 @@ int main(int argc, char **argv) {
         print_basic(elm_count, cnt_names);
 
 
-    free(cnt_names);
-    free(cnt_ids);
+    profan_free(cnt_names);
+    profan_free(cnt_ids);
     free(ls_path);
     free(args);
     return 0;

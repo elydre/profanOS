@@ -110,9 +110,6 @@ ln_args_t *parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    // disable leaks detection
-    profan_cleanup();
-
     ln_args_t *args = parse_args(argc, argv);
 
     if (!args)

@@ -198,6 +198,13 @@ void fd_putint(int fd, int n) {
     fd_putchar(fd, n % 10 + '0');
 }
 
+void fd_puthex(int fd, uint32_t n) {
+    if (n / 16) {
+        fd_puthex(fd, n / 16);
+    }
+    fd_putchar(fd, "0123456789abcdef"[n % 16]);
+}
+
 void fd_printf(int fd, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -215,6 +222,8 @@ void fd_printf(int fd, const char *fmt, ...) {
                 fd_putchar(fd, va_arg(args, int));
             } else if (fmt[i] == 'd') {
                 fd_putint(fd, va_arg(args, int));
+            } else if (fmt[i] == 'x' || fmt[i] == 'p') {
+                fd_puthex(fd, va_arg(args, uint32_t));
             } else {
                 fd_putchar(fd, '%');
             }

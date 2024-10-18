@@ -183,7 +183,5 @@ int main(int argc, char **argv) {
             printf("BAR%d: %08x ", j, pci_dev->bar[j]);
         puts("\n");
     }
-
-    profan_cleanup();
     return 0;
 }

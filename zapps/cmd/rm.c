@@ -116,7 +116,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
         char *new_path;
         for (int i = 0; i < count; i++) {
             if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
-                free(names[i]);
+                profan_free(names[i]);
                 continue;
             }
 
@@ -126,10 +126,10 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
                 exit(1);
 
             free(new_path);
-            free(names[i]);
+            profan_free(names[i]);
         }
-        free(content);
-        free(names);
+        profan_free(content);
+        profan_free(names);
     }
 
     if (options->verbose)

@@ -20,7 +20,7 @@ void __entry_exit(int ret);
 
 jmp_buf env;
 
-int entry(int argc, char **argv, char **envp) {
+int _start(int argc, char **argv, char **envp) {
     __init_libc(envp, __entry_exit);
 
     int val = setjmp(env);

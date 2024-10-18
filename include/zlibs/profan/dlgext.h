@@ -113,12 +113,16 @@ typedef struct {
 
     uint8_t *mem;
 
-    Elf32_Sym *dymsym;
-    Elf32_Dyn *dynamic;
-    char *dynstr;
+    Elf32_Sym *sym_tab;
+    uint32_t sym_size;
+    char *sym_str;
 
-    uint32_t dynsym_size;
-    dlg_hash_t *sym_table;
+    Elf32_Sym *dym_tab;
+    uint32_t dym_size;
+    char *dym_str;
+
+    Elf32_Dyn *dynamic;
+    dlg_hash_t *hash_table;
 } elfobj_t;
 
 #ifndef DLGEXT_C

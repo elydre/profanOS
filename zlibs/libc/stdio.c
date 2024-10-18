@@ -37,7 +37,9 @@ FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
-void __attribute__((constructor)) stdio_init(void) {
+char *g_printf_buffer = NULL;
+
+void __stdio_init(void) {
     // init stdin
     stdin = calloc(1, sizeof(FILE));
     stdin->mode = MODE_READ;
@@ -55,9 +57,12 @@ void __attribute__((constructor)) stdio_init(void) {
     stderr->mode = MODE_WRITE;
     stderr->buffer = malloc(FILE_BUFFER_SIZE);
     stderr->fd = 2;
+
+    // init printf buffer
+    g_printf_buffer = malloc(0x1000);
 }
 
-void __attribute__((destructor)) stdio_destroy(void) {
+void __stdio_fini(void) {
     fflush(stdin);
     free(stdin->buffer);
     free(stdin);
@@ -69,6 +74,8 @@ void __attribute__((destructor)) stdio_destroy(void) {
     fflush(stderr);
     free(stderr->buffer);
     free(stderr);
+
+    free(g_printf_buffer);
 }
 
 void clearerr(FILE *stream) {
@@ -168,10 +175,6 @@ FILE *fopen(const char *filename, const char *mode) {
 }
 
 FILE *freopen(const char *filename, const char *mode, FILE *stream) {
-    if (stream == stdin || stream == stdout || stream == stderr) {
-        return NULL;
-    }
-
     // close the file
     fclose(stream);
 
@@ -180,9 +183,8 @@ FILE *freopen(const char *filename, const char *mode, FILE *stream) {
 }
 
 int fclose(FILE *stream) {
-    // check for stdin, stdout and stderr
-    if (stream == stdin || stream == stdout || stream == stderr) {
-        return 0;
+    if (stream == NULL) {
+        return EOF;
     }
 
     // fflush the stream
@@ -199,7 +201,7 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    if (!(stream->mode & MODE_WRITE))
+    if (!(stream && (stream->mode & MODE_WRITE)))
         return 0;
 
     if (stream->buffer_size <= 0)
@@ -238,11 +240,8 @@ int fwide(FILE *stream, int mode) {
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
-    if (count == 0)
-        return 0;
-
     // check if the file is open for reading
-    if (!(stream->mode & MODE_READ))
+    if (count == 0 || !(stream && (stream->mode & MODE_READ)))
         return 0;
 
     fflush(stream);
@@ -314,11 +313,8 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
-    if (count == 0)
-        return 0;
-
     // check if the file is open for writing
-    if (!(stream->mode & MODE_WRITE))
+    if (count == 0 || !(stream && (stream->mode & MODE_WRITE)))
         return 0;
 
     // if buffer is used for reading
@@ -351,6 +347,9 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 }
 
 int fseek(FILE *stream, long offset, int whence) {
+    if (stream == NULL)
+        return -1;
+
     // flush the buffer
     fflush(stream);
 
@@ -449,7 +448,7 @@ int puts(const char *str) {
 }
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
-    if (!lineptr || !n || !(stream->mode & MODE_READ)) {
+    if (!lineptr || !n || !(stream && (stream->mode & MODE_READ))) {
         return -1;
     }
 
@@ -621,33 +620,21 @@ int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
 }
 
 int vprintf(const char *format, va_list vlist) {
-    int count;
-
-    char *buffer = malloc(0x4000);
-    vsnprintf(buffer, 0x4000, format, vlist);
-    count = fputs(buffer, stdout);
-
-    free(buffer);
+    int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
+    fwrite(g_printf_buffer, 1, count, stdout);
     return count;
 }
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
     // if the stream is read only, can't write to it
-    if (!(stream->mode & MODE_WRITE)) {
+    if (!(stream && (stream->mode & MODE_WRITE))) {
         return 0;
     }
 
-    // allocate a buffer to store the formatted string
-    char *buffer = malloc(0x4000);
-
     // copy format to a buffer because need to modify it
-    int count = vsnprintf(buffer, 0x4000, format, vlist);
-
-    // write the string
-    fwrite(buffer, 1, strlen(buffer), stream);
-
-    free(buffer);
-    return 0;
+    int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
+    fwrite(g_printf_buffer, 1, count, stream);
+    return count;
 }
 
 int vsprintf(char *buffer, const char *format, va_list vlist) {
@@ -675,6 +662,9 @@ int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) 
 }
 
 long ftell(FILE *stream) {
+    if (stream == NULL)
+        return -1;
+
     // flush the buffer
     fflush(stream);
 
@@ -682,6 +672,9 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
+    if (stream == NULL)
+        return 0;
+
     // check if the file is at the end
     uint32_t file_pos = fm_lseek(stream->fd, 0, SEEK_CUR);
     uint32_t file_size = fm_lseek(stream->fd, 0, SEEK_END);
@@ -691,7 +684,7 @@ int feof(FILE *stream) {
 }
 
 int ferror(FILE *stream) {
-    return stream->error;
+    return (stream && stream->error) ? 1 : 0;
 }
 
 void perror(const char *s) {
@@ -754,7 +747,7 @@ FILE *tmpfile(void) {
     return 0;
 }
 
-errno_t tmpfile_s(FILE * * streamptr) {
+errno_t tmpfile_s(FILE **streamptr) {
     puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?");
     return 0;
 }
