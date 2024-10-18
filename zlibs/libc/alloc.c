@@ -45,7 +45,10 @@ uint32_t g_mdata_count;  // in pages (4KB)
 
 int      g_debug;
 
+static void buddy_show_leaks(void);
+
 void __buddy_init(void) {
+    g_stat = NULL;
     g_debug = 0;
 
     g_arena_count = DEFAULT_SIZE;
@@ -71,13 +74,26 @@ void __buddy_fini(void) {
 }
 
 void __buddy_enable_leaks(void) {
+    if (g_stat)
+        return;
     g_stat = calloc(1, sizeof(leaks_stat_t));
     g_stat->allocs = calloc(1, sizeof(leaks_stat_t));
     g_stat->tab_size = 1;
     g_debug = 1;
 }
 
-void __buddy_show_leaks(void) {
+void __buddy_disable_leaks(void) {
+    if (!g_stat)
+        return;
+    buddy_show_leaks();
+    g_debug = 0;
+
+    free(g_stat->allocs);
+    free(g_stat);
+    g_stat = NULL;
+}
+
+static void buddy_show_leaks(void) {
     if (!g_debug)
         return;
     g_debug = 0;
@@ -86,26 +102,35 @@ void __buddy_show_leaks(void) {
     uint32_t total_size = 0;
 
     for (int i = 0; i < g_stat->tab_size; i++) {
-        if (g_stat->allocs[i].ptr) {
-            fprintf(stderr, "%d BYTES NOT FREED AT %p\n", g_stat->allocs[i].size, g_stat->allocs[i].ptr);
-            total_size += g_stat->allocs[i].size;
-            total_leaks++;
-
-            for (int j = 0; j < 4; j++) {
-                void *ptr = g_stat->allocs[i].caller[j];
-                if (ptr == NULL)
-                    break;
-                serial_debug("name for: 0x%08x\n", ptr);
-                char *name = profan_fn_name(ptr);
-                serial_debug("name resolution finished %p\n", name);
-                fprintf(stderr, "  0x%08x %s\n", ptr, name ? name : "???");
-            }
-            fputs("  ...\n\n", stderr);
-        }
+        if (!g_stat->allocs[i].ptr)
+            continue;
+        fputs("===================  NOT  FREED  AT  EXIT  ===================\n", stderr);
+        break;
     }
-    fputs("MEMORY USAGE SUMMARY:\n", stderr);
+
+    for (int i = 0; i < g_stat->tab_size; i++) {
+        if (!g_stat->allocs[i].ptr)
+            continue;
+        fprintf(stderr, "%d bytes at %p\n", g_stat->allocs[i].size, g_stat->allocs[i].ptr);
+        total_size += g_stat->allocs[i].size;
+        total_leaks++;
+
+        for (int j = 0; j < 4; j++) {
+            void *ptr = g_stat->allocs[i].caller[j];
+            if (ptr == NULL)
+                break;
+            serial_debug("name for: 0x%08x\n", ptr);
+            char *name = profan_fn_name(ptr);
+            serial_debug("name resolution finished %p\n", name);
+            fprintf(stderr, "  0x%08x %s\n", ptr, name ? name : "???");
+        }
+        fputs("  ...\n\n", stderr);
+    }
+
+    fputs("\n==================  MEMORY  USAGE  SUMMARY  ==================\n\n", stderr);
     fprintf(stderr, "  Unfreed at exit:  %d bytes in %d blocks\n", total_size, total_leaks);
     fprintf(stderr, "  Total allocated:  %d allocs, %d frees, %d bytes\n", g_stat->total_allocs, g_stat->total_free, g_stat->total_size);
+    fputs("\n==============================================================\n", stderr);
 
     g_debug = 1;
 }
@@ -127,7 +152,6 @@ static void set_trace(int index) {
             break;
         }
         g_stat->allocs[index].caller[i] = (void *) ebp->eip;
-        serial_debug("set_trace: %d %p\n", i, g_stat->allocs[index].caller[i]);
         ebp = ebp->ebp;
     }
 }
@@ -147,7 +171,6 @@ static void register_alloc(void *ptr, uint32_t size) {
         return;
     }
 
-    serial_debug("register_alloc: realloc...\n", g_stat->tab_size);
     g_debug = 0;
     g_stat->allocs = realloc(g_stat->allocs, g_stat->tab_size * 2 * sizeof(leaks_stat_t));
     g_debug = 1;

@@ -883,16 +883,6 @@ void libc_enable_leaks(void) {
     }
 }
 
-void libc_show_leaks(void) {
-    void (*buddy_show_leaks)(void) = (void *) get_sym_value("__buddy_show_leaks", NULL);
-
-    if (buddy_show_leaks) {
-        buddy_show_leaks();
-    } else {
-        raise_error("failed to show leaks");
-    }
-}
-
 /*********************************
  *                              *
  *    Command line Interface    *
@@ -1060,10 +1050,6 @@ int main(int argc, char **argv, char **envp) {
     ) else if (args.bench) fd_printf(2,
         "Exit with code %d in %d ms\n", ret, syscall_timer_get_ms() - start
     );
-
-    if (args.show_leaks) {
-        libc_show_leaks();
-    }
 
     free(g_prog->file);
     free(g_prog);

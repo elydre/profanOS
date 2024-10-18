@@ -35,6 +35,7 @@ void *g_entry_exit = NULL;
  *                            *
 *******************************/
 
+void __buddy_disable_leaks(void);
 void __buddy_init(void);
 void __buddy_fini(void);
 
@@ -47,6 +48,7 @@ void __attribute__((constructor)) __libc_constructor(void) {
 }
 
 void __attribute__((destructor)) __libc_destructor(void) {
+    __buddy_disable_leaks();
     __stdio_fini();
     __buddy_fini();
 }
