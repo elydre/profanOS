@@ -76,7 +76,7 @@ int main(void) {
     while (1) {
         x = mouse_get_x();
         y = mouse_get_y();
-        // // we draw a rectangle
+        // we draw a rectangle
         printf("x: %d, y: %d, %d %d %d\n", x, y, mouse_get_button(0), mouse_get_button(1), mouse_get_button(2));
         draw_mouse(x, y);
         usleep(25000);
