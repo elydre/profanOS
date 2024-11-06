@@ -92,12 +92,10 @@ void *SYSCALL_ARRAY[] = {
     scuba_call_phys,    // 43
 };
 
-#define SYSCALL_COUNT 49
-
 void syscall_handler(registers_t *r) {
     uint32_t syscall_id = r->eax;
 
-    if (syscall_id >= SYSCALL_COUNT) {
+    if (syscall_id >= (sizeof(SYSCALL_ARRAY) / sizeof(SYSCALL_ARRAY[0]))) {
         sys_error("syscall %d not found\n", syscall_id);
         return;
     }
