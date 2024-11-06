@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.1 rev 2"
+#define OLV_VERSION "1.1 rev 3"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -732,23 +732,6 @@ int del_pseudo(char *name) {
  * Function Get/Set Functions *
  *                            *
 ********************************/
-
-int print_function(char *name) {
-    for (int i = 0; i < MAX_FUNCTIONS; i++) {
-        if (functions[i].name == NULL) {
-            break;
-        }
-        if (strcmp(functions[i].name, name) == 0) {
-            printf("Function %s:\n", name);
-            for (int j = 0; j < functions[i].line_count; j++) {
-                printf("| %s\n", functions[i].lines[j]);
-            }
-            return 0;
-        }
-    }
-    raise_error(NULL, "Function %s does not exist", name);
-    return 1;
-}
 
 int del_function(char *name) {
     for (int i = 0; i < MAX_FUNCTIONS; i++) {
@@ -2861,7 +2844,7 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
         if (line[i] == INTR_QUOTE && (i == 0 || line[i - 1] != '\\')) {
             in_quote = !in_quote;
         }
-        if (line[i] == ' ' && !in_quote) {
+        if (IS_SPACE_CHAR(line[i]) && !in_quote) {
             strcat(new_line, line + i);
             break;
         }
@@ -3806,6 +3789,8 @@ char **lexe_program(char *program, int interp_bckslsh) {
                 tmp[tmp_index++] = '\t';
             } else if (program[i + 1] == 'r') {
                 tmp[tmp_index++] = '\r';
+            } else if (program[i + 1] == 'a') {
+                tmp[tmp_index++] = '\a';
             } else if (program[i + 1] == '\\') {
                 tmp[tmp_index++] = '\\';
             } else if (program[i + 1] == USER_QUOTE) {
