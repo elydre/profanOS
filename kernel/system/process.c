@@ -380,8 +380,6 @@ int process_fork(registers_t *regs) {
     new_proc->regs.ebp = regs->ebp;
     new_proc->regs.eflags = regs->eflags;
 
-    process_wakeup(new_pid);
-
     return new_pid;
 }
 
