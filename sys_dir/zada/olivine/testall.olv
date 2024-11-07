@@ -62,7 +62,7 @@ set sum 0
 
 WHILE !(eval !i ~ 101)
     set i !(eval !i + 1)
-    IF !(eval !i ^ 2)
+    IF !(eval !i % 2)
         CONTINUE
     END
     set sum !(eval !sum + !i)
@@ -94,7 +94,7 @@ del last
 
 set sum 0
 FOR e 1 2 3 4 5 6 7 8 9 10
-    IF !(eval !e ^ 2)
+    IF !(eval !e % 2)
         CONTINUE
     END
     set sum !(eval !sum + !e)
@@ -203,7 +203,7 @@ FUNC deepeval
     END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
         echo [ FAILED ] eval (complex priority)
         RETURN
-    END; IF !(eval 30 ^ 8 ~ 36 / 6)
+    END; IF !(eval 30 % 8 ~ 36 / 6)
         echo [ FAILED ] eval (division, modulo)
         RETURN
     END; IF !(eval "ab" + 2 ~ "ab2")

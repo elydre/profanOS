@@ -60,7 +60,7 @@ FUNC bf_set_me
     END
 
     IF !(eval !1 > 255)
-        set 1 !(eval !1 ^ 255)
+        set 1 !(eval !1 % 255)
     END
 
     IF !(eval !0 > !(eval !bf_mem_len - 1))
@@ -83,7 +83,7 @@ FUNC bf_set_me
             set new !(eval "!new" . "!(nb_to_hex !(eval !1 / 16))")
         END; ELSE
             IF !(eval !i = !pos + 1)
-                set new !(eval "!new" . "!(nb_to_hex !(eval !1 ^ 16))")
+                set new !(eval "!new" . "!(nb_to_hex !(eval !1 % 16))")
             END; ELSE
                 set new !(eval "!new" . "!(eval "!bf_mem" @ !i)")
             END
