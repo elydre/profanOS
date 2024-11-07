@@ -1,19 +1,19 @@
-echo starting unit tests for Olivine interpreter
-echo version: !version
+print 'starting unit tests for Olivine interpreter\n'
+print 'version: !version\n'
 print '------\n'
 
 IF !(eval 4 + 6 * ( 3 - 1 ) = 16)
-    echo [ OK ] if and eval
+    print '[ OK ] if and eval\n'
 END; ELSE
-    echo [ FAILED ] if and eval
+    print '[ FAILED ] if and eval\n'
 END
 
 
 set var 43
 IF !(eval !var = 43)
-    echo [ OK ] variable
+    print '[ OK ] variable\n'
 END; ELSE
-    echo [ FAILED ] variable
+    print '[ FAILED ] variable\n'
 END
 del var
 
@@ -24,9 +24,9 @@ FOR i !(range 1 11)
 END
 
 IF !(eval !sum = 55)
-    echo [ OK ] for loop
+    print '[ OK ] for loop\n'
 END; ELSE
-    echo [ FAILED ] for loop
+    print '[ FAILED ] for loop\n'
 END
 
 del sum
@@ -38,9 +38,9 @@ WHILE !(eval !i < 101)
 END
 
 IF !(eval !i = 101)
-    echo [ OK ] while loop
+    print '[ OK ] while loop\n'
 END; ELSE
-    echo [ FAILED ] while
+    print '[ FAILED ] while\n'
 END
 
 set i 0
@@ -52,9 +52,9 @@ WHILE 1
 END
 
 IF !(eval !i = 101)
-    echo [ OK ] while break
+    print '[ OK ] while break\n'
 END; ELSE
-    echo [ FAILED ] while break
+    print '[ FAILED ] while break\n'
 END
 
 set i 0
@@ -69,9 +69,9 @@ WHILE !(eval !i ~ 101)
 END
 
 IF !(eval !sum = 2550);
-    echo [ OK ] while continue
+    print '[ OK ] while continue\n'
 END; ELSE
-    echo [ FAILED ] while continue
+    print '[ FAILED ] while continue\n'
 END
 
 del sum
@@ -85,9 +85,9 @@ FOR e 1 2 3 4 5 6 7 8 9 10
 END
 
 IF !(eval !last = 7)
-    echo [ OK ] for break
+    print '[ OK ] for break\n'
 END; ELSE
-    echo [ FAILED ] for break
+    print '[ FAILED ] for break\n'
 END
 
 del last
@@ -101,9 +101,9 @@ FOR e 1 2 3 4 5 6 7 8 9 10
 END
 
 IF !(eval !sum = 30)
-    echo [ OK ] for continue
+    print '[ OK ] for continue\n'
 END; ELSE
-    echo [ FAILED ] for continue
+    print '[ FAILED ] for continue\n'
 END
 
 del sum
@@ -113,9 +113,9 @@ FUNC testargc
 END
 
 IF !(eval !(testargc 1 2 3 4 5) = 5)
-    echo [ OK ] function argc
+    print '[ OK ] function argc\n'
 END; ELSE
-    echo [ FAILED ] function argc
+    print '[ FAILED ] function argc\n'
 END
 
 FUNC testargv
@@ -127,112 +127,106 @@ FUNC testargv
 END
 
 IF !(eval !(testargv 5) = 10)
-    echo [ OK ] function argv
+    print '[ OK ] function argv\n'
 END; ELSE
-    echo [ FAILED ] function argv
+    print '[ FAILED ] function argv\n'
 END
 
 del -f testargc
 del -f testargv
 
 FUNC testglobal
-    global var 1
-    set v2 1
-    set var 2
+    global v1 1
+    set v2 2
 END
 
-global var 0
-global v2  0
+set v1 0
+global v2 0
 
 testglobal
 
-IF !(eval !var = 1)
-    echo [ OK ] global variable
+IF !(eval !v1 = 1)
+    print '[ OK ] local overload\n'
 END; ELSE
-    echo [ FAILED ] global variable
+    print '[ FAILED ] local overload\n'
 END
 
-IF !(eval !v2 = 0)
-    echo [ OK ] local overload
+IF !(eval !v2 = 2)
+    print '[ OK ] global overload\n'
 END; ELSE
-    echo [ FAILED ] local overload
+    print '[ FAILED ] global overload\n'
 END
 
-del -g var
-del -g v2
 del -f testglobal
-
-global l0 66
+del v1
+del v2
 
 FUNC testlocalsub
     set tmp 13
 END
 
 FUNC testlocal
-    IF !(eval !l0 = 66)
-        set tmp 12
-        testlocalsub
-        IF !(eval !tmp = 12)
-            RETURN 1
-        END
+    set tmp 12
+    testlocalsub
+    IF !(eval !tmp = 12)
+        RETURN 1
     END
 
     RETURN 0
 END
 
 IF !(testlocal)
-    echo [ OK ] local variable
+    print '[ OK ] local variable\n'
 END; ELSE
-    echo [ FAILED ] local variable
+    print '[ FAILED ] local variable\n'
 END
 
-del -g l0
 del -f testlocalsub
 del -f testlocal
 
 FUNC deepeval
     IF !(eval 43 ~ 43)
-        echo [ FAILED ] eval (simple equality)
+        print '[ FAILED ] eval (simple equality)\n'
         RETURN
     END; IF !(eval 42 + 1 ~ 43)
-        echo [ FAILED ] eval (addition, equality)
+        print '[ FAILED ] eval (addition, equality)\n'
         RETURN
     END; IF !(eval 1 + 32 * 2 ~ 65)
-        echo [ FAILED ] eval (simple priority)
+        print '[ FAILED ] eval (simple priority)\n'
         RETURN
     END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
-        echo [ FAILED ] eval (complex priority)
+        print '[ FAILED ] eval (complex priority)\n'
         RETURN
     END; IF !(eval 30 % 8 ~ 36 / 6)
-        echo [ FAILED ] eval (division, modulo)
+        print '[ FAILED ] eval (division, modulo)\n'
         RETURN
     END; IF !(eval "ab" + 2 ~ "ab2")
-        echo [ FAILED ] eval (str + int)
+        print '[ FAILED ] eval (str + int)\n'
         RETURN
     END; IF !(eval 2 + "ab" ~ "2ab")
-        echo [ FAILED ] eval (int + str)
+        print '[ FAILED ] eval (int + str)\n'
         RETURN
     END; IF !(eval "ab" + "cd" ~ "abcd")
-        echo [ FAILED ] eval (str + str)
+        print '[ FAILED ] eval (str + str)\n'
         RETURN
     END; IF !(eval "ab" . "cd" ~ "abcd")
-        echo [ FAILED ] eval (str . str)
+        print '[ FAILED ] eval (str . str)\n'
         RETURN
     END; IF !(eval 4 . 0 ~ 40)
-        echo [ FAILED ] eval (int . int)
+        print '[ FAILED ] eval (int . int)\n'
         RETURN
     END; IF !(eval 0x42 ~ 66)
-        echo [ FAILED ] eval (hex)
+        print '[ FAILED ] eval (hex)\n'
         RETURN
     END; IF !(eval 0b101010 ~ 42)
-        echo [ FAILED ] eval (bin)
+        print '[ FAILED ] eval (bin)\n'
         RETURN
     END; IF !(eval "coucou" @ 2 ~ "u")
-        echo [ FAILED ] eval (char at index)
+        print '[ FAILED ] eval (char at index)\n'
         RETURN
     END;
 
-    echo [ OK ] all eval tests
+    print '[ OK ] all eval tests\n'
 END
 
 deepeval
@@ -240,26 +234,25 @@ deepeval
 del -f deepeval
 
 FUNC temp
-    echo test
+    print 'test\n'
     RETURN 42
 END
 
 FUNC pp_tester
     IF !(eval "!(print coucou |)" ~ "coucou")
-        echo [ FAILED ] pipe (print)
+        print '[ FAILED ] pipe (print)\n'
         RETURN
     END; IF !(eval "!(echo coucou |)" ~ "coucou")
         echo [ FAILED ] pipe (echo)
         RETURN
     END; IF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
-        echo [ FAILED ] pipe (print + wc)
+        print '[ FAILED ] pipe (print + wc)\n'
         RETURN
     END; IF !(eval "!(temp | temp |)" ~ "test")
-        echo [ FAILED ] pipe (function)
+        print '[ FAILED ] pipe (function)\n'
         RETURN
     END
-
-    echo [ OK ] pipe tests
+    print '[ OK ] pipe tests\n'
 END
 
 pp_tester
