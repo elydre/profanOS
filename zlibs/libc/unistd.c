@@ -169,7 +169,23 @@ int fdatasync(int a) {
 }
 
 pid_t fork(void) {
-    return syscall_process_fork();
+    pid_t pid = syscall_process_fork();
+
+    // error while forking
+    if (pid == -1) {
+        errno = EAGAIN;
+        return -1;
+    }
+
+    // child process
+    if (pid == 0) {
+        return 0;
+    }
+
+    // parent process
+    syscall_process_wakeup(pid);
+
+    return pid;
 }
 
 long fpathconf(int a, int b) {
