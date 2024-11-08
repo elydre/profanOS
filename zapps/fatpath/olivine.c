@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.2 rev 1"
+#define OLV_VERSION "1.2 rev 2"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -290,6 +290,30 @@ void raise_error_line(int fileline, char *part, char *format, ...) {
     fputs("\n", stderr);
 
     strcpy(g_exit_code, "1");
+}
+
+void print_internal_string(char *str, FILE *file) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        switch (str[i]) {
+            case '\n':
+                fputs("\\n", file);
+                break;
+            case '\t':
+                fputs("\\t", file);
+                break;
+            case '\r':
+                fputs("\\r", file);
+                break;
+            case INTR_QUOTE:
+                fputc(USER_QUOTE, file);
+                break;
+            case INTR_VARDF:
+                fputc(USER_VARDF, file);
+                break;
+            default:
+                fputc(str[i], file);
+        }
+    }
 }
 
 int local_strncmp_nocase(char *str1, char *str2, int n) {
@@ -3232,7 +3256,9 @@ int execute_lines(olv_line_t *lines, int line_end, char **result) {
         g_fileline = lines[i].fileline;
 
         #if ENABLE_DEBUG
-            fprintf(stderr, DEBUG_COLOR"=> %03d READ: %s\e[0m\n", g_fileline, lines[i].str);
+            fprintf(stderr, DEBUG_COLOR"=> %03d READ: ", g_fileline);
+            print_internal_string(lines[i].str, stderr);
+            fputs("\e[0m\n", stderr);
         #endif
 
         if (does_startwith(lines[i].str, "FOR")) {
@@ -3773,20 +3799,19 @@ olv_line_t *lexe_program(char *program, int interp_bckslsh) {
             while (tmp_index > 0 && IS_SPACE_CHAR(tmp[tmp_index - 1]))
                 tmp_index--;
 
-            if (tmp_index == 0)
-                continue;
+            if (tmp_index) {
+                tmp[tmp_index++] = '\0';
 
-            tmp[tmp_index++] = '\0';
+                lines[line_index].fileline = fileline + 1;
+                lines[line_index].str = line_ptr;
 
-            lines[line_index].fileline = fileline + 1;
-            lines[line_index].str = line_ptr;
+                strcpy(line_ptr, tmp);
 
-            strcpy(line_ptr, tmp);
+                line_ptr += tmp_index;
+                tmp_index = 0;
 
-            line_ptr += tmp_index;
-            tmp_index = 0;
-
-            line_index++;
+                line_index++;
+            }
 
             if (program[i] == '\n') {
                 fileline++;
@@ -3932,15 +3957,15 @@ void olv_print(char *str, int len) {
     int is_var = 0;
     int i = 0;
 
-    int dec = 0;
-    while (str[i] == ' ' && i != len) {
-        dec++;
-        i++;
+    while (str[0] == ' ' && len) {
+        putchar(' ');
+        str++;
+        len--;
     }
 
-    if (str[i] == '/' && str[i + 1] == '/') {
+    if (str[0] == '/' && str[1] == '/') {
         fputs("\e[32m", stdout);
-        for (i = 0; str[i] != ';'; i++) {
+        for (; str[i] != ';' && i < len; i++) {
             if (i == len) return;
             putchar(str[i]);
         }
@@ -3960,7 +3985,7 @@ void olv_print(char *str, int len) {
 
     memcpy(tmp, str, i);
     tmp[i] = '\0';
-    printf("\e[%sm%s\e[0m", get_func_color(tmp + dec), tmp);
+    printf("\e[%sm%s\e[0m", get_func_color(tmp), tmp);
 
     int from = i;
     int in_quote = 0;
