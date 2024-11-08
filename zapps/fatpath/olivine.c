@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.2 rev 3"
+#define OLV_VERSION "1.2 rev 4"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -4614,18 +4614,22 @@ int profan_local_input(char *buffer, int size, char **history, int history_end, 
 
 #elif USE_READLINE
 
-int unix_local_input(char *buffer, int size, char **history, int history_end, char *prompt) {
+int unix_local_input(char *buffer, int size, char *prompt) {
+    static char *last_line = NULL;
+
     char *line = readline(prompt);
     if (line == NULL) {
         return -2;
     }
 
-    if (line[0] && (history[history_end] == NULL || strcmp(line, history[history_end]))) {
+    if (line[0] != '\0' && (last_line == NULL || strcmp(line, last_line))) {
         add_history(line);
     }
 
+    free(last_line);
+    last_line = line;
+
     strncpy(buffer, line, size);
-    free(line);
 
     return -1;
 }
@@ -4638,10 +4642,7 @@ int unix_local_input(char *buffer, int size, char **history, int history_end, ch
 
 #else
 
-int unix_local_input(char *buffer, int size, char **history, int history_end, char *prompt) {
-    UNUSED(history_end);
-    UNUSED(history);
-
+int unix_local_input(char *buffer, int size, char *prompt) {
     fputs(prompt, stdout);
     fflush(stdout);
 
@@ -4664,8 +4665,11 @@ void start_shell(void) {
     // use execute_program() to create a shell
     char *line = malloc(INPUT_SIZE + 1);
 
+    #if PROFANBUILD
     char **history = calloc(HISTORY_SIZE, sizeof(char *));
     int history_index = 0;
+    #endif
+
     int cursor_pos, len;
     cursor_pos = -1;
 
@@ -4676,7 +4680,7 @@ void start_shell(void) {
             display_prompt();
             cursor_pos = profan_local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
             #else
-            cursor_pos = unix_local_input(line, INPUT_SIZE, history, history_index, render_prompt(line, INPUT_SIZE));
+            cursor_pos = unix_local_input(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
             #endif
         } while (cursor_pos >= 0);
 
@@ -4691,7 +4695,7 @@ void start_shell(void) {
                 fflush(stdout);
                 cursor_pos = profan_local_input(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
                 #else
-                cursor_pos = unix_local_input(line + len, INPUT_SIZE - len, history, history_index, OTHER_PROMPT);
+                cursor_pos = unix_local_input(line + len, INPUT_SIZE - len, OTHER_PROMPT);
                 #endif
             } while(cursor_pos >= 0);
         }
@@ -4700,7 +4704,8 @@ void start_shell(void) {
             puts("Exiting olivine shell, bye!");
             break;
         }
-
+        
+        #if PROFANBUILD
         // add to history if not empty and not the same as the last command
         if (line[0] && (history[history_index] == NULL || strcmp(line, history[history_index]))) {
             history_index = (history_index + 1) % HISTORY_SIZE;
@@ -4711,21 +4716,24 @@ void start_shell(void) {
 
             history[history_index] = strdup(line);
         }
+        #endif
 
         execute_program(line);
     }
 
+    #if PROFANBUILD
     for (int i = 0; i < HISTORY_SIZE; i++) {
         if (history[i] != NULL) {
             free(history[i]);
         }
     }
+    free(history);
+    #endif
 
     #if USE_READLINE
     rl_clear_history();
     #endif
 
-    free(history);
     free(line);
 }
 
