@@ -127,10 +127,9 @@ void memory_print_usage(void) {
 
     printf("Simple alloc   %15d kB | %d\n", syscall_mem_info(10, 1) / 1024, syscall_mem_info(9, 1));
     printf("Mem struct     %15d kB | %d\n", syscall_mem_info(10, 3) / 1024, syscall_mem_info(9, 3));
-    printf("Process stack  %15d kB | %d\n", syscall_mem_info(10, 4) / 1024, syscall_mem_info(9, 4));
+    printf("Scuba vpage    %15d kB | %d\n", syscall_mem_info(10, 4) / 1024, syscall_mem_info(9, 4));
     printf("pok            %15d kB | %d\n", syscall_mem_info(10, 5) / 1024, syscall_mem_info(9, 5));
     printf("As kernel      %15d kB | %d\n", syscall_mem_info(10, 6) / 1024, syscall_mem_info(9, 6));
-    printf("Scuba vpage    %15d kB | %d\n", syscall_mem_info(10, 7) / 1024, syscall_mem_info(9, 7));
 
     printf("\n      ------ Per process ------\n");
 
@@ -144,9 +143,10 @@ void memory_print_usage(void) {
         pid = pid_list[i];
         if (pid == 1) continue;
         name = (char *) syscall_process_info(pid, PROCESS_INFO_NAME);
-        printf("PID %-3.02d %-15s %6d kB | %d\n",
+        printf("PID %-3.02d %-15s %6d kB | %-3d (%d)\n",
                 pid, (strchr(name, '/') ? strrchr(name, '/') + 1 : name),
-                syscall_mem_info(8, pid) / 1024,
+                syscall_mem_info(12, pid) / 1024,
+                syscall_mem_info(11, pid),
                 syscall_mem_info(7, pid)
         );
     }

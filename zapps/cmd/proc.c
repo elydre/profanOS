@@ -113,8 +113,8 @@ void list_process(int mode) {
                 syscall_process_ppid(pid),
                 get_state(syscall_process_state(pid)),
                 syscall_process_run_time(pid) / 1000.0,
-                syscall_mem_info(8, pid) / 1024,
-                syscall_mem_info(7, pid),
+                syscall_mem_info(12, pid) / 1024,
+                syscall_mem_info(11, pid),
                 name
         );
     }
