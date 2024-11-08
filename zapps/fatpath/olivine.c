@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.2 rev 2"
+#define OLV_VERSION "1.2 rev 3"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -65,7 +65,7 @@
 
   #define DEFAULT_PROMPT "\e[0molivine [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #else
-  #define DEFAULT_PROMPT "${olivine$}$(-ERROR-$) > "
+  #define DEFAULT_PROMPT "olivine ${>$}$(x$) "
 #endif
 
 #if !UNIXBUILD
@@ -275,11 +275,11 @@ int local_atoi(char *str, int *result) {
 
 void raise_error_line(int fileline, char *part, char *format, ...) {
     if (fileline < 0) {
-        if (part) fprintf(stderr, "'%s': ", part);
+        if (part) fprintf(stderr, "OLIVINE: %s: ", part);
         else fputs("OLIVINE: ", stderr);
     } else {
-        if (part) fprintf(stderr, "'%s' line %d: ", part, fileline);
-        else fprintf(stderr, "OLIVINE line %d: ", fileline);
+        if (part) fprintf(stderr, "OLIVINE l%d: %s: ", fileline, part);
+        else fprintf(stderr, "OLIVINE l%d: ", fileline);
     }
 
     va_list args;
@@ -2513,7 +2513,7 @@ int does_startwith(char *str, char *start) {
             return 0;
         }
     }
-    if (str[i] == '\0' || str[i] == ' ') {
+    if (str[i] == '\0' || IS_SPACE_CHAR(str[i])) {
         return 1;
     }
     return 0;
@@ -3166,23 +3166,17 @@ char *check_pseudos(char *line) {
 
 int check_condition(char *condition) {
     char *verif = check_subfunc(condition);
-    if (verif == NULL) {
-        // error in condition
+
+    if (verif == NULL)
         return -1;
-    }
 
     int res = 1;
 
-    if (
-        strcmp(verif, "false") == 0 ||
-        strcmp(verif, "0")     == 0 ||
-        strcmp(verif, "False") == 0 ||
-        strcmp(verif, "FALSE") == 0
-    ) res = 0;
+    if (strcmp(verif, "0") == 0 || local_strncmp_nocase(verif, "false", 5) == 0)
+        res = 0;
 
-    if (verif != condition) {
+    if (verif != condition)
         free(verif);
-    }
 
     return res;
 }
@@ -3208,7 +3202,7 @@ int get_line_end(int line_count, olv_line_t *lines) {
             continue;
 
         if (strlen(lines[i].str) != 3) {
-            raise_error_line(lines[i].fileline, NULL, "Invalid END statement");
+            raise_error_line(lines[i].fileline, "END", "Invalid statement");
             return -1;
         }
 
@@ -3401,8 +3395,8 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
         return -1;
     }
 
-    if (for_line[3] != ' ') {
-        raise_error(NULL, "Missing variable name for FOR loop");
+    if (strlen(for_line) < 5) {
+        raise_error("FOR", "No variable name provided");
 
         if (for_line != lines[0].str) {
             free(for_line);
@@ -3514,58 +3508,23 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
 }
 
 int execute_if(int line_count, olv_line_t *lines, char **result, int *cnd_state) {
-    char *if_line = lines[0].str;
-
-    char *condition = malloc(strlen(if_line) + 1);
-
-    if (if_line[2] != ' ') {
-        raise_error(NULL, "Missing condition for IF statement");
-        free(condition);
-
-        if (if_line != lines[0].str) {
-            free(if_line);
-        }
-
-        return -1;
-    }
-
+    char *condition = lines[0].str + 3;
     int tmp;
-    for (tmp = 3; if_line[tmp] != '\0'; tmp++) {
-        condition[tmp - 3] = if_line[tmp];
-    }
 
-    condition[tmp - 3] = '\0';
-
-    // check condition length
-    if (strlen(condition) == 0) {
-        raise_error(NULL, "Missing condition for IF statement");
-        free(condition);
-
-        if (if_line != lines[0].str) {
-            free(if_line);
-        }
-
+    if (condition[0] == '\0') {
+        raise_error("IF", "No condition provided");
         return -1;
     }
 
     int line_end = get_line_end(line_count, lines);
 
-    if (line_end == -1) {
-        if (if_line != lines[0].str)
-            free(if_line);
-        free(condition);
-
+    if (line_end == -1)
         return -1;
-    }
 
-    // execute if statement
     tmp = check_condition(condition);
 
-    if (tmp == -1) {
-        // invalid condition for WHILE loop
-        free(condition);
+    if (tmp == -1)
         return -1;
-    }
 
     *cnd_state = tmp;
 
@@ -3574,8 +3533,6 @@ int execute_if(int line_count, olv_line_t *lines, char **result, int *cnd_state)
         if (tmp < 0) line_end = tmp;
     }
 
-    free(condition);
-
     return line_end;
 }
 
@@ -3583,12 +3540,12 @@ int execute_else(int line_count, olv_line_t *lines, char **result, int *last_if_
     char *else_line = lines[0].str;
 
     if (*last_if_state == 2) {   // not set
-        raise_error(NULL, "ELSE statement without IF");
+        raise_error("ELSE", "No IF statement before");
         return -1;
     }
 
     if (else_line[4] != '\0') {
-        raise_error(NULL, "Invalid ELSE statement");
+        raise_error("ELSE", "No condition expected");
         return -1;
     }
 
@@ -3609,92 +3566,45 @@ int execute_else(int line_count, olv_line_t *lines, char **result, int *last_if_
 }
 
 int execute_while(int line_count, olv_line_t *lines, char **result) {
-    char *while_line = lines[0].str;
-
-    char *condition = malloc(strlen(while_line) + 1);
-
-    if (while_line[5] != ' ') {
-        raise_error(NULL, "Missing condition for WHILE loop");
-        free(condition);
-
-        if (while_line != lines[0].str) {
-            free(while_line);
-        }
-
-        return -1;
-    }
-
-    int i;
-    for (i = 6; while_line[i] != '\0'; i++) {
-        condition[i - 6] = while_line[i];
-    }
-
-    condition[i - 6] = '\0';
+    char *condition = lines[0].str + 6;
 
     // check condition length
     if (strlen(condition) == 0) {
-        raise_error(NULL, "Missing condition for WHILE loop");
-        free(condition);
-
-        if (while_line != lines[0].str) {
-            free(while_line);
-        }
-
+        raise_error("WHILE", "No condition provided");
         return -1;
     }
 
     int line_end = get_line_end(line_count, lines);
 
-    if (line_end == -1) {
-        if (while_line != lines[0].str)
-            free(while_line);
-        free(condition);
-
+    if (line_end == -1)
         return -1;
-    }
 
     // execute while loop
-    int verif = check_condition(condition);
+    while (1) {
+        int verif = check_condition(condition);
 
-    if (verif == -1) {
         // invalid condition for WHILE loop
-        free(condition);
-        return -1;
-    }
+        if (verif == -1)
+            return -1;
 
-    while (verif) {
+        if (!verif)
+            break;
+
         int ret = execute_lines(lines + 1, line_end - 1, result);
         if (ret == -3) {
             break;
         } if (ret < 0 && ret != -2) {
-            line_end = ret;
-            break;
-        }
-
-        verif = check_condition(condition);
-        if (verif == -1) {
-            // invalid condition for WHILE loop
-            line_end = -1;
-            break;
+            return ret;
         }
     }
-
-    free(condition);
 
     return line_end;
 }
 
 int save_function(int line_count, olv_line_t *lines) {
-    // FUNC name;
-    //  ...
-    // END
+    char *func_line = lines[0].str + 5;
 
-    char *func_line = lines[0].str + 4;
-
-    while (*func_line == ' ')
-        func_line++;
-
-    if (strlen(func_line) == 0) {
+    if (func_line[0] == '\0') {
         raise_error(NULL, "Missing function name");
         return -1;
     }
@@ -3705,19 +3615,12 @@ int save_function(int line_count, olv_line_t *lines) {
         return -1;
     }
 
-    char *func_name = strdup(func_line);
-
-    if (!is_valid_name(func_name)) {
-        raise_error(NULL, "Invalid function name '%s'", func_name);
-        free(func_name);
+    if (!is_valid_name(func_line)) {
+        raise_error(NULL, "Invalid function name '%s'", func_line);
         return -1;
     }
 
-    int ret = set_function(func_name, lines + 1, line_end - 1);
-
-    free(func_name);
-
-    return ret ? -1 : line_end;
+    return set_function(func_line, lines + 1, line_end - 1) ? -1 : line_end;
 }
 
 void execute_program(char *program) {
@@ -3835,34 +3738,6 @@ olv_line_t *lexe_program(char *program, int interp_bckslsh) {
             continue;
         }
 
-        // interpret double backslashes
-        if (program[i] == '\\' && interp_bckslsh) {
-            if (program[i + 1] == 'n') {
-                tmp[tmp_index++] = '\n';
-            } else if (program[i + 1] == 't') {
-                tmp[tmp_index++] = '\t';
-            } else if (program[i + 1] == 'r') {
-                tmp[tmp_index++] = '\r';
-            } else if (program[i + 1] == 'a') {
-                tmp[tmp_index++] = '\a';
-            } else if (program[i + 1] == '\\') {
-                tmp[tmp_index++] = '\\';
-            } else if (program[i + 1] == USER_QUOTE) {
-                tmp[tmp_index++] = USER_QUOTE;
-            } else if (program[i + 1] == USER_VARDF) {
-                tmp[tmp_index++] = USER_VARDF;
-            } else if (program[i + 1] == ';') {
-                tmp[tmp_index++] = ';';
-            } else {
-                tmp[tmp_index++] = '\\';
-                if (!program[i + 1])
-                    break;
-                tmp[tmp_index++] = program[i + 1];
-            }
-            i++;
-            continue;
-        }
-
         // remove comments
         if (!in_quote && program[i] == '/' && program[i + 1] == '/') {
             while (
@@ -3873,7 +3748,45 @@ olv_line_t *lexe_program(char *program, int interp_bckslsh) {
             continue;
         }
 
-        tmp[tmp_index++] = program[i];
+        // interpret double backslashes
+        if (program[i] == '\\' && interp_bckslsh) {
+            if (program[i + 1] == 'n') {
+                tmp[tmp_index] = '\n';
+            } else if (program[i + 1] == 't') {
+                tmp[tmp_index] = '\t';
+            } else if (program[i + 1] == 'r') {
+                tmp[tmp_index] = '\r';
+            } else if (program[i + 1] == 'a') {
+                tmp[tmp_index] = '\a';
+            } else if (program[i + 1] == '\\') {
+                tmp[tmp_index] = '\\';
+            } else if (program[i + 1] == USER_QUOTE) {
+                tmp[tmp_index] = USER_QUOTE;
+            } else if (program[i + 1] == USER_VARDF) {
+                tmp[tmp_index] = USER_VARDF;
+            } else if (program[i + 1] == ';') {
+                tmp[tmp_index] = ';';
+            } else {
+                if (program[i + 1] == '\0')
+                    raise_error_line(fileline, NULL, "Backslash at end of line");
+                else
+                    raise_error_line(fileline, NULL, "Invalid escape sequence '\\%c'", program[i + 1]);
+                lines[0].str = NULL;
+                free(tmp);
+                return lines;
+            }
+            i++;
+        } else {
+            tmp[tmp_index] = program[i];
+        }
+
+        if (!in_quote && IS_SPACE_CHAR(tmp[tmp_index])) {
+            if (tmp_index && IS_SPACE_CHAR(tmp[tmp_index - 1]))
+                continue;
+            tmp[tmp_index] = ' ';
+        }
+
+        tmp_index++;
     }
 
     if (tmp_index != 0) {
