@@ -53,9 +53,7 @@ typedef struct {
 // Max 4GB per directory
 typedef struct {
     scuba_dir_entry_t entries[1024];
-
-    uint32_t to_free_index;
-    void *to_free[SCUBA_MAX_TO_FREE];
+    uint32_t pid;
 } scuba_directory_t;
 
 #define scuba_map(dir, virt, phys) scuba_map_func(dir, virt, phys, 0)
@@ -68,8 +66,8 @@ int scuba_init(void);
 void scuba_switch(scuba_directory_t *dir);
 
 // directory creation, destruction
-scuba_directory_t *scuba_directory_inited(void);
-scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir);
+scuba_directory_t *scuba_directory_inited(uint32_t pid);
+scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir, uint32_t pid);
 void scuba_directory_destroy(scuba_directory_t *dir);
 
 // map, unmap

@@ -162,15 +162,15 @@ int mem_cmp(void *s1, void *s2, uint32_t n) {
 void free(void *addr) {
     if (addr == NULL)
         return;
-    mem_free_addr((uint32_t) addr);
+    mem_free_addr(addr);
 }
 
 void *malloc(uint32_t size) {
-    return (void *) mem_alloc(size, 0, 1);
+    return mem_alloc(size, 0, 1);
 }
 
 void *realloc_as_kernel(void *ptr, uint32_t size) {
-    void *new_addr = (void *) mem_alloc(size, 0, 6);
+    void *new_addr = mem_alloc(size, 0, 6);
 
     if (new_addr == NULL)
         return NULL;
@@ -179,13 +179,13 @@ void *realloc_as_kernel(void *ptr, uint32_t size) {
         return new_addr;
 
     mem_copy(new_addr, ptr, size);
-    mem_free_addr((uint32_t) ptr);
+    mem_free_addr(ptr);
 
     return new_addr;
 }
 
 void *calloc(uint32_t size) {
-    void *addr = (void *) mem_alloc(size, 0, 1);
+    void *addr = mem_alloc(size, 0, 1);
     if (addr == NULL)
         return NULL;
     mem_set(addr, 0, size);

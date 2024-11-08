@@ -25,20 +25,20 @@ uint32_t g_map_to_addr;
  *                       *
 **************************/
 
-static void *i_allign_calloc(uint32_t size) {
-    void *ptr = (void *) mem_alloc(size, 0x1000, 7); // we need to allign to 4KB
+static void *i_allign_calloc(uint32_t size, scuba_directory_t *dir) {
+    void *ptr = mem_alloc_dir(size, 0x1000, dir->pid, dir);
     mem_set(ptr, 0, size);
     return ptr;
 }
 
-static scuba_directory_t *i_directory_create(void) {
+static scuba_directory_t *i_directory_create(uint32_t pid) {
     // allocate a page directory
-    scuba_directory_t *dir = i_allign_calloc(sizeof(scuba_directory_t));
-
-    dir->to_free_index = 0;
+    scuba_directory_t *dir = mem_alloc_dir(sizeof(scuba_directory_t), 0x1000, pid, NULL);
+    dir->pid = pid;
 
     // setup directory entries
     for (int i = 0; i < 1024; i++) {
+        dir->entries[i].frame = 0;
         dir->entries[i].rw = 1;
         dir->entries[i].user = 1;
     }
@@ -83,8 +83,8 @@ scuba_directory_t *scuba_get_kernel_directory(void) {
     return kernel_directory;
 }
 
-scuba_directory_t *scuba_directory_inited(void) {
-    scuba_directory_t *dir = i_directory_create();
+scuba_directory_t *scuba_directory_inited(uint32_t pid) {
+    scuba_directory_t *dir = i_directory_create(pid);
 
     // map the memory to itself
     for (uint32_t i = 0x1000; i < g_map_to_addr; i += 0x1000) {
@@ -109,9 +109,9 @@ scuba_directory_t *scuba_directory_inited(void) {
     return dir;
 }
 
-scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
+scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir, uint32_t pid) {
     // allocate a new page directory
-    scuba_directory_t *new_dir = i_directory_create();
+    scuba_directory_t *new_dir = i_directory_create(pid);
 
     // copy the page tables
     for (int i = 0; i < 1024; i++) {
@@ -127,7 +127,7 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
         }
 
         // allocate a new page table
-        scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t));
+        scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t), dir);
 
         // copy the page table
         for (int j = 0; j < 1024; j++) {
@@ -135,10 +135,9 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
             if (!(table->pages[j].present && table->pages[j].deepcopy))
                 continue;
             // clone the page
-            uint32_t data = mem_alloc(0x1000, 0x1000, 7);
-            mem_copy((void *) data, (void *) (table->pages[j].frame * 0x1000), 0x1000);
+            void *data = mem_alloc_dir(0x1000, 0x1000, dir->pid, dir);
+            mem_copy(data, (void *) (table->pages[j].frame * 0x1000), 0x1000);
             new_table->pages[j].frame = (uint32_t) data / 0x1000;
-            new_table->pages[j].allocate = 1;
         }
 
         // map the new page table
@@ -151,28 +150,7 @@ scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir) {
 }
 
 void scuba_directory_destroy(scuba_directory_t *dir) {
-    // free all pages (if not from kernel)
-    for (uint32_t i = 0; i < 1024; i++) {
-        if (!dir->entries[i].frame || dir->entries[i].fkernel)
-            continue;
-
-        // get the page table
-        scuba_page_table_t *table = (scuba_page_table_t *) (dir->entries[i].frame * 0x1000);
-
-        // free all pages
-        for (uint32_t j = 0; j < 1024; j++) {
-            if (table->pages[j].present && table->pages[j].allocate) {
-                free((void *) (table->pages[j].frame * 0x1000));
-            }
-        }
-        free(table);
-    }
-
-    for (uint32_t i = 0; i < dir->to_free_index; i++) {
-        free(dir->to_free[i]);
-    }
-
-    // free the page directory
+    mem_free_dir(dir);
     free(dir);
 }
 
@@ -184,7 +162,7 @@ void scuba_directory_destroy(scuba_directory_t *dir) {
 
 int scuba_init(void) {
     // allocate a page directory
-    kernel_directory = i_directory_create();
+    kernel_directory = i_directory_create(0);
 
     g_map_to_addr = mem_get_info(0, 0);
 
@@ -243,7 +221,7 @@ int scuba_map_func(scuba_directory_t *dir, void *virt, void *phys, int mode) {
             }
         } else {
             // create a new page table
-            table = i_allign_calloc(sizeof(scuba_page_table_t));
+            table = i_allign_calloc(sizeof(scuba_page_table_t), dir);
         }
         dir->entries[table_index].present = 1;
         dir->entries[table_index].rw = 1;
@@ -273,11 +251,6 @@ int scuba_map_func(scuba_directory_t *dir, void *virt, void *phys, int mode) {
 }
 
 void *scuba_create_virtual(scuba_directory_t *dir, void *virt, uint32_t count) {
-    if (dir->to_free_index + 1 >= SCUBA_MAX_TO_FREE) {
-        sys_error("Too many pages to free (pid: %d)", process_get_pid());
-        return 0;
-    }
-
     // check if the pages are already mapped
     for (uint32_t i = 0; i < count; i++) {
         if (scuba_get_phys(dir, virt + i * 0x1000)) {
@@ -287,15 +260,7 @@ void *scuba_create_virtual(scuba_directory_t *dir, void *virt, uint32_t count) {
     }
 
     // alloc a page
-    void *phys = i_allign_calloc(0x1000 * count);
-
-    if (!phys) {
-        sys_error("Failed to alloc page (pid: %d)", process_get_pid());
-        return 0;
-    }
-
-    // add the page to the list of pages to free
-    dir->to_free[dir->to_free_index++] = phys;
+    void *phys = i_allign_calloc(0x1000 * count, dir);
 
     // map the page
     for (uint32_t i = 0; i < count; i++) {
@@ -393,6 +358,10 @@ void scuba_fault_handler(int err_code) {
     int pid = process_get_pid();
 
     // check if the faulting address is after RUN_BIN_VBASE
+    if (pid == 0) sys_fatal("Page fault in the kernel during %s at %x)",
+            (err_code & 0x2) ? "write" : "read",
+            faulting_address
+    );
     sys_error("Page fault during %s at %x (pid %d, code %x)",
             (err_code & 0x2) ? "write" : "read",
             faulting_address,

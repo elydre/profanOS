@@ -35,7 +35,7 @@ uint32_t free_count;
 uint32_t phys_size;
 int part_size;
 
-uint32_t mem_get_phys_size(void) {
+static uint32_t mem_get_phys_size(void) {
     uint32_t *addr_min, *addr_max;
     uint32_t *addr_test, old_value;
 
@@ -79,19 +79,19 @@ int mem_init(void) {
     }
 
     MEM_PARTS[0].state = 2;
-    MEM_PARTS[0].size = 1;
-    MEM_PARTS[0].addr = MEM_BASE_ADDR;
-    MEM_PARTS[0].next = 1;
-    MEM_PARTS[0].task_id = 0;
+    MEM_PARTS[0].size  = 1;
+    MEM_PARTS[0].addr  = MEM_BASE_ADDR;
+    MEM_PARTS[0].next  = 1;
+    MEM_PARTS[0].pid   = -1;
 
-    if (mem_alloc(sizeof(allocated_part_t) * part_size, 0, 3) != (uint32_t) MEM_PARTS) {
+    if (mem_alloc(sizeof(allocated_part_t) * part_size, 0, 3) != MEM_PARTS) {
         sys_fatal("Snowflake address is illogical");
     }
 
     // allocate the diskiso module if needed
     if (!diskiso_get_size()) return 0;
 
-    uint32_t start = mem_alloc(diskiso_get_size(), 0, 1);
+    void *start = mem_alloc(diskiso_get_size(), 0, 1);
 
     if (start != diskiso_get_start()) {
         sys_error("Diskiso address is illogical");
@@ -101,7 +101,7 @@ int mem_init(void) {
     return 0;
 }
 
-int mm_get_unused_index(int not_index) {
+static int get_unused_index(int not_index) {
     for (int i = 0; i < part_size; i++) {
         if (MEM_PARTS[i].state == 0 && i != not_index) return i;
     }
@@ -110,11 +110,11 @@ int mm_get_unused_index(int not_index) {
     return -1;
 }
 
-void del_occurence(int index) {
+static void del_occurence(uint32_t index) {
     int i = 0;
     for (int count = 0; MEM_PARTS[i].state; count++) {
         if (MEM_PARTS[i].next == index) {
-            MEM_PARTS[i].next = mm_get_unused_index(index);
+            MEM_PARTS[i].next = get_unused_index(index);
             return;
         }
         if (count > part_size) {
@@ -124,14 +124,14 @@ void del_occurence(int index) {
     }
 }
 
-void dynamize_mem(void) {
+static void dynamize_mem(void) {
     int sum = 0;
     for (int i = 0; i < part_size; i++) {
         sum += !MEM_PARTS[i].state;
         if (sum > 4) return;
     }
 
-    uint32_t new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 0, 3);
+    void *new_add = mem_alloc(sizeof(allocated_part_t) * (part_size + GROW_SIZE), 0, 3);
 
     if (new_add == 0) {
         sys_fatal("Memory dynamizing failed");
@@ -139,16 +139,16 @@ void dynamize_mem(void) {
     }
 
     // fill the new part with 0 and copy the old part
-    mem_set((uint8_t *) new_add, 0, sizeof(allocated_part_t) * (part_size + GROW_SIZE));
-    mem_copy((uint8_t *) new_add, (uint8_t *) MEM_PARTS, sizeof(allocated_part_t) * part_size);
+    mem_set(new_add, 0, sizeof(allocated_part_t) * (part_size + GROW_SIZE));
+    mem_copy(new_add, MEM_PARTS, sizeof(allocated_part_t) * part_size);
 
-    uint32_t old_add = (uint32_t) MEM_PARTS;
-    MEM_PARTS = (allocated_part_t *) new_add;
+    void *old_addr = MEM_PARTS;
+    MEM_PARTS = new_add;
     part_size += GROW_SIZE;
-    mem_free_addr(old_add);
+    mem_free_addr(old_addr);
 }
 
-uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
+static void *mem_alloc_func(uint32_t size, uint32_t allign, int state, int pid, void *dir) {
     if (!(size && state)) return 0;
 
     if (state != 3) {
@@ -206,31 +206,58 @@ uint32_t mem_alloc(uint32_t size, uint32_t allign, int state) {
     if (exit_mode) {
         MEM_PARTS[index].addr = last_addr + gap;
         MEM_PARTS[index].size = size;
-        MEM_PARTS[index].task_id = (state == 1) ? process_get_pid(): 0;
+        MEM_PARTS[index].pid = pid;
+        MEM_PARTS[index].dir = dir;
         MEM_PARTS[index].state = state;
-        MEM_PARTS[index].next = mm_get_unused_index(-1);
+        MEM_PARTS[index].next = get_unused_index(-1);
     }
 
     else {
-        int new_index = mm_get_unused_index(-1);
+        int new_index = get_unused_index(-1);
         del_occurence(new_index);
 
         MEM_PARTS[new_index].addr = last_addr + gap;
         MEM_PARTS[new_index].size = size;
-        MEM_PARTS[new_index].task_id = (state == 1) ? process_get_pid(): 0;
+        MEM_PARTS[new_index].pid = pid;
+        MEM_PARTS[new_index].dir = dir;
         MEM_PARTS[new_index].state = state;
 
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
     }
 
+    /* int new_index;
+
+    if (exit_mode) {
+        new_index = index;
+    } else {
+        new_index = get_unused_index(-1);
+        del_occurence(new_index);
+        MEM_PARTS[old_index].next = new_index;
+        MEM_PARTS[new_index].next = index;
+    }
+
+    MEM_PARTS[new_index].addr  = last_addr + gap;
+    MEM_PARTS[new_index].size  = size;
+    MEM_PARTS[new_index].pid   = pid;
+    MEM_PARTS[new_index].dir   = dir;
+    MEM_PARTS[new_index].state = state;*/
+
     alloc_count++;
     if (state != 3) instance_count--;
 
-    return last_addr + gap;
+    return (void *) last_addr + gap;
 }
 
-int mem_free_addr(uint32_t addr) {
+void *mem_alloc(uint32_t size, uint32_t allign, int state) {
+    return mem_alloc_func(size, allign, state, process_get_pid(), NULL);
+}
+
+void *mem_alloc_dir(uint32_t size, uint32_t allign, int pid, void *dir) {
+    return mem_alloc_func(size, allign, 4, pid, dir);
+}
+
+int mem_free_addr(void *addr) {
     instance_count++;
 
     if (instance_count > 1) {
@@ -240,7 +267,7 @@ int mem_free_addr(uint32_t addr) {
     int index = 0;
     int last_index = -1;
     while (MEM_PARTS[index].state) {
-        if (!(MEM_PARTS[index].addr == addr && last_index != -1)) {
+        if (!(MEM_PARTS[index].addr == (uint32_t) addr && last_index != -1)) {
             last_index = index;
             index = MEM_PARTS[index].next;
             continue;
@@ -249,25 +276,25 @@ int mem_free_addr(uint32_t addr) {
         if (MEM_PARTS[index].state == 2) {
             instance_count--;
             sys_warning("Cannot free snowflake memory");
-            return 0; // error
+            return 1; // error
         }
 
         free_count++;
         MEM_PARTS[last_index].next = MEM_PARTS[index].next;
         MEM_PARTS[index].state = 0;
         instance_count--;
-        return 1; // success
+        return 0; // success
     }
 
     instance_count--;
     sys_warning("Cannot free memory at address %x", addr);
-    return 0; // error
+    return 1; // error
 }
 
-uint32_t mem_get_alloc_size(uint32_t addr) {
+uint32_t mem_get_alloc_size(void *addr) {
     uint32_t index = 0;
     while (MEM_PARTS[index].state) {
-        if (MEM_PARTS[index].addr == addr) {
+        if (MEM_PARTS[index].addr == (uint32_t) addr) {
             return MEM_PARTS[index].size;
         }
         index = MEM_PARTS[index].next;
@@ -275,53 +302,80 @@ uint32_t mem_get_alloc_size(uint32_t addr) {
     return 0; // block not found
 }
 
-int mem_free_all(int task_id) {
+int mem_free_all(uint32_t pid) {
     uint32_t index = 0;
     int count = 0;
     while (MEM_PARTS[index].state) {
-        if (MEM_PARTS[index].task_id == task_id) {
-            count += mem_free_addr(MEM_PARTS[index].addr);
+        if (MEM_PARTS[index].pid == (int) pid && MEM_PARTS[index].state == 1) {
+            count += !mem_free_addr((void *) MEM_PARTS[index].addr);
         }
         index = MEM_PARTS[index].next;
     }
     return count;
 }
 
-int mem_get_info(char get_mode, int get_arg) {
-    // check the header for informations about the get_mode
-    if (get_mode == 0) return phys_size;
-    if (get_mode == 1) return MEM_BASE_ADDR;
-    if (get_mode == 2) return sizeof(allocated_part_t) * part_size;
-    if (get_mode == 3) return (int) MEM_PARTS;
-    if (get_mode == 4) return alloc_count;
-    if (get_mode == 5) return free_count;
-
-    int index = 0;
-    int info[3];
-    for (int i = 0; i < 3; i++)
-        info[i] = 0;
-
-    if (get_mode >= 6 && get_mode <= 8) {
-        while (MEM_PARTS[index].state) {
-            info[0] += MEM_PARTS[index].size;
-            if (MEM_PARTS[index].task_id == get_arg && MEM_PARTS[index].state == 1) {
-                info[1]++;
-                info[2] += MEM_PARTS[index].size;
-            }
-            index = MEM_PARTS[index].next;
+int mem_free_dir(void *dir) {
+    uint32_t index = 0;
+    int count = 0;
+    while (MEM_PARTS[index].state) {
+        if (MEM_PARTS[index].dir == dir) {
+            count += !mem_free_addr((void *) MEM_PARTS[index].addr);
         }
-        return info[get_mode - 6];
+        index = MEM_PARTS[index].next;
+    }
+    return count;
+}
+
+uint32_t mem_get_info(char get_mode, int get_arg) {
+    uint32_t count = 0;
+    uint32_t size = 0;
+    uint32_t index = 0;
+
+    switch (get_mode) {
+        case 0: return phys_size;
+        case 1: return MEM_BASE_ADDR;
+        case 2: return sizeof(allocated_part_t) * part_size;
+        case 3: return (int) MEM_PARTS;
+        case 4: return alloc_count;
+        case 5: return free_count;
+        case 6:
+            while (MEM_PARTS[index].state) {
+                count += MEM_PARTS[index].size;
+                index = MEM_PARTS[index].next;
+            }
+            return count;
+        case 7:
+        case 8:
+            while (MEM_PARTS[index].state) {
+                if (MEM_PARTS[index].pid == get_arg && MEM_PARTS[index].state == 1) {
+                    count++;
+                    size += MEM_PARTS[index].size;
+                }
+                index = MEM_PARTS[index].next;
+            }
+            return get_mode == 7 ? count : size;
+        case 9:
+        case 10:
+            while (MEM_PARTS[index].state) {
+                if (MEM_PARTS[index].state == get_arg) {
+                    count++;
+                    size += MEM_PARTS[index].size;
+                }
+                index = MEM_PARTS[index].next;
+            }
+            return get_mode == 9 ? count : size;
+        case 11:
+        case 12:
+            while (MEM_PARTS[index].state) {
+                if (MEM_PARTS[index].pid == get_arg && (MEM_PARTS[index].state == 4 || MEM_PARTS[index].state == 1)) {
+                    count++;
+                    size += MEM_PARTS[index].size;
+                }
+                index = MEM_PARTS[index].next;
+            }
+            return get_mode == 11 ? count : size;
+        default: break;
     }
 
-    if (get_mode == 9 || get_mode == 10) {
-        while (MEM_PARTS[index].state) {
-            if (MEM_PARTS[index].state == get_arg) {
-                info[0]++;
-                info[1] += MEM_PARTS[index].size;
-            }
-            index = MEM_PARTS[index].next;
-        }
-        return info[get_mode - 9];
-    }
     return -1;
 }

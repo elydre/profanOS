@@ -46,8 +46,8 @@ uint32_t diskiso_get_size(void) {
     return diskiso_size * 256;
 }
 
-uint32_t diskiso_get_start(void) {
-    return diskiso_start;
+void *diskiso_get_start(void) {
+    return (void *) diskiso_start;
 }
 
 void diskiso_free(void) {

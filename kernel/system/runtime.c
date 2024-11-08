@@ -84,7 +84,7 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
         free(comm->argv);
         free(comm->envp);
     } else {
-        comm = (void *) mem_alloc(sizeof(comm_struct_t), 0, 6);
+        comm = mem_alloc(sizeof(comm_struct_t), 0, 6);
     }
 
     comm->argv = argv;
@@ -95,7 +95,7 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     uint32_t real_fsize = fsize;
 
     scuba_directory_t *old_dir = process_get_directory(pid);
-    scuba_directory_t *dir = scuba_directory_inited();
+    scuba_directory_t *dir = scuba_directory_inited(pid);
 
     // create program memory
     scuba_create_virtual(dir, (void *) RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
@@ -137,11 +137,11 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
     while (argv && argv[argc] != NULL)
         argc++;
 
-    char **nargv = (char **) mem_alloc((argc + 1) * sizeof(char *), 0, 6);
+    char **nargv = mem_alloc((argc + 1) * sizeof(char *), 0, 6);
     mem_set((void *) nargv, 0, (argc + 1) * sizeof(char *));
 
     for (int i = 0; i < argc; i++) {
-        nargv[i] = (char *) mem_alloc(str_len(argv[i]) + 1, 0, 6);
+        nargv[i] = mem_alloc(str_len(argv[i]) + 1, 0, 6);
         str_cpy(nargv[i], argv[i]);
     }
 

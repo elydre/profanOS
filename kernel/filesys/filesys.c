@@ -47,7 +47,7 @@ filesys_t *fs_get_main(void) {
 }
 
 vdisk_t *initrd_to_vdisk(void) {
-    uint8_t *initrd = (uint8_t *) diskiso_get_start();
+    uint8_t *initrd = diskiso_get_start();
     uint32_t initrd_size = diskiso_get_size();
 
     if (initrd_size == 0) {

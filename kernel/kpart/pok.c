@@ -68,7 +68,7 @@ static uint8_t *i_pok_resolve(uint8_t *file) {
 
     required_size = (required_size + 0xFFF) & ~0xFFF;
 
-    uint8_t *mem = (void *) mem_alloc(required_size, 0x1000, 5); // 5: library
+    uint8_t *mem = mem_alloc(required_size, 0x1000, 5); // 5: library
     mem_set(mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
@@ -114,7 +114,7 @@ static uint32_t *i_pok_read_funcs(uint8_t *file, uint8_t *mem) {
     }
 
     // allocate the address list
-    uint32_t *addr_list = (uint32_t *) mem_alloc((func_count + 2) * sizeof(uint32_t), 0, 5); // 5: library
+    uint32_t *addr_list = mem_alloc((func_count + 2) * sizeof(uint32_t), 0, 5); // 5: library
     addr_list[0] = (uint32_t) mem;
     addr_list[1] = func_count;
     func_count = 2;
@@ -243,7 +243,7 @@ int pok_load(char *path, uint32_t lib_id) {
 
     // allocate the lib_functions array if it doesnt exist
     if (lib_functions == 0) {
-        lib_functions = (void *) mem_alloc(POK_MAX * sizeof(uint32_t *), 0, 5);    // 5: library
+        lib_functions = mem_alloc(POK_MAX * sizeof(uint32_t *), 0, 5);    // 5: library
         mem_set((uint8_t *) lib_functions, 0, POK_MAX * sizeof(uint32_t *));
     }
 

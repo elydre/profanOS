@@ -327,10 +327,10 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
     void *phys_stack;
 
     if (copy_page) {
-        new_proc->scuba_dir = scuba_directory_copy(g_proc_current->scuba_dir);
+        new_proc->scuba_dir = scuba_directory_copy(g_proc_current->scuba_dir, new_proc->pid);
         phys_stack = scuba_get_phys(new_proc->scuba_dir, (void *) PROC_ESP_ADDR);
     } else {
-        new_proc->scuba_dir = scuba_directory_inited();
+        new_proc->scuba_dir = scuba_directory_inited(new_proc->pid);
         phys_stack = scuba_create_virtual(new_proc->scuba_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
     }
 
