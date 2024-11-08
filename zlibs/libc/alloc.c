@@ -26,7 +26,7 @@
 #define DEFAULT_SIZE 16  // 8 pages (32KB)
 
 #define PROFAN_BUDDY_MDATA ((void *) 0xD0000000)
-#define PROFAN_BUDDY_ARENA ((void *) 0xD0800000)
+#define PROFAN_BUDDY_ARENA ((void *) 0xD1000000)
 
 typedef struct alloc_debug {
     void *ptr;
@@ -195,10 +195,10 @@ static void register_alloc(void *ptr, uint32_t size) {
 
     g_debug = 1;
 
+    g_stat->allocs = new;
+
     for (uint32_t i = g_stat->tab_size; i < g_stat->tab_size * 2; i++)
         g_stat->allocs[i].ptr = NULL;
-
-    g_stat->allocs = new;
 
     g_stat->allocs[g_stat->tab_size].size = size;
     g_stat->allocs[g_stat->tab_size].ptr = ptr;
@@ -233,7 +233,7 @@ static int extend_virtual(uint32_t size) {
     // grow the metadata if needed
     uint32_t mdata_count = buddy_sizeof(req * 4096) / 4096 + 1;
     if (mdata_count > g_mdata_count) {
-        mdata_count *= 2; // avoid too many resizes
+        mdata_count += 2; // avoid too many small resizes
         if (mdata_count > (PROFAN_BUDDY_ARENA - PROFAN_BUDDY_MDATA) / 4096) {
             put_error("libc: extend_virtual: metadata overflow\n");
             return 1;
