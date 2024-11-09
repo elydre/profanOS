@@ -64,15 +64,18 @@ void __stdio_init(void) {
 
 void __stdio_fini(void) {
     fflush(stdin);
-    free(stdin->buffer);
+    if (stdin)
+        free(stdin->buffer);
     free(stdin);
 
     fflush(stdout);
-    free(stdout->buffer);
+    if (stdout)
+        free(stdout->buffer);
     free(stdout);
 
     fflush(stderr);
-    free(stderr->buffer);
+    if (stderr)
+        free(stderr->buffer);
     free(stderr);
 
     free(g_printf_buffer);
@@ -186,6 +189,13 @@ int fclose(FILE *stream) {
     if (stream == NULL) {
         return EOF;
     }
+
+    if (stream == stdin)
+        stdin = NULL;
+    if (stream == stdout)    
+        stdout = NULL;
+    if (stream == stderr)
+        stderr = NULL;
 
     // fflush the stream
     fflush(stream);
