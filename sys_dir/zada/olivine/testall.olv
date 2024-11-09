@@ -2,46 +2,160 @@ print 'starting unit tests for Olivine interpreter\n'
 print 'version: !version\n'
 print '------\n'
 
-IF !(eval 4 + 6 * ( 3 - 1 ) = 16)
-    print '[ OK ] if and eval\n'
-END; ELSE
-    print '[ FAILED ] if and eval\n'
+// ----- ASSERT FUNCTION ------------------------------------------------------
+
+FUNC assert
+    IF !(eval !# ~ 2)
+        print 'assert requires 2 arguments\n'
+        RETURN
+    END
+
+    IF !0
+        print '[  OK  ] !1\n'
+    END; ELSE
+        print '[ FAIL ] !1\n'
+    END
 END
 
+FUNC assert_reverse
+    IF !(eval !# ~ 2)
+        print 'assert requires 2 arguments\n'
+        RETURN
+    END
+
+    IF !0
+        print '[ FAIL ] !1\n'
+    END; ELSE
+        print '[  OK  ] !1\n'
+    END
+END
+
+assert         1 'assert function'
+assert_reverse 0 'assert reverse'
+
+del -f assert_reverse
+
+// ----- IF + ELSE ------------------------------------------------------------
+
+IF 0
+    print '[ FAIL ] if + else\n'
+END; ELSE
+    IF 1
+        print '[  OK  ] if + else\n'
+    END; ELSE
+        print '[ FAIL ] if + else\n'
+    END
+END
+
+// ----- EVAL -----------------------------------------------------------------
+
+FUNC deepeval
+    IF !(eval 43 ~ 43)
+        print '[ FAIL ] eval (simple equality)\n'
+        RETURN
+    END; IF !(eval 42 + 1 ~ 43)
+        print '[ FAIL ] eval (addition, equality)\n'
+        RETURN
+    END; IF !(eval 1 + 32 * 2 ~ 65)
+        print '[ FAIL ] eval (simple priority)\n'
+        RETURN
+    END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
+        print '[ FAIL ] eval (complex priority)\n'
+        RETURN
+    END; IF !(eval 30 % 8 ~ 36 / 6)
+        print '[ FAIL ] eval (division, modulo)\n'
+        RETURN
+    END; IF !(eval "ab" + 2 ~ "ab2")
+        print '[ FAIL ] eval (str + int)\n'
+        RETURN
+    END; IF !(eval 2 + "ab" ~ "2ab")
+        print '[ FAIL ] eval (int + str)\n'
+        RETURN
+    END; IF !(eval "ab" + "cd" ~ "abcd")
+        print '[ FAIL ] eval (str + str)\n'
+        RETURN
+    END; IF !(eval "ab" . "cd" ~ "abcd")
+        print '[ FAIL ] eval (str . str)\n'
+        RETURN
+    END; IF !(eval 4 . 0 ~ 40)
+        print '[ FAIL ] eval (int . int)\n'
+        RETURN
+    END; IF !(eval 0x42 ~ 66)
+        print '[ FAIL ] eval (hex)\n'
+        RETURN
+    END; IF !(eval 0b101010 ~ 42)
+        print '[ FAIL ] eval (bin)\n'
+        RETURN
+    END; IF !(eval "coucou" @ 2 ~ "u")
+        print '[ FAIL ] eval (char at index)\n'
+        RETURN
+    END;
+
+    print '[  OK  ] all eval tests\n'
+END
+
+deepeval
+
+del -f deepeval
+
+// ----- BASIC VARIABLE -------------------------------------------------------
 
 set var 43
-IF !(eval !var = 43)
-    print '[ OK ] variable\n'
-END; ELSE
-    print '[ FAILED ] variable\n'
-END
+assert !(eval !var = 43) 'basic variable'
+
 del var
 
+// ----- FOR LOOP -------------------------------------------------------------
 
 set sum 0
 FOR i !(range 1 11)
     set sum !(eval !sum + !i)
 END
 
-IF !(eval !sum = 55)
-    print '[ OK ] for loop\n'
-END; ELSE
-    print '[ FAILED ] for loop\n'
-END
+assert !(eval !sum = 55) 'for loop'
 
 del sum
 
+// ----- FOR + BREAK ----------------------------------------------------------
+
+set last 0
+FOR e 1 2 3 4 5 6 7 8 9 10
+    set last !e
+    IF !(eval !e = 7)
+        BREAK
+    END
+END
+
+assert !(eval !last = 7) 'for + break'
+
+del last
+
+// ----- FOR + CONTINUE -------------------------------------------------------
+
+set sum 0
+FOR e 1 2 3 4 5 6 7 8 9 10
+    IF !(eval !e % 2)
+        CONTINUE
+    END
+    set sum !(eval !sum + !e)
+END
+
+assert !(eval !sum = 30) 'for + continue'
+
+del sum
+
+// ----- WHILE LOOP -----------------------------------------------------------
 
 set i 0
 WHILE !(eval !i < 101)
     set i !(eval !i + 1)
 END
 
-IF !(eval !i = 101)
-    print '[ OK ] while loop\n'
-END; ELSE
-    print '[ FAILED ] while\n'
-END
+assert !(eval !i = 101) 'while loop'
+
+del i
+
+// ----- WHILE + BREAK --------------------------------------------------------
 
 set i 0
 WHILE 1
@@ -51,11 +165,11 @@ WHILE 1
     END
 END
 
-IF !(eval !i = 101)
-    print '[ OK ] while break\n'
-END; ELSE
-    print '[ FAILED ] while break\n'
-END
+assert !(eval !i = 101) 'while + break'
+
+del i
+
+// ----- WHILE + CONTINUE -----------------------------------------------------
 
 set i 0
 set sum 0
@@ -68,72 +182,46 @@ WHILE !(eval !i ~ 101)
     set sum !(eval !sum + !i)
 END
 
-IF !(eval !sum = 2550);
-    print '[ OK ] while continue\n'
-END; ELSE
-    print '[ FAILED ] while continue\n'
-END
+assert !(eval !sum = 2550) 'while + continue'
 
 del sum
 del i
 
-FOR e 1 2 3 4 5 6 7 8 9 10
-    set last !e
-    IF !(eval !e = 7)
-        BREAK
-    END
+// ----- FUNCTION RETURN ------------------------------------------------------
+
+FUNC testreturn
+    RETURN 42
 END
 
-IF !(eval !last = 7)
-    print '[ OK ] for break\n'
-END; ELSE
-    print '[ FAILED ] for break\n'
-END
+assert !(eval !(testreturn) = 42) 'function return'
 
-del last
+del -f testreturn
 
-set sum 0
-FOR e 1 2 3 4 5 6 7 8 9 10
-    IF !(eval !e % 2)
-        CONTINUE
-    END
-    set sum !(eval !sum + !e)
-END
-
-IF !(eval !sum = 30)
-    print '[ OK ] for continue\n'
-END; ELSE
-    print '[ FAILED ] for continue\n'
-END
-
-del sum
+// ----- FUNCTION ARGC --------------------------------------------------------
 
 FUNC testargc
     RETURN !#
 END
 
-IF !(eval !(testargc 1 2 3 4 5) = 5)
-    print '[ OK ] function argc\n'
-END; ELSE
-    print '[ FAILED ] function argc\n'
-END
+assert !(eval !(testargc 1 2 3 4 5) = 5) 'function argc'
+
+del -f testargc
+
+// ----- FUNCTION ARGV --------------------------------------------------------
 
 FUNC testargv
     IF !#
-        RETURN !(eval !0 * 2)
+        RETURN !(eval !0 * 2 + !1)
     END; ELSE
         RETURN 0
     END;
 END
 
-IF !(eval !(testargv 5) = 10)
-    print '[ OK ] function argv\n'
-END; ELSE
-    print '[ FAILED ] function argv\n'
-END
+assert !(eval !(testargv 21 5) = 47) 'function argv'
 
-del -f testargc
 del -f testargv
+
+// ----- GLOBAL + LOCAL OVERLOAD ----------------------------------------------
 
 FUNC testglobal
     global v1 1
@@ -145,21 +233,14 @@ global v2 0
 
 testglobal
 
-IF !(eval !v1 = 1)
-    print '[ OK ] local overload\n'
-END; ELSE
-    print '[ FAILED ] local overload\n'
-END
-
-IF !(eval !v2 = 2)
-    print '[ OK ] global overload\n'
-END; ELSE
-    print '[ FAILED ] global overload\n'
-END
+assert !(eval !v1 = 1) 'local overload'
+assert !(eval !v2 = 2) 'global overload'
 
 del -f testglobal
 del v1
 del v2
+
+// ----- LOCAL VARIABLE -------------------------------------------------------
 
 FUNC testlocalsub
     set tmp 13
@@ -168,70 +249,29 @@ END
 FUNC testlocal
     set tmp 12
     testlocalsub
-    IF !(eval !tmp = 12)
-        RETURN 1
-    END
-
-    RETURN 0
+    RETURN !(eval !tmp = 12)
 END
 
-IF !(testlocal)
-    print '[ OK ] local variable\n'
-END; ELSE
-    print '[ FAILED ] local variable\n'
-END
+assert !(testlocal) 'local variable'
 
 del -f testlocalsub
 del -f testlocal
 
-FUNC deepeval
-    IF !(eval 43 ~ 43)
-        print '[ FAILED ] eval (simple equality)\n'
-        RETURN
-    END; IF !(eval 42 + 1 ~ 43)
-        print '[ FAILED ] eval (addition, equality)\n'
-        RETURN
-    END; IF !(eval 1 + 32 * 2 ~ 65)
-        print '[ FAILED ] eval (simple priority)\n'
-        RETURN
-    END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
-        print '[ FAILED ] eval (complex priority)\n'
-        RETURN
-    END; IF !(eval 30 % 8 ~ 36 / 6)
-        print '[ FAILED ] eval (division, modulo)\n'
-        RETURN
-    END; IF !(eval "ab" + 2 ~ "ab2")
-        print '[ FAILED ] eval (str + int)\n'
-        RETURN
-    END; IF !(eval 2 + "ab" ~ "2ab")
-        print '[ FAILED ] eval (int + str)\n'
-        RETURN
-    END; IF !(eval "ab" + "cd" ~ "abcd")
-        print '[ FAILED ] eval (str + str)\n'
-        RETURN
-    END; IF !(eval "ab" . "cd" ~ "abcd")
-        print '[ FAILED ] eval (str . str)\n'
-        RETURN
-    END; IF !(eval 4 . 0 ~ 40)
-        print '[ FAILED ] eval (int . int)\n'
-        RETURN
-    END; IF !(eval 0x42 ~ 66)
-        print '[ FAILED ] eval (hex)\n'
-        RETURN
-    END; IF !(eval 0b101010 ~ 42)
-        print '[ FAILED ] eval (bin)\n'
-        RETURN
-    END; IF !(eval "coucou" @ 2 ~ "u")
-        print '[ FAILED ] eval (char at index)\n'
-        RETURN
-    END;
+// ----- FUNCTION IN VARIABLE -------------------------------------------------
 
-    print '[ OK ] all eval tests\n'
+FUNC oui
+    IF !(eval !# ~ 2)
+        print 'oui requires 2 arguments\n'
+        RETURN
+    END
+    RETURN azerty !0 !1
 END
 
-deepeval
+set v '  oui  coucou  '
 
-del -f deepeval
+assert !(eval '"!(!v hello)"' = '"azerty coucou hello"') 'function in variable'
+
+// ----- PIPE PROCESSOR -------------------------------------------------------
 
 FUNC temp
     print 'test\n'
@@ -240,19 +280,19 @@ END
 
 FUNC pp_tester
     IF !(eval "!(print coucou |)" ~ "coucou")
-        print '[ FAILED ] pipe (print)\n'
+        print '[ FAIL ] pipe (print)\n'
         RETURN
     END; IF !(eval "!(echo coucou |)" ~ "coucou")
-        echo [ FAILED ] pipe (echo)
+        echo [ FAIL ] pipe (echo)
         RETURN
     END; IF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
-        print '[ FAILED ] pipe (print + wc)\n'
+        print '[ FAIL ] pipe (print + wc)\n'
         RETURN
     END; IF !(eval "!(temp | temp |)" ~ "test")
-        print '[ FAILED ] pipe (function)\n'
+        print '[ FAIL ] pipe (function)\n'
         RETURN
     END
-    print '[ OK ] pipe tests\n'
+    print '[  OK  ] pipe processor\n'
 END
 
 pp_tester

@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.2 rev 4"
+#define OLV_VERSION "1.2 rev 5"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -179,7 +179,7 @@ char **bin_names, *g_current_directory;
 char *g_prompt, g_exit_code[5];
 int g_current_level, g_fileline;
 
-olv_line_t *lexe_program(char *program, int interp_bckslsh);
+olv_line_t *lexe_program(char *program, int interp_bckslsh, int *len);
 int execute_file(char *file, char **args);
 
 /****************************
@@ -2068,7 +2068,7 @@ char *if_name(char **input) {
     }
 
     int len = strlen(input[0]);
-    char *name = malloc(len + 1);
+    char *name = strdup(input[0]);
 
     for (int i = len - 1; i >= 0; i--) {
         if (input[0][i] == '/') {
@@ -2085,8 +2085,11 @@ char *if_name(char **input) {
         }
     }
 
-    char *output = malloc((strlen(name) + 3));
-    sprintf(output, INTR_QUOTE_STR"%s"INTR_QUOTE_STR, name);
+    char *output = malloc(strlen(name) + 3);
+    strcpy(output, INTR_QUOTE_STR);
+    strcat(output, name);
+    strcat(output, INTR_QUOTE_STR);
+
     free(name);
 
     return output;
@@ -2870,9 +2873,11 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
     strcat(new_line, bin_path);
     free(bin_path);
 
-    int in_quote = 0;
+    int i, in_quote = 0;
 
-    for (int i = 0; line[i] != '\0'; i++) {
+    for (i = 0; IS_SPACE_CHAR(line[i]); i++);
+
+    for (; line[i]; i++) {
         if (line[i] == INTR_QUOTE && (i == 0 || line[i - 1] != '\\')) {
             in_quote = !in_quote;
         }
@@ -3624,17 +3629,17 @@ int save_function(int line_count, olv_line_t *lines) {
 }
 
 void execute_program(char *program) {
-    olv_line_t *lines = lexe_program(program, 1);
-    int lc;
-    for (lc = 0; lines[lc].str; lc++);
+    olv_line_t *lines;
+    int len;
 
-    execute_lines(lines, lc, NULL);
+    lines = lexe_program(program, 1, &len);
+    execute_lines(lines, len, NULL);
 
     free(lines);
 }
 
 int does_syntax_fail(char *program) {
-    olv_line_t *lines = lexe_program(program, 1);
+    olv_line_t *lines = lexe_program(program, 1, NULL);
 
     // check if all 'IF', 'WHILE', 'FOR' and 'FUNC' have a matching 'END'
     int open = 0;
@@ -3660,9 +3665,12 @@ int does_syntax_fail(char *program) {
  *                    *
 ***********************/
 
-olv_line_t *lexe_program(char *program, int interp_bckslsh) {
+olv_line_t *lexe_program(char *program, int interp_bckslsh, int *len) {
     int program_len, tmp_index, line_index = 1;
 
+    if (len != NULL)
+        *len = 0;
+    
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
             line_index++;
@@ -3796,12 +3804,15 @@ olv_line_t *lexe_program(char *program, int interp_bckslsh) {
         tmp[tmp_index++] = '\0';
 
         lines[line_index].fileline = fileline + 1;
-        lines[line_index].str = line_ptr;
+        lines[line_index++].str = line_ptr;
 
         strcpy(line_ptr, tmp);
     }
 
     free(tmp);
+
+    if (len != NULL)
+        *len = line_index;
 
     return lines;
 }
@@ -4817,7 +4828,7 @@ void print_file_highlighted(char *file) {
 
     int tmp, indent = 0;
 
-    olv_line_t *lines = lexe_program(program, 0);
+    olv_line_t *lines = lexe_program(program, 0, NULL);
     for (int i = 0; lines[i].str; i++) {
         line = lines[i].str;
         if ((tmp = does_startwith(line, "END")))
