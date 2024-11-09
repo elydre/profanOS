@@ -198,50 +198,30 @@ static void *mem_alloc_func(uint32_t size, uint32_t allign, int state, int pid, 
     }
 
     if (exit_mode == 2) {
-        if (state != 3) instance_count--;
+        if (state != 3)
+            instance_count--;
         sys_error("[mem_alloc] %dk of memory is not available", size / 1024);
         return 0;
     }
 
-    if (exit_mode) {
-        MEM_PARTS[index].addr = last_addr + gap;
-        MEM_PARTS[index].size = size;
-        MEM_PARTS[index].pid = pid;
-        MEM_PARTS[index].dir = dir;
-        MEM_PARTS[index].state = state;
-        MEM_PARTS[index].next = get_unused_index(-1);
-    }
-
-    else {
-        int new_index = get_unused_index(-1);
-        del_occurence(new_index);
-
-        MEM_PARTS[new_index].addr = last_addr + gap;
-        MEM_PARTS[new_index].size = size;
-        MEM_PARTS[new_index].pid = pid;
-        MEM_PARTS[new_index].dir = dir;
-        MEM_PARTS[new_index].state = state;
-
-        MEM_PARTS[old_index].next = new_index;
-        MEM_PARTS[new_index].next = index;
-    }
-
-    /* int new_index;
+    int new_index;
 
     if (exit_mode) {
         new_index = index;
+        MEM_PARTS[new_index].state = state;
+        MEM_PARTS[index].next = get_unused_index(-1);
     } else {
         new_index = get_unused_index(-1);
         del_occurence(new_index);
         MEM_PARTS[old_index].next = new_index;
         MEM_PARTS[new_index].next = index;
+        MEM_PARTS[new_index].state = state;
     }
 
     MEM_PARTS[new_index].addr  = last_addr + gap;
     MEM_PARTS[new_index].size  = size;
     MEM_PARTS[new_index].pid   = pid;
     MEM_PARTS[new_index].dir   = dir;
-    MEM_PARTS[new_index].state = state;*/
 
     alloc_count++;
     if (state != 3) instance_count--;

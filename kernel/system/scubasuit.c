@@ -34,11 +34,11 @@ static void *i_allign_calloc(uint32_t size, scuba_directory_t *dir) {
 static scuba_directory_t *i_directory_create(uint32_t pid) {
     // allocate a page directory
     scuba_directory_t *dir = mem_alloc_dir(sizeof(scuba_directory_t), 0x1000, pid, NULL);
+    mem_set(dir, 0, sizeof(scuba_directory_t));
     dir->pid = pid;
 
     // setup directory entries
     for (int i = 0; i < 1024; i++) {
-        dir->entries[i].frame = 0;
         dir->entries[i].rw = 1;
         dir->entries[i].user = 1;
     }
