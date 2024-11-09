@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.2 rev 5"
+#define OLV_VERSION "1.2 rev 6"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1829,7 +1829,7 @@ char *if_dot(char **input) {
         if (fu_is_file(sid)) {
             if (append[i])
                 fm_lseek(fm_resol012(i, pid), 0, SEEK_END);
-            else
+            else if (i != 0)
                 fu_file_set_size(sid, 0);
         }
         free(stdpaths[i]);
@@ -3670,7 +3670,7 @@ olv_line_t *lexe_program(char *program, int interp_bckslsh, int *len) {
 
     if (len != NULL)
         *len = 0;
-    
+
     for (int i = 0; program[i] != '\0'; i++) {
         if (program[i] == '\n' || program[i] == ';') {
             line_index++;
@@ -4715,7 +4715,7 @@ void start_shell(void) {
             puts("Exiting olivine shell, bye!");
             break;
         }
-        
+
         #if PROFANBUILD
         // add to history if not empty and not the same as the last command
         if (line[0] && (history[history_index] == NULL || strcmp(line, history[history_index]))) {
