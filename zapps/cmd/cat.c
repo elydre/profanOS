@@ -100,7 +100,8 @@ void cat_canonical(FILE *file, char *path) {
         offset += 16;
     }
 
-    fclose(file);
+    if (file != stdin)
+        fclose(file);
 }
 
 void cat(FILE *file, char *path, int end_of_line) {
