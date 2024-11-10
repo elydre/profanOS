@@ -192,7 +192,7 @@ int fclose(FILE *stream) {
 
     if (stream == stdin)
         stdin = NULL;
-    if (stream == stdout)    
+    if (stream == stdout)
         stdout = NULL;
     if (stream == stderr)
         stderr = NULL;
