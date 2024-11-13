@@ -32,12 +32,12 @@ u32 clip_len = 0;
 element_t *clip = NULL;
 
 static int clip_file(void *buffer, u32 offset, u32 size, u8 is_read) {
-	// TODO! : implement that please
-	return 0;
+    // TODO! : implement that please
+    return 0;
 }
 
 int init() {
-	fu_fctf_create(0, "/dev/clip", &clip_file);
+    fu_fctf_create(0, "/dev/clip", &clip_file);
     return 0;
 }
 
