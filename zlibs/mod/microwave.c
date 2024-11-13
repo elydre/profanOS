@@ -69,3 +69,4 @@ void clip_pop() {
     clip_len--;
     clip = realloc_ask(clip, sizeof(element_t) * (clip_len));
 
+}
