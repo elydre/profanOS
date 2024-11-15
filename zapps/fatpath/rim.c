@@ -48,7 +48,7 @@
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
 
-#define RIM_VERSION "7 rev 0"
+#define RIM_VERSION "7 rev 1"
 
 // GLOBALS
 typedef struct {
@@ -515,6 +515,38 @@ void insert_char(char chr) {
     g_cursor_pos++;
 }
 
+void execute_backspace(void) {
+    int future_cursor_pos;
+
+    // remove character from data buffer
+    if (g_cursor_pos > 0) {
+        for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
+            g_data[i - 1] = g_data[i];
+
+        for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+            g_data_lines[i]--;
+
+        g_data_count--;
+        g_cursor_pos--;
+    } else if (g_cursor_line > 0) {
+        future_cursor_pos = cursor_max_at_line(g_cursor_line - 1);
+
+        for (int i = g_data_lines[g_cursor_line]; i < g_data_count; i++)
+            g_data[i - 1] = g_data[i];
+
+        // remove line from data lines
+        for (int i = g_cursor_line; i < g_lines_count - 1; i++) {
+            g_data_lines[i] = g_data_lines[i + 1];
+            g_data_lines[i]--;
+        }
+
+        g_data_count--;
+        g_lines_count--;
+        g_cursor_line--;
+        g_cursor_pos = future_cursor_pos;
+    }
+}
+
 int execute_ctrl(int key, uint8_t shift, char *path) {
     int start, end, size;
 
@@ -523,7 +555,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
     if (c == 'q') {
         return 1;
     }
-    
+
     if (c == 's') {
         if (path)
             save_file(path);
@@ -549,7 +581,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
                 g_data_lines[i] = g_data_lines[i + 1];
                 g_data_lines[i] -= size + 1;
             }
-            
+
             g_lines_count--;
         } else {
             g_data_lines[0] = 0;
@@ -586,8 +618,6 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
 void main_loop(char *path) {
     uint8_t shift_pressed = 0;
     uint8_t ctrl_pressed = 0;
-
-    int future_cursor_pos;
 
     int last_key = 0, key_sgt = 0;
     int key, key_ticks = 0;
@@ -649,32 +679,19 @@ void main_loop(char *path) {
 
         // check if key is backspace
         else if (key == 14) {
-            // remove character from data buffer
-            if (g_cursor_pos > 0) {
+            execute_backspace();
+        }
+
+        // check if key is delete
+        else if (key == 83) {
+            if (g_cursor_pos < cursor_max_at_line(g_cursor_line)) {
                 for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
-                    g_data[i - 1] = g_data[i];
+                    g_data[i] = g_data[i + 1];
 
                 for (int i = g_cursor_line + 1; i < g_lines_count; i++)
                     g_data_lines[i]--;
 
                 g_data_count--;
-                g_cursor_pos--;
-            } else if (g_cursor_line > 0) {
-                future_cursor_pos = cursor_max_at_line(g_cursor_line - 1);
-
-                for (int i = g_data_lines[g_cursor_line]; i < g_data_count; i++)
-                    g_data[i - 1] = g_data[i];
-
-                // remove line from data lines
-                for (int i = g_cursor_line; i < g_lines_count - 1; i++) {
-                    g_data_lines[i] = g_data_lines[i + 1];
-                    g_data_lines[i]--;
-                }
-
-                g_data_count--;
-                g_lines_count--;
-                g_cursor_line--;
-                g_cursor_pos = future_cursor_pos;
             }
         }
 
