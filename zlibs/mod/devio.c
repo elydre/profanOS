@@ -20,10 +20,13 @@
 #undef UNUSED
 #define UNUSED(x) (void) (x)
 
-void init_devio(void);
+int init_devio(void);
 
 int main(void) {
-    init_devio();
+    if (init_devio()) {
+        syscall_kprint("[devio] Failed to initialize devices\n");
+        return 1;
+    }
     return 0;
 }
 
@@ -248,19 +251,23 @@ int dev_stderr(int id, void *buffer, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-void init_devio(void) {
-    fu_fctf_create(0, "/dev/null",   dev_null);
-    fu_fctf_create(0, "/dev/zero",   dev_zero);
-    fu_fctf_create(0, "/dev/random", dev_rand);
+int init_devio(void) {
+    return (
+        IS_SID_NULL(fu_fctf_create(0, "/dev/null",   dev_null))      ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/zero",   dev_zero))      ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/random", dev_rand))      ||
 
-    fu_fctf_create(0, "/dev/kterm",   dev_kterm);
-    fu_fctf_create(0, "/dev/panda",   dev_panda);
-    fu_fctf_create(0, "/dev/pander",  dev_pander);
-    fu_fctf_create(0, "/dev/userial", dev_userial);
-    fu_fctf_create(0, "/dev/serialA", dev_serial_a);
-    fu_fctf_create(0, "/dev/serialB", dev_serial_b);
+        IS_SID_NULL(fu_fctf_create(0, "/dev/kterm",   dev_kterm))    ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/panda",   dev_panda))    ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/pander",  dev_pander))   ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/userial", dev_userial))  ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/serialA", dev_serial_a)) ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/serialB", dev_serial_b)) ||
 
-    fu_fctf_create(0, "/dev/stdin",  dev_stdin);
-    fu_fctf_create(0, "/dev/stdout", dev_stdout);
-    fu_fctf_create(0, "/dev/stderr", dev_stderr);
+        IS_SID_NULL(fu_fctf_create(0, "/dev/stdin",  dev_stdin))     ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/stdout", dev_stdout))    ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/stderr", dev_stderr))    ||
+
+        IS_SID_NULL(fu_file_create(0, "/dev/clip"))
+    );
 }

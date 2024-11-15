@@ -180,10 +180,6 @@ int main(void) {
         set_env("TERM=/dev/kterm");
     }
 
-    if (fu_file_create(0, PROFAN_CLIP_PATH)) {
-        syscall_kprint("["LOADER_NAME"] Failed to create /dev/clip\n");
-    }
-
     welcome_print();
 
     set_env("PATH=/bin/cmd:/bin/fatpath");
