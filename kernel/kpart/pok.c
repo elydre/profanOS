@@ -228,7 +228,7 @@ static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int pok_load(char *path, uint32_t lib_id) {
-    uint32_t file = fu_path_to_sid(fs_get_main(), ROOT_SID, path);
+    uint32_t file = fu_path_to_sid(fs_get_main(), SID_ROOT, path);
     if (IS_SID_NULL(file) || !fu_is_file(fs_get_main(), file)) {
         return -1;
     }

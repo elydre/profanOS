@@ -25,7 +25,7 @@
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 
 #define SID_NULL 0
-#define ROOT_SID SID_FORMAT(1, 0)
+#define SID_ROOT SID_FORMAT(1, 0)
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))

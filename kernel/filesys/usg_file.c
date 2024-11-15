@@ -39,7 +39,7 @@ uint32_t fu_file_create(filesys_t *filesys, uint8_t device_id, char *path) {
         return SID_NULL;
     }
 
-    parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
+    parent_sid = fu_path_to_sid(filesys, SID_ROOT, parent);
     if (IS_SID_NULL(parent_sid)) {
         sys_warning("[file_create] Parent not found");
         free(parent);

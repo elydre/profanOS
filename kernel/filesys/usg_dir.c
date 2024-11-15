@@ -152,7 +152,7 @@ uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path) {
 
     sep_path(path, &parent, &name);
     if (parent[0]) {
-        parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
+        parent_sid = fu_path_to_sid(filesys, SID_ROOT, parent);
         if (IS_SID_NULL(parent_sid)) {
             sys_warning("[dir_create] Parent not found");
             free(parent);
@@ -167,7 +167,7 @@ uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path) {
             return SID_NULL;
         }
     } else {
-        parent_sid = ROOT_SID;
+        parent_sid = SID_ROOT;
     }
 
     // generate the meta

@@ -89,27 +89,27 @@ int filesys_init(void) {
 
     if (fu_add_element_to_dir(
         MAIN_FS,
-        ROOT_SID,
+        SID_ROOT,
         fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/user"),
         "user"
     ) || fu_add_element_to_dir(
         MAIN_FS,
-        ROOT_SID,
+        SID_ROOT,
         fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/bin"),
         "bin"
     ) || fu_add_element_to_dir(
         MAIN_FS,
-        ROOT_SID,
+        SID_ROOT,
         fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/lib"),
         "lib"
     ) || fu_add_element_to_dir(
         MAIN_FS,
-        ROOT_SID,
+        SID_ROOT,
         fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/sys"),
         "sys"
     ) || fu_add_element_to_dir(
         MAIN_FS,
-        ROOT_SID,
+        SID_ROOT,
         fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/zada"),
         "zada"
     )) {
@@ -119,7 +119,7 @@ int filesys_init(void) {
     uint32_t src_sid = fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/src");
     if (!IS_SID_NULL(src_sid) && fu_add_element_to_dir(
         MAIN_FS,
-        ROOT_SID,
+        SID_ROOT,
         src_sid,
         "src"
     )) return 1;

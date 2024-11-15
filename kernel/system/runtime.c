@@ -126,7 +126,7 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
-    uint32_t sid = fu_path_to_sid(fs_get_main(), ROOT_SID, file);
+    uint32_t sid = fu_path_to_sid(fs_get_main(), SID_ROOT, file);
 
     if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_warning("[run_ifexist] File not found: %s", file);
