@@ -13,6 +13,7 @@
 #include <profan.h>
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
@@ -295,7 +296,7 @@ void exit(int rv) {
         entry_exit(rv);
     }
     fputs("no entry_exit function found\n", stderr);
-    syscall_process_exit(syscall_process_pid(), rv, 0);
+    _exit(rv); // unistd
 }
 
 char *gcvt(double number, int ndigit, char *buf) {

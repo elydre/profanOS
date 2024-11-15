@@ -150,7 +150,8 @@ int execvp(const char *file, char *const argv[]) {
 }
 
 void _exit(int status) {
-    exit(status);
+    syscall_process_exit(syscall_process_pid(), status, 0);
+    while (1);
 }
 
 int fchown(int a, uid_t b, gid_t c) {
