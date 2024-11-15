@@ -526,8 +526,8 @@ def make_help():
         ("make disk",       "build classic disk image"),
         ("make bdisk",    "build disk image with source code"),
         None,
-        ("make addons",     "download all addons in disk source"),
-        ("make gaddons",    "start graphical addons selection"),
+        ("make addons",     "start graphical addons selection"),
+        ("make gaddons",    "install automatically recommended addons"),
         None,
         ("make clean",      "delete all build files"),
         ("make fclean",     "reset the repository"),
@@ -547,7 +547,7 @@ def make_help():
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")
     cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
-    cprint(COLOR_INFO, " MAKE ADDONS BDISK MISO to build the disk with all options")
+    cprint(COLOR_INFO, " MAKE ADDONS BDISK ISO to build the iso with all options")
     cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
 
