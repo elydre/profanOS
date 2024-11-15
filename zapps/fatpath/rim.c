@@ -9,8 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
 #include <profan/syscall.h>
 #include <profan/panda.h>
+#include <profan/clip.h>
 #include <profan.h>
 
 #include <string.h>
@@ -21,7 +24,7 @@
 #include <ctype.h>
 
 // input settings
-#define SLEEP_T 15
+#define SLEEP_T 20
 #define FIRST_L 12
 
 // MACROS
@@ -36,7 +39,7 @@
 
 #define cursor_max_at_line(line) (((line) < g_lines_count - 1) ? \
                                   g_data_lines[(line) + 1] - g_data_lines[line] - 1 : \
-                                  g_data_size - g_data_lines[line] - 1)
+                                  g_data_count - g_data_lines[line] - 1)
 
 #define COLOR_T 0x70    // title
 #define COLOR_L 0x87    // line number
@@ -45,7 +48,7 @@
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
 
-#define RIM_VERSION "6 rev 1"
+#define RIM_VERSION "7 rev 0"
 
 // GLOBALS
 typedef struct {
@@ -62,10 +65,12 @@ typedef struct {
 rim_syntax_t *g_syntax;
 
 char *g_data;
-int g_data_size;
+int g_data_count;
+int g_data_max;
 
 int *g_data_lines;
 int g_lines_count;
+int g_lines_max;
 
 int g_cursor_line;
 int g_cursor_pos;
@@ -98,15 +103,16 @@ void set_title(char *path) {
 void init_data(void) {
     free(g_data);
     g_data = malloc(1024);
-    g_data_size = 1;
+    g_data_count = 1;
+    g_data_max = 1024;
 
     free(g_data_lines);
     g_data_lines = calloc(1024, sizeof(int));
     g_lines_count = 1;
+    g_lines_max = 1024;
 }
 
 void load_file(char *path) {
-    int malloc_size = 1024;
     int read_size, fd;
 
     init_data();
@@ -119,28 +125,31 @@ void load_file(char *path) {
         fd = 0;
     }
 
-    while ((read_size = read(fd, g_data + g_data_size - 1, 1024))) {
+    while ((read_size = read(fd, g_data + g_data_count - 1, 1024))) {
         if (read_size < 0) {
             close(fd);
             exit(1);
         }
 
-        g_data_size += read_size;
-        if (malloc_size - g_data_size < 1024) {
-            g_data = realloc(g_data, g_data_size + 1024);
-            malloc_size += 1024;
+        g_data_count += read_size;
+        if (g_data_count >= g_data_max) {
+            g_data_max += 1024;
+            g_data = realloc(g_data, g_data_max);
         }
     }
 
     close(fd);
 
-    for (int i = 0; i < g_data_size - 1; i++) {
-        if (g_data[i] != '\n') continue;
+    for (int i = 0; i < g_data_count - 1; i++) {
+        if (g_data[i] != '\n')
+            continue;
         g_data[i] = '\0';
         g_data_lines[g_lines_count] = i + 1;
         g_lines_count++;
-        if (g_lines_count % 1024) continue;
-        g_data_lines = realloc(g_data_lines, (g_lines_count + 1024) * sizeof(int));
+        if (g_lines_count >= g_lines_max) {
+            g_lines_max += 1024;
+            g_data_lines = realloc(g_data_lines, g_lines_max * sizeof(int));
+        }
     }
 }
 
@@ -155,14 +164,14 @@ void save_file(char *path) {
         fd = 1;
     }
 
-    char *data_copy = malloc(g_data_size);
-    memcpy(data_copy, g_data, g_data_size);
+    char *data_copy = malloc(g_data_count);
+    memcpy(data_copy, g_data, g_data_count);
 
-    for (int i = 0; i < g_data_size - 1; i++) {
+    for (int i = 0; i < g_data_count - 1; i++) {
         if (data_copy[i] == '\0') data_copy[i] = '\n';
     }
 
-    write(fd, data_copy, g_data_size - 1);
+    write(fd, data_copy, g_data_count - 1);
     close(fd);
 
     free(data_copy);
@@ -405,12 +414,22 @@ void display_data(int from_line, int to_line, int x_offset) {
 }
 
 void realloc_buffer(void) {
-    if (g_lines_count % 1024 == 0) {
-        g_data_lines = realloc(g_data_lines, (g_lines_count + 1024) * sizeof(int));
+    if (g_lines_count >= g_lines_max - 1) {
+        if (g_lines_count > g_lines_max) {
+            fputs("rim: g_data_lines, overflow detected\n", stderr);
+            exit(1);
+        }
+        g_data_lines = realloc(g_data_lines, (g_lines_max + 1024) * sizeof(int));
+        g_lines_max += 1024;
     }
 
-    if (g_data_size % 1024 == 0 && g_data_size != 0) {
-        g_data = realloc(g_data, (g_data_size + 1024) * sizeof(char));
+    if (g_data_count >= g_data_max - 1) {
+        if (g_data_count > g_data_max) {
+            fputs("rim: g_data, overflow detected\n", stderr);
+            exit(1);
+        }
+        g_data = realloc(g_data, g_data_max + 1024);
+        g_data_max += 1024;
     }
 }
 
@@ -428,11 +447,11 @@ void insert_tab(void) {
 
     if (tab) {
         // add character to data buffer
-        for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+        for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
             g_data[i] = g_data[i - 1];
 
         g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = '\t';
-        g_data_size++;
+        g_data_count++;
 
         for (int i = g_cursor_line + 1; i < g_lines_count; i++)
             g_data_lines[i]++;
@@ -440,14 +459,20 @@ void insert_tab(void) {
         g_cursor_pos++;
     } else {
         int spaces = 4 - (g_cursor_pos % 4);
+        // realloc buffer if needed
+        if (g_data_count + spaces >= g_data_max) {
+            g_data_max += 1024;
+            g_data = realloc(g_data, g_data_max * sizeof(char));
+        }
+
         // add character to data buffer
-        for (int i = g_data_size + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+        for (int i = g_data_count + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
             g_data[i] = g_data[i - spaces];
 
         for (int i = 0; i < spaces; i++)
             g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] = ' ';
 
-        g_data_size += spaces;
+        g_data_count += spaces;
 
         for (int i = g_cursor_line + 1; i < g_lines_count; i++)
             g_data_lines[i] += spaces;
@@ -456,8 +481,112 @@ void insert_tab(void) {
     }
 }
 
+void insert_newline(void) {
+    // add '\0' character to data buffer
+    for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+        g_data[i] = g_data[i - 1];
+
+    g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = '\0';
+    g_data_count++;
+
+    // add line to data lines
+    for (int i = g_lines_count; i > g_cursor_line + 1; i--) {
+        g_data_lines[i] = g_data_lines[i - 1];
+        g_data_lines[i]++;
+    }
+
+    g_data_lines[g_cursor_line + 1] = g_data_lines[g_cursor_line] + g_cursor_pos + 1;
+    g_lines_count++;
+    g_cursor_line++;
+    g_cursor_pos = 0;
+}
+
+void insert_char(char chr) {
+    // add character to data buffer
+    for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+        g_data[i] = g_data[i - 1];
+
+    g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = chr;
+    g_data_count++;
+
+    for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+        g_data_lines[i]++;
+
+    g_cursor_pos++;
+}
+
+int execute_ctrl(int key, uint8_t shift, char *path) {
+    int start, end, size;
+
+    char c = profan_kb_get_char(key, shift);
+
+    if (c == 'q') {
+        return 1;
+    }
+    
+    if (c == 's') {
+        if (path)
+            save_file(path);
+        return 0;
+    }
+
+    if (c == 'c' || c == 'x') {
+        start = g_data_lines[g_cursor_line];
+        end = (g_cursor_line < g_lines_count - 1) ? g_data_lines[g_cursor_line + 1] : g_data_count;
+        size = end - start - 1;
+        char *clip = malloc(size + 2);
+        memcpy(clip, g_data + start, size);
+        strcpy(clip + size, "\n");
+        clip_set_raw(clip, size + 1);
+    }
+
+    if (c == 'x') {
+        memmove(g_data + start, g_data + end, g_data_count - end);
+        g_data_count -= size + 1;
+
+        if (g_lines_count > 1) {
+            for (int i = g_cursor_line + 1; i < g_lines_count - 1; i++) {
+                g_data_lines[i] = g_data_lines[i + 1];
+                g_data_lines[i] -= size + 1;
+            }
+            
+            g_lines_count--;
+        } else {
+            g_data_lines[0] = 0;
+            g_data_count = 1;
+        }
+
+        g_cursor_pos = 0;
+
+        if (g_cursor_line >= g_lines_count) {
+            g_cursor_line = g_lines_count - 1;
+        }
+
+        realloc_buffer();
+        return 0;
+    }
+
+    if (c == 'v') {
+        uint32_t size;
+        char *clip = clip_get_raw(&size);
+        // use insert_newline when '\n' is found
+        for (uint32_t i = 0; i < size; i++) {
+            if (clip[i] == '\n') {
+                insert_newline();
+            } else {
+                insert_char(clip[i]);
+            }
+            realloc_buffer();
+        }
+    }
+
+    return 0;
+}
+
 void main_loop(char *path) {
     uint8_t shift_pressed = 0;
+    uint8_t ctrl_pressed = 0;
+
     int future_cursor_pos;
 
     int last_key = 0, key_sgt = 0;
@@ -484,6 +613,7 @@ void main_loop(char *path) {
 
         if ((key_ticks < FIRST_L && key_ticks) || key_ticks % 2) {
             usleep(max((SLEEP_T - refresh_ticks) * 1000, 0));
+            refresh_ticks = 0;
             continue;
         }
 
@@ -492,54 +622,47 @@ void main_loop(char *path) {
 
         // check if key is enter
         if (key == 28) {
-            // add line to data lines
-
-            // add '\0' character to data buffer
-            for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-                g_data[i] = g_data[i - 1];
-
-            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = '\0';
-            g_data_size++;
-
-            // add line to data lines
-            for (int i = g_lines_count; i > g_cursor_line + 1; i--) {
-                g_data_lines[i] = g_data_lines[i - 1];
-                g_data_lines[i]++;
-            }
-
-            g_data_lines[g_cursor_line + 1] = g_data_lines[g_cursor_line] + g_cursor_pos + 1;
-            g_lines_count++;
-            g_cursor_line++;
-            g_cursor_pos = 0;
+            insert_newline();
         }
 
         // check if key is escape
         else if (key == 1) {
-            // exit
             return;
         }
 
         // check if key is ctrl
-        else if (key == 29 && path) {
-            save_file(path);
+        else if (key == 29) {
+            ctrl_pressed = 1;
+        }
+
+        // check if ctrl is released
+        else if (key == 157) {
+            ctrl_pressed = 0;
+        }
+
+        // check if key is ctrl + key
+        else if (ctrl_pressed) {
+            if (execute_ctrl(key, shift_pressed, path)) {
+                return;
+            }
         }
 
         // check if key is backspace
         else if (key == 14) {
             // remove character from data buffer
             if (g_cursor_pos > 0) {
-                for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_size; i++)
+                for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
                     g_data[i - 1] = g_data[i];
 
                 for (int i = g_cursor_line + 1; i < g_lines_count; i++)
                     g_data_lines[i]--;
 
-                g_data_size--;
+                g_data_count--;
                 g_cursor_pos--;
             } else if (g_cursor_line > 0) {
                 future_cursor_pos = cursor_max_at_line(g_cursor_line - 1);
 
-                for (int i = g_data_lines[g_cursor_line]; i < g_data_size; i++)
+                for (int i = g_data_lines[g_cursor_line]; i < g_data_count; i++)
                     g_data[i - 1] = g_data[i];
 
                 // remove line from data lines
@@ -548,7 +671,7 @@ void main_loop(char *path) {
                     g_data_lines[i]--;
                 }
 
-                g_data_size--;
+                g_data_count--;
                 g_lines_count--;
                 g_cursor_line--;
                 g_cursor_pos = future_cursor_pos;
@@ -610,17 +733,7 @@ void main_loop(char *path) {
 
         // check if key is printable
         else if (key < 58 && key > 0 && profan_kb_get_char(key, shift_pressed)) {
-            // add character to data buffer
-            for (int i = g_data_size; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-                g_data[i] = g_data[i - 1];
-
-            g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = profan_kb_get_char(key, shift_pressed);
-            g_data_size++;
-
-            for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-                g_data_lines[i]++;
-
-            g_cursor_pos++;
+            insert_char(profan_kb_get_char(key, shift_pressed));
         } else {
             continue;
         }
@@ -797,6 +910,9 @@ int main(int argc, char **argv) {
         printf("rim: panda is required\n");
         exit(1);
     }
+
+    g_data_lines = NULL;
+    g_data = NULL;
 
     if (file) {
         title = file;
