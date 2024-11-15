@@ -685,6 +685,7 @@ static uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const ch
                 SID_DISK(parent),
                 SID_SECTOR(parent)
         );
+        free(name);
         return SID_NULL;
     }
 

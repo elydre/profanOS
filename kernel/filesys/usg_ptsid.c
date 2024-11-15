@@ -45,11 +45,7 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
 
     count = fu_get_dir_content(filesys, parent, &sids, &names);
 
-    if (count == -1) {
-        return SID_NULL;
-    }
-
-    if (count == 0) {
+    if (count < 1) {
         free(name);
         return SID_NULL;
     }
