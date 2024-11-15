@@ -97,7 +97,7 @@ FILE *fopen(const char *filename, const char *mode) {
         char *pwd = getenv("PWD");
         if (pwd == NULL) pwd = "/";
 
-        path = assemble_path(pwd, (char *) filename);
+        path = profan_join_path(pwd, (char *) filename);
         filename = path;
     } else {
         path = strdup(filename);
@@ -123,7 +123,7 @@ FILE *fopen(const char *filename, const char *mode) {
     }
 
     // first check if the file exists
-    uint32_t file_id = fu_path_to_sid(ROOT_SID, (char *) path);
+    uint32_t file_id = fu_path_to_sid(SID_ROOT, (char *) path);
     int exists = !IS_SID_NULL(file_id);
 
     // the file doesn't exist but it should
@@ -371,12 +371,12 @@ int fseek(FILE *stream, long offset, int whence) {
 }
 
 int fgetc(FILE *stream) {
-    char c;
+    uint8_t c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
 int getc(FILE *stream) {
-    char c;
+    uint8_t c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
@@ -709,9 +709,9 @@ void perror(const char *s) {
 int remove(const char *fname) {
     char *pwd = getenv("PWD");
     if (pwd == NULL) pwd = "/";
-    char *full_path = assemble_path(pwd, (char *) fname);
+    char *full_path = profan_join_path(pwd, (char *) fname);
 
-    uint32_t elem = fu_path_to_sid(ROOT_SID, full_path);
+    uint32_t elem = fu_path_to_sid(SID_ROOT, full_path);
     if (IS_SID_NULL(elem) || !fu_is_file(elem)) {
         printf("remove: cannot remove '%s': No such file\n", fname);
         free(full_path);
@@ -720,9 +720,9 @@ int remove(const char *fname) {
 
     char *parent;
 
-    fu_sep_path(full_path, &parent, NULL);
+    profan_sep_path(full_path, &parent, NULL);
 
-    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
 
     if (IS_SID_NULL(parent_sid)) {
@@ -732,7 +732,7 @@ int remove(const char *fname) {
     }
 
     // remove element from directory
-    if (fu_remove_element_from_dir(parent_sid, elem)) {
+    if (fu_remove_from_dir(parent_sid, elem)) {
         printf("remove: cannot remove '%s': Failed to remove element from directory\n", fname);
         return 1;
     }
@@ -781,7 +781,7 @@ errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
             seed = seed * 1103515245 + 12345;
             filename_s[i] = 'a' + seed % 26;
         }
-    } while (!IS_SID_NULL(fu_path_to_sid(ROOT_SID, filename_s)));
+    } while (!IS_SID_NULL(fu_path_to_sid(SID_ROOT, filename_s)));
 
     return 0;
 }

@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-// @LINK SHARED: libtsi
+// @LINK: libtsi
 
 #include <profan/libtsi.h>
 

@@ -129,7 +129,7 @@ int is_valid_elf(void *data) {
 void *open_elf(char *filename) {
     elfobj_t *obj = calloc(1, sizeof(elfobj_t));
 
-    uint32_t sid = fu_path_to_sid(ROOT_SID, filename);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, filename);
     if (!fu_is_file(sid)) {
         raise_error("'%s' not found", filename);
         free(obj);

@@ -21,9 +21,9 @@ int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
     char *fullpath, *cwd = getenv("PWD");
-    fullpath = cwd ? assemble_path(cwd, path) : strdup(path);
+    fullpath = cwd ? profan_join_path(cwd, path) : strdup(path);
 
-    uint32_t sid = fu_path_to_sid(ROOT_SID, fullpath);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, fullpath);
 
     if (IS_SID_NULL(sid) && (flags & O_CREAT)) {
         sid = fu_file_create(0, fullpath);

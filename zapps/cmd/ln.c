@@ -126,19 +126,19 @@ int main(int argc, char **argv) {
 
     char *target_dir, *target_name;
     if (args->target) {
-        args->target = assemble_path(pwd, args->target);
-        fu_sep_path(args->target, &target_dir, &target_name);
+        args->target = profan_join_path(pwd, args->target);
+        profan_sep_path(args->target, &target_dir, &target_name);
     } else {
         target_dir = strdup(pwd);
-        fu_sep_path(args->source, NULL, &target_name);
+        profan_sep_path(args->source, NULL, &target_name);
     }
 
     if (args->source) {
-        args->source = assemble_path(pwd, args->source);
-        args->sector = fu_path_to_sid(ROOT_SID, args->source);
+        args->source = profan_join_path(pwd, args->source);
+        args->sector = fu_path_to_sid(SID_ROOT, args->source);
     }
 
-    uint32_t target_sid = fu_path_to_sid(ROOT_SID, target_dir);
+    uint32_t target_sid = fu_path_to_sid(SID_ROOT, target_dir);
 
 
     if (IS_SID_NULL(args->sector)) {
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fu_add_element_to_dir(target_sid, args->sector, target_name);
+    fu_add_to_dir(target_sid, args->sector, target_name);
 
     return 0;
 }

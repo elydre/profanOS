@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     host_to_internal(filesys, argv[1], "/");
     // internal_to_host(filesys, "output", "/");
 
-    draw_tree(filesys, ROOT_SID, 0);
+    draw_tree(filesys, SID_ROOT, 0);
 
     fs_print_status(filesys);
 

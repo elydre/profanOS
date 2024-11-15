@@ -90,7 +90,7 @@ char *ft_getenv(const char *name) {
     return NULL;
 }
 
-char *assemble_path(const char *dir, const char *file) {
+char *profan_join_path(const char *dir, const char *file) {
     int len1 = strlen(dir);
     char *path = malloc(len1 + strlen(file) + 2);
     strcpy(path, dir);
@@ -117,12 +117,12 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
         if (path[i] != ':' && path[i] != '\0')
             continue;
         path[i] = '\0';
-        uint32_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        uint32_t sid = fu_path_to_sid(SID_ROOT, path + start);
         if (!IS_SID_NULL(sid)) {
             sid = fu_path_to_sid(sid, fullname);
             if (fu_is_file(sid)) {
                 if (path)
-                    *fullpath = assemble_path(path + start, fullname);
+                    *fullpath = profan_join_path(path + start, fullname);
                 free(fullname);
                 free(path);
                 return sid;
@@ -146,7 +146,7 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
 
     if (type == ET_EXEC) {
         if (name[0] == '/') {
-            sid = fu_path_to_sid(ROOT_SID, name);
+            sid = fu_path_to_sid(SID_ROOT, name);
             if (!IS_SID_NULL(sid) && path)
                 *path = strdup(name);
             return sid;
@@ -156,9 +156,9 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
             char *cwd = ft_getenv("PWD");
             if (!cwd)
                 return SID_NULL;
-            char *full_path = assemble_path(cwd, name + 2);
+            char *full_path = profan_join_path(cwd, name + 2);
             fu_simplify_path(full_path);
-            sid = fu_path_to_sid(ROOT_SID, full_path);
+            sid = fu_path_to_sid(SID_ROOT, full_path);
             if (!IS_SID_NULL(sid) && path)
                 *path = full_path;
             else
@@ -172,15 +172,15 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
         return search_inpath(env_path, name, path);
     }
 
-    char *full_path = assemble_path("/lib", name);
-    sid = fu_path_to_sid(ROOT_SID, full_path);
+    char *full_path = profan_join_path("/lib", name);
+    sid = fu_path_to_sid(SID_ROOT, full_path);
 
     if (IS_SID_NULL(sid)) {
         free(full_path);
         if (!g_extralib_path)
             return SID_NULL;
-        full_path = assemble_path(g_extralib_path, name);
-        sid = fu_path_to_sid(ROOT_SID, full_path);
+        full_path = profan_join_path(g_extralib_path, name);
+        sid = fu_path_to_sid(SID_ROOT, full_path);
         if (IS_SID_NULL(sid))
             free(full_path);
         else if (path)

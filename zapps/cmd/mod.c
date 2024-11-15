@@ -22,7 +22,7 @@
 #define HELP_HELP "Try 'mod -h' for more information.\n"
 
 int is_file(char *path) {
-    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
     if (IS_SID_NULL(sid)) return 0;
     return fu_is_file(sid);
 }
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
         }
 
         // assemble new path
-        char *new_path = assemble_path(pwd, argv[3]);
+        char *new_path = profan_join_path(pwd, argv[3]);
 
         if (!is_file(new_path)) {
             fprintf(stderr, "mod: '%s': File not found\n" HELP_HELP, new_path);

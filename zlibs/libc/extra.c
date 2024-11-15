@@ -75,7 +75,7 @@ void profan_print_memory(void *addr, uint32_t size) {
  *                      *
 *************************/
 
-char *assemble_path(const char *old, const char *new) {
+char *profan_join_path(const char *old, const char *new) {
     char *result;
     int len;
 
@@ -99,13 +99,11 @@ char *assemble_path(const char *old, const char *new) {
     return result;
 }
 
-char *open_input(int *size) {
+char *profan_input(int *size) {
     char *term = getenv("TERM");
-    if (!term)
-        return NULL;
-    if (strstr(term, "serial"))
-        return open_input_serial(size, SERIAL_PORT_A);
-    return open_input_keyboard(size, term);
+    if (term && strstr(term, "serial"))
+        return profan_input_serial(size, SERIAL_PORT_A);
+    return profan_input_keyboard(size, term);
 }
 
 int profan_wait_pid(uint32_t pid) {
@@ -127,6 +125,42 @@ char *profan_fn_name(void *ptr, char **libname) {
     return NULL;
 }
 
+void profan_sep_path(const char *fullpath, char **parent, char **cnt) {
+    int i, len;
+
+    len = strlen(fullpath);
+
+    if (parent != NULL) {
+        *parent = calloc(1, len + 2);
+    }
+
+    if (cnt != NULL) {
+        *cnt = calloc(1, len + 2);
+    }
+
+    while (len > 0 && fullpath[len - 1] == '/') {
+        len--;
+    }
+
+    for (i = len - 1; i >= 0; i--) {
+        if (fullpath[i] == '/') {
+            break;
+        }
+    }
+
+    if (parent != NULL && i >= 0) {
+        if (i == 0) {
+            strcpy(*parent, "/");
+        } else {
+            strncpy(*parent, fullpath, i);
+        }
+    }
+
+    if (cnt != NULL) {
+        strcpy(*cnt, fullpath + i + 1);
+    }
+}
+
 /****************************
  *                         *
  *   KERNEL MEMORY ALLOC   *
@@ -134,11 +168,11 @@ char *profan_fn_name(void *ptr, char **libname) {
 ****************************/
 
 // kernel memory allocation functions
-void *profan_malloc(uint32_t size, int as_kernel) {
+void *profan_kmalloc(uint32_t size, int as_kernel) {
     return (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
 }
 
-void *profan_calloc(uint32_t nmemb, uint32_t lsize, int as_kernel) {
+void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
     void *addr = (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
 
@@ -149,7 +183,7 @@ void *profan_calloc(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     return addr;
 }
 
-void *profan_realloc(void *mem, uint32_t new_size, int as_kernel) {
+void *profan_krealloc(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL)
         return (void *) syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
 
@@ -164,7 +198,7 @@ void *profan_realloc(void *mem, uint32_t new_size, int as_kernel) {
     return new_addr;
 }
 
-void profan_free(void *mem) {
+void profan_kfree(void *mem) {
     if (mem == NULL)
         return;
     syscall_mem_free((uint32_t) mem);

@@ -155,7 +155,7 @@ uint32_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
 
     sep_path(path, &parent, &name);
     if (parent[0]) {
-        parent_sid = fu_path_to_sid(filesys, ROOT_SID, parent);
+        parent_sid = fu_path_to_sid(filesys, SID_ROOT, parent);
         if (IS_SID_NULL(parent_sid)) {
             printf("failed to find parent directory\n");
             free(parent);
@@ -169,7 +169,7 @@ uint32_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
             return SID_NULL;
         }
     } else {
-        parent_sid = ROOT_SID;
+        parent_sid = SID_ROOT;
     }
 
     // generate the meta
@@ -200,7 +200,7 @@ uint32_t fu_dir_create(filesys_t *filesys, int device_id, char *path) {
     fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    if (fu_add_element_to_dir(filesys, head_sid, parent_sid == ROOT_SID ? SID_FORMAT(1, 0) : parent_sid, "..")) {
+    if (fu_add_element_to_dir(filesys, head_sid, parent_sid == SID_ROOT ? SID_FORMAT(1, 0) : parent_sid, "..")) {
         printf("failed to add '..' to directory\n");
         free(parent);
         free(name);

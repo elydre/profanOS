@@ -64,7 +64,7 @@ void print_fs_info(void) {
     }
     printf("\e[0m\n");
 
-    profan_free(info);
+    profan_kfree(info);
 }
 
 char *gen_all_colors(int base_color) {

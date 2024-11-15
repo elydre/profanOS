@@ -59,7 +59,7 @@ char *find_cmd(char *cmd) {
         strcat(res, "/");
         strcat(res, cmd);
         strcat(res, ".elf");
-        sid = fu_path_to_sid(ROOT_SID, res);
+        sid = fu_path_to_sid(SID_ROOT, res);
         if (!IS_SID_NULL(sid) && fu_is_file(sid)) {
             free_tab(paths);
             return res;
@@ -125,7 +125,7 @@ int main(void) {
     while (1) {
         printf("(%d) %s # ", res, getenv("PWD"));
         fflush(stdout);
-        line = open_input(NULL);
+        line = profan_input(NULL);
         if (!line || !*line) {
             putchar('\n');
             free(line);

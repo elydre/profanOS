@@ -251,7 +251,7 @@ void print_comma(int elm_count, char **cnt_names, uint32_t *cnt_ids) {
     for (int i = 0; i < elm_count; i++) {
         print_name(cnt_ids[i], cnt_names[i]);
         if (i != elm_count - 1) printf("\e[0m, ");
-        profan_free(cnt_names[i]);
+        profan_kfree(cnt_names[i]);
     }
     puts("\e[0m");
 }
@@ -295,7 +295,7 @@ void print_cols(int elm_count, char **cnt_names, uint32_t *cnt_ids) {
             if (j + rows < elm_count && cols > 1)
                 for (uint32_t k = lens[j]; k < col_lens[j / rows]; k++)
                     putchar(' ');
-            profan_free(cnt_names[j]);
+            profan_kfree(cnt_names[j]);
         }
         putchar('\n');
     }
@@ -331,7 +331,7 @@ void print_lines(int elm_count, char **cnt_names, uint32_t *cnt_ids, ls_args_t *
         } else {
             printf("unk\e[u\e[22C\e[91m%s\e[0m", cnt_names[i]);
         }
-        profan_free(cnt_names[i]);
+        profan_kfree(cnt_names[i]);
         putchar('\n');
     }
 }
@@ -339,7 +339,7 @@ void print_lines(int elm_count, char **cnt_names, uint32_t *cnt_ids, ls_args_t *
 void print_basic(int elm_count, char **cnt_names) {
     for (int i = 0; i < elm_count; i++) {
         puts(cnt_names[i]);
-        profan_free(cnt_names[i]);
+        profan_kfree(cnt_names[i]);
     }
 }
 
@@ -362,13 +362,13 @@ int main(int argc, char **argv) {
     if (!pwd) pwd = "/";
 
     if (args->path)
-        ls_path = assemble_path(pwd, args->path);
+        ls_path = profan_join_path(pwd, args->path);
     else
         ls_path = strdup(pwd);
 
     fu_simplify_path(ls_path);
 
-    uint32_t dir = fu_path_to_sid(ROOT_SID, ls_path);
+    uint32_t dir = fu_path_to_sid(SID_ROOT, ls_path);
 
     if (IS_SID_NULL(dir) || !fu_is_dir(dir)) {
         fprintf(stderr, "ls: %s: No such directory\n", ls_path);
@@ -392,7 +392,7 @@ int main(int argc, char **argv) {
         int i = 0;
         while (i < elm_count) {
             if (cnt_names[i][0] == '.') {
-                profan_free(cnt_names[i]);
+                profan_kfree(cnt_names[i]);
                 cnt_names[i] = cnt_names[--elm_count];
                 cnt_ids[i] = cnt_ids[elm_count];
             } else i++;
@@ -400,8 +400,8 @@ int main(int argc, char **argv) {
     }
 
     if (!elm_count) {
-        profan_free(cnt_names);
-        profan_free(cnt_ids);
+        profan_kfree(cnt_names);
+        profan_kfree(cnt_ids);
         free(ls_path);
         free(args);
         return 0;
@@ -423,8 +423,8 @@ int main(int argc, char **argv) {
         print_basic(elm_count, cnt_names);
 
 
-    profan_free(cnt_names);
-    profan_free(cnt_ids);
+    profan_kfree(cnt_names);
+    profan_kfree(cnt_ids);
     free(ls_path);
     free(args);
     return 0;

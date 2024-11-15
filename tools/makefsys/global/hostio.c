@@ -119,12 +119,12 @@ int host_to_internal(filesys_t *filesys, char *extern_path, char *intern_path) {
                 uint32_t size = ftell(fp);
                 fseek(fp, 0, SEEK_SET);
                 // set the file size
-                fs_cnt_set_size(filesys, fu_path_to_sid(filesys, ROOT_SID, intern_path2), size);
+                fs_cnt_set_size(filesys, fu_path_to_sid(filesys, SID_ROOT, intern_path2), size);
                 // read the file
                 uint8_t *buf = malloc(size);
                 fread(buf, 1, size, fp);
                 // write the file
-                fs_cnt_write(filesys, fu_path_to_sid(filesys, ROOT_SID, intern_path2), buf, 0, size);
+                fs_cnt_write(filesys, fu_path_to_sid(filesys, SID_ROOT, intern_path2), buf, 0, size);
                 // close the file
                 fclose(fp);
                 free(buf);
@@ -163,7 +163,7 @@ int internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path) {
 
     int count = fu_get_dir_content(
         filesys,
-        fu_path_to_sid(filesys, ROOT_SID, intern_path),
+        fu_path_to_sid(filesys, SID_ROOT, intern_path),
         &sids,
         &names
     );

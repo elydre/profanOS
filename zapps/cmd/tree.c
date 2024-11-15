@@ -133,9 +133,9 @@ int draw_tree(uint32_t sid, int depth) {
 
     // free
     for (int j = 0; j < count; j++)
-        profan_free(names[j]);
-    profan_free(names);
-    profan_free(sids);
+        profan_kfree(names[j]);
+    profan_kfree(names);
+    profan_kfree(sids);
 
     return 0;
 }
@@ -151,10 +151,10 @@ int main(int argc, char **argv) {
     if (!path)
         path = "/";
 
-    path = assemble_path(path, argc == 2 ? argv[1] : ".");
+    path = profan_join_path(path, argc == 2 ? argv[1] : ".");
     fu_simplify_path(path);
 
-    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
 
     if (!sid) {
         fprintf(stderr, "Error: %s does not exist\n", path);

@@ -31,16 +31,16 @@ int copy_elem(uint32_t src_sid, char *src_path, char *dst_path) {
     char *parent;
     char *name;
 
-    fu_sep_path(dst_path, &parent, &name);
+    profan_sep_path(dst_path, &parent, &name);
 
-    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
     free(name);
 
     if (IS_SID_NULL(parent_sid))
         return raise_and_free("No such file or directory", dst_path, NULL);
 
-    uint32_t new_sid = fu_path_to_sid(ROOT_SID, dst_path);
+    uint32_t new_sid = fu_path_to_sid(SID_ROOT, dst_path);
 
     if (IS_SID_NULL(new_sid)) {
         new_sid = fu_file_create(0, dst_path);
@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (pwd == NULL) pwd = "/";
 
-    char *src_path = assemble_path(pwd, argv[1]);
-    char *dst_path = assemble_path(pwd, argv[2]);
+    char *src_path = profan_join_path(pwd, argv[1]);
+    char *dst_path = profan_join_path(pwd, argv[2]);
 
-    uint32_t src_sid = fu_path_to_sid(ROOT_SID, src_path);
+    uint32_t src_sid = fu_path_to_sid(SID_ROOT, src_path);
     if (IS_SID_NULL(src_sid)) {
         fprintf(stderr, "cp: Cannot copy '%s': No such file or directory\n", src_path);
         free(src_path);
@@ -104,11 +104,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    uint32_t dst_sid = fu_path_to_sid(ROOT_SID, dst_path);
+    uint32_t dst_sid = fu_path_to_sid(SID_ROOT, dst_path);
     if (!IS_SID_NULL(dst_sid) && fu_is_dir(dst_sid)) {
         char *name;
-        fu_sep_path(src_path, NULL, &name);
-        char *new_dst_path = assemble_path(dst_path, name);
+        profan_sep_path(src_path, NULL, &name);
+        char *new_dst_path = profan_join_path(dst_path, name);
         free(dst_path);
         dst_path = new_dst_path;
         free(name);

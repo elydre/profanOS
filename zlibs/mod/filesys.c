@@ -54,7 +54,7 @@ int main(void) {
     return 0;
 }
 
-void fu_sep_path(char *fullpath, char **parent, char **cnt) {
+static void fu_sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     len = strlen(fullpath);
@@ -170,7 +170,7 @@ int fu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     return count;
 }
 
-int fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
+int fu_add_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
     // read the directory and get size
     uint32_t size = syscall_fs_get_size(NULL, dir_sid);
     if (size == UINT32_MAX) {
@@ -231,7 +231,7 @@ int fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
     return 0;
 }
 
-int fu_remove_element_from_dir(uint32_t dir_sid, uint32_t element_sid) {
+int fu_remove_from_dir(uint32_t dir_sid, uint32_t element_sid) {
     // read the directory and get size
     uint32_t size = syscall_fs_get_size(NULL, dir_sid);
     if (size == UINT32_MAX) {
@@ -334,7 +334,7 @@ uint32_t fu_dir_create(int device_id, char *path) {
     uint32_t head_sid;
 
     // check if the the path already exists
-    head_sid = fu_path_to_sid(ROOT_SID, path);
+    head_sid = fu_path_to_sid(SID_ROOT, path);
     if (!IS_SID_NULL(head_sid)) {
         RAISE_ERROR("dir_create: '%s' already exists\n", path);
         return SID_NULL;
@@ -342,7 +342,7 @@ uint32_t fu_dir_create(int device_id, char *path) {
 
     fu_sep_path(path, &parent, &name);
     if (parent[0]) {
-        parent_sid = fu_path_to_sid(ROOT_SID, parent);
+        parent_sid = fu_path_to_sid(SID_ROOT, parent);
         if (IS_SID_NULL(parent_sid)) {
             RAISE_ERROR("dir_create: failed to find parent directory of '%s'\n", path);
             free(parent);
@@ -356,7 +356,7 @@ uint32_t fu_dir_create(int device_id, char *path) {
             return SID_NULL;
         }
     } else {
-        parent_sid = ROOT_SID;
+        parent_sid = SID_ROOT;
     }
 
     // generate the meta
@@ -377,7 +377,7 @@ uint32_t fu_dir_create(int device_id, char *path) {
 
     // create a link in parent directory
     if (parent[0]) {
-        if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
+        if (fu_add_to_dir(parent_sid, head_sid, name)) {
             RAISE_ERROR("dir_create: failed to add directory '%s' to parent\n", path);
             free(parent);
             free(name);
@@ -389,14 +389,14 @@ uint32_t fu_dir_create(int device_id, char *path) {
     syscall_fs_write(NULL, head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    if (fu_add_element_to_dir(head_sid, parent_sid, "..")) {
+    if (fu_add_to_dir(head_sid, parent_sid, "..")) {
         RAISE_ERROR("dir_create: failed to add '..' to directory '%s'\n", path);
         free(parent);
         free(name);
         return SID_NULL;
     }
 
-    if (fu_add_element_to_dir(head_sid, head_sid, ".")) {
+    if (fu_add_to_dir(head_sid, head_sid, ".")) {
         RAISE_ERROR("dir_create: failed to add '.' to directory '%s'\n", path);
         free(parent);
         free(name);
@@ -453,7 +453,7 @@ uint32_t fu_file_create(int device_id, char *path) {
     uint32_t head_sid;
 
     // check if the the path already exists
-    head_sid = fu_path_to_sid(ROOT_SID, path);
+    head_sid = fu_path_to_sid(SID_ROOT, path);
     if (!IS_SID_NULL(head_sid)) {
         RAISE_ERROR("file_create: '%s' already exists\n", path);
         return SID_NULL;
@@ -467,7 +467,7 @@ uint32_t fu_file_create(int device_id, char *path) {
         return SID_NULL;
     }
 
-    parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    parent_sid = fu_path_to_sid(SID_ROOT, parent);
     if (IS_SID_NULL(parent_sid)) {
         RAISE_ERROR("file_create: failed to find parent directory of '%s'\n", path);
         free(parent);
@@ -498,7 +498,7 @@ uint32_t fu_file_create(int device_id, char *path) {
     }
 
     // create a link in parent directory
-    if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
+    if (fu_add_to_dir(parent_sid, head_sid, name)) {
         RAISE_ERROR("file_create: failed to add file '%s' to parent\n", path);
         free(parent);
         free(name);
@@ -540,14 +540,14 @@ int fu_is_fctf(uint32_t file_sid) {
     return 0;
 }
 
-uint32_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, uint32_t, uint8_t)) {
+uint32_t fu_fctf_create(int device_id, char *path, int (*fct)(int, void *, uint32_t, uint8_t)) {
     char *parent, *name;
 
     uint32_t parent_sid;
     uint32_t head_sid;
 
     // check if the the path already exists
-    head_sid = fu_path_to_sid(ROOT_SID, path);
+    head_sid = fu_path_to_sid(SID_ROOT, path);
     if (!IS_SID_NULL(head_sid)) {
         RAISE_ERROR("fctf_create: '%s' already exists\n", path);
         return SID_NULL;
@@ -561,7 +561,7 @@ uint32_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, 
         return SID_NULL;
     }
 
-    parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    parent_sid = fu_path_to_sid(SID_ROOT, parent);
     if (IS_SID_NULL(parent_sid)) {
         RAISE_ERROR("fctf_create: failed to find parent directory of '%s'\n", path);
         free(parent);
@@ -592,7 +592,7 @@ uint32_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, 
     }
 
     // create a link in parent directory
-    if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
+    if (fu_add_to_dir(parent_sid, head_sid, name)) {
         RAISE_ERROR("fctf_create: failed to add file '%s' to parent\n", path);
         free(parent);
         free(name);
@@ -612,46 +612,6 @@ uint32_t fu_fctf_create(int device_id, char *path, int (*fct)(void *, uint32_t, 
     free(name);
 
     return head_sid;
-}
-
-int fu_fctf_rw(uint32_t file_sid, void *buf, uint32_t offset, uint32_t size, uint8_t is_read) {
-    // search in cache
-
-    void *addr = NULL;
-
-    for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
-        if (IS_SAME_SID(cache_fctf[i].sid, file_sid)) {
-            addr = cache_fctf[i].addr;
-            break;
-        }
-    }
-
-    if (addr == NULL) {
-        // read container
-        if (syscall_fs_read(NULL, file_sid, &addr, 0, sizeof(void *))) {
-            RAISE_ERROR("fctf_rw: failed to read function pointer from d%ds%d\n",
-                    SID_DISK(file_sid),
-                    SID_SECTOR(file_sid)
-            );
-            return -1;
-        }
-
-        // add to cache
-        for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
-            if (IS_SID_NULL(cache_fctf[i].sid)) {
-                cache_fctf[i].sid = file_sid;
-                cache_fctf[i].addr = addr;
-                break;
-            }
-            if (i == CACHE_FCTF_SIZE - 1) {
-                cache_fctf[0].sid = file_sid;
-                cache_fctf[0].addr = addr;
-            }
-        }
-    }
-
-    // call the function
-    return ((int (*)(void *, uint32_t, uint32_t, uint8_t)) addr)(buf, offset, size, is_read);
 }
 
 uint32_t fu_fctf_get_addr(uint32_t file_sid) {
@@ -696,7 +656,7 @@ uint32_t fu_fctf_get_addr(uint32_t file_sid) {
  *            Path to SID conversion             *
  *                                               *
 **************************************************/
-uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const char *path) {
+static uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, const char *path) {
     uint32_t ret = SID_NULL;
 
     // generate the path part to search for

@@ -31,7 +31,7 @@ unsigned alarm(unsigned a) {
 }
 
 int chdir(const char *path) {
-    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
     if (!fu_is_dir(sid)) {
         errno = ENOTDIR;
         return -1;
@@ -41,7 +41,7 @@ int chdir(const char *path) {
     if (!dir) dir = "/";
 
     // check if dir exists
-    dir = assemble_path(dir, path);
+    dir = profan_join_path(dir, path);
     fu_simplify_path(dir);
 
     if (setenv("PWD", dir, 1)) {
@@ -478,10 +478,10 @@ int unlink(const char *filename) {
     // add the current working directory to the filename
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
-    char *path = assemble_path(pwd, (char *) filename);
+    char *path = profan_join_path(pwd, (char *) filename);
 
     // check if the file exists
-    uint32_t parent_sid, elem = fu_path_to_sid(ROOT_SID, path);
+    uint32_t parent_sid, elem = fu_path_to_sid(SID_ROOT, path);
     if (!fu_is_file(elem)) {
         fprintf(stderr, "unlink: %s: not a file\n", filename);
         free(path);
@@ -490,8 +490,8 @@ int unlink(const char *filename) {
 
     // get the parent directory sid
     char *parent;
-    fu_sep_path(path, &parent, NULL);
-    parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    profan_sep_path(path, &parent, NULL);
+    parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
     free(path);
 
@@ -501,7 +501,7 @@ int unlink(const char *filename) {
     }
 
     // remove the element from the parent directory
-    fu_remove_element_from_dir(parent_sid, elem);
+    fu_remove_from_dir(parent_sid, elem);
 
     // delete the file content
     if (syscall_fs_delete(NULL, elem)) {

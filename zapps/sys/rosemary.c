@@ -15,6 +15,7 @@
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 #include <profan/panda.h>
+#include <profan/clip.h>
 #include <profan.h>
 
 #define LOADER_NAME "rosemary"
@@ -40,7 +41,6 @@ mod_t mods_at_boot[] = {
     {1005, "/lib/mod/profan.pok"},
     {1006, "/lib/mod/panda.pok"},
     {1007, "/lib/mod/dlgext.pok"},
-    {1008, "/lib/mod/microwave.pok"},
 };
 
 int local_strlen(char *str) {
@@ -178,6 +178,10 @@ int main(void) {
     } else {
         syscall_kprint("["LOADER_NAME"] Using kernel output for stdout\n");
         set_env("TERM=/dev/kterm");
+    }
+
+    if (fu_file_create(0, PROFAN_CLIP_PATH)) {
+        syscall_kprint("["LOADER_NAME"] Failed to create /dev/clip\n");
     }
 
     welcome_print();

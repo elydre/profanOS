@@ -34,8 +34,8 @@
 #undef META_MAXLEN
 #define META_MAXLEN 64
 
-#undef ROOT_SID
-#define ROOT_SID SID_FORMAT(1, 0)
+#undef SID_ROOT
+#define SID_ROOT SID_FORMAT(1, 0)
 
 #undef IS_SID_NULL
 #define IS_SID_NULL(sid) (sid == SID_NULL)
@@ -46,34 +46,35 @@
 #undef FS_MAX_DISKS
 #define FS_MAX_DISKS 256
 
-
-#define fu_fctf_write(sid, buf, offset, size) (fu_fctf_rw(sid, buf, offset, size, 0))
-#define fu_fctf_read(sid, buf, offset, size) (fu_fctf_rw(sid, buf, offset, size, 1))
+enum {
+    FCTF_OPEN = 1,
+    FCTF_CLOSE,
+    FCTF_READ,
+    FCTF_WRITE
+};
 
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #ifndef FILESYS_LIB_C
 
-#define fu_sep_path ((void (*)(char *, char **, char **)) get_func_addr(FILESYS_LIB_ID, 2))
-#define fu_is_dir ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 3))
-#define fu_get_dir_content ((int (*)(uint32_t, uint32_t **, char ***)) get_func_addr(FILESYS_LIB_ID, 4))
-#define fu_add_element_to_dir ((int (*)(uint32_t, uint32_t, char *)) get_func_addr(FILESYS_LIB_ID, 5))
-#define fu_remove_element_from_dir ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 6))
-#define fu_dir_create ((uint32_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 7))
-#define fu_is_file ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 8))
-#define fu_file_set_size ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 9))
-#define fu_file_get_size ((uint32_t (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 10))
-#define fu_file_create ((uint32_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 11))
-#define fu_file_read ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 12))
-#define fu_file_write ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 13))
-#define fu_is_fctf ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 14))
-#define fu_fctf_create ((uint32_t (*)(int, char *, int (*)(void *, uint32_t, uint32_t, uint8_t))) get_func_addr(FILESYS_LIB_ID, 15))
-#define fu_fctf_rw ((int (*)(uint32_t, void *, uint32_t, uint32_t, uint8_t)) get_func_addr(FILESYS_LIB_ID, 16))
-#define fu_fctf_get_addr ((uint32_t (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 17))
+#define fu_is_dir ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 2))
+#define fu_get_dir_content ((int (*)(uint32_t, uint32_t **, char ***)) get_func_addr(FILESYS_LIB_ID, 3))
+#define fu_add_to_dir ((int (*)(uint32_t, uint32_t, char *)) get_func_addr(FILESYS_LIB_ID, 4))
+#define fu_remove_from_dir ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 5))
+#define fu_dir_create ((uint32_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 6))
+#define fu_is_file ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 7))
+#define fu_file_set_size ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 8))
+#define fu_file_get_size ((uint32_t (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 9))
+#define fu_file_create ((uint32_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 10))
+#define fu_file_read ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 11))
+#define fu_file_write ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 12))
+#define fu_is_fctf ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 13))
+#define fu_fctf_create ((uint32_t (*)(int, char *, int (*)(int, void *, uint32_t, uint8_t))) get_func_addr(FILESYS_LIB_ID, 14))
+#define fu_fctf_get_addr ((uint32_t (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 15))
 
-#define fu_path_to_sid ((uint32_t (*)(uint32_t, const char *)) get_func_addr(FILESYS_LIB_ID, 19))
-#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 20))
-#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 21))
+#define fu_path_to_sid ((uint32_t (*)(uint32_t, const char *)) get_func_addr(FILESYS_LIB_ID, 16))
+#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 17))
+#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 18))
 
 #endif
 

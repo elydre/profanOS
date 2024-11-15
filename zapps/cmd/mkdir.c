@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *full_path = assemble_path(pwd, argv[1]);
+    char *full_path = profan_join_path(pwd, argv[1]);
 
     int len = strlen(full_path);
 
@@ -47,14 +47,14 @@ int main(int argc, char **argv) {
     }
 
     // chek if the parent directory exists
-    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent_path);
+    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent_path);
 
     if (IS_SID_NULL(parent_sid) || !fu_is_dir(parent_sid)) {
         fprintf(stderr, "mkdir: '%s': No such file or directory\n", parent_path);
     }
 
     // check if the file already exists
-    else if (!IS_SID_NULL(fu_path_to_sid(ROOT_SID, full_path))) {
+    else if (!IS_SID_NULL(fu_path_to_sid(SID_ROOT, full_path))) {
         fprintf(stderr, "mkdir: '%s': Already exists\n", full_path);
     }
 

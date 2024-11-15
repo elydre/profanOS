@@ -55,7 +55,7 @@ int profan_kb_load_map(char *path);
 int main(void) {
     kb_map = NULL;
     if (profan_kb_load_map(DEFAULT_KB)) {
-        fd_printf(2, "Failed to load keyboard map\n");
+        fd_printf(2, "[profan module] failed to load default keymap\n");
         return 1;
     }
 
@@ -71,7 +71,7 @@ int userspace_reporter(char *message) {
 }
 
 int profan_kb_load_map(char *path) {
-    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
     if (IS_SID_NULL(sid)) {
         return 1;
     }
@@ -126,7 +126,7 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     return kb_map[scancode * 2];
 }
 
-char *open_input_keyboard(int *size, char *term_path) {
+char *profan_input_keyboard(int *size, char *term_path) {
     int fd = fm_open(term_path);
     if (fd == -1) {
         return NULL;
@@ -248,7 +248,7 @@ char *open_input_keyboard(int *size, char *term_path) {
     return buffer;
 }
 
-char *open_input_serial(int *size, int serial_port) {
+char *profan_input_serial(int *size, int serial_port) {
     char *buffer = malloc(100);
     int buffer_size = 100;
     int i = 0;
@@ -377,14 +377,14 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     static uint32_t elf_sid = SID_NULL;
 
     if (IS_SID_NULL(elf_sid)) {
-        elf_sid = fu_path_to_sid(ROOT_SID, ELF_INTERP);
+        elf_sid = fu_path_to_sid(SID_ROOT, ELF_INTERP);
         if (IS_SID_NULL(elf_sid)) {
             fd_printf(2, "[run_ifexist] interpreter not found: %s\n", ELF_INTERP);
             return -1;
         }
     }
 
-    uint32_t sid = fu_path_to_sid(ROOT_SID, args.path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, args.path);
     if (!fu_is_file(sid)) {
         fd_printf(2, "[run_ifexist] path not found: %s\n", args.path);
         return -1;

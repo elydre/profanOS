@@ -32,13 +32,14 @@ typedef struct {
 
 typedef struct {
     union {
-        uint32_t    sid;
-        pipe_t  *pipe;
-        int    (*fctf)(void *, uint32_t, uint32_t, uint8_t);
+        uint32_t  sid;
+        int     (*fctf)(int, void *, uint32_t, uint8_t);
+        pipe_t   *pipe;
     };
-    int      type;
-    int      pid;
-    int      offset;
+    int     fctf_id;
+    int     offset;
+    int     type;
+    int     pid;
 } opened_t;
 
 typedef struct {
@@ -48,13 +49,15 @@ typedef struct {
 
 opened_t    *opened;
 stdhist_t   *stdhist;
-int          stdhist_len;
-uint32_t    stdlinks[3];
+uint32_t     stdhist_len;
+uint32_t     stdlinks[3];
 
-#define TYPE_FILE 1
-#define TYPE_FCTF 2
-#define TYPE_RPIP 3
-#define TYPE_WPIP 4
+enum {
+    TYPE_FILE = 1,
+    TYPE_FCTF,
+    TYPE_RPIP,
+    TYPE_WPIP
+};
 
 int fm_add_stdhist(int fd, int pid);
 int fm_resol012(int fd, int pid);
@@ -62,13 +65,13 @@ int fm_reopen(int fd, char *path);
 int fm_close(int fd);
 
 int main(void) {
-    opened = calloc_ask(MAX_OPENED, sizeof(opened_t));
-    stdhist = calloc_ask(MAX_STDHIST, sizeof(stdhist_t));
+    opened = calloc_ask(MAX_OPENED * sizeof(opened_t) + MAX_STDHIST * sizeof(stdhist_t), 1);
+    stdhist = (void *) (opened + MAX_OPENED);
     stdhist_len = 0;
 
-    stdlinks[0] = fu_fctf_get_addr(fu_path_to_sid(ROOT_SID, "/dev/stdin"));
-    stdlinks[1] = fu_fctf_get_addr(fu_path_to_sid(ROOT_SID, "/dev/stdout"));
-    stdlinks[2] = fu_fctf_get_addr(fu_path_to_sid(ROOT_SID, "/dev/stderr"));
+    stdlinks[0] = fu_fctf_get_addr(fu_path_to_sid(SID_ROOT, "/dev/stdin"));
+    stdlinks[1] = fu_fctf_get_addr(fu_path_to_sid(SID_ROOT, "/dev/stdout"));
+    stdlinks[2] = fu_fctf_get_addr(fu_path_to_sid(SID_ROOT, "/dev/stderr"));
 
     fm_reopen(3, "/dev/kterm");
     fm_reopen(4, "/dev/kterm");
@@ -78,14 +81,14 @@ int main(void) {
 }
 
 int fm_open(char *path) {
-    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
     if (IS_SID_NULL(sid)) {
-        fd_printf(2, "fm_open: %s not found\n", path);
+        fd_printf(2, "fm_open: %s: not found\n", path);
         return -1;
     }
 
     if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
-        fd_printf(2, "fm_open: %s is not a file\n", path);
+        fd_printf(2, "fm_open: %s: is not a file\n", path);
         return -1;
     }
 
@@ -99,13 +102,22 @@ int fm_open(char *path) {
     }
 
     opened[index].pid = syscall_process_pid();
-    opened[index].type = fu_is_fctf(sid) ? TYPE_FCTF : TYPE_FILE;
     opened[index].offset = 0;
     opened[index].pipe = NULL;
-    if (opened[index].type == TYPE_FCTF)
+
+    if (fu_is_fctf(sid)) {
         opened[index].fctf = (void *) fu_fctf_get_addr(sid);
-    else
+        opened[index].fctf_id = opened[index].fctf(0, NULL, 0, FCTF_OPEN);
+        if (opened[index].fctf_id < 0) {
+            fd_printf(2, "fm_open: %s: open rejected\n", path);
+            return -1;
+        }
+        opened[index].type = TYPE_FCTF;
+    } else {
         opened[index].sid = sid;
+        opened[index].type = TYPE_FILE;
+    }
+
     return index;
 }
 
@@ -113,11 +125,10 @@ int fm_reopen(int fd, char *path) {
     if (fd < 0 || fd >= MAX_OPENED)
         return -1;
 
-    uint32_t sid = fu_path_to_sid(ROOT_SID, path);
-
+    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(sid)) {
-        fd_printf(2, "fm_reopen: %s not found\n", path);
+        fd_printf(2, "fm_reopen: %s: not found\n", path);
         return -1;
     }
 
@@ -135,18 +146,28 @@ int fm_reopen(int fd, char *path) {
     fm_close(fd);
 
     if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
-        fd_printf(2, "fm_reopen: %s is not a file\n", path);
+        fd_printf(2, "fm_reopen: %s: is not a file\n", path);
         return -1;
     }
 
     opened[fd].pid = syscall_process_pid();
-    opened[fd].type = fu_is_fctf(sid) ? TYPE_FCTF : TYPE_FILE;
     opened[fd].offset = 0;
-    if (opened[fd].type == TYPE_FCTF)
+    opened[fd].pipe = NULL;
+
+    if (fu_is_fctf(sid)) {
         opened[fd].fctf = (void *) fu_fctf_get_addr(sid);
-    else
+        opened[fd].fctf_id = opened[fd].fctf(0, NULL, 0, FCTF_OPEN);
+        if (opened[fd].fctf_id < 0) {
+            fd_printf(2, "fm_reopen: %s: open rejected\n", path);
+            return -1;
+        }
+        opened[fd].type = TYPE_FCTF;
+    } else {
         opened[fd].sid = sid;
-    return 0;
+        opened[fd].type = TYPE_FILE;
+    }
+
+    return fd;
 }
 
 int fm_close(int fd) {
@@ -160,12 +181,12 @@ int fm_close(int fd) {
 
     if (opened[fd].type == TYPE_WPIP) {
         for (int i = 0; i < opened[fd].pipe->wpcnt; i++) {
-            if (opened[fd].pipe->wpid[i] == opened[fd].pid) {
-                memmove(opened[fd].pipe->wpid + i, opened[fd].pipe->wpid + i + 1,
-                        (opened[fd].pipe->wpcnt - i - 1) * sizeof(int));
-                opened[fd].pipe->wpcnt--;
-                break;
-            }
+            if (opened[fd].pipe->wpid[i] != opened[fd].pid)
+                continue;
+            memmove(opened[fd].pipe->wpid + i, opened[fd].pipe->wpid + i + 1,
+                    (opened[fd].pipe->wpcnt - i - 1) * sizeof(int));
+            opened[fd].pipe->wpcnt--;
+            break;
         }
     }
 
@@ -176,6 +197,9 @@ int fm_close(int fd) {
             free(opened[fd].pipe);
         }
     }
+
+    if (opened[fd].type == TYPE_FCTF)
+        opened[fd].fctf(opened[fd].fctf_id, NULL, 0, FCTF_CLOSE);
 
     opened[fd].type = 0;
     return 0;
@@ -200,7 +224,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
             read_count = syscall_fs_read(NULL, opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
             break;
         case TYPE_FCTF:
-            read_count = opened[fd].fctf(buf, opened[fd].offset, size, 1);
+            read_count = opened[fd].fctf(opened[fd].fctf_id, buf, size, FCTF_READ);
             break;
         case TYPE_RPIP:
             while ((int) opened[fd].pipe->writed <= opened[fd].offset) {
@@ -239,7 +263,7 @@ int fm_write(int fd, void *buf, uint32_t size) {
             write_count = syscall_fs_write(NULL, opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
             break;
         case TYPE_FCTF:
-            write_count = opened[fd].fctf(buf, opened[fd].offset, size, 0);
+            write_count = opened[fd].fctf(opened[fd].fctf_id, buf, size, FCTF_WRITE);
             break;
         case TYPE_WPIP:
             if (opened[fd].pipe->writed + size > opened[fd].pipe->size) {
@@ -315,9 +339,10 @@ int fm_dup(int fd) {
     opened[index].type = opened[fd].type;
     opened[index].offset = opened[fd].offset;
     opened[index].pid = opened[fd].pid;
-    if (opened[index].type == TYPE_FCTF)
+    if (opened[index].type == TYPE_FCTF) {
         opened[index].fctf = opened[fd].fctf;
-    else if (opened[index].type == TYPE_RPIP) {
+        opened[index].fctf_id = opened[fd].fctf_id;
+    } else if (opened[index].type == TYPE_RPIP) {
         opened[index].pipe = opened[fd].pipe;
         opened[index].pipe->refs++;
     } else if (opened[index].type == TYPE_WPIP) {
@@ -359,9 +384,10 @@ int fm_dup2(int fd, int new_fd) {
 
     opened[new_fd].type = opened[fd].type;
     opened[new_fd].offset = opened[fd].offset;
-    if (opened[new_fd].type == TYPE_FCTF)
+    if (opened[new_fd].type == TYPE_FCTF) {
         opened[new_fd].fctf = opened[fd].fctf;
-    else if (opened[new_fd].type == TYPE_RPIP) {
+        opened[new_fd].fctf_id = opened[fd].fctf_id;
+    } else if (opened[new_fd].type == TYPE_RPIP) {
         opened[new_fd].pipe = opened[fd].pipe;
         opened[new_fd].pipe->refs++;
     } else if (opened[new_fd].type == TYPE_WPIP) {
@@ -430,7 +456,7 @@ int fm_isfctf(int fd) {
 void fm_clean(void) {
     int fd_free = 0;
 
-    for (int i = 0; i < stdhist_len; i++) {
+    for (uint32_t i = 0; i < stdhist_len; i++) {
         if (syscall_process_state(stdhist[i].pid) < 4)
             continue;
         fd_printf(1, "fm_clean: stdhist %d (pid: %d)\n", i, stdhist[i].pid);
@@ -462,7 +488,7 @@ void fm_clean(void) {
 
 int fm_add_stdhist(int fd, int pid) {
     if (stdhist_len >= MAX_STDHIST) {
-        for (int i = 0; i < stdhist_len; i++) {
+        for (uint32_t i = 0; i < stdhist_len; i++) {
             if (syscall_process_state(stdhist[i].pid) < 4)
                 continue;
             for (int j = 0; j < 3; j++) {
@@ -486,7 +512,7 @@ int fm_add_stdhist(int fd, int pid) {
     int ppid = syscall_process_ppid(pid);
 
     if (ppid >= 0) {
-        for (int i = 0; i < stdhist_len; i++) {
+        for (uint32_t i = 0; i < stdhist_len; i++) {
             if (stdhist[i].pid != ppid)
                 continue;
             for (int j = 0; j < 3; j++) {
@@ -528,7 +554,7 @@ int fm_resol012(int fd, int pid) {
     if (pid > stdhist[stdhist_len - 1].pid)
         return fm_add_stdhist(fd, pid);
 
-    for (int i = 0; i < stdhist_len; i++) {
+    for (uint32_t i = 0; i < stdhist_len; i++) {
         if (stdhist[i].pid == pid) {
             return stdhist[i].fd[fd];
         }

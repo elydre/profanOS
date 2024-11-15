@@ -55,9 +55,9 @@ int main(int argc, char** argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *path = assemble_path(pwd, argv[1]);
+    char *path = profan_join_path(pwd, argv[1]);
 
-    uint32_t file = fu_path_to_sid(ROOT_SID, path);
+    uint32_t file = fu_path_to_sid(SID_ROOT, path);
     if (IS_SID_NULL(file) || !fu_is_file(file)) {
         file = fu_file_create(0, path);
         if (IS_SID_NULL(file)) {

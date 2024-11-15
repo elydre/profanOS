@@ -78,9 +78,9 @@ rm_options_t *parse_options(int argc, char **argv) {
 int remove_hard_link(uint32_t elem, char *path) {
     char *parent;
 
-    fu_sep_path(path, &parent, NULL);
+    profan_sep_path(path, &parent, NULL);
 
-    uint32_t parent_sid = fu_path_to_sid(ROOT_SID, parent);
+    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
 
     if (IS_SID_NULL(parent_sid)) {
@@ -88,7 +88,7 @@ int remove_hard_link(uint32_t elem, char *path) {
         return 1;
     }
 
-    return fu_remove_element_from_dir(parent_sid, elem);
+    return fu_remove_from_dir(parent_sid, elem);
 }
 
 int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
@@ -116,20 +116,20 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
         char *new_path;
         for (int i = 0; i < count; i++) {
             if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
-                profan_free(names[i]);
+                profan_kfree(names[i]);
                 continue;
             }
 
-            new_path = assemble_path(path, names[i]);
+            new_path = profan_join_path(path, names[i]);
 
             if (remove_elem(content[i], new_path, options))
                 exit(1);
 
             free(new_path);
-            profan_free(names[i]);
+            profan_kfree(names[i]);
         }
-        profan_free(content);
-        profan_free(names);
+        profan_kfree(content);
+        profan_kfree(names);
     }
 
     if (options->verbose)
@@ -181,9 +181,9 @@ int main(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    char *path = assemble_path(pwd, options->path);
+    char *path = profan_join_path(pwd, options->path);
 
-    uint32_t elem = fu_path_to_sid(ROOT_SID, path);
+    uint32_t elem = fu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(elem)) {
         fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);

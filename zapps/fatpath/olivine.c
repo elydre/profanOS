@@ -539,7 +539,7 @@ char **load_bin_names(void) {
             *path_end = '\0';
         }
 
-        uint32_t dir_id = fu_path_to_sid(ROOT_SID, path_ptr);
+        uint32_t dir_id = fu_path_to_sid(SID_ROOT, path_ptr);
         if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id))
             goto next;
 
@@ -554,11 +554,11 @@ char **load_bin_names(void) {
                 size += strlen(cnt_names[i]) - 3;
                 tmp_names[bin_count++] = cnt_names[i];
             } else {
-                profan_free(cnt_names[i]);
+                profan_kfree(cnt_names[i]);
             }
         }
-        profan_free(cnt_names);
-        profan_free(cnt_ids);
+        profan_kfree(cnt_names);
+        profan_kfree(cnt_ids);
 
         next:
         if (path_end != NULL) {
@@ -579,7 +579,7 @@ char **load_bin_names(void) {
         strncpy(ret_ptr, tmp_names[i], tmp);
         ret_ptr[tmp] = '\0';
         ret_ptr += tmp + 1;
-        profan_free(tmp_names[i]);
+        profan_kfree(tmp_names[i]);
     }
 
     if (size != (uint32_t) ret_ptr - (uint32_t) ret) {
@@ -630,9 +630,9 @@ char *get_bin_path(char *name) {
         if (path[i] != ':' && path[i] != '\0')
             continue;
         path[i] = '\0';
-        uint32_t sid = fu_path_to_sid(ROOT_SID, path + start);
+        uint32_t sid = fu_path_to_sid(SID_ROOT, path + start);
         if (!IS_SID_NULL(sid) && fu_is_file(fu_path_to_sid(sid, fullname))) {
-            char *result = assemble_path(path + start, fullname);
+            char *result = profan_join_path(path + start, fullname);
             free(fullname);
             free(path);
             return result;
@@ -1291,7 +1291,7 @@ char *if_eval(char **input) {
 #if PROFANBUILD
 
 char *search_recursive(char *path, uint8_t required_type, char *ext, int recursive) {
-    uint32_t dir_id = fu_path_to_sid(ROOT_SID, path);
+    uint32_t dir_id = fu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id)) {
         raise_error("search", "Directory '%s' does not exist", path);
@@ -1323,7 +1323,7 @@ char *search_recursive(char *path, uint8_t required_type, char *ext, int recursi
                 continue;
             }
         }
-        tmp_path = assemble_path(path, names[i]);
+        tmp_path = profan_join_path(path, names[i]);
         fu_simplify_path(tmp_path);
 
         if ((required_type == 0) ||
@@ -1359,9 +1359,9 @@ char *search_recursive(char *path, uint8_t required_type, char *ext, int recursi
     }
 
     for (int i = 0; i < elm_count; i++)
-        profan_free(names[i]);
-    profan_free(out_ids);
-    profan_free(names);
+        profan_kfree(names[i]);
+    profan_kfree(out_ids);
+    profan_kfree(names);
 
     return output;
 }
@@ -1422,7 +1422,7 @@ char *if_search(char **input) {
         dir = ".";
     }
 
-    dir = assemble_path(g_current_directory, dir);
+    dir = profan_join_path(g_current_directory, dir);
     ret = search_recursive(dir, required_type, ext, recursive);
     free(dir);
 
@@ -1691,10 +1691,10 @@ char *if_dot(char **input) {
     #if PROFANBUILD
     // get file name
     if (file_path[0] != '/')
-        file_path = assemble_path(g_current_directory, input[0]);
+        file_path = profan_join_path(g_current_directory, input[0]);
 
     // check if file exists
-    uint32_t sid = fu_path_to_sid(ROOT_SID, file_path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, file_path);
 
     if (IS_SID_NULL(sid) || !fu_is_file(sid)) {
         raise_error("dot", "File '%s' does not exist", file_path);
@@ -1744,10 +1744,10 @@ char *if_dot(char **input) {
                 raise_error("dot", "Multiple redirections for %s", redirect[j].name);
                 goto dot_redir_error;
             }
-            stdpaths[fd] = assemble_path(g_current_directory, input[i + 1]);
+            stdpaths[fd] = profan_join_path(g_current_directory, input[i + 1]);
             append[fd] = redirect[j].append;
             input[i] = NULL;
-            sid = fu_path_to_sid(ROOT_SID, stdpaths[fd]);
+            sid = fu_path_to_sid(SID_ROOT, stdpaths[fd]);
             if (fd == 0) {
                 if (fu_is_file(sid) || fu_is_fctf(sid))
                     break;
@@ -1966,9 +1966,9 @@ char *if_fsize(char **input) {
 
     #if PROFANBUILD
     // get path
-    char *path = assemble_path(g_current_directory, input[0]);
+    char *path = profan_join_path(g_current_directory, input[0]);
 
-    uint32_t file_id = fu_path_to_sid(ROOT_SID, path);
+    uint32_t file_id = fu_path_to_sid(SID_ROOT, path);
 
     // check if file exists
     if (IS_SID_NULL(file_id)) {
@@ -4232,7 +4232,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
             break;
         }
 
-        char *tmp = assemble_path(g_current_directory, inp_end);
+        char *tmp = profan_join_path(g_current_directory, inp_end);
         strcpy(path, tmp);
         free(tmp);
 
@@ -4256,7 +4256,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         *dec_ptr = dec;
 
         // check if the path is valid
-        uint32_t dir = fu_path_to_sid(ROOT_SID, path);
+        uint32_t dir = fu_path_to_sid(SID_ROOT, path);
         free(path);
 
         if (IS_SID_NULL(dir) || !fu_is_dir(dir)) {
@@ -4283,9 +4283,9 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
         }
 
         for (int j = 0; j < elm_count; j++)
-            profan_free(names[j]);
-        profan_free(out_ids);
-        profan_free(names);
+            profan_kfree(names[j]);
+        profan_kfree(out_ids);
+        profan_kfree(names);
         free(inp_end);
 
         if (suggest == 1) {

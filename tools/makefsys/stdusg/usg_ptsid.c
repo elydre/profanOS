@@ -83,7 +83,7 @@ uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path) {
     uint32_t ret;
 
     if (strcmp("/", path) == 0) {
-        ret = ROOT_SID;
+        ret = SID_ROOT;
     } else if (path[0] == '/') {
         ret = fu_rec_path_to_sid(filesys, from, path + 1);
     } else {

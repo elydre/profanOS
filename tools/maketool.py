@@ -254,14 +254,14 @@ def build_app_lib():
         with open(name, "r") as f:
             for _ in range(LD_LINE_MAX):
                 first_line = f.readline()
-                if not first_line.startswith("// @LINK SHARED:"):
+                if not first_line.startswith("// @LINK:"):
                     continue
                 required_libs = first_line.split(":")[1].replace("\n", "").replace(",", " ").split()
                 break
 
         for lib in required_libs:
             if lib not in liblist:
-                cprint(COLOR_EROR, f"library '{lib}' is not found, available: {liblist}")
+                cprint(COLOR_EROR, f"maketool: {name}: library '{lib}' not found\n{' '*10}available: {liblist}")
                 os._exit(1)
 
         print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")

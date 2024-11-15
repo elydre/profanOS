@@ -66,7 +66,7 @@ int main(void) {
 }
 
 font_data_t *load_psf_font(const char *file) {
-    uint32_t sid = fu_path_to_sid(ROOT_SID, file);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, file);
     if (IS_SID_NULL(sid)) return NULL;
 
     uint32_t magic;

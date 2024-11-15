@@ -17,98 +17,22 @@
 #include <profan/panda.h>
 #include <profan.h>
 
+#undef UNUSED
+#define UNUSED(x) (void) (x)
+
 void init_devio(void);
-int keyboard_read(void *buffer, uint32_t size, char *term);
 
 int main(void) {
     init_devio();
     return 0;
 }
 
-int dev_null(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) buffer;
-    (void) offset;
-
-    if (is_read)
-        return 0;
-    return size;
-}
-
-int dev_zero(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-    if (is_read)
-        memset(buffer, 0, size);
-    return size;
-}
-
-int dev_rand(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-
-    static uint32_t rand_seed = 0;
-
-    if (!is_read)
-        return 0;
-
-    for (uint32_t i = 0; i < size; i++) {
-        rand_seed = rand_seed * 1103515245 + 12345;
-        ((uint8_t *) buffer)[i] = (uint8_t) (rand_seed / 65536) % 256;
-    }
-
-    return size;
-}
-
-int dev_kterm(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-
-    if (is_read)
-        return keyboard_read(buffer, size, "/dev/kterm");
-
-    syscall_kcnprint((char *) buffer, size, 0x0F);
-    return size;
-}
-
-int dev_panda(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-
-    if (is_read)
-        return keyboard_read(buffer, size, "/dev/panda");
-
-    panda_print_string((char *) buffer, size, -1);
-    return size;
-}
-
-int dev_pander(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-
-    static uint8_t color = 0x0C;
-
-    if (is_read)
-        return keyboard_read(buffer, size, "/dev/pander");
-
-    color = panda_print_string((char *) buffer, size, color);
-    if (color == 0x0F)
-        color = 0x0C;
-
-    return size;
-}
-
-int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-
+static int keyboard_read(void *buffer, uint32_t size, char *term) {
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
 
-    if (!is_read) {
-        for (uint32_t i = 0; i < size; i++) {
-            if (((char *) buffer)[i] == '\n')
-                syscall_serial_write(SERIAL_PORT_A, "\r", 1);
-            syscall_serial_write(SERIAL_PORT_A, (char *) buffer + i, 1);
-        }
-        return size;
-    }
-
     if (buffer_addr == NULL) {
-        buffer_addr = open_input_serial(NULL, SERIAL_PORT_A);
+        buffer_addr = profan_input_keyboard(NULL, term);
         already_read = 0;
     }
 
@@ -130,43 +54,198 @@ int dev_userial(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
     return to_read;
 }
 
-int dev_serial_a(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-    if (is_read)
-        syscall_serial_read(SERIAL_PORT_A, buffer, size);
-    else
-        syscall_serial_write(SERIAL_PORT_A, (char *) buffer, size);
-    return size;
+
+int dev_null(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(buffer);
+    UNUSED(id);
+
+    return (mode == FCTF_WRITE) ? size : 0;
 }
 
-int dev_serial_b(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-    if (is_read)
-        syscall_serial_read(SERIAL_PORT_B, buffer, size);
-    else
-        syscall_serial_write(SERIAL_PORT_B, (char *) buffer, size);
-    return size;
-}
+int dev_zero(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
 
-int dev_stdin(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-    if (is_read)
-        return fm_read(0, buffer, size);
+    switch (mode) {
+        case FCTF_READ:
+            memset(buffer, 0, size);
+            return size;
+        case FCTF_WRITE:
+            return size;
+        default:
+            return 0;
+    }
+
     return 0;
 }
 
-int dev_stdout(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-    if (is_read)
+int dev_rand(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    static uint32_t rand_seed = 0;
+
+    if (mode != FCTF_READ)
         return 0;
-    return fm_write(1, buffer, size);
+
+    for (uint32_t i = 0; i < size; i++) {
+        rand_seed = rand_seed * 1103515245 + 12345;
+        ((uint8_t *) buffer)[i] = (uint8_t) (rand_seed / 65536) % 256;
+    }
+
+    return size;
 }
 
-int dev_stderr(void *buffer, uint32_t offset, uint32_t size, uint8_t is_read) {
-    (void) offset;
-    if (is_read)
+int dev_kterm(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    switch (mode) {
+        case FCTF_READ:
+            return keyboard_read(buffer, size, "/dev/kterm");
+        case FCTF_WRITE:
+            syscall_kcnprint((char *) buffer, size, 0x0F);
+            return size;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+int dev_panda(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    switch (mode) {
+        case FCTF_READ:
+            return keyboard_read(buffer, size, "/dev/panda");
+        case FCTF_WRITE:
+            panda_print_string((char *) buffer, size, -1);
+            return size;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+int dev_pander(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    static uint8_t color = 0x0C;
+
+    switch (mode) {
+        case FCTF_READ:
+            return keyboard_read(buffer, size, "/dev/pander");
+        case FCTF_WRITE:
+            color = panda_print_string((char *) buffer, size, color);
+            if (color == 0x0F)
+                color = 0x0C;
+            return size;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+int dev_userial(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    static char *buffer_addr = NULL;
+    static uint32_t already_read = 0;
+
+    if (mode == FCTF_WRITE) {
+        for (uint32_t i = 0; i < size; i++) {
+            if (((char *) buffer)[i] == '\n')
+                syscall_serial_write(SERIAL_PORT_A, "\r", 1);
+            syscall_serial_write(SERIAL_PORT_A, (char *) buffer + i, 1);
+        }
+        return size;
+    }
+
+    if (mode != FCTF_READ)
         return 0;
-    return fm_write(2, buffer, size);
+
+    if (buffer_addr == NULL) {
+        buffer_addr = profan_input_serial(NULL, SERIAL_PORT_A);
+        already_read = 0;
+    }
+
+    uint32_t to_read = size;
+    uint32_t buffer_size = strlen(buffer_addr);
+
+    if (already_read + to_read > buffer_size) {
+        to_read = buffer_size - already_read;
+    }
+
+    memcpy(buffer, buffer_addr + already_read, to_read);
+    already_read += to_read;
+
+    if (already_read >= buffer_size) {
+        free(buffer_addr);
+        buffer_addr = NULL;
+    }
+
+    return to_read;
+}
+
+int dev_serial_a(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    switch (mode) {
+        case FCTF_READ:
+            syscall_serial_read(SERIAL_PORT_A, buffer, size);
+            return size;
+        case FCTF_WRITE:
+            syscall_serial_write(SERIAL_PORT_A, (char *) buffer, size);
+            return size;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+int dev_serial_b(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    switch (mode) {
+        case FCTF_READ:
+            syscall_serial_read(SERIAL_PORT_B, buffer, size);
+            return size;
+        case FCTF_WRITE:
+            syscall_serial_write(SERIAL_PORT_B, (char *) buffer, size);
+            return size;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+int dev_stdin(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    if (mode == FCTF_WRITE)
+        return fm_read(0, buffer, size);
+
+    return 0;
+}
+
+int dev_stdout(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    if (mode == FCTF_READ)
+        return fm_write(1, buffer, size);
+
+    return 0;
+}
+
+int dev_stderr(int id, void *buffer, uint32_t size, uint8_t mode) {
+    UNUSED(id);
+
+    if (mode == FCTF_READ)
+        return fm_write(2, buffer, size);
+
+    return 0;
 }
 
 void init_devio(void) {
@@ -184,31 +263,4 @@ void init_devio(void) {
     fu_fctf_create(0, "/dev/stdin",  dev_stdin);
     fu_fctf_create(0, "/dev/stdout", dev_stdout);
     fu_fctf_create(0, "/dev/stderr", dev_stderr);
-}
-
-int keyboard_read(void *buffer, uint32_t size, char *term) {
-    static char *buffer_addr = NULL;
-    static uint32_t already_read = 0;
-
-    if (buffer_addr == NULL) {
-        buffer_addr = open_input_keyboard(NULL, term);
-        already_read = 0;
-    }
-
-    uint32_t to_read = size;
-    uint32_t buffer_size = strlen(buffer_addr);
-
-    if (already_read + to_read > buffer_size) {
-        to_read = buffer_size - already_read;
-    }
-
-    memcpy(buffer, buffer_addr + already_read, to_read);
-    already_read += to_read;
-
-    if (already_read >= buffer_size) {
-        free(buffer_addr);
-        buffer_addr = NULL;
-    }
-
-    return to_read;
 }

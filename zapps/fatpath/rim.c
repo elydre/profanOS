@@ -783,7 +783,7 @@ char *compute_args(int argc, char **argv) {
     char *pwd = getenv("PWD");
     if (!pwd) pwd = "/";
 
-    file = assemble_path(pwd, file);
+    file = profan_join_path(pwd, file);
 
     return file;
 }
