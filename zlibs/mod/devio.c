@@ -227,7 +227,7 @@ int dev_serial_b(int id, void *buffer, uint32_t size, uint8_t mode) {
 int dev_stdin(int id, void *buffer, uint32_t size, uint8_t mode) {
     UNUSED(id);
 
-    if (mode == FCTF_WRITE)
+    if (mode == FCTF_READ)
         return fm_read(0, buffer, size);
 
     return 0;
@@ -236,7 +236,7 @@ int dev_stdin(int id, void *buffer, uint32_t size, uint8_t mode) {
 int dev_stdout(int id, void *buffer, uint32_t size, uint8_t mode) {
     UNUSED(id);
 
-    if (mode == FCTF_READ)
+    if (mode == FCTF_WRITE)
         return fm_write(1, buffer, size);
 
     return 0;
@@ -245,7 +245,7 @@ int dev_stdout(int id, void *buffer, uint32_t size, uint8_t mode) {
 int dev_stderr(int id, void *buffer, uint32_t size, uint8_t mode) {
     UNUSED(id);
 
-    if (mode == FCTF_READ)
+    if (mode == FCTF_WRITE)
         return fm_write(2, buffer, size);
 
     return 0;
