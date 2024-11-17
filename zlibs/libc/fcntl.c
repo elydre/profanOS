@@ -53,11 +53,6 @@ int open(const char *path, int flags, ...) {
     return fd;
 }
 
-// compatibility for old precompiled programs
-int profan_open(const char *path, int flags, ...) {
-    return open(path, flags);
-}
-
 int creat(const char *file, mode_t mode) {
     puts("creat is not implemented yet, WHY DO YOU USE IT ?");
     return -1;
