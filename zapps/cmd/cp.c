@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === cp.c : 2024 ===                                                       |
 |                                                                             |
-|    Unix command implementation - clears the terminal screen      .pi0iq.    |
+|    Unix style file copy with features from dd                    .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,114 +9,210 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/filesys.h>
 #include <profan/syscall.h>
+#include <profan/filesys.h>
 #include <profan.h>
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <stdio.h>
+#include <fcntl.h>
 
-int raise_and_free(char *msg, char *name, char *buf) {
-    fprintf(stderr, "cp: Cannot copy '%s': %s\n", name, msg);
-    free(buf);
-    return 1;
+typedef struct {
+    char *src;
+    char *dst;
+    int max_size;
+    uint32_t block_size;
+    int time_it;
+} cp_args_t;
+
+#define CP_USAGE "Usage: cp [options] <src> <dst>\n"
+
+void cp_help(void) {
+    fputs(CP_USAGE, stdout);
+    puts("Options:\n"
+        "  -b  Set the block size\n"
+        "  -h  Show this help\n"
+        "  -s  Stop after copying SIZE bytes\n"
+        "  -t  Time the operation"
+    );
 }
 
-int copy_elem(uint32_t src_sid, char *src_path, char *dst_path) {
-    if (!fu_is_file(src_sid)) {
-        return raise_and_free("Not a file", src_path, NULL);
+int64_t atoi_unit(char *str) {
+    // Parse a number with a unit sucpix
+    // k, m, g / kb, mb, gb / ko, mo, go
+    // no case sensitive, return -1 on error
+
+    int64_t n;
+
+    if (*str < '0' || *str > '9')
+        return -1;
+
+    for (n = 0; *str >= '0' && *str <= '9'; str++)
+        n = n * 10 + *str - '0';
+
+    if (*str == '\0')
+        return n;
+
+    if (strlen(str) > 2)
+        return -1;
+
+    switch (str[0]) {
+        case 'k':
+        case 'K':
+            n *= 1024;
+            break;
+        case 'm':
+        case 'M':
+            n *= 1024 * 1024;
+            break;
+        case 'g':
+        case 'G':
+            n *= 1024 * 1024 * 1024;
+            break;
+        default:
+            return -1;
     }
 
-    char *parent;
-    char *name;
+    if (!*++str)
+        return n;
 
-    profan_sep_path(dst_path, &parent, &name);
+    for (int j = 0; j < 4; j++)
+        if (*str == "BbOo"[j])
+            return n;
 
-    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
-    free(parent);
-    free(name);
+    return -1;
+}
 
-    if (IS_SID_NULL(parent_sid))
-        return raise_and_free("No such file or directory", dst_path, NULL);
+char *dest_check_dir(char *dst, char *src) {
+    // Check if the destination is a directory
+    // If it is, append the source file name to it
 
-    uint32_t new_sid = fu_path_to_sid(SID_ROOT, dst_path);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, dst);
 
-    if (IS_SID_NULL(new_sid)) {
-        new_sid = fu_file_create(0, dst_path);
-        if (IS_SID_NULL(new_sid))
-            return raise_and_free("Failed to create file", dst_path, NULL);
-    } else if (IS_SAME_SID(src_sid, new_sid)) {
-        fprintf(stderr, "cp: '%s' and '%s' are the same file\n", src_path, dst_path);
-        return 1;
+    if (!fu_is_dir(sid))
+        return dst;
+
+    char *fullpath, *src_name;
+
+    profan_sep_path(src, NULL, &src_name);
+    fullpath = profan_join_path(dst, src_name);
+    free(src_name);
+
+    return fullpath;
+}
+
+cp_args_t *cp_parse_args(int argc, char **argv) {
+    cp_args_t *args = malloc(sizeof(cp_args_t));
+    args->block_size = 4096;
+    args->max_size = -1;
+    args->time_it = 0;
+
+    int i = 1;
+    int64_t n;
+    for (; i < argc && argv[i][0] == '-'; i++) {
+        switch (argv[i][1]) {
+            case 'b':
+                n = atoi_unit(argv[++i]);
+                if (n > 0 && n < INT_MAX)
+                    args->block_size = n;
+                else {
+                    fprintf(stderr, "cp: %s: invalid block size\n", argv[i]);
+                    exit(1);
+                }
+                break;
+            case 's':
+                n = atoi_unit(argv[++i]);
+                if (n > 0 && n < INT_MAX)
+                    args->max_size = n;
+                else {
+                    fprintf(stderr, "cp: %s: invalid size\n", argv[i]);
+                    exit(1);
+                }
+                break;
+            case 't':
+                args->time_it = 1;
+                break;
+            case 'h':
+                cp_help();
+                exit(0);
+            case '-':
+                fprintf(stderr, "cp: unrecognized option '%s'\n", argv[i]);
+                fputs(CP_USAGE, stderr);
+                exit(1);
+            default:
+                fprintf(stderr, "cp: invalid option -- '%c'\n", argv[i][1]);
+                fputs(CP_USAGE, stderr);
+                exit(1);
+        }
     }
 
-    if (IS_SID_NULL(new_sid))
-        return raise_and_free("Failed to create file", dst_path, NULL);
+    if (argc - i != 2) {
+        fputs(CP_USAGE, stderr);
+        exit(1);
+    }
 
-    int size = fu_file_get_size(src_sid);
-    if (size < 0)
-        return raise_and_free("Failed to get file size", src_path, NULL);
+    args->src = argv[i];
+    args->dst = argv[i + 1];
 
-    char *buf = malloc(size);
-    if (fu_file_read(src_sid, buf, 0, size))
-        return raise_and_free("Failed to read file", src_path, buf);
+    args->dst = dest_check_dir(args->dst, args->src);
 
-    if (syscall_fs_set_size(NULL, new_sid, size))
-        return raise_and_free("Failed to set file size", dst_path, buf);
-
-    if (fu_file_write(new_sid, buf, 0, size))
-        return raise_and_free("Failed to write file", dst_path, buf);
-
-    free(buf);
-    return 0;
+    return args;
 }
 
 int main(int argc, char **argv) {
-    if (argc == 3 && (argv[1][0] == '-' || argv[2][0] == '-')) {
-        fputs("cp: Invalid argument\n", stderr);
-        argc = 0;
+    cp_args_t *args = cp_parse_args(argc, argv);
+
+    int src_fd = open(args->src, O_RDONLY);
+    if (src_fd == -1) {
+        fprintf(stderr, "cp: %s: Unreadable file\n", args->src);
+        exit(1);
     }
 
-    if (argc != 3) {
-        fputs("Usage: cp <src> <dst>\n", stderr);
-        return 1;
+    int dst_fd = open(args->dst, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (dst_fd == -1) {
+        fprintf(stderr, "cp: %s: Failed to open file\n", args->dst);
+        exit(1);
     }
 
-    char *pwd = getenv("PWD");
-    if (pwd == NULL) pwd = "/";
+    char *buf = malloc(args->block_size);
+    uint32_t debut, to_read, total = 0;
 
-    char *src_path = profan_join_path(pwd, argv[1]);
-    char *dst_path = profan_join_path(pwd, argv[2]);
+    if (args->time_it)
+        debut = syscall_timer_get_ms();
 
-    uint32_t src_sid = fu_path_to_sid(SID_ROOT, src_path);
-    if (IS_SID_NULL(src_sid)) {
-        fprintf(stderr, "cp: Cannot copy '%s': No such file or directory\n", src_path);
-        free(src_path);
-        free(dst_path);
-        return 1;
+    do {
+        to_read = args->block_size;
+        if (args->max_size != -1 && total + to_read > (uint32_t) args->max_size)
+            to_read = args->max_size - total;
+
+        int n = read(src_fd, buf, to_read);
+
+        if (n == 0)
+            break;
+
+        if (n == -1) {
+            fprintf(stderr, "cp: %s: Read error\n", args->src);
+            exit(1);
+        }
+
+        if (write(dst_fd, buf, n) != n) {
+            fprintf(stderr, "cp: %s: Write error\n", args->dst);
+            exit(1);
+        }
+
+        total += n;
+    } while (to_read == args->block_size);
+
+    if (args->time_it) {
+        int fin = syscall_timer_get_ms();
+        fprintf(stderr, "cp: %d bytes copied in %d ms with %d bytes block size\n",
+                total, fin - debut, args->block_size);
     }
 
-    if (fu_is_dir(src_sid)) {
-        fprintf(stderr, "cp: Cannot copy '%s': Is a directory\n", src_path);
-        free(src_path);
-        free(dst_path);
-        return 1;
-    }
-
-    uint32_t dst_sid = fu_path_to_sid(SID_ROOT, dst_path);
-    if (!IS_SID_NULL(dst_sid) && fu_is_dir(dst_sid)) {
-        char *name;
-        profan_sep_path(src_path, NULL, &name);
-        char *new_dst_path = profan_join_path(dst_path, name);
-        free(dst_path);
-        dst_path = new_dst_path;
-        free(name);
-    }
-
-    int ret = copy_elem(src_sid, src_path, dst_path);
-
-    free(src_path);
-    free(dst_path);
-    return ret;
+    close(src_fd);
+    close(dst_fd);
+    return 0;
 }
