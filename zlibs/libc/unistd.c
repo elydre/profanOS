@@ -31,18 +31,18 @@ unsigned alarm(unsigned a) {
 }
 
 int chdir(const char *path) {
-    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
-    if (!fu_is_dir(sid)) {
-        errno = ENOTDIR;
-        return -1;
-    }
-
     char *dir = getenv("PWD");
     if (!dir) dir = "/";
 
     // check if dir exists
     dir = profan_join_path(dir, path);
     fu_simplify_path(dir);
+
+    if (!fu_is_dir(fu_path_to_sid(SID_ROOT, dir))) {
+        errno = ENOTDIR;
+        free(dir);
+        return -1;
+    }
 
     if (setenv("PWD", dir, 1)) {
         errno = ENOMEM;
