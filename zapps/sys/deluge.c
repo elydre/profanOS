@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "3.1"
+#define DELUGE_VERSION "3.2"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -895,6 +895,7 @@ void libc_enable_leaks(void) {
 
 typedef struct {
     char *name;
+    char *extra_lib;
     uint8_t show_leaks;
     int arg_offset;
 } deluge_args_t;
@@ -907,6 +908,7 @@ void show_help(int full) {
     fd_printf(1,
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
+        "  -a  add an extra library\n"
         "  -d  show additional debug info\n"
         "  -e  don't use filename as argument\n"
         "  -h  show this help message\n"
@@ -919,11 +921,13 @@ void show_help(int full) {
 
 deluge_args_t deluge_parse(int argc, char **argv) {
     deluge_args_t args;
+
+    args.extra_lib = NULL;
     args.name = NULL;
 
-    g_print_debug = ALWAYS_DEBUG;
     args.show_leaks = 0;
 
+    g_print_debug = ALWAYS_DEBUG;
     g_extralib_path = NULL;
 
     int move_arg = 0;
@@ -935,6 +939,17 @@ deluge_args_t deluge_parse(int argc, char **argv) {
             break;
         }
         switch (argv[i][1]) {
+            case 'a':
+                if (i + 1 >= argc) {
+                    fd_printf(2, "deluge: missing argument for -a\n");
+                    show_help(0);
+                }
+                if (args.extra_lib) {
+                    fd_printf(2, "deluge: extra library already set\n");
+                    show_help(0);
+                }
+                args.extra_lib = argv[++i];
+                break;
             case 'l':
                 if (!g_print_debug)
                     g_print_debug = 1;
@@ -967,6 +982,11 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 fd_printf(1, "deluge %s\n", DELUGE_VERSION);
                 exit(0);
                 break; // unreachable
+            case '\0':
+            case '-':
+                fd_printf(2, "deluge: unknown option '%s'\n", argv[i]);
+                show_help(0);
+                break; // unreachable
             default:
                 fd_printf(2, "deluge: invalid option -- '%c'\n", argv[i][1]);
                 show_help(0);
@@ -993,10 +1013,18 @@ int main(int argc, char **argv, char **envp) {
     deluge_args_t args = deluge_parse(argc, argv);
     int pid, parent_pid = syscall_process_pid();
 
-    int start, ret;
+    int ret, start = 0;
 
     if (g_print_debug) {
         start = syscall_timer_get_ms();
+    }
+
+    if (args.extra_lib) {
+        elfobj_t *lib = open_elf(args.extra_lib, ET_DYN, 0);
+        if (lib == NULL) {
+            raise_error("failed to open extra library '%s'", args.extra_lib);
+            return 1;
+        }
     }
 
     g_prog = open_elf(args.name, ET_EXEC, 1);
