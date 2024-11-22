@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === test.c : 2024 ===                                                     |
+|                                                                             |
+|    Tiny pipex implementation                                     .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +30,7 @@ char *dup_strft(char const *src, int start, int end) {
     for (i = 0; i < end - start && src[start + i]; i++)
         res[i] = src[start + i];
     res[i] = '\0';
- 
+
     return res;
 }
 
