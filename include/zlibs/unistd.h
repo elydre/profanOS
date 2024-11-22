@@ -35,11 +35,11 @@
 #define STDERR_FILENO 2
 
 #define F_OK 0
-#define R_OK 4
-#define W_OK 2
 #define X_OK 1
+#define W_OK 2
+#define R_OK 4
 
-int access(const char *a, int b);
+int access(const char *pathname, int mode);
 unsigned alarm(unsigned a);
 int chdir(const char *a);
 int chown(const char *a, uid_t b, gid_t c);

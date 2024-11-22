@@ -18,6 +18,8 @@
 #include <profan/clip.h>
 #include <profan.h>
 
+#include <fcntl.h> // open flags
+
 #define LOADER_NAME "rosemary"
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
@@ -164,12 +166,9 @@ int main(void) {
     if (syscall_vesa_state()) {
         panda_set_start(syscall_get_cursor());
         use_panda = 1;
-        if (fm_reopen(0, "/dev/panda")  < 0 ||
-            fm_reopen(1, "/dev/panda")  < 0 ||
-            fm_reopen(2, "/dev/pander") < 0 ||
-            fm_reopen(3, "/dev/panda")  < 0 ||
-            fm_reopen(4, "/dev/panda")  < 0 ||
-            fm_reopen(5, "/dev/pander") < 0
+        if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
+            fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
+            fm_reopen(2, "/dev/pander", O_WRONLY) < 0
         ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);

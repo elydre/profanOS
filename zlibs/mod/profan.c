@@ -20,6 +20,7 @@
 #include <profan.h>
 
 #include <stdarg.h>
+#include <fcntl.h> // for flags
 
 #define DEFAULT_KB "/zada/keymap/azerty.map"
 #define ELF_INTERP "/bin/sys/deluge.bin"
@@ -127,8 +128,8 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
 }
 
 char *profan_input_keyboard(int *size, char *term_path) {
-    int fd = fm_open(term_path);
-    if (fd == -1) {
+    int fd = fm_open(term_path, O_RDWR);
+    if (fd < 0) {
         return NULL;
     }
 

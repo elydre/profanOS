@@ -1823,15 +1823,16 @@ char *if_dot(char **input) {
     }
 
     for (int i = 0; i < 3; i++) {
-        if (stdpaths[i] == NULL)
-            continue;
-        fm_reopen(fm_resol012(i, pid), stdpaths[i]);
-        if (fu_is_file(sid)) {
-            if (append[i])
-                fm_lseek(fm_resol012(i, pid), 0, SEEK_END);
-            else if (i != 0)
-                fu_file_set_size(sid, 0);
-        }
+        // if (stdpaths[i] == NULL)
+        //     continue;
+        // fm_reopen(fm_resol012(i, pid), stdpaths[i]);
+        // if (fu_is_file(sid)) {
+        //     if (append[i])
+        //         fm_lseek(fm_resol012(i, pid), 0, SEEK_END);
+        //     else if (i != 0)
+        //         fu_file_set_size(sid, 0);
+        // }
+        (void) append;
         free(stdpaths[i]);
     }
 

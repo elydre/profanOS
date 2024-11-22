@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <stdio.h>
+#include <fcntl.h>
 
 #define FILE_BUFFER_SIZE 0x1000
 #define FILE_BUFFER_READ 100
@@ -153,7 +154,7 @@ FILE *fopen(const char *filename, const char *mode) {
     FILE *file = calloc(1, sizeof(FILE));
 
     // open the file
-    file->fd = fm_open((char *) path);
+    file->fd = fm_open((char *) path, O_RDWR);
     free(path);
 
     if (file->fd < 0) {
@@ -678,7 +679,7 @@ long ftell(FILE *stream) {
     // flush the buffer
     fflush(stream);
 
-    return fm_tell(stream->fd);
+    return fm_tell(stream->fd) < 0 ? -1 : 0;
 }
 
 int feof(FILE *stream) {

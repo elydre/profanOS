@@ -18,547 +18,292 @@
 #include <profan/libmmq.h>
 #include <profan.h>
 
-#define MAX_OPENED 512
-#define MAX_STDHIST 20
+#include <errno.h>
+#include <fcntl.h> // for flags
+
+#define MAX_PIPE 256
+
+enum {
+    TYPE_FREE = 0,
+    TYPE_FILE,
+    TYPE_FCTF,
+    TYPE_PPRD, // read pipe
+    TYPE_PPWR  // write pipe
+};
 
 typedef struct {
-    uint8_t *data;
-    uint32_t size;
-    uint32_t writed;
-    int      wpid[20];
-    int      wpcnt;
-    int      refs;
+
 } pipe_t;
 
 typedef struct {
+    uint8_t type;
+
     union {
-        uint32_t  sid;
+        uint32_t  sid; // for file
         int     (*fctf)(int, void *, uint32_t, uint8_t);
         pipe_t   *pipe;
     };
-    int     fctf_id;
-    int     offset;
-    int     type;
-    int     pid;
-} opened_t;
 
-typedef struct {
-    int      fd[3];
-    int      pid;
-} stdhist_t;
+    union {
+        int fctf_id; // fcft only
+        int offset;  // file
+    };
+} fd_data_t;
 
-opened_t    *opened;
-stdhist_t   *stdhist;
-uint32_t     stdhist_len;
-uint32_t     stdlinks[3];
-
-enum {
-    TYPE_FILE = 1,
-    TYPE_FCTF,
-    TYPE_RPIP,
-    TYPE_WPIP
-};
-
-int fm_add_stdhist(int fd, int pid);
-int fm_resol012(int fd, int pid);
-int fm_reopen(int fd, char *path);
-int fm_close(int fd);
+pipe_t *open_pipes;
 
 int main(void) {
-    opened = calloc_ask(MAX_OPENED * sizeof(opened_t) + MAX_STDHIST * sizeof(stdhist_t), 1);
-    stdhist = (void *) (opened + MAX_OPENED);
-    stdhist_len = 0;
-
-    stdlinks[0] = fu_fctf_get_addr(fu_path_to_sid(SID_ROOT, "/dev/stdin"));
-    stdlinks[1] = fu_fctf_get_addr(fu_path_to_sid(SID_ROOT, "/dev/stdout"));
-    stdlinks[2] = fu_fctf_get_addr(fu_path_to_sid(SID_ROOT, "/dev/stderr"));
-
-    fm_reopen(3, "/dev/kterm");
-    fm_reopen(4, "/dev/kterm");
-    fm_reopen(5, "/dev/kterm");
-
+    open_pipes = calloc_ask(MAX_PIPE, sizeof(pipe_t));
     return 0;
 }
 
-int fm_open(char *path) {
-    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
-    if (IS_SID_NULL(sid)) {
-        fd_printf(2, "fm_open: %s: not found\n", path);
-        return -1;
-    }
-
-    if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
-        fd_printf(2, "fm_open: %s: is not a file\n", path);
-        return -1;
-    }
-
-    int index;
-    for (index = 3; index < MAX_OPENED; index++) {
-        if (!opened[index].type) break;
-    }
-    if (index == MAX_OPENED) {
-        fd_printf(2, "fm_open: no more file descriptors\n");
-        return -1;
-    }
-
-    opened[index].pid = syscall_process_pid();
-    opened[index].offset = 0;
-    opened[index].pipe = NULL;
-
-    if (fu_is_fctf(sid)) {
-        opened[index].fctf = (void *) fu_fctf_get_addr(sid);
-        opened[index].fctf_id = opened[index].fctf(0, NULL, 0, FCTF_OPEN);
-        if (opened[index].fctf_id < 0) {
-            fd_printf(2, "fm_open: %s: open rejected\n", path);
-            return -1;
-        }
-        opened[index].type = TYPE_FCTF;
-    } else {
-        opened[index].sid = sid;
-        opened[index].type = TYPE_FILE;
-    }
-
-    return index;
+static fd_data_t *fm_get_free_fd(int *fd) {
+    if (fd != NULL)
+        *fd = -1;
+    return NULL;
 }
 
-int fm_reopen(int fd, char *path) {
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
+static fd_data_t *fm_fd_to_data(int fd) {
+    return NULL;
+}
 
-    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
+int fm_close(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
+
+    if (fd_data->type == TYPE_FCTF)
+        fd_data->fctf(fd_data->fctf_id, NULL, 0, FCTF_CLOSE);
+
+    fd_data->type = TYPE_FREE;
+    return 0;
+}
+
+int fm_reopen(int fd, char *abs_path, int flags) {
+    // return fd or -errno
+
+    if (fd >= 0 && fm_close(fd) < 0)
+        return -EBADF;
+
+    fd_data_t *fd_data;
+
+    uint32_t sid = fu_path_to_sid(SID_ROOT, abs_path);
+
+    if (IS_SID_NULL(sid) && (flags & O_CREAT)) {
+        sid = fu_file_create(0, abs_path);
+    }
 
     if (IS_SID_NULL(sid)) {
-        fd_printf(2, "fm_reopen: %s: not found\n", path);
-        return -1;
+        return -ENOENT;
     }
-
-    if (fu_is_fctf(sid)) {
-        uint32_t addr = fu_fctf_get_addr(sid);
-        if (addr == stdlinks[0] ||
-            addr == stdlinks[1] ||
-            addr == stdlinks[2]
-        ) return 0;
-    }
-
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-
-    fm_close(fd);
 
     if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
-        fd_printf(2, "fm_reopen: %s: is not a file\n", path);
-        return -1;
+        return -EFTYPE;
     }
 
-    opened[fd].pid = syscall_process_pid();
-    opened[fd].offset = 0;
-    opened[fd].pipe = NULL;
+    if (fd < 0)
+        fd_data = fm_get_free_fd(&fd);
+    else
+        fd_data = fm_fd_to_data(fd);
 
-    if (fu_is_fctf(sid)) {
-        opened[fd].fctf = (void *) fu_fctf_get_addr(sid);
-        opened[fd].fctf_id = opened[fd].fctf(0, NULL, 0, FCTF_OPEN);
-        if (opened[fd].fctf_id < 0) {
-            fd_printf(2, "fm_reopen: %s: open rejected\n", path);
-            return -1;
+    if (fd < 0) {
+        return -EMFILE;
+    }
+
+    if (fu_is_file(sid)) {
+        if (flags & O_TRUNC) {
+            syscall_fs_set_size(NULL, sid, 0);
         }
-        opened[fd].type = TYPE_FCTF;
-    } else {
-        opened[fd].sid = sid;
-        opened[fd].type = TYPE_FILE;
+        fd_data->type = TYPE_FILE;
+        fd_data->sid = sid;
+        if (flags & O_APPEND) {
+            fd_data->offset = syscall_fs_get_size(NULL, sid);
+        } else {
+            fd_data->offset = 0;
+        }
+    }
+    
+    fd_data->type = TYPE_FCTF;
+    fd_data->fctf = (void *) fu_fctf_get_addr(sid);
+
+    fd_data->fctf_id = fd_data->fctf(0, NULL, 0, FCTF_OPEN);
+    if (fd_data->fctf_id < 0) {
+        fd_data->type = TYPE_FREE;
+        return -EACCES;
     }
 
     return fd;
 }
 
-int fm_close(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-
-    if (!opened[fd].type)
-        return -1;
-
-    if (opened[fd].type == TYPE_WPIP) {
-        for (int i = 0; i < opened[fd].pipe->wpcnt; i++) {
-            if (opened[fd].pipe->wpid[i] != opened[fd].pid)
-                continue;
-            memmove(opened[fd].pipe->wpid + i, opened[fd].pipe->wpid + i + 1,
-                    (opened[fd].pipe->wpcnt - i - 1) * sizeof(int));
-            opened[fd].pipe->wpcnt--;
-            break;
-        }
-    }
-
-    if (opened[fd].type == TYPE_RPIP || opened[fd].type == TYPE_WPIP) {
-        opened[fd].pipe->refs--;
-        if (!opened[fd].pipe->refs) {
-            free(opened[fd].pipe->data);
-            free(opened[fd].pipe);
-        }
-    }
-
-    if (opened[fd].type == TYPE_FCTF)
-        opened[fd].fctf(opened[fd].fctf_id, NULL, 0, FCTF_CLOSE);
-
-    opened[fd].type = 0;
-    return 0;
-}
-
 int fm_read(int fd, void *buf, uint32_t size) {
-    int read_count;
     uint32_t tmp;
+    int read_count;
 
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
+    fd_data_t *fd_data = fm_fd_to_data(fd);
 
-    switch (opened[fd].type) {
+    if (fd_data == NULL)
+        return -EBADF;
+
+    switch (fd_data->type) {
         case TYPE_FILE:
-            tmp = syscall_fs_get_size(NULL, opened[fd].sid);
-            if (opened[fd].offset > (int) tmp)
-                return -1;
-            if (opened[fd].offset + size > tmp)
-                size = tmp - opened[fd].offset;
-            read_count = syscall_fs_read(NULL, opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
+            tmp = syscall_fs_get_size(NULL, fd_data->sid);
+            if (fd_data->offset > (int) tmp)
+                return -EINVAL;
+            if (fd_data->offset + size > tmp)
+                size = tmp - fd_data->offset;
+            read_count = syscall_fs_read(NULL, fd_data->sid, buf, fd_data->offset, size) ? -1 : (int) size;
             break;
+            
         case TYPE_FCTF:
-            read_count = opened[fd].fctf(opened[fd].fctf_id, buf, size, FCTF_READ);
+            read_count = fd_data->fctf(fd_data->fctf_id, buf, size, FCTF_READ);
+            if (read_count < 0)
+                return -EIO;
             break;
-        case TYPE_RPIP:
-            while ((int) opened[fd].pipe->writed <= opened[fd].offset) {
-                tmp = opened[fd].pipe->wpcnt;
-                for (int i = 0; i < opened[fd].pipe->wpcnt; i++) {
-                    if (syscall_process_state(opened[fd].pipe->wpid[i]) >= 4)
-                        tmp--;
-                }
-                if (!tmp) break;
-                syscall_process_sleep(syscall_process_pid(), 10);
-            }
-            read_count = opened[fd].pipe->writed - opened[fd].offset;
-            if (read_count > (int) size)
-                read_count = size;
-            memcpy(buf, opened[fd].pipe->data + opened[fd].offset, read_count);
+
+        case TYPE_PPRD:
             break;
+
         default:
-            return -1;
+            return -EBADF;
     }
-    opened[fd].offset += read_count;
+
     return read_count;
 }
 
 int fm_write(int fd, void *buf, uint32_t size) {
     int write_count;
 
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
+    fd_data_t *fd_data = fm_fd_to_data(fd);
 
-    switch (opened[fd].type) {
+    if (fd_data == NULL)
+        return -EBADF;
+
+    switch (fd_data->type) {
         case TYPE_FILE:
-            if (opened[fd].offset + size > syscall_fs_get_size(NULL, opened[fd].sid))
-                syscall_fs_set_size(NULL, opened[fd].sid, opened[fd].offset + size);
-            write_count = syscall_fs_write(NULL, opened[fd].sid, buf, opened[fd].offset, size) ? 0 : size;
+            if (fd_data->offset + size > syscall_fs_get_size(NULL, fd_data->sid))
+                syscall_fs_set_size(NULL, fd_data->sid, fd_data->offset + size);
+            write_count = syscall_fs_write(NULL, fd_data->sid, buf, fd_data->offset, size) ? 0 : size;
             break;
+
         case TYPE_FCTF:
-            write_count = opened[fd].fctf(opened[fd].fctf_id, buf, size, FCTF_WRITE);
+            write_count = fd_data->fctf(fd_data->fctf_id, buf, size, FCTF_WRITE);
+            if (write_count < 0)
+                return -EIO;
             break;
-        case TYPE_WPIP:
-            if (opened[fd].pipe->writed + size > opened[fd].pipe->size) {
-                opened[fd].pipe->size = opened[fd].pipe->writed + size;
-                opened[fd].pipe->data = realloc_ask(opened[fd].pipe->data, opened[fd].pipe->size);
-            }
-            memcpy(opened[fd].pipe->data + opened[fd].pipe->writed, buf, size);
-            opened[fd].pipe->writed += size;
-            write_count = size;
+
+        case TYPE_PPWR:
             break;
+
         default:
-            return -1;
+            return -EBADF;
     }
 
-    opened[fd].offset += write_count;
+    fd_data->offset += write_count;
     return write_count;
 }
 
 int fm_lseek(int fd, int offset, int whence) {
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
+    fd_data_t *fd_data = fm_fd_to_data(fd);
 
-    if (!opened[fd].type)
-        return -1;
+    if (fd_data == NULL)
+        return -EBADF;
+
+    if (fd_data->type != TYPE_FILE)
+        return -ESPIPE;
+
+    // TODO: lseek for pipes ?
 
     switch (whence) {
         case SEEK_SET:
-            opened[fd].offset = offset;
+            fd_data->offset = offset;
             break;
         case SEEK_CUR:
-            opened[fd].offset += offset;
+            fd_data->offset += offset;
             break;
         case SEEK_END:
-            if (opened[fd].type != TYPE_FILE)
-                return -1;
-            opened[fd].offset = syscall_fs_get_size(NULL, opened[fd].sid) + offset;
+            if (fd_data->type != TYPE_FILE)
+                return -ESPIPE;
+            fd_data->offset = syscall_fs_get_size(NULL, fd_data->sid) + offset;
             break;
         default:
-            return -1;
+            return -EINVAL;
     }
-    if (opened[fd].offset < 0)
-        opened[fd].offset = 0;
-    return opened[fd].offset;
+
+    if (fd_data->offset < 0)
+        fd_data->offset = 0;
+
+    return fd_data->offset;
 }
 
 int fm_tell(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-    return opened[fd].offset;
-}
+    fd_data_t *fd_data = fm_fd_to_data(fd);
 
-int fm_dup(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-    if (!opened[fd].type)
-        return -1;
+    if (fd_data == NULL)
+        return -EBADF;
 
-    int index;
-    for (index = 3; index < MAX_OPENED; index++) {
-        if (!opened[index].type) break;
-    }
-    if (index == MAX_OPENED) {
-        fd_printf(2, "fm_dup: no more file descriptors\n");
-        return -1;
-    }
+    if (fd_data->type != TYPE_FILE)
+        return -ESPIPE;
 
-    opened[index].type = opened[fd].type;
-    opened[index].offset = opened[fd].offset;
-    opened[index].pid = opened[fd].pid;
-    if (opened[index].type == TYPE_FCTF) {
-        opened[index].fctf = opened[fd].fctf;
-        opened[index].fctf_id = opened[fd].fctf_id;
-    } else if (opened[index].type == TYPE_RPIP) {
-        opened[index].pipe = opened[fd].pipe;
-        opened[index].pipe->refs++;
-    } else if (opened[index].type == TYPE_WPIP) {
-        opened[index].pipe = opened[fd].pipe;
-        opened[index].pipe->refs++;
-        for (int i = 0; i < opened[index].pipe->wpcnt; i++) {
-            if (opened[index].pipe->wpid[i] == opened[index].pid)
-                return index;
-        }
-        opened[index].pipe->wpid[opened[index].pipe->wpcnt++] = opened[index].pid;
-    } else
-        opened[index].sid = opened[fd].sid;
-    return index;
+    // TODO: tell for pipes ?
+
+    return fd_data->offset;
 }
 
 int fm_dup2(int fd, int new_fd) {
-    if (fd < 0 || fd >= MAX_OPENED || new_fd < 0 || new_fd >= MAX_OPENED)
-        return -1;
-    if (fd == new_fd)
-        return 0;
+    fd_data_t *fd_data = fm_fd_to_data(fd);
 
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
-    if (new_fd < 3)
-        new_fd = fm_resol012(new_fd, -1);
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
 
-    if (opened[fd].type == TYPE_FCTF) {
-        if (opened[fd].fctf == (void *) stdlinks[0] ||
-            opened[fd].fctf == (void *) stdlinks[1] ||
-            opened[fd].fctf == (void *) stdlinks[2]
-        ) return 0;
+    fd_data_t *new_data = fm_fd_to_data(new_fd);
+
+    if (new_data == NULL)
+        return -EBADF;
+
+    if (new_data->type != TYPE_FREE && fm_close(new_fd) < 0)
+        return -EBADF;
+
+    new_data->type = fd_data->type;
+
+    switch (fd_data->type) {
+        case TYPE_FILE:
+            new_data->sid = fd_data->sid;
+            new_data->offset = fd_data->offset;
+            break;
+
+        case TYPE_FCTF:
+            new_data->fctf = fd_data->fctf;
+            new_data->fctf_id = fd_data->fctf_id;
+            break;
+
+        // TODO: dup for pipes
+
+        default:
+            return -EBADF;
     }
 
-    if (!opened[fd].type)
-        return -1;
+    return new_fd;
+}
 
-    if (opened[new_fd].type)
-        fm_close(new_fd);
+int fm_dup(int fd) {
+    int new_fd; fm_get_free_fd(&new_fd);
 
-    opened[new_fd].type = opened[fd].type;
-    opened[new_fd].offset = opened[fd].offset;
-    if (opened[new_fd].type == TYPE_FCTF) {
-        opened[new_fd].fctf = opened[fd].fctf;
-        opened[new_fd].fctf_id = opened[fd].fctf_id;
-    } else if (opened[new_fd].type == TYPE_RPIP) {
-        opened[new_fd].pipe = opened[fd].pipe;
-        opened[new_fd].pipe->refs++;
-    } else if (opened[new_fd].type == TYPE_WPIP) {
-        opened[new_fd].pipe = opened[fd].pipe;
-        opened[new_fd].pipe->refs++;
-        for (int i = 0; i < opened[new_fd].pipe->wpcnt; i++) {
-            if (opened[new_fd].pipe->wpid[i] == opened[new_fd].pid)
-                return 0;
-        }
-        opened[new_fd].pipe->wpid[opened[new_fd].pipe->wpcnt++] = opened[new_fd].pid;
-    } else
-        opened[new_fd].sid = opened[fd].sid;
+    if (new_fd < 0)
+        return -EMFILE;
 
-    return 0;
+    return fm_dup2(fd, new_fd);
 }
 
 int fm_pipe(int fd[2]) {
-    int i1, i2, pid;
-    pipe_t *pipe = calloc_ask(1, sizeof(pipe_t));
-
-    for (i1 = 3; i1 < MAX_OPENED; i1++)
-        if (!opened[i1].type) break;
-    for (i2 = i1 + 1; i2 < MAX_OPENED; i2++)
-        if (!opened[i2].type) break;
-    if (i1 == MAX_OPENED || i2 == MAX_OPENED) {
-        fd_printf(2, "fm_pipe: no more file descriptors\n");
-        return -1;
-    }
-
-    pid = syscall_process_pid();
-
-    pipe->data = malloc_ask(1024);
-    pipe->size = 1024;
-    pipe->writed = 0;
-    pipe->wpid[0] = pid;
-    pipe->wpcnt = 1;
-    pipe->refs = 2;
-
-    opened[i1].type = TYPE_RPIP;
-    opened[i1].pipe = pipe;
-    opened[i1].offset = 0;
-    opened[i1].pid = pid;
-
-    opened[i2].type = TYPE_WPIP;
-    opened[i2].pipe = pipe;
-    opened[i2].offset = 0;
-    opened[i2].pid = pid;
-
-    fd[0] = i1;
-    fd[1] = i2;
-
     return 0;
 }
 
 int fm_isfctf(int fd) {
-    if (fd < 0 || fd >= MAX_OPENED)
-        return -1;
-    if (fd < 3)
-        fd = fm_resol012(fd, -1);
+    fd_data_t *fd_data = fm_fd_to_data(fd);
 
-    if (!opened[fd].type)
-        return -1;
-    return opened[fd].type == TYPE_FCTF;
-}
-
-void fm_clean(void) {
-    int fd_free = 0;
-
-    for (uint32_t i = 0; i < stdhist_len; i++) {
-        if (syscall_process_state(stdhist[i].pid) < 4)
-            continue;
-        fd_printf(1, "fm_clean: stdhist %d (pid: %d)\n", i, stdhist[i].pid);
-        fm_close(stdhist[i].fd[0]);
-        fm_close(stdhist[i].fd[1]);
-        fm_close(stdhist[i].fd[2]);
-        memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
-        stdhist_len--;
-        i--;
-    }
-
-    for (int i = 3; i < MAX_OPENED; i++) {
-        if (!opened[i].type) continue;
-        if (syscall_process_state(opened[i].pid) < 4)
-            continue;
-        fd_printf(1, "fm_clean: opened %d (pid: %d) [WARNING]\n", i, opened[i].pid);
-        fm_close(i);
-    }
-
-    for (int i = 3; i < MAX_OPENED; i++) {
-        if (!opened[i].type) {
-            fd_free++;
-            continue;
-        }
-    }
-
-    fd_printf(1, "fm_clean: %d file descriptors are free\n", fd_free);
-}
-
-int fm_add_stdhist(int fd, int pid) {
-    if (stdhist_len >= MAX_STDHIST) {
-        for (uint32_t i = 0; i < stdhist_len; i++) {
-            if (syscall_process_state(stdhist[i].pid) < 4)
-                continue;
-            for (int j = 0; j < 3; j++) {
-                if (opened[stdhist[i].fd[j]].pid != stdhist[i].pid)
-                    continue;
-                fm_close(stdhist[i].fd[j]);
-            }
-            memmove(stdhist + i, stdhist + i + 1, (stdhist_len - i - 1) * sizeof(stdhist_t));
-            stdhist_len--;
-            i--;
-        }
-    }
-
-    if (stdhist_len >= MAX_STDHIST) {
-        fd_printf(2, "fm_add_stdhist: no more space in stdhist\n");
-        return -1;
-    }
-
-    stdhist[stdhist_len].pid = pid;
-
-    int ppid = syscall_process_ppid(pid);
-
-    if (ppid >= 0) {
-        for (uint32_t i = 0; i < stdhist_len; i++) {
-            if (stdhist[i].pid != ppid)
-                continue;
-            for (int j = 0; j < 3; j++) {
-                stdhist[stdhist_len].fd[j] = fm_dup(stdhist[i].fd[j]);
-                opened[stdhist[stdhist_len].fd[j]].pid = pid;
-            }
-            goto end;
-        }
-    }
-
-    for (int i = 0; i < 3; i++) {
-        stdhist[stdhist_len].fd[i] = fm_dup(i + 3);
-        opened[stdhist[stdhist_len].fd[i]].pid = pid;
-    }
-
-    end:
-    int res = stdhist[stdhist_len].fd[fd];
-
-    stdhist_len++;
-
-    // sort stdhist
-    for (int i = stdhist_len - 1; i > 0; i--) {
-        if (stdhist[i].pid < stdhist[i - 1].pid) {
-            stdhist_t tmp = stdhist[i];
-            stdhist[i] = stdhist[i - 1];
-            stdhist[i - 1] = tmp;
-        }
-    }
-    return res;
-}
-
-int fm_resol012(int fd, int pid) {
-    if (fd < 0 || fd >= 3)
-        return -1;
-
-    if (pid < 0)
-        pid = syscall_process_pid();
-
-    if (pid > stdhist[stdhist_len - 1].pid)
-        return fm_add_stdhist(fd, pid);
-
-    for (uint32_t i = 0; i < stdhist_len; i++) {
-        if (stdhist[i].pid == pid) {
-            return stdhist[i].fd[fd];
-        }
-    }
-
-    return fm_add_stdhist(fd, pid);
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
+    
+    return fd_data->type == TYPE_FCTF;
 }
