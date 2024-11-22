@@ -57,13 +57,23 @@ int main(void) {
     return 0;
 }
 
-static fd_data_t *fm_get_free_fd(int *fd) {
-    if (fd != NULL)
-        *fd = -1;
-    return NULL;
-}
+#define MAX_FD ((int)(0x1000 / sizeof(fd_data_t)))
 
 static fd_data_t *fm_fd_to_data(int fd) {
+    if (fd < 0 || fd >= MAX_FD)
+        return NULL;
+    return (fd_data_t *) (0xB0000000 + fd * sizeof(fd_data_t));
+}
+
+static fd_data_t *fm_get_free_fd(int *fd) {
+    for (int i = 0; i < MAX_FD; i++) {
+        fd_data_t *fd_data = fm_fd_to_data(i);
+        if (fd_data->type == TYPE_FREE) {
+            if (fd != NULL)
+                *fd = i;
+            return fd_data;
+        }
+    }
     return NULL;
 }
 
@@ -83,8 +93,7 @@ int fm_close(int fd) {
 int fm_reopen(int fd, char *abs_path, int flags) {
     // return fd or -errno
 
-    if (fd >= 0 && fm_close(fd) < 0)
-        return -EBADF;
+    fm_close(fd);
 
     fd_data_t *fd_data;
 
@@ -107,6 +116,8 @@ int fm_reopen(int fd, char *abs_path, int flags) {
     else
         fd_data = fm_fd_to_data(fd);
 
+    fd_printf(2, "fd: %d, sid: %x, flags: %x\n", fd, sid, flags);
+
     if (fd < 0) {
         return -EMFILE;
     }
@@ -122,15 +133,15 @@ int fm_reopen(int fd, char *abs_path, int flags) {
         } else {
             fd_data->offset = 0;
         }
-    }
-    
-    fd_data->type = TYPE_FCTF;
-    fd_data->fctf = (void *) fu_fctf_get_addr(sid);
+    } else {
+        fd_data->type = TYPE_FCTF;
+        fd_data->fctf = (void *) fu_fctf_get_addr(sid);
 
-    fd_data->fctf_id = fd_data->fctf(0, NULL, 0, FCTF_OPEN);
-    if (fd_data->fctf_id < 0) {
-        fd_data->type = TYPE_FREE;
-        return -EACCES;
+        fd_data->fctf_id = fd_data->fctf(0, NULL, 0, FCTF_OPEN);
+        if (fd_data->fctf_id < 0) {
+            fd_data->type = TYPE_FREE;
+            return -EACCES;
+        }
     }
 
     return fd;
@@ -168,6 +179,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
             return -EBADF;
     }
 
+    fd_data->offset += read_count;
     return read_count;
 }
 
