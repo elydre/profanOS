@@ -124,8 +124,6 @@ int fm_close(int fd) {
         pipe_data_t *pipe = fd_data->pipe;
         int pid = syscall_process_pid();
 
-        fd_printf(2, "RD closing %d\n", pid);
-
         for (int i = 0; i < PIPE_MAX_REF; i++) {
             if (pipe->readers[i] != pid)
                 continue;
@@ -144,8 +142,6 @@ int fm_close(int fd) {
     else if (fd_data->type == TYPE_PPWR) {
         pipe_data_t *pipe = fd_data->pipe;
         int pid = syscall_process_pid();
-
-        fd_printf(2, "WR closing %d, rd_offset: %d, current_size: %d\n", pid, pipe->rd_offset, pipe->current_size);
 
         for (int i = 0; i < PIPE_MAX_REF; i++) {
             if (pipe->writers[i] != pid)
@@ -192,7 +188,7 @@ int fm_reopen(int fd, char *abs_path, int flags) {
     else
         fd_data = fm_fd_to_data(fd);
 
-    fd_printf(2, "fd: %d, sid: %x, flags: %x\n", fd, sid, flags);
+    // fd_printf(2, "fd: %d, sid: %x, flags: %x\n", fd, sid, flags);
 
     if (fd < 0) {
         return -EMFILE;
@@ -253,7 +249,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
             int pid = syscall_process_pid();
 
             while (pipe->current_size <= pipe->rd_offset && pipe->writers[0] != -1) {
-                fd_printf(2, "waiting for %d\n", pipe->writers[0]);
+                // fd_printf(2, "waiting for %d\n", pipe->writers[0]);
                 syscall_process_sleep(pid, 10);
                 for (int i = 0; i < PIPE_MAX_REF; i++) {
                     if (pipe->writers[i] == -1 || syscall_process_state(pipe->writers[i]) < 4)
