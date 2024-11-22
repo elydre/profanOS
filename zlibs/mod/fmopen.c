@@ -21,7 +21,8 @@
 #include <errno.h>
 #include <fcntl.h> // for flags
 
-#define MAX_PIPE 256
+#define PIPE_MAX     256
+#define PIPE_MAX_REF 12
 
 enum {
     TYPE_FREE = 0,
@@ -32,28 +33,33 @@ enum {
 };
 
 typedef struct {
-
-} pipe_t;
+    uint32_t current_size;
+    uint32_t buffer_size;
+    void *buf;
+    uint32_t rd_offset;
+    int readers[PIPE_MAX_REF];
+    int writers[PIPE_MAX_REF];
+} pipe_data_t;
 
 typedef struct {
     uint8_t type;
 
     union {
-        uint32_t  sid; // for file
-        int     (*fctf)(int, void *, uint32_t, uint8_t);
-        pipe_t   *pipe;
+        uint32_t     sid; // for file
+        int        (*fctf)(int, void *, uint32_t, uint8_t);
+        pipe_data_t *pipe;
     };
 
     union {
-        int fctf_id; // fcft only
-        int offset;  // file
+        uint32_t offset;  // file
+        int      fctf_id; // fcft
     };
 } fd_data_t;
 
-pipe_t *open_pipes;
+pipe_data_t *open_pipes;
 
 int main(void) {
-    open_pipes = calloc_ask(MAX_PIPE, sizeof(pipe_t));
+    open_pipes = calloc_ask(PIPE_MAX, sizeof(pipe_data_t));
     return 0;
 }
 
@@ -77,6 +83,14 @@ static fd_data_t *fm_get_free_fd(int *fd) {
     return NULL;
 }
 
+static pipe_data_t *fm_get_free_pipe(void) {
+    for (int i = 0; i < PIPE_MAX; i++) {
+        if (open_pipes[i].buf == NULL)
+            return open_pipes + i;
+    }
+    return NULL;
+}
+
 int fm_close(int fd) {
     fd_data_t *fd_data = fm_fd_to_data(fd);
 
@@ -85,6 +99,34 @@ int fm_close(int fd) {
 
     if (fd_data->type == TYPE_FCTF)
         fd_data->fctf(fd_data->fctf_id, NULL, 0, FCTF_CLOSE);
+
+    else if (fd_data->type == TYPE_PPRD || fd_data->type == TYPE_PPWR) {
+        pipe_data_t *pipe = fd_data->pipe;
+        int pid = syscall_process_pid();
+
+        for (int i = 0; i < PIPE_MAX_REF; i++) {
+            if (pipe->readers[i] != pid)
+                continue;
+            for (int j = i; j < PIPE_MAX_REF - 1; j++)
+                pipe->readers[j] = pipe->readers[j + 1];
+            pipe->readers[PIPE_MAX_REF - 1] = -1;
+            break;
+        }
+
+        for (int i = 0; i < PIPE_MAX_REF; i++) {
+            if (pipe->writers[i] != pid)
+                continue;
+            for (int j = i; j < PIPE_MAX_REF - 1; j++)
+                pipe->writers[j] = pipe->writers[j + 1];
+            pipe->writers[PIPE_MAX_REF - 1] = -1;
+            break;
+        }
+
+        if (pipe->readers[0] == -1 && pipe->writers[0] == -1) {
+            free(pipe->buf);
+            pipe->buf = NULL;
+        }
+    }
 
     fd_data->type = TYPE_FREE;
     return 0;
@@ -159,13 +201,13 @@ int fm_read(int fd, void *buf, uint32_t size) {
     switch (fd_data->type) {
         case TYPE_FILE:
             tmp = syscall_fs_get_size(NULL, fd_data->sid);
-            if (fd_data->offset > (int) tmp)
+            if (fd_data->offset > tmp)
                 return -EINVAL;
             if (fd_data->offset + size > tmp)
                 size = tmp - fd_data->offset;
             read_count = syscall_fs_read(NULL, fd_data->sid, buf, fd_data->offset, size) ? -1 : (int) size;
             break;
-            
+
         case TYPE_FCTF:
             read_count = fd_data->fctf(fd_data->fctf_id, buf, size, FCTF_READ);
             if (read_count < 0)
@@ -173,6 +215,17 @@ int fm_read(int fd, void *buf, uint32_t size) {
             break;
 
         case TYPE_PPRD:
+            pipe_data_t *pipe = fd_data->pipe;
+
+            while (pipe->current_size <= pipe->rd_offset) {
+                syscall_process_sleep(syscall_process_pid(), 10);
+            }
+
+            read_count = pipe->current_size - pipe->rd_offset;
+            if (read_count > (int) size)
+                read_count = size;
+
+            memcpy(buf, pipe->buf + pipe->rd_offset, read_count);
             break;
 
         default:
@@ -205,6 +258,23 @@ int fm_write(int fd, void *buf, uint32_t size) {
             break;
 
         case TYPE_PPWR:
+            pipe_data_t *pipe = fd_data->pipe;
+
+            uint32_t new_size = pipe->current_size + size;
+
+            if (new_size > pipe->buffer_size) {
+                void *tmp = realloc_ask(pipe->buf, new_size);
+                if (tmp == NULL)
+                    return -ENOMEM;
+                pipe->buf = tmp;
+                pipe->buffer_size = new_size;
+            }
+
+            memcpy(pipe->buf + pipe->current_size, buf, size);
+            pipe->current_size += size;
+
+
+
             break;
 
         default:
@@ -217,6 +287,7 @@ int fm_write(int fd, void *buf, uint32_t size) {
 
 int fm_lseek(int fd, int offset, int whence) {
     fd_data_t *fd_data = fm_fd_to_data(fd);
+    int new_offset;
 
     if (fd_data == NULL)
         return -EBADF;
@@ -224,28 +295,30 @@ int fm_lseek(int fd, int offset, int whence) {
     if (fd_data->type != TYPE_FILE)
         return -ESPIPE;
 
-    // TODO: lseek for pipes ?
+    new_offset = fd_data->offset;
 
     switch (whence) {
         case SEEK_SET:
-            fd_data->offset = offset;
+            new_offset = offset;
             break;
         case SEEK_CUR:
-            fd_data->offset += offset;
+            new_offset += offset;
             break;
         case SEEK_END:
             if (fd_data->type != TYPE_FILE)
                 return -ESPIPE;
-            fd_data->offset = syscall_fs_get_size(NULL, fd_data->sid) + offset;
-            break;
+            new_offset = syscall_fs_get_size(NULL, fd_data->sid) + offset;
+            break;    
         default:
             return -EINVAL;
     }
 
-    if (fd_data->offset < 0)
-        fd_data->offset = 0;
+    if (new_offset < 0)
+        return -EINVAL;
 
-    return fd_data->offset;
+    fd_data->offset = new_offset;
+
+    return new_offset;
 }
 
 int fm_tell(int fd) {
@@ -289,7 +362,10 @@ int fm_dup2(int fd, int new_fd) {
             new_data->fctf_id = fd_data->fctf_id;
             break;
 
-        // TODO: dup for pipes
+        case TYPE_PPRD:
+        case TYPE_PPWR:
+            new_data->pipe = fd_data->pipe;
+            break;
 
         default:
             return -EBADF;
@@ -308,6 +384,44 @@ int fm_dup(int fd) {
 }
 
 int fm_pipe(int fd[2]) {
+    fd_data_t *fd_data[2];
+
+    pipe_data_t *pipe = fm_get_free_pipe();
+    if (pipe == NULL)
+        return -EMFILE;
+
+    pipe->buf = calloc_ask(0x1000, 1);
+    if (pipe->buf == NULL)
+        return -ENOMEM;
+
+    pipe->buffer_size = 0x1000;
+    pipe->current_size = 0;
+    pipe->rd_offset = 0;
+
+    for (int i = 0; i < PIPE_MAX_REF; i++) {
+        pipe->readers[i] = -1;
+        pipe->writers[i] = -1;
+    }
+
+    int pid = syscall_process_pid();
+    pipe->readers[0] = pid;
+    pipe->writers[0] = pid;
+
+    fd_data[0] = fm_get_free_fd(&fd[0]);
+    if (fd_data[0] == NULL)
+        return -EMFILE;
+    fd_data[0]->type = TYPE_PPRD;
+
+    fd_data[1] = fm_get_free_fd(&fd[1]);
+    if (fd_data[1] == NULL) {
+        fd_data[0]->type = TYPE_FREE;
+        return -EMFILE;
+    }
+    fd_data[1]->type = TYPE_PPWR;
+
+    fd_data[0]->pipe = pipe;
+    fd_data[1]->pipe = pipe;
+
     return 0;
 }
 
@@ -316,6 +430,6 @@ int fm_isfctf(int fd) {
 
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
         return -EBADF;
-    
+
     return fd_data->type == TYPE_FCTF;
 }
