@@ -91,6 +91,26 @@ static pipe_data_t *fm_get_free_pipe(void) {
     return NULL;
 }
 
+static int fm_pipe_push_reader(pipe_data_t *pipe, int pid) {
+    for (int i = 0; i < PIPE_MAX_REF; i++) {
+        if (pipe->readers[i] == -1) {
+            pipe->readers[i] = pid;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+static int fm_pipe_push_writer(pipe_data_t *pipe, int pid) {
+    for (int i = 0; i < PIPE_MAX_REF; i++) {
+        if (pipe->writers[i] == -1) {
+            pipe->writers[i] = pid;
+            return 0;
+        }
+    }
+    return -1;
+}
+
 int fm_close(int fd) {
     fd_data_t *fd_data = fm_fd_to_data(fd);
 
@@ -100,9 +120,11 @@ int fm_close(int fd) {
     if (fd_data->type == TYPE_FCTF)
         fd_data->fctf(fd_data->fctf_id, NULL, 0, FCTF_CLOSE);
 
-    else if (fd_data->type == TYPE_PPRD || fd_data->type == TYPE_PPWR) {
+    else if (fd_data->type == TYPE_PPRD) {
         pipe_data_t *pipe = fd_data->pipe;
         int pid = syscall_process_pid();
+
+        fd_printf(2, "RD closing %d\n", pid);
 
         for (int i = 0; i < PIPE_MAX_REF; i++) {
             if (pipe->readers[i] != pid)
@@ -112,6 +134,18 @@ int fm_close(int fd) {
             pipe->readers[PIPE_MAX_REF - 1] = -1;
             break;
         }
+
+        if (pipe->readers[0] == -1 && pipe->writers[0] == -1) {
+            free(pipe->buf);
+            pipe->buf = NULL;
+        }
+    }
+
+    else if (fd_data->type == TYPE_PPWR) {
+        pipe_data_t *pipe = fd_data->pipe;
+        int pid = syscall_process_pid();
+
+        fd_printf(2, "WR closing %d, rd_offset: %d, current_size: %d\n", pid, pipe->rd_offset, pipe->current_size);
 
         for (int i = 0; i < PIPE_MAX_REF; i++) {
             if (pipe->writers[i] != pid)
@@ -216,16 +250,30 @@ int fm_read(int fd, void *buf, uint32_t size) {
 
         case TYPE_PPRD:
             pipe_data_t *pipe = fd_data->pipe;
+            int pid = syscall_process_pid();
 
-            while (pipe->current_size <= pipe->rd_offset) {
-                syscall_process_sleep(syscall_process_pid(), 10);
+            while (pipe->current_size <= pipe->rd_offset && pipe->writers[0] != -1) {
+                fd_printf(2, "waiting for %d\n", pipe->writers[0]);
+                syscall_process_sleep(pid, 10);
+                for (int i = 0; i < PIPE_MAX_REF; i++) {
+                    if (pipe->writers[i] == -1 || syscall_process_state(pipe->writers[i]) < 4)
+                        continue;
+                    for (int j = i; j < PIPE_MAX_REF - 1; j++)
+                        pipe->writers[j] = pipe->writers[j + 1];
+                    pipe->writers[PIPE_MAX_REF - 1] = -1;
+                    break;
+                }
             }
+
+            if (pipe->current_size <= pipe->rd_offset)
+                return 0;
 
             read_count = pipe->current_size - pipe->rd_offset;
             if (read_count > (int) size)
                 read_count = size;
 
             memcpy(buf, pipe->buf + pipe->rd_offset, read_count);
+            pipe->rd_offset += read_count;
             break;
 
         default:
@@ -272,9 +320,6 @@ int fm_write(int fd, void *buf, uint32_t size) {
 
             memcpy(pipe->buf + pipe->current_size, buf, size);
             pipe->current_size += size;
-
-
-
             break;
 
         default:
@@ -363,7 +408,12 @@ int fm_dup2(int fd, int new_fd) {
             break;
 
         case TYPE_PPRD:
+            fm_pipe_push_reader(fd_data->pipe, syscall_process_pid());
+            new_data->pipe = fd_data->pipe;
+            break;
+
         case TYPE_PPWR:
+            fm_pipe_push_writer(fd_data->pipe, syscall_process_pid());
             new_data->pipe = fd_data->pipe;
             break;
 
@@ -432,4 +482,25 @@ int fm_isfctf(int fd) {
         return -EBADF;
 
     return fd_data->type == TYPE_FCTF;
+}
+
+int fm_declare_child(int pid) {
+    // add pid to all pipes
+
+    for (int i = 0; i < MAX_FD; i++) {
+        fd_data_t *fd_data = fm_fd_to_data(i);
+
+        if (!fd_data)
+            continue;
+
+        pipe_data_t *pipe = fd_data->pipe;
+
+        if (fd_data->type == TYPE_PPRD && fm_pipe_push_reader(pipe, pid) < 0)
+            return -1;
+
+        if (fd_data->type == TYPE_PPWR && fm_pipe_push_writer(pipe, pid) < 0)
+            return -1;
+    }
+
+    return 0;
 }
