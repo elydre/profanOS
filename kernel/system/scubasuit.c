@@ -233,7 +233,7 @@ int scuba_unmap(scuba_dir_t *dir, void *virt) {
 
 int scuba_init(void) {
     uint32_t cr0, map_to_addr;
-    
+
     kernel_directory = i_directory_create(0);
     map_to_addr = mem_get_info(0, 0);
 
@@ -304,9 +304,10 @@ void scuba_dump(scuba_dir_t *dir) {
         if (!dir->entries[i].frame) continue;
 
         scuba_page_table_t *table = (void *) (dir->entries[i].frame * 0x1000);
-    
+
         if (dir->entries[i].fkernel) {
-            kprintf_serial("  page table %d [%x to %x] %x (from kernel)\n", i, i * 1024 * 0x1000, (i + 1) * 1024 * 0x1000, table);
+            kprintf_serial("  page table %d [%x to %x] %x (from kernel)\n", i,
+                    i * 1024 * 0x1000, (i + 1) * 1024 * 0x1000, table);
             continue;
         }
 
