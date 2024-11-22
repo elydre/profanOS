@@ -212,6 +212,8 @@ pid_t fork(void) {
         return 0;
     }
 
+    fm_declare_child(pid);
+
     // parent process
     syscall_process_wakeup(pid);
 
