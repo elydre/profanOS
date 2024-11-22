@@ -24,23 +24,18 @@ void free_tab(char **tab) {
 }
 
 char **ft_split(char *s, char c) {
-    char **res;
     int i, j, k;
+    char **res;
 
-    res = malloc((strlen(s) + 1) * sizeof(char *));
-    for (i = 0, j = 0, k = 0; s[i]; i++) {
-        if (s[i] != c)
-            continue;
-        res[j] = malloc(i - k + 1);
-        memcpy(res[j], s + k, i - k);
-        res[j][i - k] = '\0';
-        j++;
-        k = i + 1;
+    res = calloc(strlen(s) + 1, sizeof(char *));
+    for (i = j = k = 0; s[i]; i++) {
+        if (s[i] == c) {
+            res[j++] = strndup(s + k, i - k);
+            k = i + 1;
+        }
     }
-    res[j] = malloc(i - k + 1);
-    memcpy(res[j], s + k, i - k);
-    res[j][i - k] = '\0';
-    res[j + 1] = NULL;
+    if (k != i)
+        res[j++] = strndup(s + k, i - k);
     return res;
 }
 
@@ -126,14 +121,14 @@ int main(void) {
         printf("(%d) %s # ", res, getenv("PWD"));
         fflush(stdout);
         line = profan_input(NULL);
-        if (!line || !*line) {
+        if (!line) {
             putchar('\n');
-            free(line);
+            profan_kfree(line);
             break;
         }
         remove_trailing_newline(line);
         res = execute_line(line);
-        free(line);
+        profan_kfree(line);
     }
     return 0;
 }
