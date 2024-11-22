@@ -40,7 +40,7 @@ typedef struct {
 
 typedef struct {
     proc_rgs_t regs;
-    scuba_directory_t *scuba_dir;
+    scuba_dir_t *scuba_dir;
 
     uint32_t pid, ppid, state;
     uint32_t run_time, sleep_to;
@@ -77,8 +77,8 @@ comm_struct_t *process_get_comm(uint32_t pid);
 
 int process_set_return(uint32_t pid, uint32_t ret);
 
-scuba_directory_t *process_get_directory(uint32_t pid);
-void process_switch_directory(uint32_t pid, scuba_directory_t *dir, int now);
+scuba_dir_t *process_get_dir(uint32_t pid);
+void process_switch_directory(uint32_t pid, scuba_dir_t *dir, int now);
 
 // switch.asm
 extern void process_asm_switch(proc_rgs_t *old, proc_rgs_t *new);

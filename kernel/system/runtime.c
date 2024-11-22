@@ -69,6 +69,7 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
 
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     int pid = process_get_pid();
+    uint32_t *phys;
 
     if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_error("[binary_exec] File not found");
@@ -92,31 +93,27 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     process_set_comm(pid, comm);
 
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
-    uint32_t real_fsize = fsize;
 
-    scuba_directory_t *old_dir = process_get_directory(pid);
-    scuba_directory_t *dir = scuba_directory_inited(pid);
-
-    // create program memory
-    scuba_create_virtual(dir, (void *) RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
+    scuba_dir_t *old_dir = process_get_dir(pid);
+    scuba_dir_t *new_dir = scuba_dir_inited(old_dir, pid);
 
     // create stack
-    uint32_t *phys_stack = scuba_create_virtual(dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
-    mem_copy(phys_stack, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
+    phys = scuba_create_virtual(new_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
+    mem_copy(phys, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
 
-    process_switch_directory(pid, dir, 0);
+    process_switch_directory(pid, new_dir, 0);
 
     // switch to new directory
-    asm volatile("mov %0, %%cr3":: "r"(dir));
+    scuba_switch(new_dir);
 
-    scuba_directory_destroy(old_dir);
+    scuba_dir_destroy(old_dir);
 
     // load binary
-    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
+    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE + RUN_BIN_OFFSET, 0, fsize);
+    mem_set((void *) RUN_BIN_VBASE + RUN_BIN_OFFSET + fsize, 0, RUN_BIN_VCUNT - RUN_BIN_OFFSET - fsize);
 
     // call main
-
-    int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
+    int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE + RUN_BIN_OFFSET;
 
     sys_exit_kernel(0);
     int ret = main(argc, argv, envp) & 0xFF;

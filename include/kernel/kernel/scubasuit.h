@@ -54,29 +54,34 @@ typedef struct {
 typedef struct {
     scuba_dir_entry_t entries[1024];
     uint32_t pid;
-} scuba_directory_t;
+} scuba_dir_t;
 
 #define scuba_map(dir, virt, phys) scuba_map_func(dir, virt, phys, 0)
 #define scuba_map_from_kernel(dir, virt, phys) scuba_map_func(dir, virt, phys, 1)
 
-scuba_directory_t *scuba_get_kernel_directory(void);
+scuba_dir_t *scuba_get_kernel_dir(void);
 
 // init, switch
 int scuba_init(void);
-void scuba_switch(scuba_directory_t *dir);
+
+void scuba_switch(scuba_dir_t *dir);
+#define scuba_switch(dir) asm volatile("mov %0, %%cr3":: "r"(dir))
 
 // directory creation, destruction
-scuba_directory_t *scuba_directory_inited(uint32_t pid);
-scuba_directory_t *scuba_directory_copy(scuba_directory_t *dir, uint32_t pid);
-void scuba_directory_destroy(scuba_directory_t *dir);
+scuba_dir_t *scuba_dir_inited(scuba_dir_t *parent, uint32_t pid);
+scuba_dir_t *scuba_dir_copy(scuba_dir_t *dir, uint32_t pid);
+
+void scuba_dir_destroy(scuba_dir_t *dir);
+
+void scuba_dump(scuba_dir_t *dir);
 
 // map, unmap
-int scuba_map_func(scuba_directory_t *dir, void *virt, void *phys, int mode);
-int scuba_unmap(scuba_directory_t *dir, void *virt);
-void *scuba_create_virtual(scuba_directory_t *dir, void *virt, uint32_t count);
+int scuba_map_func(scuba_dir_t *dir, void *virt, void *phys, int mode);
+int scuba_unmap(scuba_dir_t *dir, void *virt);
+void *scuba_create_virtual(scuba_dir_t *dir, void *virt, uint32_t count);
 
 // get physical, fault handler
-void *scuba_get_phys(scuba_directory_t *dir, void *virt);
+void *scuba_get_phys(scuba_dir_t *dir, void *virt);
 void scuba_fault_handler(int err_code);
 
 // syscall functions

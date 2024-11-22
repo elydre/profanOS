@@ -73,7 +73,7 @@ static void i_new_process(process_t *process, void (*func)(), uint32_t flags, ui
     process->regs.eflags = flags;
     process->regs.eip = (uint32_t) func;
     process->regs.cr3 = (uint32_t) pagedir;
-    process->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE;
+    process->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - 4;
 }
 
 static int i_get_free_place(void) {
@@ -162,7 +162,7 @@ static void i_clean_killed(void) {
                 g_need_clean = 1;
                 continue;
             }
-            scuba_directory_destroy(plist[i].scuba_dir);
+            scuba_dir_destroy(plist[i].scuba_dir);
             plist[i].state = PROCESS_DEAD;
         }
     }
@@ -278,7 +278,7 @@ int process_init(void) {
 
     i_add_to_g_shdlr_queue(kern_proc);
 
-    kern_proc->scuba_dir = scuba_get_kernel_directory();
+    kern_proc->scuba_dir = scuba_get_kernel_dir();
 
     // enable scheduler
     g_scheduler_state = SHDLR_DISL;
@@ -327,17 +327,17 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
     void *phys_stack;
 
     if (copy_page) {
-        new_proc->scuba_dir = scuba_directory_copy(g_proc_current->scuba_dir, new_proc->pid);
+        new_proc->scuba_dir = scuba_dir_copy(g_proc_current->scuba_dir, new_proc->pid);
         phys_stack = scuba_get_phys(new_proc->scuba_dir, (void *) PROC_ESP_ADDR);
     } else {
-        new_proc->scuba_dir = scuba_directory_inited(new_proc->pid);
+        new_proc->scuba_dir = scuba_dir_inited(g_proc_current->scuba_dir, new_proc->pid);
         phys_stack = scuba_create_virtual(new_proc->scuba_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
     }
 
     i_new_process(new_proc, func, g_proc_current->regs.eflags, (uint32_t *) new_proc->scuba_dir);
 
     if (func == NULL) {
-        new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE;
+        new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - 4;
         return g_pid_incrament;
     }
 
@@ -682,7 +682,7 @@ int process_list_all(uint32_t *list, int max) {
     return i;
 }
 
-scuba_directory_t *process_get_directory(uint32_t pid) {
+scuba_dir_t *process_get_dir(uint32_t pid) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -693,7 +693,7 @@ scuba_directory_t *process_get_directory(uint32_t pid) {
     return plist[place].scuba_dir;
 }
 
-void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir, int now) {
+void process_switch_directory(uint32_t pid, scuba_dir_t *new_dir, int now) {
     int place = i_pid_to_place(pid);
 
     if (place < 0) {
@@ -701,7 +701,7 @@ void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir, int now)
         return;
     }
 
-    scuba_directory_t *old_dir = plist[place].scuba_dir;
+    scuba_dir_t *old_dir = plist[place].scuba_dir;
 
     plist[place].scuba_dir = new_dir;
 
@@ -711,7 +711,7 @@ void process_switch_directory(uint32_t pid, scuba_directory_t *new_dir, int now)
         scuba_switch(new_dir);
     }
 
-    scuba_directory_destroy(old_dir);
+    scuba_dir_destroy(old_dir);
 }
 
 int process_set_return(uint32_t pid, uint32_t ret) {
