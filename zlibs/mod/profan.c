@@ -495,6 +495,8 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (pid == -1)
         return -1;
 
+    fm_declare_child(pid);
+
     if (args.sleep_mode == 2)
         return 0;
 
