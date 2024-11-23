@@ -41,7 +41,7 @@ int main(void) {
     return 0;
 }
 
-static void fu_sep_path(char *fullpath, char **parent, char **cnt) {
+static void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     len = strlen(fullpath);
@@ -433,7 +433,7 @@ uint32_t fu_file_get_size(uint32_t file_sid) {
     return syscall_fs_get_size(NULL, file_sid);
 }
 
-uint32_t fu_file_create(int device_id, char *path) {
+uint32_t fu_file_create(int device_id, const char *path) {
     char *parent, *name;
 
     uint32_t parent_sid;

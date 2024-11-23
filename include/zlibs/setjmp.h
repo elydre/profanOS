@@ -15,6 +15,6 @@
 typedef int jmp_buf[6];
 
 int setjmp(jmp_buf var);
-void longjmp(jmp_buf var, int m);
+void longjmp(jmp_buf var, int m) __attribute__((noreturn));
 
 #endif

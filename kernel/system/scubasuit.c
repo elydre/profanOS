@@ -94,7 +94,7 @@ scuba_dir_t *scuba_dir_copy(scuba_dir_t *dir, uint32_t pid) {
         }
 
         // allocate a new page table
-        scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t), dir);
+        scuba_page_table_t *new_table = i_allign_calloc(sizeof(scuba_page_table_t), new_dir);
 
         // copy the page table
         for (int j = 0; j < 1024; j++) {
@@ -102,7 +102,7 @@ scuba_dir_t *scuba_dir_copy(scuba_dir_t *dir, uint32_t pid) {
             if (!(table->pages[j].present && table->pages[j].deepcopy))
                 continue;
             // clone the page
-            void *data = mem_alloc_dir(0x1000, 0x1000, dir->pid, dir);
+            void *data = mem_alloc_dir(0x1000, 0x1000, new_dir->pid, new_dir);
             mem_copy(data, (void *) (table->pages[j].frame * 0x1000), 0x1000);
             new_table->pages[j].frame = (uint32_t) data / 0x1000;
         }

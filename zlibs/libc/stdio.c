@@ -21,16 +21,22 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#define FILE_BUFFER_SIZE 0x1000
-#define FILE_BUFFER_READ 100
+#define STDIO_BUFFER_SIZE 0x1000
+#define STDIO_BUFFER_READ 100
 
-#define MODE_READ   1 << 0
-#define MODE_WRITE  1 << 1
-#define MODE_APPEND 1 << 2
-
-#if FILE_BUFFER_SIZE < FILE_BUFFER_READ
+#if STDIO_BUFFER_SIZE < STDIO_BUFFER_READ
   #error "stdio buffer size must be changed"
 #endif
+
+typedef struct _IO_FILE {
+    int   fd;
+    int   mode;
+
+    uint8_t error;
+    
+    char *buffer;
+    int   buffer_size;
+} FILE;
 
 int vsnprintf(char* str, size_t size, const char* format, va_list arg);
 
@@ -40,24 +46,19 @@ FILE *stderr = NULL;
 
 char *g_printf_buffer = NULL;
 
+static FILE *fopen_std(int fd, uint8_t mode) {
+    FILE *file = calloc(sizeof(FILE) + STDIO_BUFFER_SIZE, 1);
+    file->buffer = ((char *) file) + sizeof(FILE);
+    file->mode = mode;
+    file->fd = fd;
+    return file;
+}
+
 void __stdio_init(void) {
-    // init stdin
-    stdin = calloc(1, sizeof(FILE));
-    stdin->mode = MODE_READ;
-    stdin->buffer = malloc(FILE_BUFFER_SIZE);
-    stdin->fd = 0;
-
-    // init stdout
-    stdout = calloc(1, sizeof(FILE));
-    stdout->mode = MODE_WRITE;
-    stdout->buffer = malloc(FILE_BUFFER_SIZE);
-    stdout->fd = 1;
-
-    // init stderr
-    stderr = calloc(1, sizeof(FILE));
-    stderr->mode = MODE_WRITE;
-    stderr->buffer = malloc(FILE_BUFFER_SIZE);
-    stderr->fd = 2;
+    // init stdin, stdout and stderr
+    stdin  = fopen_std(0, O_RDONLY);
+    stdout = fopen_std(1, O_WRONLY);
+    stderr = fopen_std(2, O_WRONLY);
 
     // init printf buffer
     g_printf_buffer = malloc(0x1000);
@@ -65,18 +66,12 @@ void __stdio_init(void) {
 
 void __stdio_fini(void) {
     fflush(stdin);
-    if (stdin)
-        free(stdin->buffer);
     free(stdin);
 
     fflush(stdout);
-    if (stdout)
-        free(stdout->buffer);
     free(stdout);
 
     fflush(stderr);
-    if (stderr)
-        free(stderr->buffer);
     free(stderr);
 
     free(g_printf_buffer);
@@ -92,88 +87,40 @@ FILE *fopen(const char *filename, const char *mode) {
         return NULL;
     }
 
-    // if path is relative, add the current directory
-    char *path;
-    if (filename[0] != '/') {
-        char *pwd = getenv("PWD");
-        if (pwd == NULL) pwd = "/";
-
-        path = profan_join_path(pwd, (char *) filename);
-        filename = path;
-    } else {
-        path = strdup(filename);
-    }
-
     // compute the mode
     uint32_t interpeted_mode = 0;
     for (uint32_t i = 0; i < strlen(mode); i++) {
         switch (mode[i]) {
             case 'r':
-                interpeted_mode |= MODE_READ;
+                interpeted_mode |= O_RDONLY;
                 break;
             case 'w':
-                interpeted_mode |= MODE_WRITE;
+                interpeted_mode |= O_WRONLY | O_CREAT | O_TRUNC;
                 break;
             case 'a':
-                interpeted_mode |= MODE_APPEND | MODE_WRITE;
+                interpeted_mode |= O_WRONLY | O_CREAT | O_APPEND;
                 break;
             case '+':
-                interpeted_mode |= MODE_READ | MODE_WRITE;
+                interpeted_mode |= O_RDWR | O_CREAT;
                 break;
         }
     }
 
-    // first check if the file exists
-    uint32_t file_id = fu_path_to_sid(SID_ROOT, (char *) path);
-    int exists = !IS_SID_NULL(file_id);
+    // open the file
+    int fd = open(filename, interpeted_mode, 00777);
 
-    // the file doesn't exist but it should
-    if (!exists && !(interpeted_mode & MODE_WRITE)) {
-        free(path);
+    if (fd < 0)
         return NULL;
-    }
-
-    // the path is a directory
-    if (exists && fu_is_dir(file_id)) {
-        free(path);
-        return NULL;
-    }
-
-    // create the file if it doesnt exist
-    if (!exists) {
-        file_id = fu_file_create(0, (char *) path);
-    }
-
-    // check for failure
-    if (IS_SID_NULL(file_id)) {
-        free(path);
-        return NULL;
-    }
 
     // now create the file structure
-    FILE *file = calloc(1, sizeof(FILE));
+    FILE *file = calloc(1, sizeof(FILE) + STDIO_BUFFER_SIZE);
 
-    // open the file
-    file->fd = fm_open((char *) path, O_RDWR);
-    free(path);
-
-    if (file->fd < 0) {
-        free(file);
-        return NULL;
-    }
-
-    // copy the mode
+    // copy data
     file->mode = interpeted_mode;
+    file->fd = fd;
 
     // set the buffer
-    file->buffer = malloc(FILE_BUFFER_SIZE);
-
-    // if the file is open for appending, set the file pos to the end of the file
-    if (interpeted_mode & MODE_APPEND) {
-        fm_lseek(file->fd, 0, SEEK_END);
-    } else if (exists && (interpeted_mode & MODE_WRITE)) {
-        fu_file_set_size(file_id, 0);
-    }
+    file->buffer = ((char *) file) + sizeof(FILE);
 
     return file;
 }
@@ -205,14 +152,13 @@ int fclose(FILE *stream) {
     fm_close(stream->fd);
 
     // free the stream
-    free(stream->buffer);
     free(stream);
 
     return 0;
 }
 
 int fflush(FILE *stream) {
-    if (!(stream && (stream->mode & MODE_WRITE)))
+    if (stream == NULL || stream->mode & O_RDONLY)
         return 0;
 
     if (stream->buffer_size <= 0)
@@ -252,7 +198,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
     // check if the file is open for reading
-    if (count == 0 || !(stream && (stream->mode & MODE_READ)))
+    if (count == 0 || stream == NULL || stream->mode & O_WRONLY)
         return 0;
 
     fflush(stream);
@@ -293,7 +239,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // read the file
-    if (count > FILE_BUFFER_READ) {
+    if (count > STDIO_BUFFER_READ) {
         read = fm_read(stream->fd, buffer + rfrom_buffer, count);
         if (read < 0) {
             stream->error = 1;
@@ -302,7 +248,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         return (read + rfrom_buffer) / size;
     }
 
-    read = fm_read(stream->fd, stream->buffer, FILE_BUFFER_READ);
+    read = fm_read(stream->fd, stream->buffer, STDIO_BUFFER_READ);
     if (read < 0) {
         stream->error = 1;
         return 0;
@@ -325,7 +271,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
     // check if the file is open for writing
-    if (count == 0 || !(stream && (stream->mode & MODE_WRITE)))
+    if (count == 0 || stream == NULL || stream->mode & O_RDONLY)
         return 0;
 
     // if buffer is used for reading
@@ -337,7 +283,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
 
     for (uint32_t i = 0; i < count; i++) {
         // check if the buffer is full
-        if (stream->buffer_size >= (FILE_BUFFER_SIZE - 1)) {
+        if (stream->buffer_size >= (STDIO_BUFFER_SIZE - 1)) {
             if (fflush(stream) == EOF)
                 return 0;
             need_flush = 0;
@@ -459,7 +405,7 @@ int puts(const char *str) {
 }
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
-    if (!lineptr || !n || !(stream && (stream->mode & MODE_READ))) {
+    if (!(lineptr && n && stream && !(stream->mode & O_WRONLY))) {
         return -1;
     }
 
@@ -638,7 +584,7 @@ int vprintf(const char *format, va_list vlist) {
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
     // if the stream is read only, can't write to it
-    if (!(stream && (stream->mode & MODE_WRITE))) {
+    if (stream == NULL || stream->mode & O_RDONLY) {
         return 0;
     }
 
@@ -679,7 +625,8 @@ long ftell(FILE *stream) {
     // flush the buffer
     fflush(stream);
 
-    return fm_tell(stream->fd) < 0 ? -1 : 0;
+    int r = fm_lseek(stream->fd, 0, SEEK_CUR);
+    return r < 0 ? -1 : r;
 }
 
 int feof(FILE *stream) {

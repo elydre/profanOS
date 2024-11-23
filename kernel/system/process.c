@@ -337,7 +337,6 @@ int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *a
     i_new_process(new_proc, func, g_proc_current->regs.eflags, (uint32_t *) new_proc->scuba_dir);
 
     if (func == NULL) {
-        new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - 4;
         return g_pid_incrament;
     }
 

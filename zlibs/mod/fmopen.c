@@ -162,7 +162,7 @@ int fm_close(int fd) {
     return 0;
 }
 
-int fm_reopen(int fd, char *abs_path, int flags) {
+int fm_reopen(int fd, const char *abs_path, int flags) {
     // return fd or -errno
 
     fm_close(fd);
@@ -316,6 +316,7 @@ int fm_write(int fd, void *buf, uint32_t size) {
 
             memcpy(pipe->buf + pipe->current_size, buf, size);
             pipe->current_size += size;
+            write_count = size;
             break;
 
         default:
@@ -360,20 +361,6 @@ int fm_lseek(int fd, int offset, int whence) {
     fd_data->offset = new_offset;
 
     return new_offset;
-}
-
-int fm_tell(int fd) {
-    fd_data_t *fd_data = fm_fd_to_data(fd);
-
-    if (fd_data == NULL)
-        return -EBADF;
-
-    if (fd_data->type != TYPE_FILE)
-        return -ESPIPE;
-
-    // TODO: tell for pipes ?
-
-    return fd_data->offset;
 }
 
 int fm_dup2(int fd, int new_fd) {
@@ -478,6 +465,18 @@ int fm_isfctf(int fd) {
         return -EBADF;
 
     return fd_data->type == TYPE_FCTF;
+}
+
+int fm_newfd_after(int fd) {
+    // return the first free fd after fd
+
+    for (int i = fd; i < MAX_FD; i++) {
+        fd_data_t *fd_data = fm_fd_to_data(i);
+        if (fd_data->type == TYPE_FREE)
+            return i;
+    }
+
+    return -1;
 }
 
 int fm_declare_child(int pid) {
