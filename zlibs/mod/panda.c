@@ -139,6 +139,8 @@ char compute_ansi_color(char ansi_nb, int part, char old_color) {
         fg = ansi_nb + 8;
     } else if (part == 2) {
         bg = ansi_nb;
+    } else {
+        bg = ansi_nb + 8;
     }
 
     return (bg << 4) | fg;
@@ -212,21 +214,26 @@ int compute_ansi_escape(const char *str, panda_global_t *g_panda, int main_color
     }
 
     // font color
-    if (str[0] == '3' && str[2] == 'm') {
+    if (str[0] == '3' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 0, g_panda->color);
         return 4;
     }
 
     // highlight font color
-    if (str[0] == '9' && str[2] == 'm') {
+    if (str[0] == '9' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 1, g_panda->color);
         return 4;
     }
 
     // background color
-    if (str[0] == '4' && str[2] == 'm') {
+    if (str[0] == '4' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 2, g_panda->color);
         return 4;
+    }
+
+    if (str[0] == '1' && str[1] == '0' && str[2] && str[3] == 'm') {
+        g_panda->color = compute_ansi_color(str[2], 3, g_panda->color);
+        return 5;
     }
 
     // reset color
