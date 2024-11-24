@@ -9,14 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-
-#include <profan.h>
 
 char *dup_strft(char const *src, int start, int end) {
     char *res;
@@ -187,7 +186,8 @@ int main(int argc, char **argv, char **envp) {
     close(file2);
     close(pipefd[0]);
 
-    // TODO: wait for children
+    waitpid(pid1, NULL, 0);
+    waitpid(pid2, NULL, 0);
 
     return (0);
 }
