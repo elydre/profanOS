@@ -44,6 +44,7 @@ typedef struct {
 
     uint32_t pid, ppid, state;
     uint32_t run_time, sleep_to;
+    int wait_pid;
 
     uint8_t in_kernel;
 
@@ -56,11 +57,11 @@ int  process_init(void);
 void schedule(uint32_t ticks);
 
 // process gestion
-int process_create(void *func, int copy_page, char *name, int nargs, uint32_t *args);
+int process_create(void *func, int copy_page, int nargs, uint32_t *args);
 int process_fork(registers_t *regs);
-int process_handover(uint32_t pid);
-int process_wakeup(uint32_t pid);
+int process_wakeup(uint32_t pid, int handover);
 int process_sleep(uint32_t pid, uint32_t ms);
+int process_wait(int pid); // negative pid for any child
 int process_kill(uint32_t pid);
 
 // scheduler control
@@ -70,12 +71,13 @@ int process_auto_schedule(int state);
 uint32_t process_get_pid(void);
 
 int process_list_all(uint32_t *list, int max);
-uint32_t process_get_info(uint32_t pid, int info_id);
+int process_get_info(uint32_t pid, int info_id);
 
 int process_set_comm(uint32_t pid, comm_struct_t *comm);
 comm_struct_t *process_get_comm(uint32_t pid);
 
 int process_set_return(uint32_t pid, uint32_t ret);
+int process_set_name(uint32_t pid, char *name);
 
 scuba_dir_t *process_get_dir(uint32_t pid);
 void process_switch_directory(uint32_t pid, scuba_dir_t *dir, int now);

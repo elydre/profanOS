@@ -75,7 +75,7 @@ void *SYSCALL_ARRAY[] = {
     process_fork,       // 30
     process_sleep,      // 31
     process_wakeup,     // 32
-    process_handover,   // 33
+    process_wait,       // 33
     force_exit_pid,     // 34
     process_get_pid,    // 35
     process_get_info,   // 36

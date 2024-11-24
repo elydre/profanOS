@@ -16,7 +16,7 @@
 #include <system.h>
 
 int force_exit_pid(int pid, int ret_code, int warn_leaks) {
-    int ppid, pstate, leaks;
+    int leaks;
 
     if (pid == 0 || pid == 1) {
         sys_warning("[exit pid] Attempt to kill system process %d", pid);
@@ -53,17 +53,6 @@ int force_exit_pid(int pid, int ret_code, int warn_leaks) {
     // set return value
     process_set_return(pid, ret_code);
 
-    // wake up the parent process
-    ppid = process_get_ppid(pid);
-
-    if (ppid != -1) {
-        pstate = process_get_state(ppid);
-
-        if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING) {
-            process_wakeup(ppid);
-        }
-    }
-
     return process_kill(pid);
 }
 
@@ -91,6 +80,7 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     comm->argv = argv;
     comm->envp = envp;
     process_set_comm(pid, comm);
+    process_set_name(pid, argv[0] ? argv[0] : "unknown");
 
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
 
@@ -142,7 +132,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
         str_cpy(nargv[i], argv[i]);
     }
 
-    int pid = process_create(binary_exec, 0, file, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
+    int pid = process_create(binary_exec, 0, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
@@ -153,10 +143,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
     if (sleep == 2)
         return 0;
 
-    if (sleep)
-        process_handover(pid);
-    else
-        process_wakeup(pid);
+    process_wakeup(pid, sleep);
 
     return process_get_info(pid, PROCESS_INFO_EXIT_CODE);
 }
