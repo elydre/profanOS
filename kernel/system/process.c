@@ -537,7 +537,7 @@ int process_wait(int pid) {
     // return the pid of the process waited
     // or -1 on error
 
-    // if pid is 0, wait for any child
+    // if pid is negative, wait for any child
 
     if (pid >= 0) {
         int child_place = i_pid_to_place(pid);
@@ -554,6 +554,10 @@ int process_wait(int pid) {
 
         if (plist[child_place].ppid != g_proc_current->pid) {
             return ERROR_CODE;
+        }
+
+        if (plist[child_place].state >= PROCESS_KILLED) {
+            return pid;
         }
     }
 
