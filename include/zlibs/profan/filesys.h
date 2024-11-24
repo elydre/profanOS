@@ -103,8 +103,9 @@ enum {
 #define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
 #define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 9))
 #define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 10))
-#define fm_newfd_after ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
-#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_newfd_after ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
 
 #endif
 #endif

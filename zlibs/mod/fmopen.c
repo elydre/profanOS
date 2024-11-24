@@ -350,7 +350,7 @@ int fm_lseek(int fd, int offset, int whence) {
             if (fd_data->type != TYPE_FILE)
                 return -ESPIPE;
             new_offset = syscall_fs_get_size(NULL, fd_data->sid) + offset;
-            break;    
+            break;
         default:
             return -EINVAL;
     }
@@ -465,6 +465,15 @@ int fm_isfctf(int fd) {
         return -EBADF;
 
     return fd_data->type == TYPE_FCTF;
+}
+
+int fm_isfile(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
+
+    return fd_data->type == TYPE_FILE;
 }
 
 int fm_newfd_after(int fd) {

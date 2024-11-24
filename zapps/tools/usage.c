@@ -57,7 +57,7 @@ int main(void) {
     }
 
     // wake up the parent process
-    syscall_process_wakeup(syscall_process_ppid(syscall_process_pid()));
+    syscall_process_wakeup(syscall_process_ppid(syscall_process_pid()), 0);
 
     int *history = calloc(HISTOTY_SIZE, sizeof(int));
 

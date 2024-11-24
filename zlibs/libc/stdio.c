@@ -33,7 +33,7 @@ typedef struct _IO_FILE {
     int   mode;
 
     uint8_t error;
-    
+
     char *buffer;
     int   buffer_size;
 } FILE;
@@ -206,7 +206,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     int read, rfrom_buffer = 0;
 
     // check if the file is a function call
-    if (fm_isfctf(stream->fd)) {
+    if (fm_isfile(stream->fd) < 1) {
         read = fm_read(stream->fd, buffer, count);
         if (read < 0) {
             stream->error = 1;

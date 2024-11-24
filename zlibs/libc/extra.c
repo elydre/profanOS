@@ -106,19 +106,6 @@ char *profan_input(int *size) {
     return profan_input_keyboard(size, term);
 }
 
-int profan_wait_pid(uint32_t pid) {
-    uint32_t current_pid = syscall_process_pid();
-
-    if (pid == current_pid || !pid)
-        return 0;
-
-    while (syscall_process_state(pid) < 4)
-        syscall_process_sleep(current_pid, 10);
-
-    return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
-}
-
-
 // defined in deluge - don't free libname and result
 char *profan_fn_name(void *ptr, char **libname) {
     puts("libc extra: profan_fn_name: should not be called");

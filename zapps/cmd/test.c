@@ -187,8 +187,7 @@ int main(int argc, char **argv, char **envp) {
     close(file2);
     close(pipefd[0]);
 
-    profan_wait_pid(pid2);
-    profan_wait_pid(pid1);
+    // TODO: wait for children
 
     return (0);
 }

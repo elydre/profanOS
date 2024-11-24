@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
     else if (args.mode == MODE_SLPP)
         syscall_process_sleep(args.pid, UINT32_MAX);
     else if (args.mode == MODE_WKUP)
-        syscall_process_wakeup(args.pid);
+        syscall_process_wakeup(args.pid, 0);
     else return 1;
     return 0;
 }

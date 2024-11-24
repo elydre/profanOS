@@ -486,8 +486,8 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return syscall_binary_exec(sid, args.argc, nargv, nenv);
     }
 
-    int pid = syscall_process_create(syscall_binary_exec, 0, args.path,
-            4, (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
+    int pid = syscall_process_create(syscall_binary_exec, 0, 4,
+            (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
     );
 
     if (pid_ptr != NULL)
@@ -500,10 +500,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (args.sleep_mode == 2)
         return 0;
 
-    if (args.sleep_mode)
-        syscall_process_handover(pid);
-    else
-        syscall_process_wakeup(pid);
+    syscall_process_wakeup(pid, args.sleep_mode);
 
     return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
 }
