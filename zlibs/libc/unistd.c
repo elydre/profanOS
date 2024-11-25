@@ -157,7 +157,7 @@ int execlp(const char *file, const char *arg, ...) {
 }
 
 int execv(const char *fullpath, char *const argv[]) {
-    return execve(fullpath, argv, NULL);
+    return execve(fullpath, argv, __get_environ_ptr());
 }
 
 int execve(const char *fullpath, char *const argv[], char *const envp[]) {
