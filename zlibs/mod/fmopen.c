@@ -33,10 +33,12 @@ enum {
 };
 
 typedef struct {
-    uint32_t current_size;
     uint32_t buffer_size;
-    void *buf;
+    void    *buf;
+
+    uint32_t current_size;
     uint32_t rd_offset;
+
     int readers[PIPE_MAX_REF];
     int writers[PIPE_MAX_REF];
 } pipe_data_t;
@@ -84,6 +86,22 @@ static fd_data_t *fm_get_free_fd(int *fd) {
 }
 
 static pipe_data_t *fm_get_free_pipe(void) {
+    // free pipe with only dead processes
+    for (int i = 0; i < PIPE_MAX; i++) {
+        if (open_pipes[i].buf == NULL)
+            continue;
+        for (int j = 0; j < PIPE_MAX_REF; j++) {
+            if (open_pipes[i].readers[j] != -1 && syscall_process_state(open_pipes[i].readers[j]) > 1)
+                break;
+            if (open_pipes[i].writers[j] != -1 && syscall_process_state(open_pipes[i].writers[j]) > 1)
+                break;
+            if (j == PIPE_MAX_REF - 1) {
+                free(open_pipes[i].buf);
+                open_pipes[i].buf = NULL;
+            }
+        }
+    }
+
     for (int i = 0; i < PIPE_MAX; i++) {
         if (open_pipes[i].buf == NULL)
             return open_pipes + i;
@@ -252,7 +270,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
                 // fd_printf(2, "waiting for %d\n", pipe->writers[0]);
                 syscall_process_sleep(pid, 10);
                 for (int i = 0; i < PIPE_MAX_REF; i++) {
-                    if (pipe->writers[i] == -1 || syscall_process_state(pipe->writers[i]) < 4)
+                    if (pipe->writers[i] == -1 || syscall_process_state(pipe->writers[i]) > 1)
                         continue;
                     for (int j = i; j < PIPE_MAX_REF - 1; j++)
                         pipe->writers[j] = pipe->writers[j + 1];

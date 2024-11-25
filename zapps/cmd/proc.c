@@ -22,13 +22,12 @@
 
 char *get_state(int state) {
     switch (state) {
-        case 0: return "running";
-        case 1: return "waiting";
-        case 2: return "Tsleep";
-        case 3: return "Fsleep";
-        case 4: return "zombie";
-        case 5: return "dead";
-        case 6: return "idle";
+        case 0: return "free";
+        case 1: return "zombie";
+        case 2: return "sleeping";
+        case 3: return "in queue";
+        case 4: return "running";
+        case 5: return "idle";
         default: return "unknown";
     }
 }
@@ -107,7 +106,7 @@ void list_process(int mode) {
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        name = (char *) syscall_process_info(pid, PROCESS_INFO_NAME);
+        name = (char *) syscall_process_info(pid, PROC_INFO_NAME);
         printf(printf_format,
                 pid,
                 syscall_process_ppid(pid),
@@ -277,7 +276,7 @@ int main(int argc, char **argv) {
     else if (args.mode == MODE_FHLP)
         return show_help();
     else if (args.mode == MODE_EXIT)
-        syscall_process_exit(args.pid, 1, 0);
+        syscall_process_kill(args.pid, 1);
     else if (args.mode == MODE_SLPP)
         syscall_process_sleep(args.pid, UINT32_MAX);
     else if (args.mode == MODE_WKUP)

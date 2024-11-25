@@ -67,4 +67,6 @@ FUNC mv
     END
 END
 
-// dash
+FUNC a
+    test /user/hello.c rev.elf 'cat.elf -e' output.txt
+END

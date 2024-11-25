@@ -499,8 +499,11 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
 
     if (args.sleep_mode == 2)
         return 0;
-
-    syscall_process_wakeup(pid, args.sleep_mode);
-
-    return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
+    if (args.sleep_mode == 0)
+        return (syscall_process_wakeup(pid, 0), 0);
+    
+    syscall_process_wakeup(pid, 1);
+    uint8_t ret;
+    syscall_process_wait(pid, &ret, 0);
+    return ret;
 }

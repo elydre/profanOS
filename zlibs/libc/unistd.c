@@ -179,7 +179,7 @@ int execvp(const char *file, char *const argv[]) {
 }
 
 void _exit(int status) {
-    syscall_process_exit(syscall_process_pid(), status, 0);
+    syscall_process_kill(syscall_process_pid(), status);
     while (1); // unreachable (probably)
 }
 

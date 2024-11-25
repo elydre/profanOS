@@ -1830,19 +1830,21 @@ char *if_dot(char **input) {
         return ERROR_CODE;
     }
 
-    int status;
+    uint8_t status;
 
     #if PROFANBUILD
     if (wait_end) {
         syscall_process_wakeup(pid, 1);
+        syscall_process_wait(pid, &status, 0);
     } else {
         fprintf(stderr, "DOT: started with pid %d\n", pid);
         syscall_process_wakeup(pid, 0);
+        status = 0;
     }
-    status = syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
     #else
     if (wait_end) {
         waitpid(pid, &status, 0);
+        status = WEXITSTATUS(status);
     } else {
         fprintf(stderr, "DOT: started with pid %d\n", pid);
     }

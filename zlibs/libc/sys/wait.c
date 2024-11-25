@@ -16,27 +16,33 @@
 #include <errno.h>
 
 pid_t waitpid(pid_t pid, int *status, int options) {
-    if (options != 0) {
-        fprintf(stderr, "waitpid: options not supported\n");
+    if (options & WUNTRACED || options & WCONTINUED) {
+        fprintf(stderr, "waitpid: WUNTRACED and WCONTINUED not supported\n");
         errno = EINVAL;
         return -1;
     }
 
     if (pid == 0 || pid < -1) {
-        fprintf(stderr, "waitpid: pid not supported\n");
+        fprintf(stderr, "waitpid: pid %d not supported\n", pid);
         errno = EINVAL;
         return -1;
     }
 
-    pid = syscall_process_wait(pid);
+    uint8_t retcode;
+
+    pid = syscall_process_wait(pid, &retcode, options & WNOHANG);
 
     if (pid < 0) {
-        errno = -pid;
+        errno = ECHILD;
         return -1;
     }
 
+    if (pid == 0 && options & WNOHANG) {
+        return 0;
+    }
+
     if (status)
-        *status = syscall_process_info(pid, PROCESS_INFO_EXIT_CODE) << 8;
+        *status = retcode << 8;
 
     return pid;
 }
