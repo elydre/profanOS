@@ -64,7 +64,6 @@ char *sys_kinfo(void);
 // runtime.c
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp);
-int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // pok.c
 int      pok_init(void);
