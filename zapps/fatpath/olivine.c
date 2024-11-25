@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.3 rev 1"
+#define OLV_VERSION "1.3 rev 2"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -61,7 +61,7 @@
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #elif UNIXBUILD
   #include <sys/wait.h> // waitpid
-  #include <sys/time.h> // if_ticks
+  // #include <sys/time.h> // if_ticks
   #include <unistd.h>
   #include <fcntl.h>    // open
 
@@ -1830,16 +1830,15 @@ char *if_dot(char **input) {
         return ERROR_CODE;
     }
 
-    uint8_t status;
+    int status = 0;
 
     #if PROFANBUILD
     if (wait_end) {
         syscall_process_wakeup(pid, 1);
-        syscall_process_wait(pid, &status, 0);
+        syscall_process_wait(pid, (uint8_t *) &status, 0);
     } else {
         fprintf(stderr, "DOT: started with pid %d\n", pid);
         syscall_process_wakeup(pid, 0);
-        status = 0;
     }
     #else
     if (wait_end) {
@@ -4023,47 +4022,7 @@ void olv_print(char *str, int len) {
  *                 *
 ********************/
 
-#if PROFANBUILD
-
-void display_prompt(void) {
-    for (int i = 0; g_prompt[i] != '\0'; i++) {
-        if (g_prompt[i] != '$') {
-            putchar(g_prompt[i]);
-            continue;
-        }
-        switch (g_prompt[i + 1]) {
-            case 'v':
-                fputs(OLV_VERSION, stdout);
-                break;
-            case 'd':
-                fputs(g_current_directory, stdout);
-                break;
-            case '(':
-                if (g_exit_code[0] != '0')
-                    break;
-                for (; g_prompt[i] != ')'; i++);
-                i--;
-                break;
-            case '{':
-                if (g_exit_code[0] == '0')
-                    break;
-                for (; g_prompt[i] != '}'; i++);
-                i--;
-                break;
-            case ')':
-                break;
-            case '}':
-                break;
-            default:
-                putchar('$');
-                break;
-        }
-        i++;
-    }
-    fflush(stdout);
-}
-
-#else
+#if USE_READLINE
 
 char *render_prompt(char *output, int output_size) {
     int output_i = 0;
@@ -4107,6 +4066,46 @@ char *render_prompt(char *output, int output_size) {
     }
     output[output_i] = '\0';
     return output;
+}
+
+#else
+
+void display_prompt(void) {
+    for (int i = 0; g_prompt[i] != '\0'; i++) {
+        if (g_prompt[i] != '$') {
+            putchar(g_prompt[i]);
+            continue;
+        }
+        switch (g_prompt[i + 1]) {
+            case 'v':
+                fputs(OLV_VERSION, stdout);
+                break;
+            case 'd':
+                fputs(g_current_directory, stdout);
+                break;
+            case '(':
+                if (g_exit_code[0] != '0')
+                    break;
+                for (; g_prompt[i] != ')'; i++);
+                i--;
+                break;
+            case '{':
+                if (g_exit_code[0] == '0')
+                    break;
+                for (; g_prompt[i] != '}'; i++);
+                i--;
+                break;
+            case ')':
+                break;
+            case '}':
+                break;
+            default:
+                putchar('$');
+                break;
+        }
+        i++;
+    }
+    fflush(stdout);
 }
 
 #endif
@@ -4707,7 +4706,7 @@ void start_shell(void) {
             #elif USE_READLINE
             cursor_pos = input_local_readline(line + len, INPUT_SIZE - len, OTHER_PROMPT);
             #else
-            fputs(OHER_PROMPT, stdout);
+            fputs(OTHER_PROMPT, stdout);
             fflush(stdout);
             cursor_pos = input_local_stdio(line + len, INPUT_SIZE - len);
             #endif
