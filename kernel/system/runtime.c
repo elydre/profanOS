@@ -15,71 +15,27 @@
 #include <minilib.h>
 #include <system.h>
 
-int force_exit_pid(int pid, int ret_code, int warn_leaks) {
-    int leaks;
-
-    if (pid == 0 || pid == 1) {
-        sys_warning("[exit pid] Attempt to kill system process %d", pid);
-        return 1;
-    }
-
-    if (process_get_state(pid) >= PROCESS_KILLED) {
-        sys_warning("[exit pid] Attempt to kill a non-existing process %d", pid);
-        return 1;
-    }
-
-    comm_struct_t *comm = process_get_comm(pid);
-    if (comm != NULL) {
-        // free the argv
-        for (int i = 0; comm->argv[i] != NULL; i++)
-            free(comm->argv[i]);
-        free(comm->argv);
-        free(comm->envp);
-
-        // free comm struct
-        free(comm);
-    }
-
-    if (warn_leaks && (leaks = mem_get_info(7, pid)) > 0) {
-        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
-                leaks,
-                leaks == 1 ? "" : "s",
-                pid,
-                mem_get_info(8, pid)
-        );
-    }
-    mem_free_all(pid);
-
-    // set return value
-    process_set_return(pid, ret_code);
-
-    return process_kill(pid);
-}
-
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     int pid = process_get_pid();
     uint32_t *phys;
 
     if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_error("[binary_exec] File not found");
-        return force_exit_pid(pid, 1, 0);
+        return process_kill(pid, 1);
     }
 
     comm_struct_t *comm = process_get_comm(pid);
 
-    if (comm != NULL) {
-        // free the argv
+    // free the argv
+    if (comm->argv) {
         for (int i = 0; comm->argv[i] != NULL; i++)
             free(comm->argv[i]);
         free(comm->argv);
-        free(comm->envp);
-    } else {
-        comm = mem_alloc(sizeof(comm_struct_t), 0, 6);
     }
+    free(comm->envp);
 
     comm->argv = argv;
     comm->envp = envp;
-    process_set_comm(pid, comm);
     process_set_name(pid, argv[0] ? argv[0] : "unknown");
 
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
@@ -109,7 +65,7 @@ int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     int ret = main(argc, argv, envp) & 0xFF;
     sys_entry_kernel(0);
 
-    return force_exit_pid(process_get_pid(), ret, 1);
+    return process_kill(process_get_pid(), ret);
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
@@ -143,7 +99,10 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
     if (sleep == 2)
         return 0;
 
-    process_wakeup(pid, sleep);
+    uint8_t ret;
 
-    return process_get_info(pid, PROCESS_INFO_EXIT_CODE);
+    process_wakeup(pid, sleep);
+    process_wait(pid, &ret, 0);
+
+    return ret;
 }

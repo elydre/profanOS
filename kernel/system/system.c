@@ -61,7 +61,7 @@ void kernel_exit_current(void) {
         pid = pid_list[i];
         state = process_get_state(pid);
         if (pid && state < 3 && pid != process_get_pid()) {
-            force_exit_pid(pid, 143, 0);
+            process_kill(pid, 143);
             return;
         }
     }
@@ -173,7 +173,7 @@ void sys_error(char *msg, ...) {
 
     RECURSIVE_COUNT--;
 
-    if (current_pid > 1 && force_exit_pid(current_pid, 143, 0)) {
+    if (current_pid > 1 && process_kill(current_pid, 143)) {
         sys_fatal("Failed to exit process");
     }
 }
