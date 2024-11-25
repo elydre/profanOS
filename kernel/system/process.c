@@ -460,8 +460,6 @@ int process_sleep(uint32_t pid, uint32_t ms) {
 int process_wakeup(uint32_t pid, int handover) {
     int place = i_pid_to_place(pid);
 
-    kprintf_serial("WKUP %d\n", pid);
-
     if (place < 0) {
         sys_warning("[wakeup] pid %d not found", pid);
         return ERROR_CODE;
@@ -506,8 +504,6 @@ int process_wakeup(uint32_t pid, int handover) {
 }
 
 int process_kill(uint32_t pid, uint8_t retcode) {
-    kprintf_serial("KILL %d\n", pid);
-
     if (pid == 0) {
         sys_warning("[kill] Can't kill kernel (^_^ )");
         return ERROR_CODE;
@@ -546,7 +542,6 @@ int process_kill(uint32_t pid, uint8_t retcode) {
     for (int i = 0; i < PROCESS_MAX; i++) {
         if (plist[i].wait_pid == (int) pid ||
            (plist[i].wait_pid == -1 && plist[i].pid == plist[place].ppid)) {
-            kprintf_serial("pid %d waiting for %d\n", plist[i].pid, pid);
             plist[i].wait_pid = -pid;
             process_wakeup(plist[i].pid, 0);
         }
@@ -563,8 +558,6 @@ int process_wait(int pid, uint8_t *retcode, int block) {
     if (pid < 1)
         pid = -1;
 
-    kprintf_serial("WAIT %d, block %d\n", pid, block);
-
     if (pid < 0) {
         for (int i = 0; i < PROCESS_MAX; i++) {
             if (plist[i].state == PROC_STATE_ZMB && plist[i].ppid == g_proc_current->pid && plist[i].retcode >= 0) {
@@ -573,7 +566,6 @@ int process_wait(int pid, uint8_t *retcode, int block) {
                 pid = plist[i].pid;
                 i_free_process(plist + i);
                 plist[i].state = PROC_STATE_FRE;
-                kprintf_serial("WAIT found %d\n", pid);
                 return pid;
             }
         }
@@ -583,7 +575,6 @@ int process_wait(int pid, uint8_t *retcode, int block) {
             if (plist[i].ppid == g_proc_current->pid && plist[i].state > PROC_STATE_ZMB)
                 break;
             if (i == PROCESS_MAX - 1) {
-                kprintf_serial("WAIT no children\n");
                 return -1;
             }
         }
@@ -620,7 +611,6 @@ int process_wait(int pid, uint8_t *retcode, int block) {
     g_proc_current->wait_pid = 0;
 
     if (pid == -1 || pid > 0) {
-        kprintf_serial("WAIT failed\n");
         return ERROR_CODE;
     }
 
@@ -631,7 +621,6 @@ int process_wait(int pid, uint8_t *retcode, int block) {
             pid = plist[i].pid;
             i_free_process(plist + i);
             plist[i].state = PROC_STATE_FRE;
-            kprintf_serial("WAIT ends %d\n", pid);
             return pid;
         }
     }
