@@ -142,7 +142,7 @@ void memory_print_usage(void) {
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        name = (char *) syscall_process_info(pid, PROCESS_INFO_NAME);
+        name = (char *) syscall_process_info(pid, PROC_INFO_NAME);
         printf("PID %-3.02d %-15s %6d kB | %-3d (%d)\n",
                 pid, (strchr(name, '/') ? strrchr(name, '/') + 1 : name),
                 syscall_mem_info(12, pid) / 1024,

@@ -1072,7 +1072,7 @@ int main(int argc, char **argv, char **envp) {
     if (pid != parent_pid) {
         debug_printf(1, "PID %d (child of %d) exit with code %d after %d ms",
                 pid, parent_pid, ret, syscall_timer_get_ms() - start);
-        syscall_process_exit(pid, ret, 1);
+        syscall_process_kill(pid, ret);
     }
 
     debug_printf(1, "PID %d exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);

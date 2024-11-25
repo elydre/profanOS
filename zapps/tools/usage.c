@@ -56,9 +56,6 @@ int main(void) {
         return 1;
     }
 
-    // wake up the parent process
-    syscall_process_wakeup(syscall_process_ppid(syscall_process_pid()));
-
     int *history = calloc(HISTOTY_SIZE, sizeof(int));
 
     int cpu, last_idle, last_total;

@@ -30,13 +30,6 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path);
 #define CACHE_FCTF_SIZE 16
 #define RAISE_ERROR(...) fd_printf(2, "[FS MODULE ERROR] " __VA_ARGS__)
 
-typedef struct {
-    uint32_t sid;
-    void *addr;
-} cache_fctf_t;
-
-cache_fctf_t *cache_fctf;
-
 /********************************************
  *                                         *
  *          Auxiliary functions            *
@@ -45,16 +38,10 @@ cache_fctf_t *cache_fctf;
 
 // init function
 int main(void) {
-    cache_fctf = malloc(sizeof(cache_fctf_t) * CACHE_FCTF_SIZE);
-    for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
-        cache_fctf[i].sid = SID_NULL;
-        cache_fctf[i].addr = NULL;
-    }
-
     return 0;
 }
 
-static void fu_sep_path(char *fullpath, char **parent, char **cnt) {
+static void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     len = strlen(fullpath);
@@ -446,7 +433,7 @@ uint32_t fu_file_get_size(uint32_t file_sid) {
     return syscall_fs_get_size(NULL, file_sid);
 }
 
-uint32_t fu_file_create(int device_id, char *path) {
+uint32_t fu_file_create(int device_id, const char *path) {
     char *parent, *name;
 
     uint32_t parent_sid;
@@ -615,40 +602,16 @@ uint32_t fu_fctf_create(int device_id, char *path, int (*fct)(int, void *, uint3
 }
 
 uint32_t fu_fctf_get_addr(uint32_t file_sid) {
-    // search in cache
+    uint32_t addr;
 
-    void *addr = NULL;
-
-    for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
-        if (IS_SAME_SID(cache_fctf[i].sid, file_sid)) {
-            addr = cache_fctf[i].addr;
-            break;
-        }
+    // read container
+    if (syscall_fs_read(NULL, file_sid, &addr, 0, sizeof(void *))) {
+        RAISE_ERROR("fctf_get_addr: failed to read function pointer from d%ds%d\n",
+                SID_DISK(file_sid), SID_SECTOR(file_sid));
+        return 1;
     }
 
-    if (addr == NULL) {
-        // read container
-        if (syscall_fs_read(NULL, file_sid, &addr, 0, sizeof(void *))) {
-            RAISE_ERROR("fctf_get_addr: failed to read function pointer from d%ds%d\n",
-                    SID_DISK(file_sid), SID_SECTOR(file_sid));
-            return 1;
-        }
-
-        // add to cache
-        for (int i = 0; i < CACHE_FCTF_SIZE; i++) {
-            if (IS_SID_NULL(cache_fctf[i].sid)) {
-                cache_fctf[i].sid = file_sid;
-                cache_fctf[i].addr = addr;
-                break;
-            }
-            if (i == CACHE_FCTF_SIZE - 1) {
-                cache_fctf[0].sid = file_sid;
-                cache_fctf[0].addr = addr;
-            }
-        }
-    }
-
-    return (uint32_t) addr;
+    return addr;
 }
 
 /**************************************************

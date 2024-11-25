@@ -143,16 +143,6 @@ typedef unsigned short wctype_t;
 typedef long           __time32_t;
 typedef size_t rsize_t;
 
-typedef struct FILE {
-    uint8_t mode;
-    uint8_t error;
-
-    char *buffer;
-    int   buffer_size;
-
-    int   fd;
-} FILE;
-
 typedef struct fpos_t {
 
 } fpos_t;

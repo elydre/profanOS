@@ -23,16 +23,16 @@
 #define SERIAL_PORT_A 0x3F8
 #define SERIAL_PORT_B 0x2F8
 
-#define PROCESS_INFO_PPID       0
-#define PROCESS_INFO_STATE      1
-#define PROCESS_INFO_SLEEP_TO   2
-#define PROCESS_INFO_RUN_TIME   3
-#define PROCESS_INFO_EXIT_CODE  4
-#define PROCESS_INFO_NAME       5
+#define PROC_INFO_PPID     0
+#define PROC_INFO_STATE    1
+#define PROC_INFO_SLEEP_TO 2
+#define PROC_INFO_RUN_TIME 3
+#define PROC_INFO_NAME     4
+#define PROC_INFO_STACK    5
 
-#define syscall_process_ppid(pid) syscall_process_info(pid, PROCESS_INFO_PPID)
-#define syscall_process_state(pid) syscall_process_info(pid, PROCESS_INFO_STATE)
-#define syscall_process_run_time(pid) syscall_process_info(pid, PROCESS_INFO_RUN_TIME)
+#define syscall_process_ppid(pid) syscall_process_info(pid, PROC_INFO_PPID)
+#define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE)
+#define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME)
 
 #define syscall_kcprint(message, color) syscall_kcnprint(message, -1, color)
 #define syscall_kprint(message) syscall_kcprint(message, 0x0F)
@@ -257,12 +257,12 @@ DEFN_SYSCALL0(26, char *,    sys_kinfo)
 DEFN_SYSCALL4(27, int,       binary_exec, uint32_t, int, char **, char **)
 
 DEFN_SYSCALL1(28, int,       process_auto_schedule, int)
-DEFN_SYSCALL5(29, int,       process_create, void *, int, char *, int, uint32_t *)
+DEFN_SYSCALL4(29, int,       process_create, void *, int, int, uint32_t *)
 DEFN_SYSCALL0(30, int,       process_fork)
 DEFN_SYSCALL2(31, int,       process_sleep, uint32_t, uint32_t)
-DEFN_SYSCALL1(32, int,       process_wakeup, uint32_t)
-DEFN_SYSCALL1(33, int,       process_handover, uint32_t)
-DEFN_SYSCALL3(34, int,       process_exit, int, int, int)
+DEFN_SYSCALL2(32, int,       process_wakeup, uint32_t, int)
+DEFN_SYSCALL3(33, int,       process_wait, int, uint8_t *, int)
+DEFN_SYSCALL2(34, int,       process_kill, int, int)
 DEFN_SYSCALL0(35, uint32_t,  process_pid)
 DEFN_SYSCALL2(36, uint32_t,  process_info, uint32_t, int)
 DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)

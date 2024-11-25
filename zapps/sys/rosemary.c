@@ -18,15 +18,14 @@
 #include <profan/clip.h>
 #include <profan.h>
 
+#include <fcntl.h> // open flags
+
 #define LOADER_NAME "rosemary"
 
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
 #define START_USAGE_GRAPH 1
-
-#define run_ifexist_pid(path, argc, argv, envp, pid) \
-        run_ifexist_full((runtime_args_t){path, argc, argv, envp, 1}, pid)
 
 typedef struct {
     int id;
@@ -164,17 +163,14 @@ int main(void) {
     if (syscall_vesa_state()) {
         panda_set_start(syscall_get_cursor());
         use_panda = 1;
-        if (fm_reopen(0, "/dev/panda")  < 0 ||
-            fm_reopen(1, "/dev/panda")  < 0 ||
-            fm_reopen(2, "/dev/pander") < 0 ||
-            fm_reopen(3, "/dev/panda")  < 0 ||
-            fm_reopen(4, "/dev/panda")  < 0 ||
-            fm_reopen(5, "/dev/pander") < 0
+        if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
+            fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
+            fm_reopen(2, "/dev/pander", O_WRONLY) < 0
         ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);
         if (START_USAGE_GRAPH)
-            run_ifexist_pid("/bin/tools/usage.elf", 0, NULL, NULL, &usage_pid);
+            run_ifexist_full((runtime_args_t){"/bin/tools/usage.elf", 0, NULL, NULL, 0}, &usage_pid);
     } else {
         syscall_kprint("["LOADER_NAME"] Using kernel output for stdout\n");
         set_env("TERM=/dev/kterm");
@@ -187,7 +183,7 @@ int main(void) {
     set_env("HOME=/");
 
     do {
-        run_ifexist_pid(SHELL_PATH, 0, NULL, envp, NULL);
+        run_ifexist_full((runtime_args_t){SHELL_PATH, 0, NULL, envp, 1}, NULL);
 
         fd_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
@@ -205,7 +201,7 @@ int main(void) {
     }
 
     if (syscall_process_state(usage_pid) < 4) {
-        syscall_process_exit(usage_pid, 0, 0);
+        syscall_process_kill(usage_pid, 0);
     }
 
     syscall_kprint("\e[2J");

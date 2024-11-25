@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.2.2c"
+#define KERNEL_VERSION  "1.2.3"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     64          // max process count
@@ -26,6 +26,7 @@
 #define RATE_SCHEDULER  100         // schedule per second
 
 #define RUN_BIN_VBASE   0xB0000000  // virtual base address for binary
+#define RUN_BIN_OFFSET  0x1000      // offset (userspace data like fds)
 #define RUN_BIN_VCUNT   0x10000     // virtual memory count
 
 #define POK_MAX         128         // max loaded modules
@@ -63,7 +64,6 @@ char *sys_kinfo(void);
 // runtime.c
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp);
-int force_exit_pid(int pid, int ret_code, int warn_leaks);
 
 // pok.c
 int      pok_init(void);

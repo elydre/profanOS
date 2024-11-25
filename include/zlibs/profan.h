@@ -47,8 +47,8 @@ char *profan_join_path(const char *old, const char *new);
 void  profan_sep_path(const char *fullpath, char **parent, char **cnt);
 
 char *profan_input(int *size);
-int   profan_wait_pid(uint32_t pid);
 char *profan_fn_name(void *ptr, char **libname);
+void  profan_print_trace(void);
 
 void *profan_kmalloc(uint32_t size, int as_kernel);
 void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);
