@@ -25,7 +25,7 @@
 #define SHELL_PATH "/bin/fatpath/olivine.elf"
 #define SHELL_NAME "olivine"
 
-#define START_USAGE_GRAPH 1        
+#define START_USAGE_GRAPH 1
 
 typedef struct {
     int id;

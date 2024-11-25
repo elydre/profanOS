@@ -501,7 +501,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return 0;
     if (args.sleep_mode == 0)
         return (syscall_process_wakeup(pid, 0), 0);
-    
+
     syscall_process_wakeup(pid, 1);
     uint8_t ret;
     syscall_process_wait(pid, &ret, 0);
