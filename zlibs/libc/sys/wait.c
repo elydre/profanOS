@@ -30,7 +30,7 @@ pid_t waitpid(pid_t pid, int *status, int options) {
 
     uint8_t retcode;
 
-    pid = syscall_process_wait(pid, &retcode, options & WNOHANG);
+    pid = syscall_process_wait(pid, &retcode, !(options & WNOHANG));
 
     if (pid < 0) {
         errno = ECHILD;
