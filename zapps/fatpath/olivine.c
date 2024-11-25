@@ -61,7 +61,7 @@
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #elif UNIXBUILD
   #include <sys/wait.h> // waitpid
-  // #include <sys/time.h> // if_ticks
+  #include <sys/time.h> // if_ticks
   #include <unistd.h>
   #include <fcntl.h>    // open
 
