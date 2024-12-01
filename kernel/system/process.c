@@ -75,14 +75,11 @@ static void i_new_process(process_t *process, void (*func)(), uint32_t flags, ui
 }
 
 static int i_get_free_place(int pid) {
-    if (plist[pid % PROCESS_MAX].state == PROC_STATE_FRE) {
-        return pid % PROCESS_MAX;
-    }
+    int ideal = pid % PROCESS_MAX;
 
-    // TODO: optimize this
-    for (int i = 0; i < PROCESS_MAX; i++) {
-        if (plist[i].state == PROC_STATE_FRE) {
-            return i;
+    for (int i = PROCESS_MAX + ideal; i > ideal; i--) {
+        if (plist[i % PROCESS_MAX].state == PROC_STATE_FRE) {
+            return i % PROCESS_MAX;
         }
     }
 
@@ -90,13 +87,11 @@ static int i_get_free_place(int pid) {
 }
 
 static int i_pid_to_place(uint32_t pid) {
-    if (plist[pid % PROCESS_MAX].pid == pid && plist[pid % PROCESS_MAX].state != PROC_STATE_FRE) {
-        return pid % PROCESS_MAX;
-    }
+    int ideal = pid % PROCESS_MAX;
 
-    for (int i = 0; i < PROCESS_MAX; i++) {
-        if (plist[i].pid == pid && plist[i].state != PROC_STATE_FRE) {
-            return i;
+    for (int i = PROCESS_MAX + ideal; i > ideal; i--) {
+        if (plist[i % PROCESS_MAX].pid == pid) {
+            return i % PROCESS_MAX;
         }
     }
 
@@ -556,7 +551,7 @@ int process_kill(uint32_t pid, uint8_t retcode) {
         }
 
         // kill children
-        if (plist[i].ppid == pid) {
+        if (plist[i].ppid == pid && plist[i].state != PROC_STATE_FRE) {
             if (plist[i].state == PROC_STATE_ZMB) {
                 i_free_process(plist + i);
                 plist[i].state = PROC_STATE_FRE;

@@ -264,7 +264,7 @@ DEFN_SYSCALL2(32, int,       process_wakeup, uint32_t, int)
 DEFN_SYSCALL3(33, int,       process_wait, int, uint8_t *, int)
 DEFN_SYSCALL2(34, int,       process_kill, int, int)
 DEFN_SYSCALL0(35, uint32_t,  process_pid)
-DEFN_SYSCALL2(36, uint32_t,  process_info, uint32_t, int)
+DEFN_SYSCALL2(36, int,       process_info, uint32_t, int)
 DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 
 DEFN_SYSCALL2(38, int,       pok_load, char *, uint32_t)
