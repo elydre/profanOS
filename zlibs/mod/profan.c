@@ -370,6 +370,9 @@ static char **get_interp(uint32_t sid, int *c) {
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
+    if (pid_ptr != NULL)
+        *pid_ptr = -1;
+
     if (args.path == NULL) {
         fd_printf(2, "[run_ifexist] path is NULL\n");
         return -1;
