@@ -229,16 +229,6 @@ def build_app_lib():
         cprint(COLOR_INFO, "building ELF entry...")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_elf.c -o {OUT_DIR}/make/entry_elf.o {ZAPP_FLAGS}")
 
-    def build_bin_file(name, fname):
-        global total
-        print_info_line(name)
-        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o " +
-                       f"{fname}.pe {OUT_DIR}/make/entry_bin.o {fname}.o")
-        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
-        print_and_exec(f"rm {fname}.o {fname}.pe")
-        total -= 1
-
     def build_mod_file(name, fname):
         global total
         print_info_line(name)
@@ -247,7 +237,16 @@ def build_app_lib():
         print_and_exec(f"rm {fname}.o")
         total -= 1
 
-    def build_elf_file(name, fname, liblist):
+    def build_elf_sys_file(name, fname):
+        global total
+        print_info_line(name)
+        print_and_exec(f"{CC if name.endswith('.c') else CPPC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
+        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o " +
+                       f"{fname}.elf {OUT_DIR}/make/entry_bin.o {fname}.o")
+        print_and_exec(f"rm {fname}.o")
+        total -= 1
+
+    def build_elf_wshared_file(name, fname, liblist):
         # build object file and link it using shared libs
         print_info_line(name)
         required_libs = []
@@ -353,11 +352,11 @@ def build_app_lib():
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
-        threading.Thread(target = build_elf_file, args=(name, fname, libs_name)).start()
+        threading.Thread(target = build_elf_wshared_file, args=(name, fname, libs_name)).start()
 
     for name in bin_build_list:
         fname = f"{OUT_DIR}/{''.join(name.split('.')[:-1])}"
-        threading.Thread(target = build_bin_file, args=(name, fname)).start()
+        threading.Thread(target = build_elf_sys_file, args=(name, fname)).start()
 
     while total: pass # on attends que tout soit fini
 

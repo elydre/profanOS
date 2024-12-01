@@ -15,57 +15,39 @@
 #include <minilib.h>
 #include <system.h>
 
-int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
-    int pid = process_get_pid();
-    uint32_t *phys;
+int is_valid_elf(void *data) {
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
+    return !(
+        memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
+        ehdr->e_type != ET_EXEC || ehdr->e_machine != EM_386
+    );
+}
 
-    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
-        sys_error("[binary_exec] File not found");
-        return process_kill(pid, 1);
+int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
+    if (!fu_is_file(fs_get_main(), sid)) {
+        sys_warning("[exec] File not found");
+        return -1;
     }
 
-    comm_struct_t *comm = process_get_comm(pid);
+    uint32_t size = fu_file_get_size(sid);
 
-    // free the argv
-    if (comm->argv) {
-        for (int i = 0; comm->argv[i] != NULL; i++)
-            free(comm->argv[i]);
-        free(comm->argv);
+    uint8_t *file = mem_alloc(size, 0, 6);
+    fu_file_read(sid, file, 0, size);
+
+    if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file)) {
+        sys_warning("[exec] Not a valid ELF file");
+        return -1;
     }
-    free(comm->envp);
 
-    comm->argv = argv;
-    comm->envp = envp;
-    process_set_name(pid, argv[0] ? argv[0] : "unknown");
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *) (file + ehdr->e_shoff);
 
-    uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
+    Elf32_Phdr *phdr = (Elf32_Phdr *) (file + ehdr->e_phoff);
 
-    scuba_dir_t *old_dir = process_get_dir(pid);
-    scuba_dir_t *new_dir = scuba_dir_inited(old_dir, pid);
 
-    // create stack
-    phys = scuba_create_virtual(new_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
-    mem_copy(phys, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
 
-    process_switch_directory(pid, new_dir, 0);
 
-    // switch to new directory
-    scuba_switch(new_dir);
 
-    scuba_dir_destroy(old_dir);
-
-    // load binary
-    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE + RUN_BIN_OFFSET, 0, fsize);
-    mem_set((void *) RUN_BIN_VBASE + RUN_BIN_OFFSET + fsize, 0, RUN_BIN_VCUNT - RUN_BIN_OFFSET - fsize);
-
-    // call main
-    int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE + RUN_BIN_OFFSET;
-
-    sys_exit_kernel(0);
-    int ret = main(argc, argv, envp) & 0xFF;
-    sys_entry_kernel(0);
-
-    return process_kill(process_get_pid(), ret);
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
@@ -88,7 +70,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
         str_cpy(nargv[i], argv[i]);
     }
 
-    int pid = process_create(binary_exec, 0, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
+    int pid = process_create(elf_exec, 0, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
