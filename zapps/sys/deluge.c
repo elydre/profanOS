@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "3.2"
+#define DELUGE_VERSION "3.3"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -673,7 +673,13 @@ void fini_lib(elfobj_t *lib) {
 }
 
 void *dlopen(const char *filename, int flag) {
+    if (filename == NULL) {
+        g_dlfcn_error = 1;
+        return NULL;
+    }
+
     elfobj_t *dl = open_elf(filename, ET_DYN, flag == RTLD_FATAL);
+
     if (dl == NULL) {
         g_dlfcn_error = 1;
         return NULL;
@@ -1049,7 +1055,7 @@ int main(int argc, char **argv, char **envp) {
     load_sections(g_prog, ET_EXEC);
     dynamic_linker(g_prog);
 
-    debug_printf (1, "Link time: %d ms", syscall_timer_get_ms() - start);
+    debug_printf(1, "Link time: %d ms", syscall_timer_get_ms() - start);
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
 
@@ -1094,6 +1100,16 @@ int main(int argc, char **argv, char **envp) {
     free(g_prog->file);
     free(g_prog->name);
     free(g_prog);
+
+    if (args.show_leaks) {
+        int leaks;
+        if ((leaks = syscall_mem_info(7, pid)) > 0) {
+            fd_printf(2, "\n  Kernel memory leak of %d alloc%s (pid %d, %d bytes)\n\n",
+                    leaks, leaks == 1 ? "" : "s", pid,
+                    syscall_mem_info(8, pid)
+            );
+        }
+    }
 
     return ret;
 }
