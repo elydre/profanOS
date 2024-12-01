@@ -173,16 +173,6 @@ static void i_free_process(process_t *proc) {
     }
     free(proc->comm.envp);
 
-    int leaks;
-
-    if ((leaks = mem_get_info(7, proc->pid)) > 0) {
-        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
-                leaks,
-                leaks == 1 ? "" : "s",
-                proc->pid,
-                mem_get_info(8, proc->pid)
-        );
-    }
     mem_free_all(proc->pid);
 
     scuba_dir_destroy(proc->scuba_dir);
