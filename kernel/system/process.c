@@ -90,12 +90,12 @@ static int i_get_free_place(int pid) {
 }
 
 static int i_pid_to_place(uint32_t pid) {
-    if (plist[pid % PROCESS_MAX].pid == pid) {
+    if (plist[pid % PROCESS_MAX].pid == pid && plist[pid % PROCESS_MAX].state != PROC_STATE_FRE) {
         return pid % PROCESS_MAX;
     }
 
     for (int i = 0; i < PROCESS_MAX; i++) {
-        if (plist[i].pid == pid) {
+        if (plist[i].pid == pid && plist[i].state != PROC_STATE_FRE) {
             return i;
         }
     }
@@ -192,6 +192,12 @@ static void i_free_process(process_t *proc) {
 
     scuba_dir_destroy(proc->scuba_dir);
     proc->scuba_dir = NULL;
+
+    int parent_place = i_pid_to_place(proc->ppid);
+
+    if (parent_place < 0 || plist[parent_place].state == PROC_STATE_ZMB) {
+        proc->state = PROC_STATE_FRE;
+    }
 }
 
 static void i_clean_killed(void) {
@@ -538,12 +544,25 @@ int process_kill(uint32_t pid, uint8_t retcode) {
 
     g_need_clean = 1;
 
-    // wake up parent process that is waiting for this one
     for (int i = 0; i < PROCESS_MAX; i++) {
+        if (i == place)
+            continue;
+
+        // wake up parent process that is waiting for this one
         if (plist[i].wait_pid == (int) pid ||
            (plist[i].wait_pid == -1 && plist[i].pid == plist[place].ppid)) {
             plist[i].wait_pid = -pid;
             process_wakeup(plist[i].pid, 0);
+        }
+
+        // kill children
+        if (plist[i].ppid == pid) {
+            if (plist[i].state == PROC_STATE_ZMB) {
+                i_free_process(plist + i);
+                plist[i].state = PROC_STATE_FRE;
+                continue;
+            }
+            process_kill(plist[i].pid, 0);
         }
     }
 
