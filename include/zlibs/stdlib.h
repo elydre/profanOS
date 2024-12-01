@@ -20,7 +20,8 @@
 
 #define RAND_MAX 0x7fffffff
 
-char **__get_environ_ptr(void);
+extern char **environ;
+
 void *calloc(uint32_t nmemb, uint32_t lsize);
 void *malloc(uint32_t size);
 void *realloc(void *mem, uint32_t new_size);

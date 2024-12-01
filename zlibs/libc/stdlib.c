@@ -24,7 +24,7 @@
 uint32_t g_rand_seed = 0;
 
 void **g_atexit_funcs = NULL;
-char **g_env = NULL;
+char **environ = NULL;
 
 void *g_entry_exit = NULL;
 
@@ -69,8 +69,8 @@ void __init_libc(char **env, void *entry_exit) {
         return;
 
     // check if the libc environment is already initialized
-    if (g_env != NULL) {
-        for (offset = 0; g_env[offset] != NULL; offset++);
+    if (environ != NULL) {
+        for (offset = 0; environ[offset] != NULL; offset++);
     } else {
         offset = 0;
     }
@@ -78,10 +78,10 @@ void __init_libc(char **env, void *entry_exit) {
     // copy the new environment
     for (size = 0; env[size] != NULL; size++);
 
-    g_env = realloc(g_env, (size + offset + 1) * sizeof(char *));
+    environ = realloc(environ, (size + offset + 1) * sizeof(char *));
     for (int i = 0; i < size; i++)
-        g_env[i + offset] = strdup(env[i]);
-    g_env[size + offset] = NULL;
+        environ[i + offset] = strdup(env[i]);
+    environ[size + offset] = NULL;
 
     // set working directory
     if (getenv("PWD") == NULL)
@@ -98,15 +98,16 @@ void __exit_libc(void) {
     }
 
     // free the environment
-    if (g_env) {
-        for (int i = 0; g_env[i] != NULL; i++)
-            free(g_env[i]);
-        free(g_env);
+    if (environ) {
+        for (int i = 0; environ[i] != NULL; i++)
+            free(environ[i]);
+        free(environ);
     }
 }
 
+// retro compatibility (lul)
 char **__get_environ_ptr(void) {
-    return g_env;
+    return environ;
 }
 
 #define TABLE_BASE 0x2e
@@ -305,16 +306,16 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    if (g_env == NULL)
+    if (environ == NULL)
         return NULL;
     // check if the variable already exists
-    for (int i = 0; g_env[i] != NULL; i++) {
+    for (int i = 0; environ[i] != NULL; i++) {
         for (int j = 0; ; j++) {
-            if (var[j] == '\0' && g_env[i][j] == '=') {
+            if (var[j] == '\0' && environ[i][j] == '=') {
                 // found the variable
-                return g_env[i] + j + 1;
+                return environ[i] + j + 1;
             }
-            if (var[j] != g_env[i][j]) break;
+            if (var[j] != environ[i][j]) break;
         }
     }
     return NULL;
@@ -589,28 +590,28 @@ int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
 }
 
 int setenv(const char *name, const char *value, int replace) {
-    if (g_env == NULL) {
-        g_env = malloc(sizeof(char *));
-        g_env[0] = NULL;
+    if (environ == NULL) {
+        environ = malloc(sizeof(char *));
+        environ[0] = NULL;
     }
 
     int i;
     // check if the variable already exists
-    for (i = 0; g_env[i] != NULL; i++) {
+    for (i = 0; environ[i] != NULL; i++) {
         for (int j = 0;; j++) {
-            if (name[j] == '\0' && g_env[i][j] == '=') {
+            if (name[j] == '\0' && environ[i][j] == '=') {
                 // found the variable
                 if (!replace)
                     return 0;
                 // replace the variable
-                free(g_env[i]);
-                g_env[i] = malloc(strlen(name) + strlen(value) + 2);
-                strcpy(g_env[i], name);
-                strcat(g_env[i], "=");
-                strcat(g_env[i], value);
+                free(environ[i]);
+                environ[i] = malloc(strlen(name) + strlen(value) + 2);
+                strcpy(environ[i], name);
+                strcat(environ[i], "=");
+                strcat(environ[i], value);
                 return 0;
             }
-            if (name[j] != g_env[i][j] || name[j] == '\0')
+            if (name[j] != environ[i][j] || name[j] == '\0')
                 break;
         }
     }
@@ -622,27 +623,27 @@ int setenv(const char *name, const char *value, int replace) {
     strcat(new_var, value);
 
     // add the variable to the environment
-    g_env = realloc(g_env, (i + 2) * sizeof(char *));
-    g_env[i] = new_var;
-    g_env[i + 1] = NULL;
+    environ = realloc(environ, (i + 2) * sizeof(char *));
+    environ[i] = new_var;
+    environ[i + 1] = NULL;
 
     return 0;
 }
 
 int unsetenv(const char *name) {
-    if (g_env == NULL)
+    if (environ == NULL)
         return 0;
     // check if the variable already exists
-    for (int i = 0; g_env[i] != NULL; i++) {
+    for (int i = 0; environ[i] != NULL; i++) {
         for (int j = 0; ; j++) {
-            if (name[j] == '\0' && g_env[i][j] == '=') {
+            if (name[j] == '\0' && environ[i][j] == '=') {
                 // found the variable
-                free(g_env[i]);
-                for (int k = i; g_env[k] != NULL; k++)
-                    g_env[k] = g_env[k + 1];
+                free(environ[i]);
+                for (int k = i; environ[k] != NULL; k++)
+                    environ[k] = environ[k + 1];
                 return 0;
             }
-            if (name[j] != g_env[i][j] || name[j] == '\0')
+            if (name[j] != environ[i][j] || name[j] == '\0')
                 break;
         }
     }
@@ -650,14 +651,14 @@ int unsetenv(const char *name) {
 }
 
 int clearenv(void) {
-    if (g_env == NULL)
+    if (environ == NULL)
         return 0;
 
-    for (int i = 0; g_env[i] != NULL; i++)
-        free(g_env[i]);
-    free(g_env);
+    for (int i = 0; environ[i] != NULL; i++)
+        free(environ[i]);
+    free(environ);
 
-    g_env = NULL;
+    environ = NULL;
     return 0;
 }
 

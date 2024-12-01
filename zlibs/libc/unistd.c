@@ -143,7 +143,7 @@ int execl(const char *fullpath, const char *first, ...) {
     va_end(args);
     argv[argc] = NULL;
 
-    return execve(fullpath, argv, __get_environ_ptr());
+    return execve(fullpath, argv, environ);
 }
 
 int execle(const char *fullpath, const char *arg, ...) {
@@ -157,7 +157,7 @@ int execlp(const char *file, const char *arg, ...) {
 }
 
 int execv(const char *fullpath, char *const argv[]) {
-    return execve(fullpath, argv, __get_environ_ptr());
+    return execve(fullpath, argv, environ);
 }
 
 int execve(const char *fullpath, char *const argv[], char *const envp[]) {
