@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.3 rev 2"
+#define OLV_VERSION "1.3 rev 3"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1794,12 +1794,13 @@ char *if_dot(char **input) {
 
     run_ifexist_full(
         (runtime_args_t) {
-            file_path,
+            full_path,
             argc, argv,
-            __get_environ_ptr(),
+            environ,
             2
         }, &pid
     );
+
     free(full_path);
 
     #else // UNIXBUILD
