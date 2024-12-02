@@ -38,7 +38,6 @@ void *g_entry_exit = NULL;
 
 void __buddy_disable_leaks(void);
 void __buddy_init(void);
-void __buddy_fini(void);
 
 void __stdio_init(void);
 void __stdio_fini(void);
@@ -51,7 +50,6 @@ void __attribute__((constructor)) __libc_constructor(void) {
 void __attribute__((destructor)) __libc_destructor(void) {
     __buddy_disable_leaks();
     __stdio_fini();
-    __buddy_fini();
 }
 
 /*******************************
@@ -680,15 +678,15 @@ int srand48_r(long int seedval, struct drand48_data *buffer) {
     return 0;
 }
 
-double strtod(char *str, char **ptr) {
+double strtod(const char *str, char **ptr) {
     char *p;
 
     if (ptr == (char **) 0)
-        return atof (str);
+        return atof(str);
 
-    p = str;
+    p = (char *) str;
 
-    while (isspace (*p))
+    while (isspace(*p))
         ++p;
 
     if (*p == '+' || *p == '-')
@@ -706,10 +704,10 @@ double strtod(char *str, char **ptr) {
             (p[7] == 'y' || p[7] == 'Y')
         ) {
             *ptr = p + 8;
-            return atof (str);
+            return atof(str);
         } else {
             *ptr = p + 3;
-            return atof (str);
+            return atof(str);
         }
     }
 
@@ -727,13 +725,13 @@ double strtod(char *str, char **ptr) {
                 ++p;
         }
         *ptr = p;
-        return atof (str);
+        return atof(str);
     }
 
     /* digits, with 0 or 1 periods in it.  */
-    if (isdigit (*p) || *p == '.') {
+    if (isdigit(*p) || *p == '.') {
         int got_dot = 0;
-        while (isdigit (*p) || (!got_dot && *p == '.')) {
+        while (isdigit(*p) || (!got_dot && *p == '.')) {
         if (*p == '.')
             got_dot = 1;
         ++p;
@@ -745,18 +743,18 @@ double strtod(char *str, char **ptr) {
             i = 1;
             if (p[i] == '+' || p[i] == '-')
                 ++i;
-            if (isdigit (p[i])) {
-                while (isdigit (p[i]))
+            if (isdigit(p[i])) {
+                while (isdigit(p[i]))
                     ++i;
                 *ptr = p + i;
-                return atof (str);
+                return atof(str);
             }
         }
         *ptr = p;
-        return atof (str);
+        return atof(str);
     }
     /* Didn't find any digits.  Doesn't look like a number.  */
-    *ptr = str;
+    *ptr = (char *) str;
     return 0.0;
 }
 
