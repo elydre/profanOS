@@ -24,7 +24,7 @@
 uint32_t g_rand_seed = 0;
 
 void **g_atexit_funcs = NULL;
-char **g_env = NULL;
+char **environ = NULL;
 
 void *g_entry_exit = NULL;
 
@@ -38,7 +38,6 @@ void *g_entry_exit = NULL;
 
 void __buddy_disable_leaks(void);
 void __buddy_init(void);
-void __buddy_fini(void);
 
 void __stdio_init(void);
 void __stdio_fini(void);
@@ -51,7 +50,6 @@ void __attribute__((constructor)) __libc_constructor(void) {
 void __attribute__((destructor)) __libc_destructor(void) {
     __buddy_disable_leaks();
     __stdio_fini();
-    __buddy_fini();
 }
 
 /*******************************
@@ -69,8 +67,8 @@ void __init_libc(char **env, void *entry_exit) {
         return;
 
     // check if the libc environment is already initialized
-    if (g_env != NULL) {
-        for (offset = 0; g_env[offset] != NULL; offset++);
+    if (environ != NULL) {
+        for (offset = 0; environ[offset] != NULL; offset++);
     } else {
         offset = 0;
     }
@@ -78,10 +76,10 @@ void __init_libc(char **env, void *entry_exit) {
     // copy the new environment
     for (size = 0; env[size] != NULL; size++);
 
-    g_env = realloc(g_env, (size + offset + 1) * sizeof(char *));
+    environ = realloc(environ, (size + offset + 1) * sizeof(char *));
     for (int i = 0; i < size; i++)
-        g_env[i + offset] = strdup(env[i]);
-    g_env[size + offset] = NULL;
+        environ[i + offset] = strdup(env[i]);
+    environ[size + offset] = NULL;
 
     // set working directory
     if (getenv("PWD") == NULL)
@@ -98,15 +96,16 @@ void __exit_libc(void) {
     }
 
     // free the environment
-    if (g_env) {
-        for (int i = 0; g_env[i] != NULL; i++)
-            free(g_env[i]);
-        free(g_env);
+    if (environ) {
+        for (int i = 0; environ[i] != NULL; i++)
+            free(environ[i]);
+        free(environ);
     }
 }
 
+// retro compatibility (lul)
 char **__get_environ_ptr(void) {
-    return g_env;
+    return environ;
 }
 
 #define TABLE_BASE 0x2e
@@ -305,16 +304,16 @@ char *gcvt(double number, int ndigit, char *buf) {
 }
 
 char *getenv(const char *var) {
-    if (g_env == NULL)
+    if (environ == NULL)
         return NULL;
     // check if the variable already exists
-    for (int i = 0; g_env[i] != NULL; i++) {
+    for (int i = 0; environ[i] != NULL; i++) {
         for (int j = 0; ; j++) {
-            if (var[j] == '\0' && g_env[i][j] == '=') {
+            if (var[j] == '\0' && environ[i][j] == '=') {
                 // found the variable
-                return g_env[i] + j + 1;
+                return environ[i] + j + 1;
             }
-            if (var[j] != g_env[i][j]) break;
+            if (var[j] != environ[i][j]) break;
         }
     }
     return NULL;
@@ -589,28 +588,28 @@ int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
 }
 
 int setenv(const char *name, const char *value, int replace) {
-    if (g_env == NULL) {
-        g_env = malloc(sizeof(char *));
-        g_env[0] = NULL;
+    if (environ == NULL) {
+        environ = malloc(sizeof(char *));
+        environ[0] = NULL;
     }
 
     int i;
     // check if the variable already exists
-    for (i = 0; g_env[i] != NULL; i++) {
+    for (i = 0; environ[i] != NULL; i++) {
         for (int j = 0;; j++) {
-            if (name[j] == '\0' && g_env[i][j] == '=') {
+            if (name[j] == '\0' && environ[i][j] == '=') {
                 // found the variable
                 if (!replace)
                     return 0;
                 // replace the variable
-                free(g_env[i]);
-                g_env[i] = malloc(strlen(name) + strlen(value) + 2);
-                strcpy(g_env[i], name);
-                strcat(g_env[i], "=");
-                strcat(g_env[i], value);
+                free(environ[i]);
+                environ[i] = malloc(strlen(name) + strlen(value) + 2);
+                strcpy(environ[i], name);
+                strcat(environ[i], "=");
+                strcat(environ[i], value);
                 return 0;
             }
-            if (name[j] != g_env[i][j] || name[j] == '\0')
+            if (name[j] != environ[i][j] || name[j] == '\0')
                 break;
         }
     }
@@ -622,27 +621,27 @@ int setenv(const char *name, const char *value, int replace) {
     strcat(new_var, value);
 
     // add the variable to the environment
-    g_env = realloc(g_env, (i + 2) * sizeof(char *));
-    g_env[i] = new_var;
-    g_env[i + 1] = NULL;
+    environ = realloc(environ, (i + 2) * sizeof(char *));
+    environ[i] = new_var;
+    environ[i + 1] = NULL;
 
     return 0;
 }
 
 int unsetenv(const char *name) {
-    if (g_env == NULL)
+    if (environ == NULL)
         return 0;
     // check if the variable already exists
-    for (int i = 0; g_env[i] != NULL; i++) {
+    for (int i = 0; environ[i] != NULL; i++) {
         for (int j = 0; ; j++) {
-            if (name[j] == '\0' && g_env[i][j] == '=') {
+            if (name[j] == '\0' && environ[i][j] == '=') {
                 // found the variable
-                free(g_env[i]);
-                for (int k = i; g_env[k] != NULL; k++)
-                    g_env[k] = g_env[k + 1];
+                free(environ[i]);
+                for (int k = i; environ[k] != NULL; k++)
+                    environ[k] = environ[k + 1];
                 return 0;
             }
-            if (name[j] != g_env[i][j] || name[j] == '\0')
+            if (name[j] != environ[i][j] || name[j] == '\0')
                 break;
         }
     }
@@ -650,14 +649,14 @@ int unsetenv(const char *name) {
 }
 
 int clearenv(void) {
-    if (g_env == NULL)
+    if (environ == NULL)
         return 0;
 
-    for (int i = 0; g_env[i] != NULL; i++)
-        free(g_env[i]);
-    free(g_env);
+    for (int i = 0; environ[i] != NULL; i++)
+        free(environ[i]);
+    free(environ);
 
-    g_env = NULL;
+    environ = NULL;
     return 0;
 }
 
@@ -679,15 +678,15 @@ int srand48_r(long int seedval, struct drand48_data *buffer) {
     return 0;
 }
 
-double strtod(char *str, char **ptr) {
+double strtod(const char *str, char **ptr) {
     char *p;
 
     if (ptr == (char **) 0)
-        return atof (str);
+        return atof(str);
 
-    p = str;
+    p = (char *) str;
 
-    while (isspace (*p))
+    while (isspace(*p))
         ++p;
 
     if (*p == '+' || *p == '-')
@@ -705,10 +704,10 @@ double strtod(char *str, char **ptr) {
             (p[7] == 'y' || p[7] == 'Y')
         ) {
             *ptr = p + 8;
-            return atof (str);
+            return atof(str);
         } else {
             *ptr = p + 3;
-            return atof (str);
+            return atof(str);
         }
     }
 
@@ -726,13 +725,13 @@ double strtod(char *str, char **ptr) {
                 ++p;
         }
         *ptr = p;
-        return atof (str);
+        return atof(str);
     }
 
     /* digits, with 0 or 1 periods in it.  */
-    if (isdigit (*p) || *p == '.') {
+    if (isdigit(*p) || *p == '.') {
         int got_dot = 0;
-        while (isdigit (*p) || (!got_dot && *p == '.')) {
+        while (isdigit(*p) || (!got_dot && *p == '.')) {
         if (*p == '.')
             got_dot = 1;
         ++p;
@@ -744,18 +743,18 @@ double strtod(char *str, char **ptr) {
             i = 1;
             if (p[i] == '+' || p[i] == '-')
                 ++i;
-            if (isdigit (p[i])) {
-                while (isdigit (p[i]))
+            if (isdigit(p[i])) {
+                while (isdigit(p[i]))
                     ++i;
                 *ptr = p + i;
-                return atof (str);
+                return atof(str);
             }
         }
         *ptr = p;
-        return atof (str);
+        return atof(str);
     }
     /* Didn't find any digits.  Doesn't look like a number.  */
-    *ptr = str;
+    *ptr = (char *) str;
     return 0.0;
 }
 

@@ -15,7 +15,7 @@
 #include <profan/type.h>
 
 #define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, argc, argv, __get_environ_ptr(), 1}, NULL)
+        run_ifexist_full((runtime_args_t){path, argc, argv, environ, 1}, NULL)
 
 #define KB_ESC      1
 #define KB_BACK     14

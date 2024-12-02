@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.3 rev 2"
+#define OLV_VERSION "1.3 rev 4"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -55,13 +55,15 @@
   #include <profan/syscall.h>
   #include <profan/filesys.h>
   #include <profan.h>
+
+  #include <sys/wait.h>
   #include <unistd.h>
   #include <fcntl.h>
 
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #elif UNIXBUILD
-  #include <sys/wait.h> // waitpid
   #include <sys/time.h> // if_ticks
+  #include <sys/wait.h> // waitpid
   #include <unistd.h>
   #include <fcntl.h>    // open
 
@@ -1794,12 +1796,13 @@ char *if_dot(char **input) {
 
     run_ifexist_full(
         (runtime_args_t) {
-            file_path,
+            full_path,
             argc, argv,
-            __get_environ_ptr(),
+            environ,
             2
         }, &pid
     );
+
     free(full_path);
 
     #else // UNIXBUILD
@@ -1835,19 +1838,20 @@ char *if_dot(char **input) {
     #if PROFANBUILD
     if (wait_end) {
         syscall_process_wakeup(pid, 1);
-        syscall_process_wait(pid, (uint8_t *) &status, 0);
     } else {
-        fprintf(stderr, "DOT: started with pid %d\n", pid);
         syscall_process_wakeup(pid, 0);
     }
-    #else
+    #endif
+
     if (wait_end) {
         waitpid(pid, &status, 0);
         status = WEXITSTATUS(status);
     } else {
         fprintf(stderr, "DOT: started with pid %d\n", pid);
     }
-    #endif
+
+    // remove zombie processes
+    while (waitpid(-1, NULL, WNOHANG) > 0);
 
     local_itoa(status, g_exit_code);
 

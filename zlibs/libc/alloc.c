@@ -79,10 +79,6 @@ void __buddy_init(void) {
         put_error("libc: init buddy: buddy_init failed\n");
 }
 
-void __buddy_fini(void) {
-    return;
-}
-
 void __buddy_enable_leaks(void) {
     if (g_stat)
         return;
