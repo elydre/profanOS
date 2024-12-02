@@ -90,7 +90,7 @@ static int i_pid_to_place(uint32_t pid) {
     int ideal = pid % PROCESS_MAX;
 
     for (int i = PROCESS_MAX + ideal; i > ideal; i--) {
-        if (plist[i % PROCESS_MAX].pid == pid) {
+        if (plist[i % PROCESS_MAX].pid == pid && plist[i % PROCESS_MAX].state != PROC_STATE_FRE) {
             return i % PROCESS_MAX;
         }
     }
