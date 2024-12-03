@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.3 rev 4"
+#define OLV_VERSION "1.3 rev 5"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -3401,9 +3401,8 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
     char *var_name = malloc(strlen(for_line) + 1);
 
     int i;
-    for (i = 4; for_line[i] != ' ' && for_line[i] != '\0'; i++) {
+    for (i = 4; !IS_SPACE_CHAR(for_line[i]) && for_line[i] != '\0'; i++)
         var_name[i - 4] = for_line[i];
-    }
     var_name[i - 4] = '\0';
 
     int line_end = get_line_end(line_count, lines);
@@ -3451,7 +3450,7 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
     while (string[string_index]) {
 
         // skip spaces
-        while (string[string_index] == ' ')
+        while (IS_SPACE_CHAR(string[string_index]))
             string_index++;
         if (string[string_index] == '\0')
             break;
@@ -3460,7 +3459,7 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
         for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
             if (string[string_index + var_len] == INTR_QUOTE) {
                 in_string = !in_string;
-            } else if (!in_string && string[string_index + var_len] == ' ') {
+            } else if (!in_string && IS_SPACE_CHAR(string[string_index + var_len])) {
                 break;
             }
         }
