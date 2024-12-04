@@ -20,7 +20,8 @@
 
 #define RAND_MAX 0x7fffffff
 
-char **__get_environ_ptr(void);
+extern char **environ;
+
 void *calloc(uint32_t nmemb, uint32_t lsize);
 void *malloc(uint32_t size);
 void *realloc(void *mem, uint32_t new_size);
@@ -93,7 +94,7 @@ int putenv(char *string);
 void srand(unsigned int seed);
 void srand48(long seedval);
 int srand48_r(long int seedval, struct drand48_data *buffer);
-double strtod(char *str, char **ptr);
+double strtod(const char *str, char **ptr);
 long double strtod_l(const char *str, char **end, locale_t loc);
 float strtof(const char *str, char **end);
 long double strtof_l(const char *str, char **end, locale_t loc);

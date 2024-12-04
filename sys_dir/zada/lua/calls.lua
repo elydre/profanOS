@@ -1,30 +1,12 @@
-local syscalls = {
-    malloc = 9,
-    free = 10,
-    serial_print = 29,
-    process_sleep = 34,
-    process_get = 38,
-}
-
-local function get_syscall(function_id)
-    return profan.call_c(profan.memval(0x1ffff7, 4), 4, function_id)
-end
-
-local function get_lib_func(lib_id, func_id)
-    return profan.call_c(profan.memval(0x1ffffb, 4), 4, lib_id, 4, func_id)
-end
-
 local function malloc(size)
-    return profan.call_c(get_syscall(syscalls.malloc), 4, size, 4, 0, 4, 1)
+    return profan.cfunc("malloc", 4, size)
 end
 
 local function free(ptr)
-    profan.call_c(get_syscall(syscalls.free), 4, ptr)
+    profan.cfunc("free", 4, ptr)
 end
 
-local function serial_print(str, serial_port)
-    serial_port = serial_port or 0x3F8
-
+local function serial_print(str)
     local ptr = malloc(#str + 1)
 
     -- Copy string to memory
@@ -34,22 +16,18 @@ local function serial_print(str, serial_port)
     profan.memset(ptr + #str, 1, 0)
 
     -- call serial_print
-    profan.call_c(get_syscall(syscalls.serial_print), 4, serial_port, 4, ptr, 4, #str)
+    profan.cfunc("syscall_serial_write", 4, 0x3F8, 4, ptr, 4, #str)
 
     free(ptr)
 end
 
 local function ms_sleep(ms)
-    profan.call_c(get_syscall(syscalls.process_sleep), 4, profan.call_c(get_syscall(syscalls.process_get)), 4, ms)
+    profan.cfunc("usleep", 4, ms * 1000)
 end
 
 return {
-    get_syscall = get_syscall,
-    get_lib_func = get_lib_func,
-    serial_print = serial_print,
     malloc = malloc,
     free = free,
+    serial_print = serial_print,
     ms_sleep = ms_sleep,
-
-    syscalls = syscalls,
 }

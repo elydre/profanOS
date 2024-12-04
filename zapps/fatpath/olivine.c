@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.2 rev 6"
+#define OLV_VERSION "1.3 rev 5"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -55,13 +55,17 @@
   #include <profan/syscall.h>
   #include <profan/filesys.h>
   #include <profan.h>
+
+  #include <sys/wait.h>
   #include <unistd.h>
+  #include <fcntl.h>
 
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #elif UNIXBUILD
-  #include <sys/wait.h> // waitpid
   #include <sys/time.h> // if_ticks
+  #include <sys/wait.h> // waitpid
   #include <unistd.h>
+  #include <fcntl.h>    // open
 
   #define DEFAULT_PROMPT "\e[0molivine [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #else
@@ -1688,29 +1692,12 @@ char *if_dot(char **input) {
     }
 
     char *file_path = input[0];
-    #if PROFANBUILD
-    // get file name
-    if (file_path[0] != '/')
-        file_path = profan_join_path(g_current_directory, input[0]);
-
     // check if file exists
-    uint32_t sid = fu_path_to_sid(SID_ROOT, file_path);
-
-    if (IS_SID_NULL(sid) || !fu_is_file(sid)) {
-        raise_error("dot", "File '%s' does not exist", file_path);
-        if (file_path != input[0])
-            free(file_path);
+    if (access(input[0], F_OK | X_OK) == -1) {
+        raise_error("dot", "File '%s' does not exist", input[0]);
         return ERROR_CODE;
     }
-    #else
-    // check if file exists
-    if (access(file_path, F_OK | X_OK) == -1) {
-        raise_error("dot", "File '%s' does not exist", file_path);
-        return ERROR_CODE;
-    }
-    #endif
 
-    #if PROFANBUILD
     if_dot_redirect_t redirect[] = {
         {"<",   "stdin",  0, 0},
         {">",   "stdout", 1, 0},
@@ -1719,11 +1706,10 @@ char *if_dot(char **input) {
         {"2>>", "stderr", 2, 1}
     };
 
-    char *stdpaths[3] = {NULL, NULL, NULL};
-    int   append[3]   = {0, 0, 0};
-    int fd, wait_end = 1;
+    int fds[3] = {-1, -1, -1};
+    int mode, fd, wait_end = 1;
 
-    for (int i = argc - 1; i > 0; i--) {
+    for (int i = argc - 1; i >= 0; i--) {
         if (strcmp(input[i], "&") == 0) {
             input[i] = NULL;
             wait_end = 0;
@@ -1740,28 +1726,26 @@ char *if_dot(char **input) {
                 raise_error("dot", "No path specified for %s", redirect[j].name);
                 goto dot_redir_error;
             }
-            if (stdpaths[fd] != NULL) {
+            if (fds[fd] != -1) {
                 raise_error("dot", "Multiple redirections for %s", redirect[j].name);
                 goto dot_redir_error;
             }
-            stdpaths[fd] = profan_join_path(g_current_directory, input[i + 1]);
-            append[fd] = redirect[j].append;
-            input[i] = NULL;
-            sid = fu_path_to_sid(SID_ROOT, stdpaths[fd]);
+
             if (fd == 0) {
-                if (fu_is_file(sid) || fu_is_fctf(sid))
-                    break;
-                raise_error("dot", "Cannot redirect %s from '%s'", redirect[j].name, stdpaths[fd]);
-                goto dot_redir_error;
+                mode = O_RDONLY;
+            } else {
+                mode = O_WRONLY | O_CREAT;
+                if (redirect[j].append)
+                    mode |= O_APPEND;
+                else
+                    mode |= O_TRUNC;
             }
-            // fd == 1 || fd == 2
-            if (IS_SID_NULL(sid)) {
-                if (fu_file_create(0, stdpaths[fd]))
-                    break;
-                raise_error("dot", "Cannot create file '%s'", stdpaths[fd]);
-                goto dot_redir_error;
-            } else if (fu_is_dir(sid)) {
-                raise_error("dot", "Cannot redirect %s to the directory '%s'", redirect[j].name, stdpaths[fd]);
+
+            fds[fd] = open(input[i + 1], mode, 0644);
+            input[i] = NULL;
+
+            if (fds[fd] == -1) {
+                raise_error("dot", "Cannot open file '%s' for %s", input[i + 1], redirect[j].name);
                 goto dot_redir_error;
             }
             break;
@@ -1774,16 +1758,21 @@ char *if_dot(char **input) {
 
     if (0) {
         dot_redir_error:
-        if (file_path != input[0])
-            free(file_path);
         for (int i = 0; i < 3; i++) {
-            if (stdpaths[i] != NULL)
-                free(stdpaths[i]);
+            if (fds[i] != -1)
+                close(fds[i]);
         }
         return ERROR_CODE;
     }
 
-    #endif
+    for (int i = 0; i < 3; i++) {
+        if (fds[i] == -1)
+            continue;
+        fd = dup(i);
+        dup2(fds[i], i);
+        close(fds[i]);
+        fds[i] = fd;
+    }
 
     // get args
     char *file_name = strdup(input[0]);
@@ -1800,58 +1789,24 @@ char *if_dot(char **input) {
         argv[i] = input[i];
     argv[argc] = NULL;
 
+    pid_t pid;
+
     #if PROFANBUILD
-    int pid;
+    char *full_path = profan_join_path(g_current_directory, file_path);
+
     run_ifexist_full(
         (runtime_args_t) {
-            file_path,
+            full_path,
             argc, argv,
-            __get_environ_ptr(),
+            environ,
             2
         }, &pid
     );
 
-    if (pid == -1) {
-        raise_error("dot", "Cannot execute file '%s'", file_path);
-        for (int i = 0; i < 3; i++)
-            free(stdpaths[i]);
-        if (file_path != input[0])
-            free(file_path);
-        free(file_name);
-        free(argv);
-        return ERROR_CODE;
-    }
+    free(full_path);
 
-    for (int i = 0; i < 3; i++) {
-        if (stdpaths[i] == NULL)
-            continue;
-        fm_reopen(fm_resol012(i, pid), stdpaths[i]);
-        if (fu_is_file(sid)) {
-            if (append[i])
-                fm_lseek(fm_resol012(i, pid), 0, SEEK_END);
-            else if (i != 0)
-                fu_file_set_size(sid, 0);
-        }
-        free(stdpaths[i]);
-    }
-
-    if (wait_end) {
-        syscall_process_handover(pid);
-    } else {
-        fprintf(stderr, "DOT: started with pid %d\n", pid);
-        syscall_process_wakeup(pid);
-    }
-
-    local_itoa(syscall_process_info(pid, PROCESS_INFO_EXIT_CODE), g_exit_code);
-
-    #else
-    pid_t pid = fork();
-    if (pid == -1) {
-        raise_error("dot", "Cannot execute file '%s'", file_path);
-        free(file_name);
-        free(argv);
-        return ERROR_CODE;
-    }
+    #else // UNIXBUILD
+    pid = fork();
 
     if (pid == 0) {
         execv(file_path, argv);
@@ -1861,13 +1816,46 @@ char *if_dot(char **input) {
         exit(1);
     }
 
-    int status;
-    waitpid(pid, &status, 0);
-    local_itoa(WEXITSTATUS(status), g_exit_code);
     #endif
 
-    char *tmp = malloc(12);
+    // restore fds
+    for (int i = 0; i < 3; i++) {
+        if (fds[i] != -1) {
+            dup2(fds[i], i);
+            close(fds[i]);
+        }
+    }
 
+    if (pid == -1) {
+        raise_error("dot", "Cannot execute file '%s'", file_path);
+        free(file_name);
+        free(argv);
+        return ERROR_CODE;
+    }
+
+    int status = 0;
+
+    #if PROFANBUILD
+    if (wait_end) {
+        syscall_process_wakeup(pid, 1);
+    } else {
+        syscall_process_wakeup(pid, 0);
+    }
+    #endif
+
+    if (wait_end) {
+        waitpid(pid, &status, 0);
+        status = WEXITSTATUS(status);
+    } else {
+        fprintf(stderr, "DOT: started with pid %d\n", pid);
+    }
+
+    // remove zombie processes
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+
+    local_itoa(status, g_exit_code);
+
+    char tmp[13];
     local_itoa(pid, tmp);
     set_variable("spi", tmp);
 
@@ -1875,7 +1863,7 @@ char *if_dot(char **input) {
         free(file_path);
     free(file_name);
     free(argv);
-    free(tmp);
+
     return g_exit_code[0] == '0' ? NULL : ERROR_CODE;
     #else
     UNUSED(input);
@@ -3413,9 +3401,8 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
     char *var_name = malloc(strlen(for_line) + 1);
 
     int i;
-    for (i = 4; for_line[i] != ' ' && for_line[i] != '\0'; i++) {
+    for (i = 4; !IS_SPACE_CHAR(for_line[i]) && for_line[i] != '\0'; i++)
         var_name[i - 4] = for_line[i];
-    }
     var_name[i - 4] = '\0';
 
     int line_end = get_line_end(line_count, lines);
@@ -3463,7 +3450,7 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
     while (string[string_index]) {
 
         // skip spaces
-        while (string[string_index] == ' ')
+        while (IS_SPACE_CHAR(string[string_index]))
             string_index++;
         if (string[string_index] == '\0')
             break;
@@ -3472,7 +3459,7 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
         for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
             if (string[string_index + var_len] == INTR_QUOTE) {
                 in_string = !in_string;
-            } else if (!in_string && string[string_index + var_len] == ' ') {
+            } else if (!in_string && IS_SPACE_CHAR(string[string_index + var_len])) {
                 break;
             }
         }
@@ -4038,47 +4025,7 @@ void olv_print(char *str, int len) {
  *                 *
 ********************/
 
-#if PROFANBUILD
-
-void display_prompt(void) {
-    for (int i = 0; g_prompt[i] != '\0'; i++) {
-        if (g_prompt[i] != '$') {
-            putchar(g_prompt[i]);
-            continue;
-        }
-        switch (g_prompt[i + 1]) {
-            case 'v':
-                fputs(OLV_VERSION, stdout);
-                break;
-            case 'd':
-                fputs(g_current_directory, stdout);
-                break;
-            case '(':
-                if (g_exit_code[0] != '0')
-                    break;
-                for (; g_prompt[i] != ')'; i++);
-                i--;
-                break;
-            case '{':
-                if (g_exit_code[0] == '0')
-                    break;
-                for (; g_prompt[i] != '}'; i++);
-                i--;
-                break;
-            case ')':
-                break;
-            case '}':
-                break;
-            default:
-                putchar('$');
-                break;
-        }
-        i++;
-    }
-    fflush(stdout);
-}
-
-#else
+#if USE_READLINE
 
 char *render_prompt(char *output, int output_size) {
     int output_i = 0;
@@ -4122,6 +4069,46 @@ char *render_prompt(char *output, int output_size) {
     }
     output[output_i] = '\0';
     return output;
+}
+
+#else
+
+void display_prompt(void) {
+    for (int i = 0; g_prompt[i] != '\0'; i++) {
+        if (g_prompt[i] != '$') {
+            putchar(g_prompt[i]);
+            continue;
+        }
+        switch (g_prompt[i + 1]) {
+            case 'v':
+                fputs(OLV_VERSION, stdout);
+                break;
+            case 'd':
+                fputs(g_current_directory, stdout);
+                break;
+            case '(':
+                if (g_exit_code[0] != '0')
+                    break;
+                for (; g_prompt[i] != ')'; i++);
+                i--;
+                break;
+            case '{':
+                if (g_exit_code[0] == '0')
+                    break;
+                for (; g_prompt[i] != '}'; i++);
+                i--;
+                break;
+            case ')':
+                break;
+            case '}':
+                break;
+            default:
+                putchar('$');
+                break;
+        }
+        i++;
+    }
+    fflush(stdout);
 }
 
 #endif
@@ -4401,7 +4388,7 @@ char *olv_autocomplete(char *str, int len, char **other, int *dec_ptr) {
     return ret;
 }
 
-int profan_local_input(char *buffer, int size, char **history, int history_end, int buffer_index) {
+int input_local_profan(char *buffer, int size, char **history, int history_end, int buffer_index) {
     // return -1 if the input is valid, else return the cursor position
 
     #if USE_ENVVARS
@@ -4625,7 +4612,7 @@ int profan_local_input(char *buffer, int size, char **history, int history_end, 
 
 #elif USE_READLINE
 
-int unix_local_input(char *buffer, int size, char *prompt) {
+int input_local_readline(char *buffer, int size, char *prompt) {
     static char *last_line = NULL;
 
     char *line = readline(prompt);
@@ -4645,26 +4632,24 @@ int unix_local_input(char *buffer, int size, char *prompt) {
     return -1;
 }
 
+#endif
+
 /*********************
  *                  *
  *  standard input  *
  *                  *
 *********************/
 
-#else
-
-int unix_local_input(char *buffer, int size, char *prompt) {
-    fputs(prompt, stdout);
-    fflush(stdout);
+int input_local_stdio(char *buffer, int size) {
 
     if (fgets(buffer, size, stdin))
         return -1;
+
+    // end of file
     puts("");
+
     return -2;
 }
-
-#endif
-
 
 /***************************
  *                        *
@@ -4681,34 +4666,53 @@ void start_shell(void) {
     int history_index = 0;
     #endif
 
-    int cursor_pos, len;
-    cursor_pos = -1;
+    int len, is_user, cursor_pos = -1;
+
+    #if UNIXBUILD || PROFANBUILD
+    is_user = isatty(STDIN_FILENO);
+    #else
+    is_user = 1;
+    #endif
 
     while (1) {
         line[0] = '\0';
-        do {
-            #if PROFANBUILD
-            display_prompt();
-            cursor_pos = profan_local_input(line, INPUT_SIZE, history, history_index, cursor_pos);
-            #else
-            cursor_pos = unix_local_input(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
-            #endif
-        } while (cursor_pos >= 0);
 
-        while (cursor_pos != -2 && does_syntax_fail(line)) {
+        if (is_user) {
+            #if PROFANBUILD
+            do {
+                display_prompt();
+                cursor_pos = input_local_profan(line, INPUT_SIZE, history, history_index, cursor_pos);
+            } while (cursor_pos >= 0);
+            #elif USE_READLINE
+            cursor_pos = input_local_readline(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
+            #else
+            display_prompt();
+            cursor_pos = input_local_stdio(line, INPUT_SIZE);
+            #endif
+        } else {
+            if (!fgets(line, INPUT_SIZE, stdin)) {
+                break;
+            }
+        }
+
+        while (is_user && cursor_pos != -2 && does_syntax_fail(line)) {
             // multiline program
             strcat(line, ";");
             len = strlen(line);
             line[len] = '\0';
+            #if PROFANBUILD
             do {
-                #if PROFANBUILD
                 fputs(OTHER_PROMPT, stdout);
                 fflush(stdout);
-                cursor_pos = profan_local_input(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
-                #else
-                cursor_pos = unix_local_input(line + len, INPUT_SIZE - len, OTHER_PROMPT);
-                #endif
+                cursor_pos = input_local_profan(line + len, INPUT_SIZE - len, history, history_index, cursor_pos);
             } while(cursor_pos >= 0);
+            #elif USE_READLINE
+            cursor_pos = input_local_readline(line + len, INPUT_SIZE - len, OTHER_PROMPT);
+            #else
+            fputs(OTHER_PROMPT, stdout);
+            fflush(stdout);
+            cursor_pos = input_local_stdio(line + len, INPUT_SIZE - len);
+            #endif
         }
 
         if (cursor_pos == -2 || strcmp(line, "shellexit") == 0) {

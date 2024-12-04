@@ -65,7 +65,7 @@ enum {
 #define fu_is_file ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 7))
 #define fu_file_set_size ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 8))
 #define fu_file_get_size ((uint32_t (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 9))
-#define fu_file_create ((uint32_t (*)(int, char *)) get_func_addr(FILESYS_LIB_ID, 10))
+#define fu_file_create ((uint32_t (*)(int, const char *)) get_func_addr(FILESYS_LIB_ID, 10))
 #define fu_file_read ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 11))
 #define fu_file_write ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 12))
 #define fu_is_fctf ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 13))
@@ -92,19 +92,20 @@ enum {
 
 #ifndef FMOPEN_LIB_C
 
-#define fm_open ((int (*)(char *)) get_func_addr(FMOPEN_LIB_ID, 2))
-#define fm_reopen ((int (*)(int, char *)) get_func_addr(FMOPEN_LIB_ID, 3))
-#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 4))
-#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
-#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 6))
-#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 7))
-#define fm_tell ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
-#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
-#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
-#define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 11))
-#define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
-#define fm_clean ((void (*)(void)) get_func_addr(FMOPEN_LIB_ID, 13))
-#define fm_resol012 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 15))
+#define fm_open(path, flags) fm_reopen(-1, path, flags)
+
+#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 2))
+#define fm_reopen ((int (*)(int, const char *, int)) get_func_addr(FMOPEN_LIB_ID, 3))
+#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 4))
+#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
+#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 6))
+#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 7))
+#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
+#define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 9))
+#define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 10))
+#define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_newfd_after ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
 
 #endif
 #endif

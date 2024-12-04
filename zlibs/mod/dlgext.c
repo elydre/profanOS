@@ -45,7 +45,7 @@ elfobj_t *dlgext_libc(void) {
     // duplicate libc object
     elfobj_t *libc = malloc(sizeof(elfobj_t));
     memcpy(libc, g_libc, sizeof(elfobj_t));
-    libc->ref_count = 0;
+    libc->ref_count = 1;
     return libc;
 }
 

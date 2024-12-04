@@ -16,6 +16,10 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+// opaque type for FILE
+struct _IO_FILE;
+typedef struct _IO_FILE FILE;
+
 // standard streams
 extern FILE *stdin;
 extern FILE *stdout;

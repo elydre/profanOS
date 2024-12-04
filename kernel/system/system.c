@@ -57,11 +57,23 @@ void kernel_exit_current(void) {
     int pid_list_len = process_list_all(pid_list, PROCESS_MAX);
     uint32_t pid, state;
 
+    // sort by pid
+    for (int i = 0; i < pid_list_len; i++) {
+        for (int j = i + 1; j < pid_list_len; j++) {
+            if (pid_list[i] > pid_list[j]) {
+                pid = pid_list[i];
+                pid_list[i] = pid_list[j];
+                pid_list[j] = pid;
+            }
+        }
+    }
+
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];
+        if (pid < 2) continue;
         state = process_get_state(pid);
-        if (pid && state < 3 && pid != process_get_pid()) {
-            force_exit_pid(pid, 143, 0);
+        if (state == PROC_STATE_INQ || state == PROC_STATE_SLP) {
+            process_kill(pid, 143);
             return;
         }
     }
@@ -173,7 +185,7 @@ void sys_error(char *msg, ...) {
 
     RECURSIVE_COUNT--;
 
-    if (current_pid > 1 && force_exit_pid(current_pid, 143, 0)) {
+    if (current_pid > 1 && process_kill(current_pid, 143)) {
         sys_fatal("Failed to exit process");
     }
 }

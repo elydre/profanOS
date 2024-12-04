@@ -20,8 +20,22 @@
 #include <stdio.h>
 #include <errno.h>
 
-int access(const char *a, int b) {
-    puts("access is not implemented yet, WHY DO YOU USE IT ?");
+int access(const char *pathname, int mode) {
+    // add the current working directory to the filename
+    char *pwd = getenv("PWD");
+    if (!pwd) pwd = "/";
+    char *path = profan_join_path(pwd, (char *) pathname);
+
+    uint32_t elem = fu_path_to_sid(SID_ROOT, path);
+    free(path);
+
+    // check if path exists
+    if (IS_SID_NULL(elem)) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    // everything is fine (dog meme)
     return 0;
 }
 
@@ -60,7 +74,12 @@ int chown(const char *a, uid_t b, gid_t c) {
 }
 
 int close(int fd) {
-    return fm_close(fd);
+    int r = fm_close(fd);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return 0;
 }
 
 size_t confstr(int a, char *b, size_t c) {
@@ -79,11 +98,21 @@ char *ctermid(char *a) {
 }
 
 int dup(int fd) {
-    return fm_dup(fd);
+    int newfd = fm_dup(fd);
+    if (newfd < 0) {
+        errno = -newfd;
+        return -1;
+    }
+    return newfd;
 }
 
 int dup2(int fd, int newfd) {
-    return fm_dup2(fd, newfd);
+    int r = fm_dup2(fd, newfd);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return newfd;
 }
 
 void encrypt(char a[64], int b) {
@@ -114,7 +143,7 @@ int execl(const char *fullpath, const char *first, ...) {
     va_end(args);
     argv[argc] = NULL;
 
-    return execve(fullpath, argv, __get_environ_ptr());
+    return execve(fullpath, argv, environ);
 }
 
 int execle(const char *fullpath, const char *arg, ...) {
@@ -128,7 +157,7 @@ int execlp(const char *file, const char *arg, ...) {
 }
 
 int execv(const char *fullpath, char *const argv[]) {
-    return execve(fullpath, argv, NULL);
+    return execve(fullpath, argv, environ);
 }
 
 int execve(const char *fullpath, char *const argv[], char *const envp[]) {
@@ -150,8 +179,8 @@ int execvp(const char *file, char *const argv[]) {
 }
 
 void _exit(int status) {
-    syscall_process_exit(syscall_process_pid(), status, 0);
-    while (1);
+    syscall_process_kill(syscall_process_pid(), status);
+    while (1); // unreachable (probably)
 }
 
 int fchown(int a, uid_t b, gid_t c) {
@@ -183,8 +212,10 @@ pid_t fork(void) {
         return 0;
     }
 
+    fm_declare_child(pid);
+
     // parent process
-    syscall_process_wakeup(pid);
+    syscall_process_wakeup(pid, 0);
 
     return pid;
 }
@@ -239,7 +270,7 @@ gid_t getegid(void) {
 }
 
 uid_t geteuid(void) {
-    // without user system, we just return 0 for 'root'
+    // without user system, we just return 0 for "root"
     return 0;
 }
 
@@ -312,7 +343,7 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    return fm_isfctf(fd);
+    return fm_isfctf(fd) > 0;
 }
 
 int lchown(const char *a, uid_t b, gid_t c) {
@@ -331,7 +362,12 @@ int lockf(int a, int b, off_t c) {
 }
 
 off_t lseek(int fd, off_t offset, int whence) {
-    return fm_lseek(fd, offset, whence);
+    int r = fm_lseek(fd, offset, whence);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return r;
 }
 
 int nice(int a) {
@@ -350,7 +386,12 @@ int pause(void) {
 }
 
 int pipe(int fd[2]) {
-    return fm_pipe(fd);
+    int r = fm_pipe(fd);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return 0;
 }
 
 ssize_t pread(int a, void *b, size_t c, off_t d) {
@@ -364,7 +405,12 @@ ssize_t pwrite(int a, const void *b, size_t c, off_t d) {
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
-    return fm_read(fd, buf, count);
+    int r = fm_read(fd, buf, count);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return r;
 }
 
 ssize_t readlink(const char *restrict a, char *restrict b, size_t c) {
@@ -518,7 +564,7 @@ int usleep(useconds_t usec) {
 }
 
 pid_t vfork(void) {
-    puts("vfork is not implemented yet, WHY DO YOU USE IT ?");
+    puts("vfork is not implemented yet, using fork instead should work (._. )");
     return -1;
 }
 

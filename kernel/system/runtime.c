@@ -15,114 +15,57 @@
 #include <minilib.h>
 #include <system.h>
 
-int force_exit_pid(int pid, int ret_code, int warn_leaks) {
-    int ppid, pstate, leaks;
-
-    if (pid == 0 || pid == 1) {
-        sys_warning("[exit pid] Attempt to kill system process %d", pid);
-        return 1;
-    }
-
-    if (process_get_state(pid) >= PROCESS_KILLED) {
-        sys_warning("[exit pid] Attempt to kill a non-existing process %d", pid);
-        return 1;
-    }
-
-    comm_struct_t *comm = process_get_comm(pid);
-    if (comm != NULL) {
-        // free the argv
-        for (int i = 0; comm->argv[i] != NULL; i++)
-            free(comm->argv[i]);
-        free(comm->argv);
-        free(comm->envp);
-
-        // free comm struct
-        free(comm);
-    }
-
-    if (warn_leaks && (leaks = mem_get_info(7, pid)) > 0) {
-        sys_warning("Memory leak of %d alloc%s (pid %d, %d bytes)",
-                leaks,
-                leaks == 1 ? "" : "s",
-                pid,
-                mem_get_info(8, pid)
-        );
-    }
-    mem_free_all(pid);
-
-    // set return value
-    process_set_return(pid, ret_code);
-
-    // wake up the parent process
-    ppid = process_get_ppid(pid);
-
-    if (ppid != -1) {
-        pstate = process_get_state(ppid);
-
-        if (pstate == PROCESS_TSLPING || pstate == PROCESS_FSLPING) {
-            process_wakeup(ppid);
-        }
-    }
-
-    return process_kill(pid);
-}
-
 int binary_exec(uint32_t sid, int argc, char **argv, char **envp) {
     int pid = process_get_pid();
+    uint32_t *phys;
 
     if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
         sys_error("[binary_exec] File not found");
-        return force_exit_pid(pid, 1, 0);
+        return process_kill(pid, 1);
     }
 
     comm_struct_t *comm = process_get_comm(pid);
 
-    if (comm != NULL) {
-        // free the argv
+    // free the argv
+    if (comm->argv) {
         for (int i = 0; comm->argv[i] != NULL; i++)
             free(comm->argv[i]);
         free(comm->argv);
-        free(comm->envp);
-    } else {
-        comm = mem_alloc(sizeof(comm_struct_t), 0, 6);
     }
+    free(comm->envp);
 
     comm->argv = argv;
     comm->envp = envp;
-    process_set_comm(pid, comm);
+    process_set_name(pid, argv[0] ? argv[0] : "unknown");
 
     uint32_t fsize = fs_cnt_get_size(fs_get_main(), sid);
-    uint32_t real_fsize = fsize;
 
-    scuba_directory_t *old_dir = process_get_directory(pid);
-    scuba_directory_t *dir = scuba_directory_inited(pid);
-
-    // create program memory
-    scuba_create_virtual(dir, (void *) RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
+    scuba_dir_t *old_dir = process_get_dir(pid);
+    scuba_dir_t *new_dir = scuba_dir_inited(old_dir, pid);
 
     // create stack
-    uint32_t *phys_stack = scuba_create_virtual(dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
-    mem_copy(phys_stack, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
+    phys = scuba_create_virtual(new_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
+    mem_copy(phys, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
 
-    process_switch_directory(pid, dir, 0);
+    process_switch_directory(pid, new_dir, 0);
 
     // switch to new directory
-    asm volatile("mov %0, %%cr3":: "r"(dir));
+    scuba_switch(new_dir);
 
-    scuba_directory_destroy(old_dir);
+    scuba_dir_destroy(old_dir);
 
     // load binary
-    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE, 0, real_fsize);
+    fs_cnt_read(fs_get_main(), sid, (void *) RUN_BIN_VBASE + RUN_BIN_OFFSET, 0, fsize);
+    mem_set((void *) RUN_BIN_VBASE + RUN_BIN_OFFSET + fsize, 0, RUN_BIN_VCUNT - RUN_BIN_OFFSET - fsize);
 
     // call main
-
-    int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE;
+    int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) RUN_BIN_VBASE + RUN_BIN_OFFSET;
 
     sys_exit_kernel(0);
     int ret = main(argc, argv, envp) & 0xFF;
     sys_entry_kernel(0);
 
-    return force_exit_pid(process_get_pid(), ret, 1);
+    return process_kill(process_get_pid(), ret);
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
@@ -145,7 +88,7 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
         str_cpy(nargv[i], argv[i]);
     }
 
-    int pid = process_create(binary_exec, 0, file, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
+    int pid = process_create(binary_exec, 0, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
@@ -156,10 +99,10 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
     if (sleep == 2)
         return 0;
 
-    if (sleep)
-        process_handover(pid);
-    else
-        process_wakeup(pid);
+    uint8_t ret;
 
-    return process_get_info(pid, PROCESS_INFO_EXIT_CODE);
+    process_wakeup(pid, sleep);
+    process_wait(pid, &ret, 0);
+
+    return ret;
 }

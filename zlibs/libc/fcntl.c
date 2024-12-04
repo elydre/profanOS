@@ -16,41 +16,24 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
 
 int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
     char *fullpath, *cwd = getenv("PWD");
-    fullpath = cwd ? profan_join_path(cwd, path) : strdup(path);
+    if (cwd == NULL) cwd = "/";
+    fullpath = profan_join_path(cwd, path);
 
-    uint32_t sid = fu_path_to_sid(SID_ROOT, fullpath);
-
-    if (IS_SID_NULL(sid) && (flags & O_CREAT)) {
-        sid = fu_file_create(0, fullpath);
-    }
-
-    if (IS_SID_NULL(sid)) {
-        free(fullpath);
-        return -1;
-    }
-
-    if (flags & O_TRUNC && fu_is_file(sid)) {
-        fu_file_set_size(sid, 0);
-    }
-
-    int fd = fm_open(fullpath);
-
-    if (fd < 0) {
-        free(fullpath);
-        return -1;
-    }
-
-    if (flags & O_APPEND) {
-        fm_lseek(fd, 0, SEEK_END);
-    }
-
+    int fd = fm_open(fullpath, flags);
     free(fullpath);
-    return fd;
+
+    if (fd >= 0) {
+        return fd;
+    }
+
+    errno = -fd;
+    return -1;
 }
 
 int creat(const char *file, mode_t mode) {

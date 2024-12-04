@@ -27,8 +27,8 @@ typedef struct {
 } font_data_t;
 
 typedef struct {
+    uint8_t color;
     char content;
-    char color;
 } screen_char_t;
 
 typedef struct {
@@ -139,6 +139,8 @@ char compute_ansi_color(char ansi_nb, int part, char old_color) {
         fg = ansi_nb + 8;
     } else if (part == 2) {
         bg = ansi_nb;
+    } else {
+        bg = ansi_nb + 8;
     }
 
     return (bg << 4) | fg;
@@ -188,7 +190,7 @@ void panda_clear_screen(void) {
     g_panda->scroll_offset = 0;
 }
 
-int compute_ansi_escape(const char *str, panda_global_t *g_panda) {
+int compute_ansi_escape(const char *str, panda_global_t *g_panda, int main_color) {
     const char *start = str;
 
     if (str[1] == '[') str += 2;
@@ -212,26 +214,31 @@ int compute_ansi_escape(const char *str, panda_global_t *g_panda) {
     }
 
     // font color
-    if (str[0] == '3' && str[2] == 'm') {
+    if (str[0] == '3' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 0, g_panda->color);
         return 4;
     }
 
     // highlight font color
-    if (str[0] == '9' && str[2] == 'm') {
+    if (str[0] == '9' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 1, g_panda->color);
         return 4;
     }
 
     // background color
-    if (str[0] == '4' && str[2] == 'm') {
+    if (str[0] == '4' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 2, g_panda->color);
         return 4;
     }
 
+    if (str[0] == '1' && str[1] == '0' && str[2] && str[3] == 'm') {
+        g_panda->color = compute_ansi_color(str[2], 3, g_panda->color);
+        return 5;
+    }
+
     // reset color
     if (str[0] == '0' && str[1] == 'm') {
-        g_panda->color = 0xF;
+        g_panda->color = main_color == -1 ? 0xF : main_color;
         return 3;
     }
 
@@ -376,7 +383,7 @@ uint8_t panda_print_string(const char *string, int len, int tmp_color) {
             for (; g_panda->cursor_x < tmp; g_panda->cursor_x++)
                 panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
         } else if (string[i] == '\e')
-            i += compute_ansi_escape(string + i, g_panda);
+            i += compute_ansi_escape(string + i, g_panda, tmp_color);
         else {
             panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, string[i], g_panda->color);
             g_panda->cursor_x++;
@@ -388,10 +395,11 @@ uint8_t panda_print_string(const char *string, int len, int tmp_color) {
         if (!g_panda->cursor_is_hidden)
             draw_cursor(0);
     }
-    if (tmp_color != -1) {
-        tmp_color = g_panda->color;
-        g_panda->color = old_color;
-    }
+    if (tmp_color == -1)
+        return g_panda->color;
+
+    tmp_color = g_panda->color;
+    g_panda->color = old_color;
     return tmp_color;
 }
 

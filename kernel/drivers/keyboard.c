@@ -70,7 +70,8 @@ static void keyboard_callback(registers_t *regs) {
     sc_history[0] = sc;
 
     if (sc_history[0] == 60) {   // F2
-        process_wakeup(process_create(kernel_exit_current, 0, "exit_current", 0, NULL));
+        int pid = process_create(kernel_exit_current, 0, 0, NULL);
+        if (pid > 0) process_wakeup(pid, 0);
     }
 }
 

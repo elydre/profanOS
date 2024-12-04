@@ -20,6 +20,7 @@
 #include <profan.h>
 
 #include <stdarg.h>
+#include <fcntl.h> // for flags
 
 #define DEFAULT_KB "/zada/keymap/azerty.map"
 #define ELF_INTERP "/bin/sys/deluge.bin"
@@ -127,8 +128,8 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
 }
 
 char *profan_input_keyboard(int *size, char *term_path) {
-    int fd = fm_open(term_path);
-    if (fd == -1) {
+    int fd = fm_open(term_path, O_RDWR);
+    if (fd < 0) {
         return NULL;
     }
 
@@ -369,6 +370,9 @@ static char **get_interp(uint32_t sid, int *c) {
 }
 
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
+    if (pid_ptr != NULL)
+        *pid_ptr = -1;
+
     if (args.path == NULL) {
         fd_printf(2, "[run_ifexist] path is NULL\n");
         return -1;
@@ -485,8 +489,8 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return syscall_binary_exec(sid, args.argc, nargv, nenv);
     }
 
-    int pid = syscall_process_create(syscall_binary_exec, 0, args.path,
-            4, (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
+    int pid = syscall_process_create(syscall_binary_exec, 0, 4,
+            (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
     );
 
     if (pid_ptr != NULL)
@@ -494,13 +498,15 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (pid == -1)
         return -1;
 
+    fm_declare_child(pid);
+
     if (args.sleep_mode == 2)
         return 0;
+    if (args.sleep_mode == 0)
+        return (syscall_process_wakeup(pid, 0), 0);
 
-    if (args.sleep_mode)
-        syscall_process_handover(pid);
-    else
-        syscall_process_wakeup(pid);
-
-    return syscall_process_info(pid, PROCESS_INFO_EXIT_CODE);
+    syscall_process_wakeup(pid, 1);
+    uint8_t ret;
+    syscall_process_wait(pid, &ret, 0);
+    return ret;
 }

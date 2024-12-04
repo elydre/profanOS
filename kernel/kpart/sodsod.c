@@ -108,7 +108,7 @@ static void sod_print_generic_info(int is_cpu_error) {
     sod_print_at(13, 6, sys_kinfo(), 0x0D);
 
     sod_print_at(6, 7, "during", 0x05);
-    str_cpy(str, (char *) process_get_info(process_get_pid(), PROCESS_INFO_NAME));
+    str_cpy(str, (char *) process_get_info(process_get_pid(), PROC_INFO_NAME));
     sod_print_at(13, 7, str, 0x0D);
     tmp = str_len(str);
 
