@@ -11,6 +11,7 @@
 
 #include <profan/syscall.h>
 #include <profan/type.h>
+#include <profan.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -244,7 +245,7 @@ void *memset(void *s, int c, size_t n) {
 }
 
 void psignal(int signum, register const char *message) {
-    puts("psignal not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("psignal");
 }
 
 void *rawmemchr(const void *s, int c) {
@@ -283,7 +284,7 @@ int strcasecmp(const char *s1, const char *s2) {
 }
 
 int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc) {
-    puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strcasecmp_l");
     return 0;
 }
 
@@ -348,7 +349,7 @@ char *strchrnul(const char *s, int c_in) {
     if (sizeof (longword) > 4)
         charmask |= (charmask << 16) << 16;
     if (sizeof (longword) > 8)
-        abort ();
+        abort();
 
     for (;;) {
       longword = *longword_ptr++;
@@ -502,7 +503,7 @@ int strncasecmp(register const char *s1, register const char *s2, size_t n) {
 }
 
 int strncasecmp_l(register const char *s1, register const char *s2, size_t n, locale_t loc) {
-    puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strncasecmp_l");
     return 0;
 }
 
@@ -623,7 +624,7 @@ char *strsep(register char **stringp, register const char *delim) {
 }
 
 char *strsignal(int signum) {
-    puts("strsignal not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strsignal");
     return NULL;
 }
 
@@ -742,6 +743,6 @@ char *strtok_r(char *s, const char *delim, char **save_ptr) {
 }
 
 int strverscmp(const char *s1, const char *s2) {
-    puts("strverscmp not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strverscmp");
     return 0;
 }

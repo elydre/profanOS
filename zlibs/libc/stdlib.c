@@ -21,14 +21,14 @@
 #include <ctype.h>
 #include <time.h>
 
+#include "config_libc.h"
+
 uint32_t g_rand_seed = 0;
 
 void **g_atexit_funcs = NULL;
 char **environ = NULL;
 
 void *g_entry_exit = NULL;
-
-#define SHELL_PATH "/bin/fatpath/olivine.elf"
 
 /*******************************
  *                            *
@@ -147,7 +147,8 @@ long int a64l(const char *string) {
 }
 
 void abort(void) {
-    exit(1);
+    write(2, "== abort ==\n", 12);
+    _exit(1);
 }
 
 int abs(int j) {
@@ -223,12 +224,12 @@ int atoi(const char *nptr) {
 }
 
 long atol(const char *nptr) {
-    puts("atol not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("atol");
     return 0;
 }
 
 long long atoll(const char *nptr) {
-    puts("atoll not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("atoll");
     return 0;
 }
 
@@ -253,7 +254,7 @@ void *bsearch(register const void *key, const void *base0, size_t nmemb, registe
 }
 
 char *canonicalize_file_name(const char *name) {
-    puts("canonicalize_file_name not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("canonicalize_file_name");
     return NULL;
 }
 
@@ -265,27 +266,27 @@ div_t div(int numer, int denom) {
 }
 
 double drand48(void) {
-    puts("drand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("drand48");
     return 0.0;
 }
 
 int drand48_r(struct drand48_data *buffer, double *result) {
-    puts("drand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("drand48_r");
     return 0;
 }
 
 int __drand48_iterate(unsigned short int xsubi[3], struct drand48_data *buffer) {
-    puts("__drand48_iterate not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("__drand48_iterate");
     return 0;
 }
 
 double erand48(unsigned short int xsubi[3]) {
-    puts("erand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("erand48");
     return 0.0;
 }
 
 int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *result) {
-    puts("erand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("erand48_r");
     return 0;
 }
 
@@ -299,7 +300,7 @@ void exit(int rv) {
 }
 
 char *gcvt(double number, int ndigit, char *buf) {
-    puts("gcvt not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("gcvt");
     return NULL;
 }
 
@@ -320,17 +321,17 @@ char *getenv(const char *var) {
 }
 
 int getpt(void) {
-    puts("getpt not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("getpt");
     return 0;
 }
 
 long int jrand48(unsigned short int xsubi[3]) {
-    puts("jrand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("jrand48");
     return 0;
 }
 
 int jrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result) {
-    puts("jrand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("jrand48_r");
     return 0;
 }
 
@@ -372,11 +373,11 @@ long int labs(long int j) {
 }
 
 void lcong48(unsigned short int param[7]) {
-    puts("lcong48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("lcong48");
 }
 
 ldiv_t ldiv(long int numer, long int denom) {
-    puts("ldiv not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("ldiv");
     ldiv_t result;
     result = (ldiv_t) {0, 0}; // temporary, to avoid warnings
     return result;
@@ -387,119 +388,119 @@ long long int llabs(long long int j) {
 }
 
 lldiv_t lldiv(long long int numer, long long int denom) {
-    puts("lldiv not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("lldiv");
     lldiv_t result;
     result = (lldiv_t) {0, 0}; // temporary, to avoid warnings
     return result;
 }
 
 long int lrand48(void) {
-    puts("lrand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("lrand48");
     return 0;
 }
 
 int lrand48_r(struct drand48_data *buffer, long int *result) {
-    puts("lrand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("lrand48_r");
     return 0;
 }
 
 int mblen(register const char *s, size_t n) {
-    puts("mblen not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mblen");
     return 0;
 }
 
 size_t mbstowcs(wchar_t * restrict pwcs, const char * restrict s, size_t n) {
-    puts("mbstowcs not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mbstowcs");
     return 0;
 }
 
 int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
-    puts("mbtowc not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mbtowc");
     return 0;
 }
 
 char *mkdtemp(char *template) {
-    puts("mkdtemp not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkdtemp");
     return NULL;
 }
 
 int mkostemp(char *template, int flags) {
-    puts("mkostemp not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkostemp");
     return 0;
 }
 
 int mkostemp64(char *template, int flags) {
-    puts("mkostemp64 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkostemp64");
     return 0;
 }
 
 int mkostemps(char *template, int suffixlen, int flags) {
-    puts("mkostemps not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkostemps");
     return 0;
 }
 
 int mkostemps64(char *template, int suffixlen, int flags) {
-    puts("mkostemps64 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkostemps64");
     return 0;
 }
 
 int mkstemp(char *template) {
-    puts("mkstemp not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkstemp");
     return 0;
 }
 
 int mkstemp64(char *template) {
-    puts("mkstemp64 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkstemp64");
     return 0;
 }
 
 int mkstemps(char *template, int suffixlen) {
-    puts("mkstemps not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkstemps");
     return 0;
 }
 
 int mkstemps64(char *template, int suffixlen) {
-    puts("mkstemps64 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mkstemps64");
     return 0;
 }
 
 char *mktemp(char *template) {
-    puts("mktemp not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mktemp");
     return NULL;
 }
 
 long int mrand48(void) {
-    puts("mrand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mrand48");
     return 0;
 }
 
 int mrand48_r(struct drand48_data *buffer, long int *result) {
-    puts("mrand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("mrand48_r");
     return 0;
 }
 
 long int nrand48(unsigned short int xsubi[3]) {
-    puts("nrand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("nrand48");
     return 0;
 }
 
 int nrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result) {
-    puts("nrand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("nrand48_r");
     return 0;
 }
 
 int on_exit(oefuncp func, void *arg) {
-    puts("on_exit not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("on_exit");
     return 0;
 }
 
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
-    puts("posix_memalign not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("posix_memalign");
     return 0;
 }
 
 char *ptsname(int fd) {
-    puts("ptsname not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("ptsname");
     return NULL;
 }
 
@@ -519,7 +520,7 @@ void qsort(void *base, size_t nel, size_t width, __compar_fn_t comp) {
 }
 
 void qsort_r(void *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
-    puts("qsort_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("qsort_r");
 }
 
 int rand(void) {
@@ -553,37 +554,37 @@ int rand_r(unsigned int *seed) {
 }
 
 long int random(void) {
-    puts("random not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("random");
     return 0;
 }
 
 int random_r(struct random_data *buf, int32_t *result) {
-    puts("random_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("random_r");
     return 0;
 }
 
 char *realpath(const char *path, char *got_path) {
-    puts("realpath not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("realpath");
     return NULL;
 }
 
 int rpmatch(const char *__response) {
-    puts("rpmatch not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("rpmatch");
     return 0;
 }
 
 char *secure_getenv(const char *name) {
-    puts("(OK) secure_getenv not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("secure_getenv");
     return NULL;
 }
 
 unsigned short int *seed48(unsigned short int seed16v[3]) {
-    puts("seed48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("seed48");
     return NULL;
 }
 
 int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
-    puts("seed48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("seed48_r");
     return 0;
 }
 
@@ -661,7 +662,7 @@ int clearenv(void) {
 }
 
 int putenv(char *string) {
-    puts("putenv not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("putenv");
     return 0;
 }
 
@@ -670,11 +671,11 @@ void srand(unsigned int seed) {
 }
 
 void srand48(long seedval) {
-    puts("srand48 not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("srand48");
 }
 
 int srand48_r(long int seedval, struct drand48_data *buffer) {
-    puts("srand48_r not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("srand48_r");
     return 0;
 }
 
@@ -759,12 +760,12 @@ double strtod(const char *str, char **ptr) {
 }
 
 long double strtod_l(const char *str, char **end, locale_t loc) {
-    puts("strtod_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtod_l");
     return 0;
 }
 
 long double strtold(const char *str, char **end) {
-    puts("strtold not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtold");
     return 0;
 }
 
@@ -773,7 +774,7 @@ float strtof(const char *str, char **end) {
 }
 
 long double strtof_l(const char *str, char **end, locale_t loc) {
-    puts("strtof_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtof_l");
     return 0;
 }
 
@@ -876,12 +877,12 @@ noconv:
 }
 
 long long strtoll(const char *str, char **end, int base) {
-    puts("strtoll not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtoll");
     return 0;
 }
 
 long long int strtoll_l(const char *str, char **end, int base, locale_t loc) {
-    puts("strtoll_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtoll_l");
     return 0;
 }
 
@@ -939,7 +940,7 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base) {
 }
 
 unsigned long int strtoul_l(const char *str, char **end, int base, locale_t loc) {
-    puts("strtoul_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtoul_l");
     return 0;
 }
 
@@ -1023,109 +1024,102 @@ noconv:
 }
 
 unsigned long long int strtoull_l(const char *str, char **end, int base, locale_t loc) {
-    puts("strtoull_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("strtoull_l");
     return 0;
 }
 
 int system(const char *command) {
-    // generate the arguments
-    char **args = malloc(4 * sizeof(char *));
-    args[0] = SHELL_PATH;
-    args[1] = "-c";
-    args[2] = (char *) command;
-    args[3] = NULL;
+    if (access(SYSTEM_SHELL_PATH, X_OK) == -1) {
+        fputs("libC: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
+        return -1;
+    }
 
-    // run the command
-    int ret = run_ifexist(args[0], 3, args);
-
-    free(args);
-
-    return ret;
+    return run_ifexist(SYSTEM_SHELL_PATH, 3, ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}));
 }
 
 int grantpt(int fd) {
-    puts("grantpt not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("grantpt");
     return 0;
 }
 
 int unlockpt(int fd) {
-    puts("unlockpt not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("unlockpt");
     return 0;
 }
 
 #define __ptr_t void *
 __ptr_t valloc(size_t size) {
-    puts("valloc not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("valloc");
     return NULL;
 }
 
 double wcstod(const wchar_t *nptr, wchar_t **endptr) {
-    puts("wcstod not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstod");
     return 0;
 }
 
 long double wcstod_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc) {
-    puts("wcstod_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstod_l");
     return 0;
 }
 
 float wcstof(const wchar_t *nptr, wchar_t **endptr) {
-    puts("wcstof not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstof");
     return 0;
 }
 
 long double wcstof_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc) {
-    puts("wcstof_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstof_l");
     return 0;
 }
 
 long int wcstol(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstol not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstol");
     return 0;
 }
 
 long long int wcstol_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstol_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstol_l");
     return 0;
 }
 
 long long int wcstoll(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstoll not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstoll");
     return 0;
 }
 
 long long int wcstoll_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstoll_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstoll_l");
     return 0;
 }
 
 size_t wcstombs(char * restrict s, const wchar_t * restrict pwcs, size_t n) {
-    puts("wcstombs not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstombs");
     return 0;
 }
 
 unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstoul not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstoul");
     return 0;
 }
 
 unsigned long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstoul_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstoul_l");
     return 0;
 }
 
 unsigned long long int wcstoull(const wchar_t *nptr, wchar_t **endptr, int base) {
-    puts("wcstoull not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstoull");
     return 0;
 }
 
 unsigned long long int wcstoull_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    puts("wcstoull_l not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wcstoull_l");
     return 0;
 }
 
 int wctomb(char *s, wchar_t wchar) {
-    puts("wctomb not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("wctomb");
     return 0;
 }
 

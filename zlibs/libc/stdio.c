@@ -21,8 +21,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#define STDIO_BUFFER_SIZE 0x1000
-#define STDIO_BUFFER_READ 100
+#include "config_libc.h"
 
 #if STDIO_BUFFER_SIZE < STDIO_BUFFER_READ
   #error "stdio buffer size must be changed"
@@ -78,7 +77,7 @@ void __stdio_fini(void) {
 }
 
 void clearerr(FILE *stream) {
-    puts("clearerr not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("clearerr");
 }
 
 FILE *fopen(const char *filename, const char *mode) {
@@ -181,16 +180,16 @@ int fflush(FILE *stream) {
 }
 
 void setbuf(FILE *stream, char *buffer) {
-    puts("setbuf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("setbuf");
 }
 
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
-    puts("setvbuf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("setvbuf");
     return 0;
 }
 
 int fwide(FILE *stream, int mode) {
-    puts("fwide not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("fwide");
     return 0;
 }
 
@@ -442,67 +441,67 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
 
 int ungetc(int ch, FILE *stream) {
-    puts("ungetc not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("ungetc");
     return 0;
 }
 
 int scanf(const char *format, ...) {
-    puts("scanf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("scanf");
     return 0;
 }
 
 int fscanf(FILE *stream, const char *format, ...) {
-    puts("fscanf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("fscanf");
     return 0;
 }
 
 int sscanf(const char *buffer, const char *format, ...) {
-    puts("sscanf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("sscanf");
     return 0;
 }
 
 int scanf_s(const char *format, ...) {
-    puts("scanf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("scanf_s");
     return 0;
 }
 
 int fscanf_s(FILE *stream, const char *format, ...) {
-    puts("fscanf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("fscanf_s");
     return 0;
 }
 
 int sscanf_s(const char *buffer, const char *format, ...) {
-    puts("sscanf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("sscanf_s");
     return 0;
 }
 
 int vscanf(const char *format, va_list vlist) {
-    puts("vscanf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vscanf");
     return 0;
 }
 
 int vfscanf(FILE *stream, const char *format, va_list vlist) {
-    puts("vfscanf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vfscanf");
     return 0;
 }
 
 int vsscanf(const char *buffer, const char *format, va_list vlist) {
-    puts("vsscanf not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vsscanf");
     return 0;
 }
 
 int vscanf_s(const char *format, va_list vlist) {
-    puts("vscanf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vscanf_s");
     return 0;
 }
 
 int vfscanf_s(FILE *stream, const char *format, va_list vlist) {
-    puts("vfscanf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vfscanf_s");
     return 0;
 }
 
 int vsscanf_s(const char *buffer, const char *format, va_list vlist) {
-    puts("vsscanf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vsscanf_s");
     return 0;
 }
 
@@ -551,12 +550,12 @@ int snprintf(char* str, size_t size, const char* format, ...) {
 }
 
 int printf_s(const char *format, ...) {
-    puts("printf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("printf_s");
     return 0;
 }
 
 int fprintf_s(FILE *stream, const char *format, ...) {
-    puts("fprintf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("fprintf_s");
     return 0;
 }
 
@@ -572,7 +571,7 @@ int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
 }
 
 int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
-    puts("snprintf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("snprintf_s");
     return 0;
 }
 
@@ -599,22 +598,22 @@ int vsprintf(char *buffer, const char *format, va_list vlist) {
 }
 
 int vprintf_s(const char *format, va_list vlist) {
-    puts("vprintf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vprintf_s");
     return 0;
 }
 
 int vfprintf_s(FILE *stream, const char *format, va_list vlist) {
-    puts("vfprintf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vfprintf_s");
     return 0;
 }
 
 int vsprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
-    puts("vsprintf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vsprintf_s");
     return 0;
 }
 
 int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
-    puts("vsnprintf_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("vsnprintf_s");
     return 0;
 }
 
@@ -696,22 +695,22 @@ int remove(const char *fname) {
 }
 
 int rename(const char *old_filename, const char *new_filename) {
-    puts("rename not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("rename");
     return 0;
 }
 
 FILE *tmpfile(void) {
-    puts("tmpfile not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("tmpfile");
     return 0;
 }
 
 errno_t tmpfile_s(FILE **streamptr) {
-    puts("tmpfile_s not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("tmpfile_s");
     return 0;
 }
 
 char *tmpnam(char *filename) {
-    puts("tmpnam not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("tmpnam");
     return 0;
 }
 
