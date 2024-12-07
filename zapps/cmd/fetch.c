@@ -59,7 +59,7 @@ void print_fs_info(void) {
 
     uint32_t dcount = info[0];
     for (uint32_t i = 0; i < dcount; i++) {
-        printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] * FS_SECTOR_SIZE / 1024);
+        printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] / 2);
         if (i != dcount - 1) printf("\e[0m, \e[96m");
     }
     printf("\e[0m\n");

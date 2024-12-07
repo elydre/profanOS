@@ -9,10 +9,10 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef VGUI_H
-#define VGUI_H
+#ifndef _PROFAN_VGUI_H
+#define _PROFAN_VGUI_H
 
-#include <profan/type.h>
+#include <stdint.h>
 
 typedef struct {
     int width;

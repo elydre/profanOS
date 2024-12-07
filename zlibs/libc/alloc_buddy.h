@@ -21,6 +21,7 @@
 #define BUDDY_ALLOC_H
 
 #ifndef BUDDY_HEADER
+#include <sys/types.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>

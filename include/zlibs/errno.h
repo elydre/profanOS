@@ -9,10 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef ERRNO_H
-#define ERRNO_H
+#ifndef _ERRNO_H
+#define _ERRNO_H
 
-extern int errno;
+typedef int errno_t;
+extern errno_t errno;
 
 #define EOK 0           // No error
 #define EPERM 1         // Not super-user

@@ -14,7 +14,7 @@
 #define DEVIO_LIB_ID   1003
 #define FMOPEN_LIB_ID  1004
 
-#include <profan/type.h>
+#include <stdint.h>
 
 #undef SID_NULL
 #define SID_NULL 0
@@ -78,17 +78,14 @@ enum {
 
 #endif
 
-#ifndef SEEK_SET
+#undef  SEEK_SET
 #define SEEK_SET 0
-#endif
 
-#ifndef SEEK_CUR
+#undef  SEEK_CUR
 #define SEEK_CUR 1
-#endif
 
-#ifndef SEEK_END
+#undef  SEEK_END
 #define SEEK_END 2
-#endif
 
 #ifndef FMOPEN_LIB_C
 

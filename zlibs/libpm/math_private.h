@@ -12,7 +12,7 @@
 #ifndef _MATH_PRIVATE_H
 #define _MATH_PRIVATE_H
 
-#include <profan/type.h>
+#include <stdint.h>
 
 /*
  * ====================================================

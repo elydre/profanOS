@@ -11,7 +11,6 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
-#include <profan/type.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -369,28 +368,6 @@ int getchar(void) {
     return fread(&c, 1, 1, stdin) == 1 ? c : EOF;
 }
 
-char *gets_s(char *str, rsize_t n) {
-    if (n == 0) {
-        return NULL;
-    }
-
-    char *ptr = str;
-    int c;
-    while ((c = getc(stdin)) != EOF && c != '\n') {
-        if (n > 1) {
-            *ptr++ = c;
-            n--;
-        }
-    }
-
-    if (c == EOF && ptr == str) {
-        return NULL;
-    }
-
-    *ptr = 0;
-    return str;
-}
-
 int putchar(int ch) {
     fwrite(&ch, 1, 1, stdout);
     return ch;
@@ -460,21 +437,6 @@ int sscanf(const char *buffer, const char *format, ...) {
     return 0;
 }
 
-int scanf_s(const char *format, ...) {
-    profan_nimpl("scanf_s");
-    return 0;
-}
-
-int fscanf_s(FILE *stream, const char *format, ...) {
-    profan_nimpl("fscanf_s");
-    return 0;
-}
-
-int sscanf_s(const char *buffer, const char *format, ...) {
-    profan_nimpl("sscanf_s");
-    return 0;
-}
-
 int vscanf(const char *format, va_list vlist) {
     profan_nimpl("vscanf");
     return 0;
@@ -487,21 +449,6 @@ int vfscanf(FILE *stream, const char *format, va_list vlist) {
 
 int vsscanf(const char *buffer, const char *format, va_list vlist) {
     profan_nimpl("vsscanf");
-    return 0;
-}
-
-int vscanf_s(const char *format, va_list vlist) {
-    profan_nimpl("vscanf_s");
-    return 0;
-}
-
-int vfscanf_s(FILE *stream, const char *format, va_list vlist) {
-    profan_nimpl("vfscanf_s");
-    return 0;
-}
-
-int vsscanf_s(const char *buffer, const char *format, va_list vlist) {
-    profan_nimpl("vsscanf_s");
     return 0;
 }
 
@@ -549,32 +496,6 @@ int snprintf(char* str, size_t size, const char* format, ...) {
     return count;
 }
 
-int printf_s(const char *format, ...) {
-    profan_nimpl("printf_s");
-    return 0;
-}
-
-int fprintf_s(FILE *stream, const char *format, ...) {
-    profan_nimpl("fprintf_s");
-    return 0;
-}
-
-int sprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
-    int count;
-    va_list args;
-
-    va_start(args, format);
-    count = vsnprintf(buffer, bufsz, format, args);
-    va_end(args);
-
-    return count;
-}
-
-int snprintf_s(char *buffer, rsize_t bufsz, const char *format, ...) {
-    profan_nimpl("snprintf_s");
-    return 0;
-}
-
 int vprintf(const char *format, va_list vlist) {
     int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
     fwrite(g_printf_buffer, 1, count, stdout);
@@ -595,26 +516,6 @@ int vfprintf(FILE *stream, const char *format, va_list vlist) {
 
 int vsprintf(char *buffer, const char *format, va_list vlist) {
     return vsnprintf(buffer, -1, format, vlist);
-}
-
-int vprintf_s(const char *format, va_list vlist) {
-    profan_nimpl("vprintf_s");
-    return 0;
-}
-
-int vfprintf_s(FILE *stream, const char *format, va_list vlist) {
-    profan_nimpl("vfprintf_s");
-    return 0;
-}
-
-int vsprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
-    profan_nimpl("vsprintf_s");
-    return 0;
-}
-
-int vsnprintf_s(char *buffer, rsize_t bufsz, const char *format, va_list vlist) {
-    profan_nimpl("vsnprintf_s");
-    return 0;
 }
 
 long ftell(FILE *stream) {
@@ -704,32 +605,8 @@ FILE *tmpfile(void) {
     return 0;
 }
 
-errno_t tmpfile_s(FILE **streamptr) {
-    profan_nimpl("tmpfile_s");
-    return 0;
-}
-
 char *tmpnam(char *filename) {
     profan_nimpl("tmpnam");
-    return 0;
-}
-
-errno_t tmpnam_s(char *filename_s, rsize_t maxsize) {
-    if (maxsize < 12) {
-        return 1;
-    }
-
-    uint32_t seed = syscall_timer_get_ms();
-
-    strcpy(filename_s, "/tmp/");
-    filename_s[11] = 0;
-    do {
-        for (int i = 5; i < 11; i++) {
-            seed = seed * 1103515245 + 12345;
-            filename_s[i] = 'a' + seed % 26;
-        }
-    } while (!IS_SID_NULL(fu_path_to_sid(SID_ROOT, filename_s)));
-
     return 0;
 }
 

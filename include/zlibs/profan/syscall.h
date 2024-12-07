@@ -9,10 +9,12 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef SYSCALL_H
-#define SYSCALL_H
+#ifndef _PROFAN_SYSCALL_H
+#define _PROFAN_SYSCALL_H
 
-#include <profan/type.h>
+#include <profan/types.h>
+#include <stdint.h>
+#include <time.h> // tm_t
 
 /**********************************
  *                               *

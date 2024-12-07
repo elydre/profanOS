@@ -11,10 +11,9 @@
 
 #define _SYSCALL_CREATE_STATIC
 #include <profan/syscall.h>
-
 #include <profan/filesys.h>
-#include <profan/type.h>
 
+#include <stdint.h>
 #include <stdarg.h>
 
 #define malloc(size) ((void *) syscall_mem_alloc((size), 0, 1))

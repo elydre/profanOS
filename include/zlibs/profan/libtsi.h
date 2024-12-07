@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef LIBTSI_H
-#define LIBTSI_H
+#ifndef _PROFAN_LIBTSI_H
+#define _PROFAN_LIBTSI_H
 
 #include <stdint.h>
 

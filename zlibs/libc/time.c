@@ -10,7 +10,6 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
-#include <profan/type.h>
 #include <profan.h>
 
 #include <stdlib.h>

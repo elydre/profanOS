@@ -9,31 +9,31 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef FCNTL_H
-#define FCNTL_H
+#ifndef _FCNTL_H
+#define _FCNTL_H
 
-#include <profan/type.h>
+#include <sys/types.h>
 
-#define O_RDONLY    0x0000      // open for reading only
-#define O_WRONLY    0x0001      // open for writing only
-#define O_RDWR      0x0002      // open for reading and writing
-#define O_ACCMODE   0x0003      // mask for above modes
+#define O_RDONLY    0x0000  // open for reading only
+#define O_WRONLY    0x0001  // open for writing only
+#define O_RDWR      0x0002  // open for reading and writing
+#define O_ACCMODE   0x0003  // mask for above modes
 
-#define O_NONBLOCK  0x0004      // no delay
-#define O_APPEND    0x0008      // set append mode
+#define O_NONBLOCK  0x0004  // no delay
+#define O_APPEND    0x0008  // set append mode
 
-#define O_SYNC      0x0080      // synchronous writes
-#define O_CREAT     0x0200      // create if nonexistent
-#define O_TRUNC     0x0400      // truncate to zero length
-#define O_EXCL      0x0800      // error if already exists
+#define O_SYNC      0x0080  // synchronous writes
+#define O_CREAT     0x0200  // create if nonexistent
+#define O_TRUNC     0x0400  // truncate to zero length
+#define O_EXCL      0x0800  // error if already exists
 
-#define O_DSYNC     O_SYNC      // synchronous data writes
-#define O_RSYNC     O_SYNC      // synchronous reads
+#define O_DSYNC     O_SYNC  // synchronous data writes
+#define O_RSYNC     O_SYNC  // synchronous reads
 
-#define O_NOCTTY    0x8000      // don't assign controlling terminal
+#define O_NOCTTY    0x8000  // don't assign controlling terminal
 
-#define O_CLOEXEC   0x10000     // atomically set FD_CLOEXEC
-#define O_DIRECTORY 0x20000     // fail if not a directory
+#define O_CLOEXEC   0x10000 // atomically set FD_CLOEXEC
+#define O_DIRECTORY 0x20000 // fail if not a directory
 
 #define F_DUPFD     0       // duplicate file descriptor
 #define F_GETFD     1       // get file descriptor flags

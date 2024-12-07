@@ -121,7 +121,6 @@ static const char a64l_table[TABLE_SIZE] = {
   /* 0x70 */  53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
 };
 
-
 long int a64l(const char *string) {
     const char *ptr = string;
     unsigned long int result = 0ul;
@@ -253,9 +252,16 @@ void *bsearch(register const void *key, const void *base0, size_t nmemb, registe
     return NULL;
 }
 
-char *canonicalize_file_name(const char *name) {
-    profan_nimpl("canonicalize_file_name");
-    return NULL;
+int clearenv(void) {
+    if (environ == NULL)
+        return 0;
+
+    for (int i = 0; environ[i] != NULL; i++)
+        free(environ[i]);
+    free(environ);
+
+    environ = NULL;
+    return 0;
 }
 
 div_t div(int numer, int denom) {
@@ -265,31 +271,6 @@ div_t div(int numer, int denom) {
     return(result);
 }
 
-double drand48(void) {
-    profan_nimpl("drand48");
-    return 0.0;
-}
-
-int drand48_r(struct drand48_data *buffer, double *result) {
-    profan_nimpl("drand48_r");
-    return 0;
-}
-
-int __drand48_iterate(unsigned short int xsubi[3], struct drand48_data *buffer) {
-    profan_nimpl("__drand48_iterate");
-    return 0;
-}
-
-double erand48(unsigned short int xsubi[3]) {
-    profan_nimpl("erand48");
-    return 0.0;
-}
-
-int erand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, double *result) {
-    profan_nimpl("erand48_r");
-    return 0;
-}
-
 void exit(int rv) {
     if (g_entry_exit != NULL) {
         void (*entry_exit)(int) = g_entry_exit;
@@ -297,11 +278,6 @@ void exit(int rv) {
     }
     fputs("no entry_exit function found\n", stderr);
     _exit(rv); // unistd
-}
-
-char *gcvt(double number, int ndigit, char *buf) {
-    profan_nimpl("gcvt");
-    return NULL;
 }
 
 char *getenv(const char *var) {
@@ -320,24 +296,12 @@ char *getenv(const char *var) {
     return NULL;
 }
 
-int getpt(void) {
-    profan_nimpl("getpt");
+int grantpt(int fd) {
+    profan_nimpl("grantpt");
     return 0;
 }
 
-long int jrand48(unsigned short int xsubi[3]) {
-    profan_nimpl("jrand48");
-    return 0;
-}
-
-int jrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result) {
-    profan_nimpl("jrand48_r");
-    return 0;
-}
-
-// FROM THE STDLIB :
-/* Conversion table.  */
-static const char conv_table[64] = {
+static const char l64a_conv_table[64] = {
   '.', '/', '0', '1', '2', '3', '4', '5',
   '6', '7', '8', '9', 'A', 'B', 'C', 'D',
   'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -353,15 +317,14 @@ char *l64a(long int n) {
     static char result[7];
     char *p;
 
-    /* The standard says that only 32 bits are used.  */
+    // The standard says that only 32 bits are used
     if (sizeof(m) != 4)
         m &= 0xffffffff;
 
-    /* The value for N == 0 is defined to be the empty string,
-    * this code provides that as well. */
+    // The value for n == 0 is defined to be the empty string
     p = result;
     while (m) {
-        *p++ = conv_table[m & 0x3f];
+        *p++ = l64a_conv_table[m & 0x3f];
         m >>= 6;
     }
     *p = '\0';
@@ -370,10 +333,6 @@ char *l64a(long int n) {
 
 long int labs(long int j) {
     return (j >= 0) ? j : -j;
-}
-
-void lcong48(unsigned short int param[7]) {
-    profan_nimpl("lcong48");
 }
 
 ldiv_t ldiv(long int numer, long int denom) {
@@ -394,16 +353,6 @@ lldiv_t lldiv(long long int numer, long long int denom) {
     return result;
 }
 
-long int lrand48(void) {
-    profan_nimpl("lrand48");
-    return 0;
-}
-
-int lrand48_r(struct drand48_data *buffer, long int *result) {
-    profan_nimpl("lrand48_r");
-    return 0;
-}
-
 int mblen(register const char *s, size_t n) {
     profan_nimpl("mblen");
     return 0;
@@ -419,49 +368,9 @@ int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
     return 0;
 }
 
-char *mkdtemp(char *template) {
-    profan_nimpl("mkdtemp");
-    return NULL;
-}
-
-int mkostemp(char *template, int flags) {
-    profan_nimpl("mkostemp");
-    return 0;
-}
-
-int mkostemp64(char *template, int flags) {
-    profan_nimpl("mkostemp64");
-    return 0;
-}
-
-int mkostemps(char *template, int suffixlen, int flags) {
-    profan_nimpl("mkostemps");
-    return 0;
-}
-
-int mkostemps64(char *template, int suffixlen, int flags) {
-    profan_nimpl("mkostemps64");
-    return 0;
-}
-
-int mkstemp(char *template) {
+char *mkstemp(char *template) {
     profan_nimpl("mkstemp");
-    return 0;
-}
-
-int mkstemp64(char *template) {
-    profan_nimpl("mkstemp64");
-    return 0;
-}
-
-int mkstemps(char *template, int suffixlen) {
-    profan_nimpl("mkstemps");
-    return 0;
-}
-
-int mkstemps64(char *template, int suffixlen) {
-    profan_nimpl("mkstemps64");
-    return 0;
+    return NULL;
 }
 
 char *mktemp(char *template) {
@@ -469,43 +378,13 @@ char *mktemp(char *template) {
     return NULL;
 }
 
-long int mrand48(void) {
-    profan_nimpl("mrand48");
+int putenv(char *string) {
+    profan_nimpl("putenv");
     return 0;
 }
 
-int mrand48_r(struct drand48_data *buffer, long int *result) {
-    profan_nimpl("mrand48_r");
-    return 0;
-}
-
-long int nrand48(unsigned short int xsubi[3]) {
-    profan_nimpl("nrand48");
-    return 0;
-}
-
-int nrand48_r(unsigned short int xsubi[3], struct drand48_data *buffer, long int *result) {
-    profan_nimpl("nrand48_r");
-    return 0;
-}
-
-int on_exit(oefuncp func, void *arg) {
-    profan_nimpl("on_exit");
-    return 0;
-}
-
-int posix_memalign(void **memptr, size_t alignment, size_t size) {
-    profan_nimpl("posix_memalign");
-    return 0;
-}
-
-char *ptsname(int fd) {
-    profan_nimpl("ptsname");
-    return NULL;
-}
-
-void qsort(void *base, size_t nel, size_t width, __compar_fn_t comp) {
-    // bubble sort
+void qsort(void *base, size_t nel, size_t width, int (*comp)(const void *, const void *)) {
+    // bubble sort, can be improved
     char *arr = (char *) base;
     char temp[width];
     for (size_t i = 0; i < nel; i++) {
@@ -519,17 +398,10 @@ void qsort(void *base, size_t nel, size_t width, __compar_fn_t comp) {
     }
 }
 
-void qsort_r(void *base, size_t nel, size_t width, __compar_d_fn_t comp, void *arg) {
-    profan_nimpl("qsort_r");
-}
-
 int rand(void) {
     return rand_r(&g_rand_seed) & RAND_MAX;
 }
 
-/* This algorithm is mentioned in the ISO C standard, here extended
-   for 32 bits.  */
-// FROM THE STDLIB
 int rand_r(unsigned int *seed) {
     unsigned int next = *seed;
     int result;
@@ -553,39 +425,9 @@ int rand_r(unsigned int *seed) {
     return result;
 }
 
-long int random(void) {
-    profan_nimpl("random");
-    return 0;
-}
-
-int random_r(struct random_data *buf, int32_t *result) {
-    profan_nimpl("random_r");
-    return 0;
-}
-
-char *realpath(const char *path, char *got_path) {
+char *realpath(const char *path, char *resolved_path) {
     profan_nimpl("realpath");
     return NULL;
-}
-
-int rpmatch(const char *__response) {
-    profan_nimpl("rpmatch");
-    return 0;
-}
-
-char *secure_getenv(const char *name) {
-    profan_nimpl("secure_getenv");
-    return NULL;
-}
-
-unsigned short int *seed48(unsigned short int seed16v[3]) {
-    profan_nimpl("seed48");
-    return NULL;
-}
-
-int seed48_r(unsigned short int seed16v[3], struct drand48_data *buffer) {
-    profan_nimpl("seed48_r");
-    return 0;
 }
 
 int setenv(const char *name, const char *value, int replace) {
@@ -629,6 +471,24 @@ int setenv(const char *name, const char *value, int replace) {
     return 0;
 }
 
+void srand(unsigned int seed) {
+    g_rand_seed = seed;
+}
+
+int system(const char *command) {
+    if (access(SYSTEM_SHELL_PATH, X_OK) == -1) {
+        fputs("libC: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
+        return -1;
+    }
+
+    return run_ifexist(SYSTEM_SHELL_PATH, 3, ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}));
+}
+
+int unlockpt(int fd) {
+    profan_nimpl("unlockpt");
+    return 0;
+}
+
 int unsetenv(const char *name) {
     if (environ == NULL)
         return 0;
@@ -649,33 +509,18 @@ int unsetenv(const char *name) {
     return 0;
 }
 
-int clearenv(void) {
-    if (environ == NULL)
-        return 0;
+void *valloc(size_t size) {
+    profan_nimpl("valloc");
+    return NULL;
+}
 
-    for (int i = 0; environ[i] != NULL; i++)
-        free(environ[i]);
-    free(environ);
-
-    environ = NULL;
+size_t wcstombs(char * restrict s, const wchar_t * restrict pwcs, size_t n) {
+    profan_nimpl("wcstombs");
     return 0;
 }
 
-int putenv(char *string) {
-    profan_nimpl("putenv");
-    return 0;
-}
-
-void srand(unsigned int seed) {
-    g_rand_seed = seed;
-}
-
-void srand48(long seedval) {
-    profan_nimpl("srand48");
-}
-
-int srand48_r(long int seedval, struct drand48_data *buffer) {
-    profan_nimpl("srand48_r");
+int wctomb(char *s, wchar_t wchar) {
+    profan_nimpl("wctomb");
     return 0;
 }
 
@@ -759,11 +604,6 @@ double strtod(const char *str, char **ptr) {
     return 0.0;
 }
 
-long double strtod_l(const char *str, char **end, locale_t loc) {
-    profan_nimpl("strtod_l");
-    return 0;
-}
-
 long double strtold(const char *str, char **end) {
     profan_nimpl("strtold");
     return 0;
@@ -773,24 +613,13 @@ float strtof(const char *str, char **end) {
     return (float) strtod((char *) str, end);
 }
 
-long double strtof_l(const char *str, char **end, locale_t loc) {
-    profan_nimpl("strtof_l");
-    return 0;
-}
-
-long int strtol_l(const char *str, char **end, int base, locale_t loc);
 long int strtol(const char *str, char **end, int base) {
-    return strtol_l(str, end, base, NULL);
-}
-
-long int strtol_l(const char *str, char **end, int base, locale_t loc) {
     const char *s;
     unsigned long acc;
     char c;
     unsigned long cutoff;
     int neg, any, cutlim;
 
-    // NORMALIZE_LOCALE(loc);
     /*
      * Skip white space and pick up leading +/- sign if any.
      * If base is 0, allow 0x for hex and 0 for octal, else
@@ -881,11 +710,6 @@ long long strtoll(const char *str, char **end, int base) {
     return 0;
 }
 
-long long int strtoll_l(const char *str, char **end, int base, locale_t loc) {
-    profan_nimpl("strtoll_l");
-    return 0;
-}
-
 unsigned long strtoul(const char *nptr, char **endptr, register int base) {
     register const char *s = nptr;
     register unsigned long acc;
@@ -937,11 +761,6 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base) {
     if (endptr != 0)
         *endptr = (char *)(any ? s - 1 : nptr);
     return (acc);
-}
-
-unsigned long int strtoul_l(const char *str, char **end, int base, locale_t loc) {
-    profan_nimpl("strtoul_l");
-    return 0;
 }
 
 unsigned long long __strtoull_u64div(unsigned long long dividend, unsigned divisor,
@@ -1023,43 +842,8 @@ noconv:
     return (acc);
 }
 
-unsigned long long int strtoull_l(const char *str, char **end, int base, locale_t loc) {
-    profan_nimpl("strtoull_l");
-    return 0;
-}
-
-int system(const char *command) {
-    if (access(SYSTEM_SHELL_PATH, X_OK) == -1) {
-        fputs("libC: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
-        return -1;
-    }
-
-    return run_ifexist(SYSTEM_SHELL_PATH, 3, ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}));
-}
-
-int grantpt(int fd) {
-    profan_nimpl("grantpt");
-    return 0;
-}
-
-int unlockpt(int fd) {
-    profan_nimpl("unlockpt");
-    return 0;
-}
-
-#define __ptr_t void *
-__ptr_t valloc(size_t size) {
-    profan_nimpl("valloc");
-    return NULL;
-}
-
 double wcstod(const wchar_t *nptr, wchar_t **endptr) {
     profan_nimpl("wcstod");
-    return 0;
-}
-
-long double wcstod_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc) {
-    profan_nimpl("wcstod_l");
     return 0;
 }
 
@@ -1068,18 +852,8 @@ float wcstof(const wchar_t *nptr, wchar_t **endptr) {
     return 0;
 }
 
-long double wcstof_l(const wchar_t *nptr, wchar_t **endptr, locale_t loc) {
-    profan_nimpl("wcstof_l");
-    return 0;
-}
-
 long int wcstol(const wchar_t *nptr, wchar_t **endptr, int base) {
     profan_nimpl("wcstol");
-    return 0;
-}
-
-long long int wcstol_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    profan_nimpl("wcstol_l");
     return 0;
 }
 
@@ -1088,23 +862,8 @@ long long int wcstoll(const wchar_t *nptr, wchar_t **endptr, int base) {
     return 0;
 }
 
-long long int wcstoll_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    profan_nimpl("wcstoll_l");
-    return 0;
-}
-
-size_t wcstombs(char * restrict s, const wchar_t * restrict pwcs, size_t n) {
-    profan_nimpl("wcstombs");
-    return 0;
-}
-
 unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base) {
     profan_nimpl("wcstoul");
-    return 0;
-}
-
-unsigned long int wcstoul_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    profan_nimpl("wcstoul_l");
     return 0;
 }
 
@@ -1113,17 +872,7 @@ unsigned long long int wcstoull(const wchar_t *nptr, wchar_t **endptr, int base)
     return 0;
 }
 
-unsigned long long int wcstoull_l(const wchar_t *nptr, wchar_t **endptr, int base, locale_t loc) {
-    profan_nimpl("wcstoull_l");
-    return 0;
-}
-
-int wctomb(char *s, wchar_t wchar) {
-    profan_nimpl("wctomb");
-    return 0;
-}
-
-void I_swap(char *x, char *y) {
+static void I_swap(char *x, char *y) {
     char t = *x;
     *x = *y;
     *y = t;

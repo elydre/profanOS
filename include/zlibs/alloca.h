@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef ALLOCA_H
-#define ALLOCA_H
+#ifndef _ALLOCA_H
+#define _ALLOCA_H
 
 #include <stddef.h>
 

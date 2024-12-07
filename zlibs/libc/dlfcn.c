@@ -9,10 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/type.h>
 #include <profan.h>
-
-#include <stdio.h>
+#include <stddef.h>
 
 // real function are defined in the dynamic linker (/bin/sys/deluge)
 // this file is just a stratagem to make the compiler happy

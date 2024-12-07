@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef MOUSE_H
-#define MOUSE_H
+#ifndef _PROFAN_MOUSE_H
+#define _PROFAN_MOUSE_H
 
 #include <profan/syscall.h>
 

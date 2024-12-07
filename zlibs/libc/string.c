@@ -10,7 +10,6 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
-#include <profan/type.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -283,11 +282,6 @@ int strcasecmp(const char *s1, const char *s2) {
     return result;
 }
 
-int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc) {
-    profan_nimpl("strcasecmp_l");
-    return 0;
-}
-
 char *strcasestr(const char *s, const char *find) {
     size_t len;
     char c, sc;
@@ -500,11 +494,6 @@ int strncasecmp(register const char *s1, register const char *s2, size_t n) {
         ucs2++;
     }
     return d;
-}
-
-int strncasecmp_l(register const char *s1, register const char *s2, size_t n, locale_t loc) {
-    profan_nimpl("strncasecmp_l");
-    return 0;
 }
 
 char *strncat(char *restrict s1, register const char *restrict s2,
