@@ -173,6 +173,10 @@ int main(void) {
             run_ifexist_full((runtime_args_t){"/bin/tools/usage.elf", 0, NULL, NULL, 0}, &usage_pid);
     } else {
         syscall_kprint("["LOADER_NAME"] Using kernel output for stdout\n");
+        if (fm_reopen(0, "/dev/kterm", O_RDONLY)  < 0 ||
+            fm_reopen(1, "/dev/kterm", O_WRONLY)  < 0 ||
+            fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
+        ) syscall_kprint("["LOADER_NAME"] Failed to redirect to kterm\n");
         set_env("TERM=/dev/kterm");
     }
 
