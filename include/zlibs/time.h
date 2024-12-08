@@ -12,6 +12,7 @@
 #ifndef _TIME_H
 #define _TIME_H
 
+#include <profan/types.h> // sigevent_t
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>

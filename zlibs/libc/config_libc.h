@@ -12,11 +12,12 @@
 #ifndef CONFIG_LIBC_H
 #define CONFIG_LIBC_H
 
-#define PROFAN_LIBC_VERSION "2.1 rev 0"
+#define PROFAN_LIBC_VERSION "2.2 rev 1"
 
 /****** PROFAN EXTRA ***********************************************/
 
 #define NOT_IMPLEMENTED_ABORT 1 // exit on not implemented function
+#define _JOIN_LIBCC_INSIDE 1    // create 64-bit division functions
 
 
 /****** STDIO ******************************************************/

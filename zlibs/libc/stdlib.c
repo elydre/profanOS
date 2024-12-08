@@ -763,21 +763,6 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base) {
     return (acc);
 }
 
-unsigned long long __strtoull_u64div(unsigned long long dividend, unsigned divisor,
-                                int *remainder) {
-    unsigned long long quotient = 0;
-    unsigned long long temp = 0;
-    for (int i = 63; i >= 0; i--) {
-        temp = (temp << 1) | ((dividend >> i) & 1);
-        if (temp >= divisor) {
-            temp -= divisor;
-            quotient |= 1ull << i;
-        }
-    }
-    *remainder = temp;
-    return quotient;
-}
-
 unsigned long long strtoull(const char *restrict nptr, char **restrict endptr, int base) {
     const char *s;
     unsigned long long acc;
@@ -809,7 +794,9 @@ unsigned long long strtoull(const char *restrict nptr, char **restrict endptr, i
     if (base < 2 || base > 36)
         goto noconv;
 
-    cutoff = __strtoull_u64div(ULLONG_MAX, base, &cutlim);
+    cutoff = ULLONG_MAX / base;
+    cutlim = ULLONG_MAX % base;
+
     for ( ; ; c = *s++) {
         if (c >= '0' && c <= '9')
             c -= '0';
