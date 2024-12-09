@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define TSI_VERSION "0.7.1"
+#define TSI_VERSION "0.7.2"
 
 #define TSI_TEXT_COLOR   0x0F
 #define TSI_TITLE_COLOR  0x70
@@ -40,7 +40,7 @@ int SCREEN_H;
 
 static void clear_screen(void) {
     syscall_kprint("\e[2J");
-    panda_print_string("\e[2J", 4, 0);
+    panda_print_string("\e[2J", 4, -1, 0x0F);
 }
 
 static void tsi_draw_title(const char *title) {
