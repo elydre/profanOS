@@ -120,7 +120,7 @@ int dev_panda(int id, void *buffer, uint32_t size, uint8_t mode) {
         case FCTF_READ:
             return keyboard_read(buffer, size, "/dev/panda");
         case FCTF_WRITE:
-            panda_print_string((char *) buffer, size, -1);
+            panda_print_string((char *) buffer, size, -1, 0x0F);
             return size;
         default:
             return 0;
@@ -138,9 +138,7 @@ int dev_pander(int id, void *buffer, uint32_t size, uint8_t mode) {
         case FCTF_READ:
             return keyboard_read(buffer, size, "/dev/pander");
         case FCTF_WRITE:
-            color = panda_print_string((char *) buffer, size, color);
-            if (color == 0x0F)
-                color = 0x0C;
+            color = panda_print_string((char *) buffer, size, color, 0x0C);
             return size;
         default:
             return 0;
