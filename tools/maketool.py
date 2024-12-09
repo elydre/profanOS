@@ -53,7 +53,9 @@ ZLIBS_MOD = "mod" # zlibs/mod
 LINK_FILENAME = "_link.txt" # multi file link
 LINK_LINE_MAX = 12          # max line for link instructions
 
-CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686 -nostdinc -D__profanOS__"
+CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc "
+CFLAGS    += "-Wall -Wextra -D__profanOS__"
+
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Werror"
 ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror"
