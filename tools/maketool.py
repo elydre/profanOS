@@ -16,9 +16,9 @@ import threading
 from time import sleep
 
 # SETTINGS
-SHOW_CMD    = False     # show full command line [0]
-COMPCT_LINE = True      # cut line if too long [1]
-LOG_FILE    = True      # write build logs file [1]
+SHOW_CMD    = False     # show full command line     [0]
+COMPCT_LINE = True      # cut line if too long       [1]
+LOG_FILE    = True      # write build logs file      [1]
 DEBUG_MKFS  = False     # run makefsys with valgrind [0]
 
 # SETUP
@@ -50,24 +50,26 @@ ZLIBS_DIR = "zlibs"
 ZAPPS_BIN = "sys" # zapps/sys
 ZLIBS_MOD = "mod" # zlibs/mod
 
-CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686 -nostdinc"
+LINK_FILENAME = "_link.txt" # multi file link
+LINK_LINE_MAX = 12          # max line for link instructions
+
+CFLAGS     = "-m32 -ffreestanding -Wall -Wextra -fno-exceptions -fno-stack-protector -march=i686 -nostdinc -D__profanOS__"
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Werror"
 ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror"
 
-KERN_LINK = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
+KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 
-QEMU_SPL = "qemu-system-i386"
-QEMU_KVM = "qemu-system-i386 -enable-kvm"
+QEMU_SPL   = "qemu-system-i386"
+QEMU_KVM   = "qemu-system-i386 -enable-kvm"
 
-QEMU_SERIAL = "-serial stdio"
-QEMU_AUDIO  = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
+QEMU_ARGS  = "-serial stdio"
+QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
 
-LD_LINE_MAX = 12
 
 for e in ZHEADERS:
     if os.path.exists(e):
@@ -253,7 +255,7 @@ def build_disk_elfs():
         print_info_line(name)
         required_libs = []
         with open(name, "r") as f:
-            for _ in range(LD_LINE_MAX):
+            for _ in range(LINK_LINE_MAX):
                 first_line = f.readline()
                 if not first_line.startswith("// @LINK:"):
                     continue
@@ -279,6 +281,25 @@ def build_disk_elfs():
         print_info_line(name)
         print_and_exec(f"{CC} {extra_flags} -c {name} -o {fname}.o {ZLIB_FLAGS}")
         total -= 1
+
+    def link_multifile_elf(name, libs_name):
+        objs = files_in_dir_rec(f"{OUT_DIR}/{name}", ".o")
+        print_info_line(f"[link] {name}.elf")
+        # read link file to get required libs
+        required_libs = []
+        try:
+            with open(f"{name}/{LINK_FILENAME}", "r") as f:
+                lines = f.readlines()
+                for line in lines:
+                    required_libs.extend(line.replace("\n", "").replace(",", " ").split())
+        except FileNotFoundError: pass
+        for lib in required_libs:
+            if lib not in libs_name:
+                cprint(COLOR_EROR, f"maketool: {name}: library '{lib}' not found\n{' '*10}available: {libs_name}")
+                os._exit(1)
+        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs " +
+                          f"-o {OUT_DIR}/{name}.elf {OUT_DIR}/make/entry_elf.o {' '.join(objs)} -lc " +
+                            ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
 
     # detect zlibs
     lib_build_list = []
@@ -414,11 +435,7 @@ def build_disk_elfs():
 
     # linking multi file zapps
     for name in list(set([os.path.dirname(name) for name in dir_build_list])):
-        objs = files_in_dir_rec(f"{OUT_DIR}/{name}", ".o")
-        print_info_line(f"[link] {name}.elf")
-        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs " +
-                          f"-o {OUT_DIR}/{name}.elf {OUT_DIR}/make/entry_elf.o {' '.join(objs)} -lc")
-
+        link_multifile_elf(name, libs_name)
 
 def make_iso(force = False, more_option = False):
     elf_image()
@@ -572,7 +589,7 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
 
-    qemu_args = QEMU_SERIAL
+    qemu_args = QEMU_ARGS
     if audio: qemu_args += f" {QEMU_AUDIO}"
 
     cprint(COLOR_INFO, "starting qemu...")
