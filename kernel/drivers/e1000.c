@@ -16,13 +16,51 @@
 #include <drivers/e1000.h>
 #include <cpu/isr.h>
 
+
 //----------------------------------------------------//
+
+
+#define E1000_NUM_RX_DESC 32
+#define E1000_NUM_TX_DESC 8
+
+#define TSTA_DD                         (1 << 0)    // Descriptor Done
+#define TSTA_EC                         (1 << 1)    // Excess Collisions
+#define TSTA_LC                         (1 << 2)    // Late Collision
+#define LSTA_TU                         (1 << 3)    // Transmit Underrun
+
+struct e1000_rx_desc {
+        volatile uint32_t addr_low;
+        volatile uint32_t addr_high;
+        volatile uint16_t length;
+        volatile uint16_t checksum;
+        volatile uint8_t status;
+        volatile uint8_t errors;
+        volatile uint16_t special;
+} __attribute__((packed));
+
+struct e1000_tx_desc {
+        volatile uint32_t addr_low;
+        volatile uint32_t addr_high;
+        volatile uint16_t length;
+        volatile uint8_t cso;
+        volatile uint8_t cmd;
+        volatile uint8_t status;
+        volatile uint8_t css;
+        volatile uint16_t special;
+} __attribute__((packed));
+
+typedef struct e1000_rx_desc e1000_rx_desc_t;
+typedef struct e1000_tx_desc e1000_tx_desc_t;
 
 typedef struct {
     uint8_t exists;
     uint8_t mac[6];
     pci_device_t pci;
     uint8_t irq;
+    e1000_rx_desc_t *rx_descs_phys[E1000_NUM_RX_DESC];
+    e1000_tx_desc_t *tx_descs_phys[E1000_NUM_TX_DESC];
+    uint16_t rx_cur;      // Current Receive Descriptor Buffer
+    uint16_t tx_cur;      // Current Transmit Descriptor Buffer
 } e1000_t;
 
 uint32_t endian_switch_u32(uint32_t x) {
@@ -74,9 +112,78 @@ void scan_pci_for_e1000(e1000_t *e1000) {
 }
 
 void e1000_handler(registers_t *regs) {
-
+    kprintf("KAKAKAKAKAKAKAKAKA\n");
 }
 
+void e1000_rx_init(e1000_t *e1000) {
+    uint8_t *ptr = NULL;
+    e1000_rx_desc_t *descs;
+
+    ptr = malloc(sizeof(struct e1000_rx_desc)*E1000_NUM_RX_DESC + 16);
+
+    descs = (struct e1000_rx_desc *)ptr;
+    for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
+        e1000->rx_descs_phys[i] = (e1000_rx_desc_t *)((uint8_t *)descs + i*16);
+        e1000->rx_descs_phys[i]->addr_high = 0;
+        e1000->rx_descs_phys[i]->addr_low = (uint32_t)(uint8_t *)(malloc(8192 + 16));
+        e1000->rx_descs_phys[i]->status = 0;
+    }
+    pci_write_u32(&(e1000->pci), 0,REG_TXDESCLO, 0);
+    pci_write_u32(&(e1000->pci), 0,REG_TXDESCHI, (uint32_t)ptr);
+
+
+    pci_write_u32(&(e1000->pci), 0,REG_RXDESCLO, (uint32_t)ptr);
+    pci_write_u32(&(e1000->pci), 0,REG_RXDESCHI, 0);
+
+    pci_write_u32(&(e1000->pci), 0, REG_RXDESCLEN, E1000_NUM_RX_DESC * 16);
+
+    pci_write_u32(&(e1000->pci), 0, REG_RXDESCHEAD, 0);
+    pci_write_u32(&(e1000->pci), 0, REG_RXDESCTAIL, E1000_NUM_RX_DESC-1);
+    e1000->rx_cur = 0;
+    pci_write_u32(&(e1000->pci), 0, REG_RCTRL, RCTL_EN| RCTL_SBP| RCTL_UPE | RCTL_MPE | RCTL_LBM_NONE | RTCL_RDMTS_HALF | RCTL_BAM | RCTL_SECRC  | RCTL_BSIZE_8192);
+}
+
+void e1000_tx_init(e1000_t *e1000) {
+    uint8_t *  ptr;
+    struct e1000_tx_desc *descs;
+    // Allocate buffer for receive descriptors. For simplicity, in my case khmalloc returns a virtual address that is identical to it physical mapped address.
+    // In your case you should handle virtual and physical addresses as the addresses passed to the NIC should be physical ones
+    ptr = (uint8_t *)(malloc(sizeof(struct e1000_tx_desc)*E1000_NUM_TX_DESC + 16));
+
+    descs = (struct e1000_tx_desc *)ptr;
+    for(int i = 0; i < E1000_NUM_TX_DESC; i++)
+    {
+        e1000->tx_descs_phys[i] = (struct e1000_tx_desc *)((uint8_t*)descs + i*16);
+        e1000->tx_descs_phys[i]->addr_high = 0;
+        e1000->tx_descs_phys[i]->addr_low = 0;
+        e1000->tx_descs_phys[i]->cmd = 0;
+        e1000->tx_descs_phys[i]->status = TSTA_DD;
+    }
+
+    pci_write_u32(&(e1000->pci), 0, REG_TXDESCHI, (uint32_t)((uint64_t)ptr >> 32) );
+    pci_write_u32(&(e1000->pci), 0, REG_TXDESCLO, (uint32_t)((uint64_t)ptr & 0xFFFFFFFF));
+
+
+    //now setup total length of descriptors
+    pci_write_u32(&(e1000->pci), 0, REG_TXDESCLEN, E1000_NUM_TX_DESC * 16);
+
+
+    //setup numbers
+    pci_write_u32(&(e1000->pci), 0, REG_TXDESCHEAD, 0);
+    pci_write_u32(&(e1000->pci), 0, REG_TXDESCTAIL, 0);
+    e1000->tx_cur = 0;
+    pci_write_u32(&(e1000->pci), 0, REG_TCTRL,  TCTL_EN
+        | TCTL_PSP
+        | (15 << TCTL_CT_SHIFT)
+        | (64 << TCTL_COLD_SHIFT)
+        | TCTL_RTLC);
+
+    // This line of code overrides the one before it but I left both to highlight that the previous one works with e1000 cards, but for the e1000e cards
+    // you should set the TCTRL register as follows. For detailed description of each bit, please refer to the Intel Manual.
+    // In the case of I217 and 82577LM packets will not be sent if the TCTRL is not configured using the following bits.
+    pci_write_u32(&(e1000->pci), 0, REG_TCTRL,  0b0110000000000111111000011111010);
+    pci_write_u32(&(e1000->pci), 0, REG_TIPG,  0x0060200A);
+}
 
 int e1000_init(void) {
     e1000_t device = {0};
@@ -94,6 +201,27 @@ int e1000_init(void) {
     while (!(pci_read_u32(&(device.pci), 0, REG_STATUS))) {
         // wait the card to be prepared
     }
+    for (int i = 0; i < 0x80; i++)
+        pci_write_u32(&(device.pci), 0, 0x5200 + i * 4, 0);
+    asm volatile ("cli");
     register_interrupt_handler(device.irq + 32, e1000_handler);
+    pci_write_u32(&(device.pci), 0, REG_IMASK, 0x1F6DC);
+    pci_write_u32(&(device.pci), 0, REG_IMASK, 0xFF & ~4);
+    pci_read_u32(&(device.pci), 0, 0xc0);
+    asm volatile ("sti");
+    return 0;
+}
+
+
+int e1000_sendPacket(e1000_t *device, const void * p_data, uint16_t p_len)
+{
+    device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
+    device->tx_descs_phys[device->tx_cur]->length = p_len;
+    device->tx_descs_phys[device->tx_cur]->cmd = CMD_EOP | CMD_IFCS | CMD_RS;
+    device->tx_descs_phys[device->tx_cur]->status = 0;
+    uint8_t old_cur = device->tx_cur;
+    device->tx_cur = (device->tx_cur + 1) % E1000_NUM_TX_DESC;
+    pci_write_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
+    while(!(device->tx_descs_phys[old_cur]->status & 0xff));
     return 0;
 }
