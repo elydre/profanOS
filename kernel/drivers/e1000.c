@@ -111,8 +111,21 @@ void scan_pci_for_e1000(e1000_t *e1000) {
     }
 }
 
+e1000_t e1000_device = {0};
+
 void e1000_handler(registers_t *regs) {
     kprintf("KAKAKAKAKAKAKAKAKA\n");
+    pci_write_u32(&(e1000_device.pci), 0, REG_IMASK, 0x1);
+    uint32_t status = pci_read_u32(&(e1000_device.pci), 0, (0xc0));
+    if(status & 0x04) {
+
+    }
+    else if(status & 0x10) {
+       // good threshold
+    }
+    else if(status & 0x80) {
+        e1000_handle_receive(&e1000_device, regs);
+    }
 }
 
 void e1000_rx_init(e1000_t *e1000) {
@@ -188,6 +201,7 @@ void e1000_tx_init(e1000_t *e1000) {
 int e1000_init(void) {
     e1000_t device = {0};
     scan_pci_for_e1000(&device);
+    e1000_device = device;
     if (!device.exists) {
         kprintf("Error: e1000 device noot found\n");
         return 1;
@@ -208,6 +222,8 @@ int e1000_init(void) {
     pci_write_u32(&(device.pci), 0, REG_IMASK, 0x1F6DC);
     pci_write_u32(&(device.pci), 0, REG_IMASK, 0xFF & ~4);
     pci_read_u32(&(device.pci), 0, 0xc0);
+    e1000_rx_init(&device);
+    e1000_tx_init(&device);
     asm volatile ("sti");
     return 0;
 }
@@ -224,4 +240,27 @@ int e1000_sendPacket(e1000_t *device, const void * p_data, uint16_t p_len)
     pci_write_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
     while(!(device->tx_descs_phys[old_cur]->status & 0xff));
     return 0;
+}
+
+
+void e1000_handle_receive(e1000_t *device, registers_t *regs) {
+    uint16_t old_cur;
+    uint8_t got_packet = 0;
+
+    while((device->rx_descs_phys[device->rx_cur]->status & 0x1))
+    {
+            got_packet = 1;
+            uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
+            uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
+
+            kprintf("pack len: %d\n", len);
+            for (int i = 0; i < len; i++)
+                kprintf("pack: %x\n", buf[i]);
+
+
+            device->rx_descs_phys[device->rx_cur]->status = 0;
+            old_cur = device->rx_cur;
+            device->rx_cur = (device->rx_cur + 1) % E1000_NUM_RX_DESC;
+            pci_write_u32(&(device->pci), 0, REG_RXDESCTAIL, old_cur);
+    }
 }
