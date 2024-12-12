@@ -240,6 +240,7 @@ def build_disk_elfs():
         print_and_exec(f"{CC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
         print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o " +
                        f"{fname}.elf {OUT_DIR}/make/entry_bin.o {fname}.o")
+        print_and_exec(f"rm {fname}.o")
         total -= 1
 
     def build_c_to_mod(name, fname):
