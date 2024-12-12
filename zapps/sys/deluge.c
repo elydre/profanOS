@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "3.5"
+#define DELUGE_VERSION "3.6"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -1016,6 +1016,7 @@ int main(int argc, char **argv, char **envp) {
         start = syscall_timer_get_ms();
     }
 
+
     if (args.extra_lib) {
         elfobj_t *lib = open_elf(args.extra_lib, ET_DYN, 0);
         if (lib == NULL) {
@@ -1061,6 +1062,9 @@ int main(int argc, char **argv, char **envp) {
     if (args.show_leaks) {
         libc_enable_leaks();
     }
+
+    if (argc > args.arg_offset)
+        syscall_process_info(syscall_process_pid(), PROC_INFO_SET_NAME, argv[args.arg_offset]);
 
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
