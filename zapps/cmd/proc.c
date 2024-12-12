@@ -106,7 +106,7 @@ void list_process(int mode) {
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
         if (pid == 1) continue;
-        name = (char *) syscall_process_info(pid, PROC_INFO_NAME);
+        name = (char *) syscall_process_info(pid, PROC_INFO_NAME, NULL);
         printf(printf_format,
                 pid,
                 syscall_process_ppid(pid),
