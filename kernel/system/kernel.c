@@ -57,7 +57,7 @@ void kernel_main(void *mboot_ptr) {
     kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
 
     // launch of the default program
-    run_ifexist(RUN_DEFAULT, 1, NULL, NULL);
+    run_ifexist(RUN_DEF_PATH, 1, (char *[]){RUN_DEF_NAME, NULL}, NULL);
 
     sys_nothing_todo();
 }

@@ -31,10 +31,12 @@
 #define PROC_INFO_RUN_TIME 3
 #define PROC_INFO_NAME     4
 #define PROC_INFO_STACK    5
+#define PROC_INFO_COMM     6
+#define PROC_INFO_SET_NAME 7
 
-#define syscall_process_ppid(pid) syscall_process_info(pid, PROC_INFO_PPID)
-#define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE)
-#define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME)
+#define syscall_process_ppid(pid) syscall_process_info(pid, PROC_INFO_PPID, NULL)
+#define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE, NULL)
+#define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME, NULL)
 
 #define syscall_kcprint(message, color) syscall_kcnprint(message, -1, color)
 #define syscall_kprint(message) syscall_kcprint(message, 0x0F)
@@ -266,7 +268,7 @@ DEFN_SYSCALL2(32, int,       process_wakeup, uint32_t, int)
 DEFN_SYSCALL3(33, int,       process_wait, int, uint8_t *, int)
 DEFN_SYSCALL2(34, int,       process_kill, int, int)
 DEFN_SYSCALL0(35, uint32_t,  process_pid)
-DEFN_SYSCALL2(36, int,       process_info, uint32_t, int)
+DEFN_SYSCALL3(36, int,       process_info, uint32_t, int, void *)
 DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 
 DEFN_SYSCALL2(38, int,       pok_load, char *, uint32_t)

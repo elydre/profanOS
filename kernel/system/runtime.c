@@ -78,12 +78,28 @@ int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
     fs_cnt_read(fs_get_main(), sid, file, 0, size);
 
     if (size < sizeof(Elf32_Ehdr) || !is_valid_elf(file)) {
-        free(file);
         sys_warning("[exec] Not a valid ELF file");
+        free(file);
         return -1;
     }
 
     int pid = process_get_pid();
+
+    comm_struct_t *comm = process_get_comm(pid);
+
+    // free the old argv and envp
+    if (comm->argv) {
+        for (int i = 0; comm->argv[i] != NULL; i++)
+            free(comm->argv[i]);
+        free(comm->argv);
+    }
+    free(comm->envp);
+
+    comm->argv = argv;
+    comm->envp = envp;
+
+    if (argc)
+        process_info(pid, PROC_INFO_SET_NAME, argv[0]);
 
     scuba_dir_t *old_dir = process_get_dir(pid);
     scuba_dir_t *new_dir = scuba_dir_inited(old_dir, pid);
@@ -97,10 +113,8 @@ int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
     scuba_switch(new_dir);
     scuba_dir_destroy(old_dir);
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
-
     load_sections(file);
-    uint32_t entry = ehdr->e_entry;
+    uint32_t entry = ((Elf32_Ehdr *) file)->e_entry;
     free(file);
 
     // call the entry point
@@ -124,14 +138,14 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
         argc++;
 
     char **nargv = mem_alloc((argc + 1) * sizeof(char *), 0, 6);
-    mem_set((void *) nargv, 0, (argc + 1) * sizeof(char *));
+    nargv[argc] = NULL;
 
     for (int i = 0; i < argc; i++) {
         nargv[i] = mem_alloc(str_len(argv[i]) + 1, 0, 6);
         str_cpy(nargv[i], argv[i]);
     }
 
-    int pid = process_create(elf_exec, 0, 4, (uint32_t []) {sid, 0, (uint32_t) nargv, 0});
+    int pid = process_create(elf_exec, 0, 4, (uint32_t []) {sid, argc, (uint32_t) nargv, 0});
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
