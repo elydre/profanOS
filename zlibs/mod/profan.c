@@ -429,7 +429,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         char **interp = NULL;
         int c;
 
-        if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/') 
+        if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/')
             interp = get_interp(sid, &c);
         else if (args.envp != NULL) {
             for (int i = 0; args.envp[i] != NULL; i++) {
