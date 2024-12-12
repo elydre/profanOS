@@ -256,7 +256,7 @@ DEFN_SYSCALL1(24, int,       sys_set_reporter, void *)
 DEFN_SYSCALL1(25, int,       sys_power, int)
 DEFN_SYSCALL0(26, char *,    sys_kinfo)
 
-DEFN_SYSCALL4(27, int,       binary_exec, uint32_t, int, char **, char **)
+DEFN_SYSCALL4(27, int,       elf_exec, uint32_t, int, char **, char **)
 
 DEFN_SYSCALL1(28, int,       process_auto_schedule, int)
 DEFN_SYSCALL4(29, int,       process_create, void *, int, int, uint32_t *)

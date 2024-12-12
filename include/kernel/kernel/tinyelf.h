@@ -58,9 +58,21 @@ typedef struct {
     uint32_t r_info;        // Relocation type and symbol index
 } Elf32_Rel;
 
+typedef struct {
+    uint32_t p_type;        // Segment type
+    uint32_t p_offset;      // Segment offset
+    uint32_t p_vaddr;       // Virtual address of segment
+    uint32_t p_paddr;       // Physical address of segment
+    uint32_t p_filesz;      // Size of segment in file
+    uint32_t p_memsz;       // Size of segment in memory
+    uint32_t p_flags;       // Segment flags
+    uint32_t p_align;       // Segment alignment
+} Elf32_Phdr;
+
 #define SHT_PROGBITS    1
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
+#define ET_EXEC         2
 #define ET_DYN          3
 #define EM_386          3
 #define SHT_SYMTAB      2

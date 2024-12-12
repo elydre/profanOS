@@ -65,12 +65,12 @@ scuba_dir_t *scuba_dir_inited(scuba_dir_t *parent, uint32_t pid) {
     }
 
     // deep copy the bin exec memory
-    void *addr = scuba_create_virtual(dir, (void *) RUN_BIN_VBASE, RUN_BIN_VCUNT / 0x1000);
-    void *phys = scuba_get_phys(parent, (void *) RUN_BIN_VBASE);
+    void *addr = scuba_create_virtual(dir, (void *) RUN_HEAP_ADDR, RUN_HEAP_SIZE / 0x1000);
+    void *phys = scuba_get_phys(parent, (void *) RUN_HEAP_ADDR);
     if (phys) {
-        mem_copy(addr, phys, RUN_BIN_VCUNT);
+        mem_copy(addr, phys, RUN_HEAP_SIZE);
     } else {
-        mem_set(addr, 0, RUN_BIN_VCUNT);
+        mem_set(addr, 0, RUN_HEAP_SIZE);
     }
 
     return dir;
@@ -356,11 +356,12 @@ void scuba_fault_handler(int err_code) {
 
     int pid = process_get_pid();
 
-    // check if the faulting address is after RUN_BIN_VBASE
-    if (pid == 0) sys_fatal("Page fault in the kernel during %s at %x)",
-            (err_code & 0x2) ? "write" : "read",
-            faulting_address
-    );
+    if (pid == 0)
+        sys_fatal("Page fault in the kernel during %s at %x)",
+                (err_code & 0x2) ? "write" : "read",
+                faulting_address
+        );
+
     sys_error("Page fault during %s at %x (pid %d, code %x)",
             (err_code & 0x2) ? "write" : "read",
             faulting_address,

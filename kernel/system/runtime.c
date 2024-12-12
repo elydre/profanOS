@@ -12,15 +12,58 @@
 #include <kernel/snowflake.h>
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
+#include <kernel/tinyelf.h>
 #include <minilib.h>
 #include <system.h>
 
 int is_valid_elf(void *data) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     return !(
-        memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
+        mem_cmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
         ehdr->e_type != ET_EXEC || ehdr->e_machine != EM_386
     );
+}
+
+void *get_base_addr(uint8_t *data) {
+    // find the lowest address of a PT_LOAD segment
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
+    Elf32_Phdr *phdr = (Elf32_Phdr *)(data + ehdr->e_phoff);
+
+    uint32_t base_addr = 0xFFFFFFFF;
+
+    for (int i = 0; i < ehdr->e_phnum; i++) {
+        if (phdr[i].p_type == 1 && phdr[i].p_vaddr < base_addr)
+            base_addr = phdr[i].p_vaddr;
+    }
+
+    return (void *) base_addr;
+}
+
+void *load_sections(uint8_t *file) {
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(file + ehdr->e_shoff);
+
+    void *base_addr = get_base_addr(file);
+    uint32_t required_size = 0;
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
+            required_size = shdr[i].sh_addr + shdr[i].sh_size;
+    }
+
+    required_size -= (uint32_t) base_addr;
+    required_size = (required_size + 0xFFF) & ~0xFFF;
+
+    scuba_call_generate(base_addr, required_size / 0x1000);
+    mem_set(base_addr, 0, required_size);
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_addr) {
+            mem_copy((void *) shdr[i].sh_addr, file + shdr[i].sh_offset, shdr[i].sh_size);
+        }
+    }
+
+    return base_addr;
 }
 
 int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
@@ -29,25 +72,43 @@ int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
         return -1;
     }
 
-    uint32_t size = fu_file_get_size(sid);
+    uint32_t size = fs_cnt_get_size(fs_get_main(), sid);
 
     uint8_t *file = mem_alloc(size, 0, 6);
-    fu_file_read(sid, file, 0, size);
+    fs_cnt_read(fs_get_main(), sid, file, 0, size);
 
-    if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file)) {
+    if (size < sizeof(Elf32_Ehdr) || !is_valid_elf(file)) {
+        free(file);
         sys_warning("[exec] Not a valid ELF file");
         return -1;
     }
 
+    int pid = process_get_pid();
+
+    scuba_dir_t *old_dir = process_get_dir(pid);
+    scuba_dir_t *new_dir = scuba_dir_inited(old_dir, pid);
+
+    // create stack
+    void *phys = scuba_create_virtual(new_dir, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE / 0x1000);
+    mem_copy(phys, (void *) PROC_ESP_ADDR, PROC_ESP_SIZE);
+
+    // switch to new directory
+    process_switch_directory(pid, new_dir, 0);
+    scuba_switch(new_dir);
+    scuba_dir_destroy(old_dir);
+
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *) (file + ehdr->e_shoff);
 
-    Elf32_Phdr *phdr = (Elf32_Phdr *) (file + ehdr->e_phoff);
+    load_sections(file);
+    uint32_t entry = ehdr->e_entry;
+    free(file);
 
+    // call the entry point
+    sys_exit_kernel(0);
+    int ret = ((int (*)(int, char **, char **)) entry)(argc, argv, envp);
+    sys_entry_kernel(0);
 
-
-
-
+    return process_kill(process_get_pid(), ret);
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
