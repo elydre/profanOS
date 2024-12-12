@@ -31,7 +31,7 @@ char *profan_fn_name(void *ptr, char **libname);
 
 #define raise_error(fmt, ...) do {  \
             fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
-            exit(1);  \
+            process_exit(1);  \
         } while (0)
 
 #define debug_printf(lvl, fmt, ...) if (g_print_debug >= lvl) {  \
@@ -77,7 +77,7 @@ dlg_extra_t g_extra_syms[] = {
 *************************/
 
 void loaded_lib_add(elfobj_t *lib) {
-    g_loaded_libs = realloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
+    g_loaded_libs = krealloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
     g_loaded_libs[g_lib_count - 1] = lib;
 }
 
@@ -95,20 +95,20 @@ int loaded_lib_atback(elfobj_t *lib) {
 }
 
 char *ft_getenv(const char *name) {
-    uint32_t len = strlen(name);
+    uint32_t len = str_len(name);
     for (int i = 0; g_envp[i]; i++) {
-        if (strncmp(g_envp[i], name, len) == 0 && g_envp[i][len] == '=')
+        if (str_ncmp(g_envp[i], name, len) == 0 && g_envp[i][len] == '=')
             return g_envp[i] + len + 1;
     }
     return NULL;
 }
 
 char *profan_join_path(const char *dir, const char *file) {
-    int len1 = strlen(dir);
-    char *path = malloc(len1 + strlen(file) + 2);
-    strcpy(path, dir);
+    int len1 = str_len(dir);
+    char *path = kmalloc(len1 + str_len(file) + 2);
+    str_cpy(path, dir);
     path[len1] = '/';
-    strcpy(path + len1 + 1, file);
+    str_cpy(path + len1 + 1, file);
     return path;
 }
 
@@ -119,11 +119,11 @@ char *profan_join_path(const char *dir, const char *file) {
 **************************/
 
 uint32_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
-    char *path = strdup(src_path);
+    char *path = str_dup(src_path);
 
-    char *fullname = malloc(strlen(filename) + 5); // 5 => .elf + null
-    strcpy(fullname, filename);
-    strcat(fullname, ".elf");
+    char *fullname = kmalloc(str_len(filename) + 5); // 5 => .elf + null
+    str_cpy(fullname, filename);
+    str_cat(fullname, ".elf");
 
     int start = 0;
     for (int i = 0;; i++) {
@@ -136,8 +136,8 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
             if (fu_is_file(sid)) {
                 if (path)
                     *fullpath = profan_join_path(path + start, fullname);
-                free(fullname);
-                free(path);
+                kfree(fullname);
+                kfree(path);
                 return sid;
             }
         }
@@ -146,8 +146,8 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
         start = i + 1;
     }
 
-    free(fullname);
-    free(path);
+    kfree(fullname);
+    kfree(path);
     return SID_NULL;
 }
 
@@ -161,7 +161,7 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
     if (name[0] == '/') {
         sid = fu_path_to_sid(SID_ROOT, name);
         if (!IS_SID_NULL(sid) && path)
-            *path = strdup(name);
+            *path = str_dup(name);
         return sid;
     }
 
@@ -176,7 +176,7 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
             if (!IS_SID_NULL(sid) && path)
                 *path = full_path;
             else
-                free(full_path);
+                kfree(full_path);
             return sid;
         }
 
@@ -194,7 +194,7 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
                 *path = full_path;
             return sid;
         }
-        free(full_path);
+        kfree(full_path);
     }
 
     full_path = profan_join_path("/lib", name);
@@ -206,7 +206,7 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
         return sid;
     }
 
-    free(full_path);
+    kfree(full_path);
     return SID_NULL;
 }
 
@@ -227,8 +227,8 @@ uint32_t hash(const char *str) {
 dlg_hash_t *hash_create(elfobj_t *obj) {
     uint32_t size = obj->dym_size / sizeof(Elf32_Sym);
 
-    dlg_hash_t *table = calloc(size, sizeof(dlg_hash_t));
-    dlg_hash_t *later = calloc(size, sizeof(dlg_hash_t));
+    dlg_hash_t *table = kcalloc(size, sizeof(dlg_hash_t));
+    dlg_hash_t *later = kcalloc(size, sizeof(dlg_hash_t));
     int later_index = 0;
 
     for (uint32_t i = 0; i < size; i++) {
@@ -267,7 +267,7 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
 
         table_index++;
     }
-    free(later);
+    kfree(later);
 
     return table;
 }
@@ -276,7 +276,7 @@ Elf32_Sym *hash_get(elfobj_t *obj, uint32_t full_h, const char *key) {
     dlg_hash_t *entry = obj->hash_table + full_h % (obj->dym_size / sizeof(Elf32_Sym));;
 
     while (entry) {
-        if (entry->hash == full_h && strcmp(entry->key, key) == 0)
+        if (entry->hash == full_h && str_cmp(entry->key, key) == 0)
             return entry->data;
         entry = entry->next;
     }
@@ -292,7 +292,7 @@ Elf32_Sym *hash_get(elfobj_t *obj, uint32_t full_h, const char *key) {
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     return !(
-        memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
+        mem_cmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
         ehdr->e_type != required_type ||
         ehdr->e_machine != EM_386
     );
@@ -340,14 +340,14 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     } else {
         obj->mem = (void *) syscall_mem_alloc(required_size, 0x1000, 1);
     }
-    memset(obj->mem, 0, required_size);
+    mem_set(obj->mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_addr) {
             if (type == ET_EXEC)
-                memcpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
+                mem_cpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
             else
-                memcpy(obj->mem + shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
+                mem_cpy(obj->mem + shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
         }
     }
 
@@ -390,7 +390,7 @@ int does_type_required_sym(uint8_t type) {
 
 uint32_t get_sym_extra(const char *name, uint32_t full_h) {
     for (int i = 0; g_extra_syms[i].name; i++) {
-        if (g_extra_syms[i].hash == full_h && strcmp(g_extra_syms[i].name, name) == 0)
+        if (g_extra_syms[i].hash == full_h && str_cmp(g_extra_syms[i].name, name) == 0)
             return (uint32_t) g_extra_syms[i].data;
     }
     return 0;
@@ -491,29 +491,29 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
 
     if (required_type == ET_DYN) {
         for (int i = 0; i < g_lib_count; i++) {
-            if (strcmp(g_loaded_libs[i]->name, path))
+            if (str_cmp(g_loaded_libs[i]->name, path))
                 continue;
             debug_printf(1, "| Find '%s'", path);
-            free(path);
+            kfree(path);
             return g_loaded_libs[i];
         }
 
-        if (strcmp(path, "/lib/libc.so") == 0) {
+        if (str_cmp(path, "/lib/libc.so") == 0) {
             debug_printf(1, "| Open '%s' (cached)", path);
             if (libc == NULL)
                 libc = dlgext_libc();
             loaded_lib_add(libc);
-            free(path);
+            kfree(path);
             return libc;
         }
     }
 
     debug_printf(1, "| Open '%s'", path);
 
-    elfobj_t *obj = calloc(1, sizeof(elfobj_t));
+    elfobj_t *obj = kcalloc(1, sizeof(elfobj_t));
 
     obj->size = fu_file_get_size(sid);
-    obj->file = malloc(obj->size);
+    obj->file = kmalloc(obj->size);
     obj->ref_count = 1;
     obj->need_free = 1;
     obj->name = path;
@@ -523,9 +523,9 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
         if (isfatal)
             raise_error("'%s' is not a valid ELF file", path);
-        free(obj->file);
-        free(obj->name);
-        free(obj);
+        kfree(obj->file);
+        kfree(obj->name);
+        kfree(obj);
         return NULL;
     }
 
@@ -559,9 +559,9 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         if (required_type == ET_DYN) {
             if (isfatal)
                 raise_error("no dynamic symbol table found in '%s'", path);
-            free(obj->file);
-            free(obj->name);
-            free(obj);
+            kfree(obj->file);
+            kfree(obj->name);
+            kfree(obj);
             return NULL;
         }
         return obj;
@@ -723,7 +723,7 @@ int dlclose(void *handle) {
         return 0;
     }
 
-    debug_printf(1, "| Free '%s'", dl->name);
+    debug_printf(1, "| kFree '%s'", dl->name);
 
     // remove from loaded libs
     for (int i = 0; i < g_lib_count; i++) {
@@ -741,13 +741,13 @@ int dlclose(void *handle) {
     }
 
     if (dl->need_free) {
-        free(dl->hash_table);
-        free(dl->file);
-        free(dl->name);
+        kfree(dl->hash_table);
+        kfree(dl->file);
+        kfree(dl->name);
     }
 
-    free(dl->mem);
-    free(dl);
+    kfree(dl->mem);
+    kfree(dl);
     return 0;
 }
 
@@ -811,7 +811,7 @@ int dynamic_linker(elfobj_t *exec) {
                     *(uint32_t *)(rel[j].r_offset) = val;
                     break;
                 case R_386_COPY:        // symbol  S
-                    memcpy((void *) rel[j].r_offset, (void *) val, sym->st_size);
+                    mem_cpy((void *) rel[j].r_offset, (void *) val, sym->st_size);
                     break;
                 case R_386_GLOB_DAT:    // word32  S
                     *(uint32_t *)(rel[j].r_offset) = val;
@@ -900,7 +900,7 @@ typedef struct {
 void show_help(int full) {
     if (!full) {
         fd_printf(2, "Try 'deluge -h' for more information.\n");
-        exit(1);
+        process_exit(1);
     }
     fd_printf(1,
         "Usage: deluge [options] <file> [args]\n"
@@ -959,7 +959,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 break;
             case 'h':
                 show_help(1);
-                exit(0);
+                process_exit(0);
                 break; // unreachable
             case 'm':
                 args.show_leaks = 1;
@@ -977,7 +977,7 @@ deluge_args_t deluge_parse(int argc, char **argv) {
                 break;
             case 'v':
                 fd_printf(1, "deluge %s\n", DELUGE_VERSION);
-                exit(0);
+                process_exit(0);
                 break; // unreachable
             case '\0':
             case '-':
@@ -1050,7 +1050,7 @@ int main(int argc, char **argv, char **envp) {
 
     int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
 
-    free(g_prog->hash_table);
+    kfree(g_prog->hash_table);
 
     g_dlfcn_error = 0;
 
@@ -1067,12 +1067,12 @@ int main(int argc, char **argv, char **envp) {
     pid = syscall_process_pid();
 
     if (pid != parent_pid) {
-        debug_printf(1, "PID %d (child of %d) exit with code %d after %d ms",
+        debug_printf(1, "PID %d (child of %d) process_exit with code %d after %d ms",
                 pid, parent_pid, ret, syscall_timer_get_ms() - start);
         syscall_process_kill(pid, ret);
     }
 
-    debug_printf(1, "PID %d exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);
+    debug_printf(1, "PID %d process_exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);
 
     for (int i = 0; i < g_lib_count; i++)
         fini_lib(g_loaded_libs[i]);
@@ -1087,10 +1087,10 @@ int main(int argc, char **argv, char **envp) {
         dlclose(g_loaded_libs[0]);
     }
 
-    free(g_loaded_libs);
-    free(g_prog->file);
-    free(g_prog->name);
-    free(g_prog);
+    kfree(g_loaded_libs);
+    kfree(g_prog->file);
+    kfree(g_prog->name);
+    kfree(g_prog);
 
     if (args.show_leaks) {
         int leaks;

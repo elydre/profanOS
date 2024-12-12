@@ -61,7 +61,7 @@ typedef struct {
 pipe_data_t *open_pipes;
 
 int main(void) {
-    open_pipes = calloc_ask(PIPE_MAX, sizeof(pipe_data_t));
+    open_pipes = kcalloc_ask(PIPE_MAX, sizeof(pipe_data_t));
     return 0;
 }
 
@@ -96,7 +96,7 @@ static pipe_data_t *fm_get_free_pipe(void) {
             if (open_pipes[i].writers[j] != -1 && syscall_process_state(open_pipes[i].writers[j]) > 1)
                 break;
             if (j == PIPE_MAX_REF - 1) {
-                free(open_pipes[i].buf);
+                kfree(open_pipes[i].buf);
                 open_pipes[i].buf = NULL;
             }
         }
@@ -152,7 +152,7 @@ int fm_close(int fd) {
         }
 
         if (pipe->readers[0] == -1 && pipe->writers[0] == -1) {
-            free(pipe->buf);
+            kfree(pipe->buf);
             pipe->buf = NULL;
         }
     }
@@ -171,7 +171,7 @@ int fm_close(int fd) {
         }
 
         if (pipe->readers[0] == -1 && pipe->writers[0] == -1) {
-            free(pipe->buf);
+            kfree(pipe->buf);
             pipe->buf = NULL;
         }
     }
@@ -286,7 +286,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
             if (read_count > (int) size)
                 read_count = size;
 
-            memcpy(buf, pipe->buf + pipe->rd_offset, read_count);
+            mem_cpy(buf, pipe->buf + pipe->rd_offset, read_count);
             pipe->rd_offset += read_count;
             break;
 
@@ -325,14 +325,14 @@ int fm_write(int fd, void *buf, uint32_t size) {
             uint32_t new_size = pipe->current_size + size;
 
             if (new_size > pipe->buffer_size) {
-                void *tmp = realloc_ask(pipe->buf, new_size);
+                void *tmp = krealloc_ask(pipe->buf, new_size);
                 if (tmp == NULL)
                     return -ENOMEM;
                 pipe->buf = tmp;
                 pipe->buffer_size = new_size;
             }
 
-            memcpy(pipe->buf + pipe->current_size, buf, size);
+            mem_cpy(pipe->buf + pipe->current_size, buf, size);
             pipe->current_size += size;
             write_count = size;
             break;
@@ -441,7 +441,7 @@ int fm_pipe(int fd[2]) {
     if (pipe == NULL)
         return -EMFILE;
 
-    pipe->buf = calloc_ask(0x1000, 1);
+    pipe->buf = kcalloc_ask(0x1000, 1);
     if (pipe->buf == NULL)
         return -ENOMEM;
 

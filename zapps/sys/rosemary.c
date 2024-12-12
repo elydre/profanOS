@@ -131,13 +131,13 @@ char **envp;
 
 void set_env(char *line) {
     if (envp == NULL) {
-        envp = malloc(2 * sizeof(char *));
+        envp = kmalloc(2 * sizeof(char *));
         envp[0] = line;
         envp[1] = NULL;
     } else {
         int i;
         for (i = 0; envp[i]; i++);
-        envp = realloc(envp, (i + 2) * sizeof(char *));
+        envp = krealloc(envp, (i + 2) * sizeof(char *));
         envp[i] = line;
         envp[i + 1] = NULL;
     }
@@ -210,7 +210,7 @@ int main(void) {
 
     syscall_kprint("\e[2J");
 
-    free(envp);
+    kfree(envp);
 
     // unload all modules
     for (int i = 0; i < total; i++) {
