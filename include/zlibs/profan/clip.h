@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef PROFAN_CLIP_H
-#define PROFAN_CLIP_H
+#ifndef _PROFAN_CLIP_H
+#define _PROFAN_CLIP_H
 
 #define PROFAN_CLIP_PATH "/dev/clip"
 

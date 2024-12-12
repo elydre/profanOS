@@ -12,13 +12,15 @@
 #define _SYSCALL_CREATE_FUNCS
 
 #include <profan/syscall.h>
-#include <profan/filesys.h>
 #include <profan.h>
 
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
+
+#include "config_libc.h"
 
 /************************
  *                     *
@@ -43,35 +45,64 @@ int serial_debug(char *frm, ...) {
     return len;
 }
 
-void profan_print_memory(void *addr, uint32_t size) {
-    for (uint32_t i = 0; i < size / 16 + (size % 16 != 0); i++) {
-        printf("%08x: ", (uint32_t) addr + i * 16);
+// defined in deluge - don't free libname and result
+char *profan_fn_name(void *ptr, char **libname) {
+    profan_nimpl("profan_fn_name");
+    return NULL;
+}
 
-        for (int j = 0; j < 16; j++) {
-            if (i * 16 + j < size)
-                printf("%02x ", *((unsigned char *) addr + i * 16 + j));
-            else
-                printf("   ");
-            if (j % 4 == 3)
-                printf(" ");
-        }
+void profan_print_trace(void) {
+    struct stackframe {
+        struct stackframe *ebp;
+        uint32_t eip;
+    } *ebp;
 
-        for (int j = 0; j < 16; j++) {
-            unsigned char c = *((unsigned char *) addr + i * 16 + j);
-            if (i * 16 + j >= size)
-                break;
-            if (c >= 32 && c <= 126)
-                printf("%c", c);
-            else
-                printf(".");
-        }
-        printf("\n");
+    asm volatile("movl %%ebp, %0" : "=r" (ebp));
+    ebp = ebp->ebp;
+
+    char *libname, *name;
+
+    for (int i = 0; i < 5 && ebp; i++) {
+        name = profan_fn_name((void *) ebp->eip, &libname);
+
+        if (name)
+            fprintf(stderr, "  %08x: %s (%s)\n", ebp->eip, name, libname);
+        else
+            fprintf(stderr, "  %08x: ???\n", ebp->eip);
+
+        ebp = ebp->ebp;
     }
 }
 
 /*************************
  *                      *
  *     GLOBAL UTILS     *
+ *                      *
+*************************/
+
+char *profan_input(int *size) {
+    char *term = getenv("TERM");
+    if (term && strstr(term, "serial"))
+        return profan_input_serial(size, SERIAL_PORT_A);
+    return profan_input_keyboard(size, term);
+}
+
+void profan_nimpl(char *name) {
+    write(2, "libC: ", 6);
+    write(2, name, strlen(name));
+    write(2, ": function not implemented\n", 27);
+    #if NOT_IMPLEMENTED_ABORT
+    abort();
+    #endif
+}
+
+char *profan_libc_version(void) {
+    return PROFAN_LIBC_VERSION;
+}
+
+/*************************
+ *                      *
+ *   FILESYSTEM UTILS   *
  *                      *
 *************************/
 
@@ -97,44 +128,6 @@ char *profan_join_path(const char *old, const char *new) {
     }
 
     return result;
-}
-
-char *profan_input(int *size) {
-    char *term = getenv("TERM");
-    if (term && strstr(term, "serial"))
-        return profan_input_serial(size, SERIAL_PORT_A);
-    return profan_input_keyboard(size, term);
-}
-
-// defined in deluge - don't free libname and result
-char *profan_fn_name(void *ptr, char **libname) {
-    puts("libc extra: profan_fn_name: should not be called");
-    return NULL;
-}
-
-struct stackframe {
-  struct stackframe* ebp;
-  uint32_t eip;
-};
-
-void profan_print_trace(void) {
-    struct stackframe *ebp;
-
-    asm volatile("movl %%ebp, %0" : "=r" (ebp));
-    ebp = ebp->ebp;
-
-    char *libname, *name;
-
-    for (int i = 0; i < 5 && ebp; i++) {
-        name = profan_fn_name((void *) ebp->eip, &libname);
-
-        if (name)
-            fprintf(stderr, "  %08x: %s (%s)\n", ebp->eip, name, libname);
-        else
-            fprintf(stderr, "  %08x: ???\n", ebp->eip);
-
-        ebp = ebp->ebp;
-    }
 }
 
 void profan_sep_path(const char *fullpath, char **parent, char **cnt) {

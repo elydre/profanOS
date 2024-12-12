@@ -53,13 +53,13 @@ void print_logo_line(void) {
 
 void print_fs_info(void) {
     print_logo_line();
-    printf("\e[95mfs vdisk:   \e[96m");
+    printf("\e[95mfs vdisk   \e[96m");
 
     uint32_t *info = fu_get_vdisk_info();
 
     uint32_t dcount = info[0];
     for (uint32_t i = 0; i < dcount; i++) {
-        printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] * FS_SECTOR_SIZE / 1024);
+        printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] / 2);
         if (i != dcount - 1) printf("\e[0m, \e[96m");
     }
     printf("\e[0m\n");
@@ -85,9 +85,10 @@ int main(void) {
     tm_t time;
     syscall_time_get(&time);
 
-    pl_and_pf("\e[95mkernel:     \e[96m%s\n", syscall_sys_kinfo());
+    pl_and_pf("\e[95mkernel     \e[96m%s\n", syscall_sys_kinfo());
+    pl_and_pf("\e[95mlibc       \e[96mprofan v%s\n", profan_libc_version());
 
-    pl_and_pf("\e[95mRTC time:   \e[96m%02d\e[0m:\e[96m%02d\e[0m:\e[96m%02d %02d\e[0m/\e[96m%02d\e[0m/\e[96m%02d\n",
+    pl_and_pf("\e[95mRTC time   \e[96m%02d\e[0m:\e[96m%02d\e[0m:\e[96m%02d %02d\e[0m/\e[96m%02d\e[0m/\e[96m%02d\n",
         time.tm_hour, time.tm_min, time.tm_sec,
         time.tm_mday, time.tm_mon, time.tm_year + 2000
     );
@@ -96,16 +97,13 @@ int main(void) {
     int mem_usage = (uint32_t) syscall_mem_info(6, 0) / 1024;
     int mem_total = (uint32_t) syscall_mem_info(0, 0) / 1024;
 
-    pl_and_pf("\e[95mwork time:  \e[96m%gs\n", syscall_timer_get_ms() / 1000.0);
-    pl_and_pf("\e[95mmemory:     \e[96m%.2f%% of %dMB\n",
+    pl_and_pf("\e[95mwork time  \e[96m%gs of %gs\n", (syscall_timer_get_ms() - syscall_process_info(1, 3)) / 1000.0,
+            syscall_timer_get_ms() / 1000.0);
+
+    pl_and_pf("\e[95mmemory     \e[96m%.2f%% of %dMB\n",
             (float) mem_usage * 100 / (float) mem_total, mem_total / 1024);
 
-    pl_and_pf("\e[95mact alloc:  \e[96m%d\e[0m/\e[96m%d\n",
-        syscall_mem_info(4, 0) - syscall_mem_info(5, 0),
-        syscall_mem_info(4, 0)
-    );
-
-    pl_and_pf("\e[95mscreen:     \e[96m%d\e[0mx\e[96m%d (%s)\n",
+    pl_and_pf("\e[95mscreen     \e[96m%d\e[0mx\e[96m%d (%s)\n",
         syscall_vesa_width(), syscall_vesa_height(),
         syscall_vesa_state() ? "graphic" : "text"
     );

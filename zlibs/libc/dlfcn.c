@@ -9,28 +9,28 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/type.h>
-#include <stdio.h>
+#include <profan.h>
+#include <stddef.h>
 
 // real function are defined in the dynamic linker (/bin/sys/deluge)
 // this file is just a stratagem to make the compiler happy
 
 void *dlopen(const char *filename, int flag) {
-    puts("libc dlfcn: dlopen: should not be called");
+    profan_nimpl("dlopen");
     return NULL;
 }
 
 void *dlsym(void *handle, const char *symbol) {
-    puts("libc dlfcn: dlsym: should not be called");
+    profan_nimpl("dlsym");
     return NULL;
 }
 
 int dlclose(void *handle) {
-    puts("libc dlfcn: dlclose: should not be called");
+    profan_nimpl("dlclose");
     return -1;
 }
 
 char *dlerror(void) {
-    puts("libc dlfcn: dlerror: should not be called");
+    profan_nimpl("dlerror");
     return NULL;
 }

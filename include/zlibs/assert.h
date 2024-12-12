@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef ASSERT_H
-#define ASSERT_H
+#ifndef _ASSERT_H
+#define _ASSERT_H
 
 void __assert_fail(const char *expr, const char *file, int line, const char *func);
 

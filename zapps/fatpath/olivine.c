@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.3 rev 4"
+#define OLV_VERSION "1.4 rev 0"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -2432,7 +2432,7 @@ char *if_ticks(char **input) {
     #elif UNIXBUILD
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    local_itoa(tv.tv_sec * 1000 + tv.tv_usec / 1000, output);
+    local_itoa((tv.tv_sec * 1000 + tv.tv_usec / 1000) % 0x7FFFFFFF, output);
     #else
     local_itoa(0, output);
     #endif
@@ -2847,9 +2847,8 @@ char *execute_function(function_t *function, char **args) {
 }
 
 char *check_subfunc(char *line);
-char *check_pseudos(char *line);
 
-char *check_bin(char *name, char *line, void **function, char *old_line) {
+char *check_bin(char *name, char *line, void **function) {
     char *bin_path = get_bin_path(name);
     if (bin_path == NULL) {
         return line;
@@ -2875,9 +2874,7 @@ char *check_bin(char *name, char *line, void **function, char *old_line) {
         }
     }
 
-    if (old_line != line) {
-        free(line);
-    }
+    free(line);
 
     return new_line;
 }
@@ -2898,8 +2895,7 @@ char *execute_line(char *full_line) {
 
     if (function_name == NULL) {
         raise_error(NULL, "Expected function name, but got empty string");
-        if (line != full_line)
-            free(line);
+        free(line);
         return ERROR_CODE;
     }
 
@@ -2913,7 +2909,7 @@ char *execute_line(char *full_line) {
     char *result;
 
     if (function == NULL && BIN_AS_PSEUDO) {
-        line = check_bin(function_name, line, &function, full_line);
+        line = check_bin(function_name, line, &function);
     }
 
     if (function == NULL) {
@@ -2924,9 +2920,7 @@ char *execute_line(char *full_line) {
         char **function_args = gen_args(line);
         if (function_args == ERROR_CODE) {
             free(function_name);
-
-            if (line != full_line)
-                free(line);
+            free(line);
             return ERROR_CODE;
         }
 
@@ -2957,198 +2951,162 @@ char *execute_line(char *full_line) {
         free(function_args);
     }
 
-    if (line != full_line)
-        free(line);
     free(function_name);
+    free(line);
 
     return result;
 }
 
 char *check_variables(char *line) {
     // check if !... is present
-    int start = -1;
-    for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == INTR_VARDF && line[i + 1] != INTR_VARDF) {
-            start = i;
-            break;
+    int end;
+
+    for (int start = 0; line[start];) {
+        if (line[start] != INTR_VARDF || line[start + 1] == INTR_VARDF) {
+            start++;
+            continue;
         }
-    }
 
-    if (start == -1) {
-        return line;
-    }
+        for (end = start + 1; IS_NAME_CHAR(line[end]) || line[end] == '#'; end++);
 
-    int i, end = -1;
-    for (i = start + 1; line[i] != '\0'; i++) {
-        if (!IS_NAME_CHAR(line[i]) && line[i] != '#') {
-            end = i;
-            break;
+        if (end - start == 1) {
+            raise_error(NULL, "Empty variable name");
+            free(line);
+            return NULL;
         }
+
+        char old = line[end];
+        line[end] = '\0';
+
+
+        // get the variable value
+        char *var_value = get_variable(line + start + 1);
+
+        if (var_value == NULL) {
+            raise_error(NULL, "Variable '%s' not found", line + start + 1);
+            line[end] = old;
+            free(line);
+            return NULL;
+        }
+
+        line[end] = old;
+
+        // replace the variable with its value
+        char *nline = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
+        strncpy(nline, line, start);
+        strcpy(nline + start, var_value);
+        strcat(nline, line + end);
+
+        free(line);
+
+        if (start)
+            start--;
+
+        line = nline;
     }
 
-    if (end == -1)
-        end = i;
+    return line;
+}
 
-    if (end - start == 1) {
-        raise_error(NULL, "Empty variable name");
-        return NULL;
+char *check_pseudos(char *line) {
+    char *pseudo_value, old;
+    int end;
+
+    while (1) {
+        for (end = 0; line[end] && line[end] != ' '; end++);
+
+        old = line[end];
+        line[end] = '\0';
+
+        pseudo_value = get_pseudo(line);
+        line[end] = old;
+
+        if (pseudo_value == NULL)
+            return line;
+
+        char *nline = malloc(strlen(line) - end + strlen(pseudo_value) + 2); // TODO: check if +2 is needed
+        strcpy(nline, pseudo_value);
+        strcat(nline, line + end);
+        free(line);
+        line = nline;
     }
-
-    char *var_name = malloc(end - start);
-    strncpy(var_name, line + start + 1, end - start - 1);
-    var_name[end - start - 1] = '\0';
-
-    // get the variable value
-    char *var_value = get_variable(var_name);
-
-    if (var_value == NULL) {
-        raise_error(NULL, "Variable '%s' not found", var_name);
-        free(var_name);
-        return NULL;
-    }
-
-    free(var_name);
-
-    // replace the variable with its value
-    char *new_line = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
-    strncpy(new_line, line, start);
-    new_line[start] = '\0';
-
-    strcat(new_line, var_value);
-    strcat(new_line, line + end);
-
-    char *rec = check_variables(new_line);
-
-    if (rec == NULL) {
-        free(new_line);
-        return NULL;
-    }
-
-    if (rec != new_line) {
-        free(new_line);
-    }
-
-    return rec;
 }
 
 char *check_subfunc(char *line) {
     // check if !( ... ) is present
-    int start = -1;
-    for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == INTR_VARDF && line[i + 1] == '(') {
-            start = i;
-            break;
+    int open_parentheses, end;
+    line = strdup(line);
+
+    for (int start = 0; line[start];) {
+        if (line[start] != INTR_VARDF || line[start + 1] != '(') {
+            start++;
+            continue;
         }
-    }
 
-    if (start == -1) {
-        char *var_line = check_variables(line);
+        open_parentheses = 1;
 
-        if (var_line == NULL) {
+        for (end = start + 2; line[end]; end++) {
+            switch (line[end]) {
+                case '(':
+                    open_parentheses++;
+                    break;
+                case ')':
+                    open_parentheses--;
+                    break;
+            }
+            if (!open_parentheses)
+                break;
+        }
+
+        if (open_parentheses) {
+            raise_error(NULL, "Missing closing parenthesis");
+            free(line);
             return NULL;
         }
 
-        char *pseudo_line = check_pseudos(var_line);
-        if (pseudo_line != var_line && var_line != line) {
-            free(var_line);
+        char old = line[end];
+        line[end] = '\0';
+
+        // execute the subfunc
+        char *subfunc_result = execute_line(line + start + 2);
+
+        if (subfunc_result == ERROR_CODE) {
+            // subfunc execution failed
+            free(line);
+            return NULL;
         }
 
-        return pseudo_line;
+        line[end] = old;
+
+        // replace the subfunc with its result
+        char *nline;
+
+        if (subfunc_result) {
+            nline = malloc(strlen(line) - (end - start) + strlen(subfunc_result) + 1);
+            strncpy(nline, line, start);
+            strcpy(nline + start, subfunc_result);
+            strcat(nline, line + end + 1);
+            free(subfunc_result);
+        } else {
+            nline = malloc(strlen(line) - (end - start) + 1);
+            strncpy(nline, line, start);
+            strcpy(line + start, line + end + 1);
+        }
+
+        free(line);
+
+        if (start)
+            start--;
+
+        line = nline;
     }
 
-    int open_parentheses, end = -1;
+    line = check_variables(line);
 
-    open_parentheses = 1;
-    for (int i = start + 2; line[i] != '\0'; i++) {
-        if (line[i] == '(') {
-            open_parentheses++;
-        } else if (line[i] == ')') {
-            open_parentheses--;
-        }
-
-        if (open_parentheses == 0) {
-            end = i;
-            break;
-        }
-    }
-
-    if (end == -1) {
-        raise_error(NULL, "Missing closing parenthesis");
+    if (line == NULL)
         return NULL;
-    }
 
-    char *subfunc = malloc(end - start - 1);
-    strncpy(subfunc, line + start + 2, end - start - 2);
-    subfunc[end - start - 2] = '\0';
-
-    // execute the subfunc
-    char *subfunc_result = execute_line(subfunc);
-    free(subfunc);
-
-    if (subfunc_result == ERROR_CODE) {
-        // subfunc execution failed
-        return NULL;
-    }
-
-    // replace the subfunc with its result
-    char *new_line;
-
-    if (subfunc_result) {
-        new_line = malloc(strlen(line) - (end - start) + strlen(subfunc_result) + 1);
-        strncpy(new_line, line, start);
-        new_line[start] = '\0';
-
-        strcat(new_line, subfunc_result);
-        strcat(new_line, line + end + 1);
-        free(subfunc_result);
-    } else {
-        new_line = malloc(strlen(line) - (end - start) + 1);
-        strncpy(new_line, line, start);
-        new_line[start] = '\0';
-
-        strcat(new_line, line + end + 1);
-    }
-
-    char *rec = check_subfunc(new_line);
-
-    if (rec != new_line && new_line != line) {
-        free(new_line);
-    }
-
-    return rec;
-}
-
-char *check_pseudos(char *line) {
-    int i, len = strlen(line);
-    char *pseudo_name, *pseudo_value;
-
-    pseudo_name = malloc(len + 1);
-
-    for (i = 0; i < len; i++) {
-        if (line[i] == ' ')
-            break;
-        pseudo_name[i] = line[i];
-    }
-    pseudo_name[i] = '\0';
-
-    pseudo_value = get_pseudo(pseudo_name);
-
-    free(pseudo_name);
-    if (pseudo_value == NULL) {
-        return line;
-    }
-
-    char *new_line = malloc(len - i + strlen(pseudo_value) + 2);
-    strcpy(new_line, pseudo_value);
-    strcat(new_line, line + i);
-
-    char *rec = check_pseudos(new_line);
-
-    if (rec != new_line) {
-        free(new_line);
-    }
-
-    return rec;
+    return check_pseudos(line);
 }
 
 /*************************
@@ -3168,9 +3126,7 @@ int check_condition(char *condition) {
     if (strcmp(verif, "0") == 0 || local_strncmp_nocase(verif, "false", 5) == 0)
         res = 0;
 
-    if (verif != condition)
-        free(verif);
-
+    free(verif);
     return res;
 }
 
@@ -3356,27 +3312,19 @@ int execute_lines(olv_line_t *lines, int line_end, char **result) {
 }
 
 int execute_return(char *line, char **result) {
-    if (strlen(line) < 7) {
+    if (strlen(line) < 7 || result == NULL) {
         return -4;
     }
 
-    char *copy = strdup(line + 7);
-    char *res = check_subfunc(copy);
-    if (res != copy) {
-        free(copy);
-    }
+    char *res = check_subfunc(line + 7);
 
     if (res == NULL) {
         // invalid RETURN statement
         return -1;
     }
 
-    if (result != NULL) {
-        free(*result);
-        *result = res;
-    } else {
-        free(res);
-    }
+    free(*result);
+    *result = res;
 
     return -4;
 }
@@ -3390,84 +3338,54 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
 
     if (strlen(for_line) < 5) {
         raise_error("FOR", "No variable name provided");
-
-        if (for_line != lines[0].str) {
-            free(for_line);
-        }
+        free(for_line);
 
         return -1;
     }
-
-    char *var_name = malloc(strlen(for_line) + 1);
-
-    int i;
-    for (i = 4; for_line[i] != ' ' && for_line[i] != '\0'; i++) {
-        var_name[i - 4] = for_line[i];
-    }
-    var_name[i - 4] = '\0';
 
     int line_end = get_line_end(line_count, lines);
 
     if (line_end == -1) {
-        if (for_line != lines[0].str)
-            free(for_line);
-        free(var_name);
+        free(for_line);
         return -1;
     }
 
-    char *string = malloc(strlen(for_line) + 1);
+    int index;
+    for (index = 4; for_line[index] && !IS_SPACE_CHAR(for_line[index]); index++);
 
-    if (for_line[i] == '\0') {
-        string[0] = '\0';
-    } else {
-        int j;
-        for (j = i + 1; for_line[j] != '\0'; j++) {
-            string[j - i - 1] = for_line[j];
-        }
-
-        string[j - i - 1] = '\0';
-    }
-
-    // chek string length
-    if (strlen(string) == 0) {
-        free(var_name);
-        free(string);
-
-        if (for_line != lines[0].str) {
-            free(for_line);
-        }
-
+    if (for_line[index] == '\0') {
+        free(for_line);
         return line_end;
     }
 
-    int var_exist_before = get_variable_index(var_name, 0) != -1;
+    char *var_name = for_line + 4;
+    for_line[index++] = '\0';
 
-    int var_len = 0;
-    int string_index = 0;
+    int var_exist_before = get_variable_index(var_name, 0) != -1;
     int in_string = 0;
+    int var_len = 0;
 
     int res;
     // execute the loop
-    while (string[string_index]) {
-
+    while (for_line[index]) {
         // skip spaces
-        while (string[string_index] == ' ')
-            string_index++;
-        if (string[string_index] == '\0')
+        while (IS_SPACE_CHAR(for_line[index]))
+            index++;
+        if (for_line[index] == '\0')
             break;
 
         // set the the variable
-        for (var_len = 0; string[string_index + var_len] != '\0'; var_len++) {
-            if (string[string_index + var_len] == INTR_QUOTE) {
+        for (var_len = 0; for_line[index + var_len] != '\0'; var_len++) {
+            if (for_line[index + var_len] == INTR_QUOTE) {
                 in_string = !in_string;
-            } else if (!in_string && string[string_index + var_len] == ' ') {
+            } else if (!in_string && IS_SPACE_CHAR(for_line[index + var_len])) {
                 break;
             }
         }
 
-        set_variable_withlen(var_name, string + string_index, var_len, 0);
+        set_variable_withlen(var_name, for_line + index, var_len, 0);
 
-        string_index += var_len;
+        index += var_len;
 
         // execute the iteration
         res = execute_lines(lines + 1, line_end - 1, result);
@@ -3490,12 +3408,7 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
         del_variable(var_name);
     }
 
-    if (for_line != lines[0].str) {
-        free(for_line);
-    }
-
-    free(var_name);
-    free(string);
+    free(for_line);
 
     return line_end;
 }

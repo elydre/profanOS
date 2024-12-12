@@ -13,7 +13,7 @@
 #include <profan/syscall.h>
 
 #include <profan/libmmq.h>
-#include <profan/type.h>
+#include <profan/types.h>
 
 #define FILESYS_LIB_C
 #include <profan/filesys.h>

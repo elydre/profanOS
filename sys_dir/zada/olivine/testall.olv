@@ -187,6 +187,19 @@ assert !(eval !sum = 2550) 'while + continue'
 del sum
 del i
 
+// ----- PSEUDO ---------------------------------------------------------------
+
+pseudo mypseudo1 mypseudo2
+pseudo mypseudo2 set
+
+mypseudo1 var 123
+
+assert !(eval !var = 123) 'double pseudo'
+
+del -p mypseudo1
+del -p mypseudo2
+del var
+
 // ----- FUNCTION RETURN ------------------------------------------------------
 
 FUNC testreturn

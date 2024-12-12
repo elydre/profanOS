@@ -37,11 +37,11 @@ int open(const char *path, int flags, ...) {
 }
 
 int creat(const char *file, mode_t mode) {
-    puts("creat is not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("creat");
     return -1;
 }
 
 int fcntl(int fd, int cmd, ...) {
-    puts("fcntl is not implemented yet, WHY DO YOU USE IT ?");
+    profan_nimpl("fcntl");
     return -1;
 }

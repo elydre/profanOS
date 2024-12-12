@@ -18,38 +18,13 @@
 
 #define PROCESS_MAX 64
 
-int str_to_int(char *str) {
-    int ret = 0;
-    if (str[0] != '0' || str[1] != 'x') {
-        for (int i = 0; str[i]; i++) {
-            if (str[i] >= '0' && str[i] <= '9')
-                ret = ret * 10 + str[i] - '0';
-            else if (str[i] != ' ')
-                return -1;
-        }
-        return ret;
-    }
-    for (int i = 2; str[i]; i++) {
-        if (str[i] >= '0' && str[i] <= '9')
-            ret = ret * 16 + str[i] - '0';
-        else if (str[i] >= 'a' && str[i] <= 'f')
-            ret = ret * 16 + str[i] - 'a' + 10;
-        else if (str[i] >= 'A' && str[i] <= 'F')
-            ret = ret * 16 + str[i] - 'A' + 10;
-        else if (str[i] != ' ')
-            return -1;
-    }
-    return ret;
-}
-
 int print_help(void) {
     puts(
         "Usage: mem [options]\n"
         "Options:\n"
-        "  -p <f> [s] print memory area\n"
-        "  -h         display this help message\n"
-        "  -l         show detailed memory usage\n"
-        "  -s         show summary of memory usage"
+        "  -h     display this help message\n"
+        "  -l     show detailed memory usage\n"
+        "  -s     show summary of memory usage"
     );
 
     return 0;
@@ -61,11 +36,10 @@ typedef struct {
     int mode;
 } mem_args_t;
 
-#define ACTION_PRINT 1
-#define ACTION_LIST  2
-#define ACTION_SUM   3
-#define ACTION_HELP  4
-#define ACTION_ERROR 5
+#define ACTION_LIST  1
+#define ACTION_SUM   2
+#define ACTION_HELP  3
+#define ACTION_ERROR 4
 
 mem_args_t *parse_args(int argc, char **argv) {
     mem_args_t *ret = malloc(sizeof(mem_args_t));
@@ -80,18 +54,6 @@ mem_args_t *parse_args(int argc, char **argv) {
             ret->mode = ACTION_LIST;
         } else if (strcmp(argv[1], "-s") == 0) {
             ret->mode = ACTION_SUM;
-        }
-    } else if (argc == 3) {
-        if (strcmp(argv[1], "-p") == 0) {
-            ret->mode = ACTION_PRINT;
-            ret->start = str_to_int(argv[2]);
-            ret->size = 512;
-        }
-    } else if (argc == 4) {
-        if (strcmp(argv[1], "-p") == 0) {
-            ret->mode = ACTION_PRINT;
-            ret->start = str_to_int(argv[2]);
-            ret->size = str_to_int(argv[3]);
         }
     }
 
@@ -184,12 +146,6 @@ int main(int argc, char *argv[]) {
 
     if (args->mode == ACTION_SUM) {
         memory_print_summary();
-        free(args);
-        return 0;
-    }
-
-    if (args->mode == ACTION_PRINT) {
-        profan_print_memory((void *) args->start, args->size);
         free(args);
         return 0;
     }

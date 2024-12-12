@@ -12,7 +12,8 @@
 #ifndef LIBMMQ_ID
 #define LIBMMQ_ID 1001
 
-#include <profan/type.h>
+#include <stdint.h>
+#include <stddef.h>
 
 #define malloc(size) malloc_func(size, 0)
 #define malloc_ask(size) malloc_func(size, 1)

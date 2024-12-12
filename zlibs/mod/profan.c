@@ -16,7 +16,6 @@
 
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
-#include <profan/type.h>
 #include <profan.h>
 
 #include <stdarg.h>

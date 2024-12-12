@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "3.4"
+#define DELUGE_VERSION "3.5"
 #define ALWAYS_DEBUG 0
 
 /****************************
@@ -673,36 +673,43 @@ void *dlopen(const char *filename, int flag) {
 }
 
 void *dlsym(void *handle, const char *symbol) {
-    if (handle == NULL) {
-        return (void *) get_sym_value(symbol, NULL);
-    }
-
-    uint32_t val, full_h = hash(symbol);
     elfobj_t *dl = handle;
-    Elf32_Sym *ret;
-
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) dl->file;
+    uint32_t val, full_h;
 
     g_dlfcn_error = 0;
-    if (ehdr->e_type == ET_EXEC) {
-        ret = hash_get(dl, full_h, symbol);
-        if (!ret)
-            g_dlfcn_error = 2;
-        return (void *) ret->st_value;
-    }
 
-    val = get_sym_extra(symbol, full_h);
-    if (!val) {
+    if (dl == NULL) {
+        val = get_sym_value(symbol, NULL);
+        if (val)
+            return (void *) val;
         g_dlfcn_error = 2;
         return NULL;
+    }
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) dl->file;
+    Elf32_Sym *ret;
+
+    full_h = hash(symbol);
+
+    if (ehdr->e_type == ET_EXEC) {
+        ret = hash_get(dl, full_h, symbol);
+
+        if (ret)
+            return (void *) ret->st_value;
+        g_dlfcn_error = 2;
+        return NULL;
+    }
+
+    if ((val = get_sym_extra(symbol, full_h))) {
+        return (void *) val;
     }
 
     ret = hash_get(dl, full_h, symbol);
-    if (!ret) {
-        g_dlfcn_error = 2;
-        return NULL;
-    }
-    return (void *) dl->mem + ret->st_value;
+
+    if (ret)
+        return (void *) dl->mem + ret->st_value;
+    g_dlfcn_error = 2;
+    return NULL;
 }
 
 int dlclose(void *handle) {
@@ -746,12 +753,19 @@ int dlclose(void *handle) {
 
 char *dlerror(void) {
     char *error;
-    if (!g_dlfcn_error)
-        return NULL;
-    if (g_dlfcn_error == 1)
-        error = "deluge dlfcn: failed to open file";
-    else
-        error = "deluge dlfcn: symbol not found";
+    switch (g_dlfcn_error) {
+        case 0:
+            return NULL;
+        case 1:
+            error = "deluge dlfcn: failed to open file";
+            break;
+        case 2:
+            error = "deluge dlfcn: symbol not found";
+            break;
+        default:
+            error = "deluge dlfcn: unknown error";
+            break;
+    }
     g_dlfcn_error = 0;
     return error;
 }

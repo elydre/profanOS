@@ -121,7 +121,7 @@ def check_for_header(lines, path):
         print_warning(path, 1, "no file name in header")
     if lines[3] == empty_header[3]:
         print_warning(path, 3, "no file description in header")
-    elif not (lines[3][5].isupper() or lines[3][5:].startswith("profan")):
+    elif not (lines[3][5].isupper() or lines[3][5].isnumeric() or lines[3][5:].startswith("profan")):
         print_warning(path, 3, "file description should start with uppercase")
     for l in range(len(empty_header)):
         if len(lines[l]) != len(empty_header[l]):

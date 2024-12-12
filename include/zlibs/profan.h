@@ -12,7 +12,7 @@
 #ifndef PROFAN_LIB_ID
 #define PROFAN_LIB_ID 1005
 
-#include <profan/type.h>
+#include <profan/types.h>
 
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, argc, argv, environ, 1}, NULL)
@@ -41,14 +41,15 @@
 #define KB_S        31
 
 int   serial_debug(char *frm, ...);
-void  profan_print_memory(void *addr, uint32_t size);
+char *profan_fn_name(void *ptr, char **libname);
+void  profan_print_trace(void);
+
+char *profan_input(int *size);
+void  profan_nimpl(char *name);
+char *profan_libc_version(void);
 
 char *profan_join_path(const char *old, const char *new);
 void  profan_sep_path(const char *fullpath, char **parent, char **cnt);
-
-char *profan_input(int *size);
-char *profan_fn_name(void *ptr, char **libname);
-void  profan_print_trace(void);
 
 void *profan_kmalloc(uint32_t size, int as_kernel);
 void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);

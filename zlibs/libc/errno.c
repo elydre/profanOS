@@ -11,7 +11,7 @@
 
 #include <errno.h>
 
-int errno = 0;
+errno_t errno = 0;
 
 char *strerror(int errnum) {
     switch (errnum) {

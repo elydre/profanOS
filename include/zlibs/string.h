@@ -9,10 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef STRING_H
-#define STRING_H
+#ifndef _STRING_H
+#define _STRING_H
 
-#include <profan/type.h>
 #include <stddef.h>
 
 char  *basename(const char *path);
@@ -35,7 +34,6 @@ void  *rawmemchr(const void *s, int c);
 char  *stpcpy(char *s1, const char *s2);
 char  *stpncpy(char *s1, const char *s2, size_t n);
 int    strcasecmp (const char *s1, const char *s2);
-int    strcasecmp_l(const char *s1, const char *s2, locale_t loc);
 char  *strcasestr(const char *s1, const char *s2);
 char  *strcat(char *s1, const char *s2);
 char  *strchr(const char *p, int ch);
@@ -49,7 +47,6 @@ size_t strlcat(char *dst, const char *src, size_t n);
 size_t strlcpy(char *dst, const char *src, size_t n);
 size_t strlen(const char *s);
 int    strncasecmp(const char *s1, const char *s2, size_t n);
-int    strncasecmp_l(const char *s1, const char *s2, size_t n, locale_t loc);
 char  *strncat(char *s1, const char *s2, size_t n);
 int    strncmp(const char *s1, const char *s2, size_t n);
 char  *strncpy(char *s1, const char *s2, size_t n);
