@@ -16,31 +16,32 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#define malloc(size) ((void *) syscall_mem_alloc((size), 0, 1))
+#define _isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r' || (c) == '\f' || (c) == '\v')
+#define _isdigit(c) ((c) >= '0' && (c) <= '9')
 
 int main(void) {
     return 0;
 }
 
-void *memset(void *s, int c, size_t n);
-void *memcpy(void *dest, const void *src, size_t n);
+void *mem_set(void *s, int c, size_t n);
+void *mem_cpy(void *dest, const void *src, size_t n);
 
-void *calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
+void *kcalloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
     int addr = syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
     if (addr == 0)
         return NULL;
-    memset((uint8_t *) addr, 0, size);
+    mem_set((uint8_t *) addr, 0, size);
     return (void *) addr;
 }
 
-void free(void *mem) {
+void kfree(void *mem) {
     if (mem == NULL)
         return;
     syscall_mem_free((int) mem);
 }
 
-void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
+void *krealloc_func(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL)
         return (void *) syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
 
@@ -49,16 +50,16 @@ void *realloc_func(void *mem, uint32_t new_size, int as_kernel) {
     if (new_addr == 0)
         return NULL;
 
-    memcpy((uint8_t *) new_addr, (uint8_t *) mem, old_size < new_size ? old_size : new_size);
-    free(mem);
+    mem_cpy((uint8_t *) new_addr, (uint8_t *) mem, old_size < new_size ? old_size : new_size);
+    kfree(mem);
     return (void *) new_addr;
 }
 
-void *malloc_func(uint32_t size, int as_kernel) {
+void *kmalloc_func(uint32_t size, int as_kernel) {
     return (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
 }
 
-void *memcpy(void *dest, const void *src, size_t n) {
+void *mem_cpy(void *dest, const void *src, size_t n) {
     register uint8_t *d = (uint8_t *) dest;
     register const uint8_t *s = (const uint8_t *) src;
 
@@ -69,7 +70,7 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-int memcmp(const void *s1, const void *s2, size_t n) {
+int mem_cmp(const void *s1, const void *s2, size_t n) {
     register const uint8_t *r1 = (const uint8_t *) s1;
     register const uint8_t *r2 = (const uint8_t *) s2;
 
@@ -79,7 +80,7 @@ int memcmp(const void *s1, const void *s2, size_t n) {
     return r;
 }
 
-void *memset(void *s, int c, size_t n) {
+void *mem_set(void *s, int c, size_t n) {
     register uint8_t *p = (uint8_t *) s;
     register uint8_t v = (uint8_t) c;
 
@@ -90,7 +91,7 @@ void *memset(void *s, int c, size_t n) {
     return s;
 }
 
-void *memmove(void *dest, const void *src, size_t n) {
+void *mem_move(void *dest, const void *src, size_t n) {
     register uint8_t *d = (uint8_t *) dest;
     register const uint8_t *s = (const uint8_t *) src;
 
@@ -109,7 +110,7 @@ void *memmove(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-int strcmp(register const char *s1, register const char *s2) {
+int str_cmp(register const char *s1, register const char *s2) {
     while (*s1 == *s2++) {
         if (*s1++ == 0) {
             return 0;
@@ -118,7 +119,7 @@ int strcmp(register const char *s1, register const char *s2) {
     return *(unsigned char *) s1 - *(unsigned char *) --s2;
 }
 
-char *strcpy(char *restrict s1, const char *restrict s2) {
+char *str_cpy(char *restrict s1, const char *restrict s2) {
     int i;
     for (i = 0; s2[i] != '\0'; ++i) {
         s1[i] = s2[i];
@@ -127,7 +128,7 @@ char *strcpy(char *restrict s1, const char *restrict s2) {
     return s1;
 }
 
-size_t strlen(const char *s) {
+size_t str_len(const char *s) {
     register const char *p;
 
     for (p=s ; *p ; p++);
@@ -135,17 +136,17 @@ size_t strlen(const char *s) {
     return p - s;
 }
 
-char *strdup(const char *s) {
-    size_t len = strlen(s);
-    char *d = malloc(len + 1);
+char *str_dup(const char *s) {
+    size_t len = str_len(s);
+    char *d = kmalloc_func(len + 1, 0);
     if (d == NULL)
         return NULL;
-    memcpy(d, s, len);
+    mem_cpy(d, s, len);
     d[len] = '\0';
     return d;
 }
 
-char *strncpy(char *restrict s1, register const char *restrict s2,
+char *str_ncpy(char *restrict s1, register const char *restrict s2,
                size_t n) {
     register char *s = s1;
 
@@ -158,7 +159,7 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
     return s1;
 }
 
-char *strcat(char *restrict s1, register const char *restrict s2) {
+char *str_cat(char *restrict s1, register const char *restrict s2) {
     size_t i,j;
     for (i = 0; s1[i] != '\0'; i++);
     for (j = 0; s2[j] != '\0'; j++)
@@ -167,7 +168,7 @@ char *strcat(char *restrict s1, register const char *restrict s2) {
     return s1;
 }
 
-int strncmp(register const char *s1, register const char *s2, size_t n) {
+int str_ncmp(register const char *s1, register const char *s2, size_t n) {
     if (n == 0) return 0;
     do {
         if (*s1 != *s2++)
@@ -178,12 +179,24 @@ int strncmp(register const char *s1, register const char *s2, size_t n) {
     return 0;
 }
 
+int str_int(const char *nptr) {
+    int n=0, neg=0;
+    while (_isspace(*nptr)) nptr++;
+    switch (*nptr) {
+        case '-': {neg=1; nptr++; break;}
+        case '+': {nptr++; break;}
+    }
+    while (_isdigit(*nptr))
+        n = 10*n - (*nptr++ - '0');
+    return neg ? n : -n;
+}
+
 void fd_putchar(int fd, char c) {
     fm_write(fd, &c, 1);
 }
 
 void fd_putstr(int fd, const char *str) {
-    fm_write(fd, (char *) str, strlen(str));
+    fm_write(fd, (char *) str, str_len(str));
 }
 
 void fd_putint(int fd, int n) {
@@ -234,17 +247,3 @@ void fd_printf(int fd, const char *fmt, ...) {
     va_end(args);
 }
 
-#define isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r' || (c) == '\f' || (c) == '\v')
-#define isdigit(c) ((c) >= '0' && (c) <= '9')
-
-int atoi(const char *nptr) {
-    int n=0, neg=0;
-    while (isspace(*nptr)) nptr++;
-    switch (*nptr) {
-        case '-': {neg=1; nptr++; break;}
-        case '+': {nptr++; break;}
-    }
-    while (isdigit(*nptr))
-        n = 10*n - (*nptr++ - '0');
-    return neg ? n : -n;
-}

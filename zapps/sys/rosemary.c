@@ -131,13 +131,13 @@ char **envp;
 
 void set_env(char *line) {
     if (envp == NULL) {
-        envp = malloc(2 * sizeof(char *));
+        envp = kmalloc(2 * sizeof(char *));
         envp[0] = line;
         envp[1] = NULL;
     } else {
         int i;
         for (i = 0; envp[i]; i++);
-        envp = realloc(envp, (i + 2) * sizeof(char *));
+        envp = krealloc(envp, (i + 2) * sizeof(char *));
         envp[i] = line;
         envp[i + 1] = NULL;
     }
@@ -170,7 +170,7 @@ int main(void) {
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);
         if (START_USAGE_GRAPH)
-            run_ifexist_full((runtime_args_t){"/bin/tools/usage.elf", 0, NULL, NULL, 0}, &usage_pid);
+            run_ifexist_full((runtime_args_t){"/bin/tools/usage.elf", 1, (char *[]){"usage"}, NULL, 0}, &usage_pid);
     } else {
         syscall_kprint("["LOADER_NAME"] Using kernel output for stdout\n");
         if (fm_reopen(0, "/dev/kterm", O_RDONLY)  < 0 ||
@@ -187,7 +187,7 @@ int main(void) {
     set_env("HOME=/");
 
     do {
-        run_ifexist_full((runtime_args_t){SHELL_PATH, 0, NULL, envp, 1}, NULL);
+        run_ifexist_full((runtime_args_t){SHELL_PATH, 1, (char *[]){SHELL_NAME}, envp, 1}, NULL);
 
         fd_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
@@ -210,7 +210,7 @@ int main(void) {
 
     syscall_kprint("\e[2J");
 
-    free(envp);
+    kfree(envp);
 
     // unload all modules
     for (int i = 0; i < total; i++) {

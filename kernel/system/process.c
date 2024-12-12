@@ -773,19 +773,7 @@ void process_switch_directory(uint32_t pid, scuba_dir_t *new_dir, int now) {
     scuba_dir_destroy(old_dir);
 }
 
-int process_set_name(uint32_t pid, char *name) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[set_name] pid %d not found", pid);
-        return 1;
-    }
-
-    str_ncpy(plist[place].name, name, 63);
-    return 0;
-}
-
-int process_get_info(uint32_t pid, int info_id) {
+int process_info(uint32_t pid, int info_id, void *ptr) {
     int place = i_pid_to_place(pid);
 
     if (info_id == PROC_INFO_STACK) {
@@ -811,8 +799,13 @@ int process_get_info(uint32_t pid, int info_id) {
             return plist[place].run_time;
         case PROC_INFO_NAME:
             return (int) plist[place].name;
-        case PROC_INFO_STACK:
-            return PROC_ESP_ADDR;
+        case PROC_INFO_COMM:
+            return (int) &plist[place].comm;
+        case PROC_INFO_SET_NAME:
+            if (!ptr)
+                return -1;
+            str_ncpy(plist[place].name, ptr, 63);
+            return 0;
         default:
             return -1;
     }

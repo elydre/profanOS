@@ -234,14 +234,13 @@ def build_disk_elfs():
         cprint(COLOR_EXEC, f"{TOOLS_DIR}/entry_elf.c")
         print_and_exec(f"{CC} -c {TOOLS_DIR}/entry_elf.c -o {OUT_DIR}/make/entry_elf.o {ZAPP_FLAGS}")
 
-    def build_c_to_bin(name, fname):
+    def build_c_to_sys(name, fname):
         global total
         print_info_line(name)
         print_and_exec(f"{CC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
         print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o " +
-                       f"{fname}.pe {OUT_DIR}/make/entry_bin.o {fname}.o")
-        print_and_exec(f"objcopy -O binary {fname}.pe {fname}.bin -j .text -j .data -j .rodata -j .bss")
-        print_and_exec(f"rm {fname}.o {fname}.pe")
+                       f"{fname}.elf {OUT_DIR}/make/entry_bin.o {fname}.o")
+        print_and_exec(f"rm {fname}.o")
         total -= 1
 
     def build_c_to_mod(name, fname):
@@ -425,7 +424,7 @@ def build_disk_elfs():
 
     for name in bin_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
-        threading.Thread(target = build_c_to_bin, args=(name, fname)).start()
+        threading.Thread(target = build_c_to_sys, args=(name, fname)).start()
 
     for name in dir_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
