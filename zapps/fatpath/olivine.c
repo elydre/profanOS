@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 0"
+#define OLV_VERSION "1.5 rev 1"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -859,7 +859,13 @@ int is_wildcard_match(char *wildcard, char *string) {
 }
 
 char *resolve_wildcard(char *base, char *wildcard) {
+    if (*wildcard == '/' && *base == '\0') {
+        wildcard++;
+        base = "/";
+    }
+
     char *next = strchr(wildcard, '/');
+
     if (next)
         wildcard[next - wildcard] = '\0';
 
@@ -871,7 +877,7 @@ char *resolve_wildcard(char *base, char *wildcard) {
     output[0] = '\0';
 
     for (struct dirent *entry = readdir(dir); entry != NULL; entry = readdir(dir)) {
-        if (entry->d_name[0] == '.')
+        if (entry->d_name[0] == '.' && wildcard[0] != '.')
             continue;
         if (!is_wildcard_match(wildcard, entry->d_name))
             continue;
@@ -896,6 +902,9 @@ char *resolve_wildcard(char *base, char *wildcard) {
     }
 
     closedir(dir);
+
+    if (next)
+        wildcard[next - wildcard] = '/';
 
     if (output[0])
         return output;
@@ -2982,13 +2991,9 @@ char *check_wildcards(char *line) {
         for (end = i + 1; line[end] && !IS_SPACE_CHAR(line[end]); end++);
 
         char old = line[end];
-
-        int line_len = strlen(line);
-
         line[end] = '\0';
 
         char *wildcard = resolve_wildcard("", line + start);
-
         line[end] = old;
 
         if (wildcard == NULL) {
@@ -3003,7 +3008,7 @@ char *check_wildcards(char *line) {
 
         int len = strlen(wildcard);
 
-        char *nline = malloc(line_len - (end - start) + len + 1);
+        char *nline = malloc(strlen(line) - (end - start) + len + 1);
         strncpy(nline, line, start);
         strcpy(nline + start, wildcard);
         strcat(nline, line + end);
