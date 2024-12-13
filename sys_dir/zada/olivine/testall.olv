@@ -56,10 +56,10 @@ FUNC deepeval
     END; IF !(eval 42 + 1 ~ 43)
         print '[ FAIL ] eval (addition, equality)\n'
         RETURN
-    END; IF !(eval 1 + 32 * 2 ~ 65)
+    END; IF !(eval 1 + 32 x 2 ~ 65)
         print '[ FAIL ] eval (simple priority)\n'
         RETURN
-    END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
+    END; IF !(eval 1 + ( 31 + 1 ) x 2 ~ 66 - 1)
         print '[ FAIL ] eval (complex priority)\n'
         RETURN
     END; IF !(eval 30 % 8 ~ 36 / 6)
@@ -224,7 +224,7 @@ del -f testargc
 
 FUNC testargv
     IF !#
-        RETURN !(eval !0 * 2 + !1)
+        RETURN !(eval !0 x 2 + !1)
     END; ELSE
         RETURN 0
     END;

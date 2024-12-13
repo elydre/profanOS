@@ -70,7 +70,7 @@ FUNC bf_set_me
         global bf_mem_len !(eval !0 + 1)
     END
 
-    set pos !(eval !0 * 2)
+    set pos !(eval !0 x 2)
 
     IF !(eval !pos = 0)
         set new !(nb_to_hex !(eval !1 / 16))
@@ -78,7 +78,7 @@ FUNC bf_set_me
         set new 0
     END
 
-    FOR i !(range 1 !(eval !bf_mem_len * 2))
+    FOR i !(range 1 !(eval !bf_mem_len x 2))
         IF !(eval !i = !pos)
             set new !(eval "!new" . "!(nb_to_hex !(eval !1 / 16))")
         END; ELSE
@@ -108,11 +108,11 @@ FUNC bf_get_me
         RETURN 0
     END
 
-    set pos !(eval !0 * 2)
+    set pos !(eval !0 x 2)
 
     set tmp !(hex_to_nb !(eval "!bf_mem" @ !pos))
     set pos !(eval !pos + 1)
-    RETURN !(eval !tmp * 16 + !(hex_to_nb !(eval "!bf_mem" @ !pos)))
+    RETURN !(eval !tmp x 16 + !(hex_to_nb !(eval "!bf_mem" @ !pos)))
 END
 
 FUNC bf_execute
