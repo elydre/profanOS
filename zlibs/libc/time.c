@@ -16,30 +16,30 @@
 #include <stdio.h>
 #include <time.h>
 
-#define is_leap_year(year) ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
+#define IS_LEAP_YEAR(year) (((year) % 4 == 0 && (year) % 100 != 0) || (year) % 400 == 0)
 
-static uint32_t seconde_in_month[] = {
-    0,
-    2678400,
-    5097600,
-    7776000,
-    10368000,
-    13046400,
-    15638400,
-    18316800,
-    20995200,
-    23587200,
-    26265600,
-    28857600
+#define CENTURY          2000
+
+#define SEC_IN_MIN       (60)
+#define SEC_IN_HOUR      (60 * SEC_IN_MIN)
+#define SEC_IN_DAY       (24 * SEC_IN_HOUR)
+#define SEC_IN_YEAR      (365 * SEC_IN_DAY)
+#define SEC_IN_LEAP_YEAR (366 * SEC_IN_DAY)
+
+static uint32_t cumulated_seconds_in_month[] = {
+    SEC_IN_DAY * 0,   // January
+    SEC_IN_DAY * 31,  // February
+    SEC_IN_DAY * 59,  // March
+    SEC_IN_DAY * 90,  // April
+    SEC_IN_DAY * 120, // May
+    SEC_IN_DAY * 151, // June
+    SEC_IN_DAY * 181, // July
+    SEC_IN_DAY * 212, // August
+    SEC_IN_DAY * 243, // September
+    SEC_IN_DAY * 273, // October
+    SEC_IN_DAY * 304, // November
+    SEC_IN_DAY * 334, // December
 };
-
-#define seconde_in_year 31536000
-#define seconde_in_leap_year 31622400
-#define seconde_in_day 86400
-#define seconde_in_hour 3600
-#define seconde_in_minute 60
-#define start_year 1970
-#define century 2000
 
 char *asctime(const tm_t *a) {
     profan_nimpl("asctime");
@@ -119,21 +119,24 @@ time_t mktime(tm_t *time) {
     unix_time += time->tm_sec;
 
     // Add minutes
-    unix_time += time->tm_min * seconde_in_minute;
+    unix_time += time->tm_min * SEC_IN_MIN;
 
     // Add hours
-    unix_time += time->tm_hour * seconde_in_hour;
+    unix_time += time->tm_hour * SEC_IN_HOUR;
 
     // Add days
-    unix_time += (time->tm_mday - 1) * seconde_in_day;
+    unix_time += (time->tm_mday - 1) * SEC_IN_DAY;
 
     // Add months
-    unix_time += seconde_in_month[time->tm_mon - 1];
+    unix_time += cumulated_seconds_in_month[time->tm_mon - 1];
+
+    // Add leap day
+    if (IS_LEAP_YEAR(time->tm_year + CENTURY) && time->tm_mon > 2)
+        unix_time += SEC_IN_DAY;
 
     // Add years
-    for (int i = start_year; i < time->tm_year + century; i++) {
-        unix_time += is_leap_year(i) ? seconde_in_leap_year : seconde_in_year;
-    }
+    for (int i = 1970; i < time->tm_year + CENTURY; i++)
+        unix_time += IS_LEAP_YEAR(i) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR;
 
     return unix_time;
 }
