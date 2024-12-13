@@ -853,7 +853,7 @@ int is_wildcard_match(char *wildcard, char *string) {
 
     if (*wildcard != INTR_WILDC)
         return 0;
-    
+
     return is_wildcard_match(wildcard + 1, string) ||
             (*string && is_wildcard_match(wildcard, string + 1));
 }
@@ -3092,7 +3092,7 @@ char *check_subfunc(const char *input) {
 
     if (line == NULL)
         return NULL;
-    
+
     #if ENABLE_WILDC
         line = check_wildcards(line);
         if (line == NULL)
