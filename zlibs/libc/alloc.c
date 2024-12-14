@@ -161,7 +161,7 @@ static void set_trace(int index) {
     }
 }
 
-static void register_alloc(void *ptr, uint32_t size) {
+static void register_alloc(void *ptr, size_t size) {
     g_stat->total_allocs++;
     g_stat->total_size += size;
 
@@ -216,7 +216,7 @@ static void register_free(void *ptr) {
     put_error("libc: leak tracking: internal error\n");
 }
 
-static int extend_virtual(uint32_t size) {
+static int extend_virtual(size_t size) {
     uint32_t req = g_arena_count + size / 2048 + 1;
 
     // align to the next power of 2 (11 -> 16)
@@ -258,7 +258,7 @@ static int extend_virtual(uint32_t size) {
         return ptr;                     \
     }
 
-void *malloc(uint32_t size) {
+void *malloc(size_t size) {
     void *p = buddy_malloc(g_buddy, size);
     ALLOC_DO(p, size);
 
@@ -271,7 +271,7 @@ void *malloc(uint32_t size) {
     return NULL;
 }
 
-void *calloc(uint32_t nmemb, uint32_t lsize) {
+void *calloc(size_t nmemb, size_t lsize) {
     void *p = buddy_calloc(g_buddy, nmemb, lsize);
     ALLOC_DO(p, nmemb * lsize);
 
@@ -284,7 +284,7 @@ void *calloc(uint32_t nmemb, uint32_t lsize) {
     return NULL;
 }
 
-void *realloc(void *mem, uint32_t new_size) {
+void *realloc(void *mem, size_t new_size) {
     if (g_debug && mem)
         register_free(mem);
 
