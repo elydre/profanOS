@@ -47,7 +47,7 @@ make
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
 The main ports (more information in the [ports](#major-ports) section) are not included
-in the repo source code but are easily downloadable with `make gaddons disk`.
+in the repo source code but are easily downloadable with `make addons disk`.
 
 ### Automated build
 
@@ -93,11 +93,11 @@ Here is a list of the main kernel features:
 - PS/2 mouse and keyboard
 - ATA hard disk
 - custom filesystem
-- preemptive multi-tasking
+- preemptive multitasking
 - memory allocation
 - virtual memory management
 - kernel modules
-- ring0 only
+- full ring0
 
 ## The userspace
 
@@ -105,7 +105,7 @@ Here is a list of the main kernel features:
 
 The kernel and userspace are developed mainly in C. The Olivine Shell (see the
 [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
-You can also use the lua, sulfur, C and C++ languages to create your own programs.
+You can also use posix-sh, lua, sulfur, malbolge and C languages to create your own programs.
 
 If you prefer a bash like rather than Olivine, you can use the `dash` port which is
 POSIX compliant and often used as `/bin/sh` in linux systems.
@@ -117,10 +117,8 @@ POSIX compliant and often used as `/bin/sh` in linux systems.
 - [lua](https://github.com/elydre/lua-profan) Lightweight scripting language
 - [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
 - [halfix](https://github.com/elydre/halfix-profan) x86 emulator with provided linux image
-- [sulfur](https://github.com/asqel/sulfur_lang) Bytecode high-performance language
 
-All the ports are available with the command `make addons` / `make gaddons` (graphical menu)
-or by building them manually.
+All the ports are available with the command `make addons` or by building them manually.
 
 ### Libraries
 
@@ -139,8 +137,7 @@ Here is a list of the main libraries and kernel modules:
     [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
 - **libc** - standard C library
 - **libpm** - profanOS minimalistic math lib
-- [libtsi](https://github.com/elydre/profanOS/wiki/lib_tsi) - text scrollable interface lib
-- **libpf** - profanOS extra stuff lib
+- **libpf** - extra stuff like [libtsi](https://github.com/elydre/profanOS/wiki/lib_tsi)
 
 Find all the libraries available on the [wiki](https://github.com/elydre/profanOS/wiki/Dev-Links).
 
