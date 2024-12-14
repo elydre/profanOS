@@ -912,6 +912,12 @@ float cosf(float x) {
     }
 }
 
+float fabsf(float x) {
+    union {float f; uint32_t i;} u = {x};
+    u.i &= 0x7fffffff;
+    return u.f;
+}
+
 double floor(double x) {
     int interger = (int) x;
     if (x < 0 && x != interger) {
@@ -1045,7 +1051,7 @@ float powf(float x, float y) {
             if (0.0f < y)
                 return 0.0f;
 
-            return 1.0f / __builtin_fabsf(x);            // return Inf and set div/0
+            return 1.0f / fabsf(x);
         }
 
         // deal with infinite y
@@ -1053,29 +1059,28 @@ float powf(float x, float y) {
             if (-1.0f == x)
                 return 1.0f;
 
-            if (absux > 0x3f800000) {    // |x| > 1.0f
+            if (absux > 0x3f800000) { // |x| > 1.0f
                 if (0.0f < y)
                     return y;
                 else
                     return 0.0f;
-            }
-            else {      // |x| < 1.0f
+            } else { // |x| < 1.0f
                 if (0.0f < y)
                     return 0.0f;
                 else
-                    return __builtin_fabsf(y);
+                    return 0x7f800000; // +inf
             }
         }
 
         // we can also deal with x == +inf at this point.
-        if (x == __builtin_inff()) {
+        if (x == 0x7f800000) {
             if (y < 0.0f)
                 return 0.0f;
             else
                 return x;
         }
 
-        if (x > -__builtin_inff()) {
+        if (x > -0x7f800000) {
             if (fractionalBits)
                 goto nan_sqrt;
 

@@ -47,16 +47,17 @@
 #define asuint64(f) ((union{double _f; uint64_t _i;}){f})._i
 #define asdouble(i) ((union{uint64_t _i; double _f;}){i})._f
 
-float acosf(float x);
-float cosf(float x);
+float  acosf(float x);
+float  cosf(float x);
+float  fabsf(float x);
 double floor(double x);
 double log10(double x);
-float powf(float x, float y);
-float sinf(float x);
+float  powf(float x, float y);
+float  sinf(float x);
 double sqrt(double x);
-float sqrtf(float x);
-float tanf(float x);
+float  sqrtf(float x);
+float  tanf(float x);
 double trunc(double x);
-float truncf(float x);
+float  truncf(float x);
 
 #endif
