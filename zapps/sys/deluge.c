@@ -723,7 +723,7 @@ int dlclose(void *handle) {
         return 0;
     }
 
-    debug_printf(1, "| kFree '%s'", dl->name);
+    debug_printf(1, "| Free '%s'", dl->name);
 
     // remove from loaded libs
     for (int i = 0; i < g_lib_count; i++) {
