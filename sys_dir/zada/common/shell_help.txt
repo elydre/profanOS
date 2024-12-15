@@ -1,10 +1,10 @@
 \e[0m USEFUL COMMANDS \e[37m
-cat     - show file content         mkdir   - create directory
-clear   - clear the screen          more    - read line by line
+cat     - show file content         ls      - list the current dir
+clear   - clear the screen          mkdir   - create directory
 echo    - print text to stdout      proc    - process utility
 fetch   - show time, mem, disk      rim     - start text editor
 kb      - set keyboard layout       rm      - remove file or dir
-ls      - list the current dir      wif     - write in file
+less    - show file content         wc      - count words in file
 
 all commands are in /bin/cmd and /bin/fatpath
 
@@ -14,6 +14,6 @@ eval    - calculate expression      set    - set variable
 
 Some examples:
 
-\e[95mFOR \e[0mi \e[92m!(\e[96mfind\e[0m -d /user\e[92m)              \e[95mFUNC\e[0m double
-    \e[94mecho \e[93m!i                             \e[95mRETURN \e[92m!(\e[96meval\e[0m !0 * 2\e[92m)
+\e[95mFUNC\e[0m double                         \e[95mFOR\e[0m i \e[92m!(\e[96mrange\e[0m 10\e[92m)
+    \e[95mRETURN \e[92m!(\e[96meval\e[0m \e[93m!0\e[0m x 2\e[92m)               \e[94mecho \e[93m!i
 \e[95mEND                                 END
