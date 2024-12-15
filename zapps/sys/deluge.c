@@ -18,8 +18,9 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION "3.6"
-#define ALWAYS_DEBUG 0
+#define DELUGE_VERSION  "3.7"
+#define ALWAYS_DEBUG    0
+#define USE_CACHED_LIBC 1
 
 /****************************
  *                         *
@@ -216,7 +217,7 @@ uint32_t search_elf_sid(const char *name, uint16_t type, char **path) {
  *                        *
 ***************************/
 
-uint32_t hash(const char *str) {
+static inline uint32_t hash(const char *str) {
     uint32_t hash = 0;
     for (int i = 0; str[i]; i++) {
         hash = (hash << 5) + str[i];
@@ -261,9 +262,8 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
 
         table[table_index] = later[i];
 
-        while (entry->next)
-            entry = (void *) entry->next;
-        entry->next = (void *) &table[table_index];
+        table[table_index].next = entry->next;
+        entry->next = &table[table_index];
 
         table_index++;
     }
@@ -477,9 +477,12 @@ int file_relocate(elfobj_t *dl) {
 }
 
 void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
-    static elfobj_t *libc = NULL;
     char *path = NULL;
     uint32_t sid;
+
+    #if USE_CACHED_LIBC
+    static elfobj_t *libc = NULL;
+    #endif
 
     sid = search_elf_sid(filename, required_type, &path);
 
@@ -498,6 +501,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
             return g_loaded_libs[i];
         }
 
+        #if USE_CACHED_LIBC
         if (str_cmp(path, "/lib/libc.so") == 0) {
             debug_printf(1, "| Open '%s' (cached)", path);
             if (libc == NULL)
@@ -506,6 +510,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
             kfree(path);
             return libc;
         }
+        #endif
     }
 
     debug_printf(1, "| Open '%s'", path);
