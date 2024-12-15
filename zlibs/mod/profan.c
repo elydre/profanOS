@@ -405,7 +405,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
                 nargv[i] = kmalloc_ask(str_len(args.argv[i]) + 1);
                 str_cpy(nargv[i], args.argv[i]);
             }
-            sid = fu_path_to_sid(SID_ROOT, ELF_INTERP);
+            sid = fu_path_to_sid(SID_ROOT, args.path);
         } else {
             args.argc += 3;
             nargv = kcalloc_ask(args.argc + 1, sizeof(char *));
