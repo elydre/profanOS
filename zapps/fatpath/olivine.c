@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 1"
+#define OLV_VERSION "1.5 rev 2"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1310,7 +1310,7 @@ char *eval(ast_t *ast) {
 
 void eval_help(void) {
     puts("Olivine Integrated Evaluator\n"
-        "Usage: eval [args...]\n"
+        "Usage: eval <arg> [operator <arg>] [...]\n"
         "Spaces are required between operators\n\n"
         "Number operators:\n"
         " +  Addition\n"
@@ -1330,12 +1330,12 @@ void eval_help(void) {
         " =  Equal\n"
         " ~  Not equal\n\n"
         "Operators priority (from lowest to highest):");
-    for (unsigned i = 0; i < sizeof(ops); i++) {
+    for (unsigned i = 0; ops[i]; i++) {
         printf(" %c", ops[i]);
     }
-    puts("\n\nExample: eval 1 + 2 * 3\n"
-        "         eval \"hello\" * 3\n"
-        "         eval ( 1 + 3 ) * 2 = 8\n");
+    puts("\n\nExample: eval 1 + 2 x 3\n"
+        "         eval \"hello\" x 3\n"
+        "         eval ( 1 + 3 ) x 2 = 8\n");
 }
 
 char *if_eval(char **input) {
@@ -1344,7 +1344,7 @@ char *if_eval(char **input) {
     for (argc = 0; input[argc] != NULL; argc++);
 
     if (argc < 1) {
-        raise_error("eval", "Requires at least one argument");
+        raise_error("eval", "Too few arguments, try 'eval -h'");
         return ERROR_CODE;
     }
 
