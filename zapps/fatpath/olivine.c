@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 2"
+#define OLV_VERSION "1.5 rev 3"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -3082,7 +3082,7 @@ char *check_subfunc(const char *input) {
         } else {
             nline = malloc(strlen(line) - (end - start) + 1);
             strncpy(nline, line, start);
-            strcpy(line + start, line + end + 1);
+            strcpy(nline + start, line + end + 1);
         }
 
         free(line);
@@ -3667,37 +3667,50 @@ olv_line_t *lexe_program(const char *program, int make_internal, int *len) {
         #endif
 
         // interpret double backslashes
-        if (program[i] == '\\' && make_internal) {
-            if (program[i + 1] == 'n') {
+        if (program[i] != '\\' || !make_internal) {
+            tmp[tmp_index] = program[i];
+            goto lexe_end;
+        }
+
+        switch (program[++i]) {
+            case 'n':
                 tmp[tmp_index] = '\n';
-            } else if (program[i + 1] == 't') {
+                break;
+            case 't':
                 tmp[tmp_index] = '\t';
-            } else if (program[i + 1] == 'r') {
+                break;
+            case 'r':
                 tmp[tmp_index] = '\r';
-            } else if (program[i + 1] == 'a') {
+                break;
+            case 'a':
                 tmp[tmp_index] = '\a';
-            } else if (program[i + 1] == '\\') {
+                break;
+            case 'e':
+                tmp[tmp_index] = '\e';
+                break;
+            case '\\':
                 tmp[tmp_index] = '\\';
-            } else if (program[i + 1] == USER_WILDC) {
+                break;
+            case USER_WILDC:
                 tmp[tmp_index] = USER_WILDC;
-            } else if (program[i + 1] == USER_QUOTE) {
+                break;
+            case USER_QUOTE:
                 tmp[tmp_index] = USER_QUOTE;
-            } else if (program[i + 1] == USER_VARDF) {
+                break;
+            case USER_VARDF:
                 tmp[tmp_index] = USER_VARDF;
-            } else if (program[i + 1] == ';') {
+                break;
+            case ';':
                 tmp[tmp_index] = ';';
-            } else {
-                if (program[i + 1] == '\0')
+                break;
+            default:
+                if (program[i] == '\0')
                     raise_error_line(fileline, NULL, "Backslash at end of line");
                 else
-                    raise_error_line(fileline, NULL, "Invalid escape sequence '\\%c'", program[i + 1]);
+                    raise_error_line(fileline, NULL, "Invalid escape sequence '\\%c'", program[i]);
                 lines[0].str = NULL;
                 free(tmp);
                 return lines;
-            }
-            i++;
-        } else {
-            tmp[tmp_index] = program[i];
         }
 
         lexe_end:
