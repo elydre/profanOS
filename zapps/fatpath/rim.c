@@ -48,7 +48,7 @@
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
 
-#define RIM_VERSION "7 rev 1"
+#define RIM_VERSION "7 rev 2"
 
 // GLOBALS
 typedef struct {
@@ -62,7 +62,13 @@ typedef struct {
     char **blues;
 } rim_syntax_t;
 
-rim_syntax_t *g_syntax;
+typedef struct {
+    rim_syntax_t *syntax;
+    int always_tab;
+    int save_at_exit;
+} rim_settings_t;
+
+rim_settings_t g_rim;
 
 char *g_data;
 int g_data_count;
@@ -74,8 +80,6 @@ int g_lines_max;
 
 int g_cursor_line;
 int g_cursor_pos;
-
-int g_always_tab;
 
 int SCREEN_W;
 int SCREEN_H;
@@ -178,7 +182,7 @@ void save_file(char *path) {
 }
 
 int word_isnumber(char *word, int size) {
-    if (!g_syntax->numbers) return 0;
+    if (!g_rim.syntax->numbers) return 0;
     if (size > 2 && word[0] == '0' && (word[1] == 'x' || word[1] == 'X')) {
         for (int i = 2; i < size; i++) {
             if (!isxdigit(word[i])) return 0;
@@ -192,24 +196,24 @@ int word_isnumber(char *word, int size) {
 }
 
 int word_purple(char *word, uint32_t size) {
-    if (!g_syntax->keywords) return 0;
-    for (uint32_t i = 0; g_syntax->keywords[i]; i++) {
-        if (size == strlen(g_syntax->keywords[i]) && !memcmp(word, g_syntax->keywords[i], size)) return 1;
+    if (!g_rim.syntax->keywords) return 0;
+    for (uint32_t i = 0; g_rim.syntax->keywords[i]; i++) {
+        if (size == strlen(g_rim.syntax->keywords[i]) && !memcmp(word, g_rim.syntax->keywords[i], size)) return 1;
     }
     return 0;
 }
 
 int word_isblue(char *word, uint32_t size) {
-    if (g_syntax->ctypes && size > 2 && word[size - 1] == 't' && word[size - 2] == '_') return 1;
-    if (!g_syntax->blues) return 0;
-    for (uint32_t i = 0; g_syntax->blues[i]; i++) {
-        if (size == strlen(g_syntax->blues[i]) && !memcmp(word, g_syntax->blues[i], size)) return 1;
+    if (g_rim.syntax->ctypes && size > 2 && word[size - 1] == 't' && word[size - 2] == '_') return 1;
+    if (!g_rim.syntax->blues) return 0;
+    for (uint32_t i = 0; g_rim.syntax->blues[i]; i++) {
+        if (size == strlen(g_rim.syntax->blues[i]) && !memcmp(word, g_rim.syntax->blues[i], size)) return 1;
     }
     return 0;
 }
 
 int word_isbrace(char *word, uint32_t size) {
-    if (!g_syntax->braces) return 0;
+    if (!g_rim.syntax->braces) return 0;
     return (size == 1 && (
         word[0] == '(' ||
         word[0] == ')' ||
@@ -221,7 +225,7 @@ int word_isbrace(char *word, uint32_t size) {
 }
 
 int word_paraft(char *word, uint32_t size) {
-    if (!g_syntax->funccalls) return 0;
+    if (!g_rim.syntax->funccalls) return 0;
     for (uint32_t i = size; word[i]; i++) {
         if (word[i] == '(') return 1;
         if (!isspace(word[i])) return 0;
@@ -232,8 +236,8 @@ int word_paraft(char *word, uint32_t size) {
 void put_word(int line, int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
     if (size == 0) return;
     char color = 0x0F;
-    if (in_word == 2 && g_syntax->strings) color = 0x0E;
-    else if (in_word == 1 && g_syntax->words) {
+    if (in_word == 2 && g_rim.syntax->strings) color = 0x0E;
+    else if (in_word == 1 && g_rim.syntax->words) {
         color = 0x07;
         if (word_isnumber(word, size)) color = 0x0A;
         else if (word_isblue(word, size)) color = 0x09;
@@ -436,7 +440,7 @@ void realloc_buffer(void) {
 void insert_tab(void) {
     int tab = 0;
 
-    if (g_always_tab) {
+    if (g_rim.always_tab) {
         tab = 1;
     } else for (int j = g_data_lines[g_cursor_line]; g_data[j] != '\0'; j++) {
         if (g_data[j] == '\t') {
@@ -552,17 +556,16 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
 
     char c = profan_kb_get_char(key, shift);
 
-    if (c == 'q') {
+    if (c == 'q') { // quit
         return 1;
     }
 
-    if (c == 's') {
+    if (c == 's') { // save
         if (path)
             save_file(path);
-        return 0;
     }
 
-    if (c == 'c' || c == 'x') {
+    if (c == 'c' || c == 'x') { // copy or cut
         start = g_data_lines[g_cursor_line];
         end = (g_cursor_line < g_lines_count - 1) ? g_data_lines[g_cursor_line + 1] : g_data_count;
         size = end - start - 1;
@@ -570,9 +573,10 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         memcpy(clip, g_data + start, size);
         strcpy(clip + size, "\n");
         clip_set_raw(clip, size + 1);
-    }
 
-    if (c == 'x') {
+        if (c == 'c')
+            return 0;
+
         memmove(g_data + start, g_data + end, g_data_count - end);
         g_data_count -= size + 1;
 
@@ -595,10 +599,9 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         }
 
         realloc_buffer();
-        return 0;
     }
 
-    if (c == 'v') {
+    else if (c == 'v') { // paste
         uint32_t size;
         char *clip = clip_get_raw(&size);
         // use insert_newline when '\n' is found
@@ -610,6 +613,30 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
             }
             realloc_buffer();
         }
+    }
+
+    else if (c == 'm') { // page down
+        g_cursor_line += SCREEN_H;
+        if (g_cursor_line >= g_lines_count) {
+            g_cursor_line = g_lines_count - 1;
+        }
+        g_cursor_pos = min(g_cursor_pos, cursor_max_at_line(g_cursor_line));
+    }
+
+    else if (c == 'p') { // page up
+        g_cursor_line -= SCREEN_H;
+        if (g_cursor_line < 0) {
+            g_cursor_line = 0;
+        }
+        g_cursor_pos = min(g_cursor_pos, cursor_max_at_line(g_cursor_line));
+    }
+
+    else if (c == 'a') { // home
+        g_cursor_pos = 0;
+    }
+
+    else if (c == 'e') { // end
+        g_cursor_pos = cursor_max_at_line(g_cursor_line);
     }
 
     return 0;
@@ -756,8 +783,8 @@ void main_loop(char *path) {
         }
 
         // smart scrolling (y axis)
-        if (g_cursor_line - 2 < y_offset && g_cursor_line > 1) {
-            y_offset = g_cursor_line - 2;
+        if (g_cursor_line - 2 < y_offset) {
+            y_offset = max(g_cursor_line - 2, 0);
         } else if (g_cursor_line + 3 > y_offset + SCREEN_H) {
             y_offset = g_cursor_line + 3 - SCREEN_H;
         }
@@ -787,9 +814,9 @@ void quit(void) {
     free(g_data);
     free(g_data_lines);
 
-    free(g_syntax->keywords);
-    free(g_syntax->blues);
-    free(g_syntax);
+    free(g_rim.syntax->keywords);
+    free(g_rim.syntax->blues);
+    free(g_rim.syntax);
 }
 
 char **copy_array(char **array) {
@@ -804,25 +831,25 @@ char **copy_array(char **array) {
 }
 
 void rim_syntax_init(char *lang) {
-    g_syntax = calloc(1, sizeof(rim_syntax_t));
+    g_rim.syntax = calloc(1, sizeof(rim_syntax_t));
 
     if (!lang)
         return;
 
     if (strcmp(lang, "c") == 0) {
-        g_syntax->words = 1;
-        g_syntax->numbers = 1;
-        g_syntax->funccalls = 1;
-        g_syntax->braces = 1;
-        g_syntax->strings = 1;
-        g_syntax->ctypes = 1;
+        g_rim.syntax->words = 1;
+        g_rim.syntax->numbers = 1;
+        g_rim.syntax->funccalls = 1;
+        g_rim.syntax->braces = 1;
+        g_rim.syntax->strings = 1;
+        g_rim.syntax->ctypes = 1;
 
-        g_syntax->keywords = copy_array((char *[]) {
+        g_rim.syntax->keywords = copy_array((char *[]) {
             "if", "else", "while", "for", "do", "switch", "case",
             "default", "break", "continue", "return", "goto", "end", NULL
         });
 
-        g_syntax->blues = copy_array((char *[]) {
+        g_rim.syntax->blues = copy_array((char *[]) {
             "char", "short", "int", "long", "float", "double", "void",
             "struct", "enum", "union", "signed", "unsigned", "const",
             "volatile", "static", "extern", "register", "auto", "typedef",
@@ -831,28 +858,28 @@ void rim_syntax_init(char *lang) {
     }
 
     else if (strcmp(lang, "lua") == 0) {
-        g_syntax->words = 1;
-        g_syntax->numbers = 1;
-        g_syntax->funccalls = 1;
-        g_syntax->braces = 1;
-        g_syntax->strings = 1;
+        g_rim.syntax->words = 1;
+        g_rim.syntax->numbers = 1;
+        g_rim.syntax->funccalls = 1;
+        g_rim.syntax->braces = 1;
+        g_rim.syntax->strings = 1;
 
-        g_syntax->keywords = copy_array((char *[]) {
+        g_rim.syntax->keywords = copy_array((char *[]) {
             "if", "then", "else", "elseif", "while", "do", "for", "in",
             "repeat", "until", "function", "return", "break", "end", NULL
         });
 
-        g_syntax->blues = copy_array((char *[]) {
+        g_rim.syntax->blues = copy_array((char *[]) {
             "nil", "true", "false", "function", "local", NULL
         });
     }
 
     else if (strcmp(lang, "olv") == 0) {
-        g_syntax->words = 1;
-        g_syntax->numbers = 1;
-        g_syntax->strings = 1;
+        g_rim.syntax->words = 1;
+        g_rim.syntax->numbers = 1;
+        g_rim.syntax->strings = 1;
 
-        g_syntax->keywords = copy_array((char *[]) {
+        g_rim.syntax->keywords = copy_array((char *[]) {
             "IF", "ELSE", "WHILE", "FOR", "FUNC", "END", "RETURN", "BREAK", "CONTINUE",
             "if", "else", "while", "for", "func", "end", "return", "break", "continue", NULL
         });
@@ -863,24 +890,39 @@ char *compute_args(int argc, char **argv) {
     char *file = NULL;
     char *ext = NULL;
 
-    g_always_tab = 0;
+    g_rim.always_tab = 0;
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
-            if (argv[i][1] == 't') {
-                g_always_tab = 1;
-            } else if (argv[i][1] == 'h') {
-                puts("Usage: rim [-h|-t] [file]"
+            if (argv[i][1] == 'h') {
+                puts("Usage: rim [opt] [file]"
                     "\nOptions:"
                     "\n  -c    specify syntax highlighting"
                     "\n  -h    display this help message"
                     "\n  -n    disable syntax highlighting"
+                    "\n  -s    always save file at exit"
                     "\n  -t    always insert tab character"
                     "\n  -v    display version information"
+                    "\n\nSyntax highlighting:"
+                    "\n  c, lua, olv"
+                    "\n\nRim Shortcuts:"
+                    "\n  ctrl + q    quit"
+                    "\n  ctrl + s    save"
+                    "\n  ctrl + c    copy"
+                    "\n  ctrl + x    cut"
+                    "\n  ctrl + v    paste"
+                    "\n  ctrl + m    page down"
+                    "\n  ctrl + p    page up"
+                    "\n  ctrl + a    home"
+                    "\n  ctrl + e    end"
                 );
                 exit(0);
+            } else if (argv[i][1] == 't') {
+                g_rim.always_tab = 1;
             } else if (argv[i][1] == 'n') {
                 ext = "txt";
+            } else if (argv[i][1] == 's') {
+                g_rim.save_at_exit = 1;
             } else if (argv[i][1] == 'c') {
                 if (i + 1 >= argc) {
                     fprintf(stderr, "rim: Missing argument for option -- 'c'\n");
@@ -963,8 +1005,8 @@ int main(int argc, char **argv) {
     panda_screen_restore(old_screen);
     panda_screen_free(old_screen);
 
-    if (!file)
-        save_file(NULL);
+    if (g_rim.save_at_exit || !file)
+        save_file(file);
     else
         free(file);
 
