@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 3"
+#define OLV_VERSION "1.5 rev 4"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -3350,6 +3350,10 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
 
     int index;
     for (index = 4; for_line[index] && !IS_SPACE_CHAR(for_line[index]); index++);
+    for_line[index++] = '\0';
+
+    while (IS_SPACE_CHAR(for_line[index]))
+        index++;
 
     if (for_line[index] == '\0') {
         free(for_line);
@@ -3357,7 +3361,6 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
     }
 
     char *var_name = for_line + 4;
-    for_line[index++] = '\0';
 
     int var_exist_before = get_variable_index(var_name, 0) != -1;
     int in_string = 0;
