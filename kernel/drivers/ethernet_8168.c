@@ -17,5 +17,18 @@ static int this_eth_ids[][2] = {
 };
 
 int eth_8168_init() {
+	pci_device_t *pci = NULL;
+	for (int i = 0; this_eth_ids[i][0] != 0; i++) {
+		pci = pci_find(this_eth_ids[i][0], this_eth_ids[i][1]);
+		if (pci != NULL)
+			break;
+	}
+
+	if (pci == NULL) {
+		return 2;
+	}
+
+	kprintf("Realtek 8168 found at %x:%x:%x\n", pci->vendor_id, pci->device_id);
+
 	return 0;
 }

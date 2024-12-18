@@ -164,3 +164,13 @@ uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t barN, uint8_t offset) {
         return port_long_in(io_port); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
+
+
+pci_device_t *pci_find(uint16_t vendor, uint16_t device) {
+    for (int i = 0; i < pcis_len; i++) {
+        if (pcis[i].vendor_id == vendor && pcis[i].device_id == device) {
+            return &pcis[i];
+        }
+    }
+    return NULL;
+}

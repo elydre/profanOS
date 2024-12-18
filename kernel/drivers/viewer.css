@@ -1,0 +1,185 @@
+element {
+  --viewer-container-height: 246px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --main-color: rgb(249 249 250);
+    --body-bg-color: rgb(42 42 46);
+    --progressBar-color: rgb(0 96 223);
+    --progressBar-bg-color: rgb(40 40 43);
+    --progressBar-blend-color: rgb(20 68 133);
+    --scrollbar-color: rgb(121 121 123);
+    --scrollbar-bg-color: rgb(35 35 39);
+    --toolbar-icon-bg-color: rgb(255 255 255);
+    --toolbar-icon-hover-bg-color: rgb(255 255 255);
+    --sidebar-narrow-bg-color: rgb(42 42 46 / 0.9);
+    --sidebar-toolbar-bg-color: rgb(50 50 52);
+    --toolbar-bg-color: rgb(56 56 61);
+    --toolbar-border-color: rgb(12 12 13);
+    --button-hover-color: rgb(102 102 103);
+    --toggled-btn-color: rgb(255 255 255);
+    --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+    --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+    --dropdown-btn-bg-color: rgb(74 74 79);
+    --separator-color: rgb(0 0 0 / 0.3);
+    --field-color: rgb(250 250 250);
+    --field-bg-color: rgb(64 64 68);
+    --field-border-color: rgb(115 115 115);
+    --treeitem-color: rgb(255 255 255 / 0.8);
+    --treeitem-bg-color: rgb(255 255 255 / 0.15);
+    --treeitem-hover-color: rgb(255 255 255 / 0.9);
+    --treeitem-selected-color: rgb(255 255 255 / 0.9);
+    --treeitem-selected-bg-color: rgb(255 255 255 / 0.25);
+    --thumbnail-hover-color: rgb(255 255 255 / 0.1);
+    --thumbnail-selected-color: rgb(255 255 255 / 0.2);
+    --doorhanger-bg-color: rgb(74 74 79);
+    --doorhanger-border-color: rgb(39 39 43);
+    --doorhanger-hover-color: rgb(249 249 250);
+    --doorhanger-hover-bg-color: rgb(93 94 98);
+    --doorhanger-separator-color: rgb(92 92 97);
+    --dialog-button-bg-color: rgb(92 92 97);
+    --dialog-button-hover-bg-color: rgb(115 115 115);
+  }
+}
+:root {
+  --dir-factor: 1;
+  --sidebar-width: 200px;
+  --sidebar-transition-duration: 200ms;
+  --sidebar-transition-timing-function: ease;
+  --toolbar-height: 32px;
+  --toolbar-horizontal-padding: 1px;
+  --toolbar-vertical-padding: 2px;
+  --icon-size: 16px;
+  --toolbar-icon-opacity: 0.7;
+  --doorhanger-icon-opacity: 0.9;
+  --doorhanger-height: 8px;
+  --main-color: rgb(12 12 13);
+  --body-bg-color: rgb(212 212 215);
+  --progressBar-color: rgb(10 132 255);
+  --progressBar-bg-color: rgb(221 221 222);
+  --progressBar-blend-color: rgb(116 177 239);
+  --scrollbar-color: auto;
+  --scrollbar-bg-color: auto;
+  --toolbar-icon-bg-color: rgb(0 0 0);
+  --toolbar-icon-hover-bg-color: rgb(0 0 0);
+  --sidebar-narrow-bg-color: rgb(212 212 215 / 0.9);
+  --sidebar-toolbar-bg-color: rgb(245 246 247);
+  --toolbar-bg-color: rgb(249 249 250);
+  --toolbar-border-color: rgb(184 184 184);
+  --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
+  --toolbar-border-bottom: none;
+  --toolbarSidebar-box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25), 0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
+  --toolbarSidebar-border-bottom: none;
+  --button-hover-color: rgb(221 222 223);
+  --toggled-btn-color: rgb(0 0 0);
+  --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+  --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+  --toggled-hover-btn-outline: none;
+  --dropdown-btn-bg-color: rgb(215 215 219);
+  --dropdown-btn-border: none;
+  --separator-color: rgb(0 0 0 / 0.3);
+  --field-color: rgb(6 6 6);
+  --field-bg-color: rgb(255 255 255);
+  --field-border-color: rgb(187 187 188);
+  --treeitem-color: rgb(0 0 0 / 0.8);
+  --treeitem-bg-color: rgb(0 0 0 / 0.15);
+  --treeitem-hover-color: rgb(0 0 0 / 0.9);
+  --treeitem-selected-color: rgb(0 0 0 / 0.9);
+  --treeitem-selected-bg-color: rgb(0 0 0 / 0.25);
+  --thumbnail-hover-color: rgb(0 0 0 / 0.1);
+  --thumbnail-selected-color: rgb(0 0 0 / 0.2);
+  --doorhanger-bg-color: rgb(255 255 255);
+  --doorhanger-border-color: rgb(12 12 13 / 0.2);
+  --doorhanger-hover-color: rgb(12 12 13);
+  --doorhanger-hover-bg-color: rgb(237 237 237);
+  --doorhanger-separator-color: rgb(222 222 222);
+  --dialog-button-border: none;
+  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
+  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
+  --loading-icon: url(images/loading.svg);
+  --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
+  --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
+  --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
+  --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
+  --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
+  --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
+  --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
+  --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
+  --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
+  --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
+  --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
+  --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
+  --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
+  --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
+  --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
+  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
+  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
+  --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
+  --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
+  --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
+  --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
+  --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
+  --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
+  --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
+  --findbarButton-next-icon: url(images/findbarButton-next.svg);
+  --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage.svg);
+  --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage.svg);
+  --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw.svg);
+  --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
+  --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
+  --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
+  --secondaryToolbarButton-scrollPage-icon: url(images/secondaryToolbarButton-scrollPage.svg);
+  --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
+  --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
+  --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped.svg);
+  --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
+  --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
+  --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
+  --secondaryToolbarButton-imageAltTextSettings-icon: var( --toolbarButton-editorStamp-icon );
+  --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
+}
+:root {
+  --viewer-container-height: 0;
+  --pdfViewer-padding-bottom: 0;
+  --page-margin: 1px auto -8px;
+  --page-border: 9px solid transparent;
+  --spreadHorizontalWrapped-margin-LR: -3.5px;
+  --loading-icon-delay: 400ms;
+}
+@media (min-resolution: 1.1dppx) {
+  :root {
+    --editorFreeText-editing-cursor: url(images/cursor-editorFreeText.svg) 0 16, text;
+  }
+}
+:root {
+  --outline-width: 2px;
+  --outline-color: #0060df;
+  --outline-around-width: 1px;
+  --outline-around-color: #f0f0f4;
+  --hover-outline-around-color: var(--outline-around-color);
+  --focus-outline: solid var(--outline-width) var(--outline-color);
+  --unfocus-outline: solid var(--outline-width) transparent;
+  --focus-outline-around: solid var(--outline-around-width) var(--outline-around-color);
+  --hover-outline-color: #8f8f9d;
+  --hover-outline: solid var(--outline-width) var(--hover-outline-color);
+  --hover-outline-around: solid var(--outline-around-width) var(--hover-outline-around-color);
+  --freetext-line-height: 1.35;
+  --freetext-padding: 2px;
+  --resizer-bg-color: var(--outline-color);
+  --resizer-size: 6px;
+  --resizer-shift: calc( 0px - (var(--outline-width) + var(--resizer-size)) / 2 - var(--outline-around-width) );
+  --editorFreeText-editing-cursor: text;
+  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
+  --editorHighlight-editing-cursor: url(images/cursor-editorTextHighlight.svg) 24 24, text;
+  --editorFreeHighlight-editing-cursor: url(images/cursor-editorFreeHighlight.svg) 1 18, pointer;
+  --new-alt-text-warning-image: url(images/altText_warning.svg);
+}
+:root {
+  --xfa-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+  --xfa-focus-outline: auto;
+}
+html, body {
+  height: 100%;
+  width: 100%;
+}
