@@ -3,32 +3,29 @@
 
 #include <ktype.h>
 
-
-// IO PCI PORTS
-#define PCI_CONFIG_ADDRESS 0xCF8
-#define PCI_CONFIG_DATA 0xCFC
-
 typedef struct {
-    uint8_t exists;
-    uint8_t slot;
-    uint8_t bus;
-    uint16_t vendor_id;
-    uint16_t device_id;
-    uint8_t bar_type[6];
-    uint32_t bars[6];
+	int vendor_id;
+	int device_id;
+	int bus;
+	int slot;
+	int function;
+	uint8_t bar_is_mem[6];
+	uint32_t bar[6];
+	uint32_t class_id;
+	uint8_t subclass_id;
+	uint8_t prog_if;
+	uint8_t interrupt_line;
+	uint8_t interrupt_pin;
 } pci_device_t;
 
+extern pci_device_t *pcis;
+extern int pcis_len;
 
-uint32_t pci_config_read(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset);
-// return 1 if the pci read is the last
-int get_next_pci(pci_device_t *pci, int restart);
-
-
-
-
-void pci_write_u32(pci_device_t *pci, uint8_t bar, uint32_t offset, uint32_t value);
-uint32_t pci_read_u32(pci_device_t *pci, uint8_t bar, uint32_t offset);
-uint16_t pci_read_u16(pci_device_t *pci, uint8_t bar, uint32_t offset);
-void pci_write_u16(pci_device_t *pci, uint8_t bar, uint32_t offset, uint16_t value);
+uint16_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset);
+void pci_get_ids(pci_device_t *pci);
+void pci_add_device(pci_device_t *pci);
+void pci_get_bars(pci_device_t *pci);
+void pci_get_class(pci_device_t *pci);
+int pci_init();
 
 #endif

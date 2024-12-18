@@ -17,7 +17,7 @@
 #include <drivers/diskiso.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
-#include <drivers/e1000.h>
+#include <drivers/pci.h>
 #include <drivers/mouse.h>
 #include <drivers/rtc.h>
 #include <cpu/timer.h>
@@ -53,8 +53,10 @@ void kernel_main(void *mboot_ptr) {
     status_print(sys_init,     "Initing", "FPU and error reporting");
     status_print(process_init, "Starting", "process manager");
     status_print(filesys_init, "Loading", "butterfly filesystem");
-    status_print(e1000_init,   "Initing", "e1000 network card");
+    status_print(pci_init,     "Scanning", "pci devices");
     status_print(pok_init,     "Initing", "kernel modules loader");
+    extern int eth_8168_init();
+    status_print(eth_8168_init, "Initing", "8168 ethernet card");
 
     kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
 
