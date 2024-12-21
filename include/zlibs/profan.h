@@ -14,8 +14,15 @@
 
 #include <profan/types.h>
 
+#define PROFAN_PATH_MAX 512
+
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, argc, argv, environ, 1}, NULL)
+
+#ifndef _PROFAN_NO_WD
+extern const uint32_t profan_wd_sid;
+extern const char profan_wd_path[];
+#endif
 
 #define KB_ESC      1
 #define KB_BACK     14
@@ -48,8 +55,9 @@ char *profan_input(int *size);
 void  profan_nimpl(char *name);
 char *profan_libc_version(void);
 
-char *profan_join_path(const char *old, const char *new);
-void  profan_sep_path(const char *fullpath, char **parent, char **cnt);
+char    *profan_join_path(const char *old, const char *new);
+void     profan_sep_path(const char *fullpath, char **parent, char **cnt);
+uint32_t profan_resolve_path(const char *path);
 
 void *profan_kmalloc(uint32_t size, int as_kernel);
 void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);
