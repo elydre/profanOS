@@ -9,65 +9,30 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <stdlib.h>
-#include <string.h>
+#include <sys/stat.h>
 #include <stdio.h>
 
-#include <profan/filesys.h>
-#include <profan.h>
-
+#define MKDIR_USAGE "Usage: mkdir <DIR1> [DIR2] ...\n"
 
 int main(int argc, char **argv) {
-    if (argc != 2 || !argv[1][0] || argv[1][0] == '-') {
-        fprintf(stderr, "Usage: mkdir <dir>\n");
+    if (argc < 2) {
+        fputs(MKDIR_USAGE, stderr);
         return 1;
     }
 
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
-    char *full_path = profan_join_path(pwd, argv[1]);
-
-    int len = strlen(full_path);
-
-    // get the parent path
-    char *parent_path = malloc(256);
-
-    // isolate the parent path
-    for (int i = len - 1; i >= 0; i--) {
-        if (full_path[i] == '/') {
-            strncpy(parent_path, full_path, i);
-            parent_path[i] = '\0';
-            break;
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            fprintf(stderr, "mkdir: invalid option -- '%c'\n"MKDIR_USAGE, argv[i][1]);
+            return 1;
         }
     }
 
-    if (parent_path[0] == '\0') {
-        strcpy(parent_path, "/");
+    for (int i = 1; i < argc; i++) {
+        if (mkdir(argv[i], 0777) == -1) {
+            perror("mkdir");
+            return 1;
+        }
     }
 
-    // chek if the parent directory exists
-    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent_path);
-
-    if (IS_SID_NULL(parent_sid) || !fu_is_dir(parent_sid)) {
-        fprintf(stderr, "mkdir: '%s': No such file or directory\n", parent_path);
-    }
-
-    // check if the file already exists
-    else if (!IS_SID_NULL(fu_path_to_sid(SID_ROOT, full_path))) {
-        fprintf(stderr, "mkdir: '%s': Already exists\n", full_path);
-    }
-
-    // create the file
-    else {
-        fu_dir_create(0, full_path);
-        free(parent_path);
-        free(full_path);
-        return 0;
-    }
-
-    free(parent_path);
-    free(full_path);
-
-    return 1;
+    return 0;
 }
