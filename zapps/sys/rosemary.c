@@ -29,7 +29,7 @@
 
 typedef struct {
     int id;
-    char path[256];
+    char *path;
 } mod_t;
 
 mod_t mods_at_boot[] = {
@@ -185,6 +185,7 @@ int main(void) {
     set_env("PATH=/bin/cmd:/bin/fatpath");
     set_env("DEFRUN=/bin/fatpath/tcc.elf -run");
     set_env("HOME=/");
+    set_env("PWD=/");
 
     do {
         run_ifexist_full((runtime_args_t){SHELL_PATH, 1, (char *[]){SHELL_NAME}, envp, 1}, NULL);
