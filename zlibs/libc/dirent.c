@@ -10,6 +10,7 @@
 \*****************************************************************************/
 
 #include <profan/filesys.h>
+#include <profan/syscall.h>
 #include <profan.h>
 
 #include <dirent.h>
@@ -29,52 +30,60 @@ int closedir(DIR *dirp) {
         return -1;
     }
 
-    free(dirp->entries);
     free(dirp);
-
     return 0;
 }
 
 DIR *opendir(const char *dirname) {
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-    char *fullpath = profan_join_path(pwd, dirname);
+    uint32_t dir_sid = profan_resolve_path(dirname);
 
-    uint32_t dir_sid = fu_path_to_sid(SID_ROOT, fullpath);
+    uint32_t sid, size;
+    uint8_t *buf;
 
-    free(fullpath);
+    int i, count = fu_get_dir_size(dir_sid); // OK with SID_NULL
 
-    if (!fu_is_dir(dir_sid)) {
-        errno = ENOENT;
+    if (count < 0) {
+        errno = -count;
         return NULL;
     }
 
-    uint32_t *sids;
-    char **names;
-
-    int count = fu_get_dir_content(dir_sid, &sids, &names);
-
-    if (count == -1) {
+    size = syscall_fs_get_size(NULL, dir_sid);
+    if (size == UINT32_MAX || size < sizeof(uint32_t)) {
         errno = EIO;
         return NULL;
     }
 
-    DIR *dirp = malloc(sizeof(DIR));
-    dirp->entries = malloc(sizeof(struct dirent) * count);
-
-    for (int i = 0; i < count; i++) {
-        dirp->entries[i].d_ino = sids[i];
-        strncpy(dirp->entries[i].d_name, names[i], 255);
-        dirp->entries[i].d_name[255] = '\0';
+    buf = malloc(size);
+    if (syscall_fs_read(NULL, dir_sid, buf, 0, size)) {
+        free(buf);
+        errno = EIO;
+        return NULL;
     }
 
-    dirp->count = count;
-    dirp->pos = 0;
+    DIR *dirp = malloc(sizeof(DIR) + sizeof(struct dirent) * (count + 1));
+    dirp->entries = (void *) (dirp + 1);
 
-    for (int i = 0; i < count; i++)
-        profan_kfree(names[i]);
-    profan_kfree(names);
-    profan_kfree(sids);
+    for (i = 0; i < count; i++) {
+        int offset = fu_get_dir_elm(buf, size, i, &sid);
+
+        if (offset < 0) {
+            free(buf);
+            errno = -offset;
+            return NULL;
+        }
+
+        if (offset == 0) {
+            break;
+        }
+
+        dirp->entries[i].d_ino = sid;
+        strlcpy(dirp->entries[i].d_name, (char *) buf + offset, 256);
+    }
+
+    free(buf);
+
+    dirp->count = i;
+    dirp->pos = 0;
 
     return dirp;
 }

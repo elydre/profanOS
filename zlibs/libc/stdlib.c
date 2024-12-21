@@ -23,12 +23,12 @@
 
 #include "config_libc.h"
 
-uint32_t g_rand_seed = 0;
+static uint32_t g_rand_seed = 0;
 
-void **g_atexit_funcs = NULL;
+static void **g_atexit_funcs = NULL;
+static void *g_entry_exit = NULL;
+
 char **environ = NULL;
-
-void *g_entry_exit = NULL;
 
 /*******************************
  *                            *
@@ -82,8 +82,10 @@ void __init_libc(char **env, void *entry_exit) {
     environ[size + offset] = NULL;
 
     // set working directory
-    if (getenv("PWD") == NULL)
-        setenv("PWD", "/", 1);
+    char *wd = getenv("PWD");
+
+    if (wd != NULL)
+        chdir(wd);
 }
 
 void __exit_libc(void) {
@@ -477,7 +479,7 @@ void srand(unsigned int seed) {
 
 int system(const char *command) {
     if (access(SYSTEM_SHELL_PATH, X_OK) == -1) {
-        fputs("libC: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
+        fputs("libc: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
         return -1;
     }
 

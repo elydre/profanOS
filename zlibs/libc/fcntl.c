@@ -21,9 +21,8 @@
 int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
-    char *fullpath, *cwd = getenv("PWD");
-    if (cwd == NULL) cwd = "/";
-    fullpath = profan_join_path(cwd, path);
+    char *fullpath;
+    fullpath = profan_join_path(profan_wd_path, path);
 
     int fd = fm_open(fullpath, flags);
     free(fullpath);

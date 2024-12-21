@@ -12,7 +12,7 @@
 #ifndef CONFIG_LIBC_H
 #define CONFIG_LIBC_H
 
-#define PROFAN_LIBC_VERSION "2.2 rev 3"
+#define PROFAN_LIBC_VERSION "2.3 rev 0"
 
 /****** PROFAN EXTRA ***********************************************/
 

@@ -11,6 +11,8 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
+
+#define _PROFAN_NO_WD
 #include <profan.h>
 
 #include <string.h>
@@ -20,14 +22,12 @@
 #include <stdio.h>
 #include <errno.h>
 
+char profan_wd_path[PROFAN_PATH_MAX] = "/";
+uint32_t profan_wd_sid = SID_ROOT;
+
 int access(const char *pathname, int mode) {
     // add the current working directory to the filename
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-    char *path = profan_join_path(pwd, (char *) pathname);
-
-    uint32_t elem = fu_path_to_sid(SID_ROOT, path);
-    free(path);
+    uint32_t elem = profan_resolve_path(pathname);
 
     // check if path exists
     if (IS_SID_NULL(elem)) {
@@ -45,24 +45,24 @@ unsigned alarm(unsigned a) {
 }
 
 int chdir(const char *path) {
-    char *dir = getenv("PWD");
-    if (!dir) dir = "/";
+    uint32_t sid;
+    char *dir;
 
     // check if dir exists
-    dir = profan_join_path(dir, path);
+    dir = profan_join_path(profan_wd_path, path);
     fu_simplify_path(dir);
 
-    if (!fu_is_dir(fu_path_to_sid(SID_ROOT, dir))) {
+    sid = fu_path_to_sid(SID_ROOT, dir);
+
+    if (!fu_is_dir(sid)) {
         errno = ENOTDIR;
         free(dir);
         return -1;
     }
 
-    if (setenv("PWD", dir, 1)) {
-        errno = ENOMEM;
-        free(dir);
-        return -1;
-    }
+    // update the working directory
+    strlcpy(profan_wd_path, dir, PROFAN_PATH_MAX);
+    profan_wd_sid = sid;
 
     free(dir);
     return 0;
@@ -236,22 +236,16 @@ int ftruncate(int a, off_t b) {
 }
 
 char *getcwd(char *buf, size_t size) {
-    char *working_directory = getenv("PWD");
     size_t wd_len;
 
-    if (!working_directory) {
-        errno = ENOMEM;
-        return NULL;
-    }
-
-    wd_len = strlen(working_directory);
+    wd_len = strlen(profan_wd_path);
 
     if (buf == NULL) {
         if (size < wd_len + 1)
             size = wd_len + 1;
 
         buf = malloc(size);
-        strcpy(buf, working_directory);
+        strcpy(buf, profan_wd_path);
         return buf;
     }
 
@@ -260,7 +254,7 @@ char *getcwd(char *buf, size_t size) {
         return NULL;
     }
 
-    strcpy(buf, working_directory);
+    strcpy(buf, profan_wd_path);
     return buf;
 }
 
@@ -523,14 +517,12 @@ useconds_t ualarm(useconds_t a, useconds_t b) {
 
 int unlink(const char *filename) {
     // add the current working directory to the filename
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-    char *path = profan_join_path(pwd, (char *) filename);
+    char *path = profan_join_path(profan_wd_path, (char *) filename);
 
     // check if the file exists
     uint32_t parent_sid, elem = fu_path_to_sid(SID_ROOT, path);
     if (!fu_is_file(elem)) {
-        fprintf(stderr, "unlink: %s: not a file\n", filename);
+        errno = ENOENT;
         free(path);
         return -1;
     }
@@ -543,16 +535,19 @@ int unlink(const char *filename) {
     free(path);
 
     if (IS_SID_NULL(parent_sid)) {
-        fprintf(stderr, "unlink: %s: parent not found\n", filename);
+        errno = ENOENT;
         return -1;
     }
 
     // remove the element from the parent directory
-    fu_remove_from_dir(parent_sid, elem);
+    if (fu_remove_from_dir(parent_sid, elem)) {
+        errno = EIO;
+        return -1;
+    }
 
     // delete the file content
     if (syscall_fs_delete(NULL, elem)) {
-        fprintf(stderr, "unlink: %s: failed to delete\n", filename);
+        errno = EIO;
         return -1;
     }
 

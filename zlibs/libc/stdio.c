@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -554,49 +555,81 @@ void perror(const char *s) {
     fputs("\n", stderr);
 }
 
-int remove(const char *fname) {
-    char *pwd = getenv("PWD");
-    if (pwd == NULL) pwd = "/";
-    char *full_path = profan_join_path(pwd, (char *) fname);
-
-    uint32_t elem = fu_path_to_sid(SID_ROOT, full_path);
-    if (IS_SID_NULL(elem) || !fu_is_file(elem)) {
-        printf("remove: cannot remove '%s': No such file\n", fname);
-        free(full_path);
-        return 1;
-    }
-
-    char *parent;
-
-    profan_sep_path(full_path, &parent, NULL);
-
-    uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
-    free(parent);
-
-    if (IS_SID_NULL(parent_sid)) {
-        printf("remove: cannot remove '%s': Unreachable path\n", fname);
-        free(full_path);
-        return 1;
-    }
-
-    // remove element from directory
-    if (fu_remove_from_dir(parent_sid, elem)) {
-        printf("remove: cannot remove '%s': Failed to remove element from directory\n", fname);
-        return 1;
-    }
-
-    // delete container
-    if (syscall_fs_delete(NULL, elem)) {
-        printf("rm: cannot remove '%s': Failed to delete container\n", fname);
-        return 1;
-    }
-
-    free(full_path);
-    return 0;
+int remove(const char *name) {
+    if (fu_is_dir(profan_resolve_path(name)))
+        return rmdir(name);
+    return unlink(name);
 }
 
 int rename(const char *old_filename, const char *new_filename) {
-    profan_nimpl("rename");
+    char *tmp, *fullpath;
+    char *old_entry, *new_entry;
+
+    // check if the file exists
+    fullpath = profan_join_path(profan_wd_path, (char *) old_filename);
+    fu_simplify_path(fullpath);
+    uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
+
+    if (IS_SID_NULL(old_sid)) {
+        errno = ENOENT;
+        free(fullpath);
+        return -1;
+    }
+
+    if (!fu_is_file(old_sid)) {
+        errno = EISDIR;
+        free(fullpath);
+        return -1;
+    }
+
+    // get the parent directory sid
+    profan_sep_path(fullpath, &tmp, &old_entry);
+    uint32_t old_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
+
+    free(fullpath);
+    free(tmp);
+
+    // check if the new file exists
+    fullpath = profan_join_path(profan_wd_path, (char *) new_filename);
+    fu_simplify_path(fullpath);
+    uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
+
+    if (!IS_SID_NULL(new_sid)) {
+        if (fu_is_dir(new_sid)) {
+            errno = EISDIR;
+            free(fullpath);
+            return -1;
+        }
+
+        // remove the new file
+        if (unlink(fullpath) < 0) {
+            free(fullpath);
+            return -1;
+        }
+    }
+
+    // get the new parent directory sid
+    profan_sep_path(fullpath, &tmp, &new_entry);
+    uint32_t new_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
+
+    free(fullpath);
+    free(tmp);
+
+    if (IS_SID_NULL(new_parent_sid) || IS_SID_NULL(old_parent_sid)) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    // remove the old entry from the old parent
+    if (fu_remove_from_dir(old_parent_sid, old_sid)) {
+        return -1;
+    }
+
+    // add the new entry to the new parent
+    if (fu_add_to_dir(new_parent_sid, old_sid, new_entry)) {
+        return -1;
+    }
+
     return 0;
 }
 

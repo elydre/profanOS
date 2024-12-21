@@ -267,7 +267,7 @@ void *malloc(size_t size) {
     p = buddy_malloc(g_buddy, size);
     ALLOC_DO(p, size);
 
-    put_error("libc: malloc failed\n");
+    put_error("libc: malloc: not enough memory\n");
     return NULL;
 }
 
@@ -280,7 +280,7 @@ void *calloc(size_t nmemb, size_t lsize) {
     p = buddy_calloc(g_buddy, nmemb, lsize);
     ALLOC_DO(p, nmemb * lsize);
 
-    put_error("libc: calloc failed\n");
+    put_error("libc: calloc: not enough memory\n");
     return NULL;
 }
 
@@ -299,7 +299,7 @@ void *realloc(void *mem, size_t new_size) {
     p = buddy_realloc(g_buddy, mem, new_size, 0);
     ALLOC_DO(p, new_size);
 
-    put_error("libc: realloc failed\n");
+    put_error("libc: realloc: not enough memory\n");
     return NULL;
 }
 

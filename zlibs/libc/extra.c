@@ -11,6 +11,7 @@
 
 #define _SYSCALL_CREATE_FUNCS
 
+#include <profan/filesys.h>
 #include <profan/syscall.h>
 #include <profan.h>
 
@@ -88,7 +89,7 @@ char *profan_input(int *size) {
 }
 
 void profan_nimpl(char *name) {
-    write(2, "libC: ", 6);
+    write(2, "libc: ", 6);
     write(2, name, strlen(name));
     write(2, ": function not implemented\n", 27);
     #if NOT_IMPLEMENTED_ABORT
@@ -164,6 +165,12 @@ void profan_sep_path(const char *fullpath, char **parent, char **cnt) {
     if (cnt != NULL) {
         strcpy(*cnt, fullpath + i + 1);
     }
+}
+
+uint32_t profan_resolve_path(const char *path) {
+    if (path[0] == '/')
+        return fu_path_to_sid(SID_ROOT, path);
+    return fu_path_to_sid(profan_wd_sid, path);
 }
 
 /****************************
