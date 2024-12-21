@@ -15,6 +15,7 @@
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 
+#define DEFAULT_FONT "/zada/fonts/lat38-bold18.psf"
 #define SCROLL_LINES 8
 
 typedef struct {
@@ -65,10 +66,7 @@ int main(void) {
     return 0;
 }
 
-static font_data_t *load_psf_font(const char *file) {
-    uint32_t sid = fu_path_to_sid(SID_ROOT, file);
-    if (IS_SID_NULL(sid)) return NULL;
-
+static font_data_t *load_psf_font(uint32_t sid) {
     uint32_t magic;
     uint32_t version;
     uint32_t headersize;
@@ -442,10 +440,14 @@ void panda_get_size(uint32_t *x, uint32_t *y) {
     }
 }
 
-int panda_change_font(const char *file) {
-    if (!g_panda) return 1;
-    font_data_t *font = load_psf_font(file);
-    if (font == NULL) return 1;
+int panda_change_font(uint32_t sid) {
+    if (!g_panda || IS_SID_NULL(sid))
+        return 1;
+
+    font_data_t *font = load_psf_font(sid);
+
+    if (font == NULL)
+        return 1;
 
     panda_clear_screen();
     free_font(g_panda->font);
@@ -542,7 +544,7 @@ static void init_panda(void) {
     }
 
     g_panda = kmalloc_ask(sizeof(panda_global_t));
-    g_panda->font = load_psf_font("/zada/fonts/lat38-bold18.psf");
+    g_panda->font = load_psf_font(fu_path_to_sid(SID_ROOT, DEFAULT_FONT));
 
     if (g_panda->font == NULL) {
         fd_printf(2, "\n Failed to load font\n");
