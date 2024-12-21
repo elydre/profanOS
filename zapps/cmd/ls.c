@@ -92,9 +92,8 @@ int ls_cmp_size(const void *p1, const void *p2) {
     uint32_t s1 = ((ls_entry_t *) p1)->sid;
     uint32_t s2 = ((ls_entry_t *) p2)->sid;
 
-    if (fu_is_dir(s1) && fu_is_dir(s2)) {
-        return fu_get_dir_content(s2, NULL, NULL) - fu_get_dir_content(s1, NULL, NULL);
-    }
+    if (fu_is_dir(s1) && fu_is_dir(s2))
+        return fu_get_dir_size(s2) - fu_get_dir_size(s1);
 
     return syscall_fs_get_size(NULL, s2) - syscall_fs_get_size(NULL, s1);
 }
@@ -228,7 +227,7 @@ void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
         if (args->phys_size == 1) {
             len = printf("%d B", syscall_fs_get_size(NULL, entries[i].sid));
         } else if (fu_is_dir(entries[i].sid)) {
-            len = printf("%d elm", fu_get_dir_content(entries[i].sid, NULL, NULL));
+            len = printf("%d elm", fu_get_dir_size(entries[i].sid));
         } else if (fu_is_file(entries[i].sid)) {
             size = fu_file_get_size(entries[i].sid);
             if (size < 10000)
@@ -274,15 +273,13 @@ void list_entries(ls_entry_t *entries, int elm_count, ls_args_t *args) {
         print_basic(elm_count, entries, args);
 }
 
-#define PATH_TO_SID_FAST(wdsid, path) fu_path_to_sid(path[0] == '/' ? SID_ROOT : wdsid, path)
-
-void list_files(ls_args_t *args, uint32_t wdsid) {
+void list_files(ls_args_t *args) {
     ls_entry_t *entries = NULL;
     int entry_count = 0;
 
 
     for (int i = 0; args->paths[i]; i++) {
-        uint32_t sid = PATH_TO_SID_FAST(wdsid, args->paths[i]);
+        uint32_t sid = profan_resolve_path(args->paths[i]);
 
         if (IS_SID_NULL(sid)) {
             fprintf(stderr, "ls: %s: No such file or directory\n", args->paths[i]);
@@ -306,28 +303,49 @@ void list_files(ls_args_t *args, uint32_t wdsid) {
     free(entries);
 }
 
-void list_dirs(ls_args_t *args, uint32_t wdsid) {
-    uint32_t *cnt_ids;
-    char **cnt_names;
-
+void list_dirs(ls_args_t *args) {
     int entry_count;
 
-    for (int i = 0; args->paths[i]; i++) {
-        uint32_t sid = PATH_TO_SID_FAST(wdsid, args->paths[i]);
+    uint32_t sid;
+    char *name;
 
-        if (!fu_is_dir(sid)) {
+    for (int i = 0; args->paths[i]; i++) {
+        sid = profan_resolve_path(args->paths[i]);
+
+        if (!fu_is_dir(sid))
+            continue; // error message is printed by list_files
+
+        uint32_t size = syscall_fs_get_size(NULL, sid);
+        if (size == UINT32_MAX || size < sizeof(uint32_t))
+            continue;
+
+        uint8_t *buf = malloc(size);
+        if (syscall_fs_read(NULL, sid, buf, 0, size)) {
+            free(buf);
             continue;
         }
 
-        int elm_count = fu_get_dir_content(sid, &cnt_ids, &cnt_names);
+        int elm_count = *(uint32_t *) buf;
+
         ls_entry_t *entries = calloc(elm_count, sizeof(ls_entry_t));
 
         entry_count = 0;
         for (int j = 0; j < elm_count; j++) {
-            if (!args->showall && cnt_names[j][0] == '.')
+            int offset = fu_get_dir_elm(buf, size, j, &sid);
+
+            if (offset <= 0) {
+                fprintf(stderr, "ls: error reading directory (%s)\n", strerror(-offset));
+                break;
+            }
+
+            name = (char *) buf + offset;
+
+            if (!args->showall && *name == '.')
                 continue;
-            entries[entry_count].sid = cnt_ids[j];
-            entries[entry_count].name = cnt_names[j];
+
+            entries[entry_count].name = name;
+            entries[entry_count].sid = sid;
+
             entry_count++;
         }
 
@@ -337,12 +355,8 @@ void list_dirs(ls_args_t *args, uint32_t wdsid) {
 
         list_entries(entries, entry_count, args);
 
-        for (int j = 0; j < elm_count; j++)
-            profan_kfree(cnt_names[j]);
-
-        profan_kfree(cnt_names);
-        profan_kfree(cnt_ids);
         free(entries);
+        free(buf);
     }
 }
 
@@ -436,13 +450,8 @@ int main(int argc, char **argv) {
     if (args->paths[0] == NULL)
         args->paths[0] = ".";
 
-    char *pwd = getenv("PWD");
-    if (pwd == NULL) pwd = "/";
-
-    uint32_t wdsid = fu_path_to_sid(SID_ROOT, pwd);
-
-    list_files(args, wdsid);
-    list_dirs(args, wdsid);
+    list_files(args);
+    list_dirs(args);
 
     free(args);
     return 0;
