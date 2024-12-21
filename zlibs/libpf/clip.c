@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint32_t file_sid = SID_NULL;
+static uint32_t file_sid = SID_NULL;
 
 int clip_set_str(char *str) {
     if (file_sid == SID_NULL)
