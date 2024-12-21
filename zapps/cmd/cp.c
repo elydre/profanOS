@@ -180,8 +180,7 @@ int main(int argc, char **argv) {
     char *buf = malloc(args->block_size);
     uint32_t debut, to_read, total = 0;
 
-    if (args->time_it)
-        debut = syscall_timer_get_ms();
+    debut = args->time_it ? syscall_timer_get_ms() : 0;
 
     do {
         to_read = args->block_size;

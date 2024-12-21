@@ -82,6 +82,8 @@ static fd_data_t *fm_get_free_fd(int *fd) {
             return fd_data;
         }
     }
+    if (fd != NULL)
+        *fd = -1;
     return NULL;
 }
 
@@ -426,7 +428,8 @@ int fm_dup2(int fd, int new_fd) {
 }
 
 int fm_dup(int fd) {
-    int new_fd; fm_get_free_fd(&new_fd);
+    int new_fd;
+    fm_get_free_fd(&new_fd);
 
     if (new_fd < 0)
         return -EMFILE;

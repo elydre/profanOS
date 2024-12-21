@@ -53,25 +53,41 @@ ZLIBS_MOD = "mod" # zlibs/mod
 LINK_FILENAME = "_link.txt" # multi file link
 LINK_LINE_MAX = 12          # max line for link instructions
 
-CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc "
+CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib "
 CFLAGS    += "-Wall -Wextra -D__profanOS__"
+
+CC_OPTIM   = "-O3 -fno-omit-frame-pointer"
 
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Werror"
-ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror"
+ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror -fPIC"
 
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 
 QEMU_SPL   = "qemu-system-i386"
 QEMU_KVM   = "qemu-system-i386 -enable-kvm"
 
-QEMU_ARGS  = "-serial stdio"
+QEMU_FLAGS = "-serial stdio"
 QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
 COLOR_EROR = (255, 100, 80)
 
+def cprint(color, text, end="\n"):
+    r, g, b = color
+    print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
+
+if os.getenv("PROFANOS_OPTIM") == "1":
+    cprint(COLOR_INFO, "profanOS optimisation enabled")
+    ZAPP_FLAGS += f" {CC_OPTIM}"
+
+if os.getenv("PROFANOS_KIND") == "1":
+    # remove -Werror -Wall -Wextra
+    cprint(COLOR_INFO, "profanOS kind mode enabled")
+    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "")
+
+print(ZAPP_FLAGS)
 
 for e in ZHEADERS:
     if os.path.exists(e):
@@ -97,12 +113,6 @@ def files_in_dir_rec(directory, extention):
             liste.append(f"{directory}/{file}")
 
     return liste
-
-
-def cprint(color, text, end="\n"):
-    r, g, b = color
-    print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
-
 
 def print_and_exec(command):
     try:
@@ -246,7 +256,7 @@ def build_disk_elfs():
     def build_c_to_mod(name, fname):
         global total
         print_info_line(name)
-        print_and_exec(f"{CC} -fPIC -c {name} -o {fname}.o {ZLIB_FLAGS}")
+        print_and_exec(f"{CC} -c {name} -o {fname}.o {ZLIB_FLAGS}")
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {fname}.pok {fname}.o")
         print_and_exec(f"rm {fname}.o")
         total -= 1
@@ -277,10 +287,14 @@ def build_disk_elfs():
         global total
         total -= 1
 
-    def build_c_to_obj(name, fname, extra_flags = ""):
+    def build_c_to_obj(name, fname, is_lib):
         global total
         print_info_line(name)
-        print_and_exec(f"{CC} {extra_flags} -c {name} -o {fname}.o {ZLIB_FLAGS}")
+        if is_lib:
+            flags = ZLIB_FLAGS
+        else:
+            flags = ZAPP_FLAGS
+        print_and_exec(f"{CC} {flags} -c {name} -o {fname}.o")
         total -= 1
 
     def link_multifile_elf(name, libs_name):
@@ -397,7 +411,7 @@ def build_disk_elfs():
 
     for name in lib_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
-        threading.Thread(target = build_c_to_obj, args=(name, fname, "-fPIC")).start()
+        threading.Thread(target = build_c_to_obj, args=(name, fname, 1)).start()
 
     while total:
         # wait for all threads to finish
@@ -428,7 +442,7 @@ def build_disk_elfs():
 
     for name in dir_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
-        threading.Thread(target = build_c_to_obj, args=(name, fname)).start()
+        threading.Thread(target = build_c_to_obj, args=(name, fname, 0)).start()
 
     while total:
         # wait for all threads to finish
@@ -590,7 +604,7 @@ def qemu_run(iso_run = True, kvm = False, audio = False):
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
 
-    qemu_args = QEMU_ARGS
+    qemu_args = QEMU_FLAGS
     if audio: qemu_args += f" {QEMU_AUDIO}"
 
     cprint(COLOR_INFO, "starting qemu...")

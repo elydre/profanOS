@@ -809,7 +809,7 @@ int dynamic_linker(elfobj_t *exec) {
                         raise_error("'%s' requires symbol '%s'", exec->name, name);
                     val = (uint32_t) sym->st_value;
                 }
-            }
+            } else val = 0;
             switch (type) {
                 case R_386_32:          // word32  S + A
                     val += *(uint32_t *)(rel[j].r_offset);
