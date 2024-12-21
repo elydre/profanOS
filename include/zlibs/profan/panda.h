@@ -22,7 +22,7 @@
 #define panda_get_cursor ((void (*)(uint32_t *, uint32_t *)) get_func_addr(PANDA_ID, 5))
 #define panda_draw_cursor ((void (*)(uint32_t, uint32_t)) get_func_addr(PANDA_ID, 6))
 #define panda_get_size ((void (*)(uint32_t *, uint32_t *)) get_func_addr(PANDA_ID, 7))
-#define panda_change_font ((int (*)(const char *)) get_func_addr(PANDA_ID, 8))
+#define panda_change_font ((int (*)(uint32_t)) get_func_addr(PANDA_ID, 8))
 #define panda_screen_backup ((void *(*)(void)) get_func_addr(PANDA_ID, 9))
 #define panda_screen_restore ((void (*)(void *)) get_func_addr(PANDA_ID, 10))
 #define panda_screen_free ((void (*)(void *)) get_func_addr(PANDA_ID, 11))
