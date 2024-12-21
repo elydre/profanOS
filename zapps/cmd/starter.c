@@ -118,7 +118,7 @@ int main(void) {
     int res = 0;
 
     while (1) {
-        printf("(%d) %s # ", res, getenv("PWD"));
+        printf("(%d) %s # ", res, profan_wd_path);
         fflush(stdout);
         line = profan_input(NULL);
         if (!line) {

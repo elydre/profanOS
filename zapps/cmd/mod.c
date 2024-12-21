@@ -33,9 +33,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
     char option = *(argv[1] + 1);
     if (option == '-') {
         option = *(argv[1] + 2);
@@ -91,7 +88,7 @@ int main(int argc, char **argv) {
         }
 
         // assemble new path
-        char *new_path = profan_join_path(pwd, argv[3]);
+        char *new_path = profan_join_path(profan_wd_path, argv[3]);
 
         if (!is_file(new_path)) {
             fprintf(stderr, "mod: '%s': File not found\n" HELP_HELP, new_path);

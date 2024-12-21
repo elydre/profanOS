@@ -17,29 +17,21 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
     if (argc != 2 || argv[1][0] == '-') {
         fprintf(stderr, "Usage: font <file>\n");
         return 1;
     }
 
-    char *full_path = profan_join_path(pwd, argv[1]);
-
-    uint32_t file = fu_path_to_sid(SID_ROOT, full_path);
+    uint32_t file = profan_resolve_path(argv[1]);
     if (IS_SID_NULL(file) || !fu_is_file(file)) {
-        fprintf(stderr, "font: %s: File not found\n", full_path);
-        free(full_path);
+        fprintf(stderr, "font: %s: File not found\n", argv[1]);
         return 1;
     }
 
-    if (panda_change_font(full_path)) {
-        fprintf(stderr, "font: %s: Failed to change font\n", full_path);
-        free(full_path);
+    if (panda_change_font(file)) {
+        fprintf(stderr, "font: %s: Failed to change font\n", argv[1]);
         return 1;
     }
 
-    free(full_path);
     return 0;
 }

@@ -178,11 +178,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
-    char *path = profan_join_path(pwd, options->path);
-
+    char *path = profan_join_path(profan_wd_path, options->path);
     uint32_t elem = fu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(elem)) {

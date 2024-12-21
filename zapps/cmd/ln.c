@@ -120,21 +120,17 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
-
     char *target_dir, *target_name;
     if (args->target) {
-        args->target = profan_join_path(pwd, args->target);
+        args->target = profan_join_path(profan_wd_path, args->target);
         profan_sep_path(args->target, &target_dir, &target_name);
     } else {
-        target_dir = strdup(pwd);
+        target_dir = strdup(profan_wd_path);
         profan_sep_path(args->source, NULL, &target_name);
     }
 
     if (args->source) {
-        args->source = profan_join_path(pwd, args->source);
+        args->source = profan_join_path(profan_wd_path, args->source);
         args->sector = fu_path_to_sid(SID_ROOT, args->source);
     }
 

@@ -951,11 +951,7 @@ char *compute_args(int argc, char **argv) {
     if (!file)
         return NULL;
 
-
-    char *pwd = getenv("PWD");
-    if (!pwd) pwd = "/";
-
-    file = profan_join_path(pwd, file);
+    file = profan_join_path(profan_wd_path, file);
 
     return file;
 }

@@ -90,7 +90,7 @@ char *dest_check_dir(char *dst, char *src) {
     // Check if the destination is a directory
     // If it is, append the source file name to it
 
-    uint32_t sid = fu_path_to_sid(SID_ROOT, dst);
+    uint32_t sid = profan_resolve_path(dst);
 
     if (!fu_is_dir(sid))
         return dst;
