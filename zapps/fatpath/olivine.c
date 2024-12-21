@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 4"
+#define OLV_VERSION "1.5 rev 5"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1420,10 +1420,7 @@ char *if_cd(char **input) {
 
     // change directory
     strcpy(g_current_directory, dir);
-
-    #if !PROFANBUILD
     setenv("PWD", g_current_directory, 1);
-    #endif
 
     free(dir);
     return NULL;
@@ -1883,9 +1880,7 @@ char *if_fsize(char **input) {
 
     #if PROFANBUILD
     // get path
-    char *path = profan_join_path(g_current_directory, input[0]);
-
-    uint32_t file_id = fu_path_to_sid(SID_ROOT, path);
+    uint32_t file_id = profan_resolve_path(input[0]);
 
     // check if file exists
     if (IS_SID_NULL(file_id)) {
@@ -1894,7 +1889,6 @@ char *if_fsize(char **input) {
         file_size = syscall_fs_get_size(NULL, file_id);
     }
 
-    free(path);
     #else
 
     FILE *file = fopen(input[0], "r");
@@ -4906,19 +4900,16 @@ olivine_args_t *parse_args(int argc, char **argv) {
 ********************/
 
 void olv_init_globals(void) {
-    char *tmp = NULL;
-
     g_current_level = 0;
     g_fileline = -1;
 
     g_current_directory = malloc(MAX_PATH_SIZE + 1);
 
-    #if USE_ENVVARS
-    setenv("PWD", "/", 0);
-    tmp = getenv("PWD");
+    #if UNIXBUILD || PROFANBUILD
+    getcwd(g_current_directory, MAX_PATH_SIZE);
+    #else
+    strcpy(g_current_directory, "/");
     #endif
-
-    strcpy(g_current_directory, tmp ? tmp : "/");
 
     strcpy(g_exit_code, "0");
 

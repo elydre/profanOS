@@ -23,46 +23,20 @@ FUNC args
     END
 END
 
-FUNC dirsize
-    set size 0
-
-    IF !(eval !# = 0)
-        set 0 !path
-    END
-
-    FOR f !(search -f -r !0)
-        set size !(eval !size + !(fsize !f))
-    END
-
-    IF !(eval !size > 10000)
-        set size !(eval !size / 1000 . "kB")
-    END; ELSE
-        set size !(eval !size . "B")
-    END
-    echo '!0': !size
-END
-
 FUNC time
-    IF !(eval !# ~ 1)
-        echo Usage: time <command>
+    IF !(eval !# = 0)
+        print 'Usage: time <command> [arg1] [arg2] ...\n'
         RETURN
+    END
+
+    set cmd ''
+    FOR i !(range !#)
+        set cmd '!cmd !!i'
     END
 
     set debut !(ticks)
 
-    !0
+    !cmd
 
-    echo !0 took !(eval !(ticks) - !debut) ms
-END
-
-FUNC mv
-    IF !(eval !# ~ 2)
-        echo Usage: mv <source> <destination>
-        RETURN
-    END
-
-    cp !0 !1
-    IF !(eval !exit = 0)
-        rm !0
-    END
+    print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
