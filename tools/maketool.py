@@ -65,6 +65,7 @@ ZAPP_FLAGS = f"{CFLAGS} -Werror"
 ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror -fPIC"
 
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
+LD_FLAGS   = "-m elf_i386 -nostdlib"
 
 QEMU_SPL   = "qemu-system-i386"
 QEMU_KVM   = "qemu-system-i386 -enable-kvm"
@@ -247,7 +248,7 @@ def build_disk_elfs():
         global total
         print_info_line(name)
         print_and_exec(f"{CC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_bin.ld -o " +
+        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_bin.ld -o " +
                        f"{fname}.elf {OUT_DIR}/make/entry_bin.o {fname}.o")
         print_and_exec(f"rm {fname}.o")
         total -= 1
@@ -278,7 +279,7 @@ def build_disk_elfs():
                 os._exit(1)
 
         print_and_exec(f"{CC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} -nostdlib -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o " +
+        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o " +
                        f"{fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc " +
                        ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
         print_and_exec(f"rm {fname}.o")
@@ -311,7 +312,7 @@ def build_disk_elfs():
             if lib not in libs_name:
                 cprint(COLOR_EROR, f"maketool: {name}: library '{lib}' not found\n{' '*10}available: {libs_name}")
                 os._exit(1)
-        print_and_exec(f"{LD} -m elf_i386 -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs " +
+        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs " +
                           f"-o {OUT_DIR}/{name}.elf {OUT_DIR}/make/entry_elf.o {' '.join(objs)} -lc " +
                             ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
 
