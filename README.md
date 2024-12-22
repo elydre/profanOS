@@ -112,11 +112,11 @@ POSIX compliant and often used as `/bin/sh` in linux systems.
 
 ### Major ports - Addons
 
-- [tcc](https://github.com/elydre/tinycc-profan) Small and fast C compiler
+- [tcc](https://bellard.org/tcc/) Small and fast C compiler
 - [dash](https://github.com/elydre/dash-profan) POSIX compliant shell
-- [lua](https://github.com/elydre/lua-profan) Lightweight scripting language
-- [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
-- [halfix](https://github.com/elydre/halfix-profan) x86 emulator with provided linux image
+- [lua](https://www.lua.org/) Lightweight scripting language
+- [doom](https://github.com/ozkl/doomgeneric) Raycasting first person shooter
+- [halfix](https://github.com/nepx/halfix) x86 emulator with provided linux image
 
 All the ports are available with the command `make addons` or by building them manually.
 
