@@ -51,6 +51,8 @@ ZAPPS_BIN = "sys" # zapps/sys
 ZLIBS_MOD = "mod" # zlibs/mod
 
 LINK_FILENAME = "_link.txt" # multi file link
+INCLUDE_DIR   = "include"   # multi file include
+
 LINK_LINE_MAX = 12          # max line for link instructions
 
 CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib "
@@ -83,11 +85,8 @@ if os.getenv("PROFANOS_OPTIM") == "1":
     ZAPP_FLAGS += f" {CC_OPTIM}"
 
 if os.getenv("PROFANOS_KIND") == "1":
-    # remove -Werror -Wall -Wextra
     cprint(COLOR_INFO, "profanOS kind mode enabled")
-    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "")
-
-print(ZAPP_FLAGS)
+    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "").replace("-Werror", "")
 
 for e in ZHEADERS:
     if os.path.exists(e):
@@ -293,7 +292,7 @@ def build_disk_elfs():
         if is_lib:
             flags = ZLIB_FLAGS
         else:
-            flags = ZAPP_FLAGS
+            flags = ZAPP_FLAGS + f" -I {'/'.join(name.split('/')[0:3])}/{INCLUDE_DIR}"
         print_and_exec(f"{CC} {flags} -c {name} -o {fname}.o")
         total -= 1
 
@@ -390,7 +389,7 @@ def build_disk_elfs():
 
     dir_build_list = [file for file in dir_build_list if not (file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
-            f"{OUT_DIR}/{os.path.dirname(file)}.elf", file))]
+            f"{OUT_DIR}/{'/'.join(file.split('/')[0:3])}.elf", file))]
 
     cprint(COLOR_INFO, f"| lib files : {len(lib_build_list)}/{total_lib}")
     cprint(COLOR_INFO, f"| kernel mod: {len(mod_build_list)}/{total_mod}")
@@ -449,7 +448,7 @@ def build_disk_elfs():
         sleep(0.05)
 
     # linking multi file zapps
-    for name in list(set([os.path.dirname(name) for name in dir_build_list])):
+    for name in list(set(["/".join(name.split("/")[0:3]) for name in dir_build_list])):
         link_multifile_elf(name, libs_name)
 
 def make_iso(force = False, more_option = False):
