@@ -388,7 +388,7 @@ int print_help(void) {
 #define LS_INFO "Try 'ls -h' for more information.\n"
 
 ls_args_t *parse_args(int argc, char **argv) {
-    ls_args_t *args = calloc(1, sizeof(ls_args_t) + argc * sizeof(char *));
+    ls_args_t *args = calloc(1, sizeof(ls_args_t) + (argc + 1) * sizeof(char *));
     args->format = isatty(1) ? LS_FORMAT_COLS : LS_FORMAT_BASIC;
     args->color = args->format == LS_FORMAT_COLS;
 
