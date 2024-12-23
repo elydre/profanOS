@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION  "3.7"
+#define DELUGE_VERSION  "3.8"
 #define ALWAYS_DEBUG    0
 #define USE_CACHED_LIBC 1
 
@@ -323,6 +323,8 @@ int load_sections(elfobj_t *obj, uint16_t type) {
     debug_printf(2, "| Load '%s'", obj->name);
 
     void *base_addr = get_base_addr(obj->file, type);
+    void *offset = NULL;
+
     uint32_t required_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
@@ -339,15 +341,19 @@ int load_sections(elfobj_t *obj, uint16_t type) {
         syscall_scuba_generate(base_addr, required_size / 0x1000);
     } else {
         obj->mem = (void *) syscall_mem_alloc(required_size, 0x1000, 1);
+        offset = obj->mem;
     }
-    mem_set(obj->mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_addr) {
-            if (type == ET_EXEC)
-                mem_cpy((void *) shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
-            else
-                mem_cpy(obj->mem + shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
+        if (!shdr[i].sh_addr)
+            continue;
+        switch (shdr[i].sh_type) {
+            case 8: // SHT_NOBITS
+                mem_set(offset + shdr[i].sh_addr, 0, shdr[i].sh_size);
+                break;
+            default:
+                mem_cpy(offset + shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
+                break;
         }
     }
 
@@ -406,7 +412,7 @@ uint32_t get_sym_value(const char *name, Elf32_Sym **sym_ptr) {
 
     for (int k = 0; k < g_lib_count; k++) {
         sym = hash_get(g_loaded_libs[k], full_h, name);
-        if (!sym || sym->st_shndx == 0)
+        if (!sym || sym->st_shndx == 0) // STB_LOCAL
             continue;
         if (sym_ptr)
             *sym_ptr = sym;
@@ -595,56 +601,62 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     return obj;
 }
 
-void init_lib(elfobj_t *lib) {
+void init_elfobj(elfobj_t *obj, int type) {
     // call constructors
 
-    debug_printf(2, "| Init '%s'", lib->name);
+    debug_printf(2, "| Init '%s'", obj->name);
 
-    if (lib->dynamic == NULL)
+    if (obj->dynamic == NULL)
         return;
 
     void (**init_array)(void) = NULL;
     int size = 0;
 
-    for (int j = 0; lib->dynamic[j].d_tag != 0; j++) {
-        if (lib->dynamic[j].d_tag == 25) { // DT_INIT
-            init_array = (void (**)(void)) (lib->mem + lib->dynamic[j].d_un.d_ptr);
+    for (int j = 0; obj->dynamic[j].d_tag != 0; j++) {
+        if (obj->dynamic[j].d_tag == 25) { // DT_INIT
+            init_array = (void (**)(void)) obj->dynamic[j].d_un.d_ptr;
         }
-        if (lib->dynamic[j].d_tag == 27) { // DT_INIT_ARRAYSZ
-            size = lib->dynamic[j].d_un.d_val / sizeof(void *);
+        if (obj->dynamic[j].d_tag == 27) { // DT_INIT_ARRAYSZ
+            size = obj->dynamic[j].d_un.d_val / sizeof(void *);
         }
     }
 
     if (init_array == NULL)
         return;
 
+    if (type == ET_DYN)
+        init_array = (void (**)(void)) ((uint32_t) init_array + (uint32_t) obj->mem);
+
     for (int i = 0; i < size; i++) {
         init_array[i]();
     }
 }
 
-void fini_lib(elfobj_t *lib) {
+void fini_elfobj(elfobj_t *obj, int type) {
     // call destructors
 
-    if (lib->dynamic == NULL)
+    if (obj->dynamic == NULL)
         return;
 
-    debug_printf(2, "| Fini '%s'", lib->name);
+    debug_printf(2, "| Fini '%s'", obj->name);
 
     void (**fini_array)(void) = NULL;
     int size = 0;
 
-    for (int j = 0; lib->dynamic[j].d_tag != 0; j++) {
-        if (lib->dynamic[j].d_tag == 26) { // DT_FINI
-            fini_array = (void (**)(void)) (lib->mem + lib->dynamic[j].d_un.d_ptr);
+    for (int j = 0; obj->dynamic[j].d_tag != 0; j++) {
+        if (obj->dynamic[j].d_tag == 26) { // DT_FINI
+            fini_array = (void (**)(void)) obj->dynamic[j].d_un.d_ptr;
         }
-        if (lib->dynamic[j].d_tag == 28) { // DT_FINI_ARRAYSZ
-            size = lib->dynamic[j].d_un.d_val / sizeof(void *);
+        if (obj->dynamic[j].d_tag == 28) { // DT_FINI_ARRAYSZ
+            size = obj->dynamic[j].d_un.d_val / sizeof(void *);
         }
     }
 
     if (fini_array == NULL)
         return;
+
+    if (type == ET_DYN)
+        fini_array = (void (**)(void)) ((uint32_t) fini_array + (uint32_t) obj->mem);
 
     for (int i = 0; i < size; i++) {
         fini_array[i]();
@@ -673,7 +685,7 @@ void *dlopen(const char *filename, int flag) {
 
     load_sections(dl, ET_DYN);
     file_relocate(dl);
-    init_lib(dl);
+    init_elfobj(dl, ET_DYN);
     return dl;
 }
 
@@ -742,7 +754,7 @@ int dlclose(void *handle) {
     }
 
     if (!g_already_fini) {
-        fini_lib(dl);
+        fini_elfobj(dl, ET_DYN);
     }
 
     if (dl->need_free) {
@@ -805,7 +817,7 @@ int dynamic_linker(elfobj_t *exec) {
                 val = get_sym_value(name, &sym);
                 if (!val) {
                     sym = hash_get(exec, hash(name), name);
-                    if (!sym || sym->st_shndx == 0)
+                    if (!sym || sym->st_shndx == 0) // STB_LOCAL
                         raise_error("'%s' requires symbol '%s'", exec->name, name);
                     val = (uint32_t) sym->st_value;
                 }
@@ -1046,7 +1058,7 @@ int main(int argc, char **argv, char **envp) {
     }
 
     for (int i = 0; i < g_lib_count; i++) {
-        init_lib(g_loaded_libs[i]);
+        init_elfobj(g_loaded_libs[i], ET_DYN);
     }
 
     load_sections(g_prog, ET_EXEC);
@@ -1060,16 +1072,19 @@ int main(int argc, char **argv, char **envp) {
 
     g_dlfcn_error = 0;
 
-    if (g_print_debug) {
-        start = syscall_timer_get_ms();
-    }
-
     if (args.show_leaks) {
         libc_enable_leaks();
     }
 
-    if (argc > args.arg_offset)
+    if (argc > args.arg_offset) {
         syscall_process_info(syscall_process_pid(), PROC_INFO_SET_NAME, argv[args.arg_offset]);
+    }
+
+    init_elfobj(g_prog, ET_EXEC);
+
+    if (g_print_debug) {
+        start = syscall_timer_get_ms();
+    }
 
     ret = main(argc - args.arg_offset, argv + args.arg_offset, envp);
 
@@ -1083,8 +1098,11 @@ int main(int argc, char **argv, char **envp) {
 
     debug_printf(1, "PID %d process_exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);
 
-    for (int i = 0; i < g_lib_count; i++)
-        fini_lib(g_loaded_libs[i]);
+    fini_elfobj(g_prog, ET_EXEC);
+
+    for (int i = 0; i < g_lib_count; i++) {
+        fini_elfobj(g_loaded_libs[i], ET_DYN);
+    }
 
     g_already_fini = 1;
 
