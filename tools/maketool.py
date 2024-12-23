@@ -554,7 +554,10 @@ def gen_disk(force=False, with_src=False):
 
         if isinstance(HDD_MAP[dir_name], str):
             if dir_name == "lib":
-                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* {HDD_MAP[dir_name]}/mod {OUT_DIR}/disk/{dir_name}")
+                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* " + ' '.join([f'{HDD_MAP[dir_name]}/{file}'
+                        for file in os.listdir(HDD_MAP[dir_name]) if not file.startswith('lib')
+                    ]) + f" {OUT_DIR}/disk/{dir_name}")
+
             elif dir_name == "bin":
                 for file in os.listdir(HDD_MAP[dir_name]):
                     if not os.path.isdir(f"{HDD_MAP[dir_name]}/{file}"):
@@ -562,8 +565,10 @@ def gen_disk(force=False, with_src=False):
                     if not os.path.exists(f"{OUT_DIR}/disk/{dir_name}/{file}"):
                         os.makedirs(f"{OUT_DIR}/disk/{dir_name}/{file}")
                     print_and_exec(f"cp -r {HDD_MAP[dir_name]}/{file}/*.* {OUT_DIR}/disk/{dir_name}/{file}")
+
             else:
                 print_and_exec(f"cp -r {HDD_MAP[dir_name]}/* {OUT_DIR}/disk/{dir_name} 2> /dev/null || true")
+
             continue
 
         for e in HDD_MAP[dir_name]:
