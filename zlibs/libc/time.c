@@ -102,9 +102,8 @@ tm_t *gmtime_r(const time_t *a, tm_t *b) {
 }
 
 tm_t *localtime(const time_t *a) {
-    tm_t *time = malloc(sizeof(tm_t));
-    syscall_time_get(time);
-    return time;
+    profan_nimpl("localtime");
+    return NULL;
 }
 
 tm_t *localtime_r(const time_t *a, tm_t *b) {

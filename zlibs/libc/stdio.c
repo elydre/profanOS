@@ -531,15 +531,7 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
-    if (stream == NULL)
-        return 0;
-
-    // check if the file is at the end
-    uint32_t file_pos = fm_lseek(stream->fd, 0, SEEK_CUR);
-    uint32_t file_size = fm_lseek(stream->fd, 0, SEEK_END);
-    fm_lseek(stream->fd, file_pos, SEEK_SET);
-
-    return file_pos >= file_size;
+    return (stream && stream->error) ? 1 : 0;
 }
 
 int ferror(FILE *stream) {

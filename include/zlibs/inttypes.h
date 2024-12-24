@@ -228,16 +228,9 @@ typedef struct {
 
 intmax_t  imaxabs(intmax_t n);
 imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom);
-
-// from <stdlib.h>
-long long          strtoll(const char *str, char **end, int base);
-unsigned long long strtoull(const char *str, char **end, int base);
-long long          wcstoll(const wchar_t *nptr, wchar_t **endptr, int base);
-unsigned long long wcstoull(const wchar_t *nptr, wchar_t **endptr, int base);
-
-#define strtoimax(s, e, b) ((intmax_t)  strtoll(s, e, b))
-#define strtoumax(s, e, b) ((uintmax_t) strtoull(s, e, b))
-#define wcstoimax(s, e, b) ((intmax_t)  wcstoll(s, e, b))
-#define wcstoumax(s, e, b) ((uintmax_t) wcstoull(s, e, b))
+intmax_t  strtoimax(const char *nptr, char **endptr, int base);
+uintmax_t strtoumax(const char *nptr, char **endptr, int base);
+intmax_t  wcstoimax(const wchar_t *nptr, wchar_t **endptr, int base);
+uintmax_t wcstoumax(const wchar_t *nptr, wchar_t **endptr, int base);
 
 #endif
