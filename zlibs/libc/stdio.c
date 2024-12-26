@@ -32,6 +32,7 @@ typedef struct _IO_FILE {
     int   mode;
 
     uint8_t error;
+    int ungetchar;
 
     char *buffer;
     int   buffer_size;
@@ -115,6 +116,7 @@ FILE *fopen(const char *filename, const char *mode) {
     FILE *file = calloc(1, sizeof(FILE) + STDIO_BUFFER_SIZE);
 
     // copy data
+    file->ungetchar = -1;
     file->mode = interpeted_mode;
     file->fd = fd;
 
@@ -201,6 +203,13 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         return 0;
 
     fflush(stream);
+
+    if (stream->ungetchar >= 0) {
+        ((char *) buffer++)[0] = stream->ungetchar;
+        stream->ungetchar = -1;
+        if (--count == 0)
+            return 1;
+    }
 
     int read, rfrom_buffer = 0;
 
@@ -311,6 +320,7 @@ int fseek(FILE *stream, long offset, int whence) {
 
     // reset the buffer
     stream->buffer_size = 0;
+    stream->ungetchar = -1;
 
     // set the file position
     return fm_lseek(stream->fd, offset, whence) < 0 ? -1 : 0;
@@ -417,10 +427,11 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     return getdelim(lineptr, n, '\n', stream);
 }
 
-
 int ungetc(int ch, FILE *stream) {
-    profan_nimpl("ungetc");
-    return 0;
+    if (stream == NULL || stream->ungetchar >= 0)
+        return EOF;
+    stream->ungetchar = ch;
+    return ch;
 }
 
 int scanf(const char *format, ...) {
