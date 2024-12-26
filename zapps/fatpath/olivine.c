@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 5"
+#define OLV_VERSION "1.5 rev 6"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -1970,48 +1970,6 @@ char *if_inter(char **input) {
     return output;
 }
 
-char *if_name(char **input) {
-    /*
-     * input: ["/dir/subdir/file1.txt"]
-     * output: "'file1'"
-    */
-
-    int argc;
-    for (argc = 0; input[argc] != NULL; argc++);
-
-    if (argc != 1) {
-        raise_error("name", "Usage: name <path>");
-        return ERROR_CODE;
-    }
-
-    int len = strlen(input[0]);
-    char *name = strdup(input[0]);
-
-    for (int i = len - 1; i >= 0; i--) {
-        if (input[0][i] == '/') {
-            strcpy(name, input[0] + i + 1);
-            break;
-        }
-    }
-
-    // remove extension
-    for (int i = strlen(name) - 1; i >= 0; i--) {
-        if (name[i] == '.') {
-            name[i] = '\0';
-            break;
-        }
-    }
-
-    char *output = malloc(strlen(name) + 3);
-    strcpy(output, INTR_QUOTE_STR);
-    strcat(output, name);
-    strcat(output, INTR_QUOTE_STR);
-
-    free(name);
-
-    return output;
-}
-
 char *if_print(char **input) {
     for (int i = 0; input[i] != NULL; i++) {
         fputs(input[i], stdout);
@@ -2111,14 +2069,11 @@ char *if_range(char **input) {
             return (raise_error("range", "Invalid number '%s'", input[1]), ERROR_CODE);
     }
 
-    if (start > end) {
-        raise_error("range", "Start must be less than end, got %d and %d", start, end);
-        return ERROR_CODE;
-    } else if (start == end) {
+    if (start == end) {
         return NULL;
     }
 
-    char *tmp = malloc(14);
+    char tmp[13];
 
     // get the length of the biggest number
     local_itoa(end, tmp);
@@ -2127,18 +2082,27 @@ char *if_range(char **input) {
     if (nblen < strlen(tmp))
         nblen = strlen(tmp);
 
-    char *output = malloc((nblen + 1) * (end - start + 1));
+    char *output;
     int output_len = 0;
 
-    for (int i = start; i < end; i++) {
-        local_itoa(i, tmp);
-        strcat(tmp, " ");
-        for (int j = 0; tmp[j]; j++)
-            output[output_len++] = tmp[j];
+    if (start > end) {
+        output = malloc((start - end) * (nblen + 1) + 1);
+        for (int i = start; i > end; i--) {
+            local_itoa(i, tmp);
+            strcat(tmp, " ");
+            for (int j = 0; tmp[j]; j++)
+                output[output_len++] = tmp[j];
+        }
+    } else {
+        output = malloc((end - start) * (nblen + 1) + 1);
+        for (int i = start; i < end; i++) {
+            local_itoa(i, tmp);
+            strcat(tmp, " ");
+            for (int j = 0; tmp[j]; j++)
+                output[output_len++] = tmp[j];
+        }
     }
     output[--output_len] = '\0';
-
-    free(tmp);
 
     return output;
 }
@@ -2197,7 +2161,7 @@ char *if_rep(char **input) {
     return ret;
 }
 
-char *if_set_var(char **input) {
+char *if_set(char **input) {
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -2242,6 +2206,134 @@ char *if_set_var(char **input) {
     free(value);
 
     return NULL;
+}
+
+char *if_split(char **input) {
+    /*
+     * input: ["hello$world", "$"]
+     * output: "'hello' 'world'"
+    */
+
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
+
+    if (argc < 1 || argc > 3) {
+        raise_error("split", "Usage: split <string> [separator] [<from>:<to>]");
+        return ERROR_CODE;
+    }
+
+    char *sep = argc > 1 ? input[1] : " ";
+    int from = 0, to = INT_MAX;
+
+    if (argc == 3) {
+        int end;
+        for (end = 0; input[2][end] != ':' && input[2][end]; end++);
+
+        char *from_str = malloc(end + 1);
+        strncpy(from_str, input[2], end);
+        from_str[end] = '\0';
+        if (local_atoi(from_str, &from)) {
+            raise_error("split", "Invalid number '%s'", from_str);
+            free(from_str);
+            return ERROR_CODE;
+        }
+
+        free(from_str);
+        if (input[2][end] != ':') {
+            to = from == -1 ? INT_MAX : from + 1;
+        } else if (local_atoi(input[2] + end + 1, &to)) {
+            raise_error("split", "Invalid number '%s'", input[2] + end + 1);
+            return ERROR_CODE;
+        }
+    }
+
+    int slen = strlen(sep);
+    int count, oindex, in;
+    char *output;
+
+    if (slen == 0) {
+        output = input[0];
+        count = strlen(output);
+        goto split_range;
+    }
+
+    output = malloc(strlen(input[0]) * 4 + 1);
+    count = oindex = in = 0;
+
+    for (int i = 0; input[0][i] != '\0'; i++) {
+        if (strncmp(input[0] + i, sep, slen) == 0) {
+            if (in)
+                output[oindex++] = INTR_QUOTE;
+            i += slen - 1;
+            in = 0;
+        } else {
+            if (!in) {
+                if (oindex)
+                    output[oindex++] = ' ';
+                output[oindex++] = INTR_QUOTE;
+                count++;
+                in = 1;
+            }
+            output[oindex++] = input[0][i];
+        }
+    }
+    if (in)
+        output[oindex++] = INTR_QUOTE;
+    output[oindex] = '\0';
+
+    split_range:
+
+    if (from == 0 && to == INT_MAX) {
+        if (slen == 0)
+            return strdup(output);
+        if (count == 0) {
+            free(output);
+            return NULL;
+        }
+        return realloc(output, oindex + 1);
+    }
+
+    if (from < 0)
+        from = count + from;
+    if (to < 0)
+        to = count + to;
+    if (to == INT_MAX)
+        to = count;
+
+    if (from < 0 || to < 0 || from >= count || to > count || from > to) {
+        raise_error("split", "Invalid range %d:%d", from, to);
+        free(output);
+        return ERROR_CODE;
+    }
+
+    if (slen == 0) {
+        char *res = malloc(to - from + 1);
+        strncpy(res, output + from, to - from);
+        res[to - from] = '\0';
+        return res;
+    }
+
+    in = count = 0;
+
+    for (int i = 0; output[i] != '\0'; i++) {
+        while (output[++i] && output[i] != INTR_QUOTE);
+        count++;
+        i++;
+
+        if (count == to) {
+            output[i] = '\0';
+            break;
+        }
+
+        if (count == from)
+            in = i + 1;
+    }
+
+    char *res = malloc(oindex - in + 1);
+    strcpy(res, output + in);
+
+    free(output);
+    return res;
 }
 
 char *if_sprintf(char **input) {
@@ -2384,10 +2476,10 @@ internal_function_t internal_functions[] = {
     {"inter", if_inter},
     {"print", if_print},
     {"pseudo", if_pseudo},
-    {"name", if_name},
     {"range", if_range},
     {"rep", if_rep},
-    {"set", if_set_var},
+    {"set", if_set},
+    {"split", if_split},
     {"sprintf", if_sprintf},
     {"strlen", if_strlen},
     {"ticks", if_ticks},
@@ -4906,10 +4998,9 @@ void olv_init_globals(void) {
     g_current_directory = malloc(MAX_PATH_SIZE + 1);
 
     #if UNIXBUILD || PROFANBUILD
-    getcwd(g_current_directory, MAX_PATH_SIZE);
-    #else
-    strcpy(g_current_directory, "/");
+    if (getcwd(g_current_directory, MAX_PATH_SIZE) == NULL)
     #endif
+    strcpy(g_current_directory, "/");
 
     strcpy(g_exit_code, "0");
 

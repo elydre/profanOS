@@ -16,11 +16,37 @@ FUNC help
     echo -e < /zada/common/shell_help.txt
 END
 
-FUNC args
-    echo called with !# arguments
-    FOR i !(range !#)
-        echo '!i': !!i
+FUNC name
+    IF !(eval !# ~ 1)
+        print 'Usage: name <path>\n'
+        RETURN
     END
+    set n !(split '!0' / -1)
+    FOR i !(range !(eval !(strlen !n) - 1) 0)
+        IF !(eval "!n" @ !i = ".")
+            RETURN !(split !n '' 0:!i)
+        END
+    END
+    RETURN !n
+END
+
+FUNC dirsize
+    set size 0
+
+    IF !(eval !# = 0)
+        set 0 !path
+    END
+
+    FOR f !(search -f !0 |)
+        set size !(eval !size + !(fsize !f))
+    END
+
+    IF !(eval !size > 10000)
+        set size !(eval !size / 1000 . "kB")
+    END; ELSE
+        set size !(eval !size . "B")
+    END
+    echo '!0': !size
 END
 
 FUNC time
