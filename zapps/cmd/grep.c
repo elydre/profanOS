@@ -14,55 +14,45 @@
 #include <string.h>
 #include <stdio.h>
 
-char *read_stdin(void) {
-    // read from stdin
-    char *buffer = malloc(1024);
-    int buffer_size = 0;
-    int rcount = 0;
+void print_with_color(char *line, char *pattern) {
+    char *pattern_start, *pattern_end;
 
-    while ((rcount = fread(buffer + buffer_size, 1, 1024, stdin)) > 0) {
-        buffer = realloc(buffer, buffer_size + rcount + 1025);
-        buffer_size += rcount;
+    if ((pattern_start = strstr(line, pattern)) == NULL) {
+        fputs(line, stdout);
+        return;
     }
 
-    buffer[buffer_size] = '\0';
-
-    return buffer;
-}
-
-void print_with_color(char *line, char *pattern) {
-    char *pattern_start = strstr(line, pattern);
-    char *pattern_end = pattern_start + strlen(pattern);
-    char *line_end = strchr(line, '\0');
-
     fwrite(line, 1, pattern_start - line, stdout);
-    printf("\e[95m");
+    pattern_end = pattern_start + strlen(pattern);
+
+    fputs("\e[31m", stdout);
     fwrite(pattern_start, 1, pattern_end - pattern_start, stdout);
-    printf("\e[0m");
-    fwrite(pattern_end, 1, line_end - pattern_end, stdout);
-    printf("\n");
+    fputs("\e[0m", stdout);
+
+    print_with_color(pattern_end, pattern);
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2 || isatty(0)) {
-        fprintf(stderr, "Usage: <CMD> | grep <pattern>\n");
+    if (argc != 2) {
+        fprintf(stderr, "Usage: <CMD> | %s <pattern>\n", argv[0]);
         return 1;
     }
 
-    char *buffer = read_stdin();
-    char *line = buffer;
-    char *next_line = NULL;
+    int color = isatty(1);
 
-    while (1) {
-        next_line = strchr(line, '\n');
-        if (next_line == NULL)
-            break;
-        *next_line = '\0';
-        if (strstr(line, argv[1]) != NULL)
+    size_t s;
+    char *line = NULL;
+
+    while (getline(&line, &s, stdin) != -1) {
+        if (strstr(line, argv[1]) == NULL)
+            continue;
+        if (color)
             print_with_color(line, argv[1]);
-        line = next_line + 1;
+        else
+            fputs(line, stdout);
     }
 
-    free(buffer);
+    free(line);
+
     return 0;
 }
