@@ -21,12 +21,12 @@
 #define BUDDY_ALLOC_H
 
 #ifndef BUDDY_HEADER
-#include <sys/types.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
 #ifndef BUDDY_PRINTF
 #include <stdio.h>
 #endif
@@ -1260,7 +1260,7 @@ static bool buddy_is_free(struct buddy *buddy, size_t from) {
     effective_memory_size = buddy_effective_memory_size(buddy);
     virtual_slots = buddy_virtual_slots(buddy);
     to = effective_memory_size -
-        ((virtual_slots ? virtual_slots : 1) * buddy->alignment);
+        ((virtual_slots ? (virtual_slots + 1) : 1) * buddy->alignment);
 
     tree = buddy_tree(buddy);
 
