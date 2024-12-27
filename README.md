@@ -205,13 +205,15 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 - [@asqel](https://github.com/asqel) for tests, the sulfur language and all the ports
 - [@Sarah](https://github.com/Sarenard) for all the help and ideas
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
+- [@spaskalev](https://github.com/spaskalev/buddy_alloc) for the buddy allocator
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
 - [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
-- [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
 - [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
 - [szhou42](https://github.com/szhou42/osdev) for ata driver
-- [@ProtoByter](https://github.com/ProtoByter) for the first pull request
+
+A huge thank you to all the [contributors](https://github.com/elydre/profanOS/graphs/contributors)
+and all the people who took the time to look at this project!
 
 *be careful with our friend 55*
