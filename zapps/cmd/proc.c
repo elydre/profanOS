@@ -178,30 +178,54 @@ void top_loop(void) {
     panda_screen_free(screen_bk);
 }
 
-typedef struct {
-    int mode;
+void search_process(char *name) {
+    uint32_t pid_list[PROCESS_MAX];
+    int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
+    sort_tab(pid_list, pid_list_len);
+
     int pid;
+    char *pname;
+    for (int i = 0; i < pid_list_len; i++) {
+        pid = pid_list[i];
+        if (pid == 1) continue;
+        pname = (char *) syscall_process_info(pid, PROC_INFO_NAME, NULL);
+        if (strcmp(pname, name) == 0) {
+            printf("%d\n", pid);
+            return;
+        }
+    }
+    fprintf(stderr, "proc: no process named '%s'\n", name);
+}
+
+typedef struct {
+    int   mode;
+    int   pid;
+    char *name;
 } proc_args_t;
 
-#define MODE_LIST 0
-#define MODE_LHLP 1
-#define MODE_FHLP 2
-#define MODE_EXIT 3
-#define MODE_SLPP 4
-#define MODE_WKUP 5
-#define MODE_TOPL 6
-#define MODE_PARS 7
+enum {
+    MODE_LIST,
+    MODE_USGE,
+    MODE_HELP,
+    MODE_KILL,
+    MODE_SLEP,
+    MODE_WKUP,
+    MODE_TOPL,
+    MODE_PARS,
+    MODE_SRCH
+};
 
 int show_help(void) {
     puts(
-        "Usage: proc [mode] [pid]\n"
+        "Usage: proc [mode] [arg]\n"
         "Modes:\n"
+        "  -f: search pid from name\n"
         "  -h: show this help\n"
         "  -l: list processes (default)\n"
         "  -k: kill a process\n"
         "  -p: like -l but parser friendly\n"
         "  -s: asleep a process\n"
-        "  -t  top like interface\n"
+        "  -t: top like interface\n"
         "  -w: wake up a process"
     );
     return 0;
@@ -216,53 +240,48 @@ proc_args_t parse_args(int argc, char **argv) {
     }
     if (argc == 2) {
         if (strcmp(argv[1], "-h") == 0) {
-            args.mode = MODE_FHLP;
-            return args;
-        }
-        if (strcmp(argv[1], "-l") == 0) {
+            args.mode = MODE_HELP;
+        } else if (strcmp(argv[1], "-l") == 0) {
             args.mode = MODE_LIST;
-            return args;
-        }
-        if (strcmp(argv[1], "-t") == 0) {
+        } else if (strcmp(argv[1], "-t") == 0) {
             args.mode = MODE_TOPL;
             top_loop();
-            return args;
-        }
-        if (strcmp(argv[1], "-p") == 0) {
+        } else if (strcmp(argv[1], "-p") == 0) {
             args.mode = MODE_PARS;
-            return args;
+        } else {
+            fprintf(stderr, "proc: unrecognized option '%s'\n", argv[1]);
+            args.mode = MODE_USGE;
         }
-        fprintf(stderr, "proc: invalid option -- '%s'\n", argv[1]);
-        args.mode = MODE_LHLP;
         return args;
     }
     else if (argc == 3) {
         if (strcmp(argv[1], "-k") == 0) {
-            args.mode = MODE_EXIT;
-        }
-        else if (strcmp(argv[1], "-s") == 0) {
-            args.mode = MODE_SLPP;
-        }
-        else if (strcmp(argv[1], "-w") == 0) {
+            args.mode = MODE_KILL;
+        } else if (strcmp(argv[1], "-s") == 0) {
+            args.mode = MODE_SLEP;
+        } else if (strcmp(argv[1], "-w") == 0) {
             args.mode = MODE_WKUP;
-        }
-        else {
-            fprintf(stderr, "proc: invalid option -- '%s'\n", argv[1]);
-            args.mode = MODE_LHLP;
+        } else if (strcmp(argv[1], "-f") == 0) {
+            args.mode = MODE_SRCH;
+            args.name = argv[2];
+            return args;
+        } else {
+            fprintf(stderr, "proc: unrecognized option '%s'\n", argv[1]);
+            args.mode = MODE_USGE;
             return args;
         }
         args.pid = atoi(argv[2]);
         return args;
     }
     fputs("Usage: proc [mode] [pid]\n", stderr);
-    args.mode = MODE_LHLP;
+    args.mode = MODE_USGE;
     return args;
 }
 
 int main(int argc, char **argv) {
     proc_args_t args = parse_args(argc, argv);
 
-    if (args.mode == MODE_LHLP) {
+    if (args.mode == MODE_USGE) {
         fputs("Try 'proc -h' for more information.\n", stderr);
         return 1;
     }
@@ -273,14 +292,16 @@ int main(int argc, char **argv) {
         top_loop();
     else if (args.mode == MODE_PARS)
         list_process(2);
-    else if (args.mode == MODE_FHLP)
+    else if (args.mode == MODE_HELP)
         return show_help();
-    else if (args.mode == MODE_EXIT)
+    else if (args.mode == MODE_KILL)
         syscall_process_kill(args.pid, 1);
-    else if (args.mode == MODE_SLPP)
+    else if (args.mode == MODE_SLEP)
         syscall_process_sleep(args.pid, UINT32_MAX);
     else if (args.mode == MODE_WKUP)
         syscall_process_wakeup(args.pid, 0);
+    else if (args.mode == MODE_SRCH)
+        search_process(args.name);
     else return 1;
     return 0;
 }
