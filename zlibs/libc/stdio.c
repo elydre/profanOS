@@ -49,6 +49,7 @@ char *g_printf_buffer = NULL;
 static FILE *fopen_std(int fd, uint8_t mode) {
     FILE *file = calloc(sizeof(FILE) + STDIO_BUFFER_SIZE, 1);
     file->buffer = ((char *) file) + sizeof(FILE);
+    file->ungetchar = -1;
     file->mode = mode;
     file->fd = fd;
     return file;
