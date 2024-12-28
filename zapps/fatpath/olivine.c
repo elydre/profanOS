@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 6"
+#define OLV_VERSION "1.5 rev 7"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -2248,7 +2248,7 @@ char *if_split(char **input) {
     }
 
     int slen = strlen(sep);
-    int count, oindex, in;
+    int count, in, oindex = 0;
     char *output;
 
     if (slen == 0) {
@@ -2258,7 +2258,7 @@ char *if_split(char **input) {
     }
 
     output = malloc(strlen(input[0]) * 4 + 1);
-    count = oindex = in = 0;
+    count = in = 0;
 
     for (int i = 0; input[0][i] != '\0'; i++) {
         if (strncmp(input[0] + i, sep, slen) == 0) {
