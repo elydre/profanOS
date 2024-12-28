@@ -152,20 +152,21 @@ void *open_elf(char *filename) {
 
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
+    obj->type = ehdr->e_type;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         switch (shdr[i].sh_type) {
-            case 2: // SHT_SYMTAB
+            case SHT_SYMTAB:
                 obj->sym_tab = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
                 obj->sym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
                 obj->sym_size = shdr[i].sh_size;
                 break;
 
-            case 6: // SHT_STRTAB
+            case SHT_DYNAMIC:
                 obj->dynamic = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
                 break;
 
-            case 11: // SHT_DYNSYM
+            case SHT_DYNSYM:
                 obj->dym_tab = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
                 obj->dym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
                 obj->dym_size = shdr[i].sh_size;
