@@ -385,20 +385,7 @@ int putenv(char *string) {
     return 0;
 }
 
-void qsort(void *base, size_t nel, size_t width, int (*comp)(const void *, const void *)) {
-    // bubble sort, can be improved
-    char *arr = (char *) base;
-    char temp[width];
-    for (size_t i = 0; i < nel; i++) {
-        for (size_t j = 0; j < nel - i - 1; j++) {
-            if (comp(arr + j * width, arr + (j + 1) * width) < 0)
-                continue;
-            memcpy(temp, arr + j * width, width);
-            memcpy(arr + j * width, arr + (j + 1) * width, width);
-            memcpy(arr + (j + 1) * width, temp, width);
-        }
-    }
-}
+// qsort defined in qsort.c
 
 int rand(void) {
     return rand_r(&g_rand_seed) & RAND_MAX;

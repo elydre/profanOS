@@ -527,7 +527,7 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
     register char *s = s1;
 
     while (n) {
-        if ((*s = *s2) != 0) s2++; /* Need to fill tail with 0s. */
+        if ((*s = *s2) != 0) s2++; // Need to fill tail with 0s.
         ++s;
         --n;
     }
