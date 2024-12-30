@@ -219,10 +219,7 @@ void print_cols(int elm_count, ls_entry_t *entries, ls_args_t *args) {
 void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
     int size, len;
     for (int i = 0; i < elm_count; i++) {
-        len = printf("d%ds%d", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
-
-        for (int j = len; j < 10; j++)
-            putchar(' ');
+        printf("%02x:%06x  ", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
 
         if (args->phys_size == 1) {
             len = printf("%d B", syscall_fs_get_size(NULL, entries[i].sid));
