@@ -60,12 +60,19 @@ typedef struct {
 
 pipe_data_t *open_pipes;
 
+int fm_reopen(int fd, const char *abs_path, int flags);
+#define MAX_FD ((int)(0x1000 / sizeof(fd_data_t)))
+
 int main(void) {
     open_pipes = kcalloc_ask(PIPE_MAX, sizeof(pipe_data_t));
+
+    // open default fds
+    if (fm_reopen(0, "/dev/kterm", O_RDONLY) < 0 ||
+        fm_reopen(1, "/dev/kterm", O_WRONLY) < 0 ||
+        fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
+    ) return 1;
     return 0;
 }
-
-#define MAX_FD ((int)(0x1000 / sizeof(fd_data_t)))
 
 static fd_data_t *fm_fd_to_data(int fd) {
     if (fd < 0 || fd >= MAX_FD)
