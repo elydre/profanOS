@@ -14,12 +14,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 7"
+#define OLV_VERSION "1.5 rev 8"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
 
-#define USE_READLINE  1  // readline for input (unix only)
+#define USE_READLINE  0  // readline for input (unix only)
 #define BIN_AS_PSEUDO 1  // check for binaries in path
 #define USE_ENVVARS   1  // enable environment variables
 #define ENABLE_DEBUG  0  // print function calls
@@ -3080,7 +3080,6 @@ char *check_wildcards(char *line) {
         line[end] = '\0';
 
         char *wildcard = resolve_wildcard("", line + start);
-        line[end] = old;
 
         if (wildcard == NULL) {
             for (int j = start; j < end; j++) {
@@ -3091,6 +3090,8 @@ char *check_wildcards(char *line) {
             free(line);
             return NULL;
         }
+
+        line[end] = old;
 
         int len = strlen(wildcard);
 
