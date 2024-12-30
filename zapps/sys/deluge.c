@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION  "4.0"
+#define DELUGE_VERSION  "4.1"
 #define ALWAYS_DEBUG    0
 #define USE_CACHED_LIBC 1
 
@@ -517,7 +517,7 @@ int dynamic_linker(elfobj_t *obj) {
                     *ptr = val;
                     break;
                 case R_386_RELATIVE:    // word32  B + A
-                    *ptr = (uint32_t) obj->mem + val;
+                    *ptr = (uint32_t) obj->mem + *ptr;
                     break;
                 case R_386_JMP_SLOT:    // word32  S
                 case R_386_GLOB_DAT:    // word32  S
@@ -558,7 +558,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         for (int i = 0; i < g_lib_count; i++) {
             if (str_cmp(g_loaded_libs[i]->name, path))
                 continue;
-            debug_printf(1, "find %s", path);
+            debug_printf(2, "find %s", path);
             kfree(path);
             return g_loaded_libs[i];
         }
