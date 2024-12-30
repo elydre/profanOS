@@ -48,7 +48,7 @@
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
 
-#define RIM_VERSION "7 rev 2"
+#define RIM_VERSION "7 rev 3"
 
 // GLOBALS
 typedef struct {
@@ -123,14 +123,17 @@ void load_file(char *path) {
 
     if (path) {
         fd = open(path, O_RDONLY | O_CREAT);
-        if (fd < 0)
+        if (fd < 0) {
+            fprintf(stderr, "rim: %s: file not found\n", path);
             exit(1);
+        }
     } else {
         fd = 0;
     }
 
     while ((read_size = read(fd, g_data + g_data_count - 1, 1024))) {
         if (read_size < 0) {
+            fprintf(stderr, "rim: %s: read error\n", path);
             close(fd);
             exit(1);
         }
@@ -420,7 +423,7 @@ void display_data(int from_line, int to_line, int x_offset) {
 void realloc_buffer(void) {
     if (g_lines_count >= g_lines_max - 1) {
         if (g_lines_count > g_lines_max) {
-            fputs("rim: g_data_lines, overflow detected\n", stderr);
+            fputs("rim: g_data_lines: overflow detected\n", stderr);
             exit(1);
         }
         g_data_lines = realloc(g_data_lines, (g_lines_max + 1024) * sizeof(int));
@@ -429,7 +432,7 @@ void realloc_buffer(void) {
 
     if (g_data_count >= g_data_max - 1) {
         if (g_data_count > g_data_max) {
-            fputs("rim: g_data, overflow detected\n", stderr);
+            fputs("rim: g_data: overflow detected\n", stderr);
             exit(1);
         }
         g_data = realloc(g_data, g_data_max + 1024);
@@ -925,7 +928,7 @@ char *compute_args(int argc, char **argv) {
                 g_rim.save_at_exit = 1;
             } else if (argv[i][1] == 'c') {
                 if (i + 1 >= argc) {
-                    fprintf(stderr, "rim: Missing argument for option -- 'c'\n");
+                    fprintf(stderr, "rim: missing argument for option -- 'c'\n");
                     exit(1);
                 }
                 ext = argv[++i];
@@ -933,7 +936,7 @@ char *compute_args(int argc, char **argv) {
                 puts("rim version " RIM_VERSION ", profanOS text editor");
                 exit(0);
             } else {
-                fprintf(stderr, "rim: Unknown option -- '%s'\n", argv[i] + 1);
+                fprintf(stderr, "rim: unknown option -- '%s'\n", argv[i] + 1);
                 exit(1);
             }
         } else {
