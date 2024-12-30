@@ -32,6 +32,9 @@
 #define W_OK 2
 #define R_OK 4
 
+extern int optind, opterr, optopt;
+extern char *optarg;
+
 int      access(const char *pathname, int mode);
 unsigned alarm(unsigned a);
 int      chdir(const char *a);

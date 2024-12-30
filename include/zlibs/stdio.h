@@ -51,6 +51,7 @@ extern FILE *stderr;
 #define SEEK_SET 0
 
 void    clearerr(FILE *stream);
+int     fileno(FILE *stream);
 FILE   *fopen(const char *filename, const char *mode);
 FILE   *freopen(const char *filename, const char *mode, FILE *stream);
 int     fclose(FILE *stream);
@@ -90,6 +91,7 @@ int     vsnprintf(char *str, size_t count, const char *fmt, va_list args);
 long    ftell(FILE *stream);
 int     feof(FILE *stream);
 int     ferror(FILE *stream);
+void    rewind(FILE *stream);
 void    perror(const char *s);
 int     remove(const char *fname);
 int     rename(const char *old_filename, const char *new_filename);

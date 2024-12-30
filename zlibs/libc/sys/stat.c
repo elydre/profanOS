@@ -10,11 +10,49 @@
 \*****************************************************************************/
 
 #include <profan/filesys.h>
+#include <profan/syscall.h>
 #include <profan.h>
 
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <errno.h>
+
+static int stat_sid(uint32_t sid, struct stat *buf) {
+    if (IS_SID_NULL(sid)) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    buf->st_dev = SID_DISK(sid);
+    buf->st_ino = sid;
+
+    buf->st_mode = 0777;
+
+    if (fu_is_dir(sid)) {
+        buf->st_mode |= S_IFDIR;
+    } else if (fu_is_fctf(sid)) {
+        buf->st_mode |= S_IFCHR;
+    } else {
+        buf->st_mode |= S_IFREG;
+    }
+
+    buf->st_nlink = 1;
+    buf->st_rdev = 0;   // not a special file
+
+    buf->st_uid = 0;    // root
+    buf->st_gid = 0;    // root
+
+    buf->st_size = syscall_fs_get_size(NULL, sid);
+
+    buf->st_atime = 0;
+    buf->st_mtime = 0;
+    buf->st_ctime = 0;
+
+    buf->st_blksize = 512;
+    buf->st_blocks = (buf->st_size + 511) / 512;
+
+    return 0;
+}
 
 int chmod(const char *path, mode_t mode) {
     if (IS_SID_NULL(profan_resolve_path(path))) {
@@ -25,9 +63,9 @@ int chmod(const char *path, mode_t mode) {
     // everything is 777 in profanOS :)
     return 0;
 }
+
 int fstat(int fd, struct stat *buf) {
-    profan_nimpl("fstat");
-    return -1;
+    return stat_sid(fm_get_sid(fd), buf);
 }
 
 int mknod(const char *path, mode_t mode, dev_t dev) {
@@ -59,12 +97,7 @@ int mkfifo(const char *path, mode_t mode) {
 }
 
 int stat(const char *path, struct stat *buf) {
-    if (IS_SID_NULL(profan_resolve_path(path))) {
-        errno = ENOENT;
-        return -1;
-    }
-
-    return 0;
+    return stat_sid(profan_resolve_path(path), buf);
 }
 
 mode_t umask(mode_t mask) {

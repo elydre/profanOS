@@ -25,6 +25,11 @@
 char profan_wd_path[PROFAN_PATH_MAX] = "/";
 uint32_t profan_wd_sid = SID_ROOT;
 
+int   opterr = 1, // if error message should be printed
+      optind = 1, // index into parent argv vector
+      optopt;     // character checked for validity
+char *optarg;     // argument associated with option
+
 int access(const char *pathname, int mode) {
     // add the current working directory to the filename
     uint32_t elem = profan_resolve_path(pathname);
@@ -298,9 +303,57 @@ int getlogin_r(char *a, size_t n) {
     return 0;
 }
 
-int getopt(int a, char * const *b, const char *c) {
-    profan_nimpl("getopt");
-    return 0;
+int getopt(int nargc, char *const *nargv, const char *ostr) {
+    static char *place = "";
+    char *oli;
+
+    if (!*place) {
+        if (optind >= nargc || *(place = nargv[optind]) != '-') {
+            place = "";
+            return -1;
+        }
+
+        if (place[1] && *++place == '-' && place[1] == '\0') {
+            ++optind;
+            place = "";
+            return -1;
+        }
+    }
+
+    if ((optopt = (int) *place++) == (int) ':' || !(oli = strchr(ostr, optopt))) {
+        if (optopt == (int) '-') {
+            place = "";
+            return -1;
+        }
+        if (!*place)
+            optind++;
+        if (opterr && *ostr != ':')
+            fprintf(stderr, "illegal option -- '%c'\n", optopt);
+        return (int) '?';
+    }
+
+    if (*++oli != ':') {
+        optarg = NULL;
+        if (!*place)
+            optind++;
+    } else {
+        if (*place) {
+            optarg = place;
+        } else if (nargc <= ++optind) {
+            place = "";
+            if (*ostr == ':')
+                return (int) ':';
+            if (opterr)
+                fprintf(stderr, "option requires an argument -- '%c'\n", optopt);
+            return (int) '?';
+        } else {
+            optarg = nargv[optind];
+        }
+        place = "";
+        optind++;
+    }
+
+    return optopt;
 }
 
 pid_t getpgid(pid_t a) {

@@ -17,7 +17,7 @@
 struct stat {
     dev_t     st_dev;       // ID of device containing file
     ino_t     st_ino;       // file serial number
-    mode_t    st_mode;      // mode of file (see below)
+    mode_t    st_mode;      // mode of file
     nlink_t   st_nlink;     // number of links to the file
     uid_t     st_uid;       // user ID of file
     gid_t     st_gid;       // group ID of file
@@ -48,12 +48,20 @@ struct stat {
 #define S_IWOTH 0000002     // W for other
 #define S_IXOTH 0000001     // X for other
 
-#define S_ISBLK(m)  ((m & 0170000) == 0060000)  // block special
-#define S_ISCHR(m)  ((m & 0170000) == 0020000)  // char special
-#define S_ISDIR(m)  ((m & 0170000) == 0040000)  // directory
-#define S_ISFIFO(m) ((m & 0170000) == 0010000)  // fifo
-#define S_ISREG(m)  ((m & 0170000) == 0100000)  // regular file
-#define S_ISLNK(m)  ((m & 0170000) == 0120000)  // symbolic link
+#define S_IFMT  0170000     // type of file mask
+#define S_IFBLK 0060000     // block special
+#define S_IFCHR 0020000     // character special
+#define S_IFIFO 0010000     // FIFO special
+#define S_IFREG 0100000     // regular
+#define S_IFDIR 0040000     // directory
+#define S_IFLNK 0120000     // symbolic link
+
+#define S_ISBLK(m)  ((m & 0170000) == S_IFBLK)  // block special
+#define S_ISCHR(m)  ((m & 0170000) == S_IFCHR)  // character special
+#define S_ISFIFO(m) ((m & 0170000) == S_IFIFO)  // FIFO special
+#define S_ISREG(m)  ((m & 0170000) == S_IFREG)  // regular
+#define S_ISDIR(m)  ((m & 0170000) == S_IFDIR)  // directory
+#define S_ISLNK(m)  ((m & 0170000) == S_IFLNK)  // symbolic link
 
 int chmod(const char *path, mode_t mode);
 int fstat(int fd, struct stat *buf);

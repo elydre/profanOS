@@ -16,10 +16,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#define IS_LEAP_YEAR(year) (((year) % 4 == 0 && (year) % 100 != 0) || (year) % 400 == 0)
-
-#define CENTURY          2000
-
 #define SEC_IN_MIN       (60)
 #define SEC_IN_HOUR      (60 * SEC_IN_MIN)
 #define SEC_IN_DAY       (24 * SEC_IN_HOUR)
@@ -41,13 +37,28 @@ static uint32_t cumulated_seconds_in_month[] = {
     SEC_IN_DAY * 334, // December
 };
 
-char *asctime(const tm_t *a) {
-    profan_nimpl("asctime");
-    return NULL;
+static int day_in_month[] = {
+    31, // January
+    28, // February
+    31, // March
+    30, // April
+    31, // May
+    30, // June
+    31, // July
+    31, // August
+    30, // September
+    31, // October
+    30, // November
+    31, // December
+};
+
+static inline int is_leap(int year) {
+    year += 1900;
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
-char *asctime_r(const tm_t *a, char *b) {
-    profan_nimpl("asctime_r");
+char *asctime(const tm_t *a) {
+    profan_nimpl("asctime");
     return NULL;
 }
 
@@ -76,11 +87,6 @@ char *ctime(const time_t *a) {
     return NULL;
 }
 
-char *ctime_r(const time_t *a, char *b) {
-    profan_nimpl("ctime_r");
-    return NULL;
-}
-
 double difftime(time_t a, time_t b) {
     profan_nimpl("difftime");
     return 0;
@@ -91,24 +97,62 @@ tm_t *getdate(const char *a) {
     return NULL;
 }
 
-tm_t *gmtime(const time_t *a) {
-    profan_nimpl("gmtime");
-    return NULL;
-}
+tm_t *gmtime(const time_t *tp) {
+    static tm_t tm;
+    time_t t, secs_this_year;
 
-tm_t *gmtime_r(const time_t *a, tm_t *b) {
-    profan_nimpl("gmtime_r");
-    return NULL;
+    t = *tp;
+    tm.tm_sec  = 0;
+    tm.tm_min  = 0;
+    tm.tm_hour = 0;
+    tm.tm_mday = 1;
+    tm.tm_mon  = 0;
+    tm.tm_year = 70;
+    tm.tm_wday = (t / SEC_IN_DAY + 4) % 7; // 01.01.70 was Thursday
+    tm.tm_isdst = 0;
+
+    // This loop handles dates after 1970
+    while (t >= (secs_this_year = is_leap(tm.tm_year) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR)) {
+        t -= secs_this_year;
+        tm.tm_year++;
+    }
+
+    // This loop handles dates before 1970
+    while (t < 0)
+        t += is_leap(--tm.tm_year) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR;
+
+    tm.tm_yday = t / SEC_IN_DAY;    // days since Jan 1
+
+    if (is_leap(tm.tm_year))
+        day_in_month[1]++;
+
+    while (t >= day_in_month[tm.tm_mon] * SEC_IN_DAY)
+        t -= day_in_month[tm.tm_mon++] * SEC_IN_DAY;
+
+    if (is_leap(tm.tm_year))        //  restore Feb
+        day_in_month[1]--;
+
+    while (t >= SEC_IN_DAY) {
+        t -= SEC_IN_DAY;
+        tm.tm_mday++;
+    }
+
+    while (t >= SEC_IN_HOUR) {
+        t -= SEC_IN_HOUR;
+        tm.tm_hour++;
+    }
+
+    while (t >= SEC_IN_MIN) {
+        t -= SEC_IN_MIN;
+        tm.tm_min++;
+    }
+
+    tm.tm_sec = t;
+    return &tm;
 }
 
 tm_t *localtime(const time_t *a) {
-    profan_nimpl("localtime");
-    return NULL;
-}
-
-tm_t *localtime_r(const time_t *a, tm_t *b) {
-    profan_nimpl("localtime_r");
-    return NULL;
+    return gmtime(a);
 }
 
 time_t mktime(tm_t *time) {
@@ -130,12 +174,12 @@ time_t mktime(tm_t *time) {
     unix_time += cumulated_seconds_in_month[time->tm_mon - 1];
 
     // Add leap day
-    if (IS_LEAP_YEAR(time->tm_year + CENTURY) && time->tm_mon > 2)
+    if (is_leap(time->tm_year + 100) && time->tm_mon > 2)
         unix_time += SEC_IN_DAY;
 
     // Add years
-    for (int i = 1970; i < time->tm_year + CENTURY; i++)
-        unix_time += IS_LEAP_YEAR(i) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR;
+    for (int i = 70; i < time->tm_year + 100; i++)
+        unix_time += is_leap(i) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR;
 
     return unix_time;
 }

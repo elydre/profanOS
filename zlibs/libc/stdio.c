@@ -79,7 +79,15 @@ void __stdio_fini(void) {
 }
 
 void clearerr(FILE *stream) {
-    profan_nimpl("clearerr");
+    if (stream == NULL)
+        return;
+    stream->error = 0;
+}
+
+int fileno(FILE *stream) {
+    if (stream == NULL)
+        return -1;
+    return stream->fd;
 }
 
 FILE *fopen(const char *filename, const char *mode) {
@@ -548,6 +556,11 @@ int feof(FILE *stream) {
 
 int ferror(FILE *stream) {
     return (stream && stream->error) ? 1 : 0;
+}
+
+void rewind(FILE *stream) {
+    fseek(stream, 0, SEEK_SET);
+    clearerr(stream);
 }
 
 void perror(const char *s) {
