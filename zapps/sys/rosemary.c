@@ -64,7 +64,7 @@ int print_load_status(int i) {
     if (error_code > 0)
         return 0;
 
-    syscall_kprint("["LOADER_NAME"] FATAL: failed to load ");
+    syscall_kprint("["LOADER_NAME"] FATAL: ");
     syscall_kprint(get_name(mod->path));
     syscall_kprint(": ");
 
@@ -172,11 +172,6 @@ int main(void) {
         if (START_USAGE_GRAPH)
             run_ifexist_full((runtime_args_t){"/bin/tools/usage.elf", 1, (char *[]){"usage"}, NULL, 0}, &usage_pid);
     } else {
-        syscall_kprint("["LOADER_NAME"] Using kernel output for stdout\n");
-        if (fm_reopen(0, "/dev/kterm", O_RDONLY)  < 0 ||
-            fm_reopen(1, "/dev/kterm", O_WRONLY)  < 0 ||
-            fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
-        ) syscall_kprint("["LOADER_NAME"] Failed to redirect to kterm\n");
         set_env("TERM=/dev/kterm");
     }
 
