@@ -59,7 +59,7 @@ panda_global_t *g_panda;
 #define set_pixel(x, y, color) \
     g_panda->fb[(x) + (y) * g_panda->pitch] = color
 
-static void init_panda();
+static void init_panda(void);
 
 int main(void) {
     init_panda();
@@ -104,7 +104,7 @@ static void free_font(font_data_t *pff) {
     kfree(pff);
 }
 
-static uint32_t compute_color(uint8_t color) {
+static inline uint32_t compute_color(uint8_t color) {
     uint32_t rgb[] = {
         0x000000, 0x0000AA, 0x00AA00, 0x00AAAA,
         0xAA0000, 0xAA00AA, 0xAA8800, 0xAAAAAA,
@@ -114,6 +114,53 @@ static uint32_t compute_color(uint8_t color) {
 
     if (color > 0xF) return 0xFFFFFF;
     return rgb[(int) color];
+}
+
+static inline void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color_code) {
+    uint32_t bg_color = compute_color((color_code >> 4) & 0xF);
+    uint32_t fg_color = compute_color(color_code & 0xF);
+
+    uint8_t *char_data = g_panda->font->data + (c * g_panda->font->charsize);
+
+    uint32_t x = 0;
+    uint32_t y = 0;
+
+    for (uint32_t i = 0; i < g_panda->font->charsize; i++) {
+        for (int j = 7; j >= 0; j--) {
+            g_panda->fb[(xo + x) + (yo + y) * g_panda->pitch] = char_data[i] & (1 << j) ? fg_color : bg_color;
+            if (x >= g_panda->font->width - 1) {
+                x = 0;
+                y++;
+                break;
+            }
+            x++;
+        }
+    }
+}
+
+void panda_set_char(uint32_t x, uint32_t y, uint8_t c, uint8_t color) {
+    uint32_t offset = y * g_panda->max_cols + x;
+
+    if (g_panda->screen_buffer[offset].content == c &&
+        g_panda->screen_buffer[offset].color == color
+    ) return;
+
+    g_panda->screen_buffer[offset].content = c;
+    g_panda->screen_buffer[offset].color = color;
+
+    print_char(x * g_panda->font->width, y * g_panda->font->height, c, color);
+}
+
+static void panda_clear_screen(void) {
+    if (!g_panda) return;
+    for (int i = 0; i < g_panda->max_lines; i++) {
+        for (int j = 0; j < g_panda->max_cols; j++) {
+            panda_set_char(j, i, ' ', 0x0F);
+        }
+    }
+    g_panda->cursor_x = 0;
+    g_panda->cursor_y = 0;
+    g_panda->scroll_offset = 0;
 }
 
 static char compute_ansi_color(char ansi_nb, int part, char old_color) {
@@ -144,51 +191,7 @@ static char compute_ansi_color(char ansi_nb, int part, char old_color) {
     return (bg << 4) | fg;
 }
 
-static void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color_code) {
-    uint32_t bg_color = compute_color((color_code >> 4) & 0xF);
-    uint32_t fg_color = compute_color(color_code & 0xF);
-
-    uint32_t pitch = syscall_vesa_pitch();
-    uint32_t *fb = syscall_vesa_fb();
-
-    uint8_t *char_data = g_panda->font->data + (c * g_panda->font->charsize);
-
-    uint32_t x = 0;
-    uint32_t y = 0;
-    for (uint32_t i = 0; i < g_panda->font->charsize; i++) {
-        if (x >= g_panda->font->width) {
-            x = 0;
-            y++;
-        }
-        for (int j = 7; j >= 0; j--) {
-            fb[(xo + x) + (yo + y) * pitch] = char_data[i] & (1 << j) ? fg_color : bg_color;
-            if (x >= g_panda->font->width) break;
-            x++;
-        }
-    }
-}
-
-void panda_set_char(uint32_t x, uint32_t y, uint8_t c, uint8_t color) {
-    uint32_t offset = y * g_panda->max_cols + x;
-    if (g_panda->screen_buffer[offset].content == c && g_panda->screen_buffer[offset].color == color) return;
-    g_panda->screen_buffer[offset].content = c;
-    g_panda->screen_buffer[offset].color = color;
-    print_char(x * g_panda->font->width, y * g_panda->font->height, c, color);
-}
-
-static void panda_clear_screen(void) {
-    if (!g_panda) return;
-    for (int i = 0; i < g_panda->max_lines; i++) {
-        for (int j = 0; j < g_panda->max_cols; j++) {
-            panda_set_char(j, i, ' ', 0xF);
-        }
-    }
-    g_panda->cursor_x = 0;
-    g_panda->cursor_y = 0;
-    g_panda->scroll_offset = 0;
-}
-
-static int compute_ansi_escape(const char *str, panda_global_t *g_panda, int main_color) {
+static int compute_ansi_escape(const char *str, int main_color) {
     const char *start = str;
 
     if (str[1] == '[') str += 2;
@@ -320,18 +323,10 @@ static void panda_scroll(uint32_t line_count) {
     g_panda->scroll_offset += line_count;
 
     // scroll the display and print it
-    int new_offset;
     for (uint32_t i = 0; i < g_panda->max_lines - line_count; i++) {
         for (int j = 0; j < g_panda->max_cols; j++) {
-            new_offset = i * g_panda->max_cols + j;
-            offset = new_offset + g_panda->max_cols * line_count;
-            if (g_panda->screen_buffer[new_offset].content == g_panda->screen_buffer[offset].content &&
-                g_panda->screen_buffer[new_offset].color == g_panda->screen_buffer[offset].color
-            ) continue;
-            g_panda->screen_buffer[new_offset].content = g_panda->screen_buffer[offset].content;
-            g_panda->screen_buffer[new_offset].color = g_panda->screen_buffer[offset].color;
-            print_char(j * g_panda->font->width, i * g_panda->font->height,
-                    g_panda->screen_buffer[new_offset].content, g_panda->screen_buffer[new_offset].color);
+            offset = i * g_panda->max_cols + j + g_panda->max_cols * line_count;
+            panda_set_char(j, i, g_panda->screen_buffer[offset].content, g_panda->screen_buffer[offset].color);
         }
     }
 
@@ -345,7 +340,7 @@ static void panda_scroll(uint32_t line_count) {
 
 static void draw_cursor(int errase) {
     uint32_t offset;
-    if (!errase) {
+     if (!errase) {
         for (uint32_t i = 0; i < g_panda->font->height; i++) {
             set_pixel(g_panda->cursor_x * g_panda->font->width + 1,
                     (g_panda->cursor_y - g_panda->scroll_offset) * g_panda->font->height + i, 0xFFFFFF);
@@ -381,7 +376,7 @@ uint8_t panda_print_string(const char *string, int len, int string_color, uint8_
             for (; g_panda->cursor_x < tmp; g_panda->cursor_x++)
                 panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
         } else if (string[i] == '\e')
-            i += compute_ansi_escape(string + i, g_panda, default_color);
+            i += compute_ansi_escape(string + i, default_color);
         else {
             panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, string[i], g_panda->color);
             g_panda->cursor_x++;
@@ -547,7 +542,7 @@ static void init_panda(void) {
     g_panda->font = load_psf_font(fu_path_to_sid(SID_ROOT, DEFAULT_FONT));
 
     if (g_panda->font == NULL) {
-        fd_printf(2, "\n Failed to load font\n");
+        fd_printf(2, "[panda] Failed to load font\n");
     }
 
     g_panda->cursor_x = 0;
