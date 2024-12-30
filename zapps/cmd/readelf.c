@@ -25,6 +25,7 @@ typedef int (*proc)(void);
 int display_file_header(void);
 int display_section_headers(void);
 int display_symbol_table(void);
+int display_dynamic_symbols(void);
 int print_help(void);
 int dummy_proc(void);
 
@@ -35,10 +36,16 @@ int dummy_proc(void);
 #define OPT_DEC     3
 #define OPT_s       4
 
-static const char *option_chars = "hHSds";
-static const char *option_strs[] = {"--help", "--file-header", "--section-headers", "--dec", "--symbols", NULL};
-static const proc option_procs[] = {print_help, display_file_header, display_section_headers,
-        dummy_proc, display_symbol_table, NULL};
+static const char *option_chars = "dDhHsS";
+static const char *option_strs[] = {
+    "--dec", "--dyn-syms", "--help", "--file-header",
+    "--symbols", "--section-headers", NULL
+};
+
+static const proc option_procs[] = {
+    dummy_proc, display_dynamic_symbols, print_help, display_file_header,
+    display_symbol_table, display_section_headers, NULL
+};
 
 #define PROC_COUNT (sizeof(option_procs) / sizeof(proc))
 // invoke produces in 'procs' if not NULL, after options and files have been parsed
@@ -48,9 +55,10 @@ int print_help(void) {
     puts("Usage: readelf <option(s)> elf-file(s)");
     puts(" Display information about the contents of ELF format files");
     puts(" Options are:");
+    puts(" -d --dec               Display in decimal format");
+    puts(" -D --dyn-syms          Display the dynamic symbol table");
     puts(" -h --help              Display this information");
     puts(" -H --file-header       Display the ELF file header");
-    puts(" -d --dec               Display in decimal format");
     puts(" -S --section-headers   Display the sections' header");
     puts(" -s --symbols           Display the symbol table");
     return 0;
@@ -368,7 +376,7 @@ int display_section_headers(void) {
     return 0;
 }
 
-int display_symbol_table(void) {
+int display_symbols(uint16_t sh_type) {
     Elf32_Ehdr *eh = (Elf32_Ehdr *) g_buf;
     // section header base
     Elf32_Shdr *sh_base = (Elf32_Shdr *) (g_buf + eh->e_shoff);
@@ -382,7 +390,7 @@ int display_symbol_table(void) {
     // get symbol table
     for(int i = 0; i < eh->e_shnum; i ++) {
         Elf32_Shdr *sh = sh_base + i;
-        if (sh->sh_type == SHT_SYMTAB) {
+        if (sh->sh_type == sh_type) {
             sym_sh = sh;
             printf("got symtab with idx: %d\n", i);
             break;
@@ -457,6 +465,14 @@ int display_symbol_table(void) {
     }
 
     return 0;
+}
+
+int display_dynamic_symbols(void) {
+    return display_symbols(SHT_DYNSYM);
+}
+
+int display_symbol_table(void) {
+    return display_symbols(SHT_SYMTAB);
 }
 
 int dummy_proc(void) {
