@@ -509,6 +509,18 @@ int fm_newfd_after(int fd) {
     return -1;
 }
 
+uint32_t fm_get_sid(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return SID_NULL;
+
+    if (fd_data->type == TYPE_FILE)
+        return fd_data->sid;
+
+    return 0;
+}
+
 int fm_declare_child(int pid) {
     // add pid to all pipes
 
