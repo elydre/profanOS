@@ -32,17 +32,6 @@ char *get_state(int state) {
     }
 }
 
-void sort_tab(uint32_t *tab, int size) {
-    uint32_t tmp;
-    for (int i = 0; i < size; i++) {
-        for (int j = i; j > 0 && tab[j] < tab[j - 1]; j--) {
-            tmp = tab[j];
-            tab[j] = tab[j - 1];
-            tab[j - 1] = tmp;
-        }
-    }
-}
-
 void str_insert(char *str, char *insert, int pos) {
     int len = strlen(str);
     int ilen = strlen(insert);
@@ -77,12 +66,16 @@ void draw_line(char *buf, int percent) {
     str_insert(buf, "\e[31m", 1);
 }
 
+int pid_cmp(const void *a, const void *b) {
+    return *(int *) a - *(int *) b;
+}
+
 void list_process(int mode) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     char *printf_format;
 
     int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
-    sort_tab(pid_list, pid_list_len);
+    qsort(pid_list, pid_list_len, sizeof(uint32_t), pid_cmp);
 
     if (mode == 1) {
         printf("   profanOS . kernel %s . %d processes . uptime %ds (%ds IDLE)  \n",
@@ -181,20 +174,16 @@ void top_loop(void) {
 void search_process(char *name) {
     uint32_t pid_list[PROCESS_MAX];
     int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
-    sort_tab(pid_list, pid_list_len);
 
     int pid;
     char *pname;
     for (int i = 0; i < pid_list_len; i++) {
         pid = pid_list[i];
-        if (pid == 1) continue;
         pname = (char *) syscall_process_info(pid, PROC_INFO_NAME, NULL);
         if (strcmp(pname, name) == 0) {
             printf("%d\n", pid);
-            return;
         }
     }
-    fprintf(stderr, "proc: no process named '%s'\n", name);
 }
 
 typedef struct {
@@ -238,6 +227,7 @@ proc_args_t parse_args(int argc, char **argv) {
     if (argc == 1) {
         return args;
     }
+
     if (argc == 2) {
         if (strcmp(argv[1], "-h") == 0) {
             args.mode = MODE_HELP;
@@ -254,7 +244,8 @@ proc_args_t parse_args(int argc, char **argv) {
         }
         return args;
     }
-    else if (argc == 3) {
+
+    if (argc == 3) {
         if (strcmp(argv[1], "-k") == 0) {
             args.mode = MODE_KILL;
         } else if (strcmp(argv[1], "-s") == 0) {
@@ -273,6 +264,7 @@ proc_args_t parse_args(int argc, char **argv) {
         args.pid = atoi(argv[2]);
         return args;
     }
+
     fputs("Usage: proc [mode] [pid]\n", stderr);
     args.mode = MODE_USGE;
     return args;
