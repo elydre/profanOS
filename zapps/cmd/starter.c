@@ -121,7 +121,7 @@ int main(void) {
         printf("(%d) %s # ", res, profan_wd_path);
         fflush(stdout);
         line = profan_input(NULL);
-        if (!line) {
+        if (!line || !line[0]) {
             putchar('\n');
             profan_kfree(line);
             break;
