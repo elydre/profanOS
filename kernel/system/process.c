@@ -666,7 +666,7 @@ void schedule(uint32_t ticks) {
     }
 
     g_scheduler_state = SHDLR_RUNN;
-    
+
     if (ticks == 0) {   // manual schedule
         ticks = timer_get_ticks();
     } else if (g_tsleep_interact && g_tsleep_interact <= ticks) {
