@@ -42,7 +42,8 @@ def get_addons(name: str) -> dict:
         for addon in ADDONS[category]:
             if addon["name"] == name:
                 return addon
-    return None
+    print(f"ERROR: Addon {name} not found")
+    sys.exit(1)
 
 def get_file(name: str) -> dict:
     for file in FILEARRAY:
@@ -66,7 +67,7 @@ def download_targz(url: str, path: str):
     download(url, targz)
 
     if os.path.exists(path):
-        os.remove(path)
+        os.system(f"rm -rf {path}")
     os.makedirs(path)
 
     os.system(f"tar -xf {targz} -C {path}")
@@ -86,6 +87,11 @@ def download_addons(addons: list) -> bool:
 
         # check if parent directory exists
         parent = os.sep.join(e["path"][:-1])
+
+        if ".." in parent:
+            print(f"\rERROR: Invalid parent directory for {file}")
+            return False
+
         if not os.path.exists(parent):
             os.makedirs(parent)
 
