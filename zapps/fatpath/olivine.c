@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.5 rev 8"
+#define OLV_VERSION "1.5 rev 9"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -4151,8 +4151,8 @@ void display_prompt(void) {
 #if PROFANBUILD
 
 // input() setings
-#define SLEEP_T 11
-#define FIRST_L 12
+#define SLEEP_T 15
+#define FIRST_L 20
 
 #define SC_MAX 57
 
