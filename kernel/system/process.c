@@ -211,7 +211,7 @@ static void i_tsleep_awake(uint32_t ticks) {
     for (uint32_t i = 0; i < g_tsleep_list_length; i++) {
         if (g_tsleep_list[i]->sleep_to > ticks)
             continue;
-        if (g_tsleep_list[i]->state == PROC_STATE_SLP && g_tsleep_list[i]->sleep_to) { // TODO: can be removed
+        if (g_tsleep_list[i]->state == PROC_STATE_SLP) {
             g_tsleep_list[i]->state = PROC_STATE_INQ;
             i_add_to_shdlr_queue(g_tsleep_list[i]);
         } else {
@@ -666,13 +666,11 @@ void schedule(uint32_t ticks) {
     }
 
     g_scheduler_state = SHDLR_RUNN;
-
-    if (g_tsleep_interact && ticks && g_tsleep_interact <= ticks) {
-        i_tsleep_awake(ticks);
-    }
-
+    
     if (ticks == 0) {   // manual schedule
         ticks = timer_get_ticks();
+    } else if (g_tsleep_interact && g_tsleep_interact <= ticks) {
+        i_tsleep_awake(ticks);
     } else if (ticks % SCHEDULER_EVRY) {
         g_scheduler_state = SHDLR_ENBL;
         return;
