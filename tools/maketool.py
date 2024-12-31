@@ -58,7 +58,7 @@ LINK_LINE_MAX = 12          # max line for link instructions
 CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib "
 CFLAGS    += "-Wall -Wextra -D__profanOS__"
 
-CC_OPTIM   = "-O3 -fno-omit-frame-pointer"
+CC_OPTIM   = "-fno-omit-frame-pointer -O" # level defined in env PROFANOS_OPTIM
 
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Werror"
@@ -81,9 +81,14 @@ def cprint(color, text, end="\n"):
     r, g, b = color
     print(f"\033[38;2;{r};{g};{b}m{text}\033[0m", end=end)
 
-if os.getenv("PROFANOS_OPTIM") == "1":
-    cprint(COLOR_INFO, "profanOS optimisation enabled")
-    ZAPP_FLAGS += f" {CC_OPTIM}"
+opti_level = os.getenv("PROFANOS_OPTIM")
+
+if opti_level is not None:
+    if opti_level not in ["0", "1", "2", "3", "s", "g"]:
+        cprint(COLOR_EROR, f"unknown optimization level '{opti_level}'")
+        os._exit(1)
+    cprint(COLOR_INFO, f"use -O{opti_level} for compilation")
+    ZAPP_FLAGS += f" {CC_OPTIM}{opti_level}"
 
 if os.getenv("PROFANOS_KIND") == "1":
     cprint(COLOR_INFO, "profanOS kind mode enabled")
