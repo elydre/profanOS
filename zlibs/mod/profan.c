@@ -26,8 +26,8 @@
 #define ENV_INTERP "DEFRUN"
 
 // input() setings
-#define FIRST_L 12
-#define SLEEP_T 15
+#define FIRST_L 15
+#define SLEEP_T 20
 #define INP_CLR "\e[94m"
 #define INP_RST "\e[0m"
 
