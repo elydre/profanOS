@@ -271,7 +271,7 @@ int process_init(void) {
         "movl %%cr3, %%eax\n\t"
         "movl %%eax, %0"
         : "=m" (kern_proc->regs.cr3)
-        :: "%eax"
+        :: "eax"
     );
 
     asm volatile (
@@ -280,7 +280,7 @@ int process_init(void) {
         "movl %%eax, %0\n\t"
         "popfl"
         : "=m"(kern_proc->regs.eflags)
-        :: "%eax"
+        :: "eax"
     );
 
     str_cpy(kern_proc->name, "kernel");
@@ -412,19 +412,19 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_SLP) {
-        sys_warning("[sleep] pid %d already sleeping", pid);
-        return ERROR_CODE;
-    }
-
     if (plist[place].state == PROC_STATE_ZMB) {
         sys_warning("[sleep] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
-    if (pid == g_proc_current->pid && ms == 0) {
-        schedule(0);
+    if (ms == 0) {
+        if (pid == g_proc_current->pid)
+            schedule(0);
         return 0;
+    }
+
+    if (plist[place].state == PROC_STATE_SLP && plist[place].sleep_to) {
+        i_remove_from_g_tsleep_list(pid);
     }
 
     plist[place].state = PROC_STATE_SLP;
@@ -433,7 +433,7 @@ int process_sleep(uint32_t pid, uint32_t ms) {
     } else {
         // convert ms to ticks
         plist[place].sleep_to = timer_get_ticks() + (ms * 1000 / RATE_TIMER_TICK);
-        g_tsleep_list[g_tsleep_list_length] = &plist[place];
+        g_tsleep_list[g_tsleep_list_length] = plist + place;
         g_tsleep_list_length++;
         i_refresh_tsleep_interact();
     }
