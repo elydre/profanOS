@@ -529,18 +529,18 @@ def write_build_logs():
 def add_src_to_disk():
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
     for dir_name in [ZAPPS_DIR] + [ZLIBS_DIR]:
-        if not os.path.exists(dir_name): continue
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
 
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/include")
-    for dir_name in ZHEADERS + KERNEL_HEADERS:
-        if not os.path.exists(dir_name): continue
+    for dir_name in KERNEL_HEADERS:
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/include")
 
     print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/kernel")
     for dir_name in KERNEL_SRC:
-        if not os.path.exists(dir_name): continue
         print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/kernel")
+
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/build")
+    print_and_exec(f"cp {TOOLS_DIR}/*.c {TOOLS_DIR}/*.ld {OUT_DIR}/disk/src/build")
 
 
 def gen_disk(force=False, with_src=False):
@@ -587,17 +587,19 @@ def gen_disk(force=False, with_src=False):
         write_build_logs()
 
     print_info_line("copy sys/ directory")
-    print_and_exec(f"cp {TOOLS_DIR}/entry_elf.c {OUT_DIR}/disk/sys/zentry.c")
-    print_and_exec(f"gcc -c {OUT_DIR}/disk/sys/zentry.c -o {OUT_DIR}/disk/sys/zentry.o {ZAPP_FLAGS}")
-    print_and_exec(f"cp {TOOLS_DIR}/link_elf.ld {OUT_DIR}/disk/sys/")
+    print_and_exec(f"gcc -c {TOOLS_DIR}/entry_elf.c -o {OUT_DIR}/disk/sys/zentry.o {ZAPP_FLAGS}")
     print_and_exec(f"cp {OUT_DIR}/make/kernel.map {OUT_DIR}/disk/sys/ 2> /dev/null || true")
 
-    print_and_exec(f"mkdir -p {OUT_DIR}/disk/sys/include")
     for dir_name in ZHEADERS:
-        if not os.path.exists(dir_name):
-            continue
-        for subdir in os.listdir(dir_name):
-            print_and_exec(f"cp -r {dir_name}/{subdir} {OUT_DIR}/disk/sys/include")
+        if not (os.path.exists(dir_name) or with_src):
+            break
+    else:
+        print_and_exec(f"mkdir -p {OUT_DIR}/disk/sys/include")
+        for dir_name in ZHEADERS:
+            if not os.path.exists(dir_name):
+                continue
+            for e in os.listdir(dir_name):
+                print_and_exec(f"cp -r {dir_name}/{e} {OUT_DIR}/disk/sys/include")
 
     if not file_exists(f"{OUT_DIR}/make/makefsys"):
         cprint(COLOR_INFO, "building makefsys...")

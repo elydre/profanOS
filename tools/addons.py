@@ -285,4 +285,4 @@ if __name__ == "__main__":
         else:
             print("ERROR: Unknown option:", args[0])
     else:
-        download_addons([get_addons(args[0])])
+        download_addons([get_addons(e) for e in args])

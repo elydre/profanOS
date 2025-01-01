@@ -12,7 +12,7 @@
 ENTRY(kentry)                       /* entry label name */
 
 SECTIONS {
-    . = 0x00100000;                 /* the code should be loaded at 1 MB */
+    . = 0x100000;                   /* the code should be loaded at 1 MB */
     .multiboot ALIGN (0x1000): {    /* align at 4 KB */
         *(.multiboot)               /* the multiboot header */
     }
@@ -27,6 +27,6 @@ SECTIONS {
         *(.bss)                     /* all bss sections from all files */
     }
     .data ALIGN (0x1000): {
-        *(.data)                    /* all data sections from all files */
+        *(.data*)                   /* all data sections from all files */
     }
 }
