@@ -263,18 +263,17 @@ char *getcwd(char *buf, size_t size) {
     return buf;
 }
 
+// without user system, we just return 0 for "root"
+
 gid_t getegid(void) {
-    profan_nimpl("getegid");
     return 0;
 }
 
 uid_t geteuid(void) {
-    // without user system, we just return 0 for "root"
     return 0;
 }
 
 gid_t getgid(void) {
-    profan_nimpl("getgid");
     return 0;
 }
 
@@ -461,7 +460,7 @@ ssize_t read(int fd, void *buf, size_t count) {
 }
 
 ssize_t readlink(const char *restrict a, char *restrict b, size_t c) {
-    profan_nimpl("readlink");
+    printf("readlink(%s, %p, %lu)\n", a, b, c);
     return 0;
 }
 

@@ -53,6 +53,7 @@ extern FILE *stderr;
 void    clearerr(FILE *stream);
 int     fileno(FILE *stream);
 FILE   *fopen(const char *filename, const char *mode);
+FILE   *fdopen(int fd, const char *mode);
 FILE   *freopen(const char *filename, const char *mode, FILE *stream);
 int     fclose(FILE *stream);
 int     fflush(FILE *stream);

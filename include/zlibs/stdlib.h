@@ -67,7 +67,7 @@ void     *malloc(size_t size);
 int       mblen(const char *s, size_t n);
 size_t    mbstowcs(wchar_t *pwcs, const char *s, size_t n);
 int       mbtowc(wchar_t *pwc, const char *s, size_t n);
-char     *mkstemp(char *template);
+int       mkstemp(char *template);
 char     *mktemp(char *template);
 int       putenv(char *string);
 void      qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *));

@@ -15,6 +15,8 @@
 typedef int errno_t;
 extern errno_t errno;
 
+/* Standard error codes */
+
 #define EOK 0           // No error
 #define EPERM 1         // Not super-user
 #define ENOENT 2        // No such file or directory
@@ -138,5 +140,9 @@ extern errno_t errno;
 #define ECASECLASH 137  // Filename exists with different case
 #define EILSEQ 138      // Illegal byte sequence
 #define EOVERFLOW 139   // Value too large for defined data type
+
+/* Because one define is not enough */
+
+#define EWOULDBLOCK EAGAIN
 
 #endif

@@ -370,9 +370,9 @@ int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
     return 0;
 }
 
-char *mkstemp(char *template) {
+int mkstemp(char *template) {
     profan_nimpl("mkstemp");
-    return NULL;
+    return 0;
 }
 
 char *mktemp(char *template) {

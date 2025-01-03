@@ -38,28 +38,51 @@ typedef struct _IO_FILE {
     int   buffer_size;
 } FILE;
 
-int vsnprintf(char* str, size_t size, const char* format, va_list arg);
-
 FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
 char *g_printf_buffer = NULL;
 
-static FILE *fopen_std(int fd, uint8_t mode) {
+static FILE *fdopen_mode(int fd, uint8_t mode) {
     FILE *file = calloc(sizeof(FILE) + STDIO_BUFFER_SIZE, 1);
+
     file->buffer = ((char *) file) + sizeof(FILE);
     file->ungetchar = -1;
     file->mode = mode;
     file->fd = fd;
+
     return file;
+}
+
+static uint8_t interpet_mode(const char *mode) {
+    // compute the mode
+    uint8_t fdmode = 0;
+    for (int i = 0; mode[i]; i++) {
+        switch (mode[i]) {
+            case 'r':
+                fdmode |= O_RDONLY;
+                break;
+            case 'w':
+                fdmode |= O_WRONLY | O_CREAT | O_TRUNC;
+                break;
+            case 'a':
+                fdmode |= O_WRONLY | O_CREAT | O_APPEND;
+                break;
+            case '+':
+                fdmode |= O_RDWR | O_CREAT;
+                break;
+        }
+    }
+
+    return fdmode;
 }
 
 void __stdio_init(void) {
     // init stdin, stdout and stderr
-    stdin  = fopen_std(0, O_RDONLY);
-    stdout = fopen_std(1, O_WRONLY);
-    stderr = fopen_std(2, O_WRONLY);
+    stdin  = fdopen_mode(0, O_RDONLY);
+    stdout = fdopen_mode(1, O_WRONLY);
+    stderr = fdopen_mode(2, O_WRONLY);
 
     // init printf buffer
     g_printf_buffer = malloc(0x1000);
@@ -91,48 +114,25 @@ int fileno(FILE *stream) {
 }
 
 FILE *fopen(const char *filename, const char *mode) {
-    // check for null pointers
-    if (filename == NULL || mode == NULL) {
+    if (filename == NULL || mode == NULL)
         return NULL;
-    }
 
-    // compute the mode
-    uint32_t interpeted_mode = 0;
-    for (uint32_t i = 0; i < strlen(mode); i++) {
-        switch (mode[i]) {
-            case 'r':
-                interpeted_mode |= O_RDONLY;
-                break;
-            case 'w':
-                interpeted_mode |= O_WRONLY | O_CREAT | O_TRUNC;
-                break;
-            case 'a':
-                interpeted_mode |= O_WRONLY | O_CREAT | O_APPEND;
-                break;
-            case '+':
-                interpeted_mode |= O_RDWR | O_CREAT;
-                break;
-        }
-    }
+    uint8_t fdmode = interpet_mode(mode);
 
     // open the file
-    int fd = open(filename, interpeted_mode, 00777);
+    int fd = open(filename, fdmode, 0666);
 
     if (fd < 0)
         return NULL;
 
-    // now create the file structure
-    FILE *file = calloc(1, sizeof(FILE) + STDIO_BUFFER_SIZE);
+    return fdopen_mode(fd, fdmode);
+}
 
-    // copy data
-    file->ungetchar = -1;
-    file->mode = interpeted_mode;
-    file->fd = fd;
+FILE *fdopen(int fd, const char *mode) {
+    if (fd < 0 || mode == NULL)
+        return NULL;
 
-    // set the buffer
-    file->buffer = ((char *) file) + sizeof(FILE);
-
-    return file;
+    return fdopen_mode(fd, interpet_mode(mode));
 }
 
 FILE *freopen(const char *filename, const char *mode, FILE *stream) {
