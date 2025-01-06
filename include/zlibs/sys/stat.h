@@ -65,6 +65,7 @@ struct stat {
 
 int chmod(const char *path, mode_t mode);
 int fstat(int fd, struct stat *buf);
+int lstat(const char *path, struct stat *buf);
 int mknod(const char *path, mode_t mode, dev_t dev);
 int mkdir(const char *path, mode_t mode);
 int mkfifo(const char *path, mode_t mode);

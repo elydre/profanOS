@@ -18,8 +18,7 @@
 #include <time.h>
 
 int getitimer(int which, struct itimerval *value) {
-    profan_nimpl("dlclose");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
@@ -36,11 +35,9 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
 }
 
 int setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) {
-    profan_nimpl("dlclose");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 int utimes(const char *filename, const struct timeval *times) {
-    profan_nimpl("dlclose");
-    return -1;
+    return (PROFAN_FNI, -1);
 }

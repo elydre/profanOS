@@ -16,7 +16,7 @@
 
 /****** PROFAN EXTRA ***********************************************/
 
-#define NOT_IMPLEMENTED_ABORT 1 // exit on not implemented function
+#define NOT_IMPLEMENTED_ABORT 0 // exit on not implemented function
 #define _JOIN_LIBCC_INSIDE 1    // create 64-bit division functions
 
 

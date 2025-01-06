@@ -82,7 +82,7 @@ int main(void) {
     curent_line = 0;
     logo_line = 0;
 
-    tm_t time;
+    struct tm time;
     syscall_time_get(&time);
 
     pl_and_pf("\e[95mkernel     \e[96m%s\n", syscall_sys_kinfo());

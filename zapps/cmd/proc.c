@@ -144,7 +144,7 @@ void top_loop(void) {
         if (cpu > 100)
             cpu = 100;
 
-        tm_t t;
+        struct tm t;
         syscall_time_get(&t);
 
         total_mem = syscall_mem_info(0, 0) / 1024;

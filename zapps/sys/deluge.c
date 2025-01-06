@@ -314,10 +314,7 @@ int is_valid_elf(void *data, uint16_t required_type) {
  *                             *
 ********************************/
 
-void *get_base_addr(uint8_t *data, uint16_t type) {
-    if (type != ET_EXEC)
-        return 0;
-
+void *get_base_addr(uint8_t *data) {
     // find the lowest address of a PT_LOAD segment
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     Elf32_Phdr *phdr = (Elf32_Phdr *)(data + ehdr->e_phoff);
@@ -336,8 +333,12 @@ int load_sections(elfobj_t *obj) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
 
-    void *base_addr = get_base_addr(obj->file, obj->type);
+    void *base_addr = get_base_addr(obj->file);
     void *offset = NULL;
+
+    if (base_addr && obj->type != ET_EXEC) {
+        raise_error("%s: base address is %x (0 expected for shared objects)", obj->name, base_addr);
+    }
 
     uint32_t required_size = 0;
 
@@ -491,9 +492,9 @@ int dynamic_linker(elfobj_t *obj) {
             if (does_type_required_sym(type)) {
                 val = get_sym_value(name, NULL);
                 if (val == 0) {
-                    if (obj->type == ET_DYN)
-                        raise_error("%s: symbol '%s' not found", obj->name, name);
-                    Elf32_Sym *sym = hash_get(obj, hash(name), name); // ET_EXEC
+                    Elf32_Sym *sym = hash_get(g_prog, hash(name), name); // ET_EXEC
+                    /* if (obj->type == ET_DYN)
+                        raise_error("%s: symbol '%s' not found", obj->name, name); */
                     if (!sym || sym->st_shndx == STB_LOCAL)
                         raise_error("%s: symbol '%s' not found", obj->name, name);
                     val = sym->st_value;
@@ -517,7 +518,8 @@ int dynamic_linker(elfobj_t *obj) {
                     *ptr = val;
                     break;
                 case R_386_RELATIVE:    // word32  B + A
-                    *ptr = (uint32_t) obj->mem + *ptr;
+                    if (obj->type != ET_EXEC)
+                        *ptr = (uint32_t) obj->mem + *ptr;
                     break;
                 case R_386_JMP_SLOT:    // word32  S
                 case R_386_GLOB_DAT:    // word32  S
@@ -1034,8 +1036,6 @@ int main(int argc, char **argv, char **envp) {
 
         int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
 
-        kfree(g_prog->hash_table);
-
         g_dlfcn_error = 0;
 
         if (argc > g_args->arg_offset) {
@@ -1082,6 +1082,7 @@ int main(int argc, char **argv, char **envp) {
     kfree(g_loaded_libs);
 
     if (g_prog->type == ET_EXEC) {
+        kfree(g_prog->hash_table);
         kfree(g_prog->file);
         kfree(g_prog->name);
         kfree(g_prog);

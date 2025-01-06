@@ -38,17 +38,4 @@ typedef uint32_t useconds_t;  // time in microseconds
 
 typedef __SIZE_TYPE__  size_t; // sizes of objects
 
-struct _TYPEDEF; // opaque structure for pthreads (not implemented)
-
-typedef struct _TYPEDEF pthread_attr_t;       // identify a thread attribute object
-typedef struct _TYPEDEF pthread_cond_t;       // condition variables
-typedef struct _TYPEDEF pthread_condattr_t;   // identify a condition attribute object
-typedef int32_t pthread_key_t;                // thread-specific data keys
-typedef struct _TYPEDEF pthread_mutex_t;      // mutexes
-typedef struct _TYPEDEF pthread_mutexattr_t;  // identify a mutex attribute object
-typedef uint32_t pthread_once_t;              // dynamic package initialisation
-typedef struct _TYPEDEF pthread_rwlock_t;     // read-write locks
-typedef struct _TYPEDEF pthread_rwlockattr_t; // read-write lock attributes
-typedef uint32_t pthread_t;                   // identify a thread
-
 #endif

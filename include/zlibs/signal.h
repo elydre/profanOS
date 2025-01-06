@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === dlfcn.c : 2024 ===                                                    |
+|   === signal.h : 2025 ===                                                   |
 |                                                                             |
-|    Implementation of dlfcn functions from libC                   .pi0iq.    |
+|    Implementation of the signal.h header file from libC          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,24 +9,23 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan.h>
-#include <stddef.h>
+#ifndef _SIGNAL_H
+#define _SIGNAL_H
 
-// real function are defined in the dynamic linker (/bin/sys/deluge)
-// this file is just a stratagem to make the compiler happy
+#define SIG_IGN ((void (*)(int)) 0)
+#define SIG_INT ((void (*)(int)) 0)
+#define SIG_ERR ((void (*)(int)) 0)
+#define SIG_DFL ((void (*)(int)) 0)
 
-void *dlopen(const char *filename, int flag) {
-    return (PROFAN_FNI, NULL);
-}
+#define SIGINT 2
+#define SIGFPE 8
+#define SIGABRT 6
+#define SIGSEGV 11
 
-void *dlsym(void *handle, const char *symbol) {
-    return (PROFAN_FNI, NULL);
-}
+typedef int sig_atomic_t;
 
-int dlclose(void *handle) {
-    return (PROFAN_FNI, -1);
-}
+void (*signal(int sig, void (*func)(int)))(int);
+int kill(int pid, int sig);
+int raise(int sig);
 
-char *dlerror(void) {
-    return (PROFAN_FNI, NULL);
-}
+#endif

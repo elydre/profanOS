@@ -37,7 +37,9 @@ int serial_debug(char *frm, ...) {
     va_start(args, frm);
     str = malloc(1024);
 
-    len = vsprintf(str, frm, args);
+    len = sprintf(str, "[%d] ", syscall_process_pid());
+    len += vsprintf(str + len, frm, args);
+
     syscall_serial_write(SERIAL_PORT_A, str, len);
 
     free(str);
@@ -48,8 +50,7 @@ int serial_debug(char *frm, ...) {
 
 // defined in deluge - don't free libname and result
 char *profan_fn_name(void *ptr, char **libname) {
-    profan_nimpl("profan_fn_name");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
 void profan_print_trace(void) {
@@ -88,11 +89,10 @@ char *profan_input(int *size) {
     return profan_input_keyboard(size, term);
 }
 
-void profan_nimpl(char *name) {
-    write(2, "libc: ", 6);
-    write(2, name, strlen(name));
-    write(2, ": function not implemented\n", 27);
+void profan_nimpl(const char *name) {
+    fprintf(stderr, "libc: %s: function not implemented\n", name);
     #if NOT_IMPLEMENTED_ABORT
+    profan_print_trace();
     abort();
     #endif
 }

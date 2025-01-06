@@ -31,7 +31,7 @@
 
 #define POK_MAX         128         // max loaded modules
 
-#define PROC_ESP_SIZE   0x10000     // process stack size
+#define PROC_ESP_SIZE   0x30000     // process stack size
 #define PROC_ESP_ADDR   RUN_HEAP_ADDR - PROC_ESP_SIZE
 
 #define WATPOK_ADDR     0x1FFFFB

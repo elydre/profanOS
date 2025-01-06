@@ -57,48 +57,44 @@ static inline int is_leap(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
-char *asctime(const tm_t *a) {
-    profan_nimpl("asctime");
-    return NULL;
+char    *tzname[2] = { "UTC", "UTC" };
+long int timezone = 0;
+int      daylight = 0;
+
+char *asctime(const struct tm *timeptr) {
+    return (PROFAN_FNI, NULL);
 }
 
 clock_t clock(void) {
-    profan_nimpl("clock");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
-int clock_getres(clockid_t a, timespec_t *n) {
-    profan_nimpl("clock_getres");
-    return 0;
+int clock_getres(clockid_t clock_id, struct timespec *res) {
+    return (PROFAN_FNI, 0);
 }
 
-int clock_gettime(clockid_t a, timespec_t *b) {
-    profan_nimpl("clock_gettime");
-    return 0;
+int clock_gettime(clockid_t clock_id, struct timespec *tp) {
+    return (PROFAN_FNI, 0);
 }
 
-int clock_settime(clockid_t a, const timespec_t *b) {
-    profan_nimpl("clock_settime");
-    return 0;
+int clock_settime(clockid_t clock_id, const struct timespec *tp) {
+    return (PROFAN_FNI, 0);
 }
 
-char *ctime(const time_t *a) {
-    profan_nimpl("ctime");
-    return NULL;
+char *ctime(const time_t *timer) {
+    return (PROFAN_FNI, NULL);
 }
 
-double difftime(time_t a, time_t b) {
-    profan_nimpl("difftime");
-    return 0;
+double difftime(time_t end_time, time_t start_time) {
+    return (PROFAN_FNI, 0);
 }
 
-tm_t *getdate(const char *a) {
-    profan_nimpl("getdate");
-    return NULL;
+struct tm *getdate(const char *string) {
+    return (PROFAN_FNI, NULL);
 }
 
-tm_t *gmtime(const time_t *tp) {
-    static tm_t tm;
+struct tm *gmtime(const time_t *tp) {
+    static struct tm tm;
     time_t t, secs_this_year;
 
     t = *tp;
@@ -151,11 +147,19 @@ tm_t *gmtime(const time_t *tp) {
     return &tm;
 }
 
-tm_t *localtime(const time_t *a) {
-    return gmtime(a);
+struct tm *gmtime_r(const time_t *timer, struct tm *buf) {
+    return (PROFAN_FNI, NULL);
 }
 
-time_t mktime(tm_t *time) {
+struct tm *localtime(const time_t *timer) {
+    return gmtime(timer);
+}
+
+struct tm *localtime_r(const time_t *timer, struct tm *buf) {
+    return (PROFAN_FNI, NULL);
+}
+
+time_t mktime(struct tm *time) {
     time_t unix_time = 0;
 
     // Add seconds
@@ -184,56 +188,48 @@ time_t mktime(tm_t *time) {
     return unix_time;
 }
 
-int nanosleep(const timespec_t *a, timespec_t *b) {
-    profan_nimpl("nanosleep");
-    return 0;
+int nanosleep(const struct timespec *req, struct timespec *rem) {
+    return (PROFAN_FNI, 0);
 }
 
-size_t strftime(char *a, size_t b, const char *c, const tm_t *d) {
-    profan_nimpl("strftime");
-    return 0;
+size_t strftime(char *str, size_t maxsize, const char *format, const struct tm *timeptr) {
+    return (PROFAN_FNI, 0);
 }
 
-char *strptime(const char *a, const char *b, tm_t *c) {
-    profan_nimpl("strptime");
-    return NULL;
+char *strptime(const char *buf, const char *format, struct tm *timeptr) {
+    return (PROFAN_FNI, NULL);
 }
 
-time_t time(time_t *a) {
-    tm_t time;
+time_t time(time_t *tloc) {
+    struct tm time;
     syscall_time_get(&time);
 
-    if (a != NULL) {
-        *a = mktime(&time);
-    }
+    if (tloc != NULL)
+        *tloc = mktime(&time);
+
     return mktime(&time);
 }
 
-int timer_create(clockid_t a, sigevent_t *b, timer_t *c) {
-    profan_nimpl("timer_create");
-    return 0;
+int timer_create(clockid_t clock_id, sigevent_t *sevp, timer_t *timerid) {
+    return (PROFAN_FNI, 0);
 }
 
-int timer_delete(timer_t a) {
-    profan_nimpl("timer_delete");
-    return 0;
+int timer_delete(timer_t timerid) {
+    return (PROFAN_FNI, 0);
 }
 
-int timer_gettime(timer_t a, itimerspec_t *b) {
-    profan_nimpl("timer_gettime");
-    return 0;
+int timer_gettime(timer_t timerid, struct itimerspec *curr_value) {
+    return (PROFAN_FNI, 0);
 }
 
-int timer_getoverrun(timer_t a) {
-    profan_nimpl("timer_getoverrun");
-    return 0;
+int timer_getoverrun(timer_t timerid) {
+    return (PROFAN_FNI, 0);
 }
 
-int timer_settime(timer_t a, int b, const itimerspec_t * c, itimerspec_t *d) {
-    profan_nimpl("timer_settime");
-    return 0;
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *c, struct itimerspec *d) {
+    return (PROFAN_FNI, 0);
 }
 
 void tzset(void) {
-    profan_nimpl("tzset");
+    PROFAN_FNI;
 }

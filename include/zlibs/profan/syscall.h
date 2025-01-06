@@ -14,7 +14,7 @@
 
 #include <profan/types.h>
 #include <stdint.h>
-#include <time.h> // tm_t
+#include <time.h> // struct tm
 
 /**********************************
  *                               *
@@ -240,7 +240,7 @@ DEFN_SYSCALL1(11, uint32_t,  mem_get_alloc_size, uint32_t)
 DEFN_SYSCALL2(12, int,       mem_info, int, int)
 
 DEFN_SYSCALL0(13, uint32_t,  timer_get_ms)
-DEFN_SYSCALL1(14, int,       time_get, tm_t *)
+DEFN_SYSCALL1(14, int,       time_get, struct tm *)
 
 DEFN_SYSCALL0(15, uint8_t *, font_get)
 DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)

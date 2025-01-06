@@ -253,7 +253,7 @@ int init_devio(void) {
     return (
         IS_SID_NULL(fu_fctf_create(0, "/dev/null",   dev_null))      ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/zero",   dev_zero))      ||
-        IS_SID_NULL(fu_fctf_create(0, "/dev/random", dev_rand))      ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/urandom", dev_rand))      ||
 
         IS_SID_NULL(fu_fctf_create(0, "/dev/kterm",   dev_kterm))    ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/panda",   dev_panda))    ||

@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <wchar.h>
 
 #include "config_libc.h"
 
@@ -110,10 +111,13 @@ void clearerr(FILE *stream) {
 int fileno(FILE *stream) {
     if (stream == NULL)
         return -1;
+    serial_debug("fileno: %d\n", stream->fd);
     return stream->fd;
 }
 
 FILE *fopen(const char *filename, const char *mode) {
+    serial_debug("fopen: %s %s\n", filename, mode);
+
     if (filename == NULL || mode == NULL)
         return NULL;
 
@@ -136,6 +140,8 @@ FILE *fdopen(int fd, const char *mode) {
 }
 
 FILE *freopen(const char *filename, const char *mode, FILE *stream) {
+    serial_debug("freopen: %d %s\n", stream->fd, filename);
+
     // close the file
     fclose(stream);
 
@@ -144,6 +150,8 @@ FILE *freopen(const char *filename, const char *mode, FILE *stream) {
 }
 
 int fclose(FILE *stream) {
+    serial_debug("fclose: %d\n", stream->fd);
+
     if (stream == NULL) {
         return EOF;
     }
@@ -168,6 +176,8 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
+    serial_debug("fflush: %d\n", stream->fd);
+
     if (stream == NULL || stream->mode & O_RDONLY)
         return 0;
 
@@ -186,26 +196,28 @@ int fflush(FILE *stream) {
         written = 0;
     }
 
+    serial_debug("f => %d\n", written);
+
     // return the number of elements written
     return written ? 0 : EOF;
 }
 
 void setbuf(FILE *stream, char *buffer) {
-    profan_nimpl("setbuf");
+    PROFAN_FNI;
 }
 
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
-    profan_nimpl("setvbuf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fwide(FILE *stream, int mode) {
-    profan_nimpl("fwide");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
+
+    serial_debug("fread: %d %d\n", count, stream->fd);
 
     // check if the file is open for reading
     if (count == 0 || stream == NULL || stream->mode & O_WRONLY)
@@ -216,8 +228,10 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     if (stream->ungetchar >= 0) {
         ((char *) buffer++)[0] = stream->ungetchar;
         stream->ungetchar = -1;
-        if (--count == 0)
+        if (--count == 0) {
+            serial_debug("r => %d\n", 1);
             return 1;
+        }
     }
 
     int read, rfrom_buffer = 0;
@@ -227,6 +241,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         read = fm_read(stream->fd, buffer, count);
         if (read < 0) {
             stream->error = 1;
+            serial_debug("r => %d\n", 0);
             return 0;
         }
 
@@ -243,6 +258,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
             memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
 
             fm_lseek(stream->fd, count, SEEK_CUR);
+            serial_debug("r => %d\n", count / size);
             return count / size;
         }
 
@@ -260,6 +276,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         read = fm_read(stream->fd, buffer + rfrom_buffer, count);
         if (read < 0) {
             stream->error = 1;
+            serial_debug("r => %d\n", 0);
             return 0;
         }
         return (read + rfrom_buffer) / size;
@@ -268,6 +285,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     read = fm_read(stream->fd, stream->buffer, STDIO_BUFFER_READ);
     if (read < 0) {
         stream->error = 1;
+        serial_debug("r => %d\n", 0);
         return 0;
     }
 
@@ -281,15 +299,20 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     fm_lseek(stream->fd, stream->buffer_size, SEEK_CUR);
 
     // return the number of elements read
+    serial_debug("r => %d\n", count / size);
     return (count + rfrom_buffer) / size;
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
+    serial_debug("fwrite: %d %d, %s\n", count, stream->fd, buffer);
+
     // check if the file is open for writing
-    if (count == 0 || stream == NULL || stream->mode & O_RDONLY)
+    if (count == 0 || stream == NULL || stream->mode & O_RDONLY) {
+        serial_debug("w => %d\n", 0);
         return 0;
+    }
 
     // if buffer is used for reading
     if (stream->buffer_size < 0)
@@ -301,8 +324,10 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     for (uint32_t i = 0; i < count; i++) {
         // check if the buffer is full
         if (stream->buffer_size >= (STDIO_BUFFER_SIZE - 1)) {
-            if (fflush(stream) == EOF)
+            if (fflush(stream) == EOF) {
+                serial_debug("w => %d\n", 0);
                 return 0;
+            }
             need_flush = 0;
         }
 
@@ -315,8 +340,11 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // flush the buffer if needed
-    if (need_flush && fflush(stream) == EOF)
+    if (need_flush && fflush(stream) == EOF) {
+        serial_debug("w => %d\n", 0);
         return 0;
+    }
+    serial_debug("w => %d\n", count / size);
     return count / size;
 }
 
@@ -444,33 +472,27 @@ int ungetc(int ch, FILE *stream) {
 }
 
 int scanf(const char *format, ...) {
-    profan_nimpl("scanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fscanf(FILE *stream, const char *format, ...) {
-    profan_nimpl("fscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int sscanf(const char *buffer, const char *format, ...) {
-    profan_nimpl("sscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int vscanf(const char *format, va_list vlist) {
-    profan_nimpl("vscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int vfscanf(FILE *stream, const char *format, va_list vlist) {
-    profan_nimpl("vfscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int vsscanf(const char *buffer, const char *format, va_list vlist) {
-    profan_nimpl("vsscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int printf(const char *format, ...) {
@@ -551,10 +573,12 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
+    serial_debug("feof: %d\n", stream->fd);
     return (stream && stream->error) ? 1 : 0;
 }
 
 int ferror(FILE *stream) {
+    serial_debug("ferror: %d\n", stream->fd);
     return (stream && stream->error) ? 1 : 0;
 }
 
@@ -651,14 +675,13 @@ int rename(const char *old_filename, const char *new_filename) {
 }
 
 FILE *tmpfile(void) {
-    profan_nimpl("tmpfile");
-    return 0;
+    return (PROFAN_FNI, NULL);
 }
 
 char *tmpnam(char *filename) {
-    profan_nimpl("tmpnam");
-    return 0;
+    return (PROFAN_FNI, NULL);
 }
+
 /* snprintf - compatibility implementation of snprintf, vsnprintf
  *
  * Copyright (c) 2013, NLnet Labs. All rights reserved.
@@ -838,6 +861,18 @@ static void spool_str(char **at, size_t *left, int *ret, const char *buf, int le
     for (i = 0; i < len; i++) {
         if (*left > 1) {
             *(*at)++ = buf[i];
+            (*left)--;
+        }
+        (*ret)++;
+    }
+}
+
+/** copy wide string into result */
+static void spool_lstr(char **at, size_t *left, int *ret, const wchar_t *buf, int len) {
+    int i;
+    for (i = 0; i < len; i++) {
+        if (*left > 1) {
+            *(*at)++ = (char) buf[i];
             (*left)--;
         }
         (*ret)++;
@@ -1180,9 +1215,8 @@ static void print_num_g(char **at, size_t *left, int *ret, double value,
 }
 
 /** print %s */
-static void
-print_str(char **at, size_t * left, int *ret, char *s,
-      int minw, int precision, int prgiven, int minus)
+static void print_str(char **at, size_t * left, int *ret, char *s,
+        int minw, int precision, int prgiven, int minus)
 {
     int w;
 
@@ -1203,6 +1237,31 @@ print_str(char **at, size_t * left, int *ret, char *s,
     if (w < minw && minus)
         print_pad(at, left, ret, ' ', minw - w);
 }
+
+/** print %ls */
+static void print_lstr(char **at, size_t * left, int *ret, wchar_t *s,
+        int minw, int precision, int prgiven, int minus)
+{
+    int w;
+
+    if (s == NULL)
+        s = L"(null)";
+
+    /* with prec: no more than x characters from this string, stop at 0 */
+    if (prgiven)
+        w = wcsnlen(s, precision);
+    else
+        w = (int) wcslen(s); // up to the null
+
+    if (w < minw && !minus)
+        print_pad(at, left, ret, ' ', minw - w);
+
+    spool_lstr(at, left, ret, s, w);
+
+    if (w < minw && minus)
+        print_pad(at, left, ret, ' ', minw - w);
+}
+
 
 /** print %c */
 static void print_char(char **at, size_t *left, int *ret, int c, int minw, int minus) {
@@ -1403,8 +1462,12 @@ int vsnprintf(char *str, size_t size, const char *format, va_list arg) {
                         minw, precision, prgiven, zeropad, minus, plus, space);
             break;
         case 's':
-            print_str(&at, &left, &ret, va_arg(arg, char *),
-                minw, precision, prgiven, minus);
+            if (length != 1)
+                print_str(&at, &left, &ret, va_arg(arg, char *),
+                        minw, precision, prgiven, minus);
+            else
+                print_lstr(&at, &left, &ret, va_arg(arg, wchar_t *),
+                        minw, precision, prgiven, minus);
             break;
         case 'c':
             print_char(&at, &left, &ret, va_arg(arg, int), minw, minus);

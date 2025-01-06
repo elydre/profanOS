@@ -85,4 +85,10 @@
 #undef ULLONG_MAX
 #define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
 
+#undef SSIZE_MAX
+#define SSIZE_MAX __LONG_MAX__
+
+#undef SIZE_MAX
+#define SIZE_MAX __SIZE_MAX__
+
 #endif

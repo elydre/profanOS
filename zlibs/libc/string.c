@@ -244,7 +244,7 @@ void *memset(void *s, int c, size_t n) {
 }
 
 void psignal(int signum, register const char *message) {
-    profan_nimpl("psignal");
+    PROFAN_FNI;
 }
 
 void *rawmemchr(const void *s, int c) {
@@ -613,8 +613,7 @@ char *strsep(register char **stringp, register const char *delim) {
 }
 
 char *strsignal(int signum) {
-    profan_nimpl("strsignal");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
 size_t strspn(const char *s, const char *c) {
@@ -732,6 +731,5 @@ char *strtok_r(char *s, const char *delim, char **save_ptr) {
 }
 
 int strverscmp(const char *s1, const char *s2) {
-    profan_nimpl("strverscmp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }

@@ -12,6 +12,8 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
+#define _POSIX_THREADS 1
+
 #include <sys/types.h>
 
 #undef  SEEK_SET
@@ -31,6 +33,9 @@
 #define X_OK 1
 #define W_OK 2
 #define R_OK 4
+
+#define _SC_TTY_NAME_MAX 1
+#define L_ctermid 1
 
 extern int optind, opterr, optopt;
 extern char *optarg;

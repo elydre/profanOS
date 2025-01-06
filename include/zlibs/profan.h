@@ -19,6 +19,8 @@
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, argc, argv, environ, 1}, NULL)
 
+#define PROFAN_FNI profan_nimpl(__FUNCTION__)
+
 #ifndef _PROFAN_NO_WD
 extern const uint32_t profan_wd_sid;
 extern const char profan_wd_path[];
@@ -52,7 +54,7 @@ char *profan_fn_name(void *ptr, char **libname);
 void  profan_print_trace(void);
 
 char *profan_input(int *size);
-void  profan_nimpl(char *name);
+void  profan_nimpl(const char *name);
 char *profan_libc_version(void);
 
 char    *profan_join_path(const char *old, const char *new);

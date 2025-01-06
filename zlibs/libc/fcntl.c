@@ -20,6 +20,7 @@
 
 int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
+    serial_debug("open(%s, %d)\n", path, flags);
 
     char *fullpath;
     fullpath = profan_join_path(profan_wd_path, path);
@@ -36,11 +37,32 @@ int open(const char *path, int flags, ...) {
 }
 
 int creat(const char *file, mode_t mode) {
-    profan_nimpl("creat");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 int fcntl(int fd, int cmd, ...) {
-    profan_nimpl("fcntl");
-    return -1;
+    serial_debug("fcntl(%d, %d)\n", fd, cmd);
+
+    switch (cmd) {
+        case F_DUPFD:
+            return (profan_nimpl("fcntl(F_DUPFD)"), -1);
+        case F_GETFD:
+            return 0;
+        case F_SETFD:
+            return 0;
+        case F_GETFL:
+            return (profan_nimpl("fcntl(F_GETFL)"), -1);
+        case F_SETFL:
+            return (profan_nimpl("fcntl(F_SETFL)"), -1);
+        case F_GETLK:
+            return (profan_nimpl("fcntl(F_GETLK)"), -1);
+        case F_SETLK:
+            return (profan_nimpl("fcntl(F_SETLK)"), -1);
+        case F_SETLKW:
+            return (profan_nimpl("fcntl(F_SETLKW)"), -1);
+        default:
+            return (profan_nimpl("fcntl(unknown)"), -1);
+    }
+
+    return -1;        
 }

@@ -45,8 +45,7 @@ int access(const char *pathname, int mode) {
 }
 
 unsigned alarm(unsigned a) {
-    profan_nimpl("alarm");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int chdir(const char *path) {
@@ -74,11 +73,11 @@ int chdir(const char *path) {
 }
 
 int chown(const char *a, uid_t b, gid_t c) {
-    profan_nimpl("chown");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int close(int fd) {
+    serial_debug("close(%d)\n", fd);
     int r = fm_close(fd);
     if (r < 0) {
         errno = -r;
@@ -88,21 +87,19 @@ int close(int fd) {
 }
 
 size_t confstr(int a, char *b, size_t c) {
-    profan_nimpl("confstr");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 char *crypt(const char *a, const char *b) {
-    profan_nimpl("crypt");
-    return 0;
+    return (PROFAN_FNI, NULL);
 }
 
 char *ctermid(char *a) {
-    profan_nimpl("ctermid");
-    return 0;
+    return (PROFAN_FNI, NULL);
 }
 
 int dup(int fd) {
+    serial_debug("dup(%d)\n", fd);
     int newfd = fm_dup(fd);
     if (newfd < 0) {
         errno = -newfd;
@@ -112,6 +109,7 @@ int dup(int fd) {
 }
 
 int dup2(int fd, int newfd) {
+    serial_debug("dup2(%d, %d)\n", fd, newfd);
     int r = fm_dup2(fd, newfd);
     if (r < 0) {
         errno = -r;
@@ -121,7 +119,7 @@ int dup2(int fd, int newfd) {
 }
 
 void encrypt(char a[64], int b) {
-    profan_nimpl("encrypt");
+    PROFAN_FNI;
 }
 
 int execve(const char *fullpath, char *const argv[], char *const envp[]);
@@ -152,13 +150,11 @@ int execl(const char *fullpath, const char *first, ...) {
 }
 
 int execle(const char *fullpath, const char *arg, ...) {
-    profan_nimpl("execle");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int execlp(const char *file, const char *arg, ...) {
-    profan_nimpl("execlp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int execv(const char *fullpath, char *const argv[]) {
@@ -179,8 +175,7 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
 }
 
 int execvp(const char *file, char *const argv[]) {
-    profan_nimpl("execvp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 void _exit(int status) {
@@ -189,18 +184,15 @@ void _exit(int status) {
 }
 
 int fchown(int a, uid_t b, gid_t c) {
-    profan_nimpl("fchown");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fchdir(int a) {
-    profan_nimpl("fchdir");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fdatasync(int a) {
-    profan_nimpl("fdatasync");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 pid_t fork(void) {
@@ -226,18 +218,15 @@ pid_t fork(void) {
 }
 
 long fpathconf(int a, int b) {
-    profan_nimpl("fpathconf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fsync(int a) {
-    profan_nimpl("fsync");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int ftruncate(int a, off_t b) {
-    profan_nimpl("ftruncate");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 char *getcwd(char *buf, size_t size) {
@@ -278,28 +267,23 @@ gid_t getgid(void) {
 }
 
 int getgroups(int a, gid_t *b) {
-    profan_nimpl("getgroups");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 long gethostid(void) {
-    profan_nimpl("gethostid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int gethostname(char *a, size_t n) {
-    profan_nimpl("gethostname");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 char *getlogin(void) {
-    profan_nimpl("getlogin");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
 int getlogin_r(char *a, size_t n) {
-    profan_nimpl("getlogin_r");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int getopt(int nargc, char *const *nargv, const char *ostr) {
@@ -356,13 +340,11 @@ int getopt(int nargc, char *const *nargv, const char *ostr) {
 }
 
 pid_t getpgid(pid_t a) {
-    profan_nimpl("getpgid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 pid_t getpgrp(void) {
-    profan_nimpl("getpgrp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 pid_t getpid(void) {
@@ -374,8 +356,7 @@ pid_t getppid(void) {
 }
 
 pid_t getsid(pid_t a) {
-    profan_nimpl("getsid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 uid_t getuid(void) {
@@ -389,22 +370,20 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
+    serial_debug("isatty(%d)\n", fd);
     return fm_isfctf(fd) > 0;
 }
 
 int lchown(const char *a, uid_t b, gid_t c) {
-    profan_nimpl("lchown");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int link(const char *a, const char *b) {
-    profan_nimpl("link");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int lockf(int a, int b, off_t c) {
-    profan_nimpl("lockf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 off_t lseek(int fd, off_t offset, int whence) {
@@ -417,21 +396,19 @@ off_t lseek(int fd, off_t offset, int whence) {
 }
 
 int nice(int a) {
-    profan_nimpl("nice");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 long pathconf(const char *a, int b) {
-    profan_nimpl("pathconf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int pause(void) {
-    profan_nimpl("pause");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int pipe(int fd[2]) {
+    serial_debug("pipe(%p)\n", fd);
     int r = fm_pipe(fd);
     if (r < 0) {
         errno = -r;
@@ -441,17 +418,16 @@ int pipe(int fd[2]) {
 }
 
 ssize_t pread(int a, void *b, size_t c, off_t d) {
-    profan_nimpl("pread");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 ssize_t pwrite(int a, const void *b, size_t c, off_t d) {
-    profan_nimpl("pwrite");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
     int r = fm_read(fd, buf, count);
+    serial_debug("read(%d, %p, %d) => %d\n", fd, buf, count, r);
     if (r < 0) {
         errno = -r;
         return -1;
@@ -460,58 +436,51 @@ ssize_t read(int fd, void *buf, size_t count) {
 }
 
 ssize_t readlink(const char *restrict a, char *restrict b, size_t c) {
-    printf("readlink(%s, %p, %lu)\n", a, b, c);
-    return 0;
+    if (profan_resolve_path(a) == SID_NULL)
+        errno = ENOENT;
+    else
+        errno = EINVAL; // no links for now
+    return -1;
 }
 
 int rmdir(const char *a) {
-    profan_nimpl("rmdir");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int setegid(gid_t a) {
-    profan_nimpl("setegid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int seteuid(uid_t a) {
-    profan_nimpl("seteuid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int setgid(gid_t a) {
-    profan_nimpl("setgid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int setpgid(pid_t a, pid_t b) {
-    profan_nimpl("setpgid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 pid_t setpgrp(void) {
-    profan_nimpl("setpgrp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int setregid(gid_t a, gid_t b) {
-    profan_nimpl("setregid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int setreuid(uid_t a, uid_t b) {
-    profan_nimpl("setreuid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 pid_t setsid(void) {
-    profan_nimpl("setsid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int setuid(uid_t a) {
-    profan_nimpl("setuid");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 unsigned sleep(unsigned seconds) {
@@ -520,51 +489,43 @@ unsigned sleep(unsigned seconds) {
 }
 
 void swab(const void *restrict a, void *restrict n, ssize_t c) {
-    profan_nimpl("swab");
+    PROFAN_FNI;
 }
 
 int symlink(const char *a, const char *b) {
-    profan_nimpl("symlink");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 void sync(void) {
-    profan_nimpl("sync");
+    PROFAN_FNI;
 }
 
 long sysconf(int a) {
-    profan_nimpl("sysconf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 pid_t tcgetpgrp(int a) {
-    profan_nimpl("tcgetpgrp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int tcsetpgrp(int a, pid_t b) {
-    profan_nimpl("tcsetpgrp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int truncate(const char *a, off_t b) {
-    profan_nimpl("truncate");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 char *ttyname(int a) {
-    profan_nimpl("ttyname");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
 int ttyname_r(int a, char *b, size_t c) {
-    profan_nimpl("ttyname_r");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 useconds_t ualarm(useconds_t a, useconds_t b) {
-    profan_nimpl("ualarm");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int unlink(const char *filename) {
@@ -611,10 +572,15 @@ int usleep(useconds_t usec) {
 }
 
 pid_t vfork(void) {
-    profan_nimpl("vfork");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
-    return fm_write(fd, (void *) buf, count);
+    int r = fm_write(fd, (void *) buf, count);
+    serial_debug("write(%d, %p, %d) => %d\n", fd, buf, count, r);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return r;
 }
