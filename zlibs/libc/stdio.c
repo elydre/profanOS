@@ -111,13 +111,10 @@ void clearerr(FILE *stream) {
 int fileno(FILE *stream) {
     if (stream == NULL)
         return -1;
-    serial_debug("fileno: %d\n", stream->fd);
     return stream->fd;
 }
 
 FILE *fopen(const char *filename, const char *mode) {
-    serial_debug("fopen: %s %s\n", filename, mode);
-
     if (filename == NULL || mode == NULL)
         return NULL;
 
@@ -140,8 +137,6 @@ FILE *fdopen(int fd, const char *mode) {
 }
 
 FILE *freopen(const char *filename, const char *mode, FILE *stream) {
-    serial_debug("freopen: %d %s\n", stream->fd, filename);
-
     // close the file
     fclose(stream);
 
@@ -150,11 +145,8 @@ FILE *freopen(const char *filename, const char *mode, FILE *stream) {
 }
 
 int fclose(FILE *stream) {
-    serial_debug("fclose: %d\n", stream->fd);
-
-    if (stream == NULL) {
+    if (stream == NULL)
         return EOF;
-    }
 
     if (stream == stdin)
         stdin = NULL;
@@ -176,7 +168,6 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    serial_debug("fflush: %d\n", stream->fd);
 
     if (stream == NULL || stream->mode & O_RDONLY)
         return 0;
@@ -195,8 +186,6 @@ int fflush(FILE *stream) {
         stream->error = 1;
         written = 0;
     }
-
-    serial_debug("f => %d\n", written);
 
     // return the number of elements written
     return written ? 0 : EOF;
@@ -217,8 +206,6 @@ int fwide(FILE *stream, int mode) {
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
-    serial_debug("fread: %d %d\n", count, stream->fd);
-
     // check if the file is open for reading
     if (count == 0 || stream == NULL || stream->mode & O_WRONLY)
         return 0;
@@ -229,7 +216,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         ((char *) buffer++)[0] = stream->ungetchar;
         stream->ungetchar = -1;
         if (--count == 0) {
-            serial_debug("r => %d\n", 1);
             return 1;
         }
     }
@@ -241,7 +227,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         read = fm_read(stream->fd, buffer, count);
         if (read < 0) {
             stream->error = 1;
-            serial_debug("r => %d\n", 0);
             return 0;
         }
 
@@ -258,7 +243,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
             memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
 
             fm_lseek(stream->fd, count, SEEK_CUR);
-            serial_debug("r => %d\n", count / size);
             return count / size;
         }
 
@@ -276,7 +260,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         read = fm_read(stream->fd, buffer + rfrom_buffer, count);
         if (read < 0) {
             stream->error = 1;
-            serial_debug("r => %d\n", 0);
             return 0;
         }
         return (read + rfrom_buffer) / size;
@@ -285,7 +268,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     read = fm_read(stream->fd, stream->buffer, STDIO_BUFFER_READ);
     if (read < 0) {
         stream->error = 1;
-        serial_debug("r => %d\n", 0);
         return 0;
     }
 
@@ -299,20 +281,15 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     fm_lseek(stream->fd, stream->buffer_size, SEEK_CUR);
 
     // return the number of elements read
-    serial_debug("r => %d\n", count / size);
     return (count + rfrom_buffer) / size;
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
-    serial_debug("fwrite: %d %d, %s\n", count, stream->fd, buffer);
-
     // check if the file is open for writing
-    if (count == 0 || stream == NULL || stream->mode & O_RDONLY) {
-        serial_debug("w => %d\n", 0);
+    if (count == 0 || stream == NULL || stream->mode & O_RDONLY)
         return 0;
-    }
 
     // if buffer is used for reading
     if (stream->buffer_size < 0)
@@ -324,10 +301,8 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     for (uint32_t i = 0; i < count; i++) {
         // check if the buffer is full
         if (stream->buffer_size >= (STDIO_BUFFER_SIZE - 1)) {
-            if (fflush(stream) == EOF) {
-                serial_debug("w => %d\n", 0);
+            if (fflush(stream) == EOF)
                 return 0;
-            }
             need_flush = 0;
         }
 
@@ -340,11 +315,9 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     // flush the buffer if needed
-    if (need_flush && fflush(stream) == EOF) {
-        serial_debug("w => %d\n", 0);
+    if (need_flush && fflush(stream) == EOF)
         return 0;
-    }
-    serial_debug("w => %d\n", count / size);
+
     return count / size;
 }
 
@@ -573,12 +546,10 @@ long ftell(FILE *stream) {
 }
 
 int feof(FILE *stream) {
-    serial_debug("feof: %d\n", stream->fd);
     return (stream && stream->error) ? 1 : 0;
 }
 
 int ferror(FILE *stream) {
-    serial_debug("ferror: %d\n", stream->fd);
     return (stream && stream->error) ? 1 : 0;
 }
 

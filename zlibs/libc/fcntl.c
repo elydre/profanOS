@@ -20,7 +20,6 @@
 
 int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
-    serial_debug("open(%s, %d)\n", path, flags);
 
     char *fullpath;
     fullpath = profan_join_path(profan_wd_path, path);
@@ -41,8 +40,6 @@ int creat(const char *file, mode_t mode) {
 }
 
 int fcntl(int fd, int cmd, ...) {
-    serial_debug("fcntl(%d, %d)\n", fd, cmd);
-
     switch (cmd) {
         case F_DUPFD:
             return (profan_nimpl("fcntl(F_DUPFD)"), -1);

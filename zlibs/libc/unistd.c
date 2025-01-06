@@ -77,7 +77,6 @@ int chown(const char *a, uid_t b, gid_t c) {
 }
 
 int close(int fd) {
-    serial_debug("close(%d)\n", fd);
     int r = fm_close(fd);
     if (r < 0) {
         errno = -r;
@@ -99,7 +98,6 @@ char *ctermid(char *a) {
 }
 
 int dup(int fd) {
-    serial_debug("dup(%d)\n", fd);
     int newfd = fm_dup(fd);
     if (newfd < 0) {
         errno = -newfd;
@@ -109,7 +107,6 @@ int dup(int fd) {
 }
 
 int dup2(int fd, int newfd) {
-    serial_debug("dup2(%d, %d)\n", fd, newfd);
     int r = fm_dup2(fd, newfd);
     if (r < 0) {
         errno = -r;
@@ -370,7 +367,6 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    serial_debug("isatty(%d)\n", fd);
     return fm_isfctf(fd) > 0;
 }
 
@@ -408,7 +404,6 @@ int pause(void) {
 }
 
 int pipe(int fd[2]) {
-    serial_debug("pipe(%p)\n", fd);
     int r = fm_pipe(fd);
     if (r < 0) {
         errno = -r;
@@ -427,7 +422,6 @@ ssize_t pwrite(int a, const void *b, size_t c, off_t d) {
 
 ssize_t read(int fd, void *buf, size_t count) {
     int r = fm_read(fd, buf, count);
-    serial_debug("read(%d, %p, %d) => %d\n", fd, buf, count, r);
     if (r < 0) {
         errno = -r;
         return -1;
@@ -577,7 +571,6 @@ pid_t vfork(void) {
 
 ssize_t write(int fd, const void *buf, size_t count) {
     int r = fm_write(fd, (void *) buf, count);
-    serial_debug("write(%d, %p, %d) => %d\n", fd, buf, count, r);
     if (r < 0) {
         errno = -r;
         return -1;

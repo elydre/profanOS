@@ -66,5 +66,3 @@ FUNC time
 
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
-
-python /user/test.py // > o
