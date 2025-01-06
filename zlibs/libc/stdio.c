@@ -168,7 +168,6 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-
     if (stream == NULL || stream->mode & O_RDONLY)
         return 0;
 
