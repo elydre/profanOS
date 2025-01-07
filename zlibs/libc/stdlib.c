@@ -353,13 +353,13 @@ int mblen(register const char *s, size_t n) {
 
 // basic implementation (possibly incomplete)
 size_t mbstowcs(wchar_t *restrict dest, const char *restrict src, size_t n) {
-    if (dest == NULL) {
-        return strlen(src);
-    }
-
     if (src == NULL) {
         errno = EINVAL;
         return (size_t)-1;
+    }
+
+    if (dest == NULL) {
+        return strlen(src);
     }
 
     size_t i = 0;
