@@ -45,7 +45,7 @@ FILE *stderr = NULL;
 
 char *g_printf_buffer = NULL;
 
-static FILE *fdopen_mode(int fd, uint8_t mode) {
+static FILE *fdopen_mode(int fd, int mode) {
     FILE *file = calloc(sizeof(FILE) + STDIO_BUFFER_SIZE, 1);
 
     file->buffer = ((char *) file) + sizeof(FILE);
@@ -56,9 +56,10 @@ static FILE *fdopen_mode(int fd, uint8_t mode) {
     return file;
 }
 
-static uint8_t interpet_mode(const char *mode) {
+static int interpet_mode(const char *mode) {
     // compute the mode
-    uint8_t fdmode = 0;
+    int fdmode = 0;
+
     for (int i = 0; mode[i]; i++) {
         switch (mode[i]) {
             case 'r':
@@ -118,7 +119,7 @@ FILE *fopen(const char *filename, const char *mode) {
     if (filename == NULL || mode == NULL)
         return NULL;
 
-    uint8_t fdmode = interpet_mode(mode);
+    int fdmode = interpet_mode(mode);
 
     // open the file
     int fd = open(filename, fdmode, 0666);
