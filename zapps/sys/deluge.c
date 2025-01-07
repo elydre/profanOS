@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION  "4.1"
+#define DELUGE_VERSION  "4.2"
 #define ALWAYS_DEBUG    0
 #define USE_CACHED_LIBC 1
 
@@ -423,9 +423,11 @@ char *get_addr_name(elfobj_t *obj, uint32_t addr) {
 
     if (!obj->sym_tab)
         return NULL;
+    
+    uint32_t offset = obj->type == ET_DYN ? (uint32_t) obj->mem : 0;
 
     for (uint32_t i = 0; i < obj->sym_size / sizeof(Elf32_Sym); i++) {
-        uint32_t val = (uint32_t) obj->mem + obj->sym_tab[i].st_value;
+        uint32_t val = offset + obj->sym_tab[i].st_value;
         if (addr < val || addr >= val + obj->sym_tab[i].st_size)
             continue;
         name = obj->sym_str + obj->sym_tab[i].st_name;
@@ -471,7 +473,7 @@ int dynamic_linker(elfobj_t *obj) {
         return 0;
     }
 
-    uint32_t val, *ptr;
+    uint32_t *ptr, val = 0;
     uint8_t type;
     char *name;
 
@@ -486,21 +488,18 @@ int dynamic_linker(elfobj_t *obj) {
 
         for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
             name = (char *) obj->dym_str + (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_name;
-
-
             type = ELF32_R_TYPE(rel[j].r_info);
+    
             if (does_type_required_sym(type)) {
                 val = get_sym_value(name, NULL);
                 if (val == 0) {
-                    Elf32_Sym *sym = hash_get(g_prog, hash(name), name); // ET_EXEC
-                    /* if (obj->type == ET_DYN)
-                        raise_error("%s: symbol '%s' not found", obj->name, name); */
+                    // look for the symbol in the main program
+                    Elf32_Sym *sym = hash_get(g_prog, hash(name), name);
                     if (!sym || sym->st_shndx == STB_LOCAL)
                         raise_error("%s: symbol '%s' not found", obj->name, name);
                     val = sym->st_value;
                 }
-
-            } else val = 0; // for gcc -O3
+            };
 
             if (obj->type == ET_DYN)
                 ptr = (uint32_t *)(obj->mem + rel[j].r_offset);
