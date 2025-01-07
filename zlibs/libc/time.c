@@ -231,5 +231,5 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *c, struct
 }
 
 void tzset(void) {
-    PROFAN_FNI;
+    // timezone not implemented yet
 }

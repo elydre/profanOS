@@ -94,7 +94,13 @@ char *crypt(const char *a, const char *b) {
 }
 
 char *ctermid(char *a) {
-    return (PROFAN_FNI, NULL);
+    char *term = getenv("TERM");
+    if (term == NULL)
+        term = "/dev/panda";
+    if (a == NULL)
+        return term;
+    strlcpy(a, term, L_ctermid);
+    return a;
 }
 
 int dup(int fd) {
