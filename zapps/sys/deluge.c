@@ -423,7 +423,7 @@ char *get_addr_name(elfobj_t *obj, uint32_t addr) {
 
     if (!obj->sym_tab)
         return NULL;
-    
+
     uint32_t offset = obj->type == ET_DYN ? (uint32_t) obj->mem : 0;
 
     for (uint32_t i = 0; i < obj->sym_size / sizeof(Elf32_Sym); i++) {
@@ -489,7 +489,7 @@ int dynamic_linker(elfobj_t *obj) {
         for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
             name = (char *) obj->dym_str + (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_name;
             type = ELF32_R_TYPE(rel[j].r_info);
-    
+
             if (does_type_required_sym(type)) {
                 val = get_sym_value(name, NULL);
                 if (val == 0) {

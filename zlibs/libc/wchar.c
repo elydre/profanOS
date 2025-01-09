@@ -4,13 +4,31 @@
 |    Implementation of wchar functions from libC                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
-|    the terms of the GNU General Public License                   `// \\     |
+|    Based on the musl libc implementation                         `// \\     |
 |                                                                  //   \\    |
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
 #include <profan.h>
 #include <wchar.h>
+#include <errno.h>
+
+// bittab for UTF-8 conversion
+static const uint32_t bittab[] = {
+    0xc0000002, 0xc0000003, 0xc0000004, 0xc0000005,
+    0xc0000006, 0xc0000007, 0xc0000008, 0xc0000009,
+    0xc000000a, 0xc000000b, 0xc000000c, 0xc000000d,
+    0xc000000e, 0xc000000f, 0xc0000010, 0xc0000011,
+    0xc0000012, 0xc0000013, 0xc0000014, 0xc0000015,
+    0xc0000016, 0xc0000017, 0xc0000018, 0xc0000019,
+    0xc000001a, 0xc000001b, 0xc000001c, 0xc000001d,
+    0xc000001e, 0xc000001f, 0xb3000000, 0xc3000001,
+    0xc3000002, 0xc3000003, 0xc3000004, 0xc3000005,
+    0xc3000006, 0xc3000007, 0xc3000008, 0xc3000009,
+    0xc300000a, 0xc300000b, 0xc300000c, 0xd300000d,
+    0xc300000e, 0xc300000f, 0xbb0c0000, 0xc30c0001,
+    0xc30c0002, 0xc30c0003, 0xdb0c0004
+};
 
 wint_t btowc(int) {
     return (PROFAN_FNI, 0);
@@ -108,8 +126,110 @@ size_t mbrtowc(wchar_t *, const char *, size_t, mbstate_t *) {
     return (PROFAN_FNI, 0);
 }
 
-size_t mbsrtowcs(wchar_t *, const char **, size_t, mbstate_t *) {
-    return (PROFAN_FNI, 0);
+#define OOB(c,b) (((((b) >> 3) - 0x10) | (((b) >> 3) + ((int32_t)(c) >> 26))) & ~7)
+#define SA 0xc2u
+#define SB 0xf4u
+
+size_t mbsrtowcs(wchar_t *restrict ws, const char **restrict src, size_t wn, mbstate_t *restrict st) {
+    const unsigned char *s = (const void *) *src;
+    size_t wn0 = wn;
+    unsigned c = 0;
+
+    if (st && (c = *(unsigned *)st)) {
+        if (ws) {
+            *(unsigned *) st = 0;
+            goto resume;
+        } else {
+            goto resume0;
+        }
+    }
+
+    if (!ws) while (1) {
+        if (*s - 1u < 0x7f) {
+            s++;
+            wn--;
+            continue;
+        }
+
+        if (*s - SA > SB - SA)
+            break;
+        c = bittab[*s++ - SA];
+resume0:
+        if (OOB(c,*s)) {
+            s--;
+            break;
+        }
+        s++;
+        if (c & (1U << 25)) {
+            if (*s - 0x80u >= 0x40) {
+                s-=2;
+                break;
+            }
+            s++;
+
+            if (c&(1U<<19)) {
+                if (*s - 0x80u >= 0x40) {
+                    s -= 3;
+                    break;
+                }
+                s++;
+            }
+        }
+        wn--;
+        c = 0;
+    } else while (1) {
+        if (!wn) {
+            *src = (const void *) s;
+            return wn0;
+        }
+
+        if (*s - 1u < 0x7f) {
+            *ws++ = *s++;
+            wn--;
+            continue;
+        }
+
+        if (*s - SA > SB-SA)
+            break;
+        c = bittab[*s++-SA];
+resume:
+        if (OOB(c,*s)) {
+            s--;
+            break;
+        }
+        c = (c << 6) | (*s++ - 0x80);
+        if (c & (1U << 31)) {
+            if (*s - 0x80u >= 0x40) {
+                s -= 2;
+                break;
+            }
+            c = (c << 6) | (*s++ - 0x80);
+            if (c & (1U << 31)) {
+                if (*s - 0x80u >= 0x40) {
+                    s-=3;
+                    break;
+                }
+                c = ( c<< 6) | (*s++ - 0x80);
+            }
+        }
+        *ws++ = c;
+        wn--;
+        c = 0;
+    }
+
+    if (!c && !*s) {
+        if (ws) {
+            *ws = 0;
+            *src = 0;
+        }
+        return wn0 - wn;
+    }
+
+    if (ws)
+        *src = (const void *)s;
+
+    errno = EILSEQ;
+    return -1;
 }
 
 wint_t putwc(wchar_t, FILE *) {
@@ -152,62 +272,62 @@ int vswprintf(wchar_t *, size_t, const wchar_t *, va_list) {
     return (PROFAN_FNI, 0);
 }
 
-size_t wcrtomb(char *, wchar_t, mbstate_t *) {
-    return (PROFAN_FNI, 0);
+size_t wcrtomb(char *restrict s, wchar_t wc, mbstate_t *restrict st) {
+    if (!s)
+        return 1;
+
+    if ((unsigned) wc < 0x80) {
+        *s = wc;
+        return 1;
+    } else if ((unsigned) wc < 0x800) {
+        *s++ = 0xc0 | (wc >> 6);
+        *s = 0x80 | (wc & 0x3f);
+        return 2;
+    } else if ((unsigned) wc < 0xd800 || (unsigned) wc - 0xe000 < 0x2000) {
+        *s++ = 0xe0 | (wc >> 12);
+        *s++ = 0x80 | ((wc >> 6) & 0x3f);
+        *s = 0x80 | (wc & 0x3f);
+        return 3;
+    } else if ((unsigned) wc - 0x10000 < 0x100000) {
+        *s++ = 0xf0 | (wc >> 18);
+        *s++ = 0x80 | ((wc >> 12) & 0x3f);
+        *s++ = 0x80 | ((wc >> 6) & 0x3f);
+        *s = 0x80 | (wc & 0x3f);
+        return 4;
+    }
+    errno = EILSEQ;
+    return -1;
 }
 
 wchar_t *wcscat(wchar_t *, const wchar_t *) {
     return (PROFAN_FNI, NULL);
 }
 
-wchar_t *wcschr(const wchar_t *str, wchar_t c) {
-    if (str == NULL)
-        return NULL;
+wchar_t *wcschr(const wchar_t *s, wchar_t c) {
+    if (!c)
+        return (wchar_t *) s + wcslen(s);
 
-    size_t i = 0;
-    while (str[i] != L'\0') {
-        if (str[i] == c)
-            return (wchar_t *) &str[i];
-        i++;
-    }
+    for (; *s && *s != c; s++);
 
-    if (c == L'\0')
-        return (wchar_t *) &str[i];
-
-    return NULL;
+    return *s ? (wchar_t *)s : 0;
 }
 
-int wcscmp(const wchar_t *str1, const wchar_t *str2) {
-    if (str1 == NULL || str2 == NULL)
-        return (str1 == str2 ? 0 : (str1 ? 1 : -1));
+int wcscmp(const wchar_t *l, const wchar_t *r) {
+    for (; *l == *r && *l && *r; l++, r++);
 
-    size_t i = 0;
-    while (str1[i] != L'\0' && str2[i] != L'\0') {
-        if (str1[i] != str2[i])
-            return (int) (str1[i] - str2[i]);
-        i++;
-    }
-
-    return (int)(str1[i] - str2[i]);
+    return *l < *r ? -1 : *l > *r;
 }
 
 int wcscoll(const wchar_t *, const wchar_t *) {
     return (PROFAN_FNI, 0);
 }
 
-wchar_t *wcscpy(wchar_t *str1, const wchar_t *str2) {
-    if (str1 == NULL || str2 == NULL)
-        return NULL;
+wchar_t *wcscpy(wchar_t *restrict d, const wchar_t *restrict s) {
+    wchar_t *a = d;
 
-    size_t i = 0;
-    while (str2[i] != L'\0') {
-        str1[i] = str2[i];
-        i++;
-    }
+    while ((*d++ = *s++));
 
-    str1[i] = L'\0';
-
-    return str1;
+    return a;
 }
 
 size_t wcscspn(const wchar_t *, const wchar_t *) {
@@ -218,28 +338,21 @@ size_t wcsftime(wchar_t *, size_t, const wchar_t *, const struct tm *) {
     return (PROFAN_FNI, 0);
 }
 
-size_t wcslen(const wchar_t *str) {
-    size_t len = 0;
+size_t wcslen(const wchar_t *s) {
+    const wchar_t *a;
 
-    if (str == NULL)
-        return 0;
+    for (a = s; *s; s++);
 
-    while (str[len] != L'\0')
-        len++;
-
-    return len;
+    return s - a;
 }
 
-size_t wcsnlen(const wchar_t *str, size_t maxlen) {
-    size_t len = 0;
+size_t wcsnlen(const wchar_t *s, size_t n) {
+    const wchar_t *z = wmemchr(s, 0, n);
 
-    if (str == NULL)
-        return 0;
+    if (z)
+        n = z - s;
 
-    while (len < maxlen && str[len] != L'\0')
-        len++;
-
-    return len;
+    return n;
 }
 
 wchar_t *wcsncat(wchar_t *, const wchar_t *, size_t) {
@@ -250,42 +363,91 @@ int wcsncmp(const wchar_t *, const wchar_t *, size_t) {
     return (PROFAN_FNI, 0);
 }
 
-wchar_t *wcsncpy(wchar_t *str1, const wchar_t *str2, size_t n) {
-    if (str1 == NULL || str2 == NULL)
-        return NULL;
+wchar_t *wcsncpy(wchar_t *restrict d, const wchar_t *restrict s, size_t n) {
+    wchar_t *a = d;
 
-    size_t i = 0;
-    while (i < n && str2[i] != L'\0') {
-        str1[i] = str2[i];
-        i++;
+    while (n && *s) {
+        *d++ = *s++;
+        n--;
     }
 
-    if (i < n)
-        str1[i] = L'\0';
-
-    return str1;
+    wmemset(d, 0, n);
+    return a;
 }
 
 wchar_t *wcspbrk(const wchar_t *, const wchar_t *) {
     return (PROFAN_FNI, NULL);
 }
 
-wchar_t *wcsrchr(const wchar_t *str, wchar_t c) {
-    if (str == NULL)
-        return NULL;
+wchar_t *wcsrchr(const wchar_t *s, wchar_t c) {
+    const wchar_t *p;
 
-    size_t i = wcslen(str);
-    while (i > 0) {
-        i--;
-        if (str[i] == c)
-            return (wchar_t *) &str[i];
-    }
+    for (p = s + wcslen(s); p >= s && *p != c; p--);
 
-    return NULL;
+    return p >= s ? (wchar_t *) p : 0;
 }
 
-size_t wcsrtombs(char *, const wchar_t **, size_t, mbstate_t *) {
-    return (PROFAN_FNI, 0);
+size_t wcsrtombs(char *restrict s, const wchar_t **restrict ws, size_t n, mbstate_t *restrict st) {
+    const wchar_t *ws2;
+    char buf[4];
+    size_t N = n, l;
+
+    if (!s) {
+        for (n = 0, ws2 = *ws; *ws2; ws2++) {
+            if (*ws2 >= 0x80) {
+                l = wcrtomb(buf, *ws2, 0);
+                if (!(l + 1))
+                    return -1;
+                n += l;
+            } else {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    while (n>=4) {
+        if (**ws - 1u >= 0x7fu) {
+            if (!**ws) {
+                *s = 0;
+                *ws = 0;
+                return N-n;
+            }
+            l = wcrtomb(s, **ws, 0);
+            if (!(l + 1))
+                return -1;
+            s += l;
+            n -= l;
+        } else {
+            *s++ = **ws;
+            n--;
+        }
+        (*ws)++;
+    }
+
+    while (n) {
+        if (**ws - 1u >= 0x7fu) {
+            if (!**ws) {
+                *s = 0;
+                *ws = 0;
+                return N - n;
+            }
+            l = wcrtomb(buf, **ws, 0);
+            if (!(l + 1))
+                return -1;
+            if (l > n)
+                return N - n;
+            wcrtomb(s, **ws, 0);
+            s += l;
+            n -= l;
+        } else {
+            *s++ = **ws;
+            n--;
+        }
+        (*ws)++;
+    }
+
+    return N;
 }
 
 size_t wcsspn(const wchar_t *, const wchar_t *) {
@@ -324,8 +486,10 @@ int wcwidth(wchar_t) {
     return (PROFAN_FNI, 0);
 }
 
-wchar_t *wmemchr(const wchar_t *, wchar_t, size_t) {
-    return (PROFAN_FNI, NULL);
+wchar_t *wmemchr(const wchar_t *s, wchar_t c, size_t n) {
+    for (; n && *s != c; n--, s++);
+
+    return n ? (wchar_t *) s : 0;
 }
 
 int wmemcmp(const wchar_t *, const wchar_t *, size_t) {
@@ -340,8 +504,13 @@ wchar_t *wmemmove(wchar_t *, const wchar_t *, size_t) {
     return (PROFAN_FNI, NULL);
 }
 
-wchar_t *wmemset(wchar_t *, wchar_t, size_t) {
-    return (PROFAN_FNI, NULL);
+wchar_t *wmemset(wchar_t *d, wchar_t c, size_t n) {
+    wchar_t *ret = d;
+
+    while (n--)
+        *d++ = c;
+
+    return ret;
 }
 
 int wprintf(const wchar_t *, ...) {

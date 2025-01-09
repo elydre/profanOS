@@ -9,7 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan.h>
 
@@ -17,10 +16,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#include <stdio.h>
 #include <errno.h>
+#include <wchar.h>
 #include <ctype.h>
-#include <time.h>
 
 #include "config_libc.h"
 
@@ -351,31 +349,8 @@ int mblen(register const char *s, size_t n) {
     return (PROFAN_FNI, 0);
 }
 
-// basic implementation (possibly incomplete)
-size_t mbstowcs(wchar_t *restrict dest, const char *restrict src, size_t n) {
-    if (src == NULL) {
-        errno = EINVAL;
-        return (size_t)-1;
-    }
-
-    if (dest == NULL) {
-        return strlen(src);
-    }
-
-    size_t i = 0;
-
-    while (src[i] != '\0') {
-        if (i >= n)
-            break;
-        dest[i] = (wchar_t) src[i];
-        i++;
-    }
-
-    if (i < n) {
-        dest[i] = L'\0';
-    }
-
-    return i;
+size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
+    return mbsrtowcs(ws, (void*) &s, wn, 0);
 }
 
 int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
@@ -523,27 +498,14 @@ void *valloc(size_t size) {
     return (PROFAN_FNI, NULL);
 }
 
-size_t wcstombs(char *restrict s, const wchar_t *restrict pwcs, size_t n) {
-    if (s == NULL) {
-        size_t i = 0;
-        while (pwcs[i] != L'\0') {
-            i++;
-        }
-        return i;
-    }
-
-    size_t i = 0;
-    while (i < n && pwcs[i] != L'\0') {
-        s[i] = (char) pwcs[i];
-        i++;
-    }
-    if (i < n)
-        s[i] = '\0';
-    return i;
+size_t wcstombs(char *restrict s, const wchar_t *restrict ws, size_t n) {
+    return wcsrtombs(s, &(const wchar_t *) {ws}, n, 0);
 }
 
 int wctomb(char *s, wchar_t wchar) {
-    return (PROFAN_FNI, 0);
+    if (s == NULL)
+        return 0;
+    return wcrtomb(s, wchar, 0);
 }
 
 double strtod(const char *str, char **ptr) {

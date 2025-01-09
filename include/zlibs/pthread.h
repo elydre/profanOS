@@ -4,7 +4,7 @@
 |    Implementation of pthread.h header file from libpthread       .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS - under GPLv3                  q. /|\  "   |
-|    Derived from openBSD header file                              `// \\     |
+|    Based on the OpenBSD header file                              `// \\     |
 |                                                                  //   \\    |
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/

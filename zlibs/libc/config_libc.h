@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === config_libc.h : 2024 ===                                              |
+|   === config_libc.h : 2025 ===                                              |
 |                                                                             |
 |    Global configuration file for profan libc                     .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -12,7 +12,7 @@
 #ifndef CONFIG_LIBC_H
 #define CONFIG_LIBC_H
 
-#define PROFAN_LIBC_VERSION "2.6 rev 1"
+#define PROFAN_LIBC_VERSION "2.6 rev 2"
 
 /****** PROFAN EXTRA ***********************************************/
 

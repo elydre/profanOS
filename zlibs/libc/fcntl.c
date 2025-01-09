@@ -61,5 +61,5 @@ int fcntl(int fd, int cmd, ...) {
             return (profan_nimpl("fcntl(unknown)"), -1);
     }
 
-    return -1;        
+    return -1;
 }
