@@ -42,54 +42,6 @@ int fwscanf(FILE *, const wchar_t *, ...) {
     return (PROFAN_FNI, 0);
 }
 
-int iswalnum(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswalpha(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswcntrl(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswdigit(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswgraph(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswlower(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswprint(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswpunct(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswspace(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswupper(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswxdigit(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-int iswctype(wint_t, wctype_t) {
-    return (PROFAN_FNI, 0);
-}
-
 wint_t fgetwc(FILE *) {
     return (PROFAN_FNI, 0);
 }
@@ -245,14 +197,6 @@ int swprintf(wchar_t *, size_t, const wchar_t *, ...) {
 }
 
 int swscanf(const wchar_t *, const wchar_t *, ...) {
-    return (PROFAN_FNI, 0);
-}
-
-wint_t towlower(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-wint_t towupper(wint_t) {
     return (PROFAN_FNI, 0);
 }
 
@@ -475,10 +419,6 @@ size_t wcsxfrm(wchar_t *, const wchar_t *, size_t) {
 }
 
 int wctob(wint_t) {
-    return (PROFAN_FNI, 0);
-}
-
-wctype_t wctype(const char *) {
     return (PROFAN_FNI, 0);
 }
 
