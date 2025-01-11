@@ -90,11 +90,4 @@ long long          strtoll(const char *str, char **end, int base);
 unsigned long      strtoul(const char *str, char **end, int base);
 unsigned long long strtoull(const char *str, char **end, int base);
 
-double             wcstod(const wchar_t *nptr, wchar_t **endptr);
-float              wcstof(const wchar_t *nptr, wchar_t **endptr);
-long               wcstol(const wchar_t *nptr, wchar_t **endptr, int base);
-long long          wcstoll(const wchar_t *nptr, wchar_t **endptr, int base);
-unsigned long      wcstoul(const wchar_t *nptr, wchar_t **endptr, int base);
-unsigned long long wcstoull(const wchar_t *nptr, wchar_t **endptr, int base);
-
 #endif

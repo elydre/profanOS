@@ -22,7 +22,9 @@
 #define CLOCK_REALTIME 0    // The identifier of the systemwide realtime clock
 #define TIMER_ABSTIME 1     // Flag indicating time is absolute
 
-typedef struct tm {
+#define CLOCK_MONOTONIC 1   // The identifier of the systemwide monotonic clock
+
+struct tm {
     int    tm_sec;   // seconds [0,61]
     int    tm_min;   // minutes [0,59]
     int    tm_hour;  // hour [0,23]
@@ -32,38 +34,45 @@ typedef struct tm {
     int    tm_wday;  // day of week [0,6] (Sunday = 0)
     int    tm_yday;  // day of year [0,365]
     int    tm_isdst; // daylight savings flag
-} tm_t;
+};
 
-typedef struct timespec {
+struct timespec {
     time_t  tv_sec;  // seconds
     long    tv_nsec; // nanoseconds
-} timespec_t;
+};
 
-typedef struct itimerspec {
-    timespec_t it_interval; // timer period
-    timespec_t it_value;    // timer expiration
-} itimerspec_t;
+struct itimerspec {
+    struct timespec it_interval; // timer period
+    struct timespec it_value;    // timer expiration
+};
 
-char *asctime(const struct tm *a);
-clock_t clock(void);
-int clock_getres(clockid_t a, struct timespec *n);
-int clock_gettime(clockid_t a, struct timespec *b);
-int clock_settime(clockid_t a, const struct timespec *b);
-char *ctime(const time_t *a);
-double difftime(time_t a, time_t b);
-struct tm *getdate(const char *a);
-struct tm *gmtime(const time_t *a);
-struct tm *localtime(const time_t *a);
-time_t mktime(struct tm *time);
-int nanosleep(const struct timespec *a, struct timespec *b);
-size_t strftime(char *a, size_t b, const char *c, const struct tm *d);
-char *strptime(const char *a, const char *b, struct tm *c);
-time_t time(time_t *a);
-int timer_create(clockid_t a, sigevent_t *b, timer_t *c);
-int timer_delete(timer_t a);
-int timer_gettime(timer_t a, struct itimerspec *b);
-int timer_getoverrun(timer_t a);
-int timer_settime(timer_t a, int b, const struct itimerspec * c, struct itimerspec *d);
-void tzset(void);
+extern char    *tzname[2];
+extern long int timezone;
+extern int      daylight;
+
+char      *asctime(const struct tm *timeptr);
+clock_t    clock(void);
+int        clock_getres(clockid_t clock_id, struct timespec *res);
+int        clock_gettime(clockid_t clock_id, struct timespec *tp);
+int        clock_settime(clockid_t clock_id, const struct timespec *tp);
+char      *ctime(const time_t *timer);
+double     difftime(time_t end_time, time_t start_time);
+struct tm *getdate(const char *string);
+struct tm *gmtime(const time_t *timer);
+struct tm *gmtime_r(const time_t *timer, struct tm *buf);
+struct tm *localtime(const time_t *timer);
+struct tm *localtime_r(const time_t *timer, struct tm *buf);
+time_t     mktime(struct tm *timeptr);
+int        nanosleep(const struct timespec *req, struct timespec *rem);
+size_t     strftime(char *str, size_t maxsize, const char *format, const struct tm *timeptr);
+char      *strptime(const char *buf, const char *format, struct tm *timeptr);
+time_t     time(time_t *tloc);
+int        timer_create(clockid_t clock_id, struct sigevent *sevp, timer_t *timerid);
+int        timer_delete(timer_t timerid);
+int        timer_gettime(timer_t timerid, struct itimerspec *curr_value);
+int        timer_getoverrun(timer_t timerid);
+int        timer_settime(timer_t timerid, int flags, const struct itimerspec *new_value,
+                    struct itimerspec *old_value);
+void       tzset(void);
 
 #endif

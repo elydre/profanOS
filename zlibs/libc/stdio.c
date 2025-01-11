@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <wchar.h>
 
 #include "config_libc.h"
 
@@ -44,7 +45,7 @@ FILE *stderr = NULL;
 
 char *g_printf_buffer = NULL;
 
-static FILE *fdopen_mode(int fd, uint8_t mode) {
+static FILE *fdopen_mode(int fd, int mode) {
     FILE *file = calloc(sizeof(FILE) + STDIO_BUFFER_SIZE, 1);
 
     file->buffer = ((char *) file) + sizeof(FILE);
@@ -55,9 +56,10 @@ static FILE *fdopen_mode(int fd, uint8_t mode) {
     return file;
 }
 
-static uint8_t interpet_mode(const char *mode) {
+static int interpet_mode(const char *mode) {
     // compute the mode
-    uint8_t fdmode = 0;
+    int fdmode = 0;
+
     for (int i = 0; mode[i]; i++) {
         switch (mode[i]) {
             case 'r':
@@ -117,7 +119,7 @@ FILE *fopen(const char *filename, const char *mode) {
     if (filename == NULL || mode == NULL)
         return NULL;
 
-    uint8_t fdmode = interpet_mode(mode);
+    int fdmode = interpet_mode(mode);
 
     // open the file
     int fd = open(filename, fdmode, 0666);
@@ -144,9 +146,8 @@ FILE *freopen(const char *filename, const char *mode, FILE *stream) {
 }
 
 int fclose(FILE *stream) {
-    if (stream == NULL) {
+    if (stream == NULL)
         return EOF;
-    }
 
     if (stream == stdin)
         stdin = NULL;
@@ -191,17 +192,15 @@ int fflush(FILE *stream) {
 }
 
 void setbuf(FILE *stream, char *buffer) {
-    profan_nimpl("setbuf");
+    PROFAN_FNI;
 }
 
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
-    profan_nimpl("setvbuf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fwide(FILE *stream, int mode) {
-    profan_nimpl("fwide");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
@@ -216,8 +215,9 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     if (stream->ungetchar >= 0) {
         ((char *) buffer++)[0] = stream->ungetchar;
         stream->ungetchar = -1;
-        if (--count == 0)
+        if (--count == 0) {
             return 1;
+        }
     }
 
     int read, rfrom_buffer = 0;
@@ -317,6 +317,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     // flush the buffer if needed
     if (need_flush && fflush(stream) == EOF)
         return 0;
+
     return count / size;
 }
 
@@ -444,33 +445,27 @@ int ungetc(int ch, FILE *stream) {
 }
 
 int scanf(const char *format, ...) {
-    profan_nimpl("scanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int fscanf(FILE *stream, const char *format, ...) {
-    profan_nimpl("fscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int sscanf(const char *buffer, const char *format, ...) {
-    profan_nimpl("sscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int vscanf(const char *format, va_list vlist) {
-    profan_nimpl("vscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int vfscanf(FILE *stream, const char *format, va_list vlist) {
-    profan_nimpl("vfscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int vsscanf(const char *buffer, const char *format, va_list vlist) {
-    profan_nimpl("vsscanf");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int printf(const char *format, ...) {
@@ -651,14 +646,13 @@ int rename(const char *old_filename, const char *new_filename) {
 }
 
 FILE *tmpfile(void) {
-    profan_nimpl("tmpfile");
-    return 0;
+    return (PROFAN_FNI, NULL);
 }
 
 char *tmpnam(char *filename) {
-    profan_nimpl("tmpnam");
-    return 0;
+    return (PROFAN_FNI, NULL);
 }
+
 /* snprintf - compatibility implementation of snprintf, vsnprintf
  *
  * Copyright (c) 2013, NLnet Labs. All rights reserved.
@@ -838,6 +832,18 @@ static void spool_str(char **at, size_t *left, int *ret, const char *buf, int le
     for (i = 0; i < len; i++) {
         if (*left > 1) {
             *(*at)++ = buf[i];
+            (*left)--;
+        }
+        (*ret)++;
+    }
+}
+
+/** copy wide string into result */
+static void spool_lstr(char **at, size_t *left, int *ret, const wchar_t *buf, int len) {
+    int i;
+    for (i = 0; i < len; i++) {
+        if (*left > 1) {
+            *(*at)++ = (char) buf[i];
             (*left)--;
         }
         (*ret)++;
@@ -1180,9 +1186,8 @@ static void print_num_g(char **at, size_t *left, int *ret, double value,
 }
 
 /** print %s */
-static void
-print_str(char **at, size_t * left, int *ret, char *s,
-      int minw, int precision, int prgiven, int minus)
+static void print_str(char **at, size_t * left, int *ret, char *s,
+        int minw, int precision, int prgiven, int minus)
 {
     int w;
 
@@ -1203,6 +1208,31 @@ print_str(char **at, size_t * left, int *ret, char *s,
     if (w < minw && minus)
         print_pad(at, left, ret, ' ', minw - w);
 }
+
+/** print %ls */
+static void print_lstr(char **at, size_t * left, int *ret, wchar_t *s,
+        int minw, int precision, int prgiven, int minus)
+{
+    int w;
+
+    if (s == NULL)
+        s = L"(null)";
+
+    /* with prec: no more than x characters from this string, stop at 0 */
+    if (prgiven)
+        w = wcsnlen(s, precision);
+    else
+        w = (int) wcslen(s); // up to the null
+
+    if (w < minw && !minus)
+        print_pad(at, left, ret, ' ', minw - w);
+
+    spool_lstr(at, left, ret, s, w);
+
+    if (w < minw && minus)
+        print_pad(at, left, ret, ' ', minw - w);
+}
+
 
 /** print %c */
 static void print_char(char **at, size_t *left, int *ret, int c, int minw, int minus) {
@@ -1403,8 +1433,12 @@ int vsnprintf(char *str, size_t size, const char *format, va_list arg) {
                         minw, precision, prgiven, zeropad, minus, plus, space);
             break;
         case 's':
-            print_str(&at, &left, &ret, va_arg(arg, char *),
-                minw, precision, prgiven, minus);
+            if (length != 1)
+                print_str(&at, &left, &ret, va_arg(arg, char *),
+                        minw, precision, prgiven, minus);
+            else
+                print_lstr(&at, &left, &ret, va_arg(arg, wchar_t *),
+                        minw, precision, prgiven, minus);
             break;
         case 'c':
             print_char(&at, &left, &ret, va_arg(arg, int), minw, minus);

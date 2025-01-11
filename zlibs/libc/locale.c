@@ -39,8 +39,7 @@ struct lconv *localeconv(void) {
     return &_en_US;
 }
 
-
 char *setlocale(int category, const char *locale) {
-    profan_nimpl("setlocale");
-    return NULL;
+    // everything is fine
+    return "en_US";
 }

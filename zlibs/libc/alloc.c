@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === malloc.c : 2024 ===                                                   |
+|   === malloc.c : 2025 ===                                                   |
 |                                                                             |
 |    Implementation of malloc functions and leak tracking          .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -40,13 +40,13 @@ typedef struct {
     uint32_t tab_size;
 } leaks_stat_t;
 
-leaks_stat_t *g_stat;
-struct buddy  *g_buddy;
+static leaks_stat_t *g_stat;
+static struct buddy *g_buddy;
 
-uint32_t g_arena_count;  // in pages (4KB)
-uint32_t g_mdata_count;  // in pages (4KB)
+static uint32_t g_arena_count;  // in pages (4KB)
+static uint32_t g_mdata_count;  // in pages (4KB)
 
-int      g_debug;
+static int g_debug;
 
 static void buddy_show_leaks(void);
 

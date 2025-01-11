@@ -45,9 +45,9 @@ typedef struct {
 
 typedef struct {
     uint8_t type;
+    uint32_t sid;
 
     union {
-        uint32_t     sid; // for file
         int        (*fctf)(int, void *, uint32_t, uint8_t);
         pipe_data_t *pipe;
     };
@@ -221,12 +221,13 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         return -EMFILE;
     }
 
+    fd_data->sid = sid;
+
     if (fu_is_file(sid)) {
         if (flags & O_TRUNC) {
             syscall_fs_set_size(NULL, sid, 0);
         }
         fd_data->type = TYPE_FILE;
-        fd_data->sid = sid;
         if (flags & O_APPEND) {
             fd_data->offset = syscall_fs_get_size(NULL, sid);
         } else {
@@ -405,10 +406,10 @@ int fm_dup2(int fd, int new_fd) {
         return -EBADF;
 
     new_data->type = fd_data->type;
+    new_data->sid = fd_data->sid;
 
     switch (fd_data->type) {
         case TYPE_FILE:
-            new_data->sid = fd_data->sid;
             new_data->offset = fd_data->offset;
             break;
 
@@ -483,6 +484,9 @@ int fm_pipe(int fd[2]) {
     fd_data[0]->pipe = pipe;
     fd_data[1]->pipe = pipe;
 
+    fd_data[0]->sid = SID_NULL;
+    fd_data[1]->sid = SID_NULL;
+
     return 0;
 }
 
@@ -513,7 +517,7 @@ int fm_newfd_after(int fd) {
             return i;
     }
 
-    return -1;
+    return -EMFILE;
 }
 
 uint32_t fm_get_sid(int fd) {
@@ -522,10 +526,7 @@ uint32_t fm_get_sid(int fd) {
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
         return SID_NULL;
 
-    if (fd_data->type == TYPE_FILE)
-        return fd_data->sid;
-
-    return 0;
+    return fd_data->sid;
 }
 
 int fm_declare_child(int pid) {

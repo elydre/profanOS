@@ -68,9 +68,12 @@ int fstat(int fd, struct stat *buf) {
     return stat_sid(fm_get_sid(fd), buf);
 }
 
+int lstat(const char *path, struct stat *buf) {
+    return stat(path, buf);
+}
+
 int mknod(const char *path, mode_t mode, dev_t dev) {
-    profan_nimpl("mknod");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 int mkdir(const char *path, mode_t mode) {
@@ -92,8 +95,7 @@ int mkdir(const char *path, mode_t mode) {
 }
 
 int mkfifo(const char *path, mode_t mode) {
-    profan_nimpl("mkfifo");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 int stat(const char *path, struct stat *buf) {
@@ -101,6 +103,5 @@ int stat(const char *path, struct stat *buf) {
 }
 
 mode_t umask(mode_t mask) {
-    profan_nimpl("umask");
-    return 0;
+    return (PROFAN_FNI, 0);
 }

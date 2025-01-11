@@ -9,17 +9,16 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/syscall.h>
+#include <profan/filesys.h>
 #include <profan.h>
 
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#include <stdio.h>
 #include <errno.h>
+#include <wchar.h>
 #include <ctype.h>
-#include <time.h>
 
 #include "config_libc.h"
 
@@ -225,13 +224,11 @@ int atoi(const char *nptr) {
 }
 
 long atol(const char *nptr) {
-    profan_nimpl("atol");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 long long atoll(const char *nptr) {
-    profan_nimpl("atoll");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 void *bsearch(register const void *key, const void *base0, size_t nmemb, register size_t size,
@@ -299,8 +296,7 @@ char *getenv(const char *var) {
 }
 
 int grantpt(int fd) {
-    profan_nimpl("grantpt");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 static const char l64a_conv_table[64] = {
@@ -338,10 +334,7 @@ long int labs(long int j) {
 }
 
 ldiv_t ldiv(long int numer, long int denom) {
-    profan_nimpl("ldiv");
-    ldiv_t result;
-    result = (ldiv_t) {0, 0}; // temporary, to avoid warnings
-    return result;
+    return (PROFAN_FNI, ((ldiv_t) {0, 0}));
 }
 
 long long int llabs(long long int j) {
@@ -349,40 +342,31 @@ long long int llabs(long long int j) {
 }
 
 lldiv_t lldiv(long long int numer, long long int denom) {
-    profan_nimpl("lldiv");
-    lldiv_t result;
-    result = (lldiv_t) {0, 0}; // temporary, to avoid warnings
-    return result;
+    return (PROFAN_FNI, ((lldiv_t) {0, 0}));
 }
 
 int mblen(register const char *s, size_t n) {
-    profan_nimpl("mblen");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
-size_t mbstowcs(wchar_t * restrict pwcs, const char * restrict s, size_t n) {
-    profan_nimpl("mbstowcs");
-    return 0;
+size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
+    return mbsrtowcs(ws, (void*) &s, wn, 0);
 }
 
 int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
-    profan_nimpl("mbtowc");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int mkstemp(char *template) {
-    profan_nimpl("mkstemp");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 char *mktemp(char *template) {
-    profan_nimpl("mktemp");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
 int putenv(char *string) {
-    profan_nimpl("putenv");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 // qsort defined in qsort.c
@@ -415,8 +399,21 @@ int rand_r(unsigned int *seed) {
 }
 
 char *realpath(const char *path, char *resolved_path) {
-    profan_nimpl("realpath");
-    return NULL;
+    if (IS_SID_NULL(profan_resolve_path(path))) {
+        errno = ENOENT;
+        return NULL;
+    }
+
+    char *fullpath = profan_join_path(profan_wd_path, path);
+    fu_simplify_path(fullpath);
+
+    if (resolved_path == NULL)
+        return fullpath;
+
+    strcpy(resolved_path, fullpath);
+    free(fullpath);
+
+    return resolved_path;
 }
 
 int setenv(const char *name, const char *value, int replace) {
@@ -474,8 +471,7 @@ int system(const char *command) {
 }
 
 int unlockpt(int fd) {
-    profan_nimpl("unlockpt");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 int unsetenv(const char *name) {
@@ -499,18 +495,17 @@ int unsetenv(const char *name) {
 }
 
 void *valloc(size_t size) {
-    profan_nimpl("valloc");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
-size_t wcstombs(char * restrict s, const wchar_t * restrict pwcs, size_t n) {
-    profan_nimpl("wcstombs");
-    return 0;
+size_t wcstombs(char *restrict s, const wchar_t *restrict ws, size_t n) {
+    return wcsrtombs(s, &(const wchar_t *) {ws}, n, 0);
 }
 
 int wctomb(char *s, wchar_t wchar) {
-    profan_nimpl("wctomb");
-    return 0;
+    if (s == NULL)
+        return 0;
+    return wcrtomb(s, wchar, 0);
 }
 
 double strtod(const char *str, char **ptr) {
@@ -594,8 +589,7 @@ double strtod(const char *str, char **ptr) {
 }
 
 long double strtold(const char *str, char **end) {
-    profan_nimpl("strtold");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 float strtof(const char *str, char **end) {
@@ -695,8 +689,7 @@ noconv:
 }
 
 long long strtoll(const char *str, char **end, int base) {
-    profan_nimpl("strtoll");
-    return 0;
+    return (PROFAN_FNI, 0);
 }
 
 unsigned long strtoul(const char *nptr, char **endptr, register int base) {
@@ -816,36 +809,6 @@ noconv:
     if (endptr != NULL)
         *endptr = (char *)(any ? s - 1 : nptr);
     return (acc);
-}
-
-double wcstod(const wchar_t *nptr, wchar_t **endptr) {
-    profan_nimpl("wcstod");
-    return 0;
-}
-
-float wcstof(const wchar_t *nptr, wchar_t **endptr) {
-    profan_nimpl("wcstof");
-    return 0;
-}
-
-long int wcstol(const wchar_t *nptr, wchar_t **endptr, int base) {
-    profan_nimpl("wcstol");
-    return 0;
-}
-
-long long int wcstoll(const wchar_t *nptr, wchar_t **endptr, int base) {
-    profan_nimpl("wcstoll");
-    return 0;
-}
-
-unsigned long int wcstoul(const wchar_t *nptr, wchar_t **endptr, int base) {
-    profan_nimpl("wcstoul");
-    return 0;
-}
-
-unsigned long long int wcstoull(const wchar_t *nptr, wchar_t **endptr, int base) {
-    profan_nimpl("wcstoull");
-    return 0;
 }
 
 static void I_swap(char *x, char *y) {
