@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.2.5b"
+#define KERNEL_VERSION  "1.2.5c"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     64          // max process count
@@ -31,7 +31,7 @@
 
 #define POK_MAX         128         // max loaded modules
 
-#define PROC_ESP_SIZE   0x30000     // process stack size
+#define PROC_ESP_SIZE   0x20000     // process stack size
 #define PROC_ESP_ADDR   RUN_HEAP_ADDR - PROC_ESP_SIZE
 
 #define WATPOK_ADDR     0x1FFFFB
