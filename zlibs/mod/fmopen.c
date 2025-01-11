@@ -517,7 +517,7 @@ int fm_newfd_after(int fd) {
             return i;
     }
 
-    return -1;
+    return -EMFILE;
 }
 
 uint32_t fm_get_sid(int fd) {

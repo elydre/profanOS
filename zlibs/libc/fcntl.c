@@ -13,9 +13,9 @@
 #include <profan.h>
 
 #include <stdlib.h>
-#include <string.h>
+#include <unistd.h>
+#include <stdarg.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <errno.h>
 
 int open(const char *path, int flags, ...) {
@@ -40,9 +40,22 @@ int creat(const char *file, mode_t mode) {
 }
 
 int fcntl(int fd, int cmd, ...) {
+    va_list ap;
+    va_start(ap, cmd);
+    int arg = va_arg(ap, int);
+    va_end(ap);
+
     switch (cmd) {
         case F_DUPFD:
-            return (profan_nimpl("fcntl(F_DUPFD)"), -1);
+            int new_fd = fm_newfd_after(arg);
+            serial_debug("fcntl(F_DUPFD, %d) -> %d\n", arg, new_fd);
+
+            if (new_fd < 0) {
+                errno = -new_fd;
+                return -1;
+            }
+
+            return dup2(fd, new_fd);
         case F_GETFD:
             return 0;
         case F_SETFD:
