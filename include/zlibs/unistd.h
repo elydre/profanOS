@@ -38,6 +38,7 @@
 
 // sysconf
 #define _SC_TTY_NAME_MAX 1
+#define _PC_PATH_MAX     2
 
 // getopt
 extern int optind, opterr, optopt;
@@ -97,7 +98,7 @@ int      pipe(int fd[2]);
 ssize_t  pread(int a, void *b, size_t c, off_t d);
 ssize_t  pwrite(int a, const void *b, size_t c, off_t d);
 ssize_t  read(int fd, void *buf, size_t count);
-ssize_t  readlink(const char *restrict a, char *restrict b, size_t c);
+ssize_t  readlink(const char *a, char *b, size_t c);
 int      rmdir(const char *a);
 int      setegid(gid_t a);
 int      seteuid(uid_t a);
@@ -109,7 +110,7 @@ int      setreuid(uid_t a, uid_t b);
 pid_t    setsid(void);
 int      setuid(uid_t a);
 unsigned sleep(unsigned seconds);
-void     swab(const void *restrict a, void *restrict n, ssize_t c);
+void     swab(const void *a, void *n, ssize_t c);
 int      symlink(const char *a, const char *b);
 void     sync(void);
 long     sysconf(int a);
