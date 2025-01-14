@@ -18,7 +18,7 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION  "4.2"
+#define DELUGE_VERSION  "4.3"
 #define ALWAYS_DEBUG    0
 #define USE_CACHED_LIBC 1
 
@@ -388,7 +388,7 @@ int load_sections(elfobj_t *obj) {
  * R_386_PC32       S + A - P
  * R_386_GOT32      G + A
  * R_386_PLT32      L + A - P
- * R_386_COPY
+ * R_386_COPY       S (symbol size)
  * R_386_GLOB_DAT   S
  * R_386_JMP_SLOT   S
  * R_386_RELATIVE   B + A
@@ -514,7 +514,7 @@ int dynamic_linker(elfobj_t *obj) {
                     *ptr = val + *ptr - (uint32_t) ptr;
                     break;
                 case R_386_COPY:        // symbol  S
-                    *ptr = val;
+                    mem_cpy(ptr, (void *) val, (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_size);
                     break;
                 case R_386_RELATIVE:    // word32  B + A
                     if (obj->type != ET_EXEC)
