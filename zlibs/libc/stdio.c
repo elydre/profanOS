@@ -43,7 +43,7 @@ FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
-char *g_printf_buffer = NULL;
+static char *g_printf_buffer = NULL;
 
 static FILE *fdopen_mode(int fd, int mode) {
     FILE *file = calloc(sizeof(FILE) + STDIO_BUFFER_SIZE, 1);

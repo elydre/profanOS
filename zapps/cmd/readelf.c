@@ -27,23 +27,19 @@ int display_section_headers(void);
 int display_symbol_table(void);
 int display_dynamic_symbols(void);
 int print_help(void);
-int dummy_proc(void);
 
 // procedure indexes in the following 'option_xxx' arrays
-#define OPT_h       0
-#define OPT_H       1
-#define OPT_S       2
-#define OPT_DEC     3
-#define OPT_s       4
+#define OPT_h 1
+#define OPT_H 2
 
-static const char *option_chars = "dDhHsS";
+static const char *option_chars = "DhHsS";
 static const char *option_strs[] = {
-    "--dec", "--dyn-syms", "--help", "--file-header",
+    "--dyn-syms", "--help", "--file-header",
     "--symbols", "--section-headers", NULL
 };
 
 static const proc option_procs[] = {
-    dummy_proc, display_dynamic_symbols, print_help, display_file_header,
+    display_dynamic_symbols, print_help, display_file_header,
     display_symbol_table, display_section_headers, NULL
 };
 
@@ -55,7 +51,6 @@ int print_help(void) {
     puts("Usage: readelf <option(s)> elf-file(s)");
     puts(" Display information about the contents of ELF format files");
     puts(" Options are:");
-    puts(" -d --dec               Display in decimal format");
     puts(" -D --dyn-syms          Display the dynamic symbol table");
     puts(" -h --help              Display this information");
     puts(" -H --file-header       Display the ELF file header");
@@ -170,7 +165,7 @@ int main(const int argc, const char *argv[]) {
         }
 
         // now invoke each procedure in proc array
-        for(uint32_t i = 0; i < PROC_COUNT; i ++) {
+        for (uint32_t i = 0; i < PROC_COUNT; i ++) {
             if (procs[i] == NULL)
                 continue;
 
@@ -356,13 +351,8 @@ int display_section_headers(void) {
         unsigned int info = sh->sh_info;
         unsigned int align = sh->sh_addralign;
 
-        if (procs[OPT_DEC]) {
-            printf(" [%2d] %-17.17s %-15s %-8.8x %6.6d %6.6d %2.2x %3s %2d %3d %2d\n",
-                i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
-        } else {
-            printf(" [%2d] %-17.17s %-15s %-8.8x %6.6x %6.6x %2.2x %3s %2d %3d %2d\n",
-                i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
-        }
+        printf(" [%2d] %-17.17s %-15s %-8.8x %6.6x %6.6x %2.2x %3s %2d %3d %2d\n",
+            i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
     }
 
     // print flags explanation
@@ -473,8 +463,4 @@ int display_dynamic_symbols(void) {
 
 int display_symbol_table(void) {
     return display_symbols(SHT_SYMTAB);
-}
-
-int dummy_proc(void) {
-    return 0;
 }

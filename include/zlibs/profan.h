@@ -23,7 +23,7 @@
 
 #ifndef _PROFAN_NO_WD
 extern const uint32_t profan_wd_sid;
-extern const char profan_wd_path[];
+extern const char    *profan_wd_path;
 #endif
 
 #define KB_ESC      1

@@ -22,13 +22,18 @@
 #include <stdio.h>
 #include <errno.h>
 
-char profan_wd_path[PROFAN_PATH_MAX] = "/";
 uint32_t profan_wd_sid = SID_ROOT;
+char *profan_wd_path;
 
 int   opterr = 1, // if error message should be printed
       optind = 1, // index into parent argv vector
       optopt;     // character checked for validity
 char *optarg;     // argument associated with option
+
+void __unistd_init(void) {
+    static char wd_path[PROFAN_PATH_MAX] = "/";
+    profan_wd_path = wd_path;
+}
 
 int access(const char *pathname, int mode) {
     // add the current working directory to the filename

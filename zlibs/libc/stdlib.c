@@ -38,10 +38,12 @@ char **environ = NULL;
 void __buddy_disable_leaks(void);
 void __buddy_init(void);
 
+void __unistd_init(void);
 void __stdio_init(void);
 void __stdio_fini(void);
 
 void __attribute__((constructor)) __libc_constructor(void) {
+    __unistd_init();
     __buddy_init();
     __stdio_init();
 }
