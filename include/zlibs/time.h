@@ -19,9 +19,9 @@
 
 #define CLK_TCK 100         // Number of clock ticks per second returned by the times() function
 #define CLOCKS_PER_SEC 1000 // Used to convert the value returned by the clock() function into seconds
-#define CLOCK_REALTIME 0    // The identifier of the systemwide realtime clock
 #define TIMER_ABSTIME 1     // Flag indicating time is absolute
 
+#define CLOCK_REALTIME  0   // The identifier of the systemwide realtime clock
 #define CLOCK_MONOTONIC 1   // The identifier of the systemwide monotonic clock
 
 struct tm {

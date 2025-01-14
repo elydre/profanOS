@@ -22,15 +22,25 @@ int getitimer(int which, struct itimerval *value) {
 }
 
 int gettimeofday(struct timeval *tv, struct timezone *tz) {
-    if (tv) {
-        tv->tv_sec = time(NULL);
-        tv->tv_usec = (syscall_timer_get_ms() % 1000) * 1000;
-    }
     if (tz) {
-        fprintf(stderr, "gettimeofday: timezone is not supported\n");
+        fputs("libc: gettimeofday: timezone is not supported\n", stderr);
         errno = ENOSYS;
         return -1;
     }
+
+    if (tv == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+
+    struct timespec ts;
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+        return -1;
+    }
+
+    tv->tv_sec = ts.tv_sec;
+    tv->tv_usec = ts.tv_nsec / 1000;
+
     return 0;
 }
 

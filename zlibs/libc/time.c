@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <time.h>
 
 #define SEC_IN_MIN       (60)
@@ -74,7 +75,45 @@ int clock_getres(clockid_t clock_id, struct timespec *res) {
 }
 
 int clock_gettime(clockid_t clock_id, struct timespec *tp) {
-    return (PROFAN_FNI, 0);
+    static struct timespec g_first_time = {
+        .tv_nsec = -1 // represents syscall_timer_get_ms
+    };
+
+    if (tp == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+
+    if (clock_id == CLOCK_MONOTONIC) {
+        uint32_t ms = syscall_timer_get_ms();
+
+        tp->tv_sec = ms / 1000;
+        tp->tv_nsec = (ms % 1000) * 1000000;
+
+        return 0;
+    }
+
+    if (clock_id != CLOCK_REALTIME) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (g_first_time.tv_nsec == -1) {
+        g_first_time.tv_sec = time(NULL);
+        g_first_time.tv_nsec = syscall_timer_get_ms();
+
+        tp->tv_sec = g_first_time.tv_sec;
+        tp->tv_nsec = (g_first_time.tv_nsec % 1000) * 1000000;
+
+        return 0;
+    }
+
+    uint32_t ms = syscall_timer_get_ms();
+
+    tp->tv_sec = g_first_time.tv_sec + (ms / 1000 - g_first_time.tv_nsec / 1000);
+    tp->tv_nsec = (ms % 1000) * 1000000;
+
+    return 0;
 }
 
 int clock_settime(clockid_t clock_id, const struct timespec *tp) {
