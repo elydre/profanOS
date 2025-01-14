@@ -213,7 +213,7 @@ def scan_dir(path):
 def parse_args(argv):
     path = None
 
-    global apply_patch
+    global apply_patch, instant_print
     for arg in argv:
         if arg == "-s":
             apply_patch = False
