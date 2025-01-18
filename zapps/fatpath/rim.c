@@ -48,7 +48,7 @@
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
 
-#define RIM_VERSION "7 rev 3"
+#define RIM_VERSION "7 rev 4"
 
 // GLOBALS
 typedef struct {
@@ -310,6 +310,7 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
                 }
                 continue;
             }
+
             if (!isprint(g_data[g_data_lines[i] + j])) {
                 new_screen[line * SCREEN_W + j - x_offset + x] = '?' | (COLOR_U << 8);
                 localput_word(j - world_start);
@@ -874,6 +875,25 @@ void rim_syntax_init(char *lang) {
 
         g_rim.syntax->blues = copy_array((char *[]) {
             "nil", "true", "false", "function", "local", NULL
+        });
+    }
+
+    else if (strcmp(lang, "py") == 0) {
+        g_rim.syntax->words = 1;
+        g_rim.syntax->numbers = 1;
+        g_rim.syntax->funccalls = 1;
+        g_rim.syntax->braces = 1;
+        g_rim.syntax->strings = 1;
+
+        g_rim.syntax->keywords = copy_array((char *[]) {
+            "as", "assert", "async", "await", "break", "class", "continue", "del",
+            "elif", "else", "except", "finally", "for", "from", "if", "import",
+            "in", "pass", "raise", "return", "try", "while", "with", "yield", NULL
+        });
+
+        g_rim.syntax->blues = copy_array((char *[]) {
+            "False", "None", "True", "and", "def", "global", "is", "lambda",
+            "nonlocal", "not", "or", NULL
         });
     }
 
