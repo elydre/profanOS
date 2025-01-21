@@ -27,16 +27,16 @@ typedef struct {
     void *next;
 } dlg_hash_t;
 
-typedef struct {
-    uint32_t size;
-    uint8_t *file;
+typedef struct elfobj {
     char    *name;
     uint16_t type;
 
     int ref_count;
-    int need_free;
 
     uint8_t *mem;
+
+    Elf32_Ehdr *ehdr;
+    Elf32_Shdr *shdr;
 
     Elf32_Sym *sym_tab;
     uint32_t   sym_size;
@@ -47,6 +47,7 @@ typedef struct {
     char      *dym_str;
 
     Elf32_Dyn  *dynamic;
+
     dlg_hash_t *hash_table;
 } elfobj_t;
 

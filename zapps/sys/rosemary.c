@@ -39,7 +39,6 @@ mod_t mods_at_boot[] = {
     {1004, "/lib/mod/fmopen.pok"},
     {1005, "/lib/mod/profan.pok"},
     {1006, "/lib/mod/panda.pok"},
-    {1007, "/lib/mod/dlgext.pok"},
 };
 
 int local_strlen(char *str) {

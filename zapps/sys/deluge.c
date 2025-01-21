@@ -18,9 +18,9 @@
 
 #include <dlfcn.h>
 
-#define DELUGE_VERSION  "4.3"
+#define DELUGE_VERSION  "4.4"
 #define ALWAYS_DEBUG    0
-#define USE_CACHED_LIBC 1
+#define USE_CACHED_LIBC 0
 
 /****************************
  *                         *
@@ -30,16 +30,28 @@
 
 char *profan_fn_name(void *ptr, char **libname);
 
-#define raise_error(fmt, ...) do {  \
-            fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
-            process_exit(1);  \
-        } while (0)
+#define raise_error(fmt, ...) {  \
+        fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
+        process_exit(1);  \
+    }
 
-#define debug_printf(lvl, fmt, ...) if (g_args->debug >= lvl) {  \
-            fd_putstr(2, "\e[37m[DELUGE] ");  \
-            fd_printf(2, fmt, __VA_ARGS__);  \
-            fd_putstr(2, "\e[0m\n");  \
-        }
+#define debug_printf(lvl, ...) {          \
+    if (g_args->debug >= lvl) {           \
+        fd_putstr(2, "\e[37m[DELUGE] ");  \
+        fd_printf(2, __VA_ARGS__);        \
+        fd_putstr(2, "\e[0m\n");          \
+    }}
+
+#define debug_printf_tab(lvl, r, ...) {   \
+    if (g_args->debug >= lvl) {           \
+        fd_putstr(2, "\e[37m[DELUGE] ");  \
+        for (int i = 0; i < r - 1; i++)   \
+            fd_putstr(2, "--");           \
+        if (r > 0)                        \
+            fd_putstr(2, "> ");           \
+        fd_printf(2, __VA_ARGS__);        \
+        fd_putstr(2, "\e[0m\n");          \
+    }}
 
 // internal variables
 elfobj_t **g_loaded_libs;
@@ -50,7 +62,6 @@ int    g_lib_count;
 char **g_envp;
 
 // command line options
-char *g_extralib_path;
 int   g_dlfcn_error;
 
 // extra symbols structure
@@ -73,7 +84,9 @@ dlg_extra_t g_extra_syms[] = {
 // deluge arguments structure
 typedef struct {
     char   *name;
+    char   *extra_path;
     char   *extra_lib;
+    char   *patch_file;
     uint8_t show_leaks;
     int     arg_offset;
     int     debug;
@@ -103,6 +116,12 @@ int loaded_lib_atback(elfobj_t *lib) {
         return 0;
     }
     return 1;
+}
+
+void *mem_dup(void *src, uint32_t size) {
+    void *dst = kmalloc(size);
+    mem_cpy(dst, src, size);
+    return dst;
 }
 
 char *ft_getenv(const char *name) {
@@ -197,8 +216,8 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
         return search_inpath(env_path, name, path);
     }
 
-    if (g_extralib_path) {
-        full_path = profan_join_path(g_extralib_path, name);
+    if (g_args->extra_path) {
+        full_path = profan_join_path(g_args->extra_path, name);
         sid = fu_path_to_sid(SID_ROOT, full_path);
         if (!IS_SID_NULL(sid)) {
             if (path)
@@ -314,10 +333,8 @@ int is_valid_elf(void *data, uint16_t required_type) {
  *                             *
 ********************************/
 
-void *get_base_addr(uint8_t *data) {
+void *get_base_addr(Elf32_Ehdr *ehdr, Elf32_Phdr *phdr) {
     // find the lowest address of a PT_LOAD segment
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
-    Elf32_Phdr *phdr = (Elf32_Phdr *)(data + ehdr->e_phoff);
 
     uint32_t base_addr = 0xFFFFFFFF;
 
@@ -329,11 +346,11 @@ void *get_base_addr(uint8_t *data) {
     return (void *) base_addr;
 }
 
-int load_sections(elfobj_t *obj) {
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
+int load_sections(elfobj_t *obj, uint8_t *file) {
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(file + obj->ehdr->e_shoff);
+    Elf32_Phdr *phdr = (Elf32_Phdr *)(file + obj->ehdr->e_phoff);
 
-    void *base_addr = get_base_addr(obj->file);
+    void *base_addr = get_base_addr(obj->ehdr, phdr);
     void *offset = NULL;
 
     if (base_addr && obj->type != ET_EXEC) {
@@ -342,8 +359,8 @@ int load_sections(elfobj_t *obj) {
 
     uint32_t required_size = 0;
 
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_addr + shdr[i].sh_size > required_size)
+    for (int i = 0; i < obj->ehdr->e_shnum; i++) {
+        if (shdr[i].sh_addr && shdr[i].sh_addr + shdr[i].sh_size > required_size)
             required_size = shdr[i].sh_addr + shdr[i].sh_size;
     }
 
@@ -359,7 +376,7 @@ int load_sections(elfobj_t *obj) {
         offset = obj->mem;
     }
 
-    for (int i = 0; i < ehdr->e_shnum; i++) {
+    for (int i = 0; i < obj->ehdr->e_shnum; i++) {
         if (!shdr[i].sh_addr)
             continue;
         switch (shdr[i].sh_type) {
@@ -367,7 +384,7 @@ int load_sections(elfobj_t *obj) {
                 mem_set(offset + shdr[i].sh_addr, 0, shdr[i].sh_size);
                 break;
             default:
-                mem_cpy(offset + shdr[i].sh_addr, obj->file + shdr[i].sh_offset, shdr[i].sh_size);
+                mem_cpy(offset + shdr[i].sh_addr, file + shdr[i].sh_offset, shdr[i].sh_size);
                 break;
         }
     }
@@ -380,6 +397,51 @@ int load_sections(elfobj_t *obj) {
  *  ELF Relocation functions   *
  *                             *
 ********************************/
+
+uint32_t get_sym_extra(const char *name, uint32_t full_h) {
+    for (int i = 0; g_extra_syms[i].name; i++) {
+        if (g_extra_syms[i].hash == full_h && str_cmp(g_extra_syms[i].name, name) == 0)
+            return (uint32_t) g_extra_syms[i].data;
+    }
+    return 0;
+}
+
+uint32_t get_sym_value(const char *name, Elf32_Sym **sym_ptr) {
+    Elf32_Sym *sym;
+
+    uint32_t val, full_h = hash(name);
+
+    if ((val = get_sym_extra(name, full_h)))
+        return val;
+
+    for (int k = 0; k < g_lib_count; k++) {
+        sym = hash_get(g_loaded_libs[k], full_h, name);
+        if (!sym || sym->st_shndx == STB_LOCAL)
+            continue;
+        if (sym_ptr)
+            *sym_ptr = sym;
+        return (uint32_t) sym->st_value + (uint32_t) g_loaded_libs[k]->mem;
+    }
+    return 0;
+}
+
+char *get_addr_name(elfobj_t *obj, uint32_t addr) {
+    char *name = NULL;
+
+    if (!obj->sym_tab)
+        return NULL;
+
+    uint32_t offset = obj->type == ET_DYN ? (uint32_t) obj->mem : 0;
+
+    for (uint32_t i = 0; i < obj->sym_size / sizeof(Elf32_Sym); i++) {
+        uint32_t val = offset + obj->sym_tab[i].st_value;
+        if (addr < val || addr >= val + obj->sym_tab[i].st_size)
+            continue;
+        name = obj->sym_str + obj->sym_tab[i].st_name;
+    }
+
+    return name;
+}
 
 /* == 32-bit x86 relocations types ==
  *
@@ -418,75 +480,24 @@ int does_type_required_sym(uint8_t type) {
     }
 }
 
-char *get_addr_name(elfobj_t *obj, uint32_t addr) {
-    char *name = NULL;
-
-    if (!obj->sym_tab)
-        return NULL;
-
-    uint32_t offset = obj->type == ET_DYN ? (uint32_t) obj->mem : 0;
-
-    for (uint32_t i = 0; i < obj->sym_size / sizeof(Elf32_Sym); i++) {
-        uint32_t val = offset + obj->sym_tab[i].st_value;
-        if (addr < val || addr >= val + obj->sym_tab[i].st_size)
-            continue;
-        name = obj->sym_str + obj->sym_tab[i].st_name;
-    }
-
-    return name;
-}
-
-uint32_t get_sym_extra(const char *name, uint32_t full_h) {
-    for (int i = 0; g_extra_syms[i].name; i++) {
-        if (g_extra_syms[i].hash == full_h && str_cmp(g_extra_syms[i].name, name) == 0)
-            return (uint32_t) g_extra_syms[i].data;
-    }
-    return 0;
-}
-
-uint32_t get_sym_value(const char *name, Elf32_Sym **sym_ptr) {
-    Elf32_Sym *sym;
-
-    uint32_t val, full_h = hash(name);
-
-    val = get_sym_extra(name, full_h);
-    if (val) return val;
-
-    for (int k = 0; k < g_lib_count; k++) {
-        sym = hash_get(g_loaded_libs[k], full_h, name);
-        if (!sym || sym->st_shndx == STB_LOCAL)
-            continue;
-        if (sym_ptr)
-            *sym_ptr = sym;
-        return (uint32_t) sym->st_value + (uint32_t) g_loaded_libs[k]->mem;
-    }
-    return 0;
-}
-
 int dynamic_linker(elfobj_t *obj) {
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
-
-    debug_printf(2, "link %s", obj->name);
-
-    if (obj->dym_tab == NULL) {
+    if (obj->dym_tab == NULL)
         return 0;
-    }
 
     uint32_t *ptr, val = 0;
     uint8_t type;
     char *name;
 
-    for (uint32_t i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_RELA)
+    for (uint32_t i = 0; i < obj->ehdr->e_shnum; i++) {
+        if (obj->shdr[i].sh_type == SHT_RELA)
             raise_error("SHT_RELA is not supported but found in '%s'", obj->name);
 
-        if (shdr[i].sh_type != SHT_REL)
+        if (obj->shdr[i].sh_type != SHT_REL)
             continue;
 
-        Elf32_Rel *rel = (Elf32_Rel *)(obj->file + shdr[i].sh_offset);
+        Elf32_Rel *rel = (Elf32_Rel *)(obj->mem + obj->shdr[i].sh_offset);
 
-        for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
+        for (uint32_t j = 0; j < obj->shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
             name = (char *) obj->dym_str + (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_name;
             type = ELF32_R_TYPE(rel[j].r_info);
 
@@ -539,9 +550,25 @@ int dynamic_linker(elfobj_t *obj) {
  *                             *
 ********************************/
 
-void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
+void free_elf(elfobj_t *obj) {
+    if (obj->type == ET_DYN)
+        kfree(obj->mem);
+    kfree(obj->hash_table);
+    kfree(obj->sym_tab);
+    kfree(obj->sym_str);
+    kfree(obj->name);
+    kfree(obj);
+}
+
+#define open_elf(name, type, fatal) open_elf_r(name, type, fatal, 0)
+
+void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, int rlvl) {
+    // 'rlvl' is the recursion level, used for debug output
+    // set to -1 to avoid loading library dependencies
+
     char *path = NULL;
-    uint32_t sid;
+    uint32_t sid, size;
+    uint8_t *file;
 
     #if USE_CACHED_LIBC
     static elfobj_t *libc = NULL;
@@ -559,14 +586,15 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         for (int i = 0; i < g_lib_count; i++) {
             if (str_cmp(g_loaded_libs[i]->name, path))
                 continue;
-            debug_printf(2, "find %s", path);
+            debug_printf_tab(2, rlvl, "find %s", path);
             kfree(path);
+            g_loaded_libs[i]->ref_count++;
             return g_loaded_libs[i];
         }
 
         #if USE_CACHED_LIBC
         if (str_cmp(path, "/lib/libc.so") == 0) {
-            debug_printf(1, "open %s (cached)", path);
+            debug_printf_tab(1, rlvl, "open %s (cached)", path);
             if (libc == NULL)
                 libc = dlgext_libc();
             loaded_lib_add(libc);
@@ -576,47 +604,54 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         #endif
     }
 
-    debug_printf(1, "open %s", path);
+    debug_printf_tab(1, rlvl, "open %s", path);
 
-    elfobj_t *obj = kcalloc(1, sizeof(elfobj_t));
+    size = fu_file_get_size(sid);
+    file = kmalloc(size);
 
-    obj->size = fu_file_get_size(sid);
-    obj->file = kmalloc(obj->size);
-    obj->ref_count = 1;
-    obj->need_free = 1;
-    obj->name = path;
+    fu_file_read(sid, file, 0, size);
 
-    fu_file_read(sid, obj->file, 0, obj->size);
-
-    if (obj->size < sizeof(Elf32_Ehdr) || !is_valid_elf(obj->file, required_type)) {
+    if (size < sizeof(Elf32_Ehdr) || !is_valid_elf(file, required_type)) {
         if (isfatal)
             raise_error("%s: invalid ELF file", path);
-        kfree(obj->file);
-        kfree(obj->name);
-        kfree(obj);
+        kfree(file);
         return NULL;
     }
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)obj->file;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(obj->file + ehdr->e_shoff);
+    elfobj_t *obj = kcalloc(1, sizeof(elfobj_t));
+
+    obj->ref_count = 1;
+    obj->name = path;
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)file;
+    Elf32_Shdr *shdr = (Elf32_Shdr *)(file + ehdr->e_shoff);
+
     obj->type = ehdr->e_type;
+    obj->ehdr = mem_dup(ehdr, sizeof(Elf32_Ehdr));
+    obj->shdr = mem_dup(shdr, ehdr->e_shnum * sizeof(Elf32_Shdr));
+
+    load_sections(obj, file);
+
+    uint8_t *o = NULL;
+    if (obj->type != ET_EXEC)
+        o = obj->mem;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         switch (shdr[i].sh_type) {
             case SHT_SYMTAB:
-                obj->sym_tab = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
-                obj->sym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
+                obj->sym_tab = mem_dup(file + shdr[i].sh_offset, shdr[i].sh_size);
+                obj->sym_str = mem_dup(file + shdr[shdr[i].sh_link].sh_offset, shdr[shdr[i].sh_link].sh_size);
                 obj->sym_size = shdr[i].sh_size;
                 break;
 
-            case SHT_DYNAMIC:
-                obj->dynamic = (Elf32_Dyn *)(obj->file + shdr[i].sh_offset);
+            case SHT_DYNSYM:
+                obj->dym_tab = (Elf32_Sym *)(o + shdr[i].sh_addr);
+                obj->dym_str = (char *) o + shdr[shdr[i].sh_link].sh_addr;
+                obj->dym_size = shdr[i].sh_size;
                 break;
 
-            case SHT_DYNSYM:
-                obj->dym_tab = (Elf32_Sym *)(obj->file + shdr[i].sh_offset);
-                obj->dym_str = (char *) obj->file + shdr[shdr[i].sh_link].sh_offset;
-                obj->dym_size = shdr[i].sh_size;
+            case SHT_DYNAMIC:
+                obj->dynamic = (Elf32_Dyn *)(o + shdr[i].sh_addr);
                 break;
 
             default:
@@ -624,13 +659,13 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
         }
     }
 
+    kfree(file);
+
     if (obj->dym_tab == NULL) {
         if (obj->type == ET_DYN) {
             if (isfatal)
                 raise_error("%s: no dynamic section", path);
-            kfree(obj->file);
-            kfree(obj->name);
-            kfree(obj);
+            free_elf(obj);
             return NULL;
         }
         return obj;
@@ -641,7 +676,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
     if (obj->type == ET_DYN)
         loaded_lib_add(obj);
 
-    if (obj->dynamic == NULL)
+    if (obj->dynamic == NULL || rlvl == -1)
         return obj;
 
     for (int i = 0; obj->dynamic[i].d_tag != 0; i++) {
@@ -649,7 +684,7 @@ void *open_elf(const char *filename, uint16_t required_type, int isfatal) {
             continue;
 
         char *name = (char *) obj->dym_str + obj->dynamic[i].d_un.d_val;
-        if (open_elf(name, ET_DYN, 0) == NULL)
+        if (open_elf_r(name, ET_DYN, 0, rlvl + 1) == NULL)
             raise_error("%s: failed to open needed library '%s'", path, name);
     }
 
@@ -716,31 +751,29 @@ void *dlopen(const char *filename, int flag) {
 
     g_dlfcn_error = 0;
 
-    elfobj_t *dl = open_elf(filename, ET_DYN, flag == RTLD_FATAL);
+    elfobj_t *obj = open_elf(filename, ET_DYN, flag == RTLD_FATAL);
 
-    if (dl == NULL) {
+    if (obj == NULL) {
         g_dlfcn_error = 1;
         return NULL;
     }
 
-    if (dl->mem != NULL) {
-        dl->ref_count++;
-        return dl;
+    if (obj->ref_count == 1) {
+        dynamic_linker(obj);
+        elfobj_iof(obj, 0);
     }
 
-    load_sections(dl);
-    dynamic_linker(dl);
-    elfobj_iof(dl, 0);
-    return dl;
+    return obj;
 }
 
 void *dlsym(void *handle, const char *symbol) {
-    elfobj_t *dl = handle;
+    elfobj_t *obj = handle;
     uint32_t val, full_h;
+    Elf32_Sym *ret;
 
     g_dlfcn_error = 0;
 
-    if (dl == NULL) {
+    if (obj == NULL) {
         val = get_sym_value(symbol, NULL);
         if (val)
             return (void *) val;
@@ -748,13 +781,10 @@ void *dlsym(void *handle, const char *symbol) {
         return NULL;
     }
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) dl->file;
-    Elf32_Sym *ret;
-
     full_h = hash(symbol);
 
-    if (ehdr->e_type == ET_EXEC) {
-        ret = hash_get(dl, full_h, symbol);
+    if (obj->ehdr->e_type == ET_EXEC) {
+        ret = hash_get(obj, full_h, symbol);
 
         if (ret)
             return (void *) ret->st_value;
@@ -766,10 +796,10 @@ void *dlsym(void *handle, const char *symbol) {
         return (void *) val;
     }
 
-    ret = hash_get(dl, full_h, symbol);
+    ret = hash_get(obj, full_h, symbol);
 
     if (ret)
-        return (void *) dl->mem + ret->st_value;
+        return (void *) obj->mem + ret->st_value;
     g_dlfcn_error = 2;
     return NULL;
 }
@@ -778,18 +808,18 @@ int dlclose(void *handle) {
     if (handle == NULL)
         return 0;
 
-    elfobj_t *dl = handle;
+    elfobj_t *obj = handle;
 
-    if (--dl->ref_count > 0) {
-        debug_printf(2, "dref %s (%d)", dl->name, dl->ref_count);
+    if (--obj->ref_count > 0) {
+        debug_printf(2, "dref %s (%d)", obj->name, obj->ref_count);
         return 0;
     }
 
-    debug_printf(2, "free %s", dl->name);
+    debug_printf(2, "free %s", obj->name);
 
     // remove from loaded libs
     for (int i = 0; i < g_lib_count; i++) {
-        if (g_loaded_libs[i] != dl)
+        if (g_loaded_libs[i] != obj)
             continue;
         g_lib_count--;
         for (int j = i; j < g_lib_count; j++) {
@@ -799,17 +829,10 @@ int dlclose(void *handle) {
     }
 
     if (!g_already_fini) {
-        elfobj_iof(dl, 1);
+        elfobj_iof(obj, 1);
     }
 
-    if (dl->need_free) {
-        kfree(dl->hash_table);
-        kfree(dl->file);
-        kfree(dl->name);
-    }
-
-    kfree(dl->mem);
-    kfree(dl);
+    free_elf(obj);
     return 0;
 }
 
@@ -887,26 +910,22 @@ void show_help(int full) {
     fd_printf(1,
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
-        "  -a  add an extra library\n"
-        "  -d  show additional debug info\n"
         "  -e  don't use filename as argument\n"
-        "  -h  show this help message\n"
-        "  -l  list loaded files\n"
-        "  -m  show userspace memory leaks\n"
-        "  -p  add path to extra libraries\n"
-        "  -v  show version\n"
+        "  -i  show information about opened libs\n"
+        "  -d  show additional debug information\n"
+        "  -m  show memory leaks at exit\n"
+        "  -L  add path for libraries search\n"
+        "  -l  import an additional library\n"
+        "  -p  load shared object as patch file\n"
+        "  -h  show this help message and exit\n"
+        "  -v  dump deluge version and exit\n"
     );
 }
 
 void deluge_parse(int argc, char **argv) {
-    g_args->extra_lib = NULL;
-    g_args->name = NULL;
-
-    g_args->show_leaks = 0;
+    mem_set(g_args, 0, sizeof(deluge_args_t));
 
     g_args->debug = ALWAYS_DEBUG;
-    g_extralib_path = NULL;
-
     int move_arg = 0;
 
     for (int i = 1; i < argc; i++) {
@@ -916,21 +935,6 @@ void deluge_parse(int argc, char **argv) {
             break;
         }
         switch (argv[i][1]) {
-            case 'a':
-                if (i + 1 >= argc) {
-                    fd_printf(2, "deluge: missing argument for -a\n");
-                    show_help(0);
-                }
-                if (g_args->extra_lib) {
-                    fd_printf(2, "deluge: extra library already set\n");
-                    show_help(0);
-                }
-                g_args->extra_lib = argv[++i];
-                break;
-            case 'l':
-                if (g_args->debug == 0)
-                    g_args->debug = 1;
-                break;
             case 'd':
                 g_args->debug = 2;
                 break;
@@ -941,6 +945,32 @@ void deluge_parse(int argc, char **argv) {
                 show_help(1);
                 process_exit(0);
                 break; // unreachable
+            case 'i':
+                if (g_args->debug == 0)
+                    g_args->debug = 1;
+                break;
+            case 'l':
+                if (i + 1 >= argc) {
+                    fd_printf(2, "deluge: missing argument for -l\n");
+                    show_help(0);
+                }
+                if (g_args->extra_lib) {
+                    fd_printf(2, "deluge: extra library already set\n");
+                    show_help(0);
+                }
+                g_args->extra_lib = argv[++i];
+                break;
+            case 'L':
+                if (i + 1 >= argc) {
+                    fd_printf(2, "deluge: missing argument for -L\n");
+                    show_help(0);
+                }
+                if (g_args->extra_path) {
+                    fd_printf(2, "deluge: lib path already set\n");
+                    show_help(0);
+                }
+                g_args->extra_path = argv[++i];
+                break;
             case 'm':
                 g_args->show_leaks = 1;
                 break;
@@ -949,11 +979,11 @@ void deluge_parse(int argc, char **argv) {
                     fd_printf(2, "deluge: missing argument for -p\n");
                     show_help(0);
                 }
-                if (g_extralib_path) {
-                    fd_printf(2, "deluge: extra library path already set\n");
+                if (g_args->patch_file) {
+                    fd_printf(2, "deluge: patch file already set\n");
                     show_help(0);
                 }
-                g_extralib_path = argv[++i];
+                g_args->patch_file = argv[++i];
                 break;
             case 'v':
                 fd_printf(1, "deluge %s\n", DELUGE_VERSION);
@@ -997,6 +1027,13 @@ int main(int argc, char **argv, char **envp) {
         start = 0;
     }
 
+    if (g_args->patch_file) {
+        if (open_elf_r(g_args->patch_file, ET_DYN, 0, -1) == NULL) {
+            raise_error("%s: failed to open patch file", g_args->patch_file);
+            return 1;
+        }
+    }
+
     if (g_args->extra_lib) {
         if (open_elf(g_args->extra_lib, ET_DYN, 0) == NULL) {
             raise_error("%s: failed to open extra library", g_args->extra_lib);
@@ -1012,10 +1049,6 @@ int main(int argc, char **argv, char **envp) {
     }
 
     for (int i = 0; i < g_lib_count; i++) {
-        load_sections(g_loaded_libs[i]);
-    }
-
-    for (int i = 0; i < g_lib_count; i++) {
         dynamic_linker(g_loaded_libs[i]);
     }
 
@@ -1028,12 +1061,11 @@ int main(int argc, char **argv, char **envp) {
     }
 
     if (g_prog->type == ET_EXEC) {
-        load_sections(g_prog);
         dynamic_linker(g_prog);
 
         debug_printf(1, "link time: %d ms", syscall_timer_get_ms() - start);
 
-        int (*main)() = (int (*)(int, char **, char **)) ((Elf32_Ehdr *) g_prog->file)->e_entry;
+        int (*main)() = (int (*)(int, char **, char **)) (g_prog->ehdr->e_entry);
 
         g_dlfcn_error = 0;
 
@@ -1081,10 +1113,7 @@ int main(int argc, char **argv, char **envp) {
     kfree(g_loaded_libs);
 
     if (g_prog->type == ET_EXEC) {
-        kfree(g_prog->hash_table);
-        kfree(g_prog->file);
-        kfree(g_prog->name);
-        kfree(g_prog);
+        free_elf(g_prog);
     }
 
     if (g_args->show_leaks) {
