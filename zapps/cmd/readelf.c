@@ -3,21 +3,19 @@
 |                                                                             |
 |    Unix command implementation - print ELF file information      .pi0iq.    |
 |                                                                 d"  . `'b   |
-|    This file is part of profanOS and is released under          q. /|\  "   |
-|    the terms of the GNU General Public License                   `// \\     |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
+|    Original elf reader by tomcat1102                             `// \\     |
 |                                                                  //   \\    |
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <elf.h>
 
-const char *g_buf;            // global buf that holds each file contents
 const char *g_filename;
-
+char *g_filecnt;
 
 typedef int (*proc)(void);
 
@@ -26,21 +24,23 @@ int display_file_header(void);
 int display_section_headers(void);
 int display_symbol_table(void);
 int display_dynamic_symbols(void);
+int display_dynamic_reloc(void);
 int print_help(void);
 
 // procedure indexes in the following 'option_xxx' arrays
 #define OPT_h 1
 #define OPT_H 2
 
-static const char *option_chars = "DhHsS";
+static const char *option_chars = "DhHRsS";
 static const char *option_strs[] = {
-    "--dyn-syms", "--help", "--file-header",
+    "--dyn-syms", "--help", "--file-header", "--dynamic-reloc",
     "--symbols", "--section-headers", NULL
 };
 
 static const proc option_procs[] = {
     display_dynamic_symbols, print_help, display_file_header,
-    display_symbol_table, display_section_headers, NULL
+    display_dynamic_reloc, display_symbol_table,
+    display_section_headers, NULL
 };
 
 #define PROC_COUNT (sizeof(option_procs) / sizeof(proc))
@@ -48,18 +48,19 @@ static const proc option_procs[] = {
 proc procs[PROC_COUNT] = {NULL};
 
 int print_help(void) {
-    puts("Usage: readelf <option(s)> elf-file(s)");
+    puts("Usage: readelf [options] <file1> [file2] ...");
     puts(" Display information about the contents of ELF format files");
     puts(" Options are:");
     puts(" -D --dyn-syms          Display the dynamic symbol table");
     puts(" -h --help              Display this information");
     puts(" -H --file-header       Display the ELF file header");
+    puts(" -R --dynamic-reloc     Display the dynamic relocation entries");
     puts(" -S --section-headers   Display the sections' header");
     puts(" -s --symbols           Display the symbol table");
     return 0;
 }
 
-int main(const int argc, const char *argv[]) {
+int main(int argc, char **argv) {
     if (argc < 2) {
         print_help();
         return 0;
@@ -70,13 +71,13 @@ int main(const int argc, const char *argv[]) {
     int arg_i;
 
     // parse options
-    for (arg_i = 1; arg_i < argc; arg_i ++) {
+    for (arg_i = 1; arg_i < argc; arg_i++) {
         const char *arg = argv[arg_i];
         int option_idx = 0;
 
-        if (arg[0] != '-') break;
+        if (arg[0] != '-')
+            break;
 
-        // arg: -h -S ...
         if (arg[1] != '-') {
             char *p_char; // points to the matched char in option_chars
 
@@ -113,8 +114,7 @@ int main(const int argc, const char *argv[]) {
     }
 
     if (arg_i == argc) {
-        fprintf(stderr, "readelf: No input files\n");
-        fputs("Try 'readelf -h' for more information.\n", stderr);
+        fputs("readelf: No input files\nTry 'readelf -h' for more information.\n", stderr);
         return 1;
     }
 
@@ -134,7 +134,7 @@ int main(const int argc, const char *argv[]) {
         size_t file_size = ftell(fp);
         fseek(fp, 0, SEEK_SET);
 
-        if ((g_buf = malloc(file_size)) == NULL || fread((void*) g_buf, 1, file_size, fp) != file_size) {
+        if ((g_filecnt = malloc(file_size)) == NULL || fread(g_filecnt, 1, file_size, fp) != file_size) {
             fprintf(stderr, "readelf: Error: '%s': failed to read file\n", g_filename);
             fclose(fp);
             return 1;
@@ -142,10 +142,10 @@ int main(const int argc, const char *argv[]) {
         fclose(fp);
 
         // check for ELF magic number
-        Elf32_Ehdr *p_header = (Elf32_Ehdr *)g_buf;
-        if (strncmp((void*)p_header, ELFMAG, SELFMAG) != 0) {
+        Elf32_Ehdr *p_header = (Elf32_Ehdr *)g_filecnt;
+        if (memcmp(p_header->e_ident, ELFMAG, SELFMAG) != 0) {
             fprintf(stderr, "readelf: Notice: file '%s' is not an ELF.\n", g_filename);
-            free((void*) g_buf);
+            free(g_filecnt);
             return 0;
         }
 
@@ -153,19 +153,19 @@ int main(const int argc, const char *argv[]) {
         switch (p_header->e_ident[EI_CLASS]) {
             case ELFCLASS32:
                 // ok
-            break;
+                break;
             case ELFCLASS64:
                 fprintf(stderr, "readelf: Notice: ELF64 file '%s' is not supported\n", g_filename);
-                arg_i ++;
+                arg_i++;
                 continue;
             default:
                 fprintf(stderr, "readelf: Notice: file '%s' is an invalid ELF.\n", g_filename);
-                arg_i ++;
+                arg_i++;
                 continue;
         }
 
         // now invoke each procedure in proc array
-        for (uint32_t i = 0; i < PROC_COUNT; i ++) {
+        for (uint32_t i = 0; i < PROC_COUNT; i++) {
             if (procs[i] == NULL)
                 continue;
 
@@ -174,8 +174,8 @@ int main(const int argc, const char *argv[]) {
                 break;
             }
         }
-        free((void*) g_buf);
-        arg_i ++;
+        free(g_filecnt);
+        arg_i++;
     }
 
     return 0;
@@ -183,7 +183,7 @@ int main(const int argc, const char *argv[]) {
 
 // procedures for each readelf options
 int display_file_header(void) {
-    const Elf32_Ehdr *header = (Elf32_Ehdr*)g_buf;
+    const Elf32_Ehdr *header = (Elf32_Ehdr*)g_filecnt;
 
     // Strings for meanings for some of the header fields.
     static char *elf_classes[ELFCLASSNUM] = {"invalid", "ELF32", "ELF64"};
@@ -293,11 +293,11 @@ int display_file_header(void) {
 }
 
 int display_section_headers(void) {
-    Elf32_Ehdr *eh = (Elf32_Ehdr *)g_buf;
-    Elf32_Shdr *sh_base = (Elf32_Shdr *)(g_buf + eh->e_shoff);
-    Elf32_Shdr *str_sh = sh_base + eh->e_shstrndx;
+    Elf32_Ehdr *eh      = (Elf32_Ehdr *) g_filecnt;
+    Elf32_Shdr *sh_base = (Elf32_Shdr *)(g_filecnt + eh->e_shoff);
+    Elf32_Shdr *str_sh  = sh_base + eh->e_shstrndx;
 
-    char *str_table = (char*)(g_buf + str_sh->sh_offset);
+    char *str_table = (char*)(g_filecnt + str_sh->sh_offset);
 
     // type string table
     static char *sh_types[SHT_NUM] = {"NULL", "PROGBITS", "SYMTAB", "STRTAB", "RELA", "HASH",
@@ -310,49 +310,50 @@ int display_section_headers(void) {
     // check section header size
     if (eh->e_shentsize != sizeof(Elf32_Shdr)) {
         fprintf(stderr, "readelf: Error: section header in '%s' should be %ld but is %d bytes. skip it.",
-            g_filename, sizeof(Elf32_Shdr), eh->e_shentsize);
+                g_filename, sizeof(Elf32_Shdr), eh->e_shentsize);
         return 1;
     }
 
     // display section header infos
-    if (procs[OPT_h] == NULL){
+    if (procs[OPT_h] == NULL)
         printf("There are %d section headers, starting at offset 0x%x\n", eh->e_shnum, eh->e_shoff);
-    }
+
     printf("\nSection Headers:\n");    // Note 'ES' is entry size for some sections
     printf(" [Nr] %-17s %-15s %-8s %-6s %-6s %s %s %s %s %s\n",
-        "Name", "Type", "Addr", "Off", "Size", "ES", "Flg", "LK", "Inf", "Al");
+            "Name", "Type", "Addr", "Off", "Size", "ES", "Flg", "LK", "Inf", "Al");
 
-    for(int i = 0; i < eh->e_shnum; i ++) {
+    for(int i = 0; i < eh->e_shnum; i++) {
         Elf32_Shdr *sh = sh_base + i;
 
-        const char *name = str_table + sh->sh_name;
-        const char *type = sh->sh_type < SHT_NUM ? sh_types[sh->sh_type] : "???";
-        unsigned int addr = sh->sh_addr;
-        unsigned int off = sh->sh_offset;
-        unsigned int size = sh->sh_size;
-        char flags[strlen(sh_flags)];
-        {    // parse flag characters
-            unsigned int flag_bits = sh->sh_flags;
-            int flag_num = strlen(sh_flags);
-            int flag_cnt = 0;
+        // parse flags
+        char flags[sizeof(sh_flags)];
 
-            int flag_i = 0;
-            while(flag_i < flag_num) {
-                if (flag_bits & 1) {
-                    flags[flag_cnt ++] = sh_flags[flag_i];
-                }
-                flag_bits = flag_bits >> 1;
-                flag_i ++;
-            }
-            flags[flag_cnt] = '\0';
+        unsigned int flag_bits = sh->sh_flags;
+        int flag_num = sizeof(sh_flags) - 1;
+        int flag_cnt = 0;
+
+        int flag_i = 0;
+        while (flag_i < flag_num) {
+            if (flag_bits & 1)
+                flags[flag_cnt++] = sh_flags[flag_i];
+            flag_bits = flag_bits >> 1;
+            flag_i++;
         }
-        unsigned int entry_size = sh->sh_entsize;
-        unsigned int linkv = sh->sh_link;
-        unsigned int info = sh->sh_info;
-        unsigned int align = sh->sh_addralign;
+        flags[flag_cnt] = '\0';
 
         printf(" [%2d] %-17.17s %-15s %-8.8x %6.6x %6.6x %2.2x %3s %2d %3d %2d\n",
-            i, name, type, addr, off, size, entry_size, flags, linkv, info, align);
+                i,
+                str_table + sh->sh_name,
+                sh->sh_type < SHT_NUM ? sh_types[sh->sh_type] : "???",
+                sh->sh_addr,
+                sh->sh_offset,
+                sh->sh_size,
+                sh->sh_entsize,
+                flags,
+                sh->sh_link,
+                sh->sh_info,
+                sh->sh_addralign
+        );
     }
 
     // print flags explanation
@@ -367,45 +368,38 @@ int display_section_headers(void) {
 }
 
 int display_symbols(uint16_t sh_type) {
-    Elf32_Ehdr *eh = (Elf32_Ehdr *) g_buf;
-    // section header base
-    Elf32_Shdr *sh_base = (Elf32_Shdr *) (g_buf + eh->e_shoff);
-    // section string section header
+    Elf32_Ehdr *eh       = (Elf32_Ehdr *) g_filecnt;
+    Elf32_Shdr *sh_base  = (Elf32_Shdr *) (g_filecnt + eh->e_shoff);
     Elf32_Shdr *shstr_sh = sh_base + eh->e_shstrndx;
-    // symbol string section header
-    Elf32_Shdr *str_sh = NULL;
-    // symbol table section header
-    Elf32_Shdr *sym_sh = NULL;
+    Elf32_Shdr *sym_sh   = NULL;
 
     // get symbol table
-    for(int i = 0; i < eh->e_shnum; i ++) {
+    for (int i = 0; i < eh->e_shnum; i++) {
         Elf32_Shdr *sh = sh_base + i;
         if (sh->sh_type == sh_type) {
             sym_sh = sh;
-            printf("got symtab with idx: %d\n", i);
             break;
         }
     }
 
-    // check
     if (sym_sh == NULL) {
         fprintf(stderr, "readelf: Notice: there is no symbol table in '%s'\n", g_filename);
         return 0;
     }
+
     // check symbol entry size in the table
     if (sym_sh->sh_entsize != sizeof(Elf32_Sym)) {
         fprintf(stderr, "readelf: Error: symbol table entry size should be %ld but is %d\n",
-            sizeof(Elf32_Sym), (unsigned int)sym_sh->sh_entsize);
-            return 0;
+                sizeof(Elf32_Sym), (unsigned int)sym_sh->sh_entsize);
+        return 0;
     }
 
-    Elf32_Sym *symbol_table = (Elf32_Sym *) (g_buf + sym_sh->sh_offset);
+    Elf32_Sym *symbol_table = (Elf32_Sym *) (g_filecnt + sym_sh->sh_offset);
     Elf32_Sym *symbol = NULL;
 
     // prepare string tables
-    str_sh = sh_base + sym_sh->sh_link;
-    char *str_table = (char *) (g_buf + str_sh->sh_offset);
-    char *shstr_table = (char *) (g_buf + shstr_sh->sh_offset);
+    char *str_table   = (char *) (g_filecnt + (sh_base + sym_sh->sh_link)->sh_offset);
+    char *shstr_table = (char *) (g_filecnt + shstr_sh->sh_offset);
 
     // print symbol table header
     const int symbol_cnt = sym_sh->sh_size / sizeof(Elf32_Sym);
@@ -421,37 +415,35 @@ int display_symbols(uint16_t sh_type) {
     for (int i = 0; i < symbol_cnt; i++) {
         symbol = symbol_table + i;
 
-        unsigned int value = symbol->st_value;
-        unsigned int size = symbol->st_size;
-        char *type = symbol_types[ELF32_ST_TYPE(symbol->st_info)];
-        char *bind = symbol_binds[ELF32_ST_BIND(symbol->st_info)];
-        char *visibility = symbol_vis[ELF32_ST_VISIBILITY(symbol->st_other)];
         char *index = "";
 
-        {
-            unsigned int idx = symbol->st_shndx;
-            if (idx >= SHN_LORESERVE && idx <= SHN_HIRESERVE) {
-                if (idx == SHN_ABS) {
-                    index = "ABS";
-                } else if (idx == SHN_COMMON) {
-                    index = "COM";
-                } else {
-                    index = "BAD";
-                }
-
-            } else if (idx == SHN_UNDEF) { // = 0
-                index = "UND";
+        unsigned int idx = symbol->st_shndx;
+        if (idx >= SHN_LORESERVE && idx <= SHN_HIRESERVE) {
+            if (idx == SHN_ABS) {
+                index = "ABS";
+            } else if (idx == SHN_COMMON) {
+                index = "COM";
             } else {
-                char buf[3]; // enough
-                snprintf(buf, 3, "%d", idx);
-                index = buf;
+                index = "BAD";
             }
+        } else if (idx == SHN_UNDEF) {
+            index = "UND";
+        } else {
+            char buf[3]; // enough
+            snprintf(buf, 3, "%d", idx);
+            index = buf;
         }
 
-        const char *name = str_table + symbol->st_name;
-
         printf("%6d: %08x %5d %-7s %-6s %-8s %3s %s\n",
-             i, value, size, type, bind ,visibility, index, name);
+                i,
+                symbol->st_value,
+                symbol->st_size,
+                symbol_types[ELF32_ST_TYPE(symbol->st_info)],
+                symbol_binds[ELF32_ST_BIND(symbol->st_info)],
+                symbol_vis[ELF32_ST_VISIBILITY(symbol->st_other)],
+                index,
+                str_table + symbol->st_name
+        );
     }
 
     return 0;
@@ -463,4 +455,75 @@ int display_dynamic_symbols(void) {
 
 int display_symbol_table(void) {
     return display_symbols(SHT_SYMTAB);
+}
+
+int display_dynamic_reloc(void) {
+    Elf32_Ehdr *eh = (Elf32_Ehdr *) g_filecnt;
+    Elf32_Shdr *sh_base = (Elf32_Shdr *) (g_filecnt + eh->e_shoff);
+    Elf32_Shdr *rel_sh = NULL;
+    char *dyn_str = NULL;
+
+    // get dynamic relocation section
+    for (int i = 0; i < eh->e_shnum; i++) {
+        Elf32_Shdr *sh = sh_base + i;
+        if (sh->sh_type == SHT_DYNSYM)
+            dyn_str = (char *) (g_filecnt + sh_base[sh->sh_link].sh_offset);
+        else if (sh->sh_type == SHT_REL)
+            rel_sh = sh;
+    }
+
+    if (rel_sh == NULL) {
+        fprintf(stderr, "readelf: Notice: there is no dynamic relocation in '%s'\n", g_filename);
+        return 0;
+    }
+
+    if (dyn_str == NULL) {
+        fprintf(stderr, "readelf: Error: failed to get dynamic string table in '%s'\n", g_filename);
+        return 1;
+    }
+
+    // check relocation entry size in the table
+    if (rel_sh->sh_entsize != sizeof(Elf32_Rel)) {
+        fprintf(stderr, "readelf: Error: relocation entry size should be %ld but is %d\n",
+            sizeof(Elf32_Rel), (unsigned int) rel_sh->sh_entsize);
+            return 0;
+    }
+
+    // prepare string tables
+    Elf32_Shdr *str_sh = sh_base + rel_sh->sh_link;
+
+    static char *reloc_types[] = {
+        "R_386_NONE", "R_386_32", "R_386_PC32", "R_386_GOT32", "R_386_PLT32",
+        "R_386_COPY", "R_386_GLOB_DAT", "R_386_JMP_SLOT", "R_386_RELATIVE",
+        "R_386_GOTOFF", "R_386_GOTPC"
+    };
+
+    int size = rel_sh->sh_size / sizeof(Elf32_Rel);
+
+    // print relocation table header
+    printf("Offset   Info     Type            Sym Val  Sym Name\n");
+
+    // print each relocation entry in relocation table
+    for (int i = 0; i < size; i++) {
+        Elf32_Rel *rel = (Elf32_Rel *) (g_filecnt + rel_sh->sh_offset) + i;
+
+        unsigned int type = ELF32_R_TYPE(rel->r_info);
+        unsigned int sym  = ELF32_R_SYM(rel->r_info);
+        unsigned int sym_value = 0;
+        char *sym_name = NULL;
+
+        if (sym != 0) {
+            Elf32_Sym *symbol = (Elf32_Sym *) (g_filecnt + str_sh->sh_offset + sym * sizeof(Elf32_Sym));
+            sym_value = symbol->st_value;
+            sym_name = dyn_str + symbol->st_name;
+        }
+
+        printf("%08x %08x %-15s %08x %s\n",
+                rel->r_offset, rel->r_info,
+                type < sizeof(reloc_types) / sizeof(char *) ? reloc_types[type] : "UNKNOWN",
+                sym_value, sym_name ? sym_name : ""
+        );
+    }
+
+    return 0;
 }
