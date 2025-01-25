@@ -9,10 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#if !defined(__FSTD_HDRS_LIMITS_H) || defined(__FSTD_HDRS_CXX_WRAP)
-#if !defined(__FSTD_HDRS_CXX_WRAP)
-#define __FSTD_HDRS_LIMITS_H 1
-#endif
+#ifndef _LIMITS_H
+#define _LIMITS_H
 
 #undef CHAR_BIT
 #define CHAR_BIT __CHAR_BIT__
