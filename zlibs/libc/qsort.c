@@ -57,7 +57,7 @@ void qsort(void *a, size_t n, size_t es, cmp_t *cmp) {
 
     if (n < 7) {
         for (pm = (char *) a + es; pm < (char *) a + n * es; pm += es)
-            for (pl = pm; pl > (char *)a && cmp(pl - es, pl) > 0; pl -= es)
+            for (pl = pm; pl > (char *) a && cmp(pl - es, pl) > 0; pl -= es)
                 swapfunc(pl, pl - es, es);
         return;
     }
