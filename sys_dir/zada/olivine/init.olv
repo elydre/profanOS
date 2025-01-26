@@ -31,22 +31,25 @@ FUNC name
 END
 
 FUNC dirsize
-    set size 0
-
     IF !(eval !# = 0)
         set 0 !path
+        set ++ #
     END
 
-    FOR f !(search -f !0 |)
-        set size !(eval !size + !(fsize !f))
-    END
+    FOR i !(range !#)
+        set size 0
 
-    IF !(eval !size > 10000)
-        set size !(eval !size / 1000 . "kB")
-    END; ELSE
-        set size !(eval !size . "B")
+        FOR f !(search -f !!i |)
+            set size !(eval !size + !(fsize !f))
+        END
+
+        IF !(eval !size > 10000)
+            set size !(eval !size / 1000 . "kB")
+        END; ELSE
+            set size !(eval !size . "B")
+        END
+        echo '!!i': !size
     END
-    echo '!0': !size
 END
 
 FUNC time
