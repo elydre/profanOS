@@ -5097,12 +5097,14 @@ char init_prog[] =
 "END";
 
 
-int main(int, char **argv) {
+int main(int argc, char **argv) {
     olv_global_t olv;
     olv_args_t args;
 
     int ret_val = 0;
     g_olv = &olv;
+
+    (void) argc;
 
     parse_args(&args, &olv, argv);
 
