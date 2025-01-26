@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <ctype.h>
 #include <stdio.h>
 
@@ -112,7 +111,7 @@ int main(int argc, char **argv) {
     for (int i = 2; i < argc; i++) {
         FILE *file = fopen(argv[i], "r");
         if (file == NULL) {
-            fprintf(stderr, "grep: %s: %s\n", argv[i], strerror(errno));
+            fprintf(stderr, "grep: %s: %m\n", argv[i]);
             return 1;
         }
         grep_file(argv[i], file, pattern, g_flags);
