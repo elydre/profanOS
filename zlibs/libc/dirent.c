@@ -35,7 +35,7 @@ int closedir(DIR *dirp) {
 }
 
 DIR *opendir(const char *dirname) {
-    uint32_t dir_sid = profan_resolve_path(dirname);
+    uint32_t dir_sid = profan_path_resolve(dirname);
 
     if (!fu_is_dir(dir_sid)) {
         errno = ENOTDIR;

@@ -974,7 +974,7 @@ char *compute_args(int argc, char **argv) {
     if (!file)
         return NULL;
 
-    file = profan_join_path(profan_wd_path, file);
+    file = profan_path_join(profan_wd_path, file);
 
     return file;
 }

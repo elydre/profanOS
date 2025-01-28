@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 
 #include "config_libc.h"
@@ -110,7 +111,7 @@ char *profan_libc_version(void) {
  *                      *
 *************************/
 
-char *profan_join_path(const char *old, const char *new) {
+char *profan_path_join(const char *old, const char *new) {
     char *result;
     int len;
 
@@ -134,7 +135,7 @@ char *profan_join_path(const char *old, const char *new) {
     return result;
 }
 
-void profan_sep_path(const char *fullpath, char **parent, char **cnt) {
+void profan_path_sep(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     len = strlen(fullpath);
@@ -170,12 +171,75 @@ void profan_sep_path(const char *fullpath, char **parent, char **cnt) {
     }
 }
 
-uint32_t profan_resolve_path(const char *path) {
+uint32_t profan_path_resolve(const char *path) {
     if (path[0] == '/')
         return fu_path_to_sid(SID_ROOT, path);
     return fu_path_to_sid(profan_wd_sid, path);
 }
 
+char *profan_path_path(const char *exec) {
+    // resolve executable path from PATH with extension support
+    // ls -> /bin/cmd/ls.elf  -  returns NULL if not found
+    uint32_t file_sid;
+
+    char *path = strdup(getenv("PATH")); // OK with NULL
+
+    if (path == NULL)
+        return NULL;
+
+    char *dir = strtok(path, ":");
+
+    while (dir != NULL) {
+        uint32_t size, dir_sid = profan_path_resolve(dir);
+        uint8_t *buf = NULL;
+
+        if (!fu_is_dir(dir_sid))
+            goto endloop;
+
+        int count = fu_get_dir_size(dir_sid);
+        if (count < 0)
+            goto endloop;
+
+        size = syscall_fs_get_size(NULL, dir_sid);
+        if (size == UINT32_MAX || size < sizeof(uint32_t))
+            goto endloop;
+
+        buf = malloc(size);
+        if (syscall_fs_read(NULL, dir_sid, buf, 0, size))
+            goto endloop;
+
+        for (int i = 0; i < count; i++) {
+            int offset = fu_get_dir_elm(buf, size, i, &file_sid);
+
+            if (offset <= 0)
+                break;
+    
+            if (!fu_is_file(file_sid))
+                continue;
+
+            char *name = (char *) buf + offset;
+
+            int j;
+            for (j = 0; exec[j] && name[j] && exec[j] == name[j]; j++);
+            if (exec[j] == '\0' && (name[j] == '.' || name[j] == '\0')) {
+                char *r = profan_path_join(dir, name);
+                free(path);
+                free(buf);
+                return r;
+            }
+        }
+
+        endloop:
+        free(buf);
+        dir = strtok(NULL, ":");
+    }
+
+    free(path);
+
+    errno = ENOENT;
+    return NULL;
+}
+        
 /****************************
  *                         *
  *   KERNEL MEMORY ALLOC   *

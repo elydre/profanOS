@@ -78,7 +78,7 @@ rm_options_t *parse_options(int argc, char **argv) {
 int remove_hard_link(uint32_t elem, char *path) {
     char *parent;
 
-    profan_sep_path(path, &parent, NULL);
+    profan_path_sep(path, &parent, NULL);
 
     uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
@@ -120,7 +120,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
                 continue;
             }
 
-            new_path = profan_join_path(path, names[i]);
+            new_path = profan_path_join(path, names[i]);
 
             if (remove_elem(content[i], new_path, options))
                 exit(1);
@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *path = profan_join_path(profan_wd_path, options->path);
+    char *path = profan_path_join(profan_wd_path, options->path);
     uint32_t elem = fu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(elem)) {

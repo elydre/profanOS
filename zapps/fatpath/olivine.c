@@ -795,7 +795,7 @@ char *get_bin_path(const char *name) {
         path[i] = '\0';
         uint32_t sid = fu_path_to_sid(SID_ROOT, path + start);
         if (!IS_SID_NULL(sid) && fu_is_file(fu_path_to_sid(sid, fullname))) {
-            char *result = profan_join_path(path + start, fullname);
+            char *result = profan_path_join(path + start, fullname);
             free(fullname);
             free(path);
             return result;
@@ -1728,7 +1728,7 @@ char *if_dot(char **input) {
     pid_t pid;
 
     #if PROFANBUILD
-    char *full_path = profan_join_path(g_olv->current_dir, file_path);
+    char *full_path = profan_path_join(g_olv->current_dir, file_path);
 
     run_ifexist_full(
         (runtime_args_t) {
@@ -1890,7 +1890,7 @@ char *if_fsize(char **input) {
 
     #if PROFANBUILD
     // get path
-    uint32_t file_id = profan_resolve_path(input[0]);
+    uint32_t file_id = profan_path_resolve(input[0]);
 
     // check if file exists
     if (IS_SID_NULL(file_id)) {
@@ -4301,7 +4301,7 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
             break;
         }
 
-        char *tmp = profan_join_path(g_olv->current_dir, inp_end);
+        char *tmp = profan_path_join(g_olv->current_dir, inp_end);
         strcpy(path, tmp);
         free(tmp);
 

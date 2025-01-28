@@ -57,9 +57,9 @@ char *profan_input(int *size);
 void  profan_nimpl(const char *name);
 char *profan_libc_version(void);
 
-char    *profan_join_path(const char *old, const char *new);
-void     profan_sep_path(const char *fullpath, char **parent, char **cnt);
-uint32_t profan_resolve_path(const char *path);
+char    *profan_path_join(const char *old, const char *new);
+void     profan_path_sep(const char *fullpath, char **parent, char **cnt);
+uint32_t profan_path_resolve(const char *path);
 
 void *profan_kmalloc(uint32_t size, int as_kernel);
 void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);

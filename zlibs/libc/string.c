@@ -413,10 +413,10 @@ size_t strcspn(const char *s1, register const char *s2) {
 
 size_t strlen(const char *s);
 char *strdup(register const char *s) {
+    if (!s) return NULL;
     size_t l = strlen(s);
-    char *d = malloc(l+1);
-    if (!d) return NULL;
-    return memcpy(d, s, l+1);
+    char *d = malloc(l + 1);
+    return d ? memcpy(d, s, l + 1) : NULL;
 }
 
 // strerror is defined in errno.c
