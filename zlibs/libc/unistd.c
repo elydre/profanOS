@@ -130,7 +130,6 @@ void encrypt(char a[64], int b) {
     PROFAN_FNI;
 }
 
-int execve(const char *fullpath, char *const argv[], char *const envp[]);
 int execl(const char *fullpath, const char *first, ...) {
     va_list args;
     va_start(args, first);
@@ -173,17 +172,24 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
     int argc = 0;
     while (argv && argv[argc] != NULL)
         argc++;
-    return run_ifexist_full((runtime_args_t) {
+    run_ifexist_full((runtime_args_t) {
         (char *) fullpath,
         argc,
         (char **) argv,
         (char **) envp,
         3
     }, NULL);
+
+    errno = ENOENT;
+    return -1;
 }
 
 int execvp(const char *file, char *const argv[]) {
-    return (PROFAN_FNI, 0);
+    char *fullpath = profan_path_path(file);
+    if (fullpath)
+        return execve(fullpath, argv, environ);
+    errno = ENOENT;
+    return -1;
 }
 
 void _exit(int status) {
