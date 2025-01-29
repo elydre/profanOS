@@ -192,6 +192,14 @@ int execvp(const char *file, char *const argv[]) {
     return -1;
 }
 
+int execvpe(const char *file, char *const argv[], char *const envp[]) {
+    char *fullpath = profan_path_path(file);
+    if (fullpath)
+        return execve(fullpath, argv, envp);
+    errno = ENOENT;
+    return -1;
+}
+
 void _exit(int status) {
     syscall_process_kill(syscall_process_pid(), status);
     while (1); // unreachable (probably)

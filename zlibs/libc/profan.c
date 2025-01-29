@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === extra.c : 2024 ===                                                    |
+|   === profan.c : 2024 ===                                                   |
 |                                                                             |
 |    Extra functions for libC                                      .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -182,12 +182,24 @@ char *profan_path_path(const char *exec) {
     // ls -> /bin/cmd/ls.elf  -  returns NULL if not found
     uint32_t file_sid;
 
-    char *path = strdup(getenv("PATH")); // OK with NULL
-
-    if (path == NULL)
+    if (strchr(exec, '/')) {
+        char *file_path = profan_path_join(profan_wd_path, exec);
+        fu_simplify_path(file_path);
+        if (fu_path_to_sid(SID_ROOT, file_path))
+            return file_path;
+        errno = ENOENT;
         return NULL;
+    }
 
-    char *dir = strtok(path, ":");
+    char *dir, *path = strdup(getenv("PATH")); // OK with NULL
+
+    if (path)
+        dir = strtok(path, ":");
+
+    else if ((dir = path = getcwd(NULL, 0)) == NULL) {
+        errno = ENOENT;
+        return NULL;
+    }
 
     while (dir != NULL) {
         uint32_t size, dir_sid = profan_path_resolve(dir);
@@ -213,7 +225,7 @@ char *profan_path_path(const char *exec) {
 
             if (offset <= 0)
                 break;
-    
+
             if (!fu_is_file(file_sid))
                 continue;
 
@@ -239,7 +251,7 @@ char *profan_path_path(const char *exec) {
     errno = ENOENT;
     return NULL;
 }
-        
+
 /****************************
  *                         *
  *   KERNEL MEMORY ALLOC   *
