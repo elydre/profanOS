@@ -185,7 +185,7 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
 }
 
 int execvp(const char *file, char *const argv[]) {
-    char *fullpath = profan_path_path(file);
+    char *fullpath = profan_path_path(file, 1);
     if (fullpath)
         return execve(fullpath, argv, environ);
     errno = ENOENT;
@@ -193,7 +193,7 @@ int execvp(const char *file, char *const argv[]) {
 }
 
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
-    char *fullpath = profan_path_path(file);
+    char *fullpath = profan_path_path(file, 1);
     if (fullpath)
         return execve(fullpath, argv, envp);
     errno = ENOENT;

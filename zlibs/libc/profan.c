@@ -177,12 +177,16 @@ uint32_t profan_path_resolve(const char *path) {
     return fu_path_to_sid(profan_wd_sid, path);
 }
 
-char *profan_path_path(const char *exec) {
+char *profan_path_path(const char *exec, int allow_path) {
     // resolve executable path from PATH with extension support
     // ls -> /bin/cmd/ls.elf  -  returns NULL if not found
     uint32_t file_sid;
 
     if (strchr(exec, '/')) {
+        if (!allow_path) {
+            errno = EACCES;
+            return NULL;
+        }
         char *file_path = profan_path_join(profan_wd_path, exec);
         fu_simplify_path(file_path);
         if (fu_path_to_sid(SID_ROOT, file_path))

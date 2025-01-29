@@ -59,7 +59,7 @@ char *profan_libc_version(void);
 
 char    *profan_path_join(const char *old, const char *new);
 void     profan_path_sep(const char *fullpath, char **parent, char **cnt);
-char    *profan_path_path(const char *exec);
+char    *profan_path_path(const char *exec, int allow_path);
 uint32_t profan_path_resolve(const char *path);
 
 void *profan_kmalloc(uint32_t size, int as_kernel);

@@ -48,7 +48,6 @@ int fcntl(int fd, int cmd, ...) {
     switch (cmd) {
         case F_DUPFD:
             int new_fd = fm_newfd_after(arg);
-            serial_debug("fcntl(F_DUPFD, %d) -> %d\n", arg, new_fd);
 
             if (new_fd < 0) {
                 errno = -new_fd;
