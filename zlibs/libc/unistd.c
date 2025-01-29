@@ -37,7 +37,7 @@ void __unistd_init(void) {
 
 int access(const char *pathname, int mode) {
     // add the current working directory to the filename
-    uint32_t elem = profan_resolve_path(pathname);
+    uint32_t elem = profan_path_resolve(pathname);
 
     // check if path exists
     if (IS_SID_NULL(elem)) {
@@ -58,7 +58,7 @@ int chdir(const char *path) {
     char *dir;
 
     // check if dir exists
-    dir = profan_join_path(profan_wd_path, path);
+    dir = profan_path_join(profan_wd_path, path);
     fu_simplify_path(dir);
 
     sid = fu_path_to_sid(SID_ROOT, dir);
@@ -130,7 +130,6 @@ void encrypt(char a[64], int b) {
     PROFAN_FNI;
 }
 
-int execve(const char *fullpath, char *const argv[], char *const envp[]);
 int execl(const char *fullpath, const char *first, ...) {
     va_list args;
     va_start(args, first);
@@ -173,17 +172,32 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
     int argc = 0;
     while (argv && argv[argc] != NULL)
         argc++;
-    return run_ifexist_full((runtime_args_t) {
+    run_ifexist_full((runtime_args_t) {
         (char *) fullpath,
         argc,
         (char **) argv,
         (char **) envp,
         3
     }, NULL);
+
+    errno = ENOENT;
+    return -1;
 }
 
 int execvp(const char *file, char *const argv[]) {
-    return (PROFAN_FNI, 0);
+    char *fullpath = profan_path_path(file);
+    if (fullpath)
+        return execve(fullpath, argv, environ);
+    errno = ENOENT;
+    return -1;
+}
+
+int execvpe(const char *file, char *const argv[], char *const envp[]) {
+    char *fullpath = profan_path_path(file);
+    if (fullpath)
+        return execve(fullpath, argv, envp);
+    errno = ENOENT;
+    return -1;
 }
 
 void _exit(int status) {
@@ -441,7 +455,7 @@ ssize_t read(int fd, void *buf, size_t count) {
 }
 
 ssize_t readlink(const char *restrict a, char *restrict b, size_t c) {
-    if (profan_resolve_path(a) == SID_NULL)
+    if (profan_path_resolve(a) == SID_NULL)
         errno = ENOENT;
     else
         errno = EINVAL; // no links for now
@@ -535,7 +549,7 @@ useconds_t ualarm(useconds_t a, useconds_t b) {
 
 int unlink(const char *filename) {
     // add the current working directory to the filename
-    char *path = profan_join_path(profan_wd_path, (char *) filename);
+    char *path = profan_path_join(profan_wd_path, (char *) filename);
 
     // check if the file exists
     uint32_t parent_sid, elem = fu_path_to_sid(SID_ROOT, path);
@@ -547,7 +561,7 @@ int unlink(const char *filename) {
 
     // get the parent directory sid
     char *parent;
-    profan_sep_path(path, &parent, NULL);
+    profan_path_sep(path, &parent, NULL);
     parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
     free(path);

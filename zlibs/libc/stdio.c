@@ -568,7 +568,7 @@ void perror(const char *s) {
 }
 
 int remove(const char *name) {
-    if (fu_is_dir(profan_resolve_path(name)))
+    if (fu_is_dir(profan_path_resolve(name)))
         return rmdir(name);
     return unlink(name);
 }
@@ -578,7 +578,7 @@ int rename(const char *old_filename, const char *new_filename) {
     char *old_entry, *new_entry;
 
     // check if the file exists
-    fullpath = profan_join_path(profan_wd_path, (char *) old_filename);
+    fullpath = profan_path_join(profan_wd_path, (char *) old_filename);
     fu_simplify_path(fullpath);
     uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
@@ -595,14 +595,14 @@ int rename(const char *old_filename, const char *new_filename) {
     }
 
     // get the parent directory sid
-    profan_sep_path(fullpath, &tmp, &old_entry);
+    profan_path_sep(fullpath, &tmp, &old_entry);
     uint32_t old_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);
     free(tmp);
 
     // check if the new file exists
-    fullpath = profan_join_path(profan_wd_path, (char *) new_filename);
+    fullpath = profan_path_join(profan_wd_path, (char *) new_filename);
     fu_simplify_path(fullpath);
     uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
@@ -621,7 +621,7 @@ int rename(const char *old_filename, const char *new_filename) {
     }
 
     // get the new parent directory sid
-    profan_sep_path(fullpath, &tmp, &new_entry);
+    profan_path_sep(fullpath, &tmp, &new_entry);
     uint32_t new_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);

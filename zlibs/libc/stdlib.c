@@ -401,12 +401,12 @@ int rand_r(unsigned int *seed) {
 }
 
 char *realpath(const char *path, char *resolved_path) {
-    if (IS_SID_NULL(profan_resolve_path(path))) {
+    if (IS_SID_NULL(profan_path_resolve(path))) {
         errno = ENOENT;
         return NULL;
     }
 
-    char *fullpath = profan_join_path(profan_wd_path, path);
+    char *fullpath = profan_path_join(profan_wd_path, path);
     fu_simplify_path(fullpath);
 
     if (resolved_path == NULL)

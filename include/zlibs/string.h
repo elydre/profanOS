@@ -39,6 +39,7 @@ char  *strcat(char *s1, const char *s2);
 char  *strchr(const char *p, int ch);
 char  *strchrnul(const char *s, int c);
 int    strcmp(const char *s1, const char *s2);
+int    strcoll(const char *s1, const char *s2);
 char  *strcpy(char *s1, const char *s2);
 size_t strcspn(const char *s1, const char *s2);
 char  *strdup(const char *s);

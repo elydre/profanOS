@@ -276,7 +276,7 @@ void list_files(ls_args_t *args) {
 
 
     for (int i = 0; args->paths[i]; i++) {
-        uint32_t sid = profan_resolve_path(args->paths[i]);
+        uint32_t sid = profan_path_resolve(args->paths[i]);
 
         if (IS_SID_NULL(sid)) {
             fprintf(stderr, "ls: %s: No such file or directory\n", args->paths[i]);
@@ -307,7 +307,7 @@ void list_dirs(ls_args_t *args) {
     char *name;
 
     for (int i = 0; args->paths[i]; i++) {
-        sid = profan_resolve_path(args->paths[i]);
+        sid = profan_path_resolve(args->paths[i]);
 
         if (!fu_is_dir(sid))
             continue; // error message is printed by list_files

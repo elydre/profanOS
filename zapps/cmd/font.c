@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    uint32_t file = profan_resolve_path(argv[1]);
+    uint32_t file = profan_path_resolve(argv[1]);
     if (IS_SID_NULL(file) || !fu_is_file(file)) {
         fprintf(stderr, "font: %s: File not found\n", argv[1]);
         return 1;
