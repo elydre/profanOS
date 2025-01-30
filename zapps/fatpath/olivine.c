@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.6 rev 0"
+#define OLV_VERSION "1.6 rev 1"
 
 #define PROFANBUILD   1  // enable profan features
 #define UNIXBUILD     0  // enable unix features
@@ -678,31 +678,22 @@ function_t *get_function(const char *name) {
 
 char **load_bin_names(void) {
     #if BIN_AS_PSEUDO && PROFANBUILD && USE_ENVVARS
-    uint32_t size = 0;
+    uint32_t tmp, size = 0;
     int bin_count = 0;
 
-    char *path = getenv("PATH");
-    if (path == NULL) {
+    char *dir, *path = strdup(getenv("PATH")); // OK with NULL
+    if (path == NULL)
         return NULL;
-    }
-
-    char *path_copy = strdup(path);
-    char *path_ptr = path_copy;
-    char *path_end = path_ptr;
 
     uint32_t *cnt_ids;
     char **cnt_names;
 
     char **tmp_names = NULL;
 
-    while (path_ptr != NULL) {
-        path_end = strchr(path_ptr, ':');
+    dir = strtok(path, ":");
 
-        if (path_end != NULL) {
-            *path_end = '\0';
-        }
-
-        uint32_t dir_id = fu_path_to_sid(SID_ROOT, path_ptr);
+    while (dir != NULL) {
+        uint32_t dir_id = fu_path_to_sid(SID_ROOT, dir);
         if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id))
             goto next;
 
@@ -713,49 +704,47 @@ char **load_bin_names(void) {
         tmp_names = realloc(tmp_names, sizeof(char *) * (bin_count + elm_count));
 
         for (int i = 0; i < elm_count; i++) {
-            if (fu_is_file(cnt_ids[i]) && strstr(cnt_names[i], ".elf")) {
-                size += strlen(cnt_names[i]) - 3;
+            if (fu_is_file(cnt_ids[i]) && cnt_names[i][0] != '.') {
                 tmp_names[bin_count++] = cnt_names[i];
+                for (tmp = 0; cnt_names[i][tmp] && cnt_names[i][tmp] != '.'; tmp++);
+                size += tmp + 1;
             } else {
                 profan_kfree(cnt_names[i]);
             }
         }
+
         profan_kfree(cnt_names);
         profan_kfree(cnt_ids);
 
         next:
-        if (path_end != NULL) {
-            *path_end = ':';
-            path_ptr = path_end + 1;
-        } else {
-            path_ptr = NULL;
-        }
+        dir = strtok(NULL, ":");
     }
+
+    free(path);
 
     size += sizeof(char *) * (bin_count + 1);
     char **ret = malloc(size);
     char *ret_ptr = (char *) ret + sizeof(char *) * (bin_count + 1);
 
     for (int i = 0; i < bin_count; i++) {
-        int tmp = strlen(tmp_names[i]) - 4;
         ret[i] = ret_ptr;
-        strncpy(ret_ptr, tmp_names[i], tmp);
+
+        for (tmp = 0; tmp_names[i][tmp] && tmp_names[i][tmp] != '.'; tmp++)
+            ret_ptr[tmp] = tmp_names[i][tmp];
         ret_ptr[tmp] = '\0';
         ret_ptr += tmp + 1;
-        profan_kfree(tmp_names[i]);
-    }
 
-    if (size != (uint32_t) ret_ptr - (uint32_t) ret) {
-        raise_error(NULL, "Error while loading bin names");
-        free(tmp_names);
-        free(path_copy);
-        free(ret);
-        return NULL;
+        profan_kfree(tmp_names[i]);
     }
 
     ret[bin_count] = NULL;
     free(tmp_names);
-    free(path_copy);
+
+    if (size != (uint32_t) ret_ptr - (uint32_t) ret) {
+        raise_error(NULL, "Error while loading bin names");
+        free(ret);
+        return NULL;
+    }
 
     return ret;
     #else
@@ -763,7 +752,7 @@ char **load_bin_names(void) {
     #endif
 }
 
-int init_bin_names(const char *name) {
+int is_bin_names(const char *name) {
     if (g_olv->bin_names == NULL) {
         return 0;
     }
@@ -778,70 +767,40 @@ int init_bin_names(const char *name) {
 }
 
 char *get_bin_path(const char *name) {
-    #if BIN_AS_PSEUDO && (PROFANBUILD || UNIXBUILD) && USE_ENVVARS
-    char *src_path = getenv("PATH");
-    if (!src_path)
-        return NULL;
-    char *path = strdup(src_path);
+    #if BIN_AS_PSEUDO
     #if PROFANBUILD
-    char *fullname = malloc(strlen(name) + 5); // 5 => .elf + null
-    strcpy(fullname, name);
-    strcat(fullname, ".elf");
 
-    int start = 0;
-    for (int i = 0;; i++) {
-        if (path[i] != ':' && path[i] != '\0')
-            continue;
-        path[i] = '\0';
-        uint32_t sid = fu_path_to_sid(SID_ROOT, path + start);
-        if (!IS_SID_NULL(sid) && fu_is_file(fu_path_to_sid(sid, fullname))) {
-            char *result = profan_path_join(path + start, fullname);
-            free(fullname);
-            free(path);
-            return result;
-        }
-        if (src_path[i] == '\0')
-            break;
-        start = i + 1;
-    }
-
-    free(fullname);
+    return profan_path_path(name, 0);
 
     #elif UNIXBUILD
-    char *path_copy = path;
-    char *path_end = path;
 
-    while (path_copy != NULL) {
-        path_end = strchr(path_copy, ':');
+    char *path = getenv("PATH");
+    if (path == NULL)
+        return NULL;
 
-        if (path_end != NULL) {
-            *path_end = '\0';
+    char *path_copy = strdup(path);
+
+    char *path_ptr = strtok(path_copy, ":");
+    while (path_ptr != NULL) {
+        char *path_name = malloc(strlen(path_ptr) + strlen(name) + 2);
+        strcpy(path_name, path_ptr);
+        strcat(path_name, "/");
+        strcat(path_name, name);
+
+        if (access(path_name, F_OK) == 0) {
+            free(path_copy);
+            return path_name;
         }
 
-        char *result = malloc(strlen(path_copy) + strlen(name) + 2);
-        strcpy(result, path_copy);
-        strcat(result, "/");
-        strcat(result, name);
-
-        if (access(result, F_OK) == 0) {
-            free(path);
-            return result;
-        }
-
-        free(result);
-
-        if (path_end != NULL) {
-            *path_end = ':';
-            path_copy = path_end + 1;
-        } else {
-            path_copy = NULL;
-        }
+        free(path_name);
+        path_ptr = strtok(NULL, ":");
     }
 
-    #endif
-    free(path);
-    return NULL;
+    free(path_copy);
+
+    #endif //  PROFANBUILD or UNIXBUILD
     #endif // BIN_AS_PSEUDO
+
     UNUSED(name);
     return NULL;
 }
@@ -1619,7 +1578,7 @@ char *if_dot(char **input) {
         FILE *file = fopen(input[0], "r");
         char line[16];
         if (file != NULL) {
-            if (fgets(line, sizeof(line), file) != NULL && strcmp(line, "//olivine:exec\n") == 0) {
+            if (fgets(line, sizeof(line), file) != NULL && strcmp(line, "// olivine:exec\n") == 0) {
                 fclose(file);
                 return execute_file(input[0], input + 1) ? ERROR_CODE : NULL;
             }
@@ -1733,6 +1692,7 @@ char *if_dot(char **input) {
     run_ifexist_full(
         (runtime_args_t) {
             full_path,
+            NULL,
             argc, argv,
             environ,
             2
@@ -3919,13 +3879,13 @@ char *get_func_color(const char *str) {
         return "36";
     }
 
-    // bin: blue
-    if (init_bin_names(str)) {
+    // bin files: blue
+    if (is_bin_names(str)) {
         return "94";
     }
 
     // unknown functions: dark red
-    return "31";
+    return "37";
 }
 
 #define olv_print_ivfc(str, is_var) do {   \
