@@ -568,8 +568,8 @@ char *strpbrk(const char *s1, const char *s2) {
     register const char *s;
     register const char *p;
 
-    for (s=s1 ; *s ; s++) {
-        for (p=s2 ; *p ; p++) {
+    for (s = s1; *s; s++) {
+        for (p = s2 ;*p ; p++) {
             if (*p == *s)
                 return (char *) s;
         }
@@ -649,7 +649,7 @@ char *strstr(register const char *string, const char *substring) {
     if (*b == 0) {
         return (char *) string;
     }
-    for ( ; *string != 0; string += 1) {
+    for (; *string != 0; string += 1) {
         if (*string != *b) {
             continue;
         }

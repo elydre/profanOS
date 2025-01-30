@@ -17,7 +17,7 @@
 #define PROFAN_PATH_MAX 512
 
 #define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, argc, argv, environ, 1}, NULL)
+        run_ifexist_full((runtime_args_t){path, NULL, argc, argv, environ, 1}, NULL)
 
 #define PROFAN_FNI profan_nimpl(__FUNCTION__)
 

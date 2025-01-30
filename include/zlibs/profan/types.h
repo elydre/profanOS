@@ -34,6 +34,7 @@ typedef struct {
 
 typedef struct {
     char *path;     // path to file
+    char *wd;       // working directory
 
     int argc;       // argument count
     char **argv;    // argument list

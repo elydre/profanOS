@@ -174,6 +174,7 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
         argc++;
     run_ifexist_full((runtime_args_t) {
         (char *) fullpath,
+        profan_wd_path,
         argc,
         (char **) argv,
         (char **) envp,
