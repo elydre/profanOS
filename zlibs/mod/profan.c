@@ -285,13 +285,15 @@ char *profan_input_serial(int *size, int serial_port) {
     return buffer;
 }
 
-static char **dup_envp(char **envp) {
+static char **dup_envp(char **envp, char *wd) {
     if (envp == NULL)
         return kcalloc_ask(1, sizeof(char *));
     int envc, size = 0;
 
     for (envc = 0; envp[envc] != NULL; envc++)
-        size += str_len(envp[envc]) + 1;
+        size += (wd && str_ncmp(envp[envc], "PWD=", 4) == 0) ?
+                str_len(wd) + 5 : str_len(envp[envc]) + 1;
+
     size += (envc + 1) * sizeof(char *);
 
     char **nenvp = kcalloc_ask(1, size);
@@ -299,11 +301,17 @@ static char **dup_envp(char **envp) {
     char *nenvp_start = (char *) nenvp + (envc + 1) * sizeof(char *);
 
     for (int i = 0; envp[i] != NULL; i++) {
-        for (envc = 0; envp[i][envc] != '\0'; envc++) {
-            nenvp_start[envc] = envp[i][envc];
+        if (!wd || str_ncmp(envp[i], "PWD=", 4)) {
+            for (envc = 0; envp[i][envc] != '\0'; envc++)
+                nenvp_start[envc] = envp[i][envc];
+            nenvp[i] = nenvp_start;
+            nenvp_start += envc + 1;
+            continue;
         }
         nenvp[i] = nenvp_start;
-        nenvp_start += envc + 1;
+        str_cpy(nenvp_start, "PWD=");
+        str_cpy(nenvp_start + 4, wd);
+        nenvp_start += str_len(wd) + 5;
     }
 
     return nenvp;
@@ -463,7 +471,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         sid = deluge_sid;
     }
 
-    char **nenv = dup_envp(args.envp);
+    char **nenv = dup_envp(args.envp, args.wd);
 
     if (args.sleep_mode == 3) {
         syscall_mem_free_all(syscall_process_pid());
