@@ -172,7 +172,7 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    if (stream == NULL || stream->mode & O_RDONLY)
+    if (stream == NULL || (stream->mode & 0b11) == O_RDONLY)
         return 0;
 
     if (stream->buffer_size <= 0)
@@ -210,7 +210,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
     // check if the file is open for reading
-    if (count == 0 || stream == NULL || stream->mode & O_WRONLY)
+    if (count == 0 || stream == NULL || (stream->mode & 0b11) == O_WRONLY)
         return 0;
 
     fflush(stream);
@@ -416,9 +416,9 @@ int puts(const char *str) {
 }
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
-    if (!(lineptr && n && stream && !(stream->mode & O_WRONLY))) {
-        return -1;
-    }
+    if (lineptr == NULL || n == NULL || stream == NULL ||
+            (stream->mode & 0b11) == O_RDONLY
+    ) return -1;
 
     size_t i = 0;
     int c;
@@ -528,19 +528,22 @@ int snprintf(char* str, size_t size, const char* format, ...) {
 
 int vprintf(const char *format, va_list vlist) {
     int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
-    fwrite(g_printf_buffer, 1, count, stdout);
+
+    if ((int) fwrite(g_printf_buffer, 1, count, stdout) != count)
+        return -1;
+
     return count;
 }
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
-    // if the stream is read only, can't write to it
-    if (stream == NULL || stream->mode & O_RDONLY) {
-        return 0;
-    }
+    if (stream == NULL || (stream->mode & 0b11) == O_RDONLY)
+        return -1;
 
-    // copy format to a buffer because need to modify it
     int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
-    fwrite(g_printf_buffer, 1, count, stream);
+
+    if ((int) fwrite(g_printf_buffer, 1, count, stream) != count)
+        return -1;
+
     return count;
 }
 
