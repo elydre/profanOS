@@ -152,7 +152,7 @@ void show_help(void) {
         "  -H    print the file name\n"
         "  -i    Ignore case in patterns\n"
         "  -n    print line numbers\n"
-        "  -NUM  show NUM lines of context\n"
+        "  -NUM  show NUM lines of context"
     );
 }
 
