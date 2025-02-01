@@ -61,6 +61,7 @@ int      execlp(const char *file, const char *arg, ...) __attribute__((sentinel)
 int      execv(const char *fullpath, char *const argv[]);
 int      execve(const char *fullpath, char *const argv[], char *const envp[]);
 int      execvp(const char *file, char *const argv[]);
+int      execvpe(const char *file, char *const argv[], char *const envp[]);
 void    _exit(int a) __attribute__((noreturn));
 int      fchdir(int a);
 int      fchown(int a, uid_t b, gid_t c);

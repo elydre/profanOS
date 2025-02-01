@@ -133,7 +133,7 @@ char *ft_getenv(const char *name) {
     return NULL;
 }
 
-char *profan_join_path(const char *dir, const char *file) {
+char *profan_path_join(const char *dir, const char *file) {
     int len1 = str_len(dir);
     char *path = kmalloc(len1 + str_len(file) + 2);
     str_cpy(path, dir);
@@ -165,7 +165,7 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
             sid = fu_path_to_sid(sid, fullname);
             if (fu_is_file(sid)) {
                 if (path)
-                    *fullpath = profan_join_path(path + start, fullname);
+                    *fullpath = profan_path_join(path + start, fullname);
                 kfree(fullname);
                 kfree(path);
                 return sid;
@@ -199,7 +199,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
         char *cwd = ft_getenv("PWD");
         if (!cwd)
             return SID_NULL;
-        full_path = profan_join_path(cwd, name + 2);
+        full_path = profan_path_join(cwd, name + 2);
         fu_simplify_path(full_path);
         sid = fu_path_to_sid(SID_ROOT, full_path);
         if (!IS_SID_NULL(sid) && path)
@@ -217,7 +217,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
     }
 
     if (g_args->extra_path) {
-        full_path = profan_join_path(g_args->extra_path, name);
+        full_path = profan_path_join(g_args->extra_path, name);
         sid = fu_path_to_sid(SID_ROOT, full_path);
         if (!IS_SID_NULL(sid)) {
             if (path)
@@ -227,7 +227,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
         kfree(full_path);
     }
 
-    full_path = profan_join_path("/lib", name);
+    full_path = profan_path_join("/lib", name);
     sid = fu_path_to_sid(SID_ROOT, full_path);
 
     if (!IS_SID_NULL(sid)) {
@@ -910,14 +910,14 @@ void show_help(int full) {
     fd_printf(1,
         "Usage: deluge [options] <file> [args]\n"
         "Options:\n"
-        "  -e  don't use filename as argument\n"
-        "  -i  show information about opened libs\n"
         "  -d  show additional debug information\n"
-        "  -m  show memory leaks at exit\n"
-        "  -L  add path for libraries search\n"
-        "  -l  import an additional library\n"
-        "  -p  load shared object as patch file\n"
+        "  -e  don't use filename as argument\n"
         "  -h  show this help message and exit\n"
+        "  -i  show information about opened libs\n"
+        "  -l  import an additional library\n"
+        "  -L  add path for libraries search\n"
+        "  -m  show memory leaks at exit\n"
+        "  -p  load shared object as patch file\n"
         "  -v  dump deluge version and exit\n"
     );
 }

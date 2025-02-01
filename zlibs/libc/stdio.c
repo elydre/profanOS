@@ -77,6 +77,9 @@ static int interpet_mode(const char *mode) {
         }
     }
 
+    if (fdmode & O_RDWR)
+        fdmode &= ~(O_RDONLY | O_WRONLY);
+
     return fdmode;
 }
 
@@ -169,7 +172,7 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    if (stream == NULL || stream->mode & O_RDONLY)
+    if (stream == NULL || (stream->mode & 0b11) == O_RDONLY)
         return 0;
 
     if (stream->buffer_size <= 0)
@@ -207,7 +210,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
     // check if the file is open for reading
-    if (count == 0 || stream == NULL || stream->mode & O_WRONLY)
+    if (count == 0 || stream == NULL || (stream->mode & 0b11) == O_WRONLY)
         return 0;
 
     fflush(stream);
@@ -336,6 +339,17 @@ int fseek(FILE *stream, long offset, int whence) {
     return fm_lseek(stream->fd, offset, whence) < 0 ? -1 : 0;
 }
 
+long ftell(FILE *stream) {
+    if (stream == NULL)
+        return -1;
+
+    // flush the buffer
+    fflush(stream);
+
+    int r = fm_lseek(stream->fd, 0, SEEK_CUR);
+    return r < 0 ? -1 : r;
+}
+
 int fgetc(FILE *stream) {
     uint8_t c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
@@ -402,9 +416,9 @@ int puts(const char *str) {
 }
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
-    if (!(lineptr && n && stream && !(stream->mode & O_WRONLY))) {
-        return -1;
-    }
+    if (lineptr == NULL || n == NULL || stream == NULL ||
+            (stream->mode & 0b11) == O_RDONLY
+    ) return -1;
 
     size_t i = 0;
     int c;
@@ -514,35 +528,27 @@ int snprintf(char* str, size_t size, const char* format, ...) {
 
 int vprintf(const char *format, va_list vlist) {
     int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
-    fwrite(g_printf_buffer, 1, count, stdout);
+
+    if ((int) fwrite(g_printf_buffer, 1, count, stdout) != count)
+        return -1;
+
     return count;
 }
 
 int vfprintf(FILE *stream, const char *format, va_list vlist) {
-    // if the stream is read only, can't write to it
-    if (stream == NULL || stream->mode & O_RDONLY) {
-        return 0;
-    }
+    if (stream == NULL || (stream->mode & 0b11) == O_RDONLY)
+        return -1;
 
-    // copy format to a buffer because need to modify it
     int count = vsnprintf(g_printf_buffer, 0x4000, format, vlist);
-    fwrite(g_printf_buffer, 1, count, stream);
+
+    if ((int) fwrite(g_printf_buffer, 1, count, stream) != count)
+        return -1;
+
     return count;
 }
 
 int vsprintf(char *buffer, const char *format, va_list vlist) {
     return vsnprintf(buffer, -1, format, vlist);
-}
-
-long ftell(FILE *stream) {
-    if (stream == NULL)
-        return -1;
-
-    // flush the buffer
-    fflush(stream);
-
-    int r = fm_lseek(stream->fd, 0, SEEK_CUR);
-    return r < 0 ? -1 : r;
 }
 
 int feof(FILE *stream) {
@@ -568,7 +574,7 @@ void perror(const char *s) {
 }
 
 int remove(const char *name) {
-    if (fu_is_dir(profan_resolve_path(name)))
+    if (fu_is_dir(profan_path_resolve(name)))
         return rmdir(name);
     return unlink(name);
 }
@@ -578,7 +584,7 @@ int rename(const char *old_filename, const char *new_filename) {
     char *old_entry, *new_entry;
 
     // check if the file exists
-    fullpath = profan_join_path(profan_wd_path, (char *) old_filename);
+    fullpath = profan_path_join(profan_wd_path, (char *) old_filename);
     fu_simplify_path(fullpath);
     uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
@@ -595,14 +601,14 @@ int rename(const char *old_filename, const char *new_filename) {
     }
 
     // get the parent directory sid
-    profan_sep_path(fullpath, &tmp, &old_entry);
+    profan_path_sep(fullpath, &tmp, &old_entry);
     uint32_t old_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);
     free(tmp);
 
     // check if the new file exists
-    fullpath = profan_join_path(profan_wd_path, (char *) new_filename);
+    fullpath = profan_path_join(profan_wd_path, (char *) new_filename);
     fu_simplify_path(fullpath);
     uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
@@ -621,7 +627,7 @@ int rename(const char *old_filename, const char *new_filename) {
     }
 
     // get the new parent directory sid
-    profan_sep_path(fullpath, &tmp, &new_entry);
+    profan_path_sep(fullpath, &tmp, &new_entry);
     uint32_t new_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);

@@ -55,7 +55,7 @@ static int stat_sid(uint32_t sid, struct stat *buf) {
 }
 
 int chmod(const char *path, mode_t mode) {
-    if (IS_SID_NULL(profan_resolve_path(path))) {
+    if (IS_SID_NULL(profan_path_resolve(path))) {
         errno = ENOENT;
         return -1;
     }
@@ -77,15 +77,15 @@ int mknod(const char *path, mode_t mode, dev_t dev) {
 }
 
 int mkdir(const char *path, mode_t mode) {
-    if (!IS_SID_NULL(profan_resolve_path(path))) {
+    if (!IS_SID_NULL(profan_path_resolve(path))) {
         errno = EEXIST;
         return -1;
     }
 
-    char *fullpath = profan_join_path(profan_wd_path, path);
+    char *fullpath = profan_path_join(profan_wd_path, path);
 
     if (IS_SID_NULL(fu_dir_create(0, fullpath))) {
-        errno = EEXIST;
+        errno = EIO;
         free(fullpath);
         return -1;
     }
@@ -99,7 +99,7 @@ int mkfifo(const char *path, mode_t mode) {
 }
 
 int stat(const char *path, struct stat *buf) {
-    return stat_sid(profan_resolve_path(path), buf);
+    return stat_sid(profan_path_resolve(path), buf);
 }
 
 mode_t umask(mode_t mask) {

@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     }
 
     const char *path = argv[1] ? argv[1] : profan_wd_path;
-    uint32_t sid = profan_resolve_path(path);
+    uint32_t sid = profan_path_resolve(path);
 
     if (!fu_is_dir(sid)) {
         fprintf(stderr, "Error: %s: Not a directory\n", path);

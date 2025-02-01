@@ -148,7 +148,7 @@ del sum
 
 set i 0
 WHILE !(eval !i < 101)
-    set i !(eval !i + 1)
+    set ++ i
 END
 
 assert !(eval !i = 101) 'while loop'
@@ -159,7 +159,7 @@ del i
 
 set i 0
 WHILE 1
-    set i !(eval !i + 1)
+    set ++ i
     IF !(eval !i = 101)
         BREAK
     END
@@ -175,7 +175,7 @@ set i 0
 set sum 0
 
 WHILE !(eval !i ~ 101)
-    set i !(eval !i + 1)
+    set ++ i
     IF !(eval !i % 2)
         CONTINUE
     END
@@ -272,17 +272,20 @@ del -f testlocal
 
 // ----- FUNCTION IN VARIABLE -------------------------------------------------
 
-FUNC oui
+FUNC testfuncinvar
     IF !(eval !# ~ 2)
-        print 'oui requires 2 arguments\n'
+        print 'testfuncinvar requires 2 arguments\n'
         RETURN
     END
     RETURN azerty !0 !1
 END
 
-set v '  oui  coucou  '
+set v '  testfuncinvar  coucou  '
 
 assert !(eval '"!(!v hello)"' = '"azerty coucou hello"') 'function in variable'
+
+del -f testfuncinvar
+del v
 
 // ----- PIPE PROCESSOR -------------------------------------------------------
 

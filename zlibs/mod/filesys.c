@@ -651,6 +651,9 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
     while (path[path_len] && path[path_len] != '/')
         path_len++;
 
+    if (path_len == 0)
+        return parent;
+
     // get the directory content
     uint32_t sid;
     int offset;

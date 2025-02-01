@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === rm.c : 2024 ===                                                       |
 |                                                                             |
-|    Unix command implementation - removes files and dirs          .pi0iq.    |
+|    Unix command implementation - removes files / directories     .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -21,64 +21,31 @@
 #define RM_INFO "Try 'rm -h' for more information.\n"
 
 typedef struct {
-    int help;
-    int verbose;
-    int link_only;
-    int preview;
-    char *path;
+    char no_error;
+    char help;
+    char link_only;
+    char preview;
+    char dir_allowed;
+    char verbose;
 } rm_options_t;
 
 void print_help(void) {
     puts(
         "Usage: rm [options] <path>\n"
         "Options:\n"
-        "  -h   display this help and exit\n"
-        "  -v   explain what is being done\n"
-        "  -l   remove only the link\n"
-        "  -p   do not remove anything, only preview"
+        "  -f     ignore nonexistent files\n"
+        "  -h     display this help and exit\n"
+        "  -l     remove only the link\n"
+        "  -p     preview the removal\n"
+        "  -r -R  allow recursive removal\n"
+        "  -v     explain what is being done"
     );
-}
-
-rm_options_t *parse_options(int argc, char **argv) {
-    rm_options_t *options = malloc(sizeof(rm_options_t));
-    options->help = 0;
-    options->verbose = 0;
-    options->link_only = 0;
-    options->preview = 0;
-    options->path = NULL;
-
-    int i;
-    for (i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            if (strcmp(argv[i], "-h") == 0) {
-                options->help = 2;
-            } else if (strcmp(argv[i], "-v") == 0) {
-                options->verbose = 1;
-            } else if (strcmp(argv[i], "-l") == 0) {
-                options->link_only = 1;
-            } else if (strcmp(argv[i], "-p") == 0) {
-                options->preview = 1;
-                options->verbose = 1;
-            } else {
-                fprintf(stderr, "rm: Invalid option -- '%s'\n", argv[i]);
-                options->help = 1;
-            }
-        } else {
-            if (options->path) {
-                fprintf(stderr, "rm: Extra operand '%s'\n", argv[i]);
-                options->help = 1;
-            } else {
-                options->path = argv[i];
-            }
-        }
-    }
-    return options;
 }
 
 int remove_hard_link(uint32_t elem, char *path) {
     char *parent;
 
-    profan_sep_path(path, &parent, NULL);
+    profan_path_sep(path, &parent, NULL);
 
     uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
@@ -99,6 +66,11 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
 
     // recursive remove directory
     if (fu_is_dir(elem) && !options->link_only) {
+        if (!options->dir_allowed) {
+            fprintf(stderr, "rm: Cannot remove '%s': Is a directory (use -r)\n", path);
+            return 1;
+        }
+
         if (options->verbose)
             printf("rm: Going into directory '%s'\n", path);
 
@@ -110,9 +82,10 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
             fprintf(stderr, "rm: Cannot remove '%s': Failed to get directory content\n", path);
             return 1;
         }
-        if (count == 0) {
+
+        if (count == 0)
             return 0;
-        }
+
         char *new_path;
         for (int i = 0; i < count; i++) {
             if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0) {
@@ -120,7 +93,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
                 continue;
             }
 
-            new_path = profan_join_path(path, names[i]);
+            new_path = profan_path_join(path, names[i]);
 
             if (remove_elem(content[i], new_path, options))
                 exit(1);
@@ -128,6 +101,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
             free(new_path);
             profan_kfree(names[i]);
         }
+
         profan_kfree(content);
         profan_kfree(names);
     }
@@ -140,6 +114,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
     // remove link
     if (remove_hard_link(elem, path))
         return 1;
+
     if (options->link_only)
         return 0;
 
@@ -152,6 +127,53 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
     return 0;
 }
 
+rm_options_t *parse_options(int argc, char **argv) {
+    rm_options_t *options = calloc(1, sizeof(rm_options_t));
+
+    for (int i = 1; i < argc && options->help != 1; i++) {
+        if (argv[i][0] != '-')
+            continue;
+        if (argv[i][1] == '\0') {
+            fputs("rm: Empty option detected\n", stderr);
+            options->help = 1;
+            break;
+        }
+        for (int j = 1; argv[i][j] && options->help != 1; j++) {
+            switch (argv[i][j]) {
+                case 'f':
+                    options->no_error = 1;
+                    break;
+                case 'h':
+                    options->help = 2;
+                    break;
+                case 'l':
+                    options->link_only = 1;
+                    break;
+                case 'p':
+                    options->preview = 1;
+                    break;
+                case 'R':
+                case 'r':
+                    options->dir_allowed = 1;
+                    break;
+                case 'v':
+                    options->verbose = 1;
+                    break;
+                case '-':
+                    fprintf(stderr, "rm: Unrecognized option -- %s\n", argv[i]);
+                    options->help = 1;
+                    break;
+                default:
+                    fprintf(stderr, "rm: Invalid option -- '%c'\n", argv[i][j]);
+                    options->help = 1;
+                    break;
+            }
+        }
+    }
+
+    return options;
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         fputs(RM_USAGE RM_INFO, stderr);
@@ -159,6 +181,7 @@ int main(int argc, char **argv) {
     }
 
     rm_options_t *options = parse_options(argc, argv);
+    int exit_code = -1;
 
     if (options->help == 1) {
         fputs(RM_USAGE, stderr);
@@ -172,25 +195,33 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (!options->path) {
-        fputs("rm: Missing path\n" RM_INFO, stderr);
-        free(options);
-        return 1;
-    }
+    for (int i = 1; i < argc && exit_code < 1; i++) {
+        if (argv[i][0] == '-')
+            continue;
 
-    char *path = profan_join_path(profan_wd_path, options->path);
-    uint32_t elem = fu_path_to_sid(SID_ROOT, path);
+        char *path = profan_path_join(profan_wd_path, argv[i]);
+        uint32_t elem = fu_path_to_sid(SID_ROOT, path);
 
-    if (IS_SID_NULL(elem)) {
-        fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);
-        free(options);
+        if (IS_SID_NULL(elem)) {
+            if (!options->no_error) {
+                fprintf(stderr, "rm: Cannot remove '%s': Unreachable path\n", path);
+                exit_code = 1;
+                free(path);
+                continue;
+            }
+            exit_code = 0;
+        } else {
+            exit_code = remove_elem(elem, path, options);
+        }
+
         free(path);
-        return 1;
     }
 
-    int exit_code = remove_elem(elem, path, options);
+    if (exit_code == -1) {
+        fputs("rm: No path provided\n" RM_USAGE, stderr);
+        exit_code = 1;
+    }
 
     free(options);
-    free(path);
     return exit_code;
 }

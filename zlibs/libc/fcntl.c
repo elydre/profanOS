@@ -22,7 +22,7 @@ int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
     char *fullpath;
-    fullpath = profan_join_path(profan_wd_path, path);
+    fullpath = profan_path_join(profan_wd_path, path);
 
     int fd = fm_open(fullpath, flags);
     free(fullpath);
@@ -48,7 +48,6 @@ int fcntl(int fd, int cmd, ...) {
     switch (cmd) {
         case F_DUPFD:
             int new_fd = fm_newfd_after(arg);
-            serial_debug("fcntl(F_DUPFD, %d) -> %d\n", arg, new_fd);
 
             if (new_fd < 0) {
                 errno = -new_fd;

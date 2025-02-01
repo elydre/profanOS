@@ -63,7 +63,7 @@ int search_recursive(uint32_t base, char *path, uint8_t required_type, char *ext
             }
         }
 
-        char *p = profan_join_path(path, name);
+        char *p = profan_path_join(path, name);
 
         if ((required_type == SEARCH_ALL)                    ||
             (required_type == SEARCH_DIR  && fu_is_dir(sid)) ||
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
     uint32_t base;
 
     if (dir) {
-        base = profan_resolve_path(dir);
+        base = profan_path_resolve(dir);
     } else {
         base = profan_wd_sid;
         dir = profan_wd_sid == SID_ROOT ? "/" : ".";

@@ -111,7 +111,7 @@ FUNC bf_get_me
     set pos !(eval !0 x 2)
 
     set tmp !(hex_to_nb !(eval "!bf_mem" @ !pos))
-    set pos !(eval !pos + 1)
+    set ++ pos
     RETURN !(eval !tmp x 16 + !(hex_to_nb !(eval "!bf_mem" @ !pos)))
 END
 
@@ -129,67 +129,67 @@ FUNC bf_execute
 
         IF !(eval "!c" = ">")
             global bf_mem_ptr !(eval !bf_mem_ptr + 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "<")
             global bf_mem_ptr !(eval !bf_mem_ptr - 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "+")
             bf_set_me !bf_mem_ptr !(eval !(bf_get_me !bf_mem_ptr) + 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "-")
             bf_set_me !bf_mem_ptr !(eval !(bf_get_me !bf_mem_ptr) - 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = ".")
             print '!(sprintf %c !(bf_get_me !bf_mem_ptr))'
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = ",")
             global bf_mem !(eval "!bf_mem" . "!(read)")
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "[")
             IF !(eval !(bf_get_me !bf_mem_ptr) = 0)
                 WHILE !(eval !c ~ 7)
-                    set index !(eval !index + 1)
+                    set ++ index
                     set c !(eval "!0" @ !index)
                 END
             END;
 
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "]")
             IF !(eval !(bf_get_me !bf_mem_ptr) ~ 0)
-                set index !(eval !index + 1)
+                set ++ index
                 WHILE !(eval "!c" ~ "[")
                     set index !(eval !index - 1)
                     set c !(eval "!0" @ !index)
                 END
-                set index !(eval !index + 1)
+                set ++ index
             END; ELSE
-                set index !(eval !index + 1)
+                set ++ index
             END
             CONTINUE
         END
 
-        set index !(eval !index + 1)
+        set ++ index
     END
 END
 
