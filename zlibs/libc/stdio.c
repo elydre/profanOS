@@ -77,6 +77,9 @@ static int interpet_mode(const char *mode) {
         }
     }
 
+    if (fdmode & O_RDWR)
+        fdmode &= ~(O_RDONLY | O_WRONLY);
+
     return fdmode;
 }
 
@@ -336,6 +339,17 @@ int fseek(FILE *stream, long offset, int whence) {
     return fm_lseek(stream->fd, offset, whence) < 0 ? -1 : 0;
 }
 
+long ftell(FILE *stream) {
+    if (stream == NULL)
+        return -1;
+
+    // flush the buffer
+    fflush(stream);
+
+    int r = fm_lseek(stream->fd, 0, SEEK_CUR);
+    return r < 0 ? -1 : r;
+}
+
 int fgetc(FILE *stream) {
     uint8_t c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
@@ -532,17 +546,6 @@ int vfprintf(FILE *stream, const char *format, va_list vlist) {
 
 int vsprintf(char *buffer, const char *format, va_list vlist) {
     return vsnprintf(buffer, -1, format, vlist);
-}
-
-long ftell(FILE *stream) {
-    if (stream == NULL)
-        return -1;
-
-    // flush the buffer
-    fflush(stream);
-
-    int r = fm_lseek(stream->fd, 0, SEEK_CUR);
-    return r < 0 ? -1 : r;
 }
 
 int feof(FILE *stream) {

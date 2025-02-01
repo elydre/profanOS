@@ -63,7 +63,26 @@ long int timezone = 0;
 int      daylight = 0;
 
 char *asctime(const struct tm *timeptr) {
-    return (PROFAN_FNI, NULL);
+    char *wday_name[] = {
+            "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    };
+
+    char *mon_name[] = {
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+
+    static char buf[26];
+    sprintf(buf, "%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
+            wday_name[timeptr->tm_wday],
+            mon_name[timeptr->tm_mon],
+            timeptr->tm_mday,
+            timeptr->tm_hour,
+            timeptr->tm_min,
+            timeptr->tm_sec,
+            1900 + timeptr->tm_year);
+
+    return buf;
 }
 
 clock_t clock(void) {
@@ -121,7 +140,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp) {
 }
 
 char *ctime(const time_t *timer) {
-    return (PROFAN_FNI, NULL);
+    return asctime(localtime(timer));
 }
 
 double difftime(time_t end_time, time_t start_time) {
@@ -132,70 +151,70 @@ struct tm *getdate(const char *string) {
     return (PROFAN_FNI, NULL);
 }
 
-struct tm *gmtime(const time_t *tp) {
-    static struct tm tm;
-    time_t t, secs_this_year;
+struct tm *gmtime_r(const time_t *timer, struct tm *buf) {
+    time_t secs_this_year;
+    time_t t = *timer;
 
-    t = *tp;
-    tm.tm_sec  = 0;
-    tm.tm_min  = 0;
-    tm.tm_hour = 0;
-    tm.tm_mday = 1;
-    tm.tm_mon  = 0;
-    tm.tm_year = 70;
-    tm.tm_wday = (t / SEC_IN_DAY + 4) % 7; // 01.01.70 was Thursday
-    tm.tm_isdst = 0;
+    buf->tm_sec  = 0;
+    buf->tm_min  = 0;
+    buf->tm_hour = 0;
+    buf->tm_mday = 1;
+    buf->tm_mon  = 0;
+    buf->tm_year = 70;
+    buf->tm_wday = (t / SEC_IN_DAY + 4) % 7; // 01.01.70 was Thursday
+    buf->tm_isdst = 0;
 
     // This loop handles dates after 1970
-    while (t >= (secs_this_year = is_leap(tm.tm_year) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR)) {
+    while (t >= (secs_this_year = is_leap(buf->tm_year) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR)) {
         t -= secs_this_year;
-        tm.tm_year++;
+        buf->tm_year++;
     }
 
     // This loop handles dates before 1970
     while (t < 0)
-        t += is_leap(--tm.tm_year) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR;
+        t += is_leap(--buf->tm_year) ? SEC_IN_LEAP_YEAR : SEC_IN_YEAR;
 
-    tm.tm_yday = t / SEC_IN_DAY;    // days since Jan 1
+    buf->tm_yday = t / SEC_IN_DAY;    // days since Jan 1
 
-    if (is_leap(tm.tm_year))
+    if (is_leap(buf->tm_year))
         day_in_month[1]++;
 
-    while (t >= day_in_month[tm.tm_mon] * SEC_IN_DAY)
-        t -= day_in_month[tm.tm_mon++] * SEC_IN_DAY;
+    while (t >= day_in_month[buf->tm_mon] * SEC_IN_DAY)
+        t -= day_in_month[buf->tm_mon++] * SEC_IN_DAY;
 
-    if (is_leap(tm.tm_year))        //  restore Feb
+    if (is_leap(buf->tm_year))        //  restore Feb
         day_in_month[1]--;
 
     while (t >= SEC_IN_DAY) {
         t -= SEC_IN_DAY;
-        tm.tm_mday++;
+        buf->tm_mday++;
     }
 
     while (t >= SEC_IN_HOUR) {
         t -= SEC_IN_HOUR;
-        tm.tm_hour++;
+        buf->tm_hour++;
     }
 
     while (t >= SEC_IN_MIN) {
         t -= SEC_IN_MIN;
-        tm.tm_min++;
+        buf->tm_min++;
     }
 
-    tm.tm_sec = t;
-    return &tm;
+    buf->tm_sec = t;
+    return buf;
 }
 
-struct tm *gmtime_r(const time_t *timer, struct tm *buf) {
-    return (PROFAN_FNI, NULL);
+struct tm *gmtime(const time_t *tp) {
+    static struct tm buf;
+    return gmtime_r(tp, &buf);
+}
+
+struct tm *localtime_r(const time_t *timer, struct tm *buf) {
+    return gmtime_r(timer, buf);
 }
 
 struct tm *localtime(const time_t *timer) {
     return gmtime(timer);
-}
-
-struct tm *localtime_r(const time_t *timer, struct tm *buf) {
-    return (PROFAN_FNI, NULL);
 }
 
 time_t mktime(struct tm *time) {
