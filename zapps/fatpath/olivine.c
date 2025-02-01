@@ -1576,7 +1576,7 @@ char *if_dot(char **input) {
     int len = strlen(input[0]);
     if (len > 4 && strcmp(input[0] + len - 4, ".olv") == 0) {
         FILE *file = fopen(input[0], "r");
-        char line[16];
+        char line[17];
         if (file != NULL) {
             if (fgets(line, sizeof(line), file) != NULL && strcmp(line, "// olivine:exec\n") == 0) {
                 fclose(file);
