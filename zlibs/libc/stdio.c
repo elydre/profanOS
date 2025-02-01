@@ -417,7 +417,7 @@ int puts(const char *str) {
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
     if (lineptr == NULL || n == NULL || stream == NULL ||
-            (stream->mode & 0b11) == O_RDONLY
+            (stream->mode & 0b11) == O_WRONLY
     ) return -1;
 
     size_t i = 0;
