@@ -40,7 +40,9 @@
 
 #ifdef olvUnix
   #undef BUILD_TARGET
+  #undef USE_READLINE
   #define BUILD_TARGET 2
+  #define USE_READLINE 1
 #endif
 
 #if __CHAR_BIT__ != 8
@@ -90,10 +92,8 @@
 #endif
 
 #if !BUILD_PROFAN && !BUILD_UNIX
-  #undef BIN_AS_PSEUDO
-  #undef ENABLE_WILDC
+  #undef  BIN_AS_PSEUDO
   #define BIN_AS_PSEUDO 0
-  #define ENABLE_WILDC 0
 #endif
 
 #if ENABLE_WILDC
@@ -1968,9 +1968,8 @@ char *if_inter(char **input) {
 }
 
 char *if_print(char **input) {
-    for (int i = 0; input[i] != NULL; i++) {
+    for (int i = 0; input[i] != NULL; i++)
         fputs(input[i], stdout);
-    }
     fflush(stdout);
     return NULL;
 }
@@ -2221,7 +2220,7 @@ char *if_set(char **input) {
             free(value);
             return ERROR_CODE;
         }
-        value[strlen(value) - 1] = '\0';
+        value[strlen(value) - 1] = '\0'; // remove '\n'
     }
 
     // set variable
@@ -2527,7 +2526,7 @@ void *get_if_function(const char *name) {
 
 /************************************
  *                                 *
- *  String Manipulation g_olv->funcs  *
+ *  String Manipulation Functions  *
  *                                 *
 ************************************/
 
@@ -2688,7 +2687,7 @@ char *get_function_name(const char *line) {
 
 /*******************************
  *                            *
- *  Freeing Memory g_olv->funcs  *
+ *  Freeing Memory Functions  *
  *                            *
 *******************************/
 
@@ -2841,7 +2840,7 @@ char *pipe_processor(char **input) {
 
 /**************************
  *                       *
- *  Execution g_olv->funcs  *
+ *  Execution Functions  *
  *                       *
 **************************/
 
@@ -2875,7 +2874,7 @@ char *execute_function(function_t *function, char **args) {
     char *result = malloc(1);
     int ret = execute_lines(function->lines, function->line_count, &result);
 
-    // free g_olv->vars
+    // free the variables
     del_variable_level(g_olv->current_level--);
 
     if (ret == -1) {
@@ -3226,7 +3225,7 @@ char *check_subfunc(const char *input) {
 
 /*************************
  *                      *
- *  Execution g_olv->funcs *
+ *  Execution Functions *
  *                      *
 *************************/
 
@@ -4375,7 +4374,7 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
 
     tmp = malloc(len + 1);
 
-    // g_olv->vars
+    // variable
     if (in_var) {
         int size = len - in_var;
         *dec_ptr = size;
@@ -4435,21 +4434,21 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
         }
     }
 
-    // g_olv->pseudos
+    // pseudos
     for (int j = 0; g_olv->pseudos[j].name != NULL; j++) {
         if (strncmp(tmp, g_olv->pseudos[j].name, i - dec) == 0) {
             suggest = add_to_suggest(other, suggest, g_olv->pseudos[j].name);
         }
     }
 
-    // internal g_olv->funcs
+    // internal functions
     for (int j = 0; internal_funcs[j].name != NULL; j++) {
         if (strncmp(tmp, internal_funcs[j].name, i - dec) == 0) {
             suggest = add_to_suggest(other, suggest, internal_funcs[j].name);
         }
     }
 
-    // g_olv->funcs
+    // functions
     for (int j = 0; g_olv->funcs[j].name != NULL; j++) {
         if (strncmp(tmp, g_olv->funcs[j].name, i - dec) == 0) {
             suggest = add_to_suggest(other, suggest, g_olv->funcs[j].name);
@@ -4740,7 +4739,7 @@ int input_local_stdio(char *buffer, int size) {
 
 /***************************
  *                        *
- *  Shell/File g_olv->funcs  *
+ *  Shell/File Functions  *
  *                        *
 ***************************/
 
