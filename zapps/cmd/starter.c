@@ -15,29 +15,21 @@
 #include <profan.h>
 #include <stdio.h>
 
-char **ft_split(char *s, int *c) {
-    int i, k;
-    char **res;
-
-    res = calloc(strlen(s) + 1, sizeof(char *));
-    for (*c = i = k = 0; s[i]; i++) {
-        if (s[i] == ' ') {
-            res[(*c)++] = strndup(s + k, i - k);
-            k = i + 1;
-        }
-    }
-    if (k != i)
-        res[(*c)++] = strndup(s + k, i - k);
-    return res;
+char **rsplit(char **r, char *s, int *c) {
+    int i = 0;
+    while (*s == ' ') s++;
+    while (s[i] && s[i] != ' ') i++;
+    (r = realloc(r, (*c + 1) * sizeof(char *)))[*c] = i ? strndup(s, i) : 0;
+    return i ? rsplit(r, s + i, ((*c)++, c)) : r;
 }
 
 int execute_line(char *line) {
-    int    argc, res = 1;
+    int argc = 0, res = 1;
     char **args;
 
-    if ((args = ft_split(line, &argc))[0] == NULL)
+    if (!(args = rsplit(NULL, line, &argc))[0]) {
         res = 0;
-    else if (strcmp(args[0], "cd") == 0) {
+    } else if (strcmp(args[0], "cd") == 0) {
         if (chdir(args[1] ? args[1] : "/") == -1)
             fputs("cd: No such file or directory\n", stderr);
         else res = 0;
