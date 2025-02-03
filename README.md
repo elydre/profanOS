@@ -3,16 +3,19 @@
 [![publish](https://github.com/elydre/profanOS/actions/workflows/publish.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/publish.yml)
 [![nbr](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
 [![lines](https://img.shields.io/badge/dynamic/json?color=blue&label=code%20lines&query=profan_lines&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan)
-[![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=click%20to%20test&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan/latest.html)
+[![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=latest%20kernel&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan/latest.html)
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
 The profan Operating System is an independent OS developed from scratch.
 It is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
+[Test it from your browser](https://elydre.github.io/profan/latest.html)
+without installing anything.
 
-You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7)
-and the [wiki](https://github.com/elydre/profanOS/wiki) for documentation.
+You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7),
+a [monthly updates](https://github.com/elydre/profanOS/discussions/categories/retrospective) and
+the [wiki](https://github.com/elydre/profanOS/wiki) for documentation.
 
 ## Setup
 
@@ -105,7 +108,8 @@ Here is a list of the main kernel features:
 
 The kernel and userspace are developed mainly in C. The Olivine Shell (see the
 [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
-You can also use posix-sh, lua, sulfur, malbolge and C languages to create your own programs.
+You can also use python3, posix-sh, lua, perl, sulfur, and C languages to create your
+own programs.
 
 If you prefer a bash like rather than Olivine, you can use the `dash` port which is
 POSIX compliant and often used as `/bin/sh` in linux systems.
@@ -113,12 +117,16 @@ POSIX compliant and often used as `/bin/sh` in linux systems.
 ### Major ports - Addons
 
 - [tcc](https://bellard.org/tcc/) Small and fast C compiler
+- [python](https://www.python.org/) Python 3.11 interpreter
 - [dash](https://github.com/elydre/dash-profan) POSIX compliant shell
+- [GNU make](https://www.gnu.org/software/make/) Makefile interpreter
 - [lua](https://www.lua.org/) Lightweight scripting language
 - [doom](https://github.com/ozkl/doomgeneric) Raycasting first person shooter
-- [halfix](https://github.com/nepx/halfix) x86 emulator with provided linux image
 
-All the ports are available with the command `make addons` or by building them manually.
+All the ports are available with the command `make addons`.
+A lot of programs are compiled from [this repo](https://github.com/elydre/libatron),
+you can also find a list of stuff tested in profanOS
+[here](https://github.com/stars/elydre/lists/compile-in-profan).
 
 ### Libraries
 
@@ -208,10 +216,7 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 - [@spaskalev](https://github.com/spaskalev/buddy_alloc) for the buddy allocator
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
-- [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
-- [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
-- [szhou42](https://github.com/szhou42/osdev) for ata driver
 
 A huge thank you to all the [contributors](https://github.com/elydre/profanOS/graphs/contributors)
 and all the people who took the time to look at this project!
