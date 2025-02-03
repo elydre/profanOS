@@ -850,7 +850,7 @@ void rim_syntax_init(char *lang) {
 
         g_rim.syntax->keywords = copy_array((char *[]) {
             "if", "else", "while", "for", "do", "switch", "case",
-            "default", "break", "continue", "return", "goto", "end", NULL
+            "default", "break", "continue", "return", "goto", NULL
         });
 
         g_rim.syntax->blues = copy_array((char *[]) {
