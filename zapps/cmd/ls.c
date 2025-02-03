@@ -73,8 +73,7 @@ int pretty_size_print(uint32_t n) {
     int unit_index = 0;
 
     if (value < 1000) {
-        printf("%7d B", n);
-        return 8;
+        return printf("%7d B", n);
     }
 
     for (; value >= 1000 && unit_index < 4; unit_index++)
