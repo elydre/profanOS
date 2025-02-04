@@ -617,11 +617,11 @@ int del_pseudo(char *name) {
     return 1;
 }
 
-/*******************************
- *                            *
- * Function Get/Set g_olv->funcs *
- *                            *
-********************************/
+/*********************************
+ *                              *
+ *  Function Get/Set Functions  *
+ *                              *
+*********************************/
 
 int del_function(const char *name) {
     for (int i = 0; i < g_olv->func_count; i++) {
