@@ -14,13 +14,12 @@
 #include <profan/syscall.h>
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
-#include <profan/dlgext.h>
 
 #include <dlfcn.h>
+#include <elf.h>
 
-#define DELUGE_VERSION  "4.4"
+#define DELUGE_VERSION  "5 beta"
 #define ALWAYS_DEBUG    0
-#define USE_CACHED_LIBC 0
 
 /****************************
  *                         *
@@ -28,7 +27,86 @@
  *                         *
 ****************************/
 
+// hash table structure
+typedef struct {
+    const char *key;
+    Elf32_Sym *data;
+    uint32_t hash;
+    void *next;
+} dlg_hash_t;
+
+// ELF object structure
+typedef struct elfobj {
+    char    *name;
+    uint16_t type;
+
+    int ref_count;
+
+    uint8_t *mem;
+
+    Elf32_Ehdr *ehdr;
+    Elf32_Shdr *shdr;
+
+    Elf32_Sym *sym_tab;
+    uint32_t   sym_size;
+    char      *sym_str;
+
+    Elf32_Sym *dym_tab;
+    uint32_t   dym_size;
+    char      *dym_str;
+
+    Elf32_Dyn  *dynamic;
+
+    dlg_hash_t *hash_table;
+    struct elfobj **deps;
+} elfobj_t;
+
+// extra symbols structure
+typedef struct {
+    const char *name;
+    uint32_t hash;
+    void *data;
+} dlg_extra_t;
+
+// internal variables
+elfobj_t **g_loaded_libs;
+elfobj_t *g_prog;
+
+int    g_already_fini;
+int    g_dlfcn_error;
+int    g_lib_count;
+char **g_envp;
+
+// extra symbols table
 char *profan_fn_name(void *ptr, char **libname);
+
+dlg_extra_t g_extra_syms[] = {
+    { "profan_fn_name", 0x62289205, profan_fn_name },
+    { "dlclose"       , 0xDE67CAC5, dlclose        },
+    { "dlopen"        , 0xCEF94D0E, dlopen         },
+    { "dlsym"         , 0x0677DB8D, dlsym          },
+    { "dlerror"       , 0xDE8AD652, dlerror        },
+    { NULL, 0, NULL }
+};
+
+// deluge arguments structure
+typedef struct {
+    char   *name;
+    char   *extra_path;
+    char   *extra_lib;
+    char   *patch_file;
+    uint8_t show_leaks;
+    int     arg_offset;
+    int     debug;
+} deluge_args_t;
+
+deluge_args_t *g_args;
+
+/********************************
+ *                             *
+ *   Error and debug Defines   *
+ *                             *
+********************************/
 
 #define raise_error(fmt, ...) {  \
         fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
@@ -52,47 +130,6 @@ char *profan_fn_name(void *ptr, char **libname);
         fd_printf(2, __VA_ARGS__);        \
         fd_putstr(2, "\e[0m\n");          \
     }}
-
-// internal variables
-elfobj_t **g_loaded_libs;
-elfobj_t *g_prog;
-
-int    g_already_fini;
-int    g_lib_count;
-char **g_envp;
-
-// command line options
-int   g_dlfcn_error;
-
-// extra symbols structure
-typedef struct {
-    const char *name;
-    uint32_t hash;
-    void *data;
-} dlg_extra_t;
-
-// extra symbols table
-dlg_extra_t g_extra_syms[] = {
-    { "profan_fn_name", 0x62289205, profan_fn_name },
-    { "dlclose"       , 0xDE67CAC5, dlclose        },
-    { "dlopen"        , 0xCEF94D0E, dlopen         },
-    { "dlsym"         , 0x0677DB8D, dlsym          },
-    { "dlerror"       , 0xDE8AD652, dlerror        },
-    { NULL, 0, NULL }
-};
-
-// deluge arguments structure
-typedef struct {
-    char   *name;
-    char   *extra_path;
-    char   *extra_lib;
-    char   *patch_file;
-    uint8_t show_leaks;
-    int     arg_offset;
-    int     debug;
-} deluge_args_t;
-
-deluge_args_t *g_args;
 
 /********************************
  *                             *
@@ -556,11 +593,15 @@ void free_elf(elfobj_t *obj) {
     kfree(obj->hash_table);
     kfree(obj->sym_tab);
     kfree(obj->sym_str);
+    kfree(obj->ehdr);
+    kfree(obj->shdr);
     kfree(obj->name);
+    kfree(obj->deps);
     kfree(obj);
 }
 
 #define open_elf(name, type, fatal) open_elf_r(name, type, fatal, 0)
+#define close_elf(obj) close_elf_r(obj, 0)
 
 void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, int rlvl) {
     // 'rlvl' is the recursion level, used for debug output
@@ -569,10 +610,6 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, int 
     char *path = NULL;
     uint32_t sid, size;
     uint8_t *file;
-
-    #if USE_CACHED_LIBC
-    static elfobj_t *libc = NULL;
-    #endif
 
     sid = search_elf_sid(filename, required_type == ET_DYN, &path);
 
@@ -586,22 +623,11 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, int 
         for (int i = 0; i < g_lib_count; i++) {
             if (str_cmp(g_loaded_libs[i]->name, path))
                 continue;
-            debug_printf_tab(2, rlvl, "find %s", path);
+            debug_printf_tab(1, rlvl, "find %s", path);
             kfree(path);
             g_loaded_libs[i]->ref_count++;
             return g_loaded_libs[i];
         }
-
-        #if USE_CACHED_LIBC
-        if (str_cmp(path, "/lib/libc.so") == 0) {
-            debug_printf_tab(1, rlvl, "open %s (cached)", path);
-            if (libc == NULL)
-                libc = dlgext_libc();
-            loaded_lib_add(libc);
-            kfree(path);
-            return libc;
-        }
-        #endif
     }
 
     debug_printf_tab(1, rlvl, "open %s", path);
@@ -679,13 +705,33 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, int 
     if (obj->dynamic == NULL || rlvl == -1)
         return obj;
 
+    int deps_count = 0;
+    for (int i = 0; obj->dynamic[i].d_tag != 0; i++) {
+        if (obj->dynamic[i].d_tag == DT_NEEDED)
+            deps_count++;
+    }
+
+    if (deps_count == 0)
+        return obj;
+
+    obj->deps = kcalloc(deps_count + 1, sizeof(elfobj_t *));
+    deps_count = 0;
+
     for (int i = 0; obj->dynamic[i].d_tag != 0; i++) {
         if (obj->dynamic[i].d_tag != DT_NEEDED)
             continue;
 
         char *name = (char *) obj->dym_str + obj->dynamic[i].d_un.d_val;
-        if (open_elf_r(name, ET_DYN, 0, rlvl + 1) == NULL)
+
+        if ((obj->deps[deps_count] = open_elf_r(name, ET_DYN, 0, rlvl + 1))) {
+            deps_count++;
+            continue;
+        }
+
+        if (isfatal)
             raise_error("%s: failed to open needed library '%s'", path, name);
+        free_elf(obj);
+        return NULL;
     }
 
     if (obj->type == ET_DYN)
@@ -735,6 +781,39 @@ void elfobj_iof(elfobj_t *obj, int fini) {
         }
         func_array[i]();
     }
+}
+
+int close_elf_r(elfobj_t *obj, int r_lvl) {
+    if (--obj->ref_count > 0) {
+        debug_printf_tab(2, r_lvl, "dref %s (%d)", obj->name, obj->ref_count);
+        return 0;
+    }
+
+    debug_printf_tab(2, r_lvl, "free %s", obj->name);
+
+    if (obj->deps) {
+        for (int i = 0; obj->deps[i]; i++)
+            close_elf_r(obj->deps[i], r_lvl + 1);
+    }
+
+    // remove from loaded libs
+    if (obj->type == ET_DYN) {
+        for (int i = 0; i < g_lib_count; i++) {
+            if (g_loaded_libs[i] != obj)
+                continue;
+            g_lib_count--;
+            for (int j = i; j < g_lib_count; j++)
+                g_loaded_libs[j] = g_loaded_libs[j + 1];
+            break;
+        }
+    }
+
+    if (!g_already_fini) {
+        elfobj_iof(obj, 1);
+    }
+
+    free_elf(obj);
+    return 0;
 }
 
 /********************************
@@ -805,35 +884,10 @@ void *dlsym(void *handle, const char *symbol) {
 }
 
 int dlclose(void *handle) {
-    if (handle == NULL)
+    if (handle != NULL && close_elf(handle) == 0)
         return 0;
-
-    elfobj_t *obj = handle;
-
-    if (--obj->ref_count > 0) {
-        debug_printf(2, "dref %s (%d)", obj->name, obj->ref_count);
-        return 0;
-    }
-
-    debug_printf(2, "free %s", obj->name);
-
-    // remove from loaded libs
-    for (int i = 0; i < g_lib_count; i++) {
-        if (g_loaded_libs[i] != obj)
-            continue;
-        g_lib_count--;
-        for (int j = i; j < g_lib_count; j++) {
-            g_loaded_libs[j] = g_loaded_libs[j + 1];
-        }
-        break;
-    }
-
-    if (!g_already_fini) {
-        elfobj_iof(obj, 1);
-    }
-
-    free_elf(obj);
-    return 0;
+    g_dlfcn_error = 3;
+    return -1;
 }
 
 char *dlerror(void) {
@@ -846,6 +900,9 @@ char *dlerror(void) {
             break;
         case 2:
             error = "deluge dlfcn: symbol not found";
+            break;
+        case 3:
+            error = "deluge dlfcn: failed to close file";
             break;
         default:
             error = "deluge dlfcn: unknown error";
@@ -902,24 +959,26 @@ void libc_enable_leaks(void) {
  *                             *
 ********************************/
 
-void show_help(int full) {
-    if (!full) {
+void show_help(int err) {
+    if (err) {
         fd_printf(2, "Try 'deluge -h' for more information.\n");
-        process_exit(1);
+    } else {
+        fd_printf(1,
+            "Usage: deluge [options] <file> [args]\n"
+            "Options:\n"
+            "  -d  show additional debug information\n"
+            "  -e  don't use filename as argument\n"
+            "  -h  show this help message and exit\n"
+            "  -i  show information about opened libs\n"
+            "  -l  import an additional library\n"
+            "  -L  add path for libraries search\n"
+            "  -m  show memory leaks at exit\n"
+            "  -p  load shared object as patch file\n"
+            "  -v  dump deluge version and exit\n"
+        );
     }
-    fd_printf(1,
-        "Usage: deluge [options] <file> [args]\n"
-        "Options:\n"
-        "  -d  show additional debug information\n"
-        "  -e  don't use filename as argument\n"
-        "  -h  show this help message and exit\n"
-        "  -i  show information about opened libs\n"
-        "  -l  import an additional library\n"
-        "  -L  add path for libraries search\n"
-        "  -m  show memory leaks at exit\n"
-        "  -p  load shared object as patch file\n"
-        "  -v  dump deluge version and exit\n"
-    );
+
+    process_exit(err);
 }
 
 void deluge_parse(int argc, char **argv) {
@@ -942,8 +1001,7 @@ void deluge_parse(int argc, char **argv) {
                 move_arg = 1;
                 break;
             case 'h':
-                show_help(1);
-                process_exit(0);
+                show_help(0);
                 break; // unreachable
             case 'i':
                 if (g_args->debug == 0)
@@ -952,22 +1010,22 @@ void deluge_parse(int argc, char **argv) {
             case 'l':
                 if (i + 1 >= argc) {
                     fd_printf(2, "deluge: missing argument for -l\n");
-                    show_help(0);
+                    show_help(1);
                 }
                 if (g_args->extra_lib) {
                     fd_printf(2, "deluge: extra library already set\n");
-                    show_help(0);
+                    show_help(1);
                 }
                 g_args->extra_lib = argv[++i];
                 break;
             case 'L':
                 if (i + 1 >= argc) {
                     fd_printf(2, "deluge: missing argument for -L\n");
-                    show_help(0);
+                    show_help(1);
                 }
                 if (g_args->extra_path) {
                     fd_printf(2, "deluge: lib path already set\n");
-                    show_help(0);
+                    show_help(1);
                 }
                 g_args->extra_path = argv[++i];
                 break;
@@ -977,11 +1035,11 @@ void deluge_parse(int argc, char **argv) {
             case 'p':
                 if (i + 1 >= argc) {
                     fd_printf(2, "deluge: missing argument for -p\n");
-                    show_help(0);
+                    show_help(1);
                 }
                 if (g_args->patch_file) {
                     fd_printf(2, "deluge: patch file already set\n");
-                    show_help(0);
+                    show_help(1);
                 }
                 g_args->patch_file = argv[++i];
                 break;
@@ -992,18 +1050,18 @@ void deluge_parse(int argc, char **argv) {
             case '\0':
             case '-':
                 fd_printf(2, "deluge: unknown option '%s'\n", argv[i]);
-                show_help(0);
+                show_help(1);
                 break; // unreachable
             default:
                 fd_printf(2, "deluge: invalid option -- '%c'\n", argv[i][1]);
-                show_help(0);
+                show_help(1);
                 break; // unreachable
         }
     }
 
     if (g_args->name == NULL) {
         fd_printf(2, "deluge: missing file name\n");
-        show_help(0);
+        show_help(1);
     }
 }
 
@@ -1027,18 +1085,14 @@ int main(int argc, char **argv, char **envp) {
         start = 0;
     }
 
-    if (g_args->patch_file) {
-        if (open_elf_r(g_args->patch_file, ET_DYN, 0, -1) == NULL) {
-            raise_error("%s: failed to open patch file", g_args->patch_file);
-            return 1;
-        }
+    if (g_args->patch_file && open_elf_r(g_args->patch_file, ET_DYN, 0, -1) == NULL) {
+        raise_error("%s: failed to open patch file", g_args->patch_file);
+        return 1;
     }
 
-    if (g_args->extra_lib) {
-        if (open_elf(g_args->extra_lib, ET_DYN, 0) == NULL) {
-            raise_error("%s: failed to open extra library", g_args->extra_lib);
-            return 1;
-        }
+    if (g_args->extra_lib && open_elf(g_args->extra_lib, ET_DYN, 0) == NULL) {
+        raise_error("%s: failed to open extra library", g_args->extra_lib);
+        return 1;
     }
 
     g_prog = open_elf(g_args->name, 0, 1);
@@ -1090,31 +1144,21 @@ int main(int argc, char **argv, char **envp) {
         }
 
         debug_printf(1, "PID %d process_exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);
-
-        elfobj_iof(g_prog, 1);
     } else {
         ret = 0;
     }
 
-    for (int i = 0; i < g_lib_count; i++) {
-        elfobj_iof(g_loaded_libs[i], 1);
-    }
+    close_elf(g_prog);
 
     g_already_fini = 1;
 
     while (g_lib_count) {
-        if (g_loaded_libs[0]->ref_count > 1) {
-            debug_printf(1, "Unclosed library '%s'", g_loaded_libs[0]->name);
-            g_loaded_libs[0]->ref_count = 1;
-        }
-        dlclose(g_loaded_libs[0]);
+        debug_printf(1, "Unclosed library '%s'", g_loaded_libs[0]->name);
+        g_loaded_libs[0]->ref_count = 1;
+        close_elf(g_loaded_libs[0]);
     }
 
     kfree(g_loaded_libs);
-
-    if (g_prog->type == ET_EXEC) {
-        free_elf(g_prog);
-    }
 
     if (g_args->show_leaks) {
         int leaks;
