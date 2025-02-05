@@ -67,6 +67,27 @@ int get_terminal_width(void) {
     return width;
 }
 
+int pretty_size_print(uint32_t n) {
+    const char *units[] = {"B", "kB", "MB", "GB", "TB"};
+    double value = n;
+    int unit_index = 0;
+
+    if (value < 1000) {
+        return printf("%7d B", n);
+    }
+
+    for (; value >= 1000 && unit_index < 4; unit_index++)
+        value /= 1000.0;
+
+    if (value < 10)
+        return printf("%7.2f %s", value, units[unit_index]);
+
+    if (value < 100)
+        return printf("%7.1f %s", value, units[unit_index]);
+
+    return printf("%7.1f %s", value, units[unit_index]);
+}
+
 /******************************
  *                           *
  *  entry sorting functions  *
@@ -217,29 +238,23 @@ void print_cols(int elm_count, ls_entry_t *entries, ls_args_t *args) {
 }
 
 void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
-    int size, len;
+    int len;
+
     for (int i = 0; i < elm_count; i++) {
-        printf("%02x:%06x  ", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
+        printf("%02x:%06x ", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
 
-        if (args->phys_size == 1) {
-            len = printf("%d B", syscall_fs_get_size(NULL, entries[i].sid));
-        } else if (fu_is_dir(entries[i].sid)) {
-            len = printf("%d elm", fu_get_dir_size(entries[i].sid));
-        } else if (fu_is_file(entries[i].sid)) {
-            size = fu_file_get_size(entries[i].sid);
-            if (size < 10000)
-                len = printf("%d B", size);
-            else if (size < 10000000)
-                len = printf("%d kB", size / 1024);
-            else
-                len = printf("%d MB", size / (1024 * 1024));
-        } else if (fu_is_fctf(entries[i].sid)) {
-            len = printf("F:%x", (uint32_t) fu_fctf_get_addr(entries[i].sid));
-        } else {
-            len = printf("unk");
-        }
+        if (args->phys_size == 1)
+            len = printf("%8d B", syscall_fs_get_size(NULL, entries[i].sid));
+        else if (fu_is_dir(entries[i].sid))
+            len = printf("%7d e", fu_get_dir_size(entries[i].sid));
+        else if (fu_is_file(entries[i].sid))
+            len = pretty_size_print(syscall_fs_get_size(NULL, entries[i].sid));
+        else if (fu_is_fctf(entries[i].sid))
+            len = printf(" F%08x", (uint32_t) fu_fctf_get_addr(entries[i].sid));
+        else
+            len = printf(" ? unk ?");
 
-        for (int j = len; j < 10; j++)
+        for (int j = len; j < 12; j++)
             putchar(' ');
         print_name(entries + i, args);
         putchar('\n');
