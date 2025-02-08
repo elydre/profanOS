@@ -18,8 +18,8 @@
 #include <dlfcn.h>
 #include <elf.h>
 
-#define DELUGE_VERSION  "5 beta"
-#define ALWAYS_DEBUG    2
+#define DELUGE_VERSION  "5 beta 2"
+#define ALWAYS_DEBUG    0
 
 #define VISIBILITY_LOCAL  0
 #define VISIBILITY_GLOBAL 1
@@ -77,7 +77,6 @@ typedef struct {
 elfobj_t **g_loaded_libs;
 elfobj_t  *g_prog;
 
-int    g_already_fini;
 int    g_dlfcn_error;
 int    g_lib_count;
 char **g_envp;
@@ -449,75 +448,44 @@ static inline uint32_t get_sym_extra(const char *name, uint32_t full_h) {
 }
 
 uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global) {
-    Elf32_Sym *sym;
-
     uint32_t ret, full_h = hash(name);
-    uint32_t weak_val = 0;
+    Elf32_Sym *s;
 
     if ((ret = get_sym_extra(name, full_h)))
         return ret;
 
     // search in the object and its dependencies
-    if (obj) { // if obj is the main program, it's similar to obj == NULL
-        sym = hash_get(obj, full_h, name);
-        if (sym && sym->st_shndx != STB_LOCAL) {
-            if (sym->st_shndx == STB_WEAK && weak_val == 0)
-                weak_val = sym->st_value + (uint32_t) obj->mem;
-            else {
-                if (obj->type == ET_EXEC)
-                    return sym->st_value;
-                return sym->st_value + (uint32_t) obj->mem;
-            }
-        }
+    if (obj && (s = hash_get(obj, full_h, name)) && s->st_shndx != STB_LOCAL) {
+        if (obj->type == ET_EXEC)
+            return s->st_value;
+        return s->st_value + (uint32_t) obj->mem;
+    }
 
-        if (obj->deps) {
-            for (int i = 0; obj->deps[i]; i++) {
-                sym = hash_get(obj->deps[i], full_h, name);
-                if (sym && sym->st_shndx != STB_LOCAL) {
-                    if (sym->st_shndx == STB_WEAK && weak_val == 0)
-                        weak_val = sym->st_value;
-                    else
-                        return sym->st_value + (uint32_t) obj->deps[i]->mem;
-                }
-            }
+    if (obj && obj->deps) for (int i = 0; obj->deps[i]; i++) {
+        if ((s = hash_get(obj->deps[i], full_h, name)) && s->st_shndx != STB_LOCAL) {
+            return s->st_value + (uint32_t) obj->deps[i]->mem;
         }
     }
 
-    if (weak_val) // TODO: check the exact behavior of weak symbols
-        return weak_val;
-
     if (!allow_global)
-        return 0xFFFFFFFF;
- 
-    debug_printf(2, "search %s from %s", name, obj ? obj->name : "global");
+        return 0;
 
     // search in the main program
-    sym = hash_get(g_prog, full_h, name);
-    if (sym && sym->st_shndx != STB_LOCAL) {
-        if (sym->st_shndx == STB_WEAK && weak_val == 0)
-            weak_val = sym->st_value;
-        else {
-            if (obj->type == ET_EXEC)
-                return sym->st_value;
-            return sym->st_value + (uint32_t) g_prog->mem;
-        }
+    if (g_prog && (s = hash_get(g_prog, full_h, name)) && s->st_shndx != STB_LOCAL) {
+        if (obj->type == ET_EXEC)
+            return s->st_value;
+        return s->st_value + (uint32_t) g_prog->mem;
     }
 
     // search in the global libraries
     for (int k = 0; k < g_lib_count; k++) {
-        if (g_loaded_libs[k]->visibility == VISIBILITY_LOCAL)
-            continue;
-        sym = hash_get(g_loaded_libs[k], full_h, name);
-        if (sym && sym->st_shndx != STB_LOCAL) {
-            if (sym->st_shndx == STB_WEAK && weak_val == 0)
-                weak_val = sym->st_value;
-            else
-                return sym->st_value + (uint32_t) g_loaded_libs[k]->mem;
-        }
+        if (g_loaded_libs[k]->visibility == VISIBILITY_GLOBAL &&
+            (s = hash_get(g_loaded_libs[k], full_h, name))    &&
+            s->st_shndx != STB_LOCAL
+        ) return s->st_value + (uint32_t) g_loaded_libs[k]->mem;
     }
-    if (weak_val)
-        return weak_val;
-    return 0xFFFFFFFF;
+
+    return 0;
 }
 
 char *get_addr_name(elfobj_t *obj, uint32_t addr) {
@@ -561,7 +529,7 @@ char *get_addr_name(elfobj_t *obj, uint32_t addr) {
  * L:   address of the procedure linkage table
 */
 
-int does_type_required_sym(uint8_t type) {
+static inline int does_type_required_sym(uint8_t type) {
     switch (type) {
         case R_386_32:
         case R_386_PC32:
@@ -596,12 +564,9 @@ int dynamic_linker(elfobj_t *obj) {
             name = (char *) obj->dym_str + (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_name;
             type = ELF32_R_TYPE(rel[j].r_info);
 
-            if (does_type_required_sym(type)) {
-                val = search_sym_value(name, obj, 1);
-                if (val == 0xFFFFFFFF || val == 0) {
-                    raise_error("%s: symbol '%s' not found", obj->name, name);
-                }
-            };
+            if (does_type_required_sym(type) && (val = search_sym_value(name, obj, 1)) == 0) {
+                raise_error("%s: symbol '%s' not found", obj->name, name);
+            }
 
             if (obj->type == ET_DYN)
                 ptr = (uint32_t *)(obj->mem + rel[j].r_offset);
@@ -637,11 +602,70 @@ int dynamic_linker(elfobj_t *obj) {
 
 /********************************
  *                             *
+ *   ELF init/fini functions   *
+ *                             *
+********************************/
+
+void free_elf(elfobj_t *obj) {
+    if (obj->type == ET_DYN)
+        kfree(obj->mem);
+    kfree(obj->hash_table);
+    kfree(obj->sym_tab);
+    kfree(obj->sym_str);
+    kfree(obj->ehdr);
+    kfree(obj->shdr);
+    kfree(obj->name);
+    kfree(obj->deps);
+    kfree(obj);
+}
+
+#define open_elf(name, type, fatal, visibility) open_elf_r(name, type, fatal, visibility, 0)
+#define elfobj_iof(obj, fini) elfobj_iof_r(obj, fini, 0)
+#define close_elf(obj) close_elf_r(obj, 0)
+
+void elfobj_iof_r(elfobj_t *obj, int fini, int lvl) {
+    // call constructors or destructors
+
+    if (obj->dynamic == NULL)
+        return;
+
+    void (**func_array)(void) = NULL;
+    int size = 0;
+
+    for (int j = 0; obj->dynamic[j].d_tag != 0; j++) {
+        if (obj->dynamic[j].d_tag == (fini ? DT_FINI_ARRAY : DT_INIT_ARRAY)) {
+            func_array = (void (**)(void)) obj->dynamic[j].d_un.d_ptr;
+        }
+        if (obj->dynamic[j].d_tag == (fini ? DT_FINI_ARRAYSZ : DT_INIT_ARRAYSZ)) {
+            size = obj->dynamic[j].d_un.d_val / sizeof(void *);
+        }
+    }
+
+    if (func_array == NULL)
+        return;
+
+    if (obj->type == ET_DYN)
+        func_array = (void (**)(void)) ((uint32_t) func_array + (uint32_t) obj->mem);
+
+    for (int i = 0; i < size; i++) {
+        if (g_args->debug > 1) {
+            char *name = get_addr_name(obj, (uint32_t) func_array[i]);
+            if (name) {
+                debug_printf_tab(2, lvl, "call %s %s()", obj->name, name);
+            } else {
+                debug_printf_tab(2, lvl, "call %s [%p]", obj->name, func_array[i]);
+            }
+        }
+        func_array[i]();
+    }
+}
+
+/********************************
+ *                             *
  *    ELF opening functions    *
  *                             *
 ********************************/
 
-#define open_elf(name, type, fatal, visibility) open_elf_r(name, type, fatal, visibility,0)
 void free_elf(elfobj_t *obj);
 
 void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char visibility, int rlvl) {
@@ -736,7 +760,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
             free_elf(obj);
             return NULL;
         }
-        return obj;
+        goto endopen;
     }
 
     obj->hash_table = hash_create(obj);
@@ -745,7 +769,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
         loaded_lib_add(obj);
 
     if (obj->dynamic == NULL || rlvl == -1)
-        return obj;
+        goto endopen;
 
     int deps_count = 0;
     for (int i = 0; obj->dynamic[i].d_tag != 0; i++) {
@@ -754,7 +778,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
     }
 
     if (deps_count == 0)
-        return obj;
+        goto endopen;
 
     obj->deps = kcalloc(deps_count + 1, sizeof(elfobj_t *));
     deps_count = 0;
@@ -765,7 +789,10 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
 
         char *name = (char *) obj->dym_str + obj->dynamic[i].d_un.d_val;
 
-        if ((obj->deps[deps_count] = open_elf_r(name, ET_DYN, 0, visibility == VISIBILITY_GLOBAL ? VISIBILITY_LOCAL : visibility, rlvl + 1))) {
+        if ((obj->deps[deps_count] = open_elf_r(name, ET_DYN, 0,
+                visibility == VISIBILITY_GLOBAL ? VISIBILITY_LOCAL : visibility,
+                rlvl + 1))
+        ) {
             deps_count++;
             continue;
         }
@@ -779,50 +806,12 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
     if (obj->type == ET_DYN)
         loaded_lib_atback(obj);
 
+    endopen:
+
+    dynamic_linker(obj);
+    elfobj_iof_r(obj, 0, rlvl + 1);
+
     return obj;
-}
-
-/********************************
- *                             *
- *   ELF init/fini functions   *
- *                             *
-********************************/
-
-void elfobj_iof(elfobj_t *obj, int fini) {
-    // call constructors or destructors
-
-    if (obj->dynamic == NULL)
-        return;
-
-    void (**func_array)(void) = NULL;
-    int size = 0;
-
-    for (int j = 0; obj->dynamic[j].d_tag != 0; j++) {
-        if (obj->dynamic[j].d_tag == (fini ? DT_FINI_ARRAY : DT_INIT_ARRAY)) {
-            func_array = (void (**)(void)) obj->dynamic[j].d_un.d_ptr;
-        }
-        if (obj->dynamic[j].d_tag == (fini ? DT_FINI_ARRAYSZ : DT_INIT_ARRAYSZ)) {
-            size = obj->dynamic[j].d_un.d_val / sizeof(void *);
-        }
-    }
-
-    if (func_array == NULL)
-        return;
-
-    if (obj->type == ET_DYN)
-        func_array = (void (**)(void)) ((uint32_t) func_array + (uint32_t) obj->mem);
-
-    for (int i = 0; i < size; i++) {
-        if (g_args->debug > 1) {
-            char *name = get_addr_name(obj, (uint32_t) func_array[i]);
-            if (name) {
-                debug_printf(2, "call %s %s()", obj->name, name);
-            } else {
-                debug_printf(2, "call %s [%p]", obj->name, func_array[i]);
-            }
-        }
-        func_array[i]();
-    }
 }
 
 /********************************
@@ -831,32 +820,15 @@ void elfobj_iof(elfobj_t *obj, int fini) {
  *                             *
 ********************************/
 
-void free_elf(elfobj_t *obj) {
-    if (obj->type == ET_DYN)
-        kfree(obj->mem);
-    kfree(obj->hash_table);
-    kfree(obj->sym_tab);
-    kfree(obj->sym_str);
-    kfree(obj->ehdr);
-    kfree(obj->shdr);
-    kfree(obj->name);
-    kfree(obj->deps);
-    kfree(obj);
-}
-
-#define close_elf(obj) close_elf_r(obj, 0)
-
 int close_elf_r(elfobj_t *obj, int r_lvl) {
     if (--obj->ref_count > 0) {
         debug_printf_tab(2, r_lvl, "dref %s (%d)", obj->name, obj->ref_count);
         return 0;
     }
 
-    if (!g_already_fini) {
-        elfobj_iof(obj, 1);
-    }
-
     debug_printf_tab(2, r_lvl, "free %s", obj->name);
+
+    elfobj_iof_r(obj, 1, r_lvl + 1);
 
     if (obj->deps) {
         int count;
@@ -903,7 +875,7 @@ void *dlopen(const char *filename, int flag) {
     if (flag & RTLD_TRACE || flag & RTLD_NOLOAD || flag & RTLD_NODELETE) {
         g_dlfcn_error = DLG_NOTIMPL;
         return NULL;
-    } 
+    }
 
     g_dlfcn_error = DLG_NOERR;
 
@@ -912,11 +884,6 @@ void *dlopen(const char *filename, int flag) {
     if (obj == NULL) {
         g_dlfcn_error = DLG_NOFILE;
         return NULL;
-    }
-
-    if (obj->ref_count == 1) {
-        dynamic_linker(obj);
-        elfobj_iof(obj, 0);
     }
 
     return obj;
@@ -930,7 +897,7 @@ void *dlsym(void *handle, const char *symbol) {
 
     if (obj == RTLD_DEFAULT) {
         val = search_sym_value(symbol, NULL, 1);
-        if (val == 0xFFFFFFFF) {
+        if (val == 0) {
             g_dlfcn_error = DLG_NOSYM;
             return NULL;
         }
@@ -948,7 +915,7 @@ void *dlsym(void *handle, const char *symbol) {
     }
 
     val = search_sym_value(symbol, obj, 0);
-    if (val == 0xFFFFFFFF) {
+    if (val == 0) {
         g_dlfcn_error = DLG_NOSYM;
         return NULL;
     }
@@ -963,7 +930,7 @@ int dlclose(void *handle) {
         g_dlfcn_error = DLG_INTERNAL;
     else
         g_dlfcn_error = DLG_NOERR;
-    
+
     return g_dlfcn_error == DLG_NOERR ? 0 : -1;
 }
 
@@ -1150,9 +1117,9 @@ void deluge_parse(int argc, char **argv) {
 
 int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
-    g_already_fini = 0;
     g_dlfcn_error = 0;
     g_lib_count = 0;
+    g_prog = NULL;
     g_envp = envp;
 
     deluge_args_t args;
@@ -1173,24 +1140,14 @@ int main(int argc, char **argv, char **envp) {
         return 1;
     }
 
-    if (g_args->extra_lib && open_elf(g_args->extra_lib, ET_DYN, VISIBILITY_INIT, 0) == NULL) {
+    if (g_args->extra_lib && open_elf(g_args->extra_lib, ET_DYN, 0, VISIBILITY_INIT) == NULL) {
         raise_error("%s: failed to open extra library", g_args->extra_lib);
         return 1;
     }
 
-    g_prog = open_elf(g_args->name, 0, 1, VISIBILITY_INIT);
-
-    if (g_prog == NULL) {
+    if ((g_prog = open_elf(g_args->name, 0, 1, VISIBILITY_INIT)) == NULL) {
         raise_error("%s: failed to open file", g_args->name);
         return 1;
-    }
-
-    for (int i = 0; i < g_lib_count; i++) {
-        dynamic_linker(g_loaded_libs[i]);
-    }
-
-    for (int i = 0; i < g_lib_count; i++) {
-        elfobj_iof(g_loaded_libs[i], 0);
     }
 
     if (g_args->show_leaks) {
@@ -1234,12 +1191,9 @@ int main(int argc, char **argv, char **envp) {
 
     close_elf(g_prog);
 
-    g_already_fini = 1;
-
     while (g_lib_count) {
         debug_printf(1, "Unclosed library '%s'", g_loaded_libs[0]->name);
-        g_loaded_libs[0]->ref_count = 1;
-        close_elf(g_loaded_libs[0]);
+        free_elf(g_loaded_libs[0]);
     }
 
     kfree(g_loaded_libs);
@@ -1247,7 +1201,7 @@ int main(int argc, char **argv, char **envp) {
     if (g_args->show_leaks) {
         int leaks;
         if ((leaks = syscall_mem_info(7, parent_pid)) > 0) {
-            fd_printf(2, "\n  Kernel memory leak of %d alloc%s (pid %d, %d bytes)\n\n",
+            fd_printf(2, "\n  Kernel memory leak of %d alloc%s (pid %d, %d bytes)\n",
                     leaks, leaks == 1 ? "" : "s", parent_pid,
                     syscall_mem_info(8, parent_pid)
             );
