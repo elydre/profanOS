@@ -402,7 +402,10 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     }
 
     uint8_t magic[4];
-    fu_file_read(sid, magic, 0, 4);
+    if (fu_file_get_size(sid) < 4)
+        mem_set(magic, 0, 4);
+    else
+        fu_file_read(sid, magic, 0, 4);
 
     char **nargv = NULL;
 
@@ -435,11 +438,14 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         }
     } else {
         char **interp = NULL;
-        int c;
+        int c, is_fbang = 0;
 
         if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/')
             interp = get_interp(sid, &c);
-        else if (args.envp != NULL) {
+        else if (magic[0] == '>' && magic[1] == '!' && magic[2] == '/') {
+            interp = get_interp(sid, &c);
+            is_fbang = 1;
+        } else if (args.envp != NULL) {
             for (int i = 0; args.envp[i] != NULL; i++) {
                 if (str_ncmp(args.envp[i], ENV_INTERP"=", str_len(ENV_INTERP)+1))
                     continue;
@@ -451,23 +457,41 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
             }
         }
 
-        nargv = kcalloc_ask(args.argc + c + 3, sizeof(char *));
+        nargv = kcalloc_ask(args.argc + c + 4, sizeof(char *));
 
-        nargv[0] = kmalloc_ask(4);
-        str_cpy(nargv[0], "dlg");
+        c = 0;
+        nargv[c] = kmalloc_ask(4);
+        str_cpy(nargv[c++], "dlg");
 
-        for (int i = 0; i < c; i++)
-            nargv[i+1] = interp[i];
+        if (is_fbang) {
+            nargv[c] = kmalloc_ask(3);
+            str_cpy(nargv[c++], "-e");
+
+            nargv[c++] = interp[0];
+
+            if (args.argc) {
+                nargv[c] = kmalloc_ask(str_len(args.argv[0]) + 1);
+                str_cpy(nargv[c++], args.argv[0]);
+            }
+        }
+
+        for (int i = is_fbang; interp[i] != NULL; i++) {
+            nargv[c++] = interp[i];
+        }
+
         kfree(interp);
 
-        nargv[c+1] = kmalloc_ask(str_len(args.path) + 1);
-        str_cpy(nargv[c+1], args.path);
+        if (!is_fbang) {
+            nargv[c] = kmalloc_ask(str_len(args.path) + 1);
+            str_cpy(nargv[c++], args.path);
+        }
 
         for (int i = 1; i < args.argc; i++) {
-            nargv[i+c+1] = kmalloc_ask(str_len(args.argv[i]) + 1);
-            str_cpy(nargv[i+c+1], args.argv[i]);
+            nargv[c] = kmalloc_ask(str_len(args.argv[i]) + 1);
+            str_cpy(nargv[c++], args.argv[i]);
         }
-        args.argc += c + 1;
+
+        args.argc = c;
         sid = deluge_sid;
     }
 

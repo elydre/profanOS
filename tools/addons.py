@@ -57,6 +57,8 @@ def domain(url: str) -> str:
     return url.split("/")[2]
 
 def download(url: str, path: str):
+    if os.path.exists(path):
+        return
     with urlreq.urlopen(url) as response:
         with open(path, "wb") as file:
             file.write(response.read())

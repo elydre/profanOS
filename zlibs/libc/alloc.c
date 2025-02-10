@@ -213,7 +213,7 @@ static void register_free(void *ptr) {
         return;
     }
 
-    put_error("libc: leak tracking: internal error\n");
+    put_error("libc: leak tracking: possible free of memory allocated before tracking\n");
 }
 
 static int extend_virtual(size_t size) {
