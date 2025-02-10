@@ -346,25 +346,36 @@ def build_disk_elfs():
             cprint(COLOR_EROR, f"file '{ZAPPS_DIR}/{dir_name}' is not a directory")
             exit(1)
 
+        if not os.path.exists(f"{OUT_DIR}/{ZAPPS_DIR}/{dir_name}"):
+            cprint(COLOR_EXEC, f"[mkdir] {OUT_DIR}/{ZAPPS_DIR}/{dir_name}")
+            os.makedirs(f"{OUT_DIR}/{ZAPPS_DIR}/{dir_name}")
+
         if dir_name == ZAPPS_BIN:
             for file in os.listdir(f"{ZAPPS_DIR}/{dir_name}"):
                 if os.path.isdir(f"{ZAPPS_DIR}/sys/{file}"):
                     cprint(COLOR_EROR, f"direcory {file} not supported in '{ZAPPS_DIR}/sys'")
                     exit(1)
-                bin_build_list.append(f"{ZAPPS_DIR}/{dir_name}/{file}")
+                if file.endswith(".c"):
+                    bin_build_list.append(f"{ZAPPS_DIR}/{dir_name}/{file}")
+                else:
+                    cprint(COLOR_EROR, f"unknown file type '{file}' in '{ZAPPS_DIR}/{dir_name}'")
+                    exit(1)
             continue
 
         for file in os.listdir(f"{ZAPPS_DIR}/{dir_name}"):
-            if os.path.isdir(f"{ZAPPS_DIR}/{dir_name}/{file}"):
+            fname = f"{ZAPPS_DIR}/{dir_name}/{file}"
+            if os.path.isdir(fname):
                 if file in [file.split("/")[-2] for file in dir_build_list]:
                     cprint(COLOR_EROR, f"{file}: multiple command with same name")
                     exit(1)
-                dir_build_list.extend(files_in_dir_rec(f"{ZAPPS_DIR}/{dir_name}/{file}", ".c"))
+                dir_build_list.extend(files_in_dir_rec(fname, ".c"))
             elif file.endswith(".c"):
-                elf_build_list.append(f"{ZAPPS_DIR}/{dir_name}/{file}")
+                elf_build_list.append(fname)
             else:
-                cprint(COLOR_EROR, f"unknown file type '{file}' in '{ZAPPS_DIR}/{dir_name}'")
-                exit(1)
+                if file1_newer(f"{OUT_DIR}/{fname}", fname):
+                    continue
+                print(f"[cp] {fname}")
+                print_and_exec(f"cp {fname} {OUT_DIR}/{fname}")
 
     # check double file names (cmd/*/name.c and cmd/*/name/file1.c)
     monofile = [remove_ext(file.split("/")[-1]) for file in elf_build_list] + list(
@@ -385,7 +396,7 @@ def build_disk_elfs():
     elf_build_list = [file for file in elf_build_list if not file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.elf')}", file)]
     bin_build_list = [file for file in bin_build_list if not file1_newer(
-            f"{OUT_DIR}/{file.replace('.c', '.bin')}", file)]
+            f"{OUT_DIR}/{file.replace('.c', '.elf')}", file)]
     mod_build_list = [file for file in mod_build_list if not file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.pok')}", file)]
 
@@ -564,12 +575,15 @@ def gen_disk(force=False, with_src=False):
                     ]) + f" {OUT_DIR}/disk/{dir_name}")
 
             elif dir_name == "bin":
-                for file in os.listdir(HDD_MAP[dir_name]):
-                    if not os.path.isdir(f"{HDD_MAP[dir_name]}/{file}"):
-                        print_and_exec(f"cp {HDD_MAP[dir_name]}/{file} {OUT_DIR}/disk/{dir_name}")
-                    if not os.path.exists(f"{OUT_DIR}/disk/{dir_name}/{file}"):
-                        os.makedirs(f"{OUT_DIR}/disk/{dir_name}/{file}")
-                    print_and_exec(f"cp -r {HDD_MAP[dir_name]}/{file}/*.* {OUT_DIR}/disk/{dir_name}/{file}")
+                for elm in os.listdir(HDD_MAP[dir_name]):
+                    if not os.path.isdir(f"{HDD_MAP[dir_name]}/{elm}"):
+                        print_and_exec(f"cp {HDD_MAP[dir_name]}/{elm} {OUT_DIR}/disk/{dir_name}")
+                    if not os.path.exists(f"{OUT_DIR}/disk/{dir_name}/{elm}"):
+                        os.makedirs(f"{OUT_DIR}/disk/{dir_name}/{elm}")
+                    for file in os.listdir(f"{HDD_MAP[dir_name]}/{elm}"):
+                        if os.path.isdir(f"{HDD_MAP[dir_name]}/{elm}/{file}"):
+                            continue
+                        print_and_exec(f"cp {HDD_MAP[dir_name]}/{elm}/{file} {OUT_DIR}/disk/{dir_name}/{elm}")
 
             else:
                 print_and_exec(f"cp -r {HDD_MAP[dir_name]}/* {OUT_DIR}/disk/{dir_name} 2> /dev/null || true")
