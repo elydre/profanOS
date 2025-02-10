@@ -20,8 +20,8 @@
 #define RTLD_NODELETE 0x400
 #define RTLD_NOLOAD   0x800
 
-#define	RTLD_NEXT     ((void *) -1)   // search subsequent objects
-#define	RTLD_DEFAULT  ((void *) -2)   // search in RTLD_GLOBAL
+#define RTLD_NEXT     ((void *) -1)   // search subsequent objects
+#define RTLD_DEFAULT  ((void *) -2)   // search in RTLD_GLOBAL
 
 void *dlopen(const char *filename, int flag);
 void *dlsym(void *handle, const char *symbol);
