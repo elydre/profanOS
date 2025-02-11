@@ -64,6 +64,10 @@ int chmod(const char *path, mode_t mode) {
     return 0;
 }
 
+int fchmod(int fd, mode_t mode) {
+    return (PROFAN_FNI, -1);
+}
+
 int fstat(int fd, struct stat *buf) {
     return stat_sid(fm_get_sid(fd), buf);
 }

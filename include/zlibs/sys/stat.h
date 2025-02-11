@@ -32,6 +32,7 @@ struct stat {
 
 #define S_ISUID 0004000     // set user id on execution
 #define S_ISGID 0002000     // set group id on execution
+#define S_ISVTX 0001000     // sticky bit
 
 #define S_IRWXU 0000700     // RWX mask for owner
 #define S_IRUSR 0000400     // R for owner
@@ -48,13 +49,14 @@ struct stat {
 #define S_IWOTH 0000002     // W for other
 #define S_IXOTH 0000001     // X for other
 
-#define S_IFMT  0170000     // type of file mask
-#define S_IFBLK 0060000     // block special
-#define S_IFCHR 0020000     // character special
-#define S_IFIFO 0010000     // FIFO special
-#define S_IFREG 0100000     // regular
-#define S_IFDIR 0040000     // directory
-#define S_IFLNK 0120000     // symbolic link
+#define S_IFMT   0170000    // type of file mask
+#define S_IFBLK  0060000    // block special
+#define S_IFCHR  0020000    // character special
+#define S_IFIFO  0010000    // FIFO special
+#define S_IFREG  0100000    // regular
+#define S_IFDIR  0040000    // directory
+#define S_IFLNK  0120000    // symbolic link
+#define S_IFSOCK 0140000    // socket
 
 #define S_ISBLK(m)  ((m & 0170000) == S_IFBLK)  // block special
 #define S_ISCHR(m)  ((m & 0170000) == S_IFCHR)  // character special
@@ -62,8 +64,10 @@ struct stat {
 #define S_ISREG(m)  ((m & 0170000) == S_IFREG)  // regular
 #define S_ISDIR(m)  ((m & 0170000) == S_IFDIR)  // directory
 #define S_ISLNK(m)  ((m & 0170000) == S_IFLNK)  // symbolic link
+#define S_ISSOCK(m) ((m & 0170000) == S_IFSOCK) // socket
 
 int chmod(const char *path, mode_t mode);
+int fchmod(int fd, mode_t mode);
 int fstat(int fd, struct stat *buf);
 int lstat(const char *path, struct stat *buf);
 int mknod(const char *path, mode_t mode, dev_t dev);

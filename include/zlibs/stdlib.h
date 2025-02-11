@@ -18,6 +18,7 @@
 #define EXIT_FAILURE 1
 
 #define RAND_MAX 0x7fffffff
+#define MB_CUR_MAX 1
 
 extern char **environ;
 
