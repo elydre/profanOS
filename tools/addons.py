@@ -283,7 +283,9 @@ if __name__ == "__main__":
             try:
                 table[args[0]]()
             except KeyboardInterrupt:
-                print("-- Aborted by user")
+                print("-- Aborted by user : KeyboardInterrupt")
+            except curses.error as _error:
+                print("-- Aborted by user : Mouse went out of terminal")
         else:
             print("ERROR: Unknown option:", args[0])
     else:
