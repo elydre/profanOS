@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.7 rev 0"
+#define OLV_VERSION "1.7 rev 1"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -3625,9 +3625,12 @@ int execute_while(int line_count, olv_line_t *lines, char **result) {
 }
 
 int save_function(int line_count, olv_line_t *lines) {
-    const char *func_line = lines[0].str + 5;
+    const char *func_line = lines[0].str + 4;
 
-    if (func_line[0] == '\0') {
+    while (IS_SPACE_CHAR(*func_line))
+        func_line++;
+
+    if (*func_line == '\0') {
         raise_error(NULL, "Missing function name");
         return -1;
     }
@@ -3684,7 +3687,7 @@ int does_syntax_fail(const char *program) {
 
 /***********************
  *                    *
- *  Lexing g_olv->funcs  *
+ *  Lexing Functions  *
  *                    *
 ***********************/
 
