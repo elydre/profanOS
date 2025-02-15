@@ -371,6 +371,10 @@ uint8_t panda_print_string(const char *string, int len, int string_color, uint8_
             panda_scroll(SCROLL_LINES);
         else if (string[i] == '\r')
             g_panda->cursor_x = 0;
+        else if (string[i] == '\b') {
+            if (g_panda->cursor_x > 0)
+                g_panda->cursor_x--;
+        }
         else if (string[i] == '\t') {
             tmp = g_panda->cursor_x + 4 - (g_panda->cursor_x % 4);
             for (; g_panda->cursor_x < tmp; g_panda->cursor_x++)
