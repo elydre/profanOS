@@ -65,20 +65,23 @@ FUNC deepeval
     END; IF !(eval 30 % 8 ~ 36 / 6)
         print '[ FAIL ] eval (division, modulo)\n'
         RETURN
-    END; IF !(eval "ab" + 2 ~ "ab2")
-        print '[ FAIL ] eval (str + int)\n'
-        RETURN
-    END; IF !(eval 2 + "ab" ~ "2ab")
-        print '[ FAIL ] eval (int + str)\n'
-        RETURN
     END; IF !(eval "ab" + "cd" ~ "abcd")
         print '[ FAIL ] eval (str + str)\n'
         RETURN
-    END; IF !(eval "ab" . "cd" ~ "abcd")
+    END; IF !(eval "ab" + "cd" ~ "abcd")
         print '[ FAIL ] eval (str . str)\n'
         RETURN
-    END; IF !(eval 4 . 0 ~ 40)
-        print '[ FAIL ] eval (int . int)\n'
+    END; IF !(eval "hello" ~ "hello")
+        print '[ FAIL ] eval (str ~ str)\n'
+        RETURN
+    END; IF !(eval ( "hello" = "hello" ) ~ 1)
+        print '[ FAIL ] eval (str ~ str)\n'
+        RETURN
+    END; IF !(eval "hello" > 2 ~ "llo")
+        print '[ FAIL ] eval (str > int)\n'
+        RETURN
+    END; IF !(eval "hello" < 2 ~ "hel")
+        print '[ FAIL ] eval (int < str)\n'
         RETURN
     END; IF !(eval 0x42 ~ 66)
         print '[ FAIL ] eval (hex)\n'

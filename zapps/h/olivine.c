@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.7 rev 1"
+#define OLV_VERSION "1.7 rev 2"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -31,6 +31,7 @@
 #define HISTORY_SIZE  100   // profanOS history size
 #define MAX_SUGGESTS  10    // profanOS completion suggestions
 #define MAX_PATH_SIZE 512   // current directory buffer size
+#define MAX_REC_LEVEL 100   // maximum recursion level
 
 /************************************
  *                                 *
@@ -918,46 +919,98 @@ char *resolve_wildcard(char *base, char *wildcard) {
 ***********************************/
 
 typedef struct {
-    void *ptr;
-    unsigned char type;
+    unsigned char   type;
+    union {
+        char       *str;
+        struct ast *ast;
+        char        op;
+        int         num;
+    } value;
 } ast_leaf_t;
 
-typedef struct {
+typedef struct ast {
     ast_leaf_t left;
     ast_leaf_t center;
     ast_leaf_t right;
 } ast_t;
 
-#define AST_TYPE_AST   0
-#define AST_TYPE_NIL   1
-#define AST_TYPE_STR   3
+enum {
+    AST_TYPE_NIL,
+    AST_TYPE_AST,
+    AST_TYPE_STR,
+    AST_TYPE_INT,
+    AST_TYPE_OP
+} ast_type;
 
 #define IS_THIS_OP(str, op) ((str)[0] == (op) && (str)[1] == '\0')
 
-char ops[] = "=~<>@.+-x/%()";
+char ops[] = "=~<>@+-x/%()";
 
-void free_ast(ast_t *ast) {
-    if (!ast) return;
+ast_t *free_ast(ast_t *ast) {
+    if (!ast)
+        return NULL;
 
-    if (ast->left.type == AST_TYPE_AST) {
-        free_ast((ast_t *) ast->left.ptr);
-    }
+    if (ast->center.type == AST_TYPE_AST)
+        free_ast(ast->center.value.ast);
+    else if (ast->center.type == AST_TYPE_STR)
+        free(ast->center.value.str);
 
-    if (ast->right.type == AST_TYPE_AST) {
-        free_ast((ast_t *) ast->right.ptr);
-    }
+    if (ast->left.type == AST_TYPE_AST)
+        free_ast(ast->left.value.ast);
+    else if (ast->left.type == AST_TYPE_STR)
+        free(ast->left.value.str);
+
+    if (ast->right.type == AST_TYPE_AST)
+        free_ast(ast->right.value.ast);
+    else if (ast->right.type == AST_TYPE_STR)
+        free(ast->right.value.str);
 
     free(ast);
+    return NULL;
 }
 
-ast_t *gen_ast(char **str, int len) {
-    ast_t *ast = malloc(sizeof(ast_t));
-    ast->left.type = AST_TYPE_NIL;
-    ast->right.type = AST_TYPE_NIL;
-    ast->center.type = AST_TYPE_NIL;
+int ast_parse_leaf(char *str, ast_leaf_t *leaf) {
+    if (IS_THIS_OP(str, '(') || IS_THIS_OP(str, ')')) {
+        raise_error("eval", "Unexpected parenthesis");
+        return 1;
+    }
+
+    for (int i = 0; ops[i] != '\0'; i++) {
+        if (IS_THIS_OP(str, ops[i])) {
+            leaf->type = AST_TYPE_OP;
+            leaf->value.op = ops[i];
+            return 0;
+        }
+    }
+
+    if (str[0] == '"') {
+        int len = strlen(str);
+        if (len < 2 || str[len - 1] != '"') {
+            raise_error("eval", "Double quote must be closed");
+            return 1;
+        }
+
+        leaf->value.str = malloc(len - 1);
+        leaf->type = AST_TYPE_STR;
+        strncpy(leaf->value.str, str + 1, len - 2);
+        leaf->value.str[len - 2] = '\0';
+        return 0;
+    }
+
+    if (local_atoi(str, &(leaf->value.num))) {
+        raise_error("eval", "Missing quotes in string '%s'", str);
+        return 1;
+    }
+
+    leaf->type = AST_TYPE_INT;
+    return 0;
+}
+
+ast_t *ast_gen(char **str, int len) {
+    ast_t *ast = calloc(1, sizeof(ast_t));
 
     // if start with parenthesis and end with parenthesis remove them
-    if (len > 2 && IS_THIS_OP(str[0], '(')) {
+    if (IS_THIS_OP(str[0], '(') && IS_THIS_OP(str[len - 1], ')')) {
         int i, parenthesis = 1;
         for (i = 1; i < len && parenthesis; i++) {
             if (IS_THIS_OP(str[i], '(')) {
@@ -974,28 +1027,37 @@ ast_t *gen_ast(char **str, int len) {
 
     // check if only one element
     if (len == 1) {
-        ast->center.type = AST_TYPE_STR;
-        ast->center.ptr = str[0];
+        if (ast_parse_leaf(str[0], &(ast->center)))
+            return free_ast(ast);
+        if (ast->center.type == AST_TYPE_OP) {
+            raise_error("eval", "Operator '%c' must be between two values", ast->center.value.op);
+            return free_ast(ast);
+        }
         return ast;
     }
 
     // check if only two elements
     if (len == 2) {
-        ast->left.type = AST_TYPE_STR;
-        ast->left.ptr = str[0];
-        ast->right.type = AST_TYPE_STR;
-        ast->right.ptr = str[1];
-        return ast;
+        raise_error("eval", "Missing element to complete expression", str[0], str[1]);
+        return free_ast(ast);
     }
 
     // check if only one operator
     if (len == 3) {
-        ast->left.type = AST_TYPE_STR;
-        ast->left.ptr = str[0];
-        ast->center.type = AST_TYPE_STR;
-        ast->center.ptr = str[1];
-        ast->right.type = AST_TYPE_STR;
-        ast->right.ptr = str[2];
+        if (ast_parse_leaf(str[0], &(ast->left)))
+            return free_ast(ast);
+        if (ast_parse_leaf(str[1], &(ast->center)))
+            return free_ast(ast);
+        if (ast_parse_leaf(str[2], &(ast->right)))
+            return free_ast(ast);
+        if (ast->center.type != AST_TYPE_OP) {
+            raise_error("eval", "Operator expected between two values");
+            return free_ast(ast);
+        }
+        if (ast->left.type == AST_TYPE_OP || ast->right.type == AST_TYPE_OP) {
+            raise_error("eval", "Operator '%c' must be between two values", ast->center.value.op);
+            return free_ast(ast);
+        }
         return ast;
     }
 
@@ -1003,8 +1065,9 @@ ast_t *gen_ast(char **str, int len) {
 
     // find operator with lowest priority
     int op_index = -1;
-    int op_priority = 999;
+    int op_priority = INT_MAX;
     int op_parenthesis = 0;
+
     for (int i = 0; i < len; i++) {
         if (IS_THIS_OP(str[i], '(')) {
             op_parenthesis++;
@@ -1021,285 +1084,235 @@ ast_t *gen_ast(char **str, int len) {
         }
 
         for (int j = 0; j < (int) sizeof(ops); j++) {
-            if (IS_THIS_OP(str[i], ops[j]) && j < op_priority) {
-                op_index = i;
-                op_priority = j;
-                break;
-            }
+            if (!IS_THIS_OP(str[i], ops[j]) || j >= op_priority)
+                continue;
+            op_priority = j;
+            op_index = i;
+            break;
         }
     }
 
     // check if no operator
     if (op_index == -1) {
         raise_error("eval", "No operator found in expression");
-        free_ast(ast);
-        return NULL;
+        return free_ast(ast);
+    }
+
+    if (op_index == 0 || op_index == len - 1) {
+        raise_error("eval", "Operator '%c' must be between two values", str[op_index][0]);
+        return free_ast(ast);
     }
 
     // generate ast
     if (op_index == 0) {
-        ast->left.type = AST_TYPE_STR;
-        ast->left.ptr = str[0];
+        if (ast_parse_leaf(str[0], &(ast->left)))
+            return free_ast(ast);
     } else {
         ast->left.type = AST_TYPE_AST;
-        ast->left.ptr = gen_ast(str, op_index);
-        if (ast->left.ptr == NULL) {
-            free_ast(ast);
-            return NULL;
-        }
+        ast->left.value.ast = ast_gen(str, op_index);
+        if (ast->left.value.ast == NULL)
+            return free_ast(ast);
     }
 
-    ast->center.type = AST_TYPE_STR;
-    ast->center.ptr = str[op_index];
+    if (ast_parse_leaf(str[op_index], &(ast->center)))
+        return free_ast(ast);
 
-    if (len - op_index - 1 == 1) {
-        ast->right.type = AST_TYPE_STR;
-        ast->right.ptr = str[op_index + 1];
+    if (len - op_index == 2) {
+        if (ast_parse_leaf(str[op_index + 1], &(ast->right)))
+            return free_ast(ast);
     } else {
         ast->right.type = AST_TYPE_AST;
-        ast->right.ptr = gen_ast(str + op_index + 1, len - op_index - 1);
-        if (ast->right.ptr == NULL) {
-            free_ast(ast);
-            return NULL;
-        }
+        ast->right.value.ast = ast_gen(str + op_index + 1, len - op_index - 1);
+        if (ast->right.value.ast == NULL)
+            return free_ast(ast);
     }
 
     return ast;
 }
 
-char *calculate_integers(int left, int right, char *op) {
-    int result;
-    if (op[0] == '/' && right == 0) {
+int calculate_int_int(int left, char op, int right) {
+    if (op == '/' && right == 0) {
         raise_error("eval", "Cannot divide by 0");
-        return NULL;
+        return INT_MAX;
     }
 
-    if (op[0] == '%' && right == 0) {
+    if (op == '%' && right == 0) {
         raise_error("eval", "Cannot modulo by 0");
-        return NULL;
+        return INT_MAX;
     }
 
-    switch (op[0]) {
+    switch (op) {
         case '+':
-            result = left + right;
-            break;
+            return left + right;
         case '-':
-            result = left - right;
-            break;
+            return left - right;
         case 'x':
-            result = left * right;
-            break;
+            return left * right;
         case '/':
-            result = left / right;
-            break;
+            return left / right;
         case '%':
-            result = left % right;
-            break;
+            return left % right;
         case '<':
-            result = left < right;
-            break;
+            return left < right;
         case '>':
-            result = left > right;
-            break;
+            return left > right;
         case '=':
-            result = left == right;
-            break;
+            return left == right;
         case '~':
-            result = left != right;
-            break;
+            return left != right;
         default:
-            raise_error("eval", "Unknown operator '%s' between integers", op);
-            return NULL;
+            raise_error("eval", "Unknown operator '%c' between integers", op);
+            return INT_MAX;
     }
 
-    // convert back to string
-    char *ret = malloc(12);
-    local_itoa(result, ret);
-    return ret;
+    return INT_MAX;
 }
 
-char *eval_string_copy(char *dest, char *src) {
-    int len = strlen(src);
+ast_leaf_t calculate_str_str(char *left, char op, char *right) {
+    ast_leaf_t res;
+    res.type = AST_TYPE_NIL;
 
-    if (src[0] != '"') {
-        raise_error("eval", "String must start with '\"' - got '%s'", src);
-        free(dest);
-        return NULL;
-    }
+    int len;
 
-    if (src[len - 1] != '"') {
-        raise_error("eval", "String must end with '\"' - got '%s'", src);
-        free(dest);
-        return NULL;
-    }
-
-    if (dest == NULL) {
-        dest = malloc(len + 1);
-    }
-
-    strncpy(dest, src + 1, len - 2);
-    dest[len - 2] = '\0';
-
-    return dest;
-}
-
-char *calculate_strings(char *left, char *right, char *op) {
-    char *res, *tmp;
-    int len, nb = 0;
-
-    if (local_atoi(right, &nb)) {
-        if (local_atoi(left, &nb)) tmp = NULL;
-        else tmp = right;
-    } else tmp = left;
-
-    switch (op[0]) {
+    switch (op) {
         case '+':
-        case '.':
             len = strlen(left);
-            res = malloc(len + strlen(right) + 3);
-            res[0] = '"';
-            strcpy(res + 1, left);
-            strcpy(res + len + 1, right);
-            strcat(res + len + 1, "\"");
+            res.value.str = malloc(len + strlen(right) + 1);
+            res.type = AST_TYPE_STR;
+            strcpy(res.value.str, left);
+            strcpy(res.value.str + len, right);
             break;
         case '=':
-            res = malloc(2);
-            res[0] = (strcmp(left, right) == 0) + '0';
-            res[1] = '\0';
+            res.value.num = strcmp(left, right) == 0;
+            res.type = AST_TYPE_INT;
             break;
         case '~':
-            res = malloc(2);
-            res[0] = (strcmp(left, right) != 0) + '0';
-            res[1] = '\0';
-            break;
-        case 'x':
-            if (tmp == NULL) {
-                raise_error("eval", "Integer expected for string repeat");
-                return NULL;
-            }
-            len = strlen(tmp);
-            res = malloc(len * nb + 3);
-            res[0] = '"';
-            for (int i = 0; i < nb; i++)
-                memcpy(res + 1 + i * len, tmp, len);
-            res[1 + len * nb] = '"';
-            res[2 + len * nb] = '\0';
-            break;
-        case '@':
-            if (tmp == NULL) {
-                raise_error("eval", "Integer expected for string character");
-                return NULL;
-            }
-            if (nb < 0 || nb >= (int) strlen(tmp)) {
-                raise_error("eval", "Cannot get character %d from string of length %d", nb, strlen(tmp));
-                return NULL;
-            }
-            res = malloc(4);
-            res[0] = '"';
-            res[1] = tmp[nb];
-            res[2] = '"';
-            res[3] = '\0';
-            break;
-        case '>':
-            if (tmp == NULL) {
-                raise_error("eval", "Integer expected for string shift");
-                return NULL;
-            }
-            len = strlen(tmp);
-            if (nb < 0 || nb > len) {
-                raise_error("eval", "Cannot shift string by %d", nb);
-                return NULL;
-            }
-            res = malloc(len + 3 - nb);
-            res[0] = '"';
-            memcpy(res + 1, tmp + nb, len - nb);
-            res[len - nb + 1] = '"';
-            res[len - nb + 2] = '\0';
-            break;
-        case '<':
-            if (tmp == NULL) {
-                raise_error("eval", "Integer expected for string shift");
-                return NULL;
-            }
-            len = strlen(tmp);
-            if (nb < 0 || nb > len) {
-                raise_error("eval", "Cannot shift string by %d", nb);
-                return NULL;
-            }
-            res = malloc(len + 3 - nb);
-            res[0] = '"';
-            memcpy(res + 1, tmp, len - nb);
-            res[len - nb + 1] = '"';
-            res[len - nb + 2] = '\0';
+            res.value.num = strcmp(left, right) != 0;
+            res.type = AST_TYPE_INT;
             break;
         default:
-            raise_error("eval", "Unknown operator '%s' between strings", op);
-            return NULL;
+            raise_error("eval", "Unknown operator '%c' between strings", op);
+            break;
     }
     return res;
 }
 
-char *eval(ast_t *ast) {
-    int left, right;
-    char *res = NULL;
+ast_leaf_t calculate_int_str(int nb, char op, char *str) {
+    ast_leaf_t res;
+    res.type = AST_TYPE_NIL;
+
+    int len;
+
+    switch (op) {
+        case 'x':
+            if (nb < 0) {
+                raise_error("eval", "Cannot repeat string %d times", nb);
+                break;
+            }
+            len = strlen(str);
+            res.value.str = malloc(nb * len + 1);
+            res.type = AST_TYPE_STR;
+            for (int i = 0; i < nb; i++) {
+                strcpy(res.value.str + i * len, str);
+            }
+            res.value.str[nb * len] = '\0';
+            break;
+        case '@':
+            len = strlen(str);
+            if (nb < 0 || nb >= len) {
+                raise_error("eval", "Cannot get character %d from string", nb);
+                break;
+            }
+            res.value.str = malloc(2);
+            res.type = AST_TYPE_STR;
+            res.value.str[0] = str[nb];
+            res.value.str[1] = '\0';
+            break;
+        case '>':
+            len = strlen(str);
+            if (nb < 0 || nb > len) {
+                raise_error("eval", "Cannot right shift string by %d", nb);
+                break;
+            }
+            res.value.str = malloc(len - nb + 1);
+            res.type = AST_TYPE_STR;
+            memcpy(res.value.str, str + nb, len - nb);
+            res.value.str[len - nb] = '\0';
+            break;
+        case '<':
+            len = strlen(str);
+            if (nb < 0 || nb > len) {
+                raise_error("eval", "Cannot left shift string by %d", nb);
+                break;
+            }
+            res.value.str = malloc(len + 1 - nb);
+            res.type = AST_TYPE_STR;
+            memcpy(res.value.str, str, len - nb);
+            res.value.str[len - nb] = '\0';
+            break;
+        default:
+            raise_error("eval", "Unknown operator '%c' between integer and string", op);
+            break;
+    }
+
+    return res;
+}
+
+ast_leaf_t eval(ast_t *ast) {
+    ast_leaf_t res, left, right;
+    left.type  = AST_TYPE_NIL;
+    right.type = AST_TYPE_NIL;
+    res.type   = AST_TYPE_NIL;
 
     // if only one element return it
     if (ast->left.type == AST_TYPE_NIL && ast->right.type == AST_TYPE_NIL) {
-        return strdup(ast->center.ptr);
+        if (ast->center.type == AST_TYPE_STR) {
+            res.type = AST_TYPE_STR;
+            res.value.str = strdup(ast->center.value.str);
+        } else if (ast->center.type == AST_TYPE_INT) {
+            res.type = AST_TYPE_INT;
+            res.value.num = ast->center.value.num;
+        }
+        return res;
     }
 
-    if (ast->center.type == AST_TYPE_NIL) {
-        raise_error("eval", "Operators must be surrounded by two elements (got '%s', '%s')",
-            ast->left.type == AST_TYPE_NIL ? "nil" : ast->left.type == AST_TYPE_STR ? (char *) ast->left.ptr : "ast",
-            ast->right.type == AST_TYPE_NIL ? "nil" :  ast->right.type == AST_TYPE_STR ? (char *) ast->right.ptr : "ast"
-        );
-        return ERROR_CODE;
+    if (ast->left.type == AST_TYPE_NIL || ast->right.type == AST_TYPE_NIL || ast->center.type != AST_TYPE_OP) {
+        return res;
     }
-
-    // convert to int
-    char *op = (char *) ast->center.ptr;
-    char *left_str, *right_str, *s1, *s2;
 
     if (ast->left.type == AST_TYPE_AST) {
-        left_str = eval((ast_t *) ast->left.ptr);
+        left = eval(ast->left.value.ast);
+        if (left.type == AST_TYPE_NIL)
+            goto evalend;
     } else {
-        left_str = (char *) ast->left.ptr;
+        left = ast->left;
     }
 
     if (ast->right.type == AST_TYPE_AST) {
-        right_str = eval((ast_t *) ast->right.ptr);
+        right = eval(ast->right.value.ast);
+        if (right.type == AST_TYPE_NIL)
+            goto evalend;
     } else {
-        right_str = (char *) ast->right.ptr;
+        right = ast->right;
     }
 
-    right_str = right_str == ERROR_CODE ? NULL : right_str;
-    left_str = left_str == ERROR_CODE ? NULL : left_str;
-
-    if (left_str != NULL && right_str != NULL) {
-        if (local_atoi(left_str, &left))
-            left = INT_MAX;
-        if (local_atoi(right_str, &right))
-            right = INT_MAX;
-        if (left != INT_MAX && right != INT_MAX && !(op[0] == '.' || op[0] == '@'))
-            res = calculate_integers(left, right, op);
-        else {
-            s1 = (left == INT_MAX) ? eval_string_copy(NULL, left_str) : left_str;
-            s2 = (right == INT_MAX) ? eval_string_copy(NULL, right_str) : right_str;
-            res = (s1 == NULL || s2 == NULL) ? NULL : calculate_strings(s1, s2, op);
-            if (left == INT_MAX)
-                free(s1);
-            if (right == INT_MAX)
-                free(s2);
-        }
+    if (left.type == AST_TYPE_INT && right.type == AST_TYPE_INT) {          // int int
+        res.value.num = calculate_int_int(left.value.num, ast->center.value.op, right.value.num);
+        if (res.value.num != INT_MAX)
+            res.type = AST_TYPE_INT;
+    } else if (left.type == AST_TYPE_STR && right.type == AST_TYPE_STR) {   // str str
+        res = calculate_str_str(left.value.str, ast->center.value.op, right.value.str);
+    } else if (left.type == AST_TYPE_STR && right.type == AST_TYPE_INT) {   // str int
+        res = calculate_int_str(right.value.num, ast->center.value.op, left.value.str);
+    } else if (left.type == AST_TYPE_INT && right.type == AST_TYPE_STR) {   // int str
+        res = calculate_int_str(left.value.num, ast->center.value.op, right.value.str);
     }
 
-    if (left_str != NULL && ast->left.type == AST_TYPE_AST) {
-        free(left_str);
-    }
-
-    if (right_str != NULL && ast->right.type == AST_TYPE_AST) {
-        free(right_str);
-    }
+    evalend:
+        if (ast->left.type == AST_TYPE_AST && left.type == AST_TYPE_STR)
+            free(left.value.str);
+        if (ast->right.type == AST_TYPE_AST && right.type == AST_TYPE_STR)
+            free(right.value.str);
 
     return res;
 }
@@ -1320,11 +1333,12 @@ void eval_help(void) {
         " ~  Not equal\n"
         "String operators:\n"
         " +  Concatenation\n"
-        " .  Concatenation (with number)\n"
         " x  Repeat\n"
         " @  Get character\n"
         " =  Equal\n"
         " ~  Not equal\n\n"
+        " >  Shift right\n"
+        " <  Shift left\n\n"
         "Operators priority (from lowest to highest):");
     for (unsigned i = 0; ops[i]; i++) {
         printf(" %c", ops[i]);
@@ -1352,25 +1366,32 @@ char *if_eval(char **input) {
         return NULL;
     }
 
-    ast_t *ast = gen_ast(input, argc);
-    char *res = NULL;
+    ast_t *ast = ast_gen(input, argc);
+    ast_leaf_t res;
+    char *retstr;
 
-    if (ast) {
-        res = eval(ast);
-        free_ast(ast);
-    }
-
-    if (res == NULL || res == ERROR_CODE) {
+    if (ast == NULL) {
         return ERROR_CODE;
     }
 
-    if (res[0] == '"') {
-        int len = strlen(res);
-        memmove(res, res + 1, len - 1);
-        res[len - 2] = '\0';
+    res = eval(ast);
+    free_ast(ast);
+
+    if (res.type == AST_TYPE_NIL) {
+        return ERROR_CODE;
     }
 
-    return res;
+    if (res.type == AST_TYPE_INT) {
+        retstr = malloc(12);
+        local_itoa(res.value.num, retstr);
+    } else if (res.type == AST_TYPE_STR) {
+        retstr = res.value.str;
+    } else {
+        raise_error("eval", "SHOULD NOT HAPPEN 5");
+        return ERROR_CODE;
+    }
+
+    return retstr;
 }
 
 /**************************************
@@ -2853,6 +2874,11 @@ char *execute_function(function_t *function, char **args) {
     // !2: third argument
     // !#: argument count
 
+    if (g_olv->current_level == MAX_REC_LEVEL) {
+        raise_error(function->name, "Maximum level of recursion reached");
+        return ERROR_CODE;
+    }
+
     g_olv->current_level++;
 
     int argc;
@@ -3719,11 +3745,7 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
 
     if (strncmp(program, "#!", 2) == 0) {
         for (; program[i] && program[i] != '\n'; i++);
-        fileline++;
     }
-
-    while (IS_SPACE_CHAR(program[i]))
-        i++;
 
     for (; program[i]; i++) {
         if (program[i] == '\n' && real_lexe && in_quote) {
@@ -4902,25 +4924,33 @@ void print_file_highlighted(const char *file) {
         return;
     }
 
+    int color;
+
+    #if BUILD_UNIX || BUILD_PROFAN
+    color = isatty(STDOUT_FILENO);
+    #else
+    color = 1;
+    #endif
+    
     g_olv->funcs = NULL;
     g_olv->pseudos = NULL;
-
+    
     char *line = malloc(INPUT_SIZE + 1);
     char *program = malloc(1);
     program[0] = '\0';
-
+    
     while (fgets(line, INPUT_SIZE, f)) {
         // realloc program
         int len = strlen(line);
         program = realloc(program, strlen(program) + len + 1);
         strcat(program, line);
     }
-
+    
     fclose(f);
     free(line);
-
+    
     int tmp, indent = 0;
-
+    
     olv_line_t *lines = lexe_program(program, 0, NULL);
     free(program);
 
@@ -4935,7 +4965,11 @@ void print_file_highlighted(const char *file) {
         for (int j = 0; j < indent * 4; j++)
             putchar(' ');
 
-        olv_print(l, strlen(l));
+        if (color)
+            olv_print(l, strlen(l));
+        else
+            fputs(l, stdout);
+
         putchar('\n');
         if (tmp && !indent && lines[i + 1].str) {
             putchar('\n');
@@ -4949,7 +4983,6 @@ void print_file_highlighted(const char *file) {
             does_startwith(l, "ELSE")
         ) indent++;
     }
-    fputs("\e[0m", stdout);
 
     free(lines);
 }

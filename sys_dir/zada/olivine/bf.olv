@@ -65,7 +65,7 @@ FUNC bf_set_me
 
     IF !(eval !0 > !(eval !bf_mem_len - 1))
         FOR i !(range !(eval !bf_mem_len - 1) !0)
-            global bf_mem !(eval "!bf_mem" . 00)
+            global bf_mem !(eval "!bf_mem" + "00")
         END
         global bf_mem_len !(eval !0 + 1)
     END
@@ -80,12 +80,12 @@ FUNC bf_set_me
 
     FOR i !(range 1 !(eval !bf_mem_len x 2))
         IF !(eval !i = !pos)
-            set new !(eval "!new" . "!(nb_to_hex !(eval !1 / 16))")
+            set new !(eval "!new" + "!(nb_to_hex !(eval !1 / 16))")
         END; ELSE
             IF !(eval !i = !pos + 1)
-                set new !(eval "!new" . "!(nb_to_hex !(eval !1 % 16))")
+                set new !(eval "!new" + "!(nb_to_hex !(eval !1 % 16))")
             END; ELSE
-                set new !(eval "!new" . "!(eval "!bf_mem" @ !i)")
+                set new !(eval "!new" + "!(eval "!bf_mem" @ !i)")
             END
         END
     END
@@ -158,7 +158,7 @@ FUNC bf_execute
         END
 
         IF !(eval "!c" = ",")
-            global bf_mem !(eval "!bf_mem" . "!(read)")
+            global bf_mem !(eval "!bf_mem" + "!(read)")
             set ++ index
             CONTINUE
         END
