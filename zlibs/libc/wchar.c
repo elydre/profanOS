@@ -79,6 +79,63 @@ size_t mbrlen(const char *, size_t, mbstate_t *) {
 #define SA 0xc2u
 #define SB 0xf4u
 
+int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
+    const unsigned char *s = (const void *)src;
+    wchar_t dummy;
+    unsigned c;
+
+    if (!s)
+        return 0;
+    if (!n)
+        goto ilseq;
+    if (!wc)
+        wc = &dummy;
+
+    if (*s < 0x80)
+        return !!(*wc = *s);
+
+    if (MB_CUR_MAX==1) {
+        *wc = (0xdfff & (signed char)*s);
+        return 1;
+    }
+
+    if (*s - SA > SB - SA)
+        goto ilseq;
+
+    c = bittab[*s++ - SA];
+
+    if (n < 4 && (( c << (6 * n - 6)) & (1U << 31)))
+        goto ilseq;
+    if (OOB(c,*s))
+        goto ilseq;
+
+    c = (c << 6) | (*s++ - 0x80);
+
+    if (!(c & (1U<<31))) {
+        *wc = c;
+        return 2;
+    }
+
+    if (*s - 0x80u >= 0x40)
+        goto ilseq;
+
+    c = (c << 6) | (*s++ - 0x80);
+    if (!(c & (1U << 31))) {
+        *wc = c;
+        return 3;
+    }
+
+    if (*s - 0x80u >= 0x40)
+        goto ilseq;
+
+    *wc = (c << 6) | (*s++ - 0x80);
+    return 4;
+
+ilseq:
+    errno = EILSEQ;
+    return -1;
+}
+
 size_t mbrtowc(wchar_t *restrict wc, const char *restrict src, size_t n, mbstate_t *restrict st) {
     static unsigned internal_state;
     const unsigned char *s = (const void *) src;

@@ -355,9 +355,7 @@ size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
     return mbsrtowcs(ws, (void*) &s, wn, 0);
 }
 
-int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n) {
-    return (PROFAN_FNI, 0);
-}
+// mbtowc defined in wchar.c
 
 int mkstemp(char *template) {
     return (PROFAN_FNI, 0);
