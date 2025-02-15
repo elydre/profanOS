@@ -1,4 +1,4 @@
-#!/bin/fatpath/lua.elf
+#!/bin/h/lua.elf
 
 -- Definition of image resolution
 local width = 800

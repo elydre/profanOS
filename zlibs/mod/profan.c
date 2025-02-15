@@ -22,7 +22,7 @@
 #include <fcntl.h> // for flags
 
 #define DEFAULT_KB "/zada/keymap/azerty.map"
-#define ELF_INTERP "/bin/sys/deluge.elf"
+#define ELF_INTERP "/bin/x/deluge.elf"
 #define ENV_INTERP "DEFRUN"
 
 // input() setings
@@ -410,7 +410,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     char **nargv = NULL;
 
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
-        if (str_ncmp("/bin/sys/", args.path, 9) == 0) {
+        if (str_ncmp("/bin/x/", args.path, 7) == 0) {
             nargv = kcalloc_ask(args.argc + 1, sizeof(char *));
             for (int i = 0; i < args.argc; i++) {
                 nargv[i] = kmalloc_ask(str_len(args.argv[i]) + 1);

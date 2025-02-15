@@ -6,7 +6,7 @@ fetch   - show time, mem, disk      rim     - start text editor
 kb      - set keyboard layout       rm      - remove file or dir
 less    - show file content         wc      - count words in file
 
-all commands are in /bin/cmd and /bin/fatpath
+all commands are in /bin directory
 
 \e[0m OLIVINE LANGUAGE \e[37m
 cd      - change dir                .      - execute file

@@ -1,7 +1,7 @@
 pseudo testall 'exec /zada/olivine/testall.olv'
 pseudo xclear  'clear -x'
-pseudo dlg     '. /bin/sys/deluge.elf'
-pseudo leaks   '. /bin/sys/deluge.elf -m'
+pseudo dlg     '. /bin/x/deluge.elf'
+pseudo leaks   '. /bin/x/deluge.elf -m'
 
 
 FUNC pwd

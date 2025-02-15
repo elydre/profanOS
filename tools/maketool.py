@@ -47,7 +47,7 @@ ZHEADERS = ["include/zlibs", "include/addons"]
 
 ZAPPS_DIR = "zapps"
 ZLIBS_DIR = "zlibs"
-ZAPPS_BIN = "sys" # zapps/sys
+ZAPPS_BIN = "x"   # zapps/x
 ZLIBS_MOD = "mod" # zlibs/mod
 
 LINK_FILENAME = "_link.txt" # multi file link

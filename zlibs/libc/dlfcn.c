@@ -12,7 +12,7 @@
 #include <profan.h>
 #include <stddef.h>
 
-// real function are defined in the dynamic linker (/bin/sys/deluge)
+// real function are defined in the dynamic linker (/bin/x/deluge.elf)
 // this file is just a stratagem to make the compiler happy
 
 void *dlopen(const char *filename, int flag) {
