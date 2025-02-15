@@ -22,7 +22,7 @@
 
 #define LOADER_NAME "rosemary"
 
-#define SHELL_PATH "/bin/fatpath/olivine.elf"
+#define SHELL_PATH "/bin/h/olivine.elf"
 #define SHELL_NAME "olivine"
 
 #define START_USAGE_GRAPH 1
@@ -169,7 +169,7 @@ int main(void) {
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);
         if (START_USAGE_GRAPH)
-            run_ifexist_full((runtime_args_t){"/bin/tools/usage.elf", NULL, 1,
+            run_ifexist_full((runtime_args_t){"/bin/g/usage.elf", NULL, 1,
                     (char *[]){"usage"}, NULL, 0}, &usage_pid);
     } else {
         set_env("TERM=/dev/kterm");
@@ -177,8 +177,8 @@ int main(void) {
 
     welcome_print();
 
-    set_env("PATH=/bin/cmd:/bin/fatpath");
-    set_env("DEFRUN=/bin/fatpath/tcc.elf -run");
+    set_env("PATH=/bin/c:/bin/h:/bin/l");
+    set_env("DEFRUN=/bin/h/tcc.elf -run");
     set_env("HOME=/");
     set_env("PWD=/");
 
