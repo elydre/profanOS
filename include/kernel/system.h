@@ -20,7 +20,7 @@
 #define PROCESS_MAX     64          // max process count
 #define SCUBA_MAP_MAX   0x10000000  // scuba map to 256MB max
 #define FS_MAX_DISKS    256         // max disk count
-#define RUN_DEF_PATH    "/bin/sys/rosemary.elf"
+#define RUN_DEF_PATH    "/bin/x/rosemary.elf"
 #define RUN_DEF_NAME    "rosemary"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
