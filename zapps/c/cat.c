@@ -20,9 +20,9 @@
 void show_help(void) {
     puts("Usage: cat [options] [files]\n"
         "Options:\n"
-        "  -C       canonical hex+ASCII display\n"
-        "  -e       non-printable and $ before newline\n"
-        "  -h       display this help message"
+        "  -C   canonical hex+ASCII display\n"
+        "  -e   non-printable and $ before newline\n"
+        "  -h   display this help message"
     );
 }
 

@@ -29,9 +29,9 @@ int hardclear(void) {
 int showhelp(void) {
     puts(
         "Usage: clear [option]\n"
-        " -a   use ANSI escape codes to clear the screen\n"
-        " -h   show this help message\n"
-        " -x   set all pixels to black and clear the screen"
+        "  -a   use ANSI escape codes to clear the screen\n"
+        "  -h   show this help message\n"
+        "  -x   set all pixels to black and clear the screen"
     );
     return 0;
 }

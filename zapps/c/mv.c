@@ -35,8 +35,8 @@ char *dest_check_dir(char *dst, char *src) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        printf("Usage: %s <src> <dst>\n", argv[0]);
+    if (argc != 3 || argv[1][0] == '-' || argv[2][0] == '-') {
+        fputs("Usage: mv <src> <dst>\n", stderr);
         return 1;
     }
 

@@ -33,10 +33,10 @@ typedef struct {
 void cp_help(void) {
     fputs(CP_USAGE, stdout);
     puts("Options:\n"
-        "  -b  Set the block size\n"
-        "  -h  Show this help\n"
-        "  -s  Stop after copying SIZE bytes\n"
-        "  -t  Time the operation"
+        "  -b   Set the block size\n"
+        "  -h   Show this help\n"
+        "  -s   Stop after copying SIZE bytes\n"
+        "  -t   Time the operation"
     );
 }
 

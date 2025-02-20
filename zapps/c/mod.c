@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
     if (option == 'h') {
         puts(HELP_USAGE
-            "Available options:\n"
+            "Options:\n"
             "  -h              print this help message\n"
             "  -u <id>         unload a library\n"
             "  -l <id> <path>  load/replace a library\n"

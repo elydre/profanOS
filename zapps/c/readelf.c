@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <elf.h>
 
+#define READELF_USAGE "Usage: readelf [options] <file1> [file2] ...\n"
+
 const char *g_filename;
 char *g_filecnt;
 
@@ -48,22 +50,22 @@ static const proc option_procs[] = {
 proc procs[PROC_COUNT] = {NULL};
 
 int print_help(void) {
-    puts("Usage: readelf [options] <file1> [file2] ...");
-    puts(" Display information about the contents of ELF format files");
-    puts(" Options are:");
-    puts(" -D --dyn-syms          Display the dynamic symbol table");
-    puts(" -h --help              Display this information");
-    puts(" -H --file-header       Display the ELF file header");
-    puts(" -R --dynamic-reloc     Display the dynamic relocation entries");
-    puts(" -S --section-headers   Display the sections' header");
-    puts(" -s --symbols           Display the symbol table");
+    puts(READELF_USAGE
+        "Options:\n"
+        "  -D --dyn-syms         Display the dynamic symbol table\n"
+        "  -h --help             Display this information\n"
+        "  -H --file-header      Display the ELF file header\n"
+        "  -R --dynamic-reloc    Display the dynamic relocation entries\n"
+        "  -S --section-headers  Display the sections' header\n"
+        "  -s --symbols          Display the symbol table"
+    );
     return 0;
 }
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        print_help();
-        return 0;
+        fputs(READELF_USAGE, stderr);
+        return 1;
     } else if (argc == 2) {
         procs[OPT_H] = display_file_header;
     }

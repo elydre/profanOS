@@ -45,9 +45,9 @@ char *app_ansi_color(char *str) {
 void show_help(void) {
     puts("Usage: echo [options] [string ...]\n"
         "Options:\n"
-        "  -e     recognize ANSI color escape sequences\n"
-        "  -h     display this help and exit\n"
-        "  -n     do not output the trailing newline"
+        "  -e   recognize ANSI color escape sequences\n"
+        "  -h   display this help and exit\n"
+        "  -n   do not output the trailing newline"
     );
 }
 

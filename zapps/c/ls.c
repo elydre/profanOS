@@ -382,17 +382,17 @@ int print_help(void) {
     puts(
         "Usage: ls [options] [path] [path] ...\n"
         "\nDisplay Options:\n"
-        "  -f  line by line display\n"
-        "  -l  detailed list view\n"
-        "  -m  comma separated list\n"
+        "  -f   line by line display\n"
+        "  -l   detailed list view\n"
+        "  -m   comma separated list\n"
         "\nSorting Options:\n"
-        "  -a  show all elements\n"
-        "  -p  use physical size\n"
-        "  -z  sort by size\n"
+        "  -a   show all elements\n"
+        "  -p   use physical size\n"
+        "  -z   sort by size\n"
         "\nMisc. Options:\n"
-        "  -h  display this help\n"
-        "  -c  force color output (ansi escape)\n"
-        "  -n  force no color output"
+        "  -h   display this help\n"
+        "  -c   force color output (ansi escape)\n"
+        "  -n   force no color output"
     );
     return 0;
 }

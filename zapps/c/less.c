@@ -57,8 +57,8 @@ uint32_t compute_args(int argc, char **argv) {
                 case 'h':
                     puts("Usage: less [-n] [file]");
                     puts("Options:\n"
-                        "  -n  display non-printable characters\n"
-                        "  -h  Display this help message");
+                        "  -n   display non-printable characters\n"
+                        "  -h   Display this help message");
                     return (exit(0), 0);
                 default:
                     fprintf(stderr, "less: invalid option -- '%c'\n"HELP_MSG, argv[i][1]);

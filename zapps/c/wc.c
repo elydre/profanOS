@@ -20,10 +20,10 @@
 void show_help(void) {
     puts("Usage: <CMD> | wc [option]\n"
         "Print newline, word, and byte counts from stdin.\n"
-        "  -l    only print newline count\n"
-        "  -w    only print word count\n"
-        "  -c    only print byte count\n"
-        "  -h    show this help message");
+        "  -l   only print newline count\n"
+        "  -w   only print word count\n"
+        "  -c   only print byte count\n"
+        "  -h   show this help message");
 }
 
 int parse_option(char *option) {

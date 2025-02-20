@@ -53,13 +53,12 @@ int main(int argc, char **argv) {
         fputs("sleep: Invalid arguments\nTry 'sleep -h' for more information.\n", stderr);
         return 1;
     } else if (arg == 2) {
-        puts("Usage: sleep <args>\n"
+        puts("Usage: sleep [args | time]\n"
             "args:\n"
-            "  -b       print ms since boot\n"
-            "  -h       print this help message\n"
-            "  -u       print unix time\n"
-            "  -m <n>   sleep for <n> milliseconds\n"
-            "  <n>      sleep for <n> seconds"
+            "  -b   print ms since boot\n"
+            "  -h   print this help message\n"
+            "  -u   print unix time\n"
+            "  -m   sleep for <time> milliseconds\n"
         );
         return 0;
     } else if (arg == 3) {

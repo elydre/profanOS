@@ -60,9 +60,9 @@ ln_args_t *parse_args(int argc, char **argv) {
                     "  ln [-s] <source> [target]\n"
                     "  ln -d d<disk>s<sector> <target>\n"
                     "Options:\n"
-                    "  -d  Force links to a specific sector\n"
-                    "  -h  Display this help message\n"
-                    "  -s  Create a symbolic link (not supported)");
+                    "  -d   force links to a specific sector\n"
+                    "  -h   display this help message\n"
+                    "  -s   create a symbolic link (not supported)");
                 exit(0);
             }
 

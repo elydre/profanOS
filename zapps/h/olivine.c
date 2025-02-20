@@ -1322,23 +1322,23 @@ void eval_help(void) {
         "Usage: eval <arg> [operator <arg>] [...]\n"
         "Spaces are required between operators\n\n"
         "Number operators:\n"
-        " +  Addition\n"
-        " -  Substraction\n"
-        " x  Multiplication\n"
-        " /  Division\n"
-        " %  Modulo\n"
-        " <  Less than\n"
-        " >  Greater than\n"
-        " =  Equal\n"
-        " ~  Not equal\n"
+        "  +   Addition\n"
+        "  -   Substraction\n"
+        "  x   Multiplication\n"
+        "  /   Division\n"
+        "  %   Modulo\n"
+        "  <   Less than\n"
+        "  >   Greater than\n"
+        "  =   Equal\n"
+        "  ~   Not equal\n"
         "String operators:\n"
-        " +  Concatenation\n"
-        " x  Repeat\n"
-        " @  Get character\n"
-        " =  Equal\n"
-        " ~  Not equal\n\n"
-        " >  Shift right\n"
-        " <  Shift left\n\n"
+        "  +   Concatenation\n"
+        "  x   Repeat\n"
+        "  @   Get character\n"
+        "  =   Equal\n"
+        "  ~   Not equal\n\n"
+        "  >   Shift right\n"
+        "  <   Shift left\n\n"
         "Operators priority (from lowest to highest):");
     for (unsigned i = 0; ops[i]; i++) {
         printf(" %c", ops[i]);
@@ -4931,26 +4931,26 @@ void print_file_highlighted(const char *file) {
     #else
     color = 1;
     #endif
-    
+
     g_olv->funcs = NULL;
     g_olv->pseudos = NULL;
-    
+
     char *line = malloc(INPUT_SIZE + 1);
     char *program = malloc(1);
     program[0] = '\0';
-    
+
     while (fgets(line, INPUT_SIZE, f)) {
         // realloc program
         int len = strlen(line);
         program = realloc(program, strlen(program) + len + 1);
         strcat(program, line);
     }
-    
+
     fclose(f);
     free(line);
-    
+
     int tmp, indent = 0;
-    
+
     olv_line_t *lines = lexe_program(program, 0, NULL);
     free(program);
 

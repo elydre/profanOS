@@ -206,16 +206,16 @@ enum {
 
 int show_help(void) {
     puts(
-        "Usage: proc [mode] [arg]\n"
-        "Modes:\n"
-        "  -f: search pid from name\n"
-        "  -h: show this help\n"
-        "  -l: list processes (default)\n"
-        "  -k: kill a process\n"
-        "  -p: like -l but parser friendly\n"
-        "  -s: asleep a process\n"
-        "  -t: top like interface\n"
-        "  -w: wake up a process"
+        "Usage: proc [option] [arg]\n"
+        "Options:\n"
+        "  -f   search pid from name\n"
+        "  -h   show this help\n"
+        "  -l   list processes (default)\n"
+        "  -k   kill a process\n"
+        "  -p   like -l but parser friendly\n"
+        "  -s   asleep a process\n"
+        "  -t   top like interface\n"
+        "  -w   wake up a process"
     );
     return 0;
 }

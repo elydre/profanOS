@@ -1001,15 +1001,15 @@ void show_help(int err) {
         fd_printf(1,
             "Usage: deluge [options] <file> [args]\n"
             "Options:\n"
-            "  -a  import an additional library\n"
-            "  -d  show additional debug information\n"
-            "  -e  don't use filename as argument\n"
-            "  -h  show this help message and exit\n"
-            "  -l  show information about opened libs\n"
-            "  -L  add path for libraries search\n"
-            "  -m  show memory leaks at exit\n"
-            "  -p  load shared object as patch file\n"
-            "  -v  dump deluge version and exit\n"
+            "  -a   import an additional library\n"
+            "  -d   show additional debug information\n"
+            "  -e   don't use filename as argument\n"
+            "  -h   show this help message and exit\n"
+            "  -l   show information about opened libs\n"
+            "  -L   add path for libraries search\n"
+            "  -m   show memory leaks at exit\n"
+            "  -p   load shared object as patch file\n"
+            "  -v   dump deluge version and exit\n"
         );
     }
 
