@@ -15,6 +15,7 @@
 #define _POSIX_THREADS 1
 
 #include <sys/types.h>
+#include <stddef.h>
 
 #undef  SEEK_SET
 #define SEEK_SET 0
