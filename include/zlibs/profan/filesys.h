@@ -105,7 +105,8 @@ enum {
 #define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
 #define fm_newfd_after ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
 #define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
-#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
+#define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
+#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 15))
 
 #endif
 #endif
