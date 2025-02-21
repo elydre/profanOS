@@ -28,6 +28,7 @@ enum {
     TYPE_FREE = 0,
     TYPE_FILE,
     TYPE_FCTF,
+    TYPE_DIR,
     TYPE_PPRD, // read pipe
     TYPE_PPWR  // write pipe
 };
@@ -55,6 +56,7 @@ typedef struct {
     union {
         uint32_t offset;  // file
         int      fctf_id; // fcft
+        char    *path;    // dir (for fchdir)
     };
 } fd_data_t;
 
@@ -144,7 +146,10 @@ int fm_close(int fd) {
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
         return -EBADF;
 
-    if (fd_data->type == TYPE_FCTF)
+    if (fd_data->type == TYPE_DIR)
+        kfree(fd_data->path);
+
+    else if (fd_data->type == TYPE_FCTF)
         fd_data->fctf(fd_data->fctf_id, NULL, 0, FCTF_CLOSE);
 
     else if (fd_data->type == TYPE_PPRD) {
@@ -206,7 +211,7 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         return -ENOENT;
     }
 
-    if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
+    if (!fu_is_fctf(sid) && !fu_is_file(sid) && !fu_is_dir(sid)) {
         return -EFTYPE;
     }
 
@@ -233,6 +238,11 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         } else {
             fd_data->offset = 0;
         }
+    } else if (fu_is_dir(sid)) {
+        fd_data->type = TYPE_DIR;
+        int len = str_len(abs_path);
+        fd_data->path = kmalloc_ask(len + 1);
+        str_cpy(fd_data->path, abs_path);
     } else {
         fd_data->type = TYPE_FCTF;
         fd_data->fctf = (void *) fu_fctf_get_addr(sid);
@@ -257,6 +267,9 @@ int fm_read(int fd, void *buf, uint32_t size) {
         return -EBADF;
 
     switch (fd_data->type) {
+        case TYPE_DIR:
+            return -EISDIR;
+
         case TYPE_FILE:
             tmp = syscall_fs_get_size(NULL, fd_data->sid);
             if (fd_data->offset > tmp)
@@ -317,6 +330,9 @@ int fm_write(int fd, void *buf, uint32_t size) {
         return -EBADF;
 
     switch (fd_data->type) {
+        case TYPE_DIR:
+            return -EISDIR;
+
         case TYPE_FILE:
             if (fd_data->offset + size > syscall_fs_get_size(NULL, fd_data->sid))
                 syscall_fs_set_size(NULL, fd_data->sid, fd_data->offset + size);
@@ -409,6 +425,12 @@ int fm_dup2(int fd, int new_fd) {
     new_data->sid = fd_data->sid;
 
     switch (fd_data->type) {
+        case TYPE_DIR:
+            int len = str_len(fd_data->path);
+            new_data->path = kmalloc_ask(len + 1);
+            str_cpy(new_data->path, fd_data->path);
+            break;
+
         case TYPE_FILE:
             new_data->offset = fd_data->offset;
             break;
@@ -527,6 +549,15 @@ uint32_t fm_get_sid(int fd) {
         return SID_NULL;
 
     return fd_data->sid;
+}
+
+const char *fm_get_path(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type != TYPE_DIR)
+        return NULL;
+
+    return fd_data->path;
 }
 
 int fm_declare_child(int pid) {
