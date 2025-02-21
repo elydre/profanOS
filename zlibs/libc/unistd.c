@@ -211,7 +211,12 @@ int fchown(int a, uid_t b, gid_t c) {
 }
 
 int fchdir(int a) {
-    return (PROFAN_FNI, 0);
+    const char *path = fm_get_path(a);
+    if (path == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+    return chdir(path);
 }
 
 int fdatasync(int a) {
