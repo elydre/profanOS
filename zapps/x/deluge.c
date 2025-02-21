@@ -18,7 +18,7 @@
 #include <dlfcn.h>
 #include <elf.h>
 
-#define DELUGE_VERSION  "5.0"
+#define DELUGE_VERSION  "5.1"
 #define ALWAYS_DEBUG    0
 
 #define VISIBILITY_LOCAL  0
@@ -395,7 +395,7 @@ int load_sections(elfobj_t *obj, uint8_t *file) {
     void *offset = NULL;
 
     if (base_addr && obj->type != ET_EXEC) {
-        raise_error("%s: base address is %x (0 expected for shared objects)", obj->name, base_addr);
+        raise_error("%s: NULL base address expected (got 0x%x)", obj->name, base_addr);
     }
 
     uint32_t required_size = 0;
@@ -788,7 +788,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
 
         char *name = (char *) obj->dym_str + obj->dynamic[i].d_un.d_val;
 
-        if ((obj->deps[deps_count] = open_elf_r(name, ET_DYN, 0,
+        if ((obj->deps[deps_count] = open_elf_r(name, ET_DYN, isfatal,
                 visibility == VISIBILITY_GLOBAL ? VISIBILITY_LOCAL : visibility,
                 rlvl + 1))
         ) {
@@ -796,8 +796,6 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
             continue;
         }
 
-        if (isfatal)
-            raise_error("%s: failed to open needed library '%s'", path, name);
         free_elf(obj);
         return NULL;
     }
