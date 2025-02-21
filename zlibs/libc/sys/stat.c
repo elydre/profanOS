@@ -65,7 +65,7 @@ int chmod(const char *path, mode_t mode) {
 }
 
 int fchmod(int fd, mode_t mode) {
-    return (PROFAN_FNI, -1);
+    return 0;
 }
 
 int fstat(int fd, struct stat *buf) {
@@ -107,5 +107,5 @@ int stat(const char *path, struct stat *buf) {
 }
 
 mode_t umask(mode_t mask) {
-    return (PROFAN_FNI, 0);
+    return 0777;
 }

@@ -49,5 +49,5 @@ int setitimer(int which, const struct itimerval *new_value, struct itimerval *ol
 }
 
 int utimes(const char *filename, const struct timeval *times) {
-    return (PROFAN_FNI, -1);
+    return 0;
 }

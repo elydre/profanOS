@@ -77,8 +77,13 @@ int chdir(const char *path) {
     return 0;
 }
 
-int chown(const char *a, uid_t b, gid_t c) {
-    return (PROFAN_FNI, 0);
+int chown(const char *path, uid_t owner, gid_t group) {
+    if (IS_SID_NULL(profan_path_resolve(path))) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    return 0;
 }
 
 int close(int fd) {
@@ -206,8 +211,8 @@ void _exit(int status) {
     while (1); // unreachable (probably)
 }
 
-int fchown(int a, uid_t b, gid_t c) {
-    return (PROFAN_FNI, 0);
+int fchown(int fd, uid_t owner, gid_t group) {
+    return 0;
 }
 
 int fchdir(int a) {
@@ -253,8 +258,20 @@ int fsync(int a) {
     return (PROFAN_FNI, 0);
 }
 
-int ftruncate(int a, off_t b) {
-    return (PROFAN_FNI, 0);
+int ftruncate(int fd, off_t length) {
+    uint32_t sid = fm_get_sid(fd);
+
+    if (!fu_is_file(sid)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (syscall_fs_set_size(NULL, sid, length)) {
+        errno = EIO;
+        return -1;
+    }
+
+    return 0;
 }
 
 char *getcwd(char *buf, size_t size) {
@@ -401,8 +418,13 @@ int isatty(int fd) {
     return fm_isfctf(fd) > 0;
 }
 
-int lchown(const char *a, uid_t b, gid_t c) {
-    return (PROFAN_FNI, 0);
+int lchown(const char *path, uid_t owner, gid_t group) {
+    if (IS_SID_NULL(profan_path_resolve(path))) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    return 0;
 }
 
 int link(const char *a, const char *b) {
@@ -537,8 +559,20 @@ int tcsetpgrp(int a, pid_t b) {
     return (PROFAN_FNI, 0);
 }
 
-int truncate(const char *a, off_t b) {
-    return (PROFAN_FNI, 0);
+int truncate(const char *filename, off_t length) {
+    uint32_t sid = profan_path_resolve(filename);
+
+    if (!fu_is_file(sid)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (syscall_fs_set_size(NULL, sid, length)) {
+        errno = EIO;
+        return -1;
+    }
+
+    return 0;
 }
 
 char *ttyname(int a) {
