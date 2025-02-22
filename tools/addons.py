@@ -68,9 +68,8 @@ def download_targz(url: str, path: str):
 
     download(url, targz)
 
-    if os.path.exists(path):
-        os.system(f"rm -rf {path}")
-    os.makedirs(path)
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     os.system(f"tar -xf {targz} -C {path}")
     os.remove(targz)
