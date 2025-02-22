@@ -350,6 +350,18 @@ long ftell(FILE *stream) {
     return r < 0 ? -1 : r;
 }
 
+int fgetpos(FILE *stream, fpos_t *pos) {
+    if (pos == NULL)
+        return -1;
+    return (*pos = ftell(stream)) < 0 ? -1 : 0;
+}
+
+int fsetpos(FILE *stream, const fpos_t *pos) {
+    if (pos == NULL)
+        return -1;
+    return fseek(stream, *pos, SEEK_SET);
+}
+
 int fgetc(FILE *stream) {
     uint8_t c;
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;

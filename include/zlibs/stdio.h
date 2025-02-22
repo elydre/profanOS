@@ -20,6 +20,8 @@
 struct _IO_FILE;
 typedef struct _IO_FILE FILE;
 
+typedef long fpos_t;
+
 // standard streams
 extern FILE *stdin;
 extern FILE *stdout;
@@ -63,6 +65,9 @@ int     fwide(FILE *stream, int mode);
 size_t  fread(void *buffer, size_t size, size_t count, FILE *stream);
 size_t  fwrite(const void *buffer, size_t size, size_t count, FILE *stream);
 int     fseek(FILE *stream, long offset, int whence);
+long    ftell(FILE *stream);
+int     fgetpos(FILE *stream, fpos_t *pos);
+int     fsetpos(FILE *stream, const fpos_t *pos);
 int     fgetc(FILE *stream);
 int     getc(FILE *stream);
 char   *fgets(char *str, int count, FILE *stream);
@@ -89,7 +94,6 @@ int     vprintf(const char *format, va_list vlist);
 int     vfprintf(FILE *stream, const char *format, va_list vlist);
 int     vsprintf(char *buffer, const char *format, va_list vlist);
 int     vsnprintf(char *str, size_t count, const char *fmt, va_list args);
-long    ftell(FILE *stream);
 int     feof(FILE *stream);
 int     ferror(FILE *stream);
 void    rewind(FILE *stream);
