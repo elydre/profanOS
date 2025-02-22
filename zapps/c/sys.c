@@ -122,6 +122,8 @@ int do_fetch(void) {
     pl_and_pf("%s\n", all_colors);
     free(all_colors);
 
+    pl_and_pf("\n");
+
     return 0;
 }
 
