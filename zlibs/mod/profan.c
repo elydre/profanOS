@@ -440,9 +440,9 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         char **interp = NULL;
         int c, is_fbang = 0;
 
-        if (magic[0] == '#' && magic[1] == '!' && magic[2] == '/')
+        if (magic[0] == '#' && magic[1] == '!')
             interp = get_interp(sid, &c);
-        else if (magic[0] == '>' && magic[1] == '!' && magic[2] == '/') {
+        else if (magic[0] == '>' && magic[1] == '!') {
             interp = get_interp(sid, &c);
             is_fbang = 1;
         } else if (args.envp != NULL) {
@@ -451,10 +451,16 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
                     continue;
                 interp = split_interp(args.envp[i] + str_len(ENV_INTERP) + 1, &c);
             }
+
             if (interp == NULL) {
                 fd_printf(2, "[run_ifexist] %s: unknown file type\n", args.path);
                 return -1;
             }
+        }
+
+        if (c == 0) {
+            fd_printf(2, "[run_ifexist] %s: invalid shebang\n", args.path);
+            return -1;
         }
 
         nargv = kcalloc_ask(args.argc + c + 4, sizeof(char *));
