@@ -218,8 +218,6 @@ void status_print(int (*func)(), char *verb, char *noun) {
         kcprint(" OK ", 0x0A);
     } else if (status == 2) {
         kcprint("PASS", 0x0E);
-    } else if (status == 3) {
-        kcprint("ENBL", 0x0B);
     } else {
         kcprint("FAIL", 0x0C);
     }

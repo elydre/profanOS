@@ -3,13 +3,13 @@
 |                                                                             |
 |    Kernel ATA driver functions                                   .pi0iq.    |
 |                                                                 d"  . `'b   |
-|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
-|    Based on OsDev wiki - wiki.osdev.org/ATA_PIO_Mode             `// \\     |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
 |                                                                  //   \\    |
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <kernel/afft.h>
+#include <drivers/ata.h>
 #include <cpu/ports.h>
 
 /*
@@ -32,15 +32,14 @@ ERR: a 1 indicates that an error occured. An error code has been placed in the e
 #define STATUS_DF  0x20
 #define STATUS_ERR 0x01
 
-static void ATA_wait_BSY(void) {    // wait for bsy to be 0
-    while (port_byte_in(0x1F7) & STATUS_BSY);
-}
+// Source - OsDev wiki
+static void ATA_wait_BSY(void);
+static void ATA_wait_DRQ(void);
 
-static void ATA_wait_DRQ(void) {    // wait fot drq to be 1
-    while (!(port_byte_in(0x1F7) & STATUS_RDY));
-}
 
-static void write_sector(uint32_t LBA, uint32_t *data) {
+void ata_write_sector(uint32_t LBA, uint32_t *data) {
+    // LBA : Logical Block Address
+    // data: uint32_t data[128]
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
@@ -60,7 +59,9 @@ static void write_sector(uint32_t LBA, uint32_t *data) {
     }
 }
 
-static void read_sector(uint32_t LBA, uint32_t *data) {
+void ata_read_sector(uint32_t LBA, uint32_t *data) {
+    // LBA : Logical Block Address
+    // data: uint32_t data[128]
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
@@ -80,46 +81,11 @@ static void read_sector(uint32_t LBA, uint32_t *data) {
     }
 }
 
-int ata_write(void *buffer, uint32_t offset, uint32_t size) {
-    if (size % 512 != 0 || offset % 512 != 0)
-        return -1;
-
-    uint32_t LBA = offset / 512;
-    uint32_t *data = buffer;
-
-    size /= 512;
-
-    for (uint32_t i = 0; i < size; i++) {
-        write_sector(LBA + i, data);
-        data += 128;
-    }
-
-    return size;
-}
-
-int ata_read(void *buffer, uint32_t offset, uint32_t size) {
-    if (size % 512 != 0 || offset % 512 != 0)
-        return -1;
-
-    uint32_t LBA = offset / 512;
-    uint32_t *data = buffer;
-
-    size /= 512;
-
-    for (uint32_t i = 0; i < size; i++) {
-        read_sector(LBA + i, data);
-        data += 128;
-    }
-
-    return size;
-}
-
-int ata_get_sectors_count(void) {
+uint32_t ata_get_sectors_count(void) {
+    // return 0 if ata is not present
     for (int count = 0; port_byte_in(0x1F7) & STATUS_BSY; count++) {
-        if (count > 100) // timeout, no drive
-            return -1;
+        if (count > 0x1000) return 0;
     }
-
     port_byte_out(0x1F6,0xE0 | ((0 >> 24) & 0xF));
     port_byte_out(0x1F2, 0);
     port_byte_out(0x1F3, 0);
@@ -127,22 +93,24 @@ int ata_get_sectors_count(void) {
     port_byte_out(0x1F5, 0);
     port_byte_out(0x1F7, 0xEC); // send the identify command
 
-    if (port_byte_in(0x1F7) == 0) // no drive
-        return -1;
+    if (port_byte_in(0x1F7) == 0) return 0;
 
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
     uint16_t bytes[256];
-
-    for (int i = 0; i < 256; i++)
+    for (int i = 0; i < 256; i++) {
         bytes[i] = port_word_in(0x1F0);
+    }
 
-    return bytes[61] << 16 | bytes[60];
+    uint32_t size = bytes[61] << 16 | bytes[60];
+    return size;
 }
 
-int ata_init(void) {
-    if (ata_get_sectors_count() == -1)
-        return 0;
-    return afft_register(3, ata_read, ata_write, NULL) == 3 ? 3 : 1;
+static void ATA_wait_BSY(void) {    // wait for bsy to be 0
+    while (port_byte_in(0x1F7) & STATUS_BSY);
+}
+
+static void ATA_wait_DRQ(void) {    // wait fot drq to be 1
+    while (!(port_byte_in(0x1F7) & STATUS_RDY));
 }

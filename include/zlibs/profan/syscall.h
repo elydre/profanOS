@@ -250,6 +250,7 @@ DEFN_SYSCALL1(18, int,       vesa_info, int)
 DEFN_SYSCALL3(19, int,       serial_read, int, char *, uint32_t)
 DEFN_SYSCALL3(20, int,       serial_write, int, char *, uint32_t)
 
+DEFN_SYSCALL2(21, char,      sc_to_char, int, int)
 DEFN_SYSCALL0(22, int,       sc_get)
 DEFN_SYSCALL2(23, int,       mouse_call, int, int)
 

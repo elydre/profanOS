@@ -13,6 +13,7 @@
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
+#include <drivers/serial.h>
 #include <drivers/mouse.h>
 #include <drivers/rtc.h>
 #include <cpu/timer.h>
@@ -23,8 +24,6 @@
 
 #include <minilib.h>
 #include <system.h>
-
-void dummy_syscall(void) {;}
 
 void *SYSCALL_ARRAY[] = {
     // butterfly.h
@@ -54,11 +53,12 @@ void *SYSCALL_ARRAY[] = {
     cursor_get_offset,  // 17
     vesa_get_info,      // 18
 
-    dummy_syscall,      // 19
-    dummy_syscall,      // 20
-    dummy_syscall,      // 21
+    // serial.h
+    serial_read,        // 19
+    serial_write,       // 20
 
     // keyboard.h + mouse.h
+    kb_sc_to_char,      // 21
     kb_get_scfh,        // 22
     mouse_call,         // 23
 

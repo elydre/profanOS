@@ -13,6 +13,7 @@
 #include <kernel/multiboot.h>
 #include <drivers/diskiso.h>
 #include <kernel/process.h>
+#include <drivers/serial.h>
 #include <minilib.h>
 #include <system.h>
 
