@@ -63,7 +63,7 @@ void draw_tree(filesys_t *filesys, uint32_t sid, int depth) {
     uint32_t *sids;
     int count;
 
-    count = fu_get_dir_content(filesys, sid, &sids, &names);
+    count = fu_dir_get_content(filesys, sid, &sids, &names);
 
     if (count == -1) {
         printf("failed to get directory content during path search\n");

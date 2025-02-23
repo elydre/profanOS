@@ -725,7 +725,7 @@ char **load_bin_names(void) {
         if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id))
             goto next;
 
-        int elm_count = fu_get_dir_content(dir_id, &cnt_ids, &cnt_names);
+        int elm_count = fu_dir_get_content(dir_id, &cnt_ids, &cnt_names);
         if (!elm_count)
             goto next;
 
@@ -4368,7 +4368,7 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
         char **names;
         uint32_t *out_ids;
 
-        int elm_count = fu_get_dir_content(dir, &out_ids, &names);
+        int elm_count = fu_dir_get_content(dir, &out_ids, &names);
 
         for (int j = 0; j < elm_count; j++) {
             if (names[j][0] == '.' && inp_end[0] != '.') continue;

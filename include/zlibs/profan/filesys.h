@@ -58,9 +58,9 @@ enum {
 #ifndef FILESYS_LIB_C
 
 #define fu_is_dir ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 2))
-#define fu_get_dir_size ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 3))
-#define fu_get_dir_elm ((int (*)(uint8_t *, uint32_t, uint32_t, uint32_t *)) get_func_addr(FILESYS_LIB_ID, 4))
-#define fu_get_dir_content ((int (*)(uint32_t, uint32_t **, char ***)) get_func_addr(FILESYS_LIB_ID, 5))
+#define fu_dir_get_size ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 3))
+#define fu_dir_get_elm ((int (*)(uint8_t *, uint32_t, uint32_t, uint32_t *)) get_func_addr(FILESYS_LIB_ID, 4))
+#define fu_dir_get_content ((int (*)(uint32_t, uint32_t **, char ***)) get_func_addr(FILESYS_LIB_ID, 5))
 #define fu_add_to_dir ((int (*)(uint32_t, uint32_t, char *)) get_func_addr(FILESYS_LIB_ID, 6))
 #define fu_remove_from_dir ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 7))
 #define fu_dir_create ((uint32_t (*)(int, const char *)) get_func_addr(FILESYS_LIB_ID, 8))

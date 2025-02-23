@@ -45,7 +45,7 @@ DIR *opendir(const char *dirname) {
     uint32_t sid, size;
     uint8_t *buf;
 
-    int i, count = fu_get_dir_size(dir_sid); // OK with SID_NULL
+    int i, count = fu_dir_get_size(dir_sid); // OK with SID_NULL
 
     if (count < 0) {
         errno = -count;
@@ -69,7 +69,7 @@ DIR *opendir(const char *dirname) {
     dirp->entries = (void *) (dirp + 1);
 
     for (i = 0; i < count; i++) {
-        int offset = fu_get_dir_elm(buf, size, i, &sid);
+        int offset = fu_dir_get_elm(buf, size, i, &sid);
 
         if (offset < 0) {
             free(buf);

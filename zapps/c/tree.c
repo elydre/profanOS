@@ -94,7 +94,7 @@ int draw_tree(uint32_t sid, int depth) {
     uint32_t *sids;
     int count;
 
-    count = fu_get_dir_content(sid, &sids, &names);
+    count = fu_dir_get_content(sid, &sids, &names);
 
     if (count == -1) {
         return 1;

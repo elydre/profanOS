@@ -30,8 +30,7 @@ typedef struct {
 } rm_options_t;
 
 void print_help(void) {
-    puts(
-        "Usage: rm [options] <path>\n"
+    puts(RM_USAGE
         "Options:\n"
         "  -f     ignore nonexistent files\n"
         "  -h     display this help and exit\n"
@@ -76,7 +75,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
 
         uint32_t *content;
         char **names;
-        int count = fu_get_dir_content(elem, &content, &names);
+        int count = fu_dir_get_content(elem, &content, &names);
 
         if (count < 0) {
             fprintf(stderr, "rm: Cannot remove '%s': Failed to get directory content\n", path);

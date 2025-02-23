@@ -43,7 +43,7 @@ int search_recursive(uint32_t base, char *path, uint8_t required_type, char *ext
         uint32_t sid;
         char *name;
 
-        offset = fu_get_dir_elm(buf, size, i, &sid);
+        offset = fu_dir_get_elm(buf, size, i, &sid);
 
         if (offset <= 0) {
             free(buf);

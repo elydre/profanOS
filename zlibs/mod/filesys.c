@@ -128,7 +128,7 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int fu_get_dir_size(uint32_t dir_sid) {
+int fu_dir_get_size(uint32_t dir_sid) {
     if (!fu_is_dir(dir_sid))
         return ERROR_NOT_DIR;
 
@@ -146,7 +146,7 @@ int fu_get_dir_size(uint32_t dir_sid) {
     return count;
 }
 
-int fu_get_dir_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {
+int fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {
     // positive return: name offset
     // zero return: end of directory
     // negative return: error code (-errno)
@@ -182,7 +182,7 @@ int fu_get_dir_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) 
     return offset;
 }
 
-int fu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
+int fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     if (!fu_is_dir(dir_sid))
         return ERROR_NOT_DIR;
 
@@ -214,7 +214,7 @@ int fu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     *names = kmalloc(sizeof(char *) * count);
 
     for (uint32_t i = 0; i < count; i++) {
-        offset = fu_get_dir_elm(buf, size, i, &sid);
+        offset = fu_dir_get_elm(buf, size, i, &sid);
         if (offset <= 0) {
             kfree(*ids);
             kfree(*names);
@@ -670,7 +670,7 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
     }
 
     // search for the path part
-    for (int j = 0; (offset = fu_get_dir_elm(buf, size, j, &sid)) > 0; j++) {
+    for (int j = 0; (offset = fu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
         if (str_cmp(path, (char *) buf + offset) == 0) {
             kfree(buf);
             return sid;
