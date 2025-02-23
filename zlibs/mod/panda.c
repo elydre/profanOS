@@ -15,6 +15,9 @@
 #include <profan/filesys.h>
 #include <profan/libmmq.h>
 
+#define _PANDA_C
+#include <profan/panda.h>
+
 #define DEFAULT_FONT "/zada/fonts/lat38-bold18.psf"
 #define SCROLL_LINES 8
 
@@ -28,7 +31,7 @@ typedef struct {
 } font_data_t;
 
 typedef struct {
-    uint8_t color;
+    uint16_t color;
     char content;
 } screen_char_t;
 
@@ -44,7 +47,8 @@ typedef struct {
     int saved_cursor_y;
 
     uint8_t cursor_is_hidden;
-    uint8_t color;
+
+    uint16_t color;
 
     uint32_t *fb;
     uint32_t pitch;
@@ -116,7 +120,7 @@ static inline uint32_t compute_color(uint8_t color) {
     return rgb[(int) color];
 }
 
-static inline void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color_code) {
+static inline void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint16_t color_code) {
     uint32_t bg_color = compute_color((color_code >> 4) & 0xF);
     uint32_t fg_color = compute_color(color_code & 0xF);
 
@@ -128,7 +132,7 @@ static inline void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color
     for (uint32_t i = 0; i < g_panda->font->charsize; i++) {
         for (int j = 7; j >= 0; j--) {
             g_panda->fb[(xo + x) + (yo + y) * g_panda->pitch] = char_data[i] & (1 << j) ? fg_color : bg_color;
-            if (x >= g_panda->font->width - 1) {
+            if (x == g_panda->font->width - 1) {
                 x = 0;
                 y++;
                 break;
@@ -136,9 +140,15 @@ static inline void print_char(uint32_t xo, uint32_t yo, uint8_t c, uint8_t color
             x++;
         }
     }
+
+    if (color_code & PANDA_UNDERLINE) {
+        for (uint32_t i = 0; i < g_panda->font->width; i++) {
+            set_pixel(xo + i, yo + g_panda->font->height - 1, fg_color);
+        }
+    }
 }
 
-void panda_set_char(uint32_t x, uint32_t y, uint8_t c, uint8_t color) {
+void panda_set_char(uint32_t x, uint32_t y, uint8_t c, uint16_t color) {
     uint32_t offset = y * g_panda->max_cols + x;
 
     if (g_panda->screen_buffer[offset].content == c &&
@@ -163,7 +173,7 @@ static void panda_clear_screen(void) {
     g_panda->scroll_offset = 0;
 }
 
-static char compute_ansi_color(char ansi_nb, int part, char old_color) {
+static uint16_t compute_ansi_color(char ansi_nb, int part, uint16_t old_color) {
     char fg = old_color & 0xF;
     char bg = (old_color >> 4) & 0xF;
 
@@ -188,7 +198,7 @@ static char compute_ansi_color(char ansi_nb, int part, char old_color) {
         bg = ansi_nb + 8;
     }
 
-    return (bg << 4) | fg;
+    return (bg << 4) | fg | (old_color & PANDA_UNDERLINE);
 }
 
 static int compute_ansi_escape(const char *str, int main_color) {
@@ -214,6 +224,24 @@ static int compute_ansi_escape(const char *str, int main_color) {
         }
     }
 
+    // reset color
+    if (str[0] == '0' && str[1] == 'm') {
+        g_panda->color = main_color == -1 ? 0xF : main_color;
+        return 3;
+    }
+
+    // underline
+    if (str[0] == '4' && str[1] == 'm') {
+        g_panda->color |= PANDA_UNDERLINE;
+        return 3;
+    }
+
+    // no underline
+    if (str[0] == '2' && str[1] == '4' && str[2] == 'm') {
+        g_panda->color &= ~PANDA_UNDERLINE;
+        return 4;
+    }
+
     // font color
     if (str[0] == '3' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 0, g_panda->color);
@@ -232,15 +260,10 @@ static int compute_ansi_escape(const char *str, int main_color) {
         return 4;
     }
 
+    // highlight background color
     if (str[0] == '1' && str[1] == '0' && str[2] && str[3] == 'm') {
         g_panda->color = compute_ansi_color(str[2], 3, g_panda->color);
         return 5;
-    }
-
-    // reset color
-    if (str[0] == '0' && str[1] == 'm') {
-        g_panda->color = main_color == -1 ? 0xF : main_color;
-        return 3;
     }
 
     // cursor hide and show
@@ -355,7 +378,7 @@ static void draw_cursor(int errase) {
     }
 }
 
-uint8_t panda_print_string(const char *string, int len, int string_color, uint8_t default_color) {
+uint16_t panda_print_string(const char *string, int len, int string_color, uint16_t default_color) {
     if (!g_panda) return 0;
     int tmp, old_color;
 

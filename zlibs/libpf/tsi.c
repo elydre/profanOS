@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define TSI_VERSION "0.7.2"
+#define TSI_VERSION "0.7.3"
 
 #define TSI_TEXT_COLOR   0x0F
 #define TSI_TITLE_COLOR  0x70
@@ -70,7 +70,7 @@ static void tsi_draw_footer(char *buffer, int line, int line_count) {
         panda_set_char(i, SCREEN_H - 1, ' ', TSI_FOOTER_COLOR);
 }
 
-static uint8_t tsi_ansi_to_panda(char l) {
+static uint16_t tsi_ansi_to_panda(char l) {
     switch (l) {
         case '0': return 0;
         case '1': return 4;
@@ -83,13 +83,18 @@ static uint8_t tsi_ansi_to_panda(char l) {
     return 7;
 }
 
-static int tsi_compute_ansi(const char *data, uint8_t *color_ptr) {
+static int tsi_compute_ansi(const char *data, uint16_t *color_ptr) {
     int i, len = 0;
 
     if (data[0] == '\e' && data[1] == '[') {
         if (data[2] == '0' && data[3] == 'm') {
             if (color_ptr)
                 *color_ptr = TSI_TEXT_COLOR;
+            return 3;
+        }
+        if (data[2] == '4' && data[3] == 'm') {
+            if (color_ptr)
+                *color_ptr |= PANDA_UNDERLINE;
             return 3;
         }
         if (data[2] == '3' && data[3] >= '0' && data[3] <= '7' && data[4] == 'm') {
@@ -145,7 +150,7 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
 }
 
 static void tsi_draw_lines(const char **lines, uint32_t flags) {
-    uint8_t color = TSI_TEXT_COLOR;
+    uint16_t color = TSI_TEXT_COLOR;
     int x, y;
 
     for (y = 0; lines[y] && y < SCREEN_H - 2; y++) {
