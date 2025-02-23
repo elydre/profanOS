@@ -9,7 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <kernel/butterfly.h>
 #include <kernel/afft.h>
 #include <cpu/ports.h>
 
@@ -143,15 +142,7 @@ int ata_get_sectors_count(void) {
 }
 
 int ata_init(void) {
-    int afft_id;
-
     if (ata_get_sectors_count() == -1)
         return 0;
-    
-    afft_id = afft_register(AFFT_AUTO, ata_read, ata_write, NULL);
-
-    if (afft_id == -1 || fu_afft_create(MAIN_FS, "/dev", "ata", afft_id) == SID_NULL)
-        return 1;
-
-    return 3;
+    return afft_register(3, ata_read, ata_write, NULL) == 3 ? 3 : 1;
 }

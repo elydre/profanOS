@@ -78,7 +78,7 @@ void *SYSCALL_ARRAY[] = {
     process_wait,       // 33
     process_kill,       // 34
     process_get_pid,    // 35
-    process_info,       // 36
+    process_info,   // 36
     process_list_all,   // 37
 
     // system.h
