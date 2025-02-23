@@ -53,7 +53,6 @@ int   serial_debug(char *frm, ...);
 char *profan_fn_name(void *ptr, char **libname);
 void  profan_print_trace(void);
 
-char *profan_input(int *size);
 void  profan_nimpl(const char *name);
 char *profan_libc_version(void);
 
@@ -74,8 +73,7 @@ void  profan_kfree(void *mem);
 #define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 3))
 #define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 4))
 #define profan_input_keyboard ((char *(*)(int *, char *)) get_func_addr(PROFAN_LIB_ID, 5))
-#define profan_input_serial ((char *(*)(int *, int)) get_func_addr(PROFAN_LIB_ID, 6))
-#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 7))
+#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 6))
 #endif
 
 #endif

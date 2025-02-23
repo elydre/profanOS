@@ -246,43 +246,6 @@ char *profan_input_keyboard(int *size, char *term_path) {
     return buffer;
 }
 
-char *profan_input_serial(int *size, int serial_port) {
-    char *buffer = kmalloc(100);
-    int buffer_size = 100;
-    int i = 0;
-    char c = 0;
-
-     while (c != '\n') {
-        syscall_serial_read(serial_port, &c, 1);
-        if (c == '\r') {
-            syscall_serial_write(serial_port, "\r", 1);
-            c = '\n';
-        }
-        if (c == 127) {
-            if (i) {
-                i--;
-                syscall_serial_write(serial_port, "\b \b", 3);
-            }
-            continue;
-        }
-        if ((c < 32 || c > 126) && c != '\n')
-            continue;
-        ((char *) buffer)[i++] = c;
-        syscall_serial_write(serial_port, &c, 1);
-        if (i == buffer_size) {
-            buffer_size *= 2;
-            buffer = krealloc(buffer, buffer_size);
-        }
-    }
-
-    buffer = krealloc(buffer, i + 1);
-    buffer[i] = '\0';
-
-    if (size)
-        *size = i;
-    return buffer;
-}
-
 static char **dup_envp(char **envp, char *wd) {
     if (envp == NULL)
         return kcalloc_ask(1, sizeof(char *));

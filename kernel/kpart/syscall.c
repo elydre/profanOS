@@ -14,6 +14,7 @@
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
 #include <drivers/mouse.h>
+#include <kernel/afft.h>
 #include <drivers/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -54,9 +55,9 @@ void *SYSCALL_ARRAY[] = {
     cursor_get_offset,  // 17
     vesa_get_info,      // 18
 
-    dummy_syscall,      // 19
-    dummy_syscall,      // 20
-    dummy_syscall,      // 21
+    afft_read,          // 19
+    afft_write,         // 20
+    afft_cmd,           // 21
 
     // keyboard.h + mouse.h
     kb_get_scfh,        // 22
@@ -67,7 +68,7 @@ void *SYSCALL_ARRAY[] = {
     sys_power,          // 25
     sys_kinfo,          // 26
 
-    elf_exec,        // 27
+    elf_exec,           // 27
 
     // process.h + runtime.h
     process_auto_schedule, // 28

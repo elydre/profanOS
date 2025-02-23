@@ -87,8 +87,11 @@ int do_fetch(void) {
 
     struct tm time;
     syscall_time_get(&time);
+    
+    char kernel_info[64];
+    syscall_sys_kinfo(kernel_info, 64);
 
-    pl_and_pf("\e[95mkernel     \e[96m%s\n", syscall_sys_kinfo());
+    pl_and_pf("\e[95mkernel     \e[96m%s\n", kernel_info);
     pl_and_pf("\e[95mlibc       \e[96mprofan v%s\n", profan_libc_version());
 
     pl_and_pf("\e[95mRTC time   \e[96m%02d\e[0m:\e[96m%02d\e[0m:\e[96m%02d %02d\e[0m/\e[96m%02d\e[0m/\e[96m%02d\n",

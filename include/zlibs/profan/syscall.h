@@ -247,15 +247,16 @@ DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)
 DEFN_SYSCALL0(17, int,       get_cursor)
 DEFN_SYSCALL1(18, int,       vesa_info, int)
 
-DEFN_SYSCALL3(19, int,       serial_read, int, char *, uint32_t)
-DEFN_SYSCALL3(20, int,       serial_write, int, char *, uint32_t)
+DEFN_SYSCALL4(19, int,       afft_read,  int, void *, uint32_t, uint32_t)
+DEFN_SYSCALL4(20, int,       afft_write, int, void *, uint32_t, uint32_t)
+DEFN_SYSCALL3(21, int,       afft_cmd,   int, uint32_t, void *)
 
 DEFN_SYSCALL0(22, int,       sc_get)
 DEFN_SYSCALL2(23, int,       mouse_call, int, int)
 
 DEFN_SYSCALL1(24, int,       sys_set_reporter, void *)
 DEFN_SYSCALL1(25, int,       sys_power, int)
-DEFN_SYSCALL0(26, char *,    sys_kinfo)
+DEFN_SYSCALL2(26, char *,    sys_kinfo, char *, uint32_t)
 
 DEFN_SYSCALL4(27, int,       elf_exec, uint32_t, int, char **, char **)
 

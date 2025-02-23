@@ -270,7 +270,9 @@ int sys_init(void) {
     // get if fpu is present
     uint32_t eax, ebx, ecx, edx;
     cpuid(1, &eax, &ebx, &ecx, &edx);
-    if (!(edx & (1 << 24))) return 1;
+
+    if (!(edx & (1 << 24)))
+        return 1;
 
     // enable fpu
     asm volatile("fninit");
@@ -295,6 +297,7 @@ int sys_init(void) {
  *                             *
 ********************************/
 
-char *sys_kinfo(void) {
-    return KERNEL_EDITING " " KERNEL_VERSION;
+void sys_kinfo(char *buffer, int size) {
+    str_ncpy(buffer, KERNEL_EDITING " " KERNEL_VERSION, size - 1);
+    buffer[size - 1] = 0;
 }

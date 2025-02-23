@@ -147,81 +147,6 @@ int dev_pander(int id, void *buffer, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int dev_userial(int id, void *buffer, uint32_t size, uint8_t mode) {
-    UNUSED(id);
-
-    static char *buffer_addr = NULL;
-    static uint32_t already_read = 0;
-
-    if (mode == FCTF_WRITE) {
-        for (uint32_t i = 0; i < size; i++) {
-            if (((char *) buffer)[i] == '\n')
-                syscall_serial_write(SERIAL_PORT_A, "\r", 1);
-            syscall_serial_write(SERIAL_PORT_A, (char *) buffer + i, 1);
-        }
-        return size;
-    }
-
-    if (mode != FCTF_READ)
-        return 0;
-
-    if (buffer_addr == NULL) {
-        buffer_addr = profan_input_serial(NULL, SERIAL_PORT_A);
-        already_read = 0;
-    }
-
-    uint32_t to_read = size;
-    uint32_t buffer_size = str_len(buffer_addr);
-
-    if (already_read + to_read > buffer_size) {
-        to_read = buffer_size - already_read;
-    }
-
-    mem_cpy(buffer, buffer_addr + already_read, to_read);
-    already_read += to_read;
-
-    if (already_read >= buffer_size) {
-        kfree(buffer_addr);
-        buffer_addr = NULL;
-    }
-
-    return to_read;
-}
-
-int dev_serial_a(int id, void *buffer, uint32_t size, uint8_t mode) {
-    UNUSED(id);
-
-    switch (mode) {
-        case FCTF_READ:
-            syscall_serial_read(SERIAL_PORT_A, buffer, size);
-            return size;
-        case FCTF_WRITE:
-            syscall_serial_write(SERIAL_PORT_A, (char *) buffer, size);
-            return size;
-        default:
-            return 0;
-    }
-
-    return 0;
-}
-
-int dev_serial_b(int id, void *buffer, uint32_t size, uint8_t mode) {
-    UNUSED(id);
-
-    switch (mode) {
-        case FCTF_READ:
-            syscall_serial_read(SERIAL_PORT_B, buffer, size);
-            return size;
-        case FCTF_WRITE:
-            syscall_serial_write(SERIAL_PORT_B, (char *) buffer, size);
-            return size;
-        default:
-            return 0;
-    }
-
-    return 0;
-}
-
 int dev_stdin(int id, void *buffer, uint32_t size, uint8_t mode) {
     UNUSED(id);
 
@@ -259,9 +184,6 @@ int init_devio(void) {
         IS_SID_NULL(fu_fctf_create(0, "/dev/kterm",   dev_kterm))    ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/panda",   dev_panda))    ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/pander",  dev_pander))   ||
-        IS_SID_NULL(fu_fctf_create(0, "/dev/userial", dev_userial))  ||
-        IS_SID_NULL(fu_fctf_create(0, "/dev/serialA", dev_serial_a)) ||
-        IS_SID_NULL(fu_fctf_create(0, "/dev/serialB", dev_serial_b)) ||
 
         IS_SID_NULL(fu_fctf_create(0, "/dev/stdin",  dev_stdin))     ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/stdout", dev_stdout))    ||

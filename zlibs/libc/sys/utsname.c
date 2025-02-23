@@ -18,14 +18,11 @@
 #include <errno.h>
 
 int uname(struct utsname *buf) {
-    char *kernel_info = syscall_sys_kinfo();
+    char kernel_info[64];
 
-    if (kernel_info == NULL) {
-        errno = ENOSYS;
-        return -1;
-    }
+    syscall_sys_kinfo(kernel_info, 64);
 
-    char *space = strrchr(kernel_info, ' ');
+    char *space = strchr(kernel_info, ' ');
 
     strncpy(buf->version, kernel_info, space - kernel_info);
     buf->version[space - kernel_info] = '\0';

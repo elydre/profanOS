@@ -41,7 +41,7 @@ int serial_debug(char *frm, ...) {
     len = sprintf(str, "[%d] ", syscall_process_pid());
     len += vsprintf(str + len, frm, args);
 
-    syscall_serial_write(SERIAL_PORT_A, str, len);
+    syscall_afft_write(1, str, 0, len);
 
     free(str);
     va_end(args);
@@ -85,13 +85,6 @@ void profan_print_trace(void) {
  *     GLOBAL UTILS     *
  *                      *
 *************************/
-
-char *profan_input(int *size) {
-    char *term = getenv("TERM");
-    if (term && strstr(term, "serial"))
-        return profan_input_serial(size, SERIAL_PORT_A);
-    return profan_input_keyboard(size, term);
-}
 
 void profan_nimpl(const char *name) {
     fprintf(stderr, "libc: %s: function not implemented\n", name);

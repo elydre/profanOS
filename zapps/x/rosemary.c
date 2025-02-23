@@ -107,9 +107,11 @@ void rainbow_print(char *message) {
 
 void welcome_print(void) {
     rainbow_print("Welcome to profanOS!");
+    char buf[64];
+    syscall_sys_kinfo(buf, 64);
 
     fd_putstr(1, "\n\e[35mKernel: \e[95m");
-    fd_putstr(1, syscall_sys_kinfo());
+    fd_putstr(1, buf);
     fd_putstr(1, "\e[0m\n\n");
 }
 

@@ -100,7 +100,7 @@ static void sod_print_generic_info(int is_cpu_error) {
     sod_print_at(6, 4, "system has been halted to prevent damage...", 0x05);
 
     sod_print_at(6, 6, "kernel", 0x05);
-    sod_print_at(13, 6, sys_kinfo(), 0x0D);
+    sod_print_at(13, 6, KERNEL_EDITING " " KERNEL_VERSION, 0x0D);
 
     sod_print_at(6, 7, "during", 0x05);
     str_cpy(str, (char *) process_info(process_get_pid(), PROC_INFO_NAME, NULL));
