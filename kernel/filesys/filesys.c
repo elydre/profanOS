@@ -77,9 +77,10 @@ int filesys_init(void) {
         return 1;
 
     fs_mount_vdisk(MAIN_FS, d0, 1);
-    fu_dir_create(MAIN_FS, 0, "/");
-    fu_dir_create(MAIN_FS, 0, "/tmp");
-    fu_dir_create(MAIN_FS, 0, "/dev");
+
+    fu_dir_create(MAIN_FS, 0, NULL, "/");
+    fu_dir_create(MAIN_FS, 0, "/", "tmp");
+    fu_dir_create(MAIN_FS, 0, "/", "dev");
 
     vdisk_t *d1 = initrd_to_vdisk();
     if (d1 == NULL)

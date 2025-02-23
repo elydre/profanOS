@@ -9,6 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <kernel/afft.h>
@@ -66,11 +67,14 @@ static int serial_b_read(void *buffer, uint32_t offset, uint32_t len) {
 }
 
 int serial_init(void) {
+
     serial_enable(SERIAL_PORT_A);
     serial_enable(SERIAL_PORT_B);
 
     return (
-        afft_register(1, serial_a_read, serial_a_write, NULL) != 1 ||
-        afft_register(2, serial_b_read, serial_b_write, NULL) != 2
+        afft_register(1, serial_a_read, serial_a_write, NULL) != 1   ||
+        afft_register(2, serial_b_read, serial_b_write, NULL) != 2   ||
+        fu_afft_create(MAIN_FS, "/dev", "kserialA", 1) == SID_NULL ||
+        fu_afft_create(MAIN_FS, "/dev", "kserialB", 2) == SID_NULL   
     );
 }
