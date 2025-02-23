@@ -35,7 +35,7 @@ void uname_help(void) {
         "  -n   print network node hostname\n"
         "  -r   print kernel release\n"
         "  -v   print kernel version\n"
-        "  -m   print machine hardware name"
+        "  -m   print machine hardware name\n"
         "  -o   print operating system name"
     );
 }
