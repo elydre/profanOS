@@ -19,6 +19,7 @@
 #include <drivers/serial.h>
 #include <drivers/mouse.h>
 #include <drivers/rtc.h>
+#include <kernel/afft.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>
@@ -27,6 +28,7 @@
 #include <minilib.h>
 #include <system.h>
 
+int ata_init(void);
 
 void kernel_main(void *mboot_ptr) {
     clear_screen();
@@ -43,10 +45,12 @@ void kernel_main(void *mboot_ptr) {
     status_print(timer_init,   "Initing", "cpu timer (PIT)");
     status_print(keyboard_init,"Setuping", "PS/2 keyboard");
     status_print(mouse_init,   "Setuping", "PS/2 mouse");
-    status_print(serial_init,  "Enabling", "serial port (A and B)");
     status_print(init_diskiso, "Loading", "initial ramdisk");
     status_print(mem_init,     "Initing", "snowflake physical MM");
     status_print(scuba_init,   "Setuping", "scubasuit virtual MM");
+    status_print(afft_init,    "Setuping", "advanced file system functions");
+    status_print(serial_init,  "Enabling", "serial port (A and B)");
+    status_print(ata_init,     "Initing", "ATA driver");
     status_print(tef_init,     "Allocing mem", "for terminal emulator");
     status_print(rtc_init,     "Initing", "real time clock");
     status_print(sys_init,     "Initing", "FPU and error reporting");
