@@ -140,13 +140,12 @@ static void buddy_show_leaks(void) {
     g_debug = 1;
 }
 
-struct stackframe {
-  struct stackframe* ebp;
-  uint32_t eip;
-};
-
 static void set_trace(int index) {
-    struct stackframe *ebp;
+    struct stackframe {
+        struct stackframe* ebp;
+        uint32_t eip;
+    } *ebp;
+
     asm volatile("movl %%ebp, %0" : "=r" (ebp));
     ebp = ebp->ebp;
 

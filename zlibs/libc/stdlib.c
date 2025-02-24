@@ -157,7 +157,7 @@ int abs(int j) {
     return (j >= 0) ? j : -j;
 }
 
-void atexit(void (*func)()) {
+int atexit(void (*func)()) {
     if (g_atexit_funcs == NULL) {
         g_atexit_funcs = calloc(2, sizeof(void *));
         g_atexit_funcs[0] = func;
@@ -168,6 +168,7 @@ void atexit(void (*func)()) {
         g_atexit_funcs[i] = func;
         g_atexit_funcs[i + 1] = NULL;
     }
+    return 0;
 }
 
 double atof(const char *s) {
@@ -181,8 +182,8 @@ double atof(const char *s) {
     }
     if (c == '.') {
         while ((c = *s++) != '\0' && isdigit(c)) {
-        a = a*10.0 + (c - '0');
-        e = e-1;
+            a = a*10.0 + (c - '0');
+            e = e-1;
         }
     }
     if (c == 'e' || c == 'E') {
@@ -214,14 +215,24 @@ double atof(const char *s) {
 
 int atoi(const char *nptr) {
     int n=0, neg=0;
-    while (isspace(*nptr)) nptr++;
+
+    while (isspace(*nptr))
+        nptr++;
+
     switch (*nptr) {
-        case '-': {neg=1; nptr++; break;}
-        case '+': {nptr++; break;}
+        case '-':
+            neg=1;
+            nptr++;
+            break;
+        case '+':
+            nptr++;
+            break;
     }
-    /* Compute n as a negative number to avoid overflow on INT_MIN */
+
+    // Compute n as a negative number to avoid overflow on INT_MIN
     while (isdigit(*nptr))
-        n = 10*n - (*nptr++ - '0');
+        n = 10 * n - (*nptr++ - '0');
+
     return neg ? n : -n;
 }
 
