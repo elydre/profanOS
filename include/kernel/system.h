@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 3"
+#define KERNEL_VERSION  "1.3 beta 4"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     64          // max process count

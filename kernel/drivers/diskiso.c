@@ -22,12 +22,12 @@ int init_diskiso(void) {
 
     diskiso_size = 0;
 
-    if (!mboot_get(6)) {
+    if (g_mboot->mods_count < 1) {
         return 1;
     }
 
-    start = *(uint32_t *) mboot_get(6);
-    diskiso_size = (*(uint32_t *) (mboot_get(6) + 4) - start) / 256;
+    start = *(uint32_t *) g_mboot->mods_addr;
+    diskiso_size = (*(uint32_t *) (g_mboot->mods_addr + 4) - start) / 256;
 
     diskiso_start = MEM_BASE_ADDR + PARTS_COUNT * sizeof(allocated_part_t) + 1;
 

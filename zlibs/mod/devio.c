@@ -57,10 +57,13 @@ static int keyboard_read(void *buffer, uint32_t size, char *term) {
     return to_read;
 }
 
+void kernel_test(void);
 
 int dev_null(int id, void *buffer, uint32_t size, uint8_t mode) {
     UNUSED(buffer);
     UNUSED(id);
+
+    kernel_test();
 
     return (mode == FCTF_WRITE) ? size : 0;
 }

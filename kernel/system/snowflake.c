@@ -38,7 +38,7 @@ static uint32_t mem_get_phys_size(void) {
     uint32_t *addr_min, *addr_max;
     uint32_t *addr_test, old_value;
 
-    addr_test = (uint32_t *) (mboot_get(2) * 1024);
+    addr_test = (uint32_t *) (g_mboot->mem_upper * 1024);
     if (addr_test) return (uint32_t) addr_test;
 
     // if the multiboot info is not available
