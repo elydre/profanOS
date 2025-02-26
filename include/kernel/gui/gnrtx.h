@@ -39,7 +39,7 @@ int gt_get_max_rows(void);
 
 void clear_screen(void);
 
-int kcnprint(char *message, int len, char color);
+int kcnprint(const char *message, int len, char color);
 
 void kprint_char_at(int x, int y, char c, char color);
 

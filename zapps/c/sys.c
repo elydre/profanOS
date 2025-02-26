@@ -87,7 +87,7 @@ int do_fetch(void) {
 
     struct tm time;
     syscall_time_get(&time);
-    
+
     char kernel_info[64];
     syscall_sys_kinfo(kernel_info, 64);
 

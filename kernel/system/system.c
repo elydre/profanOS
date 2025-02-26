@@ -10,7 +10,9 @@
 \*****************************************************************************/
 
 #include <kernel/scubasuit.h>
+#include <kernel/multiboot.h>
 #include <kernel/process.h>
+#include <kernel/tinyelf.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
@@ -300,4 +302,63 @@ int sys_init(void) {
 void sys_kinfo(char *buffer, int size) {
     str_ncpy(buffer, KERNEL_EDITING " " KERNEL_VERSION, size - 1);
     buffer[size - 1] = 0;
+}
+
+/********************************
+ *                             *
+ *  multiboot elf resolution   *
+ *                             *
+********************************/
+
+uint32_t sys_name2addr(const char *name) {
+    if (!(g_mboot->flags & (1 << 5)))
+        return 0; // no elf section info
+
+    Elf32_Shdr *sh = (Elf32_Shdr *)g_mboot->elf_sec.addr;
+
+    for (uint32_t i = 0; i < g_mboot->elf_sec.num; i++) {
+        if (sh[i].sh_type != SHT_SYMTAB)
+            continue;
+
+        Elf32_Sym *sym = (Elf32_Sym *)sh[i].sh_addr;
+        char *strtab = (char *) sh[sh[i].sh_link].sh_addr;
+
+        int symcount = sh[i].sh_size / sh[i].sh_entsize;
+
+        for (int j = 0; j < symcount; j++) {
+            if (sym[j].st_name == 0)
+                continue;
+            if (str_cmp(name, strtab + sym[j].st_name) == 0)
+                return sym[j].st_value;
+        }
+    }
+
+    return 0;
+}
+
+const char *sys_addr2name(uint32_t addr) {
+    if (!(g_mboot->flags & (1 << 5)))
+        return NULL; // no elf section info
+
+    Elf32_Shdr *sh = (Elf32_Shdr *)g_mboot->elf_sec.addr;
+
+    for (uint32_t i = 0; i < g_mboot->elf_sec.num; i++) {
+        if (sh[i].sh_type != SHT_SYMTAB)
+            continue;
+
+        Elf32_Sym *sym = (Elf32_Sym *)sh[i].sh_addr;
+        char *strtab = (char *) sh[sh[i].sh_link].sh_addr;
+
+        int symcount = sh[i].sh_size / sh[i].sh_entsize;
+
+        for (int j = 0; j < symcount; j++) {
+            if (addr < sym[j].st_value || addr >= sym[j].st_value + sym[j].st_size)
+                continue;
+            if (sym[j].st_name == 0)
+                return NULL;
+            return strtab + sym[j].st_name;
+        }
+    }
+
+    return NULL;
 }

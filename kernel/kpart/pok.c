@@ -20,6 +20,7 @@ uint32_t **lib_functions = 0;
 
 int pok_init(void) {
     *(int *)(WATPOK_ADDR) = (int) pok_get_func;
+    asm volatile("int $80" : : "a"(0));
     return 0;
 }
 

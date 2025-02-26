@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === kernel.c : 2024 ===                                                   |
+|   === main.c : 2024 ===                                                     |
 |                                                                             |
-|    Kernel main file                                              .pi0iq.    |
+|    Kernel main function                                          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -36,34 +36,6 @@ void kernel_test(void) {
     kprintf("test\n");
 }
 
-/* ELF section header structure */
-struct elf_section_header {
-    uint32_t name;
-    uint32_t type;
-    uint32_t flags;
-    uint32_t addr;
-    uint32_t offset;
-    uint32_t size;
-    uint32_t link;
-    uint32_t info;
-    uint32_t addralign;
-    uint32_t entsize;
-};
-
-/* Function to print all ELF symbols */
-void print_elf_secs(multiboot_t *mb_info) {
-    if (mb_info->flags & (1 << 5)) { // Check if ELF sections are present
-        struct elf_section_header *sections = (struct elf_section_header *)mb_info->elf_sec.addr;
-        for (uint32_t i = 0; i < mb_info->elf_sec.num; i++) {
-            struct elf_section_header *section = &sections[i];
-            kprintf("Section %d: addr=%x, size=%x, type=%d\n", i, section->addr, section->size, section->type);
-        }
-    } else {
-        kprintf("No ELF sections available.\n");
-    }
-}
-
-
 void kernel_main(void *mboot_ptr) {
     g_mboot = mboot_ptr;
 
@@ -95,8 +67,6 @@ void kernel_main(void *mboot_ptr) {
     status_print(mouse_init,    "Setting up PS/2 mouse");
     status_print(ata_init,      "Initializing ATA driver");
     status_print(rtc_init,      "Initializing real-time clock");
-
-    print_elf_secs(g_mboot);
 
     status_print(pok_init,      "Loading kernel modules");
 

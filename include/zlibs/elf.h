@@ -14,7 +14,9 @@
 
 // Standard ELF types
 
+#ifndef _KERNEL
 #include <stdint.h>
+#endif
 
 // Type for a 16-bit quantity
 typedef uint16_t Elf32_Half;

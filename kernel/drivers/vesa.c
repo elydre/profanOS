@@ -17,10 +17,10 @@ uint32_t fb_w, fb_h, fb_p;
 int is_vesa;
 
 void init_vesa(void) {
-    framebuffer = (uint32_t *) g_mboot->framebuffer_addr_low;
-    fb_p = g_mboot->framebuffer_pitch / sizeof(uint32_t);
-    fb_w = g_mboot->framebuffer_width;
-    fb_h = g_mboot->framebuffer_height;
+    framebuffer = (uint32_t *) g_mboot->fb_addr_low;
+    fb_p = g_mboot->fb_pitch / sizeof(uint32_t);
+    fb_w = g_mboot->fb_width;
+    fb_h = g_mboot->fb_height;
 
     is_vesa = ((uint32_t) framebuffer > 0xb8000 && fb_w > 160 && fb_h > 100);
 }

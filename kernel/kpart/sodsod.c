@@ -67,7 +67,7 @@ char *angel2 =
  *                                    *
 ***************************************/
 
-static void sod_print_at(int x, int y, char *str, char color) {
+static void sod_print_at(int x, int y, const char *str, char color) {
     int i = 0;
     while (str[i] != '\0') {
         kprint_char_at(x + i, y, str[i], color);
@@ -76,14 +76,13 @@ static void sod_print_at(int x, int y, char *str, char color) {
 }
 
 static void sod_putaddr_at(int x, int y, uint32_t addr, char color) {
-    char str[10];
+    char str[9];
     for (int i = 0; i < 8; i++) {
-        str[i < 4 ? i : i + 1] = "0123456789ABCDEF"[(addr >> (28 - i * 4)) & 0xF];
+        str[i] = "0123456789ABCDEF"[(addr >> (28 - i * 4)) & 0xF];
     }
-    str[4] = ' ';
-    str[9] = '\0';
+    str[8] = '\0';
     sod_print_at(x, y, "0x", color);
-    sod_print_at(x + 3, y, str, color);
+    sod_print_at(x + 2, y, str, color);
 }
 
 static void sod_print_generic_info(int is_cpu_error) {
@@ -157,6 +156,8 @@ static void sod_print_stacktrace(void) {
         uint32_t eip;
     } *ebp;
 
+    const char *name;
+
     asm ("movl %%ebp,%0" : "=r"(ebp));
 
     if (ebp == NULL) {
@@ -170,8 +171,21 @@ static void sod_print_stacktrace(void) {
             sod_print_at(6, i, "[...]", 0x05);
             break;
         }
+
         sod_putaddr_at(6, i, ebp->eip, 0x0D);
-        if (ebp->ebp == NULL) break;
+        sod_print_at(17, i, "in", 0x05);
+
+        name = sys_addr2name(ebp->eip);
+
+        if (name == NULL) {
+            sod_print_at(20, i, "???", 0x0D);
+        } else {
+            sod_print_at(20, i, name, 0x0D);
+        }
+
+        if (ebp->ebp == NULL)
+            break;
+
         ebp = ebp->ebp;
     }
 }

@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 4"
+#define KERNEL_VERSION  "1.3 beta 5"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     64          // max process count
@@ -60,6 +60,9 @@ void sys_interrupt(uint8_t code, int err_code); // reserved cpu interrupt
 
 int   sys_init(void);
 void  sys_kinfo(char *buffer, int size);
+
+const char *sys_addr2name(uint32_t addr);
+uint32_t    sys_name2addr(const char *name);
 
 // runtime.c
 int elf_exec(uint32_t sid, int argc, char **argv, char **envp);

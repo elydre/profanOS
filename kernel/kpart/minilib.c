@@ -24,7 +24,7 @@
  *                      *
  ************************/
 
-void str_cat(char *s1, char *s2) {
+void str_cat(char *s1, const char *s2) {
     while (*s1)
         s1++;
     while (*s2)
@@ -32,14 +32,14 @@ void str_cat(char *s1, char *s2) {
     *s1 = '\0';
 }
 
-int str_len(char *s) {
+int str_len(const char *s) {
     int i = 0;
     while (s[i])
         i++;
     return i;
 }
 
-void str_cpy(char *s1, char *s2) {
+void str_cpy(char *s1, const char *s2) {
     int i;
     for (i = 0; s2[i]; i++) {
         s1[i] = s2[i];
@@ -47,7 +47,7 @@ void str_cpy(char *s1, char *s2) {
     s1[i] = '\0';
 }
 
-void  str_ncpy(char *s1, char *s2, int n) {
+void str_ncpy(char *s1, const char *s2, int n) {
     int i;
     for (i = 0; i < n && s2[i]; i++) {
         s1[i] = s2[i];
@@ -96,7 +96,7 @@ void hex2str(uint32_t n, char *s) {
     str_reverse(s);
 }
 
-int str2int(char *s) {
+int str2int(const char *s) {
     int i = 0;
     int n = 0;
     while (s[i] >= '0' && s[i] <= '9') {
@@ -105,7 +105,7 @@ int str2int(char *s) {
     return n;
 }
 
-int str_cmp(char *s1, char *s2) {
+int str_cmp(const char *s1, const char *s2) {
     int i = 0;
     while (s1[i] == s2[i]) {
         if (s1[i] == '\0') return 0;
@@ -114,7 +114,7 @@ int str_cmp(char *s1, char *s2) {
     return s1[i] - s2[i];
 }
 
-int str_ncmp(char *s1, char *s2, int n) {
+int str_ncmp(const char *s1, const char *s2, int n) {
     int i;
     for (i = 0; s1[i] == s2[i]; i++) {
         if (i == n || s1[i] == '\0') return 0;
@@ -130,14 +130,14 @@ int str_ncmp(char *s1, char *s2, int n) {
  *                       *
  *************************/
 
-void mem_move(void *dest, void *source, uint32_t nbytes) {
+void mem_move(void *dest, const void *source, uint32_t nbytes) {
     if (dest < source) {
         for (uint32_t i = 0; i < nbytes; i++) {
-            ((char *) dest)[i] = ((char *) source)[i];
+            ((char *) dest)[i] = ((const char *) source)[i];
         }
     } else {
         for (int i = nbytes - 1; i >= 0; i--) {
-            ((char *) dest)[i] = ((char *) source)[i];
+            ((char *) dest)[i] = ((const char *) source)[i];
         }
     }
 }
@@ -148,9 +148,10 @@ void mem_set(void *dest, uint8_t val, uint32_t len) {
         *temp++ = val;
 }
 
-int mem_cmp(void *s1, void *s2, uint32_t n) {
-    uint8_t *p1 = s1;
-    uint8_t *p2 = s2;
+int mem_cmp(const void *s1, const void *s2, uint32_t n) {
+    const uint8_t *p1 = s1;
+    const uint8_t *p2 = s2;
+
     for (uint32_t i = 0; i < n; i++) {
         if (p1[i] != p2[i]) {
             return p1[i] - p2[i];
@@ -198,7 +199,7 @@ void *calloc(uint32_t size) {
  *                       *
  *************************/
 
-void status_print(int (*func)(), char *msg) {
+void status_print(int (*func)(), const char *msg) {
     int old_cursor, new_cursor, status;
 
     kcprint("[", 0x07);
@@ -286,7 +287,7 @@ void kinput(char *buffer, int size) {
     kprint("\e[?25h");
 }
 
-void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
+void kprintf_va2buf(char *char_buffer, const char *fmt, va_list args) {
     int output, buffer_i, i;
     output = buffer_i = i = 0;
     char s[12];
@@ -338,7 +339,7 @@ void kprintf_va2buf(char *char_buffer, char *fmt, va_list args) {
     }
 }
 
-void kprintf_buf(char *char_buffer, char *fmt, ...) {
+void kprintf_buf(char *char_buffer, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     kprintf_va2buf(char_buffer, fmt, args);

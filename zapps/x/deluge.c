@@ -485,8 +485,6 @@ uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global) {
 }
 
 char *get_addr_name(elfobj_t *obj, uint32_t addr) {
-    char *name = NULL;
-
     if (!obj->sym_tab)
         return NULL;
 
@@ -496,10 +494,10 @@ char *get_addr_name(elfobj_t *obj, uint32_t addr) {
         uint32_t val = offset + obj->sym_tab[i].st_value;
         if (addr < val || addr >= val + obj->sym_tab[i].st_size)
             continue;
-        name = obj->sym_str + obj->sym_tab[i].st_name;
+        return obj->sym_str + obj->sym_tab[i].st_name;
     }
 
-    return name;
+    return NULL;
 }
 
 /* == 32-bit x86 relocations types ==

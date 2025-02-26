@@ -17,9 +17,9 @@
 // https://www.gnu.org/software/grub/manual/multiboot/html_node/Boot-information-format.html
 
 typedef struct {
-    uint32_t flags;             //  0 Indicates which fields are valid 
-    uint32_t mem_lower;         //  4 Lower memory in KB 
-    uint32_t mem_upper;         //  8 Upper memory in KB 
+    uint32_t flags;             //  0 Indicates which fields are valid
+    uint32_t mem_lower;         //  4 Lower memory in KB
+    uint32_t mem_upper;         //  8 Upper memory in KB
     uint32_t boot_device;       // 12 Boot device
     uint32_t cmdline;           // 16 Address of the command line
     uint32_t mods_count;        // 20 Number of loaded modules
