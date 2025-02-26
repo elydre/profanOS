@@ -18,7 +18,7 @@
 #include <dlfcn.h>
 #include <elf.h>
 
-#define DELUGE_VERSION  "5.1"
+#define DELUGE_VERSION  "5.2"
 #define ALWAYS_DEBUG    0
 
 #define VISIBILITY_LOCAL  0
@@ -543,9 +543,7 @@ int dynamic_linker(elfobj_t *obj) {
     if (obj->dym_tab == NULL)
         return 0;
 
-    uint32_t *ptr, val = 0;
-    uint8_t type;
-    char *name;
+    uint32_t *ptr;
 
     for (uint32_t i = 0; i < obj->ehdr->e_shnum; i++) {
         if (obj->shdr[i].sh_type == SHT_RELA)
@@ -557,11 +555,18 @@ int dynamic_linker(elfobj_t *obj) {
         Elf32_Rel *rel = (Elf32_Rel *)(obj->mem + obj->shdr[i].sh_offset);
 
         for (uint32_t j = 0; j < obj->shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-            name = (char *) obj->dym_str + (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_name;
-            type = ELF32_R_TYPE(rel[j].r_info);
+            Elf32_Sym *sym = obj->dym_tab + ELF32_R_SYM(rel[j].r_info);
 
-            if (does_type_required_sym(type) && (val = search_sym_value(name, obj, 1)) == 0) {
-                raise_error("%s: symbol '%s' not found", obj->name, name);
+            uint8_t    type = ELF32_R_TYPE(rel[j].r_info);
+            char      *name = obj->dym_str + sym->st_name;
+            uint32_t   val = sym->st_value;
+
+            if (val) { // local symbol
+                if (obj->type == ET_DYN)
+                    val += (uint32_t) obj->mem;
+            } else if (does_type_required_sym(type)) {
+                if (!(val = search_sym_value(name, obj, 1)))
+                    raise_error("%s: symbol '%s' not found", obj->name, name);
             }
 
             if (obj->type == ET_DYN)
