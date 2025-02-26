@@ -47,7 +47,7 @@ char     *realpath(const char *path, char *resolved_path);
 // standard functions
 void      abort(void) __attribute__((noreturn));
 int       abs(int j);
-void      atexit(void (*func)(void));
+int       atexit(void (*func)(void));
 double    atof(const char *s);
 int       atoi(const char *nptr);
 long      atol(const char *nptr);

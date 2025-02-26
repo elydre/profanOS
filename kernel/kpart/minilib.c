@@ -198,14 +198,16 @@ void *calloc(uint32_t size) {
  *                       *
  *************************/
 
-void status_print(int (*func)(), char *msg) {
+void status_print(int (*func)(), char *verb, char *noun) {
     int old_cursor, new_cursor, status;
 
-    kcprint("[", 0x07);
+    kcprint("[", 0x0F);
     old_cursor = cursor_get_offset();
     kcprint("WORK", 0x0E);
-    kcprint("] ", 0x07);
-    kcprint(msg, 0x0F);
+    kcprint("]  ", 0x0F);
+    kcprint(verb, 0x07);
+    kcprint(" ", 0x0F);
+    kcprint(noun, 0x0F);
     kcprint("\n", 0x0F);
 
     status = func();
@@ -216,8 +218,6 @@ void status_print(int (*func)(), char *msg) {
         kcprint(" OK ", 0x0A);
     } else if (status == 2) {
         kcprint("PASS", 0x0E);
-    } else if (status == 3) {
-        kcprint("ENBL", 0x0B);
     } else {
         kcprint("FAIL", 0x0C);
     }

@@ -117,8 +117,10 @@ int profan_kb_load_map(char *path) {
 }
 
 char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
-    if (scancode > 64 || kb_map == NULL)
+    if (scancode > 64)
         return '\0';
+    if (kb_map == NULL)
+        return syscall_sc_to_char(scancode, shift);
     if (shift)
         return kb_map[scancode * 2 + 1];
     return kb_map[scancode * 2];

@@ -35,10 +35,10 @@ static int i_pok_does_loaded(uint32_t lib_id) {
 }
 
 static uint8_t *i_pok_read_file(uint32_t file_sid) {
-    uint32_t file_size = fs_cnt_get_size(MAIN_FS, file_sid);
+    uint32_t file_size = fs_cnt_get_size(fs_get_main(), file_sid);
     uint8_t *file = malloc(file_size);
 
-    fs_cnt_read(MAIN_FS, file_sid, file, 0, file_size);
+    fs_cnt_read(fs_get_main(), file_sid, file, 0, file_size);
 
     // check if the file is an ELF 32 dynamic library
     if (mem_cmp(file, ELFMAG, SELFMAG) != 0) {
@@ -228,8 +228,8 @@ static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int pok_load(char *path, uint32_t lib_id) {
-    uint32_t file = fu_path_to_sid(MAIN_FS, SID_ROOT, path);
-    if (IS_SID_NULL(file) || !fu_is_file(MAIN_FS, file)) {
+    uint32_t file = fu_path_to_sid(fs_get_main(), SID_ROOT, path);
+    if (IS_SID_NULL(file) || !fu_is_file(fs_get_main(), file)) {
         return -1;
     }
 

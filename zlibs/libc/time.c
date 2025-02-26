@@ -86,7 +86,7 @@ char *asctime(const struct tm *timeptr) {
 }
 
 clock_t clock(void) {
-    return (PROFAN_FNI, 0);
+    return syscall_process_run_time(syscall_process_pid());
 }
 
 int clock_getres(clockid_t clock_id, struct timespec *res) {
