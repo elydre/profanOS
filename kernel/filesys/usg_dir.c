@@ -14,13 +14,18 @@
 #include <system.h>
 
 int fu_is_dir(filesys_t *filesys, uint32_t dir_sid) {
-    if (IS_SID_NULL(dir_sid)) return 0;
+    if (IS_SID_NULL(dir_sid))
+        return 0;
+
     char *name = fs_cnt_meta(filesys, dir_sid, NULL);
-    if (name == NULL) return 0;
+    if (name == NULL)
+        return 0;
+
     if (name[0] == 'D') {
         free(name);
         return 1;
     }
+
     free(name);
     return 0;
 }
@@ -89,7 +94,7 @@ int fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, cha
 }
 
 int fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name) {
-    if (IS_SID_NULL(element_sid) || IS_SID_NULL(dir_sid) || !fu_is_dir(filesys, dir_sid)) {
+    if (IS_SID_NULL(element_sid) || !fu_is_dir(filesys, dir_sid)) {
         sys_error("[add_element_to_dir] Invalid given sector id");
         return 1;
     }
@@ -144,26 +149,14 @@ int fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element
     return 0;
 }
 
-uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path) {
-    char *parent, *name;
-
+uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *parent, char *name) {
     uint32_t parent_sid;
     uint32_t head_sid;
 
-    sep_path(path, &parent, &name);
-    if (parent[0]) {
+    if (parent) {
         parent_sid = fu_path_to_sid(filesys, SID_ROOT, parent);
-        if (IS_SID_NULL(parent_sid)) {
-            sys_warning("[dir_create] Parent not found");
-            free(parent);
-            free(name);
-            return SID_NULL;
-        }
-
         if (!fu_is_dir(filesys, parent_sid)) {
-            sys_warning("[dir_create] Parent not a directory");
-            free(parent);
-            free(name);
+            sys_warning("[dir_create] Parent unreachable");
             return SID_NULL;
         }
     } else {
@@ -173,44 +166,22 @@ uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path) {
     // generate the meta
     char *meta = malloc(META_MAXLEN);
     str_cpy(meta, "D-");
-    str_ncpy(meta + 1, name, META_MAXLEN - 3);
+    str_ncpy(meta + 2, name, META_MAXLEN - 3);
 
     head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_SID_NULL(head_sid)) {
-        free(parent);
-        free(name);
+    if (IS_SID_NULL(head_sid))
         return SID_NULL;
-    }
 
     // create a link in parent directory
-    if (parent[0]) {
-        if (fu_add_element_to_dir(filesys, parent_sid, head_sid, name)) {
-            free(parent);
-            free(name);
-            return SID_NULL;
-        }
-    }
+    if (parent && fu_add_element_to_dir(filesys, parent_sid, head_sid, name))
+        return SID_NULL;
 
     fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
     fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    if (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..")) {
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
-
-    if (fu_add_element_to_dir(filesys, head_sid, head_sid, ".")) {
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
-
-    free(parent);
-    free(name);
-
-    return head_sid;
+    return (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..") ||
+            fu_add_element_to_dir(filesys, head_sid, head_sid, ".") ? SID_NULL : head_sid);
 }

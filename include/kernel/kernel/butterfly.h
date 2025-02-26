@@ -93,11 +93,12 @@ int      fs_cnt_write(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t
 int      fu_is_dir(filesys_t *filesys, uint32_t dir_sid);
 int      fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names);
 int      fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name);
-uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *path);
+uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *parent, char *name);
 
 // usg_file.c
 int      fu_is_file(filesys_t *filesys, uint32_t dir_sid);
-uint32_t fu_file_create(filesys_t *filesys, uint8_t device_id, char *path);
+uint32_t fu_file_create(filesys_t *filesys, char *parent, char *name);
+uint32_t fu_afft_create(filesys_t *filesys, char *parent, char *name, uint32_t id);
 
 // usg_ptsid.c
 uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path);

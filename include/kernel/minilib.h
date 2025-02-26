@@ -43,7 +43,7 @@ void *calloc(uint32_t size);
 void kprintf_va2buf(char *char_buffer, char *fmt, va_list args);
 void kprintf_buf(char *char_buffer, char *fmt, ...);
 
-void status_print(int (*func)(), char *verb, char *noun);
+void status_print(int (*func)(), char *msg);
 void kinput(char *buffer, int size);
 
 #endif
