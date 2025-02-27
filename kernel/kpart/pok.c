@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === pok.c : 2024 ===                                                      |
 |                                                                             |
-|    Kernel Dynamic Library loader                                 .pi0iq.    |
+|    Kernel Dynamic Module loader                                 .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -16,23 +16,15 @@
 #include <minilib.h>
 #include <system.h>
 
-uint32_t **lib_functions = 0;
+uint32_t *g_pok_funcs[256];
 
 int pok_init(void) {
     *(int *)(WATPOK_ADDR) = (int) pok_get_func;
-    asm volatile("int $80" : : "a"(0));
     return 0;
 }
 
 static int i_pok_does_loaded(uint32_t lib_id) {
-    return !(
-        (lib_id < 1000            ||
-         lib_id >= POK_MAX + 1000 ||
-         lib_functions == 0
-        ) || (
-         lib_functions[lib_id - 1000] == 0
-        )
-    );
+    return lib_id && lib_id < 256 && g_pok_funcs[lib_id];
 }
 
 static uint8_t *i_pok_read_file(uint32_t file_sid) {
@@ -160,7 +152,7 @@ static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(file + ehdr->e_shoff);
 
-    uint32_t val;
+    uint32_t val = 0;
     uint8_t type;
 
     char *dynstr = NULL;
@@ -187,17 +179,18 @@ static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 
         Elf32_Rel *rel = (Elf32_Rel *)(file + shdr[i].sh_offset);
         for (uint32_t j = 0; j < shdr[i].sh_size / sizeof(Elf32_Rel); j++) {
-            val = 0;
             type = ELF32_R_TYPE(rel[j].r_info);
+
             if (does_type_required_sym(type)) {
                 Elf32_Sym *sym = dynsym + ELF32_R_SYM(rel[j].r_info);
-                val = sym->st_value;
-                if (!val) {
+                if ((val = sym->st_value)) {
+                    val += (uint32_t) mem;
+                } else if (!(val = sys_name2addr(dynstr + sym->st_name))) {
                     sys_warning("[pok load] symbol %s not found in %s", dynstr + sym->st_name, finename);
                     return 1;
                 }
-                val += (uint32_t) mem;
             }
+
             switch (type) {
                 case R_386_32:          // word32  S + A
                     val += *(uint32_t *)(mem + rel[j].r_offset);
@@ -234,18 +227,12 @@ int pok_load(char *path, uint32_t lib_id) {
         return -1;
     }
 
-    if (lib_id < 1000 || lib_id >= POK_MAX + 1000) {
+    if (!lib_id || lib_id >= 256) {
         return -2;
     }
 
     if (i_pok_does_loaded(lib_id)) {
         pok_unload(lib_id);
-    }
-
-    // allocate the lib_functions array if it doesnt exist
-    if (lib_functions == 0) {
-        lib_functions = mem_alloc(POK_MAX * sizeof(uint32_t *), 0, 5);    // 5: library
-        mem_set((uint8_t *) lib_functions, 0, POK_MAX * sizeof(uint32_t *));
     }
 
     uint8_t *elf = i_pok_read_file(file);
@@ -280,7 +267,7 @@ int pok_load(char *path, uint32_t lib_id) {
     }
 
     // save the address list
-    lib_functions[lib_id - 1000] = addr_list;
+    g_pok_funcs[lib_id] = addr_list;
 
     // return the function count
     return addr_list[1];
@@ -288,27 +275,49 @@ int pok_load(char *path, uint32_t lib_id) {
 
 int pok_unload(uint32_t lib_id) {
     if (!i_pok_does_loaded(lib_id)) {
-        sys_warning("Library %d not loaded", lib_id);
+        sys_warning("Module %d not loaded", lib_id);
         return 1;
     }
-    free((void *) lib_functions[lib_id - 1000][0]);
-    free(lib_functions[lib_id - 1000]);
-    lib_functions[lib_id - 1000] = 0;
+
+    free((void *) g_pok_funcs[lib_id][0]);
+    free(g_pok_funcs[lib_id]);
+    g_pok_funcs[lib_id] = NULL;
 
     return 0;
 }
 
 uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id) {
     if (!i_pok_does_loaded(lib_id)) {
-        sys_error("Library %d (func %d) not loaded requested by pid %d", lib_id, func_id, process_get_pid());
+        sys_error("Module %d (func %d) not loaded requested by pid %d (addr)", lib_id, func_id, process_get_pid());
         return 0;
     }
 
-    uint32_t *addr_list = lib_functions[lib_id - 1000];
+    uint32_t *addr_list = g_pok_funcs[lib_id];
+
     if (func_id > addr_list[1]) {
         sys_error("Function %d not found in library %d", func_id, lib_id);
         return 0;
     }
 
     return addr_list[func_id + 1];
+}
+
+void pok_syscall(registers_t *r) {
+    uint32_t lib_id = r->eax >> 24;
+    uint32_t func_id = r->eax & 0xFFFFFF;
+
+    if (!i_pok_does_loaded(lib_id)) {
+        sys_error("Module %d (func %d) not loaded requested by pid %d (call)", lib_id, func_id, process_get_pid());
+        return;
+    }
+
+    uint32_t *addr_list = g_pok_funcs[lib_id];
+
+    if (func_id > addr_list[1]) {
+        sys_error("Function %d not found in library %d", func_id, lib_id);
+        return;
+    }
+
+    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = (void *) addr_list[func_id + 1];
+    r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 }

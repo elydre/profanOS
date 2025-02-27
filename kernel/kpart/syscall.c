@@ -13,7 +13,6 @@
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <drivers/mouse.h>
 #include <kernel/afft.h>
 #include <drivers/rtc.h>
 #include <cpu/timer.h>
@@ -61,7 +60,7 @@ void *SYSCALL_ARRAY[] = {
 
     // keyboard.h + mouse.h
     kb_get_scfh,        // 22
-    mouse_call,         // 23
+    dummy_syscall,      // 23
 
     // system.h
     sys_set_reporter,   // 24

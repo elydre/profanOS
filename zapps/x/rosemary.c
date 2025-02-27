@@ -33,12 +33,13 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1001, "/lib/mod/libmmq.pok"},
-    {1002, "/lib/mod/filesys.pok"},
-    {1003, "/lib/mod/devio.pok"},
-    {1004, "/lib/mod/fmopen.pok"},
-    {1005, "/lib/mod/profan.pok"},
-    {1006, "/lib/mod/panda.pok"},
+    {1, "/lib/mod/libmmq.pok"},
+    {2, "/lib/mod/filesys.pok"},
+    {3, "/lib/mod/devio.pok"},
+    {4, "/lib/mod/fmopen.pok"},
+    {5, "/lib/mod/profan.pok"},
+    {6, "/lib/mod/panda.pok"},
+    {9, "/lib/mod/mouse.pok"},
 };
 
 int local_strlen(char *str) {

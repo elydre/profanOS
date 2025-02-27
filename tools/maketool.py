@@ -63,6 +63,7 @@ CC_OPTIM   = "-fno-omit-frame-pointer -O" # level defined in env PROFANOS_OPTIM
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Werror"
 ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror -fPIC"
+POK_FLAGS  = f"{CFLAGS} -Wno-unused -Werror -fPIC -I include/kernel"
 
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 LD_FLAGS   = "-m elf_i386 -nostdlib"
@@ -98,6 +99,7 @@ for e in ZHEADERS:
     if os.path.exists(e):
         ZAPP_FLAGS += f" -I {e}"
         ZLIB_FLAGS += f" -I {e}"
+        POK_FLAGS  += f" -I {e}"
 
 last_modif    = lambda path: os.stat(path).st_mtime
 file_exists   = lambda path: os.path.exists(path) and os.path.isfile(path)
@@ -261,7 +263,7 @@ def build_disk_elfs():
     def build_c_to_mod(name, fname):
         global total
         print_info_line(name)
-        print_and_exec(f"{CC} -c {name} -o {fname}.o {ZLIB_FLAGS}")
+        print_and_exec(f"{CC} -c {name} -o {fname}.o {POK_FLAGS}")
         print_and_exec(f"{SHRD} -m32 -nostdlib -o {fname}.pok {fname}.o")
         print_and_exec(f"rm {fname}.o")
         total -= 1

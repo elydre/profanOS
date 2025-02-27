@@ -17,7 +17,6 @@
 #include <drivers/diskiso.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
-#include <drivers/mouse.h>
 #include <drivers/rtc.h>
 #include <kernel/afft.h>
 #include <cpu/timer.h>
@@ -64,7 +63,6 @@ void kernel_main(void *mboot_ptr) {
 
     status_print(serial_init,   "Enabling serial ports A and B");
     status_print(keyboard_init, "Setting up PS/2 keyboard");
-    status_print(mouse_init,    "Setting up PS/2 mouse");
     status_print(ata_init,      "Initializing ATA driver");
     status_print(rtc_init,      "Initializing real-time clock");
 

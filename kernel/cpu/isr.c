@@ -15,6 +15,7 @@
 #include <system.h>
 
 extern void syscall_handler(registers_t *r);
+extern void pok_syscall(registers_t *r);
 
 isr_t interrupt_handlers[256];
 
@@ -98,10 +99,14 @@ void isr_handler(registers_t *r) {
 
     r->int_no = r->int_no & 0xFF;
 
-    if (r->int_no == 128)
-        syscall_handler(r);
-    else
+    if (r->int_no == 128) {
+        if (r->eax & 0xFF000000)
+            pok_syscall(r);
+        else
+            syscall_handler(r);
+    } else {
         sys_interrupt(r->int_no & 0xFF, r->err_code);
+    }
 
     if (in_kernel)
         sys_exit_kernel(1);

@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef LIBMMQ_ID
-#define LIBMMQ_ID 1001
+#define LIBMMQ_ID 1
 
 #include <stdint.h>
 #include <stddef.h>

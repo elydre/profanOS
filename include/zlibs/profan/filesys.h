@@ -10,9 +10,9 @@
 \*****************************************************************************/
 
 #ifndef FILESYS_LIB_ID
-#define FILESYS_LIB_ID 1002
-#define DEVIO_LIB_ID   1003
-#define FMOPEN_LIB_ID  1004
+#define FILESYS_LIB_ID 2
+#define DEVIO_LIB_ID   3
+#define FMOPEN_LIB_ID  4
 
 #include <stdint.h>
 

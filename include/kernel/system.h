@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 5"
+#define KERNEL_VERSION  "1.3 beta 6"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     64          // max process count
@@ -28,8 +28,6 @@
 
 #define RUN_HEAP_ADDR   0xB0000000  // virtual base address for binary
 #define RUN_HEAP_SIZE   0x1000      // virtual memory count
-
-#define POK_MAX         128         // max loaded modules
 
 #define PROC_ESP_SIZE   0x20000     // process stack size
 #define PROC_ESP_ADDR   RUN_HEAP_ADDR - PROC_ESP_SIZE

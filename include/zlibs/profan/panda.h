@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef PANDA_ID
-#define PANDA_ID 1006
+#define PANDA_ID 6
 
 #define PANDA_UNDERLINE 0x100
 
