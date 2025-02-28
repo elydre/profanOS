@@ -49,11 +49,6 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path);
  *                                         *
 ********************************************/
 
-// init function
-int main(void) {
-    return 0;
-}
-
 static void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 

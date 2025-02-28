@@ -18,14 +18,22 @@
 
 uint32_t *g_mod_funcs[256];
 
+/* g_mod_funcs[n] layout:
+ * 0: binary memory
+ * 1: function count
+ * 2: constructor (or NULL)
+ * 3: destructor  (or NULL)
+ * 4: function 1
+ * 5: function 2
+ * ...
+ */
+
 int mod_init(void) {
     *(int *)(WATPOK_ADDR) = (int) mod_get_func;
     return 0;
 }
 
-static int i_mod_does_loaded(uint32_t lib_id) {
-    return lib_id && lib_id < 256 && g_mod_funcs[lib_id];
-}
+#define IS_LOADED(id) ((id) && (id) < 256 && g_mod_funcs[id])
 
 static uint8_t *i_mod_read_file(uint32_t file_sid) {
     uint32_t file_size = fs_cnt_get_size(MAIN_FS, file_sid);
@@ -65,9 +73,8 @@ static uint8_t *i_mod_resolve(uint8_t *file) {
     mem_set(mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_addr) {
+        if (shdr[i].sh_type == SHT_PROGBITS && shdr[i].sh_addr)
             mem_copy(mem + shdr[i].sh_addr, file + shdr[i].sh_offset, shdr[i].sh_size);
-        }
     }
 
     return mem;
@@ -95,6 +102,7 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
     // read a first time to get function count
     uint32_t func_count = 0;
     Elf32_Sym *symbol_table = (Elf32_Sym *) (file + sym_sh->sh_offset);
+    char *strtab = (char *) (file + shdr[sym_sh->sh_link].sh_offset);
 
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
         if (((Elf32_Sym *) symbol_table + i)->st_info == 0x12) {
@@ -107,21 +115,37 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
     }
 
     // allocate the address list
-    uint32_t *addr_list = mem_alloc((func_count + 2) * sizeof(uint32_t), 0, 5); // 5: library
+    uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), 0, 5); // 5: library
     addr_list[0] = (uint32_t) mem;
     addr_list[1] = func_count;
-    func_count = 2;
+    addr_list[2] = 0;
+    addr_list[3] = 0;
+
+    func_count = 4;
 
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
         Elf32_Sym *symbol = symbol_table + i;
 
-        if (symbol->st_info == 0x12) {
-            addr_list[func_count++] = symbol->st_value + (uint32_t) mem;
+        if (symbol->st_info != 0x12)
+            continue;
+
+        if (symbol->st_name) {
+            if (str_cmp(strtab + symbol->st_name, "__init") == 0) {
+                addr_list[2] = symbol->st_value + (uint32_t) mem;
+                continue;
+            }
+
+            if (str_cmp(strtab + symbol->st_name, "__fini") == 0) {
+                addr_list[3] = symbol->st_value + (uint32_t) mem;
+                continue;
+            }
         }
+
+        addr_list[func_count++] = symbol->st_value + (uint32_t) mem;
     }
 
     // sort the functions by address
-    for (uint32_t i = 2; i < func_count; i++) {
+    for (uint32_t i = 4; i < func_count; i++) {
         for (uint32_t j = i + 1; j < func_count; j++) {
             if (addr_list[i] > addr_list[j]) {
                 uint32_t tmp = addr_list[i];
@@ -222,6 +246,7 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int mod_load(char *path, uint32_t lib_id) {
+    kprintf("mod_load: %s\n", path);
     uint32_t file = fu_path_to_sid(MAIN_FS, SID_ROOT, path);
     if (IS_SID_NULL(file) || !fu_is_file(MAIN_FS, file)) {
         return -1;
@@ -231,7 +256,7 @@ int mod_load(char *path, uint32_t lib_id) {
         return -2;
     }
 
-    if (i_mod_does_loaded(lib_id)) {
+    if (IS_LOADED(lib_id)) {
         mod_unload(lib_id);
     }
 
@@ -256,11 +281,7 @@ int mod_load(char *path, uint32_t lib_id) {
         return -5;
     }
 
-    sys_exit_kernel(0);
-    int ret_code = ((int (*)(void)) addr_list[2])();
-    sys_entry_kernel(0);
-
-    if (ret_code) {
+    if (addr_list[2] && ((int (*)(void)) addr_list[2])()) {
         free(binary_mem);
         free(addr_list);
         return -6;
@@ -274,50 +295,54 @@ int mod_load(char *path, uint32_t lib_id) {
 }
 
 int mod_unload(uint32_t lib_id) {
-    if (!i_mod_does_loaded(lib_id)) {
+    if (!IS_LOADED(lib_id)) {
         sys_warning("Module %d not loaded", lib_id);
         return 1;
     }
 
+    if (g_mod_funcs[lib_id][3]) {
+        ((void (*)(void)) g_mod_funcs[lib_id][3])();
+    }
+
     free((void *) g_mod_funcs[lib_id][0]);
     free(g_mod_funcs[lib_id]);
-    g_mod_funcs[lib_id] = NULL;
 
+    g_mod_funcs[lib_id] = NULL;
     return 0;
 }
 
 uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id) {
-    if (!i_mod_does_loaded(lib_id)) {
+    if (!IS_LOADED(lib_id)) {
         sys_error("Module %d (func %d) not loaded requested by pid %d (addr)", lib_id, func_id, process_get_pid());
         return 0;
     }
 
     uint32_t *addr_list = g_mod_funcs[lib_id];
 
-    if (func_id > addr_list[1]) {
+    if (func_id >= addr_list[1]) {
         sys_error("Function %d not found in library %d", func_id, lib_id);
         return 0;
     }
 
-    return addr_list[func_id + 1];
+    return addr_list[func_id + 4];
 }
 
 void mod_syscall(registers_t *r) {
     uint32_t lib_id = r->eax >> 24;
     uint32_t func_id = r->eax & 0xFFFFFF;
 
-    if (!i_mod_does_loaded(lib_id)) {
+    if (!IS_LOADED(lib_id)) {
         sys_error("Module %d (func %d) not loaded requested by pid %d (call)", lib_id, func_id, process_get_pid());
         return;
     }
 
     uint32_t *addr_list = g_mod_funcs[lib_id];
 
-    if (func_id > addr_list[1]) {
+    if (func_id >= addr_list[1]) {
         sys_error("Function %d not found in library %d", func_id, lib_id);
         return;
     }
 
-    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = (void *) addr_list[func_id + 1];
+    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = (void *) addr_list[func_id + 4];
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 }

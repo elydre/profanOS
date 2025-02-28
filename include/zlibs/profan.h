@@ -69,11 +69,11 @@ void  profan_kfree(void *mem);
 #ifndef PROFAN_C
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
-#define userspace_reporter ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 2))
-#define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 3))
-#define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 4))
-#define profan_input_keyboard ((char *(*)(int *, char *)) get_func_addr(PROFAN_LIB_ID, 5))
-#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 6))
+#define userspace_reporter ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 0))
+#define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 1))
+#define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 2))
+#define profan_input_keyboard ((char *(*)(int *, char *)) get_func_addr(PROFAN_LIB_ID, 3))
+#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 4))
 #endif
 
 #endif

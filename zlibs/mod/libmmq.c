@@ -19,10 +19,6 @@
 #define _isspace(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\r' || (c) == '\f' || (c) == '\v')
 #define _isdigit(c) ((c) >= '0' && (c) <= '9')
 
-int main(void) {
-    return 0;
-}
-
 void *mem_set(void *s, int c, size_t n);
 void *mem_cpy(void *dest, const void *src, size_t n);
 

@@ -63,13 +63,6 @@ panda_global_t *g_panda;
 #define set_pixel(x, y, color) \
     g_panda->fb[(x) + (y) * g_panda->pitch] = color
 
-static void init_panda(void);
-
-int main(void) {
-    init_panda();
-    return 0;
-}
-
 static font_data_t *load_psf_font(uint32_t sid) {
     uint32_t magic;
     uint32_t version;
@@ -552,17 +545,19 @@ void panda_screen_restore(void *data) {
 
 void panda_screen_kfree(void *data) {
     panda_global_t *panda = (panda_global_t *) data;
-    if (!panda) return;
+    if (!panda)
+        return;
+
     free_font(panda->font);
     kfree(panda->screen_buffer);
     kfree(panda);
 }
 
-static void init_panda(void) {
+int __init(void) {
     if (!syscall_vesa_state()) {
         fd_printf(2, "[panda] VESA is not enabled\n");
         g_panda = NULL;
-        return;
+        return 1;
     }
 
     g_panda = kmalloc_ask(sizeof(panda_global_t));
@@ -570,6 +565,9 @@ static void init_panda(void) {
 
     if (g_panda->font == NULL) {
         fd_printf(2, "[panda] Failed to load font\n");
+        kfree(g_panda);
+        g_panda = NULL;
+        return 1;
     }
 
     g_panda->cursor_x = 0;
@@ -590,4 +588,6 @@ static void init_panda(void) {
     g_panda->pitch = syscall_vesa_pitch();
 
     g_panda->screen_buffer = kcalloc_ask(g_panda->max_lines * g_panda->max_cols, sizeof(screen_char_t));
+
+    return 0;
 }

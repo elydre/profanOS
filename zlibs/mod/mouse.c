@@ -33,7 +33,7 @@ int mouse_y;
 
 uint8_t buttons[3];
 
-int mouse_init(void);
+int __init(void);
 
 static void mouse_reset(void) {
     mouse_x = 0;
@@ -69,7 +69,7 @@ static void mouse_handler(registers_t *a_r) {
                 is_bad = 1;
                 was_installed = 0;
                 // TODO : save the old mouse position so we can restore it
-                mouse_init();
+                __init();
                 mouse_reset();
                 break;
             }
@@ -117,7 +117,7 @@ static uint8_t mouse_read(void) {
     return port_byte_in(0x60);
 }
 
-int mouse_init(void) {
+int __init(void) {
     if (was_installed)
         return 1;
 

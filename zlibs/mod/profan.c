@@ -52,8 +52,9 @@ char *kb_map;
 
 int profan_kb_load_map(char *path);
 
-int main(void) {
+int __init(void) {
     kb_map = NULL;
+
     if (profan_kb_load_map(DEFAULT_KB)) {
         fd_printf(2, "[profan module] failed to load default keymap\n");
         return 1;

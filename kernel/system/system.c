@@ -320,7 +320,7 @@ uint32_t sys_name2addr(const char *name) {
         if (sh[i].sh_type != SHT_SYMTAB)
             continue;
 
-        Elf32_Sym *sym = (Elf32_Sym *)sh[i].sh_addr;
+        Elf32_Sym *sym = (Elf32_Sym *) sh[i].sh_addr;
         char *strtab = (char *) sh[sh[i].sh_link].sh_addr;
 
         int symcount = sh[i].sh_size / sh[i].sh_entsize;

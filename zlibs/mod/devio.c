@@ -20,16 +20,6 @@
 #undef UNUSED
 #define UNUSED(x) (void) (x)
 
-int init_devio(void);
-
-int main(void) {
-    if (init_devio()) {
-        syscall_kprint("[devio] Failed to initialize devices\n");
-        return 1;
-    }
-    return 0;
-}
-
 static int keyboard_read(void *buffer, uint32_t size, char *term) {
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
@@ -177,8 +167,8 @@ int dev_stderr(int id, void *buffer, uint32_t size, uint8_t mode) {
     return 0;
 }
 
-int init_devio(void) {
-    return (
+int __init(void) {
+    if (
         IS_SID_NULL(fu_fctf_create(0, "/dev/null",    dev_null))     ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/zero",    dev_zero))     ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/random",  dev_rand))     ||
@@ -193,5 +183,10 @@ int init_devio(void) {
         IS_SID_NULL(fu_fctf_create(0, "/dev/stderr", dev_stderr))    ||
 
         IS_SID_NULL(fu_file_create(0, "/dev/clip"))
-    );
+    ) {
+        syscall_kprint("[devio] Failed to initialize devices\n");
+        return 1;
+    }
+
+    return 0;
 }
