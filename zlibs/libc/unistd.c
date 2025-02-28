@@ -448,8 +448,17 @@ int nice(int a) {
     return (PROFAN_FNI, 0);
 }
 
-long pathconf(const char *a, int b) {
-    return (PROFAN_FNI, 0);
+long pathconf(const char *path, int name) {
+    if (profan_path_resolve(path) == SID_NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    if (name == _PC_PATH_MAX)
+        return PROFAN_PATH_MAX;
+
+    errno = EINVAL;
+    return -1;
 }
 
 int pause(void) {

@@ -37,7 +37,7 @@
 
 #define L_ctermid 32
 
-// sysconf
+// sysconf and pathconf
 #define _SC_TTY_NAME_MAX 1
 #define _PC_PATH_MAX     2
 
@@ -94,7 +94,7 @@ int      link(const char *a, const char *b);
 int      lockf(int a, int b, off_t c);
 off_t    lseek(int fd, off_t offset, int whence);
 int      nice(int a);
-long     pathconf(const char *a, int b);
+long     pathconf(const char *path, int name);
 int      pause(void);
 int      pipe(int fd[2]);
 ssize_t  pread(int a, void *b, size_t c, off_t d);
