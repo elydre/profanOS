@@ -246,4 +246,3 @@ void fd_printf(int fd, const char *fmt, ...) {
     }
     va_end(args);
 }
-

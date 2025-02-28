@@ -271,8 +271,8 @@ DEFN_SYSCALL0(35, uint32_t,  process_pid)
 DEFN_SYSCALL3(36, int,       process_info, uint32_t, int, void *)
 DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 
-DEFN_SYSCALL2(38, int,       pok_load, char *, uint32_t)
-DEFN_SYSCALL1(39, int,       pok_unload, uint32_t)
+DEFN_SYSCALL2(38, int,       mod_load, char *, uint32_t)
+DEFN_SYSCALL1(39, int,       mod_unload, uint32_t)
 
 DEFN_SYSCALL2(40, void *,    scuba_generate, void *, uint32_t)
 DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)

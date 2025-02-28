@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === mouse.c : 2024 ===                                                    |
 |                                                                             |
-|    Kernel Mouse driver                                           .pi0iq.    |
+|    Mouse driver implementation as kernel module                  .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -15,9 +15,6 @@
 #include <minilib.h>
 #include <system.h>
 #include <ktype.h>
-
-// mouse.inc by SANiK
-// license: Use as you wish, except to cause damage
 
 int8_t mouse_byte[3];
 
@@ -82,23 +79,23 @@ static void mouse_handler(registers_t *a_r) {
                 mouse_x += mouse_byte[1];
             else
                 mouse_x += mouse_byte[1];
-            
+
             if (mouse_byte[0] & 0x20)
                 mouse_y -= mouse_byte[2];
-            else 
+            else
                 mouse_y -= mouse_byte[2];
-            
+
             // we check if the mouse is out of the screen
-            if (mouse_x < 0) 
+            if (mouse_x < 0)
                 mouse_x = 0;
-            
-            if (mouse_y < 0) 
+
+            if (mouse_y < 0)
                 mouse_y = 0;
-            
-            if (mouse_x > (int) vesa_get_width()) 
+
+            if (mouse_x > (int) vesa_get_width())
                 mouse_x = vesa_get_width();
-            
-            if (mouse_y > (int) vesa_get_height()) 
+
+            if (mouse_y > (int) vesa_get_height())
                 mouse_y = vesa_get_height();
 
             mouse_cycle = 0;

@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === pok.c : 2024 ===                                                      |
+|   === modload.c : 2025 ===                                                  |
 |                                                                             |
-|    Kernel Dynamic Module loader                                 .pi0iq.    |
+|    Kernel Dynamic Module loader                                  .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -16,18 +16,18 @@
 #include <minilib.h>
 #include <system.h>
 
-uint32_t *g_pok_funcs[256];
+uint32_t *g_mod_funcs[256];
 
-int pok_init(void) {
-    *(int *)(WATPOK_ADDR) = (int) pok_get_func;
+int mod_init(void) {
+    *(int *)(WATPOK_ADDR) = (int) mod_get_func;
     return 0;
 }
 
-static int i_pok_does_loaded(uint32_t lib_id) {
-    return lib_id && lib_id < 256 && g_pok_funcs[lib_id];
+static int i_mod_does_loaded(uint32_t lib_id) {
+    return lib_id && lib_id < 256 && g_mod_funcs[lib_id];
 }
 
-static uint8_t *i_pok_read_file(uint32_t file_sid) {
+static uint8_t *i_mod_read_file(uint32_t file_sid) {
     uint32_t file_size = fs_cnt_get_size(MAIN_FS, file_sid);
     uint8_t *file = malloc(file_size);
 
@@ -48,7 +48,7 @@ static uint8_t *i_pok_read_file(uint32_t file_sid) {
     return file;
 }
 
-static uint8_t *i_pok_resolve(uint8_t *file) {
+static uint8_t *i_mod_resolve(uint8_t *file) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(file + ehdr->e_shoff);
 
@@ -73,7 +73,7 @@ static uint8_t *i_pok_resolve(uint8_t *file) {
     return mem;
 }
 
-static uint32_t *i_pok_read_funcs(uint8_t *file, uint8_t *mem) {
+static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
     // read the symbol table and save function addresses in an array
 
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *) file;
@@ -148,7 +148,7 @@ static int does_type_required_sym(uint8_t type) {
     }
 }
 
-static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
+static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)file;
     Elf32_Shdr *shdr = (Elf32_Shdr *)(file + ehdr->e_shoff);
 
@@ -221,7 +221,7 @@ static int i_pok_relocate(char *finename, uint8_t *file, uint8_t *mem) {
     return 0;
 }
 
-int pok_load(char *path, uint32_t lib_id) {
+int mod_load(char *path, uint32_t lib_id) {
     uint32_t file = fu_path_to_sid(MAIN_FS, SID_ROOT, path);
     if (IS_SID_NULL(file) || !fu_is_file(MAIN_FS, file)) {
         return -1;
@@ -231,24 +231,24 @@ int pok_load(char *path, uint32_t lib_id) {
         return -2;
     }
 
-    if (i_pok_does_loaded(lib_id)) {
-        pok_unload(lib_id);
+    if (i_mod_does_loaded(lib_id)) {
+        mod_unload(lib_id);
     }
 
-    uint8_t *elf = i_pok_read_file(file);
+    uint8_t *elf = i_mod_read_file(file);
 
     if (elf == NULL)
         return -3;
 
-    uint8_t *binary_mem = i_pok_resolve(elf);
+    uint8_t *binary_mem = i_mod_resolve(elf);
 
-    if (i_pok_relocate(path, elf, binary_mem)) {
+    if (i_mod_relocate(path, elf, binary_mem)) {
         free(binary_mem);
         free(elf);
         return -4;
     }
 
-    uint32_t *addr_list = i_pok_read_funcs(elf, binary_mem);
+    uint32_t *addr_list = i_mod_read_funcs(elf, binary_mem);
     free(elf);
 
     if (addr_list == NULL) {
@@ -267,32 +267,32 @@ int pok_load(char *path, uint32_t lib_id) {
     }
 
     // save the address list
-    g_pok_funcs[lib_id] = addr_list;
+    g_mod_funcs[lib_id] = addr_list;
 
     // return the function count
     return addr_list[1];
 }
 
-int pok_unload(uint32_t lib_id) {
-    if (!i_pok_does_loaded(lib_id)) {
+int mod_unload(uint32_t lib_id) {
+    if (!i_mod_does_loaded(lib_id)) {
         sys_warning("Module %d not loaded", lib_id);
         return 1;
     }
 
-    free((void *) g_pok_funcs[lib_id][0]);
-    free(g_pok_funcs[lib_id]);
-    g_pok_funcs[lib_id] = NULL;
+    free((void *) g_mod_funcs[lib_id][0]);
+    free(g_mod_funcs[lib_id]);
+    g_mod_funcs[lib_id] = NULL;
 
     return 0;
 }
 
-uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id) {
-    if (!i_pok_does_loaded(lib_id)) {
+uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id) {
+    if (!i_mod_does_loaded(lib_id)) {
         sys_error("Module %d (func %d) not loaded requested by pid %d (addr)", lib_id, func_id, process_get_pid());
         return 0;
     }
 
-    uint32_t *addr_list = g_pok_funcs[lib_id];
+    uint32_t *addr_list = g_mod_funcs[lib_id];
 
     if (func_id > addr_list[1]) {
         sys_error("Function %d not found in library %d", func_id, lib_id);
@@ -302,16 +302,16 @@ uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id) {
     return addr_list[func_id + 1];
 }
 
-void pok_syscall(registers_t *r) {
+void mod_syscall(registers_t *r) {
     uint32_t lib_id = r->eax >> 24;
     uint32_t func_id = r->eax & 0xFFFFFF;
 
-    if (!i_pok_does_loaded(lib_id)) {
+    if (!i_mod_does_loaded(lib_id)) {
         sys_error("Module %d (func %d) not loaded requested by pid %d (call)", lib_id, func_id, process_get_pid());
         return;
     }
 
-    uint32_t *addr_list = g_pok_funcs[lib_id];
+    uint32_t *addr_list = g_mod_funcs[lib_id];
 
     if (func_id > addr_list[1]) {
         sys_error("Function %d not found in library %d", func_id, lib_id);

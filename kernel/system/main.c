@@ -27,8 +27,6 @@
 #include <minilib.h>
 #include <system.h>
 
-int ata_init(void);
-
 multiboot_t *g_mboot;
 
 void kernel_test(void) {
@@ -63,10 +61,9 @@ void kernel_main(void *mboot_ptr) {
 
     status_print(serial_init,   "Enabling serial ports A and B");
     status_print(keyboard_init, "Setting up PS/2 keyboard");
-    status_print(ata_init,      "Initializing ATA driver");
     status_print(rtc_init,      "Initializing real-time clock");
 
-    status_print(pok_init,      "Loading kernel modules");
+    status_print(mod_init,      "Loading kernel modules");
 
     kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
 

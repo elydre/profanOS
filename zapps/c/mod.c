@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
         printf("mod: Unloading %d\n", id);
 
         syscall_process_auto_schedule(0);
-        syscall_pok_unload(id);
+        syscall_mod_unload(id);
         syscall_process_auto_schedule(1);
         return 0;
     }
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
         printf("mod: Loading %s as %d\n", new_path, id);
 
-        int error_code = syscall_pok_load(new_path, id);
+        int error_code = syscall_mod_load(new_path, id);
         free(new_path);
 
         if (error_code > 0) {

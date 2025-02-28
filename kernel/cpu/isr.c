@@ -15,7 +15,7 @@
 #include <system.h>
 
 extern void syscall_handler(registers_t *r);
-extern void pok_syscall(registers_t *r);
+extern void mod_syscall(registers_t *r);
 
 isr_t interrupt_handlers[256];
 
@@ -101,7 +101,7 @@ void isr_handler(registers_t *r) {
 
     if (r->int_no == 128) {
         if (r->eax & 0xFF000000)
-            pok_syscall(r);
+            mod_syscall(r);
         else
             syscall_handler(r);
     } else {

@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === ata.c : 2024 ===                                                      |
 |                                                                             |
-|    Kernel ATA driver functions                                   .pi0iq.    |
+|    ATA driver implementation as kernel module                    .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS - under GPLv3                  q. /|\  "   |
 |    Based on OsDev wiki - wiki.osdev.org/ATA_PIO_Mode             `// \\     |
@@ -80,6 +80,7 @@ static void read_sector(uint32_t LBA, uint32_t *data) {
         data[i] = port_long_in(0x1F0);
     }
 }
+
 
 int ata_write(void *buffer, uint32_t offset, uint32_t size) {
     if (size % 512 != 0 || offset % 512 != 0)

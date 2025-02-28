@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 6"
+#define KERNEL_VERSION  "1.3 beta 7"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     64          // max process count
@@ -67,10 +67,10 @@ int elf_exec(uint32_t sid, int argc, char **argv, char **envp);
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
 
 // pok.c
-int      pok_init(void);
-int      pok_load(char *path, uint32_t lib_id);
-int      pok_unload(uint32_t lib_id);
-uint32_t pok_get_func(uint32_t lib_id, uint32_t func_id);
+int      mod_init(void);
+int      mod_load(char *path, uint32_t lib_id);
+int      mod_unload(uint32_t lib_id);
+uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id);
 
 #define sys_fatal(msg, ...) sod_fatal(__FILE__, __LINE__, msg, ##__VA_ARGS__)
 void sod_fatal(char *file_name, int line, char *msg, ...);

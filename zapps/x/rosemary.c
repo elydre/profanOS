@@ -59,7 +59,7 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     mod_t *mod = &mods_at_boot[i];
-    int error_code = syscall_pok_load(mod->path, mod->id);
+    int error_code = syscall_mod_load(mod->path, mod->id);
 
     if (error_code > 0)
         return 0;
@@ -214,7 +214,7 @@ int main(void) {
     // unload all modules
     for (int i = 0; i < total; i++) {
         mod_t *mod = &mods_at_boot[i];
-        syscall_pok_unload(mod->id);
+        syscall_mod_unload(mod->id);
     }
 
     syscall_kprint("all modules unloaded\n");
