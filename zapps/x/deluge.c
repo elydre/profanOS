@@ -18,7 +18,7 @@
 #include <dlfcn.h>
 #include <elf.h>
 
-#define DELUGE_VERSION  "5.2"
+#define DELUGE_VERSION  "5.3"
 #define ALWAYS_DEBUG    0
 
 #define VISIBILITY_LOCAL  0
@@ -82,15 +82,19 @@ int    g_lib_count;
 char **g_envp;
 
 // extra symbols table
-char *profan_fn_name(void *ptr, char **libname);
+char *dlg_fn_name(void *ptr, char **libname);
+void *dlg_open(const char *filename, int flag);
+int   dlg_close(void *handle);
+void *dlg_sym(void *handle, const char *symbol);
+char *dlg_error(void);
 
 dlg_extra_t g_extra_syms[] = {
-    { "profan_fn_name", 0x62289205, profan_fn_name },
-    { "dlclose"       , 0xDE67CAC5, dlclose        },
-    { "dlopen"        , 0xCEF94D0E, dlopen         },
-    { "dlsym"         , 0x0677DB8D, dlsym          },
-    { "dlerror"       , 0xDE8AD652, dlerror        },
-    { NULL, 0, NULL }
+    { "dlg_fn_name", 0xF5D604CF, dlg_fn_name },
+    { "dlg_open"   , 0x36354BED, dlg_open    },
+    { "dlg_close"  , 0xFC039D91, dlg_close   },
+    { "dlg_sym"    , 0x18EA69D4, dlg_sym     },
+    { "dlg_error"  , 0xFC2B2525, dlg_error   },
+    { NULL         , 0         , NULL        },
 };
 
 // deluge arguments structure
@@ -288,10 +292,12 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
 ********************************/
 
 static inline uint32_t hash(const char *str) {
-    uint32_t hash = 0;
-    for (int i = 0; str[i]; i++) {
-        hash = (hash << 5) + str[i];
-    }
+    uint32_t hash = 5381;
+    int c;
+
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c;
+
     return hash;
 }
 
@@ -868,7 +874,7 @@ int close_elf_r(elfobj_t *obj, int r_lvl) {
 #define DLG_INTERNAL 4
 #define DLG_NOTIMPL  5
 
-void *dlopen(const char *filename, int flag) {
+void *dlg_open(const char *filename, int flag) {
     if (filename == NULL) {
         g_dlfcn_error = DLG_INVARG;
         return NULL;
@@ -885,7 +891,7 @@ void *dlopen(const char *filename, int flag) {
     return obj;
 }
 
-void *dlsym(void *handle, const char *symbol) {
+void *dlg_sym(void *handle, const char *symbol) {
     elfobj_t *obj = handle;
     uint32_t val;
 
@@ -911,7 +917,7 @@ void *dlsym(void *handle, const char *symbol) {
     return (void *) val;
 }
 
-int dlclose(void *handle) {
+int dlg_close(void *handle) {
     if (handle == NULL)
         g_dlfcn_error = DLG_INVARG;
     else if (close_elf(handle))
@@ -922,7 +928,7 @@ int dlclose(void *handle) {
     return g_dlfcn_error == DLG_NOERR ? 0 : -1;
 }
 
-char *dlerror(void) {
+char *dlg_error(void) {
     char *error;
     switch (g_dlfcn_error) {
         case DLG_NOERR:
@@ -950,7 +956,7 @@ char *dlerror(void) {
     return error;
 }
 
-char *profan_fn_name(void *ptr, char **libname) {
+char *dlg_fn_name(void *ptr, char **libname) {
     uint32_t addr = (uint32_t) ptr;
     char *name;
 
