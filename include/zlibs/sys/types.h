@@ -13,6 +13,7 @@
 #define _SYS_TYPES_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef int32_t  blkcnt_t;    // file block counts
 typedef int32_t  blksize_t;   // block sizes
@@ -35,7 +36,5 @@ typedef int32_t  time_t;      // time in seconds
 typedef uint32_t timer_t;     // timer ID returned by timer_create()
 typedef uint32_t uid_t;       // user IDs
 typedef uint32_t useconds_t;  // time in microseconds
-
-typedef __SIZE_TYPE__  size_t; // sizes of objects
 
 #endif

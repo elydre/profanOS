@@ -13,20 +13,27 @@
 #include <stddef.h>
 
 // real function are defined in the dynamic linker (/bin/x/deluge.elf)
-// this file is just a stratagem to make the compiler happy
+
+#undef WEAK
+#define WEAK __attribute__((weak))
+
+WEAK void *dlg_open(const char *filename, int flag);
+WEAK int   dlg_close(void *handle);
+WEAK void *dlg_sym(void *handle, const char *symbol);
+WEAK char *dlg_error(void);
 
 void *dlopen(const char *filename, int flag) {
-    return (PROFAN_FNI, NULL);
-}
-
-void *dlsym(void *handle, const char *symbol) {
-    return (PROFAN_FNI, NULL);
+    return dlg_open(filename, flag);
 }
 
 int dlclose(void *handle) {
-    return (PROFAN_FNI, -1);
+    return dlg_close(handle);
+}
+
+void *dlsym(void *handle, const char *symbol) {
+    return dlg_sym(handle, symbol);
 }
 
 char *dlerror(void) {
-    return (PROFAN_FNI, NULL);
+    return dlg_error();
 }

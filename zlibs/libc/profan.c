@@ -49,9 +49,11 @@ int serial_debug(char *frm, ...) {
     return len;
 }
 
-// defined in deluge - don't free libname and result
+// defined in deluge (dynamic linker)
+__attribute__((weak)) void *dlg_fn_name(void *ptr, char **libname);
+
 char *profan_fn_name(void *ptr, char **libname) {
-    return (PROFAN_FNI, NULL);
+    return dlg_fn_name(ptr, libname);
 }
 
 void profan_print_trace(void) {
@@ -69,7 +71,7 @@ void profan_print_trace(void) {
         if (ebp->eip >= 0xB0000000 && ebp->eip < 0xC0000000)
             break; // deluge
 
-        name = profan_fn_name((void *) ebp->eip, &libname);
+        name = dlg_fn_name((void *) ebp->eip, &libname);
 
         if (name)
             fprintf(stderr, "  %08x: %s (%s)\n", ebp->eip, name, libname);
