@@ -165,16 +165,16 @@ cp_args_t *cp_parse_args(int argc, char **argv) {
 int main(int argc, char **argv) {
     cp_args_t *args = cp_parse_args(argc, argv);
 
-    int src_fd = open(args->src, O_RDONLY);
+    int src_fd = open(args->src, O_RDONLY | O_NODIR);
     if (src_fd == -1) {
-        fprintf(stderr, "cp: %s: Unreadable file\n", args->src);
-        exit(1);
+        fprintf(stderr, "cp: %s: %m\n", args->src);
+        return 1;
     }
 
     int dst_fd = open(args->dst, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (dst_fd == -1) {
-        fprintf(stderr, "cp: %s: Failed to open file\n", args->dst);
-        exit(1);
+        fprintf(stderr, "cp: %s: %m\n", args->dst);
+        return 1;
     }
 
     char *buf = malloc(args->block_size);
@@ -194,12 +194,12 @@ int main(int argc, char **argv) {
 
         if (n == -1) {
             fprintf(stderr, "cp: %s: Read error\n", args->src);
-            exit(1);
+            return 1;
         }
 
         if (write(dst_fd, buf, n) != n) {
             fprintf(stderr, "cp: %s: Write error\n", args->dst);
-            exit(1);
+            return 1;
         }
 
         total += n;

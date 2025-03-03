@@ -35,6 +35,8 @@
 #define O_CLOEXEC   0x10000 // atomically set FD_CLOEXEC
 #define O_DIRECTORY 0x20000 // fail if not a directory
 
+#define O_NODIR     0x40000 // fail if a directory (profan extension)
+
 #define F_DUPFD     0       // duplicate file descriptor
 #define F_GETFD     1       // get file descriptor flags
 #define F_SETFD     2       // set file descriptor flags

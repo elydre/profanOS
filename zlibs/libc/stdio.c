@@ -80,7 +80,7 @@ static int interpet_mode(const char *mode) {
     if (fdmode & O_RDWR)
         fdmode &= ~(O_RDONLY | O_WRONLY);
 
-    return fdmode;
+    return fdmode | O_NODIR;
 }
 
 void __stdio_init(void) {

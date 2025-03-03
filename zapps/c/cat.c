@@ -72,7 +72,7 @@ void free_args(cat_args_t *args) {
 
 void cat_canonical(FILE *file, char *path) {
     if (file == NULL) {
-        fprintf(stderr, "cat: %s: File not found\n", path);
+        fprintf(stderr, "cat: %s: %m\n", path);
         return;
     }
 
@@ -106,7 +106,7 @@ void cat_canonical(FILE *file, char *path) {
 
 void cat(FILE *file, char *path, int end_of_line) {
     if (file == NULL) {
-        fprintf(stderr, "cat: %s: File not found\n", path);
+        fprintf(stderr, "cat: %s: %m\n", path);
         return;
     }
 

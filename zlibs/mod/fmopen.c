@@ -202,16 +202,35 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
     fd_data_t *fd_data;
 
     uint32_t sid = fu_path_to_sid(SID_ROOT, abs_path);
-
-    if (IS_SID_NULL(sid) && (flags & O_CREAT)) {
-        sid = fu_file_create(0, abs_path);
-    }
+    int access = flags & O_ACCMODE;
 
     if (IS_SID_NULL(sid)) {
-        return -ENOENT;
+        if (!(O_CREAT & flags))
+            return -ENOENT;
+
+        if (O_DIRECTORY & flags)
+            return -ENOENT;
+
+        sid = fu_file_create(0, abs_path);
+        if (IS_SID_NULL(sid))
+            return -EACCES;
+    } else {
+        if (O_EXCL & flags)
+            return -EEXIST;
+
+        if (fu_is_dir(sid)) {
+            if (access != O_RDONLY ||
+                flags & O_NODIR    ||
+                flags & O_TRUNC    ||
+                flags & O_APPEND   ||
+                flags & O_CREAT
+            ) return -EISDIR;
+        } else if (flags & O_DIRECTORY) {
+            return -ENOTDIR;
+        }
     }
 
-    if (!fu_is_fctf(sid) && !fu_is_file(sid) && !fu_is_dir(sid)) {
+    if (!fu_is_file(sid) && !fu_is_fctf(sid) && !fu_is_dir(sid)) {
         return -EFTYPE;
     }
 
@@ -219,8 +238,6 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         fd_data = fm_get_free_fd(&fd);
     else
         fd_data = fm_fd_to_data(fd);
-
-    // fd_printf(2, "fd: %d, sid: %x, flags: %x\n", fd, sid, flags);
 
     if (fd < 0) {
         return -EMFILE;
