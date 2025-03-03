@@ -48,7 +48,7 @@
 #define COLOR_U 0x80    // unknown character
 #define COLOR_W 0x08    // whitespace
 
-#define RIM_VERSION "7 rev 4"
+#define RIM_VERSION "7 rev 5"
 
 // GLOBALS
 typedef struct {
@@ -86,7 +86,7 @@ int SCREEN_H;
 
 // FUNCTIONS
 
-void gui_print(uint32_t x, uint32_t y, char *str, char color) {
+void gui_print(uint32_t x, uint32_t y, char *str, uint16_t color) {
     while (*str) {
         panda_set_char(x, y, *str, color);
         x++;
@@ -124,7 +124,7 @@ void load_file(char *path) {
     if (path) {
         fd = open(path, O_RDONLY | O_CREAT);
         if (fd < 0) {
-            fprintf(stderr, "rim: %s: file not found\n", path);
+            fprintf(stderr, "rim: %s: %m\n", path);
             exit(1);
         }
     } else {
@@ -133,7 +133,7 @@ void load_file(char *path) {
 
     while ((read_size = read(fd, g_data + g_data_count - 1, 1024))) {
         if (read_size < 0) {
-            fprintf(stderr, "rim: %s: read error\n", path);
+            fprintf(stderr, "rim: %s: %m\n", path);
             close(fd);
             exit(1);
         }
@@ -237,20 +237,33 @@ int word_paraft(char *word, uint32_t size) {
 }
 
 void put_word(int line, int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
-    if (size == 0) return;
+    if (size == 0)
+        return;
+
     char color = 0x0F;
-    if (in_word == 2 && g_rim.syntax->strings) color = 0x0E;
+
+    if (in_word == 2 && g_rim.syntax->strings)
+        color = 0x0E;
+
     else if (in_word == 1 && g_rim.syntax->words) {
         color = 0x07;
-        if (word_isnumber(word, size)) color = 0x0A;
-        else if (word_isblue(word, size)) color = 0x09;
-        else if (word_purple(word, size)) color = 0x0D;
-        else if (word_paraft(word, size)) color = 0x06;
-    } else if (word_isbrace(word, size)) color = 0x0B;
+        if (word_isnumber(word, size))
+            color = 0x0A;
+        else if (word_isblue(word, size))
+            color = 0x09;
+        else if (word_purple(word, size))
+            color = 0x0D;
+        else if (word_paraft(word, size))
+            color = 0x06;
+    }
+
+    else if (word_isbrace(word, size))
+        color = 0x0B;
 
     if (line > new_screen_i) {
         size = size - (line - new_screen_i);
-        if (size <= 0) return;
+        if (size <= 0)
+            return;
         word += line - new_screen_i;
         new_screen_i = line;
     }
@@ -261,21 +274,20 @@ void put_word(int line, int in_word, uint16_t *new_screen, int new_screen_i, cha
 }
 
 #define localput_word(X) put_word((i - from_line) * SCREEN_W, in_word, new_screen, \
-    line * SCREEN_W + x + world_start - x_offset, g_data + g_data_lines[i] + world_start, X)
+    line * SCREEN_W + x + world_start - x_offset, g_data + g_data_lines[i] + world_start, (X))
 
 uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_patch) {
-    uint16_t *new_screen = calloc((SCREEN_H + 1) * (SCREEN_W + 1), sizeof(uint16_t));
+    uint16_t *new_screen = calloc((SCREEN_H) * (SCREEN_W), sizeof(uint16_t));
 
     int line = 0;
-    int max, x;
 
     int world_start, in_word;
     char chr_str;
 
     for (int i = from_line; i < to_line; i++) {
-        max = min(cursor_max_at_line(i), x_offset + SCREEN_W + 1);
-        x = 0;
+        int x = 0;
         in_word = world_start = 0;
+
         for (int j = 0; j < x_offset; j++) {
             if (in_word == 2 && g_data[g_data_lines[i] + j] != chr_str) {
                 in_word = 0;
@@ -296,14 +308,28 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
             }
         }
 
-        for (int j = x_offset; j < max; j++) {
+        int max = cursor_max_at_line(i);
+        for (int j = x_offset;; j++) {
+
+            if (j >= max) {
+                localput_word(j - world_start);
+                break;
+            }
+
+            if (j + x >= x_offset + SCREEN_W) {
+                localput_word(j + x - (world_start + x));
+                break;
+            }
+
             if (g_data[g_data_lines[i] + j] == '\t') {
                 localput_word(j - world_start);
                 world_start = j + 1;
-                if (in_word != 2) in_word = 0;
+                if (in_word != 2)
+                    in_word = 0;
                 for (int k = 0; k < 4; k++) {
                     new_screen[line * SCREEN_W + j - x_offset + x] = '>' | (COLOR_W << 8);
-                    if ((j + x) % 4 == 3) break;
+                    if ((j + x) % 4 == 3)
+                        break;
                     x++;
                     if (i == g_cursor_line && j + x <= g_cursor_pos + *cursor_patch)
                         (*cursor_patch)++;
@@ -357,7 +383,7 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
                 }
             }
         }
-        localput_word(max - world_start);
+
         line++;
     }
     return new_screen;
@@ -384,11 +410,11 @@ void display_data(int from_line, int to_line, int x_offset) {
     line_offset = strlen(line_str) - 2;
     for (int i = 0; i <= to_line - from_line - 1; i++) {
         // line content
-        for (int j = 0; j < SCREEN_W - line_offset - 1; j++) {
+        for (int j = 0; j < SCREEN_W - line_offset; j++) {
             pos = i * SCREEN_W + j;
             if (new_screen[pos] == 0) {
                 panda_set_char(j + line_offset + 1, y, ' ', COLOR_D);
-            } else if (j == SCREEN_W - line_offset - 2) {
+            } else if (j == SCREEN_W - line_offset - 1) {
                 panda_set_char(j + line_offset + 1, y, '>', COLOR_M);
             } else {
                 panda_set_char(j + line_offset + 1, y, new_screen[pos] & 0xFF, new_screen[pos] >> 8);
