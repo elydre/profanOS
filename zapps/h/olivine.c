@@ -219,7 +219,7 @@ int         execute_file(const char *file, char **args);
 
 /****************************
  *                         *
- *  Local Tools g_olv->funcs  *
+ *  Local Tools Functions  *
  *                         *
 ****************************/
 
