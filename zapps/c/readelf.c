@@ -14,7 +14,8 @@
 #include <stdio.h>
 #include <elf.h>
 
-#define READELF_USAGE "Usage: readelf [options] <file1> [file2] ...\n"
+#define READELF_USAGE "Usage: readelf [options] <file1>\n"
+#define READELF_HELPF "Try 'readelf -h' for more information.\n"
 
 const char *g_filename;
 char *g_filecnt;
@@ -22,27 +23,24 @@ char *g_filecnt;
 typedef int (*proc)(void);
 
 // procedure declarations
-int display_file_header(void);
-int display_section_headers(void);
-int display_symbol_table(void);
-int display_dynamic_symbols(void);
-int display_dynamic_reloc(void);
-int print_help(void);
+int display_dynamic_symbols(void);  // D
+int print_help(void);               // h
+int display_file_header(void);      // H
+int display_needed_libraries(void); // n
+int display_dynamic_reloc(void);    // R
+int display_section_headers(void);  // S
+int display_symbol_table(void);     // s
 
 // procedure indexes in the following 'option_xxx' arrays
 #define OPT_h 1
 #define OPT_H 2
 
-static const char *option_chars = "DhHRsS";
-static const char *option_strs[] = {
-    "--dyn-syms", "--help", "--file-header", "--dynamic-reloc",
-    "--symbols", "--section-headers", NULL
-};
+static const char *option_chars = "DhHnRSs";
 
 static const proc option_procs[] = {
     display_dynamic_symbols, print_help, display_file_header,
-    display_dynamic_reloc, display_symbol_table,
-    display_section_headers, NULL
+    display_needed_libraries, display_dynamic_reloc,
+    display_section_headers, display_symbol_table, NULL
 };
 
 #define PROC_COUNT (sizeof(option_procs) / sizeof(proc))
@@ -52,19 +50,20 @@ proc procs[PROC_COUNT] = {NULL};
 int print_help(void) {
     puts(READELF_USAGE
         "Options:\n"
-        "  -D --dyn-syms         Display the dynamic symbol table\n"
-        "  -h --help             Display this information\n"
-        "  -H --file-header      Display the ELF file header\n"
-        "  -R --dynamic-reloc    Display the dynamic relocation entries\n"
-        "  -S --section-headers  Display the sections' header\n"
-        "  -s --symbols          Display the symbol table"
+        "  -D   dynamic symbol table\n"
+        "  -h   show this help page\n"
+        "  -H   ELF file header\n"
+        "  -n   needed libraries\n"
+        "  -R   dynamic relocations\n"
+        "  -S   sections header\n"
+        "  -s   symbol table"
     );
     return 0;
 }
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fputs(READELF_USAGE, stderr);
+        fputs(READELF_USAGE READELF_HELPF, stderr);
         return 1;
     } else if (argc == 2) {
         procs[OPT_H] = display_file_header;
@@ -80,32 +79,21 @@ int main(int argc, char **argv) {
         if (arg[0] != '-')
             break;
 
-        if (arg[1] != '-') {
-            char *p_char; // points to the matched char in option_chars
-
-            if (strlen(arg) != 2 || (p_char = strchr(option_chars, arg[1])) == NULL) {
-                fprintf(stderr, "readelf: invalid option -- '%s'\n", arg + 1);
-                fputs("Try 'readelf -h' for more information.\n", stderr);
-                return 1;
-            }
-
-            option_idx = p_char - option_chars;
-        } else if (arg[1] == '-') {
-            int i = 0;
-            const char *option;
-
-            while ((option = option_strs[i++]) != NULL) {
-                if (strcmp(option, arg) == 0)
-                    break;
-                option_idx++;
-            }
-
-            if (option == NULL) {
-                fprintf(stderr, "readelf: invalid option -- '%s'\n", arg + 2);
-                fputs("Try 'readelf -h' for more information.\n", stderr);
-                return 1;
-            }
+        if (arg[1] == '-') {
+            fprintf(stderr, "readelf: unrecognized option '%s'\n", arg);
+            fputs(READELF_HELPF, stderr);
+            return 1;
         }
+
+        char *p_char;
+
+        if (strlen(arg) != 2 || (p_char = strchr(option_chars, arg[1])) == NULL) {
+            fprintf(stderr, "readelf: invalid option -- '%s'\n", arg + 1);
+            fputs(READELF_HELPF, stderr);
+            return 1;
+        }
+
+        option_idx = p_char - option_chars;
 
         procs[option_idx] = option_procs[option_idx];
     }
@@ -115,70 +103,59 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (arg_i == argc) {
-        fputs("readelf: No input files\nTry 'readelf -h' for more information.\n", stderr);
+    if (arg_i != argc - 1) {
+        fputs(READELF_USAGE READELF_HELPF, stderr);
         return 1;
     }
 
-    // read and process input files one by one
-    while (arg_i < argc) {
-        g_filename = argv[arg_i];
+    // read and process input file
+    g_filename = argv[arg_i];
 
-        // open file for reading
-        FILE *fp = fopen(g_filename, "r");
-        if (fp == NULL) {
-            fprintf(stderr, "readelf: Error: '%s': failed to open file\n", g_filename);
-            return 1;
-        }
-
-        // get file size and read the whole file
-        fseek(fp, 0, SEEK_END);
-        size_t file_size = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-
-        if ((g_filecnt = malloc(file_size)) == NULL || fread(g_filecnt, 1, file_size, fp) != file_size) {
-            fprintf(stderr, "readelf: Error: '%s': failed to read file\n", g_filename);
-            fclose(fp);
-            return 1;
-        }
-        fclose(fp);
-
-        // check for ELF magic number
-        Elf32_Ehdr *p_header = (Elf32_Ehdr *)g_filecnt;
-        if (memcmp(p_header->e_ident, ELFMAG, SELFMAG) != 0) {
-            fprintf(stderr, "readelf: Notice: file '%s' is not an ELF.\n", g_filename);
-            free(g_filecnt);
-            return 0;
-        }
-
-        // check for elf class. now only ELF32 is supported. TODO we shall support ELF64 header later
-        switch (p_header->e_ident[EI_CLASS]) {
-            case ELFCLASS32:
-                // ok
-                break;
-            case ELFCLASS64:
-                fprintf(stderr, "readelf: Notice: ELF64 file '%s' is not supported\n", g_filename);
-                arg_i++;
-                continue;
-            default:
-                fprintf(stderr, "readelf: Notice: file '%s' is an invalid ELF.\n", g_filename);
-                arg_i++;
-                continue;
-        }
-
-        // now invoke each procedure in proc array
-        for (uint32_t i = 0; i < PROC_COUNT; i++) {
-            if (procs[i] == NULL)
-                continue;
-
-            if (procs[i]() == 1) {
-                fprintf(stderr, "readelf: Error: failed to process file '%s'\n", g_filename);
-                break;
-            }
-        }
-        free(g_filecnt);
-        arg_i++;
+    // open file for reading
+    FILE *fp = fopen(g_filename, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "readelf: %s: %m\n", g_filename);
+        return 1;
     }
+
+    // get file size and read the whole file
+    fseek(fp, 0, SEEK_END);
+    size_t file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if ((g_filecnt = malloc(file_size)) == NULL || fread(g_filecnt, 1, file_size, fp) != file_size) {
+        fprintf(stderr, "readelf: %s: failed to read file\n", g_filename);
+        fclose(fp);
+        return 1;
+    }
+    fclose(fp);
+
+    // check for ELF magic number
+    Elf32_Ehdr *p_header = (Elf32_Ehdr *) g_filecnt;
+    if (memcmp(p_header->e_ident, ELFMAG, SELFMAG) != 0) {
+        fprintf(stderr, "readelf: %s: not an ELF file\n", g_filename);
+        free(g_filecnt);
+        return 1;
+    }
+
+    // check for elf class. now only ELF32 is supported. TODO we shall support ELF64 header later
+    if (p_header->e_ident[EI_CLASS] != ELFCLASS32) {
+        fprintf(stderr, "readelf: %s: unsupported ELF class\n", g_filename);
+        free(g_filecnt);
+        return 1;
+    }
+
+    // now invoke each procedure in proc array
+    for (uint32_t i = 0; i < PROC_COUNT; i++) {
+        if (procs[i] == NULL)
+            continue;
+
+        if (procs[i]() == 1) {
+            fprintf(stderr, "readelf: %s: failed to process file\n", g_filename);
+            break;
+        }
+    }
+    free(g_filecnt);
 
     return 0;
 }
@@ -307,14 +284,7 @@ int display_section_headers(void) {
         "FINI_ARRAY", "PREINIT_ARRAY", "GROUP", "SYMTAB_SHNDX"};
 
     // flag characters set
-    static char *sh_flags = "WAX MSILOGTCx"; // TODO support o, E,p flags
-
-    // check section header size
-    if (eh->e_shentsize != sizeof(Elf32_Shdr)) {
-        fprintf(stderr, "readelf: Error: section header in '%s' should be %ld but is %d bytes. skip it.",
-                g_filename, sizeof(Elf32_Shdr), eh->e_shentsize);
-        return 1;
-    }
+    static char *sh_flags = "WAX MSILOGTCx"; // TODO support o, E, p flags
 
     // display section header infos
     if (procs[OPT_h] == NULL)
@@ -385,15 +355,8 @@ int display_symbols(uint16_t sh_type) {
     }
 
     if (sym_sh == NULL) {
-        fprintf(stderr, "readelf: Notice: there is no symbol table in '%s'\n", g_filename);
-        return 0;
-    }
-
-    // check symbol entry size in the table
-    if (sym_sh->sh_entsize != sizeof(Elf32_Sym)) {
-        fprintf(stderr, "readelf: Error: symbol table entry size should be %ld but is %d\n",
-                sizeof(Elf32_Sym), (unsigned int)sym_sh->sh_entsize);
-        return 0;
+        fprintf(stderr, "readelf: %s: no symbol table\n", g_filename);
+        return 1;
     }
 
     Elf32_Sym *symbol_table = (Elf32_Sym *) (g_filecnt + sym_sh->sh_offset);
@@ -475,20 +438,13 @@ int display_dynamic_reloc(void) {
     }
 
     if (rel_sh == NULL) {
-        fprintf(stderr, "readelf: Notice: there is no dynamic relocation in '%s'\n", g_filename);
+        fprintf(stderr, "readelf: %s: no dynamic relocation section\n", g_filename);
         return 0;
     }
 
     if (dyn_str == NULL) {
-        fprintf(stderr, "readelf: Error: failed to get dynamic string table in '%s'\n", g_filename);
+        fprintf(stderr, "readelf: %s: no dynamic string table\n", g_filename);
         return 1;
-    }
-
-    // check relocation entry size in the table
-    if (rel_sh->sh_entsize != sizeof(Elf32_Rel)) {
-        fprintf(stderr, "readelf: Error: relocation entry size should be %ld but is %d\n",
-            sizeof(Elf32_Rel), (unsigned int) rel_sh->sh_entsize);
-            return 0;
     }
 
     // prepare string tables
@@ -525,6 +481,42 @@ int display_dynamic_reloc(void) {
                 type < sizeof(reloc_types) / sizeof(char *) ? reloc_types[type] : "UNKNOWN",
                 sym_value, sym_name ? sym_name : ""
         );
+    }
+
+    return 0;
+}
+
+int display_needed_libraries(void) {
+    Elf32_Ehdr *eh = (Elf32_Ehdr *) g_filecnt;
+    Elf32_Shdr *sh_base = (Elf32_Shdr *) (g_filecnt + eh->e_shoff);
+    Elf32_Shdr *dyn_sh = NULL;
+    char *dyn_str = NULL;
+
+    // get dynamic section
+    for (int i = 0; i < eh->e_shnum; i++) {
+        Elf32_Shdr *sh = sh_base + i;
+        if (sh->sh_type == SHT_DYNAMIC)
+            dyn_sh = sh;
+        else if (sh->sh_type == SHT_DYNSYM)
+            dyn_str = (char *) (g_filecnt + sh_base[sh->sh_link].sh_offset);
+    }
+
+    if (dyn_sh == NULL) {
+        fprintf(stderr, "readelf: %s: no dynamic section\n", g_filename);
+        return 1;
+    }
+
+    if (dyn_str == NULL) {
+        fprintf(stderr, "readelf: %s: no dynamic string table\n", g_filename);
+        return 1;
+    }
+
+    for (uint32_t i = 0; i < dyn_sh->sh_size / sizeof(Elf32_Dyn); i++) {
+        Elf32_Dyn *dyn = (Elf32_Dyn *) (g_filecnt + dyn_sh->sh_offset) + i;
+
+        if (dyn->d_tag == DT_NEEDED) {
+            printf("[NEEDED] %s\n", dyn_str + dyn->d_un.d_val);
+        }
     }
 
     return 0;
