@@ -247,7 +247,20 @@ time_t mktime(struct tm *time) {
 }
 
 int nanosleep(const struct timespec *req, struct timespec *rem) {
-    return (PROFAN_FNI, 0);
+    if (req == NULL || req->tv_sec < 0 || req->tv_nsec < 0 ||
+            req->tv_nsec > 999999999) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    syscall_process_sleep(syscall_process_pid(), req->tv_sec * 1000 + req->tv_nsec / 1000000);
+
+    if (rem != NULL) {
+        rem->tv_sec = 0;
+        rem->tv_nsec = 0;
+    }
+
+    return 0;
 }
 
 size_t strftime(char *str, size_t maxsize, const char *format, const struct tm *timeptr) {
