@@ -17,7 +17,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #define HELP_MSG "Try 'less -h' for more information.\n"
 
@@ -46,38 +45,42 @@ char *read_file(char *filename) {
 char *filename;
 
 uint32_t compute_args(int argc, char **argv) {
-    uint32_t flags = TSI_ALLOW_NON_PRINTABLE;
+    uint32_t flags = TSI_NON_PRINTABLE;
+    filename = "/dev/stdin";
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == '\0') {
-            switch (argv[i][1]) {
-                case 'n':
-                    flags &= ~TSI_ALLOW_NON_PRINTABLE;
-                    break;
-                case 'h':
-                    puts("Usage: less [-n] [file]");
-                    puts("Options:\n"
-                        "  -n   display non-printable characters\n"
-                        "  -h   Display this help message");
-                    return (exit(0), 0);
-                default:
-                    fprintf(stderr, "less: invalid option -- '%c'\n"HELP_MSG, argv[i][1]);
-                    exit(1);
-            }
-        } else if (argv[i][0] == '-') {
-            fprintf(stderr, "less: invalid option -- '%s'\n"HELP_MSG, argv[i]);
-            exit(1);
-        } else {
-            if (filename != NULL) {
-                fprintf(stderr, "less: Too many arguments\n"HELP_MSG);
+        if (argv[i][0] != '-') {
+            if (i < argc - 1) {
+                fprintf(stderr, "less: too many arguments\n"HELP_MSG);
                 exit(1);
             }
             filename = argv[i];
+            break;
         }
-    }
 
-    if (filename == NULL) {
-        filename = "/dev/stdin";
+        if (argv[i][1] == '\0' || argv[i][1] == '-' || argv[i][2] != '\0') {
+            fprintf(stderr, "less: unrecognized option '%s'\n" HELP_MSG, argv[i]);
+            exit(1);
+        }
+
+        switch (argv[i][1]) {
+            case 'n':
+                flags |= TSI_NO_AUTO_WRAP;
+                break;
+            case 'p':
+                flags &= ~TSI_NON_PRINTABLE;
+                break;
+            case 'h':
+                puts("Usage: less [flags] [file]");
+                puts("Options:\n"
+                    "  -n   disable long lines wrapping\n"
+                    "  -p   block non-printable characters\n"
+                    "  -h   display this help message");
+                return (exit(0), 0);
+            default:
+                fprintf(stderr, "less: invalid option -- '%c'\n"HELP_MSG, argv[i][1]);
+                exit(1);
+        }
     }
 
     return flags;
