@@ -13,16 +13,22 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
+#include <dirent.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <errno.h>
 
-#define GREP_COLOR 1
-#define GREP_FNAME 2
-#define GREP_LINES 4
-#define GREP_ICASE 8
-#define GREP_ALLLN 16
+#define GREP_COLOR 0x01
+#define GREP_FNAME 0x02
+#define GREP_LINES 0x04
+#define GREP_ICASE 0x08
+#define GREP_ALLLN 0x10
+#define GREP_RECUR 0x20
 
 #define GREP_USAGE "Usage: grep [options] <pattern> [file1] [file2] ...\n"
+
+void (*grep_file)(char *, FILE *, char *);
 
 uint32_t g_flags;
 int      g_context;
@@ -152,8 +158,45 @@ void show_help(void) {
         "  -H    print the file name\n"
         "  -i    Ignore case in patterns\n"
         "  -n    print line numbers\n"
-        "  -NUM  show NUM lines of context"
+        "  -NUM  show NUM lines of context\n"
+        "  -r    search recursively"
     );
+}
+
+void grep_dir(char *path, char *pattern) {
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        fprintf(stderr, "grep: %s: %m\n", path);
+        return;
+    }
+
+    char *fullpath = malloc(PATH_MAX);
+
+    char *path_join = path[strlen(path) - 1] == '/' ? "" : "/";
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (entry->d_name[0] == '.')
+            continue;
+
+        snprintf(fullpath, PATH_MAX, "%s%s%s", path, path_join, entry->d_name);
+
+        FILE *file = fopen(fullpath, "r");
+
+        if (file == NULL) {
+            if (errno != EISDIR)
+                fprintf(stderr, "grep: %s: %m\n", fullpath);
+            else
+                grep_dir(fullpath, pattern);
+            continue;
+        }
+
+        grep_file(fullpath, file, pattern);
+        fclose(file);
+    }
+
+    free(fullpath);
+    closedir(dir);
 }
 
 char **parse_args(int argc, char **argv) {
@@ -168,38 +211,46 @@ char **parse_args(int argc, char **argv) {
             args[file_count++] = argv[i];
             continue;
         }
-        switch (argv[i][1]) {
-            case 'c':
-                g_flags |= GREP_COLOR;
-                break;
-            case 'f':
-                g_flags |= GREP_ALLLN;
-                break;
-            case 'h':
-                show_help();
-                exit(0);
-            case 'H':
-                g_flags |= GREP_FNAME;
-                break;
-            case 'i':
-                g_flags |= GREP_ICASE;
-                break;
-            case 'n':
-                g_flags |= GREP_LINES;
-                break;
-            case '0' ... '9':
-                g_context = atoi(argv[i] + 1);
-                break;
-            case '-':
-                fprintf(stderr, "grep: unrecognized option -- '%s'\n", argv[i]);
-                fputs(GREP_USAGE, stderr);
-                free(args);
-                exit(1);
-            default:
-                fprintf(stderr, "grep: invalid option -- '%c'\n", argv[i][1]);
-                fputs(GREP_USAGE, stderr);
-                free(args);
-                exit(1);
+        for (int j = 1; argv[i][j]; j++) {
+            switch (argv[i][j]) {
+                case 'c':
+                    g_flags |= GREP_COLOR;
+                    break;
+                case 'f':
+                    g_flags |= GREP_ALLLN;
+                    break;
+                case 'h':
+                    show_help();
+                    exit(0);
+                case 'H':
+                    g_flags |= GREP_FNAME;
+                    break;
+                case 'i':
+                    g_flags |= GREP_ICASE;
+                    break;
+                case 'n':
+                    g_flags |= GREP_LINES;
+                    break;
+                case 'r':
+                    g_flags |= GREP_RECUR | GREP_FNAME;
+                    break;
+                case '0' ... '9':
+                    g_context = 0;
+                    while (isdigit(argv[i][j]) && g_context < 10000)
+                        g_context = g_context * 10 + argv[i][j++] - '0';
+                    j--;
+                    break;
+                case '-':
+                    fprintf(stderr, "grep: unrecognized option -- '%s'\n", argv[i]);
+                    fputs(GREP_USAGE, stderr);
+                    free(args);
+                    exit(1);
+                default:
+                    fprintf(stderr, "grep: invalid option -- '%c'\n", argv[i][j]);
+                    fputs(GREP_USAGE, stderr);
+                    free(args);
+                    exit(1);
+            }
         }
     }
 
@@ -223,7 +274,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    void (*grep_file)(char *, FILE *, char *);
     char **args = parse_args(argc, argv);
 
     if (g_flags & GREP_ALLLN)
@@ -240,13 +290,19 @@ int main(int argc, char **argv) {
 
     for (int i = 1; args[i]; i++) {
         FILE *file = fopen(args[i], "r");
-        if (file == NULL) {
+        if (file) {
+            grep_file(args[i], file, args[0]);
+            fclose(file);
+            continue;
+        }
+
+        if (g_flags & GREP_RECUR && errno == EISDIR) {
+            grep_dir(args[i], args[0]);
+        } else {
             fprintf(stderr, "grep: %s: %m\n", args[i]);
             free(args);
             return 1;
         }
-        grep_file(args[i], file, args[0]);
-        fclose(file);
     }
 
     free(args);
