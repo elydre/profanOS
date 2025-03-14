@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define TSI_VERSION "0.7.3"
+#define TSI_VERSION "0.7.4"
 
 #define TSI_TEXT_COLOR   0x0F
 #define TSI_TITLE_COLOR  0x70
@@ -111,7 +111,7 @@ static int tsi_compute_ansi(const char *data, uint16_t *color_ptr) {
     return 0;
 }
 
-static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
+static const char **tsi_gen_lines(const char *data, int *line_count_ptr, uint32_t flags) {
     const char **lines = malloc(sizeof(char *) * 2);
     int x, line_count, alloc_size = 2;
 
@@ -131,7 +131,7 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr) {
             lines[line_count] = data + i + 1;
             x = 0;
             line_count++;
-        } else if (x >= SCREEN_W) {
+        } else if (x >= SCREEN_W && !(flags & TSI_NO_AUTO_WRAP)) {
             lines[line_count] = data + i + 1;
             line_count++;
             x = 0;
@@ -170,7 +170,7 @@ static void tsi_draw_lines(const char **lines, uint32_t flags) {
                 }
                 if (lines[y][i] == ' ')
                     panda_set_char(x, y + 1, ' ', TSI_TEXT_COLOR);
-                else if (isprint(lines[y][i]) || flags & TSI_ALLOW_NON_PRINTABLE)
+                else if (isprint(lines[y][i]) || flags & TSI_NON_PRINTABLE)
                     panda_set_char(x, y + 1, lines[y][i], color);
                 else
                     panda_set_char(x, y + 1, '?', TSI_EOF_COLOR);
@@ -242,7 +242,7 @@ int tsi_start(const char *title, const char *string, uint32_t flags) {
 
     tsi_draw_title(title);
 
-    lines = tsi_gen_lines(string, &line_count);
+    lines = tsi_gen_lines(string, &line_count, flags);
 
     tsi_main_loop(lines, line_count, flags);
 
