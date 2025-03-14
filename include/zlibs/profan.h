@@ -14,8 +14,6 @@
 
 #include <profan/types.h>
 
-#define PROFAN_PATH_MAX 512
-
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, NULL, argc, argv, environ, 1}, NULL)
 

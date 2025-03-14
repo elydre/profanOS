@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <limits.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -31,7 +32,7 @@ int   opterr = 1, // if error message should be printed
 char *optarg;     // argument associated with option
 
 void __unistd_init(void) {
-    static char wd_path[PROFAN_PATH_MAX] = "/";
+    static char wd_path[PATH_MAX] = "/";
     profan_wd_path = wd_path;
 }
 
@@ -70,7 +71,7 @@ int chdir(const char *path) {
     }
 
     // update the working directory
-    strlcpy(profan_wd_path, dir, PROFAN_PATH_MAX);
+    strlcpy(profan_wd_path, dir, PATH_MAX);
     profan_wd_sid = sid;
 
     free(dir);
@@ -455,7 +456,7 @@ long pathconf(const char *path, int name) {
     }
 
     if (name == _PC_PATH_MAX)
-        return PROFAN_PATH_MAX;
+        return PATH_MAX;
 
     errno = EINVAL;
     return -1;
