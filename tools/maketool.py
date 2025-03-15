@@ -538,20 +538,20 @@ def write_build_logs():
 
 
 def add_src_to_disk():
-    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src")
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/user/src")
     for dir_name in [ZAPPS_DIR] + [ZLIBS_DIR]:
-        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src")
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/user/src")
 
-    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/include")
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/user/src/include")
     for dir_name in KERNEL_HEADERS:
-        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/include")
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/user/src/include")
 
-    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/kernel")
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/user/src/kernel")
     for dir_name in KERNEL_SRC:
-        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/src/kernel")
+        print_and_exec(f"cp -r {dir_name} {OUT_DIR}/disk/user/src/kernel")
 
-    print_and_exec(f"mkdir -p {OUT_DIR}/disk/src/build")
-    print_and_exec(f"cp {TOOLS_DIR}/*.c {TOOLS_DIR}/*.ld {OUT_DIR}/disk/src/build")
+    print_and_exec(f"mkdir -p {OUT_DIR}/disk/user/src/build")
+    print_and_exec(f"cp {TOOLS_DIR}/*.c {TOOLS_DIR}/*.ld {OUT_DIR}/disk/user/src/build")
 
 
 def gen_disk(force=False, with_src=False):
