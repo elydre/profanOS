@@ -18,7 +18,7 @@
 #include <dlfcn.h>
 #include <elf.h>
 
-#define DELUGE_VERSION  "5.3"
+#define DELUGE_VERSION  "5.4"
 #define ALWAYS_DEBUG    0
 
 #define VISIBILITY_LOCAL  0
@@ -445,7 +445,7 @@ int load_sections(elfobj_t *obj, uint8_t *file) {
  *                             *
 ********************************/
 
-uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global) {
+uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global, int allow_local) {
     uint32_t full_h = hash(name);
     Elf32_Sym *s;
 
@@ -456,7 +456,7 @@ uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global) {
     }
 
     // search in the object
-    if (obj && (s = hash_get(obj, full_h, name)) && s->st_shndx != STB_LOCAL) {
+    if (allow_local && obj && (s = hash_get(obj, full_h, name)) && s->st_shndx != STB_LOCAL) {
         if (obj->type == ET_EXEC)
             return s->st_value;
         return s->st_value + (uint32_t) obj->mem;
@@ -567,12 +567,19 @@ int dynamic_linker(elfobj_t *obj) {
             char      *name = obj->dym_str + sym->st_name;
             uint32_t   val = sym->st_value;
 
-            if (val) { // local symbol
-                if (obj->type == ET_DYN)
-                    val += (uint32_t) obj->mem;
-            } else if (does_type_required_sym(type)) {
-                if (!(val = search_sym_value(name, obj, 1)))
-                    raise_error("%s: symbol '%s' not found", obj->name, name);
+            if (does_type_required_sym(type)) {
+                // check if the symbol is defined in the object
+                if (val && type != R_386_COPY) {
+                    if (obj->type == ET_DYN)
+                        val += (uint32_t) obj->mem;
+                } else {
+                    val = search_sym_value(name, obj,
+                            1, // allow global libraries
+                            0  // don't check local symbols
+                    );
+                    if (val == 0)
+                        raise_error("%s: symbol '%s' not found", obj->name, name);
+                }
             }
 
             if (obj->type == ET_DYN)
@@ -901,7 +908,10 @@ void *dlg_sym(void *handle, const char *symbol) {
     }
 
     if (obj == RTLD_DEFAULT) {
-        val = search_sym_value(symbol, NULL, 1);
+        val = search_sym_value(symbol, NULL,
+                1,  // allow global libraries
+                1   // check local symbols
+        );
         g_dlfcn_error = val ? DLG_NOERR : DLG_NOSYM;
         return (void *) val;
     }
@@ -911,7 +921,10 @@ void *dlg_sym(void *handle, const char *symbol) {
         return NULL;
     }
 
-    val = search_sym_value(symbol, obj, 0);
+    val = search_sym_value(symbol, obj,
+            0,  // don't allow global libraries
+            1   // check local symbols
+    );
     g_dlfcn_error = val ? DLG_NOERR : DLG_NOSYM;
 
     return (void *) val;
@@ -988,7 +1001,7 @@ char *dlg_fn_name(void *ptr, char **libname) {
 ********************************/
 
 void libc_enable_leaks(void) {
-    void (*buddy_enable_leaks)(void) = (void *) search_sym_value("__buddy_enable_leaks", NULL, 1);
+    void (*buddy_enable_leaks)(void) = (void *) search_sym_value("__buddy_enable_leaks", NULL, 1, 0);
 
     if (buddy_enable_leaks) {
         buddy_enable_leaks();
