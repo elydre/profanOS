@@ -27,7 +27,7 @@ int display_dynamic_symbols(void);  // D
 int print_help(void);               // h
 int display_file_header(void);      // H
 int display_needed_libraries(void); // n
-int display_dynamic_reloc(void);    // R
+int display_dynamic_reloc(void);    // r
 int display_section_headers(void);  // S
 int display_symbol_table(void);     // s
 
@@ -35,7 +35,7 @@ int display_symbol_table(void);     // s
 #define OPT_h 1
 #define OPT_H 2
 
-static const char *option_chars = "DhHnRSs";
+static const char *option_chars = "DhHnrSs";
 
 static const proc option_procs[] = {
     display_dynamic_symbols, print_help, display_file_header,
@@ -54,7 +54,7 @@ int print_help(void) {
         "  -h   show this help page\n"
         "  -H   ELF file header\n"
         "  -n   needed libraries\n"
-        "  -R   dynamic relocations\n"
+        "  -r   dynamic relocations\n"
         "  -S   sections header\n"
         "  -s   symbol table"
     );
