@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 0"
+#define OLV_VERSION "1.8 rev 1"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -68,23 +68,23 @@
   #include <profan/filesys.h>
   #include <profan.h>
 
-  #include <sys/wait.h>
-  #include <unistd.h>
-  #include <fcntl.h>
-
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 
   #undef  HISTORY_PATH
   #define HISTORY_PATH "/zada/olivine/history.txt"
 #elif BUILD_UNIX
   #include <sys/time.h> // if_ticks
-  #include <sys/wait.h> // waitpid
-  #include <unistd.h>
-  #include <fcntl.h>    // open
 
   #define DEFAULT_PROMPT "\e[0molivine [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
 #else
   #define DEFAULT_PROMPT "olivine ${>$}$(x$) "
+#endif
+
+#if BUILD_PROFAN || BUILD_UNIX
+  #include <sys/wait.h> // waitpid
+  #include <sys/stat.h> // stat
+  #include <unistd.h>
+  #include <fcntl.h>    // open
 #endif
 
 #if ENABLE_WILDC
@@ -1562,7 +1562,7 @@ char *if_debug(char **input) {
             g_olv->ignore_errors = mode == 4;
             break;
         case 'h':
-            puts("Usage: debug [arg]\n"
+            puts("Usage: debug [option]\n"
                 "Options:\n"
                 "  +b     disable binary search\n"
                 "  +d     show execution debug\n"
@@ -1570,7 +1570,7 @@ char *if_debug(char **input) {
                 "  dump   print a full dump of olivine\n"
                 "  func   save functions to 'funcs.olv'\n"
                 "  rbin   reload bin names from PATH\n"
-                "Use + instead of - to turn off options"
+                "Use - instead of + to turn off options"
             );
             break;
         default:
@@ -1913,50 +1913,93 @@ char *if_export(char **input) {
     #endif
 }
 
-char *if_fsize(char **input) {
-    int file_size = 0;
+char *if_fstat(char **input) {
+    #if BUILD_PROFAN || BUILD_UNIX
 
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
 
-    if (argc != 1) {
-        raise_error("fsize", "Usage: fsize <file>");
+    if (argc != 1 && argc != 2) {
+        raise_error("fstat", "Wrong usage, try 'fstat -h'");
         return ERROR_CODE;
     }
 
-    #if BUILD_PROFAN
-    // get path
-    uint32_t file_id = profan_path_resolve(input[0]);
+    char *path, opt;
 
-    // check if file exists
-    if (IS_SID_NULL(file_id)) {
-        file_size = -1;
+    if (argc == 2) {
+        if (strlen(input[0]) != 2 || input[0][0] != '-') {
+            raise_error("fstat", "Wrong usage, try 'fstat -h'");
+            return ERROR_CODE;
+        }
+
+        opt = input[0][1];
+        path = input[1];
     } else {
-        file_size = syscall_fs_get_size(NULL, file_id);
+        if (strcmp(input[0], "-h") == 0) {
+            opt = 'h';
+        } else if (input[0][0] == '-') {
+            raise_error("fstat", "Missing path, try 'fstat -h'");
+            return ERROR_CODE;
+        } else {
+            path = input[0];
+            opt = 's';
+        }
     }
 
+    struct stat st;
+    int exists = 1;
+
+    if (opt != 'h' && stat(path, &st) == -1) {
+        if (opt != 'd' && opt != 'f') {
+            raise_error("fstat", "File '%s' does not exist", path);
+            return ERROR_CODE;
+        }
+        exists = 0;
+    }
+
+    switch (opt) {
+        case 'h':
+            puts("Usage: fstat [option] <file>\n"
+                "Options:\n"
+                "  -d   check if path is a directory\n"
+                "  -h   display this help\n"
+                "  -f   check if path is a file\n"
+                "  -m   last modification time\n"
+                "  -p   3 digits permission\n"
+                "  -s   size of the file in bytes"
+            );
+            break;
+        case 'd':
+            return (exists && S_ISDIR(st.st_mode)) ? strdup("1") : strdup("0");
+        case 'f':
+            return (exists && S_ISREG(st.st_mode)) ? strdup("1") : strdup("0");
+        case 'm':
+            char *time = malloc(13);
+            local_itoa(st.st_mtime, time);
+            return time;
+        case 'p':
+            char *perm = malloc(4);
+            perm[0] = '0' + ((st.st_mode >> 6) & 07);
+            perm[1] = '0' + ((st.st_mode >> 3) & 07);
+            perm[2] = '0' + (st.st_mode & 07);
+            perm[3] = '\0';
+            return perm;
+        case 's':
+            char *size = malloc(13);
+            local_itoa(st.st_size, size);
+            return size;
+        default:
+            raise_error("fstat", "Unknown option '%c'", opt);
+            return ERROR_CODE;
+    }
+
+    return NULL;
     #else
-
-    FILE *file = fopen(input[0], "r");
-    if (file == NULL) {
-        file_size = -1;
-    } else {
-        fseek(file, 0, SEEK_END);
-        file_size = ftell(file);
-        fclose(file);
-    }
-
+    UNUSED(input);
+    raise_error("fstat", "Not supported in this build");
+    return ERROR_CODE;
     #endif
-
-    char *res = malloc(12);
-    if (file_size == -1) {
-        strcpy(res, "null");
-    } else {
-        local_itoa(file_size, res);
-    }
-
-    return res;
 }
 
 char *if_global(char **input) {
@@ -2558,7 +2601,7 @@ internal_function_t internal_funcs[] = {
     {"exec", if_exec},
     {"exit", if_exit},
     {"export", if_export},
-    {"fsize", if_fsize},
+    {"fstat", if_fstat},
     {"global", if_global},
     {"inter", if_inter},
     {"print", if_print},
@@ -5192,7 +5235,7 @@ char init_prog[] =
 "  exec '/zada/olivine/init.olv';"
 "END;"
 "ELSE;"
-"  IF !(eval \"!(fsize '!HOME/.init.olv')\" ~ \"null\");"
+"  IF !(fstat -f '!HOME/.init.olv');"
 "    exec '!HOME/.init.olv';"
 "  END;"
 "END";
