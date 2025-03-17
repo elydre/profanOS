@@ -593,7 +593,7 @@ int remove(const char *name) {
 
 int rename(const char *old_filename, const char *new_filename) {
     char *tmp, *fullpath;
-    char *old_entry, *new_entry;
+    char *new_entry;
 
     // check if the file exists
     fullpath = profan_path_join(profan_wd_path, (char *) old_filename);
@@ -613,7 +613,7 @@ int rename(const char *old_filename, const char *new_filename) {
     }
 
     // get the parent directory sid
-    profan_path_sep(fullpath, &tmp, &old_entry);
+    profan_path_sep(fullpath, &tmp, NULL);
     uint32_t old_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);
@@ -647,19 +647,23 @@ int rename(const char *old_filename, const char *new_filename) {
 
     if (IS_SID_NULL(new_parent_sid) || IS_SID_NULL(old_parent_sid)) {
         errno = ENOENT;
+        free(new_entry);
         return -1;
     }
 
     // remove the old entry from the old parent
     if (fu_remove_from_dir(old_parent_sid, old_sid)) {
+        free(new_entry);
         return -1;
     }
 
     // add the new entry to the new parent
     if (fu_add_to_dir(new_parent_sid, old_sid, new_entry)) {
+        free(new_entry);
         return -1;
     }
 
+    free(new_entry);
     return 0;
 }
 
