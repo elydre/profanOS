@@ -9,8 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
+#include <profan/arp.h>
 #include <profan.h>
 
 #include <unistd.h>
@@ -20,27 +23,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-typedef struct {
-    char *src;
-    char *dst;
-    int max_size;
-    uint32_t block_size;
-    int time_it;
-} cp_args_t;
-
-#define CP_USAGE "Usage: cp [options] <src> <dst>\n"
-
-void cp_help(void) {
-    fputs(CP_USAGE, stdout);
-    puts("Options:\n"
-        "  -b    Set the block size\n"
-        "  -h    Show this help\n"
-        "  -s    Stop after copying SIZE bytes\n"
-        "  -t    Time the operation"
-    );
-}
-
-int64_t atoi_unit(char *str) {
+int64_t atoi_unit(const char *str) {
     // Parse a number with a unit sucpix
     // k, m, g / kb, mb, gb / ko, mo, go
     // no case sensitive, return -1 on error
@@ -86,7 +69,7 @@ int64_t atoi_unit(char *str) {
     return -1;
 }
 
-char *dest_check_dir(char *dst, char *src) {
+const char *dest_check_dir(const char *dst, const char *src) {
     // Check if the destination is a directory
     // If it is, append the source file name to it
 
@@ -104,60 +87,54 @@ char *dest_check_dir(char *dst, char *src) {
     return fullpath;
 }
 
+typedef struct {
+    const char *src;
+    const char *dst;
+    uint32_t block_size;
+    int max_size;
+    int time_it;
+} cp_args_t;
+
 cp_args_t *cp_parse_args(int argc, char **argv) {
-    cp_args_t *args = malloc(sizeof(cp_args_t));
-    args->block_size = 4096;
-    args->max_size = -1;
-    args->time_it = 0;
+    arp_init("[options] <src> <dst>", ARP_FMIN(2));
 
-    int i = 1;
-    int64_t n;
-    for (; i < argc && argv[i][0] == '-'; i++) {
-        switch (argv[i][1]) {
-            case 'b':
-                n = atoi_unit(argv[++i]);
-                if (n > 0 && n < INT_MAX)
-                    args->block_size = n;
-                else {
-                    fprintf(stderr, "cp: %s: invalid block size\n", argv[i]);
-                    exit(1);
-                }
-                break;
-            case 's':
-                n = atoi_unit(argv[++i]);
-                if (n > 0 && n < INT_MAX)
-                    args->max_size = n;
-                else {
-                    fprintf(stderr, "cp: %s: invalid size\n", argv[i]);
-                    exit(1);
-                }
-                break;
-            case 't':
-                args->time_it = 1;
-                break;
-            case 'h':
-                cp_help();
-                exit(0);
-            case '-':
-                fprintf(stderr, "cp: unrecognized option '%s'\n", argv[i]);
-                fputs(CP_USAGE, stderr);
-                exit(1);
-            default:
-                fprintf(stderr, "cp: invalid option -- '%c'\n", argv[i][1]);
-                fputs(CP_USAGE, stderr);
-                exit(1);
-        }
-    }
+    arp_register('b', ARP_NEXT_STR, "set the block size");
+    arp_register('s', ARP_NEXT_STR, "set copy size limit");
+    arp_register('t', ARP_STANDARD, "time the operation");
 
-    if (argc - i != 2) {
-        fputs(CP_USAGE, stderr);
+    if (arp_parse(argc, argv))
         exit(1);
+
+    cp_args_t *args = malloc(sizeof(cp_args_t));
+
+    if (arp_isset('b')) {
+        int n = atoi_unit(arp_get_str('b'));
+        if (n > 0 && n < INT_MAX)
+            args->block_size = n;
+        else {
+            fprintf(stderr, "cp: %s: invalid block size\n", arp_get_str('b'));
+            exit(1);
+        }
+    } else {
+        args->block_size = 4096;
     }
 
-    args->src = argv[i];
-    args->dst = argv[i + 1];
+    if (arp_isset('s')) {
+        int n = atoi_unit(arp_get_str('s'));
+        if (n > 0)
+            args->max_size = n;
+        else {
+            fprintf(stderr, "cp: %s: invalid size\n", arp_get_str('s'));
+            exit(1);
+        }
+    } else {
+        args->max_size = -1;
+    }
 
-    args->dst = dest_check_dir(args->dst, args->src);
+    args->time_it = arp_isset('t');
+
+    args->src = arp_file_next();
+    args->dst = dest_check_dir(arp_file_next(), args->src);
 
     return args;
 }
@@ -193,12 +170,12 @@ int main(int argc, char **argv) {
             break;
 
         if (n == -1) {
-            fprintf(stderr, "cp: %s: Read error\n", args->src);
+            fprintf(stderr, "cp: %s: %m\n", args->src);
             return 1;
         }
 
         if (write(dst_fd, buf, n) != n) {
-            fprintf(stderr, "cp: %s: Write error\n", args->dst);
+            fprintf(stderr, "cp: %s: %m\n", args->dst);
             return 1;
         }
 
