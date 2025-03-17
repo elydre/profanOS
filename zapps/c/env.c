@@ -10,16 +10,18 @@
 \*****************************************************************************/
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 
 int compare_str(const void *a, const void *b) {
     return strcmp(*(const char **) a, *(const char **) b);
 }
 
 int main(int argc, char **argv, char **envp) {
-    (void) argc;
-    (void) argv;
+    if (argc > 1) {
+        fprintf(stderr, "Usage: %s\n", argv[0]);
+        return 1;
+    }
 
     int env_size;
     for (env_size = 0; envp[env_size]; env_size++);

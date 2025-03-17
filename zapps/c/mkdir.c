@@ -9,13 +9,15 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
+#include <profan/arp.h>
+
 #include <sys/stat.h> // mkdir
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-
-#define MKDIR_USAGE "Usage: mkdir [-p] <DIR1> [DIR2] ...\n"
 
 int mkdir_p(const char *input) {
     char *p, *path;
@@ -31,7 +33,7 @@ int mkdir_p(const char *input) {
     while ((p = strchr(p + 1, '/'))) {
         *p = '\0';
         if (mkdir(path, 0777) == -1 && errno != EEXIST) {
-            perror("mkdir");
+            fprintf(stderr, "mkdir: %s: %m\n", path);
             free(path);
             return 1;
         }
@@ -43,31 +45,25 @@ int mkdir_p(const char *input) {
 }
 
 int main(int argc, char **argv) {
-    int pflag = 0;
+    arp_init("[-p] <dir1> [dir2] ...", ARP_FNOMAX | ARP_FMIN(1));
 
-    if (argc > 1 && strcmp(argv[1], "-p") == 0)
-        pflag = 1;
+    arp_register('p', ARP_STANDARD, "make parent directories as needed");
 
-    if (argc < 2 + pflag)
-        return (fputs(MKDIR_USAGE, stderr), 1);
+    if (arp_parse(argc, argv))
+        return 1;
 
-    for (int i = 1 + pflag; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            if (argv[i][1] != '-')
-                fprintf(stderr, "mkdir: invalid option -- '%c'\n" MKDIR_USAGE, argv[i][1]);
-            else
-                fprintf(stderr, "mkdir: unrecognized option -- '%s'\n" MKDIR_USAGE, argv[i]);
-            return 1;
-        }
+    const char *path;
+    int pflag = arp_isset('p');
 
+    while ((path = arp_file_next())) {
         if (pflag) {
-            if (mkdir_p(argv[i]) == -1)
+            if (mkdir_p(path) == -1)
                 return 1;
             continue;
         }
 
-        if (mkdir(argv[i], 0777) == -1) {
-            perror("mkdir");
+        if (mkdir(path, 0777) == -1) {
+            fprintf(stderr, "mkdir: %s: %m\n", path);
             return 1;
         }
     }

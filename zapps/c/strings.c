@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === strings.c : 2025 ===                                                  |
 |                                                                             |
-|    Unix command implementation - print strings in raw file       .pi0iq.    |
+|    One-command string manipulation tool (upper, rev...)          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,14 +9,18 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
+#include <profan/arp.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 
-int g_min_length = 4;
+int g_arg;
 
-void print_strings(FILE *file) {
+void cmd_strings(FILE *file) {
     int first = -1;
     int c;
 
@@ -25,7 +29,7 @@ void print_strings(FILE *file) {
             if (first == -1)
                 first = j;
         } else if (first != -1) {
-            if (j - first >= g_min_length) {
+            if (j - first >= g_arg) {
                 fseek(file, first, SEEK_SET);
                 for (int i = first; i < j; i++)
                     putchar(fgetc(file));
@@ -37,50 +41,79 @@ void print_strings(FILE *file) {
     }
 }
 
+void cmd_upper(FILE *file) {
+    int c;
+
+    while ((c = fgetc(file)) != EOF)
+        putchar(toupper(c));
+}
+
+void cmd_lower(FILE *file) {
+    int c;
+
+    while ((c = fgetc(file)) != EOF)
+        putchar(tolower(c));
+}
+
+void cmd_rev(FILE *file) {
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    while ((read = getline(&line, &len, file)) != -1) {
+        for (ssize_t i = read - 1; i >= 0; i--) {
+            if (line[i] == '\n')
+                continue;
+            putchar(line[i]);
+        }
+        putchar('\n');
+    }
+
+    free(line);
+}
+
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        fputs("Usage: strings [-n <int>] [file1] [file2] ...\n", stderr);
+    void (*cmd)(FILE *);
+
+    arp_init("[-LUR -n %] [file1] [file2] ...", ARP_FNOMAX);
+
+    arp_register('l', ARP_STANDARD, "convert to lowercase");
+    arp_register('n', ARP_NEXT_INT, "strings size (default: 4)");
+    arp_register('r', ARP_STANDARD, "reverse lines of text");
+    arp_register('u', ARP_STANDARD, "convert to uppercase");
+    arp_conflict("lurn,urn,rn");
+
+    arp_set_ver("strings", NULL);
+
+    if (arp_parse(argc, argv))
         return 1;
+
+    if (arp_isset('l'))
+        cmd = cmd_lower;
+    else if (arp_isset('u'))
+        cmd = cmd_upper;
+    else if (arp_isset('r'))
+        cmd = cmd_rev;
+    else {
+        g_arg = arp_isset('n') ? arp_get_int('n') : 4;
+        cmd = cmd_strings;
     }
 
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-')
-            continue;
-        if (strlen(argv[i]) != 2) {
-            fprintf(stderr, "strings: unrecognized option -- '%s'\n", argv[i]);
-        } else if (argv[i][1] == 'n') {
-            if (i + 1 >= argc) {
-                fputs("strings: missing argument to '-n'\n", stderr);
-                return 1;
-            }
-
-            g_min_length = atoi(argv[i + 1]);
-            if (g_min_length < 1) {
-                fputs("strings: invalid minimum string length\n", stderr);
-                return 1;
-            }
-
-            continue;
-        } else {
-            fprintf(stderr, "strings: invalid option -- '%c'\n", argv[i][1]);
-        }
-        return 1;
+    if (arp_file_count() == 0) {
+        cmd(stdin);
+        return 0;
     }
 
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            i++;
-            continue;
-        }
-
-        FILE *file = fopen(argv[i], "r");
+    const char *path;
+    while ((path = arp_file_next())) {
+        FILE *file = fopen(path, "r");
 
         if (file == NULL) {
-            fprintf(stderr, "strings: %s: %m\n", argv[i]);
+            fprintf(stderr, "%s: %s: %m\n", argv[0], path);
             return 1;
         }
 
-        print_strings(file);
+        cmd(file);
         fclose(file);
     }
 

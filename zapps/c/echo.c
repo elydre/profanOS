@@ -9,46 +9,69 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
+#include <profan/arp.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
 
-char *app_ansi_color(char *str) {
-    char *out = malloc(strlen(str) + 1);
-    int dup_index, str_index = 0;
-
-    for (dup_index = 0; str[str_index]; dup_index++) {
-        if (str[str_index] == '\\' && (str[str_index + 1] == 'e' || str[str_index + 1] == 'E')) {
-            out[dup_index] = '\e';
-            str_index += 2;
-        } else if (
-            str[str_index] == '\\' &&
-            str[str_index + 1] == '0' &&
-            str[str_index + 2] == '3' &&
-            str[str_index + 3] == '3'
-        ) {
-            out[dup_index] = '\e';
-            str_index += 4;
-        } else {
-            out[dup_index] = str[str_index];
-            str_index++;
+void echo_interpret(char *str) {
+    for (int i = 0; str[i]; i++) {
+        if (str[i] != '\\') {
+            putchar(str[i]);
+            continue;
+        }
+        switch (str[++i]) {
+            case '\\':
+                putchar('\\');
+                break;
+            case 'a':
+                putchar('\a');
+                break;
+            case 'b':
+                putchar('\b');
+                break;
+            case 'c':
+                return;
+            case 'e':
+                putchar('\e');
+                break;
+            case 'f':
+                putchar('\f');
+                break;
+            case 'n':
+                putchar('\n');
+                break;
+            case 'r':
+                putchar('\r');
+                break;
+            case 't':
+                putchar('\t');
+                break;
+            case 'v':
+                putchar('\v');
+                break;
+            case '0':
+                putchar(strtol(str + ++i, NULL, 8));
+                while (str[i] >= '0' && str[i] <= '7')
+                    i++;
+                i--;
+                break;
+            case 'x':
+                putchar(strtol(str + ++i, NULL, 16));
+                while (isxdigit(str[i]))
+                    i++;
+                i--;
+                break;
+            default:
+                putchar(str[i]);
+                break;
         }
     }
-
-    out[dup_index] = '\0';
-    free(str);
-
-    return out;
-}
-
-void show_help(void) {
-    puts("Usage: echo [options] [string ...]\n"
-        "Options:\n"
-        "  -e   recognize ANSI color escape sequences\n"
-        "  -h   display this help and exit\n"
-        "  -n   do not output the trailing newline"
-    );
 }
 
 char *read_stdin(void) {
@@ -67,103 +90,43 @@ char *read_stdin(void) {
     return buffer;
 }
 
-char *str_join(char *s1, char *s2) {
-    char *output = malloc(strlen(s1) + strlen(s2) + 1);
-    int i = 0;
-
-    for (; s1[i]; i++) {
-        output[i] = s1[i];
-    }
-
-    for (int j = 0; s2[j]; j++) {
-        output[i + j] = s2[j];
-    }
-
-    output[i + strlen(s2)] = '\0';
-    free(s1);
-
-    return output;
-}
-
-char *get_text(char **args, int start) {
-    if (!isatty(0)) {
-        return read_stdin();
-    }
-
-    char *text = malloc(1);
-    text[0] = '\0';
-
-    for (int i = start; args[i]; i++) {
-        text = str_join(text, args[i]);
-        if (args[i + 1]) {
-            text = str_join(text, " ");
-        }
-    }
-    return text;
-}
-
-#define ECHO_ERRR 1
-#define ECHO_ANSI 2
-#define ECHO_HELP 4
-#define ECHO_NONL 8
-
-uint32_t parse_args(char **argv, int *offset) {
-    uint32_t flags = 0;
-
-    int i;
-    for (i = 1; argv[i] && argv[i][0] == '-'; i++) {
-        if (strcmp(argv[i], "-e") == 0) {
-            flags |= ECHO_ANSI;
-        } else if (strcmp(argv[i], "-h") == 0) {
-            flags |= ECHO_HELP;
-        } else if (strcmp(argv[i], "-n") == 0) {
-            flags |= ECHO_NONL;
-        } else {
-            flags |= ECHO_ERRR;
-            break;
-        }
-    }
-
-    *offset = i;
-
-    return flags;
-}
-
 int main(int argc, char **argv) {
-    uint32_t flags;
-    int offset;
+    arp_init("[options] [str1] [str2] ...", ARP_FNOMAX);
 
-    if (argc < 2) {
-        fputs("\n", stdout);
-        return 0;
-    }
+    arp_register('e', ARP_STANDARD, "enable backslash interpretation");
+    arp_register('n', ARP_STANDARD, "do not print the trailing newline");
+    arp_register('s', ARP_STANDARD, "print stdin followed by arguments");
 
-    flags = parse_args(argv, &offset);
-
-    if (flags & ECHO_ERRR) {
-        fprintf(stderr, "echo: Invalid option -- '%s'\n", argv[offset] + 1);
-        fprintf(stderr, "Try 'echo -h' for more information.\n");
+    if (arp_parse(argc, argv))
         return 1;
+
+    int echo_e = arp_isset('e');
+
+    if (arp_isset('s')) {
+        char *stdin_buffer = read_stdin();
+        if (echo_e) {
+            echo_interpret(stdin_buffer);
+        } else {
+            fputs(stdin_buffer, stdout);
+        }
+        free(stdin_buffer);
     }
 
-    if (flags & ECHO_HELP) {
-        show_help();
-        return 0;
+    const char *word;
+
+    for (int i = 0; (word = arp_file_next()); i++) {
+        if (i > 0)
+            putchar(' ');
+
+        if (echo_e)
+            echo_interpret((char *) word);
+        else
+            fputs(word, stdout);
     }
 
-    char *text = get_text(argv, offset);
-
-    if (flags & ECHO_ANSI) {
-        text = app_ansi_color(text);
+    if (!arp_isset('n')) {
+        putchar('\n');
     }
-
-    fputs(text, stdout);
-
-    if (!(flags & ECHO_NONL)) {
-        fputs("\n", stdout);
-    }
-
-    free(text);
 
     return 0;
 }

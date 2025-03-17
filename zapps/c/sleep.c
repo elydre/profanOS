@@ -9,76 +9,38 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/syscall.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdio.h>
 #include <time.h>
 
-// -1  error
-//  0  sleep in seconds
-//  1  sleep in milliseconds
-//  2  get help
-//  3  get unix time
-//  4  get ms since boot
-
-int parse_args(int argc, char **argv) {
-    if (argc == 2) {
-        if (strcmp(argv[1], "-h") == 0) {
-            return 2;
-        } else if (strcmp(argv[1], "-u") == 0) {
-            return 3;
-        } else if (strcmp(argv[1], "-b") == 0) {
-            return 4;
-        } else if (argv[1][0] == '-') {
-            return -1;
-        } else {
-            return 0;
-        }
-    } else if (argc == 3) {
-        if (strcmp(argv[1], "-m") == 0) {
-            return 1;
-        } else {
-            return -1;
-        }
-    } else {
-        return -1;
-    }
-}
-
 int main(int argc, char **argv) {
-    int arg = parse_args(argc, argv);
-    if (arg == -1) {
-        fputs("sleep: Invalid arguments\nTry 'sleep -h' for more information.\n", stderr);
-        return 1;
-    } else if (arg == 2) {
-        puts("Usage: sleep [args | time]\n"
-            "args:\n"
-            "  -b   print ms since boot\n"
-            "  -h   print this help message\n"
-            "  -u   print unix time\n"
-            "  -m   sleep for <time> milliseconds\n"
-        );
-        return 0;
-    } else if (arg == 3) {
-        printf("%ld\n", time(NULL));
-        return 0;
-    } else if (arg == 4) {
-        printf("%d\n", syscall_timer_get_ms());
-        return 0;
-    }
-
-    int tosleep = atoi(argv[arg + 1]);
-    if (tosleep <= 0) {
-        fprintf(stderr, "sleep: '%s' is not a valid time\n", argv[arg + 1]);
+    if (argc != 2 || argv[1][0] == '-') {
+        fprintf(stderr, "Usage: %s <seconds>\n", argv[0]);
         return 1;
     }
 
-    if (arg == 0) {
-        sleep(tosleep);
-    } else if (arg == 1) {
-        usleep(tosleep * 1000);
+    for (int i = 0; argv[1][i]; i++) {
+        if ((argv[1][i] < '0' || argv[1][i] > '9') && argv[1][i] != '.') {
+            fprintf(stderr, "%s: invalid time interval\n", argv[0]);
+            return 1;
+        }
+    }
+
+    double seconds = atof(argv[1]);
+
+    if (seconds < 0) {
+        fprintf(stderr, "%s: invalid time interval\n", argv[0]);
+        return 1;
+    }
+
+    struct timespec req = {
+        .tv_sec = (time_t) seconds,
+        .tv_nsec = (long) ((seconds - (time_t) seconds) * 1e9)
+    };
+
+    if (nanosleep(&req, NULL) == -1) {
+        perror(argv[0]);
+        return 1;
     }
 
     return 0;

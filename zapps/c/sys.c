@@ -9,15 +9,16 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
 #include <profan/syscall.h>
 #include <profan/filesys.h>
+#include <profan/arp.h>
 #include <profan.h>
 
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
-
-#define USAGE_HEADER "Usage: sys [option]\n"
 
 #define PROCESS_MAX 64
 
@@ -179,7 +180,7 @@ void memory_print_usage(void) {
                 syscall_mem_info(7, pid)
         );
     }
-    puts("");
+    putchar('\n');
 }
 
 void memory_print_summary(void) {
@@ -189,58 +190,23 @@ void memory_print_summary(void) {
     printf("In total, %d MB can be allocated!\n", total / 1024 / 1024);
 }
 
-typedef enum {
-    ACTION_FETCH,
-    ACTION_MEM,
-    ACTION_SUM,
-    ACTION_HELP,
-    ACTION_ERR
-} action_t;
+int main(int argc, char **argv) {
+    arp_init("[options]", 0);
 
-action_t parse_args(int argc, char **argv) {
-    if (argc == 1)
-        return ACTION_FETCH;
+    arp_register('m', ARP_STANDARD, "show detailed memory usage");
+    arp_register('s', ARP_STANDARD, "show summary of resources");
 
-    if (argc > 2)
-        return ACTION_ERR;
+    arp_conflict("ms");
 
-    if (strcmp(argv[1], "-h") == 0)
-        return ACTION_HELP;
-
-    if (strcmp(argv[1], "-m") == 0)
-        return ACTION_MEM;
-
-    if (strcmp(argv[1], "-s") == 0)
-        return ACTION_SUM;
-
-    return ACTION_ERR;
-}
-
-int main(int argc, char *argv[]) {
-    action_t mode = parse_args(argc, argv);
-
-    if (mode == ACTION_ERR) {
-        fputs(
-            USAGE_HEADER
-            "Try 'sys -h' for more information.\n",
-            stderr
-        );
+    if (arp_parse(argc, argv))
         return 1;
-    } else if (mode == ACTION_HELP) {
-        puts(
-            USAGE_HEADER
-            "Options:\n"
-            "  -h   display this help message\n"
-            "  -m   show detailed memory usage\n"
-            "  -s   show summary of resources"
-        );
-    } else if (mode == ACTION_MEM) {
+
+    if (arp_isset('m'))
         memory_print_usage();
-    } else if (mode == ACTION_SUM) {
+    else if (arp_isset('s'))
         memory_print_summary();
-    } else {
+    else
         do_fetch();
-    }
 
     return 0;
 }

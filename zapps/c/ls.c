@@ -388,26 +388,27 @@ void list_dirs(ls_args_t *args) {
  *                              *
 *********************************/
 
+#define LS_USAGE "Usage: ls [options] [path1] [path2] ...\n"
+#define LS_INFO "Try 'ls -h' for more information.\n"
+
 int print_help(void) {
     puts(
-        "Usage: ls [options] [path] [path] ...\n"
+        LS_USAGE
         "\nDisplay Options:\n"
-        "  -f   line by line display\n"
-        "  -l   detailed list view\n"
-        "  -m   comma separated list\n"
+        "  -f    line by line display\n"
+        "  -l    detailed list view\n"
+        "  -m    comma separated list\n"
         "\nSorting Options:\n"
-        "  -a   show all elements\n"
-        "  -p   use physical size\n"
-        "  -z   sort by size\n"
+        "  -a    show all elements\n"
+        "  -p    use physical size\n"
+        "  -z    sort by size\n"
         "\nMisc. Options:\n"
-        "  -h   display this help\n"
-        "  -c   force color output (ansi escape)\n"
-        "  -n   force no color output"
+        "  -h    display this help\n"
+        "  -c    force color output (ansi escape)\n"
+        "  -n    force no color output"
     );
     return 0;
 }
-
-#define LS_INFO "Try 'ls -h' for more information.\n"
 
 ls_args_t *parse_args(int argc, char **argv) {
     ls_args_t *args = calloc(1, sizeof(ls_args_t) + (argc + 1) * sizeof(char *));
@@ -423,6 +424,18 @@ ls_args_t *parse_args(int argc, char **argv) {
         if (argv[i][0] != '-') {
             args->paths[path_count++] = argv[i];
             continue;
+        }
+
+        if (argv[i][1] == '\0') {
+            fputs(LS_USAGE LS_INFO, stderr);
+            free(args);
+            exit(1);
+        }
+
+        if (argv[i][1] == '-' && argv[i][2] == '\0') {
+            while (++i < argc)
+                args->paths[path_count++] = argv[i];
+            break;
         }
 
         for (int j = 1; argv[i][j]; j++) {
@@ -455,6 +468,10 @@ ls_args_t *parse_args(int argc, char **argv) {
                     print_help();
                     free(args);
                     exit(0);
+                case '-':
+                    fprintf(stderr, "ls: unrecognized option '%s'\n"LS_INFO, argv[i]);
+                    free(args);
+                    exit(1);
                 default:
                     fprintf(stderr, "ls: invalid option -- '%c'\n"LS_INFO, argv[i][j]);
                     free(args);

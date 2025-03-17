@@ -30,13 +30,13 @@ enum {
 void uname_help(void) {
     puts(UNAME_USAGE
         "Options:\n"
-        "  -a   print all information\n"
-        "  -s   print kernel name\n"
-        "  -n   print network node hostname\n"
-        "  -r   print kernel release\n"
-        "  -v   print kernel version\n"
-        "  -m   print machine hardware name\n"
-        "  -o   print operating system name"
+        "  -a    print all information\n"
+        "  -s    print kernel name\n"
+        "  -n    print network node hostname\n"
+        "  -r    print kernel release\n"
+        "  -v    print kernel version\n"
+        "  -m    print machine hardware name\n"
+        "  -o    print operating system name"
     );
 }
 
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     int print_mask = 0;
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-' || argv[i][1] == '\0' || argv[i][1] == '-') {
+        if (argv[i][0] != '-' || argv[i][1] == '\0') {
             fputs(UNAME_USAGE UNAME_HELP, stderr);
             return 1;
         }
@@ -90,8 +90,11 @@ int main(int argc, char **argv) {
                 case 'o':
                     print_mask |= PRINT_OS;
                     break;
+                case '-':
+                    fprintf(stderr, "uname: unrecognized option '%s'\n" UNAME_HELP, argv[i]);
+                    return 1;
                 default:
-                    fprintf(stderr, "uname: unknown option -- %c\n" UNAME_HELP, argv[i][j]);
+                    fprintf(stderr, "uname: unknown option -- '%c'\n" UNAME_HELP, argv[i][j]);
                     return 1;
             }
         }

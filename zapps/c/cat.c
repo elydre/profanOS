@@ -9,7 +9,10 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
 #include <profan/filesys.h>
+#include <profan/arp.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -17,60 +20,7 @@
 #include <ctype.h>
 #include <stdio.h>
 
-void show_help(void) {
-    puts("Usage: cat [options] [files]\n"
-        "Options:\n"
-        "  -C   canonical hex+ASCII display\n"
-        "  -e   non-printable and $ before newline\n"
-        "  -h   display this help message"
-    );
-}
-
-typedef struct {
-    int canonical;
-    int help;
-    int end_of_line;
-    int failed;
-    char **paths;
-} cat_args_t;
-
-cat_args_t *parse_args(int argc, char **argv) {
-    cat_args_t *args = malloc(sizeof(cat_args_t));
-    args->canonical = 0;
-    args->end_of_line = 0;
-    args->help = 0;
-    args->failed = 0;
-    args->paths = calloc(argc, sizeof(char *));
-
-    int path_count = 0;
-
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && argv[i][1] != '\0') {
-            if (strcmp(argv[i], "-C") == 0) {
-                args->canonical = 1;
-            } else if (strcmp(argv[i], "-e") == 0) {
-                args->end_of_line = 1;
-            } else if (strcmp(argv[i], "-h") == 0) {
-                args->help = 1;
-            } else {
-                fprintf(stderr, "cat: invalid option -- '%s'\n", argv[i] + 1);
-                args->failed = 1;
-                return args;
-            }
-        } else {
-            args->paths[path_count++] = argv[i];
-        }
-    }
-
-    return args;
-}
-
-void free_args(cat_args_t *args) {
-    free(args->paths);
-    free(args);
-}
-
-void cat_canonical(FILE *file, char *path) {
+void cat_canonical(FILE *file, const char *path) {
     if (file == NULL) {
         fprintf(stderr, "cat: %s: %m\n", path);
         return;
@@ -104,7 +54,7 @@ void cat_canonical(FILE *file, char *path) {
         fclose(file);
 }
 
-void cat(FILE *file, char *path, int end_of_line) {
+void cat(FILE *file, const char *path, int end_of_line) {
     if (file == NULL) {
         fprintf(stderr, "cat: %s: %m\n", path);
         return;
@@ -140,51 +90,30 @@ void cat(FILE *file, char *path, int end_of_line) {
 }
 
 int main(int argc, char **argv) {
-    cat_args_t *args = parse_args(argc, argv);
-    if (args->failed) {
-        fputs("Try 'cat -h' for more information.\n", stderr);
-        free_args(args);
+    arp_init("[options] [file1] [file2] ...", ARP_FNOMAX);
+
+    arp_register('C', ARP_STANDARD, "canonical hex+ASCII display");
+    arp_register('e', ARP_STANDARD, "non-printable and $ before newline");
+
+    arp_conflict("Ce");
+
+    if (arp_parse(argc, argv))
         return 1;
-    }
 
-    if (args->help) {
-        show_help();
-        free_args(args);
-        return 0;
-    }
+    const char **paths = arp_get_files();
+    int cat_e = arp_isset('e');
 
-    if (args->end_of_line && args->canonical) {
-        fputs("cat: Cannot use -e and -c together\n", stderr);
-        free_args(args);
-        return 1;
-    }
-
-    if (args->canonical) {
-        if (args->paths[0] == NULL)
+    if (arp_isset('C')) {
+        if (paths[0] == NULL)
             cat_canonical(stdin, "stdin");
-        for (int i = 0; args->paths[i] != NULL; i++) {
-            if (args->paths[i] == NULL)
-                continue;
-            if (args->paths[i][0] == '-') {
-                cat_canonical(stdin, "stdin");
-                continue;
-            }
-            cat_canonical(fopen(args->paths[i], "r"), args->paths[i]);
-        }
+        for (int i = 0; paths[i]; i++)
+            cat_canonical(fopen(paths[i], "r"), paths[i]);
     } else {
-        if (args->paths[0] == NULL)
-            cat(stdin, "stdin", args->end_of_line);
-        for (int i = 0; args->paths[i] != NULL; i++) {
-            if (args->paths[i] == NULL)
-                continue;
-            if (args->paths[i][0] == '-') {
-                cat(stdin, "stdin", args->end_of_line);
-                continue;
-            }
-            cat(fopen(args->paths[i], "r"), args->paths[i], args->end_of_line);
-        }
+        if (paths[0] == NULL)
+            cat(stdin, "stdin", cat_e);
+        for (int i = 0; paths[i]; i++)
+            cat(fopen(paths[i], "r"), paths[i], cat_e);
     }
 
-    free_args(args);
     return 0;
 }

@@ -9,10 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
+#include <profan/arp.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdint.h>
 #include <limits.h>
 #include <dirent.h>
 #include <ctype.h>
@@ -26,25 +29,23 @@
 #define GREP_ALLLN 0x10
 #define GREP_RECUR 0x20
 
-#define GREP_USAGE "Usage: grep [options] <pattern> [file1] [file2] ...\n"
-
-void (*grep_file)(char *, FILE *, char *);
+void (*grep_file)(const char *, FILE *, const char *);
 
 uint32_t g_flags;
 int      g_context;
 
-char *grep_strstr(char *haystack, char *needle) {
+const char *grep_strstr(const char *haystack, const char *needle) {
     if (g_flags & GREP_ICASE) {
-        for (char *h = haystack; *h; h++) {
-            char *n = needle;
-            for (char *h2 = h; *n && tolower(*n) == tolower(*h2); n++, h2++);
+        for (const char *h = haystack; *h; h++) {
+            const char *n = needle;
+            for (const char *h2 = h; *n && tolower(*n) == tolower(*h2); n++, h2++);
             if (!*n)
                 return h;
         }
     } else {
-        for (char *h = haystack; *h; h++) {
-            char *n = needle;
-            for (char *h2 = h; *n && *n == *h2; n++, h2++);
+        for (const char *h = haystack; *h; h++) {
+            const char *n = needle;
+            for (const char *h2 = h; *n && *n == *h2; n++, h2++);
             if (!*n)
                 return h;
         }
@@ -52,8 +53,8 @@ char *grep_strstr(char *haystack, char *needle) {
     return NULL;
 }
 
-void print_with_color(char *line, char *pattern) {
-    char *pattern_start, *pattern_end;
+void print_with_color(const char *line, const char *pattern) {
+    const char *pattern_start, *pattern_end;
 
     if ((pattern_start = grep_strstr(line, pattern)) == NULL) {
         fputs(line, stdout);
@@ -70,23 +71,23 @@ void print_with_color(char *line, char *pattern) {
     print_with_color(pattern_end, pattern);
 }
 
-void print_line(char *name, int lnum, char *line, char *pattern) {
+void print_line(const char *name, int lnum, const char *line, const char *pattern) {
     if (g_flags & GREP_COLOR) {
         if (g_flags & GREP_FNAME)
             printf("\e[37m%s:\e[0m ", name);
         if (g_flags & GREP_LINES)
-            printf("\e[32m%d\e[90m:\e[0m ", lnum);
+            printf("\e[32m%d\e[90m:\e[0m ", lnum + 1);
         print_with_color(line, pattern);
     } else {
         if (g_flags & GREP_FNAME)
             printf("%s: ", name);
         if (g_flags & GREP_LINES)
-            printf("%d: ", lnum);
+            printf("%d: ", lnum + 1);
         fputs(line, stdout);
     }
 }
 
-void grep_file_ctx(char *name, FILE *file, char *pattern) {
+void grep_file_ctx(const char *name, FILE *file, const char *pattern) {
     char *line = NULL;
     size_t s;
 
@@ -97,7 +98,7 @@ void grep_file_ctx(char *name, FILE *file, char *pattern) {
     for (int lnum = 0; getline(&line, &s, file) != -1; lnum++) {
         if (grep_strstr(line, pattern) != NULL) {
             if (first) first = 0;
-            else fputs("--\n", stdout);
+            else if (context_count == g_context) fputs("--\n", stdout);
 
             for (int i = 0; i < context_count; i++) {
                 print_line(name, lnum - context_count + i, context[i], pattern);
@@ -129,7 +130,7 @@ void grep_file_ctx(char *name, FILE *file, char *pattern) {
     free(line);
 }
 
-void grep_file_noctx(char *name, FILE *file, char *pattern) {
+void grep_file_noctx(const char *name, FILE *file, const char *pattern) {
     char *line = NULL;
     size_t s;
 
@@ -140,7 +141,7 @@ void grep_file_noctx(char *name, FILE *file, char *pattern) {
     free(line);
 }
 
-void grep_file_all(char *name, FILE *file, char *pattern) {
+void grep_file_all(const char *name, FILE *file, const char *pattern) {
     char *line = NULL;
     size_t s;
 
@@ -149,21 +150,7 @@ void grep_file_all(char *name, FILE *file, char *pattern) {
     free(line);
 }
 
-void show_help(void) {
-    puts(GREP_USAGE
-        "Options:\n"
-        "  -c    force color output\n"
-        "  -f    print all the file lines\n"
-        "  -h    display this help message\n"
-        "  -H    print the file name\n"
-        "  -i    Ignore case in patterns\n"
-        "  -n    print line numbers\n"
-        "  -NUM  show NUM lines of context\n"
-        "  -r    search recursively"
-    );
-}
-
-void grep_dir(char *path, char *pattern) {
+void grep_dir(const char *path, const char *pattern) {
     DIR *dir = opendir(path);
     if (dir == NULL) {
         fprintf(stderr, "grep: %s: %m\n", path);
@@ -199,82 +186,51 @@ void grep_dir(char *path, char *pattern) {
     closedir(dir);
 }
 
-char **parse_args(int argc, char **argv) {
+void update_flags(int argc, char **argv) {
+    arp_init("[options] <pattern> [file1] [file2] ...", ARP_FMIN(1) | ARP_FNOMAX);
+
+    arp_register('c', ARP_STANDARD, "force color output");
+    arp_register('f', ARP_STANDARD, "print all the file lines");
+    arp_register('h', ARP_STANDARD, "display this help message");
+    arp_register('H', ARP_STANDARD, "print the file name");
+    arp_register('i', ARP_STANDARD, "Ignore case in patterns");
+    arp_register('n', ARP_STANDARD, "print line numbers");
+    arp_register('r', ARP_STANDARD, "search recursively");
+    arp_register('z', ARP_STANDARD, "force no file name display");
+    arp_register('%', ARP_ANYNUMBR, "show NUM lines of context");
+
+    arp_conflict("f%,Hz");
+
+    if (arp_parse(argc, argv))
+        exit(1);
+
     g_context = 0;
     g_flags = 0;
 
-    int file_count = 0;
-    char **args = malloc(argc * sizeof(char *));
+    if (arp_isset('c'))
+        g_flags |= GREP_COLOR;
+    if (arp_isset('f'))
+        g_flags |= GREP_ALLLN;
+    if (arp_isset('H'))
+        g_flags |= GREP_FNAME;
+    if (arp_isset('i'))
+        g_flags |= GREP_ICASE;
+    if (arp_isset('n'))
+        g_flags |= GREP_LINES;
+    if (arp_isset('r'))
+        g_flags |= GREP_RECUR | GREP_FNAME;
+    if (arp_isset('%'))
+        g_context = arp_get_int('%');
 
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            args[file_count++] = argv[i];
-            continue;
-        }
-        for (int j = 1; argv[i][j]; j++) {
-            switch (argv[i][j]) {
-                case 'c':
-                    g_flags |= GREP_COLOR;
-                    break;
-                case 'f':
-                    g_flags |= GREP_ALLLN;
-                    break;
-                case 'h':
-                    show_help();
-                    exit(0);
-                case 'H':
-                    g_flags |= GREP_FNAME;
-                    break;
-                case 'i':
-                    g_flags |= GREP_ICASE;
-                    break;
-                case 'n':
-                    g_flags |= GREP_LINES;
-                    break;
-                case 'r':
-                    g_flags |= GREP_RECUR | GREP_FNAME;
-                    break;
-                case '0' ... '9':
-                    g_context = 0;
-                    while (isdigit(argv[i][j]) && g_context < 10000)
-                        g_context = g_context * 10 + argv[i][j++] - '0';
-                    j--;
-                    break;
-                case '-':
-                    fprintf(stderr, "grep: unrecognized option -- '%s'\n", argv[i]);
-                    fputs(GREP_USAGE, stderr);
-                    free(args);
-                    exit(1);
-                default:
-                    fprintf(stderr, "grep: invalid option -- '%c'\n", argv[i][j]);
-                    fputs(GREP_USAGE, stderr);
-                    free(args);
-                    exit(1);
-            }
-        }
-    }
-
-    if (file_count == 0) {
-        fputs(GREP_USAGE, stderr);
-        free(args);
-        exit(1);
-    }
-
-    g_flags |= file_count > 2 ? GREP_FNAME : 0;
+    g_flags |= arp_file_count() > 2 ? GREP_FNAME : 0;
     g_flags |= isatty(1) ? GREP_COLOR : 0;
 
-    args[file_count] = NULL;
-
-    return args;
+    if (arp_isset('z'))
+        g_flags &= ~GREP_FNAME;
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        fputs(GREP_USAGE, stderr);
-        return 1;
-    }
-
-    char **args = parse_args(argc, argv);
+    update_flags(argc, argv);
 
     if (g_flags & GREP_ALLLN)
         grep_file = grep_file_all;
@@ -282,6 +238,8 @@ int main(int argc, char **argv) {
         grep_file = grep_file_ctx;
     else
         grep_file = grep_file_noctx;
+
+    const char **args = arp_get_files();
 
     if (args[1] == NULL) {
         grep_file("stdin", stdin, args[0]);
@@ -300,11 +258,9 @@ int main(int argc, char **argv) {
             grep_dir(args[i], args[0]);
         } else {
             fprintf(stderr, "grep: %s: %m\n", args[i]);
-            free(args);
             return 1;
         }
     }
 
-    free(args);
     return 0;
 }

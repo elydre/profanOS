@@ -50,13 +50,13 @@ proc procs[PROC_COUNT] = {NULL};
 int print_help(void) {
     puts(READELF_USAGE
         "Options:\n"
-        "  -D   dynamic symbol table\n"
-        "  -h   show this help page\n"
-        "  -H   ELF file header\n"
-        "  -n   needed libraries\n"
-        "  -r   dynamic relocations\n"
-        "  -S   sections header\n"
-        "  -s   symbol table"
+        "  -D    dynamic symbol table\n"
+        "  -h    show this help page\n"
+        "  -H    ELF file header\n"
+        "  -n    needed libraries\n"
+        "  -r    dynamic relocations\n"
+        "  -S    sections header\n"
+        "  -s    symbol table"
     );
     return 0;
 }

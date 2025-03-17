@@ -12,6 +12,7 @@
 // @LINK: libpf
 
 #include <profan/libtsi.h>
+#include <profan/arp.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,12 +21,7 @@
 
 #define HELP_MSG "Try 'less -h' for more information.\n"
 
-char *read_file(char *filename) {
-    // read from file
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL)
-        return NULL;
-
+char *read_file(FILE *fp) {
     char *buffer = malloc(1024);
     int buffer_size = 0;
     int rcount = 0;
@@ -37,74 +33,44 @@ char *read_file(char *filename) {
 
     buffer[buffer_size] = '\0';
 
-    fclose(fp);
-
     return buffer;
 }
 
-char *filename;
-
-uint32_t compute_args(int argc, char **argv) {
-    uint32_t flags = TSI_NON_PRINTABLE;
-    filename = "/dev/stdin";
-
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            if (i < argc - 1) {
-                fprintf(stderr, "less: too many arguments\n"HELP_MSG);
-                exit(1);
-            }
-            filename = argv[i];
-            break;
-        }
-
-        if (argv[i][1] == '\0' || argv[i][1] == '-' || argv[i][2] != '\0') {
-            fprintf(stderr, "less: unrecognized option '%s'\n" HELP_MSG, argv[i]);
-            exit(1);
-        }
-
-        switch (argv[i][1]) {
-            case 'n':
-                flags |= TSI_NO_AUTO_WRAP;
-                break;
-            case 'p':
-                flags &= ~TSI_NON_PRINTABLE;
-                break;
-            case 'h':
-                puts("Usage: less [flags] [file]");
-                puts("Options:\n"
-                    "  -n   disable long lines wrapping\n"
-                    "  -p   block non-printable characters\n"
-                    "  -h   display this help message");
-                return (exit(0), 0);
-            default:
-                fprintf(stderr, "less: invalid option -- '%c'\n"HELP_MSG, argv[i][1]);
-                exit(1);
-        }
-    }
-
-    return flags;
-}
-
 int main(int argc, char **argv) {
-    char *buffer, *title;
+    arp_init("[-pn] [-t title] [file]", 1);
 
-    uint32_t flags = compute_args(argc, argv);
+    arp_register('p', ARP_STANDARD, "block non-printable characters");
+    arp_register('n', ARP_STANDARD, "disable long lines wrapping");
+    arp_register('t', ARP_NEXT_STR, "set TSI interface title");
 
-    buffer = read_file(filename);
+    if (arp_parse(argc, argv))
+        return 1;
 
-    if (buffer == NULL) {
-        fprintf(stderr, "less: %s: File not found\n", filename);
+    uint32_t flags = 0;
+
+    if (!arp_isset('p'))
+        flags |= TSI_NON_PRINTABLE;
+    if (arp_isset('n'))
+        flags |= TSI_NO_AUTO_WRAP;
+
+    const char *filename = arp_file_next();
+    FILE *fp = filename ? fopen(filename, "r") : stdin;
+    filename = filename ? filename : "stdin";
+
+    if (fp == NULL) {
+        fprintf(stderr, "less: %s: %m\n", filename);
         return 1;
     }
 
-    title = malloc(strlen(filename) + 8);
-    sprintf(title, "less: %s", filename);
+    const char *title = arp_isset('t') ? arp_get_str('t') : filename;
+    char *buffer = read_file(fp);
 
     tsi_start(title, buffer, flags);
 
+    if (fp != stdin)
+        fclose(fp);
+
     free(buffer);
-    free(title);
 
     return 0;
 }
