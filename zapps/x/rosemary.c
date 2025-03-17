@@ -22,7 +22,7 @@
 
 #define LOADER_NAME "rosemary"
 
-#define SHELL_PATH "/bin/h/olivine.elf"
+#define SHELL_PATH "/bin/f/olivine.elf"
 #define SHELL_NAME "olivine"
 
 #define START_USAGE_GRAPH 1
@@ -177,8 +177,8 @@ int main(void) {
 
     welcome_print();
 
-    set_env("PATH=/bin/c:/bin/h:/bin/l");
-    set_env("DEFRUN=/bin/h/tcc.elf -run");
+    set_env("PATH=/bin/c:/bin/f:/bin/l");
+    set_env("DEFRUN=/bin/f/tcc.elf -run");
     set_env("HOME=/");
     set_env("PWD=/");
 

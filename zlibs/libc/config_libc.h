@@ -28,7 +28,7 @@
 
 /****** STDLIB *****************************************************/
 
-#define SYSTEM_SHELL_PATH "/bin/h/dash.elf" // system() shell
+#define SYSTEM_SHELL_PATH "/bin/f/dash.elf" // system() shell
 
 
 /****** BUDDY ALLOCATOR ********************************************/

@@ -4566,7 +4566,7 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
     if (term && strcmp(term, "/dev/panda") && strcmp(term, "/dev/kterm")) {
         if (fgets(buffer, size, stdin))
             return -1;
-        puts("");
+        putchar('\n');
         return -2;
     }
 
@@ -4822,7 +4822,7 @@ int input_local_stdio(char *buffer, int size) {
         return -1;
 
     // end of file
-    puts("");
+    putchar('\n');
 
     return -2;
 }
@@ -5092,15 +5092,15 @@ int show_help(int full, const char *name) {
 
     printf("Usage: %s [options] [file] [arg1 arg2 ...]\n"
         "Options:\n"
-        "  -b   disable binary search as pseudo\n"
-        "  -c   execute argument as code line\n"
-        "  -d   show debug during execution\n"
-        "  -e   ignore errors and continue execution\n"
-        "  -i   start a shell after executing\n"
-        "  -h   show this help message and exit\n"
-        "  -n   don't execute the init program\n"
-        "  -p   show file with syntax highlighting\n"
-        "  -v   display program's version number\n",
+        "  -b    disable binary search as pseudo\n"
+        "  -c    execute argument as code line\n"
+        "  -d    show debug during execution\n"
+        "  -e    ignore errors and continue execution\n"
+        "  -i    start a shell after executing\n"
+        "  -h    show this help message and exit\n"
+        "  -n    don't execute the init program\n"
+        "  -p    show file with syntax highlighting\n"
+        "  -v    display program's version number\n",
         name
     );
     return 0;
