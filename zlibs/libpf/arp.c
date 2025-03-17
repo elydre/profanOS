@@ -406,6 +406,9 @@ int arp_parse(int argc, char **argv) {
     int file_max =  g_arp->file_limits & 0x00ffffff;
     int file_min = (g_arp->file_limits & 0xff000000) >> 24;
 
+    if (file_max < file_min)
+        file_max = file_min;
+
     if (file_max != ARP_FNOMAX && files_index > file_max) {
         fprintf(stderr, "%s: too many arguments\n" ARP_INFO, g_arp->name, g_arp->name);
         return 1;
