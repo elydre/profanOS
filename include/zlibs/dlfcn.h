@@ -9,20 +9,23 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef DLFCN_H
-#define DLFCN_H
+#ifndef _DLFCN_H
+#define _DLFCN_H
 
-#define RTLD_LAZY 0
-#define RTLD_NOW 1
-#define RTLD_GLOBAL 2
-#define RTLD_LOCAL 3
-#define RTLD_NODELETE 4
-#define RTLD_NOLOAD 5
-#define RTLD_FATAL 6
+#define RTLD_LAZY     1
+#define RTLD_NOW      2
+#define RTLD_LOCAL    0x000
+#define RTLD_GLOBAL   0x100
+#define RTLD_TRACE    0x200
+#define RTLD_NODELETE 0x400
+#define RTLD_NOLOAD   0x800
+
+#define RTLD_NEXT     ((void *) -1)   // search subsequent objects
+#define RTLD_DEFAULT  ((void *) -2)   // search in RTLD_GLOBAL
 
 void *dlopen(const char *filename, int flag);
 void *dlsym(void *handle, const char *symbol);
-int dlclose(void *handle);
+int   dlclose(void *handle);
 char *dlerror(void);
 
 #endif

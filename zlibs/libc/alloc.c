@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === malloc.c : 2024 ===                                                   |
+|   === malloc.c : 2025 ===                                                   |
 |                                                                             |
 |    Implementation of malloc functions and leak tracking          .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -19,14 +19,11 @@
 #undef malloc
 #undef free
 
+#include "config_libc.h"
+
 #define BUDDY_ALLOC_IMPLEMENTATION
 #include "alloc_buddy.h"
 #undef BUDDY_ALLOC_IMPLEMENTATION
-
-#define DEFAULT_SIZE 16  // 8 pages (32KB)
-
-#define PROFAN_BUDDY_MDATA ((void *) 0xD0000000)
-#define PROFAN_BUDDY_ARENA ((void *) 0xD1000000)
 
 typedef struct alloc_debug {
     void *ptr;
@@ -43,13 +40,13 @@ typedef struct {
     uint32_t tab_size;
 } leaks_stat_t;
 
-leaks_stat_t *g_stat;
-struct buddy  *g_buddy;
+static leaks_stat_t *g_stat;
+static struct buddy *g_buddy;
 
-uint32_t g_arena_count;  // in pages (4KB)
-uint32_t g_mdata_count;  // in pages (4KB)
+static uint32_t g_arena_count;  // in pages (4KB)
+static uint32_t g_mdata_count;  // in pages (4KB)
 
-int      g_debug;
+static int g_debug;
 
 static void buddy_show_leaks(void);
 
@@ -61,19 +58,19 @@ void __buddy_init(void) {
     g_stat = NULL;
     g_debug = 0;
 
-    g_arena_count = DEFAULT_SIZE;
-    if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA, g_arena_count)) {
+    g_arena_count = _BUDDY_DEFAULT_SIZE;
+    if (!syscall_scuba_generate(_BUDDY_ARENA_ADDR, g_arena_count)) {
         put_error("libc: init buddy: page allocation failed\n");
         return;
     }
 
     g_mdata_count = buddy_sizeof(g_arena_count * 4096) / 4096 + 1;
-    if (!syscall_scuba_generate(PROFAN_BUDDY_MDATA, g_mdata_count)) {
+    if (!syscall_scuba_generate(_BUDDY_MDATA_ADDR, g_mdata_count)) {
         put_error("libc: init buddy: page allocation failed\n");
         return;
     }
 
-    g_buddy = buddy_init(PROFAN_BUDDY_MDATA, PROFAN_BUDDY_ARENA, g_arena_count * 4096);
+    g_buddy = buddy_init(_BUDDY_MDATA_ADDR, _BUDDY_ARENA_ADDR, g_arena_count * 4096);
 
     if (g_buddy == NULL)
         put_error("libc: init buddy: buddy_init failed\n");
@@ -143,13 +140,12 @@ static void buddy_show_leaks(void) {
     g_debug = 1;
 }
 
-struct stackframe {
-  struct stackframe* ebp;
-  uint32_t eip;
-};
-
 static void set_trace(int index) {
-    struct stackframe *ebp;
+    struct stackframe {
+        struct stackframe* ebp;
+        uint32_t eip;
+    } *ebp;
+
     asm volatile("movl %%ebp, %0" : "=r" (ebp));
     ebp = ebp->ebp;
 
@@ -164,7 +160,7 @@ static void set_trace(int index) {
     }
 }
 
-static void register_alloc(void *ptr, uint32_t size) {
+static void register_alloc(void *ptr, size_t size) {
     g_stat->total_allocs++;
     g_stat->total_size += size;
 
@@ -216,10 +212,10 @@ static void register_free(void *ptr) {
         return;
     }
 
-    put_error("libc: leak tracking: internal error\n");
+    put_error("libc: leak tracking: possible free of memory allocated before tracking\n");
 }
 
-static int extend_virtual(uint32_t size) {
+static int extend_virtual(size_t size) {
     uint32_t req = g_arena_count + size / 2048 + 1;
 
     // align to the next power of 2 (11 -> 16)
@@ -230,16 +226,16 @@ static int extend_virtual(uint32_t size) {
     uint32_t mdata_count = buddy_sizeof(req * 4096) / 4096 + 1;
     if (mdata_count > g_mdata_count) {
         mdata_count += 2; // avoid too many small resizes
-        if (mdata_count > (PROFAN_BUDDY_ARENA - PROFAN_BUDDY_MDATA) / 4096) {
+        if (mdata_count > (_BUDDY_ARENA_ADDR - _BUDDY_MDATA_ADDR) / 4096) {
             put_error("libc: extend_virtual: metadata overflow\n");
             return 1;
         }
-        if (!syscall_scuba_generate(PROFAN_BUDDY_MDATA + g_mdata_count * 4096, mdata_count - g_mdata_count))
+        if (!syscall_scuba_generate(_BUDDY_MDATA_ADDR + g_mdata_count * 4096, mdata_count - g_mdata_count))
             return 1;
         g_mdata_count = mdata_count;
     }
 
-    if (!syscall_scuba_generate(PROFAN_BUDDY_ARENA + g_arena_count * 4096, req - g_arena_count))
+    if (!syscall_scuba_generate(_BUDDY_ARENA_ADDR + g_arena_count * 4096, req - g_arena_count))
         return 1;
 
     g_arena_count = req;
@@ -261,7 +257,7 @@ static int extend_virtual(uint32_t size) {
         return ptr;                     \
     }
 
-void *malloc(uint32_t size) {
+void *malloc(size_t size) {
     void *p = buddy_malloc(g_buddy, size);
     ALLOC_DO(p, size);
 
@@ -270,11 +266,11 @@ void *malloc(uint32_t size) {
     p = buddy_malloc(g_buddy, size);
     ALLOC_DO(p, size);
 
-    put_error("libc: malloc failed\n");
+    put_error("libc: malloc: not enough memory\n");
     return NULL;
 }
 
-void *calloc(uint32_t nmemb, uint32_t lsize) {
+void *calloc(size_t nmemb, size_t lsize) {
     void *p = buddy_calloc(g_buddy, nmemb, lsize);
     ALLOC_DO(p, nmemb * lsize);
 
@@ -283,11 +279,11 @@ void *calloc(uint32_t nmemb, uint32_t lsize) {
     p = buddy_calloc(g_buddy, nmemb, lsize);
     ALLOC_DO(p, nmemb * lsize);
 
-    put_error("libc: calloc failed\n");
+    put_error("libc: calloc: not enough memory\n");
     return NULL;
 }
 
-void *realloc(void *mem, uint32_t new_size) {
+void *realloc(void *mem, size_t new_size) {
     if (g_debug && mem)
         register_free(mem);
 
@@ -302,7 +298,7 @@ void *realloc(void *mem, uint32_t new_size) {
     p = buddy_realloc(g_buddy, mem, new_size, 0);
     ALLOC_DO(p, new_size);
 
-    put_error("libc: realloc failed\n");
+    put_error("libc: realloc: not enough memory\n");
     return NULL;
 }
 

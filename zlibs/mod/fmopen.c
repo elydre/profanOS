@@ -28,6 +28,7 @@ enum {
     TYPE_FREE = 0,
     TYPE_FILE,
     TYPE_FCTF,
+    TYPE_DIR,
     TYPE_PPRD, // read pipe
     TYPE_PPWR  // write pipe
 };
@@ -45,9 +46,9 @@ typedef struct {
 
 typedef struct {
     uint8_t type;
+    uint32_t sid;
 
     union {
-        uint32_t     sid; // for file
         int        (*fctf)(int, void *, uint32_t, uint8_t);
         pipe_data_t *pipe;
     };
@@ -55,17 +56,25 @@ typedef struct {
     union {
         uint32_t offset;  // file
         int      fctf_id; // fcft
+        char    *path;    // dir (for fchdir)
     };
 } fd_data_t;
 
 pipe_data_t *open_pipes;
 
+int fm_reopen(int fd, const char *abs_path, int flags);
+#define MAX_FD ((int)(0x1000 / sizeof(fd_data_t)))
+
 int main(void) {
-    open_pipes = calloc_ask(PIPE_MAX, sizeof(pipe_data_t));
+    open_pipes = kcalloc_ask(PIPE_MAX, sizeof(pipe_data_t));
+
+    // open default fds
+    if (fm_reopen(0, "/dev/kterm", O_RDONLY) < 0 ||
+        fm_reopen(1, "/dev/kterm", O_WRONLY) < 0 ||
+        fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
+    ) return 1;
     return 0;
 }
-
-#define MAX_FD ((int)(0x1000 / sizeof(fd_data_t)))
 
 static fd_data_t *fm_fd_to_data(int fd) {
     if (fd < 0 || fd >= MAX_FD)
@@ -82,6 +91,8 @@ static fd_data_t *fm_get_free_fd(int *fd) {
             return fd_data;
         }
     }
+    if (fd != NULL)
+        *fd = -1;
     return NULL;
 }
 
@@ -96,7 +107,7 @@ static pipe_data_t *fm_get_free_pipe(void) {
             if (open_pipes[i].writers[j] != -1 && syscall_process_state(open_pipes[i].writers[j]) > 1)
                 break;
             if (j == PIPE_MAX_REF - 1) {
-                free(open_pipes[i].buf);
+                kfree(open_pipes[i].buf);
                 open_pipes[i].buf = NULL;
             }
         }
@@ -135,7 +146,10 @@ int fm_close(int fd) {
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
         return -EBADF;
 
-    if (fd_data->type == TYPE_FCTF)
+    if (fd_data->type == TYPE_DIR)
+        kfree(fd_data->path);
+
+    else if (fd_data->type == TYPE_FCTF)
         fd_data->fctf(fd_data->fctf_id, NULL, 0, FCTF_CLOSE);
 
     else if (fd_data->type == TYPE_PPRD) {
@@ -152,7 +166,7 @@ int fm_close(int fd) {
         }
 
         if (pipe->readers[0] == -1 && pipe->writers[0] == -1) {
-            free(pipe->buf);
+            kfree(pipe->buf);
             pipe->buf = NULL;
         }
     }
@@ -171,7 +185,7 @@ int fm_close(int fd) {
         }
 
         if (pipe->readers[0] == -1 && pipe->writers[0] == -1) {
-            free(pipe->buf);
+            kfree(pipe->buf);
             pipe->buf = NULL;
         }
     }
@@ -188,16 +202,35 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
     fd_data_t *fd_data;
 
     uint32_t sid = fu_path_to_sid(SID_ROOT, abs_path);
-
-    if (IS_SID_NULL(sid) && (flags & O_CREAT)) {
-        sid = fu_file_create(0, abs_path);
-    }
+    int access = flags & O_ACCMODE;
 
     if (IS_SID_NULL(sid)) {
-        return -ENOENT;
+        if (!(O_CREAT & flags))
+            return -ENOENT;
+
+        if (O_DIRECTORY & flags)
+            return -ENOENT;
+
+        sid = fu_file_create(0, abs_path);
+        if (IS_SID_NULL(sid))
+            return -EACCES;
+    } else {
+        if (O_EXCL & flags)
+            return -EEXIST;
+
+        if (fu_is_dir(sid)) {
+            if (access != O_RDONLY ||
+                flags & O_NODIR    ||
+                flags & O_TRUNC    ||
+                flags & O_APPEND   ||
+                flags & O_CREAT
+            ) return -EISDIR;
+        } else if (flags & O_DIRECTORY) {
+            return -ENOTDIR;
+        }
     }
 
-    if (!fu_is_fctf(sid) && !fu_is_file(sid)) {
+    if (!fu_is_file(sid) && !fu_is_fctf(sid) && !fu_is_dir(sid)) {
         return -EFTYPE;
     }
 
@@ -206,23 +239,27 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
     else
         fd_data = fm_fd_to_data(fd);
 
-    // fd_printf(2, "fd: %d, sid: %x, flags: %x\n", fd, sid, flags);
-
     if (fd < 0) {
         return -EMFILE;
     }
+
+    fd_data->sid = sid;
 
     if (fu_is_file(sid)) {
         if (flags & O_TRUNC) {
             syscall_fs_set_size(NULL, sid, 0);
         }
         fd_data->type = TYPE_FILE;
-        fd_data->sid = sid;
         if (flags & O_APPEND) {
             fd_data->offset = syscall_fs_get_size(NULL, sid);
         } else {
             fd_data->offset = 0;
         }
+    } else if (fu_is_dir(sid)) {
+        fd_data->type = TYPE_DIR;
+        int len = str_len(abs_path);
+        fd_data->path = kmalloc_ask(len + 1);
+        str_cpy(fd_data->path, abs_path);
     } else {
         fd_data->type = TYPE_FCTF;
         fd_data->fctf = (void *) fu_fctf_get_addr(sid);
@@ -247,6 +284,9 @@ int fm_read(int fd, void *buf, uint32_t size) {
         return -EBADF;
 
     switch (fd_data->type) {
+        case TYPE_DIR:
+            return -EISDIR;
+
         case TYPE_FILE:
             tmp = syscall_fs_get_size(NULL, fd_data->sid);
             if (fd_data->offset > tmp)
@@ -286,7 +326,7 @@ int fm_read(int fd, void *buf, uint32_t size) {
             if (read_count > (int) size)
                 read_count = size;
 
-            memcpy(buf, pipe->buf + pipe->rd_offset, read_count);
+            mem_cpy(buf, pipe->buf + pipe->rd_offset, read_count);
             pipe->rd_offset += read_count;
             break;
 
@@ -307,6 +347,9 @@ int fm_write(int fd, void *buf, uint32_t size) {
         return -EBADF;
 
     switch (fd_data->type) {
+        case TYPE_DIR:
+            return -EISDIR;
+
         case TYPE_FILE:
             if (fd_data->offset + size > syscall_fs_get_size(NULL, fd_data->sid))
                 syscall_fs_set_size(NULL, fd_data->sid, fd_data->offset + size);
@@ -325,14 +368,14 @@ int fm_write(int fd, void *buf, uint32_t size) {
             uint32_t new_size = pipe->current_size + size;
 
             if (new_size > pipe->buffer_size) {
-                void *tmp = realloc_ask(pipe->buf, new_size);
+                void *tmp = krealloc_ask(pipe->buf, new_size);
                 if (tmp == NULL)
                     return -ENOMEM;
                 pipe->buf = tmp;
                 pipe->buffer_size = new_size;
             }
 
-            memcpy(pipe->buf + pipe->current_size, buf, size);
+            mem_cpy(pipe->buf + pipe->current_size, buf, size);
             pipe->current_size += size;
             write_count = size;
             break;
@@ -396,10 +439,16 @@ int fm_dup2(int fd, int new_fd) {
         return -EBADF;
 
     new_data->type = fd_data->type;
+    new_data->sid = fd_data->sid;
 
     switch (fd_data->type) {
+        case TYPE_DIR:
+            int len = str_len(fd_data->path);
+            new_data->path = kmalloc_ask(len + 1);
+            str_cpy(new_data->path, fd_data->path);
+            break;
+
         case TYPE_FILE:
-            new_data->sid = fd_data->sid;
             new_data->offset = fd_data->offset;
             break;
 
@@ -426,7 +475,8 @@ int fm_dup2(int fd, int new_fd) {
 }
 
 int fm_dup(int fd) {
-    int new_fd; fm_get_free_fd(&new_fd);
+    int new_fd;
+    fm_get_free_fd(&new_fd);
 
     if (new_fd < 0)
         return -EMFILE;
@@ -441,7 +491,7 @@ int fm_pipe(int fd[2]) {
     if (pipe == NULL)
         return -EMFILE;
 
-    pipe->buf = calloc_ask(0x1000, 1);
+    pipe->buf = kcalloc_ask(0x1000, 1);
     if (pipe->buf == NULL)
         return -ENOMEM;
 
@@ -473,6 +523,9 @@ int fm_pipe(int fd[2]) {
     fd_data[0]->pipe = pipe;
     fd_data[1]->pipe = pipe;
 
+    fd_data[0]->sid = SID_NULL;
+    fd_data[1]->sid = SID_NULL;
+
     return 0;
 }
 
@@ -503,7 +556,25 @@ int fm_newfd_after(int fd) {
             return i;
     }
 
-    return -1;
+    return -EMFILE;
+}
+
+uint32_t fm_get_sid(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return SID_NULL;
+
+    return fd_data->sid;
+}
+
+const char *fm_get_path(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type != TYPE_DIR)
+        return NULL;
+
+    return fd_data->path;
 }
 
 int fm_declare_child(int pid) {

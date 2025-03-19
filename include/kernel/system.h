@@ -14,25 +14,25 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.2.3c"
+#define KERNEL_VERSION  "1.2.5c"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     64          // max process count
 #define SCUBA_MAP_MAX   0x10000000  // scuba map to 256MB max
 #define FS_MAX_DISKS    256         // max disk count
-#define RUN_DEFAULT     "/bin/sys/rosemary.bin"
+#define RUN_DEF_PATH    "/bin/x/rosemary.elf"
+#define RUN_DEF_NAME    "rosemary"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
 #define RATE_SCHEDULER  100         // schedule per second
 
-#define RUN_BIN_VBASE   0xB0000000  // virtual base address for binary
-#define RUN_BIN_OFFSET  0x1000      // offset (userspace data like fds)
-#define RUN_BIN_VCUNT   0x10000     // virtual memory count
+#define RUN_HEAP_ADDR   0xB0000000  // virtual base address for binary
+#define RUN_HEAP_SIZE   0x1000      // virtual memory count
 
 #define POK_MAX         128         // max loaded modules
 
-#define PROC_ESP_SIZE   0x10000     // process stack size
-#define PROC_ESP_ADDR   RUN_BIN_VBASE - PROC_ESP_SIZE
+#define PROC_ESP_SIZE   0x20000     // process stack size
+#define PROC_ESP_ADDR   RUN_HEAP_ADDR - PROC_ESP_SIZE
 
 #define WATPOK_ADDR     0x1FFFFB
 #define MEM_BASE_ADDR   0x1FFFFF
@@ -62,8 +62,8 @@ int   sys_init(void);
 char *sys_kinfo(void);
 
 // runtime.c
+int elf_exec(uint32_t sid, int argc, char **argv, char **envp);
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
-int binary_exec(uint32_t sid, int argc, char **argv, char **envp);
 
 // pok.c
 int      pok_init(void);

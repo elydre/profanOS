@@ -9,12 +9,12 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef SETJMP_H
-#define SETJMP_H
+#ifndef _SETJMP_H
+#define _SETJMP_H
 
 typedef int jmp_buf[6];
 
-int setjmp(jmp_buf var);
+int setjmp(jmp_buf var) __attribute__((returns_twice));
 void longjmp(jmp_buf var, int m) __attribute__((noreturn));
 
 #endif

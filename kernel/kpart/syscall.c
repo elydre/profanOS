@@ -67,7 +67,7 @@ void *SYSCALL_ARRAY[] = {
     sys_power,          // 25
     sys_kinfo,          // 26
 
-    binary_exec,        // 27
+    elf_exec,        // 27
 
     // process.h + runtime.h
     process_auto_schedule, // 28
@@ -78,7 +78,7 @@ void *SYSCALL_ARRAY[] = {
     process_wait,       // 33
     process_kill,       // 34
     process_get_pid,    // 35
-    process_get_info,   // 36
+    process_info,   // 36
     process_list_all,   // 37
 
     // system.h

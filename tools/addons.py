@@ -42,7 +42,8 @@ def get_addons(name: str) -> dict:
         for addon in ADDONS[category]:
             if addon["name"] == name:
                 return addon
-    return None
+    print(f"ERROR: Addon {name} not found")
+    sys.exit(1)
 
 def get_file(name: str) -> dict:
     for file in FILEARRAY:
@@ -56,6 +57,8 @@ def domain(url: str) -> str:
     return url.split("/")[2]
 
 def download(url: str, path: str):
+    if os.path.exists(path):
+        return
     with urlreq.urlopen(url) as response:
         with open(path, "wb") as file:
             file.write(response.read())
@@ -65,9 +68,8 @@ def download_targz(url: str, path: str):
 
     download(url, targz)
 
-    if os.path.exists(path):
-        os.remove(path)
-    os.makedirs(path)
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     os.system(f"tar -xf {targz} -C {path}")
     os.remove(targz)
@@ -86,6 +88,11 @@ def download_addons(addons: list) -> bool:
 
         # check if parent directory exists
         parent = os.sep.join(e["path"][:-1])
+
+        if ".." in parent:
+            print(f"\rERROR: Invalid parent directory for {file}")
+            return False
+
         if not os.path.exists(parent):
             os.makedirs(parent)
 
@@ -275,8 +282,10 @@ if __name__ == "__main__":
             try:
                 table[args[0]]()
             except KeyboardInterrupt:
-                print("-- Aborted by user")
+                print("-- Aborted by user : KeyboardInterrupt")
+            except curses.error as _error:
+                print("-- Aborted by user : Mouse went out of terminal")
         else:
             print("ERROR: Unknown option:", args[0])
     else:
-        download_addons([get_addons(args[0])])
+        download_addons([get_addons(e) for e in args])

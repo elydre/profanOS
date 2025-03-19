@@ -116,7 +116,7 @@ int      fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t of
 
 // usg_dir.c
 int      fu_is_dir(filesys_t *filesys, uint32_t dir_sid);
-int      fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names);
+int      fu_dir_get_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names);
 int      fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name);
 uint32_t    fu_dir_create(filesys_t *filesys, int device_id, char *path);
 

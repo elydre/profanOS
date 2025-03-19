@@ -40,7 +40,7 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names) {
+int fu_dir_get_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(filesys, dir_sid);
     if (size == UINT32_MAX) {

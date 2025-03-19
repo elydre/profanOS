@@ -9,10 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#if !defined(__FSTD_HDRS_STDDEF_H) || defined(__FSTD_HDRS_CXX_WRAP)
-#if !defined(__FSTD_HDRS_CXX_WRAP)
-#define __FSTD_HDRS_STDDEF_H 1
-#endif
+#ifndef _STDDEF_H
+#define _STDDEF_H
 
 typedef __SIZE_TYPE__ size_t;
 typedef __PTRDIFF_TYPE__ ptrdiff_t;

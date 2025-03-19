@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
-#include <profan/type.h>
+#include <profan.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -244,7 +244,7 @@ void *memset(void *s, int c, size_t n) {
 }
 
 void psignal(int signum, register const char *message) {
-    puts("psignal not implemented yet, WHY DO YOU USE IT ?");
+    PROFAN_FNI;
 }
 
 void *rawmemchr(const void *s, int c) {
@@ -280,11 +280,6 @@ char *stpncpy(register char *restrict s1,
 int strcasecmp(const char *s1, const char *s2) {
     int result = strncasecmp(s1, s2, -1);
     return result;
-}
-
-int strcasecmp_l(register const char *s1, register const char *s2, locale_t loc) {
-    puts("strcasecmp_l not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
 }
 
 char *strcasestr(const char *s, const char *find) {
@@ -348,7 +343,7 @@ char *strchrnul(const char *s, int c_in) {
     if (sizeof (longword) > 4)
         charmask |= (charmask << 16) << 16;
     if (sizeof (longword) > 8)
-        abort ();
+        abort();
 
     for (;;) {
       longword = *longword_ptr++;
@@ -391,6 +386,10 @@ int strcmp(register const char *s1, register const char *s2) {
     return *(unsigned char *) s1 - *(unsigned char *) --s2;
 }
 
+int strcoll(register const char *s1, register const char *s2) {
+    return strcmp(s1, s2);
+}
+
 char *strcpy(char *restrict s1, const char *restrict s2) {
     int i;
     for (i = 0; s2[i] != '\0'; ++i) {
@@ -418,10 +417,10 @@ size_t strcspn(const char *s1, register const char *s2) {
 
 size_t strlen(const char *s);
 char *strdup(register const char *s) {
+    if (!s) return NULL;
     size_t l = strlen(s);
-    char *d = malloc(l+1);
-    if (!d) return NULL;
-    return memcpy(d, s, l+1);
+    char *d = malloc(l + 1);
+    return d ? memcpy(d, s, l + 1) : NULL;
 }
 
 // strerror is defined in errno.c
@@ -501,11 +500,6 @@ int strncasecmp(register const char *s1, register const char *s2, size_t n) {
     return d;
 }
 
-int strncasecmp_l(register const char *s1, register const char *s2, size_t n, locale_t loc) {
-    puts("strncasecmp_l not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
-}
-
 char *strncat(char *restrict s1, register const char *restrict s2,
                 size_t n) {
     register char *s = s1;
@@ -537,7 +531,7 @@ char *strncpy(char *restrict s1, register const char *restrict s2,
     register char *s = s1;
 
     while (n) {
-        if ((*s = *s2) != 0) s2++; /* Need to fill tail with 0s. */
+        if ((*s = *s2) != 0) s2++; // Need to fill tail with 0s.
         ++s;
         --n;
     }
@@ -574,8 +568,8 @@ char *strpbrk(const char *s1, const char *s2) {
     register const char *s;
     register const char *p;
 
-    for (s=s1 ; *s ; s++) {
-        for (p=s2 ; *p ; p++) {
+    for (s = s1; *s; s++) {
+        for (p = s2 ;*p ; p++) {
             if (*p == *s)
                 return (char *) s;
         }
@@ -623,8 +617,7 @@ char *strsep(register char **stringp, register const char *delim) {
 }
 
 char *strsignal(int signum) {
-    puts("strsignal not implemented yet, WHY DO YOU USE IT ?");
-    return NULL;
+    return (PROFAN_FNI, NULL);
 }
 
 size_t strspn(const char *s, const char *c) {
@@ -656,7 +649,7 @@ char *strstr(register const char *string, const char *substring) {
     if (*b == 0) {
         return (char *) string;
     }
-    for ( ; *string != 0; string += 1) {
+    for (; *string != 0; string += 1) {
         if (*string != *b) {
             continue;
         }
@@ -742,6 +735,5 @@ char *strtok_r(char *s, const char *delim, char **save_ptr) {
 }
 
 int strverscmp(const char *s1, const char *s2) {
-    puts("strverscmp not implemented yet, WHY DO YOU USE IT ?");
-    return 0;
+    return (PROFAN_FNI, 0);
 }

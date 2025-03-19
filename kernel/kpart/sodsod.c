@@ -20,11 +20,6 @@
  *                                    *
 ***************************************/
 
-struct stackframe {
-    struct stackframe* ebp;
-    uint32_t eip;
-};
-
 int size_x, size_y;
 
 /***************************************
@@ -108,7 +103,7 @@ static void sod_print_generic_info(int is_cpu_error) {
     sod_print_at(13, 6, sys_kinfo(), 0x0D);
 
     sod_print_at(6, 7, "during", 0x05);
-    str_cpy(str, (char *) process_get_info(process_get_pid(), PROC_INFO_NAME));
+    str_cpy(str, (char *) process_info(process_get_pid(), PROC_INFO_NAME, NULL));
     sod_print_at(13, 7, str, 0x0D);
     tmp = str_len(str);
 
@@ -157,22 +152,27 @@ static void sod_print_angel() {
 }
 
 static void sod_print_stacktrace(void) {
-    struct stackframe *stk;
-    asm ("movl %%ebp,%0" : "=r"(stk) ::);
-    if (stk == NULL) {
+    struct stackframe {
+        struct stackframe* ebp;
+        uint32_t eip;
+    } *ebp;
+
+    asm ("movl %%ebp,%0" : "=r"(ebp));
+
+    if (ebp == NULL) {
         sod_print_at(4, 13, "No stack trace available...", 0x05);
         return;
     }
 
     sod_print_at(4, 13, "Stack trace:", 0x05);
-    for (int i = 14; stk->eip; i++) {
+    for (int i = 14; ebp->eip; i++) {
         if (i > size_y - 4) {
             sod_print_at(6, i, "[...]", 0x05);
             break;
         }
-        sod_putaddr_at(6, i, stk->eip, 0x0D);
-        if (stk->ebp == NULL) break;
-        stk = stk->ebp;
+        sod_putaddr_at(6, i, ebp->eip, 0x0D);
+        if (ebp->ebp == NULL) break;
+        ebp = ebp->ebp;
     }
 }
 

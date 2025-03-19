@@ -1,7 +1,7 @@
-pseudo testall  'exec /zada/olivine/testall.olv'
-pseudo xclear   'clear -x'
-pseudo dlg      '. /bin/sys/deluge.bin'
-pseudo leaks    '. /bin/sys/deluge.bin -m'
+pseudo testall 'exec /zada/olivine/testall.olv'
+pseudo xclear  'clear -x'
+pseudo dlg     '. /bin/x/deluge.elf'
+pseudo leaks   '. /bin/x/deluge.elf -m'
 
 
 FUNC pwd
@@ -16,53 +16,56 @@ FUNC help
     echo -e < /zada/common/shell_help.txt
 END
 
-FUNC args
-    echo called with !# arguments
-    FOR i !(range !#)
-        echo '!i': !!i
+FUNC name
+    IF !(eval !# ~ 1)
+        print 'Usage: name <path>\n'
+        RETURN
     END
+    set n !(split '!0' / -1)
+    FOR i !(range !(eval !(strlen !n) - 1) 0)
+        IF !(eval "!n" @ !i = ".")
+            RETURN !(split !n '' 0:!i)
+        END
+    END
+    RETURN !n
 END
 
 FUNC dirsize
-    set size 0
-
     IF !(eval !# = 0)
         set 0 !path
+        set ++ #
     END
 
-    FOR f !(search -f -r !0)
-        set size !(eval !size + !(fsize !f))
-    END
+    FOR i !(range !#)
+        set size 0
 
-    IF !(eval !size > 10000)
-        set size !(eval !size / 1000 . "kB")
-    END; ELSE
-        set size !(eval !size . "B")
+        FOR f !(search -f !!i |)
+            set size !(eval !size + !(fsize !f))
+        END
+
+        IF !(eval !size > 10000)
+            set size !(eval !size / 1000 . "kB")
+        END; ELSE
+            set size !(eval !size . "B")
+        END
+        echo '!!i': !size
     END
-    echo '!0': !size
 END
 
 FUNC time
-    IF !(eval !# ~ 1)
-        echo Usage: time <command>
+    IF !(eval !# = 0)
+        print 'Usage: time <command> [arg1] [arg2] ...\n'
         RETURN
+    END
+
+    set cmd ''
+    FOR i !(range !#)
+        set cmd '!cmd !!i'
     END
 
     set debut !(ticks)
 
-    !0
+    !cmd
 
-    echo !0 took !(eval !(ticks) - !debut) ms
-END
-
-FUNC mv
-    IF !(eval !# ~ 2)
-        echo Usage: mv <source> <destination>
-        RETURN
-    END
-
-    cp !0 !1
-    IF !(eval !exit = 0)
-        rm !0
-    END
+    print '!0 took !(eval !(ticks) - !debut) ms\n'
 END

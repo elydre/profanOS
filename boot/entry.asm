@@ -10,7 +10,7 @@
 ;*****************************************************************************;
 
 [extern kernel_main]
-[global loader]
+[global kentry]
 
 FLAGS equ 0b111
 MAGIC equ 0x1BADB002
@@ -24,7 +24,12 @@ align 4
 
 section .text               ; start of the text (code) section
 align 4
-loader:
+kentry:
+    mov eax, [ebx + 8]      ; get the top of the memory
+    shl eax, 10             ; convert from KB to bytes
+    mov esp, eax            ; set the stack pointer
+
     push ebx                ; keep the multiboot info pointer
+
     cli                     ; disable interrupts
     call kernel_main        ; load profanOS kernel

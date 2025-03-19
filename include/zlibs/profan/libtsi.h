@@ -9,13 +9,16 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef LIBTSI_H
-#define LIBTSI_H
+#ifndef _PROFAN_LIBTSI_H
+#define _PROFAN_LIBTSI_H
 
 #include <stdint.h>
 
-#undef TSI_ALLOW_NON_PRINTABLE
-#define TSI_ALLOW_NON_PRINTABLE 0x01
+#undef TSI_NON_PRINTABLE
+#undef TSI_NO_AUTO_WRAP
+
+#define TSI_NON_PRINTABLE   0x01
+#define TSI_NO_AUTO_WRAP    0x02
 
 int tsi_start(const char *title, const char *string, uint32_t flags);
 int tsi_start_array(const char *title, const char **lines, uint32_t flags);

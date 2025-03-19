@@ -9,10 +9,12 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef SYSCALL_H
-#define SYSCALL_H
+#ifndef _PROFAN_SYSCALL_H
+#define _PROFAN_SYSCALL_H
 
-#include <profan/type.h>
+#include <profan/types.h>
+#include <stdint.h>
+#include <time.h> // struct tm
 
 /**********************************
  *                               *
@@ -29,10 +31,12 @@
 #define PROC_INFO_RUN_TIME 3
 #define PROC_INFO_NAME     4
 #define PROC_INFO_STACK    5
+#define PROC_INFO_COMM     6
+#define PROC_INFO_SET_NAME 7
 
-#define syscall_process_ppid(pid) syscall_process_info(pid, PROC_INFO_PPID)
-#define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE)
-#define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME)
+#define syscall_process_ppid(pid) syscall_process_info(pid, PROC_INFO_PPID, NULL)
+#define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE, NULL)
+#define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME, NULL)
 
 #define syscall_kcprint(message, color) syscall_kcnprint(message, -1, color)
 #define syscall_kprint(message) syscall_kcprint(message, 0x0F)
@@ -236,7 +240,7 @@ DEFN_SYSCALL1(11, uint32_t,  mem_get_alloc_size, uint32_t)
 DEFN_SYSCALL2(12, int,       mem_info, int, int)
 
 DEFN_SYSCALL0(13, uint32_t,  timer_get_ms)
-DEFN_SYSCALL1(14, int,       time_get, tm_t *)
+DEFN_SYSCALL1(14, int,       time_get, struct tm *)
 
 DEFN_SYSCALL0(15, uint8_t *, font_get)
 DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)
@@ -254,7 +258,7 @@ DEFN_SYSCALL1(24, int,       sys_set_reporter, void *)
 DEFN_SYSCALL1(25, int,       sys_power, int)
 DEFN_SYSCALL0(26, char *,    sys_kinfo)
 
-DEFN_SYSCALL4(27, int,       binary_exec, uint32_t, int, char **, char **)
+DEFN_SYSCALL4(27, int,       elf_exec, uint32_t, int, char **, char **)
 
 DEFN_SYSCALL1(28, int,       process_auto_schedule, int)
 DEFN_SYSCALL4(29, int,       process_create, void *, int, int, uint32_t *)
@@ -262,9 +266,9 @@ DEFN_SYSCALL0(30, int,       process_fork)
 DEFN_SYSCALL2(31, int,       process_sleep, uint32_t, uint32_t)
 DEFN_SYSCALL2(32, int,       process_wakeup, uint32_t, int)
 DEFN_SYSCALL3(33, int,       process_wait, int, uint8_t *, int)
-DEFN_SYSCALL2(34, int,       process_kill, int, int)
+DEFN_SYSCALL2(34, int,       process_kill, uint32_t, int)
 DEFN_SYSCALL0(35, uint32_t,  process_pid)
-DEFN_SYSCALL2(36, int,       process_info, uint32_t, int)
+DEFN_SYSCALL3(36, int,       process_info, uint32_t, int, void *)
 DEFN_SYSCALL2(37, int,       process_list_all, uint32_t *, int)
 
 DEFN_SYSCALL2(38, int,       pok_load, char *, uint32_t)

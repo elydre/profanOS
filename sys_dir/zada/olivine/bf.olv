@@ -1,4 +1,4 @@
-#!/bin/fatpath/olivine.elf
+#! /bin/fatpath/olivine.elf
 
 global bf_mem 00
 global bf_mem_len 1
@@ -65,12 +65,12 @@ FUNC bf_set_me
 
     IF !(eval !0 > !(eval !bf_mem_len - 1))
         FOR i !(range !(eval !bf_mem_len - 1) !0)
-            global bf_mem !(eval "!bf_mem" . 00)
+            global bf_mem !(eval "!bf_mem" + "00")
         END
         global bf_mem_len !(eval !0 + 1)
     END
 
-    set pos !(eval !0 * 2)
+    set pos !(eval !0 x 2)
 
     IF !(eval !pos = 0)
         set new !(nb_to_hex !(eval !1 / 16))
@@ -78,14 +78,14 @@ FUNC bf_set_me
         set new 0
     END
 
-    FOR i !(range 1 !(eval !bf_mem_len * 2))
+    FOR i !(range 1 !(eval !bf_mem_len x 2))
         IF !(eval !i = !pos)
-            set new !(eval "!new" . "!(nb_to_hex !(eval !1 / 16))")
+            set new !(eval "!new" + "!(nb_to_hex !(eval !1 / 16))")
         END; ELSE
             IF !(eval !i = !pos + 1)
-                set new !(eval "!new" . "!(nb_to_hex !(eval !1 % 16))")
+                set new !(eval "!new" + "!(nb_to_hex !(eval !1 % 16))")
             END; ELSE
-                set new !(eval "!new" . "!(eval "!bf_mem" @ !i)")
+                set new !(eval "!new" + "!(eval "!bf_mem" @ !i)")
             END
         END
     END
@@ -108,11 +108,11 @@ FUNC bf_get_me
         RETURN 0
     END
 
-    set pos !(eval !0 * 2)
+    set pos !(eval !0 x 2)
 
     set tmp !(hex_to_nb !(eval "!bf_mem" @ !pos))
-    set pos !(eval !pos + 1)
-    RETURN !(eval !tmp * 16 + !(hex_to_nb !(eval "!bf_mem" @ !pos)))
+    set ++ pos
+    RETURN !(eval !tmp x 16 + !(hex_to_nb !(eval "!bf_mem" @ !pos)))
 END
 
 FUNC bf_execute
@@ -129,67 +129,67 @@ FUNC bf_execute
 
         IF !(eval "!c" = ">")
             global bf_mem_ptr !(eval !bf_mem_ptr + 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "<")
             global bf_mem_ptr !(eval !bf_mem_ptr - 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "+")
             bf_set_me !bf_mem_ptr !(eval !(bf_get_me !bf_mem_ptr) + 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "-")
             bf_set_me !bf_mem_ptr !(eval !(bf_get_me !bf_mem_ptr) - 1)
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = ".")
             print '!(sprintf %c !(bf_get_me !bf_mem_ptr))'
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = ",")
-            global bf_mem !(eval "!bf_mem" . "!(read)")
-            set index !(eval !index + 1)
+            global bf_mem !(eval "!bf_mem" + "!(read)")
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "[")
             IF !(eval !(bf_get_me !bf_mem_ptr) = 0)
                 WHILE !(eval !c ~ 7)
-                    set index !(eval !index + 1)
+                    set ++ index
                     set c !(eval "!0" @ !index)
                 END
             END;
 
-            set index !(eval !index + 1)
+            set ++ index
             CONTINUE
         END
 
         IF !(eval "!c" = "]")
             IF !(eval !(bf_get_me !bf_mem_ptr) ~ 0)
-                set index !(eval !index + 1)
+                set ++ index
                 WHILE !(eval "!c" ~ "[")
                     set index !(eval !index - 1)
                     set c !(eval "!0" @ !index)
                 END
-                set index !(eval !index + 1)
+                set ++ index
             END; ELSE
-                set index !(eval !index + 1)
+                set ++ index
             END
             CONTINUE
         END
 
-        set index !(eval !index + 1)
+        set ++ index
     END
 END
 

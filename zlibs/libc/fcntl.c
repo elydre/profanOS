@@ -13,17 +13,16 @@
 #include <profan.h>
 
 #include <stdlib.h>
-#include <string.h>
+#include <unistd.h>
+#include <stdarg.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <errno.h>
 
 int open(const char *path, int flags, ...) {
     // mode is ignored, permissions are always 777
 
-    char *fullpath, *cwd = getenv("PWD");
-    if (cwd == NULL) cwd = "/";
-    fullpath = profan_join_path(cwd, path);
+    char *fullpath;
+    fullpath = profan_path_join(profan_wd_path, path);
 
     int fd = fm_open(fullpath, flags);
     free(fullpath);
@@ -37,11 +36,42 @@ int open(const char *path, int flags, ...) {
 }
 
 int creat(const char *file, mode_t mode) {
-    puts("creat is not implemented yet, WHY DO YOU USE IT ?");
-    return -1;
+    return (PROFAN_FNI, -1);
 }
 
 int fcntl(int fd, int cmd, ...) {
-    puts("fcntl is not implemented yet, WHY DO YOU USE IT ?");
+    va_list ap;
+    va_start(ap, cmd);
+    int arg = va_arg(ap, int);
+    va_end(ap);
+
+    switch (cmd) {
+        case F_DUPFD:
+            int new_fd = fm_newfd_after(arg);
+
+            if (new_fd < 0) {
+                errno = -new_fd;
+                return -1;
+            }
+
+            return dup2(fd, new_fd);
+        case F_GETFD:
+            return 0;
+        case F_SETFD:
+            return 0;
+        case F_GETFL:
+            return (profan_nimpl("fcntl(F_GETFL)"), -1);
+        case F_SETFL:
+            return (profan_nimpl("fcntl(F_SETFL)"), -1);
+        case F_GETLK:
+            return (profan_nimpl("fcntl(F_GETLK)"), -1);
+        case F_SETLK:
+            return (profan_nimpl("fcntl(F_SETLK)"), -1);
+        case F_SETLKW:
+            return (profan_nimpl("fcntl(F_SETLKW)"), -1);
+        default:
+            return (profan_nimpl("fcntl(unknown)"), -1);
+    }
+
     return -1;
 }

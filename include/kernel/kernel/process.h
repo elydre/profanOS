@@ -28,9 +28,11 @@
 #define PROC_INFO_RUN_TIME 3
 #define PROC_INFO_NAME     4
 #define PROC_INFO_STACK    5
+#define PROC_INFO_COMM     6
+#define PROC_INFO_SET_NAME 7
 
-#define process_get_ppid(pid)  process_get_info(pid, PROC_INFO_PPID)
-#define process_get_state(pid) process_get_info(pid, PROC_INFO_STATE)
+#define process_get_ppid(pid)  process_info(pid, PROC_INFO_PPID, NULL)
+#define process_get_state(pid) process_info(pid, PROC_INFO_STATE, NULL)
 
 typedef struct {
     uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
@@ -74,11 +76,9 @@ int process_auto_schedule(int state);
 uint32_t process_get_pid(void);
 
 int process_list_all(uint32_t *list, int max);
-int process_get_info(uint32_t pid, int info_id);
+int process_info(uint32_t pid, int info_id, void *ptr);
 
 comm_struct_t *process_get_comm(uint32_t pid);
-
-int process_set_name(uint32_t pid, char *name);
 
 scuba_dir_t *process_get_dir(uint32_t pid);
 void process_switch_directory(uint32_t pid, scuba_dir_t *dir, int now);

@@ -30,6 +30,12 @@ ignore_line_too_long = [
     ".md", ".h"
 ]
 
+line_too_long = 120
+
+line_too_long_special = {
+    "olivine.c": 100
+}
+
 file_with_header = [
     ".c",   ".h",
     ".cpp", ".hpp",
@@ -121,7 +127,7 @@ def check_for_header(lines, path):
         print_warning(path, 1, "no file name in header")
     if lines[3] == empty_header[3]:
         print_warning(path, 3, "no file description in header")
-    elif not (lines[3][5].isupper() or lines[3][5:].startswith("profan")):
+    elif not (lines[3][5].isupper() or lines[3][5].isnumeric() or lines[3][5:].startswith("profan")):
         print_warning(path, 3, "file description should start with uppercase")
     for l in range(len(empty_header)):
         if len(lines[l]) != len(empty_header[l]):
@@ -143,6 +149,16 @@ def detecte_brace(line, prev_line, path, l):
         if (len(line) - len(line.lstrip())) < (len(prev_line) - len(prev_line.lstrip())):
             return
         print_warning(path, l, "brace should not be on a new line")
+
+def is_line_too_long(path, line):
+    if os.path.splitext(path)[1] in ignore_line_too_long:
+        return False
+
+    name = path.split("/")[-1]
+    if name in line_too_long_special:
+        return len(line) > line_too_long_special[name]
+
+    return len(line) > line_too_long
 
 # scan file and remove trailing whitespace
 def scan_file(path):
@@ -177,7 +193,7 @@ def scan_file(path):
             detecte_brace(line, last_line, path, l)
 
             # warning if line is too long
-            if len(line) > 120 and not os.path.splitext(path)[1] in ignore_line_too_long:
+            if is_line_too_long(path, line):
                 print_warning(path, l, "line is too long")
 
             contant += line + "\n"
@@ -213,7 +229,7 @@ def scan_dir(path):
 def parse_args(argv):
     path = None
 
-    global apply_patch
+    global apply_patch, instant_print
     for arg in argv:
         if arg == "-s":
             apply_patch = False

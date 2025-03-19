@@ -33,7 +33,7 @@
 
 #define ASUINT64(x) ((union {double f; uint64_t i;}){x}).i
 
-static const double_t toint = 1/EPS;
+static const double toint = 1/EPS;
 
 /* Small multiples of pi/2 rounded to double precision. */
 static const double t1pio2 = 1*M_PI_2; /* 0x3FF921FB, 0x54442D18 */
@@ -465,7 +465,7 @@ static const double powf_log_table[256] = {
 
 static double scalbn(double x, int n) {
     union {double f; uint64_t i;} u;
-    double_t y = x;
+    double y = x;
 
     if (n > 1023) {
         y *= 0x1p1023;
@@ -633,7 +633,7 @@ recompute:
         fw = 0.0;
         for (i=jz; i>=0; i--)
             fw += fq[i];
-        // TODO: drop excess precision here once double_t is used
+        // TODO: drop excess precision here once double is used
         fw = (double)fw;
         y[0] = ih==0 ? fw : -fw;
         fw = fq[0]-fw;
@@ -666,7 +666,7 @@ recompute:
 static int __rem_pio2f(float x, double *y) {
     union {float f; uint32_t i;} u = {x};
     double tx[1],ty[1];
-    double_t fn;
+    double fn;
     uint32_t ix;
     int n, sign, e0;
 
@@ -674,7 +674,7 @@ static int __rem_pio2f(float x, double *y) {
     /* 25+53 bit pi is good enough for medium size */
     if (ix < 0x4dc90fdb) {  /* |x| ~< 2^28*(pi/2), medium size */
         /* Use a specialized rint() to get fn. */
-        fn = (double_t)x*invpio2 + toint - toint;
+        fn = (double)x*invpio2 + toint - toint;
         n  = (int32_t)fn;
         *y = x - fn*pio2_1 - fn*pio2_1t;
         /* Matters with directed rounding. */
@@ -715,7 +715,7 @@ static int __rem_pio2f(float x, double *y) {
  */
 
 static float __tandf(double x, int odd) {
-    double_t z,r,w,s,t,u;
+    double z,r,w,s,t,u;
 
     z = x*x;
     /*
@@ -742,7 +742,7 @@ static float __tandf(double x, int odd) {
 }
 
 static float __cosdf(double x) {
-    double_t r, w, z;
+    double r, w, z;
 
     /* Try to optimize for parallel evaluation as in __tandf.c. */
     z = x*x;
@@ -752,7 +752,7 @@ static float __cosdf(double x) {
 }
 
 static float __sindf(double x) {
-    double_t r, s, w, z;
+    double r, s, w, z;
 
     /* Try to optimize for parallel evaluation as in __tandf.c. */
     z = x*x;
@@ -763,7 +763,7 @@ static float __sindf(double x) {
 }
 
 static double R_acos(double z) {
-    double_t p, q;
+    double p, q;
     p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
     q = 1.0+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
     return p/q;
@@ -798,7 +798,7 @@ static inline float eval_as_float(float x) {
 }
 
 static float R_acosf(float z) {
-    float_t p, q;
+    float p, q;
     p = z*(R_pS0+z*(R_pS1+z*R_pS2));
     q = 1.0f+z*R_qS1;
     return p/q;
@@ -806,74 +806,6 @@ static float R_acosf(float z) {
 
 static float __math_invalidf(float x) {
     return (x - x) / (x - x);
-}
-
-// origin: FreeBSD /usr/src/lib/msun/src/e_acos.c
-
-/* acos(x)
- * Method :
- *      acos(x)  = pi/2 - asin(x)
- *      acos(-x) = pi/2 + asin(x)
- * For |x|<=0.5
- *      acos(x) = pi/2 - (x + x*x^2*R(x^2))     (see asin.c)
- * For x>0.5
- *      acos(x) = pi/2 - (pi/2 - 2asin(sqrt((1-x)/2)))
- *              = 2asin(sqrt((1-x)/2))
- *              = 2s + 2s*z*R(z)        ...z=(1-x)/2, s=sqrt(z)
- *              = 2f + (2c + 2s*z*R(z))
- *     where f=hi part of s, and c = (z-f*f)/(s+f) is the correction term
- *     for f so that f+c ~ sqrt(z).
- * For x<-0.5
- *      acos(x) = pi - 2asin(sqrt((1-|x|)/2))
- *              = pi - 0.5*(s+s*z*R(z)), where z=(1-|x|)/2,s=sqrt(z)
- *
- * Special cases:
- *      if x is NaN, return x itself;
- *      if |x|>1, return NaN with invalid signal.
- *
- * Function needed: sqrt
- */
-
-double acos(double x) {
-    double z,w,s,c,df;
-    uint32_t hx,ix;
-
-    GET_HIGH_WORD(hx, x);
-    ix = hx & 0x7fffffff;
-    /* |x| >= 1 or nan */
-    if (ix >= 0x3ff00000) {
-        uint32_t lx;
-
-        GET_LOW_WORD(lx,x);
-        if (((ix-0x3ff00000) | lx) == 0) {
-            /* acos(1)=0, acos(-1)=pi */
-            if (hx >> 31)
-                return 2*pio2_hi + 0x1p-120f;
-            return 0;
-        }
-        return 0/(x-x);
-    }
-    /* |x| < 0.5 */
-    if (ix < 0x3fe00000) {
-        if (ix <= 0x3c600000)  /* |x| < 2**-57 */
-            return pio2_hi + 0x1p-120f;
-        return pio2_hi - (x - (pio2_lo-x*R_acos(x*x)));
-    }
-    /* x < -0.5 */
-    if (hx >> 31) {
-        z = (1.0+x)*0.5;
-        s = sqrt(z);
-        w = R_acos(z)*s-pio2_lo;
-        return 2*(pio2_hi - (s+w));
-    }
-    /* x > 0.5 */
-    z = (1.0-x)*0.5;
-    s = sqrt(z);
-    df = s;
-    SET_LOW_WORD(df,0);
-    c = (z-df*df)/(s+df);
-    w = R_acos(z)*s+c;
-    return 2*(df+w);
 }
 
 // origin: FreeBSD /usr/src/lib/msun/src/e_acosf.c
@@ -980,6 +912,12 @@ float cosf(float x) {
     }
 }
 
+float fabsf(float x) {
+    union {float f; uint32_t i;} u = {x};
+    u.i &= 0x7fffffff;
+    return u.f;
+}
+
 double floor(double x) {
     int interger = (int) x;
     if (x < 0 && x != interger) {
@@ -1000,7 +938,7 @@ double floor(double x) {
 
 double log10(double x) {
     union {double f; uint64_t i;} u = {x};
-    double_t hfsq,f,s,z,R,w,t1,t2,dk,y,hi,lo,val_hi,val_lo;
+    double hfsq,f,s,z,R,w,t1,t2,dk,y,hi,lo,val_hi,val_lo;
     uint32_t hx;
     int k;
 
@@ -1113,7 +1051,7 @@ float powf(float x, float y) {
             if (0.0f < y)
                 return 0.0f;
 
-            return 1.0f / __builtin_fabsf(x);            // return Inf and set div/0
+            return 1.0f / fabsf(x);
         }
 
         // deal with infinite y
@@ -1121,29 +1059,28 @@ float powf(float x, float y) {
             if (-1.0f == x)
                 return 1.0f;
 
-            if (absux > 0x3f800000) {    // |x| > 1.0f
+            if (absux > 0x3f800000) { // |x| > 1.0f
                 if (0.0f < y)
                     return y;
                 else
                     return 0.0f;
-            }
-            else {      // |x| < 1.0f
+            } else { // |x| < 1.0f
                 if (0.0f < y)
                     return 0.0f;
                 else
-                    return __builtin_fabsf(y);
+                    return 0x7f800000; // +inf
             }
         }
 
         // we can also deal with x == +inf at this point.
-        if (x == __builtin_inff()) {
+        if (x == 0x7f800000) {
             if (y < 0.0f)
                 return 0.0f;
             else
                 return x;
         }
 
-        if (x > -__builtin_inff()) {
+        if (x > -0x7f800000) {
             if (fractionalBits)
                 goto nan_sqrt;
 

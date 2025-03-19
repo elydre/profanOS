@@ -3,16 +3,19 @@
 [![publish](https://github.com/elydre/profanOS/actions/workflows/publish.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/publish.yml)
 [![nbr](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
 [![lines](https://img.shields.io/badge/dynamic/json?color=blue&label=code%20lines&query=profan_lines&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan)
-[![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=click%20to%20test&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan/latest.html)
+[![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=latest%20kernel&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan/latest.html)
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
 The profan Operating System is an independent OS developed from scratch.
 It is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
+[Test it from your browser](https://elydre.github.io/profan/latest.html)
+without installing anything.
 
-You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7)
-and the [wiki](https://github.com/elydre/profanOS/wiki) for documentation.
+You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7),
+a [monthly updates](https://github.com/elydre/profanOS/discussions/categories/retrospective) and
+the [wiki](https://github.com/elydre/profanOS/wiki) for documentation.
 
 ## Setup
 
@@ -47,7 +50,7 @@ make
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
 The main ports (more information in the [ports](#major-ports) section) are not included
-in the repo source code but are easily downloadable with `make gaddons disk`.
+in the repo source code but are easily downloadable with `make addons disk`.
 
 ### Automated build
 
@@ -93,11 +96,11 @@ Here is a list of the main kernel features:
 - PS/2 mouse and keyboard
 - ATA hard disk
 - custom filesystem
-- preemptive multi-tasking
+- preemptive multitasking
 - memory allocation
 - virtual memory management
 - kernel modules
-- ring0 only
+- full ring0
 
 ## The userspace
 
@@ -105,22 +108,25 @@ Here is a list of the main kernel features:
 
 The kernel and userspace are developed mainly in C. The Olivine Shell (see the
 [language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
-You can also use the lua, sulfur, C and C++ languages to create your own programs.
+You can also use python3, posix-sh, lua, perl, sulfur, and C languages to create your
+own programs.
 
 If you prefer a bash like rather than Olivine, you can use the `dash` port which is
 POSIX compliant and often used as `/bin/sh` in linux systems.
 
 ### Major ports - Addons
 
-- [tcc](https://github.com/elydre/tinycc-profan) Small and fast C compiler
+- [tcc](https://bellard.org/tcc/) Small and fast C compiler
+- [python](https://www.python.org/) Python 3.11 interpreter
 - [dash](https://github.com/elydre/dash-profan) POSIX compliant shell
-- [lua](https://github.com/elydre/lua-profan) Lightweight scripting language
-- [doom](https://github.com/elydre/doom-profan) Raycasting first person shooter
-- [halfix](https://github.com/elydre/halfix-profan) x86 emulator with provided linux image
-- [sulfur](https://github.com/asqel/sulfur_lang) Bytecode high-performance language
+- [GNU make](https://www.gnu.org/software/make/) Makefile interpreter
+- [lua](https://www.lua.org/) Lightweight scripting language
+- [doom](https://github.com/ozkl/doomgeneric) Raycasting first person shooter
 
-All the ports are available with the command `make addons` / `make gaddons` (graphical menu)
-or by building them manually.
+All the ports are available with the command `make addons`.
+A lot of programs are compiled from [this repo](https://github.com/elydre/libatron),
+you can also find a list of stuff tested in profanOS
+[here](https://github.com/stars/elydre/lists/compile-in-profan).
 
 ### Libraries
 
@@ -139,8 +145,7 @@ Here is a list of the main libraries and kernel modules:
     [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
 - **libc** - standard C library
 - **libpm** - profanOS minimalistic math lib
-- [libtsi](https://github.com/elydre/profanOS/wiki/lib_tsi) - text scrollable interface lib
-- **libpf** - profanOS extra stuff lib
+- **libpf** - extra stuff like [libtsi](https://github.com/elydre/profanOS/wiki/lib_tsi)
 
 Find all the libraries available on the [wiki](https://github.com/elydre/profanOS/wiki/Dev-Links).
 
@@ -208,13 +213,12 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 - [@asqel](https://github.com/asqel) for tests, the sulfur language and all the ports
 - [@Sarah](https://github.com/Sarenard) for all the help and ideas
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
+- [@spaskalev](https://github.com/spaskalev/buddy_alloc) for the buddy allocator
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
-- [Terry Davis](https://templeos.org) for the inspiration and his courage
 - [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
-- [@yuukidesu9](https://gitlab.com/yuukidesu9/yuuos) for the iso creation
-- [@iProgramInCpp](https://github.com/iProgramMC) for vbe pitch help and the inspiring OS *NanoShellOS*
-- [szhou42](https://github.com/szhou42/osdev) for ata driver
-- [@ProtoByter](https://github.com/ProtoByter) for the first pull request
+
+A huge thank you to all the [contributors](https://github.com/elydre/profanOS/graphs/contributors)
+and all the people who took the time to look at this project!
 
 *be careful with our friend 55*

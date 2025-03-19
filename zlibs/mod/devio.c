@@ -40,17 +40,17 @@ static int keyboard_read(void *buffer, uint32_t size, char *term) {
     }
 
     uint32_t to_read = size;
-    uint32_t buffer_size = strlen(buffer_addr);
+    uint32_t buffer_size = str_len(buffer_addr);
 
     if (already_read + to_read > buffer_size) {
         to_read = buffer_size - already_read;
     }
 
-    memcpy(buffer, buffer_addr + already_read, to_read);
+    mem_cpy(buffer, buffer_addr + already_read, to_read);
     already_read += to_read;
 
     if (already_read >= buffer_size) {
-        free(buffer_addr);
+        kfree(buffer_addr);
         buffer_addr = NULL;
     }
 
@@ -70,7 +70,7 @@ int dev_zero(int id, void *buffer, uint32_t size, uint8_t mode) {
 
     switch (mode) {
         case FCTF_READ:
-            memset(buffer, 0, size);
+            mem_set(buffer, 0, size);
             return size;
         case FCTF_WRITE:
             return size;
@@ -120,7 +120,7 @@ int dev_panda(int id, void *buffer, uint32_t size, uint8_t mode) {
         case FCTF_READ:
             return keyboard_read(buffer, size, "/dev/panda");
         case FCTF_WRITE:
-            panda_print_string((char *) buffer, size, -1);
+            panda_print_string((char *) buffer, size, -1, 0x0F);
             return size;
         default:
             return 0;
@@ -138,9 +138,7 @@ int dev_pander(int id, void *buffer, uint32_t size, uint8_t mode) {
         case FCTF_READ:
             return keyboard_read(buffer, size, "/dev/pander");
         case FCTF_WRITE:
-            color = panda_print_string((char *) buffer, size, color);
-            if (color == 0x0F)
-                color = 0x0C;
+            color = panda_print_string((char *) buffer, size, color, 0x0C);
             return size;
         default:
             return 0;
@@ -173,17 +171,17 @@ int dev_userial(int id, void *buffer, uint32_t size, uint8_t mode) {
     }
 
     uint32_t to_read = size;
-    uint32_t buffer_size = strlen(buffer_addr);
+    uint32_t buffer_size = str_len(buffer_addr);
 
     if (already_read + to_read > buffer_size) {
         to_read = buffer_size - already_read;
     }
 
-    memcpy(buffer, buffer_addr + already_read, to_read);
+    mem_cpy(buffer, buffer_addr + already_read, to_read);
     already_read += to_read;
 
     if (already_read >= buffer_size) {
-        free(buffer_addr);
+        kfree(buffer_addr);
         buffer_addr = NULL;
     }
 
@@ -253,9 +251,10 @@ int dev_stderr(int id, void *buffer, uint32_t size, uint8_t mode) {
 
 int init_devio(void) {
     return (
-        IS_SID_NULL(fu_fctf_create(0, "/dev/null",   dev_null))      ||
-        IS_SID_NULL(fu_fctf_create(0, "/dev/zero",   dev_zero))      ||
-        IS_SID_NULL(fu_fctf_create(0, "/dev/random", dev_rand))      ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/null",    dev_null))     ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/zero",    dev_zero))     ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/random",  dev_rand))     ||
+        IS_SID_NULL(fu_fctf_create(0, "/dev/urandom", dev_rand))     ||
 
         IS_SID_NULL(fu_fctf_create(0, "/dev/kterm",   dev_kterm))    ||
         IS_SID_NULL(fu_fctf_create(0, "/dev/panda",   dev_panda))    ||

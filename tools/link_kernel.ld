@@ -9,14 +9,12 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-ENTRY(loader)                       /* entry label name */
-
-kernel_start = .;
+ENTRY(kentry)                       /* entry label name */
 
 SECTIONS {
-    . = 0x00100000;                 /* the code should be loaded at 1 MB */
+    . = 0x100000;                   /* the code should be loaded at 1 MB */
     .multiboot ALIGN (0x1000): {    /* align at 4 KB */
-        *(.multiboot)               /* all text sections from all files */
+        *(.multiboot)               /* the multiboot header */
     }
     .text ALIGN (0x1000): {
         *(.text)                    /* all text sections from all files */
@@ -29,8 +27,6 @@ SECTIONS {
         *(.bss)                     /* all bss sections from all files */
     }
     .data ALIGN (0x1000): {
-        *(.data)                    /* all data sections from all files */
+        *(.data*)                   /* all data sections from all files */
     }
 }
-
-kernel_end = .;

@@ -161,7 +161,7 @@ int internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path) {
     char **names;
     uint32_t *sids;
 
-    int count = fu_get_dir_content(
+    int count = fu_dir_get_content(
         filesys,
         fu_path_to_sid(filesys, SID_ROOT, intern_path),
         &sids,

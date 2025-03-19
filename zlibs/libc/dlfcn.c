@@ -9,28 +9,31 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/type.h>
-#include <stdio.h>
+#include <profan.h>
+#include <stddef.h>
 
-// real function are defined in the dynamic linker (/bin/sys/deluge)
-// this file is just a stratagem to make the compiler happy
+// real function are defined in the dynamic linker (/bin/x/deluge.elf)
+
+#undef WEAK
+#define WEAK __attribute__((weak))
+
+WEAK void *dlg_open(const char *filename, int flag);
+WEAK int   dlg_close(void *handle);
+WEAK void *dlg_sym(void *handle, const char *symbol);
+WEAK char *dlg_error(void);
 
 void *dlopen(const char *filename, int flag) {
-    puts("libc dlfcn: dlopen: should not be called");
-    return NULL;
-}
-
-void *dlsym(void *handle, const char *symbol) {
-    puts("libc dlfcn: dlsym: should not be called");
-    return NULL;
+    return dlg_open(filename, flag);
 }
 
 int dlclose(void *handle) {
-    puts("libc dlfcn: dlclose: should not be called");
-    return -1;
+    return dlg_close(handle);
+}
+
+void *dlsym(void *handle, const char *symbol) {
+    return dlg_sym(handle, symbol);
 }
 
 char *dlerror(void) {
-    puts("libc dlfcn: dlerror: should not be called");
-    return NULL;
+    return dlg_error();
 }

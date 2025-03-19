@@ -17,14 +17,18 @@
 void sep_path(char *fullpath, char **parent, char **cnt) {
     int i, len;
 
-    *parent = (char *)malloc(META_MAXLEN);
-    *cnt = (char *)malloc(META_MAXLEN);
-
     len = strlen(fullpath);
-    if (len == 0 || (len == 1 && fullpath[0] == '/')) {
-        (*parent)[0] = '\0';
-        strcpy((*cnt), "/");
-        return;
+
+    if (parent != NULL) {
+        *parent = calloc(1, len + 2);
+    }
+
+    if (cnt != NULL) {
+        *cnt = calloc(1, len + 2);
+    }
+
+    while (len > 0 && fullpath[len - 1] == '/') {
+        len--;
     }
 
     for (i = len - 1; i >= 0; i--) {
@@ -33,13 +37,16 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
         }
     }
 
-    if (i <= 0) {
-        strcpy(*parent, "/");
-        strncpy(*cnt, fullpath + 1 + i, META_MAXLEN);
-    } else {
-        strncpy(*parent, fullpath, i);
-        (*parent)[i] = '\0';
-        strncpy(*cnt, fullpath + i + 1, META_MAXLEN);
+    if (parent != NULL && i >= 0) {
+        if (i == 0) {
+            strcpy(*parent, "/");
+        } else {
+            strncpy(*parent, fullpath, i);
+        }
+    }
+
+    if (cnt != NULL) {
+        strcpy(*cnt, fullpath + i + 1);
     }
 }
 
@@ -56,7 +63,7 @@ void draw_tree(filesys_t *filesys, uint32_t sid, int depth) {
     uint32_t *sids;
     int count;
 
-    count = fu_get_dir_content(filesys, sid, &sids, &names);
+    count = fu_dir_get_content(filesys, sid, &sids, &names);
 
     if (count == -1) {
         printf("failed to get directory content during path search\n");

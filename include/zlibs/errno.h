@@ -9,10 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef ERRNO_H
-#define ERRNO_H
+#ifndef _ERRNO_H
+#define _ERRNO_H
 
-extern int errno;
+typedef int errno_t;
+extern errno_t errno;
+
+/* Standard error codes */
 
 #define EOK 0           // No error
 #define EPERM 1         // Not super-user
@@ -137,5 +140,9 @@ extern int errno;
 #define ECASECLASH 137  // Filename exists with different case
 #define EILSEQ 138      // Illegal byte sequence
 #define EOVERFLOW 139   // Value too large for defined data type
+
+/* Because one define is not enough */
+
+#define EWOULDBLOCK EAGAIN
 
 #endif

@@ -56,29 +56,32 @@ FUNC deepeval
     END; IF !(eval 42 + 1 ~ 43)
         print '[ FAIL ] eval (addition, equality)\n'
         RETURN
-    END; IF !(eval 1 + 32 * 2 ~ 65)
+    END; IF !(eval 1 + 32 x 2 ~ 65)
         print '[ FAIL ] eval (simple priority)\n'
         RETURN
-    END; IF !(eval 1 + ( 31 + 1 ) * 2 ~ 66 - 1)
+    END; IF !(eval 1 + ( 31 + 1 ) x 2 ~ 66 - 1)
         print '[ FAIL ] eval (complex priority)\n'
         RETURN
     END; IF !(eval 30 % 8 ~ 36 / 6)
         print '[ FAIL ] eval (division, modulo)\n'
         RETURN
-    END; IF !(eval "ab" + 2 ~ "ab2")
-        print '[ FAIL ] eval (str + int)\n'
-        RETURN
-    END; IF !(eval 2 + "ab" ~ "2ab")
-        print '[ FAIL ] eval (int + str)\n'
-        RETURN
     END; IF !(eval "ab" + "cd" ~ "abcd")
         print '[ FAIL ] eval (str + str)\n'
         RETURN
-    END; IF !(eval "ab" . "cd" ~ "abcd")
+    END; IF !(eval "ab" + "cd" ~ "abcd")
         print '[ FAIL ] eval (str . str)\n'
         RETURN
-    END; IF !(eval 4 . 0 ~ 40)
-        print '[ FAIL ] eval (int . int)\n'
+    END; IF !(eval "hello" ~ "hello")
+        print '[ FAIL ] eval (str ~ str)\n'
+        RETURN
+    END; IF !(eval ( "hello" = "hello" ) ~ 1)
+        print '[ FAIL ] eval (str ~ str)\n'
+        RETURN
+    END; IF !(eval "hello" > 2 ~ "llo")
+        print '[ FAIL ] eval (str > int)\n'
+        RETURN
+    END; IF !(eval "hello" < 2 ~ "hel")
+        print '[ FAIL ] eval (int < str)\n'
         RETURN
     END; IF !(eval 0x42 ~ 66)
         print '[ FAIL ] eval (hex)\n'
@@ -148,7 +151,7 @@ del sum
 
 set i 0
 WHILE !(eval !i < 101)
-    set i !(eval !i + 1)
+    set ++ i
 END
 
 assert !(eval !i = 101) 'while loop'
@@ -159,7 +162,7 @@ del i
 
 set i 0
 WHILE 1
-    set i !(eval !i + 1)
+    set ++ i
     IF !(eval !i = 101)
         BREAK
     END
@@ -175,7 +178,7 @@ set i 0
 set sum 0
 
 WHILE !(eval !i ~ 101)
-    set i !(eval !i + 1)
+    set ++ i
     IF !(eval !i % 2)
         CONTINUE
     END
@@ -186,6 +189,19 @@ assert !(eval !sum = 2550) 'while + continue'
 
 del sum
 del i
+
+// ----- PSEUDO ---------------------------------------------------------------
+
+pseudo mypseudo1 mypseudo2
+pseudo mypseudo2 set
+
+mypseudo1 var 123
+
+assert !(eval !var = 123) 'double pseudo'
+
+del -p mypseudo1
+del -p mypseudo2
+del var
 
 // ----- FUNCTION RETURN ------------------------------------------------------
 
@@ -211,7 +227,7 @@ del -f testargc
 
 FUNC testargv
     IF !#
-        RETURN !(eval !0 * 2 + !1)
+        RETURN !(eval !0 x 2 + !1)
     END; ELSE
         RETURN 0
     END;
@@ -259,17 +275,20 @@ del -f testlocal
 
 // ----- FUNCTION IN VARIABLE -------------------------------------------------
 
-FUNC oui
+FUNC testfuncinvar
     IF !(eval !# ~ 2)
-        print 'oui requires 2 arguments\n'
+        print 'testfuncinvar requires 2 arguments\n'
         RETURN
     END
     RETURN azerty !0 !1
 END
 
-set v '  oui  coucou  '
+set v '  testfuncinvar  coucou  '
 
 assert !(eval '"!(!v hello)"' = '"azerty coucou hello"') 'function in variable'
+
+del -f testfuncinvar
+del v
 
 // ----- PIPE PROCESSOR -------------------------------------------------------
 
