@@ -31,8 +31,13 @@ int eth_8168_init() {
 	kprintf("Realtek 8168 found at %x:%x\n", pci->vendor_id, pci->device_id);
 	char mac_address[6] = {0};
 	for (int i = 0; i < 6; i++) {
-		mac_address[i] = port_byte_in(pci->bar[0] + i);
+		mac_address[i] = port_byte_in(pci->bar[0] - 1 + i);
 	}
 	kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n", mac_address[0], mac_address[1], mac_address[2], mac_address[3], mac_address[4], mac_address[5]);
+	uint32_t t0 = timer_get_ms();
+	outportb(pci->bar[0] + 0x37, 0x10);
+	while((inportb(pci->bar[0] + 0x37) & 0x10) && (t0 + 1000 > timer_get_ms()))
+		;
+
 	return 0;
 }
