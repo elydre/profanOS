@@ -1,13 +1,13 @@
-// /*****************************************************************************\
-// |   === e1000.c : 2024 ===                                                    |
-// |                                                                             |
-// |    Implementation of e1000 network card driver                   .pi0iq.    |
-// |                                                                 d"  . `'b   |
-// |    This file is part of profanOS and is released under          q. /|\  "   |
-// |    the terms of the GNU General Public License                   `// \\     |
-// |                                                                  //   \\    |
-// |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
-// \*****************************************************************************/
+/*****************************************************************************\
+|   === e1000.c : 2025 ===                                                    |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
 
 // #include <cpu/ports.h>
 // #include <ktype.h>
@@ -328,4 +328,4 @@
 //     packet->tpa[2] = 0x00;
 //     packet->tpa[3] = 0x00;
 //     e1000_sendPacket(device, packet, sizeof(arp_packet));
-// }
+//

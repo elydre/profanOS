@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === pci_old.c : 2025 ===                                                  |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 
 // #include <drivers/pci.h>
 // #include <cpu/ports.h>
@@ -39,7 +50,7 @@
 
 // uint32_t pci_read_u32(pci_device_t *pci, uint8_t bar, uint32_t offset) {
 //     if (pci->bar_type[bar] == 0) {
-// 		scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
+//      scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
 //         return *(uint32_t *)(pci->bars[bar] + offset);
 //     }
 //     // read from ports
@@ -47,17 +58,17 @@
 // }
 
 // void pci_write_u32(pci_device_t *pci, uint8_t bar, uint32_t offset, uint32_t value) {
-// 	if (pci->bar_type[bar] == 0) {
-// 		scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
-// 		*(uint32_t *)(pci->bars[bar] + offset) = value;
-// 	}
-// 	port_long_out(pci->bars[bar] + offset, value);
+//  if (pci->bar_type[bar] == 0) {
+//      scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
+//      *(uint32_t *)(pci->bars[bar] + offset) = value;
+//  }
+//  port_long_out(pci->bars[bar] + offset, value);
 // }
 
 
 // uint16_t pci_read_u16(pci_device_t *pci, uint8_t bar, uint32_t offset) {
 //     if (pci->bar_type[bar] == 0) {
-// 		scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
+//      scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
 //         return *(uint16_t *)(pci->bars[bar] + offset);
 //     }
 //     // read from ports
@@ -65,9 +76,9 @@
 // }
 
 // void pci_write_u16(pci_device_t *pci, uint8_t bar, uint32_t offset, uint16_t value) {
-// 	if (pci->bar_type[bar] == 0) {
-// 		scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
-// 		*(uint16_t *)(pci->bars[bar] + offset) = value;
-// 	}
-// 	port_word_out(pci->bars[bar] + offset, value);
-// }
+//  if (pci->bar_type[bar] == 0) {
+//      scuba_call_map(pci->bars[bar] + offset, pci->bars[bar] + offset, 0);
+//      *(uint16_t *)(pci->bars[bar] + offset) = value;
+//  }
+//  port_word_out(pci->bars[bar] + offset, value);
+//

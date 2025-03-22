@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === pci_old.h : 2025 ===                                                  |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef PCI_OLD_H
 #define PCI_OLD_H
 
@@ -33,4 +44,4 @@ uint32_t pci_read_u32(pci_device_t *pci, uint8_t bar, uint32_t offset);
 uint16_t pci_read_u16(pci_device_t *pci, uint8_t bar, uint32_t offset);
 void pci_write_u16(pci_device_t *pci, uint8_t bar, uint32_t offset, uint16_t value);
 
-#endif
+#endi

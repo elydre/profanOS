@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === pci.c : 2025 ===                                                      |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <ktype.h>
 #include <drivers/pci.h>
 #include <minilib.h>
@@ -29,22 +40,22 @@ uint16_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t of
 }
 
 void pci_get_ids(pci_device_t *pci) {
-	pci->vendor_id = pci_read_config(pci->bus, pci->slot, pci->function, 0);
-	if (pci->vendor_id == 0xFFFF)
-		return ;
-	pci->device_id = pci_read_config(pci->bus, pci->slot, pci->function, 2);
+    pci->vendor_id = pci_read_config(pci->bus, pci->slot, pci->function, 0);
+    if (pci->vendor_id == 0xFFFF)
+        return ;
+    pci->device_id = pci_read_config(pci->bus, pci->slot, pci->function, 2);
 }
 
 void pci_add_device(pci_device_t *pci) {
-	pcis = realloc_as_kernel(pcis, (pcis_len + 1) * sizeof(pci_device_t));
-	pcis[pcis_len] = *pci;
-	pcis_len++;
+    pcis = realloc_as_kernel(pcis, (pcis_len + 1) * sizeof(pci_device_t));
+    pcis[pcis_len] = *pci;
+    pcis_len++;
 }
 
 void pci_get_bars(pci_device_t *pci) {
     for (int i = 0; i < 6; i++) {
         uint32_t bar = pci_read_config(pci->bus, pci->slot, pci->function, 0x10 + (i * 4));
-        pci->bar[i] = bar;
+        pci->bar[i] = bar & 0xfffffff0;
         pci->bar_is_mem[i] = 0 == (bar & 0x1);
     }
 }
@@ -63,23 +74,23 @@ void pci_get_class(pci_device_t *pci) {
 }
 
 int pci_init() {
-	for (int i = 0; i < 256; i++) {
-		for (int k = 0; k < 16; k++) {
-			for (int l = 0; l < 8; l++) {
-				pci_device_t pci = {0};
-				pci.bus = i;
-				pci.slot = k;
-				pci.function = l;
-				pci_get_ids(&pci);
-				if (pci.vendor_id == 0xFFFF)
-					continue;
-				pci_get_bars(&pci);
-				pci_get_class(&pci);
-				pci_add_device(&pci);
+    for (int i = 0; i < 256; i++) {
+        for (int k = 0; k < 16; k++) {
+            for (int l = 0; l < 8; l++) {
+                pci_device_t pci = {0};
+                pci.bus = i;
+                pci.slot = k;
+                pci.function = l;
+                pci_get_ids(&pci);
+                if (pci.vendor_id == 0xFFFF)
+                    continue;
+                pci_get_bars(&pci);
+                pci_get_class(&pci);
+                pci_add_device(&pci);
                 pci.interrupt_line = (uint8_t)pci_read_config(pci.bus, pci.slot, pci.function, 0x3C);
                 pci.interrupt_pin = (uint8_t)pci_read_config(pci.bus, pci.slot, pci.function, 0x3D);
-			}
-		}
+            }
+        }
     }
     return 0;
 }
@@ -174,3 +185,4 @@ pci_device_t *pci_find(uint16_t vendor, uint16_t device) {
     }
     return NULL;
 }
+
