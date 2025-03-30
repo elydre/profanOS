@@ -14,6 +14,7 @@
 #include <minilib.h>
 #include <drivers/pci.h>
 #include <cpu/isr.h>
+#include <drivers/e1000_private.h>
 #include <drivers/e1000.h>
 #include <drivers/pci.h>
 #include <kernel/snowflake.h>
@@ -33,12 +34,12 @@
 void hexdump(const unsigned char *tab, int len) {
     for (int i = 0; i < len; i++) {
         unsigned char byte = tab[i];
-        kprintf("%c%c", "0123456789ABCDEF"[byte >> 4], "0123456789ABCDEF"[byte & 0x0f]);
+        kprintf_serial("%c%c", "0123456789ABCDEF"[byte >> 4], "0123456789ABCDEF"[byte & 0x0f]);
         if ((i + 1) % 16 == 0 || i == len - 1) {
-            kprintf("\n");
+            kprintf_serial("\n");
         }
         else {
-            kprintf(" ");
+            kprintf_serial(" ");
         }
     }
 }
@@ -81,7 +82,8 @@ typedef struct {
 	uint8_t eeprom;
 } e1000_t;
 
-static e1000_t g_e1000;
+static e1000_t g_e1000 = (e1000_t){0};
+int e1000_is_inited = 0;
 
 uint32_t endian_switch_u32(uint32_t x) {
     uint32_t res = 0;
@@ -158,6 +160,8 @@ void scan_pci_for_e1000(e1000_t *e1000) {
     }
 }
 
+void e1000_handle_receive(e1000_t *device, registers_t *regs);
+
 void e1000_handler(registers_t *regs) {
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1);
     uint32_t status = pci_read_cmd_u32(&(g_e1000.pci), 0, (0xc0));
@@ -166,6 +170,11 @@ void e1000_handler(registers_t *regs) {
         if (status & 0x80)
             e1000_handle_receive(&g_e1000, regs);
         pci_write_cmd_u32(&(g_e1000.pci), 0, (0xc0), status);
+    }
+    if (status == 0x3) {
+        for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
+         hexdump(g_e1000.rx_descs_phys[i]->addr_low, 16);
+        }
     }
 }
 
@@ -179,7 +188,7 @@ void e1000_rx_init(e1000_t *e1000) {
     for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
         e1000->rx_descs_phys[i] = (e1000_rx_desc_t *)((uint8_t *)descs + i*16);
         e1000->rx_descs_phys[i]->addr_high = 0;
-        e1000->rx_descs_phys[i]->addr_low = (uint32_t)(uint8_t *)(malloc(8192 + 16));
+        e1000->rx_descs_phys[i]->addr_low = (uint32_t)(uint8_t *)(mem_alloc(8192 + 16, 128, 1));
         e1000->rx_descs_phys[i]->status = 0;
     }
     pci_write_cmd_u32(&(e1000->pci), 0,REG_TXDESCLO, 0);
@@ -201,7 +210,7 @@ void e1000_tx_init(e1000_t *e1000) {
     uint8_t *  ptr;
     struct e1000_tx_desc *descs;
 
-    ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC + 16, 128, 1));
+    ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC, 16, 1));
 
     descs = (struct e1000_tx_desc *)ptr;
     for(int i = 0; i < E1000_NUM_TX_DESC; i++)
@@ -239,43 +248,39 @@ void e1000_tx_init(e1000_t *e1000) {
 }
 
 int e1000_init(void) {
-    e1000_t device = {0};
-    scan_pci_for_e1000(&device);
-    g_e1000 = device;
-    if (!device.exists) {
+    scan_pci_for_e1000(&g_e1000);
+    if (!g_e1000.exists) {
         return 2;
     }
-    pci_enable_bus_master(&device.pci);
-    kprintf("e1000 device found slot %x bus %x\n", device.pci.slot, device.pci.bus);
+    pci_enable_bus_master(&g_e1000.pci);
+    kprintf("e1000 device found slot %x bus %x\n", g_e1000.pci.slot, g_e1000.pci.bus);
     kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n",
-           device.mac[0], device.mac[1], device.mac[2], device.mac[3], device.mac[4], device.mac[5]);
+           g_e1000.mac[0], g_e1000.mac[1], g_e1000.mac[2], g_e1000.mac[3], g_e1000.mac[4], g_e1000.mac[5]);
 
-    uint32_t ctrl = pci_read_cmd_u32(&(device.pci), 0,REG_CTRL);
-    pci_write_cmd_u32(&(device.pci), 0, REG_CTRL, ctrl | (1 << 26));
-    while (!(pci_read_cmd_u32(&(device.pci), 0, REG_STATUS))) {
+    uint32_t ctrl = pci_read_cmd_u32(&(g_e1000.pci), 0,REG_CTRL);
+    pci_write_cmd_u32(&(g_e1000.pci), 0, REG_CTRL, ctrl | (1 << 26));
+    while (!(pci_read_cmd_u32(&(g_e1000.pci), 0, REG_STATUS))) {
         // wait the card to be prepared
     }
     for (int i = 0; i < 0x80; i++)
-        pci_write_cmd_u32(&(device.pci), 0, 0x5200 + i * 4, 0);
-    register_interrupt_handler(device.irq + 32, e1000_handler);
-    pci_write_cmd_u32(&(device.pci), 0, REG_IMASK, 0x1F6DC);
-    pci_write_cmd_u32(&(device.pci), 0, REG_IMASK, 0xFF & ~4);
-    pci_read_cmd_u32(&(device.pci), 0, 0xc0);
-    e1000_rx_init(&device);
-    e1000_tx_init(&device);
-    pci_write_cmd_u32(&(device.pci), 0, 0x5400, *((uint32_t *)device.mac));
-    pci_write_cmd_u32(&(device.pci), 0, 0x5400 + 4, device.mac[4] | ((uint32_t)device.mac[5] << 8));
-
-    //get gooogle mac address
-    send_arp(&device, "\x08\x08\x08\x08");
+        pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5200 + i * 4, 0);
+    register_interrupt_handler(g_e1000.irq + 32, e1000_handler);
+    pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1F6DC);
+    pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0xFF & ~4);
+    pci_read_cmd_u32(&(g_e1000.pci), 0, 0xc0);
+    e1000_rx_init(&g_e1000);
+    e1000_tx_init(&g_e1000);
+    pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5400, *((uint32_t *)g_e1000.mac));
+    pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5400 + 4, g_e1000.mac[4] | ((uint32_t)g_e1000.mac[5] << 8));
+    e1000_is_inited = 1;
     return 0;
 }
 
 
-int e1000_sendPacket(e1000_t *device, const void * p_data, uint16_t p_len)
+void e1000_send_packet(const void * p_data, uint16_t p_len)
 {
-    if (device == NULL)
-        device = &g_e1000;
+    e1000_t *device = &g_e1000;
+
     device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
     device->tx_descs_phys[device->tx_cur]->addr_high = 0;
     device->tx_descs_phys[device->tx_cur]->length = p_len;
@@ -284,25 +289,19 @@ int e1000_sendPacket(e1000_t *device, const void * p_data, uint16_t p_len)
     uint8_t old_cur = device->tx_cur;
     device->tx_cur = (device->tx_cur + 1) % E1000_NUM_TX_DESC;
     pci_write_cmd_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
-        kprintf("debug1\n");
-    while(!(device->tx_descs_phys[old_cur]->status & 0xff))
-    {
-        kprintf_serial("status %x %d\n", device->tx_descs_phys[old_cur]->status, device->tx_descs_phys[old_cur]->status & 0xff);
-    }
-    kprintf("tx status %x %d\n", device->tx_descs_phys[old_cur]->status, device->tx_descs_phys[old_cur]->status & 0xff);
-    kprintf("debug2\n");
-    return 0;
+    while(!(device->tx_descs_phys[old_cur]->status & 0xff));
 }
 
 
 void e1000_handle_receive(e1000_t *device, registers_t *regs) {
-
+    (void)regs;
     uint16_t old_cur;
     uint8_t got_packet = 0;
 
     while((device->rx_descs_phys[device->rx_cur]->status & 0x1))
     {
             got_packet = 1;
+            (void)got_packet;
             uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
             uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
 
@@ -318,44 +317,6 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
     }
 }
 
-typedef struct {
-    uint16_t htype;
-    uint16_t ptype;
-    uint8_t hlen;
-    uint8_t plen;
-    uint16_t oper;
-    uint8_t sha[6];
-    uint8_t spa[4];
-    uint8_t tha[6];
-    uint8_t tpa[4];
-} arp_packet;
-
-void send_arp(e1000_t *device, uint8_t *ip) {
-    arp_packet *packet = mem_alloc(sizeof(arp_packet), 128, 1);
-    packet->htype = 1;
-    packet->ptype = 0x0800;
-    packet->hlen = 6;
-    packet->plen = 4;
-    packet->oper = 1;
-    packet->sha[0] = device->mac[0];
-    packet->sha[1] = device->mac[1];
-    packet->sha[2] = device->mac[2];
-    packet->sha[3] = device->mac[3];
-    packet->sha[4] = device->mac[4];
-    packet->sha[5] = device->mac[5];
-    packet->spa[0] = ip[0];
-    packet->spa[1] = ip[1];
-    packet->spa[2] = ip[2];
-    packet->spa[3] = ip[3];
-    packet->tha[0] = 0x00;
-    packet->tha[1] = 0x00;
-    packet->tha[2] = 0x00;
-    packet->tha[3] = 0x00;
-    packet->tha[4] = 0x00;
-    packet->tha[5] = 0x00;
-    packet->tpa[0] = 0x00;
-    packet->tpa[1] = 0x00;
-    packet->tpa[2] = 0x00;
-    packet->tpa[3] = 0x00;
-    e1000_sendPacket(device, packet, sizeof(arp_packet));
+void e1000_set_mac(uint8_t mac[6]) {
+    mem_copy(g_e1000.mac, mac, 6);
 }

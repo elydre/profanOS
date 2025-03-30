@@ -27,6 +27,7 @@
 #include <cpu/gdt.h>
 #include <minilib.h>
 #include <system.h>
+#include <drivers/ethernet.h>
 
 
 void kernel_main(void *mboot_ptr) {
@@ -61,6 +62,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(rtl8139_init, "Initing", "8139 ethernet card");
     extern int e1000_init();
     status_print(e1000_init, "Initing", "e1000 ethernet card");
+    status_print(eth_init,     "Initing", "ethernet driver");
 
     kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
 
