@@ -59,6 +59,8 @@ void kernel_main(void *mboot_ptr) {
     status_print(eth_8168_init, "Initing", "8168 ethernet card");
     extern int rtl8139_init();
     status_print(rtl8139_init, "Initing", "8139 ethernet card");
+    extern int e1000_init();
+    status_print(e1000_init, "Initing", "e1000 ethernet card");
 
     kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
 

@@ -67,7 +67,7 @@ ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror -fPIC"
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
-QEMU_SPL   = "qemu-system-i386 -net nic,model=rtl8139"
+QEMU_SPL   = "qemu-system-i386"
 QEMU_KVM   = "qemu-system-i386 -enable-kvm"
 
 QEMU_FLAGS = "-serial stdio"

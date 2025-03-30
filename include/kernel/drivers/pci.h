@@ -32,11 +32,22 @@ typedef struct {
 extern pci_device_t *pcis;
 extern int pcis_len;
 
-uint16_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset);
+uint32_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset);
 void pci_get_ids(pci_device_t *pci);
 void pci_add_device(pci_device_t *pci);
 void pci_get_bars(pci_device_t *pci);
 void pci_get_class(pci_device_t *pci);
 int pci_init();
+
+uint8_t pci_read_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset);
+uint16_t pci_read_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset);
+uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset);
+
+void pci_write_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset, uint8_t value);
+void pci_write_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset, uint16_t value);
+void pci_write_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset, uint32_t value);
+
+pci_device_t *pci_find(uint16_t vendor_id, uint16_t device_id);
+
 
 #endif
