@@ -19,6 +19,12 @@ pci_device_t *pcis = NULL;
 int pcis_len = 0;
 
 
+void pci_write_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t value) {
+    uint32_t address = (1 << 31) | (bus << 16) | (slot << 11) | (func << 8) | (offset & 0xFC);
+    port_long_out(0xCF8, address);
+    port_long_out(0xCFC, value);
+}
+
 uint32_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset) {
     uint32_t address;
     uint32_t lbus  = (uint32_t)bus;
@@ -182,3 +188,8 @@ pci_device_t *pci_find(uint16_t vendor, uint16_t device) {
     return NULL;
 }
 
+void pci_enable_bus_master(pci_device_t *pci) {
+    uint32_t cmd = pci_read_config(pci->bus, pci->slot, pci->function, 0x04);
+    cmd |= (1 << 2);
+    pci_write_config(pci->bus, pci->slot, pci->function, 0x04, cmd);
+}

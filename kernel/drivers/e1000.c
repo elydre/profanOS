@@ -16,6 +16,7 @@
 #include <cpu/isr.h>
 #include <drivers/e1000.h>
 #include <drivers/pci.h>
+#include <kernel/snowflake.h>
 
 
 //----------------------------------------------------//
@@ -33,10 +34,10 @@ void hexdump(const unsigned char *tab, int len) {
     for (int i = 0; i < len; i++) {
         unsigned char byte = tab[i];
         kprintf("%c%c", "0123456789ABCDEF"[byte >> 4], "0123456789ABCDEF"[byte & 0x0f]);
-        // Espacement entre les octets
         if ((i + 1) % 16 == 0 || i == len - 1) {
-            kprintf("\n"); // Saut de ligne toutes les 16 valeurs ou à la fin
-        } else {
+            kprintf("\n");
+        }
+        else {
             kprintf(" ");
         }
     }
@@ -79,6 +80,8 @@ typedef struct {
     uint16_t tx_cur;      // Current Transmit Descriptor Buffer
 	uint8_t eeprom;
 } e1000_t;
+
+static e1000_t g_e1000;
 
 uint32_t endian_switch_u32(uint32_t x) {
     uint32_t res = 0;
@@ -155,16 +158,14 @@ void scan_pci_for_e1000(e1000_t *e1000) {
     }
 }
 
-e1000_t e1000_device = {0};
-
 void e1000_handler(registers_t *regs) {
-    pci_write_cmd_u32(&(e1000_device.pci), 0, REG_IMASK, 0x1);
-    uint32_t status = pci_read_cmd_u32(&(e1000_device.pci), 0, (0xc0));
+    pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1);
+    uint32_t status = pci_read_cmd_u32(&(g_e1000.pci), 0, (0xc0));
     kprintf("E1000 interrupt %x\n", status);
     if(status) {
         if (status & 0x80)
-            e1000_handle_receive(&e1000_device, regs);
-        pci_write_cmd_u32(&(e1000_device.pci), 0, (0xc0), status);
+            e1000_handle_receive(&g_e1000, regs);
+        pci_write_cmd_u32(&(g_e1000.pci), 0, (0xc0), status);
     }
 }
 
@@ -172,7 +173,7 @@ void e1000_rx_init(e1000_t *e1000) {
     uint8_t *ptr = NULL;
     e1000_rx_desc_t *descs;
 
-    ptr = malloc(sizeof(struct e1000_rx_desc)*E1000_NUM_RX_DESC + 16);
+    ptr = mem_alloc(sizeof(struct e1000_rx_desc)*E1000_NUM_RX_DESC + 16, 128, 1);
 
     descs = (struct e1000_rx_desc *)ptr;
     for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
@@ -200,7 +201,7 @@ void e1000_tx_init(e1000_t *e1000) {
     uint8_t *  ptr;
     struct e1000_tx_desc *descs;
 
-    ptr = (uint8_t *)(malloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC + 16));
+    ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC + 16, 128, 1));
 
     descs = (struct e1000_tx_desc *)ptr;
     for(int i = 0; i < E1000_NUM_TX_DESC; i++)
@@ -213,7 +214,7 @@ void e1000_tx_init(e1000_t *e1000) {
     }
 
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCHI, 0);
-    pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCLO, (uint32_t)ptr & 0xFFFFFFFF);
+    pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCLO, (uint32_t)ptr);
 
 
     //now setup total length of descriptors
@@ -224,12 +225,12 @@ void e1000_tx_init(e1000_t *e1000) {
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCHEAD, 0);
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCTAIL, 0);
     e1000->tx_cur = 0;
-    pci_write_cmd_u32(&(e1000->pci), 0, REG_TCTRL,  TCTL_EN
-        | TCTL_PSP
-        | (15 << TCTL_CT_SHIFT)
-        | (64 << TCTL_COLD_SHIFT)
-        | TCTL_RTLC);
-
+    //pci_write_cmd_u32(&(e1000->pci), 0, REG_TCTRL,  TCTL_EN
+    //    | TCTL_PSP
+    //    | (15 << TCTL_CT_SHIFT)
+    //    | (64 << TCTL_COLD_SHIFT)
+    //    | TCTL_RTLC);
+//
     // This line of code overrides the one before it but I left both to highlight that the previous one works with e1000 cards, but for the e1000e cards
     // you should set the TCTRL register as follows. For detailed description of each bit, please refer to the Intel Manual.
     // In the case of I217 and 82577LM packets will not be sent if the TCTRL is not configured using the following bits.
@@ -240,10 +241,11 @@ void e1000_tx_init(e1000_t *e1000) {
 int e1000_init(void) {
     e1000_t device = {0};
     scan_pci_for_e1000(&device);
-    e1000_device = device;
+    g_e1000 = device;
     if (!device.exists) {
         return 2;
     }
+    pci_enable_bus_master(&device.pci);
     kprintf("e1000 device found slot %x bus %x\n", device.pci.slot, device.pci.bus);
     kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n",
            device.mac[0], device.mac[1], device.mac[2], device.mac[3], device.mac[4], device.mac[5]);
@@ -265,24 +267,30 @@ int e1000_init(void) {
     pci_write_cmd_u32(&(device.pci), 0, 0x5400 + 4, device.mac[4] | ((uint32_t)device.mac[5] << 8));
 
     //get gooogle mac address
-    //send_arp(&device, (uint8_t [4]){8, 8, 8, 8});
+    send_arp(&device, "\x08\x08\x08\x08");
     return 0;
 }
 
 
 int e1000_sendPacket(e1000_t *device, const void * p_data, uint16_t p_len)
 {
+    if (device == NULL)
+        device = &g_e1000;
     device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
+    device->tx_descs_phys[device->tx_cur]->addr_high = 0;
     device->tx_descs_phys[device->tx_cur]->length = p_len;
     device->tx_descs_phys[device->tx_cur]->cmd = CMD_EOP | CMD_IFCS | CMD_RS;
     device->tx_descs_phys[device->tx_cur]->status = 0;
     uint8_t old_cur = device->tx_cur;
     device->tx_cur = (device->tx_cur + 1) % E1000_NUM_TX_DESC;
     pci_write_cmd_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
-    kprintf("STRRRRRRRRRRR1\n");
-    while(!(device->tx_descs_phys[old_cur]->status & 0xff));
-    kprintf("STRRRRRRRRRRR2\n");
-    while (1);
+        kprintf("debug1\n");
+    while(!(device->tx_descs_phys[old_cur]->status & 0xff))
+    {
+        kprintf_serial("status %x %d\n", device->tx_descs_phys[old_cur]->status, device->tx_descs_phys[old_cur]->status & 0xff);
+    }
+    kprintf("tx status %x %d\n", device->tx_descs_phys[old_cur]->status, device->tx_descs_phys[old_cur]->status & 0xff);
+    kprintf("debug2\n");
     return 0;
 }
 
@@ -311,10 +319,10 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
 }
 
 typedef struct {
-    uint8_t htype;
-    uint8_t ptype;
-    uint16_t hlen;
-    uint16_t plen;
+    uint16_t htype;
+    uint16_t ptype;
+    uint8_t hlen;
+    uint8_t plen;
     uint16_t oper;
     uint8_t sha[6];
     uint8_t spa[4];
@@ -323,7 +331,7 @@ typedef struct {
 } arp_packet;
 
 void send_arp(e1000_t *device, uint8_t *ip) {
-    arp_packet *packet = malloc(sizeof(arp_packet));
+    arp_packet *packet = mem_alloc(sizeof(arp_packet), 128, 1);
     packet->htype = 1;
     packet->ptype = 0x0800;
     packet->hlen = 6;
