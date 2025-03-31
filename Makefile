@@ -54,6 +54,9 @@ krun:
 srun:
 	python3 $(PY_BUILD) srun
 
+nrun:
+	python3 $(PY_BUILD) nrun
+
 # install all addons
 addons:
 	python3 $(PY_ADDON) -g

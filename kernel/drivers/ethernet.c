@@ -14,6 +14,7 @@ uint32_t eth_get_transactiob_id() {
         id = timer_get_ms();
     return id++;
 }
+
 void build_dhcp_packet(uint8_t *buffer, uint8_t *mac);
 
 int eth_init(void) {
@@ -155,4 +156,13 @@ uint16_t htons(uint16_t x) {
 
 uint32_t htonl(uint32_t x) {
 	return swap_endian32(x);
+}
+
+static eth_device_t devices[256] = {0}; // [0] is null device
+static int devices_current_len = 1;
+
+uint8_t eth_new_device(char *name, pci_device_t *pci, uint8_t mac[6], void (*send)());
+
+void eth_append_packet(void *data, uint32_t len, uint8_t eth_id) {
+
 }

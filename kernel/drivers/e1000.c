@@ -297,19 +297,19 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
 
     while((device->rx_descs_phys[device->rx_cur]->status & 0x1))
     {
-            got_packet = 1;
-            (void)got_packet;
-            uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
-            uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
+        got_packet = 1;
+        (void)got_packet;
+        uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
+        uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
 
-            kprintf_serial("pack len: %d\n", len);
-            hexdump(buf, len);
-            kprintf_serial("packet end\n");
+        kprintf_serial("pack len: %d\n", len);
+        hexdump(buf, len);
+        kprintf_serial("packet end\n");
 
-            device->rx_descs_phys[device->rx_cur]->status = 0;
-            old_cur = device->rx_cur;
-            device->rx_cur = (device->rx_cur + 1) % E1000_NUM_RX_DESC;
-            pci_write_cmd_u32(&(device->pci), 0, REG_RXDESCTAIL, old_cur);
+        device->rx_descs_phys[device->rx_cur]->status = 0;
+        old_cur = device->rx_cur;
+        device->rx_cur = (device->rx_cur + 1) % E1000_NUM_RX_DESC;
+        pci_write_cmd_u32(&(device->pci), 0, REG_RXDESCTAIL, old_cur);
     }
 }
 

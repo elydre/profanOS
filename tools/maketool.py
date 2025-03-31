@@ -67,8 +67,9 @@ ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror -fPIC"
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
-QEMU_SPL   = "qemu-system-i386 -netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat"
+QEMU_SPL   = "qemu-system-i386"
 QEMU_KVM   = "qemu-system-i386 -enable-kvm"
+QEMU_NET   = "qemu-system-i386 -netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat"
 
 QEMU_FLAGS = "-serial stdio"
 QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
@@ -624,11 +625,13 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
 
 
-def qemu_run(iso_run = True, kvm = False, audio = False):
+def qemu_run(iso_run = True, kvm = False, audio = False, net = False):
     if iso_run: make_iso()
 
     gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
+    if net:
+        qemu_cmd = QEMU_NET
 
     qemu_args = QEMU_FLAGS
     if audio: qemu_args += f" {QEMU_AUDIO}"
@@ -685,6 +688,7 @@ assos = {
     "erun": lambda: qemu_run(False),
     "krun": lambda: qemu_run(True, True),
     "srun": lambda: qemu_run(True, False, True),
+    "nrun": lambda: qemu_run(True, False, False, True),
     "kver": get_kernel_version,
 }
 

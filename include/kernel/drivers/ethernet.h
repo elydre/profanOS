@@ -2,6 +2,7 @@
 #define ETHERNET_H
 
 #include <ktype.h>
+#include <drivers/pci.h>
 
 #define ETHERNET_TYPE_IPV4 0x0800
 
@@ -77,6 +78,23 @@ struct udp_header {
 void eth_send_packet(const void *buffer, uint16_t size);
 uint16_t htons(uint16_t x);
 uint32_t htonl(uint32_t x);
+
+
+typedef struct {
+    uint8_t *data;
+    uint32_t len;
+    uint8_t eth_id;
+} eth_raw_packet_t;
+
+typedef struct {
+    void (*send)(uint8_t *data, uint32_t len);
+    char *name;
+    pci_device_t pci;
+    uint8_t eth_id;
+    uint8_t mac[6];
+    uint8_t ip[4];
+    uint16_t ipv6[8];
+} eth_device_t;
 
 int eth_init(void);
 
