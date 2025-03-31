@@ -34,12 +34,12 @@
 void hexdump(const unsigned char *tab, int len) {
     for (int i = 0; i < len; i++) {
         unsigned char byte = tab[i];
-        kprintf_serial("%c%c", "0123456789ABCDEF"[byte >> 4], "0123456789ABCDEF"[byte & 0x0f]);
+        kprintf("%c%c", "0123456789ABCDEF"[byte >> 4], "0123456789ABCDEF"[byte & 0x0f]);
         if ((i + 1) % 16 == 0 || i == len - 1) {
-            kprintf_serial("\n");
+            kprintf("\n");
         }
         else {
-            kprintf_serial(" ");
+            kprintf(" ");
         }
     }
 }
@@ -302,9 +302,9 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
         uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
         uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
 
-        kprintf_serial("pack len: %d\n", len);
+        kprintf("pack len: %d\n", len);
         hexdump(buf, len);
-        kprintf_serial("packet end\n");
+        kprintf("packet end\n");
 
         device->rx_descs_phys[device->rx_cur]->status = 0;
         old_cur = device->rx_cur;
