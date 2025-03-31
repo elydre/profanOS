@@ -3,13 +3,16 @@
 #include <drivers/e1000.h>
 #include <minilib.h>
 #include <drivers/ethernet.h>
+#include <cpu/timer.h>
 
 uint8_t eth_mac[6] = {0};
 uint8_t eth_ip[4] = {0};
 
 uint32_t eth_get_transactiob_id() {
 	static uint32_t id = 0;
-	return id++;
+    if (id == 0)
+        id = timer_get_ms();
+    return id++;
 }
 void build_dhcp_packet(uint8_t *buffer, uint8_t *mac);
 
@@ -60,24 +63,43 @@ void build_dhcp_discover(uint8_t *buffer, uint8_t *mac) {
     dhcp->op = 1;  // Request
     dhcp->htype = 1;  // Ethernet
     dhcp->hlen = 6;  // Taille adresse MAC
-    dhcp->xid = 0x12345678;  // Identifiant unique (changer à chaque requête)
+    dhcp->xid = eth_get_transactiob_id();
     dhcp->flags = htons(0x8000);  // Broadcast
     mem_copy(dhcp->chaddr, mac, 6);  // Adresse MAC du client
     dhcp->magic_cookie = htonl(0x63825363);  // Magic cookie
 
     // Ajout des options DHCP
     uint8_t *options = dhcp->options;
-    *options++ = 53; // Option: DHCP Message Type
-    *options++ = 1;  // Longueur
-    *options++ = 1;  // DHCPDISCOVER
+    *(options)++ = 53; // Option: DHCP Message Type
+    *(options)++ = 1;  // Longueur
+    *(options)++ = 1;  // DHCPDISCOVER
 
-    *options++ = 55; // Option: Parameter Request List
-    *options++ = 3;  // Longueur
-    *options++ = 1;  // Subnet Mask
-    *options++ = 3;  // Router
-    *options++ = 6;  // DNS Server
+    *(options)++ = 55; // Option: Parameter Request List
+    *(options)++ = 3;  // Longueur
+    *(options)++ = 1;  // Subnet Mask
+    *(options)++ = 3;  // Router
+    *(options)++ = 6;  // DNS Server
 
-    *options++ = 255; // End option
+    *(options)++ = 255; // End option
+}
+
+uint16_t ip_checksum(void *vdata, uint32_t length) {
+    uint16_t *data = vdata;
+    uint32_t sum = 0;
+
+    for (; length > 1; length -= 2) {
+        sum += *data++;
+    }
+
+    if (length == 1) {
+        sum += *(uint8_t *)data;
+    }
+
+    while (sum >> 16) {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
+    return ~sum;
 }
 
 void build_dhcp_packet(uint8_t *buffer, uint8_t *mac) {
@@ -102,7 +124,7 @@ void build_dhcp_packet(uint8_t *buffer, uint8_t *mac) {
     ip->protocol = IP_PROTO_UDP;
     ip->src_ip = 0;  // 0.0.0.0
     ip->dst_ip = htonl(0xFFFFFFFF);  // 255.255.255.255
-    ip->checksum = 0;  // À calculer plus tard
+    ip->checksum = ip_checksum(ip, sizeof(struct ip_header));
 
     // UDP
     udp->src_port = htons(UDP_PORT_DHCP_CLIENT);

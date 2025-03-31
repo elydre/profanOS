@@ -172,9 +172,6 @@ void e1000_handler(registers_t *regs) {
         pci_write_cmd_u32(&(g_e1000.pci), 0, (0xc0), status);
     }
     if (status == 0x3) {
-        for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
-         hexdump(g_e1000.rx_descs_phys[i]->addr_low, 16);
-        }
     }
 }
 
@@ -305,10 +302,9 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
             uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
             uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
 
-            kprintf("pack len: %d\n", len);
-            for (int i = 0; i < len; i++)
-                kprintf("pack: %x\n", buf[i]);
-
+            kprintf_serial("pack len: %d\n", len);
+            hexdump(buf, len);
+            kprintf_serial("packet end\n");
 
             device->rx_descs_phys[device->rx_cur]->status = 0;
             old_cur = device->rx_cur;
