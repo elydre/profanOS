@@ -159,10 +159,30 @@ uint32_t htonl(uint32_t x) {
 }
 
 static eth_device_t devices[256] = {0}; // [0] is null device
-static int devices_current_len = 1;
+static int devices_len = 1;
 
-uint8_t eth_new_device(char *name, pci_device_t *pci, uint8_t mac[6], void (*send)());
+uint8_t eth_new_device(char *name, pci_device_t *pci, uint8_t mac[6], void (*send)()) {
+    devices[devices_len].eth_id = devices_len;
+    mem_copy(devices[devices_len].mac, mac, 6);
+    devices[devices_len].name = name;
+    devices[devices_len].pci = pci;
+    devices[devices_len].send = send;
+    return devices_len++;
+}
 
+static eth_raw_packet_t *packets = NULL;
+static int packets_len = 0;
+static int packets_alloc = 0;
+
+// data will be copied
 void eth_append_packet(void *data, uint32_t len, uint8_t eth_id) {
-
+    if (packets_len == packets_alloc) {
+        packets_alloc += 10;
+        packets = realloc_as_kernel(packets, sizeof(eth_raw_packet_t *) * packets_alloc);
+    }
+    eth_raw_packet_t *packet = &packets[packets_len];
+    packet->data = malloc(len);
+    mem_copy(packet->data, data, len);
+    packet->eth_id = eth_id;
+    packets_len++;
 }

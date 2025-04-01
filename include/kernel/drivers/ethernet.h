@@ -89,7 +89,7 @@ typedef struct {
 typedef struct {
     void (*send)(uint8_t *data, uint32_t len);
     char *name;
-    pci_device_t pci;
+    pci_device_t *pci;
     uint8_t eth_id;
     uint8_t mac[6];
     uint8_t ip[4];
