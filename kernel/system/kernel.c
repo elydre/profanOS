@@ -27,7 +27,7 @@
 #include <cpu/gdt.h>
 #include <minilib.h>
 #include <system.h>
-#include <drivers/ethernet.h>
+#include <net/ethernet.h>
 
 
 void kernel_main(void *mboot_ptr) {

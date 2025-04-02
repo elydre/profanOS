@@ -18,6 +18,7 @@
 #include <drivers/e1000.h>
 #include <drivers/pci.h>
 #include <kernel/snowflake.h>
+#include <net/ethernet.h>
 
 
 //----------------------------------------------------//
@@ -79,7 +80,7 @@ typedef struct {
     e1000_tx_desc_t *tx_descs_phys[E1000_NUM_TX_DESC];
     uint16_t rx_cur;      // Current Receive Descriptor Buffer
     uint16_t tx_cur;      // Current Transmit Descriptor Buffer
-	uint8_t eeprom;
+    uint8_t eeprom;
 } e1000_t;
 
 static e1000_t g_e1000 = (e1000_t){0};
@@ -100,19 +101,19 @@ uint16_t endian_switch_u16(uint16_t x) {
 
 static uint32_t eeprom_read(e1000_t *e1000, uint8_t addr)
 {
-	uint16_t data = 0;
-	uint32_t tmp = 0;
+    uint16_t data = 0;
+    uint32_t tmp = 0;
 
     if (e1000->eeprom) {
         pci_write_cmd_u32(&(e1000->pci), 0, REG_EEPROM, 1 | ((uint32_t)(addr) << 8));
-    	while(!((tmp = pci_read_cmd_u32(&(e1000->pci), 0, REG_EEPROM)) & (1 << 4)));
+        while(!((tmp = pci_read_cmd_u32(&(e1000->pci), 0, REG_EEPROM)) & (1 << 4)));
     }
     else {
         pci_write_cmd_u32(&(e1000->pci), 0, REG_EEPROM, 1 | ((uint32_t)(addr) << 2));
         while(!((tmp = pci_read_cmd_u32(&(e1000->pci), 0, REG_EEPROM)) & (1 << 1)));
     }
-	data = (uint16_t)((tmp >> 16) & 0xFFFF);
-	return data;
+    data = (uint16_t)((tmp >> 16) & 0xFFFF);
+    return data;
 }
 
 void get_mac_address(e1000_t *e1000) {
@@ -148,13 +149,13 @@ void scan_pci_for_e1000(e1000_t *e1000) {
         e1000->exists = 1;
         e1000->irq = pci_read_config(pci->bus, pci->slot, 0, 0x3c) & 0xff;
 
-		pci_write_cmd_u32(pci, 0, REG_EEPROM, 0x1);
-		for(int i = 0; i < 1000 && !e1000->eeprom; i++) {
-			if(pci_read_cmd_u32(pci, 0, REG_EEPROM) & 0x10)
-				e1000->eeprom = 1;
-			else
-				e1000->eeprom = 0;
-		}
+        pci_write_cmd_u32(pci, 0, REG_EEPROM, 0x1);
+        for(int i = 0; i < 1000 && !e1000->eeprom; i++) {
+            if(pci_read_cmd_u32(pci, 0, REG_EEPROM) & 0x10)
+                e1000->eeprom = 1;
+            else
+                e1000->eeprom = 0;
+        }
         get_mac_address(e1000);
         return ;
     }
@@ -302,9 +303,7 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
         uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
         uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
 
-        kprintf("pack len: %d\n", len);
-        hexdump(buf, len);
-        kprintf("packet end\n");
+        eth_append_packet(buf, len);
 
         device->rx_descs_phys[device->rx_cur]->status = 0;
         old_cur = device->rx_cur;
@@ -316,3 +315,4 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
 void e1000_set_mac(uint8_t mac[6]) {
     mem_copy(g_e1000.mac, mac, 6);
 }
+

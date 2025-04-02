@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === e1000.h : 2025 ===                                                    |
+|   === ip.c : 2025 ===                                                       |
 |                                                                             |
 |    -                                                             .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -9,15 +9,24 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef E1000_H
-#define E1000_H
+#include <net/ethernet.h>
+#include <net/ip.h>
 
-#include <ktype.h>
+uint16_t ip_checksum(void *vdata, uint32_t length) {
+    uint16_t *data = vdata;
+    uint32_t sum = 0;
 
-extern int e1000_is_inited;
+    for (; length > 1; length -= 2) {
+        sum += *data++;
+    }
 
-void e1000_send_packet(const void * p_data, uint16_t p_len);
-int e1000_init(void);
-void e1000_set_mac(uint8_t mac[6]);
+    if (length == 1) {
+        sum += *(uint8_t *)data;
+    }
 
-#endif
+    while (sum >> 16) {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
+    return ~sum;
+}
