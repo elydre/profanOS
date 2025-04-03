@@ -26,6 +26,8 @@ struct ip_header {
     uint32_t dst_ip;           // IP destination (255.255.255.255)
 } __attribute__((packed));
 
+typedef struct ip_header ip_header_t;
+
 uint16_t ip_checksum(void *vdata, uint32_t length);
 
 #endif

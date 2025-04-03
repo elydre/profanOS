@@ -10,6 +10,7 @@
 \*****************************************************************************/
 
 #include <net/ethernet.h>
+#include <net/ip.h>
 #include <net/dhcp.h>
 #include <drivers/e1000.h>
 #include <minilib.h>
@@ -17,10 +18,6 @@
 
 uint8_t eth_mac[6] = {0};
 uint8_t eth_ip[4] = {0};
-
-static eth_raw_packet_t *packets = NULL;
-static int packets_len = 0;
-static int packets_alloc = 0;
 
 uint32_t eth_get_transactiob_id() {
     static uint32_t id = 0;
@@ -30,12 +27,7 @@ uint32_t eth_get_transactiob_id() {
 }
 
 
-static void get_ip_address() {
-    uint8_t *dhcp = malloc(292);
-    build_dhcp_packet(dhcp, eth_mac);
-    eth_send_packet(dhcp, 292);
-    free(dhcp);
-}
+static void get_ip_address();
 
 int eth_init(void) {
     if (e1000_is_inited)
@@ -76,30 +68,76 @@ uint32_t htonl(uint32_t x) {
     return swap_endian32(x);
 }
 
-// data will be copied
-void eth_append_packet(void *data, uint32_t len) {
-    if (packets_len == packets_alloc) {
-        packets_alloc += 10;
-        packets = realloc_as_kernel(packets, sizeof(eth_raw_packet_t *) * packets_alloc);
+static int get_ip_state = 0;
+static uint8_t get_ip_proposal[4] = {0};
+
+void get_ip_handler(const eth_raw_packet_t *packet) {
+    if (get_ip_state == 0) {
+        uint8_t *data = packet->data;
+        uint16_t len = packet->len;
+
+        if (len < sizeof(eth_header_t))
+            return ;
+        if (mem_cmp(eth_mac, ((eth_header_t *)data)->dst_mac) != 0)
+            return ;
+        if (htons(((eth_header_t *)data)->ethertype) != 0x0800)
+            return ;
+        len -= sizeof(eth_header_t);
+        data += sizeof(eth_header_t);
+        if (len < sizeof(ip_header_t))
+            return ;
+
+        ip_header_t *ip_header = (ip_header_t *)data;
+        if (ip_header->protocol != IP_PROTO_UDP)
+            return ;
+        len -= sizeof(ip_header_t);
+        data += sizeof(ip_header_t);
+        if (len < sizeof(udp_header_t))
+            return ;
+        udp_header_t *udp_header = (udp_header_t *)data;
+        if (udp_header->src_port != htons(67) || udp_header->dst_port != htons(68))
+            return ;
+        uint16_t dhcp_len = htons(udp_header->length) - sizeof(udp_header_t);
+        len -= sizeof(udp_header_t);
+        data += sizeof(udp_header_t);
+        if (len < dhcp_len || len < 32)
+            return ;
+        if (data[0] != 0x02 || data[1] != 0x01 || data[2] != 0x06 || data[3] != 0)
+            return ;
+        // skip 4 Bytes for XID
+        data += 8;
+        if (*(uint16_t *)data  != 0 || *(uint16_t *)(data + 2)  != 0)
+            return ;
+        data += 4;
+        if (*(uint32_t *)data != 0)
+            return ;
+        data += 4;
+        mem_copy(get_ip_proposal, data, 4);
+        get_ip_state = 1;
     }
-    eth_raw_packet_t *packet = &packets[packets_len];
-    packet->data = malloc(len);
-    mem_copy(packet->data, data, len);
-    packets_len++;
-    packet->data = 0;
+
+
+
 }
 
-void eth_destroy_packet(eth_raw_packet_t *packet) {
-    free(packet->data);
+
+static void get_ip_address() {
+    eth_register_handler(&get_ip_handler);
+
+    uint8_t *dhcp = malloc(292);
+    build_dhcp_packet(dhcp, eth_mac);
+    eth_send_packet(dhcp, 292);
+    free(dhcp);
+
+    uint32_t t0 = timer_get_ms();
+    while (get_ip_state != 1 && timer_get_ms() < t0 + 1000)
+        ;
+    if (get_ip_state != 1) {
+        kprintf("Could not find IP address\n");
+        return ;
+    }
+    kprintf("ip address proposal %d.%d.%d.%d\n", get_ip_proposal[0], get_ip_proposal[1], get_ip_proposal[2], get_ip_proposal[3]);
+
+    eth_remove_handlers(&get_ip_handler);
 }
 
-eth_raw_packet_t *eth_pop_oldest_packet() {
-    if (packets_len <= 0)
-        return NULL;
-
-    eth_raw_packet_t *res = &packets[0];
-    for (int i = 1; i < packets_len; i++)
-        packets[i - 1] = packets[i];
-    packets_len++;
-    return res;
-}

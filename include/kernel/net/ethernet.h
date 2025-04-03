@@ -40,6 +40,8 @@ struct eth_header {
     uint16_t ethertype;  // 0x0800 pour IPv4
 } __attribute__((packed));
 
+typedef struct eth_header eth_header_t;
+
 // En-tête UDP (8 octets)
 struct udp_header {
     uint16_t src_port;  // Port source (68)
@@ -47,6 +49,8 @@ struct udp_header {
     uint16_t length;    // Taille totale de l'UDP (header + data)
     uint16_t checksum;  // Checksum UDP (optionnel)
 } __attribute__((packed));
+
+typedef struct udp_header udp_header_t;
 
 typedef struct {
     uint8_t *data;
@@ -61,14 +65,19 @@ void eth_send_packet(const void *buffer, uint16_t size);
 
 uint32_t eth_get_transactiob_id();
 
-
-eth_raw_packet_t *eth_pop_oldest_packet();
-void eth_destroy_packet(eth_raw_packet_t *packet);
-
 uint16_t htons(uint16_t x);
 uint32_t htonl(uint32_t x);
 
 extern uint8_t eth_mac[6];
 extern uint8_t eth_ip[4];
+
+
+#define ETH_MAX_HANDLERS 100
+
+typedef void (*packet_handler_t)(const eth_raw_packet_t *packet);
+
+// return 1 on error, else 0
+int eth_register_handler(packet_handler_t handler);
+void eth_remove_handlers(packet_handler_t handler);
 
 #endif

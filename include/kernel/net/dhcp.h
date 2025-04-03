@@ -34,6 +34,14 @@ struct dhcp_header {
     uint8_t  options[]; // Options DHCP
 } __attribute__((packed));
 
+typedef struct dhcp_header dhcp_header_t;
+
+typedef struct {
+    uint8_t types[50];
+    uint8_t lens[50];
+    uint8_t *datas[50];
+} dhcp_options_t;
+
 void build_dhcp_packet(uint8_t *buffer, uint8_t *mac);
 
 #endif
