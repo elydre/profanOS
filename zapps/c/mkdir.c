@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/arp.h>
+#include <profan/cap.h>
 
 #include <sys/stat.h> // mkdir
 #include <string.h>
@@ -45,17 +45,17 @@ int mkdir_p(const char *input) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[-p] <dir1> [dir2] ...", ARP_FNOMAX | ARP_FMIN(1));
+    cap_init("[-p] <dir1> [dir2] ...", CAP_FNOMAX | CAP_FMIN(1));
 
-    arp_register('p', ARP_STANDARD, "make parent directories as needed");
+    cap_register('p', CAP_STANDARD, "make parent directories as needed");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
     const char *path;
-    int pflag = arp_isset('p');
+    int pflag = cap_isset('p');
 
-    while ((path = arp_file_next())) {
+    while ((path = cap_file_next())) {
         if (pflag) {
             if (mkdir_p(path) == -1)
                 return 1;

@@ -13,7 +13,7 @@
 
 #include <profan/syscall.h>
 #include <profan/panda.h>
-#include <profan/arp.h>
+#include <profan/cap.h>
 
 #include <string.h>
 #include <unistd.h>
@@ -190,35 +190,35 @@ void search_process(const char *name) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[option]", 1);
+    cap_init("[option]", 1);
 
-    arp_register('f', ARP_NEXT_STR, "search pid from name");
-    arp_register('l', ARP_STANDARD, "list processes (default)");
-    arp_register('k', ARP_NEXT_INT, "kill a process");
-    arp_register('p', ARP_STANDARD, "like -l but parser friendly");
-    arp_register('s', ARP_NEXT_INT, "asleep a process");
-    arp_register('t', ARP_STANDARD, "top like interface");
-    arp_register('w', ARP_NEXT_INT, "wake up a process");
+    cap_register('f', CAP_NEXT_STR, "search pid from name");
+    cap_register('l', CAP_STANDARD, "list processes (default)");
+    cap_register('k', CAP_NEXT_INT, "kill a process");
+    cap_register('p', CAP_STANDARD, "like -l but parser friendly");
+    cap_register('s', CAP_NEXT_INT, "asleep a process");
+    cap_register('t', CAP_STANDARD, "top like interface");
+    cap_register('w', CAP_NEXT_INT, "wake up a process");
 
-    arp_conflict("flkpswt,lkswt,kpswt,pswt,swt,wt");
+    cap_conflict("flkpswt,lkswt,kpswt,pswt,swt,wt");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
-    if (arp_isset('p'))
+    if (cap_isset('p'))
         list_process(2);
-    else if (arp_isset('t'))
+    else if (cap_isset('t'))
         top_loop();
-    else if (arp_isset('l'))
+    else if (cap_isset('l'))
         list_process(0);
-    else if (arp_isset('k'))
-        syscall_process_kill(arp_get_int('k'), 1);
-    else if (arp_isset('s'))
-        syscall_process_sleep(arp_get_int('s'), UINT32_MAX);
-    else if (arp_isset('w'))
-        syscall_process_wakeup(arp_get_int('w'), 0);
-    else if (arp_isset('f'))
-        search_process(arp_get_str('f'));
+    else if (cap_isset('k'))
+        syscall_process_kill(cap_get_int('k'), 1);
+    else if (cap_isset('s'))
+        syscall_process_sleep(cap_get_int('s'), UINT32_MAX);
+    else if (cap_isset('w'))
+        syscall_process_wakeup(cap_get_int('w'), 0);
+    else if (cap_isset('f'))
+        search_process(cap_get_str('f'));
     else return 1;
     return 0;
 }

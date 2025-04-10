@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/arp.h>
+#include <profan/cap.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -75,22 +75,22 @@ void wc_print(wc_t *wc, wc_t *format, const char *file) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[options] [file1] [file2] ...", ARP_FNOMAX);
+    cap_init("[options] [file1] [file2] ...", CAP_FNOMAX);
 
-    arp_register('l', ARP_STANDARD, "print newline count");
-    arp_register('w', ARP_STANDARD, "print word count");
-    arp_register('c', ARP_STANDARD, "print byte count");
+    cap_register('l', CAP_STANDARD, "print newline count");
+    cap_register('w', CAP_STANDARD, "print word count");
+    cap_register('c', CAP_STANDARD, "print byte count");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
     wc_t wc, format = {
-        .lines = arp_isset('l'),
-        .words = arp_isset('w'),
-        .bytes = arp_isset('c')
+        .lines = cap_isset('l'),
+        .words = cap_isset('w'),
+        .bytes = cap_isset('c')
     };
 
-    int file_count = arp_file_count();
+    int file_count = cap_file_count();
     const char *file;
 
     if (file_count == 0) {
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    while ((file = arp_file_next())) {
+    while ((file = cap_file_next())) {
         FILE *f = fopen(file, "r");
         if (f == NULL) {
             perror(file);

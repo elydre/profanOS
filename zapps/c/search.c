@@ -13,7 +13,7 @@
 
 #include <profan/filesys.h>
 #include <profan/syscall.h>
-#include <profan/arp.h>
+#include <profan/cap.h>
 #include <profan.h>
 
 #include <string.h>
@@ -86,28 +86,28 @@ int search_recursive(uint32_t base, const char *path, uint8_t required_type, con
 }
 
 int main(int argc, char **argv) {
-    arp_init("[-f|-d] [-e <ext>] [dir]", 1);
+    cap_init("[-f|-d] [-e <ext>] [dir]", 1);
 
-    arp_register('d', ARP_STANDARD, "search for directories only");
-    arp_register('e', ARP_NEXT_STR, "search for specific extension");
-    arp_register('f', ARP_STANDARD, "search for files only");
+    cap_register('d', CAP_STANDARD, "search for directories only");
+    cap_register('e', CAP_NEXT_STR, "search for specific extension");
+    cap_register('f', CAP_STANDARD, "search for files only");
 
-    arp_conflict("def");
+    cap_conflict("def");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
     char required_type;
 
-    if (arp_isset('d'))
+    if (cap_isset('d'))
         required_type = SEARCH_DIR;
-    else if (arp_isset('f') || arp_isset('e'))
+    else if (cap_isset('f') || cap_isset('e'))
         required_type = SEARCH_FILE;
     else
         required_type = SEARCH_ALL;
 
-    const char *dir = arp_file_next();
-    const char *ext = arp_get_str('e');
+    const char *dir = cap_file_next();
+    const char *ext = cap_get_str('e');
 
     uint32_t base;
 

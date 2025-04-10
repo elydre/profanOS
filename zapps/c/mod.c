@@ -13,7 +13,7 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
-#include <profan/arp.h>
+#include <profan/cap.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -21,15 +21,15 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-    arp_init("[option] <id>", ARP_FMIN(1));
+    cap_init("[option] <id>", CAP_FMIN(1));
 
-    arp_register('u', ARP_STANDARD, "unload a library");
-    arp_register('l', ARP_NEXT_STR, "load/replace a library");
+    cap_register('u', CAP_STANDARD, "unload a library");
+    cap_register('l', CAP_NEXT_STR, "load/replace a library");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
-    const char *strid = arp_file_next();
+    const char *strid = cap_file_next();
 
     int id = atoi(strid);
 
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (arp_isset('u')) {
+    if (cap_isset('u')) {
         printf("mod: unloading %d...\n", id);
 
         syscall_process_auto_schedule(0);
@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (arp_isset('l')) {
-        char *new_path = profan_path_join(profan_wd_path, arp_get_str('l'));
+    if (cap_isset('l')) {
+        char *new_path = profan_path_join(profan_wd_path, cap_get_str('l'));
 
         if (!fu_is_file(fu_path_to_sid(SID_ROOT, new_path))) {
             fprintf(stderr, "mod: '%s': file not found\n", new_path);

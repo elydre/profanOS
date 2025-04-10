@@ -425,7 +425,6 @@ int display_symbol_table(void) {
 int display_dynamic_reloc(void) {
     Elf32_Ehdr *eh = (Elf32_Ehdr *) g_filecnt;
     Elf32_Shdr *sh_base = (Elf32_Shdr *) (g_filecnt + eh->e_shoff);
-    Elf32_Shdr *rel_sh = NULL;
     char *dyn_str = NULL;
 
     // get dynamic relocation section
@@ -433,22 +432,7 @@ int display_dynamic_reloc(void) {
         Elf32_Shdr *sh = sh_base + i;
         if (sh->sh_type == SHT_DYNSYM)
             dyn_str = (char *) (g_filecnt + sh_base[sh->sh_link].sh_offset);
-        else if (sh->sh_type == SHT_REL)
-            rel_sh = sh;
     }
-
-    if (rel_sh == NULL) {
-        fprintf(stderr, "readelf: %s: no dynamic relocation section\n", g_filename);
-        return 0;
-    }
-
-    if (dyn_str == NULL) {
-        fprintf(stderr, "readelf: %s: no dynamic string table\n", g_filename);
-        return 1;
-    }
-
-    // prepare string tables
-    Elf32_Shdr *str_sh = sh_base + rel_sh->sh_link;
 
     static char *reloc_types[] = {
         "R_386_NONE", "R_386_32", "R_386_PC32", "R_386_GOT32", "R_386_PLT32",
@@ -456,31 +440,43 @@ int display_dynamic_reloc(void) {
         "R_386_GOTOFF", "R_386_GOTPC"
     };
 
-    int size = rel_sh->sh_size / sizeof(Elf32_Rel);
+    if (dyn_str == NULL) {
+        fprintf(stderr, "readelf: %s: no dynamic string table\n", g_filename);
+        return 1;
+    }
 
-    // print relocation table header
     printf("Offset   Info     Type            Sym Val  Sym Name\n");
 
-    // print each relocation entry in relocation table
-    for (int i = 0; i < size; i++) {
-        Elf32_Rel *rel = (Elf32_Rel *) (g_filecnt + rel_sh->sh_offset) + i;
+    for (int i = 0; i < eh->e_shnum; i++) {
+        if (sh_base[i].sh_type != SHT_REL)
+            continue;
 
-        unsigned int type = ELF32_R_TYPE(rel->r_info);
-        unsigned int sym  = ELF32_R_SYM(rel->r_info);
-        unsigned int sym_value = 0;
-        char *sym_name = NULL;
+        Elf32_Shdr *rel_sh = sh_base + i;
+        Elf32_Shdr *str_sh = sh_base + rel_sh->sh_link;
 
-        if (sym != 0) {
-            Elf32_Sym *symbol = (Elf32_Sym *) (g_filecnt + str_sh->sh_offset + sym * sizeof(Elf32_Sym));
-            sym_value = symbol->st_value;
-            sym_name = dyn_str + symbol->st_name;
+        int size = rel_sh->sh_size / sizeof(Elf32_Rel);
+
+        // print each relocation entry in relocation table
+        for (int i = 0; i < size; i++) {
+            Elf32_Rel *rel = (Elf32_Rel *) (g_filecnt + rel_sh->sh_offset) + i;
+
+            unsigned int type = ELF32_R_TYPE(rel->r_info);
+            unsigned int sym  = ELF32_R_SYM(rel->r_info);
+            unsigned int sym_value = 0;
+            char *sym_name = NULL;
+
+            if (sym != 0) {
+                Elf32_Sym *symbol = (Elf32_Sym *) (g_filecnt + str_sh->sh_offset + sym * sizeof(Elf32_Sym));
+                sym_value = symbol->st_value;
+                sym_name = dyn_str + symbol->st_name;
+            }
+
+            printf("%08x %08x %-15s %08x %s\n",
+                    rel->r_offset, rel->r_info,
+                    type < sizeof(reloc_types) / sizeof(char *) ? reloc_types[type] : "UNKNOWN",
+                    sym_value, sym_name ? sym_name : ""
+            );
         }
-
-        printf("%08x %08x %-15s %08x %s\n",
-                rel->r_offset, rel->r_info,
-                type < sizeof(reloc_types) / sizeof(char *) ? reloc_types[type] : "UNKNOWN",
-                sym_value, sym_name ? sym_name : ""
-        );
     }
 
     return 0;

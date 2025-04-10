@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/arp.h>
+#include <profan/cap.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -91,18 +91,18 @@ char *read_stdin(void) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[options] [str1] [str2] ...", ARP_FNOMAX);
+    cap_init("[options] [str1] [str2] ...", CAP_FNOMAX);
 
-    arp_register('e', ARP_STANDARD, "enable backslash interpretation");
-    arp_register('n', ARP_STANDARD, "do not print the trailing newline");
-    arp_register('s', ARP_STANDARD, "print stdin followed by arguments");
+    cap_register('e', CAP_STANDARD, "enable backslash interpretation");
+    cap_register('n', CAP_STANDARD, "do not print the trailing newline");
+    cap_register('s', CAP_STANDARD, "print stdin followed by arguments");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
-    int echo_e = arp_isset('e');
+    int echo_e = cap_isset('e');
 
-    if (arp_isset('s')) {
+    if (cap_isset('s')) {
         char *stdin_buffer = read_stdin();
         if (echo_e) {
             echo_interpret(stdin_buffer);
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
     const char *word;
 
-    for (int i = 0; (word = arp_file_next()); i++) {
+    for (int i = 0; (word = cap_file_next()); i++) {
         if (i > 0)
             putchar(' ');
 
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
             fputs(word, stdout);
     }
 
-    if (!arp_isset('n')) {
+    if (!cap_isset('n')) {
         putchar('\n');
     }
 

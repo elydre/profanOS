@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/libtsi.h>
-#include <profan/arp.h>
+#include <profan/cap.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,23 +37,23 @@ char *read_file(FILE *fp) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[-pn] [-t title] [file]", 1);
+    cap_init("[-pn] [-t title] [file]", 1);
 
-    arp_register('p', ARP_STANDARD, "block non-printable characters");
-    arp_register('n', ARP_STANDARD, "disable long lines wrapping");
-    arp_register('t', ARP_NEXT_STR, "set TSI interface title");
+    cap_register('p', CAP_STANDARD, "block non-printable characters");
+    cap_register('n', CAP_STANDARD, "disable long lines wrapping");
+    cap_register('t', CAP_NEXT_STR, "set TSI interface title");
 
-    if (arp_parse(argc, argv))
+    if (cap_parse(argc, argv))
         return 1;
 
     uint32_t flags = 0;
 
-    if (!arp_isset('p'))
+    if (!cap_isset('p'))
         flags |= TSI_NON_PRINTABLE;
-    if (arp_isset('n'))
+    if (cap_isset('n'))
         flags |= TSI_NO_AUTO_WRAP;
 
-    const char *filename = arp_file_next();
+    const char *filename = cap_file_next();
     FILE *fp = filename ? fopen(filename, "r") : stdin;
     filename = filename ? filename : "stdin";
 
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const char *title = arp_isset('t') ? arp_get_str('t') : filename;
+    const char *title = cap_isset('t') ? cap_get_str('t') : filename;
     char *buffer = read_file(fp);
 
     tsi_start(title, buffer, flags);
