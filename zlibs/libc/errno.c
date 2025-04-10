@@ -11,7 +11,12 @@
 
 #include <errno.h>
 
-errno_t errno = 0;
+#undef errno
+int errno = 0;
+
+int *__errno_location(void) {
+    return &errno;
+}
 
 char *strerror(int errnum) {
     switch (errnum) {

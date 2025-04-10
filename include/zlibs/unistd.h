@@ -42,8 +42,23 @@
 #define _PC_PATH_MAX     2
 
 // getopt
-extern int optind, opterr, optopt;
-extern char *optarg;
+#ifdef __GNUC__
+  extern int optind, opterr, optopt;
+  extern char *optarg;
+#else
+  // old compilers make simple R_386_COPY
+  // of external variables
+
+  extern int   *__getoptind(void);
+  extern int   *__getopterr(void);
+  extern int   *__getoptopt(void);
+  extern char **__getoptarg(void);
+
+  #define optind (*__getoptind())
+  #define opterr (*__getopterr())
+  #define optopt (*__getoptopt())
+  #define optarg (*__getoptarg())
+#endif
 
 int      access(const char *pathname, int mode);
 unsigned alarm(unsigned a);

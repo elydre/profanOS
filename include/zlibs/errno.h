@@ -13,7 +13,9 @@
 #define _ERRNO_H
 
 typedef int errno_t;
-extern errno_t errno;
+
+extern int *__errno_location(void);
+#define errno (*__errno_location())
 
 /* Standard error codes */
 

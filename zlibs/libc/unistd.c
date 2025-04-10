@@ -31,6 +31,22 @@ int   opterr = 1, // if error message should be printed
       optopt;     // character checked for validity
 char *optarg;     // argument associated with option
 
+int *__getoptind(void) {
+    return &optind;
+}
+
+int *__getopterr(void) {
+    return &opterr;
+}
+
+int *__getoptopt(void) {
+    return &optopt;
+}
+
+char **__getoptarg(void) {
+    return &optarg;
+}
+
 void __unistd_init(void) {
     static char wd_path[PATH_MAX] = "/";
     profan_wd_path = wd_path;
@@ -343,7 +359,7 @@ int getopt(int nargc, char *const *nargv, const char *ostr) {
         }
 
         if (place[1] && *++place == '-' && place[1] == '\0') {
-            ++optind;
+            optind++;
             place = "";
             return -1;
         }
