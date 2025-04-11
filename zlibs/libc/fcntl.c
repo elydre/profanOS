@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <errno.h>
 
 int open(const char *path, int flags, ...) {
@@ -45,33 +46,17 @@ int fcntl(int fd, int cmd, ...) {
     int arg = va_arg(ap, int);
     va_end(ap);
 
-    switch (cmd) {
-        case F_DUPFD:
-            int new_fd = fm_newfd_after(arg);
+    int ret = fm_fcntl(fd, cmd, arg);
 
-            if (new_fd < 0) {
-                errno = -new_fd;
-                return -1;
-            }
-
-            return dup2(fd, new_fd);
-        case F_GETFD:
-            return 0;
-        case F_SETFD:
-            return 0;
-        case F_GETFL:
-            return (profan_nimpl("fcntl(F_GETFL)"), -1);
-        case F_SETFL:
-            return (profan_nimpl("fcntl(F_SETFL)"), -1);
-        case F_GETLK:
-            return (profan_nimpl("fcntl(F_GETLK)"), -1);
-        case F_SETLK:
-            return (profan_nimpl("fcntl(F_SETLK)"), -1);
-        case F_SETLKW:
-            return (profan_nimpl("fcntl(F_SETLKW)"), -1);
-        default:
-            return (profan_nimpl("fcntl(unknown)"), -1);
+    if (ret == -0xFFFF) {
+        fprintf(stderr, "fcntl(%d, %d) not supported\n", fd, cmd);
+        return (PROFAN_FNI, -1);
     }
 
-    return -1;
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    
+    return ret;
 }

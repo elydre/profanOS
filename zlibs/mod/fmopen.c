@@ -47,6 +47,7 @@ typedef struct {
 typedef struct {
     uint8_t type;
     uint32_t sid;
+    int flags;
 
     union {
         int        (*fctf)(int, void *, uint32_t, uint8_t);
@@ -243,6 +244,7 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         return -EMFILE;
     }
 
+    fd_data->flags = flags;
     fd_data->sid = sid;
 
     if (fu_is_file(sid)) {
@@ -438,6 +440,7 @@ int fm_dup2(int fd, int new_fd) {
     if (new_data->type != TYPE_FREE && fm_close(new_fd) < 0)
         return -EBADF;
 
+    new_data->flags = fd_data->flags;
     new_data->type = fd_data->type;
     new_data->sid = fd_data->sid;
 
@@ -520,6 +523,9 @@ int fm_pipe(int fd[2]) {
     }
     fd_data[1]->type = TYPE_PPWR;
 
+    fd_data[0]->flags = O_RDONLY;
+    fd_data[1]->flags = O_WRONLY;
+
     fd_data[0]->pipe = pipe;
     fd_data[1]->pipe = pipe;
 
@@ -547,16 +553,40 @@ int fm_isfile(int fd) {
     return fd_data->type == TYPE_FILE;
 }
 
-int fm_newfd_after(int fd) {
-    // return the first free fd after fd
+int fm_fcntl(int fd, int cmd, int arg) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
 
-    for (int i = fd; i < MAX_FD; i++) {
-        fd_data_t *fd_data = fm_fd_to_data(i);
-        if (fd_data->type == TYPE_FREE)
-            return i;
+    switch (cmd) {
+        case F_DUPFD:
+            for (int i = fd; i < MAX_FD; i++) {
+                fd_data_t *fd_data = fm_fd_to_data(i);
+                if (fd_data->type != TYPE_FREE)
+                    continue;
+                if (fm_dup2(fd, i) < 0)
+                    return -EBADF;
+                return i;
+            }
+            return -EMFILE;
+        case F_GETFD:
+            return 0;
+        case F_SETFD:
+            return 0;
+        case F_GETFL:
+            return fd_data->flags;
+        case F_SETFL:
+            fd_data->flags = arg;
+            return 0;
+        case F_GETLK:
+            return -0xFFFF;
+        case F_SETLK:
+            return -0xFFFF;
+        case F_SETLKW:
+            return -0xFFFF;
+        default:
+            return -0xFFFF;
     }
-
-    return -EMFILE;
 }
 
 uint32_t fm_get_sid(int fd) {
