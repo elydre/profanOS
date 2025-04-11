@@ -27,6 +27,9 @@ static uint32_t g_rand_seed = 0;
 static void **g_atexit_funcs = NULL;
 static void *g_entry_exit = NULL;
 
+char *program_invocation_short_name;
+char *program_invocation_name;
+
 char **environ = NULL;
 
 /*******************************
@@ -38,12 +41,10 @@ char **environ = NULL;
 void __buddy_disable_leaks(void);
 void __buddy_init(void);
 
-void __unistd_init(void);
 void __stdio_init(void);
 void __stdio_fini(void);
 
 void __attribute__((constructor)) __libc_constructor(void) {
-    __unistd_init();
     __buddy_init();
     __stdio_init();
 }
@@ -59,8 +60,12 @@ void __attribute__((destructor)) __libc_destructor(void) {
  *                            *
 *******************************/
 
-void __init_libc(char **env, void *entry_exit) {
+void __init_libc(char **argv, char **env, void *entry_exit) {
     int size, offset;
+
+    // set the program name (gnu extension)
+    program_invocation_short_name = argv[0];
+    program_invocation_name = argv[0];
 
     g_entry_exit = entry_exit;
 
@@ -415,7 +420,7 @@ char *realpath(const char *path, char *resolved_path) {
         return NULL;
     }
 
-    char *fullpath = profan_path_join(profan_wd_path, path);
+    char *fullpath = profan_path_join(profan_wd_path(), path);
     fu_simplify_path(fullpath);
 
     if (resolved_path == NULL)

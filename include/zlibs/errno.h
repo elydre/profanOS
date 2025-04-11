@@ -14,8 +14,15 @@
 
 typedef int errno_t;
 
+/* errno variable */
+
 extern int *__errno_location(void);
 #define errno (*__errno_location())
+
+/* Gnu extension */
+
+extern char *program_invocation_name;
+extern char *program_invocation_short_name;
 
 /* Standard error codes */
 
