@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <wchar.h>
 #include <ctype.h>
@@ -374,7 +375,33 @@ size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
 // mbtowc defined in wchar.c
 
 int mkstemp(char *template) {
-    return (PROFAN_FNI, 0);
+    int len, index;
+
+    char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    // the last six characters of template must be "XXXXXX"
+    if (template == NULL || (len = strlen (template)) < 6 ||
+            memcmp (template + (len - 6), "XXXXXX", 6)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // user may supply more than six trailing X
+    for (index = len - 6; index > 0 && template[index - 1] == 'X'; index--);
+
+    for (int i = 0; i < 1000; i++) {
+        for (int j = index; j < len; j++)
+            template[j] = letters[rand () % 62];
+
+        int fd = open(template, O_RDWR | O_CREAT, 0644);
+
+        if (fd != -1)
+            return fd;
+        if (errno != EEXIST)
+            return -1;
+    }
+
+    return -1;
 }
 
 char *mktemp(char *template) {
