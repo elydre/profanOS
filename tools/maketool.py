@@ -437,7 +437,8 @@ def build_disk_elfs():
     for name in list(set([f"{name.split('/')[1]}" for name in lib_build_list])):
         objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{name}", ".o")
         print_info_line(f"[link] zlibs/{name}.so")
-        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
+        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}" +
+                (f" -L{OUT_DIR}/zlibs -lc" if name != "libc" else ""))
 
     total = len(elf_build_list) + len(bin_build_list) + len(mod_build_list) + len(dir_build_list)
 
