@@ -13,7 +13,7 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
-#include <profan/cap.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <string.h>
@@ -191,19 +191,19 @@ void memory_print_summary(void) {
 }
 
 int main(int argc, char **argv) {
-    cap_init("[options]", 0);
+    carp_init("[options]", 0);
 
-    cap_register('m', CAP_STANDARD, "show detailed memory usage");
-    cap_register('s', CAP_STANDARD, "show summary of resources");
+    carp_register('m', CARP_STANDARD, "show detailed memory usage");
+    carp_register('s', CARP_STANDARD, "show summary of resources");
 
-    cap_conflict("ms");
+    carp_conflict("ms");
 
-    if (cap_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
-    if (cap_isset('m'))
+    if (carp_isset('m'))
         memory_print_usage();
-    else if (cap_isset('s'))
+    else if (carp_isset('s'))
         memory_print_summary();
     else
         do_fetch();

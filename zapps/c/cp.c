@@ -13,7 +13,7 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
-#include <profan/cap.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <unistd.h>
@@ -96,45 +96,45 @@ typedef struct {
 } cp_args_t;
 
 cp_args_t *cp_parse_args(int argc, char **argv) {
-    cap_init("[options] <src> <dst>", CAP_FMIN(2));
+    carp_init("[options] <src> <dst>", CARP_FMIN(2));
 
-    cap_register('b', CAP_NEXT_STR, "set the block size");
-    cap_register('s', CAP_NEXT_STR, "set copy size limit");
-    cap_register('t', CAP_STANDARD, "time the operation");
+    carp_register('b', CARP_NEXT_STR, "set the block size");
+    carp_register('s', CARP_NEXT_STR, "set copy size limit");
+    carp_register('t', CARP_STANDARD, "time the operation");
 
-    if (cap_parse(argc, argv))
+    if (carp_parse(argc, argv))
         exit(1);
 
     cp_args_t *args = malloc(sizeof(cp_args_t));
 
-    if (cap_isset('b')) {
-        int n = atoi_unit(cap_get_str('b'));
+    if (carp_isset('b')) {
+        int n = atoi_unit(carp_get_str('b'));
         if (n > 0 && n < INT_MAX)
             args->block_size = n;
         else {
-            fprintf(stderr, "cp: %s: invalid block size\n", cap_get_str('b'));
+            fprintf(stderr, "cp: %s: invalid block size\n", carp_get_str('b'));
             exit(1);
         }
     } else {
         args->block_size = 4096;
     }
 
-    if (cap_isset('s')) {
-        int n = atoi_unit(cap_get_str('s'));
+    if (carp_isset('s')) {
+        int n = atoi_unit(carp_get_str('s'));
         if (n > 0)
             args->max_size = n;
         else {
-            fprintf(stderr, "cp: %s: invalid size\n", cap_get_str('s'));
+            fprintf(stderr, "cp: %s: invalid size\n", carp_get_str('s'));
             exit(1);
         }
     } else {
         args->max_size = -1;
     }
 
-    args->time_it = cap_isset('t');
+    args->time_it = carp_isset('t');
 
-    args->src = cap_file_next();
-    args->dst = dest_check_dir(cap_file_next(), args->src);
+    args->src = carp_file_next();
+    args->dst = dest_check_dir(carp_file_next(), args->src);
 
     return args;
 }

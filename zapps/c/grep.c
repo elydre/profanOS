@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/cap.h>
+#include <profan/carp.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -187,45 +187,45 @@ void grep_dir(const char *path, const char *pattern) {
 }
 
 void update_flags(int argc, char **argv) {
-    cap_init("[options] <pattern> [file1] [file2] ...", CAP_FMIN(1) | CAP_FNOMAX);
+    carp_init("[options] <pattern> [file1] [file2] ...", CARP_FMIN(1) | CARP_FNOMAX);
 
-    cap_register('c', CAP_STANDARD, "force color output");
-    cap_register('f', CAP_STANDARD, "print all the file lines");
-    cap_register('h', CAP_STANDARD, "display this help message");
-    cap_register('H', CAP_STANDARD, "print the file name");
-    cap_register('i', CAP_STANDARD, "Ignore case in patterns");
-    cap_register('n', CAP_STANDARD, "print line numbers");
-    cap_register('r', CAP_STANDARD, "search recursively");
-    cap_register('z', CAP_STANDARD, "force no file name display");
-    cap_register('%', CAP_ANYNUMBR, "show NUM lines of context");
+    carp_register('c', CARP_STANDARD, "force color output");
+    carp_register('f', CARP_STANDARD, "print all the file lines");
+    carp_register('h', CARP_STANDARD, "display this help message");
+    carp_register('H', CARP_STANDARD, "print the file name");
+    carp_register('i', CARP_STANDARD, "Ignore case in patterns");
+    carp_register('n', CARP_STANDARD, "print line numbers");
+    carp_register('r', CARP_STANDARD, "search recursively");
+    carp_register('z', CARP_STANDARD, "force no file name display");
+    carp_register('%', CARP_ANYNUMBR, "show NUM lines of context");
 
-    cap_conflict("f%,Hz");
+    carp_conflict("f%,Hz");
 
-    if (cap_parse(argc, argv))
+    if (carp_parse(argc, argv))
         exit(1);
 
     g_context = 0;
     g_flags = 0;
 
-    if (cap_isset('c'))
+    if (carp_isset('c'))
         g_flags |= GREP_COLOR;
-    if (cap_isset('f'))
+    if (carp_isset('f'))
         g_flags |= GREP_ALLLN;
-    if (cap_isset('H'))
+    if (carp_isset('H'))
         g_flags |= GREP_FNAME;
-    if (cap_isset('i'))
+    if (carp_isset('i'))
         g_flags |= GREP_ICASE;
-    if (cap_isset('n'))
+    if (carp_isset('n'))
         g_flags |= GREP_LINES;
-    if (cap_isset('r'))
+    if (carp_isset('r'))
         g_flags |= GREP_RECUR | GREP_FNAME;
-    if (cap_isset('%'))
-        g_context = cap_get_int('%');
+    if (carp_isset('%'))
+        g_context = carp_get_int('%');
 
-    g_flags |= cap_file_count() > 2 ? GREP_FNAME : 0;
+    g_flags |= carp_file_count() > 2 ? GREP_FNAME : 0;
     g_flags |= isatty(1) ? GREP_COLOR : 0;
 
-    if (cap_isset('z'))
+    if (carp_isset('z'))
         g_flags &= ~GREP_FNAME;
 }
 
@@ -239,7 +239,7 @@ int main(int argc, char **argv) {
     else
         grep_file = grep_file_noctx;
 
-    const char **args = cap_get_files();
+    const char **args = carp_get_files();
 
     if (args[1] == NULL) {
         grep_file("stdin", stdin, args[0]);

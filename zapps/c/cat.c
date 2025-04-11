@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/filesys.h>
-#include <profan/cap.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -90,20 +90,20 @@ void cat(FILE *file, const char *path, int end_of_line) {
 }
 
 int main(int argc, char **argv) {
-    cap_init("[options] [file1] [file2] ...", CAP_FNOMAX);
+    carp_init("[options] [file1] [file2] ...", CARP_FNOMAX);
 
-    cap_register('C', CAP_STANDARD, "canonical hex+ASCII display");
-    cap_register('e', CAP_STANDARD, "non-printable and $ before newline");
+    carp_register('C', CARP_STANDARD, "canonical hex+ASCII display");
+    carp_register('e', CARP_STANDARD, "non-printable and $ before newline");
 
-    cap_conflict("Ce");
+    carp_conflict("Ce");
 
-    if (cap_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
-    const char **paths = cap_get_files();
-    int cat_e = cap_isset('e');
+    const char **paths = carp_get_files();
+    int cat_e = carp_isset('e');
 
-    if (cap_isset('C')) {
+    if (carp_isset('C')) {
         if (paths[0] == NULL)
             cat_canonical(stdin, "stdin");
         for (int i = 0; paths[i]; i++)

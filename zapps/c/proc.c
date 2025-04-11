@@ -13,7 +13,7 @@
 
 #include <profan/syscall.h>
 #include <profan/panda.h>
-#include <profan/cap.h>
+#include <profan/carp.h>
 
 #include <string.h>
 #include <unistd.h>
@@ -190,35 +190,35 @@ void search_process(const char *name) {
 }
 
 int main(int argc, char **argv) {
-    cap_init("[option]", 1);
+    carp_init("[option]", 1);
 
-    cap_register('f', CAP_NEXT_STR, "search pid from name");
-    cap_register('l', CAP_STANDARD, "list processes (default)");
-    cap_register('k', CAP_NEXT_INT, "kill a process");
-    cap_register('p', CAP_STANDARD, "like -l but parser friendly");
-    cap_register('s', CAP_NEXT_INT, "asleep a process");
-    cap_register('t', CAP_STANDARD, "top like interface");
-    cap_register('w', CAP_NEXT_INT, "wake up a process");
+    carp_register('f', CARP_NEXT_STR, "search pid from name");
+    carp_register('l', CARP_STANDARD, "list processes (default)");
+    carp_register('k', CARP_NEXT_INT, "kill a process");
+    carp_register('p', CARP_STANDARD, "like -l but parser friendly");
+    carp_register('s', CARP_NEXT_INT, "asleep a process");
+    carp_register('t', CARP_STANDARD, "top like interface");
+    carp_register('w', CARP_NEXT_INT, "wake up a process");
 
-    cap_conflict("flkpswt,lkswt,kpswt,pswt,swt,wt");
+    carp_conflict("flkpswt,lkswt,kpswt,pswt,swt,wt");
 
-    if (cap_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
-    if (cap_isset('p'))
+    if (carp_isset('p'))
         list_process(2);
-    else if (cap_isset('t'))
+    else if (carp_isset('t'))
         top_loop();
-    else if (cap_isset('l'))
+    else if (carp_isset('l'))
         list_process(0);
-    else if (cap_isset('k'))
-        syscall_process_kill(cap_get_int('k'), 1);
-    else if (cap_isset('s'))
-        syscall_process_sleep(cap_get_int('s'), UINT32_MAX);
-    else if (cap_isset('w'))
-        syscall_process_wakeup(cap_get_int('w'), 0);
-    else if (cap_isset('f'))
-        search_process(cap_get_str('f'));
+    else if (carp_isset('k'))
+        syscall_process_kill(carp_get_int('k'), 1);
+    else if (carp_isset('s'))
+        syscall_process_sleep(carp_get_int('s'), UINT32_MAX);
+    else if (carp_isset('w'))
+        syscall_process_wakeup(carp_get_int('w'), 0);
+    else if (carp_isset('f'))
+        search_process(carp_get_str('f'));
     else return 1;
     return 0;
 }
