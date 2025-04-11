@@ -596,7 +596,7 @@ int rename(const char *old_filename, const char *new_filename) {
     char *new_entry;
 
     // check if the file exists
-    fullpath = profan_path_join(profan_wd_path, (char *) old_filename);
+    fullpath = profan_path_join(profan_wd_path(), (char *) old_filename);
     fu_simplify_path(fullpath);
     uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
@@ -620,7 +620,7 @@ int rename(const char *old_filename, const char *new_filename) {
     free(tmp);
 
     // check if the new file exists
-    fullpath = profan_path_join(profan_wd_path, (char *) new_filename);
+    fullpath = profan_path_join(profan_wd_path(), (char *) new_filename);
     fu_simplify_path(fullpath);
     uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
