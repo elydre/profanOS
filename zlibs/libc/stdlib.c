@@ -409,7 +409,19 @@ char *mktemp(char *template) {
 }
 
 int putenv(char *string) {
-    return (PROFAN_FNI, 0);
+    char *name = string;
+    char *value = strchr(string, '=');
+
+    if (value == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    *value = '\0';
+    value++;
+    int r = setenv(name, value, 1);
+    *value = '=';
+    return r;
 }
 
 // qsort defined in qsort.c
