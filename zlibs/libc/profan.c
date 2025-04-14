@@ -68,7 +68,7 @@ void profan_print_trace(void) {
 
     char *libname, *name;
 
-    for (int i = 0; i < 5 && ebp; i++) {
+    for (int i = 0; i < 8 && ebp; i++) {
         if (ebp->eip >= 0xB0000000 && ebp->eip < 0xC0000000)
             break; // deluge
 
