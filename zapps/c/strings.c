@@ -75,7 +75,7 @@ void cmd_rev(FILE *file) {
 int main(int argc, char **argv) {
     void (*cmd)(FILE *);
 
-    carp_init("[-LUR -n %] [file1] [file2] ...", CARP_FNOMAX);
+    carp_init("[-lur -n %] [file1] [file2] ...", CARP_FNOMAX);
 
     carp_register('l', CARP_STANDARD, "convert to lowercase");
     carp_register('n', CARP_NEXT_INT, "strings size (default: 4)");
