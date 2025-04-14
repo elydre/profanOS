@@ -12,6 +12,10 @@
 #ifndef _LOCALE_H
 #define _LOCALE_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define LC_ALL      0
 #define LC_COLLATE  1
 #define LC_CTYPE    2
@@ -43,5 +47,7 @@ struct lconv {
 
 struct lconv *localeconv(void);
 char *setlocale(int category, const char *locale);
+
+_END_C_FILE
 
 #endif

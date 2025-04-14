@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef __FSTD_HDRS_ISO646_H
-#define __FSTD_HDRS_ISO646_H 1
+#ifndef _SO646_H
+#define _SO646_H
 
 #ifndef __cplusplus
 

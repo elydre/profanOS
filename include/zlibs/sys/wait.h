@@ -12,7 +12,10 @@
 #ifndef _SYS_WAIT_H
 #define _SYS_WAIT_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 #define _WSTOPPED       0x7f     // _WSTATUS if process is stopped
 #define _WCONTINUED     0xffff   // process has continued
@@ -32,5 +35,7 @@
 
 pid_t wait(int *status);
 pid_t waitpid(pid_t pid, int *status, int options);
+
+_END_C_FILE
 
 #endif

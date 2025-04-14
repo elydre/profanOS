@@ -12,6 +12,10 @@
 #ifndef _PROFAN_CARP_H
 #define _PROFAN_CARP_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define CARP_STANDARD 0
 #define CARP_NEXT_STR 1
 #define CARP_NEXT_INT 2
@@ -36,5 +40,7 @@ int          carp_get_int(char c);
 const char **carp_get_files(void);
 int          carp_file_count(void);
 const char  *carp_file_next(void);
+
+_END_C_FILE
 
 #endif

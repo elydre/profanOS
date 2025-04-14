@@ -12,9 +12,12 @@
 #ifndef _STDIO_H
 #define _STDIO_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stddef.h>
+
+_BEGIN_C_FILE
 
 // opaque type for FILE
 struct _IO_FILE;
@@ -102,5 +105,7 @@ int     remove(const char *fname);
 int     rename(const char *old_filename, const char *new_filename);
 FILE   *tmpfile(void);
 char   *tmpnam(char *filename);
+
+_END_C_FILE
 
 #endif

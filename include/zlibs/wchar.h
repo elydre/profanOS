@@ -12,9 +12,12 @@
 #ifndef _WCHAR_H
 #define _WCHAR_H
 
+#include <profan/minimal.h>
 #include <stddef.h>
 #include <stdio.h>  // FILE
 #include <time.h>   // struct tm
+
+_BEGIN_C_FILE
 
 typedef unsigned int wint_t;
 typedef unsigned long int wctype_t;
@@ -86,5 +89,7 @@ long               wcstol(const wchar_t *nptr, wchar_t **endptr, int base);
 long long          wcstoll(const wchar_t *nptr, wchar_t **endptr, int base);
 unsigned long      wcstoul(const wchar_t *nptr, wchar_t **endptr, int base);
 unsigned long long wcstoull(const wchar_t *nptr, wchar_t **endptr, int base);
+
+_END_C_FILE
 
 #endif

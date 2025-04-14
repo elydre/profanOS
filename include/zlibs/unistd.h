@@ -12,10 +12,13 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
-#define _POSIX_THREADS 1
-
+#include <profan/minimal.h>
 #include <sys/types.h>
 #include <stddef.h>
+
+_BEGIN_C_FILE
+
+#define _POSIX_THREADS 1
 
 #undef  SEEK_SET
 #define SEEK_SET 0
@@ -141,5 +144,7 @@ int      unlink(const char *a);
 int      usleep(useconds_t usec);
 pid_t    vfork(void);
 ssize_t  write(int fd, const void *buf, size_t count);
+
+_END_C_FILE
 
 #endif

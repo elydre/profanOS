@@ -12,7 +12,10 @@
 #ifndef PROFAN_LIB_ID
 #define PROFAN_LIB_ID 1005
 
+#include <profan/minimal.h>
 #include <profan/types.h>
+
+_BEGIN_C_FILE
 
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, NULL, argc, argv, environ, 1}, NULL)
@@ -73,5 +76,7 @@ void  profan_kfree(void *mem);
 #define profan_input_serial ((char *(*)(int *, int)) get_func_addr(PROFAN_LIB_ID, 6))
 #define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 7))
 #endif
+
+_END_C_FILE
 
 #endif

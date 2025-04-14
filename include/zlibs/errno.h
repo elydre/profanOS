@@ -12,6 +12,10 @@
 #ifndef _ERRNO_H
 #define _ERRNO_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 typedef int errno_t;
 
 /* errno variable */
@@ -153,5 +157,7 @@ extern char *program_invocation_short_name;
 /* Because one define is not enough */
 
 #define EWOULDBLOCK EAGAIN
+
+_END_C_FILE
 
 #endif

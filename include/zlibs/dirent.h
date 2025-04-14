@@ -12,7 +12,10 @@
 #ifndef _DIRENT_H
 #define _DIRENT_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 struct dirent {
     ino_t   d_ino;
@@ -25,5 +28,7 @@ int            closedir(DIR *dirp);
 DIR           *opendir(const char *dirname);
 struct dirent *readdir(DIR *dirp);
 void           rewinddir(DIR *dirp);
+
+_END_C_FILE
 
 #endif

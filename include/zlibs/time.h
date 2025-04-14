@@ -12,10 +12,13 @@
 #ifndef _TIME_H
 #define _TIME_H
 
+#include <profan/minimal.h>
 #include <profan/types.h> // sigevent_t
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>
+
+_BEGIN_C_FILE
 
 #define CLK_TCK 100         // Number of clock ticks per second returned by the times() function
 #define CLOCKS_PER_SEC 1000 // Used to convert the value returned by the clock() function into seconds
@@ -74,5 +77,7 @@ int        timer_getoverrun(timer_t timerid);
 int        timer_settime(timer_t timerid, int flags, const struct itimerspec *new_value,
                     struct itimerspec *old_value);
 void       tzset(void);
+
+_END_C_FILE
 
 #endif

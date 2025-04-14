@@ -12,9 +12,12 @@
 #ifndef _ELF_H
 #define _ELF_H
 
-// Standard ELF types
-
+#include <profan/minimal.h>
 #include <stdint.h>
+
+_BEGIN_C_FILE
+
+// Standard ELF types
 
 // Type for a 16-bit quantity
 typedef uint16_t Elf32_Half;
@@ -2579,5 +2582,7 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_M32R_GOTOFF_HI_SLO    63      // High 16 bit offset to GOT with signed low
 #define R_M32R_GOTOFF_LO        64      // Low 16 bit offset to GOT
 #define R_M32R_NUM              256     // Keep this the last entry
+
+_END_C_FILE
 
 #endif

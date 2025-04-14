@@ -12,6 +12,10 @@
 #ifndef _DLFCN_H
 #define _DLFCN_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define RTLD_LAZY     1
 #define RTLD_NOW      2
 #define RTLD_LOCAL    0x000
@@ -27,5 +31,7 @@ void *dlopen(const char *filename, int flag);
 void *dlsym(void *handle, const char *symbol);
 int   dlclose(void *handle);
 char *dlerror(void);
+
+_END_C_FILE
 
 #endif

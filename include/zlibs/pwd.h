@@ -12,7 +12,10 @@
 #ifndef _PWD_H
 #define _PWD_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 struct passwd {
     char   *pw_name;       // user name
@@ -31,5 +34,7 @@ struct passwd *getpwuid(uid_t);
 struct passwd *getpwnam(const char *);
 struct passwd *getpwuid_shadow(uid_t);
 struct passwd *getpwnam_shadow(const char *);
+
+_END_C_FILE
 
 #endif
