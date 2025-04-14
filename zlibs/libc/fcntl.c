@@ -57,6 +57,6 @@ int fcntl(int fd, int cmd, ...) {
         errno = -ret;
         return -1;
     }
-    
+
     return ret;
 }
