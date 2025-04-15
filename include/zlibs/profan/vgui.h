@@ -12,7 +12,10 @@
 #ifndef _PROFAN_VGUI_H
 #define _PROFAN_VGUI_H
 
+#include <profan/minimal.h>
 #include <stdint.h>
+
+_BEGIN_C_FILE
 
 typedef struct {
     int width;
@@ -33,5 +36,7 @@ void vgui_print(vgui_t *vgui, int x, int y, char *msg, uint32_t color);
 void vgui_draw_line(vgui_t *vgui, int x1, int y1, int x2, int y2, uint32_t color);
 void vgui_clear(vgui_t *vgui, uint32_t color);
 void vgui_putc(vgui_t *vgui, int x, int y, char c, uint32_t color, int bg_color);
+
+_END_C_FILE
 
 #endif

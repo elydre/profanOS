@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc != 2 || argv[1][0] == '-') {
-        fputs("Usage: kb [-s | <mapname>]\n", stderr);
+        fputs("Usages: kb <keymap>\n        kb -s\n", stderr);
         return 1;
     }
 

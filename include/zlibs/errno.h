@@ -12,8 +12,21 @@
 #ifndef _ERRNO_H
 #define _ERRNO_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 typedef int errno_t;
-extern errno_t errno;
+
+/* errno variable */
+
+extern int *__errno_location(void);
+#define errno (*__errno_location())
+
+/* Gnu extension */
+
+extern char *program_invocation_name;
+extern char *program_invocation_short_name;
 
 /* Standard error codes */
 
@@ -144,5 +157,7 @@ extern errno_t errno;
 /* Because one define is not enough */
 
 #define EWOULDBLOCK EAGAIN
+
+_END_C_FILE
 
 #endif

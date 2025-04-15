@@ -1,10 +1,10 @@
 \e[0m USEFUL COMMANDS \e[37m
-cat     - show file content         ls      - list the current dir
-clear   - clear the screen          mkdir   - create directory
-echo    - print text to stdout      proc    - process utility
-fetch   - show time, mem, disk      rim     - start text editor
+cat     - show file content         mkdir   - create directory
+clear   - clear the screen          proc    - process utility
+echo    - print text to stdout      rim     - start text editor
 kb      - set keyboard layout       rm      - remove file or dir
-less    - show file content         wc      - count words in file
+less    - show file content         sys     - show time, mem, disk
+ls      - list the current dir      wc      - count words in file
 
 all commands are in /bin directory
 

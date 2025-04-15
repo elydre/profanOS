@@ -12,7 +12,10 @@
 #ifndef _STDLIB_H
 #define _STDLIB_H
 
+#include <profan/minimal.h>
 #include <stddef.h>
+
+_BEGIN_C_FILE
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -90,5 +93,7 @@ long               strtol(const char *str, char **end, int base);
 long long          strtoll(const char *str, char **end, int base);
 unsigned long      strtoul(const char *str, char **end, int base);
 unsigned long long strtoull(const char *str, char **end, int base);
+
+_END_C_FILE
 
 #endif

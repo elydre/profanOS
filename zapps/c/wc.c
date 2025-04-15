@@ -9,47 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
+#include <profan/carp.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-
-#define OPTION_L 1
-#define OPTION_W 2
-#define OPTION_C 3
-
-void show_help(void) {
-    puts("Usage: <CMD> | wc [option]\n"
-        "Print newline, word, and byte counts from stdin.\n"
-        "  -l   only print newline count\n"
-        "  -w   only print word count\n"
-        "  -c   only print byte count\n"
-        "  -h   show this help message");
-}
-
-int parse_option(char *option) {
-    if (option[0] != '-') {
-        fprintf(stderr, "wc: Invalid option -- '%s'\n", option);
-        exit(1);
-    }
-
-    switch (option[1]) {
-        case 'l':
-            return OPTION_L;
-        case 'w':
-            return OPTION_W;
-        case 'c':
-            return OPTION_C;
-        case 'h':
-            show_help();
-            exit(0);
-        default:
-            break;
-    }
-    fprintf(stderr, "wc: Invalid option -- '%s'\n"
-            "Try 'wc -h' for more information.\n", option);
-    exit(1);
-    return 0;
-}
 
 typedef struct {
     int lines;
@@ -57,11 +23,12 @@ typedef struct {
     int bytes;
 } wc_t;
 
-void stdin_count(wc_t *wc) {
-    char c;
-    int in_word = 0;
+void wc_file(FILE *f, wc_t *wc) {
+    int c, in_word = 0;
 
-    while ((c = getchar()) != EOF) {
+    wc->lines = wc->words = wc->bytes = 0;
+
+    while ((c = fgetc(f)) != EOF) {
         wc->bytes++;
         if (c == '\n') {
             wc->lines++;
@@ -75,43 +42,72 @@ void stdin_count(wc_t *wc) {
     }
 }
 
+void wc_print(wc_t *wc, wc_t *format, const char *file) {
+    int sum = format->lines + format->words + format->bytes;
+    if (sum == 0)
+        format->lines = format->words = format->bytes = 1;
+
+    if (sum == 1 || file) {
+        if (file)
+            printf("%s: ", file);
+        if (format->lines)
+            printf("%d", wc->lines);
+        if (format->words) {
+            if (format->lines)
+                putchar(' ');
+            printf("%d", wc->words);
+        }
+        if (format->bytes) {
+            if (format->lines || format->words)
+                putchar(' ');
+            printf("%d", wc->bytes);
+        }
+        putchar('\n');
+        return;
+    }
+
+    if (format->lines)
+        printf("%d lines\n", wc->lines);
+    if (format->words)
+        printf("%d words\n", wc->words);
+    if (format->bytes)
+        printf("%d bytes\n", wc->bytes);
+}
+
 int main(int argc, char **argv) {
-    int option;
+    carp_init("[options] [file1] [file2] ...", CARP_FNOMAX);
 
-    if (argc > 2) {
-        fputs("Usage: <CMD> | wc [option]\n"
-            "Try 'wc -h' for more information.\n", stderr);
+    carp_register('l', CARP_STANDARD, "print newline count");
+    carp_register('w', CARP_STANDARD, "print word count");
+    carp_register('c', CARP_STANDARD, "print byte count");
+
+    if (carp_parse(argc, argv))
         return 1;
+
+    wc_t wc, format = {
+        .lines = carp_isset('l'),
+        .words = carp_isset('w'),
+        .bytes = carp_isset('c')
+    };
+
+    int file_count = carp_file_count();
+    const char *file;
+
+    if (file_count == 0) {
+        wc_file(stdin, &wc);
+        wc_print(&wc, &format, NULL);
+        return 0;
     }
 
-    if (argc == 1) {
-        option = 0;
-    } else {
-        option = parse_option(argv[1]);
-    }
-
-    if (isatty(STDIN_FILENO)) {
-        fputs("wc: stdin is a tty\n", stderr);
-        return 1;
-    }
-
-    wc_t wc = {0, 0, 0};
-    stdin_count(&wc);
-
-    switch (option) {
-        case OPTION_L:
-            printf("%d\n", wc.lines);
-            break;
-        case OPTION_W:
-            printf("%d\n", wc.words);
-            break;
-        case OPTION_C:
-            printf("%d\n", wc.bytes);
-            break;
-        default:
-            printf("lines: %d\nwords: %d\nbytes: %d\n",
-                wc.lines, wc.words, wc.bytes);
-            break;
+    while ((file = carp_file_next())) {
+        FILE *f = fopen(file, "r");
+        if (f == NULL) {
+            perror(file);
+            continue;
+        }
+        wc_file(f, &wc);
+        wc_print(&wc, &format, file_count > 1 ? file : NULL);
+        fclose(f);
     }
 
     return 0;

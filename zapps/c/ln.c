@@ -60,9 +60,9 @@ ln_args_t *parse_args(int argc, char **argv) {
                     "  ln [-s] <source> [target]\n"
                     "  ln -d d<disk>s<sector> <target>\n"
                     "Options:\n"
-                    "  -d   force links to a specific sector\n"
-                    "  -h   display this help message\n"
-                    "  -s   create a symbolic link (not supported)");
+                    "  -d    force links to a specific sector\n"
+                    "  -h    display this help message\n"
+                    "  -s    create a symbolic link (not supported)");
                 exit(0);
             }
 
@@ -122,15 +122,15 @@ int main(int argc, char **argv) {
 
     char *target_dir, *target_name;
     if (args->target) {
-        args->target = profan_path_join(profan_wd_path, args->target);
+        args->target = profan_path_join(profan_wd_path(), args->target);
         profan_path_sep(args->target, &target_dir, &target_name);
     } else {
-        target_dir = strdup(profan_wd_path);
+        target_dir = strdup(profan_wd_path());
         profan_path_sep(args->source, NULL, &target_name);
     }
 
     if (args->source) {
-        args->source = profan_path_join(profan_wd_path, args->source);
+        args->source = profan_path_join(profan_wd_path(), args->source);
         args->sector = fu_path_to_sid(SID_ROOT, args->source);
     }
 

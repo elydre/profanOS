@@ -12,6 +12,10 @@
 #ifndef _PROFAN_CLIP_H
 #define _PROFAN_CLIP_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define PROFAN_CLIP_PATH "/dev/clip"
 
 int   clip_set_str(char *str);
@@ -19,5 +23,7 @@ int   clip_set_raw(void *data, uint32_t size);
 
 char *clip_get_str(void);
 void *clip_get_raw(uint32_t *size);
+
+_END_C_FILE
 
 #endif

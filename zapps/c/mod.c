@@ -9,64 +9,37 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
+#include <profan/syscall.h>
+#include <profan/filesys.h>
+#include <profan/carp.h>
+#include <profan.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#include <profan/syscall.h>
-#include <profan/filesys.h>
-#include <profan.h>
-
-
-#define HELP_USAGE "Usage: mod <option> [args]\n"
-#define HELP_HELP "Try 'mod -h' for more information.\n"
-
-int is_file(char *path) {
-    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
-    if (IS_SID_NULL(sid)) return 0;
-    return fu_is_file(sid);
-}
-
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        fputs(HELP_USAGE HELP_HELP, stderr);
+    carp_init("[option] <id>", CARP_FMIN(1));
+
+    carp_register('u', CARP_STANDARD, "unload a library");
+    carp_register('l', CARP_NEXT_STR, "load/replace a library");
+
+    if (carp_parse(argc, argv))
+        return 1;
+
+    const char *strid = carp_file_next();
+
+    int id = atoi(strid);
+
+    if (id == 0) {
+        fprintf(stderr, "%s: invalid id '%s'\n", argv[0], strid);
         return 1;
     }
 
-    char option = *(argv[1] + 1);
-    if (option == '-') {
-        option = *(argv[1] + 2);
-    }
-
-    if (option == '\0') {
-        fprintf(stderr, "mod: Invalid option -- '%s'\n" HELP_HELP, argv[1]);
-        return 1;
-    }
-
-    if (option == 'h') {
-        puts(HELP_USAGE
-            "Options:\n"
-            "  -h              print this help message\n"
-            "  -u <id>         unload a library\n"
-            "  -l <id> <path>  load/replace a library\n"
-        );
-        return 0;
-    }
-
-    if (option == 'u') {
-        if (argc < 3) {
-            fprintf(stderr, "mod: Missing argument to option '%s'\n" HELP_HELP, argv[1]);
-            return 1;
-        }
-
-        int id = atoi(argv[2]);
-
-        if (id == 0) {
-            fprintf(stderr, "mod: Invalid id '%s'\n" HELP_HELP, argv[2]);
-            return 1;
-        }
-
-        printf("mod: Unloading %d\n", id);
+    if (carp_isset('u')) {
+        printf("mod: unloading %d...\n", id);
 
         syscall_process_auto_schedule(0);
         syscall_mod_unload(id);
@@ -74,24 +47,11 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (option == 'l') {
-        if (argc < 4) {
-            fprintf(stderr, "mod: Missing argument to option '%s'\n" HELP_HELP, argv[1]);
-            return 1;
-        }
+    if (carp_isset('l')) {
+        char *new_path = profan_path_join(profan_wd_path(), carp_get_str('l'));
 
-        int id = atoi(argv[2]);
-
-        if (id == 0) {
-            fprintf(stderr, "mod: Invalid id '%s'\n" HELP_HELP, argv[2]);
-            return 1;
-        }
-
-        // assemble new path
-        char *new_path = profan_path_join(profan_wd_path, argv[3]);
-
-        if (!is_file(new_path)) {
-            fprintf(stderr, "mod: '%s': File not found\n" HELP_HELP, new_path);
+        if (!fu_is_file(fu_path_to_sid(SID_ROOT, new_path))) {
+            fprintf(stderr, "mod: '%s': file not found\n", new_path);
             return 1;
         }
 
@@ -100,9 +60,8 @@ int main(int argc, char **argv) {
         int error_code = syscall_mod_load(new_path, id);
         free(new_path);
 
-        if (error_code > 0) {
+        if (error_code > 0)
             return 0;
-        }
 
         fprintf(stderr, "mod: ", error_code);
         switch (error_code) {
@@ -131,6 +90,5 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    printf("mod: Invalid option -- '%s'\n" HELP_HELP, argv[1]);
     return 1;
 }

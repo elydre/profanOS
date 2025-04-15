@@ -12,9 +12,12 @@
 #ifndef _PROFAN_SYSCALL_H
 #define _PROFAN_SYSCALL_H
 
+#include <profan/minimal.h>
 #include <profan/types.h>
 #include <stdint.h>
 #include <time.h> // struct tm
+
+_BEGIN_C_FILE
 
 /**********************************
  *                               *
@@ -278,5 +281,7 @@ DEFN_SYSCALL2(40, void *,    scuba_generate, void *, uint32_t)
 DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)
 DEFN_SYSCALL1(42, int,       scuba_unmap, void *)
 DEFN_SYSCALL1(43, void *,    scuba_phys, void *)
+
+_END_C_FILE
 
 #endif

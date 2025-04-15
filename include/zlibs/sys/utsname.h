@@ -12,6 +12,10 @@
 #ifndef _SYS_UTSNAME_H
 #define _SYS_UTSNAME_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 struct utsname {
     char sysname[65];
     char nodename[65];
@@ -21,5 +25,7 @@ struct utsname {
 };
 
 int uname(struct utsname *buf);
+
+_END_C_FILE
 
 #endif

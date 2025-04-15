@@ -12,6 +12,10 @@
 #ifndef _FNMATCH_H
 #define _FNMATCH_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define FNM_NOMATCH     1       // Match failed
 #define FNM_NOSYS       2       // Function not supported (unused)
 
@@ -26,5 +30,7 @@
 #define FNM_FILE_NAME   FNM_PATHNAME
 
 int fnmatch(const char *pattern, const char *string, int flags);
+
+_END_C_FILE
 
 #endif

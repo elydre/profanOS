@@ -36,19 +36,20 @@ FUNC dirsize
         set ++ #
     END
 
-    FOR i !(range !#)
+    FOR e !(range !#)
         set size 0
 
-        FOR f !(search -f !!i |)
-            set size !(eval !size + !(fsize !f))
+        FOR f !(search -f !!e |)
+            set size !(eval !size + !(fstat -s !f))
         END
 
-        IF !(eval !size > 10000)
-            set size !(eval !size / 1000 . "kB")
+        IF !(eval !size > 10000000)
+            print '!!e !(eval !size / 1000000) MB\n'
+        END; ELSE; IF !(eval !size > 10000)
+            print '!!e !(eval !size / 1000) kB\n'
         END; ELSE
-            set size !(eval !size . "B")
-        END
-        echo '!!i': !size
+            print '!!e !size B\n'
+        END; END
     END
 END
 

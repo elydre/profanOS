@@ -12,7 +12,10 @@
 #ifndef _GRP_H
 #define _GRP_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 struct group {
     char    *gr_name;       // group name
@@ -23,5 +26,7 @@ struct group {
 
 struct group *getgrgid(gid_t);
 struct group *getgrnam(const char *);
+
+_END_C_FILE
 
 #endif

@@ -9,13 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef __FSTD_HDRS_STDNORETURN_H
-#define __FSTD_HDRS_STDNORETURN_H 1
+#ifndef _STDNORETURN_H
+#define _STDNORETURN_H
 
 #ifndef __cplusplus
-
-#define noreturn _Noreturn
-
+  #define noreturn _Noreturn
 #endif
 
 #endif

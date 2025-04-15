@@ -156,4 +156,9 @@
 
 #define SSIZE_MAX LONG_MAX
 
+/**** POSIX STUFF ****************************************/
+
+#undef PATH_MAX
+#define PATH_MAX 512
+
 #endif

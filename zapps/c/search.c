@@ -9,15 +9,16 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
 #include <profan/filesys.h>
 #include <profan/syscall.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#define SEARCH_USAGE "Usage: search [-f|-d] [-e <ext>] [dir]\n"
 
 enum {
     SEARCH_FILE,
@@ -25,7 +26,7 @@ enum {
     SEARCH_ALL
 };
 
-int search_recursive(uint32_t base, char *path, uint8_t required_type, char *ext) {
+int search_recursive(uint32_t base, const char *path, uint8_t required_type, const char *ext) {
     int offset;
 
     uint32_t size = syscall_fs_get_size(NULL, base);
@@ -85,64 +86,40 @@ int search_recursive(uint32_t base, char *path, uint8_t required_type, char *ext
 }
 
 int main(int argc, char **argv) {
-    (void) argc;
+    carp_init("[-f|-d] [-e <ext>] [dir]", 1);
 
-    char required_type = SEARCH_ALL;
-    char *dir = NULL;
-    char *ext = NULL;
+    carp_register('d', CARP_STANDARD, "search for directories only");
+    carp_register('e', CARP_NEXT_STR, "search for specific extension");
+    carp_register('f', CARP_STANDARD, "search for files only");
 
-    for (int i = 1; argv[i] != NULL; i++) {
-        if (argv[i][0] != '-') {
-            if (dir == NULL) {
-                dir = argv[i];
-                continue;
-            }
-            fprintf(stderr, "search: Directory already set to '%s'\n" SEARCH_USAGE, dir);
-            return 1;
-        }
+    carp_conflict("def");
 
-        if (argv[i][1] == '-') {
-            fprintf(stderr, "search: Unknown option '%s'\n" SEARCH_USAGE, argv[i]);
-            return 1;
-        }
+    if (carp_parse(argc, argv))
+        return 1;
 
-        if (argv[i][1] == 'f') {
-            required_type = SEARCH_FILE;
-        } else if (argv[i][1] == 'd') {
-            if (ext != NULL) {
-                fprintf(stderr, "search: Cannot use -e with -d\n" SEARCH_USAGE);
-                return 1;
-            }
-            required_type = SEARCH_DIR;
-        } else if (argv[i][1] == 'e') {
-            if (required_type == SEARCH_DIR) {
-                fprintf(stderr, "search: Cannot use -d with -e\n" SEARCH_USAGE);
-                return 1;
-            }
-            if (argv[++i]) {
-                ext = argv[i];
-                required_type = SEARCH_FILE;
-                continue;
-            }
-            fprintf(stderr, "search: Missing argument for -e\n" SEARCH_USAGE);
-            return 1;
-        } else {
-            fprintf(stderr, "search: Unknown argument -- '%c'\n" SEARCH_USAGE, argv[i][1]);
-            return 1;
-        }
-    }
+    char required_type;
+
+    if (carp_isset('d'))
+        required_type = SEARCH_DIR;
+    else if (carp_isset('f') || carp_isset('e'))
+        required_type = SEARCH_FILE;
+    else
+        required_type = SEARCH_ALL;
+
+    const char *dir = carp_file_next();
+    const char *ext = carp_get_str('e');
 
     uint32_t base;
 
     if (dir) {
         base = profan_path_resolve(dir);
     } else {
-        base = profan_wd_sid;
-        dir = profan_wd_sid == SID_ROOT ? "/" : ".";
+        base = profan_wd_sid();
+        dir = profan_wd_sid() == SID_ROOT ? "/" : ".";
     }
 
     if (!fu_is_dir(base)) {
-        fprintf(stderr, "search: Directory '%s' does not exist\n" SEARCH_USAGE, dir);
+        fprintf(stderr, "search: directory '%s' does not exist\n", dir);
         return 1;
     }
 
@@ -150,6 +127,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    fprintf(stderr, "search: Error while listing '%s'\n", dir);
+    fprintf(stderr, "search: error while listing '%s'\n", dir);
     return 1;
 }

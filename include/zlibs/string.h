@@ -12,14 +12,14 @@
 #ifndef _STRING_H
 #define _STRING_H
 
+#include <profan/minimal.h>
+#include <strings.h>
 #include <stddef.h>
 
+_BEGIN_C_FILE
+
 char  *basename(const char *path);
-void   bcopy(const void *s2, void *s1, size_t n);
-void   bzero(void *s, size_t n);
 char  *dirname(char *path);
-int    ffs(int i);
-int    ffsll(long long int i);
 void  *memccpy(void *s1, const void *s2, int c, size_t n);
 void  *memchr(const void *s, int c, size_t n);
 int    memcmp(const void *s1, const void *s2, size_t n);
@@ -33,8 +33,6 @@ void   psignal(int signum, const char *message);
 void  *rawmemchr(const void *s, int c);
 char  *stpcpy(char *s1, const char *s2);
 char  *stpncpy(char *s1, const char *s2, size_t n);
-int    strcasecmp (const char *s1, const char *s2);
-char  *strcasestr(const char *s1, const char *s2);
 char  *strcat(char *s1, const char *s2);
 char  *strchr(const char *p, int ch);
 char  *strchrnul(const char *s, int c);
@@ -47,7 +45,6 @@ char  *strerror(int errnum);
 size_t strlcat(char *dst, const char *src, size_t n);
 size_t strlcpy(char *dst, const char *src, size_t n);
 size_t strlen(const char *s);
-int    strncasecmp(const char *s1, const char *s2, size_t n);
 char  *strncat(char *s1, const char *s2, size_t n);
 int    strncmp(const char *s1, const char *s2, size_t n);
 char  *strncpy(char *s1, const char *s2, size_t n);
@@ -62,5 +59,8 @@ char  *strstr(const char *string, const char *substring);
 char  *strtok(char *s1, const char *s2);
 char  *strtok_r(char *s1, const char *s2, char **next_start);
 int    strverscmp(const char *s1, const char *s2);
+size_t strxfrm(char *destination, const char *source, size_t size);
+
+_END_C_FILE
 
 #endif

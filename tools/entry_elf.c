@@ -13,7 +13,7 @@
 
 extern int main(int argc, char **argv, char **envp);
 
-extern void __init_libc(char **envp, void *exit_func);
+extern void __init_libc(char **argv, char **envp, void *exit_func);
 extern void __exit_libc();
 
 void __entry_exit(int ret);
@@ -21,7 +21,7 @@ void __entry_exit(int ret);
 jmp_buf env;
 
 int _start(int argc, char **argv, char **envp) {
-    __init_libc(envp, __entry_exit);
+    __init_libc(argv, envp, __entry_exit);
 
     int val = setjmp(env);
 

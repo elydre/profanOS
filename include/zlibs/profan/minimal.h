@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === upper.c : 2024 ===                                                    |
+|   === minimal.h : 2025 ===                                                  |
 |                                                                             |
-|    Unix command implementation - convert stdin to uppercase      .pi0iq.    |
+|    Minimal header file for C++ compatibility                     .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,15 +9,15 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <unistd.h>
+#ifndef _PROFAN_MINIMAL_H
+#define _PROFAN_MINIMAL_H
 
-int main(void) {
-    char c;
-    while (read(0, &c, 1) > 0) {
-        if (c >= 'a' && c <= 'z') {
-            c -= 32;
-        }
-        write(1, &c, 1);
-    }
-    return 0;
-}
+#ifdef __cplusplus
+  #define _BEGIN_C_FILE extern "C" {
+  #define _END_C_FILE }
+#else
+  #define _BEGIN_C_FILE
+  #define _END_C_FILE
+#endif
+
+#endif

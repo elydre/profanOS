@@ -9,8 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// @LINK: libpf
+
 #include <profan/syscall.h>
 #include <profan/panda.h>
+#include <profan/carp.h>
 
 #include <string.h>
 #include <unistd.h>
@@ -174,7 +177,7 @@ void top_loop(void) {
     panda_screen_free(screen_bk);
 }
 
-void search_process(char *name) {
+void search_process(const char *name) {
     uint32_t pid_list[PROCESS_MAX];
     int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
 
@@ -189,114 +192,36 @@ void search_process(char *name) {
     }
 }
 
-typedef struct {
-    int   mode;
-    int   pid;
-    char *name;
-} proc_args_t;
-
-enum {
-    MODE_LIST,
-    MODE_USGE,
-    MODE_HELP,
-    MODE_KILL,
-    MODE_SLEP,
-    MODE_WKUP,
-    MODE_TOPL,
-    MODE_PARS,
-    MODE_SRCH
-};
-
-int show_help(void) {
-    puts(
-        "Usage: proc [option] [arg]\n"
-        "Options:\n"
-        "  -f   search pid from name\n"
-        "  -h   show this help\n"
-        "  -l   list processes (default)\n"
-        "  -k   kill a process\n"
-        "  -p   like -l but parser friendly\n"
-        "  -s   asleep a process\n"
-        "  -t   top like interface\n"
-        "  -w   wake up a process"
-    );
-    return 0;
-}
-
-proc_args_t parse_args(int argc, char **argv) {
-    proc_args_t args;
-    args.mode = MODE_LIST;
-    args.pid = -1;
-    if (argc == 1) {
-        return args;
-    }
-
-    if (argc == 2) {
-        if (strcmp(argv[1], "-h") == 0) {
-            args.mode = MODE_HELP;
-        } else if (strcmp(argv[1], "-l") == 0) {
-            args.mode = MODE_LIST;
-        } else if (strcmp(argv[1], "-t") == 0) {
-            args.mode = MODE_TOPL;
-            top_loop();
-        } else if (strcmp(argv[1], "-p") == 0) {
-            args.mode = MODE_PARS;
-        } else {
-            fprintf(stderr, "proc: unrecognized option '%s'\n", argv[1]);
-            args.mode = MODE_USGE;
-        }
-        return args;
-    }
-
-    if (argc == 3) {
-        if (strcmp(argv[1], "-k") == 0) {
-            args.mode = MODE_KILL;
-        } else if (strcmp(argv[1], "-s") == 0) {
-            args.mode = MODE_SLEP;
-        } else if (strcmp(argv[1], "-w") == 0) {
-            args.mode = MODE_WKUP;
-        } else if (strcmp(argv[1], "-f") == 0) {
-            args.mode = MODE_SRCH;
-            args.name = argv[2];
-            return args;
-        } else {
-            fprintf(stderr, "proc: unrecognized option '%s'\n", argv[1]);
-            args.mode = MODE_USGE;
-            return args;
-        }
-        args.pid = atoi(argv[2]);
-        return args;
-    }
-
-    fputs("Usage: proc [mode] [pid]\n", stderr);
-    args.mode = MODE_USGE;
-    return args;
-}
-
 int main(int argc, char **argv) {
-    proc_args_t args = parse_args(argc, argv);
+    carp_init("[option]", 1);
 
-    if (args.mode == MODE_USGE) {
-        fputs("Try 'proc -h' for more information.\n", stderr);
+    carp_register('f', CARP_NEXT_STR, "search pid from name");
+    carp_register('l', CARP_STANDARD, "list processes (default)");
+    carp_register('k', CARP_NEXT_INT, "kill a process");
+    carp_register('p', CARP_STANDARD, "like -l but parser friendly");
+    carp_register('s', CARP_NEXT_INT, "asleep a process");
+    carp_register('t', CARP_STANDARD, "top like interface");
+    carp_register('w', CARP_NEXT_INT, "wake up a process");
+
+    carp_conflict("flkpswt,lkswt,kpswt,pswt,swt,wt");
+
+    if (carp_parse(argc, argv))
         return 1;
-    }
 
-    if (args.mode == MODE_LIST)
-        list_process(0);
-    else if (args.mode == MODE_TOPL)
-        top_loop();
-    else if (args.mode == MODE_PARS)
+    if (carp_isset('p'))
         list_process(2);
-    else if (args.mode == MODE_HELP)
-        return show_help();
-    else if (args.mode == MODE_KILL)
-        syscall_process_kill(args.pid, 1);
-    else if (args.mode == MODE_SLEP)
-        syscall_process_sleep(args.pid, UINT32_MAX);
-    else if (args.mode == MODE_WKUP)
-        syscall_process_wakeup(args.pid, 0);
-    else if (args.mode == MODE_SRCH)
-        search_process(args.name);
+    else if (carp_isset('t'))
+        top_loop();
+    else if (carp_isset('l'))
+        list_process(0);
+    else if (carp_isset('k'))
+        syscall_process_kill(carp_get_int('k'), 1);
+    else if (carp_isset('s'))
+        syscall_process_sleep(carp_get_int('s'), UINT32_MAX);
+    else if (carp_isset('w'))
+        syscall_process_wakeup(carp_get_int('w'), 0);
+    else if (carp_isset('f'))
+        search_process(carp_get_str('f'));
     else return 1;
     return 0;
 }

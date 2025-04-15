@@ -12,21 +12,16 @@
 // @LINK: libpf
 
 #include <profan/libtsi.h>
+#include <profan/carp.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #define HELP_MSG "Try 'less -h' for more information.\n"
 
-char *read_file(char *filename) {
-    // read from file
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL)
-        return NULL;
-
+char *read_file(FILE *fp) {
     char *buffer = malloc(1024);
     int buffer_size = 0;
     int rcount = 0;
@@ -38,70 +33,44 @@ char *read_file(char *filename) {
 
     buffer[buffer_size] = '\0';
 
-    fclose(fp);
-
     return buffer;
 }
 
-char *filename;
-
-uint32_t compute_args(int argc, char **argv) {
-    uint32_t flags = TSI_ALLOW_NON_PRINTABLE;
-
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && isalpha(argv[i][1]) && argv[i][2] == '\0') {
-            switch (argv[i][1]) {
-                case 'n':
-                    flags &= ~TSI_ALLOW_NON_PRINTABLE;
-                    break;
-                case 'h':
-                    puts("Usage: less [-n] [file]");
-                    puts("Options:\n"
-                        "  -n   display non-printable characters\n"
-                        "  -h   Display this help message");
-                    return (exit(0), 0);
-                default:
-                    fprintf(stderr, "less: invalid option -- '%c'\n"HELP_MSG, argv[i][1]);
-                    exit(1);
-            }
-        } else if (argv[i][0] == '-') {
-            fprintf(stderr, "less: invalid option -- '%s'\n"HELP_MSG, argv[i]);
-            exit(1);
-        } else {
-            if (filename != NULL) {
-                fprintf(stderr, "less: Too many arguments\n"HELP_MSG);
-                exit(1);
-            }
-            filename = argv[i];
-        }
-    }
-
-    if (filename == NULL) {
-        filename = "/dev/stdin";
-    }
-
-    return flags;
-}
-
 int main(int argc, char **argv) {
-    char *buffer, *title;
+    carp_init("[-pn] [-t title] [file]", 1);
 
-    uint32_t flags = compute_args(argc, argv);
+    carp_register('p', CARP_STANDARD, "block non-printable characters");
+    carp_register('n', CARP_STANDARD, "disable long lines wrapping");
+    carp_register('t', CARP_NEXT_STR, "set TSI interface title");
 
-    buffer = read_file(filename);
+    if (carp_parse(argc, argv))
+        return 1;
 
-    if (buffer == NULL) {
-        fprintf(stderr, "less: %s: File not found\n", filename);
+    uint32_t flags = 0;
+
+    if (!carp_isset('p'))
+        flags |= TSI_NON_PRINTABLE;
+    if (carp_isset('n'))
+        flags |= TSI_NO_AUTO_WRAP;
+
+    const char *filename = carp_file_next();
+    FILE *fp = filename ? fopen(filename, "r") : stdin;
+    filename = filename ? filename : "stdin";
+
+    if (fp == NULL) {
+        fprintf(stderr, "less: %s: %m\n", filename);
         return 1;
     }
 
-    title = malloc(strlen(filename) + 8);
-    sprintf(title, "less: %s", filename);
+    const char *title = carp_isset('t') ? carp_get_str('t') : filename;
+    char *buffer = read_file(fp);
 
     tsi_start(title, buffer, flags);
 
+    if (fp != stdin)
+        fclose(fp);
+
     free(buffer);
-    free(title);
 
     return 0;
 }

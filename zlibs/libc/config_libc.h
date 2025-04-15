@@ -12,7 +12,7 @@
 #ifndef CONFIG_LIBC_H
 #define CONFIG_LIBC_H
 
-#define PROFAN_LIBC_VERSION "2.6 rev 21"
+#define PROFAN_LIBC_VERSION "2.6 rev 22"
 
 /****** PROFAN EXTRA ***********************************************/
 
@@ -28,7 +28,7 @@
 
 /****** STDLIB *****************************************************/
 
-#define SYSTEM_SHELL_PATH "/bin/h/dash.elf" // system() shell
+#define SYSTEM_SHELL_PATH "/bin/f/dash.elf" // system() shell
 
 
 /****** BUDDY ALLOCATOR ********************************************/
