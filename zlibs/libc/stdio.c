@@ -29,14 +29,16 @@
 #endif
 
 typedef struct _IO_FILE {
-    int   fd;
-    int   mode;
+    int     fd;
+    int     mode;
 
     uint8_t error;
-    int ungetchar;
+    uint8_t eof;  // non-file only
 
-    char *buffer;
-    int   buffer_size;
+    int     ungetchar;
+
+    char   *buffer;
+    int     buffer_size;
 } FILE;
 
 FILE *stdin = NULL;
@@ -110,11 +112,13 @@ void clearerr(FILE *stream) {
     if (stream == NULL)
         return;
     stream->error = 0;
+    stream->eof = 0;
 }
 
 int fileno(FILE *stream) {
     if (stream == NULL)
         return -1;
+
     return stream->fd;
 }
 
@@ -215,14 +219,6 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     fflush(stream);
 
-    if (stream->ungetchar >= 0) {
-        ((char *) buffer++)[0] = stream->ungetchar;
-        stream->ungetchar = -1;
-        if (--count == 0) {
-            return 1;
-        }
-    }
-
     int read, rfrom_buffer = 0;
 
     // check if the file is a function call
@@ -232,6 +228,9 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
             stream->error = 1;
             return 0;
         }
+
+        if ((uint32_t) read < count)
+            stream->eof = 1;
 
         return read / size;
     }
@@ -261,21 +260,25 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     // read the file
     if (count > STDIO_BUFFER_READ) {
         read = fm_read(stream->fd, buffer + rfrom_buffer, count);
-        if (read < 0) {
-            stream->error = 1;
-            return 0;
-        }
+
+        if (read < 0)
+            return (stream->error = 1, 0);
+
+        if ((uint32_t) read < count)
+            stream->eof = 1;
+
         return (read + rfrom_buffer) / size;
     }
 
     read = fm_read(stream->fd, stream->buffer, STDIO_BUFFER_READ);
-    if (read < 0) {
-        stream->error = 1;
-        return 0;
-    }
 
-    if ((uint32_t) read < count)
+    if (read < 0)
+        return (stream->error = 1, 0);
+
+    if ((uint32_t) read < count) {
+        stream->eof = 1;
         count = read;
+    }
 
     memcpy(buffer + rfrom_buffer, stream->buffer, count);
     memmove(stream->buffer, stream->buffer + count, read - count);
@@ -334,6 +337,8 @@ int fseek(FILE *stream, long offset, int whence) {
     // reset the buffer
     stream->buffer_size = 0;
     stream->ungetchar = -1;
+    stream->error = 0;
+    stream->eof = 0;
 
     // set the file position
     return fm_lseek(stream->fd, offset, whence) < 0 ? -1 : 0;
@@ -364,21 +369,29 @@ int fsetpos(FILE *stream, const fpos_t *pos) {
 
 int fgetc(FILE *stream) {
     uint8_t c;
+    int val;
+
+    if (stream->ungetchar >= 0) {
+        val = stream->ungetchar;
+        stream->ungetchar = -1;
+        return val;
+    }
+
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
 
 int getc(FILE *stream) {
-    uint8_t c;
-    return fread(&c, 1, 1, stream) == 1 ? c : EOF;
+    return fgetc(stream);
 }
 
 char *fgets(char *str, int count, FILE *stream) {
+    uint8_t c;
+
     if (count <= 0)
         return NULL;
 
     for (int i = 0; i < count - 1; i++) {
-        char c = fread(&c, 1, 1, stream) == 1 ? c : EOF;
-        if (c == EOF) {
+        if (fread(&c, 1, 1, stream) != 1) {
             if (i == 0)
                 return NULL;
             str[i] = 0;
@@ -434,7 +447,8 @@ ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
 
     size_t i = 0;
     int c;
-    while ((c = fgetc(stream)) != EOF) {
+
+    while (fread(&c, 1, 1, stream)) {
         if (*lineptr == NULL) {
             *lineptr = malloc(100);
             *n = 100;
@@ -464,9 +478,10 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 }
 
 int ungetc(int ch, FILE *stream) {
-    if (stream == NULL || stream->ungetchar >= 0)
+    if (stream == NULL || stream->ungetchar >= 0 || ch == EOF)
         return EOF;
     stream->ungetchar = ch;
+    stream->eof = 0;
     return ch;
 }
 
@@ -564,7 +579,10 @@ int vsprintf(char *buffer, const char *format, va_list vlist) {
 }
 
 int feof(FILE *stream) {
-    return (stream && stream->error) ? 1 : 0;
+    if (stream == NULL)
+        return 1;
+
+    return stream->eof;
 }
 
 int ferror(FILE *stream) {
