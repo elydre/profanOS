@@ -11,6 +11,7 @@
 
 #include <strings.h>
 #include <string.h>
+#include <ctype.h>
 
 int bcmp(const void *s1, const void *s2, size_t n) {
     return memcmp(s1, s2, n);
@@ -55,7 +56,7 @@ char *rindex(const char *s, int c) {
 int strcasecmp(const char *s1, const char *s2) {
     const unsigned char *l, *r;
 
-    l = (void *) s1
+    l = (void *) s1;
     r = (void *) s2;
 
     for (; *l && *r && (*l == *r || tolower(*l) == tolower(*r)); l++, r++);
@@ -66,7 +67,7 @@ int strcasecmp(const char *s1, const char *s2) {
 int strncasecmp(const char *s1, const char *s2, size_t n) {
     const unsigned char *l, *r;
 
-    l = (void *) s1
+    l = (void *) s1;
     r = (void *) s2;
 
     if (!n--)
