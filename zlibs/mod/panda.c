@@ -224,109 +224,136 @@ static int compute_ansi_escape(const char *str, int main_color) {
         }
     }
 
+    if (str[0] >= '0' && str[0] <= '9' &&
+        str[1] >= '0' && str[1] <= '9' &&
+        str[2] == ';') str += 3;
+
     // reset color
-    if (str[0] == '0' && str[1] == 'm') {
+    if (str[0] == 'm' || (str[0] == '0' && str[1] == 'm')) {
         g_panda->color = main_color == -1 ? 0xF : main_color;
-        return 3;
+        str += 2 + (str[0] == '0');
     }
 
     // underline
-    if (str[0] == '4' && str[1] == 'm') {
+    else if (str[0] == '4' && str[1] == 'm') {
         g_panda->color |= PANDA_UNDERLINE;
-        return 3;
+        str += 3;
     }
 
     // no underline
-    if (str[0] == '2' && str[1] == '4' && str[2] == 'm') {
+    else if (str[0] == '2' && str[1] == '4' && str[2] == 'm') {
         g_panda->color &= ~PANDA_UNDERLINE;
-        return 4;
+        str += 4;
     }
 
     // font color
-    if (str[0] == '3' && str[1] && str[2] == 'm') {
+    else if (str[0] == '3' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 0, g_panda->color);
-        return 4;
+        str += 4;
     }
 
     // highlight font color
-    if (str[0] == '9' && str[1] && str[2] == 'm') {
+    else if (str[0] == '9' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 1, g_panda->color);
-        return 4;
+        str += 4;
     }
 
     // background color
-    if (str[0] == '4' && str[1] && str[2] == 'm') {
+    else if (str[0] == '4' && str[1] && str[2] == 'm') {
         g_panda->color = compute_ansi_color(str[1], 2, g_panda->color);
-        return 4;
+        str += 4;
     }
 
     // highlight background color
-    if (str[0] == '1' && str[1] == '0' && str[2] && str[3] == 'm') {
+    else if (str[0] == '1' && str[1] == '0' && str[2] && str[3] == 'm') {
         g_panda->color = compute_ansi_color(str[2], 3, g_panda->color);
-        return 5;
+        str += 5;
     }
 
     // cursor hide and show
-    if (str_ncmp(str, "?25", 3) == 0) {
+    else if (str_ncmp(str, "?25", 3) == 0) {
         if (str[3] == 'l') {
             g_panda->cursor_is_hidden = 0;
         } else if (str[3] == 'h') {
             g_panda->cursor_is_hidden = 1;
         }
-        return 5;
+        str += 5;
     }
 
     // clear screen
-    if (str[0] == '2' && str[1] == 'J') {
+    else if (str[0] == '2' && str[1] == 'J') {
         panda_clear_screen();
-        return 3;
+        str += 3;
     }
 
     // set top left
-    if (str[0] == 'H') {
+    else if (str[0] == 'H') {
         g_panda->cursor_x = 0;
         g_panda->cursor_y = 0;
         g_panda->scroll_offset = 0;
-        return 2;
+        str += 2;
     }
 
-    // number
-    const char *tmp = str;
-    while (*tmp >= '0' && *tmp <= '9') tmp++;
+    else {
+        // number
+        const char *tmp = str;
+        while (*str >= '0' && *str <= '9') str++;
 
-    // cursor up
-    if (tmp[0] == 'A') {
-        int n = str_int(str);
-        g_panda->cursor_y -= n;
-    }
-
-    // cursor down
-    if (tmp[0] == 'B') {
-        int n = str_int(str);
-        g_panda->cursor_y += n;
-    }
-
-    // cursor forward
-    if (tmp[0] == 'C') {
-        int n = str_int(str);
-        g_panda->cursor_x += n;
-        if (g_panda->cursor_x >= g_panda->max_cols) {
-            g_panda->cursor_x -= g_panda->max_cols;
-            g_panda->cursor_y++;
+        // cursor up
+        if (str[0] == 'A') {
+            int n = str_int(tmp);
+            g_panda->cursor_y -= n;
         }
-    }
 
-    // cursor backward
-    if (tmp[0] == 'D') {
-        int n = str_int(str);
-        g_panda->cursor_x -= n;
-        if (g_panda->cursor_x < 0) {
-            g_panda->cursor_x += g_panda->max_cols;
-            g_panda->cursor_y--;
+        // cursor down
+        else if (str[0] == 'B') {
+            int n = str_int(tmp);
+            g_panda->cursor_y += n;
         }
+
+        // cursor forward
+        else if (str[0] == 'C') {
+            int n = str_int(tmp);
+            g_panda->cursor_x += n;
+            if (g_panda->cursor_x >= g_panda->max_cols) {
+                g_panda->cursor_x -= g_panda->max_cols;
+                g_panda->cursor_y++;
+            }
+        }
+
+        // cursor backward
+        else if (str[0] == 'D') {
+            int n = str_int(tmp);
+            g_panda->cursor_x -= n;
+            if (g_panda->cursor_x < 0) {
+                g_panda->cursor_x += g_panda->max_cols;
+                g_panda->cursor_y--;
+            }
+        }
+
+        // clear line
+        else if (str[0] == 'K') {
+            int n = str_int(tmp);
+
+            int from = g_panda->cursor_x;
+            int to = g_panda->max_cols - 1;
+
+            if (n == 1) {
+                from = 0;
+                to = g_panda->cursor_x - 1;
+            } else if (n == 2) {
+                from = 0;
+            }
+
+            for (int i = from; i <= to; i++) {
+                panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset,
+                        ' ', g_panda->color);
+            }
+        }
+        str += 2;
     }
 
-    return tmp - start;
+    return str - start - 2;
 }
 
 static void panda_scroll(uint32_t line_count) {
