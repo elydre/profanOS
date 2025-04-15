@@ -559,6 +559,11 @@ int setuid(uid_t a) {
     return (PROFAN_FNI, 0);
 }
 
+int sched_yield(void) {
+    syscall_process_sleep(syscall_process_pid(), 0);
+    return 0;
+}
+
 unsigned sleep(unsigned seconds) {
     syscall_process_sleep(syscall_process_pid(), seconds * 1000);
     return 0;
