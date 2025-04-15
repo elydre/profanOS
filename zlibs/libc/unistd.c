@@ -431,7 +431,11 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    return fm_isfctf(fd) > 0;
+    int r = fm_isfctf(fd);
+    if (r)
+        return 1;
+    errno = r < 0 ? -r : ENOTTY;
+    return 0;
 }
 
 int lchown(const char *path, uid_t owner, gid_t group) {
@@ -656,7 +660,7 @@ int usleep(useconds_t usec) {
 }
 
 pid_t vfork(void) {
-    return (PROFAN_FNI, -1);
+    return fork();
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
