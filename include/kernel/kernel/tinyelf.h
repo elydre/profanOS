@@ -45,12 +45,12 @@ typedef struct {
 } Elf32_Shdr;
 
 typedef struct {
-    unsigned int st_name;       // Symbol name (string tbl index)
-    unsigned int st_value;      // Symbol value
-    unsigned int st_size;       // Symbol size
-    unsigned char st_info;      // Symbol type and binding
-    unsigned char st_other;     // Symbol visibility
-    unsigned short st_shndx;    // Section index
+    uint32_t st_name;       // Symbol name (string tbl index)
+    uint32_t st_value;      // Symbol value
+    uint32_t st_size;       // Symbol size
+    uint8_t  st_info;       // Symbol type and binding
+    uint8_t  st_other;      // Symbol visibility
+    uint16_t st_shndx;      // Section index
 } Elf32_Sym;
 
 typedef struct {
@@ -69,12 +69,23 @@ typedef struct {
     uint32_t p_align;       // Segment alignment
 } Elf32_Phdr;
 
-#define SHT_PROGBITS    1
+#define EI_MAG			0
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
+
+#define EI_CLASS        4
+#define ELFCLASS32      1
+
+#define EI_DATA         5
+#define ELFDATA2LSB     1
+
 #define ET_EXEC         2
 #define ET_DYN          3
+
 #define EM_386          3
+
+#define SHT_PROGBITS    1
+#define SELFMAG         4
 #define SHT_SYMTAB      2
 
 #define R_386_NONE      0   // None
