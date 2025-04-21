@@ -166,6 +166,14 @@ static void i_free_process(process_t *proc) {
     if (!proc->scuba_dir)
         return;
 
+    if (proc->comm.argv) {
+        for (int i = 0; proc->comm.argv[i] != NULL; i++)
+            free(proc->comm.argv[i]);
+        free(proc->comm.argv);
+    }
+
+    free(proc->comm.envp);
+
     mem_free_all(proc->pid);
 
     scuba_dir_destroy(proc->scuba_dir);
