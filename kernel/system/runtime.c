@@ -18,10 +18,15 @@
 
 int is_valid_elf(void *data) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
-    return !(
-        mem_cmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
-        ehdr->e_type != ET_EXEC || ehdr->e_machine != EM_386
-    );
+
+    if (mem_cmp(&ehdr->e_ident[EI_MAG], ELFMAG, SELFMAG) != 0 ||
+	  ehdr->e_ident[EI_CLASS] != ELFCLASS32 ||
+	  ehdr->e_ident[EI_DATA] != ELFDATA2LSB ||
+	  ehdr->e_type != ET_EXEC ||
+	  ehdr->e_machine != EM_386)
+		return 0;
+
+	return 1;
 }
 
 void *get_base_addr(uint8_t *data) {
@@ -52,7 +57,7 @@ void *load_sections(uint8_t *file) {
     }
 
     required_size -= (uint32_t) base_addr;
-    required_size = (required_size + 0xFFF) & ~0xFFF;
+    required_size = ALIGN(required_size, 0x1000);
 
     scuba_call_generate(base_addr, required_size / 0x1000);
     mem_set(base_addr, 0, required_size);

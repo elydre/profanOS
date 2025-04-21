@@ -14,6 +14,8 @@
 
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
+#define IS_ALIGNED(x, alignment) ((uint64_t)(x) % (alignment) == 0)
+#define ALIGN(x, alignment)  (IS_ALIGNED((x), (alignment)) ? (typeof((x)))((x)) : (typeof((x)))((uint64_t)(x) + ((alignment) - ((uint64_t)(x) % (alignment)))))
 
 #define kprintf(...) kprintf_buf((char *) 0, __VA_ARGS__)
 #define kprintf_serial(...) kprintf_buf((char *) 1, __VA_ARGS__)
