@@ -1,0 +1,35 @@
+name: Bug Report
+description: File a bug report.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please fill out the sections below and also link any relevant files or screenshots.
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: Tell us what went wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: how-to-reproduce
+    attributes:
+      label: How to Reproduce
+      description: Tell us how to reproduce this bug (in case of, for example, a non-reproducible race condition, put "non-reproducible" in this field).
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output (i.e. `out/disk/user/build.log` or other shell logs). This will be automatically formatted into code, so no need for backticks.
+      render: shell
+  - type: checkboxes
+    id: nomakeclean
+    attributes:
+      label: Before proceeding...
+      options:
+        - label: I made sure that a `make clean` did not solve the problem.
+          required: true
