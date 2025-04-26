@@ -35,6 +35,7 @@ jobs:
         mv profanOS.iso profanOS-fullgrub.iso
         rm -Rf out/ && make elf disk && sh tools/limine.sh
         mv profanOS.iso profanOS-lite.iso
+        cp profanOS-$VERSION.iso profanOS.iso
 
     - name: Release to GitHub
       uses: marvinpinto/action-automatic-releases@latest
@@ -44,7 +45,7 @@ jobs:
         repo_token: "${{ secrets.GIT_TOKEN }}"
         prerelease: false
         files: |
-          ${{ env.PROFAN_ISO }}
+          profanOS.iso
           profanOS-fullgrub.iso
           profanOS-lite.iso
           profanOS-kernel.elf
@@ -59,7 +60,7 @@ jobs:
         source_file: ${{ env.PROFAN_ISO }}
         destination_repo: 'esolangs/profanOS-build'
         destination_folder: 'post55-iso'
-        user_email: 'pf4_@gmail.com'
+        user_email: 'contact.pf4@gmail.com'
         user_name: 'esolangs'
         commit_message: 'new release'
   
@@ -71,6 +72,6 @@ jobs:
         source_file: ${{ env.PROFAN_HDD }}
         destination_repo: 'esolangs/profanOS-build'
         destination_folder: 'disk-build'
-        user_email: 'pf4_@gmail.com'
+        user_email: 'contact.pf4@gmail.com'
         user_name: 'esolangs'
         commit_message: 'new build'
