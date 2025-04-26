@@ -3,7 +3,7 @@
 |                                                                             |
 |    Implementation of wchar functions from libC                   .pi0iq.    |
 |                                                                 d"  . `'b   |
-|    This file is part of profanOS and is released under          q. /|\  "   |
+|    This file is part of profanOS - under GPLv3                  q. /|\  "   |
 |    Based on the musl libc implementation                         `// \\     |
 |                                                                  //   \\    |
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
