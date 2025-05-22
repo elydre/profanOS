@@ -14,8 +14,6 @@
 
 #include <ktype.h>
 
-#define ETHERNET_TYPE_IPV4 0x0800
-
 #define IP_PROTO_UDP       17
 #define UDP_PORT_DHCP_CLIENT 68
 #define UDP_PORT_DHCP_SERVER 67

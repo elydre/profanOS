@@ -14,7 +14,7 @@
 
 // En-tête IP (20 octets minimum)
 struct ip_header {
-    uint8_t  ihl:4, version:4; // Longueur et version
+    uint8_t version_ihl;
     uint8_t  tos;              // Type of Service
     uint16_t total_length;     // Taille totale du paquet
     uint16_t id;               // ID du paquet

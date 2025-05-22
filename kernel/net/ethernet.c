@@ -78,7 +78,7 @@ void get_ip_handler(const eth_raw_packet_t *packet) {
 
         if (len < sizeof(eth_header_t))
             return ;
-        if (mem_cmp(eth_mac, ((eth_header_t *)data)->dst_mac) != 0)
+        if (mem_cmp(eth_mac, ((eth_header_t *)data)->dst_mac, 6) != 0)
             return ;
         if (htons(((eth_header_t *)data)->ethertype) != 0x0800)
             return ;

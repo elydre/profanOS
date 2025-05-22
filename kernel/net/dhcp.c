@@ -52,11 +52,10 @@ void build_dhcp_packet(uint8_t *buffer, uint8_t *mac) {
     // Ethernet
     mem_set(eth->dst_mac, 0xFF, 6);  // Broadcast
     mem_copy(eth->src_mac, mac, 6);
-    eth->ethertype = htons(ETHERNET_TYPE_IPV4);
+    eth->ethertype = htons(0x0800);
 
     // IP
-    ip->version = 4;
-    ip->ihl = 5;
+    ip->version_ihl = (4 << 4) | 5;
     ip->tos = 0;
     ip->total_length = htons(sizeof(struct ip_header) + sizeof(struct udp_header) + sizeof(struct dhcp_header) + 10);
     ip->id = 0;
