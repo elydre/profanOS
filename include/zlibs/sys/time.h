@@ -12,7 +12,10 @@
 #ifndef _SYS_TIME_H
 #define _SYS_TIME_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 struct timeval {
     time_t      tv_sec;  // seconds
@@ -37,5 +40,7 @@ int getitimer(int which, struct itimerval *value);
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 int setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value);
 int utimes(const char *filename, const struct timeval *times);
+
+_END_C_FILE
 
 #endif

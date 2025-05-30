@@ -35,34 +35,6 @@ char *basename(const char *path) {
     return (char *) p;
 }
 
-void bcopy(const void *s2, void *s1, size_t n) {
-    register char *s;
-    register const char *p;
-
-    s = s1;
-    p = s2;
-    if (p >= s) {
-        while (n) {
-            *s++ = *p++;
-            --n;
-        }
-    } else {
-        while (n) {
-            --n;
-            s[n] = p[n];
-        }
-    }
-}
-
-void bzero(void *s, size_t n) {
-    register unsigned char *p = s;
-
-    while (n) {
-        *p++ = 0;
-        --n;
-    }
-}
-
 char *dirname(char *path) {
     static const char null_or_empty_or_noslash[] = ".";
     register char *s;
@@ -95,26 +67,6 @@ char *dirname(char *path) {
     }
  DOT:
     return (char *) null_or_empty_or_noslash;
-}
-
-int ffs(register int mask) {
-    register int bit;
-
-    if (mask == 0)
-        return 0;
-
-    for (bit = 1; !(mask & 1); bit++)
-        mask >>= 1;
-
-    return bit;
-}
-
-int ffsll(long long int i) {
-    unsigned long long int x = i & -i;
-
-    if (x <= 0xffffffff)
-        return ffs (i);
-    return 32 + ffs (i >> 32);
 }
 
 void *memccpy(void *restrict s1, const void *restrict s2, int c, size_t n) {
@@ -275,29 +227,6 @@ char *stpncpy(register char *restrict s1,
         --n;
     }
     return s1 + (s2 - p);
-}
-
-int strcasecmp(const char *s1, const char *s2) {
-    int result = strncasecmp(s1, s2, -1);
-    return result;
-}
-
-char *strcasestr(const char *s, const char *find) {
-    size_t len;
-    char c, sc;
-
-    if ((c = *find++) != 0) {
-        c = tolower((unsigned char) c);
-        len = strlen(find);
-        do {
-            do {
-                if ((sc = *s++) == 0)
-                    return (NULL);
-            } while ((char) tolower((unsigned char) sc) != c);
-        } while (strncasecmp(s, find, len) != 0);
-        s--;
-    }
-    return (char *) s;
 }
 
 char *strcat(char *restrict s1, register const char *restrict s2) {
@@ -484,20 +413,6 @@ size_t strlen(const char *s) {
     for (p=s ; *p ; p++);
 
     return p - s;
-}
-
-int strncasecmp(register const char *s1, register const char *s2, size_t n) {
-    unsigned char *ucs1 = (unsigned char *) s1;
-    unsigned char *ucs2 = (unsigned char *) s2;
-    int d = 0;
-    for ( ; n != 0; n--) {
-        int c1 = tolower(*ucs1);
-        int c2 = tolower(*ucs2);
-        if (((d = c1 - c2) != 0) || (c2 == '\0')) break;
-        ucs1++;
-        ucs2++;
-    }
-    return d;
 }
 
 char *strncat(char *restrict s1, register const char *restrict s2,
@@ -735,5 +650,9 @@ char *strtok_r(char *s, const char *delim, char **save_ptr) {
 }
 
 int strverscmp(const char *s1, const char *s2) {
+    return (PROFAN_FNI, 0);
+}
+
+size_t strxfrm(char *destination, const char *source, size_t size) {
     return (PROFAN_FNI, 0);
 }

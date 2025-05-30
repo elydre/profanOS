@@ -23,17 +23,28 @@
 #include <stdio.h>
 #include <errno.h>
 
-uint32_t profan_wd_sid = SID_ROOT;
-char *profan_wd_path;
+uint32_t g_wd_sid = SID_ROOT;
+char g_wd_path[PATH_MAX] = "/";
 
 int   opterr = 1, // if error message should be printed
       optind = 1, // index into parent argv vector
       optopt;     // character checked for validity
 char *optarg;     // argument associated with option
 
-void __unistd_init(void) {
-    static char wd_path[PATH_MAX] = "/";
-    profan_wd_path = wd_path;
+int *__getoptind(void) {
+    return &optind;
+}
+
+int *__getopterr(void) {
+    return &opterr;
+}
+
+int *__getoptopt(void) {
+    return &optopt;
+}
+
+char **__getoptarg(void) {
+    return &optarg;
 }
 
 int access(const char *pathname, int mode) {
@@ -59,7 +70,7 @@ int chdir(const char *path) {
     char *dir;
 
     // check if dir exists
-    dir = profan_path_join(profan_wd_path, path);
+    dir = profan_path_join(g_wd_path, path);
     fu_simplify_path(dir);
 
     sid = fu_path_to_sid(SID_ROOT, dir);
@@ -71,8 +82,8 @@ int chdir(const char *path) {
     }
 
     // update the working directory
-    strlcpy(profan_wd_path, dir, PATH_MAX);
-    profan_wd_sid = sid;
+    strlcpy(g_wd_path, dir, PATH_MAX);
+    g_wd_sid = sid;
 
     free(dir);
     return 0;
@@ -180,7 +191,7 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
         argc++;
     run_ifexist_full((runtime_args_t) {
         (char *) fullpath,
-        profan_wd_path,
+        g_wd_path,
         argc,
         (char **) argv,
         (char **) envp,
@@ -278,14 +289,14 @@ int ftruncate(int fd, off_t length) {
 char *getcwd(char *buf, size_t size) {
     size_t wd_len;
 
-    wd_len = strlen(profan_wd_path);
+    wd_len = strlen(g_wd_path);
 
     if (buf == NULL) {
         if (size < wd_len + 1)
             size = wd_len + 1;
 
         buf = malloc(size);
-        strcpy(buf, profan_wd_path);
+        strcpy(buf, g_wd_path);
         return buf;
     }
 
@@ -294,7 +305,7 @@ char *getcwd(char *buf, size_t size) {
         return NULL;
     }
 
-    strcpy(buf, profan_wd_path);
+    strcpy(buf, g_wd_path);
     return buf;
 }
 
@@ -343,7 +354,7 @@ int getopt(int nargc, char *const *nargv, const char *ostr) {
         }
 
         if (place[1] && *++place == '-' && place[1] == '\0') {
-            ++optind;
+            optind++;
             place = "";
             return -1;
         }
@@ -357,7 +368,8 @@ int getopt(int nargc, char *const *nargv, const char *ostr) {
         if (!*place)
             optind++;
         if (opterr && *ostr != ':')
-            fprintf(stderr, "illegal option -- '%c'\n", optopt);
+            fprintf(stderr, "%s: invalid option -- '%c'\n",
+                    program_invocation_short_name, optopt);
         return (int) '?';
     }
 
@@ -365,22 +377,25 @@ int getopt(int nargc, char *const *nargv, const char *ostr) {
         optarg = NULL;
         if (!*place)
             optind++;
-    } else {
-        if (*place) {
-            optarg = place;
-        } else if (nargc <= ++optind) {
-            place = "";
-            if (*ostr == ':')
-                return (int) ':';
-            if (opterr)
-                fprintf(stderr, "option requires an argument -- '%c'\n", optopt);
-            return (int) '?';
-        } else {
-            optarg = nargv[optind];
-        }
-        place = "";
-        optind++;
+        return optopt;
     }
+
+    if (*place) {
+        optarg = place;
+    } else if (nargc <= ++optind) {
+        place = "";
+        if (*ostr == ':')
+            return (int) ':';
+        if (opterr)
+            fprintf(stderr, "%s: option requires an argument -- '%c'\n",
+                    program_invocation_short_name, optopt);
+        return (int) '?';
+    } else {
+        optarg = nargv[optind];
+    }
+
+    place = "";
+    optind++;
 
     return optopt;
 }
@@ -416,7 +431,11 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    return fm_isfctf(fd) > 0;
+    int r = fm_isfctf(fd);
+    if (r)
+        return 1;
+    errno = r < 0 ? -r : ENOTTY;
+    return 0;
 }
 
 int lchown(const char *path, uid_t owner, gid_t group) {
@@ -540,6 +559,11 @@ int setuid(uid_t a) {
     return (PROFAN_FNI, 0);
 }
 
+int sched_yield(void) {
+    syscall_process_sleep(syscall_process_pid(), 0);
+    return 0;
+}
+
 unsigned sleep(unsigned seconds) {
     syscall_process_sleep(syscall_process_pid(), seconds * 1000);
     return 0;
@@ -599,7 +623,7 @@ useconds_t ualarm(useconds_t a, useconds_t b) {
 
 int unlink(const char *filename) {
     // add the current working directory to the filename
-    char *path = profan_path_join(profan_wd_path, (char *) filename);
+    char *path = profan_path_join(g_wd_path, (char *) filename);
 
     // check if the file exists
     uint32_t parent_sid, elem = fu_path_to_sid(SID_ROOT, path);
@@ -641,7 +665,7 @@ int usleep(useconds_t usec) {
 }
 
 pid_t vfork(void) {
-    return (PROFAN_FNI, -1);
+    return fork();
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {

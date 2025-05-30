@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/libtsi.h>
-#include <profan/arp.h>
+#include <profan/carp.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,23 +37,23 @@ char *read_file(FILE *fp) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[-pn] [-t title] [file]", 1);
+    carp_init("[-pn] [-t title] [file]", 1);
 
-    arp_register('p', ARP_STANDARD, "block non-printable characters");
-    arp_register('n', ARP_STANDARD, "disable long lines wrapping");
-    arp_register('t', ARP_NEXT_STR, "set TSI interface title");
+    carp_register('p', CARP_STANDARD, "block non-printable characters");
+    carp_register('n', CARP_STANDARD, "disable long lines wrapping");
+    carp_register('t', CARP_NEXT_STR, "set TSI interface title");
 
-    if (arp_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
     uint32_t flags = 0;
 
-    if (!arp_isset('p'))
+    if (!carp_isset('p'))
         flags |= TSI_NON_PRINTABLE;
-    if (arp_isset('n'))
+    if (carp_isset('n'))
         flags |= TSI_NO_AUTO_WRAP;
 
-    const char *filename = arp_file_next();
+    const char *filename = carp_file_next();
     FILE *fp = filename ? fopen(filename, "r") : stdin;
     filename = filename ? filename : "stdin";
 
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const char *title = arp_isset('t') ? arp_get_str('t') : filename;
+    const char *title = carp_isset('t') ? carp_get_str('t') : filename;
     char *buffer = read_file(fp);
 
     tsi_start(title, buffer, flags);

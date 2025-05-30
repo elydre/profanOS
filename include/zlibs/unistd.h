@@ -12,10 +12,13 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
-#define _POSIX_THREADS 1
-
+#include <profan/minimal.h>
 #include <sys/types.h>
 #include <stddef.h>
+
+_BEGIN_C_FILE
+
+#define _POSIX_THREADS 1
 
 #undef  SEEK_SET
 #define SEEK_SET 0
@@ -42,8 +45,23 @@
 #define _PC_PATH_MAX     2
 
 // getopt
-extern int optind, opterr, optopt;
-extern char *optarg;
+#ifdef __GNUC__
+  extern int optind, opterr, optopt;
+  extern char *optarg;
+#else
+  // old compilers make simple R_386_COPY
+  // of external variables
+
+  extern int   *__getoptind(void);
+  extern int   *__getopterr(void);
+  extern int   *__getoptopt(void);
+  extern char **__getoptarg(void);
+
+  #define optind (*__getoptind())
+  #define opterr (*__getopterr())
+  #define optopt (*__getoptopt())
+  #define optarg (*__getoptarg())
+#endif
 
 int      access(const char *pathname, int mode);
 unsigned alarm(unsigned a);
@@ -126,5 +144,7 @@ int      unlink(const char *a);
 int      usleep(useconds_t usec);
 pid_t    vfork(void);
 ssize_t  write(int fd, const void *buf, size_t count);
+
+_END_C_FILE
 
 #endif

@@ -163,8 +163,9 @@ def is_line_too_long(path, line):
 # scan file and remove trailing whitespace
 def scan_file(path):
     analyzed["files"] += 1
-    contant = ""
     last_line = None
+    contant = ""
+
     with open(path) as f:
         lines = f.readlines()
         if os.path.splitext(path)[1] in file_with_header:
@@ -172,7 +173,10 @@ def scan_file(path):
         for l, c in enumerate(lines):
             analyzed["lines"] += 1
 
-            line = c[:-1] # remove newline
+            if c.endswith("\n"):
+                line = c[:-1] # remove newline
+            else:
+                line = c
 
             # check if line contains tab
             if "\t" in line:
@@ -196,11 +200,18 @@ def scan_file(path):
             if is_line_too_long(path, line):
                 print_warning(path, l, "line is too long")
 
+            if line == c:
+                if not apply_patch:
+                    print_warning(path, l, "missing newline at end of file")
+                else:
+                    print_note(path, l, "[fixed] missing newline at end of file")
+
             contant += line + "\n"
             last_line = line
 
-    with open(path, "w") as f:
-        f.write(contant)
+    if apply_patch:
+        with open(path, "w") as f:
+            f.write(contant)
 
 # scan directory for files and directories
 def scan_dir(path):

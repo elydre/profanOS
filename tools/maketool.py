@@ -375,7 +375,7 @@ def build_disk_elfs():
             else:
                 if file1_newer(f"{OUT_DIR}/{fname}", fname):
                     continue
-                print(f"[cp] {fname}")
+                cprint(COLOR_EXEC, f"[cp] {fname}")
                 print_and_exec(f"cp {fname} {OUT_DIR}/{fname}")
 
     # check double file names (cmd/*/name.c and cmd/*/name/file1.c)
@@ -435,10 +435,17 @@ def build_disk_elfs():
         sleep(0.05)
 
     # linking libs
-    for name in list(set([f"{name.split('/')[1]}" for name in lib_build_list])):
+    to_link = list(set([f"{name.split('/')[1]}" for name in lib_build_list]))
+
+    if "libc" in to_link:
+        to_link.remove("libc")
+        to_link.insert(0, "libc")
+
+    for name in to_link:
         objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{name}", ".o")
         print_info_line(f"[link] zlibs/{name}.so")
-        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}")
+        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}" +
+                (f" -L{OUT_DIR}/zlibs -lc" if name != "libc" else ""))
 
     total = len(elf_build_list) + len(bin_build_list) + len(mod_build_list) + len(dir_build_list)
 
@@ -514,25 +521,34 @@ def get_kernel_version(print_info = True, add_editing = False):
 def write_build_logs():
     print_info_line("generating build logs")
 
+    def docmd_or_unknown(cmd):
+        try:
+            return os.popen(cmd).read().splitlines()[0]
+        except:
+            return "unknown"
+
     try:
         user_name = os.getlogin()
-    except Exception:
+    except:
         user_name = "unknown"
 
-    linux_dist = os.popen("lsb_release -d").read().splitlines()[0].split(":")[1].strip()
+    try:
+        linux_dist = os.popen("lsb_release -d").read().splitlines()[0].split(":")[1].strip()
+    except:
+        linux_dist = "unknown"
 
     text = "UTC TIME  " + datetime.datetime.now(datetime.timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S"
     ) + "\n"
     text += f"    HOST  {os.uname().nodename} ({linux_dist}, {os.uname().sysname}) by {user_name}\n"
     text += f"  KERNEL  profanOS {get_kernel_version(False, True)}\n"
-    text += f"      CC  {os.popen(f'{CC} --version').read().splitlines()[0]}\n"
-    text += f"      LD  {os.popen('ld --version').read().splitlines()[0]}\n"
-    text += f"  PYTHON  {os.popen('python3 --version').read().splitlines()[0]}\n"
-    text += f"    GRUB  {os.popen('grub-mkrescue --version').read().splitlines()[0]}\n"
-    text += f"GIT HASH  {os.popen('git rev-parse HEAD').read().splitlines()[0]}\n"
-    text += f"GIT REPO  {os.popen('git remote get-url origin').read().splitlines()[0]}"
-    text += f" [{os.popen('git rev-parse --abbrev-ref HEAD').read().splitlines()[0]}]\n"
+    text += f"      CC  {docmd_or_unknown(f'{CC} --version')}\n"
+    text += f"      LD  {docmd_or_unknown('ld --version')}\n"
+    text += f"  PYTHON  {docmd_or_unknown('python3 --version')}\n"
+    text += f"    GRUB  {docmd_or_unknown('grub-mkrescue --version')}\n"
+    text += f"GIT HASH  {docmd_or_unknown('git rev-parse HEAD')}\n"
+    text += f"GIT REPO  {docmd_or_unknown('git remote get-url origin')}"
+    text += f" [{docmd_or_unknown('git rev-parse --abbrev-ref HEAD')}]\n"
 
     with open(f"{OUT_DIR}/disk/user/build.log", "w") as f:
         f.write(text)

@@ -12,10 +12,15 @@
 #ifndef _PTHREAD_H
 #define _PTHREAD_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
 #include <time.h>
 
+_BEGIN_C_FILE
+
 // we don't have sched.h yet so we define it here
+int sched_yield(void); // unistd.c
+
 struct sched_param {
     int sched_priority;
 };
@@ -223,5 +228,7 @@ int   pthread_spin_destroy(pthread_spinlock_t *);
 int   pthread_spin_trylock(pthread_spinlock_t *);
 int   pthread_spin_lock(pthread_spinlock_t *);
 int   pthread_spin_unlock(pthread_spinlock_t *);
+
+_END_C_FILE
 
 #endif

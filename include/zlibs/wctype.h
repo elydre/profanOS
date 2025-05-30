@@ -12,7 +12,10 @@
 #ifndef _WCTYPE_H
 #define _WCTYPE_H
 
+#include <profan/minimal.h>
 #include <wchar.h>
+
+_BEGIN_C_FILE
 
 #define WEOF ((wint_t) -1)
 
@@ -36,5 +39,7 @@ wint_t    towlower(wint_t);
 wint_t    towupper(wint_t);
 wctrans_t wctrans(const char *);
 wctype_t  wctype(const char *);
+
+_END_C_FILE
 
 #endif

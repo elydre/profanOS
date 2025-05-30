@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <wchar.h>
 #include <ctype.h>
@@ -26,6 +27,9 @@ static uint32_t g_rand_seed = 0;
 
 static void **g_atexit_funcs = NULL;
 static void *g_entry_exit = NULL;
+
+char *program_invocation_short_name;
+char *program_invocation_name;
 
 char **environ = NULL;
 
@@ -38,12 +42,10 @@ char **environ = NULL;
 void __buddy_disable_leaks(void);
 void __buddy_init(void);
 
-void __unistd_init(void);
 void __stdio_init(void);
 void __stdio_fini(void);
 
 void __attribute__((constructor)) __libc_constructor(void) {
-    __unistd_init();
     __buddy_init();
     __stdio_init();
 }
@@ -59,8 +61,12 @@ void __attribute__((destructor)) __libc_destructor(void) {
  *                            *
 *******************************/
 
-void __init_libc(char **env, void *entry_exit) {
+void __init_libc(char **argv, char **env, void *entry_exit) {
     int size, offset;
+
+    // set the program name (gnu extension)
+    program_invocation_short_name = argv[0];
+    program_invocation_name = argv[0];
 
     g_entry_exit = entry_exit;
 
@@ -369,7 +375,33 @@ size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
 // mbtowc defined in wchar.c
 
 int mkstemp(char *template) {
-    return (PROFAN_FNI, 0);
+    int len, index;
+
+    char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    // the last six characters of template must be "XXXXXX"
+    if (template == NULL || (len = strlen (template)) < 6 ||
+            memcmp (template + (len - 6), "XXXXXX", 6)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // user may supply more than six trailing X
+    for (index = len - 6; index > 0 && template[index - 1] == 'X'; index--);
+
+    for (int i = 0; i < 1000; i++) {
+        for (int j = index; j < len; j++)
+            template[j] = letters[rand () % 62];
+
+        int fd = open(template, O_RDWR | O_CREAT, 0644);
+
+        if (fd != -1)
+            return fd;
+        if (errno != EEXIST)
+            return -1;
+    }
+
+    return -1;
 }
 
 char *mktemp(char *template) {
@@ -377,7 +409,19 @@ char *mktemp(char *template) {
 }
 
 int putenv(char *string) {
-    return (PROFAN_FNI, 0);
+    char *name = string;
+    char *value = strchr(string, '=');
+
+    if (value == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    *value = '\0';
+    value++;
+    int r = setenv(name, value, 1);
+    *value = '=';
+    return r;
 }
 
 // qsort defined in qsort.c
@@ -415,7 +459,7 @@ char *realpath(const char *path, char *resolved_path) {
         return NULL;
     }
 
-    char *fullpath = profan_path_join(profan_wd_path, path);
+    char *fullpath = profan_path_join(profan_wd_path(), path);
     fu_simplify_path(fullpath);
 
     if (resolved_path == NULL)

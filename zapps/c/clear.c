@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/syscall.h>
-#include <profan/arp.h>
+#include <profan/carp.h>
 
 #include <stdio.h>
 
@@ -28,14 +28,14 @@ void hardclear(void) {
 }
 
 int main(int argc, char **argv) {
-    arp_init("[-x]", 0);
+    carp_init("[-x]", 0);
 
-    arp_register('x', ARP_STANDARD, "set all pixels to black and clear the screen");
+    carp_register('x', CARP_STANDARD, "set all pixels to black and clear the screen");
 
-    if (arp_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
-    if (arp_isset('x'))
+    if (carp_isset('x'))
         hardclear();
 
     ansiclear();

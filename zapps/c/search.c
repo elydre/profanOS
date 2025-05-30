@@ -13,7 +13,7 @@
 
 #include <profan/filesys.h>
 #include <profan/syscall.h>
-#include <profan/arp.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <string.h>
@@ -86,36 +86,36 @@ int search_recursive(uint32_t base, const char *path, uint8_t required_type, con
 }
 
 int main(int argc, char **argv) {
-    arp_init("[-f|-d] [-e <ext>] [dir]", 1);
+    carp_init("[-f|-d] [-e <ext>] [dir]", 1);
 
-    arp_register('d', ARP_STANDARD, "search for directories only");
-    arp_register('e', ARP_NEXT_STR, "search for specific extension");
-    arp_register('f', ARP_STANDARD, "search for files only");
+    carp_register('d', CARP_STANDARD, "search for directories only");
+    carp_register('e', CARP_NEXT_STR, "search for specific extension");
+    carp_register('f', CARP_STANDARD, "search for files only");
 
-    arp_conflict("def");
+    carp_conflict("def");
 
-    if (arp_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
     char required_type;
 
-    if (arp_isset('d'))
+    if (carp_isset('d'))
         required_type = SEARCH_DIR;
-    else if (arp_isset('f') || arp_isset('e'))
+    else if (carp_isset('f') || carp_isset('e'))
         required_type = SEARCH_FILE;
     else
         required_type = SEARCH_ALL;
 
-    const char *dir = arp_file_next();
-    const char *ext = arp_get_str('e');
+    const char *dir = carp_file_next();
+    const char *ext = carp_get_str('e');
 
     uint32_t base;
 
     if (dir) {
         base = profan_path_resolve(dir);
     } else {
-        base = profan_wd_sid;
-        dir = profan_wd_sid == SID_ROOT ? "/" : ".";
+        base = profan_wd_sid();
+        dir = profan_wd_sid() == SID_ROOT ? "/" : ".";
     }
 
     if (!fu_is_dir(base)) {

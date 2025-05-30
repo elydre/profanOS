@@ -13,7 +13,7 @@
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
-#include <profan/arp.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -114,26 +114,26 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
 }
 
 rm_options_t *parse_options(int argc, char **argv) {
-    arp_init("[options] <path1> [path2] ...", ARP_FNOMAX | ARP_FMIN(1));
+    carp_init("[options] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
 
-    arp_register('f', ARP_STANDARD, "ignore nonexistent files");
-    arp_register('l', ARP_STANDARD, "remove only the link");
-    arp_register('p', ARP_STANDARD, "preview the removal");
-    arp_register('r', ARP_STANDARD, "allow recursive removal");
-    arp_register('R', ARP_STANDARD, NULL);
-    arp_register('v', ARP_STANDARD, "explain what is being done");
+    carp_register('f', CARP_STANDARD, "ignore nonexistent files");
+    carp_register('l', CARP_STANDARD, "remove only the link");
+    carp_register('p', CARP_STANDARD, "preview the removal");
+    carp_register('r', CARP_STANDARD, "allow recursive removal");
+    carp_register('R', CARP_STANDARD, NULL);
+    carp_register('v', CARP_STANDARD, "explain what is being done");
 
-    arp_conflict("pl");
+    carp_conflict("pl");
 
-    if (arp_parse(argc, argv))
+    if (carp_parse(argc, argv))
         exit(1);
 
     rm_options_t *options = malloc(sizeof(rm_options_t));
-    options->no_error   = arp_isset('f');
-    options->link_only  = arp_isset('l');
-    options->preview    = arp_isset('p');
-    options->allow_dirs = arp_isset('r') || arp_isset('R');
-    options->verbose    = arp_isset('v') || arp_isset('p');
+    options->no_error   = carp_isset('f');
+    options->link_only  = carp_isset('l');
+    options->preview    = carp_isset('p');
+    options->allow_dirs = carp_isset('r') || carp_isset('R');
+    options->verbose    = carp_isset('v') || carp_isset('p');
 
     return options;
 }
@@ -144,8 +144,8 @@ int main(int argc, char **argv) {
 
     const char *file;
 
-    while ((file = arp_file_next())) {
-        char *path = profan_path_join(profan_wd_path, file);
+    while ((file = carp_file_next())) {
+        char *path = profan_path_join(profan_wd_path(), file);
         uint32_t elem = fu_path_to_sid(SID_ROOT, path);
 
         if (IS_SID_NULL(elem)) {

@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === dlfcn.h : 2024 ===                                                    |
+|   === strings.h : 2025 ===                                                  |
 |                                                                             |
-|    Implementation of the dlfcn.h header file from libC           .pi0iq.    |
+|    Implementation of the strings.h header file from libC         .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,28 +9,24 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef _DLFCN_H
-#define _DLFCN_H
+#ifndef _STRINGS_H
+#define _STRINGS_H
 
 #include <profan/minimal.h>
+#include <stddef.h>
 
 _BEGIN_C_FILE
 
-#define RTLD_LAZY     1
-#define RTLD_NOW      2
-#define RTLD_LOCAL    0x000
-#define RTLD_GLOBAL   0x100
-#define RTLD_TRACE    0x200
-#define RTLD_NODELETE 0x400
-#define RTLD_NOLOAD   0x800
-
-#define RTLD_NEXT     ((void *) -1)   // search subsequent objects
-#define RTLD_DEFAULT  ((void *) -2)   // search in RTLD_GLOBAL
-
-void *dlopen(const char *filename, int flag);
-void *dlsym(void *handle, const char *symbol);
-int   dlclose(void *handle);
-char *dlerror(void);
+int    bcmp(const void *s1, const void *s2, size_t n);
+void   bcopy(const void *src, void *dest, size_t n);
+void   bzero(void *s, size_t n);
+int    ffs(int i);
+int    ffsll(long long int i);
+char  *index(const char *s, int c);
+char  *rindex(const char *s, int c);
+int    strcasecmp(const char *s1, const char *s2);
+char  *strcasestr(const char *s1, const char *s2);
+int    strncasecmp(const char *s1, const char *s2, size_t n);
 
 _END_C_FILE
 

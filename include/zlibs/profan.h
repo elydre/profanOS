@@ -12,17 +12,15 @@
 #ifndef PROFAN_LIB_ID
 #define PROFAN_LIB_ID 1005
 
+#include <profan/minimal.h>
 #include <profan/types.h>
+
+_BEGIN_C_FILE
 
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, NULL, argc, argv, environ, 1}, NULL)
 
 #define PROFAN_FNI profan_nimpl(__FUNCTION__)
-
-#ifndef _PROFAN_NO_WD
-extern const uint32_t profan_wd_sid;
-extern const char    *profan_wd_path;
-#endif
 
 #define KB_ESC      1
 #define KB_BACK     14
@@ -55,10 +53,13 @@ char *profan_input(int *size);
 void  profan_nimpl(const char *name);
 char *profan_libc_version(void);
 
-char    *profan_path_join(const char *old, const char *new);
-void     profan_path_sep(const char *fullpath, char **parent, char **cnt);
-char    *profan_path_path(const char *exec, int allow_path);
-uint32_t profan_path_resolve(const char *path);
+char       *profan_path_join(const char *old, const char *new);
+void        profan_path_sep(const char *fullpath, char **parent, char **cnt);
+char       *profan_path_path(const char *exec, int allow_path);
+uint32_t    profan_path_resolve(const char *path);
+
+uint32_t    profan_wd_sid(void);
+const char *profan_wd_path(void);
 
 void *profan_kmalloc(uint32_t size, int as_kernel);
 void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);
@@ -75,5 +76,7 @@ void  profan_kfree(void *mem);
 #define profan_input_serial ((char *(*)(int *, int)) get_func_addr(PROFAN_LIB_ID, 6))
 #define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 7))
 #endif
+
+_END_C_FILE
 
 #endif

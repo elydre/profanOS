@@ -12,8 +12,11 @@
 #ifndef _INTTYPES_H
 #define _INTTYPES_H
 
+#include <profan/minimal.h>
 #include <stdint.h>
 #include <stddef.h>
+
+_BEGIN_C_FILE
 
 // fprintf macros for signed integers
 #define PRId8           "d"     // int8_t
@@ -232,5 +235,7 @@ intmax_t  strtoimax(const char *nptr, char **endptr, int base);
 uintmax_t strtoumax(const char *nptr, char **endptr, int base);
 intmax_t  wcstoimax(const wchar_t *nptr, wchar_t **endptr, int base);
 uintmax_t wcstoumax(const wchar_t *nptr, wchar_t **endptr, int base);
+
+_END_C_FILE
 
 #endif

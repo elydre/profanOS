@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -67,7 +68,7 @@ void profan_print_trace(void) {
 
     char *libname, *name;
 
-    for (int i = 0; i < 5 && ebp; i++) {
+    for (int i = 0; i < 8 && ebp; i++) {
         if (ebp->eip >= 0xB0000000 && ebp->eip < 0xC0000000)
             break; // deluge
 
@@ -112,6 +113,17 @@ char *profan_libc_version(void) {
  *   FILESYSTEM UTILS   *
  *                      *
 *************************/
+
+extern uint32_t g_wd_sid;
+extern char g_wd_path[PATH_MAX];
+
+uint32_t profan_wd_sid(void) {
+    return g_wd_sid;
+}
+
+const char *profan_wd_path(void) {
+    return g_wd_path;
+}
 
 char *profan_path_join(const char *old, const char *new) {
     char *result;
@@ -176,7 +188,7 @@ void profan_path_sep(const char *fullpath, char **parent, char **cnt) {
 uint32_t profan_path_resolve(const char *path) {
     if (path[0] == '/')
         return fu_path_to_sid(SID_ROOT, path);
-    return fu_path_to_sid(profan_wd_sid, path);
+    return fu_path_to_sid(profan_wd_sid(), path);
 }
 
 char *profan_path_path(const char *exec, int allow_path) {
@@ -189,7 +201,7 @@ char *profan_path_path(const char *exec, int allow_path) {
             errno = EACCES;
             return NULL;
         }
-        char *file_path = profan_path_join(profan_wd_path, exec);
+        char *file_path = profan_path_join(profan_wd_path(), exec);
         fu_simplify_path(file_path);
         if (fu_path_to_sid(SID_ROOT, file_path))
             return file_path;

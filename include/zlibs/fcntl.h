@@ -12,7 +12,10 @@
 #ifndef _FCNTL_H
 #define _FCNTL_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 #define O_RDONLY    0x0000  // open for reading only
 #define O_WRONLY    0x0001  // open for writing only
@@ -65,5 +68,7 @@ struct flock {
 int open(const char *file, int oflag, ...);
 int creat(const char *file, mode_t mode);
 int fcntl(int fd, int cmd, ...);
+
+_END_C_FILE
 
 #endif

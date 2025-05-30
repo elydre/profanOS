@@ -16,33 +16,25 @@ typedef __SIZE_TYPE__ size_t;
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
 
 #ifndef __cplusplus
-typedef __WCHAR_TYPE__ wchar_t;
-
-/* XXX fix to use proper __STDC_VERSION__ number later on */
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202000L)
-typedef typeof(nullptr) nullptr_t;
-#endif
-
-#endif
-
-#ifdef __cplusplus
-typedef decltype(nullptr) nullptr_t;
+  typedef __WCHAR_TYPE__ wchar_t;
+#else
+  typedef void* nullptr_t;
+  typedef long double max_align_t;
 #endif
 
 #undef NULL
 #ifndef __cplusplus
-#  define NULL ((void *)0)
+  #define NULL ((void *) 0)
 #else
-#  define NULL 0
+  #define NULL 0
 #endif
 
 #undef offsetof
 #define offsetof(s, m) __builtin_offsetof(s, m)
 
-/* XXX fix to use proper __STDC_VERSION__ number later on */
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202000L)
-#  undef unreachable
-#  define unreachable() __builtin_unreachable()
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201710L)
+  #undef unreachable
+  #define unreachable() __builtin_unreachable()
 #endif
 
 #endif

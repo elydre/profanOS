@@ -171,6 +171,7 @@ static void i_free_process(process_t *proc) {
             free(proc->comm.argv[i]);
         free(proc->comm.argv);
     }
+
     free(proc->comm.envp);
 
     mem_free_all(proc->pid);

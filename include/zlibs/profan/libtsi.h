@@ -12,7 +12,10 @@
 #ifndef _PROFAN_LIBTSI_H
 #define _PROFAN_LIBTSI_H
 
+#include <profan/minimal.h>
 #include <stdint.h>
+
+_BEGIN_C_FILE
 
 #undef TSI_NON_PRINTABLE
 #undef TSI_NO_AUTO_WRAP
@@ -22,5 +25,7 @@
 
 int tsi_start(const char *title, const char *string, uint32_t flags);
 int tsi_start_array(const char *title, const char **lines, uint32_t flags);
+
+_END_C_FILE
 
 #endif

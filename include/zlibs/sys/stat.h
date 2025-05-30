@@ -12,7 +12,10 @@
 #ifndef _SYS_STAT_H
 #define _SYS_STAT_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
+
+_BEGIN_C_FILE
 
 struct stat {
     dev_t     st_dev;       // ID of device containing file
@@ -75,5 +78,7 @@ int mkdir(const char *path, mode_t mode);
 int mkfifo(const char *path, mode_t mode);
 int stat(const char *path, struct stat *buf);
 mode_t umask(mode_t mask);
+
+_END_C_FILE
 
 #endif

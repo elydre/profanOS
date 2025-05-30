@@ -12,6 +12,10 @@
 #ifndef _PROFAN_MATH_H
 #define _PROFAN_MATH_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define M_E        2.7182818284590452354
 #define M_LOG2E    1.4426950408889634074
 #define M_LOG10E   0.43429448190325182765
@@ -59,5 +63,7 @@ float  sqrtf(float x);
 float  tanf(float x);
 double trunc(double x);
 float  truncf(float x);
+
+_END_C_FILE
 
 #endif

@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/arp.h>
+#include <profan/carp.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -75,37 +75,37 @@ void cmd_rev(FILE *file) {
 int main(int argc, char **argv) {
     void (*cmd)(FILE *);
 
-    arp_init("[-LUR -n %] [file1] [file2] ...", ARP_FNOMAX);
+    carp_init("[-lur -n %] [file1] [file2] ...", CARP_FNOMAX);
 
-    arp_register('l', ARP_STANDARD, "convert to lowercase");
-    arp_register('n', ARP_NEXT_INT, "strings size (default: 4)");
-    arp_register('r', ARP_STANDARD, "reverse lines of text");
-    arp_register('u', ARP_STANDARD, "convert to uppercase");
-    arp_conflict("lurn,urn,rn");
+    carp_register('l', CARP_STANDARD, "convert to lowercase");
+    carp_register('n', CARP_NEXT_INT, "strings size (default: 4)");
+    carp_register('r', CARP_STANDARD, "reverse lines of text");
+    carp_register('u', CARP_STANDARD, "convert to uppercase");
+    carp_conflict("lurn,urn,rn");
 
-    arp_set_ver("strings", NULL);
+    carp_set_ver("strings", NULL);
 
-    if (arp_parse(argc, argv))
+    if (carp_parse(argc, argv))
         return 1;
 
-    if (arp_isset('l'))
+    if (carp_isset('l'))
         cmd = cmd_lower;
-    else if (arp_isset('u'))
+    else if (carp_isset('u'))
         cmd = cmd_upper;
-    else if (arp_isset('r'))
+    else if (carp_isset('r'))
         cmd = cmd_rev;
     else {
-        g_arg = arp_isset('n') ? arp_get_int('n') : 4;
+        g_arg = carp_isset('n') ? carp_get_int('n') : 4;
         cmd = cmd_strings;
     }
 
-    if (arp_file_count() == 0) {
+    if (carp_file_count() == 0) {
         cmd(stdin);
         return 0;
     }
 
     const char *path;
-    while ((path = arp_file_next())) {
+    while ((path = carp_file_next())) {
         FILE *file = fopen(path, "r");
 
         if (file == NULL) {

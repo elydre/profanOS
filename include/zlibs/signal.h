@@ -12,6 +12,10 @@
 #ifndef _SIGNAL_H
 #define _SIGNAL_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
 #define _NSIG       64
 #define _NSIG_BPW   32
 #define _NSIG_WORDS (_NSIG / _NSIG_BPW)
@@ -64,5 +68,7 @@ typedef int sig_atomic_t;
 void (*signal(int sig, void (*func)(int)))(int);
 int kill(int pid, int sig);
 int raise(int sig);
+
+_END_C_FILE
 
 #endif

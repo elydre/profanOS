@@ -14,7 +14,7 @@
 #include <profan/syscall.h>
 #include <profan/panda.h>
 #include <profan/clip.h>
-#include <profan/arp.h>
+#include <profan/carp.h>
 #include <profan.h>
 
 #include <string.h>
@@ -937,25 +937,25 @@ void rim_syntax_init(const char *lang) {
 }
 
 char *compute_args(int argc, char **argv) {
-    arp_init("[options] [file]", 1);
-    arp_set_ver("rim", RIM_VERSION);
+    carp_init("[options] [file]", 1);
+    carp_set_ver("rim", RIM_VERSION);
 
-    arp_register('c', ARP_NEXT_STR, "specify syntax highlighting");
-    arp_register('n', ARP_STANDARD, "disable syntax highlighting");
-    arp_register('s', ARP_STANDARD, "always save file at exit");
-    arp_register('M', ARP_STANDARD, "show a memo of keyboard shortcuts");
-    arp_register('t', ARP_STANDARD, "always insert tab character");
+    carp_register('c', CARP_NEXT_STR, "specify syntax highlighting");
+    carp_register('n', CARP_STANDARD, "disable syntax highlighting");
+    carp_register('s', CARP_STANDARD, "always save file at exit");
+    carp_register('M', CARP_STANDARD, "show a memo of keyboard shortcuts");
+    carp_register('t', CARP_STANDARD, "always insert tab character");
 
-    arp_conflict("nc");
+    carp_conflict("nc");
 
-    if (arp_parse(argc, argv))
+    if (carp_parse(argc, argv))
         exit(1);
 
     const char *ext = NULL;
 
     g_rim.always_tab = 0;
 
-    if (arp_isset('M')) {
+    if (carp_isset('M')) {
         puts("Rim Shortcuts:\n"
             "  ctrl + q   quit\n"
             "  ctrl + s   save\n"
@@ -973,16 +973,16 @@ char *compute_args(int argc, char **argv) {
         exit(0);
     }
 
-    if (arp_isset('t'))
+    if (carp_isset('t'))
         g_rim.always_tab = 1;
-    if (arp_isset('n'))
+    if (carp_isset('n'))
         ext = "txt";
-    if (arp_isset('s'))
+    if (carp_isset('s'))
         g_rim.save_at_exit = 1;
-    if (arp_isset('c'))
-        ext = arp_get_str('c');
+    if (carp_isset('c'))
+        ext = carp_get_str('c');
 
-    const char *file = arp_file_next();
+    const char *file = carp_file_next();
 
     if (ext == NULL && file) {
         ext = strrchr(file, '.');
@@ -994,7 +994,7 @@ char *compute_args(int argc, char **argv) {
     if (!file)
         return NULL;
 
-    return profan_path_join(profan_wd_path, file);
+    return profan_path_join(profan_wd_path(), file);
 }
 
 int main(int argc, char **argv) {

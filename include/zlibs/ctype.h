@@ -12,6 +12,21 @@
 #ifndef _CTYPE_H
 #define _CTYPE_H
 
+#include <profan/minimal.h>
+
+_BEGIN_C_FILE
+
+#define _U 0x01
+#define _L 0x02
+#define _N 0x04
+#define _S 0x08
+#define _P 0x10
+#define _C 0x20
+#define _X 0x40
+#define _B 0x80
+
+extern const char _ctype_[];
+
 int isalnum(int c);
 int isalpha(int c);
 int isascii(int c);
@@ -27,5 +42,7 @@ int isxdigit(int c);
 
 int tolower(int c);
 int toupper(int c);
+
+_END_C_FILE
 
 #endif

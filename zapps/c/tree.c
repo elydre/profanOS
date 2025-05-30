@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const char *path = argv[1] ? argv[1] : profan_wd_path;
+    const char *path = argv[1] ? argv[1] : profan_wd_path();
     uint32_t sid = profan_path_resolve(path);
 
     if (!fu_is_dir(sid)) {

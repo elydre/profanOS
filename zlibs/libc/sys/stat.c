@@ -86,7 +86,7 @@ int mkdir(const char *path, mode_t mode) {
         return -1;
     }
 
-    char *fullpath = profan_path_join(profan_wd_path, path);
+    char *fullpath = profan_path_join(profan_wd_path(), path);
 
     if (IS_SID_NULL(fu_dir_create(0, fullpath))) {
         errno = EIO;

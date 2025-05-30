@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 1"
+#define OLV_VERSION "1.8 rev 2"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -221,7 +221,7 @@ int         execute_file(const char *file, char **args);
  *                         *
 ****************************/
 
-void local_itoa(int n, char *buffer) {
+char *local_itoa(int n, char *buffer) {
     int i = 0;
     int sign = 0;
 
@@ -245,6 +245,8 @@ void local_itoa(int n, char *buffer) {
         buffer[j] = buffer[i - j - 1];
         buffer[i - j - 1] = tmp;
     }
+
+    return buffer;
 }
 
 int local_atoi(const char *str, int *result) {
@@ -1543,8 +1545,7 @@ char *if_debug(char **input) {
             int c;
             for (c = 0; g_olv->bin_names[c] != NULL; c++);
 
-            printf("Reloaded %d bin names\n", c);
-            return NULL;
+            return local_itoa(c, malloc(12));
         #else
             raise_error("debug", "Not supported in this build");
             return ERROR_CODE;
@@ -1821,8 +1822,8 @@ char *if_dot(char **input) {
     local_itoa(status, g_olv->exit_code);
 
     char tmp[13];
-    local_itoa(pid, tmp);
-    set_variable("spi", tmp);
+
+    set_variable("spi", local_itoa(pid, tmp));
 
     if (file_path != input[0])
         free(file_path);
@@ -1975,9 +1976,7 @@ char *if_fstat(char **input) {
         case 'f':
             return (exists && S_ISREG(st.st_mode)) ? strdup("1") : strdup("0");
         case 'm':
-            char *time = malloc(13);
-            local_itoa(st.st_mtime, time);
-            return time;
+            return local_itoa(st.st_mtime, malloc(13));
         case 'p':
             char *perm = malloc(4);
             perm[0] = '0' + ((st.st_mode >> 6) & 07);
@@ -1986,9 +1985,7 @@ char *if_fstat(char **input) {
             perm[3] = '\0';
             return perm;
         case 's':
-            char *size = malloc(13);
-            local_itoa(st.st_size, size);
-            return size;
+            return local_itoa(st.st_size, malloc(13));
         default:
             raise_error("fstat", "Unknown option '%c'", opt);
             return ERROR_CODE;
@@ -2183,16 +2180,14 @@ char *if_range(char **input) {
     if (start > end) {
         output = malloc((start - end) * (nblen + 1) + 1);
         for (int i = start; i > end; i--) {
-            local_itoa(i, tmp);
-            strcat(tmp, " ");
+            strcat(local_itoa(i, tmp), " ");
             for (int j = 0; tmp[j]; j++)
                 output[output_len++] = tmp[j];
         }
     } else {
         output = malloc((end - start) * (nblen + 1) + 1);
         for (int i = start; i < end; i++) {
-            local_itoa(i, tmp);
-            strcat(tmp, " ");
+            strcat(local_itoa(i, tmp), " ");
             for (int j = 0; tmp[j]; j++)
                 output[output_len++] = tmp[j];
         }
@@ -2286,11 +2281,9 @@ char *if_set(char **input) {
         }
 
         char number[13];
-        local_itoa(++val, number);
 
-        if (set_variable(input[1], number)) {
+        if (set_variable(input[1], local_itoa(++val, number)))
             return ERROR_CODE;
-        }
 
         return NULL;
     }
@@ -2510,12 +2503,9 @@ char *if_sprintf(char **input) {
                         format[format_i], input[arg_i]);
                 return ERROR_CODE;
             }
-            char *nb_str = malloc(12);
-            local_itoa(nb, nb_str);
-            for (int i = 0; nb_str[i] != '\0'; i++) {
-                res[res_i++] = nb_str[i];
-            }
-            free(nb_str);
+
+            res_i += strlen(local_itoa(nb, res + res_i) + res_i);
+
         } else if (format[format_i] == 'c') {
             int nb;
             if (local_atoi(input[arg_i], &nb) || nb < 0 || nb > 255) {
@@ -2555,11 +2545,7 @@ char *if_strlen(char **input) {
         return ERROR_CODE;
     }
 
-    char *output = malloc(11);
-
-    local_itoa(strlen(input[0]), output);
-
-    return output;
+    return local_itoa(strlen(input[0]), malloc(13));;
 }
 
 char *if_ticks(char **input) {
@@ -2958,18 +2944,17 @@ char *execute_function(function_t *function, char **args) {
 
     g_olv->current_level++;
 
+    char tmp[13];
     int argc;
-    char tmp[4];
+
     for (argc = 0; args[argc] != NULL; argc++) {
-        local_itoa(argc, tmp);
-        if (!set_variable(tmp, args[argc]))
+        if (!set_variable(local_itoa(argc, tmp), args[argc]))
             continue;
         g_olv->current_level--;
         return ERROR_CODE;
     }
 
-    local_itoa(argc, tmp);
-    if (set_variable("#", tmp)) {
+    if (set_variable("#", local_itoa(argc, tmp))) {
         g_olv->current_level--;
         return ERROR_CODE;
     }
@@ -4960,17 +4945,15 @@ int execute_file(const char *file, char **args) {
     }
 
     int argc;
-    char tmp[4];
+    char tmp[13];
     for (argc = 0; args[argc] != NULL; argc++) {
-        local_itoa(argc, tmp);
-        if (!set_variable(tmp, args[argc]))
+        if (!set_variable(local_itoa(argc, tmp), args[argc]))
             continue;
         g_olv->current_level--;
         return 1;
     }
 
-    local_itoa(argc, tmp);
-    if (set_variable("#", tmp)) {
+    if (set_variable("#", local_itoa(argc, tmp))) {
         g_olv->current_level--;
         return 1;
     }

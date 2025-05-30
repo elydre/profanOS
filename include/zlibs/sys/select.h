@@ -12,8 +12,11 @@
 #ifndef _SYS_SELECT_H
 #define _SYS_SELECT_H
 
+#include <profan/minimal.h>
 #include <sys/types.h>
 #include <sys/time.h>
+
+_BEGIN_C_FILE
 
 #undef FD_SETSIZE
 #define FD_SETSIZE  1024
@@ -32,5 +35,7 @@ void FD_SET(int fd, fd_set *fdset);
 void FD_ZERO(fd_set *fdset);
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+
+_END_C_FILE
 
 #endif
