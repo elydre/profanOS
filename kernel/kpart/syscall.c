@@ -15,6 +15,7 @@
 #include <kernel/process.h>
 #include <drivers/serial.h>
 #include <drivers/mouse.h>
+#include <net/ethernet.h>
 #include <drivers/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -90,6 +91,14 @@ void *SYSCALL_ARRAY[] = {
     scuba_call_map,     // 41
     scuba_call_unmap,   // 42
     scuba_call_phys,    // 43
+
+    // ethernet.h
+    eth_listen_start, // 44
+    eth_listen_end, // 45
+    eth_listen_get, // 46
+    eth_listen_getsize, // 47
+    eth_listen_isready, // 47
+    eth_call_send, // 48
 };
 
 void syscall_handler(registers_t *r) {

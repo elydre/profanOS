@@ -69,13 +69,12 @@ uint32_t htonl(uint32_t x);
 extern uint8_t eth_mac[6];
 extern uint8_t eth_ip[4];
 
-
-#define ETH_MAX_HANDLERS 100
-
-typedef void (*packet_handler_t)(const eth_raw_packet_t *packet);
-
-// return 1 on error, else 0
-int eth_register_handler(packet_handler_t handler);
-void eth_remove_handlers(packet_handler_t handler);
+// syscalls
+void eth_listen_start();
+void eth_listen_end();
+void eth_listen_get(uint32_t data_ptr);
+uint32_t eth_listen_getsize();
+uint32_t eth_listen_isready();
+void eth_call_send(uint32_t data_ptr, uint32_t len);
 
 #endif
