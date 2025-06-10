@@ -284,7 +284,7 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 print("-- Aborted by user : KeyboardInterrupt")
             except curses.error as _error:
-                print("-- Aborted by user : Mouse went out of terminal")
+                pass
         else:
             print("ERROR: Unknown option:", args[0])
     else:
