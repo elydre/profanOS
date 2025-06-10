@@ -70,11 +70,16 @@ extern uint8_t eth_mac[6];
 extern uint8_t eth_ip[4];
 
 // syscalls
-void eth_listen_start();
-void eth_listen_end();
-void eth_listen_get(uint32_t data_ptr);
+int eth_listen_start();
+int eth_listen_end();
+int eth_listen_get(void *data_ptr);
 uint32_t eth_listen_getsize();
 uint32_t eth_listen_isready();
-void eth_call_send(uint32_t data_ptr, uint32_t len);
+int eth_send(void *data_ptr, uint32_t len);
+void I_listener_remove(int pid);
+int eth_get_mac(uint8_t *mac);
+uint32_t eth_get_transaction_id();
+int eth_set_ip(uint8_t *ip);
+int eth_get_ip(uint8_t *ip);
 
 #endif

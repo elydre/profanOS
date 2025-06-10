@@ -97,8 +97,12 @@ void *SYSCALL_ARRAY[] = {
     eth_listen_end, // 45
     eth_listen_get, // 46
     eth_listen_getsize, // 47
-    eth_listen_isready, // 47
-    eth_call_send, // 48
+    eth_listen_isready, // 48
+    eth_send, // 49
+    eth_get_mac, // 50
+    eth_get_transaction_id, // 51
+    eth_set_ip, // 52
+    eth_get_ip, // 53
 };
 
 void syscall_handler(registers_t *r) {

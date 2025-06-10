@@ -282,6 +282,17 @@ DEFN_SYSCALL3(41, int,       scuba_map, void *, void *, int)
 DEFN_SYSCALL1(42, int,       scuba_unmap, void *)
 DEFN_SYSCALL1(43, void *,    scuba_phys, void *)
 
+DEFN_SYSCALL0(44, int, eth_listen_start)
+DEFN_SYSCALL0(45, int, eth_listen_end)
+DEFN_SYSCALL1(46, int, eth_listen_get, void *)
+DEFN_SYSCALL0(47, uint32_t, eth_listen_getsize)
+DEFN_SYSCALL0(48, uint32_t, eth_listen_isready)
+DEFN_SYSCALL2(49, int, eth_send, void *, uint32_t)
+DEFN_SYSCALL1(50, int, eth_get_mac, uint8_t *)
+DEFN_SYSCALL0(51, uint32_t, eth_get_transaction_id)
+DEFN_SYSCALL1(52, int, eth_set_ip, uint8_t *)
+DEFN_SYSCALL1(53, int, eth_get_ip, uint8_t *)
+
 _END_C_FILE
 
 #endif

@@ -15,6 +15,7 @@
 #include <drivers/pci.h>
 #include <cpu/isr.h>
 #include <drivers/e1000_private.h>
+#include <kernel/scubasuit.h>
 #include <drivers/e1000.h>
 #include <drivers/pci.h>
 #include <kernel/snowflake.h>
@@ -166,7 +167,6 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs);
 void e1000_handler(registers_t *regs) {
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1);
     uint32_t status = pci_read_cmd_u32(&(g_e1000.pci), 0, (0xc0));
-    kprintf("E1000 interrupt %x\n", status);
     if(status) {
         if (status & 0x80)
             e1000_handle_receive(&g_e1000, regs);
@@ -278,7 +278,6 @@ int e1000_init(void) {
 void e1000_send_packet(const void * p_data, uint16_t p_len)
 {
     e1000_t *device = &g_e1000;
-
     device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
     device->tx_descs_phys[device->tx_cur]->addr_high = 0;
     device->tx_descs_phys[device->tx_cur]->length = p_len;
@@ -313,6 +312,12 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
 }
 
 void e1000_set_mac(uint8_t mac[6]) {
-    mem_copy(g_e1000.mac, mac, 6);
+    mac[0] = g_e1000.mac[0];
+    mac[1] = g_e1000.mac[1];
+    mac[2] = g_e1000.mac[2];
+    mac[3] = g_e1000.mac[3];
+    mac[4] = g_e1000.mac[4];
+    mac[5] = g_e1000.mac[5];
+    // dont use mem_cpy pf4 can put the argument in order
 }
 

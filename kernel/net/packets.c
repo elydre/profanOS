@@ -27,10 +27,11 @@ void eth_append_packet(void *data, uint32_t len) {
 
 	for (int i = 0; i < listeners_len; i++) {
 		listener_t *lis = &listeners[i];
-		if (process_wait(lis->pid, NULL, 0)) {
+		if (process_is_dead(lis->pid)) {
 			I_remove_listener(i);
 			continue;
 		}
+		kprintf_serial("    to pid %d\n", lis->pid);
 		lis->packets = realloc_as_kernel(lis->packets, sizeof(eth_raw_packet_t) * (1 + lis->packets_len));
 		lis->packets[i].data = malloc(sizeof(uint8_t) * len);
 		lis->packets[i].len = len;
@@ -48,7 +49,8 @@ static void I_listener_add(int pid) {
 	listeners_len++;
 }
 
-static void I_listener_remove(int pid) {
+// not static for process_kill
+void I_listener_remove(int pid) {
 	for (int i = 0; i < listeners_len; i++) {
 		if (listeners[i].pid == pid) {
 			I_remove_listener(i);
@@ -83,22 +85,25 @@ static listener_t *I_listener_get(int pid) {
 
 
 
-void eth_listen_start() {
+int eth_listen_start() {
 	int pid = process_get_pid();
 
-	eth_listener_add(pid);
+	I_listener_add(pid);
+	return 0;
 }
 
-void eth_listen_end() {
+int eth_listen_end() {
 	int pid = process_get_pid();
 
-	eth_listener_remove(pid);
+	I_listener_remove(pid);
+	return 0;
 }
 
-void eth_listen_get(uint32_t data_ptr) {
+int eth_listen_get(void *data_ptr) {
 	int pid = process_get_pid();
 
-	eth_listener_pop(pid, (void *)data_ptr);
+	I_listener_pop(pid, (void *)data_ptr);
+	return 0;
 }
 
 uint32_t eth_listen_getsize() {
@@ -125,6 +130,42 @@ uint32_t eth_listen_isready() {
 
 }
 
-void eth_call_send(uint32_t data_ptr, uint32_t len) {
-	eth_send_packet((void *)data_ptr, len);
+int eth_send(void *data_ptr, uint32_t len) {
+	uint32_t addr = (uint32_t)data_ptr;
+	addr -= addr % 4096;
+	addr = (uint32_t)scuba_call_phys((void *)addr);
+	addr += (uint32_t)data_ptr % 4096;
+	eth_send_packet((const void *)addr, len);
+	return 0;
+}
+
+int eth_get_mac(uint8_t *mac) {
+	mac[0] = eth_mac[0];
+	mac[1] = eth_mac[1];
+	mac[2] = eth_mac[2];
+	mac[3] = eth_mac[3];
+	mac[4] = eth_mac[4];
+	mac[5] = eth_mac[5];
+	return 0;
+}
+
+uint32_t eth_get_transaction_id() {
+	static uint32_t id = 0xABCD0000;
+	return id++;
+}
+
+int eth_set_ip(uint8_t *ip) {
+	eth_ip[0] = ip[0];
+	eth_ip[1] = ip[1];
+	eth_ip[2] = ip[2];
+	eth_ip[3] = ip[3];
+	return 0;
+}
+
+int eth_get_ip(uint8_t *ip) {
+	ip[0] = eth_ip[0];
+	ip[1] = eth_ip[1];
+	ip[2] = eth_ip[2];
+	ip[3] = eth_ip[3];
+	return 0;
 }

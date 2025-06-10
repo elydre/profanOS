@@ -11,6 +11,7 @@
 
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
+#include <net/ethernet.h>
 #include <cpu/timer.h>
 #include <minilib.h>
 #include <system.h>
@@ -552,6 +553,8 @@ int process_kill(uint32_t pid, uint8_t retcode) {
         }
     }
 
+    I_listener_remove(pid);
+
     if (pid == g_proc_current->pid) {
         schedule(0);
     }
@@ -808,4 +811,9 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
         default:
             return -1;
     }
+}
+
+int process_is_dead(int pid) {
+    int place = i_pid_to_place(pid);
+    return (place < 0 || plist[place].state == PROC_STATE_ZMB);
 }
