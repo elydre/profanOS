@@ -9,9 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <stdlib.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 uint64_t make_qhash(FILE *file) {
