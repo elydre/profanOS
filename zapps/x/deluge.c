@@ -418,8 +418,8 @@ int load_sections(elfobj_t *obj, uint8_t *file) {
     if (obj->type == ET_EXEC) {
         obj->mem = (void *) base_addr;
         syscall_scuba_generate(base_addr, required_size / 0x1000);
-    } else {
-        obj->mem = (void *) syscall_mem_alloc(required_size, 0x1000, 1);
+    } else { // TODO: use a page
+        obj->mem = (void *) syscall_mem_alloc(required_size, 1, 0x1000);
         offset = obj->mem;
     }
 

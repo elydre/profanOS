@@ -166,7 +166,7 @@ static void i_free_process(process_t *proc) {
     if (!proc->scuba_dir)
         return;
 
-    mem_free_all(proc->pid);
+    mem_free_all(proc->pid, 0);
 
     scuba_dir_destroy(proc->scuba_dir);
     proc->scuba_dir = NULL;
@@ -711,17 +711,6 @@ uint32_t process_get_pid(void) {
     return g_proc_current->pid;
 }
 
-comm_struct_t *process_get_comm(uint32_t pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[get_comm] pid %d not found", pid);
-        return NULL;
-    }
-
-    return &(plist[place].comm);
-}
-
 int process_list_all(uint32_t *list, int max) {
     int i = 0;
     for (int j = 0; j < PROCESS_MAX && i < max; j++) {
@@ -790,8 +779,6 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
             return plist[place].run_time;
         case PROC_INFO_NAME:
             return (int) plist[place].name;
-        case PROC_INFO_COMM:
-            return (int) &plist[place].comm;
         case PROC_INFO_SET_NAME:
             if (!ptr)
                 return -1;

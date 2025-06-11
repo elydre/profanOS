@@ -41,7 +41,7 @@ void *SYSCALL_ARRAY[] = {
     mem_alloc,          // 8
     mem_free_addr,      // 9
     mem_free_all,       // 10
-    mem_get_alloc_size, // 11
+    mem_alloc_fetch,    // 11
     mem_get_info,       // 12
 
     // rtc.h + timer.h

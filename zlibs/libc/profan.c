@@ -271,12 +271,12 @@ char *profan_path_path(const char *exec, int allow_path) {
 
 // kernel memory allocation functions
 void *profan_kmalloc(uint32_t size, int as_kernel) {
-    return (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
+    return (void *) syscall_mem_alloc(size, as_kernel ? 2 : 1, 0);
 }
 
 void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
-    void *addr = (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
+    void *addr = (void *) syscall_mem_alloc(size, as_kernel ? 2 : 1, 0);
 
     if (addr == NULL)
         return NULL;
@@ -287,21 +287,21 @@ void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel) {
 
 void *profan_krealloc(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL)
-        return (void *) syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
+        return (void *) syscall_mem_alloc(new_size, as_kernel ? 2 : 1, 0);
 
-    uint32_t old_size = syscall_mem_get_alloc_size((uint32_t) mem);
-    void *new_addr = (void *) syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
+    uint32_t old_size = (uint32_t) syscall_mem_alloc_fetch(mem, 0);
+    void *new_addr = (void *) syscall_mem_alloc(new_size, as_kernel ? 2 : 1, 0);
 
     if (new_addr == NULL)
         return NULL;
 
     memcpy(new_addr, mem, old_size < new_size ? old_size : new_size);
-    syscall_mem_free((uint32_t) mem);
+    syscall_mem_free(mem);
     return new_addr;
 }
 
 void profan_kfree(void *mem) {
     if (mem == NULL)
         return;
-    syscall_mem_free((uint32_t) mem);
+    syscall_mem_free(mem);
 }

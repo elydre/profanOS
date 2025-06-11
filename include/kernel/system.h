@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 8"
+#define KERNEL_VERSION  "1.3 beta 9"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     64          // max process count
@@ -63,7 +63,7 @@ const char *sys_addr2name(uint32_t addr);
 uint32_t    sys_name2addr(const char *name);
 
 // runtime.c
-int elf_exec(uint32_t sid, int argc, char **argv, char **envp);
+int elf_exec(uint32_t sid, char **argv, char **envp);
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
 
 // pok.c

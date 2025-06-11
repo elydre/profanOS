@@ -28,8 +28,7 @@
 #define PROC_INFO_RUN_TIME 3
 #define PROC_INFO_NAME     4
 #define PROC_INFO_STACK    5
-#define PROC_INFO_COMM     6
-#define PROC_INFO_SET_NAME 7
+#define PROC_INFO_SET_NAME 6
 
 #define process_get_ppid(pid)  process_info(pid, PROC_INFO_PPID, NULL)
 #define process_get_state(pid) process_info(pid, PROC_INFO_STATE, NULL)
@@ -43,7 +42,6 @@ typedef struct {
     scuba_dir_t *scuba_dir;
 
     uint32_t pid, ppid, run_time;
-    comm_struct_t comm;
 
     int wait_pid;
 
@@ -77,8 +75,6 @@ uint32_t process_get_pid(void);
 
 int process_list_all(uint32_t *list, int max);
 int process_info(uint32_t pid, int info_id, void *ptr);
-
-comm_struct_t *process_get_comm(uint32_t pid);
 
 scuba_dir_t *process_get_dir(uint32_t pid);
 void process_switch_directory(uint32_t pid, scuba_dir_t *dir, int now);

@@ -24,35 +24,36 @@ void *mem_cpy(void *dest, const void *src, size_t n);
 
 void *kcalloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel) {
     uint32_t size = lsize * nmemb;
-    int addr = syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
+    void *addr = syscall_mem_alloc(size, as_kernel ? 2 : 1, 0);
     if (addr == 0)
         return NULL;
-    mem_set((uint8_t *) addr, 0, size);
-    return (void *) addr;
+    mem_set(addr, 0, size);
+    return addr;
 }
 
 void kfree(void *mem) {
     if (mem == NULL)
         return;
-    syscall_mem_free((int) mem);
+    syscall_mem_free(mem);
 }
 
 void *krealloc_func(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL)
-        return (void *) syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
+        return (void *) syscall_mem_alloc(new_size, as_kernel ? 2 : 1, 0);
 
-    uint32_t old_size = syscall_mem_get_alloc_size((uint32_t) mem);
-    uint32_t new_addr = syscall_mem_alloc(new_size, 0, as_kernel ? 6 : 1);
+    uint32_t old_size = (uint32_t) syscall_mem_alloc_fetch(mem, 0);
+    void *new_addr = syscall_mem_alloc(new_size, as_kernel ? 2 : 1, 0);
     if (new_addr == 0)
         return NULL;
 
-    mem_cpy((uint8_t *) new_addr, (uint8_t *) mem, old_size < new_size ? old_size : new_size);
+    mem_cpy(new_addr, mem, old_size < new_size ? old_size : new_size);
     kfree(mem);
-    return (void *) new_addr;
+
+    return new_addr;
 }
 
 void *kmalloc_func(uint32_t size, int as_kernel) {
-    return (void *) syscall_mem_alloc(size, 0, as_kernel ? 6 : 1);
+    return syscall_mem_alloc(size, as_kernel ? 2 : 1, 0);
 }
 
 void *mem_cpy(void *dest, const void *src, size_t n) {

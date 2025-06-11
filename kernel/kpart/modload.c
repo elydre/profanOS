@@ -69,7 +69,7 @@ static uint8_t *i_mod_resolve(uint8_t *file) {
 
     required_size = (required_size + 0xFFF) & ~0xFFF;
 
-    uint8_t *mem = mem_alloc(required_size, 0x1000, 5); // 5: library
+    uint8_t *mem = mem_alloc(required_size, SNOW_LIB, 0x1000);
     mem_set(mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
@@ -95,9 +95,8 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
         }
     }
 
-    if (sym_sh == NULL) {
+    if (sym_sh == NULL)
         return NULL;
-    }
 
     // read a first time to get function count
     uint32_t func_count = 0;
@@ -105,17 +104,15 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
     char *strtab = (char *) (file + shdr[sym_sh->sh_link].sh_offset);
 
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
-        if (((Elf32_Sym *) symbol_table + i)->st_info == 0x12) {
+        if (((Elf32_Sym *) symbol_table + i)->st_info == 0x12)
             func_count++;
-        }
     }
 
-    if (func_count == 0) {
+    if (func_count == 0)
         return NULL;
-    }
 
     // allocate the address list
-    uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), 0, 5); // 5: library
+    uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), SNOW_LIB, 0);
     addr_list[0] = (uint32_t) mem;
     addr_list[1] = func_count;
     addr_list[2] = 0;

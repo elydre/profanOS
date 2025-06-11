@@ -219,7 +219,5 @@ int main(void) {
 
     syscall_kprint("all modules unloaded\n");
 
-    syscall_mem_free_all(syscall_process_pid());
-
     return 0;
 }

@@ -247,9 +247,22 @@ char *profan_input_keyboard(int *size, char *term_path) {
     return buffer;
 }
 
-static char **dup_envp(char **envp, char *wd) {
+#define alloc_arg(size, pid) ((void *) syscall_mem_alloc(size, 5, pid))
+
+static inline void *calloc_arg(size_t size, int pid) {
+    void *ptr = alloc_arg(size, pid);
+
+    if (ptr == NULL)
+        return NULL;
+
+    mem_set(ptr, 0, size);
+
+    return ptr;
+}
+
+static char **dup_envp(char **envp, char *wd, int pid) {
     if (envp == NULL)
-        return kcalloc_ask(1, sizeof(char *));
+        return calloc_arg(sizeof(char *), pid);
     int envc, size = 0;
 
     for (envc = 0; envp[envc] != NULL; envc++)
@@ -258,7 +271,7 @@ static char **dup_envp(char **envp, char *wd) {
 
     size += (envc + 1) * sizeof(char *);
 
-    char **nenvp = kcalloc_ask(1, size);
+    char **nenvp = calloc_arg(size, pid);
 
     char *nenvp_start = (char *) nenvp + (envc + 1) * sizeof(char *);
 
@@ -292,7 +305,7 @@ static char **split_interp(char *tmp, int *c) {
         if (i == from)
             break;
         interp = krealloc(interp, (*c + 2) * sizeof(char *));
-        char *cpy = kmalloc_ask(i - from + 1);
+        char *cpy = alloc_arg(i - from + 1, 0);
         mem_cpy(cpy, tmp + from, i - from);
         cpy[i - from] = '\0';
         interp[*c] = cpy;
@@ -338,12 +351,21 @@ static char **get_interp(uint32_t sid, int *c) {
     return interp;
 }
 
+enum {
+    FILE_RAWELF,
+    FILE_DYNELF,
+    FILE_SHEBANG,
+    FILE_FBANG,
+    FILE_OTHER
+} ifexist_file_type;
+
 int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 
+    // safety checks
     if (args.path == NULL) {
-        fd_printf(2, "[run_ifexist] path is NULL\n");
+        fd_printf(2, "[run_ifexist] no path provided\n");
         return -1;
     }
 
@@ -352,7 +374,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (IS_SID_NULL(deluge_sid)) {
         deluge_sid = fu_path_to_sid(SID_ROOT, ELF_INTERP);
         if (IS_SID_NULL(deluge_sid)) {
-            fd_printf(2, "[run_ifexist] interpreter not found: %s\n", ELF_INTERP);
+            fd_printf(2, "[run_ifexist] elf interpreter not found: %s\n", ELF_INTERP);
             return -1;
         }
     }
@@ -363,121 +385,140 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         return -1;
     }
 
+    // read the magic number
     uint8_t magic[4];
     if (fu_file_get_size(sid) < 4)
         mem_set(magic, 0, 4);
     else
         fu_file_read(sid, magic, 0, 4);
 
-    char **nargv = NULL;
+    int file_type, inter_offset = 0;
 
+    char **interp = NULL;
+
+    // get the interpreter
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
         if (str_ncmp("/bin/x/", args.path, 7) == 0) {
-            nargv = kcalloc_ask(args.argc + 1, sizeof(char *));
-            for (int i = 0; i < args.argc; i++) {
-                nargv[i] = kmalloc_ask(str_len(args.argv[i]) + 1);
-                str_cpy(nargv[i], args.argv[i]);
-            }
-            sid = fu_path_to_sid(SID_ROOT, args.path);
+            file_type = FILE_RAWELF;
         } else {
-            args.argc += 3;
-            nargv = kcalloc_ask(args.argc + 1, sizeof(char *));
-
-            nargv[0] = kmalloc_ask(4);
-            str_cpy(nargv[0], "dlg");
-
-            nargv[1] = kmalloc_ask(3);
-            str_cpy(nargv[1], "-e");
-
-            nargv[2] = kmalloc_ask(str_len(args.path) + 1);
-            str_cpy(nargv[2], args.path);
-
-            for (int i = 3; i < args.argc; i++) {
-                nargv[i] = kmalloc_ask(str_len(args.argv[i-3]) + 1);
-                str_cpy(nargv[i], args.argv[i-3]);
-            }
+            file_type = FILE_DYNELF;
             sid = deluge_sid;
         }
     } else {
-        char **interp = NULL;
-        int c, is_fbang = 0;
+        if ((magic[0] == '#' || magic[0] == '>') && magic[1] == '!') {
+            interp = get_interp(sid, &inter_offset);
+            file_type = magic[0] == '#' ? FILE_SHEBANG : FILE_FBANG;
+        } else {
+            file_type = FILE_OTHER;
 
-        if (magic[0] == '#' && magic[1] == '!')
-            interp = get_interp(sid, &c);
-        else if (magic[0] == '>' && magic[1] == '!') {
-            interp = get_interp(sid, &c);
-            is_fbang = 1;
-        } else if (args.envp != NULL) {
-            for (int i = 0; args.envp[i] != NULL; i++) {
-                if (str_ncmp(args.envp[i], ENV_INTERP"=", str_len(ENV_INTERP)+1))
-                    continue;
-                interp = split_interp(args.envp[i] + str_len(ENV_INTERP) + 1, &c);
+            if (args.envp) {
+                int env_interp_len = str_len(ENV_INTERP) + 1;
+                for (int i = 0; args.envp[i] != NULL; i++) {
+                    if (str_ncmp(args.envp[i], ENV_INTERP"=", env_interp_len))
+                        continue;
+                    interp = split_interp(args.envp[i] + env_interp_len, &inter_offset);
+                }
             }
 
             if (interp == NULL) {
-                fd_printf(2, "[run_ifexist] %s: unknown file type\n", args.path);
+                fd_printf(2, "[run_ifexist] %s: no interpreter found, export '%s' to set one\n", args.path, ENV_INTERP);
                 return -1;
             }
         }
 
-        if (c == 0) {
+        if (interp == NULL || inter_offset == 0) {
             fd_printf(2, "[run_ifexist] %s: invalid shebang\n", args.path);
             return -1;
         }
+    }
 
-        nargv = kcalloc_ask(args.argc + c + 4, sizeof(char *));
+    int pid = syscall_process_pid();
 
-        c = 0;
-        nargv[c] = kmalloc_ask(4);
+    // generate arguments and environment
+    char **nenv  = dup_envp(args.envp, args.wd, pid);
+    char **nargv = calloc_arg((args.argc + 5 + inter_offset) * sizeof(char *), pid);
+
+    // create the new process
+    if (args.sleep_mode != 3) {
+        pid = syscall_process_create(syscall_elf_exec, 0, 3,
+                (uint32_t []) {sid, (uint32_t) nargv, (uint32_t) nenv}
+        );
+
+        if (pid == -1) {
+            fd_printf(2, "[run_ifexist] failed to create process for %s\n", args.path);
+            return -1;
+        }
+
+        syscall_mem_alloc_fetch(nargv, pid);
+        syscall_mem_alloc_fetch(nenv, pid);
+    }
+
+    if (pid_ptr != NULL)
+        *pid_ptr = pid;
+
+    // prepare the arguments
+    if (file_type == FILE_RAWELF) {
+        for (int i = 0; i < args.argc; i++) {
+            nargv[i] = alloc_arg(str_len(args.argv[i]) + 1, pid);
+            str_cpy(nargv[i], args.argv[i]);
+        }
+    } else if (file_type == FILE_DYNELF) {
+        nargv[0] = alloc_arg(4, pid);
+        str_cpy(nargv[0], "dlg");
+
+        nargv[1] = alloc_arg(3, pid);
+        str_cpy(nargv[1], "-e");
+
+        nargv[2] = alloc_arg(str_len(args.path) + 1, pid);
+        str_cpy(nargv[2], args.path);
+
+        for (int i = 0; i < args.argc; i++) {
+            nargv[i + 3] = alloc_arg(str_len(args.argv[i]) + 1, pid);
+            str_cpy(nargv[i + 3], args.argv[i]);
+        }
+    } else {
+        int c = 0;
+
+        nargv[c] = alloc_arg(4, pid);
         str_cpy(nargv[c++], "dlg");
 
-        if (is_fbang) {
-            nargv[c] = kmalloc_ask(3);
+        if (file_type == FILE_FBANG) {
+            nargv[c] = alloc_arg(3, pid);
             str_cpy(nargv[c++], "-e");
 
             nargv[c++] = interp[0];
 
             if (args.argc) {
-                nargv[c] = kmalloc_ask(str_len(args.argv[0]) + 1);
+                nargv[c] = alloc_arg(str_len(args.argv[0]) + 1, pid);
                 str_cpy(nargv[c++], args.argv[0]);
             }
         }
 
-        for (int i = is_fbang; interp[i] != NULL; i++) {
+        for (int i = file_type == FILE_FBANG; interp[i] != NULL; i++) {
             nargv[c++] = interp[i];
         }
 
-        kfree(interp);
 
-        if (!is_fbang) {
-            nargv[c] = kmalloc_ask(str_len(args.path) + 1);
+        if (file_type != FILE_FBANG) {
+            nargv[c] = alloc_arg(str_len(args.path) + 1, pid);
             str_cpy(nargv[c++], args.path);
         }
 
         for (int i = 1; i < args.argc; i++) {
-            nargv[c] = kmalloc_ask(str_len(args.argv[i]) + 1);
+            nargv[c] = alloc_arg(str_len(args.argv[i]) + 1, pid);
             str_cpy(nargv[c++], args.argv[i]);
         }
 
-        args.argc = c;
         sid = deluge_sid;
     }
 
-    char **nenv = dup_envp(args.envp, args.wd);
+    kfree(interp);
 
+    // finalize the execution
     if (args.sleep_mode == 3) {
-        syscall_mem_free_all(syscall_process_pid());
-        return syscall_elf_exec(sid, args.argc, nargv, nenv);
+        syscall_mem_free_all(syscall_process_pid(), 1);
+        return syscall_elf_exec(sid, nargv, nenv);
     }
-
-    int pid = syscall_process_create(syscall_elf_exec, 0, 4,
-            (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
-    );
-
-    if (pid_ptr != NULL)
-        *pid_ptr = pid;
-    if (pid == -1)
-        return -1;
 
     fm_declare_child(pid);
 
@@ -486,8 +527,10 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     if (args.sleep_mode == 0)
         return (syscall_process_wakeup(pid, 0), 0);
 
-    syscall_process_wakeup(pid, 1);
     uint8_t ret;
+
+    syscall_process_wakeup(pid, 1);
     syscall_process_wait(pid, &ret, 0);
+
     return ret;
 }

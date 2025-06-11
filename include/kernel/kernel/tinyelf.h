@@ -69,7 +69,7 @@ typedef struct {
     uint32_t p_align;       // Segment alignment
 } Elf32_Phdr;
 
-#define EI_MAG			0
+#define EI_MAG          0
 #define ELFMAG          "\177ELF"
 #define SELFMAG         4
 

@@ -28,23 +28,21 @@ typedef struct allocated_part_t {
 #define PARTS_COUNT 100  // initial size
 #define GROW_SIZE   20   // increase size
 
-/*********************
- *      states      *
- * 0: free          *
- * 1: simple alloc  *
- * 2: initial block *
- * 3: mm struct     *
- * 4: scuba page    *
- * 5: loaded lib    *
- * 6: as kernel     *
-*********************/
+#define SNOW_FREE   0
+#define SNOW_SIMPLE 1   // simple alloc
+#define SNOW_KERNEL 2   // as-kernel alloc
+#define SNOW_SCUBA  3   // scuba page
+#define SNOW_LIB    4   // module loader
+#define SNOW_ARGS   5   // runtime args
+#define SNOW_MM     6   // memory manager
+#define SNOW_BASE   7   // initial block
 
 int mem_init(void);
 
 void *mem_alloc_dir(uint32_t size, uint32_t allign, int pid, void *dir);
-void *mem_alloc(uint32_t size, uint32_t allign, int state);
+void *mem_alloc(uint32_t size, int state, uint32_t allign);
 
-int mem_free_all(uint32_t pid);
+int mem_free_all(int pid, int state);
 int mem_free_addr(void *addr);
 int mem_free_dir(void *dir);
 
@@ -66,6 +64,6 @@ int mem_free_dir(void *dir);
 ****************************************/
 
 uint32_t mem_get_info(char get_mode, int arg);
-uint32_t mem_get_alloc_size(void *addr);
+int mem_alloc_fetch(void *addr, int arg);
 
 #endif

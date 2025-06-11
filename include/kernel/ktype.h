@@ -62,11 +62,6 @@ typedef struct {
     uint32_t vdisk_count;       // virtual disk count
 } filesys_t;
 
-typedef struct {
-    char **argv;
-    char **envp;
-} comm_struct_t;
-
 // va_list
 typedef __builtin_va_list va_list;
 
