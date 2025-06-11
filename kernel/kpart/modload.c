@@ -36,10 +36,10 @@ int mod_init(void) {
 #define IS_LOADED(id) ((id) && (id) < 256 && g_mod_funcs[id])
 
 static uint8_t *i_mod_read_file(uint32_t file_sid) {
-    uint32_t file_size = fs_cnt_get_size(MAIN_FS, file_sid);
+    uint32_t file_size = fs_cnt_get_size(file_sid);
     uint8_t *file = malloc(file_size);
 
-    fs_cnt_read(MAIN_FS, file_sid, file, 0, file_size);
+    fs_cnt_read(file_sid, file, 0, file_size);
 
     // check if the file is an ELF 32 dynamic library
     if (mem_cmp(file, ELFMAG, SELFMAG) != 0) {
@@ -207,7 +207,7 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
                 if ((val = sym->st_value)) {
                     val += (uint32_t) mem;
                 } else if (!(val = sys_name2addr(dynstr + sym->st_name))) {
-                    sys_warning("[pok load] symbol %s not found in %s", dynstr + sym->st_name, finename);
+                    sys_warning("[pok load] %s requires symbol '%s'\n", finename, dynstr + sym->st_name);
                     return 1;
                 }
             }
@@ -244,8 +244,8 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 
 int mod_load(char *path, uint32_t lib_id) {
     kprintf("mod_load: %s\n", path);
-    uint32_t file = fu_path_to_sid(MAIN_FS, SID_ROOT, path);
-    if (IS_SID_NULL(file) || !fu_is_file(MAIN_FS, file)) {
+    uint32_t file = kfu_path_to_sid(SID_ROOT, path);
+    if (IS_SID_NULL(file) || !kfu_is_file(file)) {
         return -1;
     }
 

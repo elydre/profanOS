@@ -32,7 +32,7 @@ typedef struct tm {
 #define high_16(address) (uint16_t)(((address) >> 16) & 0xFFFF)
 
 #ifndef NULL
-#define NULL 0
+#define NULL ((void *) 0)
 #endif
 
 typedef signed char        int8_t;

@@ -245,7 +245,6 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
         if (!cwd)
             return SID_NULL;
         full_path = profan_path_join(cwd, name + 2);
-        fu_simplify_path(full_path);
         sid = fu_path_to_sid(SID_ROOT, full_path);
         if (!IS_SID_NULL(sid) && path)
             *path = full_path;

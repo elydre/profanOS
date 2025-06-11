@@ -71,7 +71,7 @@ int chdir(const char *path) {
 
     // check if dir exists
     dir = profan_path_join(g_wd_path, path);
-    fu_simplify_path(dir);
+    profan_path_simplify(dir);
 
     sid = fu_path_to_sid(SID_ROOT, dir);
 
@@ -431,7 +431,7 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    int r = fm_isfctf(fd);
+    int r = fm_isafft(fd);
     if (r)
         return 1;
     errno = r < 0 ? -r : ENOTTY;

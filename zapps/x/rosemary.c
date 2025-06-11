@@ -33,7 +33,6 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1, "/lib/mod/libmmq.pok"},
     {2, "/lib/mod/filesys.pok"},
     {3, "/lib/mod/devio.pok"},
     {4, "/lib/mod/fmopen.pok"},

@@ -31,7 +31,7 @@ typedef struct {
 #define LS_COLOR_DIR  "\e[96m"
 #define LS_COLOR_FILE "\e[92m"
 #define LS_COLOR_SHBG "\e[4m"
-#define LS_COLOR_FCTF "\e[93m"
+#define LS_COLOR_AFFT "\e[93m"
 #define LS_COLOR_ERR  "\e[91m"
 #define LS_COLOR_RSET "\e[0m"
 
@@ -161,8 +161,8 @@ int print_name(ls_entry_t *entry, ls_args_t *args) {
         return fputs(entry->name, stdout);
     if (fu_is_dir(entry->sid))
         return printf(LS_COLOR_DIR "%s" LS_COLOR_RSET, entry->name);
-    if (fu_is_fctf(entry->sid))
-        return printf(LS_COLOR_FCTF "%s" LS_COLOR_RSET, entry->name);
+    if (fu_is_afft(entry->sid))
+        return printf(LS_COLOR_AFFT "%s" LS_COLOR_RSET, entry->name);
     if (!fu_is_file(entry->sid))
         return printf(LS_COLOR_ERR "%s" LS_COLOR_RSET, entry->name);
 
@@ -258,8 +258,8 @@ void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
             len = printf("%7d e", fu_dir_get_size(entries[i].sid));
         else if (fu_is_file(entries[i].sid))
             len = pretty_size_print(syscall_fs_get_size(NULL, entries[i].sid));
-        else if (fu_is_fctf(entries[i].sid))
-            len = printf(" F%08x", (uint32_t) fu_fctf_get_addr(entries[i].sid));
+        else if (fu_is_afft(entries[i].sid))
+            len = printf(" F%08x", (uint32_t) fu_afft_get_addr(entries[i].sid));
         else
             len = printf(" ? unk ?");
 

@@ -9,15 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#define _SYSCALL_CREATE_STATIC
-#include <profan/syscall.h>
-#include <profan/libmmq.h>
-#include <profan/types.h>
+#include <kernel/butterfly.h>
+#include <minilib.h>
+#include <system.h>
 
 #include <errno.h>
-
-#define FILESYS_LIB_C
-#include <profan/filesys.h>
 
 #define FILESYS_DEBUG 1 // 0: no debug, 1: debug
 
@@ -28,11 +24,11 @@
 ********************************************/
 
 #if FILESYS_DEBUG
-#define ERROR_EXISTS  (fd_printf(2, "filesys: line %d: file already exists\n", __LINE__), -EEXIST)
-#define ERROR_NOT_DIR (fd_printf(2, "filesys: line %d: not a directory\n", __LINE__), -ENOTDIR)
-#define ERROR_INV_ARG (fd_printf(2, "filesys: line %d: invalid argument\n", __LINE__), -EINVAL)
-#define ERROR_INTERN  (fd_printf(2, "filesys: line %d: internal error\n", __LINE__), -EIO)
-#define ERROR_NOT_FND (fd_printf(2, "filesys: line %d: not found\n", __LINE__), -ENOENT)
+#define ERROR_EXISTS  (sys_warning("filesys mod: line %d: file already exists\n", __LINE__), -EEXIST)
+#define ERROR_NOT_DIR (sys_warning("filesys mod: line %d: not a directory\n", __LINE__), -ENOTDIR)
+#define ERROR_INV_ARG (sys_warning("filesys mod: line %d: invalid argument\n", __LINE__), -EINVAL)
+#define ERROR_INTERN  (sys_warning("filesys mod: line %d: internal error\n", __LINE__), -EIO)
+#define ERROR_NOT_FND (sys_warning("filesys mod: line %d: not found\n", __LINE__), -ENOENT)
 #else
 #define ERROR_EXISTS  -EEXIST
 #define ERROR_NOT_DIR -ENOTDIR
@@ -55,11 +51,11 @@ static void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
     len = str_len(fullpath);
 
     if (parent != NULL) {
-        *parent = kcalloc(1, len + 2);
+        *parent = calloc(len + 2);
     }
 
     if (cnt != NULL) {
-        *cnt = kcalloc(1, len + 2);
+        *cnt = calloc(len + 2);
     }
 
     while (len > 0 && fullpath[len - 1] == '/') {
@@ -95,17 +91,17 @@ int fu_is_dir(uint32_t dir_sid) {
     if (IS_SID_NULL(dir_sid))
         return 0;
 
-    char *name = syscall_fs_meta(NULL, dir_sid, NULL);
+    char *name = fs_cnt_meta(dir_sid, NULL);
 
     if (name == NULL)
         return 0;
 
     if (name[0] == 'D') {
-        kfree(name);
+        free(name);
         return 1;
     }
 
-    kfree(name);
+    free(name);
     return 0;
 }
 
@@ -128,14 +124,14 @@ int fu_dir_get_size(uint32_t dir_sid) {
         return ERROR_NOT_DIR;
 
     // read the directory and get size
-    uint32_t size = syscall_fs_get_size(NULL, dir_sid);
+    uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX || size < sizeof(uint32_t))
         return ERROR_INTERN;
 
     // read the directory
     uint32_t count;
 
-    if (syscall_fs_read(NULL, dir_sid, &count, 0, sizeof(uint32_t)))
+    if (fs_cnt_read(dir_sid, &count, 0, sizeof(uint32_t)))
         return ERROR_INTERN;
 
     return count;
@@ -153,7 +149,7 @@ int fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) 
         return ERROR_INTERN;
 
     uint32_t count;
-    mem_cpy(&count, buf, sizeof(uint32_t));
+    mem_copy(&count, buf, sizeof(uint32_t));
 
     if (count <= index)
         return 0;
@@ -166,9 +162,9 @@ int fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) 
         return ERROR_INTERN;
 
     if (sid != NULL)
-        mem_cpy(sid, buf + offset, sizeof(uint32_t));
+        mem_copy(sid, buf + offset, sizeof(uint32_t));
 
-    mem_cpy(&name_offset, buf + offset + sizeof(uint32_t), sizeof(uint32_t));
+    mem_copy(&name_offset, buf + offset + sizeof(uint32_t), sizeof(uint32_t));
     offset = sizeof(uint32_t) + count * (sizeof(uint32_t) * 2) + name_offset;
 
     if (bsize < offset)
@@ -184,14 +180,14 @@ int fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     uint32_t sid;
     int offset;
 
-    uint32_t size = syscall_fs_get_size(NULL, dir_sid);
+    uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX || size < sizeof(uint32_t)) {
         return ERROR_INTERN;
     }
 
-    uint8_t *buf = kmalloc(size);
-    if (syscall_fs_read(NULL, dir_sid, buf, 0, size)) {
-        kfree(buf);
+    uint8_t *buf = malloc(size);
+    if (fs_cnt_read(dir_sid, buf, 0, size)) {
+        free(buf);
         return ERROR_INTERN;
     }
 
@@ -200,29 +196,29 @@ int fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     count = *(uint32_t *) buf;
 
     if (count == 0 || ids == NULL || names == NULL) {
-        kfree(buf);
+        free(buf);
         return count;
     }
 
     // get the elements
-    *ids = kmalloc(sizeof(uint32_t) * count);
-    *names = kmalloc(sizeof(char *) * count);
+    *ids = malloc(sizeof(uint32_t) * count);
+    *names = malloc(sizeof(char *) * count);
 
     for (uint32_t i = 0; i < count; i++) {
         offset = fu_dir_get_elm(buf, size, i, &sid);
         if (offset <= 0) {
-            kfree(*ids);
-            kfree(*names);
-            kfree(buf);
+            free(*ids);
+            free(*names);
+            free(buf);
             return ERROR_INTERN;
         }
 
         (*ids)[i] = sid;
-        (*names)[i] = kmalloc(str_len((char *) buf + offset) + 1);
+        (*names)[i] = malloc(str_len((char *) buf + offset) + 1);
         str_cpy((*names)[i], (char *) buf + offset);
     }
 
-    kfree(buf);
+    free(buf);
 
     return count;
 }
@@ -238,20 +234,20 @@ int fu_add_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
     }
 
     // read the directory and get size
-    uint32_t size = syscall_fs_get_size(NULL, dir_sid);
+    uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX || size < sizeof(uint32_t))
         return ERROR_INTERN;
 
-    if (syscall_fs_set_size(NULL, dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1))
+    if (fs_cnt_set_size(dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1))
         return ERROR_INTERN;
 
     // read the directory
-    uint8_t *buf = kmalloc(size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1);
-    if (syscall_fs_read(NULL, dir_sid, buf, 0, size))
+    uint8_t *buf = malloc(size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1);
+    if (fs_cnt_read(dir_sid, buf, 0, size))
         return ERROR_INTERN;
 
     uint32_t count = 0;
-    mem_cpy(&count, buf, sizeof(uint32_t));
+    mem_copy(&count, buf, sizeof(uint32_t));
 
     // move names
     if (count > 0) {
@@ -263,22 +259,22 @@ int fu_add_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
     uint32_t offset = sizeof(uint32_t) + count * (sizeof(uint32_t) * 2);
 
     // insert the new element
-    mem_cpy(buf + offset, &element_sid, sizeof(uint32_t));
+    mem_copy(buf + offset, &element_sid, sizeof(uint32_t));
 
     uint32_t name_offset = size - sizeof(uint32_t) - count * (sizeof(uint32_t) * 2);
-    mem_cpy(buf + offset + sizeof(uint32_t), &name_offset, sizeof(uint32_t));
+    mem_copy(buf + offset + sizeof(uint32_t), &name_offset, sizeof(uint32_t));
 
     // update the number of elements
     count++;
-    mem_cpy(buf, &count, sizeof(uint32_t));
+    mem_copy(buf, &count, sizeof(uint32_t));
 
     str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) * 2 + name_offset, name);
 
     // write the directory
-    if (syscall_fs_write(NULL, dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1))
+    if (fs_cnt_write(dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1))
         return ERROR_INTERN;
 
-    kfree(buf);
+    free(buf);
     return 0;
 }
 
@@ -287,31 +283,31 @@ int fu_remove_from_dir(uint32_t dir_sid, uint32_t element_sid) {
         return ERROR_NOT_DIR;
 
     // read the directory and get size
-    uint32_t size = syscall_fs_get_size(NULL, dir_sid);
+    uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX)
         return ERROR_INTERN;
 
     // read the directory
-    uint8_t *buf = kmalloc(size);
-    if (syscall_fs_read(NULL, dir_sid, buf, 0, size))
+    uint8_t *buf = malloc(size);
+    if (fs_cnt_read(dir_sid, buf, 0, size))
         return ERROR_INTERN;
 
     uint32_t count = *(uint32_t *) buf;
 
     if (count == 0) {
-        kfree(buf);
+        free(buf);
         return ERROR_NOT_FND;
     }
 
     // get the elements
-    uint32_t *ids = kmalloc(sizeof(uint32_t) * count);
-    uint32_t *name_offsets = kmalloc(sizeof(uint32_t) * count);
+    uint32_t *ids = malloc(sizeof(uint32_t) * count);
+    uint32_t *name_offsets = malloc(sizeof(uint32_t) * count);
 
     for (uint32_t i = 0; i < count; i++) {
         void *addr = buf + sizeof(uint32_t) + i * sizeof(uint32_t) * 2;
 
-        mem_cpy(&ids[i], addr, sizeof(uint32_t));
-        mem_cpy(&name_offsets[i], addr + sizeof(uint32_t), sizeof(uint32_t));
+        mem_copy(&ids[i], addr, sizeof(uint32_t));
+        mem_copy(&name_offsets[i], addr + sizeof(uint32_t), sizeof(uint32_t));
     }
 
     // search for the element
@@ -324,9 +320,9 @@ int fu_remove_from_dir(uint32_t dir_sid, uint32_t element_sid) {
     }
 
     if (index == 0) {
-        kfree(name_offsets);
-        kfree(buf);
-        kfree(ids);
+        free(name_offsets);
+        free(buf);
+        free(ids);
         return ERROR_NOT_FND;
     }
 
@@ -338,12 +334,12 @@ int fu_remove_from_dir(uint32_t dir_sid, uint32_t element_sid) {
         ids[i] = ids[i + 1];
         name_offsets[i] = name_offsets[i + 1];
 
-        mem_cpy(addr, &ids[i], sizeof(uint32_t));
-        mem_cpy(addr + sizeof(uint32_t), &name_offsets[i], sizeof(uint32_t));
+        mem_copy(addr, &ids[i], sizeof(uint32_t));
+        mem_copy(addr + sizeof(uint32_t), &name_offsets[i], sizeof(uint32_t));
     }
 
-    kfree(name_offsets);
-    kfree(ids);
+    free(name_offsets);
+    free(ids);
 
     // move names
     int name_offset = sizeof(uint32_t) + count * sizeof(uint32_t) * 2;
@@ -353,15 +349,15 @@ int fu_remove_from_dir(uint32_t dir_sid, uint32_t element_sid) {
 
     // update the number of elements
     count--;
-    mem_cpy(buf, &count, sizeof(uint32_t));
+    mem_copy(buf, &count, sizeof(uint32_t));
 
     // write the directory
-    if (syscall_fs_write(NULL, dir_sid, buf, 0, size - sizeof(uint32_t) * 2)) {
-        kfree(buf);
+    if (fs_cnt_write(dir_sid, buf, 0, size - sizeof(uint32_t) * 2)) {
+        free(buf);
         return ERROR_INTERN;
     }
 
-    kfree(buf);
+    free(buf);
     return 0;
 }
 
@@ -381,8 +377,8 @@ uint32_t fu_dir_create(int device_id, const char *path) {
     if (parent[0]) {
         parent_sid = fu_path_to_sid(SID_ROOT, parent);
         if (!fu_is_dir(parent_sid)) {
-            kfree(parent);
-            kfree(name);
+            free(parent);
+            free(name);
             return (ERROR_NOT_DIR, SID_NULL);
         }
     } else {
@@ -395,40 +391,40 @@ uint32_t fu_dir_create(int device_id, const char *path) {
         namelen--;
 
     if (namelen == 0) {
-        kfree(parent);
-        kfree(name);
+        free(parent);
+        free(name);
         return (ERROR_INV_ARG, SID_NULL);
     }
 
     name[namelen] = '\0';
 
     // generate the meta
-    char *meta = kmalloc(META_MAXLEN);
+    char *meta = malloc(META_MAXLEN);
     str_cpy(meta, "D-");
     str_ncpy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
-    head_sid = syscall_fs_init(NULL, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
-    kfree(meta);
+    head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
+    free(meta);
 
     if (IS_SID_NULL(head_sid)) {
-        kfree(parent);
-        kfree(name);
+        free(parent);
+        free(name);
         return (ERROR_INTERN, SID_NULL);
     }
 
     // create a link in parent directory
     if (parent[0] && fu_add_to_dir(parent_sid, head_sid, name)) {
-        kfree(parent);
-        kfree(name);
+        free(parent);
+        free(name);
         return (ERROR_INTERN, SID_NULL);
     }
 
-    kfree(parent);
-    kfree(name);
+    free(parent);
+    free(name);
 
-    syscall_fs_set_size(NULL, head_sid, sizeof(uint32_t));
-    syscall_fs_write(NULL, head_sid, "\0\0\0\0", 0, 4);
+    fs_cnt_set_size(head_sid, sizeof(uint32_t));
+    fs_cnt_write(head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
     if (fu_add_to_dir(head_sid, parent_sid, "..") || fu_add_to_dir(head_sid, head_sid, "."))
@@ -447,17 +443,17 @@ int fu_is_file(uint32_t dir_sid) {
     if (IS_SID_NULL(dir_sid))
         return 0;
 
-    char *name = syscall_fs_meta(NULL, dir_sid, NULL);
+    char *name = fs_cnt_meta(dir_sid, NULL);
 
     if (name == NULL)
         return 0;
 
     if (name[0] == 'F') {
-        kfree(name);
+        free(name);
         return 1;
     }
 
-    kfree(name);
+    free(name);
     return 0;
 }
 
@@ -465,7 +461,7 @@ int fu_file_set_size(uint32_t file_sid, uint32_t size) {
     if (!fu_is_file(file_sid))
         return ERROR_INV_ARG;
 
-    if (syscall_fs_set_size(NULL, file_sid, size))
+    if (fs_cnt_set_size(file_sid, size))
         return ERROR_INTERN;
 
     return 0;
@@ -475,7 +471,7 @@ uint32_t fu_file_get_size(uint32_t file_sid) {
     if (!fu_is_file(file_sid))
         return (ERROR_INV_ARG, UINT32_MAX);
 
-    return syscall_fs_get_size(NULL, file_sid);
+    return fs_cnt_get_size(file_sid);
 }
 
 uint32_t fu_file_create(int device_id, const char *path) {
@@ -491,44 +487,44 @@ uint32_t fu_file_create(int device_id, const char *path) {
 
     fu_sep_path(path, &parent, &name);
     if (!parent[0]) {
-        kfree(parent);
-        kfree(name);
+        free(parent);
+        free(name);
         return (ERROR_INV_ARG, SID_NULL);
     }
 
     parent_sid = fu_path_to_sid(SID_ROOT, parent);
-    kfree(parent);
+    free(parent);
 
     if (!fu_is_dir(parent_sid)) {
-        kfree(name);
+        free(name);
         return (ERROR_NOT_DIR, SID_NULL);
     }
 
     // generate the meta
-    char *meta = kmalloc(META_MAXLEN);
+    char *meta = malloc(META_MAXLEN);
     str_cpy(meta, "F-");
     str_ncpy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
-    head_sid = syscall_fs_init(NULL, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
-    kfree(meta);
+    head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
+    free(meta);
 
     // create a link in parent directory
     if (IS_SID_NULL(head_sid) || fu_add_to_dir(parent_sid, head_sid, name)) {
-        kfree(name);
+        free(name);
         return (ERROR_INTERN, SID_NULL);
     }
 
-    kfree(name);
+    free(name);
     return head_sid;
 }
 
 int fu_file_read(uint32_t file_sid, void *buf, uint32_t offset, uint32_t size) {
-    return (!fu_is_file(file_sid) || syscall_fs_read(NULL, file_sid, buf, offset, size));
+    return (!fu_is_file(file_sid) || fs_cnt_read(file_sid, buf, offset, size));
 }
 
 int fu_file_write(uint32_t file_sid, void *buf, uint32_t offset, uint32_t size) {
-    return (!fu_is_file(file_sid) || syscall_fs_write(NULL, file_sid, buf, offset, size));
+    return (!fu_is_file(file_sid) || fs_cnt_write(file_sid, buf, offset, size));
 }
 
 /**************************************************
@@ -539,25 +535,25 @@ int fu_file_write(uint32_t file_sid, void *buf, uint32_t offset, uint32_t size) 
 
 // call a function when reading a file
 
-int fu_is_fctf(uint32_t file_sid) {
+int fu_is_afft(uint32_t file_sid) {
     if (IS_SID_NULL(file_sid))
         return 0;
 
-    char *name = syscall_fs_meta(NULL, file_sid, NULL);
+    char *name = fs_cnt_meta(file_sid, NULL);
 
     if (name == NULL)
         return 0;
 
-    if (name[0] == 'C') {
-        kfree(name);
+    if (name[0] == 'A') {
+        free(name);
         return 1;
     }
 
-    kfree(name);
+    free(name);
     return 0;
 }
 
-uint32_t fu_fctf_create(int device_id, const char *path, int (*fct)(int, void *, uint32_t, uint8_t)) {
+uint32_t fu_afft_create(int device_id, const char *path, uint32_t id) {
     char *parent, *name;
 
     uint32_t parent_sid;
@@ -570,55 +566,55 @@ uint32_t fu_fctf_create(int device_id, const char *path, int (*fct)(int, void *,
     fu_sep_path(path, &parent, &name);
 
     if (!parent[0]) {
-        kfree(parent);
-        kfree(name);
+        free(parent);
+        free(name);
         return (ERROR_INV_ARG, SID_NULL);
     }
 
     parent_sid = fu_path_to_sid(SID_ROOT, parent);
-    kfree(parent);
+    free(parent);
 
     if (!fu_is_dir(parent_sid)) {
-        kfree(name);
+        free(name);
         return (ERROR_NOT_DIR, SID_NULL);
     }
 
     // generate the meta
-    char *meta = kmalloc(META_MAXLEN);
-    str_cpy(meta, "C-");
+    char *meta = malloc(META_MAXLEN);
+    str_cpy(meta, "A-");
     str_ncpy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
-    head_sid = syscall_fs_init(NULL, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
-    kfree(meta);
+    head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
+    free(meta);
 
     // create a link in parent directory
     if (IS_SID_NULL(head_sid) || fu_add_to_dir(parent_sid, head_sid, name)) {
-        kfree(name);
+        free(name);
         return (ERROR_INTERN, SID_NULL);
     }
 
-    kfree(name);
+    free(name);
 
     // write the function pointer
-    syscall_fs_set_size(NULL, head_sid, sizeof(void *));
-    if (syscall_fs_write(NULL, head_sid, (void *) &fct, 0, sizeof(void *)))
+    fs_cnt_set_size(head_sid, sizeof(uint32_t));
+    if (fs_cnt_write(head_sid, (void *) &id, 0, sizeof(uint32_t)))
         return SID_NULL;
 
     return head_sid;
 }
 
-void *fu_fctf_get_addr(uint32_t file_sid) {
-    void *addr;
+int fu_afft_get_id(uint32_t file_sid) {
+    int id;
 
-    if (!fu_is_fctf(file_sid) || syscall_fs_get_size(NULL, file_sid) < sizeof(void *))
-        return (ERROR_INTERN, NULL);
+    if (!fu_is_afft(file_sid) || fs_cnt_get_size(file_sid) != sizeof(uint32_t))
+        return (ERROR_INTERN, -1);
 
     // read container
-    if (syscall_fs_read(NULL, file_sid, &addr, 0, sizeof(void *)))
-        return (ERROR_INTERN, NULL);
+    if (fs_cnt_read(file_sid, &id, 0, sizeof(uint32_t)))
+        return (ERROR_INTERN, -1);
 
-    return addr;
+    return id;
 }
 
 /**************************************************
@@ -650,34 +646,37 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
         return parent;
 
     // get the directory content
-    uint32_t sid;
+    uint32_t sid, size;
+    uint8_t *buf;
     int offset;
 
-    uint32_t size = syscall_fs_get_size(NULL, parent);
-    if (size == UINT32_MAX || size < sizeof(uint32_t)) {
-        return (ERROR_INTERN, SID_NULL);
-    }
+    size = fs_cnt_get_size(parent);
 
-    uint8_t *buf = kmalloc(size);
-    if (syscall_fs_read(NULL, parent, buf, 0, size)) {
-        kfree(buf);
+    if (size == UINT32_MAX || size < sizeof(uint32_t))
+        return (ERROR_INTERN, SID_NULL);
+
+    buf = malloc(size);
+
+    if (fs_cnt_read(parent, buf, 0, size)) {
+        free(buf);
         return (ERROR_INTERN, SID_NULL);
     }
 
     // search for the path part
     for (int j = 0; (offset = fu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
         if (str_cmp(path, (char *) buf + offset) == 0) {
-            kfree(buf);
+            free(buf);
             return sid;
         }
 
         if (path_to_sid_cmp(path, (char *) buf + offset, path_len) == 0 && fu_is_dir(sid)) {
-            kfree(buf);
+            free(buf);
             return rec_path_to_sid(sid, path + path_len);
         }
     }
 
-    kfree(buf);
+    free(buf);
+
     return SID_NULL;
 }
 
@@ -691,8 +690,13 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     char *tmp;
 
     if (path[len] == '/') {
-        tmp = str_dup(path);
-        tmp[len] = '\0';
+        // remove the last '/'
+        // TODO: check and optimize this
+        tmp = malloc(len);
+
+        for (int i = 0; i < len; i++)
+            tmp[i] = path[i];
+        tmp[len - 1] = '\0';
     } else {
         tmp = (char *) path;
     }
@@ -700,57 +704,9 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     ret = rec_path_to_sid(from, tmp + (tmp[0] == '/'));
 
     if (tmp != path)
-        kfree(tmp);
+        free(tmp);
 
     return ret;
-}
-
-int fu_simplify_path(char *path) {
-    // some path look like this: /a/b/../c/./d/./e/../f
-    // this function simplifies them to: /a/c/d/f
-
-    if (path[0] != '/') {
-        return ERROR_INV_ARG;
-    }
-
-    char *tmp = kmalloc(str_len(path) + 2);
-    str_cpy(tmp, path);
-    str_cat(tmp, "/");
-
-    int i;
-    for (i = 0; tmp[i]; i++) {
-        if (tmp[i] == '/' && tmp[i + 1] == '/') {
-            mem_move(tmp + i, tmp + i + 1, str_len(tmp + i));
-            i--;
-            continue;
-        }
-        if (tmp[i] == '/' && tmp[i + 1] == '.' && tmp[i + 2] == '/') {
-            mem_move(tmp + i, tmp + i + 2, str_len(tmp + i));
-            i--;
-            continue;
-        }
-        if (tmp[i] == '/' && tmp[i + 1] == '.' && tmp[i + 2] == '.' && tmp[i + 3] == '/') {
-            if (i == 0) {
-                mem_move(tmp, tmp + 3, str_len(tmp + 2));
-                i = -1;
-                continue;
-            }
-            int j = i - 1;
-            while (j >= 0 && tmp[j] != '/') j--;
-            if (j >= 0) {
-                mem_move(tmp + j, tmp + i + 3, str_len(tmp + i));
-                i = j - 1;
-            }
-            continue;
-        }
-    }
-    if (tmp[i - 1] == '/' && i > 1) {
-        tmp[i - 1] = '\0';
-    }
-    str_cpy(path, tmp);
-    kfree(tmp);
-
-    return 0;
 }
 
 /**************************************************
@@ -767,9 +723,9 @@ uint32_t *fu_get_vdisk_info(void) {
     // [3n + 3] = vdisk[n] size
     // ...
 
-    filesys_t *filesys = syscall_fs_get_default();
+    filesys_t *filesys = fs_get_filesys();
 
-    uint32_t *ret = kmalloc(sizeof(uint32_t) * (filesys->vdisk_count * 3 + 1));
+    uint32_t *ret = malloc(sizeof(uint32_t) * (filesys->vdisk_count * 3 + 1));
     ret[0] = filesys->vdisk_count;
     int ret_i = 1;
     for (uint32_t i = 0; i < FS_MAX_DISKS; i++) {

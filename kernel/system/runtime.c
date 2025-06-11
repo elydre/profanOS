@@ -72,15 +72,15 @@ void *load_sections(uint8_t *file) {
 }
 
 int elf_exec(uint32_t sid, char **argv, char **envp) {
-    if (!fu_is_file(fs_get_main(), sid)) {
+    if (!kfu_is_file(sid)) {
         sys_warning("[exec] File not found");
         return -1;
     }
 
-    uint32_t size = fs_cnt_get_size(fs_get_main(), sid);
+    uint32_t size = fs_cnt_get_size(sid);
 
     uint8_t *file = mem_alloc(size, SNOW_KERNEL, 0);
-    fs_cnt_read(fs_get_main(), sid, file, 0, size);
+    fs_cnt_read(sid, file, 0, size);
 
     if (size < sizeof(Elf32_Ehdr) || !is_valid_elf(file)) {
         sys_warning("[exec] Not a valid ELF file");
@@ -123,12 +123,12 @@ int elf_exec(uint32_t sid, char **argv, char **envp) {
 }
 
 int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
-    uint32_t sid = fu_path_to_sid(fs_get_main(), SID_ROOT, file);
+    uint32_t sid = kfu_path_to_sid(SID_ROOT, file);
 
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 
-    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
+    if (IS_SID_NULL(sid) || !kfu_is_file(sid)) {
         sys_warning("[run_ifexist] File not found: %s", file);
         return -1;
     }

@@ -71,40 +71,44 @@ int      vdisk_unload_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data, int sa
 
 // fstools.c
 void     sep_path(char *fullpath, char **parent, char **cnt);
-vdisk_t *fs_get_vdisk(filesys_t *fs, uint8_t device_id);
+vdisk_t *fs_get_vdisk(uint8_t device_id);
 
 // cnt_init.c
 int      fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type);
-uint32_t fs_cnt_init(filesys_t *filesys, uint8_t device_id, char *meta);
-char    *fs_cnt_meta(filesys_t *filesys, uint32_t sid, char *meta);
+uint32_t fs_cnt_init(uint8_t device_id, char *meta);
+char    *fs_cnt_meta(uint32_t sid, char *meta);
 
 // cnt_size.c
-int      fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size);
-uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid);
+int      fs_cnt_set_size(uint32_t head_sid, uint32_t size);
+uint32_t fs_cnt_get_size(uint32_t head_sid);
 
 // cnt_del.c
-int      fs_cnt_delete(filesys_t *filesys, uint32_t head_sid);
+int      fs_cnt_delete(uint32_t head_sid);
 
 // cnt_rw.c
-int      fs_cnt_read(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size);
-int      fs_cnt_write(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size);
+int      fs_cnt_read(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size);
+int      fs_cnt_write(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size);
 
 // usg_dir.c
-int      fu_is_dir(filesys_t *filesys, uint32_t dir_sid);
-int      fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names);
-int      fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name);
-uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *parent, char *name);
+int      kfu_is_dir(uint32_t dir_sid);
+int      kfu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names);
+int      kfu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, const char *name);
+uint32_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name);
 
 // usg_file.c
-int      fu_is_file(filesys_t *filesys, uint32_t dir_sid);
-uint32_t fu_file_create(filesys_t *filesys, char *parent, char *name);
-uint32_t fu_afft_create(filesys_t *filesys, char *parent, char *name, uint32_t id);
+int      kfu_is_file(uint32_t dir_sid);
+uint32_t kfu_file_create(const char *parent, const char *name);
+
+// usg_afft.c
+int      kfu_is_afft(uint32_t sid);
+int      kfu_afft_get_id(uint32_t sid);
+uint32_t kfu_afft_create(const char *parent, const char *name, uint32_t id);
 
 // usg_ptsid.c
-uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path);
+uint32_t kfu_path_to_sid(uint32_t from, const char *path);
 
 // filesys.c
-filesys_t *fs_get_main(void);
+filesys_t *fs_get_filesys(void);
 int       filesys_init(void);
 
 #endif

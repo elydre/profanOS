@@ -29,10 +29,6 @@
 
 multiboot_t *g_mboot;
 
-void kernel_test(void) {
-    kprintf("test\n");
-}
-
 void kernel_main(void *mboot_ptr) {
     g_mboot = mboot_ptr;
 

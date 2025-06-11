@@ -74,7 +74,7 @@ int serial_init(void) {
     return (
         afft_register(1, serial_a_read, serial_a_write, NULL) != 1   ||
         afft_register(2, serial_b_read, serial_b_write, NULL) != 2   ||
-        fu_afft_create(MAIN_FS, "/dev", "serialA", 1) == SID_NULL ||
-        fu_afft_create(MAIN_FS, "/dev", "serialB", 2) == SID_NULL
+        kfu_afft_create("/dev", "serialA", 1) == SID_NULL ||
+        kfu_afft_create("/dev", "serialB", 2) == SID_NULL
     );
 }

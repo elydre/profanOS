@@ -12,6 +12,8 @@
 #ifndef MINILIB_H
 #define MINILIB_H
 
+#include <ktype.h>
+
 #define UNUSED(x) (void)(x)
 #define ARYLEN(x) (int)(sizeof(x) / sizeof((x)[0]))
 #define IS_ALIGNED(x, alignment) ((uint64_t)(x) % (alignment) == 0)
@@ -32,13 +34,14 @@ int  str_ncmp(const char *s1, const char *s2, int n);
 
 // memory functions
 #define mem_copy(dest, source, nbytes) mem_move(dest, source, nbytes)
+
 void mem_set(void *dest, uint8_t val, uint32_t len);
 void mem_move(void *dest, const void *source, uint32_t nbytes);
-int mem_cmp(const void *s1, const void *s2, uint32_t n);
+int  mem_cmp(const void *s1, const void *s2, uint32_t n);
 
 void  free(void *addr);
 void *malloc(uint32_t size);
-void *realloc_as_kernel(void *ptr, uint32_t size);
+void *realloc(void *ptr, uint32_t size);
 void *calloc(uint32_t size);
 
 // io format functions

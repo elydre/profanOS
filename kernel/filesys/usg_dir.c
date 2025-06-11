@@ -13,11 +13,11 @@
 #include <minilib.h>
 #include <system.h>
 
-int fu_is_dir(filesys_t *filesys, uint32_t dir_sid) {
+int kfu_is_dir(uint32_t dir_sid) {
     if (IS_SID_NULL(dir_sid))
         return 0;
 
-    char *name = fs_cnt_meta(filesys, dir_sid, NULL);
+    char *name = fs_cnt_meta(dir_sid, NULL);
     if (name == NULL)
         return 0;
 
@@ -44,21 +44,21 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names) {
-    if (!fu_is_dir(filesys, dir_sid)) {
+int kfu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
+    if (!kfu_is_dir(dir_sid)) {
         sys_warning("[get_dir_content] Sector is not a directory");
         return -1;
     }
 
     // read the directory and get size
-    uint32_t size = fs_cnt_get_size(filesys, dir_sid);
+    uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX) {
         return -1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size);
-    if (fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
+    if (fs_cnt_read(dir_sid, buf, 0, size)) {
         return -1;
     }
 
@@ -93,26 +93,26 @@ int fu_get_dir_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, cha
     return count;
 }
 
-int fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name) {
-    if (IS_SID_NULL(element_sid) || !fu_is_dir(filesys, dir_sid)) {
+int kfu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, const char *name) {
+    if (IS_SID_NULL(element_sid) || !kfu_is_dir(dir_sid)) {
         sys_error("[add_element_to_dir] Invalid given sector id");
         return 1;
     }
 
     // read the directory and get size
-    uint32_t size = fs_cnt_get_size(filesys, dir_sid);
+    uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX) {
         return 1;
     }
 
     // extend the directory
-    if (fs_cnt_set_size(filesys, dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
+    if (fs_cnt_set_size(dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1);
-    if (fs_cnt_read(filesys, dir_sid, buf, 0, size)) {
+    if (fs_cnt_read(dir_sid, buf, 0, size)) {
         return 1;
     }
 
@@ -140,7 +140,7 @@ int fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element
     str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) + count * sizeof(uint32_t) + name_offset, name);
 
     // write the directory
-    if (fs_cnt_write(filesys, dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
+    if (fs_cnt_write(dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
         return 1;
     }
 
@@ -149,13 +149,13 @@ int fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element
     return 0;
 }
 
-uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *parent, char *name) {
+uint32_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
     uint32_t parent_sid;
     uint32_t head_sid;
 
     if (parent) {
-        parent_sid = fu_path_to_sid(filesys, SID_ROOT, parent);
-        if (!fu_is_dir(filesys, parent_sid)) {
+        parent_sid = kfu_path_to_sid(SID_ROOT, parent);
+        if (!kfu_is_dir(parent_sid)) {
             sys_warning("[dir_create] Parent unreachable");
             return SID_NULL;
         }
@@ -168,20 +168,20 @@ uint32_t fu_dir_create(filesys_t *filesys, uint8_t device_id, char *parent, char
     str_cpy(meta, "D-");
     str_ncpy(meta + 2, name, META_MAXLEN - 3);
 
-    head_sid = fs_cnt_init(filesys, (device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
+    head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
     if (IS_SID_NULL(head_sid))
         return SID_NULL;
 
     // create a link in parent directory
-    if (parent && fu_add_element_to_dir(filesys, parent_sid, head_sid, name))
+    if (parent && kfu_add_element_to_dir(parent_sid, head_sid, name))
         return SID_NULL;
 
-    fs_cnt_set_size(filesys, head_sid, sizeof(uint32_t));
-    fs_cnt_write(filesys, head_sid, "\0\0\0\0", 0, 4);
+    fs_cnt_set_size(head_sid, sizeof(uint32_t));
+    fs_cnt_write(head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    return (fu_add_element_to_dir(filesys, head_sid, parent_sid, "..") ||
-            fu_add_element_to_dir(filesys, head_sid, head_sid, ".") ? SID_NULL : head_sid);
+    return (kfu_add_element_to_dir(head_sid, parent_sid, "..") ||
+            kfu_add_element_to_dir(head_sid, head_sid, ".") ? SID_NULL : head_sid);
 }

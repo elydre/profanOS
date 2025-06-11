@@ -56,7 +56,7 @@ static void mouse_handler(registers_t *a_r) {
             mouse_cycle++;
             break;
         case 2:
-            mouse_byte[2]=port_byte_in(0x60);
+            mouse_byte[2] = port_byte_in(0x60);
 
             // if those are set, it's a bad packet
             if ((mouse_byte[0] & 0x80) || (mouse_byte[0] & 0x40)) {

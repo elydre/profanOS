@@ -32,17 +32,17 @@ void fs_destroy(filesys_t *filesys) {
     free(filesys);
 }
 
-int fs_mount_vdisk(filesys_t *filesys, vdisk_t *vdisk, uint8_t device_id) {
-    if (filesys->vdisk[device_id - 1] != NULL) {
+int fs_mount_vdisk(vdisk_t *vdisk, uint8_t device_id) {
+    if (MAIN_FS->vdisk[device_id - 1] != NULL) {
         sys_warning("[mount_vdisk] Disk id is already used");
         return -1;
     }
-    filesys->vdisk[device_id - 1] = vdisk;
-    filesys->vdisk_count++;
+    MAIN_FS->vdisk[device_id - 1] = vdisk;
+    MAIN_FS->vdisk_count++;
     return device_id;
 }
 
-filesys_t *fs_get_main(void) {
+filesys_t *fs_get_filesys(void) {
     return MAIN_FS;
 }
 
@@ -76,50 +76,44 @@ int filesys_init(void) {
     if (d0 == NULL)
         return 1;
 
-    fs_mount_vdisk(MAIN_FS, d0, 1);
+    fs_mount_vdisk(d0, 1);
 
-    fu_dir_create(MAIN_FS, 0, NULL, "/");
-    fu_dir_create(MAIN_FS, 0, "/", "tmp");
-    fu_dir_create(MAIN_FS, 0, "/", "dev");
+    kfu_dir_create(0, NULL, "/");
+    kfu_dir_create(0, "/", "tmp");
+    kfu_dir_create(0, "/", "dev");
 
     vdisk_t *d1 = initrd_to_vdisk();
     if (d1 == NULL)
         return 1;
 
-    fs_mount_vdisk(MAIN_FS, d1, 2);
+    fs_mount_vdisk(d1, 2);
 
-    if (fu_add_element_to_dir(
-        MAIN_FS,
+    if (kfu_add_element_to_dir(
         SID_ROOT,
-        fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/user"),
+        kfu_path_to_sid(SID_FORMAT(2, 0), "/user"),
         "user"
-    ) || fu_add_element_to_dir(
-        MAIN_FS,
+    ) || kfu_add_element_to_dir(
         SID_ROOT,
-        fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/bin"),
+        kfu_path_to_sid(SID_FORMAT(2, 0), "/bin"),
         "bin"
-    ) || fu_add_element_to_dir(
-        MAIN_FS,
+    ) || kfu_add_element_to_dir(
         SID_ROOT,
-        fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/lib"),
+        kfu_path_to_sid(SID_FORMAT(2, 0), "/lib"),
         "lib"
-    ) || fu_add_element_to_dir(
-        MAIN_FS,
+    ) || kfu_add_element_to_dir(
         SID_ROOT,
-        fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/sys"),
+        kfu_path_to_sid(SID_FORMAT(2, 0), "/sys"),
         "sys"
-    ) || fu_add_element_to_dir(
-        MAIN_FS,
+    ) || kfu_add_element_to_dir(
         SID_ROOT,
-        fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/zada"),
+        kfu_path_to_sid(SID_FORMAT(2, 0), "/zada"),
         "zada"
     )) {
         return 1;
     }
 
-    uint32_t src_sid = fu_path_to_sid(MAIN_FS, SID_FORMAT(2, 0), "/src");
-    if (!IS_SID_NULL(src_sid) && fu_add_element_to_dir(
-        MAIN_FS,
+    uint32_t src_sid = kfu_path_to_sid(SID_FORMAT(2, 0), "/src");
+    if (!IS_SID_NULL(src_sid) && kfu_add_element_to_dir(
         SID_ROOT,
         src_sid,
         "src"

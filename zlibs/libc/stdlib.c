@@ -460,7 +460,7 @@ char *realpath(const char *path, char *resolved_path) {
     }
 
     char *fullpath = profan_path_join(profan_wd_path(), path);
-    fu_simplify_path(fullpath);
+    profan_path_simplify(fullpath);
 
     if (resolved_path == NULL)
         return fullpath;

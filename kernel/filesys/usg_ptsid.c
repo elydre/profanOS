@@ -12,13 +12,13 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 
-uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
+uint32_t kfu_rec_path_to_sid(uint32_t parent, const char *path) {
     uint32_t ret;
 
     ret = SID_NULL;
 
     // read the directory
-    uint32_t size = fs_cnt_get_size(filesys, parent);
+    uint32_t size = fs_cnt_get_size(parent);
     if (size == UINT32_MAX) {
         return SID_NULL;
     }
@@ -43,7 +43,7 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
     uint32_t *sids;
     int count;
 
-    count = fu_get_dir_content(filesys, parent, &sids, &names);
+    count = kfu_get_dir_content(parent, &sids, &names);
 
     if (count < 1) {
         free(name);
@@ -56,10 +56,10 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
             ret = sids[j];
             break;
         }
-        if (str_cmp(name, names[j]) == 0 && fu_is_dir(filesys, sids[j]) &&
-            fu_get_dir_content(filesys, sids[j], NULL, NULL) > 0
+        if (str_cmp(name, names[j]) == 0 && kfu_is_dir(sids[j]) &&
+            kfu_get_dir_content(sids[j], NULL, NULL) > 0
         ) {
-            ret = fu_rec_path_to_sid(filesys, sids[j], path + i);
+            ret = kfu_rec_path_to_sid(sids[j], path + i);
             break;
         }
     }
@@ -75,15 +75,15 @@ uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
     return ret;
 }
 
-uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path) {
+uint32_t kfu_path_to_sid(uint32_t from, const char *path) {
     uint32_t ret;
 
     if (str_cmp("/", path) == 0) {
         ret = SID_ROOT;
     } else if (path[0] == '/') {
-        ret = fu_rec_path_to_sid(filesys, from, path + 1);
+        ret = kfu_rec_path_to_sid(from, path + 1);
     } else {
-        ret = fu_rec_path_to_sid(filesys, from, path);
+        ret = kfu_rec_path_to_sid(from, path);
     }
 
     return ret;

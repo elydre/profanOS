@@ -167,10 +167,10 @@ void free(void *addr) {
 }
 
 void *malloc(uint32_t size) {
-    return mem_alloc(size, SNOW_SIMPLE, 0);
+    return mem_alloc(size, SNOW_KERNEL, 0);
 }
 
-void *realloc_as_kernel(void *ptr, uint32_t size) {
+void *realloc(void *ptr, uint32_t size) {
     void *new_addr = mem_alloc(size, SNOW_KERNEL, 0);
 
     if (new_addr == NULL)
@@ -186,7 +186,7 @@ void *realloc_as_kernel(void *ptr, uint32_t size) {
 }
 
 void *calloc(uint32_t size) {
-    void *addr = mem_alloc(size, SNOW_SIMPLE, 0);
+    void *addr = mem_alloc(size, SNOW_KERNEL, 0);
     if (addr == NULL)
         return NULL;
     mem_set(addr, 0, size);

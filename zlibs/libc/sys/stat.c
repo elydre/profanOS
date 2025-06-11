@@ -30,7 +30,7 @@ static int stat_sid(uint32_t sid, struct stat *buf) {
 
     if (fu_is_dir(sid)) {
         buf->st_mode |= S_IFDIR;
-    } else if (fu_is_fctf(sid)) {
+    } else if (fu_is_afft(sid)) {
         buf->st_mode |= S_IFCHR;
     } else {
         buf->st_mode |= S_IFREG;

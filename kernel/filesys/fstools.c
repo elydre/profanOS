@@ -48,7 +48,7 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
     }
 }
 
-vdisk_t *fs_get_vdisk(filesys_t *fs, uint8_t device_id) {
+vdisk_t *fs_get_vdisk(uint8_t device_id) {
     device_id -= 1;
-    return fs->vdisk[device_id];
+    return MAIN_FS->vdisk[device_id];
 }

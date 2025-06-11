@@ -151,7 +151,7 @@ int ata_init(void) {
 
     afft_id = afft_register(AFFT_AUTO, ata_read, ata_write, NULL);
 
-    if (afft_id == -1 || fu_afft_create(MAIN_FS, "/dev", "ata", afft_id) == SID_NULL)
+    if (afft_id == -1 || kfu_afft_create("/dev", "ata", afft_id) == SID_NULL)
         return 1;
 
     return 3;
