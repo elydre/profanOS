@@ -14,6 +14,7 @@
 #include <profan/syscall.h>
 #include <profan/panda.h>
 #include <profan/carp.h>
+#include <profan.h>
 
 #include <string.h>
 #include <unistd.h>
@@ -133,8 +134,6 @@ void top_loop(void) {
     printf("\e[2J");
     fflush(stdout);
 
-    while (syscall_sc_get());
-
     do {
         // move cursor to top left
         printf("\e[H");
@@ -165,7 +164,7 @@ void top_loop(void) {
         printf("%s %d allocs    \n\n", buf, syscall_mem_info(4, 0) - syscall_mem_info(5, 0));
         list_process(1);
         for (int i = 0; i < 9; i++) {
-            if (syscall_sc_get()) {
+            if (syscall_sc_get() == KB_ESC) {
                 last_idle = -1;
                 break;
             }
@@ -212,8 +211,6 @@ int main(int argc, char **argv) {
         list_process(2);
     else if (carp_isset('t'))
         top_loop();
-    else if (carp_isset('l'))
-        list_process(0);
     else if (carp_isset('k'))
         syscall_process_kill(carp_get_int('k'), 1);
     else if (carp_isset('s'))
@@ -222,6 +219,8 @@ int main(int argc, char **argv) {
         syscall_process_wakeup(carp_get_int('w'), 0);
     else if (carp_isset('f'))
         search_process(carp_get_str('f'));
-    else return 1;
+    else
+        list_process(0);
+
     return 0;
 }

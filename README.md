@@ -1,9 +1,9 @@
 # The profan Operating System
 
 [![publish](https://github.com/elydre/profanOS/actions/workflows/publish.yml/badge.svg)](https://github.com/elydre/profanOS/actions/workflows/publish.yml)
-[![nbr](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
-[![lines](https://img.shields.io/badge/dynamic/json?color=blue&label=code%20lines&query=profan_lines&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan)
-[![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=latest%20kernel&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan/latest.html)
+[![commit-activity](https://img.shields.io/github/commit-activity/m/elydre/profanOS)](https://github.com/esolangs/profanOS-build/tree/main/img)
+[![loc](https://img.shields.io/badge/dynamic/json?color=blue&label=code%20lines&query=profan_lines&url=https://elydre.github.io/build/profan_data.json)](https://github.com/elydre/profanOS/graphs/code-frequency)
+[![latest](https://img.shields.io/badge/dynamic/json?color=blue&label=latest%20kernel&query=kernel_version&url=https://elydre.github.io/build/profan_data.json)](https://elydre.github.io/profan)
 
 ![wave](https://elydre.github.io/img/profan.svg)
 
