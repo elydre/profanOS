@@ -23,6 +23,13 @@ static void I_remove_listener(int idx) {
 }
 
 void eth_append_packet(void *data, uint32_t len) {
+	if (len < 12)
+		return ;
+	uint8_t mac[6];
+	eth_get_mac(mac);
+	// if dest != mac && dest != broadcast return
+	if (mem_cmp(data, mac, 6) != 0 && mem_cmp(data, "\xFF\xFF\xFF\xFF\xFF\xFF", 6) != 0)
+		return;
 	int old_len = listeners_len;
 
 	for (int i = 0; i < listeners_len; i++) {
@@ -36,6 +43,7 @@ void eth_append_packet(void *data, uint32_t len) {
 		lis->packets[i].data = malloc(sizeof(uint8_t) * len);
 		lis->packets[i].len = len;
 		mem_copy(lis->packets[i].data, data, sizeof(uint8_t) * len);
+		lis->packets_len++;
 	}
 	if (old_len != listeners_len)
 		listeners = realloc_as_kernel(listeners, sizeof(listener_t) * listeners_len);
@@ -63,15 +71,20 @@ static void I_listener_pop(int pid, void *data) {
 	for (int i = 0; i < listeners_len; i++) {
 		if (listeners[i].pid != pid)
 			continue;
-		listener_t *lis = &listeners[i];
-		if (lis->packets_len == 0)
+		if (listeners[i].packets_len == 0)
 			break;
-		mem_copy(data, lis->packets[i].data, lis->packets_len * sizeof(uint8_t));
-		free(lis->packets[i].data);
-		for (int k = 0; k < lis->packets_len - 1; k++)
-			lis->packets[i] = lis->packets[i + 1];
-		lis->packets_len--;
-		break;
+		eth_raw_packet_t *packet = &listeners[i].packets[0];
+		mem_copy(data, packet->data, packet->len);
+		free(packet->data);
+		listeners[i].packets_len--;
+		if (listeners[i].packets_len == 0) {
+			free(listeners[i].packets);
+			listeners[i].packets = NULL;
+		} else {
+			for (int j = 0; j < listeners[i].packets_len; j++)
+				listeners[i].packets[j] = listeners[i].packets[j + 1];
+			listeners[i].packets = realloc_as_kernel(listeners[i].packets, sizeof(eth_raw_packet_t) * listeners[i].packets_len);
+		}
 	}
 }
 
@@ -127,7 +140,6 @@ uint32_t eth_listen_isready() {
 	if (lis->packets_len == 0)
 		return 0;
 	return 1;
-
 }
 
 int eth_send(void *data_ptr, uint32_t len) {
