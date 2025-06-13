@@ -62,5 +62,7 @@ extern uint32_t dhcp_server_ip;
 
 void send_dhcp_discover(uint8_t *mac);
 int receive_offer(uint8_t *mac);
+void send_dhcp_request(uint8_t *mac);
+int receive_ack(uint8_t *mac);
 
 #endif

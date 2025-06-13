@@ -13,11 +13,22 @@ int retrieve_ip(uint8_t *mac) {
     int fail = 1;
     while (syscall_timer_get_ms() - now < 1000) {
         fail = receive_offer(mac);
+        if (fail == 0)
+            break;
         usleep(500);
     }
     if (fail)
         return 1;
-    return 0;
+    send_dhcp_request(mac);
+    now = syscall_timer_get_ms();
+    fail = 1;
+    while (syscall_timer_get_ms() - now < 1000) {
+        fail = receive_ack(mac);
+        if (fail == 0)
+            break;
+        usleep(500);
+    }
+    return fail;
 }
 
 int main(int argc, char **argv) {

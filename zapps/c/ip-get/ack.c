@@ -1,6 +1,6 @@
 #include "ip-get.h"
 
-int receive_offer(uint8_t *mac) {
+int receive_ack(uint8_t *mac) {
 	(void)mac;
 	if (!syscall_eth_listen_isready()) {
 		return 1;
@@ -47,9 +47,7 @@ int receive_offer(uint8_t *mac) {
 			continue;
 		}
 		if (i + 2 < opt_len) {
-			if (opt[i] == 53 && opt[i + 1] == 1 && opt[i + 2] == 2) {
-				offered_ip = dhcp->yiaddr;
-				dhcp_server_ip = dhcp->siaddr;
+			if (opt[i] == 53 && opt[i + 1] == 1 && opt[i + 2] == 5) {
 				free(packet);
 				return 0;
 			}
