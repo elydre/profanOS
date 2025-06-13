@@ -13,7 +13,7 @@ FUNC help
         !0 -h
         RETURN
     END
-    echo -e < /zada/common/shell_help.txt
+    echo -es < /zada/common/shell_help.txt
 END
 
 FUNC name
