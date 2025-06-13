@@ -56,10 +56,8 @@ void kernel_main(void *mboot_ptr) {
     status_print(filesys_init, "Loading", "butterfly filesystem");
     status_print(pci_init,     "Scanning", "pci devices");
     status_print(pok_init,     "Initing", "kernel modules loader");
-    extern int eth_8168_init();
-    status_print(eth_8168_init, "Initing", "8168 ethernet card");
-    extern int rtl8139_init();
-    status_print(rtl8139_init, "Initing", "8139 ethernet card");
+    extern int rtl8168_init();
+    status_print(rtl8168_init, "Initing", "8168 ethernet card");
     extern int e1000_init();
     status_print(e1000_init, "Initing", "e1000 ethernet card");
     status_print(eth_init,     "Initing", "ethernet driver");

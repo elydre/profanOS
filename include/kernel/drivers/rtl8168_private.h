@@ -1,0 +1,4 @@
+#ifndef RTL8168_PRIVATE_H
+#define RTL8168_PRIVATE_H
+
+#endif

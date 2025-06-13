@@ -69,7 +69,7 @@ LD_FLAGS   = "-m elf_i386 -nostdlib"
 
 QEMU_SPL   = "qemu-system-i386"
 QEMU_KVM   = "qemu-system-i386 -enable-kvm"
-QEMU_NET   = "qemu-system-i386 -enable-kvm -netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat"
+QEMU_NET   = "qemu-system-i386 -netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat"
 
 QEMU_FLAGS = "-serial stdio"
 QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"

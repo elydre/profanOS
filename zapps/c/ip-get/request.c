@@ -66,7 +66,8 @@ void send_dhcp_request(uint8_t *mac) {
 	// === Checksum IP ===
     ip->checksum = 0;
     uint32_t sum = 0;
-    uint16_t *ip_data = (uint16_t *)ip;
+    uint16_t ip_data[sizeof(ip_header_t)/2];
+	memcpy(ip_data, ip, sizeof(ip_header_t));
     for (size_t i = 0; i < sizeof(ip_header_t)/2; ++i)
         sum += ntohs(ip_data[i]);
     sum = (sum & 0xFFFF) + (sum >> 16);
