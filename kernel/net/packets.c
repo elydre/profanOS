@@ -143,11 +143,7 @@ uint32_t eth_listen_isready() {
 }
 
 int eth_send(void *data_ptr, uint32_t len) {
-	uint32_t addr = (uint32_t)data_ptr;
-	addr -= addr % 4096;
-	addr = (uint32_t)scuba_call_phys((void *)addr);
-	addr += (uint32_t)data_ptr % 4096;
-	eth_send_packet((const void *)addr, len);
+	eth_send_packet(data_ptr, len);
 	return 0;
 }
 

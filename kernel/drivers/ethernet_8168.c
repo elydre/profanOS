@@ -72,7 +72,11 @@ void init_tx_rx() {
 
     port_byte_out(io + 0x37, 0x0C); // Enable RX & TX
 
-    port_word_out(io + 0x3C, 0x0005); // Enable interrupts
+    kprintf("debug1\n");
+    port_word_out(io + 0x3C, 0xffff); // Enable interrupts
+    kprintf("debug2\n");
+    port_long_out(io + 0x44, 0); // Current RX index
+    kprintf("debug3\n");
 }
 
 void rtl8168_send_packet(const void *p_data, uint16_t p_len) {
@@ -85,7 +89,7 @@ void rtl8168_send_packet(const void *p_data, uint16_t p_len) {
     tx_descs[tx_cur].length = p_len & 0x1FFF;
     tx_descs[tx_cur].status = 0x80000000 | (p_len & 0x1FFF);
 
-    uint32_t io = g_pci_device->bar[0] & ~0x3;
+    uint32_t io = g_pci_device->bar[0];
     port_byte_out(io + 0x38, tx_cur); // Notify NIC
 
     // Timeout pour éviter les blocages
@@ -103,6 +107,7 @@ void rtl8168_handler(registers_t *regs) {
         return;
     kprintf("RTL8168 INT RECV\n");
     uint32_t io = g_pci_device->bar[0] & ~0x3;
+    port_word_out(io + 0x3E, 0xFFFF);
 
     // Traite tous les paquets disponibles
     while (!(rx_descs[rx_cur].status & 0x80000000)) {
@@ -114,9 +119,6 @@ void rtl8168_handler(registers_t *regs) {
         rx_descs[rx_cur].length = RX_BUF_SIZE;
         rx_cur = (rx_cur + 1) % NUM_RX_DESC;
     }
-
-    // Accuser réception de l'interruption
-    port_word_out(io + 0x3E, 0xFFFF);
 }
 
 int rtl8168_init() {
@@ -151,7 +153,6 @@ int rtl8168_init() {
     init_tx_rx();
 
     register_interrupt_handler(pci->interrupt_line + 32, rtl8168_handler);
-    port_word_out(pci->bar[0] + 0x3C, 0x0005);
 
     rtl8168_is_inited = 1;
     return 0;
