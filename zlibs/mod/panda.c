@@ -177,16 +177,14 @@ static uint16_t compute_ansi_color(char ansi_nb, int part, uint16_t old_color) {
     char fg = old_color & 0xF;
     char bg = (old_color >> 4) & 0xF;
 
-    switch (ansi_nb) {
-        case '0': ansi_nb = 0; break;
-        case '1': ansi_nb = 4; break;
-        case '2': ansi_nb = 2; break;
-        case '3': ansi_nb = 6; break;
-        case '4': ansi_nb = 1; break;
-        case '5': ansi_nb = 5; break;
-        case '6': ansi_nb = 3; break;
-        default:  ansi_nb = 7; break;
-    }
+    int conv[] = {
+        0, 4, 2, 6, 1, 5, 3, 7
+    };
+
+    if (ansi_nb < 0 || ansi_nb > 7)
+        ansi_nb = 7;
+    else
+        ansi_nb = conv[(int) ansi_nb];
 
     if (part == 0) {
         fg = ansi_nb;
@@ -204,156 +202,197 @@ static uint16_t compute_ansi_color(char ansi_nb, int part, uint16_t old_color) {
 static int compute_ansi_escape(const char *str, int main_color) {
     const char *start = str;
 
-    if (str[1] == '[') str += 2;
-    else return 1;
-
-    // cursor save and restore
-    if (str[0] == 's') {
-        g_panda->saved_cursor_x = g_panda->cursor_x;
-        g_panda->saved_cursor_y = g_panda->cursor_y;
-    } else if (str[0] == 'u') {
-        if (g_panda->saved_cursor_y < g_panda->scroll_offset) {
-            g_panda->saved_cursor_y = g_panda->scroll_offset;
-        } else {
-            g_panda->cursor_y = g_panda->saved_cursor_y;
-        }
-        g_panda->cursor_x = g_panda->saved_cursor_x;
-    } else if (str[0] == 'K') {
-        for (int i = g_panda->cursor_x; i < g_panda->max_cols; i++) {
-            panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
-        }
-    }
-
-    if (str[0] >= '0' && str[0] <= '9' &&
-        str[1] >= '0' && str[1] <= '9' &&
-        str[2] == ';') str += 3;
-
-    // reset color
-    if (str[0] == 'm' || (str[0] == '0' && str[1] == 'm')) {
-        g_panda->color = main_color == -1 ? 0xF : main_color;
-        str += 2 + (str[0] == '0');
-    }
-
-    // underline
-    else if (str[0] == '4' && str[1] == 'm') {
-        g_panda->color |= PANDA_UNDERLINE;
-        str += 3;
-    }
-
-    // no underline
-    else if (str[0] == '2' && str[1] == '4' && str[2] == 'm') {
-        g_panda->color &= ~PANDA_UNDERLINE;
-        str += 4;
-    }
-
-    // font color
-    else if (str[0] == '3' && str[1] && str[2] == 'm') {
-        g_panda->color = compute_ansi_color(str[1], 0, g_panda->color);
-        str += 4;
-    }
-
-    // highlight font color
-    else if (str[0] == '9' && str[1] && str[2] == 'm') {
-        g_panda->color = compute_ansi_color(str[1], 1, g_panda->color);
-        str += 4;
-    }
-
-    // background color
-    else if (str[0] == '4' && str[1] && str[2] == 'm') {
-        g_panda->color = compute_ansi_color(str[1], 2, g_panda->color);
-        str += 4;
-    }
-
-    // highlight background color
-    else if (str[0] == '1' && str[1] == '0' && str[2] && str[3] == 'm') {
-        g_panda->color = compute_ansi_color(str[2], 3, g_panda->color);
-        str += 5;
-    }
-
-    // cursor hide and show
-    else if (str_ncmp(str, "?25", 3) == 0) {
-        if (str[3] == 'l') {
-            g_panda->cursor_is_hidden = 0;
-        } else if (str[3] == 'h') {
-            g_panda->cursor_is_hidden = 1;
-        }
-        str += 5;
-    }
-
-    // clear screen
-    else if (str[0] == '2' && str[1] == 'J') {
-        panda_clear_screen();
-        str += 3;
-    }
-
-    // set top left
-    else if (str[0] == 'H') {
-        g_panda->cursor_x = 0;
-        g_panda->cursor_y = 0;
-        g_panda->scroll_offset = 0;
+    if (str[0] == '\e' && str[1] == '[')
         str += 2;
+    else
+        return 1;
+    
+    int vals[4] = {0};
+    int private = 0;
+    int vcount = 0;
+
+    if (*str == '?') {
+        private = 1;
+        str++;
     }
 
-    else {
-        // number
-        const char *tmp = str;
-        while (*str >= '0' && *str <= '9') str++;
-
-        // cursor up
-        if (str[0] == 'A') {
-            int n = str_int(tmp);
-            g_panda->cursor_y -= n;
+    while (*str >= '0' && *str <= '9' && vcount < 4) {
+        while (*str >= '0' && *str <= '9') {
+            vals[vcount] = vals[vcount] * 10 + (*str - '0');
+            str++;
         }
-
-        // cursor down
-        else if (str[0] == 'B') {
-            int n = str_int(tmp);
-            g_panda->cursor_y += n;
+        vcount++;
+        if (*str == ';') {
+            str++;
+        } else {
+            break;
         }
+    }
 
-        // cursor forward
-        else if (str[0] == 'C') {
-            int n = str_int(tmp);
-            g_panda->cursor_x += n;
+    switch (*str) {
+        case 's': // save cursor position
+            if (vcount > 0 || private)
+                goto UNKNOWN_ESCAPE;
+            g_panda->saved_cursor_x = g_panda->cursor_x;
+            g_panda->saved_cursor_y = g_panda->cursor_y;
+            break;
+        case 'u': // restore cursor position
+            if (vcount > 0 || private)
+                goto UNKNOWN_ESCAPE;
+            if (g_panda->saved_cursor_y < g_panda->scroll_offset)
+                g_panda->saved_cursor_y = g_panda->scroll_offset;
+            else
+                g_panda->cursor_y = g_panda->saved_cursor_y;
+            g_panda->cursor_x = g_panda->saved_cursor_x;
+            break;
+        case 'K': // clear line
+            if (vcount > 1 || private)
+                goto UNKNOWN_ESCAPE;
+            if (vcount == 0 || vals[0] == 0)
+                for (int i = g_panda->cursor_x; i < g_panda->max_cols; i++)
+                    panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
+            else if (vals[0] == 1) // clear from start to cursor
+                for (int i = 0; i < g_panda->cursor_x; i++)
+                    panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
+            else if (vals[0] == 2) // clear whole line
+                for (int i = 0; i < g_panda->max_cols; i++) 
+                    panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
+            else
+                goto UNKNOWN_ESCAPE;
+            break;
+        case 'm': // set text attributes
+            if (vcount == 0 || private)
+                goto UNKNOWN_ESCAPE;
+            for (int i = 0; i < vcount; i++) {
+                if (vals[i] == 0) {
+                    g_panda->color = main_color == -1 ? 0xF : main_color;
+                    g_panda->color &= ~PANDA_UNDERLINE;
+                } else if (vals[i] == 1) {
+                    g_panda->color |= PANDA_UNDERLINE;
+                } else if (vals[i] >= 30 && vals[i] <= 37) {
+                    g_panda->color = compute_ansi_color(vals[i] - 30, 0, g_panda->color);
+                } else if (vals[i] >= 40 && vals[i] <= 47) {
+                    g_panda->color = compute_ansi_color(vals[i] - 40, 2, g_panda->color);
+                } else if (vals[i] >= 90 && vals[i] <= 97) {
+                    g_panda->color = compute_ansi_color(vals[i] - 90, 1, g_panda->color);
+                } else if (vals[i] >= 100 && vals[i] <= 107) {
+                    g_panda->color = compute_ansi_color(vals[i] - 100, 3, g_panda->color);
+                } else {
+                    goto UNKNOWN_ESCAPE;
+                }
+            }
+            break;
+        case 'l': // show cursor
+            if (private && vcount == 1 && vals[0] == 25)
+                g_panda->cursor_is_hidden = 0;
+            else
+                goto UNKNOWN_ESCAPE;
+            break;
+        case 'h': // hide cursor
+            if (private && vcount == 1 && vals[0] == 25)
+                g_panda->cursor_is_hidden = 1;
+            else
+                goto UNKNOWN_ESCAPE;
+            break;
+        case 'J': // clear screen
+            if (vcount > 1 || private)
+                goto UNKNOWN_ESCAPE;
+            if (vals[0] == -1 || vals[0] == 0) { // clear from cursor to end of screen
+                for (int i = g_panda->cursor_y - g_panda->scroll_offset; i < g_panda->max_lines; i++) {
+                    for (int j = 0; j < g_panda->max_cols; j++) {
+                        panda_set_char(j, i, ' ', g_panda->color);
+                    }
+                }
+            } else if (vals[0] == 1) { // clear from start of screen to cursor
+                for (int i = 0; i < g_panda->cursor_y - g_panda->scroll_offset; i++) {
+                    for (int j = 0; j < g_panda->max_cols; j++) {
+                        panda_set_char(j, i, ' ', g_panda->color);
+                    }
+                }
+            } else if (vals[0] == 2) { // clear whole screen
+                panda_clear_screen();
+            } else {
+                goto UNKNOWN_ESCAPE;
+            }
+            break;
+        case 'f':
+        case 'H': // move cursor to position
+            if (private)
+                goto UNKNOWN_ESCAPE;
+            if (*str == 'H' && vcount == 0) {
+                // set cursor to top left
+                g_panda->cursor_x = 0;
+                g_panda->cursor_y = 0;
+                g_panda->scroll_offset = 0;
+            } else if (vcount == 2) {
+                // set cursor to position
+                if (vals[0] < 0 || vals[0] > g_panda->max_cols ||
+                    vals[1] < 0 || vals[1] > g_panda->max_lines) {
+                    goto UNKNOWN_ESCAPE;
+                }
+                g_panda->cursor_y = vals[0];
+                g_panda->cursor_x = vals[1] + g_panda->scroll_offset;
+            } else {
+                goto UNKNOWN_ESCAPE;
+            }
+            break;
+        case 'A': // cursor up
+            if (private || vcount > 1)
+                goto UNKNOWN_ESCAPE;
+            if (vcount == 0 || vals[0] < 1)
+                g_panda->cursor_y--;
+            else
+                g_panda->cursor_y -= vals[0];
+            if (g_panda->cursor_y < g_panda->scroll_offset)
+                g_panda->cursor_y = g_panda->scroll_offset;
+            break;
+        case 'B': // cursor down
+            if (private || vcount > 1)
+                goto UNKNOWN_ESCAPE;
+            if (vcount == 0 || vals[0] < 1)
+                g_panda->cursor_y++;
+            else
+                g_panda->cursor_y += vals[0];
+            if (g_panda->cursor_y >= g_panda->max_lines + g_panda->scroll_offset)
+                g_panda->cursor_y = g_panda->max_lines - 1 + g_panda->scroll_offset;
+            break;
+        case 'C': // cursor forward
+            if (private || vcount > 1)
+                goto UNKNOWN_ESCAPE;
+            if (vcount == 0 || vals[0] < 1)
+                g_panda->cursor_x++;
+            else
+                g_panda->cursor_x += vals[0];
             if (g_panda->cursor_x >= g_panda->max_cols) {
                 g_panda->cursor_x -= g_panda->max_cols;
                 g_panda->cursor_y++;
             }
-        }
-
-        // cursor backward
-        else if (str[0] == 'D') {
-            int n = str_int(tmp);
-            g_panda->cursor_x -= n;
+            if (g_panda->cursor_y >= g_panda->max_lines + g_panda->scroll_offset)
+                g_panda->cursor_y = g_panda->max_lines - 1 + g_panda->scroll_offset;
+            break;
+        case 'D': // cursor backward
+            if (private || vcount > 1)
+                goto UNKNOWN_ESCAPE;
+            if (vcount == 0 || vals[0] < 1)
+                g_panda->cursor_x--;
+            else
+                g_panda->cursor_x -= vals[0];
             if (g_panda->cursor_x < 0) {
                 g_panda->cursor_x += g_panda->max_cols;
                 g_panda->cursor_y--;
             }
-        }
-
-        // clear line
-        else if (str[0] == 'K') {
-            int n = str_int(tmp);
-
-            int from = g_panda->cursor_x;
-            int to = g_panda->max_cols - 1;
-
-            if (n == 1) {
-                from = 0;
-                to = g_panda->cursor_x - 1;
-            } else if (n == 2) {
-                from = 0;
-            }
-
-            for (int i = from; i <= to; i++) {
-                panda_set_char(i, g_panda->cursor_y - g_panda->scroll_offset,
-                        ' ', g_panda->color);
-            }
-        }
-        str += 2;
+            if (g_panda->cursor_y < g_panda->scroll_offset)
+                g_panda->cursor_y = g_panda->scroll_offset;
+            break;
+        default:
+            // unknown escape sequence
+            goto UNKNOWN_ESCAPE;    
     }
 
-    return str - start - 2;
+    return str - start;
+
+    UNKNOWN_ESCAPE:
+    return 0;
 }
 
 static void panda_scroll(uint32_t line_count) {

@@ -243,7 +243,7 @@ int atoi(const char *nptr) {
 }
 
 long atol(const char *nptr) {
-    return (PROFAN_FNI, 0);
+    return atoi(nptr);
 }
 
 long long atoll(const char *nptr) {
