@@ -267,8 +267,10 @@ static int compute_ansi_escape(const char *str, int main_color) {
                 if (vals[i] == 0) {
                     g_panda->color = main_color == -1 ? 0xF : main_color;
                     g_panda->color &= ~PANDA_UNDERLINE;
-                } else if (vals[i] == 1) {
-                    g_panda->color |= PANDA_UNDERLINE;
+                } else if (vals[i] == 4) {
+                    g_panda->color |= PANDA_UNDERLINE; // underline
+                } else if (vals[i] == 24) {
+                    g_panda->color &= ~PANDA_UNDERLINE; // end underline
                 } else if (vals[i] >= 30 && vals[i] <= 37) {
                     g_panda->color = compute_ansi_color(vals[i] - 30, 0, g_panda->color);
                 } else if (vals[i] >= 40 && vals[i] <= 47) {
@@ -326,10 +328,14 @@ static int compute_ansi_escape(const char *str, int main_color) {
                 g_panda->scroll_offset = 0;
             } else if (vcount == 2) {
                 // set cursor to position
-                if (vals[0] < 0 || vals[0] > g_panda->max_cols ||
-                    vals[1] < 0 || vals[1] > g_panda->max_lines) {
-                    goto UNKNOWN_ESCAPE;
-                }
+                if (vals[0] < 0)
+                    vals[0] = 0;
+                if (vals[1] < 0)
+                    vals[1] = 0;
+                if (vals[0] >= g_panda->max_lines + g_panda->scroll_offset)
+                    vals[0] = g_panda->max_lines - 1 + g_panda->scroll_offset;
+                if (vals[1] >= g_panda->max_cols)
+                    vals[1] = g_panda->max_cols - 1;
                 g_panda->cursor_y = vals[0];
                 g_panda->cursor_x = vals[1] + g_panda->scroll_offset;
             } else {
@@ -460,6 +466,9 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
             panda_scroll(SCROLL_LINES);
         else if (string[i] == '\r')
             g_panda->cursor_x = 0;
+        else if (string[i] == '\a')
+            // bell (do nothing)
+            ;
         else if (string[i] == '\b') {
             if (g_panda->cursor_x > 0)
                 g_panda->cursor_x--;

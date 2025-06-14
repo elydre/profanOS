@@ -61,41 +61,7 @@ static int ttyscr = 1;
 /* initialize the screen & keyboard */
 void ttyinit()
 {
-#ifdef FEATURE_STDIN
-	/* choose a keyboard fd */
-	if (stdin_not_kbd)
-	{
-		if (isatty(2))
-			ttykbd = 2;
-		else
-		{
-			ttykbd = open("/dev/tty", O_RDONLY);
-			if (ttykbd < 0)
-			{
-				perror("/dev/tty");
-				exit(2);
-			}
-		}
-	}
-#endif
-
-	/* choose a screen fd */
-	if (!isatty(1))
-	{
-		if (isatty(2))
-			ttyscr = 2;
-		else
-		{
-			ttyscr = open("/dev/tty", O_WRONLY);
-			if (ttykbd < 0)
-			{
-				perror("/dev/tty");
-				exit(2);
-			}
-		}
-	}
-
-	ttyinit2();
+    write(1, "\033[?25l", 6); // Enable cursor visibility
 }
 
 /* write characters out to the screen */

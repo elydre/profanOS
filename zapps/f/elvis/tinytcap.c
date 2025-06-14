@@ -44,16 +44,24 @@ int tgetent(bp, name)
 	return 1;
 }
 
+#include <profan/panda.h>
+#include <profan.h>
+
 int tgetnum(id)
 	char	*id;
 {
-    serial_debug("tgetnum(%s)\n", id);
+
+    int x, y;
 
     if (strcmp(id, "co") == 0) {
-        return 80;
+        panda_get_size(&x, &y);
+        return x;
     } else if (strcmp(id, "li") == 0) {
-        return 24;
+        panda_get_size(&x, &y);
+        return y;
     }
+
+    serial_debug("tgetnum(%s)\n", id);
 
     return -1;
 }
@@ -65,27 +73,65 @@ int tgetflag(id)
     return 0;
 }
 
+typedef struct {
+    const char *key;
+    const char *ansi_sequence;
+} TermcapMapping;
+
+TermcapMapping termcap_mappings[] = {
+    "up", "\033[A",  // up one line
+    "cm", "\033[%d;%dH",  // cursor movement to row N, col M
+    "ce", "\033[K",  // clear to end of line
+    "do", "\033[B",  // down one line
+
+    "bc", "\033[D",  // backspace
+    "vb", NULL,  // visible bell
+    "DO", "\033[%dB",  // down N lines
+    "ti", NULL,  // terminal initialization
+    "te", NULL,  // terminal end
+    "sc", "\033[s",  // save cursor position
+    "rc", "\033[u",  // restore cursor position
+    "ks", NULL,  // start function keys
+    "ke", NULL,  // end function keys
+    "AF", "\033[%dm",  // set foreground color
+    "sg", NULL,  // ?
+    "so", NULL,  // standout mode
+    "se", NULL,  // end standout mode
+    "ug", NULL,  // underline magic (?)
+    "us", "\033[4m",   // start underline
+    "ue", "\033[24m",  // end underline
+    "me", "\033[0m",   // end all modes
+    "IC", NULL,  // insert character
+    "ic", NULL,  // insert character
+    "DC", NULL,  // delete character
+    "dc", NULL,  // delete character
+    "AL", NULL,  // insert blank line
+    "al", NULL,  // insert blank line
+    "DL", NULL,  // delete line
+    "dl", NULL,  // delete line
+    "sr", NULL,  // screen scroll
+    "sC", NULL,  // ?
+    "ve", NULL,  // normal cursor
+    "vs", NULL,  // enhanced cursor
+    "kl", "\033[D",  // cursor left
+    "kr", "\033[C",  // cursor right
+    "ku", "\033[A",  // cursor up
+    "kd", "\033[B",  // cursor down
+};
+
 /*ARGSUSED*/
 char *tgetstr(id, bp)
 	char	*id;
 	char	**bp;	/* pointer to pointer to buffer - ignored */
 {
-	serial_debug("tgetstr(%s)\n", id);
-    if (strcmp(id, "up") == 0) {
-        return "\033[A";  /* ANSI escape sequence for cursor up */
-    } else if (strcmp(id, "do") == 0) {
-        return "\033[B";  /* ANSI escape sequence for cursor down */
-    } else if (strcmp(id, "nd") == 0) {
-        return "\033[C";  /* ANSI escape sequence for cursor right */
-    } else if (strcmp(id, "le") == 0) {
-        return "\033[D";  /* ANSI escape sequence for cursor left */
-    } else if (strcmp(id, "cl") == 0) {
-        return "\033[2J\033[H"; /* ANSI clear screen and home cursor */
-    } else if (strcmp(id, "cm") == 0) {
-        return "\033[%d;%dH"; /* ANSI cursor movement */
-    } else if (strcmp(id, "ce") == 0) {
-        return "\033[K"; /* ANSI clear to end of line */
+	
+    for (int i = 0; i < sizeof(termcap_mappings) / sizeof(TermcapMapping); i++) {
+        if (strcmp(termcap_mappings[i].key, id) == 0) {
+            return (char *)termcap_mappings[i].ansi_sequence;
+        }
     }
+
+    serial_debug("tgetstr(%s)\n", id);
 
     return 0;
 }
@@ -96,8 +142,6 @@ char *tgoto(cm, destcol, destrow)
 	int	destcol; /* destination column, 0 - 79 */
 	int	destrow; /* destination row, 0 - 24 */
 {
-    serial_debug("tgoto(%s, %d, %d)\n", cm, destcol, destrow);
-
 	static char buf[30];
 	char	*build;
 	int	tmp;

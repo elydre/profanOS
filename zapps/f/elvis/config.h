@@ -136,4 +136,4 @@
  * default values of some options.
  */
 #define	OSLPOUT	"!lp -s"	/* default value of lpout option */
-#define OSLIBPATH "~/.elvis:/etc/elvis:/usr/share/elvis/:/usr/share/elvis/doc/"	/* default elvispath */
+#define OSLIBPATH "/user/elvis/"	/* default elvispath */
