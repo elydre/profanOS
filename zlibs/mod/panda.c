@@ -47,6 +47,7 @@ typedef struct {
     int saved_cursor_y;
 
     uint8_t cursor_is_hidden;
+    uint8_t always_bright;
 
     uint16_t color;
 
@@ -267,10 +268,15 @@ static int compute_ansi_escape(const char *str, int main_color) {
                 if (vals[i] == 0) {
                     g_panda->color = main_color == -1 ? 0xF : main_color;
                     g_panda->color &= ~PANDA_UNDERLINE;
+                    g_panda->always_bright = 0;
                 } else if (vals[i] == 4) {
                     g_panda->color |= PANDA_UNDERLINE; // underline
                 } else if (vals[i] == 24) {
                     g_panda->color &= ~PANDA_UNDERLINE; // end underline
+                } else if (vals[i] == 1) {  // bold
+                    g_panda->always_bright = 1;
+                } else if (vals[i] == 22) { // end bold
+                    g_panda->always_bright = 0;
                 } else if (vals[i] >= 30 && vals[i] <= 37) {
                     g_panda->color = compute_ansi_color(vals[i] - 30, 0, g_panda->color);
                 } else if (vals[i] >= 40 && vals[i] <= 47) {
@@ -336,8 +342,8 @@ static int compute_ansi_escape(const char *str, int main_color) {
                     vals[0] = g_panda->max_lines - 1 + g_panda->scroll_offset;
                 if (vals[1] >= g_panda->max_cols)
                     vals[1] = g_panda->max_cols - 1;
-                g_panda->cursor_y = vals[0];
-                g_panda->cursor_x = vals[1] + g_panda->scroll_offset;
+                g_panda->cursor_y = vals[0] + g_panda->scroll_offset;
+                g_panda->cursor_x = vals[1];
             } else {
                 goto UNKNOWN_ESCAPE;
             }
@@ -390,6 +396,11 @@ static int compute_ansi_escape(const char *str, int main_color) {
             if (g_panda->cursor_y < g_panda->scroll_offset)
                 g_panda->cursor_y = g_panda->scroll_offset;
             break;
+        case '\e':
+            syscall_serial_write(SERIAL_PORT_A, "WTF: ", 5);
+            syscall_serial_write(SERIAL_PORT_A, (char *) start + 1, str - start - 1);
+            syscall_serial_write(SERIAL_PORT_A, "\n", 1);
+            while (1);
         default:
             // unknown escape sequence
             goto UNKNOWN_ESCAPE;    
@@ -398,7 +409,8 @@ static int compute_ansi_escape(const char *str, int main_color) {
     return str - start;
 
     UNKNOWN_ESCAPE:
-    return 0;
+
+    return -(str - start); // return negative value to indicate error
 }
 
 static void panda_scroll(uint32_t line_count) {
@@ -454,9 +466,38 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
     if (!g_panda) return 0;
     int tmp, old_color;
 
+    static char ansi_buffer[16] = "";
+
     if (string_color != -1) {
         old_color = g_panda->color;
         g_panda->color = string_color;
+    }
+
+    if (ansi_buffer[0] != '\0') {
+        // if there is an ansi escape sequence in progress, we need to finish it
+        unsigned i, old_len;
+        for (i = 0; i < sizeof(ansi_buffer) - 1 && ansi_buffer[i]; i++);
+        old_len = i;
+        for (int j = 0; (len < 0) ? (string[j]) : (j < len) && i < sizeof(ansi_buffer) - 1; j++)
+            ansi_buffer[i++] = string[j];
+        ansi_buffer[i] = '\0';
+
+        syscall_serial_write(SERIAL_PORT_A, "retry\n", 6);
+        int ansi_len = compute_ansi_escape(ansi_buffer, default_color);
+
+        if (ansi_len >= 0) {
+            string += ansi_len - old_len + 1;
+            len -= ansi_len - old_len + 1;
+        } else if (-ansi_len == len) {
+            // incomplete escape sequence
+            goto END;
+        } else {
+            syscall_serial_write(SERIAL_PORT_A, "UNK: ", 5);
+            syscall_serial_write(SERIAL_PORT_A, ansi_buffer + 1, -ansi_len);
+            syscall_serial_write(SERIAL_PORT_A, "\n", 1);
+        }
+
+        ansi_buffer[0] = '\0';
     }
 
     for (int i = 0; (len < 0) ? (string[i]) : (i < len); i++) {
@@ -472,17 +513,26 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
         else if (string[i] == '\b') {
             if (g_panda->cursor_x > 0)
                 g_panda->cursor_x--;
-        }
-        else if (string[i] == '\t') {
+        } else if (string[i] == '\t') {
             tmp = g_panda->cursor_x + 4 - (g_panda->cursor_x % 4);
             for (; g_panda->cursor_x < tmp; g_panda->cursor_x++)
                 panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, ' ', g_panda->color);
-        } else if (string[i] == '\e')
-            i += compute_ansi_escape(string + i, default_color);
-        else {
-            panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, string[i], g_panda->color);
+        } else if (string[i] == '\e') {
+            int ansi_len = compute_ansi_escape(string + i, default_color);
+            if (ansi_len >= 0) {
+                i += ansi_len;
+            } else if (-ansi_len == len - i && -ansi_len < (int) sizeof(ansi_buffer)) {
+                for (int j = 0; j < -ansi_len && i + j < len; j++)
+                    ansi_buffer[j] = string[i + j];
+                ansi_buffer[-ansi_len] = '\0';
+                goto END; // we have an incomplete escape sequence, so we stop here
+            }
+        } else {
+            panda_set_char(g_panda->cursor_x, g_panda->cursor_y - g_panda->scroll_offset, string[i], g_panda->always_bright ? 
+                    (g_panda->color | 0x08) : g_panda->color);
             g_panda->cursor_x++;
         }
+
         if (g_panda->cursor_x >= g_panda->max_cols)
             panda_scroll(SCROLL_LINES);
         if (g_panda->cursor_y - g_panda->scroll_offset >= g_panda->max_lines)
@@ -490,6 +540,9 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
         if (!g_panda->cursor_is_hidden)
             draw_cursor(0);
     }
+
+    END:
+
     if (string_color == -1)
         return g_panda->color;
 
@@ -656,6 +709,7 @@ static void init_panda(void) {
     g_panda->scroll_offset = 0;
 
     g_panda->cursor_is_hidden = 1;
+    g_panda->always_bright = 0;
     g_panda->color = 0x0F;
 
     g_panda->max_lines = syscall_vesa_height() / g_panda->font->height;

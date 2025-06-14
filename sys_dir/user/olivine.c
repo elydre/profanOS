@@ -105,7 +105,7 @@
 
 /***********************************
  *                                *
- *  Structs and Global Variables  *
+ *  Structs and Global g_olv->vars  *
  *                                *
 ***********************************/
 
@@ -386,11 +386,11 @@ int is_valid_name(const char *name) {
     return 1;
 }
 
-/*********************************
- *                              *
- *  Variable Get/Set Functions  *
- *                              *
-*********************************/
+/*******************************
+ *                            *
+ * Variable Get/Set g_olv->funcs *
+ *                            *
+********************************/
 
 int get_variable_index(const char *name, int allow_sublvl) {
     for (int i = 0; i < g_olv->var_count; i++) {

@@ -1,0 +1,7 @@
+This directory contains the standard versions of elvis' configuration
+files.  DO NOT MODIFY THESE FILES!  To perform host-specific customization,
+copy files from this directory into /etc/elvis/, and then modify the copies.
+To make user-specific changes, create a ~/.elvis/ directory (if it doesn't
+exist already) and copy files from this directory into ~/.elvis/ and then
+modify the copies.  Any file that elvis finds in ~/.elvis/ or /etc/elvis/
+overrides the similarly named file in this directory.

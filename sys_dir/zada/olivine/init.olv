@@ -71,4 +71,4 @@ FUNC time
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
 
-elvis user/hello.c
+elvis /user/olivine.c

@@ -136,4 +136,4 @@
  * default values of some options.
  */
 #define	OSLPOUT	"!lp -s"	/* default value of lpout option */
-#define OSLIBPATH "/user/elvis/"	/* default elvispath */
+#define OSLIBPATH "/zada/elvis/"	/* default elvispath */

@@ -494,7 +494,17 @@ int fscanf(FILE *stream, const char *format, ...) {
 }
 
 int sscanf(const char *buffer, const char *format, ...) {
-    return (PROFAN_FNI, 0);
+    va_list args;
+    int count;
+
+    if (buffer == NULL || format == NULL)
+        return 0;
+
+    va_start(args, format);
+    count = vsscanf(buffer, format, args);
+    va_end(args);
+
+    return count;
 }
 
 int vscanf(const char *format, va_list vlist) {
@@ -505,9 +515,7 @@ int vfscanf(FILE *stream, const char *format, va_list vlist) {
     return (PROFAN_FNI, 0);
 }
 
-int vsscanf(const char *buffer, const char *format, va_list vlist) {
-    return (PROFAN_FNI, 0);
-}
+// vsscanf defined in vsscanf.c
 
 int printf(const char *format, ...) {
     int count;
