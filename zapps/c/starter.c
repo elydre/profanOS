@@ -52,7 +52,7 @@ int main(void) {
     size_t len = 0;
 
     for (int res = 0;; res = execute_line(line)) {
-        printf("(%d) %s # ", res, profan_wd_path);
+        printf("(%d) %s # ", res, profan_wd_path());
         fflush(stdout);
         if ((res = getline(&line, &len, stdin)) < 1)
             break;
