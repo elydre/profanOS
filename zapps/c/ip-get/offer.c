@@ -1,5 +1,11 @@
 #include "ip-get.h"
 
+void save_router_mac(uint8_t *mac) {
+	FILE *f = fopen("/zada/router_mac", "wb");
+	fwrite(mac, 1, 6, f);
+	fclose(f);
+}
+
 int receive_offer(uint8_t *mac) {
 	(void)mac;
 	if (!syscall_eth_listen_isready()) {
@@ -51,6 +57,7 @@ int receive_offer(uint8_t *mac) {
 				offered_ip = dhcp->yiaddr;
 				dhcp_server_ip = dhcp->siaddr;
 				free(packet);
+				save_router_mac(eth->src_mac);
 				return 0;
 			}
 		}

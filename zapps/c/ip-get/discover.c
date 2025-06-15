@@ -62,9 +62,14 @@ void send_dhcp_discover(uint8_t *mac) {
     // === Checksum IP ===
     ip->checksum = 0;
     uint32_t sum = 0;
-    uint16_t *ip_data = (uint16_t *)ip;
-    for (size_t i = 0; i < sizeof(ip_header_t)/2; ++i)
-        sum += ntohs(ip_data[i]);
+    // uint16_t *ip_data = (uint16_t *)ip;
+    // for (size_t i = 0; i < sizeof(ip_header_t)/2; ++i)
+    //     sum += ntohs(ip_data[i]);
+    uint16_t ip_data_buff[sizeof(ip_header_t) / 2];
+    memcpy(ip_data_buff, ip, sizeof(ip_header_t));
+    for (size_t i = 0; i < sizeof(ip_data_buff) / 2; i++) {
+        sum += ntohs(ip_data_buff[i]);
+    }
     sum = (sum & 0xFFFF) + (sum >> 16);
     sum += (sum >> 16);
     ip->checksum = htons(~sum);

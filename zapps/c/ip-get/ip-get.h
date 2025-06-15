@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 typedef struct {
 	uint8_t dest_mac[6];
@@ -51,10 +52,6 @@ typedef struct {
 	uint8_t file[128];
 	uint32_t magic_cookie;
 } __attribute__((packed)) dhcp_packet_no_opt_t;
-
-uint16_t htons(uint16_t n);
-uint32_t htonl(uint32_t n);
-uint16_t ntohs(uint16_t n);
 
 extern uint32_t last_xid; //  network endian
 extern uint32_t offered_ip;

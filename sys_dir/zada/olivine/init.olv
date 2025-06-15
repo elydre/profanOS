@@ -70,3 +70,7 @@ FUNC time
 
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
+
+FOR i !(range 1 10)
+    ip-get > /dev/null 2> /dev/null
+END
