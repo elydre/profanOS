@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#define RIM_VERSION "8 rev 0"
+
 // input settings
 #define SLEEP_T 20
 #define FIRST_L 12
@@ -42,14 +44,22 @@
                                   g_data_lines[(line) + 1] - g_data_lines[line] - 1 : \
                                   g_data_count - g_data_lines[line] - 1)
 
-#define COLOR_T 0x70    // title
-#define COLOR_L 0x87    // line number
-#define COLOR_D 0x0F    // data
-#define COLOR_M 0x70    // more data (>)
-#define COLOR_U 0x80    // unknown character
-#define COLOR_W 0x08    // whitespace
+// interface colors
+#define COLOR_IT 0x70    // title
+#define COLOR_IL 0x87    // line number
+#define COLOR_ID 0x0F    // data
+#define COLOR_IM 0x70    // more data (>)
+#define COLOR_IU 0x80    // unknown character
+#define COLOR_IW 0x08    // whitespace
 
-#define RIM_VERSION "7 rev 6"
+// syntax highlighting colors
+#define COLOR_SD 0x07   // data
+#define COLOR_SS 0x06   // string
+#define COLOR_SN 0x0A   // number
+#define COLOR_ST 0x09   // type
+#define COLOR_SK 0x0D   // keyword
+#define COLOR_SF 0x0E   // function
+#define COLOR_SB 0x0B   // brace
 
 // GLOBALS
 typedef struct {
@@ -67,11 +77,14 @@ typedef struct {
     rim_syntax_t *syntax;
     int always_tab;
     int save_at_exit;
+    int no_syntax;
 } rim_settings_t;
 
 rim_settings_t g_rim;
 
-char *g_data;
+uint16_t *gscreen;
+char     *g_data;
+
 int g_data_count;
 int g_data_max;
 
@@ -95,14 +108,37 @@ void gui_print(uint32_t x, uint32_t y, char *str, uint16_t color) {
     }
 }
 
-void set_title(char *path) {
+#define DISPLAY_EDIT_STAR() set_title(NULL, 1)
+
+void set_title(char *path, int unsaved) {
+    static int start_pos = 0;
+ 
+    if (start_pos > 0) {
+        if (unsaved) {
+            panda_set_char(start_pos, 0, '*', COLOR_IT);
+        } else {
+            panda_set_char(start_pos, 0, ' ', COLOR_IT);
+        }
+        return;
+    }
+    
+    if (start_pos < 0 || path == NULL)
+        return;
+
     char *title = malloc(SCREEN_W + 1);
-    memset(title, ' ', SCREEN_W);
-    memcpy(title, "RIM", 3);
-    memcpy(title + 4, path, min(strlen(path), (uint32_t) SCREEN_W - 4));
-    title[SCREEN_W] = '\0';
-    gui_print(0, 0, title, COLOR_T);
+
+    int len = snprintf(title, SCREEN_W, "RIM%s %s", g_rim.no_syntax ? " lite" : "",
+                path);
+    memset(title + len, ' ', SCREEN_W - len);
+
+    start_pos = len + 1;
+
+    if (start_pos > SCREEN_W)
+        start_pos = -1;
+
+    gui_print(0, 0, title, COLOR_IT);
     free(title);
+
 }
 
 void init_data(void) {
@@ -176,7 +212,8 @@ void save_file(char *path) {
     memcpy(data_copy, g_data, g_data_count);
 
     for (int i = 0; i < g_data_count - 1; i++) {
-        if (data_copy[i] == '\0') data_copy[i] = '\n';
+        if (data_copy[i] == '\0')
+            data_copy[i] = '\n';
     }
 
     write(fd, data_copy, g_data_count - 1);
@@ -186,38 +223,46 @@ void save_file(char *path) {
 }
 
 int word_isnumber(char *word, int size) {
-    if (!g_rim.syntax->numbers) return 0;
+    if (!g_rim.syntax->numbers)
+        return 0;
     if (size > 2 && word[0] == '0' && (word[1] == 'x' || word[1] == 'X')) {
-        for (int i = 2; i < size; i++) {
-            if (!isxdigit(word[i])) return 0;
-        }
+        for (int i = 2; i < size; i++)
+            if (!isxdigit(word[i]))
+                return 0;
         return 1;
     }
     for (int i = 0; i < size; i++) {
-        if (!isdigit(word[i])) return 0;
+        if (!isdigit(word[i]))
+            return 0;
     }
     return 1;
 }
 
 int word_purple(char *word, uint32_t size) {
-    if (!g_rim.syntax->keywords) return 0;
+    if (!g_rim.syntax->keywords)
+        return 0;
     for (uint32_t i = 0; g_rim.syntax->keywords[i]; i++) {
-        if (size == strlen(g_rim.syntax->keywords[i]) && !memcmp(word, g_rim.syntax->keywords[i], size)) return 1;
+        if (size == strlen(g_rim.syntax->keywords[i]) && !memcmp(word, g_rim.syntax->keywords[i], size))
+            return 1;
     }
     return 0;
 }
 
 int word_isblue(char *word, uint32_t size) {
-    if (g_rim.syntax->ctypes && size > 2 && word[size - 1] == 't' && word[size - 2] == '_') return 1;
-    if (!g_rim.syntax->blues) return 0;
+    if (g_rim.syntax->ctypes && size > 2 && word[size - 1] == 't' && word[size - 2] == '_')
+        return 1;
+    if (!g_rim.syntax->blues)
+        return 0;
     for (uint32_t i = 0; g_rim.syntax->blues[i]; i++) {
-        if (size == strlen(g_rim.syntax->blues[i]) && !memcmp(word, g_rim.syntax->blues[i], size)) return 1;
+        if (size == strlen(g_rim.syntax->blues[i]) && !memcmp(word, g_rim.syntax->blues[i], size))
+            return 1;
     }
     return 0;
 }
 
 int word_isbrace(char *word, uint32_t size) {
-    if (!g_rim.syntax->braces) return 0;
+    if (!g_rim.syntax->braces)
+        return 0;
     return (size == 1 && (
         word[0] == '(' ||
         word[0] == ')' ||
@@ -229,77 +274,84 @@ int word_isbrace(char *word, uint32_t size) {
 }
 
 int word_paraft(char *word, uint32_t size) {
-    if (!g_rim.syntax->funccalls) return 0;
+    if (!g_rim.syntax->funccalls)
+        return 0;
     for (uint32_t i = size; word[i]; i++) {
-        if (word[i] == '(') return 1;
-        if (!isspace(word[i])) return 0;
+        if (word[i] == '(')
+            return 1;
+        if (!isspace(word[i]))
+            return 0;
     }
     return 0;
 }
 
-void put_word(int line, int in_word, uint16_t *new_screen, int new_screen_i, char *word, int size) {
+void put_word(int line, int in_word, uint16_t *gscreen, int gscreen_i, char *word, int size) {
     if (size == 0)
         return;
 
-    char color = 0x0F;
+    char color = COLOR_ID;
 
     if (in_word == 2 && g_rim.syntax->strings)
-        color = 0x0E;
+        color = COLOR_SS;
 
     else if (in_word == 1 && g_rim.syntax->words) {
-        color = 0x07;
+        color = COLOR_SD;
         if (word_isnumber(word, size))
-            color = 0x0A;
+            color = COLOR_SN;
         else if (word_isblue(word, size))
-            color = 0x09;
+            color = COLOR_ST;
         else if (word_purple(word, size))
-            color = 0x0D;
+            color = COLOR_SK;
         else if (word_paraft(word, size))
-            color = 0x06;
+            color = COLOR_SF;
     }
 
     else if (word_isbrace(word, size))
-        color = 0x0B;
+        color = COLOR_SB;
 
-    if (line > new_screen_i) {
-        size = size - (line - new_screen_i);
+    if (line > gscreen_i) {
+        size = size - (line - gscreen_i);
         if (size <= 0)
             return;
-        word += line - new_screen_i;
-        new_screen_i = line;
+        word += line - gscreen_i;
+        gscreen_i = line;
     }
 
     for (int k = 0; k < size; k++) {
-        new_screen[new_screen_i + k] = word[k] | (color << 8);
+        gscreen[gscreen_i + k] = word[k] | (color << 8);
     }
 }
 
-#define localput_word(X) put_word((i - from_line) * SCREEN_W, in_word, new_screen, \
-    line * SCREEN_W + x + world_start - x_offset, g_data + g_data_lines[i] + world_start, (X))
+#define localput_word(X) put_word((i - from_line) * SCREEN_W, in_word, gscreen, \
+    line * SCREEN_W + world_start - x_offset, g_data + g_data_lines[i] + world_start, (X))
 
-uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_patch) {
-    uint16_t *new_screen = calloc((SCREEN_H) * (SCREEN_W), sizeof(uint16_t));
-
+void calc_screen_color(int from_line, int to_line, int x_offset) {
     int line = 0;
 
     int world_start, in_word;
     char chr_str;
 
     for (int i = from_line; i < to_line; i++) {
-        int x = 0;
         in_word = world_start = 0;
+        
+        int max = cursor_max_at_line(i);
+        
+        // out-screen characters (x_offset)
+        for (int j = 0; j < x_offset && j < max; j++) {
+            char c = g_data[g_data_lines[i] + j];
 
-        for (int j = 0; j < x_offset; j++) {
-            if (in_word == 2 && g_data[g_data_lines[i] + j] != chr_str) {
+            if (in_word == 2 && c == chr_str)
                 in_word = 0;
-            }
-            else if (g_data[g_data_lines[i] + j] == '\"' || g_data[g_data_lines[i] + j] == '\'') {
-                chr_str = g_data[g_data_lines[i] + j];
+        
+            else if (c == '\"' || c == '\'') {
+                chr_str = c;
                 in_word = 2;
             }
+        
             if (in_word == 2)
                 continue;
-            if (isalnum(g_data[g_data_lines[i] + j]) || g_data[g_data_lines[i] + j] == '_') {
+
+            if (isalnum(c) || c == '_') {
                 if (!in_word) {
                     in_word = 1;
                     world_start = j;
@@ -309,53 +361,49 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
             }
         }
 
-        int max = cursor_max_at_line(i);
+        // in-screen characters
         for (int j = x_offset;; j++) {
-
             if (j >= max) {
                 localput_word(j - world_start);
                 break;
             }
 
-            if (j + x >= x_offset + SCREEN_W) {
-                localput_word(j + x - (world_start + x));
+            if (j >= x_offset + SCREEN_W) {
+                localput_word(j - (world_start));
                 break;
             }
 
-            if (g_data[g_data_lines[i] + j] == '\t') {
+            char c = g_data[g_data_lines[i] + j];
+
+            if (c == '\t') {
+                gscreen[line * SCREEN_W + j - x_offset] = '>' | (COLOR_IW << 8);
                 localput_word(j - world_start);
                 world_start = j + 1;
                 if (in_word != 2)
                     in_word = 0;
-                for (int k = 0; k < 4; k++) {
-                    new_screen[line * SCREEN_W + j - x_offset + x] = '>' | (COLOR_W << 8);
-                    if ((j + x) % 4 == 3)
-                        break;
-                    x++;
-                    if (i == g_cursor_line && j + x <= g_cursor_pos + *cursor_patch)
-                        (*cursor_patch)++;
-                }
                 continue;
             }
 
-            if (!isprint(g_data[g_data_lines[i] + j])) {
-                new_screen[line * SCREEN_W + j - x_offset + x] = '?' | (COLOR_U << 8);
+            if (!isprint(c)) {
+                gscreen[line * SCREEN_W + j - x_offset] = '?' | (COLOR_IU << 8);
                 localput_word(j - world_start);
                 world_start = j + 1;
-                if (in_word != 2) in_word = 0;
+                if (in_word != 2)
+                    in_word = 0;
                 continue;
             }
 
-            else if (g_data[g_data_lines[i] + j] == ' ') {
-                new_screen[line * SCREEN_W + j - x_offset + x] = '.' | (COLOR_W << 8);
+            else if (c == ' ') {
+                gscreen[line * SCREEN_W + j - x_offset] = '.' | (COLOR_IW << 8);
                 localput_word(j - world_start);
                 world_start = j + 1;
-                if (in_word != 2) in_word = 0;
+                if (in_word != 2)
+                    in_word = 0;
                 continue;
             }
 
             if (in_word == 2) {
-                if (g_data[g_data_lines[i] + j] == chr_str) {
+                if (c == chr_str) {
                     localput_word(j - world_start + 1);
                     world_start = j + 1;
                     in_word = 0;
@@ -363,15 +411,15 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
                 continue;
             }
 
-            else if (g_data[g_data_lines[i] + j] == '\"' || g_data[g_data_lines[i] + j] == '\'') {
+            else if (c == '\"' || c == '\'') {
                 localput_word(j - world_start);
-                chr_str = g_data[g_data_lines[i] + j];
+                chr_str = c;
                 world_start = j;
                 in_word = 2;
             }
 
             else if (in_word != 2) {
-                if (isalnum(g_data[g_data_lines[i] + j]) || g_data[g_data_lines[i] + j] == '_') {
+                if (isalnum(c) || c == '_') {
                     if (!in_word) {
                         localput_word(j - world_start);
                         world_start = j;
@@ -387,7 +435,32 @@ uint16_t *calc_new_screen(int from_line, int to_line, int x_offset, int *cursor_
 
         line++;
     }
-    return new_screen;
+}
+
+void calc_screen_lite(int from_line, int to_line, int x_offset) {
+    int max, line = 0;
+
+    for (int i = from_line; i < to_line; i++) {
+        max = cursor_max_at_line(i);
+
+        // in-screen characters
+        for (int j = x_offset; j < max; j++) {
+            if (j >= x_offset + SCREEN_W)
+                break;
+
+            char c = g_data[g_data_lines[i] + j];
+
+            if (c == ' ')
+                gscreen[line * SCREEN_W + j - x_offset] = '.' | (COLOR_IW << 8);
+            else if (c == '\t')
+                gscreen[line * SCREEN_W + j - x_offset] = '>' | (COLOR_IW << 8);
+            else if (!isprint(c))
+                gscreen[line * SCREEN_W + j - x_offset] = '?' | (COLOR_IU << 8);
+            else
+                gscreen[line * SCREEN_W + j - x_offset] = c | (COLOR_ID << 8);
+        }
+        line++;
+    }
 }
 
 void display_data(int from_line, int to_line, int x_offset) {
@@ -396,9 +469,12 @@ void display_data(int from_line, int to_line, int x_offset) {
         exit(1);
     }
 
-    int cursor_patch = 0;
+    memset(gscreen, 0, SCREEN_W * SCREEN_H * sizeof(uint16_t));
 
-    uint16_t *new_screen = calc_new_screen(from_line, to_line, x_offset, &cursor_patch);
+    if (g_rim.syntax && !g_rim.no_syntax)
+        calc_screen_color(from_line, to_line, x_offset);
+    else
+        calc_screen_lite(from_line, to_line, x_offset);
 
     // display data
     int y = 1;
@@ -413,20 +489,20 @@ void display_data(int from_line, int to_line, int x_offset) {
         // line content
         for (int j = 0; j < SCREEN_W - line_offset; j++) {
             pos = i * SCREEN_W + j;
-            if (new_screen[pos] == 0) {
-                panda_set_char(j + line_offset + 1, y, ' ', COLOR_D);
+            if (gscreen[pos] == 0) {
+                panda_set_char(j + line_offset + 1, y, ' ', COLOR_ID);
             } else if (j == SCREEN_W - line_offset - 1) {
-                panda_set_char(j + line_offset + 1, y, '>', COLOR_M);
+                panda_set_char(j + line_offset + 1, y, '>', COLOR_IM);
             } else {
-                panda_set_char(j + line_offset + 1, y, new_screen[pos] & 0xFF, new_screen[pos] >> 8);
+                panda_set_char(j + line_offset + 1, y, gscreen[pos] & 0xFF, gscreen[pos] >> 8);
             }
         }
 
         if (i < to_line - from_line) {
             // line number
             itoa(from_line + i + 1, line_str + 2, 10);
-            gui_print(0, y, line_str + strlen(line_str) - line_offset, COLOR_L);
-            panda_set_char(line_offset, y, ' ', COLOR_D);
+            gui_print(0, y, line_str + strlen(line_str) - line_offset, COLOR_IL);
+            panda_set_char(line_offset, y, ' ', COLOR_ID);
         }
 
         y++;
@@ -434,18 +510,16 @@ void display_data(int from_line, int to_line, int x_offset) {
 
     for (int i = y; i <= SCREEN_H; i++) {
         for (int j = line_offset; j < SCREEN_W; j++) {
-            panda_set_char(j, i, ' ', COLOR_D);
+            panda_set_char(j, i, ' ', COLOR_ID);
         }
         for (int j = 0; j < line_offset; j++) {
-            panda_set_char(j, i, ' ', COLOR_L);
+            panda_set_char(j, i, ' ', COLOR_IL);
         }
-        panda_set_char(line_offset, i, ' ', COLOR_D);
+        panda_set_char(line_offset, i, ' ', COLOR_ID);
     }
 
     // cursor
-    panda_draw_cursor(g_cursor_pos - x_offset + line_offset + 1 + cursor_patch, g_cursor_line - from_line + 1);
-
-    free(new_screen);
+    panda_draw_cursor(g_cursor_pos - x_offset + line_offset + 1, g_cursor_line - from_line + 1);
 }
 
 void realloc_buffer(void) {
@@ -591,12 +665,12 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         return 1;
     }
 
-    if (c == 's') { // save
-        if (path)
-            save_file(path);
+    if (c == 's' && path) { // save
+        save_file(path);
+        set_title(NULL, 0);
     }
 
-    if (c == 'c' || c == 'x') { // copy or cut
+    else if (c == 'c' || c == 'x') { // copy or cut
         start = g_data_lines[g_cursor_line];
         end = (g_cursor_line < g_lines_count - 1) ? g_data_lines[g_cursor_line + 1] : g_data_count;
         size = end - start - 1;
@@ -630,6 +704,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         }
 
         realloc_buffer();
+        DISPLAY_EDIT_STAR();
     }
 
     else if (c == 'v') { // paste
@@ -644,6 +719,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
             }
             realloc_buffer();
         }
+        DISPLAY_EDIT_STAR();
     }
 
     else if (c == 'm') { // page down
@@ -711,6 +787,7 @@ void main_loop(char *path) {
         // check if key is enter
         if (key == 28) {
             insert_newline();
+            DISPLAY_EDIT_STAR();
         }
 
         // check if key is escape
@@ -738,6 +815,7 @@ void main_loop(char *path) {
         // check if key is backspace
         else if (key == 14) {
             execute_backspace();
+            DISPLAY_EDIT_STAR();
         }
 
         // check if key is delete
@@ -751,6 +829,7 @@ void main_loop(char *path) {
 
                 g_data_count--;
             }
+            DISPLAY_EDIT_STAR();
         }
 
         // check if shift is pressed
@@ -766,6 +845,7 @@ void main_loop(char *path) {
         // check if key is tab
         else if (key == 15) {
             insert_tab();
+            DISPLAY_EDIT_STAR();
         }
 
         // check if key is arrow left
@@ -809,9 +889,11 @@ void main_loop(char *path) {
         // check if key is printable
         else if (key < 58 && key > 0 && profan_kb_get_char(key, shift_pressed)) {
             insert_char(profan_kb_get_char(key, shift_pressed));
-        } else {
-            continue;
+            DISPLAY_EDIT_STAR();
         }
+
+        // nothing to do
+        else continue;
 
         // smart scrolling (y axis)
         if (g_cursor_line - 2 < y_offset) {
@@ -934,6 +1016,10 @@ void rim_syntax_init(const char *lang) {
             "if", "else", "while", "for", "func", "end", "return", "break", "continue", NULL
         });
     }
+
+    else {
+        g_rim.syntax->words = 1;
+    }
 }
 
 char *compute_args(int argc, char **argv) {
@@ -953,14 +1039,14 @@ char *compute_args(int argc, char **argv) {
 
     const char *ext = NULL;
 
-    g_rim.always_tab = 0;
+    memset(&g_rim, 0, sizeof(g_rim));
 
     if (carp_isset('M')) {
         puts("Rim Shortcuts:\n"
             "  ctrl + q   quit\n"
             "  ctrl + s   save\n"
             "  ctrl + c   copy\n"
-            "  ctrl + x   cut\n"
+            "  ctrl   cut\n"
             "  ctrl + v   paste\n"
             "  ctrl + m   page down\n"
             "  ctrl + p   page up\n"
@@ -976,7 +1062,7 @@ char *compute_args(int argc, char **argv) {
     if (carp_isset('t'))
         g_rim.always_tab = 1;
     if (carp_isset('n'))
-        ext = "txt";
+        g_rim.no_syntax = 1;
     if (carp_isset('s'))
         g_rim.save_at_exit = 1;
     if (carp_isset('c'))
@@ -1028,12 +1114,14 @@ int main(int argc, char **argv) {
     SCREEN_H--;
     SCREEN_W--;
 
+    gscreen = malloc(SCREEN_H * SCREEN_W * sizeof(uint16_t));
+
     g_cursor_line = 0;
     g_cursor_pos = 0;
 
     clear_screen();
 
-    set_title(title);
+    set_title(title, 0);
 
     display_data(0, min(g_lines_count, SCREEN_H), 0);
 
