@@ -243,7 +243,7 @@ int atoi(const char *nptr) {
 }
 
 long atol(const char *nptr) {
-    return (PROFAN_FNI, 0);
+    return atoi(nptr);
 }
 
 long long atoll(const char *nptr) {
@@ -424,7 +424,7 @@ int putenv(char *string) {
     return r;
 }
 
-// qsort defined in qsort.c
+// qsort defined in funcs/qsort.c
 
 int rand(void) {
     return rand_r(&g_rand_seed) & RAND_MAX;

@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 2"
+#define OLV_VERSION "1.8 rev 3"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -105,7 +105,7 @@
 
 /***********************************
  *                                *
- *  Structs and Global g_olv->vars  *
+ *  Structs and Global Variables  *
  *                                *
 ***********************************/
 
@@ -139,7 +139,7 @@
     ((x) == '_'))
 
 #define IS_SPACE_CHAR(x) (        \
-    (x) == ' ' || (x) == '\t'  || \
+    (x) == ' '  || (x) == '\t' || \
     (x) == '\n' || (x) == '\r' || \
     (x) == '\v' || (x) == '\f')
 
@@ -386,11 +386,11 @@ int is_valid_name(const char *name) {
     return 1;
 }
 
-/*******************************
- *                            *
- * Variable Get/Set g_olv->funcs *
- *                            *
-********************************/
+/*********************************
+ *                              *
+ *  Variable Get/Set Functions  *
+ *                              *
+*********************************/
 
 int get_variable_index(const char *name, int allow_sublvl) {
     for (int i = 0; i < g_olv->var_count; i++) {
@@ -4568,7 +4568,7 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
+        printf(" \e[0m\e[u\e[%dC", buffer_index);
     }
 
     fflush(stdout);
@@ -4752,7 +4752,10 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
 
         fputs("\e[?25h\e[u", stdout);
         olv_print(buffer, buffer_actual_size);
-        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
+        if (buffer_index)
+            printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
+        else
+            fputs(" \e[0m\e[u\e[?25l", stdout);
         fflush(stdout);
     }
 
