@@ -154,18 +154,19 @@ void set_title(char *path, int unsaved) {
 
     start_pos = len + 1;
 
-    if (start_pos > SCREEN_W)
-        start_pos = -1;
-
     gui_print(0, 0, title, COLOR_IT);
     free(title);
 
+    if (start_pos > SCREEN_W)
+        start_pos = -1;
+    else if (unsaved)
+        panda_set_char(start_pos, 0, '+', COLOR_IT);
 }
 
 void init_data(void) {
     free(g_data);
     g_data = malloc(1024 * sizeof(uint16_t));
-    g_data[0] = '\0';
+    g_data[0] = 0;
     g_data_count = 1;
     g_data_max = 1024;
 
@@ -175,7 +176,7 @@ void init_data(void) {
     g_lines_max = 1024;
 }
 
-void load_file(char *path) {
+int load_file(char *path) {
     int row, c;
     FILE *f;
 
@@ -185,7 +186,7 @@ void load_file(char *path) {
         f = fopen(path, "r");
         if (f == NULL) {
             if (errno == ENOENT)
-                return; // file not exists yet, no error
+                return 1; // file does not exist
             fprintf(stderr, "rim: %s: %m\n", path);
             exit(1);
         }
@@ -222,10 +223,12 @@ void load_file(char *path) {
         }
     }
 
-    g_data[g_data_count++] = '\0';
+    g_data[g_data_count++] = 0;
 
     if (f != stdin)
         fclose(f);
+
+    return 0;
 }
 
 void save_file(char *path) {
@@ -241,7 +244,7 @@ void save_file(char *path) {
         f = stdout;
     }
 
-    for (int i = 0; i < g_data_count; i++) {
+    for (int i = 0; i < g_data_count - 1; i++) {
         if (g_data[i] & RIMCHAR_NEW)
             g_data[i] = RIMCHAR_SN(g_data[i], RIMCHAR_SAV);
 
@@ -251,7 +254,7 @@ void save_file(char *path) {
         if (g_data[i] == 0)
             fputc('\n', f);
         else
-            fputc(g_data[i] & 0xFF, f);
+            fputc(RIMCHAR_CH(g_data[i]), f);
     }
 
     if (f != stdout)
@@ -606,10 +609,13 @@ void realloc_buffer(void) {
 }
 
 void reallign_tabs(void) {
-    int tab, len;
-    tab = len = 0;
+    int tab, new_len, original_len;
+    tab = new_len = 0;
+    original_len = 1;
 
-    for (int i = g_data_lines[g_cursor_line]; g_data[i] != 0; i++) {
+    for (int i = g_data_lines[g_cursor_line]; g_data[i]; i++) {
+        original_len++;
+
         if (g_data[i] & RIMCHAR_FTB) {
             if (tab == 0)
                 tab++;
@@ -619,15 +625,15 @@ void reallign_tabs(void) {
         if (RIMCHAR_CH(g_data[i]) == '\t')
             tab++;
 
-        len++;
+        new_len++;
     }
 
     if (tab == 0)
         return;
 
-    uint16_t *new_line = malloc((len + tab * 3 + 1) * sizeof(uint16_t));
-    // copy data to new line and add fake tabs
+    uint16_t *new_line = malloc((new_len + tab * 3 + 1000) * sizeof(uint16_t));
 
+    // copy data to new line and add fake tabs
     int j = 0;
     for (int i = g_data_lines[g_cursor_line]; g_data[i] != 0; i++) {
         if (g_data[i] & RIMCHAR_FTB)
@@ -642,7 +648,8 @@ void reallign_tabs(void) {
 
     new_line[j++] = 0;
 
-    int offset = j - (g_data_lines[g_cursor_line + 1] - g_data_lines[g_cursor_line]);
+    int offset = j - original_len;
+    original_len += g_data_lines[g_cursor_line];
 
     // realloc buffer if needed
     while (g_data_count + offset >= g_data_max) {
@@ -652,9 +659,8 @@ void reallign_tabs(void) {
 
     // move data after current line
     if (offset) {
-        memmove(g_data + g_data_lines[g_cursor_line] + j,
-                g_data + g_data_lines[g_cursor_line + 1],
-                (g_data_count - g_data_lines[g_cursor_line + 1]) * sizeof(uint16_t));
+        memmove(g_data + g_data_lines[g_cursor_line] + j, g_data + original_len,
+                (g_data_count - original_len) * sizeof(uint16_t));
     }
 
     // copy new line to data buffer
@@ -674,35 +680,51 @@ void finish_edits(void) {
     set_title(NULL, 1);
 }
 
-void insert_tab(int force) {
-    int tab = 0;
+void cursor_tab_allign(int right) {
+    // jump over the fake tabs
+    while (g_data[g_data_lines[g_cursor_line] + g_cursor_pos] & RIMCHAR_FTB && g_cursor_pos > 0) {
+        if (right)
+            g_cursor_pos++;
+        else
+            g_cursor_pos--;
+    }
+}
 
+void insert_char(char chr) {
+    // add character to data buffer
+    for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+        g_data[i] = g_data[i - 1];
+
+    g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = RIMCHAR_SN(chr, RIMCHAR_NEW);
+    g_data_count++;
+
+    for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+        g_data_lines[i]++;
+
+    g_cursor_pos++;
+}
+
+void insert_tab(int force) {
     if (g_rim.always_tab || force) {
-        tab = 1;
+        goto REAL_TAB;
     } else for (int j = g_data_lines[g_cursor_line]; g_data[j] != 0; j++) {
-        if (g_data[j] == '\t') {
-            tab = 1;
-            break;
-        }
+        if (g_data[j] == '\t')
+            goto REAL_TAB;
     }
 
     int spaces = 4 - (g_cursor_pos % 4);
     // realloc buffer if needed
-    if (g_data_count + spaces >= g_data_max) {
+    if (g_data_count + spaces + 2 >= g_data_max) {
         g_data_max += 1024;
         g_data = realloc(g_data, g_data_max * sizeof(uint16_t));
     }
 
     // add character to data buffer
-    for (int i = g_data_count + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+    for (int i = g_data_count + spaces - 1; i >= spaces && i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
         g_data[i] = g_data[i - spaces];
 
-    if (tab)
-        g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = RIMCHAR_ST('\t', RIMCHAR_NEW);
-
-    for (int i = tab; i < spaces; i++)
-        g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] =
-                RIMCHAR_ST(tab ? RIMCHAR_ST('\t', RIMCHAR_FTB) : ' ', RIMCHAR_NEW);
+    for (int i = 0; i < spaces; i++)
+        g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] = RIMCHAR_ST(' ', RIMCHAR_NEW);
 
     g_data_count += spaces;
 
@@ -712,9 +734,23 @@ void insert_tab(int force) {
     g_cursor_pos += spaces;
 
     finish_edits();
+    return;
+
+    REAL_TAB:
+    insert_char('\t');
+    finish_edits();
+    cursor_tab_allign(1);
 }
 
-void insert_newline(void) {
+void insert_newline(int auto_indent) {
+    int spaces = 0;
+
+    if (auto_indent) {
+        // count spaces in current line
+        for (int i = g_data_lines[g_cursor_line]; RIMCHAR_CH(g_data[i]) == ' ' || RIMCHAR_CH(g_data[i]) == '\t'; i++)
+            spaces++;
+    }
+
     // add '\0' character to data buffer
     for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
         g_data[i] = g_data[i - 1];
@@ -732,20 +768,19 @@ void insert_newline(void) {
     g_lines_count++;
     g_cursor_line++;
     g_cursor_pos = 0;
-}
 
-void insert_char(char chr) {
-    // add character to data buffer
-    for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-        g_data[i] = g_data[i - 1];
+    if (!auto_indent || spaces == 0)
+        return;
 
-    g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = RIMCHAR_SN(chr, RIMCHAR_NEW);
-    g_data_count++;
+    while (spaces >= 4) {
+        insert_tab(0);
+        spaces -= 4;
+    }
 
-    for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-        g_data_lines[i]++;
-
-    g_cursor_pos++;
+    while (spaces > 0) {
+        insert_char(' ');
+        spaces--;
+    }
 }
 
 void execute_delete(void) {
@@ -759,16 +794,6 @@ void execute_delete(void) {
 
     g_data_count--;
     finish_edits();
-}
-
-void cursor_tab_allign(int right) {
-    // jump over the fake tabs
-    while (g_data[g_data_lines[g_cursor_line] + g_cursor_pos] & RIMCHAR_FTB && g_cursor_pos > 0) {
-        if (right)
-            g_cursor_pos++;
-        else
-            g_cursor_pos--;
-    }
 }
 
 void execute_backspace(void) {
@@ -858,7 +883,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         // use insert_newline when '\n' is found
         for (uint32_t i = 0; i < size; i++) {
             if (clip[i] == '\n') {
-                insert_newline();
+                insert_newline(0);
             } else {
                 insert_char(clip[i]);
             }
@@ -932,7 +957,7 @@ void main_loop(char *path) {
 
         // check if key is enter
         if (key == 28) {
-            insert_newline();
+            insert_newline(1);
             finish_edits();
         }
 
@@ -1214,8 +1239,8 @@ char *compute_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    char *file = compute_args(argc, argv);
-    char *title;
+    char *title, *file = compute_args(argc, argv);
+    int is_new = 0;
 
     panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
     if (SCREEN_W * SCREEN_H == 0) {
@@ -1228,7 +1253,7 @@ int main(int argc, char **argv) {
 
     if (file) {
         title = file;
-        load_file(file);
+        is_new = load_file(file);
     } else {
         if (isatty(0)) {
             title = "blank -> stdout";
@@ -1251,7 +1276,7 @@ int main(int argc, char **argv) {
 
     clear_screen();
 
-    set_title(title, 0);
+    set_title(title, is_new);
 
     display_data(0, min(g_lines_count, SCREEN_H), 0);
 
