@@ -95,6 +95,7 @@ typedef struct {
     rim_syntax_t *syntax;
     int always_tab;
     int save_at_exit;
+    int auto_indent;
     int view;
 } rim_settings_t;
 
@@ -742,6 +743,19 @@ void insert_tab(int force) {
     cursor_tab_allign(1);
 }
 
+void execute_delete(void) {
+    if (g_cursor_pos >= cursor_max_at_line(g_cursor_line))
+        return;
+    for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
+        g_data[i] = g_data[i + 1];
+
+    for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+        g_data_lines[i]--;
+
+    g_data_count--;
+    finish_edits();
+}
+
 void insert_newline(int auto_indent) {
     int spaces = 0;
 
@@ -749,6 +763,15 @@ void insert_newline(int auto_indent) {
         // count spaces in current line
         for (int i = g_data_lines[g_cursor_line]; RIMCHAR_CH(g_data[i]) == ' ' || RIMCHAR_CH(g_data[i]) == '\t'; i++)
             spaces++;
+
+        // trim the end of the line
+        int base = g_data_lines[g_cursor_line];
+
+        while (g_cursor_pos > 0 && (RIMCHAR_CH(g_data[base + g_cursor_pos - 1]) == ' '
+                || RIMCHAR_CH(g_data[base + g_cursor_pos - 1]) == '\t')) {
+            g_cursor_pos--;
+            execute_delete();
+        }
     }
 
     // add '\0' character to data buffer
@@ -781,19 +804,6 @@ void insert_newline(int auto_indent) {
         insert_char(' ');
         spaces--;
     }
-}
-
-void execute_delete(void) {
-    if (g_cursor_pos >= cursor_max_at_line(g_cursor_line))
-        return;
-    for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
-        g_data[i] = g_data[i + 1];
-
-    for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-        g_data_lines[i]--;
-
-    g_data_count--;
-    finish_edits();
 }
 
 void execute_backspace(void) {
@@ -957,7 +967,7 @@ void main_loop(char *path) {
 
         // check if key is enter
         if (key == 28) {
-            insert_newline(1);
+            insert_newline(g_rim.auto_indent);
             finish_edits();
         }
 
@@ -1185,8 +1195,9 @@ char *compute_args(int argc, char **argv) {
     carp_set_ver("rim", RIM_VERSION);
 
     carp_register('c', CARP_NEXT_STR, "specify syntax highlighting");
-    carp_register('s', CARP_STANDARD, "always save file at exit");
+    carp_register('i', CARP_STANDARD, "disable automatic indentation");
     carp_register('M', CARP_STANDARD, "show a memo of keyboard shortcuts");
+    carp_register('s', CARP_STANDARD, "always save file at exit");
     carp_register('t', CARP_STANDARD, "use tabs instead of spaces");
 
     if (carp_parse(argc, argv))
@@ -1222,6 +1233,8 @@ char *compute_args(int argc, char **argv) {
         g_rim.save_at_exit = 1;
     if (carp_isset('c'))
         ext = carp_get_str('c');
+    if (!carp_isset('i'))
+        g_rim.auto_indent = 1;
 
     const char *file = carp_file_next();
 
