@@ -76,6 +76,7 @@
 #define RIMCHAR_ST(c, flag) ((c & 0x0FFF) | (flag))
 #define RIMCHAR_CH(c) ((char) (c & 0xFF))
 #define RIMCHAR_NF(c) (c & 0x0F00)
+#define RIMCHAR_FF(c) (c & 0xF000)
 
 // GLOBALS
 typedef struct {
@@ -100,7 +101,7 @@ enum {
     RIMVIEW_SYNTAX, // syntax highlighting
     RIMVIEW_LITE,   // simple and fast view
     RIMVIEW_EDITS,  // show edits in color
-    RIMVIEW_MAX     // number of views 
+    RIMVIEW_MAX     // number of views
 };
 
 rim_settings_t g_rim;
@@ -131,11 +132,9 @@ void gui_print(uint32_t x, uint32_t y, char *str, uint16_t color) {
     }
 }
 
-#define DISPLAY_EDIT_STAR() set_title(NULL, 1)
-
 void set_title(char *path, int unsaved) {
     static int start_pos = 0;
- 
+
     if (start_pos > 0) {
         if (unsaved) {
             panda_set_char(start_pos, 0, '*', COLOR_IT);
@@ -144,7 +143,7 @@ void set_title(char *path, int unsaved) {
         }
         return;
     }
-    
+
     if (start_pos < 0 || path == NULL)
         return;
 
@@ -165,7 +164,7 @@ void set_title(char *path, int unsaved) {
 
 void init_data(void) {
     free(g_data);
-    g_data = malloc(1024);
+    g_data = malloc(1024 * sizeof(uint16_t));
     g_data[0] = '\0';
     g_data_count = 1;
     g_data_max = 1024;
@@ -199,14 +198,14 @@ void load_file(char *path) {
     while ((c = fgetc(f)) != EOF) {
         if (g_data_count >= g_data_max - 5) {
             g_data_max += 1024;
-            g_data = realloc(g_data, g_data_max);
+            g_data = realloc(g_data, g_data_max * sizeof(uint16_t));
         }
 
         if (c == '\n') {
             g_data[g_data_count++] = 0;
             row = 0;
 
-            g_data_lines[g_lines_count] = g_data_count;            
+            g_data_lines[g_lines_count] = g_data_count;
             g_lines_count++;
 
             if (g_lines_count >= g_lines_max) {
@@ -385,21 +384,21 @@ void calc_screen_color(int from_line, int to_line, int x_offset) {
 
     for (int i = from_line; i < to_line; i++) {
         in_word = world_start = 0;
-        
+
         int max = cursor_max_at_line(i);
-        
+
         // out-screen characters (x_offset)
         for (int j = 0; j < x_offset && j < max; j++) {
             char c = g_data[g_data_lines[i] + j];
 
             if (in_word == 2 && c == chr_str)
                 in_word = 0;
-        
+
             else if (c == '\"' || c == '\'') {
                 chr_str = c;
                 in_word = 2;
             }
-        
+
             if (in_word == 2)
                 continue;
 
@@ -499,7 +498,7 @@ void calc_screen_lite(int from_line, int to_line, int x_offset) {
         for (int j = x_offset; j < max; j++) {
             if (j >= x_offset + SCREEN_W)
                 break;
-            
+
             uint16_t lc = g_data[g_data_lines[i] + j];
             char c = RIMCHAR_CH(lc);
 
@@ -508,7 +507,6 @@ void calc_screen_lite(int from_line, int to_line, int x_offset) {
                     RIMCHAR_NF(lc) == RIMCHAR_SAV ? COLOR_ES :
                     RIMCHAR_NF(lc) == RIMCHAR_ORI ? COLOR_EO :
                     COLOR_IU) : COLOR_ID) << 8;
-
             if (c == '\t')
                 c = ' ';
 
@@ -587,8 +585,8 @@ void realloc_buffer(void) {
             fputs("rim: g_data_lines: overflow detected\n", stderr);
             exit(1);
         }
-        g_data_lines = realloc(g_data_lines, (g_lines_max + 1024) * sizeof(int));
         g_lines_max += 1024;
+        g_data_lines = realloc(g_data_lines, g_lines_max * sizeof(int));
     }
 
     if (g_data_count >= g_data_max - 1) {
@@ -596,8 +594,8 @@ void realloc_buffer(void) {
             fputs("rim: g_data: overflow detected\n", stderr);
             exit(1);
         }
-        g_data = realloc(g_data, g_data_max + 1024);
         g_data_max += 1024;
+        g_data = realloc(g_data, g_data_max * sizeof(uint16_t));
     }
 }
 
@@ -617,7 +615,7 @@ void insert_tab(int force) {
     // realloc buffer if needed
     if (g_data_count + spaces >= g_data_max) {
         g_data_max += 1024;
-        g_data = realloc(g_data, g_data_max * sizeof(char));
+        g_data = realloc(g_data, g_data_max * sizeof(uint16_t));
     }
 
     // add character to data buffer
@@ -673,35 +671,95 @@ void insert_char(char chr) {
     g_cursor_pos++;
 }
 
-void execute_backspace(void) {
-    int future_cursor_pos;
-
-    // remove character from data buffer
-    if (g_cursor_pos > 0) {
+void execute_delete(void) {
+    if (g_cursor_pos < cursor_max_at_line(g_cursor_line)) {
         for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
-            g_data[i - 1] = g_data[i];
+            g_data[i] = g_data[i + 1];
 
         for (int i = g_cursor_line + 1; i < g_lines_count; i++)
             g_data_lines[i]--;
 
         g_data_count--;
-        g_cursor_pos--;
-    } else if (g_cursor_line > 0) {
-        future_cursor_pos = cursor_max_at_line(g_cursor_line - 1);
+    }
+}
 
-        for (int i = g_data_lines[g_cursor_line]; i < g_data_count; i++)
-            g_data[i - 1] = g_data[i];
+void reallign_tabs(void) {
+    int tab, len;
+    tab = len = 0;
 
-        // remove line from data lines
-        for (int i = g_cursor_line; i < g_lines_count - 1; i++) {
-            g_data_lines[i] = g_data_lines[i + 1];
-            g_data_lines[i]--;
+    for (int i = g_data_lines[g_cursor_line]; g_data[i] != 0; i++) {
+        if (g_data[i] & RIMCHAR_FTB) {
+            if (tab == 0)
+                tab++;
+            continue;
         }
 
-        g_data_count--;
-        g_lines_count--;
-        g_cursor_line--;
-        g_cursor_pos = future_cursor_pos;
+        if (RIMCHAR_CH(g_data[i]) == '\t')
+            tab++;
+
+        len++;
+    }
+
+    if (tab == 0)
+        return;
+
+    uint16_t *new_line = malloc((len + tab * 3 + 1) * sizeof(uint16_t));
+    // copy data to new line and add fake tabs
+
+    int j = 0;
+    for (int i = g_data_lines[g_cursor_line]; g_data[i] != 0; i++) {
+        if (g_data[i] & RIMCHAR_FTB)
+            continue;
+        new_line[j++] = g_data[i];
+        if (RIMCHAR_CH(g_data[i]) == '\t') {
+            int flag = RIMCHAR_NF(g_data[i]);
+            for (; j % 4 != 0; j++)
+                new_line[j] = '\t' | flag | RIMCHAR_FTB;
+        }
+    }
+
+    new_line[j++] = 0;
+
+    int offset = j - (g_data_lines[g_cursor_line + 1] - g_data_lines[g_cursor_line]);
+
+    // realloc buffer if needed
+    while (g_data_count + offset >= g_data_max) {
+        g_data_max += 1024;
+        g_data = realloc(g_data, g_data_max * sizeof(uint16_t));
+    }
+
+    // move data after current line
+    if (offset) {
+        memmove(g_data + g_data_lines[g_cursor_line] + j,
+                g_data + g_data_lines[g_cursor_line + 1],
+                (g_data_count - g_data_lines[g_cursor_line + 1]) * sizeof(uint16_t));
+    }
+
+    // copy new line to data buffer
+    memcpy(g_data + g_data_lines[g_cursor_line], new_line, j * sizeof(uint16_t));
+    free(new_line);
+
+    // update data lines
+    for (int i = g_cursor_line + 1; i < g_lines_count; i++) {
+        g_data_lines[i] += offset;
+    }
+
+    g_data_count += offset;
+}
+
+void finish_edits(void) {
+    reallign_tabs();
+    realloc_buffer();
+    set_title(NULL, 1);
+}
+
+void cursor_tab_allign(int right) {
+    // jump over the fake tabs
+    while (g_data[g_data_lines[g_cursor_line] + g_cursor_pos] & RIMCHAR_FTB && g_cursor_pos > 0) {
+        if (right)
+            g_cursor_pos++;
+        else
+            g_cursor_pos--;
     }
 }
 
@@ -753,7 +811,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         }
 
         realloc_buffer();
-        DISPLAY_EDIT_STAR();
+        finish_edits();
     }
 
     else if (c == 'v') { // paste
@@ -768,7 +826,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
             }
             realloc_buffer();
         }
-        DISPLAY_EDIT_STAR();
+        finish_edits();
     }
 
     else if (c == 'm') { // page down
@@ -798,7 +856,7 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
     else if (c == 'n') { // switch view
         g_rim.view = (g_rim.view + 1) % RIMVIEW_MAX;
     }
-        
+
     return 0;
 }
 
@@ -834,18 +892,15 @@ void main_loop(char *path) {
             continue;
         }
 
-        // realloc buffer if needed
-        realloc_buffer();
-
         // check if key is enter
         if (key == 28) {
             insert_newline();
-            DISPLAY_EDIT_STAR();
+            finish_edits();
         }
 
         // check if key is escape
         else if (key == 1) {
-            return;
+            reallign_tabs();
         }
 
         // check if key is ctrl
@@ -867,22 +922,18 @@ void main_loop(char *path) {
 
         // check if key is backspace
         else if (key == 14) {
-            execute_backspace();
-            DISPLAY_EDIT_STAR();
+            if (g_cursor_pos > 0) {
+                g_cursor_pos--;
+                cursor_tab_allign(0);
+                execute_delete();
+                finish_edits();
+            }
         }
 
         // check if key is delete
         else if (key == 83) {
-            if (g_cursor_pos < cursor_max_at_line(g_cursor_line)) {
-                for (int i = g_data_lines[g_cursor_line] + g_cursor_pos; i < g_data_count; i++)
-                    g_data[i] = g_data[i + 1];
-
-                for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-                    g_data_lines[i]--;
-
-                g_data_count--;
-            }
-            DISPLAY_EDIT_STAR();
+            execute_delete();
+            finish_edits();
         }
 
         // check if shift is pressed
@@ -898,7 +949,7 @@ void main_loop(char *path) {
         // check if key is tab
         else if (key == 15) {
             insert_tab(shift_pressed);
-            DISPLAY_EDIT_STAR();
+            finish_edits();
         }
 
         // check if key is arrow left
@@ -907,6 +958,7 @@ void main_loop(char *path) {
             if (g_cursor_pos > 0) {
                 g_cursor_pos--;
             }
+            cursor_tab_allign(0);
         }
 
         // check if key is arrow right
@@ -915,6 +967,7 @@ void main_loop(char *path) {
             if (g_cursor_pos < cursor_max_at_line(g_cursor_line)) {
                 g_cursor_pos++;
             }
+            cursor_tab_allign(1);
         }
 
         // check if key is arrow up
@@ -926,6 +979,7 @@ void main_loop(char *path) {
             if (g_cursor_pos > cursor_max_at_line(g_cursor_line)) {
                 g_cursor_pos = cursor_max_at_line(g_cursor_line);
             }
+            cursor_tab_allign(0);
         }
 
         // check if key is arrow down
@@ -937,12 +991,13 @@ void main_loop(char *path) {
             if (g_cursor_pos > cursor_max_at_line(g_cursor_line)) {
                 g_cursor_pos = cursor_max_at_line(g_cursor_line);
             }
+            cursor_tab_allign(0);
         }
 
         // check if key is printable
         else if (key < 58 && key > 0 && profan_kb_get_char(key, shift_pressed)) {
             insert_char(profan_kb_get_char(key, shift_pressed));
-            DISPLAY_EDIT_STAR();
+            finish_edits();
         }
 
         // nothing to do
