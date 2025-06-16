@@ -20,8 +20,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
 #include <ctype.h>
 
 #define RIM_VERSION "8 rev 0"
@@ -45,12 +45,12 @@
                                   g_data_count - g_data_lines[line] - 1)
 
 // interface colors
-#define COLOR_IT 0x70    // title
-#define COLOR_IL 0x87    // line number
-#define COLOR_ID 0x0F    // data
-#define COLOR_IM 0x70    // more data (>)
-#define COLOR_IU 0x80    // unknown character
-#define COLOR_IW 0x08    // whitespace
+#define COLOR_IT 0x70   // title
+#define COLOR_IL 0x87   // line number
+#define COLOR_ID 0x0F   // data
+#define COLOR_IM 0x70   // more data (>)
+#define COLOR_IU 0x80   // unknown character
+#define COLOR_IW 0x08   // whitespace
 
 // syntax highlighting colors
 #define COLOR_SD 0x07   // data
@@ -60,6 +60,22 @@
 #define COLOR_SK 0x0D   // keyword
 #define COLOR_SF 0x0E   // function
 #define COLOR_SB 0x0B   // brace
+
+// edit status colors
+#define COLOR_EN 0xE0   // unsaved
+#define COLOR_ES 0x0A   // saved
+#define COLOR_EO 0x07   // original
+
+// character flags
+#define RIMCHAR_ORI 0x0100 // present in original file
+#define RIMCHAR_NEW 0x0200 // character not saved yet
+#define RIMCHAR_SAV 0x0300 // character saved in file
+#define RIMCHAR_FTB 0x1000 // fake tab (for displaying)
+
+#define RIMCHAR_SN(c, flag) ((c & 0xF0FF) | (flag))
+#define RIMCHAR_ST(c, flag) ((c & 0x0FFF) | (flag))
+#define RIMCHAR_CH(c) ((char) (c & 0xFF))
+#define RIMCHAR_NF(c) (c & 0x0F00)
 
 // GLOBALS
 typedef struct {
@@ -77,13 +93,20 @@ typedef struct {
     rim_syntax_t *syntax;
     int always_tab;
     int save_at_exit;
-    int no_syntax;
+    int view;
 } rim_settings_t;
+
+enum {
+    RIMVIEW_SYNTAX, // syntax highlighting
+    RIMVIEW_LITE,   // simple and fast view
+    RIMVIEW_EDITS,  // show edits in color
+    RIMVIEW_MAX     // number of views 
+};
 
 rim_settings_t g_rim;
 
 uint16_t *gscreen;
-char     *g_data;
+uint16_t *g_data;
 
 int g_data_count;
 int g_data_max;
@@ -127,8 +150,7 @@ void set_title(char *path, int unsaved) {
 
     char *title = malloc(SCREEN_W + 1);
 
-    int len = snprintf(title, SCREEN_W, "RIM%s %s", g_rim.no_syntax ? " lite" : "",
-                path);
+    int len = snprintf(title, SCREEN_W, "RIM %s", path);
     memset(title + len, ' ', SCREEN_W - len);
 
     start_pos = len + 1;
@@ -144,6 +166,7 @@ void set_title(char *path, int unsaved) {
 void init_data(void) {
     free(g_data);
     g_data = malloc(1024);
+    g_data[0] = '\0';
     g_data_count = 1;
     g_data_max = 1024;
 
@@ -154,138 +177,167 @@ void init_data(void) {
 }
 
 void load_file(char *path) {
-    int read_size, fd;
+    int row, c;
+    FILE *f;
 
     init_data();
 
     if (path) {
-        fd = open(path, O_RDONLY | O_CREAT);
-        if (fd < 0) {
+        f = fopen(path, "r");
+        if (f == NULL) {
+            if (errno == ENOENT)
+                return; // file not exists yet, no error
             fprintf(stderr, "rim: %s: %m\n", path);
             exit(1);
         }
     } else {
-        fd = 0;
+        f = stdin;
     }
 
-    while ((read_size = read(fd, g_data + g_data_count - 1, 1024))) {
-        if (read_size < 0) {
-            fprintf(stderr, "rim: %s: %m\n", path);
-            close(fd);
-            exit(1);
-        }
+    g_data_count = row = 0;
 
-        g_data_count += read_size;
-        if (g_data_count >= g_data_max) {
+    while ((c = fgetc(f)) != EOF) {
+        if (g_data_count >= g_data_max - 5) {
             g_data_max += 1024;
             g_data = realloc(g_data, g_data_max);
         }
-    }
 
-    close(fd);
+        if (c == '\n') {
+            g_data[g_data_count++] = 0;
+            row = 0;
 
-    for (int i = 0; i < g_data_count - 1; i++) {
-        if (g_data[i] != '\n')
-            continue;
-        g_data[i] = '\0';
-        g_data_lines[g_lines_count] = i + 1;
-        g_lines_count++;
-        if (g_lines_count >= g_lines_max) {
-            g_lines_max += 1024;
-            g_data_lines = realloc(g_data_lines, g_lines_max * sizeof(int));
+            g_data_lines[g_lines_count] = g_data_count;            
+            g_lines_count++;
+
+            if (g_lines_count >= g_lines_max) {
+                g_lines_max += 1024;
+                g_data_lines = realloc(g_data_lines, g_lines_max * sizeof(int));
+            }
+        } else if (c == '\t') {
+            g_data[g_data_count++] = '\t' | RIMCHAR_ORI;
+            for (row++; row % 4 != 0; row++)
+                g_data[g_data_count++] = '\t' | RIMCHAR_ORI | RIMCHAR_FTB;
+        } else {
+            g_data[g_data_count++] = c | RIMCHAR_ORI;
+            row++;
         }
     }
+
+    g_data[g_data_count++] = '\0';
+
+    if (f != stdin)
+        fclose(f);
 }
 
 void save_file(char *path) {
-    int fd;
+    FILE *f;
 
     if (path) {
-        fd = open(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd < 0)
+        f = fopen(path, "w+");
+        if (f == NULL) {
+            fprintf(stderr, "rim: %s: %m\n", path);
             return;
+        }
     } else {
-        fd = 1;
+        f = stdout;
     }
 
-    char *data_copy = malloc(g_data_count);
-    memcpy(data_copy, g_data, g_data_count);
+    for (int i = 0; i < g_data_count; i++) {
+        if (g_data[i] & RIMCHAR_NEW)
+            g_data[i] = RIMCHAR_SN(g_data[i], RIMCHAR_SAV);
 
-    for (int i = 0; i < g_data_count - 1; i++) {
-        if (data_copy[i] == '\0')
-            data_copy[i] = '\n';
+        if (g_data[i] & RIMCHAR_FTB)
+            continue; // skip fake tabs
+
+        if (g_data[i] == 0)
+            fputc('\n', f);
+        else
+            fputc(g_data[i] & 0xFF, f);
     }
 
-    write(fd, data_copy, g_data_count - 1);
-    close(fd);
-
-    free(data_copy);
+    if (f != stdout)
+        fclose(f);
 }
 
-int word_isnumber(char *word, int size) {
+int word_isnumber(uint16_t *word, int size) {
     if (!g_rim.syntax->numbers)
         return 0;
-    if (size > 2 && word[0] == '0' && (word[1] == 'x' || word[1] == 'X')) {
+    if (size > 2 && (char) word[0] == '0' &&
+            ((char) word[1] == 'x' || (char) word[1] == 'X')) {
         for (int i = 2; i < size; i++)
-            if (!isxdigit(word[i]))
+            if (!isxdigit((char) word[i]))
                 return 0;
         return 1;
     }
     for (int i = 0; i < size; i++) {
-        if (!isdigit(word[i]))
+        if (!isdigit((char) word[i]))
             return 0;
     }
     return 1;
 }
 
-int word_purple(char *word, uint32_t size) {
+int word_purple(uint16_t *word, uint32_t size) {
     if (!g_rim.syntax->keywords)
         return 0;
     for (uint32_t i = 0; g_rim.syntax->keywords[i]; i++) {
-        if (size == strlen(g_rim.syntax->keywords[i]) && !memcmp(word, g_rim.syntax->keywords[i], size))
-            return 1;
+        // compare word with keyword
+        for (uint32_t j = 0; j < size; j++) {
+            if (g_rim.syntax->keywords[i][j] == '\0' || g_rim.syntax->keywords[i][j] != (char) word[j])
+                break;
+            if (g_rim.syntax->keywords[i][j + 1] == '\0' && j + 1 == size)
+                return 1;
+        }
     }
     return 0;
 }
 
-int word_isblue(char *word, uint32_t size) {
-    if (g_rim.syntax->ctypes && size > 2 && word[size - 1] == 't' && word[size - 2] == '_')
+int word_isblue(uint16_t *word, uint32_t size) {
+    if (g_rim.syntax->ctypes && size > 2 && (char) word[size - 1] == 't' && (char) word[size - 2] == '_')
         return 1;
     if (!g_rim.syntax->blues)
         return 0;
     for (uint32_t i = 0; g_rim.syntax->blues[i]; i++) {
-        if (size == strlen(g_rim.syntax->blues[i]) && !memcmp(word, g_rim.syntax->blues[i], size))
-            return 1;
+        // compare word with blue
+        for (uint32_t j = 0; j < size; j++) {
+            if (g_rim.syntax->blues[i][j] == '\0' || g_rim.syntax->blues[i][j] != (char) word[j])
+                break;
+            if (g_rim.syntax->blues[i][j + 1] == '\0' && j + 1 == size)
+                return 1;
+        }
     }
     return 0;
 }
 
-int word_isbrace(char *word, uint32_t size) {
-    if (!g_rim.syntax->braces)
+int word_isbrace(uint16_t *word, uint32_t size) {
+    if (!g_rim.syntax->braces || size != 1)
         return 0;
-    return (size == 1 && (
-        word[0] == '(' ||
-        word[0] == ')' ||
-        word[0] == '{' ||
-        word[0] == '}' ||
-        word[0] == '[' ||
-        word[0] == ']'
-    ));
+
+    switch (RIMCHAR_CH(*word)) {
+        case '{':
+        case '}':
+        case '(':
+        case ')':
+        case '[':
+        case ']':
+            return 1;
+        default:
+            return 0;
+    }
 }
 
-int word_paraft(char *word, uint32_t size) {
+int word_paraft(uint16_t *word, uint32_t size) {
     if (!g_rim.syntax->funccalls)
         return 0;
     for (uint32_t i = size; word[i]; i++) {
-        if (word[i] == '(')
+        if (RIMCHAR_CH(word[i]) == '(')
             return 1;
-        if (!isspace(word[i]))
+        if (!isspace(RIMCHAR_CH(word[i])))
             return 0;
     }
     return 0;
 }
 
-void put_word(int line, int in_word, uint16_t *gscreen, int gscreen_i, char *word, int size) {
+void put_word(int line, int in_word, uint16_t *gscreen, int gscreen_i, uint16_t *word, int size) {
     if (size == 0)
         return;
 
@@ -318,7 +370,7 @@ void put_word(int line, int in_word, uint16_t *gscreen, int gscreen_i, char *wor
     }
 
     for (int k = 0; k < size; k++) {
-        gscreen[gscreen_i + k] = word[k] | (color << 8);
+        gscreen[gscreen_i + k] = RIMCHAR_CH(word[k]) | (color << 8);
     }
 }
 
@@ -447,17 +499,24 @@ void calc_screen_lite(int from_line, int to_line, int x_offset) {
         for (int j = x_offset; j < max; j++) {
             if (j >= x_offset + SCREEN_W)
                 break;
+            
+            uint16_t lc = g_data[g_data_lines[i] + j];
+            char c = RIMCHAR_CH(lc);
 
-            char c = g_data[g_data_lines[i] + j];
+            lc = (g_rim.view == RIMVIEW_EDITS ? (
+                    RIMCHAR_NF(lc) == RIMCHAR_NEW ? COLOR_EN :
+                    RIMCHAR_NF(lc) == RIMCHAR_SAV ? COLOR_ES :
+                    RIMCHAR_NF(lc) == RIMCHAR_ORI ? COLOR_EO :
+                    COLOR_IU) : COLOR_ID) << 8;
 
-            if (c == ' ')
-                gscreen[line * SCREEN_W + j - x_offset] = '.' | (COLOR_IW << 8);
-            else if (c == '\t')
-                gscreen[line * SCREEN_W + j - x_offset] = '>' | (COLOR_IW << 8);
-            else if (!isprint(c))
+            if (c == '\t')
+                c = ' ';
+
+            if (!isprint(c))
                 gscreen[line * SCREEN_W + j - x_offset] = '?' | (COLOR_IU << 8);
-            else
-                gscreen[line * SCREEN_W + j - x_offset] = c | (COLOR_ID << 8);
+            else {
+                gscreen[line * SCREEN_W + j - x_offset] = c | lc;
+            }
         }
         line++;
     }
@@ -471,7 +530,7 @@ void display_data(int from_line, int to_line, int x_offset) {
 
     memset(gscreen, 0, SCREEN_W * SCREEN_H * sizeof(uint16_t));
 
-    if (g_rim.syntax && !g_rim.no_syntax)
+    if (g_rim.view == RIMVIEW_SYNTAX)
         calc_screen_color(from_line, to_line, x_offset);
     else
         calc_screen_lite(from_line, to_line, x_offset);
@@ -542,52 +601,42 @@ void realloc_buffer(void) {
     }
 }
 
-void insert_tab(void) {
+void insert_tab(int force) {
     int tab = 0;
 
-    if (g_rim.always_tab) {
+    if (g_rim.always_tab || force) {
         tab = 1;
-    } else for (int j = g_data_lines[g_cursor_line]; g_data[j] != '\0'; j++) {
+    } else for (int j = g_data_lines[g_cursor_line]; g_data[j] != 0; j++) {
         if (g_data[j] == '\t') {
             tab = 1;
             break;
         }
     }
 
-    if (tab) {
-        // add character to data buffer
-        for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-            g_data[i] = g_data[i - 1];
-
-        g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = '\t';
-        g_data_count++;
-
-        for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-            g_data_lines[i]++;
-
-        g_cursor_pos++;
-    } else {
-        int spaces = 4 - (g_cursor_pos % 4);
-        // realloc buffer if needed
-        if (g_data_count + spaces >= g_data_max) {
-            g_data_max += 1024;
-            g_data = realloc(g_data, g_data_max * sizeof(char));
-        }
-
-        // add character to data buffer
-        for (int i = g_data_count + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
-            g_data[i] = g_data[i - spaces];
-
-        for (int i = 0; i < spaces; i++)
-            g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] = ' ';
-
-        g_data_count += spaces;
-
-        for (int i = g_cursor_line + 1; i < g_lines_count; i++)
-            g_data_lines[i] += spaces;
-
-        g_cursor_pos += spaces;
+    int spaces = 4 - (g_cursor_pos % 4);
+    // realloc buffer if needed
+    if (g_data_count + spaces >= g_data_max) {
+        g_data_max += 1024;
+        g_data = realloc(g_data, g_data_max * sizeof(char));
     }
+
+    // add character to data buffer
+    for (int i = g_data_count + spaces - 1; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
+        g_data[i] = g_data[i - spaces];
+
+    if (tab)
+        g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = RIMCHAR_ST('\t', RIMCHAR_NEW);
+
+    for (int i = tab; i < spaces; i++)
+        g_data[g_data_lines[g_cursor_line] + g_cursor_pos + i] =
+                RIMCHAR_ST(tab ? RIMCHAR_ST('\t', RIMCHAR_FTB) : ' ', RIMCHAR_NEW);
+
+    g_data_count += spaces;
+
+    for (int i = g_cursor_line + 1; i < g_lines_count; i++)
+        g_data_lines[i] += spaces;
+
+    g_cursor_pos += spaces;
 }
 
 void insert_newline(void) {
@@ -615,7 +664,7 @@ void insert_char(char chr) {
     for (int i = g_data_count; i > g_data_lines[g_cursor_line] + g_cursor_pos; i--)
         g_data[i] = g_data[i - 1];
 
-    g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = chr;
+    g_data[g_data_lines[g_cursor_line] + g_cursor_pos] = RIMCHAR_SN(chr, RIMCHAR_NEW);
     g_data_count++;
 
     for (int i = g_cursor_line + 1; i < g_lines_count; i++)
@@ -746,6 +795,10 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         g_cursor_pos = cursor_max_at_line(g_cursor_line);
     }
 
+    else if (c == 'n') { // switch view
+        g_rim.view = (g_rim.view + 1) % RIMVIEW_MAX;
+    }
+        
     return 0;
 }
 
@@ -844,7 +897,7 @@ void main_loop(char *path) {
 
         // check if key is tab
         else if (key == 15) {
-            insert_tab();
+            insert_tab(shift_pressed);
             DISPLAY_EDIT_STAR();
         }
 
@@ -945,12 +998,12 @@ char **copy_array(char **array) {
 
 void rim_syntax_init(const char *lang) {
     g_rim.syntax = calloc(1, sizeof(rim_syntax_t));
+    g_rim.syntax->words = 1;
 
     if (!lang)
         return;
 
     if (strcmp(lang, "c") == 0) {
-        g_rim.syntax->words = 1;
         g_rim.syntax->numbers = 1;
         g_rim.syntax->funccalls = 1;
         g_rim.syntax->braces = 1;
@@ -971,7 +1024,6 @@ void rim_syntax_init(const char *lang) {
     }
 
     else if (strcmp(lang, "lua") == 0) {
-        g_rim.syntax->words = 1;
         g_rim.syntax->numbers = 1;
         g_rim.syntax->funccalls = 1;
         g_rim.syntax->braces = 1;
@@ -988,7 +1040,6 @@ void rim_syntax_init(const char *lang) {
     }
 
     else if (strcmp(lang, "py") == 0) {
-        g_rim.syntax->words = 1;
         g_rim.syntax->numbers = 1;
         g_rim.syntax->funccalls = 1;
         g_rim.syntax->braces = 1;
@@ -1007,7 +1058,6 @@ void rim_syntax_init(const char *lang) {
     }
 
     else if (strcmp(lang, "olv") == 0) {
-        g_rim.syntax->words = 1;
         g_rim.syntax->numbers = 1;
         g_rim.syntax->strings = 1;
 
@@ -1016,10 +1066,6 @@ void rim_syntax_init(const char *lang) {
             "if", "else", "while", "for", "func", "end", "return", "break", "continue", NULL
         });
     }
-
-    else {
-        g_rim.syntax->words = 1;
-    }
 }
 
 char *compute_args(int argc, char **argv) {
@@ -1027,12 +1073,9 @@ char *compute_args(int argc, char **argv) {
     carp_set_ver("rim", RIM_VERSION);
 
     carp_register('c', CARP_NEXT_STR, "specify syntax highlighting");
-    carp_register('n', CARP_STANDARD, "disable syntax highlighting");
     carp_register('s', CARP_STANDARD, "always save file at exit");
     carp_register('M', CARP_STANDARD, "show a memo of keyboard shortcuts");
-    carp_register('t', CARP_STANDARD, "always insert tab character");
-
-    carp_conflict("nc");
+    carp_register('t', CARP_STANDARD, "use tabs instead of spaces");
 
     if (carp_parse(argc, argv))
         exit(1);
@@ -1043,15 +1086,17 @@ char *compute_args(int argc, char **argv) {
 
     if (carp_isset('M')) {
         puts("Rim Shortcuts:\n"
-            "  ctrl + q   quit\n"
-            "  ctrl + s   save\n"
-            "  ctrl + c   copy\n"
-            "  ctrl   cut\n"
-            "  ctrl + v   paste\n"
-            "  ctrl + m   page down\n"
-            "  ctrl + p   page up\n"
-            "  ctrl + a   home\n"
-            "  ctrl + e   end\n\n"
+            "   ctrl + q     quit\n"
+            "   ctrl + s     save\n"
+            "   ctrl + c     copy\n"
+            "   ctrl + x     cut\n"
+            "   ctrl + v     paste\n"
+            "   ctrl + m     page down\n"
+            "   ctrl + p     page up\n"
+            "   ctrl + a     home\n"
+            "   ctrl + e     end\n"
+            "   ctrl + n     switch view\n"
+            "  shift + tab   insert \\t\n\n"
             "Syntax highlighting:\n"
             "  c, lua, py, olv"
         );
@@ -1061,8 +1106,6 @@ char *compute_args(int argc, char **argv) {
 
     if (carp_isset('t'))
         g_rim.always_tab = 1;
-    if (carp_isset('n'))
-        g_rim.no_syntax = 1;
     if (carp_isset('s'))
         g_rim.save_at_exit = 1;
     if (carp_isset('c'))
