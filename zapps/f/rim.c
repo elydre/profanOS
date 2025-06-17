@@ -761,7 +761,8 @@ void insert_newline(int auto_indent) {
         int base = g_data_lines[g_cursor_line];
 
         // count spaces in current line
-        for (int i = base; i < g_cursor_pos + base && (RIMCHAR_CH(g_data[i]) == ' ' || RIMCHAR_CH(g_data[i]) == '\t'); i++)
+        for (int i = base; i < g_cursor_pos + base &&
+                (RIMCHAR_CH(g_data[i]) == ' ' || RIMCHAR_CH(g_data[i]) == '\t'); i++)
             spaces++;
 
         // trim the end of the line
