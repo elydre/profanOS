@@ -851,26 +851,28 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
     else if (c == 'c' || c == 'x') { // copy or cut
         start = g_data_lines[g_cursor_line];
         end = (g_cursor_line < g_lines_count - 1) ? g_data_lines[g_cursor_line + 1] : g_data_count;
-        size = end - start - 1;
-        char *clip = malloc(size + 2);
-        for (int i = 0; i < size; i++) {
-            clip[i] = RIMCHAR_CH(g_data[start + i]);
+        size = 0;
+        char *clip = malloc(end - start + 1);
+        for (int i = start; i < end - 1; i++) {
+            if (g_data[i] & RIMCHAR_FTB)
+                continue; // skip fake tabs
+            clip[size++] = RIMCHAR_CH(g_data[i]);
         }
-        clip[size] = '\n';
-        clip[size + 1] = '\0';
-        clip_set_raw(clip, size + 1);
+        clip[size++] = '\n';
+        clip[size] = '\0';
+        clip_set_raw(clip, size);
         free(clip);
 
         if (c == 'c')
             return 0;
 
         memmove(g_data + start, g_data + end, (g_data_count - end) * sizeof(uint16_t));
-        g_data_count -= size + 1;
+        g_data_count -= size;
 
         if (g_lines_count > 1) {
             for (int i = g_cursor_line + 1; i < g_lines_count - 1; i++) {
                 g_data_lines[i] = g_data_lines[i + 1];
-                g_data_lines[i] -= size + 1;
+                g_data_lines[i] -= size;
             }
 
             g_lines_count--;
@@ -894,7 +896,9 @@ int execute_ctrl(int key, uint8_t shift, char *path) {
         char *clip = clip_get_raw(&size);
         // use insert_newline when '\n' is found
         for (uint32_t i = 0; i < size; i++) {
-            if (clip[i] == '\n') {
+            if (clip[i] == '\t') {
+                insert_tab(1);
+            } else if (clip[i] == '\n') {
                 insert_newline(0);
             } else {
                 insert_char(clip[i]);
