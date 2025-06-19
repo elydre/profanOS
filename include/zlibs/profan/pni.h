@@ -4,6 +4,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef struct {
+	uint16_t src_port;
+	uint16_t dest_port;
+	uint8_t src_ip[4];
+	int32_t len; // < 0 -> error
+	uint8_t *data;
+} pni_packet_t;
+
 #define PNI_ERR_NO_MAC (-1)
 #define PNI_ERR_NO_IP (-2)
 #define PNI_ERR_NO_ROUTER (-3)
@@ -18,9 +26,9 @@
 #define PNI_RECV_HANGTIME  0b00000000000000000000000000000010 // incompatible with NOHANG
 
 // return 0 on success
-int      pni_init(void);
-int      pni_send(uint16_t src_p, uint16_t dest_p, uint8_t *data, size_t data_len, uint8_t *dest_ip);
-uint8_t *pni_recv(int *len, uint32_t flags, ...); // *len = error code
-void     pni_exit(void);
+int pni_init(void);
+int pni_send(uint16_t src_p, uint16_t dest_p, uint8_t *data, size_t data_len, uint8_t *dest_ip);
+pni_packet_t pni_recv(uint32_t flags, ...);
+void pni_exit(void);
 
 #endif
