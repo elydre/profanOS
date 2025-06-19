@@ -29,7 +29,13 @@ int eth_init(void) {
     return 2;
 }
 
+void eth_append_packet(void *data, uint32_t len);
+
 void eth_send_packet(const void * addr, uint16_t p_len) {
+    if (p_len >= 6 && !mem_cmp(addr, eth_mac, 6)) {
+        eth_append_packet((void *)addr, p_len);
+        return ;
+    }
     uint32_t addr_phys = (uint32_t)addr;
 	addr_phys -= addr_phys % 4096;
 	addr_phys = (uint32_t)scuba_call_phys((void *)addr_phys);
