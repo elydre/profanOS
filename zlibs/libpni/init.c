@@ -14,7 +14,6 @@ int pni_init() {
 	}
 
 	syscall_eth_get_ip(self_ip);
-	printf("SELF ip %d.%d.%d.%d\n", self_ip[0], self_ip[1], self_ip[2], self_ip[3]);
 	if (self_ip[0] == 0 && self_ip[1] == 0 && self_ip[2] == 0 && self_ip[3] == 0) {
 		return PNI_ERR_NO_IP;
 	}
