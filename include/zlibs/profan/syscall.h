@@ -159,13 +159,13 @@ _BEGIN_C_FILE
 ************************************/
 
 DEFN_SYSCALL0(0, filesys_t *,fs_get_default)
-DEFN_SYSCALL5(1, int,        fs_read, filesys_t *, uint32_t, void *, uint32_t, uint32_t)
-DEFN_SYSCALL5(2, int,        fs_write, filesys_t *, uint32_t, void *, uint32_t, uint32_t)
-DEFN_SYSCALL3(3, int,        fs_set_size, filesys_t *, uint32_t, uint32_t)
-DEFN_SYSCALL2(4, uint32_t,   fs_get_size, filesys_t *, uint32_t)
-DEFN_SYSCALL2(5, int,        fs_delete, filesys_t *, uint32_t)
-DEFN_SYSCALL3(6, uint32_t,   fs_init, filesys_t *, uint32_t, char *)
-DEFN_SYSCALL3(7, char *,     fs_meta, filesys_t *, uint32_t, char *)
+DEFN_SYSCALL4(1, int,        fs_read, uint32_t, void *, uint32_t, uint32_t)
+DEFN_SYSCALL4(2, int,        fs_write, uint32_t, void *, uint32_t, uint32_t)
+DEFN_SYSCALL2(3, int,        fs_set_size, uint32_t, uint32_t)
+DEFN_SYSCALL1(4, uint32_t,   fs_get_size, uint32_t)
+DEFN_SYSCALL1(5, int,        fs_delete, uint32_t)
+DEFN_SYSCALL2(6, uint32_t,   fs_init, uint32_t, char *)
+DEFN_SYSCALL2(7, char *,     fs_meta, uint32_t, char *)
 
 DEFN_SYSCALL3(8,  void *,    mem_alloc, uint32_t, int, uint32_t)
 DEFN_SYSCALL1(9,  int,       mem_free, void *)

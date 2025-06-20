@@ -122,14 +122,14 @@ int elf_exec(uint32_t sid, char **argv, char **envp) {
     return process_kill(process_get_pid(), ret);
 }
 
-int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
+int elf_start(char *file, int sleep, char **argv, int *pid_ptr) {
     uint32_t sid = kfu_path_to_sid(SID_ROOT, file);
 
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 
     if (IS_SID_NULL(sid) || !kfu_is_file(sid)) {
-        sys_warning("[run_ifexist] File not found: %s", file);
+        sys_warning("[elf_start] File not found: %s", file);
         return -1;
     }
 

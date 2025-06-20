@@ -66,7 +66,7 @@ int __init(void) {
         return 1;
     }
 
-    // sys_set_reporter(userspace_reporter);
+    sys_set_reporter(userspace_reporter);
 
     return 0;
 }
@@ -362,7 +362,7 @@ enum {
     FILE_OTHER
 } ifexist_file_type;
 
-int run_ifexist_full(runtime_args_t *args, int *pid_ptr) {
+int run_ifexist(runtime_args_t *args, int *pid_ptr) {
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 

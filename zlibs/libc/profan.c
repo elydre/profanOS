@@ -250,12 +250,12 @@ char *profan_path_path(const char *exec, int allow_path) {
         if (count < 0)
             goto endloop;
 
-        size = syscall_fs_get_size(NULL, dir_sid);
+        size = syscall_fs_get_size(dir_sid);
         if (size == UINT32_MAX || size < sizeof(uint32_t))
             goto endloop;
 
         buf = malloc(size);
-        if (syscall_fs_read(NULL, dir_sid, buf, 0, size))
+        if (syscall_fs_read(dir_sid, buf, 0, size))
             goto endloop;
 
         for (int i = 0; i < count; i++) {

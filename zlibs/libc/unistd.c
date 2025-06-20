@@ -198,7 +198,7 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
         3 // sleep mode
     };
 
-    run_ifexist_full(&args, NULL);
+    run_ifexist(&args, NULL);
 
     errno = ENOENT;
     return -1;
@@ -280,7 +280,7 @@ int ftruncate(int fd, off_t length) {
         return -1;
     }
 
-    if (syscall_fs_set_size(NULL, sid, length)) {
+    if (syscall_fs_set_size(sid, length)) {
         errno = EIO;
         return -1;
     }
@@ -603,7 +603,7 @@ int truncate(const char *filename, off_t length) {
         return -1;
     }
 
-    if (syscall_fs_set_size(NULL, sid, length)) {
+    if (syscall_fs_set_size(sid, length)) {
         errno = EIO;
         return -1;
     }
@@ -654,7 +654,7 @@ int unlink(const char *filename) {
     }
 
     // delete the file content
-    if (syscall_fs_delete(NULL, elem)) {
+    if (syscall_fs_delete(elem)) {
         errno = EIO;
         return -1;
     }

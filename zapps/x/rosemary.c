@@ -178,7 +178,7 @@ int main(void) {
                 .envp = NULL,
                 .sleep_mode = 0
             };
-            run_ifexist_full(&args, &usage_pid);
+            run_ifexist(&args, &usage_pid);
         }
 
     } else {
@@ -202,7 +202,7 @@ int main(void) {
             .sleep_mode = 1
         };
 
-        run_ifexist_full(&args, &usage_pid);
+        run_ifexist(&args, &usage_pid);
 
         mmq_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"

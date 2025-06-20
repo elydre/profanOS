@@ -528,7 +528,7 @@ int system(const char *command) {
         environ, 1
     };
 
-    return run_ifexist_full(&args, NULL);
+    return run_ifexist(&args, NULL);
 }
 
 int unlockpt(int fd) {

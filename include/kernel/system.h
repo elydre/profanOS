@@ -64,7 +64,7 @@ uint32_t    sys_name2addr(const char *name);
 
 // runtime.c
 int elf_exec(uint32_t sid, char **argv, char **envp);
-int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr);
+int elf_start(char *file, int sleep, char **argv, int *pid_ptr);
 
 // pok.c
 int      mod_init(void);

@@ -79,7 +79,7 @@ void  profan_kfree(void *mem);
 int profan_kb_load_map(char *map);
 char profan_kb_get_char(uint8_t scancode, uint8_t shift);
 char *profan_input_keyboard(int *scancode, char *buf);
-int run_ifexist_full(runtime_args_t *args, int *pid);
+int run_ifexist(runtime_args_t *args, int *pid);
 
 #ifndef _KERNEL_MODULE
 
@@ -92,7 +92,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define profan_kb_load_map(a)       ((int) _syscall(PROFAN_LIB_ID, 0, a))
 #define profan_kb_get_char(a, b)    ((char) _syscall(PROFAN_LIB_ID, 1, a, b))
 #define profan_input_keyboard(a, b) ((char *) _syscall(PROFAN_LIB_ID, 2, a, b))
-#define run_ifexist_full(a, b)      ((int) _syscall(PROFAN_LIB_ID, 3, a, b))
+#define run_ifexist(a, b)      ((int) _syscall(PROFAN_LIB_ID, 3, a, b))
 #endif
 
 _END_C_FILE

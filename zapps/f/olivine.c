@@ -1767,7 +1767,7 @@ char *if_dot(char **input) {
         2
     };
 
-    run_ifexist_full(&runtime_args, &pid);
+    run_ifexist(&runtime_args, &pid);
 
     free(full_path);
 
