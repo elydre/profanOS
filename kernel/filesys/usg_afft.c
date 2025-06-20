@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === usg_file.c : 2024 ===                                                 |
+|   === usg_afft.c : 2024 ===                                                 |
 |                                                                             |
-|    Kernel-only file manipulation functions                       .pi0iq.    |
+|    Kernel-only afft manipulation functions                       .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |

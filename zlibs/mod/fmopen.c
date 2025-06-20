@@ -181,6 +181,8 @@ int fm_close(int fd) {
 int fm_reopen(int fd, const char *abs_path, int flags) {
     // return fd or -errno
 
+    kprintf_serial("[fm_reopen] fd=%d, path='%s', flags=%x\n", fd, abs_path, flags);
+
     fm_close(fd);
 
     fd_data_t *fd_data;

@@ -10,6 +10,8 @@
 \*****************************************************************************/
 
 #define _SYSCALL_CREATE_STATIC
+#undef _KERNEL_MODULE
+
 #include <profan/syscall.h>
 
 #include <profan/filesys.h>
@@ -389,11 +391,6 @@ static int compute_ansi_escape(const char *str, int main_color) {
             if (g_panda->cursor_y < g_panda->scroll_offset)
                 g_panda->cursor_y = g_panda->scroll_offset;
             break;
-        case '\e':
-            syscall_serial_write(SERIAL_PORT_A, "WTF: ", 5);
-            syscall_serial_write(SERIAL_PORT_A, (char *) start + 1, str - start - 1);
-            syscall_serial_write(SERIAL_PORT_A, "\n", 1);
-            while (1);
         default:
             // unknown escape sequence
             goto UNKNOWN_ESCAPE;
@@ -483,10 +480,6 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
         } else if (-ansi_len == len) {
             // incomplete escape sequence
             goto END;
-        } else {
-            syscall_serial_write(SERIAL_PORT_A, "RUNK: ", 6);
-            syscall_serial_write(SERIAL_PORT_A, ansi_buffer + 1, -ansi_len);
-            syscall_serial_write(SERIAL_PORT_A, "\n", 1);
         }
 
         ansi_buffer[0] = '\0';

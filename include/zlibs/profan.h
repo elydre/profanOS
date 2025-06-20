@@ -13,9 +13,20 @@
 #define PROFAN_LIB_ID 5
 
 #include <profan/minimal.h>
-#include <profan/types.h>
+#include <stdint.h>
 
 _BEGIN_C_FILE
+
+typedef struct {
+    char *path;     // path to file
+    char *wd;       // working directory
+
+    int argc;       // argument count
+    char **argv;    // argument list
+    char **envp;    // environment list
+
+    uint8_t sleep_mode;  // sleep mode
+} runtime_args_t;
 
 #define run_ifexist(path, argc, argv) \
         run_ifexist_full((runtime_args_t){path, NULL, argc, argv, environ, 1}, NULL)
@@ -67,7 +78,7 @@ void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);
 void *profan_krealloc(void *mem, uint32_t new_size, int as_kernel);
 void  profan_kfree(void *mem);
 
-#ifndef PROFAN_C
+#ifndef _KERNEL_MODULE
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #define userspace_reporter ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 0))

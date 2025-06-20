@@ -63,7 +63,7 @@ CC_OPTIM   = "-fno-omit-frame-pointer -O" # level defined in env PROFANOS_OPTIM
 KERN_FLAGS = f"{CFLAGS} -fno-pie -I include/kernel"
 ZAPP_FLAGS = f"{CFLAGS} -Werror"
 ZLIB_FLAGS = f"{CFLAGS} -Wno-unused -Werror -fPIC"
-POK_FLAGS  = f"{CFLAGS} -Wno-unused -Werror -fPIC -I include/kernel"
+POK_FLAGS  = f"{CFLAGS} -Wno-unused -Werror -fPIC -I include/kernel -D_KERNEL_MODULE"
 
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 LD_FLAGS   = "-m elf_i386 -nostdlib"

@@ -52,8 +52,6 @@ enum {
     FCTF_WRITE
 };
 
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
-
 #ifndef _KERNEL_MODULE
 
 extern int profan_syscall(uint32_t id, ...);
@@ -61,8 +59,6 @@ extern int profan_syscall(uint32_t id, ...);
 #undef  _syscall
 #define _syscall(module, id, ...) \
     profan_syscall(((module << 24) | id), __VA_ARGS__)
-
-#endif
 
 int       fu_is_dir(uint32_t sid);
 int       fu_dir_get_size(uint32_t sid);
@@ -82,8 +78,6 @@ uint32_t  fu_afft_create(int disk, const char *path, int (*handler)(int, void *,
 void     *fu_afft_get_addr(uint32_t sid);
 uint32_t  fu_path_to_sid(uint32_t disk, const char *path);
 uint32_t *fu_get_vdisk_info(void);
-
-#ifndef _KERNEL_MODULE
 
 #define fu_is_dir(a)                  ((int) _syscall(FILESYS_LIB_ID, 0, a))
 #define fu_dir_get_size(a)            ((int) _syscall(FILESYS_LIB_ID, 1, a))
@@ -139,6 +133,25 @@ int fm_declare_child(int fd);
 #define fm_get_sid(a)       ((uint32_t) _syscall(FMOPEN_LIB_ID, 11, a))
 #define fm_get_path(a)      ((const char *) _syscall(FMOPEN_LIB_ID, 12, a))
 #define fm_declare_child(a) ((int) _syscall(FMOPEN_LIB_ID, 13, a))
+
+#else
+
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
+
+#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 2))
+#define fm_reopen ((int (*)(int, const char *, int)) get_func_addr(FMOPEN_LIB_ID, 3))
+#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 4))
+#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
+#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 6))
+#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 7))
+#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
+#define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 9))
+#define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 10))
+#define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_fcntl ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
+#define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
+#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 15))
 
 #endif
 

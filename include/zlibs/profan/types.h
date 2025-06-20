@@ -32,18 +32,6 @@ typedef struct {
     uint32_t vdisk_count;   // virtual disk count
 } filesys_t;
 
-typedef struct {
-    char *path;     // path to file
-    char *wd;       // working directory
-
-    int argc;       // argument count
-    char **argv;    // argument list
-    char **envp;    // environment list
-
-    uint8_t sleep_mode;  // sleep mode
-} runtime_args_t;
-
-
 /************* Signal handling *************/
 
 union sigval {
