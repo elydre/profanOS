@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#define _SYSCALL_CREATE_FUNCS
+// @LINK: libmmq
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
@@ -33,12 +33,12 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {2, "/lib/mod/filesys.pok"},
-    {3, "/lib/mod/devio.pok"},
-    {4, "/lib/mod/fmopen.pok"},
-    {5, "/lib/mod/profan.pok"},
-    {6, "/lib/mod/panda.pok"},
-    {9, "/lib/mod/mouse.pok"},
+    {2, "/lib/mod/filesys.pkm"},
+    {3, "/lib/mod/devio.pkm"},
+    {4, "/lib/mod/fmopen.pkm"},
+    {5, "/lib/mod/profan.pkm"},
+    {6, "/lib/mod/panda.pkm"},
+    {9, "/lib/mod/mouse.pkm"},
 };
 
 int local_strlen(char *str) {
@@ -101,7 +101,7 @@ void rainbow_print(char *message) {
     for (int i = 0; message[i]; i++) {
         tmp[3] = rainbow_colors[i % 6];
         tmp[5] = message[i];
-        fd_putstr(1, tmp);
+        mmq_putstr(1, tmp);
     }
 }
 
@@ -110,9 +110,9 @@ void welcome_print(void) {
     char buf[64];
     syscall_sys_kinfo(buf, 64);
 
-    fd_putstr(1, "\n\e[35mKernel: \e[95m");
-    fd_putstr(1, buf);
-    fd_putstr(1, "\e[0m\n\n");
+    mmq_putstr(1, "\n\e[35mKernel: \e[95m");
+    mmq_putstr(1, buf);
+    mmq_putstr(1, "\e[0m\n\n");
 }
 
 char wait_key(void) {
@@ -132,13 +132,13 @@ char **envp;
 
 void set_env(char *line) {
     if (envp == NULL) {
-        envp = kmalloc(2 * sizeof(char *));
+        envp = mmq_malloc(2 * sizeof(char *));
         envp[0] = line;
         envp[1] = NULL;
     } else {
         int i;
         for (i = 0; envp[i]; i++);
-        envp = krealloc(envp, (i + 2) * sizeof(char *));
+        envp = mmq_realloc(envp, (i + 2) * sizeof(char *));
         envp[i] = line;
         envp[i + 1] = NULL;
     }
@@ -159,15 +159,18 @@ int main(void) {
         return 1;
     }
 
-    fd_printf(1, "Successfully loaded %d modules\n\n", total);
+    mmq_printf(1, "Successfully loaded %d modules\n\n", total);
 
     if (syscall_vesa_state()) {
+        mmq_printf(1, "a\n");
         panda_set_start(syscall_get_cursor());
+        mmq_printf(1, "b\n");
         use_panda = 1;
         if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
             fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
             fm_reopen(2, "/dev/pander", O_WRONLY) < 0
         ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
+        mmq_printf(1, "c\n");
         set_env("TERM=/dev/panda");
         syscall_sys_set_reporter(userspace_reporter);
         if (START_USAGE_GRAPH)
@@ -187,7 +190,7 @@ int main(void) {
     do {
         run_ifexist_full((runtime_args_t){SHELL_PATH, NULL, 1, (char *[]){SHELL_NAME}, envp, 1}, NULL);
 
-        fd_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
+        mmq_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
             " h - unload all modules and exit\n"
             " j - reboot profanOS\n"
@@ -208,7 +211,7 @@ int main(void) {
 
     syscall_kprint("\e[2J");
 
-    kfree(envp);
+    mmq_free(envp);
 
     // unload all modules
     for (int i = 0; i < total; i++) {
