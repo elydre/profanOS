@@ -1,0 +1,34 @@
+STP PACKET:
+
+1B: opcode
+...: data
+
+
+OPCODES:
+	0xFF: read_url
+		2B: url length
+		...: url (not null-terminated)
+
+	0xFE: read_url_response
+		1B: status (0 for ok, 1 for error)
+		8B: url_temp_id
+
+	0xFD: read_url_get_size
+		8B: url_temp_id
+
+	0xFC: read_url_get_size_response
+		1B: status (0 for ok, 1 for error)
+		8B: size (0 if error)
+
+	0xFB: read_url_get_data
+		8B: url_temp_id
+		4B: offset
+
+	0xFA: read_url_get_data_response
+		1B: status (0 for ok, 1 for error)
+		8B: url_temp_id
+		4B: offset
+		512B: data
+
+	0xF9: read_url_get_data_end
+		8B: url_temp_id
