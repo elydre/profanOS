@@ -50,7 +50,13 @@ struct stackframe {
 
 char *kb_map;
 
-int profan_kb_load_map(char *path);
+static int userspace_reporter(char *message) {
+    int len = 0;
+    while (message[len] != '\0')
+        len++;
+    fm_write(2, message, len);
+    return 0;
+}
 
 int __init(void) {
     kb_map = NULL;
@@ -60,14 +66,8 @@ int __init(void) {
         return 1;
     }
 
-    return 0;
-}
+    // sys_set_reporter(userspace_reporter);
 
-int userspace_reporter(char *message) {
-    int len = 0;
-    while (message[len] != '\0')
-        len++;
-    fm_write(2, message, len);
     return 0;
 }
 
@@ -362,12 +362,12 @@ enum {
     FILE_OTHER
 } ifexist_file_type;
 
-int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
+int run_ifexist_full(runtime_args_t *args, int *pid_ptr) {
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 
     // safety checks
-    if (args.path == NULL) {
+    if (args->path == NULL) {
         sys_warning("[run_ifexist] no path provided\n");
         return -1;
     }
@@ -382,9 +382,9 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         }
     }
 
-    uint32_t sid = kfu_path_to_sid(SID_ROOT, args.path);
+    uint32_t sid = kfu_path_to_sid(SID_ROOT, args->path);
     if (!kfu_is_file(sid)) {
-        sys_warning("[run_ifexist] path not found: %s\n", args.path);
+        sys_warning("[run_ifexist] path not found: %s\n", args->path);
         return -1;
     }
 
@@ -401,7 +401,7 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
 
     // get the interpreter
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
-        if (str_ncmp("/bin/x/", args.path, 7) == 0) {
+        if (str_ncmp("/bin/x/", args->path, 7) == 0) {
             file_type = FILE_RAWELF;
         } else {
             file_type = FILE_DYNELF;
@@ -414,23 +414,23 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         } else {
             file_type = FILE_OTHER;
 
-            if (args.envp) {
+            if (args->envp) {
                 int env_interp_len = str_len(ENV_INTERP) + 1;
-                for (int i = 0; args.envp[i] != NULL; i++) {
-                    if (str_ncmp(args.envp[i], ENV_INTERP"=", env_interp_len))
+                for (int i = 0; args->envp[i] != NULL; i++) {
+                    if (str_ncmp(args->envp[i], ENV_INTERP"=", env_interp_len))
                         continue;
-                    interp = split_interp(args.envp[i] + env_interp_len, &inter_offset);
+                    interp = split_interp(args->envp[i] + env_interp_len, &inter_offset);
                 }
             }
 
             if (interp == NULL) {
-                sys_warning("[run_ifexist] %s: no interpreter found, export '%s' to set one\n", args.path, ENV_INTERP);
+                sys_warning("[run_ifexist] %s: no interpreter found, export '%s' to set one\n", args->path, ENV_INTERP);
                 return -1;
             }
         }
 
         if (interp == NULL || inter_offset == 0) {
-            sys_warning("[run_ifexist] %s: invalid shebang\n", args.path);
+            sys_warning("[run_ifexist] %s: invalid shebang\n", args->path);
             return -1;
         }
     }
@@ -438,17 +438,17 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     int pid = process_get_pid();
 
     // generate arguments and environment
-    char **nenv  = dup_envp(args.envp, args.wd, pid);
-    char **nargv = calloc_arg((args.argc + 5 + inter_offset) * sizeof(char *), pid);
+    char **nenv  = dup_envp(args->envp, args->wd, pid);
+    char **nargv = calloc_arg((args->argc + 5 + inter_offset) * sizeof(char *), pid);
 
     // create the new process
-    if (args.sleep_mode != 3) {
+    if (args->sleep_mode != 3) {
         pid = process_create(elf_exec, 0, 3,
                 (uint32_t []) {sid, (uint32_t) nargv, (uint32_t) nenv}
         );
 
         if (pid == -1) {
-            sys_warning("[run_ifexist] failed to create process for %s\n", args.path);
+            sys_warning("[run_ifexist] failed to create process for %s\n", args->path);
             return -1;
         }
 
@@ -461,9 +461,9 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
 
     // prepare the arguments
     if (file_type == FILE_RAWELF) {
-        for (int i = 0; i < args.argc; i++) {
-            nargv[i] = alloc_arg(str_len(args.argv[i]) + 1, pid);
-            str_cpy(nargv[i], args.argv[i]);
+        for (int i = 0; i < args->argc; i++) {
+            nargv[i] = alloc_arg(str_len(args->argv[i]) + 1, pid);
+            str_cpy(nargv[i], args->argv[i]);
         }
     } else if (file_type == FILE_DYNELF) {
         nargv[0] = alloc_arg(4, pid);
@@ -472,12 +472,12 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
         nargv[1] = alloc_arg(3, pid);
         str_cpy(nargv[1], "-e");
 
-        nargv[2] = alloc_arg(str_len(args.path) + 1, pid);
-        str_cpy(nargv[2], args.path);
+        nargv[2] = alloc_arg(str_len(args->path) + 1, pid);
+        str_cpy(nargv[2], args->path);
 
-        for (int i = 0; i < args.argc; i++) {
-            nargv[i + 3] = alloc_arg(str_len(args.argv[i]) + 1, pid);
-            str_cpy(nargv[i + 3], args.argv[i]);
+        for (int i = 0; i < args->argc; i++) {
+            nargv[i + 3] = alloc_arg(str_len(args->argv[i]) + 1, pid);
+            str_cpy(nargv[i + 3], args->argv[i]);
         }
     } else {
         int c = 0;
@@ -491,9 +491,9 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
 
             nargv[c++] = interp[0];
 
-            if (args.argc) {
-                nargv[c] = alloc_arg(str_len(args.argv[0]) + 1, pid);
-                str_cpy(nargv[c++], args.argv[0]);
+            if (args->argc) {
+                nargv[c] = alloc_arg(str_len(args->argv[0]) + 1, pid);
+                str_cpy(nargv[c++], args->argv[0]);
             }
         }
 
@@ -503,13 +503,13 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
 
 
         if (file_type != FILE_FBANG) {
-            nargv[c] = alloc_arg(str_len(args.path) + 1, pid);
-            str_cpy(nargv[c++], args.path);
+            nargv[c] = alloc_arg(str_len(args->path) + 1, pid);
+            str_cpy(nargv[c++], args->path);
         }
 
-        for (int i = 1; i < args.argc; i++) {
-            nargv[c] = alloc_arg(str_len(args.argv[i]) + 1, pid);
-            str_cpy(nargv[c++], args.argv[i]);
+        for (int i = 1; i < args->argc; i++) {
+            nargv[c] = alloc_arg(str_len(args->argv[i]) + 1, pid);
+            str_cpy(nargv[c++], args->argv[i]);
         }
 
         sid = deluge_sid;
@@ -518,16 +518,16 @@ int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
     free(interp);
 
     // finalize the execution
-    if (args.sleep_mode == 3) {
+    if (args->sleep_mode == 3) {
         mem_free_all(process_get_pid(), 1);
         return elf_exec(sid, nargv, nenv);
     }
 
     fm_declare_child(pid);
 
-    if (args.sleep_mode == 2)
+    if (args->sleep_mode == 2)
         return 0;
-    if (args.sleep_mode == 0)
+    if (args->sleep_mode == 0)
         return (process_wakeup(pid, 0), 0);
 
     uint8_t ret;

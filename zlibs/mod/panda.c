@@ -544,7 +544,6 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
 #define offset_to_cursor_y(offset, max_cols) ((offset) / (2 * (max_cols)))
 
 void panda_set_start(int kernel_cursor) {
-    mmq_printf(1, "pandaa\n");
     if (!g_panda)
         return;
 

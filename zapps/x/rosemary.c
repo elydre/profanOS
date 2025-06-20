@@ -145,8 +145,9 @@ void set_env(char *line) {
 }
 
 int main(void) {
-    char key_char, use_panda = 0;
+    runtime_args_t args;
     int total, usage_pid;
+    char key_char;
 
     envp = NULL;
 
@@ -162,20 +163,24 @@ int main(void) {
     mmq_printf(1, "Successfully loaded %d modules\n\n", total);
 
     if (syscall_vesa_state()) {
-        mmq_printf(1, "a\n");
         panda_set_start(syscall_get_cursor());
-        mmq_printf(1, "b\n");
-        use_panda = 1;
         if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
             fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
             fm_reopen(2, "/dev/pander", O_WRONLY) < 0
         ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
-        mmq_printf(1, "c\n");
         set_env("TERM=/dev/panda");
-        syscall_sys_set_reporter(userspace_reporter);
-        if (START_USAGE_GRAPH)
-            run_ifexist_full((runtime_args_t){"/bin/g/usage.elf", NULL, 1,
-                    (char *[]){"usage"}, NULL, 0}, &usage_pid);
+        if (START_USAGE_GRAPH) {
+            args = (runtime_args_t){
+                .path = "/bin/g/usage.elf",
+                .wd = NULL,
+                .argc = 1,
+                .argv = (char *[]){"usage"},
+                .envp = NULL,
+                .sleep_mode = 0
+            };
+            run_ifexist_full(&args, &usage_pid);
+        }
+
     } else {
         set_env("TERM=/dev/kterm");
     }
@@ -188,7 +193,16 @@ int main(void) {
     set_env("PWD=/");
 
     do {
-        run_ifexist_full((runtime_args_t){SHELL_PATH, NULL, 1, (char *[]){SHELL_NAME}, envp, 1}, NULL);
+        args = (runtime_args_t){
+            .path = SHELL_PATH,
+            .wd = NULL,
+            .argc = 1,
+            .argv = (char *[]) {SHELL_NAME},
+            .envp = envp,
+            .sleep_mode = 1
+        };
+
+        run_ifexist_full(&args, &usage_pid);
 
         mmq_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
@@ -200,10 +214,6 @@ int main(void) {
             syscall_sys_power(0);
         }
     } while (key_char != 'h');
-
-    if (use_panda) {
-        syscall_sys_set_reporter(NULL);
-    }
 
     if (syscall_process_state(usage_pid) < 4) {
         syscall_process_kill(usage_pid, 0);

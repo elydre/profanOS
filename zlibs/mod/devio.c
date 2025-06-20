@@ -15,6 +15,8 @@
 #include <minilib.h>
 #include <system.h>
 
+#include <profan/filesys.h>
+
 static int keyboard_read(void *buffer, uint32_t size, char *term) {
     return 0; // TODO
 
@@ -122,9 +124,6 @@ int dev_pander_w(void *buffer, uint32_t offset, uint32_t size) {
     color = panda_print_string((char *) buffer, size, color, 0x0C);
     return size;
 }
-
-#define fm_read ((int (*)(int, void *, uint32_t)) mod_get_func(4, 2))
-#define fm_write ((int (*)(int, void *, uint32_t)) mod_get_func(4, 3))
 
 int dev_stdin_r(void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);

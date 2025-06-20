@@ -189,14 +189,16 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
     int argc = 0;
     while (argv && argv[argc] != NULL)
         argc++;
-    run_ifexist_full((runtime_args_t) {
+    runtime_args_t args = {
         (char *) fullpath,
         g_wd_path,
         argc,
         (char **) argv,
         (char **) envp,
-        3
-    }, NULL);
+        3 // sleep mode
+    };
+
+    run_ifexist_full(&args, NULL);
 
     errno = ENOENT;
     return -1;

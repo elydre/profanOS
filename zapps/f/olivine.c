@@ -1759,15 +1759,15 @@ char *if_dot(char **input) {
     #if BUILD_PROFAN
     char *full_path = profan_path_join(g_olv->current_dir, file_path);
 
-    run_ifexist_full(
-        (runtime_args_t) {
-            full_path,
-            NULL,
-            argc, argv,
-            environ,
-            2
-        }, &pid
-    );
+    runtime_args_t runtime_args = {
+        full_path,
+        NULL,
+        argc, argv,
+        environ,
+        2
+    };
+
+    run_ifexist_full(&runtime_args, &pid);
 
     free(full_path);
 

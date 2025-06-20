@@ -63,8 +63,7 @@ void *SYSCALL_ARRAY[] = {
     dummy_syscall,      // 23
 
     // system.h
-    sys_set_reporter,   // 24
-    sys_power,          // 25
+    sys_power,          // 25 TODO: not the good number in comment
     sys_kinfo,          // 26
 
     elf_exec,           // 27

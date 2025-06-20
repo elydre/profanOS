@@ -517,12 +517,18 @@ void srand(unsigned int seed) {
 }
 
 int system(const char *command) {
-    if (access(SYSTEM_SHELL_PATH, X_OK) == -1) {
+    if (!fu_is_file(SYSTEM_SHELL_PATH)) {
         fputs("libc: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
         return -1;
     }
 
-    return run_ifexist(SYSTEM_SHELL_PATH, 3, ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}));
+    runtime_args_t args = {
+        SYSTEM_SHELL_PATH, NULL, 3,
+        ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}),
+        environ, 1
+    };
+
+    return run_ifexist_full(&args, NULL);
 }
 
 int unlockpt(int fd) {

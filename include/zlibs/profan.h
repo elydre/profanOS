@@ -28,9 +28,6 @@ typedef struct {
     uint8_t sleep_mode;  // sleep mode
 } runtime_args_t;
 
-#define run_ifexist(path, argc, argv) \
-        run_ifexist_full((runtime_args_t){path, NULL, argc, argv, environ, 1}, NULL)
-
 #define PROFAN_FNI profan_nimpl(__FUNCTION__)
 
 #define KB_ESC      1
@@ -78,14 +75,24 @@ void *profan_kcalloc(uint32_t nmemb, uint32_t lsize, int as_kernel);
 void *profan_krealloc(void *mem, uint32_t new_size, int as_kernel);
 void  profan_kfree(void *mem);
 
-#ifndef _KERNEL_MODULE
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
-#define userspace_reporter ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 0))
-#define profan_kb_load_map ((int (*)(char *)) get_func_addr(PROFAN_LIB_ID, 1))
-#define profan_kb_get_char ((char (*)(uint8_t, uint8_t)) get_func_addr(PROFAN_LIB_ID, 2))
-#define profan_input_keyboard ((char *(*)(int *, char *)) get_func_addr(PROFAN_LIB_ID, 3))
-#define run_ifexist_full ((int (*)(runtime_args_t, int *)) get_func_addr(PROFAN_LIB_ID, 4))
+int profan_kb_load_map(char *map);
+char profan_kb_get_char(uint8_t scancode, uint8_t shift);
+char *profan_input_keyboard(int *scancode, char *buf);
+int run_ifexist_full(runtime_args_t *args, int *pid);
+
+#ifndef _KERNEL_MODULE
+
+extern int profan_syscall(uint32_t id, ...);
+
+#undef  _syscall
+#define _syscall(module, id, ...) \
+    profan_syscall(((module << 24) | id), __VA_ARGS__)
+
+#define profan_kb_load_map(a)       ((int) _syscall(PROFAN_LIB_ID, 0, a))
+#define profan_kb_get_char(a, b)    ((char) _syscall(PROFAN_LIB_ID, 1, a, b))
+#define profan_input_keyboard(a, b) ((char *) _syscall(PROFAN_LIB_ID, 2, a, b))
+#define run_ifexist_full(a, b)      ((int) _syscall(PROFAN_LIB_ID, 3, a, b))
 #endif
 
 _END_C_FILE
