@@ -42,7 +42,7 @@ char kb_sc_to_char(int scancode, int shift) {
 }
 
 int kb_get_scancode(void) {
-    return (int) port_byte_in(0x60);
+    return (int) port_read8(0x60);
 }
 
 int kb_get_scfh(void) {

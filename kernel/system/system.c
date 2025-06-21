@@ -217,15 +217,15 @@ void sys_interrupt(uint8_t code, int err_code) {
 void sys_reboot(void) {
     uint8_t good = 0x02;
     while (good & 0x02)
-        good = port_byte_in(0x64);
-    port_byte_out(0x64, 0xFE);
+        good = port_read8(0x64);
+    port_write8(0x64, 0xFE);
     asm volatile("hlt");
 }
 
 void sys_shutdown(void) {
-    port_word_out(0x604, 0x2000);   // qemu
-    port_word_out(0xB004, 0x2000);  // bochs
-    port_word_out(0x4004, 0x3400);  // virtualbox
+    port_write16(0x604, 0x2000);   // qemu
+    port_write16(0xB004, 0x2000);  // bochs
+    port_write16(0x4004, 0x3400);  // virtualbox
 
     kcprint("profanOS has been stopped ", 0x0D);
     kcprint(":", 0x0B);

@@ -15,13 +15,13 @@
 char bcd;
 
 unsigned char read_register(unsigned char reg) {
-    port_byte_out(0x70, reg);
-    return port_byte_in(0x71);
+    port_write8(0x70, reg);
+    return port_read8(0x71);
 }
 
 void write_register(unsigned char reg, unsigned char value) {
-    port_byte_out(0x70, reg);
-    port_byte_out(0x71, value);
+    port_write8(0x70, reg);
+    port_write8(0x71, value);
 }
 
 unsigned char bcd2bin(unsigned char in_bcd) {

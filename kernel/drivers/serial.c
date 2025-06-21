@@ -19,29 +19,29 @@
 
 
 void serial_enable(int device) {
-    port_byte_out(device + 1, 0x00);
-    port_byte_out(device + 3, 0x80); // enable divisor mode
-    port_byte_out(device + 0, 0x03); // div Low:  03 Set the port to 38400 bps
-    port_byte_out(device + 1, 0x00); // div High: 00
-    port_byte_out(device + 3, 0x03);
-    port_byte_out(device + 2, 0xC7);
-    port_byte_out(device + 4, 0x0B);
+    port_write8(device + 1, 0x00);
+    port_write8(device + 3, 0x80); // enable divisor mode
+    port_write8(device + 0, 0x03); // div Low:  03 Set the port to 38400 bps
+    port_write8(device + 1, 0x00); // div High: 00
+    port_write8(device + 3, 0x03);
+    port_write8(device + 2, 0xC7);
+    port_write8(device + 4, 0x0B);
 }
 
 int serial_write(uint32_t port, void *buffer, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {
-        while (!(port_byte_in(port + 5) & 0x20))
+        while (!(port_read8(port + 5) & 0x20))
             process_sleep(process_get_pid(), 1);
-        port_byte_out(port, ((char *) buffer)[i]);
+        port_write8(port, ((char *) buffer)[i]);
     }
     return len;
 }
 
 int serial_read(uint32_t port, void *buffer, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {
-        while (!(port_byte_in(port + 5) & 1))
+        while (!(port_read8(port + 5) & 1))
             process_sleep(process_get_pid(), 1);
-        ((char *) buffer)[i] = port_byte_in(port);
+        ((char *) buffer)[i] = port_read8(port);
     }
     return len;
 }

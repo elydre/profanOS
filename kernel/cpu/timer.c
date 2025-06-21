@@ -45,9 +45,9 @@ int timer_init(void) {
     uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
 
     // send the command
-    port_byte_out(0x43, 0x36); // command port
-    port_byte_out(0x40, low);
-    port_byte_out(0x40, high);
+    port_write8(0x43, 0x36); // command port
+    port_write8(0x40, low);
+    port_write8(0x40, high);
 
     return 0;
 }

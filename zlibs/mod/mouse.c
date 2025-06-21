@@ -48,15 +48,15 @@ static void mouse_handler(registers_t *a_r) {
 
     switch(mouse_cycle) {
         case 0:
-            mouse_byte[0] = port_byte_in(0x60);
+            mouse_byte[0] = port_read8(0x60);
             mouse_cycle++;
             break;
         case 1:
-            mouse_byte[1] = port_byte_in(0x60);
+            mouse_byte[1] = port_read8(0x60);
             mouse_cycle++;
             break;
         case 2:
-            mouse_byte[2] = port_byte_in(0x60);
+            mouse_byte[2] = port_read8(0x60);
 
             // if those are set, it's a bad packet
             if ((mouse_byte[0] & 0x80) || (mouse_byte[0] & 0x40)) {
@@ -109,12 +109,12 @@ static void mouse_handler(registers_t *a_r) {
 }
 
 static void mouse_write(uint8_t a_write) {
-    port_byte_out(0x64, 0xD4);
-    port_byte_out(0x60, a_write);
+    port_write8(0x64, 0xD4);
+    port_write8(0x60, a_write);
 }
 
 static uint8_t mouse_read(void) {
-    return port_byte_in(0x60);
+    return port_read8(0x60);
 }
 
 int __init(void) {
@@ -126,13 +126,13 @@ int __init(void) {
     uint8_t status;
 
     // enable the auxiliary mouse device
-    port_byte_out(0x64, 0xA8);
+    port_write8(0x64, 0xA8);
 
     // enable the interrupts
-    port_byte_out(0x64, 0x20);
-    status = (port_byte_in(0x60) | 2);
-    port_byte_out(0x64, 0x60);
-    port_byte_out(0x60, status);
+    port_write8(0x64, 0x20);
+    status = (port_read8(0x60) | 2);
+    port_write8(0x64, 0x60);
+    port_write8(0x60, status);
 
     // tell the mouse to use default settings
     mouse_write(0xF6);
