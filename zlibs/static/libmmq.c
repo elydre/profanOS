@@ -245,27 +245,26 @@ void mmq_printf(int fd, const char *fmt, ...) {
     va_start(args, fmt);
     va_end(args);
 
-    for (int i = 0; fmt[i] != '\0';) {
-        if (fmt[i] == '%') {
-            i++;
-            if (fmt[i] == 's') {
-                char *tmp = va_arg(args, char *);
-                if (tmp == NULL)
-                    tmp = "(null)";
-                mmq_putstr(fd, tmp);
-            } else if (fmt[i] == 'c') {
-                mmq_putchar(fd, va_arg(args, int));
-            } else if (fmt[i] == 'd') {
-                mmq_putint(fd, va_arg(args, int));
-            } else if (fmt[i] == 'x' || fmt[i] == 'p') {
-                mmq_puthex(fd, va_arg(args, uint32_t));
-            } else {
-                mmq_putchar(fd, '%');
-            }
-        } else {
+    for (int i = 0; fmt[i] != '\0'; i++) {
+        if (fmt[i] != '%') {
             mmq_putchar(fd, fmt[i]);
+            continue;
         }
         i++;
+        if (fmt[i] == 's') {
+            char *tmp = va_arg(args, char *);
+            if (tmp == NULL)
+                tmp = "(null)";
+            mmq_putstr(fd, tmp);
+        } else if (fmt[i] == 'c') {
+            mmq_putchar(fd, va_arg(args, int));
+        } else if (fmt[i] == 'd') {
+            mmq_putint(fd, va_arg(args, int));
+        } else if (fmt[i] == 'x' || fmt[i] == 'p') {
+            mmq_puthex(fd, va_arg(args, uint32_t));
+        } else {
+            mmq_putchar(fd, '%');
+        }
     }
     va_end(args);
 }
