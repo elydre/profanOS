@@ -52,4 +52,6 @@ pci_device_t *pci_find(uint16_t vendor_id, uint16_t device_id);
 void pci_write_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t value);
 void pci_enable_bus_master(pci_device_t *pci);
 
+uint32_t pci_try_enable_msi(pci_device_t *pci);
+
 #endif

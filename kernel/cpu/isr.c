@@ -13,6 +13,7 @@
 #include <cpu/idt.h>
 #include <cpu/isr.h>
 #include <system.h>
+#include <minilib.h>
 
 extern void syscall_handler(registers_t *r);
 
@@ -114,7 +115,6 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 void irq_handler(registers_t *r) {
     /* after every interrupt we need to send an EOI to the PICs
      * or they will not send another interrupt again */
-
     if (r->int_no >= 40)
         port_byte_out(0xA0, 0x20); // slave
     port_byte_out(0x20, 0x20); // master
