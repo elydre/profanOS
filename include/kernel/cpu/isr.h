@@ -98,13 +98,11 @@ typedef struct {
    uint32_t eip, cs, eflags, useresp, ss;                // Pushed by the processor automatically.
 } registers_t;
 
-typedef void (*isr_t)(registers_t*);
+typedef void (*interrupt_handler_t)(registers_t*);
 
-void isr_handler(registers_t *r);
+int isr_install(void);
+int irq_install(void);
 
-int  isr_install(void);
-int  irq_install(void);
-
-void register_interrupt_handler(uint8_t n, isr_t handler);
+void interrupt_register_handler(uint8_t n, interrupt_handler_t handler);
 
 #endif

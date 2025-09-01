@@ -143,7 +143,7 @@ int __init(void) {
     mouse_read();  // acknowledge
 
     // setup the mouse handler
-    register_interrupt_handler(IRQ12, mouse_handler);
+    interrupt_register_handler(IRQ12, mouse_handler);
 
     mouse_reset();
     return 0;

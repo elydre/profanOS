@@ -37,7 +37,7 @@ int timer_init(void) {
     ticks = 1;
 
     // set the timer interrupt handler
-    register_interrupt_handler(IRQ0, timer_callback);
+    interrupt_register_handler(IRQ0, timer_callback);
 
     // get the PIT value: hardware clock at 1193180 Hz
     uint32_t divisor = 1193180 / RATE_TIMER_TICK;

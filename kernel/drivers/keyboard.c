@@ -76,7 +76,7 @@ static void keyboard_callback(registers_t *regs) {
 }
 
 int keyboard_init(void) {
-    register_interrupt_handler(IRQ1, keyboard_callback);
+    interrupt_register_handler(IRQ1, keyboard_callback);
     for (int i = 0; i < HISTORY_SIZE; i++) {
         sc_history[i] = 0;
     }

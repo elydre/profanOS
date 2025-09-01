@@ -17,19 +17,19 @@
 extern void syscall_handler(registers_t *r);
 extern void mod_syscall(registers_t *r);
 
-isr_t interrupt_handlers[256];
+interrupt_handler_t interrupt_handlers[256];
 
 int isr_install(void) {
-    set_idt_gate(0, isr0);
-    set_idt_gate(1, isr1);
-    set_idt_gate(2, isr2);
-    set_idt_gate(3, isr3);
-    set_idt_gate(4, isr4);
-    set_idt_gate(5, isr5);
-    set_idt_gate(6, isr6);
-    set_idt_gate(7, isr7);
-    set_idt_gate(8, isr8);
-    set_idt_gate(9, isr9);
+    set_idt_gate(0,  isr0);
+    set_idt_gate(1,  isr1);
+    set_idt_gate(2,  isr2);
+    set_idt_gate(3,  isr3);
+    set_idt_gate(4,  isr4);
+    set_idt_gate(5,  isr5);
+    set_idt_gate(6,  isr6);
+    set_idt_gate(7,  isr7);
+    set_idt_gate(8,  isr8);
+    set_idt_gate(9,  isr9);
     set_idt_gate(10, isr10);
     set_idt_gate(11, isr11);
     set_idt_gate(12, isr12);
@@ -91,11 +91,28 @@ int isr_install(void) {
     return 0;
 }
 
+void interrupts_block_except_irq0(void) {
+    asm volatile("cli");        // disable all interrupts
+
+    port_write8(0x21, 0xFE);    // allow only IRQ0
+    port_write8(0xA1, 0xFF);    // disable all IRQ8–15
+
+    asm volatile("sti");        // re-enable interrupts, but only IRQ0 will be handled
+}
+
+void interrupts_unblock(void) {
+    asm volatile("cli");        // disable all interrupts
+
+    port_write8(0x21, 0x00);    // allow all IRQs
+    port_write8(0xA1, 0x00);    // allow all IRQs
+
+    asm volatile("sti");        // re-enable interrupts
+}
+
 void isr_handler(registers_t *r) {
     int in_kernel = !sys_entry_kernel(1);
 
-    // restore interrupts
-    asm volatile("sti");
+    interrupts_block_except_irq0();
 
     r->int_no = r->int_no & 0xFF;
 
@@ -105,30 +122,37 @@ void isr_handler(registers_t *r) {
         else
             syscall_handler(r);
     } else {
-        sys_interrupt(r->int_no & 0xFF, r->err_code);
+        sys_interrupt(r->int_no, r->err_code);
     }
 
     if (in_kernel)
         sys_exit_kernel(1);
-}
 
-void register_interrupt_handler(uint8_t n, isr_t handler) {
-    interrupt_handlers[n] = handler;
+    interrupts_unblock();
 }
 
 void irq_handler(registers_t *r) {
     /* after every interrupt we need to send an EOI to the PICs
      * or they will not send another interrupt again */
 
+    interrupts_block_except_irq0();
+
     if (r->int_no >= 40)
         port_write8(0xA0, 0x20); // slave
-    port_write8(0x20, 0x20); // master
+    port_write8(0x20, 0x20);     // master
 
     // handle the interrupt in a more modular way
-    if (interrupt_handlers[r->int_no] != 0) {
-        isr_t handler = interrupt_handlers[r->int_no];
+    interrupt_handler_t handler = interrupt_handlers[r->int_no];
+
+    if (handler != NULL)
         handler(r);
-    }
+
+    interrupts_unblock();
+}
+
+
+void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
+    interrupt_handlers[n] = handler;
 }
 
 int irq_install(void) {
