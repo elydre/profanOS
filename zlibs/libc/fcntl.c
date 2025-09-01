@@ -37,7 +37,7 @@ int open(const char *path, int flags, ...) {
 }
 
 int creat(const char *file, mode_t mode) {
-    return (PROFAN_FNI, -1);
+    return open(file, O_WRONLY | O_CREAT | O_TRUNC, mode);
 }
 
 int fcntl(int fd, int cmd, ...) {
