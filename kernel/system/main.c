@@ -61,7 +61,7 @@ void kernel_main(void *mboot_ptr) {
 
     status_print(mod_init,      "Loading kernel modules");
 
-    kprintf("Kernel finished booting in %d ms\n", timer_get_ticks());
+    kprintf("Kernel finished booting in %d ms\n", timer_get_ms());
 
     // launch of the default program
     elf_start(RUN_DEF_PATH, 1, (char *[]){RUN_DEF_NAME, NULL}, NULL);

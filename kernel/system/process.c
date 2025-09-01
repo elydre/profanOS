@@ -19,8 +19,7 @@
 
 #define SHDLR_ENBL 0    // scheduler enabled
 #define SHDLR_RUNN 1    // scheduler running
-#define SHDLR_DISL 2    // scheduler disabled
-#define SHDLR_DEAD 3    // scheduler dead
+#define SHDLR_DEAD 2    // not initialized yet
 
 #define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
 
@@ -40,7 +39,6 @@ process_t **g_shdlr_queue;
 
 // scheduler state
 uint8_t g_scheduler_state = SHDLR_DEAD;
-int g_scheduler_disable_count;
 
 // need to clean killed processes
 uint8_t g_need_clean;
@@ -102,17 +100,16 @@ static int i_pid_to_place(uint32_t pid) {
 void i_end_scheduler(void) {
     if (IN_KERNEL != g_proc_current->in_kernel) {
         if (g_proc_current->in_kernel) {
-            sys_entry_kernel(0);
+            sys_entry_kernel();
         } else {
-            sys_exit_kernel(0);
+            sys_exit_kernel();
         }
     }
 
-    if (g_scheduler_state == SHDLR_RUNN) {
-        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
-    } else {
+    if (g_scheduler_state != SHDLR_RUNN)
         sys_fatal("Scheduler is not running but scheduler is exiting");
-    }
+
+    g_scheduler_state = SHDLR_ENBL;
 }
 
 static void i_process_switch(process_t *proc1, process_t *proc2) {
@@ -297,8 +294,7 @@ int process_init(void) {
     kern_proc->scuba_dir = scuba_get_kernel_dir();
 
     // enable scheduler
-    g_scheduler_state = SHDLR_DISL;
-    g_scheduler_disable_count = 1;
+    g_scheduler_state = SHDLR_ENBL;
 
     // create idle process
     process_create(idle_process, 0, 0, NULL);
@@ -425,7 +421,7 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         plist[place].sleep_to = 0;
     } else {
         // convert ms to ticks
-        plist[place].sleep_to = timer_get_ticks() + (ms * 1000 / RATE_TIMER_TICK);
+        plist[place].sleep_to = TIMER_TICKS + (ms * 1000 / RATE_TIMER_TICK);
         g_tsleep_list[g_tsleep_list_length] = plist + place;
         g_tsleep_list_length++;
         i_refresh_tsleep_interact();
@@ -632,36 +628,17 @@ int process_wait(int pid, uint8_t *retcode, int block) {
  *                       *
 **************************/
 
-int process_auto_schedule(int acitve) {
-    if (!acitve) {
-        g_scheduler_disable_count++;
-        if (g_scheduler_state == SHDLR_ENBL) {
-            g_scheduler_state = SHDLR_DISL;
-        }
-    } else {
-        g_scheduler_disable_count--;
-        if (g_scheduler_disable_count < 0)
-            g_scheduler_disable_count = 0;
-        if (g_scheduler_state == SHDLR_DISL && !g_scheduler_disable_count) {
-            g_scheduler_state = SHDLR_ENBL;
-            if (timer_get_ticks() - g_last_switch > SCHEDULER_EVRY) {
-                schedule(0);
-            }
-        }
-    }
-
-    return 0;
-}
-
 void schedule(uint32_t ticks) {
-    if (ticks && g_scheduler_state != SHDLR_ENBL) {
+    if (g_scheduler_state != SHDLR_ENBL) {
+        sys_fatal("Scheduler triggered but not enabled");
         return;
     }
+
 
     g_scheduler_state = SHDLR_RUNN;
 
     if (ticks == 0) {   // manual schedule
-        ticks = timer_get_ticks();
+        ticks = TIMER_TICKS;
     } else if (g_tsleep_interact && g_tsleep_interact <= ticks) {
         i_tsleep_awake(ticks);
     } else if (ticks % SCHEDULER_EVRY) {
@@ -692,7 +669,7 @@ void schedule(uint32_t ticks) {
     g_last_switch = ticks;
 
     if (proc == g_proc_current) {
-        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
+        g_scheduler_state = SHDLR_ENBL;
         return;
     }
 

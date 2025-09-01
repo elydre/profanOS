@@ -15,26 +15,22 @@
 #include <cpu/isr.h>
 #include <system.h>
 
-uint32_t ticks;
+uint32_t TIMER_TICKS;
 
 static void timer_callback(registers_t *regs) {
     (void) regs;
 
-    ticks++;
+    TIMER_TICKS++;
 
-    schedule(ticks);
-}
-
-uint32_t timer_get_ticks(void) {
-    return ticks;
+    schedule(TIMER_TICKS);
 }
 
 uint32_t timer_get_ms(void) {
-    return ticks * 1000 / RATE_TIMER_TICK;
+    return TIMER_TICKS * 1000 / RATE_TIMER_TICK;
 }
 
 int timer_init(void) {
-    ticks = 1;
+    TIMER_TICKS = 1;
 
     // set the timer interrupt handler
     interrupt_register_handler(IRQ0, timer_callback);

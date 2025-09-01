@@ -88,26 +88,25 @@ void kernel_exit_current(void) {
 
 uint8_t IN_KERNEL = 1;
 
-int sys_entry_kernel(int tolerate_error) {
-    if (IN_KERNEL) {
-        if (tolerate_error)
-            return 1;
+void sys_entry_kernel(void) {
+    if (IN_KERNEL)
         sys_fatal("Already in kernel mode");
-    }
-    process_auto_schedule(0); // lock before entering kernel
+
+    interrupts_block_except_irq0();
+
     IN_KERNEL = 1;
-    return 0;
+
+   // kprintf_serial("-> KERNEL\n");
 }
 
-int sys_exit_kernel(int tolerate_error) {
-    if (!IN_KERNEL) {
-        if (tolerate_error)
-            return 1;
+void sys_exit_kernel(void) {
+    if (!IN_KERNEL)
         sys_fatal("Already in user mode");
-    }
+
     IN_KERNEL = 0;
-    process_auto_schedule(1); // unlock after exiting kernel
-    return 0;
+   // kprintf_serial("<- KERNEL\n");
+
+    interrupts_allow_all();
 }
 
 /********************************

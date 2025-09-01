@@ -630,8 +630,6 @@ void panda_screen_restore(void *data) {
 
     draw_cursor(1);
 
-    syscall_process_auto_schedule(0);
-
     // restore font
     g_panda->font->data = mmq_realloc_ask( g_panda->font->data, source->font->charcount * source->font->charsize);
     mmq_memcpy(g_panda->font->data, source->font->data, source->font->charcount * source->font->charsize);
@@ -654,8 +652,6 @@ void panda_screen_restore(void *data) {
     g_panda->cursor_x = source->cursor_x;
     g_panda->cursor_y = source->cursor_y;
     g_panda->color = source->color;
-
-    syscall_process_auto_schedule(1);
 
     for (int i = 0; i < g_panda->max_lines; i++) {
         for (int j = 0; j < g_panda->max_cols; j++) {
@@ -681,6 +677,7 @@ void panda_screen_kfree(void *data) {
 }
 
 int __init(void) {
+    return 0;
     if (!syscall_vesa_state()) {
         mmq_printf(2, "[panda] VESA is not enabled\n");
         g_panda = NULL;

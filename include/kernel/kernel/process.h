@@ -67,9 +67,6 @@ int process_sleep(uint32_t pid, uint32_t ms);
 int process_wait(int pid, uint8_t *retcode, int block); // negative pid for any child
 int process_kill(uint32_t pid, uint8_t retcode);
 
-// scheduler control
-int process_auto_schedule(int state);
-
 // process info
 uint32_t process_get_pid(void);
 

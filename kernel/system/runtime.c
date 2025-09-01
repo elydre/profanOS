@@ -115,9 +115,9 @@ int elf_exec(uint32_t sid, char **argv, char **envp) {
     free(file);
 
     // call the entry point
-    sys_exit_kernel(0);
+    sys_exit_kernel();
     int ret = ((int (*)(int, char **, char **)) entry)(argc, argv, envp);
-    sys_entry_kernel(0);
+    sys_entry_kernel();
 
     return process_kill(process_get_pid(), ret);
 }

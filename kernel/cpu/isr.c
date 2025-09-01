@@ -10,8 +10,10 @@
 \*****************************************************************************/
 
 #include <cpu/ports.h>
+#include <cpu/timer.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
+#include <minilib.h>
 #include <system.h>
 
 extern void syscall_handler(registers_t *r);
@@ -100,7 +102,7 @@ void interrupts_block_except_irq0(void) {
     asm volatile("sti");        // re-enable interrupts, but only IRQ0 will be handled
 }
 
-void interrupts_unblock(void) {
+void interrupts_allow_all(void) {
     asm volatile("cli");        // disable all interrupts
 
     port_write8(0x21, 0x00);    // allow all IRQs
@@ -110,11 +112,16 @@ void interrupts_unblock(void) {
 }
 
 void isr_handler(registers_t *r) {
-    int in_kernel = !sys_entry_kernel(1);
-
-    interrupts_block_except_irq0();
-
     r->int_no = r->int_no & 0xFF;
+
+    // kprintf_serial("received ISR %d from cpu\n", r->int_no);
+
+    // understandable error for display
+    if (r->int_no == 128 && IN_KERNEL) {
+        sys_fatal("syscall from kernel mode (%x)", r->eax);
+    }
+
+    sys_entry_kernel();
 
     if (r->int_no == 128) {
         if (r->eax & 0xFF000000)
@@ -125,29 +132,32 @@ void isr_handler(registers_t *r) {
         sys_interrupt(r->int_no, r->err_code);
     }
 
-    if (in_kernel)
-        sys_exit_kernel(1);
-
-    interrupts_unblock();
+    sys_exit_kernel();
 }
 
 void irq_handler(registers_t *r) {
-    /* after every interrupt we need to send an EOI to the PICs
-     * or they will not send another interrupt again */
+    // kprintf_serial("received IRQ %d from cpu (%d)\n", r->int_no, IN_KERNEL);
 
-    interrupts_block_except_irq0();
+    if (r->int_no == 32 && IN_KERNEL) {
+        TIMER_TICKS++;
+        port_write8(0x20, 0x20);
+        return;
+    }
+
+    sys_entry_kernel();
+
+    // send EOI to the PIC to allow further interrupts
 
     if (r->int_no >= 40)
         port_write8(0xA0, 0x20); // slave
     port_write8(0x20, 0x20);     // master
 
-    // handle the interrupt in a more modular way
     interrupt_handler_t handler = interrupt_handlers[r->int_no];
 
     if (handler != NULL)
         handler(r);
 
-    interrupts_unblock();
+    sys_exit_kernel();
 }
 
 
@@ -156,7 +166,6 @@ void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
 }
 
 int irq_install(void) {
-    // enable interruptions
-    asm volatile("sti");
+    interrupts_block_except_irq0();
     return 0;
 }

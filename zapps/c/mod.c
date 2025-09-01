@@ -41,9 +41,7 @@ int main(int argc, char **argv) {
     if (carp_isset('u')) {
         printf("mod: unloading %d...\n", id);
 
-        syscall_process_auto_schedule(0);
         syscall_mod_unload(id);
-        syscall_process_auto_schedule(1);
         return 0;
     }
 
