@@ -23,6 +23,8 @@
 
 #include "config_libc.h"
 
+#define MKTEMP_LETTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 static uint32_t g_rand_seed = 0;
 
 static void **g_atexit_funcs = NULL;
@@ -377,11 +379,9 @@ size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
 int mkstemp(char *template) {
     int len, index;
 
-    char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
     // the last six characters of template must be "XXXXXX"
-    if (template == NULL || (len = strlen (template)) < 6 ||
-            memcmp (template + (len - 6), "XXXXXX", 6)) {
+    if (template == NULL || (len = strlen(template)) < 6 ||
+            memcmp(template + (len - 6), "XXXXXX", 6)) {
         errno = EINVAL;
         return -1;
     }
@@ -391,7 +391,7 @@ int mkstemp(char *template) {
 
     for (int i = 0; i < 1000; i++) {
         for (int j = index; j < len; j++)
-            template[j] = letters[rand () % 62];
+            template[j] = MKTEMP_LETTERS[rand () % 62];
 
         int fd = open(template, O_RDWR | O_CREAT, 0644);
 
@@ -405,7 +405,32 @@ int mkstemp(char *template) {
 }
 
 char *mktemp(char *template) {
-    return (PROFAN_FNI, NULL);
+    // mkstemp is preferred over mktemp
+
+    int len, index;
+
+    if (template == NULL)
+        return NULL;
+
+    // the last six characters of template must be "XXXXXX"
+    if ((len = strlen(template)) < 6 || memcmp(template + (len - 6), "XXXXXX", 6)) {
+        *template = '\0';
+        return template;
+    }
+
+    // user may supply more than six trailing X
+    for (index = len - 6; index > 0 && template[index - 1] == 'X'; index--);
+
+    for (int i = 0; i < 1000; i++) {
+        for (int j = index; j < len; j++)
+            template[j] = MKTEMP_LETTERS[rand () % 62];
+
+        if (IS_SID_NULL(profan_path_resolve(template)))
+            return template;
+    }
+
+    *template = '\0';
+    return template;
 }
 
 int putenv(char *string) {
