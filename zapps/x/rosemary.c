@@ -38,7 +38,7 @@ mod_t mods_at_boot[] = {
     {4, "/lib/mod/fmopen.pkm"},
     {5, "/lib/mod/profan.pkm"},
     {6, "/lib/mod/panda.pkm"},
-    {9, "/lib/mod/mouse.pkm"},
+//  {9, "/lib/mod/mouse.pkm"},
 };
 
 int local_strlen(char *str) {

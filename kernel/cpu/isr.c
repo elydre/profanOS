@@ -116,12 +116,17 @@ void isr_handler(registers_t *r) {
 
     // kprintf_serial("received ISR %d from cpu\n", r->int_no);
 
-    // understandable error for display
-    if (r->int_no == 128 && IN_KERNEL) {
-        sys_fatal("syscall from kernel mode (%x)", r->eax);
-    }
+    int need_unlook = 0;
 
-    sys_entry_kernel();
+    if (IN_KERNEL) {
+        // understandable error for display
+        if (r->int_no == 128) {
+            sys_fatal("syscall from kernel mode (%x)", r->eax);
+        }
+    } else {
+        sys_entry_kernel();
+        need_unlook = 1;
+    }
 
     if (r->int_no == 128) {
         if (r->eax & 0xFF000000)
@@ -132,11 +137,13 @@ void isr_handler(registers_t *r) {
         sys_interrupt(r->int_no, r->err_code);
     }
 
-    sys_exit_kernel();
+    if (need_unlook)
+        sys_exit_kernel();
 }
 
 void irq_handler(registers_t *r) {
-    // kprintf_serial("received IRQ %d from cpu (%d)\n", r->int_no, IN_KERNEL);
+    if (r->int_no != 32)
+        kprintf_serial("received IRQ %d from cpu (%d)\n", r->int_no, IN_KERNEL);
 
     if (r->int_no == 32 && IN_KERNEL) {
         TIMER_TICKS++;
@@ -147,7 +154,6 @@ void irq_handler(registers_t *r) {
     sys_entry_kernel();
 
     // send EOI to the PIC to allow further interrupts
-
     if (r->int_no >= 40)
         port_write8(0xA0, 0x20); // slave
     port_write8(0x20, 0x20);     // master
