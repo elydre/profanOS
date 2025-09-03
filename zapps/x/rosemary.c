@@ -164,11 +164,11 @@ int main(void) {
 
     if (syscall_vesa_state()) {
         panda_set_start(syscall_get_cursor());
-        /* if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
+        if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
             fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
             fm_reopen(2, "/dev/pander", O_WRONLY) < 0
         ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
-        set_env("TERM=/dev/panda"); */
+        set_env("TERM=/dev/panda");
         if (START_USAGE_GRAPH) {
             args = (runtime_args_t){
                 .path = "/bin/g/usage.elf",

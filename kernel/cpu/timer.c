@@ -20,8 +20,6 @@ uint32_t TIMER_TICKS;
 static void timer_callback(registers_t *regs) {
     (void) regs;
 
-    TIMER_TICKS++;
-
     schedule(TIMER_TICKS);
 }
 

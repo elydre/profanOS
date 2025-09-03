@@ -11,12 +11,12 @@
 
 // @LINK: libmmq
 
-#undef _KERNEL_MODULE
+#include <kernel/butterfly.h>
+#include <kernel/snowflake.h>
+#include <kernel/afft.h>
 
-#include <profan/libmmq.h>
-
-#include <profan/syscall.h>
-#include <profan/filesys.h>
+#include <gui/vesa.h>
+#include <minilib.h>
 
 #define _PANDA_C
 #include <profan/panda.h>
@@ -76,21 +76,21 @@ static font_data_t *load_psf_font(uint32_t sid) {
     uint32_t height;
     uint32_t width;
 
-    fu_file_read(sid, &magic, 0, 4);
-    fu_file_read(sid, &version, 4, 4);
-    fu_file_read(sid, &headersize, 8, 4);
-    fu_file_read(sid, &charcount, 16, 4);
-    fu_file_read(sid, &charsize, 20, 4);
-    fu_file_read(sid, &height, 24, 4);
-    fu_file_read(sid, &width, 28, 4);
+    fs_cnt_read(sid, &magic, 0, 4);
+    fs_cnt_read(sid, &version, 4, 4);
+    fs_cnt_read(sid, &headersize, 8, 4);
+    fs_cnt_read(sid, &charcount, 16, 4);
+    fs_cnt_read(sid, &charsize, 20, 4);
+    fs_cnt_read(sid, &height, 24, 4);
+    fs_cnt_read(sid, &width, 28, 4);
 
     if (magic != 0x864ab572 || version != 0)
         return NULL;
 
-    uint8_t *font = mmq_malloc_ask(charcount * charsize);
-    fu_file_read(sid, font, headersize, charcount * charsize);
+    uint8_t *font = malloc(charcount * charsize);
+    fs_cnt_read(sid, font, headersize, charcount * charsize);
 
-    font_data_t *psf = mmq_malloc_ask(sizeof(font_data_t));
+    font_data_t *psf = malloc(sizeof(font_data_t));
     psf->width = width;
     psf->height = height;
     psf->charcount = charcount;
@@ -101,8 +101,8 @@ static font_data_t *load_psf_font(uint32_t sid) {
 }
 
 static void free_font(font_data_t *pff) {
-    mmq_free(pff->data);
-    mmq_free(pff);
+    free(pff->data);
+    free(pff);
 }
 
 static inline uint32_t compute_color(uint8_t color) {
@@ -547,7 +547,7 @@ void panda_set_start(int kernel_cursor) {
     if (!g_panda)
         return;
 
-    uint32_t kmax_cols = syscall_vesa_width() / 8;
+    uint32_t kmax_cols = vesa_get_info(0) / 8;
 
     g_panda->cursor_x = 0;
     g_panda->cursor_y = ((offset_to_cursor_y(kernel_cursor, kmax_cols) + 1) * 16) / g_panda->font->height;
@@ -594,9 +594,9 @@ int panda_change_font(uint32_t sid) {
     panda_clear_screen();
     free_font(g_panda->font);
     g_panda->font = font;
-    g_panda->max_lines = syscall_vesa_height() / g_panda->font->height;
-    g_panda->max_cols = syscall_vesa_width() / g_panda->font->width;
-    g_panda->screen_buffer = mmq_realloc_ask(g_panda->screen_buffer,
+    g_panda->max_lines = vesa_get_info(1) / g_panda->font->height;
+    g_panda->max_cols = vesa_get_info(0) / g_panda->font->width;
+    g_panda->screen_buffer = realloc(g_panda->screen_buffer,
             g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
 
     return 0;
@@ -606,16 +606,16 @@ void *panda_screen_backup(void) {
     if (!g_panda)
         return NULL;
 
-    font_data_t *font = mmq_malloc(sizeof(font_data_t));
-    mmq_memcpy(font, g_panda->font, sizeof(font_data_t));
-    font->data = mmq_malloc(font->charcount * font->charsize);
-    mmq_memcpy(font->data, g_panda->font->data, font->charcount * font->charsize);
+    font_data_t *font = mem_alloc(sizeof(font_data_t), SNOW_SIMPLE, 0);
+    mem_copy(font, g_panda->font, sizeof(font_data_t));
+    font->data = mem_alloc(font->charcount * font->charsize, SNOW_SIMPLE, 0);
+    mem_copy(font->data, g_panda->font->data, font->charcount * font->charsize);
 
-    screen_char_t *screen = mmq_malloc(g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
-    mmq_memcpy(screen, g_panda->screen_buffer, g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
+    screen_char_t *screen = mem_alloc(g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t), SNOW_SIMPLE, 0);
+    mem_copy(screen, g_panda->screen_buffer, g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
 
-    panda_global_t *panda = mmq_malloc(sizeof(panda_global_t));
-    mmq_memcpy(panda, g_panda, sizeof(panda_global_t));
+    panda_global_t *panda = mem_alloc(sizeof(panda_global_t), SNOW_SIMPLE, 0);
+    mem_copy(panda, g_panda, sizeof(panda_global_t));
     panda->font = font;
     panda->screen_buffer = screen;
 
@@ -631,17 +631,17 @@ void panda_screen_restore(void *data) {
     draw_cursor(1);
 
     // restore font
-    g_panda->font->data = mmq_realloc_ask( g_panda->font->data, source->font->charcount * source->font->charsize);
-    mmq_memcpy(g_panda->font->data, source->font->data, source->font->charcount * source->font->charsize);
+    g_panda->font->data = realloc( g_panda->font->data, source->font->charcount * source->font->charsize);
+    mem_copy(g_panda->font->data, source->font->data, source->font->charcount * source->font->charsize);
     g_panda->font->charcount = source->font->charcount;
     g_panda->font->charsize = source->font->charsize;
     g_panda->font->height = source->font->height;
     g_panda->font->width = source->font->width;
 
     // restore screen buffer
-    g_panda->screen_buffer = mmq_realloc_ask(g_panda->screen_buffer,
+    g_panda->screen_buffer = realloc(g_panda->screen_buffer,
             source->max_lines * source->max_cols * sizeof(screen_char_t));
-    mmq_memcpy(g_panda->screen_buffer, source->screen_buffer,
+    mem_copy(g_panda->screen_buffer, source->screen_buffer,
             source->max_lines * source->max_cols * sizeof(screen_char_t));
 
     // restore other fields
@@ -672,24 +672,55 @@ void panda_screen_kfree(void *data) {
         return;
 
     free_font(panda->font);
-    mmq_free(panda->screen_buffer);
-    mmq_free(panda);
+    free(panda->screen_buffer);
+    free(panda);
+}
+
+static int dev_panda_r(void *buffer, uint32_t offset, uint32_t size) {
+    UNUSED(buffer);
+    UNUSED(offset);
+    UNUSED(size);
+
+    // TODO: Implement reading from the panda terminal
+    return 0;
+}
+
+static int dev_panda_w(void *buffer, uint32_t offset, uint32_t size) {
+    UNUSED(offset);
+
+    panda_print_string((char *) buffer, size, -1, 0x0F);
+
+    return size;
+}
+
+static int dev_pander_w(void *buffer, uint32_t offset, uint32_t size) {
+    UNUSED(offset);
+
+    static uint8_t color = 0x0C;
+
+    color = panda_print_string((char *) buffer, size, color, 0x0C);
+    return size;
+}
+
+static int setup_afft(const char *name, void *write) {
+    int afft_id = afft_register(AFFT_AUTO, dev_panda_r, write, NULL);
+
+    return (afft_id == -1 || kfu_afft_create("/dev", name, afft_id) == SID_NULL);
 }
 
 int __init(void) {
-    return 0;
-    if (!syscall_vesa_state()) {
-        mmq_printf(2, "[panda] VESA is not enabled\n");
+    if (!vesa_get_info(4)) {
+        kprintf("[panda] VESA is not enabled\n");
         g_panda = NULL;
         return 1;
     }
 
-    g_panda = mmq_malloc_ask(sizeof(panda_global_t));
-    g_panda->font = load_psf_font(fu_path_to_sid(SID_ROOT, DEFAULT_FONT));
+    g_panda = malloc(sizeof(panda_global_t));
+    g_panda->font = load_psf_font(kfu_path_to_sid(SID_ROOT, DEFAULT_FONT));
 
     if (g_panda->font == NULL) {
-        mmq_printf(2, "[panda] Failed to load font\n");
-        mmq_free(g_panda);
+        kprintf("[panda] Failed to load font\n");
+        free(g_panda);
         g_panda = NULL;
         return 1;
     }
@@ -706,13 +737,13 @@ int __init(void) {
     g_panda->always_bright = 0;
     g_panda->color = 0x0F;
 
-    g_panda->max_lines = syscall_vesa_height() / g_panda->font->height;
-    g_panda->max_cols = syscall_vesa_width() / g_panda->font->width;
+    g_panda->max_lines = vesa_get_info(1) / g_panda->font->height;
+    g_panda->max_cols = vesa_get_info(0) / g_panda->font->width;
 
-    g_panda->fb = syscall_vesa_fb();
-    g_panda->pitch = syscall_vesa_pitch();
+    g_panda->fb = (void *) vesa_get_info(3);
+    g_panda->pitch = vesa_get_info(2);
 
-    g_panda->screen_buffer = mmq_calloc_ask(g_panda->max_lines * g_panda->max_cols, sizeof(screen_char_t));
+    g_panda->screen_buffer = calloc(g_panda->max_lines * g_panda->max_cols * sizeof(screen_char_t));
 
-    return 0;
+    return (setup_afft("panda", dev_panda_w) || setup_afft("pander", dev_pander_w));
 }

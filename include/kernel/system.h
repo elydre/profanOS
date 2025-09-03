@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 12"
+#define KERNEL_VERSION  "1.3 beta 13"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     64          // max process count
@@ -42,7 +42,7 @@ void kernel_exit_current(void);
 extern uint8_t IN_KERNEL;
 
 void sys_entry_kernel(void);
-void sys_exit_kernel(void);
+void sys_exit_kernel(int restore_pic);
 
 extern char sys_safe_buffer[256];
 int sys_set_reporter(int (*reporter)(char *));

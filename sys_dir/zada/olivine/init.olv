@@ -70,3 +70,8 @@ FUNC time
 
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
+
+FUNC f
+    FOR i !(range 100000)
+    END
+END

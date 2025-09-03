@@ -88,25 +88,51 @@ void kernel_exit_current(void) {
 
 uint8_t IN_KERNEL = 1;
 
+uint32_t g_in_kernel_total = 0;
+uint32_t g_last_entry = 0;
+
 void sys_entry_kernel(void) {
+    asm volatile("cli");        // disable all interrupts
+
     if (IN_KERNEL)
         sys_fatal("Already in kernel mode");
 
-    interrupts_block_except_irq0();
-
     IN_KERNEL = 1;
 
+    g_last_entry = TIMER_TICKS;
+
    // kprintf_serial("-> KERNEL\n");
+
+    port_write8(0x21, 0xFE);    // allow only IRQ0
+    port_write8(0xA1, 0xFF);    // disable all IRQ8–15
+
+    asm volatile("sti");        // re-enable interrupts, but only IRQ0 will be handled
 }
 
-void sys_exit_kernel(void) {
+void sys_exit_kernel(int restore_pic) {
+    asm volatile("cli");        // disable all interrupts
+
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
+
+    schedule_if_needed();
 
     IN_KERNEL = 0;
    // kprintf_serial("<- KERNEL\n");
 
-    interrupts_allow_all();
+    g_in_kernel_total += TIMER_TICKS - g_last_entry;
+    kprintf_serial("TOTAL time: %d, Kernel time: %d\n", TIMER_TICKS, g_in_kernel_total);
+
+    port_write8(0x21, 0x00);    // allow all IRQs
+    port_write8(0xA1, 0x00);    // allow all IRQs
+
+    if (restore_pic) {
+        if (restore_pic > 40)
+            port_write8(0xA0, 0x20); // slave
+        port_write8(0x20, 0x20);     // master
+    }
+
+    asm volatile("sti");        // re-enable interrupts
 }
 
 /********************************

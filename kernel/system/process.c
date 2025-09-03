@@ -102,7 +102,7 @@ void i_end_scheduler(void) {
         if (g_proc_current->in_kernel) {
             sys_entry_kernel();
         } else {
-            sys_exit_kernel();
+            sys_exit_kernel(0);
         }
     }
 
@@ -634,7 +634,6 @@ void schedule(uint32_t ticks) {
         return;
     }
 
-
     g_scheduler_state = SHDLR_RUNN;
 
     if (ticks == 0) {   // manual schedule
@@ -674,6 +673,13 @@ void schedule(uint32_t ticks) {
     }
 
     i_process_switch(g_proc_current, proc);
+}
+
+void schedule_if_needed(void) {
+    if (TIMER_TICKS - g_last_switch > SCHEDULER_EVRY) {
+        kprintf_serial("FORCE SCHEDULE\n");
+        schedule(0);
+    }
 }
 
 /**************************

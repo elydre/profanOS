@@ -93,24 +93,6 @@ int isr_install(void) {
     return 0;
 }
 
-void interrupts_block_except_irq0(void) {
-    asm volatile("cli");        // disable all interrupts
-
-    port_write8(0x21, 0xFE);    // allow only IRQ0
-    port_write8(0xA1, 0xFF);    // disable all IRQ8–15
-
-    asm volatile("sti");        // re-enable interrupts, but only IRQ0 will be handled
-}
-
-void interrupts_allow_all(void) {
-    asm volatile("cli");        // disable all interrupts
-
-    port_write8(0x21, 0x00);    // allow all IRQs
-    port_write8(0xA1, 0x00);    // allow all IRQs
-
-    asm volatile("sti");        // re-enable interrupts
-}
-
 void isr_handler(registers_t *r) {
     r->int_no = r->int_no & 0xFF;
 
@@ -138,40 +120,39 @@ void isr_handler(registers_t *r) {
     }
 
     if (need_unlook)
-        sys_exit_kernel();
+        sys_exit_kernel(0);
 }
 
 void irq_handler(registers_t *r) {
     if (r->int_no != 32)
         kprintf_serial("received IRQ %d from cpu (%d)\n", r->int_no, IN_KERNEL);
 
-    if (r->int_no == 32 && IN_KERNEL) {
+    if (r->int_no == 32) {
         TIMER_TICKS++;
         port_write8(0x20, 0x20);
-        return;
+        if (IN_KERNEL)
+            return;
     }
 
     sys_entry_kernel();
-
-    // send EOI to the PIC to allow further interrupts
-    if (r->int_no >= 40)
-        port_write8(0xA0, 0x20); // slave
-    port_write8(0x20, 0x20);     // master
 
     interrupt_handler_t handler = interrupt_handlers[r->int_no];
 
     if (handler != NULL)
         handler(r);
 
-    sys_exit_kernel();
+    sys_exit_kernel(r->int_no == 32 ? 0 : r->int_no + 1);
 }
-
 
 void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
     interrupt_handlers[n] = handler;
 }
 
 int irq_install(void) {
-    interrupts_block_except_irq0();
+    port_write8(0x21, 0xFE);    // allow only IRQ0
+    port_write8(0xA1, 0xFF);    // disable all IRQ8–15
+
+    asm volatile("sti");        // enable interrupts, but only IRQ0 will be handled
+
     return 0;
 }

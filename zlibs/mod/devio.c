@@ -97,34 +97,6 @@ int dev_kterm_w(void *buffer, uint32_t offset, uint32_t size) {
     return size;
 }
 
-int dev_panda_r(void *buffer, uint32_t offset, uint32_t size) {
-    UNUSED(buffer);
-    UNUSED(offset);
-    UNUSED(size);
-
-    // TODO: Implement reading from the panda terminal
-    return 0;
-}
-
-#include <profan/panda.h>
-
-int dev_panda_w(void *buffer, uint32_t offset, uint32_t size) {
-    UNUSED(offset);
-
-    panda_print_string((char *) buffer, size, -1, 0x0F);
-
-    return size;
-}
-
-int dev_pander_w(void *buffer, uint32_t offset, uint32_t size) {
-    UNUSED(offset);
-
-    static uint8_t color = 0x0C;
-
-    color = panda_print_string((char *) buffer, size, color, 0x0C);
-    return size;
-}
-
 int dev_stdin_r(void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
 
@@ -155,8 +127,6 @@ int __init(void) {
         setup_afft("zero", dev_zero_r, dev_null_w, NULL) ||
         setup_afft("rand", dev_rand_r, NULL, NULL) ||
         setup_afft("kterm", dev_kterm_r, dev_kterm_w, NULL) ||
-        setup_afft("panda", dev_panda_r, dev_panda_w, NULL) ||
-        setup_afft("pander", dev_panda_r, dev_pander_w, NULL) ||
         setup_afft("stdin", dev_stdin_r, NULL, NULL) ||
         setup_afft("stdout", NULL, dev_stdout_w, NULL) ||
         setup_afft("stderr", NULL, dev_stderr_w, NULL)
