@@ -759,6 +759,8 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
         case PROC_INFO_SLEEP_TO:
             return plist[place].sleep_to;
         case PROC_INFO_RUN_TIME:
+            if (pid == 0)
+                return sys_get_kernel_time();
             return plist[place].run_time;
         case PROC_INFO_NAME:
             return (int) plist[place].name;

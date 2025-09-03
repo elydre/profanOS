@@ -101,8 +101,6 @@ void sys_entry_kernel(void) {
 
     g_last_entry = TIMER_TICKS;
 
-   // kprintf_serial("-> KERNEL\n");
-
     port_write8(0x21, 0xFE);    // allow only IRQ0
     port_write8(0xA1, 0xFF);    // disable all IRQ8–15
 
@@ -118,10 +116,9 @@ void sys_exit_kernel(int restore_pic) {
     schedule_if_needed();
 
     IN_KERNEL = 0;
-   // kprintf_serial("<- KERNEL\n");
 
     g_in_kernel_total += TIMER_TICKS - g_last_entry;
-    kprintf_serial("TOTAL time: %d, Kernel time: %d\n", TIMER_TICKS, g_in_kernel_total);
+    // kprintf_serial("TOTAL time: %d, Kernel time: %d\n", TIMER_TICKS, g_in_kernel_total);
 
     port_write8(0x21, 0x00);    // allow all IRQs
     port_write8(0xA1, 0x00);    // allow all IRQs
@@ -133,6 +130,10 @@ void sys_exit_kernel(int restore_pic) {
     }
 
     asm volatile("sti");        // re-enable interrupts
+}
+
+uint32_t sys_get_kernel_time(void) {
+    return g_in_kernel_total + (TIMER_TICKS - g_last_entry);
 }
 
 /********************************
@@ -324,9 +325,10 @@ int sys_init(void) {
  *                             *
 ********************************/
 
-void sys_kinfo(char *buffer, int size) {
+char *sys_kinfo(char *buffer, int size) {
     str_ncpy(buffer, KERNEL_EDITING " " KERNEL_VERSION, size - 1);
     buffer[size - 1] = 0;
+    return buffer;
 }
 
 /********************************
