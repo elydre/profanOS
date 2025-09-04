@@ -72,7 +72,7 @@ int main(void) {
     tick_count[0] = syscall_timer_get_ms();
     tick_count[3] = 0;
 
-    vgui_t vgui = vgui_setup(320, 200);
+    vgui_t vgui = vgui_setup(0, 0, 320, 200);
     while (1) {
         tick_count[1] = syscall_timer_get_ms() - tick_count[0];
         tick_count[0] = syscall_timer_get_ms();

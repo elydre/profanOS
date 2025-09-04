@@ -20,13 +20,15 @@ _BEGIN_C_FILE
 typedef struct {
     int width;
     int height;
+    int xoffset;
+    int yoffset;
     uint32_t *old_framebuffer;
     uint32_t *framebuffer;
     uint32_t *changed_pixels; // coordinates of changed pixels (y * width + x)
     int changed_pixels_count;
 } vgui_t;
 
-vgui_t vgui_setup(int width, int height);
+vgui_t vgui_setup(int xoffset, int yoffset, int width, int height);
 void vgui_exit(vgui_t *vgui);
 void vgui_set_pixel(vgui_t *vgui, int x, int y, uint32_t color);
 uint32_t vgui_get_pixel(vgui_t *vgui, int x, int y);

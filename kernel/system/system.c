@@ -118,7 +118,6 @@ void sys_exit_kernel(int restore_pic) {
     IN_KERNEL = 0;
 
     g_in_kernel_total += TIMER_TICKS - g_last_entry;
-    // kprintf_serial("TOTAL time: %d, Kernel time: %d\n", TIMER_TICKS, g_in_kernel_total);
 
     port_write8(0x21, 0x00);    // allow all IRQs
     port_write8(0xA1, 0x00);    // allow all IRQs

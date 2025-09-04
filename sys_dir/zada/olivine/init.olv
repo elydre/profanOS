@@ -72,5 +72,7 @@ FUNC time
 END
 
 FUNC f
-    pipex /user/hello.c 'rev.fb' 'cat.elf -e' /g.txt
+    FOR i !(range 20)
+        . /bin/g/cube.elf -r &
+    END
 END

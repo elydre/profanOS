@@ -433,6 +433,7 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
             sys_warning("[run_ifexist] %s: invalid shebang\n", args->path);
             return -1;
         }
+        sid = deluge_sid;
     }
 
     int pid = process_get_pid();

@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 14"
+#define KERNEL_VERSION  "1.3 beta 15"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     200         // max process count
@@ -24,7 +24,7 @@
 #define RUN_DEF_NAME    "rosemary"
 
 #define RATE_TIMER_TICK 1000        // cpu ticks per second
-#define RATE_SCHEDULER  100         // schedule per second
+#define SCHEDULER_EVRY  10          // ticks between scheduler runs
 
 #define RUN_HEAP_ADDR   0xB0000000  // virtual base address for binary
 #define RUN_HEAP_SIZE   0x1000      // virtual memory count

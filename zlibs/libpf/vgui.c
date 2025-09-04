@@ -14,11 +14,14 @@
 
 #include <stdlib.h>
 
-vgui_t vgui_setup(int width, int height) {
+vgui_t vgui_setup(int xoffset, int yoffset, int width, int height) {
     vgui_t vgui;
     int buffer_size = width * height;
     vgui.width = width;
     vgui.height = height;
+
+    vgui.xoffset = xoffset;
+    vgui.yoffset = yoffset;
 
     vgui.old_framebuffer = calloc(buffer_size, sizeof(uint32_t));
     vgui.framebuffer = calloc(buffer_size, sizeof(uint32_t));
@@ -59,7 +62,8 @@ void vgui_render(vgui_t *vgui, int render_mode) {
     uint32_t pitch = syscall_vesa_pitch();
     if (render_mode) {
         for (int i = 0; i < vgui->width * vgui->height; i++) {
-            fb[i % vgui->width + i / vgui->width * pitch] = vgui->framebuffer[i];
+            fb[i % vgui->width + vgui->xoffset + (i / vgui->width + vgui->yoffset) * pitch]
+                        = vgui->framebuffer[i];
             vgui->old_framebuffer[i] = vgui->framebuffer[i];
         }
     } else {
@@ -67,7 +71,8 @@ void vgui_render(vgui_t *vgui, int render_mode) {
         for (int i = 0; i < vgui->changed_pixels_count; i++) {
             poss = vgui->changed_pixels[i];
             if (vgui->framebuffer[poss] != vgui->old_framebuffer[poss]) {
-                fb[poss % vgui->width + poss / vgui->width * pitch] = vgui->framebuffer[poss];
+                fb[poss % vgui->width + vgui->xoffset + (poss / vgui->width + vgui->yoffset)
+                        * pitch] = vgui->framebuffer[poss];
                 vgui->old_framebuffer[poss] = vgui->framebuffer[poss];
             }
         }

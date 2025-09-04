@@ -55,8 +55,11 @@ typedef struct {
     char name[64];
 } process_t;
 
-// setup and call
-int  process_init(void);
+// setup
+int process_init(void);
+
+// scheduler
+void schedule_if_needed(void);
 void schedule(uint32_t ticks);
 
 // process gestion
