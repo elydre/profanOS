@@ -178,10 +178,21 @@ int fm_close(int fd) {
     return 0;
 }
 
+static uint32_t create_new_file(const char *path) {
+    char *parent = NULL;
+    char *cnt    = NULL;
+
+    kfu_sep_path(path, &parent, &cnt);
+    uint32_t sid = kfu_file_create(parent, cnt);
+
+    free(parent);
+    free(cnt);
+
+    return sid;
+}
+
 int fm_reopen(int fd, const char *abs_path, int flags) {
     // return fd or -errno
-
-    kprintf_serial("[fm_reopen] fd=%d, path='%s', flags=%x\n", fd, abs_path, flags);
 
     fm_close(fd);
 
@@ -197,7 +208,7 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         if (O_DIRECTORY & flags)
             return -ENOENT;
 
-        sid = kfu_file_create(0, abs_path);
+        sid = create_new_file(abs_path);
         if (IS_SID_NULL(sid))
             return -EACCES;
     } else {

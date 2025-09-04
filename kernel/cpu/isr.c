@@ -96,8 +96,6 @@ int isr_install(void) {
 void isr_handler(registers_t *r) {
     r->int_no = r->int_no & 0xFF;
 
-    // kprintf_serial("received ISR %d from cpu\n", r->int_no);
-
     int need_unlook = 0;
 
     if (IN_KERNEL) {
@@ -124,9 +122,6 @@ void isr_handler(registers_t *r) {
 }
 
 void irq_handler(registers_t *r) {
-    if (r->int_no != 32)
-        kprintf_serial("received IRQ %d from cpu (%d)\n", r->int_no, IN_KERNEL);
-
     if (r->int_no == 32) {
         TIMER_TICKS++;
         port_write8(0x20, 0x20);
@@ -149,10 +144,11 @@ void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
 }
 
 int irq_install(void) {
-    port_write8(0x21, 0xFE);    // allow only IRQ0
-    port_write8(0xA1, 0xFF);    // disable all IRQ8–15
+    // durring the kernel only IRQ0 is enabled (timer)
+    port_write8(0x21, 0xFE);
+    port_write8(0xA1, 0xFF);
 
-    asm volatile("sti");        // enable interrupts, but only IRQ0 will be handled
+    asm volatile("sti");
 
     return 0;
 }

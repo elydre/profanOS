@@ -70,7 +70,7 @@ uint8_t *vdisk_load_sector(vdisk_t *vdisk, uint32_t sid);
 int      vdisk_unload_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data, int save);
 
 // fstools.c
-void     sep_path(char *fullpath, char **parent, char **cnt);
+void     kfu_sep_path(const char *fullpath, char **parent, char **cnt);
 vdisk_t *fs_get_vdisk(uint8_t device_id);
 
 // cnt_init.c

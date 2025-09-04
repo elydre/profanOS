@@ -9,6 +9,10 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+// NOTE: This driver is suspected of causing the keyboard to malfunction
+//       and creating various bugs! It seems to incorrectly initialize the
+//       mouse and does not work on real hardware. An update is planned.
+
 #include <cpu/ports.h>
 #include <gui/vesa.h>
 #include <cpu/isr.h>

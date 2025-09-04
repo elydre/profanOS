@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define PROCESS_MAX 64
+#define PROCESS_MAX 200
 
 #define LOGO_LINES 9
 #define INFO_LINES 11

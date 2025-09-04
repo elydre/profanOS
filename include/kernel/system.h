@@ -14,10 +14,10 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 13"
+#define KERNEL_VERSION  "1.3 beta 14"
 #define KERNEL_EDITING  "dev"
 
-#define PROCESS_MAX     64          // max process count
+#define PROCESS_MAX     200         // max process count
 #define SCUBA_MAP_MAX   0x10000000  // scuba map to 256MB max
 #define FS_MAX_DISKS    256         // max disk count
 #define RUN_DEF_PATH    "/bin/x/rosemary.elf"

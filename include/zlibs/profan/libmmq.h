@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === libmmq.h : 2025 ===                                                   |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Basic C library header for static linking                     .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |

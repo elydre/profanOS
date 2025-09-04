@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef PROFAN_LIB_ID
-#define PROFAN_LIB_ID 5
+#define PROFAN_LIB_ID 4
 
 #include <profan/minimal.h>
 #include <stdint.h>

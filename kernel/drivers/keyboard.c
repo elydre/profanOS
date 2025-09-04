@@ -61,17 +61,18 @@ static void keyboard_callback(registers_t *regs) {
 
     int sc = kb_get_scancode();
 
-    if (sc == 0) return;
-    if (sc == sc_history[0]) return;
+    if (sc == 0)
+        return;
 
-    for (int i = HISTORY_SIZE - 2; i >= 0; i--) {
+    if (sc == sc_history[0])
+        return;
+
+    for (int i = HISTORY_SIZE - 2; i >= 0; i--)
         sc_history[i + 1] = sc_history[i];
-    }
     sc_history[0] = sc;
 
-    if (sc_history[0] == 60) {   // F2
-        int pid = process_create(kernel_exit_current, 0, 0, NULL);
-        if (pid > 0) process_wakeup(pid, 0);
+    if (sc == 60) {   // F2
+        kernel_exit_current();
     }
 }
 

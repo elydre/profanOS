@@ -72,6 +72,5 @@ FUNC time
 END
 
 FUNC f
-    FOR i !(range 100000)
-    END
+    pipex /user/hello.c 'rev.fb' 'cat.elf -e' /g.txt
 END

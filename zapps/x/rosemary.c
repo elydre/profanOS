@@ -33,12 +33,11 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {2, "/lib/mod/filesys.pkm"},
-    {3, "/lib/mod/devio.pkm"},
-    {4, "/lib/mod/fmopen.pkm"},
-    {5, "/lib/mod/profan.pkm"},
-    {6, "/lib/mod/panda.pkm"},
-//  {9, "/lib/mod/mouse.pkm"},
+    {1, "/lib/mod/filesys.pkm"},
+    {2, "/lib/mod/devio.pkm"},
+    {3, "/lib/mod/fmopen.pkm"},
+    {4, "/lib/mod/profan.pkm"},
+    {5, "/lib/mod/panda.pkm"},
 };
 
 int local_strlen(char *str) {

@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define PROCESS_MAX 64
+#define PROCESS_MAX 200
 
 char *get_state(int state) {
     switch (state) {

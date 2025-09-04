@@ -12,7 +12,7 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 
-void sep_path(char *fullpath, char **parent, char **cnt) {
+void kfu_sep_path(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     len = str_len(fullpath);
