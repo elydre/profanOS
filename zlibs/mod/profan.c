@@ -11,6 +11,7 @@
 
 #define PROFAN_C
 
+#include <drivers/keyboard.h>
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
@@ -124,8 +125,15 @@ char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
     return kb_map[scancode * 2];
 }
 
+static void fd_putstr(int fd, const char *str) {
+    fm_write(fd, (void *) str, str_len(str));
+}
+
+static void fd_putchar(int fd, char c) {
+    fm_write(fd, (void *) &c, 1);
+}
+
 char *profan_input_keyboard(int *size, char *term_path) {
-    /*
     int fd = fm_open(term_path, O_RDWR);
     if (fd < 0) {
         return NULL;
@@ -136,7 +144,7 @@ char *profan_input_keyboard(int *size, char *term_path) {
     uint32_t buffer_actual_size, buffer_index, buffer_size;
     int sc, last_sc, last_sc_sgt, key_ticks, shift;
 
-    char *buffer = kmalloc(100);
+    char *buffer = malloc(100);
     buffer[0] = '\0';
     buffer_size = 100;
 
@@ -144,8 +152,8 @@ char *profan_input_keyboard(int *size, char *term_path) {
     buffer_actual_size = buffer_index = 0;
 
     while (sc != ENTER) {
-        process_sleep(process_pid(), SLEEP_T);
-        sc = sc_get();
+        process_sleep(process_get_pid(), SLEEP_T);
+        sc = kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;
@@ -245,8 +253,6 @@ char *profan_input_keyboard(int *size, char *term_path) {
     if (size)
         *size = buffer_actual_size;
     return buffer;
-    */
-    return NULL;
 }
 
 #define alloc_arg(size, pid) ((void *) mem_alloc(size, 5, pid))

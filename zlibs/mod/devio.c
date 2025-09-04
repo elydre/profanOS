@@ -16,15 +16,14 @@
 #include <system.h>
 
 #include <profan/filesys.h>
+#include <profan.h>
 
 static int keyboard_read(void *buffer, uint32_t size, char *term) {
-    return 0; // TODO
-
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
 
     if (buffer_addr == NULL) {
-        // buffer_addr = profan_input_keyboard(NULL, term);
+        buffer_addr = profan_input_keyboard(NULL, term);
         already_read = 0;
     }
 
@@ -81,12 +80,9 @@ int dev_rand_r(void *buffer, uint32_t offset, uint32_t size) {
 }
 
 int dev_kterm_r(void *buffer, uint32_t offset, uint32_t size) {
-    UNUSED(buffer);
     UNUSED(offset);
-    UNUSED(size);
 
-    // TODO: Implement reading from the kernel terminal
-    return 0;
+    return keyboard_read(buffer, size, "/dev/kterm");
 }
 
 int dev_kterm_w(void *buffer, uint32_t offset, uint32_t size) {

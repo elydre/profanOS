@@ -309,6 +309,12 @@ int mod_unload(uint32_t lib_id) {
 }
 
 uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id) {
+    if (!IN_KERNEL) {
+        sys_entry_kernel();
+        sys_error("mod_get_func called from userspace");
+        return 0;
+    }
+
     if (!IS_LOADED(lib_id)) {
         sys_error("Module %d (func %d) not loaded requested by pid %d (addr)", lib_id, func_id, process_get_pid());
         return 0;

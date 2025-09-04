@@ -20,6 +20,7 @@
 
 #define _PANDA_C
 #include <profan/panda.h>
+#include <profan.h>
 
 #define DEFAULT_FONT "/zada/fonts/lat38-bold18.psf"
 #define SCROLL_LINES 8
@@ -677,12 +678,32 @@ void panda_screen_kfree(void *data) {
 }
 
 static int dev_panda_r(void *buffer, uint32_t offset, uint32_t size) {
-    UNUSED(buffer);
     UNUSED(offset);
-    UNUSED(size);
 
-    // TODO: Implement reading from the panda terminal
-    return 0;
+    static char *buffer_addr = NULL;
+    static uint32_t already_read = 0;
+
+    if (buffer_addr == NULL) {
+        buffer_addr = profan_input_keyboard(NULL, "/dev/panda");
+        already_read = 0;
+    }
+
+    uint32_t to_read = size;
+    uint32_t buffer_size = str_len(buffer_addr);
+
+    if (already_read + to_read > buffer_size) {
+        to_read = buffer_size - already_read;
+    }
+
+    mem_copy(buffer, buffer_addr + already_read, to_read);
+    already_read += to_read;
+
+    if (already_read >= buffer_size) {
+        free(buffer_addr);
+        buffer_addr = NULL;
+    }
+
+    return to_read;
 }
 
 static int dev_panda_w(void *buffer, uint32_t offset, uint32_t size) {
