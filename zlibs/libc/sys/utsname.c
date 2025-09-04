@@ -53,7 +53,7 @@ int uname(struct utsname *buf) {
 
     fclose(f);
     free(info);
-   
+
     char *sysname = getenv("UNAME_KERNEL");
 
     if (sysname == NULL) {
