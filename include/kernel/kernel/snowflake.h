@@ -32,7 +32,7 @@ typedef struct allocated_part_t {
 #define SNOW_SIMPLE 1   // simple alloc
 #define SNOW_KERNEL 2   // as-kernel alloc
 #define SNOW_SCUBA  3   // scuba page
-#define SNOW_LIB    4   // module loader
+#define SNOW_MOD    4   // module loader
 #define SNOW_ARGS   5   // runtime args
 #define SNOW_MM     6   // memory manager
 #define SNOW_BASE   7   // initial block

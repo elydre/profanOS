@@ -64,30 +64,28 @@ void *SYSCALL_ARRAY[] = {
 
     // system.h
     sys_power,             // 24
-    sys_kinfo,             // 25
-
-    elf_exec,              // 26
+    elf_exec,              // 25
 
     // process.h + runtime.h
-    process_create,        // 27
-    process_fork,          // 28
-    process_sleep,         // 29
-    process_wakeup,        // 30
-    process_wait,          // 31
-    process_kill,          // 32
-    process_get_pid,       // 33
-    process_info,          // 34
-    process_list_all,      // 35
+    process_create,        // 26
+    process_fork,          // 27
+    process_sleep,         // 28
+    process_wakeup,        // 29
+    process_wait,          // 30
+    process_kill,          // 31
+    process_get_pid,       // 32
+    process_info,          // 33
+    process_list_all,      // 34
 
     // system.h
-    mod_load,              // 36
-    mod_unload,            // 37
+    mod_load,              // 35
+    mod_unload,            // 36
 
     // scubasuit.h
-    scuba_call_generate,   // 38
-    scuba_call_map,        // 39
-    scuba_call_unmap,      // 40
-    scuba_call_phys,       // 41
+    scuba_call_generate,   // 37
+    scuba_call_map,        // 38
+    scuba_call_unmap,      // 39
+    scuba_call_phys,       // 40
 };
 
 void syscall_handler(registers_t *r) {

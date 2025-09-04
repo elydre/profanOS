@@ -53,7 +53,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(tef_init,      "Allocating memory for terminal emulator");
 
     status_print(afft_init,     "Initializing afft system");
-    status_print(sys_init,      "Initializing FPU and error reporting");
+    status_print(sys_init,      "Initializing system reporting");
 
     status_print(serial_init,   "Enabling serial ports A and B");
     status_print(keyboard_init, "Setting up PS/2 keyboard");

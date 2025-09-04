@@ -62,7 +62,7 @@ int print_load_status(int i) {
     if (error_code > 0)
         return 0;
 
-    syscall_kprint("["LOADER_NAME"] FATAL: ");
+    syscall_kprint("["LOADER_NAME"] ");
     syscall_kprint(get_name(mod->path));
     syscall_kprint(": ");
 
@@ -105,13 +105,7 @@ void rainbow_print(char *message) {
 }
 
 void welcome_print(void) {
-    rainbow_print("Welcome to profanOS!");
-    char buf[64];
-    syscall_sys_kinfo(buf, 64);
-
-    mmq_putstr(1, "\n\e[35mKernel: \e[95m");
-    mmq_putstr(1, buf);
-    mmq_putstr(1, "\e[0m\n\n");
+    rainbow_print("Welcome to profanOS!\n\n");
 }
 
 char wait_key(void) {
@@ -153,10 +147,7 @@ int main(void) {
     total = (int) (sizeof(mods_at_boot) / sizeof(mod_t));
 
     for (int i = 0; i < total; i++) {
-        if (!print_load_status(i))
-            continue;
-        syscall_kprint("["LOADER_NAME"] Module loading failed, exiting\n");
-        return 1;
+        print_load_status(i);
     }
 
     mmq_printf(1, "Successfully loaded %d modules\n\n", total);

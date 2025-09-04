@@ -17,9 +17,6 @@
 
 #define ERROR_CODE (-1)
 
-#define SHDLR_COOP 0
-#define SHDLR_PEMP 1
-
 process_t  *g_plist;                 // main process list
 process_t  *g_proc_current = NULL;   // running process pointer
 uint32_t    g_pid_incrament;         // pid of the last created process
@@ -31,7 +28,6 @@ uint32_t    g_tsleep_interact;       // time when the next sleeping process will
 
 process_t **g_shdlr_queue;              // scheduler queue
 uint32_t    g_shdlr_queue_length;       // scheduler queue length
-int         g_shdlr_mode = SHDLR_COOP;  // scheduler mode (cooperative / preemptive)
 uint8_t     g_need_clean;               // need to clean killed processes
 
 /**************************
@@ -40,7 +36,7 @@ uint8_t     g_need_clean;               // need to clean killed processes
  *                       *
 **************************/
 
-static void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
+static void i_new_process(process_t *process, void *entry, uint32_t flags, uint32_t *pagedir) {
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -49,7 +45,7 @@ static void i_new_process(process_t *process, void (*func)(), uint32_t flags, ui
     process->regs.esi = 0;
     process->regs.edi = 0;
     process->regs.eflags = flags;
-    process->regs.eip = (uint32_t) func;
+    process->regs.eip = (uint32_t) entry;
     process->regs.cr3 = (uint32_t) pagedir;
     process->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - 4;
 }
@@ -80,13 +76,10 @@ static int i_pid_to_place(uint32_t pid) {
 
 // used in switch.asm
 void i_end_scheduler(void) {
-    if (IN_KERNEL != g_proc_current->in_kernel) {
-        if (g_proc_current->in_kernel) {
-            sys_fatal("ENTER KERNEL, pid %d\n", g_proc_current->pid);
-        } else {
-            kprintf_serial("EXIT KERNEL, pid %d\n", g_proc_current->pid);
-            sys_exit_kernel(0);
-        }
+    if (g_proc_current->in_kernel == 0) {
+        // called once for new process that never called a syscall
+        kprintf_serial("EXIT KERNEL, pid %d\n", g_proc_current->pid);
+        sys_exit_kernel(0);
     }
 }
 
@@ -530,7 +523,8 @@ int process_wait(int pid, uint8_t *retcode, int block) {
 
     if (pid < 0) {
         for (int i = 0; i < PROCESS_MAX; i++) {
-            if (g_plist[i].state == PROC_STATE_ZMB && g_plist[i].ppid == g_proc_current->pid && g_plist[i].retcode >= 0) {
+            if (g_plist[i].state == PROC_STATE_ZMB && g_plist[i].ppid == g_proc_current->pid &&
+                        g_plist[i].retcode >= 0) {
                 if (retcode)
                     *retcode = (uint8_t) g_plist[i].retcode;
                 pid = g_plist[i].pid;
@@ -606,13 +600,14 @@ int process_wait(int pid, uint8_t *retcode, int block) {
 **************************/
 
 void schedule(uint32_t ticks) {
-
-    if (ticks == 0) {   // manual schedule
+    if (ticks == 0) {
+        // manual schedule
         ticks = TIMER_TICKS;
     }
 
     else if (ticks - g_last_switch < SCHEDULER_EVRY &&
             (g_proc_current->state != PROC_STATE_IDL || g_tsleep_interact > ticks)) {
+        // not time yet to switch
         return;
     }
 
@@ -651,7 +646,6 @@ void schedule(uint32_t ticks) {
 
 void schedule_if_needed(void) {
     if (TIMER_TICKS - g_last_switch > SCHEDULER_EVRY) {
-        kprintf_serial("FORCE SCHEDULE\n");
         schedule(0);
     }
 }

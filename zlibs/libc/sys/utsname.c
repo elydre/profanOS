@@ -9,8 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/syscall.h>
-
 #include <sys/utsname.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,17 +16,44 @@
 #include <errno.h>
 
 int uname(struct utsname *buf) {
-    char kernel_info[64];
+    // getline from /sys/kernel/version.txt
 
-    syscall_sys_kinfo(kernel_info, 64);
+    FILE *f = fopen("/sys/kernel/version.txt", "r");
+    if (f == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
 
-    char *space = strchr(kernel_info, ' ');
+    char *info = NULL;
+    size_t len = 0;
 
-    strncpy(buf->version, kernel_info, space - kernel_info);
-    buf->version[space - kernel_info] = '\0';
-    strcpy(buf->release, space + 1);
-    strcpy(buf->machine, "i386");
+    char buffers[3][65]; // version, release, machine
 
+    for (int i = 0; i < 3; i++) {
+        ssize_t read = getline(&info, &len, f);
+
+        if (read == -1) {
+            fclose(f);
+            free(info);
+            errno = EIO;
+            return -1;
+        }
+
+        // Remove newline character if present
+        if (info[read - 1] == '\n') {
+            info[read - 1] = '\0';
+        }
+
+        strlcpy(buffers[i], info, sizeof(buffers[i]));
+    }
+
+    strcpy(buf->version, buffers[0]);
+    strcpy(buf->release, buffers[1]);
+    strcpy(buf->machine, buffers[2]);
+
+    fclose(f);
+    free(info);
+   
     char *sysname = getenv("UNAME_KERNEL");
 
     if (sysname == NULL) {

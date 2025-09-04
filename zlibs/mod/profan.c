@@ -54,8 +54,7 @@ static int userspace_reporter(char *message) {
     int len = 0;
     while (message[len] != '\0')
         len++;
-    fm_write(2, message, len);
-    return 0;
+    return fm_write(2, message, len) == len ? 0 : -1;
 }
 
 int __init(void) {

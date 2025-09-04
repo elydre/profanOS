@@ -16,6 +16,7 @@
 #include <profan/carp.h>
 #include <profan.h>
 
+#include <sys/utsname.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -89,10 +90,10 @@ int do_fetch(void) {
     struct tm time;
     syscall_time_get(&time);
 
-    char kernel_info[64];
-    syscall_sys_kinfo(kernel_info, 64);
+    struct utsname name;
+    uname(&name);
 
-    pl_and_pf("\e[95mkernel     \e[96m%s\n", kernel_info);
+    pl_and_pf("\e[95mkernel     \e[96m%s %s\n", name.version, name.release);
     pl_and_pf("\e[95mlibc       \e[96mprofan v%s\n", profan_libc_version());
 
     pl_and_pf("\e[95mRTC time   \e[96m%02d\e[0m:\e[96m%02d\e[0m:\e[96m%02d %02d\e[0m/\e[96m%02d\e[0m/\e[96m%02d\n",
@@ -159,10 +160,9 @@ void memory_print_usage(void) {
     puts("\n      ------- Per types -------");
 
     printf("Simple alloc   %15d kB | %d\n", syscall_mem_info(10, 1) / 1024, syscall_mem_info(9, 1));
-    printf("Mem struct     %15d kB | %d\n", syscall_mem_info(10, 3) / 1024, syscall_mem_info(9, 3));
-    printf("Scuba vpage    %15d kB | %d\n", syscall_mem_info(10, 4) / 1024, syscall_mem_info(9, 4));
-    printf("pok            %15d kB | %d\n", syscall_mem_info(10, 5) / 1024, syscall_mem_info(9, 5));
-    printf("As kernel      %15d kB | %d\n", syscall_mem_info(10, 6) / 1024, syscall_mem_info(9, 6));
+    printf("Scuba vpage    %15d kB | %d\n", syscall_mem_info(10, 3) / 1024, syscall_mem_info(9, 3));
+    printf("Module Loader  %15d kB | %d\n", syscall_mem_info(10, 4) / 1024, syscall_mem_info(9, 4));
+    printf("As kernel      %15d kB | %d\n", syscall_mem_info(10, 2) / 1024, syscall_mem_info(9, 2));
 
     puts("\n      ------ Per process ------");
 

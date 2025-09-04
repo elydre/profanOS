@@ -446,7 +446,7 @@ ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
     ) return -1;
 
     size_t i = 0;
-    int c;
+    uint8_t c;
 
     while (fread(&c, 1, 1, stream)) {
         if (*lineptr == NULL) {

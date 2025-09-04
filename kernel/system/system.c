@@ -11,6 +11,7 @@
 
 #include <kernel/scubasuit.h>
 #include <kernel/multiboot.h>
+#include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <kernel/tinyelf.h>
 #include <cpu/timer.h>
@@ -142,20 +143,20 @@ uint32_t sys_get_kernel_time(void) {
 ********************************/
 
 char sys_safe_buffer[256];
-void *reporter_addr;
-
-int RECURSIVE_COUNT;
 
 int sys_default_reporter(char *msg) {
     kprint(msg);
     return 0;
 }
 
+void *reporter_addr = sys_default_reporter;
+int RECURSIVE_COUNT = 0;
+
 int sys_set_reporter(int (*reporter)(char *)) {
-    if (reporter == NULL) {
-        reporter = sys_default_reporter;
-    }
-    reporter_addr = reporter;
+    if (reporter == NULL)
+        reporter_addr = sys_default_reporter;
+    else
+        reporter_addr = reporter;
     return 0;
 }
 
@@ -170,10 +171,15 @@ void sys_report(char *msg) {
         RECURSIVE_COUNT > 1)
     ) {
         reporter_addr = sys_default_reporter;
-        sys_warning("Invalid reporter address, using default reporter");
+        sys_warning("Invalid reporter, using the default one");
     }
 
-    ((int (*)(char *)) reporter_addr)(copy);
+    if (((int (*)(char *)) reporter_addr)(copy)) {
+        RECURSIVE_COUNT++;
+        sys_report(copy);
+        RECURSIVE_COUNT--;
+    }
+
     free(copy);
 }
 
@@ -289,11 +295,11 @@ int sys_power(int action) {
  *                           *
 ******************************/
 
-void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
+static void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(eax));
 }
 
-int sys_init(void) {
+static int init_fpu(void) {
     // get if fpu is present
     uint32_t eax, ebx, ecx, edx;
     cpuid(1, &eax, &ebx, &ecx, &edx);
@@ -312,22 +318,34 @@ int sys_init(void) {
     asm volatile("or $0x600, %eax");
     asm volatile("mov %eax, %cr4");
 
-    RECURSIVE_COUNT = 0;
-    sys_set_reporter(sys_default_reporter);
+    return 0;
+}
+
+static int write_kernel_version(void) {
+    if (IS_SID_NULL(kfu_dir_create(0, "/sys", "kernel")))
+        return 1;
+
+    uint32_t sid = kfu_file_create("/sys/kernel", "version.txt");
+
+    if (IS_SID_NULL(sid))
+        return 1;
+
+    char *version = KERNEL_VERSION "\n" KERNEL_EDITING "\ni386\n";
+    uint32_t version_len = str_len(version);
+
+    if (fs_cnt_set_size(sid, version_len))
+        return 1;
+
+    if (fs_cnt_write(sid, version, 0, version_len))
+        return 1;
 
     return 0;
 }
 
-/********************************
- *                             *
- *  information get functions  *
- *                             *
-********************************/
-
-char *sys_kinfo(char *buffer, int size) {
-    str_ncpy(buffer, KERNEL_EDITING " " KERNEL_VERSION, size - 1);
-    buffer[size - 1] = 0;
-    return buffer;
+int sys_init(void) {
+    init_fpu();
+    write_kernel_version();
+    return 0;
 }
 
 /********************************

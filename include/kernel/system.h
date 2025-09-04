@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3 beta 15"
+#define KERNEL_VERSION  "1.3 beta 16"
 #define KERNEL_EDITING  "dev"
 
 #define PROCESS_MAX     200         // max process count
@@ -37,13 +37,15 @@
 
 
 // system.c
-void kernel_exit_current(void);
-
 extern uint8_t IN_KERNEL;
+
+int sys_init(void);
 
 void     sys_entry_kernel(void);
 void     sys_exit_kernel(int restore_pic);
 uint32_t sys_get_kernel_time(void);
+
+void kernel_exit_current(void);
 
 extern char sys_safe_buffer[256];
 int sys_set_reporter(int (*reporter)(char *));
@@ -56,9 +58,6 @@ void sys_nothing_todo(void);
 void sys_warning(char *msg, ...);
 void sys_error(char *msg, ...);
 void sys_interrupt(uint8_t code, int err_code); // reserved for ISRs
-
-int   sys_init(void);
-char *sys_kinfo(char *buffer, int size);
 
 const char *sys_addr2name(uint32_t addr);
 uint32_t    sys_name2addr(const char *name);

@@ -69,7 +69,7 @@ static uint8_t *i_mod_resolve(uint8_t *file) {
 
     required_size = (required_size + 0xFFF) & ~0xFFF;
 
-    uint8_t *mem = mem_alloc(required_size, SNOW_LIB, 0x1000);
+    uint8_t *mem = mem_alloc(required_size, SNOW_MOD, 0x1000);
     mem_set(mem, 0, required_size);
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
@@ -112,7 +112,7 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
         return NULL;
 
     // allocate the address list
-    uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), SNOW_LIB, 0);
+    uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), SNOW_MOD, 0);
     addr_list[0] = (uint32_t) mem;
     addr_list[1] = func_count;
     addr_list[2] = 0;
@@ -243,8 +243,8 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int mod_load(char *path, uint32_t lib_id) {
-    kprintf("mod_load: %s\n", path);
     uint32_t file = kfu_path_to_sid(SID_ROOT, path);
+
     if (IS_SID_NULL(file) || !kfu_is_file(file)) {
         return -1;
     }

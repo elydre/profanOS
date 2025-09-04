@@ -189,27 +189,26 @@ DEFN_SYSCALL0(22, int,       sc_get)
 DEFN_SYSCALL2(23, int,       mouse_call, int, int)
 
 DEFN_SYSCALL1(24, int,       sys_power, int)
-DEFN_SYSCALL2(25, char *,    sys_kinfo, char *, uint32_t)
 
-DEFN_SYSCALL3(26, int,       elf_exec, uint32_t, char **, char **)
+DEFN_SYSCALL3(25, int,       elf_exec, uint32_t, char **, char **)
 
-DEFN_SYSCALL4(27, int,       process_create, void *, int, int, uint32_t *)
-DEFN_SYSCALL0(28, int,       process_fork)
-DEFN_SYSCALL2(29, int,       process_sleep, uint32_t, uint32_t)
-DEFN_SYSCALL2(30, int,       process_wakeup, uint32_t, int)
-DEFN_SYSCALL3(31, int,       process_wait, int, uint8_t *, int)
-DEFN_SYSCALL2(32, int,       process_kill, uint32_t, int)
-DEFN_SYSCALL0(33, uint32_t,  process_pid)
-DEFN_SYSCALL3(34, int,       process_info, uint32_t, int, void *)
-DEFN_SYSCALL2(35, int,       process_list_all, uint32_t *, int)
+DEFN_SYSCALL4(26, int,       process_create, void *, int, int, uint32_t *)
+DEFN_SYSCALL0(27, int,       process_fork)
+DEFN_SYSCALL2(28, int,       process_sleep, uint32_t, uint32_t)
+DEFN_SYSCALL2(29, int,       process_wakeup, uint32_t, int)
+DEFN_SYSCALL3(30, int,       process_wait, int, uint8_t *, int)
+DEFN_SYSCALL2(31, int,       process_kill, uint32_t, int)
+DEFN_SYSCALL0(32, uint32_t,  process_pid)
+DEFN_SYSCALL3(33, int,       process_info, uint32_t, int, void *)
+DEFN_SYSCALL2(34, int,       process_list_all, uint32_t *, int)
 
-DEFN_SYSCALL2(36, int,       mod_load, char *, uint32_t)
-DEFN_SYSCALL1(37, int,       mod_unload, uint32_t)
+DEFN_SYSCALL2(35, int,       mod_load, char *, uint32_t)
+DEFN_SYSCALL1(36, int,       mod_unload, uint32_t)
 
-DEFN_SYSCALL2(38, void *,    scuba_generate, void *, uint32_t)
-DEFN_SYSCALL3(39, int,       scuba_map, void *, void *, int)
-DEFN_SYSCALL1(40, int,       scuba_unmap, void *)
-DEFN_SYSCALL1(41, void *,    scuba_phys, void *)
+DEFN_SYSCALL2(37, void *,    scuba_generate, void *, uint32_t)
+DEFN_SYSCALL3(38, int,       scuba_map, void *, void *, int)
+DEFN_SYSCALL1(39, int,       scuba_unmap, void *)
+DEFN_SYSCALL1(40, void *,    scuba_phys, void *)
 
 _END_C_FILE
 
