@@ -17,6 +17,11 @@
 #include <minilib.h>
 #include <ktype.h>
 
+/********************************
+ *                             *
+ *   serial driver functions   *
+ *                             *
+********************************/
 
 void serial_enable(int device) {
     port_write8(device + 1, 0x00);
@@ -46,6 +51,12 @@ int serial_read(uint32_t port, void *buffer, uint32_t len) {
     return len;
 }
 
+/********************************
+ *                             *
+ *  AFFT read/write handlers   *
+ *                             *
+********************************/
+
 static int serial_a_write(void *buffer, uint32_t offset, uint32_t len) {
     UNUSED(offset);
     return serial_write(SERIAL_PORT_A, buffer, len);
@@ -72,8 +83,8 @@ int serial_init(void) {
     serial_enable(SERIAL_PORT_B);
 
     return (
-        afft_register(1, serial_a_read, serial_a_write, NULL) != 1   ||
-        afft_register(2, serial_b_read, serial_b_write, NULL) != 2   ||
+        afft_register(1, serial_a_read, serial_a_write, NULL) != 1 ||
+        afft_register(2, serial_b_read, serial_b_write, NULL) != 2 ||
         kfu_afft_create("/dev", "serialA", 1) == SID_NULL ||
         kfu_afft_create("/dev", "serialB", 2) == SID_NULL
     );
