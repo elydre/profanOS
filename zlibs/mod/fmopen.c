@@ -19,7 +19,7 @@
 #include <system.h>
 
 #include <errno.h>
-#include <fcntl.h> // for flags
+#include <fcntl.h>  // for flags
 #include <unistd.h> // for SEEK_SET, SEEK_CUR, SEEK_END
 
 #define PIPE_MAX     256
@@ -629,9 +629,9 @@ int __init(void) {
     open_pipes = calloc(PIPE_MAX * sizeof(pipe_data_t));
 
     // open default fds
-    if (fm_reopen(0, "/dev/kterm", O_RDONLY) < 0 ||
+    return (
+        fm_reopen(0, "/dev/kterm", O_RDONLY) < 0 ||
         fm_reopen(1, "/dev/kterm", O_WRONLY) < 0 ||
         fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
-    ) return 1;
-    return 0;
+    );
 }

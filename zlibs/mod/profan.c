@@ -18,8 +18,8 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <profan.h> // for runtime_args_t
 #include <profan/filesys.h>
+#include <profan.h> // for runtime_args_t
 #include <fcntl.h>  // for flags
 
 #define DEFAULT_KB "/zada/keymap/azerty.map"
@@ -506,7 +506,6 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
         for (int i = file_type == FILE_FBANG; interp[i] != NULL; i++) {
             nargv[c++] = interp[i];
         }
-
 
         if (file_type != FILE_FBANG) {
             nargv[c] = alloc_arg(str_len(args->path) + 1, pid);

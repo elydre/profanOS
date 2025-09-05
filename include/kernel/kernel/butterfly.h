@@ -109,6 +109,6 @@ uint32_t kfu_path_to_sid(uint32_t from, const char *path);
 
 // filesys.c
 filesys_t *fs_get_filesys(void);
-int       filesys_init(void);
+int        filesys_init(void);
 
 #endif

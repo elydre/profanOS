@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef TASK_H
-#define TASK_H
+#ifndef PROCESS_H
+#define PROCESS_H
 
 #include <kernel/scubasuit.h>
 #include <ktype.h>

@@ -122,8 +122,7 @@ static uint8_t mouse_read(void) {
 }
 
 int __init(void) {
-    if (was_installed)
-        return 1;
+    return 0; // TODO: rewrite this driver
 
     was_installed = 1;
 

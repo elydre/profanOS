@@ -28,9 +28,6 @@ typedef struct tm {
     int    tm_isdst; // daylight savings flag
 } tm_t;
 
-#define low_16(address) (uint16_t)((address) & 0xFFFF)
-#define high_16(address) (uint16_t)(((address) >> 16) & 0xFFFF)
-
 #ifndef NULL
 #define NULL ((void *) 0)
 #endif

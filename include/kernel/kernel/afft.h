@@ -9,6 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#ifndef AFFT_H
+#define AFFT_H
+
 #include <ktype.h>
 
 #define AFFT_MAX      256
@@ -28,3 +31,5 @@ int afft_register(
 int afft_read  (uint32_t id, void *buffer, uint32_t offset, uint32_t size);
 int afft_write (uint32_t id, void *buffer, uint32_t offset, uint32_t size);
 int afft_cmd   (uint32_t id, uint32_t cmd, void *arg);
+
+#endif

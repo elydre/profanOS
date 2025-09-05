@@ -143,7 +143,7 @@ int ata_get_sectors_count(void) {
     return bytes[61] << 16 | bytes[60];
 }
 
-int ata_init(void) {
+int __init(void) {
     int afft_id;
 
     if (ata_get_sectors_count() == -1)
@@ -154,5 +154,5 @@ int ata_init(void) {
     if (afft_id == -1 || kfu_afft_create("/dev", "ata", afft_id) == SID_NULL)
         return 1;
 
-    return 3;
+    return 0;
 }

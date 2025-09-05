@@ -32,21 +32,21 @@ void  panda_screen_free(void *backup);
 
 extern int profan_syscall(uint32_t id, ...);
 
-#undef  _syscall
-#define _syscall(module, id, ...) \
+#undef  _pscall
+#define _pscall(module, id, ...) \
     profan_syscall(((module << 24) | id), __VA_ARGS__)
 
-#define panda_set_char(x, y, c, color)  ((void) _syscall(PANDA_ID, 0, x, y, c, color))
+#define panda_set_char(x, y, c, color)  ((void) _pscall(PANDA_ID, 0, x, y, c, color))
 #define panda_print_string(str, len, str_color, def_color) \
-        ((uint16_t) _syscall(PANDA_ID, 1, str, len, str_color, def_color))
-#define panda_set_start(kernel_cursor)  ((void) _syscall(PANDA_ID, 2, kernel_cursor))
-#define panda_get_cursor(x, y)          ((void) _syscall(PANDA_ID, 3, x, y))
-#define panda_draw_cursor(x, y)         ((void) _syscall(PANDA_ID, 4, x, y))
-#define panda_get_size(cols, lines)     ((void) _syscall(PANDA_ID, 5, cols, lines))
-#define panda_change_font(font_sid)     ((int) _syscall(PANDA_ID, 6, font_sid))
-#define panda_screen_backup()           ((void *) _syscall(PANDA_ID, 7, 0))
-#define panda_screen_restore(backup)    ((void) _syscall(PANDA_ID, 8, backup))
-#define panda_screen_free(backup)       ((void) _syscall(PANDA_ID, 9, backup))
+        ((uint16_t) _pscall(PANDA_ID, 1, str, len, str_color, def_color))
+#define panda_set_start(kernel_cursor)  ((void) _pscall(PANDA_ID, 2, kernel_cursor))
+#define panda_get_cursor(x, y)          ((void) _pscall(PANDA_ID, 3, x, y))
+#define panda_draw_cursor(x, y)         ((void) _pscall(PANDA_ID, 4, x, y))
+#define panda_get_size(cols, lines)     ((void) _pscall(PANDA_ID, 5, cols, lines))
+#define panda_change_font(font_sid)     ((int) _pscall(PANDA_ID, 6, font_sid))
+#define panda_screen_backup()           ((void *) _pscall(PANDA_ID, 7, 0))
+#define panda_screen_restore(backup)    ((void) _pscall(PANDA_ID, 8, backup))
+#define panda_screen_free(backup)       ((void) _pscall(PANDA_ID, 9, backup))
 
 #endif // _KERNEL_MODULE
 

@@ -31,11 +31,11 @@ void vesa_set_pixel(int x, int y, uint32_t c) {
 
 uint32_t vesa_get_info(int i) {
     switch (i) {
-        case 0: return fb_w;
-        case 1: return fb_h;
-        case 2: return fb_p;
-        case 3: return (uint32_t) framebuffer;
-        case 4: return is_vesa;
+        case 0:  return fb_w;
+        case 1:  return fb_h;
+        case 2:  return fb_p;
+        case 3:  return (uint32_t) framebuffer;
+        case 4:  return is_vesa;
         default: return 0;
     }
 }

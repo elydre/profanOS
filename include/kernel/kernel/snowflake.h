@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === snowflake.h : 2024 ===                                                |
 |                                                                             |
-|    Kernel memory allocator header                                .pi0iq.    |
+|    Kernel physical memory allocator header                       .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -13,8 +13,6 @@
 #define SNOWFLAKE_H
 
 #include <ktype.h>
-
-// SNOWFLAKE physical memory manager
 
 typedef struct allocated_part_t {
     uint32_t next; // list index
@@ -29,13 +27,13 @@ typedef struct allocated_part_t {
 #define GROW_SIZE   20   // increase size
 
 #define SNOW_FREE   0
-#define SNOW_SIMPLE 1   // simple alloc
-#define SNOW_KERNEL 2   // as-kernel alloc
-#define SNOW_SCUBA  3   // scuba page
-#define SNOW_MOD    4   // module loader
-#define SNOW_ARGS   5   // runtime args
-#define SNOW_MM     6   // memory manager
-#define SNOW_BASE   7   // initial block
+#define SNOW_SIMPLE 1    // simple alloc
+#define SNOW_KERNEL 2    // as-kernel alloc
+#define SNOW_SCUBA  3    // scuba page
+#define SNOW_MOD    4    // module loader
+#define SNOW_ARGS   5    // runtime args
+#define SNOW_MM     6    // memory manager
+#define SNOW_BASE   7    // initial block
 
 int mem_init(void);
 
@@ -64,6 +62,6 @@ int mem_free_dir(void *dir);
 ****************************************/
 
 uint32_t mem_get_info(char get_mode, int arg);
-int mem_alloc_fetch(void *addr, int arg);
+int      mem_alloc_fetch(void *addr, int arg);
 
 #endif

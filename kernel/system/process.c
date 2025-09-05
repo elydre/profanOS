@@ -26,9 +26,9 @@ process_t **g_tsleep_list;           // sleeping processes
 uint32_t    g_tsleep_list_length;    // number of sleeping processes
 uint32_t    g_tsleep_interact;       // time when the next sleeping process will awake
 
-process_t **g_shdlr_queue;              // scheduler queue
-uint32_t    g_shdlr_queue_length;       // scheduler queue length
-uint8_t     g_need_clean;               // need to clean killed processes
+process_t **g_shdlr_queue;           // scheduler queue
+uint32_t    g_shdlr_queue_length;    // scheduler queue length
+uint8_t     g_need_clean;            // need to clean killed processes
 
 /**************************
  *                       *
@@ -78,7 +78,6 @@ static int i_pid_to_place(uint32_t pid) {
 void i_end_scheduler(void) {
     if (g_proc_current->in_kernel == 0) {
         // called once for new process that never called a syscall
-        kprintf_serial("EXIT KERNEL, pid %d\n", g_proc_current->pid);
         sys_exit_kernel(0);
     }
 }

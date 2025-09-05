@@ -9,7 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <kernel/scubasuit.h>
 #include <kernel/multiboot.h>
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
@@ -93,7 +92,7 @@ uint32_t g_in_kernel_total = 0;
 uint32_t g_last_entry = 0;
 
 void sys_entry_kernel(void) {
-    asm volatile("cli");        // disable all interrupts
+    asm volatile("cli");
 
     if (IN_KERNEL)
         sys_fatal("Already in kernel mode");
@@ -102,14 +101,15 @@ void sys_entry_kernel(void) {
 
     g_last_entry = TIMER_TICKS;
 
-    port_write8(0x21, 0xFE);    // allow only IRQ0
-    port_write8(0xA1, 0xFF);    // disable all IRQ8–15
+    // enable interrupts but with only IRQ0 (timer)
+    port_write8(0x21, 0xFE);
+    port_write8(0xA1, 0xFF);
 
-    asm volatile("sti");        // re-enable interrupts, but only IRQ0 will be handled
+    asm volatile("sti");
 }
 
 void sys_exit_kernel(int restore_pic) {
-    asm volatile("cli");        // disable all interrupts
+    asm volatile("cli");
 
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
@@ -120,16 +120,18 @@ void sys_exit_kernel(int restore_pic) {
 
     g_in_kernel_total += TIMER_TICKS - g_last_entry;
 
-    port_write8(0x21, 0x00);    // allow all IRQs
-    port_write8(0xA1, 0x00);    // allow all IRQs
+    // enable all IRQs
+    port_write8(0x21, 0x00);
+    port_write8(0xA1, 0x00);
 
+    // restore pic if needed
     if (restore_pic) {
         if (restore_pic > 40)
-            port_write8(0xA0, 0x20); // slave
-        port_write8(0x20, 0x20);     // master
+            port_write8(0xA0, 0x20);
+        port_write8(0x20, 0x20);
     }
 
-    asm volatile("sti");        // re-enable interrupts
+    asm volatile("sti");
 }
 
 uint32_t sys_get_kernel_time(void) {

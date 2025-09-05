@@ -31,7 +31,7 @@ extern uint8_t font_8x16[4096];
 uint8_t *font_get(void);
 
 // tefv.c
-int  tef_init(void);
+int tef_init(void);
 
 // gnrtx
 int gt_get_max_cols(void);

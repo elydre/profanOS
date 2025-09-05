@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === diskiso.c : 2024 ===                                                  |
 |                                                                             |
-|    Kernel Disk ISO (grub module) functions                       .pi0iq.    |
+|    Kernel Disk ISO (grub module) reading functions               .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
