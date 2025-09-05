@@ -12,7 +12,7 @@
 #include <kernel/butterfly.h>
 #include <minilib.h>
 
-void sep_path(char *fullpath, char **parent, char **cnt) {
+void kfu_sep_path(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 
     len = str_len(fullpath);
@@ -48,7 +48,7 @@ void sep_path(char *fullpath, char **parent, char **cnt) {
     }
 }
 
-vdisk_t *fs_get_vdisk(filesys_t *fs, uint8_t device_id) {
+vdisk_t *fs_get_vdisk(uint8_t device_id) {
     device_id -= 1;
-    return fs->vdisk[device_id];
+    return MAIN_FS->vdisk[device_id];
 }

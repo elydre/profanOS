@@ -24,6 +24,10 @@ include/addons/
 .vscode/
 .vs/
 
+# clangd indexing data
+.cache/
+compile_commands.json
+
 # debug dirs/files
 extracted/
 debug/

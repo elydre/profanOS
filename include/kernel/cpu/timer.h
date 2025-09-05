@@ -14,9 +14,9 @@
 
 #include <ktype.h>
 
-int      timer_init(void);
+extern uint32_t TIMER_TICKS;
 
+int      timer_init(void);
 uint32_t timer_get_ms(void);
-uint32_t timer_get_ticks(void);
 
 #endif

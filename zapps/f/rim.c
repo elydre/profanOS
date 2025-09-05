@@ -1102,7 +1102,7 @@ void main_loop(char *path) {
 
 void clear_screen(void) {
     syscall_kprint("\e[2J");
-    panda_print_string("\e[2J", 4, -1, 0x0F);
+    (void) panda_print_string("\e[2J", 4, -1, 0x0F);
 }
 
 void quit(void) {

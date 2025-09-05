@@ -25,24 +25,25 @@ char **rsplit(char **r, char *s, int *c) {
 
 int execute_line(char *line) {
     int argc = 0, res = 1;
-    char **args;
+    runtime_args_t r;
 
-    if (!(args = rsplit(NULL, line, &argc))[0]) {
+    if (!(r.argv = rsplit(NULL, line, &argc))[0]) {
         res = 0;
-    } else if (strcmp(args[0], "cd") == 0) {
-        if (chdir(args[1] ? args[1] : "/") == -1)
+    } else if (strcmp(r.argv[0], "cd") == 0) {
+        if (chdir(r.argv[1] ? r.argv[1] : "/") == -1)
             fputs("cd: No such file or directory\n", stderr);
         else res = 0;
-    } else if ((line = profan_path_path(args[0], 1))) {
-        res = run_ifexist(line, argc, args);
+    } else if ((line = profan_path_path(r.argv[0], 1))) {
+        r = (runtime_args_t) { line, NULL, argc, r.argv, environ, 1 };
+        res = run_ifexist(&r, NULL);
         free(line);
     } else {
-        fprintf(stderr, "%s: Command not found\n", args[0]);
+        fprintf(stderr, "%s: Command not found\n", r.argv[0]);
     }
 
-    for (int i = 0; args[i]; i++)
-        free(args[i]);
-    free(args);
+    for (int i = 0; r.argv[i]; i++)
+        free(r.argv[i]);
+    free(r.argv);
 
     return res;
 }

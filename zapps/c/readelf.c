@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // check for elf class. now only ELF32 is supported. TODO we shall support ELF64 header later
+    // check for elf class. now only ELF32 is supported.
     if (p_header->e_ident[EI_CLASS] != ELFCLASS32) {
         fprintf(stderr, "readelf: %s: unsupported ELF class\n", g_filename);
         free(g_filecnt);

@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#define _SYSCALL_CREATE_FUNCS
+// @LINK: libmmq
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
@@ -33,12 +33,12 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1001, "/lib/mod/libmmq.pok"},
-    {1002, "/lib/mod/filesys.pok"},
-    {1003, "/lib/mod/devio.pok"},
-    {1004, "/lib/mod/fmopen.pok"},
-    {1005, "/lib/mod/profan.pok"},
-    {1006, "/lib/mod/panda.pok"},
+    {1, "/lib/mod/filesys.pkm"},
+    {2, "/lib/mod/devio.pkm"},
+    {3, "/lib/mod/fmopen.pkm"},
+    {4, "/lib/mod/profan.pkm"},
+    {5, "/lib/mod/panda.pkm"},
+    {6, "/lib/mod/ata.pkm"},
 };
 
 int local_strlen(char *str) {
@@ -58,12 +58,12 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     mod_t *mod = &mods_at_boot[i];
-    int error_code = syscall_pok_load(mod->path, mod->id);
+    int error_code = syscall_mod_load(mod->path, mod->id);
 
     if (error_code > 0)
         return 0;
 
-    syscall_kprint("["LOADER_NAME"] FATAL: ");
+    syscall_kprint("["LOADER_NAME"] ");
     syscall_kprint(get_name(mod->path));
     syscall_kprint(": ");
 
@@ -101,16 +101,12 @@ void rainbow_print(char *message) {
     for (int i = 0; message[i]; i++) {
         tmp[3] = rainbow_colors[i % 6];
         tmp[5] = message[i];
-        fd_putstr(1, tmp);
+        mmq_putstr(1, tmp);
     }
 }
 
 void welcome_print(void) {
-    rainbow_print("Welcome to profanOS!");
-
-    fd_putstr(1, "\n\e[35mKernel: \e[95m");
-    fd_putstr(1, syscall_sys_kinfo());
-    fd_putstr(1, "\e[0m\n\n");
+    rainbow_print("Welcome to profanOS!\n\n");
 }
 
 char wait_key(void) {
@@ -130,47 +126,52 @@ char **envp;
 
 void set_env(char *line) {
     if (envp == NULL) {
-        envp = kmalloc(2 * sizeof(char *));
+        envp = mmq_malloc(2 * sizeof(char *));
         envp[0] = line;
         envp[1] = NULL;
     } else {
         int i;
         for (i = 0; envp[i]; i++);
-        envp = krealloc(envp, (i + 2) * sizeof(char *));
+        envp = mmq_realloc(envp, (i + 2) * sizeof(char *));
         envp[i] = line;
         envp[i + 1] = NULL;
     }
 }
 
 int main(void) {
-    char key_char, use_panda = 0;
+    runtime_args_t args;
     int total, usage_pid;
+    char key_char;
 
     envp = NULL;
 
     total = (int) (sizeof(mods_at_boot) / sizeof(mod_t));
 
     for (int i = 0; i < total; i++) {
-        if (!print_load_status(i))
-            continue;
-        syscall_kprint("["LOADER_NAME"] Module loading failed, exiting\n");
-        return 1;
+        print_load_status(i);
     }
 
-    fd_printf(1, "Successfully loaded %d modules\n\n", total);
+    mmq_printf(1, "Successfully loaded %d modules\n\n", total);
 
     if (syscall_vesa_state()) {
         panda_set_start(syscall_get_cursor());
-        use_panda = 1;
         if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
             fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
             fm_reopen(2, "/dev/pander", O_WRONLY) < 0
         ) syscall_kprint("["LOADER_NAME"] Failed to redirect to panda\n");
         set_env("TERM=/dev/panda");
-        syscall_sys_set_reporter(userspace_reporter);
-        if (START_USAGE_GRAPH)
-            run_ifexist_full((runtime_args_t){"/bin/g/usage.elf", NULL, 1,
-                    (char *[]){"usage"}, NULL, 0}, &usage_pid);
+        if (START_USAGE_GRAPH) {
+            args = (runtime_args_t){
+                .path = "/bin/g/usage.elf",
+                .wd = NULL,
+                .argc = 1,
+                .argv = (char *[]){"usage"},
+                .envp = NULL,
+                .sleep_mode = 0
+            };
+            run_ifexist(&args, &usage_pid);
+        }
+
     } else {
         set_env("TERM=/dev/kterm");
     }
@@ -183,9 +184,18 @@ int main(void) {
     set_env("PWD=/");
 
     do {
-        run_ifexist_full((runtime_args_t){SHELL_PATH, NULL, 1, (char *[]){SHELL_NAME}, envp, 1}, NULL);
+        args = (runtime_args_t){
+            .path = SHELL_PATH,
+            .wd = NULL,
+            .argc = 1,
+            .argv = (char *[]) {SHELL_NAME},
+            .envp = envp,
+            .sleep_mode = 1
+        };
 
-        fd_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
+        run_ifexist(&args, &usage_pid);
+
+        mmq_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
             " h - unload all modules and exit\n"
             " j - reboot profanOS\n"
@@ -196,27 +206,21 @@ int main(void) {
         }
     } while (key_char != 'h');
 
-    if (use_panda) {
-        syscall_sys_set_reporter(NULL);
-    }
-
     if (syscall_process_state(usage_pid) < 4) {
         syscall_process_kill(usage_pid, 0);
     }
 
     syscall_kprint("\e[2J");
 
-    kfree(envp);
+    mmq_free(envp);
 
     // unload all modules
     for (int i = 0; i < total; i++) {
         mod_t *mod = &mods_at_boot[i];
-        syscall_pok_unload(mod->id);
+        syscall_mod_unload(mod->id);
     }
 
     syscall_kprint("all modules unloaded\n");
-
-    syscall_mem_free_all(syscall_process_pid());
 
     return 0;
 }

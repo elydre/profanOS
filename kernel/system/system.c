@@ -9,9 +9,10 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <kernel/scubasuit.h>
-#include <drivers/serial.h>
+#include <kernel/multiboot.h>
+#include <kernel/butterfly.h>
 #include <kernel/process.h>
+#include <kernel/tinyelf.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
@@ -87,26 +88,54 @@ void kernel_exit_current(void) {
 
 uint8_t IN_KERNEL = 1;
 
-int sys_entry_kernel(int tolerate_error) {
-    if (IN_KERNEL) {
-        if (tolerate_error)
-            return 1;
+uint32_t g_in_kernel_total = 0;
+uint32_t g_last_entry = 0;
+
+void sys_entry_kernel(void) {
+    asm volatile("cli");
+
+    if (IN_KERNEL)
         sys_fatal("Already in kernel mode");
-    }
-    process_auto_schedule(0); // lock before entering kernel
+
     IN_KERNEL = 1;
-    return 0;
+
+    g_last_entry = TIMER_TICKS;
+
+    // enable interrupts but with only IRQ0 (timer)
+    port_write8(0x21, 0xFE);
+    port_write8(0xA1, 0xFF);
+
+    asm volatile("sti");
 }
 
-int sys_exit_kernel(int tolerate_error) {
-    if (!IN_KERNEL) {
-        if (tolerate_error)
-            return 1;
+void sys_exit_kernel(int restore_pic) {
+    asm volatile("cli");
+
+    if (!IN_KERNEL)
         sys_fatal("Already in user mode");
-    }
+
+    schedule_if_needed();
+
     IN_KERNEL = 0;
-    process_auto_schedule(1); // unlock after exiting kernel
-    return 0;
+
+    g_in_kernel_total += TIMER_TICKS - g_last_entry;
+
+    // enable all IRQs
+    port_write8(0x21, 0x00);
+    port_write8(0xA1, 0x00);
+
+    // restore pic if needed
+    if (restore_pic) {
+        if (restore_pic > 40)
+            port_write8(0xA0, 0x20);
+        port_write8(0x20, 0x20);
+    }
+
+    asm volatile("sti");
+}
+
+uint32_t sys_get_kernel_time(void) {
+    return g_in_kernel_total + (TIMER_TICKS - g_last_entry);
 }
 
 /********************************
@@ -116,21 +145,20 @@ int sys_exit_kernel(int tolerate_error) {
 ********************************/
 
 char sys_safe_buffer[256];
-void *reporter_addr;
-
-int RECURSIVE_COUNT;
 
 int sys_default_reporter(char *msg) {
     kprint(msg);
-    serial_write(SERIAL_PORT_A, msg, str_len(msg));
     return 0;
 }
 
+void *reporter_addr = sys_default_reporter;
+int RECURSIVE_COUNT = 0;
+
 int sys_set_reporter(int (*reporter)(char *)) {
-    if (reporter == NULL) {
-        reporter = sys_default_reporter;
-    }
-    reporter_addr = reporter;
+    if (reporter == NULL)
+        reporter_addr = sys_default_reporter;
+    else
+        reporter_addr = reporter;
     return 0;
 }
 
@@ -145,10 +173,15 @@ void sys_report(char *msg) {
         RECURSIVE_COUNT > 1)
     ) {
         reporter_addr = sys_default_reporter;
-        sys_warning("Invalid reporter address, using default reporter");
+        sys_warning("Invalid reporter, using the default one");
     }
 
-    ((int (*)(char *)) reporter_addr)(copy);
+    if (((int (*)(char *)) reporter_addr)(copy)) {
+        RECURSIVE_COUNT++;
+        sys_report(copy);
+        RECURSIVE_COUNT--;
+    }
+
     free(copy);
 }
 
@@ -217,15 +250,15 @@ void sys_interrupt(uint8_t code, int err_code) {
 void sys_reboot(void) {
     uint8_t good = 0x02;
     while (good & 0x02)
-        good = port_byte_in(0x64);
-    port_byte_out(0x64, 0xFE);
+        good = port_read8(0x64);
+    port_write8(0x64, 0xFE);
     asm volatile("hlt");
 }
 
 void sys_shutdown(void) {
-    port_word_out(0x604, 0x2000);   // qemu
-    port_word_out(0xB004, 0x2000);  // bochs
-    port_word_out(0x4004, 0x3400);  // virtualbox
+    port_write16(0x604, 0x2000);   // qemu
+    port_write16(0xB004, 0x2000);  // bochs
+    port_write16(0x4004, 0x3400);  // virtualbox
 
     kcprint("profanOS has been stopped ", 0x0D);
     kcprint(":", 0x0B);
@@ -264,15 +297,17 @@ int sys_power(int action) {
  *                           *
 ******************************/
 
-void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
+static void cpuid(uint32_t eax, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     asm volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(eax));
 }
 
-int sys_init(void) {
+static int init_fpu(void) {
     // get if fpu is present
     uint32_t eax, ebx, ecx, edx;
     cpuid(1, &eax, &ebx, &ecx, &edx);
-    if (!(edx & (1 << 24))) return 1;
+
+    if (!(edx & (1 << 24)))
+        return 1;
 
     // enable fpu
     asm volatile("fninit");
@@ -285,18 +320,91 @@ int sys_init(void) {
     asm volatile("or $0x600, %eax");
     asm volatile("mov %eax, %cr4");
 
-    RECURSIVE_COUNT = 0;
-    sys_set_reporter(sys_default_reporter);
+    return 0;
+}
 
+static int write_kernel_version(void) {
+    if (IS_SID_NULL(kfu_dir_create(0, "/sys", "kernel")))
+        return 1;
+
+    uint32_t sid = kfu_file_create("/sys/kernel", "version.txt");
+
+    if (IS_SID_NULL(sid))
+        return 1;
+
+    char *version = KERNEL_VERSION "\n" KERNEL_EDITING "\ni386\n";
+    uint32_t version_len = str_len(version);
+
+    if (fs_cnt_set_size(sid, version_len))
+        return 1;
+
+    if (fs_cnt_write(sid, version, 0, version_len))
+        return 1;
+
+    return 0;
+}
+
+int sys_init(void) {
+    init_fpu();
+    write_kernel_version();
     return 0;
 }
 
 /********************************
  *                             *
- *  information get functions  *
+ *  multiboot elf resolution   *
  *                             *
 ********************************/
 
-char *sys_kinfo(void) {
-    return KERNEL_EDITING " " KERNEL_VERSION;
+uint32_t sys_name2addr(const char *name) {
+    if (!(g_mboot->flags & (1 << 5)))
+        return 0; // no elf section info
+
+    Elf32_Shdr *sh = (Elf32_Shdr *)g_mboot->elf_sec.addr;
+
+    for (uint32_t i = 0; i < g_mboot->elf_sec.num; i++) {
+        if (sh[i].sh_type != SHT_SYMTAB)
+            continue;
+
+        Elf32_Sym *sym = (Elf32_Sym *) sh[i].sh_addr;
+        char *strtab = (char *) sh[sh[i].sh_link].sh_addr;
+
+        int symcount = sh[i].sh_size / sh[i].sh_entsize;
+
+        for (int j = 0; j < symcount; j++) {
+            if (sym[j].st_name == 0)
+                continue;
+            if (str_cmp(name, strtab + sym[j].st_name) == 0)
+                return sym[j].st_value;
+        }
+    }
+
+    return 0;
+}
+
+const char *sys_addr2name(uint32_t addr) {
+    if (!(g_mboot->flags & (1 << 5)))
+        return NULL; // no elf section info
+
+    Elf32_Shdr *sh = (Elf32_Shdr *)g_mboot->elf_sec.addr;
+
+    for (uint32_t i = 0; i < g_mboot->elf_sec.num; i++) {
+        if (sh[i].sh_type != SHT_SYMTAB)
+            continue;
+
+        Elf32_Sym *sym = (Elf32_Sym *)sh[i].sh_addr;
+        char *strtab = (char *) sh[sh[i].sh_link].sh_addr;
+
+        int symcount = sh[i].sh_size / sh[i].sh_entsize;
+
+        for (int j = 0; j < symcount; j++) {
+            if (addr < sym[j].st_value || addr >= sym[j].st_value + sym[j].st_size)
+                continue;
+            if (sym[j].st_name == 0)
+                return NULL;
+            return strtab + sym[j].st_name;
+        }
+    }
+
+    return NULL;
 }

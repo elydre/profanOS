@@ -446,7 +446,7 @@ ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
     ) return -1;
 
     size_t i = 0;
-    int c;
+    uint8_t c;
 
     while (fread(&c, 1, 1, stream)) {
         if (*lineptr == NULL) {
@@ -625,7 +625,7 @@ int rename(const char *old_filename, const char *new_filename) {
 
     // check if the file exists
     fullpath = profan_path_join(profan_wd_path(), (char *) old_filename);
-    fu_simplify_path(fullpath);
+    profan_path_simplify(fullpath);
     uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
     if (IS_SID_NULL(old_sid)) {
@@ -649,7 +649,7 @@ int rename(const char *old_filename, const char *new_filename) {
 
     // check if the new file exists
     fullpath = profan_path_join(profan_wd_path(), (char *) new_filename);
-    fu_simplify_path(fullpath);
+    profan_path_simplify(fullpath);
     uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
     if (!IS_SID_NULL(new_sid)) {

@@ -18,9 +18,12 @@
 
 int is_valid_elf(void *data) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
-    return !(
-        mem_cmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
-        ehdr->e_type != ET_EXEC || ehdr->e_machine != EM_386
+
+    return !(mem_cmp(&ehdr->e_ident[EI_MAG], ELFMAG, SELFMAG) != 0 ||
+        ehdr->e_ident[EI_CLASS] != ELFCLASS32  ||
+        ehdr->e_ident[EI_DATA]  != ELFDATA2LSB ||
+        ehdr->e_type    != ET_EXEC             ||
+        ehdr->e_machine != EM_386
     );
 }
 
@@ -52,7 +55,7 @@ void *load_sections(uint8_t *file) {
     }
 
     required_size -= (uint32_t) base_addr;
-    required_size = (required_size + 0xFFF) & ~0xFFF;
+    required_size = ALIGN(required_size, 0x1000);
 
     scuba_call_generate(base_addr, required_size / 0x1000);
     mem_set(base_addr, 0, required_size);
@@ -66,16 +69,16 @@ void *load_sections(uint8_t *file) {
     return base_addr;
 }
 
-int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
-    if (!fu_is_file(fs_get_main(), sid)) {
+int elf_exec(uint32_t sid, char **argv, char **envp) {
+    if (!kfu_is_file(sid)) {
         sys_warning("[exec] File not found");
         return -1;
     }
 
-    uint32_t size = fs_cnt_get_size(fs_get_main(), sid);
+    uint32_t size = fs_cnt_get_size(sid);
 
-    uint8_t *file = mem_alloc(size, 0, 6);
-    fs_cnt_read(fs_get_main(), sid, file, 0, size);
+    uint8_t *file = mem_alloc(size, SNOW_KERNEL, 0);
+    fs_cnt_read(sid, file, 0, size);
 
     if (size < sizeof(Elf32_Ehdr) || !is_valid_elf(file)) {
         sys_warning("[exec] Not a valid ELF file");
@@ -85,18 +88,10 @@ int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
 
     int pid = process_get_pid();
 
-    comm_struct_t *comm = process_get_comm(pid);
+    int argc = 0;
 
-    // free the old argv and envp
-    if (comm->argv) {
-        for (int i = 0; comm->argv[i] != NULL; i++)
-            free(comm->argv[i]);
-        free(comm->argv);
-    }
-    free(comm->envp);
-
-    comm->argv = argv;
-    comm->envp = envp;
+    if (argv) while (argv[argc] != NULL)
+        argc++;
 
     if (argc)
         process_info(pid, PROC_INFO_SET_NAME, argv[0]);
@@ -120,16 +115,19 @@ int elf_exec(uint32_t sid, int argc, char **argv, char **envp) {
     // call the entry point
     sys_exit_kernel(0);
     int ret = ((int (*)(int, char **, char **)) entry)(argc, argv, envp);
-    sys_entry_kernel(0);
+    sys_entry_kernel();
 
     return process_kill(process_get_pid(), ret);
 }
 
-int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
-    uint32_t sid = fu_path_to_sid(fs_get_main(), SID_ROOT, file);
+int elf_start(char *file, int sleep, char **argv, int *pid_ptr) {
+    uint32_t sid = kfu_path_to_sid(SID_ROOT, file);
 
-    if (IS_SID_NULL(sid) || !fu_is_file(fs_get_main(), sid)) {
-        sys_warning("[run_ifexist] File not found: %s", file);
+    if (pid_ptr != NULL)
+        *pid_ptr = -1;
+
+    if (IS_SID_NULL(sid) || !kfu_is_file(sid)) {
+        sys_warning("[elf_start] File not found: %s", file);
         return -1;
     }
 
@@ -137,21 +135,25 @@ int run_ifexist(char *file, int sleep, char **argv, int *pid_ptr) {
     while (argv && argv[argc] != NULL)
         argc++;
 
-    char **nargv = mem_alloc((argc + 1) * sizeof(char *), 0, 6);
+    char **nargv = mem_alloc((argc + 1) * sizeof(char *), SNOW_ARGS, 0);
     nargv[argc] = NULL;
 
-    for (int i = 0; i < argc; i++) {
-        nargv[i] = mem_alloc(str_len(argv[i]) + 1, 0, 6);
-        str_cpy(nargv[i], argv[i]);
-    }
+    int pid = process_create(elf_exec, 0, 3, (uint32_t []) {sid, (uint32_t) nargv, 0});
 
-    int pid = process_create(elf_exec, 0, 4, (uint32_t []) {sid, argc, (uint32_t) nargv, 0});
+    if (pid == -1) {
+        free(nargv);
+        return -1;
+    }
 
     if (pid_ptr != NULL)
         *pid_ptr = pid;
 
-    if (pid == -1)
-        return -1;
+    mem_alloc_fetch(nargv, pid);
+
+    for (int i = 0; i < argc; i++) {
+        nargv[i] = mem_alloc(str_len(argv[i]) + 1, SNOW_ARGS, pid);
+        str_cpy(nargv[i], argv[i]);
+    }
 
     if (sleep == 2)
         return 0;

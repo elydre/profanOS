@@ -15,7 +15,7 @@
 
 ; Common ISR code
 isr_common_stub:
-    ; 1. Save CPU state
+    ; 1 - save CPU state
     pusha           ; pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
     mov ax, ds      ; lower 16-bits of eax = ds.
     push eax        ; save the data segment descriptor
@@ -26,18 +26,18 @@ isr_common_stub:
     mov gs, ax
     push esp        ; registers_t *r
 
-    ; 2. Call C handler
-    cld ; clear direction flag
+    ; 2 - call the handler
+    cld
     call isr_handler
 
-    ; 3. Restore state
+    ; 3 - restore state
     pop eax
     pop eax
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    popa        ; pops edi,esi,ebp,esp,ebx,edx,ecx,eax
+    popa        ; pops edi, esi, ebp, esp, ebx, edx, ecx, eax
     add esp, 8  ; cleans up the pushed error code and pushed ISR number
     iret        ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
@@ -57,7 +57,7 @@ irq_common_stub:
     cld
     call irq_handler
 
-    pop ebx         ; Different than the ISR code
+    pop ebx
     pop ebx
     mov ds, bx
     mov es, bx
@@ -74,7 +74,6 @@ irq_common_stub:
 ; don't, so we will push a dummy error code for those which don't, so that
 ; we have a consistent stack for all of them.
 
-; First make the ISRs global
 global isr0
 global isr1
 global isr2
@@ -108,7 +107,7 @@ global isr29
 global isr30
 global isr31
 global isr128
-; IRQs
+
 global irq0
 global irq1
 global irq2
@@ -125,6 +124,7 @@ global irq12
 global irq13
 global irq14
 global irq15
+
 
 ; 0: Divide By Zero Exception
 isr0:
@@ -317,6 +317,7 @@ isr128:
     push byte 0
     push byte -128 ; -128 => 128  :)
     jmp isr_common_stub
+
 
 ; IRQ handlers
 irq0:

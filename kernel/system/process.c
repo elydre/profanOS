@@ -17,42 +17,18 @@
 
 #define ERROR_CODE (-1)
 
-#define SHDLR_ENBL 0    // scheduler enabled
-#define SHDLR_RUNN 1    // scheduler running
-#define SHDLR_DISL 2    // scheduler disabled
-#define SHDLR_DEAD 3    // scheduler dead
+process_t  *g_plist;                 // main process list
+process_t  *g_proc_current = NULL;   // running process pointer
+uint32_t    g_pid_incrament;         // pid of the last created process
+uint32_t    g_last_switch;           // last scheduler switch time
 
-#define SCHEDULER_EVRY (RATE_TIMER_TICK / RATE_SCHEDULER)
+process_t **g_tsleep_list;           // sleeping processes
+uint32_t    g_tsleep_list_length;    // number of sleeping processes
+uint32_t    g_tsleep_interact;       // time when the next sleeping process will awake
 
-// main process list
-process_t *plist;
-
-// sleeping processes
-uint32_t g_tsleep_list_length;
-process_t **g_tsleep_list;
-
-// first process to wake up
-uint32_t g_tsleep_interact;
-
-// scheduler queue
-uint32_t g_shdlr_queue_length;
-process_t **g_shdlr_queue;
-
-// scheduler state
-uint8_t g_scheduler_state = SHDLR_DEAD;
-int g_scheduler_disable_count;
-
-// need to clean killed processes
-uint8_t g_need_clean;
-
-// running process
-process_t *g_proc_current = NULL;
-
-// how many processes have been created
-uint32_t g_pid_incrament;
-
-// last scheduler switch
-uint32_t g_last_switch;
+process_t **g_shdlr_queue;           // scheduler queue
+uint32_t    g_shdlr_queue_length;    // scheduler queue length
+uint8_t     g_need_clean;            // need to clean killed processes
 
 /**************************
  *                       *
@@ -60,7 +36,7 @@ uint32_t g_last_switch;
  *                       *
 **************************/
 
-static void i_new_process(process_t *process, void (*func)(), uint32_t flags, uint32_t *pagedir) {
+static void i_new_process(process_t *process, void *entry, uint32_t flags, uint32_t *pagedir) {
     process->regs.eax = 0;
     process->regs.ebx = 0;
     process->regs.ecx = 0;
@@ -69,7 +45,7 @@ static void i_new_process(process_t *process, void (*func)(), uint32_t flags, ui
     process->regs.esi = 0;
     process->regs.edi = 0;
     process->regs.eflags = flags;
-    process->regs.eip = (uint32_t) func;
+    process->regs.eip = (uint32_t) entry;
     process->regs.cr3 = (uint32_t) pagedir;
     process->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - 4;
 }
@@ -78,7 +54,7 @@ static int i_get_free_place(int pid) {
     int ideal = pid % PROCESS_MAX;
 
     for (int i = PROCESS_MAX + ideal; i > ideal; i--) {
-        if (plist[i % PROCESS_MAX].state == PROC_STATE_FRE) {
+        if (g_plist[i % PROCESS_MAX].state == PROC_STATE_FRE) {
             return i % PROCESS_MAX;
         }
     }
@@ -90,7 +66,7 @@ static int i_pid_to_place(uint32_t pid) {
     int ideal = pid % PROCESS_MAX;
 
     for (int i = PROCESS_MAX + ideal; i > ideal; i--) {
-        if (plist[i % PROCESS_MAX].pid == pid && plist[i % PROCESS_MAX].state != PROC_STATE_FRE) {
+        if (g_plist[i % PROCESS_MAX].pid == pid && g_plist[i % PROCESS_MAX].state != PROC_STATE_FRE) {
             return i % PROCESS_MAX;
         }
     }
@@ -100,18 +76,9 @@ static int i_pid_to_place(uint32_t pid) {
 
 // used in switch.asm
 void i_end_scheduler(void) {
-    if (IN_KERNEL != g_proc_current->in_kernel) {
-        if (g_proc_current->in_kernel) {
-            sys_entry_kernel(0);
-        } else {
-            sys_exit_kernel(0);
-        }
-    }
-
-    if (g_scheduler_state == SHDLR_RUNN) {
-        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
-    } else {
-        sys_fatal("Scheduler is not running but scheduler is exiting");
+    if (g_proc_current->in_kernel == 0) {
+        // called once for new process that never called a syscall
+        sys_exit_kernel(0);
     }
 }
 
@@ -122,13 +89,13 @@ static void i_process_switch(process_t *proc1, process_t *proc2) {
     if (proc1->state == PROC_STATE_RUN) {
         proc1->state = PROC_STATE_INQ;
     }
+
     if (proc2->state != PROC_STATE_IDL) {
         proc2->state = PROC_STATE_RUN;
     }
 
     g_proc_current = proc2;
-
-    proc1->in_kernel = IN_KERNEL;
+    proc1->in_kernel = 1;
 
     process_asm_switch(&proc1->regs, &proc2->regs);
 }
@@ -166,22 +133,14 @@ static void i_free_process(process_t *proc) {
     if (!proc->scuba_dir)
         return;
 
-    if (proc->comm.argv) {
-        for (int i = 0; proc->comm.argv[i] != NULL; i++)
-            free(proc->comm.argv[i]);
-        free(proc->comm.argv);
-    }
-
-    free(proc->comm.envp);
-
-    mem_free_all(proc->pid);
+    mem_free_all(proc->pid, 0);
 
     scuba_dir_destroy(proc->scuba_dir);
     proc->scuba_dir = NULL;
 
     int parent_place = i_pid_to_place(proc->ppid);
 
-    if (parent_place < 0 || plist[parent_place].state == PROC_STATE_ZMB) {
+    if (parent_place < 0 || g_plist[parent_place].state == PROC_STATE_ZMB) {
         proc->state = PROC_STATE_FRE;
     }
 }
@@ -189,10 +148,10 @@ static void i_free_process(process_t *proc) {
 static void i_clean_killed(void) {
     g_need_clean = 0;
     for (int i = 0; i < PROCESS_MAX; i++) {
-        if (plist[i].state != PROC_STATE_ZMB || !plist[i].scuba_dir)
+        if (g_plist[i].state != PROC_STATE_ZMB || !g_plist[i].scuba_dir)
             continue;
-        if (plist[i].pid != g_proc_current->pid) {
-            i_free_process(plist + i);
+        if (g_plist[i].pid != g_proc_current->pid) {
+            i_free_process(g_plist + i);
         } else {
             g_need_clean = 1;
         }
@@ -251,6 +210,8 @@ static void i_process_final_jump(void) {
 **************************/
 
 void idle_process(void) {
+    // used to keep the CPU busy when no process is running
+    // be careful: it runs out of kernel mode !
     while (1) asm volatile("hlt");
 }
 
@@ -261,11 +222,11 @@ void idle_process(void) {
 **************************/
 
 int process_init(void) {
-    plist = calloc(sizeof(process_t) * PROCESS_MAX);
+    g_plist = calloc(sizeof(process_t) * PROCESS_MAX);
     g_shdlr_queue = calloc(sizeof(process_t *) * PROCESS_MAX);
     g_tsleep_list = calloc(sizeof(process_t *) * PROCESS_MAX);
 
-    process_t *kern_proc = &plist[0];
+    process_t *kern_proc = &g_plist[0];
 
     // Get EFLAGS and CR3
     asm volatile (
@@ -304,16 +265,12 @@ int process_init(void) {
 
     kern_proc->scuba_dir = scuba_get_kernel_dir();
 
-    // enable scheduler
-    g_scheduler_state = SHDLR_DISL;
-    g_scheduler_disable_count = 1;
-
     // create idle process
     process_create(idle_process, 0, 0, NULL);
-    str_cpy(plist[1].name, "idle");
+    str_cpy(g_plist[1].name, "idle");
 
-    plist[1].state = PROC_STATE_IDL;
-    plist[1].in_kernel = 0;
+    g_plist[1].state = PROC_STATE_IDL;
+    g_plist[1].in_kernel = 0;
 
     return 0;
 }
@@ -329,7 +286,7 @@ int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
 
     g_pid_incrament++;
 
-    process_t *new_proc = plist + place;
+    process_t *new_proc = g_plist + place;
 
     mem_set(new_proc, 0, sizeof(process_t));
 
@@ -381,7 +338,7 @@ int process_fork(registers_t *regs) {
         return ERROR_CODE;
     }
 
-    process_t *new_proc = &plist[i_pid_to_place(new_pid)];
+    process_t *new_proc = &g_plist[i_pid_to_place(new_pid)];
 
     new_proc->in_kernel = 0; // cannot call this without a syscall
 
@@ -408,12 +365,12 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_IDL) {
+    if (g_plist[place].state == PROC_STATE_IDL) {
         sys_warning("[sleep] Can't interact with idle process");
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_ZMB) {
+    if (g_plist[place].state == PROC_STATE_ZMB) {
         sys_warning("[sleep] pid %d already dead", pid);
         return ERROR_CODE;
     }
@@ -424,22 +381,22 @@ int process_sleep(uint32_t pid, uint32_t ms) {
         return 0;
     }
 
-    if (plist[place].state == PROC_STATE_SLP && plist[place].sleep_to) {
+    if (g_plist[place].state == PROC_STATE_SLP && g_plist[place].sleep_to) {
         i_remove_from_g_tsleep_list(pid);
     }
 
-    plist[place].state = PROC_STATE_SLP;
+    g_plist[place].state = PROC_STATE_SLP;
     if (ms == (uint32_t) -1) {
-        plist[place].sleep_to = 0;
+        g_plist[place].sleep_to = 0;
     } else {
         // convert ms to ticks
-        plist[place].sleep_to = timer_get_ticks() + (ms * 1000 / RATE_TIMER_TICK);
-        g_tsleep_list[g_tsleep_list_length] = plist + place;
+        g_plist[place].sleep_to = TIMER_TICKS + (ms * 1000 / RATE_TIMER_TICK);
+        g_tsleep_list[g_tsleep_list_length] = g_plist + place;
         g_tsleep_list_length++;
         i_refresh_tsleep_interact();
     }
 
-    i_remove_from_shdlr_queue(&plist[place]);
+    i_remove_from_shdlr_queue(&g_plist[place]);
 
     if (pid == g_proc_current->pid) {
         schedule(0);
@@ -457,30 +414,30 @@ int process_wakeup(uint32_t pid, int handover) {
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_IDL) {
+    if (g_plist[place].state == PROC_STATE_IDL) {
         sys_warning("[wakeup] Can't interact with idle process");
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_ZMB) {
+    if (g_plist[place].state == PROC_STATE_ZMB) {
         sys_warning("[wakeup] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
-    if (plist[place].state != PROC_STATE_SLP) {
+    if (g_plist[place].state != PROC_STATE_SLP) {
         sys_warning("[wakeup] pid %d not sleeping", pid);
         return ERROR_CODE;
     }
 
-    if (plist[place].sleep_to) {
+    if (g_plist[place].sleep_to) {
         i_remove_from_g_tsleep_list(pid);
     }
 
-    plist[place].state = PROC_STATE_INQ;
-    plist[place].sleep_to = 0;
-    plist[place].wait_pid = 0;
+    g_plist[place].state = PROC_STATE_INQ;
+    g_plist[place].sleep_to = 0;
+    g_plist[place].wait_pid = 0;
 
-    i_add_to_shdlr_queue(&plist[place]);
+    i_add_to_shdlr_queue(&g_plist[place]);
     i_refresh_tsleep_interact();
 
     if (handover) {
@@ -508,25 +465,25 @@ int process_kill(uint32_t pid, uint8_t retcode) {
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_IDL) {
+    if (g_plist[place].state == PROC_STATE_IDL) {
         sys_warning("[kill] Can't interact with idle process");
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_ZMB) {
+    if (g_plist[place].state == PROC_STATE_ZMB) {
         sys_warning("[kill] pid %d already dead", pid);
         return ERROR_CODE;
     }
 
-    if (plist[place].state == PROC_STATE_SLP && plist[place].sleep_to) {
+    if (g_plist[place].state == PROC_STATE_SLP && g_plist[place].sleep_to) {
         i_remove_from_g_tsleep_list(pid);
     }
 
-    plist[place].state = PROC_STATE_ZMB;
-    plist[place].retcode = retcode;
-    plist[place].wait_pid = 0;
+    g_plist[place].state = PROC_STATE_ZMB;
+    g_plist[place].retcode = retcode;
+    g_plist[place].wait_pid = 0;
 
-    i_remove_from_shdlr_queue(&plist[place]);
+    i_remove_from_shdlr_queue(&g_plist[place]);
 
     g_need_clean = 1;
 
@@ -535,20 +492,20 @@ int process_kill(uint32_t pid, uint8_t retcode) {
             continue;
 
         // wake up parent process that is waiting for this one
-        if (plist[i].wait_pid == (int) pid ||
-           (plist[i].wait_pid == -1 && plist[i].pid == plist[place].ppid)) {
-            plist[i].wait_pid = -pid;
-            process_wakeup(plist[i].pid, 0);
+        if (g_plist[i].wait_pid == (int) pid ||
+           (g_plist[i].wait_pid == -1 && g_plist[i].pid == g_plist[place].ppid)) {
+            g_plist[i].wait_pid = -pid;
+            process_wakeup(g_plist[i].pid, 0);
         }
 
         // kill children
-        if (plist[i].ppid == pid && plist[i].state != PROC_STATE_FRE) {
-            if (plist[i].state == PROC_STATE_ZMB) {
-                i_free_process(plist + i);
-                plist[i].state = PROC_STATE_FRE;
+        if (g_plist[i].ppid == pid && g_plist[i].state != PROC_STATE_FRE) {
+            if (g_plist[i].state == PROC_STATE_ZMB) {
+                i_free_process(g_plist + i);
+                g_plist[i].state = PROC_STATE_FRE;
                 continue;
             }
-            process_kill(plist[i].pid, 0);
+            process_kill(g_plist[i].pid, 0);
         }
     }
 
@@ -565,19 +522,20 @@ int process_wait(int pid, uint8_t *retcode, int block) {
 
     if (pid < 0) {
         for (int i = 0; i < PROCESS_MAX; i++) {
-            if (plist[i].state == PROC_STATE_ZMB && plist[i].ppid == g_proc_current->pid && plist[i].retcode >= 0) {
+            if (g_plist[i].state == PROC_STATE_ZMB && g_plist[i].ppid == g_proc_current->pid &&
+                        g_plist[i].retcode >= 0) {
                 if (retcode)
-                    *retcode = (uint8_t) plist[i].retcode;
-                pid = plist[i].pid;
-                i_free_process(plist + i);
-                plist[i].state = PROC_STATE_FRE;
+                    *retcode = (uint8_t) g_plist[i].retcode;
+                pid = g_plist[i].pid;
+                i_free_process(g_plist + i);
+                g_plist[i].state = PROC_STATE_FRE;
                 return pid;
             }
         }
 
         // check for children
         for (int i = 0; i < PROCESS_MAX; i++) {
-            if (plist[i].ppid == g_proc_current->pid && plist[i].state > PROC_STATE_ZMB)
+            if (g_plist[i].ppid == g_proc_current->pid && g_plist[i].state > PROC_STATE_ZMB)
                 break;
             if (i == PROCESS_MAX - 1) {
                 return -1;
@@ -586,15 +544,15 @@ int process_wait(int pid, uint8_t *retcode, int block) {
     } else {
         int child_place = i_pid_to_place(pid);
 
-        if (child_place < 0 || plist[child_place].ppid != g_proc_current->pid) {
+        if (child_place < 0 || g_plist[child_place].ppid != g_proc_current->pid) {
             return ERROR_CODE;
         }
 
-        if (plist[child_place].state == PROC_STATE_ZMB) {
+        if (g_plist[child_place].state == PROC_STATE_ZMB) {
             if (retcode)
-                *retcode = (uint8_t) plist[child_place].retcode;
-            i_free_process(plist + child_place);
-            plist[child_place].state = PROC_STATE_FRE;
+                *retcode = (uint8_t) g_plist[child_place].retcode;
+            i_free_process(g_plist + child_place);
+            g_plist[child_place].state = PROC_STATE_FRE;
             return pid;
         }
     }
@@ -620,12 +578,12 @@ int process_wait(int pid, uint8_t *retcode, int block) {
     }
 
     for (int i = 0; i < PROCESS_MAX; i++) {
-        if (plist[i].state == PROC_STATE_ZMB && plist[i].ppid == g_proc_current->pid && plist[i].retcode >= 0) {
+        if (g_plist[i].state == PROC_STATE_ZMB && g_plist[i].ppid == g_proc_current->pid && g_plist[i].retcode >= 0) {
             if (retcode)
-                *retcode = (uint8_t) plist[i].retcode;
-            pid = plist[i].pid;
-            i_free_process(plist + i);
-            plist[i].state = PROC_STATE_FRE;
+                *retcode = (uint8_t) g_plist[i].retcode;
+            pid = g_plist[i].pid;
+            i_free_process(g_plist + i);
+            g_plist[i].state = PROC_STATE_FRE;
             return pid;
         }
     }
@@ -640,41 +598,20 @@ int process_wait(int pid, uint8_t *retcode, int block) {
  *                       *
 **************************/
 
-int process_auto_schedule(int acitve) {
-    if (!acitve) {
-        g_scheduler_disable_count++;
-        if (g_scheduler_state == SHDLR_ENBL) {
-            g_scheduler_state = SHDLR_DISL;
-        }
-    } else {
-        g_scheduler_disable_count--;
-        if (g_scheduler_disable_count < 0)
-            g_scheduler_disable_count = 0;
-        if (g_scheduler_state == SHDLR_DISL && !g_scheduler_disable_count) {
-            g_scheduler_state = SHDLR_ENBL;
-            if (timer_get_ticks() - g_last_switch > SCHEDULER_EVRY) {
-                schedule(0);
-            }
-        }
-    }
-
-    return 0;
-}
-
 void schedule(uint32_t ticks) {
-    if (ticks && g_scheduler_state != SHDLR_ENBL) {
+    if (ticks == 0) {
+        // manual schedule
+        ticks = TIMER_TICKS;
+    }
+
+    else if (ticks - g_last_switch < SCHEDULER_EVRY &&
+            (g_proc_current->state != PROC_STATE_IDL || g_tsleep_interact > ticks)) {
+        // not time yet to switch
         return;
     }
 
-    g_scheduler_state = SHDLR_RUNN;
-
-    if (ticks == 0) {   // manual schedule
-        ticks = timer_get_ticks();
-    } else if (g_tsleep_interact && g_tsleep_interact <= ticks) {
+    if (g_tsleep_interact && g_tsleep_interact <= ticks) {
         i_tsleep_awake(ticks);
-    } else if (ticks % SCHEDULER_EVRY) {
-        g_scheduler_state = SHDLR_ENBL;
-        return;
     }
 
     if (g_need_clean) {
@@ -691,7 +628,7 @@ void schedule(uint32_t ticks) {
     process_t *proc;
 
     if (g_shdlr_queue_length == 0) {
-        proc = &plist[1]; // idle process
+        proc = &g_plist[1]; // idle process
     } else {
         proc = g_shdlr_queue[g_shdlr_queue_index];
     }
@@ -700,11 +637,16 @@ void schedule(uint32_t ticks) {
     g_last_switch = ticks;
 
     if (proc == g_proc_current) {
-        g_scheduler_state = g_scheduler_disable_count ? SHDLR_DISL : SHDLR_ENBL;
         return;
     }
 
     i_process_switch(g_proc_current, proc);
+}
+
+void schedule_if_needed(void) {
+    if (TIMER_TICKS - g_last_switch > SCHEDULER_EVRY) {
+        schedule(0);
+    }
 }
 
 /**************************
@@ -719,22 +661,11 @@ uint32_t process_get_pid(void) {
     return g_proc_current->pid;
 }
 
-comm_struct_t *process_get_comm(uint32_t pid) {
-    int place = i_pid_to_place(pid);
-
-    if (place < 0) {
-        sys_warning("[get_comm] pid %d not found", pid);
-        return NULL;
-    }
-
-    return &(plist[place].comm);
-}
-
 int process_list_all(uint32_t *list, int max) {
     int i = 0;
     for (int j = 0; j < PROCESS_MAX && i < max; j++) {
-        if (plist[j].state != PROC_STATE_FRE) {
-            list[i++] = plist[j].pid;
+        if (g_plist[j].state != PROC_STATE_FRE) {
+            list[i++] = g_plist[j].pid;
         }
     }
     return i;
@@ -748,7 +679,7 @@ scuba_dir_t *process_get_dir(uint32_t pid) {
         return 0;
     }
 
-    return plist[place].scuba_dir;
+    return g_plist[place].scuba_dir;
 }
 
 void process_switch_directory(uint32_t pid, scuba_dir_t *new_dir, int now) {
@@ -759,9 +690,9 @@ void process_switch_directory(uint32_t pid, scuba_dir_t *new_dir, int now) {
         return;
     }
 
-    scuba_dir_t *old_dir = plist[place].scuba_dir;
+    scuba_dir_t *old_dir = g_plist[place].scuba_dir;
 
-    plist[place].scuba_dir = new_dir;
+    g_plist[place].scuba_dir = new_dir;
 
     if (!now) return;
 
@@ -782,7 +713,7 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
     if (info_id == PROC_INFO_STATE) {
         if (place < 0)
             return -1;
-        return plist[place].state;
+        return g_plist[place].state;
     }
 
     if (place < 0) {
@@ -791,19 +722,19 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
 
     switch (info_id) {
         case PROC_INFO_PPID:
-            return plist[place].ppid;
+            return g_plist[place].ppid;
         case PROC_INFO_SLEEP_TO:
-            return plist[place].sleep_to;
+            return g_plist[place].sleep_to;
         case PROC_INFO_RUN_TIME:
-            return plist[place].run_time;
+            if (pid == 0)
+                return sys_get_kernel_time();
+            return g_plist[place].run_time;
         case PROC_INFO_NAME:
-            return (int) plist[place].name;
-        case PROC_INFO_COMM:
-            return (int) &plist[place].comm;
+            return (int) g_plist[place].name;
         case PROC_INFO_SET_NAME:
             if (!ptr)
                 return -1;
-            str_ncpy(plist[place].name, ptr, 63);
+            str_ncpy(g_plist[place].name, ptr, 63);
             return 0;
         default:
             return -1;

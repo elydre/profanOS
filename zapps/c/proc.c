@@ -16,13 +16,14 @@
 #include <profan/carp.h>
 #include <profan.h>
 
+#include <sys/utsname.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#define PROCESS_MAX 64
+#define PROCESS_MAX 200
 
 char *get_state(int state) {
     switch (state) {
@@ -81,9 +82,12 @@ void list_process(int mode) {
     int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
     qsort(pid_list, pid_list_len, sizeof(uint32_t), pid_cmp);
 
+    struct utsname kname;
+    uname(&kname);
+
     if (mode == 1) {
-        printf("   profanOS . kernel %s . %d processes . uptime %ds (%ds IDLE)  \n",
-                syscall_sys_kinfo(),
+        printf("   profanOS . kernel %s %s . %d processes . uptime %ds (%ds IDLE)  \n",
+                kname.version, kname.release,
                 pid_list_len - 2,
                 syscall_timer_get_ms() / 1000,
                 syscall_process_run_time(1) / 1000

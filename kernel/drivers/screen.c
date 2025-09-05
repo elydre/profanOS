@@ -15,10 +15,6 @@
 #include <ktype.h>
 
 
-/**********************************************************
- * Public Kernel API functions                            *
-***********************************************************/
-
 #define MAX_ROWS 25
 #define MAX_COLS 80
 
@@ -95,23 +91,23 @@ int txt_cursor_get_offset(void) {
      * 1. ask for high byte of the cursor offset (data 14)
      * 2. ask for low byte (data 15) */
 
-    port_byte_out(REG_SCREEN_CTRL, 14);
-    int offset = port_byte_in(REG_SCREEN_DATA) << 8;
-    port_byte_out(REG_SCREEN_CTRL, 15);
-    offset += port_byte_in(REG_SCREEN_DATA);
+    port_write8(REG_SCREEN_CTRL, 14);
+    int offset = port_read8(REG_SCREEN_DATA) << 8;
+    port_write8(REG_SCREEN_CTRL, 15);
+    offset += port_read8(REG_SCREEN_DATA);
     return offset * 2; // position * size of character cell
 }
 
 void txt_cursor_set_offset(int offset) {
     // similar to cursor_get_offset, but instead of reading we write data
     offset /= 2;
-    port_byte_out(REG_SCREEN_CTRL, 14);
-    port_byte_out(REG_SCREEN_DATA, (uint8_t)(offset >> 8));
-    port_byte_out(REG_SCREEN_CTRL, 15);
-    port_byte_out(REG_SCREEN_DATA, (uint8_t)(offset & 0xff));
+    port_write8(REG_SCREEN_CTRL, 14);
+    port_write8(REG_SCREEN_DATA, (uint8_t)(offset >> 8));
+    port_write8(REG_SCREEN_CTRL, 15);
+    port_write8(REG_SCREEN_DATA, (uint8_t)(offset & 0xff));
 }
 
 void txt_cursor_blink(int on) {
-    port_byte_out(REG_SCREEN_CTRL, 0x0A);
-    port_byte_out(REG_SCREEN_DATA, (port_byte_in(REG_SCREEN_DATA) & 0xC0) | (on ? 0x0F : 0x0C));
+    port_write8(REG_SCREEN_CTRL, 0x0A);
+    port_write8(REG_SCREEN_DATA, (port_read8(REG_SCREEN_DATA) & 0xC0) | (on ? 0x0F : 0x0C));
 }

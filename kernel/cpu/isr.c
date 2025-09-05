@@ -10,25 +10,28 @@
 \*****************************************************************************/
 
 #include <cpu/ports.h>
+#include <cpu/timer.h>
 #include <cpu/idt.h>
 #include <cpu/isr.h>
+#include <minilib.h>
 #include <system.h>
 
 extern void syscall_handler(registers_t *r);
+extern void mod_syscall(registers_t *r);
 
-isr_t interrupt_handlers[256];
+interrupt_handler_t interrupt_handlers[256];
 
 int isr_install(void) {
-    set_idt_gate(0, isr0);
-    set_idt_gate(1, isr1);
-    set_idt_gate(2, isr2);
-    set_idt_gate(3, isr3);
-    set_idt_gate(4, isr4);
-    set_idt_gate(5, isr5);
-    set_idt_gate(6, isr6);
-    set_idt_gate(7, isr7);
-    set_idt_gate(8, isr8);
-    set_idt_gate(9, isr9);
+    set_idt_gate(0,  isr0);
+    set_idt_gate(1,  isr1);
+    set_idt_gate(2,  isr2);
+    set_idt_gate(3,  isr3);
+    set_idt_gate(4,  isr4);
+    set_idt_gate(5,  isr5);
+    set_idt_gate(6,  isr6);
+    set_idt_gate(7,  isr7);
+    set_idt_gate(8,  isr8);
+    set_idt_gate(9,  isr9);
     set_idt_gate(10, isr10);
     set_idt_gate(11, isr11);
     set_idt_gate(12, isr12);
@@ -53,16 +56,16 @@ int isr_install(void) {
     set_idt_gate(31, isr31);
 
     // remap the PIC
-    port_byte_out(0x20, 0x11);
-    port_byte_out(0xA0, 0x11);
-    port_byte_out(0x21, 0x20);
-    port_byte_out(0xA1, 0x28);
-    port_byte_out(0x21, 0x04);
-    port_byte_out(0xA1, 0x02);
-    port_byte_out(0x21, 0x01);
-    port_byte_out(0xA1, 0x01);
-    port_byte_out(0x21, 0x0);
-    port_byte_out(0xA1, 0x0);
+    port_write8(0x20, 0x11);
+    port_write8(0xA0, 0x11);
+    port_write8(0x21, 0x20);
+    port_write8(0xA1, 0x28);
+    port_write8(0x21, 0x04);
+    port_write8(0xA1, 0x02);
+    port_write8(0x21, 0x01);
+    port_write8(0xA1, 0x01);
+    port_write8(0x21, 0x0);
+    port_write8(0xA1, 0x0);
 
     // install the IRQs
     set_idt_gate(32, irq0);
@@ -91,43 +94,61 @@ int isr_install(void) {
 }
 
 void isr_handler(registers_t *r) {
-    int in_kernel = !sys_entry_kernel(1);
-
-    // restore interrupts
-    asm volatile("sti");
-
     r->int_no = r->int_no & 0xFF;
 
-    if (r->int_no == 128)
-        syscall_handler(r);
-    else
-        sys_interrupt(r->int_no & 0xFF, r->err_code);
+    int need_unlook = 0;
 
-    if (in_kernel)
-        sys_exit_kernel(1);
-}
+    if (IN_KERNEL) {
+        // understandable error for display
+        if (r->int_no == 128) {
+            sys_fatal("syscall from kernel mode (%x)", r->eax);
+        }
+    } else {
+        sys_entry_kernel();
+        need_unlook = 1;
+    }
 
-void register_interrupt_handler(uint8_t n, isr_t handler) {
-    interrupt_handlers[n] = handler;
+    if (r->int_no == 128) {
+        if (r->eax & 0xFF000000)
+            mod_syscall(r);
+        else
+            syscall_handler(r);
+    } else {
+        sys_interrupt(r->int_no, r->err_code);
+    }
+
+    if (need_unlook)
+        sys_exit_kernel(0);
 }
 
 void irq_handler(registers_t *r) {
-    /* after every interrupt we need to send an EOI to the PICs
-     * or they will not send another interrupt again */
-
-    if (r->int_no >= 40)
-        port_byte_out(0xA0, 0x20); // slave
-    port_byte_out(0x20, 0x20); // master
-
-    // handle the interrupt in a more modular way
-    if (interrupt_handlers[r->int_no] != 0) {
-        isr_t handler = interrupt_handlers[r->int_no];
-        handler(r);
+    if (r->int_no == 32) {
+        TIMER_TICKS++;
+        port_write8(0x20, 0x20);
+        if (IN_KERNEL)
+            return;
     }
+
+    sys_entry_kernel();
+
+    interrupt_handler_t handler = interrupt_handlers[r->int_no];
+
+    if (handler != NULL)
+        handler(r);
+
+    sys_exit_kernel(r->int_no == 32 ? 0 : r->int_no + 1);
+}
+
+void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
+    interrupt_handlers[n] = handler;
 }
 
 int irq_install(void) {
-    // enable interruptions
+    // durring the kernel only IRQ0 is enabled (timer)
+    port_write8(0x21, 0xFE);
+    port_write8(0xA1, 0xFF);
+
     asm volatile("sti");
+
     return 0;
 }

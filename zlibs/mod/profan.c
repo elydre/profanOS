@@ -11,15 +11,16 @@
 
 #define PROFAN_C
 
-#define _SYSCALL_CREATE_STATIC
-#include <profan/syscall.h>
+#include <drivers/keyboard.h>
+#include <kernel/butterfly.h>
+#include <kernel/snowflake.h>
+#include <kernel/process.h>
+#include <minilib.h>
+#include <system.h>
 
 #include <profan/filesys.h>
-#include <profan/libmmq.h>
-#include <profan.h>
-
-#include <stdarg.h>
-#include <fcntl.h> // for flags
+#include <profan.h> // for runtime_args_t
+#include <fcntl.h>  // for flags
 
 #define DEFAULT_KB "/zada/keymap/azerty.map"
 #define ELF_INTERP "/bin/x/deluge.elf"
@@ -50,44 +51,44 @@ struct stackframe {
 
 char *kb_map;
 
-int profan_kb_load_map(char *path);
-
-int main(void) {
-    kb_map = NULL;
-    if (profan_kb_load_map(DEFAULT_KB)) {
-        fd_printf(2, "[profan module] failed to load default keymap\n");
-        return 1;
-    }
-
-    return 0;
-}
-
-int userspace_reporter(char *message) {
+static int userspace_reporter(char *message) {
     int len = 0;
     while (message[len] != '\0')
         len++;
-    fm_write(2, message, len);
+    return fm_write(2, message, len) == len ? 0 : -1;
+}
+
+int __init(void) {
+    kb_map = NULL;
+
+    if (profan_kb_load_map(DEFAULT_KB)) {
+        sys_warning("[profan module] failed to load default keymap\n");
+        return 1;
+    }
+
+    sys_set_reporter(userspace_reporter);
+
     return 0;
 }
 
 int profan_kb_load_map(char *path) {
-    uint32_t sid = fu_path_to_sid(SID_ROOT, path);
-    if (IS_SID_NULL(sid)) {
+    uint32_t sid = kfu_path_to_sid(SID_ROOT, path);
+
+    if (!kfu_is_file(sid))
         return 1;
-    }
 
-    int file_size = fu_file_get_size(sid);
-    char *file_content = kmalloc(file_size + 1);
+    int file_size = fs_cnt_get_size(sid);
+    char *file_content = malloc(file_size + 1);
 
-    fu_file_read(sid, file_content, 0, file_size);
+    fs_cnt_read(sid, file_content, 0, file_size);
     file_content[file_size] = '\0';
 
     if (str_ncmp(file_content, "#KEYMAP", 7)) {
-        kfree(file_content);
+        free(file_content);
         return 1;
     }
 
-    char *tmp = kcalloc_ask(128, 1);
+    char *tmp = calloc(128);
 
     int tmp_i = 0;
     for (int i = 7; i < file_size; i++) {
@@ -110,20 +111,26 @@ int profan_kb_load_map(char *path) {
         }
     }
 
-    kfree(file_content);
-    kfree(kb_map);
+    free(file_content);
+    free(kb_map);
     kb_map = tmp;
     return 0;
 }
 
 char profan_kb_get_char(uint8_t scancode, uint8_t shift) {
-    if (scancode > 64)
+    if (scancode > 64 || kb_map == NULL)
         return '\0';
-    if (kb_map == NULL)
-        return syscall_sc_to_char(scancode, shift);
     if (shift)
         return kb_map[scancode * 2 + 1];
     return kb_map[scancode * 2];
+}
+
+static void fd_putstr(int fd, const char *str) {
+    fm_write(fd, (void *) str, str_len(str));
+}
+
+static void fd_putchar(int fd, char c) {
+    fm_write(fd, (void *) &c, 1);
 }
 
 char *profan_input_keyboard(int *size, char *term_path) {
@@ -137,7 +144,7 @@ char *profan_input_keyboard(int *size, char *term_path) {
     uint32_t buffer_actual_size, buffer_index, buffer_size;
     int sc, last_sc, last_sc_sgt, key_ticks, shift;
 
-    char *buffer = kmalloc(100);
+    char *buffer = malloc(100);
     buffer[0] = '\0';
     buffer_size = 100;
 
@@ -145,8 +152,8 @@ char *profan_input_keyboard(int *size, char *term_path) {
     buffer_actual_size = buffer_index = 0;
 
     while (sc != ENTER) {
-        syscall_process_sleep(syscall_process_pid(), SLEEP_T);
-        sc = syscall_sc_get();
+        process_sleep(process_get_pid(), SLEEP_T);
+        sc = kb_get_scfh();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;
@@ -208,7 +215,7 @@ char *profan_input_keyboard(int *size, char *term_path) {
 
         else if (sc == ESC) {
             fm_close(fd);
-            buffer = krealloc(buffer, buffer_actual_size + 1);
+            buffer = realloc(buffer, buffer_actual_size + 1);
             if (size)
                 *size = buffer_actual_size;
             return buffer;
@@ -219,7 +226,7 @@ char *profan_input_keyboard(int *size, char *term_path) {
             if (c == '\0') continue;
             if (buffer_size < buffer_actual_size + 2) {
                 buffer_size *= 2;
-                buffer = krealloc(buffer, buffer_size);
+                buffer = realloc(buffer, buffer_size);
             }
             fd_putstr(fd, INP_CLR);
             fd_putchar(fd, c);
@@ -242,52 +249,28 @@ char *profan_input_keyboard(int *size, char *term_path) {
     fd_putstr(fd, "\e[?25h\n");
     fm_close(fd);
 
-    buffer = krealloc(buffer, buffer_actual_size + 1);
+    buffer = realloc(buffer, buffer_actual_size + 1);
     if (size)
         *size = buffer_actual_size;
     return buffer;
 }
 
-char *profan_input_serial(int *size, int serial_port) {
-    char *buffer = kmalloc(100);
-    int buffer_size = 100;
-    int i = 0;
-    char c = 0;
+#define alloc_arg(size, pid) ((void *) mem_alloc(size, 5, pid))
 
-     while (c != '\n') {
-        syscall_serial_read(serial_port, &c, 1);
-        if (c == '\r') {
-            syscall_serial_write(serial_port, "\r", 1);
-            c = '\n';
-        }
-        if (c == 127) {
-            if (i) {
-                i--;
-                syscall_serial_write(serial_port, "\b \b", 3);
-            }
-            continue;
-        }
-        if ((c < 32 || c > 126) && c != '\n')
-            continue;
-        ((char *) buffer)[i++] = c;
-        syscall_serial_write(serial_port, &c, 1);
-        if (i == buffer_size) {
-            buffer_size *= 2;
-            buffer = krealloc(buffer, buffer_size);
-        }
-    }
+static inline void *calloc_arg(size_t size, int pid) {
+    void *ptr = alloc_arg(size, pid);
 
-    buffer = krealloc(buffer, i + 1);
-    buffer[i] = '\0';
+    if (ptr == NULL)
+        return NULL;
 
-    if (size)
-        *size = i;
-    return buffer;
+    mem_set(ptr, 0, size);
+
+    return ptr;
 }
 
-static char **dup_envp(char **envp, char *wd) {
+static char **dup_envp(char **envp, char *wd, int pid) {
     if (envp == NULL)
-        return kcalloc_ask(1, sizeof(char *));
+        return calloc_arg(sizeof(char *), pid);
     int envc, size = 0;
 
     for (envc = 0; envp[envc] != NULL; envc++)
@@ -296,7 +279,7 @@ static char **dup_envp(char **envp, char *wd) {
 
     size += (envc + 1) * sizeof(char *);
 
-    char **nenvp = kcalloc_ask(1, size);
+    char **nenvp = calloc_arg(size, pid);
 
     char *nenvp_start = (char *) nenvp + (envc + 1) * sizeof(char *);
 
@@ -318,7 +301,7 @@ static char **dup_envp(char **envp, char *wd) {
 }
 
 static char **split_interp(char *tmp, int *c) {
-    char **interp = kcalloc(1, sizeof(char *));
+    char **interp = calloc(sizeof(char *));
     *c = 0;
 
     for (int from, i = 0; tmp[i];) {
@@ -329,9 +312,9 @@ static char **split_interp(char *tmp, int *c) {
             i++;
         if (i == from)
             break;
-        interp = krealloc(interp, (*c + 2) * sizeof(char *));
-        char *cpy = kmalloc_ask(i - from + 1);
-        mem_cpy(cpy, tmp + from, i - from);
+        interp = realloc(interp, (*c + 2) * sizeof(char *));
+        char *cpy = alloc_arg(i - from + 1, 0);
+        mem_copy(cpy, tmp + from, i - from);
         cpy[i - from] = '\0';
         interp[*c] = cpy;
         (*c)++;
@@ -342,16 +325,16 @@ static char **split_interp(char *tmp, int *c) {
 }
 
 static char **get_interp(uint32_t sid, int *c) {
-    char *tmp = kmalloc(11);
+    char *tmp = malloc(11);
     int size = 0;
     int to_read = 10;
 
-    int file_size = fu_file_get_size(sid);
+    int file_size = fs_cnt_get_size(sid);
     if (file_size < 10)
         to_read = file_size;
 
     while (1) {
-        fu_file_read(sid, tmp + size, size + 2, to_read);
+        fs_cnt_read(sid, tmp + size, size + 2, to_read);
         for (int i = size; i < size + to_read; i++) {
             if (tmp[i] == '\n') {
                 tmp[i] = '\0';
@@ -367,165 +350,195 @@ static char **get_interp(uint32_t sid, int *c) {
             tmp[size] = '\0';
             break;
         }
-        tmp = krealloc(tmp, size + to_read + 1);
+        tmp = realloc(tmp, size + to_read + 1);
     }
 
     char **interp = split_interp(tmp, c);
-    kfree(tmp);
+    free(tmp);
 
     return interp;
 }
 
-int run_ifexist_full(runtime_args_t args, int *pid_ptr) {
+enum {
+    FILE_RAWELF,
+    FILE_DYNELF,
+    FILE_SHEBANG,
+    FILE_FBANG,
+    FILE_OTHER
+} ifexist_file_type;
+
+int run_ifexist(runtime_args_t *args, int *pid_ptr) {
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 
-    if (args.path == NULL) {
-        fd_printf(2, "[run_ifexist] path is NULL\n");
+    // safety checks
+    if (args->path == NULL) {
+        sys_warning("[run_ifexist] no path provided\n");
         return -1;
     }
 
     static uint32_t deluge_sid = SID_NULL;
 
     if (IS_SID_NULL(deluge_sid)) {
-        deluge_sid = fu_path_to_sid(SID_ROOT, ELF_INTERP);
+        deluge_sid = kfu_path_to_sid(SID_ROOT, ELF_INTERP);
         if (IS_SID_NULL(deluge_sid)) {
-            fd_printf(2, "[run_ifexist] interpreter not found: %s\n", ELF_INTERP);
+            sys_warning("[run_ifexist] elf interpreter not found: %s\n", ELF_INTERP);
             return -1;
         }
     }
 
-    uint32_t sid = fu_path_to_sid(SID_ROOT, args.path);
-    if (!fu_is_file(sid)) {
-        fd_printf(2, "[run_ifexist] path not found: %s\n", args.path);
+    uint32_t sid = kfu_path_to_sid(SID_ROOT, args->path);
+    if (!kfu_is_file(sid)) {
+        sys_warning("[run_ifexist] path not found: %s\n", args->path);
         return -1;
     }
 
+    // read the magic number
     uint8_t magic[4];
-    if (fu_file_get_size(sid) < 4)
+    if (fs_cnt_get_size(sid) < 4)
         mem_set(magic, 0, 4);
     else
-        fu_file_read(sid, magic, 0, 4);
+        fs_cnt_read(sid, magic, 0, 4);
 
-    char **nargv = NULL;
+    int file_type, inter_offset = 0;
 
+    char **interp = NULL;
+
+    // get the interpreter
     if (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F') {
-        if (str_ncmp("/bin/x/", args.path, 7) == 0) {
-            nargv = kcalloc_ask(args.argc + 1, sizeof(char *));
-            for (int i = 0; i < args.argc; i++) {
-                nargv[i] = kmalloc_ask(str_len(args.argv[i]) + 1);
-                str_cpy(nargv[i], args.argv[i]);
-            }
-            sid = fu_path_to_sid(SID_ROOT, args.path);
+        if (str_ncmp("/bin/x/", args->path, 7) == 0) {
+            file_type = FILE_RAWELF;
         } else {
-            args.argc += 3;
-            nargv = kcalloc_ask(args.argc + 1, sizeof(char *));
-
-            nargv[0] = kmalloc_ask(4);
-            str_cpy(nargv[0], "dlg");
-
-            nargv[1] = kmalloc_ask(3);
-            str_cpy(nargv[1], "-e");
-
-            nargv[2] = kmalloc_ask(str_len(args.path) + 1);
-            str_cpy(nargv[2], args.path);
-
-            for (int i = 3; i < args.argc; i++) {
-                nargv[i] = kmalloc_ask(str_len(args.argv[i-3]) + 1);
-                str_cpy(nargv[i], args.argv[i-3]);
-            }
+            file_type = FILE_DYNELF;
             sid = deluge_sid;
         }
     } else {
-        char **interp = NULL;
-        int c, is_fbang = 0;
+        if ((magic[0] == '#' || magic[0] == '>') && magic[1] == '!') {
+            interp = get_interp(sid, &inter_offset);
+            file_type = magic[0] == '#' ? FILE_SHEBANG : FILE_FBANG;
+        } else {
+            file_type = FILE_OTHER;
 
-        if (magic[0] == '#' && magic[1] == '!')
-            interp = get_interp(sid, &c);
-        else if (magic[0] == '>' && magic[1] == '!') {
-            interp = get_interp(sid, &c);
-            is_fbang = 1;
-        } else if (args.envp != NULL) {
-            for (int i = 0; args.envp[i] != NULL; i++) {
-                if (str_ncmp(args.envp[i], ENV_INTERP"=", str_len(ENV_INTERP)+1))
-                    continue;
-                interp = split_interp(args.envp[i] + str_len(ENV_INTERP) + 1, &c);
+            if (args->envp) {
+                int env_interp_len = str_len(ENV_INTERP) + 1;
+                for (int i = 0; args->envp[i] != NULL; i++) {
+                    if (str_ncmp(args->envp[i], ENV_INTERP"=", env_interp_len))
+                        continue;
+                    interp = split_interp(args->envp[i] + env_interp_len, &inter_offset);
+                }
             }
 
             if (interp == NULL) {
-                fd_printf(2, "[run_ifexist] %s: unknown file type\n", args.path);
+                sys_warning("[run_ifexist] %s: no interpreter found, export '%s' to set one\n", args->path, ENV_INTERP);
                 return -1;
             }
         }
 
-        if (c == 0) {
-            fd_printf(2, "[run_ifexist] %s: invalid shebang\n", args.path);
+        if (interp == NULL || inter_offset == 0) {
+            sys_warning("[run_ifexist] %s: invalid shebang\n", args->path);
+            return -1;
+        }
+        sid = deluge_sid;
+    }
+
+    int pid = process_get_pid();
+
+    // generate arguments and environment
+    char **nenv  = dup_envp(args->envp, args->wd, pid);
+    char **nargv = calloc_arg((args->argc + 5 + inter_offset) * sizeof(char *), pid);
+
+    // create the new process
+    if (args->sleep_mode != 3) {
+        pid = process_create(elf_exec, 0, 3,
+                (uint32_t []) {sid, (uint32_t) nargv, (uint32_t) nenv}
+        );
+
+        if (pid == -1) {
+            sys_warning("[run_ifexist] failed to create process for %s\n", args->path);
             return -1;
         }
 
-        nargv = kcalloc_ask(args.argc + c + 4, sizeof(char *));
+        mem_alloc_fetch(nargv, pid);
+        mem_alloc_fetch(nenv, pid);
+    }
 
-        c = 0;
-        nargv[c] = kmalloc_ask(4);
+    if (pid_ptr != NULL)
+        *pid_ptr = pid;
+
+    // prepare the arguments
+    if (file_type == FILE_RAWELF) {
+        for (int i = 0; i < args->argc; i++) {
+            nargv[i] = alloc_arg(str_len(args->argv[i]) + 1, pid);
+            str_cpy(nargv[i], args->argv[i]);
+        }
+    } else if (file_type == FILE_DYNELF) {
+        nargv[0] = alloc_arg(4, pid);
+        str_cpy(nargv[0], "dlg");
+
+        nargv[1] = alloc_arg(3, pid);
+        str_cpy(nargv[1], "-e");
+
+        nargv[2] = alloc_arg(str_len(args->path) + 1, pid);
+        str_cpy(nargv[2], args->path);
+
+        for (int i = 0; i < args->argc; i++) {
+            nargv[i + 3] = alloc_arg(str_len(args->argv[i]) + 1, pid);
+            str_cpy(nargv[i + 3], args->argv[i]);
+        }
+    } else {
+        int c = 0;
+
+        nargv[c] = alloc_arg(4, pid);
         str_cpy(nargv[c++], "dlg");
 
-        if (is_fbang) {
-            nargv[c] = kmalloc_ask(3);
+        if (file_type == FILE_FBANG) {
+            nargv[c] = alloc_arg(3, pid);
             str_cpy(nargv[c++], "-e");
 
             nargv[c++] = interp[0];
 
-            if (args.argc) {
-                nargv[c] = kmalloc_ask(str_len(args.argv[0]) + 1);
-                str_cpy(nargv[c++], args.argv[0]);
+            if (args->argc) {
+                nargv[c] = alloc_arg(str_len(args->argv[0]) + 1, pid);
+                str_cpy(nargv[c++], args->argv[0]);
             }
         }
 
-        for (int i = is_fbang; interp[i] != NULL; i++) {
+        for (int i = file_type == FILE_FBANG; interp[i] != NULL; i++) {
             nargv[c++] = interp[i];
         }
 
-        kfree(interp);
-
-        if (!is_fbang) {
-            nargv[c] = kmalloc_ask(str_len(args.path) + 1);
-            str_cpy(nargv[c++], args.path);
+        if (file_type != FILE_FBANG) {
+            nargv[c] = alloc_arg(str_len(args->path) + 1, pid);
+            str_cpy(nargv[c++], args->path);
         }
 
-        for (int i = 1; i < args.argc; i++) {
-            nargv[c] = kmalloc_ask(str_len(args.argv[i]) + 1);
-            str_cpy(nargv[c++], args.argv[i]);
+        for (int i = 1; i < args->argc; i++) {
+            nargv[c] = alloc_arg(str_len(args->argv[i]) + 1, pid);
+            str_cpy(nargv[c++], args->argv[i]);
         }
 
-        args.argc = c;
         sid = deluge_sid;
     }
 
-    char **nenv = dup_envp(args.envp, args.wd);
+    free(interp);
 
-    if (args.sleep_mode == 3) {
-        syscall_mem_free_all(syscall_process_pid());
-        return syscall_elf_exec(sid, args.argc, nargv, nenv);
+    // finalize the execution
+    if (args->sleep_mode == 3) {
+        mem_free_all(process_get_pid(), 1);
+        return elf_exec(sid, nargv, nenv);
     }
-
-    int pid = syscall_process_create(syscall_elf_exec, 0, 4,
-            (uint32_t []) {sid, args.argc, (uint32_t) nargv, (uint32_t) nenv}
-    );
-
-    if (pid_ptr != NULL)
-        *pid_ptr = pid;
-    if (pid == -1)
-        return -1;
 
     fm_declare_child(pid);
 
-    if (args.sleep_mode == 2)
+    if (args->sleep_mode == 2)
         return 0;
-    if (args.sleep_mode == 0)
-        return (syscall_process_wakeup(pid, 0), 0);
+    if (args->sleep_mode == 0)
+        return (process_wakeup(pid, 0), 0);
 
-    syscall_process_wakeup(pid, 1);
     uint8_t ret;
-    syscall_process_wait(pid, &ret, 0);
+
+    process_wakeup(pid, 1);
+    process_wait(pid, &ret, 0);
+
     return ret;
 }

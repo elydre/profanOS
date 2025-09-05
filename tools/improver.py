@@ -27,7 +27,8 @@ ignore_directories = [
 ]
 
 ignore_line_too_long = [
-    ".md", ".h"
+    "zlibs/libc/alloc_buddy.h",
+    "*.md",
 ]
 
 line_too_long = 120
@@ -151,8 +152,13 @@ def detecte_brace(line, prev_line, path, l):
         print_warning(path, l, "brace should not be on a new line")
 
 def is_line_too_long(path, line):
-    if os.path.splitext(path)[1] in ignore_line_too_long:
-        return False
+    for p in ignore_line_too_long:
+        if p.startswith("*") and p[1:] == os.path.splitext(path)[1]:
+            return False
+        if p.endswith("*") and p[:-1] in path:
+            return False
+        if p == path:
+            return False
 
     name = path.split("/")[-1]
     if name in line_too_long_special:

@@ -36,7 +36,9 @@ void uname_help(void) {
         "  -r    print kernel release\n"
         "  -v    print kernel version\n"
         "  -m    print machine hardware name\n"
-        "  -o    print operating system name"
+        "  -o    print operating system name\n\n"
+        "Note: with no options, prints the kernel name\n"
+        "Note: export UNAME_KERNEL to change the name\n"
     );
 }
 

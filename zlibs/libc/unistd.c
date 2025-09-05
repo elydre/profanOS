@@ -71,7 +71,7 @@ int chdir(const char *path) {
 
     // check if dir exists
     dir = profan_path_join(g_wd_path, path);
-    fu_simplify_path(dir);
+    profan_path_simplify(dir);
 
     sid = fu_path_to_sid(SID_ROOT, dir);
 
@@ -189,14 +189,16 @@ int execve(const char *fullpath, char *const argv[], char *const envp[]) {
     int argc = 0;
     while (argv && argv[argc] != NULL)
         argc++;
-    run_ifexist_full((runtime_args_t) {
+    runtime_args_t args = {
         (char *) fullpath,
         g_wd_path,
         argc,
         (char **) argv,
         (char **) envp,
-        3
-    }, NULL);
+        3 // sleep mode
+    };
+
+    run_ifexist(&args, NULL);
 
     errno = ENOENT;
     return -1;
@@ -278,7 +280,7 @@ int ftruncate(int fd, off_t length) {
         return -1;
     }
 
-    if (syscall_fs_set_size(NULL, sid, length)) {
+    if (syscall_fs_set_size(sid, length)) {
         errno = EIO;
         return -1;
     }
@@ -431,7 +433,7 @@ char *getwd(char *a) {
 }
 
 int isatty(int fd) {
-    int r = fm_isfctf(fd);
+    int r = fm_isafft(fd);
     if (r)
         return 1;
     errno = r < 0 ? -r : ENOTTY;
@@ -601,7 +603,7 @@ int truncate(const char *filename, off_t length) {
         return -1;
     }
 
-    if (syscall_fs_set_size(NULL, sid, length)) {
+    if (syscall_fs_set_size(sid, length)) {
         errno = EIO;
         return -1;
     }
@@ -652,7 +654,7 @@ int unlink(const char *filename) {
     }
 
     // delete the file content
-    if (syscall_fs_delete(NULL, elem)) {
+    if (syscall_fs_delete(elem)) {
         errno = EIO;
         return -1;
     }

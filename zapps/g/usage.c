@@ -10,6 +10,7 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
+#include <profan.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,11 +57,12 @@ int main(void) {
         return 1;
     }
 
-    int *history = calloc(HISTOTY_SIZE, sizeof(int));
+    uint32_t *history = calloc(HISTOTY_SIZE, sizeof(int));
 
-    int cpu, last_idle, last_total;
+    int last_idle, last_total, last_kernel;
     int idle = 0;
     int total = 0;
+    int kernel = 0;
 
     uint32_t *pixel_buffer = calloc(HISTOTY_SIZE * 100, sizeof(uint32_t));
 
@@ -69,26 +71,31 @@ int main(void) {
     while (1) {
         last_idle = idle;
         last_total = total;
+        last_kernel = kernel;
 
-        idle = syscall_process_run_time(1);
+        idle   = syscall_process_run_time(1);
+        kernel = syscall_process_run_time(0);
         total = syscall_timer_get_ms();
 
-        cpu = total - last_total;
-        cpu = 100 - (idle - last_idle) * 100 / (cpu ? cpu : 1);
+        int s = (total - last_total ?: 1);
+        last_total = 100 - ((idle - last_idle) * 100 / s);
+        last_kernel = (kernel - last_kernel) * 100 / s;
 
         for (int i = HISTOTY_SIZE - 1; i > 0; i--) {
             history[i] = history[i - 1];
         }
-        history[0] = cpu;
-
-        // reset pixel buffer
-        for (int i = 0; i < HISTOTY_SIZE * 100; i++) {
-            pixel_buffer[i] = 0x000000;
-        }
+        history[0] = (last_total << 16) | last_kernel;
 
         for (int i = 0; i < HISTOTY_SIZE; i++) {
-            for (int j = 0; j < history[i]; j++) {
-                pixel_buffer[i + HISTOTY_SIZE * j] = 0x550099;
+            last_total = (history[i] >> 16) & 0xff;
+            last_kernel = history[i] & 0xff;
+            for (int j = 0; j < 100; j++) {
+                if (j < last_kernel)
+                    pixel_buffer[i + HISTOTY_SIZE * j] = 0xa26ea8;
+                else if (j < last_total)
+                    pixel_buffer[i + HISTOTY_SIZE * j] = 0x711b7d;
+                else
+                    pixel_buffer[i + HISTOTY_SIZE * j] = 0;
             }
         }
 

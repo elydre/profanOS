@@ -15,29 +15,23 @@
 #include <cpu/isr.h>
 #include <system.h>
 
-uint32_t ticks;
+uint32_t TIMER_TICKS;
 
 static void timer_callback(registers_t *regs) {
     (void) regs;
 
-    ticks++;
-
-    schedule(ticks);
-}
-
-uint32_t timer_get_ticks(void) {
-    return ticks;
+    schedule(TIMER_TICKS);
 }
 
 uint32_t timer_get_ms(void) {
-    return ticks * 1000 / RATE_TIMER_TICK;
+    return TIMER_TICKS * 1000 / RATE_TIMER_TICK;
 }
 
 int timer_init(void) {
-    ticks = 1;
+    TIMER_TICKS = 1;
 
     // set the timer interrupt handler
-    register_interrupt_handler(IRQ0, timer_callback);
+    interrupt_register_handler(IRQ0, timer_callback);
 
     // get the PIT value: hardware clock at 1193180 Hz
     uint32_t divisor = 1193180 / RATE_TIMER_TICK;
@@ -45,9 +39,9 @@ int timer_init(void) {
     uint8_t high = (uint8_t)((divisor >> 8) & 0xFF);
 
     // send the command
-    port_byte_out(0x43, 0x36); // command port
-    port_byte_out(0x40, low);
-    port_byte_out(0x40, high);
+    port_write8(0x43, 0x36); // command port
+    port_write8(0x40, low);
+    port_write8(0x40, high);
 
     return 0;
 }

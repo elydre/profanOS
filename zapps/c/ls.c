@@ -31,7 +31,7 @@ typedef struct {
 #define LS_COLOR_DIR  "\e[96m"
 #define LS_COLOR_FILE "\e[92m"
 #define LS_COLOR_SHBG "\e[4m"
-#define LS_COLOR_FCTF "\e[93m"
+#define LS_COLOR_AFFT "\e[93m"
 #define LS_COLOR_ERR  "\e[91m"
 #define LS_COLOR_RSET "\e[0m"
 
@@ -117,7 +117,7 @@ int ls_cmp_size(const void *p1, const void *p2) {
     if (fu_is_dir(s1) && fu_is_dir(s2))
         return fu_dir_get_size(s2) - fu_dir_get_size(s1);
 
-    return syscall_fs_get_size(NULL, s2) - syscall_fs_get_size(NULL, s1);
+    return syscall_fs_get_size(s2) - syscall_fs_get_size(s1);
 }
 
 void sort_entries(int count, ls_entry_t *entries, int (*cmp)(const void *, const void *)) {
@@ -161,15 +161,15 @@ int print_name(ls_entry_t *entry, ls_args_t *args) {
         return fputs(entry->name, stdout);
     if (fu_is_dir(entry->sid))
         return printf(LS_COLOR_DIR "%s" LS_COLOR_RSET, entry->name);
-    if (fu_is_fctf(entry->sid))
-        return printf(LS_COLOR_FCTF "%s" LS_COLOR_RSET, entry->name);
+    if (fu_is_afft(entry->sid))
+        return printf(LS_COLOR_AFFT "%s" LS_COLOR_RSET, entry->name);
     if (!fu_is_file(entry->sid))
         return printf(LS_COLOR_ERR "%s" LS_COLOR_RSET, entry->name);
 
     uint8_t buf[2];
 
     if (fu_file_get_size(entry->sid) > 1) {
-        syscall_fs_read(NULL, entry->sid, buf, 0, 4);
+        syscall_fs_read(entry->sid, buf, 0, 4);
         if ((buf[0] == '#' || buf[0] == '>') && buf[1] == '!')
             fputs(LS_COLOR_SHBG, stdout);
     }
@@ -253,13 +253,13 @@ void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
         printf("%02x:%06x ", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
 
         if (args->phys_size == 1)
-            len = printf("%8d B", syscall_fs_get_size(NULL, entries[i].sid));
+            len = printf("%8d B", syscall_fs_get_size(entries[i].sid));
         else if (fu_is_dir(entries[i].sid))
             len = printf("%7d e", fu_dir_get_size(entries[i].sid));
         else if (fu_is_file(entries[i].sid))
-            len = pretty_size_print(syscall_fs_get_size(NULL, entries[i].sid));
-        else if (fu_is_fctf(entries[i].sid))
-            len = printf(" F%08x", (uint32_t) fu_fctf_get_addr(entries[i].sid));
+            len = pretty_size_print(syscall_fs_get_size(entries[i].sid));
+        else if (fu_is_afft(entries[i].sid))
+            len = printf(" F%08x", (uint32_t) fu_afft_get_addr(entries[i].sid));
         else
             len = printf(" ? unk ?");
 
@@ -336,12 +336,12 @@ void list_dirs(ls_args_t *args) {
         if (!fu_is_dir(sid))
             continue; // error message is printed by list_files
 
-        uint32_t size = syscall_fs_get_size(NULL, sid);
+        uint32_t size = syscall_fs_get_size(sid);
         if (size == UINT32_MAX || size < sizeof(uint32_t))
             continue;
 
         uint8_t *buf = malloc(size);
-        if (syscall_fs_read(NULL, sid, buf, 0, size)) {
+        if (syscall_fs_read(sid, buf, 0, size)) {
             free(buf);
             continue;
         }

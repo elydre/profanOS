@@ -29,13 +29,13 @@ enum {
 int search_recursive(uint32_t base, const char *path, uint8_t required_type, const char *ext) {
     int offset;
 
-    uint32_t size = syscall_fs_get_size(NULL, base);
+    uint32_t size = syscall_fs_get_size(base);
     if (size == UINT32_MAX || size < sizeof(uint32_t)) {
         return 1;
     }
 
     uint8_t *buf = malloc(size);
-    if (syscall_fs_read(NULL, base, buf, 0, size)) {
+    if (syscall_fs_read(base, buf, 0, size)) {
         free(buf);
         return 1;
     }

@@ -14,6 +14,7 @@
 #include <profan/syscall.h>
 #include <profan/math.h>
 #include <profan/vgui.h>
+#include <profan/carp.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -167,8 +168,20 @@ int fps_limiter(int time) {
     return new_time;
 }
 
-int main(void) {
-    vgui_t vgui = vgui_setup(200, 200);
+int main(int argc, char **argv) {
+    carp_init("[-r]", 0);
+
+    carp_register('r', CARP_STANDARD, "randomize cube position");
+
+    if (carp_parse(argc, argv))
+        return 1;
+
+    srand(syscall_timer_get_ms());
+
+    vgui_t vgui = vgui_setup(
+            carp_isset('r') ? rand() % (syscall_vesa_width() - 200) : 0,
+            carp_isset('r') ? rand() % (syscall_vesa_height() - 200) : 0,
+            200, 200);
 
     shape_t shape = cube(120);
     int time = syscall_timer_get_ms();

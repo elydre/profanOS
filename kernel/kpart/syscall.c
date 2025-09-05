@@ -13,8 +13,7 @@
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <drivers/serial.h>
-#include <drivers/mouse.h>
+#include <kernel/afft.h>
 #include <drivers/rtc.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
@@ -25,71 +24,68 @@
 #include <minilib.h>
 #include <system.h>
 
+void dummy_syscall(void) {;}
+
 void *SYSCALL_ARRAY[] = {
     // butterfly.h
-    fs_get_main,        // 0
-    fs_cnt_read,        // 1
-    fs_cnt_write,       // 2
-    fs_cnt_set_size,    // 3
-    fs_cnt_get_size,    // 4
-    fs_cnt_delete,      // 5
-    fs_cnt_init,        // 6
-    fs_cnt_meta,        // 7
+    fs_get_filesys,        // 0
+    fs_cnt_read,           // 1
+    fs_cnt_write,          // 2
+    fs_cnt_set_size,       // 3
+    fs_cnt_get_size,       // 4
+    fs_cnt_delete,         // 5
+    fs_cnt_init,           // 6
+    fs_cnt_meta,           // 7
 
     // snowflake.h
-    mem_alloc,          // 8
-    mem_free_addr,      // 9
-    mem_free_all,       // 10
-    mem_get_alloc_size, // 11
-    mem_get_info,       // 12
+    mem_alloc,             // 8
+    mem_free_addr,         // 9
+    mem_free_all,          // 10
+    mem_alloc_fetch,       // 11
+    mem_get_info,          // 12
 
     // rtc.h + timer.h
-    timer_get_ms,       // 13
-    time_get,           // 14
+    timer_get_ms,          // 13
+    time_get,              // 14
 
     // gnrtx.h + vesa.h
-    font_get,           // 15
-    kcnprint,           // 16
-    cursor_get_offset,  // 17
-    vesa_get_info,      // 18
+    font_get,              // 15
+    kcnprint,              // 16
+    cursor_get_offset,     // 17
+    vesa_get_info,         // 18
 
-    // serial.h
-    serial_read,        // 19
-    serial_write,       // 20
+    afft_read,             // 19
+    afft_write,            // 20
+    afft_cmd,              // 21
 
     // keyboard.h + mouse.h
-    kb_sc_to_char,      // 21
-    kb_get_scfh,        // 22
-    mouse_call,         // 23
+    kb_get_scfh,           // 22
+    dummy_syscall,         // 23
 
     // system.h
-    sys_set_reporter,   // 24
-    sys_power,          // 25
-    sys_kinfo,          // 26
-
-    elf_exec,        // 27
+    sys_power,             // 24
+    elf_exec,              // 25
 
     // process.h + runtime.h
-    process_auto_schedule, // 28
-    process_create,     // 29
-    process_fork,       // 30
-    process_sleep,      // 31
-    process_wakeup,     // 32
-    process_wait,       // 33
-    process_kill,       // 34
-    process_get_pid,    // 35
-    process_info,   // 36
-    process_list_all,   // 37
+    process_create,        // 26
+    process_fork,          // 27
+    process_sleep,         // 28
+    process_wakeup,        // 29
+    process_wait,          // 30
+    process_kill,          // 31
+    process_get_pid,       // 32
+    process_info,          // 33
+    process_list_all,      // 34
 
     // system.h
-    pok_load,           // 38
-    pok_unload,         // 39
+    mod_load,              // 35
+    mod_unload,            // 36
 
     // scubasuit.h
-    scuba_call_generate,// 40
-    scuba_call_map,     // 41
-    scuba_call_unmap,   // 42
-    scuba_call_phys,    // 43
+    scuba_call_generate,   // 37
+    scuba_call_map,        // 38
+    scuba_call_unmap,      // 39
+    scuba_call_phys,       // 40
 };
 
 void syscall_handler(registers_t *r) {

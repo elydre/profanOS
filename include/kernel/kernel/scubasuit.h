@@ -15,8 +15,6 @@
 #include <cpu/isr.h>
 #include <ktype.h>
 
-// SCUBASUIT virtual memory manager
-
 // stadard page size
 #define PAGE_SIZE 4096
 #define SCUBA_MAX_TO_FREE 512
@@ -76,18 +74,18 @@ void scuba_dir_destroy(scuba_dir_t *dir);
 void scuba_dump(scuba_dir_t *dir);
 
 // map, unmap
-int scuba_map_func(scuba_dir_t *dir, void *virt, void *phys, int mode);
-int scuba_unmap(scuba_dir_t *dir, void *virt);
+int   scuba_map_func(scuba_dir_t *dir, void *virt, void *phys, int mode);
+int   scuba_unmap(scuba_dir_t *dir, void *virt);
 void *scuba_create_virtual(scuba_dir_t *dir, void *virt, uint32_t count);
 
 // get physical, fault handler
 void *scuba_get_phys(scuba_dir_t *dir, void *virt);
-void scuba_fault_handler(int err_code);
+void  scuba_fault_handler(int err_code);
 
 // syscall functions
 void *scuba_call_generate(void *addr, uint32_t size);
-int scuba_call_map(void *addr, void *phys, int cic);
-int scuba_call_unmap(void *addr);
+int   scuba_call_map(void *addr, void *phys, int cic);
+int   scuba_call_unmap(void *addr);
 void *scuba_call_phys(void *addr);
 
 #endif

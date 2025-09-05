@@ -127,8 +127,8 @@ char compute_ansi_color(char ansi_nb, int part, char old_color) {
     return (bg << 4) | fg;
 }
 
-int compute_ansi_escape(char *str, char *color) {
-    char *start = str;
+int compute_ansi_escape(const char *str, char *color) {
+    const char *start = str;
 
     if (str[1] == '[') str += 2;
     else return 1;
@@ -195,7 +195,7 @@ int compute_ansi_escape(char *str, char *color) {
     }
 
     // number
-    char *tmp = str;
+    const char *tmp = str;
     while (*tmp >= '0' && *tmp <= '9') tmp++;
 
     // cursor up
@@ -221,7 +221,7 @@ int compute_ansi_escape(char *str, char *color) {
     return tmp - start;
 }
 
-int kcnprint(char *message, int len, char color) {
+int kcnprint(const char *message, int len, char color) {
     int i = 0;
 
     if (len == -1)
