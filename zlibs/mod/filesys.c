@@ -686,25 +686,7 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     if (str_cmp("/", path) == 0)
         return from;
 
-    int len = str_len(path) - 1;
-    char *tmp;
-
-    if (path[len] == '/') {
-        // remove the last '/'
-        // TODO: check and optimize this
-        tmp = malloc(len);
-
-        for (int i = 0; i < len; i++)
-            tmp[i] = path[i];
-        tmp[len - 1] = '\0';
-    } else {
-        tmp = (char *) path;
-    }
-
-    ret = rec_path_to_sid(from, tmp + (tmp[0] == '/'));
-
-    if (tmp != path)
-        free(tmp);
+    ret = rec_path_to_sid(from, path);
 
     return ret;
 }
