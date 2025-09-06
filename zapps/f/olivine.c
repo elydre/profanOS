@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 3"
+#define OLV_VERSION "1.8 rev 4"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -3928,10 +3928,11 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
         tmp_index++;
     }
 
+    while (tmp_index > 0 && IS_SPACE_CHAR(tmp[tmp_index - 1]))
+        tmp_index--;
+
     if (tmp_index != 0) {
         // remove trailing spaces
-        while (tmp_index > 0 && IS_SPACE_CHAR(tmp[tmp_index - 1]))
-            tmp_index--;
         tmp[tmp_index++] = '\0';
 
         lines[line_index].fileline = fileline;
