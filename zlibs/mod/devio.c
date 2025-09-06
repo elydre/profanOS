@@ -197,7 +197,8 @@ int __init(void) {
     if (
         setup_afft("null", dev_null_r, dev_null_w, NULL)    ||
         setup_afft("zero", dev_zero_r, dev_null_w, NULL)    ||
-        setup_afft("rand", dev_rand_r, NULL, NULL)          ||
+        setup_afft("random", dev_rand_r, NULL, NULL)        ||
+        setup_afft("urandom", dev_rand_r, NULL, NULL)       ||
         setup_afft("kterm", dev_kterm_r, dev_kterm_w, NULL) ||
         setup_afft("stdin", dev_stdin_r, NULL, NULL)        ||
         setup_afft("stdout", NULL, dev_stdout_w, NULL)      ||
