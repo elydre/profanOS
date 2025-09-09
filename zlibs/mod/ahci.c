@@ -304,8 +304,8 @@ static void initialize_abar(HBAData *abar) {
     }
 }
 
-#define MAGIC_ADDR 0xFEBB1000
-// #define MAGIC_ADDR 0xA132d000
+// #define MAGIC_ADDR 0xFEBB1000
+#define MAGIC_ADDR 0xA132d000
 
 uint8_t ahci_read_sectors(uint16_t drive_num, uint64_t start_sector, uint32_t count, void *buf) {
     scuba_call_map((void *) MAGIC_ADDR, (void *) MAGIC_ADDR, 1);
