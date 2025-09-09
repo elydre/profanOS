@@ -70,9 +70,3 @@ FUNC time
 
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
-
-FUNC f
-    FOR i !(range 20)
-        . /bin/g/cube.elf -r &
-    END
-END

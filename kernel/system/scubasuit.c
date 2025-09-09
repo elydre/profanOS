@@ -288,7 +288,7 @@ void *scuba_get_phys(scuba_dir_t *dir, void *virt) {
     if (!page->present) return 0;
 
     // return the physical address
-    return (void *) (page->frame * 0x1000);
+    return (void *) (page->frame * 0x1000) + ((uint32_t) virt % 0x1000);
 }
 
 /**************************

@@ -90,6 +90,7 @@ void pci_probe(void) {
                 pdev->func = function;
                 for (uint32_t i = 0; i < 6; i++) {
                     pdev->bar[i] = pci_read_word(bus, slot, function, 0x10 + i * 4);
+                    pdev->bar[i] |= (pci_read_word(bus, slot, function, 0x10 + i * 4 + 2) << 16);
                 }
                 add_pci_device(pdev);
             }
