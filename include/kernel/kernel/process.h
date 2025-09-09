@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef TASK_H
-#define TASK_H
+#ifndef PROCESS_H
+#define PROCESS_H
 
 #include <kernel/scubasuit.h>
 #include <ktype.h>
@@ -28,8 +28,7 @@
 #define PROC_INFO_RUN_TIME 3
 #define PROC_INFO_NAME     4
 #define PROC_INFO_STACK    5
-#define PROC_INFO_COMM     6
-#define PROC_INFO_SET_NAME 7
+#define PROC_INFO_SET_NAME 6
 
 #define process_get_ppid(pid)  process_info(pid, PROC_INFO_PPID, NULL)
 #define process_get_state(pid) process_info(pid, PROC_INFO_STATE, NULL)
@@ -43,7 +42,6 @@ typedef struct {
     scuba_dir_t *scuba_dir;
 
     uint32_t pid, ppid, run_time;
-    comm_struct_t comm;
 
     int wait_pid;
 
@@ -57,8 +55,11 @@ typedef struct {
     char name[64];
 } process_t;
 
-// setup and call
-int  process_init(void);
+// setup
+int process_init(void);
+
+// scheduler
+void schedule_if_needed(void);
 void schedule(uint32_t ticks);
 
 // process gestion
@@ -69,16 +70,11 @@ int process_sleep(uint32_t pid, uint32_t ms);
 int process_wait(int pid, uint8_t *retcode, int block); // negative pid for any child
 int process_kill(uint32_t pid, uint8_t retcode);
 
-// scheduler control
-int process_auto_schedule(int state);
-
 // process info
 uint32_t process_get_pid(void);
 
 int process_list_all(uint32_t *list, int max);
 int process_info(uint32_t pid, int info_id, void *ptr);
-
-comm_struct_t *process_get_comm(uint32_t pid);
 
 scuba_dir_t *process_get_dir(uint32_t pid);
 void process_switch_directory(uint32_t pid, scuba_dir_t *dir, int now);

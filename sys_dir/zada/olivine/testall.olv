@@ -1,6 +1,6 @@
 print 'starting unit tests for Olivine interpreter\n'
 print 'version: !version\n'
-print '------\n'
+print '--------\n'
 
 // ----- ASSERT FUNCTION ------------------------------------------------------
 
@@ -319,4 +319,4 @@ pp_tester
 del -f pp_tester
 del -f temp
 
-print '------\n'
+print '--------\n'

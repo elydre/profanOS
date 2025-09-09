@@ -45,7 +45,7 @@ int remove_hard_link(uint32_t elem, char *path) {
 }
 
 int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
-    if (!options->link_only && !(fu_is_file(elem) || fu_is_dir(elem) || fu_is_fctf(elem))) {
+    if (!options->link_only && !(fu_is_file(elem) || fu_is_dir(elem) || fu_is_afft(elem))) {
         fprintf(stderr, "rm: cannot remove '%s': unknown element type\n", path);
         return 1;
     }
@@ -105,7 +105,7 @@ int remove_elem(uint32_t elem, char *path, rm_options_t *options) {
         return 0;
 
     // delete container
-    if (syscall_fs_delete(NULL, elem)) {
+    if (syscall_fs_delete(elem)) {
         fprintf(stderr, "rm: cannot remove '%s': failed to delete container\n", path);
         return 1;
     }

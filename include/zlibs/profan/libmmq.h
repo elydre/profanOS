@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === libmmq.h : 2024 ===                                                   |
+|   === libmmq.h : 2025 ===                                                   |
 |                                                                             |
-|    Kernel module header for minimalistic libC implementation     .pi0iq.    |
+|    Basic C library header for static linking                     .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,47 +9,46 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef LIBMMQ_ID
-#define LIBMMQ_ID 1001
+#ifndef _PROFAN_LIBMMQ_H
+#define _PROFAN_LIBMMQ_H
 
 #include <stdint.h>
 #include <stddef.h>
 
-#define kmalloc(size) kmalloc_func(size, 0)
-#define kmalloc_ask(size) kmalloc_func(size, 1)
+#define mmq_exit(code) syscall_process_kill(syscall_process_pid(), code)
 
-#define kcalloc(nmemb, lsize) kcalloc_func(nmemb, lsize, 0)
-#define kcalloc_ask(nmemb, lsize) kcalloc_func(nmemb, lsize, 1)
+#define mmq_malloc(size) mmq_malloc_func(size, 0)
+#define mmq_malloc_ask(size) mmq_malloc_func(size, 1)
 
-#define krealloc(mem, new_size) krealloc_func(mem, new_size, 0)
-#define krealloc_ask(mem, new_size) krealloc_func(mem, new_size, 1)
+#define mmq_calloc(nmemb, lsize) mmq_calloc_func(nmemb, lsize, 0)
+#define mmq_calloc_ask(nmemb, lsize) mmq_calloc_func(nmemb, lsize, 1)
 
-#define process_exit(code) syscall_process_kill(syscall_process_pid(), code)
+#define mmq_realloc(mem, new_size) mmq_realloc_func(mem, new_size, 0)
+#define mmq_realloc_ask(mem, new_size) mmq_realloc_func(mem, new_size, 1)
 
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
+void  *mmq_calloc_func(uint32_t nmemb, uint32_t lsize, int as_kernel);
+void   mmq_free(void *mem);
+void  *mmq_realloc_func(void *mem, uint32_t new_size, int as_kernel);
+void  *mmq_malloc_func(uint32_t size, int as_kernel);
 
-#define kcalloc_func ((void *(*)(uint32_t, uint32_t, int)) get_func_addr(LIBMMQ_ID, 2))
-#define kfree ((void (*)(void *)) get_func_addr(LIBMMQ_ID, 3))
-#define krealloc_func ((void *(*)(void *, uint32_t, int)) get_func_addr(LIBMMQ_ID, 4))
-#define kmalloc_func ((void *(*)(uint32_t, int)) get_func_addr(LIBMMQ_ID, 5))
+void  *mmq_memset(void *s, int c, size_t n);
+void  *mmq_memcpy(void *dest, const void *src, size_t n);
+int    mmq_memcmp(const void *s1, const void *s2, size_t n);
+void  *mmq_memmove(void *dest, const void *src, size_t n);
 
-#define mem_cpy ((void *(*)(void *, const void *, size_t)) get_func_addr(LIBMMQ_ID, 6))
-#define mem_cmp ((int (*)(const void *, const void *, size_t)) get_func_addr(LIBMMQ_ID, 7))
-#define mem_set ((void *(*)(void *, int, size_t)) get_func_addr(LIBMMQ_ID, 8))
-#define mem_move ((void *(*)(void *, const void *, size_t)) get_func_addr(LIBMMQ_ID, 9))
-#define str_cmp ((int (*)(const char *, const char *)) get_func_addr(LIBMMQ_ID, 10))
-#define str_cpy ((int (*)(char *, const char *)) get_func_addr(LIBMMQ_ID, 11))
-#define str_len ((size_t (*)(const char *)) get_func_addr(LIBMMQ_ID, 12))
-#define str_dup ((char *(*)(const char *)) get_func_addr(LIBMMQ_ID, 13))
-#define str_ncpy ((char *(*)(char *, const char *, size_t)) get_func_addr(LIBMMQ_ID, 14))
-#define str_cat ((char *(*)(char *, const char *)) get_func_addr(LIBMMQ_ID, 15))
-#define str_ncmp ((int (*)(const char *, const char *, size_t)) get_func_addr(LIBMMQ_ID, 16))
-#define str_int ((int (*)(const char *)) get_func_addr(LIBMMQ_ID, 17))
+int    mmq_strcmp(const char *s1, const char *s2);
+char  *mmq_strcpy(char *s1, const char *s2);
+size_t mmq_strlen(const char *s);
+char  *mmq_strdup(const char *s);
+char  *mmq_strncpy(char *s1, const char *s2, size_t n);
+char  *mmq_strcat(char *s1, const char *s2);
+int    mmq_strncmp(const char *s1, const char *s2, size_t n);
+int    mmq_str2int(const char *nptr);
 
-#define fd_putchar ((void (*)(int, char)) get_func_addr(LIBMMQ_ID, 18))
-#define fd_putstr ((void (*)(int, const char *)) get_func_addr(LIBMMQ_ID, 19))
-#define fd_putint ((void (*)(int, int)) get_func_addr(LIBMMQ_ID, 20))
-#define fd_puthex ((void (*)(int, uint32_t)) get_func_addr(LIBMMQ_ID, 21))
-#define fd_printf ((void (*)(int, const char *, ...)) get_func_addr(LIBMMQ_ID, 22))
+void mmq_putchar(int fd, char c);
+void mmq_putstr(int fd, const char *str);
+void mmq_putint(int fd, int n);
+void mmq_puthex(int fd, uint32_t n);
+void mmq_printf(int fd, const char *fmt, ...);
 
 #endif

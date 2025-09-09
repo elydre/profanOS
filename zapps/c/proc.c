@@ -14,14 +14,16 @@
 #include <profan/syscall.h>
 #include <profan/panda.h>
 #include <profan/carp.h>
+#include <profan.h>
 
+#include <sys/utsname.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#define PROCESS_MAX 64
+#define PROCESS_MAX 200
 
 char *get_state(int state) {
     switch (state) {
@@ -80,9 +82,12 @@ void list_process(int mode) {
     int pid_list_len = syscall_process_list_all(pid_list, PROCESS_MAX);
     qsort(pid_list, pid_list_len, sizeof(uint32_t), pid_cmp);
 
+    struct utsname kname;
+    uname(&kname);
+
     if (mode == 1) {
-        printf("   profanOS . kernel %s . %d processes . uptime %ds (%ds IDLE)  \n",
-                syscall_sys_kinfo(),
+        printf("   profanOS . kernel %s %s . %d processes . uptime %ds (%ds IDLE)  \n",
+                kname.version, kname.release,
                 pid_list_len - 2,
                 syscall_timer_get_ms() / 1000,
                 syscall_process_run_time(1) / 1000
@@ -130,8 +135,6 @@ void top_loop(void) {
     printf("\e[2J");
     fflush(stdout);
 
-    while (syscall_sc_get());
-
     do {
         // move cursor to top left
         printf("\e[H");
@@ -162,7 +165,7 @@ void top_loop(void) {
         printf("%s %d allocs    \n\n", buf, syscall_mem_info(4, 0) - syscall_mem_info(5, 0));
         list_process(1);
         for (int i = 0; i < 9; i++) {
-            if (syscall_sc_get()) {
+            if (syscall_sc_get() == KB_ESC) {
                 last_idle = -1;
                 break;
             }
@@ -209,8 +212,6 @@ int main(int argc, char **argv) {
         list_process(2);
     else if (carp_isset('t'))
         top_loop();
-    else if (carp_isset('l'))
-        list_process(0);
     else if (carp_isset('k'))
         syscall_process_kill(carp_get_int('k'), 1);
     else if (carp_isset('s'))
@@ -219,6 +220,8 @@ int main(int argc, char **argv) {
         syscall_process_wakeup(carp_get_int('w'), 0);
     else if (carp_isset('f'))
         search_process(carp_get_str('f'));
-    else return 1;
+    else
+        list_process(0);
+
     return 0;
 }

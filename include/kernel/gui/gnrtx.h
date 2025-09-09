@@ -31,7 +31,7 @@ extern uint8_t font_8x16[4096];
 uint8_t *font_get(void);
 
 // tefv.c
-int  tef_init(void);
+int tef_init(void);
 
 // gnrtx
 int gt_get_max_cols(void);
@@ -39,7 +39,7 @@ int gt_get_max_rows(void);
 
 void clear_screen(void);
 
-int kcnprint(char *message, int len, char color);
+int kcnprint(const char *message, int len, char color);
 
 void kprint_char_at(int x, int y, char c, char color);
 

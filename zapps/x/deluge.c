@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#define _SYSCALL_CREATE_FUNCS
+// @LINK: libmmq
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
@@ -117,26 +117,26 @@ deluge_args_t *g_args;
 ********************************/
 
 #define raise_error(fmt, ...) {  \
-        fd_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
-        process_exit(1);  \
+        mmq_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
+        mmq_exit(1);  \
     }
 
 #define debug_printf(lvl, ...) {          \
     if (g_args->debug >= lvl) {           \
-        fd_putstr(2, "\e[37m[DELUGE] ");  \
-        fd_printf(2, __VA_ARGS__);        \
-        fd_putstr(2, "\e[0m\n");          \
+        mmq_putstr(2, "\e[37m[DELUGE] ");  \
+        mmq_printf(2, __VA_ARGS__);        \
+        mmq_putstr(2, "\e[0m\n");          \
     }}
 
 #define debug_printf_tab(lvl, r, ...) {   \
     if (g_args->debug >= lvl) {           \
-        fd_putstr(2, "\e[37m[DELUGE] ");  \
+        mmq_putstr(2, "\e[37m[DELUGE] ");  \
         for (int i = 0; i < r - 1; i++)   \
-            fd_putstr(2, "--");           \
+            mmq_putstr(2, "--");           \
         if (r > 0)                        \
-            fd_putstr(2, "> ");           \
-        fd_printf(2, __VA_ARGS__);        \
-        fd_putstr(2, "\e[0m\n");          \
+            mmq_putstr(2, "> ");           \
+        mmq_printf(2, __VA_ARGS__);        \
+        mmq_putstr(2, "\e[0m\n");          \
     }}
 
 /********************************
@@ -146,7 +146,7 @@ deluge_args_t *g_args;
 ********************************/
 
 void loaded_lib_add(elfobj_t *lib) {
-    g_loaded_libs = krealloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
+    g_loaded_libs = mmq_realloc(g_loaded_libs, ++g_lib_count * sizeof(elfobj_t *));
     g_loaded_libs[g_lib_count - 1] = lib;
 }
 
@@ -164,26 +164,26 @@ int loaded_lib_atback(elfobj_t *lib) {
 }
 
 void *mem_dup(void *src, uint32_t size) {
-    void *dst = kmalloc(size);
-    mem_cpy(dst, src, size);
+    void *dst = mmq_malloc(size);
+    mmq_memcpy(dst, src, size);
     return dst;
 }
 
 char *ft_getenv(const char *name) {
-    uint32_t len = str_len(name);
+    uint32_t len = mmq_strlen(name);
     for (int i = 0; g_envp[i]; i++) {
-        if (str_ncmp(g_envp[i], name, len) == 0 && g_envp[i][len] == '=')
+        if (mmq_strncmp(g_envp[i], name, len) == 0 && g_envp[i][len] == '=')
             return g_envp[i] + len + 1;
     }
     return NULL;
 }
 
 char *profan_path_join(const char *dir, const char *file) {
-    int len1 = str_len(dir);
-    char *path = kmalloc(len1 + str_len(file) + 2);
-    str_cpy(path, dir);
+    int len1 = mmq_strlen(dir);
+    char *path = mmq_malloc(len1 + mmq_strlen(file) + 2);
+    mmq_strcpy(path, dir);
     path[len1] = '/';
-    str_cpy(path + len1 + 1, file);
+    mmq_strcpy(path + len1 + 1, file);
     return path;
 }
 
@@ -194,11 +194,11 @@ char *profan_path_join(const char *dir, const char *file) {
 ********************************/
 
 uint32_t search_inpath(const char *src_path, const char *filename, char **fullpath) {
-    char *path = str_dup(src_path);
+    char *path = mmq_strdup(src_path);
 
-    char *fullname = kmalloc(str_len(filename) + 5); // 5 => .elf + null
-    str_cpy(fullname, filename);
-    str_cat(fullname, ".elf");
+    char *fullname = mmq_malloc(mmq_strlen(filename) + 5); // 5 => .elf + null
+    mmq_strcpy(fullname, filename);
+    mmq_strcat(fullname, ".elf");
 
     int start = 0;
     for (int i = 0;; i++) {
@@ -211,8 +211,8 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
             if (fu_is_file(sid)) {
                 if (path)
                     *fullpath = profan_path_join(path + start, fullname);
-                kfree(fullname);
-                kfree(path);
+                mmq_free(fullname);
+                mmq_free(path);
                 return sid;
             }
         }
@@ -221,8 +221,8 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
         start = i + 1;
     }
 
-    kfree(fullname);
-    kfree(path);
+    mmq_free(fullname);
+    mmq_free(path);
     return SID_NULL;
 }
 
@@ -236,7 +236,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
     if (name[0] == '/') {
         sid = fu_path_to_sid(SID_ROOT, name);
         if (!IS_SID_NULL(sid) && path)
-            *path = str_dup(name);
+            *path = mmq_strdup(name);
         return sid;
     }
 
@@ -245,12 +245,11 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
         if (!cwd)
             return SID_NULL;
         full_path = profan_path_join(cwd, name + 2);
-        fu_simplify_path(full_path);
         sid = fu_path_to_sid(SID_ROOT, full_path);
         if (!IS_SID_NULL(sid) && path)
             *path = full_path;
         else
-            kfree(full_path);
+            mmq_free(full_path);
         return sid;
     }
 
@@ -269,7 +268,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
                 *path = full_path;
             return sid;
         }
-        kfree(full_path);
+        mmq_free(full_path);
     }
 
     full_path = profan_path_join("/lib", name);
@@ -281,7 +280,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
         return sid;
     }
 
-    kfree(full_path);
+    mmq_free(full_path);
     return SID_NULL;
 }
 
@@ -304,8 +303,8 @@ static inline uint32_t hash(const char *str) {
 dlg_hash_t *hash_create(elfobj_t *obj) {
     uint32_t size = obj->dym_size / sizeof(Elf32_Sym);
 
-    dlg_hash_t *table = kcalloc(size, sizeof(dlg_hash_t));
-    dlg_hash_t *later = kcalloc(size, sizeof(dlg_hash_t));
+    dlg_hash_t *table = mmq_calloc(size, sizeof(dlg_hash_t));
+    dlg_hash_t *later = mmq_calloc(size, sizeof(dlg_hash_t));
     int later_index = 0;
 
     for (uint32_t i = 0; i < size; i++) {
@@ -343,7 +342,7 @@ dlg_hash_t *hash_create(elfobj_t *obj) {
 
         table_index++;
     }
-    kfree(later);
+    mmq_free(later);
 
     return table;
 }
@@ -352,7 +351,7 @@ Elf32_Sym *hash_get(elfobj_t *obj, uint32_t full_h, const char *key) {
     dlg_hash_t *entry = obj->hash_table + full_h % (obj->dym_size / sizeof(Elf32_Sym));;
 
     while (entry) {
-        if (entry->hash == full_h && str_cmp(entry->key, key) == 0)
+        if (entry->hash == full_h && mmq_strcmp(entry->key, key) == 0)
             return entry->data;
         entry = entry->next;
     }
@@ -368,7 +367,7 @@ Elf32_Sym *hash_get(elfobj_t *obj, uint32_t full_h, const char *key) {
 int is_valid_elf(void *data, uint16_t required_type) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)data;
     return !(
-        mem_cmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
+        mmq_memcmp(ehdr->e_ident, (void *) ELFMAG, SELFMAG) != 0 ||
         (required_type && ehdr->e_type != required_type) ||
         ehdr->e_machine != EM_386
     );
@@ -418,8 +417,8 @@ int load_sections(elfobj_t *obj, uint8_t *file) {
     if (obj->type == ET_EXEC) {
         obj->mem = (void *) base_addr;
         syscall_scuba_generate(base_addr, required_size / 0x1000);
-    } else {
-        obj->mem = (void *) syscall_mem_alloc(required_size, 0x1000, 1);
+    } else { // TODO: use a page
+        obj->mem = (void *) syscall_mem_alloc(required_size, 1, 0x1000);
         offset = obj->mem;
     }
 
@@ -428,10 +427,10 @@ int load_sections(elfobj_t *obj, uint8_t *file) {
             continue;
         switch (shdr[i].sh_type) {
             case SHT_NOBITS:
-                mem_set(offset + shdr[i].sh_addr, 0, shdr[i].sh_size);
+                mmq_memset(offset + shdr[i].sh_addr, 0, shdr[i].sh_size);
                 break;
             default:
-                mem_cpy(offset + shdr[i].sh_addr, file + shdr[i].sh_offset, shdr[i].sh_size);
+                mmq_memcpy(offset + shdr[i].sh_addr, file + shdr[i].sh_offset, shdr[i].sh_size);
                 break;
         }
     }
@@ -451,7 +450,7 @@ uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global, int
 
     // search in the extra symbols
     for (int i = 0; g_extra_syms[i].name; i++) {
-        if (g_extra_syms[i].hash == full_h && str_cmp(g_extra_syms[i].name, name) == 0)
+        if (g_extra_syms[i].hash == full_h && mmq_strcmp(g_extra_syms[i].name, name) == 0)
             return (uint32_t) g_extra_syms[i].func;
     }
 
@@ -491,8 +490,6 @@ uint32_t search_sym_value(const char *name, elfobj_t *obj, int allow_global, int
 }
 
 char *get_addr_name(elfobj_t *obj, uint32_t addr) {
-    char *name = NULL;
-
     if (!obj->sym_tab)
         return NULL;
 
@@ -502,10 +499,10 @@ char *get_addr_name(elfobj_t *obj, uint32_t addr) {
         uint32_t val = offset + obj->sym_tab[i].st_value;
         if (addr < val || addr >= val + obj->sym_tab[i].st_size)
             continue;
-        name = obj->sym_str + obj->sym_tab[i].st_name;
+        return obj->sym_str + obj->sym_tab[i].st_name;
     }
 
-    return name;
+    return NULL;
 }
 
 /* == 32-bit x86 relocations types ==
@@ -595,7 +592,7 @@ int dynamic_linker(elfobj_t *obj) {
                     *ptr = val + *ptr - (uint32_t) ptr;
                     break;
                 case R_386_COPY:        // symbol  S
-                    mem_cpy(ptr, (void *) val, (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_size);
+                    mmq_memcpy(ptr, (void *) val, (obj->dym_tab + ELF32_R_SYM(rel[j].r_info))->st_size);
                     break;
                 case R_386_RELATIVE:    // word32  B + A
                     if (obj->type != ET_EXEC)
@@ -622,15 +619,15 @@ int dynamic_linker(elfobj_t *obj) {
 
 void free_elf(elfobj_t *obj) {
     if (obj->type == ET_DYN)
-        kfree(obj->mem);
-    kfree(obj->hash_table);
-    kfree(obj->sym_tab);
-    kfree(obj->sym_str);
-    kfree(obj->ehdr);
-    kfree(obj->shdr);
-    kfree(obj->name);
-    kfree(obj->deps);
-    kfree(obj);
+        mmq_free(obj->mem);
+    mmq_free(obj->hash_table);
+    mmq_free(obj->sym_tab);
+    mmq_free(obj->sym_str);
+    mmq_free(obj->ehdr);
+    mmq_free(obj->shdr);
+    mmq_free(obj->name);
+    mmq_free(obj->deps);
+    mmq_free(obj);
 }
 
 #define open_elf(name, type, fatal, visibility) open_elf_r(name, type, fatal, visibility, 0)
@@ -700,10 +697,10 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
 
     if (required_type == ET_DYN) {
         for (int i = 0; i < g_lib_count; i++) {
-            if (str_cmp(g_loaded_libs[i]->name, path))
+            if (mmq_strcmp(g_loaded_libs[i]->name, path))
                 continue;
             debug_printf_tab(1, rlvl, "find %s", path);
-            kfree(path);
+            mmq_free(path);
             g_loaded_libs[i]->ref_count++;
             return g_loaded_libs[i];
         }
@@ -712,18 +709,18 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
     debug_printf_tab(1, rlvl, "open %s", path);
 
     size = fu_file_get_size(sid);
-    file = kmalloc(size);
+    file = mmq_malloc(size);
 
     fu_file_read(sid, file, 0, size);
 
     if (size < sizeof(Elf32_Ehdr) || !is_valid_elf(file, required_type)) {
         if (isfatal)
             raise_error("%s: invalid ELF file", path);
-        kfree(file);
+        mmq_free(file);
         return NULL;
     }
 
-    elfobj_t *obj = kcalloc(1, sizeof(elfobj_t));
+    elfobj_t *obj = mmq_calloc(1, sizeof(elfobj_t));
 
     obj->ref_count = 1;
     obj->name = path;
@@ -765,7 +762,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
         }
     }
 
-    kfree(file);
+    mmq_free(file);
 
     if (obj->dym_tab == NULL) {
         if (obj->type == ET_DYN) {
@@ -797,7 +794,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
     if (deps_count == 0)
         goto endopen;
 
-    obj->deps = kcalloc(deps_count + 1, sizeof(elfobj_t *));
+    obj->deps = mmq_calloc(deps_count + 1, sizeof(elfobj_t *));
     deps_count = 0;
 
     for (int i = 0; obj->dynamic[i].d_tag != 0; i++) {
@@ -1018,9 +1015,9 @@ void libc_enable_leaks(void) {
 
 void show_help(int err) {
     if (err) {
-        fd_printf(2, "Try 'deluge -h' for more information.\n");
+        mmq_printf(2, "Try 'deluge -h' for more information.\n");
     } else {
-        fd_printf(1,
+        mmq_printf(1,
             "Usage: deluge [options] <file> [args]\n"
             "Options:\n"
             "  -a   import an additional library\n"
@@ -1035,11 +1032,11 @@ void show_help(int err) {
         );
     }
 
-    process_exit(err);
+    mmq_exit(err);
 }
 
 void deluge_parse(int argc, char **argv) {
-    mem_set(g_args, 0, sizeof(deluge_args_t));
+    mmq_memset(g_args, 0, sizeof(deluge_args_t));
 
     g_args->debug = ALWAYS_DEBUG;
     int move_arg = 0;
@@ -1066,22 +1063,22 @@ void deluge_parse(int argc, char **argv) {
                 break;
             case 'a':
                 if (i + 1 >= argc) {
-                    fd_printf(2, "deluge: missing argument for -l\n");
+                    mmq_printf(2, "deluge: missing argument for -l\n");
                     show_help(1);
                 }
                 if (g_args->extra_lib) {
-                    fd_printf(2, "deluge: extra library already set\n");
+                    mmq_printf(2, "deluge: extra library already set\n");
                     show_help(1);
                 }
                 g_args->extra_lib = argv[++i];
                 break;
             case 'L':
                 if (i + 1 >= argc) {
-                    fd_printf(2, "deluge: missing argument for -L\n");
+                    mmq_printf(2, "deluge: missing argument for -L\n");
                     show_help(1);
                 }
                 if (g_args->extra_path) {
-                    fd_printf(2, "deluge: lib path already set\n");
+                    mmq_printf(2, "deluge: lib path already set\n");
                     show_help(1);
                 }
                 g_args->extra_path = argv[++i];
@@ -1091,33 +1088,33 @@ void deluge_parse(int argc, char **argv) {
                 break;
             case 'p':
                 if (i + 1 >= argc) {
-                    fd_printf(2, "deluge: missing argument for -p\n");
+                    mmq_printf(2, "deluge: missing argument for -p\n");
                     show_help(1);
                 }
                 if (g_args->patch_file) {
-                    fd_printf(2, "deluge: patch file already set\n");
+                    mmq_printf(2, "deluge: patch file already set\n");
                     show_help(1);
                 }
                 g_args->patch_file = argv[++i];
                 break;
             case 'v':
-                fd_printf(1, "deluge %s\n", DELUGE_VERSION);
-                process_exit(0);
+                mmq_printf(1, "deluge %s\n", DELUGE_VERSION);
+                mmq_exit(0);
                 break; // unreachable
             case '\0':
             case '-':
-                fd_printf(2, "deluge: unknown option '%s'\n", argv[i]);
+                mmq_printf(2, "deluge: unknown option '%s'\n", argv[i]);
                 show_help(1);
                 break; // unreachable
             default:
-                fd_printf(2, "deluge: invalid option -- '%c'\n", argv[i][1]);
+                mmq_printf(2, "deluge: invalid option -- '%c'\n", argv[i][1]);
                 show_help(1);
                 break; // unreachable
         }
     }
 
     if (g_args->name == NULL) {
-        fd_printf(2, "deluge: missing file name\n");
+        mmq_printf(2, "deluge: missing file name\n");
         show_help(1);
     }
 }
@@ -1170,7 +1167,7 @@ int main(int argc, char **argv, char **envp) {
     if (g_prog->type == ET_EXEC) {
         debug_printf(1, "link time: %d ms", syscall_timer_get_ms() - start);
 
-        int (*main)(int, char **, char **) = (int (*)(int, char **, char **)) (g_prog->ehdr->e_entry);
+        int (*main)(int, char **, char **) = (void *) g_prog->ehdr->e_entry;
 
         if (argc > g_args->arg_offset) {
             syscall_process_info(syscall_process_pid(), PROC_INFO_SET_NAME, argv[g_args->arg_offset]);
@@ -1208,12 +1205,12 @@ int main(int argc, char **argv, char **envp) {
         free_elf(g_loaded_libs[i]);
     }
 
-    kfree(g_loaded_libs);
+    mmq_free(g_loaded_libs);
 
     if (g_args->show_leaks) {
         int leaks;
         if ((leaks = syscall_mem_info(7, parent_pid)) > 0) {
-            fd_printf(2, "\n  Kernel memory leak of %d alloc%s (pid %d, %d bytes)\n",
+            mmq_printf(2, "\n  Kernel memory leak of %d alloc%s (pid %d, %d bytes)\n",
                     leaks, leaks == 1 ? "" : "s", parent_pid,
                     syscall_mem_info(8, parent_pid)
             );

@@ -28,11 +28,8 @@ typedef struct tm {
     int    tm_isdst; // daylight savings flag
 } tm_t;
 
-#define low_16(address) (uint16_t)((address) & 0xFFFF)
-#define high_16(address) (uint16_t)(((address) >> 16) & 0xFFFF)
-
 #ifndef NULL
-#define NULL 0
+#define NULL ((void *) 0)
 #endif
 
 typedef signed char        int8_t;
@@ -61,11 +58,6 @@ typedef struct {
     vdisk_t **vdisk;            // list mounted virtual disks
     uint32_t vdisk_count;       // virtual disk count
 } filesys_t;
-
-typedef struct {
-    char **argv;
-    char **envp;
-} comm_struct_t;
 
 // va_list
 typedef __builtin_va_list va_list;

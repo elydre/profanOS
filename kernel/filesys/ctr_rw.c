@@ -13,7 +13,7 @@
 #include <minilib.h>
 #include <system.h>
 
-int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t offset,
+int fs_cnt_rw_core(uint32_t core_sid, uint8_t *buf, uint32_t offset,
         uint32_t size, int is_read, uint8_t *alloc_buf) {
     vdisk_t *vdisk;
 
@@ -22,7 +22,7 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
         return -1;
     }
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(core_sid));
+    vdisk = fs_get_vdisk(SID_DISK(core_sid));
 
     if (vdisk == NULL) {
         return -1;
@@ -53,7 +53,7 @@ int fs_cnt_rw_core(filesys_t *filesys, uint32_t core_sid, uint8_t *buf, uint32_t
     return size + offset - 1;
 }
 
-int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
+int fs_cnt_rw_loca(uint32_t loca_sid, uint8_t *buf,
         uint32_t offset, int size, int is_read) {
     uint32_t next_loca_sid;
     vdisk_t *vdisk;
@@ -62,7 +62,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
     uint8_t *data = malloc(FS_SECTOR_SIZE);
     int tmp;
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
+    vdisk = fs_get_vdisk(SID_DISK(loca_sid));
 
     if (vdisk == NULL) {
         return 1;
@@ -109,7 +109,7 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
                 free(data);
                 return 1;
             }
-            tmp = fs_cnt_rw_core(filesys, core_sid, buf + max(index, 0), max(0, -index),
+            tmp = fs_cnt_rw_core(core_sid, buf + max(index, 0), max(0, -index),
                     size - max(index, 0), is_read, alloc_buf);
             if (tmp == -1) {
                 sys_error("failed to %s core d%ds%d\n",
@@ -142,15 +142,12 @@ int fs_cnt_rw_loca(filesys_t *filesys, uint32_t loca_sid, uint8_t *buf,
     return 0;
 }
 
-int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
+int fs_cnt_rw(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
     vdisk_t *vdisk;
     uint8_t *data;
     uint32_t loca_sid;
 
-    if (filesys == NULL)
-        filesys = MAIN_FS;
-
-    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
+    vdisk = fs_get_vdisk(SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_rw] Invalid sector id");
@@ -180,7 +177,7 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
     // rw locator
     loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
     if (loca_sid != 0) {
-        if (fs_cnt_rw_loca(filesys, loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
+        if (fs_cnt_rw_loca(loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }
@@ -193,10 +190,10 @@ int fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset,
     return 0;
 }
 
-int fs_cnt_read(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size) {
-    return fs_cnt_rw(filesys, head_sid, buf, offset, size, 1);
+int fs_cnt_read(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size) {
+    return fs_cnt_rw(head_sid, buf, offset, size, 1);
 }
 
-int fs_cnt_write(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size) {
-    return fs_cnt_rw(filesys, head_sid, buf, offset, size, 0);
+int fs_cnt_write(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size) {
+    return fs_cnt_rw(head_sid, buf, offset, size, 0);
 }

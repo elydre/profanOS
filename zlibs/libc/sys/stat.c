@@ -30,7 +30,7 @@ static int stat_sid(uint32_t sid, struct stat *buf) {
 
     if (fu_is_dir(sid)) {
         buf->st_mode |= S_IFDIR;
-    } else if (fu_is_fctf(sid)) {
+    } else if (fu_is_afft(sid)) {
         buf->st_mode |= S_IFCHR;
     } else {
         buf->st_mode |= S_IFREG;
@@ -42,7 +42,7 @@ static int stat_sid(uint32_t sid, struct stat *buf) {
     buf->st_uid = 0;    // root
     buf->st_gid = 0;    // root
 
-    buf->st_size = syscall_fs_get_size(NULL, sid);
+    buf->st_size = syscall_fs_get_size(sid);
 
     buf->st_atime = 0;
     buf->st_mtime = 0;

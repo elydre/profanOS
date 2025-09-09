@@ -10,9 +10,8 @@
 \*****************************************************************************/
 
 #ifndef FILESYS_LIB_ID
-#define FILESYS_LIB_ID 1002
-#define DEVIO_LIB_ID   1003
-#define FMOPEN_LIB_ID  1004
+#define FILESYS_LIB_ID 1
+#define FMOPEN_LIB_ID  3
 
 #include <stdint.h>
 
@@ -53,60 +52,107 @@ enum {
     FCTF_WRITE
 };
 
-#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
+#ifndef _KERNEL_MODULE
 
-#ifndef FILESYS_LIB_C
+extern int profan_syscall(uint32_t id, ...);
 
-#define fu_is_dir ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 2))
-#define fu_dir_get_size ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 3))
-#define fu_dir_get_elm ((int (*)(uint8_t *, uint32_t, uint32_t, uint32_t *)) get_func_addr(FILESYS_LIB_ID, 4))
-#define fu_dir_get_content ((int (*)(uint32_t, uint32_t **, char ***)) get_func_addr(FILESYS_LIB_ID, 5))
-#define fu_add_to_dir ((int (*)(uint32_t, uint32_t, char *)) get_func_addr(FILESYS_LIB_ID, 6))
-#define fu_remove_from_dir ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 7))
-#define fu_dir_create ((uint32_t (*)(int, const char *)) get_func_addr(FILESYS_LIB_ID, 8))
-#define fu_is_file ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 9))
-#define fu_file_set_size ((int (*)(uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 10))
-#define fu_file_get_size ((uint32_t (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 11))
-#define fu_file_create ((uint32_t (*)(int, const char *)) get_func_addr(FILESYS_LIB_ID, 12))
-#define fu_file_read ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 13))
-#define fu_file_write ((int (*)(uint32_t, void *, uint32_t, uint32_t)) get_func_addr(FILESYS_LIB_ID, 14))
-#define fu_is_fctf ((int (*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 15))
-#define fu_fctf_create ((uint32_t (*)(int, const char *, int (*)(int, void *, uint32_t, uint8_t))) get_func_addr(FILESYS_LIB_ID, 16))
-#define fu_fctf_get_addr ((void *(*)(uint32_t)) get_func_addr(FILESYS_LIB_ID, 17))
+#undef  _pscall
+#define _pscall(module, id, ...) \
+    profan_syscall(((module << 24) | id), __VA_ARGS__)
 
-#define fu_path_to_sid ((uint32_t (*)(uint32_t, const char *)) get_func_addr(FILESYS_LIB_ID, 18))
-#define fu_simplify_path ((void (*)(char *)) get_func_addr(FILESYS_LIB_ID, 19))
-#define fu_get_vdisk_info ((uint32_t *(*)(void)) get_func_addr(FILESYS_LIB_ID, 20))
+int       fu_is_dir(uint32_t sid);
+int       fu_dir_get_size(uint32_t sid);
+int       fu_dir_get_elm(uint8_t *name, uint32_t sid, uint32_t index, uint32_t *elm_sid);
+int       fu_dir_get_content(uint32_t sid, uint32_t **elm_sids, char ***elm_names);
+int       fu_add_to_dir(uint32_t dir_sid, uint32_t elm_sid, char *name);
+int       fu_remove_from_dir(uint32_t dir_sid, uint32_t elm_sid);
+uint32_t  fu_dir_create(int disk, const char *path);
+int       fu_is_file(uint32_t sid);
+int       fu_file_set_size(uint32_t sid, uint32_t size);
+uint32_t  fu_file_get_size(uint32_t sid);
+uint32_t  fu_file_create(int disk, const char *path);
+int       fu_file_read(uint32_t sid, void *buf, uint32_t offset, uint32_t size);
+int       fu_file_write(uint32_t sid, void *buf, uint32_t offset, uint32_t size);
+int       fu_is_afft(uint32_t sid);
+uint32_t  fu_afft_create(int disk, const char *path, int (*handler)(int, void *, uint32_t, uint8_t));
+void     *fu_afft_get_addr(uint32_t sid);
+uint32_t  fu_path_to_sid(uint32_t disk, const char *path);
+uint32_t *fu_get_vdisk_info(void);
 
-#endif
+#define fu_is_dir(a)                  ((int) _pscall(FILESYS_LIB_ID, 0, a))
+#define fu_dir_get_size(a)            ((int) _pscall(FILESYS_LIB_ID, 1, a))
+#define fu_dir_get_elm(a, b, c, d)    ((int) _pscall(FILESYS_LIB_ID, 2, a, b, c, d))
+#define fu_dir_get_content(a, b, c)   ((int) _pscall(FILESYS_LIB_ID, 3, a, b, c))
+#define fu_add_to_dir(a, b, c)        ((int) _pscall(FILESYS_LIB_ID, 4, a, b, c))
+#define fu_remove_from_dir(a, b)      ((int) _pscall(FILESYS_LIB_ID, 5, a, b))
+#define fu_dir_create(a, b)           ((uint32_t) _pscall(FILESYS_LIB_ID, 6, a, b))
+#define fu_is_file(a)                 ((int) _pscall(FILESYS_LIB_ID, 7, a))
+#define fu_file_set_size(a, b)        ((int) _pscall(FILESYS_LIB_ID, 8, a, b))
+#define fu_file_get_size(a)           ((uint32_t) _pscall(FILESYS_LIB_ID, 9, a))
+#define fu_file_create(a, b)          ((uint32_t) _pscall(FILESYS_LIB_ID, 10, a, b))
+#define fu_file_read(a, b, c, d)      ((int) _pscall(FILESYS_LIB_ID, 11, a, b, c, d))
+#define fu_file_write(a, b, c, d)     ((int) _pscall(FILESYS_LIB_ID, 12, a, b, c, d))
+#define fu_is_afft(a)                 ((int) _pscall(FILESYS_LIB_ID, 13, a))
+#define fu_afft_create(a, b, c)       ((uint32_t) _pscall(FILESYS_LIB_ID, 14, a, b, c))
+#define fu_afft_get_addr(a)           ((void *) _pscall(FILESYS_LIB_ID, 15, a))
+#define fu_path_to_sid(a, b)          ((uint32_t) _pscall(FILESYS_LIB_ID, 16, a, b))
+#define fu_get_vdisk_info()           ((uint32_t *) _pscall(FILESYS_LIB_ID, 17, 0))
 
-#undef  SEEK_SET
-#define SEEK_SET 0
-
-#undef  SEEK_CUR
-#define SEEK_CUR 1
-
-#undef  SEEK_END
-#define SEEK_END 2
-
-#ifndef FMOPEN_LIB_C
+#endif // _KERNEL_MODULE
 
 #define fm_open(path, flags) fm_reopen(-1, path, flags)
 
-#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 2))
-#define fm_reopen ((int (*)(int, const char *, int)) get_func_addr(FMOPEN_LIB_ID, 3))
-#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 4))
-#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 5))
-#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 6))
-#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 7))
-#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
-#define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 9))
-#define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 10))
-#define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
-#define fm_fcntl ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 12))
-#define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
-#define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
-#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 15))
+int fm_close(int fd);
+int fm_reopen(int fd, const char *path, int flags);
+int fm_read(int fd, void *buf, uint32_t size);
+int fm_write(int fd, void *buf, uint32_t size);
+int fm_lseek(int fd, int offset, int whence);
+int fm_dup2(int oldfd, int newfd);
+int fm_dup(int fd);
+int fm_pipe(int fds[2]);
+int fm_isafft(int fd);
+int fm_isfile(int fd);
+int fm_fcntl(int fd, int cmd, int arg);
+uint32_t fm_get_sid(int fd);
+const char *fm_get_path(int fd);
+int fm_declare_child(int fd);
 
-#endif
+#ifndef _KERNEL_MODULE
+
+#define fm_close(a)         ((int) _pscall(FMOPEN_LIB_ID, 0, a))
+#define fm_reopen(a, b, c)  ((int) _pscall(FMOPEN_LIB_ID, 1, a, b, c))
+#define fm_read(a, b, c)    ((int) _pscall(FMOPEN_LIB_ID, 2, a, b, c))
+#define fm_write(a, b, c)   ((int) _pscall(FMOPEN_LIB_ID, 3, a, b, c))
+#define fm_lseek(a, b, c)   ((int) _pscall(FMOPEN_LIB_ID, 4, a, b, c))
+#define fm_dup2(a, b)       ((int) _pscall(FMOPEN_LIB_ID, 5, a, b))
+#define fm_dup(a)           ((int) _pscall(FMOPEN_LIB_ID, 6, a))
+#define fm_pipe(a)          ((int) _pscall(FMOPEN_LIB_ID, 7, a))
+#define fm_isafft(a)        ((int) _pscall(FMOPEN_LIB_ID, 8, a))
+#define fm_isfile(a)        ((int) _pscall(FMOPEN_LIB_ID, 9, a))
+#define fm_fcntl(a, b, c)   ((int) _pscall(FMOPEN_LIB_ID, 10, a, b, c))
+#define fm_get_sid(a)       ((uint32_t) _pscall(FMOPEN_LIB_ID, 11, a))
+#define fm_get_path(a)      ((const char *) _pscall(FMOPEN_LIB_ID, 12, a))
+#define fm_declare_child(a) ((int) _pscall(FMOPEN_LIB_ID, 13, a))
+
+#else
+
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
+
+#define fm_close ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 0))
+#define fm_reopen ((int (*)(int, const char *, int)) get_func_addr(FMOPEN_LIB_ID, 1))
+#define fm_read ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 2))
+#define fm_write ((int (*)(int, void *, uint32_t)) get_func_addr(FMOPEN_LIB_ID, 3))
+#define fm_lseek ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 4))
+#define fm_dup2 ((int (*)(int, int)) get_func_addr(FMOPEN_LIB_ID, 5))
+#define fm_dup ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 6))
+#define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 7))
+#define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
+#define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
+#define fm_fcntl ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
+#define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
+
+#endif // _KERNEL_MODULE
+
 #endif

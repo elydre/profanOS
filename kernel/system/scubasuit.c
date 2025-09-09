@@ -362,10 +362,9 @@ void scuba_fault_handler(int err_code) {
                 faulting_address
         );
 
-    sys_error("Page fault during %s at %x (pid %d, code %x)",
+    sys_error("Page fault during %s at %x (pid %d)",
             (err_code & 0x2) ? "write" : "read",
             faulting_address,
-            pid,
-            err_code
+            pid
     );
 }

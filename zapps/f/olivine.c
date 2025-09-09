@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 2"
+#define OLV_VERSION "1.8 rev 4"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -105,7 +105,7 @@
 
 /***********************************
  *                                *
- *  Structs and Global g_olv->vars  *
+ *  Structs and Global Variables  *
  *                                *
 ***********************************/
 
@@ -139,7 +139,7 @@
     ((x) == '_'))
 
 #define IS_SPACE_CHAR(x) (        \
-    (x) == ' ' || (x) == '\t'  || \
+    (x) == ' '  || (x) == '\t' || \
     (x) == '\n' || (x) == '\r' || \
     (x) == '\v' || (x) == '\f')
 
@@ -386,11 +386,11 @@ int is_valid_name(const char *name) {
     return 1;
 }
 
-/*******************************
- *                            *
- * Variable Get/Set g_olv->funcs *
- *                            *
-********************************/
+/*********************************
+ *                              *
+ *  Variable Get/Set Functions  *
+ *                              *
+*********************************/
 
 int get_variable_index(const char *name, int allow_sublvl) {
     for (int i = 0; i < g_olv->var_count; i++) {
@@ -1759,15 +1759,15 @@ char *if_dot(char **input) {
     #if BUILD_PROFAN
     char *full_path = profan_path_join(g_olv->current_dir, file_path);
 
-    run_ifexist_full(
-        (runtime_args_t) {
-            full_path,
-            NULL,
-            argc, argv,
-            environ,
-            2
-        }, &pid
-    );
+    runtime_args_t runtime_args = {
+        full_path,
+        NULL,
+        argc, argv,
+        environ,
+        2
+    };
+
+    run_ifexist(&runtime_args, &pid);
 
     free(full_path);
 
@@ -3928,10 +3928,11 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
         tmp_index++;
     }
 
+    while (tmp_index > 0 && IS_SPACE_CHAR(tmp[tmp_index - 1]))
+        tmp_index--;
+
     if (tmp_index != 0) {
         // remove trailing spaces
-        while (tmp_index > 0 && IS_SPACE_CHAR(tmp[tmp_index - 1]))
-            tmp_index--;
         tmp[tmp_index++] = '\0';
 
         lines[line_index].fileline = fileline;
@@ -4568,7 +4569,7 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
 
     if (buffer_actual_size) {
         olv_print(buffer, buffer_actual_size);
-        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
+        printf(" \e[0m\e[u\e[%dC", buffer_index);
     }
 
     fflush(stdout);
@@ -4752,7 +4753,10 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
 
         fputs("\e[?25h\e[u", stdout);
         olv_print(buffer, buffer_actual_size);
-        printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
+        if (buffer_index)
+            printf(" \e[0m\e[u\e[%dC\e[?25l", buffer_index);
+        else
+            fputs(" \e[0m\e[u\e[?25l", stdout);
         fflush(stdout);
     }
 

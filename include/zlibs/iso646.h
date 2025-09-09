@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef _SO646_H
-#define _SO646_H
+#ifndef _ISO646_H
+#define _ISO646_H
 
 #ifndef __cplusplus
 

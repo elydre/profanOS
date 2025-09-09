@@ -58,9 +58,9 @@ typedef struct {
     sector_t **sectors;         // array of sectors
     uint32_t size;              // sector count
 
-    uint8_t *used;              // array sectors (bool)
+    uint8_t  *used;             // array sectors (bool)
     uint32_t *free;             // array of free sector ids
-    uint32_t used_count;        // used sector count
+    uint32_t  used_count;       // used sector count
 } vdisk_t;
 
 typedef struct {
@@ -104,7 +104,7 @@ int      internal_to_host(filesys_t *filesys, char *extern_path, char *intern_pa
 
 // cnt_init.c
 int      fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type);
-uint32_t    fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta);
+uint32_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta);
 char    *fs_cnt_get_meta(filesys_t *filesys, uint32_t sid);
 
 // cnt_size.c
@@ -118,13 +118,13 @@ int      fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t of
 int      fu_is_dir(filesys_t *filesys, uint32_t dir_sid);
 int      fu_dir_get_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names);
 int      fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name);
-uint32_t    fu_dir_create(filesys_t *filesys, int device_id, char *path);
+uint32_t fu_dir_create(filesys_t *filesys, int device_id, char *path);
 
 // usg_file.c
 int      fu_is_file(filesys_t *filesys, uint32_t dir_sid);
-uint32_t    fu_file_create(filesys_t *filesys, int device_id, char *path);
+uint32_t fu_file_create(filesys_t *filesys, int device_id, char *path);
 
 // usg_ptsid.c
-uint32_t    fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path);
+uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path);
 
 #endif

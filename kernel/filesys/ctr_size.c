@@ -13,11 +13,11 @@
 #include <minilib.h>
 #include <system.h>
 
-int fs_cnt_shrink_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_shrink) {
+int fs_cnt_shrink_size(uint32_t loca_sid, uint32_t to_shrink) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
+    vdisk = fs_get_vdisk(SID_DISK(loca_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, loca_sid)) {
         sys_error("[cnt_shrink_size] Invalid sector id");
@@ -38,7 +38,7 @@ int fs_cnt_shrink_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_shrink
     mem_copy(&next_sid, data + LAST_SID_OFFSET, sizeof(uint32_t));
 
     if (!IS_SID_NULL(next_sid)) {
-        int ret = fs_cnt_shrink_size(filesys, next_sid, to_shrink);
+        int ret = fs_cnt_shrink_size(next_sid, to_shrink);
         if (ret <= 0) {
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return ret == 0 ? -2 : ret;
@@ -67,11 +67,11 @@ int fs_cnt_shrink_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_shrink
     return to_shrink;
 }
 
-int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
+int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
+    vdisk = fs_get_vdisk(SID_DISK(loca_sid));
 
     if (vdisk == NULL) {
         sys_error("[cnt_grow_size] vdisk not found");
@@ -190,14 +190,11 @@ int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
     return 0;
 }
 
-int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
+int fs_cnt_set_size(uint32_t head_sid, uint32_t size) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    if (filesys == NULL)
-        filesys = MAIN_FS;
-
-    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
+    vdisk = fs_get_vdisk(SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_set_size] Invalid sector id");
@@ -221,13 +218,13 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
     uint32_t loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
     if (old_count < new_count) {
         // grow cnt
-        if (fs_cnt_grow_size(filesys, loca_sid, new_count - old_count)) {
+        if (fs_cnt_grow_size(loca_sid, new_count - old_count)) {
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
             return 1;
         }
     } else if (old_count > new_count) {
         // shrink cnt
-        int ret = fs_cnt_shrink_size(filesys, loca_sid, old_count - new_count);
+        int ret = fs_cnt_shrink_size(loca_sid, old_count - new_count);
         if (ret == -2) ret = 0;
         if (ret) {
             sys_warning("[cnt_set_size] Could not shrink cnt");
@@ -241,14 +238,11 @@ int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
     return 0;
 }
 
-uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid) {
+uint32_t fs_cnt_get_size(uint32_t head_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
 
-    if (filesys == NULL)
-        filesys = MAIN_FS;
-
-    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
+    vdisk = fs_get_vdisk(SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_get_size] Invalid sector id");

@@ -205,7 +205,7 @@ def graphic_menu(stdscr: curses.window):
         elif key == curses.KEY_UP:
             current = max(current - 1, 0)
         elif key == curses.KEY_RIGHT:
-            if current > 0:
+            if current > 1:
                 draw_info(stdscr, ALL_ADOONS[current - 2])
         elif key == curses.KEY_LEFT:
             current = 0
@@ -284,7 +284,7 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 print("-- Aborted by user : KeyboardInterrupt")
             except curses.error as _error:
-                print("-- Aborted by user : Mouse went out of terminal")
+                pass
         else:
             print("ERROR: Unknown option:", args[0])
     else:

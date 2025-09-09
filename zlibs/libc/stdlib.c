@@ -23,6 +23,8 @@
 
 #include "config_libc.h"
 
+#define MKTEMP_LETTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 static uint32_t g_rand_seed = 0;
 
 static void **g_atexit_funcs = NULL;
@@ -243,7 +245,7 @@ int atoi(const char *nptr) {
 }
 
 long atol(const char *nptr) {
-    return (PROFAN_FNI, 0);
+    return atoi(nptr);
 }
 
 long long atoll(const char *nptr) {
@@ -377,11 +379,9 @@ size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
 int mkstemp(char *template) {
     int len, index;
 
-    char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
     // the last six characters of template must be "XXXXXX"
-    if (template == NULL || (len = strlen (template)) < 6 ||
-            memcmp (template + (len - 6), "XXXXXX", 6)) {
+    if (template == NULL || (len = strlen(template)) < 6 ||
+            memcmp(template + (len - 6), "XXXXXX", 6)) {
         errno = EINVAL;
         return -1;
     }
@@ -391,7 +391,7 @@ int mkstemp(char *template) {
 
     for (int i = 0; i < 1000; i++) {
         for (int j = index; j < len; j++)
-            template[j] = letters[rand () % 62];
+            template[j] = MKTEMP_LETTERS[rand () % 62];
 
         int fd = open(template, O_RDWR | O_CREAT, 0644);
 
@@ -405,7 +405,32 @@ int mkstemp(char *template) {
 }
 
 char *mktemp(char *template) {
-    return (PROFAN_FNI, NULL);
+    // mkstemp is preferred over mktemp
+
+    int len, index;
+
+    if (template == NULL)
+        return NULL;
+
+    // the last six characters of template must be "XXXXXX"
+    if ((len = strlen(template)) < 6 || memcmp(template + (len - 6), "XXXXXX", 6)) {
+        *template = '\0';
+        return template;
+    }
+
+    // user may supply more than six trailing X
+    for (index = len - 6; index > 0 && template[index - 1] == 'X'; index--);
+
+    for (int i = 0; i < 1000; i++) {
+        for (int j = index; j < len; j++)
+            template[j] = MKTEMP_LETTERS[rand () % 62];
+
+        if (IS_SID_NULL(profan_path_resolve(template)))
+            return template;
+    }
+
+    *template = '\0';
+    return template;
 }
 
 int putenv(char *string) {
@@ -424,7 +449,7 @@ int putenv(char *string) {
     return r;
 }
 
-// qsort defined in qsort.c
+// qsort defined in funcs/qsort.c
 
 int rand(void) {
     return rand_r(&g_rand_seed) & RAND_MAX;
@@ -460,7 +485,7 @@ char *realpath(const char *path, char *resolved_path) {
     }
 
     char *fullpath = profan_path_join(profan_wd_path(), path);
-    fu_simplify_path(fullpath);
+    profan_path_simplify(fullpath);
 
     if (resolved_path == NULL)
         return fullpath;
@@ -517,12 +542,18 @@ void srand(unsigned int seed) {
 }
 
 int system(const char *command) {
-    if (access(SYSTEM_SHELL_PATH, X_OK) == -1) {
+    if (!fu_is_file(SYSTEM_SHELL_PATH)) {
         fputs("libc: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
         return -1;
     }
 
-    return run_ifexist(SYSTEM_SHELL_PATH, 3, ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}));
+    runtime_args_t args = {
+        SYSTEM_SHELL_PATH, NULL, 3,
+        ((char *[]) {SYSTEM_SHELL_PATH, "-c", (char *) command}),
+        environ, 1
+    };
+
+    return run_ifexist(&args, NULL);
 }
 
 int unlockpt(int fd) {
