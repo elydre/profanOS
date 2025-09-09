@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <elf.h>    // for colorizing ELF files
 
 #include <profan/syscall.h>
 #include <profan/filesys.h>
@@ -24,16 +25,21 @@ typedef struct {
     int sort_mode;  // -z
     int showall;    // -a
     int phys_size;  // -p
-    int color;      // -c, -n
+    int color;      // -c, -n, -e
     char **paths;
 } ls_args_t;
 
-#define LS_COLOR_DIR  "\e[96m"
-#define LS_COLOR_FILE "\e[92m"
-#define LS_COLOR_SHBG "\e[4m"
-#define LS_COLOR_AFFT "\e[93m"
-#define LS_COLOR_ERR  "\e[91m"
-#define LS_COLOR_RSET "\e[0m"
+#define LS_COLOR_DIR      "\e[96m"   // light cyan
+#define LS_COLOR_FILE     "\e[92m"   // light green
+#define LS_COLOR_SHBG     "\e[4m"    // underline
+#define LS_COLOR_AFFT     "\e[93m"   // light yellow
+#define LS_COLOR_ERR      "\e[91m"   // light red
+#define LS_COLOR_RSET     "\e[0m"    // reset
+
+#define LS_COLOR_ELF_UNK  "\e[41m"   // red
+#define LS_COLOR_ELF_REL  "\e[100m"  // dark gray
+#define LS_COLOR_ELF_EXEC "\e[45m"   // magenta
+#define LS_COLOR_ELF_DYN  "\e[44m"   // blue
 
 enum {
     LS_FORMAT_COMMA,
@@ -156,6 +162,27 @@ void sort_entries(int count, ls_entry_t *entries, int (*cmp)(const void *, const
  *                            *
 *******************************/
 
+char *get_elf_color(uint32_t sid) {
+    uint8_t buf[20];
+
+    if (syscall_fs_read(sid, buf, 0, 20))
+        return "";
+
+    if (buf[4] != 1 || buf[5] != 1) // not 32-bit or not little-endian
+        return LS_COLOR_ELF_UNK;
+
+    switch (*(uint16_t *) (buf + 16)) {
+        case ET_REL:
+            return LS_COLOR_ELF_REL;
+        case ET_EXEC:
+            return LS_COLOR_ELF_EXEC;
+        case ET_DYN:
+            return LS_COLOR_ELF_DYN;
+        default:
+            return LS_COLOR_ELF_UNK;
+    }
+}
+
 int print_name(ls_entry_t *entry, ls_args_t *args) {
     if (args->color == 0)
         return fputs(entry->name, stdout);
@@ -166,12 +193,14 @@ int print_name(ls_entry_t *entry, ls_args_t *args) {
     if (!fu_is_file(entry->sid))
         return printf(LS_COLOR_ERR "%s" LS_COLOR_RSET, entry->name);
 
-    uint8_t buf[2];
+    uint8_t buf[4];
 
-    if (fu_file_get_size(entry->sid) > 1) {
-        syscall_fs_read(entry->sid, buf, 0, 4);
+    if (fu_file_get_size(entry->sid) >= 4 && !syscall_fs_read(entry->sid, buf, 0, 4)) {
         if ((buf[0] == '#' || buf[0] == '>') && buf[1] == '!')
             fputs(LS_COLOR_SHBG, stdout);
+        else if (args->color == 2 && buf[0] == 0x7f && buf[1] == 'E' &&
+                    buf[2] == 'L' && buf[3] == 'F')
+            fputs(get_elf_color(entry->sid), stdout);
     }
 
     return printf(LS_COLOR_FILE "%s" LS_COLOR_RSET, entry->name);
@@ -406,6 +435,7 @@ int print_help(void) {
         "  -h    display this help\n"
         "  -c    force color output (ansi escape)\n"
         "  -n    force no color output"
+        "  -e    colorize ELF files\n"
     );
     return 0;
 }
@@ -459,10 +489,14 @@ ls_args_t *parse_args(int argc, char **argv) {
                     args->sort_mode = LS_SORT_SIZE;
                     break;
                 case 'c':
-                    args->color = 1;
+                    if (args->color == 0)
+                        args->color = 1;
                     break;
                 case 'n':
                     args->color = 0;
+                    break;
+                case 'e':
+                    args->color = 2;
                     break;
                 case 'h':
                     print_help();
