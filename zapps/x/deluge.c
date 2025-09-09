@@ -1167,7 +1167,7 @@ int main(int argc, char **argv, char **envp) {
     if (g_prog->type == ET_EXEC) {
         debug_printf(1, "link time: %d ms", syscall_timer_get_ms() - start);
 
-        int (*main)() = (int (*)(int, char **, char **)) (g_prog->ehdr->e_entry);
+        int (*main)(int, char **, char **) = (void *) g_prog->ehdr->e_entry;
 
         if (argc > g_args->arg_offset) {
             syscall_process_info(syscall_process_pid(), PROC_INFO_SET_NAME, argv[g_args->arg_offset]);
