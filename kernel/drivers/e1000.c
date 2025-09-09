@@ -167,6 +167,8 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs);
 void e1000_handler(registers_t *regs) {
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1);
     uint32_t status = pci_read_cmd_u32(&(g_e1000.pci), 0, (0xc0));
+    kprintf_serial("e1000 interrupt, satus %x\n", status);
+
     if(status) {
         if (status & 0x80)
             e1000_handle_receive(&g_e1000, regs);
@@ -285,8 +287,10 @@ void e1000_send_packet(const void * p_data, uint16_t p_len)
     device->tx_descs_phys[device->tx_cur]->status = 0;
     uint8_t old_cur = device->tx_cur;
     device->tx_cur = (device->tx_cur + 1) % E1000_NUM_TX_DESC;
+    kprintf_serial("e1000: sending packet of len %d, cur %d\n", p_len, device->tx_cur);
     pci_write_cmd_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
-    while(!(device->tx_descs_phys[old_cur]->status & 0xff));
+    while (!(device->tx_descs_phys[old_cur]->status & 0xff))
+        process_sleep(process_get_pid(), 1);
 }
 
 
