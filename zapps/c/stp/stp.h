@@ -1,6 +1,7 @@
 #ifndef STP_H
 #define STP_H
 
+#include <profan/pni.h>
 #include <stdint.h>
 
 typedef struct {

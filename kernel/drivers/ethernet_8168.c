@@ -117,7 +117,7 @@ int rtl8168_init() {
         kprintf("Failed to enable MSI for RTL8168\n");
         return 2;
     }
-    register_interrupt_handler(g_pci_device->interrupt_line, rtl8168_handler);
+    interrupt_register_handler(g_pci_device->interrupt_line, rtl8168_handler);
 
     // Reset matériel de la carte
     pci_write_cmd_u8(pci, 0, 0x52, 0x0);  // Clear some control register (OK)

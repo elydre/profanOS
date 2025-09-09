@@ -63,12 +63,12 @@ void kernel_main(void *mboot_ptr) {
     status_print(rtc_init,      "Initializing real-time clock");
 
     // e1000 
-    status_print(pci_init,     "Scanning", "pci devices");
+    status_print(pci_init,     "Scanning pci devices");
     extern int rtl8168_init();
-    status_print(rtl8168_init, "Initing", "8168 ethernet card");
+    status_print(rtl8168_init, "Initing 8168 ethernet card");
     extern int e1000_init();
-    status_print(e1000_init, "Initing", "e1000 ethernet card");
-    status_print(eth_init,     "Initing", "ethernet driver");
+    status_print(e1000_init, "Initing e1000 ethernet card");
+    status_print(eth_init,     "Initing ethernet driver");
     // end e1000
 
     status_print(mod_init,      "Loading kernel modules");

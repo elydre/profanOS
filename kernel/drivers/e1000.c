@@ -262,7 +262,7 @@ int e1000_init(void) {
     }
     for (int i = 0; i < 0x80; i++)
         pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5200 + i * 4, 0);
-    register_interrupt_handler(g_e1000.irq + 32, e1000_handler);
+    interrupt_register_handler(g_e1000.irq + 32, e1000_handler);
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1F6DC);
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0xFF & ~4);
     pci_read_cmd_u32(&(g_e1000.pci), 0, 0xc0);

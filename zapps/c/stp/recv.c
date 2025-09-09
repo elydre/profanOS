@@ -5,11 +5,11 @@
 
 pni_packet_t stp_recv(uint8_t xid, uint32_t timeout) {
 	pni_packet_t resp;
-	uint32_t start = syscall_get_time();
+	uint32_t start = syscall_timer_get_ms();
 
-	while (start + timeout > syscall_get_time() || timeout == 0) {
+	while (start + timeout > syscall_timer_get_ms() || timeout == 0) {
 		resp = pni_recv(PNI_RECV_NOHANG | PNI_RECV_PORT_SRC | PNI_RECV_PORT_DEST, STP_PORT, STP_PORT);
-		if (resp.len < sizeof(stp_header_t)) {
+		if (resp.len < (int) sizeof(stp_header_t)) {
 			goto retry;
 		}
 		stp_header_t *header = (stp_header_t *)resp.data;

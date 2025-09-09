@@ -22,11 +22,10 @@
 pci_device_t *pcis = NULL;
 int pcis_len = 0;
 
-
 void pci_write_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t value) {
     uint32_t address = (1 << 31) | (bus << 16) | (slot << 11) | (func << 8) | (offset & 0xFC);
-    port_long_out(0xCF8, address);
-    port_long_out(0xCFC, value);
+    port_write32(0xCF8, address);
+    port_write32(0xCFC, value);
 }
 
 void pci_write_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset, uint16_t value) {
@@ -40,13 +39,13 @@ void pci_write_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t o
             | (function << 8)
             | aligned_offset;
 
-    port_long_out(0xCF8, address);
+    port_write32(0xCF8, address);
 
-    uint32_t existing = port_long_in(0xCFC);
+    uint32_t existing = port_read32(0xCFC);
     existing &= ~(0xFFFF << shift);
     existing |= ((uint32_t)value) << shift;
 
-    port_long_out(0xCFC, existing);
+    port_write32(0xCFC, existing);
 }
 
 uint32_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset) {
@@ -60,8 +59,8 @@ uint32_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t of
               (lfunc << 8) | (offset & 0xFC) | ((uint32_t)0x80000000));
 
     // Write out the address
-    port_long_out(0xCF8, address);
-    return (port_long_in(0xCFC));
+    port_write32(0xCF8, address);
+    return (port_read32(0xCFC));
 }
 
 uint16_t pci_read_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset) {
@@ -75,9 +74,9 @@ uint16_t pci_read_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_
             | (function << 8)
             | aligned_offset;
 
-    port_long_out(0xCF8, address);
+    port_write32(0xCF8, address);
 
-    uint32_t value = port_long_in(0xCFC);
+    uint32_t value = port_read32(0xCFC);
     return (value >> shift) & 0xFFFF;
 }
 
@@ -89,7 +88,7 @@ void pci_get_ids(pci_device_t *pci) {
 }
 
 void pci_add_device(pci_device_t *pci) {
-    pcis = realloc_as_kernel(pcis, (pcis_len + 1) * sizeof(pci_device_t));
+    pcis = realloc(pcis, (pcis_len + 1) * sizeof(pci_device_t));
     pcis[pcis_len] = *pci;
     pcis_len++;
 }
@@ -148,7 +147,7 @@ void pci_write_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset, uint8_t 
     } else {
         // Si le BAR est de type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        port_byte_out(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
+        port_write8(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
 
@@ -162,7 +161,7 @@ void pci_write_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset, uint16_
     } else {
         // Si le BAR est de type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        port_word_out(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
+        port_write16(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
 
@@ -176,7 +175,7 @@ void pci_write_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset, uint32_
     } else {
         // Si le BAR est de type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        port_long_out(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
+        port_write32(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
 
@@ -189,7 +188,7 @@ uint8_t pci_read_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset) {
     } else {
         // Si le BAR est  type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        return port_byte_in(io_port); // Assurez-vous que `outb` est implémentée ou disponible
+        return port_read8(io_port); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
 
@@ -202,7 +201,7 @@ uint16_t pci_read_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset) {
     } else {
         // Si le BAR est  type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        return port_word_in(io_port); // Assurez-vous que `outb` est implémentée ou disponible
+        return port_read16(io_port); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
 
@@ -215,7 +214,7 @@ uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset) {
     } else {
         // Si le BAR est  type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        return port_long_in(io_port); // Assurez-vous que `outb` est implémentée ou disponible
+        return port_read32(io_port); // Assurez-vous que `outb` est implémentée ou disponible
     }
 }
 

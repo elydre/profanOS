@@ -746,5 +746,5 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
 
 int process_is_dead(int pid) {
     int place = i_pid_to_place(pid);
-    return (place < 0 || plist[place].state == PROC_STATE_ZMB);
+    return (place < 0 || g_plist[place].state == PROC_STATE_ZMB);
 }

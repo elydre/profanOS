@@ -39,18 +39,18 @@ void eth_append_packet(void *data, uint32_t len) {
 			continue;
 		}
 		kprintf_serial("    to pid %d\n", lis->pid);
-		lis->packets = realloc_as_kernel(lis->packets, sizeof(eth_raw_packet_t) * (1 + lis->packets_len));
+		lis->packets = realloc(lis->packets, sizeof(eth_raw_packet_t) * (1 + lis->packets_len));
 		lis->packets[i].data = malloc(sizeof(uint8_t) * len);
 		lis->packets[i].len = len;
 		mem_copy(lis->packets[i].data, data, sizeof(uint8_t) * len);
 		lis->packets_len++;
 	}
 	if (old_len != listeners_len)
-		listeners = realloc_as_kernel(listeners, sizeof(listener_t) * listeners_len);
+		listeners = realloc(listeners, sizeof(listener_t) * listeners_len);
 }
 
 static void I_listener_add(int pid) {
-	listeners = realloc_as_kernel(listeners, sizeof(listener_t) * (listeners_len + 1));
+	listeners = realloc(listeners, sizeof(listener_t) * (listeners_len + 1));
 	listeners[listeners_len].pid = pid;
 	listeners[listeners_len].packets_len = 0;
 	listeners[listeners_len].packets = NULL;
@@ -83,7 +83,7 @@ static void I_listener_pop(int pid, void *data) {
 		} else {
 			for (int j = 0; j < listeners[i].packets_len; j++)
 				listeners[i].packets[j] = listeners[i].packets[j + 1];
-			listeners[i].packets = realloc_as_kernel(listeners[i].packets, sizeof(eth_raw_packet_t) * listeners[i].packets_len);
+			listeners[i].packets = realloc(listeners[i].packets, sizeof(eth_raw_packet_t) * listeners[i].packets_len);
 		}
 	}
 }

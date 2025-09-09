@@ -29,7 +29,7 @@ int stp_do_read_url(const char *url, uint8_t url_tmp_id[8]) {
 
 	pni_packet_t resp = stp_recv(xid, 1000);
 	stp_header_t *resp_header = (stp_header_t *)resp.data;
-	if (resp.len == -1 || resp.len < sizeof(stp_header_t) + 1 + 8)
+	if (resp.len == -1 || resp.len < (int) sizeof(stp_header_t) + 1 + 8)
 		return 1;
 
 
@@ -38,7 +38,7 @@ int stp_do_read_url(const char *url, uint8_t url_tmp_id[8]) {
 	if (resp.data[sizeof(stp_header_t)] != 0)
 		return pni_destroy_packet(resp), 1;
 
-	memcpy(url_tmp_id, resp.data[sizeof(stp_header_t) + 1], 8);
+	memcpy(url_tmp_id, &(resp.data[sizeof(stp_header_t) + 1]), 8);
 	free(resp.data);
 	return 0;
 }
