@@ -365,7 +365,7 @@ enum {
     FILE_SHEBANG,
     FILE_FBANG,
     FILE_OTHER
-} ifexist_file_type;
+};
 
 int run_ifexist(runtime_args_t *args, int *pid_ptr) {
     if (pid_ptr != NULL)
@@ -387,7 +387,16 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
         }
     }
 
-    uint32_t sid = kfu_path_to_sid(SID_ROOT, args->path);
+    uint32_t sid = SID_NULL;
+
+    if (args->path[0] != '/' && args->wd) {
+        uint32_t cwd_sid = kfu_path_to_sid(SID_ROOT, args->wd);
+        if (kfu_is_dir(cwd_sid))
+            sid = kfu_path_to_sid(cwd_sid, args->path);
+    } else {
+        sid = kfu_path_to_sid(SID_ROOT, args->path);
+    }
+
     if (!kfu_is_file(sid)) {
         sys_warning("[run_ifexist] path not found: %s\n", args->path);
         return -1;
