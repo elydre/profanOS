@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define COUNT 1
+#define COUNT 3
 
 int main(void) {
     if (!drive_exists(0)) {
@@ -18,15 +18,8 @@ int main(void) {
 
     printf("read: %d (0 = OK)\n", ahci_read_sectors(0, 0, COUNT, buffer));
 
-    /* for (int i = 0; i < 512 * COUNT; i++) {
-        putchar(((uint8_t *)buffer)[i]);
-    }*/
-
     for (int i = 0; i < 512 * COUNT; i++) {
-        if (i % 16 == 0) {
-            printf("\n%08x: ", i);
-        }
-        printf("%02x ", ((uint8_t *) buffer)[i]);
+        putchar(((uint8_t *)buffer)[i]);
     }
 
     printf("\n");
