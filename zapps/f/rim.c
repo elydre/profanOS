@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define RIM_VERSION "8 rev 0"
+#define RIM_VERSION "8 rev 1"
 
 // input settings
 #define SLEEP_T 20
@@ -107,6 +107,7 @@ enum {
 };
 
 rim_settings_t g_rim;
+panda_char_t *g_panda_buffer;
 
 uint16_t *g_screen;
 uint16_t *g_data;
@@ -126,9 +127,11 @@ int SCREEN_H;
 
 // FUNCTIONS
 
+#define set_char_at(x, y, c, color) g_panda_buffer[(y) * (SCREEN_W + 1) + (x)] = (panda_char_t){color, c}
+
 void gui_print(uint32_t x, uint32_t y, char *str, uint16_t color) {
     while (*str) {
-        panda_set_char(x, y, *str, color);
+        set_char_at(x, y, *str, color);
         x++;
         str++;
     }
@@ -139,9 +142,9 @@ void set_title(char *path, int unsaved) {
 
     if (start_pos > 0) {
         if (unsaved)
-            panda_set_char(start_pos, 0, '*', COLOR_IT);
+            set_char_at(start_pos, 0, '*', COLOR_IT);
         else
-            panda_set_char(start_pos, 0, ' ', COLOR_IT);
+            set_char_at(start_pos, 0, ' ', COLOR_IT);
         return;
     }
 
@@ -161,7 +164,7 @@ void set_title(char *path, int unsaved) {
     if (start_pos > SCREEN_W)
         start_pos = -1;
     else if (unsaved)
-        panda_set_char(start_pos, 0, '+', COLOR_IT);
+        set_char_at(start_pos, 0, '+', COLOR_IT);
 }
 
 void init_data(void) {
@@ -197,6 +200,8 @@ int load_file(char *path) {
 
     g_data_count = row = 0;
 
+    printf("Loading file...\n");
+
     while ((c = fgetc(f)) != EOF) {
         if (g_data_count >= g_data_max - 5) {
             g_data_max += 1024;
@@ -223,6 +228,8 @@ int load_file(char *path) {
             row++;
         }
     }
+
+    printf("Loading file OK\n");
 
     g_data[g_data_count++] = 0;
 
@@ -557,11 +564,11 @@ void display_data(int from_line, int to_line, int x_offset) {
         for (int j = 0; j < SCREEN_W - line_offset; j++) {
             pos = i * SCREEN_W + j;
             if (g_screen[pos] == 0) {
-                panda_set_char(j + line_offset + 1, y, ' ', COLOR_ID);
+                set_char_at(j + line_offset + 1, y, ' ', COLOR_ID);
             } else if (j == SCREEN_W - line_offset - 1) {
-                panda_set_char(j + line_offset + 1, y, '>', COLOR_IM);
+                set_char_at(j + line_offset + 1, y, '>', COLOR_IM);
             } else {
-                panda_set_char(j + line_offset + 1, y, g_screen[pos] & 0xFF, g_screen[pos] >> 8);
+                set_char_at(j + line_offset + 1, y, g_screen[pos] & 0xFF, g_screen[pos] >> 8);
             }
         }
 
@@ -569,7 +576,7 @@ void display_data(int from_line, int to_line, int x_offset) {
             // line number
             itoa(from_line + i + 1, line_str + 2, 10);
             gui_print(0, y, line_str + strlen(line_str) - line_offset, COLOR_IL);
-            panda_set_char(line_offset, y, ' ', COLOR_ID);
+            set_char_at(line_offset, y, ' ', COLOR_ID);
         }
 
         y++;
@@ -577,13 +584,14 @@ void display_data(int from_line, int to_line, int x_offset) {
 
     for (int i = y; i <= SCREEN_H; i++) {
         for (int j = line_offset; j < SCREEN_W; j++)
-            panda_set_char(j, i, ' ', COLOR_ID);
+            set_char_at(j, i, ' ', COLOR_ID);
         for (int j = 0; j < line_offset; j++)
-            panda_set_char(j, i, ' ', COLOR_IL);
-        panda_set_char(line_offset, i, ' ', COLOR_ID);
+            set_char_at(j, i, ' ', COLOR_IL);
+        set_char_at(line_offset, i, ' ', COLOR_ID);
     }
 
     // cursor
+    panda_print_raw(g_panda_buffer, (SCREEN_W + 1) * (SCREEN_H + 1));
     panda_draw_cursor(g_cursor_pos - x_offset + line_offset + 1, g_cursor_line - from_line + 1);
 }
 
@@ -1106,6 +1114,7 @@ void clear_screen(void) {
 }
 
 void quit(void) {
+    free(g_panda_buffer);
     free(g_data_lines);
     free(g_screen);
     free(g_data);
@@ -1265,11 +1274,13 @@ int main(int argc, char **argv) {
     int is_new = 0;
 
     panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
+
     if (SCREEN_W * SCREEN_H == 0) {
         printf("rim: panda is required\n");
         exit(1);
     }
 
+    g_panda_buffer = malloc(SCREEN_W * SCREEN_H * sizeof(panda_char_t));
     g_data_lines = NULL;
     g_data = NULL;
 
