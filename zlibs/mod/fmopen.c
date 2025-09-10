@@ -15,12 +15,11 @@
 #include <kernel/process.h>
 #include <kernel/afft.h>
 #include <minilib.h>
-
 #include <system.h>
 
-#include <errno.h>
-#include <fcntl.h>  // for flags
 #include <unistd.h> // for SEEK_SET, SEEK_CUR, SEEK_END
+#include <fcntl.h>  // for flags
+#include <errno.h>
 
 #define PIPE_MAX     256
 #define PIPE_MAX_REF 12
