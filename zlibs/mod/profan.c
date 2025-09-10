@@ -153,7 +153,7 @@ char *profan_input_keyboard(int *size, char *term_path) {
 
     while (sc != ENTER) {
         process_sleep(process_get_pid(), SLEEP_T);
-        sc = kb_get_scfh();
+        sc = kb_get_scancode();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;

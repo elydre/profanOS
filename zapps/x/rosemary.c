@@ -154,7 +154,7 @@ int main(void) {
     mmq_printf(1, "Successfully loaded %d modules\n\n", total);
 
     if (syscall_vesa_state()) {
-        panda_set_start(syscall_get_cursor());
+        panda_sync_start();
         if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
             fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
             fm_reopen(2, "/dev/pander", O_WRONLY) < 0

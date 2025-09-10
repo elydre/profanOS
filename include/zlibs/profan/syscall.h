@@ -25,9 +25,6 @@ _BEGIN_C_FILE
  *                               *
 **********************************/
 
-#define SERIAL_PORT_A 0x3F8
-#define SERIAL_PORT_B 0x2F8
-
 #define PROC_INFO_PPID     0
 #define PROC_INFO_STATE    1
 #define PROC_INFO_SLEEP_TO 2
@@ -40,8 +37,7 @@ _BEGIN_C_FILE
 #define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE, NULL)
 #define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME, NULL)
 
-#define syscall_kcprint(message, color) syscall_kcnprint(message, -1, color)
-#define syscall_kprint(message) syscall_kcprint(message, 0x0F)
+#define syscall_kprint(message) syscall_kcnprint(message, -1, 0x0F)
 
 #define syscall_vesa_width()   syscall_vesa_info(0)
 #define syscall_vesa_height()  syscall_vesa_info(1)
@@ -170,45 +166,42 @@ DEFN_SYSCALL2(7, char *,     fs_meta, uint32_t, char *)
 DEFN_SYSCALL3(8,  void *,    mem_alloc, uint32_t, int, uint32_t)
 DEFN_SYSCALL1(9,  int,       mem_free, void *)
 DEFN_SYSCALL2(10, int,       mem_free_all, int, int)
-DEFN_SYSCALL2(11, uint32_t,  mem_alloc_fetch, void *, int)
+DEFN_SYSCALL2(11, uint32_t,  mem_fetch, void *, int)
 DEFN_SYSCALL2(12, int,       mem_info, int, int)
 
-DEFN_SYSCALL0(13, uint32_t,  timer_get_ms)
+DEFN_SYSCALL0(13, uint32_t,  ms_get)
 DEFN_SYSCALL1(14, int,       time_get, struct tm *)
 
 DEFN_SYSCALL0(15, uint8_t *, font_get)
 DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)
-DEFN_SYSCALL0(17, int,       get_cursor)
-DEFN_SYSCALL1(18, int,       vesa_info, int)
+DEFN_SYSCALL1(17, int,       vesa_info, int)
 
-DEFN_SYSCALL4(19, int,       afft_read,  int, void *, uint32_t, uint32_t)
-DEFN_SYSCALL4(20, int,       afft_write, int, void *, uint32_t, uint32_t)
-DEFN_SYSCALL3(21, int,       afft_cmd,   int, uint32_t, void *)
+DEFN_SYSCALL4(18, int,       afft_read,  int, void *, uint32_t, uint32_t)
+DEFN_SYSCALL4(19, int,       afft_write, int, void *, uint32_t, uint32_t)
+DEFN_SYSCALL3(20, int,       afft_cmd,   int, uint32_t, void *)
 
-DEFN_SYSCALL0(22, int,       sc_get)
-DEFN_SYSCALL2(23, int,       mouse_call, int, int)
+DEFN_SYSCALL0(21, int,       sc_get)
 
-DEFN_SYSCALL1(24, int,       sys_power, int)
+DEFN_SYSCALL1(22, int,       sys_power, int)
+DEFN_SYSCALL3(23, int,       elf_exec, uint32_t, char **, char **)
 
-DEFN_SYSCALL3(25, int,       elf_exec, uint32_t, char **, char **)
+DEFN_SYSCALL4(24, int,       process_create, void *, int, int, uint32_t *)
+DEFN_SYSCALL0(25, int,       process_fork)
+DEFN_SYSCALL2(26, int,       process_sleep, uint32_t, uint32_t)
+DEFN_SYSCALL2(27, int,       process_wakeup, uint32_t, int)
+DEFN_SYSCALL3(28, int,       process_wait, int, uint8_t *, int)
+DEFN_SYSCALL2(29, int,       process_kill, uint32_t, int)
+DEFN_SYSCALL0(30, uint32_t,  process_pid)
+DEFN_SYSCALL3(31, int,       process_info, uint32_t, int, void *)
+DEFN_SYSCALL2(32, int,       process_list_all, uint32_t *, int)
 
-DEFN_SYSCALL4(26, int,       process_create, void *, int, int, uint32_t *)
-DEFN_SYSCALL0(27, int,       process_fork)
-DEFN_SYSCALL2(28, int,       process_sleep, uint32_t, uint32_t)
-DEFN_SYSCALL2(29, int,       process_wakeup, uint32_t, int)
-DEFN_SYSCALL3(30, int,       process_wait, int, uint8_t *, int)
-DEFN_SYSCALL2(31, int,       process_kill, uint32_t, int)
-DEFN_SYSCALL0(32, uint32_t,  process_pid)
-DEFN_SYSCALL3(33, int,       process_info, uint32_t, int, void *)
-DEFN_SYSCALL2(34, int,       process_list_all, uint32_t *, int)
+DEFN_SYSCALL2(33, int,       mod_load, char *, uint32_t)
+DEFN_SYSCALL1(34, int,       mod_unload, uint32_t)
 
-DEFN_SYSCALL2(35, int,       mod_load, char *, uint32_t)
-DEFN_SYSCALL1(36, int,       mod_unload, uint32_t)
-
-DEFN_SYSCALL2(37, void *,    scuba_generate, void *, uint32_t)
-DEFN_SYSCALL3(38, int,       scuba_map, void *, void *, int)
-DEFN_SYSCALL1(39, int,       scuba_unmap, void *)
-DEFN_SYSCALL1(40, void *,    scuba_phys, void *)
+DEFN_SYSCALL2(35, void *,    scuba_generate, void *, uint32_t)
+DEFN_SYSCALL3(36, int,       scuba_map, void *, void *, int)
+DEFN_SYSCALL1(37, int,       scuba_unmap, void *)
+DEFN_SYSCALL1(38, void *,    scuba_phys, void *)
 
 _END_C_FILE
 

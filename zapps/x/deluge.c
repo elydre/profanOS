@@ -1135,7 +1135,7 @@ int main(int argc, char **argv, char **envp) {
     int ret, start, pid, parent_pid = syscall_process_pid();
 
     if (g_args->debug) {
-        start = syscall_timer_get_ms();
+        start = syscall_ms_get();
     } else {
         start = 0;
     }
@@ -1165,7 +1165,7 @@ int main(int argc, char **argv, char **envp) {
     }
 
     if (g_prog->type == ET_EXEC) {
-        debug_printf(1, "link time: %d ms", syscall_timer_get_ms() - start);
+        debug_printf(1, "link time: %d ms", syscall_ms_get() - start);
 
         int (*main)(int, char **, char **) = (void *) g_prog->ehdr->e_entry;
 
@@ -1174,7 +1174,7 @@ int main(int argc, char **argv, char **envp) {
         }
 
         if (g_args->debug) {
-            start = syscall_timer_get_ms();
+            start = syscall_ms_get();
         }
 
         ret = main(argc - g_args->arg_offset, argv + g_args->arg_offset, envp);
@@ -1183,11 +1183,11 @@ int main(int argc, char **argv, char **envp) {
 
         if (pid != parent_pid) {
             debug_printf(1, "PID %d (child of %d) process_exit with code %d after %d ms",
-                    pid, parent_pid, ret, syscall_timer_get_ms() - start);
+                    pid, parent_pid, ret, syscall_ms_get() - start);
             syscall_process_kill(pid, ret);
         }
 
-        debug_printf(1, "PID %d process_exit with code %d in %d ms", pid, ret, syscall_timer_get_ms() - start);
+        debug_printf(1, "PID %d process_exit with code %d in %d ms", pid, ret, syscall_ms_get() - start);
     } else {
         debug_printf(1, "no entry point in shared object");
         ret = 0;

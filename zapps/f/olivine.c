@@ -2565,7 +2565,7 @@ char *if_ticks(char **input) {
     char *output = malloc(12);
 
     #if BUILD_PROFAN
-    local_itoa(syscall_timer_get_ms(), output);
+    local_itoa(syscall_ms_get(), output);
     #elif BUILD_UNIX
     struct timeval tv;
     gettimeofday(&tv, NULL);

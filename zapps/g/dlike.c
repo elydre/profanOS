@@ -69,13 +69,13 @@ int main(void) {
     int key_buffer[20];
     for (int i = 0; i < 20; i++) key_buffer[i] = 0;
     int tick_count[4];
-    tick_count[0] = syscall_timer_get_ms();
+    tick_count[0] = syscall_ms_get();
     tick_count[3] = 0;
 
     vgui_t vgui = vgui_setup(0, 0, 320, 200);
     while (1) {
-        tick_count[1] = syscall_timer_get_ms() - tick_count[0];
-        tick_count[0] = syscall_timer_get_ms();
+        tick_count[1] = syscall_ms_get() - tick_count[0];
+        tick_count[0] = syscall_ms_get();
 
         for (int i = 0; i < width; i++) {
             center = (int) (half_height * BLOCK_HEIGHT /
@@ -109,9 +109,9 @@ int main(void) {
         itoa(1000 / (tick_count[1] + 1), convert, 10);
         vgui_print(&vgui, 0, 8, convert, 0x0000AA);
 
-        tick_count[2] = syscall_timer_get_ms();
+        tick_count[2] = syscall_ms_get();
         vgui_render(&vgui, 0);
-        tick_count[3] = syscall_timer_get_ms() - tick_count[2];
+        tick_count[3] = syscall_ms_get() - tick_count[2];
 
         key = syscall_sc_get();
         if (last_key != key && key != 0) {

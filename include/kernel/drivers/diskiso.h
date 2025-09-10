@@ -14,7 +14,7 @@
 
 #include <ktype.h>
 
-int      init_diskiso(void);
+int      diskiso_init(void);
 
 uint32_t diskiso_get_size(void);
 void    *diskiso_get_start(void);

@@ -15,6 +15,6 @@
 int  keyboard_init(void);
 
 char kb_sc_to_char(int scancode, int shift);
-int  kb_get_scfh(void);
+int  kb_get_scancode(void);
 
 #endif

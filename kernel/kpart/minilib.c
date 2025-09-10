@@ -251,7 +251,7 @@ void kinput(char *buffer, int size) {
     sc = last_sc = 0;
     while (sc != ENTER) {
         process_sleep(process_get_pid(), SLEEP_T);
-        sc = kb_get_scfh();
+        sc = kb_get_scancode();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;

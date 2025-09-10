@@ -161,7 +161,7 @@ void draw(shape_t *shape, vgui_t *vgui, int erase) {
 }
 
 int fps_limiter(int time) {
-    int new_time = syscall_timer_get_ms();
+    int new_time = syscall_ms_get();
     int fps = 1000 / (new_time - time + 1);
     if (fps > 30)
         usleep(10000);
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
     if (carp_parse(argc, argv))
         return 1;
 
-    srand(syscall_timer_get_ms());
+    srand(syscall_ms_get());
 
     vgui_t vgui = vgui_setup(
             carp_isset('r') ? rand() % (syscall_vesa_width() - 200) : 0,
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
             200, 200);
 
     shape_t shape = cube(120);
-    int time = syscall_timer_get_ms();
+    int time = syscall_ms_get();
 
     shape_t nshape = new_shape();
     for (int i = 0;; i = (i + 1) % 360) {

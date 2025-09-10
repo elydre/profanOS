@@ -25,7 +25,7 @@ void     panda_print_char(uint32_t x, uint32_t y, uint8_t c, uint16_t color); //
 void     panda_print_raw(panda_char_t *buffer, uint32_t length);
 uint16_t panda_print_string(const char *string, int len, int string_color, uint16_t default_color);
 
-void panda_set_start(int kernel_cursor);
+void panda_sync_start(void);
 void panda_get_size(uint32_t *cols, uint32_t *lines);
 void panda_get_cursor(uint32_t *x, uint32_t *y);
 void panda_draw_cursor(uint32_t x, uint32_t y);
@@ -49,7 +49,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define panda_print_string(str, len, str_color, def_color) \
         ((uint16_t) _pscall(PANDA_ID, 2, str, len, str_color, def_color))
 
-#define panda_set_start(kernel_cursor)  ((void) _pscall(PANDA_ID, 3, kernel_cursor))
+#define panda_sync_start()              ((void) _pscall(PANDA_ID, 3, 0))
 #define panda_get_size(cols, lines)     ((void) _pscall(PANDA_ID, 4, cols, lines))
 #define panda_get_cursor(x, y)          ((void) _pscall(PANDA_ID, 5, x, y))
 #define panda_draw_cursor(x, y)         ((void) _pscall(PANDA_ID, 6, x, y))

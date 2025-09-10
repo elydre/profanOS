@@ -14,6 +14,7 @@
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/afft.h>
+#include <gui/gnrtx.h>
 
 #include <gui/vesa.h>
 #include <minilib.h>
@@ -558,14 +559,14 @@ uint16_t panda_print_string(const char *string, int len, int string_color, uint1
 
 #define offset_to_cursor_y(offset, max_cols) ((offset) / (2 * (max_cols)))
 
-void panda_set_start(int kernel_cursor) {
+void panda_sync_start(void) {
     if (!g_panda)
         return;
 
-    uint32_t kmax_cols = vesa_get_info(0) / 8;
-
     g_panda->cursor_x = 0;
-    g_panda->cursor_y = ((offset_to_cursor_y(kernel_cursor, kmax_cols) + 1) * 16) / g_panda->font->height;
+    g_panda->cursor_y = ((offset_to_cursor_y(cursor_get_offset(),
+            vesa_get_info(0) / 8) + 1) * 16) / g_panda->font->height;
+
     g_panda->scroll_offset = 0;
 }
 

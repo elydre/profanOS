@@ -106,7 +106,7 @@ int do_fetch(void) {
     int mem_total = (uint32_t) syscall_mem_info(0, 0) / 1024;
 
     pl_and_pf("\e[95mwork time  \e[96m%gs of %gs\n",
-            (syscall_timer_get_ms() - syscall_process_info(1, 3, NULL)) / 1000.0, syscall_timer_get_ms() / 1000.0);
+            (syscall_ms_get() - syscall_process_info(1, 3, NULL)) / 1000.0, syscall_ms_get() / 1000.0);
 
     pl_and_pf("\e[95mmemory     \e[96m%.2f%% of %dMB\n",
             (float) mem_usage * 100 / (float) mem_total, mem_total / 1024);

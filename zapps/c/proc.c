@@ -89,7 +89,7 @@ void list_process(int mode) {
         printf("   profanOS . kernel %s %s . %d processes . uptime %ds (%ds IDLE)  \n",
                 kname.version, kname.release,
                 pid_list_len - 2,
-                syscall_timer_get_ms() / 1000,
+                syscall_ms_get() / 1000,
                 syscall_process_run_time(1) / 1000
         );
 
@@ -143,7 +143,7 @@ void top_loop(void) {
         last_total = total;
 
         idle = syscall_process_run_time(1);
-        total = syscall_timer_get_ms();
+        total = syscall_ms_get();
 
         cpu = total - last_total;
         cpu = 100 - (idle - last_idle) * 100 / (cpu ? cpu : 1);

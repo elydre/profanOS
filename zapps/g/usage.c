@@ -75,7 +75,7 @@ int main(void) {
 
         idle   = syscall_process_run_time(1);
         kernel = syscall_process_run_time(0);
-        total = syscall_timer_get_ms();
+        total = syscall_ms_get();
 
         int s = (total - last_total ?: 1);
         last_total = 100 - ((idle - last_idle) * 100 / s);

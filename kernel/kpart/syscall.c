@@ -24,8 +24,6 @@
 #include <minilib.h>
 #include <system.h>
 
-void dummy_syscall(void) {;}
-
 void *SYSCALL_ARRAY[] = {
     // butterfly.h
     fs_get_filesys,        // 0
@@ -51,41 +49,40 @@ void *SYSCALL_ARRAY[] = {
     // gnrtx.h + vesa.h
     font_get,              // 15
     kcnprint,              // 16
-    cursor_get_offset,     // 17
-    vesa_get_info,         // 18
+    vesa_get_info,         // 17
 
-    afft_read,             // 19
-    afft_write,            // 20
-    afft_cmd,              // 21
+    // afft.h
+    afft_read,             // 18
+    afft_write,            // 19
+    afft_cmd,              // 20
 
-    // keyboard.h + mouse.h
-    kb_get_scfh,           // 22
-    dummy_syscall,         // 23
+    // keyboard.h
+    kb_get_scancode,           // 21
 
     // system.h
-    sys_power,             // 24
-    elf_exec,              // 25
+    sys_power,             // 22
+    elf_exec,              // 23
 
     // process.h + runtime.h
-    process_create,        // 26
-    process_fork,          // 27
-    process_sleep,         // 28
-    process_wakeup,        // 29
-    process_wait,          // 30
-    process_kill,          // 31
-    process_get_pid,       // 32
-    process_info,          // 33
-    process_list_all,      // 34
+    process_create,        // 24
+    process_fork,          // 25
+    process_sleep,         // 26
+    process_wakeup,        // 27
+    process_wait,          // 28
+    process_kill,          // 29
+    process_get_pid,       // 30
+    process_info,          // 31
+    process_list_all,      // 32
 
     // system.h
-    mod_load,              // 35
-    mod_unload,            // 36
+    mod_load,              // 33
+    mod_unload,            // 34
 
     // scubasuit.h
-    scuba_call_generate,   // 37
-    scuba_call_map,        // 38
-    scuba_call_unmap,      // 39
-    scuba_call_phys,       // 40
+    scuba_call_generate,   // 35
+    scuba_call_map,        // 36
+    scuba_call_unmap,      // 37
+    scuba_call_phys,       // 38
 };
 
 void syscall_handler(registers_t *r) {

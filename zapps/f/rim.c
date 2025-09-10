@@ -1102,9 +1102,9 @@ void main_loop(char *path) {
         }
 
         // display data
-        refresh_ticks = syscall_timer_get_ms();
+        refresh_ticks = syscall_ms_get();
         display_data(y_offset, min(g_lines_count, y_offset + SCREEN_H), x_offset);
-        refresh_ticks = syscall_timer_get_ms() - refresh_ticks;
+        refresh_ticks = syscall_ms_get() - refresh_ticks;
     }
 }
 

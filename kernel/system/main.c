@@ -43,7 +43,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(isr_install,   "Installing CPU interrupt handlers");
     status_print(irq_install,   "Enabling interrupts");
     status_print(timer_init,    "Initializing CPU timer (PIT)");
-    status_print(init_diskiso,  "Loading initial RAM disk");
+    status_print(diskiso_init,  "Loading initial RAM disk");
 
     status_print(mem_init,      "Initializing Snowflake physical MM");
     status_print(scuba_init,    "Setting up Scubasuit virtual MM");
