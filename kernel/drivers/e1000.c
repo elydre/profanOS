@@ -182,13 +182,13 @@ void e1000_rx_init(e1000_t *e1000) {
     uint8_t *ptr = NULL;
     e1000_rx_desc_t *descs;
 
-    ptr = mem_alloc(sizeof(struct e1000_rx_desc)*E1000_NUM_RX_DESC + 16, 128, 1);
+    ptr = mem_alloc(sizeof(struct e1000_rx_desc)*E1000_NUM_RX_DESC + 16, 1, 128);
 
     descs = (struct e1000_rx_desc *)ptr;
     for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
         e1000->rx_descs_phys[i] = (e1000_rx_desc_t *)((uint8_t *)descs + i*16);
         e1000->rx_descs_phys[i]->addr_high = 0;
-        e1000->rx_descs_phys[i]->addr_low = (uint32_t)(uint8_t *)(mem_alloc(8192 + 16, 128, 1));
+        e1000->rx_descs_phys[i]->addr_low = (uint32_t)(uint8_t *)(mem_alloc(8192 + 16, 1, 128));
         e1000->rx_descs_phys[i]->status = 0;
     }
     pci_write_cmd_u32(&(e1000->pci), 0,REG_TXDESCLO, 0);
@@ -210,7 +210,7 @@ void e1000_tx_init(e1000_t *e1000) {
     uint8_t *  ptr;
     struct e1000_tx_desc *descs;
 
-    ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC, 16, 1));
+    ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC, 1, 16));
 
     descs = (struct e1000_tx_desc *)ptr;
     for(int i = 0; i < E1000_NUM_TX_DESC; i++)
