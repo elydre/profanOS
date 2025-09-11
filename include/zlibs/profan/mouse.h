@@ -15,7 +15,7 @@
 #define mouse_get_x() 0
 #define mouse_get_y() 0
 
-#define mouse_get_button(button)
+#define mouse_get_button(button) 0
 
 #define mouse_set_x(x)
 #define mouse_set_y(y)
