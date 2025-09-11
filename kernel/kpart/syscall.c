@@ -88,17 +88,6 @@ void *SYSCALL_ARRAY[] = {
     scuba_call_unmap,      // 39
     scuba_call_phys,       // 40
 
-    // ethernet.h
-    eth_listen_start,       // 41
-    eth_listen_end,         // 42
-    eth_listen_get,         // 43
-    eth_listen_getsize,     // 44
-    eth_listen_isready,     // 45
-    eth_send,               // 46
-    eth_get_mac,            // 47
-    eth_get_transaction_id, // 48
-    eth_set_ip,             // 49
-    eth_get_ip,             // 50
 };
 
 void syscall_handler(registers_t *r) {

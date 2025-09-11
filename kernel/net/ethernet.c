@@ -9,41 +9,51 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <net/ethernet.h>
-#include <net/ip.h>
-#include <net/dhcp.h>
-#include <drivers/e1000.h>
-#include <drivers/rtl8168.h>
+
 #include <minilib.h>
 #include <cpu/timer.h>
 #include <kernel/scubasuit.h>
+#include <net.h>
+#include <drivers/e1000.h>
+#include <drivers/rtl8168.h>
 
-uint8_t eth_mac[6] = {0};
-uint8_t eth_ip[4] = {0};
+static uint32_t get_phys(void *ptr) {
+    uint32_t addr_phys = (uint32_t)ptr;
+	addr_phys -= addr_phys % 4096;
+	addr_phys = (uint32_t)scuba_call_phys((void *)addr_phys);
+	addr_phys += (uint32_t)ptr % 4096;
+    return addr_phys;
+}
+
+eth_info_t eth_info = (eth_info_t){0};
 
 int eth_init(void) {
     if (e1000_is_inited)
-        e1000_set_mac(eth_mac);
+        e1000_set_mac((uint8_t *)&eth_info.mac);
     if (rtl8168_is_inited)
-        rtl8168_set_mac(eth_mac);
+        rtl8168_set_mac((uint8_t *)&eth_info.mac);
     return 2;
 }
 
-void eth_append_packet(void *data, uint32_t len);
+int eth_send_packet(const void * addr, uint16_t p_len) {
+    if (p_len < 6)
+        return 1;
+    uint32_t addr_phys = get_phys(addr);
 
-void eth_send_packet(const void * addr, uint16_t p_len) {
-    if (p_len >= 6 && !mem_cmp(addr, eth_mac, 6)) {
-        eth_append_packet((void *)addr, p_len);
-        return ;
-    }
-    uint32_t addr_phys = (uint32_t)addr;
-	addr_phys -= addr_phys % 4096;
-	addr_phys = (uint32_t)scuba_call_phys((void *)addr_phys);
-	addr_phys += (uint32_t)addr % 4096;
+    if (!mem_cmp(addr, (uint8_t *)&eth_info.mac, 6))
+        eth_appehnd_packet((void *)addr, p_len);
+    if (!mem_cmp(addr, "\xFF\xFF\xFF\xFF\xFF\xFF", 6))
+        eth_appehnd_packet((void *)addr, p_len);
+    if (!mem_cmp(addr, (uint8_t *)&eth_info.mac, 6))
+        return 0;
     if (e1000_is_inited)
-        e1000_send_packet((void *)addr_phys, p_len);
+        return e1000_send_packet((void *)addr_phys, p_len);
     else if (rtl8168_is_inited)
-        rtl8168_send_packet((void *)addr, p_len);
-    else
-        kprintf("eth_send_packet no device found inited\n");
+        return rtl8168_send_packet((void *)addr, p_len);
+    kprintf("eth_send_packet no device found inited\n");
+    return 1;
+}
+
+void eth_recv_packet(const void *addr, uint16_t p_len) {
+
 }
