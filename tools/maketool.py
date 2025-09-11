@@ -70,7 +70,7 @@ MOD_FLAGS  = f"{CFLAGS} -Wno-unused -Werror -fPIC -I include/kernel -D_KERNEL_MO
 KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/kernel.map"
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
-QEMU_SPL   = "qemu-system-i386"
+QEMU_SPL   = "qemu-system-i386 -device intel-hda -device hda-duplex"
 QEMU_KVM   = "qemu-system-i386 -enable-kvm"
 
 QEMU_FLAGS = "-serial stdio"

@@ -10,6 +10,8 @@
 
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
+#include <cpu/ports.h>
+#include <cpu/timer.h>
 #include <minilib.h>
 
 #define dword_t unsigned int
@@ -56,6 +58,55 @@ static inline void *aligned_calloc(dword_t mem_length, dword_t mem_alignment) {
         mem_set(addr, 0, mem_length);
     }
     return addr;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+    uint8_t bus;
+    uint8_t slot;
+    uint8_t func;
+} pci_addr_t;
+
+void pci_write_config(pci_addr_t *pci, uint8_t offset, uint32_t value) {
+    uint32_t address = (1 << 31) | (pci->bus << 16) | (pci->slot << 11) | (pci->func << 8) | (offset & 0xFC);
+    port_write32(0xCF8, address);
+    port_write32(0xCFC, value);
+}
+
+uint32_t pci_read_config(pci_addr_t *pci, uint32_t offset) {
+    uint32_t lbus  = (uint32_t) pci->bus;
+    uint32_t lslot = (uint32_t) pci->slot;
+    uint32_t lfunc = (uint32_t) pci->func;
+
+    // Write out the address
+    port_write32(0xCF8, (uint32_t)((lbus << 16) | (lslot << 11) |
+              (lfunc << 8) | (offset & 0xFC) | ((uint32_t)0x80000000)));
+
+    return port_read32(0xCFC);
+}
+
+uint32_t pci_get_bar(pci_addr_t *pci, uint8_t barN) {
+    return pci_read_config(pci, 0x10 + (barN * 4)) & 0xfffffffE;
+}
+
+pci_addr_t pci_find(uint16_t vendor, uint16_t device) {
+    // scan all PCI devices and return the first one that matches
+    for (int bus = 0; bus < 256; bus++) {
+        for (int slot = 0; slot < 16; slot++) {
+            for (int func = 0; func < 8; func++) {
+                pci_addr_t pci = {bus, slot, func};
+                uint16_t vid = pci_read_config(&pci, 0) & 0xffff;
+                if (vid == 0xFFFF)
+                    continue;
+                uint16_t did = (pci_read_config(&pci, 2) >> 16) & 0xffff;
+                if (vid == vendor && did == device) {
+                    return pci;
+                }
+            }
+        }
+    }
+    return (pci_addr_t){0xFF, 0xFF, 0xFF}; // not found
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,33 +231,42 @@ struct hda_info_t components_hda[MAX_NUMBER_OF_HDA_SOUND_CARDS];
 
 uint32_t ticks;
 
-void hda_add_new_pci_device(void) {
-    // check number of already connected cards
-    if(components_n_hda >= MAX_NUMBER_OF_HDA_SOUND_CARDS) {
-        return;
-    }
-
-    // log driver
-    logf("%s", __FILE__);
-
-    // save basic device informations
-    // copy_memory((dword_t)&device, (dword_t)&components_hda[components_n_hda].pci, sizeof(struct pci_device_info_t)); // PROFAN EDIT
+int __init(void) {
+    logf("\n");
 
     // read other device informations
-    components_hda[components_n_hda].base = pci_get_mmio(device, PCI_BAR0);
+    pci_addr_t device = pci_find(0x8086, 0x2668); // Intel 82801H (ICH8) High Definition Audio Controller
+
+    if (device.bus == 0xFF && device.slot == 0xFF && device.func == 0xFF) {
+        logf("HDA: No HDA PCI device found\n\n");
+        return 0;
+    }
+
+    logf("HDA: Found HDA PCI device at %d:%d:%d\n",
+        device.bus,
+        device.slot,
+        device.func);
+
+    components_hda[0].base = pci_get_bar(&device, 0);
+
+    scuba_call_map((void *)components_hda[0].base, (void *)components_hda[0].base, 0);
 
     // configure PCI
-    pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_MMIO);
+    // pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_MMIO);
+    pci_write_config(&device, 0x04, pci_read_config(&device, 0x04) | 0x6);
 
-    // update number of devices
-    // components->p_sound_card = 1; PROFAN EDIT
-    components_n_hda++;
+    components_n_hda = 1;
+
+    hda_initalize_sound_card(0);
+    
+    logf("\n");
+    return 0;
 }
 
 void hda_initalize_sound_card(dword_t sound_card_number) {
     selected_hda_card = sound_card_number;
     //log
-    /*logf("\n\nDriver: High Definition Audio\nDevice: PCI bus %d:%d:%d:%d",
+    /*logf("\nDriver: High Definition Audio\nDevice: PCI bus %d:%d:%d:%\nd",
         components_hda[sound_card_number].pci.segment,
         components_hda[sound_card_number].pci.bus,
         components_hda[sound_card_number].pci.device,
@@ -217,28 +277,28 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
 
  //reset card and set operational state
  mmio_outd(hda_base + 0x08, 0x0);
- ticks = 0;
- while(ticks<10) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 10) {
   asm("nop");
   if((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
    break;
   }
  }
  mmio_outd(hda_base + 0x08, 0x1);
- ticks = 0;
- while(ticks<10) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 10) {
   asm("nop");
   if((mmio_ind(hda_base + 0x08) & 0x1)==0x1) {
    break;
   }
  }
  if((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
-  logf("\nHDA ERROR: card can not be set to operational state");
+  logf("HDA ERROR: card can not be set to operational state\n");
   return;
  }
 
  //read capabilities
- logf("\nVersion: %d.%d", mmio_inb(hda_base + 0x03), mmio_inb(hda_base + 0x02));
+ logf("Version: %d.%d\n", mmio_inb(hda_base + 0x03), mmio_inb(hda_base + 0x02));
  components_hda[sound_card_number].input_stream_base = (hda_base + 0x80);
  components_hda[sound_card_number].output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF))); //skip input streams ports
  components_hda[sound_card_number].output_buffer_list = (dword_t *) (aligned_calloc(16*2, 0x7F));
@@ -265,44 +325,44 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  if((mmio_inb(hda_base + 0x4E) & 0x40)==0x40) {
   components_hda[sound_card_number].corb_number_of_entries = 256;
   mmio_outb(hda_base + 0x4E, 0x2); //256 entries
-  logf("\nCORB: 256 entries");
+  logf("CORB: 256 entries\n");
  }
  else if((mmio_inb(hda_base + 0x4E) & 0x20)==0x20) {
   components_hda[sound_card_number].corb_number_of_entries = 16;
   mmio_outb(hda_base + 0x4E, 0x1); //16 entries
-  logf("\nCORB: 16 entries");
+  logf("CORB: 16 entries\n");
  }
  else if((mmio_inb(hda_base + 0x4E) & 0x10)==0x10) {
   components_hda[sound_card_number].corb_number_of_entries = 2;
   mmio_outb(hda_base + 0x4E, 0x0); //2 entries
-  logf("\nCORB: 2 entries");
+  logf("CORB: 2 entries\n");
  }
  else { //CORB/RIRB is not supported
-  logf("\nCORB: no size allowed");
+  logf("CORB: no size allowed\n");
   goto hda_use_pio_interface;
  }
  mmio_outw(hda_base + 0x4A, 0x8000); //reset read pointer
- ticks = 0;
- while(ticks<5) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 5) {
   asm("nop");
   if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x8000) { //wait until reset is complete
    break;
   }
  }
  if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //CORB read pointer was not reseted
-  logf("\nHDA: CORB pointer can not be put to reset state");
+  logf("HDA: CORB pointer can not be put to reset state\n");
   goto hda_use_pio_interface;
  }
  mmio_outw(hda_base + 0x4A, 0x0000); //go back to normal state
- ticks = 0;
- while(ticks<5) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 5) {
   asm("nop");
   if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x0000) { //wait until is CORB read pointer in normal state
    break;
   }
  }
  if((mmio_inw(hda_base + 0x4A) & 0x8000)==0x8000) { //CORB read pointer is still in reset
-  logf("\nHDA: CORB pointer can not be put from reset state");
+  logf("HDA: CORB pointer can not be put from reset state\n");
   goto hda_use_pio_interface;
  }
  mmio_outw(hda_base + 0x48, 0); //set write pointer
@@ -315,20 +375,20 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  if((mmio_inb(hda_base + 0x5E) & 0x40)==0x40) {
   components_hda[sound_card_number].rirb_number_of_entries = 256;
   mmio_outb(hda_base + 0x5E, 0x2); //256 entries
-  logf("\nRIRB: 256 entries");
+  logf("RIRB: 256 entries\n");
  }
  else if((mmio_inb(hda_base + 0x5E) & 0x20)==0x20) {
   components_hda[sound_card_number].rirb_number_of_entries = 16;
   mmio_outb(hda_base + 0x5E, 0x1); //16 entries
-  logf("\nRIRB: 16 entries");
+  logf("RIRB: 16 entries\n");
  }
  else if((mmio_inb(hda_base + 0x5E) & 0x10)==0x10) {
   components_hda[sound_card_number].rirb_number_of_entries = 2;
   mmio_outb(hda_base + 0x5E, 0x0); //2 entries
-  logf("\nRIRB: 2 entries");
+  logf("RIRB: 2 entries\n");
  }
  else { //CORB/RIRB is not supported
-  logf("\nRIRB: no size allowed");
+  logf("RIRB: no size allowed\n");
   goto hda_use_pio_interface;
  }
  mmio_outw(hda_base + 0x58, 0x8000); //reset write pointer
@@ -342,12 +402,13 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
 
  //find codec and working communication interface
  //TODO: find more codecs
+
  for(dword_t codec_number = 0, codec_id = 0; codec_number < 16; codec_number++) {
   components_hda[sound_card_number].communication_type = HDA_CORB_RIRB;
   codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
 
   if(codec_id != 0) {
-   logf("\nHDA: CORB/RIRB communication interface");
+   logf("HDA: CORB/RIRB communication interface (codec id: %x)\n", codec_id);
    hda_initalize_codec(sound_card_number, codec_number);
    return; //initalization is complete
   }
@@ -363,12 +424,14 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
 
   if(codec_id != 0) {
-   logf("\nHDA: PIO communication interface");
+   logf("HDA: PIO communication interface\n");
    hda_initalize_codec(sound_card_number, codec_number);
    return; //initalization is complete
   }
  }
 }
+
+
 
 dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command) {
  dword_t value = ((codec<<28) | (node<<20) | (verb<<8) | (command));
@@ -381,15 +444,15 @@ dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command
   mmio_outw(components_hda[selected_hda_card].base + 0x48, components_hda[selected_hda_card].corb_pointer);
 
   //wait for response
-  ticks = 0;
-  while(ticks<5) {
+  ticks = TIMER_TICKS;
+  while(TIMER_TICKS - ticks < 5) {
    asm("nop");
    if(mmio_inw(components_hda[selected_hda_card].base + 0x58)==components_hda[selected_hda_card].corb_pointer) {
     break;
    }
   }
   if(mmio_inw(components_hda[selected_hda_card].base + 0x58)!=components_hda[selected_hda_card].corb_pointer) {
-   logf("\nHDA ERROR: no response");
+   logf("HDA ERROR: no response\n");
    components_hda[selected_hda_card].communication_type = HDA_UNINITALIZED;
    return STATUS_ERROR;
   }
@@ -421,8 +484,8 @@ dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command
   mmio_outw(components_hda[selected_hda_card].base + 0x68, 0x1);
 
   //pool for response
-  ticks = 0;
-  while(ticks<3) {
+  ticks = TIMER_TICKS;
+  while(TIMER_TICKS - ticks < 3) {
    asm("nop");
 
    //wait for Immediate Result Valid bit = set and Immediate Command Busy bit = clear
@@ -436,7 +499,7 @@ dword_t hda_send_verb(dword_t codec, dword_t node, dword_t verb, dword_t command
   }
 
   //there was no response after 6 ms
-  logf("\nHDA ERROR: no response");
+  logf("HDA ERROR: no response\n");
   components_hda[selected_hda_card].communication_type = HDA_UNINITALIZED;
   return STATUS_ERROR;
  }
@@ -517,20 +580,20 @@ void hda_initalize_codec(dword_t sound_card_number, dword_t codec_number) {
  components_hda[sound_card_number].codec_number = codec_number;
 
  //log basic codec info
- logf("\nCodec %d ", codec_number);
- logf("\nVendor: %04x %s", (codec_id>>16), /*(pci_get_vendor_name(codec_id>>16))*/ "FUCK"); //PROFAN EDIT
- logf("\nNumber: %04x", (codec_id & 0xFFFF), 4);
+ logf("Codec %d\n", codec_number);
+ logf("Vendor: %x\n", (codec_id>>16) /*(pci_get_vendor_name(codec_id>>16))*/); //PROFAN EDIT
+ logf("Number: %x\n", (codec_id & 0xFFFF));
 
  //find Audio Function Groups
  dword_t subordinate_node_count_reponse = hda_send_verb(codec_number, 0, 0xF00, 0x04);
- logf("\nFirst Group node: %d Number of Groups: %d", (subordinate_node_count_reponse>>16) & 0xFF, subordinate_node_count_reponse & 0xFF);
+ logf("First Group node: %d Number of Groups: %d\n", (subordinate_node_count_reponse>>16) & 0xFF, subordinate_node_count_reponse & 0xFF);
  for(dword_t node = ((subordinate_node_count_reponse>>16) & 0xFF), last_node = (node+(subordinate_node_count_reponse & 0xFF)); node<last_node; node++) {
   if((hda_send_verb(codec_number, node, 0xF00, 0x05) & 0x7F)==0x01) { //this is Audio Function Group
    hda_initalize_audio_function_group(sound_card_number, node); //initalize Audio Function Group
    return;
   }
  }
- logf("\nHDA ERROR: No AFG founded");
+ logf("HDA ERROR: No AFG founded\n");
 }
 
 void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_node_number) {
@@ -550,21 +613,21 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
  components_hda[sound_card_number].afg_node_output_amp_capabilities = hda_send_verb(components_hda[sound_card_number].codec_number, afg_node_number, 0xF00, 0x12);
 
  //log AFG info
- logf("\nAudio Function Group node %d", afg_node_number);
- logf("\nAFG sample capabilities: 0x%x", components_hda[sound_card_number].afg_node_sample_capabilities);
- logf("\nAFG stream format capabilities: 0x%x", components_hda[sound_card_number].afg_node_stream_format_capabilities);
- logf("\nAFG input amp capabilities: 0x%x", components_hda[sound_card_number].afg_node_input_amp_capabilities);
- logf("\nAFG output amp capabilities: 0x%x", components_hda[sound_card_number].afg_node_output_amp_capabilities);
+ logf("Audio Function Group node %d\n", afg_node_number);
+ logf("AFG sample capabilities: %x\n", components_hda[sound_card_number].afg_node_sample_capabilities);
+ logf("AFG stream format capabilities: %x\n", components_hda[sound_card_number].afg_node_stream_format_capabilities);
+ logf("AFG input amp capabilities: %x\n", components_hda[sound_card_number].afg_node_input_amp_capabilities);
+ logf("AFG output amp capabilities: %x\n", components_hda[sound_card_number].afg_node_output_amp_capabilities);
 
  //log all AFG nodes and find useful PINs
- logf("\n\nLIST OF ALL NODES IN AFG:");
+ logf("\nLIST OF ALL NODES IN AFG:\n");
  dword_t subordinate_node_count_reponse = hda_send_verb(components_hda[sound_card_number].codec_number, afg_node_number, 0xF00, 0x04);
  dword_t pin_alternative_output_node_number = 0, pin_speaker_default_node_number = 0, pin_speaker_node_number = 0, pin_headphone_node_number = 0;
  components_hda[sound_card_number].pin_output_node_number = 0;
  components_hda[sound_card_number].pin_headphone_node_number = 0;
  for(dword_t node = ((subordinate_node_count_reponse>>16) & 0xFF), last_node = (node+(subordinate_node_count_reponse & 0xFF)), type_of_node = 0; node < last_node; node++) {
   //log number of node
-  logf("\n%d ", node);
+  logf("%d ", node);
 
   //get type of node
   type_of_node = hda_get_node_type(components_hda[sound_card_number].codec_number, node);
@@ -732,12 +795,12 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
   //initalize speaker
   components_hda[sound_card_number].is_initalized_useful_output = STATUS_TRUE;
   if(pin_speaker_node_number!=0) {
-   logf("\nSpeaker output");
+   logf("Speaker output\n");
    hda_initalize_output_pin(sound_card_number, pin_speaker_node_number); //initalize speaker with connected output device
    components_hda[sound_card_number].pin_output_node_number = pin_speaker_node_number; //save speaker node number
   }
   else {
-   logf("\nDefault speaker output");
+   logf("Default speaker output\n");
    hda_initalize_output_pin(sound_card_number, pin_speaker_default_node_number); //initalize default speaker
    components_hda[sound_card_number].pin_output_node_number = pin_speaker_default_node_number; //save speaker node number
   }
@@ -751,7 +814,7 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
 
   //if codec has also headphone output, initalize it
   if(pin_headphone_node_number!=0) {
-   logf("\n\nHeadphone output");
+   logf("\nHeadphone output\n");
    hda_initalize_output_pin(sound_card_number, pin_headphone_node_number); //initalize headphone output
    components_hda[sound_card_number].pin_headphone_node_number = pin_headphone_node_number; //save headphone node number
 
@@ -777,24 +840,24 @@ void hda_initalize_audio_function_group(dword_t sound_card_number, dword_t afg_n
   }
  }
  else if(pin_headphone_node_number!=0) { //codec do not have speaker, but only headphone output
-  logf("\nHeadphone output");
+  logf("Headphone output\n");
   components_hda[sound_card_number].is_initalized_useful_output = STATUS_TRUE;
   hda_initalize_output_pin(sound_card_number, pin_headphone_node_number); //initalize headphone output
   components_hda[sound_card_number].pin_output_node_number = pin_headphone_node_number; //save headphone node number
  }
  else if(pin_alternative_output_node_number!=0) { //codec have only alternative output
-  logf("\nAlternative output");
+  logf("Alternative output\n");
   components_hda[sound_card_number].is_initalized_useful_output = STATUS_FALSE;
   hda_initalize_output_pin(sound_card_number, pin_alternative_output_node_number); //initalize alternative output
   components_hda[sound_card_number].pin_output_node_number = pin_alternative_output_node_number; //save alternative output node number
  }
  else {
-  logf("\nCodec do not have any output PINs");
+  logf("Codec do not have any output PINs\n");
  }
 }
 
 void hda_initalize_output_pin(dword_t sound_card_number, dword_t pin_node_number) {
- logf("\nInitalizing PIN %d", pin_node_number);
+ logf("Initalizing PIN %d\n", pin_node_number);
 
  //reset variables of first path
  components_hda[sound_card_number].audio_output_node_number = 0;
@@ -842,12 +905,12 @@ void hda_initalize_output_pin(dword_t sound_card_number, dword_t pin_node_number
   hda_initalize_audio_selector(sound_card_number, first_connected_node_number);
  }
  else {
-  logf("\nHDA ERROR: PIN have connection %d", first_connected_node_number);
+  logf("HDA ERROR: PIN have connection %d\n", first_connected_node_number);
  }
 }
 
 void hda_initalize_audio_output(dword_t sound_card_number, dword_t audio_output_node_number) {
- logf("\nInitalizing Audio Output %d", audio_output_node_number);
+ logf("Initalizing Audio Output %d\n", audio_output_node_number);
  components_hda[sound_card_number].audio_output_node_number = audio_output_node_number;
 
  //turn on power for Audio Output
@@ -892,18 +955,18 @@ void hda_initalize_audio_output(dword_t sound_card_number, dword_t audio_output_
  }
 
  //because we are at end of node path, log all gathered info
- logf("\nSample Capabilites: 0x%x", components_hda[sound_card_number].audio_output_node_sample_capabilities);
- logf("\nStream Format Capabilites: 0x%x", components_hda[sound_card_number].audio_output_node_stream_format_capabilities);
- logf("\nVolume node: %d", components_hda[sound_card_number].output_amp_node_number);
- logf("\nVolume capabilities: 0x%x", components_hda[sound_card_number].output_amp_node_capabilities);
+ logf("Sample Capabilites: %x\n", components_hda[sound_card_number].audio_output_node_sample_capabilities);
+ logf("Stream Format Capabilites: %x\n", components_hda[sound_card_number].audio_output_node_stream_format_capabilities);
+ logf("Volume node: %d\n", components_hda[sound_card_number].output_amp_node_number);
+ logf("Volume capabilities: %x\n", components_hda[sound_card_number].output_amp_node_capabilities);
 }
 
 void hda_initalize_audio_mixer(dword_t sound_card_number, dword_t audio_mixer_node_number) {
  if(components_hda[sound_card_number].length_of_node_path>=10) {
-  logf("\nHDA ERROR: too long path");
+  logf("HDA ERROR: too long path\n");
   return;
  }
- logf("\nInitalizing Audio Mixer %d", audio_mixer_node_number);
+ logf("Initalizing Audio Mixer %d\n", audio_mixer_node_number);
 
  //turn on power for Audio Mixer
  hda_send_verb(components_hda[sound_card_number].codec_number, audio_mixer_node_number, 0x705, 0x00);
@@ -934,16 +997,16 @@ void hda_initalize_audio_mixer(dword_t sound_card_number, dword_t audio_mixer_no
   hda_initalize_audio_selector(sound_card_number, first_connected_node_number);
  }
  else {
-  logf("\nHDA ERROR: Mixer have connection %d", first_connected_node_number);
+  logf("HDA ERROR: Mixer have connection %d\n", first_connected_node_number);
  }
 }
 
 void hda_initalize_audio_selector(dword_t sound_card_number, dword_t audio_selector_node_number) {
  if(components_hda[sound_card_number].length_of_node_path>=10) {
-  logf("\nHDA ERROR: too long path");
+  logf("HDA ERROR: too long path\n");
   return;
  }
- logf("\nInitalizing Audio Selector %d", audio_selector_node_number);
+ logf("Initalizing Audio Selector %d\n", audio_selector_node_number);
 
  //turn on power for Audio Selector
  hda_send_verb(components_hda[sound_card_number].codec_number, audio_selector_node_number, 0x705, 0x00);
@@ -978,7 +1041,7 @@ void hda_initalize_audio_selector(dword_t sound_card_number, dword_t audio_selec
   hda_initalize_audio_selector(sound_card_number, first_connected_node_number);
  }
  else {
-  logf("\nHDA ERROR: Selector have connection %d", first_connected_node_number);
+  logf("HDA ERROR: Selector have connection %d\n", first_connected_node_number);
  }
 }
 
@@ -1098,6 +1161,7 @@ word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword
  return data_format;
 }
 
+/*
 void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate) {
  if((components_hda[sound_card_number].audio_output_node_stream_format_capabilities & 0x1)==0x0) {
   return; //this Audio Output do not support PCM sound data
@@ -1105,41 +1169,41 @@ void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate) {
 
  //stop stream
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x00, 0x00);
- ticks = 0;
- while(ticks<2) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 2) {
   asm("nop");
   if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x2)==0x0) {
    break;
   }
  }
  if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x2)==0x2) {
-  logf("\nHDA: can not stop stream");
+  logf("HDA: can not stop stream\n");
   return;
  }
 
  //reset stream registers
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x00, 0x01);
- ticks = 0;
- while(ticks<10) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 10) {
   asm("nop");
   if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x1)==0x1) {
    break;
   }
  }
  if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x1)==0x0) {
-  logf("\nHDA: can not start resetting stream");
+  logf("HDA: can not start resetting stream\n");
  }
  wait(5);
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x00, 0x00);
- ticks = 0;
- while(ticks<10) {
+ ticks = TIMER_TICKS;
+ while(TIMER_TICKS - ticks < 10) {
   asm("nop");
   if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x1)==0x0) {
    break;
   }
  }
  if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x1)==0x1) {
-  logf("\nHDA: can not stop resetting stream");
+  logf("HDA: can not stop resetting stream\n");
   return;
  }
  wait(5);
@@ -1174,6 +1238,7 @@ void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate) {
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x02, 0x14);
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x00, 0x02);
 }
+*/
 
 void hda_stop_sound(dword_t sound_card_number) {
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x00, 0x00);

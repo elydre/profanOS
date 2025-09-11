@@ -39,6 +39,7 @@ mod_t mods_at_boot[] = {
     {4, "/lib/mod/profan.pkm"},
     {5, "/lib/mod/panda.pkm"},
     {6, "/lib/mod/ata.pkm"},
+    {7, "/lib/mod/hda.pkm"},
 };
 
 int local_strlen(char *str) {
