@@ -58,7 +58,6 @@ int main(int argc, char **argv) {
         return 0;
 
     }
-    printf("aa%daa\n", g_info.mac[0]);
     if (!memcmp(g_info.mac, "\0\0\0\0\0\0", 6)) {
         fprintf(stderr, "Error: no ethernet device found\n");
         syscall_eth_end(g_eth_id);

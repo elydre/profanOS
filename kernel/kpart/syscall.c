@@ -92,10 +92,10 @@ void *SYSCALL_ARRAY[] = {
     eth_end, // 42
     eth_send, // 43
     eth_is_ready, // 44
-    eth_recv, // 44
-    eth_get_info, // 45
-    eth_set_info, // 46
-    eth_get_transaction, // 47
+    eth_recv, // 45
+    eth_get_info, // 46
+    eth_set_info, // 47
+    eth_get_transaction, // 48
 };
 
 void syscall_handler(registers_t *r) {
