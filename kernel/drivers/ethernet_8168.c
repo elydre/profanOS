@@ -73,7 +73,7 @@ void rtl8168_handler(registers_t *regs) {
 	pci_write_cmd_u16(g_pci_device, 0, 0x3E, status);
 }
 
-void rtl8168_send_packet(const void *p_data, uint16_t p_len) {
+int rtl8168_send_packet(const void *p_data, uint16_t p_len) {
     if (p_len > TX_BUF_SIZE) return;
 
     volatile struct Descriptor *desz = &Tx_Descriptors[tx_pointer];
@@ -93,12 +93,12 @@ void rtl8168_send_packet(const void *p_data, uint16_t p_len) {
     pci_write_cmd_u8(g_pci_device, 0, 0x38, 0x40);
 
     while (1) {
-        kprintf("Waiting for ACK...\n");
         if (package_send_ack == 1) break;
         if ((pci_read_cmd_u8(g_pci_device, 0, 0x38) & 0x40) == 0) break;
     }
     package_send_ack = 0;
     tx_pointer = (tx_pointer + 1) % NUM_TX_DESC;
+    return 0;
 }
 int rtl8168_init() {
     pci_device_t *pci = NULL;

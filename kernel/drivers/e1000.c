@@ -19,7 +19,7 @@
 #include <drivers/e1000.h>
 #include <drivers/pci.h>
 #include <kernel/snowflake.h>
-#include <net/ethernet.h>
+#include <net.h>
 
 
 //----------------------------------------------------//
@@ -277,7 +277,7 @@ int e1000_init(void) {
 }
 
 
-void e1000_send_packet(const void * p_data, uint16_t p_len)
+int e1000_send_packet(const void * p_data, uint16_t p_len)
 {
     e1000_t *device = &g_e1000;
     device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
@@ -291,6 +291,7 @@ void e1000_send_packet(const void * p_data, uint16_t p_len)
     pci_write_cmd_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
     while (!(device->tx_descs_phys[old_cur]->status & 0xff))
         process_sleep(process_get_pid(), 1);
+    return 0;
 }
 
 
@@ -306,7 +307,7 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
         uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
         uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
 
-        eth_append_packet(buf, len);
+        eth_recv_packet(buf, len);
 
         device->rx_descs_phys[device->rx_cur]->status = 0;
         old_cur = device->rx_cur;

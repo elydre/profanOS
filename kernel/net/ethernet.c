@@ -40,20 +40,24 @@ int eth_send_packet(const void * addr, uint16_t p_len) {
         return 1;
     uint32_t addr_phys = get_phys(addr);
 
+    int dest_type = 0;
     if (!mem_cmp(addr, (uint8_t *)&eth_info.mac, 6))
-        eth_appehnd_packet((void *)addr, p_len);
+        dest_type = 1;
     if (!mem_cmp(addr, "\xFF\xFF\xFF\xFF\xFF\xFF", 6))
-        eth_appehnd_packet((void *)addr, p_len);
-    if (!mem_cmp(addr, (uint8_t *)&eth_info.mac, 6))
+        dest_type = 2;
+
+    if (dest_type)
+        eth_recv_packet(addr, p_len);
+    if (dest_type == 1)
         return 0;
     if (e1000_is_inited)
-        return e1000_send_packet((void *)addr_phys, p_len);
+        return e1000_send_packet((const void *)addr_phys, p_len);
     else if (rtl8168_is_inited)
-        return rtl8168_send_packet((void *)addr, p_len);
+        return rtl8168_send_packet((const void *)addr, p_len);
     kprintf("eth_send_packet no device found inited\n");
     return 1;
 }
 
 void eth_recv_packet(const void *addr, uint16_t p_len) {
-
+    eth_listeners_add_packet(addr, (int)p_len);
 }

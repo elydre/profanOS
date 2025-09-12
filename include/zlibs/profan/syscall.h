@@ -210,6 +210,14 @@ DEFN_SYSCALL3(38, int,       scuba_map, void *, void *, int)
 DEFN_SYSCALL1(39, int,       scuba_unmap, void *)
 DEFN_SYSCALL1(40, void *,    scuba_phys, void *)
 
+DEFN_SYSCALL0(41, uint32_t, eth_start)
+DEFN_SYSCALL1(42, int, eth_end, uint32_t)
+DEFN_SYSCALL2(43, int, eth_send, void *, int)
+DEFN_SYSCALL1(44, int, eth_is_ready, uint32_t)
+DEFN_SYSCALL2(44, int, eth_recv, uint32_t, void *)
+DEFN_SYSCALL2(45, int, eth_get_info, uint32_t, void *)
+DEFN_SYSCALL2(46, int, eth_set_info, uint32_t, void *)
+
 _END_C_FILE
 
 #endif
