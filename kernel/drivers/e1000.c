@@ -20,6 +20,7 @@
 #include <drivers/pci.h>
 #include <kernel/snowflake.h>
 #include <net.h>
+#include <kernel/process.h>
 
 
 //----------------------------------------------------//

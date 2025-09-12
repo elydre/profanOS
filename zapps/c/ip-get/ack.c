@@ -2,15 +2,16 @@
 
 int receive_ack(uint8_t *mac) {
 	(void)mac;
-	if (!syscall_eth_listen_isready()) {
+	int size = syscall_eth_is_ready(g_eth_id);
+	if (size < 0) {
 		return 1;
 	}
-	int packet_size = syscall_eth_listen_getsize();
+	int packet_size = size;
 	uint8_t *packet = malloc(packet_size);
 	if (!packet) {
 		return 1;
 	}
-	syscall_eth_listen_get(packet);
+	syscall_eth_recv(g_eth_id, packet);
 	ethernet_header_t *eth = (ethernet_header_t *)packet;
 	if (eth->ether_type != htons(0x0800)) {
 		free(packet);
@@ -41,22 +42,29 @@ int receive_ack(uint8_t *mac) {
 		return 1;
 	}
 	int opt_len = packet_size - (opt - packet);
-	for (int i = 0; i < opt_len && opt[i] != 0xff; ) {
+	uint32_t router_mask = 0;
+	int	is_ack = 0;
+	int i = 0;
+
+	while (i < opt_len && opt[i] != 0xff) {
 		if (opt[i] == 0) {
 			i++;
 			continue;
 		}
 		if (i + 2 < opt_len) {
-			if (opt[i] == 53 && opt[i + 1] == 1 && opt[i + 2] == 5) {
-				free(packet);
-				return 0;
-			}
+			if (opt[i] == 53 && opt[i + 1] == 1 && opt[i + 2] == 5)
+				is_ack = 1;
 		}
+		if (opt[i] == 0x01 && i + 5 < opt_len && opt[i + 1] == 4)
+			router_mask = *(uint32_t *)(&opt[i + 2]);
 		if (i + 1 < opt_len)
 			i += opt[i + 1] + 2;
 		else
 			break;
 	}
 	free(packet);
-	return 1;
+	if (router_mask == 0 || is_ack == 0)
+		return 1;
+	g_info.net_mask = router_mask;
+	return 0;
 }

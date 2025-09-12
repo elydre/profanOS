@@ -38,7 +38,7 @@ void send_dhcp_discover(uint8_t *mac) {
     dhcp->op = 1; // BOOTREQUEST
     dhcp->htype = 1; // Ethernet
     dhcp->hlen = 6;
-    dhcp->xid = htonl(syscall_eth_get_transaction_id());
+    dhcp->xid = htonl(syscall_eth_get_transaction());
 	last_xid = dhcp->xid;
     dhcp->flags = htons(0x8000); // Broadcast flag
     memcpy(dhcp->chaddr, mac, 6);

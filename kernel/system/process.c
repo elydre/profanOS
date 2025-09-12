@@ -11,7 +11,7 @@
 
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <net/ethernet.h>
+#include <net.h>
 #include <cpu/timer.h>
 #include <minilib.h>
 #include <system.h>
