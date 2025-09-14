@@ -131,7 +131,6 @@ struct hda_info_t {
     dword_t rirb_pointer;
     dword_t rirb_number_of_entries;
 
-    dword_t *output_buffer_list;
     dword_t sound_length;
     dword_t bytes_on_output_for_stopping_sound;
     dword_t length_of_node_path;
@@ -220,7 +219,7 @@ void hda_check_headphone_connection_change(void);
 byte_t hda_is_supported_channel_size(dword_t sound_card_number, byte_t size);
 byte_t hda_is_supported_sample_rate(dword_t sound_card_number, dword_t sample_rate);
 word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword_t bits_per_sample);
-void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate, void* pcm_data, dword_t buffer_size);
+void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate, void* pcm_data, dword_t buffer_size, word_t lvi);
 void hda_stop_sound(dword_t sound_card_number);
 dword_t hda_get_actual_stream_position(dword_t sound_card_number);
 
@@ -278,9 +277,9 @@ int __init(void) {
     return 0;
 }
 
-void my_handler(dword_t sample_rate, void* pcm_data, dword_t buffer_size) {
+void my_handler(dword_t sample_rate, void* pcm_data, dword_t buffer_size, word_t lvi) {
     kprintf_serial("my_handler 1\n");
-    hda_play_pcm_data_in_loop(0, sample_rate, pcm_data, buffer_size);
+    hda_play_pcm_data_in_loop(0, sample_rate, pcm_data, buffer_size, lvi);
 }
 
 int my_handler2(dword_t sample_rate) {
@@ -337,7 +336,6 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  logf("Version: %d.%d\n", mmio_inb(hda_base + 0x03), mmio_inb(hda_base + 0x02));
  components_hda[sound_card_number].input_stream_base = (hda_base + 0x80);
  components_hda[sound_card_number].output_stream_base = (hda_base + 0x80 + (0x20*((mmio_inw(hda_base + 0x00)>>8) & 0xF))); //skip input streams ports
- components_hda[sound_card_number].output_buffer_list = (dword_t *) (aligned_calloc(16*2, 0x7F));
 
  //disable interrupts
  mmio_outd(hda_base + 0x20, 0);
@@ -1199,7 +1197,7 @@ word_t hda_return_sound_data_format(dword_t sample_rate, dword_t channels, dword
  return data_format;
 }
 
-void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate, void* pcm_data, dword_t buffer_size) {
+void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate, void* pcm_data, dword_t buffer_size, word_t lvi) {
  if((components_hda[sound_card_number].audio_output_node_stream_format_capabilities & 0x1)==0x0) {
   return; //this Audio Output do not support PCM sound data
  }
@@ -1248,16 +1246,12 @@ void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate, v
  //clear error bits
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x03, 0x1C);
 
- //fill buffer entries - there have to be at least two entries in buffer, so we fill second entry with zeroes
- mem_set(components_hda[sound_card_number].output_buffer_list, 0, 16*2);
- components_hda[sound_card_number].output_buffer_list[0]=((dword_t)pcm_data);
- components_hda[sound_card_number].output_buffer_list[2]=(buffer_size*2); //from point of view of HDA card there is only one buffer, but thread will recognize first half of buffer as SOUND_BUFFER_0 and second half as SOUND_BUFFER_2
  asm("wbinvd"); //flush processor cache to RAM to be sure sound card will read correct data
 
  //set buffer registers
- mmio_outd(components_hda[sound_card_number].output_stream_base + 0x18, (dword_t)components_hda[sound_card_number].output_buffer_list);
- mmio_outd(components_hda[sound_card_number].output_stream_base + 0x08, (buffer_size*2));
- mmio_outw(components_hda[sound_card_number].output_stream_base + 0x0C, 1); //there are two entries in buffer
+ mmio_outd(components_hda[sound_card_number].output_stream_base + 0x18, (dword_t) pcm_data);
+ mmio_outd(components_hda[sound_card_number].output_stream_base + 0x08, buffer_size);
+ mmio_outw(components_hda[sound_card_number].output_stream_base + 0x0C, lvi);
 
  //set stream data format
  mmio_outw(components_hda[sound_card_number].output_stream_base + 0x12, hda_return_sound_data_format(sample_rate, 2, 16));
