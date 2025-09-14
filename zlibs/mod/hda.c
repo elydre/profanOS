@@ -253,6 +253,8 @@ int __init(void) {
 
     components_hda[0].base = pci_get_bar(&device, 0);
 
+    logf("HDA: HDA PCI device MMIO base %x\n", components_hda[0].base);
+
     scuba_call_map((void *)components_hda[0].base, (void *)components_hda[0].base, 0);
 
     // configure PCI
@@ -437,16 +439,16 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
  //find codec and working communication interface
  //TODO: find more codecs
 
- /*for(dword_t codec_number = 0, codec_id = 0; codec_number < 16; codec_number++) {
+ for(dword_t codec_number = 0, codec_id = 0; codec_number < 16; codec_number++) {
   components_hda[sound_card_number].communication_type = HDA_CORB_RIRB;
   codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
 
-  if(codec_id != 0) {
+  if(codec_id != 0 && codec_id != STATUS_ERROR) {
    logf("HDA: CORB/RIRB communication interface\n");
    hda_initalize_codec(sound_card_number, codec_number);
    return; //initalization is complete
   }
- }*/
+ }
 
  hda_use_pio_interface:
  //stop CORB and RIRB
