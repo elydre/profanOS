@@ -1,11 +1,12 @@
+// @LINK: libpf
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <profan/syscall.h>
+#include <profan/carp.h>
 #include <profan.h>
 #include <unistd.h>
-
-
 
 
 #define _pscall(module, id, ...) \
@@ -50,6 +51,8 @@ typedef struct {
     char *album;
     char *year;
 } wav_file_t;
+
+int g_volume = 50;
 
 char *header_set_info(FILE *file, uint32_t size) {
     char *info = malloc(size + 1);
@@ -165,26 +168,47 @@ void print_info(wav_file_t *header, uint32_t pos) {
     int curent_sec = pos / header->byte_rate;
     int total_sec = header->data_bytes / header->byte_rate;
 
-    if (header->artist)
-        printf("\r%s - %s", header->artist, header->title);
-    else
-        printf("\r%s", header->title);
-    if (header->year)
-        printf(" (%s)", header->year);
+    if (curent_sec > total_sec)
+        curent_sec = total_sec;
 
-    printf(" | %02d:%02d / %02d:%02d",
-            curent_sec / 60, curent_sec % 60, total_sec / 60, total_sec % 60
+    printf("\r    [ %02d:%02d / %02d:%02d  |  Vol: %d%% ] ",
+            curent_sec / 60, curent_sec % 60, total_sec / 60, total_sec % 60,
+            g_volume
     );
 
     fflush(stdout);
 }
 
-int start_play(FILE *file, wav_file_t *header) {
-    if (hda_is_supported_sample_rate(header->sample_rate)) {
-        printf("Error: Sample rate %d not supported by HDA\n", header->sample_rate);
-        return 1;
-    }
+int get_volume_change() {
+    int sc;
 
+    do {
+        sc = syscall_sc_get();
+
+        if (sc == KB_LEFT || sc == KB_BOT) {
+            g_volume -= 5;
+            if (g_volume < 0)
+                g_volume = 0;
+
+            hda_set_volume(g_volume);
+        }
+
+        if (sc == KB_RIGHT || sc == KB_TOP) {
+            g_volume += 5;
+            if (g_volume > 100)
+                g_volume = 100;
+            hda_set_volume(g_volume);
+        }
+
+        if (sc == KB_ESC) {
+            return 1;
+        }
+    } while (sc != 0);
+
+    return 0;
+}
+
+int start_play(FILE *file, wav_file_t *header) {
     void *physical = syscall_mem_alloc(BLOCK_SIZE * 4, 1, 0x1000);
 
     hda_play_buffer_t *buf = syscall_mem_alloc(sizeof(hda_play_buffer_t) * CIRUCULAR_COUNT, 1, 0x1000);
@@ -201,6 +225,8 @@ int start_play(FILE *file, wav_file_t *header) {
     for (int i = 0; i < CIRUCULAR_COUNT; i++)
         add_block_to_buffer(file, header, physical + i * BLOCK_SIZE, block++);
 
+    hda_set_volume(g_volume);
+
     hda_play(header->sample_rate, buf, CIRUCULAR_COUNT * BLOCK_SIZE * 2, CIRUCULAR_COUNT - 1);
 
     int loop_reset = 0;
@@ -208,8 +234,8 @@ int start_play(FILE *file, wav_file_t *header) {
 
     int end_count = 0;
     
-    while (1) {
-        while (1) {
+    while (end_count < CIRUCULAR_COUNT - 1) {
+        for (int i = 0;; i++) {
             pos = hda_get_pos();
 
             if (old_pos > pos)
@@ -219,6 +245,12 @@ int start_play(FILE *file, wav_file_t *header) {
 
             if (pos / BLOCK_SIZE + (loop_reset * CIRUCULAR_COUNT) > (block - CIRUCULAR_COUNT))
                 break;
+            
+            if (i % 20 == 0)
+                hda_check_headphone_connection_change();
+
+            if (get_volume_change())
+                goto end;
 
             print_info(header, pos + (loop_reset * CIRUCULAR_COUNT * BLOCK_SIZE));
 
@@ -228,71 +260,68 @@ int start_play(FILE *file, wav_file_t *header) {
         if (add_block_to_buffer(file, header, physical + ((block % CIRUCULAR_COUNT) * BLOCK_SIZE), block) == 0)
             end_count++;
 
-        if (end_count >= CIRUCULAR_COUNT - 1)
-            break;
-
         asm("wbinvd");
         block++;
     }
 
+    end:
+
     hda_stop();
 
-    print_info(header, header->data_bytes);
     printf("\n");
 
     return 0;
 }
 
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("Usage: %s <wav file>\n", argv[0]);
-        return 1;
-    }
-
-    FILE *file = fopen(argv[1], "rb");
+int playme_file(const char *path) {
+    FILE *file = fopen(path, "rb");
+    int errcode = 1;
 
     if (!file) {
-        printf("Error: Could not open file %s\n", argv[1]);
+        fprintf(stderr, "playme: %s: %m\n", path);
         return 1;
     }
 
     wav_file_t *header = read_header(file);
 
-
     if (!header) {
-        printf("Error: Not a valid WAV file\n");
+        fprintf(stderr, "playme: %s: Not a valid WAV file\n", path);
         fclose(file);
         return 1;
     }
 
     if (!header->title)
-        header->title = strdup(argv[1]);
+        header->title = strdup(path);
 
-    printf("playing %d channels at %d kbps: %d bits %gkHz\n",
+    printf("\e[4m");
+    if (header->artist)
+        printf("%s - %s", header->artist, header->title);
+    else
+        printf("%s", header->title);
+    if (header->year)
+        printf(" (%s)", header->year);
+    printf("\e[0m\n");
+
+    printf("%d channels at %d kbps: %d bits %gkHz\n",
             header->num_channels, header->byte_rate / 125,
             header->bits_per_sample, header->sample_rate / 1000.0
     );
 
-    if (header->audio_format != 1) {
-        printf("Error: Only PCM format is supported\n");
-        goto end;
-    }
+    if (header->audio_format != 1)
+        fprintf(stderr, "playme: %s: Only PCM format is supported\n", path);
+    else if (header->num_channels != 2)
+        fprintf(stderr, "playme: %s: Only stereo files are supported\n", path);
+    else if (header->bits_per_sample != 16)
+        fprintf(stderr, "playme: %s: Only 16 bits files are supported for now\n", path);
+    else if (hda_is_supported_sample_rate(header->sample_rate))
+        fprintf(stderr, "playme: %s: Sample rate %d not supported by HDA\n", path, header->sample_rate);
+    else if (start_play(file, header))
+        fprintf(stderr, "playme: %s: Error while playing file\n", path);
+    else
+        errcode = 0;
 
-    if (header->num_channels != 2) {
-        printf("Error: Only stereo files are supported\n");
-        goto end;
-    }
 
-    if (header->bits_per_sample != 16) {
-        printf("Error: Only 16 bits files are supported for now\n");
-        goto end;
-    }
-
-    if (start_play(file, header) != 0) {
-        goto end;
-    }
-
-    end:
+    fclose(file);
 
     free(header->artist);
     free(header->title);
@@ -300,7 +329,31 @@ int main(int argc, char **argv) {
     free(header->year);
 
     free(header);
-    fclose(file);
 
+    return errcode;
+}
+
+int main(int argc, char **argv) {
+    carp_init("[-v %] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
+
+    carp_register('v', CARP_NEXT_INT, "set initial volume (default: 50%)");
+
+    if (carp_parse(argc, argv))
+        return 1;
+    
+    if (carp_isset('v')) {
+        if (g_volume < 0)
+            g_volume = 0;
+        if (g_volume > 100)
+            g_volume = 100;
+        g_volume = carp_get_int('v');
+    }
+
+    const char *path;
+    while ((path = carp_file_next())) {
+        if (playme_file(path) != 0)
+            return 1;
+    }
+    
     return 0;
 }

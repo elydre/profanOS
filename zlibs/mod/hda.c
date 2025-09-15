@@ -1104,12 +1104,12 @@ void hda_check_headphone_connection_change(void) {
  if(components_hda[selected_hda_card].selected_output_node==components_hda[selected_hda_card].pin_output_node_number && hda_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
   hda_disable_pin_output(components_hda[selected_hda_card].codec_number, components_hda[selected_hda_card].pin_output_node_number);
   components_hda[selected_hda_card].selected_output_node = components_hda[selected_hda_card].pin_headphone_node_number;
-  logf("\nHDA: Headphone connected, switched output to HP\n");
+  // logf("\nHDA: Headphone connected, switched output to HP\n");
  }
  else if(components_hda[selected_hda_card].selected_output_node==components_hda[selected_hda_card].pin_headphone_node_number && hda_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
   hda_enable_pin_output(components_hda[selected_hda_card].codec_number, components_hda[selected_hda_card].pin_output_node_number);
   components_hda[selected_hda_card].selected_output_node = components_hda[selected_hda_card].pin_output_node_number;
-  logf("\nHDA: Headphone disconnected, switched output to speaker\n");
+  // logf("\nHDA: Headphone disconnected, switched output to speaker\n");
  }
 }
 
@@ -1240,7 +1240,7 @@ void hda_play_pcm_data_in_loop(dword_t sound_card_number, dword_t sample_rate, v
   }
  }
  if((mmio_inb(components_hda[sound_card_number].output_stream_base + 0x00) & 0x1)==0x0) {
-  logf("\nHDA: can not start resetting stream");
+  // logf("\nHDA: can not start resetting stream");
  }
  wait(5);
  mmio_outb(components_hda[sound_card_number].output_stream_base + 0x00, 0x00);
