@@ -227,7 +227,7 @@ int start_play(FILE *file, wav_file_t *header) {
 
     hda_set_volume(g_volume);
 
-    hda_play(header->sample_rate, buf, CIRUCULAR_COUNT * BLOCK_SIZE * 2, CIRUCULAR_COUNT - 1);
+    hda_play(header->sample_rate, buf, CIRUCULAR_COUNT * BLOCK_SIZE, CIRUCULAR_COUNT - 1);
 
     int loop_reset = 0;
     int old_pos = 0;
