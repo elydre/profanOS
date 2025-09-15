@@ -87,7 +87,7 @@ static uint32_t pci_read_config(pci_addr_t *pci, uint32_t offset) {
 }
 
 static uint32_t pci_get_bar(pci_addr_t *pci, uint8_t barN) {
-    return pci_read_config(pci, 0x10 + (barN * 4)) & 0xfffffffE;
+    return pci_read_config(pci, 0x10 + (barN * 4));
 }
 
 static pci_addr_t pci_find(uint16_t vendor, uint16_t device) {
@@ -253,6 +253,9 @@ int __init(void) {
     components_hda[0].base = pci_get_bar(&device, 0);
 
     logf("HDA: HDA PCI device MMIO base %x\n", components_hda[0].base);
+    components_hda[0].base &= 0xFFFFFFF0; // mask memory type
+
+    logf("HDA:                       -> %x\n", components_hda[0].base);
 
     scuba_call_map((void *)components_hda[0].base, (void *)components_hda[0].base, 0);
 
@@ -296,6 +299,11 @@ void my_handler3(dword_t volume) {
 uint32_t my_handler4(void) {
     kprintf_serial("my_handler 4\n");
     return hda_get_actual_stream_position(0);
+}
+
+void my_handler5(void) {
+    kprintf_serial("my_handler 5\n");
+    hda_check_headphone_connection_change();
 }
 
 void hda_initalize_sound_card(dword_t sound_card_number) {
@@ -457,7 +465,7 @@ void hda_initalize_sound_card(dword_t sound_card_number) {
   components_hda[sound_card_number].communication_type = HDA_PIO;
   codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
 
-  if(codec_id != 0) {
+  if(codec_id != 0 && codec_id != STATUS_ERROR) {
    logf("HDA: PIO communication interface\n");
    hda_initalize_codec(sound_card_number, codec_number);
    return; //initalization is complete
@@ -1092,10 +1100,12 @@ void hda_check_headphone_connection_change(void) {
  if(components_hda[selected_hda_card].selected_output_node==components_hda[selected_hda_card].pin_output_node_number && hda_is_headphone_connected()==STATUS_TRUE) { //headphone was connected
   hda_disable_pin_output(components_hda[selected_hda_card].codec_number, components_hda[selected_hda_card].pin_output_node_number);
   components_hda[selected_hda_card].selected_output_node = components_hda[selected_hda_card].pin_headphone_node_number;
+  logf("\nHDA: Headphone connected, switched output to HP\n");
  }
  else if(components_hda[selected_hda_card].selected_output_node==components_hda[selected_hda_card].pin_headphone_node_number && hda_is_headphone_connected()==STATUS_FALSE) { //headphone was disconnected
   hda_enable_pin_output(components_hda[selected_hda_card].codec_number, components_hda[selected_hda_card].pin_output_node_number);
   components_hda[selected_hda_card].selected_output_node = components_hda[selected_hda_card].pin_output_node_number;
+  logf("\nHDA: Headphone disconnected, switched output to speaker\n");
  }
 }
 

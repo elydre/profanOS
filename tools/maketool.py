@@ -71,7 +71,7 @@ KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/ker
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
 QEMU_SPL   = "qemu-system-i386 -device intel-hda -device hda-duplex"
-QEMU_KVM   = "qemu-system-i386 -enable-kvm -device intel-hda -device hda-duplex"
+QEMU_KVM   = "qemu-system-i386 -m 256M -enable-kvm -device intel-hda -device hda-duplex"
 
 QEMU_FLAGS = "-serial stdio"
 QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
