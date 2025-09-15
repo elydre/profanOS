@@ -287,23 +287,27 @@ void my_handler(dword_t sample_rate, void* pcm_data, dword_t buffer_size, word_t
 
 int my_handler2(dword_t sample_rate) {
     kprintf_serial("my_handler 2\n");
+    scuba_call_map((void *)components_hda[0].base, (void *)components_hda[0].base, 0);
     return hda_is_supported_sample_rate(0, sample_rate);
 }
 
 void my_handler3(dword_t volume) {
-    scuba_call_map((void *)components_hda[0].base, (void *)components_hda[0].base, 0);
     kprintf_serial("my_handler 3\n");
     hda_set_volume(0, volume);
 }
 
 uint32_t my_handler4(void) {
-    kprintf_serial("my_handler 4\n");
     return hda_get_actual_stream_position(0);
 }
 
 void my_handler5(void) {
     kprintf_serial("my_handler 5\n");
     hda_check_headphone_connection_change();
+}
+
+void my_handler6(void) {
+    kprintf_serial("my_handler 6\n");
+    hda_stop_sound(0);
 }
 
 void hda_initalize_sound_card(dword_t sound_card_number) {
