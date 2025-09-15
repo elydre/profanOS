@@ -111,7 +111,6 @@ void eth_recv(uint32_t id, void *data) {
 void eth_get_info(uint32_t id, struct eth_info_t *info) {
 	(void)id;
 	*info = eth_info;
-	kprintf_serial("MACCCCCCCCCC %d.%d.%d.%d.%d.%d\n", eth_info.mac[0], eth_info.mac[1], eth_info.mac[2],  eth_info.mac[3],  eth_info.mac[4],  eth_info.mac[5]);
 }
 
 void eth_set_info(uint32_t id, struct eth_info_t *info) {

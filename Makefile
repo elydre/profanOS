@@ -14,6 +14,9 @@
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
 
+all: disk iso
+	qemu-system-i386 -enable-kvm -nographic -hda profanOS.iso
+
 # list off available commands
 help:
 	@python3 $(PY_BUILD) help

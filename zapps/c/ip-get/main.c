@@ -35,7 +35,7 @@ int retrieve_ip(uint8_t *mac) {
 }
 
 void print_ip(uint32_t ip) {
-    printf("%d.%d.%d.%d\n", ip >> 24, 0xff & (ip >> 16), 0xff & (ip >> 8), ip & 0xff);
+    printf("%d.%d.%d.%d\n", ip & 0xff, 0xff & (ip >> 8), 0xff & (ip >> 16), ip >> 24);
 
 }
 
