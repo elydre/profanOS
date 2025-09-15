@@ -45,6 +45,8 @@ _BEGIN_C_FILE
 #define syscall_vesa_fb() ((void *) syscall_vesa_info(3))
 #define syscall_vesa_state()   syscall_vesa_info(4)
 
+#define syscall_timer_get_ms() syscall_ms_get() // retrocompatibility
+
 /************************************
  *                                 *
  *  syscall generator definitions  *
