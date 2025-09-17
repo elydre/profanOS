@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === ctr_size.c : 2024 ===                                                 |
+|   === ctr_size.c : 2025 ===                                                 |
 |                                                                             |
 |    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -15,202 +15,133 @@
 
 #include "../butterfly.h"
 
-int fs_cnt_grow_size(filesys_t *filesys, uint32_t loca_sid, uint32_t to_grow) {
-    vdisk_t *vdisk;
-    uint8_t *data;
+uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(loca_sid));
+int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
 
-    if (vdisk == NULL) {
-        printf("d%ds%d not found\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+    // check if sector is cnt locator
+
+    if (vdisk_read(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+        printf("failed to read d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
         return -1;
     }
 
-    uint32_t next_sid;
+    // check if sector linked to another locator
+    sid_t *next_sid = &sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-    while (1) {
-        // check if sector is used
-        if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-            printf("d%ds%d not used\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+    if (!IS_SID_NULL(*next_sid)) {
+        int ret = fs_cnt_shrink_size(*next_sid, to_shrink);
+        if (ret <= 0) {
+            return ret == 0 ? -2 : ret;
+        }
+        *next_sid = SID_NULL;
+        to_shrink = ret;
+    }
+
+    // remove core sectors
+    for (int i = LINKS_IN_LOCA - 1; i >= 0; i--) {
+        if (to_shrink == 0)
+            break;
+
+        sid_t    core_sid   = sector_data[i * 2];
+        uint32_t core_count = sector_data[i * 2 + 1];
+
+        if (IS_SID_NULL(core_sid)) {
+            continue;
+        }
+
+        for (int j = core_count - 1; j >= 0; j--) {
+            if (to_shrink == 0)
+                break;
+
+            fs_sector_note_free(core_sid + j);
+            core_count -= 1;
+            to_shrink -= 1;
+        }
+
+        if (core_count == 0)
+            sector_data[i * 2] = SID_NULL;
+        sector_data[i * 2 + 1] = core_count;
+    }
+
+    // remove locator if empty
+    if (to_shrink) {
+        fs_sector_note_free(loca_sid);
+    } else if (vdisk_write(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+        printf("failed to write d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+        return -1;
+    }
+
+    return to_shrink;
+}
+
+int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
+    // jump to last locator
+    do {
+        if (vdisk_read(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+            printf("failed to read d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             return -1;
         }
 
-        // check if sector is cnt locator
-        data = vdisk_load_sector(vdisk, loca_sid);
-
-        if (data[0] != SF_LOCA) {
-            printf("d%ds%d not cnt locator\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
-            free(data);
-            return -1;
-        }
-
-        memcpy(&next_sid, data + LAST_SID_OFFSET, sizeof(uint32_t));
-        vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
+        uint32_t next_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
         if (IS_SID_NULL(next_sid)) {
             break;
         }
 
         loca_sid = next_sid;
-    };
+    } while (1);
 
-    uint32_t core_count = 0;
-    uint32_t new_loca_sid;
-    uint32_t core_sid;
+    // TODO
 
-    // check if loca is full
-    for (uint32_t byte = sizeof(uint32_t); byte < LAST_SID_OFFSET; byte += sizeof(uint32_t)) {
-        memcpy(&core_sid, data + byte, sizeof(uint32_t));
-        if (IS_SID_NULL(core_sid)) break;
-        core_count += 1;
-    }
-
-    // fill loca
-    while (core_count < LINKS_IN_LOCA && to_grow > 0) {
-        core_sid = SID_FORMAT(SID_DISK(loca_sid), (uint32_t) vdisk_get_unused_sector(vdisk));
-        if (IS_SID_NULL(core_sid)) {
-            printf("no free sectors\n");
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return -1;
-        }
-        if (fs_cnt_init_core_in_sector(vdisk, core_sid) == -1) {
-            printf("failed to init core\n");
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return -1;
-        }
-        core_count += 1;
-        memcpy(data + core_count * sizeof(uint32_t), &core_sid, sizeof(uint32_t));
-        to_grow -= 1;
-    }
-
-    if (!to_grow) {
-        vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
-        return 0;
-    }
-
-    while (to_grow > 0) {
-        // create new locator
-
-        new_loca_sid = SID_FORMAT(SID_DISK(loca_sid), (uint32_t) vdisk_get_unused_sector(vdisk));
-
-        if (IS_SID_NULL(new_loca_sid)) {
-            printf("no free sectors\n");
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return -1;
-        }
-
-        if (fs_cnt_init_loca_in_sector(vdisk, new_loca_sid) == -1) {
-            printf("failed to init locator\n");
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return -1;
-        }
-
-        memcpy(data + LAST_SID_OFFSET, &new_loca_sid, sizeof(uint32_t));
-        vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
-
-        loca_sid = new_loca_sid;
-
-        data = vdisk_load_sector(vdisk, loca_sid);
-
-        // fill loca
-        core_count = 0;
-        while (core_count < LINKS_IN_LOCA && to_grow > 0) {
-            core_sid = SID_FORMAT(SID_DISK(loca_sid), (uint32_t) vdisk_get_unused_sector(vdisk));
-            if (IS_SID_NULL(core_sid)) {
-                printf("no free sectors\n");
-                vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-                return -1;
-            }
-            if (fs_cnt_init_core_in_sector(vdisk, core_sid) == -1) {
-                printf("failed to init core\n");
-                vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-                return -1;
-            }
-            core_count += 1;
-            memcpy(data + core_count * sizeof(uint32_t), &core_sid, sizeof(uint32_t));
-            to_grow -= 1;
-        }
-    }
-
-    vdisk_unload_sector(vdisk, loca_sid, data, SAVE);
     return 0;
 }
 
-int fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size) {
-    vdisk_t *vdisk;
-    uint8_t *data;
+int fs_cnt_set_size(uint32_t head_sid, uint32_t size) {
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
-
-    if (vdisk == NULL) {
-        printf("d%ds%d not found\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+    if (vdisk_read(sector_data, SECTOR_SIZE, head_sid * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+        printf("not a cnt header d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return 1;
     }
 
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        printf("d%ds%d not used\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
-        return 1;
-    }
+    uint32_t old_count = (sector_data[1] / SECTOR_SIZE) + (sector_data[1] % SECTOR_SIZE ? 1 : 0);
+    uint32_t new_count = size / SECTOR_SIZE + (size != 0);
 
-    // check if sector is cnt header
-    data = vdisk_load_sector(vdisk, head_sid);
+    uint32_t loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-    if (data[0] != SF_HEAD) {
-        printf("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
-        free(data);
-        return 1;
-    }
-
-    uint32_t old_count = *((uint32_t *) (data + 1 + META_MAXLEN));
-    uint32_t new_count = size / BYTE_IN_CORE;
-    old_count = (old_count / BYTE_IN_CORE) + (old_count % BYTE_IN_CORE ? 1 : 0);
-    if (size) new_count++;
-
-    uint32_t loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
     if (old_count < new_count) {
         // grow cnt
-        if (fs_cnt_grow_size(filesys, loca_sid, new_count - old_count)) {
-            printf("failed to grow cnt\n");
-            vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
+        if (fs_cnt_grow_size(loca_sid, new_count - old_count)) {
             return 1;
         }
     } else if (old_count > new_count) {
-        printf("shrink cnt not implemented\n");
+        // shrink cnt
+        int ret = fs_cnt_shrink_size(loca_sid, old_count - new_count);
+    
+        if (ret == -2)  // TODO check if this can be improved
+            ret = 0;
+    
+        if (ret) {
+            printf("[cnt_set_size] Could not shrink cnt\n");
+            return 1;
+        }
     }
 
-    *((uint32_t *) (data + 1 + META_MAXLEN)) = size;
-    vdisk_unload_sector(vdisk, head_sid, data, SAVE);
+    sector_data[1] = size;
+
+    if (vdisk_write(sector_data, SECTOR_SIZE, head_sid * SECTOR_SIZE)) {
+        printf("failed to write d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+        return 1;
+    }
+
     return 0;
 }
 
-uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-
-    vdisk = fs_get_vdisk(filesys, SID_DISK(head_sid));
-
-    if (vdisk == NULL) {
-        printf("d%ds%d not found\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+uint32_t fs_cnt_get_size(uint32_t head_sid) {
+    if (vdisk_read(sector_data, SECTOR_SIZE, head_sid * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+        printf("not a cnt header d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return UINT32_MAX;
     }
 
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, head_sid)) {
-        printf("d%ds%d not used\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
-        return UINT32_MAX;
-    }
-
-    // check if sector is cnt header
-    data = vdisk_load_sector(vdisk, head_sid);
-
-    if (data[0] != SF_HEAD) {
-        printf("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
-        vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
-        return UINT32_MAX;
-    }
-
-    uint32_t size = *((uint32_t *) (data + 1 + META_MAXLEN));
-    vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
-    return size;
+    return sector_data[1];
 }

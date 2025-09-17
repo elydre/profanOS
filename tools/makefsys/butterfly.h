@@ -13,118 +13,83 @@
 #define BUTTERFLY_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define SECTOR_SIZE 512
 #define META_MAXLEN 64
 
-#define LAST_SID_OFFSET (SECTOR_SIZE - sizeof(uint32_t))
-#define LINKS_IN_LOCA ((int) (SECTOR_SIZE / sizeof(uint32_t) - 2))
-#define BYTE_IN_CORE (SECTOR_SIZE - 1)
+#undef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+#define LINKS_IN_LOCA ((int) ((SECTOR_SIZE / (sizeof(uint32_t) * 2)) - sizeof(uint32_t)))
 
 #define SID_FORMAT(disk, sector) ((uint32_t) (((disk) << 24) | (sector)))
 #define SID_DISK(sid) ((sid) >> 24)
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 
+#define SF_HEAD 0xAEFCEBDA // CG - 4836
+
+typedef uint32_t sid_t;
+
 #define SID_NULL 0
-#define SID_ROOT SID_FORMAT(2, 0)
+#define SID_ROOT SID_FORMAT(1, 1)
 
-#define FS_DISKS 256
+#define IS_SID_NULL(sid) ((sid) == SID_NULL)
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
+///////////////////// VDISK
 
-#ifndef max
-#define max(a,b) ((a) > (b) ? (a) : (b))
-#endif
+void vdisk_init(void);
+void vdisk_destroy(void);
+int  vdisk_extend(uint32_t newsize);
+int  vdisk_write(void *data, uint32_t size, uint32_t offset);
+int  vdisk_read(void *buffer, uint32_t size, uint32_t offset);
 
-#ifndef UINT32_MAX
-#define UINT32_MAX 0xffffffff
-#endif
+//////////////////// HOST I/O
 
-// sector functions
-#define SF_HEAD 1
-#define SF_LOCA 2
-#define SF_CORE 3
+int hio_raw_export(const char *filename);
+int hio_raw_import(const char *filename);
 
-#define SAVE 1
-#define NO_SAVE 0
+int hio_dir_import(const char *extern_path, const char *intern_path);
+int hio_dir_export(const char *extern_path, const char *intern_path);
 
-typedef struct {
-    uint8_t data[SECTOR_SIZE];  // sector data
-} sector_t;
+//////////////////// SECTOR
 
-typedef struct {
-    sector_t **sectors;         // array of sectors
-    uint32_t size;              // sector count
+int fs_sector_get_unused(int disk_id);
+int fs_sector_note_used(sid_t sid);
+int fs_sector_note_free(sid_t sid);
 
-    uint8_t  *used;             // array sectors (bool)
-    uint32_t *free;             // array of free sector ids
-    uint32_t  used_count;       // used sector count
-} vdisk_t;
-
-typedef struct {
-    vdisk_t **vdisk;            // list mounted virtual disks
-    uint32_t vdisk_count;       // virtual disk count
-} filesys_t;
-
-
-#define fs_cnt_read(fs, head_sid, buf, offset, size) fs_cnt_rw(fs, head_sid, buf, offset, size, 1)
-#define fs_cnt_write(fs, head_sid, buf, offset, size) fs_cnt_rw(fs, head_sid, buf, offset, size, 0)
-
-#define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
-#define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
-
-#define IS_SID_NULL(sid) (sid == SID_NULL)
-#define IS_SAME_SID(sid1, sid2) (sid1 == sid2)
-
-// vdisk.c
-int      vdisk_note_sector_used(vdisk_t *vdisk, uint32_t sid);
-int      vdisk_note_sector_unused(vdisk_t *vdisk, uint32_t sid);
-int      vdisk_get_unused_sector(vdisk_t *vdisk);
-int      vdisk_extend(vdisk_t *vdisk, uint32_t newsize);
-vdisk_t *vdisk_create(uint32_t initsize);
-void     vdisk_destroy(vdisk_t *vdisk);
-int      vdisk_is_sector_used(vdisk_t *vdisk, uint32_t sid);
-int      vdisk_write_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data);
-uint8_t *vdisk_load_sector(vdisk_t *vdisk, uint32_t sid);
-int      vdisk_unload_sector(vdisk_t *vdisk, uint32_t sid, uint8_t *data, int save);
-
-// fstools.c
-void     sep_path(char *fullpath, char **parent, char **cnt);
-void     fs_print_sector(filesys_t *fs, uint32_t sid, int verbose);
-vdisk_t *fs_get_vdisk(filesys_t *fs, uint32_t device_id);
-void     draw_tree(filesys_t *filesys, uint32_t sid, int depth);
-
-// hostio.c
-int      save_vdisk(vdisk_t *vdisk, char *filename);
-vdisk_t *load_vdisk(char *filename, uint32_t min_size);
-int      host_to_internal(filesys_t *filesys, char *extern_path, char *intern_path);
-int      internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path);
+//////////////////// CONTAINER
 
 // cnt_init.c
-int      fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type);
-uint32_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta);
-char    *fs_cnt_get_meta(filesys_t *filesys, uint32_t sid);
+sid_t fs_cnt_init(uint32_t device_id, const char *meta);
+int   fs_cnt_meta(sid_t sid, char *buffer, int buffer_size, int replace);
 
 // cnt_size.c
-int      fs_cnt_set_size(filesys_t *filesys, uint32_t head_sid, uint32_t size);
-uint32_t fs_cnt_get_size(filesys_t *filesys, uint32_t head_sid);
+int      fs_cnt_set_size(uint32_t head_sid, uint32_t size);
+uint32_t fs_cnt_get_size(uint32_t head_sid);
 
 // cnt_rw.c
-int      fs_cnt_rw(filesys_t *filesys, uint32_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read);
+int      fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read);
+#define fs_cnt_read(head_sid, buf, offset, size) fs_cnt_rw(head_sid, buf, offset, size, 1)
+#define fs_cnt_write(head_sid, buf, offset, size) fs_cnt_rw(head_sid, buf, offset, size, 0)
+
+/////////////////// USAGE
+
+// usg_tools.c
+void     fu_sep_path(const char *fullpath, char **parent, char **cnt);
+void     fu_draw_tree(sid_t sid, int depth);
 
 // usg_dir.c
-int      fu_is_dir(filesys_t *filesys, uint32_t dir_sid);
-int      fu_dir_get_content(filesys_t *filesys, uint32_t dir_sid, uint32_t **ids, char ***names);
-int      fu_add_element_to_dir(filesys_t *filesys, uint32_t dir_sid, uint32_t element_sid, char *name);
-uint32_t fu_dir_create(filesys_t *filesys, int device_id, char *path);
+int      fu_is_dir(uint32_t dir_sid);
+int      fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names);
+int      fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name);
+uint32_t fu_dir_create(int device_id, char *path);
 
 // usg_file.c
-int      fu_is_file(filesys_t *filesys, uint32_t dir_sid);
-uint32_t fu_file_create(filesys_t *filesys, int device_id, char *path);
+int      fu_is_file(uint32_t dir_sid);
+uint32_t fu_file_create(int device_id, char *path);
 
 // usg_ptsid.c
-uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path);
+uint32_t fu_path_to_sid(uint32_t from, const char *path);
 
 #endif

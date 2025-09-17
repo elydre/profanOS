@@ -17,24 +17,30 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-int save_vdisk(vdisk_t *vdisk, char *filename) {
-    // we need to create a file and write the vdisk to it
-    FILE *fp = fopen(filename, "wb");
+int hio_raw_import(const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+    
     if (fp == NULL) {
         printf("error: could not open file %s\n", filename);
-        return -1;
+        return 1;
     }
-    // get the last used sector
-    uint32_t last_sector = 0;
-    for (uint32_t i = 0; i < vdisk->size; i++) {
-        if (vdisk->sectors[i]->data[0]) {
-            last_sector = i;
-        }
-    }
-    printf("saving vdisk to %s, last_sector: %d\n", filename, last_sector);
 
-    for (uint32_t i = 0; i <= last_sector; i++) {
-        fwrite(vdisk->sectors[i]->data, 1, SECTOR_SIZE, fp);
+    // cleanup the vdisk
+    vdisk_destroy();
+    vdisk_init();
+
+    // read the file and write it to the vdisk
+    uint8_t buffer[SECTOR_SIZE];
+
+    size_t bytes_read;
+    uint32_t sector = 0;
+    while ((bytes_read = fread(buffer, 1, SECTOR_SIZE, fp)) > 0) {
+        if (vdisk_write(buffer, bytes_read, sector * SECTOR_SIZE)) {
+            printf("error: could not write to vdisk at sector %d\n", sector);
+            fclose(fp);
+            return 1;
+        }
+        sector++;
     }
 
     // close the file
@@ -42,49 +48,38 @@ int save_vdisk(vdisk_t *vdisk, char *filename) {
     return 0;
 }
 
-vdisk_t *load_vdisk(char *filename, uint32_t min_size) {
-    // we need to read the file and write it to the vdisk
-    FILE *fp = fopen(filename, "rb");
+int hio_raw_export(const char *filename) {
+    FILE *fp = fopen(filename, "wb");
     if (fp == NULL) {
         printf("error: could not open file %s\n", filename);
-        return NULL;
-    }
-    // get the file size
-    uint32_t size;
-    fseek(fp, 0, SEEK_END);
-    size = ftell(fp) / SECTOR_SIZE;
-    fseek(fp, 0, SEEK_SET);
-    printf("loading vdisk from %s, size: %d sectors\n", filename, size);
-
-    // create the vdisk
-    vdisk_t *vdisk = vdisk_create(max(size, min_size));
-    if (vdisk == NULL) {
-        printf("error: could not create vdisk\n");
-        return NULL;
+        return 1;
     }
 
-    // read the file
-    for (uint32_t i = 0; i < size; i++) {
-        fread(vdisk->sectors[i]->data, 1, SECTOR_SIZE, fp);
-        if (vdisk->sectors[i]->data[0]) {
-            vdisk_note_sector_used(vdisk, i);
+    // write the vdisk to the file
+    uint8_t buffer[SECTOR_SIZE];
+    while (vdisk_read(buffer, SECTOR_SIZE, 0) == 0) {
+        size_t bytes_written = fwrite(buffer, 1, SECTOR_SIZE, fp);
+        if (bytes_written < SECTOR_SIZE) {
+            printf("error: could not write to file %s\n", filename);
+            fclose(fp);
+            return 1;
         }
     }
 
     // close the file
     fclose(fp);
-    return vdisk;
+    return 0;
 }
 
-void path_join(char *dst, char *a, char *b) {
+static void path_join(char *dst, const char *a, char *b) {
     strcpy(dst, a);
-    if (dst[strlen(dst) - 1] != '/') {
+    if (dst[strlen(dst) - 1] != '/')
         strcat(dst, "/");
-    }
+
     strcat(dst, b);
 }
 
-int host_to_internal(filesys_t *filesys, char *extern_path, char *intern_path) {
+int hio_dir_import(const char *extern_path, const char *intern_path) {
     // list the files in the directory
     DIR *dir;
     struct dirent *ent;
@@ -102,29 +97,29 @@ int host_to_internal(filesys_t *filesys, char *extern_path, char *intern_path) {
             path_join(intern_path2, intern_path, ent->d_name);
             if (ent->d_type == DT_DIR) {
                 // create the directory
-                fu_dir_create(filesys, 0, intern_path2);
+                fu_dir_create(0, intern_path2);
 
-                // recursively call host_to_internal
-                host_to_internal(filesys, path, intern_path2);
+                // recursively call hio_dir_import
+                hio_dir_import(path, intern_path2);
             } else {
                 // create the file
-                fu_file_create(filesys, 0, intern_path2);
+                fu_file_create(0, intern_path2);
                 // get the file size
                 FILE *fp = fopen(path, "rb");
                 if (fp == NULL) {
                     printf("could not open file %s\n", path);
-                    return -1;
+                    return 1;
                 }
                 fseek(fp, 0, SEEK_END);
                 uint32_t size = ftell(fp);
                 fseek(fp, 0, SEEK_SET);
                 // set the file size
-                fs_cnt_set_size(filesys, fu_path_to_sid(filesys, SID_ROOT, intern_path2), size);
+                fs_cnt_set_size(fu_path_to_sid(SID_ROOT, intern_path2), size);
                 // read the file
                 uint8_t *buf = malloc(size);
                 fread(buf, 1, size, fp);
                 // write the file
-                fs_cnt_write(filesys, fu_path_to_sid(filesys, SID_ROOT, intern_path2), buf, 0, size);
+                fs_cnt_write(fu_path_to_sid(SID_ROOT, intern_path2), buf, 0, size);
                 // close the file
                 fclose(fp);
                 free(buf);
@@ -136,12 +131,12 @@ int host_to_internal(filesys_t *filesys, char *extern_path, char *intern_path) {
     } else {
         // could not open directory
         printf("error: could not open directory %s\n", extern_path);
-        return -1;
+        return 1;
     }
     return 0;
 }
 
-void create_if_not_exists(char *path) {
+static void create_if_not_exists(const char *path) {
     DIR *dir = opendir(path);
     if (dir) {
         // directory exists
@@ -155,15 +150,14 @@ void create_if_not_exists(char *path) {
     }
 }
 
-int internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path) {
+int hio_dir_export(const char *extern_path, const char *intern_path) {
     create_if_not_exists(extern_path);
 
     char **names;
     uint32_t *sids;
 
     int count = fu_dir_get_content(
-        filesys,
-        fu_path_to_sid(filesys, SID_ROOT, intern_path),
+        fu_path_to_sid(SID_ROOT, intern_path),
         &sids,
         &names
     );
@@ -178,20 +172,20 @@ int internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path) {
         path_join(path, extern_path, names[i]);
         char *intern_path2 = malloc(strlen(intern_path) + strlen(names[i]) + 2);
         path_join(intern_path2, intern_path, names[i]);
-        if (fu_is_file(filesys, sids[i])) {
+        if (fu_is_file(sids[i])) {
             // create the file
             FILE *fp = fopen(path, "wb");
             if (fp == NULL) {
                 printf("error: could not open file %s\n", path);
-                return -1;
+                return 1;
             }
             // get the file size
-            uint32_t size = fs_cnt_get_size(filesys, sids[i]);
+            uint32_t size = fs_cnt_get_size(sids[i]);
             // read the file
             uint8_t *buf = malloc(size);
-            if (fs_cnt_read(filesys, sids[i], buf, 0, size)) {
+            if (fs_cnt_read(sids[i], buf, 0, size)) {
                 printf("error: could not read file %s\n", path);
-                return -1;
+                return 1;
             }
             // write the file
             fwrite(buf, 1, size, fp);
@@ -201,8 +195,8 @@ int internal_to_host(filesys_t *filesys, char *extern_path, char *intern_path) {
         } else {
             // create the directory
             mkdir(path, 0777);
-            // recursively call internal_to_host
-            internal_to_host(filesys, path, intern_path2);
+            // recursively call hio_dir_export
+            hio_dir_export(path, intern_path2);
         }
         free(intern_path2);
         free(path);

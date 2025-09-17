@@ -15,111 +15,84 @@
 
 #include "../butterfly.h"
 
-int fs_cnt_init_sector(vdisk_t *vdisk, uint32_t sid, int type) {
-    uint8_t *data;
+uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
-    // check if sector unused
-    if (vdisk_is_sector_used(vdisk, sid)) {
-        printf("d%ds%d already used\n", SID_DISK(sid), SID_SECTOR(sid));
-        return 1;
-    }
+sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
+    sid_t main_sid;
+    sid_t loca_sid;
 
-    vdisk_note_sector_used(vdisk, sid);
-
-    data = calloc(SECTOR_SIZE, sizeof(uint8_t));
-
-    // add sector identifier
-    data[0] = type;
-
-    vdisk_write_sector(vdisk, sid, data);
-
-    free(data);
-
-    return 0;
-}
-
-#define fs_cnt_init_loca_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_LOCA)
-#define fs_cnt_init_core_in_sector(vdisk, sid) fs_cnt_init_sector(vdisk, sid, SF_CORE)
-
-uint32_t fs_cnt_init(filesys_t *filesys, uint32_t device_id, char *meta) {
-    vdisk_t *vdisk;
-    uint32_t main_sid;
-    uint32_t loca_sid;
-
-    uint8_t *data;
     int ret_sect;
 
-
-    vdisk = fs_get_vdisk(filesys, device_id);
-    if (vdisk == NULL) {
-        printf("d%d not found\n", device_id);
-        return SID_NULL;
-    }
-
-    // get unused sector for header
-    ret_sect = vdisk_get_unused_sector(vdisk);
+    // get new sector for header
+    ret_sect = fs_sector_get_unused(SID_DISK(device_id));
     if (ret_sect == -1) {
         printf("no more sectors in d%d\n", device_id);
         return SID_NULL;
     }
-    main_sid = SID_FORMAT(device_id, (uint32_t) ret_sect);
-    vdisk_note_sector_used(vdisk, main_sid);
 
-    // get unused sector for locator
-    ret_sect = vdisk_get_unused_sector(vdisk);
+    main_sid = SID_FORMAT(device_id, (uint32_t) ret_sect);
+    fs_sector_note_used(main_sid);
+
+    // get new sector for locator
+    ret_sect = fs_sector_get_unused(SID_DISK(device_id));
     if (ret_sect == -1) {
         printf("no more sectors in d%d\n", SID_DISK(main_sid));
-        vdisk_note_sector_unused(vdisk, main_sid);
+        fs_sector_note_used(main_sid);
         return SID_NULL;
     }
+
     loca_sid = SID_FORMAT(SID_DISK(main_sid), (uint32_t) ret_sect);
 
-    // init locator
-    if (fs_cnt_init_loca_in_sector(vdisk, loca_sid)) {
-        printf("failed to init core\n");
-        vdisk_note_sector_unused(vdisk, main_sid);
-        vdisk_note_sector_unused(vdisk, loca_sid);
-        return SID_NULL;
+    // init header
+    memset(sector_data, 0, SECTOR_SIZE);
+    sector_data[0] = SF_HEAD;
+    sector_data[1] = 0; // size
+
+    memcpy(sector_data + 2, meta, min(META_MAXLEN, strlen(meta) + 1));
+
+    sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = loca_sid;
+
+    if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(main_sid) * SECTOR_SIZE)) {
+        printf("failed to write d%ds%d\n", SID_DISK(main_sid), SID_SECTOR(main_sid));
+        goto init_err;
     }
 
-    data = calloc(SECTOR_SIZE, sizeof(uint8_t));
+    // init locator
+    memset(sector_data, 0, SECTOR_SIZE);
+    sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = SID_NULL;    
 
-    // add sector identifier
-    data[0] = SF_HEAD;
+    if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(loca_sid) * SECTOR_SIZE)) {
+        printf("failed to write d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+        goto init_err;
+    }
 
-    // add meta and core sid
-    memcpy(data + 1, meta, min(strlen(meta), META_MAXLEN - 1));
-
-    memcpy(data + LAST_SID_OFFSET, &loca_sid, sizeof(uint32_t));
-
-    vdisk_write_sector(vdisk, main_sid, data);
-
-    free(data);
-
+    // return main sid
     return main_sid;
+
+    init_err:
+    fs_sector_note_free(main_sid);
+    fs_sector_note_free(loca_sid);
+    return SID_NULL;
 }
 
-char *fs_cnt_get_meta(filesys_t *filesys, uint32_t sid) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-    char *meta;
 
-    vdisk = fs_get_vdisk(filesys, SID_DISK(sid));
-    if (vdisk == NULL) {
-        printf("d%d not found\n", SID_DISK(sid));
-        return NULL;
+int fs_cnt_meta(sid_t sid, char *meta, int buffer_size, int replace) {
+    if (vdisk_read(sector_data, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+        printf("not a cnt header d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
+        return 1;
     }
 
-    data = vdisk_load_sector(vdisk, sid);
-    if (data == NULL) {
-        printf("failed to read d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
-        return NULL;
+    if (!replace) {
+        memcpy(meta, sector_data + 2, min(buffer_size, META_MAXLEN));
+        return 0;
     }
 
-    meta = calloc(META_MAXLEN, sizeof(char));
-    memcpy(meta, data + 1, META_MAXLEN - 1);
+    memcpy(sector_data + 2, meta, min(META_MAXLEN, buffer_size > 0 ? buffer_size : strlen(meta) + 1));
 
-    vdisk_unload_sector(vdisk, sid, data, NO_SAVE);
+    if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE)) {
+        printf("failed to write d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
+        return 1;
+    }
 
-    return meta;
+    return 0;
 }

@@ -15,86 +15,70 @@
 
 #include "../butterfly.h"
 
-uint32_t fu_rec_path_to_sid(filesys_t *filesys, uint32_t parent, char *path) {
-    uint32_t ret;
-
-    ret = SID_NULL;
-
-    // read the directory
-    uint32_t size = fs_cnt_get_size(filesys, parent);
-    if (size == UINT32_MAX) {
-        printf("failed to get directory size\n");
-        return SID_NULL;
+static inline int path_to_sid_cmp(const char *path, const char *name, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        if (name[i] == '\0' || path[i] != name[i])
+            return 1;
     }
 
+    return name[len] != '\0';
+}
+
+static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
     // generate the path part to search for
-    char *name;
+    uint32_t path_len = 0;
 
-    name = calloc(1, strlen(path) + 1);
-    strcpy(name, path);
-    uint32_t i = 0;
-    while (name[i]) {
-        if (name[i] == '/') {
-            name[i] = '\0';
-            break;
-        }
-        i++;
-    }
-    while (path[i] == '/') i++;
+    while (*path == '/')
+        path++;
+
+    while (path[path_len] && path[path_len] != '/')
+        path_len++;
+
+    if (path_len == 0)
+        return parent;
 
     // get the directory content
-    char **names;
-    uint32_t *sids;
-    int count;
+    uint32_t sid, size;
+    uint8_t *buf;
+    int offset;
 
-    count = fu_dir_get_content(filesys, parent, &sids, &names);
+    size = fs_cnt_get_size(parent);
 
-    if (count == -1) {
-        printf("failed to get directory content during path search\n");
-        free(name);
+    if (size == UINT32_MAX || size < sizeof(uint32_t))
+        return SID_NULL;
+
+    buf = malloc(size);
+
+    if (fs_cnt_read(parent, buf, 0, size)) {
+        free(buf);
         return SID_NULL;
     }
 
     // search for the path part
-    for (int j = 0; j < count; j++) {
-        if (strcmp(path, names[j]) == 0) {
-            ret = sids[j];
-            break;
+    for (int j = 0; (offset = fu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
+        if (strcmp(path, (char *) buf + offset) == 0) {
+            free(buf);
+            return sid;
         }
-        if (strcmp(name, names[j]) == 0 && fu_is_dir(filesys, sids[j]) &&
-            fu_dir_get_content(filesys, sids[j], NULL, NULL) > 0
-        ) {
-            ret = fu_rec_path_to_sid(filesys, sids[j], path + i);
-            break;
+
+        if (path_to_sid_cmp(path, (char *) buf + offset, path_len) == 0 && fu_is_dir(sid)) {
+            free(buf);
+            return rec_path_to_sid(sid, path + path_len);
         }
     }
 
-    // free
-    for (int j = 0; j < count; j++) {
-        free(names[j]);
-    }
-    free(names);
-    free(sids);
-    free(name);
+    free(buf);
 
-    return ret;
+    return SID_NULL;
 }
 
-uint32_t fu_path_to_sid(filesys_t *filesys, uint32_t from, char *path) {
+uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     uint32_t ret;
 
-    if (strcmp("/", path) == 0) {
-        ret = SID_ROOT;
-    } else if (path[0] == '/') {
-        ret = fu_rec_path_to_sid(filesys, from, path + 1);
-    } else {
-        ret = fu_rec_path_to_sid(filesys, from, path);
-    }
+    if (strcmp("/", path) == 0)
+        return from;
 
-    if (IS_SID_NULL(ret)) {
-        printf("failed to find path %s\n", path);
-        return SID_NULL;
-    }
+    ret = rec_path_to_sid(from, path);
 
     return ret;
 }

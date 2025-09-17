@@ -623,7 +623,7 @@ int fu_afft_get_id(uint32_t file_sid) {
  *                                               *
 **************************************************/
 
-static int path_to_sid_cmp(const char *path, const char *name, uint32_t len) {
+static inline int path_to_sid_cmp(const char *path, const char *name, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {
         if (name[i] == '\0' || path[i] != name[i])
             return 1;
