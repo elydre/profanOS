@@ -15,7 +15,6 @@
 
 #include "../butterfly.h"
 
-uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
 

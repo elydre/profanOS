@@ -217,3 +217,39 @@ uint32_t fu_dir_create(int device_id, char *path) {
 
     return head_sid;
 }
+
+int fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {
+    // positive return: name offset
+    // zero return: end of directory
+    // negative return: error code (-errno)
+
+    if (sid != NULL)
+        *sid = SID_NULL;
+
+    if (bsize < sizeof(uint32_t))
+        return -1;
+
+    uint32_t count;
+    memcpy(&count, buf, sizeof(uint32_t));
+
+    if (count <= index)
+        return 0;
+
+    uint32_t name_offset;
+    uint32_t offset;
+
+    offset = sizeof(uint32_t) + index * (sizeof(uint32_t) * 2);
+    if (bsize < offset + sizeof(uint32_t) * 2)
+        return -1;
+
+    if (sid != NULL)
+        memcpy(sid, buf + offset, sizeof(uint32_t));
+
+    memcpy(&name_offset, buf + offset + sizeof(uint32_t), sizeof(uint32_t));
+    offset = sizeof(uint32_t) + count * (sizeof(uint32_t) * 2) + name_offset;
+
+    if (bsize < offset)
+        return -1;
+
+    return offset;
+}

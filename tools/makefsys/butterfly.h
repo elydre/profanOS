@@ -36,6 +36,8 @@ typedef uint32_t sid_t;
 
 #define IS_SID_NULL(sid) ((sid) == SID_NULL)
 
+extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
+
 ///////////////////// VDISK
 
 void vdisk_init(void);
@@ -84,6 +86,7 @@ int      fu_is_dir(uint32_t dir_sid);
 int      fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names);
 int      fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name);
 uint32_t fu_dir_create(int device_id, char *path);
+int      fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid);
 
 // usg_file.c
 int      fu_is_file(uint32_t dir_sid);

@@ -21,7 +21,6 @@
 
 int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
 
-    uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
     sid_t loca_sid;
 
     // check if sector is cnt header

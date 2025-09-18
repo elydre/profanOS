@@ -15,6 +15,7 @@
 
 #include "../butterfly.h"
 
+uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 int main(int argc, char **argv) {
     if (argc != 2) {
