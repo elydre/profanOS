@@ -197,7 +197,7 @@ sudo sh install.sh /dev/sdX profanOS.iso
 1. *Linux running in halfix x86 emulator*
 2. *Configuring and compiling yacc from source*
 3. *Discontinued desktop environment for profanOS*
-4. *the doom port running in profanOS*
+4. *The doom port running in profanOS*
 
 ### Author & Contact
 
