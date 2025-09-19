@@ -93,17 +93,20 @@ int hio_dir_import(const char *extern_path, const char *intern_path) {
             // create the file or directory
             char *path = malloc(strlen(extern_path) + strlen(ent->d_name) + 2);
             path_join(path, extern_path, ent->d_name);
-            char *intern_path2 = malloc(strlen(intern_path) + strlen(ent->d_name) + 2);
-            path_join(intern_path2, intern_path, ent->d_name);
             if (ent->d_type == DT_DIR) {
                 // create the directory
-                fu_dir_create(0, intern_path2);
+                fu_dir_create(0, intern_path, ent->d_name);
 
                 // recursively call hio_dir_import
+                char *intern_path2 = malloc(strlen(intern_path) + strlen(ent->d_name) + 2);
+                path_join(intern_path2, intern_path, ent->d_name);
+            
                 hio_dir_import(path, intern_path2);
+
+                free(intern_path2);
             } else {
                 // create the file
-                fu_file_create(0, intern_path2);
+                sid_t sid = fu_file_create(intern_path, ent->d_name);
                 // get the file size
                 FILE *fp = fopen(path, "rb");
                 if (fp == NULL) {
@@ -114,17 +117,16 @@ int hio_dir_import(const char *extern_path, const char *intern_path) {
                 uint32_t size = ftell(fp);
                 fseek(fp, 0, SEEK_SET);
                 // set the file size
-                fs_cnt_set_size(fu_path_to_sid(SID_ROOT, intern_path2), size);
+                fs_cnt_set_size(sid, size);
                 // read the file
                 uint8_t *buf = malloc(size);
                 fread(buf, 1, size, fp);
                 // write the file
-                fs_cnt_write(fu_path_to_sid(SID_ROOT, intern_path2), buf, 0, size);
+                fs_cnt_write(sid, buf, 0, size);
                 // close the file
                 fclose(fp);
                 free(buf);
             }
-            free(intern_path2);
             free(path);
         }
         closedir(dir);

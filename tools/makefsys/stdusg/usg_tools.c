@@ -51,7 +51,7 @@ void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
 }
 
 void fu_draw_tree(sid_t sid, int depth) {
-    uint32_t *sids;
+    sid_t *sids;
     char **names;
     int count;
 
@@ -86,4 +86,27 @@ void fu_draw_tree(sid_t sid, int depth) {
 
     free(names);
     free(sids);
+}
+
+void fu_dump_sector(sid_t sid) {
+    uint8_t buf[SECTOR_SIZE];
+    if (vdisk_read(buf, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE)) {
+        printf("failed to read sector d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
+        return;
+    }
+
+    printf("SECTOR d%ds%d:\n", SID_DISK(sid), SID_SECTOR(sid));
+
+    char line[16];
+
+    for (int i = 0; i < SECTOR_SIZE; i++) {
+        if (i % 16 == 0)
+            printf("%04x: ", i);
+        printf("%02x ", buf[i]);
+        line[i % 16] = (buf[i] >= 32 && buf[i] <= 126) ? buf[i] : '.';
+        if (i % 16 == 15) {
+            line[16] = 0;
+            printf("  %s\n", line);
+        }
+    }
 }

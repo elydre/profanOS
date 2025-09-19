@@ -32,7 +32,7 @@
 typedef uint32_t sid_t;
 
 #define SID_NULL 0
-#define SID_ROOT SID_FORMAT(1, 1)
+#define SID_ROOT SID_FORMAT(0, 1)
 
 #define IS_SID_NULL(sid) ((sid) == SID_NULL)
 
@@ -56,8 +56,7 @@ int hio_dir_export(const char *extern_path, const char *intern_path);
 
 //////////////////// SECTOR
 
-int fs_sector_get_unused(int disk_id);
-int fs_sector_note_used(sid_t sid);
+int fs_sector_get_unused(int disk, int count, sid_t *ret);
 int fs_sector_note_free(sid_t sid);
 
 //////////////////// CONTAINER
@@ -78,21 +77,22 @@ int      fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, in
 /////////////////// USAGE
 
 // usg_tools.c
-void     fu_sep_path(const char *fullpath, char **parent, char **cnt);
-void     fu_draw_tree(sid_t sid, int depth);
+void    fu_sep_path(const char *fullpath, char **parent, char **cnt);
+void    fu_draw_tree(sid_t sid, int depth);
+void    fu_dump_sector(sid_t sid);
 
 // usg_dir.c
-int      fu_is_dir(uint32_t dir_sid);
-int      fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names);
-int      fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name);
-uint32_t fu_dir_create(int device_id, char *path);
-int      fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid);
+int     fu_is_dir(sid_t dir_sid);
+int     fu_dir_get_content(sid_t dir_sid, sid_t **ids, char ***names);
+int     fu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, const char *name);
+sid_t   fu_dir_create(uint8_t device_id, const char *parent, const char *name);
+int     fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, sid_t *sid);
 
 // usg_file.c
-int      fu_is_file(uint32_t dir_sid);
-uint32_t fu_file_create(int device_id, char *path);
+int     fu_is_file(sid_t file_sid);
+sid_t   fu_file_create(const char *parent, const char *name);
 
 // usg_ptsid.c
-uint32_t fu_path_to_sid(uint32_t from, const char *path);
+sid_t   fu_path_to_sid(sid_t from, const char *path);
 
 #endif

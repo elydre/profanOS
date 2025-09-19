@@ -15,7 +15,7 @@
 
 #include "../butterfly.h"
 
-int fu_is_file(uint32_t dir_sid) {
+int fu_is_file(sid_t dir_sid) {
     char letter;
     
     if (fs_cnt_meta(dir_sid, &letter, 1, 0))
@@ -24,59 +24,28 @@ int fu_is_file(uint32_t dir_sid) {
     return letter == 'F';
 }
 
-uint32_t fu_file_create(int device_id, char *path) {
-    char *parent, *name;
-
-    uint32_t parent_sid;
-    uint32_t head_sid;
-
-    fu_sep_path(path, &parent, &name);
-    if (!parent[0]) {
-        printf("parent unreachable\n");
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
+sid_t fu_file_create(const char *parent, const char *name) {
+    sid_t parent_sid;
+    sid_t head_sid;
 
     parent_sid = fu_path_to_sid(SID_ROOT, parent);
-    if (IS_SID_NULL(parent_sid)) {
-        printf("failed to find parent directory\n");
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
+
     if (!fu_is_dir(parent_sid)) {
-        printf("parent is not a directory\n");
-        free(parent);
-        free(name);
+        printf("Error: parent is not a directory\n");
         return SID_NULL;
     }
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "F-%s", name);
+    strcpy(meta, "F-");
+    strncpy(meta + 2, name, META_MAXLEN - 3);
 
-    head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
+    head_sid = fs_cnt_init(SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_SID_NULL(head_sid)) {
-        printf("failed to create file\n");
-        free(parent);
-        free(name);
+    if (IS_SID_NULL(head_sid))
         return SID_NULL;
-    }
 
     // create a link in parent directory
-
-    if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
-        printf("failed to add directory to parent\n");
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
-
-    free(parent);
-    free(name);
-
-    return head_sid;
+    return fu_add_element_to_dir(parent_sid, head_sid, name) ? SID_NULL : head_sid;
 }

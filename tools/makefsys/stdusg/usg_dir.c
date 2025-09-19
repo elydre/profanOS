@@ -84,7 +84,7 @@ int fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     return count;
 }
 
-int fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
+int fu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(dir_sid);
 
@@ -145,25 +145,14 @@ int fu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
     return 0;
 }
 
-uint32_t fu_dir_create(int device_id, char *path) {
-    char *parent, *name;
+sid_t fu_dir_create(uint8_t device_id, const char *parent, const char *name) {
+    sid_t parent_sid;
+    sid_t head_sid;
 
-    uint32_t parent_sid;
-    uint32_t head_sid;
-
-    fu_sep_path(path, &parent, &name);
-    if (parent[0]) {
+    if (parent) {
         parent_sid = fu_path_to_sid(SID_ROOT, parent);
-        if (IS_SID_NULL(parent_sid)) {
-            printf("failed to find parent directory\n");
-            free(parent);
-            free(name);
-            return SID_NULL;
-        }
         if (!fu_is_dir(parent_sid)) {
             printf("parent is not a directory\n");
-            free(parent);
-            free(name);
             return SID_NULL;
         }
     } else {
@@ -172,50 +161,29 @@ uint32_t fu_dir_create(int device_id, char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    snprintf(meta, META_MAXLEN, "D-%s", name);
+    strcpy(meta, "D-");
+    strncpy(meta + 2, name, META_MAXLEN - 3);
 
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_SID_NULL(head_sid)) {
-        printf("failed to create directory\n");
-        free(parent);
-        free(name);
+    printf("created directory d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+
+    if (IS_SID_NULL(head_sid))
         return SID_NULL;
-    }
+    
 
     // create a link in parent directory
-    if (parent[0]) {
-        if (fu_add_element_to_dir(parent_sid, head_sid, name)) {
-            printf("failed to add directory to parent\n");
-            free(parent);
-            free(name);
-            return SID_NULL;
-        }
-    }
+    if (parent && fu_add_element_to_dir(parent_sid, head_sid, name))
+        return SID_NULL;
 
     fs_cnt_set_size(head_sid, sizeof(uint32_t));
+
     fs_cnt_write(head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    if (fu_add_element_to_dir(head_sid, parent_sid == SID_ROOT ? SID_FORMAT(1, 0) : parent_sid, "..")) {
-        printf("failed to add '..' to directory\n");
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
-
-    if (fu_add_element_to_dir(head_sid, head_sid, ".")) {
-        printf("failed to add '.' to directory\n");
-        free(parent);
-        free(name);
-        return SID_NULL;
-    }
-
-    free(parent);
-    free(name);
-
-    return head_sid;
+    return (fu_add_element_to_dir(head_sid, parent_sid, "..") ||
+            fu_add_element_to_dir(head_sid, head_sid, ".") ? SID_NULL : head_sid);
 }
 
 int fu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {

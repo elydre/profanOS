@@ -5,13 +5,11 @@
 
 #include "../butterfly.h"
 
-int fs_sector_get_unused(int disk_id) {
-    static int next_free_sector = 0;
-    return next_free_sector++;
-}
-
-int fs_sector_note_used(sid_t sid) {
-    return 0;
+int fs_sector_get_unused(int disk, int count, sid_t *ret) {
+    static int next_free_sector = 1;
+    *ret = SID_FORMAT(disk, next_free_sector);
+    next_free_sector += count;
+    return count;
 }
 
 int fs_sector_note_free(sid_t sid) {

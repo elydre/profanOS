@@ -19,29 +19,18 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
     sid_t main_sid;
     sid_t loca_sid;
 
-    int ret_sect;
-
     // get new sector for header
-    ret_sect = fs_sector_get_unused(SID_DISK(device_id));
-    if (ret_sect == -1) {
+    if (fs_sector_get_unused(device_id, 1, &main_sid) != 1) {
         printf("no more sectors in d%d\n", device_id);
         return SID_NULL;
     }
 
-    main_sid = SID_FORMAT(device_id, (uint32_t) ret_sect);
-
     // get new sector for locator
-    ret_sect = fs_sector_get_unused(SID_DISK(device_id));
-    if (ret_sect == -1) {
+    if (fs_sector_get_unused(device_id, 1, &loca_sid) != 1) {
         printf("no more sectors in d%d\n", SID_DISK(main_sid));
+        fs_sector_note_free(main_sid);
         return SID_NULL;
     }
-
-    loca_sid = SID_FORMAT(SID_DISK(main_sid), (uint32_t) ret_sect);
-
-    // mark sectors as used
-    fs_sector_note_used(main_sid);
-    fs_sector_note_used(loca_sid);
 
     // init header
     memset(sector_data, 0, SECTOR_SIZE);

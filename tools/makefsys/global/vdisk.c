@@ -18,7 +18,6 @@
 typedef struct {
     uint8_t *data;
     uint32_t size;
-    uint32_t used_count;
 } vdisk_t;
 
 vdisk_t *g_vdisk = NULL;
@@ -70,7 +69,6 @@ int vdisk_write(void *data, uint32_t size, uint32_t offset) {
     }
 
     memcpy(g_vdisk->data + offset, data, size);
-    g_vdisk->used_count += size;
 
     return 0;
 }
