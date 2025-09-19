@@ -1,0 +1,961 @@
+#!/bin/sh
+
+# Copyright (c) 2019 - 2021
+# Nio Wiklund alias sudodus <nio dot wiklund at gmail dot com>
+# Thomas Schmitt <scdbackup@gmx.net>
+# Provided under GPL version 2 or later.
+
+# All names of variables and functions begin by "xdt_" in order to facilitate
+# the re-use of this code by inclusion or forking and expansion.
+# Before using most of the functions it is necessary to run
+#   xdt_init ; xdt_reset_job 
+# The only function which may be run earlier is xdt_set_lang_c .
+# The function xtd_main gets run by the code at the end of this file
+# if $no_xorriso_dd_target_run is empty. It implements what xdt_print_usage
+# announces.
+
+xdt_print_version() {
+  echo "xorriso-dd-target , version 1.5.4 , 2021.01.30.150001"
+}
+
+
+## This obtrusive setting shall make the script safe against exotic locales.
+## Supposed to stabilize grep expression interpretation and error messages.
+## It is optional but highly advisable.
+xdt_set_lang_c() {
+  export LANG=C
+  export LC_ALL=C
+  return 0
+}
+
+## This function has to be called before any real work can be done.
+xdt_init() {
+  # Check whether we are on GNU/Linux
+  if uname -s | grep -v '^Linux' >/dev/null
+  then
+    echo "This program is entirely specialized on Linux kernel device names." >&2
+    echo "Found to be on: '$(uname -s)'" >&2
+    return 2
+  fi
+
+  # Accept sudo-executable commands only in well known directories.
+  # (Listed with increasing priority.)
+  xdt_lsblk_cmd=
+  xdt_dd_cmd=
+  xdt_umount_cmd=
+  if test "$(whoami)" = "root"
+  then
+    xdt_sudo_x_dir_list="/usr/bin /bin /usr/sbin /sbin"
+  else
+    xdt_sudo_x_dir_list="/usr/sbin /sbin /usr/bin /bin"
+  fi
+  for xdt_i in $xdt_sudo_x_dir_list
+  do
+    if test -x "$xdt_i"/lsblk
+    then
+      xdt_lsblk_cmd="$xdt_i"/lsblk
+    fi
+    if test -x "$xdt_i"/dd
+    then
+      xdt_dd_cmd="$xdt_i"/dd
+    fi
+    if test -x "$xdt_i"/umount
+    then
+      xdt_umount_cmd="$xdt_i"/umount
+    fi
+  done
+  if test -z "$xdt_lsblk_cmd"
+  then
+    echo "No executable program lsblk found in: $xdt_sudo_x_dir_list" >&2
+    return 5
+  fi
+  return 0
+}
+
+xdt_print_usage() {
+  echo "usage:  $0 [options] [device_name [device_name ...]]"
+  echo
+  echo "Looks on GNU/Linux for USB and Memory Card devices and evaluates"
+  echo "whether the found devices are plausible targets for image copying."
+  echo "If no device names and no -list_all are given, then a plain list of"
+  echo "advisable device names is printed to stdout. One per line."
+  echo "Device names must not begin by '-' and must be single words. They must"
+  echo "not begin by '/dev/'. E.g. 'sdc' is valid, '/dev/sdc' is not valid."
+  echo "If device names are given, then they get listed with advice shown."
+  echo "If one of the given device names gets not advised, the exit value is 1."
+  echo
+  echo "The option -plug_test can determine the desired target device by"
+  echo "inquiring the system with unplugged device and then with plugged one."
+  echo
+  echo "Only if option -DO_WRITE is given and -list_all is not, and if exactly"
+  echo "one advisable device is listed, it really gets overwritten by the"
+  echo "file content of the given -image_file. In this case the exit value"
+  echo "is zero if writing succeeded, non-zero else."
+  echo "Option -dummy prevents this kind of real action and rather shows the"
+  echo "unmount and write commands on stdout."
+  echo
+  echo "Options:"
+  echo " -plug_test         Find the target device by asking the user to press"
+  echo "                    Enter when the desired target is _not_ plugged in,"
+  echo "                    to then plug it in, and to press Enter again."
+  echo "                    This overrides device names and option -list_all."
+  echo "                    The found device is then shown with advice, vendor,"
+  echo "                    and model. Option -DO_WRITE is obeyed if given."
+  echo " -list_all          Print list of all found devices with advice, vendor"
+  echo "                    and model. One per line. Ignore any device names."
+  echo "                    Ignore -DO_WRITE."
+  echo " -list_long         With each line printed by -list_all or a submitted"
+  echo "                    device name, let lsblk print info which led to the"
+  echo "                    shown reasons."
+  echo " -with_vendor_model Print vendor and model with each submitted device"
+  echo "                    name."
+  echo " -max_size n[M|G|T] Set upper byte size limit for advisable devices."
+  echo "                    Plain numbers get rounded down to full millions."
+  echo "                    Suffix: M = million, G = billion, T = trillion."
+  echo "                    Be generous to avoid problems with GB < GiB."
+  echo " -min_size n[M|G|T] Set lower byte size limit for advisable devices."
+  echo "                    After processing like with -max_size, one million"
+  echo "                    gets added to the size limit."
+  echo " -look_for_iso      Demand presence of an ISO 9660 filesystem. If so,"
+  echo "                    any further filesystem type is acceptable on that"
+  echo "                    device. Else only ISO 9660 and VFAT are accepted."
+  echo " -with_sudo         Run '$xdt_lsblk_cmd -o FSTYPE' by sudo."
+  echo "                    If no filesystems are detected and the program"
+  echo "                    has no superuser power, the device is not advised."
+  echo "                    If -DO_WRITE is given, run umount and dd by sudo." 
+  echo " -trust_lsblk_udev  Suppress the reason no_fs_while_not_su- if lsblk"
+  echo "                    is linked with libudev.so. In this case it is"
+  echo "                    likely that lsblk can retrieve FSTYPE even if"
+  echo "                    run by a non-priviledged user."
+  echo " -image_file PATH   Set the path of the image file which shall be"
+  echo "                    written to a device. Its size will be set as"
+  echo "                    -min_size."
+  echo " -DO_WRITE          Write the given -image_file to the one advisable"
+  echo "                    device that is found. If more than one such device"
+  echo "                    is found, then they get listed but no writing"
+  echo "                    happens. In this case, re-run with one of the"
+  echo "                    advised device names to get a real write run."
+  echo " -no_pacifier       Do not use dd options to print progress messages"
+  echo "                    and to perform synchronized output."
+  echo " -dummy             Report the -DO_WRITE actions but do not perform"
+  echo "                    them."
+  echo " -dummy_force       If a single device name is given, do a run of"
+  echo "                    -dummy -DO_WRITE even against the advice of"
+  echo "                    this program. This probably shows you ways to"
+  echo "                    shoot your own foot."
+  echo " -version           Print version text and then end the program."
+  echo " -help              Print this text to stdout and then end the program."
+  echo "Examples:"
+  echo " $0 -with_sudo -list_all"
+  echo " $0 sdc"
+  echo " $0 -with_sudo -image_file debian-live-10.0.0-amd64-xfce.iso -DO_WRITE -dummy"
+  echo " $0 -with_sudo -image_file debian-live-10.0.0-amd64-xfce.iso -DO_WRITE -plug_test"
+  echo
+  return 0
+}
+
+# Roughly convert human readable sizes and plain numbers to 1 / million
+xdt_round_down_div_million() {
+  sed \
+    -e 's/^[0-9][0-9][0-9][0-9][0-9][0-9]$/0/' \
+    -e 's/^[0-9][0-9][0-9][0-9][0-9]$/0/' \
+    -e 's/^[0-9][0-9][0-9][0-9]$/0/' \
+    -e 's/^[0-9][0-9][0-9]$/0/' \
+    -e 's/^[0-9][0-9]$/0/' \
+    -e 's/^[0-9]$/0/' \
+    -e 's/\.[0-9]*//' \
+    -e 's/[0-9][0-9][0-9][0-9][0-9][0-9]$//' \
+    -e 's/[Mm]$//' \
+    -e 's/[Gg]$/000/' \
+    -e 's/[Tt]$/000000/' 
+  return 0
+}
+
+## Check for harmless name or number in program argument
+xdt_check_parameter() {
+  if test "X$2" = "Xdevice_name"
+  then
+    if echo "X$1" | grep '[^A-Za-z0-9_/-]' >/dev/null
+    then
+      echo "SORRY: Given device name contains unexpected character. Ok: [A-za-z0-9_/-]" >&2
+      return 12
+    elif echo "X$1" | grep '^X-' >/dev/null
+    then
+      echo "SORRY: Given device name begins by '-' character." >&2
+      return 15
+    fi
+  elif test "X$2" = "Ximage_file"
+  then
+    if echo "X$1" | grep '[$`[*?<>|&!{\]' >/dev/null
+    then
+      echo "SORRY: Given image file name contains unexpected character. Not ok: "'[$`[*?<>|&!{\]' >&2
+      return 15
+    elif echo "X$1" | grep '^X[-(]' >/dev/null
+    then
+      echo "SORRY: Given image file name begins by problematic character. Not ok: "'[-(]' >&2
+      return 15
+    fi
+  else
+    if echo "X$1" | grep -v '^X[0-9][0-9]*[0-9MGTmgt]$' >/dev/null
+    then
+      echo "SORRY: Number for $2 too short or bad character. Ok: [0-9][0-9MGTmgt]" >&2
+      return 14
+    fi
+  fi
+  return 0
+}
+
+### Assessing arguments and setting up the job
+
+# Settings
+xdt_reset_job() {
+  xdt_list_all=
+  xdt_do_list_long=
+  xdt_show_reasons=
+  xdt_look_for_iso=
+  xdt_devs=
+  xdt_devs_named=
+  xdt_max_size=
+  xdt_with_vendor_model=
+  xdt_with_sudo=
+  xdt_image_file=
+  xdt_do_write=
+  xdt_dummy_run=
+  xdt_dummy_force=
+  xdt_no_pacifier=
+  xdt_do_plug_test=
+  xdt_trust_lsblk_udev=
+
+  # Status
+  xdt_sudo_cmd=
+  xdt_have_su_power=
+  xdt_end_after_setup=
+  xdt_dev_end=
+  xdt_dd_bs="bs=1M"
+  xdt_dd_silent=
+
+  return 0
+}
+
+## Predict superuser power. Possibly enable sudo with lsblk -o FSTYPE and dd.
+## Also predict whether lsblk -o FSTYPE will bring results as non-root.
+xdt_predict_su_power() {
+  if test "$(whoami)" = "root"
+  then
+    xdt_have_su_power=y
+  elif test -n "$xdt_with_sudo"
+  then
+    echo "Testing sudo to possibly get password prompting done now:" >&2
+    if sudo "$xdt_lsblk_cmd" -h >/dev/null
+    then
+      echo "sudo $xdt_lsblk_cmd seems ok." >&2
+      echo >&2
+      xdt_sudo_cmd=sudo
+      xdt_have_su_power=y
+    else
+      echo "FAILURE: Cannot execute program $xdt_lsblk_cmd by sudo" >&2
+      return 11
+    fi
+  fi
+
+  # lsblk linked with libudev.so usually can obtain filesystem info
+  # without superuser powers.
+  if test -n "$xdt_trust_lsblk_udev"
+  then
+    if ldd "$xdt_lsblk_cmd" | grep '\blibudev\.so' >/dev/null
+    then
+      xdt_lsblk_fs_wo_su=y
+    fi
+  fi
+  return 0
+}
+
+## Sets xdt_variables according to its arguments
+xdt_arg_interpreter() {
+  xdt_next_is=
+  for xdt_i in "$@"
+  do
+    # The next_is option parameter readers get programmed by the -options
+    if test "$xdt_next_is" = "max_size"
+    then
+      xdt_check_parameter "$xdt_i" -max_size || return "$?"
+      xdt_max_size="$(echo "$xdt_i" | xdt_round_down_div_million)"
+      xdt_next_is=
+    elif test "$xdt_next_is" = "min_size"
+    then
+      xdt_check_parameter "$xdt_i" -min_size || return "$?"
+      xdt_min_size="$(echo "$xdt_i" | xdt_round_down_div_million)"
+      xdt_min_size="$(expr $xdt_min_size + 1)"
+      xdt_next_is=
+    elif test "$xdt_next_is" = "image_file"
+    then
+      xdt_check_parameter "$xdt_i" image_file || return "$?"
+      xdt_image_file="$xdt_i"
+      xdt_min_size="$(stat -c '%s' "$xdt_i" \
+                          | xdt_round_down_div_million)"
+      if test -z "$xdt_min_size"
+      then
+        echo "FAILURE: Cannot obtain size of -image_file '$xdt_i'" >&2
+        return 13
+      else
+        xdt_min_size="$(expr $xdt_min_size + 1)"
+      fi
+      xdt_next_is=
+    elif test "X$xdt_i" = "X-list_all"
+    then
+      xdt_list_all=y
+      xdt_with_vendor_model=y
+      xdt_show_reasons=y
+    elif test "X$xdt_i" = "X-list_long"
+    then
+      xdt_do_list_long=y
+    elif test "X$xdt_i" = "X-plug_test"
+    then
+      xdt_do_plug_test=y
+    elif test "X$xdt_i" = "X-max_size"
+    then
+      xdt_next_is="max_size"
+    elif test "X$xdt_i" = "X-min_size"
+    then
+      xdt_next_is="min_size"
+    elif test "X$xdt_i" = "X-with_vendor_model"
+    then
+      xdt_with_vendor_model=y
+    elif test "X$xdt_i" = "X-look_for_iso"
+    then
+      xdt_look_for_iso=y
+    elif test "X$xdt_i" = "X-trust_lsblk_udev"
+    then
+      xdt_trust_lsblk_udev=y
+    elif test "X$xdt_i" = "X-with_sudo"
+    then
+      xdt_with_sudo=y
+    elif test "X$xdt_i" = "X-image_file"
+    then
+      xdt_next_is="image_file"
+    elif test "X$xdt_i" = "X-dummy"
+    then
+      xdt_dummy_run=y
+    elif test "X$xdt_i" = "X-dummy_force"
+    then
+      xdt_dummy_run=y
+      xdt_do_write=y
+      xdt_dummy_force=y
+    elif test "X$xdt_i" = "X-DO_WRITE"
+    then
+      xdt_do_write=y
+    elif test "X$xdt_i" = "X-no_pacifier"
+    then
+      xdt_no_pacifier=y
+    elif test "X$xdt_i" = "X-version"
+    then
+      xdt_print_version
+      xdt_end_after_setup=y
+      return 0
+    elif test "X$xdt_i" = "X-help"
+    then
+      xdt_print_usage
+      xdt_end_after_setup=y
+      return 0
+    elif echo "X$xdt_i" | grep -v '^X-' >/dev/null
+    then
+      xdt_check_parameter "$xdt_i" device_name || return "$?"
+      xdt_devs_named=y
+      xdt_devs="$xdt_devs $xdt_i"
+      xdt_show_reasons=y
+    else
+      echo "$0 : Unknown option: '$xdt_i'" >&2
+      echo >&2
+      echo "For a help text run: $0 -help" >&2
+      return 16
+    fi
+  done
+  xdt_predict_su_power || return "$?"
+  # Prepare for using dd pacifier if desired and available
+  # Prepare for using silent dd with GPT backup erasure if available
+  xdt_dd_bs="bs=1M"
+  xdt_dd_silent=
+  if test -n "$xdt_dd_cmd"
+  then
+    if test -z "$xdt_no_pacifier" && \
+       "$xdt_dd_cmd" if=/dev/zero of=/dev/null count=1 \
+                     bs=1M status=progress oflag=dsync 2>/dev/null
+    then
+      xdt_dd_bs="bs=1M status=progress oflag=dsync"
+    fi
+    if "$xdt_dd_cmd" if=/dev/zero of=/dev/null count=1 bs=512 status=none \
+                     2>/dev/null
+    then
+      xdt_dd_silent="status=none"
+    fi
+  fi
+  return 0
+}
+
+## Obtain a blank separated list of top-level names which do not look like
+## CD, floppy, RAM dev, or loop device.
+xdt_collect_devices() {
+  "$xdt_lsblk_cmd" -d -n -o NAME \
+    | grep -v '^sr[0-9]' \
+    | grep -v '^fd[0-9]' \
+    | grep -v '^zram[0-9]' \
+    | grep -v '^loop[0-9]' \
+    | tr '\n\r' '  '
+  return 0
+}
+
+## Let lsblk print extra info for the given devices
+xdt_list_long() {
+  if test -z "$xdt_do_list_long"
+  then
+    return 0
+  fi
+  $xdt_sudo_cmd "$xdt_lsblk_cmd" -o NAME,SIZE,FSTYPE,TRAN,LABEL \
+                    /dev/"$1"
+  echo
+  return 0
+}
+
+## Trying to find the desired device by watching plug-in effects
+xdt_plug_in_watcher() {
+  # How long to wait for a first device to appear, how long to wait for more
+  xdt_wait_span_0=10
+  xdt_wait_span_1=5
+
+  xdt_found_devices=
+  echo >&2
+  echo "Caused by option -plug_test: Attempt to find the desired device" >&2
+  echo "by watching it appear after being plugged in." >&2
+  echo >&2
+  echo "Step 1:" >&2
+  echo "Please make sure that the desired target device is plugged _out_ now." >&2
+  echo "If it is currently plugged in, make sure to unmount all its fileystems" >&2
+  echo "and then unplug it." >&2
+  echo "Press the Enter key when ready." >&2
+  read xdt_dummy
+  xdt_old_device_list=' '$(xdt_collect_devices)' '
+
+# <<< Mock-up to save USB socket wear-off by erasing items from old_device_list
+# <<< Their presence in new_device_list will let them appear as fresh plugs
+# xdt_old_device_list=' '$(echo -n $xdt_old_device_list | sed -e 's/sdc//')' '
+
+  echo "Found and noted as _not_ desired: $xdt_old_device_list" >&2
+  echo >&2
+  echo "Step 2:" >&2
+  echo "Please plug in the desired target device and then press the Enter key." >&2
+  read xdt_dummy
+  echo -n "Waiting up to $xdt_wait_span_0 seconds for a new device to be listed ..." >&2
+  xdt_end_time="$(expr $(date +'%s') + "$xdt_wait_span_0")"
+  while test $(date +'%s') -le "$xdt_end_time"
+  do
+    xdt_new_device_list=' '$(xdt_collect_devices)' '
+    for xdt_i in $xdt_new_device_list
+    do
+      if echo "$xdt_old_device_list $xdt_found_devices " \
+         | grep -F -v ' '"$xdt_i"' ' >/dev/null
+      then
+        echo " found: $xdt_i" >&2
+        xdt_found_devices="$xdt_found_devices $xdt_i"
+        xdt_end_time=$(expr $(date +'%s') + "$xdt_wait_span_1")
+        echo -n "Now waiting $xdt_wait_span_1 seconds to let it settle ..." >&2
+      fi
+    done
+    sleep 1
+    echo -n '.' >&2
+  done
+  echo >&2
+  if test -z "$xdt_found_devices"
+  then
+    echo "SORRY: No new candidate device was found." >&2
+    return 8
+  fi
+  xdt_num=$(echo $xdt_found_devices | wc -w)
+  if test "$xdt_num" -gt 1
+  then
+    echo "SORRY: More than one new candidate device appeared: $xdt_found_devices" >&2
+    return 9
+  fi
+  echo "Found and noted as desired device: $xdt_found_devices" >&2
+  if test -n "$xdt_devs"
+  then
+    echo "(-plug_test is overriding device list given by arguments: $xdt_devs )" >&2
+  fi
+  if test -n "$xdt_list_all"
+  then
+    echo "(-plug_test is overriding -list_all)" >&2
+    xdt_list_all=
+  fi
+  xdt_devs_named=y
+  xdt_with_vendor_model=y
+  xdt_show_reasons=y
+  xdt_devs=$(echo -n $xdt_found_devices)
+  echo >&2
+
+  return 0
+}
+
+## Evaluation of available devices and suitability
+xdt_list_devices() {
+  if test -n "$xdt_list_all"
+  then
+    xdt_devs=
+  fi
+  if test -z "$xdt_devs"
+  then
+    # Obtain list of top-level names which do not look like CD, floppy, RAM dev
+    xdt_devs=$(xdt_collect_devices)
+  fi
+
+  xdt_not_advised=0
+  for xdt_name in $xdt_devs
+  do
+    # Collect reasons
+    xdt_yucky=
+    xdt_reasons=
+    xdt_good_trans=
+    xdt_good_fs=
+    xdt_bad_trans=
+    xdt_bad_fs=
+
+    # Unwanted device name patterns
+    if (echo "$xdt_name" | grep '^sd[a-z][1-9]' >/dev/null) \
+       || (echo "$xdt_name" | grep '^mmcblk.*p[0-9]' >/dev/null) \
+       || (echo "$xdt_name" | grep '^nvme.*p[0-9]' >/dev/null)
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}looks_like_disk_partition- "
+    elif echo "$xdt_name" | grep '^sr[0-9]' >/dev/null
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}looks_like_cd_drive- "
+    elif echo "$xdt_name" | grep '^fd[0-9]' >/dev/null
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}looks_like_floppy- "
+    elif echo "$xdt_name" | grep '^loop[0-9]' >/dev/null
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}looks_like_loopdev- "
+    elif echo "$xdt_name" | grep '^zram[0-9]' >/dev/null
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}looks_like_ramdev- "
+    fi
+
+    # >>> recognize the device from which Debian Live booted
+
+    # Connection type. Normally by lsblk TRAN, but in case of mmcblk artificial.
+    if echo "$xdt_name" | grep '^mmcblk[0-9]' >/dev/null
+    then
+      xdt_transports="mmcblk"
+    elif echo "$xdt_name" | grep -F "/" >/dev/null
+    then
+      xdt_transports=not_an_expected_name
+      xdt_reasons="${xdt_reasons}name_with_slash- "
+    else
+      xdt_transports=$("$xdt_lsblk_cmd" -n -o TRAN /dev/"$xdt_name")
+    fi
+    for xdt_trans in $xdt_transports
+    do
+      if test "$xdt_trans" = "usb" || test "$xdt_trans" = "mmcblk"
+      then
+        xdt_good_trans="${xdt_trans}+"
+      elif test -n "$xdt_trans"
+      then
+        xdt_bad_trans="$xdt_trans"
+        xdt_yucky=y
+        if test "$xdt_transports" = "not_an_expected_name"
+        then
+          xdt_dummy=dummy
+        else
+          if echo "$xdt_reasons" | grep -F -v "not_usb" >/dev/null
+          then
+            xdt_reasons="${xdt_reasons}not_usb- "
+          fi
+        fi
+      fi
+    done
+    if test -z "$xdt_good_trans" && test -z "$xdt_bad_trans"
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}no_bus_info- "
+    elif test -z "$xdt_bad_trans"
+    then
+      xdt_reasons="${xdt_reasons}$xdt_good_trans "
+    fi
+
+    # Wanted or unwanted filesystem types
+    xdt_fstypes=$($xdt_sudo_cmd "$xdt_lsblk_cmd" -n -o FSTYPE \
+                      /dev/"$xdt_name")
+    if test "$?" -gt 0
+    then
+      xdt_fstypes="lsblk_fstype_error"
+    fi
+    # Get overview of filesystems
+    xdt_has_iso=
+    xdt_has_vfat=
+    xdt_has_other=
+    for xdt_fstype in $xdt_fstypes
+    do
+      if test "$xdt_fstype" = "iso9660"
+      then
+        xdt_has_iso=y
+        if echo "$xdt_good_fs" | grep -F -v "has_$xdt_fstype" >/dev/null
+        then
+          xdt_good_fs="${xdt_good_fs}has_${xdt_fstype}+ "
+        fi
+      elif test "$xdt_fstype" = "vfat"
+      then
+        xdt_has_vfat=y
+        if echo "$xdt_good_fs" | grep -F -v "has_$xdt_fstype" >/dev/null
+        then
+          xdt_good_fs="${xdt_good_fs}has_${xdt_fstype}+ "
+        fi
+      elif test -n "$xdt_fstype"
+      then
+        xdt_has_other=y
+        if echo "$xdt_bad_fs" | grep -F -v "has_$xdt_fstype" >/dev/null
+        then
+          xdt_bad_fs="${xdt_bad_fs}has_${xdt_fstype}- "
+        fi
+      fi
+    done
+    # Decide whether the found filesystems look dispensible enough
+    xdt_reasons="${xdt_reasons}${xdt_good_fs}${xdt_bad_fs}"
+    if test "${xdt_bad_fs}${xdt_good_fs}" = "" \
+       && test -z "$xdt_have_su_power" && test -z "$xdt_lsblk_fs_wo_su"
+    then
+      xdt_yucky=y
+      xdt_reasons="${xdt_reasons}no_fs_while_not_su- "
+    elif test -n "$xdt_look_for_iso"
+    then
+      if test -n "$xdt_has_iso"
+      then
+        xdt_reasons="${xdt_reasons}look_for_iso++ "
+      else
+        xdt_yucky=y
+        xdt_reasons="${xdt_reasons}no_iso9660- "
+      fi
+    elif test -n "$xdt_has_other"
+    then
+      xdt_yucky=y
+    fi
+  
+    # Optional tests for size
+    if test -n "$xdt_max_size" || test -n "$xdt_min_size"
+    then
+      xdt_dev_bytes=$("$xdt_lsblk_cmd" -n -b -o SIZE /dev/"$xdt_name" | head -1)
+      xdt_size=$(echo "$xdt_dev_bytes" | xdt_round_down_div_million)
+      if test -z "$xdt_size"
+      then
+        xdt_yucky=y
+        xdt_reasons="${xdt_reasons}lsblk_no_size- "
+      fi
+    fi
+    if test -n "$xdt_max_size" && test -n "$xdt_size"
+    then
+      if test "$xdt_size" -gt "$xdt_max_size"
+      then
+        xdt_yucky=y
+        xdt_reasons="${xdt_reasons}size_too_large- "
+      fi
+    fi
+    if test -n "$xdt_min_size" && test -n "$xdt_size"
+    then
+      if test "$xdt_size" -lt "$xdt_min_size"
+      then
+        xdt_yucky=y
+        xdt_reasons="${xdt_reasons}size_too_small- "
+      fi
+    fi
+  
+    # Now decide overall and report
+    xdt_descr=
+    if test -n "$xdt_with_vendor_model"
+    then
+      xdt_descr=": "$("$xdt_lsblk_cmd" -n -o VENDOR,MODEL \
+                          /dev/"$xdt_name" | tr '\n\r' '  ' | tr -s ' ')
+    fi
+    if test -n "$xdt_yucky"
+    then
+      if test -n "$xdt_show_reasons"
+      then
+        echo "$xdt_name : NO  : $xdt_reasons$xdt_descr"
+        xdt_list_long "$xdt_name"
+      fi
+      xdt_not_advised=1
+    else
+      if test -n "$xdt_show_reasons"
+      then
+        echo "$xdt_name : YES : $xdt_reasons$xdt_descr"
+        xdt_list_long "$xdt_name"
+      else
+        echo "$xdt_name"
+      fi
+    fi
+  done
+  return 0;
+}
+
+## Puts list of mounted (sub-)devices of $1 into $mounted_devs
+xdt_list_mounted_of() {
+  xdt_partitions=$("$xdt_lsblk_cmd" -l -n -p -o NAME /dev/"$1" \
+                       | grep -v '^'/dev/"$1"'$' \
+                       | tr '\n\r' '  ')
+  xdt_mounted_devs=
+  for xdt_i in /dev/"$1" $xdt_partitions
+  do
+    # Show the found mount lines and add their device paths to list
+    xdt_mount_line=$(mount | grep '^'"$xdt_i"' ')
+    if test -n "$xdt_mount_line"
+    then
+      echo "  $xdt_mount_line"
+      xdt_mounted_devs="$xdt_mounted_devs $xdt_i"
+    fi
+  done
+  return 0
+}
+
+## Unmount xdt_mounted_devs (maybe filled by xdt_list_mounted_of)
+## $1 : base device name
+xdt_unmount() {
+  if test -z "$xdt_mounted_devs"
+  then
+    return 0
+  fi
+
+  for xdt_i in $xdt_mounted_devs
+  do
+    if test -n "$xdt_dummy_run"
+    then
+      echo "  $xdt_sudo_cmd $xdt_umount_cmd $xdt_i"
+    elif $xdt_sudo_cmd "$xdt_umount_cmd" "$xdt_i"
+    then
+      echo "Unmounted: $xdt_i"
+    else
+      echo "FAILURE: Non-zero exit value with:  $xdt_sudo_cmd $xdt_umount_cmd $xdt_i" >&2
+      return 7
+    fi
+  done
+
+  # Check again if any mount points still exist
+  if test -z "$xdt_dummy_run"
+  then
+    xdt_list_mounted_of "$1"
+    if test -n "$xdt_mounted_devs"
+    then
+      echo "FAILURE: $xdt_sudo_cmd $xdt_umount_cmd could not remove all mounts: $xdt_mounted_devs" >&2
+      return 7
+    fi
+  fi
+  return 0
+}
+
+## Does the work of unmounting and dd-ing
+## $1 : image file path
+## $2 : base device name
+xdt_write_image() {
+
+  if test -z "$xdt_umount_cmd"
+  then
+    echo "No executable program umount found in: $xdt_sudo_x_dir_list" >&2
+    return 6
+  fi
+  echo "Looking for mount points of $2:"
+  xdt_mounted_devs=
+  xdt_list_mounted_of "$2"
+
+  if test -n "$xdt_dummy_force"
+  then
+    echo "AGAINST THE ADVICE BY THIS PROGRAM, a daring user could do:"
+    xdt_dummy_run=y
+  elif test -n "$xdt_dummy_run"
+  then
+    echo "Would do if not -dummy:"
+  fi
+
+  xdt_unmount "$2" || return "$?"
+
+  if test -z "$xdt_dd_cmd"
+  then
+    echo "No executable program dd found in: $xdt_sudo_x_dir_list" >&2
+    return 6
+  fi
+
+  # Erase possible GPT backup table at end of device
+  # if expr can properly divide device size by 512
+  xdt_dev_bytes=$("$xdt_lsblk_cmd" -n -b -o SIZE /dev/"${2}" | head -1)
+  if test -n "$xdt_dev_bytes"
+  then
+    xdt_dev_end=$(expr "$xdt_dev_bytes" / 512 2>/dev/null)
+    if test "$(expr "$xdt_dev_end" '*' 512 2>/dev/null)" = "$xdt_dev_bytes"
+    then
+      xdt_dev_end=$(expr "$xdt_dev_end" - 1)
+    else
+      xdt_dev_end=
+    fi
+  fi
+  xdt_gpt_erase_line="$xdt_sudo_cmd $xdt_dd_cmd if=/dev/zero of=/dev/'${2}' bs=512 seek='$xdt_dev_end' count=1 $xdt_dd_silent"
+
+  xdt_copy_line="$xdt_sudo_cmd $xdt_dd_cmd if='${1}' of=/dev/'${2}' $xdt_dd_bs ; sync"
+  if test -n "$xdt_dummy_run"
+  then
+    if test -n "$xdt_dev_end"
+    then
+      echo "  $xdt_gpt_erase_line"
+    fi
+    echo "  $xdt_copy_line"
+  else
+    echo "Performing:"
+    if test -n "$xdt_dev_end"
+    then
+      echo "  $xdt_gpt_erase_line"
+      $xdt_sudo_cmd "$xdt_dd_cmd" if=/dev/zero of=/dev/"${2}" bs=512 seek="$xdt_dev_end" count=1 $xdt_dd_silent
+    fi
+    echo "  $xdt_copy_line"
+    $xdt_sudo_cmd "$xdt_dd_cmd" if="${1}" of=/dev/"${2}" $xdt_dd_bs
+    xdt_ret="$?"
+    sync
+    if test "$xdt_ret" -ne 0
+    then
+      echo "FAILURE: $xdt_sudo_cmd $xdt_dd_cmd was not successful" >&2
+      return 18
+    fi
+  fi
+
+  if test -n "$xdt_dummy_force"
+  then
+    echo "BE SMART. BE CAUTIOUS. BEWARE."
+  fi
+  return 0
+}
+
+## Inspects the result of listing, decides whether writing is advisable,
+## and starts the write run
+xdt_decide_writing()
+{
+  xdt_with_vendor_model=
+  xdt_show_reasons=
+  xdt_candidates=$(xdt_list_devices | tr '\n\r' '  ')
+  xdt_num_cand=$(echo $xdt_candidates | wc -w)
+  xdt_num_devs=$(echo $xdt_devs| wc -w)
+  if test -n "$xdt_dummy_force" && test "$xdt_num_devs" -ne 1
+  then
+    echo "SORRY: Refusing -dummy_force with not exactly one device given." >&2
+    return 10
+  fi
+  if test -n "$xdt_dummy_force" && test -n "$xdt_dummy_run" \
+     && test "$xdt_num_cand" -ne 1 
+  then
+    # -dummy_force in a situation where the program would normally refuse
+    echo
+    echo "Overriding any advice because of -dummy_force"
+    xdt_candidates="$xdt_devs"
+    xdt_num_cand=1
+  elif test -n "$xdt_dummy_force"
+  then
+    # Downgrade -dummy_force to -dummy in order to avoid the ugly warning
+    xdt_dummy_force=
+    xdt_dummy_run=y
+  fi
+  if test "$xdt_num_cand" -eq 1
+  then
+    if test -n "$xdt_image_file"
+    then
+      if test -n "$xdt_do_plug_test"
+      then
+        echo >&2
+        echo "Step 3:" >&2
+        if test -n "$xdt_dummy_run"
+        then
+          echo "This would be the last chance to abort. Enter the word 'yes' to see -dummy report." >&2
+        else
+          echo "Last chance to abort. Enter the word 'yes' to start REAL WRITING." >&2
+        fi
+        read xdt_dummy
+        if test "X$xdt_dummy" = "Xyes" || test "X$xdt_dummy" = "X'yes'" \
+           || test "X$xdt_dummy" = 'X"yes"'
+        then
+          xdt_dummy=dummy
+        else
+          echo "WRITE RUN PREVENTED by user input '$xdt_dummy'." >&2
+          return 17  
+        fi
+      fi
+      xdt_write_image "$xdt_image_file" $xdt_candidates || return "$?"
+    else
+      xdt_candidates=$(echo $xdt_candidates)
+      if test -n "$xdt_dummy_run"
+      then
+        echo "Would simulate writing to /dev/$xdt_candidates if an -image_file were given."
+      else
+        echo "Would write to /dev/$xdt_candidates if an -image_file were given."
+      fi
+      return 0
+    fi
+  elif test "$xdt_num_cand" -gt 1
+  then
+    echo "WILL NOT WRITE ! More than one candidate found for target device:" >&2
+    xdt_show_reasons=y
+    xdt_with_vendor_model=y
+    xdt_devs="$xdt_candidates"
+    xdt_list_devices >&2
+    echo "HINT: Unplug the unwanted devices from the machine," >&2
+    echo "      or work with option -plug_test," >&2
+    echo "      or add the desired name out of {$(echo $xdt_candidates | sed -e 's/ /,/g')} as additional argument." >&2
+    return 3
+  else
+    if test -n "$xdt_devs_named"
+    then
+      echo "NO CANDIDATE FOR TARGET DEVICE AMONG THE GIVEN NAMES !" >&2
+    else
+      echo "NO CANDIDATE FOR TARGET DEVICE FOUND !" >&2
+    fi
+    echo "Overall available devices:" >&2
+    xdt_list_all=y
+    xdt_list_long=
+    xdt_show_reasons=y
+    xdt_with_vendor_model=y
+    xdt_list_devices >&2
+    return 4
+  fi
+  return 0
+}
+
+## The main function which runs the others in standalone mode
+xdt_main()
+{
+  xdt_set_lang_c
+  xdt_init || return "$?"
+  
+  xdt_reset_job
+  xdt_arg_interpreter "$@" || return "$?"
+  if test -n "$xdt_end_after_setup"
+  then
+    return 0
+  fi
+  
+  if test -n "$xdt_do_plug_test"
+  then
+    xdt_plug_in_watcher || return "$?"
+  fi
+  
+  xdt_list_devices || return "$?"
+
+  if test -z "$xdt_list_all" && test -n "$xdt_do_write"
+  then
+    xdt_decide_writing || return "$?"
+  fi
+  
+  if test -n "$xdt_devs_named"
+  then
+    return $xdt_not_advised
+  fi
+  return 0
+}
+
+if test -z "$no_xorriso_dd_target_run"
+then
+  xdt_main "$@" || exit "$?"
+fi
+
