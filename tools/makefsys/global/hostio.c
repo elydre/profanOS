@@ -33,14 +33,12 @@ int hio_raw_import(const char *filename) {
     uint8_t buffer[SECTOR_SIZE];
 
     size_t bytes_read;
-    uint32_t sector = 0;
-    while ((bytes_read = fread(buffer, 1, SECTOR_SIZE, fp)) > 0) {
+    for (uint32_t sector = 0; (bytes_read = fread(buffer, 1, SECTOR_SIZE, fp)) > 0; sector++) {
         if (vdisk_write(buffer, bytes_read, sector * SECTOR_SIZE)) {
             printf("error: could not write to vdisk at sector %d\n", sector);
             fclose(fp);
             return 1;
         }
-        sector++;
     }
 
     // close the file
@@ -57,7 +55,7 @@ int hio_raw_export(const char *filename) {
 
     // write the vdisk to the file
     uint8_t buffer[SECTOR_SIZE];
-    while (vdisk_read(buffer, SECTOR_SIZE, 0) == 0) {
+    for (uint32_t sector = 0; vdisk_read(buffer, SECTOR_SIZE, sector * SECTOR_SIZE) == 0; sector++) {
         size_t bytes_written = fwrite(buffer, 1, SECTOR_SIZE, fp);
         if (bytes_written < SECTOR_SIZE) {
             printf("error: could not write to file %s\n", filename);

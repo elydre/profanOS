@@ -42,6 +42,8 @@ void vdisk_destroy(void) {
     g_vdisk = NULL;
 }
 
+#define DISK_EXTEND_SIZE SECTOR_SIZE * 1024
+
 int vdisk_extend(uint32_t newsize) {
     if (!g_vdisk)
         return -1;
@@ -49,9 +51,13 @@ int vdisk_extend(uint32_t newsize) {
     if (newsize <= g_vdisk->size)
         return 0;
 
+    newsize += DISK_EXTEND_SIZE - (newsize % DISK_EXTEND_SIZE);
+
     uint8_t *newdata = realloc(g_vdisk->data, newsize);
     if (!newdata)
         return -1;
+
+    memset(newdata + g_vdisk->size, 0, newsize - g_vdisk->size);
 
     g_vdisk->data = newdata;
     g_vdisk->size = newsize;

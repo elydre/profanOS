@@ -28,13 +28,13 @@ int main(int argc, char **argv) {
     sid_t s = fu_dir_create(0, NULL, "/");
     printf("root sid: d%ds%d\n", SID_DISK(s), SID_SECTOR(s));
 
-    /* hio_dir_import(argv[1], "/");
+    hio_dir_import(argv[1], "/");
     // internal_to_host(filesys, "output", "/");
 
     fu_draw_tree(SID_ROOT, 0);
 
     hio_raw_export("initrd.bin");
-*/
+
     vdisk_destroy();
 
     return 0;

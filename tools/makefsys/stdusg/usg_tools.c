@@ -68,14 +68,13 @@ void fu_draw_tree(sid_t sid, int depth) {
     for (int i = 0; i < count; i++) {
         if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0)
             continue;
+
+        printf("%08x  ", sids[i]);
         
         for (int j = 0; j < depth; j++) 
             printf("  ");
         
-        printf("%s, %x: %dB\n", names[i],
-                sids[i],
-                fs_cnt_get_size(sids[i])
-        );
+        printf("%s : %dB\n", names[i], fs_cnt_get_size(sids[i]));
         
         if (fu_is_dir(sids[i]))
             fu_draw_tree(sids[i], depth + 1);
