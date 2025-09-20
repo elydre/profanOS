@@ -428,7 +428,7 @@ def build_disk_elfs():
     mod_build_list = [file for file in mod_build_list if not file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.pkm')}", file)]
     stt_build_list = [file for file in stt_build_list if not file1_newer(
-            f"{OUT_DIR}/{file.replace('.c', '.a')}", file)]
+            f"{OUT_DIR}/{file.replace(ZLIBS_STT, '').replace('.c', '.a')}", file)]
 
     lib_build_list = [file for file in lib_build_list if not (file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
@@ -438,12 +438,12 @@ def build_disk_elfs():
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
             f"{OUT_DIR}/{'/'.join(file.split('/')[0:3])}.elf", file))]
 
-    cprint(COLOR_INFO, f"| lib C src : {len(lib_build_list)}/{total_lib}")
-    cprint(COLOR_INFO, f"| kernel mod: {len(mod_build_list)}/{total_mod}")
-    cprint(COLOR_INFO, f"| static lib: {len(stt_build_list)}/{total_stt}")
-    cprint(COLOR_INFO, f"| system bin: {len(bin_build_list)}/{total_bin}")
-    cprint(COLOR_INFO, f"| single elf: {len(elf_build_list)}/{total_elf}")
-    cprint(COLOR_INFO, f"| multi file : {len(dir_build_list)}/{total_dir}")
+    cprint(COLOR_INFO, f"| kernel mods: {len(mod_build_list)} / {total_mod}")
+    cprint(COLOR_INFO, f"| shared libs: {len(lib_build_list)} / {total_lib}")
+    cprint(COLOR_INFO, f"| static libs: {len(stt_build_list)} / {total_stt}")
+    cprint(COLOR_INFO, f"| system bins: {len(bin_build_list)} / {total_bin}")
+    cprint(COLOR_INFO, f"| single elfs: {len(elf_build_list)} / {total_elf}")
+    cprint(COLOR_INFO, f"| multi files: {len(dir_build_list)} / {total_dir}")
 
     # create directories
     for file in elf_build_list + bin_build_list + lib_build_list + mod_build_list + dir_build_list:
