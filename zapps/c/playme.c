@@ -322,7 +322,7 @@ int playme_file(const char *path) {
         fprintf(stderr, "playme: %s: Only stereo files are supported\n", path);
     else if (header->bits_per_sample != 16)
         fprintf(stderr, "playme: %s: Only 16 bits files are supported for now\n", path);
-    else if (hda_is_supported_sample_rate(header->sample_rate))
+    else if (hda_is_supported_sample_rate(header->sample_rate) == 0)
         fprintf(stderr, "playme: %s: Sample rate %d not supported by HDA\n", path, header->sample_rate);
     else if (start_play(file, header))
         fprintf(stderr, "playme: %s: Error while playing file\n", path);
