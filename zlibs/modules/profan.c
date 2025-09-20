@@ -18,7 +18,7 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan.h> // for runtime_args_t
 #include <fcntl.h>  // for flags
 

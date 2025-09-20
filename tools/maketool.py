@@ -47,9 +47,9 @@ ZHEADERS = ["include/zlibs", "include/addons"]
 
 ZAPPS_DIR = "zapps"
 ZLIBS_DIR = "zlibs"
-ZAPPS_BIN = "x"      # zapps/x
-ZLIBS_MOD = "mod"    # zlibs/mod
-ZLIBS_STT = "static" # zlibs/static
+ZAPPS_BIN = "x"         # zapps/x
+ZLIBS_MOD = "modules"   # zlibs/modules
+ZLIBS_STT = "static"    # zlibs/static
 
 LINK_FILENAME = "_link.txt" # multi file link
 INCLUDE_DIR   = "include"   # multi file include
@@ -71,10 +71,10 @@ KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/ker
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
 QEMU_SPL   = "qemu-system-i386"
-QEMU_KVM   = "qemu-system-i386 -enable-kvm"
+QEMU_KVM   = "qemu-system-i386 -enable-kvm -m 256M"
 
 QEMU_FLAGS = "-serial stdio"
-QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
+QEMU_AUDIO = "-m 256M -device intel-hda -device hda-duplex"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
@@ -428,7 +428,7 @@ def build_disk_elfs():
     mod_build_list = [file for file in mod_build_list if not file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.pkm')}", file)]
     stt_build_list = [file for file in stt_build_list if not file1_newer(
-            f"{OUT_DIR}/{file.replace('.c', '.a')}", file)]
+            f"{OUT_DIR}/{file.replace(ZLIBS_STT, '').replace('.c', '.a')}", file)]
 
     lib_build_list = [file for file in lib_build_list if not (file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
@@ -438,12 +438,12 @@ def build_disk_elfs():
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
             f"{OUT_DIR}/{'/'.join(file.split('/')[0:3])}.elf", file))]
 
-    cprint(COLOR_INFO, f"| lib C src : {len(lib_build_list)}/{total_lib}")
-    cprint(COLOR_INFO, f"| kernel mod: {len(mod_build_list)}/{total_mod}")
-    cprint(COLOR_INFO, f"| static lib: {len(stt_build_list)}/{total_stt}")
-    cprint(COLOR_INFO, f"| system bin: {len(bin_build_list)}/{total_bin}")
-    cprint(COLOR_INFO, f"| single elf: {len(elf_build_list)}/{total_elf}")
-    cprint(COLOR_INFO, f"| multi file : {len(dir_build_list)}/{total_dir}")
+    cprint(COLOR_INFO, f"| kernel mods: {len(mod_build_list)} / {total_mod}")
+    cprint(COLOR_INFO, f"| shared libs: {len(lib_build_list)} / {total_lib}")
+    cprint(COLOR_INFO, f"| static libs: {len(stt_build_list)} / {total_stt}")
+    cprint(COLOR_INFO, f"| system bins: {len(bin_build_list)} / {total_bin}")
+    cprint(COLOR_INFO, f"| single elfs: {len(elf_build_list)} / {total_elf}")
+    cprint(COLOR_INFO, f"| multi files: {len(dir_build_list)} / {total_dir}")
 
     # create directories
     for file in elf_build_list + bin_build_list + lib_build_list + mod_build_list + dir_build_list:
@@ -513,7 +513,7 @@ def build_disk_elfs():
 
 def make_iso(force = False, more_option = False):
     elf_image()
-    gen_disk()
+    gen_disk(False)
 
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "kernel.elf") and (
             file1_newer("profanOS.iso", "initrd.bin") and not force):
@@ -606,9 +606,10 @@ def add_src_to_disk():
     print_and_exec(f"cp {TOOLS_DIR}/*.c {TOOLS_DIR}/*.ld {OUT_DIR}/disk/user/src/build")
 
 
-def gen_disk(force=False, with_src=False):
+def gen_disk(force=True, with_src=False):
 
-    if file_exists("initrd.bin") and not force: return
+    if file_exists("initrd.bin") and not force:
+        return
 
     build_disk_elfs()
 
@@ -676,30 +677,30 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
 
 
-def qemu_run(iso_run = True, kvm = False, audio = False):
-    if iso_run: make_iso()
+def qemu_run(kvm = False, audio = False):
+    make_iso()
 
-    gen_disk(False)
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
 
     qemu_args = QEMU_FLAGS
-    if audio: qemu_args += f" {QEMU_AUDIO}"
+
+    if audio:
+        qemu_args += f" {QEMU_AUDIO}"
 
     cprint(COLOR_INFO, "starting qemu...")
 
-    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -boot order=d {qemu_args}")
-    else: print_and_exec(f"{qemu_cmd} -kernel kernel.elf -boot order=a {qemu_args}")
+    print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -boot order=d {qemu_args}")
 
 def make_help():
     help_lines = (
         ("make [help]", "show this help message"),
         None,
         ("make elf",        "build the kernel in elf format"),
-        ("make iso",        "build the iso image of profanOS"),
-        ("make miso",       "build the iso with more grub options"),
-        None,
         ("make disk",       "build classic disk image"),
         ("make bdisk",    "build disk image with source code"),
+        None,
+        ("make iso",        "build the iso image of profanOS"),
+        ("make miso",       "build the iso with more grub options"),
         None,
         ("make addons",     "start graphical addons selection"),
         ("make gaddons",    "install automatically recommended addons"),
@@ -708,7 +709,6 @@ def make_help():
         ("make fclean",     "reset the repository"),
         None,
         ("make run",        "run the profanOS.iso in qemu"),
-        ("make erun",       "run the kernel.elf in qemu"),
         ("make krun",       "run the profanOS.iso with kvm"),
         ("make srun",       "run the profanOS.iso with sound"),
     )
@@ -721,7 +721,6 @@ def make_help():
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")
-    cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
     cprint(COLOR_INFO, " MAKE ADDONS BDISK ISO to build the iso with all options")
     cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
@@ -733,10 +732,9 @@ assos = {
     "bdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
     "miso": lambda: make_iso(True, True),
-    "run": lambda: qemu_run(True),
-    "erun": lambda: qemu_run(False),
-    "krun": lambda: qemu_run(True, True),
-    "srun": lambda: qemu_run(True, False, True),
+    "run": lambda: qemu_run(),
+    "krun": lambda: qemu_run(True),
+    "srun": lambda: qemu_run(False, True),
     "kver": get_kernel_version,
 }
 

@@ -16,7 +16,7 @@
 #include <minilib.h>
 #include <system.h>
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan.h>
 
 
@@ -86,7 +86,7 @@ int dev_kterm_r(void *buffer, uint32_t offset, uint32_t size) {
 int dev_kterm_w(void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
 
-    kcnprint((char *) buffer, size, 0x0F);
+    kcnprint((char *) buffer, size, 0);
 
     return size;
 }
@@ -194,7 +194,7 @@ static int setup_afft(const char *name, void *read, void *write, void *cmd) {
 }
 
 int __init(void) {
-    if (
+    return (
         setup_afft("null", dev_null_r, dev_null_w, NULL)    ||
         setup_afft("zero", dev_zero_r, dev_null_w, NULL)    ||
         setup_afft("random", dev_rand_r, NULL, NULL)        ||
@@ -204,10 +204,5 @@ int __init(void) {
         setup_afft("stdout", NULL, dev_stdout_w, NULL)      ||
         setup_afft("stderr", NULL, dev_stderr_w, NULL)      ||
         setup_afft("userial", dev_userial_r, dev_userial_w, NULL)
-    ) {
-        kprint("[devio] Failed to initialize devices\n");
-        return 1;
-    }
-
-    return 0;
+    );
 }

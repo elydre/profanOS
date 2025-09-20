@@ -37,7 +37,7 @@ _BEGIN_C_FILE
 #define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE, NULL)
 #define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME, NULL)
 
-#define syscall_kprint(message) syscall_kcnprint(message, -1, 0x0F)
+#define syscall_kprint(message) syscall_kcnprint(message, -1, 0)
 
 #define syscall_vesa_width()   syscall_vesa_info(0)
 #define syscall_vesa_height()  syscall_vesa_info(1)

@@ -12,7 +12,7 @@
 // @LINK: libmmq
 
 #include <profan/syscall.h>
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan/libmmq.h>
 
 #include <dlfcn.h>

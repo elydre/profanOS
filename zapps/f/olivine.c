@@ -65,7 +65,7 @@
 
 #if BUILD_PROFAN
   #include <profan/syscall.h>
-  #include <profan/filesys.h>
+  #include <modules/filesys.h>
   #include <profan.h>
 
   #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
