@@ -122,7 +122,7 @@ static uint8_t mouse_read(void) {
 }
 
 int __init(void) {
-    return 0; // TODO: rewrite this driver
+    return 2; // TODO: rewrite this driver
 
     was_installed = 1;
 

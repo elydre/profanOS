@@ -9,7 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
 #include <cpu/ports.h>
@@ -17,8 +16,9 @@
 #include <minilib.h>
 
 #include <modules/hdaudio.h>
-
-#define logf kprintf
+#include <modules/filesys.h>
+#include <stdarg.h>
+#include <fcntl.h> // O_ flags
 
 #define wait(ms) process_sleep(process_get_pid(), ms)
 
@@ -173,9 +173,9 @@ struct hda_info_t {
 
 static uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t command);
 
-static void hda_initalize_sound_card(void);
-static void hda_initalize_codec(uint32_t codec_number);
-static void hda_initalize_audio_function_group(uint32_t afg_node_number);
+static int hda_initalize_sound_card(void);
+static int hda_initalize_codec(uint32_t codec_number);
+static int hda_initalize_audio_function_group(uint32_t afg_node_number);
 static void hda_initalize_output_pin(uint32_t pin_node_number);
 static void hda_initalize_audio_output(uint32_t audio_output_node_number);
 static void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number);
@@ -197,11 +197,29 @@ uint32_t hda_get_stream_position(void);
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 struct hda_info_t g_hda;
-
 uint32_t ticks;
+int g_log_fd;
+
+static void logf(const char *fmt, ...) {
+    if (g_log_fd < 0) {
+        return;
+    }
+
+    char buffer[512];
+    va_list args;
+    va_start(args, fmt);
+    kprintf_va2buf(buffer, fmt, args);
+    va_end(args);
+
+    fm_write(g_log_fd, buffer, str_len(buffer));
+}
 
 int __init(void) {
-    logf("\n");
+    g_log_fd = fm_open("/sys/kernel/hdaudio.log", O_WRONLY | O_CREAT | O_TRUNC);
+
+    if (g_log_fd < 0) {
+        return 1;
+    }
 
     mem_set(&g_hda, 0, sizeof(g_hda));
 
@@ -213,7 +231,9 @@ int __init(void) {
 
         if (device.bus == 0xFF && device.slot == 0xFF && device.func == 0xFF) {
             logf("HDA: No HDA PCI device found\n");
-            return 0;
+            fm_close(g_log_fd);
+            g_log_fd = 2;
+            return 2; // skip
         }
     }
 
@@ -233,6 +253,9 @@ int __init(void) {
 
     hda_initalize_sound_card();
 
+    fm_close(g_log_fd);
+    g_log_fd = 2;
+
     return 0;
 }
 
@@ -240,7 +263,7 @@ void hda_map_memory(void) {
     scuba_call_map((void *) g_hda.base, (void *) g_hda.base, 0);
 }
 
-static void hda_initalize_sound_card(void) {
+static int hda_initalize_sound_card(void) {
     uint32_t hda_base = g_hda.base;
     g_hda.communication_type = HDA_UNINITALIZED;
     g_hda.is_initalized_useful_output = 0;
@@ -266,7 +289,7 @@ static void hda_initalize_sound_card(void) {
 
     if ((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
         logf("HDA ERROR: card can not be set to operational state\n");
-        return;
+        return 1;
     }
 
     // read capabilities
@@ -405,10 +428,11 @@ static void hda_initalize_sound_card(void) {
 
         if (codec_id != HDA_VERB_ERROR) {
             logf("HDA: PIO communication interface\n");
-            hda_initalize_codec(codec_number);
-            return; // initalization is complete
+            return hda_initalize_codec(codec_number);
         }
     }
+
+    return 1; // no codec found
 }
 
 
@@ -548,11 +572,13 @@ uint8_t hda_is_headphone_connected(void) {
                 g_hda.pin_headphone_node_number, 0xF09, 0x00) & 0x80000000) == 0x80000000;
 }
 
-static void hda_initalize_codec(uint32_t codec_number) {
+static int hda_initalize_codec(uint32_t codec_number) {
     // test if this codec exist
     uint32_t codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
+
     if (codec_id == 0x00000000) {
-        return;
+        logf("HDA ERROR: Codec %d does not exist\n", codec_number);
+        return 1;
     }
 
     g_hda.codec_number = codec_number;
@@ -571,15 +597,15 @@ static void hda_initalize_codec(uint32_t codec_number) {
     for (uint32_t node = ((subordinate_node_count_reponse >> 16) & 0xFF),
                 last_node = (node + (subordinate_node_count_reponse & 0xFF)); node < last_node; node++) {
         if ((hda_send_verb(codec_number, node, 0xF00, 0x05) & 0x7F) == 0x01) { // this is Audio Function Group
-            hda_initalize_audio_function_group(node); // initalize Audio Function Group
-            return;
+            return hda_initalize_audio_function_group(node);
         }
     }
 
     logf("HDA ERROR: No AFG founded\n");
+    return 1;
 }
 
-static void hda_initalize_audio_function_group(uint32_t afg_node_number) {
+static int hda_initalize_audio_function_group(uint32_t afg_node_number) {
     // reset AFG
     hda_send_verb(g_hda.codec_number, afg_node_number, 0x7FF, 0x00);
 
@@ -597,10 +623,10 @@ static void hda_initalize_audio_function_group(uint32_t afg_node_number) {
 
     // log AFG info
     logf("Audio Function Group node %d\n", afg_node_number);
-    logf("AFG sample capabilities:          %x\n", g_hda.afg_node_sample_capabilities);
-    logf("AFG stream format capabilities:   %x\n", g_hda.afg_node_stream_format_capabilities);
-    logf("AFG input amp capabilities:       %x\n", g_hda.afg_node_input_amp_capabilities);
-    logf("AFG output amp capabilities:      %x\n", g_hda.afg_node_output_amp_capabilities);
+    logf("AFG sample capabilities:        %x\n", g_hda.afg_node_sample_capabilities);
+    logf("AFG stream format capabilities: %x\n", g_hda.afg_node_stream_format_capabilities);
+    logf("AFG input amp capabilities:     %x\n", g_hda.afg_node_input_amp_capabilities);
+    logf("AFG output amp capabilities:    %x\n", g_hda.afg_node_output_amp_capabilities);
 
     // log all AFG nodes and find useful PINs
     logf("\nLIST OF ALL NODES IN AFG:\n");
@@ -725,18 +751,16 @@ static void hda_initalize_audio_function_group(uint32_t afg_node_number) {
         }
 
         // log all connected nodes
-        logf(" ");
 
         uint8_t connection_entry_number = 0;
         uint16_t connection_entry_node = hda_get_node_connection_entry(g_hda.codec_number, node, 0);
 
-        logf("( connections: ");
-        while (connection_entry_node!=0x0000) {
-            logf("%d ", connection_entry_node);
+        while (connection_entry_node != 0x0000) {
+            logf(" -> %d", connection_entry_node);
             connection_entry_number++;
             connection_entry_node = hda_get_node_connection_entry(g_hda.codec_number, node, connection_entry_number);
         }
-        logf(")\n");
+        logf("\n");
     }
 
     // reset variables of second path
@@ -809,7 +833,9 @@ static void hda_initalize_audio_function_group(uint32_t afg_node_number) {
         g_hda.pin_output_node_number = pin_alternative_output_node_number;
     } else {
         logf("Codec do not have any output PINs\n");
+        return 1;
     }
+    return 0;
 }
 
 static void hda_initalize_output_pin(uint32_t pin_node_number) {
@@ -923,10 +949,10 @@ static void hda_initalize_audio_output(uint32_t audio_output_node_number) {
     }
 
     // because we are at end of node path, log all gathered info
-    logf("Sample Capabilites: %x\n", g_hda.audio_output_sample_capabilities);
+    logf("Sample Capabilites:        %x\n", g_hda.audio_output_sample_capabilities);
     logf("Stream Format Capabilites: %x\n", g_hda.audio_output_stream_format_capabilities);
-    logf("Volume node: %d\n", g_hda.output_amp_node_number);
-    logf("Volume capabilities: %x\n", g_hda.output_amp_node_capabilities);
+    logf("Volume node:               %d\n", g_hda.output_amp_node_number);
+    logf("Volume capabilities:       %x\n", g_hda.output_amp_node_capabilities);
 }
 
 static void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number) {

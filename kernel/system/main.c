@@ -37,7 +37,6 @@ void kernel_main(void *mboot_ptr) {
 
     gdt_init();
     init_vesa();
-    kcprint("Multiboot info saved, GDT and VESA initialized\n", 0x07);
     cursor_blink(0);
 
     status_print(isr_install,   "Installing CPU interrupt handlers");
@@ -53,15 +52,13 @@ void kernel_main(void *mboot_ptr) {
     status_print(tef_init,      "Allocating memory for terminal emulator");
 
     status_print(afft_init,     "Initializing afft system");
-    status_print(sys_init,      "Initializing system reporting");
+    status_print(sys_init,      "Initializing system functions");
 
     status_print(serial_init,   "Enabling serial ports A and B");
     status_print(keyboard_init, "Setting up PS/2 keyboard");
     status_print(rtc_init,      "Initializing real-time clock");
 
-    status_print(mod_init,      "Loading kernel modules");
-
-    kprintf("Kernel finished booting in %d ms\n", timer_get_ms());
+    kprintf("------ Kernel finished booting in %d ms\n", timer_get_ms());
 
     // launch of the default program
     elf_start(RUN_DEF_PATH, 1, (char *[]){RUN_DEF_NAME, NULL}, NULL);

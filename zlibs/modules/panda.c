@@ -13,9 +13,9 @@
 #include <kernel/snowflake.h>
 #include <kernel/afft.h>
 #include <gui/gnrtx.h>
-
 #include <gui/vesa.h>
 #include <minilib.h>
+#include <system.h>
 
 #include <modules/panda.h>
 #include <profan.h>
@@ -563,7 +563,7 @@ void panda_sync_start(void) {
 
     g_panda->cursor_x = 0;
     g_panda->cursor_y = ((offset_to_cursor_y(cursor_get_offset(),
-            vesa_get_info(0) / 8) + 1) * 16) / g_panda->font->height;
+            vesa_get_info(0) / 8)) * 16) / g_panda->font->height;
 
     g_panda->scroll_offset = 0;
 }
@@ -744,16 +744,15 @@ static int setup_afft(const char *name, void *write) {
 
 int __init(void) {
     if (!vesa_get_info(4)) {
-        kprintf("[panda] VESA is not enabled\n");
         g_panda = NULL;
-        return 1;
+        return 2;
     }
 
     g_panda = malloc(sizeof(panda_global_t));
     g_panda->font = load_psf_font(kfu_path_to_sid(SID_ROOT, DEFAULT_FONT));
 
     if (g_panda->font == NULL) {
-        kprintf("[panda] Failed to load font\n");
+        sys_warning("[panda module] failed to load font\n");
         free(g_panda);
         g_panda = NULL;
         return 1;

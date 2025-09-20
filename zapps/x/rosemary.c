@@ -31,16 +31,17 @@
 typedef struct {
     int id;
     char *path;
+    char *msg;
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1, "/lib/modules/filesys.pkm"},
-    {2, "/lib/modules/devio.pkm"},
-    {3, "/lib/modules/fmopen.pkm"},
-    {4, "/lib/modules/profan.pkm"},
-    {5, "/lib/modules/panda.pkm"},
-    {6, "/lib/modules/ata.pkm"},
-    {7, "/lib/modules/hdaudio.pkm"},
+    {1, "/lib/modules/filesys.pkm", "Loading filesystem extensions"},
+    {2, "/lib/modules/devio.pkm",   "Creating /dev entries"},
+    {3, "/lib/modules/fmopen.pkm",  "Loading unix file descriptors layer"},
+    {4, "/lib/modules/profan.pkm",  "Loading extra profan functions"},
+    {5, "/lib/modules/panda.pkm",   "Setting up advanced terminal emulation"},
+    {6, "/lib/modules/ata.pkm",     "Loading ATA disk driver"},
+    {7, "/lib/modules/hdaudio.pkm", "Loading intel HD audio driver"},
 };
 
 int local_strlen(char *str) {
@@ -60,40 +61,81 @@ char *get_name(char *path) {
 
 int print_load_status(int i) {
     mod_t *mod = &mods_at_boot[i];
+
+    syscall_kprint("\e[37m[\e[93mWORK\e[37m]\e[37m ");
+    syscall_kprint(mod->msg);
+    syscall_kprint("\e[0m\n");
+
     int error_code = syscall_mod_load(mod->path, mod->id);
 
-    if (error_code > 0)
+    if (error_code > 0) {
+        syscall_kprint("\e[1A\e[37m[\e[92m OK \e[37m]\e[0m\n");
         return 0;
+    } else if (error_code == -7) {
+        syscall_kprint("\e[1A\e[37m[SKIP]\e[0m\n");
+        return 0;
+    }
 
-    syscall_kprint("["LOADER_NAME"] ");
+    syscall_kprint("\e[1A\e[37m[\e[91mFAIL\e[37m] ");
+
     syscall_kprint(get_name(mod->path));
     syscall_kprint(": ");
 
     switch (error_code) {
         case -1:
-            syscall_kprint("file not found\n");
+            syscall_kprint("file not found");
             break;
         case -2:
-            syscall_kprint("invalid module id range\n");
+            syscall_kprint("invalid module id range");
             break;
         case -3:
-            syscall_kprint("file is not a dynamic ELF\n");
+            syscall_kprint("file is not a dynamic ELF");
             break;
         case -4:
-            syscall_kprint("ELF relocation failed\n");
+            syscall_kprint("ELF relocation failed");
             break;
         case -5:
-            syscall_kprint("failed to read functions\n");
+            syscall_kprint("failed to read functions");
             break;
         case -6:
-            syscall_kprint("init function exited with error\n");
+            syscall_kprint("init function exited with error");
+            break;
+        case -7:
+            syscall_kprint("module is not useful for this system");
             break;
         default:
-            syscall_kprint("unknown error\n");
+            syscall_kprint("unknown error");
             break;
     }
 
+    syscall_kprint("\e[0m\n");
+
     return 1;
+}
+
+void print_kernel_version(void) {
+    char version[16];
+    
+    uint32_t sid = fu_path_to_sid(SID_ROOT, "/sys/kernel/version.txt");
+
+    if (sid == SID_NULL) {
+        mmq_putstr(1, "\n");
+        return;
+    }
+
+    mmq_putstr(1, "\e[35mkernel: \e[95m");
+
+    syscall_fs_read(sid, version, 0, 15);
+
+    for (int i = 0; i < 16; i++) {
+        if (version[i] == '\n' || version[i] == '\r' || i == 15) {
+            version[i] = '\0';
+            break;
+        }
+    }
+
+    mmq_putstr(1, version);
+    mmq_putstr(1, "\e[0m\n\n");
 }
 
 void rainbow_print(char *message) {
@@ -150,7 +192,7 @@ int main(void) {
         print_load_status(i);
     }
 
-    mmq_printf(1, "Successfully loaded %d modules\n\n", total);
+    mmq_printf(1, "------ Modules loading completed in %d ms\n\n", syscall_timer_get_ms());
 
     if (SERIAL_AS_TERMINAL) {
         if (fm_reopen(0, "/dev/userial", O_RDONLY)  < 0 ||
@@ -181,7 +223,8 @@ int main(void) {
         set_env("TERM=/dev/kterm");
     }
 
-    rainbow_print("Welcome to profanOS!\n\n");
+    rainbow_print("Welcome to profanOS!\n");
+    print_kernel_version();
 
     set_env("PATH=/bin/c:/bin/f:/bin/l");
     set_env("DEFRUN=/bin/f/tcc.elf -run");
