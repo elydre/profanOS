@@ -239,7 +239,7 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 
 int mod_load(char *path, uint32_t lib_id) {
     if (path == NULL)
-        return IS_LOADED(lib_id) ? g_mod_funcs[lib_id][1] : -1;
+        return IS_LOADED(lib_id) ? (int) g_mod_funcs[lib_id][1] : -1;
 
     uint32_t file = kfu_path_to_sid(SID_ROOT, path);
 
