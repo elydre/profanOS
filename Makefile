@@ -9,7 +9,7 @@
 #   === elydre : https://github.com/elydre/profanOS ===         #######  \\   #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-.PHONY: help elf iso miso disk bdisk run erun krun srun clean fclean addons gaddons
+.PHONY: help elf iso miso disk bdisk run krun srun clean fclean addons gaddons
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
@@ -41,10 +41,6 @@ bdisk:
 # run kernel in qemu
 run:
 	python3 $(PY_BUILD) run
-
-# run iso in qemu
-erun:
-	python3 $(PY_BUILD) erun
 
 # run iso in qemu with kvm acceleration
 krun:
