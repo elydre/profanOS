@@ -681,7 +681,7 @@ def qemu_run(kvm = False, audio = False):
     make_iso()
 
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
-    
+
     qemu_args = QEMU_FLAGS
 
     if audio:
