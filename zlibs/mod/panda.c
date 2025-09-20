@@ -9,8 +9,6 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-// @LINK: libmmq
-
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/afft.h>
