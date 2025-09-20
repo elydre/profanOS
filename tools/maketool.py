@@ -513,7 +513,7 @@ def build_disk_elfs():
 
 def make_iso(force = False, more_option = False):
     elf_image()
-    gen_disk()
+    gen_disk(force)
 
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "kernel.elf") and (
             file1_newer("profanOS.iso", "initrd.bin") and not force):
