@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === hda.c : 2025 ===                                                      |
+|   === hdaudio.c : 2025 ===                                                  |
 |                                                                             |
 |    Intel High Definition Audio (HDA) driver implementation       .pi0iq.    |
 |                                                                 d"  . `'b   |
