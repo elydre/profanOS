@@ -15,9 +15,10 @@
 #include <stdio.h>
 #include <elf.h>    // for colorizing ELF files
 
+#include <modules/filesys.h>
+#include <modules/panda.h>
+
 #include <profan/syscall.h>
-#include <profan/filesys.h>
-#include <profan/panda.h>
 #include <profan.h>
 
 typedef struct {

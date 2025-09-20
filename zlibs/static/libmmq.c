@@ -11,8 +11,8 @@
 
 #define _SYSCALL_CREATE_FUNCS
 
+#include <modules/filesys.h>
 #include <profan/syscall.h>
-#include <profan/filesys.h>
 #include <profan/libmmq.h>
 
 #include <stdarg.h>

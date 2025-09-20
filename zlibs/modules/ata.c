@@ -147,7 +147,7 @@ int __init(void) {
     int afft_id;
 
     if (ata_get_sectors_count() == -1)
-        return 0;
+        return 2; // pass, no drive
 
     afft_id = afft_register(AFFT_AUTO, ata_read, ata_write, NULL);
 

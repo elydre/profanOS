@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/syscall.h>
-#include <profan/panda.h>
+#include <modules/panda.h>
 #include <profan/carp.h>
 #include <profan.h>
 

@@ -28,11 +28,6 @@ uint32_t *g_mod_funcs[256];
  * ...
  */
 
-int mod_init(void) {
-    *(int *)(WATPOK_ADDR) = (int) mod_get_func;
-    return 0;
-}
-
 #define IS_LOADED(id) ((id) && (id) < 256 && g_mod_funcs[id])
 
 static uint8_t *i_mod_read_file(uint32_t file_sid) {
@@ -243,6 +238,9 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int mod_load(char *path, uint32_t lib_id) {
+    if (path == NULL)
+        return IS_LOADED(lib_id) ? g_mod_funcs[lib_id][1] : -1;
+
     uint32_t file = kfu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(file) || !kfu_is_file(file)) {
@@ -278,10 +276,12 @@ int mod_load(char *path, uint32_t lib_id) {
         return -5;
     }
 
-    if (addr_list[2] && ((int (*)(void)) addr_list[2])()) {
+    int ret_val;
+
+    if (addr_list[2] && (ret_val = ((int (*)(void)) addr_list[2])())) {
         free(binary_mem);
         free(addr_list);
-        return -6;
+        return -(6 + (ret_val == 2));
     }
 
     // save the address list
