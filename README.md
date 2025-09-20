@@ -214,7 +214,8 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 - [@spaskalev](https://github.com/spaskalev/buddy_alloc) for the buddy allocator
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
-- [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
+- [BleskOS](https://github.com/VendelinSlezak/BleskOS) for the Intel HDA driver
+- [mintsuki](https://codeberg.org/OSDev/freestnd-c-hdrs-0bsd) for freestanding headers
 
 A huge thank you to all the [contributors](https://github.com/elydre/profanOS/graphs/contributors)
 and all the people who took the time to look at this project!
