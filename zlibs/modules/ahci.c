@@ -304,8 +304,8 @@ static void initialize_abar(HBAData *abar) {
     }
 }
 
-// #define MAGIC_ADDR 0xFEBB1000
-#define MAGIC_ADDR 0xA132d000
+#define MAGIC_ADDR 0xFEBB1000
+// #define MAGIC_ADDR 0xA132d000
 
 uint8_t ahci_read_sectors(uint16_t drive_num, uint64_t start_sector, uint32_t count, void *buf) {
     scuba_call_map((void *) MAGIC_ADDR, (void *) MAGIC_ADDR, 1);
@@ -329,9 +329,6 @@ uint8_t ahci_write_sectors(uint16_t drive_num, uint64_t start_sector, uint32_t c
 int drive_exists(uint16_t drive_num) {
     return drive_num < 256 && (ports[drive_num].abar != 0);
 }
-
-
-
 
 int __init(void) {
     ports = alloc_page(16); // 256*256 = 65536 bytes, or 16 pages. 256 ports is probably enough

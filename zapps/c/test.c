@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/ahci.h>
+#include <modules/ahci.h>
 #include <stdlib.h>
 #include <profan/syscall.h>
 #include <stdio.h>

@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef AHCI_MODULE_ID
-#define AHCI_MODULE_ID 7
+#define AHCI_MODULE_ID 8
 
 #include <stdint.h>
 
