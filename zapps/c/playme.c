@@ -335,12 +335,17 @@ int main(int argc, char **argv) {
     if (carp_parse(argc, argv))
         return 1;
 
+    if (syscall_mod_load(NULL, HDAUDIO_ID) < 0) {
+        fprintf(stderr, "playme: HDA sound card not found\n");
+        return 1;
+    }
+
     if (carp_isset('v')) {
+        g_volume = carp_get_int('v');
         if (g_volume < 0)
             g_volume = 0;
         if (g_volume > 100)
             g_volume = 100;
-        g_volume = carp_get_int('v');
     }
 
     const char *path;
