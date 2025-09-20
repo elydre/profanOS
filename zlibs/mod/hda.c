@@ -16,6 +16,8 @@
 #include <cpu/timer.h>
 #include <minilib.h>
 
+#include <modules/hdaudio.h>
+
 #define logf kprintf
 
 #define wait(ms) process_sleep(process_get_pid(), ms)
@@ -169,34 +171,26 @@ struct hda_info_t {
 #define HDA_OUTPUT_NODE 0x1
 #define HDA_INPUT_NODE 0x2
 
-void hda_add_new_pci_device(void);
+static uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t command);
 
-void hda_initalize_sound_card(void);
-uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t command);
+static void hda_initalize_sound_card(void);
+static void hda_initalize_codec(uint32_t codec_number);
+static void hda_initalize_audio_function_group(uint32_t afg_node_number);
+static void hda_initalize_output_pin(uint32_t pin_node_number);
+static void hda_initalize_audio_output(uint32_t audio_output_node_number);
+static void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number);
+static void hda_initalize_audio_selector(uint32_t audio_selector_node_number);
 
-uint8_t hda_get_node_type(uint32_t codec, uint32_t node);
-uint16_t hda_get_node_connection_entry(uint32_t codec, uint32_t node, uint32_t connection_entry_number);
-void hda_set_node_gain(uint32_t codec, uint32_t node, uint32_t node_type, uint32_t capabilities, uint32_t gain);
-void hda_enable_pin_output(uint32_t codec, uint32_t pin_node);
-void hda_disable_pin_output(uint32_t codec, uint32_t pin_node);
-uint8_t hda_is_headphone_connected(void);
+void     hda_map_memory(void);
+uint8_t  hda_is_headphone_connected(void);
+void     hda_set_volume(uint32_t volume);
+void     hda_check_headphone_connection_change(void);
 
-void hda_initalize_codec(uint32_t codec_number);
-void hda_initalize_audio_function_group(uint32_t afg_node_number);
-void hda_initalize_output_pin(uint32_t pin_node_number);
-void hda_initalize_audio_output(uint32_t audio_output_node_number);
-void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number);
-void hda_initalize_audio_selector(uint32_t audio_selector_node_number);
-
-void hda_set_volume(uint32_t volume);
-void hda_check_headphone_connection_change(void);
-
-uint8_t hda_is_supported_channel_size(uint8_t size);
-uint8_t hda_is_supported_sample_rate(uint32_t sample_rate);
-uint16_t hda_return_sound_data_format(uint32_t sample_rate, uint32_t channels, uint32_t bits_per_sample);
-void hda_play_pcm_data(uint32_t sample_rate, void* pcm_data, uint32_t buffer_size, uint16_t lvi);
-void hda_stop_sound(void);
-uint32_t hda_get_actual_stream_position(void);
+uint8_t  hda_is_supported_channel_size(uint8_t size);
+uint8_t  hda_is_supported_sample_rate(uint32_t sample_rate);
+void     hda_play_pcm_data(uint32_t sample_rate, void* pcm_data, uint32_t buffer_size, uint16_t lvi);
+void     hda_stop_sound(void);
+uint32_t hda_get_stream_position(void);
 
 #define HDA_VERB_ERROR 0
 
@@ -228,17 +222,13 @@ int __init(void) {
         device.slot,
         device.func);
 
-    g_hda.base = pci_get_bar(&device, 0);
+    g_hda.base = pci_get_bar(&device, 0) & 0xFFFFFFF0; // mask memory type
 
     logf("HDA: HDA PCI device MMIO base %x\n", g_hda.base);
-    g_hda.base &= 0xFFFFFFF0; // mask memory type
-
-    logf("HDA:                       -> %x\n", g_hda.base);
 
     scuba_call_map((void *)g_hda.base, (void *)g_hda.base, 0);
 
     // configure PCI
-    // pci_set_bits(device, 0x04, PCI_STATUS_BUSMASTERING | PCI_STATUS_MMIO);
     pci_write_config(&device, 0x04, pci_read_config(&device, 0x04) | 0x6);
 
     hda_initalize_sound_card();
@@ -246,37 +236,11 @@ int __init(void) {
     return 0;
 }
 
-void my_handler(uint32_t sample_rate, void* pcm_data, uint32_t buffer_size, uint16_t lvi) {
-    kprintf_serial("my_handler 1\n");
-    hda_play_pcm_data(sample_rate, pcm_data, buffer_size, lvi);
+void hda_map_memory(void) {
+    scuba_call_map((void *) g_hda.base, (void *) g_hda.base, 0);
 }
 
-int my_handler2(uint32_t sample_rate) {
-    kprintf_serial("my_handler 2\n");
-    scuba_call_map((void *)g_hda.base, (void *)g_hda.base, 0);
-    return hda_is_supported_sample_rate(sample_rate);
-}
-
-void my_handler3(uint32_t volume) {
-    kprintf_serial("my_handler 3\n");
-    hda_set_volume(volume);
-}
-
-uint32_t my_handler4(void) {
-    return hda_get_actual_stream_position();
-}
-
-void my_handler5(void) {
-    kprintf_serial("my_handler 5\n");
-    hda_check_headphone_connection_change();
-}
-
-void my_handler6(void) {
-    kprintf_serial("my_handler 6\n");
-    hda_stop_sound();
-}
-
-void hda_initalize_sound_card(void) {
+static void hda_initalize_sound_card(void) {
     uint32_t hda_base = g_hda.base;
     g_hda.communication_type = HDA_UNINITALIZED;
     g_hda.is_initalized_useful_output = 0;
@@ -448,7 +412,7 @@ void hda_initalize_sound_card(void) {
 }
 
 
-uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t command) {
+static uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t command) {
     uint32_t value = ((codec << 28) | (node << 20) | (verb << 8) | (command));
 
     if (g_hda.communication_type == HDA_CORB_RIRB) { // CORB/RIRB interface
@@ -524,11 +488,11 @@ uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t co
     return HDA_VERB_ERROR;
 }
 
-uint8_t hda_get_node_type(uint32_t codec, uint32_t node) {
+static uint8_t hda_get_node_type(uint32_t codec, uint32_t node) {
     return ((hda_send_verb(codec, node, 0xF00, 0x09) >> 20) & 0xF);
 }
 
-uint16_t hda_get_node_connection_entry(uint32_t codec, uint32_t node, uint32_t connection_entry_number) {
+static uint16_t hda_get_node_connection_entry(uint32_t codec, uint32_t node, uint32_t connection_entry_number) {
     // read connection capabilities
     uint32_t connection_list_capabilities = hda_send_verb(codec, node, 0xF00, 0x0E);
 
@@ -547,7 +511,7 @@ uint16_t hda_get_node_connection_entry(uint32_t codec, uint32_t node, uint32_t c
                 >> ((connection_entry_number % 2) * 16)) & 0xFFFF);
 }
 
-void hda_set_node_gain(uint32_t codec, uint32_t node, uint32_t node_type, uint32_t capabilities, uint32_t gain) {
+static void hda_set_node_gain(uint32_t codec, uint32_t node, uint32_t node_type, uint32_t capabilities, uint32_t gain) {
     // this will apply to left and right
     uint32_t payload = 0x3000;
 
@@ -571,11 +535,11 @@ void hda_set_node_gain(uint32_t codec, uint32_t node, uint32_t node_type, uint32
     hda_send_verb(codec, node, 0x300, payload);
 }
 
-void hda_enable_pin_output(uint32_t codec, uint32_t pin_node) {
+static void hda_enable_pin_output(uint32_t codec, uint32_t pin_node) {
     hda_send_verb(codec, pin_node, 0x707, (hda_send_verb(codec, pin_node, 0xF07, 0x00) | 0x40));
 }
 
-void hda_disable_pin_output(uint32_t codec, uint32_t pin_node) {
+static void hda_disable_pin_output(uint32_t codec, uint32_t pin_node) {
     hda_send_verb(codec, pin_node, 0x707, (hda_send_verb(codec, pin_node, 0xF07, 0x00) & ~0x40));
 }
 
@@ -584,7 +548,7 @@ uint8_t hda_is_headphone_connected(void) {
                 g_hda.pin_headphone_node_number, 0xF09, 0x00) & 0x80000000) == 0x80000000;
 }
 
-void hda_initalize_codec(uint32_t codec_number) {
+static void hda_initalize_codec(uint32_t codec_number) {
     // test if this codec exist
     uint32_t codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
     if (codec_id == 0x00000000) {
@@ -615,7 +579,7 @@ void hda_initalize_codec(uint32_t codec_number) {
     logf("HDA ERROR: No AFG founded\n");
 }
 
-void hda_initalize_audio_function_group(uint32_t afg_node_number) {
+static void hda_initalize_audio_function_group(uint32_t afg_node_number) {
     // reset AFG
     hda_send_verb(g_hda.codec_number, afg_node_number, 0x7FF, 0x00);
 
@@ -848,7 +812,7 @@ void hda_initalize_audio_function_group(uint32_t afg_node_number) {
     }
 }
 
-void hda_initalize_output_pin(uint32_t pin_node_number) {
+static void hda_initalize_output_pin(uint32_t pin_node_number) {
     logf("Initalizing PIN %d\n", pin_node_number);
 
     // reset variables of first path
@@ -904,7 +868,7 @@ void hda_initalize_output_pin(uint32_t pin_node_number) {
     }
 }
 
-void hda_initalize_audio_output(uint32_t audio_output_node_number) {
+static void hda_initalize_audio_output(uint32_t audio_output_node_number) {
     logf("Initalizing Audio Output %d\n", audio_output_node_number);
     g_hda.audio_output_node_number = audio_output_node_number;
 
@@ -965,7 +929,7 @@ void hda_initalize_audio_output(uint32_t audio_output_node_number) {
     logf("Volume capabilities: %x\n", g_hda.output_amp_node_capabilities);
 }
 
-void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number) {
+static void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number) {
  if (g_hda.length_of_node_path>=10) {
     logf("HDA ERROR: too long path\n");
     return;
@@ -1010,7 +974,7 @@ void hda_initalize_audio_mixer(uint32_t audio_mixer_node_number) {
     }
 }
 
-void hda_initalize_audio_selector(uint32_t audio_selector_node_number) {
+static void hda_initalize_audio_selector(uint32_t audio_selector_node_number) {
     if (g_hda.length_of_node_path >= 10) {
         logf("HDA ERROR: too long path\n");
         return;
@@ -1119,7 +1083,7 @@ uint8_t hda_is_supported_sample_rate(uint32_t sample_rate) {
     return (g_hda.audio_output_sample_capabilities & mask) == mask; // return 1 if supported
 }
 
-uint16_t hda_return_sound_data_format(uint32_t sample_rate, uint32_t channels, uint32_t bits_per_sample) {
+static uint16_t hda_return_sound_data_format(uint32_t sample_rate, uint32_t channels, uint32_t bits_per_sample) {
     uint16_t data_format = (channels - 1);
 
     // bits per sample
@@ -1180,7 +1144,7 @@ void hda_play_pcm_data(uint32_t sample_rate, void* pcm_data, uint32_t buffer_siz
     }
 
     if ((mmio_inb(g_hda.output_stream_base + 0x00) & 0x2) == 0x2) {
-        logf("\nHDA: can not stop stream");
+        logf("HDA: can not stop stream\n");
         return;
     }
 
@@ -1196,7 +1160,7 @@ void hda_play_pcm_data(uint32_t sample_rate, void* pcm_data, uint32_t buffer_siz
     }
 
     if ((mmio_inb(g_hda.output_stream_base + 0x00) & 0x1)==0x0) {
-        // logf("\nHDA: can not start resetting stream");
+        // logf("HDA: can not start resetting stream\n");
     }
 
     wait(5);
@@ -1211,7 +1175,7 @@ void hda_play_pcm_data(uint32_t sample_rate, void* pcm_data, uint32_t buffer_siz
     }
 
     if ((mmio_inb(g_hda.output_stream_base + 0x00) & 0x1)==0x1) {
-        logf("\nHDA: can not stop resetting stream");
+        logf("HDA: can not stop resetting stream\n");
         return;
     }
 
@@ -1250,6 +1214,6 @@ void hda_stop_sound() {
     mmio_outb(g_hda.output_stream_base + 0x00, 0x00);
 }
 
-uint32_t hda_get_actual_stream_position() {
+uint32_t hda_get_stream_position() {
     return mmio_ind(g_hda.output_stream_base + 0x04);
 }

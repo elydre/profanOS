@@ -17,7 +17,7 @@
 #include <gui/vesa.h>
 #include <minilib.h>
 
-#include <profan/panda.h>
+#include <modules/panda.h>
 #include <profan.h>
 
 #define DEFAULT_FONT "/zada/fonts/lat38-bold18.psf"

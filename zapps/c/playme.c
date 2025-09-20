@@ -11,31 +11,15 @@
 
 // @LINK: libpf
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <modules/hdaudio.h>
 #include <profan/syscall.h>
 #include <profan/carp.h>
+
+#include <stdlib.h>
+#include <string.h>
 #include <profan.h>
 #include <unistd.h>
-
-
-#define _pscall(module, id, ...) \
-    profan_syscall(((module << 24) | id), __VA_ARGS__)
-
-void hda_play(uint32_t sample_rate, void* pcm_data, uint32_t pcm_octets, uint16_t lvi);
-int hda_is_supported_sample_rate(uint32_t sample_rate);
-void hda_set_volume(uint32_t volume);
-uint32_t hda_get_pos(void);
-void hda_check_headphone_connection_change(void);
-void hda_stop(void);
-
-#define hda_play(b, c, d, e) ((void) _pscall(7, 0, b, c, d, e))
-#define hda_is_supported_sample_rate(b) ((int) _pscall(7, 1, b))
-#define hda_set_volume(b) ((void) _pscall(7, 2, b))
-#define hda_get_pos() ((uint32_t) _pscall(7, 3, 0))
-#define hda_check_headphone_connection_change() ((void) _pscall(7, 4, 0))
-#define hda_stop() ((void) _pscall(7, 5, 0))
+#include <stdio.h>
 
 typedef struct {
     uint32_t addr_low;
@@ -234,9 +218,10 @@ int start_play(FILE *file, wav_file_t *header) {
     for (int i = 0; i < CIRUCULAR_COUNT; i++)
         add_block_to_buffer(file, header, physical + i * BLOCK_SIZE, block++);
 
+    hda_map_memory();
     hda_set_volume(g_volume);
 
-    hda_play(header->sample_rate, buf, CIRUCULAR_COUNT * BLOCK_SIZE, CIRUCULAR_COUNT - 1);
+    hda_play_pcm_data(header->sample_rate, buf, CIRUCULAR_COUNT * BLOCK_SIZE, CIRUCULAR_COUNT - 1);
 
     int loop_reset = 0;
     int old_pos = 0;
@@ -245,7 +230,7 @@ int start_play(FILE *file, wav_file_t *header) {
 
     while (end_count < CIRUCULAR_COUNT - 1) {
         for (int i = 0;; i++) {
-            pos = hda_get_pos();
+            pos = hda_get_stream_position();
 
             if (old_pos > pos)
                 loop_reset++;
@@ -275,7 +260,7 @@ int start_play(FILE *file, wav_file_t *header) {
 
     end:
 
-    hda_stop();
+    hda_stop_sound();
 
     printf("\n");
 

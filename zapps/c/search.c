@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan/syscall.h>
 #include <profan/carp.h>
 #include <profan.h>
