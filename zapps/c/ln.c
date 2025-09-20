@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan.h>
 
 #define LN_SHORT "Try 'ln -h' for more information\n"

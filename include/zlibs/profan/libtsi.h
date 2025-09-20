@@ -17,9 +17,11 @@
 
 _BEGIN_C_FILE
 
+#undef TSI_DEFAULT
 #undef TSI_NON_PRINTABLE
 #undef TSI_NO_AUTO_WRAP
 
+#define TSI_DEFAULT         0x00
 #define TSI_NON_PRINTABLE   0x01
 #define TSI_NO_AUTO_WRAP    0x02
 

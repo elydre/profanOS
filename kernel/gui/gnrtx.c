@@ -222,7 +222,13 @@ int compute_ansi_escape(const char *str, char *color) {
 }
 
 int kcnprint(const char *message, int len, char color) {
+    static int default_color = 0x0F;
     int i = 0;
+
+    if (color == 0) {
+        color = default_color;
+        default_color = 0;
+    }
 
     if (len == -1)
         len = str_len(message);
@@ -234,6 +240,9 @@ int kcnprint(const char *message, int len, char color) {
             kprint_char_at(-1, -1, message[i], color);
         i++;
     }
+
+    if (default_color == 0)
+        default_color = color;
 
     return len;
 }

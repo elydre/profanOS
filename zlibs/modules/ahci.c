@@ -342,7 +342,6 @@ int __init(void) {
     scuba_call_map((void *) MAGIC_ADDR, (void *) MAGIC_ADDR, 1);
 
     initialize_abar((HBAData *) MAGIC_ADDR);
-    kprintf("\n");
 
     return 0;
 }

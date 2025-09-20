@@ -24,7 +24,7 @@
 #define c_white     0x0f
 
 #define kcprint(message, color) kcnprint(message, -1, color)
-#define kprint(message) kcprint(message, c_white)
+#define kprint(message) kcprint(message, 0)
 
 // font.c
 extern uint8_t font_8x16[4096];

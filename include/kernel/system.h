@@ -14,7 +14,7 @@
 
 // build settings
 
-#define KERNEL_VERSION  "1.3.1b"
+#define KERNEL_VERSION  "1.3.1c"
 #define KERNEL_EDITING  "generic"
 
 #define PROCESS_MAX     200         // max process count
@@ -32,7 +32,7 @@
 #define PROC_ESP_SIZE   0x20000     // process stack size
 #define PROC_ESP_ADDR   RUN_HEAP_ADDR - PROC_ESP_SIZE
 
-#define WATPOK_ADDR     0x1FFFFB
+#define WATMOD_ADDR     0x1FFFFB
 #define MEM_BASE_ADDR   0x1FFFFF
 
 
@@ -67,7 +67,6 @@ int elf_exec(uint32_t sid, char **argv, char **envp);
 int elf_start(char *file, int sleep, char **argv, int *pid_ptr);
 
 // pok.c
-int      mod_init(void);
 int      mod_load(char *path, uint32_t lib_id);
 int      mod_unload(uint32_t lib_id);
 uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id);
