@@ -115,7 +115,7 @@ int print_load_status(int i) {
 
 void print_kernel_version(void) {
     char version[16];
-    
+
     uint32_t sid = fu_path_to_sid(SID_ROOT, "/sys/kernel/version.txt");
 
     if (sid == SID_NULL) {
