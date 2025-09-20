@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === playme.c : 2025 ===                                                   |
+|                                                                             |
+|    Simple command line WAV file player                           .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 // @LINK: libpf
 
 #include <stdlib.h>
@@ -31,9 +42,7 @@ typedef struct {
     uint32_t addr_high;
     uint32_t length;
     uint32_t flags;
-} __attribute__((packed)) hda_play_buffer_t;  
-
-
+} __attribute__((packed)) hda_play_buffer_t;
 
 typedef struct {
     uint16_t audio_format;   // PCM = 1
@@ -233,7 +242,7 @@ int start_play(FILE *file, wav_file_t *header) {
     int old_pos = 0;
 
     int end_count = 0;
-    
+
     while (end_count < CIRUCULAR_COUNT - 1) {
         for (int i = 0;; i++) {
             pos = hda_get_pos();
@@ -245,7 +254,7 @@ int start_play(FILE *file, wav_file_t *header) {
 
             if (pos / BLOCK_SIZE + (loop_reset * CIRUCULAR_COUNT) > (block - CIRUCULAR_COUNT))
                 break;
-            
+
             if (i % 20 == 0)
                 hda_check_headphone_connection_change();
 
@@ -340,7 +349,7 @@ int main(int argc, char **argv) {
 
     if (carp_parse(argc, argv))
         return 1;
-    
+
     if (carp_isset('v')) {
         if (g_volume < 0)
             g_volume = 0;
@@ -354,6 +363,6 @@ int main(int argc, char **argv) {
         if (playme_file(path) != 0)
             return 1;
     }
-    
+
     return 0;
 }
