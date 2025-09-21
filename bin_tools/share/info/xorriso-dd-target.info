@@ -1,0 +1,578 @@
+This is xorriso-dd-target.info, produced by makeinfo version 5.2 from
+xorriso-dd-target.texi.
+
+xorriso-dd-target - Device evaluator and disk image copier for GNU/Linux
+
+   Copyright (C) 2021 Thomas Schmitt
+
+     Permission is granted to distribute this text freely.
+INFO-DIR-SECTION Archiving
+START-INFO-DIR-ENTRY
+* Xorriso-dd-target: (xorriso-dd-target). Device evaluator and disk image copier for GNU/Linux
+END-INFO-DIR-ENTRY
+
+
+File: xorriso-dd-target.info,  Node: Top,  Next: Overview,  Up: (dir)
+
+xorriso-dd-target 1.5.4
+***********************
+
+xorriso-dd-target - Device evaluator and disk image copier for GNU/Linux
+* Menu:
+
+* Overview::            Overview
+* Options::             Options
+* Examples::            Examples
+* Files::               Files
+* Seealso::             See also
+* Bugreport::           Reporting bugs
+* Legal::               Author, Copyright, Credits
+* CommandIdx::          Alphabetic Option List
+* ConceptIdx::          Alphabetic List of Concepts and Objects
+
+
+File: xorriso-dd-target.info,  Node: Overview,  Next: Options,  Prev: Top,  Up: Top
+
+1 Overview
+**********
+
+'xorriso-dd-target' evaluates block devices of the Linux kernel whether
+they are suitable targets for a disk image file and optionally copies
+the image file to one of them.
+It is specialized on the device names of the *Linux kernel* and uses the
+capabilities of util-linux program *lsblk*.  Therefore it refuses to run
+on non-Linux kernels.
+
+   The main purpose of xorriso-dd-target is to inspect the device files
+of disk-like storage media and to judge whether they look like removable
+devices with disposable content.
+If a single plausible candidate is detected, then the program is willing
+to copy a disk image file onto it.  This will overwrite or make
+inaccessible the previous partition table and all previous data content
+of the target device.
+*Superuser power* is often needed for filesystem type identification,
+for possible unmounting, and for possible image writing.  Option
+*-with_sudo* offers a way to gain this power only for those tasks and to
+run the program elsewise with a normal user's power.
+If a particular disk image file is intended as copy source, then its
+path should be given by option -image_file, so that its size can be used
+as decision criterion.
+
+   Following are use case descriptions with examples:
+* Menu:
+
+* Simplenames::           List plain device names
+* Listall::               List all devices with reasoning
+* Givendevices::          Evaluate particular given devices
+* Plugtest::              Detect intended device by plugging
+* Dowrite::               Write image to an advised device
+* Unwise::                Show commands for writing to a not advised device
+* Reasons::               Alphabetical list of positive and negative reasons
+
+
+File: xorriso-dd-target.info,  Node: Simplenames,  Next: Listall,  Prev: Overview,  Up: Overview
+
+2 List plain device names
+*************************
+
+The most simple and most boring use case is a program run without device
+names and without options -list_all, -plug_test, -DO_WRITE,
+-dummy_force.  It prints on standard output (stdout) only the names of
+advisable devices without "/dev/" prefix.  One name per line and without
+any reasoning text.
+The possible sudo password prompt, the message line about sudo, and the
+empty line after it do not go to stdout.
+Example:
+$ xorriso-dd-target -with_sudo
+Testing sudo to possibly get password prompting done now:
+[sudo] password for thomas:
+sudo /bin/lsblk seems ok.
+
+   sde
+
+
+File: xorriso-dd-target.info,  Node: Listall,  Next: Givendevices,  Prev: Simplenames,  Up: Overview
+
+3 List all devices with reasoning
+*********************************
+
+For the more curious user, there is option *-list_all* which prints the
+evaluation of each disk-like device that is listed by program lsblk.
+Optical drives, floppy disks, RAM block devices, loop devices are
+excluded, though.
+Each device is shown by one line of the form
+name : advice : reasoning : info
+*name* is the device name without "/dev/" prefix.
+*advice* is either "YES" or "NO". "YES" indicates that the device
+appears to be pluggable disk-like, not used as system disk or sincere
+data storage, and - if tested - of sufficient or plausible size.
+*reasoning* is a blank separated list of words with either suffix '+'
+for an inviting device property or '-' for a prohibitive property.
+Normally a single '-' reason disqualifies the device from being
+advisable.  Only if option -look_for_iso is given, a reason "has_XYZ-"
+can be overridden by the presence of an ISO 9660 filesystem on the
+device.
+*info* is composed from VENDOR and MODEL as told by lsblk.
+Option *-list_long* causes with each line an additional listing of the
+information provided by lsblk which led to the shown reasons.
+Example:
+$ xorriso-dd-target -with_sudo -list_all
+...
+sda : NO : not_usb- has_vfat+ has_ext4- : ATA Samsung SSD 850
+sdb : NO : not_usb- has_swap- has_ext4- : ATA WDC WD20EFRX-68A
+sdc : YES : usb+ has_iso9660+ has_vfat+ : Intenso Ultra Line
+sdd : NO : usb+ has_iso9660+ has_vfat+ has_ext2- : SanDisk Cruzer
+
+
+File: xorriso-dd-target.info,  Node: Givendevices,  Next: Plugtest,  Prev: Listall,  Up: Overview
+
+4 Evaluate particular given devices
+***********************************
+
+If *device names* are given instead of option -list_all, then only these
+devices are inspected.  Their result gets listed without the ": info"
+part, unless option *-with_vendor_model* is given.
+Device names must not begin by '-' and must be single words composed of
+the characters [A-za-z0-9_/-].  They should not contain '/'.  E.g.
+'sdc' is valid, '/dev/sdc' is not valid.
+If one of the given device names gets not advised, the exit value is 1.
+It makes few sense to give device names which are not listed by
+-list_all.
+Examples:
+$ xorriso-dd-target -with_sudo sdc
+...
+sdc : YES : usb+ has_iso9660+ has_vfat+
+$ xorriso-dd-target -with_sudo -with_vendor_model sdc
+...
+sdc : YES : usb+ has_iso9660+ has_vfat+ : Intenso Ultra Line
+$ xorriso-dd-target sdc
+sdc : NO : usb+ no_fs_while_not_su-
+
+
+File: xorriso-dd-target.info,  Node: Plugtest,  Next: Dowrite,  Prev: Givendevices,  Up: Overview
+
+5 Detect intended device by plugging
+************************************
+
+Option *-plug_test* triggers an interactive method to unambiguously
+determine the intended target device candidate.  It consists of 2 or 3
+steps.
+*Step 1* is to have the intended storage device *unplugged* and to
+confirm this by pressing the Enter key at the program's prompt.  The
+program will then assess the list of not wanted devices.
+*Step 2* is to *plug in* the intended storage device and to confirm this
+by pressing the Enter key a second time.  The program will wait up to 10
+seconds for a disk-like storage device which is not in the list of not
+wanted devices.  The user may wait with key pressing until the device
+blinking looks like it is ready.
+Only if a single new device is found, the program will go on as if a
+single device name was given.  Option -list_all and any device names
+given as arguments will be ignored.
+*Step 3* happens only if options -DO_WRITE or -dummy_force are given.
+The program asks for a final input of the word 'yes' before real or
+simulated writing begins.
+Example:
+$ xorriso-dd-target -with_sudo -plug_test
+...
+Caused by option -plug_test: Attempt to find the desired device by
+watching it appear after being plugged in.
+Step 1:
+Please make sure that the desired target device is plugged _out_ now.
+If it is currently plugged in, make sure to unmount all its fileystems
+and then unplug it.
+Press the Enter key when ready.
+
+
+   Found and noted as _not_ desired: sda sdb sdc
+Step 2:
+Please plug in the desired target device and then press the Enter key.
+
+
+   Waiting up to 10 seconds for a new device to be listed ...  found:
+sdd
+Now waiting 5 seconds to let it settle .........
+Found and noted as desired device: sdd
+
+
+   sdd : NO : usb+ has_iso9660+ has_vfat+ has_ext2- : SanDisk Cruzer
+
+
+File: xorriso-dd-target.info,  Node: Dowrite,  Next: Unwise,  Prev: Plugtest,  Up: Overview
+
+6 Write image to an advised device
+**********************************
+
+Only if option *-DO_WRITE* is given and -list_all is not, and if exactly
+one advisable device is listed, it really gets overwritten by the file
+content of the given -image_file.  In this case the exit value is zero
+if writing succeeded, non-zero else.
+Option *-dummy* prevents this kind of real action and rather shows the
+planned umount and dd commands on stdout.
+Example:
+$ xorriso-dd-target -with_sudo -plug_test -DO_WRITE \
+-image_file debian-live-10.0.0-amd64-xfce.iso
+...  sudo messages and above plug test steps 1 and 2 ...
+
+
+   sde : YES : usb+ has_iso9660+ has_vfat+
+Step 3:
+Last chance to abort.  Enter the word 'yes' to start REAL WRITING.
+yes
+Looking for mount points of sde:
+/dev/sde1 on /mnt/iso type iso9660 (ro,relatime)
+/dev/sde2 on /mnt/fat type vfat (rw,...,errors=remount-ro)
+Unmounted: /dev/sde1
+Unmounted: /dev/sde2
+Performing:
+sudo /bin/dd if=/dev/zero of=/dev/'sde' bs=512 seek='245759999'
+count=1 status=none
+sudo /bin/dd if='debian-live-10.0.0-amd64-xfce.iso' of=/dev/'sde'
+bs=1M status=progress oflag=dsync ; sync
+...  dd messages ...
+The first dd run shall erase a possible GPT backup header.  It is
+performed only if the local program "expr" can deal with the byte size
+of the device.
+
+
+File: xorriso-dd-target.info,  Node: Unwise,  Next: Reasons,  Prev: Dowrite,  Up: Overview
+
+7 Show commands for writing to a not advised device
+***************************************************
+
+There should be no way to convince xorriso-dd-target of writing to a
+target device which it does not deem advisable.  Please report any set
+of arguments that can be misused for that.
+The outmost complicity to potentially unwise actions is offered by
+option *-dummy_force*.  If given together with a single device name or
+with option -plug_test it will act like -dummy -DO_WRITE with this
+device, even if it looks not advisable.  I.e.  it will show the shell
+commands which the program does not dare to perform.
+Example:
+$ xorriso-dd-target -with_sudo -list_long -dummy_force sdd \
+-image_file debian-live-10.0.0-amd64-xfce.iso
+...
+sdd : NO : usb+ has_iso9660+ has_vfat+ has_ext2-
+NAME SIZE FSTYPE TRAN LABEL
+sdd 3.8G iso9660 usb d-live 9.5.0 xf i386
+|-sdd1 1.9G iso9660 d-live 9.5.0 xf i386
+|-sdd2 320K vfat
+'-sdd3 512M ext2
+
+
+   Overriding any advice because of -dummy_force
+Looking for mount points of sdd:
+/dev/sdd1 on /mnt/iso type iso9660 (ro,relatime)
+/dev/sdd2 on /mnt/fat type vfat (rw,...,errors=remount-ro)
+/dev/sdd3 on /mnt/ext type ext2 (rw,relatime)
+AGAINST THE ADVICE BY THIS PROGRAM, a daring user could do:
+sudo /bin/umount /dev/sdd1
+sudo /bin/umount /dev/sdd2
+sudo /bin/umount /dev/sdd3
+sudo /bin/dd if=/dev/zero of=/dev/'sdd' bs=512 seek='7864318'
+count=1 status=none
+sudo /bin/dd if='debian-live-10.0.0-amd64-xfce.iso' of=/dev/sdd
+bs=1M status=progress oflag=dsync ; sync
+BE SMART. BE CAUTIOUS. BEWARE.
+
+
+File: xorriso-dd-target.info,  Node: Reasons,  Next: Options,  Prev: Unwise,  Up: Overview
+
+8 Alphabetical list of positive and negative reasons
+****************************************************
+
+As stated with use case "List all devices", *reasons* are words with
+either suffix '+' for an inviting device property or '-' for a
+prohibitive property.
+Normally a single '-' reason disqualifies the device from being
+advisable.
+
+8.1 Reasons
+===========
+
+*has_XYZ-*
+A filesystem of type XYZ is detected on base device or partition and is
+spoiling the impression of a device with disposable content.
+*has_iso9660+*
+An ISO 9660 filesystem is detected.
+*has_vfat+*
+A FAT (MS-DOS-like) filesystem is detected.
+*look_for_iso++*
+Option -look_for_iso is given and an ISO 9660 filesystem is detected.
+This reason overrides any "has_XYZ-" reason.
+*looks_like_cd_drive-*
+A given device name looks like the name of an optical drive: sr[0-9]*.
+Use program *xorrecord* for this kind of devices.
+*looks_like_disk_partition-*
+A given device name looks like the name of a partition.  Expected are
+names of base devices, like "sde", not of their partitions, like "sde1".
+
+*looks_like_floppy-*
+A given device name looks like the name of a floppy disk drive:
+fd[0-9]*.
+*looks_like_loopdev-*
+A given device name looks like the name of a loop device: loop[0-9]*.
+*looks_like_ramdev-*
+A given device name looks like the name of a RAM block device:
+zram[0-9]*.
+*lsblk_no_size-*
+A size test is given by -max_size, -min_size, or -image_file but the
+size of the device cannot be inquired by lsblk.  This is supposed to
+happen only with given inappropriate device names.
+*mmcblk+*
+The device name looks like a directly connected memory card.
+*name_with_slash-*
+A given device name contains '/' characters.
+*no_bus_info-*
+The device is not a memory card and lsblk reports nothing about the way
+how it is connected to the computer.
+*no_fs_while_not_su-*
+No filesystem is reported by lsblk and the program does not believe to
+have run it with superuser powers.  There is the risk that lsblk
+silently failed to detect existing filesystems.
+*no_iso9660-*
+Option -look_for_iso is given but no ISO 9660 filesystem is detected.
+*not_usb-*
+The device is not a memory card and lsblk reports that it is connected
+by something other than USB.
+*size_too_large-*
+Option -max_size is given with a size smaller than the size of the
+device.
+*size_too_small-*
+Option -min_size or -image_file is given with size or file size larger
+than the size of the device.
+*usb+*
+The device is reported by lsblk to be connected via USB.
+
+
+File: xorriso-dd-target.info,  Node: Options,  Next: Examples,  Prev: Overview,  Up: Top
+
+9 Options
+*********
+
+-plug_test
+     Find the target device by asking the user to press the Enter key
+     when the desired target is _not_ plugged in, to then plug it in,
+     and to press Enter again.
+     This overrides device names and option -list_all.  The found device
+     is then shown with advice, vendor, and model.
+     Option -DO_WRITE is obeyed if given.  In this case, the word 'yes'
+     has to be entered to let unmounting and writing begin.
+-list_all
+     Print list of all found devices with advice, vendor and model.  One
+     per line.  Ignore any device names.  Ignore -DO_WRITE.
+-list_long
+     After each result line, which shows reasons, add an additional
+     listing of the information provided by lsblk which led to the
+     reasons and add an empty line.
+-with_vendor_model
+     Print vendor and model with each submitted device name.
+-max_size n[M|G|T]
+     Set the upper byte size limit for advisable devices.  Plain numbers
+     get rounded down to full millions.  As suffix are recognized: M =
+     million, G = billion, T = trillion.
+     Be generous to avoid problems with GB < GiB.
+-min_size n[M|G|T]
+     Set the lower byte size limit for advisable devices.  After
+     processing like with -max_size, one million gets added to the size
+     limit.
+-look_for_iso
+     Demand presence of an ISO 9660 filesystem.  If so, then any further
+     filesystem type is acceptable on that device.
+     If this option is missing, only ISO 9660 and VFAT filesystems are
+     accepted.
+-with_sudo
+     Run 'lsblk -o FSTYPE' by sudo.  If no filesystems are detected on a
+     device while the program has no superuser power, then the device is
+     not advised.  Option -with_sudo avoids this refusal without the
+     need to run the whole program as superuser.
+     If -DO_WRITE -with_sudo is given, then the programs umount and dd
+     will be run by sudo, too.
+-trust_lsblk_udev
+     Suppress the reason no_fs_while_not_su- if lsblk is linked with
+     libudev.so.  In this case it is likely that lsblk can retrieve
+     FSTYPE even if run by a non-priviledged user.
+     This option is intended for use by frontend programs which are
+     certain that they do not encounter a udev-using version of lsblk
+     which nevertheless fails to detect existing filesystems.  Human
+     users should better acquire superuser powers if reason
+     no_fs_while_not_su- is reported.
+-image_file PATH
+     Set the path of the image file which shall be written to a device.
+     Its size will be set as -min_size.
+-DO_WRITE
+     Write the given -image_file to the one advisable device that is
+     found.  If more than one such device is found, then they get listed
+     but no writing happens.
+     In this case, to get a real write run, consider unplugging unneeded
+     devices, or using option -plug_test, or a re-run with one of the
+     advised device names as additional argument.
+-no_pacifier
+     Do not use dd options to print progress messages and to perform
+     synchronized output.  These options are used by default if program
+     dd offers progress messages.
+-dummy
+     Report the -DO_WRITE actions but do not perform them.
+-dummy_force
+     If a single device name is given, do a run of -dummy -DO_WRITE even
+     against the advice of this program.  This probably shows you ways
+     to shoot your own foot.
+-version
+     Print the program name, version text, and timestamp to stdout and
+     then end the program.
+-help
+     Print the help text to stdout and then end the program.
+
+
+File: xorriso-dd-target.info,  Node: Examples,  Next: Files,  Prev: Options,  Up: Top
+
+10 Examples
+***********
+
+Examples are given in the above description of use cases.
+
+
+File: xorriso-dd-target.info,  Node: Files,  Next: Seealso,  Prev: Examples,  Up: Top
+
+11 Files
+********
+
+For now, no files are defined for configuration.
+
+
+File: xorriso-dd-target.info,  Node: Seealso,  Next: Bugreport,  Prev: Files,  Up: Top
+
+12 See also
+***********
+
+lsblk(8), sudo(8), umount(8), dd(1), xorrecord(1)
+
+
+File: xorriso-dd-target.info,  Node: Bugreport,  Next: Legal,  Prev: Seealso,  Up: Top
+
+13 Reporting bugs
+*****************
+
+To report bugs, request help, or suggest enhancements for
+'xorriso-dd-target', please send electronic mail to the public list
+<bug-xorriso@gnu.org>.  If more privacy is desired, mail to
+<scdbackup@gmx.net>.
+
+   Please describe what you expect the program to do, the program
+arguments which you used, the messages of 'xorriso-dd-target', and the
+undesirable outcome of your program run.
+
+   Expect to get asked more questions before solutions can be proposed.
+
+
+File: xorriso-dd-target.info,  Node: Legal,  Next: CommandIdx,  Prev: Bugreport,  Up: Top
+
+14 Author, Copyright, Credits
+*****************************
+
+14.1 Author
+===========
+
+Thomas Schmitt <scdbackup@gmx.net>
+for libburnia-project.org
+
+14.2 Copyright
+==============
+
+Copyright (c) 2019 - 2021 Thomas Schmitt
+Permission is granted to distribute this text freely.  It shall only be
+modified in sync with the technical properties of xorriso-dd-target.  If
+you make use of the license to derive modified versions of
+xorriso-dd-target then you are entitled to modify this text under that
+same license.
+
+14.3 Credits
+============
+
+'xorriso-dd-target' is developed in cooperation with Nio Wiklund alias
+sudodus.
+
+
+File: xorriso-dd-target.info,  Node: CommandIdx,  Next: ConceptIdx,  Prev: Legal,  Up: Top
+
+15 Alphabetic Options List
+**************************
+
+ [index ]
+* Menu:
+
+* -DO_WRITE write image file to device:  Options.              (line 57)
+* -dummy report but do not perform:      Options.              (line 68)
+* -dummy_force show raw copy commands:   Options.              (line 70)
+* -help print help text to stdout:       Options.              (line 77)
+* -image_file set path of disk image file: Options.            (line 54)
+* -list_all print list of disk devices:  Options.              (line 15)
+* -list_long print extra device info:    Options.              (line 18)
+* -look_for_iso demand presence of ISO 9660: Options.          (line 33)
+* -max_size set size limit for device:   Options.              (line 24)
+* -min_size set size limit for device:   Options.              (line 29)
+* -no_pacifier do not show dd progress:  Options.              (line 64)
+* -plug_test detect target device plugging: Options.           (line  7)
+* -trust_lsblk_udev suppress no_fs_while_not_su-: Options.     (line 45)
+* -version print version text to stdout: Options.              (line 74)
+* -with_sudo run lsblk, umount, dd by sudo: Options.           (line 38)
+* -with_vendor_model add drive info to advice: Options.        (line 22)
+
+
+File: xorriso-dd-target.info,  Node: ConceptIdx,  Next: Top,  Prev: CommandIdx,  Up: Top
+
+16 Alphabetic List of Concepts and Objects
+******************************************
+
+ [index ]
+* Menu:
+
+* Bugs, reporting:                       Bugreport.            (line  6)
+* dd progress, do not show, -no_pacifier: Options.             (line 64)
+* Device info, print extra, -list_long:  Options.              (line 18)
+* Device size, set limit, -max_size:     Options.              (line 24)
+* Device size, set limit, -min_size:     Options.              (line 29)
+* Disk devices, print list, -list_all:   Options.              (line 15)
+* disk image file, set path, -image_file: Options.             (line 54)
+* disk image file, write to device, -DO_WRITE: Options.        (line 57)
+* Drive info, add to advice, -with_vendor_model: Options.      (line 22)
+* help text, print to stdout, -help:     Options.              (line 77)
+* ISO 9660, demand presence on target, -look_for_iso: Options. (line 33)
+* lsblk, umount, dd, run by sudo, -with_sudo: Options.         (line 38)
+* only report, do not perform, -dummy:   Options.              (line 68)
+* Problems, reporting:                   Bugreport.            (line  6)
+* raw copy commands, show, -dummy_force: Options.              (line 70)
+* Reasons, list of:                      Reasons.              (line  6)
+* suppress no_fs_while_not_su-, -trust_lsblk_udev: Options.    (line 45)
+* Target device, detect by plugging, -plug_test: Options.      (line  7)
+* Use case, detect intended device by plugging: Plugtest.      (line  6)
+* Use case, evaluate particular given devices: Givendevices.   (line  6)
+* Use case, list advisable device names: Simplenames.          (line  6)
+* Use case, list all devices with reasoning: Listall.          (line  6)
+* Use case, show commands for writing to a not advised device: Unwise.
+                                                               (line  6)
+* Use case, write image to an advised device: Dowrite.         (line  6)
+* version text, print to stdout, -version: Options.            (line 74)
+* xorriso-dd-target, options:            Options.              (line  6)
+
+
+
+Tag Table:
+Node: Top429
+Node: Overview996
+Node: Simplenames2789
+Node: Listall3513
+Node: Givendevices5086
+Node: Plugtest6050
+Node: Dowrite7955
+Node: Unwise9336
+Node: Reasons10958
+Node: Options13539
+Node: Examples17147
+Node: Files17320
+Node: Seealso17478
+Node: Bugreport17644
+Node: Legal18231
+Node: CommandIdx18942
+Node: ConceptIdx20281
+
+End Tag Table
