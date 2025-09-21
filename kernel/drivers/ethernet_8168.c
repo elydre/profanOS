@@ -5,7 +5,7 @@
 #include <cpu/isr.h>
 #include <kernel/snowflake.h>
 #include <cpu/timer.h>
-#include <net/ethernet.h>
+#include <net.h>
 
 #define NUM_TX_DESC  2
 #define NUM_RX_DESC  8
@@ -60,7 +60,7 @@ void rtl8168_handler(registers_t *regs) {
 	if(status & 0x01) {
 		for(int z = 0; z < NUM_RX_DESC; z++) {
 			if (!(Rx_Descriptors[z].command & OWN)) {
-                eth_append_packet((void *)Rx_Descriptors[z].low_buf, Rx_Descriptors[z].command & 0x3FFF);
+                eth_recv_packet((void *)Rx_Descriptors[z].low_buf, Rx_Descriptors[z].command & 0x3FFF);
 				Rx_Descriptors[z].command |= OWN;
 			}
 		}
@@ -74,7 +74,7 @@ void rtl8168_handler(registers_t *regs) {
 }
 
 int rtl8168_send_packet(const void *p_data, uint16_t p_len) {
-    if (p_len > TX_BUF_SIZE) return;
+    if (p_len > TX_BUF_SIZE) return 1;
 
     volatile struct Descriptor *desz = &Tx_Descriptors[tx_pointer];
     while (desz->command & OWN) {

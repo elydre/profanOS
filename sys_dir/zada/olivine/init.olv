@@ -71,4 +71,5 @@ FUNC time
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
 
-ip-get
+ip-get > /dev/null
+kb qwerty

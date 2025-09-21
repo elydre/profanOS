@@ -25,7 +25,8 @@
 #define SHELL_PATH "/bin/f/olivine.elf"
 #define SHELL_NAME "olivine"
 
-#define START_USAGE_GRAPH 1
+#define START_USAGE_GRAPH   1
+#define SERIAL_AS_TERMINAL  1
 
 typedef struct {
     int id;
@@ -103,10 +104,7 @@ void rainbow_print(char *message) {
         tmp[5] = message[i];
         mmq_putstr(1, tmp);
     }
-}
-
-void welcome_print(void) {
-    rainbow_print("Welcome to profanOS!\n\n");
+    mmq_putstr(1, "\e[0m");
 }
 
 char wait_key(void) {
@@ -153,7 +151,13 @@ int main(void) {
 
     mmq_printf(1, "Successfully loaded %d modules\n\n", total);
 
-    if (syscall_vesa_state()) {
+    if (SERIAL_AS_TERMINAL) {
+        if (fm_reopen(0, "/dev/userial", O_RDONLY)  < 0 ||
+            fm_reopen(1, "/dev/userial", O_WRONLY)  < 0 ||
+            fm_reopen(2, "/dev/userial", O_WRONLY) < 0
+        ) syscall_kprint("["LOADER_NAME"] Failed to redirect to userial\n");
+        set_env("TERM=/dev/userial");
+    } else if (syscall_vesa_state()) {
         panda_set_start(syscall_get_cursor());
         if (fm_reopen(0, "/dev/panda", O_RDONLY)  < 0 ||
             fm_reopen(1, "/dev/panda", O_WRONLY)  < 0 ||
@@ -176,7 +180,7 @@ int main(void) {
         set_env("TERM=/dev/kterm");
     }
 
-    welcome_print();
+    rainbow_print("Welcome to profanOS!\n\n");
 
     set_env("PATH=/bin/c:/bin/f:/bin/l");
     set_env("DEFRUN=/bin/f/tcc.elf -run");
@@ -195,6 +199,10 @@ int main(void) {
 
         run_ifexist(&args, &usage_pid);
 
+        if (SERIAL_AS_TERMINAL) {
+            syscall_sys_power(1); // poweroff
+        }
+
         mmq_putstr(1, "\n["LOADER_NAME"] "SHELL_NAME" exited,\nAction keys:\n"
             " g - start "SHELL_NAME" again\n"
             " h - unload all modules and exit\n"
@@ -202,7 +210,7 @@ int main(void) {
         );
 
         if ((key_char = wait_key()) == 'j') {
-            syscall_sys_power(0);
+            syscall_sys_power(0); // reboot
         }
     } while (key_char != 'h');
 

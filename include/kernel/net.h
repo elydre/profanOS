@@ -1,6 +1,8 @@
 #ifndef NET_H
 #define NET_H
 
+#include <minilib.h>
+
 typedef struct eth_info_t {
 	uint32_t net_mask;
 	uint32_t router_ip;
@@ -19,7 +21,7 @@ typedef struct eth_listener_t {
 	int pid;
 	int len;
 	eth_packet_t *packets;
-	int id;
+	uint32_t id;
 } eth_listener_t;
 
 extern eth_info_t eth_info;
@@ -27,6 +29,8 @@ extern eth_info_t eth_info;
 void eth_recv_packet(const void *addr, uint16_t p_len);
 int eth_send_packet(const void * addr, uint16_t p_len);
 void eth_listeners_add_packet(const void *addr, int len);
+int eth_init(void);
+void I_listener_remove(int pid);
 
 // syscalls
 uint32_t eth_start();
@@ -36,5 +40,6 @@ int eth_is_ready(uint32_t id);
 void eth_recv(uint32_t id, void *data);
 void eth_get_info(uint32_t id, struct eth_info_t *info);
 void eth_set_info(uint32_t id, struct eth_info_t *info);
+uint32_t eth_get_transaction();
 
 #endif

@@ -26,7 +26,7 @@ syscalls:
 */
 
 static eth_listener_t *listeners = NULL;
-static int listeners_len = NULL;
+static int listeners_len = 0;
 static uint32_t last_id = 0;
 
 static void remove_listener_at(int idx) {
@@ -39,7 +39,7 @@ static void remove_listener_at(int idx) {
 	listeners = realloc(listeners, sizeof(eth_listener_t) * listeners_len);
 }
 
-static eth_listener_t *get_listener(int id, int pid) {
+static eth_listener_t *get_listener(uint32_t id, int pid) {
 	if (id == 0)
 		return NULL;
 	for (int i = 0; i < listeners_len; i++) {
@@ -73,7 +73,7 @@ void eth_end(uint32_t id) {
 	if (id == 0)
 		return ;
 	for (int i = 0; i < listeners_len; i++) {
-		if (listeners[i].id == id && listeners[i].pid == process_get_pid()) {
+		if (listeners[i].id == id && listeners[i].pid == (int)process_get_pid()) {
 			remove_listener_at(i);
 			break;
 		}
@@ -96,9 +96,9 @@ int eth_is_ready(uint32_t id) {
 void eth_recv(uint32_t id, void *data) {
 	eth_listener_t *lis = get_listener(id, process_get_pid());
 	if (lis == NULL)
-		return -1;
+		return ;
 	if (lis->len == 0)
-		return -1;
+		return ;
 	mem_copy(data, lis->packets[0].data, lis->packets[0].len);
 
 	free(lis->packets[0].data);
@@ -128,5 +128,22 @@ void eth_listeners_add_packet(const void *addr, int len) {
 		lis->packets[lis->len - 1].data = malloc(sizeof(char) * len);
 		mem_copy(lis->packets[lis->len - 1].data, addr, len);
 		lis->packets[lis->len - 1].len = len;
+	}
+}
+
+uint32_t eth_get_transaction() {
+	static uint32_t _id = 1;
+
+	return _id++;
+}
+
+void I_listener_remove(int pid) {
+	int i = 0;
+	while (i < listeners_len) {
+		if (listeners[i].pid == pid) {
+			remove_listener_at(i);
+		}
+		else
+			i++;
 	}
 }

@@ -17,7 +17,7 @@
 #include <drivers/e1000.h>
 #include <drivers/rtl8168.h>
 
-static uint32_t get_phys(void *ptr) {
+static uint32_t get_phys(const void *ptr) {
     uint32_t addr_phys = (uint32_t)ptr;
 	addr_phys -= addr_phys % 4096;
 	addr_phys = (uint32_t)scuba_call_phys((void *)addr_phys);
@@ -29,9 +29,9 @@ eth_info_t eth_info = (eth_info_t){0};
 
 int eth_init(void) {
     if (e1000_is_inited)
-        e1000_set_mac((uint8_t *)&eth_info.mac);
+        e1000_set_mac((uint8_t *)eth_info.mac);
     if (rtl8168_is_inited)
-        rtl8168_set_mac((uint8_t *)&eth_info.mac);
+        rtl8168_set_mac((uint8_t *)eth_info.mac);
     return 2;
 }
 

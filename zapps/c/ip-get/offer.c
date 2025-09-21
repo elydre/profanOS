@@ -1,22 +1,21 @@
 #include "ip-get.h"
 
 void save_router_mac(uint8_t *mac) {
-	FILE *f = fopen("/zada/router_mac", "wb");
-	fwrite(mac, 1, 6, f);
-	fclose(f);
+	memcpy(g_info.router_mac, mac, 6);
 }
 
 int receive_offer(uint8_t *mac) {
 	(void)mac;
-	if (!syscall_eth_listen_isready()) {
+	int size = syscall_eth_is_ready(g_eth_id);
+	if (size < 0) {
 		return 1;
 	}
-	int packet_size = syscall_eth_listen_getsize();
+	int packet_size = size;
 	uint8_t *packet = malloc(packet_size);
 	if (!packet) {
 		return 1;
 	}
-	syscall_eth_listen_get(packet);
+	syscall_eth_recv(g_eth_id, packet);
 	ethernet_header_t *eth = (ethernet_header_t *)packet;
 	if (eth->ether_type != htons(0x0800)) {
 		free(packet);

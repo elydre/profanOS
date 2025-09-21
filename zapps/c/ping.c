@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <profan/net.h>
 
 typedef struct {
 	uint8_t dest_mac[6];
@@ -33,11 +34,11 @@ typedef struct {
 
 uint8_t dest_ip[4] = {0};
 
-void send_ping(uint8_t *router_mac) {
+void send_ping(uint8_t *router_mac, uint8_t *src_mac, uint8_t *src_ip) {
 	uint8_t packet[sizeof(ethernet_header_t) + sizeof(ip_header_t) + sizeof(icmp_header_t) + 4];
 	ethernet_header_t *eth_hdr = (ethernet_header_t *)packet;
 	memcpy(eth_hdr->dest_mac, router_mac, 6);
-	syscall_eth_get_mac(eth_hdr->src_mac);
+	memcpy(eth_hdr->src_mac, src_mac, 6);
 	eth_hdr->ether_type = htons(0x0800);
 	ip_header_t *ip_hdr = (ip_header_t *)(packet + sizeof(ethernet_header_t));
 	ip_hdr->version_ihl = 0x45;
@@ -48,7 +49,7 @@ void send_ping(uint8_t *router_mac) {
 	ip_hdr->ttl = 64;
 	ip_hdr->protocol = 1;
 	ip_hdr->checksum = 0;
-	syscall_eth_get_ip(ip_hdr->src_ip);
+	memcpy(ip_hdr->src_ip, src_ip, 4);
 	// to 8.8.8.8
 	memcpy(ip_hdr->dest_ip, dest_ip, 4);
 	icmp_header_t *icmp_hdr = (icmp_header_t *)(packet + sizeof(ethernet_header_t) + sizeof(ip_header_t));
@@ -84,28 +85,32 @@ void send_ping(uint8_t *router_mac) {
 
 void treat_args(int argc, char **argv);
 
+int g_eth_id = 0;
+eth_info_t g_eth_info;
+
 int main(int argc, char **argv) {
 	treat_args(argc, argv);
+	g_eth_id = syscall_eth_start();
+	if (g_eth_id == 0) {
+		fprintf(stderr, "Error: could not open connection with profan eth\n");
+		return 1;
+	}
+	syscall_eth_get_info(g_eth_id, &g_eth_info);
 	uint8_t mac[6];
-	syscall_eth_get_mac(mac);
-	if (mac[0] == 0 && mac[1] == 0 && mac[2] == 0 &&
-	    mac[3] == 0 && mac[4] == 0 && mac[5] == 0) {
-		fprintf(stderr, "MAC address not set.\n");
-		return 1;
-	}
 	uint8_t router_mac[6];
-	FILE *f = fopen("/zada/router_mac", "rb");
-	if (f) {
-		fread(router_mac, 1, 6, f);
-		fclose(f);
-	}
-	else {
-		fprintf(stderr, "Failed to read router MAC address.\n");
+	memcpy(mac, g_eth_info.mac, 6);
+	memcpy(router_mac, g_eth_info.router_mac, 6);
+	if (!memcmp(mac, "\0\0\0\0\0\0", 6)) {
+		fprintf(stderr, "Error: no ethernet device found\n");
 		return 1;
 	}
-	syscall_eth_listen_start();
+	if (!memcmp(router_mac, "\0\0\0\0\0\0", 6)) {
+		fprintf(stderr, "Error: no router mac address found\n");
+		return 1;
+	}
+
 	for (int i = 0 ; i < 10; i++) {
-		send_ping(router_mac);
+		send_ping(router_mac, g_eth_info.mac, (uint8_t *)&g_eth_info.ip);
 		uint32_t start = syscall_timer_get_ms();
 		while (1) {
 			uint32_t now = syscall_timer_get_ms();
@@ -113,10 +118,10 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "Ping timeout.\n");
 				break;
 			}
-			if (!syscall_eth_listen_isready())
+			int len = syscall_eth_is_ready(g_eth_id);
+			if (len < 0)
 				continue;
-			uint32_t len = syscall_eth_listen_getsize();
-			if (len < sizeof(ethernet_header_t) + sizeof(ip_header_t) + sizeof(icmp_header_t)) {
+			if (len < (int)sizeof(ethernet_header_t) + (int)sizeof(ip_header_t) + (int)sizeof(icmp_header_t)) {
 				continue; // Not enough data for a valid ICMP packet
 			}
 			uint8_t *buffer = malloc(len);
@@ -124,7 +129,7 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "Memory allocation failed.\n");
 				return 1;
 			}
-			syscall_eth_listen_get(buffer);
+			syscall_eth_recv(g_eth_id, buffer);
 			ethernet_header_t *eth_hdr = (ethernet_header_t *)buffer;
 			if (eth_hdr->ether_type != htons(0x0800)) {
 				free(buffer);

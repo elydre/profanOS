@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <profan/net.h>
 
 typedef struct {
 	uint8_t dest_mac[6];
@@ -56,6 +57,10 @@ typedef struct {
 extern uint32_t last_xid; //  network endian
 extern uint32_t offered_ip;
 extern uint32_t dhcp_server_ip;
+
+
+extern eth_info_t g_info;
+extern uint32_t g_eth_id;
 
 void send_dhcp_discover(uint8_t *mac);
 int receive_offer(uint8_t *mac);
