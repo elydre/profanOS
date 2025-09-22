@@ -93,18 +93,18 @@ int mlw_tcp_send(mlw_instance_t *inst, void *data, int len) {
             ip_header_t iphdr;
 
             if (mlw_ip_recv(&pkt, &pkt_len, &iphdr, &pkt_data, &data_len, inst) == 0) {
-                        if (iphdr.protocol == 6) {
-                                tcp_recv_info_t info;
-                    info.src_ip = iphdr.src_ip;
-                    info.dest_ip = iphdr.dest_ip;
+                    if (iphdr.protocol == 6) {
+                        tcp_recv_info_t info;
+                        info.src_ip = iphdr.src_ip;
+                        info.dest_ip = iphdr.dest_ip;
 
-                    if (!tcp_get_packet_info(&info, pkt_data, data_len)) {
-                        if (info.src_port == inst->dest_port &&
-                            info.dest_port == inst->src_port &&
-                            ntohl(info.ack) >= inst->current_seq + len) {
-                        ack_received = 1; // ACK reçu pour ce segment
+                        if (!tcp_get_packet_info(&info, pkt_data, data_len)) {
+                            if (info.src_port == inst->dest_port &&
+                                info.dest_port == inst->src_port &&
+                                info.ack >= inst->current_seq + len) {
+                            ack_received = 1; // ACK reçu pour ce segment
+                        }
                     }
-                }
                 }
                 free(pkt);
             }

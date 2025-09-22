@@ -31,7 +31,7 @@ typedef struct {
 
 mlw_instance_t *mlw_open(uint32_t dest_ip, uint16_t dest_port);
 int mlw_tcp_close(mlw_instance_t *inst, int timeout_ms);
-int mlw_tcp_recv(mlw_instance_t *inst, void *buffer, int buffer_len, int timeout_ms);
+void *mlw_tcp_recv(mlw_instance_t *inst, int *buffer_len, int timeout_ms);
 int mlw_tcp_send(mlw_instance_t *inst, void *data, int len);
 uint32_t mlw_ip_from_str(char *ip);
 

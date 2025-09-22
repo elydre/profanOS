@@ -13,20 +13,20 @@ int main() {
     const char *req =  "GET / HTTP/1.0\r\nHost: httpforever.com\r\n\r\n";
     if (mlw_tcp_send(inst, (void *)req, strlen(req))) {
         printf("Failed to send TCP request\n");
+        mlw_tcp_close(inst, 1000);
         return 1;
     }
 
 	while (1) {
-    	char resp[4096] = {0};
-    	int n = mlw_tcp_recv(inst, resp, sizeof(resp), 10000); // 10s timeout
-    	if (n <= 0) {
-    	    printf("No response received\n");
+    	int size = 0;
+    	char *packet = mlw_tcp_recv(inst, &size, 500); // 10s timeout
+    	if (size <= 0) {
 			break;
     	} else {
-    	    printf("HTTP Response (%d bytes):\n%s\n", n, resp);
+    	    printf("HTTP Response (%d bytes):\n%.*s\n", size, size, packet);
     	}
 	}
 
-    mlw_tcp_close(inst, 100);
+    mlw_tcp_close(inst, 1000);
     return 0;
 }

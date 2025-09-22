@@ -62,4 +62,7 @@ int mlw_send_ip(uint8_t protocol, uint32_t dest_ip, const uint8_t *data, int len
 uint32_t get_time();
 int tcp_get_packet_info(tcp_recv_info_t *info, uint8_t *packet, int len);
 
+uint16_t tcp_checksum(uint32_t src_ip, uint32_t dest_ip,
+						const uint8_t *tcp_seg, int tcp_len);
+
 #endif
