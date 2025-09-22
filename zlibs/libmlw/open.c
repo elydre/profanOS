@@ -54,7 +54,6 @@ int mlw_tcp_connect(mlw_instance_t *inst, uint32_t dest_ip, uint16_t dest_port) 
     inst->dest_port = dest_port;
     inst->buffer = NULL;
     inst->buffer_len = 0;
-    inst->packets = NULL;
     inst->window = 65535;
 
     srand(time(NULL));
@@ -85,13 +84,14 @@ int mlw_tcp_connect(mlw_instance_t *inst, uint32_t dest_ip, uint16_t dest_port) 
                         info.src_port  == dest_port &&
                         info.ack == inst->current_seq + 1) {
 
-                        inst->next_packet_seq = info.seq + 1;
+                        inst->next_segment_seq = info.seq + 1;
+                        inst->first_segment_seq = info.seq + 1;
                         free(pkt);
 
                         // send final ACK
                         inst->current_seq++;
                         if (mlw_tcp_general_send(inst->src_port, dest_ip, dest_port,
-                                                 inst->current_seq, inst->next_packet_seq,
+                                                 inst->current_seq, inst->next_segment_seq,
                                                  0x10, NULL, 0, inst->window)) {
 							printf("ici \n");
 							return -1;
@@ -122,8 +122,6 @@ mlw_instance_t *mlw_open(uint32_t dest_ip, uint16_t dest_port) {
 		free(res);
 		return NULL;
 	}
-	res->next_packet_seq = 0;
-	res->packets = NULL;
 	res->src_port = rand_u16();
 	res->dest_port = dest_port;
 	res->dest_ip = dest_ip;
@@ -134,5 +132,6 @@ mlw_instance_t *mlw_open(uint32_t dest_ip, uint16_t dest_port) {
 		free(res);
 		return NULL;
 	}
+    res->is_open = 1;
 	return res;
 }

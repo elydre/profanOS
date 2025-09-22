@@ -65,4 +65,10 @@ int tcp_get_packet_info(tcp_recv_info_t *info, uint8_t *packet, int len);
 uint16_t tcp_checksum(uint32_t src_ip, uint32_t dest_ip,
 						const uint8_t *tcp_seg, int tcp_len);
 
+void *mlw_tcp_recv(mlw_instance_t *inst, int *buffer_len, int timeout_ms);
+int mlw_tcp_send(mlw_instance_t *inst, void *data, int len);
+
+uint32_t tcp_get_relative(uint32_t seq, uint32_t seq_first);
+uint32_t tcp_has_been_seen(uint32_t seq, uint32_t current_seq, uint32_t seq_first);
+
 #endif

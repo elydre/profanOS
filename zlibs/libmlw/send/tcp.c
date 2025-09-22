@@ -81,7 +81,7 @@ int mlw_tcp_send(mlw_instance_t *inst, void *data, int len) {
     int ack_received = 0;
     while (tries-- && !ack_received) {
         if (mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
-                                 inst->current_seq, inst->next_packet_seq,
+                                 inst->current_seq, inst->next_segment_seq,
                                  0x18, // PSH + ACK
                                  data, len, inst->window))
             return 1;

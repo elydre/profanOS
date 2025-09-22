@@ -6,7 +6,7 @@ int mlw_tcp_close(mlw_instance_t *inst, int timeout_ms) {
 
     // 1️⃣ Envoie FIN + ACK
     if (mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
-                             inst->current_seq, inst->next_packet_seq,
+                             inst->current_seq, inst->next_segment_seq,
                              0x11, NULL, 0, inst->window)) // FIN + ACK
         return -1;
 
@@ -39,11 +39,11 @@ int mlw_tcp_close(mlw_instance_t *inst, int timeout_ms) {
                         // FIN du serveur
                         if (info.flags & 0x01) {
                             fin_from_server = 1;
-                            inst->next_packet_seq = info.seq + 1;
+                            inst->next_segment_seq = info.seq + 1;
 
                             // envoyer ACK pour le FIN serveur
                             mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
-                                                 inst->current_seq, inst->next_packet_seq,
+                                                 inst->current_seq, inst->next_segment_seq,
                                                  0x10, NULL, 0, inst->window);
                         }
 

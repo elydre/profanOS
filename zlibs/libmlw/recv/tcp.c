@@ -44,7 +44,12 @@ void *mlw_tcp_recv(mlw_instance_t *inst, int *buffer_len, int timeout_ms) {
         uint32_t payload_len = info.len;
 
         // si c'est le segment attendu avec données
-        if (seq == inst->next_packet_seq && payload_len > 0) {
+        if (tcp_has_been_seen(seq, inst->next_segment_seq, inst->first_segment_seq) && payload_len > 0) {
+            mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
+                                 inst->current_seq, inst->next_segment_seq,
+                                 0x10, NULL, 0, inst->window);
+        }
+        if (seq == inst->next_segment_seq && payload_len > 0) {
             // alloue un buffer pour ce segment
             uint8_t *buf = malloc(payload_len);
             if (!buf) {
@@ -55,11 +60,11 @@ void *mlw_tcp_recv(mlw_instance_t *inst, int *buffer_len, int timeout_ms) {
             *buffer_len = payload_len;
 
             // met à jour la séquence attendue
-            inst->next_packet_seq = seq + payload_len;
+            inst->next_segment_seq = seq + payload_len;
 
             // envoie l'ACK correspondant
             mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
-                                 inst->current_seq, inst->next_packet_seq,
+                                 inst->current_seq, inst->next_segment_seq,
                                  0x10, NULL, 0, inst->window);
 
             free(pkt);
