@@ -12,18 +12,22 @@
 #ifndef PANDA_ID
 #define PANDA_ID 5
 
-#define PANDA_UNDERLINE 0x100
+#define PANDA_UNDERLINE 0x1
+#define PANDA_BOLD      0x2
+
 
 #include <stdint.h>
 
 typedef struct {
-    uint16_t color;
-    char   content;
+    uint32_t fg_color   : 24;
+    uint8_t  decoration : 8;
+    uint32_t bg_color   : 24;
+    char     character  : 8;
 } panda_char_t;
 
-void     panda_print_char(uint32_t x, uint32_t y, uint8_t c, uint16_t color); // slow on large texts
+void     panda_print_char(uint32_t x, uint32_t y, panda_char_t c); // slow on large texts
 void     panda_print_raw(panda_char_t *buffer, uint32_t length);
-uint16_t panda_print_string(const char *string, int len, int string_color, uint16_t default_color);
+uint16_t panda_print_string(const char *string, int len, int is_stderr);
 
 void panda_sync_start(void);
 void panda_get_size(uint32_t *cols, uint32_t *lines);
@@ -44,10 +48,10 @@ extern int profan_syscall(uint32_t id, ...);
 #define _pscall(module, id, ...) \
     profan_syscall(((module << 24) | id), __VA_ARGS__)
 
-#define panda_print_char(x, y, c, color)  ((void) _pscall(PANDA_ID, 0, x, y, c, color))
+#define panda_print_char(x, y, c)  ((void) _pscall(PANDA_ID, 0, x, y, c))
 #define panda_print_raw(buffer, length)   ((void) _pscall(PANDA_ID, 1, buffer, length))
-#define panda_print_string(str, len, str_color, def_color) \
-        ((uint16_t) _pscall(PANDA_ID, 2, str, len, str_color, def_color))
+#define panda_print_string(str, len, is_stderr) \
+        ((uint16_t) _pscall(PANDA_ID, 2, str, len, is_stderr))
 
 #define panda_sync_start()              ((void) _pscall(PANDA_ID, 3, 0))
 #define panda_get_size(cols, lines)     ((void) _pscall(PANDA_ID, 4, cols, lines))
