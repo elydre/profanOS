@@ -12,7 +12,7 @@
 #ifndef CONFIG_LIBC_H
 #define CONFIG_LIBC_H
 
-#define PROFAN_LIBC_VERSION "2.6 rev 24"
+#define PROFAN_LIBC_VERSION "2.7 rev 0"
 
 /****** PROFAN EXTRA ***********************************************/
 
@@ -23,7 +23,7 @@
 /****** STDIO ******************************************************/
 
 #define STDIO_BUFFER_SIZE 0x1000 // file buffer size (4KB)
-#define STDIO_BUFFER_READ 100    // read cache (use file buffer)
+#define STDIO_BUFFER_READ 0x400  // read cache (use file buffer)
 
 
 /****** STDLIB *****************************************************/

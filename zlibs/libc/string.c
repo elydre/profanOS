@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define BITOP(a,b,op) \
- ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
+#define BITOP(a, b, op) \
+    ((a)[(size_t)(b) / (8 * sizeof(*(a)))] op (size_t)1 << ((size_t)(b) % (8 * sizeof(*(a)))))
 
 char *basename(const char *path) {
     register const char *s;
@@ -549,6 +549,7 @@ size_t strspn(const char *s, const char *c) {
 
     for (; *c && BITOP(byteset, *(unsigned char *)c, |=); c++);
     for (; *s && BITOP(byteset, *(unsigned char *)s, &); s++);
+
     return s-a;
 }
 
@@ -561,13 +562,13 @@ char *strstr(register const char *string, const char *substring) {
      */
 
     b = substring;
-    if (*b == 0) {
+    if (*b == 0)
         return (char *) string;
-    }
+
     for (; *string != 0; string += 1) {
-        if (*string != *b) {
+        if (*string != *b)
             continue;
-        }
+
         a = string;
         while (1) {
             if (*b == 0)

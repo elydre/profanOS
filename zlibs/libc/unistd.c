@@ -496,12 +496,32 @@ int pipe(int fd[2]) {
     return 0;
 }
 
-ssize_t pread(int a, void *b, size_t c, off_t d) {
-    return (PROFAN_FNI, 0);
+ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
+    if (offset < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    int r = fm_pread(fd, buf, count, offset);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return r;
 }
 
-ssize_t pwrite(int a, const void *b, size_t c, off_t d) {
-    return (PROFAN_FNI, 0);
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
+    if (offset < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    int r = fm_pwrite(fd, (void *) buf, count, offset);
+    if (r < 0) {
+        errno = -r;
+        return -1;
+    }
+    return r;
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
