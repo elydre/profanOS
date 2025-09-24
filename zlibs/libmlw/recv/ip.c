@@ -3,7 +3,7 @@
 int mlw_ip_recv(void **whole_packet, int *whole_len, ip_header_t *header, void **data, int *data_len, mlw_instance_t *inst) {
 	int size = syscall_eth_is_ready(inst->eth_id);
 	if (size <= 0)
-		return 1;
+		return 2;
 	uint8_t *packet = malloc(size);
 	syscall_eth_recv(inst->eth_id, packet);
 	if (size < 14) {
