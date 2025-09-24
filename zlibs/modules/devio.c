@@ -195,6 +195,7 @@ static int setup_afft(const char *name, void *read, void *write, void *cmd) {
 
 int __init(void) {
     return (
+        kfu_file_create("/dev", "clip") == SID_NULL         ||
         setup_afft("null", dev_null_r, dev_null_w, NULL)    ||
         setup_afft("zero", dev_zero_r, dev_null_w, NULL)    ||
         setup_afft("random", dev_rand_r, NULL, NULL)        ||
