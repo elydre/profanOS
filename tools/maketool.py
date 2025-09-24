@@ -38,7 +38,7 @@ HDD_MAP = {
 
 CC   = "gcc"
 LD   = "ld"
-SHRD = "gcc -shared"
+SHRD = "gcc -shared -m32 -nostdlib"
 
 KERNEL_SRC = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
 KERNEL_HEADERS = ["include/kernel"]
@@ -297,7 +297,7 @@ def build_disk_elfs():
         required_libs = get_required_libs(name, stt_list)
 
         print_and_exec(f"{CC} -c {name} -o {fname}.o {MOD_FLAGS}")
-        print_and_exec(f"{SHRD} -m32 -nostdlib -L {OUT_DIR}/zlibs -o {fname}.pkm {fname}.o " +
+        print_and_exec(f"{SHRD} -L {OUT_DIR}/zlibs -o {fname}.pkm {fname}.o " +
                        ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
         print_and_exec(f"rm {fname}.o")
         total -= 1
@@ -478,7 +478,7 @@ def build_disk_elfs():
     for name in to_link:
         objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{name}", ".o")
         print_info_line(f"[link] zlibs/{name}.so")
-        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}" +
+        print_and_exec(f"{SHRD} -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}" +
                 (f" -L{OUT_DIR}/zlibs -lc" if name != "libc" else ""))
 
     total = len(elf_build_list) + len(bin_build_list) + len(mod_build_list) + len(dir_build_list)
