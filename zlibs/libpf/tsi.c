@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define TSI_VERSION "0.7.4"
+#define TSI_VERSION "0.7.5"
 
-#define TSI_TEXT_COLOR   0x0F
-#define TSI_TITLE_COLOR  0x70
-#define TSI_FOOTER_COLOR 0x70
-#define TSI_EOF_COLOR    0x08
+#define TSI_TEXT_FG   0xDDDDDD
+#define TSI_TITLE_FG  0x000000
+#define TSI_TITLE_BG  0x888888
+#define TSI_EOF_FG    0x444444
 
 #define TSI_TAB_SIZE 4
 
@@ -38,21 +38,22 @@
 int SCREEN_W;
 int SCREEN_H;
 
-static void clear_screen(void) {
-    syscall_kprint("\e[2J");
-    panda_print_string("\e[2J", 4, -1, 0x0F);
-}
+panda_char_t *tsi_screen_buffer;
+void *tsi_old_screen = NULL;
+
+#define tsi_putchar(x, y, c, fg, bg) tsi_screen_buffer[(y) * SCREEN_W + (x)] = \
+            ((panda_char_t){.fg_color = fg, .bg_color = bg, .decoration = 0, .character = c})
 
 static void tsi_draw_title(const char *title) {
     int len = strlen(title);
     int i, x = (SCREEN_W - len) / 2;
 
     for (i = 0; i < x; i++)
-        panda_print_char(i, 0, ' ', TSI_TITLE_COLOR);
+        tsi_putchar(i, 0, ' ', TSI_TITLE_FG, TSI_TITLE_BG);
     for (; i < SCREEN_W && title[i - x]; i++)
-        panda_print_char(i, 0, title[i - x], TSI_TITLE_COLOR);
+        tsi_putchar(i, 0, title[i - x], TSI_TITLE_FG, TSI_TITLE_BG);
     for (; i < SCREEN_W; i++)
-        panda_print_char(i, 0, ' ', TSI_TITLE_COLOR);
+        tsi_putchar(i, 0, ' ', TSI_TITLE_FG, TSI_TITLE_BG);
 }
 
 static void tsi_draw_footer(char *buffer, int line, int line_count) {
@@ -65,50 +66,9 @@ static void tsi_draw_footer(char *buffer, int line, int line_count) {
     );
 
     for (i = 0; i < SCREEN_W && buffer[i]; i++)
-        panda_print_char(i, SCREEN_H - 1, buffer[i], TSI_FOOTER_COLOR);
+        tsi_putchar(i, SCREEN_H - 1, buffer[i], TSI_TITLE_FG, TSI_TITLE_BG);
     for (; i < SCREEN_W; i++)
-        panda_print_char(i, SCREEN_H - 1, ' ', TSI_FOOTER_COLOR);
-}
-
-static uint16_t tsi_ansi_to_panda(char l) {
-    switch (l) {
-        case '0': return 0;
-        case '1': return 4;
-        case '2': return 2;
-        case '3': return 6;
-        case '4': return 1;
-        case '5': return 5;
-        case '6': return 3;
-    }
-    return 7;
-}
-
-static int tsi_compute_ansi(const char *data, uint16_t *color_ptr) {
-    int i, len = 0;
-
-    if (data[0] == '\e' && data[1] == '[') {
-        if (data[2] == '0' && data[3] == 'm') {
-            if (color_ptr)
-                *color_ptr = TSI_TEXT_COLOR;
-            return 3;
-        }
-        if (data[2] == '4' && data[3] == 'm') {
-            if (color_ptr)
-                *color_ptr |= PANDA_UNDERLINE;
-            return 3;
-        }
-        if (data[2] == '3' && data[3] >= '0' && data[3] <= '7' && data[4] == 'm') {
-            if (color_ptr)
-                *color_ptr = tsi_ansi_to_panda(data[3]);
-            return 4;
-        }
-        if (data[2] == '9' && data[3] >= '0' && data[3] <= '7' && data[4] == 'm') {
-            if (color_ptr)
-                *color_ptr = tsi_ansi_to_panda(data[3]) | 0x08;
-            return 4;
-        }
-    }
-    return 0;
+        tsi_putchar(i, SCREEN_H - 1, ' ', TSI_TITLE_FG, TSI_TITLE_BG);
 }
 
 static const char **tsi_gen_lines(const char *data, int *line_count_ptr, uint32_t flags) {
@@ -122,8 +82,6 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr, uint32_
     for (int i = 0; data[i]; i++) {
         if (data[i] == '\t')
             x += TSI_TAB_SIZE - (x % TSI_TAB_SIZE);
-        else if (data[i] == '\e')
-            i += tsi_compute_ansi(data + i, NULL);
         else
             x++;
 
@@ -150,7 +108,6 @@ static const char **tsi_gen_lines(const char *data, int *line_count_ptr, uint32_
 }
 
 static void tsi_draw_lines(const char **lines, uint32_t flags) {
-    uint16_t color = TSI_TEXT_COLOR;
     int x, y;
 
     for (y = 0; lines[y] && y < SCREEN_H - 2; y++) {
@@ -159,34 +116,30 @@ static void tsi_draw_lines(const char **lines, uint32_t flags) {
             if (lines[y][i] != '\n' && lines[y][i] != '\0') {
                 if (lines[y][i] == '\t') {
                     do {
-                        panda_print_char(x, y + 1, ' ', TSI_TEXT_COLOR);
+                        tsi_putchar(x, y + 1, ' ', TSI_TEXT_FG, 0);
                         x++;
                     } while (x % TSI_TAB_SIZE);
                     continue;
                 }
-                if (lines[y][i] == '\e') {
-                    i += tsi_compute_ansi(lines[y] + i, &color);
-                    continue;
-                }
                 if (lines[y][i] == ' ')
-                    panda_print_char(x, y + 1, ' ', TSI_TEXT_COLOR);
+                    tsi_putchar(x, y + 1, ' ', TSI_TEXT_FG, 0);
                 else if (isprint(lines[y][i]) || flags & TSI_NON_PRINTABLE)
-                    panda_print_char(x, y + 1, lines[y][i], color);
+                    tsi_putchar(x, y + 1, lines[y][i], TSI_TEXT_FG, 0);
                 else
-                    panda_print_char(x, y + 1, '?', TSI_EOF_COLOR);
+                    tsi_putchar(x, y + 1, '?', TSI_EOF_FG, 0);
                 x++;
                 continue;
             }
             for (; x < SCREEN_W; x++) {
-                panda_print_char(x, y + 1, ' ', TSI_TEXT_COLOR);
+                tsi_putchar(x, y + 1, ' ', TSI_TEXT_FG, 0);
             }
         }
     }
 
     for (; y < SCREEN_H - 2; y++) {
-        panda_print_char(0, y + 1, '~', TSI_EOF_COLOR);
+        tsi_putchar(0, y + 1, '~', TSI_EOF_FG, 0);
         for (x = 1; x < SCREEN_W; x++) {
-            panda_print_char(x, y + 1, ' ', TSI_TEXT_COLOR);
+            tsi_putchar(x, y + 1, ' ', TSI_TEXT_FG, 0);
         }
     }
 }
@@ -203,6 +156,7 @@ static void tsi_main_loop(const char **lines, int line_count, uint32_t flags) {
         if (need_redraw) {
             tsi_draw_lines(lines + y, flags);
             tsi_draw_footer(buffer, y + 1, line_count);
+            panda_print_raw(tsi_screen_buffer, SCREEN_W * SCREEN_H);
         }
 
         key = syscall_sc_get();
@@ -226,53 +180,62 @@ static void tsi_main_loop(const char **lines, int line_count, uint32_t flags) {
     free(buffer);
 }
 
+static int tsi_init_screen(const char *title) {
+    panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
+
+    if (SCREEN_W * SCREEN_H == 0 || tsi_old_screen != NULL) {
+        return 1;
+    }
+
+    tsi_old_screen = panda_screen_backup();
+
+    tsi_screen_buffer = malloc(SCREEN_W * SCREEN_H * sizeof(panda_char_t));
+
+    for (int i = 0; i < SCREEN_W; i++) {
+        for (int j = 0; j < SCREEN_H; j++) {
+            tsi_putchar(i, j, ' ', TSI_TEXT_FG, 0);
+        }
+    }
+
+    tsi_draw_title(title);
+
+    return 0;
+}
+
+static void tsi_fini(void) {
+    panda_screen_restore(tsi_old_screen);
+    panda_screen_free(tsi_old_screen);
+    free(tsi_screen_buffer);
+
+    tsi_old_screen = NULL;
+}
+
 int tsi_start(const char *title, const char *string, uint32_t flags) {
     const char **lines;
     int line_count;
 
-    panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
-
-    if (SCREEN_W * SCREEN_H == 0) {
+    if (tsi_init_screen(title))
         return 1;
-    }
-
-    void *old_screen = panda_screen_backup();
-
-    clear_screen();
-
-    tsi_draw_title(title);
 
     lines = tsi_gen_lines(string, &line_count, flags);
-
     tsi_main_loop(lines, line_count, flags);
-
     free(lines);
 
-    panda_screen_restore(old_screen);
-    panda_screen_free(old_screen);
+    tsi_fini();
+
     return 0;
 }
 
 int tsi_start_array(const char *title, const char **lines, uint32_t flags) {
     int line_count;
 
-    panda_get_size((uint32_t *) &SCREEN_W, (uint32_t*) &SCREEN_H);
-
-    if (SCREEN_W * SCREEN_H == 0) {
+    if (tsi_init_screen(title))
         return 1;
-    }
-
-    void *old_screen = panda_screen_backup();
-
-    clear_screen();
-
-    tsi_draw_title(title);
 
     for (line_count = 0; lines[line_count]; line_count++);
-
     tsi_main_loop(lines, line_count, flags);
 
-    panda_screen_restore(old_screen);
-    panda_screen_free(old_screen);
+    tsi_fini();
+
     return 0;
 }
