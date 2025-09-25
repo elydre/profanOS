@@ -94,6 +94,7 @@ int mlw_tcp_connect(mlw_instance_t *inst, uint32_t dest_ip, uint16_t dest_port) 
         inst->recv.next_seq = info.seq + 1;
         inst->recv.first_seq = info.seq;
 
+        // send ack for server syn+ack
         if (mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
                 inst->send.next_seq, inst->recv.next_seq, TCP_FLAG_ACK, NULL, 0, 0xFFFF)) {
             free(whole);
@@ -123,16 +124,10 @@ mlw_instance_t *mlw_open(uint32_t dest_ip, uint16_t dest_port) {
 		free(res);
 		return NULL;
 	}
-	res->src_port = rand_u16();
-	res->dest_port = dest_port;
-	res->dest_ip = dest_ip;
-	res->buffer = NULL;
-	res->buffer_len = 0;
 	if (mlw_tcp_connect(res, res->dest_ip, res->dest_port) == -1) {
 		syscall_eth_end(res->eth_id);
 		free(res);
 		return NULL;
 	}
-    res->is_open = 1;
 	return res;
 }
