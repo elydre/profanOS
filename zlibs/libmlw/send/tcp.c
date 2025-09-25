@@ -63,6 +63,9 @@ int mlw_tcp_general_send(uint16_t src_port,
 }
 
 int mlw_tcp_send(mlw_instance_t *inst, void *data, int len) {
+    if (!inst || !inst->is_open)
+        return 1;
+
     const int MAX_SEGMENT = 500;
 
     if (len > MAX_SEGMENT) {
@@ -77,48 +80,9 @@ int mlw_tcp_send(mlw_instance_t *inst, void *data, int len) {
         return 0;
     }
 
-    int tries = 5;           // nombre de retransmissions max
-    int ack_received = 0;
-    while (tries-- && !ack_received) {
-        if (mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
-                                 inst->current_seq, inst->next_segment_seq,
-                                 0x18, // PSH + ACK
-                                 data, len, inst->window))
-            return 1;
+    int tries = 5;
+    while (tries--) {
 
-        uint32_t end = get_time() + 500; // timeout 500 ms
-        while (get_time() < end) {
-                void *pkt, *pkt_data;
-            int pkt_len, data_len;
-            ip_header_t iphdr;
-
-            if (mlw_ip_recv(&pkt, &pkt_len, &iphdr, &pkt_data, &data_len, inst) == 0) {
-                    if (iphdr.protocol == 6) {
-                        tcp_recv_info_t info;
-                        info.src_ip = iphdr.src_ip;
-                        info.dest_ip = iphdr.dest_ip;
-
-                        if (!tcp_get_packet_info(&info, pkt_data, data_len)) {
-                            if (info.src_port == inst->dest_port &&
-                                info.dest_port == inst->src_port &&
-                                info.ack >= inst->current_seq + len) {
-                            ack_received = 1; // ACK reçu pour ce segment
-                        }
-                    }
-                }
-                free(pkt);
-            }
-
-            if (ack_received)
-                break;
-
-            // petite pause pour ne pas saturer la boucle
-            usleep(500); // 0.5 ms
-        }
     }
-    if (!ack_received)
-        return 1; // échec après toutes les retransmissions
-
-    inst->current_seq += len; // incrémente SEQ après ACK
     return 0;
 }
