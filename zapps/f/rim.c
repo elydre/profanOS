@@ -537,7 +537,7 @@ void display_data(int from_line, int to_line, int x_offset) {
     char line_str[15];
     memset(line_str, ' ', sizeof(line_str));
 
-    itoa(g_lines_count, line_str + 5, 10);
+    profan_itoa(g_lines_count, line_str + 5, 10);
     int line_offset = strlen(line_str) - 4;
     if (line_offset < 4)
         line_offset = 4;
@@ -605,7 +605,7 @@ void display_data(int from_line, int to_line, int x_offset) {
 
         // line number
         if (i < to_line) {
-            itoa(i + 1, line_str + 5, 10);
+            profan_itoa(i + 1, line_str + 5, 10);
 
             gui_print(1, y, line_str + strlen(line_str) - line_offset + 1,
                 (i == g_cursor_line) ? COLOR_FLC : COLOR_FLU,

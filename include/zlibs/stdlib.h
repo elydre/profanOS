@@ -44,7 +44,7 @@ typedef struct {
 long int  a64l(const char *string);
 char     *l64a(long int n);
 int       rand_r(unsigned int *seed);
-char     *itoa(int value, char *buffer, int base);
+char     *profan_itoa(int value, char *buffer, int base);
 char     *realpath(const char *path, char *resolved_path);
 
 // standard functions

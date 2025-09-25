@@ -22,7 +22,7 @@ typedef struct {
     uint32_t fg_color   : 24;
     uint8_t  decoration : 8;
     uint32_t bg_color   : 24;
-    char     character  : 8;
+    uint8_t  character  : 8;
 } panda_char_t;
 
 void     panda_print_char(uint32_t x, uint32_t y, panda_char_t c); // slow on large texts

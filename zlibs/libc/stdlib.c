@@ -912,7 +912,7 @@ static char *I_reverse(char *buffer, int i, int j) {
     return buffer;
 }
 
-char *itoa(int value, char *buffer, int base) {
+char *profan_itoa(int value, char *buffer, int base) {
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;

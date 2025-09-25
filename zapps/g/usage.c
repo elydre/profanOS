@@ -39,7 +39,7 @@ void add_mem_info(uint32_t *pixel_buffer) {
 
     int mem_used = syscall_mem_info(6, 0) / 1024;
 
-    itoa(mem_used, tmp, 10);
+    profan_itoa(mem_used, tmp, 10);
     int len = strlen(tmp);
 
     if (len < 4) {
