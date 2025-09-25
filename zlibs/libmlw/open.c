@@ -52,59 +52,60 @@ int mlw_tcp_connect(mlw_instance_t *inst, uint32_t dest_ip, uint16_t dest_port) 
     // init state
     inst->dest_ip = dest_ip;
     inst->dest_port = dest_port;
-    inst->buffer = NULL;
-    inst->buffer_len = 0;
-    inst->window = 65535;
+    inst->is_open = 0;
+    inst->is_waiting_seq = 0;
+    inst->recv.buffer = NULL;
+    inst->recv.buffer_len = 0;
+    inst->recv.first_seq = 0;
+    inst->recv.next_seq = 0;
+    inst->src_port = rand_u16();
 
-    srand(time(NULL));
-    inst->current_seq = (uint32_t)rand();
+    inst->send.first_seq = (uint32_t)rand();
+    inst->send.next_seq = inst->send.first_seq;
 
     // send SYN
     if (mlw_tcp_general_send(inst->src_port, dest_ip, dest_port,
-                             inst->current_seq, 0, 0x02, NULL, 0, inst->window))
+                             inst->send.next_seq, 0, 0x02, NULL, 0, 0xffff))
         return -1;
+    inst->send.next_seq++;
 
-    // wait SYN+ACK
-    uint32_t timeout = 10000;
+    uint32_t timeout = 5000;
     uint32_t end = get_time() + timeout;
-
     while (get_time() < end) {
-        void *pkt, *data;
-        int pkt_len, data_len;
-        ip_header_t iphdr;
-        if (mlw_ip_recv(&pkt, &pkt_len, &iphdr, &data, &data_len, inst) == 0) {
-            if (iphdr.protocol == 6) {
-                tcp_recv_info_t info;
-                info.dest_ip = iphdr.dest_ip;
-                info.src_ip  = iphdr.src_ip;
-
-                if (!tcp_get_packet_info(&info, data, data_len)) {
-                    if ((info.flags & 0x12) == 0x12 && // SYN+ACK
-                        info.dest_port == inst->src_port &&
-                        info.src_port  == dest_port &&
-                        info.ack == inst->current_seq + 1) {
-
-                        inst->next_segment_seq = info.seq + 1;
-                        inst->first_segment_seq = info.seq + 1;
-                        free(pkt);
-
-                        // send final ACK
-                        inst->current_seq++;
-                        if (mlw_tcp_general_send(inst->src_port, dest_ip, dest_port,
-                                                 inst->current_seq, inst->next_segment_seq,
-                                                 0x10, NULL, 0, inst->window)) {
-							printf("ici \n");
-							return -1;
-						}
-
-                        return 0; // connected
-                    }
-                }
-            }
-            free(pkt);
+        // wait for syn ack
+        void *whole = NULL;
+        tcp_recv_info_t info;
+        int tcp_ret = tcp_general_recv(&info, inst, &whole);
+        if (tcp_ret == 2) {
+            usleep(500);
+            continue;
         }
+        if (tcp_ret == 1)
+            continue;
+
+        if (info.src_ip != dest_ip || info.dest_port != inst->src_port
+                || info.dest_ip != mlw_info->ip || info.src_port != inst->dest_port)
+            goto err;
+        if ((info.flags & TCP_FLAG_ACK) == 0 || (info.flags & TCP_FLAG_SYN) == 0)
+            goto err;
+        if (info.ack != inst->send.next_seq)
+            goto err;
+
+        inst->recv.next_seq = info.seq + 1;
+        inst->recv.first_seq = info.seq;
+
+        if (mlw_tcp_general_send(inst->src_port, inst->dest_ip, inst->dest_port,
+                inst->send.next_seq, inst->recv.next_seq, TCP_FLAG_ACK, NULL, 0, 0xFFFF)) {
+            free(whole);
+            return -1;
+        }
+        inst->is_open = 1;
+        return 0;
+        err:
+            free(whole);
+            continue;
     }
-    return -1; // timeout
+    return -1;
 }
 
 mlw_instance_t *mlw_open(uint32_t dest_ip, uint16_t dest_port) {

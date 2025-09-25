@@ -28,6 +28,8 @@ typedef struct {
 		uint32_t first_seq;
 		uint32_t next_seq;
 	} send;
+	uint8_t is_waiting_seq;
+	uint32_t seq_to_wait;
 } mlw_instance_t;
 
 mlw_instance_t *mlw_open(uint32_t dest_ip, uint16_t dest_port);

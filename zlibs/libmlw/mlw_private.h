@@ -51,6 +51,14 @@ typedef struct tcp_recv_info_t {
 	int len;
 } tcp_recv_info_t;
 
+#define TCP_FLAG_CWR (1)
+#define TCP_FLAG_ECE (1 << 1)
+#define TCP_FLAG_URG (1 << 2)
+#define TCP_FLAG_ACK (1 << 3)
+#define TCP_FLAG_PSH (1 << 4)
+#define TCP_FLAG_RST (1 << 5)
+#define TCP_FLAG_SYN (1 << 6)
+#define TCP_FLAG_FIN (1 << 7)
 
 int mlw_tcp_general_send(uint16_t src_port,
 				uint32_t dest_ip, uint32_t dest_port, uint32_t seq,
@@ -65,7 +73,7 @@ int tcp_get_packet_info(tcp_recv_info_t *info, uint8_t *packet, int len);
 uint16_t tcp_checksum(uint32_t src_ip, uint32_t dest_ip,
 						const uint8_t *tcp_seg, int tcp_len);
 
-void *mlw_tcp_recv(mlw_instance_t *inst, int *buffer_len, int timeout_ms);
+int tcp_general_recv(tcp_recv_info_t *info, mlw_instance_t *inst, void **whole);
 int mlw_tcp_send(mlw_instance_t *inst, void *data, int len);
 
 uint32_t tcp_get_relative(uint32_t seq, uint32_t seq_first);
