@@ -17,10 +17,10 @@
 
 int fu_is_dir(uint32_t dir_sid) {
     char letter;
-    
+
     if (fs_cnt_meta(dir_sid, &letter, 1, 0))
         return 0;
-    
+
     return letter == 'D';
 }
 
@@ -171,7 +171,7 @@ sid_t fu_dir_create(uint8_t device_id, const char *parent, const char *name) {
 
     if (IS_SID_NULL(head_sid))
         return SID_NULL;
-    
+
 
     // create a link in parent directory
     if (parent && fu_add_element_to_dir(parent_sid, head_sid, name))

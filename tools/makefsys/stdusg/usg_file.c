@@ -17,10 +17,10 @@
 
 int fu_is_file(sid_t dir_sid) {
     char letter;
-    
+
     if (fs_cnt_meta(dir_sid, &letter, 1, 0))
         return 0;
-    
+
     return letter == 'F';
 }
 

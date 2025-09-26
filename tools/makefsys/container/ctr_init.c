@@ -48,7 +48,7 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
 
     // init locator
     memset(sector_data, 0, SECTOR_SIZE);
-    sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = SID_NULL;    
+    sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = SID_NULL;
 
     if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(loca_sid) * SECTOR_SIZE)) {
         printf("failed to write d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));

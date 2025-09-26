@@ -9,17 +9,18 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include "../butterfly.h"
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <sys/stat.h>
 #include <errno.h>
+
+#include "../butterfly.h"
 
 int hio_raw_import(const char *filename) {
     FILE *fp = fopen(filename, "rb");
-    
+
     if (fp == NULL) {
         printf("error: could not open file %s\n", filename);
         return 1;
@@ -98,7 +99,7 @@ int hio_dir_import(const char *extern_path, const char *intern_path) {
                 // recursively call hio_dir_import
                 char *intern_path2 = malloc(strlen(intern_path) + strlen(ent->d_name) + 2);
                 path_join(intern_path2, intern_path, ent->d_name);
-            
+
                 hio_dir_import(path, intern_path2);
 
                 free(intern_path2);

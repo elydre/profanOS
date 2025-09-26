@@ -155,10 +155,10 @@ int fs_cnt_set_size(sid_t sid, uint32_t size) {
     } else if (old_count > new_count) {
         // shrink cnt
         int ret = fs_cnt_shrink_size(loca_sid, old_count - new_count);
-    
+
         if (ret == -2)  // TODO check if this can be improved
             ret = 0;
-    
+
         if (ret) {
             printf("[cnt_set_size] Could not shrink cnt\n");
             return 1;

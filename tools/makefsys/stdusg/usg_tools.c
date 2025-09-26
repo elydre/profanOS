@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === fstools.c : 2024 ===                                                  |
+|   === usg_tools.c : 2024 ===                                                |
 |                                                                             |
-|    Part of the m creation tool                          .pi0iq.    |
+|    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -56,7 +56,7 @@ void fu_draw_tree(sid_t sid, int depth) {
     int count;
 
     count = fu_dir_get_content(sid, &sids, &names);
-    
+
     if (count == 0)
         return;
 
@@ -70,12 +70,12 @@ void fu_draw_tree(sid_t sid, int depth) {
             continue;
 
         printf("%08x  ", sids[i]);
-        
-        for (int j = 0; j < depth; j++) 
+
+        for (int j = 0; j < depth; j++)
             printf("  ");
-        
+
         printf("%s : %dB\n", names[i], fs_cnt_get_size(sids[i]));
-        
+
         if (fu_is_dir(sids[i]))
             fu_draw_tree(sids[i], depth + 1);
     }

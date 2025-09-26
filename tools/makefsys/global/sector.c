@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === sector.c : 2025 ===                                                   |
+|                                                                             |
+|    Part of the filesystem creation tool                          .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
