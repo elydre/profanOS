@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include "config_libc.h"
+
 uint32_t g_wd_sid = SID_ROOT;
 char g_wd_path[PATH_MAX] = "/";
 
@@ -333,8 +335,16 @@ long gethostid(void) {
     return (PROFAN_FNI, 0);
 }
 
-int gethostname(char *a, size_t n) {
-    return (PROFAN_FNI, 0);
+int gethostname(char *name, size_t size) {
+    size_t len = strlen(DEFAULT_HOSTNAME);
+
+    if (size < len + 1) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    strcpy(name, DEFAULT_HOSTNAME);
+    return 0;
 }
 
 char *getlogin(void) {

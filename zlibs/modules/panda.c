@@ -23,7 +23,7 @@
 #define DEFAULT_FONT "/zada/fonts/lat38-bold18.psf"
 #define SCROLL_LINES 8
 
-#define COLOR_STDOUT 0xEEEEEE
+#define COLOR_STDOUT 0xFFFFFF
 #define COLOR_STDERR 0xFF7B81
 
 typedef struct {

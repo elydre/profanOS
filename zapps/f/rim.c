@@ -531,8 +531,6 @@ void display_data(int from_line, int to_line, int x_offset) {
         exit(1);
     }
 
-    serial_debug("REFRESH %d..%d (cursor at %d,%d)\n", from_line, to_line, g_cursor_line, g_cursor_pos);
-
     int y = 1;
     char line_str[15];
     memset(line_str, ' ', sizeof(line_str));

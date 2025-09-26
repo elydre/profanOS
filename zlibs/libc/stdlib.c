@@ -455,6 +455,10 @@ int rand(void) {
     return rand_r(&g_rand_seed) & RAND_MAX;
 }
 
+long random(void) {
+    return rand_r(&g_rand_seed) & RAND_MAX;
+}
+
 int rand_r(unsigned int *seed) {
     unsigned int next = *seed;
     int result;
@@ -538,6 +542,10 @@ int setenv(const char *name, const char *value, int replace) {
 }
 
 void srand(unsigned int seed) {
+    g_rand_seed = seed;
+}
+
+void srandom(unsigned int seed) {
     g_rand_seed = seed;
 }
 

@@ -19,6 +19,7 @@
 #include <profan.h>
 
 #include <fcntl.h> // open flags
+#include <paths.h>
 
 #define LOADER_NAME "rosemary"
 
@@ -226,7 +227,7 @@ int main(void) {
     rainbow_print("Welcome to profanOS!\n");
     print_kernel_version();
 
-    set_env("PATH=/bin/c:/bin/f:/bin/l");
+    set_env("PATH=" _PATH_DEFPATH);
     set_env("DEFRUN=/bin/f/tcc.elf -run");
     set_env("HOME=/");
     set_env("PWD=/");

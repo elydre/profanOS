@@ -716,7 +716,13 @@ int rename(const char *old_filename, const char *new_filename) {
 }
 
 FILE *tmpfile(void) {
-    return (PROFAN_FNI, NULL);
+    char template[] = "/tmp/tmpfileXXXXXX";
+    int fd = mkstemp(template);
+
+    if (fd < 0)
+        return NULL;
+
+    return fdopen_mode(fd, O_RDWR | O_CREAT | O_TRUNC);
 }
 
 char *tmpnam(char *filename) {
