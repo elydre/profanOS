@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 #define HISTOTY_SIZE 80
+#define USAGE_HEIGHT 40
 
 void *kfont;
 
@@ -25,25 +26,31 @@ void buffer_print(uint32_t *pixel_buffer, int x, int y, char *msg) {
         glyph = kfont + msg[i] * 16;
         for (int j = 0; j < 16; j++) {
             for (int k = 0; k < 8; k++) {
-                if (!(glyph[j] & (1 << k))) continue;
-                pixel_buffer[i * 8 + x + 8 - k + HISTOTY_SIZE * (y + j)] = 0xffffff;
+                if (!(glyph[j] & (1 << k)))
+                    continue;
+                pixel_buffer[i * 8 + x + 8 - k + HISTOTY_SIZE * (y + j)] = 0xBBBBBB;
             }
         }
     }
 }
 
 void add_mem_info(uint32_t *pixel_buffer) {
-    char tmp[10];
+    char tmp[15];
 
-    int alloc_count = syscall_mem_info(4, 0) - syscall_mem_info(5, 0);
     int mem_used = syscall_mem_info(6, 0) / 1024;
 
-    itoa(mem_used, tmp, 10);
-    strcat(tmp, "kB");
-    buffer_print(pixel_buffer, HISTOTY_SIZE - (strlen(tmp) * 8 + 3), 0, tmp);
+    profan_itoa(mem_used, tmp, 10);
+    int len = strlen(tmp);
 
-    itoa(alloc_count, tmp, 10);
-    buffer_print(pixel_buffer, HISTOTY_SIZE - (strlen(tmp) * 8 + 3), 16, tmp);
+    if (len < 4) {
+        strcpy(tmp + len, " k");
+    } else {
+        memmove(tmp + len - 2, tmp + len - 3, 2);
+        tmp[len - 3] = '.';
+        strcat(tmp, " M");
+    }
+
+    buffer_print(pixel_buffer, HISTOTY_SIZE - (strlen(tmp) * 8 + 3), 0, tmp);
 }
 
 int main(void) {
@@ -64,7 +71,7 @@ int main(void) {
     int total = 0;
     int kernel = 0;
 
-    uint32_t *pixel_buffer = calloc(HISTOTY_SIZE * 100, sizeof(uint32_t));
+    uint32_t *pixel_buffer = calloc(HISTOTY_SIZE * USAGE_HEIGHT, sizeof(uint32_t));
 
     kfont = syscall_font_get();
 
@@ -78,18 +85,18 @@ int main(void) {
         total = syscall_ms_get();
 
         int s = (total - last_total ?: 1);
-        last_total = 100 - ((idle - last_idle) * 100 / s);
-        last_kernel = (kernel - last_kernel) * 100 / s;
+        last_total = USAGE_HEIGHT - ((idle - last_idle) * USAGE_HEIGHT / s);
+        last_kernel = (kernel - last_kernel) * USAGE_HEIGHT / s;
 
-        for (int i = HISTOTY_SIZE - 1; i > 0; i--) {
+        for (int i = HISTOTY_SIZE - 1; i > 0; i--)
             history[i] = history[i - 1];
-        }
+
         history[0] = (last_total << 16) | last_kernel;
 
         for (int i = 0; i < HISTOTY_SIZE; i++) {
             last_total = (history[i] >> 16) & 0xff;
             last_kernel = history[i] & 0xff;
-            for (int j = 0; j < 100; j++) {
+            for (int j = 0; j < USAGE_HEIGHT; j++) {
                 if (j < last_kernel)
                     pixel_buffer[i + HISTOTY_SIZE * j] = 0xa26ea8;
                 else if (j < last_total)
@@ -101,10 +108,14 @@ int main(void) {
 
         add_mem_info(pixel_buffer);
 
+        for (int j = 0; j <= USAGE_HEIGHT; j++)
+            fb[x_offset - 1 + j * pitch] = 0x444444;
+
         for (int i = 0; i < HISTOTY_SIZE; i++) {
-            for (int j = 0; j < 100; j++) {
+            for (int j = 0; j < USAGE_HEIGHT; j++) {
                 fb[(x_offset + i) % width + j * pitch] = pixel_buffer[i + HISTOTY_SIZE * j];
             }
+            fb[(x_offset + i) % width + USAGE_HEIGHT * pitch] = 0x666666;
         }
 
         syscall_process_sleep(syscall_process_pid(), 200);

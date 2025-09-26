@@ -683,7 +683,7 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
 uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     uint32_t ret;
 
-    if (str_cmp("/", path) == 0)
+    if (path[0] == '/' && path[1] == '\0')
         return from;
 
     ret = rec_path_to_sid(from, path);

@@ -11,6 +11,7 @@
 
 #include <sys/utsname.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -51,6 +52,10 @@ int uname(struct utsname *buf) {
     strcpy(buf->release, buffers[1]);
     strcpy(buf->machine, buffers[2]);
 
+    if (gethostname(buf->nodename, sizeof(buf->nodename)) == -1) {
+        buf->nodename[0] = '\0'; // fallback to empty string on error
+    }
+
     fclose(f);
     free(info);
 
@@ -58,10 +63,8 @@ int uname(struct utsname *buf) {
 
     if (sysname == NULL) {
         strcpy(buf->sysname, "profan");
-        strcpy(buf->nodename, "( ._.)");
     } else {
         strlcpy(buf->sysname, sysname, sizeof(buf->sysname));
-        strcpy(buf->nodename, "( ^-^)");
     }
 
     return 0;

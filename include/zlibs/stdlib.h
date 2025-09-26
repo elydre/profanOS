@@ -44,7 +44,7 @@ typedef struct {
 long int  a64l(const char *string);
 char     *l64a(long int n);
 int       rand_r(unsigned int *seed);
-char     *itoa(int value, char *buffer, int base);
+char     *profan_itoa(int value, char *buffer, int base);
 char     *realpath(const char *path, char *resolved_path);
 
 // standard functions
@@ -77,9 +77,11 @@ char     *mktemp(char *tmpl);
 int       putenv(char *string);
 void      qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *));
 int       rand(void);
+long      random(void);
 void     *realloc(void *mem, size_t new_size);
 int       setenv(const char *name, const char *value, int replace);
 void      srand(unsigned int seed);
+void      srandom(unsigned int seed);
 int       system(const char *command);
 int       unlockpt(int fd);
 int       unsetenv(const char *name);

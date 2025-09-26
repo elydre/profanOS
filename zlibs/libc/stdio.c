@@ -33,12 +33,15 @@ typedef struct _IO_FILE {
     int     mode;
 
     uint8_t error;
-    uint8_t eof;  // non-file only
+    uint8_t eof;
+    uint8_t unbuffered;
 
     int     ungetchar;
+    int     pos;
 
     char   *buffer;
     int     buffer_size;
+    int     buffer_needle;
 } FILE;
 
 FILE *stdin = NULL;
@@ -54,6 +57,8 @@ static FILE *fdopen_mode(int fd, int mode) {
     file->ungetchar = -1;
     file->mode = mode;
     file->fd = fd;
+    file->unbuffered = !fm_isfile(fd);
+    file->pos = fm_lseek(fd, 0, SEEK_CUR);
 
     return file;
 }
@@ -179,8 +184,11 @@ int fflush(FILE *stream) {
     if (stream == NULL || (stream->mode & 0b11) == O_RDONLY)
         return 0;
 
-    if (stream->buffer_size <= 0)
+    // fflush also sync the file position
+    if (stream->buffer_size <= 0) {
+        fm_lseek(stream->fd, stream->pos, SEEK_SET);
         return 0;
+    }
 
     uint32_t buffer_size = stream->buffer_size;
     stream->buffer_size = 0;
@@ -188,11 +196,15 @@ int fflush(FILE *stream) {
     stream->buffer[buffer_size] = 0;
 
     // write the file
-    int written = fm_write(stream->fd, stream->buffer, buffer_size);
+    int written = fm_pwrite(stream->fd, stream->buffer, buffer_size, stream->pos);
+    stream->pos += written;
+
     if (written < 0) {
         stream->error = 1;
         written = 0;
     }
+
+    fm_lseek(stream->fd, stream->pos, SEEK_SET);
 
     // return the number of elements written
     return written ? 0 : EOF;
@@ -217,13 +229,17 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     if (count == 0 || stream == NULL || (stream->mode & 0b11) == O_WRONLY)
         return 0;
 
-    fflush(stream);
+    // if buffer is used for writing
+    if (stream->buffer_size > 0)
+        fflush(stream);
 
     int read, rfrom_buffer = 0;
 
     // check if the file is a function call
-    if (fm_isfile(stream->fd) < 1) {
-        read = fm_read(stream->fd, buffer, count);
+    if (stream->unbuffered) {
+        read = fm_pread(stream->fd, buffer, count, stream->pos);
+        stream->pos += read;
+
         if (read < 0) {
             stream->error = 1;
             return 0;
@@ -237,29 +253,28 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
 
     // read the file from the buffer if possible
     if (stream->buffer_size < 0) {
-        if ((uint32_t) -stream->buffer_size >= count) {
-            memcpy(buffer, stream->buffer, count);
-            stream->buffer_size += count;
+        if ((int) count + stream->buffer_needle <= -stream->buffer_size) {
+            memcpy(buffer, stream->buffer + stream->buffer_needle, count);
+            stream->buffer_needle += count;
+            stream->pos += count;
 
-            // move the buffer
-            memmove(stream->buffer, stream->buffer + count, -stream->buffer_size);
-
-            fm_lseek(stream->fd, count, SEEK_CUR);
             return count / size;
         }
 
-        memcpy(buffer, stream->buffer, -stream->buffer_size);
-        rfrom_buffer = -stream->buffer_size;
-        count += stream->buffer_size;
+        rfrom_buffer = -(stream->buffer_size + stream->buffer_needle);
 
-        fm_lseek(stream->fd, -stream->buffer_size, SEEK_CUR);
+        if (rfrom_buffer)
+            memcpy(buffer, stream->buffer + stream->buffer_needle, rfrom_buffer);
 
         stream->buffer_size = 0;
+        stream->pos += rfrom_buffer;
+        count -= rfrom_buffer;
     }
 
     // read the file
     if (count > STDIO_BUFFER_READ) {
-        read = fm_read(stream->fd, buffer + rfrom_buffer, count);
+        read = fm_pread(stream->fd, buffer + rfrom_buffer, count, stream->pos);
+        stream->pos += read;
 
         if (read < 0)
             return (stream->error = 1, 0);
@@ -270,7 +285,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         return (read + rfrom_buffer) / size;
     }
 
-    read = fm_read(stream->fd, stream->buffer, STDIO_BUFFER_READ);
+    read = fm_pread(stream->fd, stream->buffer, STDIO_BUFFER_READ, stream->pos);
 
     if (read < 0)
         return (stream->error = 1, 0);
@@ -281,10 +296,10 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     }
 
     memcpy(buffer + rfrom_buffer, stream->buffer, count);
-    memmove(stream->buffer, stream->buffer + count, read - count);
-    stream->buffer_size = -(read - count);
+    stream->buffer_needle = count;
+    stream->buffer_size = -read;
 
-    fm_lseek(stream->fd, stream->buffer_size, SEEK_CUR);
+    stream->pos += count;
 
     // return the number of elements read
     return (count + rfrom_buffer) / size;
@@ -341,18 +356,23 @@ int fseek(FILE *stream, long offset, int whence) {
     stream->eof = 0;
 
     // set the file position
-    return fm_lseek(stream->fd, offset, whence) < 0 ? -1 : 0;
+    int newpos = fm_lseek(stream->fd, offset, whence);
+    if (newpos < 0)
+        return -1;
+
+    stream->pos = newpos;
+
+    return 0;
 }
 
 long ftell(FILE *stream) {
     if (stream == NULL)
         return -1;
 
-    // flush the buffer
+    // flush the buffer and sync position
     fflush(stream);
 
-    int r = fm_lseek(stream->fd, 0, SEEK_CUR);
-    return r < 0 ? -1 : r;
+    return stream->pos;
 }
 
 int fgetpos(FILE *stream, fpos_t *pos) {
@@ -696,7 +716,13 @@ int rename(const char *old_filename, const char *new_filename) {
 }
 
 FILE *tmpfile(void) {
-    return (PROFAN_FNI, NULL);
+    char template[] = "/tmp/tmpfileXXXXXX";
+    int fd = mkstemp(template);
+
+    if (fd < 0)
+        return NULL;
+
+    return fdopen_mode(fd, O_RDWR | O_CREAT | O_TRUNC);
 }
 
 char *tmpnam(char *filename) {

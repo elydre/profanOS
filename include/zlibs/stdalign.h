@@ -13,6 +13,10 @@
 #define _STDALIGN_H
 
 #ifndef __cplusplus
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
+  // These do not need to be defined for C23+
+#else
   #undef alignas
   #define alignas _Alignas
 
@@ -24,6 +28,7 @@
 
   #undef __alignas_is_defined
   #define __alignas_is_defined 1
+#endif
 #endif
 
 #endif

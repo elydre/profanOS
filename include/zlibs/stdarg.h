@@ -14,8 +14,12 @@
 
 typedef __builtin_va_list va_list;
 
-#undef  va_start
-#define va_start(v, l) __builtin_va_start(v, l)
+#undef va_start
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
+  #define va_start(v, ...) __builtin_va_start(v, 0)
+#else
+  #define va_start(v, l) __builtin_va_start(v, l)
+#endif
 
 #undef  va_end
 #define va_end(v) __builtin_va_end(v)

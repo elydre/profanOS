@@ -35,6 +35,8 @@ typedef __PTRDIFF_TYPE__ ptrdiff_t;
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201710L)
   #undef unreachable
   #define unreachable() __builtin_unreachable()
+
+  #define __STDC_VERSION_STDDEF_H__ 202311L
 #endif
 
 #endif

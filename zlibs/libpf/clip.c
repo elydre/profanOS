@@ -51,6 +51,7 @@ char *clip_get_str(void) {
         file_sid = fu_path_to_sid(SID_ROOT, PROFAN_CLIP_PATH);
     if (!fu_is_file(file_sid))
         return NULL;
+
     uint32_t size = fu_file_get_size(file_sid);
     char *buf = malloc(size + 1);
 
@@ -66,6 +67,7 @@ void *clip_get_raw(uint32_t *size) {
         file_sid = fu_path_to_sid(SID_ROOT, PROFAN_CLIP_PATH);
     if (!fu_is_file(file_sid))
         return NULL;
+
     *size = fu_file_get_size(file_sid);
     void *buf = malloc(*size);
 
