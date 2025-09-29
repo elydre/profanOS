@@ -1,0 +1,39 @@
+.Dd September 28, 2025
+.Dt mlw_tcp_recv 10
+.Os ProfanOS
+.Sh NAME
+.Nm mlw_tcp_recv
+.Nd receive data from a TCP connection
+.Sh SYNOPSIS
+.In mlw.h
+.Ft int
+.Fn mlw_tcp_recv "mlw_tcp_t *inst" "void *buff" "int buff_len" "int timeout"
+.Sh DESCRIPTION
+The
+.Fn mlw_tcp_recv
+function receives data from a TCP connection referenced by
+.Fa inst
+and writes at most
+.Fa buff_len
+bytes into
+.Fa buff .
+.Pp
+The number of bytes read may be less than
+.Fa buff_len .
+.Pp
+A negative
+.Fa timeout
+is considered infinite.
+.Pp
+A zero
+.Fa timeout
+returns immediately after the first check for data presence.
+.Sh RETURN VALUES
+Upon success, the number of bytes read is returned.
+.Pp
+If the timeout was not infinite,
+a return value of 0 indicates that no data was available.
+.Pp
+A return value of -1 indicates that the connection is closed and
+no more data remains to be read.
+

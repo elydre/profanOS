@@ -23,7 +23,7 @@ static uint16_t ip_checksum(void *buf, size_t len) {
 }
 
 
-int mlw_send_ip(uint8_t protocol, uint32_t dest_ip, const uint8_t *data, int len) {
+int I_mlw_tcp_send_ip(uint8_t protocol, uint32_t dest_ip, const uint8_t *data, int len) {
 	if (!data || len <= 0)
 		return 1;
 
@@ -51,7 +51,7 @@ int mlw_send_ip(uint8_t protocol, uint32_t dest_ip, const uint8_t *data, int len
 		free(packet);
 		return 1;
 	}
-	int ret = mlw_send_ethernet(0x0800, dest_mac, packet, len + sizeof(ip_header_t));
+	int ret = I_mlw_tcp_send_ethernet(0x0800, dest_mac, packet, len + sizeof(ip_header_t));
 	free(packet);
 	return ret;
 }

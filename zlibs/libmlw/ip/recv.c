@@ -1,6 +1,6 @@
 #include "../mlw_private.h"
 
-int mlw_ip_recv(void **whole_packet, int *whole_len, ip_header_t *header, void **data, int *data_len, mlw_instance_t *inst) {
+int I_mlw_ip_recv(void **whole_packet, int *whole_len, ip_header_t *header, void **data, int *data_len, mlw_tcp_t *inst) {
 	int size = syscall_eth_is_ready(inst->eth_id);
 	if (size <= 0)
 		return 2;
@@ -25,8 +25,8 @@ int mlw_ip_recv(void **whole_packet, int *whole_len, ip_header_t *header, void *
 	ip_header_t *ip_header = (ip_header_t *)ip_addr;
 	*data = (uint8_t *)ip_addr + (ip_header->v_ihl & 0xf) * 4;
 	*data_len = ip_len - ((uint8_t *)*data - (uint8_t *)ip_addr);
-	if (*data_len > ip_header->tot_len - (ip_header->v_ihl & 0xf) * 4)
-		*data_len = ip_header->tot_len - (ip_header->v_ihl & 0xf) * 4;
+	if (*data_len > ntohs(ip_header->tot_len) - (ip_header->v_ihl & 0xf) * 4)
+		*data_len = ntohs(ip_header->tot_len) - (ip_header->v_ihl & 0xf) * 4;
 	*whole_packet = packet;
 	*whole_len = size;
 	*header = *ip_header;

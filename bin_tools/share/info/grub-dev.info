@@ -839,7 +839,7 @@ terminfo and direct hardware.  For string of keys look at i386-pc (same
 files), for terminfo ieee1275 (same files) and for hardware loongson
 (kern/mips/loongson/init.c and term/at_keyboard.c).
 
-   For the timer you'll need to call grub_install_get_time_ms (...)
+   For the timer you'll need to call grub_install_I_mlw_get_time_ms (...)
 with as sole argument a function returning a grub_uint64_t of a number
 of milliseconds elapsed since arbitrary point in the past.
 

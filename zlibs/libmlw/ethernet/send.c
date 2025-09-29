@@ -1,6 +1,6 @@
 #include "../mlw_private.h"
 
-int mlw_send_ethernet(uint16_t type_lit, uint8_t *mac, uint8_t *data, int len) {
+int I_mlw_tcp_send_ethernet(uint16_t type_lit, uint8_t *mac, uint8_t *data, int len) {
 	uint8_t *packet = malloc(6 + 6 + 2 + len);
 	if (!packet)
 		return 1;
