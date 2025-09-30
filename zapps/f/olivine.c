@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 4"
+#define OLV_VERSION "1.8 rev 5"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -4244,17 +4244,20 @@ void display_prompt(void) {
             case 'd':
                 fputs(g_olv->current_dir, stdout);
                 break;
+            case 'e':
+                fputs(g_olv->exit_code, stdout);
+                break;
             case '(':
                 if (g_olv->exit_code[0] != '0')
                     break;
-                for (; prompt[i] && prompt[i] != ')'; i++);
-                i--;
+                for (; prompt[i] && !(prompt[i] == '$' &&
+                        prompt[i + 1] == ')'); i++);
                 break;
             case '{':
                 if (g_olv->exit_code[0] == '0')
                     break;
-                for (; prompt[i] && prompt[i] != '}'; i++);
-                i--;
+                for (; prompt[i] && !(prompt[i] == '$' &&
+                        prompt[i + 1] == '}'); i++);
                 break;
             case ')':
                 break;
