@@ -56,7 +56,7 @@ INCLUDE_DIR   = "include"   # multi file include
 
 LINK_LINE_MAX = 12          # max line for link instructions
 
-CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib "
+CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib -Wundef "
 CFLAGS    += "-Wall -Wextra -D__profanOS__"
 
 CC_OPTIM   = "-fno-omit-frame-pointer -O" # level defined in env PROFANOS_OPTIM
@@ -95,8 +95,7 @@ if opti_level is not None:
 
 if os.getenv("PROFANOS_KIND") == "1":
     cprint(COLOR_INFO, "profanOS kind mode enabled")
-    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "").replace("-Werror", "")
-
+    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "").replace("-Werror", "").replace("-Wundef", "")
 for e in ZHEADERS:
     if os.path.exists(e):
         ZAPP_FLAGS += f" -I {e}"
