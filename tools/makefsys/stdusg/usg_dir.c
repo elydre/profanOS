@@ -15,7 +15,7 @@
 
 #include "../butterfly.h"
 
-int fu_is_dir(uint32_t dir_sid) {
+int fu_is_dir(sid_t dir_sid) {
     char letter;
 
     if (fs_cnt_meta(dir_sid, &letter, 1, 0))
@@ -38,7 +38,7 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
+int fu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX) {

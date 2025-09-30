@@ -27,8 +27,8 @@
 // string functions
 void str_cat(char *s1, const char *s2);
 int  str_len(const char *s);
-void str_cpy(char *s1, const char *s2);
-void str_ncpy(char *s1, const char *s2, int n);
+void str_copy(char *s1, const char *s2);
+void str_ncopy(char *s1, const char *s2, int n);
 void int2str(int n, char *s);
 int  str2int(const char *s);
 int  str_cmp(const char *s1, const char *s2);

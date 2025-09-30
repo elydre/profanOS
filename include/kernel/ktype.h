@@ -41,24 +41,6 @@ typedef unsigned short     uint16_t;
 typedef unsigned int       uint32_t;
 typedef unsigned long long uint64_t;
 
-typedef struct {
-    uint8_t data[FS_SECTOR_SIZE];  // sector data
-} sector_t;
-
-typedef struct {
-    sector_t *sectors;          // first sector pointer
-    uint32_t size;              // sector count
-
-    uint8_t *used;              // array sectors (bool)
-    uint32_t *free;             // array of free sector ids
-    uint32_t used_count;        // used sector count
-} vdisk_t;
-
-typedef struct {
-    vdisk_t **vdisk;            // list mounted virtual disks
-    uint32_t vdisk_count;       // virtual disk count
-} filesys_t;
-
 // va_list
 typedef __builtin_va_list va_list;
 

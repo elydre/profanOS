@@ -256,7 +256,7 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         fd_data->type = TYPE_DIR;
         int len = str_len(abs_path);
         fd_data->path = malloc(len + 1);
-        str_cpy(fd_data->path, abs_path);
+        str_copy(fd_data->path, abs_path);
     } else {
         fd_data->type = TYPE_AFFT;
         fd_data->afft_id = kfu_afft_get_id(sid);
@@ -458,7 +458,7 @@ int fm_dup2(int fd, int new_fd) {
         case TYPE_DIR:
             int len = str_len(fd_data->path);
             new_data->path = malloc(len + 1);
-            str_cpy(new_data->path, fd_data->path);
+            str_copy(new_data->path, fd_data->path);
             break;
 
         case TYPE_FILE:

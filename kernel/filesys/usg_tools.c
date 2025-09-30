@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === usg_tools.c : 2024 ===                                                |
+|   === usg_tools.c : 2025 ===                                                |
 |                                                                             |
 |    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -9,10 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include "../butterfly.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <kernel/butterfly.h>
+#include <minilib.h>
+#include <system.h>
 
 static inline int path_to_sid_cmp(const char *path, const char *name, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {
@@ -54,13 +53,13 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
     }
 
     // search for the path part
-    for (int j = 0; (offset = fu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
-        if (strcmp(path, (char *) buf + offset) == 0) {
+    for (int j = 0; (offset = kfu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
+        if (str_cmp(path, (char *) buf + offset) == 0) {
             free(buf);
             return sid;
         }
 
-        if (path_to_sid_cmp(path, (char *) buf + offset, path_len) == 0 && fu_is_dir(sid)) {
+        if (path_to_sid_cmp(path, (char *) buf + offset, path_len) == 0 && kfu_is_dir(sid)) {
             free(buf);
             return rec_path_to_sid(sid, path + path_len);
         }
@@ -71,10 +70,10 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
     return SID_NULL;
 }
 
-uint32_t fu_path_to_sid(uint32_t from, const char *path) {
+uint32_t kfu_path_to_sid(uint32_t from, const char *path) {
     uint32_t ret;
 
-    if (strcmp("/", path) == 0)
+    if (str_cmp("/", path) == 0)
         return from;
 
     ret = rec_path_to_sid(from, path);
@@ -82,17 +81,17 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
     return ret;
 }
 
-void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
+void kfu_sep_path(const char *fullpath, char **parent, char **cnt) {
     int i, len;
 
-    len = strlen(fullpath);
+    len = str_len(fullpath);
 
     if (parent != NULL) {
-        *parent = calloc(len + 2, sizeof(char));
+        *parent = calloc(len + 2);
     }
 
     if (cnt != NULL) {
-        *cnt = calloc(len + 2, sizeof(char));
+        *cnt = calloc(len + 2);
     }
 
     while (len > 0 && fullpath[len - 1] == '/') {
@@ -107,45 +106,45 @@ void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
 
     if (parent != NULL && i >= 0) {
         if (i == 0) {
-            strcpy(*parent, "/");
+            str_copy(*parent, "/");
         } else {
-            strncpy(*parent, fullpath, i);
+            str_ncopy(*parent, fullpath, i);
         }
     }
 
     if (cnt != NULL) {
-        strcpy(*cnt, fullpath + i + 1);
+        str_copy(*cnt, fullpath + i + 1);
     }
 }
 
-void fu_draw_tree(sid_t sid, int depth) {
+void kfu_draw_tree(sid_t sid, int depth) {
     sid_t *sids;
     char **names;
     int count;
 
-    count = fu_dir_get_content(sid, &sids, &names);
+    count = kfu_dir_get_content(sid, &sids, &names);
 
     if (count == 0)
         return;
 
     if (count == -1) {
-        printf("failed to get directory content during path search\n");
+        kprintf_serial("failed to get directory content during path search\n");
         return;
     }
 
     for (int i = 0; i < count; i++) {
-        if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0)
+        if (str_cmp(names[i], ".") == 0 || str_cmp(names[i], "..") == 0)
             continue;
 
-        printf("%08x  ", sids[i]);
+        kprintf_serial("%08x  ", sids[i]);
 
         for (int j = 0; j < depth; j++)
-            printf("  ");
+            kprintf_serial("  ");
 
-        printf("%s : %dB\n", names[i], fs_cnt_get_size(sids[i]));
+        kprintf_serial("%s : %dB\n", names[i], fs_cnt_get_size(sids[i]));
 
-        if (fu_is_dir(sids[i]))
-            fu_draw_tree(sids[i], depth + 1);
+        if (kfu_is_dir(sids[i]))
+            kfu_draw_tree(sids[i], depth + 1);
     }
 
     for (int i = 0; i < count; i++)
@@ -155,25 +154,25 @@ void fu_draw_tree(sid_t sid, int depth) {
     free(sids);
 }
 
-void fu_dump_sector(sid_t sid) {
+void kfu_dump_sector(sid_t sid) {
     uint8_t buf[SECTOR_SIZE];
     if (vdisk_read(buf, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE)) {
-        printf("failed to read sector d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
+        kprintf_serial("failed to read sector d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
         return;
     }
 
-    printf("SECTOR d%ds%d:\n", SID_DISK(sid), SID_SECTOR(sid));
+    kprintf_serial("SECTOR d%ds%d:\n", SID_DISK(sid), SID_SECTOR(sid));
 
     char line[16];
 
     for (int i = 0; i < SECTOR_SIZE; i++) {
         if (i % 16 == 0)
-            printf("%04x: ", i);
-        printf("%02x ", buf[i]);
+            kprintf_serial("%04x: ", i);
+        kprintf_serial("%02x ", buf[i]);
         line[i % 16] = (buf[i] >= 32 && buf[i] <= 126) ? buf[i] : '.';
         if (i % 16 == 15) {
             line[16] = 0;
-            printf("  %s\n", line);
+            kprintf_serial("  %s\n", line);
         }
     }
 }

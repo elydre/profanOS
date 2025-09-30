@@ -292,8 +292,8 @@ static char **dup_envp(char **envp, char *wd, int pid) {
             continue;
         }
         nenvp[i] = nenvp_start;
-        str_cpy(nenvp_start, "PWD=");
-        str_cpy(nenvp_start + 4, wd);
+        str_copy(nenvp_start, "PWD=");
+        str_copy(nenvp_start + 4, wd);
         nenvp_start += str_len(wd) + 5;
     }
 
@@ -478,37 +478,37 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
     if (file_type == FILE_RAWELF) {
         for (int i = 0; i < args->argc; i++) {
             nargv[i] = alloc_arg(str_len(args->argv[i]) + 1, pid);
-            str_cpy(nargv[i], args->argv[i]);
+            str_copy(nargv[i], args->argv[i]);
         }
     } else if (file_type == FILE_DYNELF) {
         nargv[0] = alloc_arg(4, pid);
-        str_cpy(nargv[0], "dlg");
+        str_copy(nargv[0], "dlg");
 
         nargv[1] = alloc_arg(3, pid);
-        str_cpy(nargv[1], "-e");
+        str_copy(nargv[1], "-e");
 
         nargv[2] = alloc_arg(str_len(args->path) + 1, pid);
-        str_cpy(nargv[2], args->path);
+        str_copy(nargv[2], args->path);
 
         for (int i = 0; i < args->argc; i++) {
             nargv[i + 3] = alloc_arg(str_len(args->argv[i]) + 1, pid);
-            str_cpy(nargv[i + 3], args->argv[i]);
+            str_copy(nargv[i + 3], args->argv[i]);
         }
     } else {
         int c = 0;
 
         nargv[c] = alloc_arg(4, pid);
-        str_cpy(nargv[c++], "dlg");
+        str_copy(nargv[c++], "dlg");
 
         if (file_type == FILE_FBANG) {
             nargv[c] = alloc_arg(3, pid);
-            str_cpy(nargv[c++], "-e");
+            str_copy(nargv[c++], "-e");
 
             nargv[c++] = interp[0];
 
             if (args->argc) {
                 nargv[c] = alloc_arg(str_len(args->argv[0]) + 1, pid);
-                str_cpy(nargv[c++], args->argv[0]);
+                str_copy(nargv[c++], args->argv[0]);
             }
         }
 
@@ -518,12 +518,12 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
 
         if (file_type != FILE_FBANG) {
             nargv[c] = alloc_arg(str_len(args->path) + 1, pid);
-            str_cpy(nargv[c++], args->path);
+            str_copy(nargv[c++], args->path);
         }
 
         for (int i = 1; i < args->argc; i++) {
             nargv[c] = alloc_arg(str_len(args->argv[i]) + 1, pid);
-            str_cpy(nargv[c++], args->argv[i]);
+            str_copy(nargv[c++], args->argv[i]);
         }
 
         sid = deluge_sid;

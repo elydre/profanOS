@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === ctr_del.c : 2024 ===                                                  |
+|   === ctr_del.c : 2025 ===                                                  |
 |                                                                             |
 |    Kernel container deletion functions                           .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -13,6 +13,7 @@
 #include <minilib.h>
 #include <system.h>
 
+/*
 int fs_cnt_delete_core(uint32_t core_sid) {
     vdisk_t *vdisk;
     uint8_t *data;
@@ -93,13 +94,13 @@ int fs_cnt_delete_loca_recur(uint32_t loca_sid) {
     vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
     return 0;
 }
+*/
 
-int fs_cnt_delete(uint32_t head_sid) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-    uint32_t loca_sid;
+int fs_cnt_delete(sid_t head_sid) {
+    sys_error("[cnt_delete] not implemented yet");
+    return 1;
 
-    vdisk = fs_get_vdisk(SID_DISK(head_sid));
+    /*vdisk = fs_get_vdisk(SID_DISK(head_sid));
 
     if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
         sys_warning("[cnt_delete] Invalid sector id");
@@ -128,5 +129,5 @@ int fs_cnt_delete(uint32_t head_sid) {
     // delete cnt header
     vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
     vdisk_note_sector_unused(vdisk, head_sid);
-    return 0;
+    return 0;*/
 }

@@ -152,7 +152,7 @@ int elf_start(char *file, int sleep, char **argv, int *pid_ptr) {
 
     for (int i = 0; i < argc; i++) {
         nargv[i] = mem_alloc(str_len(argv[i]) + 1, SNOW_ARGS, pid);
-        str_cpy(nargv[i], argv[i]);
+        str_copy(nargv[i], argv[i]);
     }
 
     if (sleep == 2)

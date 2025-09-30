@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === usg_dir.c : 2024 ===                                                  |
+|   === usg_dir.c : 2025 ===                                                  |
 |                                                                             |
-|    Kernel-only directory manipulation functions                  .pi0iq.    |
+|    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -13,21 +13,13 @@
 #include <minilib.h>
 #include <system.h>
 
-int kfu_is_dir(uint32_t dir_sid) {
-    if (IS_SID_NULL(dir_sid))
+int kfu_is_dir(sid_t dir_sid) {
+    char letter;
+
+    if (fs_cnt_meta(dir_sid, &letter, 1, 0))
         return 0;
 
-    char *name = fs_cnt_meta(dir_sid, NULL);
-    if (name == NULL)
-        return 0;
-
-    if (name[0] == 'D') {
-        free(name);
-        return 1;
-    }
-
-    free(name);
-    return 0;
+    return letter == 'D';
 }
 
 /*
@@ -44,21 +36,23 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int kfu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
-    if (!kfu_is_dir(dir_sid)) {
-        sys_warning("[get_dir_content] Sector is not a directory");
-        return -1;
-    }
-
+int kfu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX) {
+        sys_warning("failed to get directory size\n");
+        return -1;
+    }
+
+    if (!kfu_is_dir(dir_sid)) {
+        sys_warning("not a directory\n");
         return -1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size);
     if (fs_cnt_read(dir_sid, buf, 0, size)) {
+        sys_warning("failed to read directory\n");
         return -1;
     }
 
@@ -75,44 +69,43 @@ int kfu_get_dir_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
     *ids = malloc(sizeof(uint32_t) * count);
     *names = malloc(sizeof(char *) * count);
 
-    if (*ids == NULL || *names == NULL) {
-        return -1;
-    }
-
     uint32_t name_offset;
     for (uint32_t i = 0; i < count; i++) {
-        mem_copy(*ids + i, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
-        mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t),
-                sizeof(uint32_t));
+        mem_copy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
+        mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) +
+                sizeof(uint32_t)) + sizeof(uint32_t), sizeof(uint32_t));
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(str_len(tmp) + 1);
-        str_cpy((*names)[i], tmp);
+        str_copy((*names)[i], tmp);
     }
     free(buf);
-
     return count;
 }
 
-int kfu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, const char *name) {
-    if (IS_SID_NULL(element_sid) || !kfu_is_dir(dir_sid)) {
-        sys_error("[add_element_to_dir] Invalid given sector id");
+int kfu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name) {
+    // read the directory and get size
+    uint32_t size = fs_cnt_get_size(dir_sid);
+
+    if (size == UINT32_MAX) {
+        sys_warning("failed to get directory size\n");
         return 1;
     }
 
-    // read the directory and get size
-    uint32_t size = fs_cnt_get_size(dir_sid);
-    if (size == UINT32_MAX) {
+    if (!kfu_is_dir(dir_sid)) {
+        sys_warning("not a directory\n");
         return 1;
     }
 
     // extend the directory
     if (fs_cnt_set_size(dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
+        sys_warning("failed to extend directory\n");
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1);
     if (fs_cnt_read(dir_sid, buf, 0, size)) {
+        sys_warning("failed to read directory\n");
         return 1;
     }
 
@@ -130,17 +123,18 @@ int kfu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, const char *n
     // insert the new element
     mem_copy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)), &element_sid, sizeof(uint32_t));
     uint32_t name_offset = size - sizeof(uint32_t) - count * (sizeof(uint32_t) + sizeof(uint32_t));
-    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t), &name_offset,
-            sizeof(uint32_t));
+    mem_copy(buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + sizeof(uint32_t),
+            &name_offset, sizeof(uint32_t));
 
     // update the number of elements
     count++;
     mem_copy(buf, &count, sizeof(uint32_t));
 
-    str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) + count * sizeof(uint32_t) + name_offset, name);
+    str_copy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) + count * sizeof(uint32_t) + name_offset, name);
 
     // write the directory
     if (fs_cnt_write(dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
+        sys_warning("failed to write directory\n");
         return 1;
     }
 
@@ -149,14 +143,14 @@ int kfu_add_element_to_dir(uint32_t dir_sid, uint32_t element_sid, const char *n
     return 0;
 }
 
-uint32_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
-    uint32_t parent_sid;
-    uint32_t head_sid;
+sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
+    sid_t parent_sid;
+    sid_t head_sid;
 
     if (parent) {
         parent_sid = kfu_path_to_sid(SID_ROOT, parent);
         if (!kfu_is_dir(parent_sid)) {
-            sys_warning("[dir_create] Parent unreachable");
+            sys_warning("parent is not a directory\n");
             return SID_NULL;
         }
     } else {
@@ -165,23 +159,63 @@ uint32_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name)
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    str_cpy(meta, "D-");
-    str_ncpy(meta + 2, name, META_MAXLEN - 3);
+    str_copy(meta, "D-");
+    str_ncopy(meta + 2, name, META_MAXLEN - 3);
 
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
+    sys_warning("created directory d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+
     if (IS_SID_NULL(head_sid))
         return SID_NULL;
+
 
     // create a link in parent directory
     if (parent && kfu_add_element_to_dir(parent_sid, head_sid, name))
         return SID_NULL;
 
     fs_cnt_set_size(head_sid, sizeof(uint32_t));
+
     fs_cnt_write(head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
     return (kfu_add_element_to_dir(head_sid, parent_sid, "..") ||
             kfu_add_element_to_dir(head_sid, head_sid, ".") ? SID_NULL : head_sid);
+}
+
+int kfu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {
+    // positive return: name offset
+    // zero return: end of directory
+    // negative return: error code (-errno)
+
+    if (sid != NULL)
+        *sid = SID_NULL;
+
+    if (bsize < sizeof(uint32_t))
+        return -1;
+
+    uint32_t count;
+    mem_copy(&count, buf, sizeof(uint32_t));
+
+    if (count <= index)
+        return 0;
+
+    uint32_t name_offset;
+    uint32_t offset;
+
+    offset = sizeof(uint32_t) + index * (sizeof(uint32_t) * 2);
+    if (bsize < offset + sizeof(uint32_t) * 2)
+        return -1;
+
+    if (sid != NULL)
+        mem_copy(sid, buf + offset, sizeof(uint32_t));
+
+    mem_copy(&name_offset, buf + offset + sizeof(uint32_t), sizeof(uint32_t));
+    offset = sizeof(uint32_t) + count * (sizeof(uint32_t) * 2) + name_offset;
+
+    if (bsize < offset)
+        return -1;
+
+    return offset;
 }

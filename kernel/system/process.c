@@ -245,7 +245,7 @@ int process_init(void) {
         :: "eax"
     );
 
-    str_cpy(kern_proc->name, "kernel");
+    str_copy(kern_proc->name, "kernel");
     kern_proc->state = PROC_STATE_RUN;
 
     kern_proc->ppid = 0; // it's worse than inbreeding!
@@ -267,7 +267,7 @@ int process_init(void) {
 
     // create idle process
     process_create(idle_process, 0, 0, NULL);
-    str_cpy(g_plist[1].name, "idle");
+    str_copy(g_plist[1].name, "idle");
 
     g_plist[1].state = PROC_STATE_IDL;
     g_plist[1].in_kernel = 0;
@@ -290,7 +290,7 @@ int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
 
     mem_set(new_proc, 0, sizeof(process_t));
 
-    str_cpy(new_proc->name, "child");
+    str_copy(new_proc->name, "child");
 
     new_proc->pid = g_pid_incrament;
     new_proc->ppid = g_proc_current->pid;
@@ -734,7 +734,7 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
         case PROC_INFO_SET_NAME:
             if (!ptr)
                 return -1;
-            str_ncpy(g_plist[place].name, ptr, 63);
+            str_ncopy(g_plist[place].name, ptr, 63);
             return 0;
         default:
             return -1;

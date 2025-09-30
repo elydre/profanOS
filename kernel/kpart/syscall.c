@@ -24,9 +24,11 @@
 #include <minilib.h>
 #include <system.h>
 
+void nothing() {};
+
 void *SYSCALL_ARRAY[] = {
     // butterfly.h
-    fs_get_filesys,        // 0
+    nothing,               // 0
     fs_cnt_read,           // 1
     fs_cnt_write,          // 2
     fs_cnt_set_size,       // 3

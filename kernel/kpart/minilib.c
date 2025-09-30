@@ -39,7 +39,7 @@ int str_len(const char *s) {
     return i;
 }
 
-void str_cpy(char *s1, const char *s2) {
+void str_copy(char *s1, const char *s2) {
     int i;
     for (i = 0; s2[i]; i++) {
         s1[i] = s2[i];
@@ -47,7 +47,7 @@ void str_cpy(char *s1, const char *s2) {
     s1[i] = '\0';
 }
 
-void str_ncpy(char *s1, const char *s2, int n) {
+void str_ncopy(char *s1, const char *s2, int n) {
     int i;
     for (i = 0; i < n && s2[i]; i++) {
         s1[i] = s2[i];

@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === usg_file.c : 2024 ===                                                 |
+|   === usg_file.c : 2025 ===                                                 |
 |                                                                             |
 |    Kernel-only file manipulation functions                       .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -13,26 +13,18 @@
 #include <minilib.h>
 #include <system.h>
 
-int kfu_is_file(uint32_t dir_sid) {
-    if (IS_SID_NULL(dir_sid))
+int kfu_is_file(sid_t dir_sid) {
+    char letter;
+
+    if (fs_cnt_meta(dir_sid, &letter, 1, 0))
         return 0;
 
-    char *name = fs_cnt_meta(dir_sid, NULL);
-    if (name == NULL)
-        return 0;
-
-    if (name[0] == 'F') {
-        free(name);
-        return 1;
-    }
-
-    free(name);
-    return 0;
+    return letter == 'F';
 }
 
-uint32_t kfu_file_create(const char *parent, const char *name) {
-    uint32_t parent_sid;
-    uint32_t head_sid;
+sid_t kfu_file_create(const char *parent, const char *name) {
+    sid_t parent_sid;
+    sid_t head_sid;
 
     parent_sid = kfu_path_to_sid(SID_ROOT, parent);
 
@@ -43,8 +35,8 @@ uint32_t kfu_file_create(const char *parent, const char *name) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    str_cpy(meta, "F-");
-    str_ncpy(meta + 2, name, META_MAXLEN - 3);
+    str_copy(meta, "F-");
+    str_ncopy(meta + 2, name, META_MAXLEN - 3);
 
     head_sid = fs_cnt_init(SID_DISK(parent_sid), meta);
     free(meta);

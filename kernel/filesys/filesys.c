@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === filesys.c : 2024 ===                                                  |
+|   === filesys.c : 2025 ===                                                  |
 |                                                                             |
 |    Kernel filesystem functions                                   .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -14,38 +14,9 @@
 #include <minilib.h>
 #include <system.h>
 
-filesys_t *MAIN_FS;
+uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
-filesys_t *fs_create(void) {
-    filesys_t *filesys = malloc(sizeof(filesys_t));
-    filesys->vdisk = calloc(sizeof(vdisk_t *) * FS_MAX_DISKS);
-    filesys->vdisk_count = 0;
-    return filesys;
-}
-
-void fs_destroy(filesys_t *filesys) {
-    for (uint32_t i = 0; i < FS_MAX_DISKS; i++) {
-        if (filesys->vdisk[i] == NULL) continue;
-        vdisk_destroy(filesys->vdisk[i]);
-    }
-    free(filesys->vdisk);
-    free(filesys);
-}
-
-int fs_mount_vdisk(vdisk_t *vdisk, uint8_t device_id) {
-    if (MAIN_FS->vdisk[device_id - 1] != NULL) {
-        sys_warning("[mount_vdisk] Disk id is already used");
-        return -1;
-    }
-    MAIN_FS->vdisk[device_id - 1] = vdisk;
-    MAIN_FS->vdisk_count++;
-    return device_id;
-}
-
-filesys_t *fs_get_filesys(void) {
-    return MAIN_FS;
-}
-
+/*
 vdisk_t *initrd_to_vdisk(void) {
     uint8_t *initrd = diskiso_get_start();
     uint32_t initrd_size = diskiso_get_size();
@@ -120,3 +91,4 @@ int filesys_init(void) {
     )) return 1;
     return 0;
 }
+*/

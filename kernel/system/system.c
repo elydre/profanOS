@@ -164,7 +164,7 @@ int sys_set_reporter(int (*reporter)(char *)) {
 
 void sys_report(char *msg) {
     char *copy = malloc(str_len(msg) + 1);
-    str_cpy(copy, msg);
+    str_copy(copy, msg);
 
     if (reporter_addr != sys_default_reporter &&
         (reporter_addr == NULL ||
@@ -191,7 +191,7 @@ void sys_warning(char *msg, ...) {
     va_list args;
     va_start(args, msg);
 
-    str_cpy(sys_safe_buffer, "\e[33mWARNING: \e[93m");
+    str_copy(sys_safe_buffer, "\e[33mWARNING: \e[93m");
     kprintf_va2buf(sys_safe_buffer + 19, msg, args);
     str_cat(sys_safe_buffer, "\e[0m\n");
 
@@ -209,7 +209,7 @@ void sys_error(char *msg, ...) {
     va_list args;
     va_start(args, msg);
 
-    str_cpy(sys_safe_buffer, "\e[31mERROR: \e[91m");
+    str_copy(sys_safe_buffer, "\e[31mERROR: \e[91m");
     kprintf_va2buf(sys_safe_buffer + 17, msg, args);
     str_cat(sys_safe_buffer, "\e[0m\n");
 

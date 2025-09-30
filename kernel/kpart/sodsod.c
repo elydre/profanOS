@@ -102,7 +102,7 @@ static void sod_print_generic_info(int is_cpu_error) {
     sod_print_at(13, 6, KERNEL_EDITING " " KERNEL_VERSION, 0x0D);
 
     sod_print_at(6, 7, "during", 0x05);
-    str_cpy(str, (char *) process_info(process_get_pid(), PROC_INFO_NAME, NULL));
+    str_copy(str, (char *) process_info(process_get_pid(), PROC_INFO_NAME, NULL));
     sod_print_at(13, 7, str, 0x0D);
     tmp = str_len(str);
 

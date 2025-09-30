@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === ctr_rw.c : 2024 ===                                                   |
+|   === ctr_rw.c : 2025 ===                                                   |
 |                                                                             |
-|    Kernel container read/write functions                         .pi0iq.    |
+|    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -13,187 +13,93 @@
 #include <minilib.h>
 #include <system.h>
 
-int fs_cnt_rw_core(uint32_t core_sid, uint8_t *buf, uint32_t offset,
-        uint32_t size, int is_read, uint8_t *alloc_buf) {
-    vdisk_t *vdisk;
+#define vdisk_rw(data, size, offset, is_read) \
+    (is_read ? vdisk_read(data, size, offset) : vdisk_write(data, size, offset))
 
-    // check if offset is valid
-    if (offset >= BYTE_IN_CORE) {
-        return -1;
-    }
 
-    vdisk = fs_get_vdisk(SID_DISK(core_sid));
-
-    if (vdisk == NULL) {
-        return -1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, core_sid)) {
-        return -1;
-    }
-
-    // check if sector is core
-    vdisk_read_sector(vdisk, core_sid, alloc_buf);
-
-    if (alloc_buf[0] != SF_CORE) {
-        return -1;
-    }
-
-    size = min(size, BYTE_IN_CORE - offset);
-    offset += 1; // skip sector identifier
-
-    if (!is_read) {
-        mem_copy(alloc_buf + offset, buf, size);
-        vdisk_write_sector(vdisk, core_sid, alloc_buf);
-    } else {
-        mem_copy(buf, alloc_buf + offset, size);
-    }
-
-    return size + offset - 1;
-}
-
-int fs_cnt_rw_loca(uint32_t loca_sid, uint8_t *buf,
-        uint32_t offset, int size, int is_read) {
-    uint32_t next_loca_sid;
-    vdisk_t *vdisk;
-
-    uint8_t *alloc_buf = malloc(FS_SECTOR_SIZE);
-    uint8_t *data = malloc(FS_SECTOR_SIZE);
-    int tmp;
-
-    vdisk = fs_get_vdisk(SID_DISK(loca_sid));
-
-    if (vdisk == NULL) {
-        return 1;
-    }
-
-    int index = -offset;
-    while (index < size) {
-        // check if sector is used
-        if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-            sys_error("[cnt_rw] locator not used");
-            free(alloc_buf);
-            free(data);
-            return 1;
-        }
-
-        // check if sector is locator
-        vdisk_read_sector(vdisk, loca_sid, data);
-
-        if (data[0] != SF_LOCA) {
-            free(alloc_buf);
-            free(data);
-            return 1;
-        }
-
-        if (index + LINKS_IN_LOCA * BYTE_IN_CORE < 0) {
-            index += LINKS_IN_LOCA * BYTE_IN_CORE;
-        } else for (int i = 0; i < LINKS_IN_LOCA; i++) {
-            if (index >= size) {
-                free(alloc_buf);
-                free(data);
-                return 0;
-            }
-            if (index + BYTE_IN_CORE <= 0) {
-                index += BYTE_IN_CORE;
-                continue;
-            }
-            uint32_t core_sid = *((uint32_t *) (data + (i + 1) * sizeof(uint32_t)));
-            if (IS_SID_NULL(core_sid)) {
-                sys_error("no more core, but still %d bytes to %s\n",
-                        size - max(index, 0),
-                        is_read ? "read" : "write"
-                );
-                free(alloc_buf);
-                free(data);
-                return 1;
-            }
-            tmp = fs_cnt_rw_core(core_sid, buf + max(index, 0), max(0, -index),
-                    size - max(index, 0), is_read, alloc_buf);
-            if (tmp == -1) {
-                sys_error("failed to %s core d%ds%d\n",
-                        is_read ? "read" : "write",
-                        SID_DISK(core_sid), SID_SECTOR(core_sid)
-                );
-                free(alloc_buf);
-                free(data);
-                return 1;
-            }
-            index += tmp;
-        }
-
-        next_loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
-        if (IS_SID_NULL(next_loca_sid) && index < size) {
-            sys_error("no more locator after d%ds%d, but still %d bytes to %s\n",
-                    SID_DISK(loca_sid),
-                    SID_SECTOR(loca_sid),
-                    size - index,
-                    is_read ? "read" : "write"
-            );
-            free(alloc_buf);
-            free(data);
-            return 1;
-        }
-        loca_sid = next_loca_sid;
-    }
-    free(alloc_buf);
-    free(data);
-    return 0;
-}
-
-int fs_cnt_rw(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-    uint32_t loca_sid;
-
-    vdisk = fs_get_vdisk(SID_DISK(head_sid));
-
-    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
-        sys_warning("[cnt_rw] Invalid sector id");
-        return 1;
-    }
+static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
+    sid_t loca_sid;
 
     // check if sector is cnt header
-    data = vdisk_load_sector(vdisk, head_sid);
 
-    if (data[0] != SF_HEAD) {
-        sys_warning("[cnt_rw] Sector is not cnt header");
-        vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
+    if (vdisk_read(sector_data, SECTOR_SIZE, SID_SECTOR(head_sid) * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+        sys_warning("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return 1;
     }
 
-    // check if offset + size is valid
-    if (offset + size > *((uint32_t *) (data + 1 + META_MAXLEN))) {
-        sys_warning("[cnt_rw] cannot %s beyond cnt size (%d requested, %d max)",
-                is_read ? "read" : "write",
-                offset + size,
-                *((uint32_t *) (data + 1 + META_MAXLEN))
-        );
-        vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
+    // check if offset+size is valid
+    if (offset + size > sector_data[1]) {
+        sys_warning("cannot %s beyond cnt size\n", is_read ? "read" : "write");
         return 1;
     }
 
     // rw locator
-    loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
-    if (loca_sid != 0) {
-        if (fs_cnt_rw_loca(loca_sid, (uint8_t *) buf, offset, (int) size, is_read)) {
-            vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
-            return 1;
-        }
-    } else {
-        sys_warning("[cnt_rw] No locator found");
+    loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
+
+    if (loca_sid == SID_NULL) {
+        sys_error("INTERNAL ERROR: head cnt has no locator\n");
         return 1;
     }
 
-    vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
+    int index = -offset;
+
+    while (index < (int) size) {
+        // load locator sector
+        if (vdisk_read(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+            sys_error("failed to read d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+            return 1;
+        }
+
+        for (int i = 0; i < LINKS_IN_LOCA; i++) {
+            if (index >= (int) size)
+                return 0;
+
+            sid_t    core_sid   = sector_data[i * 2];
+            uint32_t core_count = sector_data[i * 2 + 1];
+
+            if (index + (SECTOR_SIZE * core_count) <= 0) {
+                index += SECTOR_SIZE * core_count;
+                continue;
+            }
+
+            if (IS_SID_NULL(core_sid)) {
+                sys_error("INTERNAL ERROR: null core d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+                return 1;
+            }
+
+            uint32_t rwsize = min(size - index, SECTOR_SIZE * core_count);
+
+            // read / write cores
+            if (vdisk_rw(
+                    buf + index,
+                    rwsize,
+                    (core_sid * SECTOR_SIZE) + (index < 0 ? -index : 0),
+                    is_read
+            )) {
+                sys_error("failed to %s core d%ds%d\n",
+                        is_read ? "read" : "write",
+                        SID_DISK(core_sid), SID_SECTOR(core_sid)
+                );
+                return 1;
+            }
+            index += rwsize;
+        }
+
+        loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
+
+        if (IS_SID_NULL(loca_sid) && index < (int) size) {
+            sys_error("INTERNAL ERROR: next locator null before end\n");
+            return 1;
+        }
+    }
+
     return 0;
 }
 
-int fs_cnt_read(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size) {
+int fs_cnt_read(sid_t head_sid, void *buf, uint32_t offset, uint32_t size) {
     return fs_cnt_rw(head_sid, buf, offset, size, 1);
 }
 
-int fs_cnt_write(uint32_t head_sid, void *buf, uint32_t offset, uint32_t size) {
-    return fs_cnt_rw(head_sid, buf, offset, size, 0);
+int fs_cnt_write(sid_t head_sid, const void *buf, uint32_t offset, uint32_t size) {
+    return fs_cnt_rw(head_sid, (void *) buf, offset, size, 0);
 }

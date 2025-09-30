@@ -70,14 +70,14 @@ static void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
 
     if (parent != NULL && i >= 0) {
         if (i == 0) {
-            str_cpy(*parent, "/");
+            str_copy(*parent, "/");
         } else {
-            str_ncpy(*parent, fullpath, i);
+            str_ncopy(*parent, fullpath, i);
         }
     }
 
     if (cnt != NULL) {
-        str_cpy(*cnt, fullpath + i + 1);
+        str_copy(*cnt, fullpath + i + 1);
     }
 }
 
@@ -215,7 +215,7 @@ int fu_dir_get_content(uint32_t dir_sid, uint32_t **ids, char ***names) {
 
         (*ids)[i] = sid;
         (*names)[i] = malloc(str_len((char *) buf + offset) + 1);
-        str_cpy((*names)[i], (char *) buf + offset);
+        str_copy((*names)[i], (char *) buf + offset);
     }
 
     free(buf);
@@ -268,7 +268,7 @@ int fu_add_to_dir(uint32_t dir_sid, uint32_t element_sid, char *name) {
     count++;
     mem_copy(buf, &count, sizeof(uint32_t));
 
-    str_cpy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) * 2 + name_offset, name);
+    str_copy((char *) buf + sizeof(uint32_t) + count * sizeof(uint32_t) * 2 + name_offset, name);
 
     // write the directory
     if (fs_cnt_write(dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1))
@@ -400,8 +400,8 @@ uint32_t fu_dir_create(int device_id, const char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    str_cpy(meta, "D-");
-    str_ncpy(meta + 2, name, META_MAXLEN - 3);
+    str_copy(meta, "D-");
+    str_ncopy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
@@ -502,8 +502,8 @@ uint32_t fu_file_create(int device_id, const char *path) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    str_cpy(meta, "F-");
-    str_ncpy(meta + 2, name, META_MAXLEN - 3);
+    str_copy(meta, "F-");
+    str_ncopy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
@@ -581,8 +581,8 @@ uint32_t fu_afft_create(int device_id, const char *path, uint32_t id) {
 
     // generate the meta
     char *meta = malloc(META_MAXLEN);
-    str_cpy(meta, "A-");
-    str_ncpy(meta + 2, name, META_MAXLEN - 3);
+    str_copy(meta, "A-");
+    str_ncopy(meta + 2, name, META_MAXLEN - 3);
     meta[META_MAXLEN - 1] = '\0';
 
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
