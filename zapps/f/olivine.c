@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.8 rev 5"
+#define OLV_VERSION "1.9.0"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -34,7 +34,7 @@
 
 /************************************
  *                                 *
- *  Target Detection and includes  *
+ *  Target Detection and Includes  *
  *                                 *
 ************************************/
 
@@ -68,14 +68,14 @@
   #include <modules/filesys.h>
   #include <profan.h>
 
-  #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
+  #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$w\e[0m] $(\e[31m$)>$(\e[0m$) "
 
   #undef  HISTORY_PATH
   #define HISTORY_PATH "/zada/olivine/history.txt"
 #elif BUILD_UNIX
   #include <sys/time.h> // if_ticks
 
-  #define DEFAULT_PROMPT "\e[0molivine [\e[95m$d\e[0m] $(\e[31m$)>$(\e[0m$) "
+  #define DEFAULT_PROMPT "\e[0molivine [\e[95m$w\e[0m] $(\e[31m$)>$(\e[0m$) "
 #else
   #define DEFAULT_PROMPT "olivine ${>$}$(x$) "
 #endif
@@ -96,7 +96,7 @@
     #include <readline/readline.h>
     #include <readline/history.h>
     #undef  DEFAULT_PROMPT
-    #define DEFAULT_PROMPT "olivine [\1\e[95m\2$d\1\e[0m\2] $(\1\e[31m\2$)>$(\1\e[0m\2$) "
+    #define DEFAULT_PROMPT "olivine [\1\e[95m\2$w\1\e[0m\2] $(\1\e[31m\2$)>$(\1\e[0m\2$) "
   #else
     #undef  USE_READLINE
     #define USE_READLINE 0
@@ -149,6 +149,7 @@ char *keywords[] = {
     "ELSE",
     "FOR",
     "WHILE",
+    "ELIF",
     "FUNC",
     "RETURN",
     "BREAK",
@@ -203,7 +204,7 @@ typedef struct {
 
     char  *current_dir;
 
-    int    ignore_errors;
+    int    fatal_errors;
     int    debug_prints;
     int    no_binaries;
 } olv_globals_t;
@@ -212,8 +213,8 @@ internal_function_t internal_funcs[];
 
 olv_globals_t *g_olv;
 
-olv_line_t *lexe_program(const char *program, int real_lexe, int *len);
-int         execute_file(const char *file, char **args);
+int execute_program(const char *program, int increment_level);
+int execute_file(const char *file, char **args);
 
 /****************************
  *                         *
@@ -553,7 +554,7 @@ void del_variable_level(int level) {
 
 /*******************************
  *                            *
- *  pseudo Get/Set Functions  *
+ *  Pseudo Get/Set Functions  *
  *                            *
 *******************************/
 
@@ -669,7 +670,7 @@ int set_function(const char *name, olv_line_t *lines, int line_count) {
     }
 
     for (int i = 0;; i++) {
-        if (i == g_olv->func_count) {
+        if (i + 1 >= g_olv->func_count) {
             g_olv->func_count += 10;
             g_olv->funcs = realloc(g_olv->funcs, g_olv->func_count * sizeof(function_t));
             memset(g_olv->funcs + i, 0, 10 * sizeof(function_t));
@@ -1506,7 +1507,7 @@ char *if_debug(char **input) {
         puts("OLIVINE ---");
         printf("  func-level   %d\n", g_olv->current_level);
         printf("  ig [b]in     %s\n", g_olv->no_binaries   ? "true" : "false");
-        printf("  ig [e]rror   %s\n", g_olv->ignore_errors ? "true" : "false");
+        printf("  ft [e]rror   %s\n", g_olv->fatal_errors  ? "true" : "false");
         printf("  sw [d]ebug   %s\n", g_olv->debug_prints  ? "true" : "false");
 
         return NULL;
@@ -1560,14 +1561,14 @@ char *if_debug(char **input) {
             g_olv->debug_prints = mode == 4;
             break;
         case 'e':
-            g_olv->ignore_errors = mode == 4;
+            g_olv->fatal_errors = mode == 4;
             break;
         case 'h':
             puts("Usage: debug [option]\n"
                 "Options:\n"
                 "  +b     disable binary search\n"
                 "  +d     show execution debug\n"
-                "  +e     continue on errors\n"
+                "  +e     enable fatal errors\n"
                 "  dump   print a full dump of olivine\n"
                 "  func   save functions to 'funcs.olv'\n"
                 "  rbin   reload bin names from PATH\n"
@@ -1849,18 +1850,19 @@ char *if_dot(char **input) {
 char *if_exec(char **input) {
     // get argc
     int argc = 0;
-    for (int i = 0; input[i] != NULL; i++) {
+    for (int i = 0; input[i] != NULL; i++)
         argc++;
+
+    if (argc && strcmp(input[0], "-c") == 0) {
+        if (argc == 2)
+            return execute_program(input[1], 1) ? ERROR_CODE : NULL;
     }
 
-    if (argc != 1) {
-        raise_error("exec", "Usage: exec <file> [arg1 arg2 ...]");
-        return ERROR_CODE;
-    }
+    else if (argc != 0)
+        return execute_file(input[0], input + 1) ? ERROR_CODE : NULL;
 
-    if (execute_file(input[0], input + 1))
-        return ERROR_CODE;
-    return NULL;
+    raise_error("exec", "Usage: exec (-c <program>) | (<file> [arg1 arg2 ...])");
+    return ERROR_CODE;
 }
 
 char *if_exit(char **input) {
@@ -2018,43 +2020,9 @@ char *if_global(char **input) {
     }
 
     // set variable
-    if (set_variable_global(name, input[1])) {
-        return ERROR_CODE;
-    }
+    set_variable_global(name, input[1]);
 
     return NULL;
-}
-
-char *if_inter(char **input) {
-    // make variable and quote usable for olivine
-
-    if (input[0] == NULL || input[1] != NULL) {
-        raise_error("inter", "Usage: inter <string>");
-        return ERROR_CODE;
-    }
-
-    char *output = malloc(strlen(input[0]) + 1);
-
-    int i;
-    for (i = 0; input[0][i] != '\0'; i++) {
-        switch (input[0][i]) {
-            case USER_QUOTE:
-                output[i] = INTR_QUOTE;
-                break;
-            case USER_VARDF:
-                output[i] = INTR_VARDF;
-                break;
-            case USER_WILDC:
-                output[i] = INTR_WILDC;
-                break;
-            default:
-                output[i] = input[0][i];
-        }
-    }
-
-    output[i] = '\0';
-
-    return output;
 }
 
 char *if_print(char **input) {
@@ -2282,8 +2250,7 @@ char *if_set(char **input) {
 
         char number[13];
 
-        if (set_variable(input[1], local_itoa(++val, number)))
-            return ERROR_CODE;
+        set_variable(input[1], local_itoa(++val, number));
 
         return NULL;
     }
@@ -2298,9 +2265,7 @@ char *if_set(char **input) {
 
     // set variable if a value is given
     if (value) {
-        if (set_variable(input[0], value)) {
-            return ERROR_CODE;
-        }
+        set_variable(input[0], value);
         return NULL;
     }
 
@@ -2315,11 +2280,7 @@ char *if_set(char **input) {
         value[strlen(value) - 1] = '\0'; // remove '\n'
     }
 
-    // set variable
-    if (set_variable(input[0], value)) {
-        return ERROR_CODE;
-    }
-
+    set_variable(input[0], value);
     free(value);
 
     return NULL;
@@ -2589,7 +2550,6 @@ internal_function_t internal_funcs[] = {
     {"export", if_export},
     {"fstat", if_fstat},
     {"global", if_global},
-    {"inter", if_inter},
     {"print", if_print},
     {"pseudo", if_pseudo},
     {"range", if_range},
@@ -2640,7 +2600,7 @@ int does_startwith(const char *str, const char *start) {
 int quotes_less_copy(char *dest, const char *src, int len) {
     int i = 0;
     int in_string = 0;
-    for (int j = 0; src[j] != '\0' && i < len; j++) {
+    for (int j = 0; src[j] && i < len; j++) {
         if (src[j] == INTR_QUOTE) {
             in_string = !in_string;
             len--;
@@ -2771,7 +2731,7 @@ char *get_function_name(const char *line) {
 
 /*******************************
  *                            *
- *  Freeing Memory Functions  *
+ *  Memory Freeing Functions  *
  *                            *
 *******************************/
 
@@ -2922,16 +2882,16 @@ char *pipe_processor(char **input) {
     #endif
 }
 
-/**************************
- *                       *
- *  Execution Functions  *
- *                       *
-**************************/
+/************************
+ *                     *
+ *  Line Substitution  *
+ *                     *
+************************/
 
-int execute_lines(olv_line_t *lines, int line_end, char **result);
+int execute_lines(olv_line_t *lines, int line_count, char **result);
 
 char *execute_function(function_t *function, char **args) {
-    // set g_olv->vars:
+    // create variables for the arguments
     // !0: first argument
     // !1: second argument
     // !2: third argument
@@ -2947,19 +2907,12 @@ char *execute_function(function_t *function, char **args) {
     char tmp[13];
     int argc;
 
-    for (argc = 0; args[argc] != NULL; argc++) {
-        if (!set_variable(local_itoa(argc, tmp), args[argc]))
-            continue;
-        g_olv->current_level--;
-        return ERROR_CODE;
-    }
+    for (argc = 0; args[argc] != NULL; argc++)
+        set_variable(local_itoa(argc, tmp), args[argc]);
 
-    if (set_variable("#", local_itoa(argc, tmp))) {
-        g_olv->current_level--;
-        return ERROR_CODE;
-    }
+    set_variable("#", local_itoa(argc, tmp));
 
-    char *result = malloc(1);
+    char *result = NULL;
     int ret = execute_lines(function->lines, function->line_count, &result);
 
     // free the variables
@@ -3314,11 +3267,11 @@ char *check_subfunc(const char *input) {
     return check_pseudos(line);
 }
 
-/**************************
- *                       *
- *  Execution Functions  *
- *                       *
-**************************/
+/*************************
+ *                      *
+ *  Statement Routines  *
+ *                      *
+*************************/
 
 int check_condition(const char *condition) {
     char *verif = check_subfunc(condition);
@@ -3333,183 +3286,6 @@ int check_condition(const char *condition) {
 
     free(verif);
     return res;
-}
-
-int get_line_end(int line_count, olv_line_t *lines) {
-    // return the line number or -1 on error
-
-    int end_offset = 1;
-    for (int i = 1; i < line_count; i++) {
-        if (
-            does_startwith(lines[i].str, "IF")    ||
-            does_startwith(lines[i].str, "FOR")   ||
-            does_startwith(lines[i].str, "WHILE") ||
-            does_startwith(lines[i].str, "FUNC")  ||
-            does_startwith(lines[i].str, "ELSE")
-        ) {
-            end_offset++;
-        } else if (does_startwith(lines[i].str, "END")) {
-            end_offset--;
-        }
-
-        if (end_offset)
-            continue;
-
-        if (strlen(lines[i].str) != 3) {
-            raise_error_line(lines[i].fileline, "END", "Invalid statement");
-            return -1;
-        }
-
-        return i;
-    }
-
-    raise_error_line(lines[line_count - 1].fileline, NULL,
-            "Missing END statement for keyword line %d", lines[0].fileline);
-
-    return -1;
-}
-
-int execute_if(int line_count, olv_line_t *lines, char **result, int *cnd_state);
-int execute_else(int line_count, olv_line_t *lines, char **result, int *last_if_state);
-int execute_while(int line_count, olv_line_t *lines, char **result);
-int execute_for(int line_count, olv_line_t *lines, char **result);
-int save_function(int line_count, olv_line_t *lines);
-int execute_return(const char *line, char **result);
-
-#define execute_lines_ret(val) return (g_olv->fileline = old_fileline, val)
-
-int execute_lines(olv_line_t *lines, int line_end, char **result) {
-    // return -4 : return
-    // return -3 : break
-    // return -2 : continue
-    // return -1 : error
-    // return  0 : no error
-    // return >0 : number of lines executed
-
-    if (result != NULL) {
-        *result[0] = '\0';
-    }
-
-    if (line_end == 0) {
-        strcpy(g_olv->exit_code, "0");
-        return 0;
-    }
-
-    int old_fileline = g_olv->fileline;
-
-    int lastif_state = 2; // 0: false, 1: true, 2: not set
-    char *res = NULL;
-
-    for (int i = 0; i < line_end; i++) {
-        g_olv->fileline = lines[i].fileline;
-
-        if (g_olv->debug_prints) {
-            fprintf(stderr, DEBUG_COLOR"=> %03d READ: ", g_olv->fileline);
-            print_internal_string(lines[i].str, stderr);
-            fputs("\e[0m\n", stderr);
-        }
-
-        if (does_startwith(lines[i].str, "FOR")) {
-            int ret = execute_for(line_end - i, lines + i, result);
-
-            if (ret == -1) {
-                execute_lines_ret(-1);
-            } else if (ret < -1) {
-                execute_lines_ret(ret);
-            }
-
-            i += ret;
-        }
-
-        else if (does_startwith(lines[i].str, "IF")) {
-            int ret = execute_if(line_end - i, lines + i, result, &lastif_state);
-
-            if (ret == -1) {
-                execute_lines_ret(-1);
-            } else if (ret < -1) {
-                execute_lines_ret(ret);
-            }
-
-            i += ret;
-        }
-
-        else if (does_startwith(lines[i].str, "ELSE")) {
-            int ret = execute_else(line_end - i, lines + i, result, &lastif_state);
-
-            if (ret == -1) {
-                execute_lines_ret(-1);
-            } else if (ret < -1) {
-                execute_lines_ret(ret);
-            }
-
-            i += ret;
-        }
-
-        else if (does_startwith(lines[i].str, "WHILE")) {
-            int ret = execute_while(line_end - i, lines + i, result);
-
-            if (ret == -1) {
-                execute_lines_ret(-1);
-            } else if (ret < -1) {
-                execute_lines_ret(ret);
-            }
-
-            i += ret;
-        }
-
-        else if (does_startwith(lines[i].str, "FUNC")) {
-            int ret = save_function(line_end - i, lines + i);
-
-            if (ret == -1) {
-                execute_lines_ret(-1);
-            } else if (ret < -1) {
-                execute_lines_ret(ret);
-            }
-
-            i += ret;
-        }
-
-        else if (does_startwith(lines[i].str, "END")) {
-            raise_error(NULL, "Suspicious END keyword");
-            execute_lines_ret(-1);
-        }
-
-        else if (does_startwith(lines[i].str, "BREAK")) {
-            execute_lines_ret(-3);
-        }
-
-        else if (does_startwith(lines[i].str, "CONTINUE")) {
-            execute_lines_ret(-2);
-        }
-
-        else if (does_startwith(lines[i].str, "RETURN")) {
-            int ret = execute_return(lines[i].str, result);
-            execute_lines_ret(ret);
-        }
-
-        else {
-            res = execute_line(lines[i].str);
-
-            if (res == ERROR_CODE) {
-                if (!g_olv->ignore_errors)
-                    execute_lines_ret(-1);
-            } else if (res) {
-                for (int i = 0; res[i]; i++) {
-                    if (res[i] == INTR_QUOTE)
-                        res[i] = USER_QUOTE;
-                }
-                if (res[0])
-                    puts(res);
-                free(res);
-                res = NULL;
-            }
-        }
-
-        if (res != ERROR_CODE) {
-            strcpy(g_olv->exit_code, "0");
-        }
-    }
-    execute_lines_ret(0);
 }
 
 int execute_return(const char *line, char **result) {
@@ -3529,6 +3305,115 @@ int execute_return(const char *line, char **result) {
     return -4;
 }
 
+int execute_if(int line_count, olv_line_t *lines, char **result, int old_state) {
+    UNUSED(old_state);
+
+    const char *condition = lines[0].str + 2;
+
+    while (IS_SPACE_CHAR(*condition))
+        condition++;
+
+    if (*condition == '\0') {
+        raise_error("IF", "No condition provided");
+        return -1;
+    }
+
+    int cnd_valide = check_condition(condition);
+
+    if (cnd_valide != 1)
+        return cnd_valide;
+
+    cnd_valide = execute_lines(lines + 1, line_count, result);
+
+    return cnd_valide ? : 1;
+}
+
+int execute_elif(int line_count, olv_line_t *lines, char **result, int old_state) {
+    const char *condition = lines[0].str + 4;
+
+    while (IS_SPACE_CHAR(*condition))
+        condition++;
+
+    if (*condition == '\0') {
+        raise_error("ELIF", "No condition provided");
+        return -1;
+    }
+
+    if (old_state == 2) {   // not set
+        raise_error("ELIF", "No IF statement before");
+        return -1;
+    }
+
+    if (old_state == 1)     // already true
+        return 1;
+
+    int cnd_valide = check_condition(condition);
+
+    if (cnd_valide != 1)
+        return cnd_valide;
+
+    cnd_valide = execute_lines(lines + 1, line_count, result);
+
+    return cnd_valide ? : 1;
+}
+
+int execute_else(int line_count, olv_line_t *lines, char **result, int old_state) {
+    const char *condition = lines[0].str + 4;
+
+    while (IS_SPACE_CHAR(*condition))
+        condition++;
+
+    if (*condition != '\0') {
+        raise_error("ELSE", "No condition expected");
+        return -1;
+    }
+
+    if (old_state == 2) {   // not set
+        raise_error("ELSE", "No IF statement before");
+        return -1;
+    }
+
+    if (old_state == 1)     // already true
+        return 0;
+
+    int ret = execute_lines(lines + 1, line_count, result);
+
+    return ret ? : 1;
+}
+
+int execute_while(int line_count, olv_line_t *lines, char **result) {
+    const char *condition = lines[0].str + 5;
+
+    while (IS_SPACE_CHAR(*condition))
+        condition++;
+
+    if (condition[0] == '\0') {
+        raise_error("WHILE", "No condition provided");
+        return -1;
+    }
+
+    int cnd_valide;
+
+    // execute while loop
+    while (1) {
+        cnd_valide = check_condition(condition);
+
+        // invalid condition for WHILE loop
+        if (cnd_valide != 1)
+            break;
+
+        int ret = execute_lines(lines + 1, line_count, result);
+
+        if (ret == -3 || ret == -4)
+            return 0;
+
+        if (ret == -1)
+            return -1;
+    }
+
+    return cnd_valide;
+}
+
 int execute_for(int line_count, olv_line_t *lines, char **result) {
     char *for_line = check_subfunc(lines[0].str);
 
@@ -3541,23 +3426,18 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
         return -1;
     }
 
-    int line_end = get_line_end(line_count, lines);
-
-    if (line_end == -1) {
-        free(for_line);
-        return -1;
-    }
-
     int index;
     for (index = 4; for_line[index] && !IS_SPACE_CHAR(for_line[index]); index++);
-    for_line[index++] = '\0';
+
+    if (for_line[index])
+        for_line[index++] = '\0';
 
     while (IS_SPACE_CHAR(for_line[index]))
         index++;
 
     if (for_line[index] == '\0') {
         free(for_line);
-        return line_end;
+        return 0;
     }
 
     char *var_name = for_line + 4;
@@ -3588,19 +3468,13 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
         index += var_len;
 
         // execute the iteration
-        res = execute_lines(lines + 1, line_end - 1, result);
-        if (res == -1) {
-            // invalid FOR loop
-            line_end = -1;
-            break;
-        } else if (res == -3) {
-            break;
-        } else if (res == -2) {
+        res = execute_lines(lines + 1, line_count, result);
+        if (res == 0 || res == -2)
             continue;
-        } else if (res < 0) {
-            line_end = res;
-            break;
-        }
+
+        if (res == -3)
+            res = 0;
+        break;
     }
 
     // delete variable
@@ -3609,159 +3483,199 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
 
     free(for_line);
 
-    return line_end;
+    return res;
 }
 
-int execute_if(int line_count, olv_line_t *lines, char **result, int *cnd_state) {
-    const char *condition = lines[0].str + 2;
+int save_function(int line_count, olv_line_t *lines, char **result) {
+    UNUSED(result);
 
-    while (IS_SPACE_CHAR(*condition))
-        condition++;
+    const char *func_name = lines[0].str + 4;
 
-    if (condition[0] == '\0') {
-        raise_error("IF", "No condition provided");
-        return -1;
-    }
+    while (IS_SPACE_CHAR(*func_name))
+        func_name++;
 
-    int line_end = get_line_end(line_count, lines);
-
-    if (line_end == -1)
-        return -1;
-
-    int tmp = check_condition(condition);
-
-    if (tmp == -1)
-        return -1;
-
-    *cnd_state = tmp;
-
-    if (tmp && (tmp = execute_lines(lines + 1, line_end - 1, result)) < 0)
-        line_end = tmp;
-
-    return line_end;
-}
-
-int execute_else(int line_count, olv_line_t *lines, char **result, int *last_if_state) {
-    const char *else_line = lines[0].str;
-
-    if (*last_if_state == 2) {   // not set
-        raise_error("ELSE", "No IF statement before");
-        return -1;
-    }
-
-    if (else_line[4] != '\0') {
-        raise_error("ELSE", "No condition expected");
-        return -1;
-    }
-
-    int err, line_end = get_line_end(line_count, lines);
-
-    if (line_end == -1)
-        return -1;
-
-    if (!*last_if_state && (err = execute_lines(lines + 1, line_end - 1, result)) < 0)
-        line_end = err;
-
-    *last_if_state = !*last_if_state;
-
-    return line_end;
-}
-
-int execute_while(int line_count, olv_line_t *lines, char **result) {
-    const char *condition = lines[0].str + 5;
-
-    while (IS_SPACE_CHAR(*condition))
-        condition++;
-
-    if (condition[0] == '\0') {
-        raise_error("WHILE", "No condition provided");
-        return -1;
-    }
-
-    int line_end = get_line_end(line_count, lines);
-
-    if (line_end == -1)
-        return -1;
-
-    // execute while loop
-    while (1) {
-        int verif = check_condition(condition);
-
-        // invalid condition for WHILE loop
-        if (verif == -1)
-            return -1;
-
-        if (!verif)
-            break;
-
-        int ret = execute_lines(lines + 1, line_end - 1, result);
-        if (ret == -3)
-            break;
-        if (ret < 0 && ret != -2)
-            return ret;
-    }
-
-    return line_end;
-}
-
-int save_function(int line_count, olv_line_t *lines) {
-    const char *func_line = lines[0].str + 4;
-
-    while (IS_SPACE_CHAR(*func_line))
-        func_line++;
-
-    if (*func_line == '\0') {
+    if (*func_name == '\0') {
         raise_error(NULL, "Missing function name");
         return -1;
     }
 
-    int line_end = get_line_end(line_count, lines);
-
-    if (line_end == -1)
-        return -1;
-
-    if (!is_valid_name(func_line)) {
-        raise_error(NULL, "Invalid function name '%s'", func_line);
+    if (!is_valid_name(func_name)) {
+        raise_error(NULL, "Invalid function name '%s'", func_name);
         return -1;
     }
 
-    return set_function(func_line, lines + 1, line_end - 1) ? -1 : line_end;
+    return set_function(func_name, lines + 1, line_count) ? -1 : 0;
 }
 
-void execute_program(const char *program) {
-    olv_line_t *lines;
-    int len;
+/*******************************
+ *                            *
+ *  Lines Execution Function  *
+ *                            *
+*******************************/
 
-    lines = lexe_program(program, 1, &len);
+int get_line_end(int line_count, olv_line_t *lines, int *is_end) {
+    // return the line number or -1 on error
+    // is_end != NULL allows a else/elif to follow
 
-    if (lines == NULL)
-        return;
+    if (is_end != NULL)
+        *is_end = 0;
 
-    execute_lines(lines, len, NULL);
-    free(lines);
-}
+    int end_offset = 1;
+    for (int i = 1; i < line_count; i++) {
+        if (does_startwith(lines[i].str, "IF")    || does_startwith(lines[i].str, "FOR") ||
+            does_startwith(lines[i].str, "WHILE") || does_startwith(lines[i].str, "FUNC")
+        ) end_offset++;
 
-int does_syntax_fail(const char *program) {
-    olv_line_t *lines = lexe_program(program, 0, NULL);
+        else if (end_offset == 1 && is_end && (
+            does_startwith(lines[i].str, "ELSE") || does_startwith(lines[i].str, "ELIF")
+        )) return i - 1;
 
-    if (lines == NULL) // should not happen with real_lexe = 0
-        return 1;
-
-    // check if all 'IF', 'WHILE', 'FOR' and 'FUNC' have a matching 'END'
-    int count = 0;
-    for (int i = 0; lines[i].str != NULL; i++) {
-        if (does_startwith(lines[i].str, "IF")    ||
-            does_startwith(lines[i].str, "WHILE") ||
-            does_startwith(lines[i].str, "FOR")   ||
-            does_startwith(lines[i].str, "FUNC")  ||
-            does_startwith(lines[i].str, "ELSE")
-        ) count++;
         else if (does_startwith(lines[i].str, "END"))
-            count--;
-    }
-    free(lines);
+            end_offset--;
 
-    return count > 0;
+        if (end_offset)
+            continue;
+
+        if (strlen(lines[i].str) != 3) {
+            raise_error_line(lines[i].fileline, "END", "Invalid statement");
+            return -1;
+        }
+
+        if (is_end != NULL)
+            *is_end = 1;
+
+        return i - 1;
+    }
+
+    raise_error_line(lines[line_count - 1].fileline, NULL,
+            "Missing END statement for keyword line %d", lines[0].fileline);
+
+    return -1;
+}
+
+#define execute_lines_ret(val) return (g_olv->fileline = old_fileline, val)
+
+struct statement {
+    const char *name;
+    int (*cnd_func)(int, olv_line_t *, char **, int);
+    int (*func)(int, olv_line_t *, char **);
+};
+
+static inline int execute_line_print(const char *line) {
+    char *res = execute_line(line);
+
+    if (res == ERROR_CODE)
+        return -1;
+
+    if (res) {
+        for (int i = 0; res[i]; i++) {
+            if (res[i] == INTR_QUOTE)
+                res[i] = USER_QUOTE;
+        }
+        if (res[0])
+            puts(res);
+        free(res);
+    }
+
+    strcpy(g_olv->exit_code, "0");
+    return 0;
+}
+
+int execute_lines(olv_line_t *lines, int line_count, char **result) {
+    // return -4 : return
+    // return -3 : break
+    // return -2 : continue
+    // return -1 : error
+    // return  0 : no error
+
+    if (result && *result) {
+        *result[0] = '\0';
+    }
+
+    if (line_count == 0) {
+        strcpy(g_olv->exit_code, "0");
+        return 0;
+    }
+
+    int ret, old_fileline = g_olv->fileline;
+
+    int lastif_state = 2; // 0: false, 1: true, 2: not set
+    int is_end, stat_end;
+
+    struct statement statements[] = {
+        {"IF",    execute_if,   NULL},
+        {"ELIF",  execute_elif, NULL},
+        {"ELSE",  execute_else, NULL},
+        {"FOR",   NULL, execute_for},
+        {"WHILE", NULL, execute_while},
+        {"FUNC",  NULL, save_function},
+        {NULL,    NULL, NULL}
+    };
+
+    for (int i = 0; i < line_count; i++) {
+        g_olv->fileline = lines[i].fileline;
+
+        if (g_olv->debug_prints) {
+            fprintf(stderr, DEBUG_COLOR"=> %03d READ: ", g_olv->fileline);
+            print_internal_string(lines[i].str, stderr);
+            fputs("\e[0m\n", stderr);
+        }
+
+        for (int s = 0; statements[s].name != NULL; s++) {
+            if (!does_startwith(lines[i].str, statements[s].name))
+                continue;
+
+            stat_end = get_line_end(line_count - i, lines + i, statements[s].func ? NULL : &is_end);
+
+            if (stat_end == -1)
+                execute_lines_ret(-1);
+
+            if (statements[s].func) {
+                ret = statements[s].func(stat_end, lines + i, result);
+                is_end = 1;
+            } else {
+                ret = statements[s].cnd_func(stat_end, lines + i, result, lastif_state);
+                lastif_state = ret >= 0 ? ret : (lastif_state != 2 ? lastif_state : 0);
+            }
+
+            goto statment_end;
+        }
+
+        if (does_startwith(lines[i].str, "END")) {
+            raise_error(NULL, "Suspicious END keyword");
+            if (g_olv->fatal_errors)
+                execute_lines_ret(-1);
+        }
+
+        else if (does_startwith(lines[i].str, "BREAK"))
+            execute_lines_ret(-3);
+
+        else if (does_startwith(lines[i].str, "CONTINUE"))
+            execute_lines_ret(-2);
+
+        else if (does_startwith(lines[i].str, "RETURN"))
+            execute_lines_ret(execute_return(lines[i].str, result));
+
+        else if (execute_line_print(lines[i].str) && g_olv->fatal_errors)
+            execute_lines_ret(-1);
+
+        continue;
+
+        statment_end:
+
+        if (ret == -1){
+            if (g_olv->fatal_errors)
+                execute_lines_ret(-1);
+            strcpy(g_olv->exit_code, "1");
+        }
+
+        if (ret < -1)
+            execute_lines_ret(ret);
+
+        i += stat_end + is_end;
+    }
+
+    execute_lines_ret(0);
 }
 
 /***********************
@@ -3771,14 +3685,23 @@ int does_syntax_fail(const char *program) {
 ***********************/
 
 olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
-    int program_len, tmp_index, line_index = 1;
+    int fileline, program_len, tmp_index, line_index = 1;
 
     if (len != NULL)
         *len = 0;
 
-    for (int i = 0; program[i] != '\0'; i++) {
+    fileline = 1;
+
+    for (int i = 0; program[i]; i++) {
+        if (program[i] == '\n')
+            fileline++;
         if (program[i] == '\n' || program[i] == ';')
             line_index++;
+        if (!real_lexe || (program[i] > 31 && program[i] < 127) || IS_SPACE_CHAR(program[i]))
+            continue;
+        raise_error_line(fileline, NULL, "Invalid input character x%02X",
+                (unsigned char) program[i]);
+        return NULL;
     }
 
     tmp_index = (line_index + 1) * sizeof(olv_line_t);
@@ -3790,7 +3713,7 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
     olv_line_t *lines = calloc(tmp_index + (program_len), 1);
 
     char *line_ptr = (char *) lines + tmp_index;
-    int fileline, in_quote, i;
+    int in_quote, i;
 
     tmp_index = in_quote = i = 0;
     fileline = 1;
@@ -3849,10 +3772,39 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
             goto lexe_end;
         }
 
-        if (program[i] < 32 || program[i] > 126) {
-            raise_error_line(fileline, NULL, "Invalid input character x%02X",
-                    (unsigned char) program[i]);
-            goto err;
+        if (!in_quote && program[i]   == USER_QUOTE &&
+                         program[i+1] == USER_QUOTE &&
+                         program[i+2] == USER_QUOTE
+        ) {
+            i += 3;
+            tmp[tmp_index++] = INTR_QUOTE;
+
+            // we dont need to check for tmp_index < 0 because a quote was just added
+            while (!(program[i]   == USER_QUOTE &&
+                     program[i+1] == USER_QUOTE &&
+                     program[i+2] == USER_QUOTE
+            )) {
+                if (program[i] == '\0') {
+                    raise_error_line(fileline, NULL, "Missing closing doc-string quote");
+                    goto err;
+                }
+
+                if (program[i] == '\n')
+                    fileline++;
+
+                if (IS_SPACE_CHAR(program[i])) {
+                    if (!IS_SPACE_CHAR(tmp[tmp_index - 1]) && tmp[tmp_index - 1] != INTR_QUOTE)
+                        tmp[tmp_index++] = ' ';
+                } else {
+                    tmp[tmp_index++] = program[i];
+                }
+                i++;
+            }
+            if (IS_SPACE_CHAR(tmp[tmp_index - 1]))
+                tmp_index--;
+            tmp[tmp_index++] = INTR_QUOTE;
+            i += 2;
+            continue;
         }
 
         if (program[i] == USER_QUOTE) {
@@ -3911,8 +3863,8 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
                 tmp[tmp_index] = ';';
                 break;
             default:
-                if (program[i] < 32 || program[i] > 126)
-                    raise_error_line(fileline, NULL, "Backslash at end of line");
+                if (IS_SPACE_CHAR(program[i]))
+                    raise_error_line(fileline, NULL, "Non-space character expected after '\\'");
                 else
                     raise_error_line(fileline, NULL, "Invalid escape sequence '\\%c'", program[i]);
                 goto err;
@@ -3926,6 +3878,11 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
         }
 
         tmp_index++;
+    }
+
+    if (real_lexe && in_quote) {
+        raise_error_line(fileline, NULL, "Missing closing quote");
+        goto err;
     }
 
     while (tmp_index > 0 && IS_SPACE_CHAR(tmp[tmp_index - 1]))
@@ -3952,6 +3909,75 @@ olv_line_t *lexe_program(const char *program, int real_lexe, int *len) {
     free(lines);
     free(tmp);
     return NULL;
+}
+
+/*******************************
+ *                            *
+ *  Program / File Execution  *
+ *                            *
+*******************************/
+
+int execute_program(const char *program, int increment_level) {
+    olv_line_t *lines;
+    int len;
+
+    lines = lexe_program(program, 1, &len);
+
+    if (lines == NULL)
+        return 1;
+
+    if (increment_level)
+        g_olv->current_level++;
+
+    int ret = execute_lines(lines, len, NULL);
+
+    if (increment_level)
+        del_variable_level(g_olv->current_level--);
+
+    free(lines);
+
+    return ret;
+}
+
+int execute_file(const char *file, char **args) {
+    FILE *f = fopen(file, "r");
+    if (f == NULL) {
+        raise_error(NULL, "File '%s' does not exist", file);
+        return 1;
+    }
+
+    char *line = malloc(INPUT_SIZE + 1);
+    char *program = malloc(1);
+    program[0] = '\0';
+
+    while (fgets(line, INPUT_SIZE, f) != NULL) {
+        // realloc program
+        int len = strlen(line);
+        program = realloc(program, strlen(program) + len + 1);
+        strcat(program, line);
+    }
+
+    fclose(f);
+    free(line);
+
+    g_olv->current_level++;
+    set_variable("filename", file);
+
+    int argc;
+    char tmp[13];
+
+    for (argc = 0; args[argc] != NULL; argc++)
+        set_variable(local_itoa(argc, tmp), args[argc]);
+
+    set_variable("#", local_itoa(argc, tmp));
+
+    int ret = execute_program(program, 0);
+
+    // free variables
+    del_variable_level(g_olv->current_level--);
+    free(program);
+
+    return ret;
 }
 
 /***********************
@@ -4067,6 +4093,7 @@ void olv_print(const char *str, int len) {
                 memcpy(tmp, str + from, i - from);
                 tmp[i - from] = '\0';
                 olv_print_ivfc(tmp, is_var);
+                from = i;
             }
 
             // find the closing bracket
@@ -4160,13 +4187,48 @@ void olv_print(const char *str, int len) {
     free(tmp);
 }
 
-/********************
- *                 *
- *  prompt render  *
- *                 *
-********************/
+/**************************
+ *                       *
+ *  Input Prompt Render  *
+ *                       *
+**************************/
 
-#if USE_READLINE
+int copy_working_dir(char *output, int output_size) {
+    // replace home directory with '~'
+    char *home = getenv("HOME");
+    char *cwd = g_olv->current_dir;
+    int len = 0;
+
+    if (output_size < 2)
+        return 0;
+
+    if (home != NULL && home[0] == '/' && home[1]) {
+        while (*home == '/' || *cwd == '/') {
+            while (*home == '/')
+                home++;
+            while (*cwd == '/')
+                cwd++;
+            while (*home && *cwd && *home == *cwd && *home != '/' && *cwd != '/') {
+                home++;
+                cwd++;
+            }
+        }
+
+        if (*home)
+            cwd = g_olv->current_dir;
+        else {
+            if (*cwd)
+                cwd--;
+            output[len++] = '~';
+        }
+    }
+
+    while (*cwd && len < output_size - 1)
+        output[len++] = *cwd++;
+
+    output[len] = '\0';
+    return len;
+}
 
 char *render_prompt(char *output, int output_size) {
     char *prompt = get_variable("prompt");
@@ -4187,25 +4249,28 @@ char *render_prompt(char *output, int output_size) {
             continue;
         }
         switch (prompt[i + 1]) {
-            case 'v':
-                for (int j = 0; OLV_VERSION[j] != '\0' && output_i < output_size - 1; j++)
-                    output[output_i++] = OLV_VERSION[j];
+            case 'e':
+                for (int j = 0; g_olv->exit_code[j] && output_i < output_size - 1; j++)
+                    output[output_i++] = g_olv->exit_code[j];
                 break;
-            case 'd':
-                for (int j = 0; g_olv->current_dir[j] != '\0' && output_i < output_size - 1; j++)
-                    output[output_i++] = g_olv->current_dir[j];
+            case 'v':
+                for (int i = 0; OLV_VERSION[i] && output_i < output_size - 1; i++)
+                    output[output_i++] = OLV_VERSION[i];
+                break;
+            case 'w':
+                output_i += copy_working_dir(output + output_i, output_size - output_i);
                 break;
             case '(':
                 if (g_olv->exit_code[0] != '0')
                     break;
-                for (; prompt[i] && prompt[i] != ')'; i++);
-                i--;
+                for (; prompt[i] && !(prompt[i] == '$' &&
+                        prompt[i + 1] == ')') && output_i < output_size - 1; i++);
                 break;
             case '{':
                 if (g_olv->exit_code[0] == '0')
                     break;
-                for (; prompt[i] && prompt[i] != '}'; i++);
-                i--;
+                for (; prompt[i] && !(prompt[i] == '$' &&
+                        prompt[i + 1] == '}') && output_i < output_size - 1; i++);
                 break;
             case ')':
                 break;
@@ -4220,59 +4285,6 @@ char *render_prompt(char *output, int output_size) {
     output[output_i] = '\0';
     return output;
 }
-
-#else
-
-void display_prompt(void) {
-    char *prompt = get_variable("prompt");
-
-    if (prompt == NULL) {
-        fputs("> ", stdout);
-        fflush(stdout);
-        return;
-    }
-
-    for (int i = 0; prompt[i] != '\0'; i++) {
-        if (prompt[i] != '$') {
-            putchar(prompt[i]);
-            continue;
-        }
-        switch (prompt[i + 1]) {
-            case 'v':
-                fputs(OLV_VERSION, stdout);
-                break;
-            case 'd':
-                fputs(g_olv->current_dir, stdout);
-                break;
-            case 'e':
-                fputs(g_olv->exit_code, stdout);
-                break;
-            case '(':
-                if (g_olv->exit_code[0] != '0')
-                    break;
-                for (; prompt[i] && !(prompt[i] == '$' &&
-                        prompt[i + 1] == ')'); i++);
-                break;
-            case '{':
-                if (g_olv->exit_code[0] == '0')
-                    break;
-                for (; prompt[i] && !(prompt[i] == '$' &&
-                        prompt[i + 1] == '}'); i++);
-                break;
-            case ')':
-                break;
-            case '}':
-                break;
-            default:
-                putchar('$');
-                break;
-        }
-        i++;
-    }
-    fflush(stdout);
-}
-
-#endif
 
 /*********************
  *                  *
@@ -4413,8 +4425,8 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
         }
 
         // get the directory content
-        char **names;
         uint32_t *out_ids;
+        char **names;
 
         int elm_count = fu_dir_get_content(dir, &out_ids, &names);
 
@@ -4788,7 +4800,7 @@ int input_local_readline(char *buffer, int size, const char *prompt) {
         return -2;
     }
 
-    if (line[0] != '\0' && (last_line == NULL || strcmp(line, last_line))) {
+    if (line[0] && (last_line == NULL || strcmp(line, last_line))) {
         add_history(line);
     }
 
@@ -4819,11 +4831,27 @@ int input_local_stdio(char *buffer, int size) {
     return -2;
 }
 
-/***************************
- *                        *
- *  Shell/File Functions  *
- *                        *
-***************************/
+int does_syntax_fail(const char *program) {
+    olv_line_t *lines = lexe_program(program, 0, NULL);
+
+    if (lines == NULL) // should not happen with real_lexe = 0
+        return 0;
+
+    // check if all 'IF', 'WHILE', 'FOR' and 'FUNC' have a matching 'END'
+    int count = 0;
+    for (int i = 0; lines[i].str != NULL; i++) {
+        if (does_startwith(lines[i].str, "IF")    ||
+            does_startwith(lines[i].str, "WHILE") ||
+            does_startwith(lines[i].str, "FOR")   ||
+            does_startwith(lines[i].str, "FUNC")
+        ) count++;
+        else if (does_startwith(lines[i].str, "END"))
+            count--;
+    }
+    free(lines);
+
+    return count > 0;
+}
 
 void start_shell(void) {
     char *line = malloc(INPUT_SIZE + 1);
@@ -4835,6 +4863,8 @@ void start_shell(void) {
 
     #if USE_READLINE
     rl_bind_key('\t', rl_complete);
+    #else
+    char prompt_buf[256];
     #endif
 
     while (1) {
@@ -4843,13 +4873,15 @@ void start_shell(void) {
 
         #if BUILD_PROFAN
             do {
-                display_prompt();
+                fputs(render_prompt(prompt_buf, 256), stdout);
+                fflush(stdout);
                 ret = input_local_profan(line, INPUT_SIZE, history, history_index, ret);
             } while (ret >= 0);
         #elif USE_READLINE
             ret = input_local_readline(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
         #else
-            display_prompt();
+            fputs(render_prompt(prompt_buf, 256), stdout);
+            fflush(stdout);
             ret = input_local_stdio(line, INPUT_SIZE);
         #endif
 
@@ -4904,7 +4936,7 @@ void start_shell(void) {
         }
         #endif
 
-        execute_program(line);
+        execute_program(line, 0);
     }
 
     #if BUILD_PROFAN
@@ -4921,58 +4953,6 @@ void start_shell(void) {
     #endif
 
     free(line);
-}
-
-int execute_file(const char *file, char **args) {
-    FILE *f = fopen(file, "r");
-    if (f == NULL) {
-        raise_error(NULL, "File '%s' does not exist", file);
-        return 1;
-    }
-
-    char *line = malloc(INPUT_SIZE + 1);
-    char *program = malloc(1);
-    program[0] = '\0';
-
-    while (fgets(line, INPUT_SIZE, f) != NULL) {
-        // realloc program
-        int len = strlen(line);
-        program = realloc(program, strlen(program) + len + 1);
-        strcat(program, line);
-    }
-
-    fclose(f);
-    free(line);
-
-    g_olv->current_level++;
-    if (set_variable("filename", file)) {
-        g_olv->current_level--;
-        free(program);
-        return 1;
-    }
-
-    int argc;
-    char tmp[13];
-    for (argc = 0; args[argc] != NULL; argc++) {
-        if (!set_variable(local_itoa(argc, tmp), args[argc]))
-            continue;
-        g_olv->current_level--;
-        return 1;
-    }
-
-    if (set_variable("#", local_itoa(argc, tmp))) {
-        g_olv->current_level--;
-        return 1;
-    }
-
-    execute_program(program);
-
-    // free variables
-    del_variable_level(g_olv->current_level--);
-
-    free(program);
-
-    return 0;
 }
 
 void print_file_highlighted(const char *file) {
@@ -5007,7 +4987,7 @@ void print_file_highlighted(const char *file) {
     fclose(f);
     free(line);
 
-    int tmp, indent = 0;
+    int is_end, indent = 0;
 
     olv_line_t *lines = lexe_program(program, 0, NULL);
     free(program);
@@ -5017,7 +4997,9 @@ void print_file_highlighted(const char *file) {
 
     for (int i = 0; lines[i].str; i++) {
         const char *l = lines[i].str;
-        if ((tmp = does_startwith(l, "END")))
+        is_end = does_startwith(l, "END");
+
+        if (is_end || does_startwith(l, "ELSE") || does_startwith(l, "ELIF"))
             indent--;
 
         for (int j = 0; j < indent * 4; j++)
@@ -5028,17 +5010,16 @@ void print_file_highlighted(const char *file) {
         else
             fputs(l, stdout);
 
-        putchar('\n');
-        if (tmp && !indent && lines[i + 1].str) {
+        if (is_end && indent == 0 && lines[i + 1].str)
             putchar('\n');
-            continue;
-        }
+        putchar('\n');
 
         if (does_startwith(l, "IF")    ||
             does_startwith(l, "WHILE") ||
             does_startwith(l, "FOR")   ||
             does_startwith(l, "FUNC")  ||
-            does_startwith(l, "ELSE")
+            does_startwith(l, "ELSE")  ||
+            does_startwith(l, "ELIF")
         ) indent++;
     }
 
@@ -5067,7 +5048,7 @@ void show_version(void) {
     printf(
         "Olivine %s, %s, %s%s%s\n",
         OLV_VERSION,
-        BUILD_PROFAN   ? "profanOS" : BUILD_UNIX ? "Unix" : "Minimal",
+        BUILD_PROFAN  ? "profanOS" : BUILD_UNIX ? "Unix" : "Minimal",
         USE_READLINE  ? "R" : "r",
         USE_ENVVARS   ? "E" : "e",
         ENABLE_WILDC  ? "W" : "w"
@@ -5118,7 +5099,7 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
             g_olv->debug_prints = 1;
             break;
         case 'e':
-            g_olv->ignore_errors = 1;
+            g_olv->fatal_errors = 0;
             break;
         case 'h':
             args->help = 2;
@@ -5147,6 +5128,7 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
 void parse_args(olv_args_t *args, char **argv) {
     memset(g_olv, 0, sizeof(olv_globals_t));
     memset(args, 0, sizeof(olv_args_t));
+    g_olv->fatal_errors = 1;
 
     for (int i = 1; argv[i] != NULL; i++) {
         if (argv[i][0] != '-') {
@@ -5206,28 +5188,27 @@ void olv_init_globals(void) {
         #if BUILD_PROFAN
             "profanOS"
         #elif BUILD_UNIX
-            "Unix"
+            "unix"
         #else
-            "Minimal"
+            "minimal"
         #endif
     );
 
     set_variable_global("version", OLV_VERSION);
     set_variable_global("prompt", DEFAULT_PROMPT);
-    set_variable("spi", "0");
+    set_variable_global("spi", "0");
 
     set_sync_variable("path", g_olv->current_dir, MAX_PATH_SIZE);
     set_sync_variable("exit", g_olv->exit_code, 4);
 }
 
 char init_prog[] =
-"IF !(eval \"!host\" = \"profanOS\");"
-"  exec '/zada/olivine/init.olv';"
-"END;"
-"ELSE;"
-"  IF !(fstat -f '!HOME/.init.olv');"
-"    exec '!HOME/.init.olv';"
-"  END;"
+"IF !(eval \"!host\" = \"profanOS\") \n"
+"  exec '/zada/olivine/init.olv'     \n"
+"ELIF !(eval \"!host\" = \"unix\")   \n"
+"  IF !(fstat -f '!HOME/.init.olv')  \n"
+"    exec '!HOME/.init.olv'          \n"
+"  END                               \n"
 "END";
 
 int main(int argc, char **argv) {
@@ -5263,18 +5244,18 @@ int main(int argc, char **argv) {
     olv_init_globals();
 
     if (!args.no_init)
-        execute_program(init_prog);
+        execute_program(init_prog, 1);
 
     if (args.file != NULL && execute_file(args.file, argv + args.arg_offset))
         ret_val = 1;
 
     if (args.command != NULL)
-        execute_program(args.command);
+        execute_program(args.command, 0);
 
     if (args.inter || (args.file == NULL && args.command == NULL))
         start_shell();
 
-    if (local_atoi(g_olv->exit_code, &ret_val))
+    if (g_olv->fatal_errors && local_atoi(g_olv->exit_code, &ret_val))
         ret_val = 1;
 
     free_pseudos();

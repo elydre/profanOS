@@ -45,11 +45,11 @@ FUNC dirsize
 
         IF !(eval !size > 10000000)
             print '!!e !(eval !size / 1000000) MB\n'
-        END; ELSE; IF !(eval !size > 10000)
+        ELIF !(eval !size > 10000)
             print '!!e !(eval !size / 1000) kB\n'
-        END; ELSE
+        ELSE
             print '!!e !size B\n'
-        END; END
+        END
     END
 END
 
