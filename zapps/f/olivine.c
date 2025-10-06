@@ -3472,10 +3472,9 @@ int execute_for(int line_count, olv_line_t *lines, char **result) {
     char *var_name = for_line + 4;
 
     int var_exist_before = get_variable_index(var_name, 0) != -1;
+    int var_len, res = 0;
     int in_string = 0;
-    int var_len = 0;
 
-    int res;
     // execute the loop
     while (for_line[index]) {
         // skip spaces
