@@ -18,7 +18,7 @@ END
 
 FUNC name
     IF !(eval !# ~ 1)
-        print 'Usage: name <path>\n'
+        raise name 'Usage: name <path>'
         RETURN
     END
     set n !(split '!0' / -1)
@@ -33,7 +33,7 @@ END
 FUNC dirsize
     IF !(eval !# = 0)
         set 0 !path
-        set ++ #
+        set # 1
     END
 
     FOR e !(range !#)
@@ -55,7 +55,7 @@ END
 
 FUNC time
     IF !(eval !# = 0)
-        print 'Usage: time <command> [arg1] [arg2] ...\n'
+        raise time 'Usage: time <command> [arg1] [arg2] ...'
         RETURN
     END
 

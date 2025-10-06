@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.0"
+#define OLV_VERSION "1.9.1"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -32,6 +32,13 @@
 #define MAX_PATH_SIZE 512   // current directory buffer size
 #define MAX_REC_LEVEL 100   // maximum recursion level
 
+// colors can be set to an empty string if not supported
+#define COLOR_OLV    "\e[38;2;129;208;62m"
+#define COLOR_DEBUG  "\e[90m"
+#define COLOR_ERROR  "\e[31m"
+#define COLOR_ULINE  "\e[4m"
+#define COLOR_RESET  "\e[0m"
+
 /************************************
  *                                 *
  *  Target Detection and Includes  *
@@ -46,43 +53,45 @@
 // automatic target detection
 
 #define BUILD_PROFAN 0
-#define BUILD_UNIX   0
 
 #if BUILD_TARGET == 0
   #if defined(__profanOS__)
     #undef  BUILD_PROFAN
     #define BUILD_PROFAN 1
+    #define BUILD_UNIX   1
   #elif defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__)
-    #undef  BUILD_UNIX
     #define BUILD_UNIX 1
+  #else
+    #define BUILD_UNIX 0
   #endif
 #elif BUILD_TARGET == 2
-  #undef  BUILD_UNIX
   #define BUILD_UNIX 1
+#else
+  #define BUILD_UNIX 0
 #endif
 
 // platform specific includes
 
 #if BUILD_PROFAN
-  #include <profan/syscall.h>
   #include <modules/filesys.h>
+  #include <profan/syscall.h>
   #include <profan.h>
 
-  #define DEFAULT_PROMPT "\e[0mprofanOS [\e[95m$w\e[0m] $(\e[31m$)>$(\e[0m$) "
+  #undef  COLOR_ERROR
+  #define COLOR_ERROR "" // stderr is already red in profanOS
 
-  #undef  HISTORY_PATH
-  #define HISTORY_PATH "/zada/olivine/history.txt"
+  #define PROMPT_UNIX   ANSI(COLOR_RESET) "profanOS [" ANSI("\e[95m") "$w" ANSI(COLOR_RESET) \
+                        "] $(" ANSI("\e[31m") "$)>$(" ANSI(COLOR_RESET) "$) "
 #elif BUILD_UNIX
-  #include <sys/time.h> // if_ticks
-
-  #define DEFAULT_PROMPT "\e[0molivine [\e[95m$w\e[0m] $(\e[31m$)>$(\e[0m$) "
-#else
-  #define DEFAULT_PROMPT "olivine ${>$}$(x$) "
+  #define PROMPT_UNIX   ANSI(COLOR_RESET) "(" ANSI(COLOR_OLV) "olivine" ANSI(COLOR_RESET) \
+                        " at " ANSI("\e[1m") "$w" ANSI(COLOR_RESET) ") $(" ANSI("\e[31m") \
+                        "$)>$(" ANSI(COLOR_RESET) "$) "
 #endif
 
-#if BUILD_PROFAN || BUILD_UNIX
-  #include <sys/wait.h> // waitpid
+#if BUILD_UNIX
   #include <sys/stat.h> // stat
+  #include <sys/time.h> // gettimeofday
+  #include <sys/wait.h> // waitpid
   #include <unistd.h>
   #include <fcntl.h>    // open
 #endif
@@ -91,17 +100,18 @@
   #include <dirent.h>
 #endif
 
-#if USE_READLINE
-  #if BUILD_UNIX
-    #include <readline/readline.h>
-    #include <readline/history.h>
-    #undef  DEFAULT_PROMPT
-    #define DEFAULT_PROMPT "olivine [\1\e[95m\2$w\1\e[0m\2] $(\1\e[31m\2$)>$(\1\e[0m\2$) "
-  #else
-    #undef  USE_READLINE
-    #define USE_READLINE 0
-  #endif
+#if USE_READLINE && BUILD_UNIX && !BUILD_PROFAN
+  #include <readline/readline.h>
+  #include <readline/history.h>
+  #define ANSI(x) "\001" x "\002"
+#else
+  #undef  USE_READLINE
+  #define USE_READLINE 0
+  #define ANSI(x) x
 #endif
+
+#define PROMPT_MINIMAL "olivine ${>$}$(x$) "
+#define PROMPT_OTHER    "> "   // multiline prompt
 
 /***********************************
  *                                *
@@ -109,19 +119,15 @@
  *                                *
 ***********************************/
 
-#define DEBUG_COLOR  "\e[90m"
-
-#define OTHER_PROMPT "> "
-
 #define ERROR_CODE ((void *) 1)
 
-#define INTR_QUOTE '\1'
-#define INTR_VARDF '\2'
-#define INTR_WILDC '\3'
+#define INTR_QUOTE '\3'
+#define INTR_VARDF '\4'
+#define INTR_WILDC '\5'
 
-#define INTR_QUOTE_STR "\1"
-#define INTR_VARDF_STR "\2"
-#define INTR_WILDC_STR "\3"
+#define INTR_QUOTE_STR "\3"
+#define INTR_VARDF_STR "\4"
+#define INTR_WILDC_STR "\5"
 
 #undef  LOWERCASE
 #define LOWERCASE(x) ((x) >= 'A' && (x) <= 'Z' ? (x) + 32 : (x))
@@ -142,6 +148,9 @@
     (x) == ' '  || (x) == '\t' || \
     (x) == '\n' || (x) == '\r' || \
     (x) == '\v' || (x) == '\f')
+
+#define OLV_USE_UNIX do { if (!g_olv->minimal_mode) {
+#define OLV_END_UNIX }} while(0);
 
 char *keywords[] = {
     "END",
@@ -206,15 +215,15 @@ typedef struct {
 
     int    fatal_errors;
     int    debug_prints;
-    int    no_binaries;
+    int    minimal_mode;
 } olv_globals_t;
 
 internal_function_t internal_funcs[];
 
 olv_globals_t *g_olv;
 
-int execute_program(const char *program, int increment_level);
-int execute_file(const char *file, char **args);
+int  execute_program(const char *program, int increment_level);
+int  execute_file(const char *file, char **args);
 
 /****************************
  *                         *
@@ -311,6 +320,8 @@ int local_atoi(const char *str, int *result) {
             raise_error_line(g_olv->fileline, part, format, ##__VA_ARGS__)
 
 void raise_error_line(int fileline, const char *part, char *format, ...) {
+    fputs(COLOR_ERROR, stderr);
+
     if (fileline < 0 || g_olv->current_level == 0) {
         if (part)
             fprintf(stderr, "OLIVINE: %s: ", part);
@@ -328,7 +339,7 @@ void raise_error_line(int fileline, const char *part, char *format, ...) {
     vfprintf(stderr, format, args);
     va_end(args);
 
-    fputs("\n", stderr);
+    fputs(COLOR_RESET "\n", stderr);
 
     strcpy(g_olv->exit_code, "1");
 }
@@ -797,13 +808,12 @@ int is_bin_names(const char *name) {
 
 #endif // BUILD_PROFAN
 
+#if BUILD_UNIX
 char *get_bin_path(const char *name) {
     #if BUILD_PROFAN
-
     return profan_path_path(name, 0);
 
-    #elif BUILD_UNIX
-
+    #else
     char *path = getenv("PATH");
     if (path == NULL)
         return NULL;
@@ -827,12 +837,10 @@ char *get_bin_path(const char *name) {
     }
 
     free(path_copy);
-
-    #endif // BUILD_PROFAN or BUILD_UNIX
-
-    UNUSED(name);
     return NULL;
+    #endif
 }
+#endif // BUILD_UNIX
 
 /*******************************
  *                            *
@@ -1406,7 +1414,8 @@ char *if_eval(char **input) {
 **************************************/
 
 char *if_cd(char **input) {
-    #if (BUILD_PROFAN || BUILD_UNIX)
+    #if BUILD_UNIX
+    OLV_USE_UNIX
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -1446,12 +1455,12 @@ char *if_cd(char **input) {
 
     free(dir);
     return NULL;
-
-    #else
-    UNUSED(input);
-    raise_error("cd", "Not supported in this build");
-    return ERROR_CODE;
+    OLV_END_UNIX
     #endif
+
+    UNUSED(input);
+    raise_error("cd", "Unix support not enabled");
+    return ERROR_CODE;
 }
 
 char *if_debug(char **input) {
@@ -1506,9 +1515,8 @@ char *if_debug(char **input) {
 
         puts("OLIVINE ---");
         printf("  func-level   %d\n", g_olv->current_level);
-        printf("  ig [b]in     %s\n", g_olv->no_binaries   ? "true" : "false");
-        printf("  ft [e]rror   %s\n", g_olv->fatal_errors  ? "true" : "false");
-        printf("  sw [d]ebug   %s\n", g_olv->debug_prints  ? "true" : "false");
+        printf("  fatal [e]rrors  %s\n", g_olv->fatal_errors  ? "true" : "false");
+        printf("  print [d]ebug   %s\n", g_olv->debug_prints  ? "true" : "false");
 
         return NULL;
     }
@@ -1527,18 +1535,14 @@ char *if_debug(char **input) {
         }
 
         fclose(file);
-        puts("functions saved to 'funcs.olv' use 'olivine -p funcs.olv' to display them");
 
+        puts("functions saved to 'funcs.olv' use 'olivine -p funcs.olv' to display them");
         return NULL;
     }
 
     if (mode == 3) {
         #if BUILD_PROFAN
-            if (g_olv->no_binaries) {
-                raise_error("debug", "Bin names are not loaded as pseudo");
-                return ERROR_CODE;
-            }
-
+            OLV_USE_UNIX
             free(g_olv->bin_names);
             g_olv->bin_names = load_bin_names();
 
@@ -1547,16 +1551,13 @@ char *if_debug(char **input) {
             for (c = 0; g_olv->bin_names[c] != NULL; c++);
 
             return local_itoa(c, malloc(12));
-        #else
-            raise_error("debug", "Not supported in this build");
-            return ERROR_CODE;
+            OLV_END_UNIX
         #endif
+        raise_error("debug", "Binary reloading not supported in this build");
+        return ERROR_CODE;
     }
 
     switch (input[0][1]) {
-        case 'b':
-            g_olv->no_binaries = mode == 4;
-            break;
         case 'd':
             g_olv->debug_prints = mode == 4;
             break;
@@ -1566,7 +1567,6 @@ char *if_debug(char **input) {
         case 'h':
             puts("Usage: debug [option]\n"
                 "Options:\n"
-                "  +b     disable binary search\n"
                 "  +d     show execution debug\n"
                 "  +e     enable fatal errors\n"
                 "  dump   print a full dump of olivine\n"
@@ -1642,7 +1642,9 @@ typedef struct {
 } if_dot_redirect_t;
 
 char *if_dot(char **input) {
-    #if BUILD_PROFAN || BUILD_UNIX
+    #if BUILD_UNIX
+    OLV_USE_UNIX
+
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -1840,11 +1842,12 @@ char *if_dot(char **input) {
 
     return ERROR_CODE;
 
-    #else
-    UNUSED(input);
-    raise_error("dot", "Not supported in this build");
-    return ERROR_CODE;
+    OLV_END_UNIX
     #endif
+
+    UNUSED(input);
+    raise_error("dot", "Unix support not enabled");
+    return ERROR_CODE;
 }
 
 char *if_exec(char **input) {
@@ -1917,7 +1920,8 @@ char *if_export(char **input) {
 }
 
 char *if_fstat(char **input) {
-    #if BUILD_PROFAN || BUILD_UNIX
+    #if BUILD_UNIX
+    OLV_USE_UNIX
 
     // get argc
     int argc;
@@ -1994,11 +1998,12 @@ char *if_fstat(char **input) {
     }
 
     return NULL;
-    #else
-    UNUSED(input);
-    raise_error("fstat", "Not supported in this build");
-    return ERROR_CODE;
+    OLV_END_UNIX
     #endif
+
+    UNUSED(input);
+    raise_error("fstat", "Unix support not enabled");
+    return ERROR_CODE;
 }
 
 char *if_global(char **input) {
@@ -2099,6 +2104,22 @@ char *if_pseudo(char **input) {
 
     free(history);
     return NULL;
+}
+
+char *if_raise(char **input) {
+    // get argc
+    int argc;
+    for (argc = 0; input[argc] != NULL; argc++);
+
+    if (argc == 1) {
+        raise_error(NULL, "%s", input[0]);
+    } else if (argc == 2) {
+        raise_error(input[0], "%s", input[1]);
+    } else if (argc > 2) {
+        raise_error("raise", "Usage: raise [name] [message]");
+    }
+
+    return ERROR_CODE;
 }
 
 char *if_range(char **input) {
@@ -2525,14 +2546,14 @@ char *if_ticks(char **input) {
 
     char *output = malloc(12);
 
-    #if BUILD_PROFAN
-    local_itoa(syscall_ms_get(), output);
-    #elif BUILD_UNIX
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    local_itoa((tv.tv_sec * 1000 + tv.tv_usec / 1000) % 0x7FFFFFFF, output);
+    #if BUILD_UNIX
+        OLV_USE_UNIX
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        local_itoa((tv.tv_sec * 1000 + tv.tv_usec / 1000) & 0x7FFFFFFF, output);
+        OLV_END_UNIX
     #else
-    local_itoa(0, output);
+        local_itoa(0, output);
     #endif
 
     return output;
@@ -2552,6 +2573,7 @@ internal_function_t internal_funcs[] = {
     {"global", if_global},
     {"print", if_print},
     {"pseudo", if_pseudo},
+    {"raise", if_raise},
     {"range", if_range},
     {"rep", if_rep},
     {"set", if_set},
@@ -2776,7 +2798,9 @@ void free_funcs(void) {
 char *execute_line(const char *full_line);
 
 char *pipe_processor(char **input) {
-    #if BUILD_PROFAN || BUILD_UNIX
+    #if BUILD_UNIX
+    OLV_USE_UNIX
+
     // get argc
     int argc;
     for (argc = 0; input[argc] != NULL; argc++);
@@ -2860,12 +2884,12 @@ char *pipe_processor(char **input) {
         char buffer[101];
         int n = read(fdin, buffer, 100);
         if (n > 0) {
-            puts("\e[37m  --- Pipe Content ---\e[0m");
+            fputs("  --- Pipe Content ---\n", stderr);
             do {
                 buffer[n] = '\0';
-                fputs(buffer, stdout);
+                fputs(buffer, stderr);
             } while ((n = read(fdin, buffer, 100)) > 0);
-            puts("\e[37m  --------------------\e[0m");
+            fputs("  --------------------\n", stderr);
         }
     }
 
@@ -2875,11 +2899,12 @@ char *pipe_processor(char **input) {
     close(old_fds[1]);
 
     return ret;
-    #else
-    UNUSED(input);
-    raise_error("Pipe Processor", "Not supported in this build");
-    return ERROR_CODE;
+    OLV_END_UNIX
     #endif
+
+    UNUSED(input);
+    raise_error("Pipe Processor", "Unix support not enabled");
+    return ERROR_CODE;
 }
 
 /************************
@@ -2929,6 +2954,7 @@ char *execute_function(function_t *function, char **args) {
 
 char *check_subfunc(const char *line);
 
+#if BUILD_UNIX
 char *check_bin(char *name, char *line, void **function) {
     char *bin_path = get_bin_path(name);
     if (bin_path == NULL) {
@@ -2958,6 +2984,7 @@ char *check_bin(char *name, char *line, void **function) {
 
     return new_line;
 }
+#endif
 
 char *execute_line(const char *full_line) {
     // check for function and variable
@@ -2987,9 +3014,11 @@ char *execute_line(const char *full_line) {
         isif = 1;
     }
 
-    if (!(function || g_olv->no_binaries)) {
+    #if BUILD_UNIX
+    if (!(function || g_olv->minimal_mode)) {
         line = check_bin(function_name, line, &function);
     }
+    #endif
 
     char *result;
 
@@ -3014,11 +3043,11 @@ char *execute_line(const char *full_line) {
         }
 
         if (g_olv->debug_prints) {
-            fprintf(stderr, DEBUG_COLOR"   %03d EXEC:", g_olv->fileline);
+            fprintf(stderr, COLOR_DEBUG "   %03d EXEC:", g_olv->fileline);
             for (int i = 0; function_args[i] != NULL; i++) {
                 fprintf(stderr, " %s", function_args[i]);
             }
-            fputs("\n\e[0m", stderr);
+            fputs(COLOR_RESET "\n", stderr);
         }
 
         // execute the function
@@ -3564,8 +3593,11 @@ struct statement {
 static inline int execute_line_print(const char *line) {
     char *res = execute_line(line);
 
-    if (res == ERROR_CODE)
+    if (res == ERROR_CODE) {
+        if (*g_olv->exit_code == '0')
+            strcpy(g_olv->exit_code, "1");
         return -1;
+    }
 
     if (res) {
         for (int i = 0; res[i]; i++) {
@@ -3616,9 +3648,9 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
         g_olv->fileline = lines[i].fileline;
 
         if (g_olv->debug_prints) {
-            fprintf(stderr, DEBUG_COLOR"=> %03d READ: ", g_olv->fileline);
+            fprintf(stderr, COLOR_DEBUG"=> %03d READ: ", g_olv->fileline);
             print_internal_string(lines[i].str, stderr);
-            fputs("\e[0m\n", stderr);
+            fputs(COLOR_RESET "\n", stderr);
         }
 
         for (int s = 0; statements[s].name != NULL; s++) {
@@ -4234,9 +4266,9 @@ char *render_prompt(char *output, int output_size) {
     char *prompt = get_variable("prompt");
 
     if (prompt == NULL) {
-        if (output_size < 3)
+        if (output_size < (int) sizeof(PROMPT_MINIMAL))
             return NULL;
-        strcpy(output, "> ");
+        strcpy(output, PROMPT_MINIMAL);
         return output;
     }
 
@@ -4286,13 +4318,56 @@ char *render_prompt(char *output, int output_size) {
     return output;
 }
 
-/*********************
- *                  *
- *  profanOS input  *
- *                  *
-*********************/
+/****************************
+ *                          *
+ *  stdio / readline input  *
+ *                          *
+*****************************/
 
-#if BUILD_PROFAN
+int input_local_stdio(char *buffer, int size, const char *prompt) {
+    fputs(prompt, stdout);
+    fflush(stdout);
+
+    if (fgets(buffer, size, stdin))
+        return 0;
+
+    // end of file
+    putchar('\n');
+
+    return -1;
+}
+
+#if USE_READLINE
+
+int input_local_readline(char *buffer, int size, const char *prompt) {
+    static char *last_line = NULL;
+
+    if (g_olv->minimal_mode)
+        return input_local_stdio(buffer, size, prompt);
+
+    char *line = readline(prompt);
+
+    if (line == NULL)
+        return -1;
+
+    if (line[0] && (last_line == NULL || strcmp(line, last_line)))
+        add_history(line);
+
+    free(last_line);
+    last_line = line;
+
+    strncpy(buffer, line, size);
+
+    return 0;
+}
+
+/******************************
+ *                           *
+ *  profanOS advanced input  *
+ *                           *
+******************************/
+
+#elif BUILD_PROFAN
 
 // input() setings
 #define SLEEP_T 15
@@ -4542,7 +4617,7 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
     }
 
     // binaries
-    if (!g_olv->no_binaries && g_olv->bin_names != NULL) {
+    if (!g_olv->minimal_mode && g_olv->bin_names != NULL) {
         for (int j = 0; g_olv->bin_names[j] != NULL; j++) {
             if (strncmp(tmp, g_olv->bin_names[j], i - dec) == 0) {
                 suggest = add_to_suggest(other, suggest, g_olv->bin_names[j]);
@@ -4560,15 +4635,16 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
     return ret;
 }
 
-int input_local_profan(char *buffer, int size, char **history, int history_end, int buffer_index) {
-    // return -1 if the input is valid, else return the cursor position
+static int input_local_profan_loop(char *buffer, int size, char **history,
+            int history_end, int buffer_index) {
+    // return -2 if the input is valid, else return the cursor position
 
     char *term = getenv("TERM");
     if (term && strcmp(term, "/dev/panda") && strcmp(term, "/dev/kterm")) {
         if (fgets(buffer, size, stdin))
-            return -1;
+            return -2;
         putchar('\n');
-        return -2;
+        return -1;
     }
 
     history_end++;
@@ -4579,7 +4655,7 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
     int sc, last_sc = 0, last_sc_sgt = 0;
 
     int buffer_actual_size = strlen(buffer);
-    if (buffer_index == -1)
+    if (buffer_index == -2)
         buffer_index = buffer_actual_size;
 
     if (buffer_actual_size) {
@@ -4595,7 +4671,7 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
     int history_index = history_end;
 
     char **other_suggests = malloc((MAX_SUGGESTS + 1) * sizeof(char *));
-    int ret_val = -1;
+    int ret_val = -2;
 
     sc = 0;
     while (sc != KB_ENTER) {
@@ -4657,7 +4733,7 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
         }
 
         else if (sc == KB_ESC && buffer_actual_size == 0 && size != INPUT_SIZE) {
-            ret_val = -2;
+            ret_val = -1;
             break;
         }
 
@@ -4784,52 +4860,22 @@ int input_local_profan(char *buffer, int size, char **history, int history_end, 
     return ret_val;
 }
 
-/*********************
- *                  *
- *  readline input  *
- *                  *
-*********************/
+int input_local_profan(char *buffer, int size, char *prompt, char **history, int history_index) {
+    int ret = -2;
 
-#elif USE_READLINE
+    if (g_olv->minimal_mode)
+        return input_local_stdio(buffer, size, prompt);
 
-int input_local_readline(char *buffer, int size, const char *prompt) {
-    static char *last_line = NULL;
+    do {
+        fputs(prompt, stdout);
+        fflush(stdout);
+        ret = input_local_profan_loop(buffer, size, history, history_index, ret);
+    } while (ret >= 0);
 
-    char *line = readline(prompt);
-    if (line == NULL) {
-        return -2;
-    }
-
-    if (line[0] && (last_line == NULL || strcmp(line, last_line))) {
-        add_history(line);
-    }
-
-    free(last_line);
-    last_line = line;
-
-    strncpy(buffer, line, size);
-
-    return -1;
+    return ret;
 }
 
 #endif
-
-/*********************
- *                  *
- *  standard input  *
- *                  *
-*********************/
-
-int input_local_stdio(char *buffer, int size) {
-
-    if (fgets(buffer, size, stdin))
-        return -1;
-
-    // end of file
-    putchar('\n');
-
-    return -2;
-}
 
 int does_syntax_fail(const char *program) {
     olv_line_t *lines = lexe_program(program, 0, NULL);
@@ -4855,43 +4901,35 @@ int does_syntax_fail(const char *program) {
 
 void start_shell(void) {
     char *line = malloc(INPUT_SIZE + 1);
-
-    #if BUILD_PROFAN
-    char **history = calloc(HISTORY_SIZE, sizeof(char *));
-    int history_index = 0;
-    #endif
+    int ret;
 
     #if USE_READLINE
-    rl_bind_key('\t', rl_complete);
-    #else
-    char prompt_buf[256];
+        rl_bind_key('\t', rl_complete);
+    #elif BUILD_PROFAN
+        char **history = calloc(HISTORY_SIZE, sizeof(char *));
+        int history_index = 0;
+        char prompt_buf[256];
     #endif
 
     while (1) {
-        int ret = -1;
         line[0] = '\0';
 
-        #if BUILD_PROFAN
-            do {
-                fputs(render_prompt(prompt_buf, 256), stdout);
-                fflush(stdout);
-                ret = input_local_profan(line, INPUT_SIZE, history, history_index, ret);
-            } while (ret >= 0);
-        #elif USE_READLINE
+        #if USE_READLINE
             ret = input_local_readline(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
+        #elif BUILD_PROFAN
+            ret = input_local_profan(line, INPUT_SIZE, render_prompt(prompt_buf, 256),
+                        history, history_index);
         #else
-            fputs(render_prompt(prompt_buf, 256), stdout);
-            fflush(stdout);
-            ret = input_local_stdio(line, INPUT_SIZE);
+            ret = input_local_stdio(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
         #endif
 
-        if (ret == -2 || strcmp(line, "shellexit") == 0) {
+        if (ret == -1 || strcmp(line, "shellexit") == 0) {
             puts("Exiting olivine shell, bye!");
             break;
         }
 
         // multiline input
-        while (ret != -2 && does_syntax_fail(line)) {
+        while (ret != -1 && does_syntax_fail(line)) {
             int len = strlen(line);
 
             while (len && IS_SPACE_CHAR(line[len - 1]))
@@ -4905,24 +4943,17 @@ void start_shell(void) {
             strcpy(line + len++, " ");
 
             #if BUILD_PROFAN
-                do {
-                    fputs(OTHER_PROMPT, stdout);
-                    fflush(stdout);
-                    ret = input_local_profan(line + len, INPUT_SIZE - len, history,
-                            history_index, ret);
-                } while (ret >= 0);
+                ret = input_local_profan(line + len, INPUT_SIZE - len, PROMPT_OTHER,
+                            history, history_index);
             #elif USE_READLINE
-                ret = input_local_readline(line + len, INPUT_SIZE - len, OTHER_PROMPT);
+                ret = input_local_readline(line + len, INPUT_SIZE - len, PROMPT_OTHER);
             #else
-                fputs(OTHER_PROMPT, stdout);
-                fflush(stdout);
-                ret = input_local_stdio(line + len, INPUT_SIZE - len);
+                ret = input_local_stdio(line + len, INPUT_SIZE - len, PROMPT_OTHER);
             #endif
         }
 
-        if (ret == -2) {
+        if (ret == -1)
             continue;
-        }
 
         #if BUILD_PROFAN
         // add to history if not empty and not the same as the last command
@@ -4964,7 +4995,7 @@ void print_file_highlighted(const char *file) {
 
     int color;
 
-    #if BUILD_UNIX || BUILD_PROFAN
+    #if BUILD_UNIX
     color = isatty(STDOUT_FILENO);
     #else
     color = 1;
@@ -5026,11 +5057,11 @@ void print_file_highlighted(const char *file) {
     free(lines);
 }
 
-/************************
- *                     *
- *   Argument Parser   *
- *                     *
-************************/
+/****************************
+ *                         *
+ *   CLI Argument Parser   *
+ *                         *
+****************************/
 
 typedef struct {
     char help;
@@ -5061,40 +5092,40 @@ int show_help(int full, const char *name) {
         return 1;
     }
 
-    printf("Usage: %s [options] [file] [arg1 arg2 ...]\n"
-        "Options:\n"
-        "  -b    disable binary search as pseudo\n"
+    printf("Usage: %s [options] [-c command] [file] [arg1 arg2 ...]\n"
+        "\n"
+        COLOR_ULINE "Shell Options" COLOR_RESET ":\n"
         "  -c    execute argument as code line\n"
+        "  -i    start shell after executing file\n"
+        "  -h    show this help message\n"
+        "  -p    print file with syntax highlighting\n"
+        "  -v    display olivine version information\n"
+        "\n"
+        COLOR_ULINE "Execution Options" COLOR_RESET ":\n"
         "  -d    show debug during execution\n"
         "  -e    ignore errors and continue execution\n"
-        "  -i    start a shell after executing\n"
-        "  -h    show this help message and exit\n"
+        "  -m    minimal emulation (disable unix features)\n"
         "  -n    don't execute the init program\n"
-        "  -p    show file with syntax highlighting\n"
-        "  -v    display program's version number\n",
+        "\n",
         name
     );
+
     return 0;
 }
 
 int parse_args_opt(olv_args_t *args, char **argv, int i) {
     switch ((*argv)[i]) {
-        case 'b':
-            g_olv->no_binaries = 1;
-            break;
         case 'c':
             if (i != 1 || (*argv)[i + 1]) {
                 fputs("olivine: invalid syntax in option -- 'c'\n", stderr);
-                args->help = 1;
-                break;
+                return 1;
             }
-            if (*(argv + 1) == NULL) {
+            if (argv[1] == NULL) {
                 fputs("olivine: no command given after option -- 'c'\n", stderr);
-                args->help = 1;
-                break;
+                return 1;
             }
-            args->command = *++argv;
-            return 1;
+            args->command = argv[1];
+            break;
         case 'd':
             g_olv->debug_prints = 1;
             break;
@@ -5107,6 +5138,9 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
         case 'i':
             args->inter = 1;
             break;
+        case 'm':
+            g_olv->minimal_mode = 1;
+            break;
         case 'n':
             args->no_init = 1;
             break;
@@ -5118,8 +5152,7 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
             break;
         default:
             fprintf(stderr, "olivine: invalid option -- '%c'\n", (*argv)[i]);
-            args->help = 1;
-            break;
+            return 1;
     }
 
     return 0;
@@ -5128,27 +5161,37 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
 void parse_args(olv_args_t *args, char **argv) {
     memset(g_olv, 0, sizeof(olv_globals_t));
     memset(args, 0, sizeof(olv_args_t));
+
+    g_olv->minimal_mode = !BUILD_UNIX;
     g_olv->fatal_errors = 1;
 
-    for (int i = 1; argv[i] != NULL; i++) {
+    for (int i = 1; argv[i] && args->help == 0; i++) {
         if (argv[i][0] != '-') {
             args->file = argv[i];
             args->arg_offset = i + 1;
-            break;
-        }
-
-        if (argv[i][1] == '-') {
-            fprintf(stderr, "olivine: unrecognized option '%s'\n", argv[i]);
-            args->help = 1;
             return;
         }
 
-        for (int j = 1; argv[i][j] && !args->help; j++) {
-            if (parse_args_opt(args, argv + i, j) == 0)
-                continue;
-            i++;
-            break;
+        else if (strcmp(argv[i], "--help") == 0)
+            args->help = 1;
+
+        else if (argv[i][1] == '-')
+            fprintf(stderr, "olivine: unrecognized option '%s'\n", argv[i]);
+
+        else if (argv[i][1] == '\0')
+            fprintf(stderr, "olivine: empty option given\n");
+
+        else {
+            for (int j = 1; argv[i][j]; j++) {
+                if (parse_args_opt(args, argv + i, j) && (args->help = 1))
+                    break;
+            }
+            if (args->command && args->command == argv[i + 1])
+                i++;
+            continue;
         }
+
+        args->help++;
     }
 }
 
@@ -5164,7 +5207,7 @@ void olv_init_globals(void) {
 
     g_olv->current_dir = malloc(MAX_PATH_SIZE + 1);
 
-    #if BUILD_UNIX || BUILD_PROFAN
+    #if BUILD_UNIX
     if (getcwd(g_olv->current_dir, MAX_PATH_SIZE) == NULL)
     #endif
     strcpy(g_olv->current_dir, "/");
@@ -5180,26 +5223,29 @@ void olv_init_globals(void) {
     g_olv->funcs     = calloc(g_olv->func_count, sizeof(function_t));
 
     #if BUILD_PROFAN
-        if (!g_olv->no_binaries)
+        if (!g_olv->minimal_mode)
             g_olv->bin_names = load_bin_names();
     #endif
 
-    set_variable_global("host",
-        #if BUILD_PROFAN
-            "profanOS"
-        #elif BUILD_UNIX
-            "unix"
-        #else
-            "minimal"
-        #endif
-    );
-
     set_variable_global("version", OLV_VERSION);
-    set_variable_global("prompt", DEFAULT_PROMPT);
     set_variable_global("spi", "0");
 
     set_sync_variable("path", g_olv->current_dir, MAX_PATH_SIZE);
     set_sync_variable("exit", g_olv->exit_code, 4);
+
+    if (g_olv->minimal_mode) {
+        set_variable_global("prompt", PROMPT_MINIMAL);
+        set_variable_global("host", "minimal");
+        return;
+    }
+
+    #if BUILD_PROFAN
+        set_variable_global("host", "profanOS");
+    #else
+        set_variable_global("host", "unix");
+    #endif
+
+    set_variable_global("prompt", PROMPT_UNIX);
 }
 
 char init_prog[] =
@@ -5255,7 +5301,7 @@ int main(int argc, char **argv) {
     if (args.inter || (args.file == NULL && args.command == NULL))
         start_shell();
 
-    if (g_olv->fatal_errors && local_atoi(g_olv->exit_code, &ret_val))
+    else if (g_olv->fatal_errors && local_atoi(g_olv->exit_code, &ret_val))
         ret_val = 1;
 
     free_pseudos();
