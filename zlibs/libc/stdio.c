@@ -229,11 +229,21 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     if (count == 0 || stream == NULL || (stream->mode & 0b11) == O_WRONLY)
         return 0;
 
+    int read, rfrom_buffer = 0;
+    int unget = 0;
+
+    if (stream->ungetchar >= 0) {
+        ((char *) buffer)[0] = stream->ungetchar;
+        stream->ungetchar = -1;
+        buffer = (char *) buffer + 1;
+        if (--count == 0)
+            return size / size;
+        unget = 1;
+    }
+
     // if buffer is used for writing
     if (stream->buffer_size > 0)
         fflush(stream);
-
-    int read, rfrom_buffer = 0;
 
     // check if the file is a function call
     if (stream->unbuffered) {
@@ -248,7 +258,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         if ((uint32_t) read < count)
             stream->eof = 1;
 
-        return read / size;
+        return (read + unget) / size;
     }
 
     // read the file from the buffer if possible
@@ -258,7 +268,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
             stream->buffer_needle += count;
             stream->pos += count;
 
-            return count / size;
+            return (count + unget) / size;
         }
 
         rfrom_buffer = -(stream->buffer_size + stream->buffer_needle);
@@ -282,7 +292,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         if ((uint32_t) read < count)
             stream->eof = 1;
 
-        return (read + rfrom_buffer) / size;
+        return (read + rfrom_buffer + unget) / size;
     }
 
     read = fm_pread(stream->fd, stream->buffer, STDIO_BUFFER_READ, stream->pos);
@@ -302,7 +312,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
     stream->pos += count;
 
     // return the number of elements read
-    return (count + rfrom_buffer) / size;
+    return (count + rfrom_buffer + unget) / size;
 }
 
 size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
@@ -390,12 +400,6 @@ int fsetpos(FILE *stream, const fpos_t *pos) {
 int fgetc(FILE *stream) {
     uint8_t c;
     int val;
-
-    if (stream->ungetchar >= 0) {
-        val = stream->ungetchar;
-        stream->ungetchar = -1;
-        return val;
-    }
 
     return fread(&c, 1, 1, stream) == 1 ? c : EOF;
 }
