@@ -47,11 +47,66 @@ _BEGIN_C_FILE
 
 #define syscall_timer_get_ms() syscall_ms_get() // retrocompatibility
 
-/************************************
- *                                 *
- *  syscall function definitions   *
- *                                 *
-************************************/
+/*************************************
+ *                                  *
+ *  syscall prototypes declaration  *
+ *                                  *
+*************************************/
+
+filesys_t *syscall_fs_get_default(void);
+int        syscall_fs_read(uint32_t, void *, uint32_t, uint32_t);
+int        syscall_fs_write(uint32_t, void *, uint32_t, uint32_t);
+int        syscall_fs_set_size(uint32_t, uint32_t);
+uint32_t   syscall_fs_get_size(uint32_t);
+int        syscall_fs_delete(uint32_t);
+uint32_t   syscall_fs_init(uint32_t, char *);
+char      *syscall_fs_meta(uint32_t, char *);
+
+void    *syscall_mem_alloc(uint32_t, int, uint32_t);
+int      syscall_mem_free(void *);
+int      syscall_mem_free_all(int, int);
+uint32_t syscall_mem_fetch(void *, int);
+int      syscall_mem_info(int, int);
+
+uint32_t syscall_ms_get(void);
+int      syscall_time_get(struct tm *);
+
+uint8_t *syscall_font_get(void);
+int      syscall_kcnprint(char *, int, char);
+int      syscall_vesa_info(int);
+
+int      syscall_afft_read( int, void *, uint32_t, uint32_t);
+int      syscall_afft_write(int, void *, uint32_t, uint32_t);
+int      syscall_afft_cmd(  int, uint32_t, void *);
+
+int      syscall_sc_get(void);
+
+int      syscall_sys_power(int);
+int      syscall_elf_exec(uint32_t, char **, char **);
+
+int      syscall_process_create(void *, int, int, uint32_t *);
+int      syscall_process_fork(void);
+int      syscall_process_sleep(uint32_t, uint32_t);
+int      syscall_process_wakeup(uint32_t, int);
+int      syscall_process_wait(int, uint8_t *, int);
+int      syscall_process_kill(uint32_t, int);
+uint32_t syscall_process_pid(void);
+int      syscall_process_info(uint32_t, int, void *);
+int      syscall_process_list_all(uint32_t *, int);
+
+int      syscall_mod_load(char *, uint32_t);
+int      syscall_mod_unload(uint32_t);
+
+void    *syscall_scuba_generate(void *, uint32_t);
+int      syscall_scuba_map(void *, void *, int);
+int      syscall_scuba_unmap(void *);
+void    *syscall_scuba_phys(void *);
+
+/*********************************
+ *                              *
+ *  syscalls declaration macro  *
+ *                              *
+*********************************/
 
 extern int profan_syscall(uint32_t id, ...);
 
@@ -103,56 +158,6 @@ extern int profan_syscall(uint32_t id, ...);
 #define syscall_scuba_map(a, b, c) ((int) profan_syscall(36, a, b, c))
 #define syscall_scuba_unmap(a) ((int) profan_syscall(37, a))
 #define syscall_scuba_phys(a) ((void *) profan_syscall(38, a))
-
-
-filesys_t *syscall_fs_get_default(void);
-int        syscall_fs_read(uint32_t, void *, uint32_t, uint32_t);
-int        syscall_fs_write(uint32_t, void *, uint32_t, uint32_t);
-int        syscall_fs_set_size(uint32_t, uint32_t);
-uint32_t   syscall_fs_get_size(uint32_t);
-int        syscall_fs_delete(uint32_t);
-uint32_t   syscall_fs_init(uint32_t, char *);
-char      *syscall_fs_meta(uint32_t, char *);
-
-void    *syscall_mem_alloc(uint32_t, int, uint32_t);
-int      syscall_mem_free(void *);
-int      syscall_mem_free_all(int, int);
-uint32_t syscall_mem_fetch(void *, int);
-int      syscall_mem_info(int, int);
-
-uint32_t syscall_ms_get(void);
-int      syscall_time_get(struct tm *);
-
-uint8_t *syscall_font_get(void);
-int      syscall_kcnprint(char *, int, char);
-int      syscall_vesa_info(int);
-
-int      syscall_afft_read( int, void *, uint32_t, uint32_t);
-int      syscall_afft_write(int, void *, uint32_t, uint32_t);
-int      syscall_afft_cmd(  int, uint32_t, void *);
-
-int      syscall_sc_get(void);
-
-int      syscall_sys_power(int);
-int      syscall_elf_exec(uint32_t, char **, char **);
-
-int      syscall_process_create(void *, int, int, uint32_t *);
-int      syscall_process_fork(void);
-int      syscall_process_sleep(uint32_t, uint32_t);
-int      syscall_process_wakeup(uint32_t, int);
-int      syscall_process_wait(int, uint8_t *, int);
-int      syscall_process_kill(uint32_t, int);
-uint32_t syscall_process_pid(void);
-int      syscall_process_info(uint32_t, int, void *);
-int      syscall_process_list_all(uint32_t *, int);
-
-int      syscall_mod_load(char *, uint32_t);
-int      syscall_mod_unload(uint32_t);
-
-void    *syscall_scuba_generate(void *, uint32_t);
-int      syscall_scuba_map(void *, void *, int);
-int      syscall_scuba_unmap(void *);
-void    *syscall_scuba_phys(void *);
 
 _END_C_FILE
 
