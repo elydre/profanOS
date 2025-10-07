@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #include <profan/math.h>
-#include "math_private.h"
+#include <stdint.h>
 
 /*
  * ====================================================
@@ -336,6 +336,43 @@ static const double powf_log_table[256] = {
     0x1.0103091b51f5ep-1,    0x1.fd160df77ed7ap-1,  // 0.501976, -log2l(0.501976)
     0x1p-1,                  0x1p+0,                // 0.5, -log2l(0.5)
 };
+
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+typedef union {
+    float value;
+    uint32_t word;
+} ieee_float_shape_type;
+
+// Get a 32 bit int from a float.
+#ifndef GET_FLOAT_WORD
+# define GET_FLOAT_WORD(i,d)        \
+do {                                \
+    ieee_float_shape_type gf_u;     \
+    gf_u.value = (d);               \
+    (i) = gf_u.word;                \
+} while (0)
+#endif
+
+// Set a float from a 32 bit int.
+#ifndef SET_FLOAT_WORD
+# define SET_FLOAT_WORD(d,i)        \
+do {                                \
+    ieee_float_shape_type sf_u;     \
+    sf_u.word = (i);                \
+    (d) = sf_u.value;               \
+} while (0)
+#endif
 
 // origin: FreeBSD /usr/src/lib/msun/src/e_rem_pio2f.c
 

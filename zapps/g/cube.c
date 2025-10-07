@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-// @LINK: libpf, libpm
+// @LINK: libpf
 
 #include <profan/syscall.h>
 #include <profan/math.h>
