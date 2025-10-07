@@ -97,7 +97,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define syscall_process_list_all(a, b) ((int) profan_syscall(32, a, b))
 
 #define syscall_mod_load(a, b) ((int) profan_syscall(33, a, b))
-#define syscall_mod_unload(a) ((int) profan_syscall(34, a)) 
+#define syscall_mod_unload(a) ((int) profan_syscall(34, a))
 
 #define syscall_scuba_generate(a, b) ((void *) profan_syscall(35, a, b))
 #define syscall_scuba_map(a, b, c) ((int) profan_syscall(36, a, b, c))
