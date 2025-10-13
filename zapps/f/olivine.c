@@ -14,13 +14,14 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.1"
+#define OLV_VERSION "1.9.2"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
 #define USE_READLINE  1     // enable libreadline (unix only)
 #define USE_ENVVARS   1     // enable variable search in env
 #define ENABLE_WILDC  1     // enable wildcard expansion
+#define HAVE_ALLOCA   1     // use alloca for small allocations
 
 #define USER_QUOTE '\''     // quote character
 #define USER_VARDF '!'      // variable & subfunc character
@@ -35,7 +36,7 @@
 // colors can be set to an empty string if not supported
 #define COLOR_OLV    "\e[38;2;129;208;62m"
 #define COLOR_DEBUG  "\e[90m"
-#define COLOR_ERROR  "\e[31m"
+#define COLOR_ERROR  "\e[91m"
 #define COLOR_ULINE  "\e[4m"
 #define COLOR_RESET  "\e[0m"
 
@@ -93,7 +94,17 @@
   #include <sys/time.h> // gettimeofday
   #include <sys/wait.h> // waitpid
   #include <unistd.h>
+  #include <stddef.h>   // ptrdiff_t
   #include <fcntl.h>    // open
+#endif
+
+#if HAVE_ALLOCA
+  #include <alloca.h>
+  #define fast_alloc(x) alloca(x)
+  #define fast_free(x)  ((void) 0)
+#else
+  #define fast_alloc(x) malloc(x)
+  #define fast_free(x)  free(x)
 #endif
 
 #if ENABLE_WILDC
@@ -398,6 +409,16 @@ int is_valid_name(const char *name) {
     return 1;
 }
 
+int does_startwith(const char *str, const char *start) {
+    int i;
+    for (i = 0; start[i] != '\0'; i++) {
+        if (LOWERCASE(str[i]) != LOWERCASE(start[i]))
+            return 0;
+    }
+    return (str[i] == '\0' || IS_SPACE_CHAR(str[i]));
+}
+
+
 /*********************************
  *                              *
  *  Variable Get/Set Functions  *
@@ -684,7 +705,7 @@ int set_function(const char *name, olv_line_t *lines, int line_count) {
         if (i + 1 >= g_olv->func_count) {
             g_olv->func_count += 10;
             g_olv->funcs = realloc(g_olv->funcs, g_olv->func_count * sizeof(function_t));
-            memset(g_olv->funcs + i, 0, 10 * sizeof(function_t));
+            memset(g_olv->funcs + i + 1, 0, 10 * sizeof(function_t));
         }
         if (g_olv->funcs[i].name == NULL) {
             char *name_copy = malloc(strlen(name) + 1);
@@ -879,8 +900,8 @@ char *resolve_wildcard(char *base, char *wildcard) {
     if (dir == NULL)
         return NULL;
 
-    char *output = malloc(1);
-    output[0] = '\0';
+    char *new_base, *output = NULL;
+    int output_len = 0;
 
     for (struct dirent *entry = readdir(dir); entry != NULL; entry = readdir(dir)) {
         if (entry->d_name[0] == '.' && wildcard[0] != '.')
@@ -890,25 +911,22 @@ char *resolve_wildcard(char *base, char *wildcard) {
             continue;
 
         if (!next) {
-            output = realloc(output, strlen(output) + strlen(base) + strlen(entry->d_name) + 2);
-            strcat(output, base);
-            strcat(output, entry->d_name);
-            strcat(output, " ");
+            output = realloc(output, output_len + strlen(base) + strlen(entry->d_name) + 4);
+            output_len += sprintf(output + output_len, INTR_QUOTE_STR "%s%s" INTR_QUOTE_STR " ",
+                    base, entry->d_name);
             continue;
         }
 
-        char *new_base = malloc(strlen(base) + strlen(entry->d_name) + 2);
-        strcpy(new_base, base);
-        strcat(new_base, entry->d_name);
-        strcat(new_base, "/");
+        new_base = fast_alloc(strlen(base) + strlen(entry->d_name) + 2);
+        sprintf(new_base, "%s%s%s", base, "/", entry->d_name);
 
         char *new_output = resolve_wildcard(new_base, next + 1);
-        free(new_base);
+        fast_free(new_base);
 
         if (new_output == NULL)
             continue;
 
-        output = realloc(output, strlen(output) + strlen(new_output) + 1);
+        output = realloc(output, output_len + strlen(new_output) + 1);
         strcat(output, new_output);
         free(new_output);
     }
@@ -918,11 +936,7 @@ char *resolve_wildcard(char *base, char *wildcard) {
     if (next)
         wildcard[next - wildcard] = '/';
 
-    if (output[0])
-        return output;
-
-    free(output);
-    return NULL;
+    return output;
 }
 
 #endif
@@ -2592,165 +2606,6 @@ void *get_if_function(const char *name) {
     return NULL;
 }
 
-/************************************
- *                                 *
- *  String Manipulation Functions  *
- *                                 *
-************************************/
-
-void remove_quotes(char *string) {
-    int i, dec = 0;
-    for (i = 0; string[i] != '\0'; i++) {
-        if (string[i] == INTR_QUOTE) {
-            dec++;
-            continue;
-        }
-        string[i - dec] = string[i];
-    }
-    string[i - dec] = '\0';
-}
-
-int does_startwith(const char *str, const char *start) {
-    int i;
-    for (i = 0; start[i] != '\0'; i++) {
-        if (LOWERCASE(str[i]) != LOWERCASE(start[i]))
-            return 0;
-    }
-    return (str[i] == '\0' || IS_SPACE_CHAR(str[i]));
-}
-
-int quotes_less_copy(char *dest, const char *src, int len) {
-    int i = 0;
-    int in_string = 0;
-    for (int j = 0; src[j] && i < len; j++) {
-        if (src[j] == INTR_QUOTE) {
-            in_string = !in_string;
-            len--;
-        } else if (in_string) {
-            dest[i++] = src[j];
-        } else if (!IS_SPACE_CHAR(src[j])) {
-            dest[i++] = src[j];
-        }
-    }
-    dest[i] = '\0';
-    return i;
-}
-
-char **gen_args(const char *string) {
-    if (string == NULL)
-        return calloc(1, sizeof(char *));
-
-    while (IS_SPACE_CHAR(*string))
-        string++;
-
-    if (*string == '\0')
-        return calloc(1, sizeof(char *));
-
-    // count the number of arguments
-    int in_string = 0;
-    int argc = 1;
-    int len;
-
-    for (len = 0; string[len]; len++) {
-        if (string[len] == INTR_QUOTE) {
-            in_string = !in_string;
-        } if (IS_SPACE_CHAR(string[len]) && !in_string) {
-            while (IS_SPACE_CHAR(string[len + 1]))
-                len++;
-            argc++;
-        }
-    }
-
-    if (in_string) {
-        raise_error(NULL, "String not closed");
-        return ERROR_CODE;
-    }
-
-    // allocate the arguments array
-    char **argv = malloc((argc + 1) * sizeof(char *) + len + 1);
-    char *args = (char *) (argv + argc + 1);
-
-    // fill the arguments array
-    int old_i, arg_i, i;
-    old_i = arg_i = 0;
-    for (i = 0; string[i] != '\0'; i++) {
-        if (string[i] == INTR_QUOTE) {
-            in_string = !in_string;
-            continue;
-        }
-
-        if (IS_SPACE_CHAR(string[i]) && !in_string) {
-            int tmp = quotes_less_copy(args, string + old_i, i - old_i);
-            argv[arg_i++] = args;
-            while (IS_SPACE_CHAR(string[i + 1]))
-                i++;
-            old_i = i + 1;
-            args += tmp + 1;
-        }
-    }
-
-    if (old_i != i) {
-        len = quotes_less_copy(args, string + old_i, len - old_i);
-        argv[arg_i++] = args;
-    }
-
-    argv[arg_i] = NULL;
-    return argv;
-}
-
-char *args_rejoin(char **input, int to) {
-    int size = 1;
-
-    for (int i = 0; i < to; i++)
-        size += strlen(input[i]) + 3;
-
-    char *joined_input = malloc(size);
-    joined_input[0] = '\0';
-
-    size = 0;
-    for (int i = 0; i < to; i++) {
-        joined_input[size++] = INTR_QUOTE;
-        for (int j = 0; input[i][j] != '\0'; j++) {
-            joined_input[size++] = input[i][j];
-        }
-        joined_input[size++] = INTR_QUOTE;
-        if (i != to - 1) {
-            joined_input[size++] = ' ';
-        }
-    }
-    joined_input[size] = '\0';
-
-    return joined_input;
-}
-
-char *get_function_name(const char *line) {
-    while (IS_SPACE_CHAR(*line))
-        line++;
-
-    if (*line == '\0')
-        return NULL;
-
-    int in_string = 0;
-    for (int i = 0; line[i] != '\0'; i++) {
-        if (line[i] == INTR_QUOTE)
-            in_string = !in_string;
-
-        if (IS_SPACE_CHAR(line[i]) && !in_string) {
-            char *function_name = malloc(i + 1);
-            strncpy(function_name, line, i);
-            function_name[i] = '\0';
-
-            remove_quotes(function_name);
-            return function_name;
-        }
-    }
-
-    char *function_name = strdup(line);
-
-    remove_quotes(function_name);
-    return function_name;
-}
-
 /*******************************
  *                            *
  *  Memory Freeing Functions  *
@@ -2796,6 +2651,32 @@ void free_funcs(void) {
 *****************************/
 
 char *execute_line(const char *full_line);
+
+char *args_rejoin(char **input, int to) {
+    int size = 1;
+
+    for (int i = 0; i < to; i++)
+        size += strlen(input[i]) + 3;
+
+    char *joined_input = malloc(size);
+    joined_input[0] = '\0';
+
+    size = 0;
+    for (int i = 0; i < to; i++) {
+        joined_input[size++] = INTR_QUOTE;
+
+        for (int j = 0; input[i][j] != '\0'; j++)
+            joined_input[size++] = input[i][j];
+
+        joined_input[size++] = INTR_QUOTE;
+
+        if (i != to - 1)
+            joined_input[size++] = ' ';
+    }
+
+    joined_input[size] = '\0';
+    return joined_input;
+}
 
 char *pipe_processor(char **input) {
     #if BUILD_UNIX
@@ -2955,113 +2836,179 @@ char *execute_function(function_t *function, char **args) {
 char *check_subfunc(const char *line);
 
 #if BUILD_UNIX
-char *check_bin(char *name, char *line, void **function) {
-    char *bin_path = get_bin_path(name);
-    if (bin_path == NULL) {
-        return line;
-    }
+int check_bin(char **args, char **line, int len, int *argc) {
+    char *bin_path = get_bin_path(args[0]);
+    if (bin_path == NULL)
+        return 1;
 
-    *function = if_dot;
-    char *new_line = malloc(strlen(line) + strlen(bin_path) + 2);
-    strcpy(new_line, ". ");
-    strcat(new_line, bin_path);
+    int func_len, bin_off = strlen(bin_path) + 3;
+
+    func_len = args[1] ? args[1] - *line : len + 1;
+    len -= func_len - 1;
+
+    char *new_line = malloc(len + bin_off + 1);
+    strcpy(new_line, ".");
+    strcpy(new_line + 2, bin_path);
+    if (args[1])
+        memcpy(new_line + bin_off, args[1], len);
+
     free(bin_path);
+    free(*line);
 
-    int i, in_quote = 0;
+    // move args
+    ptrdiff_t delta = (new_line - *line) + bin_off - func_len;
 
-    for (i = 0; IS_SPACE_CHAR(line[i]); i++);
+    for (int i = (*argc)++; i > 0; i--)
+        args[i] = args[i - 1] + delta;
 
-    for (; line[i]; i++) {
-        if (line[i] == INTR_QUOTE)
-            in_quote = !in_quote;
-        if (IS_SPACE_CHAR(line[i]) && !in_quote) {
-            strcat(new_line, line + i);
-            break;
+
+    args[0] = new_line;
+    args[1] = new_line + 2;
+    args[*argc] = NULL;
+    *line = new_line;
+
+    return 0;
+}
+#endif
+
+int count_args(const char *string) {
+    // count the number of arguments
+    int in_string = 0;
+    int i, argc = 1;
+
+    while (IS_SPACE_CHAR(*string))
+        string++;
+
+    for (i = 0; string[i]; i++) {
+        if (string[i] == INTR_QUOTE) {
+            in_string = !in_string;
+        } if (IS_SPACE_CHAR(string[i]) && !in_string) {
+            while (IS_SPACE_CHAR(string[i + 1]))
+                i++;
+            if (string[i + 1])
+                argc++;
         }
     }
 
-    free(line);
+    if (in_string) {
+        raise_error(NULL, "Should not happen: unclosed quote");
+        return -1;
+    }
 
-    return new_line;
+    return argc;
 }
-#endif
+
+int gen_args(char **args, char *string) {
+    int srci, desti = 0;
+    int argc = 0;
+
+    int in_string = 0;
+
+    for (srci = 0; IS_SPACE_CHAR(string[srci]); srci++);
+
+    if (srci) {
+        for (desti = 0; string[srci + desti]; desti++)
+            string[desti] = string[srci + desti];
+        string[desti] = '\0';
+        desti = 0;
+    }
+
+    args[argc++] = string;
+
+    for (srci = 0; string[srci]; srci++) {
+        if (string[srci] == INTR_QUOTE) {
+            in_string = !in_string;
+            continue;
+        }
+
+        if (!in_string && IS_SPACE_CHAR(string[srci])) {
+            string[desti++] = '\0';
+            while (IS_SPACE_CHAR(string[srci + 1]))
+                srci++;
+            if (string[srci + 1] == '\0')
+                break;
+            args[argc++] = string + desti;
+            continue;
+        }
+
+        string[desti++] = string[srci];
+    }
+
+    string[desti] = '\0';
+    args[argc] = NULL;
+
+    return desti;
+}
 
 char *execute_line(const char *full_line) {
     // check for function and variable
     char *line = check_subfunc(full_line);
-    int pipe_after = 0;
+    int len, pipe = 0;
 
     if (line == NULL) {
         // subfunction failed
         return ERROR_CODE;
     }
 
-    // get the function name
-    int isif = 0;
-    char *function_name = get_function_name(line);
-
-    if (function_name == NULL) {
-        raise_error(NULL, "Expected function name, but got empty string");
+    // generate arguments
+    int argc = count_args(line);
+    if (argc == -1) {
         free(line);
         return ERROR_CODE;
     }
 
-    // get the function address
-    void *function = get_function(function_name);
+    char **args = fast_alloc((argc + 2) * sizeof(char *));
 
+    len = gen_args(args, line);
+
+    // get the function address
+    void *function = get_function(args[0]);
+
+    int isif = 0;
     if (function == NULL) {
-        function = get_if_function(function_name);
+        function = get_if_function(args[0]);
         isif = 1;
     }
 
     #if BUILD_UNIX
-    if (!(function || g_olv->minimal_mode)) {
-        line = check_bin(function_name, line, &function);
-    }
+        if (!(function || g_olv->minimal_mode || check_bin(args, &line, len, &argc)))
+            function = if_dot;
+    #else
+        (void) len;
     #endif
 
     char *result;
 
     if (function == NULL) {
-        raise_error(NULL, "Function '%s' not found", function_name);
+        raise_error(NULL, "Function '%s' not found", args[0]);
         result = ERROR_CODE;
     } else {
-        // generate the arguments array
-        char **function_args = gen_args(line);
-        if (function_args == ERROR_CODE) {
-            free(function_name);
-            free(line);
-            return ERROR_CODE;
-        }
-
-        // check if "|" is present
-        for (int i = 0; function_args[i] != NULL; i++) {
-            if (function_args[i][0] == '|' && function_args[i][1] == '\0') {
-                pipe_after = 1;
-                break;
-            }
-        }
-
         if (g_olv->debug_prints) {
             fprintf(stderr, COLOR_DEBUG "   %03d EXEC:", g_olv->fileline);
-            for (int i = 0; function_args[i] != NULL; i++) {
-                fprintf(stderr, " %s", function_args[i]);
+            for (int i = 0; args[i] != NULL; i++) {
+                fprintf(stderr, " %s", args[i]);
             }
             fputs(COLOR_RESET "\n", stderr);
         }
 
-        // execute the function
-        if (pipe_after)
-            result = pipe_processor(function_args);
-        else if (isif)
-            result = ((char *(*)(char **)) function)(function_args + 1);
-        else
-            result = execute_function(function, function_args + 1);
+        // check if "|" is present
+        for (int i = 0; args[i] != NULL; i++) {
+            if (args[i][0] == '|' && args[i][1] == '\0') {
+                pipe = 1;
+                break;
+            }
+        }
 
-        free(function_args);
+        // execute the function
+        if (pipe)
+            result = pipe_processor(args);
+        else if (isif)
+            result = ((char *(*)(char **)) function)(args + 1);
+        else
+            result = execute_function(function, args + 1);
     }
 
-    free(function_name);
+    fast_free(args);
     free(line);
 
     return result;
@@ -3101,18 +3048,27 @@ char *check_variables(char *line) {
 
         line[end] = old;
 
-        // replace the variable with its value
-        char *nline = malloc(strlen(line) - (end - start) + strlen(var_value) + 1);
-        strncpy(nline, line, start);
-        strcpy(nline + start, var_value);
-        strcat(nline, line + end);
+        int val_len = strlen(var_value);
 
-        free(line);
+        if (val_len > end - start) {
+            // we need to reallocate line
+            char *nline = malloc(strlen(line) - (end - start) + val_len + 1);
+            strncpy(nline, line, start);
+            strcpy(nline + start, var_value);
+            strcat(nline, line + end);
+
+            free(line);
+            line = nline;
+        } else {
+            // we can just move the rest of the string
+            if (val_len != end - start)
+                memmove(line + start + val_len, line + end, strlen(line + end) + 1);
+            memcpy(line + start, var_value, val_len);
+        }
 
         if (start)
             start--;
 
-        line = nline;
     }
 
     return line;
@@ -3137,11 +3093,19 @@ char *check_pseudos(char *line) {
 
         last = pseudo_value;
 
-        char *nline = malloc(strlen(line) - end + strlen(pseudo_value) + 1);
-        strcpy(nline, pseudo_value);
-        strcat(nline, line + end);
-        free(line);
-        line = nline;
+        int pseudo_len = strlen(pseudo_value);
+
+        if (pseudo_len > end) {
+            char *nline = malloc(strlen(line) - end + strlen(pseudo_value) + 1);
+            strcpy(nline, pseudo_value);
+            strcat(nline, line + end);
+            free(line);
+            line = nline;
+        } else {
+            if (pseudo_len != end)
+                memmove(line + pseudo_len, line + end, strlen(line + end) + 1);
+            memcpy(line, pseudo_value, pseudo_len);
+        }
     }
 }
 
@@ -3262,24 +3226,32 @@ char *check_subfunc(const char *input) {
         // replace the subfunc with its result
         char *nline;
 
-        if (subfunc_result) {
-            nline = malloc(strlen(line) - (end - start) + strlen(subfunc_result) + 1);
-            strncpy(nline, line, start);
-            strcpy(nline + start, subfunc_result);
-            strcat(nline, line + end + 1);
-            free(subfunc_result);
-        } else {
-            nline = malloc(strlen(line) - (end - start) + 1);
-            strncpy(nline, line, start);
-            strcpy(nline + start, line + end + 1);
-        }
+        {
+            int orig_seg_len = end - start + 1;
+            int repl_len = subfunc_result ? strlen(subfunc_result) : 0;
 
-        free(line);
+            if (repl_len > orig_seg_len) {
+                nline = malloc(strlen(line) - orig_seg_len + repl_len + 1);
+                if (start)
+                    memcpy(nline, line, start);
+                if (repl_len)
+                    memcpy(nline + start, subfunc_result, repl_len);
+                strcpy(nline + start + repl_len, line + end + 1);
+
+                free(line);
+                line = nline;
+            } else {
+                memmove(line + start + repl_len, line + end + 1, strlen(line + end));
+                if (repl_len)
+                    memcpy(line + start, subfunc_result, repl_len);
+            }
+
+            if (subfunc_result)
+                free(subfunc_result);
+        }
 
         if (start)
             start--;
-
-        line = nline;
     }
 
     line = check_variables(line);
@@ -3589,7 +3561,7 @@ struct statement {
     int (*func)(int, olv_line_t *, char **);
 };
 
-static inline int execute_line_print(const char *line) {
+static inline int execute_line_sub(const char *line) {
     char *res = execute_line(line);
 
     if (res == ERROR_CODE) {
@@ -3687,7 +3659,7 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
         else if (does_startwith(lines[i].str, "RETURN"))
             execute_lines_ret(execute_return(lines[i].str, result));
 
-        else if (execute_line_print(lines[i].str) && g_olv->fatal_errors)
+        else if (execute_line_sub(lines[i].str) && g_olv->fatal_errors)
             execute_lines_ret(-1);
 
         continue;
@@ -3698,10 +3670,11 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
             if (g_olv->fatal_errors)
                 execute_lines_ret(-1);
             strcpy(g_olv->exit_code, "1");
-        }
-
-        if (ret < -1)
+        } else if (ret < -1) {
             execute_lines_ret(ret);
+        } else if (g_olv->exit_code[0] != '0') {
+            strcpy(g_olv->exit_code, "0");
+        }
 
         i += stat_end + is_end;
     }
@@ -5174,6 +5147,9 @@ void parse_args(olv_args_t *args, char **argv) {
         else if (strcmp(argv[i], "--help") == 0)
             args->help = 1;
 
+        else if (strcmp(argv[i], "--version") == 0)
+            args->version = 1;
+
         else if (argv[i][1] == '-')
             fprintf(stderr, "olivine: unrecognized option '%s'\n", argv[i]);
 
@@ -5238,13 +5214,15 @@ void olv_init_globals(void) {
         return;
     }
 
-    #if BUILD_PROFAN
-        set_variable_global("host", "profanOS");
-    #else
-        set_variable_global("host", "unix");
-    #endif
+    #if BUILD_UNIX
+        #if BUILD_PROFAN
+            set_variable_global("host", "profanOS");
+        #else
+            set_variable_global("host", "unix");
+        #endif
 
-    set_variable_global("prompt", PROMPT_UNIX);
+        set_variable_global("prompt", PROMPT_UNIX);
+    #endif
 }
 
 char init_prog[] =
@@ -5267,14 +5245,14 @@ int main(int argc, char **argv) {
 
     parse_args(&args, argv);
 
-    if (args.help) {
-        ret_val = show_help(args.help == 2, argv[0]);
-        return ret_val;
-    }
-
     if (args.version) {
         show_version();
         return 0;
+    }
+
+    if (args.help) {
+        ret_val = show_help(args.help == 2, argv[0]);
+        return ret_val;
     }
 
     if (args.print) {

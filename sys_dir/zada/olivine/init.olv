@@ -22,12 +22,12 @@ FUNC name
         RETURN
     END
     set n !(split '!0' / -1)
-    FOR i !(range !(eval !(strlen !n) - 1) 0)
-        IF !(eval "!n" @ !i = ".")
-            RETURN !(split !n '' 0:!i)
+    FOR i !(range !(eval !(strlen '!n') - 1) 0)
+        IF !(eval "'!n'" @ !i = ".")
+            RETURN '!(split '!n' '' 0:!i)'
         END
     END
-    RETURN !n
+    RETURN '!n'
 END
 
 FUNC dirsize
