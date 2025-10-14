@@ -14,13 +14,14 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.2"
+#define OLV_VERSION "1.9.3"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
 #define USE_READLINE  1     // enable libreadline (unix only)
 #define USE_ENVVARS   1     // enable variable search in env
-#define ENABLE_WILDC  1     // enable wildcard expansion
+#define ENABLE_WILDC  1     // enable wildcard (using dirent.h)
+#define ENABLE_SIGINT 1     // enable ctrl+c handling in shell
 #define HAVE_ALLOCA   1     // use alloca for small allocations
 
 #define USER_QUOTE '\''     // quote character
@@ -111,6 +112,10 @@
   #include <dirent.h>
 #endif
 
+#if ENABLE_SIGINT
+  #include <signal.h>
+#endif
+
 #if USE_READLINE && BUILD_UNIX && !BUILD_PROFAN
   #include <readline/readline.h>
   #include <readline/history.h>
@@ -160,7 +165,7 @@
     (x) == '\n' || (x) == '\r' || \
     (x) == '\v' || (x) == '\f')
 
-#define OLV_USE_UNIX do { if (!g_olv->minimal_mode) {
+#define OLV_USE_UNIX do { if (!g_olv->s_minimal) {
 #define OLV_END_UNIX }} while(0);
 
 char *keywords[] = {
@@ -218,15 +223,19 @@ typedef struct {
     char **bin_names;
 #endif
 
+#if ENABLE_SIGINT
+    volatile sig_atomic_t interrupted;
+#endif
+
     char   exit_code[5];
     int    current_level;
     int    fileline;
 
     char  *current_dir;
 
-    int    fatal_errors;
-    int    debug_prints;
-    int    minimal_mode;
+    int    s_fatal;
+    int    s_debug;
+    int    s_minimal;
 } olv_globals_t;
 
 internal_function_t internal_funcs[];
@@ -941,6 +950,26 @@ char *resolve_wildcard(char *base, char *wildcard) {
 
 #endif
 
+/*******************************
+ *                            *
+ *  Signal Handling Function  *
+ *                            *
+*******************************/
+
+#if ENABLE_SIGINT
+  #define is_interrupted() (g_olv->interrupted)
+
+void signal_hander(int signum) {
+    if (signum == SIGINT) {
+        g_olv->interrupted = 1;
+        fputs("\n", stderr);
+    }
+}
+
+#else
+  #define is_interrupted() (0)
+#endif
+
 /***********************************
  *                                *
  *  Olivine Integrated Evaluator  *
@@ -1529,8 +1558,8 @@ char *if_debug(char **input) {
 
         puts("OLIVINE ---");
         printf("  func-level   %d\n", g_olv->current_level);
-        printf("  fatal [e]rrors  %s\n", g_olv->fatal_errors  ? "true" : "false");
-        printf("  print [d]ebug   %s\n", g_olv->debug_prints  ? "true" : "false");
+        printf("  fatal [e]rrors  %s\n", g_olv->s_fatal ? "true" : "false");
+        printf("  print [d]ebug   %s\n", g_olv->s_debug ? "true" : "false");
 
         return NULL;
     }
@@ -1573,10 +1602,10 @@ char *if_debug(char **input) {
 
     switch (input[0][1]) {
         case 'd':
-            g_olv->debug_prints = mode == 4;
+            g_olv->s_debug = mode == 4;
             break;
         case 'e':
-            g_olv->fatal_errors = mode == 4;
+            g_olv->s_fatal = mode == 4;
             break;
         case 'h':
             puts("Usage: debug [option]\n"
@@ -2749,7 +2778,7 @@ char *pipe_processor(char **input) {
 
         fdin = fd[0];
 
-        if (tmp == ERROR_CODE) {
+        if (tmp == ERROR_CODE || is_interrupted()) {
             ret = ERROR_CODE;
             break;
         }
@@ -2971,7 +3000,7 @@ char *execute_line(const char *full_line) {
     }
 
     #if BUILD_UNIX
-        if (!(function || g_olv->minimal_mode || check_bin(args, &line, len, &argc)))
+        if (!(function || g_olv->s_minimal || check_bin(args, &line, len, &argc)))
             function = if_dot;
     #else
         (void) len;
@@ -2983,7 +3012,7 @@ char *execute_line(const char *full_line) {
         raise_error(NULL, "Function '%s' not found", args[0]);
         result = ERROR_CODE;
     } else {
-        if (g_olv->debug_prints) {
+        if (g_olv->s_debug) {
             fprintf(stderr, COLOR_DEBUG "   %03d EXEC:", g_olv->fileline);
             for (int i = 0; args[i] != NULL; i++) {
                 fprintf(stderr, " %s", args[i]);
@@ -3591,14 +3620,8 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
     // return -1 : error
     // return  0 : no error
 
-    if (result && *result) {
+    if (result && *result)
         *result[0] = '\0';
-    }
-
-    if (line_count == 0) {
-        strcpy(g_olv->exit_code, "0");
-        return 0;
-    }
 
     int ret, old_fileline = g_olv->fileline;
 
@@ -3615,10 +3638,10 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
         {NULL,    NULL, NULL}
     };
 
-    for (int i = 0; i < line_count; i++) {
+    for (int i = 0; i < line_count && !is_interrupted(); i++) {
         g_olv->fileline = lines[i].fileline;
 
-        if (g_olv->debug_prints) {
+        if (g_olv->s_debug) {
             fprintf(stderr, COLOR_DEBUG"=> %03d READ: ", g_olv->fileline);
             print_internal_string(lines[i].str, stderr);
             fputs(COLOR_RESET "\n", stderr);
@@ -3646,7 +3669,7 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
 
         if (does_startwith(lines[i].str, "END")) {
             raise_error(NULL, "Suspicious END keyword");
-            if (g_olv->fatal_errors)
+            if (g_olv->s_fatal)
                 execute_lines_ret(-1);
         }
 
@@ -3659,7 +3682,7 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
         else if (does_startwith(lines[i].str, "RETURN"))
             execute_lines_ret(execute_return(lines[i].str, result));
 
-        else if (execute_line_sub(lines[i].str) && g_olv->fatal_errors)
+        else if (execute_line_sub(lines[i].str) && g_olv->s_fatal)
             execute_lines_ret(-1);
 
         continue;
@@ -3667,7 +3690,7 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
         statment_end:
 
         if (ret == -1){
-            if (g_olv->fatal_errors)
+            if (g_olv->s_fatal)
                 execute_lines_ret(-1);
             strcpy(g_olv->exit_code, "1");
         } else if (ret < -1) {
@@ -3678,6 +3701,17 @@ int execute_lines(olv_line_t *lines, int line_count, char **result) {
 
         i += stat_end + is_end;
     }
+
+    #if ENABLE_SIGINT
+    if (g_olv->interrupted) {
+        raise_error(NULL, "Execution interrupted by user");
+        g_olv->interrupted = 0;
+        execute_lines_ret(-1);
+    }
+    #endif
+
+    if (line_count == 0)
+        strcpy(g_olv->exit_code, "0");
 
     execute_lines_ret(0);
 }
@@ -4314,7 +4348,7 @@ int input_local_stdio(char *buffer, int size, const char *prompt) {
 int input_local_readline(char *buffer, int size, const char *prompt) {
     static char *last_line = NULL;
 
-    if (g_olv->minimal_mode)
+    if (g_olv->s_minimal)
         return input_local_stdio(buffer, size, prompt);
 
     char *line = readline(prompt);
@@ -4589,7 +4623,7 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
     }
 
     // binaries
-    if (!g_olv->minimal_mode && g_olv->bin_names != NULL) {
+    if (!g_olv->s_minimal && g_olv->bin_names != NULL) {
         for (int j = 0; g_olv->bin_names[j] != NULL; j++) {
             if (strncmp(tmp, g_olv->bin_names[j], i - dec) == 0) {
                 suggest = add_to_suggest(other, suggest, g_olv->bin_names[j]);
@@ -4835,7 +4869,7 @@ static int input_local_profan_loop(char *buffer, int size, char **history,
 int input_local_profan(char *buffer, int size, char *prompt, char **history, int history_index) {
     int ret = -2;
 
-    if (g_olv->minimal_mode)
+    if (g_olv->s_minimal)
         return input_local_stdio(buffer, size, prompt);
 
     do {
@@ -4885,6 +4919,10 @@ void start_shell(void) {
 
     while (1) {
         line[0] = '\0';
+
+        #if ENABLE_SIGINT
+            signal(SIGINT, SIG_IGN);
+        #endif
 
         #if USE_READLINE
             ret = input_local_readline(line, INPUT_SIZE, render_prompt(line, INPUT_SIZE));
@@ -4939,6 +4977,10 @@ void start_shell(void) {
         }
         #endif
 
+        #if ENABLE_SIGINT
+            signal(SIGINT, signal_hander);
+        #endif
+
         execute_program(line, 0);
     }
 
@@ -4951,8 +4993,8 @@ void start_shell(void) {
     free(history);
     #endif
 
-    #if USE_READLINE
-    rl_clear_history();
+    #if ENABLE_SIGINT
+        signal(SIGINT, SIG_DFL);
     #endif
 
     free(line);
@@ -5099,10 +5141,10 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
             args->command = argv[1];
             break;
         case 'd':
-            g_olv->debug_prints = 1;
+            g_olv->s_debug = 1;
             break;
         case 'e':
-            g_olv->fatal_errors = 0;
+            g_olv->s_fatal = 0;
             break;
         case 'h':
             args->help = 2;
@@ -5111,7 +5153,7 @@ int parse_args_opt(olv_args_t *args, char **argv, int i) {
             args->inter = 1;
             break;
         case 'm':
-            g_olv->minimal_mode = 1;
+            g_olv->s_minimal = 1;
             break;
         case 'n':
             args->no_init = 1;
@@ -5134,8 +5176,8 @@ void parse_args(olv_args_t *args, char **argv) {
     memset(g_olv, 0, sizeof(olv_globals_t));
     memset(args, 0, sizeof(olv_args_t));
 
-    g_olv->minimal_mode = !BUILD_UNIX;
-    g_olv->fatal_errors = 1;
+    g_olv->s_minimal = !BUILD_UNIX;
+    g_olv->s_fatal = 1;
 
     for (int i = 1; argv[i] && args->help == 0; i++) {
         if (argv[i][0] != '-') {
@@ -5177,7 +5219,8 @@ void parse_args(olv_args_t *args, char **argv) {
 ********************/
 
 void olv_init_globals(void) {
-    g_olv->current_level = 0;
+    memset(g_olv, 0, sizeof(olv_globals_t));
+
     g_olv->fileline = -1;
 
     g_olv->current_dir = malloc(MAX_PATH_SIZE + 1);
@@ -5198,7 +5241,7 @@ void olv_init_globals(void) {
     g_olv->funcs     = calloc(g_olv->func_count, sizeof(function_t));
 
     #if BUILD_PROFAN
-        if (!g_olv->minimal_mode)
+        if (!g_olv->s_minimal)
             g_olv->bin_names = load_bin_names();
     #endif
 
@@ -5208,7 +5251,7 @@ void olv_init_globals(void) {
     set_sync_variable("path", g_olv->current_dir, MAX_PATH_SIZE);
     set_sync_variable("exit", g_olv->exit_code, 4);
 
-    if (g_olv->minimal_mode) {
+    if (g_olv->s_minimal) {
         set_variable_global("prompt", PROMPT_MINIMAL);
         set_variable_global("host", "minimal");
         return;
@@ -5278,7 +5321,7 @@ int main(int argc, char **argv) {
     if (args.inter || (args.file == NULL && args.command == NULL))
         start_shell();
 
-    else if (g_olv->fatal_errors && local_atoi(g_olv->exit_code, &ret_val))
+    else if (g_olv->s_fatal && local_atoi(g_olv->exit_code, &ret_val))
         ret_val = 1;
 
     free_pseudos();
