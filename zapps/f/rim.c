@@ -24,11 +24,14 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define RIM_VERSION "9.0"
+#define RIM_VERSION "9.1"
 
 // input settings
 #define SLEEP_T 20
 #define FIRST_L 12
+
+// number of lines between cursor and screen during scrolling
+#define SCROLL_PUSH 3
 
 // MACROS
 
@@ -129,6 +132,7 @@ typedef struct {
     int always_tab;
     int save_at_exit;
     int auto_indent;
+    int start_line;
 } rim_settings_t;
 
 rim_settings_t g_rim;
@@ -701,10 +705,15 @@ void reallign_tabs(void) {
         }
     }
 
-    new_line[j++] = 0;
+    new_line[j++] = RIMCHAR_NWL | RIMCHAR_NEW;
 
     int offset = j - original_len;
     original_len += g_data_lines[g_cursor_line];
+
+    if (offset == 0) {
+        free(new_line);
+        return;
+    }
 
     // realloc buffer if needed
     while (g_data_count + offset >= g_data_max) {
@@ -713,10 +722,8 @@ void reallign_tabs(void) {
     }
 
     // move data after current line
-    if (offset) {
-        memmove(g_data + g_data_lines[g_cursor_line] + j, g_data + original_len,
-                (g_data_count - original_len) * sizeof(uint32_t));
-    }
+    memmove(g_data + g_data_lines[g_cursor_line] + j, g_data + original_len,
+            (g_data_count - original_len) * sizeof(uint32_t));
 
     // copy new line to data buffer
     memcpy(g_data + g_data_lines[g_cursor_line], new_line, j * sizeof(uint32_t));
@@ -1017,10 +1024,14 @@ void main_loop(char *path) {
     int last_key = 0, key_sgt = 0;
     int key, key_ticks = 0;
 
-    int y_offset = 0;
+    g_cursor_line = min(g_rim.start_line, g_lines_count) - 1;
+
+    int y_offset = max(0, min(g_cursor_line - 5, g_lines_count - SCREEN_H));
     int x_offset = 0;
 
     int refresh_ticks = 0;
+
+    display_data(y_offset, min(g_lines_count, y_offset + SCREEN_H), 0);
 
     while (1) {
         // wait for key
@@ -1153,10 +1164,10 @@ void main_loop(char *path) {
         else continue;
 
         // smart scrolling (y axis)
-        if (g_cursor_line - 2 < y_offset) {
-            y_offset = max(g_cursor_line - 2, 0);
-        } else if (g_cursor_line + 3 > y_offset + SCREEN_H) {
-            y_offset = g_cursor_line + 3 - SCREEN_H;
+        if (g_cursor_line - SCROLL_PUSH < y_offset) {
+            y_offset = max(g_cursor_line - SCROLL_PUSH, 0);
+        } else if (g_cursor_line + (SCROLL_PUSH + 1) > y_offset + SCREEN_H) {
+            y_offset = g_cursor_line + (SCROLL_PUSH + 1) - SCREEN_H;
         }
 
         // smart scrolling (x axis)
@@ -1214,7 +1225,7 @@ void rim_syntax_init(const char *lang) {
     if (!lang)
         return;
 
-    if (strcmp(lang, "c") == 0) {
+    if (strcmp(lang, "c") == 0 || strcmp(lang, "h") == 0) {
         g_rim.syntax->numbers = 1;
         g_rim.syntax->funccalls = 1;
         g_rim.syntax->braces = 1;
@@ -1285,11 +1296,12 @@ void rim_syntax_init(const char *lang) {
 }
 
 char *compute_args(int argc, char **argv) {
-    carp_init("[options] [file]", 1);
+    carp_init("[options] [file] [-line]", 1);
     carp_set_ver("rim", RIM_VERSION);
 
     carp_register('c', CARP_NEXT_STR, "specify syntax highlighting");
     carp_register('i', CARP_STANDARD, "disable automatic indentation");
+    carp_register('%', CARP_ANYNUMBR, "move cursor to line at start");
     carp_register('M', CARP_STANDARD, "show a memo of keyboard shortcuts");
     carp_register('s', CARP_STANDARD, "always save file at exit");
     carp_register('t', CARP_STANDARD, "use tabs instead of spaces");
@@ -1329,17 +1341,22 @@ char *compute_args(int argc, char **argv) {
     if (!carp_isset('i'))
         g_rim.auto_indent = 1;
 
+    if ((g_rim.start_line = carp_get_int('%')) < 1)
+        g_rim.start_line = 1;
+
     const char *file = carp_file_next();
 
-    if (ext == NULL && file) {
+    if (file == NULL) {
+        rim_syntax_init(ext);
+        return NULL;
+    }
+
+    if (ext == NULL) {
         ext = strrchr(file, '.');
         if (ext) ext++;
     }
 
     rim_syntax_init(ext);
-
-    if (!file)
-        return NULL;
 
     return profan_path_join(profan_wd_path(), file);
 }
@@ -1385,8 +1402,6 @@ int main(int argc, char **argv) {
     color_lines(0, g_lines_count);
 
     set_title(title, is_new);
-
-    display_data(0, min(g_lines_count, SCREEN_H), 0);
 
     main_loop(file);
 

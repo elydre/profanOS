@@ -470,7 +470,8 @@ int carp_get_int(char c) {
         return -1;
     if (g_carp->options[(int) c].count == 0)
         return -1;
-    if (g_carp->options[(int) c].flag != CARP_NEXT_INT)
+    if (g_carp->options[(int) c].flag != CARP_NEXT_INT &&
+                g_carp->options[(int) c].flag != CARP_ANYNUMBR)
         return -1;
     return g_carp->options[(int) c].value.n;
 }
