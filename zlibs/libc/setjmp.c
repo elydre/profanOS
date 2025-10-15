@@ -9,7 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-typedef int jmp_buf[6];
+#include <setjmp.h>
+#include <unistd.h>
 
 int setjmp(jmp_buf var) {
     asm volatile (
@@ -45,4 +46,5 @@ void longjmp(jmp_buf var, int m) {
         "mov    20(%edx),%ecx   \n" // ecx = jmp_buf[5]
         "jmp     *%ecx          \n" // eip = ecx
     );
+    _exit(1); // never reached
 }

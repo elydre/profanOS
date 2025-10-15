@@ -367,7 +367,7 @@ lldiv_t lldiv(long long int numer, long long int denom) {
 }
 
 int mblen(register const char *s, size_t n) {
-    return (PROFAN_FNI, 0);
+    return mbtowc(0, s, n);
 }
 
 size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
