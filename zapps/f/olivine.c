@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.3"
+#define OLV_VERSION "1.9.4"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -4271,12 +4271,8 @@ int copy_working_dir(char *output, int output_size) {
 char *render_prompt(char *output, int output_size) {
     char *prompt = get_variable("prompt");
 
-    if (prompt == NULL) {
-        if (output_size < (int) sizeof(PROMPT_MINIMAL))
-            return NULL;
-        strcpy(output, PROMPT_MINIMAL);
-        return output;
-    }
+    if (prompt == NULL)
+        prompt = PROMPT_MINIMAL;
 
     int output_i = 0;
     for (int i = 0; prompt[i] != '\0'; i++) {
@@ -5219,11 +5215,8 @@ void parse_args(olv_args_t *args, char **argv) {
 ********************/
 
 void olv_init_globals(void) {
-    memset(g_olv, 0, sizeof(olv_globals_t));
-
-    g_olv->fileline = -1;
-
     g_olv->current_dir = malloc(MAX_PATH_SIZE + 1);
+    g_olv->fileline = -1;
 
     #if BUILD_UNIX
     if (getcwd(g_olv->current_dir, MAX_PATH_SIZE) == NULL)
@@ -5278,7 +5271,7 @@ char init_prog[] =
 "END";
 
 int main(int argc, char **argv) {
-    olv_globals_t olv;
+    olv_globals_t olv = {0};
     olv_args_t args;
 
     int ret_val = 0;
