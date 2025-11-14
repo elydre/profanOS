@@ -401,7 +401,7 @@ static int compute_ansi_escape(const char *str) {
                 g_panda->cursor_x++;
             else
                 g_panda->cursor_x += vals[0];
-            if (g_panda->cursor_x >= g_panda->max_cols) {
+            while (g_panda->cursor_x >= g_panda->max_cols) {
                 g_panda->cursor_x -= g_panda->max_cols;
                 g_panda->cursor_y++;
             }
@@ -415,7 +415,7 @@ static int compute_ansi_escape(const char *str) {
                 g_panda->cursor_x--;
             else
                 g_panda->cursor_x -= vals[0];
-            if (g_panda->cursor_x < 0) {
+            while (g_panda->cursor_x < 0) {
                 g_panda->cursor_x += g_panda->max_cols;
                 g_panda->cursor_y--;
             }
