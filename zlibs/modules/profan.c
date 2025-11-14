@@ -379,9 +379,9 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
 
     static uint32_t deluge_sid = SID_NULL;
 
-    if (IS_SID_NULL(deluge_sid)) {
+    if (SID_IS_NULL(deluge_sid)) {
         deluge_sid = kfu_path_to_sid(SID_ROOT, ELF_INTERP);
-        if (IS_SID_NULL(deluge_sid)) {
+        if (SID_IS_NULL(deluge_sid)) {
             sys_warning("[run_ifexist] elf interpreter not found: %s\n", ELF_INTERP);
             return -1;
         }

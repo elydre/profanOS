@@ -324,12 +324,12 @@ static int init_fpu(void) {
 }
 
 static int write_kernel_version(void) {
-    if (IS_SID_NULL(kfu_dir_create(0, "/sys", "kernel")))
+    if (SID_IS_NULL(kfu_dir_create(0, "/sys", "kernel")))
         return 1;
 
     uint32_t sid = kfu_file_create("/sys/kernel", "version.txt");
 
-    if (IS_SID_NULL(sid))
+    if (SID_IS_NULL(sid))
         return 1;
 
     char *version = KERNEL_VERSION "\n" KERNEL_EDITING "\ni386\n";

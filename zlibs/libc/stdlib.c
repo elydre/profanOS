@@ -425,7 +425,7 @@ char *mktemp(char *template) {
         for (int j = index; j < len; j++)
             template[j] = MKTEMP_LETTERS[rand () % 62];
 
-        if (IS_SID_NULL(profan_path_resolve(template)))
+        if (SID_IS_NULL(profan_path_resolve(template)))
             return template;
     }
 
@@ -483,7 +483,7 @@ int rand_r(unsigned int *seed) {
 }
 
 char *realpath(const char *path, char *resolved_path) {
-    if (IS_SID_NULL(profan_path_resolve(path))) {
+    if (SID_IS_NULL(profan_path_resolve(path))) {
         errno = ENOENT;
         return NULL;
     }

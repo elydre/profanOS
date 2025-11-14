@@ -54,7 +54,7 @@ int access(const char *pathname, int mode) {
     uint32_t elem = profan_path_resolve(pathname);
 
     // check if path exists
-    if (IS_SID_NULL(elem)) {
+    if (SID_IS_NULL(elem)) {
         errno = ENOENT;
         return -1;
     }
@@ -92,7 +92,7 @@ int chdir(const char *path) {
 }
 
 int chown(const char *path, uid_t owner, gid_t group) {
-    if (IS_SID_NULL(profan_path_resolve(path))) {
+    if (SID_IS_NULL(profan_path_resolve(path))) {
         errno = ENOENT;
         return -1;
     }
@@ -451,7 +451,7 @@ int isatty(int fd) {
 }
 
 int lchown(const char *path, uid_t owner, gid_t group) {
-    if (IS_SID_NULL(profan_path_resolve(path))) {
+    if (SID_IS_NULL(profan_path_resolve(path))) {
         errno = ENOENT;
         return -1;
     }
@@ -672,7 +672,7 @@ int unlink(const char *filename) {
     free(parent);
     free(path);
 
-    if (IS_SID_NULL(parent_sid)) {
+    if (SID_IS_NULL(parent_sid)) {
         errno = ENOENT;
         return -1;
     }

@@ -82,7 +82,7 @@ ln_args_t *parse_args(int argc, char **argv) {
             if (i + 1 >= argc)
                 return (fputs("ln: missing sector\n" LN_SHORT, stderr), NULL);
             args->sector = parse_sid(argv[++i]);
-            if (IS_SID_NULL(args->sector))
+            if (SID_IS_NULL(args->sector))
                 return (fprintf(stderr, "ln: invalid sector '%s'\n" LN_SHORT, argv[i]), NULL);
         } else {
             if (!args->sector && !args->source) {
@@ -137,17 +137,17 @@ int main(int argc, char **argv) {
     uint32_t target_sid = fu_path_to_sid(SID_ROOT, target_dir);
 
 
-    if (IS_SID_NULL(args->sector)) {
+    if (SID_IS_NULL(args->sector)) {
         fprintf(stderr, "ln: cannot access '%s': No such file or directory\n", args->source);
         return 1;
     }
 
-    if (IS_SID_NULL(target_sid)) {
+    if (SID_IS_NULL(target_sid)) {
         fprintf(stderr, "ln: cannot access '%s': No such file or directory\n", target_dir);
         return 1;
     }
 
-    if (!IS_SID_NULL(fu_path_to_sid(target_sid, target_name))) {
+    if (!SID_IS_NULL(fu_path_to_sid(target_sid, target_name))) {
         fprintf(stderr, "ln: cannot create link '%s': Name already exists\n", target_name);
         return 1;
     }

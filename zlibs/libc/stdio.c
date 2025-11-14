@@ -648,7 +648,7 @@ int rename(const char *old_filename, const char *new_filename) {
     profan_path_simplify(fullpath);
     uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
-    if (IS_SID_NULL(old_sid)) {
+    if (SID_IS_NULL(old_sid)) {
         errno = ENOENT;
         free(fullpath);
         return -1;
@@ -672,7 +672,7 @@ int rename(const char *old_filename, const char *new_filename) {
     profan_path_simplify(fullpath);
     uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
-    if (!IS_SID_NULL(new_sid)) {
+    if (!SID_IS_NULL(new_sid)) {
         if (fu_is_dir(new_sid)) {
             errno = EISDIR;
             free(fullpath);
@@ -693,7 +693,7 @@ int rename(const char *old_filename, const char *new_filename) {
     free(fullpath);
     free(tmp);
 
-    if (IS_SID_NULL(new_parent_sid) || IS_SID_NULL(old_parent_sid)) {
+    if (SID_IS_NULL(new_parent_sid) || SID_IS_NULL(old_parent_sid)) {
         errno = ENOENT;
         free(new_entry);
         return -1;

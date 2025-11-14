@@ -29,7 +29,7 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
     // check if sector linked to another locator
     sid_t *next_sid = &local_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-    if (!IS_SID_NULL(*next_sid)) {
+    if (!SID_IS_NULL(*next_sid)) {
         int ret = fs_cnt_shrink_size(*next_sid, to_shrink);
         if (ret <= 0) {
             return ret == 0 ? -2 : ret;
@@ -46,7 +46,7 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
         sid_t    core_sid   = local_data[i * 2];
         uint32_t core_count = local_data[i * 2 + 1];
 
-        if (IS_SID_NULL(core_sid)) {
+        if (SID_IS_NULL(core_sid)) {
             continue;
         }
 
@@ -87,7 +87,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
 
         uint32_t next_sid = local_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-        if (IS_SID_NULL(next_sid)) {
+        if (SID_IS_NULL(next_sid)) {
             break;
         }
 
@@ -101,7 +101,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
             sid_t    core_sid   = local_data[i * 2];
             uint32_t core_count = local_data[i * 2 + 1];
 
-            if (IS_SID_NULL(core_sid)) {
+            if (SID_IS_NULL(core_sid)) {
                 // found space
                 int count = fs_sector_get_unused(SID_DISK(loca_sid), to_grow, &core_sid);
 

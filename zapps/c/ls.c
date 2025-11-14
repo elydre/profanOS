@@ -332,7 +332,7 @@ void list_files(ls_args_t *args) {
     for (int i = 0; args->paths[i]; i++) {
         uint32_t sid = profan_path_resolve(args->paths[i]);
 
-        if (IS_SID_NULL(sid)) {
+        if (SID_IS_NULL(sid)) {
             fprintf(stderr, "ls: %s: No such file or directory\n", args->paths[i]);
             continue;
         }

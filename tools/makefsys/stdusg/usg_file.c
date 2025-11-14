@@ -43,7 +43,7 @@ sid_t fu_file_create(const char *parent, const char *name) {
     head_sid = fs_cnt_init(SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_SID_NULL(head_sid))
+    if (SID_IS_NULL(head_sid))
         return SID_NULL;
 
     // create a link in parent directory

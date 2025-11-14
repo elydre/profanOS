@@ -18,7 +18,7 @@
 #include <errno.h>
 
 static int stat_sid(uint32_t sid, struct stat *buf) {
-    if (IS_SID_NULL(sid)) {
+    if (SID_IS_NULL(sid)) {
         errno = ENOENT;
         return -1;
     }
@@ -55,7 +55,7 @@ static int stat_sid(uint32_t sid, struct stat *buf) {
 }
 
 int chmod(const char *path, mode_t mode) {
-    if (IS_SID_NULL(profan_path_resolve(path))) {
+    if (SID_IS_NULL(profan_path_resolve(path))) {
         errno = ENOENT;
         return -1;
     }
@@ -81,14 +81,14 @@ int mknod(const char *path, mode_t mode, dev_t dev) {
 }
 
 int mkdir(const char *path, mode_t mode) {
-    if (!IS_SID_NULL(profan_path_resolve(path))) {
+    if (!SID_IS_NULL(profan_path_resolve(path))) {
         errno = EEXIST;
         return -1;
     }
 
     char *fullpath = profan_path_join(profan_wd_path(), path);
 
-    if (IS_SID_NULL(fu_dir_create(0, fullpath))) {
+    if (SID_IS_NULL(fu_dir_create(0, fullpath))) {
         errno = EIO;
         free(fullpath);
         return -1;

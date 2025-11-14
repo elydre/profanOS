@@ -206,7 +206,7 @@ uint32_t search_inpath(const char *src_path, const char *filename, char **fullpa
             continue;
         path[i] = '\0';
         uint32_t sid = fu_path_to_sid(SID_ROOT, path + start);
-        if (!IS_SID_NULL(sid)) {
+        if (!SID_IS_NULL(sid)) {
             sid = fu_path_to_sid(sid, fullname);
             if (fu_is_file(sid)) {
                 if (path)
@@ -235,7 +235,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
 
     if (name[0] == '/') {
         sid = fu_path_to_sid(SID_ROOT, name);
-        if (!IS_SID_NULL(sid) && path)
+        if (!SID_IS_NULL(sid) && path)
             *path = mmq_strdup(name);
         return sid;
     }
@@ -246,7 +246,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
             return SID_NULL;
         full_path = profan_path_join(cwd, name + 2);
         sid = fu_path_to_sid(SID_ROOT, full_path);
-        if (!IS_SID_NULL(sid) && path)
+        if (!SID_IS_NULL(sid) && path)
             *path = full_path;
         else
             mmq_free(full_path);
@@ -263,7 +263,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
     if (g_args->extra_path) {
         full_path = profan_path_join(g_args->extra_path, name);
         sid = fu_path_to_sid(SID_ROOT, full_path);
-        if (!IS_SID_NULL(sid)) {
+        if (!SID_IS_NULL(sid)) {
             if (path)
                 *path = full_path;
             return sid;
@@ -274,7 +274,7 @@ uint32_t search_elf_sid(const char *name, int islib, char **path) {
     full_path = profan_path_join("/lib", name);
     sid = fu_path_to_sid(SID_ROOT, full_path);
 
-    if (!IS_SID_NULL(sid)) {
+    if (!SID_IS_NULL(sid)) {
         if (path)
             *path = full_path;
         return sid;
@@ -689,7 +689,7 @@ void *open_elf_r(const char *filename, uint16_t required_type, int isfatal, char
 
     sid = search_elf_sid(filename, required_type == ET_DYN, &path);
 
-    if (IS_SID_NULL(sid)) {
+    if (SID_IS_NULL(sid)) {
         if (isfatal)
             raise_error("%s: file not found", filename);
         return NULL;

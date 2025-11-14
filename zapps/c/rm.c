@@ -36,7 +36,7 @@ int remove_hard_link(uint32_t elem, char *path) {
     uint32_t parent_sid = fu_path_to_sid(SID_ROOT, parent);
     free(parent);
 
-    if (IS_SID_NULL(parent_sid)) {
+    if (SID_IS_NULL(parent_sid)) {
         fprintf(stderr, "rm: cannot remove '%s': unreachable path\n", path);
         return 1;
     }
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
         char *path = profan_path_join(profan_wd_path(), file);
         uint32_t elem = fu_path_to_sid(SID_ROOT, path);
 
-        if (IS_SID_NULL(elem)) {
+        if (SID_IS_NULL(elem)) {
             if (!options->no_error) {
                 fprintf(stderr, "rm: cannot remove '%s': unreachable path\n", path);
                 exit_code = 1;

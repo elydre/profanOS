@@ -53,7 +53,7 @@ uint32_t kfu_afft_create(const char *parent, const char *name, uint32_t id) {
     head_sid = fs_cnt_init(SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_SID_NULL(head_sid) || kfu_add_element_to_dir(parent_sid, head_sid, name))
+    if (SID_IS_NULL(head_sid) || kfu_add_element_to_dir(parent_sid, head_sid, name))
         return SID_NULL;
 
     // write the id

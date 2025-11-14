@@ -71,7 +71,7 @@ int fs_cnt_delete_loca_recur(uint32_t loca_sid) {
     // delete all cores
     for (uint32_t i = 0; i < LINKS_IN_LOCA; i++) {
         uint32_t core_sid = *((uint32_t *) (data + (i + 1) * sizeof(uint32_t)));
-        if (IS_SID_NULL(core_sid)) {
+        if (SID_IS_NULL(core_sid)) {
             break;
         }
         if (fs_cnt_delete_core(core_sid)) {
@@ -82,7 +82,7 @@ int fs_cnt_delete_loca_recur(uint32_t loca_sid) {
 
     // delete next locator
     next_loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
-    if (!IS_SID_NULL(next_loca_sid)) {
+    if (!SID_IS_NULL(next_loca_sid)) {
         if (fs_cnt_delete_loca_recur(next_loca_sid)) {
             vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
             return 1;
@@ -118,7 +118,7 @@ int fs_cnt_delete(sid_t head_sid) {
 
     // delete locator
     loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
-    if (!IS_SID_NULL(loca_sid)) {
+    if (!SID_IS_NULL(loca_sid)) {
         if (fs_cnt_delete_loca_recur(loca_sid)) {
             sys_error("[cnt_delete] Failed to delete locator");
             vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);

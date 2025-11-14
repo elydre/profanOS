@@ -727,7 +727,7 @@ char **load_bin_names(void) {
 
     while (dir != NULL) {
         uint32_t dir_id = fu_path_to_sid(SID_ROOT, dir);
-        if (IS_SID_NULL(dir_id) || !fu_is_dir(dir_id))
+        if (SID_IS_NULL(dir_id) || !fu_is_dir(dir_id))
             goto next;
 
         int elm_count = fu_dir_get_content(dir_id, &cnt_ids, &cnt_names);
@@ -4404,7 +4404,7 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
         uint32_t dir = fu_path_to_sid(SID_ROOT, path);
         free(path);
 
-        if (IS_SID_NULL(dir) || !fu_is_dir(dir)) {
+        if (SID_IS_NULL(dir) || !fu_is_dir(dir)) {
             free(inp_end);
             return NULL;
         }

@@ -65,7 +65,7 @@ int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_
                 continue;
             }
 
-            if (IS_SID_NULL(core_sid)) {
+            if (SID_IS_NULL(core_sid)) {
                 printf("INTERNAL ERROR: null core d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
                 return 1;
             }
@@ -90,7 +90,7 @@ int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_
 
         loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-        if (IS_SID_NULL(loca_sid) && index < (int) size) {
+        if (SID_IS_NULL(loca_sid) && index < (int) size) {
             printf("INTERNAL ERROR: next locator null before end\n");
             return 1;
         }

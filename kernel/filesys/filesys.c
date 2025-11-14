@@ -39,25 +39,14 @@ vdisk_t *initrd_to_vdisk(void) {
 
     return vdisk;
 }
+*/
 
 int filesys_init(void) {
-    MAIN_FS = fs_create();
-
-    vdisk_t *d0 = vdisk_create(500);
-    if (d0 == NULL)
-        return 1;
-
-    fs_mount_vdisk(d0, 1);
+    vdisk_init();
 
     kfu_dir_create(0, NULL, "/");
     kfu_dir_create(0, "/", "tmp");
     kfu_dir_create(0, "/", "dev");
-
-    vdisk_t *d1 = initrd_to_vdisk();
-    if (d1 == NULL)
-        return 1;
-
-    fs_mount_vdisk(d1, 2);
 
     if (kfu_add_element_to_dir(
         SID_ROOT,
@@ -84,11 +73,10 @@ int filesys_init(void) {
     }
 
     uint32_t src_sid = kfu_path_to_sid(SID_FORMAT(2, 0), "/src");
-    if (!IS_SID_NULL(src_sid) && kfu_add_element_to_dir(
+    if (!SID_IS_NULL(src_sid) && kfu_add_element_to_dir(
         SID_ROOT,
         src_sid,
         "src"
     )) return 1;
     return 0;
 }
-*/

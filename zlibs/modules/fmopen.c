@@ -200,7 +200,7 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
     uint32_t sid = kfu_path_to_sid(SID_ROOT, abs_path);
     int access = flags & O_ACCMODE;
 
-    if (IS_SID_NULL(sid)) {
+    if (SID_IS_NULL(sid)) {
         if (!(O_CREAT & flags))
             return -ENOENT;
 
@@ -208,7 +208,7 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
             return -ENOENT;
 
         sid = create_new_file(abs_path);
-        if (IS_SID_NULL(sid))
+        if (SID_IS_NULL(sid))
             return -EACCES;
     } else {
         if (O_EXCL & flags)

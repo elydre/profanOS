@@ -603,7 +603,7 @@ void panda_draw_cursor(uint32_t x, uint32_t y) {
 }
 
 int panda_change_font(uint32_t sid) {
-    if (!g_panda || IS_SID_NULL(sid))
+    if (!g_panda || SID_IS_NULL(sid))
         return 1;
 
     font_data_t *font = load_psf_font(sid);

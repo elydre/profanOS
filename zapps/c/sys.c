@@ -54,22 +54,6 @@ void print_logo_line(void) {
     curent_line++;
 }
 
-void print_fs_info(void) {
-    print_logo_line();
-    printf("\e[95mfs vdisk   \e[96m");
-
-    uint32_t *info = fu_get_vdisk_info();
-
-    uint32_t dcount = info[0];
-    for (uint32_t i = 0; i < dcount; i++) {
-        printf("d%d: %dk", info[i*3 + 1], info[i*3 + 2] / 2);
-        if (i != dcount - 1) printf("\e[0m, \e[96m");
-    }
-    printf("\e[0m\n");
-
-    profan_kfree(info);
-}
-
 char *gen_all_colors(int base_color) {
     char *ret = malloc(1000);
     char *ptr = ret;
@@ -100,7 +84,7 @@ int do_fetch(void) {
         time.tm_hour, time.tm_min, time.tm_sec,
         time.tm_mday, time.tm_mon, time.tm_year + 2000
     );
-    print_fs_info();
+    // print_fs_info();
 
     int mem_usage = (uint32_t) syscall_mem_info(6, 0) / 1024;
     int mem_total = (uint32_t) syscall_mem_info(0, 0) / 1024;

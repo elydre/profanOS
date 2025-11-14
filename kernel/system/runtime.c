@@ -126,7 +126,7 @@ int elf_start(char *file, int sleep, char **argv, int *pid_ptr) {
     if (pid_ptr != NULL)
         *pid_ptr = -1;
 
-    if (IS_SID_NULL(sid) || !kfu_is_file(sid)) {
+    if (SID_IS_NULL(sid) || !kfu_is_file(sid)) {
         sys_warning("[elf_start] File not found: %s", file);
         return -1;
     }

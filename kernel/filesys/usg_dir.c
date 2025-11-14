@@ -167,7 +167,7 @@ sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
 
     sys_warning("created directory d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
 
-    if (IS_SID_NULL(head_sid))
+    if (SID_IS_NULL(head_sid))
         return SID_NULL;
 
 

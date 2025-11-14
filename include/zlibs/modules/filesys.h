@@ -36,11 +36,11 @@
 #undef SID_ROOT
 #define SID_ROOT SID_FORMAT(1, 0)
 
-#undef IS_SID_NULL
-#define IS_SID_NULL(sid) (sid == SID_NULL)
+#undef SID_IS_NULL
+#define SID_IS_NULL(sid) (sid == SID_NULL)
 
-#undef IS_SAME_SID
-#define IS_SAME_SID(sid1, sid2) (sid1 == sid2)
+#undef SID_IS_SAME
+#define SID_IS_SAME(sid1, sid2) (sid1 == sid2)
 
 #undef FS_MAX_DISKS
 #define FS_MAX_DISKS 256
@@ -77,7 +77,6 @@ int       fu_is_afft(uint32_t sid);
 uint32_t  fu_afft_create(int disk, const char *path, int (*handler)(int, void *, uint32_t, uint8_t));
 void     *fu_afft_get_addr(uint32_t sid);
 uint32_t  fu_path_to_sid(uint32_t disk, const char *path);
-uint32_t *fu_get_vdisk_info(void);
 
 #define fu_is_dir(a)                  ((int) _pscall(FILESYS_LIB_ID, 0, a))
 #define fu_dir_get_size(a)            ((int) _pscall(FILESYS_LIB_ID, 1, a))
@@ -96,7 +95,6 @@ uint32_t *fu_get_vdisk_info(void);
 #define fu_afft_create(a, b, c)       ((uint32_t) _pscall(FILESYS_LIB_ID, 14, a, b, c))
 #define fu_afft_get_addr(a)           ((void *) _pscall(FILESYS_LIB_ID, 15, a))
 #define fu_path_to_sid(a, b)          ((uint32_t) _pscall(FILESYS_LIB_ID, 16, a, b))
-#define fu_get_vdisk_info()           ((uint32_t *) _pscall(FILESYS_LIB_ID, 17, 0))
 
 #endif // _KERNEL_MODULE
 

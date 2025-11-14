@@ -88,21 +88,12 @@ static void fu_sep_path(const char *fullpath, char **parent, char **cnt) {
 ********************************************/
 
 int fu_is_dir(uint32_t dir_sid) {
-    if (IS_SID_NULL(dir_sid))
+    char letter;
+
+    if (fs_cnt_meta(dir_sid, &letter, 1, 0))
         return 0;
 
-    char *name = fs_cnt_meta(dir_sid, NULL);
-
-    if (name == NULL)
-        return 0;
-
-    if (name[0] == 'D') {
-        free(name);
-        return 1;
-    }
-
-    free(name);
-    return 0;
+    return letter == 'D';
 }
 
 /*
@@ -313,7 +304,7 @@ int fu_remove_from_dir(uint32_t dir_sid, uint32_t element_sid) {
     // search for the element
     uint32_t index = 0;
     for (uint32_t i = 0; i < count; i++) {
-        if (IS_SAME_SID(ids[i], element_sid)) {
+        if (SID_IS_SAME(ids[i], element_sid)) {
             index = i + 1;
             break;
         }
@@ -369,7 +360,7 @@ uint32_t fu_dir_create(int device_id, const char *path) {
 
     // check if the the path already exists
     head_sid = fu_path_to_sid(SID_ROOT, path);
-    if (!IS_SID_NULL(head_sid)) {
+    if (!SID_IS_NULL(head_sid)) {
         return (ERROR_EXISTS, SID_NULL);
     }
 
@@ -407,7 +398,7 @@ uint32_t fu_dir_create(int device_id, const char *path) {
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    if (IS_SID_NULL(head_sid)) {
+    if (SID_IS_NULL(head_sid)) {
         free(parent);
         free(name);
         return (ERROR_INTERN, SID_NULL);
@@ -440,21 +431,12 @@ uint32_t fu_dir_create(int device_id, const char *path) {
 ********************************************/
 
 int fu_is_file(uint32_t dir_sid) {
-    if (IS_SID_NULL(dir_sid))
+    char letter;
+
+    if (fs_cnt_meta(dir_sid, &letter, 1, 0))
         return 0;
 
-    char *name = fs_cnt_meta(dir_sid, NULL);
-
-    if (name == NULL)
-        return 0;
-
-    if (name[0] == 'F') {
-        free(name);
-        return 1;
-    }
-
-    free(name);
-    return 0;
+    return letter == 'F';
 }
 
 int fu_file_set_size(uint32_t file_sid, uint32_t size) {
@@ -482,7 +464,7 @@ uint32_t fu_file_create(int device_id, const char *path) {
 
     // check if the the path already exists
     head_sid = fu_path_to_sid(SID_ROOT, path);
-    if (!IS_SID_NULL(head_sid))
+    if (!SID_IS_NULL(head_sid))
         return (ERROR_EXISTS, SID_NULL);
 
     fu_sep_path(path, &parent, &name);
@@ -510,7 +492,7 @@ uint32_t fu_file_create(int device_id, const char *path) {
     free(meta);
 
     // create a link in parent directory
-    if (IS_SID_NULL(head_sid) || fu_add_to_dir(parent_sid, head_sid, name)) {
+    if (SID_IS_NULL(head_sid) || fu_add_to_dir(parent_sid, head_sid, name)) {
         free(name);
         return (ERROR_INTERN, SID_NULL);
     }
@@ -536,21 +518,12 @@ int fu_file_write(uint32_t file_sid, void *buf, uint32_t offset, uint32_t size) 
 // call a function when reading a file
 
 int fu_is_afft(uint32_t file_sid) {
-    if (IS_SID_NULL(file_sid))
+    char letter;
+
+    if (fs_cnt_meta(file_sid, &letter, 1, 0))
         return 0;
 
-    char *name = fs_cnt_meta(file_sid, NULL);
-
-    if (name == NULL)
-        return 0;
-
-    if (name[0] == 'A') {
-        free(name);
-        return 1;
-    }
-
-    free(name);
-    return 0;
+    return letter == 'A';
 }
 
 uint32_t fu_afft_create(int device_id, const char *path, uint32_t id) {
@@ -560,7 +533,7 @@ uint32_t fu_afft_create(int device_id, const char *path, uint32_t id) {
     uint32_t head_sid;
 
     // check if the the path already exists
-    if (!IS_SID_NULL(fu_path_to_sid(SID_ROOT, path)))
+    if (!SID_IS_NULL(fu_path_to_sid(SID_ROOT, path)))
         return (ERROR_EXISTS, SID_NULL);
 
     fu_sep_path(path, &parent, &name);
@@ -589,7 +562,7 @@ uint32_t fu_afft_create(int device_id, const char *path, uint32_t id) {
     free(meta);
 
     // create a link in parent directory
-    if (IS_SID_NULL(head_sid) || fu_add_to_dir(parent_sid, head_sid, name)) {
+    if (SID_IS_NULL(head_sid) || fu_add_to_dir(parent_sid, head_sid, name)) {
         free(name);
         return (ERROR_INTERN, SID_NULL);
     }
@@ -687,36 +660,6 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
         return from;
 
     ret = rec_path_to_sid(from, path);
-
-    return ret;
-}
-
-/**************************************************
- *                                               *
- *             File System Get Info              *
- *                                               *
-**************************************************/
-
-uint32_t *fu_get_vdisk_info(void) {
-    // array:
-    // [0] = vdisk_count
-    // [3n + 1] = vdisk[n] mount point
-    // [3n + 2] = vdisk[n] used_count
-    // [3n + 3] = vdisk[n] size
-    // ...
-
-    filesys_t *filesys = fs_get_filesys();
-
-    uint32_t *ret = malloc(sizeof(uint32_t) * (filesys->vdisk_count * 3 + 1));
-    ret[0] = filesys->vdisk_count;
-    int ret_i = 1;
-    for (uint32_t i = 0; i < FS_MAX_DISKS; i++) {
-        if (filesys->vdisk[i] == NULL) continue;
-        ret[ret_i] = i + 1;
-        ret[ret_i + 1] = filesys->vdisk[i]->used_count;
-        ret[ret_i + 2] = filesys->vdisk[i]->size;
-        ret_i += 3;
-    }
 
     return ret;
 }

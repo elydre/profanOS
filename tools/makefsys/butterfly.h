@@ -34,7 +34,7 @@ typedef uint32_t sid_t;
 #define SID_NULL 0
 #define SID_ROOT SID_FORMAT(0, 1)
 
-#define IS_SID_NULL(sid) ((sid) == SID_NULL)
+#define SID_IS_NULL(sid) ((sid) == SID_NULL)
 
 extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
