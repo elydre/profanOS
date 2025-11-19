@@ -50,29 +50,29 @@ int filesys_init(void) {
 
     if (kfu_add_element_to_dir(
         SID_ROOT,
-        kfu_path_to_sid(SID_FORMAT(2, 0), "/user"),
+        kfu_path_to_sid(SID_FORMAT(0, 1), "/user"),
         "user"
     ) || kfu_add_element_to_dir(
         SID_ROOT,
-        kfu_path_to_sid(SID_FORMAT(2, 0), "/bin"),
+        kfu_path_to_sid(SID_FORMAT(0, 1), "/bin"),
         "bin"
     ) || kfu_add_element_to_dir(
         SID_ROOT,
-        kfu_path_to_sid(SID_FORMAT(2, 0), "/lib"),
+        kfu_path_to_sid(SID_FORMAT(0, 1), "/lib"),
         "lib"
     ) || kfu_add_element_to_dir(
         SID_ROOT,
-        kfu_path_to_sid(SID_FORMAT(2, 0), "/sys"),
+        kfu_path_to_sid(SID_FORMAT(0, 1), "/sys"),
         "sys"
     ) || kfu_add_element_to_dir(
         SID_ROOT,
-        kfu_path_to_sid(SID_FORMAT(2, 0), "/zada"),
+        kfu_path_to_sid(SID_FORMAT(0, 1), "/zada"),
         "zada"
     )) {
         return 1;
     }
 
-    uint32_t src_sid = kfu_path_to_sid(SID_FORMAT(2, 0), "/src");
+    uint32_t src_sid = kfu_path_to_sid(SID_FORMAT(0, 0), "/src");
     if (!SID_IS_NULL(src_sid) && kfu_add_element_to_dir(
         SID_ROOT,
         src_sid,

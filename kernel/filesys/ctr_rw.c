@@ -23,13 +23,13 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
     // check if sector is cnt header
 
     if (vdisk_read(sector_data, SECTOR_SIZE, SID_SECTOR(head_sid) * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
-        sys_warning("d%ds%d not cnt header\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+        sys_warning("d%ds%d not cnt header", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return 1;
     }
 
     // check if offset+size is valid
     if (offset + size > sector_data[1]) {
-        sys_warning("cannot %s beyond cnt size\n", is_read ? "read" : "write");
+        sys_warning("cannot %s beyond cnt size", is_read ? "read" : "write");
         return 1;
     }
 
@@ -37,7 +37,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
     loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
     if (loca_sid == SID_NULL) {
-        sys_error("INTERNAL ERROR: head cnt has no locator\n");
+        sys_error("INTERNAL ERROR: head cnt has no locator");
         return 1;
     }
 
@@ -46,7 +46,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
     while (index < (int) size) {
         // load locator sector
         if (vdisk_read(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
-            sys_error("failed to read d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+            sys_error("failed to read d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             return 1;
         }
 
@@ -63,7 +63,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
             }
 
             if (SID_IS_NULL(core_sid)) {
-                sys_error("INTERNAL ERROR: null core d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+                sys_error("INTERNAL ERROR: null core d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
                 return 1;
             }
 
@@ -76,7 +76,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
                     (core_sid * SECTOR_SIZE) + (index < 0 ? -index : 0),
                     is_read
             )) {
-                sys_error("failed to %s core d%ds%d\n",
+                sys_error("failed to %s core d%ds%d",
                         is_read ? "read" : "write",
                         SID_DISK(core_sid), SID_SECTOR(core_sid)
                 );
@@ -88,7 +88,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
         loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
         if (SID_IS_NULL(loca_sid) && index < (int) size) {
-            sys_error("INTERNAL ERROR: next locator null before end\n");
+            sys_error("INTERNAL ERROR: next locator null before end");
             return 1;
         }
     }

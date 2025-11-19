@@ -19,13 +19,13 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
 
     // get new sector for header
     if (fs_sector_get_unused(device_id, 1, &main_sid) != 1) {
-        sys_warning("no more sectors in d%d\n", device_id);
+        sys_warning("no more sectors in d%d", device_id);
         return SID_NULL;
     }
 
     // get new sector for locator
     if (fs_sector_get_unused(device_id, 1, &loca_sid) != 1) {
-        sys_warning("no more sectors in d%d\n", SID_DISK(main_sid));
+        sys_warning("no more sectors in d%d", SID_DISK(main_sid));
         fs_sector_note_free(main_sid);
         return SID_NULL;
     }
@@ -40,7 +40,7 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
     sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = loca_sid;
 
     if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(main_sid) * SECTOR_SIZE)) {
-        sys_error("failed to write d%ds%d\n", SID_DISK(main_sid), SID_SECTOR(main_sid));
+        sys_error("failed to write d%ds%d", SID_DISK(main_sid), SID_SECTOR(main_sid));
         goto init_err;
     }
 
@@ -49,7 +49,7 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
     sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = SID_NULL;
 
     if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(loca_sid) * SECTOR_SIZE)) {
-        sys_error("failed to write d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
+        sys_error("failed to write d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
         goto init_err;
     }
 
@@ -65,7 +65,7 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
 
 int fs_cnt_meta(sid_t sid, char *meta, int buffer_size, int replace) {
     if (vdisk_read(sector_data, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
-        sys_warning("not a cnt header d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
+        sys_warning("not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
 
@@ -77,7 +77,7 @@ int fs_cnt_meta(sid_t sid, char *meta, int buffer_size, int replace) {
     mem_copy(sector_data + 2, meta, min(META_MAXLEN, buffer_size > 0 ? buffer_size : str_len(meta) + 1));
 
     if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE)) {
-        sys_error("failed to write d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
+        sys_error("failed to write d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
 

@@ -40,19 +40,19 @@ int kfu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(dir_sid);
     if (size == UINT32_MAX) {
-        sys_warning("failed to get directory size\n");
+        sys_warning("failed to get directory size");
         return -1;
     }
 
     if (!kfu_is_dir(dir_sid)) {
-        sys_warning("not a directory\n");
+        sys_warning("not a directory");
         return -1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size);
     if (fs_cnt_read(dir_sid, buf, 0, size)) {
-        sys_warning("failed to read directory\n");
+        sys_warning("failed to read directory");
         return -1;
     }
 
@@ -87,25 +87,25 @@ int kfu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name
     uint32_t size = fs_cnt_get_size(dir_sid);
 
     if (size == UINT32_MAX) {
-        sys_warning("failed to get directory size\n");
+        sys_warning("failed to get directory size");
         return 1;
     }
 
     if (!kfu_is_dir(dir_sid)) {
-        sys_warning("not a directory\n");
+        sys_warning("not a directory");
         return 1;
     }
 
     // extend the directory
     if (fs_cnt_set_size(dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
-        sys_warning("failed to extend directory\n");
+        sys_warning("failed to extend directory");
         return 1;
     }
 
     // read the directory
     uint8_t *buf = malloc(size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1);
     if (fs_cnt_read(dir_sid, buf, 0, size)) {
-        sys_warning("failed to read directory\n");
+        sys_warning("failed to read directory");
         return 1;
     }
 
@@ -134,7 +134,7 @@ int kfu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name
 
     // write the directory
     if (fs_cnt_write(dir_sid, buf, 0, size + sizeof(uint32_t) + sizeof(uint32_t) + str_len(name) + 1)) {
-        sys_warning("failed to write directory\n");
+        sys_warning("failed to write directory");
         return 1;
     }
 
@@ -150,7 +150,7 @@ sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
     if (parent) {
         parent_sid = kfu_path_to_sid(SID_ROOT, parent);
         if (!kfu_is_dir(parent_sid)) {
-            sys_warning("parent is not a directory\n");
+            sys_warning("parent is not a directory");
             return SID_NULL;
         }
     } else {
@@ -165,7 +165,7 @@ sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    sys_warning("created directory d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
+    sys_warning("created directory d%ds%d", SID_DISK(head_sid), SID_SECTOR(head_sid));
 
     if (SID_IS_NULL(head_sid))
         return SID_NULL;

@@ -11,8 +11,6 @@
 
 #include <modules/filesys.h>
 #include <profan/syscall.h>
-
-#define _PROFAN_NO_WD
 #include <profan.h>
 
 #include <string.h>
