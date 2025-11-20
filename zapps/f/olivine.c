@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.4"
+#define OLV_VERSION "1.9.5"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -900,14 +900,22 @@ char *resolve_wildcard(char *base, char *wildcard) {
         base = "/";
     }
 
+    DIR *dir = opendir(*base ? base : ".");
+
+    if (dir == NULL)
+        return NULL;
+
+    if (*wildcard == '\0' && *base) {
+        closedir(dir);
+        char *output = malloc(strlen(base) + 4);
+        sprintf(output, INTR_QUOTE_STR "%s" INTR_QUOTE_STR " ", base);
+        return output;
+    }
+
     char *next = strchr(wildcard, '/');
 
     if (next)
         wildcard[next - wildcard] = '\0';
-
-    DIR *dir = opendir(*base ? base : ".");
-    if (dir == NULL)
-        return NULL;
 
     char *new_base, *output = NULL;
     int output_len = 0;
@@ -926,8 +934,13 @@ char *resolve_wildcard(char *base, char *wildcard) {
             continue;
         }
 
-        new_base = fast_alloc(strlen(base) + strlen(entry->d_name) + 2);
-        sprintf(new_base, "%s%s%s", base, "/", entry->d_name);
+        if (*base) {
+            new_base = fast_alloc(strlen(base) + strlen(entry->d_name) + 2);
+            sprintf(new_base, "%s%s/", base, entry->d_name);
+        } else {
+            new_base = fast_alloc(strlen(entry->d_name) + 2);
+            sprintf(new_base, "%s/", entry->d_name);
+        }
 
         char *new_output = resolve_wildcard(new_base, next + 1);
         fast_free(new_base);
@@ -935,7 +948,14 @@ char *resolve_wildcard(char *base, char *wildcard) {
         if (new_output == NULL)
             continue;
 
-        output = realloc(output, output_len + strlen(new_output) + 1);
+        output_len += strlen(new_output);
+
+        if (output == NULL) {
+            output = new_output;
+            continue;
+        }
+
+        output = realloc(output, output_len + 1);
         strcat(output, new_output);
         free(new_output);
     }
