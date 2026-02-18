@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.5"
+#define OLV_VERSION "1.9.6"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -2033,6 +2033,7 @@ char *if_fstat(char **input) {
             puts("Usage: fstat [option] <file>\n"
                 "Options:\n"
                 "  -d   check if path is a directory\n"
+                "  -e   check if path exists\n"
                 "  -h   display this help\n"
                 "  -f   check if path is a file\n"
                 "  -m   last modification time\n"
@@ -2040,6 +2041,8 @@ char *if_fstat(char **input) {
                 "  -s   size of the file in bytes"
             );
             break;
+        case 'e':
+            return exists ? strdup("1") : strdup("0");
         case 'd':
             return (exists && S_ISDIR(st.st_mode)) ? strdup("1") : strdup("0");
         case 'f':

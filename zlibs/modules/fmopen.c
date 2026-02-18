@@ -648,3 +648,21 @@ int __init(void) {
         fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
     );
 }
+
+void *__profan_module_func[] = {
+    (void *) 0xF3A3C4D4, // magic
+    (void *) fm_close,
+    (void *) fm_reopen,
+    (void *) fm_pread,
+    (void *) fm_pwrite,
+    (void *) fm_lseek,
+    (void *) fm_dup2,
+    (void *) fm_dup,
+    (void *) fm_pipe,
+    (void *) fm_isafft,
+    (void *) fm_isfile,
+    (void *) fm_fcntl,
+    (void *) fm_get_sid,
+    (void *) fm_get_path,
+    (void *) fm_declare_child
+};

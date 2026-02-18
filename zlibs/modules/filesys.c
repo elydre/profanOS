@@ -720,3 +720,25 @@ uint32_t *fu_get_vdisk_info(void) {
 
     return ret;
 }
+
+void *__profan_module_func[] = {
+    (void *) 0xF3A3C4D4, // magic
+    (void *) fu_is_dir,
+    (void *) fu_dir_get_size,
+    (void *) fu_dir_get_elm,
+    (void *) fu_dir_get_content,
+    (void *) fu_add_to_dir,
+    (void *) fu_remove_from_dir,
+    (void *) fu_dir_create,
+    (void *) fu_is_file,
+    (void *) fu_file_set_size,
+    (void *) fu_file_get_size,
+    (void *) fu_file_create,
+    (void *) fu_file_read,
+    (void *) fu_file_write,
+    (void *) fu_is_afft,
+    (void *) fu_afft_create,
+    (void *) fu_afft_get_id,
+    (void *) fu_path_to_sid,
+    (void *) fu_get_vdisk_info
+};

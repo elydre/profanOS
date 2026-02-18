@@ -551,3 +551,11 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
 
     return ret;
 }
+
+void *__profan_module_func[] = {
+    (void *) 0xF3A3C4D4, // magic
+    (void *) profan_kb_load_map,
+    (void *) profan_kb_get_char,
+    (void *) profan_input_keyboard,
+    (void *) run_ifexist
+};

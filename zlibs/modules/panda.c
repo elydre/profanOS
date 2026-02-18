@@ -688,7 +688,7 @@ void panda_screen_restore(void *data) {
         draw_cursor(0);
 }
 
-void panda_screen_kfree(void *data) {
+void panda_screen_free(void *data) {
     panda_global_t *panda = (panda_global_t *) data;
     if (!panda)
         return;
@@ -779,3 +779,18 @@ int __init(void) {
 
     return (setup_afft("panda", dev_panda_w) || setup_afft("pander", dev_pander_w));
 }
+
+void *__profan_module_func[] = {
+    (void *) 0xF3A3C4D4, // magic
+    (void *) panda_print_char,
+    (void *) panda_print_raw,
+    (void *) panda_print_string,
+    (void *) panda_sync_start,
+    (void *) panda_get_size,
+    (void *) panda_get_cursor,
+    (void *) panda_draw_cursor,
+    (void *) panda_change_font,
+    (void *) panda_screen_backup,
+    (void *) panda_screen_restore,
+    (void *) panda_screen_free,
+};

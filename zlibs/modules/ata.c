@@ -156,3 +156,8 @@ int __init(void) {
 
     return 0;
 }
+
+void *__profan_module_func[] = {
+    (void *) 0xF3A3C4D4, // magic
+    // no functions exported
+};
