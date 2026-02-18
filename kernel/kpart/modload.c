@@ -17,7 +17,7 @@
 #include <system.h>
 
 #define MODLOAD_FARRAY_MAGIC 0xF3A3C4D4
-#define MODLOAD_FARRAY_NAME  "__profan_module_func"
+#define MODLOAD_FARRAY_NAME  "__module_func_array"
 
 uint32_t *g_mod_funcs[256];
 

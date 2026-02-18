@@ -649,20 +649,20 @@ int __init(void) {
     );
 }
 
-void *__profan_module_func[] = {
+void *__module_func_array[] = {
     (void *) 0xF3A3C4D4, // magic
-    (void *) fm_close,
-    (void *) fm_reopen,
-    (void *) fm_pread,
-    (void *) fm_pwrite,
-    (void *) fm_lseek,
-    (void *) fm_dup2,
-    (void *) fm_dup,
-    (void *) fm_pipe,
-    (void *) fm_isafft,
-    (void *) fm_isfile,
-    (void *) fm_fcntl,
-    (void *) fm_get_sid,
-    (void *) fm_get_path,
-    (void *) fm_declare_child
+    fm_close,
+    fm_reopen,
+    fm_pread,
+    fm_pwrite,
+    fm_lseek,
+    fm_dup2,
+    fm_dup,
+    fm_pipe,
+    fm_isafft,
+    fm_isfile,
+    fm_fcntl,
+    fm_get_sid,
+    fm_get_path,
+    fm_declare_child
 };

@@ -208,7 +208,7 @@ int __init(void) {
     );
 }
 
-void *__profan_module_func[] = {
+void *__module_func_array[] = {
     (void *) 0xF3A3C4D4, // magic
     // no functions exported
 };

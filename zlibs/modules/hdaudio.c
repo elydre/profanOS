@@ -1244,15 +1244,15 @@ uint32_t hda_get_stream_position() {
     return mmio_ind(g_hda.output_stream_base + 0x04);
 }
 
-void *__profan_module_func[] = {
+void *__module_func_array[] = {
     (void *) 0xF3A3C4D4, // magic
-    (void *) hda_map_memory,
-    (void *) hda_is_headphone_connected,
-    (void *) hda_set_volume,
-    (void *) hda_check_headphone_connection_change,
-    (void *) hda_is_supported_channel_size,
-    (void *) hda_is_supported_sample_rate,
-    (void *) hda_play_pcm_data,
-    (void *) hda_stop_sound,
-    (void *) hda_get_stream_position
+    hda_map_memory,
+    hda_is_headphone_connected,
+    hda_set_volume,
+    hda_check_headphone_connection_change,
+    hda_is_supported_channel_size,
+    hda_is_supported_sample_rate,
+    hda_play_pcm_data,
+    hda_stop_sound,
+    hda_get_stream_position
 };
