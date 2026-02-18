@@ -352,9 +352,9 @@ def build_disk_elfs():
                 (f" -L{OUT_DIR}/zlibs -lc" if name != "libc" else ""))
 
     def link_multifile_mod(name):
-        objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{name}", ".o")
-        print_info_line(f"[link] zlibs/{name}.pkm")
-        print_and_exec(f"{SHRD} -o {OUT_DIR}/zlibs/{name}.pkm {' '.join(objs)}")
+        objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{ZLIBS_MOD}/{name}", ".o")
+        print_info_line(f"[link] zlibs/{ZLIBS_MOD}/{name}.pkm")
+        print_and_exec(f"{SHRD} -o {OUT_DIR}/zlibs/{ZLIBS_MOD}/{name}.pkm {' '.join(objs)}")
 
 
     # detect zlibs
@@ -381,7 +381,7 @@ def build_disk_elfs():
         if not os.path.isdir(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}"):
             if not name.endswith(".c"):
                 continue
-            mod_build_list.extend(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}")
+            mod_build_list.append(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}")
         else:
             mmf_build_list.extend(files_in_dir_rec(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}", ".c"))
 
@@ -540,6 +540,10 @@ def build_disk_elfs():
     for name in list(set(["/".join(name.split("/")[0:3]) for name in dir_build_list])):
         link_multifile_elf(name, libs_name + stts_name)
 
+    # linking multi file mods
+    for name in list(set([name.split("/")[2] for name in mmf_build_list])):
+        link_multifile_mod(name)
+
 def make_iso(force = False, more_option = False):
     elf_image()
     gen_disk(False)
@@ -652,9 +656,9 @@ def gen_disk(force=True, with_src=False):
 
         if isinstance(HDD_MAP[dir_name], str):
             if dir_name == "lib":
-                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* " + ' '.join([f'{HDD_MAP[dir_name]}/{file}'
-                        for file in os.listdir(HDD_MAP[dir_name]) if not file.startswith('lib')
-                    ]) + f" {OUT_DIR}/disk/{dir_name}")
+                os.makedirs(f"{OUT_DIR}/disk/{dir_name}/{ZLIBS_MOD}")
+                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* {OUT_DIR}/disk/{dir_name}")
+                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/{ZLIBS_MOD}/*.* {OUT_DIR}/disk/{dir_name}/modules")
 
             elif dir_name == "bin":
                 for elm in os.listdir(HDD_MAP[dir_name]):
