@@ -70,8 +70,6 @@ void kernel_main(void *mboot_ptr) {
     status_print(eth_init,     "Initing ethernet driver");
     // end e1000
 
-    status_print(mod_init,      "Loading kernel modules");
-
     kprintf("------ Kernel finished booting in %d ms\n", timer_get_ms());
 
     // launch of the default program

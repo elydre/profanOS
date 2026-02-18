@@ -712,6 +712,8 @@ def gen_disk(force=True, with_src=False):
 
 
 def qemu_run(kvm = False, audio = False, net = False):
+    make_iso()
+
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
     if net:
         qemu_cmd = QEMU_NET
