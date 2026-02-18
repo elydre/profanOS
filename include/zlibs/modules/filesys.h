@@ -114,6 +114,7 @@ int fm_dup(int fd);
 int fm_pipe(int fds[2]);
 int fm_isafft(int fd);
 int fm_isfile(int fd);
+int fm_issock(int fd);
 int fm_fcntl(int fd, int cmd, int arg);
 uint32_t fm_get_sid(int fd);
 const char *fm_get_path(int fd);
@@ -131,10 +132,11 @@ int fm_declare_child(int fd);
 #define fm_pipe(a)           ((int) _pscall(FMOPEN_LIB_ID, 7, a))
 #define fm_isafft(a)         ((int) _pscall(FMOPEN_LIB_ID, 8, a))
 #define fm_isfile(a)         ((int) _pscall(FMOPEN_LIB_ID, 9, a))
-#define fm_fcntl(a, b, c)    ((int) _pscall(FMOPEN_LIB_ID, 10, a, b, c))
-#define fm_get_sid(a)        ((uint32_t) _pscall(FMOPEN_LIB_ID, 11, a))
-#define fm_get_path(a)       ((const char *) _pscall(FMOPEN_LIB_ID, 12, a))
-#define fm_declare_child(a)  ((int) _pscall(FMOPEN_LIB_ID, 13, a))
+#define fm_issock(a)         ((int) _pscall(FMOPEN_LIB_ID, 10, a))
+#define fm_fcntl(a, b, c)    ((int) _pscall(FMOPEN_LIB_ID, 11, a, b, c))
+#define fm_get_sid(a)        ((uint32_t) _pscall(FMOPEN_LIB_ID, 12, a))
+#define fm_get_path(a)       ((const char *) _pscall(FMOPEN_LIB_ID, 13, a))
+#define fm_declare_child(a)  ((int) _pscall(FMOPEN_LIB_ID, 14, a))
 
 #else
 
@@ -150,10 +152,11 @@ int fm_declare_child(int fd);
 #define fm_pipe ((int (*)(int[2])) get_func_addr(FMOPEN_LIB_ID, 7))
 #define fm_isfctf ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 8))
 #define fm_isfile ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 9))
-#define fm_fcntl ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 10))
-#define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 11))
-#define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
-#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
+#define fm_issock ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 10))
+#define fm_fcntl ((int (*)(int, int, int)) get_func_addr(FMOPEN_LIB_ID, 11))
+#define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
+#define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
+#define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
 
 #endif // _KERNEL_MODULE
 

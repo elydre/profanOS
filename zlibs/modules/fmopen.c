@@ -30,7 +30,8 @@ enum {
     TYPE_AFFT,
     TYPE_DIR,
     TYPE_PPRD, // read pipe
-    TYPE_PPWR  // write pipe
+    TYPE_PPWR, // write pipe
+    TYPE_SOCK
 };
 
 typedef struct {
@@ -55,6 +56,7 @@ typedef struct {
         int          afft_id; // afft
         pipe_data_t *pipe;    // pipe
         char        *path;    // dir (for fchdir)
+        int          sock_id; // socket
     };
 } fd_data_t;
 
@@ -134,6 +136,10 @@ int fm_close(int fd) {
 
     if (fd_data->type == TYPE_DIR)
         free(fd_data->path);
+
+    else if (fd_data->type == TYPE_SOCK) {
+        // TODO ASQEL (close socket)
+    }
 
     else if (fd_data->type == TYPE_PPRD) {
         pipe_data_t *pipe = fd_data->pipe;
@@ -290,6 +296,10 @@ int fm_pread(int fd, void *buf, uint32_t size, int offset) {
         case TYPE_DIR:
             return -EISDIR;
 
+        case TYPE_SOCK:
+            // TODO ASQEL (read)
+            return -EIO;
+
         case TYPE_FILE:
             tmp = fs_cnt_get_size(fd_data->sid);
             if ((uint32_t) offset > tmp)
@@ -359,6 +369,10 @@ int fm_pwrite(int fd, void *buf, uint32_t size, int offset) {
     switch (fd_data->type) {
         case TYPE_DIR:
             return -EISDIR;
+
+        case TYPE_SOCK:
+            // TODO ASQEL (write)
+            return -EIO;
 
         case TYPE_FILE:
             if (offset + size > fs_cnt_get_size(fd_data->sid))
@@ -465,6 +479,10 @@ int fm_dup2(int fd, int new_fd) {
             new_data->offset = fd_data->offset;
             break;
 
+        case TYPE_SOCK:
+            // TODO ASQEL (dup socket)
+            break;
+
         case TYPE_AFFT:
             new_data->afft_id = fd_data->afft_id;
             new_data->offset = fd_data->offset;
@@ -561,6 +579,15 @@ int fm_isfile(int fd) {
         return -EBADF;
 
     return fd_data->type == TYPE_FILE;
+}
+
+int fm_issock(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
+
+    return fd_data->type == TYPE_SOCK;
 }
 
 int fm_fcntl(int fd, int cmd, int arg) {
@@ -661,6 +688,7 @@ void *__module_func_array[] = {
     fm_pipe,
     fm_isafft,
     fm_isfile,
+    fm_issock,
     fm_fcntl,
     fm_get_sid,
     fm_get_path,
