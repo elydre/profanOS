@@ -42,10 +42,6 @@ char kb_sc_to_char(int scancode, int shift) {
 }
 
 int kb_get_scancode(void) {
-    return (int) port_read8(0x60);
-}
-
-int kb_get_scfh(void) {
     // get scancode from history
     for (int i = HISTORY_SIZE - 1; i >= 0; i--) {
         if (sc_history[i] == 0) continue;
@@ -59,7 +55,7 @@ int kb_get_scfh(void) {
 static void keyboard_callback(registers_t *regs) {
     (void) regs;
 
-    int sc = kb_get_scancode();
+    int sc = port_read8(0x60);
 
     if (sc == 0)
         return;

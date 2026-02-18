@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/syscall.h>
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan/carp.h>
 #include <profan.h>
 
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     char *buf = malloc(args->block_size);
     uint32_t debut, to_read, total = 0;
 
-    debut = args->time_it ? syscall_timer_get_ms() : 0;
+    debut = args->time_it ? syscall_ms_get() : 0;
 
     do {
         to_read = args->block_size;
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
     } while (to_read == args->block_size);
 
     if (args->time_it) {
-        int fin = syscall_timer_get_ms();
+        int fin = syscall_ms_get();
         fprintf(stderr, "cp: %d bytes copied in %d ms with %d bytes block size\n",
                 total, fin - debut, args->block_size);
     }

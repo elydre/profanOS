@@ -19,7 +19,6 @@
 #define CARP_INFO "Try '%s -h' for more information.\n"
 
 #define CARP_NUMMAX 0x7fffffff
-#define CARP_VINDEX 0
 
 #define CARP_ISVALID(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%')
 #define CARP_UNINIT ((void) fprintf(stderr, "carp: library not initialized\n"))
@@ -121,7 +120,7 @@ static void print_help_line(struct carp_option *opt) {
     printf("  -%c %c  %s\n", opt->c, letter, opt->desc);
 }
 
-void carp_print_help(void) {
+void carp_show_help(void) {
     if (g_carp == NULL)
         return CARP_UNINIT;
 
@@ -134,7 +133,21 @@ void carp_print_help(void) {
     print_help_line(g_carp->options + '%');
 }
 
-static void carp_print_version(void) {
+void carp_show_usage(void) {
+    if (g_carp == NULL)
+        return CARP_UNINIT;
+
+    fprintf(stderr, "Usage: %s %s\n" CARP_INFO, g_carp->name, g_carp->usage, g_carp->name);
+}
+
+void carp_show_info(void) {
+    if (g_carp == NULL)
+        return CARP_UNINIT;
+
+    fprintf(stderr, CARP_INFO, g_carp->name);
+}
+
+void carp_show_version(void) {
     if (g_carp == NULL)
         return CARP_UNINIT;
 
@@ -297,7 +310,7 @@ int carp_parse(int argc, char **argv) {
         }
 
         if (argv[i][1] == '\0') {
-            fprintf(stderr, "Usage: %s %s\n" CARP_INFO, g_carp->name, g_carp->usage, g_carp->name);
+            carp_show_usage();
             return 1;
         }
 
@@ -316,7 +329,7 @@ int carp_parse(int argc, char **argv) {
                         break;
                     }
                     if (strcmp(argv[i], "--version") == 0) {
-                        carp_print_version();
+                        carp_show_version();
                         exit(0);
                     }
                 }
@@ -327,7 +340,7 @@ int carp_parse(int argc, char **argv) {
 
 
             if (!isprint(c)) {
-                fprintf(stderr, "Usage: %s %s\n" CARP_INFO, g_carp->name, g_carp->usage, g_carp->name);
+                carp_show_usage();
                 return 1;
             }
 
@@ -398,7 +411,7 @@ int carp_parse(int argc, char **argv) {
     }
 
     if (g_carp->options['h'].count) {
-        carp_print_help();
+        carp_show_help();
         exit(0);
     }
 
@@ -457,7 +470,8 @@ int carp_get_int(char c) {
         return -1;
     if (g_carp->options[(int) c].count == 0)
         return -1;
-    if (g_carp->options[(int) c].flag != CARP_NEXT_INT)
+    if (g_carp->options[(int) c].flag != CARP_NEXT_INT &&
+                g_carp->options[(int) c].flag != CARP_ANYNUMBR)
         return -1;
     return g_carp->options[(int) c].value.n;
 }

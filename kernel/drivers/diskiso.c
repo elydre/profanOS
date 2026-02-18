@@ -17,7 +17,7 @@
 uint32_t diskiso_start;
 uint32_t diskiso_size;
 
-int init_diskiso(void) {
+int diskiso_init(void) {
     uint32_t mod_end, end_pos, start;
 
     diskiso_size = 0;

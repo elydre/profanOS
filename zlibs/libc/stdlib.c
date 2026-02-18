@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan.h>
 
 #include <stdlib.h>
@@ -367,7 +367,7 @@ lldiv_t lldiv(long long int numer, long long int denom) {
 }
 
 int mblen(register const char *s, size_t n) {
-    return (PROFAN_FNI, 0);
+    return mbtowc(0, s, n);
 }
 
 size_t mbstowcs(wchar_t *restrict ws, const char *restrict s, size_t wn) {
@@ -455,6 +455,10 @@ int rand(void) {
     return rand_r(&g_rand_seed) & RAND_MAX;
 }
 
+long random(void) {
+    return rand_r(&g_rand_seed) & RAND_MAX;
+}
+
 int rand_r(unsigned int *seed) {
     unsigned int next = *seed;
     int result;
@@ -538,6 +542,10 @@ int setenv(const char *name, const char *value, int replace) {
 }
 
 void srand(unsigned int seed) {
+    g_rand_seed = seed;
+}
+
+void srandom(unsigned int seed) {
     g_rand_seed = seed;
 }
 
@@ -912,7 +920,7 @@ static char *I_reverse(char *buffer, int i, int j) {
     return buffer;
 }
 
-char *itoa(int value, char *buffer, int base) {
+char *profan_itoa(int value, char *buffer, int base) {
     // invalid input
     if (base < 2 || base > 32) {
         return buffer;

@@ -345,8 +345,15 @@ static int write_kernel_version(void) {
 }
 
 int sys_init(void) {
+    // setup floating point unit
     init_fpu();
+
+    // write the kernel version in the filesystem
     write_kernel_version();
+
+    // write the address of redirection function
+    *(int *)(WATMOD_ADDR) = (int) mod_get_func;
+
     return 0;
 }
 

@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/filesys.h>
-#include <profan/panda.h>
+#include <modules/filesys.h>
+#include <modules/panda.h>
 #include <profan.h>
 
 #include <stdlib.h>

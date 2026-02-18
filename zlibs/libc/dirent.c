@@ -9,7 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan/syscall.h>
 #include <profan.h>
 
@@ -34,9 +34,7 @@ int closedir(DIR *dirp) {
     return 0;
 }
 
-DIR *opendir(const char *dirname) {
-    uint32_t dir_sid = profan_path_resolve(dirname);
-
+static DIR *sidopendir(uint32_t dir_sid) {
     if (!fu_is_dir(dir_sid)) {
         errno = ENOTDIR;
         return NULL;
@@ -91,6 +89,14 @@ DIR *opendir(const char *dirname) {
     dirp->pos = 0;
 
     return dirp;
+}
+
+DIR *opendir(const char *dirname) {
+    return sidopendir(profan_path_resolve(dirname));
+}
+
+DIR *fdopendir(int fd) {
+    return sidopendir(fm_get_sid(fd));
 }
 
 struct dirent *readdir(DIR *dirp) {

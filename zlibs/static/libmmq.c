@@ -11,8 +11,8 @@
 
 #define _SYSCALL_CREATE_FUNCS
 
+#include <modules/filesys.h>
 #include <profan/syscall.h>
-#include <profan/filesys.h>
 #include <profan/libmmq.h>
 
 #include <stdarg.h>
@@ -82,7 +82,7 @@ void *mmq_realloc_func(void *mem, uint32_t new_size, int as_kernel) {
     if (mem == NULL)
         return (void *) syscall_mem_alloc(new_size, as_kernel ? 2 : 1, 0);
 
-    uint32_t old_size = (uint32_t) syscall_mem_alloc_fetch(mem, 0);
+    uint32_t old_size = (uint32_t) syscall_mem_fetch(mem, 0);
     void *new_addr = syscall_mem_alloc(new_size, as_kernel ? 2 : 1, 0);
     if (new_addr == 0)
         return NULL;

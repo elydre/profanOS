@@ -26,9 +26,6 @@ _BEGIN_C_FILE
  *                               *
 **********************************/
 
-#define SERIAL_PORT_A 0x3F8
-#define SERIAL_PORT_B 0x2F8
-
 #define PROC_INFO_PPID     0
 #define PROC_INFO_STATE    1
 #define PROC_INFO_SLEEP_TO 2
@@ -41,8 +38,7 @@ _BEGIN_C_FILE
 #define syscall_process_state(pid) syscall_process_info(pid, PROC_INFO_STATE, NULL)
 #define syscall_process_run_time(pid) syscall_process_info(pid, PROC_INFO_RUN_TIME, NULL)
 
-#define syscall_kcprint(message, color) syscall_kcnprint(message, -1, color)
-#define syscall_kprint(message) syscall_kcprint(message, 0x0F)
+#define syscall_kprint(message) syscall_kcnprint(message, -1, 0)
 
 #define syscall_vesa_width()   syscall_vesa_info(0)
 #define syscall_vesa_height()  syscall_vesa_info(1)
@@ -50,166 +46,119 @@ _BEGIN_C_FILE
 #define syscall_vesa_fb() ((void *) syscall_vesa_info(3))
 #define syscall_vesa_state()   syscall_vesa_info(4)
 
-/************************************
- *                                 *
- *  syscall generator definitions  *
- *                                 *
-************************************/
+#define syscall_timer_get_ms() syscall_ms_get() // retrocompatibility
 
-#undef DEFN_SYSCALL0
-#undef DEFN_SYSCALL1
-#undef DEFN_SYSCALL2
-#undef DEFN_SYSCALL3
-#undef DEFN_SYSCALL4
-#undef DEFN_SYSCALL5
+/*************************************
+ *                                  *
+ *  syscall prototypes declaration  *
+ *                                  *
+*************************************/
 
-#ifdef _SYSCALL_CREATE_FUNCS
+filesys_t *syscall_fs_get_default(void);
+int        syscall_fs_read(uint32_t, void *, uint32_t, uint32_t);
+int        syscall_fs_write(uint32_t, void *, uint32_t, uint32_t);
+int        syscall_fs_set_size(uint32_t, uint32_t);
+uint32_t   syscall_fs_get_size(uint32_t);
+int        syscall_fs_delete(uint32_t);
+uint32_t   syscall_fs_init(uint32_t, char *);
+char      *syscall_fs_meta(uint32_t, char *);
 
-#define DEFN_SYSCALL0(id, ret_type, name) \
-    ret_type syscall_##name(void) { \
-        ret_type a; \
-        asm volatile( \
-            "int $0x80" \
-            : "=a" (a) \
-            : "a" (id) \
-        ); \
-        return a; \
-    }
+void    *syscall_mem_alloc(uint32_t, int, uint32_t);
+int      syscall_mem_free(void *);
+int      syscall_mem_free_all(int, int);
+uint32_t syscall_mem_fetch(void *, int);
+int      syscall_mem_info(int, int);
 
-#define DEFN_SYSCALL1(id, ret_type, name, type1) \
-    ret_type syscall_##name(type1 a1) { \
-        ret_type a; \
-        asm volatile( \
-            "int $0x80" \
-            : "=a" (a) \
-            : "a" (id), "b" (a1) \
-        ); \
-        return a; \
-    }
+uint32_t syscall_ms_get(void);
+int      syscall_time_get(struct tm *);
 
-#define DEFN_SYSCALL2(id, ret_type, name, type1, type2) \
-    ret_type syscall_##name(type1 a1, type2 a2) { \
-        ret_type a; \
-        asm volatile( \
-            "int $0x80" \
-            : "=a" (a) \
-            : "a" (id), "b" (a1), "c" (a2) \
-        ); \
-        return a; \
-    }
+uint8_t *syscall_font_get(void);
+int      syscall_kcnprint(char *, int, char);
+int      syscall_vesa_info(int);
 
-#define DEFN_SYSCALL3(id, ret_type, name, type1, type2, type3) \
-    ret_type syscall_##name(type1 a1, type2 a2, type3 a3) { \
-        ret_type a; \
-        asm volatile( \
-            "int $0x80" \
-            : "=a" (a) \
-            : "a" (id), "b" (a1), "c" (a2), "d" (a3) \
-        ); \
-        return a; \
-    }
+int      syscall_afft_read( int, void *, uint32_t, uint32_t);
+int      syscall_afft_write(int, void *, uint32_t, uint32_t);
+int      syscall_afft_cmd(  int, uint32_t, void *);
 
-#define DEFN_SYSCALL4(id, ret_type, name, type1, type2, type3, type4) \
-    ret_type syscall_##name(type1 a1, type2 a2, type3 a3, type4 a4) { \
-        ret_type a; \
-        asm volatile( \
-            "int $0x80" \
-            : "=a" (a) \
-            : "a" (id), "b" (a1), "c" (a2), "d" (a3), "S" (a4) \
-        ); \
-        return a; \
-    }
+int      syscall_sc_get(void);
 
-#define DEFN_SYSCALL5(id, ret_type, name, type1, type2, type3, type4, type5) \
-    ret_type syscall_##name(type1 a1, type2 a2, type3 a3, type4 a4, type5 a5) { \
-        ret_type a; \
-        asm volatile( \
-            "int $0x80" \
-            : "=a" (a) \
-            : "a" (id), "b" (a1), "c" (a2), "d" (a3), "S" (a4), "D" (a5) \
-        ); \
-        return a; \
-    }
+int      syscall_sys_power(int);
+int      syscall_elf_exec(uint32_t, char **, char **);
 
-#else
+int      syscall_process_create(void *, int, int, uint32_t *);
+int      syscall_process_fork(void);
+int      syscall_process_sleep(uint32_t, uint32_t);
+int      syscall_process_wakeup(uint32_t, int);
+int      syscall_process_wait(int, uint8_t *, int);
+int      syscall_process_kill(uint32_t, int);
+uint32_t syscall_process_pid(void);
+int      syscall_process_info(uint32_t, int, void *);
+int      syscall_process_list_all(uint32_t *, int);
 
-#define DEFN_SYSCALL0(id, ret_type, name) \
-    ret_type syscall_##name(void);
+int      syscall_mod_load(char *, uint32_t);
+int      syscall_mod_unload(uint32_t);
 
-#define DEFN_SYSCALL1(id, ret_type, name, type1) \
-    ret_type syscall_##name(type1 a1);
+void    *syscall_scuba_generate(void *, uint32_t);
+int      syscall_scuba_map(void *, void *, int);
+int      syscall_scuba_unmap(void *);
+void    *syscall_scuba_phys(void *);
 
-#define DEFN_SYSCALL2(id, ret_type, name, type1, type2) \
-    ret_type syscall_##name(type1 a1, type2 a2);
+/*********************************
+ *                              *
+ *  syscalls declaration macro  *
+ *                              *
+*********************************/
 
-#define DEFN_SYSCALL3(id, ret_type, name, type1, type2, type3) \
-    ret_type syscall_##name(type1 a1, type2 a2, type3 a3);
+extern int profan_syscall(uint32_t id, ...);
 
-#define DEFN_SYSCALL4(id, ret_type, name, type1, type2, type3, type4) \
-    ret_type syscall_##name(type1 a1, type2 a2, type3 a3, type4 a4);
+#define syscall_fs_get_default() ((filesys_t *) profan_syscall(0))
+#define syscall_fs_read(a, b, c, d) ((int) profan_syscall(1, a, b, c, d))
+#define syscall_fs_write(a, b, c, d) ((int) profan_syscall(2, a, b, c, d))
+#define syscall_fs_set_size(a, b) ((int) profan_syscall(3, a, b))
+#define syscall_fs_get_size(a) ((uint32_t) profan_syscall(4, a))
+#define syscall_fs_delete(a) ((int) profan_syscall(5, a))
+#define syscall_fs_init(a, b) ((uint32_t) profan_syscall(6, a, b))
+#define syscall_fs_meta(a, b) ((char *) profan_syscall(7, a, b))
 
-#define DEFN_SYSCALL5(id, ret_type, name, type1, type2, type3, type4, type5) \
-    ret_type syscall_##name(type1 a1, type2 a2, type3 a3, type4 a4, type5 a5);
+#define syscall_mem_alloc(a, b, c) ((void *) profan_syscall(8, a, b, c))
+#define syscall_mem_free(a) ((int) profan_syscall(9, a))
+#define syscall_mem_free_all(a, b) ((int) profan_syscall(10, a, b))
+#define syscall_mem_fetch(a, b) ((uint32_t) profan_syscall(11, a, b))
+#define syscall_mem_info(a, b) ((int) profan_syscall(12, a, b))
 
-#endif
+#define syscall_ms_get() ((uint32_t) profan_syscall(13))
+#define syscall_time_get(a) ((int) profan_syscall(14, a))
 
-/************************************
- *                                 *
- *  syscall function definitions   *
- *                                 *
-************************************/
+#define syscall_font_get() ((uint8_t *) profan_syscall(15))
+#define syscall_kcnprint(a, b, c) ((int) profan_syscall(16, a, b, c))
+#define syscall_vesa_info(a) ((int) profan_syscall(17, a))
 
-DEFN_SYSCALL0(0, filesys_t *,fs_get_default)
-DEFN_SYSCALL4(1, int,        fs_read, uint32_t, void *, uint32_t, uint32_t)
-DEFN_SYSCALL4(2, int,        fs_write, uint32_t, void *, uint32_t, uint32_t)
-DEFN_SYSCALL2(3, int,        fs_set_size, uint32_t, uint32_t)
-DEFN_SYSCALL1(4, uint32_t,   fs_get_size, uint32_t)
-DEFN_SYSCALL1(5, int,        fs_delete, uint32_t)
-DEFN_SYSCALL2(6, uint32_t,   fs_init, uint32_t, char *)
-DEFN_SYSCALL2(7, char *,     fs_meta, uint32_t, char *)
+#define syscall_afft_read(a, b, c, d) ((int) profan_syscall(18, a, b, c, d))
+#define syscall_afft_write(a, b, c, d) ((int) profan_syscall(19, a, b, c, d))
+#define syscall_afft_cmd(a, b, c) ((int) profan_syscall(20, a, b, c))
 
-DEFN_SYSCALL3(8,  void *,    mem_alloc, uint32_t, int, uint32_t)
-DEFN_SYSCALL1(9,  int,       mem_free, void *)
-DEFN_SYSCALL2(10, int,       mem_free_all, int, int)
-DEFN_SYSCALL2(11, uint32_t,  mem_alloc_fetch, void *, int)
-DEFN_SYSCALL2(12, int,       mem_info, int, int)
+#define syscall_sc_get() ((int) profan_syscall(21))
 
-DEFN_SYSCALL0(13, uint32_t,  timer_get_ms)
-DEFN_SYSCALL1(14, int,       time_get, struct tm *)
+#define syscall_sys_power(a) ((int) profan_syscall(22, a))
+#define syscall_elf_exec(a, b, c) ((int) profan_syscall(23, a, b, c))
 
-DEFN_SYSCALL0(15, uint8_t *, font_get)
-DEFN_SYSCALL3(16, int,       kcnprint, char *, int, char)
-DEFN_SYSCALL0(17, int,       get_cursor)
-DEFN_SYSCALL1(18, int,       vesa_info, int)
+#define syscall_process_create(a, b, c, d) ((int) profan_syscall(24, a, b, c, d))
+#define syscall_process_fork() ((int) profan_syscall(25))
+#define syscall_process_sleep(a, b) ((int) profan_syscall(26, a, b))
+#define syscall_process_wakeup(a, b) ((int) profan_syscall(27, a, b))
+#define syscall_process_wait(a, b, c) ((int) profan_syscall(28, a, b, c))
+#define syscall_process_kill(a, b) ((int) profan_syscall(29, a, b))
+#define syscall_process_pid() ((uint32_t) profan_syscall(30))
+#define syscall_process_info(a, b, c) ((int) profan_syscall(31, a, b, c))
+#define syscall_process_list_all(a, b) ((int) profan_syscall(32, a, b))
 
-DEFN_SYSCALL4(19, int,       afft_read,  int, void *, uint32_t, uint32_t)
-DEFN_SYSCALL4(20, int,       afft_write, int, void *, uint32_t, uint32_t)
-DEFN_SYSCALL3(21, int,       afft_cmd,   int, uint32_t, void *)
+#define syscall_mod_load(a, b) ((int) profan_syscall(33, a, b))
+#define syscall_mod_unload(a) ((int) profan_syscall(34, a))
 
-DEFN_SYSCALL0(22, int,       sc_get)
-DEFN_SYSCALL2(23, int,       mouse_call, int, int)
-
-DEFN_SYSCALL1(24, int,       sys_power, int)
-
-DEFN_SYSCALL3(25, int,       elf_exec, uint32_t, char **, char **)
-
-DEFN_SYSCALL4(26, int,       process_create, void *, int, int, uint32_t *)
-DEFN_SYSCALL0(27, int,       process_fork)
-DEFN_SYSCALL2(28, int,       process_sleep, uint32_t, uint32_t)
-DEFN_SYSCALL2(29, int,       process_wakeup, uint32_t, int)
-DEFN_SYSCALL3(30, int,       process_wait, int, uint8_t *, int)
-DEFN_SYSCALL2(31, int,       process_kill, uint32_t, int)
-DEFN_SYSCALL0(32, uint32_t,  process_pid)
-DEFN_SYSCALL3(33, int,       process_info, uint32_t, int, void *)
-DEFN_SYSCALL2(34, int,       process_list_all, uint32_t *, int)
-
-DEFN_SYSCALL2(35, int,       mod_load, char *, uint32_t)
-DEFN_SYSCALL1(36, int,       mod_unload, uint32_t)
-
-DEFN_SYSCALL2(37, void *,    scuba_generate, void *, uint32_t)
-DEFN_SYSCALL3(38, int,       scuba_map, void *, void *, int)
-DEFN_SYSCALL1(39, int,       scuba_unmap, void *)
-DEFN_SYSCALL1(40, void *,    scuba_phys, void *)
+#define syscall_scuba_generate(a, b) ((void *) profan_syscall(35, a, b))
+#define syscall_scuba_map(a, b, c) ((int) profan_syscall(36, a, b, c))
+#define syscall_scuba_unmap(a) ((int) profan_syscall(37, a))
+#define syscall_scuba_phys(a) ((void *) profan_syscall(38, a))
 
 DEFN_SYSCALL0(41, uint32_t,  eth_start)
 DEFN_SYSCALL1(42, int,       eth_end, uint32_t)

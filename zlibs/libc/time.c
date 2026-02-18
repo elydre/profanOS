@@ -95,7 +95,7 @@ int clock_getres(clockid_t clock_id, struct timespec *res) {
 
 int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     static struct timespec g_first_time = {
-        .tv_nsec = -1 // represents syscall_timer_get_ms
+        .tv_nsec = -1 // represents syscall_ms_get
     };
 
     if (tp == NULL) {
@@ -104,7 +104,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     }
 
     if (clock_id == CLOCK_MONOTONIC) {
-        uint32_t ms = syscall_timer_get_ms();
+        uint32_t ms = syscall_ms_get();
 
         tp->tv_sec = ms / 1000;
         tp->tv_nsec = (ms % 1000) * 1000000;
@@ -119,7 +119,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp) {
 
     if (g_first_time.tv_nsec == -1) {
         g_first_time.tv_sec = time(NULL);
-        g_first_time.tv_nsec = syscall_timer_get_ms();
+        g_first_time.tv_nsec = syscall_ms_get();
 
         tp->tv_sec = g_first_time.tv_sec;
         tp->tv_nsec = (g_first_time.tv_nsec % 1000) * 1000000;
@@ -127,7 +127,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp) {
         return 0;
     }
 
-    uint32_t ms = syscall_timer_get_ms();
+    uint32_t ms = syscall_ms_get();
 
     tp->tv_sec = g_first_time.tv_sec + (ms / 1000 - g_first_time.tv_nsec / 1000);
     tp->tv_nsec = (ms % 1000) * 1000000;

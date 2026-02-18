@@ -16,6 +16,9 @@
 #include <minilib.h>
 #include <system.h>
 
+#define MODLOAD_FARRAY_MAGIC 0xF3A3C4D4
+#define MODLOAD_FARRAY_NAME  "__module_func_array"
+
 uint32_t *g_mod_funcs[256];
 
 /* g_mod_funcs[n] layout:
@@ -27,11 +30,6 @@ uint32_t *g_mod_funcs[256];
  * 5: function 2
  * ...
  */
-
-int mod_init(void) {
-    *(int *)(WATPOK_ADDR) = (int) mod_get_func;
-    return 0;
-}
 
 #define IS_LOADED(id) ((id) && (id) < 256 && g_mod_funcs[id])
 
@@ -99,57 +97,51 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
         return NULL;
 
     // read a first time to get function count
-    uint32_t func_count = 0;
     Elf32_Sym *symbol_table = (Elf32_Sym *) (file + sym_sh->sh_offset);
     char *strtab = (char *) (file + shdr[sym_sh->sh_link].sh_offset);
 
+    uint32_t *func_array = NULL;
+    uint32_t func_count = 0;
+
+    // search for the function array
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
-        if (((Elf32_Sym *) symbol_table + i)->st_info == 0x12)
-            func_count++;
+        Elf32_Sym *symbol = symbol_table + i;
+
+        if (symbol->st_name && str_cmp(strtab + symbol->st_name, MODLOAD_FARRAY_NAME) == 0) {
+            func_array = (uint32_t *) (mem + symbol->st_value);
+            if (func_array[0] != MODLOAD_FARRAY_MAGIC)
+                return NULL;
+            func_count = symbol->st_size / sizeof(uint32_t) - 1;
+            break;
+        }
     }
 
-    if (func_count == 0)
+    if (func_array == NULL)
         return NULL;
 
     // allocate the address list
     uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), SNOW_MOD, 0);
     addr_list[0] = (uint32_t) mem;
     addr_list[1] = func_count;
-    addr_list[2] = 0;
-    addr_list[3] = 0;
-
-    func_count = 4;
+    addr_list[2] = 0;   // __init address
+    addr_list[3] = 0;   // __fini address
 
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
         Elf32_Sym *symbol = symbol_table + i;
 
-        if (symbol->st_info != 0x12)
+        if (symbol->st_info != 0x12 || !symbol->st_name)
             continue;
 
-        if (symbol->st_name) {
-            if (str_cmp(strtab + symbol->st_name, "__init") == 0) {
-                addr_list[2] = symbol->st_value + (uint32_t) mem;
-                continue;
-            }
+        else if (str_cmp(strtab + symbol->st_name, "__init") == 0)
+            addr_list[2] = symbol->st_value + (uint32_t) mem;
 
-            if (str_cmp(strtab + symbol->st_name, "__fini") == 0) {
-                addr_list[3] = symbol->st_value + (uint32_t) mem;
-                continue;
-            }
-        }
-
-        addr_list[func_count++] = symbol->st_value + (uint32_t) mem;
+        else if (str_cmp(strtab + symbol->st_name, "__fini") == 0)
+            addr_list[3] = symbol->st_value + (uint32_t) mem;
     }
 
-    // sort the functions by address
-    for (uint32_t i = 4; i < func_count; i++) {
-        for (uint32_t j = i + 1; j < func_count; j++) {
-            if (addr_list[i] > addr_list[j]) {
-                uint32_t tmp = addr_list[i];
-                addr_list[i] = addr_list[j];
-                addr_list[j] = tmp;
-            }
-        }
+    // copy function addresses
+    for (uint32_t i = 0; i < func_count; i++) {
+        addr_list[i + 4] = func_array[i + 1];
     }
 
     return addr_list;
@@ -243,6 +235,9 @@ static int i_mod_relocate(char *finename, uint8_t *file, uint8_t *mem) {
 }
 
 int mod_load(char *path, uint32_t lib_id) {
+    if (path == NULL)
+        return IS_LOADED(lib_id) ? (int) g_mod_funcs[lib_id][1] : -1;
+
     uint32_t file = kfu_path_to_sid(SID_ROOT, path);
 
     if (IS_SID_NULL(file) || !kfu_is_file(file)) {
@@ -278,10 +273,12 @@ int mod_load(char *path, uint32_t lib_id) {
         return -5;
     }
 
-    if (addr_list[2] && ((int (*)(void)) addr_list[2])()) {
+    int ret_val;
+
+    if (addr_list[2] && (ret_val = ((int (*)(void)) addr_list[2])())) {
         free(binary_mem);
         free(addr_list);
-        return -6;
+        return -(6 + (ret_val == 2));
     }
 
     // save the address list

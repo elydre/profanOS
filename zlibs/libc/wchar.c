@@ -71,8 +71,9 @@ int mbsinit(const mbstate_t *) {
     return (PROFAN_FNI, 0);
 }
 
-size_t mbrlen(const char *, size_t, mbstate_t *) {
-    return (PROFAN_FNI, 0);
+size_t mbrlen(const char *s, size_t n, mbstate_t *st) {
+    static unsigned internal;
+    return mbrtowc(0, s, n, st ? st : (mbstate_t *)&internal);
 }
 
 #define OOB(c,b) (((((b) >> 3) - 0x10) | (((b) >> 3) + ((int32_t)(c) >> 26))) & ~7)

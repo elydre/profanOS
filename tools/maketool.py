@@ -38,7 +38,7 @@ HDD_MAP = {
 
 CC   = "gcc"
 LD   = "ld"
-SHRD = "gcc -shared"
+SHRD = "gcc -shared -m32 -nostdlib"
 
 KERNEL_SRC = [f"kernel/{e}" for e in os.listdir("kernel")] + ["boot"]
 KERNEL_HEADERS = ["include/kernel"]
@@ -47,16 +47,16 @@ ZHEADERS = ["include/zlibs", "include/addons"]
 
 ZAPPS_DIR = "zapps"
 ZLIBS_DIR = "zlibs"
-ZAPPS_BIN = "x"      # zapps/x
-ZLIBS_MOD = "mod"    # zlibs/mod
-ZLIBS_STT = "static" # zlibs/static
+ZAPPS_BIN = "x"         # zapps/x
+ZLIBS_MOD = "modules"   # zlibs/modules
+ZLIBS_STT = "static"    # zlibs/static
 
 LINK_FILENAME = "_link.txt" # multi file link
 INCLUDE_DIR   = "include"   # multi file include
 
 LINK_LINE_MAX = 12          # max line for link instructions
 
-CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib "
+CFLAGS     = "-m32 -march=i686 -ffreestanding -fno-exceptions -fno-stack-protector -nostdinc -nostdlib -Wundef "
 CFLAGS    += "-Wall -Wextra -D__profanOS__"
 
 CC_OPTIM   = "-fno-omit-frame-pointer -O" # level defined in env PROFANOS_OPTIM
@@ -71,11 +71,11 @@ KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/ker
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
 QEMU_SPL   = "qemu-system-i386"
-QEMU_KVM   = "qemu-system-i386 -enable-kvm"
+QEMU_KVM   = "qemu-system-i386 -m 256M -enable-kvm"
 QEMU_NET   = "qemu-system-i386 -netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat"
 
 QEMU_FLAGS = "-serial stdio"
-QEMU_AUDIO = "-audiodev pa,id=snd0 -machine pcspk-audiodev=snd0"
+QEMU_AUDIO = "-m 256M -device intel-hda -device hda-duplex"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
@@ -96,8 +96,7 @@ if opti_level is not None:
 
 if os.getenv("PROFANOS_KIND") == "1":
     cprint(COLOR_INFO, "profanOS kind mode enabled")
-    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "").replace("-Werror", "")
-
+    ZAPP_FLAGS = ZAPP_FLAGS.replace("-Wall", "").replace("-Wextra", "").replace("-Werror", "").replace("-Wundef", "")
 for e in ZHEADERS:
     if os.path.exists(e):
         ZAPP_FLAGS += f" -I {e}"
@@ -292,14 +291,12 @@ def build_disk_elfs():
         print_and_exec(f"rm {fname}.o")
         total -= 1
 
-    def build_c_to_mod(name, fname, stt_list):
+    def build_c_to_mod(name, fname):
         global total
         print_info_line(name)
-        required_libs = get_required_libs(name, stt_list)
 
         print_and_exec(f"{CC} -c {name} -o {fname}.o {MOD_FLAGS}")
-        print_and_exec(f"{SHRD} -m32 -nostdlib -L {OUT_DIR}/zlibs -o {fname}.pkm {fname}.o " +
-                       ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
+        print_and_exec(f"{SHRD} -o {fname}.pkm {fname}.o")
         print_and_exec(f"rm {fname}.o")
         total -= 1
 
@@ -315,13 +312,18 @@ def build_disk_elfs():
         print_and_exec(f"rm {fname}.o")
         total -= 1
 
-    def build_c_to_obj(name, fname, is_lib):
+    def build_c_to_obj(name, fname, dest):
         global total
         print_info_line(name)
-        if is_lib:
+        if dest == "lib":
             flags = ZLIB_FLAGS
-        else:
+        elif dest == "exe":
             flags = ZAPP_FLAGS + f" -I {'/'.join(name.split('/')[0:3])}/{INCLUDE_DIR}"
+        elif dest == "mod":
+            flags = MOD_FLAGS + f" -I {'/'.join(name.split('/')[0:3])}/{INCLUDE_DIR}"
+        else:
+            cprint(COLOR_EROR, f"unknown type '{dest}' for build_c_to_obj")
+            os._exit(1)
         print_and_exec(f"{CC} {flags} -c {name} -o {fname}.o")
         total -= 1
 
@@ -344,9 +346,22 @@ def build_disk_elfs():
                           f"-o {OUT_DIR}/{name}.elf {OUT_DIR}/make/entry_elf.o {' '.join(objs)} -lc " +
                             ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
 
+    def link_multifile_lib(name):
+        objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{name}", ".o")
+        print_info_line(f"[link] zlibs/{name}.so")
+        print_and_exec(f"{SHRD} -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}" +
+                (f" -L{OUT_DIR}/zlibs -lc" if name != "libc" else ""))
+
+    def link_multifile_mod(name):
+        objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{ZLIBS_MOD}/{name}", ".o")
+        print_info_line(f"[link] zlibs/{ZLIBS_MOD}/{name}.pkm")
+        print_and_exec(f"{SHRD} -o {OUT_DIR}/zlibs/{ZLIBS_MOD}/{name}.pkm {' '.join(objs)}")
+
+
     # detect zlibs
     lib_build_list = []
     mod_build_list = []
+    mmf_build_list = [] # multi file module
     stt_build_list = []
 
     for dir_name in os.listdir(ZLIBS_DIR):
@@ -355,7 +370,6 @@ def build_disk_elfs():
             exit(1)
 
         if dir_name == ZLIBS_MOD:
-            mod_build_list.extend(files_in_dir_rec(f"{ZLIBS_DIR}/{dir_name}", ".c"))
             continue
 
         if dir_name == ZLIBS_STT:
@@ -363,6 +377,14 @@ def build_disk_elfs():
             continue
 
         lib_build_list.extend(files_in_dir_rec(f"{ZLIBS_DIR}/{dir_name}", ".c"))
+
+    for name in os.listdir(f"{ZLIBS_DIR}/{ZLIBS_MOD}"):
+        if not os.path.isdir(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}"):
+            if not name.endswith(".c"):
+                continue
+            mod_build_list.append(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}")
+        else:
+            mmf_build_list.extend(files_in_dir_rec(f"{ZLIBS_DIR}/{ZLIBS_MOD}/{name}", ".c"))
 
     # detect zapps
     bin_build_list = []
@@ -420,6 +442,7 @@ def build_disk_elfs():
     total_elf = len(elf_build_list)
     total_lib = len(lib_build_list)
     total_mod = len(mod_build_list)
+    total_mmf = len(mmf_build_list)
     total_stt = len(stt_build_list)
 
     elf_build_list = [file for file in elf_build_list if not file1_newer(
@@ -429,7 +452,7 @@ def build_disk_elfs():
     mod_build_list = [file for file in mod_build_list if not file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.pkm')}", file)]
     stt_build_list = [file for file in stt_build_list if not file1_newer(
-            f"{OUT_DIR}/{file.replace('.c', '.a')}", file)]
+            f"{OUT_DIR}/{file.replace(ZLIBS_STT, '').replace('.c', '.a')}", file)]
 
     lib_build_list = [file for file in lib_build_list if not (file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
@@ -439,15 +462,20 @@ def build_disk_elfs():
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
             f"{OUT_DIR}/{'/'.join(file.split('/')[0:3])}.elf", file))]
 
-    cprint(COLOR_INFO, f"| lib C src : {len(lib_build_list)}/{total_lib}")
-    cprint(COLOR_INFO, f"| kernel mod: {len(mod_build_list)}/{total_mod}")
-    cprint(COLOR_INFO, f"| static lib: {len(stt_build_list)}/{total_stt}")
-    cprint(COLOR_INFO, f"| system bin: {len(bin_build_list)}/{total_bin}")
-    cprint(COLOR_INFO, f"| single elf: {len(elf_build_list)}/{total_elf}")
-    cprint(COLOR_INFO, f"| multi file : {len(dir_build_list)}/{total_dir}")
+    mmf_build_list = [file for file in mmf_build_list if not (file1_newer(
+            f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
+            f"{OUT_DIR}/zlibs/{ZLIBS_MOD}/{file.split('/')[2]}.pkm", file))]
+
+    cprint(COLOR_INFO, f"| single file pkm: {len(mod_build_list)} / {total_mod}")
+    cprint(COLOR_INFO, f"| multi file pkm:  {len(mmf_build_list)} / {total_mmf}")
+    cprint(COLOR_INFO, f"| shared lib:      {len(lib_build_list)} / {total_lib}")
+    cprint(COLOR_INFO, f"| static lib:      {len(stt_build_list)} / {total_stt}")
+    cprint(COLOR_INFO, f"| single file exe: {len(elf_build_list)} / {total_elf}")
+    cprint(COLOR_INFO, f"| multi file exe:  {len(dir_build_list)} / {total_dir}")
+    cprint(COLOR_INFO, f"| static exe:      {len(bin_build_list)} / {total_bin}")
 
     # create directories
-    for file in elf_build_list + bin_build_list + lib_build_list + mod_build_list + dir_build_list:
+    for file in elf_build_list + bin_build_list + lib_build_list + mod_build_list + dir_build_list + mmf_build_list:
         dir_name = file[:max([max(x for x in range(len(file)) if file[x] == "/")])]
 
         if not os.path.exists(f"{OUT_DIR}/{dir_name}"):
@@ -459,7 +487,7 @@ def build_disk_elfs():
 
     for name in lib_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
-        threading.Thread(target = build_c_to_obj, args=(name, fname, 1)).start()
+        threading.Thread(target = build_c_to_obj, args=(name, fname, "lib")).start()
 
     for name in stt_build_list:
         fname = f"{OUT_DIR}/{ZLIBS_DIR}/{remove_ext(name.split('/')[-1])}"
@@ -477,12 +505,9 @@ def build_disk_elfs():
         to_link.insert(0, "libc")
 
     for name in to_link:
-        objs = files_in_dir_rec(f"{OUT_DIR}/zlibs/{name}", ".o")
-        print_info_line(f"[link] zlibs/{name}.so")
-        print_and_exec(f"{SHRD} -m32 -nostdlib -o {OUT_DIR}/zlibs/{name}.so {' '.join(objs)}" +
-                (f" -L{OUT_DIR}/zlibs -lc" if name != "libc" else ""))
+        link_multifile_lib(name)
 
-    total = len(elf_build_list) + len(bin_build_list) + len(mod_build_list) + len(dir_build_list)
+    total = len(elf_build_list) + len(bin_build_list) + len(mod_build_list) + len(dir_build_list) + len(mmf_build_list)
 
     # get .so files
     libs_name = [e[:-3] for e in files_in_dir(f"{OUT_DIR}/zlibs", ".so")]
@@ -490,7 +515,11 @@ def build_disk_elfs():
 
     for name in mod_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
-        threading.Thread(target = build_c_to_mod, args=(name, fname, stts_name)).start()
+        threading.Thread(target = build_c_to_mod, args=(name, fname)).start()
+
+    for name in mmf_build_list:
+        fname = f"{OUT_DIR}/{remove_ext(name)}"
+        threading.Thread(target = build_c_to_obj, args=(name, fname, "mod")).start()
 
     for name in elf_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
@@ -502,7 +531,7 @@ def build_disk_elfs():
 
     for name in dir_build_list:
         fname = f"{OUT_DIR}/{remove_ext(name)}"
-        threading.Thread(target = build_c_to_obj, args=(name, fname, 0)).start()
+        threading.Thread(target = build_c_to_obj, args=(name, fname, "exe")).start()
 
     while total:
         # wait for all threads to finish
@@ -512,9 +541,13 @@ def build_disk_elfs():
     for name in list(set(["/".join(name.split("/")[0:3]) for name in dir_build_list])):
         link_multifile_elf(name, libs_name + stts_name)
 
+    # linking multi file mods
+    for name in list(set([name.split("/")[2] for name in mmf_build_list])):
+        link_multifile_mod(name)
+
 def make_iso(force = False, more_option = False):
     elf_image()
-    gen_disk()
+    gen_disk(False)
 
     if file_exists("profanOS.iso") and file1_newer("profanOS.iso", "kernel.elf") and (
             file1_newer("profanOS.iso", "initrd.bin") and not force):
@@ -607,9 +640,10 @@ def add_src_to_disk():
     print_and_exec(f"cp {TOOLS_DIR}/*.c {TOOLS_DIR}/*.ld {OUT_DIR}/disk/user/src/build")
 
 
-def gen_disk(force=False, with_src=False):
+def gen_disk(force=True, with_src=False):
 
-    if file_exists("initrd.bin") and not force: return
+    if file_exists("initrd.bin") and not force:
+        return
 
     build_disk_elfs()
 
@@ -623,9 +657,9 @@ def gen_disk(force=False, with_src=False):
 
         if isinstance(HDD_MAP[dir_name], str):
             if dir_name == "lib":
-                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* " + ' '.join([f'{HDD_MAP[dir_name]}/{file}'
-                        for file in os.listdir(HDD_MAP[dir_name]) if not file.startswith('lib')
-                    ]) + f" {OUT_DIR}/disk/{dir_name}")
+                os.makedirs(f"{OUT_DIR}/disk/{dir_name}/{ZLIBS_MOD}")
+                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* {OUT_DIR}/disk/{dir_name}")
+                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/{ZLIBS_MOD}/*.* {OUT_DIR}/disk/{dir_name}/modules")
 
             elif dir_name == "bin":
                 for elm in os.listdir(HDD_MAP[dir_name]):
@@ -677,32 +711,30 @@ def gen_disk(force=False, with_src=False):
     print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
 
 
-def qemu_run(iso_run = True, kvm = False, audio = False, net = False):
-    if iso_run: make_iso()
-
-    gen_disk(False)
+def qemu_run(kvm = False, audio = False, net = False):
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
     if net:
         qemu_cmd = QEMU_NET
 
     qemu_args = QEMU_FLAGS
-    if audio: qemu_args += f" {QEMU_AUDIO}"
+
+    if audio:
+        qemu_args += f" {QEMU_AUDIO}"
 
     cprint(COLOR_INFO, "starting qemu...")
 
-    if iso_run: print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -boot order=d {qemu_args}")
-    else: print_and_exec(f"{qemu_cmd} -kernel kernel.elf -boot order=a {qemu_args}")
+    print_and_exec(f"{qemu_cmd} -cdrom profanOS.iso -boot order=d {qemu_args}")
 
 def make_help():
     help_lines = (
         ("make [help]", "show this help message"),
         None,
         ("make elf",        "build the kernel in elf format"),
-        ("make iso",        "build the iso image of profanOS"),
-        ("make miso",       "build the iso with more grub options"),
-        None,
         ("make disk",       "build classic disk image"),
         ("make bdisk",    "build disk image with source code"),
+        None,
+        ("make iso",        "build the iso image of profanOS"),
+        ("make miso",       "build the iso with more grub options"),
         None,
         ("make addons",     "start graphical addons selection"),
         ("make gaddons",    "install automatically recommended addons"),
@@ -711,7 +743,6 @@ def make_help():
         ("make fclean",     "reset the repository"),
         None,
         ("make run",        "run the profanOS.iso in qemu"),
-        ("make erun",       "run the kernel.elf in qemu"),
         ("make krun",       "run the profanOS.iso with kvm"),
         ("make srun",       "run the profanOS.iso with sound"),
     )
@@ -724,7 +755,6 @@ def make_help():
         cprint(COLOR_INFO ,f"{command.upper():<15} {description}")
 
     cprint(COLOR_INFO, "\nYou can cross the command like:")
-    cprint(COLOR_INFO, " MAKE DISK RUN to force the disk generation and run it")
     cprint(COLOR_INFO, " MAKE ADDONS BDISK ISO to build the iso with all options")
     cprint(COLOR_INFO, "You can also use tools/ directory to more options...")
 
@@ -736,11 +766,10 @@ assos = {
     "bdisk": lambda: gen_disk(True, True),
     "iso": lambda: make_iso(True),
     "miso": lambda: make_iso(True, True),
-    "run": lambda: qemu_run(True),
-    "erun": lambda: qemu_run(False),
-    "krun": lambda: qemu_run(True, True),
-    "srun": lambda: qemu_run(True, False, True),
-    "nrun": lambda: qemu_run(True, False, False, True),
+    "run": lambda: qemu_run(),
+    "krun": lambda: qemu_run(True),
+    "srun": lambda: qemu_run(False, True),
+    "nrun": lambda: qemu_run(False, False, True),
     "kver": get_kernel_version,
 }
 

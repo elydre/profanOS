@@ -12,7 +12,7 @@
 // @LINK: libpf
 
 #include <profan/syscall.h>
-#include <profan/mouse.h>
+#include <modules/mouse.h>
 #include <profan/vgui.h>
 
 #include <stdlib.h>

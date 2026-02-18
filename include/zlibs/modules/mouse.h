@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === keyboard.h : 2024 ===                                                 |
+|   === mouse.h : 2025 ===                                                    |
 |                                                                             |
-|    Kernel Keyboard driver header                                 .pi0iq.    |
+|    Mouse module driver header (rewrite pending)                  .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,12 +9,17 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#ifndef _PROFAN_MOUSE_H
+#define _PROFAN_MOUSE_H
 
-int  keyboard_init(void);
+#define mouse_get_x() 0
+#define mouse_get_y() 0
 
-char kb_sc_to_char(int scancode, int shift);
-int  kb_get_scancode(void);
+#define mouse_get_button(button) 0
+
+#define mouse_set_x(x)
+#define mouse_set_y(y)
+
+#define mouse_reset()
 
 #endif

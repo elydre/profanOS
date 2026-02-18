@@ -15,9 +15,10 @@
 #include <stdio.h>
 #include <elf.h>    // for colorizing ELF files
 
+#include <modules/filesys.h>
+#include <modules/panda.h>
+
 #include <profan/syscall.h>
-#include <profan/filesys.h>
-#include <profan/panda.h>
 #include <profan.h>
 
 typedef struct {
@@ -423,18 +424,18 @@ void list_dirs(ls_args_t *args) {
 int print_help(void) {
     puts(
         LS_USAGE
-        "\nDisplay Options:\n"
+        "\n\e[4mDisplay Options\e[0m:\n"
         "  -f    line by line display\n"
         "  -l    detailed list view\n"
         "  -m    comma separated list\n"
-        "\nSorting Options:\n"
+        "\n\e[4mSorting Options\e[0m:\n"
         "  -a    show all elements\n"
         "  -p    use physical size\n"
         "  -z    sort by size\n"
-        "\nMisc. Options:\n"
+        "\n\e[4mMisc. Options\e[0m:\n"
         "  -h    display this help\n"
         "  -c    force color output (ansi escape)\n"
-        "  -n    force no color output"
+        "  -n    force no color output\n"
         "  -e    colorize ELF files\n"
     );
     return 0;

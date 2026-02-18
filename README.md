@@ -10,7 +10,7 @@
 The profan Operating System is an independent OS developed from scratch.
 It is characterized by its ring0-only preemptive modular multitasking
 minimalist kernel and colorful-looking command line-based user interface.
-[Test it from your browser](https://elydre.github.io/profan/latest.html)
+[Test it from your browser](https://elydre.github.io/profan)
 without installing anything.
 
 You can find a progress roadmap in [github projet](https://github.com/users/elydre/projects/7),
@@ -20,7 +20,7 @@ the [wiki](https://github.com/elydre/profanOS/wiki) for documentation.
 ## Setup
 
 > [!NOTE]
-> Compilation is guaranteed only on linux with **gcc 11**
+> Compilation is guaranteed only on linux but
 > it is also possible in windows with virtualization
 > solutions like wsl (on windows 11) or hyperV.
 
@@ -49,13 +49,13 @@ make
 ```
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
-The main ports (more information in the [ports](#major-ports) section) are not included
+The main ports (more information in the [ports](#Major ports - Addons) section) are not included
 in the repo source code but are easily downloadable with `make addons disk`.
 
 ### Automated build
 
-You can download the build images from the repo [profanOS-build](https://github.com/esolangs/profanOS-build)
-or the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
+You can download the build images from the [latest release](https://github.com/elydre/profanOS/releases/tag/latest)
+or the repo [profanOS-build](https://github.com/esolangs/profanOS-build).
 
 ```bash
 # Run the iso image in qemu
@@ -68,46 +68,54 @@ qemu-system-i386 -cdrom profanOS.iso -enable-kvm
 profanOS can also be tested online with two clicks with the [v86 copy](https://github.com/copy/v86)
 emulator [here](https://elydre.github.io/profan).
 
-For information about real hardware boot and instalation see the [dedicated section](#real-hardware).
-
 ## First look
 
-When starting profanOS, you will be greeted by the Olivine shell, a language similar to bash.
+When starting profanOS, you will be greeted by the [Olivine](https://github.com/elydre/profanOS/wiki/olivine) shell, a language similar to bash.
 You can then run the `help` command to see a list of useful commands.
 
-![banner](https://elydre.github.io/img/profan/banner.png)
+![banner](https://elydre.github.io/img/profan/banner2.png)
 
 > [!TIP]
 > To switch the keyboard layout use the `kb <layout>` command, such as `kb qwerty`.
 
 ## The kernel
 
-The profanOS kernel (generally called generic kernel or profan kernel) is at the heart
-of the OS, it is extremely minimalist and can be completed by adding modules loaded
-from disk such as drivers or file system extensions.
+### Overview
 
-profanOS is **not** a SASOS - single address space operating system, but part of the memory is shared,
-like kernel and modules. Processes can therefore freely access kernel memory.
+The **profanOS kernel** is the core of the operating system. It is extremely minimalist and
+provides only the essential features required to run a multitasking OS. Everything
+non-essential is kept outside of the kernel and implemented as modules.
 
-Here is a list of the main kernel features:
+**Main features**:
 
 - multiboot support
 - 32 bits protected mode
-- PS/2 mouse and keyboard
-- ATA hard disk
-- custom filesystem
+- custom modular filesystem
 - preemptive multitasking
-- memory allocation
 - virtual memory management
-- kernel modules
-- full ring0
+- syscalls with interrupts
+- ELF modules loading
+
+### Modules
+
+Modules extend the kernel with additional functionality, they can be hot-loaded and
+have access to all kernel functions. Typical modules provide drivers, UNIX compatibility
+layers, or low-level libraries.
+
+**Main modules**:
+
+- unix file descriptors interface
+- ATA and AHCI disk driver
+- profan filesystem extansion
+- intel HDA audio driver
+- panda terminal emulator
 
 ## The userspace
 
 ### Programing languages
 
 The kernel and userspace are developed mainly in C. The Olivine Shell (see the
-[language documentation](https://elydre.github.io/md/olivine)) is the main shell language.
+[language documentation](https://github.com/elydre/profanOS/wiki/olivine)) is the main shell language.
 You can also use python3, posix-sh, lua, perl, sulfur, and C languages to create your
 own programs.
 
@@ -116,11 +124,10 @@ POSIX compliant and often used as `/bin/sh` in linux systems.
 
 ### Major ports - Addons
 
-- [tcc](https://bellard.org/tcc/) Small and fast C compiler
 - [python](https://www.python.org/) Python 3.11 interpreter
 - [dash](https://github.com/elydre/dash-profan) POSIX compliant shell
+- [tcc](https://bellard.org/tcc/) Small and fast C compiler
 - [GNU make](https://www.gnu.org/software/make/) Makefile interpreter
-- [lua](https://www.lua.org/) Lightweight scripting language
 - [doom](https://github.com/ozkl/doomgeneric) Raycasting first person shooter
 
 All the ports are available with the command `make addons`.
@@ -131,21 +138,14 @@ you can also find a list of stuff tested in profanOS
 ### Libraries
 
 Libraries are loaded from file system and are dynamically linked to executables using
-`deluge` (profan dynamic linker). Kernel modules, for their part, are shared between
-the process and their content are accessible using syscalls.
+`deluge` (profan dynamic linker).
 
 Here is a list of the main libraries and kernel modules:
 
-- **kernel modules**:
-  - devio,
-    [filesys](https://github.com/elydre/profanOS/wiki/lib_filesys),
-    fmopen,
-    [libmmq](https://github.com/elydre/profanOS/wiki/lib_mmq),
-    [panda](https://github.com/elydre/profanOS/wiki/lib_panda),
-    [profan](https://github.com/elydre/profanOS/wiki/lib_profan)
 - **libc** - standard C library
-- **libpm** - profanOS minimalistic math lib
 - **libpf** - extra stuff like [libtsi](https://github.com/elydre/profanOS/wiki/lib_tsi)
+- **libm** - math library *(port)*
+- **libSDL2** - Simple DirectMedia Layer 2 *(port)*
 
 Find all the libraries available on the [wiki](https://github.com/elydre/profanOS/wiki/Dev-Links).
 
@@ -188,18 +188,16 @@ sudo sh install.sh /dev/sdX profanOS.iso
 
 ## About
 
-### Known major bugs
-
-| bug name   | since | description                       | cause           | fixed ? |
-|------------|-------|-----------------------------------|-----------------|---------|
-| lagged lag | ?     | all profanOS is getting very slow | memory access ? | partial |
-| no KB      | ?     | keyboard not working sometimes    | ?               | no      |
-
 ### Screenshots
 
-| ![halfix](https://elydre.github.io/img/profan/screen/halfix.png) | ![lua](https://elydre.github.io/img/profan/screen/lua.png) |
-|------------------------------------------------------------------|-------------------------------------------------------------------|
+| ![halfix](https://elydre.github.io/img/profan/screen/halfix.png)     | ![yacc](https://elydre.github.io/img/profan/screen/yacc.png) |
+|----------------------------------------------------------------------|--------------------------------------------------------------|
 | ![windaube](https://elydre.github.io/img/profan/screen/windaube.png) | ![doom](https://elydre.github.io/img/profan/screen/doom.png) |
+
+1. *Linux running in halfix x86 emulator*
+2. *Configuring and compiling yacc from source*
+3. *Discontinued desktop environment for profanOS*
+4. *The doom port running in profanOS*
 
 ### Author & Contact
 
@@ -216,7 +214,8 @@ Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 - [@spaskalev](https://github.com/spaskalev/buddy_alloc) for the buddy allocator
 - [osdev wiki](https://wiki.osdev.org/) for documentation made by the community
 - [ToaruOS](https://github.com/klange/toaruos) for the inspiration and the dynamic linking
-- [mintsuki](https://github.com/mintsuki/freestanding-headers) for freestanding headers
+- [BleskOS](https://github.com/VendelinSlezak/BleskOS) for the Intel HDA driver
+- [mintsuki](https://codeberg.org/OSDev/freestnd-c-hdrs-0bsd) for freestanding headers
 
 A huge thank you to all the [contributors](https://github.com/elydre/profanOS/graphs/contributors)
 and all the people who took the time to look at this project!

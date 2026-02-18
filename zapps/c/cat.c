@@ -11,7 +11,7 @@
 
 // @LINK: libpf
 
-#include <profan/filesys.h>
+#include <modules/filesys.h>
 #include <profan/carp.h>
 #include <profan.h>
 
@@ -20,10 +20,10 @@
 #include <ctype.h>
 #include <stdio.h>
 
-void cat_canonical(FILE *file, const char *path) {
+int cat_canonical(FILE *file, const char *path) {
     if (file == NULL) {
         fprintf(stderr, "cat: %s: %m\n", path);
-        return;
+        return 1;
     }
 
     char buffer[16];
@@ -52,12 +52,14 @@ void cat_canonical(FILE *file, const char *path) {
 
     if (file != stdin)
         fclose(file);
+
+    return 0;
 }
 
-void cat(FILE *file, const char *path, int end_of_line) {
+int cat(FILE *file, const char *path, int end_of_line) {
     if (file == NULL) {
         fprintf(stderr, "cat: %s: %m\n", path);
-        return;
+        return 1;
     }
 
     uint8_t buffer[1024];
@@ -86,7 +88,10 @@ void cat(FILE *file, const char *path, int end_of_line) {
         }
     }
 
-    fclose(file);
+    if (file != stdin)
+        fclose(file);
+
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -102,18 +107,19 @@ int main(int argc, char **argv) {
 
     const char **paths = carp_get_files();
     int cat_e = carp_isset('e');
+    int ret = 0;
 
     if (carp_isset('C')) {
         if (paths[0] == NULL)
-            cat_canonical(stdin, "stdin");
+            ret |= cat_canonical(stdin, "stdin");
         for (int i = 0; paths[i]; i++)
-            cat_canonical(fopen(paths[i], "r"), paths[i]);
+            ret |= cat_canonical(fopen(paths[i], "r"), paths[i]);
     } else {
         if (paths[0] == NULL)
-            cat(stdin, "stdin", cat_e);
+            ret |= cat(stdin, "stdin", cat_e);
         for (int i = 0; paths[i]; i++)
-            cat(fopen(paths[i], "r"), paths[i], cat_e);
+            ret |= cat(fopen(paths[i], "r"), paths[i], cat_e);
     }
 
-    return 0;
+    return ret;
 }

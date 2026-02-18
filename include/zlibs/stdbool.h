@@ -13,6 +13,9 @@
 #define _STDBOOL_H
 
 #ifndef __cplusplus
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
+    // These do not need to be defined for C23+
+#else
   #undef  bool
   #define bool _Bool
 
@@ -21,6 +24,7 @@
 
   #undef  false
   #define false 0
+#endif
 #endif
 
 #undef  __bool_true_false_are_defined

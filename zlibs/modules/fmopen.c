@@ -15,12 +15,11 @@
 #include <kernel/process.h>
 #include <kernel/afft.h>
 #include <minilib.h>
-
 #include <system.h>
 
-#include <errno.h>
-#include <fcntl.h>  // for flags
 #include <unistd.h> // for SEEK_SET, SEEK_CUR, SEEK_END
+#include <fcntl.h>  // for flags
+#include <errno.h>
 
 #define PIPE_MAX     256
 #define PIPE_MAX_REF 12
@@ -63,7 +62,7 @@ pipe_data_t *open_pipes;
 
 #define MAX_FD ((int)(0x1000 / sizeof(fd_data_t)))
 
-static fd_data_t *fm_fd_to_data(int fd) {
+static inline fd_data_t *fm_fd_to_data(int fd) {
     if (fd < 0 || fd >= MAX_FD)
         return NULL;
     return (fd_data_t *) (0xB0000000 + fd * sizeof(fd_data_t));
@@ -273,14 +272,19 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
     return fd;
 }
 
-int fm_read(int fd, void *buf, uint32_t size) {
+int fm_pread(int fd, void *buf, uint32_t size, int offset) {
+    int read_count, sync = 0;
     uint32_t tmp;
-    int read_count;
 
     fd_data_t *fd_data = fm_fd_to_data(fd);
 
     if (fd_data == NULL)
         return -EBADF;
+
+    if (offset < 0) {
+        offset = fd_data->offset;
+        sync = 1;
+    }
 
     switch (fd_data->type) {
         case TYPE_DIR:
@@ -288,15 +292,15 @@ int fm_read(int fd, void *buf, uint32_t size) {
 
         case TYPE_FILE:
             tmp = fs_cnt_get_size(fd_data->sid);
-            if (fd_data->offset > tmp)
+            if ((uint32_t) offset > tmp)
                 return -EINVAL;
-            if (fd_data->offset + size > tmp)
-                size = tmp - fd_data->offset;
-            read_count = fs_cnt_read(fd_data->sid, buf, fd_data->offset, size) ? -1 : (int) size;
+            if (offset + size > tmp)
+                size = tmp - offset;
+            read_count = fs_cnt_read(fd_data->sid, buf, offset, size) ? -1 : (int) size;
             break;
 
         case TYPE_AFFT:
-            read_count = afft_read(fd_data->afft_id, buf, fd_data->offset, size);
+            read_count = afft_read(fd_data->afft_id, buf, offset, size);
             if (read_count < 0)
                 return -EIO;
             break;
@@ -333,30 +337,37 @@ int fm_read(int fd, void *buf, uint32_t size) {
             return -EBADF;
     }
 
-    fd_data->offset += read_count;
+    if (sync)
+        fd_data->offset += read_count;
+
     return read_count;
 }
 
-int fm_write(int fd, void *buf, uint32_t size) {
-    int write_count;
+int fm_pwrite(int fd, void *buf, uint32_t size, int offset) {
+    int write_count, sync = 0;
 
     fd_data_t *fd_data = fm_fd_to_data(fd);
 
     if (fd_data == NULL)
         return -EBADF;
 
+    if (offset < 0) {
+        offset = fd_data->offset;
+        sync = 1;
+    }
+
     switch (fd_data->type) {
         case TYPE_DIR:
             return -EISDIR;
 
         case TYPE_FILE:
-            if (fd_data->offset + size > fs_cnt_get_size(fd_data->sid))
-                fs_cnt_set_size(fd_data->sid, fd_data->offset + size);
-            write_count = fs_cnt_write(fd_data->sid, buf, fd_data->offset, size) ? 0 : size;
+            if (offset + size > fs_cnt_get_size(fd_data->sid))
+                fs_cnt_set_size(fd_data->sid, offset + size);
+            write_count = fs_cnt_write(fd_data->sid, buf, offset, size) ? 0 : size;
             break;
 
         case TYPE_AFFT:
-            write_count = afft_write(fd_data->afft_id, buf, fd_data->offset, size);
+            write_count = afft_write(fd_data->afft_id, buf, offset, size);
             if (write_count < 0)
                 return -EIO;
             break;
@@ -383,7 +394,9 @@ int fm_write(int fd, void *buf, uint32_t size) {
             return -EBADF;
     }
 
-    fd_data->offset += write_count;
+    if (sync)
+        fd_data->offset += write_count;
+
     return write_count;
 }
 
@@ -635,3 +648,21 @@ int __init(void) {
         fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
     );
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    fm_close,
+    fm_reopen,
+    fm_pread,
+    fm_pwrite,
+    fm_lseek,
+    fm_dup2,
+    fm_dup,
+    fm_pipe,
+    fm_isafft,
+    fm_isfile,
+    fm_fcntl,
+    fm_get_sid,
+    fm_get_path,
+    fm_declare_child
+};

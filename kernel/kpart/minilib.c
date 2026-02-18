@@ -206,7 +206,7 @@ void status_print(int (*func)(), const char *msg) {
     old_cursor = cursor_get_offset();
     kcprint("WORK", 0x0E);
     kcprint("] ", 0x07);
-    kcprint(msg, 0x0F);
+    kcprint(msg, 0x07);
     kcprint("\n", 0x0F);
 
     status = func();
@@ -216,9 +216,7 @@ void status_print(int (*func)(), const char *msg) {
     if (status == 0) {
         kcprint(" OK ", 0x0A);
     } else if (status == 2) {
-        kcprint("PASS", 0x0E);
-    } else if (status == 3) {
-        kcprint("ENBL", 0x0B);
+        kcprint("SKIP", 0x07);
     } else {
         kcprint("FAIL", 0x0C);
     }
@@ -251,7 +249,7 @@ void kinput(char *buffer, int size) {
     sc = last_sc = 0;
     while (sc != ENTER) {
         process_sleep(process_get_pid(), SLEEP_T);
-        sc = kb_get_scfh();
+        sc = kb_get_scancode();
 
         if (sc == RESEND || sc == 0) {
             sc = last_sc_sgt;
