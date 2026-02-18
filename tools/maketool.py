@@ -463,15 +463,15 @@ def build_disk_elfs():
 
     mmf_build_list = [file for file in mmf_build_list if not (file1_newer(
             f"{OUT_DIR}/{file.replace('.c', '.o')}", file) and file1_newer(
-            f"{OUT_DIR}/zlibs/{file.split('/')[2]}.pkm", file))]
+            f"{OUT_DIR}/zlibs/{ZLIBS_MOD}/{file.split('/')[2]}.pkm", file))]
 
-    cprint(COLOR_INFO, f"| kernel mods: {len(mod_build_list)} / {total_mod}")
-    cprint(COLOR_INFO, f"| mfiles mods: {len(mmf_build_list)} / {total_mmf}")
-    cprint(COLOR_INFO, f"| shared libs: {len(lib_build_list)} / {total_lib}")
-    cprint(COLOR_INFO, f"| static libs: {len(stt_build_list)} / {total_stt}")
-    cprint(COLOR_INFO, f"| system bins: {len(bin_build_list)} / {total_bin}")
-    cprint(COLOR_INFO, f"| single elfs: {len(elf_build_list)} / {total_elf}")
-    cprint(COLOR_INFO, f"| multi files: {len(dir_build_list)} / {total_dir}")
+    cprint(COLOR_INFO, f"| single file pkm: {len(mod_build_list)} / {total_mod}")
+    cprint(COLOR_INFO, f"| multi file pkm:  {len(mmf_build_list)} / {total_mmf}")
+    cprint(COLOR_INFO, f"| shared lib:      {len(lib_build_list)} / {total_lib}")
+    cprint(COLOR_INFO, f"| static lib:      {len(stt_build_list)} / {total_stt}")
+    cprint(COLOR_INFO, f"| single file exe: {len(elf_build_list)} / {total_elf}")
+    cprint(COLOR_INFO, f"| multi file exe:  {len(dir_build_list)} / {total_dir}")
+    cprint(COLOR_INFO, f"| static exe:      {len(bin_build_list)} / {total_bin}")
 
     # create directories
     for file in elf_build_list + bin_build_list + lib_build_list + mod_build_list + dir_build_list + mmf_build_list:
