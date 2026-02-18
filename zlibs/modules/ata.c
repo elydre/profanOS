@@ -156,3 +156,8 @@ int __init(void) {
 
     return 0;
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    // no functions exported
+};

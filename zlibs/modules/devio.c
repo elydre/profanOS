@@ -207,3 +207,8 @@ int __init(void) {
         setup_afft("userial", dev_userial_r, dev_userial_w, NULL)
     );
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    // no functions exported
+};

@@ -69,7 +69,7 @@ int print_load_status(int i) {
 
     int error_code = syscall_mod_load(mod->path, mod->id);
 
-    if (error_code > 0) {
+    if (error_code >= 0) {
         syscall_kprint("\e[1A\e[37m[\e[92m OK \e[37m]\e[0m\n");
         return 0;
     } else if (error_code == -7) {

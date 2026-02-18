@@ -1243,3 +1243,16 @@ void hda_stop_sound() {
 uint32_t hda_get_stream_position() {
     return mmio_ind(g_hda.output_stream_base + 0x04);
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    hda_map_memory,
+    hda_is_headphone_connected,
+    hda_set_volume,
+    hda_check_headphone_connection_change,
+    hda_is_supported_channel_size,
+    hda_is_supported_sample_rate,
+    hda_play_pcm_data,
+    hda_stop_sound,
+    hda_get_stream_position
+};
