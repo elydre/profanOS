@@ -17,6 +17,6 @@ int supercool_function() {
 
 void *__profan_module_func[] = {
     (void *) 0xF3A3C4D4, // magic
+    (void *) sumit,
     (void *) supercool_function,
-    (void *) sumit
 };
