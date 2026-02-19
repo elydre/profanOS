@@ -156,7 +156,7 @@ void kfu_draw_tree(sid_t sid, int depth) {
 
 void kfu_dump_sector(sid_t sid) {
     uint8_t buf[SECTOR_SIZE];
-    if (vdisk_read(buf, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE)) {
+    if (interdisk_read(sid, buf, SECTOR_SIZE)) {
         kprintf_serial("failed to read sector d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
         return;
     }

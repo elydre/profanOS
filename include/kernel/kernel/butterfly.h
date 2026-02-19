@@ -49,6 +49,12 @@ int  vdisk_extend(uint32_t newsize);
 int  vdisk_write(void *data, uint32_t size, uint32_t offset);
 int  vdisk_read(void *buffer, uint32_t size, uint32_t offset);
 
+int interdisk_write(sid_t sid, void *data, uint32_t size);
+int interdisk_read(sid_t sid, void *buffer, uint32_t size);
+int interdisk_write_offset(sid_t sid, void *data, uint32_t size, uint32_t offset);
+int interdisk_read_offset(sid_t sid, void *buffer, uint32_t size, uint32_t offset);
+
+
 //////////////////// FS
 
 int filesys_init(void);

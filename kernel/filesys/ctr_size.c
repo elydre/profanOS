@@ -19,7 +19,7 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
 
     // check if sector is cnt locator
 
-    if (vdisk_read(local_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+    if (interdisk_read(loca_sid, local_data, SECTOR_SIZE)) {
         sys_error("failed to read d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
         return -1;
     }
@@ -65,7 +65,7 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
     // remove locator if empty
     if (to_shrink) {
         fs_sector_note_free(loca_sid);
-    } else if (vdisk_write(local_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+    } else if (interdisk_write(loca_sid, local_data, SECTOR_SIZE)) {
         sys_error("failed to write d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
         return -1;
     }
@@ -78,7 +78,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
 
     // jump to last locator
     do {
-        if (vdisk_read(local_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+        if (interdisk_read(loca_sid, local_data, SECTOR_SIZE)) {
             sys_warning("failed to read d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             return -1;
         }
@@ -126,7 +126,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
         }
     }
 
-    if (vdisk_write(local_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+    if (interdisk_write(loca_sid, local_data, SECTOR_SIZE)) {
         sys_error("failed to write d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
         return -1;
     }
@@ -135,7 +135,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
 }
 
 int fs_cnt_set_size(sid_t sid, uint32_t size) {
-    if (vdisk_read(sector_data, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+    if (interdisk_read(sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
         sys_warning("not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
@@ -165,7 +165,7 @@ int fs_cnt_set_size(sid_t sid, uint32_t size) {
 
     sector_data[1] = size;
 
-    if (vdisk_write(sector_data, SECTOR_SIZE, sid * SECTOR_SIZE)) {
+    if (interdisk_write(sid, sector_data, SECTOR_SIZE)) {
         sys_error("failed to write d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
@@ -174,7 +174,7 @@ int fs_cnt_set_size(sid_t sid, uint32_t size) {
 }
 
 uint32_t fs_cnt_get_size(sid_t sid) {
-    if (vdisk_read(sector_data, SECTOR_SIZE, sid * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+    if (interdisk_read(sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
         sys_warning("not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return UINT32_MAX;
     }

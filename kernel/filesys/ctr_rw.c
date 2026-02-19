@@ -13,16 +13,15 @@
 #include <minilib.h>
 #include <system.h>
 
-#define vdisk_rw(data, size, offset, is_read) \
-    (is_read ? vdisk_read(data, size, offset) : vdisk_write(data, size, offset))
+#define interdisk_rw_offset(sid, data, size, offset, is_read) \
+    (is_read ? interdisk_read_offset(sid, data, size, offset) : interdisk_write_offset(sid, data, size, offset))
 
 
 static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read) {
     sid_t loca_sid;
 
     // check if sector is cnt header
-
-    if (vdisk_read(sector_data, SECTOR_SIZE, SID_SECTOR(head_sid) * SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
+    if (interdisk_read(head_sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
         sys_warning("d%ds%d not cnt header", SID_DISK(head_sid), SID_SECTOR(head_sid));
         return 1;
     }
@@ -45,7 +44,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
 
     while (index < (int) size) {
         // load locator sector
-        if (vdisk_read(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
+        if (interdisk_read(loca_sid, sector_data, SECTOR_SIZE)) {
             sys_error("failed to read d%ds%d", SID_DISK(loca_sid), SID_SECTOR(loca_sid));
             return 1;
         }
@@ -70,10 +69,11 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
             uint32_t rwsize = min(size - index, SECTOR_SIZE * core_count);
 
             // read / write cores
-            if (vdisk_rw(
+            if (interdisk_rw_offset(
+                    core_sid,
                     buf + index,
                     rwsize,
-                    (core_sid * SECTOR_SIZE) + (index < 0 ? -index : 0),
+                    index < 0 ? -index : 0,
                     is_read
             )) {
                 sys_error("failed to %s core d%ds%d",
