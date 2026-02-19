@@ -53,16 +53,17 @@ _BEGIN_C_FILE
 
 float  acosf(float x);
 float  cosf(float x);
+float  sinf(float x);
+float  tanf(float x);
+float  powf(float x, float y);
+float  sqrtf(float x);
 float  fabsf(float x);
+float  truncf(float x);
+
 double floor(double x);
 double log10(double x);
-float  powf(float x, float y);
-float  sinf(float x);
 double sqrt(double x);
-float  sqrtf(float x);
-float  tanf(float x);
 double trunc(double x);
-float  truncf(float x);
 
 _END_C_FILE
 

@@ -92,7 +92,7 @@ static DIR *sidopendir(uint32_t dir_sid) {
 }
 
 DIR *opendir(const char *dirname) {
-    return sidopendir(fu_path_to_sid(SID_ROOT, dirname));
+    return sidopendir(profan_path_resolve(dirname));
 }
 
 DIR *fdopendir(int fd) {

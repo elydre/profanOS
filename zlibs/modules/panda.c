@@ -401,7 +401,7 @@ static int compute_ansi_escape(const char *str) {
                 g_panda->cursor_x++;
             else
                 g_panda->cursor_x += vals[0];
-            if (g_panda->cursor_x >= g_panda->max_cols) {
+            while (g_panda->cursor_x >= g_panda->max_cols) {
                 g_panda->cursor_x -= g_panda->max_cols;
                 g_panda->cursor_y++;
             }
@@ -415,7 +415,7 @@ static int compute_ansi_escape(const char *str) {
                 g_panda->cursor_x--;
             else
                 g_panda->cursor_x -= vals[0];
-            if (g_panda->cursor_x < 0) {
+            while (g_panda->cursor_x < 0) {
                 g_panda->cursor_x += g_panda->max_cols;
                 g_panda->cursor_y--;
             }
@@ -688,7 +688,7 @@ void panda_screen_restore(void *data) {
         draw_cursor(0);
 }
 
-void panda_screen_kfree(void *data) {
+void panda_screen_free(void *data) {
     panda_global_t *panda = (panda_global_t *) data;
     if (!panda)
         return;
@@ -779,3 +779,18 @@ int __init(void) {
 
     return (setup_afft("panda", dev_panda_w) || setup_afft("pander", dev_pander_w));
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    panda_print_char,
+    panda_print_raw,
+    panda_print_string,
+    panda_sync_start,
+    panda_get_size,
+    panda_get_cursor,
+    panda_draw_cursor,
+    panda_change_font,
+    panda_screen_backup,
+    panda_screen_restore,
+    panda_screen_free,
+};

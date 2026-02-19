@@ -62,7 +62,7 @@ int __init(void) {
     kb_map = NULL;
 
     if (profan_kb_load_map(DEFAULT_KB)) {
-        sys_warning("[profan module] failed to load default keymap\n");
+        sys_warning("[profan module] failed to load default keymap");
         return 1;
     }
 
@@ -373,7 +373,7 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
 
     // safety checks
     if (args->path == NULL) {
-        sys_warning("[run_ifexist] no path provided\n");
+        sys_warning("[run_ifexist] no path provided");
         return -1;
     }
 
@@ -382,7 +382,7 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
     if (SID_IS_NULL(deluge_sid)) {
         deluge_sid = kfu_path_to_sid(SID_ROOT, ELF_INTERP);
         if (SID_IS_NULL(deluge_sid)) {
-            sys_warning("[run_ifexist] elf interpreter not found: %s\n", ELF_INTERP);
+            sys_warning("[run_ifexist] elf interpreter not found: %s", ELF_INTERP);
             return -1;
         }
     }
@@ -398,7 +398,7 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
     }
 
     if (!kfu_is_file(sid)) {
-        sys_warning("[run_ifexist] path not found: %s\n", args->path);
+        sys_warning("[run_ifexist] path not found: %s", args->path);
         return -1;
     }
 
@@ -438,13 +438,13 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
             }
 
             if (interp == NULL) {
-                sys_warning("[run_ifexist] %s: no interpreter found, export '%s' to set one\n", args->path, ENV_INTERP);
+                sys_warning("[run_ifexist] %s: no interpreter found, export '%s' to set one", args->path, ENV_INTERP);
                 return -1;
             }
         }
 
         if (interp == NULL || inter_offset == 0) {
-            sys_warning("[run_ifexist] %s: invalid shebang\n", args->path);
+            sys_warning("[run_ifexist] %s: invalid shebang", args->path);
             return -1;
         }
         sid = deluge_sid;
@@ -463,7 +463,7 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
         );
 
         if (pid == -1) {
-            sys_warning("[run_ifexist] failed to create process for %s\n", args->path);
+            sys_warning("[run_ifexist] failed to create process for %s", args->path);
             return -1;
         }
 
@@ -551,3 +551,11 @@ int run_ifexist(runtime_args_t *args, int *pid_ptr) {
 
     return ret;
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    profan_kb_load_map,
+    profan_kb_get_char,
+    profan_input_keyboard,
+    run_ifexist
+};

@@ -12,7 +12,7 @@ FUNC assert
 
     IF !0
         print '[  OK  ] !1\n'
-    END; ELSE
+    ELSE
         print '[ FAIL ] !1\n'
     END
 END
@@ -25,7 +25,7 @@ FUNC assert_reverse
 
     IF !0
         print '[ FAIL ] !1\n'
-    END; ELSE
+    ELSE
         print '[  OK  ] !1\n'
     END
 END
@@ -38,13 +38,11 @@ del -f assert_reverse
 // ----- IF + ELSE ------------------------------------------------------------
 
 IF 0
-    print '[ FAIL ] if + else\n'
-END; ELSE
-    IF 1
-        print '[  OK  ] if + else\n'
-    END; ELSE
-        print '[ FAIL ] if + else\n'
-    END
+    print '[ FAIL ] if + elif + else\n'
+ELIF 1
+    print '[  OK  ] if + elif + else\n'
+ELSE
+    print '[ FAIL ] if + elif + else\n'
 END
 
 // ----- EVAL -----------------------------------------------------------------
@@ -52,49 +50,35 @@ END
 FUNC deepeval
     IF !(eval 43 ~ 43)
         print '[ FAIL ] eval (simple equality)\n'
-        RETURN
-    END; IF !(eval 42 + 1 ~ 43)
+    ELIF !(eval 42 + 1 ~ 43)
         print '[ FAIL ] eval (addition, equality)\n'
-        RETURN
-    END; IF !(eval 1 + 32 x 2 ~ 65)
+    ELIF !(eval 1 + 32 x 2 ~ 65)
         print '[ FAIL ] eval (simple priority)\n'
-        RETURN
-    END; IF !(eval 1 + ( 31 + 1 ) x 2 ~ 66 - 1)
+    ELIF !(eval 1 + ( 31 + 1 ) x 2 ~ 66 - 1)
         print '[ FAIL ] eval (complex priority)\n'
-        RETURN
-    END; IF !(eval 30 % 8 ~ 36 / 6)
+    ELIF !(eval 30 % 8 ~ 36 / 6)
         print '[ FAIL ] eval (division, modulo)\n'
-        RETURN
-    END; IF !(eval "ab" + "cd" ~ "abcd")
+    ELIF !(eval "ab" + "cd" ~ "abcd")
         print '[ FAIL ] eval (str + str)\n'
-        RETURN
-    END; IF !(eval "ab" + "cd" ~ "abcd")
+    ELIF !(eval "ab" + "cd" ~ "abcd")
         print '[ FAIL ] eval (str . str)\n'
-        RETURN
-    END; IF !(eval "hello" ~ "hello")
+    ELIF !(eval "hello" ~ "hello")
         print '[ FAIL ] eval (str ~ str)\n'
-        RETURN
-    END; IF !(eval ( "hello" = "hello" ) ~ 1)
+    ELIF !(eval ( "hello" = "hello" ) ~ 1)
         print '[ FAIL ] eval (str ~ str)\n'
-        RETURN
-    END; IF !(eval "hello" > 2 ~ "llo")
+    ELIF !(eval "hello" > 2 ~ "llo")
         print '[ FAIL ] eval (str > int)\n'
-        RETURN
-    END; IF !(eval "hello" < 2 ~ "hel")
+    ELIF !(eval "hello" < 2 ~ "hel")
         print '[ FAIL ] eval (int < str)\n'
-        RETURN
-    END; IF !(eval 0x42 ~ 66)
+    ELIF !(eval 0x42 ~ 66)
         print '[ FAIL ] eval (hex)\n'
-        RETURN
-    END; IF !(eval 0b101010 ~ 42)
+    ELIF !(eval 0b101010 ~ 42)
         print '[ FAIL ] eval (bin)\n'
-        RETURN
-    END; IF !(eval "coucou" @ 2 ~ "u")
+    ELIF !(eval "coucou" @ 2 ~ "u")
         print '[ FAIL ] eval (char at index)\n'
-        RETURN
-    END;
-
-    print '[  OK  ] all eval tests\n'
+    ELSE
+        print '[  OK  ] all eval tests\n'
+    END
 END
 
 deepeval
@@ -107,6 +91,18 @@ set var 43
 assert !(eval !var = 43) 'basic variable'
 
 del var
+
+// ----- DOC-STRING -----------------------------------------------------------
+
+set docstring '''
+hello
+
+world
+!
+'''
+
+assert !(eval "'!docstring'" = "'hello world \!'") 'doc string'
+
 
 // ----- FOR LOOP -------------------------------------------------------------
 
@@ -228,9 +224,9 @@ del -f testargc
 FUNC testargv
     IF !#
         RETURN !(eval !0 x 2 + !1)
-    END; ELSE
+    ELSE
         RETURN 0
-    END;
+    END
 END
 
 assert !(eval !(testargv 21 5) = 47) 'function argv'
@@ -300,18 +296,15 @@ END
 FUNC pp_tester
     IF !(eval "!(print coucou |)" ~ "coucou")
         print '[ FAIL ] pipe (print)\n'
-        RETURN
-    END; IF !(eval "!(echo coucou |)" ~ "coucou")
-        echo [ FAIL ] pipe (echo)
-        RETURN
-    END; IF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
+    ELIF !(eval "!(echo coucou |)" ~ "coucou")
+        print '[ FAIL ] pipe (echo)\n'
+    ELIF !(eval !(print 'abc def yes' | wc -w |) ~ 3)
         print '[ FAIL ] pipe (print + wc)\n'
-        RETURN
-    END; IF !(eval "!(temp | temp |)" ~ "test")
+    ELIF !(eval "!(temp | temp |)" ~ "test")
         print '[ FAIL ] pipe (function)\n'
-        RETURN
+    ELSE
+        print '[  OK  ] pipe processor\n'
     END
-    print '[  OK  ] pipe processor\n'
 END
 
 pp_tester

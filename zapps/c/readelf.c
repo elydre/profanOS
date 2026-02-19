@@ -147,13 +147,8 @@ int main(int argc, char **argv) {
 
     // now invoke each procedure in proc array
     for (uint32_t i = 0; i < PROC_COUNT; i++) {
-        if (procs[i] == NULL)
-            continue;
-
-        if (procs[i]() == 1) {
-            fprintf(stderr, "readelf: %s: failed to process file\n", g_filename);
+        if (procs[i] && procs[i]())
             break;
-        }
     }
     free(g_filecnt);
 

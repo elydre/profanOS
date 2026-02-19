@@ -74,19 +74,17 @@ FUNC bf_set_me
 
     IF !(eval !pos = 0)
         set new !(nb_to_hex !(eval !1 / 16))
-    END; ELSE
+    ELSE
         set new 0
     END
 
     FOR i !(range 1 !(eval !bf_mem_len x 2))
         IF !(eval !i = !pos)
             set new !(eval "!new" + "!(nb_to_hex !(eval !1 / 16))")
-        END; ELSE
-            IF !(eval !i = !pos + 1)
-                set new !(eval "!new" + "!(nb_to_hex !(eval !1 % 16))")
-            END; ELSE
-                set new !(eval "!new" + "!(eval "!bf_mem" @ !i)")
-            END
+        ELIF !(eval !i = !pos + 1)
+            set new !(eval "!new" + "!(nb_to_hex !(eval !1 % 16))")
+        ELSE
+            set new !(eval "!new" + "!(eval "!bf_mem" @ !i)")
         END
     END
 
@@ -169,7 +167,7 @@ FUNC bf_execute
                     set ++ index
                     set c !(eval "!0" @ !index)
                 END
-            END;
+            END
 
             set ++ index
             CONTINUE
@@ -183,7 +181,7 @@ FUNC bf_execute
                     set c !(eval "!0" @ !index)
                 END
                 set ++ index
-            END; ELSE
+            ELSE
                 set ++ index
             END
             CONTINUE

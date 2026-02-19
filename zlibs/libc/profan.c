@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <stdio.h>
+#include <paths.h>
 
 #include "config_libc.h"
 
@@ -229,15 +230,12 @@ char *profan_path_path(const char *exec, int allow_path) {
         return NULL;
     }
 
-    char *dir, *path = strdup(getenv("PATH")); // OK with NULL
+    char *dir, *path = strdup(getenv("PATH"));
 
-    if (path)
-        dir = strtok(path, ":");
+    if (path == NULL)
+        path = strdup(_PATH_DEFPATH);
 
-    else if ((dir = path = getcwd(NULL, 0)) == NULL) {
-        errno = ENOENT;
-        return NULL;
-    }
+    dir = strtok(path, ":");
 
     while (dir != NULL) {
         uint32_t size, dir_sid = profan_path_resolve(dir);

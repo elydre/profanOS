@@ -193,7 +193,7 @@ void update_flags(int argc, char **argv) {
     carp_register('f', CARP_STANDARD, "print all the file lines");
     carp_register('h', CARP_STANDARD, "display this help message");
     carp_register('H', CARP_STANDARD, "print the file name");
-    carp_register('i', CARP_STANDARD, "Ignore case in patterns");
+    carp_register('i', CARP_STANDARD, "ignore case in patterns");
     carp_register('n', CARP_STANDARD, "print line numbers");
     carp_register('r', CARP_STANDARD, "search recursively");
     carp_register('z', CARP_STANDARD, "force no file name display");
@@ -240,6 +240,12 @@ int main(int argc, char **argv) {
         grep_file = grep_file_noctx;
 
     const char **args = carp_get_files();
+
+    if (*args[0] == '\0') {
+        fprintf(stderr, "grep: empty search pattern\n");
+        carp_show_info();
+        return 1;
+    }
 
     if (args[1] == NULL) {
         grep_file("stdin", stdin, args[0]);

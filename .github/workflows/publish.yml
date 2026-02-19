@@ -30,9 +30,7 @@ jobs:
         cp initrd.bin disk-$VERSION.bin
         cp profanOS.iso profanOS-$VERSION.iso
         cp kernel.elf profanOS-kernel.elf
-        make miso
         mv initrd.bin profanOS-initrd.bin
-        mv profanOS.iso profanOS-fullgrub.iso
         rm -Rf out/ && make elf disk && sh tools/limine.sh
         mv profanOS.iso profanOS-lite.iso
         cp profanOS-$VERSION.iso profanOS.iso
@@ -46,7 +44,6 @@ jobs:
         prerelease: false
         files: |
           profanOS.iso
-          profanOS-fullgrub.iso
           profanOS-lite.iso
           profanOS-kernel.elf
           profanOS-initrd.bin

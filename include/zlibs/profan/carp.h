@@ -31,7 +31,10 @@ int carp_register(char c, int flag, const char *desc);
 int carp_conflict(const char *conflict);
 int carp_parse(int argc, char **argv);
 
-void carp_print_help(void);
+void carp_show_help(void);      // full help (stdout)
+void carp_show_usage(void);     // usage + info (stderr)
+void carp_show_info(void);      // info only (try -h in stderr)
+void carp_show_version(void);   // version only (stdout)
 
 int          carp_isset(char c);
 const char  *carp_get_str(char c);

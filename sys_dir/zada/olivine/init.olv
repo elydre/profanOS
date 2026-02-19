@@ -18,22 +18,22 @@ END
 
 FUNC name
     IF !(eval !# ~ 1)
-        print 'Usage: name <path>\n'
+        raise name 'Usage: name <path>'
         RETURN
     END
     set n !(split '!0' / -1)
-    FOR i !(range !(eval !(strlen !n) - 1) 0)
-        IF !(eval "!n" @ !i = ".")
-            RETURN !(split !n '' 0:!i)
+    FOR i !(range !(eval !(strlen '!n') - 1) 0)
+        IF !(eval "'!n'" @ !i = ".")
+            RETURN '!(split '!n' '' 0:!i)'
         END
     END
-    RETURN !n
+    RETURN '!n'
 END
 
 FUNC dirsize
     IF !(eval !# = 0)
         set 0 !path
-        set ++ #
+        set # 1
     END
 
     FOR e !(range !#)
@@ -45,17 +45,17 @@ FUNC dirsize
 
         IF !(eval !size > 10000000)
             print '!!e !(eval !size / 1000000) MB\n'
-        END; ELSE; IF !(eval !size > 10000)
+        ELIF !(eval !size > 10000)
             print '!!e !(eval !size / 1000) kB\n'
-        END; ELSE
+        ELSE
             print '!!e !size B\n'
-        END; END
+        END
     END
 END
 
 FUNC time
     IF !(eval !# = 0)
-        print 'Usage: time <command> [arg1] [arg2] ...\n'
+        raise time 'Usage: time <command> [arg1] [arg2] ...'
         RETURN
     END
 

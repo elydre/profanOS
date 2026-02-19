@@ -663,3 +663,24 @@ uint32_t fu_path_to_sid(uint32_t from, const char *path) {
 
     return ret;
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    fu_is_dir,
+    fu_dir_get_size,
+    fu_dir_get_elm,
+    fu_dir_get_content,
+    fu_add_to_dir,
+    fu_remove_from_dir,
+    fu_dir_create,
+    fu_is_file,
+    fu_file_set_size,
+    fu_file_get_size,
+    fu_file_create,
+    fu_file_read,
+    fu_file_write,
+    fu_is_afft,
+    fu_afft_create,
+    fu_afft_get_id,
+    fu_path_to_sid,
+};

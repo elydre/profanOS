@@ -648,3 +648,21 @@ int __init(void) {
         fm_reopen(2, "/dev/kterm", O_WRONLY) < 0
     );
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    fm_close,
+    fm_reopen,
+    fm_pread,
+    fm_pwrite,
+    fm_lseek,
+    fm_dup2,
+    fm_dup,
+    fm_pipe,
+    fm_isafft,
+    fm_isfile,
+    fm_fcntl,
+    fm_get_sid,
+    fm_get_path,
+    fm_declare_child
+};
