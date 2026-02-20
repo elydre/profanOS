@@ -1,21 +1,20 @@
-#ifndef SOCKET_H
-#define SOCKET_H
+#ifndef SOCKET_MOD_H
+#define SOCKET_MOD_H
 
 #include <sys/socket.h>
-#include "tcp.h"
+#include <modules/filesys.h>
+#include <net.h>
+#include <kernel/process.h>
+#include <minilib.h>
 
 typedef struct {
 	uint32_t type; // domain | type << 8 | protcol << 16
-	union {
-		tcp_state_t *tcp;
-		void *data;
-	};
+	void *data;
 	int parent_pid;
 	int ref_count;
 	int fd;
 } socket_t;
 
-#define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16 ))
 
 
 extern socket_t *sockets;
@@ -26,5 +25,35 @@ int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+
+void tick(int len, uint8_t *packet);
+
+// TODO fix this with a include fmopen (pf4 cant make complete headers)
+enum {
+    TYPE_FREE = 0,
+    TYPE_FILE,
+    TYPE_AFFT,
+    TYPE_DIR,
+    TYPE_PPRD, // read pipe
+    TYPE_PPWR, // write pipe
+    TYPE_SOCK
+};
+
+typedef struct {
+    uint8_t type;
+    uint32_t sid;
+    int flags;
+
+    uint32_t offset;  // file and afft
+
+    union {
+        int          afft_id; // afft
+        struct pipe_data_t *pipe;    // pipe
+        char        *path;    // dir (for fchdir)
+        int          sock_id; // socket
+    };
+} fd_data_t;
+
+fd_data_t *fm_get_free_fd(int *fd);
 
 #endif

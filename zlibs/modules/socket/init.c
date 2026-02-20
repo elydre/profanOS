@@ -17,7 +17,10 @@ static void socket_process() {
 		if (packet_len < 0)
 			packet_len = 0;
 
-		tick(packet_len, pack);
+		if (packet_len)
+			tick(packet_len, packet);
+		else
+			tick(0, NULL);
 		if (!packet)
 			process_sleep(process_get_pid(), 1);
 	}

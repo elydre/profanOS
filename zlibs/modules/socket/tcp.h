@@ -1,6 +1,10 @@
 #ifndef TCP_H
 #define TCP_H
 
+#include "socket.h"
+
+#define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16 ))
+
 enum {
 	TCP_SATE_CLOSED,
     TCP_SATE_LISTEN,
@@ -36,10 +40,12 @@ typedef struct {
 		uint8_t wait_seq;
 		uint32_t seq_to_wait;
 	} send;
-} mlw_tcp_t;
+} tcp_state_t;
 
 
 #define CLT_PORT_START 32768
 #define CLT_PORT_END 60999
+
+int socket_init_tcp(socket_t *sock);
 
 #endif

@@ -1,4 +1,5 @@
 #include "socket.h"
+#include "tcp.h"
 #include <errno.h>
 
 socket_t *sockets = NULL;
@@ -8,14 +9,14 @@ uint32_t supported[] = {
 	SOCKET_TCP,
 };
 
-int (*supported_init[])(socket_t *socket) {
+int (*supported_init[])(socket_t *socket) = {
 	socket_init_tcp,
 };
 
 
-int socket_socket(int domain, int type, int protocol) {
-	uint32_t type = domain | (type << 8) | (protocol << 16);
-	int i = 0;
+int socket_socket(int domain, int type_, int protocol) {
+	uint32_t type = domain | (type_ << 8) | (protocol << 16);
+	unsigned int i = 0;
 	int res = -EINVAL;
 	while (i < sizeof(supported) / sizeof(supported[0])) {
 		if (type != supported[i]) {

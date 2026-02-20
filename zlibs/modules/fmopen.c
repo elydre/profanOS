@@ -70,7 +70,7 @@ static inline fd_data_t *fm_fd_to_data(int fd) {
     return (fd_data_t *) (0xB0000000 + fd * sizeof(fd_data_t));
 }
 
-static fd_data_t *fm_get_free_fd(int *fd) {
+fd_data_t *fm_get_free_fd(int *fd) {
     for (int i = 0; i < MAX_FD; i++) {
         fd_data_t *fd_data = fm_fd_to_data(i);
         if (fd_data->type == TYPE_FREE) {

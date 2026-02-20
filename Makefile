@@ -14,8 +14,7 @@
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
 
-all: disk iso
-	qemu-system-i386 -nographic -hda profanOS.iso -netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat
+all: disk iso nrun
 
 # list off available commands
 help:
