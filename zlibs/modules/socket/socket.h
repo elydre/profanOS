@@ -5,7 +5,7 @@
 #include "tcp.h"
 
 typedef struct {
-	int type[3];
+	uint32_t type; // domain | type << 8 | protcol << 16
 	union {
 		tcp_state_t *tcp;
 		void *data;
@@ -14,6 +14,9 @@ typedef struct {
 	int ref_count;
 	int fd;
 } socket_t;
+
+#define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16 ))
+
 
 extern socket_t *sockets;
 extern int sockets_len;
