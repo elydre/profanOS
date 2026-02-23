@@ -1,4 +1,6 @@
 #include "udp.h"
+#include <sys/socket.h>
+#include <errno.h>
 #include "ip.h"
 
 int socket_init_udp(socket_t *sock) {
@@ -142,4 +144,62 @@ void socket_udp_tick(socket_t *sock) {
 	packet[12] = 0x08;
 	packet[13] = 0x00;
 	eth_send(packet, 6 + 6 + 2 + 20 + 8 + info->send[info->send_len].len);
+}
+
+int socket_udp_port_is_free(uint16_t port) {
+	for (int i = 0; i < sockets_len; i++) {
+		if (sockets[i].type != SOCKET_UDP)
+			continue;
+		udp_t *udp = sockets[i].data;
+		if (udp->local_port == port)
+			return 1;
+	}
+	return 0;
+}
+
+uint16_t socket_udp_get_free_port() {
+	uint16_t res = CLT_PORT_START;
+	while (res <= CLT_PORT_END) {
+		if (!socket_udp_port_is_free(res))
+			res++;
+		return res;
+	}
+	return 0;
+}
+
+int socket_udp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen) {
+	udp_t *data = sock->data;
+	if (addrlen != sizeof(struct sockaddr_in))
+		return -EINVAL;
+	if (data->is_bound)
+		return -EINVAL;
+	const struct sockaddr_in *addr2 = (void *)addr;
+	if (addr2->sin_family != AF_INET)
+		return -EINVAL;
+	uint16_t port = addr2->sin_port;
+	if (!socket_udp_port_is_free(port))
+		return -EADDRINUSE;
+	if (addr2->sin_port == 0)
+		port = socket_udp_get_free_port();
+	if (port == 0)
+		return -ENOMEM;
+	data->local_ip = addr2->sin_addr.s_addr;
+	data->local_port = port;
+	data->is_bound = 1;
+	return 0;
+}
+
+int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen) {
+	udp_t *data = sock->data;
+	if (addrlen != sizeof(struct sockaddr_in))
+		return -EINVAL;
+	if (data->is_connected)
+		return -EINVAL;
+	const struct sockaddr_in *addr2 = (void *)addr;
+	if (addr2->sin_family != AF_INET)
+		return -EINVAL;
+	uint16_t port = addr2->sin_port;
+	if (port == 0)
+		return -EINVAL;
+	int err = socket_udp_bind(sock, 
 }

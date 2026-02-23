@@ -43,8 +43,6 @@ typedef struct {
 } tcp_state_t;
 
 
-#define CLT_PORT_START 32768
-#define CLT_PORT_END 60999
 
 int socket_init_tcp(socket_t *sock);
 

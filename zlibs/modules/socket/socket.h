@@ -16,7 +16,8 @@ typedef struct {
 	int fd;
 } socket_t;
 
-
+#define CLT_PORT_START 32768
+#define CLT_PORT_END 60999
 
 extern socket_t *sockets;
 extern int sockets_len;

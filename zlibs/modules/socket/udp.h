@@ -40,5 +40,7 @@ int socket_init_udp(socket_t *sock);
 void socket_on_recv_udp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len);
 
 void socket_udp_tick(socket_t *sock);
+int socket_udp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen);
+int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen);
 
 #endif
