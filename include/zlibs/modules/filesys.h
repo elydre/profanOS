@@ -157,6 +157,7 @@ int fm_declare_child(int fd);
 #define fm_get_sid ((uint32_t (*)(int)) get_func_addr(FMOPEN_LIB_ID, 12))
 #define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
 #define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
+#define fm_get_free_fd ((void *(*)(int *)) get_func_addr(FMOPEN_LIB_ID, 15))
 
 #endif // _KERNEL_MODULE
 

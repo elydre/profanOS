@@ -1,4 +1,5 @@
 #include "socket.h"
+#include "udp.h"
 
 static void socket_process() {
 
@@ -7,6 +8,8 @@ static void socket_process() {
 	int alloc_len = 0xFFFF;
 	while (1) {
 		int packet_len = eth_is_ready(eth_id);
+		if (packet_len >= 0)
+			kprintf_serial("packet recv %d\n", packet_len);
 		if (packet_len > alloc_len) {
 			free(packet);
 			alloc_len = packet_len;
@@ -18,9 +21,9 @@ static void socket_process() {
 			packet_len = 0;
 
 		if (packet_len)
-			tick(packet_len, packet);
+			socket_tick(packet_len, packet);
 		else
-			tick(0, NULL);
+			socket_tick(0, NULL);
 		if (!packet)
 			process_sleep(process_get_pid(), 1);
 	}

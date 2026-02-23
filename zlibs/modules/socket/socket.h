@@ -2,6 +2,7 @@
 #define SOCKET_MOD_H
 
 #include <sys/socket.h>
+#include <system.h>
 #include <modules/filesys.h>
 #include <net.h>
 #include <kernel/process.h>
@@ -26,7 +27,7 @@ int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
-void tick(int len, uint8_t *packet);
+void socket_tick(int len, uint8_t *packet);
 
 // TODO fix this with a include fmopen (pf4 cant make complete headers)
 enum {
@@ -53,7 +54,5 @@ typedef struct {
         int          sock_id; // socket
     };
 } fd_data_t;
-
-fd_data_t *fm_get_free_fd(int *fd);
 
 #endif
