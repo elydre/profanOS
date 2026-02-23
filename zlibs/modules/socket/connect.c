@@ -1,4 +1,5 @@
-#include "socket.h"
+#include <modules/socket.h>
+#include <errno.h>
 #include "udp.h"
 
 int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
@@ -6,7 +7,7 @@ int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 	for (int i = 0; i < sockets_len; i++) {
 		if (sockets[i].fd == sockfd) {
 			sock = &sockets[i];
-			break
+			break;
 		}
 	}
 	if (!sock)

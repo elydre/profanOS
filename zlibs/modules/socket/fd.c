@@ -1,4 +1,4 @@
-#include "socket.h"
+#include <modules/socket.h>
 #include "tcp.h"
 #include "udp.h"
 #include <errno.h>
@@ -18,6 +18,7 @@ int (*supported_init[])(socket_t *socket) = {
 
 
 int socket_socket(int domain, int type_, int protocol) {
+	kprintf_serial("socket socket %d %d %d\n", domain, type_, protocol);
 	uint32_t type = domain | (type_ << 8) | (protocol << 16);
 	unsigned int i = 0;
 	int res = -EINVAL;

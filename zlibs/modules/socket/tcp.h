@@ -1,7 +1,7 @@
 #ifndef TCP_H
 #define TCP_H
 
-#include "socket.h"
+#include <modules/socket.h>
 
 #define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16 ))
 

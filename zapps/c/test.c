@@ -8308,8 +8308,50 @@
 //     // 	}
 // 	// }
 // // */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h> // pour close()
 
-int main()
-{
-	return 0;
+int main() {
+    int sockfd;
+    struct sockaddr_in serv_addr;
+
+    // 1️⃣ Créer le socket UDP
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    // 2️⃣ Préparer l'adresse distante
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+
+    // Port 53 (DNS), en network byte order
+    serv_addr.sin_port = htons(53);
+
+    // Adresse IP 8.8.8.8 sous forme binaire (big endian)
+    // 8.8.8.8 = 0x08080808
+    serv_addr.sin_addr.s_addr = htonl(0x08080808);
+
+    // 3️⃣ Connecter le socket UDP
+    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("connect");
+        close(sockfd);
+        return 1;
+    }
+
+    // 4️⃣ Affichage simplifié
+    printf("UDP socket connecté à IP 0x%08X, port %d (network byte order)\n",
+           ntohl(serv_addr.sin_addr.s_addr), ntohs(serv_addr.sin_port));
+
+    // 5️⃣ Fermer le socket
+    close(sockfd);
+    return 0;
 }

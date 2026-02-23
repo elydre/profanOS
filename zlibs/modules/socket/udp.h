@@ -1,7 +1,7 @@
 #ifndef UDP_H
 #define UDP_H
 
-#include "socket.h"
+#include <modules/socket.h>
 
 #define SOCKET_UDP (AF_INET | (SOCK_DGRAM << 8) | (0 << 16 ))
 

@@ -2,6 +2,7 @@
 #define SOCKET_H
 
 #include <stdint.h>
+#include <unistd.h>
 
 #define AF_UNIX     1
 #define AF_LOCAL    1
@@ -28,14 +29,11 @@ struct sockaddr {
 	char sa_data[14];
 };
 
-struct in_addr {
-	in_addr_t s_addr;
-};
 
-struct sockaddr_in {
-	sa_family_t sin_family;
-	in_port_t sin_port;
-	struct in_addr sin_addr;
-};
+#define INADDR_ANY 0
+
+int socket(int domain, int type, int protocol);
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
 #endif

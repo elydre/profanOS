@@ -45,9 +45,21 @@ void socket_on_recv_udp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 	kprintf_serial("packet received si %x di %x sp %d dp %d\n", packet.src_ip, packet.dest_ip, packet.src_port, packet.dest_port);
 }
 
-static uint16_t ntohs(uint16_t x) {
+uint16_t ntohs(uint16_t x) {
 	return (x >> 8) | (x << 8);
 }
+
+uint32_t ntohl(uint32_t x) {
+	uint32_t res = x >> 24;
+
+	res |= ((x >> 16) & 0xff) << 8;
+	res |= ((x >> 8) & 0xff) << 16;
+	res |= (x & 0xff) << 24;
+	return res;
+}
+
+#define htons ntohs
+#define htonl ntohl
 
 static uint16_t udp_checksum(void *data, int len, uint32_t src_ip, uint32_t dest_ip) {
 	uint8_t *udp_data = (uint8_t *)data;
@@ -83,10 +95,10 @@ static uint16_t udp_checksum(void *data, int len, uint32_t src_ip, uint32_t dest
 #define UDP_OFFSET (IP_OFFSET + 20)
 
 static void fill_udp(uint8_t *buffer, udp_packet_t *packet) {
-	buffer[0] = packet->src_port >> 8;
-	buffer[1] = packet->src_port & 0xff;
-	buffer[2] = packet->dest_port >> 8;
-	buffer[3] = packet->dest_port & 0xff;
+	buffer[0] = packet->src_port & 0xff;
+	buffer[1] = packet->src_port >> 8;
+	buffer[2] = packet->dest_port & 0xff;
+	buffer[3] = packet->dest_port >> 8;
 
 	int len = packet->len + 8;
 	buffer[4] = len >> 8;
@@ -177,9 +189,9 @@ int socket_udp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrl
 	if (addr2->sin_family != AF_INET)
 		return -EINVAL;
 	uint16_t port = addr2->sin_port;
-	if (!socket_udp_port_is_free(port))
+	if (port && !socket_udp_port_is_free(port))
 		return -EADDRINUSE;
-	if (addr2->sin_port == 0)
+	if (port == 0)
 		port = socket_udp_get_free_port();
 	if (port == 0)
 		return -ENOMEM;
@@ -193,13 +205,24 @@ int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
 	udp_t *data = sock->data;
 	if (addrlen != sizeof(struct sockaddr_in))
 		return -EINVAL;
-	if (data->is_connected)
-		return -EINVAL;
 	const struct sockaddr_in *addr2 = (void *)addr;
 	if (addr2->sin_family != AF_INET)
 		return -EINVAL;
 	uint16_t port = addr2->sin_port;
 	if (port == 0)
 		return -EINVAL;
-	int err = socket_udp_bind(sock, 
+	if (!data->is_bound) {
+		struct sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		addr.sin_port = 0;
+		
+		int err = socket_udp_bind(sock, (void *)&addr, sizeof(addr));
+		if (err)
+			return err;
+	}
+	data->is_connected = 1;
+	data->remote_port = port;
+	data->remote_ip = addr2->sin_addr.s_addr;
+	return 0;
 }
