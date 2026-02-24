@@ -33,6 +33,7 @@ int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
 void socket_tick(int len, uint8_t *packet);
+socket_t *socket_find_fd(int fd);
 
 // TODO fix this with a include fmopen (pf4 cant make complete headers)
 enum {

@@ -50,3 +50,11 @@ int socket_socket(int domain, int type_, int protocol) {
 	}
 	return res;
 }
+
+socket_t *socket_find_fd(int fd) {
+	for (int i = 0; i < sockets_len; i++) {
+		if (sockets[i].fd == fd)
+			return &sockets[i];
+	}
+	return NULL;
+}

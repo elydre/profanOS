@@ -226,3 +226,23 @@ int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
 	data->remote_ip = addr2->sin_addr.s_addr;
 	return 0;
 }
+
+ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint32_t dip, uint16_t dport) {
+	udp_t *data = sock->data;
+	if (len > 1450)
+		return -EMSGSIZE;
+	if (data->send_len == 64)
+		return -ENOMEM;
+	if (dip == 0)
+		dip = data->remote_ip;
+	if (dport)
+		dport = data->remote_port;
+	udp_packet_t *pakcet = data->send[data->send_len++];
+	pakcet->src_ip = data->local_ip; // if 0 choose with eth_info
+	return len;
+}
+
+ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
+	if (!dest_addr && addrlen == 0)
+		return socket_udp_send(sock, buf, len, 0, 0);
+}

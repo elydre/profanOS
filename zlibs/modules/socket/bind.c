@@ -3,13 +3,7 @@
 #include "udp.h"
 
 int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
-	socket_t *sock = NULL;
-	for (int i = 0; i < sockets_len; i++) {
-		if (sockets[i].fd == sockfd) {
-			sock = &sockets[i];
-			break;
-		}
-	}
+	socket_t *sock = socket_find_fd(sockfd);
 	if (!sock)
 		return -ENOTSOCK;
 	switch (sock->type) {
