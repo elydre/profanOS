@@ -87,7 +87,6 @@ static uint16_t udp_checksum(void *data, int len, uint32_t src_ip, uint32_t dest
 	}
 	sum = (sum & 0xFFFF) + (sum >> 16);
 	sum += (sum >> 16);
-	kprintf("%x checksum\n", ~sum);
 	return ~sum;
 }
 
@@ -175,7 +174,7 @@ uint16_t socket_udp_get_free_port() {
 	while (res <= CLT_PORT_END) {
 		if (!socket_udp_port_is_free(res))
 			res++;
-		return res;
+		return htons(res);
 	}
 	return 0;
 }
@@ -234,10 +233,6 @@ ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint3
 		return -EMSGSIZE;
 	if (data->send_len == 64)
 		return -ENOMEM;
-	if (dip == 0)
-		dip = data->remote_ip;
-	if (dport)
-		dport = data->remote_port;
 	udp_packet_t *packet = &data->send[data->send_len];
 	if (dip == 0) {
 		if (!data->is_connected)
@@ -269,8 +264,7 @@ ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint3
 }
 
 ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
-	kprintf_serial("%d %x %d %d %x %d\n", sock, buf, len, flags, dest_addr, addrlen);
-	if (!dest_addr || addrlen == 0)
+	if (!dest_addr && addrlen == 0)
 		return socket_udp_send(sock, buf, len, 0, 0);
 	
 	if (addrlen != sizeof(struct sockaddr_in))

@@ -31,7 +31,15 @@ int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-ssize_t socket_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+typedef struct {
+	int sockfd;
+	const void *buf;
+	size_t len;
+	int flags;
+	const struct sockaddr *dest_addr;
+	socklen_t addrlen;
+} sendto_arg_t;
+ssize_t socket_sendto(sendto_arg_t *args);
 
 void socket_tick(int len, uint8_t *packet);
 socket_t *socket_find_fd(int fd);
@@ -73,7 +81,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_socket(a, b, c) ((int) _pscall(SOCKET_MOD_H, 0, a, b, c))
 #define socket_bind(a, b, c) ((int) _pscall(SOCKET_MOD_H, 1, a, b, c))
 #define socket_connect(a, b, c) ((int) _pscall(SOCKET_MOD_H, 2, a, b, c))
-#define socket_sendto(a, b, c, d, e, f) ((int) _pscall(SOCKET_MOD_H, 3, a, b, c, d, e, f))
+#define socket_sendto(a) ((int) _pscall(SOCKET_MOD_H, 3, a))
 
 #endif
 
