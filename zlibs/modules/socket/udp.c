@@ -156,6 +156,7 @@ void socket_udp_tick(socket_t *sock) {
 	packet[12] = 0x08;
 	packet[13] = 0x00;
 	eth_send(packet, 6 + 6 + 2 + 20 + 8 + info->send[info->send_len].len);
+	free(info->send[info->send_len].data);
 }
 
 int socket_udp_port_is_free(uint16_t port) {
@@ -214,7 +215,7 @@ int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
 	if (!data->is_bound) {
 		struct sockaddr_in addr;
 		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		addr.sin_addr.s_addr = eth_info.ip;
 		addr.sin_port = 0;
 		
 		int err = socket_udp_bind(sock, (void *)&addr, sizeof(addr));
@@ -237,12 +238,47 @@ ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint3
 		dip = data->remote_ip;
 	if (dport)
 		dport = data->remote_port;
-	udp_packet_t *pakcet = data->send[data->send_len++];
-	pakcet->src_ip = data->local_ip; // if 0 choose with eth_info
+	udp_packet_t *packet = &data->send[data->send_len];
+	if (dip == 0) {
+		if (!data->is_connected)
+			return -EINVAL;
+		packet->dest_ip = data->remote_ip;
+		packet->dest_port = data->remote_port;
+	}
+	else {
+		packet->dest_ip = dip;
+		packet->dest_port = dport;
+	}
+	if (!data->is_bound) {
+		struct sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_addr.s_addr = eth_info.ip;
+		addr.sin_port = 0;
+		
+		int err = socket_udp_bind(sock, (void *)&addr, sizeof(addr));
+		if (err)
+			return err;
+	}
+	packet->src_ip = data->local_ip;
+	packet->src_port = data->local_port;
+	packet->len = len;
+	packet->data = malloc(len);
+	mem_copy(packet->data, buffer, len);
+	data->send_len++;
 	return len;
 }
 
 ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
-	if (!dest_addr && addrlen == 0)
+	kprintf_serial("%d %x %d %d %x %d\n", sock, buf, len, flags, dest_addr, addrlen);
+	if (!dest_addr || addrlen == 0)
 		return socket_udp_send(sock, buf, len, 0, 0);
+	
+	if (addrlen != sizeof(struct sockaddr_in))
+		return -EINVAL;
+	const struct sockaddr_in *addr2 = (void *)dest_addr;
+	if (addr2->sin_family != AF_INET)
+		return -EINVAL;
+	if (addr2->sin_port == 0)
+		return -EINVAL;
+	return socket_udp_send(sock, buf, len, addr2->sin_addr.s_addr, addr2->sin_port);
 }

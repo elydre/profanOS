@@ -8346,6 +8346,8 @@ int main() {
         close(sockfd);
         return 1;
     }
+	printf("%d\n", sendto(sockfd, "ABCDEFGHIJK", 6, 0, NULL, 0));
+	perror("sendto");
 
     // 4️⃣ Affichage simplifié
     printf("UDP socket connecté à IP 0x%08X, port %d (network byte order)\n",

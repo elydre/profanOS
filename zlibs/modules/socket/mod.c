@@ -5,4 +5,5 @@ void *__module_func_array[] = {
 	socket_socket,
 	socket_bind,
 	socket_connect,
+	socket_sendto,
 };
