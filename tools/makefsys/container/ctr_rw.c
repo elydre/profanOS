@@ -46,7 +46,7 @@ int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_
 
     int index = -offset;
 
-    while (index < size) {
+    while (index < (int) size) {
         // load locator sector
         if (vdisk_read(sector_data, SECTOR_SIZE, loca_sid * SECTOR_SIZE)) {
             printf("failed to read d%ds%d\n", SID_DISK(loca_sid), SID_SECTOR(loca_sid));

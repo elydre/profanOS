@@ -42,10 +42,21 @@ vdisk_t *initrd_to_vdisk(void) {
 */
 
 int filesys_init(void) {
+    interdisk_init();
     vdisk_init();
+
+    int afft = vdisk_create();
+    if (afft < 0 || interdisk_register_disk(0, afft) < 0) {
+        sys_error("Failed to create vdisk for filesystem");
+        return 1;
+    }
+
+    kprintf("\n\n");
 
     kfu_dir_create(0, NULL, "/");
     kfu_dir_create(0, "/", "tmp");
+    while (1);
+
     kfu_dir_create(0, "/", "dev");
 
     if (kfu_add_element_to_dir(

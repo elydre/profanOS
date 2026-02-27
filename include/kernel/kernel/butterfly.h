@@ -22,6 +22,9 @@
 
 #define LINKS_IN_LOCA ((int) ((SECTOR_SIZE / (sizeof(uint32_t) * 2)) - sizeof(uint32_t)))
 
+#define SID_MAX_SECTOR 0xFFFFFF
+#define SID_MAX_DISK   0xFF
+
 #define SID_FORMAT(disk, sector) ((uint32_t) (((disk) << 24) | (sector)))
 #define SID_DISK(sid) ((sid) >> 24)
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
@@ -43,12 +46,13 @@ extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 ///////////////////// VDISK
 
-void vdisk_init(void);
-void vdisk_destroy(void);
-int  vdisk_extend(uint32_t newsize);
-int  vdisk_write(void *data, uint32_t size, uint32_t offset);
-int  vdisk_read(void *buffer, uint32_t size, uint32_t offset);
+#define VDISK_EXTEND_SIZE SECTOR_SIZE * 512
 
+int vdisk_init(void);
+int vdisk_create(void); // returns a afft id
+
+int interdisk_init(void);
+int interdisk_register_disk(int disk, int afft_id);
 int interdisk_write(sid_t sid, void *data, uint32_t size);
 int interdisk_read(sid_t sid, void *buffer, uint32_t size);
 int interdisk_write_offset(sid_t sid, void *data, uint32_t size, uint32_t offset);

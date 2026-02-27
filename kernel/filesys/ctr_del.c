@@ -97,6 +97,7 @@ int fs_cnt_delete_loca_recur(uint32_t loca_sid) {
 */
 
 int fs_cnt_delete(sid_t head_sid) {
+    UNUSED(head_sid);
     sys_error("[cnt_delete] not implemented yet");
     return 1;
 

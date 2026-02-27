@@ -300,6 +300,8 @@ void kprintf_va2buf(char *char_buffer, const char *fmt, va_list args) {
             i++;
             if (fmt[i] == 's') {
                 char *tmp = va_arg(args, char *);
+                if (tmp == NULL)
+                    tmp = "(null)";
                 for (int j = 0; tmp[j]; j++) {
                     char_buffer[buffer_i] = tmp[j];
                     buffer_i++;

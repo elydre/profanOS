@@ -698,8 +698,9 @@ void panda_screen_free(void *data) {
     free(panda);
 }
 
-static int dev_panda_r(void *buffer, uint32_t offset, uint32_t size) {
+static int dev_panda_r(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
@@ -735,8 +736,9 @@ static int dev_panda_w(void *buffer, uint32_t offset, uint32_t size) {
     return size;
 }
 
-static int dev_pander_w(void *buffer, uint32_t offset, uint32_t size) {
+static int dev_pander_w(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     panda_print_string((char *) buffer, size, 1);
 

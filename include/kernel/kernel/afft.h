@@ -23,9 +23,9 @@ int afft_init(void);
 
 int afft_register(
         uint32_t wanted_id,
-        int (*write) (void *buffer, uint32_t offset, uint32_t size),
-        int (*read)  (void *buffer, uint32_t offset, uint32_t size),
-        int (*cmd)   (uint32_t cmd, void *arg)
+        int (*read)  (uint32_t id, void *buffer, uint32_t offset, uint32_t size),
+        int (*write) (uint32_t id, void *buffer, uint32_t offset, uint32_t size),
+        int (*cmd)   (uint32_t id, uint32_t cmd, void *arg)
 );
 
 int afft_read  (uint32_t id, void *buffer, uint32_t offset, uint32_t size);

@@ -12,6 +12,7 @@
 #include <kernel/butterfly.h>
 #include <kernel/afft.h>
 #include <cpu/ports.h>
+#include <minilib.h>
 
 /*
 BSY: a 1 means that the controller is busy executing a command.
@@ -82,7 +83,9 @@ static void read_sector(uint32_t LBA, uint32_t *data) {
 }
 
 
-int ata_write(void *buffer, uint32_t offset, uint32_t size) {
+int ata_write(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
+    UNUSED(id);
+
     if (size % 512 != 0 || offset % 512 != 0)
         return -1;
 
@@ -99,7 +102,9 @@ int ata_write(void *buffer, uint32_t offset, uint32_t size) {
     return size;
 }
 
-int ata_read(void *buffer, uint32_t offset, uint32_t size) {
+int ata_read(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
+    UNUSED(id);
+
     if (size % 512 != 0 || offset % 512 != 0)
         return -1;
 

@@ -117,6 +117,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
             }
 
             // TODO check if core can be extended
+            UNUSED(core_count);
         }
 
         // TODO create new locator if needed

@@ -10,6 +10,7 @@
 \*****************************************************************************/
 
 #include <kernel/butterfly.h>
+#include <kernel/afft.h>
 #include <minilib.h>
 #include <system.h>
 
@@ -18,72 +19,95 @@ typedef struct {
     uint32_t size;
 } vdisk_t;
 
-vdisk_t *g_vdisk = NULL;
+vdisk_t *g_vdisks[AFFT_MAX];
 
-void vdisk_init(void) {
-    if (g_vdisk)
-        return;
+// internal functions
 
-    g_vdisk = malloc(sizeof(vdisk_t));
-    g_vdisk->data = NULL;
-    g_vdisk->size = 0;
-}
-
-void vdisk_destroy(void) {
-    if (!g_vdisk)
-        return;
-
-    if (g_vdisk->data)
-        free(g_vdisk->data);
-
-    free(g_vdisk);
-    g_vdisk = NULL;
-}
-
-#define DISK_EXTEND_SIZE SECTOR_SIZE * 1024
-
-int vdisk_extend(uint32_t newsize) {
-    if (!g_vdisk)
-        return -1;
-
-    if (newsize <= g_vdisk->size)
+int vdisk_extend(vdisk_t *vdisk, uint32_t newsize) {
+    if (newsize <= vdisk->size)
         return 0;
 
-    newsize += DISK_EXTEND_SIZE - (newsize % DISK_EXTEND_SIZE);
+    newsize += VDISK_EXTEND_SIZE - (newsize % VDISK_EXTEND_SIZE);
 
-    uint8_t *newdata = realloc(g_vdisk->data, newsize);
+    uint8_t *newdata = realloc(vdisk->data, newsize);
+
     if (!newdata)
         return -1;
 
-    mem_set(newdata + g_vdisk->size, 0, newsize - g_vdisk->size);
+    mem_set(newdata + vdisk->size, 0, newsize - vdisk->size); // TODO maybe not needed ?
 
-    g_vdisk->data = newdata;
-    g_vdisk->size = newsize;
+    vdisk->data = newdata;
+    vdisk->size = newsize;
 
     return 0;
 }
 
-int vdisk_write(void *data, uint32_t size, uint32_t offset) {
-    if (!g_vdisk)
+int vdisk_write(uint32_t afft_id, void *data, uint32_t offset, uint32_t size) {
+    vdisk_t *vdisk = g_vdisks[afft_id];
+
+    if (vdisk == NULL)
         return -1;
 
-    if (offset + size > g_vdisk->size) {
-        if (vdisk_extend(offset + size))
+    if (offset + size > vdisk->size) {
+        if (vdisk_extend(vdisk, offset + size))
             return -1;
     }
 
-    mem_copy(g_vdisk->data + offset, data, size);
+    // kprintf("\e[90mvdisk_write: afft_id=%d, offset=%d, size=%d\e[0m\n", afft_id, offset, size);
+
+    mem_copy(vdisk->data + offset, data, size);
 
     return 0;
 }
 
-int vdisk_read(void *buffer, uint32_t size, uint32_t offset) {
-    if (!g_vdisk)
+int vdisk_read(uint32_t afft_id, void *buffer, uint32_t offset, uint32_t size) {
+    vdisk_t *vdisk = g_vdisks[afft_id];
+
+    if (vdisk == NULL)
         return -1;
 
-    if (offset + size > g_vdisk->size)
+    if (offset + size > vdisk->size)
         return -1;
 
-    mem_copy(buffer, g_vdisk->data + offset, size);
+    // kprintf("\e[90mvdisk_read: afft_id=%d, offset=%d, size=%d\e[0m\n", afft_id, offset, size);
+
+    mem_copy(buffer, vdisk->data + offset, size);
+
+    return 0;
+}
+
+// public functions
+
+int vdisk_create(void) { // returns a afft id
+    int afft_id = afft_register(
+        AFFT_AUTO,
+        vdisk_read,
+        vdisk_write,
+        NULL
+    );
+
+    if (afft_id < 0)
+        return -1;
+
+    vdisk_t *vdisk = malloc(sizeof(vdisk_t));
+
+    vdisk->data = NULL;
+    vdisk->size = 0;
+
+    g_vdisks[afft_id] = vdisk;
+
+    return afft_id;
+}
+
+void vdisk_destroy(int afft_id) {
+    vdisk_t *disk = g_vdisks[afft_id];
+
+    free(disk->data);
+    free(disk);
+}
+
+int vdisk_init(void) {
+    for (int i = 0; i < AFFT_MAX; i++)
+        g_vdisks[i] = NULL;
     return 0;
 }

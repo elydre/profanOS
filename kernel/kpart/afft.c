@@ -14,9 +14,9 @@
 
 typedef struct {
     int busy;
-    int (*read) (void *buffer, uint32_t offset, uint32_t size);
-    int (*write)(void *buffer, uint32_t offset, uint32_t size);
-    int (*cmd)  (uint32_t cmd, void *arg);
+    int (*read) (uint32_t id, void *buffer, uint32_t offset, uint32_t size);
+    int (*write)(uint32_t id, void *buffer, uint32_t offset, uint32_t size);
+    int (*cmd)  (uint32_t id, uint32_t cmd, void *arg);
 } afft_map_t;
 
 afft_map_t *g_afft_funcs;
@@ -32,9 +32,9 @@ int afft_init(void) {
 
 int afft_register(
         uint32_t wanted_id,
-        int (*read)  (void *buffer, uint32_t offset, uint32_t size),
-        int (*write) (void *buffer, uint32_t offset, uint32_t size),
-        int (*cmd)   (uint32_t cmd, void *arg)
+        int (*read)  (uint32_t id, void *buffer, uint32_t offset, uint32_t size),
+        int (*write) (uint32_t id, void *buffer, uint32_t offset, uint32_t size),
+        int (*cmd)   (uint32_t id, uint32_t cmd, void *arg)
 ) {
     if (wanted_id != AFFT_AUTO) {
         if (wanted_id >= AFFT_MAX || g_afft_funcs[wanted_id].busy)
@@ -60,19 +60,25 @@ int afft_register(
 }
 
 int afft_read(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
-    if (id < AFFT_MAX && g_afft_funcs[id].busy && g_afft_funcs[id].read)
-        return g_afft_funcs[id].read(buffer, offset, size);
+    uint32_t rawid = id & 0x0000FFFF;
+
+    if (rawid < AFFT_MAX && g_afft_funcs[rawid].busy && g_afft_funcs[rawid].read)
+        return g_afft_funcs[rawid].read(id, buffer, offset, size);
     return -1;
 }
 
 int afft_write(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
-    if (id < AFFT_MAX && g_afft_funcs[id].busy && g_afft_funcs[id].write)
-        return g_afft_funcs[id].write(buffer, offset, size);
+    uint32_t rawid = id & 0x0000FFFF;
+
+    if (rawid < AFFT_MAX && g_afft_funcs[rawid].busy && g_afft_funcs[rawid].write)
+        return g_afft_funcs[rawid].write(id, buffer, offset, size);
     return -1;
 }
 
 int afft_cmd(uint32_t id, uint32_t cmd, void *arg) {
-    if (id < AFFT_MAX && g_afft_funcs[id].busy && g_afft_funcs[id].cmd)
-        return g_afft_funcs[id].cmd(cmd, arg);
+    uint32_t rawid = id & 0x0000FFFF;
+
+    if (rawid < AFFT_MAX && g_afft_funcs[rawid].busy && g_afft_funcs[rawid].cmd)
+        return g_afft_funcs[rawid].cmd(id, cmd, arg);
     return -1;
 }

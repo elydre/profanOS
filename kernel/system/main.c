@@ -46,12 +46,13 @@ void kernel_main(void *mboot_ptr) {
 
     status_print(mem_init,      "Initializing Snowflake physical MM");
     status_print(scuba_init,    "Setting up Scubasuit virtual MM");
+
+    status_print(afft_init,     "Initializing afft system");
+    status_print(tef_init,      "Allocating memory for terminal emulator");
+
     status_print(process_init,  "Starting process manager");
     status_print(filesys_init,  "Loading Butterfly filesystem");
 
-    status_print(tef_init,      "Allocating memory for terminal emulator");
-
-    status_print(afft_init,     "Initializing afft system");
     status_print(sys_init,      "Initializing system functions");
 
     status_print(serial_init,   "Enabling serial ports A and B");

@@ -57,24 +57,33 @@ int serial_read(uint32_t port, void *buffer, uint32_t len) {
  *                             *
 ********************************/
 
-static int serial_a_write(void *buffer, uint32_t offset, uint32_t len) {
+#define SERIAL_AFFT_A 1
+#define SERIAL_AFFT_B 2
+
+static int serial_afft_write(uint32_t id, void *buffer, uint32_t offset, uint32_t len) {
     UNUSED(offset);
-    return serial_write(SERIAL_PORT_A, buffer, len);
+    
+    switch (id) {
+        case SERIAL_AFFT_A:
+            return serial_write(SERIAL_PORT_A, buffer, len);
+        case SERIAL_AFFT_B:
+            return serial_write(SERIAL_PORT_B, buffer, len);
+        default:
+            return -1;
+    }
 }
 
-static int serial_a_read(void *buffer, uint32_t offset, uint32_t len) {
+static int serial_afft_read(uint32_t id, void *buffer, uint32_t offset, uint32_t len) {
     UNUSED(offset);
-    return serial_read(SERIAL_PORT_A, buffer, len);
-}
 
-static int serial_b_write(void *buffer, uint32_t offset, uint32_t len) {
-    UNUSED(offset);
-    return serial_write(SERIAL_PORT_B, buffer, len);
-}
-
-static int serial_b_read(void *buffer, uint32_t offset, uint32_t len) {
-    UNUSED(offset);
-    return serial_read(SERIAL_PORT_B, buffer, len);
+    switch (id) {
+        case SERIAL_AFFT_A:
+            return serial_read(SERIAL_PORT_A, buffer, len);
+        case SERIAL_AFFT_B:
+            return serial_read(SERIAL_PORT_B, buffer, len);
+        default:
+            return -1;
+    }
 }
 
 int serial_init(void) {
@@ -83,9 +92,9 @@ int serial_init(void) {
     serial_enable(SERIAL_PORT_B);
 
     return (
-        afft_register(1, serial_a_read, serial_a_write, NULL) != 1 ||
-        afft_register(2, serial_b_read, serial_b_write, NULL) != 2 ||
-        kfu_afft_create("/dev", "serialA", 1) == SID_NULL ||
-        kfu_afft_create("/dev", "serialB", 2) == SID_NULL
+        afft_register(SERIAL_AFFT_A, serial_afft_read, serial_afft_write, NULL) != SERIAL_AFFT_A ||
+        afft_register(SERIAL_AFFT_B, serial_afft_read, serial_afft_write, NULL) != SERIAL_AFFT_B ||
+        kfu_afft_create("/dev", "serialA", SERIAL_AFFT_A) == SID_NULL ||
+        kfu_afft_create("/dev", "serialB", SERIAL_AFFT_B) == SID_NULL
     );
 }

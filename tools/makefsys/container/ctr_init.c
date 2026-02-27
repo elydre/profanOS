@@ -76,7 +76,7 @@ int fs_cnt_meta(sid_t sid, char *meta, int buffer_size, int replace) {
         return 0;
     }
 
-    memcpy(sector_data + 2, meta, min(META_MAXLEN, buffer_size > 0 ? buffer_size : strlen(meta) + 1));
+    memcpy(sector_data + 2, meta, min(META_MAXLEN, buffer_size > 0 ? buffer_size : (int) strlen(meta) + 1));
 
     if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(sid) * SECTOR_SIZE)) {
         printf("failed to write d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
