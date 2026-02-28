@@ -79,6 +79,8 @@ int fu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(strlen(tmp) + 1);
         strcpy((*names)[i], tmp);
+        if (SID_DISK((*ids)[i]) == 0xFF)
+            (*ids)[i] = SID_FORMAT(SID_DISK(dir_sid), SID_SECTOR((*ids)[i]));
     }
     free(buf);
     return count;
@@ -97,6 +99,8 @@ int fu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name)
         printf("not a directory\n");
         return 1;
     }
+
+    element_sid = SID_FORMAT(0xFF, SID_SECTOR(element_sid));
 
     // extend the directory
     if (fs_cnt_set_size(dir_sid, size + sizeof(uint32_t) + sizeof(uint32_t) + strlen(name) + 1)) {

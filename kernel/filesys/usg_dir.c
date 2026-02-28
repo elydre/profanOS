@@ -13,10 +13,13 @@
 #include <minilib.h>
 #include <system.h>
 
-int kfu_is_dir(sid_t dir_sid) {
+int kfu_is_dir(sid_t sid) {
     char letter;
 
-    if (fs_cnt_meta(dir_sid, &letter, 1, 0))
+    if (SID_IS_NULL(sid))
+        return 0;
+
+    if (fs_cnt_meta(sid, &letter, 1, 0))
         return 0;
 
     return letter == 'D';
@@ -69,6 +72,8 @@ int kfu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
     *ids = malloc(sizeof(uint32_t) * count);
     *names = malloc(sizeof(char *) * count);
 
+    kprintf("directory d%ds%d has %d elements:\n", SID_DISK(dir_sid), SID_SECTOR(dir_sid), count);
+
     uint32_t name_offset;
     for (uint32_t i = 0; i < count; i++) {
         mem_copy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
@@ -77,6 +82,8 @@ int kfu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
         char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + name_offset;
         (*names)[i] = malloc(str_len(tmp) + 1);
         str_copy((*names)[i], tmp);
+        (*ids)[i] = SID_RESTORE_DISK((*ids)[i], dir_sid);
+        kprintf("found element: %s (d%ds%d)\n", (*names)[i], SID_DISK((*ids)[i]), SID_SECTOR((*ids)[i]));
     }
     free(buf);
     return count;
@@ -85,6 +92,9 @@ int kfu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
 int kfu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(dir_sid);
+
+    if (SID_DISK(element_sid) == SID_DISK(dir_sid))
+        element_sid = SID_FORMAT(0xFF, SID_SECTOR(element_sid));
 
     if (size == UINT32_MAX) {
         sys_warning("failed to get directory size");

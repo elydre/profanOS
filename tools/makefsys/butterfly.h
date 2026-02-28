@@ -23,7 +23,7 @@
 
 #define LINKS_IN_LOCA ((int) ((SECTOR_SIZE / (sizeof(uint32_t) * 2)) - sizeof(uint32_t)))
 
-#define SID_FORMAT(disk, sector) ((uint32_t) (((disk) << 24) | (sector)))
+#define SID_FORMAT(disk, sector) ((uint32_t) (((disk) << 24) | (sector & 0xFFFFFF)))
 #define SID_DISK(sid) ((sid) >> 24)
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 

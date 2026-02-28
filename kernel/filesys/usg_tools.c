@@ -54,6 +54,9 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
 
     // search for the path part
     for (int j = 0; (offset = kfu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
+        sid = SID_RESTORE_DISK(sid, parent);
+        kprintf("checking element d%ds%d (%s) for path %s\n", SID_DISK(sid), SID_SECTOR(sid), (char *) buf + offset, path);
+
         if (str_cmp(path, (char *) buf + offset) == 0) {
             free(buf);
             return sid;
@@ -70,13 +73,17 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
     return SID_NULL;
 }
 
-uint32_t kfu_path_to_sid(uint32_t from, const char *path) {
-    uint32_t ret;
+sid_t kfu_path_to_sid(sid_t from, const char *path) {
+    sid_t ret;
+
+    kprintf("resolving path %s from d%ds%d\n", path, SID_DISK(from), SID_SECTOR(from));
 
     if (str_cmp("/", path) == 0)
         return from;
 
     ret = rec_path_to_sid(from, path);
+
+    kprintf("path %s resolved to d%ds%d\n", path, SID_DISK(ret), SID_SECTOR(ret));
 
     return ret;
 }

@@ -49,6 +49,7 @@ int kb_get_scancode(void) {
         sc_history[i] = 0;
         return sc;
     }
+
     return 0;
 }
 

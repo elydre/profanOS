@@ -240,7 +240,7 @@ int mod_load(char *path, uint32_t lib_id) {
 
     uint32_t file = kfu_path_to_sid(SID_ROOT, path);
 
-    if (SID_IS_NULL(file) || !kfu_is_file(file)) {
+    if (!kfu_is_file(file)) {
         return -1;
     }
 

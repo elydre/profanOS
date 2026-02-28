@@ -324,9 +324,13 @@ static int init_fpu(void) {
 }
 
 static int write_kernel_version(void) {
-    if (SID_IS_NULL(kfu_dir_create(0, "/sys", "kernel")))
+    kprint("aa\n");
+    if (SID_IS_NULL(kfu_dir_create(0, "/sys", "kernel"))) {
+        kprint("ab\n");
         return 1;
+    } // TODO: mettre disk=0xFF pour indiquer que c'est le meme disque, sinon c'est un point de montage
 
+    kprint("bb\n");
     uint32_t sid = kfu_file_create("/sys/kernel", "version.txt");
 
     if (SID_IS_NULL(sid))
@@ -348,13 +352,11 @@ int sys_init(void) {
     // setup floating point unit
     init_fpu();
 
-    // write the kernel version in the filesystem
-    write_kernel_version();
-
     // write the address of redirection function
     *(int *)(WATMOD_ADDR) = (int) mod_get_func;
 
-    return 0;
+    // write the kernel version in the filesystem
+    return write_kernel_version();
 }
 
 /********************************

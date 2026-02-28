@@ -16,6 +16,9 @@
 int kfu_is_afft(sid_t sid) {
     char letter;
 
+    if (SID_IS_NULL(sid))
+        return 0;
+
     if (fs_cnt_meta(sid, &letter, 1, 0))
         return 0;
 
@@ -23,7 +26,7 @@ int kfu_is_afft(sid_t sid) {
 }
 
 int kfu_afft_get_id(sid_t sid) {
-    uint32_t id;
+    sid_t id;
 
     if (!kfu_is_afft(sid))
         return -1;
@@ -34,9 +37,9 @@ int kfu_afft_get_id(sid_t sid) {
     return id;
 }
 
-uint32_t kfu_afft_create(const char *parent, const char *name, uint32_t id) {
-    uint32_t parent_sid;
-    uint32_t head_sid;
+sid_t kfu_afft_create(const char *parent, const char *name, uint32_t id) {
+    sid_t parent_sid;
+    sid_t head_sid;
 
     parent_sid = kfu_path_to_sid(SID_ROOT, parent);
 
@@ -57,6 +60,6 @@ uint32_t kfu_afft_create(const char *parent, const char *name, uint32_t id) {
         return SID_NULL;
 
     // write the id
-    return (fs_cnt_set_size(head_sid, sizeof(uint32_t)) ||
+    return (fs_cnt_set_size(head_sid, sizeof(sid_t)) ||
             fs_cnt_write(head_sid, &id, 0, sizeof(uint32_t)) ? SID_NULL : head_sid);
 }

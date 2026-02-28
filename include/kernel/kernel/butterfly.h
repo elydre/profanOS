@@ -29,6 +29,8 @@
 #define SID_DISK(sid) ((sid) >> 24)
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 
+#define SID_RESTORE_DISK(sid, parent_sid) (SID_DISK(sid) == 0xFF ? SID_FORMAT(SID_DISK(parent_sid), SID_SECTOR(sid)) : (sid))
+
 #undef UINT32_MAX
 #define UINT32_MAX 0xFFFFFFFF
 
@@ -94,19 +96,19 @@ void    kfu_draw_tree(sid_t sid, int depth);
 void    kfu_dump_sector(sid_t sid);
 
 // usg_dir.c
-int     kfu_is_dir(sid_t dir_sid);
+int     kfu_is_dir(sid_t sid);
 int     kfu_dir_get_content(sid_t dir_sid, sid_t **ids, char ***names);
 int     kfu_add_element_to_dir(sid_t dir_sid, sid_t element_sid, const char *name);
 sid_t   kfu_dir_create(uint8_t device_id, const char *parent, const char *name);
 int     kfu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, sid_t *sid);
 
 // usg_afft.c
-int      kfu_is_afft(uint32_t sid);
-int      kfu_afft_get_id(uint32_t sid);
-uint32_t kfu_afft_create(const char *parent, const char *name, uint32_t id);
+int     kfu_is_afft(sid_t sid);
+int     kfu_afft_get_id(sid_t sid);
+sid_t   kfu_afft_create(const char *parent, const char *name, uint32_t id);
 
 // usg_file.c
-int     kfu_is_file(sid_t file_sid);
+int     kfu_is_file(sid_t sid);
 sid_t   kfu_file_create(const char *parent, const char *name);
 
 // usg_ptsid.c

@@ -54,6 +54,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(filesys_init,  "Loading Butterfly filesystem");
 
     status_print(sys_init,      "Initializing system functions");
+    while (1);
 
     status_print(serial_init,   "Enabling serial ports A and B");
     status_print(keyboard_init, "Setting up PS/2 keyboard");

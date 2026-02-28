@@ -13,10 +13,13 @@
 #include <minilib.h>
 #include <system.h>
 
-int kfu_is_file(sid_t dir_sid) {
+int kfu_is_file(sid_t sid) {
     char letter;
 
-    if (fs_cnt_meta(dir_sid, &letter, 1, 0))
+    if (SID_IS_NULL(sid))
+        return 0;
+
+    if (fs_cnt_meta(sid, &letter, 1, 0))
         return 0;
 
     return letter == 'F';

@@ -75,7 +75,7 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
     return to_shrink;
 }
 
-int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
+int fs_cnt_grow_size(sid_t loca_sid, uint32_t to_grow) {
     uint32_t local_data[SECTOR_SIZE / sizeof(uint32_t)];
 
     // jump to last locator
@@ -85,7 +85,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
             return -1;
         }
 
-        uint32_t next_sid = local_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
+        sid_t next_sid = local_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
         if (SID_IS_NULL(next_sid)) {
             break;
