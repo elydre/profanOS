@@ -13,7 +13,7 @@ int interdisk_init(void) {
 
 int interdisk_register_disk(int disk, int afft_id) {
     if (disk < 0 || disk >= SID_MAX_DISK)
-        return -1;
+        return 1;
 
     g_disk_to_afft[disk] = afft_id;
     return 0;

@@ -34,7 +34,7 @@
 #define META_MAXLEN 64
 
 #undef SID_ROOT
-#define SID_ROOT SID_FORMAT(1, 0)
+#define SID_ROOT SID_FORMAT(0, 1)
 
 #undef SID_IS_NULL
 #define SID_IS_NULL(sid) (sid == SID_NULL)

@@ -18,6 +18,6 @@ int      diskiso_init(void);
 
 uint32_t diskiso_get_size(void);
 void    *diskiso_get_start(void);
-void     diskiso_free(void);
+void     diskiso_fini(void);
 
 #endif

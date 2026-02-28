@@ -66,12 +66,18 @@ int vdisk_read(uint32_t afft_id, void *buffer, uint32_t offset, uint32_t size) {
     if (vdisk == NULL)
         return -1;
 
+    uint32_t read_size = size;
+
     if (offset + size > vdisk->size)
-        return -1;
+        read_size = vdisk->size > offset ? vdisk->size - offset : 0;
 
     // kprintf("\e[90mvdisk_read: afft_id=%d, offset=%d, size=%d\e[0m\n", afft_id, offset, size);
 
-    mem_copy(buffer, vdisk->data + offset, size);
+    if (read_size > 0)
+        mem_copy(buffer, vdisk->data + offset, read_size);
+
+    if (read_size < size)
+        mem_set(buffer + read_size, 0, size - read_size);
 
     return 0;
 }
@@ -93,6 +99,27 @@ int vdisk_create(void) { // returns a afft id
 
     vdisk->data = NULL;
     vdisk->size = 0;
+
+    g_vdisks[afft_id] = vdisk;
+
+    return afft_id;
+}
+
+int vdisk_diskify(void *mem, uint32_t size) { // returns a afft id
+    int afft_id = afft_register(
+        AFFT_AUTO,
+        vdisk_read,
+        vdisk_write,
+        NULL
+    );
+
+    if (afft_id < 0)
+        return -1;
+
+    vdisk_t *vdisk = malloc(sizeof(vdisk_t));
+
+    vdisk->data = mem;
+    vdisk->size = size;
 
     g_vdisks[afft_id] = vdisk;
 

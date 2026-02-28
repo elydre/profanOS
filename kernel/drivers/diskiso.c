@@ -50,7 +50,6 @@ void *diskiso_get_start(void) {
     return (void *) diskiso_start;
 }
 
-void diskiso_free(void) {
+void diskiso_fini(void) {
     diskiso_size = 0;
-    free((void *) diskiso_start);
 }
