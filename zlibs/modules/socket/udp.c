@@ -31,18 +31,40 @@ void socket_on_recv_udp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 	packet.len = data_len - 8;
 	packet.data = data + 8;
 
-	packet.src_port = data[0] << 8;
-	packet.src_port |= data[1];
+	packet.src_port = data[1] << 8;
+	packet.src_port |= data[0];
 
-	packet.dest_port = data[2] << 8;
-	packet.dest_port |= data[3];
+	packet.dest_port = data[3] << 8;
+	packet.dest_port |= data[2];
 
 	int len2 = ((data[4] << 8) | data[5]) - 8;
-	kprintf_serial("udp: len %d real len %d\n", len2, packet.len);
 	if (len2 > packet.len)
 		return ;
 	packet.len = len2;
-	kprintf_serial("packet received si %x di %x sp %d dp %d\n", packet.src_ip, packet.dest_ip, packet.src_port, packet.dest_port);
+	for (int i = 0; i < sockets_len; i++) {
+		if (sockets[i].type != SOCKET_UDP)
+			continue;
+		udp_t *data = sockets[i].data;
+		if (!data->is_bound)
+			continue;
+		if (data->local_port != packet.dest_port)
+			continue;
+		if (data->local_ip != 0 && data->local_ip != packet.dest_ip)
+			break;
+		if (data->is_connected && data->remote_ip != packet.src_ip && data->remote_port != packet.src_port)
+			break;
+		if (data->recv_len == 64)
+			break;
+		data->recv[data->recv_len].src_ip = packet.src_ip;
+		data->recv[data->recv_len].dest_ip = packet.dest_ip;
+		data->recv[data->recv_len].src_port = packet.src_port;
+		data->recv[data->recv_len].dest_port = packet.dest_port;
+		data->recv[data->recv_len].len = packet.len;
+		data->recv[data->recv_len].data = malloc(packet.len);
+		mem_copy(data->recv[data->recv_len].data, packet.data, packet.len);
+		data->recv_len++;
+		break;
+	}
 }
 
 uint16_t ntohs(uint16_t x) {
@@ -144,6 +166,10 @@ static void fill_ip(uint8_t *buffer, udp_packet_t *packet) {
 
 void socket_udp_tick(socket_t *sock) {
 	udp_t *info = sock->data;
+	if (!info->send_len && sock->parent_pid < 0) {
+		sock->do_remove = 1;
+		return ;
+	}
 	if (!info->send_len)
 		return ;
 	info->send_len--;
@@ -164,9 +190,9 @@ int socket_udp_port_is_free(uint16_t port) {
 			continue;
 		udp_t *udp = sockets[i].data;
 		if (udp->local_port == port)
-			return 1;
+			return 0;
 	}
-	return 0;
+	return 1;
 }
 
 uint16_t socket_udp_get_free_port() {
@@ -275,4 +301,22 @@ ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags
 	if (addr2->sin_port == 0)
 		return -EINVAL;
 	return socket_udp_send(sock, buf, len, addr2->sin_addr.s_addr, addr2->sin_port);
+}
+
+ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
+	udp_t *data = sock->data;
+	while (data->recv_len == 0)
+		process_sleep(process_get_pid(), 10);
+	if ((size_t)data->recv[data->recv_len - 1].len < len)
+		len = data->recv[data->recv_len - 1].len;
+	mem_copy(buf, data->recv[data->recv_len - 1].data, len);
+	if (src_addr && addrlen) {
+		struct sockaddr_in *addr2 = (void *)src_addr;	
+		addr2->sin_family = AF_INET;
+		addr2->sin_port = data->recv[data->recv_len - 1].src_port;
+		addr2->sin_addr.s_addr = data->recv[data->recv_len - 1].src_ip;
+		*addrlen = sizeof(struct sockaddr_in);
+	}
+	data->recv_len--;
+	return (ssize_t) len;
 }

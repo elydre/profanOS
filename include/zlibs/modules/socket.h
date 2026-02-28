@@ -18,6 +18,7 @@ typedef struct {
 	int parent_pid;
 	int ref_count;
 	int fd;
+	int do_remove;
 } socket_t;
 
 #define CLT_PORT_START 32768
@@ -31,6 +32,9 @@ int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+int socket_close(socket_t *sock);
+int socket_close_fd(int fd);
+
 typedef struct {
 	int sockfd;
 	const void *buf;
@@ -41,34 +45,21 @@ typedef struct {
 } sendto_arg_t;
 ssize_t socket_sendto(sendto_arg_t *args);
 
+typedef struct {
+	int sockfd;
+	void *buf;
+	size_t len;
+	int flags;
+	struct sockaddr *src_addr;
+	socklen_t *addrlen;
+} recvfrom_arg_t;
+ssize_t socket_recvfrom(recvfrom_arg_t *args);
+
 void socket_tick(int len, uint8_t *packet);
 socket_t *socket_find_fd(int fd);
 
 // TODO fix this with a include fmopen (pf4 cant make complete headers)
-enum {
-    TYPE_FREE = 0,
-    TYPE_FILE,
-    TYPE_AFFT,
-    TYPE_DIR,
-    TYPE_PPRD, // read pipe
-    TYPE_PPWR, // write pipe
-    TYPE_SOCK
-};
 
-typedef struct {
-    uint8_t type;
-    uint32_t sid;
-    int flags;
-
-    uint32_t offset;  // file and afft
-
-    union {
-        int          afft_id; // afft
-        struct pipe_data_t *pipe;    // pipe
-        char        *path;    // dir (for fchdir)
-        int          sock_id; // socket
-    };
-} fd_data_t;
 
 #ifndef _KERNEL_MODULE
 
@@ -82,6 +73,13 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_bind(a, b, c) ((int) _pscall(SOCKET_MOD_H, 1, a, b, c))
 #define socket_connect(a, b, c) ((int) _pscall(SOCKET_MOD_H, 2, a, b, c))
 #define socket_sendto(a) ((int) _pscall(SOCKET_MOD_H, 3, a))
+#define socket_recvfrom(a) ((int) _pscall(SOCKET_MOD_H, 4, a))
+
+#else 
+
+#define socket_sendto_call ((int (*)(sendto_arg_t *)) get_func_addr(SOCKET_MOD_H, 3))
+#define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))
+#define socket_close_fd_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 5))
 
 #endif
 

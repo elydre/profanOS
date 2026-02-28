@@ -11,6 +11,9 @@
 
 #define FMOPEN_LIB_C
 
+#define INCLUDE_FROM_FMOPEN
+#include <modules/socket.h>
+
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <kernel/afft.h>
@@ -21,20 +24,28 @@
 #include <fcntl.h>  // for flags
 #include <errno.h>
 
+#undef fm_close
+#undef fm_reopen
+#undef fm_pread
+#undef fm_pwrite
+#undef fm_lseek
+#undef fm_dup2
+#undef fm_dup
+#undef fm_pipe
+#undef fm_isafft
+#undef fm_isfile
+#undef fm_issock
+#undef fm_fcntl
+#undef fm_get_sid
+#undef fm_get_path
+#undef fm_declare_child
+#undef fm_get_free_fd
+
+
 #define PIPE_MAX     256
 #define PIPE_MAX_REF 12
 
-enum {
-    TYPE_FREE = 0,
-    TYPE_FILE,
-    TYPE_AFFT,
-    TYPE_DIR,
-    TYPE_PPRD, // read pipe
-    TYPE_PPWR, // write pipe
-    TYPE_SOCK
-};
-
-typedef struct {
+typedef struct pipe_data_t {
     uint32_t buffer_size;
     void    *buf;
 
@@ -44,21 +55,6 @@ typedef struct {
     int readers[PIPE_MAX_REF];
     int writers[PIPE_MAX_REF];
 } pipe_data_t;
-
-typedef struct {
-    uint8_t type;
-    uint32_t sid;
-    int flags;
-
-    uint32_t offset;  // file and afft
-
-    union {
-        int          afft_id; // afft
-        pipe_data_t *pipe;    // pipe
-        char        *path;    // dir (for fchdir)
-        int          sock_id; // socket
-    };
-} fd_data_t;
 
 pipe_data_t *open_pipes;
 
@@ -128,6 +124,7 @@ static int fm_pipe_push_writer(pipe_data_t *pipe, int pid) {
     return -1;
 }
 
+
 int fm_close(int fd) {
     fd_data_t *fd_data = fm_fd_to_data(fd);
 
@@ -138,7 +135,7 @@ int fm_close(int fd) {
         free(fd_data->path);
 
     else if (fd_data->type == TYPE_SOCK) {
-        // TODO ASQEL (close socket)
+		socket_close_fd_call(fd);
     }
 
     else if (fd_data->type == TYPE_PPRD) {
@@ -297,8 +294,15 @@ int fm_pread(int fd, void *buf, uint32_t size, int offset) {
             return -EISDIR;
 
         case TYPE_SOCK:
-            // TODO ASQEL (read)
-            return -EIO;
+			recvfrom_arg_t args = {
+				.sockfd = fd,
+				.buf = buf,
+				.len = size, 
+				.flags = 0,
+				.src_addr = NULL,
+				.addrlen = NULL
+			};
+            return socket_recvfrom_call(&args);
 
         case TYPE_FILE:
             tmp = fs_cnt_get_size(fd_data->sid);
@@ -371,8 +375,15 @@ int fm_pwrite(int fd, void *buf, uint32_t size, int offset) {
             return -EISDIR;
 
         case TYPE_SOCK:
-            // TODO ASQEL (write)
-            return -EIO;
+			sendto_arg_t args = {
+				.sockfd = fd,
+				.buf = buf,
+				.len = size,
+				.flags = 0,
+				.dest_addr = NULL,
+				.addrlen = 0
+			};
+            return socket_sendto_call(&args);
 
         case TYPE_FILE:
             if (offset + size > fs_cnt_get_size(fd_data->sid))

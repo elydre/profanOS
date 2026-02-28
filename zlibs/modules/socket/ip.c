@@ -11,7 +11,6 @@ void socket_on_recv_ip4(int len, uint8_t *packet) {
 
 	header.tot_len = packet[2] << 8;
 	header.tot_len |= packet[3];
-	kprintf_serial("ip: tot_len %d, real len %d\n", header.tot_len, len);
 	if (header.tot_len > len)
 		return ;
 
@@ -37,7 +36,6 @@ void socket_on_recv_ip4(int len, uint8_t *packet) {
 	header.data_len = header.tot_len - 20 - header.options_len;
 	header.data = packet + 20 + header.options_len;
 
-	kprintf_serial("ip: protocol %d\n", header.protocol);
 	switch (header.protocol) {
 		case 17: // udp
 			socket_on_recv_udp(header.src_ip, header.dest_ip, header.data, header.data_len);

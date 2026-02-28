@@ -18,7 +18,6 @@ int (*supported_init[])(socket_t *socket) = {
 
 
 int socket_socket(int domain, int type_, int protocol) {
-	kprintf_serial("socket socket %d %d %d\n", domain, type_, protocol);
 	uint32_t type = domain | (type_ << 8) | (protocol << 16);
 	unsigned int i = 0;
 	int res = -EINVAL;
@@ -37,6 +36,7 @@ int socket_socket(int domain, int type_, int protocol) {
 		sockets[sockets_len].fd = res;
 		sockets[sockets_len].ref_count = 0;
 		sockets[sockets_len].parent_pid = process_get_pid();
+		sockets[sockets_len].do_remove = 0;
 
 		int err = supported_init[i](&sockets[sockets_len]);
 		if (err)

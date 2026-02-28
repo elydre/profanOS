@@ -161,4 +161,30 @@ int fm_declare_child(int fd);
 
 #endif // _KERNEL_MODULE
 
+
+enum {
+    TYPE_FREE = 0,
+    TYPE_FILE,
+    TYPE_AFFT,
+    TYPE_DIR,
+    TYPE_PPRD, // read pipe
+    TYPE_PPWR, // write pipe
+    TYPE_SOCK
+};
+
+typedef struct {
+    uint8_t type;
+    uint32_t sid;
+    int flags;
+
+    uint32_t offset;  // file and afft
+
+    union {
+        int          afft_id; // afft
+        struct pipe_data_t *pipe;    // pipe
+        char        *path;    // dir (for fchdir)
+        int          sock_id; // socket
+    };
+} fd_data_t;
+
 #endif
