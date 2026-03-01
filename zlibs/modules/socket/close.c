@@ -6,7 +6,6 @@ int socket_close(socket_t *sock) {
 	if (sock->ref_count)
 		return 0;
 	sock->parent_pid = -1;
-	sock->fd = -1;
 	return 0;
 }
 

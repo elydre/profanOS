@@ -17,7 +17,7 @@ typedef struct {
 	void *data;
 	int parent_pid;
 	int ref_count;
-	int fd;
+	int id;
 	int do_remove;
 } socket_t;
 
@@ -34,6 +34,7 @@ int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int socket_close(socket_t *sock);
 int socket_close_fd(int fd);
+int socket_get_rw(int id);
 
 typedef struct {
 	int sockfd;
@@ -57,6 +58,7 @@ ssize_t socket_recvfrom(recvfrom_arg_t *args);
 
 void socket_tick(int len, uint8_t *packet);
 socket_t *socket_find_fd(int fd);
+socket_t *socket_find_id(int id);
 
 // TODO fix this with a include fmopen (pf4 cant make complete headers)
 
@@ -80,6 +82,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_sendto_call ((int (*)(sendto_arg_t *)) get_func_addr(SOCKET_MOD_H, 3))
 #define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))
 #define socket_close_fd_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 5))
+#define socket_get_rw_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 6))
 
 #endif
 

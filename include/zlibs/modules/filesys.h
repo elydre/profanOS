@@ -137,6 +137,7 @@ int fm_declare_child(int fd);
 #define fm_get_sid(a)        ((uint32_t) _pscall(FMOPEN_LIB_ID, 12, a))
 #define fm_get_path(a)       ((const char *) _pscall(FMOPEN_LIB_ID, 13, a))
 #define fm_declare_child(a)  ((int) _pscall(FMOPEN_LIB_ID, 14, a))
+#define fm_get_fd_rw(a) ((int) _pscall(FMOPEN_LIB_ID, 17, a))
 
 #else
 
@@ -158,6 +159,7 @@ int fm_declare_child(int fd);
 #define fm_get_path ((const char *(*)(int)) get_func_addr(FMOPEN_LIB_ID, 13))
 #define fm_declare_child ((int (*)(int)) get_func_addr(FMOPEN_LIB_ID, 14))
 #define fm_get_free_fd ((void *(*)(int *)) get_func_addr(FMOPEN_LIB_ID, 15))
+#define fm_fd_to_data ((fd_data_t * (*)(int)) get_func_addr(FMOPEN_LIB_ID, 16))
 
 #endif // _KERNEL_MODULE
 
@@ -171,6 +173,9 @@ enum {
     TYPE_PPWR, // write pipe
     TYPE_SOCK
 };
+
+#define FM_READ (1 << 0)
+#define FM_WRITE (1 << 1)
 
 typedef struct {
     uint8_t type;

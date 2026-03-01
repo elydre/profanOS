@@ -40,7 +40,8 @@
 #undef fm_get_path
 #undef fm_declare_child
 #undef fm_get_free_fd
-
+#undef fm_fd_to_data
+#undef fm_get_fd_rw
 
 #define PIPE_MAX     256
 #define PIPE_MAX_REF 12
@@ -676,6 +677,21 @@ int fm_declare_child(int pid) {
     return 0;
 }
 
+int fm_get_fd_rw(int fd) {
+	fd_data_t *data = fm_fd_to_data(fd);
+	if (!data)
+		return -1;
+	switch (data->type) {
+		case TYPE_SOCK:
+			return socket_get_rw_call(data->sock_id);
+		case TYPE_FILE:
+			return FM_READ | FM_WRITE;
+		// TODO PF4 IMPLEMENT PIPES AND OTHERS
+		default:
+			return -1;
+	}
+}
+
 int __init(void) {
     open_pipes = calloc(PIPE_MAX * sizeof(pipe_data_t));
 
@@ -704,5 +720,7 @@ void *__module_func_array[] = {
     fm_get_sid,
     fm_get_path,
     fm_declare_child,
-	fm_get_free_fd
+	fm_get_free_fd,
+	fm_fd_to_data,
+	fm_get_fd_rw,
 };

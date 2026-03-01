@@ -16,6 +16,8 @@ int (*supported_init[])(socket_t *socket) = {
 	//socket_init_tcp,
 };
 
+int last_id = 0;
+extern int socket_pid;
 
 int socket_socket(int domain, int type_, int protocol) {
 	uint32_t type = domain | (type_ << 8) | (protocol << 16);
@@ -33,7 +35,7 @@ int socket_socket(int domain, int type_, int protocol) {
 		sockets = realloc(sockets, sizeof(socket_t) * (sockets_len + 1));
 		sockets[sockets_len] = (socket_t){0};
 		sockets[sockets_len].type = type;
-		sockets[sockets_len].fd = res;
+		sockets[sockets_len].id = last_id;
 		sockets[sockets_len].ref_count = 0;
 		sockets[sockets_len].parent_pid = process_get_pid();
 		sockets[sockets_len].do_remove = 0;
@@ -46,14 +48,27 @@ int socket_socket(int domain, int type_, int protocol) {
 		fd_data->type = TYPE_SOCK;
 
 		sockets_len++;
+		last_id++;
+		process_wakeup(socket_pid, 0);
 		break;
 	}
 	return res;
 }
 
 socket_t *socket_find_fd(int fd) {
+	fd_data_t *data = fm_fd_to_data(fd);
+	if (!data || data->type != TYPE_SOCK)
+		return NULL;
 	for (int i = 0; i < sockets_len; i++) {
-		if (sockets[i].fd == fd)
+		if (sockets[i].id == data->sock_id)
+			return &sockets[i];
+	}
+	return NULL;
+}
+
+socket_t *socket_find_id(int id) {
+	for (int i = 0; i < sockets_len; i++) {
+		if (sockets[i].id == id)
 			return &sockets[i];
 	}
 	return NULL;
