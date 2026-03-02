@@ -30,7 +30,8 @@
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 
 #define SID_ANONYMIZE(sid) (SID_FORMAT(0xFF, SID_SECTOR(sid)))
-#define SID_RESTORE_DISK(sid, parent_sid) (SID_DISK(sid) == 0xFF ? SID_FORMAT(SID_DISK(parent_sid), SID_SECTOR(sid)) : (sid))
+#define SID_RESTORE_DISK(sid, parent_sid) (SID_DISK(sid) == 0xFF ? \
+            SID_FORMAT(SID_DISK(parent_sid), SID_SECTOR(sid)) : (sid))
 
 #undef UINT32_MAX
 #define UINT32_MAX 0xFFFFFFFF

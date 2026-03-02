@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === ctr_size.c : 2025 ===                                                 |
+|   === ctr_size.c : 2026 ===                                                 |
 |                                                                             |
-|    Part of the filesystem creation tool                          .pi0iq.    |
+|    Kernel container size modification functions                  .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |

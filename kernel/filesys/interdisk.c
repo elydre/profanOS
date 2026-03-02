@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === interdisk.c : 2026 ===                                                |
+|                                                                             |
+|    Kernel global disk interface functions                        .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <kernel/butterfly.h>
 #include <kernel/afft.h>
 #include <minilib.h>

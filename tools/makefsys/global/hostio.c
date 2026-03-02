@@ -169,10 +169,15 @@ int hio_dir_export(const char *extern_path, const char *intern_path) {
     }
 
     for (int i = 0; i < count; i++) {
+        if (strcmp(names[i], ".") == 0 || strcmp(names[i], "..") == 0)
+            continue;
+
         char *path = malloc(strlen(extern_path) + strlen(names[i]) + 2);
         path_join(path, extern_path, names[i]);
+
         char *intern_path2 = malloc(strlen(intern_path) + strlen(names[i]) + 2);
         path_join(intern_path2, intern_path, names[i]);
+
         if (fu_is_file(sids[i])) {
             // create the file
             FILE *fp = fopen(path, "wb");

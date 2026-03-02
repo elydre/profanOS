@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === vdisk.c : 2025 ===                                                    |
+|   === vdisk.c : 2026 ===                                                    |
 |                                                                             |
-|    Part of the filesystem creation tool                          .pi0iq.    |
+|    Kernel virtual disk implementation                            .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |

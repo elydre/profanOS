@@ -62,7 +62,7 @@ int serial_read(uint32_t port, void *buffer, uint32_t len) {
 
 static int serial_afft_write(uint32_t id, void *buffer, uint32_t offset, uint32_t len) {
     UNUSED(offset);
-    
+
     switch (id) {
         case SERIAL_AFFT_A:
             return serial_write(SERIAL_PORT_A, buffer, len);

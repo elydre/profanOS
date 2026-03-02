@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === usg_tools.c : 2025 ===                                                |
+|   === usg_tools.c : 2026 ===                                                |
 |                                                                             |
 |    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -22,7 +22,7 @@ static inline int path_to_sid_cmp(const char *path, const char *name, uint32_t l
     return name[len] != '\0';
 }
 
-static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
+static sid_t rec_path_to_sid(sid_t parent, const char *path) {
     // generate the path part to search for
     uint32_t path_len = 0;
 
@@ -36,21 +36,20 @@ static uint32_t rec_path_to_sid(uint32_t parent, const char *path) {
         return parent;
 
     // get the directory content
-    uint32_t sid, size;
-    uint8_t *buf;
-    int offset;
-
-    size = fs_cnt_get_size(parent);
+    uint32_t size = fs_cnt_get_size(parent);
 
     if (size == UINT32_MAX || size < sizeof(uint32_t))
         return SID_NULL;
 
-    buf = malloc(size);
+    uint8_t *buf = malloc(size);
 
     if (fs_cnt_read(parent, buf, 0, size)) {
         free(buf);
         return SID_NULL;
     }
+
+    int offset;
+    sid_t sid;
 
     // search for the path part
     for (int j = 0; (offset = kfu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
@@ -116,65 +115,5 @@ void kfu_sep_path(const char *fullpath, char **parent, char **cnt) {
 
     if (cnt != NULL) {
         str_copy(*cnt, fullpath + i + 1);
-    }
-}
-
-void kfu_draw_tree(sid_t sid, int depth) {
-    sid_t *sids;
-    char **names;
-    int count;
-
-    count = kfu_dir_get_content(sid, &sids, &names);
-
-    if (count == 0)
-        return;
-
-    if (count == -1) {
-        kprintf_serial("failed to get directory content during path search\n");
-        return;
-    }
-
-    for (int i = 0; i < count; i++) {
-        if (str_cmp(names[i], ".") == 0 || str_cmp(names[i], "..") == 0)
-            continue;
-
-        kprintf_serial("%08x  ", sids[i]);
-
-        for (int j = 0; j < depth; j++)
-            kprintf_serial("  ");
-
-        kprintf_serial("%s : %dB\n", names[i], fs_cnt_get_size(sids[i]));
-
-        if (kfu_is_dir(sids[i]))
-            kfu_draw_tree(sids[i], depth + 1);
-    }
-
-    for (int i = 0; i < count; i++)
-        free(names[i]);
-
-    free(names);
-    free(sids);
-}
-
-void kfu_dump_sector(sid_t sid) {
-    uint8_t buf[SECTOR_SIZE];
-    if (interdisk_read(sid, buf, SECTOR_SIZE)) {
-        kprintf_serial("failed to read sector d%ds%d\n", SID_DISK(sid), SID_SECTOR(sid));
-        return;
-    }
-
-    kprintf_serial("SECTOR d%ds%d:\n", SID_DISK(sid), SID_SECTOR(sid));
-
-    char line[16];
-
-    for (int i = 0; i < SECTOR_SIZE; i++) {
-        if (i % 16 == 0)
-            kprintf_serial("%04x: ", i);
-        kprintf_serial("%02x ", buf[i]);
-        line[i % 16] = (buf[i] >= 32 && buf[i] <= 126) ? buf[i] : '.';
-        if (i % 16 == 15) {
-            line[16] = 0;
-            kprintf_serial("  %s\n", line);
-        }
     }
 }

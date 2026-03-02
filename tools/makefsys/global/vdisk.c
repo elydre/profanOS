@@ -44,7 +44,7 @@ void vdisk_destroy(void) {
 
 #define DISK_EXTEND_SIZE SECTOR_SIZE * 1024
 
-int vdisk_extend(uint32_t newsize) {
+static int vdisk_extend(uint32_t newsize) {
     if (!g_vdisk)
         return -1;
 

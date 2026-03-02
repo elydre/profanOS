@@ -28,7 +28,8 @@
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 
 #define SID_ANONYMIZE(sid) (SID_FORMAT(0xFF, SID_SECTOR(sid)))
-#define SID_RESTORE_DISK(sid, parent_sid) (SID_DISK(sid) == 0xFF ? SID_FORMAT(SID_DISK(parent_sid), SID_SECTOR(sid)) : (sid))
+#define SID_RESTORE_DISK(sid, parent_sid) (SID_DISK(sid) == 0xFF ? \
+            SID_FORMAT(SID_DISK(parent_sid), SID_SECTOR(sid)) : (sid))
 
 #define SF_HEAD 0xAEFCEBDA // CG - 4836
 
@@ -45,7 +46,6 @@ extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 void vdisk_init(void);
 void vdisk_destroy(void);
-int  vdisk_extend(uint32_t newsize);
 int  vdisk_write(void *data, uint32_t size, uint32_t offset);
 int  vdisk_read(void *buffer, uint32_t size, uint32_t offset);
 

@@ -26,10 +26,10 @@ int main(int argc, char **argv) {
     vdisk_init();
 
     sid_t s = fu_dir_create(0, NULL, "/");
-    printf("root sid: d%ds%d\n", SID_DISK(s), SID_SECTOR(s));
 
     hio_dir_import(argv[1], "/");
-    // internal_to_host(filesys, "output", "/");
+
+    // hio_dir_export("output", "/");
 
     fu_draw_tree(SID_ROOT, 0);
 

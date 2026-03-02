@@ -19,7 +19,7 @@ from time import sleep
 SHOW_CMD    = False     # show full command line     [0]
 COMPCT_LINE = True      # cut line if too long       [1]
 LOG_FILE    = True      # write build logs file      [1]
-DEBUG_MKFS  = False     # run makefsys with valgrind [0]
+DEBUG_MKFS  = True      # run makefsys with valgrind [0]
 
 # SETUP
 TOOLS_DIR = "tools"

@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === sector.c : 2025 ===                                                   |
+|   === sector.c : 2026 ===                                                   |
 |                                                                             |
-|    Part of the filesystem creation tool                          .pi0iq.    |
+|    Filesystem v4 sector management functions                     .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -14,12 +14,20 @@
 #include <system.h>
 
 int fs_sector_get_unused(int disk, int count, sid_t *ret) {
-    if (disk != 0)
-        sys_error("fs_sector_get_unused: only disk 0 is supported for now");
-    static int next_free_sector = 1;
-    *ret = SID_FORMAT(disk, next_free_sector);
-    next_free_sector += count;
-    return count;
+    if (disk == 0) {
+        static int next_free_sector_0 = 1;
+        *ret = SID_FORMAT(disk, next_free_sector_0);
+        next_free_sector_0 += count;
+        return count;
+    } else if (disk == 1) {
+        static int next_free_sector_1 = 3900;
+        *ret = SID_FORMAT(disk, next_free_sector_1);
+        next_free_sector_1 += count;
+        return count;
+    } else {
+        sys_error("fs_sector_get_unused: invalid disk %d", disk);
+        return 0;
+    }
 }
 
 int fs_sector_note_free(sid_t sid) {
