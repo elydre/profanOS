@@ -324,13 +324,11 @@ static int init_fpu(void) {
 }
 
 static int write_kernel_version(void) {
-    kprint("aa\n");
     if (SID_IS_NULL(kfu_dir_create(0, "/sys", "kernel"))) {
         kprint("ab\n");
         return 1;
-    } // TODO: mettre disk=0xFF pour indiquer que c'est le meme disque, sinon c'est un point de montage
+    }
 
-    kprint("bb\n");
     uint32_t sid = kfu_file_create("/sys/kernel", "version.txt");
 
     if (SID_IS_NULL(sid))

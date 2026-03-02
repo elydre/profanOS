@@ -39,7 +39,7 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
 
     memcpy(sector_data + 2, meta, min(META_MAXLEN, strlen(meta) + 1));
 
-    sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = loca_sid;
+    sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1] = SID_ANONYMIZE(loca_sid);
 
     if (vdisk_write(sector_data, SECTOR_SIZE, SID_SECTOR(main_sid) * SECTOR_SIZE)) {
         printf("failed to write d%ds%d\n", SID_DISK(main_sid), SID_SECTOR(main_sid));

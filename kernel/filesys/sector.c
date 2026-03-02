@@ -14,6 +14,8 @@
 #include <system.h>
 
 int fs_sector_get_unused(int disk, int count, sid_t *ret) {
+    if (disk != 0)
+        sys_error("fs_sector_get_unused: only disk 0 is supported for now");
     static int next_free_sector = 1;
     *ret = SID_FORMAT(disk, next_free_sector);
     next_free_sector += count;

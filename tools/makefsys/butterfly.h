@@ -27,6 +27,9 @@
 #define SID_DISK(sid) ((sid) >> 24)
 #define SID_SECTOR(sid) ((sid) & 0xFFFFFF)
 
+#define SID_ANONYMIZE(sid) (SID_FORMAT(0xFF, SID_SECTOR(sid)))
+#define SID_RESTORE_DISK(sid, parent_sid) (SID_DISK(sid) == 0xFF ? SID_FORMAT(SID_DISK(parent_sid), SID_SECTOR(sid)) : (sid))
+
 #define SF_HEAD 0xAEFCEBDA // CG - 4836
 
 typedef uint32_t sid_t;

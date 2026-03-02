@@ -44,6 +44,8 @@ int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_
         return 1;
     }
 
+    loca_sid = SID_RESTORE_DISK(loca_sid, head_sid);
+
     int index = -offset;
 
     while (index < (int) size) {
@@ -70,6 +72,8 @@ int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_
                 return 1;
             }
 
+            core_sid = SID_RESTORE_DISK(core_sid, loca_sid);
+
             uint32_t rwsize = min(size - index, SECTOR_SIZE * core_count);
 
             // read / write cores
@@ -90,7 +94,9 @@ int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_
 
         loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-        if (SID_IS_NULL(loca_sid) && index < (int) size) {
+        if (!SID_IS_NULL(loca_sid))
+            loca_sid = SID_RESTORE_DISK(loca_sid, head_sid);
+        else if (index < (int) size) {
             printf("INTERNAL ERROR: next locator null before end\n");
             return 1;
         }

@@ -30,7 +30,7 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
     sid_t *next_sid = &local_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
     if (!SID_IS_NULL(*next_sid)) {
-        int ret = fs_cnt_shrink_size(*next_sid, to_shrink);
+        int ret = fs_cnt_shrink_size(SID_RESTORE_DISK(*next_sid, loca_sid), to_shrink);
         if (ret <= 0) {
             return ret == 0 ? -2 : ret;
         }
@@ -49,6 +49,8 @@ int fs_cnt_shrink_size(sid_t loca_sid, uint32_t to_shrink) {
         if (SID_IS_NULL(core_sid)) {
             continue;
         }
+
+        core_sid = SID_RESTORE_DISK(core_sid, loca_sid);
 
         for (int j = core_count - 1; j >= 0; j--) {
             if (to_shrink == 0)
@@ -91,7 +93,7 @@ int fs_cnt_grow_size(sid_t loca_sid, uint32_t to_grow) {
             break;
         }
 
-        loca_sid = next_sid;
+        loca_sid = SID_RESTORE_DISK(next_sid, loca_sid);
     } while (1);
 
     while (to_grow) {
@@ -110,7 +112,7 @@ int fs_cnt_grow_size(sid_t loca_sid, uint32_t to_grow) {
                     return -1;
                 }
 
-                local_data[i * 2]     = core_sid;
+                local_data[i * 2]     = SID_ANONYMIZE(core_sid);
                 local_data[i * 2 + 1] = count;
                 to_grow -= count;
 
@@ -142,10 +144,17 @@ int fs_cnt_set_size(sid_t sid, uint32_t size) {
         return 1;
     }
 
+    sid_t loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
+
+    if (SID_IS_NULL(loca_sid)) {
+        printf("INTERNAL ERROR: head cnt has no locator\n");
+        return 1;
+    }
+
+    loca_sid = SID_RESTORE_DISK(loca_sid, sid);
+
     uint32_t old_count = (sector_data[1] / SECTOR_SIZE) + (sector_data[1] % SECTOR_SIZE ? 1 : 0);
     uint32_t new_count = size / SECTOR_SIZE + (size != 0);
-
-    uint32_t loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
     if (old_count < new_count) {
         // grow cnt
