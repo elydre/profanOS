@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <modules/filesys.h>
+#include <stdio.h>
 
 static uint32_t get_time() {
 	struct timeval tv;
@@ -13,8 +14,9 @@ static uint32_t get_time() {
 int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 	int res = 0;
 
-	uint32_t time_end = get_time() + timeout;
-	while (timeout < 1 && get_time() < time_end && res == 0) {
+	uint32_t t_start = get_time();
+	uint32_t time_end = get_time() + timeout - t_start;
+	while ((timeout < 1 || get_time() - t_start < time_end) && res == 0) {
 		for (int i = 0; i < nfds; i++) {
 			if (fds[i].fd == -1)
 				continue;

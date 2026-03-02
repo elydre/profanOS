@@ -76,7 +76,7 @@ int send_query(int fd, char *domain, uint16_t id) {
 
 int parse_packet(uint8_t *packet, int packet_len, uint16_t id, uint32_t *ip) {
 	if (packet_len < 12) {
-		fprintf(stderr, "malformed response\n");
+		fprintf(stderr, "malformed response %d\n", __LINE__);
 		return 1;
 	}
 	uint16_t rid = (packet[0] << 8) | packet[1];
@@ -85,6 +85,8 @@ int parse_packet(uint8_t *packet, int packet_len, uint16_t id, uint32_t *ip) {
 	uint16_t ancount = (packet[6] << 8) | packet[7];
 	uint16_t nscount = (packet[8] << 8) | packet[9];
 	uint16_t arcount = (packet[10] << 8) | packet[11];
+	(void)arcount;
+	(void)nscount;
 	if (id != rid) {
 		fprintf(stderr, "invalid response id\n");
 		return 1;
@@ -100,15 +102,16 @@ int parse_packet(uint8_t *packet, int packet_len, uint16_t id, uint32_t *ip) {
 		if (part_len == 0)
 			break;
 	}
+	i += 4;
 	if (flags & 0b1111 || ancount == 0) {
 		fprintf(stderr, "domain name not found\n");
 		return 1;
 	}
 	if (i >= packet_len) {
-		fprintf(stderr, "malformed packet response\n");
+		fprintf(stderr, "malformed packet response %d\n", __LINE__);
 		return 1;
 	}
-	if ((packet[i]) & 0xc0 == 0xc0)
+	if ((packet[i] & 0xc0) == 0xc0)
 		i += 2;
 	else {
 		while (i < packet_len) {
@@ -119,39 +122,39 @@ int parse_packet(uint8_t *packet, int packet_len, uint16_t id, uint32_t *ip) {
 		}
 	}
 	if (i + 1 >= packet_len) {
-		fprintf(stderr, "malformed packet response\n");
+		fprintf(stderr, "malformed packet response %d\n", __LINE__);
 		return 1;
 	}
 	uint16_t rtype = (packet[i] << 8) | packet[i + 1];
 	if (rtype != 1) {
-		fprintf(stderr, "invalude type in response\n");
+		fprintf(stderr, "invalude type in response %d\n", __LINE__);
 		return 1;
 	}
 	i += 2;
 	if (i + 1 >= packet_len) {
-		fprintf(stderr, "malformed packet response\n");
+		fprintf(stderr, "malformed packet response %d\n", __LINE__);
 		return 1;
 	}
 	uint16_t rclass = (packet[i] << 8) | packet[i + 1];
 	if (rclass != 1) {
-		fprintf(stderr, "invalude class in response\n");
+		fprintf(stderr, "invalude class in response %d\n", __LINE__);
 		return 1;
 	}
 	i += 2;
 	i += 4; // skip ttl
 	if (i + 1 >= packet_len) {
-		fprintf(stderr, "malformed packet response\n");
+		fprintf(stderr, "malformed packet response %d\n", __LINE__);
 		return 1;
 	}
 
 	uint16_t rlen = (packet[i] << 8) | packet[i + 1];
 	if (rlen != 4) {
-		fprintf(stderr, "invalude len in response\n");
+		fprintf(stderr, "invalude len in response %d\n", __LINE__);
 		return 1;
 	}
 	i += 2;
 	if (i + 3 >= packet_len) {
-		fprintf(stderr, "malformed packet response\n");
+		fprintf(stderr, "malformed packet response %d\n", __LINE__);
 		return 1;
 	}
 	*ip = packet[i];
@@ -201,7 +204,7 @@ int main(int argc, char **argv) {
 		close(fd);
 		return 1;
 	}
-	srand(time(NULL) + getpid() << 7);
+	srand(time(NULL) + (getpid() << 7));
 	uint16_t id = rand() % 0xFFFF;
 	if (send_query(fd, argv[1], id)) {
 		close(fd);

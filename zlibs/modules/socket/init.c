@@ -4,10 +4,11 @@
 int socket_pid = -1;
 
 static void socket_process() {
-
 	uint32_t eth_id = eth_start();
+
 	uint8_t *packet = malloc(0xFFFF);
 	int alloc_len = 0xFFFF;
+
 	socket_pid = process_get_pid();
 	while (1) {
 		if (sockets_len == 0)

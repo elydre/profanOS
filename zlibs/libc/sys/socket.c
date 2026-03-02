@@ -5,7 +5,6 @@
 
 int socket(int domain, int type, int protocol) {
 	int ret = socket_socket(domain, type, protocol);
-	printf("socket ret %d\n", ret);
 	if (ret < 0) {
 		errno = -ret;
 		ret = -1;

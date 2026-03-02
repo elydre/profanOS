@@ -44,7 +44,7 @@ int socket_socket(int domain, int type_, int protocol) {
 		if (err)
 			return err;
 
-		fd_data->sock_id = sockets_len;
+		fd_data->sock_id = last_id;
 		fd_data->type = TYPE_SOCK;
 
 		sockets_len++;
@@ -55,21 +55,17 @@ int socket_socket(int domain, int type_, int protocol) {
 	return res;
 }
 
-socket_t *socket_find_fd(int fd) {
-	fd_data_t *data = fm_fd_to_data(fd);
-	if (!data || data->type != TYPE_SOCK)
-		return NULL;
-	for (int i = 0; i < sockets_len; i++) {
-		if (sockets[i].id == data->sock_id)
-			return &sockets[i];
-	}
-	return NULL;
-}
-
 socket_t *socket_find_id(int id) {
 	for (int i = 0; i < sockets_len; i++) {
 		if (sockets[i].id == id)
 			return &sockets[i];
 	}
 	return NULL;
+}
+
+socket_t *socket_find_fd(int fd) {
+	fd_data_t *data = fm_fd_to_data(fd);
+	if (!data || data->type != TYPE_SOCK)
+		return NULL;
+	return socket_find_id(data->sock_id);
 }
