@@ -39,57 +39,7 @@ DIR STRUCTURE
     [nameN](N)
 */
 
-int kfu_dir_get_content(sid_t dir_sid, uint32_t **ids, char ***names) {
-    // read the directory and get size
-    uint32_t size = fs_cnt_get_size(dir_sid);
-    if (size == UINT32_MAX) {
-        sys_warning("failed to get directory size");
-        return -1;
-    }
-
-    if (!kfu_is_dir(dir_sid)) {
-        sys_warning("not a directory");
-        return -1;
-    }
-
-    // read the directory
-    uint8_t *buf = malloc(size);
-    if (fs_cnt_read(dir_sid, buf, 0, size)) {
-        sys_warning("failed to read directory");
-        return -1;
-    }
-
-    // get the number of elements
-    uint32_t count;
-    mem_copy(&count, buf, sizeof(uint32_t));
-
-    if (count == 0 || ids == NULL || names == NULL) {
-        free(buf);
-        return count;
-    }
-
-    // get the elements
-    *ids = malloc(sizeof(uint32_t) * count);
-    *names = malloc(sizeof(char *) * count);
-
-    kprintf("directory d%ds%d has %d elements:\n", SID_DISK(dir_sid), SID_SECTOR(dir_sid), count);
-
-    uint32_t name_offset;
-    for (uint32_t i = 0; i < count; i++) {
-        mem_copy(&(*ids)[i], buf + sizeof(uint32_t) + i * (sizeof(uint32_t) + sizeof(uint32_t)), sizeof(uint32_t));
-        mem_copy(&name_offset, buf + sizeof(uint32_t) + i * (sizeof(uint32_t) +
-                sizeof(uint32_t)) + sizeof(uint32_t), sizeof(uint32_t));
-        char *tmp = (void *) buf + sizeof(uint32_t) + count * (sizeof(uint32_t) + sizeof(uint32_t)) + name_offset;
-        (*names)[i] = malloc(str_len(tmp) + 1);
-        str_copy((*names)[i], tmp);
-        (*ids)[i] = SID_RESTORE_DISK((*ids)[i], dir_sid);
-        kprintf("found element: %s (d%ds%d)\n", (*names)[i], SID_DISK((*ids)[i]), SID_SECTOR((*ids)[i]));
-    }
-    free(buf);
-    return count;
-}
-
-int kfu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name) {
+int kfu_dir_add(sid_t dir_sid, uint32_t element_sid, const char *name) {
     // read the directory and get size
     uint32_t size = fs_cnt_get_size(dir_sid);
 
@@ -153,7 +103,7 @@ int kfu_add_element_to_dir(sid_t dir_sid, uint32_t element_sid, const char *name
     return 0;
 }
 
-sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
+sid_t kfu_dir_create(const char *parent, const char *name) {
     sid_t parent_sid;
     sid_t head_sid;
 
@@ -172,14 +122,14 @@ sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
     str_copy(meta, "D-");
     str_ncopy(meta + 2, name, META_MAXLEN - 3);
 
-    head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
+    head_sid = fs_cnt_init(SID_DISK(parent_sid), meta);
     free(meta);
 
     if (SID_IS_NULL(head_sid))
         return SID_NULL;
 
     // create a link in parent directory
-    if (parent && kfu_add_element_to_dir(parent_sid, head_sid, name))
+    if (parent && kfu_dir_add(parent_sid, head_sid, name))
         return SID_NULL;
 
     fs_cnt_set_size(head_sid, sizeof(uint32_t));
@@ -187,8 +137,8 @@ sid_t kfu_dir_create(uint8_t device_id, const char *parent, const char *name) {
     fs_cnt_write(head_sid, "\0\0\0\0", 0, 4);
 
     // create '.' and '..'
-    return (kfu_add_element_to_dir(head_sid, parent_sid, "..") ||
-            kfu_add_element_to_dir(head_sid, head_sid, ".") ? SID_NULL : head_sid);
+    return (kfu_dir_add(head_sid, parent_sid, "..") ||
+            kfu_dir_add(head_sid, head_sid, ".") ? SID_NULL : head_sid);
 }
 
 int kfu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {

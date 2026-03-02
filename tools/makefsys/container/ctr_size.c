@@ -101,7 +101,7 @@ int fs_cnt_grow_size(sid_t loca_sid, uint32_t to_grow) {
 
         for (int i = 0; i < LINKS_IN_LOCA; i++) {
             sid_t    core_sid   = local_data[i * 2];
-            uint32_t core_count = local_data[i * 2 + 1];
+            // uint32_t core_count = local_data[i * 2 + 1];
 
             if (SID_IS_NULL(core_sid)) {
                 // found space

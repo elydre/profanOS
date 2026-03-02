@@ -15,6 +15,8 @@
 
 #include <stdint.h>
 
+typedef uint32_t sid_t;
+
 #undef SID_NULL
 #define SID_NULL 0
 
@@ -60,29 +62,29 @@ extern int profan_syscall(uint32_t id, ...);
 #define _pscall(module, id, ...) \
     profan_syscall(((module << 24) | id), __VA_ARGS__)
 
-int       fu_is_dir(uint32_t sid);
-int       fu_dir_get_size(uint32_t sid);
-int       fu_dir_get_elm(uint8_t *name, uint32_t sid, uint32_t index, uint32_t *elm_sid);
-int       fu_dir_get_content(uint32_t sid, uint32_t **elm_sids, char ***elm_names);
-int       fu_add_to_dir(uint32_t dir_sid, uint32_t elm_sid, char *name);
-int       fu_remove_from_dir(uint32_t dir_sid, uint32_t elm_sid);
-uint32_t  fu_dir_create(int disk, const char *path);
-int       fu_is_file(uint32_t sid);
-int       fu_file_set_size(uint32_t sid, uint32_t size);
-uint32_t  fu_file_get_size(uint32_t sid);
-uint32_t  fu_file_create(int disk, const char *path);
-int       fu_file_read(uint32_t sid, void *buf, uint32_t offset, uint32_t size);
-int       fu_file_write(uint32_t sid, void *buf, uint32_t offset, uint32_t size);
-int       fu_is_afft(uint32_t sid);
-uint32_t  fu_afft_create(int disk, const char *path, int (*handler)(int, void *, uint32_t, uint8_t));
-void     *fu_afft_get_addr(uint32_t sid);
-uint32_t  fu_path_to_sid(uint32_t disk, const char *path);
+int      fu_is_dir(sid_t sid);
+int      fu_dir_get_size(sid_t sid);
+int      fu_dir_get_elm(uint8_t *name, sid_t sid, uint32_t index, sid_t *elm_sid);
+int      fu_dir_get_content(sid_t sid, sid_t **elm_sids, char ***elm_names);
+int      fu_dir_add(sid_t dir_sid, sid_t elm_sid, char *name);
+int      fu_remove_from_dir(sid_t dir_sid, sid_t elm_sid);
+sid_t    fu_dir_create(const char *parent, const char *name);
+int      fu_is_file(sid_t sid);
+int      fu_file_set_size(sid_t sid, uint32_t size);
+uint32_t fu_file_get_size(sid_t sid);
+sid_t    fu_file_create(const char *parent, const char *name);
+int      fu_file_read(sid_t sid, void *buf, uint32_t offset, uint32_t size);
+int      fu_file_write(sid_t sid, void *buf, uint32_t offset, uint32_t size);
+int      fu_is_afft(sid_t sid);
+sid_t    fu_afft_create(const char *parent, const char *name, uint32_t id);
+int      fu_afft_get_id(sid_t sid);
+sid_t    fu_path_to_sid(sid_t base, const char *path);
 
 #define fu_is_dir(a)                  ((int) _pscall(FILESYS_LIB_ID, 0, a))
 #define fu_dir_get_size(a)            ((int) _pscall(FILESYS_LIB_ID, 1, a))
 #define fu_dir_get_elm(a, b, c, d)    ((int) _pscall(FILESYS_LIB_ID, 2, a, b, c, d))
 #define fu_dir_get_content(a, b, c)   ((int) _pscall(FILESYS_LIB_ID, 3, a, b, c))
-#define fu_add_to_dir(a, b, c)        ((int) _pscall(FILESYS_LIB_ID, 4, a, b, c))
+#define fu_dir_add(a, b, c)           ((int) _pscall(FILESYS_LIB_ID, 4, a, b, c))
 #define fu_remove_from_dir(a, b)      ((int) _pscall(FILESYS_LIB_ID, 5, a, b))
 #define fu_dir_create(a, b)           ((uint32_t) _pscall(FILESYS_LIB_ID, 6, a, b))
 #define fu_is_file(a)                 ((int) _pscall(FILESYS_LIB_ID, 7, a))

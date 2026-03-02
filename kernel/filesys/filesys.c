@@ -46,30 +46,30 @@ int filesys_init(void) {
         return 1;
     }
 
-    kfu_dir_create(0, NULL, "/");
-    kfu_dir_create(0, "/", "tmp");
-    kfu_dir_create(0, "/", "dev");
+    kfu_dir_create(NULL, "/");
+    kfu_dir_create("/", "tmp");
+    kfu_dir_create("/", "dev");
 
     if (initrd_to_vdisk())
         return 1;
 
-    if (kfu_add_element_to_dir(
+    if (kfu_dir_add(
         SID_ROOT,
         kfu_path_to_sid(SID_FORMAT(1, 1), "/user"),
         "user"
-    ) || kfu_add_element_to_dir(
+    ) || kfu_dir_add(
         SID_ROOT,
         kfu_path_to_sid(SID_FORMAT(1, 1), "/bin"),
         "bin"
-    ) || kfu_add_element_to_dir(
+    ) || kfu_dir_add(
         SID_ROOT,
         kfu_path_to_sid(SID_FORMAT(1, 1), "/lib"),
         "lib"
-    ) || kfu_add_element_to_dir(
+    ) || kfu_dir_add(
         SID_ROOT,
         kfu_path_to_sid(SID_FORMAT(1, 1), "/sys"),
         "sys"
-    ) || kfu_add_element_to_dir(
+    ) || kfu_dir_add(
         SID_ROOT,
         kfu_path_to_sid(SID_FORMAT(1, 1), "/zada"),
         "zada"
@@ -79,7 +79,7 @@ int filesys_init(void) {
 
     uint32_t src_sid = kfu_path_to_sid(SID_FORMAT(1, 1), "/src");
 
-    return (!SID_IS_NULL(src_sid) && kfu_add_element_to_dir(
+    return (!SID_IS_NULL(src_sid) && kfu_dir_add(
         SID_ROOT,
         src_sid,
         "src"

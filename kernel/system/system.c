@@ -324,7 +324,7 @@ static int init_fpu(void) {
 }
 
 static int write_kernel_version(void) {
-    if (SID_IS_NULL(kfu_dir_create(0, "/sys", "kernel"))) {
+    if (SID_IS_NULL(kfu_dir_create("/sys", "kernel"))) {
         kprint("ab\n");
         return 1;
     }

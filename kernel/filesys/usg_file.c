@@ -48,5 +48,5 @@ sid_t kfu_file_create(const char *parent, const char *name) {
         return SID_NULL;
 
     // create a link in parent directory
-    return kfu_add_element_to_dir(parent_sid, head_sid, name) ? SID_NULL : head_sid;
+    return kfu_dir_add(parent_sid, head_sid, name) ? SID_NULL : head_sid;
 }

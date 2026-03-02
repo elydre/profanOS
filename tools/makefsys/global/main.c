@@ -25,7 +25,10 @@ int main(int argc, char **argv) {
 
     vdisk_init();
 
-    sid_t s = fu_dir_create(0, NULL, "/");
+    if (SID_IS_NULL(fu_dir_create(0, NULL, "/"))) {
+        printf("failed to create root directory\n");
+        return 1;
+    }
 
     hio_dir_import(argv[1], "/");
 

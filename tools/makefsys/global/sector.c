@@ -24,6 +24,8 @@ int fs_sector_get_unused(int disk, int count, sid_t *ret) {
 }
 
 int fs_sector_note_free(sid_t sid) {
+    (void) sid;
+
     printf("not implemented yet\n");
     return 0;
 }

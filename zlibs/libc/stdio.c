@@ -710,7 +710,7 @@ int rename(const char *old_filename, const char *new_filename) {
     }
 
     // add the new entry to the new parent
-    if (fu_add_to_dir(new_parent_sid, old_sid, new_entry)) {
+    if (fu_dir_add(new_parent_sid, old_sid, new_entry)) {
         free(new_entry);
         return -1;
     }

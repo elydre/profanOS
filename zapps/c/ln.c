@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fu_add_to_dir(target_sid, args->sector, target_name);
+    fu_dir_add(target_sid, args->sector, target_name);
 
     return 0;
 }
