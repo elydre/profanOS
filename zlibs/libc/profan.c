@@ -257,7 +257,7 @@ char *profan_path_path(const char *exec, int allow_path) {
             goto endloop;
 
         for (int i = 0; i < count; i++) {
-            int offset = fu_dir_get_elm(buf, size, i, &file_sid);
+            int offset = fu_dir_get_elm(dir_sid, buf, size, i, &file_sid);
 
             if (offset <= 0)
                 break;

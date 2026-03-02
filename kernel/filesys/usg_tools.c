@@ -52,9 +52,7 @@ static sid_t rec_path_to_sid(sid_t parent, const char *path) {
     sid_t sid;
 
     // search for the path part
-    for (int j = 0; (offset = kfu_dir_get_elm(buf, size, j, &sid)) > 0; j++) {
-        sid = SID_RESTORE_DISK(sid, parent);
-
+    for (int j = 0; (offset = kfu_dir_get_elm(parent, buf, size, j, &sid)) > 0; j++) {
         if (str_cmp(path, (char *) buf + offset) == 0) {
             free(buf);
             return sid;

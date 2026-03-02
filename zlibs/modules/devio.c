@@ -20,29 +20,33 @@
 #include <profan.h>
 
 
-int dev_null_r(void *buffer, uint32_t offset, uint32_t size) {
+int dev_null_r(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(buffer);
     UNUSED(offset);
+    UNUSED(id);
 
     return 0;
 }
 
-int dev_null_w(void *buffer, uint32_t offset, uint32_t size) {
+int dev_null_w(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(buffer);
     UNUSED(offset);
+    UNUSED(id);
 
     return size;
 }
 
-int dev_zero_r(void *buffer, uint32_t offset, uint32_t size) {
+int dev_zero_r(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     mem_set(buffer, 0, size);
     return size;
 }
 
-int dev_rand_r(void *buffer, uint32_t offset, uint32_t size) {
+int dev_rand_r(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     static uint32_t rand_seed = 0;
 
@@ -54,8 +58,9 @@ int dev_rand_r(void *buffer, uint32_t offset, uint32_t size) {
     return size;
 }
 
-int dev_kterm_r(void *buffer, uint32_t offset, uint32_t size) {
+int dev_kterm_r(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
@@ -83,28 +88,32 @@ int dev_kterm_r(void *buffer, uint32_t offset, uint32_t size) {
     return to_read;
 }
 
-int dev_kterm_w(void *buffer, uint32_t offset, uint32_t size) {
+int dev_kterm_w(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     kcnprint((char *) buffer, size, 0);
 
     return size;
 }
 
-int dev_stdin_r(void *buffer, uint32_t offset, uint32_t size) {
+int dev_stdin_r(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     return fm_read(0, buffer, size);
 }
 
-int dev_stdout_w(void *buffer, uint32_t offset, uint32_t size) {
+int dev_stdout_w(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     return fm_write(1, buffer, size);
 }
 
-int dev_stderr_w(void *buffer, uint32_t offset, uint32_t size) {
+int dev_stderr_w(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     return fm_write(2, buffer, size);
 }
@@ -146,8 +155,9 @@ static char *input_serial(void) {
     return buffer;
 }
 
-int dev_userial_r(void *buffer, uint32_t offset, uint32_t size) {
+int dev_userial_r(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     static char *buffer_addr = NULL;
     static uint32_t already_read = 0;
@@ -175,8 +185,9 @@ int dev_userial_r(void *buffer, uint32_t offset, uint32_t size) {
     return to_read;
 }
 
-int dev_userial_w(void *buffer, uint32_t offset, uint32_t size) {
+int dev_userial_w(int id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
+    UNUSED(id);
 
     for (uint32_t i = 0; i < size; i++) {
         if (((char *) buffer)[i] == '\n')

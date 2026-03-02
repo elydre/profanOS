@@ -73,7 +73,7 @@ panda_global_t *g_panda;
 
 #define set_pixel(x, y, color) g_panda->fb[(x) + (y) * g_panda->pitch] = color
 
-static font_data_t *load_psf_font(uint32_t sid) {
+static font_data_t *load_psf_font(sid_t sid) {
     uint32_t magic;
     uint32_t version;
     uint32_t headersize;
@@ -81,6 +81,9 @@ static font_data_t *load_psf_font(uint32_t sid) {
     uint32_t charsize;
     uint32_t height;
     uint32_t width;
+
+    if (SID_IS_NULL(sid))
+        return NULL;
 
     fs_cnt_read(sid, &magic, 0, 4);
     fs_cnt_read(sid, &version, 4, 4);
@@ -728,7 +731,7 @@ static int dev_panda_r(uint32_t id, void *buffer, uint32_t offset, uint32_t size
     return to_read;
 }
 
-static int dev_panda_w(void *buffer, uint32_t offset, uint32_t size) {
+static int dev_panda_w(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(offset);
 
     panda_print_string((char *) buffer, size, 0);

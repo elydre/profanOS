@@ -24,6 +24,9 @@
 #define kprintf(...) kprintf_buf((char *) 0, __VA_ARGS__)
 #define kprintf_serial(...) kprintf_buf((char *) 1, __VA_ARGS__)
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
 // string functions
 void str_cat(char *s1, const char *s2);
 int  str_len(const char *s);

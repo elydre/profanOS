@@ -226,6 +226,8 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         }
     }
 
+    kprintf_serial("sid: d%ds%d, name: %s\n", SID_DISK(sid), SID_SECTOR(sid), abs_path);
+
     if (!kfu_is_file(sid) && !kfu_is_afft(sid) && !kfu_is_dir(sid)) {
         return -EFTYPE;
     }

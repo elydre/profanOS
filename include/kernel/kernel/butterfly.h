@@ -17,9 +17,6 @@
 #define SECTOR_SIZE 512
 #define META_MAXLEN 64
 
-#undef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
 #define LINKS_IN_LOCA ((int) ((SECTOR_SIZE / (sizeof(uint32_t) * 2)) - sizeof(uint32_t)))
 
 #define SID_MAX_SECTOR 0xFFFFFF
@@ -101,7 +98,7 @@ void    kfu_dump_sector(sid_t sid);
 int     kfu_is_dir(sid_t sid);
 int     kfu_dir_add(sid_t dir_sid, sid_t element_sid, const char *name);
 sid_t   kfu_dir_create(const char *parent, const char *name);
-int     kfu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, sid_t *sid);
+int     kfu_dir_get_elm(sid_t dir_sid, uint8_t *buf, uint32_t bsize, uint32_t index, sid_t *sid);
 
 // usg_file.c
 int     kfu_is_file(sid_t sid);

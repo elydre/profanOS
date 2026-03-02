@@ -67,7 +67,7 @@ static DIR *sidopendir(uint32_t dir_sid) {
     dirp->entries = (void *) (dirp + 1);
 
     for (i = 0; i < count; i++) {
-        int offset = fu_dir_get_elm(buf, size, i, &sid);
+        int offset = fu_dir_get_elm(dir_sid, buf, size, i, &sid);
 
         if (offset < 0) {
             free(buf);

@@ -20,13 +20,13 @@ int fs_sector_get_unused(int disk, int count, sid_t *ret) {
         next_free_sector_0 += count;
         return count;
     } else if (disk == 1) {
-        static int next_free_sector_1 = 3900;
+        static int next_free_sector_1 = 4000;
         *ret = SID_FORMAT(disk, next_free_sector_1);
         next_free_sector_1 += count;
         return count;
     } else {
         sys_error("fs_sector_get_unused: invalid disk %d", disk);
-        return 0;
+        return -1;
     }
 }
 

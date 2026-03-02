@@ -70,6 +70,9 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
 
             core_sid = SID_RESTORE_DISK(core_sid, loca_sid);
 
+            if (index < 0)
+                index = 0;
+
             uint32_t rwsize = min(size - index, SECTOR_SIZE * core_count);
 
             // read / write cores
@@ -77,7 +80,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
                     core_sid,
                     buf + index,
                     rwsize,
-                    index < 0 ? -index : 0,
+                    offset,
                     is_read
             )) {
                 sys_error("failed to %s core d%ds%d",
@@ -86,6 +89,10 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
                 );
                 return 1;
             }
+
+            if (offset)
+                offset = 0;
+            
             index += rwsize;
         }
 

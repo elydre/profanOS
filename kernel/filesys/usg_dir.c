@@ -141,7 +141,7 @@ sid_t kfu_dir_create(const char *parent, const char *name) {
             kfu_dir_add(head_sid, head_sid, ".") ? SID_NULL : head_sid);
 }
 
-int kfu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid) {
+int kfu_dir_get_elm(sid_t dir_sid, uint8_t *buf, uint32_t bsize, uint32_t index, sid_t *sid) {
     // positive return: name offset
     // zero return: end of directory
     // negative return: error code (-errno)
@@ -165,8 +165,12 @@ int kfu_dir_get_elm(uint8_t *buf, uint32_t bsize, uint32_t index, uint32_t *sid)
     if (bsize < offset + sizeof(uint32_t) * 2)
         return -1;
 
-    if (sid != NULL)
+    if (sid != NULL) {
         mem_copy(sid, buf + offset, sizeof(uint32_t));
+        if (SID_IS_NULL(*sid))
+            return -1;
+        *sid = SID_RESTORE_DISK(*sid, dir_sid);
+    }
 
     mem_copy(&name_offset, buf + offset + sizeof(uint32_t), sizeof(uint32_t));
     offset = sizeof(uint32_t) + count * (sizeof(uint32_t) * 2) + name_offset;

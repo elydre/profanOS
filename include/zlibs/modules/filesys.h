@@ -64,7 +64,7 @@ extern int profan_syscall(uint32_t id, ...);
 
 int      fu_is_dir(sid_t sid);
 int      fu_dir_get_size(sid_t sid);
-int      fu_dir_get_elm(uint8_t *name, sid_t sid, uint32_t index, sid_t *elm_sid);
+int      fu_dir_get_elm(sid_t dir_sid, uint8_t *name, sid_t sid, uint32_t index, sid_t *elm_sid);
 int      fu_dir_get_content(sid_t sid, sid_t **elm_sids, char ***elm_names);
 int      fu_dir_add(sid_t dir_sid, sid_t elm_sid, char *name);
 int      fu_remove_from_dir(sid_t dir_sid, sid_t elm_sid);
@@ -82,7 +82,7 @@ sid_t    fu_path_to_sid(sid_t base, const char *path);
 
 #define fu_is_dir(a)                  ((int) _pscall(FILESYS_LIB_ID, 0, a))
 #define fu_dir_get_size(a)            ((int) _pscall(FILESYS_LIB_ID, 1, a))
-#define fu_dir_get_elm(a, b, c, d)    ((int) _pscall(FILESYS_LIB_ID, 2, a, b, c, d))
+#define fu_dir_get_elm(a, b, c, d, e) ((int) _pscall(FILESYS_LIB_ID, 2, a, b, c, d, e))
 #define fu_dir_get_content(a, b, c)   ((int) _pscall(FILESYS_LIB_ID, 3, a, b, c))
 #define fu_dir_add(a, b, c)           ((int) _pscall(FILESYS_LIB_ID, 4, a, b, c))
 #define fu_remove_from_dir(a, b)      ((int) _pscall(FILESYS_LIB_ID, 5, a, b))

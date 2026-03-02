@@ -83,7 +83,7 @@ int fu_dir_get_content(sid_t dir_sid, sid_t **ids, char ***names) {
     *names = malloc(sizeof(char *) * count);
 
     for (uint32_t i = 0; i < count; i++) {
-        offset = kfu_dir_get_elm(buf, size, i, &sid);
+        offset = kfu_dir_get_elm(dir_sid, buf, size, i, &sid);
         if (offset <= 0) {
             free(*ids);
             free(*names);

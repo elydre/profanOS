@@ -382,7 +382,7 @@ void list_dirs(ls_args_t *args) {
 
         entry_count = 0;
         for (int j = 0; j < elm_count; j++) {
-            int offset = fu_dir_get_elm(buf, size, j, &sid);
+            int offset = fu_dir_get_elm(sid, buf, size, j, &sid);
 
             if (offset <= 0) {
                 fprintf(stderr, "ls: error reading directory (%s)\n", strerror(-offset));

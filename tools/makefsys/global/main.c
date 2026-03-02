@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
     }
 
     hio_dir_import(argv[1], "/");
-
     // hio_dir_export("output", "/");
 
     fu_draw_tree(SID_ROOT, 0);
