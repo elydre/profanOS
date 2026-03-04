@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === sector.c : 2025 ===                                                   |
+|   === afft.h : 2026 ===                                                     |
 |                                                                             |
-|    Part of the filesystem creation tool                          .pi0iq.    |
+|    -                                                             .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,23 +9,21 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#ifndef _PROFAN_AFFT_H
+#define _PROFAN_AFFT_H
 
-#include "../butterfly.h"
+#include <profan/minimal.h>
 
-int fs_sector_get_unused(int disk, int count, sid_t *ret) {
-    static int next_free_sector = 1;
-    *ret = SID_FORMAT(disk, next_free_sector);
-    next_free_sector += count;
-    return count;
-}
+_BEGIN_C_FILE
 
-int fs_sector_note_free(sid_t sid) {
-    (void) sid;
+#define AFFT_MAX      256
+#define AFFT_RESERVED 16
+#define AFFT_NAME_MAX 32
 
-    printf("not implemented yet\n");
-    return 0;
-}
+// commands with 2272 prefix are reserved for profanOS stuff
+#define AFFTC_EXISTS  0x2272000 // return 1 if exists, 0 if not
+#define AFFTC_GETNAME 0x2272001 // copy name to arg (char arg[32])
+
+_END_C_FILE
+
+#endif

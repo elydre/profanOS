@@ -126,10 +126,11 @@ void print_kernel_version(void) {
 
     mmq_putstr(1, "\e[35mkernel: \e[95m");
 
-    syscall_fs_read(sid, version, 0, 15);
+    int size = min(syscall_fs_get_size(sid), 16);
+    syscall_fs_read(sid, version, 0, size);
 
-    for (int i = 0; i < 16; i++) {
-        if (version[i] == '\n' || version[i] == '\r' || i == 15) {
+    for (int i = 0;; i++) {
+        if (version[i] == '\n' || version[i] == '\r' || i == size) {
             version[i] = '\0';
             break;
         }

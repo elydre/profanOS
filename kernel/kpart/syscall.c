@@ -59,7 +59,7 @@ void *SYSCALL_ARRAY[] = {
     afft_cmd,              // 20
 
     // keyboard.h
-    kb_get_scancode,           // 21
+    kb_get_scancode,       // 21
 
     // system.h
     sys_power,             // 22

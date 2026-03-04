@@ -749,7 +749,7 @@ static int dev_pander_w(uint32_t id, void *buffer, uint32_t offset, uint32_t siz
 }
 
 static int setup_afft(const char *name, void *write) {
-    int afft_id = afft_register(AFFT_AUTO, dev_panda_r, write, NULL);
+    int afft_id = afft_register(AFFT_AUTO, dev_panda_r, write, NULL, name);
 
     return (afft_id == -1 || kfu_afft_create("/dev", name, afft_id) == SID_NULL);
 }

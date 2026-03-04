@@ -216,6 +216,34 @@ int fu_file_write(sid_t file_sid, void *buf, uint32_t offset, uint32_t size) {
     return (!kfu_is_file(file_sid) || fs_cnt_write(file_sid, buf, offset, size));
 }
 
+/********************************************
+ *                                         *
+ *                New Stuff                *
+ *                                         *
+********************************************/
+
+int fu_mount_afft(int afft_id, sid_t mount_point, const char *name) {
+    if (!kfu_is_dir(mount_point))
+        return -1;
+
+    int disk_id = interdisk_register_disk(-1, afft_id);
+
+    if (disk_id < 0) {
+        sys_warning("Failed to register disk for afft %d", afft_id);
+        return -2;
+    }
+
+    if (kfu_dir_add(mount_point,
+        SID_FORMAT(disk_id, 1),
+        name
+    )) {
+        sys_warning("Failed to add afft %d to directory", afft_id);
+        return -2;
+    }
+
+    return 0;
+}
+
 
 void *__module_func_array[] = {
     (void *) 0xF3A3C4D4, // magic
@@ -236,4 +264,5 @@ void *__module_func_array[] = {
     kfu_afft_create,
     kfu_afft_get_id,
     kfu_path_to_sid,
+    fu_mount_afft
 };

@@ -34,6 +34,8 @@ ERR: a 1 indicates that an error occured. An error code has been placed in the e
 #define STATUS_DF  0x20
 #define STATUS_ERR 0x01
 
+uint32_t g_max_sector;
+
 static void ATA_wait_BSY(void) {    // wait for bsy to be 0
     while (port_read8(0x1F7) & STATUS_BSY);
 }
@@ -42,7 +44,7 @@ static void ATA_wait_DRQ(void) {    // wait fot drq to be 1
     while (!(port_read8(0x1F7) & STATUS_RDY));
 }
 
-static void write_sector(uint32_t LBA, uint32_t *data) {
+static void write_sector(uint32_t LBA, uint8_t *data, uint32_t offset, uint32_t size) {
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
@@ -57,12 +59,30 @@ static void write_sector(uint32_t LBA, uint32_t *data) {
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
-    for (int i = 0; i < 128; i++) {
-        port_write32(0x1F0, data[i]);
+    uint8_t data_part[4];
+
+    if (offset == 0 && size == 512) {
+        // fast write
+        kprintf_serial("fast write sector %d\n", LBA);
+        for (int i = 0; i < 128; i++)
+            port_write32(0x1F0, ((uint32_t *) data)[i]);
+        return;
+    }
+
+    kprintf_serial("slow write sector %d\n", LBA);
+    for (uint32_t i = 0; i < 512; i += 4) {
+        for (uint32_t j = 0; j < 4; j++) {
+            if (i + j < offset || i + j >= offset + size)
+                data_part[j] = 0;
+            else
+                data_part[j] = data[i + j - offset];
+        }
+
+        port_write32(0x1F0, *(uint32_t *) data_part);
     }
 }
 
-static void read_sector(uint32_t LBA, uint32_t *data) {
+static void read_sector(uint32_t LBA, uint8_t *data, uint32_t offset, uint32_t size) {
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
@@ -77,54 +97,96 @@ static void read_sector(uint32_t LBA, uint32_t *data) {
     ATA_wait_BSY();
     ATA_wait_DRQ();
 
-    for (int i = 0; i < 128; i++) {
-        data[i] = port_read32(0x1F0);
+    uint8_t data_part[4];
+
+    if (offset == 0 && size == 512) {
+        // fast read
+        kprintf_serial("fast read sector %d\n", LBA);
+        for (int i = 0; i < 128; i++)
+            ((uint32_t *) data)[i] = port_read32(0x1F0);
+        return;
+    }
+
+    kprintf_serial("slow read sector %d\n", LBA);
+    for (uint32_t i = 0; i < 512; i += 4) {
+        *(uint32_t *) data_part = port_read32(0x1F0);
+
+        for (uint32_t j = 0; j < 4; j++) {
+            if (i + j < offset || i + j >= offset + size)
+                continue;
+            else
+                data[i + j - offset] = data_part[j];
+        }
     }
 }
 
 
 int ata_write(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(id);
+    int res = size;
 
-    if (size % 512 != 0 || offset % 512 != 0)
+    uint32_t sector = offset / 512;
+
+    if (sector >= g_max_sector)
         return -1;
 
-    uint32_t LBA = offset / 512;
-    uint32_t *data = buffer;
+    uint32_t offset_in_sector = offset % 512;
+    uint32_t size_in_sector = 512 - offset_in_sector;
 
-    size /= 512;
+    if (size_in_sector > size)
+        size_in_sector = size;
 
-    for (uint32_t i = 0; i < size; i++) {
-        write_sector(LBA + i, data);
-        data += 128;
+    write_sector(sector, buffer, offset_in_sector, size_in_sector);
+    size -= size_in_sector;
+    buffer = (uint8_t *) buffer + size_in_sector;
+    offset += size_in_sector;
+
+    while (size > 0 && sector < g_max_sector) {
+        sector++;
+        size_in_sector = size > 512 ? 512 : size;
+        write_sector(sector, buffer, 0, size_in_sector);
+        size -= size_in_sector;
+        buffer = (uint8_t *) buffer + size_in_sector;
     }
 
-    return size;
+    return res;
 }
 
 int ata_read(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
     UNUSED(id);
+    int res = size;
 
-    if (size % 512 != 0 || offset % 512 != 0)
+    uint32_t sector = offset / 512;
+
+    if (sector >= g_max_sector)
         return -1;
 
-    uint32_t LBA = offset / 512;
-    uint32_t *data = buffer;
+    uint32_t offset_in_sector = offset % 512;
+    uint32_t size_in_sector = 512 - offset_in_sector;
 
-    size /= 512;
+    if (size_in_sector > size)
+        size_in_sector = size;
 
-    for (uint32_t i = 0; i < size; i++) {
-        read_sector(LBA + i, data);
-        data += 128;
+    read_sector(sector, buffer, offset_in_sector, size_in_sector);
+    size -= size_in_sector;
+    buffer = (uint8_t *) buffer + size_in_sector;
+    offset += size_in_sector;
+
+    while (size > 0 && sector < g_max_sector) {
+        sector++;
+        size_in_sector = size > 512 ? 512 : size;
+        read_sector(sector, buffer, 0, size_in_sector);
+        size -= size_in_sector;
+        buffer = (uint8_t *) buffer + size_in_sector;
     }
 
-    return size;
+    return res;
 }
 
-int ata_get_sectors_count(void) {
+uint32_t ata_get_sectors_count(void) {
     for (int count = 0; port_read8(0x1F7) & STATUS_BSY; count++) {
         if (count > 100) // timeout, no drive
-            return -1;
+            return (uint32_t) -1;
     }
 
     port_write8(0x1F6,0xE0 | ((0 >> 24) & 0xF));
@@ -135,7 +197,7 @@ int ata_get_sectors_count(void) {
     port_write8(0x1F7, 0xEC); // send the identify command
 
     if (port_read8(0x1F7) == 0) // no drive
-        return -1;
+        return (uint32_t) -1;
 
     ATA_wait_BSY();
     ATA_wait_DRQ();
@@ -150,11 +212,13 @@ int ata_get_sectors_count(void) {
 
 int __init(void) {
     int afft_id;
+    
+    g_max_sector = ata_get_sectors_count();
 
-    if (ata_get_sectors_count() == -1)
+    if (g_max_sector == (uint32_t) -1)
         return 2; // pass, no drive
 
-    afft_id = afft_register(AFFT_AUTO, ata_read, ata_write, NULL);
+    afft_id = afft_register(AFFT_AUTO, ata_read, ata_write, NULL, "ata");
 
     if (afft_id == -1 || kfu_afft_create("/dev", "ata", afft_id) == SID_NULL)
         return 1;

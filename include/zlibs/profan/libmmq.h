@@ -15,6 +15,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#undef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+#undef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
 #define mmq_exit(code) syscall_process_kill(syscall_process_pid(), code)
 
 #define mmq_malloc(size) mmq_malloc_func(size, 0)

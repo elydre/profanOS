@@ -19,7 +19,7 @@ from time import sleep
 SHOW_CMD    = False     # show full command line     [0]
 COMPCT_LINE = True      # cut line if too long       [1]
 LOG_FILE    = True      # write build logs file      [1]
-DEBUG_MKFS  = True      # run makefsys with valgrind [0]
+DEBUG_MKFS  = True      # run mkfsv4 with valgrind   [0]
 
 # SETUP
 TOOLS_DIR = "tools"
@@ -701,13 +701,13 @@ def gen_disk(force=True, with_src=False):
             for e in os.listdir(dir_name):
                 print_and_exec(f"cp -r {dir_name}/{e} {OUT_DIR}/disk/sys/include")
 
-    if not file_exists(f"{OUT_DIR}/make/makefsys"):
-        cprint(COLOR_INFO, "building makefsys...")
+    if not file_exists(f"{OUT_DIR}/make/mkfsv4"):
+        cprint(COLOR_INFO, "building mkfsv4...")
         print_and_exec(f"mkdir -p {OUT_DIR}/make")
-        print_and_exec(f"{CC} -o {OUT_DIR}/make/makefsys -Wall -Wextra -g {TOOLS_DIR}/makefsys/*/*.c")
+        print_and_exec(f"{CC} -o {OUT_DIR}/make/mkfsv4 -Wall -Wextra -g {TOOLS_DIR}/mkfsv4/*.c {TOOLS_DIR}/mkfsv4/*/*.c")
 
     cprint(COLOR_INFO, "building initrd.bin...")
-    print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
+    print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/mkfsv4 -t \"$(pwd)/{OUT_DIR}/disk\" initrd.bin")
 
 
 def qemu_run(kvm = False, audio = False):

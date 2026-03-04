@@ -22,26 +22,27 @@ int initrd_to_vdisk(void) {
 
     if (initrd_size == 0) {
         sys_error("Initrd is empty or missing");
-        return 1;
+        return -1;
     }
 
-    int afft = vdisk_diskify(initrd, initrd_size);
+    int afft = vdisk_create(initrd, initrd_size);
 
-    if (afft < 0 || interdisk_register_disk(1, afft)) {
+    if (afft < 0 || interdisk_register_disk(1, afft) != 1) {
         sys_error("Failed to create vdisk for initrd");
-        return 1;
+        return -1;
     }
 
     diskiso_fini();
-    return 0;
+    return afft;
 }
 
 int filesys_init(void) {
     interdisk_init();
     vdisk_init();
 
-    int main_disk = vdisk_create();
-    if (main_disk < 0 || interdisk_register_disk(0, main_disk)) {
+    int d0_afft = vdisk_create(NULL, 0);
+
+    if (d0_afft < 0 || interdisk_register_disk(0, d0_afft) != 0) {
         sys_error("Failed to create vdisk for filesystem");
         return 1;
     }
@@ -50,7 +51,9 @@ int filesys_init(void) {
     kfu_dir_create("/", "tmp");
     kfu_dir_create("/", "dev");
 
-    if (initrd_to_vdisk())
+    int d1_afft = initrd_to_vdisk();
+
+    if (d1_afft < 0)
         return 1;
 
     if (kfu_dir_add(
@@ -74,6 +77,11 @@ int filesys_init(void) {
         kfu_path_to_sid(SID_FORMAT(1, 1), "/zada"),
         "zada"
     )) {
+        return 1;
+    }
+
+    if (vdisk_add_to_dev(d0_afft) || vdisk_add_to_dev(d1_afft)) {
+        sys_error("Failed to add vdisks to /dev");
         return 1;
     }
 

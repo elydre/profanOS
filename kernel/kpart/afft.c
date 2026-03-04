@@ -17,6 +17,7 @@ typedef struct {
     int (*read) (uint32_t id, void *buffer, uint32_t offset, uint32_t size);
     int (*write)(uint32_t id, void *buffer, uint32_t offset, uint32_t size);
     int (*cmd)  (uint32_t id, uint32_t cmd, void *arg);
+    char name[AFFT_NAME_MAX];
 } afft_map_t;
 
 afft_map_t *g_afft_funcs;
@@ -34,29 +35,38 @@ int afft_register(
         uint32_t wanted_id,
         int (*read)  (uint32_t id, void *buffer, uint32_t offset, uint32_t size),
         int (*write) (uint32_t id, void *buffer, uint32_t offset, uint32_t size),
-        int (*cmd)   (uint32_t id, uint32_t cmd, void *arg)
+        int (*cmd)   (uint32_t id, uint32_t cmd, void *arg),
+        const char *name
 ) {
-    if (wanted_id != AFFT_AUTO) {
-        if (wanted_id >= AFFT_MAX || g_afft_funcs[wanted_id].busy)
+    if (wanted_id == AFFT_AUTO) {
+        for (int i = AFFT_RESERVED; i < AFFT_MAX; i++) {
+            if (g_afft_funcs[i].busy)
+                continue;
+            wanted_id = i;
+            break;
+        }
+        if (wanted_id == AFFT_AUTO)
             return -1;
-        g_afft_funcs[wanted_id].busy = 1;
-        g_afft_funcs[wanted_id].read = read;
-        g_afft_funcs[wanted_id].write = write;
-        g_afft_funcs[wanted_id].cmd = cmd;
-        return wanted_id;
-    }
+    } else if (wanted_id >= AFFT_MAX || g_afft_funcs[wanted_id].busy)
+        return -1;
 
-    for (int i = AFFT_RESERVED; i < AFFT_MAX; i++) {
-        if (g_afft_funcs[i].busy)
-            continue;
-        g_afft_funcs[i].busy = 1;
-        g_afft_funcs[i].read = read;
-        g_afft_funcs[i].write = write;
-        g_afft_funcs[i].cmd = cmd;
-        return i;
-    }
+    g_afft_funcs[wanted_id].busy = 1;
+    g_afft_funcs[wanted_id].read = read;
+    g_afft_funcs[wanted_id].write = write;
+    g_afft_funcs[wanted_id].cmd = cmd;
 
-    return -1;
+    if (name)
+        str_ncopy(g_afft_funcs[wanted_id].name, name, AFFT_NAME_MAX - 1);
+
+    return wanted_id;
+}
+
+int afft_unregister(uint32_t id) {
+    if (id >= AFFT_MAX || !g_afft_funcs[id].busy)
+        return -1;
+
+    g_afft_funcs[id].busy = 0;
+    return 0;
 }
 
 int afft_read(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
@@ -78,7 +88,20 @@ int afft_write(uint32_t id, void *buffer, uint32_t offset, uint32_t size) {
 int afft_cmd(uint32_t id, uint32_t cmd, void *arg) {
     uint32_t rawid = id & 0x0000FFFF;
 
-    if (rawid < AFFT_MAX && g_afft_funcs[rawid].busy && g_afft_funcs[rawid].cmd)
-        return g_afft_funcs[rawid].cmd(id, cmd, arg);
-    return -1;
+    if (!(rawid < AFFT_MAX && g_afft_funcs[rawid].busy))
+        return (cmd == AFFTC_EXISTS) ? 0 : -1;
+
+    switch (cmd) {
+        case AFFTC_EXISTS:
+            return 1;
+        case AFFTC_GETNAME:
+            str_ncopy(arg, g_afft_funcs[rawid].name ? g_afft_funcs[rawid].name :
+                        "anonymous", AFFT_NAME_MAX - 1);
+            return 0;
+    }
+
+    if (!g_afft_funcs[rawid].cmd)
+        return -1;
+
+    return g_afft_funcs[rawid].cmd(id, cmd, arg);
 }

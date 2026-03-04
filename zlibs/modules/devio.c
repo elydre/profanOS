@@ -199,7 +199,7 @@ int dev_userial_w(int id, void *buffer, uint32_t offset, uint32_t size) {
 }
 
 static int setup_afft(const char *name, void *read, void *write, void *cmd) {
-    int afft_id = afft_register(AFFT_AUTO, read, write, cmd);
+    int afft_id = afft_register(AFFT_AUTO, read, write, cmd, name);
 
     return (afft_id == -1 || kfu_afft_create("/dev", name, afft_id) == SID_NULL);
 }

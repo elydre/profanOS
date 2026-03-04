@@ -139,7 +139,7 @@ int fs_cnt_grow_size(uint32_t loca_sid, uint32_t to_grow) {
 
 int fs_cnt_set_size(sid_t sid, uint32_t size) {
     if (interdisk_read(sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
-        sys_warning("not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
+        sys_warning("[fs_cnt_set_size] not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
 
@@ -185,7 +185,7 @@ int fs_cnt_set_size(sid_t sid, uint32_t size) {
 
 uint32_t fs_cnt_get_size(sid_t sid) {
     if (interdisk_read(sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
-        sys_warning("not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
+        sys_warning("[fs_cnt_set_size] not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return UINT32_MAX;
     }
 

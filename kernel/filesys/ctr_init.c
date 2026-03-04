@@ -65,7 +65,7 @@ sid_t fs_cnt_init(uint32_t device_id, const char *meta) {
 
 int fs_cnt_meta(sid_t sid, char *meta, int buffer_size, int replace) {
     if (interdisk_read(sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD) {
-        sys_warning("not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
+        sys_warning("[fs_cnt_meta] not a cnt header d%ds%d", SID_DISK(sid), SID_SECTOR(sid));
         return 1;
     }
 

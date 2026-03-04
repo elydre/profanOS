@@ -92,8 +92,8 @@ int serial_init(void) {
     serial_enable(SERIAL_PORT_B);
 
     return (
-        afft_register(SERIAL_AFFT_A, serial_afft_read, serial_afft_write, NULL) != SERIAL_AFFT_A ||
-        afft_register(SERIAL_AFFT_B, serial_afft_read, serial_afft_write, NULL) != SERIAL_AFFT_B ||
+        afft_register(SERIAL_AFFT_A, serial_afft_read, serial_afft_write, NULL, "serialA") != SERIAL_AFFT_A ||
+        afft_register(SERIAL_AFFT_B, serial_afft_read, serial_afft_write, NULL, "serialB") != SERIAL_AFFT_B ||
         kfu_afft_create("/dev", "serialA", SERIAL_AFFT_A) == SID_NULL ||
         kfu_afft_create("/dev", "serialB", SERIAL_AFFT_B) == SID_NULL
     );

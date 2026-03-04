@@ -171,11 +171,8 @@ sid_t fu_dir_create(uint8_t device_id, const char *parent, const char *name) {
     head_sid = fs_cnt_init((device_id > 0) ? (uint32_t) device_id : SID_DISK(parent_sid), meta);
     free(meta);
 
-    printf("created directory d%ds%d\n", SID_DISK(head_sid), SID_SECTOR(head_sid));
-
     if (SID_IS_NULL(head_sid))
         return SID_NULL;
-
 
     // create a link in parent directory
     if (parent && fu_add_element_to_dir(parent_sid, head_sid, name))

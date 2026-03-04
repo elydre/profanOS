@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === main.c : 2024 ===                                                     |
+|   === sector.c : 2025 ===                                                   |
 |                                                                             |
 |    Part of the filesystem creation tool                          .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -9,35 +9,23 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#include "../butterfly.h"
+#include "butterfly.h"
 
-uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
+int fs_sector_get_unused(int disk, int count, sid_t *ret) {
+    static int next_free_sector = 1;
+    *ret = SID_FORMAT(disk, next_free_sector);
+    next_free_sector += count;
+    return count;
+}
 
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("usage: %s <input path>\n", argv[0]);
-        return 1;
-    }
+int fs_sector_note_free(sid_t sid) {
+    (void) sid;
 
-    vdisk_init();
-
-    if (SID_IS_NULL(fu_dir_create(0, NULL, "/"))) {
-        printf("failed to create root directory\n");
-        return 1;
-    }
-
-    hio_dir_import(argv[1], "/");
-    // hio_dir_export("output", "/");
-
-    fu_draw_tree(SID_ROOT, 0);
-
-    hio_raw_export("initrd.bin");
-
-    vdisk_destroy();
-
+    printf("not implemented yet\n");
     return 0;
 }

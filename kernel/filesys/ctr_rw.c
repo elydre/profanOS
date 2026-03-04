@@ -92,7 +92,7 @@ static int fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, 
 
             if (offset)
                 offset = 0;
-            
+
             index += rwsize;
         }
 

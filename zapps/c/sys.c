@@ -13,6 +13,7 @@
 
 #include <profan/syscall.h>
 #include <modules/filesys.h>
+#include <profan/afft.h>
 #include <profan/carp.h>
 #include <profan.h>
 
@@ -177,13 +178,34 @@ void memory_print_summary(void) {
     printf("In total, %d MB can be allocated!\n", total / 1024 / 1024);
 }
 
+void print_afft(void) {
+    char name[AFFT_NAME_MAX];
+    char path[10 + AFFT_NAME_MAX];
+
+    printf("  ID  NAME\n");
+
+    for (int i = 0; i < AFFT_MAX; i++) {
+        if (!syscall_afft_cmd(i, AFFTC_EXISTS, NULL))
+            continue;
+        
+        syscall_afft_cmd(i, AFFTC_GETNAME, name);
+        snprintf(path, sizeof(path), "/dev/%s", name);
+        
+        if (SID_IS_NULL(fu_path_to_sid(SID_ROOT, path)))
+            printf("%4d  \e[91m%s\e[0m\n", i, name);
+        else
+            printf("%4d  %s\n", i, name);
+    }
+}
+
 int main(int argc, char **argv) {
     carp_init("[options]", 0);
 
     carp_register('m', CARP_STANDARD, "show detailed memory usage");
     carp_register('s', CARP_STANDARD, "show summary of resources");
+    carp_register('a', CARP_STANDARD, "show loaded afft");
 
-    carp_conflict("ms");
+    carp_conflict("msa,sa");
 
     if (carp_parse(argc, argv))
         return 1;
@@ -192,6 +214,8 @@ int main(int argc, char **argv) {
         memory_print_usage();
     else if (carp_isset('s'))
         memory_print_summary();
+    else if (carp_isset('a'))
+        print_afft();
     else
         do_fetch();
 

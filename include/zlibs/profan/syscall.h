@@ -75,9 +75,9 @@ uint8_t *syscall_font_get(void);
 int      syscall_kcnprint(char *, int, char);
 int      syscall_vesa_info(int);
 
-int      syscall_afft_read( int, void *, uint32_t, uint32_t);
-int      syscall_afft_write(int, void *, uint32_t, uint32_t);
-int      syscall_afft_cmd(  int, uint32_t, void *);
+int      syscall_afft_read(uint32_t, void *, uint32_t, uint32_t);
+int      syscall_afft_write(uint32_t, void *, uint32_t, uint32_t);
+int      syscall_afft_cmd(uint32_t, uint32_t, void *);
 
 int      syscall_sc_get(void);
 

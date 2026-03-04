@@ -13,11 +13,11 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "../butterfly.h"
+#include "butterfly.h"
 
 typedef struct {
     uint8_t *data;
-    uint32_t size;
+    uint64_t size;
 } vdisk_t;
 
 vdisk_t *g_vdisk = NULL;
@@ -44,7 +44,7 @@ void vdisk_destroy(void) {
 
 #define DISK_EXTEND_SIZE SECTOR_SIZE * 1024
 
-static int vdisk_extend(uint32_t newsize) {
+static int vdisk_extend(uint64_t newsize) {
     if (!g_vdisk)
         return -1;
 
@@ -65,7 +65,7 @@ static int vdisk_extend(uint32_t newsize) {
     return 0;
 }
 
-int vdisk_write(void *data, uint32_t size, uint32_t offset) {
+int vdisk_write(void *data, uint32_t size, uint64_t offset) {
     if (!g_vdisk)
         return -1;
 
@@ -79,7 +79,7 @@ int vdisk_write(void *data, uint32_t size, uint32_t offset) {
     return 0;
 }
 
-int vdisk_read(void *buffer, uint32_t size, uint32_t offset) {
+int vdisk_read(void *buffer, uint32_t size, uint64_t offset) {
     if (!g_vdisk)
         return -1;
 

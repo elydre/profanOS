@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "../butterfly.h"
+#include "butterfly.h"
 
 int hio_raw_import(const char *filename) {
     FILE *fp = fopen(filename, "rb");
@@ -78,7 +78,7 @@ static void path_join(char *dst, const char *a, char *b) {
     strcat(dst, b);
 }
 
-int hio_dir_import(const char *extern_path, const char *intern_path) {
+static int hio_dir_import_rec(const char *extern_path, const char *intern_path) {
     // list the files in the directory
     DIR *dir;
     struct dirent *ent;
@@ -100,7 +100,7 @@ int hio_dir_import(const char *extern_path, const char *intern_path) {
                 char *intern_path2 = malloc(strlen(intern_path) + strlen(ent->d_name) + 2);
                 path_join(intern_path2, intern_path, ent->d_name);
 
-                hio_dir_import(path, intern_path2);
+                hio_dir_import_rec(path, intern_path2);
 
                 free(intern_path2);
             } else {
@@ -137,6 +137,18 @@ int hio_dir_import(const char *extern_path, const char *intern_path) {
     return 0;
 }
 
+int hio_dir_import(const char *extern_path) {
+    vdisk_destroy();
+    vdisk_init();
+
+    if (SID_IS_NULL(fu_dir_create(0, NULL, "/"))) {
+        printf("failed to create root directory\n");
+        return 1;
+    }
+
+    return hio_dir_import_rec(extern_path, "/");
+}
+
 static void create_if_not_exists(const char *path) {
     DIR *dir = opendir(path);
     if (dir) {
@@ -151,7 +163,7 @@ static void create_if_not_exists(const char *path) {
     }
 }
 
-int hio_dir_export(const char *extern_path, const char *intern_path) {
+static int hio_dir_export_rec(const char *extern_path, const char *intern_path) {
     create_if_not_exists(extern_path);
 
     char **names;
@@ -202,17 +214,20 @@ int hio_dir_export(const char *extern_path, const char *intern_path) {
             // create the directory
             mkdir(path, 0777);
             // recursively call hio_dir_export
-            hio_dir_export(path, intern_path2);
+            hio_dir_export_rec(path, intern_path2);
         }
         free(intern_path2);
         free(path);
     }
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++)
         free(names[i]);
-    }
     free(names);
     free(sids);
 
     return 0;
+}
+
+int hio_dir_export(const char *extern_path) {
+    return hio_dir_export_rec(extern_path, "/");
 }

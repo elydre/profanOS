@@ -280,7 +280,7 @@ void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
     int len;
 
     for (int i = 0; i < elm_count; i++) {
-        printf("%02x:%06x ", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
+        printf("%2d:%-8d ", SID_DISK(entries[i].sid), SID_SECTOR(entries[i].sid));
 
         if (args->phys_size == 1)
             len = printf("%8d B", syscall_fs_get_size(entries[i].sid));
@@ -289,7 +289,7 @@ void print_lines(int elm_count, ls_entry_t *entries, ls_args_t *args) {
         else if (fu_is_file(entries[i].sid))
             len = pretty_size_print(syscall_fs_get_size(entries[i].sid));
         else if (fu_is_afft(entries[i].sid))
-            len = printf(" F%08x", (uint32_t) fu_afft_get_addr(entries[i].sid));
+            len = printf(" afft %3d", (uint32_t) fu_afft_get_id(entries[i].sid));
         else
             len = printf(" ? unk ?");
 
@@ -357,7 +357,7 @@ void list_files(ls_args_t *args) {
 void list_dirs(ls_args_t *args) {
     int entry_count;
 
-    uint32_t sid;
+    sid_t sid, elmsid;
     char *name;
 
     for (int i = 0; args->paths[i]; i++) {
@@ -382,7 +382,7 @@ void list_dirs(ls_args_t *args) {
 
         entry_count = 0;
         for (int j = 0; j < elm_count; j++) {
-            int offset = fu_dir_get_elm(sid, buf, size, j, &sid);
+            int offset = fu_dir_get_elm(sid, buf, size, j, &elmsid);
 
             if (offset <= 0) {
                 fprintf(stderr, "ls: error reading directory (%s)\n", strerror(-offset));
@@ -396,7 +396,7 @@ void list_dirs(ls_args_t *args) {
                 continue;
 
             entries[entry_count].name = name;
-            entries[entry_count].sid = sid;
+            entries[entry_count].sid = elmsid;
 
             entry_count++;
         }

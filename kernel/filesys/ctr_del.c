@@ -13,122 +13,17 @@
 #include <minilib.h>
 #include <system.h>
 
-/*
-int fs_cnt_delete_core(uint32_t core_sid) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-
-    vdisk = fs_get_vdisk(SID_DISK(core_sid));
-
-    if (vdisk == NULL) {
-        return 1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, core_sid)) {
-        return 1;
-    }
-
-    // check if sector is core
-    data = vdisk_load_sector(vdisk, core_sid);
-
-    if (data[0] != SF_CORE) {
-        vdisk_unload_sector(vdisk, core_sid, data, NO_SAVE);
-        return 1;
-    }
-
-    // delete core
-    vdisk_note_sector_unused(vdisk, core_sid);
-    vdisk_unload_sector(vdisk, core_sid, data, SAVE);
-
-    return 0;
-}
-
-int fs_cnt_delete_loca_recur(uint32_t loca_sid) {
-    vdisk_t *vdisk;
-    uint8_t *data;
-    uint32_t next_loca_sid;
-
-    vdisk = fs_get_vdisk(SID_DISK(loca_sid));
-
-    if (vdisk == NULL) {
-        return 1;
-    }
-
-    // check if sector is used
-    if (!vdisk_is_sector_used(vdisk, loca_sid)) {
-        return 1;
-    }
-
-    // check if sector is locator
-    data = vdisk_load_sector(vdisk, loca_sid);
-
-    if (data[0] != SF_LOCA) {
-        vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-        return 1;
-    }
-
-    // delete all cores
-    for (uint32_t i = 0; i < LINKS_IN_LOCA; i++) {
-        uint32_t core_sid = *((uint32_t *) (data + (i + 1) * sizeof(uint32_t)));
-        if (SID_IS_NULL(core_sid)) {
-            break;
-        }
-        if (fs_cnt_delete_core(core_sid)) {
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return 1;
-        }
-    }
-
-    // delete next locator
-    next_loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
-    if (!SID_IS_NULL(next_loca_sid)) {
-        if (fs_cnt_delete_loca_recur(next_loca_sid)) {
-            vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-            return 1;
-        }
-    }
-
-    // delete locator
-    vdisk_note_sector_unused(vdisk, loca_sid);
-    vdisk_unload_sector(vdisk, loca_sid, data, NO_SAVE);
-    return 0;
-}
-*/
-
 int fs_cnt_delete(sid_t head_sid) {
-    UNUSED(head_sid);
-    sys_error("[cnt_delete] not implemented yet");
-    return 1;
-
-    /*vdisk = fs_get_vdisk(SID_DISK(head_sid));
-
-    if (vdisk == NULL || !vdisk_is_sector_used(vdisk, head_sid)) {
-        sys_warning("[cnt_delete] Invalid sector id");
+    if (fs_cnt_set_size(head_sid, 0))
         return 1;
-    }
 
-    // check if sector is cnt header
-    data = vdisk_load_sector(vdisk, head_sid);
-
-    if (data[0] != SF_HEAD) {
-        sys_warning("[cnt_delete] Sector not container header");
-        vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
+    if (interdisk_read(head_sid, sector_data, SECTOR_SIZE) || sector_data[0] != SF_HEAD)
         return 1;
-    }
 
-    // delete locator
-    loca_sid = *((uint32_t *) (data + LAST_SID_OFFSET));
-    if (!SID_IS_NULL(loca_sid)) {
-        if (fs_cnt_delete_loca_recur(loca_sid)) {
-            sys_error("[cnt_delete] Failed to delete locator");
-            vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
-            return 1;
-        }
-    }
+    sid_t loca_sid = sector_data[SECTOR_SIZE / sizeof(uint32_t) - 1];
 
-    // delete cnt header
-    vdisk_unload_sector(vdisk, head_sid, data, NO_SAVE);
-    vdisk_note_sector_unused(vdisk, head_sid);
-    return 0;*/
+    if (!SID_IS_NULL(loca_sid) && fs_sector_note_free(SID_RESTORE_DISK(loca_sid, head_sid)))
+        return 1;
+
+    return fs_sector_note_free(head_sid);
 }

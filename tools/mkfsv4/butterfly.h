@@ -46,16 +46,16 @@ extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 void vdisk_init(void);
 void vdisk_destroy(void);
-int  vdisk_write(void *data, uint32_t size, uint32_t offset);
-int  vdisk_read(void *buffer, uint32_t size, uint32_t offset);
+int  vdisk_write(void *data, uint32_t size, uint64_t offset);
+int  vdisk_read(void *buffer, uint32_t size, uint64_t offset);
 
 //////////////////// HOST I/O
 
 int hio_raw_export(const char *filename);
 int hio_raw_import(const char *filename);
 
-int hio_dir_import(const char *extern_path, const char *intern_path);
-int hio_dir_export(const char *extern_path, const char *intern_path);
+int hio_dir_import(const char *extern_path);
+int hio_dir_export(const char *extern_path);
 
 //////////////////// SECTOR
 
@@ -73,7 +73,7 @@ int      fs_cnt_set_size(uint32_t head_sid, uint32_t size);
 uint32_t fs_cnt_get_size(uint32_t head_sid);
 
 // cnt_rw.c
-int      fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read);
+int     fs_cnt_rw(sid_t head_sid, void *buf, uint32_t offset, uint32_t size, int is_read);
 #define fs_cnt_read(head_sid, buf, offset, size) fs_cnt_rw(head_sid, buf, offset, size, 1)
 #define fs_cnt_write(head_sid, buf, offset, size) fs_cnt_rw(head_sid, buf, offset, size, 0)
 

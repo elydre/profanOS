@@ -49,9 +49,10 @@ extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 #define VDISK_EXTEND_SIZE SECTOR_SIZE * 512
 
-int vdisk_init(void);
-int vdisk_create(void);                         // returns a afft id
-int vdisk_diskify(void *mem, uint32_t size);    // returns a afft id
+int  vdisk_init(void);
+int  vdisk_create(void *mem, uint32_t size);     // returns a afft id
+int  vdisk_add_to_dev(uint32_t afft_id);
+void vdisk_destroy(uint32_t afft_id);
 
 int interdisk_init(void);
 int interdisk_register_disk(int disk, int afft_id);

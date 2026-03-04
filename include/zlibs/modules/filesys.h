@@ -79,6 +79,7 @@ int      fu_is_afft(sid_t sid);
 sid_t    fu_afft_create(const char *parent, const char *name, uint32_t id);
 int      fu_afft_get_id(sid_t sid);
 sid_t    fu_path_to_sid(sid_t base, const char *path);
+int      fu_mount_afft(int afft_id, sid_t mount_point, const char *name);
 
 #define fu_is_dir(a)                  ((int) _pscall(FILESYS_LIB_ID, 0, a))
 #define fu_dir_get_size(a)            ((int) _pscall(FILESYS_LIB_ID, 1, a))
@@ -95,8 +96,9 @@ sid_t    fu_path_to_sid(sid_t base, const char *path);
 #define fu_file_write(a, b, c, d)     ((int) _pscall(FILESYS_LIB_ID, 12, a, b, c, d))
 #define fu_is_afft(a)                 ((int) _pscall(FILESYS_LIB_ID, 13, a))
 #define fu_afft_create(a, b, c)       ((uint32_t) _pscall(FILESYS_LIB_ID, 14, a, b, c))
-#define fu_afft_get_addr(a)           ((void *) _pscall(FILESYS_LIB_ID, 15, a))
+#define fu_afft_get_id(a)             ((int) _pscall(FILESYS_LIB_ID, 15, a))
 #define fu_path_to_sid(a, b)          ((uint32_t) _pscall(FILESYS_LIB_ID, 16, a, b))
+#define fu_mount_afft(a, b, c)        ((int) _pscall(FILESYS_LIB_ID, 17, a, b, c))
 
 #endif // _KERNEL_MODULE
 
