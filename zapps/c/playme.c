@@ -59,11 +59,10 @@ wav_file_t *read_header(FILE *file) {
     char riff_header[4], wave_header[4];
     uint32_t riff_size;
 
-    if (fread(riff_header, 1, 4, file) != 4)
-        return NULL;
-
-    fread(&riff_size, 4, 1, file);
-    fread(wave_header, 1, 4, file);
+    if (fread(riff_header, 1, 4, file) != 4 ||
+        fread(&riff_size, 4, 1, file)  != 1 ||
+        fread(wave_header, 1, 4, file) != 4
+    ) return NULL;
 
     if (memcmp(riff_header, "RIFF", 4) != 0 || memcmp(wave_header, "WAVE", 4) != 0)
         return NULL;
@@ -73,16 +72,16 @@ wav_file_t *read_header(FILE *file) {
     char chunk_id[4];
     uint32_t chunk_size;
 
-    while (fread(chunk_id, 1, 4, file) == 4 &&
+    while (fread(chunk_id, 1, 4, file)    == 4 &&
            fread(&chunk_size, 4, 1, file) == 1) {
 
-        if (memcmp(chunk_id, "fmt ", 4) == 0) {
-            fread(&header->audio_format,    sizeof(uint16_t), 1, file);
-            fread(&header->num_channels,    sizeof(uint16_t), 1, file);
-            fread(&header->sample_rate,     sizeof(uint32_t), 1, file);
-            fread(&header->byte_rate,       sizeof(uint32_t), 1, file);
-            fread(&header->block_align,     sizeof(uint16_t), 1, file);
-            fread(&header->bits_per_sample, sizeof(uint16_t), 1, file);
+        if (memcmp(chunk_id, "fmt ", 4) == 0 && chunk_size >= 16) {
+            if (fread(&header->audio_format,    sizeof(uint16_t), 1, file) != 1 ||
+                fread(&header->num_channels,    sizeof(uint16_t), 1, file) != 1 ||
+                fread(&header->sample_rate,     sizeof(uint32_t), 1, file) != 1 ||
+                fread(&header->byte_rate,       sizeof(uint32_t), 1, file) != 1 ||
+                fread(&header->block_align,     sizeof(uint16_t), 1, file) != 1 ||
+                fread(&header->bits_per_sample, sizeof(uint16_t), 1, file) != 1) goto err;
 
             if (chunk_size > 16)
                 fseek(file, chunk_size - 16, SEEK_CUR);
@@ -101,10 +100,9 @@ wav_file_t *read_header(FILE *file) {
                 while (ftell(file) < list_end) {
                     char info_id[4];
                     uint32_t info_size;
-                    if (fread(info_id, 1, 4, file) != 4)
-                        break;
-                    if (fread(&info_size, 4, 1, file) != 1)
-                        break;
+
+                    if (fread(info_id, 1, 4, file) != 4 || fread(&info_size, 4, 1, file) != 1)
+                        goto err;
 
                     if (memcmp(info_id, "IART", 4) == 0)
                         header->artist = header_set_info(file, info_size);
@@ -123,13 +121,16 @@ wav_file_t *read_header(FILE *file) {
             } else {
                 fseek(file, list_end - ftell(file), SEEK_CUR);
             }
-        }
-        else {
+        } else {
             fseek(file, chunk_size, SEEK_CUR);
         }
     }
 
     return header;
+
+    err:
+    free(header);
+    return NULL;
 }
 
 
@@ -144,15 +145,13 @@ int add_block_to_buffer(FILE *file, wav_file_t *header, void *at, uint32_t block
     if ((block_index + 1) * BLOCK_SIZE > header->data_bytes)
         to_read = header->data_bytes - (block_index * BLOCK_SIZE);
 
+    if (to_read <= 0)
+        return 0;
 
     size_t read = fread(at, 1, to_read, file);
 
     if (read < BLOCK_SIZE)
         memset(at + read, 0, BLOCK_SIZE - read);
-
-    int sum = 0;
-    for (size_t i = 0; i < read; i++)
-        sum += ((uint8_t *)at)[i];
 
     return read;
 }
@@ -327,10 +326,53 @@ int playme_file(const char *path) {
     return errcode;
 }
 
+int playme_dump(const char *path) {
+    FILE *file = fopen(path, "rb");
+
+    if (!file) {
+        fprintf(stderr, "playme: %s: %m\n", path);
+        return 1;
+    }
+
+    wav_file_t *header = read_header(file);
+
+    if (!header) {
+        fprintf(stderr, "playme: %s: Not a valid WAV file\n", path);
+        fclose(file);
+        return 1;
+    }
+
+    printf("Title: %s\n", header->title ? header->title : "Unknown");
+    printf("Artist: %s\n", header->artist ? header->artist : "Unknown");
+    printf("Album: %s\n", header->album ? header->album : "Unknown");
+    printf("Year: %s\n", header->year ? header->year : "Unknown");
+    printf("Audio format: %d\n", header->audio_format);
+    printf("Channels: %d\n", header->num_channels);
+    printf("Sample rate: %d\n", header->sample_rate);
+    printf("Byte rate: %d\n", header->byte_rate);
+    printf("Block align: %d\n", header->block_align);
+    printf("Bits per sample: %d\n", header->bits_per_sample);
+    printf("Data size: %d bytes\n", header->data_bytes);
+
+    fclose(file);
+
+    free(header->artist);
+    free(header->title);
+    free(header->album);
+    free(header->year);
+
+    free(header);
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
-    carp_init("[-v %] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
+    carp_init("[-d] [-v %] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
 
     carp_register('v', CARP_NEXT_INT, "set initial volume (default: 50%)");
+    carp_register('d', CARP_STANDARD, "dump file header and exit");
+
+    carp_conflict("dv");
 
     if (carp_parse(argc, argv))
         return 1;
@@ -350,8 +392,13 @@ int main(int argc, char **argv) {
 
     const char *path;
     while ((path = carp_file_next())) {
-        if (playme_file(path) != 0)
-            return 1;
+        if (carp_isset('d')) {
+            if (playme_dump(path) != 0)
+                return 1;
+        } else {
+            if (playme_file(path) != 0)
+                return 1;
+        }
     }
 
     return 0;
