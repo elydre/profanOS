@@ -64,7 +64,7 @@ void *SYSCALL_ARRAY[] = {
     elf_exec,              // 23
 
     // process.h + runtime.h
-    process_create,        // 24
+    process_create_user,   // 24
     process_fork,          // 25
     process_sleep,         // 26
     process_wakeup,        // 27

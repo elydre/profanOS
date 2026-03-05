@@ -276,12 +276,12 @@ int process_init(void) {
 }
 
 
-int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
+process_t *process_create_func(void *func, int copy_page, int nargs, uint32_t *args, int in_kernel) {
     int place = i_get_free_place(g_pid_incrament + 1);
 
     if (place == ERROR_CODE) {
         sys_warning("[create] Too many processes");
-        return ERROR_CODE;
+        return NULL;
     }
 
     g_pid_incrament++;
@@ -295,7 +295,7 @@ int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
     new_proc->pid = g_pid_incrament;
     new_proc->ppid = g_proc_current->pid;
 
-    new_proc->in_kernel = (uint32_t) func < 0x200000;
+    new_proc->in_kernel = in_kernel;
     new_proc->state = PROC_STATE_SLP;
 
     void *phys_stack;
@@ -311,7 +311,7 @@ int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
     i_new_process(new_proc, func, g_proc_current->regs.eflags, (uint32_t *) new_proc->scuba_dir);
 
     if (func == NULL) {
-        return g_pid_incrament;
+        return new_proc;
     }
 
     // push arguments to the new process
@@ -327,33 +327,40 @@ int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
 
     new_proc->regs.esp = PROC_ESP_ADDR + PROC_ESP_SIZE - (nargs + 1) * sizeof(uint32_t);
 
-    return g_pid_incrament;
+    return new_proc;
 }
 
+int process_create(void *func, int copy_page, int nargs, uint32_t *args) {
+    // the function is used by the kernel only
+    process_t *proc = process_create_func(func, copy_page, nargs, args, 1);
+    return proc ? (int) proc->pid : ERROR_CODE;
+}
+
+int process_create_user(void *func, int nargs, uint32_t *args) {
+    // the function is used by the user processes only
+    process_t *proc = process_create_func(func, 1, nargs, args, 0);
+    return proc ? (int) proc->pid : ERROR_CODE;
+}
 
 int process_fork(registers_t *regs) {
-    int new_pid = process_create(NULL, 1, 0, NULL);
+    process_t *proc = process_create_func(NULL, 1, 0, NULL, 0); // fork can be call only trough a syscall
 
-    if (new_pid == ERROR_CODE) {
+    if (proc == NULL) {
         return ERROR_CODE;
     }
 
-    process_t *new_proc = &g_plist[i_pid_to_place(new_pid)];
+    proc->regs.eax = regs->eax;
+    proc->regs.ebx = regs->ebx;
+    proc->regs.ecx = regs->ecx;
+    proc->regs.edx = regs->edx;
+    proc->regs.esi = regs->esi;
+    proc->regs.edi = regs->edi;
+    proc->regs.eip = regs->eip;
+    proc->regs.esp = regs->esp + 20; // popa (interrupt.asm: isr_common_stub)
+    proc->regs.ebp = regs->ebp;
+    proc->regs.eflags = regs->eflags;
 
-    new_proc->in_kernel = 0; // cannot call this without a syscall
-
-    new_proc->regs.eax = regs->eax;
-    new_proc->regs.ebx = regs->ebx;
-    new_proc->regs.ecx = regs->ecx;
-    new_proc->regs.edx = regs->edx;
-    new_proc->regs.esi = regs->esi;
-    new_proc->regs.edi = regs->edi;
-    new_proc->regs.eip = regs->eip;
-    new_proc->regs.esp = regs->esp + 20; // popa (interrupt.asm: isr_common_stub)
-    new_proc->regs.ebp = regs->ebp;
-    new_proc->regs.eflags = regs->eflags;
-
-    return new_pid;
+    return proc->pid;
 }
 
 
