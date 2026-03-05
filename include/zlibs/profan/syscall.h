@@ -85,7 +85,7 @@ int      syscall_sc_get(void);
 int      syscall_sys_power(int);
 int      syscall_elf_exec(uint32_t, char **, char **);
 
-int      syscall_process_create(void *, int, int, uint32_t *);
+int      syscall_process_create(void *, int, uint32_t *);
 int      syscall_process_fork(void);
 int      syscall_process_sleep(uint32_t, uint32_t);
 int      syscall_process_wakeup(uint32_t, int);
@@ -151,7 +151,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define syscall_sys_power(a) ((int) profan_syscall(22, a))
 #define syscall_elf_exec(a, b, c) ((int) profan_syscall(23, a, b, c))
 
-#define syscall_process_create(a, b, c, d) ((int) profan_syscall(24, a, b, c, d))
+#define syscall_process_create(a, c, d) ((int) profan_syscall(24, a, c, d))
 #define syscall_process_fork() ((int) profan_syscall(25))
 #define syscall_process_sleep(a, b) ((int) profan_syscall(26, a, b))
 #define syscall_process_wakeup(a, b) ((int) profan_syscall(27, a, b))

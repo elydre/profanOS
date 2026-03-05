@@ -230,10 +230,6 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
         }
     }
 
-    if (!kfu_is_file(sid) && !kfu_is_afft(sid) && !kfu_is_dir(sid)) {
-        return -EFTYPE;
-    }
-
     if (fd < 0)
         fd_data = fm_get_free_fd(&fd);
     else
@@ -247,21 +243,16 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
     fd_data->sid = sid;
 
     if (kfu_is_file(sid)) {
-        if (flags & O_TRUNC) {
+        if (flags & O_TRUNC)
             fs_cnt_set_size(sid, 0);
-        }
         fd_data->type = TYPE_FILE;
-        if (flags & O_APPEND) {
-            fd_data->offset = fs_cnt_get_size(sid);
-        } else {
-            fd_data->offset = 0;
-        }
+        fd_data->offset = (flags & O_APPEND) ? fs_cnt_get_size(sid) : 0;
     } else if (kfu_is_dir(sid)) {
         fd_data->type = TYPE_DIR;
         int len = str_len(abs_path);
         fd_data->path = malloc(len + 1);
         str_cpy(fd_data->path, abs_path);
-    } else {
+    } else if (kfu_is_afft(sid)) {
         fd_data->type = TYPE_AFFT;
         fd_data->afft_id = kfu_afft_get_id(sid);
         fd_data->offset = 0;
@@ -271,6 +262,9 @@ int fm_reopen(int fd, const char *abs_path, int flags) {
             sys_warning("[fm_reopen] Failed to get AFFT ID for %s", abs_path);
             return -EACCES;
         }
+    } else {
+        sys_warning("[fm_reopen] unknown file type for %s", abs_path);
+        return -EACCES;
     }
 
     return fd;
@@ -446,8 +440,6 @@ int fm_lseek(int fd, int offset, int whence) {
             new_offset += offset;
             break;
         case SEEK_END:
-            if (fd_data->type != TYPE_FILE)
-                return -ESPIPE;
             new_offset = fs_cnt_get_size(fd_data->sid) + offset;
             break;
         default:

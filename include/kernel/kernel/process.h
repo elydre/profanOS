@@ -64,6 +64,7 @@ void schedule(uint32_t ticks);
 
 // process gestion
 int process_create(void *func, int copy_page, int nargs, uint32_t *args);
+int process_create_user(void *func, int nargs, uint32_t *args);
 int process_fork(registers_t *regs);
 int process_wakeup(uint32_t pid, int handover);
 int process_sleep(uint32_t pid, uint32_t ms);

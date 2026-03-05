@@ -34,7 +34,7 @@ typedef struct _IO_FILE {
 
     uint8_t error;
     uint8_t eof;
-    uint8_t unbuffered;
+    uint8_t isfile;
 
     int     ungetchar;
     int     pos;
@@ -57,7 +57,7 @@ static FILE *fdopen_mode(int fd, int mode) {
     file->ungetchar = -1;
     file->mode = mode;
     file->fd = fd;
-    file->unbuffered = !fm_isfile(fd);
+    file->isfile = fm_isfile(fd);
     file->pos = fm_lseek(fd, 0, SEEK_CUR);
 
     return file;
@@ -116,6 +116,7 @@ void __stdio_fini(void) {
 void clearerr(FILE *stream) {
     if (stream == NULL)
         return;
+
     stream->error = 0;
     stream->eof = 0;
 }
@@ -181,12 +182,13 @@ int fclose(FILE *stream) {
 }
 
 int fflush(FILE *stream) {
-    if (stream == NULL || (stream->mode & 0b11) == O_RDONLY)
-        return 0;
+    if (stream == NULL)
+        return EOF;
 
     // fflush also sync the file position
     if (stream->buffer_size <= 0) {
-        fm_lseek(stream->fd, stream->pos, SEEK_SET);
+        if (stream->isfile)
+            fm_lseek(stream->fd, stream->pos, SEEK_SET);
         return 0;
     }
 
@@ -204,7 +206,8 @@ int fflush(FILE *stream) {
         written = 0;
     }
 
-    fm_lseek(stream->fd, stream->pos, SEEK_SET);
+    if (stream->isfile)
+        fm_lseek(stream->fd, stream->pos, SEEK_SET);
 
     // return the number of elements written
     return written ? 0 : EOF;
@@ -246,7 +249,7 @@ size_t fread(void *buffer, size_t size, size_t count, FILE *stream) {
         fflush(stream);
 
     // check if the file is a function call
-    if (stream->unbuffered) {
+    if (!stream->isfile) {
         read = fm_pread(stream->fd, buffer, count, stream->pos);
         stream->pos += read;
 
@@ -319,7 +322,7 @@ size_t fwrite(const void *buffer, size_t size, size_t count, FILE *stream) {
     count *= size;
 
     // check if the file is open for writing
-    if (count == 0 || stream == NULL || stream->mode & O_RDONLY)
+    if (count == 0 || stream == NULL || (stream->mode & 0b11) == O_RDONLY)
         return 0;
 
     // if buffer is used for reading
