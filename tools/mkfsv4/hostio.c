@@ -18,58 +18,6 @@
 
 #include "butterfly.h"
 
-int hio_raw_import(const char *filename) {
-    FILE *fp = fopen(filename, "rb");
-
-    if (fp == NULL) {
-        printf("error: could not open file %s\n", filename);
-        return 1;
-    }
-
-    // cleanup the vdisk
-    vdisk_destroy();
-    vdisk_init();
-
-    // read the file and write it to the vdisk
-    uint8_t buffer[SECTOR_SIZE];
-
-    size_t bytes_read;
-    for (uint32_t sector = 0; (bytes_read = fread(buffer, 1, SECTOR_SIZE, fp)) > 0; sector++) {
-        if (vdisk_write(buffer, bytes_read, sector * SECTOR_SIZE)) {
-            printf("error: could not write to vdisk at sector %d\n", sector);
-            fclose(fp);
-            return 1;
-        }
-    }
-
-    // close the file
-    fclose(fp);
-    return 0;
-}
-
-int hio_raw_export(const char *filename) {
-    FILE *fp = fopen(filename, "wb");
-    if (fp == NULL) {
-        printf("error: could not open file %s\n", filename);
-        return 1;
-    }
-
-    // write the vdisk to the file
-    uint8_t buffer[SECTOR_SIZE];
-    for (uint32_t sector = 0; vdisk_read(buffer, SECTOR_SIZE, sector * SECTOR_SIZE) == 0; sector++) {
-        size_t bytes_written = fwrite(buffer, 1, SECTOR_SIZE, fp);
-        if (bytes_written < SECTOR_SIZE) {
-            printf("error: could not write to file %s\n", filename);
-            fclose(fp);
-            return 1;
-        }
-    }
-
-    // close the file
-    fclose(fp);
-    return 0;
-}
-
 static void path_join(char *dst, const char *a, char *b) {
     strcpy(dst, a);
     if (dst[strlen(dst) - 1] != '/')
@@ -138,9 +86,6 @@ static int hio_dir_import_rec(const char *extern_path, const char *intern_path) 
 }
 
 int hio_dir_import(const char *extern_path) {
-    vdisk_destroy();
-    vdisk_init();
-
     if (SID_IS_NULL(fu_dir_create(0, NULL, "/"))) {
         printf("failed to create root directory\n");
         return 1;

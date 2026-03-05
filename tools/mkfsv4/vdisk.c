@@ -11,81 +11,87 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 
 #include "butterfly.h"
 
-typedef struct {
-    uint8_t *data;
-    uint64_t size;
-} vdisk_t;
+#define DISK_EXTEND_SIZE SECTOR_SIZE * 64
 
-vdisk_t *g_vdisk = NULL;
+int fd = -1;
 
-void vdisk_init(void) {
-    if (g_vdisk)
+void vdisk_close(void) {
+    if (fd == -1)
         return;
 
-    g_vdisk = malloc(sizeof(vdisk_t));
-    g_vdisk->data = NULL;
-    g_vdisk->size = 0;
+    close(fd);
+    fd = -1;
 }
 
-void vdisk_destroy(void) {
-    if (!g_vdisk)
-        return;
+void vdisk_new(char *path) {
+    vdisk_close();
+    
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0666);
 
-    if (g_vdisk->data)
-        free(g_vdisk->data);
-
-    free(g_vdisk);
-    g_vdisk = NULL;
+    if (fd == -1) {
+        perror("Failed to create vdisk");
+        exit(EXIT_FAILURE);
+    }    
 }
 
-#define DISK_EXTEND_SIZE SECTOR_SIZE * 1024
+void vdisk_open(char *path) {
+    vdisk_close();
+    
+    fd = open(path, O_RDWR);
 
-static int vdisk_extend(uint64_t newsize) {
-    if (!g_vdisk)
-        return -1;
-
-    if (newsize <= g_vdisk->size)
-        return 0;
-
-    newsize += DISK_EXTEND_SIZE - (newsize % DISK_EXTEND_SIZE);
-
-    uint8_t *newdata = realloc(g_vdisk->data, newsize);
-    if (!newdata)
-        return -1;
-
-    memset(newdata + g_vdisk->size, 0, newsize - g_vdisk->size);
-
-    g_vdisk->data = newdata;
-    g_vdisk->size = newsize;
-
-    return 0;
+    if (fd == -1) {
+        perror("Failed to open vdisk");
+        exit(EXIT_FAILURE);
+    }
 }
 
-int vdisk_write(void *data, uint32_t size, uint64_t offset) {
-    if (!g_vdisk)
+int vdisk_write(void *data, uint32_t size, unsigned long offset) {
+    if (fd == -1) {
+        fprintf(stderr, "vdisk_write: No vdisk open\n");
         return -1;
-
-    if (offset + size > g_vdisk->size) {
-        if (vdisk_extend(offset + size))
-            return -1;
     }
 
-    memcpy(g_vdisk->data + offset, data, size);
+    if ((long) offset + size > lseek(fd, 0, SEEK_END)) {
+        if (ftruncate(fd, offset + DISK_EXTEND_SIZE) == -1) {
+            perror("vdisk_write: Failed to extend vdisk");
+            return -1;
+        }
+    }
+
+    if (lseek(fd, offset, SEEK_SET) == -1) {
+        perror("vdisk_write: Failed to seek");
+        return -1;
+    }
+
+    if (write(fd, data, size) != size) {
+        perror("vdisk_write: Failed to write");
+        return -1;
+    }
 
     return 0;
 }
 
-int vdisk_read(void *buffer, uint32_t size, uint64_t offset) {
-    if (!g_vdisk)
+int vdisk_read(void *buffer, uint32_t size, unsigned long offset) {
+    if (fd == -1) {
+        fprintf(stderr, "vdisk_read: No vdisk open\n");
         return -1;
+    }
 
-    if (offset + size > g_vdisk->size)
+    if (lseek(fd, offset, SEEK_SET) == -1) {
+        perror("vdisk_read: Failed to seek");
         return -1;
+    }
 
-    memcpy(buffer, g_vdisk->data + offset, size);
+    if (read(fd, buffer, size) != size) {
+        perror("vdisk_read: Failed to read");
+        return -1;
+    }
+
     return 0;
 }

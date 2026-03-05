@@ -44,15 +44,14 @@ extern uint32_t sector_data[SECTOR_SIZE / sizeof(uint32_t)];
 
 ///////////////////// VDISK
 
-void vdisk_init(void);
-void vdisk_destroy(void);
-int  vdisk_write(void *data, uint32_t size, uint64_t offset);
-int  vdisk_read(void *buffer, uint32_t size, uint64_t offset);
+void vdisk_new(char *path);
+void vdisk_open(char *path);
+void vdisk_close(void);
+
+int  vdisk_write(void *data, uint32_t size, unsigned long offset);
+int  vdisk_read(void *buffer, uint32_t size, unsigned long offset);
 
 //////////////////// HOST I/O
-
-int hio_raw_export(const char *filename);
-int hio_raw_import(const char *filename);
 
 int hio_dir_import(const char *extern_path);
 int hio_dir_export(const char *extern_path);

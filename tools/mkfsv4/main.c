@@ -96,16 +96,16 @@ int main(int argc, char **argv) {
 
 
     if (options.extract) {
-        hio_raw_import(options.input);
+        vdisk_open(options.input);
         hio_dir_export(options.output);
     } else {
+        vdisk_new(options.output);
         hio_dir_import(options.input);
-        hio_raw_export(options.output);
     }
 
     if (options.print_tree)
         fu_draw_tree(SID_ROOT, 0);
 
-    vdisk_destroy();
+    vdisk_close();
     return 0;
 }
