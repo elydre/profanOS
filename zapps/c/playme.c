@@ -21,6 +21,13 @@
 #include <unistd.h>
 #include <stdio.h>
 
+// display white spaces
+#define LEFT_OFFSET ""
+
+// circular buffer size
+#define BLOCK_SIZE (64 * 1024)
+#define CIRUCULAR_COUNT 4
+
 typedef struct {
     uint32_t addr_low;
     uint32_t addr_high;
@@ -43,6 +50,7 @@ typedef struct {
     char *title;
     char *album;
     char *year;
+    char *trackn;
 } wav_file_t;
 
 int g_volume = 50;
@@ -112,6 +120,8 @@ wav_file_t *read_header(FILE *file) {
                         header->album = header_set_info(file, info_size);
                     else if (memcmp(info_id, "ICRD", 4) == 0)
                         header->year = header_set_info(file, info_size);
+                    else if (memcmp(info_id, "IPRT", 4) == 0)
+                        header->trackn = header_set_info(file, info_size);
                     else
                         fseek(file, info_size, SEEK_CUR);
 
@@ -134,8 +144,7 @@ wav_file_t *read_header(FILE *file) {
 }
 
 
-#define BLOCK_SIZE (64 * 1024)
-#define CIRUCULAR_COUNT 4
+
 
 int add_block_to_buffer(FILE *file, wav_file_t *header, void *at, uint32_t block_index) {
     size_t to_read = BLOCK_SIZE;
@@ -168,10 +177,10 @@ void print_info(wav_file_t *header, uint32_t pos, uint32_t stream_pos, uint32_t 
     if (curent_sec > total_sec)
         curent_sec = total_sec;
 
-    printf("\r[");
+    printf("\r" LEFT_OFFSET "[");
     for (int i = 0; i < LINE_SIZE; i++) {
         if (i == stream_bar && i == read_bar)
-            printf("\e[94m |\e[93m>\e[0m");
+            printf("\e[94m|\e[93m>\e[0m ");
         else if (i == stream_bar)
             printf("\e[93m>>\e[0m");
         else if (i == read_bar)
@@ -216,7 +225,7 @@ int get_volume_change() {
     return 0;
 }
 
-int start_play(FILE *file, wav_file_t *header) {
+int start_play(FILE *file, wav_file_t *header, int print) {
     void *physical = syscall_mem_alloc(BLOCK_SIZE * 4, 1, 0x1000);
 
     hda_play_buffer_t *buf = syscall_mem_alloc(sizeof(hda_play_buffer_t) * CIRUCULAR_COUNT, 1, 0x1000);
@@ -258,10 +267,12 @@ int start_play(FILE *file, wav_file_t *header) {
             if (i % 20 == 0)
                 hda_check_headphone_connection_change();
 
-            if (get_volume_change())
-                goto end;
+            if (print) {
+                if (get_volume_change())
+                    goto end;
 
-            print_info(header, pos + (loop_reset * CIRUCULAR_COUNT * BLOCK_SIZE), pos, (block % CIRUCULAR_COUNT) * BLOCK_SIZE);
+                print_info(header, pos + (loop_reset * CIRUCULAR_COUNT * BLOCK_SIZE), pos, (block % CIRUCULAR_COUNT) * BLOCK_SIZE);
+            }
 
             usleep(10000);
         }
@@ -277,12 +288,12 @@ int start_play(FILE *file, wav_file_t *header) {
 
     hda_stop_sound();
 
-    printf("\n");
+    printf("\r\e[K" LEFT_OFFSET "\e[37m~~~\e[0m\n");
 
     return 0;
 }
 
-int playme_file(const char *path) {
+int playme_file(const char *path, int print) {
     FILE *file = fopen(path, "rb");
     int errcode = 1;
 
@@ -302,19 +313,23 @@ int playme_file(const char *path) {
     if (!header->title)
         header->title = strdup(path);
 
-    printf("\e[4m");
-    if (header->artist)
-        printf("%s - %s", header->artist, header->title);
-    else
-        printf("%s", header->title);
-    if (header->year)
-        printf(" - %s", header->year);
-    printf("\e[0m\n");
+    if (print) {
+        printf(LEFT_OFFSET "\e[4m");
+        if (header->trackn)
+            printf("%s. ", header->trackn);
+        if (header->artist)
+            printf("%s - %s", header->artist, header->title);
+        else
+            printf("%s", header->title);
+        if (header->year)
+            printf(" [%s]", header->year);
+        printf("\e[0m\n");
 
-    printf("%d channels at %d kbps: %d bits %gkHz\n",
-            header->num_channels, header->byte_rate / 125,
-            header->bits_per_sample, header->sample_rate / 1000.0
-    );
+        printf(LEFT_OFFSET "\e[37m%d channels at %d kbps: %d bits %gkHz\e[0m\n",
+                header->num_channels, header->byte_rate / 125,
+                header->bits_per_sample, header->sample_rate / 1000.0
+        );
+    }
 
     if (header->audio_format != 1)
         fprintf(stderr, "playme: %s: Only PCM format is supported\n", path);
@@ -324,7 +339,7 @@ int playme_file(const char *path) {
         fprintf(stderr, "playme: %s: Only 16 bits files are supported for now\n", path);
     else if (hda_is_supported_sample_rate(header->sample_rate) == 0)
         fprintf(stderr, "playme: %s: Sample rate %d not supported by HDA\n", path, header->sample_rate);
-    else if (start_play(file, header))
+    else if (start_play(file, header, print))
         fprintf(stderr, "playme: %s: Error while playing file\n", path);
     else
         errcode = 0;
@@ -362,6 +377,7 @@ int playme_dump(const char *path) {
     printf("Artist: %s\n", header->artist ? header->artist : "Unknown");
     printf("Album: %s\n", header->album ? header->album : "Unknown");
     printf("Year: %s\n", header->year ? header->year : "Unknown");
+    printf("Track number: %s\n", header->trackn ? header->trackn : "Unknown");
     printf("Audio format: %d\n", header->audio_format);
     printf("Channels: %d\n", header->num_channels);
     printf("Sample rate: %d\n", header->sample_rate);
@@ -383,12 +399,13 @@ int playme_dump(const char *path) {
 }
 
 int main(int argc, char **argv) {
-    carp_init("[-d] [-v %] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
+    carp_init("[-d] [-v %] [-n] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
 
     carp_register('d', CARP_STANDARD, "dump file header and exit");
+    carp_register('n', CARP_STANDARD, "play without user interface");
     carp_register('v', CARP_NEXT_INT, "set initial volume (default: 50%)");
 
-    carp_conflict("dv");
+    carp_conflict("dvn");
 
     if (carp_parse(argc, argv))
         return 1;
@@ -406,13 +423,17 @@ int main(int argc, char **argv) {
             g_volume = 100;
     }
 
+    /* if (!(carp_isset('d') || carp_isset('n'))) {
+        fputs("\n", stdout);
+    }*/
+
     const char *path;
     while ((path = carp_file_next())) {
         if (carp_isset('d')) {
-            if (playme_dump(path) != 0)
+            if (playme_dump(path))
                 return 1;
         } else {
-            if (playme_file(path) != 0)
+            if (playme_file(path, !carp_isset('n')))
                 return 1;
         }
     }
