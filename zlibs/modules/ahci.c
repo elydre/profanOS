@@ -396,6 +396,8 @@ static int ahci_write(uint32_t afft_id, void *data, uint32_t offset, uint32_t si
 
 
 int __init(void) {
+    return 2;
+
     ports = alloc_page(16); // 256*256 = 65536 bytes, or 16 pages. 256 ports is probably enough
     mem_set(ports, 0, 4096 * 16);
 
@@ -438,7 +440,7 @@ int __init(void) {
         afft_to_drive_num[afft_id] = i;
     }
 
-    return 0;
+    return found_drives ? 0 : 2;
 }
 
 void *__module_func_array[] = {
