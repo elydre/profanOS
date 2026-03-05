@@ -156,14 +156,30 @@ int add_block_to_buffer(FILE *file, wav_file_t *header, void *at, uint32_t block
     return read;
 }
 
-void print_info(wav_file_t *header, uint32_t pos) {
+#define LINE_SIZE 16
+
+void print_info(wav_file_t *header, uint32_t pos, uint32_t stream_pos, uint32_t read_pos) {
+    int stream_bar = stream_pos * LINE_SIZE / (BLOCK_SIZE * CIRUCULAR_COUNT);
+    int read_bar = read_pos * LINE_SIZE / (BLOCK_SIZE * CIRUCULAR_COUNT);
+
     int curent_sec = pos / header->byte_rate;
     int total_sec = header->data_bytes / header->byte_rate;
 
     if (curent_sec > total_sec)
         curent_sec = total_sec;
 
-    printf("\r    [ %02d:%02d / %02d:%02d  |  Vol: %d%% ] ",
+    printf("\r[");
+    for (int i = 0; i < LINE_SIZE; i++) {
+        if (i == stream_bar && i == read_bar)
+            printf("\e[94m |\e[93m>\e[0m");
+        else if (i == stream_bar)
+            printf("\e[93m>>\e[0m");
+        else if (i == read_bar)
+            printf("\e[94m |\e[0m");
+        else
+            printf(" ");
+    }
+    printf("] %02d:%02d / %02d:%02d (%d%%)  ",
             curent_sec / 60, curent_sec % 60, total_sec / 60, total_sec % 60,
             g_volume
     );
@@ -245,7 +261,7 @@ int start_play(FILE *file, wav_file_t *header) {
             if (get_volume_change())
                 goto end;
 
-            print_info(header, pos + (loop_reset * CIRUCULAR_COUNT * BLOCK_SIZE));
+            print_info(header, pos + (loop_reset * CIRUCULAR_COUNT * BLOCK_SIZE), pos, (block % CIRUCULAR_COUNT) * BLOCK_SIZE);
 
             usleep(10000);
         }
@@ -253,7 +269,7 @@ int start_play(FILE *file, wav_file_t *header) {
         if (add_block_to_buffer(file, header, physical + ((block % CIRUCULAR_COUNT) * BLOCK_SIZE), block) == 0)
             end_count++;
 
-        asm("wbinvd");
+        asm volatile("wbinvd");
         block++;
     }
 
@@ -292,7 +308,7 @@ int playme_file(const char *path) {
     else
         printf("%s", header->title);
     if (header->year)
-        printf(" (%s)", header->year);
+        printf(" - %s", header->year);
     printf("\e[0m\n");
 
     printf("%d channels at %d kbps: %d bits %gkHz\n",
@@ -369,8 +385,8 @@ int playme_dump(const char *path) {
 int main(int argc, char **argv) {
     carp_init("[-d] [-v %] <path1> [path2] ...", CARP_FNOMAX | CARP_FMIN(1));
 
-    carp_register('v', CARP_NEXT_INT, "set initial volume (default: 50%)");
     carp_register('d', CARP_STANDARD, "dump file header and exit");
+    carp_register('v', CARP_NEXT_INT, "set initial volume (default: 50%)");
 
     carp_conflict("dv");
 

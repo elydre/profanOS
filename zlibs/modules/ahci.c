@@ -15,6 +15,9 @@
 #include <kernel/snowflake.h>
 #include <kernel/scubasuit.h>
 #include <kernel/process.h>
+#include <kernel/butterfly.h>
+#include <kernel/afft.h>
+#include <system.h>
 
 #define get_phys_addr(x) (void *) scuba_get_phys(process_get_dir(process_get_pid()), x)
 #define alloc_page(x) (void *) mem_alloc(4096 * (x), SNOW_KERNEL, 0x1000)
@@ -284,7 +287,7 @@ static void initialize_abar(HBAData *abar) {
                 initialize_port(&ports[num_ports]);
 
                 sata_identify_packet *info = calloc_page(1);
-                kprintf("\n[AHCI] Identifying device: %d (0 = OK)\n", ahci_identify_device(ports[num_ports], info));
+                kprintf("[AHCI] Identifying device: %s\n", ahci_identify_device(ports[num_ports], info) == 0 ? "OK" : "FAIL");
 
                 char name[41] = {0};
                 for (int i = 0; i < 40; i += 2) {
@@ -292,8 +295,10 @@ static void initialize_abar(HBAData *abar) {
                     name[i + 1] = info->model_number[i];
                 }
 
-                kprintf("[AHCI] Detected SATA drive: %s\n", name);
-                kprintf("size: %d sector\n", (uint32_t) info->total_sectors & 0xFFFFFFFF);
+                for (int j = 39; j >= 0 && name[j] == ' '; j--)
+                    name[j] = 0;
+
+                kprintf("[AHCI] Detected SATA drive: %s, %d sectors\n", name, (uint32_t) info->total_sectors & 0xFFFFFFFF);
 
                 free(info);
 
@@ -304,12 +309,12 @@ static void initialize_abar(HBAData *abar) {
     }
 }
 
-#define MAGIC_ADDR 0xFEBB1000
+#define MAGIC_ADDR 0xFEBB5000
 // #define MAGIC_ADDR 0xA132d000
 
 uint8_t ahci_read_sectors(uint16_t drive_num, uint64_t start_sector, uint32_t count, void *buf) {
     scuba_call_map((void *) MAGIC_ADDR, (void *) MAGIC_ADDR, 1);
-    kprintf_serial("ahci_read_sectors(drive_num=%d, start_sector=%x - %x, count=%d, buf=%x)\n", drive_num, (uint32_t)(start_sector & 0xFFFFFFFF), (uint32_t)((start_sector >> 32) & 0xFFFFFFFF), count, (uint32_t)buf);
+    // kprintf_serial("ahci_read_sectors(drive_num=%d, start_sector=%x - %x, count=%d, buf=%x)\n", drive_num, (uint32_t)(start_sector & 0xFFFFFFFF), (uint32_t)((start_sector >> 32) & 0xFFFFFFFF), count, (uint32_t)buf);
 
     if (ports[drive_num].abar != 0)
         return ahci_read_sectors_internal(ports[drive_num], start_sector & 0xFFFFFFFF, (start_sector >> 32) & 0xFFFFFFFF, count, buf);
@@ -330,8 +335,69 @@ int drive_exists(uint16_t drive_num) {
     return drive_num < 256 && (ports[drive_num].abar != 0);
 }
 
+int afft_to_drive_num[AFFT_MAX];
+
+static int ahci_read(uint32_t afft_id, void *buffer, uint32_t offset, uint32_t size) {
+    int drive_num = afft_to_drive_num[afft_id];
+    if (drive_num < 0)
+        return -1;
+
+    // the offset and size can be unaligned, if they are, we need a temporary buffer to read the full sectors and then copy the relevant data to the output buffer
+
+    uint32_t sector_size = 512;
+    uint32_t start_sector = offset / sector_size;
+    uint32_t end_sector = (offset + size - 1) / sector_size;
+    uint32_t sector_count = end_sector - start_sector + 1;
+
+    void *temp_buffer = alloc_page((sector_count * sector_size + 4095) / 4096);
+    uint8_t result = ahci_read_sectors(drive_num, start_sector, sector_count, temp_buffer);
+    if (result != 0) {
+        free(temp_buffer);
+        return -1;
+    }
+
+    uint32_t offset_in_first_sector = offset % sector_size;
+    mem_copy(buffer, temp_buffer + offset_in_first_sector, size);
+    free(temp_buffer);
+    return size;
+}
+
+static int ahci_write(uint32_t afft_id, void *data, uint32_t offset, uint32_t size) {
+    int drive_num = afft_to_drive_num[afft_id];
+    if (drive_num < 0)
+        return -1;
+
+    uint32_t sector_size = 512;
+    uint32_t start_sector = offset / sector_size;
+    uint32_t end_sector = (offset + size - 1) / sector_size;
+    uint32_t sector_count = end_sector - start_sector + 1;
+
+    void *temp_buffer = alloc_page((sector_count * sector_size + 4095) / 4096);
+
+    // if the write is not sector aligned, we need to read the existing data of the first and last sectors to avoid overwriting the unaligned parts
+    if (offset % sector_size != 0 || size % sector_size != 0) {
+        uint8_t result = ahci_read_sectors(drive_num, start_sector, sector_count, temp_buffer);
+        if (result != 0) {
+            free(temp_buffer);
+            return -1;
+        }
+    }
+
+    uint32_t offset_in_first_sector = offset % sector_size;
+    mem_copy(temp_buffer + offset_in_first_sector, data, size);
+
+    uint8_t result = ahci_write_sectors(drive_num, start_sector, sector_count, temp_buffer);
+    free(temp_buffer);
+    if (result != 0)
+        return -1;
+
+    return size;
+}
+
+
 int __init(void) {
     ports = alloc_page(16); // 256*256 = 65536 bytes, or 16 pages. 256 ports is probably enough
+    mem_set(ports, 0, 4096 * 16);
 
     // register_pci_driver(print_pci_data, 1, 6);
     // driver_id = register_disk_handler(ahci_read_sectors, ahci_write_sectors, 255);
@@ -339,6 +405,45 @@ int __init(void) {
     scuba_call_map((void *) MAGIC_ADDR, (void *) MAGIC_ADDR, 1);
 
     initialize_abar((HBAData *) MAGIC_ADDR);
+    
+    for (int i = 0; i < AFFT_MAX; i++)
+        afft_to_drive_num[i] = -1;
+    
+    char name[10]; // ahci0 - ahci255
+    str_copy(name, "ahci");
+
+    int found_drives = 0;
+    int afft_id;
+
+    for (uint16_t i = 0; i < 10; i++) {
+        if (ports[i].abar == 0)
+            continue;
+
+        found_drives++;
+
+        int2str(i, name + 4);
+
+        afft_id = afft_register(AFFT_AUTO, ahci_read, ahci_write, NULL, name);
+
+        if (afft_id < 0) {
+            sys_error("[ahci mod] Failed to register AHCI drive %d", i);
+            continue;
+        }
+
+        if (SID_IS_NULL(kfu_afft_create("/dev", name, afft_id))) {
+            sys_error("[ahci mod] Failed to create device for AHCI drive %d", i);
+            continue;
+        }
+
+        afft_to_drive_num[afft_id] = i;
+    }
 
     return 0;
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    ahci_read_sectors,
+    ahci_write_sectors,
+    drive_exists,
+};
