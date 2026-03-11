@@ -68,8 +68,8 @@ int filesys_init(void);
 
 //////////////////// SECTOR
 
-int fs_sector_get_unused(int disk, int count, sid_t *ret);
-int fs_sector_note_free(sid_t sid);
+int fs_sector_get_unused(int disk, uint32_t count, sid_t *ret);
+int fs_sector_note_free(sid_t sid, uint32_t count);
 
 //////////////////// CONTAINER
 
