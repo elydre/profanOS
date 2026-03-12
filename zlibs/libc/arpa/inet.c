@@ -143,14 +143,17 @@ int inet_pton(int af, const char *s, void *a0) {
 		}
 		s += j + 1;
 	}
-	if (brk >= 0) {
+	
+    if (brk >= 0) {
 		memmove(ip + brk + 7 - i, ip + brk, 2 * (i + 1 - brk));
 		for (j = 0; j < 7 - i; j++)
             ip[brk+j] = 0;
 	}
-	for (j = 0; j < 8; j++) {
+	
+    for (j = 0; j < 8; j++) {
 		*a++ = ip[j] >> 8;
 		*a++ = ip[j];
 	}
+
 	return !(need_v4 && inet_pton(AF_INET, (void *) s, a - 4) <= 0);
 }

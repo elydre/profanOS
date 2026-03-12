@@ -183,7 +183,22 @@ struct hostent *gethostbyname(const char *name) {
 		h_errno = HOST_NOT_FOUND;
 		return NULL;
 	}
+
 	strcpy(dup, name);
+
+    struct in_addr addr;
+    if (inet_pton(AF_INET, name, &addr) == 1) {
+        storage.h_name = dup;
+        storage.h_aliases = NULL;
+        storage.h_addrtype = AF_INET;
+        storage.h_length = 4;
+        storage.h_addr_list = arr;
+        iarr[0] = addr.s_addr & 0xff;
+        iarr[1] = (addr.s_addr >> 8) & 0xff;
+        iarr[2] = (addr.s_addr >> 16) & 0xff;
+        iarr[3] = (addr.s_addr >> 24) & 0xff;
+        return &storage;
+    }
 
 	uint32_t ip = 0;
 	int ret = get_ip(dup, &ip);
@@ -191,6 +206,7 @@ struct hostent *gethostbyname(const char *name) {
 		h_errno = HOST_NOT_FOUND;
 		return NULL;
 	}
+
 	storage.h_name = dup;
 	storage.h_aliases = NULL;
 	storage.h_addrtype = AF_INET;
