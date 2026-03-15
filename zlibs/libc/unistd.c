@@ -659,8 +659,10 @@ int unlink(const char *filename) {
 
     // check if the file exists
     uint32_t parent_sid, elem = fu_path_to_sid(SID_ROOT, path);
-    if (!fu_is_file(elem)) {
-        errno = ENOENT;
+
+    if (fu_is_dir(elem) && fu_dir_get_size(elem) > 2) {
+        // the directory is not empty (only '.' and '..' allowed)
+        errno = ENOTEMPTY;
         free(path);
         return -1;
     }

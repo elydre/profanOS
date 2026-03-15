@@ -646,75 +646,116 @@ int remove(const char *name) {
     return unlink(name);
 }
 
+static int rename_is_subdir(uint32_t tofind, char *fullpath) {
+    // Check if the destination is a subdirectory of the source
+    // by comparing the inodes of the source and destination directories
+
+    uint32_t dst_sid = profan_path_resolve(fullpath);
+    if (IS_SAME_SID(tofind, dst_sid))
+        return 1;
+
+    if (strcmp(fullpath, "/") == 0)
+        return 0;
+
+    char *parent = profan_path_join(fullpath, "..");
+    profan_path_simplify(parent);
+
+    int res = rename_is_subdir(tofind, parent);
+    free(parent);
+    return res;
+}
+
 int rename(const char *old_filename, const char *new_filename) {
     char *tmp, *fullpath;
     char *new_entry;
 
-    // check if the file exists
+    // check if the path exists
     fullpath = profan_path_join(profan_wd_path(), (char *) old_filename);
     profan_path_simplify(fullpath);
-    uint32_t old_sid = fu_path_to_sid(SID_ROOT, fullpath);
+    uint32_t sid = fu_path_to_sid(SID_ROOT, fullpath);
 
-    if (IS_SID_NULL(old_sid)) {
+    if (IS_SID_NULL(sid)) {
         errno = ENOENT;
         free(fullpath);
         return -1;
     }
 
-    if (!fu_is_file(old_sid)) {
-        errno = EISDIR;
-        free(fullpath);
-        return -1;
-    }
-
-    // get the parent directory sid
+    // get the old parent sid
     profan_path_sep(fullpath, &tmp, NULL);
     uint32_t old_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);
     free(tmp);
 
-    // check if the new file exists
+    // check if the new path exists
     fullpath = profan_path_join(profan_wd_path(), (char *) new_filename);
     profan_path_simplify(fullpath);
-    uint32_t new_sid = fu_path_to_sid(SID_ROOT, fullpath);
+    uint32_t dest_sid = fu_path_to_sid(SID_ROOT, fullpath);
 
-    if (!IS_SID_NULL(new_sid)) {
-        if (fu_is_dir(new_sid)) {
-            errno = EISDIR;
+    // if old and new paths are the same, do nothing
+    if (IS_SAME_SID(sid, dest_sid)) {
+        free(fullpath);
+        return 0;
+    }
+
+    if (fu_is_dir(dest_sid)) {
+        if (!fu_is_dir(sid)) {
             free(fullpath);
+            errno = EISDIR;
             return -1;
         }
-
-        // remove the new file
-        if (unlink(fullpath) < 0) {
+        if (fu_dir_get_size(dest_sid) > 2) {
             free(fullpath);
+            errno = ENOTEMPTY;
             return -1;
         }
     }
 
-    // get the new parent directory sid
+    // get the new parent sid
     profan_path_sep(fullpath, &tmp, &new_entry);
     uint32_t new_parent_sid = fu_path_to_sid(SID_ROOT, tmp);
 
     free(fullpath);
     free(tmp);
 
+    // should not happen
     if (IS_SID_NULL(new_parent_sid) || IS_SID_NULL(old_parent_sid)) {
         errno = ENOENT;
         free(new_entry);
         return -1;
     }
 
-    // remove the old entry from the old parent
-    if (fu_remove_from_dir(old_parent_sid, old_sid)) {
+    // check if the two paths are in the same filesystem
+    if (SID_DISK(sid) != SID_DISK(new_parent_sid)) {
+        free(new_entry);
+        errno = EXDEV;
+        return -1;
+    }
+
+    // check if the new path is a subdirectory of the old path
+    if (fu_is_dir(sid) && rename_is_subdir(sid, fullpath)) {
+        free(new_entry);
+        errno = EINVAL;
+        return -1;
+    }
+
+    // check if the new path already exists
+    if (!IS_SID_NULL(dest_sid) && unlink(new_filename) < 0) {
         free(new_entry);
         return -1;
     }
 
-    // add the new entry to the new parent
-    if (fu_add_to_dir(new_parent_sid, old_sid, new_entry)) {
+    // remove the old entry from the old parent
+    if (fu_remove_from_dir(old_parent_sid, sid)) {
         free(new_entry);
+        errno = ENOENT; // should not happen
+        return -1;
+    }
+
+    // add the new entry to the new parent
+    if (fu_add_to_dir(new_parent_sid, sid, new_entry)) {
+        free(new_entry);
+        errno = EEXIST; // should not happen
         return -1;
     }
 
