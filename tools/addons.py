@@ -74,7 +74,23 @@ def download_targz(url: str, path: str):
     os.system(f"tar -xf {targz} -C {path}")
     os.remove(targz)
 
+def dependencies_rec(addon: dict, visited: set = None) -> list:
+    if visited is None:
+        visited = set()
+
+    if addon["name"] in visited:
+        return []
+    visited.add(addon["name"])
+
+    dependencies = []
+    if "dependencies" in addon.keys():
+        for dep in addon["dependencies"]:
+            dependencies += dependencies_rec(get_addons(dep), visited)
+
+    return dependencies + [addon]
+
 def download_addons(addons: list) -> bool:
+    addons = [e for addon in addons for e in dependencies_rec(addon)]
     required = list(set([file for addon in addons for file in addon["files"]]))
     required.sort()
 
@@ -182,7 +198,14 @@ def graphic_menu(stdscr: curses.window):
         for i, file in enumerate(element["files"]):
             e = get_file(file)
             stdscr.addstr(4 + i, 0, f"  {file}{' ' * (max(0, 15 - len(file)))} {domain(e['url'])}")
-        stdscr.addstr(5 + len(element["files"]), 0, "Press any key to continue")
+        offset = 5 + len(element["files"])
+        if "dependencies" in element.keys() and len(element["dependencies"]) > 0:
+            stdscr.addstr(offset, 0, "Dependencies:", curses.A_BOLD)
+            for i, dep in enumerate(element["dependencies"]):
+                stdscr.addstr(offset + 1 + i, 0, f"  {dep}")
+            offset += 2 + len(element["dependencies"])
+
+        stdscr.addstr(offset, 0, "Press any key to continue")
         stdscr.refresh()
         stdscr.getch()
 
