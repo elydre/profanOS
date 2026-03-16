@@ -550,7 +550,7 @@ void srandom(unsigned int seed) {
 }
 
 int system(const char *command) {
-    if (!fu_is_file(SYSTEM_SHELL_PATH)) {
+    if (!fu_is_file(profan_path_resolve(SYSTEM_SHELL_PATH))) {
         fputs("libc: system: '" SYSTEM_SHELL_PATH "' not found\n", stderr);
         return -1;
     }
