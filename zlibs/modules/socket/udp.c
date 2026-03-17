@@ -200,7 +200,7 @@ int socket_udp_port_is_free(uint16_t port) {
         if (sockets[i].type != SOCKET_UDP)
             continue;
         udp_t *udp = sockets[i].data;
-        if (udp->local_port == port)
+        if (htons(udp->local_port) == port)
             return 0;
     }
     return 1;
