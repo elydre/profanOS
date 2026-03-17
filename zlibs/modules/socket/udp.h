@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === udp.h : 2026 ===                                                      |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -53,8 +53,12 @@ void socket_on_recv_udp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 void socket_udp_tick(socket_t *sock);
 int socket_udp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen);
 int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen);
-ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
-ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+
+ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags,
+            const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
+            struct sockaddr *src_addr, socklen_t *addrlen);
+
 int socket_udp_get_rw(socket_t *sock);
 
 #endif

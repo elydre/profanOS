@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === udp.c : 2026 ===                                                      |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -300,7 +300,9 @@ ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint3
     return len;
 }
 
-ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
+ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags,
+            const struct sockaddr *dest_addr, socklen_t addrlen) {
+
     if (!dest_addr && addrlen == 0)
         return socket_udp_send(sock, buf, len, 0, 0);
 
@@ -314,7 +316,9 @@ ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags
     return socket_udp_send(sock, buf, len, addr2->sin_addr.s_addr, addr2->sin_port);
 }
 
-ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
+ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
+            struct sockaddr *src_addr, socklen_t *addrlen) {
+
     udp_t *data = sock->data;
     while (data->recv_len == 0)
         process_sleep(process_get_pid(), 10);

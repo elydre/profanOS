@@ -11,7 +11,9 @@
 
 #include "../mlw_private.h"
 
-int I_mlw_ip_recv(void **whole_packet, int *whole_len, ip_header_t *header, void **data, int *data_len, mlw_tcp_t *inst) {
+int I_mlw_ip_recv(void **whole_packet, int *whole_len, ip_header_t *header, void **data,
+            int *data_len, mlw_tcp_t *inst) {
+
     int size = syscall_eth_is_ready(inst->eth_id);
     if (size <= 0)
         return 2;

@@ -75,8 +75,6 @@
 #define E1000_82577LM  0x10EA  // Device ID for Intel 82577LM
 
 
-// I have gathered those from different Hobby online operating systems instead of getting them one by one from the manual
-
 #define REG_CTRL        0x0000
 #define REG_STATUS      0x0008
 #define REG_EEPROM      0x0014

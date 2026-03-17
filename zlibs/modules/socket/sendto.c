@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === sendto.c : 2026 ===                                                   |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -12,7 +12,6 @@
 #include <errno.h>
 #include "udp.h"
 
-//ssize_t socket_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
 ssize_t socket_sendto(sendto_arg_t *args) {
     int sockfd = args->sockfd;
     const void *buf = args->buf;

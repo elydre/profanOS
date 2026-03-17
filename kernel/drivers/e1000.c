@@ -101,8 +101,7 @@ uint16_t endian_switch_u16(uint16_t x) {
     return ((x & 0xff) << 8) | ((x >> 8) & 0xff);
 }
 
-static uint32_t eeprom_read(e1000_t *e1000, uint8_t addr)
-{
+static uint32_t eeprom_read(e1000_t *e1000, uint8_t addr) {
     uint16_t data = 0;
     uint32_t tmp = 0;
 
@@ -212,7 +211,8 @@ void e1000_rx_init(e1000_t *e1000) {
     pci_write_cmd_u32(&(e1000->pci), 0, REG_RXDESCHEAD, 0);
     pci_write_cmd_u32(&(e1000->pci), 0, REG_RXDESCTAIL, E1000_NUM_RX_DESC-1);
     e1000->rx_cur = 0;
-    pci_write_cmd_u32(&(e1000->pci), 0, REG_RCTRL, RCTL_EN| RCTL_SBP| RCTL_UPE | RCTL_MPE | RCTL_LBM_NONE | RTCL_RDMTS_HALF | RCTL_BAM | RCTL_SECRC  | RCTL_BSIZE_8192);
+    pci_write_cmd_u32(&(e1000->pci), 0, REG_RCTRL, RCTL_EN| RCTL_SBP| RCTL_UPE | RCTL_MPE |
+                RCTL_LBM_NONE | RTCL_RDMTS_HALF | RCTL_BAM | RCTL_SECRC  | RCTL_BSIZE_8192);
 }
 
 void e1000_tx_init(e1000_t *e1000) {
@@ -222,8 +222,7 @@ void e1000_tx_init(e1000_t *e1000) {
     ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC, 1, 16));
 
     descs = (struct e1000_tx_desc *)ptr;
-    for(int i = 0; i < E1000_NUM_TX_DESC; i++)
-    {
+    for(int i = 0; i < E1000_NUM_TX_DESC; i++) {
         e1000->tx_descs_phys[i] = (struct e1000_tx_desc *)((uint8_t*)descs + i * 16);
         e1000->tx_descs_phys[i]->addr_high = 0;
         e1000->tx_descs_phys[i]->addr_low = 0;
@@ -243,15 +242,17 @@ void e1000_tx_init(e1000_t *e1000) {
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCHEAD, 0);
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCTAIL, 0);
     e1000->tx_cur = 0;
-    //pci_write_cmd_u32(&(e1000->pci), 0, REG_TCTRL,  TCTL_EN
+    // pci_write_cmd_u32(&(e1000->pci), 0, REG_TCTRL,  TCTL_EN
     //    | TCTL_PSP
     //    | (15 << TCTL_CT_SHIFT)
     //    | (64 << TCTL_COLD_SHIFT)
     //    | TCTL_RTLC);
-//
-    // This line of code overrides the one before it but I left both to highlight that the previous one works with e1000 cards, but for the e1000e cards
-    // you should set the TCTRL register as follows. For detailed description of each bit, please refer to the Intel Manual.
-    // In the case of I217 and 82577LM packets will not be sent if the TCTRL is not configured using the following bits.
+
+    // This line of code overrides the one before it but I left both to highlight that the previous one
+    // works with e1000 cards, but for the e1000e cards you should set the TCTRL register as follows.
+    // For detailed description of each bit, please refer to the Intel Manual. In the case of I217
+    // and 82577LM packets will not be sent if the TCTRL is not configured using the following bits.
+
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TCTRL,  0b0110000000000111111000011111010);
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TIPG,  0x0060200A);
 }
@@ -286,8 +287,7 @@ int e1000_init(void) {
 }
 
 
-int e1000_send_packet(const void * p_data, uint16_t p_len)
-{
+int e1000_send_packet(const void * p_data, uint16_t p_len) {
     e1000_t *device = &g_e1000;
     device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
     device->tx_descs_phys[device->tx_cur]->addr_high = 0;
@@ -308,8 +308,7 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
     uint16_t old_cur;
     uint8_t got_packet = 0;
 
-    while((device->rx_descs_phys[device->rx_cur]->status & 0x1))
-    {
+    while((device->rx_descs_phys[device->rx_cur]->status & 0x1)) {
         got_packet = 1;
         (void)got_packet;
         uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;

@@ -18,7 +18,8 @@ static int mlw_ip_to_mac(uint32_t ip, uint8_t *mac_res) {
         memcpy(mac_res,  mlw_info->router_mac, 6);
         return 0;
     }
-    fprintf(stderr, "error: %d.%d.%d.%d local no implemented\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, ip >> 24);
+    fprintf(stderr, "error: %d.%d.%d.%d local no implemented\n",
+                ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, ip >> 24);
     return 1;
 }
 

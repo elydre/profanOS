@@ -21,7 +21,8 @@ void send_dhcp_request(uint8_t *mac) {
     ethernet_header_t *eth = (ethernet_header_t *)packet;
     ip_header_t *ip = (ip_header_t *)(packet + sizeof(ethernet_header_t));
     udp_header_t *udp = (udp_header_t *)(packet + sizeof(ethernet_header_t) + sizeof(ip_header_t));
-    dhcp_packet_no_opt_t *dhcp = (dhcp_packet_no_opt_t *)(packet + sizeof(ethernet_header_t) + sizeof(ip_header_t) + sizeof(udp_header_t));
+    dhcp_packet_no_opt_t *dhcp = (dhcp_packet_no_opt_t *)(packet + sizeof(ethernet_header_t) +
+                sizeof(ip_header_t) + sizeof(udp_header_t));
     uint8_t *opt = (uint8_t *)(dhcp + 1);
 
     memcpy(eth->dest_mac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);

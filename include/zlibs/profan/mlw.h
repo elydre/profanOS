@@ -62,7 +62,7 @@ uint32_t    mlw_ip_from_str(char *ip);
 
 
 // tcp
-mlw_tcp_t   *mlw_tcp_open(
+mlw_tcp_t  *mlw_tcp_open(
                 uint32_t dest_ip,
                 uint16_t dest_port
 );
@@ -84,7 +84,7 @@ int         mlw_tcp_send(
 
 
 // udp
-mlw_udp_t   *mlw_udp_open(uint32_t dest_ip, uint16_t dest_port);
+mlw_udp_t  *mlw_udp_open(uint32_t dest_ip, uint16_t dest_port);
 int         mlw_udp_send(mlw_udp_t *inst, void *data, uint16_t len);
 
 #endif
