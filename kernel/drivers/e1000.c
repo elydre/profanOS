@@ -385,5 +385,5 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
 }
 
 void e1000_set_mac(uint8_t mac[6]) {
-    mem_copy(g_e1000.mac, mac, 6);
+    mem_copy(mac, g_e1000.mac, 6);
 }
