@@ -9,14 +9,15 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <stdint.h>
-#include <stdio.h>
 #include <profan/syscall.h>
+#include <profan/net.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <profan/net.h>
+#include <stdio.h>
+#include <netdb.h>
 
 typedef struct {
     uint8_t dest_mac[6];
@@ -94,13 +95,29 @@ void send_ping(uint8_t *router_mac, uint8_t *src_mac, uint8_t *src_ip) {
     syscall_eth_send(packet, sizeof(packet));
 }
 
-void treat_args(int argc, char **argv);
-
 int g_eth_id = 0;
 eth_info_t g_eth_info;
 
+
+int addr_to_ip(const char *addr) {
+    struct hostent *host = gethostbyname(addr);
+    if (!host)
+        return 1;
+    memcpy(dest_ip, host->h_addr_list[0], 4);
+    return 0;
+}
+
 int main(int argc, char **argv) {
-    treat_args(argc, argv);
+    if (argc != 2) {
+        fprintf(stderr, "Usage: ping <destination_ip>\n");
+        return 1;
+    }
+
+    if (addr_to_ip(argv[1]) != 0) {
+        fprintf(stderr, "Invalid IP address: %s\n", argv[1]);
+        return 1;
+    }
+
     g_eth_id = syscall_eth_start();
     if (g_eth_id == 0) {
         fprintf(stderr, "Error: could not open connection with profan eth\n");
@@ -169,56 +186,4 @@ int main(int argc, char **argv) {
         }
     }
     return (0);
-}
-
-void treat_args(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <destination_ip>\n", argv[0]);
-        exit(1);
-    }
-    char *addr = argv[1];
-    if (addr[0] == '.' || addr[strlen(addr) - 1] == '.') {
-        fprintf(stderr, "Invalid IP address format. Use x.x.x.x\n");
-        exit(1);
-    }
-    int dot_count = 0;
-    for (int i = 0; addr[i] != '\0'; i++) {
-        if (addr[i] == '.')
-            dot_count++;
-    }
-    if (dot_count != 3) {
-        fprintf(stderr, "Invalid IP address format. Use x.x.x.x\n");
-        exit(1);
-    }
-    int parts_idx[4] = {0};
-    int current_part = 1;
-    for (int i = 0; addr[i] != '\0'; i++) {
-        if (addr[i] == '.')
-            parts_idx[current_part++] = i + 1;
-    }
-    for (int i = 0; i < 4; i++) {
-        int part_len = 0;
-        int idx = parts_idx[i];
-        while (addr[idx] != '.' && addr[idx] != '\0') {
-            part_len++;
-            idx++;
-        }
-        if (part_len == 0 || part_len > 3) {
-            fprintf(stderr, "Invalid IP address format. Use x.x.x.x\n");
-            exit(1);
-        }
-        int part_value = 0;
-        for (int k = 0; k < part_len; k++) {
-            if (addr[parts_idx[i] + k] < '0' || addr[parts_idx[i] + k] > '9') {
-                fprintf(stderr, "Invalid IP address format. Use x.x.x.x\n");
-                exit(1);
-            }
-            part_value = part_value * 10 + (addr[parts_idx[i] + k] - '0');
-        }
-        if (part_value < 0 || part_value > 255) {
-            fprintf(stderr, "Invalid IP address format. Use x.x.x.x\n");
-            exit(1);
-        }
-        dest_ip[i] = (uint8_t)part_value;
-    }
 }

@@ -9,45 +9,110 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <cpu/ports.h>
-#include <ktype.h>
-#include <minilib.h>
-#include <drivers/pci.h>
-#include <cpu/isr.h>
-#include <drivers/e1000_private.h>
 #include <kernel/scubasuit.h>
+#include <kernel/snowflake.h>
+#include <kernel/process.h>
 #include <drivers/e1000.h>
 #include <drivers/pci.h>
-#include <kernel/snowflake.h>
+#include <cpu/ports.h>
+#include <cpu/isr.h>
+#include <minilib.h>
+#include <ktype.h>
 #include <net.h>
-#include <kernel/process.h>
-
 
 //----------------------------------------------------//
 
+#define INTEL_VEND      0x8086      // Vendor ID for Intel
+#define E1000_DEV       0x100E      // Device ID for the e1000 Qemu, Bochs, and VirtualBox emmulated NICs
+#define E1000_I217      0x153A      // Device ID for Intel I217
+#define E1000_82577LM   0x10EA      // Device ID for Intel 82577LM
+
+#define REG_CTRL        0x0000
+#define REG_STATUS      0x0008
+#define REG_EEPROM      0x0014
+#define REG_CTRL_EXT    0x0018
+#define REG_IMASK       0x00D0
+#define REG_RCTRL       0x0100
+#define REG_RXDESCLO    0x2800
+#define REG_RXDESCHI    0x2804
+#define REG_RXDESCLEN   0x2808
+#define REG_RXDESCHEAD  0x2810
+#define REG_RXDESCTAIL  0x2818
+
+#define REG_TCTRL       0x0400
+#define REG_TXDESCLO    0x3800
+#define REG_TXDESCHI    0x3804
+#define REG_TXDESCLEN   0x3808
+#define REG_TXDESCHEAD  0x3810
+#define REG_TXDESCTAIL  0x3818
+
+#define REG_RDTR        0x2820      // RX Delay Timer Register
+#define REG_RXDCTL      0x2828      // RX Descriptor Control
+#define REG_RADV        0x282C      // RX Int. Absolute Delay Timer
+#define REG_RSRPD       0x2C00      // RX Small Packet Detect Interrupt
+
+#define REG_TIPG        0x0410      // Transmit Inter Packet Gap
+#define ECTRL_SLU       0x40        // Set link up
+
+#define RCTL_EN             (1 << 1)    // Receiver Enable
+#define RCTL_SBP            (1 << 2)    // Store Bad Packets
+#define RCTL_UPE            (1 << 3)    // Unicast Promiscuous Enabled
+#define RCTL_MPE            (1 << 4)    // Multicast Promiscuous Enabled
+#define RCTL_LPE            (1 << 5)    // Long Packet Reception Enable
+#define RCTL_LBM_NONE       (0 << 6)    // No Loopback
+#define RCTL_LBM_PHY        (3 << 6)    // PHY or external SerDesc loopback
+#define RTCL_RDMTS_HALF     (0 << 8)    // Free Buffer Threshold is 1/2 of RDLEN
+#define RTCL_RDMTS_QUARTER  (1 << 8)    // Free Buffer Threshold is 1/4 of RDLEN
+#define RTCL_RDMTS_EIGHTH   (2 << 8)    // Free Buffer Threshold is 1/8 of RDLEN
+#define RCTL_MO_36          (0 << 12)   // Multicast Offset - bits 47:36
+#define RCTL_MO_35          (1 << 12)   // Multicast Offset - bits 46:35
+#define RCTL_MO_34          (2 << 12)   // Multicast Offset - bits 45:34
+#define RCTL_MO_32          (3 << 12)   // Multicast Offset - bits 43:32
+#define RCTL_BAM            (1 << 15)   // Broadcast Accept Mode
+#define RCTL_VFE            (1 << 18)   // VLAN Filter Enable
+#define RCTL_CFIEN          (1 << 19)   // Canonical Form Indicator Enable
+#define RCTL_CFI            (1 << 20)   // Canonical Form Indicator Bit Value
+#define RCTL_DPF            (1 << 22)   // Discard Pause Frames
+#define RCTL_PMCF           (1 << 23)   // Pass MAC Control Frames
+#define RCTL_SECRC          (1 << 26)   // Strip Ethernet CRC
+
+// Buffer Sizes
+#define RCTL_BSIZE_256      (3 << 16)
+#define RCTL_BSIZE_512      (2 << 16)
+#define RCTL_BSIZE_1024     (1 << 16)
+#define RCTL_BSIZE_2048     (0 << 16)
+#define RCTL_BSIZE_4096     ((3 << 16) | (1 << 25))
+#define RCTL_BSIZE_8192     ((2 << 16) | (1 << 25))
+#define RCTL_BSIZE_16384    ((1 << 16) | (1 << 25))
+
+
+// Transmit Command
+#define CMD_EOP             (1 << 0)    // End of Packet
+#define CMD_IFCS            (1 << 1)    // Insert FCS
+#define CMD_IC              (1 << 2)    // Insert Checksum
+#define CMD_RS              (1 << 3)    // Report Status
+#define CMD_RPS             (1 << 4)    // Report Packet Sent
+#define CMD_VLE             (1 << 6)    // VLAN Packet Enable
+#define CMD_IDE             (1 << 7)    // Interrupt Delay Enable
+
+
+// TCTL Register
+#define TCTL_EN             (1 << 1)    // Transmit Enable
+#define TCTL_PSP            (1 << 3)    // Pad Short Packets
+#define TCTL_CT_SHIFT       4           // Collision Threshold
+#define TCTL_COLD_SHIFT     12          // Collision Distance
+#define TCTL_SWXOFF         (1 << 22)   // Software XOFF Transmission
+#define TCTL_RTLC           (1 << 24)   // Re-transmit on Late Collision
+
+#define TSTA_DD             (1 << 0)    // Descriptor Done
+#define TSTA_EC             (1 << 1)    // Excess Collisions
+#define TSTA_LC             (1 << 2)    // Late Collision
+#define LSTA_TU             (1 << 3)    // Transmit Underrun
+
+//----------------------------------------------------//
 
 #define E1000_NUM_RX_DESC 32
 #define E1000_NUM_TX_DESC 8
-
-#define TSTA_DD                         (1 << 0)    // Descriptor Done
-#define TSTA_EC                         (1 << 1)    // Excess Collisions
-#define TSTA_LC                         (1 << 2)    // Late Collision
-#define LSTA_TU                         (1 << 3)    // Transmit Underrun
-
-void hexdump(const unsigned char *tab, int len) {
-    for (int i = 0; i < len; i++) {
-        unsigned char byte = tab[i];
-        kprintf("%c%c", "0123456789ABCDEF"[byte >> 4], "0123456789ABCDEF"[byte & 0x0f]);
-        if ((i + 1) % 16 == 0 || i == len - 1) {
-            kprintf("\n");
-        }
-        else {
-            kprintf(" ");
-        }
-    }
-}
-
-
 
 struct e1000_rx_desc {
         volatile uint32_t addr_low;
@@ -127,8 +192,7 @@ void get_mac_address(e1000_t *e1000) {
         e1000->mac[3] = (mac_low >> 24) & 0xFF;
         e1000->mac[4] = mac_high & 0xFF;
         e1000->mac[5] = (mac_high >> 8) & 0xFF;
-    }
-    else {
+    } else {
         uint32_t temp;
         temp = eeprom_read(e1000, 0);
         e1000->mac[0] = temp &0xff;
@@ -167,7 +231,7 @@ void scan_pci_for_e1000(e1000_t *e1000) {
                 e1000->eeprom = 0;
         }
         get_mac_address(e1000);
-        return ;
+        return;
     }
 }
 
@@ -177,11 +241,12 @@ void e1000_handler(registers_t *regs) {
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1);
     uint32_t status = pci_read_cmd_u32(&(g_e1000.pci), 0, (0xc0));
 
-    if(status) {
+    if (status) {
         if (status & 0x80)
             e1000_handle_receive(&g_e1000, regs);
         pci_write_cmd_u32(&(g_e1000.pci), 0, (0xc0), status);
     }
+
     if (status == 0x3) {
     }
 }
@@ -192,16 +257,16 @@ void e1000_rx_init(e1000_t *e1000) {
 
     ptr = mem_alloc(sizeof(struct e1000_rx_desc)*E1000_NUM_RX_DESC + 16, 1, 128);
 
-    descs = (struct e1000_rx_desc *)ptr;
+    descs = (struct e1000_rx_desc *) ptr;
     for (int i = 0; i < E1000_NUM_RX_DESC; i++) {
         e1000->rx_descs_phys[i] = (e1000_rx_desc_t *)((uint8_t *)descs + i*16);
         e1000->rx_descs_phys[i]->addr_high = 0;
         e1000->rx_descs_phys[i]->addr_low = (uint32_t)(uint8_t *)(mem_alloc(8192 + 16, 1, 128));
         e1000->rx_descs_phys[i]->status = 0;
     }
+
     pci_write_cmd_u32(&(e1000->pci), 0,REG_TXDESCLO, 0);
     pci_write_cmd_u32(&(e1000->pci), 0,REG_TXDESCHI, (uint32_t)ptr);
-
 
     pci_write_cmd_u32(&(e1000->pci), 0,REG_RXDESCLO, (uint32_t)ptr);
     pci_write_cmd_u32(&(e1000->pci), 0,REG_RXDESCHI, 0);
@@ -219,11 +284,11 @@ void e1000_tx_init(e1000_t *e1000) {
     uint8_t *  ptr;
     struct e1000_tx_desc *descs;
 
-    ptr = (uint8_t *)(mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC, 1, 16));
+    ptr = (uint8_t *) (mem_alloc(sizeof(struct e1000_tx_desc) * E1000_NUM_TX_DESC, 1, 16));
 
     descs = (struct e1000_tx_desc *)ptr;
-    for(int i = 0; i < E1000_NUM_TX_DESC; i++) {
-        e1000->tx_descs_phys[i] = (struct e1000_tx_desc *)((uint8_t*)descs + i * 16);
+    for (int i = 0; i < E1000_NUM_TX_DESC; i++) {
+        e1000->tx_descs_phys[i] = (struct e1000_tx_desc *) ((uint8_t *) descs + i * 16);
         e1000->tx_descs_phys[i]->addr_high = 0;
         e1000->tx_descs_phys[i]->addr_low = 0;
         e1000->tx_descs_phys[i]->cmd = 0;
@@ -233,12 +298,10 @@ void e1000_tx_init(e1000_t *e1000) {
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCHI, 0);
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCLO, (uint32_t)ptr);
 
-
-    //now setup total length of descriptors
+    // now setup total length of descriptors
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCLEN, E1000_NUM_TX_DESC * 16);
 
-
-    //setup numbers
+    // setup numbers
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCHEAD, 0);
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TXDESCTAIL, 0);
     e1000->tx_cur = 0;
@@ -286,7 +349,6 @@ int e1000_init(void) {
     return 0;
 }
 
-
 int e1000_send_packet(const void * p_data, uint16_t p_len) {
     e1000_t *device = &g_e1000;
     device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
@@ -301,7 +363,6 @@ int e1000_send_packet(const void * p_data, uint16_t p_len) {
         process_sleep(process_get_pid(), 1);
     return 0;
 }
-
 
 void e1000_handle_receive(e1000_t *device, registers_t *regs) {
     (void)regs;
@@ -324,12 +385,5 @@ void e1000_handle_receive(e1000_t *device, registers_t *regs) {
 }
 
 void e1000_set_mac(uint8_t mac[6]) {
-    mac[0] = g_e1000.mac[0];
-    mac[1] = g_e1000.mac[1];
-    mac[2] = g_e1000.mac[2];
-    mac[3] = g_e1000.mac[3];
-    mac[4] = g_e1000.mac[4];
-    mac[5] = g_e1000.mac[5];
-    // dont use mem_cpy pf4 can put the argument in order
+    mem_copy(g_e1000.mac, mac, 6);
 }
-

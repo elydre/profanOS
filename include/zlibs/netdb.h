@@ -9,8 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef NETDB_H
-#define NETDB_H
+#ifndef _NETDB_H
+#define _NETDB_H
+
+#define HOST_NOT_FOUND 0xFF
+#define NO_DATA        0xFE
+#define NO_RECOVERY    0xFD
+#define TRY_AGAIN      0xFC
 
 struct hostent {
     char *h_name;
@@ -23,10 +28,5 @@ struct hostent {
 extern int h_errno;
 
 struct hostent *gethostbyname(const char *name);
-
-#define HOST_NOT_FOUND 0xFF
-#define NO_DATA 0xFE
-#define NO_RECOVERY 0xFD
-#define TRY_AGAIN 0xFC
 
 #endif

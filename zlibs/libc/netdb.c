@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === gethostbyname.c : 2026 ===                                            |
+|   === netdb.c : 2026 ===                                                    |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Implementation of netdb functions from libC                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,16 +9,18 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <poll.h>
-#include <time.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <time.h>
+#include <poll.h>
+
+int h_errno = 0;
 
 static int get_parts(uint8_t parts[256], char *domain) {
     int i = 0;
