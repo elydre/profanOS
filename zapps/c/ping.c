@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === ping.c : 2026 ===                                                     |
 |                                                                             |
-|    Command to send ICMP ECHO_REQUEST to network hosts                .pi0iq.    |
+|    Command to send ICMP ECHO_REQUEST to network hosts            .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
