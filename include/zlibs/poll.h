@@ -1,10 +1,21 @@
+/*****************************************************************************\
+|   === poll.h : 2026 ===                                                     |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef POLL_H
 #define POLL_H
 
 struct pollfd {
-	int   fd;
-	short events;
-	short revents;
+    int   fd;
+    short events;
+    short revents;
 };
 
 #define POLLIN (1 << 0)

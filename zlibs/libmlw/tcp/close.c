@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === close.c : 2026 ===                                                    |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include "../mlw_private.h"
 
 int mlw_tcp_close(mlw_tcp_t *inst) {
@@ -23,8 +34,8 @@ int mlw_tcp_close(mlw_tcp_t *inst) {
             usleep(500000);
             continue;
         }
-		if (tcp_ret == 1)
-			continue;
+        if (tcp_ret == 1)
+            continue;
         if ((info.flags & TCP_FLAG_ACK) == 0) {
             free(whole);
             continue;
@@ -38,14 +49,14 @@ int mlw_tcp_close(mlw_tcp_t *inst) {
     }
     while (I_mlw_get_time() < end) {
         void *whole = NULL;
-		tcp_recv_info_t info;
-		int tcp_ret = I_mlw_tcp_general_recv(&info, inst, &whole);
-		if (tcp_ret == 2) {
+        tcp_recv_info_t info;
+        int tcp_ret = I_mlw_tcp_general_recv(&info, inst, &whole);
+        if (tcp_ret == 2) {
             usleep(500000);
             continue;
         }
-		if (tcp_ret == 1)
-			continue;
+        if (tcp_ret == 1)
+            continue;
         if ((info.flags & TCP_FLAG_FIN) == 0) {
             free(whole);
             continue;

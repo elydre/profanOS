@@ -19,9 +19,9 @@
 
 static uint32_t get_phys(const void *ptr) {
     uint32_t addr_phys = (uint32_t)ptr;
-	addr_phys -= addr_phys % 4096;
-	addr_phys = (uint32_t)scuba_call_phys((void *)addr_phys);
-	addr_phys += (uint32_t)ptr % 4096;
+    addr_phys -= addr_phys % 4096;
+    addr_phys = (uint32_t)scuba_call_phys((void *)addr_phys);
+    addr_phys += (uint32_t)ptr % 4096;
     return addr_phys;
 }
 

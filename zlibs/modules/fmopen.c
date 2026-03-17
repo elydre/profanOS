@@ -136,7 +136,7 @@ int fm_close(int fd) {
         free(fd_data->path);
 
     else if (fd_data->type == TYPE_SOCK) {
-		socket_close_fd_call(fd);
+        socket_close_fd_call(fd);
     }
 
     else if (fd_data->type == TYPE_PPRD) {
@@ -289,14 +289,14 @@ int fm_pread(int fd, void *buf, uint32_t size, int offset) {
             return -EISDIR;
 
         case TYPE_SOCK:
-			recvfrom_arg_t args = {
-				.sockfd = fd,
-				.buf = buf,
-				.len = size, 
-				.flags = 0,
-				.src_addr = NULL,
-				.addrlen = NULL
-			};
+            recvfrom_arg_t args = {
+                .sockfd = fd,
+                .buf = buf,
+                .len = size,
+                .flags = 0,
+                .src_addr = NULL,
+                .addrlen = NULL
+            };
             return socket_recvfrom_call(&args);
 
         case TYPE_FILE:
@@ -370,14 +370,14 @@ int fm_pwrite(int fd, void *buf, uint32_t size, int offset) {
             return -EISDIR;
 
         case TYPE_SOCK:
-			sendto_arg_t args = {
-				.sockfd = fd,
-				.buf = buf,
-				.len = size,
-				.flags = 0,
-				.dest_addr = NULL,
-				.addrlen = 0
-			};
+            sendto_arg_t args = {
+                .sockfd = fd,
+                .buf = buf,
+                .len = size,
+                .flags = 0,
+                .dest_addr = NULL,
+                .addrlen = 0
+            };
             return socket_sendto_call(&args);
 
         case TYPE_FILE:
@@ -670,18 +670,18 @@ int fm_declare_child(int pid) {
 }
 
 int fm_get_fd_rw(int fd) {
-	fd_data_t *data = fm_fd_to_data(fd);
-	if (!data)
-		return -1;
-	switch (data->type) {
-		case TYPE_SOCK:
-			return socket_get_rw_call(data->sock_id);
-		case TYPE_FILE:
-			return FM_READ | FM_WRITE;
-		// TODO PF4 IMPLEMENT PIPES AND OTHERS
-		default:
-			return -1;
-	}
+    fd_data_t *data = fm_fd_to_data(fd);
+    if (!data)
+        return -1;
+    switch (data->type) {
+        case TYPE_SOCK:
+            return socket_get_rw_call(data->sock_id);
+        case TYPE_FILE:
+            return FM_READ | FM_WRITE;
+        // TODO PF4 IMPLEMENT PIPES AND OTHERS
+        default:
+            return -1;
+    }
 }
 
 int __init(void) {
@@ -712,7 +712,7 @@ void *__module_func_array[] = {
     fm_get_sid,
     fm_get_path,
     fm_declare_child,
-	fm_get_free_fd,
-	fm_fd_to_data,
-	fm_get_fd_rw,
+    fm_get_free_fd,
+    fm_fd_to_data,
+    fm_get_fd_rw,
 };

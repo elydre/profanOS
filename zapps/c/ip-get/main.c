@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === main.c : 2026 ===                                                     |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include "ip-get.h"
 
 uint32_t last_xid = 0;
@@ -8,9 +19,9 @@ eth_info_t g_info;
 uint32_t g_eth_id;
 
 int retrieve_ip(uint8_t *mac) {
-	srand(syscall_timer_get_ms());
+    srand(syscall_timer_get_ms());
 
-	send_dhcp_discover(mac);
+    send_dhcp_discover(mac);
 
     uint32_t now = syscall_timer_get_ms();
     int fail = 1;
@@ -40,10 +51,10 @@ void print_ip(uint32_t ip) {
 }
 
 int main(int argc, char **argv) {
-	if (argc > 1) {
-		fprintf(stderr, "Usage: %s\n", argv[0]);
-		return 1;
-	}
+    if (argc > 1) {
+        fprintf(stderr, "Usage: %s\n", argv[0]);
+        return 1;
+    }
 
     g_eth_id = syscall_eth_start();
     if (g_eth_id == 0) {

@@ -144,16 +144,16 @@ void get_mac_address(e1000_t *e1000) {
 }
 
 void scan_pci_for_e1000(e1000_t *e1000) {
-	int devices[] = {
-		0x100e,
-		0x15b7
-	};
-	pci_device_t *pci = NULL;
-	for (unsigned int i = 0; i < sizeof(devices) / sizeof(devices[0]); i++) {
-    	pci = pci_find(0x8086, devices[i]);
-		if (pci)
-			break;
-	}
+    int devices[] = {
+        0x100e,
+        0x15b7
+    };
+    pci_device_t *pci = NULL;
+    for (unsigned int i = 0; i < sizeof(devices) / sizeof(devices[0]); i++) {
+        pci = pci_find(0x8086, devices[i]);
+        if (pci)
+            break;
+    }
 
     if (pci) {
         e1000->pci = *pci;

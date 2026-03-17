@@ -1,12 +1,23 @@
+/*****************************************************************************\
+|   === netdb.h : 2026 ===                                                    |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef NETDB_H
 #define NETDB_H
 
 struct hostent {
-	char *h_name;
-	char **h_aliases;
-	int h_addrtype;
-	int h_length;
-	char **h_addr_list;
+    char *h_name;
+    char **h_aliases;
+    int h_addrtype;
+    int h_length;
+    char **h_addr_list;
 };
 
 extern int h_errno;

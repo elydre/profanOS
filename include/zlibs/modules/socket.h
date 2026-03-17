@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === socket.h : 2026 ===                                                   |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef SOCKET_MOD_H
 #define SOCKET_MOD_H 8
 
@@ -6,19 +17,19 @@
 #include <netinet/in.h>
 #include <modules/filesys.h>
 #ifdef _KERNEL_MODULE
-	#include <system.h>
-	#include <net.h>
-	#include <kernel/process.h>
-	#include <minilib.h>
+    #include <system.h>
+    #include <net.h>
+    #include <kernel/process.h>
+    #include <minilib.h>
 #endif
 
 typedef struct {
-	uint32_t type; // domain | type << 8 | protcol << 16
-	void *data;
-	int parent_pid;
-	int ref_count;
-	int id;
-	int do_remove;
+    uint32_t type; // domain | type << 8 | protcol << 16
+    void *data;
+    int parent_pid;
+    int ref_count;
+    int id;
+    int do_remove;
 } socket_t;
 
 #define CLT_PORT_START 32768
@@ -37,22 +48,22 @@ int socket_close_fd(int fd);
 int socket_get_rw(int id);
 
 typedef struct {
-	int sockfd;
-	const void *buf;
-	size_t len;
-	int flags;
-	const struct sockaddr *dest_addr;
-	socklen_t addrlen;
+    int sockfd;
+    const void *buf;
+    size_t len;
+    int flags;
+    const struct sockaddr *dest_addr;
+    socklen_t addrlen;
 } sendto_arg_t;
 ssize_t socket_sendto(sendto_arg_t *args);
 
 typedef struct {
-	int sockfd;
-	void *buf;
-	size_t len;
-	int flags;
-	struct sockaddr *src_addr;
-	socklen_t *addrlen;
+    int sockfd;
+    void *buf;
+    size_t len;
+    int flags;
+    struct sockaddr *src_addr;
+    socklen_t *addrlen;
 } recvfrom_arg_t;
 ssize_t socket_recvfrom(recvfrom_arg_t *args);
 
@@ -77,7 +88,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_sendto(a) ((int) _pscall(SOCKET_MOD_H, 3, a))
 #define socket_recvfrom(a) ((int) _pscall(SOCKET_MOD_H, 4, a))
 
-#else 
+#else
 
 #define socket_sendto_call ((int (*)(sendto_arg_t *)) get_func_addr(SOCKET_MOD_H, 3))
 #define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))

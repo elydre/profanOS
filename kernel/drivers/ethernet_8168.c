@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === ethernet_8168.c : 2026 ===                                            |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <cpu/ports.h>
 #include <ktype.h>
 #include <minilib.h>
@@ -15,10 +26,10 @@
 #define OWN 0x80000000
 #define EOR 0x40000000
 struct Descriptor {
-	unsigned int command;
-	unsigned int vlan;
-	unsigned int low_buf;
-	unsigned int high_buf;
+    unsigned int command;
+    unsigned int vlan;
+    unsigned int low_buf;
+    unsigned int high_buf;
 };
 
 struct Descriptor *Rx_Descriptors;
@@ -46,31 +57,31 @@ static volatile uint32_t package_send_ack = 0;
 
 void rtl8168_handler(registers_t *regs) {
     (void)regs;
-	kprintf("RTL8168 IRQ\n");
+    kprintf("RTL8168 IRQ\n");
     if (!rtl8168_is_inited) return;
 
 
-	// Acknowledge the interrupt
-	pci_write_cmd_u8(g_pci_device, 0, 0x3C, 0xFF);
+    // Acknowledge the interrupt
+    pci_write_cmd_u8(g_pci_device, 0, 0x3C, 0xFF);
 
-	// Read the status register to check for received packets
-	// and to clear the interrupt
-	unsigned short status = pci_read_cmd_u16(g_pci_device, 0, 0x3E);
-	if(status & 0x20) status |= 0x20;
-	if(status & 0x01) {
-		for(int z = 0; z < NUM_RX_DESC; z++) {
-			if (!(Rx_Descriptors[z].command & OWN)) {
+    // Read the status register to check for received packets
+    // and to clear the interrupt
+    unsigned short status = pci_read_cmd_u16(g_pci_device, 0, 0x3E);
+    if(status & 0x20) status |= 0x20;
+    if(status & 0x01) {
+        for(int z = 0; z < NUM_RX_DESC; z++) {
+            if (!(Rx_Descriptors[z].command & OWN)) {
                 eth_recv_packet((void *)Rx_Descriptors[z].low_buf, Rx_Descriptors[z].command & 0x3FFF);
-				Rx_Descriptors[z].command |= OWN;
-			}
-		}
-		status |= 0x01;
-	}
-	if(status & 0x04) {
+                Rx_Descriptors[z].command |= OWN;
+            }
+        }
+        status |= 0x01;
+    }
+    if(status & 0x04) {
         package_send_ack = 1;
-		status |= 0x04;
-	}
-	pci_write_cmd_u16(g_pci_device, 0, 0x3E, status);
+        status |= 0x04;
+    }
+    pci_write_cmd_u16(g_pci_device, 0, 0x3E, status);
 }
 
 int rtl8168_send_packet(const void *p_data, uint16_t p_len) {

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === pni.h : 2026 ===                                                      |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef PNI_H
 #define PNI_H
 
@@ -5,11 +16,11 @@
 #include <stdlib.h>
 
 typedef struct {
-	uint16_t src_port;
-	uint16_t dest_port;
-	uint8_t src_ip[4];
-	int32_t len; // < 0 -> error
-	uint8_t *data;
+    uint16_t src_port;
+    uint16_t dest_port;
+    uint8_t src_ip[4];
+    int32_t len; // < 0 -> error
+    uint8_t *data;
 } pni_packet_t;
 
 #define PNI_ERR_NO_MAC (-1)

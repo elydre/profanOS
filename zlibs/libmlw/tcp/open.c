@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === open.c : 2026 ===                                                     |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include "../mlw_private.h"
 
 int I_mlw_tcp_get_packet_info(tcp_recv_info_t *info, uint8_t *packet, int len) {
@@ -83,18 +94,18 @@ int mlw_tcp_connect(mlw_tcp_t *inst, uint32_t dest_ip, uint16_t dest_port) {
 }
 
 mlw_tcp_t *mlw_tcp_open(uint32_t dest_ip, uint16_t dest_port) {
-	mlw_tcp_t *res = malloc(sizeof(mlw_tcp_t));
-	if (!res)
-		return NULL;
-	res->eth_id = syscall_eth_start();
-	if (res->eth_id == 0) {
-		free(res);
-		return NULL;
-	}
-	if (mlw_tcp_connect(res, dest_ip, dest_port) == -1) {
-		syscall_eth_end(res->eth_id);
-		free(res);
-		return NULL;
-	}
-	return res;
+    mlw_tcp_t *res = malloc(sizeof(mlw_tcp_t));
+    if (!res)
+        return NULL;
+    res->eth_id = syscall_eth_start();
+    if (res->eth_id == 0) {
+        free(res);
+        return NULL;
+    }
+    if (mlw_tcp_connect(res, dest_ip, dest_port) == -1) {
+        syscall_eth_end(res->eth_id);
+        free(res);
+        return NULL;
+    }
+    return res;
 }

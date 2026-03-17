@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === socket.h : 2026 ===                                                   |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef SOCKET_H
 #define SOCKET_H
 
@@ -25,8 +36,8 @@ typedef uint32_t in_addr_t;
 typedef uint16_t in_port_t;
 
 struct sockaddr {
-	sa_family_t sa_family;
-	char sa_data[14];
+    sa_family_t sa_family;
+    char sa_data[14];
 };
 
 

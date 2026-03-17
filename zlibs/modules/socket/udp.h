@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === udp.h : 2026 ===                                                      |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef UDP_H
 #define UDP_H
 
@@ -6,34 +17,34 @@
 #define SOCKET_UDP (AF_INET | (SOCK_DGRAM << 8) | (0 << 16 ))
 
 typedef struct udp_header_t{
-	uint16_t src_port;
-	uint16_t dest_port;
-	uint16_t len;
-	uint16_t checksum;
+    uint16_t src_port;
+    uint16_t dest_port;
+    uint16_t len;
+    uint16_t checksum;
 } __attribute__((packed)) udp_header_t;
 
 typedef struct {
-	uint32_t src_ip;
-	uint32_t dest_ip;
-	uint32_t dest_port;
-	uint32_t src_port;
-	int len;
-	uint8_t *data;
+    uint32_t src_ip;
+    uint32_t dest_ip;
+    uint32_t dest_port;
+    uint32_t src_port;
+    int len;
+    uint8_t *data;
 } udp_packet_t;
 
 typedef struct {
-	uint32_t local_ip; // any
-	uint32_t local_port;
-	uint8_t is_bound;
+    uint32_t local_ip; // any
+    uint32_t local_port;
+    uint8_t is_bound;
 
-	uint32_t remote_ip;
-	uint32_t remote_port;
-	uint8_t is_connected;
+    uint32_t remote_ip;
+    uint32_t remote_port;
+    uint8_t is_connected;
 
-	udp_packet_t recv[64];
-	int recv_len;
-	udp_packet_t send[64];
-	int send_len;
+    udp_packet_t recv[64];
+    int recv_len;
+    udp_packet_t send[64];
+    int send_len;
 } udp_t;
 
 int socket_init_udp(socket_t *sock);

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === discover.c : 2026 ===                                                 |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include "ip-get.h"
 
 
@@ -39,7 +50,7 @@ void send_dhcp_discover(uint8_t *mac) {
     dhcp->htype = 1; // Ethernet
     dhcp->hlen = 6;
     dhcp->xid = htonl(syscall_eth_get_transaction());
-	last_xid = dhcp->xid;
+    last_xid = dhcp->xid;
     dhcp->flags = htons(0x8000); // Broadcast flag
     memcpy(dhcp->chaddr, mac, 6);
     dhcp->magic_cookie = htonl(0x63825363);

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === tcp.h : 2026 ===                                                      |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #ifndef TCP_H
 #define TCP_H
 
@@ -6,7 +17,7 @@
 #define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16 ))
 
 enum {
-	TCP_SATE_CLOSED,
+    TCP_SATE_CLOSED,
     TCP_SATE_LISTEN,
     TCP_SATE_SYN_SENT,
     TCP_SATE_SYN_RECEIVED,
@@ -20,26 +31,26 @@ enum {
 };
 
 typedef struct {
-	uint16_t local_port;
-	uint16_t rmote_port;
-	uint32_t remote_ip;
-	uint32_t local_ip;
+    uint16_t local_port;
+    uint16_t rmote_port;
+    uint32_t remote_ip;
+    uint32_t local_ip;
 
-	uint16_t state;
+    uint16_t state;
 
-	struct {
-		uint32_t first_seq;
-		uint32_t next_seq;
-		uint8_t buffer[4096 * 4];
-		int buffer_len;
-	} recv;
-	struct {
-		uint32_t first_seq;
-		uint32_t next_seq;
-		uint8_t buffer[4096 * 4];
-		uint8_t wait_seq;
-		uint32_t seq_to_wait;
-	} send;
+    struct {
+        uint32_t first_seq;
+        uint32_t next_seq;
+        uint8_t buffer[4096 * 4];
+        int buffer_len;
+    } recv;
+    struct {
+        uint32_t first_seq;
+        uint32_t next_seq;
+        uint8_t buffer[4096 * 4];
+        uint8_t wait_seq;
+        uint32_t seq_to_wait;
+    } send;
 } tcp_state_t;
 
 
