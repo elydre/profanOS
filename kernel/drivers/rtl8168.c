@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === ethernet_8168.c : 2026 ===                                            |
+|   === rtl8168.c : 2026 ===                                                  |
 |                                                                             |
 |    -                                                             .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -9,13 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <cpu/ports.h>
-#include <ktype.h>
-#include <minilib.h>
-#include <drivers/pci.h>
-#include <cpu/isr.h>
 #include <kernel/snowflake.h>
+#include <drivers/pci.h>
 #include <cpu/timer.h>
+#include <cpu/ports.h>
+#include <cpu/isr.h>
+#include <minilib.h>
+#include <ktype.h>
 #include <net.h>
 
 #define NUM_TX_DESC  2
