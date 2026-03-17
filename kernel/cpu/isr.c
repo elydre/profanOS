@@ -15,7 +15,6 @@
 #include <cpu/isr.h>
 #include <minilib.h>
 #include <system.h>
-#include <minilib.h>
 
 extern void syscall_handler(registers_t *r);
 extern void mod_syscall(registers_t *r);
