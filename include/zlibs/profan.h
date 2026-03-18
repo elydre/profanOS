@@ -18,12 +18,12 @@
 _BEGIN_C_FILE
 
 typedef struct {
-    char *path;     // path to file
-    char *wd;       // working directory
+    const char *path;   // path to file
+    const char *wd;     // working directory
 
-    int argc;       // argument count
-    char **argv;    // argument list
-    char **envp;    // environment list
+    int argc;           // argument count
+    char *const *argv;  // argument list
+    char *const *envp;  // environment list
 
     uint8_t sleep_mode;  // sleep mode
 } runtime_args_t;

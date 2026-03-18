@@ -268,7 +268,7 @@ static inline void *calloc_arg(size_t size, int pid) {
     return ptr;
 }
 
-static char **dup_envp(char **envp, char *wd, int pid) {
+static char **dup_envp(char *const *envp, const char *wd, int pid) {
     if (envp == NULL)
         return calloc_arg(sizeof(char *), pid);
     int envc, size = 0;

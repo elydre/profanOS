@@ -574,11 +574,11 @@ void panda_sync_start(void) {
 
 void panda_get_size(uint32_t *x, uint32_t *y) {
     if (!g_panda) {
-        *x = 0;
-        *y = 0;
+        if (x) *x = 0;
+        if (y) *y = 0;
     } else {
-        *x = g_panda->max_cols;
-        *y = g_panda->max_lines;
+        if (x) *x = g_panda->max_cols;
+        if (y) *y = g_panda->max_lines;
     }
 }
 
