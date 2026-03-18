@@ -43,7 +43,7 @@ int execute_line(char *line) {
 
     for (int i = 0; r.argv[i]; i++)
         free(r.argv[i]);
-    free(r.argv);
+    free((void *) r.argv);
 
     return res;
 }
