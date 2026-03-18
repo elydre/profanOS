@@ -96,7 +96,81 @@ int G_FD;
 
 /*******************************************
  *                                        *
- *             ERROR MESSAGES             *
+ *             FILE UTILITIES             *
+ *                                        *
+********************************************/
+
+static int remove_full_dir(const char *path) {
+    #ifdef __profanOS__
+        runtime_args_t args = {
+            PATH_RM,
+            profan_wd_path(),
+            3,
+            (char *[]) {
+                "rm",
+                "-rf",
+                (char *) path,
+                NULL
+            },
+            environ,
+            1 // sleep mode
+        };  
+
+        if (run_ifexist(&args, NULL)) {
+            fprintf(stderr, "failed to run rm for path %s\n", path);
+            return -1;
+        }
+
+        return 0;
+    #else
+        char cmd[512];
+        snprintf(cmd, sizeof(cmd), "rm -rf %s", path);
+        return system(cmd) == 0 ? 0 : -1;
+    #endif
+}
+
+static int move_element(const char *src, const char *dst) {
+    if (rename(src, dst) == 0)
+        return 0;
+
+    FILE *in = fopen(src, "rb");
+    if (!in) {
+        fprintf(stderr, "mv: Failed to open source file '%s'\n", src);
+        return 1;
+    }
+
+    FILE *out = fopen(dst, "wb");
+    if (!out) {
+        fprintf(stderr, "mv: Failed to open destination file '%s'\n", dst);
+        fclose(in);
+        return 1;
+    }
+
+    char buffer[8192];
+    size_t bytes;
+    int ret = 0;
+    while ((bytes = fread(buffer, 1, sizeof(buffer), in)) > 0) {
+        if (fwrite(buffer, 1, bytes, out) != bytes) {
+            fprintf(stderr, "mv: Failed to write to destination file '%s'\n", dst);
+            ret = 1;
+            break;
+        }
+    }
+
+    if (ferror(in)) {
+        fprintf(stderr, "mv: Failed to read from source file '%s'\n", src);
+        ret = 1;
+    }
+
+    fclose(in);
+    fclose(out);
+
+    return ret;
+}
+
+/*******************************************
+ *                                        *
+ *             PROTOCOL UTILS             *
  *                                        *
 ********************************************/
 
@@ -120,12 +194,6 @@ char *error_to_str(uint16_t error) {
             return "Unknown error";
     }
 }
-
-/*******************************************
- *                                        *
- *             PROTOCOL UTILS             *
- *                                        *
-********************************************/
 
 static uint64_t get_random_xid(void) {
     return (((uint64_t) rand() << 32) | rand()) & 0xFFFFFFFFFF;
@@ -673,7 +741,12 @@ int cmd_list(void) {
 
 download_stat_t g_alltime_dl_stat;
 
-static int64_t *cmd_install_dl(uint64_t id, int64_t *dl_deps) {
+typedef struct {
+    int64_t id;
+    char name[STP_MAX_NAME_SIZE];
+} id_name_pair_t;
+
+static id_name_pair_t *cmd_install_dl(uint64_t id, id_name_pair_t *dl_deps) {
     stp_info_t info;
 
     if (get_pkg_info(id, &info) == -1)
@@ -687,18 +760,20 @@ static int64_t *cmd_install_dl(uint64_t id, int64_t *dl_deps) {
 
     int dl_deps_count = 0;
     if (dl_deps) {
-        while (dl_deps[dl_deps_count] != -1)
+        while (dl_deps[dl_deps_count].id != -1)
             dl_deps_count++;
     }
 
-    dl_deps = realloc(dl_deps, (dl_deps_count + 2) * sizeof(int64_t));
-    dl_deps[dl_deps_count++] = id;
-    dl_deps[dl_deps_count] = -1;
+    dl_deps = realloc(dl_deps, (dl_deps_count + 2) * sizeof(id_name_pair_t));
+    strncpy(dl_deps[dl_deps_count].name, info.name, STP_MAX_NAME_SIZE - 1);
+    dl_deps[dl_deps_count].name[STP_MAX_NAME_SIZE - 1] = '\0';
+    dl_deps[dl_deps_count].id = id;
+    dl_deps[++dl_deps_count].id = -1;
 
     for (int i = 0; i < num_deps; i++) {
         for (int j = 0; j < dl_deps_count; j++) {
-            if (deps[i] == dl_deps[j]) {
-                fprintf(stderr, "dependency %"PRId64" of %s already downloaded, skipping\n", deps[i], info.name);
+            if (deps[i] == dl_deps[j].id) {
+                fprintf(stderr, "dependency %s of %s already downloaded, skipping\n", dl_deps[j].name, info.name);
                 goto next_dep;
             }
         }
@@ -708,7 +783,7 @@ static int64_t *cmd_install_dl(uint64_t id, int64_t *dl_deps) {
         if (dl_deps == NULL)
             return NULL;
         dl_deps_count = 0;
-        while (dl_deps[dl_deps_count] != -1)
+        while (dl_deps[dl_deps_count].id != -1)
             dl_deps_count++;
         next_dep:;
     }
@@ -722,8 +797,8 @@ static int64_t *cmd_install_dl(uint64_t id, int64_t *dl_deps) {
 
     download_stat_t dl_stat;
 
-    char dl_path[256];
-    snprintf(dl_path, sizeof(dl_path), TEMP_DIR "/%" PRId64 ".zip", id);
+    char dl_path[PATH_MAX];
+    snprintf(dl_path, sizeof(dl_path), TEMP_DIR "/%s.zip", info.name);
 
     if (download_pkg(id, dl_path, &info, &dl_stat) == -1)
         return NULL;
@@ -735,90 +810,18 @@ static int64_t *cmd_install_dl(uint64_t id, int64_t *dl_deps) {
     return dl_deps;
 }
 
-static int remove_full_dir(const char *path) {
-    #ifdef __profanOS__
-        runtime_args_t args = {
-            PATH_RM,
-            profan_wd_path(),
-            3,
-            (char *[]) {
-                "rm",
-                "-rf",
-                (char *) path,
-                NULL
-            },
-            environ,
-            1 // sleep mode
-        };  
-
-        if (run_ifexist(&args, NULL)) {
-            fprintf(stderr, "failed to run rm for path %s\n", path);
-            return -1;
-        }
-
-        return 0;
-    #else
-        char cmd[512];
-        snprintf(cmd, sizeof(cmd), "rm -rf %s", path);
-        return system(cmd) == 0 ? 0 : -1;
-    #endif
-}
-
-
-static int move_element(const char *src, const char *dst) {
-    /*if (rename(src, dst) == 0)
-        return 0;*/
-
-    FILE *in = fopen(src, "rb");
-    if (!in) {
-        fprintf(stderr, "mv: Failed to open source file '%s'\n", src);
-        return 1;
-    }
-
-    FILE *out = fopen(dst, "wb");
-    if (!out) {
-        fprintf(stderr, "mv: Failed to open destination file '%s'\n", dst);
-        fclose(in);
-        return 1;
-    }
-
-    char buffer[8192];
-    size_t bytes;
-    int ret = 0;
-    while ((bytes = fread(buffer, 1, sizeof(buffer), in)) > 0) {
-        if (fwrite(buffer, 1, bytes, out) != bytes) {
-            fprintf(stderr, "mv: Failed to write to destination file '%s'\n", dst);
-            ret = 1;
-            break;
-        }
-    }
-
-    if (ferror(in)) {
-        fprintf(stderr, "mv: Failed to read from source file '%s'\n", src);
-        ret = 1;
-    }
-
-    fclose(in);
-    fclose(out);
-
-    return ret;
-}
-
-static int cmd_install_install(int64_t *dl_deps) {
-    // in a real package manager, this would do the actual installation (moving files, running scripts, etc.)
-    // here we just print the order of installation
-
+static int cmd_install_install(id_name_pair_t *dl_deps) {
     int count = 0;
-    while (dl_deps[count] != -1)
+    while (dl_deps[count].id != -1)
         count++;
 
     for (int i = count - 1; i >= 0; i--) {
         #ifdef __profanOS__
-        printf("installing package %" PRId64 "...\n", dl_deps[i]);
+        printf("installing package %s...\n", dl_deps[i].name);
         char dl_path[PATH_MAX];
         char extract_path[PATH_MAX];
-        snprintf(dl_path, sizeof(dl_path), TEMP_DIR "/%" PRId64 ".zip", dl_deps[i]);
-        snprintf(extract_path, sizeof(extract_path), TEMP_DIR "/%" PRId64, dl_deps[i]);
+        snprintf(dl_path, sizeof(dl_path), TEMP_DIR "/%s.zip", dl_deps[i].name);
+        snprintf(extract_path, sizeof(extract_path), TEMP_DIR "/%s", dl_deps[i].name);
 
         // unzip
         runtime_args_t args = {
@@ -840,7 +843,7 @@ static int cmd_install_install(int64_t *dl_deps) {
         int pid;
 
         if (run_ifexist(&args, &pid)) {
-            fprintf(stderr, "failed to run unzip for package %" PRId64 "\n", dl_deps[i]);
+            fprintf(stderr, "failed to run unzip for package %s\n", dl_deps[i].name);
             return -1;
         }
 
@@ -849,7 +852,7 @@ static int cmd_install_install(int64_t *dl_deps) {
         getcwd(cwd, sizeof(cwd));
 
         if (chdir(extract_path) != 0) {
-            fprintf(stderr, "failed to chdir to package %" PRId64 "\n", dl_deps[i]);
+            fprintf(stderr, "failed to chdir to package %s\n", dl_deps[i].name);
             return -1;
         }
 
@@ -868,24 +871,23 @@ static int cmd_install_install(int64_t *dl_deps) {
         };
 
         if (run_ifexist(&olivine_args, &pid)) {
-            fprintf(stderr, "failed to run olivine for package %" PRId64 "\n", dl_deps[i]);
+            fprintf(stderr, "failed to run olivine for package %s\n", dl_deps[i].name);
             return -1;
         }
 
-        // save the uninstall.olv file to /zada/stp/XXXXX.olv
-        printf("saving uninstall script...\n");
+        // save the remove.olv file to /zada/stp/XXXXX.olv
 
-        char uninstall_dest[PATH_MAX];
-        snprintf(uninstall_dest, sizeof(uninstall_dest), "/zada/stp/%" PRId64 ".olv", dl_deps[i]);
+        char remove_dest[PATH_MAX];
+        snprintf(remove_dest, sizeof(remove_dest), "/zada/stp/remove/%s.olv", dl_deps[i].name);
 
-        if (move_element("uninstall.olv", uninstall_dest)) {
-            fprintf(stderr, "failed to save uninstall script for package %" PRId64 "\n", dl_deps[i]);
+        if (move_element("remove.olv", remove_dest)) {
+            fprintf(stderr, "failed to save remove script for package %s\n", dl_deps[i].name);
             return -1;
         }
 
         // chdir back
         if (chdir(cwd) != 0) {
-            fprintf(stderr, "failed to chdir back after installing package %" PRId64 "\n", dl_deps[i]);
+            fprintf(stderr, "failed to chdir back after installing package %s\n", dl_deps[i].name);
             return -1;
         }
 
@@ -898,41 +900,53 @@ static int cmd_install_install(int64_t *dl_deps) {
     return 0;
 }
 
-int cmd_install(const char *name) {
-    int64_t id = get_pkg_id(name);
+int cmd_install(char **names) {
+    int count, r = 0;
+    int64_t *ids;
+    
+    for (count = 0; names[count]; count++);
+    ids = malloc(count * sizeof(int64_t));
 
-    if (id == -1)
-        return 1;
-
-    if (id == 0) {
-        fprintf(stderr, "package '%s' not found\n", name);
+    for (int i = 0; i < count; i++) {
+        ids[i] = get_pkg_id(names[i]);
+        if (ids[i] == 0)
+            fprintf(stderr, "package '%s' not found\n", names[i]);
+        else if (ids[i] != -1)
+            continue;
+        free(ids);
         return 1;
     }
 
-    mkdir(TEMP_DIR, 0755); // ensure tmp directory exists
+    remove_full_dir(TEMP_DIR);  // clean temp directory before downloading
+    mkdir(TEMP_DIR, 0755);      // ensure tmp directory exists
     #ifdef __profanOS__
-    mkdir("/zada/stp", 0755); // ensure uninstall script directory exists
+    mkdir("/zada/stp", 0755);           // ensure remove script directory exists
+    mkdir("/zada/stp/remove", 0755);   // ensure remove script directory exists
     #endif
 
-    int64_t *dls = cmd_install_dl(id, NULL);
+    id_name_pair_t *dl_deps = NULL;
 
-    if (dls == NULL) {
-        remove_full_dir(TEMP_DIR);
-        return 1;
+    for (int i = 0; i < count; i++) {
+        dl_deps = cmd_install_dl(ids[i], dl_deps);
+        if (dl_deps == NULL) {
+            r = 1;
+            break;
+        }
     }
 
-    printf("all downloads complete: %u ms, %"PRIu32" packets received, %"PRIu32" packets lost, %.2f MB/s\n",
-                g_alltime_dl_stat.total_ms, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
-                (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
+    if (r == 0) {
+        printf("all downloads complete: %u ms, %"PRIu32" packets received, %"PRIu32" packets lost, %.2f MB/s\n",
+                    g_alltime_dl_stat.total_ms, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
+                    (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
 
-    if (cmd_install_install(dls))
-        return 1;
+        r = cmd_install_install(dl_deps);
+    }
 
-    if (remove_full_dir(TEMP_DIR))
-        return 1;
+    remove_full_dir(TEMP_DIR);
+    free(dl_deps);
+    free(ids);
 
-    free(dls);
-    return 0;
+    return r;
 }
 
 /*******************************************
@@ -967,11 +981,6 @@ cmd_entry_t commands[] = {
 command_t parse_args(int argc, char **argv) {
     if (argc < 2)
         return CMD_HELP;
-
-    if (argc > 3) {
-        fprintf(stderr, "usage: %s <command> [name]\n", argv[0]);
-        return 1;
-    }
 
     for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
         for (size_t j = 0; commands[i].str[j]; j++) {
@@ -1013,7 +1022,7 @@ int main(int argc, char **argv) {
             ret = cmd_list();
             break;
         case CMD_INSTALL:
-            ret = cmd_install(argv[2]);
+            ret = cmd_install(argv + 2);
             break;
         default:
             fprintf(stderr, "command not implemented yet\n");
