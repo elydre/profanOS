@@ -57,4 +57,18 @@ void socket_tick(int len, uint8_t *packet) {
         default:
             break;
     }
+	int k = 0;
+	for (int i = 0; i < sockets_len; i++) {
+		if (!sockets[i].do_remove) {
+			socket_t tmp = sockets[k];
+			sockets[k] = sockets[i];
+			sockets[i] = tmp;
+
+			k++;
+		}
+	}
+	int last_alive = 0;
+	while (last_alive < sockets_len && !sockets[last_alive].do_remove)
+		last_alive++;
+	sockets_len = last_alive;
 }
