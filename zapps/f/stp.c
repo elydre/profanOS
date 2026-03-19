@@ -129,6 +129,7 @@ static int remove_full_dir(const char *path) {
     #endif
 }
 
+#ifdef __profanOS__ // unused in linux
 static int move_element(const char *src, const char *dst) {
     if (rename(src, dst) == 0)
         return 0;
@@ -161,6 +162,7 @@ static int move_element(const char *src, const char *dst) {
 
     return ret;
 }
+#endif
 
 /*******************************************
  *                                        *
@@ -888,7 +890,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
         }
 
         #else
-        printf("  %d\n", (int) dl_deps[i]);
+        printf("  %s\n", dl_deps[i].name);
         printf("  installation not available...\n");
         #endif
     }
