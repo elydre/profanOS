@@ -60,7 +60,8 @@ int socket_socket(int domain, int type_, int protocol) {
 
         sockets_len++;
         last_id++;
-        process_wakeup(socket_pid, 0);
+        if (process_info(socket_pid, PROC_INFO_STATE, NULL) == PROC_STATE_SLP)
+            process_wakeup(socket_pid, 0); // TODO: asqel check why the condition is needed
         break;
     }
     return res;
