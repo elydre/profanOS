@@ -8,7 +8,8 @@ protocol_t socket_protocols[] = {
 		socket_udp_bind,
 		socket_udp_connect,
 		socket_udp_sendto,
-		socket_udp_recvfrom
+		socket_udp_recvfrom,
+		socket_udp_get_rw,
 	},
 	{0},
 };

@@ -18,10 +18,8 @@ int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     if (!sock)
         return -ENOTSOCK;
 
-    switch (sock->type) {
-        case SOCKET_UDP:
-            return socket_udp_connect(sock, addr, addrlen);
-        default:
-            return -EINVAL;
-    }
+    protocol_t *prot = socket_find_protocol(sock->type);
+	if (!prot || !prot->connect)
+		return -EINVAL;
+	return prot->connect(sock, addr, addrlen);
 }

@@ -17,10 +17,8 @@ int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     socket_t *sock = socket_find_fd(sockfd);
     if (!sock)
         return -ENOTSOCK;
-    switch (sock->type) {
-        case SOCKET_UDP:
-            return socket_udp_bind(sock, addr, addrlen);
-        default:
-            return -EINVAL;
-    }
+    protocol_t *prot = socket_find_protocol(sock->type);
+	if (!prot || !prot->bind)
+		return -EINVAL;
+	return prot->bind(sock, addr, addrlen);
 }

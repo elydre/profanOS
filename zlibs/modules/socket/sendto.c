@@ -23,10 +23,9 @@ ssize_t socket_sendto(sendto_arg_t *args) {
     if (!sock)
         return -ENOTSOCK;
 
-    switch (sock->type) {
-        case SOCKET_UDP:
-            return socket_udp_sendto(sock, buf, len, flags, dest_addr, addrlen);
-        default:
-            return -EINVAL;
-    }
+    protocol_t *prot = socket_find_protocol(sock->type);
+	if (!prot || !prot->sendto)
+		return -EINVAL;
+
+     return prot->sendto(sock, buf, len, flags, dest_addr, addrlen);
 }

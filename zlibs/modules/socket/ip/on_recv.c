@@ -1,18 +1,8 @@
-/*****************************************************************************\
-|   === ip.c : 2026 ===                                                       |
-|                                                                             |
-|    Unix socket implementation as kernel module                   .pi0iq.    |
-|                                                                 d"  . `'b   |
-|    This file is part of profanOS and is released under          q. /|\  "   |
-|    the terms of the GNU General Public License                   `// \\     |
-|                                                                  //   \\    |
-|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
-\*****************************************************************************/
-
 #include "ip.h"
 #include "udp.h"
 
-void socket_on_recv_ip4(int len, uint8_t *packet) {
+
+void socket_on_recv_ip(int len, uint8_t *packet) {
     if (len < 20)
         return ;
 
@@ -54,9 +44,4 @@ void socket_on_recv_ip4(int len, uint8_t *packet) {
         default:
             break;
     }
-}
-
-void socket_ip_send(uint32_t src_ip, uint32_t dest_ip, uint8_t protocol, uint8_t *data, int data_len) {
-
-    static uint8_t packet[2048];
 }

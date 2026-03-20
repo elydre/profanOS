@@ -33,30 +33,22 @@ void socket_tick(int len, uint8_t *packet) {
                 break;
         }
     }
-    for (int i = 0; i < sockets_len; i++) {
-        if (sockets[i].do_remove) {
-            mem_copy(&sockets[i], &sockets[i + 1], sockets_len - i - 1);
-            sockets_len--;
-            i--;
-        }
-    }
-    if (!len)
-        return ;
-    if (len < 6 + 6 + 2)
-        return ;
-    uint16_t ether_type = packet[6 + 6] << 8;
-    ether_type |= packet[6 + 6 + 1];
-    len -= 6 + 6 + 2;
-    packet += 6 + 6 + 2;
-    if (!len)
-        return ;
-    switch (ether_type) {
-        case ETHER_IP4:
-            socket_on_recv_ip4(len, packet);
-            break;
-        default:
-            break;
-    }
+
+    if (len >= 6 + 6 + 2) {
+    	uint16_t ether_type = packet[6 + 6] << 8;
+    	ether_type |= packet[6 + 6 + 1];
+    	len -= 6 + 6 + 2;
+    	packet += 6 + 6 + 2;
+    	if (len) {
+    		switch (ether_type) {
+    		    case ETHER_IP4:
+    		        socket_on_recv_ip(len, packet);
+    		        break;
+    		    default:
+    		        break;
+    		}
+		}
+	}
 	int k = 0;
 	for (int i = 0; i < sockets_len; i++) {
 		if (!sockets[i].do_remove) {

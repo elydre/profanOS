@@ -10,8 +10,6 @@
 \*****************************************************************************/
 
 #include <modules/socket.h>
-#include "tcp.h"
-#include "udp.h"
 #include <errno.h>
 
 socket_t *sockets = NULL;
@@ -29,12 +27,11 @@ int socket_socket(int domain, int type_, int protocol) {
     fd_data_t *fd_data = fm_get_free_fd(&res);
     if (fd_data == NULL)
         return -EMFILE;
-
     sockets = realloc(sockets, sizeof(socket_t) * (sockets_len + 1));
     sockets[sockets_len] = (socket_t){0};
     sockets[sockets_len].type = type;
     sockets[sockets_len].id = last_id;
-    sockets[sockets_len].ref_count = 0;
+    sockets[sockets_len].ref_count = 1;
     sockets[sockets_len].parent_pid = process_get_pid();
     sockets[sockets_len].do_remove = 0;
 
