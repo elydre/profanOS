@@ -942,11 +942,11 @@ static int setup_connection(void) {
         return 1;
 
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
-    G_SOCKET_FD = fd;
 
-    if (fd < 0) {
+    if (fd < 0)
         return 1;
-    }
+
+    G_SOCKET_FD = fd;
 
     if (connect(fd, (void *)&addr, sizeof(addr))) {
         fprintf(stderr, "stp: Failed to connect to server: %m\n");
