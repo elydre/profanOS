@@ -823,6 +823,51 @@ int lpl_add_dep(const char *name, const char *dep_name) {
     return -1;
 }
 
+int lpl_remove(const char *name) {
+    for (int i = 0; G_LPL[i]; i++) {
+        if (strcmp(G_LPL[i]->name, name) != 0)
+            continue;
+
+        if (G_LPL[i]->deps) {
+            for (int j = 0; G_LPL[i]->deps[j]; j++)
+                free(G_LPL[i]->deps[j]);
+            free(G_LPL[i]->deps);
+        }
+        free(G_LPL[i]->name);    
+        free(G_LPL[i]);
+
+        // shift the rest of the list
+        int j = i;
+        while (G_LPL[j + 1]) {
+            G_LPL[j] = G_LPL[j + 1];
+            j++;
+        }
+        G_LPL[j] = NULL;
+
+        return 0;
+    }
+
+    return -1;
+}
+
+const char *lpl_get_dependent(const char *name) {
+    // return the name of the first package found that uses
+    // the given package name, or NULL if not found
+
+    for (int i = 0; G_LPL[i]; i++) {
+        if (!G_LPL[i]->deps)
+            continue;
+        if (strcmp(G_LPL[i]->name, name) == 0)
+            continue; // skip the package itself
+        for (int j = 0; G_LPL[i]->deps[j]; j++) {
+            if (strcmp(G_LPL[i]->deps[j], name) == 0)
+                return G_LPL[i]->name;
+        }
+    }
+
+    return NULL;
+}
+
 /*******************************************
  *                                        *
  *      UDP INITIALIZATION FUNCTIONS      *
@@ -960,7 +1005,7 @@ static id_name_pair_t *cmd_install_dl(uint64_t id, const char *from, id_name_pai
         if (from)
             printf("stp: dependency '%s' of '%s' is already installed, skipping\n", info.name, from);
         else
-            printf("stp: package '%s' already downloaded\n", info.name);
+            printf("stp: package '%s' already installed\n", info.name);
         return dl_deps;
     }
 
@@ -1038,9 +1083,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
             1 // sleep mode
         };
 
-        int pid;
-
-        if (run_ifexist(&args, &pid)) {
+        if (run_ifexist(&args, NULL)) {
             fprintf(stderr, "stp: Failed to run unzip for package %s\n", dl_deps[i].name);
             return -1;
         }
@@ -1068,7 +1111,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
             1 // sleep mode
         };
 
-        if (run_ifexist(&olivine_args, &pid)) {
+        if (run_ifexist(&olivine_args, NULL)) {
             fprintf(stderr, "stp: Failed to run olivine for package %s\n", dl_deps[i].name);
             return -1;
         }
@@ -1103,7 +1146,7 @@ int cmd_install(char **names) {
     for (int i = 0; i < count; i++) {
         ids[i] = pkg_get_id(names[i]);
         if (ids[i] == 0)
-            fprintf(stderr, "stp: %s: package not found\n", names[i]);
+            fprintf(stderr, "stp: Package %s not found\n", names[i]);
         else if (ids[i] != -1)
             continue;
         free(ids);
@@ -1143,6 +1186,107 @@ int cmd_install(char **names) {
     free(ids);
 
     return r;
+}
+
+static int cmd_remove_remove(const char *name) {
+    printf("removing %s\n", name);
+    #ifdef __profanOS__
+    char remove_script[PATH_MAX];
+    snprintf(remove_script, sizeof(remove_script), PATH_STP "/" PKG_RMDIR "/%s.olv", name);
+
+    if (access(remove_script, F_OK) != 0) {
+        fprintf(stderr, "stp: No remove script found for package %s\n", name);
+        return -1;
+    }
+
+    runtime_args_t args = {
+        PATH_OLIVINE,
+        profan_wd_path(),
+        2,
+        (char *[]) {
+            PATH_OLIVINE,
+            remove_script,
+            NULL
+        },
+        environ,
+        1 // sleep mode
+    };
+
+    if (run_ifexist(&args, NULL)) {
+        fprintf(stderr, "stp: Failed to run remove script for package %s\n", name);
+        return -1;
+    }
+    #endif
+
+    if (lpl_remove(name) == 0)
+        return 0;
+
+    // should not happen
+    fprintf(stderr, "stp: Package %s not found in local package list\n", name);
+    return -1;
+}
+
+static int cmd_auto_remove(void) {
+    if (!G_LPL)
+        lpl_load();
+
+    int found = 0;
+
+    for (int i = 0; G_LPL[i]; i++) {
+        if (G_LPL[i]->is_a_dep && lpl_get_dependent(G_LPL[i]->name) == NULL) {
+            found = 1;
+            if (cmd_remove_remove(G_LPL[i]->name))
+                return -1;
+        }
+    }
+
+    if (found)
+        found += cmd_auto_remove();
+
+    return found;
+}
+
+int cmd_remove(char **names) {
+    const char *dependent;
+    int success = 0;
+
+    for (int i = 0; names[i]; i++) {
+        if (!lpl_is_installed(names[i]))
+            fprintf(stderr, "stp: Package %s not installed\n", names[i]);
+        else if ((dependent = lpl_get_dependent(names[i])) != NULL)
+            fprintf(stderr, "stp: Package %s is used by %s, cannot remove\n", names[i], dependent);
+        else if (cmd_remove_remove(names[i]) == -1)
+            ; // error already printed
+        else {
+            if (success != -1)
+                success++;
+            continue;
+        };
+        success = -1;
+    }
+
+    if (success < 0)
+        return 1;
+
+    int auto_removed = cmd_auto_remove();
+    if (auto_removed == -1) {
+        fprintf(stderr, "stp: Failed to remove unused dependencies\n");
+        return 1;
+    }
+
+    if (success == 0) {
+        if (auto_removed == 0)
+            printf("stp: no unused dependencies found\n");
+        else
+            printf("successfully removed %d unused dependencies\n", auto_removed);
+    } else {
+        if (auto_removed == 0)
+            printf("successfully removed %d packages, no unused dependencies found\n", success);
+        else
+            printf("successfully removed %d packages and %d unused dependencies\n", success, auto_removed);
+    }
+
+    return 0;
 }
 
 int cmd_info(char **names) {
@@ -1191,7 +1335,7 @@ int cmd_help(void) {
     fputs("Usage: stp <command> [args]\n"
             "Commands:\n"
             "  install <pkg1> [pkg2 ...]  Install packages\n"
-            "  remove  <pkg1> [pkg2 ...]  Remove packages\n"
+            "  remove  [pkg1] [pkg2 ...]  Remove packages and unused dependencies\n"
             "  info    <pkg1> [pkg2 ...]  Show package info\n"
             "  list                       List available packages\n"
             "  update                     Update package list\n"
@@ -1225,7 +1369,7 @@ typedef struct {
 
 cmd_entry_t commands[] = {
     { CMD_INSTALL, 1, { "install", "i", NULL } },
-    { CMD_REMOVE,  1, { "remove", "rm", "r", NULL } },
+    { CMD_REMOVE,  2, { "remove", "rm", NULL } },
     { CMD_INFO,    1, { "info", NULL } },
     { CMD_LIST,    0, { "list", NULL } },
     { CMD_UPDATE,  0, { "update", "u", NULL } },
@@ -1240,10 +1384,10 @@ command_t parse_args(int argc, char **argv) {
         for (size_t j = 0; commands[i].str[j]; j++) {
             if (strcmp(argv[1], commands[i].str[j]))
                 continue;
-            if (commands[i].needs_arg && argc < 3) {
+            if (commands[i].needs_arg == 1 && argc < 3) {
                 fprintf(stderr, "stp: %s: Missing argument\n", argv[1]);
                 return CMD_ERROR;
-            } else if (!commands[i].needs_arg && argc > 2) {
+            } else if (commands[i].needs_arg == 0 && argc > 2) {
                 fprintf(stderr, "stp: %s: Too many arguments\n", argv[1]);
                 return CMD_ERROR;
             }
@@ -1277,6 +1421,9 @@ int main(int argc, char **argv) {
             break;
         case CMD_INSTALL:
             ret = cmd_install(argv + 2);
+            break;
+        case CMD_REMOVE:
+            ret = cmd_remove(argv + 2);
             break;
         case CMD_INFO:
             ret = cmd_info(argv + 2);
