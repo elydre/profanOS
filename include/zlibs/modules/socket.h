@@ -46,6 +46,10 @@ int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int socket_close(socket_t *sock);
 int socket_close_fd(int fd);
 int socket_get_rw(int id);
+protocol_t *socket_find_protocol(uint32_t type);
+void socket_tick(int len, uint8_t *packet);
+socket_t *socket_find_fd(int fd);
+socket_t *socket_find_id(int id);
 
 typedef struct {
     int sockfd;
@@ -67,11 +71,16 @@ typedef struct {
 } recvfrom_arg_t;
 ssize_t socket_recvfrom(recvfrom_arg_t *args);
 
-void socket_tick(int len, uint8_t *packet);
-socket_t *socket_find_fd(int fd);
-socket_t *socket_find_id(int id);
+typedef struct {
+	uint32_t prot;
+	int (*init)(socket_t *);
+	int (*bind)(socket_t *, const struct sockaddr *, socklen_t);
+	int (*connect)(socket_t *, const struct sockaddr *, socklen_t);
+	ssize_t (*sendto)(socket_t *, const void *, size_t, int, const struct sockaddr *, socklen_t);
+	ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
+} protocol_t;
 
-// TODO fix this with a include fmopen (pf4 cant make complete headers)
+extern protocol_t socket_protocols[];
 
 
 #ifndef _KERNEL_MODULE
@@ -89,6 +98,9 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_recvfrom(a) ((int) _pscall(SOCKET_MOD_H, 4, a))
 
 #else
+
+#undef get_func_addr
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
 #define socket_sendto_call ((int (*)(sendto_arg_t *)) get_func_addr(SOCKET_MOD_H, 3))
 #define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))

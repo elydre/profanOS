@@ -24,25 +24,6 @@
 #include <fcntl.h>  // for flags
 #include <errno.h>
 
-#undef fm_close
-#undef fm_reopen
-#undef fm_pread
-#undef fm_pwrite
-#undef fm_lseek
-#undef fm_dup2
-#undef fm_dup
-#undef fm_pipe
-#undef fm_isafft
-#undef fm_isfile
-#undef fm_issock
-#undef fm_fcntl
-#undef fm_get_sid
-#undef fm_get_path
-#undef fm_declare_child
-#undef fm_get_free_fd
-#undef fm_fd_to_data
-#undef fm_get_fd_rw
-
 #define PIPE_MAX     256
 #define PIPE_MAX_REF 12
 

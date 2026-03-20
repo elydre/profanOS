@@ -47,7 +47,7 @@ typedef struct {
     int send_len;
 } udp_t;
 
-int socket_init_udp(socket_t *sock);
+int socket_udp_init(socket_t *sock);
 void socket_on_recv_udp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len);
 
 void socket_udp_tick(socket_t *sock);

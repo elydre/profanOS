@@ -14,7 +14,7 @@
 #include <errno.h>
 #include "ip.h"
 
-int socket_init_udp(socket_t *sock) {
+int socket_udp_init(socket_t *sock) {
     udp_t *info = malloc(sizeof(udp_t));
     if (!info)
         return 1;

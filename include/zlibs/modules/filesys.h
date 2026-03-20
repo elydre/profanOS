@@ -120,7 +120,7 @@ uint32_t fm_get_sid(int fd);
 const char *fm_get_path(int fd);
 int fm_declare_child(int fd);
 
-#ifndef _KERNEL_MODULE
+#if !defined(_KERNEL_MODULE)
 
 #define fm_close(a)          ((int) _pscall(FMOPEN_LIB_ID, 0, a))
 #define fm_reopen(a, b, c)   ((int) _pscall(FMOPEN_LIB_ID, 1, a, b, c))
@@ -139,7 +139,7 @@ int fm_declare_child(int fd);
 #define fm_declare_child(a)  ((int) _pscall(FMOPEN_LIB_ID, 14, a))
 #define fm_get_fd_rw(a) ((int) _pscall(FMOPEN_LIB_ID, 17, a))
 
-#else
+#elif !defined(INCLUDE_FROM_FMOPEN)
 
 #define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
 
