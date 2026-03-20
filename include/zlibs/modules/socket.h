@@ -46,7 +46,6 @@ int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int socket_close(socket_t *sock);
 int socket_close_fd(int fd);
 int socket_get_rw(int id);
-protocol_t *socket_find_protocol(uint32_t type);
 void socket_tick(int len, uint8_t *packet);
 socket_t *socket_find_fd(int fd);
 socket_t *socket_find_id(int id);
@@ -79,6 +78,8 @@ typedef struct {
 	ssize_t (*sendto)(socket_t *, const void *, size_t, int, const struct sockaddr *, socklen_t);
 	ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
 } protocol_t;
+
+protocol_t *socket_find_protocol(uint32_t type);
 
 extern protocol_t socket_protocols[];
 

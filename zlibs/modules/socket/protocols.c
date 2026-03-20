@@ -14,7 +14,7 @@ protocol_t socket_protocols[] = {
 };
 
 protocol_t *socket_find_protocol(uint32_t type) {
-	for (size_t i = 0; socket_protocols[i].type; i++) {
+	for (size_t i = 0; socket_protocols[i].prot; i++) {
 		if (socket_protocols[i].prot == type)
 			return &socket_protocols[i];
 	}
