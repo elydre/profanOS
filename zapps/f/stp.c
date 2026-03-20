@@ -641,7 +641,7 @@ int pkg_get_list(uint64_t **ids) {
 
 typedef struct {
     char *name;
-    uint64_t version;
+    uint32_t version;
     int is_a_dep;
     char **deps;
 } local_pkg_info_t;
@@ -688,7 +688,7 @@ int lpl_load(void) {
 
         info = calloc(1, sizeof(local_pkg_info_t));
         line_num++;
-    
+
         token = strtok(line, ",");
         if (!token)
             goto parse_error;
@@ -697,7 +697,7 @@ int lpl_load(void) {
         token = strtok(NULL, ",");
         if (!token)
             goto parse_error;
-        info->version = strtoull(token, NULL, 10);
+        info->version = atoi(token);
 
         token = strtok(NULL, ",");
         if (!token)
@@ -730,7 +730,7 @@ int lpl_load(void) {
     return 0;
 }
 
-int lpl_save(void) {
+int lpl_save_and_free(void) {
     if (!G_LPL)
         return 0; // nothing to save
 
@@ -741,43 +741,36 @@ int lpl_save(void) {
     }
 
     for (int i = 0; G_LPL[i]; i++) {
-        fprintf(f, "%s,%"PRIu64",%d", G_LPL[i]->name, G_LPL[i]->version, G_LPL[i]->is_a_dep);
+        fprintf(f, "%s,%u,%d", G_LPL[i]->name, G_LPL[i]->version, G_LPL[i]->is_a_dep);
         if (G_LPL[i]->deps) {
             for (int j = 0; G_LPL[i]->deps[j]; j++) {
                 fprintf(f, ",%s", G_LPL[i]->deps[j]);
+                free(G_LPL[i]->deps[j]);
             }
+            free(G_LPL[i]->deps);
         }
+        free(G_LPL[i]->name);
+        free(G_LPL[i]);
         fprintf(f, "\n");
     }
 
-    fclose(f);
-    return 0;
-}
-
-int lpl_free(void) {
-    if (!G_LPL)
-        return 0;
-
-    for (int i = 0; G_LPL[i]; i++) {
-        if (G_LPL[i]->deps) {
-            for (int j = 0; G_LPL[i]->deps[j]; j++)
-                free(G_LPL[i]->deps[j]);
-            free(G_LPL[i]->deps);
-        }
-        free(G_LPL[i]->name);    
-        free(G_LPL[i]);
-    }
     free(G_LPL);
+    fclose(f);
+
     return 0;
 }
 
 int lpl_is_installed(const char *name) {
+    // 0: not installed
+    // 1: installed by user
+    // 2: installed as a dependency
+
     if (!G_LPL)
         lpl_load();
 
     for (int i = 0; G_LPL[i]; i++) {
         if (strcmp(G_LPL[i]->name, name) == 0)
-            return 1;
+            return G_LPL[i]->is_a_dep ? 2 : 1;
     }
 
     return 0;
@@ -805,6 +798,33 @@ int lpl_add(const char *name, uint64_t version, int is_a_dep) {
     return 0;
 }
 
+int lpl_remove(const char *name) {
+    for (int i = 0; G_LPL[i]; i++) {
+        if (strcmp(G_LPL[i]->name, name) != 0)
+            continue;
+
+        if (G_LPL[i]->deps) {
+            for (int j = 0; G_LPL[i]->deps[j]; j++)
+                free(G_LPL[i]->deps[j]);
+            free(G_LPL[i]->deps);
+        }
+        free(G_LPL[i]->name);
+        free(G_LPL[i]);
+
+        // shift the rest of the list
+        int j = i;
+        while (G_LPL[j + 1]) {
+            G_LPL[j] = G_LPL[j + 1];
+            j++;
+        }
+        G_LPL[j] = NULL;
+
+        return 0;
+    }
+
+    return -1;
+}
+
 int lpl_add_dep(const char *name, const char *dep_name) {
     for (int i = 0; G_LPL[i]; i++) {
         if (strcmp(G_LPL[i]->name, name) != 0)
@@ -820,33 +840,6 @@ int lpl_add_dep(const char *name, const char *dep_name) {
         G_LPL[i]->deps[dep_count + 1] = NULL;
         return 0;
     }
-    return -1;
-}
-
-int lpl_remove(const char *name) {
-    for (int i = 0; G_LPL[i]; i++) {
-        if (strcmp(G_LPL[i]->name, name) != 0)
-            continue;
-
-        if (G_LPL[i]->deps) {
-            for (int j = 0; G_LPL[i]->deps[j]; j++)
-                free(G_LPL[i]->deps[j]);
-            free(G_LPL[i]->deps);
-        }
-        free(G_LPL[i]->name);    
-        free(G_LPL[i]);
-
-        // shift the rest of the list
-        int j = i;
-        while (G_LPL[j + 1]) {
-            G_LPL[j] = G_LPL[j + 1];
-            j++;
-        }
-        G_LPL[j] = NULL;
-
-        return 0;
-    }
-
     return -1;
 }
 
@@ -866,6 +859,26 @@ const char *lpl_get_dependent(const char *name) {
     }
 
     return NULL;
+}
+
+int lpl_update_version(const char *name, uint32_t version) {
+    for (int i = 0; G_LPL[i]; i++) {
+        if (strcmp(G_LPL[i]->name, name) == 0) {
+            G_LPL[i]->version = version;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int lpl_update_depflag(const char *name, int is_a_dep) {
+    for (int i = 0; G_LPL[i]; i++) {
+        if (strcmp(G_LPL[i]->name, name) == 0) {
+            G_LPL[i]->is_a_dep = is_a_dep;
+            return 0;
+        }
+    }
+    return -1;
 }
 
 /*******************************************
@@ -1001,11 +1014,18 @@ static id_name_pair_t *cmd_install_dl(uint64_t id, const char *from, id_name_pai
     if (from)
         lpl_add_dep(from, info.name);
 
-    if (lpl_is_installed(info.name)) {
-        if (from)
-            printf("stp: dependency '%s' of '%s' is already installed, skipping\n", info.name, from);
-        else
-            printf("stp: package '%s' already installed\n", info.name);
+    int is_installed = lpl_is_installed(info.name);
+    if (is_installed) {
+        if (from) {
+            printf("dependency '%s' of '%s' is already installed, skipping\n", info.name, from);
+            return dl_deps;
+        }
+        if (is_installed == 1)
+            fprintf(stderr, "stp: Package '%s' already installed\n", info.name);
+        else {
+            printf("package '%s' is now marked as user-installed\n", info.name);
+            lpl_update_depflag(info.name, 0);
+        }
         return dl_deps;
     }
 
@@ -1053,86 +1073,80 @@ static id_name_pair_t *cmd_install_dl(uint64_t id, const char *from, id_name_pai
     return dl_deps;
 }
 
-static int cmd_install_install(id_name_pair_t *dl_deps) {
-    int count = 0;
-    while (dl_deps[count].id != -1)
-        count++;
+static int cmd_install_install(const char *name) {
+    printf("installing %s\n", name);
+    #ifdef __profanOS__
 
-    for (int i = count - 1; i >= 0; i--) {
-        printf("installing %s\n", dl_deps[i].name);
-        #ifdef __profanOS__
-        char dl_path[PATH_MAX];
-        char extract_path[PATH_MAX];
-        snprintf(dl_path, sizeof(dl_path), PATH_TEMP "/%s.zip", dl_deps[i].name);
-        snprintf(extract_path, sizeof(extract_path), PATH_TEMP "/%s", dl_deps[i].name);
+    char dl_path[PATH_MAX];
+    char extract_path[PATH_MAX];
+    snprintf(dl_path, sizeof(dl_path), PATH_TEMP "/%s.zip", name);
+    snprintf(extract_path, sizeof(extract_path), PATH_TEMP "/%s", name);
 
-        // unzip
-        runtime_args_t args = {
+    // unzip
+    runtime_args_t args = {
+        PATH_UNZIP,
+        profan_wd_path(),
+        5,
+        (char *[]) {
             PATH_UNZIP,
-            profan_wd_path(),
-            5,
-            (char *[]) {
-                PATH_UNZIP,
-                "-q",
-                dl_path,
-                "-d",
-                extract_path,
-                NULL
-            },
-            environ,
-            1 // sleep mode
-        };
+            "-q",
+            dl_path,
+            "-d",
+            extract_path,
+            NULL
+        },
+        environ,
+        1 // sleep mode
+    };
 
-        if (run_ifexist(&args, NULL)) {
-            fprintf(stderr, "stp: Failed to run unzip for package %s\n", dl_deps[i].name);
-            return -1;
-        }
-
-        // chdir
-        char cwd[PATH_MAX];
-        getcwd(cwd, sizeof(cwd));
-
-        if (chdir(extract_path) != 0) {
-            fprintf(stderr, "stp: Failed to chdir to package %s\n", dl_deps[i].name);
-            return -1;
-        }
-
-        // olivine
-        runtime_args_t olivine_args = {
-            PATH_OLIVINE,
-            profan_wd_path(),
-            2,
-            (char *[]) {
-                PATH_OLIVINE,
-                "install.olv",
-                NULL
-            },
-            environ,
-            1 // sleep mode
-        };
-
-        if (run_ifexist(&olivine_args, NULL)) {
-            fprintf(stderr, "stp: Failed to run olivine for package %s\n", dl_deps[i].name);
-            return -1;
-        }
-
-        // save the remove.olv
-        char remove_dest[PATH_MAX];
-        snprintf(remove_dest, sizeof(remove_dest), PATH_STP "/" PKG_RMDIR "/%s.olv", dl_deps[i].name);
-
-        if (move_element("remove.olv", remove_dest)) {
-            fprintf(stderr, "stp: Failed to save remove script for package %s\n", dl_deps[i].name);
-            return -1;
-        }
-
-        // chdir back
-        if (chdir(cwd) != 0) {
-            fprintf(stderr, "stp: Failed to chdir back\n", dl_deps[i].name);
-            return -1;
-        }
-        #endif
+    if (run_ifexist(&args, NULL)) {
+        fprintf(stderr, "stp: Failed to run unzip for package '%s'\n", name);
+        return 1;
     }
 
+    // chdir
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+
+    if (chdir(extract_path) != 0) {
+        fprintf(stderr, "stp: Failed to chdir to '%s'\n", name);
+        return 1;
+    }
+
+    // olivine
+    runtime_args_t olivine_args = {
+        PATH_OLIVINE,
+        profan_wd_path(),
+        2,
+        (char *[]) {
+            PATH_OLIVINE,
+            "install.olv",
+            NULL
+        },
+        environ,
+        1 // sleep mode
+    };
+
+    if (run_ifexist(&olivine_args, NULL)) {
+        fprintf(stderr, "stp: Failed to run olivine for package '%s'\n", name);
+        return 1;
+    }
+
+    // save the remove.olv
+    char remove_dest[PATH_MAX];
+    snprintf(remove_dest, sizeof(remove_dest), PATH_STP "/" PKG_RMDIR "/%s.olv", name);
+
+    if (move_element("remove.olv", remove_dest)) {
+        fprintf(stderr, "stp: Failed to save remove script for package '%s'\n", name);
+        return 1;
+    }
+
+    // chdir back
+    if (chdir(cwd) != 0) {
+        fprintf(stderr, "stp: Failed to chdir back\n", name);
+        return 1;
+    }
+    #endif
     return 0;
 }
 
@@ -1146,7 +1160,7 @@ int cmd_install(char **names) {
     for (int i = 0; i < count; i++) {
         ids[i] = pkg_get_id(names[i]);
         if (ids[i] == 0)
-            fprintf(stderr, "stp: Package %s not found\n", names[i]);
+            fprintf(stderr, "stp: Package '%s' not found\n", names[i]);
         else if (ids[i] != -1)
             continue;
         free(ids);
@@ -1173,12 +1187,17 @@ int cmd_install(char **names) {
         }
     }
 
-    if (r == 0 && dl_deps[0].id != -1) {
-        printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
-                    (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
-                    (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
+    count = 0;
+    while (dl_deps[count].id != -1)
+        count++;
 
-        r = cmd_install_install(dl_deps);
+    if (r == 0 && count > 0) {
+        printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
+                (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
+                (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
+
+        for (int i = count - 1; i >= 0; i--)
+            r |= cmd_install_install(dl_deps[i].name);
     }
 
     remove_full_dir(PATH_TEMP);
@@ -1195,8 +1214,8 @@ static int cmd_remove_remove(const char *name) {
     snprintf(remove_script, sizeof(remove_script), PATH_STP "/" PKG_RMDIR "/%s.olv", name);
 
     if (access(remove_script, F_OK) != 0) {
-        fprintf(stderr, "stp: No remove script found for package %s\n", name);
-        return -1;
+        fprintf(stderr, "stp: No remove script found for package '%s'\n", name);
+        return 1;
     }
 
     runtime_args_t args = {
@@ -1213,17 +1232,18 @@ static int cmd_remove_remove(const char *name) {
     };
 
     if (run_ifexist(&args, NULL)) {
-        fprintf(stderr, "stp: Failed to run remove script for package %s\n", name);
-        return -1;
+        fprintf(stderr, "stp: Failed to run remove script for package '%s'\n", name);
+        return 1;
+    }
+
+    // remove the script after successful execution
+    if (remove(remove_script) != 0) {
+        fprintf(stderr, "stp: Failed to remove %s\n", remove_script);
+        return 1;
     }
     #endif
 
-    if (lpl_remove(name) == 0)
-        return 0;
-
-    // should not happen
-    fprintf(stderr, "stp: Package %s not found in local package list\n", name);
-    return -1;
+    return 0;
 }
 
 static int cmd_auto_remove(void) {
@@ -1237,6 +1257,11 @@ static int cmd_auto_remove(void) {
             found = 1;
             if (cmd_remove_remove(G_LPL[i]->name))
                 return -1;
+            if (lpl_remove(G_LPL[i]->name) == 0)
+                continue;
+            // should not happen
+            fprintf(stderr, "stp: Package '%s' not found in local package list\n", G_LPL[i]->name);
+            return -1;
         }
     }
 
@@ -1251,12 +1276,22 @@ int cmd_remove(char **names) {
     int success = 0;
 
     for (int i = 0; names[i]; i++) {
-        if (!lpl_is_installed(names[i]))
-            fprintf(stderr, "stp: Package %s not installed\n", names[i]);
+        int is_installed = lpl_is_installed(names[i]);
+    
+        if (is_installed == 0)
+            fprintf(stderr, "stp: Package '%s' not installed\n", names[i]);
         else if ((dependent = lpl_get_dependent(names[i])) != NULL)
-            fprintf(stderr, "stp: Package %s is used by %s, cannot remove\n", names[i], dependent);
-        else if (cmd_remove_remove(names[i]) == -1)
+            if (is_installed == 1) {
+                printf("package '%s' requires by '%s' is now marked only as a dependency\n", names[i], dependent);
+                lpl_update_depflag(names[i], 1);
+                continue;
+            }
+            else
+                fprintf(stderr, "stp: Failed to remove '%s' because '%s' uses it\n", names[i], dependent);
+        else if (cmd_remove_remove(names[i]))
             ; // error already printed
+        else if (lpl_remove(names[i]))
+            fprintf(stderr, "stp: Failed to remove '%s' from local package list\n", names[i]);
         else {
             if (success != -1)
                 success++;
@@ -1276,7 +1311,7 @@ int cmd_remove(char **names) {
 
     if (success == 0) {
         if (auto_removed == 0)
-            printf("stp: no unused dependencies found\n");
+            printf("no unused dependencies found\n");
         else
             printf("successfully removed %d unused dependencies\n", auto_removed);
     } else {
@@ -1285,6 +1320,73 @@ int cmd_remove(char **names) {
         else
             printf("successfully removed %d packages and %d unused dependencies\n", success, auto_removed);
     }
+
+    return 0;
+}
+
+int cmd_upgrade(void) {
+    if (!G_LPL)
+        lpl_load();
+
+    printf("checking for package updates...\n");
+
+    remove_full_dir(PATH_TEMP);             // clean temp directory before downloading
+    mkdir(PATH_TEMP, 0755);                 // ensure tmp directory exists
+
+    #ifdef __profanOS__
+    mkdir(PATH_STP "/" PKG_RMDIR, 0755);    // ensure remove script directory exists
+    #endif
+
+    char dl_path[PATH_MAX];
+    int count = 0;
+
+    id_name_pair_t *dl_deps = malloc(sizeof(id_name_pair_t));
+    dl_deps[0].id = -1;
+
+    for (int i = 0; G_LPL[i]; i++) {
+        int64_t id = pkg_get_id(G_LPL[i]->name);
+        if (id == 0) {
+            fprintf(stderr, "stp: Package '%s' not found in server, skipping\n", G_LPL[i]->name);
+            continue;
+        } else if (id == -1)
+            return 1;
+
+        stp_info_t info;
+        if (pkg_get_info(id, &info) == -1)
+            return 1;
+
+        if (info.version <= G_LPL[i]->version)
+            continue;
+
+        printf("downloading %s: v%u -> v%u (%"PRId64" KB)\n", G_LPL[i]->name, G_LPL[i]->version, info.version, info.file_size / 1024);
+
+        snprintf(dl_path, sizeof(dl_path), PATH_TEMP "/%s.zip", info.name);
+        if (pkg_download(id, dl_path, &info, NULL) == -1)
+            return 1;
+
+        // add to install list
+        dl_deps = realloc(dl_deps, (count + 2) * sizeof(id_name_pair_t));
+        strncpy(dl_deps[count].name, info.name, STP_MAX_NAME_SIZE - 1);
+        dl_deps[count].name[STP_MAX_NAME_SIZE - 1] = '\0';
+        dl_deps[count].id = info.version; // store the new version for saving to lpl later
+        dl_deps[++count].id = -1;
+    }
+
+    for (int i = 0; dl_deps[i].id != -1; i++) {
+        if (cmd_remove_remove(dl_deps[i].name))
+            return 1;
+        if (cmd_install_install(dl_deps[i].name))
+            return 1;
+        lpl_update_version(dl_deps[i].name, dl_deps[i].id);
+    }
+
+    remove_full_dir(PATH_TEMP);
+    free(dl_deps);
+
+    if (count == 0)
+        printf("All packages are up to date\n");
+    else
+        printf("Successfully upgraded %d packages\n", count);
 
     return 0;
 }
@@ -1338,7 +1440,7 @@ int cmd_help(void) {
             "  remove  [pkg1] [pkg2 ...]  Remove packages and unused dependencies\n"
             "  info    <pkg1> [pkg2 ...]  Show package info\n"
             "  list                       List available packages\n"
-            "  update                     Update package list\n"
+            "  upgrade                    Upgrade installed packages\n"
             "Options:\n"
             "  --help                     Show this help message\n",
         stdout);
@@ -1357,7 +1459,7 @@ typedef enum {
     CMD_REMOVE,
     CMD_INFO,
     CMD_LIST,
-    CMD_UPDATE,
+    CMD_UPGRADE,
     CMD_HELP
 } command_t;
 
@@ -1372,7 +1474,7 @@ cmd_entry_t commands[] = {
     { CMD_REMOVE,  2, { "remove", "rm", NULL } },
     { CMD_INFO,    1, { "info", NULL } },
     { CMD_LIST,    0, { "list", NULL } },
-    { CMD_UPDATE,  0, { "update", "u", NULL } },
+    { CMD_UPGRADE, 0, { "upgrade", "u", NULL } },
     { CMD_HELP,    0, { "--help", "-h", NULL } }
 };
 
@@ -1428,15 +1530,16 @@ int main(int argc, char **argv) {
         case CMD_INFO:
             ret = cmd_info(argv + 2);
             break;
+        case CMD_UPGRADE:
+            ret = cmd_upgrade();
+            break;
         default:
             fprintf(stderr, "stp: Command not implemented yet\n");
             ret = 1;
             break;
     }
 
-    if (ret == 0)
-        lpl_save();
-    lpl_free();
+    lpl_save_and_free();
 
     close(G_SOCKET_FD);
     return ret;
