@@ -114,10 +114,10 @@ static int remove_full_dir(const char *path) {
             },
             environ,
             1 // sleep mode
-        };  
+        };
 
         if (run_ifexist(&args, NULL)) {
-            fprintf(stderr, "failed to run rm for path %s\n", path);
+            fprintf(stderr, "stp: Failed to run rm for path %s\n", path);
             return -1;
         }
 
@@ -129,19 +129,17 @@ static int remove_full_dir(const char *path) {
     #endif
 }
 
+#ifdef __profanOS__ // unused in linux
 static int move_element(const char *src, const char *dst) {
     if (rename(src, dst) == 0)
         return 0;
 
     FILE *in = fopen(src, "rb");
-    if (!in) {
-        fprintf(stderr, "mv: Failed to open source file '%s'\n", src);
+    if (!in)
         return 1;
-    }
 
     FILE *out = fopen(dst, "wb");
     if (!out) {
-        fprintf(stderr, "mv: Failed to open destination file '%s'\n", dst);
         fclose(in);
         return 1;
     }
@@ -151,22 +149,20 @@ static int move_element(const char *src, const char *dst) {
     int ret = 0;
     while ((bytes = fread(buffer, 1, sizeof(buffer), in)) > 0) {
         if (fwrite(buffer, 1, bytes, out) != bytes) {
-            fprintf(stderr, "mv: Failed to write to destination file '%s'\n", dst);
             ret = 1;
             break;
         }
     }
 
-    if (ferror(in)) {
-        fprintf(stderr, "mv: Failed to read from source file '%s'\n", src);
+    if (ferror(in))
         ret = 1;
-    }
 
     fclose(in);
     fclose(out);
 
     return ret;
 }
+#endif
 
 /*******************************************
  *                                        *
@@ -243,40 +239,40 @@ static int stp_sarap(uint8_t *buf, int buf_len, uint16_t type) {
     purge_receive_buffer();
 
     if (send(G_FD, buf, buf_len, 0) == -1)
-        RETERR("[protocol err] send error %d (%s)\n", errno, strerror(errno));
+        RETERR("stp: send error: %m\n");
 
     wait_for_response:
     int rlen = timeout_recv(buf, 1300);
 
     if (rlen == -2) {
         if (retry_count >= MAX_RETRY_COUNT)
-            RETERR("[protocol err] recv timeout, max retry count reached\n");
-        fprintf(stderr, "[protocol warn] recv timeout, retrying... (%d/%d)\n",
+            RETERR("stp: recv timeout, max retry count reached\n");
+        fprintf(stderr, "stp: recv timeout, retrying... (%d/%d)\n",
                     retry_count + 1, MAX_RETRY_COUNT);
         retry_count++;
         goto send_and_wait;
     }
 
     if (rlen < 0)
-        RETERR("[protocol err] recv error %d (%s)\n", errno, strerror(errno));
+        RETERR("stp: [protocol err] recv error: %m\n");
 
     if (rlen < 8)
-        RETERR("[protocol err] recv too short\n");
+        RETERR("stp: [protocol err] recv too short\n");
 
     memcpy(&r, buf, 8);
 
     if (R64_TO_XID(r) != xid) {
-        fprintf(stderr, "[protocol warn] wrong xid, waiting for response again\n");
+        fprintf(stderr, "stp: [protocol warn] wrong xid, waiting for response again\n");
         goto wait_for_response;
     }
 
     uint16_t resp_type = R64_TO_TYPE(r);
 
     if (TYPE_IS_ERR(resp_type))
-        RETERR("[protocol err] error response received: %s (0x%04x)\n", error_to_str(resp_type), resp_type);
+        RETERR("stp: [protocol err] error response received: %s (0x%04x)\n", error_to_str(resp_type), resp_type);
 
     if (resp_type != type + 1)
-        RETERR("[protocol err] unexpected response type %x\n", resp_type);
+        RETERR("stp: [protocol err] unexpected response type %x\n", resp_type);
 
     return rlen;
 }
@@ -303,7 +299,7 @@ int64_t get_pkg_id(const char *name) {
         return -1;
 
     if (rlen != 16)
-        RETERR("[protocol err] recv wrong length\n");
+        RETERR("stp: [protocol err] recv wrong length\n");
 
     memcpy(&r, buf + 8, 8);
     return r;
@@ -320,7 +316,7 @@ int64_t get_pkg_info(int64_t id, stp_info_t *info_buf) {
         return -1;
 
     if (rlen < STP_MAX_NAME_SIZE + 20) // 20 = 8 (id) + 8 (file_size) + 4 (version) + 16 (md5)
-        RETERR("[protocol err] recv too short\n");
+        RETERR("stp: [protocol err] recv too short\n");
 
     memcpy(info_buf->name, buf + 8, STP_MAX_NAME_SIZE);
     memcpy(&info_buf->file_size, buf + 8 + STP_MAX_NAME_SIZE, 8);
@@ -383,7 +379,7 @@ static int download_send(uint64_t xid, int64_t id, int64_t offset, int64_t file_
     memcpy(buf + 24, &part_size, 2);
 
     if (send(G_FD, buf, 26, 0) == -1)
-        RETERR("[protocol err] send error %d\n", errno);
+        RETERR("stp: [protocol err] send error: %m\n");
 
     return 0;
 }
@@ -396,11 +392,11 @@ static int download_check_md5(const char *file, uint8_t *expected_md5) {
         FILE *f = fopen(file, "rb");
 
         if (!f)
-            RETERR("failed to open file for md5 check\n");
+            RETERR("stp: Failed to open file for md5 check\n");
 
         if (md5_stream(f, result) == -1) {
             fclose(f);
-            RETERR("failed to compute md5\n");
+            RETERR("stp: Failed to compute md5\n");
         }
 
         fclose(f);
@@ -447,12 +443,13 @@ int download_pkg(int64_t id, const char *dest_path, stp_info_t *info, download_s
     // open the local file for writing
     FILE *f = fopen(dest_path, "wb");
     if (!f)
-        RETERR("failed to open local file for writing\n");
+        RETERR("stp: Failed to open local file for writing\n");
 
     // set the final size
-    if (fseek(f, info->file_size - 2, SEEK_SET) != 0 || fwrite("", 1, 1, f) != 1) {
+    int fd = fileno(f);
+    if (fd == -1 || ftruncate(fd, info->file_size) != 0) {
         fclose(f);
-        RETERR("failed to set local file size\n");
+        RETERR("stp: Failed to set local file size\n");
     }
 
     char received_parts[FAST_DL_ONCE]; // bitmap to track received parts
@@ -494,7 +491,7 @@ int download_pkg(int64_t id, const char *dest_path, stp_info_t *info, download_s
 
             if (rlen == -2) {
                 if (retry_count >= MAX_RETRY_COUNT)
-                    GOTOERR(error, "[protocol err] recv timeout, max retry count reached\n");
+                    GOTOERR(error, "stp: recv timeout, max retry count reached\n");
                 retry_count++;
                 if (dl_stat)
                     dl_stat->packets_lost += to_wait;
@@ -503,21 +500,21 @@ int download_pkg(int64_t id, const char *dest_path, stp_info_t *info, download_s
             }
 
             if (rlen < 0)
-                GOTOERR(error, "[protocol err] recv error %d\n", errno);
+                GOTOERR(error, "stp: recv error: %m\n");
 
             if (rlen < 8)
-                GOTOERR(error, "[protocol err] recv too short\n");
+                GOTOERR(error, "stp: [protocol err] recv too short\n");
 
             uint64_t r;
             memcpy(&r, buf, 8);
             uint16_t resp_type = R64_TO_TYPE(r);
 
             if (TYPE_IS_ERR(resp_type))
-                GOTOERR(error, "[protocol err] error response received: %s (0x%04x)\n",
+                GOTOERR(error, "stp: [protocol err] error response received: %s (0x%04x)\n",
                             error_to_str(resp_type), resp_type);
 
             if (resp_type != READ_PART_RSP)
-                GOTOERR(error, "[protocol err] unexpected response type 0x%04x\n", resp_type);
+                GOTOERR(error, "stp: [protocol err] unexpected response type 0x%04x\n", resp_type);
 
             int part_index = R64_TO_XID(r) & 0xFF;
 
@@ -530,16 +527,16 @@ int download_pkg(int64_t id, const char *dest_path, stp_info_t *info, download_s
             expected_len += 8; // +8 for the header
 
             if (rlen != expected_len)
-                GOTOERR(error, "[protocol err] recv wrong length %d (expected %d)\n", rlen, expected_len);
+                GOTOERR(error, "stp: [protocol err] recv wrong length %d (expected %d)\n", rlen, expected_len);
 
             // write the data to the file at the correct offset
             if (fseek(f, part_offset + part_index * STP_MAX_PART_SIZE, SEEK_SET) != 0)
-                GOTOERR(error, "failed to seek in local file\n");
+                GOTOERR(error, "stp: Failed to seek in local file\n");
 
             rlen -= 8;
 
             if (fwrite(buf + 8, 1, rlen, f) != (size_t) rlen)
-                GOTOERR(error, "failed to write to local file\n");
+                GOTOERR(error, "stp: Failed to write to local file\n");
 
             received_bytes += rlen;
             if (!G_DOWNLOAD_MUTE)
@@ -555,13 +552,13 @@ int download_pkg(int64_t id, const char *dest_path, stp_info_t *info, download_s
     printf("\n");
 
     if (received_bytes != info->file_size)
-        GOTOERR(error, "download incomplete: received %"PRId64" bytes, expected %"PRId64"\n",
+        GOTOERR(error, "stp: error: received %"PRId64" bytes, expected %"PRId64"\n",
                     received_bytes, info->file_size);
 
     fflush(f); // write before checking sum
 
     if (download_check_md5(dest_path, info->md5))
-        GOTOERR(error, "md5 checksum mismatch\n");
+        GOTOERR(error, "stp: md5 check failed for downloaded file\n");
 
     if (dl_stat) {
         struct timeval tv;
@@ -631,13 +628,13 @@ int parse_ipandport(const char *str, struct sockaddr_in *addr) {
 
     const char *p = strchr(str, ':');
     if (!p) {
-        fprintf(stderr, "stp: expected ip:port format\n");
+        fprintf(stderr, "stp: Invalid server address format (expected ip:port)\n");
         return -1;
     }
 
     size_t ip_len = p - str;
     if (ip_len >= sizeof(ip)) {
-        fprintf(stderr, "stp: ip too long\n");
+        fprintf(stderr, "stp: IP address too long\n");
         return -1;
     }
 
@@ -646,13 +643,13 @@ int parse_ipandport(const char *str, struct sockaddr_in *addr) {
 
     port = atoi(p + 1);
     if (port <= 0 || port > 65535) {
-        fprintf(stderr, "stp: '%s' invalid port\n", p + 1);
+        fprintf(stderr, "stp: %s: Invalid port\n", p + 1);
         return -1;
     }
 
     struct hostent *info = gethostbyname(ip);
     if (!info) {
-        fprintf(stderr, "stp: %s: host non trouve\n", str);
+        fprintf(stderr, "stp: %s: Failed to resolve hostname\n", ip);
         return -1;
     }
 
@@ -660,13 +657,13 @@ int parse_ipandport(const char *str, struct sockaddr_in *addr) {
     memcpy(&addr->sin_addr, info->h_addr_list[0], 4);
     addr->sin_port = htons(port);
 
-    printf("// ip: %d.%d.%d.%d:%d\n",
+    /* printf("// ip: %d.%d.%d.%d:%d\n",
         (uint8_t)info->h_addr_list[0][0],
         (uint8_t)info->h_addr_list[0][1],
         (uint8_t)info->h_addr_list[0][2],
         (uint8_t)info->h_addr_list[0][3],
         port
-    );
+    ); */
 
     return 0;
 }
@@ -685,7 +682,7 @@ int setup_connection(void) {
     }
 
     if (connect(fd, (void *)&addr, sizeof(addr))) {
-        fprintf(stderr, "failed to connect to server: %d\n", errno);
+        fprintf(stderr, "stp: Failed to connect to server: %m\n");
         close(fd);
         return 1;
     }
@@ -778,7 +775,7 @@ static id_name_pair_t *cmd_install_dl(uint64_t id, id_name_pair_t *dl_deps) {
             }
         }
 
-        printf("get package %"PRId64", dependency of %s\n", deps[i], info.name);
+        // printf("get package %"PRId64", dependency of %s\n", deps[i], info.name);
         dl_deps = cmd_install_dl(deps[i], dl_deps);
         if (dl_deps == NULL)
             return NULL;
@@ -788,12 +785,13 @@ static id_name_pair_t *cmd_install_dl(uint64_t id, id_name_pair_t *dl_deps) {
         next_dep:;
     }
 
-    printf("PACKAGE INFO:\n");
+    /* printf("PACKAGE INFO:\n");
     printf("  id        %"PRId64"\n", id);
     printf("  name      %s\n", info.name);
     printf("  desc      %s\n", info.desc);
     printf("  file_size %"PRId64" KB\n", info.file_size / 1024);
-    printf("  version   %u\n", info.version);
+    printf("  version   %u\n", info.version); */
+    printf("downloading %s v%d: %s (%"PRId64" KB)\n", info.name, info.version, info.desc, info.file_size / 1024);
 
     download_stat_t dl_stat;
 
@@ -817,7 +815,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
 
     for (int i = count - 1; i >= 0; i--) {
         #ifdef __profanOS__
-        printf("installing package %s...\n", dl_deps[i].name);
+        printf("installing %s\n", dl_deps[i].name);
         char dl_path[PATH_MAX];
         char extract_path[PATH_MAX];
         snprintf(dl_path, sizeof(dl_path), TEMP_DIR "/%s.zip", dl_deps[i].name);
@@ -843,7 +841,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
         int pid;
 
         if (run_ifexist(&args, &pid)) {
-            fprintf(stderr, "failed to run unzip for package %s\n", dl_deps[i].name);
+            fprintf(stderr, "stp: Failed to run unzip for package %s\n", dl_deps[i].name);
             return -1;
         }
 
@@ -852,7 +850,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
         getcwd(cwd, sizeof(cwd));
 
         if (chdir(extract_path) != 0) {
-            fprintf(stderr, "failed to chdir to package %s\n", dl_deps[i].name);
+            fprintf(stderr, "stp: Failed to chdir to package %s\n", dl_deps[i].name);
             return -1;
         }
 
@@ -871,7 +869,7 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
         };
 
         if (run_ifexist(&olivine_args, &pid)) {
-            fprintf(stderr, "failed to run olivine for package %s\n", dl_deps[i].name);
+            fprintf(stderr, "stp: Failed to run olivine for package %s\n", dl_deps[i].name);
             return -1;
         }
 
@@ -881,18 +879,18 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
         snprintf(remove_dest, sizeof(remove_dest), "/zada/stp/remove/%s.olv", dl_deps[i].name);
 
         if (move_element("remove.olv", remove_dest)) {
-            fprintf(stderr, "failed to save remove script for package %s\n", dl_deps[i].name);
+            fprintf(stderr, "stp: Failed to save remove script for package %s\n", dl_deps[i].name);
             return -1;
         }
 
         // chdir back
         if (chdir(cwd) != 0) {
-            fprintf(stderr, "failed to chdir back after installing package %s\n", dl_deps[i].name);
+            fprintf(stderr, "stp: Failed to chdir back\n", dl_deps[i].name);
             return -1;
         }
 
         #else
-        printf("  %d\n", (int) dl_deps[i]);
+        printf("  %s\n", dl_deps[i].name);
         printf("  installation not available...\n");
         #endif
     }
@@ -903,14 +901,14 @@ static int cmd_install_install(id_name_pair_t *dl_deps) {
 int cmd_install(char **names) {
     int count, r = 0;
     int64_t *ids;
-    
+
     for (count = 0; names[count]; count++);
     ids = malloc(count * sizeof(int64_t));
 
     for (int i = 0; i < count; i++) {
         ids[i] = get_pkg_id(names[i]);
         if (ids[i] == 0)
-            fprintf(stderr, "package '%s' not found\n", names[i]);
+            fprintf(stderr, "stp: %s: package not found\n", names[i]);
         else if (ids[i] != -1)
             continue;
         free(ids);
@@ -920,7 +918,7 @@ int cmd_install(char **names) {
     remove_full_dir(TEMP_DIR);  // clean temp directory before downloading
     mkdir(TEMP_DIR, 0755);      // ensure tmp directory exists
     #ifdef __profanOS__
-    mkdir("/zada/stp", 0755);           // ensure remove script directory exists
+    mkdir("/zada/stp", 0755);          // ensure remove script directory exists
     mkdir("/zada/stp/remove", 0755);   // ensure remove script directory exists
     #endif
 
@@ -935,8 +933,8 @@ int cmd_install(char **names) {
     }
 
     if (r == 0) {
-        printf("all downloads complete: %u ms, %"PRIu32" packets received, %"PRIu32" packets lost, %.2f MB/s\n",
-                    g_alltime_dl_stat.total_ms, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
+        printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
+                    (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
                     (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
 
         r = cmd_install_install(dl_deps);
@@ -949,6 +947,62 @@ int cmd_install(char **names) {
     return r;
 }
 
+int cmd_info(char **names) {
+    int64_t deps[STP_MAX_DEPS];
+    stp_info_t info;
+
+    for (int i = 0; names[i]; i++) {
+        int64_t id = get_pkg_id(names[i]);
+        if (id == 0) {
+            fprintf(stderr, "stp: %s: package not found\n", names[i]);
+            continue;
+        } else if (id == -1)
+            return 1;
+
+        if (get_pkg_info(id, &info) == -1)
+            return 1;
+
+        printf("PACKAGE INFO -----------\n");
+        printf("  id           %"PRId64"\n", id);
+        printf("  name         %s\n", info.name);
+        printf("  desc         %s\n", info.desc);
+        printf("  file_size    %"PRId64" KB\n", info.file_size / 1024);
+        printf("  version      %u\n", info.version);
+
+        int num_deps = get_pkg_deps(id, deps, STP_MAX_DEPS);
+
+        if (num_deps == -1)
+            return 1;
+
+        if (num_deps == 0)
+            continue;
+
+        printf("DEPENDENCIES -----------\n");
+        for (int j = 0; j < num_deps; j++) {
+            if (get_pkg_info(deps[j], &info) == -1)
+                return 1;
+
+            printf("  %-12s %"PRId64" KB\n", info.name, info.file_size / 1024);
+        }
+    }
+
+    return 0;
+}
+
+int cmd_help(void) {
+    fputs("Usage: stp <command> [args]\n"
+            "Commands:\n"
+            "  install <pkg1> [pkg2 ...]  Install packages\n"
+            "  remove  <pkg1> [pkg2 ...]  Remove packages\n"
+            "  info    <pkg1> [pkg2 ...]  Show package info\n"
+            "  list                       List available packages\n"
+            "  update                     Update package list\n"
+            "Options:\n"
+            "  --help                     Show this help message\n",
+        stdout);
+    return 0;
+}
+
 /*******************************************
  *                                        *
  *           COMMAND LINE STUFF           *
@@ -959,6 +1013,7 @@ typedef enum {
     CMD_ERROR = -1,
     CMD_INSTALL,
     CMD_REMOVE,
+    CMD_INFO,
     CMD_LIST,
     CMD_UPDATE,
     CMD_HELP
@@ -973,9 +1028,10 @@ typedef struct {
 cmd_entry_t commands[] = {
     { CMD_INSTALL, 1, { "install", "i", NULL } },
     { CMD_REMOVE,  1, { "remove", "rm", "r", NULL } },
-    { CMD_LIST,    0, { "list", "ls", "l", NULL } },
-    { CMD_UPDATE,  0, { "update", "up", "u", NULL } },
-    { CMD_HELP,    0, { "help", "--help", "-h", NULL } }
+    { CMD_INFO,    1, { "info", NULL } },
+    { CMD_LIST,    0, { "list", NULL } },
+    { CMD_UPDATE,  0, { "update", "u", NULL } },
+    { CMD_HELP,    0, { "--help", "-h", NULL } }
 };
 
 command_t parse_args(int argc, char **argv) {
@@ -987,17 +1043,17 @@ command_t parse_args(int argc, char **argv) {
             if (strcmp(argv[1], commands[i].str[j]))
                 continue;
             if (commands[i].needs_arg && argc < 3) {
-                fprintf(stderr, "command '%s' needs an argument\n", argv[1]);
+                fprintf(stderr, "stp: %s: Missing argument\n", argv[1]);
                 return CMD_ERROR;
             } else if (!commands[i].needs_arg && argc > 2) {
-                fprintf(stderr, "command '%s' does not take arguments\n", argv[1]);
+                fprintf(stderr, "stp: %s: Too many arguments\n", argv[1]);
                 return CMD_ERROR;
             }
             return commands[i].cmd;
         }
     }
 
-    fprintf(stderr, "unknown command: %s\n", argv[1]);
+    fprintf(stderr, "stp: %s: Unknown command\n", argv[1]);
     return CMD_ERROR;
 }
 
@@ -1008,7 +1064,7 @@ int main(int argc, char **argv) {
         return 1;
 
     if (command == CMD_HELP) {
-        printf("please ask to pf4 for help :)\n");
+        cmd_help();
         return 0;
     }
 
@@ -1024,8 +1080,11 @@ int main(int argc, char **argv) {
         case CMD_INSTALL:
             ret = cmd_install(argv + 2);
             break;
+        case CMD_INFO:
+            ret = cmd_info(argv + 2);
+            break;
         default:
-            fprintf(stderr, "command not implemented yet\n");
+            fprintf(stderr, "stp: Command not implemented yet\n");
             ret = 1;
             break;
     }
