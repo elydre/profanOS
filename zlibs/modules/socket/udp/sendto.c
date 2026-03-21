@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === sendto.c : 2026 ===                                                   |
+|                                                                             |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include "udp.h"
 
 ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint32_t dip, uint16_t dport) {

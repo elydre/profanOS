@@ -21,9 +21,9 @@ extern int socket_pid;
 int socket_socket(int domain, int type_, int protocol) {
     uint32_t type = domain | (type_ << 8) | (protocol << 16);
     int res = -EINVAL;
-	protocol_t *prot = socket_find_protocol(type);
-	if (!prot || !prot->init)
-		return -EINVAL;
+    protocol_t *prot = socket_find_protocol(type);
+    if (!prot || !prot->init)
+        return -EINVAL;
     fd_data_t *fd_data = fm_get_free_fd(&res);
     if (fd_data == NULL)
         return -EMFILE;

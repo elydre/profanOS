@@ -71,13 +71,13 @@ typedef struct {
 ssize_t socket_recvfrom(recvfrom_arg_t *args);
 
 typedef struct {
-	uint32_t prot;
-	int (*init)(socket_t *);
-	int (*bind)(socket_t *, const struct sockaddr *, socklen_t);
-	int (*connect)(socket_t *, const struct sockaddr *, socklen_t);
-	ssize_t (*sendto)(socket_t *, const void *, size_t, int, const struct sockaddr *, socklen_t);
-	ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
-	int (*get_rw)(socket_t *);
+    uint32_t prot;
+    int (*init)(socket_t *);
+    int (*bind)(socket_t *, const struct sockaddr *, socklen_t);
+    int (*connect)(socket_t *, const struct sockaddr *, socklen_t);
+    ssize_t (*sendto)(socket_t *, const void *, size_t, int, const struct sockaddr *, socklen_t);
+    ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
+    int (*get_rw)(socket_t *);
 } protocol_t;
 
 protocol_t *socket_find_protocol(uint32_t type);

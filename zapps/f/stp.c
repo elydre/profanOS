@@ -1193,8 +1193,10 @@ int cmd_install(char **names) {
 
     if (r == 0 && count > 0) {
         printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
-                (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
-                (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
+                (double) g_alltime_dl_stat.total_ms / 1000.0,
+                g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
+                (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) /
+                (g_alltime_dl_stat.total_ms / 1000.0));
 
         for (int i = count - 1; i >= 0; i--)
             r |= cmd_install_install(dl_deps[i].name);
@@ -1277,7 +1279,7 @@ int cmd_remove(char **names) {
 
     for (int i = 0; names[i]; i++) {
         int is_installed = lpl_is_installed(names[i]);
-    
+
         if (is_installed == 0)
             fprintf(stderr, "stp: Package '%s' not installed\n", names[i]);
         else if ((dependent = lpl_get_dependent(names[i])) != NULL)
@@ -1358,7 +1360,8 @@ int cmd_upgrade(void) {
         if (info.version <= G_LPL[i]->version)
             continue;
 
-        printf("downloading %s: v%u -> v%u (%"PRId64" KB)\n", G_LPL[i]->name, G_LPL[i]->version, info.version, info.file_size / 1024);
+        printf("downloading %s: v%u -> v%u (%"PRId64" KB)\n", G_LPL[i]->name, G_LPL[i]->version,
+                    info.version, info.file_size / 1024);
 
         snprintf(dl_path, sizeof(dl_path), PATH_TEMP "/%s.zip", info.name);
         if (pkg_download(id, dl_path, &info, NULL) == -1)

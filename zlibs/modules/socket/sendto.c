@@ -24,8 +24,8 @@ ssize_t socket_sendto(sendto_arg_t *args) {
         return -ENOTSOCK;
 
     protocol_t *prot = socket_find_protocol(sock->type);
-	if (!prot || !prot->sendto)
-		return -EINVAL;
+    if (!prot || !prot->sendto)
+        return -EINVAL;
 
      return prot->sendto(sock, buf, len, flags, dest_addr, addrlen);
 }

@@ -18,7 +18,7 @@ int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     if (!sock)
         return -ENOTSOCK;
     protocol_t *prot = socket_find_protocol(sock->type);
-	if (!prot || !prot->bind)
-		return -EINVAL;
-	return prot->bind(sock, addr, addrlen);
+    if (!prot || !prot->bind)
+        return -EINVAL;
+    return prot->bind(sock, addr, addrlen);
 }

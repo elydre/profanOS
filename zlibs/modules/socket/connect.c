@@ -19,7 +19,7 @@ int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
         return -ENOTSOCK;
 
     protocol_t *prot = socket_find_protocol(sock->type);
-	if (!prot || !prot->connect)
-		return -EINVAL;
-	return prot->connect(sock, addr, addrlen);
+    if (!prot || !prot->connect)
+        return -EINVAL;
+    return prot->connect(sock, addr, addrlen);
 }

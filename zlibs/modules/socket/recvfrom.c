@@ -24,8 +24,8 @@ ssize_t socket_recvfrom(recvfrom_arg_t *args) {
         return -ENOTSOCK;
 
     protocol_t *prot = socket_find_protocol(sock->type);
-	if (!prot || !prot->recvfrom)
-		return -EINVAL;
+    if (!prot || !prot->recvfrom)
+        return -EINVAL;
 
      return prot->recvfrom(sock, buf, len, flags, src_addr, addrlen);
 }
