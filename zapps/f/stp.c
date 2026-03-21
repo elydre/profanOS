@@ -61,6 +61,8 @@
 #define GET_ID_RSP      0x02
 #define GET_INFO        0x03
 #define GET_INFO_RSP    0x04
+#define GET_MAX         0x05
+#define GET_MAX_RSP     0x06
 #define READ_PART       0x07
 #define READ_PART_RSP   0x08
 #define GET_DEP         0x09
@@ -375,6 +377,21 @@ int pkg_get_deps(int64_t id, int64_t *dep_buf, size_t buf_size) {
     return num_deps;
 }
 
+int64_t pkg_get_max_id(void) {
+    uint8_t buf[STP_PKT_SIZE];
+
+    int rlen = stp_sarap(buf, 8, GET_MAX);
+    if (rlen < 0)
+        return -1;
+
+    if (rlen != 16)
+        RETERR("stp: [protocol err] recv wrong length\n");
+
+    uint64_t max_id;
+    memcpy(&max_id, buf + 8, 8);
+    return max_id;
+}
+
 /*******************************************
  *                                        *
  *   STP CLIENT SIDE DOWNLOAD FUNCTIONS   *
@@ -592,45 +609,6 @@ int pkg_download(int64_t id, const char *dest_path, stp_info_t *info, download_s
     fclose(f);
     remove(dest_path);
     return -1;
-}
-
-int pkg_get_list(uint64_t **ids) {
-    stp_info_t *info_buf = malloc(sizeof(stp_info_t));
-
-    if (pkg_get_info(0, info_buf) == -1) {
-        free(info_buf);
-        return -1;
-    }
-
-    // download the list
-    if (pkg_download(0, "pkg_list.tmp", info_buf, NULL) == -1) {
-        free(info_buf);
-        return -1;
-    }
-
-    // the list is a sequence of 8-byte ids
-    int num_ids = info_buf->file_size / 8;
-    free(info_buf);
-
-    uint64_t *id_list = malloc(num_ids * 8);
-
-    FILE *f = fopen("pkg_list.tmp", "rb");
-    if (!f) {
-        free(id_list);
-        return -1;
-    }
-
-    if (fread(id_list, 8, num_ids, f) != (size_t) num_ids) {
-        free(id_list);
-        fclose(f);
-        return -1;
-    }
-
-    fclose(f);
-    remove("pkg_list.tmp");
-
-    *ids = id_list;
-    return num_ids;
 }
 
 /*******************************************
@@ -982,26 +960,22 @@ int setup(void) {
 ********************************************/
 
 int cmd_list(void) {
-    uint64_t *ids;
-    int num_ids = pkg_get_list(&ids);
+    int64_t num_ids = pkg_get_max_id();
 
     if (num_ids < 0)
         return 1;
 
     printf("available packages:\n");
 
-    for (int i = 0; i < num_ids; i++) {
+    for (int i = 1; i <= num_ids; i++) {
         stp_info_t info;
 
-        if (pkg_get_info(ids[i], &info) == -1) {
-            free(ids);
+        if (pkg_get_info(i, &info) == -1)
             return 1;
-        }
 
         printf("  %s: %s (%"PRId64" KB)\n", info.name, info.desc, info.file_size / 1024);
     }
 
-    free(ids);
     return 0;
 }
 
@@ -1193,10 +1167,8 @@ int cmd_install(char **names) {
 
     if (r == 0 && count > 0) {
         printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
-                (double) g_alltime_dl_stat.total_ms / 1000.0,
-                g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
-                (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) /
-                (g_alltime_dl_stat.total_ms / 1000.0));
+                (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv, g_alltime_dl_stat.packets_lost,
+                (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) / (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
 
         for (int i = count - 1; i >= 0; i--)
             r |= cmd_install_install(dl_deps[i].name);
@@ -1279,7 +1251,7 @@ int cmd_remove(char **names) {
 
     for (int i = 0; names[i]; i++) {
         int is_installed = lpl_is_installed(names[i]);
-
+    
         if (is_installed == 0)
             fprintf(stderr, "stp: Package '%s' not installed\n", names[i]);
         else if ((dependent = lpl_get_dependent(names[i])) != NULL)
@@ -1360,8 +1332,7 @@ int cmd_upgrade(void) {
         if (info.version <= G_LPL[i]->version)
             continue;
 
-        printf("downloading %s: v%u -> v%u (%"PRId64" KB)\n", G_LPL[i]->name, G_LPL[i]->version,
-                    info.version, info.file_size / 1024);
+        printf("downloading %s: v%u -> v%u (%"PRId64" KB)\n", G_LPL[i]->name, G_LPL[i]->version, info.version, info.file_size / 1024);
 
         snprintf(dl_path, sizeof(dl_path), PATH_TEMP "/%s.zip", info.name);
         if (pkg_download(id, dl_path, &info, NULL) == -1)
