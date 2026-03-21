@@ -29,7 +29,7 @@ except Exception as e:
     sys.exit(1)
 
 RECOMMENDED = addons_json["RECOMMENDED"]
-ADDONS = addons_json["ADDONS"]
+ADDONS = {c: e for c, e in addons_json["ADDONS"].items() if not c.startswith("_")}
 FILEARRAY = addons_json["FILEARRAY"]
 
 for e in FILEARRAY:
@@ -128,8 +128,9 @@ def download_addons(addons: list) -> bool:
 def graphic_menu(stdscr: curses.window):
     curses.curs_set(0)
     stdscr.clear()
+    for y in range(curses.LINES - 1): # clear the vscode terminal (???)
+        stdscr.addstr(y, 0, " ")
     stdscr.refresh()
-
 
     checked = [False] * len(ALL_ADOONS)
 
