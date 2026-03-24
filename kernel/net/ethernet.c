@@ -11,11 +11,10 @@
 
 
 #include <minilib.h>
+#include <system.h>
 #include <cpu/timer.h>
 #include <kernel/scubasuit.h>
 #include <net.h>
-#include <drivers/e1000.h>
-#include <drivers/rtl8168.h>
 
 static uint32_t get_phys(const void *ptr) {
     uint32_t addr_phys = (uint32_t)ptr;
@@ -27,15 +26,19 @@ static uint32_t get_phys(const void *ptr) {
 
 eth_info_t eth_info = (eth_info_t){0};
 
-int eth_init(void) {
-    if (e1000_is_inited)
-        e1000_set_mac((uint8_t *)eth_info.mac);
-    if (rtl8168_is_inited)
-        rtl8168_set_mac((uint8_t *)eth_info.mac);
-    return 2;
+static int (*g_on_send)(const void *addr_phys, uint16_t len);
+
+void eth_register_nic(int (*on_send)(const void *addr_phys, uint16_t len), const uint8_t *mac) {
+    if (!on_send || !mac) {
+        sys_warning("eth_register_nic invalid parameters");
+        return ;
+    }
+    g_on_send = on_send;
+    mem_copy(eth_info.mac, mac, 6);
+    return ;
 }
 
-int eth_send_packet(const void * addr, uint16_t p_len) {
+int eth_send_packet(const void *addr, uint16_t p_len) {
     if (p_len < 6)
         return 1;
     uint32_t addr_phys = get_phys(addr);
@@ -50,11 +53,17 @@ int eth_send_packet(const void * addr, uint16_t p_len) {
         eth_recv_packet(addr, p_len);
     if (dest_type == 1)
         return 0;
+    /*
     if (e1000_is_inited)
         return e1000_send_packet((const void *)addr_phys, p_len);
     else if (rtl8168_is_inited)
         return rtl8168_send_packet((const void *)addr, p_len);
-    kprintf("eth_send_packet no device found inited\n");
+    */
+
+    if (g_on_send)
+        return g_on_send((const void *) addr_phys, p_len);
+    else
+        sys_warning("eth_send_packet no device found inited");
     return 1;
 }
 

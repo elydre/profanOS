@@ -12,7 +12,6 @@
 #include <kernel/scubasuit.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <drivers/e1000.h>
 #include <drivers/pci.h>
 #include <cpu/ports.h>
 #include <cpu/isr.h>
@@ -151,7 +150,6 @@ typedef struct {
 } e1000_t;
 
 static e1000_t g_e1000 = (e1000_t){0};
-int e1000_is_inited = 0;
 
 uint32_t endian_switch_u32(uint32_t x) {
     uint32_t res = 0;
@@ -235,7 +233,40 @@ void scan_pci_for_e1000(e1000_t *e1000) {
     }
 }
 
-void e1000_handle_receive(e1000_t *device, registers_t *regs);
+int e1000_send_packet(const void *p_data, uint16_t p_len) {
+    e1000_t *device = &g_e1000;
+    device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
+    device->tx_descs_phys[device->tx_cur]->addr_high = 0;
+    device->tx_descs_phys[device->tx_cur]->length = p_len;
+    device->tx_descs_phys[device->tx_cur]->cmd = CMD_EOP | CMD_IFCS | CMD_RS;
+    device->tx_descs_phys[device->tx_cur]->status = 0;
+    uint8_t old_cur = device->tx_cur;
+    device->tx_cur = (device->tx_cur + 1) % E1000_NUM_TX_DESC;
+    pci_write_cmd_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
+    while (!(device->tx_descs_phys[old_cur]->status & 0xff))
+        process_sleep(process_get_pid(), 1);
+    return 0;
+}
+
+void e1000_handle_receive(e1000_t *device, registers_t *regs) {
+    (void) regs;
+    uint16_t old_cur;
+    uint8_t got_packet = 0;
+
+    while((device->rx_descs_phys[device->rx_cur]->status & 0x1)) {
+        got_packet = 1;
+        (void)got_packet;
+        uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
+        uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
+
+        eth_recv_packet(buf, len);
+
+        device->rx_descs_phys[device->rx_cur]->status = 0;
+        old_cur = device->rx_cur;
+        device->rx_cur = (device->rx_cur + 1) % E1000_NUM_RX_DESC;
+        pci_write_cmd_u32(&(device->pci), 0, REG_RXDESCTAIL, old_cur);
+    }
+}
 
 void e1000_handler(registers_t *regs) {
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_IMASK, 0x1);
@@ -320,7 +351,7 @@ void e1000_tx_init(e1000_t *e1000) {
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TIPG,  0x0060200A);
 }
 
-int e1000_init(void) {
+int __init(void) {
     scan_pci_for_e1000(&g_e1000);
     if (!g_e1000.exists) {
         return 2;
@@ -345,45 +376,12 @@ int e1000_init(void) {
     e1000_tx_init(&g_e1000);
     pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5400, *((uint32_t *)g_e1000.mac));
     pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5400 + 4, g_e1000.mac[4] | ((uint32_t)g_e1000.mac[5] << 8));
-    e1000_is_inited = 1;
+    
+    eth_register_nic(e1000_send_packet, g_e1000.mac);
     return 0;
 }
 
-int e1000_send_packet(const void * p_data, uint16_t p_len) {
-    e1000_t *device = &g_e1000;
-    device->tx_descs_phys[device->tx_cur]->addr_low = (uint32_t)p_data;
-    device->tx_descs_phys[device->tx_cur]->addr_high = 0;
-    device->tx_descs_phys[device->tx_cur]->length = p_len;
-    device->tx_descs_phys[device->tx_cur]->cmd = CMD_EOP | CMD_IFCS | CMD_RS;
-    device->tx_descs_phys[device->tx_cur]->status = 0;
-    uint8_t old_cur = device->tx_cur;
-    device->tx_cur = (device->tx_cur + 1) % E1000_NUM_TX_DESC;
-    pci_write_cmd_u32(&(device->pci), 0, REG_TXDESCTAIL, device->tx_cur);
-    while (!(device->tx_descs_phys[old_cur]->status & 0xff))
-        process_sleep(process_get_pid(), 1);
-    return 0;
-}
-
-void e1000_handle_receive(e1000_t *device, registers_t *regs) {
-    (void)regs;
-    uint16_t old_cur;
-    uint8_t got_packet = 0;
-
-    while((device->rx_descs_phys[device->rx_cur]->status & 0x1)) {
-        got_packet = 1;
-        (void)got_packet;
-        uint8_t *buf = (uint8_t *)device->rx_descs_phys[device->rx_cur]->addr_low;
-        uint16_t len = device->rx_descs_phys[device->rx_cur]->length;
-
-        eth_recv_packet(buf, len);
-
-        device->rx_descs_phys[device->rx_cur]->status = 0;
-        old_cur = device->rx_cur;
-        device->rx_cur = (device->rx_cur + 1) % E1000_NUM_RX_DESC;
-        pci_write_cmd_u32(&(device->pci), 0, REG_RXDESCTAIL, old_cur);
-    }
-}
-
-void e1000_set_mac(uint8_t mac[6]) {
-    mem_copy(mac, g_e1000.mac, 6);
-}
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4, // magic
+    // no functions exported
+};

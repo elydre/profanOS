@@ -43,7 +43,8 @@ mod_t mods_at_boot[] = {
     {5, "/lib/modules/panda.pkm",   "Setting up advanced terminal emulation"},
     {6, "/lib/modules/ata.pkm",     "Loading ATA disk driver"},
     {7, "/lib/modules/hdaudio.pkm", "Loading intel HD audio driver"},
-    {8, "/lib/modules/socket.pkm", "Loading socket library"},
+    {8, "/lib/modules/socket.pkm",  "Loading socket library"},
+    {9, "/lib/modules/e1000.pkm",   "Initing e1000 ethernet card"},
 };
 
 int local_strlen(char *str) {

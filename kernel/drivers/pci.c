@@ -131,7 +131,7 @@ int pci_init() {
                 pci.interrupt_line = pci_read_config(pci.bus, pci.slot, pci.function, 0x3C) & 0xFF;
                 pci.interrupt_pin = pci_read_config(pci.bus, pci.slot, pci.function, 0x3D) & 0xFF;
                 pci_add_device(&pci);
-                }
+            }
         }
     }
     return 0;

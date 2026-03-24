@@ -38,9 +38,9 @@ typedef struct eth_listener_t {
 extern eth_info_t eth_info;
 
 void eth_recv_packet(const void *addr, uint16_t p_len);
-int eth_send_packet(const void * addr, uint16_t p_len);
+int  eth_send_packet(const void *addr, uint16_t p_len);
+void eth_register_nic(int (*on_send)(const void *addr_phys, uint16_t len), const uint8_t *mac);
 void eth_listeners_add_packet(const void *addr, int len);
-int eth_init(void);
 void I_listener_remove(int pid);
 
 // syscalls
