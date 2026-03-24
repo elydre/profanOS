@@ -9,9 +9,12 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <net.h>
-#include <minilib.h>
 #include <kernel/process.h>
+#include <kernel/scubasuit.h>
+#include <minilib.h>
+#include <system.h>
+#include <net.h>
+
 
 /*
 
@@ -27,14 +30,35 @@ struct eth_info_t {
 syscalls:
     int eth_start() -> returns a id of the listner (can have multiple by process) (0 == error)
     void eth_end(int id)
-    int eth_send(void *data, int len)
+    int eth_send(void *data, uint16_t len)
     int eth_is_ready(int id) -> -1 if not ready to recv, else returns the size of the next packet
     void eth_recv(int id, void *data)
     void eth_get_info(int id, struct eth_info_t *info)
     void eth_set_info(int id, struct eth_info_t *info)
 
-
 */
+
+eth_info_t eth_info = (eth_info_t){0};
+
+// functions used by cards drivers
+
+static int (*g_on_send)(const void *addr_phys, uint16_t len);
+
+void eth_register_nic(int (*on_send)(const void *addr_phys, uint16_t len), const uint8_t *mac) {
+    if (!on_send || !mac) {
+        sys_warning("eth_register_nic invalid parameters");
+        return ;
+    }
+    g_on_send = on_send;
+    mem_copy(eth_info.mac, mac, 6);
+    return ;
+}
+
+void eth_recv_packet(const void *addr, uint16_t p_len) {
+    eth_listeners_add_packet(addr, (int)p_len);
+}
+
+// functions used as syscalls
 
 static eth_listener_t *listeners = NULL;
 static int listeners_len = 0;
@@ -91,8 +115,27 @@ void eth_end(uint32_t id) {
     }
 }
 
-int eth_send(void *data, int len) {
-    return eth_send_packet(data, (uint16_t)len);
+int eth_send(void *data, uint16_t len) {
+    if (len < 6)
+        return 1;
+    const void *addr_phys = scuba_call_phys((void *) data);
+
+    int dest_type = 0;
+    if (!mem_cmp(data, (uint8_t *)&eth_info.mac, 6))
+        dest_type = 1;
+    if (!mem_cmp(data, "\xFF\xFF\xFF\xFF\xFF\xFF", 6))
+        dest_type = 2;
+
+    if (dest_type)
+        eth_recv_packet(data, len);
+    if (dest_type == 1)
+        return 0;
+
+    if (g_on_send)
+        return g_on_send((const void *) addr_phys, len);
+    else
+        sys_warning("eth_send no device found inited");
+    return 1;
 }
 
 int eth_is_ready(uint32_t id) {

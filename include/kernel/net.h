@@ -46,7 +46,7 @@ void I_listener_remove(int pid);
 // syscalls
 uint32_t eth_start();
 void eth_end(uint32_t id);
-int eth_send(void *data, int len);
+int eth_send(void *data, uint16_t len);
 int eth_is_ready(uint32_t id);
 void eth_recv(uint32_t id, void *data);
 void eth_get_info(uint32_t id, struct eth_info_t *info);

@@ -105,7 +105,7 @@ void    *syscall_scuba_phys(void *);
 
 uint32_t syscall_eth_start(void);
 int syscall_eth_end(uint32_t);
-int syscall_eth_send(void *, int);
+int syscall_eth_send(void *, uint16_t);
 int syscall_eth_is_ready(uint32_t);
 int syscall_eth_recv(uint32_t, void *);
 int syscall_eth_get_info(uint32_t, eth_info_t *);
