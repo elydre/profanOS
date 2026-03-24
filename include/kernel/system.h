@@ -69,6 +69,7 @@ int elf_start(char *file, int sleep, char **argv, int *pid_ptr);
 // pok.c
 int      mod_load(char *path, uint32_t lib_id);
 int      mod_unload(uint32_t lib_id);
+int      mod_trigger_atdeath(int pid);
 uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id);
 
 #define sys_fatal(msg, ...) sod_fatal(__FILE__, __LINE__, msg, ##__VA_ARGS__)

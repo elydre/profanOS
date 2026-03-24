@@ -19,6 +19,11 @@
 #define MODLOAD_FARRAY_MAGIC 0xF3A3C4D4
 #define MODLOAD_FARRAY_NAME  "__module_func_array"
 
+#define MODLOAD_FIRST_FUNC   5
+#define MODLOAD_CONSTRUCTOR  "__init"
+#define MODLOAD_DESTRUCTOR   "__fini"
+#define MODLOAD_ATDEATH      "__atdeath"
+
 uint32_t *g_mod_funcs[256];
 
 /* g_mod_funcs[n] layout:
@@ -26,8 +31,9 @@ uint32_t *g_mod_funcs[256];
  * 1: function count
  * 2: constructor (or NULL)
  * 3: destructor  (or NULL)
- * 4: function 1
- * 5: function 2
+ * 4: atdeath     (or NULL)
+ * 5: function 1
+ * 6: function 2
  * ...
  */
 
@@ -120,11 +126,12 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
         return NULL;
 
     // allocate the address list
-    uint32_t *addr_list = mem_alloc((func_count + 4) * sizeof(uint32_t), SNOW_MOD, 0);
+    uint32_t *addr_list = mem_alloc((func_count + MODLOAD_FIRST_FUNC) * sizeof(uint32_t), SNOW_MOD, 0);
     addr_list[0] = (uint32_t) mem;
     addr_list[1] = func_count;
     addr_list[2] = 0;   // __init address
     addr_list[3] = 0;   // __fini address
+    addr_list[4] = 0;   // __atdeath address
 
     for (uint32_t i = 0; i < sym_sh->sh_size / sizeof(Elf32_Sym); i++) {
         Elf32_Sym *symbol = symbol_table + i;
@@ -132,16 +139,19 @@ static uint32_t *i_mod_read_funcs(uint8_t *file, uint8_t *mem) {
         if (symbol->st_info != 0x12 || !symbol->st_name)
             continue;
 
-        else if (str_cmp(strtab + symbol->st_name, "__init") == 0)
+        else if (str_cmp(strtab + symbol->st_name, MODLOAD_CONSTRUCTOR) == 0)
             addr_list[2] = symbol->st_value + (uint32_t) mem;
 
-        else if (str_cmp(strtab + symbol->st_name, "__fini") == 0)
+        else if (str_cmp(strtab + symbol->st_name, MODLOAD_DESTRUCTOR) == 0)
             addr_list[3] = symbol->st_value + (uint32_t) mem;
+
+        else if (str_cmp(strtab + symbol->st_name, MODLOAD_ATDEATH) == 0)
+            addr_list[4] = symbol->st_value + (uint32_t) mem;
     }
 
     // copy function addresses
     for (uint32_t i = 0; i < func_count; i++) {
-        addr_list[i + 4] = func_array[i + 1];
+        addr_list[i + MODLOAD_FIRST_FUNC] = func_array[i + 1];
     }
 
     return addr_list;
@@ -305,6 +315,15 @@ int mod_unload(uint32_t lib_id) {
     return 0;
 }
 
+int mod_trigger_atdeath(int pid) {
+    for (int i = 1; i < 256; i++) {
+        if (IS_LOADED(i) && g_mod_funcs[i][4]) {
+            ((void (*)(int)) g_mod_funcs[i][4])(pid);
+        }
+    }
+    return 0;
+}
+
 uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id) {
     if (!IN_KERNEL) {
         sys_entry_kernel();
@@ -324,7 +343,7 @@ uint32_t mod_get_func(uint32_t lib_id, uint32_t func_id) {
         return 0;
     }
 
-    return addr_list[func_id + 4];
+    return addr_list[func_id + MODLOAD_FIRST_FUNC];
 }
 
 void mod_syscall(registers_t *r) {
@@ -343,6 +362,6 @@ void mod_syscall(registers_t *r) {
         return;
     }
 
-    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = (void *) addr_list[func_id + 4];
+    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = (void *) addr_list[func_id + MODLOAD_FIRST_FUNC];
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 }

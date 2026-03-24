@@ -14,7 +14,6 @@
 #include <cpu/timer.h>
 #include <minilib.h>
 #include <system.h>
-#include <net.h>
 
 #define ERROR_CODE (-1)
 
@@ -517,6 +516,7 @@ int process_kill(uint32_t pid, uint8_t retcode) {
         }
     }
 
+    mod_trigger_atdeath(pid);
     I_listener_remove(pid);
 
     if (pid == g_proc_current->pid) {
