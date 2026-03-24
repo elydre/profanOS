@@ -16,9 +16,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <modules/filesys.h>
-#ifdef _KERNEL_MODULE
+
+#ifdef _KERNEL_MODULE // TODO remove this
+    #include <modules/net.h>
     #include <system.h>
-    #include <net.h>
     #include <kernel/process.h>
     #include <minilib.h>
 #endif

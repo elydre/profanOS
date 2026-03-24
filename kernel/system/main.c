@@ -27,7 +27,6 @@
 #include <cpu/gdt.h>
 #include <minilib.h>
 #include <system.h>
-#include <net.h>
 
 multiboot_t *g_mboot;
 

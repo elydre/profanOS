@@ -9,6 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+/*
 #include <kernel/snowflake.h>
 #include <drivers/pci.h>
 #include <cpu/timer.h>
@@ -25,6 +26,7 @@
 
 #define OWN 0x80000000
 #define EOR 0x40000000
+
 struct Descriptor {
     unsigned int command;
     unsigned int vlan;
@@ -111,6 +113,7 @@ int rtl8168_send_packet(const void *p_data, uint16_t p_len) {
     tx_pointer = (tx_pointer + 1) % NUM_TX_DESC;
     return 0;
 }
+
 int rtl8168_init() {
     pci_device_t *pci = NULL;
     for (int i = 0; this_eth_ids[i][0] != 0; i++) {
@@ -190,7 +193,9 @@ int rtl8168_init() {
 
     return 0;
 }
+
 void rtl8168_set_mac(uint8_t mac[6]) {
     for (int i = 0; i < 6; i++)
         mac[i] = g_mac_address[i];
 }
+*/

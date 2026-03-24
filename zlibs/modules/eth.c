@@ -13,7 +13,9 @@
 #include <kernel/scubasuit.h>
 #include <minilib.h>
 #include <system.h>
-#include <net.h>
+
+#define _ETH_C
+#include <modules/net.h>
 
 
 /*
@@ -191,7 +193,7 @@ uint32_t eth_get_transaction() {
     return _id++;
 }
 
-void I_listener_remove(int pid) {
+void __atdeath(int pid) {
     int i = 0;
     while (i < listeners_len) {
         if (listeners[i].pid == pid) {
@@ -201,3 +203,15 @@ void I_listener_remove(int pid) {
             i++;
     }
 }
+
+void *__module_func_array[] = {
+    (void *) 0xF3A3C4D4,   // magic
+    eth_start,            
+    eth_end,              
+    eth_send,             
+    eth_is_ready,         
+    eth_recv,             
+    eth_get_info,         
+    eth_set_info,         
+    eth_get_transaction,  
+};

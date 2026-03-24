@@ -185,10 +185,10 @@ typedef struct {
     uint32_t offset;  // file and afft
 
     union {
-        int          afft_id; // afft
-        struct pipe_data_t *pipe;    // pipe
-        char        *path;    // dir (for fchdir)
-        int          sock_id; // socket
+        int          afft_id;       // afft
+        struct pipe_data_t *pipe;   // pipe
+        char        *path;          // dir (for fchdir)
+        int          sock_id;       // socket
     };
 } fd_data_t;
 

@@ -13,7 +13,6 @@
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <net.h>
 #include <drivers/rtc.h>
 #include <kernel/afft.h>
 #include <cpu/timer.h>
@@ -84,15 +83,6 @@ void *SYSCALL_ARRAY[] = {
     scuba_call_map,        // 36
     scuba_call_unmap,      // 37
     scuba_call_phys,       // 38
-
-    eth_start,             // 39
-    eth_end,               // 40
-    eth_send,              // 41
-    eth_is_ready,          // 42
-    eth_recv,              // 43
-    eth_get_info,          // 44
-    eth_set_info,          // 45
-    eth_get_transaction,   // 46
 };
 
 void syscall_handler(registers_t *r) {

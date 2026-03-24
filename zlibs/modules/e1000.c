@@ -17,7 +17,8 @@
 #include <cpu/isr.h>
 #include <minilib.h>
 #include <ktype.h>
-#include <net.h>
+
+#include <modules/net.h>
 
 //----------------------------------------------------//
 
