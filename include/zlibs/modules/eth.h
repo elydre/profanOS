@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef ETH_ID
-#define ETH_ID 7
+#define ETH_ID 6
 
 #include <stdint.h>
 

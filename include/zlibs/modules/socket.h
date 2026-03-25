@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef SOCKET_MOD_H
-#define SOCKET_MOD_H 6
+#define SOCKET_MOD_H 7
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
