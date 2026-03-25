@@ -356,7 +356,7 @@ int __init(void) {
     scan_pci_for_e1000(&g_e1000);
     if (!g_e1000.exists)
         return 2;
-    
+
     pci_enable_bus_master(&g_e1000.pci);
 
     // kprintf("e1000 device found slot %x bus %x\n", g_e1000.pci.slot, g_e1000.pci.bus);
@@ -378,7 +378,7 @@ int __init(void) {
     e1000_tx_init(&g_e1000);
     pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5400, *((uint32_t *)g_e1000.mac));
     pci_write_cmd_u32(&(g_e1000.pci), 0, 0x5400 + 4, g_e1000.mac[4] | ((uint32_t)g_e1000.mac[5] << 8));
-    
+
     eth_register_nic(e1000_send_packet, g_e1000.mac);
     return 0;
 }

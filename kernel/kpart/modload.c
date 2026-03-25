@@ -362,6 +362,8 @@ void mod_syscall(registers_t *r) {
         return;
     }
 
-    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) = (void *) addr_list[func_id + MODLOAD_FIRST_FUNC];
+    uint32_t (*func)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) =
+                (void *) addr_list[func_id + MODLOAD_FIRST_FUNC];
+
     r->eax = func(r->ebx, r->ecx, r->edx, r->esi, r->edi);
 }

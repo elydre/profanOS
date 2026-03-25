@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === listener.c : 2026 ===                                                 |
+|   === eth.c : 2026 ===                                                      |
 |                                                                             |
 |    -                                                             .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -207,13 +207,13 @@ void *__module_func_array[] = {
     (void *) 0xF3A3C4D4,   // magic
 
     // syscalls
-    eth_start,            
-    eth_end,              
-    eth_send,             
-    eth_is_ready,         
-    eth_recv,             
-    eth_get_info,         
-    eth_set_info,         
+    eth_start,
+    eth_end,
+    eth_send,
+    eth_is_ready,
+    eth_recv,
+    eth_get_info,
+    eth_set_info,
     eth_get_transaction,
 
     // module interface

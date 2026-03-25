@@ -21,7 +21,7 @@ int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
     uint16_t port = addr2->sin_port;
     if (port == 0)
         return -EINVAL;
-    
+
     eth_info_t info;
     eth_get_info(0, &info);
 
