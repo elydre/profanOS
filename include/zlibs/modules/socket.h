@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #ifndef SOCKET_MOD_H
-#define SOCKET_MOD_H 8
+#define SOCKET_MOD_H 6
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -18,7 +18,7 @@
 #include <modules/filesys.h>
 
 #ifdef _KERNEL_MODULE // TODO remove this
-    #include <modules/net.h>
+    #include <modules/eth.h>
     #include <system.h>
     #include <kernel/process.h>
     #include <minilib.h>

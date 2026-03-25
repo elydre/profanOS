@@ -21,10 +21,14 @@ int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
     uint16_t port = addr2->sin_port;
     if (port == 0)
         return -EINVAL;
+    
+    eth_info_t info;
+    eth_get_info(0, &info);
+
     if (!data->is_bound) {
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = eth_info.ip;
+        addr.sin_addr.s_addr = info.ip;
         addr.sin_port = 0;
 
         int err = socket_udp_bind(sock, (void *)&addr, sizeof(addr));

@@ -16,7 +16,6 @@
 #include <profan/types.h>
 #include <stdint.h>
 #include <time.h> // struct tm
-#include <profan/net.h>
 
 _BEGIN_C_FILE
 
@@ -103,14 +102,6 @@ int      syscall_scuba_map(void *, void *, int);
 int      syscall_scuba_unmap(void *);
 void    *syscall_scuba_phys(void *);
 
-uint32_t syscall_eth_start(void);
-int syscall_eth_end(uint32_t);
-int syscall_eth_send(void *, uint16_t);
-int syscall_eth_is_ready(uint32_t);
-int syscall_eth_recv(uint32_t, void *);
-int syscall_eth_get_info(uint32_t, eth_info_t *);
-int syscall_eth_set_info(uint32_t, eth_info_t *);
-uint32_t syscall_eth_get_transaction(void);
 
 /*********************************
  *                              *
@@ -168,15 +159,6 @@ extern int profan_syscall(uint32_t id, ...);
 #define syscall_scuba_map(a, b, c) ((int) profan_syscall(36, a, b, c))
 #define syscall_scuba_unmap(a) ((int) profan_syscall(37, a))
 #define syscall_scuba_phys(a) ((void *) profan_syscall(38, a))
-
-#define syscall_eth_start() ((uint32_t) profan_syscall(39))
-#define syscall_eth_end(a) ((int) profan_syscall(40, a))
-#define syscall_eth_send(a, b) ((int) profan_syscall(41, a, b))
-#define syscall_eth_is_ready(a) ((int) profan_syscall(42, a))
-#define syscall_eth_recv(a, b) ((int) profan_syscall(43, a, b))
-#define syscall_eth_get_info(a, b) ((int) profan_syscall(44, a, b))
-#define syscall_eth_set_info(a, b) ((int) profan_syscall(45, a, b))
-#define syscall_eth_get_transaction() ((uint32_t) profan_syscall(46))
 
 _END_C_FILE
 

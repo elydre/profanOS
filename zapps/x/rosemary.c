@@ -36,15 +36,16 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1, "/lib/modules/filesys.pkm", "Loading filesystem extensions"},
-    {2, "/lib/modules/devio.pkm",   "Creating /dev entries"},
-    {3, "/lib/modules/fmopen.pkm",  "Loading unix file descriptors layer"},
-    {4, "/lib/modules/profan.pkm",  "Loading extra profan functions"},
-    {5, "/lib/modules/panda.pkm",   "Setting up advanced terminal emulation"},
-    {6, "/lib/modules/ata.pkm",     "Loading ATA disk driver"},
-    {7, "/lib/modules/hdaudio.pkm", "Loading intel HD audio driver"},
-    {8, "/lib/modules/socket.pkm",  "Loading socket library"},
-    {9, "/lib/modules/e1000.pkm",   "Initing e1000 ethernet card"},
+    {1,  "/lib/modules/filesys.pkm", "Loading filesystem extensions"},
+    {2,  "/lib/modules/devio.pkm",   "Creating /dev entries"},
+    {3,  "/lib/modules/fmopen.pkm",  "Loading unix file descriptors layer"},
+    {4,  "/lib/modules/profan.pkm",  "Loading extra profan functions"},
+    {5,  "/lib/modules/panda.pkm",   "Setting up advanced terminal emulation"},
+    {6,  "/lib/modules/socket.pkm",  "Loading socket library"},
+    {7,  "/lib/modules/eth.pkm",     "Initing ethernet module"},
+    {8,  "/lib/modules/ata.pkm",     "Loading ATA disk driver"},
+    {9,  "/lib/modules/hdaudio.pkm", "Loading intel HD audio driver"},
+    {10, "/lib/modules/e1000.pkm",   "Initing e1000 ethernet card"},
 };
 
 int local_strlen(char *str) {
@@ -195,7 +196,7 @@ int main(void) {
         print_load_status(i);
     }
 
-    mmq_printf(1, "------ Modules loading completed in %d ms\n\n", syscall_timer_get_ms());
+    mmq_printf(1, "------ Modules loading completed in %d ms\n\n\n", syscall_timer_get_ms());
 
     if (SERIAL_AS_TERMINAL) {
         if (fm_reopen(0, "/dev/userial", O_RDONLY)  < 0 ||

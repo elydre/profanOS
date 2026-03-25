@@ -97,13 +97,13 @@ mlw_tcp_t *mlw_tcp_open(uint32_t dest_ip, uint16_t dest_port) {
     mlw_tcp_t *res = malloc(sizeof(mlw_tcp_t));
     if (!res)
         return NULL;
-    res->eth_id = syscall_eth_start();
+    res->eth_id = modeth_start();
     if (res->eth_id == 0) {
         free(res);
         return NULL;
     }
     if (mlw_tcp_connect(res, dest_ip, dest_port) == -1) {
-        syscall_eth_end(res->eth_id);
+        modeth_end(res->eth_id);
         free(res);
         return NULL;
     }

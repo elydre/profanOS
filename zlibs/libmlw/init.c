@@ -19,6 +19,6 @@ int mlw_init(uint32_t flags) {
     mlw_info = malloc(sizeof(eth_info_t));
     if (!mlw_info)
         return 1;
-    syscall_eth_get_info(0, mlw_info);
+    modeth_get_info(0, mlw_info);
     return 0;
 }

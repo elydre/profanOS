@@ -11,7 +11,7 @@
 
 
 #ifndef HDAUDIO_ID
-#define HDAUDIO_ID 7
+#define HDAUDIO_ID 9
 
 #include <stdint.h>
 

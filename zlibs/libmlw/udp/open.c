@@ -17,7 +17,7 @@ mlw_udp_t *mlw_udp_open(uint32_t dest_ip, uint16_t dest_port) {
         return NULL;
     res->dest_ip = dest_ip;
     res->dest_port = dest_port;
-    res->eth_id = syscall_eth_start();
+    res->eth_id = modeth_start();
     if (!res->eth_id) {
         free(res);
         return NULL;

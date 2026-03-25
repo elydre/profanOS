@@ -28,10 +28,14 @@ ssize_t socket_udp_send(socket_t *sock, const uint8_t *buffer, size_t len, uint3
         packet->dest_ip = dip;
         packet->dest_port = dport;
     }
+
+    eth_info_t info;
+    eth_get_info(0, &info);
+
     if (!data->is_bound) {
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = eth_info.ip;
+        addr.sin_addr.s_addr = info.ip;
         addr.sin_port = 0;
 
         int err = socket_udp_bind(sock, (void *)&addr, sizeof(addr));

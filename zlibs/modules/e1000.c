@@ -18,7 +18,7 @@
 #include <minilib.h>
 #include <ktype.h>
 
-#include <modules/net.h>
+#include <modules/eth.h>
 
 //----------------------------------------------------//
 
@@ -354,13 +354,14 @@ void e1000_tx_init(e1000_t *e1000) {
 
 int __init(void) {
     scan_pci_for_e1000(&g_e1000);
-    if (!g_e1000.exists) {
+    if (!g_e1000.exists)
         return 2;
-    }
+    
     pci_enable_bus_master(&g_e1000.pci);
-    kprintf("e1000 device found slot %x bus %x\n", g_e1000.pci.slot, g_e1000.pci.bus);
-    kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n",
-           g_e1000.mac[0], g_e1000.mac[1], g_e1000.mac[2], g_e1000.mac[3], g_e1000.mac[4], g_e1000.mac[5]);
+
+    // kprintf("e1000 device found slot %x bus %x\n", g_e1000.pci.slot, g_e1000.pci.bus);
+    // kprintf("MAC Address: %x:%x:%x:%x:%x:%x\n",
+    //        g_e1000.mac[0], g_e1000.mac[1], g_e1000.mac[2], g_e1000.mac[3], g_e1000.mac[4], g_e1000.mac[5]);
 
     uint32_t ctrl = pci_read_cmd_u32(&(g_e1000.pci), 0,REG_CTRL);
     pci_write_cmd_u32(&(g_e1000.pci), 0, REG_CTRL, ctrl | (1 << 26));

@@ -52,10 +52,13 @@ void socket_on_send_ip(uint32_t src_ip, uint32_t dest_ip, uint8_t protocol, uint
     eth_buffer[12] = 0x08;
     eth_buffer[13] = 0x00;
 
-    mem_copy(&eth_buffer[6], &eth_info.mac, 6);
-    if ((src_ip & eth_info.net_mask) == (dest_ip & eth_info.net_mask))
+    eth_info_t info;
+    eth_get_info(0, &info);
+
+    mem_copy(&eth_buffer[6], &info.mac, 6);
+    if ((src_ip & info.net_mask) == (dest_ip & info.net_mask))
         mem_copy(eth_buffer, "\xff\xff\xff\xff\xff\xff", 6);
     else
-        mem_copy(eth_buffer, &eth_info.router_mac, 6);
+        mem_copy(eth_buffer, &info.router_mac, 6);
     eth_send(eth_buffer, 6 + 6 + 2 + 20 + data_len);
 }

@@ -56,31 +56,31 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    g_eth_id = syscall_eth_start();
+    g_eth_id = modeth_start();
     if (g_eth_id == 0) {
         fprintf(stderr, "Error: could not open connection wiith profan net\n");
         return 1;
     }
 
-    syscall_eth_get_info(g_eth_id, &g_info);
+    modeth_get_info(g_eth_id, &g_info);
     if (g_info.ip != 0) {
         print_ip(g_info.ip);
-        syscall_eth_end(g_eth_id);
+        modeth_end(g_eth_id);
         return 0;
 
     }
     if (!memcmp(g_info.mac, "\0\0\0\0\0\0", 6)) {
         fprintf(stderr, "Error: no ethernet device found\n");
-        syscall_eth_end(g_eth_id);
+        modeth_end(g_eth_id);
         return 1;
     }
     int res = retrieve_ip(g_info.mac);
     if (res == 0) {
         memcpy(&g_info.ip, &offered_ip, 4);
-        syscall_eth_set_info(g_eth_id, &g_info);
+        modeth_set_info(g_eth_id, &g_info);
         print_ip(offered_ip);
     }
 
-    syscall_eth_end(g_eth_id);
+    modeth_end(g_eth_id);
     return res;
 }

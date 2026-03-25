@@ -17,7 +17,7 @@ void save_router_mac(uint8_t *mac) {
 
 int receive_offer(uint8_t *mac) {
     (void)mac;
-    int size = syscall_eth_is_ready(g_eth_id);
+    int size = modeth_is_ready(g_eth_id);
     if (size < 0) {
         return 1;
     }
@@ -26,7 +26,7 @@ int receive_offer(uint8_t *mac) {
     if (!packet) {
         return 1;
     }
-    syscall_eth_recv(g_eth_id, packet);
+    modeth_recv(g_eth_id, packet);
     ethernet_header_t *eth = (ethernet_header_t *)packet;
     if (eth->ether_type != htons(0x0800)) {
         free(packet);

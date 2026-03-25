@@ -19,7 +19,7 @@ int I_mlw_tcp_send_ethernet(uint16_t type_lit, uint8_t *mac, uint8_t *data, int 
     memcpy(&packet[6], mlw_info->mac, 6);
     *(uint16_t *)(void *)&packet[12] = htons(type_lit);
     memcpy(&packet[14], data, len);
-    int ret = syscall_eth_send(packet, len + 6 + 6 + 2);
+    int ret = modeth_send(packet, len + 6 + 6 + 2);
     free(packet);
     return ret;
 }

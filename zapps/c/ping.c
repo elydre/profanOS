@@ -10,7 +10,7 @@
 \*****************************************************************************/
 
 #include <profan/syscall.h>
-#include <profan/net.h>
+#include <modules/eth.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdint.h>
@@ -92,7 +92,7 @@ void send_ping(uint8_t *router_mac, uint8_t *src_mac, uint8_t *src_ip) {
     sum += (sum >> 16);
     ip_hdr->checksum = htons((uint16_t)(~sum));
 
-    syscall_eth_send(packet, sizeof(packet));
+    modeth_send(packet, sizeof(packet));
 }
 
 int g_eth_id = 0;
@@ -118,12 +118,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    g_eth_id = syscall_eth_start();
+    g_eth_id = modeth_start();
     if (g_eth_id == 0) {
         fprintf(stderr, "Error: could not open connection with profan eth\n");
         return 1;
     }
-    syscall_eth_get_info(g_eth_id, &g_eth_info);
+    modeth_get_info(g_eth_id, &g_eth_info);
     uint8_t mac[6];
     uint8_t router_mac[6];
     memcpy(mac, g_eth_info.mac, 6);
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "Ping timeout.\n");
                 break;
             }
-            int len = syscall_eth_is_ready(g_eth_id);
+            int len = modeth_is_ready(g_eth_id);
             if (len < 0)
                 continue;
             if (len < (int)sizeof(ethernet_header_t) + (int)sizeof(ip_header_t) + (int)sizeof(icmp_header_t)) {
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "Memory allocation failed.\n");
                 return 1;
             }
-            syscall_eth_recv(g_eth_id, buffer);
+            modeth_recv(g_eth_id, buffer);
             ethernet_header_t *eth_hdr = (ethernet_header_t *)buffer;
             if (eth_hdr->ether_type != htons(0x0800)) {
                 free(buffer);

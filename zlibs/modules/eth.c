@@ -15,8 +15,7 @@
 #include <system.h>
 
 #define _ETH_C
-#include <modules/net.h>
-
+#include <modules/eth.h>
 
 /*
 
@@ -206,6 +205,8 @@ void __atdeath(int pid) {
 
 void *__module_func_array[] = {
     (void *) 0xF3A3C4D4,   // magic
+
+    // syscalls
     eth_start,            
     eth_end,              
     eth_send,             
@@ -213,5 +214,10 @@ void *__module_func_array[] = {
     eth_recv,             
     eth_get_info,         
     eth_set_info,         
-    eth_get_transaction,  
+    eth_get_transaction,
+
+    // module interface
+    eth_recv_packet,
+    eth_register_nic,
+    eth_listeners_add_packet,
 };

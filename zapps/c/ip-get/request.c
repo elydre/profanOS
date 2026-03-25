@@ -109,5 +109,5 @@ void send_dhcp_request(uint8_t *mac) {
     sum += (sum >> 16);
     udp->checksum = htons(~sum);
 
-    syscall_eth_send(packet, total_size);
+    modeth_send(packet, total_size);
 }

@@ -12,14 +12,14 @@
 #ifndef IP_GET_H
 #define IP_GET_H
 
-#include <stdio.h>
-#include <stdint.h>
 #include <profan/syscall.h>
+#include <modules/eth.h>
+#include <arpa/inet.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <profan/net.h>
+#include <stdio.h>
 
 typedef struct {
     uint8_t dest_mac[6];
