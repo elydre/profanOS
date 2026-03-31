@@ -160,6 +160,26 @@ static int fm_close_data(fd_data_t *fd_data) {
     return 0;
 }
 
+int __atdeath(int pid) {
+    // get the physical address of the fd table
+    scuba_dir_t *dir = process_get_dir(pid);
+    fd_data_t *fd_table = scuba_get_phys(dir, (void *) 0xB0000000);
+
+    if (fd_table == NULL) {
+        sys_error("[fm_atdeath] Failed to get fd table for pid %d", pid);
+        return -1;
+    }
+
+    for (int i = 0; i < MAX_FD; i++) {
+        if (fd_table[i].type == TYPE_FREE)
+            continue;
+        kprintf_serial("[fm_atdeath] Closing fd %d for pid %d\n", i, pid);
+        fm_close_data(fd_table + i);
+    }
+
+    return 0;
+}
+
 int fm_close(int fd) {
     return fm_close_data(fm_fd_to_data(fd));
 }
