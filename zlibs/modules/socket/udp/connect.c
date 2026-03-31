@@ -9,6 +9,7 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <modules/eth.h>
 #include "udp.h"
 
 int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen) {

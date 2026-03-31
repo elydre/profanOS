@@ -9,6 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <modules/eth.h>
+#include <minilib.h>
 #include "ip.h"
 
 static uint16_t ip_checksum(void *buf, int len) {

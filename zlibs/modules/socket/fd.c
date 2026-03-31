@@ -10,6 +10,8 @@
 \*****************************************************************************/
 
 #include <modules/socket.h>
+#include <kernel/process.h>
+#include <minilib.h>
 #include <errno.h>
 
 socket_t *sockets = NULL;

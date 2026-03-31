@@ -20,8 +20,8 @@ int socket_close(socket_t *sock) {
     return 0;
 }
 
-int socket_close_fd(int fd) {
-    socket_t *sock = socket_find_fd(fd);
+int socket_close_id(int id) {
+    socket_t *sock = socket_find_id(id);
     if (!sock)
         return -EINVAL;
     return socket_close(sock);

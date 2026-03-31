@@ -107,9 +107,7 @@ static int fm_pipe_push_writer(pipe_data_t *pipe, int pid) {
 }
 
 
-int fm_close(int fd) {
-    fd_data_t *fd_data = fm_fd_to_data(fd);
-
+static int fm_close_data(fd_data_t *fd_data) {
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
         return -EBADF;
 
@@ -117,7 +115,7 @@ int fm_close(int fd) {
         free(fd_data->path);
 
     else if (fd_data->type == TYPE_SOCK) {
-        socket_close_fd_call(fd);
+        socket_close_id_call(fd_data->sock_id);
     }
 
     else if (fd_data->type == TYPE_PPRD) {
@@ -160,6 +158,10 @@ int fm_close(int fd) {
 
     fd_data->type = TYPE_FREE;
     return 0;
+}
+
+int fm_close(int fd) {
+    return fm_close_data(fm_fd_to_data(fd));
 }
 
 static uint32_t create_new_file(const char *path) {

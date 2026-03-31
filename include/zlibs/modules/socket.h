@@ -17,13 +17,6 @@
 #include <netinet/in.h>
 #include <modules/filesys.h>
 
-#ifdef _KERNEL_MODULE // TODO remove this
-    #include <modules/eth.h>
-    #include <system.h>
-    #include <kernel/process.h>
-    #include <minilib.h>
-#endif
-
 typedef struct {
     uint32_t type; // domain | type << 8 | protcol << 16
     void *data;
@@ -39,18 +32,6 @@ typedef struct {
 extern socket_t *sockets;
 extern int sockets_len;
 
-int socket_socket(int domain, int type, int protocol);
-int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-int socket_listen(int sockfd, int backlog);
-int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-int socket_close(socket_t *sock);
-int socket_close_fd(int fd);
-int socket_get_rw(int id);
-void socket_tick(int len, uint8_t *packet);
-socket_t *socket_find_fd(int fd);
-socket_t *socket_find_id(int id);
-
 typedef struct {
     int sockfd;
     const void *buf;
@@ -59,6 +40,18 @@ typedef struct {
     const struct sockaddr *dest_addr;
     socklen_t addrlen;
 } sendto_arg_t;
+
+int socket_socket(int domain, int type, int protocol);
+int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int socket_listen(int sockfd, int backlog);
+int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+int socket_close(socket_t *sock);
+int socket_close_id(int id);
+int socket_get_rw(int id);
+void socket_tick(int len, uint8_t *packet);
+socket_t *socket_find_fd(int fd);
+socket_t *socket_find_id(int id);
 ssize_t socket_sendto(sendto_arg_t *args);
 
 typedef struct {
@@ -107,7 +100,7 @@ extern int profan_syscall(uint32_t id, ...);
 
 #define socket_sendto_call ((int (*)(sendto_arg_t *)) get_func_addr(SOCKET_MOD_H, 3))
 #define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))
-#define socket_close_fd_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 5))
+#define socket_close_id_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 5))
 #define socket_get_rw_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 6))
 
 #endif

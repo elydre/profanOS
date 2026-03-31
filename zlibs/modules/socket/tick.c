@@ -10,8 +10,11 @@
 \*****************************************************************************/
 
 #include <modules/socket.h>
-#include "ip.h"
+#include <kernel/process.h>
+#include <system.h>
+
 #include "udp.h"
+#include "ip.h"
 
 #define ETHER_IP4 0x0800
 #define is_dead(pid) (process_info((pid), PROC_INFO_STATE, NULL) < 2)
