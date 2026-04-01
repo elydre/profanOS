@@ -64,3 +64,9 @@ socket_t *socket_find_fd(int fd) {
         return NULL;
     return socket_find_id(data->sock_id);
 }
+
+void socket_inc_ref(int id) {
+    socket_t *sock = socket_find_id(id);
+    if (sock)
+        sock->ref_count++;
+}

@@ -20,4 +20,5 @@ void *__module_func_array[] = {
     socket_recvfrom,
     socket_close_id,
     socket_get_rw,
+    socket_inc_ref
 };

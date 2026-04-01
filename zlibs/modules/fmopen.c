@@ -469,7 +469,7 @@ int fm_dup2(int fd, int new_fd) {
             break;
 
         case TYPE_SOCK:
-            // TODO ASQEL (dup socket)
+            socket_inc_ref_call(fd_data->sock_id);
             break;
 
         case TYPE_AFFT:
@@ -642,13 +642,14 @@ int fm_declare_child(int pid) {
         if (!fd_data)
             continue;
 
-        pipe_data_t *pipe = fd_data->pipe;
-
-        if (fd_data->type == TYPE_PPRD && fm_pipe_push_reader(pipe, pid) < 0)
+        if (fd_data->type == TYPE_PPRD && fm_pipe_push_reader(fd_data->pipe, pid) < 0)
             return -1;
 
-        if (fd_data->type == TYPE_PPWR && fm_pipe_push_writer(pipe, pid) < 0)
+        if (fd_data->type == TYPE_PPWR && fm_pipe_push_writer(fd_data->pipe, pid) < 0)
             return -1;
+
+        if (fd_data->type == TYPE_SOCK)
+            socket_inc_ref_call(fd_data->sock_id);
     }
 
     return 0;

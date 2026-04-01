@@ -52,6 +52,7 @@ void socket_tick(int len, uint8_t *packet);
 socket_t *socket_find_fd(int fd);
 socket_t *socket_find_id(int id);
 ssize_t socket_sendto(sendto_arg_t *args);
+void socket_inc_ref(int id);
 
 typedef struct {
     int sockfd;
@@ -101,7 +102,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))
 #define socket_close_id_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 5))
 #define socket_get_rw_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 6))
-
+#define socket_inc_ref_call ((void (*)(int)) get_func_addr(SOCKET_MOD_H, 7))
 #endif
 
 #endif
