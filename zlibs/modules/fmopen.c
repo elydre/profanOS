@@ -98,9 +98,8 @@ static int fm_close_data(fd_data_t *fd_data) {
     if (fd_data->type == TYPE_DIR)
         free(fd_data->path);
 
-    else if (fd_data->type == TYPE_SOCK) {
+    else if (fd_data->type == TYPE_SOCK)
         socket_close_id_call(fd_data->sock_id);
-    }
 
     else if (fd_data->type == TYPE_PPRD) {
         pipe_data_t *pipe = fd_data->pipe;

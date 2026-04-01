@@ -45,7 +45,7 @@ int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int socket_listen(int sockfd, int backlog);
 int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-int socket_close(socket_t *sock);
+void socket_close(socket_t *sock);
 int socket_close_id(int id);
 int socket_get_rw(int id);
 void socket_tick(int len, uint8_t *packet);
