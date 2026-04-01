@@ -20,7 +20,6 @@
 typedef struct {
     uint32_t type; // domain | type << 8 | protcol << 16
     void *data;
-    int parent_pid;
     int ref_count;
     int id;
     int do_remove;

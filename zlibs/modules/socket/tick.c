@@ -17,12 +17,9 @@
 #include "ip.h"
 
 #define ETHER_IP4 0x0800
-#define is_dead(pid) (process_info((pid), PROC_INFO_STATE, NULL) < 2)
 
 void socket_tick(int len, uint8_t *packet) {
     for (int i = 0; i < sockets_len; i++) {
-        if (is_dead(sockets[i].parent_pid))
-            sockets[i].parent_pid = -1;
         switch (sockets[i].type) {
             case SOCKET_UDP:
                 socket_udp_tick(&sockets[i]);

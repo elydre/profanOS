@@ -34,7 +34,6 @@ int socket_socket(int domain, int type_, int protocol) {
     sockets[sockets_len].type = type;
     sockets[sockets_len].id = last_id;
     sockets[sockets_len].ref_count = 1;
-    sockets[sockets_len].parent_pid = process_get_pid();
     sockets[sockets_len].do_remove = 0;
 
     int err = prot->init(&sockets[sockets_len]);
