@@ -12,7 +12,7 @@
 #include <errno.h>
 #include "udp.h"
 
-int socket_close(socket_t *sock) {
+void socket_close(socket_t *sock) {
     sock->ref_count--;
 }
 
