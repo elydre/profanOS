@@ -63,22 +63,6 @@ static fd_data_t *fm_get_free_fd(int *fd) {
 }
 
 static pipe_data_t *fm_get_free_pipe(void) {
-    // free pipe with only dead processes
-    for (int i = 0; i < PIPE_MAX; i++) {
-        if (open_pipes[i].buf == NULL)
-            continue;
-        for (int j = 0; j < PIPE_MAX_REF; j++) {
-            if (open_pipes[i].readers[j] != -1 && process_info(open_pipes[i].readers[j], PROC_INFO_STATE, NULL) > 1)
-                break;
-            if (open_pipes[i].writers[j] != -1 && process_info(open_pipes[i].writers[j], PROC_INFO_STATE, NULL) > 1)
-                break;
-            if (j == PIPE_MAX_REF - 1) {
-                free(open_pipes[i].buf);
-                open_pipes[i].buf = NULL;
-            }
-        }
-    }
-
     for (int i = 0; i < PIPE_MAX; i++) {
         if (open_pipes[i].buf == NULL)
             return open_pipes + i;
