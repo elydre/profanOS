@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === eth.c : 2026 ===                                                      |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Ethernet packet transfer as kernel module                     .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |

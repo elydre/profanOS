@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === socket.c : 2026 ===                                                   |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Implementation of sys/socket functions from libC              .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,10 +9,11 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <sys/socket.h>
-#include <errno.h>
 #include <modules/socket.h>
+
+#include <sys/socket.h>
 #include <stdio.h>
+#include <errno.h>
 
 int socket(int domain, int type, int protocol) {
     int ret = socket_socket(domain, type, protocol);

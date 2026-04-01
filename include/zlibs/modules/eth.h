@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === eth.h : 2026 ===                                                      |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Ethernet kernel module header                                 .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |

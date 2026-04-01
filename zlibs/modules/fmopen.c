@@ -157,7 +157,6 @@ int __atdeath(int pid) {
     for (int i = 0; i < MAX_FD; i++) {
         if (fd_table[i].type == TYPE_FREE)
             continue;
-        kprintf_serial("[fm_atdeath] Closing fd %d for pid %d\n", i, pid);
         fm_close_data(fd_table + i);
     }
 

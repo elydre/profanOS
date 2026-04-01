@@ -146,10 +146,13 @@ def check_for_header(lines, path):
     return lines
 
 def detecte_brace(line, prev_line, path, l):
-    if line.strip() == "{" and prev_line is not None and not prev_line.strip() == "":
-        if (len(line) - len(line.lstrip())) < (len(prev_line) - len(prev_line.lstrip())):
-            return
-        print_warning(path, l, "brace should not be on a new line")
+    if line.strip() != "{":
+        return
+    if prev_line is None or prev_line.strip() == "" or prev_line.strip().endswith("{"):
+        return
+    if (len(line) - len(line.lstrip())) < (len(prev_line) - len(prev_line.lstrip())):
+        return
+    print_warning(path, l, "brace should not be on a new line")
 
 def is_line_too_long(path, line):
     for p in ignore_line_too_long:

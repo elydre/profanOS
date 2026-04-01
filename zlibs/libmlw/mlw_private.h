@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === mlw_private.h : 2026 ===                                              |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Part the mini libweb implementation                           .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -12,10 +12,18 @@
 #ifndef MLW_PRIVATE_H
 #define MLW_PRIVATE_H
 
-#include "mlw.h"
-#include <unistd.h>
-#include <stdlib.h>
+#include <profan/syscall.h>
+#include <modules/eth.h>
+#include <profan/mlw.h>
+
+#include <arpa/inet.h>
 #include <sys/time.h>
+#include <stdlib.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+
 
 extern eth_info_t *mlw_info;
 

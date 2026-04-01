@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === mlw.h : 2026 ===                                                      |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Header for the profanOS mini libweb library                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,16 +9,10 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef MLW_H
-#define MLW_H
+#ifndef _PROFAN_MLW_H
+#define _PROFAN_MLW_H
 
-#include <profan/syscall.h>
-#include <profan/net.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <string.h>
 
 typedef struct {
     uint8_t is_open;
@@ -55,10 +49,6 @@ typedef struct {
 
 int mlw_init(uint32_t flags);
 void mlw_end();
-
-
-// ip
-uint32_t    mlw_ip_from_str(char *ip);
 
 
 // tcp
