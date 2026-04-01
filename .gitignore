@@ -33,3 +33,5 @@ extracted/
 debug/
 *.hex
 *.out
+
+*.swp
