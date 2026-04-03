@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === ip-get.c : 2026 ===                                                   |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    DHCP IP retrieval utility for profanOS                        .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -436,7 +436,6 @@ int receive_offer(uint8_t *mac) {
  *                                    *
 ***************************************/
 
-
 int retrieve_ip(uint8_t *mac) {
     srand(syscall_timer_get_ms());
 
@@ -444,22 +443,22 @@ int retrieve_ip(uint8_t *mac) {
 
     uint32_t now = syscall_timer_get_ms();
     int fail = 1;
-    while (syscall_timer_get_ms() - now < 1000) {
+    while (syscall_timer_get_ms() - now < 2000) {
         fail = receive_offer(mac);
         if (fail == 0)
             break;
-        usleep(500);
+        usleep(10000);
     }
     if (fail)
         return 1;
     send_dhcp_request(mac);
     now = syscall_timer_get_ms();
     fail = 1;
-    while (syscall_timer_get_ms() - now < 1000) {
+    while (syscall_timer_get_ms() - now < 2000) {
         fail = receive_ack(mac);
         if (fail == 0)
             break;
-        usleep(500);
+        usleep(10000);
     }
     return fail;
 }

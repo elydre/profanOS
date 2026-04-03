@@ -14,7 +14,7 @@
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
 
-all: disk iso nrun
+_all: disk run
 
 # list off available commands
 help:

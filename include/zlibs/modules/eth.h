@@ -67,7 +67,6 @@ extern int profan_syscall(uint32_t id, ...);
 
 void     eth_recv_packet(const void *addr, uint16_t p_len);
 void     eth_register_nic(int (*on_send)(const void *addr_phys, uint16_t len), const uint8_t *mac);
-void     eth_listeners_add_packet(const void *addr, int len);
 
 uint32_t eth_start();
 void     eth_end(uint32_t id);
@@ -94,7 +93,6 @@ uint32_t eth_get_transaction();
 
 #define eth_recv_packet ((void (*)(const void *, uint16_t)) get_func_addr(ETH_ID, 8))
 #define eth_register_nic ((void (*)(int (*)(const void *, uint16_t), const uint8_t *)) get_func_addr(ETH_ID, 9))
-#define eth_listeners_add_packet ((void (*)(const void *, int)) get_func_addr(ETH_ID, 10))
 
 #endif // _ETH_C
 #endif // _KERNEL_MODULE

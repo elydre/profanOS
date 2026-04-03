@@ -55,10 +55,6 @@ void eth_register_nic(int (*on_send)(const void *addr_phys, uint16_t len), const
     return ;
 }
 
-void eth_recv_packet(const void *addr, uint16_t p_len) {
-    eth_listeners_add_packet(addr, (int)p_len);
-}
-
 // functions used as syscalls
 
 static eth_listener_t *listeners = NULL;
@@ -129,6 +125,7 @@ int eth_send(void *data, uint16_t len) {
 
     if (dest_type)
         eth_recv_packet(data, len);
+
     if (dest_type == 1)
         return 0;
 
@@ -173,8 +170,7 @@ void eth_set_info(uint32_t id, struct eth_info_t *info) {
     eth_info = *info;
 }
 
-void eth_listeners_add_packet(const void *addr, int len) {
-    // should maybe check if we are in kernel mode if this is in a module
+void eth_recv_packet(const void *addr, uint16_t len) {
     for (int i = 0; i < listeners_len; i++) {
         eth_listener_t *lis = &listeners[i];
 
@@ -219,5 +215,4 @@ void *__module_func_array[] = {
     // module interface
     eth_recv_packet,
     eth_register_nic,
-    eth_listeners_add_packet,
 };
