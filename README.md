@@ -199,7 +199,7 @@ sudo sh install.sh /dev/sdX profanOS.iso
 3. *Discontinued desktop environment for profanOS*
 4. *The doom port running in profanOS*
 
-### Author & Contact
+### Authors & Contact
 
 - pf4 ([@elydre](https://github.com/elydre))
 - asqel ([@asqel](https://github.com/asqel))

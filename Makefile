@@ -52,8 +52,8 @@ krun:
 srun:
 	python3 $(PY_BUILD) srun
 
-nrun:
-	python3 $(PY_BUILD) nrun
+run_ndbg:
+	python3 $(PY_BUILD) run_ndbg
 
 # install all addons
 addons:
