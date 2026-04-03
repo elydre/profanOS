@@ -50,6 +50,10 @@ static void socket_process() {
 
 
 int __init() {
-    process_wakeup(process_create(socket_process, 0, 0, NULL), 0);
+    int pid = process_create(socket_process, 0, 0, NULL);
+    if (pid < 0)
+        return -1;
+    process_info(pid, PROC_INFO_SET_NAME, "socket");
+    process_wakeup(pid, 0);
     return 0;
 }

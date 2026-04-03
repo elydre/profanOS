@@ -140,7 +140,7 @@ static void i_free_process(process_t *proc) {
 
     int parent_place = i_pid_to_place(proc->ppid);
 
-    if (parent_place < 0 || g_plist[parent_place].state == PROC_STATE_ZMB) {
+    if (parent_place < 0 || g_plist[parent_place].state == PROC_STATE_ZMB || g_plist[parent_place].pid == 0) {
         proc->state = PROC_STATE_FRE;
     }
 }
@@ -732,6 +732,13 @@ int process_info(uint32_t pid, int info_id, void *ptr) {
     switch (info_id) {
         case PROC_INFO_PPID:
             return g_plist[place].ppid;
+        case PROC_INFO_SET_PPID:
+            g_plist[place].ppid = (uint32_t) ptr;
+            return 0;
+        case PROC_INFO_WAIT_PID:
+            return g_plist[place].wait_pid;
+        case PROC_INFO_RET_CODE:
+            return g_plist[place].retcode;
         case PROC_INFO_SLEEP_TO:
             return g_plist[place].sleep_to;
         case PROC_INFO_RUN_TIME:

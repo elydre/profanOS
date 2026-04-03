@@ -183,16 +183,16 @@ void set_env(char *line) {
     }
 }
 
+#define NUM_MODULES (int) (sizeof(mods_at_boot) / sizeof(mod_t))
+
 int main(void) {
     runtime_args_t args;
-    int total, usage_pid;
+    int tmp_pid, usage_pid;
     char key_char;
 
     envp = NULL;
 
-    total = (int) (sizeof(mods_at_boot) / sizeof(mod_t));
-
-    for (int i = 0; i < total; i++) {
+    for (int i = 0; i < NUM_MODULES; i++) {
         print_load_status(i);
     }
 
@@ -235,7 +235,9 @@ int main(void) {
         .envp = NULL,
         .sleep_mode = 0
     };
-    run_ifexist(&args, &usage_pid);
+
+    run_ifexist(&args, &tmp_pid);
+    syscall_process_info(tmp_pid, PROC_INFO_SET_PPID, 0);
 
     rainbow_print("Welcome to profanOS!\n");
     print_kernel_version();
@@ -255,7 +257,7 @@ int main(void) {
             .sleep_mode = 1
         };
 
-        run_ifexist(&args, &usage_pid);
+        run_ifexist(&args, NULL);
 
         if (SERIAL_AS_TERMINAL) {
             syscall_sys_power(1); // poweroff
@@ -272,19 +274,13 @@ int main(void) {
         }
     } while (key_char != 'h');
 
-    if (syscall_process_state(usage_pid) < 4) {
-        syscall_process_kill(usage_pid, 0);
-    }
-
     syscall_kprint("\e[2J");
 
     mmq_free(envp);
 
     // unload all modules
-    for (int i = 0; i < total; i++) {
-        mod_t *mod = &mods_at_boot[i];
-        syscall_mod_unload(mod->id);
-    }
+    for (int i = NUM_MODULES - 1; i >= 0; i--)
+        syscall_mod_unload(mods_at_boot[i].id);
 
     syscall_kprint("all modules unloaded\n");
 
