@@ -22,22 +22,24 @@
 pci_device_t *pcis = NULL;
 int pcis_len = 0;
 
-void pci_write_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t value) {
-    uint32_t address = (1 << 31) | (bus << 16) | (slot << 11) | (func << 8) | (offset & 0xFC);
+void pci_write_config(pci_device_t *pci, uint8_t offset, uint32_t value) {
+    uint32_t address = (1 << 31)
+                     | (pci->bus << 16)
+                     | (pci->slot << 11)
+                     | (pci->function << 8)
+                     | (offset & 0xFC);
+
     port_write32(0xCF8, address);
     port_write32(0xCFC, value);
 }
 
-void pci_write_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset, uint16_t value) {
-    uint32_t address;
-    uint32_t aligned_offset = offset & ~0x3;
+void pci_write_config_u16(pci_device_t *pci, uint8_t offset, uint16_t value) {
     uint32_t shift = (offset & 0x3) * 8;
-
-    address = (1U << 31)               // Enable bit
-            | (bus << 16)
-            | (slot << 11)
-            | (function << 8)
-            | aligned_offset;
+    uint32_t address = (1 << 31)
+                     | (pci->bus << 16)
+                     | (pci->slot << 11)
+                     | (pci->function << 8)
+                     | (offset & 0xFC);
 
     port_write32(0xCF8, address);
 
@@ -48,74 +50,67 @@ void pci_write_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t o
     port_write32(0xCFC, existing);
 }
 
-uint32_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset) {
-    uint32_t address;
-    uint32_t lbus  = (uint32_t)bus;
-    uint32_t lslot = (uint32_t)slot;
-    uint32_t lfunc = (uint32_t)func;
+uint32_t pci_read_config(pci_device_t *pci, uint32_t offset) {
+    uint32_t address = (1 << 31)
+                     | (pci->bus << 16)
+                     | (pci->slot << 11)
+                     | (pci->function << 8)
+                     | (offset & 0xFC)
+                     | ((uint32_t) 0x80000000);
 
-    // Create configuration address as per Figure 1
-    address = (uint32_t)((lbus << 16) | (lslot << 11) |
-              (lfunc << 8) | (offset & 0xFC) | ((uint32_t)0x80000000));
-
-    // Write out the address
     port_write32(0xCF8, address);
-    return (port_read32(0xCFC));
+    return port_read32(0xCFC);
 }
 
-uint16_t pci_read_config_u16(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset) {
-    uint32_t address;
-    uint32_t aligned_offset = offset & ~0x3;
+uint16_t pci_read_config_u16(pci_device_t *pci, uint8_t offset) {
     uint32_t shift = (offset & 0x3) * 8;
-
-    address = (1U << 31)               // Enable bit
-            | (bus << 16)
-            | (slot << 11)
-            | (function << 8)
-            | aligned_offset;
+    uint32_t address = (1 << 31)
+                     | (pci->bus << 16)
+                     | (pci->slot << 11)
+                     | (pci->function << 8)
+                     | (offset & 0xFC);
 
     port_write32(0xCF8, address);
-
-    uint32_t value = port_read32(0xCFC);
-    return (value >> shift) & 0xFFFF;
+    return (port_read32(0xCFC) >> shift) & 0xFFFF;
 }
 
-void pci_get_ids(pci_device_t *pci) {
-    pci->vendor_id = pci_read_config(pci->bus, pci->slot, pci->function, 0) & 0xffff;
+static void pci_get_ids(pci_device_t *pci) {
+    pci->vendor_id = pci_read_config(pci, 0) & 0xffff;
     if (pci->vendor_id == 0xFFFF)
-        return ;
-    pci->device_id = (pci_read_config(pci->bus, pci->slot, pci->function, 2) >> 16) & 0xffff;
+        return;
+    pci->device_id = (pci_read_config(pci, 2) >> 16) & 0xffff;
 }
 
-void pci_add_device(pci_device_t *pci) {
+static void pci_add_device(pci_device_t *pci) {
     pcis = realloc(pcis, (pcis_len + 1) * sizeof(pci_device_t));
     pcis[pcis_len] = *pci;
     pcis_len++;
 }
 
-void pci_get_bars(pci_device_t *pci) {
+static void pci_get_bars(pci_device_t *pci) {
     for (int i = 0; i < 6; i++) {
-        uint32_t bar = pci_read_config(pci->bus, pci->slot, pci->function, 0x10 + (i * 4));
+        uint32_t bar = pci_read_config(pci, 0x10 + (i * 4));
         pci->bar[i] = bar & 0xfffffffE;
         pci->bar_is_mem[i] = 0 == (bar & 0x1);
     }
 }
 
-void pci_get_class(pci_device_t *pci) {
-    uint16_t upper_word = pci_read_config(pci->bus, pci->slot, pci->function, 0x0A); // Bits 31-16
-    uint16_t lower_word = pci_read_config(pci->bus, pci->slot, pci->function, 0x08); // Bits 15-0
+static void pci_get_class(pci_device_t *pci) {
+    uint16_t upper_word = pci_read_config(pci, 0x0A); // Bits 31-16
+    uint16_t lower_word = pci_read_config(pci, 0x08); // Bits 15-0
 
     uint32_t class_info = ((uint32_t)upper_word << 16) | lower_word; // Combine en un uint32_t
 
     pci->class_id = (class_info >> 24) & 0xFF;       // Bits 31-2`4
 
-    uint16_t class_code = pci_read_config(pci->bus, pci->slot, pci->function, 0x08);
+    uint16_t class_code = pci_read_config(pci, 0x08);
     pci->subclass_id = (class_code >> 8) & 0xFF;
     pci->prog_if = class_code & 0xFF;
 }
 
-int pci_init() {
-    scuba_call_map((void *)LAPIC_DEFAULT_BASE, (void *)LAPIC_DEFAULT_BASE, 1);
+int pci_init(void) {
+    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 1);
+
     for (int i = 0; i < 256; i++) {
         for (int k = 0; k < 16; k++) {
             for (int l = 0; l < 8; l++) {
@@ -128,8 +123,8 @@ int pci_init() {
                     continue;
                 pci_get_bars(&pci);
                 pci_get_class(&pci);
-                pci.interrupt_line = pci_read_config(pci.bus, pci.slot, pci.function, 0x3C) & 0xFF;
-                pci.interrupt_pin = pci_read_config(pci.bus, pci.slot, pci.function, 0x3D) & 0xFF;
+                pci.interrupt_line = pci_read_config(&pci, 0x3C) & 0xFF;
+                pci.interrupt_pin = pci_read_config(&pci, 0x3D) & 0xFF;
                 pci_add_device(&pci);
             }
         }
@@ -222,16 +217,27 @@ uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset) {
 pci_device_t *pci_find(uint16_t vendor, uint16_t device) {
     for (int i = 0; i < pcis_len; i++) {
         if (pcis[i].vendor_id == vendor && pcis[i].device_id == device) {
-            return &pcis[i];
+            return pcis + i;
+        }
+    }
+    return NULL;
+}
+
+pci_device_t *pci_find_array(pci_findme_t *ids, int count) {
+    for (int i = 0; i < pcis_len; i++) {
+        for (int j = 0; j < count; j++) {
+            if (pcis[i].vendor_id == ids[j].vendor_id && pcis[i].device_id == ids[j].device_id) {
+                return pcis + i;
+            }
         }
     }
     return NULL;
 }
 
 void pci_enable_bus_master(pci_device_t *pci) {
-    uint32_t cmd = pci_read_config(pci->bus, pci->slot, pci->function, 0x04);
+    uint32_t cmd = pci_read_config(pci, 0x04);
     cmd |= (1 << 2);
-    pci_write_config(pci->bus, pci->slot, pci->function, 0x04, cmd);
+    pci_write_config(pci, 0x04, cmd);
 }
 
 
@@ -278,11 +284,11 @@ svr |= 0x100; // APIC Software Enable
 lapic[0xF0 / 4] = svr;
 
 
-    uint32_t val = pci_read_config(pci->bus, pci->slot, pci->function, 0x34);
+    uint32_t val = pci_read_config(pci, 0x34);
     uint8_t cap_ptr = val & 0xFF;
 
     while (cap_ptr != 0) {
-        uint32_t cap_hdr = pci_read_config(pci->bus, pci->slot, pci->function, cap_ptr);
+        uint32_t cap_hdr = pci_read_config(pci, cap_ptr);
         uint8_t cap_id = cap_hdr & 0xFF;
         if (cap_id == PCI_CAP_ID_MSI)
             break;
@@ -294,22 +300,22 @@ lapic[0xF0 / 4] = svr;
         return 0;
     }
 
-    uint16_t msi_ctrl = pci_read_config_u16(pci->bus, pci->slot, pci->function, cap_ptr + 2);
+    uint16_t msi_ctrl = pci_read_config_u16(pci, cap_ptr + 2);
     int has_64bit = (msi_ctrl >> 7) & 1;
 
     uint32_t lapic_addr = LAPIC_DEFAULT_BASE;
     uint32_t data = (next_int_no & 0xFF) | (0 << 8);  // delivery mode = fixed (000), vector = next_int_no
 
-    pci_write_config(pci->bus, pci->slot, pci->function, cap_ptr + 4, lapic_addr);
+    pci_write_config(pci, cap_ptr + 4, lapic_addr);
     if (has_64bit) {
-        pci_write_config(pci->bus, pci->slot, pci->function, cap_ptr + 8, 0x0);
-        pci_write_config(pci->bus, pci->slot, pci->function, cap_ptr + 12, data);
+        pci_write_config(pci, cap_ptr + 8, 0x0);
+        pci_write_config(pci, cap_ptr + 12, data);
     } else {
-        pci_write_config(pci->bus, pci->slot, pci->function, cap_ptr + 8, data);
+        pci_write_config(pci, cap_ptr + 8, data);
     }
 
     msi_ctrl |= 0x1; // Enable MSI
-    pci_write_config_u16(pci->bus, pci->slot, pci->function, cap_ptr + 2, msi_ctrl);
+    pci_write_config_u16(pci, cap_ptr + 2, msi_ctrl);
 
     return next_int_no++;
 }

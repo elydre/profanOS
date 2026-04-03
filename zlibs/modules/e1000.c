@@ -139,7 +139,6 @@ typedef struct e1000_rx_desc e1000_rx_desc_t;
 typedef struct e1000_tx_desc e1000_tx_desc_t;
 
 typedef struct {
-    uint8_t exists;
     uint8_t mac[6];
     pci_device_t pci;
     uint8_t irq;
@@ -205,33 +204,29 @@ void get_mac_address(e1000_t *e1000) {
     }
 }
 
-void scan_pci_for_e1000(e1000_t *e1000) {
-    int devices[] = {
-        0x100e,
-        0x15b7
-    };
-    pci_device_t *pci = NULL;
-    for (unsigned int i = 0; i < sizeof(devices) / sizeof(devices[0]); i++) {
-        pci = pci_find(0x8086, devices[i]);
-        if (pci)
-            break;
-    }
+int scan_pci_for_e1000(e1000_t *e1000) {
+    pci_device_t *pci = pci_find_array((pci_findme_t[]) {
+        {INTEL_VEND, E1000_DEV},
+        {INTEL_VEND, E1000_I217},
+        {INTEL_VEND, E1000_82577LM}
+        {INTEL_VEND, 0x15B7}
+    }, 3);
 
-    if (pci) {
-        e1000->pci = *pci;
-        e1000->exists = 1;
-        e1000->irq = pci_read_config(pci->bus, pci->slot, 0, 0x3c) & 0xff;
+    if (pci == NULL)
+        return 1;
 
-        pci_write_cmd_u32(pci, 0, REG_EEPROM, 0x1);
-        for(int i = 0; i < 1000 && !e1000->eeprom; i++) {
-            if(pci_read_cmd_u32(pci, 0, REG_EEPROM) & 0x10)
-                e1000->eeprom = 1;
-            else
-                e1000->eeprom = 0;
-        }
-        get_mac_address(e1000);
-        return;
+    e1000->pci = *pci;
+    e1000->irq = pci_read_config(pci, 0x3c) & 0xff;
+
+    pci_write_cmd_u32(pci, 0, REG_EEPROM, 0x1);
+    for (int i = 0; i < 1000 && !e1000->eeprom; i++) {
+        if(pci_read_cmd_u32(pci, 0, REG_EEPROM) & 0x10)
+            e1000->eeprom = 1;
+        else
+            e1000->eeprom = 0;
     }
+    get_mac_address(e1000);
+    return 0;
 }
 
 int e1000_send_packet(const void *p_data, uint16_t p_len) {
@@ -353,8 +348,7 @@ void e1000_tx_init(e1000_t *e1000) {
 }
 
 int __init(void) {
-    scan_pci_for_e1000(&g_e1000);
-    if (!g_e1000.exists)
+    if (scan_pci_for_e1000(&g_e1000))
         return 2;
 
     pci_enable_bus_master(&g_e1000.pci);

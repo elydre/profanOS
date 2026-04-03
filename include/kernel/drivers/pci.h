@@ -29,29 +29,32 @@ typedef struct {
     uint8_t interrupt_pin;
 } pci_device_t;
 
+typedef struct {
+    uint16_t vendor_id;
+    uint16_t device_id;
+} pci_findme_t;
+
 extern pci_device_t *pcis;
 extern int pcis_len;
 
-uint32_t pci_read_config(uint32_t bus, uint32_t slot, uint32_t func, uint32_t offset);
-void pci_get_ids(pci_device_t *pci);
-void pci_add_device(pci_device_t *pci);
-void pci_get_bars(pci_device_t *pci);
-void pci_get_class(pci_device_t *pci);
-int pci_init();
+void     pci_write_config(pci_device_t *pci, uint8_t offset, uint32_t value);
+void     pci_write_config_u16(pci_device_t *pci, uint8_t offset, uint16_t value);
+uint32_t pci_read_config(pci_device_t *pci, uint32_t offset);
+uint16_t pci_read_config_u16(pci_device_t *pci, uint8_t offset);
 
-uint8_t pci_read_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset);
-uint16_t pci_read_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset);
-uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset);
+uint8_t  pci_read_cmd_u8(pci_device_t *pci, uint8_t bar, uint32_t offset);
+uint16_t pci_read_cmd_u16(pci_device_t *pci, uint8_t bar, uint32_t offset);
+uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t bar, uint32_t offset);
+void     pci_write_cmd_u8(pci_device_t *pci, uint8_t bar, uint32_t offset, uint8_t value);
+void     pci_write_cmd_u16(pci_device_t *pci, uint8_t bar, uint32_t offset, uint16_t value);
+void     pci_write_cmd_u32(pci_device_t *pci, uint8_t bar, uint32_t offset, uint32_t value);
 
-void pci_write_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset, uint8_t value);
-void pci_write_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset, uint16_t value);
-void pci_write_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset, uint32_t value);
+pci_device_t *pci_find(uint16_t vendor, uint16_t device);
+pci_device_t *pci_find_array(pci_findme_t *ids, int count);
 
-pci_device_t *pci_find(uint16_t vendor_id, uint16_t device_id);
-
-void pci_write_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t value);
-void pci_enable_bus_master(pci_device_t *pci);
-
+void     pci_enable_bus_master(pci_device_t *pci);
 uint32_t pci_try_enable_msi(pci_device_t *pci);
+
+int pci_init();
 
 #endif
