@@ -42,7 +42,7 @@ static uint32_t get_dns_ip() {
 	line[ret] = '\0';
 
 	uint32_t res2 = 0;
-	if (inet_pton(AF_INET, line, &res2)) {
+	if (!inet_pton(AF_INET, line, &res2)) {
 		fclose(f);
 		return res;
 	}
@@ -79,7 +79,8 @@ static uint32_t get_local(char *domain, int *err) {
 			continue;
 		}
 		uint32_t dest_ip = 0;
-		if (inet_pton(AF_INET, sep + 1, &dest_ip)) {
+		ret = inet_pton(AF_INET, sep + 1, &dest_ip);
+		if (!ret) {
 			free(line);
 			continue;
 		}
