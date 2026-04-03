@@ -32,6 +32,6 @@ ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
         *addrlen = sizeof(struct sockaddr_in);
     }
     data->recv_len--;
-	mem_copy(data->recv, &data->recv[1], sizeof(udp_packet_t) * data->recv_len);
+    mem_copy(data->recv, &data->recv[1], sizeof(udp_packet_t) * data->recv_len);
     return (ssize_t) len;
 }

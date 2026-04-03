@@ -21,5 +21,5 @@ int socket_close_id(int id) {
     if (!sock)
         return -EINVAL;
     socket_close(sock);
-	return 0;
+    return 0;
 }

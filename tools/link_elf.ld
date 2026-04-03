@@ -27,7 +27,7 @@ SECTIONS {
     /* Place the build-id as close to the ELF headers as possible.  This
         maximises the chance the build-id will be present in core files,
         which GDB can then use to locate the associated debuginfo file.  */
-  
+
     .note.gnu.build-id  : { *(.note.gnu.build-id) }
     .interp             : { *(.interp) }
     .hash               : { *(.hash) }
@@ -133,14 +133,14 @@ SECTIONS {
         KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
         PROVIDE_HIDDEN (__init_array_end = .);
     }
-    
+
     .fini_array    : {
         PROVIDE_HIDDEN (__fini_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
         KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
         PROVIDE_HIDDEN (__fini_array_end = .);
     }
-    
+
     .ctors          : {
         /* gcc uses crtbegin.o to find the start of
         the constructors, so we make sure it is
@@ -161,22 +161,25 @@ SECTIONS {
         KEEP (*(SORT(.ctors.*)))
         KEEP (*(.ctors))
     }
-    .dtors          :
-    {
+
+    .dtors          : {
         KEEP (*crtbegin.o(.dtors))
         KEEP (*crtbegin?.o(.dtors))
         KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
         KEEP (*(SORT(.dtors.*)))
         KEEP (*(.dtors))
     }
+
     .jcr            : { KEEP (*(.jcr)) }
-    .data.rel.ro : { *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*) *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*) }
+    .data.rel.ro    : {
+        *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*)
+        *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
+    }
     .dynamic        : { *(.dynamic) }
     .got            : { *(.got) *(.igot) }
     . = DATA_SEGMENT_RELRO_END (SIZEOF (.got.plt) >= 12 ? 12 : 0, .);
     .got.plt        : { *(.got.plt) *(.igot.plt) }
-    .data           :
-    {
+    .data           : {
         *(.data .data.* .gnu.linkonce.d.*)
         SORT(CONSTRUCTORS)
     }
@@ -185,8 +188,7 @@ SECTIONS {
     PROVIDE (edata = .);
     . = ALIGN(ALIGNOF(NEXT_SECTION));
     __bss_start = .;
-    .bss            :
-    {
+    .bss            : {
         *(.dynbss)
         *(.bss .bss.* .gnu.linkonce.b.*)
         *(COMMON)
@@ -254,4 +256,4 @@ SECTIONS {
     .debug_sup      0 : { *(.debug_sup) }
     .gnu.attributes 0 : { KEEP (*(.gnu.attributes)) }
     /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) *(.gnu_object_only) }
-    }
+}
