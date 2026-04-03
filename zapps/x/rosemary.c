@@ -227,6 +227,16 @@ int main(void) {
         set_env("TERM=/dev/kterm");
     }
 
+    args = (runtime_args_t){
+        .path = "/bin/c/ip-get.elf",
+        .wd = NULL,
+        .argc = 2,
+        .argv = (char *[]){"ip-get", "-q"},
+        .envp = NULL,
+        .sleep_mode = 0
+    };
+    run_ifexist(&args, &usage_pid);
+
     rainbow_print("Welcome to profanOS!\n");
     print_kernel_version();
 

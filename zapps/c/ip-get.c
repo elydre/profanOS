@@ -478,9 +478,12 @@ int main(int argc, char **argv) {
     if (carp_parse(argc, argv))
         return 1;
 
+    int quiet = carp_isset('q');
+
     g_eth_id = modeth_start();
     if (g_eth_id == 0) {
-        fprintf(stderr, "ip-get: error: could not open connection with profan net\n");
+        if (!quiet)
+            fprintf(stderr, "ip-get: error: could not open connection with profan net\n");
         return 1;
     }
 
@@ -492,7 +495,8 @@ int main(int argc, char **argv) {
     }
 
     if (!memcmp(g_info.mac, "\0\0\0\0\0\0", 6)) {
-        fprintf(stderr, "ip-get: error: no ethernet device found\n");
+        if (!quiet)
+            fprintf(stderr, "ip-get: error: no ethernet device found\n");
         modeth_end(g_eth_id);
         return 1;
     }

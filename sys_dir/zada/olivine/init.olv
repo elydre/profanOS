@@ -70,11 +70,3 @@ FUNC time
 
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
-
-FUNC a
-    set debut !(ticks)
-    ip-get
-    print 'ip-get finished in !(eval !(ticks) - !debut) ms\n'
-END
-
-a
