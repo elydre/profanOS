@@ -9,7 +9,7 @@
 #   === elydre : https://github.com/elydre/profanOS ===         #######  \\   #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-.PHONY: help elf iso miso disk bdisk run krun srun clean fclean addons gaddons
+.PHONY: _all help kernel iso miso disk bdisk run krun srun clean fclean addons gaddons run_ndbg
 
 PY_BUILD = tools/maketool.py
 PY_ADDON = tools/addons.py
@@ -21,8 +21,8 @@ help:
 	@python3 $(PY_BUILD) help
 
 # build kernel
-elf:
-	python3 $(PY_BUILD) elf
+kernel:
+	python3 $(PY_BUILD) kernel
 
 # create iso with grub
 iso:

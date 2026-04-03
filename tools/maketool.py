@@ -731,7 +731,7 @@ def make_help():
     help_lines = (
         ("make [help]", "show this help message"),
         None,
-        ("make elf",        "build the kernel in elf format"),
+        ("make kernel",     "build the kernel in elf format"),
         ("make disk",       "build classic disk image"),
         ("make bdisk",      "build disk image with source code"),
         None,
@@ -763,7 +763,7 @@ def make_help():
 
 
 assos = {
-    "elf": elf_image,
+    "kernel": elf_image,
     "help": make_help,
     "disk": lambda: gen_disk(True),
     "bdisk": lambda: gen_disk(True, True),
