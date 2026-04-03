@@ -30,6 +30,8 @@
 #define IPPROTO_TCP     6
 #define IPPROTO_UDP     17
 
+#define MSG_PEEK (1 << 0)
+
 typedef uint32_t socklen_t;
 typedef uint16_t sa_family_t;
 typedef uint32_t in_addr_t;
