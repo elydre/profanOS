@@ -208,7 +208,7 @@ int scan_pci_for_e1000(e1000_t *e1000) {
     pci_device_t *pci = pci_find_array((pci_findme_t[]) {
         {INTEL_VEND, E1000_DEV},
         {INTEL_VEND, E1000_I217},
-        {INTEL_VEND, E1000_82577LM}
+        {INTEL_VEND, E1000_82577LM},
         {INTEL_VEND, 0x15B7}
     }, 3);
 
