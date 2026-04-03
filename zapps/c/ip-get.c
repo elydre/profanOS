@@ -417,7 +417,7 @@ int receive_offer(uint8_t *mac) {
                 offered_ip = dhcp->yiaddr;
                 dhcp_server_ip = dhcp->siaddr;
                 free(packet);
-                memcpy(g_info.router_mac, mac, 6);
+                memcpy(g_info.router_mac, eth->src_mac, 6);
                 return 0;
             }
         }
