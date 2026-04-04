@@ -26,71 +26,71 @@ int h_errno = 0;
 #define DNS_LOCAL_PATH "/sys/dns/local.conf"
 
 static uint32_t get_dns_ip() {
-	uint32_t res = htonl(0x08080808);
+    uint32_t res = htonl(0x08080808);
 
-	FILE *f = fopen(DNS_IP_PATH, "r");
-	if (!f)
-		return res;
+    FILE *f = fopen(DNS_IP_PATH, "r");
+    if (!f)
+        return res;
 
-	char line[256] = {0};
-	int ret = fread(line, 1, 255, f);
-	if (ret < 0) {
-		fclose(f);
-		return res;
-	}
+    char line[256] = {0};
+    int ret = fread(line, 1, 255, f);
+    if (ret < 0) {
+        fclose(f);
+        return res;
+    }
 
-	line[ret] = '\0';
+    line[ret] = '\0';
 
-	uint32_t res2 = 0;
-	if (!inet_pton(AF_INET, line, &res2)) {
-		fclose(f);
-		return res;
-	}
+    uint32_t res2 = 0;
+    if (!inet_pton(AF_INET, line, &res2)) {
+        fclose(f);
+        return res;
+    }
 
-	res = res2;
-	fclose(f);
-	return res;
+    res = res2;
+    fclose(f);
+    return res;
 }
 
 static uint32_t get_local(char *domain, int *err) {
-	*err = 0;
-	FILE *f = fopen(DNS_LOCAL_PATH, "r");
+    *err = 0;
+    FILE *f = fopen(DNS_LOCAL_PATH, "r");
 
-	while (1) {
-		char *line = NULL;
-		size_t len = 0;
-		ssize_t ret = getline(&line, &len, f);
-		if (ret == -1) {
-			free(line);
-			break;
-		}
-		if (line[0] == '/' && line[1] == '/') {
-			free(line);
-			continue;
-		}
-		char *sep = strchr(line, ':');
-		if (!sep) {
-			free(line);
-			continue;
-		}
-		*sep = '\0';
-		if (strcmp(domain, line)) {
-			free(line);
-			continue;
-		}
-		uint32_t dest_ip = 0;
-		ret = inet_pton(AF_INET, sep + 1, &dest_ip);
-		if (!ret) {
-			free(line);
-			continue;
-		}
-		fclose(f);
-		free(line);
-		return dest_ip;
-	}
-	*err = 1;
-	fclose(f);
-	return 0;
+    while (1) {
+        char *line = NULL;
+        size_t len = 0;
+        ssize_t ret = getline(&line, &len, f);
+        if (ret == -1) {
+            free(line);
+            break;
+        }
+        if (line[0] == '/' && line[1] == '/') {
+            free(line);
+            continue;
+        }
+        char *sep = strchr(line, ':');
+        if (!sep) {
+            free(line);
+            continue;
+        }
+        *sep = '\0';
+        if (strcmp(domain, line)) {
+            free(line);
+            continue;
+        }
+        uint32_t dest_ip = 0;
+        ret = inet_pton(AF_INET, sep + 1, &dest_ip);
+        if (!ret) {
+            free(line);
+            continue;
+        }
+        fclose(f);
+        free(line);
+        return dest_ip;
+    }
+    *err = 1;
+    fclose(f);
+    return 0;
 }
 
 
@@ -235,11 +235,11 @@ static int get_response(int fd, uint16_t id, uint32_t *ip) {
 }
 
 static int get_ip(char *name, uint32_t *ip) {
-	int err = 0;
-	uint32_t local = get_local(name, &err);
-	if (!err)
-		return local;
-	
+    int err = 0;
+    uint32_t local = get_local(name, &err);
+    if (!err)
+        return local;
+
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
         return 1;
