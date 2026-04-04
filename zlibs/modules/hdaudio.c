@@ -11,6 +11,7 @@
 
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
+#include <drivers/pci.h>
 #include <cpu/ports.h>
 #include <cpu/timer.h>
 #include <minilib.h>
@@ -45,57 +46,6 @@ static inline uint16_t mmio_inw(uint32_t base) {
 static inline uint32_t mmio_ind(uint32_t base) {
     return *(volatile uint32_t *) base;
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-typedef struct {
-    uint8_t bus;
-    uint8_t slot;
-    uint8_t func;
-} pci_addr_t;
-
-static void pci_write_config(pci_addr_t *pci, uint8_t offset, uint32_t value) {
-    uint32_t address = (1 << 31) | (pci->bus << 16) | (pci->slot << 11) | (pci->func << 8) | (offset & 0xFC);
-    port_write32(0xCF8, address);
-    port_write32(0xCFC, value);
-}
-
-static uint32_t pci_read_config(pci_addr_t *pci, uint32_t offset) {
-    uint32_t lbus  = (uint32_t) pci->bus;
-    uint32_t lslot = (uint32_t) pci->slot;
-    uint32_t lfunc = (uint32_t) pci->func;
-
-    // Write out the address
-    port_write32(0xCF8, (uint32_t)((lbus << 16) | (lslot << 11) |
-              (lfunc << 8) | (offset & 0xFC) | ((uint32_t) 0x80000000)));
-
-    return port_read32(0xCFC);
-}
-
-static uint32_t pci_get_bar(pci_addr_t *pci, uint8_t barN) {
-    return pci_read_config(pci, 0x10 + (barN * 4));
-}
-
-static pci_addr_t pci_find(uint16_t vendor, uint16_t device) {
-    // scan all PCI devices and return the first one that matches
-    for (int bus = 0; bus < 256; bus++) {
-        for (int slot = 0; slot < 16; slot++) {
-            for (int func = 0; func < 8; func++) {
-                pci_addr_t pci = {bus, slot, func};
-                uint16_t vid = pci_read_config(&pci, 0) & 0xffff;
-                if (vid == 0xFFFF)
-                    continue;
-                uint16_t did = (pci_read_config(&pci, 2) >> 16) & 0xffff;
-                if (vid == vendor && did == device) {
-                    return pci;
-                }
-            }
-        }
-    }
-    return (pci_addr_t){0xFF, 0xFF, 0xFF}; // not found
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 struct hda_info_t {
     uint32_t base;
@@ -193,6 +143,7 @@ void     hda_stop_sound(void);
 uint32_t hda_get_stream_position(void);
 
 #define HDA_VERB_ERROR 0
+#define HDA_RESPONSE_TIMEOUT 20
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -215,48 +166,47 @@ static void logf(const char *fmt, ...) {
 }
 
 int __init(void) {
-    g_log_fd = fm_open("/sys/kernel/hdaudio.log", O_WRONLY | O_CREAT | O_TRUNC);
-
-    if (g_log_fd < 0) {
-        return 1;
-    }
-
     mem_set(&g_hda, 0, sizeof(g_hda));
+    g_log_fd = 2;
 
     // read other device informations
-    pci_addr_t device = pci_find(0x8086, 0x2668);
+    pci_device_t *device = pci_find_array((pci_findme_t[]) {
+        {0x8086, 0x2668}, // qemu
+        {0x8086, 0x3198}  // my laptop
+    }, 2);
 
-    if (device.bus == 0xFF && device.slot == 0xFF && device.func == 0xFF) {
-        device = pci_find(0x8086, 0x3198); // my laptop
+    if (device == NULL)
+        return 2; // skip
 
-        if (device.bus == 0xFF && device.slot == 0xFF && device.func == 0xFF) {
-            logf("HDA: No HDA PCI device found\n");
-            fm_close(g_log_fd);
-            g_log_fd = 2;
-            return 2; // skip
-        }
-    }
+    g_log_fd = fm_open("/sys/kernel/hdaudio.log", O_WRONLY | O_CREAT | O_TRUNC);
+
+    if (g_log_fd < 0)
+        return 1;
 
     logf("HDA: Found HDA PCI device at %d:%d:%d\n",
-        device.bus,
-        device.slot,
-        device.func);
+        device->bus,
+        device->slot,
+        device->function);
 
-    g_hda.base = pci_get_bar(&device, 0) & 0xFFFFFFF0; // mask memory type
+    g_hda.base = device->bar[0] & 0xFFFFFFF0; // mask memory type
 
     logf("HDA: HDA PCI device MMIO base %x\n", g_hda.base);
 
     scuba_call_map((void *)g_hda.base, (void *)g_hda.base, 0);
 
     // configure PCI
-    pci_write_config(&device, 0x04, pci_read_config(&device, 0x04) | 0x6);
+    pci_write_config(device, 0x04, pci_read_config(device, 0x04) | 0x6);
 
-    hda_initalize_sound_card();
+    int ret = 0; // init return value
+    if (hda_initalize_sound_card() != 0) {
+        logf("HDA: Sound card initialization failed\n");
+        ret = 1;
+    }
 
     fm_close(g_log_fd);
     g_log_fd = 2;
 
-    return 0;
+    return ret;
 }
 
 void hda_map_memory(void) {
@@ -271,25 +221,20 @@ static int hda_initalize_sound_card(void) {
     // reset card and set operational state
     mmio_outd(hda_base + 0x08, 0x0);
     ticks = TIMER_TICKS;
-    while (TIMER_TICKS - ticks < 10) {
-        asm("nop");
-        if ((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
-            break;
+    while ((mmio_ind(hda_base + 0x08) & 0x1) != 0x0) {
+        if (TIMER_TICKS - ticks > HDA_RESPONSE_TIMEOUT) {
+            logf("HDA ERROR: card can not be reset\n");
+            return 1;
         }
     }
 
     mmio_outd(hda_base + 0x08, 0x1);
     ticks = TIMER_TICKS;
-    while (TIMER_TICKS - ticks < 10) {
-        asm("nop");
-        if ((mmio_ind(hda_base + 0x08) & 0x1)==0x1) {
-            break;
+    while ((mmio_ind(hda_base + 0x08) & 0x1) != 0x1) {
+        if (TIMER_TICKS - ticks > HDA_RESPONSE_TIMEOUT) {
+            logf("HDA ERROR: card can not be set to operational state\n");
+            return 1;
         }
-    }
-
-    if ((mmio_ind(hda_base + 0x08) & 0x1)==0x0) {
-        logf("HDA ERROR: card can not be set to operational state\n");
-        return 1;
     }
 
     // read capabilities
@@ -448,18 +393,12 @@ static uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint
 
         // wait for response
         ticks = TIMER_TICKS;
-        while (TIMER_TICKS - ticks < 5) {
-            asm("nop");
-            if (mmio_inw(g_hda.base + 0x58) ==
-                        g_hda.corb_pointer) {
-                break;
+        while (mmio_inw(g_hda.base + 0x58) != g_hda.corb_pointer) {
+            if (TIMER_TICKS - ticks > HDA_RESPONSE_TIMEOUT) {
+                logf("HDA ERROR: corb/rirp no response\n");
+                g_hda.communication_type = HDA_UNINITALIZED;
+                return HDA_VERB_ERROR;
             }
-        }
-
-        if (mmio_inw(g_hda.base + 0x58) != g_hda.corb_pointer) {
-            logf("HDA ERROR: no response\n");
-            g_hda.communication_type = HDA_UNINITALIZED;
-            return HDA_VERB_ERROR;
         }
 
         // read response
@@ -490,9 +429,7 @@ static uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint
 
         // pool for response
         ticks = TIMER_TICKS;
-        while (TIMER_TICKS - ticks < 6) {
-            asm("nop");
-
+        while (TIMER_TICKS - ticks <= HDA_RESPONSE_TIMEOUT) {
             // wait for Immediate Result Valid bit = set and Immediate Command Busy bit = clear
             if ((mmio_inw(g_hda.base + 0x68) & 0x3)==0x2) {
                 // clear Immediate Result Valid bit
@@ -503,8 +440,8 @@ static uint32_t hda_send_verb(uint32_t codec, uint32_t node, uint32_t verb, uint
             }
         }
 
-        // there was no response after 6 ms
-        logf("HDA ERROR: no response\n");
+        // there was no response after the delay
+        logf("HDA ERROR: pio no response\n");
         g_hda.communication_type = HDA_UNINITALIZED;
         return HDA_VERB_ERROR;
     }
@@ -576,19 +513,19 @@ static int hda_initalize_codec(uint32_t codec_number) {
     // test if this codec exist
     uint32_t codec_id = hda_send_verb(codec_number, 0, 0xF00, 0);
 
-    if (codec_id == 0x00000000) {
-        logf("HDA ERROR: Codec %d does not exist\n", codec_number);
+    if (codec_id == HDA_VERB_ERROR) {
+        logf("HDA ERROR: Codec %d does not respond\n", codec_number);
         return 1;
     }
 
     g_hda.codec_number = codec_number;
 
-    //log basic codec info
+    // log basic codec info
     logf("Codec %d\n", codec_number);
     logf("Vendor: %x\n", (codec_id >> 16) /*(pci_get_vendor_name(codec_id>>16))*/); //PROFAN EDIT
     logf("Number: %x\n", (codec_id & 0xFFFF));
 
-    //find Audio Function Groups
+    // find Audio Function Groups
     uint32_t subordinate_node_count_reponse = hda_send_verb(codec_number, 0, 0xF00, 0x04);
 
     logf("First Group node: %d Number of Groups: %d\n", (subordinate_node_count_reponse >> 16) & 0xFF,

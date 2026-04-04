@@ -11,26 +11,31 @@
 
 ENTRY(_start)
 
+PHDRS {
+    text PT_LOAD FLAGS(5);    /* R + X */
+    data PT_LOAD FLAGS(6);    /* R + W */
+}
+
 SECTIONS {
     . = 0xB0001000;
 
     .text : {
         *(.text)
         *(.text.*)
-    }
+    } :text
 
     .rodata : {
         *(.rodata)
         *(.rodata.*)
-    }
+    } :text
 
     .data : {
         *(.data)
         *(.data.*)
-    }
+    } :data
 
     .bss : {
         *(.bss)
         *(.bss.*)
-    }
+    } :data
 }

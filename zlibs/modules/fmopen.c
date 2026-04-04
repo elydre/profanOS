@@ -11,6 +11,9 @@
 
 #define FMOPEN_LIB_C
 
+#define INCLUDE_FROM_FMOPEN
+#include <modules/socket.h>
+
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <kernel/afft.h>
@@ -24,16 +27,7 @@
 #define PIPE_MAX     256
 #define PIPE_MAX_REF 12
 
-enum {
-    TYPE_FREE = 0,
-    TYPE_FILE,
-    TYPE_AFFT,
-    TYPE_DIR,
-    TYPE_PPRD, // read pipe
-    TYPE_PPWR  // write pipe
-};
-
-typedef struct {
+typedef struct pipe_data_t {
     uint32_t buffer_size;
     void    *buf;
 
@@ -43,20 +37,6 @@ typedef struct {
     int readers[PIPE_MAX_REF];
     int writers[PIPE_MAX_REF];
 } pipe_data_t;
-
-typedef struct {
-    uint8_t type;
-    uint32_t sid;
-    int flags;
-
-    uint32_t offset;  // file and afft
-
-    union {
-        int          afft_id; // afft
-        pipe_data_t *pipe;    // pipe
-        char        *path;    // dir (for fchdir)
-    };
-} fd_data_t;
 
 pipe_data_t *open_pipes;
 
@@ -83,22 +63,6 @@ static fd_data_t *fm_get_free_fd(int *fd) {
 }
 
 static pipe_data_t *fm_get_free_pipe(void) {
-    // free pipe with only dead processes
-    for (int i = 0; i < PIPE_MAX; i++) {
-        if (open_pipes[i].buf == NULL)
-            continue;
-        for (int j = 0; j < PIPE_MAX_REF; j++) {
-            if (open_pipes[i].readers[j] != -1 && process_info(open_pipes[i].readers[j], PROC_INFO_STATE, NULL) > 1)
-                break;
-            if (open_pipes[i].writers[j] != -1 && process_info(open_pipes[i].writers[j], PROC_INFO_STATE, NULL) > 1)
-                break;
-            if (j == PIPE_MAX_REF - 1) {
-                free(open_pipes[i].buf);
-                open_pipes[i].buf = NULL;
-            }
-        }
-    }
-
     for (int i = 0; i < PIPE_MAX; i++) {
         if (open_pipes[i].buf == NULL)
             return open_pipes + i;
@@ -126,14 +90,16 @@ static int fm_pipe_push_writer(pipe_data_t *pipe, int pid) {
     return -1;
 }
 
-int fm_close(int fd) {
-    fd_data_t *fd_data = fm_fd_to_data(fd);
 
+static int fm_close_data(fd_data_t *fd_data) {
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
         return -EBADF;
 
     if (fd_data->type == TYPE_DIR)
         free(fd_data->path);
+
+    else if (fd_data->type == TYPE_SOCK)
+        socket_close_id_call(fd_data->sock_id);
 
     else if (fd_data->type == TYPE_PPRD) {
         pipe_data_t *pipe = fd_data->pipe;
@@ -175,6 +141,29 @@ int fm_close(int fd) {
 
     fd_data->type = TYPE_FREE;
     return 0;
+}
+
+int __atdeath(int pid) {
+    // get the physical address of the fd table
+    scuba_dir_t *dir = process_get_dir(pid);
+    fd_data_t *fd_table = scuba_get_phys(dir, (void *) 0xB0000000);
+
+    if (fd_table == NULL) {
+        sys_error("[fm_atdeath] Failed to get fd table for pid %d", pid);
+        return -1;
+    }
+
+    for (int i = 0; i < MAX_FD; i++) {
+        if (fd_table[i].type == TYPE_FREE)
+            continue;
+        fm_close_data(fd_table + i);
+    }
+
+    return 0;
+}
+
+int fm_close(int fd) {
+    return fm_close_data(fm_fd_to_data(fd));
 }
 
 static uint32_t create_new_file(const char *path) {
@@ -284,6 +273,17 @@ int fm_pread(int fd, void *buf, uint32_t size, int offset) {
         case TYPE_DIR:
             return -EISDIR;
 
+        case TYPE_SOCK:
+            recvfrom_arg_t args = {
+                .sockfd = fd,
+                .buf = buf,
+                .len = size,
+                .flags = 0,
+                .src_addr = NULL,
+                .addrlen = NULL
+            };
+            return socket_recvfrom_call(&args);
+
         case TYPE_FILE:
             tmp = fs_cnt_get_size(fd_data->sid);
             if ((uint32_t) offset > tmp)
@@ -353,6 +353,17 @@ int fm_pwrite(int fd, void *buf, uint32_t size, int offset) {
     switch (fd_data->type) {
         case TYPE_DIR:
             return -EISDIR;
+
+        case TYPE_SOCK:
+            sendto_arg_t args = {
+                .sockfd = fd,
+                .buf = buf,
+                .len = size,
+                .flags = 0,
+                .dest_addr = NULL,
+                .addrlen = 0
+            };
+            return socket_sendto_call(&args);
 
         case TYPE_FILE:
             if (offset + size > fs_cnt_get_size(fd_data->sid))
@@ -457,6 +468,10 @@ int fm_dup2(int fd, int new_fd) {
             new_data->offset = fd_data->offset;
             break;
 
+        case TYPE_SOCK:
+            socket_inc_ref_call(fd_data->sock_id);
+            break;
+
         case TYPE_AFFT:
             new_data->afft_id = fd_data->afft_id;
             new_data->offset = fd_data->offset;
@@ -555,6 +570,15 @@ int fm_isfile(int fd) {
     return fd_data->type == TYPE_FILE;
 }
 
+int fm_issock(int fd) {
+    fd_data_t *fd_data = fm_fd_to_data(fd);
+
+    if (fd_data == NULL || fd_data->type == TYPE_FREE)
+        return -EBADF;
+
+    return fd_data->type == TYPE_SOCK;
+}
+
 int fm_fcntl(int fd, int cmd, int arg) {
     fd_data_t *fd_data = fm_fd_to_data(fd);
     if (fd_data == NULL || fd_data->type == TYPE_FREE)
@@ -618,16 +642,32 @@ int fm_declare_child(int pid) {
         if (!fd_data)
             continue;
 
-        pipe_data_t *pipe = fd_data->pipe;
-
-        if (fd_data->type == TYPE_PPRD && fm_pipe_push_reader(pipe, pid) < 0)
+        if (fd_data->type == TYPE_PPRD && fm_pipe_push_reader(fd_data->pipe, pid) < 0)
             return -1;
 
-        if (fd_data->type == TYPE_PPWR && fm_pipe_push_writer(pipe, pid) < 0)
+        if (fd_data->type == TYPE_PPWR && fm_pipe_push_writer(fd_data->pipe, pid) < 0)
             return -1;
+
+        if (fd_data->type == TYPE_SOCK)
+            socket_inc_ref_call(fd_data->sock_id);
     }
 
     return 0;
+}
+
+int fm_get_fd_rw(int fd) {
+    fd_data_t *data = fm_fd_to_data(fd);
+    if (!data)
+        return -1;
+    switch (data->type) {
+        case TYPE_SOCK:
+            return socket_get_rw_call(data->sock_id);
+        case TYPE_FILE:
+            return FM_READ | FM_WRITE;
+        // TODO PF4 IMPLEMENT PIPES AND OTHERS
+        default:
+            return -1;
+    }
 }
 
 int __init(void) {
@@ -653,8 +693,12 @@ void *__module_func_array[] = {
     fm_pipe,
     fm_isafft,
     fm_isfile,
+    fm_issock,
     fm_fcntl,
     fm_get_sid,
     fm_get_path,
-    fm_declare_child
+    fm_declare_child,
+    fm_get_free_fd,
+    fm_fd_to_data,
+    fm_get_fd_rw,
 };

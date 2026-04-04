@@ -1,0 +1,59 @@
+/*****************************************************************************\
+|   === init.c : 2026 ===                                                     |
+|                                                                             |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
+#include <kernel/process.h>
+#include <modules/socket.h>
+#include <modules/eth.h>
+#include <minilib.h>
+#include "udp.h"
+
+int socket_pid = -1;
+
+static void socket_process() {
+    uint32_t eth_id = eth_start();
+
+    uint8_t *packet = malloc(0xFFFF);
+    int alloc_len = 0xFFFF;
+
+    socket_pid = process_get_pid();
+    while (1) {
+        if (sockets_len == 0)
+            process_sleep(process_get_pid(), -1);
+        int packet_len = eth_is_ready(eth_id);
+        if (packet_len > alloc_len) {
+            free(packet);
+            alloc_len = packet_len;
+            packet = malloc(alloc_len);
+        }
+        if (packet_len >= 0)
+            eth_recv(eth_id, packet);
+        if (packet_len < 0)
+            packet_len = 0;
+
+        if (packet_len)
+            socket_tick(packet_len, packet);
+        else
+            socket_tick(0, NULL);
+        if (!packet_len) {
+            process_sleep(process_get_pid(), 5);
+        }
+    }
+}
+
+
+int __init() {
+    int pid = process_create(socket_process, 0, 0, NULL);
+    if (pid < 0)
+        return -1;
+    process_info(pid, PROC_INFO_SET_NAME, "socket");
+    process_wakeup(pid, 0);
+    return 0;
+}

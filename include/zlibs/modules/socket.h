@@ -1,0 +1,108 @@
+/*****************************************************************************\
+|   === socket.h : 2026 ===                                                   |
+|                                                                             |
+|    Header for the Unix socket implementation as module           .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
+#ifndef SOCKET_MOD_H
+#define SOCKET_MOD_H 7
+
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <modules/filesys.h>
+
+typedef struct {
+    uint32_t type; // domain | type << 8 | protcol << 16
+    void *data;
+    int ref_count;
+    int id;
+    int do_remove;
+} socket_t;
+
+#define CLT_PORT_START 32768
+#define CLT_PORT_END 60999
+
+extern socket_t *sockets;
+extern int sockets_len;
+
+typedef struct {
+    int sockfd;
+    const void *buf;
+    size_t len;
+    int flags;
+    const struct sockaddr *dest_addr;
+    socklen_t addrlen;
+} sendto_arg_t;
+
+int socket_socket(int domain, int type, int protocol);
+int socket_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int socket_listen(int sockfd, int backlog);
+int socket_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+void socket_close(socket_t *sock);
+int socket_close_id(int id);
+int socket_get_rw(int id);
+void socket_tick(int len, uint8_t *packet);
+socket_t *socket_find_fd(int fd);
+socket_t *socket_find_id(int id);
+ssize_t socket_sendto(sendto_arg_t *args);
+void socket_inc_ref(int id);
+
+typedef struct {
+    int sockfd;
+    void *buf;
+    size_t len;
+    int flags;
+    struct sockaddr *src_addr;
+    socklen_t *addrlen;
+} recvfrom_arg_t;
+ssize_t socket_recvfrom(recvfrom_arg_t *args);
+
+typedef struct {
+    uint32_t prot;
+    int (*init)(socket_t *);
+    int (*bind)(socket_t *, const struct sockaddr *, socklen_t);
+    int (*connect)(socket_t *, const struct sockaddr *, socklen_t);
+    ssize_t (*sendto)(socket_t *, const void *, size_t, int, const struct sockaddr *, socklen_t);
+    ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
+    int (*get_rw)(socket_t *);
+} protocol_t;
+
+protocol_t *socket_find_protocol(uint32_t type);
+
+extern protocol_t socket_protocols[];
+
+
+#ifndef _KERNEL_MODULE
+
+extern int profan_syscall(uint32_t id, ...);
+
+#undef _pscall
+#define _pscall(module, id, ...) \
+    profan_syscall(((module << 24) | id), __VA_ARGS__)
+
+#define socket_socket(a, b, c) ((int) _pscall(SOCKET_MOD_H, 0, a, b, c))
+#define socket_bind(a, b, c) ((int) _pscall(SOCKET_MOD_H, 1, a, b, c))
+#define socket_connect(a, b, c) ((int) _pscall(SOCKET_MOD_H, 2, a, b, c))
+#define socket_sendto(a) ((int) _pscall(SOCKET_MOD_H, 3, a))
+#define socket_recvfrom(a) ((int) _pscall(SOCKET_MOD_H, 4, a))
+
+#else
+
+#undef get_func_addr
+#define get_func_addr ((uint32_t (*)(uint32_t, uint32_t)) *(uint32_t *) 0x1ffffb)
+
+#define socket_sendto_call ((int (*)(sendto_arg_t *)) get_func_addr(SOCKET_MOD_H, 3))
+#define socket_recvfrom_call ((int (*)(recvfrom_arg_t *)) get_func_addr(SOCKET_MOD_H, 4))
+#define socket_close_id_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 5))
+#define socket_get_rw_call ((int (*)(int)) get_func_addr(SOCKET_MOD_H, 6))
+#define socket_inc_ref_call ((void (*)(int)) get_func_addr(SOCKET_MOD_H, 7))
+#endif
+
+#endif

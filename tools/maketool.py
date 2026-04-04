@@ -71,10 +71,11 @@ KERN_LINK  = f"-m elf_i386 -T {TOOLS_DIR}/link_kernel.ld -Map {OUT_DIR}/make/ker
 LD_FLAGS   = "-m elf_i386 -nostdlib"
 
 QEMU_SPL   = "qemu-system-i386"
-QEMU_KVM   = "qemu-system-i386 -enable-kvm -m 256M"
+QEMU_KVM   = "qemu-system-i386 -m 256M -enable-kvm"
 
 QEMU_FLAGS = "-serial stdio"
 QEMU_AUDIO = "-m 256M -device intel-hda -device hda-duplex"
+QEMU_NETDG = "-netdev user,id=u1 -device e1000,netdev=u1 -object filter-dump,id=f1,netdev=u1,file=dump.dat"
 
 COLOR_INFO = (120, 250, 161)
 COLOR_EXEC = (170, 170, 170)
@@ -710,15 +711,17 @@ def gen_disk(force=True, with_src=False):
     print_and_exec(("valgrind "if DEBUG_MKFS else "") + f"./{OUT_DIR}/make/makefsys \"$(pwd)/{OUT_DIR}/disk\"")
 
 
-def qemu_run(kvm = False, audio = False):
+def qemu_run(kvm = False, audio = False, net_debug = False):
     make_iso()
 
     qemu_cmd = QEMU_KVM if kvm else QEMU_SPL
-
     qemu_args = QEMU_FLAGS
 
     if audio:
         qemu_args += f" {QEMU_AUDIO}"
+
+    if net_debug:
+        qemu_cmd += f" {QEMU_NETDG}"
 
     cprint(COLOR_INFO, "starting qemu...")
 
@@ -728,9 +731,9 @@ def make_help():
     help_lines = (
         ("make [help]", "show this help message"),
         None,
-        ("make elf",        "build the kernel in elf format"),
+        ("make kernel",     "build the kernel in elf format"),
         ("make disk",       "build classic disk image"),
-        ("make bdisk",    "build disk image with source code"),
+        ("make bdisk",      "build disk image with source code"),
         None,
         ("make iso",        "build the iso image of profanOS"),
         ("make miso",       "build the iso with more grub options"),
@@ -744,6 +747,7 @@ def make_help():
         ("make run",        "run the profanOS.iso in qemu"),
         ("make krun",       "run the profanOS.iso with kvm"),
         ("make srun",       "run the profanOS.iso with sound"),
+        ("make run_ndbg",   "run the profanOS.iso with network debug")
     )
 
     for e in help_lines:
@@ -759,7 +763,7 @@ def make_help():
 
 
 assos = {
-    "elf": elf_image,
+    "kernel": elf_image,
     "help": make_help,
     "disk": lambda: gen_disk(True),
     "bdisk": lambda: gen_disk(True, True),
@@ -768,6 +772,7 @@ assos = {
     "run": lambda: qemu_run(),
     "krun": lambda: qemu_run(True),
     "srun": lambda: qemu_run(False, True),
+    "run_ndbg": lambda: qemu_run(False, False, True),
     "kver": get_kernel_version,
 }
 

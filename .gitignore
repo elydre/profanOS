@@ -24,6 +24,9 @@ include/addons/
 .vscode/
 .vs/
 
+# vim swap files
+*.swp
+
 # clangd indexing data
 .cache/
 compile_commands.json
@@ -33,3 +36,4 @@ extracted/
 debug/
 *.hex
 *.out
+*.dat

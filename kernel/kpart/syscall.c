@@ -13,8 +13,8 @@
 #include <kernel/butterfly.h>
 #include <kernel/snowflake.h>
 #include <kernel/process.h>
-#include <kernel/afft.h>
 #include <drivers/rtc.h>
+#include <kernel/afft.h>
 #include <cpu/timer.h>
 #include <gui/gnrtx.h>
 #include <gui/vesa.h>

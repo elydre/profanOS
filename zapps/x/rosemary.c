@@ -36,13 +36,16 @@ typedef struct {
 } mod_t;
 
 mod_t mods_at_boot[] = {
-    {1, "/lib/modules/filesys.pkm", "Loading filesystem extensions"},
-    {2, "/lib/modules/devio.pkm",   "Creating /dev entries"},
-    {3, "/lib/modules/fmopen.pkm",  "Loading unix file descriptors layer"},
-    {4, "/lib/modules/profan.pkm",  "Loading extra profan functions"},
-    {5, "/lib/modules/panda.pkm",   "Setting up advanced terminal emulation"},
-    {6, "/lib/modules/ata.pkm",     "Loading ATA disk driver"},
-    {7, "/lib/modules/hdaudio.pkm", "Loading intel HD audio driver"},
+    {1,  "/lib/modules/filesys.pkm", "Loading filesystem extensions"},
+    {2,  "/lib/modules/devio.pkm",   "Creating /dev entries"},
+    {3,  "/lib/modules/fmopen.pkm",  "Loading unix file descriptors layer"},
+    {4,  "/lib/modules/profan.pkm",  "Loading extra profan functions"},
+    {5,  "/lib/modules/panda.pkm",   "Setting up advanced terminal emulation"},
+    {6,  "/lib/modules/eth.pkm",     "Initing ethernet module"},
+    {7,  "/lib/modules/socket.pkm",  "Loading socket library"},
+    {8,  "/lib/modules/ata.pkm",     "Loading ATA disk driver"},
+    {9,  "/lib/modules/hdaudio.pkm", "Loading intel HD audio driver"},
+    {10, "/lib/modules/e1000.pkm",   "Initing e1000 ethernet card"},
 };
 
 int local_strlen(char *str) {
@@ -180,20 +183,20 @@ void set_env(char *line) {
     }
 }
 
+#define NUM_MODULES (int) (sizeof(mods_at_boot) / sizeof(mod_t))
+
 int main(void) {
     runtime_args_t args;
-    int total, usage_pid;
+    int tmp_pid, usage_pid;
     char key_char;
 
     envp = NULL;
 
-    total = (int) (sizeof(mods_at_boot) / sizeof(mod_t));
-
-    for (int i = 0; i < total; i++) {
+    for (int i = 0; i < NUM_MODULES; i++) {
         print_load_status(i);
     }
 
-    mmq_printf(1, "------ Modules loading completed in %d ms\n\n", syscall_timer_get_ms());
+    mmq_printf(1, "------ Modules loading completed in %d ms\n\n\n", syscall_timer_get_ms());
 
     if (SERIAL_AS_TERMINAL) {
         if (fm_reopen(0, "/dev/userial", O_RDONLY)  < 0 ||
@@ -224,6 +227,18 @@ int main(void) {
         set_env("TERM=/dev/kterm");
     }
 
+    args = (runtime_args_t){
+        .path = "/bin/c/ip-get.elf",
+        .wd = NULL,
+        .argc = 2,
+        .argv = (char *[]){"ip-get", "-q"},
+        .envp = NULL,
+        .sleep_mode = 0
+    };
+
+    run_ifexist(&args, &tmp_pid);
+    syscall_process_info(tmp_pid, PROC_INFO_SET_PPID, 0);
+
     rainbow_print("Welcome to profanOS!\n");
     print_kernel_version();
 
@@ -242,7 +257,7 @@ int main(void) {
             .sleep_mode = 1
         };
 
-        run_ifexist(&args, &usage_pid);
+        run_ifexist(&args, NULL);
 
         if (SERIAL_AS_TERMINAL) {
             syscall_sys_power(1); // poweroff
@@ -259,19 +274,13 @@ int main(void) {
         }
     } while (key_char != 'h');
 
-    if (syscall_process_state(usage_pid) < 4) {
-        syscall_process_kill(usage_pid, 0);
-    }
-
     syscall_kprint("\e[2J");
 
     mmq_free(envp);
 
     // unload all modules
-    for (int i = 0; i < total; i++) {
-        mod_t *mod = &mods_at_boot[i];
-        syscall_mod_unload(mod->id);
-    }
+    for (int i = NUM_MODULES - 1; i >= 0; i--)
+        syscall_mod_unload(mods_at_boot[i].id);
 
     syscall_kprint("all modules unloaded\n");
 

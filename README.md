@@ -45,7 +45,7 @@ sudo pacman -S      make python gcc nasm qemu-full xorriso \
 make run
 
 # Show all commands
-make
+make help
 ```
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
@@ -199,16 +199,16 @@ sudo sh install.sh /dev/sdX profanOS.iso
 3. *Discontinued desktop environment for profanOS*
 4. *The doom port running in profanOS*
 
-### Author & Contact
+### Authors & Contact
 
 - pf4 ([@elydre](https://github.com/elydre))
+- asqel ([@asqel](https://github.com/asqel))
 
 Contact me on my discord [server](https://discord.gg/PFbymQ3d97) or in PM `@pf4`
 
 ### Source & Acknowledgment
 
 - **[os tutorial](https://github.com/cfenollosa/os-tutorial) for the original tutorial**
-- [@asqel](https://github.com/asqel) for tests, the sulfur language and all the ports
 - [@Sarah](https://github.com/Sarenard) for all the help and ideas
 - [@copy](https://github.com/copy/v86) for the v86 online emulator and floppy build
 - [@spaskalev](https://github.com/spaskalev/buddy_alloc) for the buddy allocator

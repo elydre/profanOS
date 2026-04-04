@@ -24,4 +24,4 @@ jobs:
 
     - name: build img
       run: |
-        make elf bdisk iso
+        make kernel bdisk iso

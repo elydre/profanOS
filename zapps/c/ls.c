@@ -66,12 +66,12 @@ typedef struct {
 *******************************/
 
 int get_terminal_width(void) {
-    uint32_t width, height;
+    uint32_t width;
 
     char *term = getenv("TERM");
     if (term == NULL || strcmp(term, "/dev/panda"))
         return 80;
-    panda_get_size(&width, &height);
+    panda_get_size(&width, NULL);
     return width;
 }
 

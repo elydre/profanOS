@@ -25,13 +25,13 @@ jobs:
         echo "PROFAN_HDD=disk-$VERSION.bin" >> $GITHUB_ENV
         echo "PROFAN_ISO=profanOS-$VERSION.iso" >> $GITHUB_ENV
         echo "PROFAN_VER=profanOS $VERSION" >> $GITHUB_ENV
-        make gaddons elf bdisk iso
+        make gaddons kernel bdisk iso
         cd out/disk && zip -r ../../initrd-build.zip * && cd ../..
         cp initrd.bin disk-$VERSION.bin
         cp profanOS.iso profanOS-$VERSION.iso
         cp kernel.elf profanOS-kernel.elf
         mv initrd.bin profanOS-initrd.bin
-        rm -Rf out/ && make elf disk && sh tools/limine.sh
+        rm -Rf out/ && make kernel disk && sh tools/limine.sh
         mv profanOS.iso profanOS-lite.iso
         cp profanOS-$VERSION.iso profanOS.iso
 

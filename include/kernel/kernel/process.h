@@ -22,13 +22,16 @@
 #define PROC_STATE_RUN 4
 #define PROC_STATE_IDL 5
 
-#define PROC_INFO_PPID     0
-#define PROC_INFO_STATE    1
-#define PROC_INFO_SLEEP_TO 2
-#define PROC_INFO_RUN_TIME 3
-#define PROC_INFO_NAME     4
-#define PROC_INFO_STACK    5
-#define PROC_INFO_SET_NAME 6
+#define PROC_INFO_PPID      0
+#define PROC_INFO_SET_PPID  1
+#define PROC_INFO_WAIT_PID  2
+#define PROC_INFO_RET_CODE  3
+#define PROC_INFO_STATE     4
+#define PROC_INFO_SLEEP_TO  5
+#define PROC_INFO_RUN_TIME  6
+#define PROC_INFO_NAME      7
+#define PROC_INFO_STACK     8
+#define PROC_INFO_SET_NAME  9
 
 #define process_get_ppid(pid)  process_info(pid, PROC_INFO_PPID, NULL)
 #define process_get_state(pid) process_info(pid, PROC_INFO_STATE, NULL)

@@ -17,6 +17,7 @@
 #include <drivers/diskiso.h>
 #include <kernel/process.h>
 #include <drivers/serial.h>
+#include <drivers/pci.h>
 #include <drivers/rtc.h>
 #include <kernel/afft.h>
 #include <cpu/timer.h>
@@ -28,6 +29,7 @@
 #include <system.h>
 
 multiboot_t *g_mboot;
+
 
 void kernel_main(void *mboot_ptr) {
     g_mboot = mboot_ptr;
@@ -57,6 +59,8 @@ void kernel_main(void *mboot_ptr) {
     status_print(serial_init,   "Enabling serial ports A and B");
     status_print(keyboard_init, "Setting up PS/2 keyboard");
     status_print(rtc_init,      "Initializing real-time clock");
+
+    status_print(pci_init,      "Setting up PCI subsystem");
 
     kprintf("------ Kernel finished booting in %d ms\n", timer_get_ms());
 
