@@ -182,6 +182,14 @@ static int move_element(const char *src, const char *dst) {
 
     return ret;
 }
+
+static int check_command_exists(const char *path) {
+    if (access(path, X_OK) == 0)
+        return 0; // no problem
+
+    fprintf(stderr, "stp: %s required but not found\n", path);
+    exit(1);
+}
 #endif
 
 /*******************************************
@@ -1142,6 +1150,12 @@ int cmd_install(char **names) {
         return 1;
     }
 
+    #ifdef __profanOS__
+    check_command_exists(PATH_UNZIP);
+    check_command_exists(PATH_OLIVINE);
+    check_command_exists(PATH_RM);
+    #endif
+
     remove_full_dir(PATH_TEMP);             // clean temp directory before downloading
     mkdir(PATH_TEMP, 0755);                 // ensure tmp directory exists
 
@@ -1251,6 +1265,10 @@ int cmd_remove(char **names) {
     const char *dependent;
     int success = 0;
 
+    #ifdef __profanOS__
+    check_command_exists(PATH_OLIVINE);
+    #endif
+
     for (int i = 0; names[i]; i++) {
         int is_installed = lpl_is_installed(names[i]);
 
@@ -1303,6 +1321,12 @@ int cmd_remove(char **names) {
 int cmd_upgrade(void) {
     if (!G_LPL)
         lpl_load();
+
+    #ifdef __profanOS__
+    check_command_exists(PATH_UNZIP);
+    check_command_exists(PATH_OLIVINE);
+    check_command_exists(PATH_RM);
+    #endif
 
     printf("checking for package updates...\n");
 
