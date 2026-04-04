@@ -47,7 +47,7 @@
 #define PKG_RMDIR "remove"       // directory in PATH_STP to save remove scripts
 #define PKG_LIST  "pkg_list.csv" // file in PATH_STP to save intalled package list
 
-#define PATH_UNZIP   "/bin/f/bsdunzip.elf"
+#define PATH_UNZIP   "/bin/f/unzip.elf"
 #define PATH_OLIVINE "/bin/f/olivine.elf"
 #define PATH_RM      "/bin/c/rm.elf"
 
@@ -83,6 +83,9 @@
 #define STP_MAX_PART_SIZE   (STP_PKT_SIZE - 8)
 #define STP_MAX_NAME_SIZE   64
 
+#define FORMAT_RAW 0 // raw file
+#define FORMAT_PKG 1 // zip package
+
 // XID and TYPE decoding macros
 #define R64_TO_XID(r)  ((r) & 0xFFFFFFFFFF)
 #define R64_TO_TYPE(r) (((r) >> 48) & 0xFFFF)
@@ -92,6 +95,7 @@ typedef struct {    // used by pkg_get_info
     char name[STP_MAX_NAME_SIZE];
     uint64_t file_size;
     uint32_t version;
+    uint32_t format;
     uint8_t md5[16];
     char desc[STP_MAX_DESC_SIZE];
 } stp_info_t;
@@ -343,19 +347,20 @@ int64_t pkg_get_info(int64_t id, stp_info_t *info_buf) {
     if (rlen < 0)
         return -1;
 
-    if (rlen < STP_MAX_NAME_SIZE + 20) // 20 = 8 (id) + 8 (file_size) + 4 (version) + 16 (md5)
+    if (rlen < STP_MAX_NAME_SIZE + 24) // 24 = 8 (id) + 8 (file_size) + 4 (version) + 4 (format) + 16 (md5)
         RETERR("stp: [protocol err] recv too short\n");
 
     memcpy(info_buf->name, buf + 8, STP_MAX_NAME_SIZE);
     memcpy(&info_buf->file_size, buf + 8 + STP_MAX_NAME_SIZE, 8);
     memcpy(&info_buf->version, buf + 16 + STP_MAX_NAME_SIZE, 4);
-    memcpy(info_buf->md5, buf + 20 + STP_MAX_NAME_SIZE, 16);
+    memcpy(&info_buf->format, buf + 20 + STP_MAX_NAME_SIZE, 4);
+    memcpy(info_buf->md5, buf + 24 + STP_MAX_NAME_SIZE, 16);
 
-    int desc_len = rlen - (STP_MAX_NAME_SIZE + 36);
+    int desc_len = rlen - (STP_MAX_NAME_SIZE + 40);
     if (desc_len > STP_MAX_DESC_SIZE - 1)
         desc_len = STP_MAX_DESC_SIZE - 1;
 
-    memcpy(info_buf->desc, buf + 36 + STP_MAX_NAME_SIZE, desc_len);
+    memcpy(info_buf->desc, buf + 40 + STP_MAX_NAME_SIZE, desc_len);
 
     info_buf->desc[desc_len] = '\0';
 
@@ -982,17 +987,69 @@ int cmd_list(void) {
         if (pkg_get_info(i, &info) == -1)
             return 1;
 
-        printf("  %s: %s (%"PRId64" KB)\n", info.name, info.desc, info.file_size / 1024);
+        printf("  %-20s %s (%"PRId64" KB%s)\n", info.name, info.desc, info.file_size / 1024,
+                    info.format == FORMAT_RAW ? ", file" : "");
     }
 
     return 0;
 }
+
+static void print_download_header(stp_info_t *info) {
+    printf("downloading %s v%d: %s (%"PRId64" KB)\n", info->name, info->version, info->desc, info->file_size / 1024);
+}
+
+static void print_download_stats(void) {
+    printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
+        (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv,
+        g_alltime_dl_stat.packets_lost, (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) /
+        (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
+}
+
+#ifdef __profanOS__
+static int download_unzip_command(void) {
+    if (access(PATH_UNZIP, X_OK) == 0)
+        return 0; // no problem
+
+    stp_info_t info;
+    int64_t id = pkg_get_id("unzip.elf");
+
+    if (id <= 0) {
+        fprintf(stderr, "stp: Failed to find 'unzip.elf' on server\n");
+        return 1;
+    }
+
+    if (pkg_get_info(id, &info) == -1)
+        return 1;
+
+    if (info.format != FORMAT_RAW) {
+        fprintf(stderr, "stp: 'unzip.elf' on server is not a raw file\n");
+        return 1;
+    }
+
+    download_stat_t dl_stat;
+
+    print_download_header(&info);
+    if (pkg_download(id, PATH_UNZIP, &info, &dl_stat) == -1)
+        return 1;
+
+    g_alltime_dl_stat.packets_lost += dl_stat.packets_lost;
+    g_alltime_dl_stat.packets_recv += dl_stat.packets_recv;
+    g_alltime_dl_stat.total_ms     += dl_stat.total_ms;
+
+    return 0;
+}
+#endif
 
 static id_name_pair_t *cmd_install_dl(uint64_t id, const char *from, id_name_pair_t *dl_deps) {
     stp_info_t info;
 
     if (pkg_get_info(id, &info) == -1)
         return NULL;
+
+    if (info.format != FORMAT_PKG) {
+        fprintf(stderr, "stp: '%s' is not a package, use 'stp get' to download it\n", info.name);
+        return NULL;
+    }
 
     if (from)
         lpl_add_dep(from, info.name);
@@ -1039,7 +1096,7 @@ static id_name_pair_t *cmd_install_dl(uint64_t id, const char *from, id_name_pai
             return NULL;
     }
 
-    printf("downloading %s v%d: %s (%"PRId64" KB)\n", info.name, info.version, info.desc, info.file_size / 1024);
+    print_download_header(&info);
 
     download_stat_t dl_stat;
 
@@ -1134,7 +1191,7 @@ static int cmd_install_install(const char *name) {
 }
 
 int cmd_install(char **names) {
-    int count, r = 0;
+    int count, ret = 0;
     int64_t *ids;
 
     for (count = 0; names[count]; count++);
@@ -1150,8 +1207,11 @@ int cmd_install(char **names) {
         return 1;
     }
 
+    memset(&g_alltime_dl_stat, 0, sizeof(g_alltime_dl_stat));
+
     #ifdef __profanOS__
-    check_command_exists(PATH_UNZIP);
+    if (download_unzip_command())
+        return 1;
     check_command_exists(PATH_OLIVINE);
     check_command_exists(PATH_RM);
     #endif
@@ -1163,38 +1223,35 @@ int cmd_install(char **names) {
     mkdir(PATH_STP "/" PKG_RMDIR, 0755);    // ensure remove script directory exists
     #endif
 
-    memset(&g_alltime_dl_stat, 0, sizeof(g_alltime_dl_stat));
-
     id_name_pair_t *dl_deps = malloc(sizeof(id_name_pair_t));
     dl_deps[0].id = -1;
 
     for (int i = 0; i < count; i++) {
         dl_deps = cmd_install_dl(ids[i], NULL, dl_deps);
         if (dl_deps == NULL) {
-            r = 1;
+            ret = 1;
             break;
         }
     }
 
-    count = 0;
-    while (dl_deps[count].id != -1)
-        count++;
+    if (ret == 0) {
+        count = 0;
+        while (dl_deps[count].id != -1)
+            count++;
+    }
 
-    if (r == 0 && count > 0) {
-        printf("all downloads complete in %.2f s - %"PRIu32" packets received, %"PRIu32" lost - %.2f MB/s\n",
-                (double) g_alltime_dl_stat.total_ms / 1000.0, g_alltime_dl_stat.packets_recv,
-                g_alltime_dl_stat.packets_lost, (double) (g_alltime_dl_stat.packets_recv * STP_PKT_SIZE) /
-                (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
+    if (ret == 0 && count > 0) {
+        print_download_stats();
 
         for (int i = count - 1; i >= 0; i--)
-            r |= cmd_install_install(dl_deps[i].name);
+            ret |= cmd_install_install(dl_deps[i].name);
     }
 
     remove_full_dir(PATH_TEMP);
     free(dl_deps);
     free(ids);
 
-    return r;
+    return ret;
 }
 
 static int cmd_remove_remove(const char *name) {
@@ -1322,8 +1379,11 @@ int cmd_upgrade(void) {
     if (!G_LPL)
         lpl_load();
 
+    memset(&g_alltime_dl_stat, 0, sizeof(g_alltime_dl_stat));
+
     #ifdef __profanOS__
-    check_command_exists(PATH_UNZIP);
+    if (download_unzip_command())
+        return 1;
     check_command_exists(PATH_OLIVINE);
     check_command_exists(PATH_RM);
     #endif
@@ -1373,6 +1433,8 @@ int cmd_upgrade(void) {
         dl_deps[++count].id = -1;
     }
 
+    print_download_stats();
+
     for (int i = 0; dl_deps[i].id != -1; i++) {
         if (cmd_remove_remove(dl_deps[i].name))
             return 1;
@@ -1404,11 +1466,14 @@ int cmd_get(char **names) {
             if (pkg_get_info(id, &info) == -1)
                 return 1;
 
-            printf("downloading %s v%d: %s (%"PRId64" KB)\n", info.name, info.version,
-                        info.desc, info.file_size / 1024);
+            print_download_header(&info);
 
             char dl_path[PATH_MAX];
-            snprintf(dl_path, sizeof(dl_path), "%s.zip", info.name);
+
+            if (info.format == FORMAT_PKG)
+                snprintf(dl_path, sizeof(dl_path), "%s.zip", info.name);
+            else
+                snprintf(dl_path, sizeof(dl_path), "%s", info.name);
 
             if (pkg_download(id, dl_path, &info, NULL) == -1)
                 return 1;
@@ -1456,7 +1521,9 @@ int cmd_info(char **names) {
         printf("  id               %"PRId64"\n", id);
         printf("  version          %u\n", info.version);
         printf("  desc             %s\n", info.desc);
-        printf("  zip size         %"PRId64" KB\n", info.file_size / 1024);
+        printf("  size             %"PRId64" KB\n", info.file_size / 1024);
+        printf("  format           %s\n", info.format == FORMAT_PKG ? "package"  :
+                                          info.format == FORMAT_RAW ? "raw file" : "unknown");
 
         int num_deps = pkg_get_deps(id, deps, STP_MAX_DEPS);
 
