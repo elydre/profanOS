@@ -37,6 +37,3 @@ debug/
 *.hex
 *.out
 *.dat
-
-.*.swp
-dump.dat
