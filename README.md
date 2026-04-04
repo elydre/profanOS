@@ -45,7 +45,7 @@ sudo pacman -S      make python gcc nasm qemu-full xorriso \
 make run
 
 # Show all commands
-make
+make help
 ```
 
 Each time the disk is modified you must force its reconstruction with `make disk`.
