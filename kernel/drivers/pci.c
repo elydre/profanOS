@@ -109,8 +109,6 @@ static void pci_get_class(pci_device_t *pci) {
 }
 
 int pci_init(void) {
-    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 1);
-
     for (int i = 0; i < 256; i++) {
         for (int k = 0; k < 16; k++) {
             for (int l = 0; l < 8; l++) {
@@ -241,7 +239,7 @@ void pci_enable_bus_master(pci_device_t *pci) {
 }
 
 
-//static volatile uint32_t *lapic = (volatile uint32_t *)LAPIC_DEFAULT_BASE;
+// static volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
 
 void rdmsr(uint32_t msr, uint32_t *value_high, uint32_t *value_low) {
     __asm__ volatile ("rdmsr" : "=d"(*value_high), "=a"(*value_low) : "c"(msr));
@@ -250,7 +248,6 @@ void rdmsr(uint32_t msr, uint32_t *value_high, uint32_t *value_low) {
 void wrmsr(uint32_t msr, uint32_t value_low, uint32_t value_high) {
     __asm__ volatile ("wrmsr" : : "a"(value_low), "d"(value_high), "c"(msr));
 }
-
 
 static void lapic_enable() {
     uint32_t apic_base_low;
@@ -277,15 +274,21 @@ uint32_t pci_try_enable_msi(pci_device_t *pci) {
         kprintf("RET DEBUG 1\n");
         return 0; // No LAPIC, cannot use MSI
     }
+    kprintf("%d\n", __LINE__);
+    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
     lapic_enable();
-    volatile uint32_t *lapic = (volatile uint32_t *)LAPIC_DEFAULT_BASE;
-uint32_t svr = lapic[0xF0 / 4];
-svr |= 0x100; // APIC Software Enable
-lapic[0xF0 / 4] = svr;
+    kprintf("%d\n", __LINE__);
+    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+    kprintf("%d\n", __LINE__);
 
+    uint32_t svr = lapic[0xF0 / 4];
+    svr |= 0x100; // APIC Software Enable
+    lapic[0xF0 / 4] = svr;
+    kprintf("%d\n", __LINE__);
 
     uint32_t val = pci_read_config(pci, 0x34);
     uint8_t cap_ptr = val & 0xFF;
+    kprintf("%d\n", __LINE__);
 
     while (cap_ptr != 0) {
         uint32_t cap_hdr = pci_read_config(pci, cap_ptr);
@@ -294,6 +297,7 @@ lapic[0xF0 / 4] = svr;
             break;
         cap_ptr = (cap_hdr >> 8) & 0xFF;
     }
+    kprintf("%d\n", __LINE__);
 
     if (cap_ptr == 0) {
         kprintf("No MSI capability\n");
@@ -302,9 +306,11 @@ lapic[0xF0 / 4] = svr;
 
     uint16_t msi_ctrl = pci_read_config_u16(pci, cap_ptr + 2);
     int has_64bit = (msi_ctrl >> 7) & 1;
+    kprintf("%d\n", __LINE__);
 
     uint32_t lapic_addr = LAPIC_DEFAULT_BASE;
     uint32_t data = (next_int_no & 0xFF) | (0 << 8);  // delivery mode = fixed (000), vector = next_int_no
+    kprintf("%d\n", __LINE__);
 
     pci_write_config(pci, cap_ptr + 4, lapic_addr);
     if (has_64bit) {
@@ -313,9 +319,11 @@ lapic[0xF0 / 4] = svr;
     } else {
         pci_write_config(pci, cap_ptr + 8, data);
     }
+    kprintf("%d\n", __LINE__);
 
     msi_ctrl |= 0x1; // Enable MSI
     pci_write_config_u16(pci, cap_ptr + 2, msi_ctrl);
+    kprintf("%d\n", __LINE__);
 
     return next_int_no++;
 }

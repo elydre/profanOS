@@ -506,6 +506,8 @@ int main(int argc, char **argv) {
         memcpy(&g_info.ip, &offered_ip, 4);
         modeth_set_info(g_eth_id, &g_info);
         print_ip(offered_ip);
+    } else if (!quiet) {
+        fprintf(stderr, "ip-get: error: failed to retrieve IP address\n");
     }
 
     modeth_end(g_eth_id);

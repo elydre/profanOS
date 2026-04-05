@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.6"
+#define OLV_VERSION "1.9.7"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -1608,12 +1608,7 @@ char *if_debug(char **input) {
             OLV_USE_UNIX
             free(g_olv->bin_names);
             g_olv->bin_names = load_bin_names();
-
-            // count bin names
-            int c;
-            for (c = 0; g_olv->bin_names[c] != NULL; c++);
-
-            return local_itoa(c, malloc(12));
+            return NULL;
             OLV_END_UNIX
         #endif
         raise_error("debug", "Binary reloading not supported in this build");
@@ -4660,6 +4655,40 @@ char *olv_autocomplete(const char *str, int len, char **other, int *dec_ptr) {
     return ret;
 }
 
+static void input_local_profan_rbin(char *buffer, int buffer_actual_size) {
+    while (IS_SPACE_CHAR(*buffer))
+        buffer++;
+
+    char *end_command = buffer;
+
+    while (*end_command && !IS_SPACE_CHAR(*end_command))
+        end_command++;
+
+    char tmp = *end_command;
+    *end_command = '\0';
+
+    if (strcmp(get_func_color(buffer), "37") != 0) {
+        *end_command = tmp;
+        return;
+    }
+
+    char *path = get_bin_path(buffer);
+    *end_command = tmp;
+
+    if (path == NULL)
+        return;
+
+    free(path);
+
+    free(g_olv->bin_names);
+    g_olv->bin_names = load_bin_names();
+
+    fputs("\e[u", stdout);
+    olv_print(buffer, buffer_actual_size);
+    fputs(" \e[0m", stdout);
+    fflush(stdout);
+}
+
 static int input_local_profan_loop(char *buffer, int size, char **history,
             int history_end, int buffer_index) {
     // return -2 if the input is valid, else return the cursor position
@@ -4879,6 +4908,7 @@ static int input_local_profan_loop(char *buffer, int size, char **history,
     free(other_suggests);
 
     buffer[buffer_actual_size] = '\0';
+    input_local_profan_rbin(buffer, buffer_actual_size);
 
     puts("\e[?25h");
 
