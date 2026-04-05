@@ -124,6 +124,7 @@ global irq12
 global irq13
 global irq14
 global irq15
+global irq28
 
 
 ; 0: Divide By Zero Exception
@@ -398,4 +399,9 @@ irq14:
 irq15:
     push byte 15
     push byte 47
+    jmp irq_common_stub
+
+irq28:
+    push byte 28
+    push byte 60
     jmp irq_common_stub

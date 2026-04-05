@@ -84,6 +84,8 @@ int isr_install(void) {
     set_idt_gate(45, irq13);
     set_idt_gate(46, irq14);
     set_idt_gate(47, irq15);
+  
+    set_idt_gate(60, irq28);
 
     // install the syscall interrupt
     set_idt_gate(128, isr128);
@@ -131,12 +133,15 @@ void irq_handler(registers_t *r) {
 
     sys_entry_kernel();
 
+    if (r->int_no != 32 && r->int_no != 33)
+        kprintf("IRQ%d\n", r->int_no - 32);
+
     interrupt_handler_t handler = interrupt_handlers[r->int_no];
 
     if (handler != NULL)
         handler(r);
 
-    sys_exit_kernel(r->int_no == 32 ? 0 : r->int_no + 1);
+    sys_exit_kernel(r->int_no == 32 || r->int_no == 32 + 28 ? -1 : (int) r->int_no);
 }
 
 void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {

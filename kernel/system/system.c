@@ -125,7 +125,7 @@ void sys_exit_kernel(int restore_pic) {
     port_write8(0xA1, 0x00);
 
     // restore pic if needed
-    if (restore_pic) {
+    if (restore_pic != -1) {
         if (restore_pic > 40)
             port_write8(0xA0, 0x20);
         port_write8(0x20, 0x20);

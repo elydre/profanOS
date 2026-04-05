@@ -254,7 +254,8 @@ int rtl8169_reset(rtl8169_t *nic) {
  * @param mac Destination MAC
  */
 int rtl8169_readMAC(rtl8169_t *nic, uint8_t *mac) {
-    for (int i = 0; i < 6; i++) mac[i] = RTL8169_READ8(RTL8169_REG_IDR0 + i);
+    for (int i = 0; i < 6; i++)
+        mac[i] = RTL8169_READ8(RTL8169_REG_IDR0 + i);
     return 0;
 }
 
@@ -274,7 +275,7 @@ int rtl8169_initializeRx(rtl8169_t *nic) {
     for (int i = 0; i < RTL8169_RX_DESC_COUNT; i++) {
         rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (i * sizeof(rtl8169_desc_t)));
 
-        desc->command = 0x1FF8 | RTL8169_DESC_CMD_OWN;
+        desc->command = RTL8169_RX_BUFFER_SIZE | RTL8169_DESC_CMD_OWN;
         if (i == RTL8169_RX_DESC_COUNT-1) desc->command |= RTL8169_DESC_CMD_EOR;
 
         // Get buffer
@@ -282,13 +283,15 @@ int rtl8169_initializeRx(rtl8169_t *nic) {
 
         // Setup remaining parameters
         desc->vlan = 0x00000000;
-        desc->buffer_lo = (buffer & 0xFFFFFFFF);
+        desc->buffer_lo = buffer;
         desc->buffer_hi = 0;
     }
 
     // Configure Rx descriptor addresses
     uint32_t desc_phys = nic->rx_descriptors;
-    RTL8169_WRITE32(RTL8169_REG_RDSAR, desc_phys & 0xFFFFFFFF);
+    asm volatile("wbinvd");
+
+    RTL8169_WRITE32(RTL8169_REG_RDSAR, desc_phys);
     RTL8169_WRITE32(RTL8169_REG_RDSAR + 4, 0);
 
     // Enable 1024-byte MXDMA, unlimited RXFTH, accept physica lmatch, broadcast, multicast
@@ -323,13 +326,15 @@ int rtl8169_initializeTx(rtl8169_t *nic) {
         // Setup parameters
         desc->command = (i == RTL8169_TX_DESC_COUNT-1) ? RTL8169_DESC_CMD_EOR : 0;
         desc->vlan = 0x00000000;
-        desc->buffer_lo = (buffer & 0xFFFFFFFF);
+        desc->buffer_lo = buffer;
         desc->buffer_hi = 0;
     }
 
     // Configure Tx descriptor addresses
     uint32_t desc_phys = nic->tx_descriptors;
-    RTL8169_WRITE32(RTL8169_REG_TNPDS, desc_phys & 0xFFFFFFFF);
+    asm volatile("wbinvd");
+
+    RTL8169_WRITE32(RTL8169_REG_TNPDS, desc_phys);
     RTL8169_WRITE32(RTL8169_REG_TNPDS + 4, 0);
 
     // I ain't care enough to write the defines for this, enables standard IFG and 1024-byte DMA
@@ -346,51 +351,39 @@ int rtl8169_initializeTx(rtl8169_t *nic) {
  * @param context NIC
  */
 
-/*
-void rtl8169_thread(void *context) {
-    rtl8169_t *nic = (rtl8169_t*)context;
+void rtl8169_recv(void) {
+    rtl8169_t *nic = G_NIC;
     
     for (;;) {
-        // Sleep until forever
-        sleep_prepare();
-        int w = sleep_enter();
-
-        if (w == WAKEUP_SIGNAL) {
-            // Aw HELL nah
-            continue;
-        }
-
-        // Loop
-        for (;;) {
-            // Get descriptor
-            rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (nic->rx_current * sizeof(rtl8169_desc_t)));
-            
-            // Only descriptors no longer owned are valid
-            if (desc->command & RTL8169_DESC_CMD_OWN) break;
+        // Get descriptor
+        rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (nic->rx_current * sizeof(rtl8169_desc_t)));
         
-            // Figure out packet length
-            uint16_t pkt_length = desc->command & 0x3FFF;
+        // Only descriptors no longer owned are valid
+        if (desc->command & RTL8169_DESC_CMD_OWN)
+            break;
+    
+        // Figure out packet length
+        uint16_t pkt_length = desc->command & 0x3FFF;
 
-            // Error?
-            if (desc->command & (1 << 21)) {
-                LOG("ERR", "Error in Rx descriptor\n");
-                goto _next_desc;
-            }
-
-            // Update NIC statistics
-            // nic->n->stats.rx_bytes += pkt_length; PROFANOS
-            // nic->n->stats.rx_packets++;
-
-            // Pass it on to the Ethernet handler
-            ethernet_handle((ethernet_packet_t*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), nic->n, pkt_length);
-
-        _next_desc:
-            nic->rx_current = (nic->rx_current + 1) % RTL8169_RX_DESC_COUNT;
-            desc->command |= RTL8169_DESC_CMD_OWN;
+        // Error?
+        if (desc->command & (1 << 21)) {
+            LOG("ERR", "Error in Rx descriptor\n");
+            goto _next_desc;
         }
+
+        // Update NIC statistics
+        // nic->n->stats.rx_bytes += pkt_length; PROFANOS
+        // nic->n->stats.rx_packets++;
+
+        // Pass it on to the Ethernet handler
+        // ethernet_handle((ethernet_packet_t*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), nic->n, pkt_length);
+        eth_recv_packet((void*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), pkt_length);
+
+    _next_desc:
+        nic->rx_current = (nic->rx_current + 1) % RTL8169_RX_DESC_COUNT;
+        desc->command |= RTL8169_DESC_CMD_OWN;
     }
 }
-*/
 
 /**
  * @brief RTL8169 IRQ handler
@@ -400,42 +393,42 @@ void rtl8169_irq(registers_t *regs) {
     (void)regs;
     rtl8169_t *nic = G_NIC;
 
-    if (nic) {
-        LOG("DEBUG", "Got IRQ on RTL8169\n");
+    LOG("DEBUG", "OHOHOHOHHO HOHOHOHOHOHOH Got IRQ on RTL8169\n");
 
-        // Why were we interrupted?
-        uint16_t isr = RTL8169_READ16(RTL8169_REG_ISR);
-        RTL8169_WRITE16(RTL8169_REG_ISR, isr);
+    // Why were we interrupted?
+    uint16_t isr = RTL8169_READ16(RTL8169_REG_ISR);
 
-        if (isr & RTL8169_ISR_LINKCHG) {// Update link status
-            if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_LINKSTS) {
-                kprintf("Link is now UP\n");
-            } else {
-                kprintf("Link is now DOWN\n");
-            }
-        }
+    kprintf("ISR: %x\n", isr); // j'ai 0 ici
 
-        // Check for errors
-        if (isr & RTL8169_ISR_RER) {
-            kprintf("Error in received packet\n");
-        }
-
-        if (isr & RTL8169_ISR_TER) {
-            kprintf("Error in transmitted packet\n");
-        }
-
-        if (isr & RTL8169_ISR_TOK /*&& nic->thr*/) {
-            // sleep_wakeup(nic->thr);
-            kprintf("DEBUG: WAWWWWW Waking up transmit thread\n");
-        }  
-
-        // Did we get a packet?
-        if (isr & RTL8169_ISR_ROK) {
-            // Wake the thread up
-            kprintf("DEBUG: WAWWWWW Waking up receive thread\n");
-            // sleep_wakeup(nic->recv_proc->main_thread);
+    if (isr & RTL8169_ISR_LINKCHG) {// Update link status
+        if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_LINKSTS) {
+            kprintf("Link is now UP\n");
+        } else {
+            kprintf("Link is now DOWN\n");
         }
     }
+
+    // Check for errors
+    if (isr & RTL8169_ISR_RER) {
+        kprintf("Error in received packet\n");
+    }
+
+    if (isr & RTL8169_ISR_TER) {
+        kprintf("Error in transmitted packet\n");
+    }
+
+    if (isr & RTL8169_ISR_TOK /*&& nic->thr*/) {
+        // sleep_wakeup(nic->thr);
+        kprintf("DEBUG: WAWWWWW packet transmitted successfully\n");
+    }  
+
+    // Did we get a packet?
+    if (isr & RTL8169_ISR_ROK) {
+        kprintf("DEBUG: WAWWWWW new packet received\n");
+        rtl8169_recv();
+    }
+
+    RTL8169_WRITE16(RTL8169_REG_ISR, isr);
 }
 
 /**
@@ -522,10 +515,18 @@ int __init(void) {
     // Get BAR
     uint32_t bar = device->bar[0];
 
+    if (device->bar_is_mem[0]) {
+        LOG("ERR", "only I/O BARs are supported for RTL8169\n\n");
+        return 1;
+    }
+
     // Create RTL8169 NIC object
     rtl8169_t *nic = calloc(sizeof(rtl8169_t));
     G_NIC = nic;
+
     nic->base = bar & 0xFFFFFFF0;
+
+    kprintf("I/O base address: %x\n", nic->base);
 
     // Reset the NIC
     if (rtl8169_reset(nic)) {
@@ -575,9 +576,12 @@ int __init(void) {
     // Enable receive and transmit
     RTL8169_WRITE8(RTL8169_REG_CR, RTL8169_CR_RE | RTL8169_CR_TE);
 
+    RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF); // this is what sends me the ISR with 0
+
     // Enable interrupts
-    RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER | RTL8169_IMR_TOK | RTL8169_IMR_TER | RTL8169_IMR_RDU | RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU);
-    RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF);
+    RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER | 
+                RTL8169_IMR_TOK | RTL8169_IMR_TER | RTL8169_IMR_RDU |
+                RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU);
 
     // Update link status
     kprintf("Link status: %s\n", rtl8169_link(nic));
